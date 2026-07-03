@@ -118,3 +118,78 @@ def test_types_empty_registry(client):
 def test_types_unauthenticated_401(client):
     """T-DS-TY04: 未认证 → 401。"""
     assert client.get("/api/v1/datasources/types").status_code == 401
+
+
+import threading
+import uuid
+from unittest.mock import MagicMock
+
+from app.datasources.pool import DataSourcePoolManager
+
+
+def test_pool_reuses_connection_same_id():
+    """T-DS-PL01: 同一 dataSourceId 复用连接。"""
+    mgr = DataSourcePoolManager()
+    ds_id = uuid.uuid4()
+    connector = MagicMock()
+    conn1 = MagicMock()
+    connector.open_connection.return_value = conn1
+    kwargs = {"host": "a", "port": 5432, "database": "d", "username": "u", "password": "p"}
+    with mgr.pooled_connection(ds_id, connector=connector, connect_kwargs=kwargs) as c1:
+        pass
+    with mgr.pooled_connection(ds_id, connector=connector, connect_kwargs=kwargs) as c2:
+        pass
+    assert connector.open_connection.call_count == 1
+    assert c2 is conn1
+
+
+def test_pool_isolates_different_ids():
+    """T-DS-PL02: 不同 dataSourceId 不混用 connect 参数。"""
+    mgr = DataSourcePoolManager()
+    connector = MagicMock()
+    connector.open_connection.side_effect = [MagicMock(name="a"), MagicMock(name="b")]
+    with mgr.pooled_connection(uuid.uuid4(), connector=connector, connect_kwargs={"host": "a", "port": 1, "database": "d", "username": "u", "password": "p"}):
+        pass
+    with mgr.pooled_connection(uuid.uuid4(), connector=connector, connect_kwargs={"host": "b", "port": 2, "database": "d", "username": "u", "password": "p"}):
+        pass
+    assert connector.open_connection.call_count == 2
+
+
+def test_evict_pool_closes_and_decrements():
+    """T-DS-PL03: evict_pool 关闭连接并减计数。"""
+    mgr = DataSourcePoolManager()
+    ds_id = uuid.uuid4()
+    connector = MagicMock()
+    conn = MagicMock()
+    connector.open_connection.return_value = conn
+    kwargs = {"host": "h", "port": 1, "database": "d", "username": "u", "password": "p"}
+    with mgr.pooled_connection(ds_id, connector=connector, connect_kwargs=kwargs):
+        pass
+    assert mgr.active_pool_count() == 1
+    mgr.evict_pool(ds_id)
+    assert mgr.active_pool_count() == 0
+    conn.close.assert_called()
+
+
+def test_pool_concurrent_smoke():
+    """T-DS-PL04: 4 线程同一 id 无异常。"""
+    mgr = DataSourcePoolManager()
+    ds_id = uuid.uuid4()
+    connector = MagicMock()
+    connector.open_connection.return_value = MagicMock()
+    kwargs = {"host": "h", "port": 1, "database": "d", "username": "u", "password": "p"}
+    errors: list[Exception] = []
+
+    def worker():
+        try:
+            with mgr.pooled_connection(ds_id, connector=connector, connect_kwargs=kwargs):
+                pass
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=worker) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == []

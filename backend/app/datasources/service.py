@@ -16,6 +16,7 @@ from app.auth.models import AuthResourceGrant
 from app.core.logging import trace_id_var
 from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
 from app.datasources.models import DataSource, get_meta_session
+from app.datasources.pool import pool_manager
 from app.datasources.registry import ConnectorNotFoundError, register_usage_checker, registry
 from app.datasources.schemas import (
     ConnectionOptions,
@@ -332,6 +333,7 @@ def delete_data_source(session: Session, data_source_id: uuid.UUID) -> None:
         raise DataSourceError("DATASOURCE_IN_USE", "Data source is referenced by grants", 409)
     row.deleted_at = datetime.now(UTC)
     session.commit()
+    pool_manager.evict_pool(data_source_id)
 
 
 def test_connection_draft(payload: TestConnectionIn) -> TestConnectionOut:
