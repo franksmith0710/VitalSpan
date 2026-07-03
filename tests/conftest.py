@@ -25,6 +25,7 @@ from app.main import app
 # - combined_auth_trace_headers: auth_headers ∪ trace_id_headers for me+trace combo tests
 # - lowercase_bearer_headers: {"Authorization": "bearer dev"} for RFC scheme case sensitivity tests
 # - malformed_auth_headers: {"Authorization": "Bearerde"} for missing space separator tests
+# - basic_auth_headers: {"Authorization": "Basic dev"} for non-Bearer scheme tests
 
 
 @pytest.fixture
@@ -63,6 +64,11 @@ def lowercase_bearer_headers() -> dict[str, str]:
 @pytest.fixture
 def malformed_auth_headers() -> dict[str, str]:
     return {"Authorization": "Bearerde"}
+
+
+@pytest.fixture
+def basic_auth_headers() -> dict[str, str]:
+    return {"Authorization": "Basic dev"}
 
 
 def _port_open(host: str, port: int, timeout: float = 1.0) -> bool:

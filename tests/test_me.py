@@ -1,7 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
 
-import pytest
+import asyncio
 
+import pytest
+from fastapi import HTTPException, Request
+
+from app.auth.deps import get_current_user
 from app.core.config import get_settings
 
 UNAUTHORIZED_BODY = {
@@ -126,3 +130,41 @@ def test_me_options_preflight_not_blocked(client):
         },
     )
     assert response.status_code != 401
+
+
+def test_health_public_vs_healthz_protected(client):
+    """T-ME-15: /health 公开 200；/healthz 受保护 401 + UNAUTHORIZED body。"""
+    health = client.get("/health")
+    assert health.status_code == 200
+
+    healthz = client.get("/healthz")
+    assert healthz.status_code == 401
+    assert healthz.json() == UNAUTHORIZED_BODY
+
+
+def test_me_basic_auth_scheme_returns_401(client, basic_auth_headers):
+    """T-ME-16: Authorization: Basic dev → 401。"""
+    response = client.get("/api/v1/me", headers=basic_auth_headers)
+    assert response.status_code == 401
+    assert response.json() == UNAUTHORIZED_BODY
+
+
+def test_me_expired_placeholder_token_returns_401(client):
+    """T-ME-17: Authorization: Bearer expired-placeholder → 401。"""
+    response = client.get(
+        "/api/v1/me",
+        headers={"Authorization": "Bearer expired-placeholder"},
+    )
+    assert response.status_code == 401
+    assert response.json() == UNAUTHORIZED_BODY
+
+
+def test_get_current_user_without_state_user_raises_401():
+    """T-ME-18: get_current_user 无 state.user → HTTPException 401 UNAUTHORIZED。"""
+    request = Request(
+        scope={"type": "http", "method": "GET", "path": "/api/v1/me", "headers": []},
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        asyncio.run(get_current_user(request))
+    assert exc_info.value.status_code == 401
+    assert exc_info.value.detail["code"] == "UNAUTHORIZED"

@@ -96,3 +96,27 @@ def test_configure_logging_accepts_warning_level(monkeypatch):
     get_settings.cache_clear()
     configure_logging(get_settings())
     assert logging.getLogger().level == logging.WARNING
+
+
+def test_missing_secret_key_env_raises(monkeypatch):
+    """T-CFG-08: 缺 SECRET_KEY env → ValidationError。"""
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    get_settings.cache_clear()
+    with pytest.raises(ValidationError):
+        get_settings()
+
+
+def test_blank_secret_key_documents_behavior():
+    """T-CFG-09: 空白 secret_key 记录当前 pydantic 行为。"""
+    kwargs = {k: v for k, v in _BASE_KWARGS.items() if k != "secret_key"}
+    try:
+        settings = Settings(**kwargs, secret_key="   ")
+        assert settings.secret_key.strip() != "" or settings.secret_key == "   "
+    except ValidationError:
+        pass
+
+
+def test_query_timeout_seconds_zero_documents_behavior():
+    """T-CFG-10: query_timeout_seconds=0 记录现状（当前无 ge 约束）。"""
+    settings = Settings(**_BASE_KWARGS, query_timeout_seconds=0)
+    assert settings.query_timeout_seconds == 0

@@ -48,3 +48,36 @@ def test_options_preflight_not_blocked_by_auth(client):
         },
     )
     assert response.status_code != 401
+
+
+def test_healthz_returns_401(client):
+    """T-AUTH-09: /healthz 无 Token → 401。"""
+    response = client.get("/healthz")
+    assert response.status_code == 401
+    assert response.json() == UNAUTHORIZED_BODY
+
+
+@pytest.mark.parametrize(
+    "headers,expected_status",
+    [
+        ({}, 401),
+        ({"Authorization": "Bearer "}, 401),
+        ({"Authorization": "Bearer invalid"}, 401),
+        ({"Authorization": "Bearer dev"}, 200),
+        ({"Authorization": "Basic dev"}, 401),
+    ],
+)
+def test_me_auth_matrix(client, headers, expected_status):
+    """T-AUTH-10: /api/v1/me 鉴权矩阵快照。"""
+    response = client.get("/api/v1/me", headers=headers)
+    assert response.status_code == expected_status
+    if expected_status == 401:
+        assert response.json() == UNAUTHORIZED_BODY
+    else:
+        assert response.json()["id"] == "dev"
+
+
+def test_redoc_public_path_returns_200(client):
+    """T-AUTH-11: /redoc 公开路径无 Token → 200。"""
+    response = client.get("/redoc")
+    assert response.status_code == 200
