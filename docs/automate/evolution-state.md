@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | design | docs/superpowers/specs/2026-07-03-boot-data-quality-design.md |
 | plan | docs/superpowers/plans/2026-07-03-boot-data-quality.md |
@@ -16,6 +16,8 @@
 | pr_number |  |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm exec vitest run (smoke: T-FE-15/16/19, T-ING-06~10) && pnpm run check:design |
+| last_ui_verified_note | PASS via vitest role/viewport assertions; no Playwright screenshots (plan constraint) |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
 | skill_rule_index_source_count | 26 |
