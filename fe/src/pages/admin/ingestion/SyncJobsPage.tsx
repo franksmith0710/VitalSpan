@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { History, Pencil, Play, Settings2 } from "lucide-react";
+import { History, Pencil, Play, Settings2, Trash2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +45,8 @@ export function SyncJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SyncJobSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadJobs = useCallback(async () => {
     setLoading(true);
@@ -61,6 +73,20 @@ export function SyncJobsPage() {
       setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
     } finally {
       setRunningId(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await apiFetch(`/api/v1/ingestion/sync-jobs/${deleteTarget.id}`, { method: "DELETE" });
+      setDeleteTarget(null);
+      await loadJobs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -139,6 +165,7 @@ export function SyncJobsPage() {
                           variant="ghost"
                           size="sm"
                           aria-label="手动运行同步"
+                          disabled={runningId === job.id}
                           loading={runningId === job.id}
                           onClick={() => void handleRun(job.id)}
                         >
@@ -159,6 +186,15 @@ export function SyncJobsPage() {
                             <Pencil className="size-4" />
                           </Link>
                         </IconButton>
+                        <IconButton
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label="删除任务"
+                          onClick={() => setDeleteTarget(job)}
+                        >
+                          <Trash2 className="size-4" />
+                        </IconButton>
                       </div>
                     </td>
                   </tr>
@@ -168,6 +204,37 @@ export function SyncJobsPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除任务？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget
+                ? `确定删除任务「${deleteTarget.name}」？删除后无法恢复，运行历史将一并清除。`
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-error-500 text-white shadow-theme-xs hover:bg-error-600 disabled:opacity-50"
+              disabled={deleting}
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDelete();
+              }}
+            >
+              {deleting ? "删除中…" : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

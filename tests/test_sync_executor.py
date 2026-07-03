@@ -249,3 +249,54 @@ def test_run_job_write_receives_applied_rules(mock_fetch, mock_write):
     assert row["amount"] == 12.5
     assert row["note"] == "无备注"
     assert "product_name" not in row
+
+
+from unittest.mock import MagicMock
+
+from app.ingestion.sync_executor import INGESTION_MAX_ROWS
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=0)
+@patch("app.ingestion.sync_executor.pymysql.connect")
+def test_run_job_respects_ingestion_max_rows_limit(mock_connect, mock_write):
+    """T-D02-09: cursor.execute 的 LIMIT 参数为 INGESTION_MAX_ROWS。"""
+    cursor = MagicMock()
+    cursor.fetchall.return_value = []
+    conn = MagicMock()
+    conn.cursor.return_value.__enter__.return_value = cursor
+    mock_connect.return_value = conn
+
+    job_id = _seed_job()
+    run_job(job_id, "trace-limit-sql")
+    sql, params = cursor.execute.call_args[0]
+    assert "LIMIT" in sql.upper()
+    assert params == (INGESTION_MAX_ROWS,)
+
+
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", side_effect=ConnectionError("always down"))
+def test_run_job_trace_id_preserved_on_final_failure(mock_fetch):
+    """T-D02-10: 源始终失败 → failed 且 trace_id 保持入参。"""
+    job_id = _seed_job()
+    run_job(job_id, "trace-preserved-fail")
+    run = _latest_run(job_id)
+    assert run.status == "failed"
+    assert run.trace_id == "trace-preserved-fail"
+
+
+@patch("app.ingestion.sync_executor._write_analytics")
+@patch("app.ingestion.sync_executor._fetch_mysql_rows")
+def test_run_job_write_row_count_matches_rows_synced(mock_fetch, mock_write):
+    """T-D02-11: mock_write 收到 len(rows) 与 rows_synced 一致。"""
+    rows = [
+        {"product_name": "A", "amount": "1", "status": "active", "note": None},
+        {"product_name": "B", "amount": "2", "status": "active", "note": None},
+        {"product_name": "C", "amount": "3", "status": "active", "note": None},
+    ]
+    mock_fetch.return_value = rows
+    mock_write.return_value = len(rows)
+    job_id = _seed_job()
+    run_job(job_id, "trace-batch-count")
+    run = _latest_run(job_id)
+    assert run.rows_synced == len(rows)
+    written = mock_write.call_args[0][1]
+    assert len(written) == len(rows)

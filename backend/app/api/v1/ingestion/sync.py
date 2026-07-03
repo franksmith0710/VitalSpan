@@ -295,6 +295,20 @@ def trigger_run(
             status_code=404,
             detail={"code": "NOT_FOUND", "message": "任务不存在", "detail": None},
         )
+    existing_running = db.scalar(
+        select(SyncRun.id)
+        .where(SyncRun.job_id == job_id, SyncRun.status == "running")
+        .limit(1)
+    )
+    if existing_running is not None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "RUN_ALREADY_IN_PROGRESS",
+                "message": "该任务正在运行中",
+                "detail": None,
+            },
+        )
     trace_id = request.headers.get("X-Trace-Id", str(uuid.uuid4()))
     run = SyncRun(job_id=job_id, status="running", trace_id=trace_id)
     db.add(run)

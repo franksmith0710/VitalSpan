@@ -20,3 +20,24 @@ def test_services_ingestion_symbol_anchors():
         "ingestion.scheduler",
     ):
         assert symbol in text
+
+
+def test_api_readme_section9_ingestion_routes():
+    """T-D05-05: api/README.md §9 含 sync-jobs 与 source 字段。"""
+    text = (ROOT / "docs/api/README.md").read_text(encoding="utf-8")
+    assert "/api/v1/ingestion/sync-jobs" in text
+    assert "source" in text
+    assert "SourceConnection" in text or '"type"' in text
+
+
+def test_prd_f16_data005_acceptance_test_anchors():
+    """T-D05-06: F16-DATA DATA-005 验收含 test_ingestion 锚点。"""
+    text = (ROOT / "docs/automate/prd/F16-DATA.md").read_text(encoding="utf-8")
+    assert "DATA-005" in text
+    assert "test_ingestion" in text
+
+
+def test_services_ingestion_implemented_status():
+    """T-D05-07: ingestion.md 状态为已实现。"""
+    text = (ROOT / "docs/services/ingestion.md").read_text(encoding="utf-8")
+    assert "已实现" in text

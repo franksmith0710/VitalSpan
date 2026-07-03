@@ -7,19 +7,19 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
-| design | docs/superpowers/specs/2026-07-03-m1b-quality-r7-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1b-quality-r7.md |
-| branch | feat/m1b-quality-r7 |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r8.md |
+| design | docs/superpowers/specs/2026-07-03-m1b-quality-r8-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-quality-r8.md |
+| branch | cursor/bc-138e6383-60a1-46a7-b8a2-8017c718af92-b8d3 |
 | base_branch | dev-auto |
-| prd_ids | DATA-004,DATA-002,DATA-005,ETL-001,BOOT-005 |
-| pr_number | 20 |
-| last_verified_command | cd backend && python3 -m pytest -v && python3 -m ruff check . |
+| prd_ids | DATA-003,DATA-002,DATA-004,DATA-001,DATA-005 |
+| pr_number | 22 |
+| last_verified_command | cd backend && python3 -m pytest -q; cd fe && pnpm test && pnpm run build && pnpm run check:design |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A (ui_design_skill: none; 纯后端轮次) |
-| last_ui_verified_note | UI: N/A — 未触及 fe/ |
+| last_ui_verified_command | cd fe && pnpm test && pnpm run build && pnpm run check:design |
+| last_ui_screenshots | NOT_RUN（无头 CI；vitest viewport 1400/375 + check:design 已覆盖 UI Acceptance） |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
+| skill_rule_index_generated_at | 2026-07-03T12:30:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -68,11 +68,10 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G0 PASS：无 Open PR；PR #17 已 merge；上轮 phase 自 P5_DOCS_READY 重置 idle
-- G1 doc-bootstrap：goal 只读；prd hub v1.2.11（16 分片 124 项）、8 维总表/薄弱项汇总/功能索引完整；plan 只读校验通过
-- plan：M1+M1B 勾选清单全部 [x]；无含未完成 `[ ]` 的活跃里程碑节
-- 已实现项薄弱 Top3（<90）：DATA-002(83.9)、DATA-004(84.8)、BOOT-005(85.9)；远期未实现项仍占系统薄弱项汇总 Top10
-- STUCK 表保留 12 行（BOOT×6 + DATA/ETL×6）；技能规则索引 26 条未过期
+- G0 PASS：已 Squash merge PR #21（补救 P2 plan 文档）至 dev-auto；sha 73fb684；无剩余 Open PR
+- 上轮 r7（PR #20）已合并；本轮 r8 M1B DATA 质量推分（DATA-003/002/004/001/005）待 PR
+- pytest 127 + vitest 14 ingestion；P5 重评总分 85.4–88.4（均 <90）
+- STUCK DATA-* 连续未过轮次 +1；技能规则索引 26 条未过期
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -84,9 +83,9 @@
 | BOOT-001 | 9 | 86.5 | 2026-07-03 |
 | BOOT-004 | 9 | 87.4 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
-| DATA-004 | 2 | 84.8 | 2026-07-03 |
-| DATA-001 | 2 | 85.8 | 2026-07-03 |
-| DATA-002 | 3 | 83.9 | 2026-07-03 |
+| DATA-004 | 3 | 87.5 | 2026-07-03 |
+| DATA-001 | 3 | 88.1 | 2026-07-03 |
+| DATA-002 | 4 | 85.5 | 2026-07-03 |
 | ETL-001 | 3 | 85.9 | 2026-07-03 |
-| DATA-003 | 3 | 81.5 | 2026-07-03 |
-| DATA-005 | 2 | 85.8 | 2026-07-03 |
+| DATA-003 | 4 | 85.4 | 2026-07-03 |
+| DATA-005 | 3 | 88.4 | 2026-07-03 |
