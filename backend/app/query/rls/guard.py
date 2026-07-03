@@ -28,6 +28,13 @@ def merge_where_clause(sql: str, fragment: str) -> str:
     return f"{normalized} WHERE ({fragment})"
 
 
+ADMIN_BYPASS_ROLES = frozenset({"admin"})
+
+
+def _should_bypass_rls(user: UserContext) -> bool:
+    return bool(ADMIN_BYPASS_ROLES.intersection(user.roles))
+
+
 def apply_rls_to_sql(
     session: Session,
     user: UserContext,
@@ -35,6 +42,8 @@ def apply_rls_to_sql(
     *,
     rls_config: dict[str, Any] | None = None,
 ) -> str:
+    if _should_bypass_rls(user):
+        return sql
     cfg = rls_config or {}
     column_by_dimension_id = cfg.get("column_by_dimension_id")
     table_alias = cfg.get("table_alias", "t")
