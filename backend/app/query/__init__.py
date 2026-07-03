@@ -1,1 +1,5 @@
-"""Query domain (L1 RLS guard only in r21; M3 executor expands here)."""
+"""Query domain — executor, dialects, bindings, RLS guard."""
+
+from app.query.schemas import QueryError
+
+__all__ = ["QueryError"]
