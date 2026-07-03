@@ -6,7 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
+| branch | cursor/bc-f9be599f-3659-4ccf-88f3-8a04502e6c80-9b41 |
+| base_branch | dev-auto |
 | design | docs/superpowers/specs/2026-07-03-m1-plan-close-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-plan-close.md |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-plan-close.md |
