@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
+| phase | P1_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r10.md |
+| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r10-design.md |
 | plan |  |
 | branch |  |
 | base_branch |  |
-| prd_ids |  |
+| prd_ids | DATA-003,DATA-002,ETL-001,DATA-004,DATA-001 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -70,7 +70,8 @@
 
 - G1 doc-bootstrap：prd hub（124 项·16 域）含薄弱项汇总/8 维总表/功能索引；goal.md 只读未改
 - plan M1+M1B 全 [x]（12 项 ID 与 prd 分片一致）；无活跃里程碑节
-- 上轮 r9 P5 完成；当前轮次已重置 idle；STUCK BOOT-* 最高 11 轮（BOOT-002/005/006）
+- G2 r10 选题完成：M1B DATA companion 推分 DATA-003/002/ETL-001/004/001；BOOT rotation 饱和本轮 pivot
+- 上轮 r9 P5 完成；STUCK BOOT-* 最高 11 轮（BOOT-002/005/006）；DATA-* STUCK 3–4 轮
 - deployed_automate_rev=bf60b94ec4f4；技能规则索引 26 条未过期
 
 ## 选题卡住计数（连续未过 90 的功能项）
