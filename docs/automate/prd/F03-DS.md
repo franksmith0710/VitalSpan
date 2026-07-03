@@ -4,37 +4,40 @@
 
 ### [DS-001] ConnectorRegistry 插件注册表
 
-- **状态**：未实现
+- **状态**：已实现（L1 kickoff r22）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：ConnectorRegistry 插件注册表（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 连接器可注册 type/category/capabilities
-  - [ ] 新增类型不改核心服务
-- **代码锚点**：`backend/app/datasources/registry.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 连接器可注册 type/category/capabilities
+  - [x] 新增类型不改核心服务
+- **代码锚点**：`backend/app/datasources/registry.py` · `backend/app/datasources/dialects/` · `tests/test_datasources_l1.py` T-DS-R01~R04
+- **演化建议**：DS-007 GET `/types` API；CONN-002 PostgreSQL 方言；连接池 DS-006
+- **里程碑对齐**：
 ### [DS-002] 数据源 CRUD API
 
-- **状态**：未实现
+- **状态**：已实现（L1 kickoff r22）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：数据源 CRUD API（SRS 追溯项）。
 - **验收标准**：
-  - [ ] GET/POST/PUT/DELETE `/api/v1/datasources`
-  - [ ] 返回 dataSourceId
-- **代码锚点**：`backend/app/datasources/api/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] GET/POST/PUT/DELETE `/api/v1/datasources`
+  - [x] 返回 dataSourceId
+- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/service.py` · `tests/test_datasources_l1.py` T-DS-C01~C08
+- **演化建议**：Admin UI 数据源管理页；M7 列表过滤；`sourceDataSourceId` 与 ingestion 对接
+- **里程碑对齐**：
 ### [DS-003] 连通性测试
 
-- **状态**：未实现
+- **状态**：已实现（L1 kickoff r22）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：连通性测试（SRS 追溯项）。
 - **验收标准**：
-  - [ ] POST test 端点返回成功/失败原因
-  - [ ] 超时与错误结构化
-- **代码锚点**：`backend/app/datasources/test.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] POST test 端点返回成功/失败原因
+  - [x] 超时与错误结构化
+- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/service.py` · `tests/test_datasources_l1.py` T-DS-T01~T05
+- **演化建议**：可配置超时；真实 compose MySQL 集成测试
+- **里程碑对齐**：
 ### [DS-004] Schema 元数据浏览
 
 - **状态**：未实现
@@ -48,15 +51,16 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [DS-005] 凭证加密存储
 
-- **状态**：未实现
+- **状态**：已实现（L1 kickoff r22）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：凭证加密存储（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 密码 Fernet 加密落库
-  - [ ] API 不返回明文密码
-- **代码锚点**：`backend/app/datasources/credentials.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 密码 Fernet 加密落库
+  - [x] API 不返回明文密码
+- **代码锚点**：`backend/app/datasources/credentials.py` · `backend/app/datasources/models.py` · `tests/test_datasources_l1.py` T-DS-K01~K04
+- **演化建议**：凭证轮换；访问审计与 M7 ACL 联动
+- **里程碑对齐**：
 ### [DS-006] 连接池按 dataSourceId 隔离
 
 - **状态**：未实现

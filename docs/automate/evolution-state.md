@@ -7,15 +7,16 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r21.md |
-| design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r21-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r21.md |
-| branch | feat/evolution-r21-m2-auth-quality-push |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r22.md |
+| design | docs/superpowers/specs/2026-07-03-m3-datasource-kickoff-r22-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m3-datasource-kickoff-r22.md |
+| branch | feat/evolution-r22-m3-datasource-kickoff |
 | base_branch | dev-auto |
-| prd_ids | AUTH-007,AUTH-006,AUTH-008,AUTH-005,AUTH-001 |
-| pr_number | 40 |
-| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v --tb=no -q` |
+| prd_ids | DS-001,DS-002,DS-005,DS-003,CONN-001 |
+| pr_number | 42 |
+| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
+| last_ui_verified_command | N/A（纯后端 r22） |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,7 +67,10 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P5 r21 PRD 重评：AUTH-007/006/008/005/001 破 90（89.5–91.5→90.8–92.1）；AUTH-006~008 STUCK 清零；pytest 394 + 4 skipped；T-AUTH-RLS09~13、GP13~15、AU11~13、D13~14、R10~12
+- P5 r22 PRD 重评：DS-001/002/005/003 + CONN-001 L1 kickoff 12.8–13.6→86.8–91.1（DS-002/003/005 破 90；DS-001/CONN-001 <90 STUCK upsert）；pytest 419 + 4 skipped；T-DS-R/C/T/K + CONN-M smoke
+- P4 r22 独立验证：backend ruff PASS + pytest 419 passed/4 skipped；test_datasources_l1 23/23；round-target DS-001/002/005/003 + CONN-001 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r22-m3-datasource-kickoff；base_branch dev-auto
+- P3 r22 实现完成：7 Task 全绿；backend ruff+pytest 419 passed/4 skipped（+25 datasources L1）；ui_design_skill: none；branch feat/evolution-r22-m3-datasource-kickoff；base_branch dev-auto
+- P2 r22 计划完成：7 Task（注册表/MySQL→凭证→ORM/0008→service→API→迁移测试→文档）；17 文件；subagent-driven-development option 1；全 Task UI skill: none
 - P4 r21 独立验证：backend ruff PASS + pytest 394 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r21-m2-auth-quality-push；base_branch dev-auto
 - P3 r21 实现完成：7 Task 全绿；backend ruff+pytest 394 passed/4 skipped（+17 AUTH quality）；ui_design_skill: none；branch feat/evolution-r21-m2-auth-quality-push；base_branch dev-auto
 - P5 r20 PRD 重评：AUTH-006~008 L1 kickoff 13.2–13.6→89.5–89.9（均 <90 STUCK upsert）；pytest 377 + 4 skipped；T-AUTH-GP/RLS/AU 30 smoke
@@ -102,3 +106,5 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| DS-001 | 1 | 88.6 | 2026-07-03 |
+| CONN-001 | 1 | 86.8 | 2026-07-03 |

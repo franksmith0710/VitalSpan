@@ -244,7 +244,7 @@ def test_migrations_offline_run_migrations_called(monkeypatch):
 
 
 def test_revision_directory_single_head_chain():
-    """T-MIG-15: versions/*.py revision 唯一、单链、head 为 0007。"""
+    """T-MIG-15: versions/*.py revision 唯一、单链、head 为 0008。"""
     versions_dir = (
         Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     )
@@ -255,7 +255,7 @@ def test_revision_directory_single_head_chain():
         module = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[module.revision] = module.down_revision
 
-    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004", "0005", "0006", "0007"}
+    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008"}
     assert len(revisions) == len(set(revisions.keys()))
     assert revisions["0001"] is None
     assert revisions["0002"] == "0001"
@@ -264,10 +264,11 @@ def test_revision_directory_single_head_chain():
     assert revisions["0005"] == "0004"
     assert revisions["0006"] == "0005"
     assert revisions["0007"] == "0006"
+    assert revisions["0008"] == "0007"
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0007"]
+    assert heads == ["0008"]
 
 
 def test_migrations_online_path_connects_and_runs(monkeypatch):
@@ -488,7 +489,7 @@ def test_migrations_env_reimport_under_budget(monkeypatch):
 
 
 def test_alembic_heads_single_head():
-    """T-MIG-25: alembic heads 子进程 returncode==0 且 stdout 含 0007（单 head）。"""
+    """T-MIG-25: alembic heads 子进程 returncode==0 且 stdout 含 0008（单 head）。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "heads"],
@@ -499,7 +500,7 @@ def test_alembic_heads_single_head():
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
-    assert "0007" in result.stdout
+    assert "0008" in result.stdout
 
 
 def test_migrations_online_uses_null_pool(monkeypatch):
@@ -600,7 +601,7 @@ def test_alembic_upgrade_head_sql_subprocess_smoke():
 
 
 def test_revision_chain_no_orphans_head_0003():
-    """T-MIG-30: revision 链无 orphan；唯一 head 为 0007。"""
+    """T-MIG-30: revision 链无 orphan；唯一 head 为 0008。"""
     versions_dir = (
         Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     )
@@ -618,11 +619,11 @@ def test_revision_chain_no_orphans_head_0003():
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0007"]
+    assert heads == ["0008"]
 
 
-def test_revision_chain_head_is_0007():
-    """T-MIG-34: revision 链唯一 head 为 0007；0007.down_revision==0006。"""
+def test_revision_chain_head_is_0008():
+    """T-MIG-34: revision 链唯一 head 为 0008；0008.down_revision==0007。"""
     versions_dir = Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     revisions: dict[str, str | None] = {}
     for path in sorted(versions_dir.glob("*.py")):
@@ -632,10 +633,10 @@ def test_revision_chain_head_is_0007():
         revisions[module.revision] = module.down_revision
 
     heads = [rev for rev, down in revisions.items() if not any(d == rev for d in revisions.values())]
-    assert heads == ["0007"]
+    assert heads == ["0008"]
 
-    mod = importlib.import_module("migrations.versions.0007_auth_role_active_audit_idx")
-    assert mod.down_revision == "0006"
+    mod = importlib.import_module("migrations.versions.0008_datasources_table")
+    assert mod.down_revision == "0007"
 
 
 def test_alembic_upgrade_sql_contains_auth_roles():
@@ -666,6 +667,35 @@ def test_alembic_upgrade_sql_contains_dimension_groups():
     )
     assert result.returncode == 0, result.stderr
     assert "auth_dimension_groups" in result.stdout
+
+
+def test_revision_chain_head_0008_down_revision():
+    """T-MIG-36: heads 含 0008；0008.down_revision==0007。"""
+    versions_dir = Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
+    revisions: dict[str, str | None] = {}
+    for path in sorted(versions_dir.glob("*.py")):
+        if path.name.startswith("__"):
+            continue
+        mod = importlib.import_module(f"migrations.versions.{path.stem}")
+        revisions[mod.revision] = mod.down_revision
+    heads = [rev for rev in revisions if rev not in revisions.values()]
+    assert "0008" in heads
+    assert revisions["0008"] == "0007"
+
+
+def test_alembic_upgrade_head_sql_contains_data_sources():
+    """T-MIG-37: upgrade head --sql 含 data_sources。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=backend_dir,
+        env=_migration_subprocess_env(),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "data_sources" in result.stdout
 
 
 def test_unreachable_host_operational_error_message(monkeypatch):

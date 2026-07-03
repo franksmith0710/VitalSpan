@@ -4,16 +4,17 @@
 
 ### [CONN-001] MySQL 连接器
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r22）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：MySQL 连接器（SRS 追溯项）。
 - **验收标准**：
   - [ ] type=`mysql` 已注册且 UI 可选
   - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/mysql/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] category=`relational` 查询模式正确
+- **代码锚点**：`backend/app/datasources/dialects/mysql.py` · `tests/test_datasources_l1.py` T-CONN-M01~M04
+- **演化建议**：DS-004 schema 元数据浏览；QUERY 只读查询对接；Admin UI 类型选择
+- **里程碑对齐**：
 ### [CONN-002] PostgreSQL 连接器
 
 - **状态**：未实现
