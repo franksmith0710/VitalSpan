@@ -294,3 +294,107 @@ def test_run_job_bad_analytics_host_runtime_write_failed(
     assert run.error_message is not None
     assert len(run.error_message) <= 500
     mock_create_engine.assert_called_with(bad_url, pool_pre_ping=True)
+
+
+import re
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+@patch("app.ingestion.sync_executor.create_engine")
+@patch("app.ingestion.sync_executor.get_settings")
+@patch(
+    "app.ingestion.sync_executor._fetch_mysql_rows",
+    return_value=[{"col": "v"}],
+)
+def test_run_job_connection_timeout_failed(
+    mock_fetch, mock_get_settings, mock_create_engine
+):
+    """T-D04-17: 连接超时 OperationalError → failed + error_message 含 timeout。"""
+    mock_get_settings.return_value.analytics_database_url = (
+        "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics"
+    )
+    mock_engine = MagicMock()
+    mock_create_engine.return_value = mock_engine
+    mock_engine.begin.side_effect = OperationalError("connection timeout", None, None)
+
+    job_id = _seed_config_run_job()
+    run_job(job_id, "trace-timeout")
+    run = _latest_run_for_config(job_id)
+    assert run.status == "failed"
+    assert run.error_message is not None
+    assert "timeout" in run.error_message.lower()
+    assert len(run.error_message) <= 500
+
+
+def _compose_service_block(compose_text: str, service: str) -> str:
+    pattern = rf"^\s*{re.escape(service)}:\s*$"
+    lines = compose_text.splitlines()
+    start = next(i for i, line in enumerate(lines) if re.match(pattern, line))
+    block: list[str] = []
+    for line in lines[start + 1 :]:
+        if re.match(r"^\S", line) and not line.startswith(" "):
+            break
+        block.append(line)
+    return "\n".join(block)
+
+
+def test_docker_compose_healthcheck_contract():
+    """T-D04-18: analytics-postgres / sample-mysql healthcheck 字段契约。"""
+    compose_path = Path(__file__).resolve().parents[1] / "docker-compose.yml"
+    text = compose_path.read_text(encoding="utf-8")
+    analytics = _compose_service_block(text, "analytics-postgres")
+    mysql = _compose_service_block(text, "sample-mysql")
+    assert "pg_isready" in analytics
+    assert "mysqladmin" in mysql and "ping" in mysql
+    for block in (analytics, mysql):
+        assert "interval:" in block
+        assert "timeout:" in block
+        assert "retries:" in block
+
+
+@pytest.fixture
+def config_api_client() -> TestClient:
+    return TestClient(app)
+
+
+def test_trigger_run_without_analytics_url_503_regression(
+    config_api_client, auth_headers, monkeypatch
+):
+    """T-D04-19: 缺失 ANALYTICS_DATABASE_URL 时 POST run → 503 ANALYTICS_DB_NOT_CONFIGURED。"""
+    from app.core.config import get_settings
+
+    job_payload = {
+        "name": "no-analytics-url",
+        "source": {
+            "type": "mysql",
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+            "table": "dirty_orders",
+        },
+        "target_table": "orders_clean",
+        "schedule_cron": None,
+    }
+    create = config_api_client.post(
+        "/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers
+    )
+    assert create.status_code == 201
+    job_id = create.json()["id"]
+    get_settings.cache_clear()
+    with patch("app.api.v1.ingestion.sync.get_settings") as mock_get:
+        mock_get.return_value.analytics_database_url = None
+        response = config_api_client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+            headers=auth_headers,
+        )
+    assert response.status_code == 503
+    assert response.json()["detail"]["code"] == "ANALYTICS_DB_NOT_CONFIGURED"
+    config_api_client.delete(
+        f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers
+    )
