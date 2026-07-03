@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
+| phase | P1_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r8.md |
+| design | docs/superpowers/specs/2026-07-03-m1b-quality-r8-design.md |
 | plan |  |
 | branch |  |
 | base_branch |  |
-| prd_ids |  |
+| prd_ids | DATA-003,DATA-002,DATA-004,DATA-001,DATA-005 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
