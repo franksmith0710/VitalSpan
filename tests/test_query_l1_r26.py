@@ -27,25 +27,33 @@ from app.query.schemas import ExecuteRequest, RlsOptions
 _QUERY_SQLITE_URL = "sqlite+pysqlite:///file:query_r26_test?mode=memory&cache=shared&uri=true"
 
 
+def _dispose_meta_engines() -> None:
+    from app.auth.models import get_meta_engine as auth_engine
+    from app.datasources.models import get_meta_engine as ds_engine
+    from app.ingestion.models import get_meta_engine as ing_engine
+    from app.query.models import get_meta_engine as query_engine
+
+    for fn in (auth_engine, ds_engine, query_engine, ing_engine):
+        try:
+            fn().dispose()
+        except Exception:
+            pass
+        fn.cache_clear()
+
+
 @pytest.fixture(scope="module", autouse=True)
 def query_r26_sqlite_env():
     previous = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = _QUERY_SQLITE_URL
     get_settings.cache_clear()
-    from app.auth.models import get_meta_engine as auth_engine
-    from app.datasources.models import get_meta_engine as ds_engine
-    from app.query.models import get_meta_engine as query_engine
-
-    for fn in (auth_engine, ds_engine, query_engine):
-        fn.cache_clear()
+    _dispose_meta_engines()
     yield
     if previous is None:
         os.environ.pop("DATABASE_URL", None)
     else:
         os.environ["DATABASE_URL"] = previous
     get_settings.cache_clear()
-    for fn in (auth_engine, ds_engine, query_engine):
-        fn.cache_clear()
+    _dispose_meta_engines()
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -71,15 +79,33 @@ def reset_registry():
 
 @pytest.fixture(autouse=True)
 def clean_query_data():
-    from app.datasources.models import get_meta_engine
+    from app.datasources.models import get_meta_session
 
     yield
-    engine = get_meta_engine()
-    with engine.begin() as conn:
-        conn.execute(text("DELETE FROM chart_query_bindings"))
-        conn.execute(text("DELETE FROM auth_resource_grants"))
-        conn.execute(text("DELETE FROM auth_user_roles"))
-        conn.execute(text("DELETE FROM data_sources"))
+    session = get_meta_session()
+    try:
+        session.execute(text("DELETE FROM chart_query_bindings"))
+        session.execute(text("DELETE FROM auth_resource_grants"))
+        session.execute(text("DELETE FROM auth_user_roles"))
+        session.execute(text("DELETE FROM data_sources"))
+        session.commit()
+    except Exception:
+        session.rollback()
+    finally:
+        session.close()
+
+
+def _meta_session():
+    session = get_meta_session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture
+def meta_session():
+    yield from _meta_session()
 
 
 def _create_ds(name: str = "Query DS", code: str | None = None):
@@ -158,12 +184,13 @@ def query_seed(client, auth_headers):
         json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(visible.id)},
         headers=auth_headers,
     )
-    return {
+    seed = {
         "ds_id": visible.id,
         "hidden_ds_id": hidden.id,
         "viewer_role_id": role["id"],
-        "session": get_meta_session(),
     }
+    yield seed
+    _restore_dev_admin(client, auth_headers)
 
 
 @pytest.fixture
@@ -253,10 +280,10 @@ def test_readonly_accepts_select():
 
 
 @patch("app.query.executor.pool_manager.pooled_connection")
-def test_execute_table_mock_success(mock_pool, query_seed):
+def test_execute_table_mock_success(mock_pool, query_seed, meta_session):
     """T-Q-010: mode=table mock 成功返回列/行。"""
     mock_pool.side_effect = _mock_pool_cursor(["org_node_id", "amount"], [(1, 10)])
-    session = query_seed["session"]
+    session = meta_session
     user = UserContext(id="dev", username="dev", roles=["admin"])
     result = QueryExecutor().execute_table(
         session, user, query_seed["ds_id"], "public", "sales", limit=100,
@@ -267,12 +294,12 @@ def test_execute_table_mock_success(mock_pool, query_seed):
 
 
 @patch("app.query.executor.pool_manager.pooled_connection")
-def test_execute_table_not_found(mock_pool, query_seed):
+def test_execute_table_not_found(mock_pool, query_seed, meta_session):
     """T-Q-011: 不存在表 → 404 QUERY_TABLE_NOT_FOUND。"""
     mock_pool.side_effect = lambda *a, **k: (_ for _ in ()).throw(
         RuntimeError("relation \"missing\" does not exist")
     )
-    session = query_seed["session"]
+    session = meta_session
     user = UserContext(id="dev", username="dev", roles=["admin"])
     with pytest.raises(QueryError) as exc:
         QueryExecutor().execute_table(
@@ -282,9 +309,9 @@ def test_execute_table_not_found(mock_pool, query_seed):
     assert exc.value.status == 404
 
 
-def test_execute_table_invalid_schema(query_seed):
+def test_execute_table_invalid_schema(query_seed, meta_session):
     """T-Q-012: 非法 schema 名 → 400。"""
-    session = query_seed["session"]
+    session = meta_session
     user = UserContext(id="dev", username="dev", roles=["admin"])
     with pytest.raises(Exception):
         QueryExecutor().execute_table(
@@ -293,10 +320,10 @@ def test_execute_table_invalid_schema(query_seed):
 
 
 @patch("app.query.executor.pool_manager.pooled_connection")
-def test_execute_table_offset_in_sql(mock_pool, query_seed):
+def test_execute_table_offset_in_sql(mock_pool, query_seed, meta_session):
     """T-Q-013: limit/offset 分页 — dialect 生成含 OFFSET。"""
     mock_pool.side_effect = _mock_pool_cursor(["id"], [(1,)])
-    session = query_seed["session"]
+    session = meta_session
     user = UserContext(id="dev", username="dev", roles=["admin"])
     QueryExecutor().execute_table(
         session, user, query_seed["ds_id"], "public", "sales", limit=10, offset=5, apply_rls=False,
@@ -310,10 +337,10 @@ def test_execute_table_offset_in_sql(mock_pool, query_seed):
 
 @patch("app.query.executor.apply_rls_to_sql", side_effect=lambda s, u, sql, **kw: sql + " /*RLS*/")
 @patch("app.query.executor.pool_manager.pooled_connection")
-def test_rls_injected_on_execute(mock_pool, mock_rls, query_seed):
+def test_rls_injected_on_execute(mock_pool, mock_rls, query_seed, meta_session):
     """T-Q-040: 有 org 授权用户执行时 apply_rls_to_sql 被调用。"""
     mock_pool.side_effect = _mock_pool_cursor(["id"], [(1,)])
-    session = query_seed["session"]
+    session = meta_session
     user = UserContext(id="dev", username="dev", roles=["admin"])
     payload = ExecuteRequest(
         data_source_id=query_seed["ds_id"],
@@ -327,11 +354,11 @@ def test_rls_injected_on_execute(mock_pool, mock_rls, query_seed):
 
 @patch("app.query.executor.apply_rls_to_sql")
 @patch("app.query.executor.pool_manager.pooled_connection")
-def test_rls_no_org_empty_rows(mock_pool, mock_rls, query_seed):
+def test_rls_no_org_empty_rows(mock_pool, mock_rls, query_seed, meta_session):
     """T-Q-041: 无授权用户 → 200 空结果（RLS 1=0）。"""
     mock_rls.side_effect = lambda s, u, sql, **kw: sql + " WHERE (1=0)"
     mock_pool.side_effect = _mock_pool_cursor(["id"], [])
-    session = query_seed["session"]
+    session = meta_session
     user = UserContext(id="dev", username="dev", roles=["admin"])
     payload = ExecuteRequest(
         data_source_id=query_seed["ds_id"],
@@ -360,10 +387,10 @@ def test_rls_visibility_denied(query_seed, viewer_headers, client):
 
 @patch("app.query.executor.apply_rls_to_sql", side_effect=lambda s, u, sql, **kw: f"{sql} AND (1=1)")
 @patch("app.query.executor.pool_manager.pooled_connection")
-def test_rls_merge_existing_where(mock_pool, mock_rls, query_seed):
+def test_rls_merge_existing_where(mock_pool, mock_rls, query_seed, meta_session):
     """T-Q-043: apply_rls_to_sql 合并已有 WHERE。"""
     mock_pool.side_effect = _mock_pool_cursor(["id"], [(1,)])
-    session = query_seed["session"]
+    session = meta_session
     user = UserContext(id="dev", username="dev", roles=["admin"])
     payload = ExecuteRequest(
         data_source_id=query_seed["ds_id"],
@@ -378,12 +405,12 @@ def test_rls_merge_existing_where(mock_pool, mock_rls, query_seed):
 
 @patch("app.query.executor.apply_rls_to_sql")
 @patch("app.query.executor.pool_manager.pooled_connection")
-def test_rls_disabled_only_in_development(mock_pool, mock_rls, query_seed, monkeypatch):
+def test_rls_disabled_only_in_development(mock_pool, mock_rls, query_seed, monkeypatch, meta_session):
     """T-Q-044: development 下 rls.enabled=false 不注入。"""
     monkeypatch.setenv("VITALSPAN_ENV", "development")
     get_settings.cache_clear()
     mock_pool.side_effect = _mock_pool_cursor(["id"], [(1,)])
-    session = query_seed["session"]
+    session = meta_session
     user = UserContext(id="dev", username="dev", roles=["admin"])
     payload = ExecuteRequest(
         data_source_id=query_seed["ds_id"],
