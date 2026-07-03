@@ -6,19 +6,19 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r24.md |
-| design | docs/superpowers/specs/2026-07-03-m3-datasource-quality-r24-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m3-datasource-quality-r24.md |
-| branch | feat/evolution-r24-m3-datasource-quality |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r25.md |
+| design | docs/superpowers/specs/2026-07-03-m3-datasource-companion-r25-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m3-datasource-companion-r25.md |
+| branch | feat/evolution-r25-m3-datasource-companion |
 | base_branch | dev-auto |
-| prd_ids | CONN-001, DS-001, DS-002, DS-003, DS-005 |
-| pr_number | 45 |
-| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
+| prd_ids | DS-008,DS-007,DS-004,CONN-002,DS-006 |
+| pr_number |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端 r24） |
+| last_ui_verified_command | N/A（纯后端 r25） |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
+| skill_rule_index_generated_at | 2026-07-03T22:10:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
