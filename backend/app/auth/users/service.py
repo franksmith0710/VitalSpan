@@ -75,7 +75,7 @@ def list_user_roles(session: Session, user_id: uuid.UUID) -> list[AuthRole]:
         session.scalars(
             select(AuthRole)
             .join(AuthUserRole, AuthUserRole.role_id == AuthRole.id)
-            .where(AuthUserRole.user_id == user_id)
+            .where(AuthUserRole.user_id == user_id, AuthRole.is_active.is_(True))
             .order_by(AuthRole.code)
         )
     )
@@ -96,6 +96,9 @@ def bind_role(
     role = session.get(AuthRole, role_id)
     if role is None:
         raise UserError("ROLE_NOT_FOUND", "Role not found", 404)
+    from app.auth.roles.service import assert_role_active
+
+    assert_role_active(role)
     existing = session.get(AuthUserRole, {"user_id": user_id, "role_id": role_id})
     if existing is None:
         session.add(AuthUserRole(user_id=user_id, role_id=role_id))
@@ -155,6 +158,12 @@ def replace_user_roles(
     for role_id in role_ids:
         if session.get(AuthRole, role_id) is None:
             raise UserError("ROLE_NOT_FOUND", "Role not found", 404)
+    from app.auth.roles.service import assert_role_active
+
+    for role_id in role_ids:
+        role = session.get(AuthRole, role_id)
+        assert role is not None
+        assert_role_active(role)
     session.query(AuthUserRole).filter(AuthUserRole.user_id == user_id).delete()
     for role_id in role_ids:
         session.add(AuthUserRole(user_id=user_id, role_id=role_id))
@@ -188,6 +197,9 @@ def bind_roles_batch(
         role = session.get(AuthRole, role_id)
         if role is None:
             raise UserError("ROLE_NOT_FOUND", "Role not found", 404)
+        from app.auth.roles.service import assert_role_active
+
+        assert_role_active(role)
         existing = session.get(AuthUserRole, {"user_id": user_id, "role_id": role_id})
         if existing is None:
             session.add(AuthUserRole(user_id=user_id, role_id=role_id))

@@ -28,6 +28,7 @@ class RoleCreate(BaseModel):
 class RoleUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=128)
     description: str | None = None
+    is_active: bool | None = None
 
 
 class RoleOut(BaseModel):
@@ -37,10 +38,12 @@ class RoleOut(BaseModel):
     code: str
     name: str
     description: str | None
+    is_active: bool
 
 
 class RoleListResponse(BaseModel):
     items: list[RoleOut]
+    total: int
 
 
 class OrgCreate(BaseModel):

@@ -1009,7 +1009,7 @@ def test_dimension_list_pagination_performance(client, auth_headers):
 
 
 def test_role_code_format_boundary(client, auth_headers):
-    """T-AUTH-R10: code 过短 → 422；合法 ab → 201。"""
+    """T-AUTH-R13: code 过短 → 422；合法 ab → 201。"""
     assert client.post("/api/v1/roles", json={"code": "A", "name": "x"}, headers=auth_headers).status_code == 422
     assert client.post("/api/v1/roles", json={"code": "x", "name": "x"}, headers=auth_headers).status_code == 422
     ok = client.post("/api/v1/roles", json={"code": "ab", "name": "OK"}, headers=auth_headers)
@@ -1017,7 +1017,7 @@ def test_role_code_format_boundary(client, auth_headers):
 
 
 def test_role_delete_bound_regression(client, auth_headers):
-    """T-AUTH-R11: 删除已绑定角色 → 409 ROLE_IN_USE（回归 R07）。"""
+    """T-AUTH-R14: 删除已绑定角色 → 409 ROLE_IN_USE（回归 R07）。"""
     role = client.post("/api/v1/roles", json={"code": "bound_r19", "name": "B"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "bound_u19"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
@@ -1027,7 +1027,7 @@ def test_role_delete_bound_regression(client, auth_headers):
 
 
 def test_role_list_filter_sort(client, auth_headers):
-    """T-AUTH-R12: code_prefix + limit 边界。"""
+    """T-AUTH-R15: code_prefix + limit 边界。"""
     client.post("/api/v1/roles", json={"code": "pre_a", "name": "A"}, headers=auth_headers)
     client.post("/api/v1/roles", json={"code": "pre_b", "name": "B"}, headers=auth_headers)
     resp = client.get("/api/v1/roles?code_prefix=pre_&limit=1", headers=auth_headers)
@@ -1839,7 +1839,6 @@ def test_replace_role_groups_dedupe_idempotent_gp14(client, auth_headers):
     assert eff.status_code == 200
 
 
-@pytest.mark.skip(reason="requires is_active from Task 5")
 def test_bind_groups_to_disabled_role_409_gp15(client, auth_headers):
     """T-AUTH-GP15: 绑定到 is_active=false 角色 → 409 ROLE_DISABLED。"""
     dim = client.post(
@@ -2001,3 +2000,48 @@ def test_dimension_delete_role_direct_ref_d14(client, auth_headers):
     resp = client.delete(f"/api/v1/rls/dimensions/{dim['id']}", headers=auth_headers)
     assert resp.status_code == 409
     assert resp.json()["code"] == "DIMENSION_IN_USE"
+
+
+def test_bind_user_to_disabled_role_409_r10(client, auth_headers):
+    """T-AUTH-R10: PUT is_active=false 后 bind 用户 → 409 ROLE_DISABLED。"""
+    role = client.post("/api/v1/roles", json={"code": "r10_dis", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}",
+        json={"name": "R", "description": None, "is_active": False},
+        headers=auth_headers,
+    )
+    user = client.post("/api/v1/users", json={"username": "r10_u"}, headers=auth_headers).json()
+    resp = client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "ROLE_DISABLED"
+
+
+def test_role_list_offset_total_r11(client, auth_headers):
+    """T-AUTH-R11: limit=2&offset=2 → items≤2；total≥5。"""
+    for i in range(5):
+        client.post(
+            "/api/v1/roles",
+            json={"code": f"r11_{i:02d}", "name": f"R{i}"},
+            headers=auth_headers,
+        )
+    resp = client.get("/api/v1/roles?limit=2&offset=2", headers=auth_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["items"]) <= 2
+    assert body["total"] >= 5
+
+
+def test_inactive_role_excluded_from_me_r12(client, auth_headers):
+    """T-AUTH-R12: 停用角色不出现在 resolve_user_roles / GET /me。"""
+    role = client.post("/api/v1/roles", json={"code": "r12_dis", "name": "R"}, headers=auth_headers).json()
+    dev_user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{dev_user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}",
+        json={"name": "R", "description": None, "is_active": False},
+        headers=auth_headers,
+    )
+    me = client.get("/api/v1/me", headers=auth_headers)
+    assert me.status_code == 200
+    codes = me.json().get("roles", [])
+    assert "r12_dis" not in codes

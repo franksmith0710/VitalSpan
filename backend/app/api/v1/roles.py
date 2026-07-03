@@ -54,9 +54,10 @@ def list_roles(
     db: Annotated[Session, Depends(_db)],
     code_prefix: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
 ) -> RoleListResponse:
-    items = [RoleOut.model_validate(r) for r in role_service.list_roles(db, code_prefix, limit)]
-    return RoleListResponse(items=items)
+    items, total = role_service.list_roles(db, code_prefix, limit, offset)
+    return RoleListResponse(items=[RoleOut.model_validate(r) for r in items], total=total)
 
 
 @router.post("", response_model=RoleOut, status_code=status.HTTP_201_CREATED)
