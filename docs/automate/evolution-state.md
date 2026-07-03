@@ -13,7 +13,7 @@
 | branch | cursor/bc-bd69fc40-747b-441e-84b6-ad1d4d101de0-1ac0 |
 | base_branch | dev-auto |
 | prd_ids | BOOT-005,BOOT-006,BOOT-001,BOOT-004,BOOT-002 |
-| pr_number | |
+| pr_number | 23 |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test && pnpm build && pnpm run check:design |
