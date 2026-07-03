@@ -6,17 +6,17 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-fe-ci.md |
 | design | docs/superpowers/specs/2026-07-03-m1-fe-ci-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-03-m1-fe-ci.md |
+| branch | feat/m1-fe-ci |
 | base_branch | dev-auto |
 | prd_ids | BOOT-002,BOOT-006 |
-| pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
-| last_ui_verified_command |  |
+| pr_number | 4 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v && cd fe && pnpm build && pnpm run check:design |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | curl http://127.0.0.1:5173/admin (200) + headless chrome screenshots .superpowers/evolution/p4-screenshots/admin-{desktop,mobile}.png |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T04:10:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,15 +67,16 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G1 doc-bootstrap：上一轮 PR #2 已合并（sha 2120e12），当前轮次已重置 idle
-- M1 剩余 plan 勾选：BOOT-002（React 壳层）、BOOT-006（CI 门禁）
-- `backend/` 已落地 BOOT-004/001/005/003；`fe/` 壳层待实现
+- P4 验证通过：ruff、pytest、`fe build`、`check:design`、/admin UI 截图
+- M1 plan 勾选 BOOT-002/006 已完成；待 M1 文档回写 checklist（api/services/arch）
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| BOOT-002 | 1 | 60.6 | 2026-07-03 |
 | BOOT-005 | 1 | 66.8 | 2026-07-03 |
+| BOOT-006 | 1 | 62.6 | 2026-07-03 |
 | BOOT-001 | 1 | 69.4 | 2026-07-03 |
 | BOOT-004 | 1 | 70.7 | 2026-07-03 |
 | BOOT-003 | 1 | 73.4 | 2026-07-03 |

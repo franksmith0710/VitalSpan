@@ -6,7 +6,7 @@
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F01-BOOT.md`](./prd/F01-BOOT.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)。
 
 ```yaml
-version: 1.2.2
+version: 1.2.3
 last_updated: 2026-07-03
 archive_ref: docs/automate/plan.archive.md
 current_milestone: M1
@@ -43,8 +43,8 @@ BOOT-004 → BOOT-001 → BOOT-005 → BOOT-003 → BOOT-002 → BOOT-006
 - [x] BOOT-001: FastAPI 工程骨架（完成于 2026-07-03）
 - [x] BOOT-005: 数据库迁移框架（完成于 2026-07-03）
 - [x] BOOT-003: 鉴权中间件骨架（完成于 2026-07-03）
-- [ ] BOOT-002: React 管理端壳层
-- [ ] BOOT-006: CI 与质量门禁
+- [x] BOOT-002: React 管理端壳层（完成于 2026-07-03）
+- [x] BOOT-006: CI 与质量门禁（完成于 2026-07-03）
 
 ### M1 实施展开（plan-execute 履约用）
 
