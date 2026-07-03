@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | design | docs/superpowers/specs/2026-07-03-m1-boot-test-r4-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-boot-test-r4-plan.md |
@@ -14,8 +14,10 @@
 | base_branch | dev-auto |
 | prd_ids | BOOT-005,BOOT-002,BOOT-006,BOOT-001,BOOT-004 |
 | pr_number |  |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm test (vitest smoke T-FE-08~10) && pnpm run check:design |
+| last_ui_verified_result | PASS (jsdom smoke + design gate; no desktop/mobile screenshot) |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T07:55:00Z |
 | skill_rule_index_source_count | 26 |
