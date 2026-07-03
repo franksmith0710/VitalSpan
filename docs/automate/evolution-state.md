@@ -6,20 +6,20 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r2.md |
 | prd_ids | BOOT-005,BOOT-002,BOOT-003,BOOT-001,BOOT-006 |
 | design | docs/superpowers/specs/2026-07-03-m1-boot-test-r2-design.md |
-| plan | |
-| branch | |
-| base_branch | |
+| plan | docs/superpowers/plans/2026-07-03-m1-boot-test-r2-plan.md |
+| branch | cursor/bc-4a0f303a-c0de-456f-ae09-42f3bbaa7f7e-4567 |
+| base_branch | dev-auto |
 | pr_number | |
 | merge_sha | |
-| last_verified_command | |
-| last_verified_exit_code | |
-| last_ui_verified_command | |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm vitest run src/routes.smoke.test.tsx src/layouts/AdminLayout.smoke.test.tsx |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T06:12:00Z |
+| skill_rule_index_generated_at | 2026-07-03T06:45:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
