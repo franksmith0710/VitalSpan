@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.v1.audit import router as audit_router
 from app.api.v1.ingestion import router as ingestion_router
 from app.api.v1.me import router as me_router
 from app.api.v1.orgs import router as orgs_router
@@ -16,3 +17,4 @@ api_v1_router.include_router(orgs_router)
 api_v1_router.include_router(users_router)
 api_v1_router.include_router(resource_grants_router)
 api_v1_router.include_router(rls_router)
+api_v1_router.include_router(audit_router)
