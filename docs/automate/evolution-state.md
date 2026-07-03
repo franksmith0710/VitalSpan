@@ -6,17 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r18.md |
-| design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r18-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r18.md |
-| branch | feat/evolution-r18-m2-auth-quality-push |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | AUTH-001,AUTH-002,AUTH-003,AUTH-004,AUTH-005 |
-| pr_number | 36 |
+| prd_ids |  |
+| pr_number |  |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端 r18） |
+| deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
 | skill_rule_index_source_count | 26 |
 
@@ -66,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 doc-bootstrap：goal/prd hub+分片(124项)/evolution-state 就绪；PRD hub 含薄弱项汇总+8维总表+功能索引（P5 r18 已重评，本轮免刷新）；plan 只读 M1+M1B 全 [x] 无活跃 `[ ]` 节；STUCK AUTH-003(2轮/89.4)；base_branch dev-auto；G0 PASS PR #35+#36 已 merge
 - P5 r18 PRD 重评：AUTH-001/002/004/005 破 90（90.0–91.2）；AUTH-003 仍 89.4（缺审计）；pytest 325/4 skipped；T-AUTH-G06~G10、OU/O07~O10、D06~D08、U07~U10、R07~R09
 - P4 r18 独立验证：backend ruff PASS + pytest 325 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r18-m2-auth-quality-push@62fdc65；base_branch dev-auto
 - P3 r18 实现完成：7 Task 全绿；backend ruff+pytest 325 passed/4 skipped（+23 AUTH quality）；ui_design_skill: none；branch feat/evolution-r18-m2-auth-quality-push@2ce436a；base_branch dev-auto
