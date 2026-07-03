@@ -1,0 +1,74 @@
+# 域服务附录
+
+> **随实现补充**：描述后端各域服务的职责、边界、依赖与代码锚点。  
+> 功能验收以 [prd.md](../automate/prd.md) 为准；HTTP 路由见 [api/README.md](../api/README.md)；目录与 ADR 见 [arch.md](../arch.md)。
+
+## 维护约定
+
+| 时机 | 动作 |
+|------|------|
+| 新建 `backend/app/<domain>/` 模块 | 创建或启用对应附录，填写「代码锚点」与「状态」 |
+| 实现 PRD 功能项 | 在附录中登记主要类/函数，并回链 `XXX-NNN` |
+| API 路由落地 | 同步 [api/README.md](../api/README.md) 状态列 |
+| 跨域依赖变更 | 更新本文件「域依赖图」与各附录「依赖」节 |
+
+**状态枚举**：`未实现` · `骨架` · `部分` · `已实现`
+
+## 域索引
+
+| 附录 | 后端模块 | PRD 分片 | 里程碑 | 状态 |
+|------|----------|----------|--------|------|
+| [core.md](./core.md) | `app/core/` | F01-BOOT | M1 | 未实现 |
+| [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | 未实现 |
+| [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 骨架 |
+| [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | 骨架 |
+| [designer.md](./designer.md) | `app/designer/` | F12-DESIGN | M2（四期） | 未实现 |
+| [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | 未实现 |
+| [reports.md](./reports.md) | `app/reports/` | F08-RPT | M6 | 未实现 |
+| [views.md](./views.md) | `app/views/` | F09-VIEW | FR-VIEW | 未实现 |
+| [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 未实现 |
+| [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 未实现 |
+| [governance.md](./governance.md) | `app/governance/` | F10-GOV · F14-CAT | M8 | 未实现 |
+
+**横切**：F06-VIZ（图表配置契约）、F13-API（对外集成）、F15-NFR（非功能）——不单独成域，由各服务与 `core` 分担；详见各附录「边界」节。
+
+## 域依赖图（目标态）
+
+```mermaid
+flowchart TB
+  subgraph core_layer [core]
+    CORE[core · 配置/中间件/日志]
+  end
+
+  AUTH[auth · M7]
+  DS[datasources · 连接层]
+  ING[ingestion · M1B]
+  META[metadata · M1]
+  Q[query · M3]
+  DASH[dashboard · M5]
+  RPT[reports · M6]
+  VIEW[views · FR-VIEW]
+  GOV[governance · M8]
+  DES[designer · M2]
+
+  CORE --> AUTH
+  CORE --> DS
+  DS --> ING
+  ING --> DS
+  AUTH --> DS
+  AUTH --> Q
+  DS --> Q
+  META --> Q
+  Q --> DASH
+  Q --> RPT
+  AUTH --> VIEW
+  Q --> GOV
+  META --> GOV
+  META --> DES
+```
+
+## 修订记录
+
+| 版本 | 日期 | 说明 |
+|------|------|------|
+| 0.2.0 | 2026-07-03 | 新增 ingestion 域（M1B / F16-DATA） |

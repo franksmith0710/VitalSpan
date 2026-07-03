@@ -1,0 +1,340 @@
+# VitalSpan — 技术架构
+
+> **定位**：技术决策、目录约定、配置与环境变量；行为需求见 [SRS](srs/全生命周期系统需求规格说明书.md)，功能验收见 [PRD hub](automate/prd.md)。
+> **维护**：架构或路由分层变更时同步本文件（见 `.cursor/rules/prd-sync.mdc` 文档同步总表）。
+
+```yaml
+version: 1.0.0
+last_updated: 2026-07-03
+status: bootstrap
+srs_ref: docs/srs/全生命周期系统需求规格说明书.md
+prd_ref: docs/automate/prd.md
+```
+
+---
+
+## 1. 架构总览
+
+```mermaid
+flowchart TB
+    subgraph client [客户端]
+        AdminUI[管理端 React]
+        Portal[门户嵌入 iframe/SDK]
+    end
+    subgraph api [FastAPI /api/v1]
+        AuthMW[鉴权中间件]
+        DSAPI[数据源 IF-06]
+        QueryAPI[查询执行 M3-LITE]
+        DashAPI[Dashboard/视图]
+        GovAPI[治理 M8 四期]
+    end
+    subgraph platform [平台自研层]
+        M7[M7 权限 RBAC+RLS]
+        Conn[ConnectorRegistry]
+        Engine[查询引擎 SQL+Native]
+        Meta[M1 语义层 四期]
+    end
+    subgraph external [外部]
+        DB[(多类别数据源)]
+        Bus[数据交换总线]
+    end
+    AdminUI --> AuthMW
+    Portal --> AuthMW
+    AuthMW --> DSAPI
+    AuthMW --> QueryAPI
+    AuthMW --> DashAPI
+    DSAPI --> M7
+    QueryAPI --> M7
+    QueryAPI --> Engine
+    DSAPI --> Conn
+    Conn --> DB
+    Engine --> Conn
+    GovAPI --> Bus
+    Meta --> Engine
+```
+
+**建设原则**（摘自 goal / SRS）：
+
+- BI 层全部自研；**零** Superset / DataEase 运行时依赖（NFR-08）
+- 一至三期：图表 **直连** `dataSourceId` + SQL/表/native，**不经** Dataset
+- 四期：补齐 M1 Dataset、M2 设计器、M8 治理全自动
+
+---
+
+## 2. 技术决策（ADR 摘要）
+
+| ID | 决策 | 理由 | 状态 |
+|----|------|------|------|
+| ADR-01 | 后端 **FastAPI** + OpenAPI 自动生成 | 与 FR-1.1 总线 OpenAPI 对齐；Python 生态适合 SQL/连接器 | 已定 |
+| ADR-02 | 前端 **React + shadcn/ui + Radix + Tailwind v4** | SRS 已定目标栈；管理端与门户壳层统一 | 已定 |
+| ADR-03 | 图表 **ECharts**（主）/ **AntV L7**（GIS） | 与 UI 层解耦；对标 DE/SS 图表能力 | 已定 |
+| ADR-04 | **ConnectorRegistry** 插件式数据源 | NFR-04：新增类型不改核心服务与查询执行器 | 已定 |
+| ADR-05 | 查询双路径：**SqlCapable** + **NativeQuery** | 关系型/OLAP 走 SQL；时序/文档/搜索走原生 DSL | 已定 |
+| ADR-06 | 凭证 **Fernet** 加密（可换 KMS） | NFR-03；API 不返回明文密码 | 已定 |
+| ADR-07 | 平台元数据 **PostgreSQL**（建议） | 角色、数据源、Dashboard、审计等；与业务分析库分离 | 建议 |
+| ADR-08 | M8 工作流 **Flowable / Camunda** 二选一 | 四期治理 BPM；具体选型待 M13 前锁定 | 待定 |
+| ADR-09 | M6 报表 **JasperReports** 或等价 | 模板 Word/Excel/PDF；二期末前选型 | 待定 |
+| ADR-10 | 演化指导库 **`.automate` submodule** | SOP/skills/agents 与产品代码分离；`install.sh` 同步至 `.cursor/` | 已部署 |
+
+---
+
+## 3. 技术栈
+
+| 层次 | 技术 | 说明 |
+|------|------|------|
+| 前端 UI | React · shadcn/ui · Radix · Tailwind CSS v4 | 管理端、配置台 |
+| 前端图表 | ECharts · AntV L7 | 通用图表 · GIS/热力 |
+| 后端 API | FastAPI · Pydantic v2 · Uvicorn | REST `/api/v1/*` |
+| 平台库 | SQLAlchemy 2 · Alembic | 元数据 ORM + 迁移 |
+| 连接层 | ConnectorRegistry · SQLAlchemy 连接池 | 按 `dataSourceId` 隔离 |
+| SQL 方言 | 每连接器 dialect 模块 | RLS 注入、LIMIT、转义 |
+| Native 驱动 | influxdb-client · pymongo · elasticsearch | `mode=native` |
+| 鉴权 | 自建 RBAC + RLS（M7） | 不照搬 Superset FAB |
+| 调度 | Quartz / XXL-JOB（待定） | M6 三期 |
+| 参考产品 | DataEase · Superset | **仅设计走查**，不部署 |
+
+---
+
+## 4. 仓库目录
+
+### 4.1 顶层（现状 · 2026-07-03）
+
+```
+VitalSpan/
+├── backend/                 # FastAPI 应用（骨架）
+│   └── app/
+│       ├── core/            # 配置、鉴权、日志
+│       ├── datasources/     # 连接层 + ConnectorRegistry
+│       │   └── dialects/  # 按 type 分目录（CONN-*）
+│       └── query/           # M3-LITE 查询执行
+├── fe/                      # （待建）React 双端前端
+├── docs/
+│   ├── arch.md              # 本文件
+│   ├── api/                 # OpenAPI 端点索引
+│   ├── services/            # 域服务附录（随实现补充）
+│   ├── srs/                 # 需求权威（SRS + 附录）
+│   ├── automate/            # 演化文档 goal/prd/plan
+├── tests/                   # （待建）单元 / smoke / perf
+├── .automate/               # submodule：演化 SOP/skills/agents
+├── .cursor/                 # 运行时：automate 同步 + 项目 rules
+│   └── rules/               # vitalspan-project · fe-ui · backend-fastapi …
+└── .agents/skills/          # 项目级 agent skills
+```
+
+### 4.2 后端目标布局（对齐 PRD 代码锚点）
+
+```
+backend/
+├── app/
+│   ├── main.py
+│   ├── core/           # config, auth middleware, security, logging
+│   ├── api/v1/         # 路由聚合：datasources, query, dashboard, reports…
+│   ├── auth/           # M7：roles, org, rls, audit
+│   ├── datasources/    # registry, credentials, pool, metadata, dialects/*
+│   ├── query/          # executor, binding, rls, dialects, dataset（四期）
+│   ├── schemas/        # Pydantic：ChartViewConfig, QueryRequest…
+│   ├── dashboard/      # M5 DashboardView
+│   ├── views/          # FR-VIEW role/user templates
+│   ├── reports/        # M6 engine, templates, scheduler
+│   ├── metadata/       # M1 四期
+│   ├── governance/     # M8 catalog, workflow, publish, bus
+│   ├── ingestion/      # FR-DATA/FR-ETL：同步、清洗、调度（M1B）
+│   └── designer/       # M2 四期
+├── migrations/         # Alembic
+└── pyproject.toml      # （待建）依赖与工具配置
+```
+
+### 4.3 前端目标布局
+
+> 壳层与 IA 见 [ui/layout.md](../ui/layout.md)；源码目录 **`fe/`**（见 fe-ui.mdc）。
+
+```
+fe/
+├── src/
+│   ├── app/            # 路由、布局壳层
+│   ├── pages/          # dashboard, explore, entity-overview, theme-analysis
+│   ├── components/
+│   │   ├── ui/         # shadcn 基元
+│   │   ├── charts/     # M4 图表 + registry + adapters
+│   │   └── dashboard/  # M5 组件库
+│   ├── embed/          # iframe
+│   ├── sdk/            # 门户 JS SDK
+│   └── lib/            # api client, theme
+├── package.json
+└── vite.config.ts      # （建议）Vite + React
+```
+
+### 4.4 演化与 Agent 资产
+
+| 路径 | 角色 |
+|------|------|
+| `.automate/` | submodule **源**；改 skills/SOP/agents 后执行 `install.sh` |
+| `.cursor/automate/` | 运行时 Read 路径（skills、sop、templates） |
+| `.cursor/agents/` | evolution-* subagent 定义 |
+| `docs/automate/` | goal · prd · plan · evolution-state |
+
+---
+
+## 5. API 约定
+
+### 5.1 通用规则
+
+- 前缀：`/api/v1/`
+- 认证：Bearer Token / Session（一期 BOOT-003 落地后细化）
+- 只读查询：禁止经查询 API 写入外部数据源
+- 破坏性变更：升 `v2`，旧版保留过渡期
+
+### 5.2 一期核心端点（IF-06 + 查询）
+
+| 方法 | 路径 | 模块 | PRD |
+|------|------|------|-----|
+| GET | `/api/v1/datasources/types` | 连接层 | DS-007 |
+| GET/POST/PUT/DELETE | `/api/v1/datasources` | 连接层 | DS-002 |
+| POST | `/api/v1/datasources/test` | 连接层 | DS-003 |
+| POST | `/api/v1/datasources/{id}/test` | 连接层 | DS-003 |
+| GET | `/api/v1/datasources/{id}/schemas` | 元数据 | DS-004 |
+| GET | `/api/v1/datasources/{id}/tables` | 元数据 | DS-004 |
+| GET | `/api/v1/datasources/{id}/columns` | 元数据 | DS-004 |
+| POST | `/api/v1/query/execute` | M3-LITE | QUERY-001 |
+| GET | `/health` | 运维 | BOOT-001 |
+
+> 完整路由索引维护于 [`docs/api/README.md`](../api/README.md)（按域分表；实现后更新状态列）。
+
+### 5.3 查询请求体（一至三期）
+
+```json
+{
+  "dataSourceId": "uuid",
+  "mode": "sql | table | native",
+  "querySql": "SELECT …",
+  "tableName": "schema.table",
+  "nativeQuery": { },
+  "params": { },
+  "limit": 1000
+}
+```
+
+执行链：`鉴权 → M7 数据源授权 → RLS 谓词注入 → 方言/Native 执行 → QueryResult`。
+
+---
+
+## 6. 领域模型（摘要）
+
+### 6.1 外部数据源
+
+```
+DataSourceCategory → DataSourceType → ConnectionConfig → dataSourceId
+```
+
+类别：`relational | olap | timeseries | document | search | lake | api`
+
+类型全量枚举见 SRS §3.2 FR-2.0 与 PRD `F04-CONN`。
+
+### 6.2 查询与展现（一至三期）
+
+```
+dataSourceId + ChartViewConfig + DashboardView
+  → POST /query/execute
+  → 图表 / Dashboard 组件渲染
+```
+
+四期起可增加 `datasetId` 路径（M1），与直连绑定可迁移（QUERY-009 / META-007）。
+
+### 6.3 权限（M7）
+
+```
+权限维度 → 维度分组 → 角色 → 用户
+资源：数据源 / Dashboard / 报表 / 工单节点
+```
+
+---
+
+## 7. 配置与环境变量
+
+### 7.1 配置文件约定
+
+| 文件 | 用途 | 提交 Git |
+|------|------|----------|
+| `backend/.env.example` | 环境变量模板 | ✅ |
+| `backend/.env` | 本地/部署秘密 | ❌ |
+| `fe/.env.example` | 前端 `VITE_*` 模板 | ✅ |
+| `docker-compose.yml` | 本地 MySQL/PG + 平台库 | ✅（待建） |
+
+### 7.2 后端环境变量（规划）
+
+| 变量 | 必填 | 说明 | 默认 |
+|------|:----:|------|------|
+| `VITALSPAN_ENV` | | `development` / `staging` / `production` | `development` |
+| `DATABASE_URL` | ✅ | 平台元数据库（PostgreSQL 推荐） | — |
+| `SECRET_KEY` | ✅ | JWT / 会话签名 | — |
+| `CREDENTIAL_FERNET_KEY` | ✅ | 数据源密码加密（ADR-06） | — |
+| `CORS_ORIGINS` | | 前端源，逗号分隔 | `http://localhost:5173` |
+| `LOG_LEVEL` | | 日志级别 | `INFO` |
+| `QUERY_DEFAULT_LIMIT` | | 查询硬上限 | `1000` |
+| `QUERY_TIMEOUT_SECONDS` | | 单次查询超时 | `30` |
+| `ANALYTICS_DATABASE_URL` | | 平台托管分析库（M1B 同步/清洗目标库） | — |
+
+### 7.3 前端环境变量（规划）
+
+| 变量 | 说明 |
+|------|------|
+| `VITE_API_BASE_URL` | 后端 API 根，如 `http://localhost:8000` |
+
+---
+
+## 8. 安全与合规
+
+| 项 | 实现要点 | NFR |
+|----|----------|-----|
+| 传输 | 生产全站 HTTPS | NFR-03 |
+| 凭证 | Fernet 加密存储；响应脱敏 | NFR-03 |
+| 查询 | 强制 LIMIT；参数化；RLS 注入 | M7 |
+| 审计 | 权限变更、敏感操作写审计日志 | AUTH-008 |
+| 依赖 | 禁止 GPL BI 运行时；信创连接器按需打包 | NFR-06/08 |
+
+---
+
+## 9. 本地开发（规划）
+
+```bash
+# 1. 平台依赖
+docker compose up -d   # postgres + 可选 mysql/pg 样例库
+
+# 2. 后端
+cd backend
+cp .env.example .env
+uvicorn app.main:app --reload --port 8000
+
+# 3. 前端
+cd fe
+cp .env.example .env
+pnpm dev            # 默认 :5173
+```
+
+一期冒烟（P1-SMOKE）：MySQL/PG 建源 → SQL → Dashboard 出数 + 越权失败。
+
+---
+
+## 10. 文档索引
+
+| 文档 | 内容 |
+|------|------|
+| [srs/README.md](srs/README.md) | 需求权威（SRS + 附录） |
+| [全生命周期系统需求规格说明书.md](srs/全生命周期系统需求规格说明书.md) | SRS 主文档 |
+| [automate/goal.md](automate/goal.md) | 产品方向与边界 |
+| [automate/prd.md](automate/prd.md) | 功能真理源 hub（118 项） |
+| [automate/plan.archive.md](automate/plan.archive.md) | 里程碑 M1–M13 |
+| [automate/plan.md](automate/plan.md) | 活跃里程碑当前节 |
+| [api/README.md](api/README.md) | API 端点一行索引 |
+| [services/README.md](services/README.md) | 域服务附录（随实现补充） |
+| [ui/layout.md](ui/layout.md) | 双端壳层与信息架构 |
+| [superpowers/README.md](superpowers/README.md) | 演化轮次 design/plan 产出（G2–P3） |
+| `.cursor/rules/` | Cursor 项目规则（见 `vitalspan-project.mdc`） |
+
+---
+
+## 修订记录
+
+| 版本 | 日期 | 说明 |
+|------|------|------|
+| 1.0.2 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；增 ingestion 域与 ANALYTICS_DATABASE_URL |
