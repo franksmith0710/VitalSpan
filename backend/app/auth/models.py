@@ -100,6 +100,31 @@ class AuthDimensionType(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class AuthAuditEvent(Base):
+    __tablename__ = "auth_audit_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    actor_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    actor_username: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    target_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    trace_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuthDimensionTypeRef(Base):
+    __tablename__ = "auth_dimension_type_refs"
+
+    dimension_type_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("auth_dimension_types.id", ondelete="RESTRICT"),
+        primary_key=True,
+    )
+    ref_source: Mapped[str] = mapped_column(String(32), nullable=False, server_default="group")
+
+
 @lru_cache
 def get_meta_engine():
     url = get_settings().database_url

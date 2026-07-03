@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -156,3 +157,23 @@ class DimensionTypeOut(BaseModel):
 
 class DimensionTypeListResponse(BaseModel):
     items: list[DimensionTypeOut]
+    total: int
+
+
+class AuditEventOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    actor_id: str
+    actor_username: str | None
+    target_type: str
+    target_id: uuid.UUID
+    action: str
+    detail: str | None
+    trace_id: str
+    created_at: datetime
+
+
+class AuditListResponse(BaseModel):
+    items: list[AuditEventOut]
+    total: int
