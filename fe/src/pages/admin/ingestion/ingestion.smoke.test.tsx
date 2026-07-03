@@ -403,7 +403,9 @@ describe("ingestion admin smoke", () => {
       resolveSave = r;
     });
     mockApiFetch
-      .mockResolvedValueOnce({ rules: [] })
+      .mockResolvedValueOnce({
+        rules: [{ type: "rename_column", from: "product_name", to: "product" }],
+      })
       .mockImplementationOnce(() => savePromise);
     render(
       <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
@@ -473,5 +475,95 @@ describe("ingestion admin smoke", () => {
     await screen.findByText("任务 0");
     const elapsed = performance.now() - start;
     expect(elapsed).toBeLessThan(500);
+  });
+
+  it("EtlRulesPage_blocks_save_on_empty_rename_column (T-ING-20)", async () => {
+    setViewport(1400);
+    mockApiFetch.mockResolvedValueOnce({ rules: [{ type: "rename_column", from: "", to: "product" }] });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/etl-rules"
+            element={<EtlRulesPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const saveBtn = await screen.findByRole("button", { name: "保存规则" });
+    fireEvent.click(saveBtn);
+    expect(await screen.findByText(/请填写完整的列重命名规则|请填写规则涉及的列名/)).toBeInTheDocument();
+    const putCalls = mockApiFetch.mock.calls.filter(
+      (c) => typeof c[0] === "string" && c[0].includes("/etl-rules") && c[1]?.method === "PUT",
+    );
+    expect(putCalls).toHaveLength(0);
+  });
+
+  it("SyncJobHistoryPage_renders_20_rows_under_600ms (T-ING-21)", async () => {
+    setViewport(1400);
+    const runs = Array.from({ length: 20 }, (_, i) => ({
+      id: `run-${i}`,
+      status: i % 3 === 0 ? "failed" : "succeeded",
+      trace_id: `trace-${i}`,
+      started_at: `2026-07-0${(i % 9) + 1}T10:00:00Z`,
+      finished_at: `2026-07-0${(i % 9) + 1}T10:01:00Z`,
+      rows_synced: i,
+      error_message: i % 3 === 0 ? "mock error" : null,
+      retry_count: 0,
+    }));
+    mockApiFetch.mockResolvedValueOnce({ items: runs });
+    const start = performance.now();
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/history"
+            element={<SyncJobHistoryPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText("trace-0");
+    expect(performance.now() - start).toBeLessThan(600);
+  });
+
+  it("SyncJobFormPage_invalid_port_shows_error (T-ING-22)", async () => {
+    setViewport(375);
+    mockApiFetch.mockRejectedValueOnce({
+      message: "请求参数无效",
+      status: 422,
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByLabelText("任务名称");
+    fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "bad-port" } });
+    fireEvent.change(screen.getByLabelText("端口"), { target: { value: "0" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "创建" })[0]);
+    expect(await screen.findByText(/请求参数无效|操作失败/)).toBeInTheDocument();
+  });
+
+  it("SyncJobHistoryPage_error_state_uses_semantic_tokens (T-ING-23)", async () => {
+    setViewport(1400);
+    mockApiFetch.mockRejectedValueOnce(new Error("加载历史失败"));
+    const { container } = render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/history"
+            element={<SyncJobHistoryPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText("加载历史失败");
+    const errorBanner = container.querySelector(".border-error-500");
+    expect(errorBanner).toBeTruthy();
+    const errorText = errorBanner?.querySelector("p");
+    expect(errorText?.className).toMatch(/text-error-700|text-error-400/);
   });
 });
