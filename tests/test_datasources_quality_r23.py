@@ -23,12 +23,19 @@ def ds_r23_sqlite_env():
     previous = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = _DS_SQLITE_URL
     get_settings.cache_clear()
+    from app.auth.models import get_meta_engine as auth_get_meta_engine
+    from app.datasources.models import get_meta_engine
+
+    get_meta_engine.cache_clear()
+    auth_get_meta_engine.cache_clear()
     yield
     if previous is None:
         os.environ.pop("DATABASE_URL", None)
     else:
         os.environ["DATABASE_URL"] = previous
     get_settings.cache_clear()
+    get_meta_engine.cache_clear()
+    auth_get_meta_engine.cache_clear()
 
 
 @pytest.fixture(autouse=True)
