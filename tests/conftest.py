@@ -15,6 +15,11 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
+# Fixture contract (BOOT-006):
+# - client: TestClient(app) for all backend HTTP tests
+# - auth_headers: {"Authorization": "Bearer dev"} for protected routes in development
+# - unauthorized_headers: {"Authorization": "Bearer invalid"} for 401 negative cases
+
 
 @pytest.fixture
 def client() -> TestClient:
@@ -24,3 +29,8 @@ def client() -> TestClient:
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
     return {"Authorization": "Bearer dev"}
+
+
+@pytest.fixture
+def unauthorized_headers() -> dict[str, str]:
+    return {"Authorization": "Bearer invalid"}
