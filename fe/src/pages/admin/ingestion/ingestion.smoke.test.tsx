@@ -355,4 +355,123 @@ describe("ingestion admin smoke", () => {
     );
     expect(await screen.findByText(/加载规则失败|操作失败/)).toBeInTheDocument();
   });
+
+  it("SyncJobHistoryPage_error_state (T-ING-14)", async () => {
+    setViewport(375);
+    mockApiFetch.mockRejectedValueOnce(new Error("加载历史失败"));
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/history"
+            element={<SyncJobHistoryPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("加载历史失败")).toBeInTheDocument();
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    fireEvent.click(screen.getByRole("button", { name: "重试" }));
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("SyncJobHistoryPage_requests_limit_20 (T-ING-16)", async () => {
+    setViewport(1400);
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/history"
+            element={<SyncJobHistoryPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText("暂无运行记录");
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      "/api/v1/ingestion/sync-jobs/job-1/runs?limit=20",
+    );
+  });
+
+  it("EtlRulesPage_prevents_double_save (T-ING-17)", async () => {
+    setViewport(1400);
+    let resolveSave: () => void;
+    const savePromise = new Promise<void>((r) => {
+      resolveSave = r;
+    });
+    mockApiFetch
+      .mockResolvedValueOnce({ rules: [] })
+      .mockImplementationOnce(() => savePromise);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/etl-rules"
+            element={<EtlRulesPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const saveBtn = await screen.findByRole("button", { name: "保存规则" });
+    fireEvent.click(saveBtn);
+    fireEvent.click(saveBtn);
+    const putCalls = mockApiFetch.mock.calls.filter(
+      (c) => typeof c[0] === "string" && c[0].includes("/etl-rules") && c[1]?.method === "PUT",
+    );
+    expect(putCalls).toHaveLength(1);
+    resolveSave!();
+  });
+
+  it("SyncJobFormPage_prevents_double_submit (T-ING-18)", async () => {
+    setViewport(375);
+    let resolveCreate: () => void;
+    const createPromise = new Promise<{ id: string }>((r) => {
+      resolveCreate = () => r({ id: "new-job" });
+    });
+    mockApiFetch.mockImplementationOnce(() => createPromise);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/new"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByLabelText("任务名称");
+    fireEvent.change(screen.getByLabelText("任务名称"), { target: { value: "double-guard" } });
+    const createBtn = screen.getAllByRole("button", { name: "创建" })[0];
+    fireEvent.click(createBtn);
+    fireEvent.click(createBtn);
+    const postCalls = mockApiFetch.mock.calls.filter(
+      (c) => c[0] === "/api/v1/ingestion/sync-jobs" && c[1]?.method === "POST",
+    );
+    expect(postCalls).toHaveLength(1);
+    resolveCreate!();
+  });
+
+  it("SyncJobsPage_first_paint_under_500ms (T-ING-19)", async () => {
+    setViewport(1400);
+    const jobs = Array.from({ length: 10 }, (_, i) => ({
+      id: `job-${i}`,
+      name: `任务 ${i}`,
+      source_type: "mysql",
+      target_table: `t${i}`,
+      enabled: true,
+      schedule_cron: null,
+    }));
+    mockApiFetch.mockResolvedValueOnce({ items: jobs });
+    const start = performance.now();
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText("任务 0");
+    const elapsed = performance.now() - start;
+    expect(elapsed).toBeLessThan(500);
+  });
 });

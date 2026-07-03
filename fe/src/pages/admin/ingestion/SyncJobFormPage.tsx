@@ -93,6 +93,7 @@ export function SyncJobFormPage() {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (submitting) return;
     setSubmitting(true);
     setError(null);
     const payload = {

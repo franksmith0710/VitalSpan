@@ -135,3 +135,23 @@ def test_malicious_nested_json_rule_value_no_crash():
     rules = [{"type": "filter_rows", "column": "a", "op": "eq", "value": nested}]
     result = apply_rules(rows, rules)
     assert result == []
+
+
+def test_filter_rows_unknown_op_keeps_row():
+    """T-ETL-09: filter_rows 未知 op 默认保留行。"""
+    rows = [{"status": "active"}]
+    rules = [{"type": "filter_rows", "column": "status", "op": "regex", "value": "active"}]
+    assert apply_rules(rows, rules) == [{"status": "active"}]
+
+
+def test_cast_type_unknown_to_falls_back_to_str():
+    """T-ETL-10: cast_type 未知 to 回退 str()。"""
+    rows = [{"amount": 42}]
+    rules = [{"type": "cast_type", "column": "amount", "to": "decimal"}]
+    assert apply_rules(rows, rules)[0]["amount"] == "42"
+
+
+def test_empty_rules_chain_preserves_rows():
+    """T-ETL-11: rules: [] 不改变行集。"""
+    rows = [{"a": 1}, {"a": 2}]
+    assert apply_rules(rows, []) == [{"a": 1}, {"a": 2}]

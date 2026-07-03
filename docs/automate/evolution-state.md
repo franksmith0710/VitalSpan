@@ -7,19 +7,19 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r9.md |
-| design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r9-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r9.md |
-| branch | cursor/bc-bd69fc40-747b-441e-84b6-ad1d4d101de0-1ac0 |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r10.md |
+| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r10-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r10.md |
+| branch | cursor/bc-64cdacda-49d6-4592-b740-6831a174fd09-3a52 |
 | base_branch | dev-auto |
-| prd_ids | BOOT-005,BOOT-006,BOOT-001,BOOT-004,BOOT-002 |
-| pr_number | 23 |
+| prd_ids | DATA-003,DATA-002,ETL-001,DATA-004,DATA-001 |
+| pr_number | 24 |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm test && pnpm build && pnpm run check:design |
-| last_ui_screenshots | NOT_RUN（无头环境；vitest viewport 375/1400 smoke + check:design 34 files PASS 覆盖 UI Acceptance） |
+| last_ui_verified_command | cd fe && pnpm test -- ingestion.smoke.test.tsx && pnpm run check:design |
+| last_ui_screenshots | NOT_RUN（无头环境；ingestion.smoke 19 tests viewport 375/1400 + check:design 34 files PASS） |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T13:10:00Z |
+| skill_rule_index_generated_at | 2026-07-03T13:45:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -68,9 +68,15 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G0 PASS：上轮 r8 PR #22 已合并至 dev-auto；本轮 r9 BOOT 质量推分（BOOT-005/006/001/004/002）PR #23 待合并
-- pytest 145 + vitest 39 + check:design PASS；P5 重评总分 88.6–89.5（均 <90）
-- STUCK BOOT-* 连续未过轮次 +1（11 轮）；技能规则索引 26 条未过期
+- G1 doc-bootstrap：prd hub（124 项·16 域）含薄弱项汇总/8 维总表/功能索引；goal.md 只读未改
+- plan M1+M1B 全 [x]（12 项 ID 与 prd 分片一致）；无活跃里程碑节
+- G2 r10 选题完成：M1B DATA companion 推分 DATA-003/002/ETL-001/004/001；BOOT rotation 饱和本轮 pivot
+- 上轮 r9 P5 完成；STUCK BOOT-* 最高 11 轮（BOOT-002/005/006）；DATA-* STUCK 3–4 轮
+- deployed_automate_rev=bf60b94ec4f4；技能规则索引 26 条未过期
+- P2 r10 计划完成：`docs/superpowers/plans/2026-07-03-m1b-data-quality-r10.md`（6 Task · 10 文件）
+- P3 r10 实现完成：5 commits（DATA-004/001/002+ETL-001/003）；backend 162 passed；fe 44 passed + check:design PASS
+- P4 r10 验证完成：backend 162 passed 1 skipped；fe 44 passed + build + check:design 34 files PASS；UI ingestion.smoke 19 tests PASS
+- P5 r10 PRD 8 维重评完成：DATA-003/002/ETL-001/004/001 总分 87.5–89.5（均 <90）；STUCK DATA-* 3–5 轮
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -82,9 +88,9 @@
 | BOOT-001 | 10 | 89.2 | 2026-07-03 |
 | BOOT-004 | 10 | 89.5 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
-| DATA-004 | 3 | 87.5 | 2026-07-03 |
-| DATA-001 | 3 | 88.1 | 2026-07-03 |
-| DATA-002 | 4 | 85.5 | 2026-07-03 |
-| ETL-001 | 3 | 85.9 | 2026-07-03 |
-| DATA-003 | 4 | 85.4 | 2026-07-03 |
+| DATA-004 | 4 | 88.7 | 2026-07-03 |
+| DATA-001 | 4 | 89.5 | 2026-07-03 |
+| DATA-002 | 5 | 87.0 | 2026-07-03 |
+| ETL-001 | 4 | 87.5 | 2026-07-03 |
+| DATA-003 | 5 | 87.5 | 2026-07-03 |
 | DATA-005 | 3 | 88.4 | 2026-07-03 |

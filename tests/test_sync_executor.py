@@ -300,3 +300,104 @@ def test_run_job_write_row_count_matches_rows_synced(mock_fetch, mock_write):
     assert run.rows_synced == len(rows)
     written = mock_write.call_args[0][1]
     assert len(written) == len(rows)
+
+
+import time
+
+from app.ingestion.etl_rules import apply_rules
+
+
+def test_apply_rules_5000_rows_under_two_seconds():
+    """T-D02-13: 5000 行经 apply_rules（空规则）耗时 <2.0s。"""
+    rows = [{"idx": i, "status": "active"} for i in range(5000)]
+    start = time.perf_counter()
+    result = apply_rules(rows, [])
+    elapsed = time.perf_counter() - start
+    assert len(result) == 5000
+    assert elapsed < 2.0
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=0)
+@patch(
+    "app.ingestion.sync_executor._fetch_mysql_rows",
+    return_value=[
+        {"status": "deleted", "amount": "1"},
+        {"status": "deleted", "amount": "2"},
+    ],
+)
+def test_run_job_filter_removes_all_rows_writes_empty(mock_fetch, mock_write):
+    """T-D02-14: 过滤规则剔除全部行 → write 收到 []、rows_synced == 0。"""
+    db = get_meta_session()
+    job = SyncJob(
+        name="filter-all-job",
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="db",
+        source_username="u",
+        source_password_encrypted=encrypt_password("p"),
+        source_table="t",
+        target_table="tgt_empty",
+        enabled=True,
+    )
+    db.add(job)
+    db.flush()
+    db.add(
+        EtlRuleSet(
+            job_id=job.id,
+            rules=[{"type": "filter_rows", "column": "status", "op": "ne", "value": "deleted"}],
+        )
+    )
+    db.commit()
+    job_id = job.id
+    db.close()
+
+    run_job(job_id, "trace-filter-all")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    assert run.rows_synced == 0
+    written_rows = mock_write.call_args[0][1]
+    assert written_rows == []
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=1)
+@patch(
+    "app.ingestion.sync_executor._fetch_mysql_rows",
+    return_value=[{"amount": "bad", "note": None}],
+)
+def test_run_job_cast_fail_then_fill_null(mock_fetch, mock_write):
+    """T-ETL-12: cast 失败变 None + fill_null 补救后 write 收到填充值。"""
+    db = get_meta_session()
+    job = SyncJob(
+        name="dirty-cast-job",
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="db",
+        source_username="u",
+        source_password_encrypted=encrypt_password("p"),
+        source_table="t",
+        target_table="tgt_dirty",
+        enabled=True,
+    )
+    db.add(job)
+    db.flush()
+    db.add(
+        EtlRuleSet(
+            job_id=job.id,
+            rules=[
+                {"type": "cast_type", "column": "amount", "to": "float"},
+                {"type": "fill_null", "column": "note", "value": "无备注"},
+            ],
+        )
+    )
+    db.commit()
+    job_id = job.id
+    db.close()
+
+    run_job(job_id, "trace-dirty-cast")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    written = mock_write.call_args[0][1][0]
+    assert written["amount"] is None
+    assert written["note"] == "无备注"
