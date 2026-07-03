@@ -22,6 +22,7 @@ from app.main import app
 # - auth_headers: {"Authorization": "Bearer dev"} for protected routes in development
 # - unauthorized_headers: {"Authorization": "Bearer invalid"} for 401 negative cases
 # - trace_id_headers: {"X-Trace-Id": "<32-hex>"} for TraceId passthrough tests
+# - combined_auth_trace_headers: auth_headers ∪ trace_id_headers for me+trace combo tests
 
 
 @pytest.fixture
@@ -42,6 +43,14 @@ def unauthorized_headers() -> dict[str, str]:
 @pytest.fixture
 def trace_id_headers() -> dict[str, str]:
     return {"X-Trace-Id": "a1b2c3d4e5f6789012345678abcdef01"}
+
+
+@pytest.fixture
+def combined_auth_trace_headers(
+    auth_headers: dict[str, str],
+    trace_id_headers: dict[str, str],
+) -> dict[str, str]:
+    return {**auth_headers, **trace_id_headers}
 
 
 def _port_open(host: str, port: int, timeout: float = 1.0) -> bool:

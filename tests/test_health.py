@@ -1,3 +1,6 @@
+import time
+
+
 def test_health_returns_ok(client):
     response = client.get("/health")
     assert response.status_code == 200
@@ -118,3 +121,36 @@ def test_openapi_paths_include_ingestion_sync_jobs(client):
     assert response.status_code == 200
     paths = response.json()["paths"]
     assert "/api/v1/ingestion/sync-jobs" in paths
+
+
+def test_health_first_request_startup_smoke(client):
+    """T-HLT-16: 首请求 GET /health 耗时 smoke < 2.0s。"""
+    start = time.perf_counter()
+    response = client.get("/health")
+    elapsed = time.perf_counter() - start
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+    assert elapsed < 2.0
+
+
+def test_openapi_public_me_protected_boundary(client):
+    """T-HLT-17: /openapi.json 公开；/api/v1/me 无 Token → 401。"""
+    openapi = client.get("/openapi.json")
+    assert openapi.status_code == 200
+    assert "openapi" in openapi.json()
+
+    me = client.get("/api/v1/me")
+    assert me.status_code == 401
+    assert me.json()["code"] == "UNAUTHORIZED"
+
+
+def test_health_get_illegal_origin_no_acao(client):
+    """T-HLT-18: GET /health 非法 Origin 无 access-control-allow-origin。"""
+    response = client.get(
+        "/health",
+        headers={"Origin": "http://evil.example"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+    allow_origin = response.headers.get("access-control-allow-origin")
+    assert allow_origin is None or allow_origin != "http://evil.example"

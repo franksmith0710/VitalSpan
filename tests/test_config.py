@@ -1,10 +1,13 @@
 """T-CFG-01~03: Settings 安全边界与 .env.example 对齐。"""
 
+import logging
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from app.core.config import Settings, get_settings
+from app.core.logging import configure_logging
 
 REQUIRED_ENV_KEYS = ("DATABASE_URL", "SECRET_KEY", "CREDENTIAL_FERNET_KEY")
 ENV_TO_FIELD = {
@@ -57,3 +60,39 @@ def test_env_example_covers_required_settings_fields():
     for env_key, field_name in ENV_TO_FIELD.items():
         if env_key in keys:
             assert field_name in Settings.model_fields
+
+
+_BASE_KWARGS = {
+    "database_url": "postgresql+psycopg://ci:ci@localhost:5432/ci",
+    "secret_key": "ci-test-secret-key-min-32-chars-long!!",
+    "credential_fernet_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+}
+
+
+def test_vitalspan_env_invalid_enum_raises():
+    """T-CFG-04: vitalspan_env 非法枚举 → ValidationError。"""
+    with pytest.raises(ValidationError):
+        Settings(**_BASE_KWARGS, vitalspan_env="invalid")
+
+
+def test_credential_fernet_key_invalid_raises():
+    """T-CFG-05: 非法 credential_fernet_key → ValidationError 含中文提示。"""
+    kwargs = {**_BASE_KWARGS, "credential_fernet_key": "not-a-valid-fernet-key"}
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(**kwargs)
+    message = str(exc_info.value)
+    assert "Fernet" in message or "CREDENTIAL_FERNET_KEY" in message
+
+
+def test_query_default_limit_zero_documents_current_behavior():
+    """T-CFG-06: query_default_limit=0 记录现状（当前无 ge 约束）。"""
+    settings = Settings(**_BASE_KWARGS, query_default_limit=0)
+    assert settings.query_default_limit == 0
+
+
+def test_configure_logging_accepts_warning_level(monkeypatch):
+    """T-CFG-07: LOG_LEVEL=WARNING 可加载。"""
+    monkeypatch.setenv("LOG_LEVEL", "WARNING")
+    get_settings.cache_clear()
+    configure_logging(get_settings())
+    assert logging.getLogger().level == logging.WARNING

@@ -4,6 +4,24 @@ import { describe, expect, it } from "vitest";
 import { AdminLayout } from "./AdminLayout";
 
 describe("AdminLayout smoke", () => {
+  function setMobileViewport(width = 375) {
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: width,
+    });
+    window.dispatchEvent(new Event("resize"));
+  }
+
+  function setDesktopViewport(width = 1400) {
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: width,
+    });
+    window.dispatchEvent(new Event("resize"));
+  }
+
   it("mounts sidebar navigation and main content (T-FE-06)", () => {
     render(
       <MemoryRouter initialEntries={["/admin"]}>
@@ -80,5 +98,63 @@ describe("AdminLayout smoke", () => {
     );
     const main = screen.getAllByRole("main")[0];
     expect(main.className).toContain("max-w-(--breakpoint-2xl)");
+  });
+
+  it("shows mobile backdrop when menu opens at 375px (T-FE-20)", () => {
+    setMobileViewport(375);
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const menuBtn = screen.getAllByRole("button", { name: "打开菜单" })[0];
+    fireEvent.click(menuBtn);
+    const backdrop = document.querySelector('[class*="bg-gray-900/50"]');
+    expect(backdrop).not.toBeNull();
+  });
+
+  it("toggles desktop sidebar margin between 290px and 90px (T-FE-21)", () => {
+    setDesktopViewport(1400);
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const menuBtn = screen.getAllByRole("button", { name: "打开菜单" })[0];
+    const main = screen.getAllByRole("main")[0];
+    const contentWrapper = main.parentElement;
+    expect(contentWrapper?.className).toContain("xl:ml-[290px]");
+
+    fireEvent.click(menuBtn);
+    expect(contentWrapper?.className).toContain("xl:ml-[90px]");
+
+    fireEvent.click(menuBtn);
+    expect(contentWrapper?.className).toContain("xl:ml-[290px]");
+  });
+
+  it("main and navigation token contract (T-FE-22)", () => {
+    setDesktopViewport(1400);
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    expect(main.className).toContain("max-w-(--breakpoint-2xl)");
+    expect(
+      screen.getAllByRole("navigation", { name: "管理端导航" }).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });
