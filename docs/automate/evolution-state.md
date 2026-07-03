@@ -13,7 +13,7 @@
 | branch | feat/evolution-r26-m4-query-l1-kickoff |
 | base_branch | dev-auto |
 | prd_ids | QUERY-001,QUERY-002,QUERY-004,QUERY-005,QUERY-006 |
-| pr_number |  |
+| pr_number | 48 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
