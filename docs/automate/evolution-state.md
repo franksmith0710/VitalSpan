@@ -6,18 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md |
-| design | docs/superpowers/specs/2026-07-03-m1b-activate-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1b-activate.md |
-| branch | cursor/bc-0d13bb06-9441-4bf6-971e-43912ce3df4b-bd04 |
-| base_branch | dev-auto |
-| prd_ids | DATA-004,DATA-001,DATA-002,ETL-001,DATA-003 |
-| pr_number | 14 |
-| last_verified_command | cd backend && python3 -m pytest ../tests -v; cd fe && pnpm build && pnpm check:design && pnpm test:smoke && pnpm test |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm build && pnpm check:design && pnpm test:smoke |
-| last_ui_screenshot_status | SKIPPED — 无 docker/浏览器，desktop 1280px 与 mobile 390px 截图未运行 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T09:30:00Z |
 | skill_rule_index_source_count | 26 |
@@ -68,8 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G0 PASS：无 Open PR；PR #14 Squash merge 至 dev-auto（sha 74937da）；PRD/plan 已对齐；phase 重置 idle
 - G1 doc-bootstrap：goal 只读；prd hub v1.2.8（16 分片 124 项）、8 维总表与薄弱项汇总就绪；plan 只读校验通过
-- G0 PASS：无 Open PR；PR #13 merged；工作区干净；phase 重置 idle
 - plan 当前节 M1B（M1 BOOT+文档回写已全部 [x]）；M1B queued，`m1b_activation: after-M1-complete-not-in-current-execute-scope`
 - P2 planner：5 Task 计划 `docs/superpowers/plans/2026-07-03-m1b-activate.md`（004→001→ETL→002→003）；固定 subagent-driven-development option 1
 - G2 picker：M1 闭环后激活 M1B；本轮 5 项 DATA-004/001/002 + ETL-001 + DATA-003（plan 推荐顺序前五）；BOOT STUCK 让位
