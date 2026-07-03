@@ -419,3 +419,16 @@ def test_trigger_run_p95_under_half_second(mock_run_job, client, auth_headers, j
     assert durations_sorted[p95_index] < 0.5
     for job_id in job_ids:
         client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_put_etl_rules_non_list_body_422(client, auth_headers, job_payload):
+    """T-ETL-14: PUT etl-rules body rules 非 list → 422。"""
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    response = client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules",
+        json={"rules": "not-list"},
+        headers=auth_headers,
+    )
+    assert response.status_code == 422
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
