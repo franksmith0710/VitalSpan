@@ -74,7 +74,7 @@ class SourceConnectionIn(BaseModel):
     port: int = Field(ge=1, le=65535)
     database: str
     username: str
-    password: str
+    password: str = Field(min_length=1)
     table: str
 
 
