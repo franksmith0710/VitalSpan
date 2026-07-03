@@ -1338,3 +1338,207 @@ def test_group_delete_in_use_gp12(client, auth_headers):
     resp = client.delete(f"/api/v1/rls/groups/{group['id']}", headers=auth_headers)
     assert resp.status_code == 409
     assert resp.json()["code"] == "GROUP_IN_USE"
+
+
+def test_rls_no_binding_returns_false_predicate_rls03(client, auth_headers):
+    """T-AUTH-RLS03: 无绑定 → build_org_rls_fragment → 1=0。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import build_org_rls_fragment, resolve_user_org_node_ids
+
+    user = client.post("/api/v1/users", json={"username": "rls_u3"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        frag = build_org_rls_fragment(allowed, column="org_node_id", alias="t")
+        assert frag.strip() == "1=0" or "1=0" in frag
+    finally:
+        session.close()
+
+
+def test_rls_subtree_expansion_rls01_rls02(client, auth_headers):
+    """T-AUTH-RLS01~RLS02: 绑定父 org → 子树节点均在允许集。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import resolve_user_org_node_ids
+
+    parent = client.post("/api/v1/orgs", json={"name": "RLS P"}, headers=auth_headers).json()
+    child = client.post(
+        "/api/v1/orgs",
+        json={"name": "RLS C", "parent_id": parent["id"]},
+        headers=auth_headers,
+    ).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_dim01", "name": "O", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "rls_r01", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u01"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [parent["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        assert uuid_mod.UUID(parent["id"]) in allowed
+        assert uuid_mod.UUID(child["id"]) in allowed
+    finally:
+        session.close()
+
+
+def test_rls_fragment_in_clause_rls04(client, auth_headers):
+    """T-AUTH-RLS04: 有权限时片段含 IN 与 org id。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import build_org_rls_fragment, resolve_user_org_node_ids
+
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "rls_r04", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u04"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        frag = build_org_rls_fragment(allowed, column="org_node_id", alias="t")
+        assert " IN (" in frag
+        assert org["id"] in frag
+    finally:
+        session.close()
+
+
+def test_rls_union_direct_and_group_rls05(client, auth_headers):
+    """T-AUTH-RLS05: 直绑与分组值并集展开。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import resolve_user_org_node_ids
+
+    org1 = client.post("/api/v1/orgs", json={"name": "RLS A"}, headers=auth_headers).json()
+    org2 = client.post("/api/v1/orgs", json={"name": "RLS B"}, headers=auth_headers).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_dim05", "name": "O", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "rls_g05", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    client.post(
+        f"/api/v1/rls/groups/{group['id']}/values",
+        json={"values": [org2["id"]]},
+        headers=auth_headers,
+    )
+    role = client.post("/api/v1/roles", json={"code": "rls_r05", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u05"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org1["id"]]},
+        headers=auth_headers,
+    )
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json={"group_ids": [group["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        assert uuid_mod.UUID(org1["id"]) in allowed
+        assert uuid_mod.UUID(org2["id"]) in allowed
+    finally:
+        session.close()
+
+
+def _simulate_row_filter(rows: list[dict], allowed: set[uuid_mod.UUID]) -> list[dict]:
+    return [r for r in rows if uuid_mod.UUID(str(r["org_node_id"])) in allowed]
+
+
+def test_rls_unauthorized_row_hidden_rls06(client, auth_headers):
+    """T-AUTH-RLS06: 允许集外 org 行不可见。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import resolve_user_org_node_ids
+
+    parent = client.post("/api/v1/orgs", json={"name": "RLS P6"}, headers=auth_headers).json()
+    other = client.post("/api/v1/orgs", json={"name": "RLS O6"}, headers=auth_headers).json()
+    child = client.post(
+        "/api/v1/orgs",
+        json={"name": "RLS C6", "parent_id": parent["id"]},
+        headers=auth_headers,
+    ).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_dim06", "name": "O", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "rls_r06", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u06"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [parent["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        rows = [
+            {"org_node_id": parent["id"]},
+            {"org_node_id": child["id"]},
+            {"org_node_id": other["id"]},
+        ]
+        visible = _simulate_row_filter(rows, allowed)
+        visible_ids = {str(r["org_node_id"]) for r in visible}
+        assert other["id"] not in visible_ids
+        assert parent["id"] in visible_ids
+        assert child["id"] in visible_ids
+    finally:
+        session.close()
+
+
+def test_rls_empty_allowed_hides_all_rls07(client, auth_headers):
+    """T-AUTH-RLS07: 无权限用户所有行被过滤。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import resolve_user_org_node_ids
+
+    org = client.post("/api/v1/orgs", json={"name": "RLS O7"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u07"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        rows = [{"org_node_id": org["id"]}]
+        visible = _simulate_row_filter(rows, allowed)
+        assert visible == []
+    finally:
+        session.close()
+
+
+def test_rls_query_hook_rls08(client, auth_headers):
+    """T-AUTH-RLS08: get_query_rls_fragment 返回有效片段。"""
+    from app.auth.deps import UserContext
+    from app.auth.models import get_meta_session
+    from app.auth.rls.hooks import get_query_rls_fragment
+
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "rls_r08", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u08"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=["rls_r08"])
+        frag = get_query_rls_fragment(session, ctx)
+        assert "IN (" in frag
+        assert org["id"] in frag
+    finally:
+        session.close()
