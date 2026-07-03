@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r23.md |
-| design | docs/superpowers/specs/2026-07-03-m3-datasource-quality-r23-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m3-datasource-quality-r23.md |
-| branch | feat/evolution-r23-m3-datasource-quality |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r24.md |
+| design | docs/superpowers/specs/2026-07-03-m3-datasource-quality-r24-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m3-datasource-quality-r24.md |
+| branch | feat/evolution-r24-m3-datasource-quality |
 | base_branch | dev-auto |
-| prd_ids | CONN-001,DS-001,DS-003,DS-002,DS-005 |
+| prd_ids | CONN-001, DS-001, DS-002, DS-003, DS-005 |
 | pr_number | 43 |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |

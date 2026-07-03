@@ -42,3 +42,11 @@
 
 - L1：`data_sources` 表 + CRUD + 凭证 Fernet + 双连通测试端点；首期方言 `mysql`；不含连接池与 schema 浏览。
 - r23：`ConnectorRegistry.unregister` + `register_usage_checker` 引用保护；MySQL `dialects/errors.py` 稳定错误码（`MYSQL_*`）；`deleted_at` 软删 L1；列表分页/PATCH；连通性测试进程内 2s 防重 L1（单 worker）；`CredentialDecryptError` 结构化解密失败；test 响应 `traceId`。
+
+### r24 质量推分（2026-07-03）
+
+- **CONN-001**：MySQL `connection_options` 消费 — SSL 三态、charset/collation、connect/read 分层 timeout；`TestConnectionResult.code` 结构化 `MYSQL_*`
+- **DS-001**：`ConnectorRegistry` `RLock`；`export_type_catalog()` DS-007 预留形状
+- **DS-002**：`connection_options` JSON 列；软删后 `code` 可复用（PostgreSQL 部分唯一索引 + service 层检测）
+- **DS-003**：inflight acquire + finally release；测试日志 `datasource_test` + `traceId`
+- **DS-005**：`CREDENTIAL_FERNET_KEY_PREVIOUS` 双钥解密占位
