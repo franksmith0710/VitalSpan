@@ -81,6 +81,17 @@ def create_dimension(
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionTypeOut | JSONResponse:
     try:
+        assert_binding_admin(actor.roles)
+    except UserError:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "code": "DIMENSION_FORBIDDEN",
+                "message": "Dimension changes require admin role",
+                "detail": None,
+            },
+        )
+    try:
         dim = dim_service.create_dimension_type(
             db, payload, **audit_kwargs(actor.id, actor.username)
         )
@@ -110,6 +121,17 @@ def update_dimension(
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionTypeOut | JSONResponse:
     try:
+        assert_binding_admin(actor.roles)
+    except UserError:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "code": "DIMENSION_FORBIDDEN",
+                "message": "Dimension changes require admin role",
+                "detail": None,
+            },
+        )
+    try:
         dim = dim_service.update_dimension_type(
             db, dim_id, payload, **audit_kwargs(actor.id, actor.username)
         )
@@ -124,6 +146,17 @@ def delete_dimension(
     actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
+    try:
+        assert_binding_admin(actor.roles)
+    except UserError:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "code": "DIMENSION_FORBIDDEN",
+                "message": "Dimension changes require admin role",
+                "detail": None,
+            },
+        )
     try:
         dim_service.delete_dimension_type(db, dim_id, **audit_kwargs(actor.id, actor.username))
     except dim_service.DimensionError as exc:

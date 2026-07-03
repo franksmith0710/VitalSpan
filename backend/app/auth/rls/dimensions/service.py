@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.audit.write_hooks import record_platform_event
-from app.auth.models import AuthDimensionType, AuthDimensionTypeRef, AuthOrgNode
+from app.auth.models import AuthDimensionType, AuthDimensionTypeRef, AuthOrgNode, AuthRoleDimensionValue
 from app.auth.schemas import DimensionTypeCreate, DimensionTypeUpdate
 
 
@@ -125,6 +125,15 @@ def delete_dimension_type(
     trace_id: str,
 ) -> None:
     dim = get_dimension_type(session, dim_id)
+    rdv_count = session.scalar(
+        select(func.count())
+        .select_from(AuthRoleDimensionValue)
+        .where(AuthRoleDimensionValue.dimension_type_id == dim_id)
+    )
+    if rdv_count and rdv_count > 0:
+        raise DimensionError(
+            "DIMENSION_IN_USE", "Dimension type is referenced and cannot be deleted", 409
+        )
     ref_count = session.scalar(
         select(func.count())
         .select_from(AuthDimensionTypeRef)

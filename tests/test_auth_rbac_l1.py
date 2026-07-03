@@ -1972,3 +1972,32 @@ def test_audit_bulk_query_pagination_perf_au13(client, auth_headers):
     assert body["total"] >= 200
     assert len(body["items"]) == 50
     assert elapsed < 0.5
+
+
+def test_dimension_create_non_admin_forbidden_d13(operator_client, auth_headers):
+    """T-AUTH-D13: 非 admin POST /rls/dimensions → 403 DIMENSION_FORBIDDEN。"""
+    resp = operator_client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "d13_op", "name": "X", "value_type": "string"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "DIMENSION_FORBIDDEN"
+
+
+def test_dimension_delete_role_direct_ref_d14(client, auth_headers):
+    """T-AUTH-D14: auth_role_dimension_values 引用 → 409 DIMENSION_IN_USE。"""
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "d14_dim", "name": "D", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "d14_role", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": ["v1"]},
+        headers=auth_headers,
+    )
+    resp = client.delete(f"/api/v1/rls/dimensions/{dim['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "DIMENSION_IN_USE"
