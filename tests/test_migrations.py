@@ -595,3 +595,83 @@ def test_migrations_online_connect_operational_error_propagates(monkeypatch):
                 importlib.import_module("migrations.env")
 
     sys.modules.pop("migrations.env", None)
+
+
+def test_alembic_upgrade_head_sql_subprocess_smoke():
+    """T-MIG-29: alembic upgrade head --sql 子进程 returncode==0 且含 CREATE TABLE 或 ingestion_sync_jobs。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    env = os.environ.copy()
+    env.setdefault("DATABASE_URL", KNOWN_URL)
+    env.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
+    env.setdefault(
+        "CREDENTIAL_FERNET_KEY",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=backend_dir,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    stdout_upper = result.stdout.upper()
+    assert "ingestion_sync_jobs" in result.stdout or "CREATE TABLE" in stdout_upper
+
+
+def test_revision_chain_no_orphans_head_0002():
+    """T-MIG-30: revision 链无 orphan；唯一 head 为 0002。"""
+    versions_dir = (
+        Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
+    )
+    revisions: dict[str, str | None] = {}
+    for path in sorted(versions_dir.glob("*.py")):
+        if path.name.startswith("__"):
+            continue
+        module = importlib.import_module(f"migrations.versions.{path.stem}")
+        revisions[module.revision] = module.down_revision
+
+    all_ids = set(revisions.keys())
+    for rev, down in revisions.items():
+        if down is not None:
+            assert down in all_ids, f"orphan down_revision {down!r} for {rev}"
+
+    referred_down = {d for d in revisions.values() if d}
+    heads = [rev for rev in revisions if rev not in referred_down]
+    assert heads == ["0002"]
+
+
+def test_unreachable_host_operational_error_message(monkeypatch):
+    """T-MIG-31: 不可达 host DATABASE_URL online 导入传播 OperationalError 且消息含 connection/refused。"""
+    unreachable_url = "postgresql+psycopg://ci:ci@127.0.0.1:1/ci_unreachable"
+    fake_settings = Settings(
+        database_url=unreachable_url,
+        secret_key="ci-test-secret-key-min-32-chars-long!!",
+        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
+    get_settings.cache_clear()
+    sys.modules.pop("migrations.env", None)
+
+    mock_config = MagicMock()
+    mock_config.config_file_name = None
+    mock_config.get_section.return_value = {}
+
+    mock_engine = MagicMock()
+    mock_engine.connect.side_effect = OperationalError(
+        "stmt", {}, Exception("connection refused")
+    )
+
+    mock_context = MagicMock()
+    mock_context.config = mock_config
+    mock_context.is_offline_mode.return_value = False
+
+    with patch("alembic.context", mock_context):
+        with patch("sqlalchemy.engine_from_config", return_value=mock_engine):
+            with pytest.raises(OperationalError) as exc_info:
+                importlib.import_module("migrations.env")
+
+    message = str(exc_info.value).lower()
+    assert "connection" in message or "refused" in message
+    sys.modules.pop("migrations.env", None)

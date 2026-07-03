@@ -103,3 +103,44 @@ def test_pytest_subset_elapsed_under_budget():
     elapsed = time.perf_counter() - start
     assert result.returncode == 0, result.stderr
     assert elapsed < 30.0, f"subset took {elapsed:.1f}s"
+
+
+def test_pytest_collect_minimum_232():
+    """T-CI-07: pytest --collect-only 收集下限 ≥232。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", "../tests"],
+        cwd=backend_dir,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr
+    last_line = result.stdout.strip().splitlines()[-1]
+    count_str = last_line.split()[0]
+    assert int(count_str) >= 232, f"expected ≥232 tests, got: {last_line}"
+
+
+def test_ci_frontend_job_step_order(ci_yml_text):
+    """T-CI-08: frontend job 中 pnpm test 在 build 之前；check:design 在 build 之后。"""
+    frontend_block = ci_yml_text.split("frontend:")[1]
+    test_idx = frontend_block.index("pnpm test")
+    build_idx = frontend_block.index("pnpm build")
+    design_idx = frontend_block.index("check:design")
+    assert test_idx < build_idx < design_idx
+
+
+def test_vitest_routes_smoke_elapsed_under_budget():
+    """T-CI-09: vitest 单文件 routes.smoke 子集 elapsed < 45s。"""
+    fe_dir = Path(__file__).resolve().parents[1] / "fe"
+    start = time.perf_counter()
+    result = subprocess.run(
+        ["pnpm", "exec", "vitest", "run", "src/routes.smoke.test.tsx"],
+        cwd=fe_dir,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    elapsed = time.perf_counter() - start
+    assert result.returncode == 0, result.stderr
+    assert elapsed < 45.0, f"vitest routes smoke took {elapsed:.1f}s"
