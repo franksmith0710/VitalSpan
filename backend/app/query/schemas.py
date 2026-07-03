@@ -78,6 +78,7 @@ class BindingCreate(BaseModel):
     schema_name: str | None = Field(default=None, alias="schema")
     table_name: str | None = Field(default=None, alias="table")
     default_limit: int = Field(default=100, alias="defaultLimit", ge=1)
+    chart_id: uuid.UUID | None = Field(default=None, alias="chartId")
 
 
 class BindingUpdate(BindingCreate):
@@ -94,6 +95,7 @@ class BindingOut(BaseModel):
     schema_name: str | None = Field(default=None, alias="schema")
     table_name: str | None = Field(default=None, alias="table")
     default_limit: int = Field(alias="defaultLimit")
+    chart_id: uuid.UUID | None = Field(default=None, alias="chartId")
 
 
 class BindingListResponse(BaseModel):
