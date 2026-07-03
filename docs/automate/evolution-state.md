@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r8.md |
-| design | docs/superpowers/specs/2026-07-03-m1b-quality-r8-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1b-quality-r8.md |
-| branch | cursor/bc-138e6383-60a1-46a7-b8a2-8017c718af92-b8d3 |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r9.md |
+| design | |
+| plan | |
+| branch | |
 | base_branch | dev-auto |
-| prd_ids | DATA-003,DATA-002,DATA-004,DATA-001,DATA-005 |
-| pr_number | 22 |
+| prd_ids | BOOT-005,BOOT-006,BOOT-001,BOOT-004,BOOT-002 |
+| pr_number | |
 | last_verified_command | cd backend && python3 -m pytest -q; cd fe && pnpm test && pnpm run build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test && pnpm run build && pnpm run check:design |
