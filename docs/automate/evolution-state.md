@@ -6,9 +6,11 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | branch | cursor/bc-f9be599f-3659-4ccf-88f3-8a04502e6c80-9b41 |
 | base_branch | dev-auto |
+| last_verified_command | plan Task5 Step6 P4 precheck (rg + test) |
+| last_verified_exit_code | 0 |
 | design | docs/superpowers/specs/2026-07-03-m1-plan-close-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-plan-close.md |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-plan-close.md |
