@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r17.md |
 | design | docs/superpowers/specs/2026-07-03-m2-auth-rbac-kickoff-r17-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m2-auth-rbac-kickoff-r17.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r17 PRD 重评：AUTH-001~005 L1 破 13→86.7–88.9（均 <90）；T-AUTH-R/O/U/G/D + T-MIG-32~33；pytest 302/4 skipped；缺用户-组织/审计/资源可见性守卫
 - P4 r17 独立验证：backend ruff PASS + pytest 302 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r17-m2-auth-rbac-kickoff；base_branch dev-auto
 - P3 r17 实现完成：7 Task 全绿；backend ruff+pytest 302 passed/4 skipped（+29 AUTH smoke）；ui_design_skill: none；branch feat/evolution-r17-m2-auth-rbac-kickoff@62a80b8；base_branch dev-auto
 - P2 r17 计划完成：7 Task（基建 + AUTH-001~005 + 路由/迁移/文档）；18 文件；subagent-driven-development option 1；全 Task UI skill: none
@@ -91,4 +92,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| （无） | — | — | — |
+| AUTH-004 | 1 | 86.7 | 2026-07-03 |
+| AUTH-002 | 1 | 87.3 | 2026-07-03 |
+| AUTH-005 | 1 | 88.2 | 2026-07-03 |
+| AUTH-003 | 1 | 88.5 | 2026-07-03 |
+| AUTH-001 | 1 | 88.9 | 2026-07-03 |
