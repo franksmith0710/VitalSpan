@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
-| plan |  |
-| branch |  |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r26.md |
+| design | docs/superpowers/specs/2026-07-03-m4-query-l1-kickoff-r26-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m4-query-l1-kickoff-r26.md |
+| branch | feat/evolution-r26-m4-query-l1-kickoff |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | QUERY-001,QUERY-002,QUERY-004,QUERY-005,QUERY-006 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T22:10:00Z |
