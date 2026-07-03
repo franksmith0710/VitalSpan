@@ -41,3 +41,18 @@ def test_services_ingestion_implemented_status():
     """T-D05-07: ingestion.md 状态为已实现。"""
     text = (ROOT / "docs/services/ingestion.md").read_text(encoding="utf-8")
     assert "已实现" in text
+
+
+def test_prd_f16_data005_l1_smoke_anchor():
+    """T-D05-08: F16-DATA DATA-005 演化建议含 test_ingestion_l1_smoke 锚点。"""
+    text = (ROOT / "docs/automate/prd/F16-DATA.md").read_text(encoding="utf-8")
+    section_start = text.find("DATA-005")
+    assert section_start != -1
+    section = text[section_start : section_start + 4000]
+    assert "test_ingestion_l1_smoke" in section
+
+
+def test_services_ingestion_data005_or_data_smoke_reference():
+    """T-D05-09: services/ingestion.md 含 DATA-005 或 DATA-SMOKE 引用。"""
+    text = (ROOT / "docs/services/ingestion.md").read_text(encoding="utf-8")
+    assert "DATA-005" in text or "DATA-SMOKE" in text

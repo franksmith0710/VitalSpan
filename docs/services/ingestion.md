@@ -42,3 +42,8 @@
 ## 关联 API
 
 见 [api/README.md](../api/README.md) §9 数据接入。
+
+## 验收与 L1 smoke（DATA-005）
+
+- L1 端到端：`tests/test_ingestion_l1_smoke.py`（`T-L1-05` analytics_sqlite 写穿、`T-L1-06` 运行历史排序）
+- 文档锚点：`tests/test_doc_anchors_data.py` T-D05-08~09

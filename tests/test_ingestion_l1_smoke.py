@@ -207,6 +207,7 @@ def test_l1_mock_smoke_source_failure(mock_fetch, smoke_client, auth_headers):
     assert final["trace_id"] == "mock-l1-fail-trace"
     assert final["error_message"] is not None
     assert "mock source down" in final["error_message"]
+    assert len(final["error_message"]) <= 500
 
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
@@ -269,4 +270,195 @@ def test_l1_mock_smoke_end_to_end_under_three_seconds(
     assert final["status"] == "succeeded"
     assert elapsed < 3.0
 
+    smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+@pytest.fixture
+def analytics_smoke_client() -> TestClient:
+    return TestClient(app)
+
+
+L1_SHARED_ANALYTICS = "sqlite+pysqlite:///file:l1_analytics_r11?mode=memory&cache=shared&uri=true"
+
+
+def _analytics_sqlite_file_url() -> str:
+    import tempfile
+    from pathlib import Path
+
+    path = Path(tempfile.gettempdir()) / "vitalspan_l1_analytics_r11.db"
+    if path.exists():
+        path.unlink()
+    return f"sqlite+pysqlite:///{path}"
+
+
+def _sqlite_write_analytics(job, rows):
+    """L1 smoke: sqlite-compatible write (DELETE vs TRUNCATE) for analytics_sqlite write-through."""
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.pool import StaticPool
+
+    from app.ingestion import sync_executor
+
+    settings = sync_executor.get_settings()
+    engine = create_engine(
+        settings.analytics_database_url,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    if not rows:
+        return 0
+    columns = list(rows[0].keys())
+    col_defs = ", ".join(f'"{c}" TEXT' for c in columns)
+    placeholders = ", ".join(f":{c}" for c in columns)
+    insert_sql = text(
+        f'INSERT INTO "{job.target_table}" ({", ".join(columns)}) VALUES ({placeholders})'
+    )
+    with engine.begin() as conn:
+        conn.execute(text(f'CREATE TABLE IF NOT EXISTS "{job.target_table}" ({col_defs})'))
+        conn.execute(text(f'DELETE FROM "{job.target_table}"'))
+        for row in rows:
+            conn.execute(insert_sql, row)
+    return len(rows)
+
+
+@patch("app.ingestion.sync_executor._write_analytics", side_effect=_sqlite_write_analytics)
+@patch("app.api.v1.ingestion.sync.get_settings")
+@patch("app.ingestion.sync_executor.get_settings")
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", return_value=MOCK_ROWS)
+def test_l1_analytics_sqlite_write_through(
+    mock_fetch,
+    mock_exec_settings,
+    mock_api_settings,
+    mock_write,
+    analytics_smoke_client,
+    auth_headers,
+    analytics_sqlite,
+):
+    """T-L1-05: mock fetch + 真实 analytics_sqlite 写穿 → SELECT 目标表行与列。"""
+    from unittest.mock import MagicMock
+    from sqlalchemy import create_engine
+    from sqlalchemy.pool import StaticPool
+
+    shared_url = _analytics_sqlite_file_url()
+    mock_settings = MagicMock()
+    mock_settings.analytics_database_url = shared_url
+    mock_exec_settings.return_value = mock_settings
+    mock_api_settings.return_value = mock_settings
+    verify_engine = create_engine(
+        shared_url,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    target_table = "orders_l1_write"
+    payload = {
+        "name": "l1-write-through",
+        "source": {
+            "type": "mysql",
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+            "table": "dirty_orders",
+        },
+        "target_table": target_table,
+        "schedule_cron": None,
+    }
+    create = analytics_smoke_client.post(
+        "/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers
+    )
+    assert create.status_code == 201
+    job_id = create.json()["id"]
+
+    put_rules = analytics_smoke_client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules",
+        json={"rules": L1_RULES},
+        headers=auth_headers,
+    )
+    assert put_rules.status_code == 200
+
+    run = analytics_smoke_client.post(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+        headers=auth_headers,
+    )
+    assert run.status_code == 202
+    run_id = run.json()["run_id"]
+
+    deadline = time.time() + 15
+    final = None
+    while time.time() < deadline:
+        listed = analytics_smoke_client.get(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/runs",
+            headers=auth_headers,
+        )
+        match = next((i for i in listed.json()["items"] if i["id"] == run_id), None)
+        if match and match["status"] in ("succeeded", "failed"):
+            final = match
+            break
+        time.sleep(0.05)
+
+    assert final is not None
+    assert final["status"] == "succeeded"
+
+    with verify_engine.connect() as conn:
+        rows = conn.execute(text(f'SELECT * FROM "{target_table}"')).mappings().all()
+    assert len(rows) >= 1
+    assert "product" in rows[0]
+    assert "amount" in rows[0]
+    assert "note" in rows[0]
+
+    analytics_smoke_client.delete(
+        f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers
+    )
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=1)
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", return_value=MOCK_ROWS[:1])
+def test_l1_runs_started_at_descending(
+    mock_fetch, mock_write, smoke_client, auth_headers
+):
+    """T-L1-06: 连续两次 run 后 GET runs 首项 started_at ≥ 次项。"""
+    payload = {
+        "name": "l1-order-r11",
+        "source": {
+            "type": "mysql",
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+            "table": "dirty_orders",
+        },
+        "target_table": "orders_l1_order_r11",
+        "schedule_cron": None,
+    }
+    create = smoke_client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    for _ in range(2):
+        run_resp = smoke_client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+            headers=auth_headers,
+        )
+        if run_resp.status_code == 409:
+            time.sleep(0.2)
+            run_resp = smoke_client.post(
+                f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+                headers=auth_headers,
+            )
+        assert run_resp.status_code == 202
+        deadline = time.time() + 15
+        while time.time() < deadline:
+            listed = smoke_client.get(
+                f"/api/v1/ingestion/sync-jobs/{job_id}/runs",
+                headers=auth_headers,
+            )
+            latest = listed.json()["items"][0] if listed.json()["items"] else None
+            if latest and latest["status"] in ("succeeded", "failed"):
+                break
+            time.sleep(0.1)
+    items = smoke_client.get(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/runs",
+        headers=auth_headers,
+    ).json()["items"]
+    assert len(items) >= 2
+    assert items[0]["started_at"] >= items[1]["started_at"]
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
