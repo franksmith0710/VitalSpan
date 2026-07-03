@@ -236,7 +236,7 @@ def test_migrations_offline_run_migrations_called(monkeypatch):
 
 
 def test_revision_directory_single_head_chain():
-    """T-MIG-15: versions/*.py revision 唯一、单链、head 为 0002。"""
+    """T-MIG-15: versions/*.py revision 唯一、单链、head 为 0003。"""
     versions_dir = (
         Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     )
@@ -247,14 +247,15 @@ def test_revision_directory_single_head_chain():
         module = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[module.revision] = module.down_revision
 
-    assert set(revisions.keys()) == {"0001", "0002"}
+    assert set(revisions.keys()) == {"0001", "0002", "0003"}
     assert len(revisions) == len(set(revisions.keys()))
     assert revisions["0001"] is None
     assert revisions["0002"] == "0001"
+    assert revisions["0003"] == "0002"
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0002"]
+    assert heads == ["0003"]
 
 
 def test_migrations_online_path_connects_and_runs(monkeypatch):
@@ -495,7 +496,7 @@ def test_migrations_env_reimport_under_budget(monkeypatch):
 
 
 def test_alembic_heads_single_head():
-    """T-MIG-25: alembic heads 子进程 returncode==0 且 stdout 含 0002（单 head）。"""
+    """T-MIG-25: alembic heads 子进程 returncode==0 且 stdout 含 0003（单 head）。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
     env = os.environ.copy()
     env.setdefault("DATABASE_URL", KNOWN_URL)
@@ -513,7 +514,7 @@ def test_alembic_heads_single_head():
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
-    assert "0002" in result.stdout
+    assert "0003" in result.stdout
 
 
 def test_migrations_online_uses_null_pool(monkeypatch):
@@ -620,8 +621,8 @@ def test_alembic_upgrade_head_sql_subprocess_smoke():
     assert "ingestion_sync_jobs" in result.stdout or "CREATE TABLE" in stdout_upper
 
 
-def test_revision_chain_no_orphans_head_0002():
-    """T-MIG-30: revision 链无 orphan；唯一 head 为 0002。"""
+def test_revision_chain_no_orphans_head_0003():
+    """T-MIG-30: revision 链无 orphan；唯一 head 为 0003。"""
     versions_dir = (
         Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     )
@@ -639,7 +640,38 @@ def test_revision_chain_no_orphans_head_0002():
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0002"]
+    assert heads == ["0003"]
+
+
+def test_revision_chain_head_is_0003():
+    """T-MIG-32: revision 链唯一 head 为 0003；0003.down_revision==0002。"""
+    versions_dir = Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
+    revisions: dict[str, str | None] = {}
+    for path in sorted(versions_dir.glob("*.py")):
+        if path.name.startswith("__"):
+            continue
+        module = importlib.import_module(f"migrations.versions.{path.stem}")
+        revisions[module.revision] = module.down_revision
+
+    heads = [rev for rev, down in revisions.items() if not any(d == rev for d in revisions.values())]
+    assert heads == ["0003"]
+
+    mod = importlib.import_module("migrations.versions.0003_auth_tables")
+    assert mod.down_revision == "0002"
+
+
+def test_alembic_upgrade_sql_contains_auth_roles():
+    """T-MIG-33: alembic upgrade head --sql 输出含 auth_roles。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=backend_dir,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "auth_roles" in result.stdout
 
 
 def test_unreachable_host_operational_error_message(monkeypatch):
