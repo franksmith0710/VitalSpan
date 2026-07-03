@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "./routes";
@@ -208,5 +209,29 @@ describe("AppRoutes smoke", () => {
     expect(
       screen.getAllByRole("button", { name: "打开菜单" }).length,
     ).toBeGreaterThanOrEqual(1);
+  });
+
+  it("admin shell tab smoke at /admin (T-FE-27)", async () => {
+    setDesktopViewport();
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    const menuBtn = screen.getAllByRole("button", { name: "打开菜单" })[0];
+    const themeBtn = screen.getAllByRole("button", { name: "切换深浅色主题" })[0];
+    let focusable = false;
+    for (let i = 0; i < 40; i++) {
+      await user.tab();
+      if (
+        document.activeElement === menuBtn ||
+        document.activeElement === themeBtn
+      ) {
+        focusable = true;
+        break;
+      }
+    }
+    expect(focusable).toBe(true);
   });
 });

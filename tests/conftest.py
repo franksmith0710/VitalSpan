@@ -23,6 +23,8 @@ from app.main import app
 # - unauthorized_headers: {"Authorization": "Bearer invalid"} for 401 negative cases
 # - trace_id_headers: {"X-Trace-Id": "<32-hex>"} for TraceId passthrough tests
 # - combined_auth_trace_headers: auth_headers ∪ trace_id_headers for me+trace combo tests
+# - lowercase_bearer_headers: {"Authorization": "bearer dev"} for RFC scheme case sensitivity tests
+# - malformed_auth_headers: {"Authorization": "Bearerde"} for missing space separator tests
 
 
 @pytest.fixture
@@ -51,6 +53,16 @@ def combined_auth_trace_headers(
     trace_id_headers: dict[str, str],
 ) -> dict[str, str]:
     return {**auth_headers, **trace_id_headers}
+
+
+@pytest.fixture
+def lowercase_bearer_headers() -> dict[str, str]:
+    return {"Authorization": "bearer dev"}
+
+
+@pytest.fixture
+def malformed_auth_headers() -> dict[str, str]:
+    return {"Authorization": "Bearerde"}
 
 
 def _port_open(host: str, port: int, timeout: float = 1.0) -> bool:

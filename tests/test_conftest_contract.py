@@ -67,3 +67,17 @@ def test_development_env_allows_dev_token(client, auth_headers):
     assert auth_headers == {"Authorization": "Bearer dev"}
     response = client.get("/api/v1/me", headers=auth_headers)
     assert response.status_code == 200
+
+
+def test_lowercase_bearer_headers_fixture_returns_401(client, lowercase_bearer_headers):
+    """T-CFT-09: lowercase_bearer_headers fixture + client → GET /api/v1/me 401。"""
+    response = client.get("/api/v1/me", headers=lowercase_bearer_headers)
+    assert response.status_code == 401
+    assert response.json()["code"] == "UNAUTHORIZED"
+
+
+def test_malformed_auth_headers_fixture_returns_401(client, malformed_auth_headers):
+    """T-CFT-10: malformed_auth_headers fixture + client → GET /api/v1/me 401。"""
+    response = client.get("/api/v1/me", headers=malformed_auth_headers)
+    assert response.status_code == 401
+    assert response.json()["code"] == "UNAUTHORIZED"

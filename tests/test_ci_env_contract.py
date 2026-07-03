@@ -1,6 +1,9 @@
 """T-CI-01~03: CI workflow env 与 conftest 默认值对齐（BOOT-006）。"""
 
 import re
+import subprocess
+import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -45,3 +48,58 @@ def test_ci_frontend_job_has_test_build_check_design(ci_yml_text):
     assert "pnpm test" in ci_yml_text
     assert "pnpm build" in ci_yml_text
     assert "check:design" in ci_yml_text
+
+
+def test_pytest_collect_minimum_threshold():
+    """T-CI-04: pytest --collect-only 收集下限 ≥225 tests（基线 207 + 本轮 ~19）。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", "../tests"],
+        cwd=backend_dir,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr
+    last_line = result.stdout.strip().splitlines()[-1]
+    count_str = last_line.split()[0]
+    assert int(count_str) >= 225, f"expected ≥225 tests, got: {last_line}"
+
+
+def test_pytest_collect_includes_r14_modules():
+    """T-CI-05: collect 输出含本轮扩展模块 test_me / test_migrations / test_health。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", "../tests"],
+        cwd=backend_dir,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr
+    stdout = result.stdout
+    for module in ("test_me.py", "test_migrations.py", "test_health.py"):
+        assert module in stdout, f"missing {module} in collect output"
+
+
+def test_pytest_subset_elapsed_under_budget():
+    """T-CI-06: pytest 子集 test_me + test_health elapsed < 30s。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    start = time.perf_counter()
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "../tests/test_me.py",
+            "../tests/test_health.py",
+            "-q",
+        ],
+        cwd=backend_dir,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    elapsed = time.perf_counter() - start
+    assert result.returncode == 0, result.stderr
+    assert elapsed < 30.0, f"subset took {elapsed:.1f}s"
