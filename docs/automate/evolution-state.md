@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r21.md |
 | design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r21-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r21.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | AUTH-007,AUTH-006,AUTH-008,AUTH-005,AUTH-001 |
 | pr_number |  |
-| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
+| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v --tb=no -q` |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r21 独立验证：backend ruff PASS + pytest 394 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r21-m2-auth-quality-push；base_branch dev-auto
 - P3 r21 实现完成：7 Task 全绿；backend ruff+pytest 394 passed/4 skipped（+17 AUTH quality）；ui_design_skill: none；branch feat/evolution-r21-m2-auth-quality-push；base_branch dev-auto
 - P5 r20 PRD 重评：AUTH-006~008 L1 kickoff 13.2–13.6→89.5–89.9（均 <90 STUCK upsert）；pytest 377 + 4 skipped；T-AUTH-GP/RLS/AU 30 smoke
 - P4 r20 独立验证：backend ruff PASS + pytest 377 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r20-m2-auth-kickoff；base_branch dev-auto
