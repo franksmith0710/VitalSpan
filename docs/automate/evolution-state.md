@@ -13,7 +13,7 @@
 | branch | feat/m1-backend-bootstrap |
 | base_branch | dev-auto |
 | prd_ids | BOOT-004,BOOT-001,BOOT-005,BOOT-003 |
-| pr_number | TBD |
+| pr_number | 2 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m alembic upgrade head && curl health/me smoke |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端轮次，无 UI 改动） |
