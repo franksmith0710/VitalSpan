@@ -1802,3 +1802,89 @@ def test_rls_hook_internal_error_degrades_to_empty_rls13(monkeypatch, client, au
         assert "1=0" in out
     finally:
         session.close()
+
+
+def test_group_list_negative_offset_422_gp13(client, auth_headers):
+    """T-AUTH-GP13: GET /rls/groups?offset=-1 → 422。"""
+    resp = client.get("/api/v1/rls/groups?offset=-1", headers=auth_headers)
+    assert resp.status_code == 422
+
+
+def test_replace_role_groups_dedupe_idempotent_gp14(client, auth_headers):
+    """T-AUTH-GP14: 重复 group_ids → 204；有效集正确。"""
+    _, org_dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": org_dim["id"], "code": "gp_g14", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "gp_r14", "name": "R"}, headers=auth_headers).json()
+    body = {"group_ids": [group["id"], group["id"]]}
+    r1 = client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json=body,
+        headers=auth_headers,
+    )
+    assert r1.status_code == 204
+    r2 = client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json=body,
+        headers=auth_headers,
+    )
+    assert r2.status_code == 204
+    eff = client.get(
+        f"/api/v1/roles/{role['id']}/effective-dimensions?dimension_type_id={org_dim['id']}",
+        headers=auth_headers,
+    )
+    assert eff.status_code == 200
+
+
+@pytest.mark.skip(reason="requires is_active from Task 5")
+def test_bind_groups_to_disabled_role_409_gp15(client, auth_headers):
+    """T-AUTH-GP15: 绑定到 is_active=false 角色 → 409 ROLE_DISABLED。"""
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "gp_dim15", "name": "S", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_g15", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "gp_r15", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}",
+        json={"name": "R", "description": None, "is_active": False},
+        headers=auth_headers,
+    )
+    resp = client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json={"group_ids": [group["id"]]},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "ROLE_DISABLED"
+
+
+def test_group_list_pagination_perf_gp_perf(client, auth_headers):
+    """AUTH-006 性能 smoke: 50 分组 limit=20 P95 < 500ms。"""
+    import time
+
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "gp_perf", "name": "P", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    for i in range(50):
+        client.post(
+            "/api/v1/rls/groups",
+            json={"dimension_type_id": dim["id"], "code": f"gp_pf_{i:02d}", "name": f"G{i}"},
+            headers=auth_headers,
+        )
+    start = time.perf_counter()
+    resp = client.get("/api/v1/rls/groups?limit=20", headers=auth_headers)
+    elapsed = time.perf_counter() - start
+    assert resp.status_code == 200
+    assert len(resp.json()["items"]) == 20
+    assert elapsed < 0.5

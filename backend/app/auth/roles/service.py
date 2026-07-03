@@ -69,6 +69,11 @@ def get_role(session: Session, role_id: uuid.UUID) -> AuthRole:
     return role
 
 
+def assert_role_active(role: AuthRole) -> None:
+    if getattr(role, "is_active", True) is False:
+        raise RoleError("ROLE_DISABLED", "Role is disabled", 409)
+
+
 def update_role(
     session: Session,
     role_id: uuid.UUID,
