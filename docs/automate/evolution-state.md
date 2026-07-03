@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r8.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-quality-r8-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-quality-r8.md |
@@ -14,8 +14,10 @@
 | base_branch | dev-auto |
 | prd_ids | DATA-003,DATA-002,DATA-004,DATA-001,DATA-005 |
 | pr_number |  |
-| last_verified_command | cd backend && pytest tests/test_ingestion_*.py tests/test_sync_executor.py tests/test_scheduler.py tests/test_doc_anchors_data.py; cd fe && pnpm exec vitest run ingestion.smoke routes.smoke && pnpm run build && pnpm run check:design |
+| last_verified_command | cd backend && python3 -m pytest -q; cd fe && pnpm test && pnpm run build && pnpm run check:design |
 | last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm test && pnpm run build && pnpm run check:design |
+| last_ui_screenshots | NOT_RUN（无头 CI；vitest viewport 1400/375 + check:design 已覆盖 UI Acceptance） |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T12:30:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,9 +69,9 @@
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
 - G0 PASS：已 Squash merge PR #21（补救 P2 plan 文档）至 dev-auto；sha 73fb684；无剩余 Open PR
-- 上轮 r7（PR #20）已合并；PR #21 补齐遗漏的 `docs/superpowers/plans/2026-07-03-m1b-quality-r7.md`
-- phase 自 P5_DOCS_READY 重置 idle；deployed_automate_rev bf60b94 未变
-- STUCK 表保留 12 行；技能规则索引 26 条未过期
+- 上轮 r7（PR #20）已合并；本轮 r8 M1B DATA 质量推分（DATA-003/002/004/001/005）待 PR
+- pytest 127 + vitest 14 ingestion；P5 重评总分 85.4–88.4（均 <90）
+- STUCK DATA-* 连续未过轮次 +1；技能规则索引 26 条未过期
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -81,9 +83,9 @@
 | BOOT-001 | 9 | 86.5 | 2026-07-03 |
 | BOOT-004 | 9 | 87.4 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
-| DATA-004 | 2 | 84.8 | 2026-07-03 |
-| DATA-001 | 2 | 85.8 | 2026-07-03 |
-| DATA-002 | 3 | 83.9 | 2026-07-03 |
+| DATA-004 | 3 | 87.5 | 2026-07-03 |
+| DATA-001 | 3 | 88.1 | 2026-07-03 |
+| DATA-002 | 4 | 85.5 | 2026-07-03 |
 | ETL-001 | 3 | 85.9 | 2026-07-03 |
-| DATA-003 | 3 | 81.5 | 2026-07-03 |
-| DATA-005 | 2 | 85.8 | 2026-07-03 |
+| DATA-003 | 4 | 85.4 | 2026-07-03 |
+| DATA-005 | 3 | 88.4 | 2026-07-03 |
