@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-doc-writeback.md |
-| design | docs/superpowers/specs/2026-07-03-m1-doc-writeback-close-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1-doc-writeback-close.md |
-| branch | cursor/bc-2c340cbf-c91f-4930-9dd7-08d818233460-fb98 |
-| base_branch | dev-auto |
-| prd_ids | BOOT-001,BOOT-002,BOOT-003,BOOT-004,BOOT-005,BOOT-006 |
-| pr_number | 10 |
-| last_verified_command | python3 -m pytest (25) + pnpm test (6 vitest + 2 node) + ruff + pnpm build + check:design + P4 doc writeback aggregate |
-| last_verified_exit_code | 0 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T07:24:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,10 +66,10 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G0 PASS：PR #8/#9 已 Squash merge 至 dev-auto；工作区干净
-- P5 r3 重评 BOOT-001~006：M1 文档回写闭环；services/core+auth 已实现；api/arch/F01 idempotent 对齐；总分 78.2–86.0（仍均 <90）
-- M1 plan §勾选清单六 BOOT 项已完成；§文档回写 4 行无 BOOT-ID 格式（P5 未改 plan 结构，建议人工 create-evolution-plan 对账）
-- 待办池空；M1B queued 未激活
+- G1 doc-bootstrap：goal 只读；prd hub+16 分片 124 项、8 维总表与薄弱项汇总就绪；plan 只读校验通过
+- G0 PASS（上轮）：PR #10 merged；工作区干净；phase 已重置 idle
+- plan 当前节 M1「文档回写」4 项未完成；BOOT 勾选清单六项目已完成；M1B queued 未激活
+- STUCK：BOOT-001~006 均 <90（最高 BOOT-003 86.0）
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
