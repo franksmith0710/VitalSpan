@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | design | docs/superpowers/specs/2026-07-03-m1-boot-test-r4-design.md |
-| plan |  |
-| branch |  |
-| base_branch |  |
+| plan | docs/superpowers/plans/2026-07-03-m1-boot-test-r4-plan.md |
+| branch | cursor/bc-3e92750a-38c3-4750-9488-b81f4e2ff9f4-c8a2 |
+| base_branch | dev-auto |
 | prd_ids | BOOT-005,BOOT-002,BOOT-006,BOOT-001,BOOT-004 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T07:24:00Z |
+| skill_rule_index_generated_at | 2026-07-03T07:55:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
