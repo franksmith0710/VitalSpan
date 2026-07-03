@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r9.md |
 | design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r9-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r9.md |
@@ -68,20 +68,19 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G0 PASS：已 Squash merge PR #21（补救 P2 plan 文档）至 dev-auto；sha 73fb684；无剩余 Open PR
-- 上轮 r7（PR #20）已合并；本轮 r8 M1B DATA 质量推分（DATA-003/002/004/001/005）待 PR
-- pytest 127 + vitest 14 ingestion；P5 重评总分 85.4–88.4（均 <90）
-- STUCK DATA-* 连续未过轮次 +1；技能规则索引 26 条未过期
+- G0 PASS：上轮 r8 PR #22 已合并至 dev-auto；本轮 r9 BOOT 质量推分（BOOT-005/006/001/004/002）PR #23 待合并
+- pytest 145 + vitest 39 + check:design PASS；P5 重评总分 88.6–89.5（均 <90）
+- STUCK BOOT-* 连续未过轮次 +1（11 轮）；技能规则索引 26 条未过期
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-002 | 10 | 87.7 | 2026-07-03 |
-| BOOT-005 | 10 | 85.9 | 2026-07-03 |
-| BOOT-006 | 10 | 85.9 | 2026-07-03 |
-| BOOT-001 | 9 | 86.5 | 2026-07-03 |
-| BOOT-004 | 9 | 87.4 | 2026-07-03 |
+| BOOT-002 | 11 | 88.9 | 2026-07-03 |
+| BOOT-005 | 11 | 88.6 | 2026-07-03 |
+| BOOT-006 | 11 | 88.8 | 2026-07-03 |
+| BOOT-001 | 10 | 89.2 | 2026-07-03 |
+| BOOT-004 | 10 | 89.5 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
 | DATA-004 | 3 | 87.5 | 2026-07-03 |
 | DATA-001 | 3 | 88.1 | 2026-07-03 |
