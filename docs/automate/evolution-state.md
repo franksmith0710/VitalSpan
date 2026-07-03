@@ -6,17 +6,17 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r17.md |
-| design | docs/superpowers/specs/2026-07-03-m2-auth-rbac-kickoff-r17-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m2-auth-rbac-kickoff-r17.md |
-| branch | feat/evolution-r17-m2-auth-rbac-kickoff |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r18.md |
+| design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r18-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r18.md |
+| branch | feat/evolution-r18-m2-auth-quality-push |
 | base_branch | dev-auto |
-| prd_ids | AUTH-001,AUTH-002,AUTH-003,AUTH-004,AUTH-005 |
-| pr_number | 34 |
+| prd_ids | AUTH-004,AUTH-002,AUTH-005,AUTH-003,AUTH-001 |
+| pr_number |  |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端 r17） |
+| last_ui_verified_command | N/A（纯后端 r18） |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
 | skill_rule_index_source_count | 26 |
 
