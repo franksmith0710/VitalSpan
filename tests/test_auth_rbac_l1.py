@@ -1316,14 +1316,22 @@ def test_role_dimension_invalid_role_gp10(client, auth_headers):
     assert resp.json()["code"] == "ROLE_NOT_FOUND"
 
 
-def test_group_binding_forbidden_non_admin_gp11(client, operator_client, auth_headers):
+def test_group_binding_forbidden_non_admin_gp11(client, auth_headers):
     """T-AUTH-GP11: 非 admin 写分组 → 403 BINDING_FORBIDDEN。"""
     _, dim = _ensure_org_dim(client, auth_headers)
-    resp = operator_client.post(
-        "/api/v1/rls/groups",
-        json={"dimension_type_id": dim["id"], "code": "gp_op", "name": "O"},
-        headers={"Authorization": "Bearer dev"},
-    )
+
+    async def _operator():
+        return UserContext(id="op-1", username="operator", roles=["operator"])
+
+    app.dependency_overrides[get_current_user] = _operator
+    try:
+        resp = client.post(
+            "/api/v1/rls/groups",
+            json={"dimension_type_id": dim["id"], "code": "gp_op", "name": "O"},
+            headers=auth_headers,
+        )
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
     assert resp.status_code == 403
     assert resp.json()["code"] == "BINDING_FORBIDDEN"
 
