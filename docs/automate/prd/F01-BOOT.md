@@ -13,7 +13,7 @@
   - [x] `backend/app` 可启动且 `/health` 返回 200
   - [x] OpenAPI 文档可访问
 - **代码锚点**：`backend/app/main.py` · `backend/app/api/v1/` · `backend/pyproject.toml`
-- **演化建议**：BOOT-006 补 `tests/test_health.py` 与 CI；M1 文档回写 checklist 待下轮
+- **演化建议**：二期扩展健康检查维度（DB 连通性）；维持 `tests/test_health.py` CI 覆盖
 
 ### [BOOT-002] React 管理端壳层
 
@@ -26,7 +26,7 @@
   - [x] `fe/` 可构建且 `/admin` 路由壳层可访问
   - [x] shadcn/ui + Tailwind v4 主题加载
 - **代码锚点**：`fe/src/layouts/AdminLayout.tsx` · `fe/src/routes.tsx` · `fe/src/index.css` · `fe/scripts/check-design.mjs` · `fe/src/components/README.md`
-- **演化建议**：二期补 TanStack Query、`@/lib/api.ts` 与业务页；增 vitest/Playwright 覆盖壳层交互；M1 文档回写（api/services）待下轮
+- **演化建议**：二期补 TanStack Query、`@/lib/api.ts` 与业务页；增 vitest/Playwright 覆盖壳层交互
 
 ### [BOOT-003] 鉴权中间件骨架
 
@@ -40,7 +40,7 @@
   - [x] 公开路径（`/health`、`/docs`、`/redoc`、`/openapi.json`）无需认证仍可访问
   - [x] 认证上下文可注入 handler
 - **代码锚点**：`backend/app/auth/middleware.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/me.py`（`main.py` 注册 `AuthMiddleware`）
-- **演化建议**：二期替换 `Bearer dev` 为正式 JWT；补集成测试覆盖 401/200 分支
+- **演化建议**：二期替换 `Bearer dev` 为正式 JWT；`tests/test_me.py` 已覆盖 401/200 smoke
 
 ### [BOOT-004] 配置与日志基线
 
@@ -53,7 +53,7 @@
   - [x] 环境变量配置可加载
   - [x] 结构化日志输出请求 traceId
 - **代码锚点**：`backend/app/core/config.py` · `backend/app/core/logging.py` · `backend/app/core/middleware.py`
-- **演化建议**：BOOT-006 补 Settings 加载与 traceId 日志断言测试
+- **演化建议**：二期补 Settings 加载与 traceId 日志断言测试
 
 ### [BOOT-005] 数据库迁移框架
 
@@ -79,4 +79,4 @@
   - [x] lint + 单元测试 CI 通过
   - [x] 前后端可本地联调
 - **代码锚点**：`.github/workflows/ci.yml` · `tests/conftest.py` · `tests/test_health.py`
-- **演化建议**：CI 增 docker postgres job；补 Settings/traceId 与 401/me 集成测试；M1 api/services 文档回写待下轮
+- **演化建议**：CI 增 docker postgres job；补 Settings/traceId 集成测试

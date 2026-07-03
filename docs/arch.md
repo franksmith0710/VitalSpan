@@ -107,14 +107,14 @@ VitalSpan/
 │       ├── datasources/     # 连接层 + ConnectorRegistry
 │       │   └── dialects/  # 按 type 分目录（CONN-*）
 │       └── query/           # M3-LITE 查询执行
-├── fe/                      # （待建）React 双端前端
+├── fe/                      # React 双端前端（M1 Admin 壳层已实现）
 ├── docs/
 │   ├── arch.md              # 本文件
 │   ├── api/                 # OpenAPI 端点索引
 │   ├── services/            # 域服务附录（随实现补充）
 │   ├── srs/                 # 需求权威（SRS + 附录）
 │   ├── automate/            # 演化文档 goal/prd/plan
-├── tests/                   # （待建）单元 / smoke / perf
+├── tests/                   # 单元 / smoke（M1：health + me）
 ├── .automate/               # submodule：演化 SOP/skills/agents
 ├── .cursor/                 # 运行时：automate 同步 + 项目 rules
 │   └── rules/               # vitalspan-project · fe-ui · backend-fastapi …
@@ -127,7 +127,7 @@ VitalSpan/
 backend/
 ├── app/
 │   ├── main.py
-│   ├── core/           # config, auth middleware, security, logging
+│   ├── core/           # config, logging, TraceIdMiddleware；鉴权委托 auth/（AuthMiddleware 由 main.py 注册）
 │   ├── api/v1/         # 路由聚合：datasources, query, dashboard, reports…
 │   ├── auth/           # M7：roles, org, rls, audit
 │   ├── datasources/    # registry, credentials, pool, metadata, dialects/*
@@ -163,6 +163,10 @@ fe/
 ├── package.json
 └── vite.config.ts      # （建议）Vite + React
 ```
+
+> **M1 过渡布局（2026-07-03）**：Admin 壳层已落地于 `fe/src/layouts/AdminLayout.tsx` +
+> `fe/src/routes.tsx`（`/admin` 路由）。目标态目录 `src/app/` 在二期壳层统一时迁移；
+> 详见 `prd/F01-BOOT.md` BOOT-002 与 `docs/ui/layout.md`。
 
 ### 4.4 演化与 Agent 资产
 
@@ -322,7 +326,7 @@ pnpm dev            # 默认 :5173
 | [srs/README.md](srs/README.md) | 需求权威（SRS + 附录） |
 | [全生命周期系统需求规格说明书.md](srs/全生命周期系统需求规格说明书.md) | SRS 主文档 |
 | [automate/goal.md](automate/goal.md) | 产品方向与边界 |
-| [automate/prd.md](automate/prd.md) | 功能真理源 hub（118 项） |
+| [automate/prd.md](automate/prd.md) | 功能真理源 hub（124 项） |
 | [automate/plan.archive.md](automate/plan.archive.md) | 里程碑 M1–M13 |
 | [automate/plan.md](automate/plan.md) | 活跃里程碑当前节 |
 | [api/README.md](api/README.md) | API 端点一行索引 |
