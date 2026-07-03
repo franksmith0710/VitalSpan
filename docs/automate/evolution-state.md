@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-fe-ci.md |
 | design |  |
 | plan |  |
 | branch |  |
-| base_branch |  |
-| prd_ids |  |
+| base_branch | dev-auto |
+| prd_ids | BOOT-002,BOOT-006 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
