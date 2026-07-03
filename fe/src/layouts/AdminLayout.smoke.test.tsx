@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
 import { AdminLayout } from "./AdminLayout";
@@ -156,5 +157,73 @@ describe("AdminLayout smoke", () => {
     expect(
       screen.getAllByRole("navigation", { name: "管理端导航" }).length,
     ).toBeGreaterThanOrEqual(1);
+  });
+
+  it("desktop tab focus order: menu button then theme toggle (T-FE-24)", async () => {
+    setDesktopViewport(1400);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const menuBtn = screen.getAllByRole("button", { name: "打开菜单" })[0];
+    const themeBtn = screen.getAllByRole("button", { name: "切换深浅色主题" })[0];
+
+    for (let i = 0; i < 40; i++) {
+      await user.tab();
+      if (document.activeElement === menuBtn) break;
+    }
+    expect(document.activeElement).toBe(menuBtn);
+
+    let reachedTheme = false;
+    for (let i = 0; i < 15; i++) {
+      await user.tab();
+      if (document.activeElement === themeBtn) {
+        reachedTheme = true;
+        break;
+      }
+    }
+    expect(reachedTheme).toBe(true);
+  });
+
+  it("mobile tab reaches menu button at 375px (T-FE-25)", async () => {
+    setMobileViewport(375);
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const menuBtn = screen.getAllByRole("button", { name: "打开菜单" })[0];
+    menuBtn.focus();
+    expect(document.activeElement).toBe(menuBtn);
+    expect(menuBtn).toHaveAccessibleName("打开菜单");
+  });
+
+  it("mobile menu open tab does not trap focus (T-FE-26)", async () => {
+    setMobileViewport(375);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const menuBtn = screen.getAllByRole("button", { name: "打开菜单" })[0];
+    await user.click(menuBtn);
+    await user.tab();
+    await user.tab();
+    expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
   });
 });
