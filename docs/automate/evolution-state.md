@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
-| design | docs/superpowers/specs/2026-07-03-boot-data-quality-design.md |
-| plan | docs/superpowers/plans/2026-07-03-boot-data-quality.md |
-| branch | feat/boot-data-quality-r6 |
+| design | docs/superpowers/specs/2026-07-03-m1b-quality-r7-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-quality-r7.md |
+| branch | feat/m1b-quality-r7 |
 | base_branch | dev-auto |
-| prd_ids | BOOT-005,BOOT-006,BOOT-002,BOOT-003,DATA-003 |
-| pr_number | 19 |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| prd_ids | DATA-004,DATA-002,DATA-005,ETL-001,BOOT-005 |
+| pr_number |  |
+| last_verified_command | cd backend && pytest -v && ruff check . |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm exec vitest run (smoke: T-FE-15/16/19, T-ING-06~10) && pnpm run check:design |
 | last_ui_verified_note | PASS via vitest role/viewport assertions; no Playwright screenshots (plan constraint) |
