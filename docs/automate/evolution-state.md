@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r20.md |
 | design | docs/superpowers/specs/2026-07-03-m2-auth-kickoff-r20-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m2-auth-kickoff-r20.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r20 PRD 重评：AUTH-006~008 L1 kickoff 13.2–13.6→89.5–89.9（均 <90 STUCK upsert）；pytest 377 + 4 skipped；T-AUTH-GP/RLS/AU 30 smoke
 - P4 r20 独立验证：backend ruff PASS + pytest 377 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r20-m2-auth-kickoff；base_branch dev-auto
 - P5 r19 PRD 重评：AUTH-001~005 巩固 90.8–92.1（89.4–91.2→）；AUTH-003 审计闭环破 90 STUCK 清零；pytest 348 + 4 skipped
 - P4 r19 独立验证：backend ruff PASS + pytest 348 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r19-m2-auth-quality-push@fe8c799；base_branch dev-auto
@@ -98,3 +99,6 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| AUTH-006 | 1 | 89.6 | 2026-07-03 |
+| AUTH-007 | 1 | 89.5 | 2026-07-03 |
+| AUTH-008 | 1 | 89.9 | 2026-07-03 |
