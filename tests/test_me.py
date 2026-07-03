@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
 
 from app.core.config import get_settings
@@ -39,9 +41,12 @@ def test_me_missing_authorization_header_returns_401(client):
     assert response.json() == UNAUTHORIZED_BODY
 
 
-@pytest.mark.parametrize("path", ["/health", "/openapi.json", "/docs"])
+@pytest.mark.parametrize(
+    "path",
+    ["/health", "/docs", "/redoc", "/openapi.json"],
+)
 def test_public_paths_accessible_without_token(client, path):
-    """T-ME-05~07: 公开路径无 Token → 200。"""
+    """T-ME-13: PUBLIC_PATHS 矩阵含 /redoc，无 Token → 200。"""
     response = client.get(path)
     assert response.status_code == 200
 
@@ -71,3 +76,53 @@ def test_me_bearer_dev_rejected_in_production(client, auth_headers, monkeypatch)
     finally:
         auth_mw.settings = prev_settings
         get_settings.cache_clear()
+
+
+def test_me_empty_bearer_token_returns_401(client):
+    """T-ME-09: Authorization: Bearer（空 token / 仅空格）→ 401 + UNAUTHORIZED body。"""
+    for header_value in ("Bearer", "Bearer "):
+        response = client.get("/api/v1/me", headers={"Authorization": header_value})
+        assert response.status_code == 401
+        assert response.json() == UNAUTHORIZED_BODY
+
+
+def test_me_lowercase_bearer_scheme_returns_401(client, lowercase_bearer_headers):
+    """T-ME-10: Authorization: bearer dev（小写 scheme）→ 401。"""
+    response = client.get("/api/v1/me", headers=lowercase_bearer_headers)
+    assert response.status_code == 401
+    assert response.json() == UNAUTHORIZED_BODY
+
+
+def test_me_malformed_bearer_header_returns_401(client, malformed_auth_headers):
+    """T-ME-11: Authorization: Bearerde（无空格分隔）→ 401。"""
+    response = client.get("/api/v1/me", headers=malformed_auth_headers)
+    assert response.status_code == 401
+    assert response.json() == UNAUTHORIZED_BODY
+
+
+def test_me_concurrent_requests_stable(client, auth_headers):
+    """T-ME-12: 并发 5× GET /api/v1/me + auth_headers 全部 200 且用户上下文一致。"""
+    def fetch_me():
+        return client.get("/api/v1/me", headers=auth_headers)
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        responses = list(executor.map(lambda _: fetch_me(), range(5)))
+
+    for response in responses:
+        assert response.status_code == 200
+        body = response.json()
+        assert body["id"] == "dev"
+        assert body["username"] == "dev"
+        assert body["roles"] == ["admin"]
+
+
+def test_me_options_preflight_not_blocked(client):
+    """T-ME-14: OPTIONS /api/v1/me 预检不被鉴权中间件 401 拦截。"""
+    response = client.options(
+        "/api/v1/me",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code != 401
