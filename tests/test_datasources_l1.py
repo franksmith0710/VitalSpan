@@ -5,18 +5,21 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import ValidationError
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from app.core.config import Settings, get_settings
 from app.datasources import register_builtin_dialects
 from app.datasources.credentials import decrypt_credential, encrypt_credential
 from app.datasources.dialects.mysql import MysqlConnector
+from app.datasources.models import DataSource, get_meta_session
 from app.datasources.registry import (
     ConnectorAlreadyRegisteredError,
     ConnectorNotFoundError,
     registry,
     register_dialect,
 )
+from app.datasources.schemas import DataSourceCreate
+from app.datasources.service import create_data_source
 
 _DS_SQLITE_URL = "sqlite+pysqlite:///file:ds_l1_test?mode=memory&cache=shared&uri=true"
 
@@ -164,3 +167,39 @@ def test_data_sources_table_exists():
 
     assert "data_sources" in Base.metadata.tables
     assert get_meta_engine() is not None
+
+
+def _sample_create() -> DataSourceCreate:
+    return DataSourceCreate(
+        name="Demo MySQL",
+        code="demo_mysql",
+        type="mysql",
+        host="127.0.0.1",
+        port=3306,
+        database="demo",
+        username="root",
+        password="plain-secret",
+    )
+
+
+def test_db_stores_encrypted_password_not_plaintext():
+    """T-DS-K02: DB 存密文非明文。"""
+    session = get_meta_session()
+    try:
+        create_data_source(session, _sample_create())
+        row = session.scalar(select(DataSource).where(DataSource.code == "demo_mysql"))
+        assert row is not None
+        assert row.password_encrypted != "plain-secret"
+    finally:
+        session.close()
+
+
+def test_data_source_out_masks_password():
+    """T-DS-K03: API Out 层脱敏。"""
+    session = get_meta_session()
+    try:
+        out = create_data_source(session, _sample_create())
+        assert out.password == "***"
+        assert not hasattr(out, "password_encrypted")
+    finally:
+        session.close()
