@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r18.md |
 | design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r18-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r18.md |
@@ -66,7 +66,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P5 r17 PRD 重评：AUTH-001~005 L1 破 13→86.7–88.9（均 <90）；T-AUTH-R/O/U/G/D + T-MIG-32~33；pytest 302/4 skipped；缺用户-组织/审计/资源可见性守卫
+- P4 r18 独立验证：backend ruff PASS + pytest 325 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r18-m2-auth-quality-push@5746254；base_branch dev-auto
+- P3 r18 实现完成：7 Task 全绿；backend ruff+pytest 325 passed/4 skipped（+23 AUTH quality）；ui_design_skill: none；branch feat/evolution-r18-m2-auth-quality-push@2ce436a；base_branch dev-auto
+- P2 r18 计划完成：7 Task（AUTH-004→002→005→003→001 + 迁移/文档）；15 文件；subagent-driven-development option 1；全 Task UI skill: none
 - P4 r17 独立验证：backend ruff PASS + pytest 302 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r17-m2-auth-rbac-kickoff；base_branch dev-auto
 - P3 r17 实现完成：7 Task 全绿；backend ruff+pytest 302 passed/4 skipped（+29 AUTH smoke）；ui_design_skill: none；branch feat/evolution-r17-m2-auth-rbac-kickoff@62a80b8；base_branch dev-auto
 - P2 r17 计划完成：7 Task（基建 + AUTH-001~005 + 路由/迁移/文档）；18 文件；subagent-driven-development option 1；全 Task UI skill: none
