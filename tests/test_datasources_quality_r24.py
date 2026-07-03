@@ -5,12 +5,21 @@ import threading
 import time
 from unittest.mock import MagicMock, patch
 
+import logging
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+
 import pymysql.err
 import pytest
+from cryptography.fernet import Fernet
+from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 from app.core.config import get_settings
+from app.auth.models import Base as AuthBase
 from app.datasources import register_builtin_dialects
-from app.datasources.models import Base, DataSource, get_meta_engine
+from app.datasources.credentials import CredentialDecryptError, decrypt_credential
+from app.datasources.models import Base, DataSource, get_meta_engine, get_meta_session
 from app.datasources.dialects.base import TestConnectionResult
 from app.datasources.dialects.errors import MYSQL_SSL_ERROR, MYSQL_UNKNOWN_DATABASE
 from app.datasources.dialects.mysql import MysqlConnector
@@ -22,6 +31,8 @@ from app.datasources.registry import (
     register_dialect,
     unregister,
 )
+from app.datasources.schemas import ConnectionOptions, DataSourceCreate
+from app.main import app
 
 _DS_SQLITE_URL = "sqlite+pysqlite:///file:ds_r24_test?mode=memory&cache=shared&uri=true"
 
@@ -219,18 +230,6 @@ def test_ingestion_mysql_type_in_catalog():
     assert "postgres" not in types  # CONN-002 待实现
 
 
-import logging
-import uuid
-from concurrent.futures import ThreadPoolExecutor
-
-from cryptography.fernet import Fernet
-
-from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
-from app.datasources.models import DataSource, get_meta_session
-from app.auth.models import Base as AuthBase
-from sqlalchemy import text
-
-
 @pytest.fixture(autouse=True)
 def clean_data_sources_r24():
     yield
@@ -297,9 +296,6 @@ def test_test_failure_path_logs_no_secrets(caplog, client, auth_headers):
     assert "plain-secret" not in caplog.text
     assert "password=" not in caplog.text.lower()
     assert cipher not in caplog.text
-
-
-from app.datasources.schemas import ConnectionOptions, DataSourceCreate
 
 
 def test_connection_options_defaults():
@@ -455,7 +451,13 @@ def test_concurrent_test_same_id(mock_connect, client, auth_headers):
     ds_id = created.json()["id"]
 
     def run_test():
-        return client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers).status_code
+        thread_client = TestClient(app)
+        try:
+            return thread_client.post(
+                f"/api/v1/datasources/{ds_id}/test", headers=auth_headers
+            ).status_code
+        finally:
+            thread_client.close()
 
     with ThreadPoolExecutor(max_workers=3) as pool:
         codes = list(pool.map(lambda _: run_test(), range(3)))

@@ -455,7 +455,13 @@ def test_duplicate_test_returns_429(mock_connect, client, auth_headers):
     results: list[int] = []
 
     def run_test():
-        return client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers).status_code
+        thread_client = TestClient(app)
+        try:
+            return thread_client.post(
+                f"/api/v1/datasources/{ds_id}/test", headers=auth_headers
+            ).status_code
+        finally:
+            thread_client.close()
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         futures = [pool.submit(run_test) for _ in range(2)]
