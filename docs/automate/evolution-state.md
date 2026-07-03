@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | prd_ids | BOOT-001,BOOT-002,BOOT-003,BOOT-004,BOOT-006 |
 | design | docs/superpowers/specs/2026-07-03-m1-doc-writeback-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-doc-writeback.md |
 | branch | cursor/bc-a7765f53-c8ac-40ce-a840-02fb4ed0fd13-31a4 |
 | base_branch | dev-auto |
-| pr_number | — |
-| merge_sha | — |
+| pr_number | TBD |
+| merge_sha | TBD |
 | last_verified_command | cd backend && ruff check . && pytest -v |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | — |
@@ -68,17 +68,17 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- PR #4 已 Squash 合并至 dev-auto（sha 8d09c24）；M1 BOOT-002/006 已实现
-- M1 plan 六勾选项全部完成；G2 选题：M1 文档回写 4 项 + BOOT-003 `/me` smoke 测试
+- P5 重评 BOOT-001~004/006：文档真理源回写 + `tests/test_me.py`（3 pytest 绿）
+- M1 plan §勾选清单六 BOOT 项已完成；§文档回写 4 行无 BOOT ID 格式（P5 未改 plan 结构）
 - 待办池空；M1B queued 未激活
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-002 | 1 | 60.6 | 2026-07-03 |
+| BOOT-002 | 2 | 64.8 | 2026-07-03 |
 | BOOT-005 | 1 | 66.8 | 2026-07-03 |
-| BOOT-006 | 1 | 62.6 | 2026-07-03 |
-| BOOT-001 | 1 | 69.4 | 2026-07-03 |
-| BOOT-004 | 1 | 70.7 | 2026-07-03 |
-| BOOT-003 | 1 | 73.4 | 2026-07-03 |
+| BOOT-006 | 2 | 66.4 | 2026-07-03 |
+| BOOT-001 | 2 | 72.4 | 2026-07-03 |
+| BOOT-004 | 2 | 74.2 | 2026-07-03 |
+| BOOT-003 | 2 | 78.6 | 2026-07-03 |
