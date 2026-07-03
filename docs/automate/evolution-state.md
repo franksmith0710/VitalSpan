@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | verify_done |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r10.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r10-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r10.md |
-| branch |  |
+| branch | cursor/bc-64cdacda-49d6-4592-b740-6831a174fd09-3a52 |
 | base_branch | dev-auto |
 | prd_ids | DATA-003,DATA-002,ETL-001,DATA-004,DATA-001 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
-| last_ui_verified_command | cd fe && pnpm test && pnpm build && pnpm run check:design |
-| last_ui_screenshots | NOT_RUN（无头环境；vitest viewport 375/1400 smoke + check:design 34 files PASS 覆盖 UI Acceptance） |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm test -- ingestion.smoke.test.tsx && pnpm run check:design |
+| last_ui_screenshots | NOT_RUN（无头环境；ingestion.smoke 19 tests viewport 375/1400 + check:design 34 files PASS） |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T13:45:00Z |
 | skill_rule_index_source_count | 26 |
@@ -75,6 +75,7 @@
 - deployed_automate_rev=bf60b94ec4f4；技能规则索引 26 条未过期
 - P2 r10 计划完成：`docs/superpowers/plans/2026-07-03-m1b-data-quality-r10.md`（6 Task · 10 文件）
 - P3 r10 实现完成：5 commits（DATA-004/001/002+ETL-001/003）；backend 162 passed；fe 44 passed + check:design PASS
+- P4 r10 验证完成：backend 162 passed 1 skipped；fe 44 passed + build + check:design 34 files PASS；UI ingestion.smoke 19 tests PASS
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
