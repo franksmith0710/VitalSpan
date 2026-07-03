@@ -598,3 +598,67 @@ def test_delete_idle_leaf_org_204(client, auth_headers):
         org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
     finally:
         session.close()
+
+
+def test_org_orphan_parent_still_404(client, auth_headers):
+    """T-AUTH-O09: 孤儿 parent 创建 → 404 ORG_PARENT_NOT_FOUND（回归）。"""
+    resp = client.post(
+        "/api/v1/orgs",
+        json={"name": "Orphan", "parent_id": str(uuid_mod.uuid4())},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "ORG_PARENT_NOT_FOUND"
+
+
+def test_user_org_http_roundtrip(client, auth_headers):
+    """T-AUTH-O10: PUT/GET/DELETE user-org HTTP 状态码与 body 一致。"""
+    org = client.post("/api/v1/orgs", json={"name": "HttpOrg"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "http_ou"}, headers=auth_headers).json()
+    put = client.put(
+        f"/api/v1/users/{user['id']}/org",
+        json={"org_node_id": org["id"]},
+        headers=auth_headers,
+    )
+    assert put.status_code == 200
+    got = client.get(f"/api/v1/users/{user['id']}/org", headers=auth_headers)
+    assert got.status_code == 200
+    assert got.json()["id"] == org["id"]
+    deleted = client.delete(f"/api/v1/users/{user['id']}/org", headers=auth_headers)
+    assert deleted.status_code == 204
+    missing = client.get(f"/api/v1/users/{user['id']}/org", headers=auth_headers)
+    assert missing.status_code == 404
+    assert missing.json()["code"] == "USER_ORG_NOT_SET"
+
+
+def test_dimension_delete_org_ref_in_use(client, auth_headers):
+    """T-AUTH-D06: org_ref 维度 + org 节点存在 → DELETE 409 DIMENSION_IN_USE。"""
+    client.post("/api/v1/orgs", json={"name": "OrgDim"}, headers=auth_headers)
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "org_dim", "name": "Org", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    resp = client.delete(f"/api/v1/rls/dimensions/{dim['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "DIMENSION_IN_USE"
+
+
+def test_dimension_delete_idle_non_org(client, auth_headers):
+    """T-AUTH-D07: 空闲非 org 维度 → 204（回归 D05）。"""
+    created = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "free_dim", "name": "Free", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    assert client.delete(f"/api/v1/rls/dimensions/{created['id']}", headers=auth_headers).status_code == 204
+
+
+def test_dimension_invalid_value_type_422(client, auth_headers):
+    """T-AUTH-D08: value_type=map → 422。"""
+    resp = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "bad_vt", "name": "Bad", "value_type": "map"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 422
