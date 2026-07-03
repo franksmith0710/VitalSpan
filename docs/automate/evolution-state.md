@@ -7,16 +7,16 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r22.md |
-| design | docs/superpowers/specs/2026-07-03-m3-datasource-kickoff-r22-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m3-datasource-kickoff-r22.md |
-| branch | feat/evolution-r22-m3-datasource-kickoff |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r23.md |
+| design | docs/superpowers/specs/2026-07-03-m3-datasource-quality-r23-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m3-datasource-quality-r23.md |
+| branch | feat/evolution-r23-m3-datasource-quality |
 | base_branch | dev-auto |
-| prd_ids | DS-001,DS-002,DS-005,DS-003,CONN-001 |
-| pr_number | 42 |
+| prd_ids | CONN-001,DS-001,DS-003,DS-002,DS-005 |
+| pr_number | 43 |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端 r22） |
+| last_ui_verified_command | N/A（纯后端 r23） |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +67,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r23 PRD 重评：DS-001/002/003/005 + CONN-001 质量推分 86.8–91.1→89.1–91.9（DS-001 破 90 STUCK 清零；CONN-001 round 2）；pytest 449 + 4 skipped；T-DS-R05~R08、C09~C16、T06~T10、K05~K08、CONN-M05~M10
+- P4 r23 独立验证：backend ruff PASS + pytest 449 passed/4 skipped；round-target CONN-001/DS-001/002/003/005 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r23-m3-datasource-quality；base_branch dev-auto
+- P3 r23 实现完成：7 Task 全绿；backend ruff+pytest 449 passed/4 skipped（+30 datasources quality）；ui_design_skill: none；branch feat/evolution-r23-m3-datasource-quality；base_branch dev-auto
 - P5 r22 PRD 重评：DS-001/002/005/003 + CONN-001 L1 kickoff 12.8–13.6→86.8–91.1（DS-002/003/005 破 90；DS-001/CONN-001 <90 STUCK upsert）；pytest 419 + 4 skipped；T-DS-R/C/T/K + CONN-M smoke
 - P4 r22 独立验证：backend ruff PASS + pytest 419 passed/4 skipped；test_datasources_l1 23/23；round-target DS-001/002/005/003 + CONN-001 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r22-m3-datasource-kickoff；base_branch dev-auto
 - P3 r22 实现完成：7 Task 全绿；backend ruff+pytest 419 passed/4 skipped（+25 datasources L1）；ui_design_skill: none；branch feat/evolution-r22-m3-datasource-kickoff；base_branch dev-auto
@@ -106,5 +109,4 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| DS-001 | 1 | 88.6 | 2026-07-03 |
-| CONN-001 | 1 | 86.8 | 2026-07-03 |
+| CONN-001 | 2 | 89.1 | 2026-07-03 |
