@@ -38,6 +38,8 @@ def ensure_auth_tables():
     yield
     with engine.begin() as conn:
         for table in (
+            "auth_audit_events",
+            "auth_dimension_type_refs",
             "auth_user_roles",
             "auth_resource_grants",
             "auth_dimension_types",
@@ -54,6 +56,8 @@ def clean_auth_tables_between_tests():
     engine = get_meta_engine()
     with engine.begin() as conn:
         for table in (
+            "auth_audit_events",
+            "auth_dimension_type_refs",
             "auth_user_roles",
             "auth_resource_grants",
             "auth_dimension_types",
@@ -72,6 +76,26 @@ def client() -> TestClient:
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
     return {"Authorization": "Bearer dev"}
+
+
+from app.auth.deps import UserContext, get_current_user
+
+_ADMIN_CTX = {
+    "actor_id": "dev",
+    "actor_username": "dev",
+    "actor_roles": ["admin"],
+    "trace_id": "test-trace",
+}
+
+
+@pytest.fixture
+def operator_client(client):
+    async def _operator():
+        return UserContext(id="op-1", username="operator", roles=["operator"])
+
+    app.dependency_overrides[get_current_user] = _operator
+    yield client
+    app.dependency_overrides.pop(get_current_user, None)
 
 
 def test_auth_rbac_infra_tables_exist():
@@ -530,7 +554,9 @@ def test_user_org_bind_roundtrip(client, auth_headers):
     user = client.post("/api/v1/users", json={"username": "ou_user"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
-        users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]))
+        users_service.assign_user_org(
+            session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]), **_ADMIN_CTX
+        )
         node = users_service.get_user_org(session, uuid_mod.UUID(user["id"]))
         assert node is not None
         assert str(node.id) == org["id"]
@@ -545,8 +571,8 @@ def test_user_org_idempotent(client, auth_headers):
     session = get_meta_session()
     try:
         uid, oid = uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"])
-        users_service.assign_user_org(session, uid, oid)
-        users_service.assign_user_org(session, uid, oid)
+        users_service.assign_user_org(session, uid, oid, **_ADMIN_CTX)
+        users_service.assign_user_org(session, uid, oid, **_ADMIN_CTX)
         assert users_service.get_user_org(session, uid).id == oid
     finally:
         session.close()
@@ -558,7 +584,7 @@ def test_user_org_invalid_org_404(client, auth_headers):
     session = get_meta_session()
     try:
         with pytest.raises(users_service.UserError) as exc:
-            users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.uuid4())
+            users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.uuid4(), **_ADMIN_CTX)
         assert exc.value.code == "ORG_NOT_FOUND"
         assert exc.value.status == 404
     finally:
@@ -572,8 +598,8 @@ def test_user_org_clear(client, auth_headers):
     session = get_meta_session()
     try:
         uid, oid = uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"])
-        users_service.assign_user_org(session, uid, oid)
-        users_service.clear_user_org(session, uid)
+        users_service.assign_user_org(session, uid, oid, **_ADMIN_CTX)
+        users_service.clear_user_org(session, uid, **_ADMIN_CTX)
         assert users_service.get_user_org(session, uid) is None
     finally:
         session.close()
@@ -585,7 +611,9 @@ def test_delete_org_with_users_409(client, auth_headers):
     user = client.post("/api/v1/users", json={"username": "leaf_u"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
-        users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]))
+        users_service.assign_user_org(
+            session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]), **_ADMIN_CTX
+        )
         with pytest.raises(org_service.OrgError) as exc:
             org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
         assert exc.value.code == "ORG_HAS_USERS"
@@ -676,7 +704,10 @@ def test_bind_roles_batch(client, auth_headers):
     session = get_meta_session()
     try:
         roles = users_service.bind_roles_batch(
-            session, uuid_mod.UUID(user["id"]), [uuid_mod.UUID(r1["id"]), uuid_mod.UUID(r2["id"])]
+            session,
+            uuid_mod.UUID(user["id"]),
+            [uuid_mod.UUID(r1["id"]), uuid_mod.UUID(r2["id"])],
+            **_ADMIN_CTX,
         )
         codes = {r.code for r in roles}
         assert codes == {"batch_a", "batch_b"}
@@ -690,7 +721,7 @@ def test_bind_invalid_user_404(client, auth_headers):
     session = get_meta_session()
     try:
         with pytest.raises(users_service.UserError) as exc:
-            users_service.bind_role(session, uuid_mod.uuid4(), uuid_mod.UUID(role["id"]))
+            users_service.bind_role(session, uuid_mod.uuid4(), uuid_mod.UUID(role["id"]), **_ADMIN_CTX)
         assert exc.value.code == "USER_NOT_FOUND"
     finally:
         session.close()
@@ -700,7 +731,22 @@ def test_me_after_unbind(client, auth_headers):
     """T-AUTH-U09: 绑定 a+b → 解绑 a → /me 仅含 b。"""
     ra = client.post("/api/v1/roles", json={"code": "me_a", "name": "A"}, headers=auth_headers).json()
     rb = client.post("/api/v1/roles", json={"code": "me_b", "name": "B"}, headers=auth_headers).json()
+    admin_resp = client.post("/api/v1/roles", json={"code": "admin", "name": "Admin"}, headers=auth_headers)
+    if admin_resp.status_code == 201:
+        admin_role = admin_resp.json()
+    else:
+        admin_role = client.get("/api/v1/roles?code_prefix=admin&limit=1", headers=auth_headers).json()["items"][0]
     user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        users_service.bind_role(
+            session,
+            uuid_mod.UUID(user["id"]),
+            uuid_mod.UUID(admin_role["id"]),
+            **_ADMIN_CTX,
+        )
+    finally:
+        session.close()
     client.post(f"/api/v1/users/{user['id']}/roles/{ra['id']}", headers=auth_headers)
     client.post(f"/api/v1/users/{user['id']}/roles/{rb['id']}", headers=auth_headers)
     client.delete(f"/api/v1/users/{user['id']}/roles/{ra['id']}", headers=auth_headers)
@@ -716,6 +762,16 @@ def test_me_roles_sorted(client, auth_headers):
     r1 = client.post("/api/v1/roles", json={"code": "z_role", "name": "Z"}, headers=auth_headers).json()
     r2 = client.post("/api/v1/roles", json={"code": "a_role", "name": "A"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    admin_resp = client.post("/api/v1/roles", json={"code": "admin", "name": "Admin"}, headers=auth_headers)
+    if admin_resp.status_code == 201:
+        admin_id = admin_resp.json()["id"]
+    else:
+        admin_id = client.get("/api/v1/roles?code_prefix=admin&limit=1", headers=auth_headers).json()["items"][0]["id"]
+    session = get_meta_session()
+    try:
+        users_service.bind_role(session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(admin_id), **_ADMIN_CTX)
+    finally:
+        session.close()
     client.put(
         f"/api/v1/users/{user['id']}/roles",
         json={"role_ids": [r1["id"], r2["id"]]},
@@ -748,3 +804,339 @@ def test_role_list_limit(client, auth_headers):
     resp = client.get("/api/v1/roles?limit=2", headers=auth_headers)
     assert resp.status_code == 200
     assert len(resp.json()["items"]) <= 2
+
+
+def test_audit_bind_role_writes_event(client, auth_headers):
+    """T-AUTH-A01: bind_role 写审计。"""
+    role = client.post("/api/v1/roles", json={"code": "aud_r", "name": "A"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_u"}, headers=auth_headers).json()
+    assert client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers).status_code == 200
+    audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
+    assert audit["total"] >= 1
+    actions = [i["action"] for i in audit["items"]]
+    assert "user.role.bind" in actions
+    row = next(i for i in audit["items"] if i["action"] == "user.role.bind")
+    assert row["actor_id"]
+    assert row["trace_id"]
+
+
+def test_audit_unbind_writes_event(client, auth_headers):
+    """T-AUTH-A02: unbind 留痕。"""
+    role = client.post("/api/v1/roles", json={"code": "aud_u2", "name": "A"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_u2"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    assert client.delete(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers).status_code == 204
+    audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
+    assert "user.role.unbind" in [i["action"] for i in audit["items"]]
+
+
+def test_audit_replace_roles_writes_event(client, auth_headers):
+    """T-AUTH-A03: replace_roles 留痕且 detail 含 role_ids。"""
+    r1 = client.post("/api/v1/roles", json={"code": "aud_rp1", "name": "1"}, headers=auth_headers).json()
+    r2 = client.post("/api/v1/roles", json={"code": "aud_rp2", "name": "2"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_rp"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/users/{user['id']}/roles",
+        json={"role_ids": [r1["id"], r2["id"]]},
+        headers=auth_headers,
+    )
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={user['id']}&action=user.roles.replace",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+    assert audit["items"][0]["detail"] is not None
+
+
+def test_audit_org_assign_and_clear(client, auth_headers):
+    """T-AUTH-A04: assign_org / clear_org 对应 action。"""
+    org = client.post("/api/v1/orgs", json={"name": "AudOrg"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_org"}, headers=auth_headers).json()
+    client.put(f"/api/v1/users/{user['id']}/org", json={"org_node_id": org["id"]}, headers=auth_headers)
+    client.delete(f"/api/v1/users/{user['id']}/org", headers=auth_headers)
+    audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
+    actions = {i["action"] for i in audit["items"]}
+    assert "user.org.assign" in actions
+    assert "user.org.clear" in actions
+
+
+def test_audit_idempotent_bind_no_duplicate(client, auth_headers):
+    """T-AUTH-A05: 幂等 bind 不增加审计条数。"""
+    role = client.post("/api/v1/roles", json={"code": "aud_idem", "name": "I"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_idem"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    before = client.get(
+        f"/api/v1/audit/events?target_id={user['id']}&action=user.role.bind",
+        headers=auth_headers,
+    ).json()["total"]
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    after = client.get(
+        f"/api/v1/audit/events?target_id={user['id']}&action=user.role.bind",
+        headers=auth_headers,
+    ).json()["total"]
+    assert after == before
+
+
+def test_audit_invalid_user_no_row(client, auth_headers):
+    """T-AUTH-A06: 非法 userId bind → 404 且无审计。"""
+    role = client.post("/api/v1/roles", json={"code": "aud_bad", "name": "B"}, headers=auth_headers).json()
+    fake_user = str(uuid_mod.uuid4())
+    resp = client.post(f"/api/v1/users/{fake_user}/roles/{role['id']}", headers=auth_headers)
+    assert resp.status_code == 404
+    audit = client.get(f"/api/v1/audit/events?target_id={fake_user}", headers=auth_headers).json()
+    assert audit["total"] == 0
+
+
+def test_audit_concurrent_bind_at_most_one(client, auth_headers):
+    """T-AUTH-A07: 连续两次 bind 同一对 → 审计至多 1 条 bind。"""
+    role = client.post("/api/v1/roles", json={"code": "aud_con", "name": "C"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_con"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    total = client.get(
+        f"/api/v1/audit/events?target_id={user['id']}&action=user.role.bind",
+        headers=auth_headers,
+    ).json()["total"]
+    assert total == 1
+
+
+def test_binding_forbidden_non_admin(client, operator_client, auth_headers):
+    """T-AUTH-A08: 非 admin operator → 403 BINDING_FORBIDDEN；无审计。"""
+    role = client.post("/api/v1/roles", json={"code": "aud_op", "name": "O"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_op"}, headers=auth_headers).json()
+    resp = operator_client.post(
+        f"/api/v1/users/{user['id']}/roles/{role['id']}",
+        headers={"Authorization": "Bearer dev"},
+    )
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "BINDING_FORBIDDEN"
+    audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
+    assert audit["total"] == 0
+
+
+def test_audit_pagination_limit_offset(client, auth_headers):
+    """T-AUTH-A09: 审计分页 limit/offset/total。"""
+    role = client.post("/api/v1/roles", json={"code": "aud_pg", "name": "P"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_pg"}, headers=auth_headers).json()
+    for i in range(3):
+        r = client.post(
+            "/api/v1/roles",
+            json={"code": f"aud_pg_r{i}", "name": f"R{i}"},
+            headers=auth_headers,
+        ).json()
+        client.post(f"/api/v1/users/{user['id']}/roles/{r['id']}", headers=auth_headers)
+        client.delete(f"/api/v1/users/{user['id']}/roles/{r['id']}", headers=auth_headers)
+    page = client.get(
+        f"/api/v1/audit/events?target_id={user['id']}&limit=2&offset=0",
+        headers=auth_headers,
+    ).json()
+    assert len(page["items"]) <= 2
+    assert page["total"] >= 3
+
+
+def test_dimension_duplicate_code_regression(client, auth_headers):
+    """T-AUTH-D09: 重复 code → 409 DIMENSION_CODE_CONFLICT。"""
+    payload = {"code": "dup_dim_r19", "name": "D", "value_type": "string"}
+    assert client.post("/api/v1/rls/dimensions", json=payload, headers=auth_headers).status_code == 201
+    dup = client.post("/api/v1/rls/dimensions", json=payload, headers=auth_headers)
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "DIMENSION_CODE_CONFLICT"
+
+
+def test_dimension_invalid_value_type_regression(client, auth_headers):
+    """T-AUTH-D10: value_type=map → 422。"""
+    resp = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "bad_vt_r19", "name": "B", "value_type": "map"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 422
+
+
+def test_dimension_delete_with_refs_409(client, auth_headers):
+    """T-AUTH-D11: auth_dimension_type_refs 存在 → 409 DIMENSION_IN_USE。"""
+    from app.auth.models import AuthDimensionTypeRef, get_meta_session
+
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "ref_dim", "name": "R", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    session = get_meta_session()
+    try:
+        session.add(AuthDimensionTypeRef(dimension_type_id=uuid_mod.UUID(dim["id"]), ref_source="group"))
+        session.commit()
+    finally:
+        session.close()
+    resp = client.delete(f"/api/v1/rls/dimensions/{dim['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "DIMENSION_IN_USE"
+
+
+def test_dimension_list_pagination_performance(client, auth_headers):
+    """T-AUTH-D12: 60 类型分页 limit=50；耗时 <2s。"""
+    import time
+
+    for i in range(60):
+        client.post(
+            "/api/v1/rls/dimensions",
+            json={"code": f"perf_d{i:02d}", "name": f"P{i}", "value_type": "string"},
+            headers=auth_headers,
+        )
+    start = time.perf_counter()
+    resp = client.get("/api/v1/rls/dimensions?limit=50", headers=auth_headers)
+    elapsed = time.perf_counter() - start
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["items"]) == 50
+    assert body["total"] >= 60
+    assert elapsed < 2.0
+
+
+def test_role_code_format_boundary(client, auth_headers):
+    """T-AUTH-R10: code 过短 → 422；合法 ab → 201。"""
+    assert client.post("/api/v1/roles", json={"code": "A", "name": "x"}, headers=auth_headers).status_code == 422
+    assert client.post("/api/v1/roles", json={"code": "x", "name": "x"}, headers=auth_headers).status_code == 422
+    ok = client.post("/api/v1/roles", json={"code": "ab", "name": "OK"}, headers=auth_headers)
+    assert ok.status_code == 201
+
+
+def test_role_delete_bound_regression(client, auth_headers):
+    """T-AUTH-R11: 删除已绑定角色 → 409 ROLE_IN_USE（回归 R07）。"""
+    role = client.post("/api/v1/roles", json={"code": "bound_r19", "name": "B"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "bound_u19"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    resp = client.delete(f"/api/v1/roles/{role['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "ROLE_IN_USE"
+
+
+def test_role_list_filter_sort(client, auth_headers):
+    """T-AUTH-R12: code_prefix + limit 边界。"""
+    client.post("/api/v1/roles", json={"code": "pre_a", "name": "A"}, headers=auth_headers)
+    client.post("/api/v1/roles", json={"code": "pre_b", "name": "B"}, headers=auth_headers)
+    resp = client.get("/api/v1/roles?code_prefix=pre_&limit=1", headers=auth_headers)
+    assert resp.status_code == 200
+    items = resp.json()["items"]
+    assert len(items) == 1
+    codes = [i["code"] for i in items]
+    assert codes == sorted(codes)
+
+
+def test_org_depth_exceeded(client, auth_headers):
+    """T-AUTH-O11: 链式 32 层后再加子 → 422 ORG_DEPTH_EXCEEDED。"""
+    parent_id = None
+    for i in range(32):
+        payload = {"name": f"L{i}"}
+        if parent_id:
+            payload["parent_id"] = parent_id
+        node = client.post("/api/v1/orgs", json=payload, headers=auth_headers).json()
+        parent_id = node["id"]
+    resp = client.post("/api/v1/orgs", json={"name": "TooDeep", "parent_id": parent_id}, headers=auth_headers)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "ORG_DEPTH_EXCEEDED"
+
+
+def test_org_move_subtree_regression(client, auth_headers):
+    """T-AUTH-O12: 移节点子树 path 更新（回归 O05）。"""
+    a = client.post("/api/v1/orgs", json={"name": "DA"}, headers=auth_headers).json()
+    b = client.post("/api/v1/orgs", json={"name": "DB", "parent_id": a["id"]}, headers=auth_headers).json()
+    c = client.post("/api/v1/orgs", json={"name": "DC", "parent_id": b["id"]}, headers=auth_headers).json()
+    d = client.post("/api/v1/orgs", json={"name": "DD"}, headers=auth_headers).json()
+    client.put(f"/api/v1/orgs/{b['id']}", json={"parent_id": d["id"]}, headers=auth_headers)
+    items = {i["id"]: i for i in client.get("/api/v1/orgs", headers=auth_headers).json()["items"]}
+    assert items[c["id"]]["path"].startswith(items[d["id"]]["path"])
+
+
+def test_org_delete_with_children_regression(client, auth_headers):
+    """T-AUTH-O13: 删除有子节点 → 409 ORG_HAS_CHILDREN（回归 O04）。"""
+    root = client.post("/api/v1/orgs", json={"name": "R19"}, headers=auth_headers).json()
+    client.post("/api/v1/orgs", json={"name": "C19", "parent_id": root["id"]}, headers=auth_headers)
+    resp = client.delete(f"/api/v1/orgs/{root['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "ORG_HAS_CHILDREN"
+
+
+from app.auth.models import get_meta_session
+from app.auth.resources.service import (
+    VisibilityError,
+    check_resource_access,
+    delete_grants_batch,
+    ensure_resource_visible,
+    list_visible_resource_ids,
+)
+
+
+def test_multi_resource_type_visibility(client, auth_headers):
+    """T-AUTH-G11: datasource/dashboard/report 各授权可见。"""
+    role = client.post("/api/v1/roles", json={"code": "multi_rt", "name": "M"}, headers=auth_headers).json()
+    ids = {t: uuid_mod.uuid4() for t in ("datasource", "dashboard", "report")}
+    for rtype, rid in ids.items():
+        client.post(
+            "/api/v1/resource-grants",
+            json={"role_id": role["id"], "resource_type": rtype, "resource_id": str(rid)},
+            headers=auth_headers,
+        )
+    session = get_meta_session()
+    try:
+        for rtype, rid in ids.items():
+            visible = list_visible_resource_ids(session, ["multi_rt"], rtype)
+            assert rid in visible
+    finally:
+        session.close()
+
+
+def test_delete_grants_batch(client, auth_headers):
+    """T-AUTH-G12: delete_grants_batch 撤权后 check False。"""
+    role = client.post("/api/v1/roles", json={"code": "batch_g", "name": "B"}, headers=auth_headers).json()
+    grant_ids = []
+    rid = uuid_mod.uuid4()
+    for _ in range(3):
+        g = client.post(
+            "/api/v1/resource-grants",
+            json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(rid)},
+            headers=auth_headers,
+        )
+        if g.status_code == 201:
+            grant_ids.append(uuid_mod.UUID(g.json()["id"]))
+    session = get_meta_session()
+    try:
+        deleted = delete_grants_batch(session, grant_ids)
+        assert deleted == len(grant_ids)
+        assert check_resource_access(session, ["batch_g"], "datasource", rid) is False
+    finally:
+        session.close()
+
+
+def test_resource_horizontal_forbidden_matrix(client, auth_headers):
+    """T-AUTH-G13: role_a 仅 ds1；role_b 仅 ds2；交叉 ensure → 403。"""
+    role_a = client.post("/api/v1/roles", json={"code": "role_a_g", "name": "A"}, headers=auth_headers).json()
+    client.post("/api/v1/roles", json={"code": "role_b_g", "name": "B"}, headers=auth_headers)
+    ds1, ds2 = uuid_mod.uuid4(), uuid_mod.uuid4()
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": role_a["id"], "resource_type": "datasource", "resource_id": str(ds1)},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        ensure_resource_visible(session, ["role_a_g"], "datasource", ds1)
+        with pytest.raises(VisibilityError) as exc:
+            ensure_resource_visible(session, ["role_b_g"], "datasource", ds1)
+        assert exc.value.code == "RESOURCE_FORBIDDEN"
+    finally:
+        session.close()
+
+
+def test_resource_vertical_forbidden_regression(client, auth_headers):
+    """T-AUTH-G14: 空 roles / 未授权 resource → 403。"""
+    session = get_meta_session()
+    try:
+        with pytest.raises(VisibilityError) as exc1:
+            ensure_resource_visible(session, [], "datasource", uuid_mod.uuid4())
+        assert exc1.value.code == "RESOURCE_FORBIDDEN"
+        with pytest.raises(VisibilityError) as exc2:
+            ensure_resource_visible(session, ["nobody"], "datasource", uuid_mod.uuid4())
+        assert exc2.value.code == "RESOURCE_FORBIDDEN"
+    finally:
+        session.close()

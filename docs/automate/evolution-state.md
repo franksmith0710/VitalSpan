@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
-| plan |  |
-| branch |  |
-| base_branch |  |
-| prd_ids |  |
-| pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| phase | P5_DOCS_READY |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
+| design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r19-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r19.md |
+| branch | feat/evolution-r19-m2-auth-quality-push |
+| base_branch | dev-auto |
+| prd_ids | AUTH-003,AUTH-005,AUTH-001,AUTH-002,AUTH-004 |
+| pr_number | 38 |
+| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,7 +66,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P5 r18 PRD 重评：AUTH-001/002/004/005 破 90（90.0–91.2）；AUTH-003 仍 89.4（缺审计）；pytest 325/4 skipped；T-AUTH-G06~G10、OU/O07~O10、D06~D08、U07~U10、R07~R09
+- P5 r19 PRD 重评：AUTH-001~005 巩固 90.8–92.1（89.4–91.2→）；AUTH-003 审计闭环破 90 STUCK 清零；pytest 348 + 4 skipped
+- P4 r19 独立验证：backend ruff PASS + pytest 348 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r19-m2-auth-quality-push@fe8c799；base_branch dev-auto
+- P3 r19 实现完成：7 Task 全绿；backend ruff+pytest 348 passed/4 skipped（+23 AUTH audit/boundary）；ui_design_skill: none；branch feat/evolution-r19-m2-auth-quality-push@b472e9a；base_branch dev-auto
 - P4 r18 独立验证：backend ruff PASS + pytest 325 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r18-m2-auth-quality-push@62fdc65；base_branch dev-auto
 - P3 r18 实现完成：7 Task 全绿；backend ruff+pytest 325 passed/4 skipped（+23 AUTH quality）；ui_design_skill: none；branch feat/evolution-r18-m2-auth-quality-push@2ce436a；base_branch dev-auto
 - P2 r18 计划完成：7 Task（AUTH-004→002→005→003→001 + 迁移/文档）；15 文件；subagent-driven-development option 1；全 Task UI skill: none
@@ -95,4 +97,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| AUTH-003 | 2 | 89.4 | 2026-07-03 |

@@ -61,6 +61,7 @@ redoc: /redoc
 | GET/POST | `/api/v1/orgs` | 组织树节点 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
 | GET/POST/DELETE | `/api/v1/resource-grants` | AUTH-004 资源授权 CRUD | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | GET/POST | `/api/v1/rls/dimensions` | 权限维度类型 | 内部 | 一期 | AUTH-005 | 已实现 | `backend/app/api/v1/rls.py` |
+| GET | `/api/v1/audit/events` | AUTH-003 绑定/组织变更审计查询（`?target_id=&action=&limit=&offset=`） | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/audit.py` |
 | GET/POST | `/api/v1/rls/groups` | 维度分组 | 内部 | 一期 | AUTH-006 | 规划 | `backend/app/api/v1/rls.py` |
 | GET | `/api/v1/audit-logs` | 操作审计 | 内部 | 一期 | AUTH-008 | 规划 | `backend/app/api/v1/audit.py` |
 

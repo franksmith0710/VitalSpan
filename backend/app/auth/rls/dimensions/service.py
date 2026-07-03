@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.auth.models import AuthDimensionType, AuthOrgNode
+from app.auth.models import AuthDimensionType, AuthDimensionTypeRef, AuthOrgNode
 from app.auth.schemas import DimensionTypeCreate, DimensionTypeUpdate
 
 
@@ -27,8 +27,21 @@ def _validate_org_ref(session: Session, value_type: str) -> bool:
     return True
 
 
-def list_dimension_types(session: Session) -> list[AuthDimensionType]:
-    return list(session.scalars(select(AuthDimensionType).order_by(AuthDimensionType.code)))
+def list_dimension_types(
+    session: Session,
+    limit: int = 100,
+    offset: int = 0,
+) -> tuple[list[AuthDimensionType], int]:
+    total = session.scalar(select(func.count()).select_from(AuthDimensionType)) or 0
+    items = list(
+        session.scalars(
+            select(AuthDimensionType)
+            .order_by(AuthDimensionType.code)
+            .limit(min(limit, 500))
+            .offset(offset)
+        )
+    )
+    return items, total
 
 
 def create_dimension_type(session: Session, payload: DimensionTypeCreate) -> AuthDimensionType:
@@ -70,6 +83,13 @@ def update_dimension_type(
 
 def delete_dimension_type(session: Session, dim_id: uuid.UUID) -> None:
     dim = get_dimension_type(session, dim_id)
+    ref_count = session.scalar(
+        select(func.count())
+        .select_from(AuthDimensionTypeRef)
+        .where(AuthDimensionTypeRef.dimension_type_id == dim_id)
+    )
+    if ref_count and ref_count > 0:
+        raise DimensionError("DIMENSION_IN_USE", "Dimension type is referenced and cannot be deleted", 409)
     if dim.org_dimension:
         org_count = session.scalar(select(func.count()).select_from(AuthOrgNode))
         if org_count and org_count > 0:

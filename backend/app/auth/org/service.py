@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from app.auth.models import AuthOrgNode, AuthUser
 from app.auth.schemas import OrgCreate, OrgUpdate
 
+MAX_ORG_DEPTH = 32
+
 
 class OrgError(Exception):
     def __init__(self, code: str, message: str, status: int = 400) -> None:
@@ -57,6 +59,8 @@ def create_org_node(session: Session, payload: OrgCreate) -> AuthOrgNode:
         parent_id=payload.parent_id,
     )
     _init_path_level(node, parent)
+    if node.level >= MAX_ORG_DEPTH:
+        raise OrgError("ORG_DEPTH_EXCEEDED", f"Org tree depth cannot exceed {MAX_ORG_DEPTH}", 422)
     session.add(node)
     session.commit()
     session.refresh(node)
@@ -85,6 +89,8 @@ def update_org_node(session: Session, node_id: uuid.UUID, payload: OrgUpdate) ->
         node.parent_id = payload.parent_id
         _init_path_level(node, parent)
         _repath_subtree(session, node)
+    if node.level >= MAX_ORG_DEPTH:
+        raise OrgError("ORG_DEPTH_EXCEEDED", f"Org tree depth cannot exceed {MAX_ORG_DEPTH}", 422)
     session.commit()
     session.refresh(node)
     return node
