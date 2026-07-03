@@ -36,6 +36,7 @@
 | `AuthMiddleware` | ASGI 中间件；`main.py` 注册 | BOOT-003 | M1 骨架 |
 | `PUBLIC_PATHS` | `/health`、`/docs`、`/redoc`、`/openapi.json` 豁免 | BOOT-003 | M1 骨架 |
 | `get_current_user` | `auth/deps.py`；handler 依赖注入 | BOOT-003 | M1 骨架 |
+| `GET /api/v1/me` | `api/v1/me.py`；`get_current_user` 注入 `UserContext` | BOOT-003 | M1 骨架 |
 | `UserContext` | 占位用户上下文 | BOOT-003 | M1 骨架 |
 | `Bearer dev` | 仅 `VITALSPAN_ENV=development` 接受 | BOOT-003 | M1 占位 |
 | `PermissionService` | RBAC 校验 | AUTH-002~004 | 待建 |

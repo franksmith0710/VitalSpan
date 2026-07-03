@@ -40,7 +40,7 @@
   - [x] 公开路径（`/health`、`/docs`、`/redoc`、`/openapi.json`）无需认证仍可访问
   - [x] 认证上下文可注入 handler
 - **代码锚点**：`backend/app/auth/middleware.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/me.py`（`main.py` 注册 `AuthMiddleware`）
-- **演化建议**：`docs/services/auth.md` 与 api README §1 已对齐 PUBLIC_PATHS；二期替换 `Bearer dev` 为正式 JWT；`tests/test_auth.py` + `test_me.py` 已覆盖 401 矩阵、公开路径与 OPTIONS 预检（T-AUTH-02~08）
+- **演化建议**：`docs/services/auth.md` 入口表已含 `api/v1/me.py` 锚点，与 api README §1 PUBLIC_PATHS 对齐；plan §文档回写已勾选；二期替换 `Bearer dev` 为正式 JWT；`tests/test_auth.py` + `test_me.py` 已覆盖 401 矩阵、公开路径与 OPTIONS 预检（T-AUTH-02~08）
 
 ### [BOOT-004] 配置与日志基线
 

@@ -148,10 +148,10 @@ cd fe && cp .env.example .env && pnpm dev
 
 #### M1 完成 — 文档回写
 
-- [ ] `docs/api/README.md`：`/health` 状态 → `已实现`；**新增** `GET /api/v1/me`（M1 占位验收，锚点 `api/v1/me.py`）；§1 `auth/me` 保留「规划」并注「二期正式路径」
-- [ ] `docs/services/core.md`、`auth.md`：更新状态与代码锚点（含 CORS、TraceId、`main.py` 挂载 `AuthMiddleware`）
-- [ ] `docs/arch.md`：§4.2 `auth` 挂载改为 `main.py` 注册；§4.3 增 **M1 过渡布局**注记；§10 PRD hub 计数 → **124 项**
-- [ ] `prd/F01-BOOT.md`：各项状态 → `已实现`（勾选验收标准）；BOOT-003 代码锚点与 plan 一致（`auth/middleware.py` + `main.py` 注册）
+- [x] `docs/api/README.md`：`/health` 状态 → `已实现`；**新增** `GET /api/v1/me`（M1 占位验收，锚点 `api/v1/me.py`）；§1 `auth/me` 保留「规划」并注「二期正式路径」（完成于 2026-07-03）
+- [x] `docs/services/core.md`、`auth.md`：更新状态与代码锚点（含 CORS、TraceId、`main.py` 挂载 `AuthMiddleware`）（完成于 2026-07-03）
+- [x] `docs/arch.md`：§4.2 `auth` 挂载改为 `main.py` 注册；§4.3 增 **M1 过渡布局**注记；§10 PRD hub 计数 → **124 项**（完成于 2026-07-03）
+- [x] `prd/F01-BOOT.md`：各项状态 → `已实现`（勾选验收标准）；BOOT-003 代码锚点与 plan 一致（`auth/middleware.py` + `main.py` 注册）（完成于 2026-07-03）
 
 ---
 
