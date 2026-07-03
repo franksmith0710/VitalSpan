@@ -6,17 +6,17 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
-| design | docs/superpowers/specs/2026-07-03-m1-backend-bootstrap-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1-backend-bootstrap.md |
-| branch | feat/m1-backend-bootstrap |
-| base_branch | dev-auto |
-| prd_ids | BOOT-004,BOOT-001,BOOT-005,BOOT-003 |
-| pr_number | 2 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m alembic upgrade head && curl health/me smoke |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端轮次，无 UI 改动） |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
+| last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T04:10:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,10 +67,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P2 计划覆盖 BOOT-004/001/005/003，共 4 Task、20 文件
-- `backend/` 尚未落地，本轮从零补缺
-- 本轮无前端 UI 实现，`ui_design_skill: none`
-- P3 推荐 skills：`fastapi`、`verification-before-completion`、`bug-case-library`（Task 4）
+- G1 doc-bootstrap：上一轮 PR #2 已合并（sha 2120e12），当前轮次已重置 idle
+- M1 剩余 plan 勾选：BOOT-002（React 壳层）、BOOT-006（CI 门禁）
+- `backend/` 已落地 BOOT-004/001/005/003；`fe/` 壳层待实现
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
