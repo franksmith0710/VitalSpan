@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r12.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r12-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r12.md |
@@ -72,7 +72,7 @@
 - plan M1+M1B 全 [x]（16 项）；无含 `[ ]` 的活跃节
 - G0 PASS：无 Open PR；PR #26 已 Squash merge 至 dev-auto@0d63f3b；state 对账 phase→idle
 - 技能规则索引 26 条未过期；deployed_automate_rev=bf60b94ec4f4
-- P5 r11 收尾：DATA-001 破 90（90.4）；DATA-002/003/ETL-001/005 仍 88.2–89.4（<90）；STUCK DATA-* 4–6 轮
+- P5 r12 收尾：DATA-005 破 90（90.8）；DATA-004 89.8、DATA-003 89.6、DATA-002 89.4、ETL-001 89.3 仍 <90；pytest 194 + vitest ingestion 27
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -84,8 +84,7 @@
 | BOOT-001 | 10 | 89.2 | 2026-07-03 |
 | BOOT-004 | 10 | 89.5 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
-| DATA-004 | 4 | 88.7 | 2026-07-03 |
-| DATA-002 | 6 | 88.2 | 2026-07-03 |
-| DATA-003 | 6 | 88.8 | 2026-07-03 |
-| ETL-001 | 5 | 88.5 | 2026-07-03 |
-| DATA-005 | 4 | 89.4 | 2026-07-03 |
+| DATA-004 | 5 | 89.8 | 2026-07-03 |
+| DATA-002 | 7 | 89.4 | 2026-07-03 |
+| DATA-003 | 7 | 89.6 | 2026-07-03 |
+| ETL-001 | 6 | 89.3 | 2026-07-03 |
