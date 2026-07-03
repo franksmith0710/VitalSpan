@@ -1,0 +1,123 @@
+import type { ApexOptions } from "apexcharts";
+
+import { deepMergeOptions } from "./merge-options";
+
+export const chartPalette = {
+  brand: "#465fff", // @design-token-ok
+  purple: "#7a5af8", // @design-token-ok
+  success: "#12b76a", // @design-token-ok
+  info: "#0ba5ec", // @design-token-ok
+  pink: "#ee46bc", // @design-token-ok
+} as const;
+
+export const chartColors = Object.values(chartPalette);
+
+export const chartFontFamily = "Outfit, sans-serif";
+
+export const chartAxisLabelStyle = {
+  colors: "#667085", // @design-token-ok
+  fontSize: "12px",
+} as const;
+
+export const chartGridBorderColor = "#e4e7ec"; // @design-token-ok
+
+const baseChartOptions: ApexOptions = {
+  colors: chartColors,
+  chart: {
+    fontFamily: chartFontFamily,
+    toolbar: { show: false },
+    animations: {
+      enabled: true,
+      speed: 450,
+      animateGradually: { enabled: true, delay: 80 },
+      dynamicAnimation: { enabled: true, speed: 300 },
+    },
+  },
+  dataLabels: { enabled: false },
+  grid: {
+    borderColor: chartGridBorderColor,
+    strokeDashArray: 0,
+    yaxis: { lines: { show: true } },
+  },
+  xaxis: {
+    labels: { style: chartAxisLabelStyle },
+    axisBorder: { show: false },
+    axisTicks: { show: false },
+  },
+  yaxis: {
+    labels: { style: chartAxisLabelStyle },
+  },
+  legend: {
+    fontFamily: chartFontFamily,
+    labels: { colors: "#344054" }, // @design-token-ok
+  },
+  stroke: {
+    show: true,
+    width: 4,
+    colors: ["transparent"],
+  },
+  markers: {
+    size: 0,
+    strokeColors: "#fff", // @design-token-ok
+    strokeWidth: 2,
+    hover: { size: 6 },
+  },
+  states: {
+    hover: { filter: { type: "lighten", value: 0.04 } },
+    active: {
+      allowMultipleDataPointsSelection: false,
+      filter: { type: "darken", value: 0.08 },
+    },
+  } as NonNullable<ApexOptions["states"]>,
+  tooltip: {
+    enabled: true,
+    theme: "light",
+    shared: true,
+    intersect: false,
+  },
+};
+
+export function getBaseChartOptions(overrides?: ApexOptions): ApexOptions {
+  return deepMergeOptions(
+    baseChartOptions as Record<string, unknown>,
+    overrides as Record<string, unknown> | undefined,
+  ) as ApexOptions;
+}
+
+export const barChartPlotOptions: NonNullable<ApexOptions["plotOptions"]> = {
+  bar: {
+    horizontal: false,
+    columnWidth: "39%",
+    borderRadius: 5,
+    borderRadiusApplication: "end",
+  },
+};
+
+export const lineChartStrokeOptions: NonNullable<ApexOptions["stroke"]> = {
+  curve: "smooth",
+  width: 2,
+};
+
+export function createBarChartOptions(
+  categories: string[],
+  overrides?: ApexOptions,
+): ApexOptions {
+  return getBaseChartOptions({
+    chart: { type: "bar", height: 180 },
+    plotOptions: barChartPlotOptions,
+    xaxis: { categories },
+    ...overrides,
+  });
+}
+
+export function createLineChartOptions(
+  categories: string[],
+  overrides?: ApexOptions,
+): ApexOptions {
+  return getBaseChartOptions({
+    chart: { type: "line", height: 180 },
+    stroke: lineChartStrokeOptions,
+    xaxis: { categories },
+    ...overrides,
+  });
+}
