@@ -87,6 +87,21 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button";
     const loadingIndicator = spinner ?? <ButtonSpinner />;
     const content = loading && loadingText ? loadingText : children;
+
+    if (asChild) {
+      return (
+        <Comp
+          className={cn(buttonVariants({ variant, size, className }))}
+          aria-busy={loading || undefined}
+          data-loading={loading || undefined}
+          ref={ref}
+          {...props}
+        >
+          {content}
+        </Comp>
+      );
+    }
+
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}

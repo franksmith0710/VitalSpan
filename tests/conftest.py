@@ -10,6 +10,8 @@ os.environ.setdefault(
     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
 )
 
+import socket
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -40,3 +42,22 @@ def unauthorized_headers() -> dict[str, str]:
 @pytest.fixture
 def trace_id_headers() -> dict[str, str]:
     return {"X-Trace-Id": "a1b2c3d4e5f6789012345678abcdef01"}
+
+
+def _port_open(host: str, port: int, timeout: float = 1.0) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+@pytest.fixture(scope="session")
+def integration_env():
+    mysql_ok = _port_open("127.0.0.1", 3307)
+    pg_ok = _port_open("127.0.0.1", 5433)
+    if not (mysql_ok and pg_ok):
+        pytest.skip("compose services not running — start: docker compose up -d sample-mysql analytics-postgres")
+    return {
+        "analytics_url": "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics",
+    }

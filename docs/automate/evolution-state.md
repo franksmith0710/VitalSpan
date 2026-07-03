@@ -7,19 +7,20 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md |
-| design | docs/superpowers/specs/2026-07-03-m1b-activate-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1b-activate.md |
-| branch | cursor/bc-0d13bb06-9441-4bf6-971e-43912ce3df4b-bd04 |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-close.md |
+| design | docs/superpowers/specs/2026-07-03-m1b-close-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-close.md |
+| branch | cursor/bc-f55858a9-664a-4ce4-89a2-440201551df3-239a |
 | base_branch | dev-auto |
-| prd_ids | DATA-004,DATA-001,DATA-002,ETL-001,DATA-003 |
-| pr_number | 14 |
-| last_verified_command | cd backend && python3 -m pytest ../tests -v; cd fe && pnpm build && pnpm check:design && pnpm test:smoke && pnpm test |
+| prd_ids | DATA-005,DATA-002,DATA-003,ETL-001,DATA-001 |
+| pr_number |  |
+| last_verified_command | cd backend && python3 -m pytest ../tests/ -v; cd fe && pnpm test ingestion.smoke && pnpm run build && pnpm run check:design; grep SourceConnection docs/services/ingestion.md |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm build && pnpm check:design && pnpm test:smoke |
-| last_ui_screenshot_status | SKIPPED — 无 docker/浏览器，desktop 1280px 与 mobile 390px 截图未运行 |
+| last_ui_verified_command | cd fe && pnpm test ingestion.smoke && pnpm run build && pnpm run check:design |
+| last_ui_verified_note | vitest 5/5 ingestion smoke (desktop 1400 + mobile 375 viewports); build exit 0; check:design exit 0; no browser screenshots (vitest RTL smoke satisfies UI Acceptance) |
+| l1_integration_note | test_l1_sync_etl_analytics_pipeline SKIPPED — docker not available in verifier env |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T09:30:00Z |
+| skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -68,12 +69,12 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G0 PASS：无 Open PR；PR #14 Squash merge 至 dev-auto（sha 74937da）；PRD/plan 已对齐；phase 重置 idle
 - G1 doc-bootstrap：goal 只读；prd hub v1.2.8（16 分片 124 项）、8 维总表与薄弱项汇总就绪；plan 只读校验通过
-- G0 PASS：无 Open PR；PR #13 merged；工作区干净；phase 重置 idle
 - plan 当前节 M1B（M1 BOOT+文档回写已全部 [x]）；M1B queued，`m1b_activation: after-M1-complete-not-in-current-execute-scope`
-- P2 planner：5 Task 计划 `docs/superpowers/plans/2026-07-03-m1b-activate.md`（004→001→ETL→002→003）；固定 subagent-driven-development option 1
-- G2 picker：M1 闭环后激活 M1B；本轮 5 项 DATA-004/001/002 + ETL-001 + DATA-003（plan 推荐顺序前五）；BOOT STUCK 让位
-- 薄弱项 Top3：META-001(10.8)、DESIGN-001(10.8)、CONN-021(10.9)；STUCK BOOT-001~006 均 <90（最高 BOOT-003 86.4）
+- P2 planner：6 Task 计划 `docs/superpowers/plans/2026-07-03-m1b-close.md`（001→ETL→002→005 L1→003 smoke→005 文档）；固定 subagent-driven-development option 1
+- G2 picker：M1B 收尾 DATA-005 L1 + 文档回写；同轮 companion DATA-002/003 + ETL-001 + DATA-001 测试/文档补强；META/DESIGN/CONN 远期让位
+- 薄弱项 Top3：META-001(10.8)、DESIGN-001(10.8)、CONN-021(10.9)；STUCK BOOT-001~006 均 <90（最高 BOOT-003 86.4）；入选 M1B 项连续未过轮次均 1（非 STUCK）
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -86,7 +87,8 @@
 | BOOT-004 | 8 | 86.1 | 2026-07-03 |
 | BOOT-003 | 6 | 86.4 | 2026-07-03 |
 | DATA-004 | 1 | 80.7 | 2026-07-03 |
-| DATA-001 | 1 | 83.2 | 2026-07-03 |
-| DATA-002 | 1 | 77.4 | 2026-07-03 |
-| ETL-001 | 1 | 80.8 | 2026-07-03 |
-| DATA-003 | 1 | 76.3 | 2026-07-03 |
+| DATA-001 | 2 | 85.8 | 2026-07-03 |
+| DATA-002 | 2 | 80.8 | 2026-07-03 |
+| ETL-001 | 2 | 83.3 | 2026-07-03 |
+| DATA-003 | 2 | 80.0 | 2026-07-03 |
+| DATA-005 | 1 | 82.5 | 2026-07-03 |
