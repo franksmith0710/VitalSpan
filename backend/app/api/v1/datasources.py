@@ -56,14 +56,16 @@ def _visibility_response(exc: VisibilityError) -> JSONResponse:
 
 @router.get("", response_model=DataSourceListResponse)
 def list_data_sources(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     type: str | None = None,
     q: str | None = None,
 ) -> DataSourceListResponse:
-    return ds_service.list_data_sources(db, limit=limit, offset=offset, type=type, q=q)
+    return ds_service.list_data_sources(
+        db, role_codes=user.roles, limit=limit, offset=offset, type=type, q=q
+    )
 
 
 @router.post("", response_model=DataSourceOut, status_code=status.HTTP_201_CREATED)
@@ -89,51 +91,59 @@ def list_connector_types(
 @router.get("/{data_source_id}", response_model=DataSourceOut)
 def get_data_source(
     data_source_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
-        return ds_service.get_data_source(db, data_source_id)
+        return ds_service.get_data_source(db, data_source_id, role_codes=user.roles)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
+    except VisibilityError as exc:
+        return _visibility_response(exc)
 
 
 @router.put("/{data_source_id}", response_model=DataSourceOut)
 def update_data_source(
     data_source_id: uuid.UUID,
     payload: DataSourceUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
-        return ds_service.update_data_source(db, data_source_id, payload)
+        return ds_service.update_data_source(db, data_source_id, payload, role_codes=user.roles)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
+    except VisibilityError as exc:
+        return _visibility_response(exc)
 
 
 @router.patch("/{data_source_id}", response_model=DataSourceOut)
 def patch_data_source(
     data_source_id: uuid.UUID,
     payload: DataSourcePatch,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
-        return ds_service.patch_data_source(db, data_source_id, payload)
+        return ds_service.patch_data_source(db, data_source_id, payload, role_codes=user.roles)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
+    except VisibilityError as exc:
+        return _visibility_response(exc)
 
 
 @router.delete("/{data_source_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_data_source(
     data_source_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:
-        ds_service.delete_data_source(db, data_source_id)
+        ds_service.delete_data_source(db, data_source_id, role_codes=user.roles)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
+    except VisibilityError as exc:
+        return _visibility_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -151,13 +161,15 @@ def test_connection_draft(
 @router.post("/{data_source_id}/test", response_model=TestConnectionOut)
 def test_connection_saved(
     data_source_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> TestConnectionOut | JSONResponse:
     try:
-        return ds_service.test_connection_by_id(db, data_source_id)
+        return ds_service.test_connection_by_id(db, data_source_id, role_codes=user.roles)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
+    except VisibilityError as exc:
+        return _visibility_response(exc)
 
 
 @router.get("/{data_source_id}/schemas", response_model=SchemaListResponse)

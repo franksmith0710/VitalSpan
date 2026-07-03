@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import threading
+import uuid
 from unittest.mock import MagicMock, patch
 
 import psycopg
@@ -123,10 +125,6 @@ def test_types_unauthenticated_401(client):
     assert client.get("/api/v1/datasources/types").status_code == 401
 
 
-import threading
-import uuid
-from unittest.mock import MagicMock
-
 from app.datasources.pool import DataSourcePoolManager
 
 
@@ -209,7 +207,51 @@ def ensure_ds_table():
     AuthBase.metadata.create_all(engine)
     yield
     with engine.begin() as conn:
+        conn.execute(text("DELETE FROM auth_resource_grants"))
+        conn.execute(text("DELETE FROM auth_user_roles"))
         conn.execute(text("DELETE FROM data_sources"))
+
+
+def _create_ds_named(name: str, code: str):
+    session = get_meta_session()
+    try:
+        return create_data_source(session, DataSourceCreate(
+            name=name, code=code, type="postgresql",
+            host="h", port=5432, database="d", username="u", password="p",
+        ))
+    finally:
+        session.close()
+
+
+def _dev_user(client, auth_headers):
+    created = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers)
+    if created.status_code == 201:
+        return created.json()
+    from sqlalchemy import select
+
+    from app.auth.models import AuthUser
+
+    session = get_meta_session()
+    try:
+        user = session.scalar(select(AuthUser).where(AuthUser.username == "dev"))
+        if user is None:
+            raise RuntimeError("dev user not found")
+        return {"id": str(user.id), "username": user.username}
+    finally:
+        session.close()
+
+
+def _set_dev_roles(client, auth_headers, role_ids: list[str]):
+    dev_user = _dev_user(client, auth_headers)
+    client.put(
+        f"/api/v1/users/{dev_user['id']}/roles",
+        json={"role_ids": role_ids},
+        headers=auth_headers,
+    )
+
+
+def _restore_dev_admin(client, auth_headers):
+    _set_dev_roles(client, auth_headers, [])
 
 
 def _create_ds():
@@ -249,3 +291,106 @@ def test_metadata_tables_missing_schema_400(client):
     resp = client.get(f"/api/v1/datasources/{ds.id}/tables", headers=AUTH)
     assert resp.status_code == 400
     assert resp.json()["code"] == "METADATA_INVALID_REQUEST"
+
+
+def test_acl_admin_sees_all(client, auth_headers):
+    """T-DS-AC01: admin 列表见全部。"""
+    _restore_dev_admin(client, auth_headers)
+    ds1 = _create_ds_named("ACL DS1", f"acl-ds1-{uuid.uuid4().hex[:6]}")
+    ds2 = _create_ds_named("ACL DS2", f"acl-ds2-{uuid.uuid4().hex[:6]}")
+    resp = client.get("/api/v1/datasources", headers=auth_headers)
+    assert resp.status_code == 200
+    ids = {item["id"] for item in resp.json()["items"]}
+    assert str(ds1.id) in ids and str(ds2.id) in ids
+
+
+def test_acl_viewer_only_granted(client, auth_headers):
+    """T-DS-AC02: viewer 仅见 grant id。"""
+    _restore_dev_admin(client, auth_headers)
+    granted = _create_ds_named("Granted", f"acl-granted-{uuid.uuid4().hex[:6]}")
+    _create_ds_named("Hidden", f"acl-hidden-{uuid.uuid4().hex[:6]}")
+    role = client.post(
+        "/api/v1/roles",
+        json={"code": f"acl_viewer_{uuid.uuid4().hex[:6]}", "name": "Viewer"},
+        headers=auth_headers,
+    ).json()
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(granted.id)},
+        headers=auth_headers,
+    )
+    _set_dev_roles(client, auth_headers, [role["id"]])
+    resp = client.get("/api/v1/datasources", headers=auth_headers)
+    assert resp.status_code == 200
+    ids = {item["id"] for item in resp.json()["items"]}
+    assert ids == {str(granted.id)}
+    _restore_dev_admin(client, auth_headers)
+
+
+def test_acl_viewer_forbidden_detail(client, auth_headers):
+    """T-DS-AC03: viewer GET 他人 id → 403 RESOURCE_FORBIDDEN。"""
+    _restore_dev_admin(client, auth_headers)
+    granted = _create_ds_named("Granted", f"acl-g2-{uuid.uuid4().hex[:6]}")
+    hidden = _create_ds_named("Hidden", f"acl-h2-{uuid.uuid4().hex[:6]}")
+    role = client.post(
+        "/api/v1/roles",
+        json={"code": f"acl_viewer2_{uuid.uuid4().hex[:6]}", "name": "Viewer"},
+        headers=auth_headers,
+    ).json()
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(granted.id)},
+        headers=auth_headers,
+    )
+    _set_dev_roles(client, auth_headers, [role["id"]])
+    resp = client.get(f"/api/v1/datasources/{hidden.id}", headers=auth_headers)
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "RESOURCE_FORBIDDEN"
+    _restore_dev_admin(client, auth_headers)
+
+
+@patch("app.datasources.dialects.postgres.PostgresConnector.test_connection")
+def test_acl_viewer_forbidden_test(mock_test, client, auth_headers):
+    """T-DS-AC04: viewer POST test 他人 id → 403。"""
+    _restore_dev_admin(client, auth_headers)
+    granted = _create_ds_named("Granted", f"acl-g3-{uuid.uuid4().hex[:6]}")
+    hidden = _create_ds_named("Hidden", f"acl-h3-{uuid.uuid4().hex[:6]}")
+    role = client.post(
+        "/api/v1/roles",
+        json={"code": f"acl_viewer3_{uuid.uuid4().hex[:6]}", "name": "Viewer"},
+        headers=auth_headers,
+    ).json()
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(granted.id)},
+        headers=auth_headers,
+    )
+    _set_dev_roles(client, auth_headers, [role["id"]])
+    resp = client.post(f"/api/v1/datasources/{hidden.id}/test", headers=auth_headers)
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "RESOURCE_FORBIDDEN"
+    mock_test.assert_not_called()
+    _restore_dev_admin(client, auth_headers)
+
+
+def test_acl_revoke_grant_forbidden(client, auth_headers):
+    """T-DS-AC05: 撤权后 403。"""
+    _restore_dev_admin(client, auth_headers)
+    ds = _create_ds_named("Revoke DS", f"acl-revoke-{uuid.uuid4().hex[:6]}")
+    role = client.post(
+        "/api/v1/roles",
+        json={"code": f"acl_revoke_{uuid.uuid4().hex[:6]}", "name": "Viewer"},
+        headers=auth_headers,
+    ).json()
+    grant = client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(ds.id)},
+        headers=auth_headers,
+    ).json()
+    _set_dev_roles(client, auth_headers, [role["id"]])
+    assert client.get(f"/api/v1/datasources/{ds.id}", headers=auth_headers).status_code == 200
+    client.delete(f"/api/v1/resource-grants/{grant['id']}", headers=auth_headers)
+    resp = client.get(f"/api/v1/datasources/{ds.id}", headers=auth_headers)
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "RESOURCE_FORBIDDEN"
+    _restore_dev_admin(client, auth_headers)
