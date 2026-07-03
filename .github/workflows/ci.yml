@@ -40,6 +40,8 @@ jobs:
           cache-dependency-path: fe/pnpm-lock.yaml
       - name: Install frontend
         run: pnpm install --frozen-lockfile
+      - name: Test
+        run: pnpm test
       - name: Build
         run: pnpm build
       - name: Design check
