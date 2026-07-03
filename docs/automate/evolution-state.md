@@ -6,20 +6,20 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | prd_ids | BOOT-001,BOOT-002,BOOT-003,BOOT-004,BOOT-006 |
 | design | docs/superpowers/specs/2026-07-03-m1-doc-writeback-design.md |
-| plan | — |
-| branch | — |
+| plan | docs/superpowers/plans/2026-07-03-m1-doc-writeback.md |
+| branch | cursor/bc-a7765f53-c8ac-40ce-a840-02fb4ed0fd13-31a4 |
 | base_branch | dev-auto |
 | pr_number | — |
 | merge_sha | — |
-| last_verified_command | — |
-| last_verified_exit_code | — |
+| last_verified_command | cd backend && ruff check . && pytest -v |
+| last_verified_exit_code | 0 |
 | last_ui_verified_command | — |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T04:10:00Z |
+| skill_rule_index_generated_at | 2026-07-03T05:40:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
