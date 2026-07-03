@@ -234,4 +234,27 @@ describe("AppRoutes smoke", () => {
     }
     expect(focusable).toBe(true);
   });
+
+  it("keeps admin shell for unknown /admin/* path without API leak (T-FE-28)", () => {
+    setDesktopViewport();
+    render(
+      <MemoryRouter initialEntries={["/admin/nonexistent-secret"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(screen.getAllByText("VitalSpan").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
+    expect(mockApiFetch).not.toHaveBeenCalled();
+  });
+
+  it("nested unknown ingestion path stays inside AdminLayout (T-FE-29)", () => {
+    setDesktopViewport();
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/unknown"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(screen.getAllByText("VitalSpan").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
+  });
 });

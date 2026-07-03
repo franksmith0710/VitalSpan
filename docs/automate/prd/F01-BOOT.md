@@ -26,7 +26,7 @@
   - [x] `fe/` 可构建且 `/admin` 路由壳层可访问
   - [x] shadcn/ui + Tailwind v4 主题加载
 - **代码锚点**：`fe/src/layouts/AdminLayout.tsx` · `fe/src/routes.tsx` · `fe/src/index.css` · `fe/scripts/check-design.mjs` · `fe/src/components/README.md`
-- **演化建议**：vitest 42 项 + node:test 3 项覆盖 routes/AdminLayout a11y smoke（T-FE-08~26）含 desktop tab 焦点序（T-FE-24）、mobile 菜单按钮可达（T-FE-25）、浮层不 trap focus（T-FE-26）；二期补 TanStack Query、`@/lib/api.ts` 与业务页
+- **演化建议**：vitest 44 项 + node:test 4 项覆盖 routes/AdminLayout a11y smoke（T-FE-08~31）含非法 `/admin/*` 壳层守卫（T-FE-28~29）、主题 localStorage 降级（T-FE-30~31）、check-design 混合 fixture（T-FE-DG-04）；二期补 TanStack Query、`@/lib/api.ts` 与业务页
 
 ### [BOOT-003] 鉴权中间件骨架
 
@@ -40,7 +40,7 @@
   - [x] 公开路径（`/health`、`/docs`、`/redoc`、`/openapi.json`）无需认证仍可访问
   - [x] 认证上下文可注入 handler
 - **代码锚点**：`backend/app/auth/middleware.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/me.py`（`main.py` 注册 `AuthMiddleware`）
-- **演化建议**：`tests/test_me.py` 14 项覆盖并发 5× `/me` 稳定（T-ME-12）、PUBLIC_PATHS 含 `/redoc`（T-ME-13）、malformed Bearer（T-ME-09~11）、OPTIONS 预检（T-ME-14）；`test_auth.py` 公开路径矩阵；二期替换 `Bearer dev` 为正式 JWT
+- **演化建议**：`tests/test_me.py` 18 项覆盖 `/healthz` 非公开（T-ME-15）、Basic scheme（T-ME-16）、占位 token（T-ME-17）、DI 分支（T-ME-18）；`test_auth.py` T-AUTH-09~11 鉴权矩阵；二期替换 `Bearer dev` 为正式 JWT
 
 ### [BOOT-004] 配置与日志基线
 
@@ -53,7 +53,7 @@
   - [x] 环境变量配置可加载
   - [x] 结构化日志输出请求 traceId
 - **代码锚点**：`backend/app/core/config.py` · `backend/app/core/logging.py` · `backend/app/core/middleware.py`
-- **演化建议**：`tests/test_trace.py` 12 项 + `tests/test_config.py` 7 项覆盖 `VITALSPAN_ENV` 枚举（T-CFG-04）、Fernet 非法（T-CFG-05）、`query_default_limit` 契约（T-CFG-06）、`LOG_LEVEL` WARNING（T-CFG-07）与 `request_finished` traceId 契约（T-TRC-11~12）；二期补 Settings 热加载与异常分支
+- **演化建议**：`tests/test_trace.py` 16 项 + `tests/test_config.py` 10 项覆盖 `VITALSPAN_ENV` 枚举（T-CFG-04）、Fernet 非法（T-CFG-05）、`SECRET_KEY` 缺失（T-CFG-08）、`query_timeout_seconds` 边界（T-CFG-10）与 `request_finished` traceId 硬契约（T-TRC-11~16）；`middleware.py` 修复 reset 前日志；二期补 Settings 热加载与异常分支
 
 ### [BOOT-005] 数据库迁移框架
 
@@ -66,7 +66,7 @@
   - [x] Alembic 或等价迁移可执行（`alembic upgrade head`）
   - [x] 平台元数据库可连接（`docker-compose.yml` 本地 PostgreSQL）
 - **代码锚点**：`backend/migrations/` · `docker-compose.yml` · `backend/migrations/env.py`
-- **演化建议**：`tests/test_migrations.py` 28 项覆盖 alembic heads 单 head（T-MIG-25）、NullPool online（T-MIG-26）、`mysql://` 协议拒绝（T-MIG-27）、OperationalError 传播（T-MIG-28）；`config.py` `validate_database_url`；CI 仍不跑 docker `alembic upgrade`；M1B 增 ingestion 元表 revision
+- **演化建议**：`tests/test_migrations.py` 31 项覆盖 alembic heads 单 head（T-MIG-25）、`upgrade --sql` smoke（T-MIG-29）、revision 链完整性（T-MIG-30）、不可达 host（T-MIG-31）；CI 仍不跑 docker `alembic upgrade`；M1B 增 ingestion 元表 revision
 
 ### [BOOT-006] CI 与质量门禁
 
@@ -79,4 +79,4 @@
   - [x] lint + 单元测试 CI 通过
   - [x] 前后端可本地联调
 - **代码锚点**：`.github/workflows/ci.yml` · `tests/conftest.py` · `tests/test_health.py`
-- **演化建议**：CI 已含 backend 227 pytest + frontend 60 vitest + node:test 3；`tests/test_conftest_contract.py` 10 项含 lowercase/malformed Bearer（T-CFT-09~10）；`tests/test_ci_env_contract.py` 6 项含 collect ≥225（T-CI-04）与 elapsed smoke（T-CI-06）；`.github/workflows/ci.yml` 显式 env；二期增 docker postgres job 与 Playwright E2E
+- **演化建议**：CI 已含 backend 254 pytest + frontend 64 vitest + node:test 4；`tests/test_ruff_contract.py` 2 项 ruff 子进程契约（T-RUF-01~02）；`tests/test_ci_env_contract.py` 9 项含 vitest 耗时预算（T-CI-09）；`.github/workflows/ci.yml` 显式 env；二期增 docker postgres job 与 Playwright E2E

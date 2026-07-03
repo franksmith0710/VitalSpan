@@ -29,3 +29,8 @@ test("T-FE-DG-03: rgb() in fixture fails check:design", () => {
   const result = runCheck(path.join(fixturesRoot, "rgb-only"));
   assert.equal(result.status, 1, result.stdout + result.stderr);
 });
+
+test("T-FE-DG-04: mixed bad+ok fixtures fail check:design", () => {
+  const result = runCheck(path.join(fixturesRoot, "mixed"));
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+});

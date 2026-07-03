@@ -21,15 +21,15 @@ class TraceIdMiddleware(BaseHTTPMiddleware):
         )
         try:
             response = await call_next(request)
+            response.headers["X-Trace-Id"] = trace_id
+            logger.info(
+                "request_finished",
+                extra={
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status_code": response.status_code,
+                },
+            )
         finally:
             trace_id_var.reset(token)
-        response.headers["X-Trace-Id"] = trace_id
-        logger.info(
-            "request_finished",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "status_code": response.status_code,
-            },
-        )
         return response

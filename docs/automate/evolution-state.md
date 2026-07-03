@@ -7,19 +7,17 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r14.md |
-| design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r14-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r14.md |
-| branch | feat/evolution-r14-boot-quality-push |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r15.md |
+| design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r15-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r15.md |
+| branch | feat/evolution-r15-boot-quality-push |
 | base_branch | dev-auto |
-| prd_ids | BOOT-003,BOOT-005,BOOT-006,BOOT-002,BOOT-001 |
-| pr_number | 31 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| prd_ids | BOOT-004,BOOT-005,BOOT-006,BOOT-002,BOOT-003 |
+| pr_number | 32 |
+| last_verified_command | `cd backend && ruff check . && pytest -v`; `cd fe && pnpm test && pnpm build && pnpm run check:design` |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm test && pnpm run check:design |
-| last_ui_screenshots | N/A headless vitest — T-FE-24~27 tab focus smoke PASS; check:design 34 files |
-| deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T15:55:00Z |
+| last_ui_verified_command | `cd fe && pnpm test`（vitest 64/64 含 routes/theme smoke；node:test 4/4 check-design fixture）+ `pnpm run check:design` PASS |
+| skill_rule_index_generated_at | 2026-07-03T16:51:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -68,17 +66,21 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r15 PRD 重评：BOOT-004 破 90（89.5→90.6 STUCK 清零）；BOOT-003/005/006/002 巩固 90.2–90.9；middleware traceId 契约修复；pytest 254 + vitest 64 + node:test 4
+- P4 r15 独立验证：backend ruff+pytest 254 passed/2 skipped；fe vitest 64/64 + node:test 4/4；build+check:design PASS；UI smoke+design drift PASS；exit_code 0；branch feat/evolution-r15-boot-quality-push@362c8fb
+- P3 r15 实现完成：5 Task 全绿；backend ruff+pytest 254 passed/2 skipped；fe vitest 64/64 + node:test 4/4；build+check:design PASS；branch feat/evolution-r15-boot-quality-push@c8c75ce；base_branch dev-auto
 - P5 r14 PRD 重评：BOOT-003/005/006/002/001 破 90（90.0–90.4）；BOOT 簇 STUCK 五 ID 清零；BOOT-004 仍 89.5
 - P4 r14 独立验证：backend ruff+pytest 227 passed/2 skipped；fe vitest 60/60；build+check:design PASS；exit_code 0
 - P3 r14 实现完成：5 Task 全绿；backend 227 passed/2 skipped；fe vitest 60/60；build+check:design PASS；branch feat/evolution-r14-boot-quality-push@6af6604
 - P5 r13 PRD 重评：DATA-004/002/003/ETL-001 破 90（91.1/91.0/90.6/90.7）；DATA-001 巩固 91.3；STUCK DATA 簇清零
 - P4 r13 独立验证：backend ruff+pytest 207 passed/2 skipped；ingestion 105 passed/1 skipped；fe vitest 56/56（ingestion 31/31）；build+check:design PASS
 - G2 r13 选题完成：M1B DATA companion 质量推分 r13 — DATA-004/003/002 + ETL-001 + DATA-001（5 项）；最低分 ETL-001(89.3)
+- G2 r15 选题完成：M1 BOOT quality push r15 — BOOT-004/005/006/002/003（5 项）；最低分 BOOT-004(89.5)；STUCK BOOT-004 连续 10 轮
 - plan M1+M1B 全 [x]（12 项勾选）；无含 `[ ]` 的活跃节；饱和熔断未触发（远期未实现占 Top10）
-- G0 PASS：PR #29 已 merge 至 dev-auto@31c3fec；BOOT 簇 STUCK 7–11 轮本轮跳过
+- G0 PASS：PR #31 已 merge 至 dev-auto@43cbf98；BOOT 簇五 ID 破 90，仅 BOOT-004 仍 <90
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-004 | 10 | 89.5 | 2026-07-03 |
+| （无） | — | — | — |
