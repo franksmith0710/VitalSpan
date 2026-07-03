@@ -163,10 +163,10 @@ cd fe && cp .env.example .env && pnpm dev
 > - [x] `goal.md` §4：ETL/同步移至 In Scope  
 > - [x] `docs/srs/全生命周期系统需求规格说明书.md` §3.6、§8.1、附录追溯表  
 > - [x] `docs/automate/prd/F16-DATA.md` + hub 索引（**DATA-001 描述**待 DATA-005 对齐 SourceConnection）  
-> - [ ] `plan.archive.md`：M1B 节目标与 124 项计数（**待 DATA-005**）  
+> - [x] `plan.archive.md`：M1B 节目标与 124 项计数（完成于 2026-07-03）  
 > - [x] `docs/arch.md`：`ingestion/` · `ANALYTICS_DATABASE_URL`  
 > - [x] `docs/api/README.md` §9 数据接入 API  
-> - [ ] `docs/services/ingestion.md`：SourceConnection 边界（**待 DATA-005**）
+> - [x] `docs/services/ingestion.md`：SourceConnection 边界（完成于 2026-07-03）
 >
 > **明确不含**：提前一至三期 Dataset（M1-DATASET 仍按四期 / M13）；嵌入 Superset/DataEase。
 
@@ -199,7 +199,7 @@ DATA-004 → DATA-001 → DATA-002 → ETL-001 → DATA-003 → DATA-005
 - [x] DATA-002: 同步执行器（定时/手动）（完成于 2026-07-03）
 - [x] ETL-001: 清洗规则引擎（轻量）（完成于 2026-07-03）
 - [x] DATA-003: Admin 配置台页面（完成于 2026-07-03）
-- [ ] DATA-005: 端到端验收与文档回写
+- [x] DATA-005: 端到端验收与文档回写（完成于 2026-07-03）
 
 ### M1B 实施展开
 

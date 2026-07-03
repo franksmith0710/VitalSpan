@@ -13,7 +13,7 @@
   - [x] docker-compose 可启动托管 PostgreSQL（或独立 schema 方案已文档化）
   - [x] `Settings` 可加载 `ANALYTICS_DATABASE_URL`
 - **代码锚点**：`docker-compose.yml` · `backend/app/core/config.py`
-- **演化建议**：补 compose 集成 smoke；DATA-005 文档回写
+- **演化建议**：CI compose 集成 job 跑 L1 e2e（当前 integration marker skip）
 
 ### [DATA-001] 同步任务模型与 API
 
@@ -39,7 +39,7 @@
   - [x] `GET/POST /api/v1/ingestion/sync-jobs` 可用
   - [x] OpenAPI 可访问
 - **代码锚点**：`backend/app/ingestion/` · `backend/app/api/v1/ingestion/`
-- **演化建议**：补边界/异常 API 测试；DATA-005 对齐 SourceConnection 文档
+- **演化建议**：补 postgres 源类型 executor 覆盖；OpenAPI 示例与 api/README 持续对齐
 
 ### [DATA-002] 同步执行器
 
@@ -52,7 +52,7 @@
   - [x] 手动 `POST .../run` 可将源表写入托管库
   - [x] 运行历史含状态与 `traceId` 日志
 - **代码锚点**：`backend/app/ingestion/sync_executor.py` · `scheduler.py`
-- **演化建议**：补 `/run` 与 executor 集成测试；扩展 postgres 源；compose E2E
+- **演化建议**：扩展 postgres 源 executor；CI compose 跑 L1 全链路
 
 ### [ETL-001] 清洗规则引擎（轻量）
 
@@ -65,7 +65,7 @@
   - [x] 规则在写托管库前生效
   - [x] 脏数据样例经规则后字段符合配置
 - **代码锚点**：`backend/app/ingestion/etl_rules.py`
-- **演化建议**：补流水线集成测试（executor + rules）
+- **演化建议**：补 executor+rules 组合失败降级场景
 
 ### [DATA-003] Admin 配置台页面
 
@@ -78,16 +78,17 @@
   - [x] 浏览器可创建任务并手动运行
   - [x] 可查看运行历史
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
-- **演化建议**：补 ingestion 路由 fe smoke；空态与错误引导
+- **演化建议**：补空态/错误态 fe 断言；Playwright 真浏览器 L1
 
 ### [DATA-005] 端到端验收与文档回写
 
 - **状态**：已实现
 - **goal_ref**：goal.md §5（DATA-SMOKE）
 - **期次**：M1B
+- **里程碑对齐**：M1B · 已完成 · 2026-07-03
 - **描述**：DATA-SMOKE **L1**：内联 SourceConnection → 同步+清洗 → 托管库目标表；运行历史含 traceId/行数/errorMessage。**L2**（dataSourceId + SQL 出数）见 M3/M4。
 - **验收标准**：
   - [x] DATA-SMOKE L1 用例通过（`tests/test_ingestion_e2e.py`）
   - [x] SRS §3.6、api/README §9、services/ingestion 状态已回写
 - **代码锚点**：`tests/test_ingestion_e2e.py` · `docs/automate/plan.md` M1B
-- **演化建议**：P4 compose 集成验证；L2 dataSourceId 登记见 M3/M4
+- **演化建议**：CI compose 跑 L1 integration（当前 skip）；L2 dataSourceId 登记见 M3/M4
