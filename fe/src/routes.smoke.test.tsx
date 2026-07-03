@@ -1,7 +1,13 @@
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "./routes";
+
+const mockApiFetch = vi.fn();
+
+vi.mock("@/lib/api", () => ({
+  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+}));
 
 function setDesktopViewport() {
   Object.defineProperty(window, "innerWidth", {
@@ -13,6 +19,45 @@ function setDesktopViewport() {
 }
 
 describe("AppRoutes smoke", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("renders nested sync-jobs route through AdminLayout (T-FE-11)", async () => {
+    setDesktopViewport();
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
+    expect(
+      await screen.findByRole("heading", { name: "同步任务" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows loading skeleton in nested sync-jobs route (T-FE-12)", async () => {
+    setDesktopViewport();
+    mockApiFetch.mockReturnValue(new Promise(() => {}));
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    await waitFor(() => {
+      const skeletons = main.querySelectorAll(
+        '[class*="skeleton"], [data-slot="skeleton"], [class*="animate-pulse"]',
+      );
+      expect(skeletons.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
   it("renders AdminLayout at /admin with VitalSpan logo (T-FE-01)", () => {
     render(
       <MemoryRouter initialEntries={["/admin"]}>
