@@ -1,102 +1,95 @@
-# 演化轮次选题 — 2026-07-03
+# 演化轮次选题 — 2026-07-03（M1 文档回写 + 测试补强）
 
-## 本轮演化目标（共 4 项）
+## 本轮演化目标（共 5 项）
 
 ### 选题决策
 
-- **批量主题**：M1 P0 工程基线 — 后端启动链（配置/日志 → API 骨架 → 迁移 → 鉴权）
-- **来源**：`docs/automate/plan.md` §M1 当前节未完成勾选清单 + 推荐执行顺序；`prd.md` hub 8 维评分作同分 tie-break
-- **合并理由**：plan 推荐顺序 `BOOT-004 → BOOT-001 → BOOT-005 → BOOT-003` 构成可联调后端最小闭环（Settings/日志/trace → FastAPI 壳 → 元库迁移 → 鉴权与 `/me`）；四项依赖链完整，可单 PR 批处理
+- **批量主题**：M1 P0 工程基线收尾 — 文档真理源回写 + 鉴权 smoke 测试补强（完成 plan §M1「文档回写」全部未完成勾选）
+- **来源**：`docs/automate/plan.md` §M1「M1 完成 — 文档回写」4 项 `[ ]`；`prd.md` hub 8 维作 tie-break（BOOT 全项主薄弱维为测试覆盖 8–32%）
+- **合并理由**：PR #4 已合并 BOOT-002/006 实现；plan §M1 勾选清单六勾已全部完成，**当前节唯一未完成块**为文档回写。代码与文档漂移会阻塞 M1 正式收口与后续 M1B 激活判断；hub 显示 BOOT-001~006 测试覆盖维仍 ≤32%，须在本轮以 `/me` smoke 补强
 - **范围框定**：
-  - **模块**（≤3）：`backend/app/core/`、`backend/app/`（`main.py` + `api/v1/`）、`backend/app/auth/`；`docker-compose.yml` + `backend/migrations/` 计为基础设施交付物，不扩第四业务域
-  - **文件**（合计约 19，触及 ≤20 上限）：见各子项
-  - **不含**：`fe/` 前端壳层（BOOT-002）、CI 门禁（BOOT-006）、M1 文档回写 checklist
-- **不足 5 项原因**：若纳入 BOOT-002（前端 ~10+ 文件）或 BOOT-006（CI + tests ~4 文件）将突破单轮 ≤20 文件上限；BOOT-002、BOOT-006 顺延下轮
+  - **模块**（≤3）：`docs/`（api · services · arch · prd 分片）、`tests/`（鉴权 smoke）
+  - **文件**（合计约 8，≤20 上限）：见各子项
+  - **不含**：新功能开发；M1B（DATA-*，queued 未激活）；远期薄弱项 META-001 / DESIGN-001 / CONN-021（总分 10.8–10.9，非 M1 节）
+- **不足 5 项原因**：plan 文档回写 checklist 为 4 行；按交付物拆为 4 文档子项 + 1 测试补强子项凑满 5，同属 M1 收尾批处理，未突破单轮文件/模块上限
 
 ### 候选对比
 
 | 候选 prd ID | 加权总分 | 未选原因 |
 |-------------|:--------:|----------|
-| META-001 | 10.8 | 属 F11-META 远期能力，不在 M1 当前节 plan 勾选范围 |
-| DESIGN-001 | 10.8 | 属 F12-DESIGN 治理设计器，里程碑 M10+，与 M1 基线无关 |
-| CONN-021 | 10.9 | TiDB 连接器属 M4 数据源域，M1 未激活 |
-| QUERY-007 | 10.9 | 查询元模型属 M5+，非当前里程碑 |
-| CONN-009 | 11.1 | StarRocks 连接器，同 CONN-021 |
-| BOOT-002 | 12.0 | **本轮顺延**：纳入将超 20 文件上限；依赖 BOOT-001 后端可联调后实施 |
-| BOOT-006 | 12.8 | **本轮顺延**：依赖本轮及 BOOT-002 交付物；CI 宜在壳层就绪后启用 |
+| META-001 | 10.8 | F11-META 术语字典，里程碑远期，不在 M1 当前节 |
+| DESIGN-001 | 10.8 | F12-DESIGN 拖拽查询条件，M10+ 治理设计器 |
+| CONN-021 | 10.9 | TiDB 连接器属 M4，M1B 未激活 |
+| QUERY-007 | 10.9 | 配置元模型存储，M5+ |
+| DATA-004 | 12.5 | M1B queued，plan 明确 M1 完成后才激活 |
+| BOOT-002 | 60.6 | 实现已完成（PR #4）；本轮仅文档回写与测试，不重复壳层/CI 实施 |
 
 ---
 
-### 子项 1：BOOT-004 配置与日志基线
+### 子项 1：BOOT-001 API 路由登记 — `/health`
 
-- **选题理由**：plan §M1 推荐执行顺序首位；无 Settings/日志/trace 则后续 BOOT-001 无法按 arch 加载配置与输出结构化日志
-- **选题时 PRD 加权总分**：12.8/100（用户价值 53% · 完整度 5% · 可靠性 0% · 架构 11% · 测试 0% · 性能 0% · 安全 11% · 交互 N/A）
-- **主攻薄弱维**：完整度、可靠性、测试覆盖（均 ≤40%）
-- **用户感知**：后端启动后可读 `.env` 配置；`GET /health` 日志行含 `traceId`，排障可追踪请求
-- **类型**：补缺（M1 工程基线未落地）
-- **验收标准**（来源 plan §BOOT-004）：
-  - `Settings()` 从 `backend/.env` 加载（`pydantic-settings`）
-  - `TraceIdMiddleware` 每请求生成/透传 `traceId` 并写入 JSON 日志
-  - `backend/.env.example`、`fe/.env.example` 对齐 `arch.md` §7.2
+- **选题理由**：plan §M1 文档回写第 1 项要求 `docs/api/README.md` 将 `/health` 标为已实现；BOOT-001 为健康检查入口，api 登记簿是 HTTP 契约真理源
+- **选题时 PRD 加权总分**：69.4/100（用户价值 74% · 完整度 86% · 可靠性 68% · 架构 88% · 测试覆盖 8% · 性能 84% · 安全性 68% · 交互 N/A）
+- **主攻薄弱维**：测试覆盖（8%）；文档完整度对齐后 P5 可重评 completeness
+- **用户感知**：开发者查 `docs/api/README.md` 可确认 `/health` 已可用及代码锚点
+- **类型**：补缺（文档对齐，非新功能）
+- **验收标准**（来源 plan §M1 完成 — 文档回写）：
+  - `docs/api/README.md`：`GET /health` 状态 → `已实现`；锚点指向 `backend/app/main.py`
+  - 与现有实现行为一致（200、无鉴权）
 - **范围框定**：
-  - `backend/app/core/config.py`
-  - `backend/app/core/logging.py`
-  - `backend/app/core/middleware.py`
-  - `backend/.env.example`
-  - `fe/.env.example`
+  - `docs/api/README.md`（`/health` 相关行）
 
-### 子项 2：BOOT-001 FastAPI 工程骨架
+### 子项 2：BOOT-003 API 登记与鉴权域文档 — `/api/v1/me`
 
-- **选题理由**：plan 顺序第 2 项；提供 `/health`、OpenAPI、CORS 与 v1 路由壳，BOOT-003 挂载 `/me` 之前置
-- **选题时 PRD 加权总分**：11.6/100（用户价值 50% · 完整度 5% · 可靠性 0% · 架构 8% · 测试 0% · 性能 0% · 安全 8% · 交互 N/A）
-- **主攻薄弱维**：完整度、可靠性、测试覆盖
-- **用户感知**：`uvicorn` 启动后 `/health` 返回 200；`/docs` 可浏览 API；前端 dev 预检无 CORS 错误
+- **选题理由**：plan 文档回写第 1–2 项要求新增 `GET /api/v1/me` 登记并更新 `auth.md`；BOOT-003 鉴权中间件与 `/me` 占位路由是 M1 验收核心
+- **选题时 PRD 加权总分**：73.4/100（用户价值 78% · 完整度 92% · 可靠性 74% · 架构 88% · 测试覆盖 10% · 性能 86% · 安全性 74% · 交互 N/A）
+- **主攻薄弱维**：测试覆盖（10%）；安全性文档锚点
+- **用户感知**：API 索引可见受保护路由；`docs/services/auth.md` 反映 `AuthMiddleware`、`main.py` 注册与 `Bearer dev` 占位行为
 - **类型**：补缺
-- **验收标准**（来源 plan §BOOT-001）：
-  - `cd backend && uvicorn app.main:app --reload --port 8000` 成功
-  - `curl http://localhost:8000/health` → 200
-  - OPTIONS 预检含 `Access-Control-Allow-Origin`
-  - `pyproject.toml` 含 fastapi、uvicorn、pydantic-settings、sqlalchemy、alembic、psycopg、ruff、pytest、httpx
+- **验收标准**（来源 plan §M1 完成 — 文档回写 + §BOOT-003）：
+  - `docs/api/README.md`：**新增** `GET /api/v1/me`（M1 占位验收，锚点 `api/v1/me.py`）；§1 `auth/me` 保留「规划」并注「二期正式路径」
+  - `docs/services/auth.md`：状态与代码锚点（`auth/middleware.py`、`deps.py`、`main.py` 注册 `AuthMiddleware`、`PUBLIC_PATHS`）
 - **范围框定**：
-  - `backend/pyproject.toml`
-  - `backend/app/main.py`（挂载 TraceId、CORS、`/health`）
-  - `backend/app/api/v1/router.py`
-  - `backend/app/api/v1/__init__.py`
+  - `docs/api/README.md`（`/api/v1/me` 与 §1 注记）
+  - `docs/services/auth.md`
 
-### 子项 3：BOOT-005 数据库迁移框架
+### 子项 3：BOOT-004 核心域文档 — CORS 与 TraceId
 
-- **选题理由**：plan 顺序第 3 项；元库 PostgreSQL + Alembic 空 revision 为二期业务表与 M1B ingestion 元表奠基
-- **选题时 PRD 加权总分**：13.2/100（用户价值 54% · 完整度 5% · 可靠性 0% · 架构 12% · 测试 0% · 性能 0% · 安全 12% · 交互 N/A）
-- **主攻薄弱维**：完整度、可靠性、测试覆盖
-- **用户感知**：`docker compose up` 后本地元库可连；`alembic upgrade head` 成功，团队有统一 schema 演进通道
+- **选题理由**：plan 文档回写第 2 项要求 `core.md` 同步 CORS、TraceId 与 `main.py` 挂载事实；BOOT-004 配置/日志/中间件是后端横切基线
+- **选题时 PRD 加权总分**：70.7/100（用户价值 72% · 完整度 88% · 可靠性 70% · 架构 90% · 测试覆盖 8% · 性能 82% · 安全性 76% · 交互 N/A）
+- **主攻薄弱维**：测试覆盖（8%）；文档与 `arch.md` 交叉引用一致性
+- **用户感知**：域附录准确描述 `Settings`、`TraceIdMiddleware`、`CORSMiddleware` 职责与锚点
 - **类型**：补缺
-- **验收标准**（来源 plan §BOOT-005）：
-  - `docker compose up -d` 启动 PostgreSQL
-  - `cd backend && alembic upgrade head` 成功（初始空 revision）
-  - `migrations/env.py` 从 `Settings.DATABASE_URL` 读取连接串
+- **验收标准**（来源 plan §M1 完成 — 文档回写）：
+  - `docs/services/core.md`：更新实现状态与代码锚点（`core/config.py`、`core/logging.py`、`core/middleware.py`；CORS 来源 `Settings.cors_origins`）
+  - `docs/services/README.md` 索引状态与 core/auth 一致（若索引表含状态列）
 - **范围框定**：
-  - `docker-compose.yml`
-  - `backend/alembic.ini`
-  - `backend/migrations/env.py`
-  - `backend/migrations/versions/`（初始空 revision）
-  - `backend/migrations/script.py.mako`
+  - `docs/services/core.md`
+  - `docs/services/README.md`（仅状态/锚点行，若有）
 
-### 子项 4：BOOT-003 鉴权中间件骨架
+### 子项 4：BOOT-002/006 架构注记与 PRD 分片回写
 
-- **选题理由**：plan 顺序第 4 项；在 001 路由壳上挂载鉴权与受保护 `/api/v1/me`，完成 M1 后端「公开/受保护」路径分界
-- **选题时 PRD 加权总分**：12.4/100（用户价值 52% · 完整度 5% · 可靠性 0% · 架构 10% · 测试 0% · 性能 0% · 安全 10% · 交互 N/A）
-- **主攻薄弱维**：完整度、可靠性、测试覆盖、安全性
-- **用户感知**：无 Token 访问 `/api/v1/me` 得 401；`Authorization: Bearer dev` 得 200 占位用户；`/health` 仍无需鉴权
+- **选题理由**：plan 文档回写第 3–4 项要求 `arch.md` M1 过渡布局与 PRD hub 计数，以及 `F01-BOOT.md` 全项标已实现；覆盖 BOOT-002 前端目录与 BOOT-006 CI 交付的文档侧闭环
+- **选题时 PRD 加权总分**：BOOT-002 60.6/100 · BOOT-006 62.6/100（两子项均主薄弱维测试覆盖 22%/32%）
+- **主攻薄弱维**：完整度（PRD 分片状态与 plan 勾选对齐）；架构文档与 `fe/`、`ci.yml` 目录一致
+- **用户感知**：`arch.md` 反映 M1 真实目录（`fe/`、`auth` 在 `main.py` 注册）；PRD 分片验收标准全绿，便于 P5 重评
 - **类型**：补缺
-- **验收标准**（来源 plan §BOOT-003）：
-  - `GET /health` → 200（无 Token）
-  - `GET /api/v1/me` 无 Token → 401
-  - `GET /api/v1/me` + `Bearer dev` → 200 + 用户上下文
-  - `PUBLIC_PATHS` 豁免 `/health`、`/docs`、`/redoc`、`/openapi.json`
-  - `main.py` 注册 `AuthMiddleware` 并 `include_router(api_v1_router, prefix="/api/v1")`
+- **验收标准**（来源 plan §M1 完成 — 文档回写）：
+  - `docs/arch.md`：§4.2 `auth` 挂载改为 `main.py` 注册；§4.3 增 **M1 过渡布局**注记（`fe/` Admin 壳层）；§10 PRD hub 计数 → **124 项**
+  - `prd/F01-BOOT.md`：BOOT-001~006 状态 → `已实现`；验收标准勾选与 plan §BOOT-* 一致
 - **范围框定**：
-  - `backend/app/auth/middleware.py`
-  - `backend/app/auth/deps.py`
-  - `backend/app/api/v1/me.py`
-  - `backend/app/api/v1/router.py`（挂载 me）
-  - `backend/app/main.py`（注册 AuthMiddleware）
+  - `docs/arch.md`（§4.2、§4.3、§10）
+  - `prd/F01-BOOT.md`（BOOT-001~006 状态与验收勾选）
+
+### 子项 5：BOOT-003 鉴权 smoke 测试 — `/api/v1/me` 401/200
+
+- **选题理由**：hub 显示 BOOT-001~006 测试覆盖维 8–32%，为系统最薄弱维；plan §BOOT-003 已定义 curl 验收，本轮固化为 pytest 用例，与现有 `test_health.py` 对称，提升 P5 可重评证据
+- **选题时 PRD 加权总分**：73.4/100（同上 BOOT-003）
+- **主攻薄弱维**：测试覆盖（10% → 目标 ≥40% 维度分%）
+- **用户感知**：CI pytest 自动验证无 Token 401、`Bearer dev` 200，鉴权骨架回归可重复
+- **类型**：补缺（测试补强，非行为变更）
+- **验收标准**（来源 plan §BOOT-003 验证 + §BOOT-006 CI）：
+  - `tests/test_me.py`（或等价文件）：`GET /api/v1/me` 无 Authorization → 401；`Authorization: Bearer dev` → 200
+  - `cd backend && pytest` 全绿；CI backend job 无需改动即可拾取新用例
+- **范围框定**：
+  - `tests/test_me.py`
