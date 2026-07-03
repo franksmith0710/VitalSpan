@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | design | docs/superpowers/specs/2026-07-03-m1-backend-bootstrap-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-backend-bootstrap.md |
 | branch | feat/m1-backend-bootstrap |
 | base_branch | dev-auto |
 | prd_ids | BOOT-004,BOOT-001,BOOT-005,BOOT-003 |
-| pr_number |  |
+| pr_number | TBD |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m alembic upgrade head && curl health/me smoke |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端轮次，无 UI 改动） |
@@ -76,3 +76,7 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| BOOT-005 | 1 | 66.8 | 2026-07-03 |
+| BOOT-001 | 1 | 69.4 | 2026-07-03 |
+| BOOT-004 | 1 | 70.7 | 2026-07-03 |
+| BOOT-003 | 1 | 73.4 | 2026-07-03 |
