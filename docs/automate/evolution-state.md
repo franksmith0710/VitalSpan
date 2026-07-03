@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r2.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch |  |
-| prd_ids |  |
+| prd_ids | BOOT-002,BOOT-006 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -67,9 +67,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G1 doc-bootstrap：hub 124 项 · 16 域分片就绪；goal/plan 只读校验通过
+- G2 topic-picker R2：M1 收尾选题 BOOT-002（3 子项）+ BOOT-006；round-target-r2 已写
 - plan 当前节 M1：已完成 BOOT-004/001/005/003；待办 BOOT-002/006
-- 上轮 PR #2 已合并；P5 文档账本已闭合
+- 上轮 PR #2 已合并后端启动链；STUCK 计数 BOOT-001/003/004/005 各 1 轮
 - skill/rule 索引 26 条未过期（P2 按需刷新）
 
 ## 选题卡住计数（连续未过 90 的功能项）
