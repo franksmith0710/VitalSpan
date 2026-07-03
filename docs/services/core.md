@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/core/` |
 | PRD | [F01-BOOT](../automate/prd/F01-BOOT.md) · BOOT-001 ~ BOOT-006 |
 | 里程碑 | M1 |
-| 状态 | **骨架** |
+| 状态 | **已实现** |
 
 ## 职责
 

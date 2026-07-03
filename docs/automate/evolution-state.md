@@ -7,19 +7,17 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r2.md |
-| prd_ids | BOOT-005,BOOT-002,BOOT-003,BOOT-001,BOOT-006 |
-| design | docs/superpowers/specs/2026-07-03-m1-boot-test-r2-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1-boot-test-r2-plan.md |
-| branch | cursor/bc-4a0f303a-c0de-456f-ae09-42f3bbaa7f7e-4567 |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-doc-writeback.md |
+| design | docs/superpowers/specs/2026-07-03-m1-doc-writeback-close-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1-doc-writeback-close.md |
+| branch | cursor/bc-2c340cbf-c91f-4930-9dd7-08d818233460-fb98 |
 | base_branch | dev-auto |
-| pr_number | 8 |
-| merge_sha | |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
+| prd_ids | BOOT-001,BOOT-002,BOOT-003,BOOT-004,BOOT-005,BOOT-006 |
+| pr_number | 10 |
+| last_verified_command | python3 -m pytest (25) + pnpm test (6 vitest + 2 node) + ruff + pnpm build + check:design + P4 doc writeback aggregate |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm vitest run src/routes.smoke.test.tsx src/layouts/AdminLayout.smoke.test.tsx && pnpm run check:design |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T06:45:00Z |
+| skill_rule_index_generated_at | 2026-07-03T07:24:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -68,17 +66,18 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P5 r2 重评 BOOT-001~003/005~006：pytest 25 + vitest 6 绿；测试覆盖 45–55%→68–82%，总分 77.9–85.6（仍均 <90）
-- M1 plan §勾选清单六 BOOT 项已完成；§文档回写 4 行无 BOOT ID 格式（未改 plan 结构）
+- G0 PASS：PR #8/#9 已 Squash merge 至 dev-auto；工作区干净
+- P5 r3 重评 BOOT-001~006：M1 文档回写闭环；services/core+auth 已实现；api/arch/F01 idempotent 对齐；总分 78.2–86.0（仍均 <90）
+- M1 plan §勾选清单六 BOOT 项已完成；§文档回写 4 行无 BOOT-ID 格式（P5 未改 plan 结构，建议人工 create-evolution-plan 对账）
 - 待办池空；M1B queued 未激活
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-002 | 4 | 79.8 | 2026-07-03 |
-| BOOT-005 | 3 | 77.9 | 2026-07-03 |
-| BOOT-006 | 4 | 82.1 | 2026-07-03 |
-| BOOT-001 | 4 | 82.2 | 2026-07-03 |
-| BOOT-004 | 3 | 82.2 | 2026-07-03 |
-| BOOT-003 | 3 | 85.6 | 2026-07-03 |
+| BOOT-002 | 5 | 80.1 | 2026-07-03 |
+| BOOT-005 | 4 | 78.2 | 2026-07-03 |
+| BOOT-006 | 5 | 82.5 | 2026-07-03 |
+| BOOT-001 | 5 | 83.0 | 2026-07-03 |
+| BOOT-004 | 5 | 83.0 | 2026-07-03 |
+| BOOT-003 | 4 | 86.0 | 2026-07-03 |
