@@ -89,3 +89,25 @@ def test_refresh_all_jobs_registers_only_enabled_cron(mock_get_scheduler):
     assert call_kwargs["kwargs"]["job_id"] == cron_id
     registered_ids = {c.kwargs["id"] for c in mock_scheduler.add_job.call_args_list}
     assert str(manual_id) not in registered_ids
+
+
+@patch("app.ingestion.scheduler.run_job")
+@patch("app.ingestion.scheduler.get_scheduler")
+def test_scheduler_cron_callback_invokes_run_job(mock_get_scheduler, mock_run_job):
+    """T-D02-12: add_job func 手动 invoke → run_job 被调用 1 次。"""
+    engine = get_meta_engine()
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM ingestion_sync_jobs"))
+    cron_id, _ = _seed_scheduler_jobs()
+    mock_scheduler = MagicMock()
+    mock_scheduler.get_jobs.return_value = []
+    mock_get_scheduler.return_value = mock_scheduler
+
+    refresh_all_jobs()
+
+    assert mock_scheduler.add_job.call_count == 1
+    registered_func = mock_scheduler.add_job.call_args.args[0]
+    kwargs = mock_scheduler.add_job.call_args.kwargs["kwargs"]
+    assert kwargs["job_id"] == cron_id
+    registered_func(**kwargs)
+    mock_run_job.assert_called_once_with(job_id=cron_id, trace_id=kwargs["trace_id"])
