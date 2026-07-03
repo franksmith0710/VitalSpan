@@ -53,6 +53,62 @@ def _seed_job() -> uuid.UUID:
     return job_id
 
 
+def _seed_postgres_job() -> uuid.UUID:
+    db = get_meta_session()
+    job = SyncJob(
+        name="postgres-job",
+        source_type="postgres",
+        source_host="127.0.0.1",
+        source_port=5432,
+        source_database="pg_db",
+        source_username="pg",
+        source_password_encrypted=encrypt_password("pg"),
+        source_table="orders",
+        target_table="orders_pg",
+        enabled=True,
+    )
+    db.add(job)
+    db.flush()
+    db.add(EtlRuleSet(job_id=job.id, rules=[]))
+    db.commit()
+    job_id = job.id
+    db.close()
+    return job_id
+
+
+def _seed_job_with_l1_rules() -> uuid.UUID:
+    db = get_meta_session()
+    job = SyncJob(
+        name="rules-job",
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="sample_db",
+        source_username="sample",
+        source_password_encrypted=encrypt_password("sample"),
+        source_table="dirty_orders",
+        target_table="orders_rules",
+        enabled=True,
+    )
+    db.add(job)
+    db.flush()
+    db.add(
+        EtlRuleSet(
+            job_id=job.id,
+            rules=[
+                {"type": "rename_column", "from": "product_name", "to": "product"},
+                {"type": "cast_type", "column": "amount", "to": "float"},
+                {"type": "fill_null", "column": "note", "value": "无备注"},
+                {"type": "filter_rows", "column": "status", "op": "ne", "value": "deleted"},
+            ],
+        )
+    )
+    db.commit()
+    job_id = job.id
+    db.close()
+    return job_id
+
+
 def _latest_run(job_id: uuid.UUID) -> SyncRun:
     db = get_meta_session()
     run = db.scalar(select(SyncRun).where(SyncRun.job_id == job_id).order_by(SyncRun.started_at.desc()))
@@ -126,3 +182,48 @@ def test_run_job_missing_job():
     assert run is not None
     assert run.status == "failed"
     assert run.error_message == "任务不存在"
+
+
+def test_run_job_rejects_non_mysql_source():
+    """T-D02-04: source_type != mysql → failed + 可读错误。"""
+    job_id = _seed_postgres_job()
+    run_job(job_id, "trace-postgres-reject")
+    run = _latest_run(job_id)
+    assert run.status == "failed"
+    assert "mysql" in (run.error_message or "").lower()
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=0)
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", return_value=[])
+def test_run_job_empty_rows_succeeds_with_zero(mock_fetch, mock_write):
+    """T-D02-05: 空行集 → succeeded + rows_synced == 0。"""
+    job_id = _seed_job()
+    run_job(job_id, "trace-empty-rows")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    assert run.rows_synced == 0
+    mock_write.assert_called_once()
+    _job_arg, written_rows = mock_write.call_args[0]
+    assert written_rows == []
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=1)
+@patch(
+    "app.ingestion.sync_executor._fetch_mysql_rows",
+    side_effect=[
+        ConnectionError("transient mysql"),
+        [{"product_name": "A", "amount": "1", "status": "active", "note": None}],
+    ],
+)
+def test_run_job_retry_reuses_same_run_id(mock_fetch, mock_write):
+    """T-D02-06: 重试同一 run_id，不产生 duplicate run 行。"""
+    job_id = _seed_job()
+    run_job(job_id, "trace-retry-idempotent")
+    db = get_meta_session()
+    runs = list(db.scalars(select(SyncRun).where(SyncRun.job_id == job_id)).all())
+    db.close()
+    assert len(runs) == 1
+    assert runs[0].trace_id == "trace-retry-idempotent"
+    assert runs[0].retry_count >= 1
+    assert runs[0].status == "succeeded"
+    assert mock_fetch.call_count == 2
