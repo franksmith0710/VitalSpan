@@ -422,3 +422,95 @@ def test_dimension_type_delete_idle(client, auth_headers):
         headers=auth_headers,
     ).json()
     assert client.delete(f"/api/v1/rls/dimensions/{created['id']}", headers=auth_headers).status_code == 204
+
+
+from app.auth.resources.service import (
+    VisibilityError,
+    ensure_resource_visible,
+    list_visible_resource_ids,
+)
+
+
+def test_grant_revoke_visibility(client, auth_headers):
+    """T-AUTH-G06: 撤权后 ensure_resource_visible 抛 403 RESOURCE_FORBIDDEN。"""
+    role = client.post("/api/v1/roles", json={"code": "vis_r1", "name": "V"}, headers=auth_headers).json()
+    rid = uuid_mod.uuid4()
+    grant = client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(rid)},
+        headers=auth_headers,
+    ).json()
+    session = get_meta_session()
+    try:
+        ensure_resource_visible(session, ["vis_r1"], "datasource", rid)
+        client.delete(f"/api/v1/resource-grants/{grant['id']}", headers=auth_headers)
+        with pytest.raises(VisibilityError) as exc:
+            ensure_resource_visible(session, ["vis_r1"], "datasource", rid)
+        assert exc.value.code == "RESOURCE_FORBIDDEN"
+        assert exc.value.status == 403
+    finally:
+        session.close()
+
+
+def test_horizontal_privilege_denied(client, auth_headers):
+    """T-AUTH-G07: role_a 授权、role_b 未授权 → check False。"""
+    role_a = client.post("/api/v1/roles", json={"code": "role_a", "name": "A"}, headers=auth_headers).json()
+    client.post("/api/v1/roles", json={"code": "role_b", "name": "B"}, headers=auth_headers)
+    rid = uuid_mod.uuid4()
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": role_a["id"], "resource_type": "dashboard", "resource_id": str(rid)},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        assert check_resource_access(session, ["role_b"], "dashboard", rid) is False
+    finally:
+        session.close()
+
+
+def test_list_visible_resource_ids(client, auth_headers):
+    """T-AUTH-G08: 两角色各一资源 → 合并 role_codes 返回 2 个 id。"""
+    r1 = client.post("/api/v1/roles", json={"code": "lv_r1", "name": "1"}, headers=auth_headers).json()
+    r2 = client.post("/api/v1/roles", json={"code": "lv_r2", "name": "2"}, headers=auth_headers).json()
+    id1, id2 = uuid_mod.uuid4(), uuid_mod.uuid4()
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": r1["id"], "resource_type": "report", "resource_id": str(id1)},
+        headers=auth_headers,
+    )
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": r2["id"], "resource_type": "report", "resource_id": str(id2)},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        visible = list_visible_resource_ids(session, ["lv_r1", "lv_r2"], "report")
+        assert set(visible) == {id1, id2}
+    finally:
+        session.close()
+
+
+def test_invalid_resource_type_422():
+    """T-AUTH-G09: 非法 resource_type → 422 INVALID_RESOURCE_TYPE。"""
+    session = get_meta_session()
+    try:
+        with pytest.raises(VisibilityError) as exc:
+            ensure_resource_visible(session, ["any"], "widget", uuid_mod.uuid4())
+        assert exc.value.code == "INVALID_RESOURCE_TYPE"
+        assert exc.value.status == 422
+    finally:
+        session.close()
+
+
+def test_empty_roles_forbidden():
+    """T-AUTH-G10: role_codes=[] → ensure 403。"""
+    session = get_meta_session()
+    try:
+        with pytest.raises(VisibilityError) as exc:
+            ensure_resource_visible(session, [], "datasource", uuid_mod.uuid4())
+        assert exc.value.code == "RESOURCE_FORBIDDEN"
+        assert exc.value.status == 403
+    finally:
+        session.close()

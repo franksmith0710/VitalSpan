@@ -76,3 +76,73 @@ def check_resource_access(
         .limit(1)
     )
     return session.scalar(stmt) is not None
+
+
+VALID_RESOURCE_TYPES = frozenset({"datasource", "dashboard", "report"})
+
+
+class VisibilityError(Exception):
+    def __init__(self, code: str, message: str, status: int = 403) -> None:
+        self.code = code
+        self.message = message
+        self.status = status
+        super().__init__(message)
+
+
+def _validate_resource_type(resource_type: str) -> None:
+    if resource_type not in VALID_RESOURCE_TYPES:
+        raise VisibilityError(
+            "INVALID_RESOURCE_TYPE",
+            f"resource_type must be one of {sorted(VALID_RESOURCE_TYPES)}",
+            422,
+        )
+
+
+def list_visible_resource_ids(
+    session: Session,
+    role_codes: list[str],
+    resource_type: str,
+) -> list[uuid.UUID]:
+    _validate_resource_type(resource_type)
+    if not role_codes:
+        return []
+    stmt = (
+        select(AuthResourceGrant.resource_id)
+        .join(AuthRole, AuthRole.id == AuthResourceGrant.role_id)
+        .where(
+            AuthRole.code.in_(role_codes),
+            AuthResourceGrant.resource_type == resource_type,
+        )
+        .order_by(AuthResourceGrant.created_at)
+    )
+    rows = session.scalars(stmt).all()
+    seen: set[uuid.UUID] = set()
+    result: list[uuid.UUID] = []
+    for rid in rows:
+        if rid not in seen:
+            seen.add(rid)
+            result.append(rid)
+    return result
+
+
+def ensure_resource_visible(
+    session: Session,
+    role_codes: list[str],
+    resource_type: str,
+    resource_id: uuid.UUID,
+) -> None:
+    _validate_resource_type(resource_type)
+    if not role_codes or not check_resource_access(session, role_codes, resource_type, resource_id):
+        raise VisibilityError("RESOURCE_FORBIDDEN", "Resource not visible for current roles", 403)
+
+
+def filter_visible_resources(
+    session: Session,
+    role_codes: list[str],
+    resource_type: str,
+    candidate_ids: list[uuid.UUID],
+) -> list[uuid.UUID]:
+    if not candidate_ids:
+        return []
+    visible = set(list_visible_resource_ids(session, role_codes, resource_type))
+    return [cid for cid in candidate_ids if cid in visible]
