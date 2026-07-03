@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-03-m1-backend-bootstrap-design.md |
 | plan |  |
 | branch |  |
 | base_branch |  |
