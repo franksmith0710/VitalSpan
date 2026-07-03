@@ -6,9 +6,10 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | branch | cursor/bc-f9be599f-3659-4ccf-88f3-8a04502e6c80-9b41 |
 | base_branch | dev-auto |
+| pr_number | |
 | last_verified_command | plan Task5 Step6 P4 precheck (rg + test) |
 | last_verified_exit_code | 0 |
 | design | docs/superpowers/specs/2026-07-03-m1-plan-close-design.md |
@@ -74,9 +75,9 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-002 | 6 | 84.7 | 2026-07-03 |
-| BOOT-005 | 5 | 82.4 | 2026-07-03 |
-| BOOT-006 | 6 | 84.5 | 2026-07-03 |
-| BOOT-001 | 6 | 86.0 | 2026-07-03 |
-| BOOT-004 | 6 | 86.1 | 2026-07-03 |
-| BOOT-003 | 4 | 86.0 | 2026-07-03 |
+| BOOT-002 | 7 | 84.7 | 2026-07-03 |
+| BOOT-005 | 6 | 82.4 | 2026-07-03 |
+| BOOT-006 | 7 | 84.5 | 2026-07-03 |
+| BOOT-001 | 7 | 86.0 | 2026-07-03 |
+| BOOT-004 | 7 | 86.1 | 2026-07-03 |
+| BOOT-003 | 5 | 86.4 | 2026-07-03 |
