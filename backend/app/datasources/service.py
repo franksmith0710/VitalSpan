@@ -75,6 +75,12 @@ def list_data_sources(session: Session) -> list[DataSourceOut]:
 
 def create_data_source(session: Session, payload: DataSourceCreate) -> DataSourceOut:
     _resolve_connector(payload.type)
+    existing_code = session.scalar(select(DataSource).where(DataSource.code == payload.code))
+    if existing_code is not None:
+        raise DataSourceError("DATASOURCE_CODE_CONFLICT", "Data source code already exists", 409)
+    existing_name = session.scalar(select(DataSource).where(DataSource.name == payload.name))
+    if existing_name is not None:
+        raise DataSourceError("DATASOURCE_NAME_CONFLICT", "Data source name already exists", 409)
     row = DataSource(
         name=payload.name,
         code=payload.code,
@@ -122,6 +128,11 @@ def update_data_source(
     if payload.password:
         row.password_encrypted = encrypt_credential(payload.password)
     row.description = payload.description
+    existing_name = session.scalar(
+        select(DataSource).where(DataSource.name == payload.name, DataSource.id != data_source_id)
+    )
+    if existing_name is not None:
+        raise DataSourceError("DATASOURCE_NAME_CONFLICT", "Data source name already exists", 409)
     try:
         session.commit()
     except IntegrityError as exc:

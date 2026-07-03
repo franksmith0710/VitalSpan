@@ -1,0 +1,119 @@
+from __future__ import annotations
+
+import uuid
+from typing import Annotated
+
+import app.datasources  # noqa: F401 — trigger register_builtin_dialects
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse, Response
+from sqlalchemy.orm import Session
+
+from app.auth.deps import UserContext, get_current_user
+from app.datasources.models import get_meta_session
+from app.datasources.schemas import (
+    DataSourceCreate,
+    DataSourceListResponse,
+    DataSourceOut,
+    DataSourceUpdate,
+    TestConnectionIn,
+    TestConnectionOut,
+)
+from app.datasources import service as ds_service
+
+router = APIRouter(prefix="/datasources", tags=["datasources"])
+
+
+def _db() -> Session:
+    session = get_meta_session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def _error_response(exc: ds_service.DataSourceError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+@router.get("", response_model=DataSourceListResponse)
+def list_data_sources(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DataSourceListResponse:
+    return DataSourceListResponse(items=ds_service.list_data_sources(db))
+
+
+@router.post("", response_model=DataSourceOut, status_code=status.HTTP_201_CREATED)
+def create_data_source(
+    payload: DataSourceCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DataSourceOut | JSONResponse:
+    try:
+        return ds_service.create_data_source(db, payload)
+    except ds_service.DataSourceError as exc:
+        return _error_response(exc)
+
+
+@router.get("/{data_source_id}", response_model=DataSourceOut)
+def get_data_source(
+    data_source_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DataSourceOut | JSONResponse:
+    try:
+        return ds_service.get_data_source(db, data_source_id)
+    except ds_service.DataSourceError as exc:
+        return _error_response(exc)
+
+
+@router.put("/{data_source_id}", response_model=DataSourceOut)
+def update_data_source(
+    data_source_id: uuid.UUID,
+    payload: DataSourceUpdate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DataSourceOut | JSONResponse:
+    try:
+        return ds_service.update_data_source(db, data_source_id, payload)
+    except ds_service.DataSourceError as exc:
+        return _error_response(exc)
+
+
+@router.delete("/{data_source_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_data_source(
+    data_source_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> Response:
+    try:
+        ds_service.delete_data_source(db, data_source_id)
+    except ds_service.DataSourceError as exc:
+        return _error_response(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/test", response_model=TestConnectionOut)
+def test_connection_draft(
+    payload: TestConnectionIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> TestConnectionOut | JSONResponse:
+    try:
+        return ds_service.test_connection_draft(payload)
+    except ds_service.DataSourceError as exc:
+        return _error_response(exc)
+
+
+@router.post("/{data_source_id}/test", response_model=TestConnectionOut)
+def test_connection_saved(
+    data_source_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> TestConnectionOut | JSONResponse:
+    try:
+        return ds_service.test_connection_by_id(db, data_source_id)
+    except ds_service.DataSourceError as exc:
+        return _error_response(exc)

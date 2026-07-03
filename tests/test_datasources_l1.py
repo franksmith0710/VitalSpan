@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
+import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
+from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy import select, text
 
@@ -20,6 +22,9 @@ from app.datasources.registry import (
 )
 from app.datasources.schemas import DataSourceCreate
 from app.datasources.service import create_data_source
+from app.main import app
+
+get_settings.cache_clear()
 
 _DS_SQLITE_URL = "sqlite+pysqlite:///file:ds_l1_test?mode=memory&cache=shared&uri=true"
 
@@ -203,3 +208,170 @@ def test_data_source_out_masks_password():
         assert not hasattr(out, "password_encrypted")
     finally:
         session.close()
+
+
+@pytest.fixture
+def client() -> TestClient:
+    return TestClient(app)
+
+
+@pytest.fixture
+def auth_headers() -> dict[str, str]:
+    return {"Authorization": "Bearer dev"}
+
+
+def _payload() -> dict:
+    return {
+        "name": "Demo MySQL",
+        "code": "demo_mysql",
+        "type": "mysql",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "database": "demo",
+        "username": "root",
+        "password": "plain-secret",
+    }
+
+
+def test_openapi_includes_datasources_paths(client):
+    """T-DS-R-openapi: OpenAPI 含 datasources 路径。"""
+    spec = client.get("/openapi.json").json()
+    assert "/api/v1/datasources" in spec["paths"]
+
+
+def test_create_list_get_update_delete_roundtrip(client, auth_headers):
+    """T-DS-C01~C05: CRUD roundtrip。"""
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    assert created.status_code == 201
+    body = created.json()
+    ds_id = body["id"]
+    assert body["password"] == "***"
+
+    listed = client.get("/api/v1/datasources", headers=auth_headers)
+    assert listed.status_code == 200
+    assert any(item["id"] == ds_id for item in listed.json()["items"])
+
+    detail = client.get(f"/api/v1/datasources/{ds_id}", headers=auth_headers)
+    assert detail.status_code == 200
+    assert detail.json()["password"] == "***"
+
+    updated = client.put(
+        f"/api/v1/datasources/{ds_id}",
+        json={
+            "name": "Demo MySQL Updated",
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "demo",
+            "username": "root",
+            "password": "",
+            "description": "updated",
+        },
+        headers=auth_headers,
+    )
+    assert updated.status_code == 200
+    assert updated.json()["name"] == "Demo MySQL Updated"
+    assert updated.json()["code"] == "demo_mysql"
+    assert updated.json()["type"] == "mysql"
+
+    deleted = client.delete(f"/api/v1/datasources/{ds_id}", headers=auth_headers)
+    assert deleted.status_code == 204
+    assert client.get(f"/api/v1/datasources/{ds_id}", headers=auth_headers).status_code == 404
+
+
+def test_duplicate_code_conflict(client, auth_headers):
+    """T-DS-C06: 重复 code → 409。"""
+    assert client.post("/api/v1/datasources", json=_payload(), headers=auth_headers).status_code == 201
+    dup = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "DATASOURCE_CODE_CONFLICT"
+
+
+def test_duplicate_name_conflict(client, auth_headers):
+    """T-DS-C07: 重复 name → 409。"""
+    first = _payload()
+    second = {**_payload(), "code": "demo_mysql_2"}
+    assert client.post("/api/v1/datasources", json=first, headers=auth_headers).status_code == 201
+    dup = client.post("/api/v1/datasources", json=second, headers=auth_headers)
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "DATASOURCE_NAME_CONFLICT"
+
+
+def test_invalid_connector_type(client, auth_headers):
+    """T-DS-C08: 非法 type → 422。"""
+    bad = {**_payload(), "type": "oracle", "code": "oracle_ds"}
+    resp = client.post("/api/v1/datasources", json=bad, headers=auth_headers)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "UNKNOWN_CONNECTOR_TYPE"
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_draft_test_connection_success(mock_connect, client, auth_headers):
+    """T-DS-T01: POST /datasources/test mock 成功。"""
+    connection = MagicMock()
+    mock_connect.return_value = connection
+    resp = client.post("/api/v1/datasources/test", json=_payload(), headers=auth_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is True
+    assert isinstance(body["latencyMs"], int)
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_draft_test_connection_refused(mock_connect, client, auth_headers):
+    """T-DS-T02: mock 拒绝连接。"""
+    import pymysql.err
+
+    mock_connect.side_effect = pymysql.err.OperationalError(2003, "Connection refused")
+    resp = client.post("/api/v1/datasources/test", json=_payload(), headers=auth_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is False
+    assert "refused" in body["message"].lower() or "Connection refused" in body["message"]
+    assert "plain-secret" not in body["message"]
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_saved_test_connection_success(mock_connect, client, auth_headers):
+    """T-DS-T03: POST /{id}/test 已保存实例。"""
+    connection = MagicMock()
+    mock_connect.return_value = connection
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    resp = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json()["ok"] is True
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_saved_test_bad_credentials(mock_connect, client, auth_headers):
+    """T-DS-T04: 错误凭据 mock。"""
+    import pymysql.err
+
+    mock_connect.side_effect = pymysql.err.OperationalError(1045, "Access denied for user 'root'@'localhost'")
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    resp = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json()["ok"] is False
+    assert "plain-secret" not in resp.json()["message"]
+
+
+def test_saved_test_not_found(client, auth_headers):
+    """T-DS-T05: 不存在 id → 404。"""
+    missing = uuid.uuid4()
+    resp = client.post(f"/api/v1/datasources/{missing}/test", headers=auth_headers)
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "DATASOURCE_NOT_FOUND"
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_end_to_end_create_and_test(mock_connect, client, auth_headers):
+    """T-CONN-M04: 创建 mysql + test 串联。"""
+    connection = MagicMock()
+    mock_connect.return_value = connection
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    assert created.status_code == 201
+    ds_id = created.json()["id"]
+    tested = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert tested.status_code == 200
+    assert tested.json()["ok"] is True
