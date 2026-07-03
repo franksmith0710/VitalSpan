@@ -13,7 +13,7 @@
   - [x] `backend/app` 可启动且 `/health` 返回 200
   - [x] OpenAPI 文档可访问
 - **代码锚点**：`backend/app/main.py` · `backend/app/api/v1/` · `backend/pyproject.toml`
-- **演化建议**：`tests/test_health.py` 22 项覆盖 CORS 多 Origin 矩阵（T-HLT-19）、TRACE 稳定非 500（T-HLT-20）、OpenAPI 路径快照（T-HLT-21）、5× GET P95 smoke <0.5s（T-HLT-22）；二期扩展健康检查维度（DB 连通性）
+- **演化建议**：`tests/test_health.py` 25 项覆盖 docs/openapi CORS 预检非法 Origin（T-HLT-23~24）、公开路径无鉴权（T-HLT-25）；`tests/test_router.py` T-RTR-03~04 空 v1 路由非 500 + 生产路由数 ≥2；二期扩展健康检查维度（DB 连通性）
 
 ### [BOOT-002] React 管理端壳层
 
@@ -53,7 +53,7 @@
   - [x] 环境变量配置可加载
   - [x] 结构化日志输出请求 traceId
 - **代码锚点**：`backend/app/core/config.py` · `backend/app/core/logging.py` · `backend/app/core/middleware.py`
-- **演化建议**：`tests/test_trace.py` 16 项 + `tests/test_config.py` 10 项覆盖 `VITALSPAN_ENV` 枚举（T-CFG-04）、Fernet 非法（T-CFG-05）、`SECRET_KEY` 缺失（T-CFG-08）、`query_timeout_seconds` 边界（T-CFG-10）与 `request_finished` traceId 硬契约（T-TRC-11~16）；`middleware.py` 修复 reset 前日志；二期补 Settings 热加载与异常分支
+- **演化建议**：`tests/test_trace.py` 18 项 + `tests/test_config.py` 13 项覆盖 cors_origins 空串（T-CFG-11）、analytics mysql 拒绝（T-CFG-12）、production+sqlite 组合（T-CFG-13）、连续请求 traceId 隔离（T-TRC-17）、LOG_LEVEL 热切换（T-TRC-18）；二期补 Settings 热加载与异常分支
 
 ### [BOOT-005] 数据库迁移框架
 
@@ -79,4 +79,4 @@
   - [x] lint + 单元测试 CI 通过
   - [x] 前后端可本地联调
 - **代码锚点**：`.github/workflows/ci.yml` · `tests/conftest.py` · `tests/test_health.py`
-- **演化建议**：CI 已含 backend 254 pytest + frontend 64 vitest + node:test 4；`tests/test_ruff_contract.py` 2 项 ruff 子进程契约（T-RUF-01~02）；`tests/test_ci_env_contract.py` 9 项含 vitest 耗时预算（T-CI-09）；`.github/workflows/ci.yml` 显式 env；二期增 docker postgres job 与 Playwright E2E
+- **演化建议**：CI 已含 backend 273 pytest + frontend 68 vitest + node:test 4；`tests/test_ci_env_contract.py` 12 项含 collect 下限 ≥258（T-CI-10）、job timeout-minutes（T-CI-11）、pnpm cache-dependency-path（T-CI-12）；`tests/test_ruff_contract.py` 2 项 ruff 子进程契约；二期增 docker postgres job 与 Playwright E2E

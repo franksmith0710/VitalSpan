@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r16.md |
 | design | docs/superpowers/specs/2026-07-03-m1-m1b-floor-polish-r16-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-m1b-floor-polish-r16.md |
@@ -14,9 +14,9 @@
 | base_branch | dev-auto |
 | prd_ids | BOOT-001,BOOT-006,BOOT-004,DATA-003,ETL-001 |
 | pr_number |  |
-| last_verified_command | `cd backend && ruff check . && pytest -v`; `cd fe && pnpm test && pnpm build && pnpm run check:design` |
+| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v`; `cd fe && pnpm test && pnpm build && pnpm run check:design` |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | `cd fe && pnpm test`（vitest 68/68 含 ingestion 35；node:test 4/4）+ `pnpm run check:design` PASS |
+| last_ui_verified_command | vitest ingestion.smoke 35/35 + routes.smoke 16/16（viewport 1400/375）；check:design PASS；screenshots N/A headless |
 | skill_rule_index_generated_at | 2026-07-03T16:51:00Z |
 | skill_rule_index_source_count | 26 |
 
@@ -66,6 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r16 PRD 重评：BOOT-001/006/004 + DATA-003 + ETL-001 巩固 91.0–91.5（90.4–90.7→）；T-HLT-23~25、T-RTR-03~04、T-CFG-11~13、T-TRC-17~18、T-CI-10~12、T-ETL-23~25、T-ING-32~35；pytest 273 + vitest 68 + node:test 4
+- P4 r16 独立验证：backend ruff+pytest 273 passed/2 skipped；fe vitest 68/68 + node:test 4/4；build+check:design PASS；ingestion smoke 35/35 + routes 16/16；UI viewport 1400/375 PASS；exit_code 0；branch feat/evolution-r16-m1-m1b-floor-polish@95f0e34
 - P3 r16 实现完成：5 Task 全绿；backend ruff+pytest 273 passed/2 skipped；fe vitest 68/68（ingestion 35）+ node:test 4/4；build+check:design PASS；ui_design_skill: b-design-system-tailadmin-radix；screenshots: N/A headless CI；branch feat/evolution-r16-m1-m1b-floor-polish@84738cf；base_branch dev-auto
 - P5 r15 PRD 重评：BOOT-004 破 90（89.5→90.6 STUCK 清零）；BOOT-003/005/006/002 巩固 90.2–90.9；middleware traceId 契约修复；pytest 254 + vitest 64 + node:test 4
 - P4 r15 独立验证：backend ruff+pytest 254 passed/2 skipped；fe vitest 64/64 + node:test 4/4；build+check:design PASS；UI smoke+design drift PASS；exit_code 0；branch feat/evolution-r15-boot-quality-push@362c8fb

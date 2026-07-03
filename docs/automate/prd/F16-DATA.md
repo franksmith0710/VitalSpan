@@ -65,7 +65,7 @@
   - [x] 规则在写托管库前生效
   - [x] 脏数据样例经规则后字段符合配置
 - **代码锚点**：`backend/app/ingestion/etl_rules.py`
-- **演化建议**：`tests/test_etl_rules.py` T-ETL-20~22（双 rename 链、超长 column 不崩、脏数据 fill_null executor 写穿）；`test_sync_executor` T-ETL-15 L1 全规则链写字段；补 executor+rules 组合失败降级场景
+- **演化建议**：`tests/test_etl_rules.py` T-ETL-23~24（type 数字不崩、cast_type 缺 column KeyError）；`test_sync_executor` T-ETL-25 apply_rules 异常 failed 不写库；补 executor+rules 组合失败降级场景
 
 ### [DATA-003] Admin 配置台页面
 
@@ -78,7 +78,7 @@
   - [x] 浏览器可创建任务并手动运行
   - [x] 可查看运行历史
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
-- **演化建议**：`ingestion.smoke.test.tsx` 31 项（T-ING-28~31 run AlertDialog 确认/取消/401、历史 100 行 <900ms）；二期 Playwright 真浏览器 L1
+- **演化建议**：`ingestion.smoke.test.tsx` 35 项（T-ING-32~35 failed error_message、skeleton loading、401 无 success、run dialog pending 禁用）；二期 Playwright 真浏览器 L1
 
 ### [DATA-005] 端到端验收与文档回写
 
