@@ -258,7 +258,7 @@ sequenceDiagram
 |------|----------|------|------|
 | `test_rename_column_only` | rename | `{a:1}` | key `b` 存在、`a` 不存在 |
 | `test_cast_type_integer` | cast | `"42.0"` | int 42 |
-| `test_fill_null_only` | fill_null | `note: CGSize` | 填充值 |
+| `test_fill_null_only` | fill_null | `note: null` | 填充值 |
 | `test_filter_rows_eq` | filter | 多行 | 仅匹配行保留 |
 | `test_rule_chain_dirty_orders_subset` | 链式 | 对齐 init.sql 子集 | 行数与字段与 §7 一致 |
 | `test_filter_rows_is_null` | filter | `is_null` op | 空串/NULL 过滤 |
