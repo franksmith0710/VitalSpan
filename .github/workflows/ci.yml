@@ -8,6 +8,10 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql+psycopg://vitalspan:vitalspan@localhost:5432/vitalspan
+      SECRET_KEY: ci-test-secret-key-min-32-chars-long!!
+      CREDENTIAL_FERNET_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     defaults:
       run:
         working-directory: backend
