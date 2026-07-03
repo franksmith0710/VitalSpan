@@ -1,5 +1,6 @@
 import importlib
 import os
+import subprocess
 import sys
 import time
 from configparser import ConfigParser
@@ -342,3 +343,42 @@ def test_migrations_env_rebinds_on_settings_change(monkeypatch):
     get_settings.cache_clear()
     assert import_env_and_capture_url() == url_b
     sys.modules.pop("migrations.env", None)
+
+
+def test_alembic_upgrade_head_sql_contains_ingestion_tables():
+    """T-MIG-19: alembic upgrade head --sql stdout 含 ingestion_sync_jobs。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    env = os.environ.copy()
+    env.setdefault("DATABASE_URL", KNOWN_URL)
+    env.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
+    env.setdefault(
+        "CREDENTIAL_FERNET_KEY",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=backend_dir,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    stdout = result.stdout
+    assert "ingestion_sync_jobs" in stdout
+    assert "ingestion_sync_runs" in stdout
+    assert "ingestion_etl_rules" in stdout
+
+
+def test_revision_0002_source_defines_ingestion_table_names():
+    """T-MIG-20: 0002 revision 源码含三张 ingestion 表名。"""
+    rev_path = (
+        Path(__file__).resolve().parents[1]
+        / "backend"
+        / "migrations"
+        / "versions"
+        / "0002_ingestion_tables.py"
+    )
+    source = rev_path.read_text(encoding="utf-8")
+    for table in ("ingestion_sync_jobs", "ingestion_sync_runs", "ingestion_etl_rules"):
+        assert table in source

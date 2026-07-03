@@ -8,16 +8,16 @@
 |------|----|
 | phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
-| design | docs/superpowers/specs/2026-07-03-boot-data-quality-design.md |
-| plan | docs/superpowers/plans/2026-07-03-boot-data-quality.md |
-| branch | feat/boot-data-quality-r6 |
+| design | docs/superpowers/specs/2026-07-03-m1b-quality-r7-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-quality-r7.md |
+| branch | feat/m1b-quality-r7 |
 | base_branch | dev-auto |
-| prd_ids | BOOT-005,BOOT-006,BOOT-002,BOOT-003,DATA-003 |
-| pr_number | 19 |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| prd_ids | DATA-004,DATA-002,DATA-005,ETL-001,BOOT-005 |
+| pr_number | 20 |
+| last_verified_command | cd backend && python3 -m pytest -v && python3 -m ruff check . |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm exec vitest run (smoke: T-FE-15/16/19, T-ING-06~10) && pnpm run check:design |
-| last_ui_verified_note | PASS via vitest role/viewport assertions; no Playwright screenshots (plan constraint) |
+| last_ui_verified_command | N/A (ui_design_skill: none; 纯后端轮次) |
+| last_ui_verified_note | UI: N/A — 未触及 fe/ |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
 | skill_rule_index_source_count | 26 |
@@ -71,7 +71,7 @@
 - G0 PASS：无 Open PR；PR #17 已 merge；上轮 phase 自 P5_DOCS_READY 重置 idle
 - G1 doc-bootstrap：goal 只读；prd hub v1.2.11（16 分片 124 项）、8 维总表/薄弱项汇总/功能索引完整；plan 只读校验通过
 - plan：M1+M1B 勾选清单全部 [x]；无含未完成 `[ ]` 的活跃里程碑节
-- 已实现项薄弱 Top3（<90）：BOOT-005(83.4)、BOOT-006(85.3)、BOOT-002(85.7)；远期未实现项仍占系统薄弱项汇总 Top10
+- 已实现项薄弱 Top3（<90）：DATA-002(83.9)、DATA-004(84.8)、BOOT-005(85.9)；远期未实现项仍占系统薄弱项汇总 Top10
 - STUCK 表保留 12 行（BOOT×6 + DATA/ETL×6）；技能规则索引 26 条未过期
 
 ## 选题卡住计数（连续未过 90 的功能项）
@@ -79,14 +79,14 @@
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
 | BOOT-002 | 10 | 87.7 | 2026-07-03 |
-| BOOT-005 | 9 | 84.7 | 2026-07-03 |
+| BOOT-005 | 10 | 85.9 | 2026-07-03 |
 | BOOT-006 | 10 | 85.9 | 2026-07-03 |
 | BOOT-001 | 9 | 86.5 | 2026-07-03 |
 | BOOT-004 | 9 | 87.4 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
-| DATA-004 | 1 | 80.7 | 2026-07-03 |
+| DATA-004 | 2 | 84.8 | 2026-07-03 |
 | DATA-001 | 2 | 85.8 | 2026-07-03 |
-| DATA-002 | 2 | 80.8 | 2026-07-03 |
-| ETL-001 | 2 | 83.3 | 2026-07-03 |
+| DATA-002 | 3 | 83.9 | 2026-07-03 |
+| ETL-001 | 3 | 85.9 | 2026-07-03 |
 | DATA-003 | 3 | 81.5 | 2026-07-03 |
-| DATA-005 | 1 | 82.5 | 2026-07-03 |
+| DATA-005 | 2 | 85.8 | 2026-07-03 |

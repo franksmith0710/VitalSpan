@@ -13,7 +13,7 @@
   - [x] docker-compose 可启动托管 PostgreSQL（或独立 schema 方案已文档化）
   - [x] `Settings` 可加载 `ANALYTICS_DATABASE_URL`
 - **代码锚点**：`docker-compose.yml` · `backend/app/core/config.py`
-- **演化建议**：CI compose 集成 job 跑 L1 e2e（当前 integration marker skip）
+- **演化建议**：`tests/test_ingestion_config.py` T-D04-01~07 + `tests/test_ingestion_models_crypto.py` Fernet roundtrip/InvalidToken；CI compose 集成 job 跑 L1 e2e（当前 integration marker skip）
 
 ### [DATA-001] 同步任务模型与 API
 
@@ -52,7 +52,7 @@
   - [x] 手动 `POST .../run` 可将源表写入托管库
   - [x] 运行历史含状态与 `traceId` 日志
 - **代码锚点**：`backend/app/ingestion/sync_executor.py` · `scheduler.py`
-- **演化建议**：扩展 postgres 源 executor；CI compose 跑 L1 全链路
+- **演化建议**：`tests/test_sync_executor.py` T-D02-01~08 + `tests/test_scheduler.py` cron 注册；扩展 postgres 源 executor；CI compose 跑 L1 全链路
 
 ### [ETL-001] 清洗规则引擎（轻量）
 
@@ -65,7 +65,7 @@
   - [x] 规则在写托管库前生效
   - [x] 脏数据样例经规则后字段符合配置
 - **代码锚点**：`backend/app/ingestion/etl_rules.py`
-- **演化建议**：补 executor+rules 组合失败降级场景
+- **演化建议**：`tests/test_etl_rules.py` T-ETL-01~08 + executor apply_rules 管线断言；`etl_rules.py` T-ETL-06/07 缺键跳过与精度溢出→None；补 executor+rules 组合失败降级场景
 
 ### [DATA-003] Admin 配置台页面
 
@@ -91,4 +91,4 @@
   - [x] DATA-SMOKE L1 用例通过（`tests/test_ingestion_e2e.py`）
   - [x] SRS §3.6、api/README §9、services/ingestion 状态已回写
 - **代码锚点**：`tests/test_ingestion_e2e.py` · `docs/automate/plan.md` M1B
-- **演化建议**：CI compose 跑 L1 integration（当前 skip）；L2 dataSourceId 登记见 M3/M4
+- **演化建议**：`tests/test_ingestion_l1_smoke.py` mock L1 成功/失败 + `tests/test_doc_anchors_data.py` 锚点对账 + `analytics_sqlite` fixture；CI compose 跑 L1 integration（当前 skip）；L2 dataSourceId 登记见 M3/M4

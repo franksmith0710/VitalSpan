@@ -61,3 +61,9 @@ def integration_env():
     return {
         "analytics_url": "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics",
     }
+
+
+@pytest.fixture
+def analytics_sqlite() -> str:
+    """In-memory sqlite URL for mock L1 analytics (no compose)."""
+    return "sqlite+pysqlite:///:memory:"

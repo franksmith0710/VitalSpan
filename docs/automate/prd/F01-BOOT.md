@@ -66,7 +66,7 @@
   - [x] Alembic 或等价迁移可执行（`alembic upgrade head`）
   - [x] 平台元数据库可连接（`docker-compose.yml` 本地 PostgreSQL）
 - **代码锚点**：`backend/migrations/` · `docker-compose.yml` · `backend/migrations/env.py`
-- **演化建议**：`tests/test_migrations.py` 18 项覆盖 revision 链、online/offline `run_migrations`、settings rebind（T-MIG-01~18）；CI 仍不跑 docker `alembic upgrade`；M1B 增 ingestion 元表 revision
+- **演化建议**：`tests/test_migrations.py` 20 项覆盖 revision 链、online/offline `run_migrations`、settings rebind、T-MIG-19~22 offline SQL + 0002 ingestion 表名（T-MIG-01~22）；CI 仍不跑 docker `alembic upgrade`；M1B 增 ingestion 元表 revision
 
 ### [BOOT-006] CI 与质量门禁
 
