@@ -1888,3 +1888,87 @@ def test_group_list_pagination_perf_gp_perf(client, auth_headers):
     assert resp.status_code == 200
     assert len(resp.json()["items"]) == 20
     assert elapsed < 0.5
+
+
+from datetime import datetime, timedelta, timezone
+
+
+def test_audit_created_range_filter_au11(client, auth_headers):
+    """T-AUTH-AU11: created_after/before 时间窗过滤。"""
+    from urllib.parse import quote
+
+    role = client.post("/api/v1/roles", json={"code": "au_r11", "name": "R"}, headers=auth_headers)
+    assert role.status_code == 201
+    now = datetime.now(timezone.utc)
+    after = quote((now - timedelta(hours=1)).isoformat())
+    before = quote((now + timedelta(hours=1)).isoformat())
+    resp = client.get(
+        f"/api/v1/audit/events?created_after={after}&created_before={before}",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    window_start = now - timedelta(hours=1)
+    window_end = now + timedelta(hours=1)
+    for item in resp.json()["items"]:
+        created = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        assert created >= window_start
+        assert created <= window_end
+
+
+def test_audit_detail_password_masked_au12(client, auth_headers):
+    """T-AUTH-AU12: detail 含 password 键 → 响应 ***。"""
+    from app.auth.audit.service import record_event
+
+    session = get_meta_session()
+    try:
+        record_event(
+            session,
+            actor_id="dev",
+            actor_username="dev",
+            target_type="user",
+            target_id=uuid_mod.uuid4(),
+            action="user.update",
+            detail={"password": "secret123", "note": "ok"},
+            trace_id="t-au12",
+        )
+        session.commit()
+    finally:
+        session.close()
+    resp = client.get("/api/v1/audit/events?action=user.update", headers=auth_headers)
+    assert resp.status_code == 200
+    found = [i for i in resp.json()["items"] if i.get("detail") and "password" in i["detail"]]
+    assert found
+    assert '"***"' in found[0]["detail"] or "***" in found[0]["detail"]
+
+
+def test_audit_bulk_query_pagination_perf_au13(client, auth_headers):
+    """T-AUTH-AU13: 200 条审计分页 P95 < 500ms；total 正确。"""
+    import time
+    from app.auth.audit.service import record_event
+
+    session = get_meta_session()
+    try:
+        for i in range(200):
+            record_event(
+                session,
+                actor_id="dev",
+                actor_username="dev",
+                target_type="role",
+                target_id=uuid_mod.uuid4(),
+                action="role.perf",
+                detail={"i": i},
+                trace_id=f"perf-{i}",
+            )
+        session.commit()
+    finally:
+        session.close()
+    start = time.perf_counter()
+    resp = client.get("/api/v1/audit/events?action=role.perf&limit=50&offset=0", headers=auth_headers)
+    elapsed = time.perf_counter() - start
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] >= 200
+    assert len(body["items"]) == 50
+    assert elapsed < 0.5
