@@ -18,6 +18,15 @@ function setDesktopViewport() {
   window.dispatchEvent(new Event("resize"));
 }
 
+function setMobileViewport(width = 375) {
+  Object.defineProperty(window, "innerWidth", {
+    writable: true,
+    configurable: true,
+    value: width,
+  });
+  window.dispatchEvent(new Event("resize"));
+}
+
 describe("AppRoutes smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
@@ -185,5 +194,19 @@ describe("AppRoutes smoke", () => {
     await waitFor(() => {
       expect(within(main).getByRole("heading", { level: 1, name: "编辑同步任务" })).toBeInTheDocument();
     });
+  });
+
+  it("renders admin shell at mobile 375px (T-FE-23)", () => {
+    setMobileViewport(375);
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(screen.getAllByText("VitalSpan").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByRole("button", { name: "打开菜单" }).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });
