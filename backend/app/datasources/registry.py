@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from app.datasources.dialects.base import DialectConnector
@@ -11,6 +12,25 @@ class ConnectorNotFoundError(KeyError):
 
 class ConnectorAlreadyRegisteredError(ValueError):
     pass
+
+
+class ConnectorInUseError(ValueError):
+    pass
+
+
+_usage_checkers: list[Callable[[str], bool]] = []
+
+
+def register_usage_checker(fn: Callable[[str], bool]) -> None:
+    _usage_checkers.append(fn)
+
+
+def unregister(type: str) -> None:
+    if type not in registry._connectors:
+        raise ConnectorNotFoundError(type)
+    if any(checker(type) for checker in _usage_checkers):
+        raise ConnectorInUseError(f"connector type in use: {type}")
+    del registry._connectors[type]
 
 
 @dataclass(frozen=True)
