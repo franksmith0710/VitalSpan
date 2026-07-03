@@ -13,7 +13,7 @@
 | branch | feat/boot-test-coverage-r5 |
 | base_branch | dev-auto |
 | prd_ids | BOOT-005,BOOT-002,BOOT-006,BOOT-001,BOOT-004 |
-| pr_number |  |
+| pr_number | 17 |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test && pnpm build && pnpm run check:design |
