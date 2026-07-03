@@ -662,3 +662,85 @@ def test_dimension_invalid_value_type_422(client, auth_headers):
         headers=auth_headers,
     )
     assert resp.status_code == 422
+
+
+def test_bind_roles_batch(client, auth_headers):
+    """T-AUTH-U07: 批量绑定两角色 → GET roles 含 2 codes。"""
+    r1 = client.post("/api/v1/roles", json={"code": "batch_a", "name": "A"}, headers=auth_headers).json()
+    r2 = client.post("/api/v1/roles", json={"code": "batch_b", "name": "B"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "batch_u"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        roles = users_service.bind_roles_batch(
+            session, uuid_mod.UUID(user["id"]), [uuid_mod.UUID(r1["id"]), uuid_mod.UUID(r2["id"])]
+        )
+        codes = {r.code for r in roles}
+        assert codes == {"batch_a", "batch_b"}
+    finally:
+        session.close()
+
+
+def test_bind_invalid_user_404(client, auth_headers):
+    """T-AUTH-U08: 随机 user UUID bind → 404 USER_NOT_FOUND。"""
+    role = client.post("/api/v1/roles", json={"code": "bind_u8", "name": "R"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        with pytest.raises(users_service.UserError) as exc:
+            users_service.bind_role(session, uuid_mod.uuid4(), uuid_mod.UUID(role["id"]))
+        assert exc.value.code == "USER_NOT_FOUND"
+    finally:
+        session.close()
+
+
+def test_me_after_unbind(client, auth_headers):
+    """T-AUTH-U09: 绑定 a+b → 解绑 a → /me 仅含 b。"""
+    ra = client.post("/api/v1/roles", json={"code": "me_a", "name": "A"}, headers=auth_headers).json()
+    rb = client.post("/api/v1/roles", json={"code": "me_b", "name": "B"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{ra['id']}", headers=auth_headers)
+    client.post(f"/api/v1/users/{user['id']}/roles/{rb['id']}", headers=auth_headers)
+    client.delete(f"/api/v1/users/{user['id']}/roles/{ra['id']}", headers=auth_headers)
+    me = client.get("/api/v1/me", headers=auth_headers)
+    assert me.status_code == 200
+    roles = me.json()["roles"]
+    assert "me_b" in roles
+    assert "me_a" not in roles
+
+
+def test_me_roles_sorted(client, auth_headers):
+    """T-AUTH-U10: 多角色 me roles 按 code 字典序。"""
+    r1 = client.post("/api/v1/roles", json={"code": "z_role", "name": "Z"}, headers=auth_headers).json()
+    r2 = client.post("/api/v1/roles", json={"code": "a_role", "name": "A"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/users/{user['id']}/roles",
+        json={"role_ids": [r1["id"], r2["id"]]},
+        headers=auth_headers,
+    )
+    me = client.get("/api/v1/me", headers=auth_headers)
+    assert me.json()["roles"] == sorted(me.json()["roles"])
+
+
+def test_role_delete_with_user_binding_409(client, auth_headers):
+    """T-AUTH-R07: bind user → DELETE role → 409 ROLE_IN_USE。"""
+    role = client.post("/api/v1/roles", json={"code": "in_use", "name": "IU"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "iu_user"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    resp = client.delete(f"/api/v1/roles/{role['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "ROLE_IN_USE"
+
+
+def test_role_empty_name_422(client, auth_headers):
+    """T-AUTH-R08: POST name=\"\" → 422。"""
+    resp = client.post("/api/v1/roles", json={"code": "empty_nm", "name": ""}, headers=auth_headers)
+    assert resp.status_code == 422
+
+
+def test_role_list_limit(client, auth_headers):
+    """T-AUTH-R09: 创建 3 角色；GET ?limit=2 → items 长度 ≤2。"""
+    for code in ("lim_a", "lim_b", "lim_c"):
+        client.post("/api/v1/roles", json={"code": code, "name": code}, headers=auth_headers)
+    resp = client.get("/api/v1/roles?limit=2", headers=auth_headers)
+    assert resp.status_code == 200
+    assert len(resp.json()["items"]) <= 2
