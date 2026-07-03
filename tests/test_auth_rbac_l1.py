@@ -1148,3 +1148,193 @@ def test_resource_vertical_forbidden_regression(client, auth_headers):
         assert exc2.value.code == "RESOURCE_FORBIDDEN"
     finally:
         session.close()
+
+
+def _ensure_org_dim(client, auth_headers):
+    org = client.post("/api/v1/orgs", json={"name": "RLS Root"}, headers=auth_headers).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "org_dim_gp", "name": "Org", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    return org, dim
+
+
+def test_group_create_root_gp01(client, auth_headers):
+    """T-AUTH-GP01: POST 创建根分组。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    resp = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "east", "name": "East"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["dimension_type_id"] == dim["id"]
+    listed = client.get(f"/api/v1/rls/groups?dimension_type_id={dim['id']}", headers=auth_headers).json()
+    assert any(g["id"] == body["id"] for g in listed["items"])
+
+
+def test_group_duplicate_code_gp02(client, auth_headers):
+    """T-AUTH-GP02: 重复 code → 409 GROUP_CODE_CONFLICT。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    payload = {"dimension_type_id": dim["id"], "code": "dup_gp", "name": "D"}
+    assert client.post("/api/v1/rls/groups", json=payload, headers=auth_headers).status_code == 201
+    dup = client.post("/api/v1/rls/groups", json=payload, headers=auth_headers)
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "GROUP_CODE_CONFLICT"
+
+
+def test_group_invalid_dimension_gp03(client, auth_headers):
+    """T-AUTH-GP03: 非法 dimension_type_id → 404 DIMENSION_NOT_FOUND。"""
+    fake = str(uuid_mod.uuid4())
+    resp = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": fake, "code": "bad", "name": "B"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "DIMENSION_NOT_FOUND"
+
+
+def test_group_cycle_gp04(client, auth_headers):
+    """T-AUTH-GP04: 更新分组形成环 → 409 GROUP_CYCLE。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    parent = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_p", "name": "P"},
+        headers=auth_headers,
+    ).json()
+    child = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_c", "name": "C", "parent_id": parent["id"]},
+        headers=auth_headers,
+    ).json()
+    resp = client.put(
+        f"/api/v1/rls/groups/{parent['id']}",
+        json={"parent_id": child["id"]},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "GROUP_CYCLE"
+
+
+def test_group_values_add_list_gp05_gp06(client, auth_headers):
+    """T-AUTH-GP05~GP06: 分组成员值添加与列表。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_vals", "name": "V"},
+        headers=auth_headers,
+    ).json()
+    add = client.post(
+        f"/api/v1/rls/groups/{group['id']}/values",
+        json={"values": [org["id"]]},
+        headers=auth_headers,
+    )
+    assert add.status_code == 200
+    assert org["id"] in add.json()["items"]
+    listed = client.get(f"/api/v1/rls/groups/{group['id']}/values", headers=auth_headers).json()
+    assert org["id"] in listed["items"]
+
+
+def test_role_dimension_values_gp07(client, auth_headers):
+    """T-AUTH-GP07: 角色直绑维度值。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "gp_r7", "name": "R"}, headers=auth_headers).json()
+    resp = client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 204
+    eff = client.get(
+        f"/api/v1/roles/{role['id']}/effective-dimensions?dimension_type_id={dim['id']}",
+        headers=auth_headers,
+    ).json()
+    assert org["id"] in eff["values"]
+
+
+def test_role_dimension_groups_effective_gp08(client, auth_headers):
+    """T-AUTH-GP08: 角色分组绑定 → 有效维度集含分组值。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_g8", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    client.post(
+        f"/api/v1/rls/groups/{group['id']}/values",
+        json={"values": [org["id"]]},
+        headers=auth_headers,
+    )
+    role = client.post("/api/v1/roles", json={"code": "gp_r8", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json={"group_ids": [group["id"]]},
+        headers=auth_headers,
+    )
+    eff = client.get(
+        f"/api/v1/roles/{role['id']}/effective-dimensions?dimension_type_id={dim['id']}",
+        headers=auth_headers,
+    ).json()
+    assert org["id"] in eff["values"]
+
+
+def test_group_values_idempotent_gp09(client, auth_headers):
+    """T-AUTH-GP09: 重复添加分组成员值幂等。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_idem", "name": "I"},
+        headers=auth_headers,
+    ).json()
+    payload = {"values": [org["id"]]}
+    client.post(f"/api/v1/rls/groups/{group['id']}/values", json=payload, headers=auth_headers)
+    again = client.post(f"/api/v1/rls/groups/{group['id']}/values", json=payload, headers=auth_headers)
+    assert again.status_code == 200
+    assert again.json()["items"].count(org["id"]) == 1
+
+
+def test_role_dimension_invalid_role_gp10(client, auth_headers):
+    """T-AUTH-GP10: 非法 roleId → 404 ROLE_NOT_FOUND。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    fake_role = str(uuid_mod.uuid4())
+    resp = client.put(
+        f"/api/v1/roles/{fake_role}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": []},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "ROLE_NOT_FOUND"
+
+
+def test_group_binding_forbidden_non_admin_gp11(client, operator_client, auth_headers):
+    """T-AUTH-GP11: 非 admin 写分组 → 403 BINDING_FORBIDDEN。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    resp = operator_client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_op", "name": "O"},
+        headers={"Authorization": "Bearer dev"},
+    )
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "BINDING_FORBIDDEN"
+
+
+def test_group_delete_in_use_gp12(client, auth_headers):
+    """T-AUTH-GP12: 角色引用分组时删除 → 409 GROUP_IN_USE。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_del", "name": "D"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "gp_r12", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json={"group_ids": [group["id"]]},
+        headers=auth_headers,
+    )
+    resp = client.delete(f"/api/v1/rls/groups/{group['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "GROUP_IN_USE"

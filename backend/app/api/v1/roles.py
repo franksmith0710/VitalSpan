@@ -10,11 +10,19 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext, get_current_user
 from app.auth.models import get_meta_session
 from app.auth.roles import service as role_service
-from app.auth.schemas import RoleCreate, RoleListResponse, RoleOut, RoleUpdate
+from app.auth.rls.bindings import service as binding_service
+from app.auth.schemas import (
+    EffectiveDimensionsResponse,
+    RoleCreate,
+    RoleDimensionGroupsReplace,
+    RoleDimensionValuesReplace,
+    RoleListResponse,
+    RoleOut,
+    RoleUpdate,
+)
+from app.auth.users.service import UserError
 
 router = APIRouter(prefix="/roles", tags=["auth"])
-
-
 def _db() -> Session:
     session = get_meta_session()
     try:
@@ -27,6 +35,20 @@ def _role_error_response(exc: role_service.RoleError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+def _binding_error_response(exc: binding_service.BindingError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+def _binding_forbidden_response() -> JSONResponse:
+    return JSONResponse(
+        status_code=403,
+        content={"code": "BINDING_FORBIDDEN", "message": "Binding changes require admin role", "detail": None},
     )
 
 
@@ -92,3 +114,68 @@ def delete_role(
     except role_service.RoleError as exc:
         return _role_error_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.put("/{role_id}/dimension-values", response_model=None)
+def replace_role_dimension_values(
+    role_id: uuid.UUID,
+    payload: RoleDimensionValuesReplace,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> Response | JSONResponse:
+    try:
+        binding_service.replace_role_dimension_values(
+            db,
+            role_id,
+            payload.dimension_type_id,
+            payload.values,
+            actor_roles=actor.roles,
+        )
+    except UserError as exc:
+        return JSONResponse(
+            status_code=exc.status,
+            content={"code": exc.code, "message": exc.message, "detail": None},
+        )
+    except role_service.RoleError as exc:
+        return _role_error_response(exc)
+    except binding_service.BindingError as exc:
+        return _binding_error_response(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.put("/{role_id}/dimension-groups", response_model=None)
+def replace_role_dimension_groups(
+    role_id: uuid.UUID,
+    payload: RoleDimensionGroupsReplace,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> Response | JSONResponse:
+    try:
+        binding_service.replace_role_dimension_groups(
+            db, role_id, payload.group_ids, actor_roles=actor.roles
+        )
+    except UserError as exc:
+        return JSONResponse(
+            status_code=exc.status,
+            content={"code": exc.code, "message": exc.message, "detail": None},
+        )
+    except role_service.RoleError as exc:
+        return _role_error_response(exc)
+    except binding_service.BindingError as exc:
+        return _binding_error_response(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{role_id}/effective-dimensions", response_model=EffectiveDimensionsResponse)
+def get_effective_dimensions(
+    role_id: uuid.UUID,
+    dimension_type_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> EffectiveDimensionsResponse | JSONResponse:
+    try:
+        role_service.get_role(db, role_id)
+    except role_service.RoleError as exc:
+        return _role_error_response(exc)
+    values = binding_service.resolve_effective_values(db, role_id, dimension_type_id)
+    return EffectiveDimensionsResponse(dimension_type_id=dimension_type_id, values=values)
