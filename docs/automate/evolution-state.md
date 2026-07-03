@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r18.md |
 | design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r18-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r18.md |
 | branch | feat/evolution-r18-m2-auth-quality-push |
 | base_branch | dev-auto |
-| prd_ids | AUTH-004,AUTH-002,AUTH-005,AUTH-003,AUTH-001 |
-| pr_number |  |
+| prd_ids | AUTH-001,AUTH-002,AUTH-003,AUTH-004,AUTH-005 |
+| pr_number | TBD |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端 r18） |
@@ -66,7 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P4 r18 独立验证：backend ruff PASS + pytest 325 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r18-m2-auth-quality-push@5746254；base_branch dev-auto
+- P5 r18 PRD 重评：AUTH-001/002/004/005 破 90（90.0–91.2）；AUTH-003 仍 89.4（缺审计）；pytest 325/4 skipped；T-AUTH-G06~G10、OU/O07~O10、D06~D08、U07~U10、R07~R09
+- P4 r18 独立验证：backend ruff PASS + pytest 325 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r18-m2-auth-quality-push@62fdc65；base_branch dev-auto
 - P3 r18 实现完成：7 Task 全绿；backend ruff+pytest 325 passed/4 skipped（+23 AUTH quality）；ui_design_skill: none；branch feat/evolution-r18-m2-auth-quality-push@2ce436a；base_branch dev-auto
 - P2 r18 计划完成：7 Task（AUTH-004→002→005→003→001 + 迁移/文档）；15 文件；subagent-driven-development option 1；全 Task UI skill: none
 - P4 r17 独立验证：backend ruff PASS + pytest 302 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r17-m2-auth-rbac-kickoff；base_branch dev-auto
@@ -94,8 +95,4 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| AUTH-004 | 1 | 86.7 | 2026-07-03 |
-| AUTH-002 | 1 | 87.3 | 2026-07-03 |
-| AUTH-005 | 1 | 88.2 | 2026-07-03 |
-| AUTH-003 | 1 | 88.5 | 2026-07-03 |
-| AUTH-001 | 1 | 88.9 | 2026-07-03 |
+| AUTH-003 | 2 | 89.4 | 2026-07-03 |

@@ -12,7 +12,7 @@
   - [x] 管理员可 CRUD 角色 code/显示名/描述
   - [x] 平台不预置业务角色
 - **代码锚点**：`backend/app/auth/roles/service.py` · `backend/app/api/v1/roles.py` · `tests/test_auth_rbac_l1.py` T-AUTH-R01~R09
-- **演化建议**：r18+ 补管理员专属鉴权守卫；与 AUTH-008 审计联动
+- **演化建议**：补管理员专属鉴权守卫；与 AUTH-008 审计联动
 - **里程碑对齐**：
 
 ### [AUTH-002] 组织树配置
@@ -51,7 +51,7 @@
   - [x] 角色可绑定数据源/Dashboard/报表资源
   - [x] 未授权资源不可见
 - **代码锚点**：`backend/app/auth/resources/service.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/resource_grants.py` · `tests/test_auth_rbac_l1.py` T-AUTH-G01~G10
-- **演化建议**：M3 数据源 API 接入 `require_resource_visible`；列表过滤未授权资源
+- **演化建议**：M3 数据源 API 接入 `require_resource_visible`；列表端点过滤未授权资源
 - **里程碑对齐**：
 
 ### [AUTH-005] 权限维度类型定义
