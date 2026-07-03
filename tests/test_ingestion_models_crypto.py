@@ -38,3 +38,17 @@ def test_encrypt_password_with_env_fernet_key_roundtrip():
     cipher = encrypt_password(plain)
     assert cipher != plain
     assert decrypt_password(cipher) == plain
+
+
+def test_fernet_multi_job_password_isolation():
+    """T-D04-16: 同一 Fernet key 下两 job 密码 encrypt/decrypt 互不干扰。"""
+    plain_a = "password-job-alpha"
+    plain_b = "password-job-beta"
+    cipher_a = encrypt_password(plain_a)
+    cipher_b = encrypt_password(plain_b)
+    assert cipher_a != cipher_b
+    assert cipher_a != plain_a
+    assert cipher_b != plain_b
+    assert decrypt_password(cipher_a) == plain_a
+    assert decrypt_password(cipher_b) == plain_b
+    assert decrypt_password(cipher_a) != plain_b
