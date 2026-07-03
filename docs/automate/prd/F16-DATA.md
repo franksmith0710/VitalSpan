@@ -78,7 +78,7 @@
   - [x] 浏览器可创建任务并手动运行
   - [x] 可查看运行历史
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
-- **演化建议**：补空态/错误态 fe 断言；Playwright 真浏览器 L1
+- **演化建议**：`admin-nav` 已含「数据接入」入口；`ingestion.smoke.test.tsx` 10 项覆盖空态/错误态/表单校验/密码掩码/ETL 默认行（T-ING-06~10）；二期 Playwright 真浏览器 L1
 
 ### [DATA-005] 端到端验收与文档回写
 
