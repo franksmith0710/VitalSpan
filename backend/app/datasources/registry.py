@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -26,11 +27,12 @@ def register_usage_checker(fn: Callable[[str], bool]) -> None:
 
 
 def unregister(type: str) -> None:
-    if type not in registry._connectors:
-        raise ConnectorNotFoundError(type)
-    if any(checker(type) for checker in _usage_checkers):
-        raise ConnectorInUseError(f"connector type in use: {type}")
-    del registry._connectors[type]
+    with registry._lock:
+        if type not in registry._connectors:
+            raise ConnectorNotFoundError(type)
+        if any(checker(type) for checker in _usage_checkers):
+            raise ConnectorInUseError(f"connector type in use: {type}")
+        del registry._connectors[type]
 
 
 @dataclass(frozen=True)
@@ -43,27 +45,33 @@ class ConnectorDescriptor:
 class ConnectorRegistry:
     def __init__(self) -> None:
         self._connectors: dict[str, DialectConnector] = {}
+        self._lock = threading.RLock()
 
     def register(self, connector: DialectConnector) -> None:
-        if connector.type in self._connectors:
-            raise ConnectorAlreadyRegisteredError(f"connector type already registered: {connector.type}")
-        self._connectors[connector.type] = connector
+        with self._lock:
+            if connector.type in self._connectors:
+                raise ConnectorAlreadyRegisteredError(
+                    f"connector type already registered: {connector.type}"
+                )
+            self._connectors[connector.type] = connector
 
     def get(self, type: str) -> DialectConnector:
-        try:
-            return self._connectors[type]
-        except KeyError as exc:
-            raise ConnectorNotFoundError(type) from exc
+        with self._lock:
+            try:
+                return self._connectors[type]
+            except KeyError as exc:
+                raise ConnectorNotFoundError(type) from exc
 
     def list_types(self) -> list[ConnectorDescriptor]:
-        return [
-            ConnectorDescriptor(
-                type=c.type,
-                category=c.category,
-                capabilities=c.capabilities,
-            )
-            for c in self._connectors.values()
-        ]
+        with self._lock:
+            return [
+                ConnectorDescriptor(
+                    type=c.type,
+                    category=c.category,
+                    capabilities=c.capabilities,
+                )
+                for c in self._connectors.values()
+            ]
 
 
 registry = ConnectorRegistry()
@@ -71,3 +79,14 @@ registry = ConnectorRegistry()
 
 def register_dialect(connector: DialectConnector) -> None:
     registry.register(connector)
+
+
+def export_type_catalog() -> list[dict]:
+    return [
+        {
+            "type": item.type,
+            "category": item.category,
+            "capabilities": list(item.capabilities),
+        }
+        for item in registry.list_types()
+    ]
