@@ -1664,3 +1664,141 @@ def test_audit_filter_actor_id_au10(client, auth_headers):
     audit = client.get("/api/v1/audit/events?actor_id=dev", headers=auth_headers).json()
     assert audit["total"] >= 1
     assert all(i["actor_id"] == "dev" for i in audit["items"])
+
+
+def test_rls_multi_dimension_and_combination_rls09(client, auth_headers):
+    """T-AUTH-RLS09: org + string 双维度 AND 组合。"""
+    from app.auth.rls.hooks import prepare_query_rls
+
+    org, org_dim = _ensure_org_dim(client, auth_headers)
+    str_dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_str09", "name": "S", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "rls_r09", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u09"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": org_dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": str_dim["id"], "values": ["east"]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=["viewer"])
+        frag = prepare_query_rls(
+            session,
+            ctx,
+            column_by_dimension_id={
+                uuid_mod.UUID(org_dim["id"]): "org_node_id",
+                uuid_mod.UUID(str_dim["id"]): "region",
+            },
+            table_alias="t",
+        )
+        assert " AND " in frag
+        assert "org_node_id" in frag
+        assert "region" in frag
+        assert "east" in frag
+    finally:
+        session.close()
+
+
+def test_rls_invalid_column_raises_config_error_rls10(client, auth_headers):
+    """T-AUTH-RLS10: 非法列名 org-node → RlsConfigError。"""
+    from app.auth.rls.hooks import prepare_query_rls
+    from app.auth.rls.predicate import RlsConfigError
+
+    user = client.post("/api/v1/users", json={"username": "rls_u10"}, headers=auth_headers).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_d10", "name": "D", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=[])
+        with pytest.raises(RlsConfigError):
+            prepare_query_rls(
+                session,
+                ctx,
+                column_by_dimension_id={uuid_mod.UUID(dim["id"]): "org-node"},
+            )
+    finally:
+        session.close()
+
+
+def test_rls_empty_string_dimension_returns_false_predicate_rls11(client, auth_headers):
+    """T-AUTH-RLS11: string 维度空有效集 → 1=0。"""
+    from app.auth.rls.hooks import prepare_query_rls
+
+    user = client.post("/api/v1/users", json={"username": "rls_u11"}, headers=auth_headers).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_d11", "name": "D", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=[])
+        frag = prepare_query_rls(
+            session,
+            ctx,
+            column_by_dimension_id={uuid_mod.UUID(dim["id"]): "region"},
+        )
+        assert frag.strip() == "1=0"
+    finally:
+        session.close()
+
+
+def test_apply_rls_to_sql_merge_where_rls12(client, auth_headers):
+    """T-AUTH-RLS12: apply_rls_to_sql 合并 WHERE。"""
+    from app.query.rls.guard import apply_rls_to_sql
+
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "rls_r12", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u12"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=["viewer"])
+        out = apply_rls_to_sql(
+            session,
+            ctx,
+            "SELECT * FROM facts t",
+            rls_config={"org_column": "org_node_id", "table_alias": "t"},
+        )
+        assert "WHERE" in out.upper()
+        assert "org_node_id" in out
+    finally:
+        session.close()
+
+
+def test_rls_hook_internal_error_degrades_to_empty_rls13(monkeypatch, client, auth_headers):
+    """T-AUTH-RLS13: hook 内部异常降级 → 1=0 片段，非 500。"""
+    import app.auth.rls.hooks as hooks_mod
+    from app.query.rls.guard import apply_rls_to_sql
+
+    user = client.post("/api/v1/users", json={"username": "rls_u13"}, headers=auth_headers).json()
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("rls internal")
+
+    monkeypatch.setattr(hooks_mod, "prepare_query_rls", _boom)
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=[])
+        out = apply_rls_to_sql(session, ctx, "SELECT 1", rls_config={})
+        assert "1=0" in out
+    finally:
+        session.close()
