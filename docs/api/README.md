@@ -164,9 +164,10 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/ingestion/sync-jobs` | 同步任务 CRUD | 内部 | M1B | DATA-001 | 规划 | `backend/app/api/v1/ingestion/sync.py` |
-| POST | `/api/v1/ingestion/sync-jobs/{id}/run` | 手动触发同步 | 内部 | M1B | DATA-002 | 规划 | `backend/app/ingestion/sync_executor.py` |
-| GET/PUT | `/api/v1/ingestion/sync-jobs/{id}/etl-rules` | 清洗规则配置 | 内部 | M1B | ETL-001 | 规划 | `backend/app/ingestion/etl_rules.py` |
+| GET/POST | `/api/v1/ingestion/sync-jobs` | 同步任务 CRUD | 内部 | M1B | DATA-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
+| POST | `/api/v1/ingestion/sync-jobs/{id}/run` | 手动触发同步 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/ingestion/sync_executor.py` |
+| GET | `/api/v1/ingestion/sync-jobs/{id}/runs` | 运行历史 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
+| GET/PUT | `/api/v1/ingestion/sync-jobs/{id}/etl-rules` | 清洗规则配置 | 内部 | M1B | ETL-001 | 已实现 | `backend/app/ingestion/etl_rules.py` |
 
 ---
 
