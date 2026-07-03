@@ -209,3 +209,64 @@ def test_l1_mock_smoke_source_failure(mock_fetch, smoke_client, auth_headers):
     assert "mock source down" in final["error_message"]
 
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=2)
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", return_value=MOCK_ROWS)
+def test_l1_mock_smoke_end_to_end_under_three_seconds(
+    mock_fetch, mock_write, smoke_client, auth_headers
+):
+    """T-L1-04: mock L1 全流程 create+rules+run+history 耗时 <3.0s。"""
+    payload = {
+        "name": "l1-perf-smoke",
+        "source": {
+            "type": "mysql",
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+            "table": "dirty_orders",
+        },
+        "target_table": "orders_perf_l1",
+        "schedule_cron": None,
+    }
+    start = time.perf_counter()
+
+    create = smoke_client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert create.status_code == 201
+    job_id = create.json()["id"]
+
+    put_rules = smoke_client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules",
+        json={"rules": L1_RULES},
+        headers=auth_headers,
+    )
+    assert put_rules.status_code == 200
+
+    run = smoke_client.post(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+        headers=auth_headers,
+    )
+    assert run.status_code == 202
+    run_id = run.json()["run_id"]
+
+    deadline = time.time() + 10
+    final = None
+    while time.time() < deadline:
+        listed = smoke_client.get(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/runs",
+            headers=auth_headers,
+        )
+        match = next((i for i in listed.json()["items"] if i["id"] == run_id), None)
+        if match and match["status"] in ("succeeded", "failed"):
+            final = match
+            break
+        time.sleep(0.05)
+
+    elapsed = time.perf_counter() - start
+    assert final is not None
+    assert final["status"] == "succeeded"
+    assert elapsed < 3.0
+
+    smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)

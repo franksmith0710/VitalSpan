@@ -111,3 +111,18 @@ def test_scheduler_cron_callback_invokes_run_job(mock_get_scheduler, mock_run_jo
     assert kwargs["job_id"] == cron_id
     registered_func(**kwargs)
     mock_run_job.assert_called_once_with(job_id=cron_id, trace_id=kwargs["trace_id"])
+
+
+@patch("app.ingestion.scheduler.get_scheduler")
+def test_refresh_all_jobs_removes_stale_registered_jobs(mock_get_scheduler):
+    """T-D02-15: refresh_all_jobs 移除 scheduler 中陈旧 job。"""
+    stale_id = "00000000-0000-0000-0000-000000000000"
+    mock_scheduler = MagicMock()
+    stale_job = MagicMock()
+    stale_job.id = stale_id
+    mock_scheduler.get_jobs.return_value = [stale_job]
+    mock_get_scheduler.return_value = mock_scheduler
+
+    refresh_all_jobs()
+
+    mock_scheduler.remove_job.assert_called_with(stale_id)

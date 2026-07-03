@@ -3,6 +3,10 @@ import uuid
 from unittest.mock import patch
 
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///file:ingestion_test?mode=memory&cache=shared&uri=true"
+os.environ.setdefault(
+    "ANALYTICS_DATABASE_URL",
+    "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics",
+)
 
 import pytest
 from fastapi.testclient import TestClient
@@ -224,4 +228,99 @@ def test_trigger_run_manual_accepted_202(mock_run_job, client, auth_headers, job
     body = response.json()
     assert body["status"] == "running"
     assert "run_id" in body
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+import time
+
+
+def test_get_and_delete_job_not_found_404(client, auth_headers):
+    """T-D01-14: GET/DELETE 不存在 job → 404 NOT_FOUND。"""
+    missing = uuid.uuid4()
+    get_resp = client.get(f"/api/v1/ingestion/sync-jobs/{missing}", headers=auth_headers)
+    assert get_resp.status_code == 404
+    assert get_resp.json()["detail"]["code"] == "NOT_FOUND"
+
+    del_resp = client.delete(f"/api/v1/ingestion/sync-jobs/{missing}", headers=auth_headers)
+    assert del_resp.status_code == 404
+    assert del_resp.json()["detail"]["code"] == "NOT_FOUND"
+
+
+def test_list_runs_respects_limit_param(client, auth_headers, job_payload):
+    """T-D01-15: GET .../runs?limit=5 尊重 limit。"""
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = uuid.UUID(create.json()["id"])
+    db = get_meta_session()
+    for i in range(6):
+        db.add(
+            SyncRun(
+                job_id=job_id,
+                status="succeeded",
+                trace_id=f"seed-run-{i}",
+                started_at=datetime.now(timezone.utc),
+                finished_at=datetime.now(timezone.utc),
+                rows_synced=i,
+            )
+        )
+    db.commit()
+    db.close()
+
+    listed = client.get(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/runs?limit=5",
+        headers=auth_headers,
+    )
+    assert listed.status_code == 200
+    assert len(listed.json()["items"]) <= 5
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+@patch("app.api.v1.ingestion.sync.run_job")
+def test_trigger_run_consecutive_post_second_409(mock_run_job, client, auth_headers, job_payload):
+    """T-D01-16: 连续两次 POST run → 第二次 409（run_job mock 保持 running）。"""
+    mock_run_job.return_value = None
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    with patch("app.api.v1.ingestion.sync.get_settings") as mock_get:
+        mock_get.return_value.analytics_database_url = "postgresql+psycopg://u:p@localhost:5433/a"
+        first = client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+            headers=auth_headers,
+        )
+        assert first.status_code == 202
+        second = client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+            headers=auth_headers,
+        )
+    assert second.status_code == 409
+    assert second.json()["detail"]["code"] == "RUN_ALREADY_IN_PROGRESS"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_openapi_ingestion_tag_on_post_run(client):
+    """T-D01-17: OpenAPI POST run operation 含 ingestion tag。"""
+    spec = client.get("/openapi.json").json()
+    run_path = next(
+        p for p in spec["paths"] if p.endswith("/sync-jobs/{job_id}/run")
+    )
+    post_op = spec["paths"][run_path]["post"]
+    assert "ingestion" in post_op.get("tags", [])
+
+
+@patch("app.api.v1.ingestion.sync.run_job")
+def test_trigger_run_accepts_within_one_second(mock_run_job, client, auth_headers, job_payload):
+    """T-D01-18: 手动 run 接受响应耗时 <1.0s。"""
+    mock_run_job.return_value = None
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    with patch("app.api.v1.ingestion.sync.get_settings") as mock_get:
+        mock_get.return_value.analytics_database_url = "postgresql+psycopg://u:p@localhost:5433/a"
+        start = time.perf_counter()
+        response = client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+            headers=auth_headers,
+        )
+        elapsed = time.perf_counter() - start
+    assert response.status_code == 202
+    assert elapsed < 1.0
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
