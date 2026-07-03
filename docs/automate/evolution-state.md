@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r12.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r12-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r12.md |
@@ -14,10 +14,10 @@
 | base_branch | dev-auto |
 | prd_ids | DATA-002,ETL-001,DATA-004,DATA-003,DATA-005 |
 | pr_number |  |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd backend && pytest -v ../tests/test_ingestion_config.py ../tests/test_sync_executor.py ../tests/test_scheduler.py ../tests/test_etl_rules.py ../tests/test_ingestion_api.py ../tests/test_ingestion_l1_smoke.py ../tests/test_doc_anchors_data.py; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx; pnpm run check:design |
-| last_ui_screenshots | N/A headless CI — design_drift: check:design passed (34 files) |
+| last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx && pnpm run check:design |
+| last_ui_screenshots | N/A headless CI — ingestion vitest 27/27 PASS; check:design passed (34 files) |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T13:45:00Z |
 | skill_rule_index_source_count | 26 |
