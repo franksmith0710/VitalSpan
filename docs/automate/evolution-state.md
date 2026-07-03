@@ -6,18 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
-| design | docs/superpowers/specs/2026-07-03-boot-test-coverage-design.md |
-| plan | docs/superpowers/plans/2026-07-03-boot-test-coverage.md |
-| branch | feat/boot-test-coverage-r5 |
-| base_branch | dev-auto |
-| prd_ids | BOOT-005,BOOT-002,BOOT-006,BOOT-001,BOOT-004 |
-| pr_number | 17 |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm test && pnpm build && pnpm run check:design |
-| last_ui_verified_note | vitest 18/18 (4 files, T-FE-11~14 smoke); check:design fixture 3/3; build exit 0; check:design 33 files scanned exit 0 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
 | skill_rule_index_source_count | 26 |
@@ -68,12 +66,11 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G0 PASS：无 Open PR；PR #14 Squash merge 至 dev-auto（sha 74937da）；PRD/plan 已对齐；phase 重置 idle
-- G1 doc-bootstrap：goal 只读；prd hub v1.2.8（16 分片 124 项）、8 维总表与薄弱项汇总就绪；plan 只读校验通过
-- plan 当前节 M1B（M1 BOOT+文档回写已全部 [x]）；M1B queued，`m1b_activation: after-M1-complete-not-in-current-execute-scope`
-- P2 planner：6 Task 计划 `docs/superpowers/plans/2026-07-03-m1b-close.md`（001→ETL→002→005 L1→003 smoke→005 文档）；固定 subagent-driven-development option 1
-- G2 picker：M1B 收尾 DATA-005 L1 + 文档回写；同轮 companion DATA-002/003 + ETL-001 + DATA-001 测试/文档补强；META/DESIGN/CONN 远期让位
-- P5 r8 BOOT 测试 r5：pytest 77 + vitest 18；hub 重评 BOOT-001/002/004/005/006 总分 83.4–87.4（仍 <90）；STUCK 连续未过轮次 +1
+- G0 PASS：无 Open PR；PR #17 已 merge；上轮 phase 自 P5_DOCS_READY 重置 idle
+- G1 doc-bootstrap：goal 只读；prd hub v1.2.11（16 分片 124 项）、8 维总表/薄弱项汇总/功能索引完整；plan 只读校验通过
+- plan：M1+M1B 勾选清单全部 [x]；无含未完成 `[ ]` 的活跃里程碑节
+- 已实现项薄弱 Top3（<90）：BOOT-005(83.4)、BOOT-006(85.3)、BOOT-002(85.7)；远期未实现项仍占系统薄弱项汇总 Top10
+- STUCK 表保留 12 行（BOOT×6 + DATA/ETL×6）；技能规则索引 26 条未过期
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
