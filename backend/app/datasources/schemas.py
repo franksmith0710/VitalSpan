@@ -130,3 +130,32 @@ class ConnectorTypeOut(BaseModel):
 
 class ConnectorTypeListResponse(BaseModel):
     items: list[ConnectorTypeOut]
+
+
+class SchemaItemOut(BaseModel):
+    name: str
+
+
+class SchemaListResponse(BaseModel):
+    items: list[SchemaItemOut]
+
+
+class TableItemOut(BaseModel):
+    name: str
+    type: str
+
+
+class TableListResponse(BaseModel):
+    items: list[TableItemOut]
+
+
+class ColumnItemOut(BaseModel):
+    name: str
+    data_type: str = Field(serialization_alias="dataType")
+    nullable: bool
+
+    model_config = {"populate_by_name": True}
+
+
+class ColumnListResponse(BaseModel):
+    items: list[ColumnItemOut]

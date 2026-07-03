@@ -11,7 +11,10 @@ from app.core.config import get_settings
 from app.datasources import register_builtin_dialects
 from app.datasources.dialects.errors import PG_AUTH_FAILED
 from app.datasources.dialects.postgres import PostgresConnector
+from app.datasources.models import DataSource, get_meta_session
 from app.datasources.registry import registry
+from app.datasources.schemas import DataSourceCreate
+from app.datasources.service import create_data_source
 from app.main import app
 
 _DS_SQLITE_URL = "sqlite+pysqlite:///file:ds_r25_test?mode=memory&cache=shared&uri=true"
@@ -193,3 +196,56 @@ def test_pool_concurrent_smoke():
     for t in threads:
         t.join()
     assert errors == []
+
+
+@pytest.fixture(autouse=True)
+def ensure_ds_table():
+    from app.datasources.models import Base, get_meta_engine
+    from app.auth.models import Base as AuthBase
+    from sqlalchemy import text
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    AuthBase.metadata.create_all(engine)
+    yield
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM data_sources"))
+
+
+def _create_ds():
+    session = get_meta_session()
+    try:
+        return create_data_source(session, DataSourceCreate(
+            name="Meta DS", code=f"meta-ds-{uuid.uuid4().hex[:8]}", type="postgresql",
+            host="h", port=5432, database="d", username="u", password="p",
+        ))
+    finally:
+        session.close()
+
+
+@patch("app.datasources.metadata.service.pool_manager.pooled_connection")
+@patch("app.datasources.dialects.postgres.PostgresConnector.list_schemas")
+def test_metadata_schemas_200(mock_list, mock_pool, client):
+    """T-DS-MD01: mock list_schemas → 200。"""
+    from contextlib import contextmanager
+    from app.datasources.dialects.base import SchemaInfo
+
+    mock_list.return_value = [SchemaInfo(name="public")]
+
+    @contextmanager
+    def _cm(*a, **k):
+        yield MagicMock()
+
+    mock_pool.side_effect = _cm
+    ds = _create_ds()
+    resp = client.get(f"/api/v1/datasources/{ds.id}/schemas", headers=AUTH)
+    assert resp.status_code == 200
+    assert resp.json()["items"]
+
+
+def test_metadata_tables_missing_schema_400(client):
+    """T-DS-MD02: tables 无 schema → 400。"""
+    ds = _create_ds()
+    resp = client.get(f"/api/v1/datasources/{ds.id}/tables", headers=AUTH)
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "METADATA_INVALID_REQUEST"

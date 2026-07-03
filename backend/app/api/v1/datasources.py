@@ -9,8 +9,11 @@ from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, get_current_user
+from app.auth.resources.service import VisibilityError
 from app.datasources.models import get_meta_session
+from app.datasources.metadata import service as metadata_service
 from app.datasources.schemas import (
+    ColumnListResponse,
     ConnectorTypeListResponse,
     ConnectorTypeOut,
     DataSourceCreate,
@@ -18,6 +21,8 @@ from app.datasources.schemas import (
     DataSourceOut,
     DataSourcePatch,
     DataSourceUpdate,
+    SchemaListResponse,
+    TableListResponse,
     TestConnectionIn,
     TestConnectionOut,
 )
@@ -36,6 +41,13 @@ def _db() -> Session:
 
 
 def _error_response(exc: ds_service.DataSourceError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+def _visibility_response(exc: VisibilityError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": None},
@@ -146,3 +158,48 @@ def test_connection_saved(
         return ds_service.test_connection_by_id(db, data_source_id)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
+
+
+@router.get("/{data_source_id}/schemas", response_model=SchemaListResponse)
+def get_schemas(
+    data_source_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> SchemaListResponse | JSONResponse:
+    try:
+        return metadata_service.list_schemas(db, user.roles, data_source_id)
+    except ds_service.DataSourceError as exc:
+        return _error_response(exc)
+    except VisibilityError as exc:
+        return _visibility_response(exc)
+
+
+@router.get("/{data_source_id}/tables", response_model=TableListResponse)
+def get_tables(
+    data_source_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    schema: str = "",
+) -> TableListResponse | JSONResponse:
+    try:
+        return metadata_service.list_tables(db, user.roles, data_source_id, schema)
+    except ds_service.DataSourceError as exc:
+        return _error_response(exc)
+    except VisibilityError as exc:
+        return _visibility_response(exc)
+
+
+@router.get("/{data_source_id}/columns", response_model=ColumnListResponse)
+def get_columns(
+    data_source_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    schema: str = "",
+    table: str = "",
+) -> ColumnListResponse | JSONResponse:
+    try:
+        return metadata_service.list_columns(db, user.roles, data_source_id, schema, table)
+    except ds_service.DataSourceError as exc:
+        return _error_response(exc)
+    except VisibilityError as exc:
+        return _visibility_response(exc)
