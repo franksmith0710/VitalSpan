@@ -177,3 +177,52 @@ def test_migrations_offline_url_matches_settings(monkeypatch):
 
     mock_config.set_main_option.assert_called_with("sqlalchemy.url", KNOWN_URL)
     assert captured_urls == [KNOWN_URL]
+
+
+def test_revision_upgrade_downgrade_noop():
+    """T-MIG-12: 0001/0002 upgrade/downgrade 空操作可调用。"""
+    rev_0001 = importlib.import_module("migrations.versions.0001_initial")
+    rev_0002 = importlib.import_module("migrations.versions.0002_ingestion_tables")
+    rev_0001.upgrade()
+    rev_0001.downgrade()
+    with patch.object(rev_0002, "op", MagicMock()):
+        rev_0002.upgrade()
+        rev_0002.downgrade()
+
+
+def test_revision_chain_0002_down_revision_is_0001():
+    """T-MIG-13: revision 链 0002.down_revision == '0001'。"""
+    rev_0001 = importlib.import_module("migrations.versions.0001_initial")
+    rev_0002 = importlib.import_module("migrations.versions.0002_ingestion_tables")
+    assert rev_0001.revision == "0001"
+    assert rev_0002.revision == "0002"
+    assert rev_0002.down_revision == "0001"
+
+
+def test_migrations_offline_run_migrations_called(monkeypatch):
+    """T-MIG-14: offline 模式触发 context.run_migrations()。"""
+    fake_settings = Settings(
+        database_url=KNOWN_URL,
+        secret_key="ci-test-secret-key-min-32-chars-long!!",
+        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
+    get_settings.cache_clear()
+
+    mock_config = MagicMock()
+    mock_config.config_file_name = None
+    mock_config.get_main_option.return_value = KNOWN_URL
+
+    sys.modules.pop("migrations.env", None)
+
+    mock_context = MagicMock()
+    mock_context.config = mock_config
+    mock_context.is_offline_mode.return_value = True
+    mock_context.begin_transaction.return_value.__enter__ = MagicMock()
+    mock_context.begin_transaction.return_value.__exit__ = MagicMock()
+
+    with patch("alembic.context", mock_context):
+        importlib.import_module("migrations.env")
+
+    mock_context.run_migrations.assert_called_once()
+    sys.modules.pop("migrations.env", None)
