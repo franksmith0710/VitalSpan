@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | design | docs/superpowers/specs/2026-07-03-m1-boot-test-r4-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-boot-test-r4-plan.md |
 | branch | cursor/bc-3e92750a-38c3-4750-9488-b81f4e2ff9f4-c8a2 |
 | base_branch | dev-auto |
 | prd_ids | BOOT-005,BOOT-002,BOOT-006,BOOT-001,BOOT-004 |
-| pr_number |  |
+| pr_number | TBD |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test (vitest smoke T-FE-08~10) && pnpm run check:design |
@@ -77,9 +77,9 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-002 | 5 | 80.1 | 2026-07-03 |
-| BOOT-005 | 4 | 78.2 | 2026-07-03 |
-| BOOT-006 | 5 | 82.5 | 2026-07-03 |
-| BOOT-001 | 5 | 83.0 | 2026-07-03 |
-| BOOT-004 | 5 | 83.0 | 2026-07-03 |
+| BOOT-002 | 6 | 84.7 | 2026-07-03 |
+| BOOT-005 | 5 | 82.4 | 2026-07-03 |
+| BOOT-006 | 6 | 84.5 | 2026-07-03 |
+| BOOT-001 | 6 | 86.0 | 2026-07-03 |
+| BOOT-004 | 6 | 86.1 | 2026-07-03 |
 | BOOT-003 | 4 | 86.0 | 2026-07-03 |
