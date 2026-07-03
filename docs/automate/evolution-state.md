@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r26.md |
 | design | docs/superpowers/specs/2026-07-03-m4-query-l1-kickoff-r26-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m4-query-l1-kickoff-r26.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r26 独立验证：backend ruff PASS + pytest 532 passed/4 skipped；test_query_l1_r26 29/29；test_migrations T-MIG-38~39 2/2；plan 验收 ≥531/4 skipped 绿（round-target-r26.md 缺失，按 plan Step 5 对照）；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r26-m4-query-l1-kickoff；base_branch dev-auto
 - P3 r26 实现完成：7 Task 全绿；backend ruff+pytest 532 passed/4 skipped（+31 query L1）；ui_design_skill: none；branch feat/evolution-r26-m4-query-l1-kickoff；base_branch dev-auto
 - G0 PR #46 遗留合并：rebase 至 dev-auto 后重置 phase=idle（r25 已在 PR #47 合并）
 - P5 r25 MERGED：PR #47 squash 至 dev-auto@d1b6c91；DS-004/006/007/008 + CONN-002 重评 90.1–91.6；pytest 501/4 skipped；head 分支已删
