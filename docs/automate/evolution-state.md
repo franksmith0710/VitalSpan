@@ -6,10 +6,10 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r8.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-quality-r8-design.md |
-| plan |  |
+| plan | docs/superpowers/plans/2026-07-03-m1b-quality-r8.md |
 | branch |  |
 | base_branch |  |
 | prd_ids | DATA-003,DATA-002,DATA-004,DATA-001,DATA-005 |
@@ -17,7 +17,7 @@
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
+| skill_rule_index_generated_at | 2026-07-03T12:30:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
