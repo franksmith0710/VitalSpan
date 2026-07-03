@@ -68,8 +68,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P4 验证通过：ruff、pytest、`fe build`、`check:design`、/admin UI 截图
-- M1 plan 勾选 BOOT-002/006 已完成；待 M1 文档回写 checklist（api/services/arch）
+- PR #4 已 Squash 合并至 dev-auto（sha 8d09c24）；M1 BOOT-002/006 已实现
+- M1 plan 六勾选项全部完成；待 M1 文档回写 checklist（api/services/arch）
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
