@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r24.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch |  |
-| prd_ids |  |
+| prd_ids | CONN-001,DS-001,DS-002,DS-003,DS-005 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -103,6 +103,7 @@
 - G2 r15 选题完成：M1 BOOT quality push r15 — BOOT-004/005/006/002/003（5 项）；最低分 BOOT-004(89.5)；STUCK BOOT-004 连续 10 轮
 - plan M1+M1B 全 [x]（12 项勾选）；无含 `[ ]` 的活跃节；饱和熔断未触发（远期未实现占 Top10）
 - G0 PASS：PR #31 已 merge 至 dev-auto@43cbf98；BOOT 簇五 ID 破 90，仅 BOOT-004 仍 <90
+- G2 r24 选题完成：M3 datasource quality push r24 — CONN-001/DS-001/002/003/005（5 项）；最低分 CONN-001(89.1)；CONN-001 连续 2 轮 <90
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
