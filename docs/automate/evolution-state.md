@@ -13,7 +13,7 @@
 | branch | cursor/bc-f55858a9-664a-4ce4-89a2-440201551df3-239a |
 | base_branch | dev-auto |
 | prd_ids | DATA-005,DATA-002,DATA-003,ETL-001,DATA-001 |
-| pr_number |  |
+| pr_number | 15 |
 | last_verified_command | cd backend && python3 -m pytest ../tests/ -v; cd fe && pnpm test ingestion.smoke && pnpm run build && pnpm run check:design; grep SourceConnection docs/services/ingestion.md |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test ingestion.smoke && pnpm run build && pnpm run check:design |
