@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r14.md |
 | design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r14-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r14.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | BOOT-003,BOOT-005,BOOT-006,BOOT-002,BOOT-001 |
 | pr_number |  |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test && pnpm run check:design |
 | last_ui_screenshots | N/A headless vitest — T-FE-24~27 tab focus smoke PASS; check:design 34 files |
@@ -68,6 +68,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r14 独立验证：backend ruff+pytest 227 passed/2 skipped；fe vitest 60/60；build+check:design PASS；exit_code 0
+- P3 r14 实现完成：5 Task 全绿；backend 227 passed/2 skipped；fe vitest 60/60；build+check:design PASS；branch feat/evolution-r14-boot-quality-push@6af6604
 - P5 r13 PRD 重评：DATA-004/002/003/ETL-001 破 90（91.1/91.0/90.6/90.7）；DATA-001 巩固 91.3；STUCK DATA 簇清零
 - P4 r13 独立验证：backend ruff+pytest 207 passed/2 skipped；ingestion 105 passed/1 skipped；fe vitest 56/56（ingestion 31/31）；build+check:design PASS
 - P3 r13 实现完成：6 Task 全绿；DATA-003 run AlertDialog ≤25 行；ingestion vitest 31 项；backend 207 passed
