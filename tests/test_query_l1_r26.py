@@ -252,9 +252,9 @@ def test_build_table_select_readonly():
 
 
 def test_unknown_dialect():
-    """T-Q-025: 未知 connector_type → UnsupportedDialectError."""
+    """T-Q-025: 未知 connector_type → UnsupportedDialectError（clickhouse 已注册）。"""
     with pytest.raises(UnsupportedDialectError):
-        get_sql_dialect("clickhouse")
+        get_sql_dialect("unknown_type")
 
 
 # --- readonly tests ---
