@@ -13,12 +13,33 @@ describe("AppRoutes smoke", () => {
     expect(screen.getAllByText("VitalSpan").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("redirects / to admin shell (T-FE-02)", () => {
+  it("renders main content area at /admin (T-FE-03)", () => {
     render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={["/admin"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows AdminHomePage welcome heading at /admin (T-FE-04)", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.getAllByRole("heading", { name: "欢迎使用 VitalSpan" }).length,
+    ).toBeGreaterThanOrEqual(1);
+  });
+
+  it("redirects unknown paths to admin shell (T-FE-05)", () => {
+    render(
+      <MemoryRouter initialEntries={["/unknown-route-xyz"]}>
         <AppRoutes />
       </MemoryRouter>,
     );
     expect(screen.getAllByText("VitalSpan").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
   });
 });
