@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r11.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r11-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r11.md |
@@ -73,6 +73,7 @@
 - G0 PASS：PR #25 已合并 dev-auto@78fb630；deployed_automate_rev=bf60b94ec4f4
 - 技能规则索引 26 条未过期
 - P4 r11 验证完成：backend 178 passed 1 skipped；fe 48 passed + build + check:design 34 files PASS；ingestion.smoke 23 tests PASS
+- P5 r11 PRD 8 维重评完成：DATA-001 破 90（90.4）；DATA-002/003/ETL-001/005 总分 88.2–89.4（仍 <90）；STUCK DATA-* 4–6 轮
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -85,8 +86,7 @@
 | BOOT-004 | 10 | 89.5 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
 | DATA-004 | 4 | 88.7 | 2026-07-03 |
-| DATA-001 | 4 | 89.5 | 2026-07-03 |
-| DATA-002 | 5 | 87.0 | 2026-07-03 |
-| ETL-001 | 4 | 87.5 | 2026-07-03 |
-| DATA-003 | 5 | 87.5 | 2026-07-03 |
-| DATA-005 | 3 | 88.4 | 2026-07-03 |
+| DATA-002 | 6 | 88.2 | 2026-07-03 |
+| DATA-003 | 6 | 88.8 | 2026-07-03 |
+| ETL-001 | 5 | 88.5 | 2026-07-03 |
+| DATA-005 | 4 | 89.4 | 2026-07-03 |
