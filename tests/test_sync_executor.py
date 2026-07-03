@@ -401,3 +401,80 @@ def test_run_job_cast_fail_then_fill_null(mock_fetch, mock_write):
     written = mock_write.call_args[0][1][0]
     assert written["amount"] is None
     assert written["note"] == "无备注"
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=1000)
+@patch("app.ingestion.sync_executor._fetch_mysql_rows")
+def test_run_job_large_batch_row_count(mock_fetch, mock_write):
+    """T-D02-16: 大批量 mock fetch 1000 行 → rows_synced==1000 且 write 收到 1000 行。"""
+    rows = [
+        {"product_name": f"A{i}", "amount": "1", "status": "active", "note": None}
+        for i in range(1000)
+    ]
+    mock_fetch.return_value = rows
+    job_id = _seed_job()
+    run_job(job_id, "trace-large-batch")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    assert run.rows_synced == 1000
+    written_rows = mock_write.call_args[0][1]
+    assert len(written_rows) == 1000
+
+
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", side_effect=ConnectionError("always fails"))
+def test_run_job_retry_exhausted_preserves_trace_and_error(mock_fetch):
+    """T-D02-17: 重试耗尽 → failed + trace_id 保持 + error_message 非空且 ≤500。"""
+    job_id = _seed_job()
+    run_job(job_id, "trace-retry-final")
+    run = _latest_run(job_id)
+    assert run.status == "failed"
+    assert run.trace_id == "trace-retry-final"
+    assert run.error_message is not None
+    assert "always fails" in run.error_message
+    assert run.retry_count >= 1
+    assert len(run.error_message) <= 500
+    assert mock_fetch.call_count >= 2
+
+
+from test_etl_rules import DIRTY_ORDERS_SUBSET, L1_RULE_CHAIN
+
+
+def _seed_job_with_dirty_subset_rules() -> uuid.UUID:
+    db = get_meta_session()
+    job = SyncJob(
+        name="l1-chain-job",
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="sample_db",
+        source_username="sample",
+        source_password_encrypted=encrypt_password("sample"),
+        source_table="dirty_orders",
+        target_table="orders_l1_chain",
+        enabled=True,
+    )
+    db.add(job)
+    db.flush()
+    db.add(EtlRuleSet(job_id=job.id, rules=L1_RULE_CHAIN))
+    db.commit()
+    job_id = job.id
+    db.close()
+    return job_id
+
+
+@patch("app.ingestion.sync_executor._write_analytics")
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", return_value=DIRTY_ORDERS_SUBSET)
+def test_run_job_l1_rule_chain_writes_transformed_fields(mock_fetch, mock_write):
+    """T-ETL-15: L1 全规则链 executor 写字段含 product/amount/note，无 product_name。"""
+    mock_write.return_value = 3
+    job_id = _seed_job_with_dirty_subset_rules()
+    run_job(job_id, "trace-l1-chain")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    written_rows = mock_write.call_args[0][1]
+    assert len(written_rows) >= 1
+    first = written_rows[0]
+    assert "product" in first
+    assert "product_name" not in first
+    assert isinstance(first["amount"], float)
+    assert first["note"] == "无备注"

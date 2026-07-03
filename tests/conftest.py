@@ -76,3 +76,15 @@ def integration_env():
 def analytics_sqlite() -> str:
     """In-memory sqlite URL for mock L1 analytics (no compose)."""
     return "sqlite+pysqlite:///:memory:"
+
+
+@pytest.fixture
+def l1_analytics_engine(analytics_sqlite: str):
+    """Yield SQLAlchemy engine bound to in-memory analytics; drop test tables after."""
+    from sqlalchemy import create_engine, text
+
+    engine = create_engine(analytics_sqlite)
+    yield engine
+    with engine.begin() as conn:
+        conn.execute(text('DROP TABLE IF EXISTS "orders_l1_write"'))
+        conn.execute(text('DROP TABLE IF EXISTS "orders_l1_order_r11"'))

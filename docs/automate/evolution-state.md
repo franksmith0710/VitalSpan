@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r11.md |
-| design |  |
-| plan |  |
-| branch |  |
-| base_branch |  |
+| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r11-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r11.md |
+| branch | cursor/bc-53058b4a-e7e4-4724-8daf-ed82dcadddd0-47d6 |
+| base_branch | dev-auto |
 | prd_ids | DATA-002,DATA-003,ETL-001,DATA-001,DATA-005 |
-| pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
-| last_ui_verified_command |  |
-| last_ui_screenshots |  |
+| pr_number | 26 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx; pnpm run check:design |
+| last_ui_screenshots | N/A headless CI |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T13:45:00Z |
 | skill_rule_index_source_count | 26 |
@@ -69,10 +69,11 @@
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
 - G1 doc-bootstrap（r11 入口）：goal.md 只读；prd hub 124 项·16 域含薄弱项汇总/8 维总表/功能索引
-- 已实现薄弱项 Top3（<90）：DATA-002(87.0)、DATA-003(87.5)、ETL-001(87.5)；STUCK BOOT-* 最高 11 轮
-- plan M1+M1B 全 [x]（16 项）；无含 `[ ]` 的活跃节，建议人工 create-evolution-plan 激活 M2+
-- G0 PASS：PR #25 已合并 dev-auto@78fb630；工作区干净；deployed_automate_rev=bf60b94ec4f4
-- 技能规则索引 26 条未过期；轮次已重置 phase=idle
+- plan M1+M1B 全 [x]（16 项）；无含 `[ ]` 的活跃节
+- G0 PASS：PR #25 已合并 dev-auto@78fb630；deployed_automate_rev=bf60b94ec4f4
+- 技能规则索引 26 条未过期
+- P4 r11 验证完成：backend 178 passed 1 skipped；fe 48 passed + build + check:design 34 files PASS；ingestion.smoke 23 tests PASS
+- P5 r11 PRD 8 维重评完成：DATA-001 破 90（90.4）；DATA-002/003/ETL-001/005 总分 88.2–89.4（仍 <90）；STUCK DATA-* 4–6 轮
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -85,8 +86,7 @@
 | BOOT-004 | 10 | 89.5 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
 | DATA-004 | 4 | 88.7 | 2026-07-03 |
-| DATA-001 | 4 | 89.5 | 2026-07-03 |
-| DATA-002 | 5 | 87.0 | 2026-07-03 |
-| ETL-001 | 4 | 87.5 | 2026-07-03 |
-| DATA-003 | 5 | 87.5 | 2026-07-03 |
-| DATA-005 | 3 | 88.4 | 2026-07-03 |
+| DATA-002 | 6 | 88.2 | 2026-07-03 |
+| DATA-003 | 6 | 88.8 | 2026-07-03 |
+| ETL-001 | 5 | 88.5 | 2026-07-03 |
+| DATA-005 | 4 | 89.4 | 2026-07-03 |

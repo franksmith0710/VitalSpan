@@ -89,6 +89,24 @@ export function EtlRulesPage() {
   const handleSave = async () => {
     if (!id) return;
     if (saving) return;
+    for (const rule of rules) {
+      if (
+        rule.type === "rename_column" &&
+        (!(rule.from?.trim()) || !(rule.to?.trim()))
+      ) {
+        setError("请填写完整的列重命名规则");
+        return;
+      }
+      if (
+        (rule.type === "cast_type" ||
+          rule.type === "fill_null" ||
+          rule.type === "filter_rows") &&
+        !(rule.column?.trim())
+      ) {
+        setError("请填写规则涉及的列名");
+        return;
+      }
+    }
     setSaving(true);
     setError(null);
     try {

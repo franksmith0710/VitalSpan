@@ -39,7 +39,7 @@
   - [x] `GET/POST /api/v1/ingestion/sync-jobs` 可用
   - [x] OpenAPI 可访问
 - **代码锚点**：`backend/app/ingestion/` · `backend/app/api/v1/ingestion/`
-- **演化建议**：`tests/test_ingestion_api.py` T-D01-14~18（404/limit/OpenAPI tag/连续 409/耗时 smoke）；补 postgres 源类型 executor 覆盖；OpenAPI 示例与 api/README 持续对齐
+- **演化建议**：`tests/test_ingestion_api.py` T-D01-19~22（OpenAPI snapshot、422 缺 host/table、rules 幂等 PUT、run P95 <0.5s）；补 postgres 源类型 executor 覆盖；OpenAPI 示例与 api/README 持续对齐
 
 ### [DATA-002] 同步执行器
 
@@ -52,7 +52,7 @@
   - [x] 手动 `POST .../run` 可将源表写入托管库
   - [x] 运行历史含状态与 `traceId` 日志
 - **代码锚点**：`backend/app/ingestion/sync_executor.py` · `scheduler.py`
-- **演化建议**：`tests/test_sync_executor.py` T-D02-13~14（5k 行 apply_rules <2s、filter 全剔除写空表）；`tests/test_scheduler.py` T-D02-15；`tests/test_ingestion_l1_smoke.py` T-L1-04 端到端 <3s；扩展 postgres 源 executor；CI compose 跑 L1 全链路
+- **演化建议**：`tests/test_sync_executor.py` T-D02-16~17（1000 行批量、重试耗尽 failed+traceId）；`tests/test_scheduler.py` T-D02-18（cron 变更重注册）；`tests/test_ingestion_l1_smoke.py` T-L1-04 端到端 <3s；扩展 postgres 源 executor；CI compose 跑 L1 全链路
 
 ### [ETL-001] 清洗规则引擎（轻量）
 
@@ -65,7 +65,7 @@
   - [x] 规则在写托管库前生效
   - [x] 脏数据样例经规则后字段符合配置
 - **代码锚点**：`backend/app/ingestion/etl_rules.py`
-- **演化建议**：`tests/test_etl_rules.py` T-ETL-09~12（unknown op/cast fallback/empty chain）；`test_sync_executor` T-D02-14 cast 失败+fill_null 管线；补 executor+rules 组合失败降级场景
+- **演化建议**：`tests/test_etl_rules.py` T-ETL-13~16（6 规则深链 <0.3s、500 noop 不挂起）；`test_ingestion_api` T-ETL-14 rules 非 list 422；`test_sync_executor` T-ETL-15 L1 全规则链写字段；补 executor+rules 组合失败降级场景
 
 ### [DATA-003] Admin 配置台页面
 
@@ -78,7 +78,7 @@
   - [x] 浏览器可创建任务并手动运行
   - [x] 可查看运行历史
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
-- **演化建议**：`SyncJobFormPage`/`EtlRulesPage` handler 防重 guard；`ingestion.smoke.test.tsx` 19 项（T-ING-06~19 含 history error/limit=20/双次提交/首屏 <500ms）；二期 Playwright 真浏览器 L1
+- **演化建议**：`EtlRulesPage` 客户端校验 + handler 防重 guard；`ingestion.smoke.test.tsx` 23 项（T-ING-20~23 空列拦截、history 20 行 <600ms、port 校验、error 语义 token）；二期 Playwright 真浏览器 L1
 
 ### [DATA-005] 端到端验收与文档回写
 
@@ -91,4 +91,4 @@
   - [x] DATA-SMOKE L1 用例通过（`tests/test_ingestion_e2e.py`）
   - [x] SRS §3.6、api/README §9、services/ingestion 状态已回写
 - **代码锚点**：`tests/test_ingestion_e2e.py` · `tests/test_ingestion_l1_smoke.py` · `tests/test_doc_anchors_data.py` · `docs/automate/plan.md` M1B
-- **演化建议**：`tests/test_ingestion_l1_smoke.py` mock L1 成功/失败/历史排序 + `tests/test_doc_anchors_data.py` T-D05-05~07 锚点对账 + `analytics_sqlite` fixture；CI compose 跑 L1 integration（当前 skip）；L2 dataSourceId 登记见 M3/M4
+- **演化建议**：`tests/test_ingestion_l1_smoke.py` T-L1-05~06（analytics_sqlite 写穿、runs 时间序）；`tests/test_doc_anchors_data.py` T-D05-08~09 锚点对账；CI compose 跑 L1 integration（当前 skip）；L2 dataSourceId 登记见 M3/M4

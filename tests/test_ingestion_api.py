@@ -324,3 +324,111 @@ def test_trigger_run_accepts_within_one_second(mock_run_job, client, auth_header
     assert response.status_code == 202
     assert elapsed < 1.0
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+INGESTION_OPENAPI_PATHS = {
+    "/api/v1/ingestion/sync-jobs": {"get", "post"},
+    "/api/v1/ingestion/sync-jobs/{job_id}": {"get", "put", "delete"},
+    "/api/v1/ingestion/sync-jobs/{job_id}/run": {"post"},
+    "/api/v1/ingestion/sync-jobs/{job_id}/runs": {"get"},
+    "/api/v1/ingestion/sync-jobs/{job_id}/etl-rules": {"get", "put"},
+}
+
+
+def test_openapi_ingestion_contract_snapshot(client):
+    """T-D01-19: ingestion 5 path 的 method/tags 与 SyncJobCreate/SourceConnectionIn 必填字段。"""
+    spec = client.get("/openapi.json").json()
+    paths = spec["paths"]
+    for path, methods in INGESTION_OPENAPI_PATHS.items():
+        assert path in paths, path
+        for method in methods:
+            op = paths[path][method]
+            assert "ingestion" in op.get("tags", []), f"{method} {path}"
+    components = spec["components"]["schemas"]
+    create_required = set(components["SyncJobCreate"]["required"])
+    assert {"name", "source", "target_table"}.issubset(create_required)
+    src_required = set(components["SourceConnectionIn"]["required"])
+    assert {"type", "host", "port", "database", "username", "password", "table"}.issubset(
+        src_required
+    )
+
+
+def test_create_job_invalid_source_missing_host_422(client, auth_headers, job_payload):
+    """T-D01-20: SourceConnection 缺 host → 422 validation。"""
+    source = {k: v for k, v in job_payload["source"].items() if k != "host"}
+    bad = {**job_payload, "source": source}
+    response = client.post("/api/v1/ingestion/sync-jobs", json=bad, headers=auth_headers)
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert isinstance(detail, list)
+
+
+def test_create_job_invalid_source_empty_table_422(client, auth_headers, job_payload):
+    """T-D01-20: SourceConnection 缺 table 字段 → 422 validation。"""
+    source = {k: v for k, v in job_payload["source"].items() if k != "table"}
+    bad = {**job_payload, "source": source}
+    response = client.post("/api/v1/ingestion/sync-jobs", json=bad, headers=auth_headers)
+    assert response.status_code == 422
+
+
+def test_put_etl_rules_idempotent(client, auth_headers, job_payload):
+    """T-D01-21: 同一 rules 连续 PUT 两次 → 均 200 且 GET 一致。"""
+    rules = [
+        {"type": "rename_column", "from": "product_name", "to": "product"},
+        {"type": "filter_rows", "column": "status", "op": "ne", "value": "deleted"},
+    ]
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    for _ in range(2):
+        put = client.put(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules",
+            json={"rules": rules},
+            headers=auth_headers,
+        )
+        assert put.status_code == 200
+        assert put.json()["rules"] == rules
+    got = client.get(f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules", headers=auth_headers)
+    assert got.json()["rules"] == rules
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+@patch("app.api.v1.ingestion.sync.run_job")
+def test_trigger_run_p95_under_half_second(mock_run_job, client, auth_headers, job_payload):
+    """T-D01-22: 每次新建 job 后 POST run，10 次采样 P95 <0.5s。"""
+    mock_run_job.return_value = None
+    durations: list[float] = []
+    job_ids: list[str] = []
+    with patch("app.api.v1.ingestion.sync.get_settings") as mock_get:
+        mock_get.return_value.analytics_database_url = "postgresql+psycopg://u:p@localhost:5433/a"
+        for _ in range(10):
+            create = client.post(
+                "/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers
+            )
+            assert create.status_code == 201
+            job_id = create.json()["id"]
+            job_ids.append(job_id)
+            start = time.perf_counter()
+            response = client.post(
+                f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+                headers=auth_headers,
+            )
+            durations.append(time.perf_counter() - start)
+            assert response.status_code == 202
+    durations_sorted = sorted(durations)
+    p95_index = max(0, int(len(durations_sorted) * 0.95) - 1)
+    assert durations_sorted[p95_index] < 0.5
+    for job_id in job_ids:
+        client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_put_etl_rules_non_list_body_422(client, auth_headers, job_payload):
+    """T-ETL-14: PUT etl-rules body rules 非 list → 422。"""
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    response = client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules",
+        json={"rules": "not-list"},
+        headers=auth_headers,
+    )
+    assert response.status_code == 422
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)

@@ -155,3 +155,33 @@ def test_empty_rules_chain_preserves_rows():
     """T-ETL-11: rules: [] 不改变行集。"""
     rows = [{"a": 1}, {"a": 2}]
     assert apply_rules(rows, []) == [{"a": 1}, {"a": 2}]
+
+
+import time
+
+
+DEEP_RULE_CHAIN = [
+    *L1_RULE_CHAIN,
+    {"type": "filter_rows", "column": "amount", "op": "is_not_null", "value": None},
+    {"type": "rename_column", "from": "note", "to": "remark"},
+]
+
+
+def test_deep_six_rule_chain_perf_under_300ms():
+    """T-ETL-13: 6 规则深链在 DIRTY_ORDERS_SUBSET 上 <0.3s。"""
+    start = time.perf_counter()
+    result = apply_rules(DIRTY_ORDERS_SUBSET, DEEP_RULE_CHAIN)
+    elapsed = time.perf_counter() - start
+    assert len(result) >= 1
+    assert elapsed < 0.3
+
+
+def test_five_hundred_noop_rename_rules_under_one_second():
+    """T-ETL-16: 500 条 noop rename 规则不挂起且行数不变。"""
+    rows = [{"col_a": f"v{i}", "col_b": i} for i in range(50)]
+    rules = [{"type": "rename_column", "from": "missing_col", "to": "missing_col2"} for _ in range(500)]
+    start = time.perf_counter()
+    result = apply_rules(rows, rules)
+    elapsed = time.perf_counter() - start
+    assert len(result) == len(rows)
+    assert elapsed < 1.0
