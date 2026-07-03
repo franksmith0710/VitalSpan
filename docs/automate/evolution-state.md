@@ -13,7 +13,7 @@
 | branch | feat/evolution-r18-m2-auth-quality-push |
 | base_branch | dev-auto |
 | prd_ids | AUTH-001,AUTH-002,AUTH-003,AUTH-004,AUTH-005 |
-| pr_number | TBD |
+| pr_number | 36 |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端 r18） |
