@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r27.md |
-| design | docs/superpowers/specs/2026-07-03-m4-query-quality-r27-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m4-query-quality-r27.md |
-| branch | feat/evolution-r27-m4-query-quality |
-| base_branch | dev-auto |
-| prd_ids | QUERY-004, QUERY-001, QUERY-002, QUERY-005, QUERY-006 |
-| pr_number | 49 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
-| last_verified_exit_code | 0 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T23:20:00Z |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 doc-bootstrap：r27 PR #49 已合并；当前轮次重置 phase=idle，待 G2 选题
 - P5 r27 PRD 重评：QUERY-001/002/004/005/006 质量推分 88.5–91.4→91.4–92.8（QUERY-004 破 90 STUCK 清零）；pytest 570 + 4 skipped；test_query_quality_r27 36/36；ClickHouse dialect + readonly/table/binding/RLS 边界
 - P4 r27 独立验证：backend ruff PASS + pytest 570 passed/4 skipped（≥560 目标）；test_query_quality_r27 36/36（≥28）；round-target QUERY-004/001/002/005/006 + plan T-MIG-40 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r27-m4-query-quality；base_branch dev-auto
 - P3 r27 实现完成：7 Task 全绿；backend ruff+pytest 570 passed/4 skipped（+38 query quality）；test_query_quality_r27 36/36；ui_design_skill: none；branch feat/evolution-r27-m4-query-quality；base_branch dev-auto
