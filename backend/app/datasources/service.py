@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import threading
 import time
 import uuid
@@ -18,6 +19,7 @@ from app.datasources.credentials import CredentialDecryptError, decrypt_credenti
 from app.datasources.models import DataSource, get_meta_session
 from app.datasources.registry import ConnectorNotFoundError, register_usage_checker, registry
 from app.datasources.schemas import (
+    ConnectionOptions,
     DataSourceCreate,
     DataSourceListResponse,
     DataSourceOut,
@@ -26,6 +28,8 @@ from app.datasources.schemas import (
     TestConnectionIn,
     TestConnectionOut,
 )
+
+logger = logging.getLogger("vitalspan.datasources")
 
 _test_inflight: dict[str, float] = {}
 _test_lock = threading.Lock()
@@ -40,7 +44,28 @@ class DataSourceError(Exception):
         super().__init__(message)
 
 
+def _connection_options_to_json(opts: ConnectionOptions | None) -> dict | None:
+    if opts is None:
+        return None
+    return opts.model_dump(by_alias=False, exclude_none=True)
+
+
+def _resolve_connection_options(
+    *,
+    row: DataSource | None = None,
+    payload: ConnectionOptions | None = None,
+) -> ConnectionOptions:
+    if payload is not None:
+        return payload
+    if row is not None and row.connection_options:
+        return ConnectionOptions.model_validate(row.connection_options)
+    return ConnectionOptions()
+
+
 def _to_out(row: DataSource) -> DataSourceOut:
+    opts = None
+    if row.connection_options is not None:
+        opts = ConnectionOptions.model_validate(row.connection_options)
     return DataSourceOut(
         id=row.id,
         name=row.name,
@@ -52,6 +77,7 @@ def _to_out(row: DataSource) -> DataSourceOut:
         username=row.username,
         password="***",
         description=row.description,
+        connection_options=opts,
     )
 
 
@@ -92,9 +118,17 @@ def _inflight_key_draft(payload: TestConnectionIn) -> str:
     return f"draft:{digest}"
 
 
+def _release_test_slot(key: str) -> None:
+    with _test_lock:
+        _test_inflight.pop(key, None)
+
+
 def _acquire_test_slot(key: str) -> None:
     now = time.monotonic()
     with _test_lock:
+        expired = [k for k, exp in _test_inflight.items() if exp <= now]
+        for k in expired:
+            del _test_inflight[k]
         expires = _test_inflight.get(key)
         if expires is not None and expires > now:
             raise DataSourceError("TEST_IN_PROGRESS", "Connection test already in progress", 429)
@@ -109,19 +143,30 @@ def _run_test(
     database: str,
     username: str,
     password: str,
+    options: ConnectionOptions | None = None,
+    data_source_id: uuid.UUID | None = None,
 ) -> TestConnectionOut:
-    settings = get_settings()
-    timeout_sec = min(5.0, float(settings.query_timeout_seconds))
+    opts = options or ConnectionOptions()
     result = connector.test_connection(
         host=host,
         port=port,
         database=database,
         username=username,
         password=password,
-        timeout_sec=timeout_sec,
+        timeout_sec=opts.connect_timeout_sec,
+        charset=opts.charset,
+        collation=opts.collation,
+        ssl_mode=opts.ssl_mode,
+        connect_timeout_sec=opts.connect_timeout_sec,
+        read_timeout_sec=opts.read_timeout_sec,
     )
     trace = trace_id_var.get() or ""
-    return TestConnectionOut.from_result(result, trace_id=trace)
+    out = TestConnectionOut.from_result(result, trace_id=trace)
+    extra: dict = {"traceId": trace, "ok": result.ok}
+    if data_source_id is not None:
+        extra["dataSourceId"] = str(data_source_id)
+    logger.info("datasource_test", extra=extra)
+    return out
 
 
 def list_data_sources(
@@ -141,7 +186,14 @@ def list_data_sources(
     if q:
         pattern = f"%{q}%"
         base = base.where(or_(DataSource.name.ilike(pattern), DataSource.code.ilike(pattern)))
-    total = session.scalar(select(func.count()).select_from(base.subquery())) or 0
+    count_stmt = select(func.count()).select_from(DataSource)
+    count_stmt = _active_filter(count_stmt)
+    if type:
+        count_stmt = count_stmt.where(DataSource.type == type)
+    if q:
+        pattern = f"%{q}%"
+        count_stmt = count_stmt.where(or_(DataSource.name.ilike(pattern), DataSource.code.ilike(pattern)))
+    total = session.scalar(count_stmt) or 0
     rows = list(session.scalars(base.order_by(DataSource.code).limit(limit).offset(offset)))
     return DataSourceListResponse(
         items=[_to_out(row) for row in rows],
@@ -173,6 +225,7 @@ def create_data_source(session: Session, payload: DataSourceCreate) -> DataSourc
         username=payload.username,
         password_encrypted=encrypt_credential(payload.password),
         description=payload.description,
+        connection_options=_connection_options_to_json(payload.connection_options),
     )
     session.add(row)
     try:
@@ -210,6 +263,8 @@ def update_data_source(
     if payload.password:
         row.password_encrypted = encrypt_credential(payload.password)
     row.description = payload.description
+    if payload.connection_options is not None:
+        row.connection_options = _connection_options_to_json(payload.connection_options)
     existing_name = session.scalar(
         select(DataSource).where(
             DataSource.name == payload.name,
@@ -236,7 +291,12 @@ def patch_data_source(
     row = session.get(DataSource, data_source_id)
     if row is None or row.deleted_at is not None:
         raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
-    data = payload.model_dump(exclude_unset=True)
+    data = payload.model_dump(exclude_unset=True, by_alias=False)
+    if "connection_options" in data:
+        raw = data.pop("connection_options")
+        row.connection_options = _connection_options_to_json(
+            ConnectionOptions.model_validate(raw) if raw is not None else None
+        )
     if "name" in data and data["name"] != row.name:
         conflict = session.scalar(
             select(DataSource).where(
@@ -278,33 +338,42 @@ def delete_data_source(session: Session, data_source_id: uuid.UUID) -> None:
 def test_connection_draft(payload: TestConnectionIn) -> TestConnectionOut:
     key = _inflight_key_draft(payload)
     _acquire_test_slot(key)
-    connector = _resolve_connector(payload.type)
-    return _run_test(
-        connector,
-        host=payload.host,
-        port=payload.port,
-        database=payload.database,
-        username=payload.username,
-        password=payload.password,
-    )
+    try:
+        connector = _resolve_connector(payload.type)
+        return _run_test(
+            connector,
+            host=payload.host,
+            port=payload.port,
+            database=payload.database,
+            username=payload.username,
+            password=payload.password,
+            options=payload.connection_options,
+        )
+    finally:
+        _release_test_slot(key)
 
 
 def test_connection_by_id(session: Session, data_source_id: uuid.UUID) -> TestConnectionOut:
     key = _inflight_key_saved(data_source_id)
     _acquire_test_slot(key)
-    row = session.get(DataSource, data_source_id)
-    if row is None or row.deleted_at is not None:
-        raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
-    connector = _resolve_connector(row.type)
     try:
-        password = decrypt_credential(row.password_encrypted)
-    except CredentialDecryptError as exc:
-        raise DataSourceError("CREDENTIAL_DECRYPT_FAILED", str(exc), 500) from exc
-    return _run_test(
-        connector,
-        host=row.host,
-        port=row.port,
-        database=row.database,
-        username=row.username,
-        password=password,
-    )
+        row = session.get(DataSource, data_source_id)
+        if row is None or row.deleted_at is not None:
+            raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
+        connector = _resolve_connector(row.type)
+        try:
+            password = decrypt_credential(row.password_encrypted)
+        except CredentialDecryptError as exc:
+            raise DataSourceError("CREDENTIAL_DECRYPT_FAILED", str(exc), 500) from exc
+        return _run_test(
+            connector,
+            host=row.host,
+            port=row.port,
+            database=row.database,
+            username=row.username,
+            password=password,
+            options=_resolve_connection_options(row=row),
+            data_source_id=data_source_id,
+        )
+    finally:
+        _release_test_slot(key)

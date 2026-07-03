@@ -170,7 +170,9 @@ def test_mysql_invalid_ssl_mode_raises():
 
 
 import logging
+import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
 from sqlalchemy import text
@@ -442,15 +444,24 @@ def test_test_uses_updated_password(mock_connect, client, auth_headers):
 
 @patch("app.datasources.dialects.mysql.pymysql.connect")
 def test_duplicate_test_returns_429(mock_connect, client, auth_headers):
-    """T-DS-T07: 2s 内重复 test → 429 TEST_IN_PROGRESS。"""
-    mock_connect.return_value = MagicMock()
+    """T-DS-T07: inflight 内并发 test → 429 TEST_IN_PROGRESS。"""
+    def slow(**kwargs):
+        time.sleep(0.1)
+        return MagicMock()
+
+    mock_connect.side_effect = slow
     created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
     ds_id = created.json()["id"]
-    first = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
-    assert first.status_code == 200
-    second = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
-    assert second.status_code == 429
-    assert second.json()["code"] == "TEST_IN_PROGRESS"
+    results: list[int] = []
+
+    def run_test():
+        return client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(run_test) for _ in range(2)]
+        results = [f.result() for f in futures]
+    assert 200 in results
+    assert 429 in results
 
 
 @patch("app.datasources.dialects.mysql.pymysql.connect")

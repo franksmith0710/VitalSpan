@@ -14,9 +14,11 @@ DATASOURCE_CODE_RE = re.compile(r"^[a-z][a-z0-9_-]{1,63}$")
 class ConnectionOptions(BaseModel):
     charset: str = "utf8mb4"
     collation: str | None = None
-    ssl_mode: Literal["disabled", "preferred", "required"] = "preferred"
-    connect_timeout_sec: float = Field(default=5.0, ge=1.0, le=30.0)
-    read_timeout_sec: float | None = None
+    ssl_mode: Literal["disabled", "preferred", "required"] = Field(
+        default="preferred", alias="sslMode"
+    )
+    connect_timeout_sec: float = Field(default=5.0, ge=1.0, le=30.0, alias="connectTimeoutSec")
+    read_timeout_sec: float | None = Field(default=None, alias="readTimeoutSec")
 
     model_config = {"populate_by_name": True}
 
@@ -31,7 +33,7 @@ class DataSourceCreate(BaseModel):
     username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1)
     description: str | None = None
-    connection_options: ConnectionOptions | None = Field(default=None, serialization_alias="connectionOptions")
+    connection_options: ConnectionOptions | None = Field(default=None, alias="connectionOptions")
 
     model_config = {"populate_by_name": True}
 
@@ -51,7 +53,7 @@ class DataSourceUpdate(BaseModel):
     username: str = Field(min_length=1, max_length=128)
     password: str = ""
     description: str | None = None
-    connection_options: ConnectionOptions | None = Field(default=None, serialization_alias="connectionOptions")
+    connection_options: ConnectionOptions | None = Field(default=None, alias="connectionOptions")
 
     model_config = {"populate_by_name": True}
 
@@ -64,7 +66,7 @@ class DataSourcePatch(BaseModel):
     username: str | None = None
     password: str | None = None
     description: str | None = None
-    connection_options: ConnectionOptions | None = Field(default=None, serialization_alias="connectionOptions")
+    connection_options: ConnectionOptions | None = Field(default=None, alias="connectionOptions")
 
     model_config = {"populate_by_name": True}
 
@@ -80,7 +82,7 @@ class DataSourceOut(BaseModel):
     username: str
     password: str = "***"
     description: str | None
-    connection_options: ConnectionOptions | None = Field(default=None, serialization_alias="connectionOptions")
+    connection_options: ConnectionOptions | None = Field(default=None, alias="connectionOptions")
 
     model_config = {"populate_by_name": True}
 

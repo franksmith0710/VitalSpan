@@ -10,7 +10,7 @@ import pytest
 
 from app.core.config import get_settings
 from app.datasources import register_builtin_dialects
-from app.datasources.models import Base, get_meta_engine
+from app.datasources.models import Base, DataSource, get_meta_engine
 from app.datasources.dialects.base import TestConnectionResult
 from app.datasources.dialects.errors import MYSQL_SSL_ERROR, MYSQL_UNKNOWN_DATABASE
 from app.datasources.dialects.mysql import MysqlConnector
@@ -49,7 +49,15 @@ def ds_r24_sqlite_env():
 def ensure_data_sources_table_r24():
     get_meta_engine.cache_clear()
     engine = get_meta_engine()
+    Base.metadata.drop_all(engine, tables=[DataSource.__table__])
     Base.metadata.create_all(engine)
+    yield
+
+
+@pytest.fixture(scope="module", autouse=True)
+def ensure_auth_tables_r24():
+    engine = get_meta_engine()
+    AuthBase.metadata.create_all(engine)
     yield
 
 
@@ -210,11 +218,13 @@ def test_ingestion_mysql_type_in_catalog():
 
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 from cryptography.fernet import Fernet
 
 from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
 from app.datasources.models import DataSource, get_meta_session
+from app.auth.models import Base as AuthBase
 from sqlalchemy import text
 
 
@@ -310,3 +320,164 @@ def test_datasource_create_accepts_connection_options():
     )
     assert payload.connection_options is not None
     assert payload.connection_options.ssl_mode == "required"
+
+
+def _payload(**overrides) -> dict:
+    base = {
+        "name": "Demo MySQL",
+        "code": "demo_mysql",
+        "type": "mysql",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "database": "demo",
+        "username": "root",
+        "password": "plain-secret",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_list_offset_beyond_total(client, auth_headers):
+    """T-DS-C17: offset=9999 → items=[], total 不变。"""
+    client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    resp = client.get("/api/v1/datasources?offset=9999", headers=auth_headers)
+    body = resp.json()
+    assert body["items"] == []
+    assert body["total"] >= 1
+    assert body["offset"] == 9999
+
+
+def test_soft_delete_code_reuse(client, auth_headers):
+    """T-DS-C18: 软删后同 code 再 POST → 201。"""
+    created = client.post("/api/v1/datasources", json=_payload(code="reuse_code"), headers=auth_headers)
+    ds_id = created.json()["id"]
+    assert client.delete(f"/api/v1/datasources/{ds_id}", headers=auth_headers).status_code == 204
+    resp = client.post("/api/v1/datasources", json=_payload(code="reuse_code", name="Reused"), headers=auth_headers)
+    assert resp.status_code == 201
+
+
+def test_create_with_connection_options_echoed(client, auth_headers):
+    """T-DS-C19: POST connectionOptions → GET 回显。"""
+    payload = _payload(
+        code="opts_echo",
+        connectionOptions={"sslMode": "required", "connectTimeoutSec": 3.0},
+    )
+    created = client.post("/api/v1/datasources", json=payload, headers=auth_headers)
+    assert created.status_code == 201
+    body = created.json()
+    assert body["connectionOptions"]["sslMode"] == "required"
+    got = client.get(f"/api/v1/datasources/{body['id']}", headers=auth_headers)
+    assert got.json()["connectionOptions"]["connectTimeoutSec"] == 3.0
+
+
+def test_patch_connection_options_only(client, auth_headers):
+    """T-DS-C20: PATCH 仅 connectionOptions.sslMode。"""
+    created = client.post("/api/v1/datasources", json=_payload(code="patch_opts"), headers=auth_headers)
+    ds_id = created.json()["id"]
+    before_name = created.json()["name"]
+    patched = client.patch(
+        f"/api/v1/datasources/{ds_id}",
+        json={"connectionOptions": {"sslMode": "disabled"}},
+        headers=auth_headers,
+    )
+    assert patched.status_code == 200
+    assert patched.json()["name"] == before_name
+    assert patched.json()["connectionOptions"]["sslMode"] == "disabled"
+
+
+def test_list_query_count_bounded(client, auth_headers, monkeypatch):
+    """T-DS-C21: list 路径 DB execute/scalar 调用 ≤ 3。"""
+    for i in range(3):
+        client.post("/api/v1/datasources", json=_payload(code=f"cnt_{i}", name=f"C {i}"), headers=auth_headers)
+    calls = {"n": 0}
+    import sqlalchemy.orm
+
+    real_scalar = sqlalchemy.orm.Session.scalar
+    real_scalars = sqlalchemy.orm.Session.scalars
+
+    def counting_scalar(self, *args, **kwargs):
+        calls["n"] += 1
+        return real_scalar(self, *args, **kwargs)
+
+    def counting_scalars(self, *args, **kwargs):
+        calls["n"] += 1
+        return real_scalars(self, *args, **kwargs)
+
+    monkeypatch.setattr(sqlalchemy.orm.Session, "scalar", counting_scalar)
+    monkeypatch.setattr(sqlalchemy.orm.Session, "scalars", counting_scalars)
+    client.get("/api/v1/datasources?limit=2", headers=auth_headers)
+    assert calls["n"] <= 3
+
+
+def test_responses_exclude_encrypted_password(client, auth_headers):
+    """T-DS-C22: 响应无 password_encrypted 与明文。"""
+    created = client.post("/api/v1/datasources", json=_payload(code="no_cipher"), headers=auth_headers)
+    assert "password_encrypted" not in created.text
+    assert "plain-secret" not in created.text
+    listed = client.get("/api/v1/datasources", headers=auth_headers)
+    assert "password_encrypted" not in listed.text
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_failed_test_includes_code(mock_connect, client, auth_headers):
+    """T-DS-T11: 失败含 code MYSQL_*。"""
+    mock_connect.side_effect = pymysql.err.OperationalError(1045, "Access denied")
+    resp = client.post("/api/v1/datasources/test", json=_payload(), headers=auth_headers)
+    body = resp.json()
+    assert body["ok"] is False
+    assert body["code"] == "MYSQL_AUTH_FAILED"
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_back_to_back_test_without_waiting(mock_connect, client, auth_headers):
+    """T-DS-T12: 连续两次 test 均 200（release 后）。"""
+    mock_connect.return_value = MagicMock()
+    created = client.post("/api/v1/datasources", json=_payload(code="dbl_test"), headers=auth_headers)
+    ds_id = created.json()["id"]
+    first = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    second = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert first.status_code == 200
+    assert second.status_code == 200
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_concurrent_test_same_id(mock_connect, client, auth_headers):
+    """T-DS-T13: 3 线程并行 test → 无 500。"""
+    def slow(**kwargs):
+        time.sleep(0.05)
+        return MagicMock()
+
+    mock_connect.side_effect = slow
+    created = client.post("/api/v1/datasources", json=_payload(code="conc_test"), headers=auth_headers)
+    ds_id = created.json()["id"]
+
+    def run_test():
+        return client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers).status_code
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        codes = list(pool.map(lambda _: run_test(), range(3)))
+    assert all(c in (200, 429) for c in codes)
+    assert 500 not in codes
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_test_logs_trace_id(mock_connect, client, auth_headers, caplog):
+    """T-DS-T14: caplog 含 traceId / datasource_test。"""
+    caplog.set_level(logging.INFO)
+    mock_connect.side_effect = pymysql.err.OperationalError(2003, "refused")
+    client.post("/api/v1/datasources/test", json=_payload(), headers=auth_headers)
+    assert "datasource_test" in caplog.text or any("traceId" in str(r.__dict__) for r in caplog.records)
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_draft_test_passes_connection_options(mock_connect, client, auth_headers):
+    """T-DS-T15: draft test 传 connectionOptions → connect kwargs。"""
+    mock_connect.return_value = MagicMock()
+    client.post(
+        "/api/v1/datasources/test",
+        json=_payload(connectionOptions={"sslMode": "required", "charset": "utf8mb4"}),
+        headers=auth_headers,
+    )
+    kwargs = mock_connect.call_args.kwargs
+    assert kwargs.get("ssl") == {"ssl": {}}
+    assert kwargs["charset"] == "utf8mb4"
