@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-doc-writeback.md |
 | design | docs/superpowers/specs/2026-07-03-m1-doc-writeback-close-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-doc-writeback-close.md |
@@ -67,17 +67,17 @@
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
 - G0 PASS：PR #8/#9 已 Squash merge 至 dev-auto；工作区干净
-- P5 r2 重评 BOOT-001~006：pytest 25 + vitest 6 绿；加权总分 77.9–85.6（均未达 90）
-- M1 勾选清单六 BOOT 项已完成；当前节 M1「文档回写」4 项待 P5 闭环
+- P5 r3 重评 BOOT-001~006：M1 文档回写闭环；services/core+auth 已实现；api/arch/F01 idempotent 对齐；总分 78.2–86.0（仍均 <90）
+- M1 plan §勾选清单六 BOOT 项已完成；§文档回写 4 行无 BOOT-ID 格式（P5 未改 plan 结构，建议人工 create-evolution-plan 对账）
 - 待办池空；M1B queued 未激活
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-002 | 4 | 79.8 | 2026-07-03 |
-| BOOT-005 | 3 | 77.9 | 2026-07-03 |
-| BOOT-006 | 4 | 82.1 | 2026-07-03 |
-| BOOT-001 | 4 | 82.2 | 2026-07-03 |
-| BOOT-004 | 4 | 82.2 | 2026-07-03 |
-| BOOT-003 | 3 | 85.6 | 2026-07-03 |
+| BOOT-002 | 5 | 80.1 | 2026-07-03 |
+| BOOT-005 | 4 | 78.2 | 2026-07-03 |
+| BOOT-006 | 5 | 82.5 | 2026-07-03 |
+| BOOT-001 | 5 | 83.0 | 2026-07-03 |
+| BOOT-004 | 5 | 83.0 | 2026-07-03 |
+| BOOT-003 | 4 | 86.0 | 2026-07-03 |

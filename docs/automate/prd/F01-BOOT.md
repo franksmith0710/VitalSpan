@@ -13,7 +13,7 @@
   - [x] `backend/app` 可启动且 `/health` 返回 200
   - [x] OpenAPI 文档可访问
 - **代码锚点**：`backend/app/main.py` · `backend/app/api/v1/` · `backend/pyproject.toml`
-- **演化建议**：二期扩展健康检查维度（DB 连通性）；`tests/test_health.py` 已覆盖 404/OpenAPI paths 契约与 CORS 回归（T-HLT-05~08）
+- **演化建议**：api/arch/services 文档已与实现 idempotent 对齐（P5 r3）；二期扩展健康检查维度（DB 连通性）；`tests/test_health.py` 已覆盖 404/OpenAPI paths 契约与 CORS 回归（T-HLT-05~08）
 
 ### [BOOT-002] React 管理端壳层
 
@@ -26,7 +26,7 @@
   - [x] `fe/` 可构建且 `/admin` 路由壳层可访问
   - [x] shadcn/ui + Tailwind v4 主题加载
 - **代码锚点**：`fe/src/layouts/AdminLayout.tsx` · `fe/src/routes.tsx` · `fe/src/index.css` · `fe/scripts/check-design.mjs` · `fe/src/components/README.md`
-- **演化建议**：二期补 TanStack Query、`@/lib/api.ts` 与业务页；vitest 6 项覆盖 routes/AdminLayout smoke 与 `check:design` fixture 负例（T-FE-01~07、T-FE-DG-01~02）
+- **演化建议**：arch §M1 过渡布局已登记；二期补 TanStack Query、`@/lib/api.ts` 与业务页；vitest 6 项覆盖 routes/AdminLayout smoke 与 `check:design` fixture 负例（T-FE-01~07、T-FE-DG-01~02）
 
 ### [BOOT-003] 鉴权中间件骨架
 
@@ -40,7 +40,7 @@
   - [x] 公开路径（`/health`、`/docs`、`/redoc`、`/openapi.json`）无需认证仍可访问
   - [x] 认证上下文可注入 handler
 - **代码锚点**：`backend/app/auth/middleware.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/me.py`（`main.py` 注册 `AuthMiddleware`）
-- **演化建议**：二期替换 `Bearer dev` 为正式 JWT；`tests/test_auth.py` + `test_me.py` 已覆盖 401 矩阵、公开路径与 OPTIONS 预检（T-AUTH-02~08）
+- **演化建议**：`docs/services/auth.md` 与 api README §1 已对齐 PUBLIC_PATHS；二期替换 `Bearer dev` 为正式 JWT；`tests/test_auth.py` + `test_me.py` 已覆盖 401 矩阵、公开路径与 OPTIONS 预检（T-AUTH-02~08）
 
 ### [BOOT-004] 配置与日志基线
 
@@ -53,7 +53,7 @@
   - [x] 环境变量配置可加载
   - [x] 结构化日志输出请求 traceId
 - **代码锚点**：`backend/app/core/config.py` · `backend/app/core/logging.py` · `backend/app/core/middleware.py`
-- **演化建议**：`tests/test_trace.py` 已覆盖 `X-Trace-Id` 生成/透传与 JSON 日志 `traceId`；二期补 Settings 边界与异常分支
+- **演化建议**：`docs/services/core.md` 已实现状态与 TraceId/CORS 锚点已回写；`tests/test_trace.py` 已覆盖 `X-Trace-Id` 生成/透传与 JSON 日志 `traceId`；二期补 Settings 边界与异常分支
 
 ### [BOOT-005] 数据库迁移框架
 
