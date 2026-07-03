@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r22.md |
 | design | docs/superpowers/specs/2026-07-03-m3-datasource-kickoff-r22-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m3-datasource-kickoff-r22.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r22 PRD 重评：DS-001/002/005/003 + CONN-001 L1 kickoff 12.8–13.6→86.8–91.1（DS-002/003/005 破 90；DS-001/CONN-001 <90 STUCK upsert）；pytest 419 + 4 skipped；T-DS-R/C/T/K + CONN-M smoke
 - P4 r22 独立验证：backend ruff PASS + pytest 419 passed/4 skipped；test_datasources_l1 23/23；round-target DS-001/002/005/003 + CONN-001 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r22-m3-datasource-kickoff；base_branch dev-auto
 - P3 r22 实现完成：7 Task 全绿；backend ruff+pytest 419 passed/4 skipped（+25 datasources L1）；ui_design_skill: none；branch feat/evolution-r22-m3-datasource-kickoff；base_branch dev-auto
 - P2 r22 计划完成：7 Task（注册表/MySQL→凭证→ORM/0008→service→API→迁移测试→文档）；17 文件；subagent-driven-development option 1；全 Task UI skill: none
@@ -105,3 +106,5 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| DS-001 | 1 | 88.6 | 2026-07-03 |
+| CONN-001 | 1 | 86.8 | 2026-07-03 |
