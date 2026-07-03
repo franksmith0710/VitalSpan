@@ -244,7 +244,7 @@ def test_migrations_offline_run_migrations_called(monkeypatch):
 
 
 def test_revision_directory_single_head_chain():
-    """T-MIG-15: versions/*.py revision 唯一、单链、head 为 0010。"""
+    """T-MIG-15: versions/*.py revision 唯一、单链、head 为 0011。"""
     versions_dir = (
         Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     )
@@ -255,7 +255,7 @@ def test_revision_directory_single_head_chain():
         module = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[module.revision] = module.down_revision
 
-    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010"}
+    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011"}
     assert len(revisions) == len(set(revisions.keys()))
     assert revisions["0001"] is None
     assert revisions["0002"] == "0001"
@@ -267,10 +267,11 @@ def test_revision_directory_single_head_chain():
     assert revisions["0008"] == "0007"
     assert revisions["0009"] == "0008"
     assert revisions["0010"] == "0009"
+    assert revisions["0011"] == "0010"
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0010"]
+    assert heads == ["0011"]
 
 
 def test_migrations_online_path_connects_and_runs(monkeypatch):
@@ -491,7 +492,7 @@ def test_migrations_env_reimport_under_budget(monkeypatch):
 
 
 def test_alembic_heads_single_head():
-    """T-MIG-25: alembic heads 子进程 returncode==0 且 stdout 含 0010（单 head）。"""
+    """T-MIG-25: alembic heads 子进程 returncode==0 且 stdout 含 0011（单 head）。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "heads"],
@@ -502,7 +503,7 @@ def test_alembic_heads_single_head():
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
-    assert "0010" in result.stdout
+    assert "0011" in result.stdout
 
 
 def test_migrations_online_uses_null_pool(monkeypatch):
@@ -603,7 +604,7 @@ def test_alembic_upgrade_head_sql_subprocess_smoke():
 
 
 def test_revision_chain_no_orphans_head_0003():
-    """T-MIG-30: revision 链无 orphan；唯一 head 为 0010。"""
+    """T-MIG-30: revision 链无 orphan；唯一 head 为 0011。"""
     versions_dir = (
         Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     )
@@ -621,11 +622,11 @@ def test_revision_chain_no_orphans_head_0003():
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0010"]
+    assert heads == ["0011"]
 
 
-def test_revision_chain_head_is_0010():
-    """T-MIG-34: revision 链唯一 head 为 0010；0010.down_revision==0009。"""
+def test_revision_chain_head_is_0011():
+    """T-MIG-34: revision 链唯一 head 为 0011；0011.down_revision==0010。"""
     versions_dir = Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     revisions: dict[str, str | None] = {}
     for path in sorted(versions_dir.glob("*.py")):
@@ -635,10 +636,10 @@ def test_revision_chain_head_is_0010():
         revisions[module.revision] = module.down_revision
 
     heads = [rev for rev, down in revisions.items() if not any(d == rev for d in revisions.values())]
-    assert heads == ["0010"]
+    assert heads == ["0011"]
 
-    mod = importlib.import_module("migrations.versions.0010_datasources_connection_options")
-    assert mod.down_revision == "0009"
+    mod = importlib.import_module("migrations.versions.0011_chart_query_bindings")
+    assert mod.down_revision == "0010"
 
 
 def test_alembic_upgrade_sql_contains_auth_roles():
@@ -671,8 +672,8 @@ def test_alembic_upgrade_sql_contains_dimension_groups():
     assert "auth_dimension_groups" in result.stdout
 
 
-def test_revision_chain_head_0010_down_revision():
-    """T-MIG-36: heads 含 0010；0010.down_revision==0009。"""
+def test_revision_chain_head_0011_down_revision():
+    """T-MIG-36: heads 含 0011；0011.down_revision==0010。"""
     versions_dir = Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     revisions: dict[str, str | None] = {}
     for path in sorted(versions_dir.glob("*.py")):
@@ -681,8 +682,8 @@ def test_revision_chain_head_0010_down_revision():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0010" in heads
-    assert revisions["0010"] == "0009"
+    assert "0011" in heads
+    assert revisions["0011"] == "0010"
 
 
 def test_alembic_upgrade_head_sql_contains_data_sources():
@@ -698,6 +699,34 @@ def test_alembic_upgrade_head_sql_contains_data_sources():
     )
     assert result.returncode == 0
     assert "data_sources" in result.stdout
+
+
+def test_revision_chain_head_0011_down_revision_t_mig38():
+    """T-MIG-38: heads 含 0011；0011.down_revision==0010。"""
+    versions_dir = Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
+    revisions: dict[str, str | None] = {}
+    for path in sorted(versions_dir.glob("*.py")):
+        if path.name.startswith("__"):
+            continue
+        mod = importlib.import_module(f"migrations.versions.{path.stem}")
+        revisions[mod.revision] = mod.down_revision
+    heads = [rev for rev in revisions if rev not in revisions.values()]
+    assert "0011" in heads
+    assert revisions["0011"] == "0010"
+
+
+def test_alembic_upgrade_head_sql_contains_chart_query_bindings():
+    """T-MIG-39: upgrade head --sql 含 chart_query_bindings。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=backend_dir,
+        env=_migration_subprocess_env(),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "chart_query_bindings" in result.stdout
 
 
 def test_unreachable_host_operational_error_message(monkeypatch):
