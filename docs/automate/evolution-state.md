@@ -13,7 +13,7 @@
 | branch | feat/m1-fe-ci |
 | base_branch | dev-auto |
 | prd_ids | BOOT-002,BOOT-006 |
-| pr_number |  |
+| pr_number | 4 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v && cd fe && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | curl http://127.0.0.1:5173/admin (200) + headless chrome screenshots .superpowers/evolution/p4-screenshots/admin-{desktop,mobile}.png |
