@@ -2,12 +2,23 @@ from __future__ import annotations
 
 import re
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
 from app.datasources.dialects.base import TestConnectionResult
 
 DATASOURCE_CODE_RE = re.compile(r"^[a-z][a-z0-9_-]{1,63}$")
+
+
+class ConnectionOptions(BaseModel):
+    charset: str = "utf8mb4"
+    collation: str | None = None
+    ssl_mode: Literal["disabled", "preferred", "required"] = "preferred"
+    connect_timeout_sec: float = Field(default=5.0, ge=1.0, le=30.0)
+    read_timeout_sec: float | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class DataSourceCreate(BaseModel):
@@ -20,6 +31,9 @@ class DataSourceCreate(BaseModel):
     username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1)
     description: str | None = None
+    connection_options: ConnectionOptions | None = Field(default=None, serialization_alias="connectionOptions")
+
+    model_config = {"populate_by_name": True}
 
     @field_validator("code")
     @classmethod
@@ -37,6 +51,9 @@ class DataSourceUpdate(BaseModel):
     username: str = Field(min_length=1, max_length=128)
     password: str = ""
     description: str | None = None
+    connection_options: ConnectionOptions | None = Field(default=None, serialization_alias="connectionOptions")
+
+    model_config = {"populate_by_name": True}
 
 
 class DataSourcePatch(BaseModel):
@@ -47,6 +64,9 @@ class DataSourcePatch(BaseModel):
     username: str | None = None
     password: str | None = None
     description: str | None = None
+    connection_options: ConnectionOptions | None = Field(default=None, serialization_alias="connectionOptions")
+
+    model_config = {"populate_by_name": True}
 
 
 class DataSourceOut(BaseModel):
@@ -60,6 +80,9 @@ class DataSourceOut(BaseModel):
     username: str
     password: str = "***"
     description: str | None
+    connection_options: ConnectionOptions | None = Field(default=None, serialization_alias="connectionOptions")
+
+    model_config = {"populate_by_name": True}
 
 
 class DataSourceListResponse(BaseModel):
@@ -78,9 +101,16 @@ class TestConnectionOut(BaseModel):
     message: str
     latency_ms: int | None = Field(serialization_alias="latencyMs")
     trace_id: str | None = Field(default=None, serialization_alias="traceId")
+    code: str | None = None
 
     model_config = {"populate_by_name": True}
 
     @classmethod
     def from_result(cls, result: TestConnectionResult, *, trace_id: str | None = None) -> TestConnectionOut:
-        return cls(ok=result.ok, message=result.message, latency_ms=result.latency_ms, trace_id=trace_id)
+        return cls(
+            ok=result.ok,
+            message=result.message,
+            latency_ms=result.latency_ms,
+            trace_id=trace_id,
+            code=result.code,
+        )

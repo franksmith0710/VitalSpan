@@ -284,3 +284,29 @@ def test_test_failure_path_logs_no_secrets(caplog, client, auth_headers):
     assert "plain-secret" not in caplog.text
     assert "password=" not in caplog.text.lower()
     assert cipher not in caplog.text
+
+
+from app.datasources.schemas import ConnectionOptions, DataSourceCreate
+
+
+def test_connection_options_defaults():
+    opts = ConnectionOptions()
+    assert opts.charset == "utf8mb4"
+    assert opts.ssl_mode == "preferred"
+    assert opts.connect_timeout_sec == 5.0
+
+
+def test_datasource_create_accepts_connection_options():
+    payload = DataSourceCreate(
+        name="Opts DS",
+        code="opts_ds",
+        type="mysql",
+        host="127.0.0.1",
+        port=3306,
+        database="demo",
+        username="root",
+        password="secret",
+        connection_options=ConnectionOptions(ssl_mode="required", connect_timeout_sec=3.0),
+    )
+    assert payload.connection_options is not None
+    assert payload.connection_options.ssl_mode == "required"
