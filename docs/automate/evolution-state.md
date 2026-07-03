@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-close.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-close-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-close.md |
@@ -14,8 +14,11 @@
 | base_branch | dev-auto |
 | prd_ids | DATA-005,DATA-002,DATA-003,ETL-001,DATA-001 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m pytest ../tests/ -v; cd fe && pnpm test ingestion.smoke && pnpm run build && pnpm run check:design; grep SourceConnection docs/services/ingestion.md |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm test ingestion.smoke && pnpm run build && pnpm run check:design |
+| last_ui_verified_note | vitest 5/5 ingestion smoke (desktop 1400 + mobile 375 viewports); build exit 0; check:design exit 0; no browser screenshots (vitest RTL smoke satisfies UI Acceptance) |
+| l1_integration_note | test_l1_sync_etl_analytics_pipeline SKIPPED — docker not available in verifier env |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
 | skill_rule_index_source_count | 26 |
