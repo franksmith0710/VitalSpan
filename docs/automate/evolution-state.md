@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-close.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch |  |
-| prd_ids |  |
+| prd_ids | DATA-005,DATA-002,DATA-003,ETL-001,DATA-001 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -70,8 +70,8 @@
 - G1 doc-bootstrap：goal 只读；prd hub v1.2.8（16 分片 124 项）、8 维总表与薄弱项汇总就绪；plan 只读校验通过
 - plan 当前节 M1B（M1 BOOT+文档回写已全部 [x]）；M1B queued，`m1b_activation: after-M1-complete-not-in-current-execute-scope`
 - P2 planner：5 Task 计划 `docs/superpowers/plans/2026-07-03-m1b-activate.md`（004→001→ETL→002→003）；固定 subagent-driven-development option 1
-- G2 picker：M1 闭环后激活 M1B；本轮 5 项 DATA-004/001/002 + ETL-001 + DATA-003（plan 推荐顺序前五）；BOOT STUCK 让位
-- 薄弱项 Top3：META-001(10.8)、DESIGN-001(10.8)、CONN-021(10.9)；STUCK BOOT-001~006 均 <90（最高 BOOT-003 86.4）
+- G2 picker：M1B 收尾 DATA-005 L1 + 文档回写；同轮 companion DATA-002/003 + ETL-001 + DATA-001 测试/文档补强；META/DESIGN/CONN 远期让位
+- 薄弱项 Top3：META-001(10.8)、DESIGN-001(10.8)、CONN-021(10.9)；STUCK BOOT-001~006 均 <90（最高 BOOT-003 86.4）；入选 M1B 项连续未过轮次均 1（非 STUCK）
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
