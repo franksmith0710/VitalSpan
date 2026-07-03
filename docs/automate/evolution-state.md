@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r13.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r13-design.md |
 | plan |  |
 | branch | feat/evolution-r13-data-companion-push |
 | base_branch | dev-auto |
