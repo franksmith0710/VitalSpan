@@ -13,7 +13,7 @@
 | branch | feat/boot-data-quality-r6 |
 | base_branch | dev-auto |
 | prd_ids | BOOT-005,BOOT-006,BOOT-002,BOOT-003,DATA-003 |
-| pr_number |  |
+| pr_number | 19 |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm exec vitest run (smoke: T-FE-15/16/19, T-ING-06~10) && pnpm run check:design |
