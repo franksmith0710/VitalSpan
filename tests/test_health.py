@@ -93,3 +93,28 @@ def test_openapi_json_has_version_key(client):
     body = response.json()
     assert "openapi" in body
     assert str(body["openapi"]).startswith("3.")
+
+
+def test_openapi_info_metadata(client):
+    """T-HLT-13: OpenAPI info.title/version 元数据。"""
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    info = response.json()["info"]
+    assert info["title"] == "VitalSpan"
+    assert info["version"] == "0.1.0"
+
+
+def test_health_consecutive_requests_stable(client):
+    """T-HLT-14: 连续 GET /health 稳定（lifespan/scheduler）。"""
+    for _ in range(3):
+        response = client.get("/health")
+        assert response.status_code == 200
+        assert response.headers.get("X-Trace-Id")
+
+
+def test_openapi_paths_include_ingestion_sync_jobs(client):
+    """T-HLT-15: OpenAPI paths 含 ingestion sync-jobs。"""
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    paths = response.json()["paths"]
+    assert "/api/v1/ingestion/sync-jobs" in paths
