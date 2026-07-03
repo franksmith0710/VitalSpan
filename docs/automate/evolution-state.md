@@ -13,7 +13,7 @@
 | branch | feat/evolution-r15-boot-quality-push |
 | base_branch | dev-auto |
 | prd_ids | BOOT-004,BOOT-005,BOOT-006,BOOT-002,BOOT-003 |
-| pr_number | 待创建 |
+| pr_number | 32 |
 | last_verified_command | `cd backend && ruff check . && pytest -v`; `cd fe && pnpm test && pnpm build && pnpm run check:design` |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | `cd fe && pnpm test`（vitest 64/64 含 routes/theme smoke；node:test 4/4 check-design fixture）+ `pnpm run check:design` PASS |
