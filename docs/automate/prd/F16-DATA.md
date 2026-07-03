@@ -52,7 +52,7 @@
   - [x] 手动 `POST .../run` 可将源表写入托管库
   - [x] 运行历史含状态与 `traceId` 日志
 - **代码锚点**：`backend/app/ingestion/sync_executor.py` · `scheduler.py`
-- **演化建议**：`tests/test_sync_executor.py` T-D02-23~25（并发 POST 409、10000 行 P95 <3s、重试耗尽 failed+traceId）；`tests/test_scheduler.py` T-D02-26（非法 cron refresh 不崩）；`tests/test_ingestion_l1_smoke.py` T-L1-09 compose L1 编排；补增量同步与大批量分批写入 perf 基准
+- **演化建议**：`tests/test_sync_executor.py` T-D02-19（全量刷新契约）、T-D02-23~25（并发 POST 409、10000 行 P95 <3s、重试耗尽 failed+traceId）；`tests/test_scheduler.py` T-D02-26（非法 cron refresh 不崩）；`tests/test_ingestion_l1_smoke.py` T-L1-09 compose L1 编排；补增量同步与大批量分批写入 perf 基准
 
 ### [ETL-001] 清洗规则引擎（轻量）
 
