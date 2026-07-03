@@ -401,3 +401,36 @@ def test_run_job_cast_fail_then_fill_null(mock_fetch, mock_write):
     written = mock_write.call_args[0][1][0]
     assert written["amount"] is None
     assert written["note"] == "无备注"
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=1000)
+@patch("app.ingestion.sync_executor._fetch_mysql_rows")
+def test_run_job_large_batch_row_count(mock_fetch, mock_write):
+    """T-D02-16: 大批量 mock fetch 1000 行 → rows_synced==1000 且 write 收到 1000 行。"""
+    rows = [
+        {"product_name": f"A{i}", "amount": "1", "status": "active", "note": None}
+        for i in range(1000)
+    ]
+    mock_fetch.return_value = rows
+    job_id = _seed_job()
+    run_job(job_id, "trace-large-batch")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    assert run.rows_synced == 1000
+    written_rows = mock_write.call_args[0][1]
+    assert len(written_rows) == 1000
+
+
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", side_effect=ConnectionError("always fails"))
+def test_run_job_retry_exhausted_preserves_trace_and_error(mock_fetch):
+    """T-D02-17: 重试耗尽 → failed + trace_id 保持 + error_message 非空且 ≤500。"""
+    job_id = _seed_job()
+    run_job(job_id, "trace-retry-final")
+    run = _latest_run(job_id)
+    assert run.status == "failed"
+    assert run.trace_id == "trace-retry-final"
+    assert run.error_message is not None
+    assert "always fails" in run.error_message
+    assert run.retry_count >= 1
+    assert len(run.error_message) <= 500
+    assert mock_fetch.call_count >= 2

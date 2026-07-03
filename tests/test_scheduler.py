@@ -7,6 +7,8 @@ from sqlalchemy import text
 
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///file:scheduler_test?mode=memory&cache=shared&uri=true"
 
+from apscheduler.triggers.cron import CronTrigger
+
 from app.core.config import get_settings
 from app.ingestion.models import Base, SyncJob, encrypt_password, get_meta_engine, get_meta_session
 from app.ingestion.scheduler import refresh_all_jobs
@@ -126,3 +128,42 @@ def test_refresh_all_jobs_removes_stale_registered_jobs(mock_get_scheduler):
     refresh_all_jobs()
 
     mock_scheduler.remove_job.assert_called_with(stale_id)
+
+
+@patch("app.ingestion.scheduler.get_scheduler")
+def test_refresh_all_jobs_reregisters_on_cron_change(mock_get_scheduler):
+    """T-D02-18: schedule_cron 变更后 refresh 以新 CronTrigger 重注册且 replace_existing=True。"""
+    engine = get_meta_engine()
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM ingestion_sync_jobs"))
+    cron_id, _ = _seed_scheduler_jobs()
+    mock_scheduler = MagicMock()
+    mock_scheduler.get_jobs.return_value = []
+    mock_get_scheduler.return_value = mock_scheduler
+
+    refresh_all_jobs()
+    assert mock_scheduler.add_job.call_count == 1
+    first_kwargs = mock_scheduler.add_job.call_args.kwargs
+    assert first_kwargs["replace_existing"] is True
+    assert isinstance(first_kwargs["trigger"], CronTrigger)
+
+    db = get_meta_session()
+    job = db.get(SyncJob, cron_id)
+    assert job is not None
+    job.schedule_cron = "0 4 * * *"
+    db.commit()
+    db.close()
+
+    registered = MagicMock()
+    registered.id = str(cron_id)
+    mock_scheduler.reset_mock()
+    mock_scheduler.get_jobs.return_value = [registered]
+
+    refresh_all_jobs()
+
+    mock_scheduler.remove_job.assert_called_with(str(cron_id))
+    assert mock_scheduler.add_job.call_count == 1
+    second_kwargs = mock_scheduler.add_job.call_args.kwargs
+    assert second_kwargs["replace_existing"] is True
+    assert isinstance(second_kwargs["trigger"], CronTrigger)
+    assert second_kwargs["id"] == str(cron_id)
