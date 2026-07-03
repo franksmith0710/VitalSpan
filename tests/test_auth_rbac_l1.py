@@ -443,7 +443,11 @@ def test_grant_revoke_visibility(client, auth_headers):
     session = get_meta_session()
     try:
         ensure_resource_visible(session, ["vis_r1"], "datasource", rid)
-        client.delete(f"/api/v1/resource-grants/{grant['id']}", headers=auth_headers)
+    finally:
+        session.close()
+    client.delete(f"/api/v1/resource-grants/{grant['id']}", headers=auth_headers)
+    session = get_meta_session()
+    try:
         with pytest.raises(VisibilityError) as exc:
             ensure_resource_visible(session, ["vis_r1"], "datasource", rid)
         assert exc.value.code == "RESOURCE_FORBIDDEN"
