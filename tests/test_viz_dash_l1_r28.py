@@ -1,12 +1,60 @@
 """M5 VIZ/DASH L1 kickoff r28 smoke — VIZ-001~002 + DASH-001~003."""
 from __future__ import annotations
 
+import os
 import uuid
 
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import text
 
+from app.core.config import get_settings
+from app.dashboard.models import Dashboard
+from app.dashboard.service import DashboardError, create_dashboard, get_dashboard, update_layout
+from app.datasources.models import Base, get_meta_engine, get_meta_session
 from app.schemas.chart_view import ChartViewConfig, ChartViewError, validate_chart_view_config
+
+_DASH_SQLITE_URL = "sqlite+pysqlite:///file:viz_dash_r28?mode=memory&cache=shared&uri=true"
+
+
+@pytest.fixture(scope="module", autouse=True)
+def dash_r28_sqlite_env():
+    previous = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = _DASH_SQLITE_URL
+    get_settings.cache_clear()
+    from app.auth.models import get_meta_engine as auth_get_meta_engine
+
+    get_meta_engine.cache_clear()
+    auth_get_meta_engine.cache_clear()
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM dashboards"))
+    yield
+    if previous is None:
+        os.environ.pop("DATABASE_URL", None)
+    else:
+        os.environ["DATABASE_URL"] = previous
+    get_settings.cache_clear()
+    get_meta_engine.cache_clear()
+    auth_get_meta_engine.cache_clear()
+
+
+@pytest.fixture
+def db_session():
+    session = get_meta_session()
+    try:
+        yield session
+        session.rollback()
+        session.execute(text("DELETE FROM dashboards"))
+        session.commit()
+    finally:
+        session.close()
+
+
+@pytest.fixture
+def auth_user_id() -> uuid.UUID:
+    return uuid.UUID("00000000-0000-4000-8000-000000000001")
 
 
 def test_chart_view_table_sql_valid():
@@ -88,3 +136,19 @@ def test_post_charts_validate_rejects_invalid(client, auth_headers):
     assert resp.status_code == 422
     body = resp.json()
     assert body["code"] == "CHART_INVALID_TYPE"
+
+
+def test_create_dashboard_success(db_session, auth_user_id):
+    """T-DASH-R28-001-01: POST 创建 → 返回 id。"""
+    out = create_dashboard(db_session, name="销售看板", slug="sales", created_by=auth_user_id)
+    assert out.name == "销售看板"
+    assert out.slug == "sales"
+
+
+def test_duplicate_slug_conflict(db_session, auth_user_id):
+    """T-DASH-R28-001-05: 重复 slug → DASH_SLUG_CONFLICT。"""
+    create_dashboard(db_session, name="A", slug="dup", created_by=auth_user_id)
+    with pytest.raises(DashboardError) as exc:
+        create_dashboard(db_session, name="B", slug="dup", created_by=auth_user_id)
+    assert exc.value.code == "DASH_SLUG_CONFLICT"
+    assert exc.value.status == 409
