@@ -8,11 +8,8 @@ def test_me_without_token_returns_401(client):
     }
 
 
-def test_me_with_bearer_dev_returns_200(client):
-    response = client.get(
-        "/api/v1/me",
-        headers={"Authorization": "Bearer dev"},
-    )
+def test_me_with_bearer_dev_returns_200(client, auth_headers):
+    response = client.get("/api/v1/me", headers=auth_headers)
     assert response.status_code == 200
     assert response.json() == {
         "id": "dev",
