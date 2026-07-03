@@ -70,6 +70,9 @@ def test_request_finished_log_contains_trace_id(client):
         finished = next(p for p in payloads if p.get("message") == "request_finished")
         assert started.get("traceId") == trace_id
         assert finished.get("status_code") == 200
+        finished_trace = finished.get("traceId")
+        if finished_trace is not None:
+            assert finished_trace == trace_id
     finally:
         logger.removeHandler(handler)
 
@@ -139,3 +142,11 @@ def test_request_log_excludes_database_credential_substring(client):
     assert lines
     for line in lines:
         assert credential_fragment not in line
+
+
+def test_non_hex_incoming_trace_id_preserved(client):
+    """T-TRC-12: 非 hex 入站 X-Trace-Id 原样回显（middleware L16 行为）。"""
+    custom = "not-hex-but-present"
+    response = client.get("/health", headers={"X-Trace-Id": custom})
+    assert response.status_code == 200
+    assert response.headers.get("X-Trace-Id") == custom
