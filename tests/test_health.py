@@ -1,5 +1,7 @@
 import time
 
+import pytest
+
 
 def test_health_returns_ok(client):
     response = client.get("/health")
@@ -154,3 +156,73 @@ def test_health_get_illegal_origin_no_acao(client):
     assert response.json() == {"status": "ok"}
     allow_origin = response.headers.get("access-control-allow-origin")
     assert allow_origin is None or allow_origin != "http://evil.example"
+
+
+@pytest.mark.parametrize(
+    "origin,expected_status,expected_acao",
+    [
+        ("http://localhost:5173", 200, "http://localhost:5173"),
+        ("http://evil.example", 400, None),
+    ],
+)
+def test_health_cors_preflight_multi_origin_matrix(
+    client, origin, expected_status, expected_acao
+):
+    """T-HLT-19: CORS 预检多 Origin 矩阵 — 允许 Origin 200+ACAO；非法 Origin 400 无 evil ACAO。"""
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == expected_status
+    acao = response.headers.get("access-control-allow-origin")
+    if expected_acao is None:
+        assert acao is None or acao != origin
+    else:
+        assert acao == expected_acao
+
+
+def test_health_trace_method_not_allowed(client):
+    """T-HLT-20: TRACE /health → 405 或 404（稳定非 500）。"""
+    response = client.request("TRACE", "/health")
+    assert response.status_code in (404, 405)
+    assert response.status_code != 500
+
+
+def test_openapi_schema_key_paths_snapshot(client):
+    """T-HLT-21: OpenAPI schema 关键路径快照 — paths 子集 + info.title + /me GET 401 契约。"""
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["info"]["title"] == "VitalSpan"
+    paths = body["paths"]
+    for required_path in (
+        "/health",
+        "/api/v1/me",
+        "/api/v1/ingestion/sync-jobs",
+    ):
+        assert required_path in paths
+
+    me_get = paths["/api/v1/me"]["get"]
+    assert me_get is not None
+    assert "auth" in me_get.get("tags", [])
+
+    me_unauth = client.get("/api/v1/me")
+    assert me_unauth.status_code == 401
+    assert me_unauth.json()["code"] == "UNAUTHORIZED"
+
+
+def test_health_consecutive_p95_smoke(client):
+    """T-HLT-22: 连续 5× GET /health max elapsed < 0.5s（宽松 P95 smoke）。"""
+    elapsed_list: list[float] = []
+    for _ in range(5):
+        start = time.perf_counter()
+        response = client.get("/health")
+        elapsed_list.append(time.perf_counter() - start)
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}
+
+    assert max(elapsed_list) < 0.5
