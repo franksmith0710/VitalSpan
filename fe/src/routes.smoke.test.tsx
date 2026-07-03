@@ -133,4 +133,57 @@ describe("AppRoutes smoke", () => {
       within(main).getByRole("heading", { level: 1, name: "欢迎使用 VitalSpan" }),
     ).toBeInTheDocument();
   });
+
+  it("renders sync-jobs history nested route (T-FE-ING-01)", async () => {
+    setDesktopViewport();
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    expect(within(main).getByRole("heading", { level: 1, name: "运行历史" })).toBeInTheDocument();
+  });
+
+  it("renders sync-jobs etl-rules nested route (T-FE-ING-02)", async () => {
+    setDesktopViewport();
+    mockApiFetch.mockResolvedValueOnce({ rules: [] });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    await waitFor(() => {
+      expect(within(main).getByRole("button", { name: /保存规则/ })).toBeInTheDocument();
+    });
+  });
+
+  it("renders sync-jobs edit nested route (T-FE-ING-03)", async () => {
+    setDesktopViewport();
+    mockApiFetch.mockResolvedValueOnce({
+      name: "demo",
+      source: {
+        type: "mysql",
+        host: "127.0.0.1",
+        port: 3307,
+        database: "sample_db",
+        username: "sample",
+        password: "***",
+        table: "dirty_orders",
+      },
+      target_table: "orders_clean",
+      schedule_cron: null,
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/edit"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    await waitFor(() => {
+      expect(within(main).getByRole("heading", { level: 1, name: "编辑同步任务" })).toBeInTheDocument();
+    });
+  });
 });

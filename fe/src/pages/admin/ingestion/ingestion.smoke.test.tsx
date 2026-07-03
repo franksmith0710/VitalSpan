@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import * as ReactRouter from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -31,6 +31,7 @@ describe("ingestion admin smoke", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
   });
 
@@ -234,5 +235,124 @@ describe("ingestion admin smoke", () => {
       );
       expect(skeletons.length).toBeGreaterThanOrEqual(1);
     });
+  });
+
+  it("SyncJobsPage_delete_confirms_and_calls_delete (T-ING-11)", async () => {
+    setViewport(1400);
+    mockApiFetch
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "job-del",
+            name: "待删任务",
+            source_type: "mysql",
+            target_table: "t",
+            enabled: true,
+            schedule_cron: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ items: [] });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "删除任务" }));
+    expect(await screen.findByText("确认删除任务？")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "删除" }));
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/v1/ingestion/sync-jobs/job-del",
+        { method: "DELETE" },
+      );
+    });
+  });
+
+  it("SyncJobsPage_delete_cancel_skips_api (T-ING-12)", async () => {
+    setViewport(375);
+    mockApiFetch.mockResolvedValueOnce({
+      items: [
+        {
+          id: "job-keep",
+          name: "保留",
+          source_type: "mysql",
+          target_table: "t",
+          enabled: true,
+          schedule_cron: null,
+        },
+      ],
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "删除任务" }));
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    expect(mockApiFetch).not.toHaveBeenCalledWith(
+      expect.stringContaining("/run"),
+      expect.objectContaining({ method: "DELETE" }),
+    );
+    const deleteCalls = mockApiFetch.mock.calls.filter((c) => c[1]?.method === "DELETE");
+    expect(deleteCalls).toHaveLength(0);
+  });
+
+  it("SyncJobsPage_run_prevents_double_post (T-ING-13)", async () => {
+    setViewport(1400);
+    let resolveRun: () => void;
+    const runPromise = new Promise<void>((r) => {
+      resolveRun = r;
+    });
+    mockApiFetch
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "job-run",
+            name: "run-test",
+            source_type: "mysql",
+            target_table: "t",
+            enabled: true,
+            schedule_cron: null,
+          },
+        ],
+      })
+      .mockImplementationOnce(() => runPromise);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const runBtn = await screen.findByRole("button", { name: "手动运行同步" });
+    fireEvent.click(runBtn);
+    fireEvent.click(runBtn);
+    const postRuns = mockApiFetch.mock.calls.filter(
+      (c) => typeof c[0] === "string" && c[0].endsWith("/run"),
+    );
+    expect(postRuns).toHaveLength(1);
+    resolveRun!();
+  });
+
+  it("EtlRulesPage_error_state (T-ING-15)", async () => {
+    setViewport(375);
+    mockApiFetch.mockRejectedValueOnce(new Error("加载规则失败"));
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/etl-rules"
+            element={<EtlRulesPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText(/加载规则失败|操作失败/)).toBeInTheDocument();
   });
 });
