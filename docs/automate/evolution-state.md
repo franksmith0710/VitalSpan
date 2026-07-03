@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r28.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch |  |
-| prd_ids |  |
+| prd_ids | VIZ-001,VIZ-002,DASH-001,DASH-002,DASH-003 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -67,7 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G1 doc-bootstrap：r27 PR #49 已合并；当前轮次重置 phase=idle，待 G2 选题
+- G2 r28 选题完成：M5 VIZ/DASH kickoff — VIZ-001/002 + DASH-001/002/003（5 项）；最低分 DASH-001(13.2)
+- G1 doc-bootstrap：r27 PR #49 已合并；当前轮次 phase=G2_DONE，待 G3 design
 - P5 r27 PRD 重评：QUERY-001/002/004/005/006 质量推分 88.5–91.4→91.4–92.8（QUERY-004 破 90 STUCK 清零）；pytest 570 + 4 skipped；test_query_quality_r27 36/36；ClickHouse dialect + readonly/table/binding/RLS 边界
 - P4 r27 独立验证：backend ruff PASS + pytest 570 passed/4 skipped（≥560 目标）；test_query_quality_r27 36/36（≥28）；round-target QUERY-004/001/002/005/006 + plan T-MIG-40 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r27-m4-query-quality；base_branch dev-auto
 - P3 r27 实现完成：7 Task 全绿；backend ruff+pytest 570 passed/4 skipped（+38 query quality）；test_query_quality_r27 36/36；ui_design_skill: none；branch feat/evolution-r27-m4-query-quality；base_branch dev-auto
