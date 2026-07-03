@@ -4,63 +4,68 @@
 
 ### [DATA-004] 托管分析库与配置项
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：M1B
+- **里程碑对齐**：M1B · 已完成 · 2026-07-03
 - **描述**：平台托管分析库（与元库分离）及 `ANALYTICS_DATABASE_URL` 配置。
 - **验收标准**：
-  - [ ] docker-compose 可启动托管 PostgreSQL（或独立 schema 方案已文档化）
-  - [ ] `Settings` 可加载 `ANALYTICS_DATABASE_URL`
+  - [x] docker-compose 可启动托管 PostgreSQL（或独立 schema 方案已文档化）
+  - [x] `Settings` 可加载 `ANALYTICS_DATABASE_URL`
 - **代码锚点**：`docker-compose.yml` · `backend/app/core/config.py`
-- **演化建议**：按 plan.md M1B 执行
+- **演化建议**：补 compose 集成 smoke；DATA-005 文档回写
 
 ### [DATA-001] 同步任务模型与 API
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：M1B
-- **描述**：同步任务 CRUD（源 `dataSourceId`、源表、目标表、调度）。
+- **里程碑对齐**：M1B · 已完成 · 2026-07-03
+- **描述**：同步任务 CRUD（内联 `SourceConnection`、源表、目标表、调度）。
 - **验收标准**：
-  - [ ] `GET/POST /api/v1/ingestion/sync-jobs` 可用
-  - [ ] OpenAPI 可访问
+  - [x] `GET/POST /api/v1/ingestion/sync-jobs` 可用
+  - [x] OpenAPI 可访问
 - **代码锚点**：`backend/app/ingestion/` · `backend/app/api/v1/ingestion/`
-- **演化建议**：按 plan.md M1B 执行
+- **演化建议**：补边界/异常 API 测试；DATA-005 对齐 SourceConnection 文档
 
 ### [DATA-002] 同步执行器
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：M1B
+- **里程碑对齐**：M1B · 已完成 · 2026-07-03
 - **描述**：全量/增量同步执行（M1B 可先全量）与定时调度。
 - **验收标准**：
-  - [ ] 手动 `POST .../run` 可将源表写入托管库
-  - [ ] 运行历史含状态与 `traceId` 日志
+  - [x] 手动 `POST .../run` 可将源表写入托管库
+  - [x] 运行历史含状态与 `traceId` 日志
 - **代码锚点**：`backend/app/ingestion/sync_executor.py` · `scheduler.py`
-- **演化建议**：按 plan.md M1B 执行
+- **演化建议**：补 `/run` 与 executor 集成测试；扩展 postgres 源；compose E2E
 
 ### [ETL-001] 清洗规则引擎（轻量）
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：M1B
+- **里程碑对齐**：M1B · 已完成 · 2026-07-03
 - **描述**：JSON 规则：列重命名、类型转换、空值填充、简单过滤。
 - **验收标准**：
-  - [ ] 规则在写托管库前生效
-  - [ ] 脏数据样例经规则后字段符合配置
+  - [x] 规则在写托管库前生效
+  - [x] 脏数据样例经规则后字段符合配置
 - **代码锚点**：`backend/app/ingestion/etl_rules.py`
-- **演化建议**：按 plan.md M1B 执行
+- **演化建议**：补流水线集成测试（executor + rules）
 
 ### [DATA-003] Admin 配置台页面
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：M1B
+- **里程碑对齐**：M1B · 已完成 · 2026-07-03
 - **描述**：`/admin/ingestion/*` 同步任务与清洗规则配置 UI。
 - **验收标准**：
-  - [ ] 浏览器可创建任务并手动运行
-  - [ ] 可查看运行历史
+  - [x] 浏览器可创建任务并手动运行
+  - [x] 可查看运行历史
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
-- **演化建议**：按 plan.md M1B 执行
+- **演化建议**：补 ingestion 路由 fe smoke；空态与错误引导
 
 ### [DATA-005] 端到端验收与文档回写
 

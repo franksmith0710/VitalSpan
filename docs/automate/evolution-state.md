@@ -7,17 +7,19 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| branch | cursor/bc-f9be599f-3659-4ccf-88f3-8a04502e6c80-9b41 |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md |
+| design | docs/superpowers/specs/2026-07-03-m1b-activate-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-activate.md |
+| branch | cursor/bc-0d13bb06-9441-4bf6-971e-43912ce3df4b-bd04 |
 | base_branch | dev-auto |
-| pr_number | 13 |
-| last_verified_command | plan Task5 Step6 P4 precheck (rg + test) |
+| prd_ids | DATA-004,DATA-001,DATA-002,ETL-001,DATA-003 |
+| pr_number | 14 |
+| last_verified_command | cd backend && python3 -m pytest ../tests -v; cd fe && pnpm build && pnpm check:design && pnpm test:smoke && pnpm test |
 | last_verified_exit_code | 0 |
-| design | docs/superpowers/specs/2026-07-03-m1-plan-close-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1-plan-close.md |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-plan-close.md |
-| prd_ids | BOOT-001,BOOT-003,BOOT-004,BOOT-002,BOOT-005,BOOT-006 |
+| last_ui_verified_command | cd fe && pnpm build && pnpm check:design && pnpm test:smoke |
+| last_ui_screenshot_status | SKIPPED — 无 docker/浏览器，desktop 1280px 与 mobile 390px 截图未运行 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T08:25:00Z |
+| skill_rule_index_generated_at | 2026-07-03T09:30:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,18 +68,25 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G1 doc-bootstrap：goal 只读；prd hub+16 分片 124 项、8 维总表与薄弱项汇总就绪；plan 只读校验通过
-- G0 PASS（上轮）：PR #10 merged；工作区干净；phase 已重置 idle
-- plan 当前节 M1「文档回写」4 项未完成；BOOT 勾选清单六项目已完成；M1B queued 未激活
-- STUCK：BOOT-001~006 均 <90（最高 BOOT-003 86.0）
+- G1 doc-bootstrap：goal 只读；prd hub v1.2.8（16 分片 124 项）、8 维总表与薄弱项汇总就绪；plan 只读校验通过
+- G0 PASS：无 Open PR；PR #13 merged；工作区干净；phase 重置 idle
+- plan 当前节 M1B（M1 BOOT+文档回写已全部 [x]）；M1B queued，`m1b_activation: after-M1-complete-not-in-current-execute-scope`
+- P2 planner：5 Task 计划 `docs/superpowers/plans/2026-07-03-m1b-activate.md`（004→001→ETL→002→003）；固定 subagent-driven-development option 1
+- G2 picker：M1 闭环后激活 M1B；本轮 5 项 DATA-004/001/002 + ETL-001 + DATA-003（plan 推荐顺序前五）；BOOT STUCK 让位
+- 薄弱项 Top3：META-001(10.8)、DESIGN-001(10.8)、CONN-021(10.9)；STUCK BOOT-001~006 均 <90（最高 BOOT-003 86.4）
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-002 | 7 | 84.7 | 2026-07-03 |
-| BOOT-005 | 6 | 82.4 | 2026-07-03 |
-| BOOT-006 | 7 | 84.5 | 2026-07-03 |
-| BOOT-001 | 7 | 86.0 | 2026-07-03 |
-| BOOT-004 | 7 | 86.1 | 2026-07-03 |
-| BOOT-003 | 5 | 86.4 | 2026-07-03 |
+| BOOT-002 | 8 | 84.7 | 2026-07-03 |
+| BOOT-005 | 7 | 82.4 | 2026-07-03 |
+| BOOT-006 | 8 | 84.5 | 2026-07-03 |
+| BOOT-001 | 8 | 86.0 | 2026-07-03 |
+| BOOT-004 | 8 | 86.1 | 2026-07-03 |
+| BOOT-003 | 6 | 86.4 | 2026-07-03 |
+| DATA-004 | 1 | 80.7 | 2026-07-03 |
+| DATA-001 | 1 | 83.2 | 2026-07-03 |
+| DATA-002 | 1 | 77.4 | 2026-07-03 |
+| ETL-001 | 1 | 80.8 | 2026-07-03 |
+| DATA-003 | 1 | 76.3 | 2026-07-03 |

@@ -2,7 +2,7 @@ import os
 
 os.environ.setdefault(
     "DATABASE_URL",
-    "postgresql+psycopg://ci:ci@localhost:5432/ci",
+    "postgresql+psycopg://vitalspan:vitalspan@localhost:5432/vitalspan",
 )
 os.environ.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
 os.environ.setdefault(

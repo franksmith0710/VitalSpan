@@ -7,6 +7,10 @@
 | Button | `ui/button.tsx` | 主/次操作（skill 模板） |
 | Input | `ui/input.tsx` | 表单输入（skill 模板） |
 | Label | `ui/label.tsx` | 表单标签 |
+| Badge | `ui/badge.tsx` | 状态标签 |
+| Skeleton | `ui/skeleton.tsx` | 加载占位 |
+| Select | `ui/select.tsx` | 下拉选择（Radix） |
+| AlertDialog | `ui/alert-dialog.tsx` | 破坏性操作确认 |
 | FormContext | `ui/form-context.tsx` | Input 皮肤上下文 |
 | AppSidebar | `layout/app-sidebar.tsx` | Admin 侧栏 290px |
 | AppHeader | `layout/app-header.tsx` | sticky 顶栏 |
