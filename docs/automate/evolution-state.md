@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md |
 | design |  |
 | plan |  |
-| branch |  |
+| branch | cursor/bc-0d13bb06-9441-4bf6-971e-43912ce3df4b-bd04 |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | DATA-004,DATA-001,DATA-002,ETL-001,DATA-003 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -69,6 +69,7 @@
 - G1 doc-bootstrap：goal 只读；prd hub v1.2.8（16 分片 124 项）、8 维总表与薄弱项汇总就绪；plan 只读校验通过
 - G0 PASS：无 Open PR；PR #13 merged；工作区干净；phase 重置 idle
 - plan 当前节 M1B（M1 BOOT+文档回写已全部 [x]）；M1B queued，`m1b_activation: after-M1-complete-not-in-current-execute-scope`
+- G2 picker：M1 闭环后激活 M1B；本轮 5 项 DATA-004/001/002 + ETL-001 + DATA-003（plan 推荐顺序前五）；BOOT STUCK 让位
 - 薄弱项 Top3：META-001(10.8)、DESIGN-001(10.8)、CONN-021(10.9)；STUCK BOOT-001~006 均 <90（最高 BOOT-003 86.4）
 
 ## 选题卡住计数（连续未过 90 的功能项）
