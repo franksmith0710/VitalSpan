@@ -152,3 +152,61 @@ def test_duplicate_slug_conflict(db_session, auth_user_id):
         create_dashboard(db_session, name="B", slug="dup", created_by=auth_user_id)
     assert exc.value.code == "DASH_SLUG_CONFLICT"
     assert exc.value.status == 409
+
+
+def test_dashboard_crud_smoke(client, auth_headers):
+    """T-DASH-R28-001-01~04: CRUD + layout round-trip。"""
+    create = client.post(
+        "/api/v1/dashboards",
+        json={"name": "测试看板", "slug": "test-dash"},
+        headers=auth_headers,
+    )
+    assert create.status_code == 201
+    dash_id = create.json()["id"]
+    layout = {
+        "version": 1,
+        "widgets": [{
+            "id": str(uuid.uuid4()),
+            "type": "chart",
+            "title": "表",
+            "colSpan": 6,
+            "rowSpan": 1,
+            "order": 0,
+            "chartConfig": {
+                "chartType": "table",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "sql",
+                "sql": "SELECT 1 AS id",
+            },
+        }],
+        "globalFilters": [],
+    }
+    put_layout = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={"layoutJson": layout},
+        headers=auth_headers,
+    )
+    assert put_layout.status_code == 200
+    got = client.get(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
+    assert got.json()["layoutJson"]["widgets"][0]["chartConfig"]["chartType"] == "table"
+
+
+def test_dashboard_layout_invalid_chart(client, auth_headers):
+    """T-DASH-R28-001-06: 非法 chartType → 422 DASH_INVALID_LAYOUT。"""
+    create = client.post(
+        "/api/v1/dashboards",
+        json={"name": "X", "slug": "x-invalid"},
+        headers=auth_headers,
+    )
+    dash_id = create.json()["id"]
+    resp = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={"layoutJson": {"version": 1, "widgets": [{
+            "id": str(uuid.uuid4()), "type": "chart", "title": "t",
+            "colSpan": 6, "rowSpan": 1, "order": 0,
+            "chartConfig": {"chartType": "pie"},
+        }], "globalFilters": []}},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "DASH_INVALID_LAYOUT"
