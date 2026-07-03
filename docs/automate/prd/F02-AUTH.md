@@ -69,34 +69,39 @@
 
 ### [AUTH-006] 权限维度分组与角色关联
 
-- **状态**：未实现
+- **状态**：L1 已实现（r20 kickoff）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：权限维度分组与角色关联（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 维度分组可关联角色
-  - [ ] 用户继承角色权限
-- **代码锚点**：`backend/app/auth/rls/groups/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 维度分组可关联角色
+  - [x] 用户继承角色权限（有效维度集 = 直绑 ∪ 分组展开）
+- **代码锚点**：`backend/app/auth/rls/groups/service.py` · `backend/app/auth/rls/bindings/service.py` · `backend/app/api/v1/rls.py` · `backend/app/api/v1/roles.py` · `tests/test_auth_rbac_l1.py` T-AUTH-GP01~GP12
+- **演化建议**：Admin UI 维度分组配置；生产维度值校验扩展
+- **里程碑对齐**：
+
 ### [AUTH-007] RLS 谓词生成与注入
 
-- **状态**：未实现
+- **状态**：L1 已实现（r20 kickoff）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：RLS 谓词生成与注入（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 查询执行前合并 WHERE 谓词
-  - [ ] 越权 smoke test 通过
-- **代码锚点**：`backend/app/auth/rls/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 查询执行前合并 WHERE 谓词（`get_query_rls_fragment` hook）
+  - [x] 越权 smoke test 通过
+- **代码锚点**：`backend/app/auth/rls/predicate.py` · `backend/app/auth/rls/hooks.py` · `tests/test_auth_rbac_l1.py` T-AUTH-RLS01~RLS08
+- **演化建议**：M4 `query` 域对接 hook；全方言 SQL 改写
+- **里程碑对齐**：
+
 ### [AUTH-008] 操作审计日志
 
-- **状态**：未实现
+- **状态**：L1 已实现（r20 kickoff）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：操作审计日志（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 权限变更写入审计日志
-  - [ ] 敏感操作可追溯
-- **代码锚点**：`backend/app/auth/audit/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 权限变更写入审计日志（auth 域写路径挂钩）
+  - [x] 敏感操作可追溯（admin 守卫分页查询）
+- **代码锚点**：`backend/app/auth/audit/write_hooks.py` · `backend/app/auth/audit/service.py` · `backend/app/api/v1/audit.py` · `tests/test_auth_rbac_l1.py` T-AUTH-AU01~AU10 · T-AUTH-A01~A09 回归
+- **演化建议**：非 auth 域写操作扩展；生产留存策略
+- **里程碑对齐**：

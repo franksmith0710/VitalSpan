@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.auth.audit.write_hooks import record_platform_event
 from app.auth.models import AuthResourceGrant, AuthRole, AuthUserRole
 from app.auth.schemas import RoleCreate, RoleUpdate
 
@@ -31,10 +32,28 @@ def list_roles(
     return list(session.scalars(stmt))
 
 
-def create_role(session: Session, payload: RoleCreate) -> AuthRole:
+def create_role(
+    session: Session,
+    payload: RoleCreate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthRole:
     role = AuthRole(code=payload.code, name=payload.name, description=payload.description)
     session.add(role)
     try:
+        session.flush()
+        record_platform_event(
+            session,
+            actor_id=actor_id,
+            actor_username=actor_username,
+            target_type="role",
+            target_id=role.id,
+            action="role.create",
+            detail={"code": role.code},
+            trace_id=trace_id,
+        )
         session.commit()
     except IntegrityError as exc:
         session.rollback()
@@ -50,16 +69,41 @@ def get_role(session: Session, role_id: uuid.UUID) -> AuthRole:
     return role
 
 
-def update_role(session: Session, role_id: uuid.UUID, payload: RoleUpdate) -> AuthRole:
+def update_role(
+    session: Session,
+    role_id: uuid.UUID,
+    payload: RoleUpdate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthRole:
     role = get_role(session, role_id)
     role.name = payload.name
     role.description = payload.description
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="role",
+        target_id=role.id,
+        action="role.update",
+        detail={"code": role.code},
+        trace_id=trace_id,
+    )
     session.commit()
     session.refresh(role)
     return role
 
 
-def delete_role(session: Session, role_id: uuid.UUID) -> None:
+def delete_role(
+    session: Session,
+    role_id: uuid.UUID,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> None:
     role = get_role(session, role_id)
     user_refs = session.scalar(
         select(AuthUserRole).where(AuthUserRole.role_id == role_id).limit(1)
@@ -69,5 +113,17 @@ def delete_role(session: Session, role_id: uuid.UUID) -> None:
     )
     if user_refs or grant_refs:
         raise RoleError("ROLE_IN_USE", "Role is referenced by bindings or grants", 409)
+    role_code = role.code
+    role_uuid = role.id
     session.delete(role)
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="role",
+        target_id=role_uuid,
+        action="role.delete",
+        detail={"code": role_code},
+        trace_id=trace_id,
+    )
     session.commit()

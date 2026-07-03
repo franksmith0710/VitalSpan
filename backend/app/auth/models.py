@@ -114,6 +114,65 @@ class AuthAuditEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class AuthDimensionGroup(Base):
+    __tablename__ = "auth_dimension_groups"
+    __table_args__ = (
+        UniqueConstraint("dimension_type_id", "code", name="uq_auth_dimension_groups_type_code"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    dimension_type_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_dimension_types.id", ondelete="RESTRICT"), nullable=False
+    )
+    code: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("auth_dimension_groups.id", ondelete="RESTRICT"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuthDimensionGroupValue(Base):
+    __tablename__ = "auth_dimension_group_values"
+    __table_args__ = (UniqueConstraint("group_id", "value", name="uq_auth_dimension_group_values"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_dimension_groups.id", ondelete="CASCADE"), nullable=False
+    )
+    value: Mapped[str] = mapped_column(String(256), nullable=False)
+
+
+class AuthRoleDimensionValue(Base):
+    __tablename__ = "auth_role_dimension_values"
+    __table_args__ = (
+        UniqueConstraint(
+            "role_id", "dimension_type_id", "value", name="uq_auth_role_dimension_values"
+        ),
+    )
+
+    role_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_roles.id", ondelete="CASCADE"), primary_key=True
+    )
+    dimension_type_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_dimension_types.id", ondelete="RESTRICT"), primary_key=True
+    )
+    value: Mapped[str] = mapped_column(String(256), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuthRoleDimensionGroup(Base):
+    __tablename__ = "auth_role_dimension_groups"
+
+    role_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_roles.id", ondelete="CASCADE"), primary_key=True
+    )
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_dimension_groups.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class AuthDimensionTypeRef(Base):
     __tablename__ = "auth_dimension_type_refs"
 

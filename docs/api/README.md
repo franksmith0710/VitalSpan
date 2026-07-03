@@ -61,9 +61,13 @@ redoc: /redoc
 | GET/POST | `/api/v1/orgs` | 组织树节点 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
 | GET/POST/DELETE | `/api/v1/resource-grants` | AUTH-004 资源授权 CRUD | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | GET/POST | `/api/v1/rls/dimensions` | 权限维度类型 | 内部 | 一期 | AUTH-005 | 已实现 | `backend/app/api/v1/rls.py` |
-| GET | `/api/v1/audit/events` | AUTH-003 绑定/组织变更审计查询（`?target_id=&action=&limit=&offset=`） | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/audit.py` |
-| GET/POST | `/api/v1/rls/groups` | 维度分组 | 内部 | 一期 | AUTH-006 | 规划 | `backend/app/api/v1/rls.py` |
-| GET | `/api/v1/audit-logs` | 操作审计 | 内部 | 一期 | AUTH-008 | 规划 | `backend/app/api/v1/audit.py` |
+| GET | `/api/v1/audit/events` | 审计事件查询（`?target_id=&action=&target_type=&actor_id=&limit=&offset=`；admin 守卫） | 内部 | 一期 | AUTH-003, AUTH-008 | 已实现 | `backend/app/api/v1/audit.py` |
+| GET/POST | `/api/v1/rls/groups` | 维度分组列表/创建 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
+| GET/PUT/DELETE | `/api/v1/rls/groups/{id}` | 分组详情/更新/删除 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
+| GET/POST/PUT/DELETE | `/api/v1/rls/groups/{id}/values` | 分组成员值列表/添加/全量替换/删除 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
+| PUT | `/api/v1/roles/{id}/dimension-values` | 角色直绑维度值全量替换 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
+| PUT | `/api/v1/roles/{id}/dimension-groups` | 角色分组绑定全量替换 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
+| GET | `/api/v1/roles/{id}/effective-dimensions` | 角色有效维度集 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
 
 ---
 

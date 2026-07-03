@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
+from app.auth.audit.write_hooks import audit_kwargs
 from app.auth.deps import UserContext, get_current_user
 from app.auth.models import get_meta_session
 from app.auth.org import service as org_service
@@ -42,11 +43,11 @@ def list_orgs(
 @router.post("", response_model=OrgOut, status_code=status.HTTP_201_CREATED)
 def create_org(
     payload: OrgCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> OrgOut | JSONResponse:
     try:
-        node = org_service.create_org_node(db, payload)
+        node = org_service.create_org_node(db, payload, **audit_kwargs(actor.id, actor.username))
     except org_service.OrgError as exc:
         return _org_error_response(exc)
     return OrgOut.model_validate(node)
@@ -69,11 +70,13 @@ def get_org(
 def update_org(
     org_id: uuid.UUID,
     payload: OrgUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> OrgOut | JSONResponse:
     try:
-        node = org_service.update_org_node(db, org_id, payload)
+        node = org_service.update_org_node(
+            db, org_id, payload, **audit_kwargs(actor.id, actor.username)
+        )
     except org_service.OrgError as exc:
         return _org_error_response(exc)
     return OrgOut.model_validate(node)
@@ -82,11 +85,11 @@ def update_org(
 @router.delete("/{org_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_org(
     org_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:
-        org_service.delete_org_node(db, org_id)
+        org_service.delete_org_node(db, org_id, **audit_kwargs(actor.id, actor.username))
     except org_service.OrgError as exc:
         return _org_error_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

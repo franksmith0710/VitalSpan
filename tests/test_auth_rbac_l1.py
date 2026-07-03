@@ -38,6 +38,10 @@ def ensure_auth_tables():
     yield
     with engine.begin() as conn:
         for table in (
+            "auth_role_dimension_groups",
+            "auth_role_dimension_values",
+            "auth_dimension_group_values",
+            "auth_dimension_groups",
             "auth_audit_events",
             "auth_dimension_type_refs",
             "auth_user_roles",
@@ -56,6 +60,10 @@ def clean_auth_tables_between_tests():
     engine = get_meta_engine()
     with engine.begin() as conn:
         for table in (
+            "auth_role_dimension_groups",
+            "auth_role_dimension_values",
+            "auth_dimension_group_values",
+            "auth_dimension_groups",
             "auth_audit_events",
             "auth_dimension_type_refs",
             "auth_user_roles",
@@ -84,6 +92,12 @@ _ADMIN_CTX = {
     "actor_id": "dev",
     "actor_username": "dev",
     "actor_roles": ["admin"],
+    "trace_id": "test-trace",
+}
+
+_AUDIT_CTX = {
+    "actor_id": "dev",
+    "actor_username": "dev",
     "trace_id": "test-trace",
 }
 
@@ -615,7 +629,7 @@ def test_delete_org_with_users_409(client, auth_headers):
             session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]), **_ADMIN_CTX
         )
         with pytest.raises(org_service.OrgError) as exc:
-            org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
+            org_service.delete_org_node(session, uuid_mod.UUID(org["id"]), **_AUDIT_CTX)
         assert exc.value.code == "ORG_HAS_USERS"
         assert exc.value.status == 409
     finally:
@@ -627,7 +641,7 @@ def test_delete_idle_leaf_org_204(client, auth_headers):
     org = client.post("/api/v1/orgs", json={"name": "IdleLeaf"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
-        org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
+        org_service.delete_org_node(session, uuid_mod.UUID(org["id"]), **_AUDIT_CTX)
     finally:
         session.close()
 
@@ -910,6 +924,7 @@ def test_binding_forbidden_non_admin(client, operator_client, auth_headers):
     )
     assert resp.status_code == 403
     assert resp.json()["code"] == "BINDING_FORBIDDEN"
+    app.dependency_overrides.pop(get_current_user, None)
     audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
     assert audit["total"] == 0
 
@@ -1140,3 +1155,512 @@ def test_resource_vertical_forbidden_regression(client, auth_headers):
         assert exc2.value.code == "RESOURCE_FORBIDDEN"
     finally:
         session.close()
+
+
+def _ensure_org_dim(client, auth_headers):
+    org = client.post("/api/v1/orgs", json={"name": "RLS Root"}, headers=auth_headers).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "org_dim_gp", "name": "Org", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    return org, dim
+
+
+def test_group_create_root_gp01(client, auth_headers):
+    """T-AUTH-GP01: POST 创建根分组。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    resp = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "east", "name": "East"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["dimension_type_id"] == dim["id"]
+    listed = client.get(f"/api/v1/rls/groups?dimension_type_id={dim['id']}", headers=auth_headers).json()
+    assert any(g["id"] == body["id"] for g in listed["items"])
+
+
+def test_group_duplicate_code_gp02(client, auth_headers):
+    """T-AUTH-GP02: 重复 code → 409 GROUP_CODE_CONFLICT。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    payload = {"dimension_type_id": dim["id"], "code": "dup_gp", "name": "D"}
+    assert client.post("/api/v1/rls/groups", json=payload, headers=auth_headers).status_code == 201
+    dup = client.post("/api/v1/rls/groups", json=payload, headers=auth_headers)
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "GROUP_CODE_CONFLICT"
+
+
+def test_group_invalid_dimension_gp03(client, auth_headers):
+    """T-AUTH-GP03: 非法 dimension_type_id → 404 DIMENSION_NOT_FOUND。"""
+    fake = str(uuid_mod.uuid4())
+    resp = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": fake, "code": "bad", "name": "B"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "DIMENSION_NOT_FOUND"
+
+
+def test_group_cycle_gp04(client, auth_headers):
+    """T-AUTH-GP04: 更新分组形成环 → 409 GROUP_CYCLE。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    parent = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_p", "name": "P"},
+        headers=auth_headers,
+    ).json()
+    child = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_c", "name": "C", "parent_id": parent["id"]},
+        headers=auth_headers,
+    ).json()
+    resp = client.put(
+        f"/api/v1/rls/groups/{parent['id']}",
+        json={"parent_id": child["id"]},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "GROUP_CYCLE"
+
+
+def test_group_values_add_list_gp05_gp06(client, auth_headers):
+    """T-AUTH-GP05~GP06: 分组成员值添加与列表。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_vals", "name": "V"},
+        headers=auth_headers,
+    ).json()
+    add = client.post(
+        f"/api/v1/rls/groups/{group['id']}/values",
+        json={"values": [org["id"]]},
+        headers=auth_headers,
+    )
+    assert add.status_code == 200
+    assert org["id"] in add.json()["items"]
+    listed = client.get(f"/api/v1/rls/groups/{group['id']}/values", headers=auth_headers).json()
+    assert org["id"] in listed["items"]
+
+
+def test_role_dimension_values_gp07(client, auth_headers):
+    """T-AUTH-GP07: 角色直绑维度值。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "gp_r7", "name": "R"}, headers=auth_headers).json()
+    resp = client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 204
+    eff = client.get(
+        f"/api/v1/roles/{role['id']}/effective-dimensions?dimension_type_id={dim['id']}",
+        headers=auth_headers,
+    ).json()
+    assert org["id"] in eff["values"]
+
+
+def test_role_dimension_groups_effective_gp08(client, auth_headers):
+    """T-AUTH-GP08: 角色分组绑定 → 有效维度集含分组值。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_g8", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    client.post(
+        f"/api/v1/rls/groups/{group['id']}/values",
+        json={"values": [org["id"]]},
+        headers=auth_headers,
+    )
+    role = client.post("/api/v1/roles", json={"code": "gp_r8", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json={"group_ids": [group["id"]]},
+        headers=auth_headers,
+    )
+    eff = client.get(
+        f"/api/v1/roles/{role['id']}/effective-dimensions?dimension_type_id={dim['id']}",
+        headers=auth_headers,
+    ).json()
+    assert org["id"] in eff["values"]
+
+
+def test_group_values_idempotent_gp09(client, auth_headers):
+    """T-AUTH-GP09: 重复添加分组成员值幂等。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_idem", "name": "I"},
+        headers=auth_headers,
+    ).json()
+    payload = {"values": [org["id"]]}
+    client.post(f"/api/v1/rls/groups/{group['id']}/values", json=payload, headers=auth_headers)
+    again = client.post(f"/api/v1/rls/groups/{group['id']}/values", json=payload, headers=auth_headers)
+    assert again.status_code == 200
+    assert again.json()["items"].count(org["id"]) == 1
+
+
+def test_role_dimension_invalid_role_gp10(client, auth_headers):
+    """T-AUTH-GP10: 非法 roleId → 404 ROLE_NOT_FOUND。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    fake_role = str(uuid_mod.uuid4())
+    resp = client.put(
+        f"/api/v1/roles/{fake_role}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": []},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "ROLE_NOT_FOUND"
+
+
+def test_group_binding_forbidden_non_admin_gp11(client, operator_client, auth_headers):
+    """T-AUTH-GP11: 非 admin 写分组 → 403 BINDING_FORBIDDEN。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    resp = operator_client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_op", "name": "O"},
+        headers={"Authorization": "Bearer dev"},
+    )
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "BINDING_FORBIDDEN"
+
+
+def test_group_delete_in_use_gp12(client, auth_headers):
+    """T-AUTH-GP12: 角色引用分组时删除 → 409 GROUP_IN_USE。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_del", "name": "D"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "gp_r12", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json={"group_ids": [group["id"]]},
+        headers=auth_headers,
+    )
+    resp = client.delete(f"/api/v1/rls/groups/{group['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "GROUP_IN_USE"
+
+
+def test_rls_no_binding_returns_false_predicate_rls03(client, auth_headers):
+    """T-AUTH-RLS03: 无绑定 → build_org_rls_fragment → 1=0。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import build_org_rls_fragment, resolve_user_org_node_ids
+
+    user = client.post("/api/v1/users", json={"username": "rls_u3"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        frag = build_org_rls_fragment(allowed, column="org_node_id", alias="t")
+        assert frag.strip() == "1=0" or "1=0" in frag
+    finally:
+        session.close()
+
+
+def test_rls_subtree_expansion_rls01_rls02(client, auth_headers):
+    """T-AUTH-RLS01~RLS02: 绑定父 org → 子树节点均在允许集。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import resolve_user_org_node_ids
+
+    parent = client.post("/api/v1/orgs", json={"name": "RLS P"}, headers=auth_headers).json()
+    child = client.post(
+        "/api/v1/orgs",
+        json={"name": "RLS C", "parent_id": parent["id"]},
+        headers=auth_headers,
+    ).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_dim01", "name": "O", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "rls_r01", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u01"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [parent["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        assert uuid_mod.UUID(parent["id"]) in allowed
+        assert uuid_mod.UUID(child["id"]) in allowed
+    finally:
+        session.close()
+
+
+def test_rls_fragment_in_clause_rls04(client, auth_headers):
+    """T-AUTH-RLS04: 有权限时片段含 IN 与 org id。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import build_org_rls_fragment, resolve_user_org_node_ids
+
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "rls_r04", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u04"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        frag = build_org_rls_fragment(allowed, column="org_node_id", alias="t")
+        assert " IN (" in frag
+        assert org["id"] in frag
+    finally:
+        session.close()
+
+
+def test_rls_union_direct_and_group_rls05(client, auth_headers):
+    """T-AUTH-RLS05: 直绑与分组值并集展开。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import resolve_user_org_node_ids
+
+    org1 = client.post("/api/v1/orgs", json={"name": "RLS A"}, headers=auth_headers).json()
+    org2 = client.post("/api/v1/orgs", json={"name": "RLS B"}, headers=auth_headers).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_dim05", "name": "O", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "rls_g05", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    client.post(
+        f"/api/v1/rls/groups/{group['id']}/values",
+        json={"values": [org2["id"]]},
+        headers=auth_headers,
+    )
+    role = client.post("/api/v1/roles", json={"code": "rls_r05", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u05"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org1["id"]]},
+        headers=auth_headers,
+    )
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json={"group_ids": [group["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        assert uuid_mod.UUID(org1["id"]) in allowed
+        assert uuid_mod.UUID(org2["id"]) in allowed
+    finally:
+        session.close()
+
+
+def _simulate_row_filter(rows: list[dict], allowed: set[uuid_mod.UUID]) -> list[dict]:
+    return [r for r in rows if uuid_mod.UUID(str(r["org_node_id"])) in allowed]
+
+
+def test_rls_unauthorized_row_hidden_rls06(client, auth_headers):
+    """T-AUTH-RLS06: 允许集外 org 行不可见。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import resolve_user_org_node_ids
+
+    parent = client.post("/api/v1/orgs", json={"name": "RLS P6"}, headers=auth_headers).json()
+    other = client.post("/api/v1/orgs", json={"name": "RLS O6"}, headers=auth_headers).json()
+    child = client.post(
+        "/api/v1/orgs",
+        json={"name": "RLS C6", "parent_id": parent["id"]},
+        headers=auth_headers,
+    ).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_dim06", "name": "O", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "rls_r06", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u06"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [parent["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        rows = [
+            {"org_node_id": parent["id"]},
+            {"org_node_id": child["id"]},
+            {"org_node_id": other["id"]},
+        ]
+        visible = _simulate_row_filter(rows, allowed)
+        visible_ids = {str(r["org_node_id"]) for r in visible}
+        assert other["id"] not in visible_ids
+        assert parent["id"] in visible_ids
+        assert child["id"] in visible_ids
+    finally:
+        session.close()
+
+
+def test_rls_empty_allowed_hides_all_rls07(client, auth_headers):
+    """T-AUTH-RLS07: 无权限用户所有行被过滤。"""
+    from app.auth.models import get_meta_session
+    from app.auth.rls.predicate import resolve_user_org_node_ids
+
+    org = client.post("/api/v1/orgs", json={"name": "RLS O7"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u07"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
+        rows = [{"org_node_id": org["id"]}]
+        visible = _simulate_row_filter(rows, allowed)
+        assert visible == []
+    finally:
+        session.close()
+
+
+def test_rls_query_hook_rls08(client, auth_headers):
+    """T-AUTH-RLS08: get_query_rls_fragment 返回有效片段。"""
+    from app.auth.deps import UserContext
+    from app.auth.models import get_meta_session
+    from app.auth.rls.hooks import get_query_rls_fragment
+
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "rls_r08", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u08"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=["rls_r08"])
+        frag = get_query_rls_fragment(session, ctx)
+        assert "IN (" in frag
+        assert org["id"] in frag
+    finally:
+        session.close()
+
+
+def test_audit_role_create_au01(client, auth_headers):
+    """T-AUTH-AU01: POST 创建角色 → role.create。"""
+    role = client.post(
+        "/api/v1/roles", json={"code": "au_role", "name": "AU"}, headers=auth_headers
+    ).json()
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={role['id']}&action=role.create",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_role_update_au02(client, auth_headers):
+    """T-AUTH-AU02: PUT 更新角色 → role.update。"""
+    role = client.post(
+        "/api/v1/roles", json={"code": "au_upd", "name": "U"}, headers=auth_headers
+    ).json()
+    client.put(f"/api/v1/roles/{role['id']}", json={"name": "U2"}, headers=auth_headers)
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={role['id']}&action=role.update",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_org_create_au03(client, auth_headers):
+    """T-AUTH-AU03: POST 创建组织 → org.create。"""
+    org = client.post("/api/v1/orgs", json={"name": "AU Org"}, headers=auth_headers).json()
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={org['id']}&action=org.create",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_dimension_create_au04(client, auth_headers):
+    """T-AUTH-AU04: POST 创建维度类型 → dimension.create。"""
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "au_dim", "name": "D", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={dim['id']}&action=dimension.create",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_group_create_au05(client, auth_headers):
+    """T-AUTH-AU05: POST 创建分组 → group.create。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "au_grp", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={group['id']}&action=group.create",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_role_dimension_replace_au06(client, auth_headers):
+    """T-AUTH-AU06: 角色维度替换 → role.dimension.replace。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "au_rd", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={role['id']}&action=role.dimension.replace",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_forbidden_non_admin_au07(client, operator_client, auth_headers):
+    """T-AUTH-AU07: 非 admin 查询审计 → 403 AUDIT_FORBIDDEN。"""
+    resp = operator_client.get("/api/v1/audit/events", headers={"Authorization": "Bearer dev"})
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "AUDIT_FORBIDDEN"
+
+
+def test_audit_filter_target_type_au08(client, auth_headers):
+    """T-AUTH-AU08: target_type 过滤。"""
+    client.post("/api/v1/roles", json={"code": "au_ft", "name": "F"}, headers=auth_headers)
+    audit = client.get("/api/v1/audit/events?target_type=role", headers=auth_headers).json()
+    assert audit["total"] >= 1
+    assert all(i["target_type"] == "role" for i in audit["items"])
+
+
+def test_audit_r19_bind_regression_au09(client, auth_headers):
+    """T-AUTH-AU09: user.role.bind 仍写入；r19 绑定审计行为保持。"""
+    role = client.post("/api/v1/roles", json={"code": "au_r19", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "au_r19_u"}, headers=auth_headers).json()
+    assert client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers).status_code == 200
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={user['id']}&action=user.role.bind",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_filter_actor_id_au10(client, auth_headers):
+    """T-AUTH-AU10: actor_id 过滤。"""
+    client.post("/api/v1/roles", json={"code": "au_act", "name": "A"}, headers=auth_headers)
+    audit = client.get("/api/v1/audit/events?actor_id=dev", headers=auth_headers).json()
+    assert audit["total"] >= 1
+    assert all(i["actor_id"] == "dev" for i in audit["items"])
