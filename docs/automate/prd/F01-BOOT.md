@@ -17,15 +17,16 @@
 
 ### [BOOT-002] React 管理端壳层
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：P0
+- **里程碑对齐**：M1 · 已完成 · 2026-07-03
 - **描述**：React 管理端壳层（SRS 追溯项）。
 - **验收标准**：
-  - [ ] `fe/` 可构建且 `/admin` 路由壳层可访问
-  - [ ] shadcn/ui + Tailwind v4 主题加载
-- **代码锚点**：`fe/src/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] `fe/` 可构建且 `/admin` 路由壳层可访问
+  - [x] shadcn/ui + Tailwind v4 主题加载
+- **代码锚点**：`fe/src/layouts/AdminLayout.tsx` · `fe/src/routes.tsx` · `fe/src/index.css` · `fe/scripts/check-design.mjs` · `fe/src/components/README.md`
+- **演化建议**：二期补 TanStack Query、`@/lib/api.ts` 与业务页；增 vitest/Playwright 覆盖壳层交互；M1 文档回写（api/services）待下轮
 
 ### [BOOT-003] 鉴权中间件骨架
 
@@ -69,12 +70,13 @@
 
 ### [BOOT-006] CI 与质量门禁
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：P0
+- **里程碑对齐**：M1 · 已完成 · 2026-07-03
 - **描述**：CI 与质量门禁（SRS 追溯项）。
 - **验收标准**：
-  - [ ] lint + 单元测试 CI 通过
-  - [ ] 前后端可本地联调
-- **代码锚点**：`.github/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] lint + 单元测试 CI 通过
+  - [x] 前后端可本地联调
+- **代码锚点**：`.github/workflows/ci.yml` · `tests/conftest.py` · `tests/test_health.py`
+- **演化建议**：CI 增 docker postgres job；补 Settings/traceId 与 401/me 集成测试；M1 api/services 文档回写待下轮

@@ -6,17 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r2.md |
-| design |  |
-| plan |  |
-| branch |  |
-| base_branch |  |
+| phase | MERGED |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-fe-ci.md |
+| design | docs/superpowers/specs/2026-07-03-m1-fe-ci-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1-fe-ci.md |
+| branch | feat/m1-fe-ci |
+| base_branch | dev-auto |
 | prd_ids | BOOT-002,BOOT-006 |
-| pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
-| last_ui_verified_command |  |
+| pr_number | 4 |
+| merge_sha | 8d09c24 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v && cd fe && pnpm build && pnpm run check:design |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | curl http://127.0.0.1:5173/admin (200) + headless chrome screenshots .superpowers/evolution/p4-screenshots/admin-{desktop,mobile}.png |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T04:10:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,16 +68,16 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G2 topic-picker R2：M1 收尾选题 BOOT-002（3 子项）+ BOOT-006；round-target-r2 已写
-- plan 当前节 M1：已完成 BOOT-004/001/005/003；待办 BOOT-002/006
-- 上轮 PR #2 已合并后端启动链；STUCK 计数 BOOT-001/003/004/005 各 1 轮
-- skill/rule 索引 26 条未过期（P2 按需刷新）
+- PR #4 已 Squash 合并至 dev-auto（sha 8d09c24）；M1 BOOT-002/006 已实现
+- M1 plan 六勾选项全部完成；待 M1 文档回写 checklist（api/services/arch）
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| BOOT-002 | 1 | 60.6 | 2026-07-03 |
 | BOOT-005 | 1 | 66.8 | 2026-07-03 |
+| BOOT-006 | 1 | 62.6 | 2026-07-03 |
 | BOOT-001 | 1 | 69.4 | 2026-07-03 |
 | BOOT-004 | 1 | 70.7 | 2026-07-03 |
 | BOOT-003 | 1 | 73.4 | 2026-07-03 |
