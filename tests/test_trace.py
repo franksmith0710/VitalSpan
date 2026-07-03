@@ -1,6 +1,7 @@
 import io
 import json
 import logging
+import os
 import re
 
 import pytest
@@ -105,3 +106,36 @@ def test_configure_logging_rejects_invalid_log_level():
     )
     with pytest.raises(ValueError):
         configure_logging(settings)
+
+
+def _capture_http_logs(client) -> list[str]:
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    handler.setFormatter(JsonFormatter())
+    logger = logging.getLogger("vitalspan.http")
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    try:
+        response = client.get("/health")
+        assert response.status_code == 200
+        return [line for line in stream.getvalue().splitlines() if line.strip()]
+    finally:
+        logger.removeHandler(handler)
+
+
+def test_request_log_excludes_secret_key_plaintext(client):
+    """T-TRC-09: 请求日志 JSON 不含 SECRET_KEY 明文。"""
+    secret = os.environ["SECRET_KEY"]
+    lines = _capture_http_logs(client)
+    assert lines
+    for line in lines:
+        assert secret not in line
+
+
+def test_request_log_excludes_database_credential_substring(client):
+    """T-TRC-10: 请求日志 JSON 不含 database URL 凭据子串。"""
+    credential_fragment = "vitalspan:vitalspan@"
+    lines = _capture_http_logs(client)
+    assert lines
+    for line in lines:
+        assert credential_fragment not in line
