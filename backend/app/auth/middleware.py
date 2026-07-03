@@ -46,13 +46,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
             and self.settings.vitalspan_env == "development"
         ):
             session = get_meta_session()
+            db_roles: list[str] = []
             try:
                 try:
                     db_roles = user_service.resolve_role_codes_for_username(session, "dev")
                 except (OperationalError, ProgrammingError):
                     db_roles = []
             finally:
-                session.close()
+                try:
+                    session.close()
+                except (OperationalError, ProgrammingError):
+                    pass
             roles = db_roles if db_roles else ["admin"]
             request.state.user = UserContext(id="dev", username="dev", roles=roles)
             return await call_next(request)

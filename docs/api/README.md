@@ -98,7 +98,12 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| POST | `/api/v1/query/execute` | 只读查询（sql/table/native） | IF-06 | 一期 | QUERY-001 | 规划 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/execute` | 只读查询（sql/table） | IF-06 | 一期 | QUERY-001 | 已实现 | `backend/app/api/v1/query.py` |
+| GET | `/api/v1/query/bindings` | 图表直连绑定列表 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/bindings` | 创建绑定 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
+| GET | `/api/v1/query/bindings/{bindingId}` | 绑定详情 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
+| PUT | `/api/v1/query/bindings/{bindingId}` | 更新绑定 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
+| DELETE | `/api/v1/query/bindings/{bindingId}` | 删除绑定 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/preview` | 查询预览（设计器/图表配置） | 内部 | 二期 | QUERY-005 | 规划 | `backend/app/api/v1/query.py` |
 
 ---
