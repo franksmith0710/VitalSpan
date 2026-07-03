@@ -6,12 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | design | docs/superpowers/specs/2026-07-03-m1-plan-close-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1-plan-close.md |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-plan-close.md |
 | prd_ids | BOOT-001,BOOT-003,BOOT-004,BOOT-002,BOOT-005,BOOT-006 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T07:55:00Z |
+| skill_rule_index_generated_at | 2026-07-03T08:25:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
