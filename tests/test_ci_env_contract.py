@@ -1,6 +1,7 @@
 """T-CI-01~03: CI workflow env 与 conftest 默认值对齐（BOOT-006）。"""
 
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -130,6 +131,11 @@ def test_ci_frontend_job_step_order(ci_yml_text):
     assert test_idx < build_idx < design_idx
 
 
+@pytest.mark.skipif(
+    shutil.which("pnpm") is None
+    or not (Path(__file__).resolve().parents[1] / "fe" / "node_modules").is_dir(),
+    reason="T-CI-09: vitest budget smoke requires pnpm + fe deps (frontend CI or local dev)",
+)
 def test_vitest_routes_smoke_elapsed_under_budget():
     """T-CI-09: vitest 单文件 routes.smoke 子集 elapsed < 45s。"""
     fe_dir = Path(__file__).resolve().parents[1] / "fe"
