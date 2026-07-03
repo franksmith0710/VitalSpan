@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r17.md |
 | design | docs/superpowers/specs/2026-07-03-m2-auth-rbac-kickoff-r17-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m2-auth-rbac-kickoff-r17.md |
 | branch | feat/evolution-r17-m2-auth-rbac-kickoff |
 | base_branch | dev-auto |
 | prd_ids | AUTH-001,AUTH-002,AUTH-003,AUTH-004,AUTH-005 |
-| pr_number |  |
+| pr_number | 34 |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端 r17） |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r17 独立验证：backend ruff PASS + pytest 302 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r17-m2-auth-rbac-kickoff；base_branch dev-auto
 - P3 r17 实现完成：7 Task 全绿；backend ruff+pytest 302 passed/4 skipped（+29 AUTH smoke）；ui_design_skill: none；branch feat/evolution-r17-m2-auth-rbac-kickoff@62a80b8；base_branch dev-auto
 - P2 r17 计划完成：7 Task（基建 + AUTH-001~005 + 路由/迁移/文档）；18 文件；subagent-driven-development option 1；全 Task UI skill: none
 - P1 r17 设计完成：M2 AUTH RBAC 地基 — AUTH-001~005 L1（6 表 + 0003 migration + 5 API router + pytest smoke）
