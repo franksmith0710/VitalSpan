@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r23.md |
 | design | docs/superpowers/specs/2026-07-03-m3-datasource-quality-r23-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m3-datasource-quality-r23.md |
@@ -16,7 +16,7 @@
 | pr_number | |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端 r22） |
+| last_ui_verified_command | N/A（纯后端 r23） |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r23 独立验证：backend ruff PASS + pytest 449 passed/4 skipped；round-target CONN-001/DS-001/002/003/005 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r23-m3-datasource-quality；base_branch dev-auto
 - P3 r23 实现完成：7 Task 全绿；backend ruff+pytest 449 passed/4 skipped（+30 datasources quality）；ui_design_skill: none；branch feat/evolution-r23-m3-datasource-quality；base_branch dev-auto
 - P5 r22 PRD 重评：DS-001/002/005/003 + CONN-001 L1 kickoff 12.8–13.6→86.8–91.1（DS-002/003/005 破 90；DS-001/CONN-001 <90 STUCK upsert）；pytest 419 + 4 skipped；T-DS-R/C/T/K + CONN-M smoke
 - P4 r22 独立验证：backend ruff PASS + pytest 419 passed/4 skipped；test_datasources_l1 23/23；round-target DS-001/002/005/003 + CONN-001 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r22-m3-datasource-kickoff；base_branch dev-auto
