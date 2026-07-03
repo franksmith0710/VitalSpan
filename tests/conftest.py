@@ -19,6 +19,7 @@ from app.main import app
 # - client: TestClient(app) for all backend HTTP tests
 # - auth_headers: {"Authorization": "Bearer dev"} for protected routes in development
 # - unauthorized_headers: {"Authorization": "Bearer invalid"} for 401 negative cases
+# - trace_id_headers: {"X-Trace-Id": "<32-hex>"} for TraceId passthrough tests
 
 
 @pytest.fixture
@@ -34,3 +35,8 @@ def auth_headers() -> dict[str, str]:
 @pytest.fixture
 def unauthorized_headers() -> dict[str, str]:
     return {"Authorization": "Bearer invalid"}
+
+
+@pytest.fixture
+def trace_id_headers() -> dict[str, str]:
+    return {"X-Trace-Id": "a1b2c3d4e5f6789012345678abcdef01"}

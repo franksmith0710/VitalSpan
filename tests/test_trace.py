@@ -15,10 +15,10 @@ def test_health_response_includes_generated_trace_id(client):
     assert TRACE_ID_HEX_PATTERN.match(trace_id)
 
 
-def test_health_preserves_incoming_trace_id(client):
+def test_health_preserves_incoming_trace_id(client, trace_id_headers):
     """T-TRC-02: 透传已有 X-Trace-Id 请求头。"""
-    incoming = "abc123"
-    response = client.get("/health", headers={"X-Trace-Id": incoming})
+    incoming = trace_id_headers["X-Trace-Id"]
+    response = client.get("/health", headers=trace_id_headers)
     assert response.status_code == 200
     assert response.headers.get("X-Trace-Id") == incoming
 
