@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r11.md |
-| design |  |
-| plan |  |
-| branch |  |
-| base_branch |  |
+| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r11-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r11.md |
+| branch | cursor/bc-53058b4a-e7e4-4724-8daf-ed82dcadddd0-47d6 |
+| base_branch | dev-auto |
 | prd_ids | DATA-002,DATA-003,ETL-001,DATA-001,DATA-005 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
-| last_ui_verified_command |  |
-| last_ui_screenshots |  |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm test -- ingestion.smoke.test.tsx; pnpm run check:design |
+| last_ui_screenshots | N/A headless CI |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T13:45:00Z |
 | skill_rule_index_source_count | 26 |
