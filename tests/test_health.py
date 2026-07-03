@@ -57,3 +57,39 @@ def test_health_cors_preflight_regression(client):
     )
     assert response.status_code == 200
     assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_health_cors_preflight_illegal_origin_no_acao(client):
+    """T-HLT-09: OPTIONS /health 非法 Origin 无 Access-Control-Allow-Origin。"""
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": "http://evil.example",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 400
+    allow_origin = response.headers.get("access-control-allow-origin")
+    assert allow_origin is None or allow_origin != "http://evil.example"
+
+
+def test_redoc_public(client):
+    """T-HLT-10: GET /redoc 公开可访问。"""
+    response = client.get("/redoc")
+    assert response.status_code == 200
+
+
+def test_health_get_allowed_origin_returns_acao(client):
+    """T-HLT-11: GET /health 带允许 Origin 返回 ACAO。"""
+    response = client.get("/health", headers={"Origin": "http://localhost:5173"})
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_openapi_json_has_version_key(client):
+    """T-HLT-12: OpenAPI 文档含 openapi 3.x 版本键。"""
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    body = response.json()
+    assert "openapi" in body
+    assert str(body["openapi"]).startswith("3.")
