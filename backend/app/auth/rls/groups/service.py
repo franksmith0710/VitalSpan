@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.auth.audit.write_hooks import record_platform_event
 from app.auth.models import (
     AuthDimensionGroup,
     AuthDimensionGroupValue,
@@ -112,7 +113,14 @@ def get_group(session: Session, group_id: uuid.UUID) -> AuthDimensionGroup:
     return group
 
 
-def create_group(session: Session, payload: DimensionGroupCreate) -> AuthDimensionGroup:
+def create_group(
+    session: Session,
+    payload: DimensionGroupCreate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthDimensionGroup:
     dim = session.get(AuthDimensionType, payload.dimension_type_id)
     if dim is None:
         raise GroupError("DIMENSION_NOT_FOUND", "Dimension type not found", 404)
@@ -132,6 +140,16 @@ def create_group(session: Session, payload: DimensionGroupCreate) -> AuthDimensi
     try:
         session.flush()
         ensure_dimension_type_ref(session, payload.dimension_type_id)
+        record_platform_event(
+            session,
+            actor_id=actor_id,
+            actor_username=actor_username,
+            target_type="group",
+            target_id=group.id,
+            action="group.create",
+            detail={"code": group.code},
+            trace_id=trace_id,
+        )
         session.commit()
     except IntegrityError as exc:
         session.rollback()
@@ -141,7 +159,13 @@ def create_group(session: Session, payload: DimensionGroupCreate) -> AuthDimensi
 
 
 def update_group(
-    session: Session, group_id: uuid.UUID, payload: DimensionGroupUpdate
+    session: Session,
+    group_id: uuid.UUID,
+    payload: DimensionGroupUpdate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
 ) -> AuthDimensionGroup:
     group = get_group(session, group_id)
     if payload.parent_id is not None:
@@ -157,12 +181,29 @@ def update_group(
         group.parent_id = payload.parent_id
     if payload.name is not None:
         group.name = payload.name
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="group",
+        target_id=group.id,
+        action="group.update",
+        detail={"code": group.code},
+        trace_id=trace_id,
+    )
     session.commit()
     session.refresh(group)
     return group
 
 
-def delete_group(session: Session, group_id: uuid.UUID) -> None:
+def delete_group(
+    session: Session,
+    group_id: uuid.UUID,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> None:
     group = get_group(session, group_id)
     child_count = session.scalar(
         select(func.count())
@@ -179,9 +220,21 @@ def delete_group(session: Session, group_id: uuid.UUID) -> None:
     if role_ref is not None:
         raise GroupError("GROUP_IN_USE", "Group is bound to a role", 409)
     dim_type_id = group.dimension_type_id
+    group_uuid = group.id
+    group_code = group.code
     session.delete(group)
     session.flush()
     maybe_remove_dimension_type_ref(session, dim_type_id)
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="group",
+        target_id=group_uuid,
+        action="group.delete",
+        detail={"code": group_code},
+        trace_id=trace_id,
+    )
     session.commit()
 
 
@@ -196,7 +249,15 @@ def list_group_values(session: Session, group_id: uuid.UUID) -> list[str]:
     )
 
 
-def add_group_values(session: Session, group_id: uuid.UUID, values: list[str]) -> list[str]:
+def add_group_values(
+    session: Session,
+    group_id: uuid.UUID,
+    values: list[str],
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> list[str]:
     group = get_group(session, group_id)
     dim = session.get(AuthDimensionType, group.dimension_type_id)
     assert dim is not None
@@ -211,6 +272,17 @@ def add_group_values(session: Session, group_id: uuid.UUID, values: list[str]) -
         if existing is None:
             session.add(AuthDimensionGroupValue(group_id=group_id, value=value))
     try:
+        session.flush()
+        record_platform_event(
+            session,
+            actor_id=actor_id,
+            actor_username=actor_username,
+            target_type="group",
+            target_id=group_id,
+            action="group.values.add",
+            detail={"values": values},
+            trace_id=trace_id,
+        )
         session.commit()
     except IntegrityError as exc:
         session.rollback()
@@ -218,7 +290,15 @@ def add_group_values(session: Session, group_id: uuid.UUID, values: list[str]) -
     return list_group_values(session, group_id)
 
 
-def replace_group_values(session: Session, group_id: uuid.UUID, values: list[str]) -> list[str]:
+def replace_group_values(
+    session: Session,
+    group_id: uuid.UUID,
+    values: list[str],
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> list[str]:
     group = get_group(session, group_id)
     dim = session.get(AuthDimensionType, group.dimension_type_id)
     assert dim is not None
@@ -227,11 +307,29 @@ def replace_group_values(session: Session, group_id: uuid.UUID, values: list[str
     session.query(AuthDimensionGroupValue).filter_by(group_id=group_id).delete()
     for value in values:
         session.add(AuthDimensionGroupValue(group_id=group_id, value=value))
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="group",
+        target_id=group_id,
+        action="group.values.replace",
+        detail={"values": values},
+        trace_id=trace_id,
+    )
     session.commit()
     return list_group_values(session, group_id)
 
 
-def remove_group_value(session: Session, group_id: uuid.UUID, value: str) -> None:
+def remove_group_value(
+    session: Session,
+    group_id: uuid.UUID,
+    value: str,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> None:
     get_group(session, group_id)
     row = session.scalar(
         select(AuthDimensionGroupValue).where(
@@ -242,4 +340,14 @@ def remove_group_value(session: Session, group_id: uuid.UUID, value: str) -> Non
     if row is None:
         raise GroupError("GROUP_VALUE_NOT_FOUND", "Group value not found", 404)
     session.delete(row)
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="group",
+        target_id=group_id,
+        action="group.values.remove",
+        detail={"value": value},
+        trace_id=trace_id,
+    )
     session.commit()

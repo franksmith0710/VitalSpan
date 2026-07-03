@@ -9,6 +9,19 @@ from sqlalchemy.orm import Session
 from app.auth.models import AuthAuditEvent
 
 
+class AuditError(Exception):
+    def __init__(self, code: str, message: str, status: int = 400) -> None:
+        self.code = code
+        self.message = message
+        self.status = status
+        super().__init__(message)
+
+
+def assert_audit_admin(actor_roles: list[str]) -> None:
+    if "admin" not in actor_roles:
+        raise AuditError("AUDIT_FORBIDDEN", "Audit query requires admin role", 403)
+
+
 def record_event(
     session: Session,
     *,
@@ -39,6 +52,8 @@ def list_events(
     *,
     target_id: uuid.UUID | None = None,
     action: str | None = None,
+    target_type: str | None = None,
+    actor_id: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[AuthAuditEvent], int]:
@@ -50,6 +65,12 @@ def list_events(
     if action is not None:
         base = base.where(AuthAuditEvent.action == action)
         count_stmt = count_stmt.where(AuthAuditEvent.action == action)
+    if target_type is not None:
+        base = base.where(AuthAuditEvent.target_type == target_type)
+        count_stmt = count_stmt.where(AuthAuditEvent.target_type == target_type)
+    if actor_id is not None:
+        base = base.where(AuthAuditEvent.actor_id == actor_id)
+        count_stmt = count_stmt.where(AuthAuditEvent.actor_id == actor_id)
     total = session.scalar(count_stmt) or 0
     items = list(
         session.scalars(

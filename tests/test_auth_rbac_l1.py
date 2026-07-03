@@ -95,6 +95,12 @@ _ADMIN_CTX = {
     "trace_id": "test-trace",
 }
 
+_AUDIT_CTX = {
+    "actor_id": "dev",
+    "actor_username": "dev",
+    "trace_id": "test-trace",
+}
+
 
 @pytest.fixture
 def operator_client(client):
@@ -623,7 +629,7 @@ def test_delete_org_with_users_409(client, auth_headers):
             session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]), **_ADMIN_CTX
         )
         with pytest.raises(org_service.OrgError) as exc:
-            org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
+            org_service.delete_org_node(session, uuid_mod.UUID(org["id"]), **_AUDIT_CTX)
         assert exc.value.code == "ORG_HAS_USERS"
         assert exc.value.status == 409
     finally:
@@ -635,7 +641,7 @@ def test_delete_idle_leaf_org_204(client, auth_headers):
     org = client.post("/api/v1/orgs", json={"name": "IdleLeaf"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
-        org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
+        org_service.delete_org_node(session, uuid_mod.UUID(org["id"]), **_AUDIT_CTX)
     finally:
         session.close()
 
@@ -918,6 +924,7 @@ def test_binding_forbidden_non_admin(client, operator_client, auth_headers):
     )
     assert resp.status_code == 403
     assert resp.json()["code"] == "BINDING_FORBIDDEN"
+    app.dependency_overrides.pop(get_current_user, None)
     audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
     assert audit["total"] == 0
 
@@ -1542,3 +1549,118 @@ def test_rls_query_hook_rls08(client, auth_headers):
         assert org["id"] in frag
     finally:
         session.close()
+
+
+def test_audit_role_create_au01(client, auth_headers):
+    """T-AUTH-AU01: POST 创建角色 → role.create。"""
+    role = client.post(
+        "/api/v1/roles", json={"code": "au_role", "name": "AU"}, headers=auth_headers
+    ).json()
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={role['id']}&action=role.create",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_role_update_au02(client, auth_headers):
+    """T-AUTH-AU02: PUT 更新角色 → role.update。"""
+    role = client.post(
+        "/api/v1/roles", json={"code": "au_upd", "name": "U"}, headers=auth_headers
+    ).json()
+    client.put(f"/api/v1/roles/{role['id']}", json={"name": "U2"}, headers=auth_headers)
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={role['id']}&action=role.update",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_org_create_au03(client, auth_headers):
+    """T-AUTH-AU03: POST 创建组织 → org.create。"""
+    org = client.post("/api/v1/orgs", json={"name": "AU Org"}, headers=auth_headers).json()
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={org['id']}&action=org.create",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_dimension_create_au04(client, auth_headers):
+    """T-AUTH-AU04: POST 创建维度类型 → dimension.create。"""
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "au_dim", "name": "D", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={dim['id']}&action=dimension.create",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_group_create_au05(client, auth_headers):
+    """T-AUTH-AU05: POST 创建分组 → group.create。"""
+    _, dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "au_grp", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={group['id']}&action=group.create",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_role_dimension_replace_au06(client, auth_headers):
+    """T-AUTH-AU06: 角色维度替换 → role.dimension.replace。"""
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "au_rd", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={role['id']}&action=role.dimension.replace",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_forbidden_non_admin_au07(client, operator_client, auth_headers):
+    """T-AUTH-AU07: 非 admin 查询审计 → 403 AUDIT_FORBIDDEN。"""
+    resp = operator_client.get("/api/v1/audit/events", headers={"Authorization": "Bearer dev"})
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "AUDIT_FORBIDDEN"
+
+
+def test_audit_filter_target_type_au08(client, auth_headers):
+    """T-AUTH-AU08: target_type 过滤。"""
+    client.post("/api/v1/roles", json={"code": "au_ft", "name": "F"}, headers=auth_headers)
+    audit = client.get("/api/v1/audit/events?target_type=role", headers=auth_headers).json()
+    assert audit["total"] >= 1
+    assert all(i["target_type"] == "role" for i in audit["items"])
+
+
+def test_audit_r19_bind_regression_au09(client, auth_headers):
+    """T-AUTH-AU09: user.role.bind 仍写入；r19 绑定审计行为保持。"""
+    role = client.post("/api/v1/roles", json={"code": "au_r19", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "au_r19_u"}, headers=auth_headers).json()
+    assert client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers).status_code == 200
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={user['id']}&action=user.role.bind",
+        headers=auth_headers,
+    ).json()
+    assert audit["total"] >= 1
+
+
+def test_audit_filter_actor_id_au10(client, auth_headers):
+    """T-AUTH-AU10: actor_id 过滤。"""
+    client.post("/api/v1/roles", json={"code": "au_act", "name": "A"}, headers=auth_headers)
+    audit = client.get("/api/v1/audit/events?actor_id=dev", headers=auth_headers).json()
+    assert audit["total"] >= 1
+    assert all(i["actor_id"] == "dev" for i in audit["items"])

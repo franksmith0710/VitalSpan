@@ -5,6 +5,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth.audit.write_hooks import record_platform_event
 from app.auth.models import (
     AuthDimensionGroup,
     AuthDimensionGroupValue,
@@ -61,6 +62,9 @@ def replace_role_dimension_values(
     values: list[str],
     *,
     actor_roles: list[str],
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
 ) -> None:
     assert_binding_admin(actor_roles)
     role = get_role(session, role_id)
@@ -78,6 +82,16 @@ def replace_role_dimension_values(
                 role_id=role.id, dimension_type_id=dimension_type_id, value=value
             )
         )
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="role",
+        target_id=role.id,
+        action="role.dimension.replace",
+        detail={"dimension_type_id": str(dimension_type_id), "values": values},
+        trace_id=trace_id,
+    )
     session.commit()
 
 
@@ -87,6 +101,9 @@ def replace_role_dimension_groups(
     group_ids: list[uuid.UUID],
     *,
     actor_roles: list[str],
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
 ) -> None:
     assert_binding_admin(actor_roles)
     role = get_role(session, role_id)
@@ -97,4 +114,14 @@ def replace_role_dimension_groups(
     session.query(AuthRoleDimensionGroup).filter_by(role_id=role.id).delete()
     for group_id in group_ids:
         session.add(AuthRoleDimensionGroup(role_id=role.id, group_id=group_id))
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="role",
+        target_id=role.id,
+        action="role.group.replace",
+        detail={"group_ids": [str(g) for g in group_ids]},
+        trace_id=trace_id,
+    )
     session.commit()

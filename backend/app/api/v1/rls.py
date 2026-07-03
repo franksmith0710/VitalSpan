@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
+from app.auth.audit.write_hooks import audit_kwargs
 from app.auth.deps import UserContext, get_current_user
 from app.auth.models import get_meta_session
 from app.auth.rls.dimensions import service as dim_service
@@ -76,11 +77,13 @@ def list_dimensions(
 @dimensions_router.post("", response_model=DimensionTypeOut, status_code=status.HTTP_201_CREATED)
 def create_dimension(
     payload: DimensionTypeCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionTypeOut | JSONResponse:
     try:
-        dim = dim_service.create_dimension_type(db, payload)
+        dim = dim_service.create_dimension_type(
+            db, payload, **audit_kwargs(actor.id, actor.username)
+        )
     except dim_service.DimensionError as exc:
         return _dim_error_response(exc)
     return DimensionTypeOut.model_validate(dim)
@@ -103,11 +106,13 @@ def get_dimension(
 def update_dimension(
     dim_id: uuid.UUID,
     payload: DimensionTypeUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionTypeOut | JSONResponse:
     try:
-        dim = dim_service.update_dimension_type(db, dim_id, payload)
+        dim = dim_service.update_dimension_type(
+            db, dim_id, payload, **audit_kwargs(actor.id, actor.username)
+        )
     except dim_service.DimensionError as exc:
         return _dim_error_response(exc)
     return DimensionTypeOut.model_validate(dim)
@@ -116,11 +121,11 @@ def update_dimension(
 @dimensions_router.delete("/{dim_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_dimension(
     dim_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:
-        dim_service.delete_dimension_type(db, dim_id)
+        dim_service.delete_dimension_type(db, dim_id, **audit_kwargs(actor.id, actor.username))
     except dim_service.DimensionError as exc:
         return _dim_error_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -154,7 +159,9 @@ def create_group(
     except UserError:
         return _binding_forbidden_response()
     try:
-        group = group_service.create_group(db, payload)
+        group = group_service.create_group(
+            db, payload, **audit_kwargs(actor.id, actor.username)
+        )
     except group_service.GroupError as exc:
         return _group_error_response(exc)
     return DimensionGroupOut.model_validate(group)
@@ -185,7 +192,9 @@ def update_group(
     except UserError:
         return _binding_forbidden_response()
     try:
-        group = group_service.update_group(db, group_id, payload)
+        group = group_service.update_group(
+            db, group_id, payload, **audit_kwargs(actor.id, actor.username)
+        )
     except group_service.GroupError as exc:
         return _group_error_response(exc)
     return DimensionGroupOut.model_validate(group)
@@ -202,7 +211,7 @@ def delete_group(
     except UserError:
         return _binding_forbidden_response()
     try:
-        group_service.delete_group(db, group_id)
+        group_service.delete_group(db, group_id, **audit_kwargs(actor.id, actor.username))
     except group_service.GroupError as exc:
         return _group_error_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -233,7 +242,9 @@ def add_group_values(
     except UserError:
         return _binding_forbidden_response()
     try:
-        values = group_service.add_group_values(db, group_id, payload.values)
+        values = group_service.add_group_values(
+            db, group_id, payload.values, **audit_kwargs(actor.id, actor.username)
+        )
     except group_service.GroupError as exc:
         return _group_error_response(exc)
     return DimensionGroupValuesResponse(items=values)
@@ -251,7 +262,9 @@ def replace_group_values(
     except UserError:
         return _binding_forbidden_response()
     try:
-        values = group_service.replace_group_values(db, group_id, payload.values)
+        values = group_service.replace_group_values(
+            db, group_id, payload.values, **audit_kwargs(actor.id, actor.username)
+        )
     except group_service.GroupError as exc:
         return _group_error_response(exc)
     return DimensionGroupValuesResponse(items=values)
@@ -269,7 +282,9 @@ def remove_group_value(
     except UserError:
         return _binding_forbidden_response()
     try:
-        group_service.remove_group_value(db, group_id, value)
+        group_service.remove_group_value(
+            db, group_id, value, **audit_kwargs(actor.id, actor.username)
+        )
     except group_service.GroupError as exc:
         return _group_error_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

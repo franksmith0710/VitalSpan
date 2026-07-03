@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
+from app.auth.audit.write_hooks import audit_kwargs
 from app.auth.deps import UserContext, get_current_user
 from app.auth.models import get_meta_session
 from app.auth.roles import service as role_service
@@ -23,6 +24,8 @@ from app.auth.schemas import (
 from app.auth.users.service import UserError
 
 router = APIRouter(prefix="/roles", tags=["auth"])
+
+
 def _db() -> Session:
     session = get_meta_session()
     try:
@@ -45,13 +48,6 @@ def _binding_error_response(exc: binding_service.BindingError) -> JSONResponse:
     )
 
 
-def _binding_forbidden_response() -> JSONResponse:
-    return JSONResponse(
-        status_code=403,
-        content={"code": "BINDING_FORBIDDEN", "message": "Binding changes require admin role", "detail": None},
-    )
-
-
 @router.get("", response_model=RoleListResponse)
 def list_roles(
     _: Annotated[UserContext, Depends(get_current_user)],
@@ -66,11 +62,11 @@ def list_roles(
 @router.post("", response_model=RoleOut, status_code=status.HTTP_201_CREATED)
 def create_role(
     payload: RoleCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> RoleOut | JSONResponse:
     try:
-        role = role_service.create_role(db, payload)
+        role = role_service.create_role(db, payload, **audit_kwargs(actor.id, actor.username))
     except role_service.RoleError as exc:
         return _role_error_response(exc)
     return RoleOut.model_validate(role)
@@ -93,11 +89,13 @@ def get_role(
 def update_role(
     role_id: uuid.UUID,
     payload: RoleUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> RoleOut | JSONResponse:
     try:
-        role = role_service.update_role(db, role_id, payload)
+        role = role_service.update_role(
+            db, role_id, payload, **audit_kwargs(actor.id, actor.username)
+        )
     except role_service.RoleError as exc:
         return _role_error_response(exc)
     return RoleOut.model_validate(role)
@@ -106,11 +104,11 @@ def update_role(
 @router.delete("/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_role(
     role_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:
-        role_service.delete_role(db, role_id)
+        role_service.delete_role(db, role_id, **audit_kwargs(actor.id, actor.username))
     except role_service.RoleError as exc:
         return _role_error_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -123,6 +121,7 @@ def replace_role_dimension_values(
     actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
+    ctx = audit_kwargs(actor.id, actor.username)
     try:
         binding_service.replace_role_dimension_values(
             db,
@@ -130,6 +129,7 @@ def replace_role_dimension_values(
             payload.dimension_type_id,
             payload.values,
             actor_roles=actor.roles,
+            **ctx,
         )
     except UserError as exc:
         return JSONResponse(
@@ -150,9 +150,14 @@ def replace_role_dimension_groups(
     actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
+    ctx = audit_kwargs(actor.id, actor.username)
     try:
         binding_service.replace_role_dimension_groups(
-            db, role_id, payload.group_ids, actor_roles=actor.roles
+            db,
+            role_id,
+            payload.group_ids,
+            actor_roles=actor.roles,
+            **ctx,
         )
     except UserError as exc:
         return JSONResponse(

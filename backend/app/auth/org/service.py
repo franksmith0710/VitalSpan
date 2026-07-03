@@ -5,6 +5,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.auth.audit.write_hooks import record_platform_event
 from app.auth.models import AuthOrgNode, AuthUser
 from app.auth.schemas import OrgCreate, OrgUpdate
 
@@ -47,7 +48,14 @@ def list_org_nodes(session: Session) -> list[AuthOrgNode]:
     return list(session.scalars(select(AuthOrgNode).order_by(AuthOrgNode.path)))
 
 
-def create_org_node(session: Session, payload: OrgCreate) -> AuthOrgNode:
+def create_org_node(
+    session: Session,
+    payload: OrgCreate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthOrgNode:
     parent = None
     if payload.parent_id is not None:
         parent = session.get(AuthOrgNode, payload.parent_id)
@@ -62,6 +70,17 @@ def create_org_node(session: Session, payload: OrgCreate) -> AuthOrgNode:
     if node.level >= MAX_ORG_DEPTH:
         raise OrgError("ORG_DEPTH_EXCEEDED", f"Org tree depth cannot exceed {MAX_ORG_DEPTH}", 422)
     session.add(node)
+    session.flush()
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="org",
+        target_id=node.id,
+        action="org.create",
+        detail={"name": node.name},
+        trace_id=trace_id,
+    )
     session.commit()
     session.refresh(node)
     return node
@@ -74,7 +93,15 @@ def get_org_node(session: Session, node_id: uuid.UUID) -> AuthOrgNode:
     return node
 
 
-def update_org_node(session: Session, node_id: uuid.UUID, payload: OrgUpdate) -> AuthOrgNode:
+def update_org_node(
+    session: Session,
+    node_id: uuid.UUID,
+    payload: OrgUpdate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthOrgNode:
     node = get_org_node(session, node_id)
     if payload.name is not None:
         node.name = payload.name
@@ -91,12 +118,29 @@ def update_org_node(session: Session, node_id: uuid.UUID, payload: OrgUpdate) ->
         _repath_subtree(session, node)
     if node.level >= MAX_ORG_DEPTH:
         raise OrgError("ORG_DEPTH_EXCEEDED", f"Org tree depth cannot exceed {MAX_ORG_DEPTH}", 422)
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="org",
+        target_id=node.id,
+        action="org.update",
+        detail={"name": node.name},
+        trace_id=trace_id,
+    )
     session.commit()
     session.refresh(node)
     return node
 
 
-def delete_org_node(session: Session, node_id: uuid.UUID) -> None:
+def delete_org_node(
+    session: Session,
+    node_id: uuid.UUID,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> None:
     node = get_org_node(session, node_id)
     child_count = session.scalar(
         select(func.count()).select_from(AuthOrgNode).where(AuthOrgNode.parent_id == node_id)
@@ -108,5 +152,17 @@ def delete_org_node(session: Session, node_id: uuid.UUID) -> None:
     )
     if user_count and user_count > 0:
         raise OrgError("ORG_HAS_USERS", "Cannot delete org node with assigned users", 409)
+    node_uuid = node.id
+    node_name = node.name
     session.delete(node)
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="org",
+        target_id=node_uuid,
+        action="org.delete",
+        detail={"name": node_name},
+        trace_id=trace_id,
+    )
     session.commit()

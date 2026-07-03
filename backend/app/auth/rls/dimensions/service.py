@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.auth.audit.write_hooks import record_platform_event
 from app.auth.models import AuthDimensionType, AuthDimensionTypeRef, AuthOrgNode
 from app.auth.schemas import DimensionTypeCreate, DimensionTypeUpdate
 
@@ -44,7 +45,14 @@ def list_dimension_types(
     return items, total
 
 
-def create_dimension_type(session: Session, payload: DimensionTypeCreate) -> AuthDimensionType:
+def create_dimension_type(
+    session: Session,
+    payload: DimensionTypeCreate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthDimensionType:
     org_dimension = _validate_org_ref(session, payload.value_type)
     dim = AuthDimensionType(
         code=payload.code,
@@ -55,6 +63,17 @@ def create_dimension_type(session: Session, payload: DimensionTypeCreate) -> Aut
     )
     session.add(dim)
     try:
+        session.flush()
+        record_platform_event(
+            session,
+            actor_id=actor_id,
+            actor_username=actor_username,
+            target_type="dimension",
+            target_id=dim.id,
+            action="dimension.create",
+            detail={"code": dim.code},
+            trace_id=trace_id,
+        )
         session.commit()
     except IntegrityError as exc:
         session.rollback()
@@ -71,17 +90,40 @@ def get_dimension_type(session: Session, dim_id: uuid.UUID) -> AuthDimensionType
 
 
 def update_dimension_type(
-    session: Session, dim_id: uuid.UUID, payload: DimensionTypeUpdate
+    session: Session,
+    dim_id: uuid.UUID,
+    payload: DimensionTypeUpdate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
 ) -> AuthDimensionType:
     dim = get_dimension_type(session, dim_id)
     dim.name = payload.name
     dim.description = payload.description
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="dimension",
+        target_id=dim.id,
+        action="dimension.update",
+        detail={"code": dim.code},
+        trace_id=trace_id,
+    )
     session.commit()
     session.refresh(dim)
     return dim
 
 
-def delete_dimension_type(session: Session, dim_id: uuid.UUID) -> None:
+def delete_dimension_type(
+    session: Session,
+    dim_id: uuid.UUID,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> None:
     dim = get_dimension_type(session, dim_id)
     ref_count = session.scalar(
         select(func.count())
@@ -98,5 +140,17 @@ def delete_dimension_type(session: Session, dim_id: uuid.UUID) -> None:
                 "Cannot delete org dimension while org tree has nodes",
                 409,
             )
+    dim_id_copy = dim.id
+    dim_code = dim.code
     session.delete(dim)
+    record_platform_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_type="dimension",
+        target_id=dim_id_copy,
+        action="dimension.delete",
+        detail={"code": dim_code},
+        trace_id=trace_id,
+    )
     session.commit()
