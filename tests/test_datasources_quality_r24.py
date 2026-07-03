@@ -206,3 +206,81 @@ def test_ingestion_mysql_type_in_catalog():
     types = {entry["type"] for entry in export_type_catalog()}
     assert "mysql" in types
     assert "postgres" not in types  # CONN-002 待实现
+
+
+import logging
+import uuid
+
+from cryptography.fernet import Fernet
+
+from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
+from app.datasources.models import DataSource, get_meta_session
+from sqlalchemy import text
+
+
+@pytest.fixture(autouse=True)
+def clean_data_sources_r24():
+    yield
+    with get_meta_engine().begin() as conn:
+        conn.execute(text("DELETE FROM data_sources"))
+
+
+def test_decrypt_with_previous_key_roundtrip(monkeypatch):
+    """T-DS-K09: PREVIOUS key 可解密旧密文。"""
+    old_key = Fernet.generate_key().decode()
+    new_key = Fernet.generate_key().decode()
+    plain = "rotate-me"
+    cipher = Fernet(old_key.encode()).encrypt(plain.encode()).decode()
+    monkeypatch.setenv("CREDENTIAL_FERNET_KEY", new_key)
+    monkeypatch.setenv("CREDENTIAL_FERNET_KEY_PREVIOUS", old_key)
+    get_settings.cache_clear()
+    assert decrypt_credential(cipher) == plain
+
+
+def test_decrypt_both_keys_fail_raises(monkeypatch):
+    """T-DS-K10: 双钥均失败 → CredentialDecryptError。"""
+    monkeypatch.setenv("CREDENTIAL_FERNET_KEY", Fernet.generate_key().decode())
+    monkeypatch.setenv("CREDENTIAL_FERNET_KEY_PREVIOUS", Fernet.generate_key().decode())
+    get_settings.cache_clear()
+    with pytest.raises(CredentialDecryptError):
+        decrypt_credential("not-valid-fernet-token")
+
+
+def test_settings_fails_without_credential_fernet_key(monkeypatch):
+    """T-DS-K11: 缺 CREDENTIAL_FERNET_KEY → Settings 构造失败。"""
+    monkeypatch.delenv("CREDENTIAL_FERNET_KEY", raising=False)
+    get_settings.cache_clear()
+    with pytest.raises(Exception):
+        get_settings()
+
+
+def test_test_failure_path_logs_no_secrets(caplog, client, auth_headers):
+    """T-DS-K12: test 失败路径 caplog 无 password 明文与完整 cipher。"""
+    caplog.set_level(logging.INFO)
+    created = client.post(
+        "/api/v1/datasources",
+        json={
+            "name": "Log DS",
+            "code": "log_ds",
+            "type": "mysql",
+            "host": "127.0.0.1",
+            "port": 3306,
+            "database": "demo",
+            "username": "root",
+            "password": "plain-secret",
+        },
+        headers=auth_headers,
+    )
+    ds_id = created.json()["id"]
+    session = get_meta_session()
+    row = session.get(DataSource, uuid.UUID(ds_id))
+    cipher = row.password_encrypted
+    row.password_encrypted = "corrupt-cipher"
+    session.commit()
+    session.close()
+    with patch("app.datasources.dialects.mysql.pymysql.connect") as mock_connect:
+        mock_connect.side_effect = pymysql.err.OperationalError(2003, "refused")
+        client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert "plain-secret" not in caplog.text
+    assert "password=" not in caplog.text.lower()
+    assert cipher not in caplog.text
