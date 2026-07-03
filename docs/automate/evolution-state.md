@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r11.md |
-| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r11-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r11.md |
-| branch | cursor/bc-53058b4a-e7e4-4724-8daf-ed82dcadddd0-47d6 |
-| base_branch | dev-auto |
-| prd_ids | DATA-002,DATA-003,ETL-001,DATA-001,DATA-005 |
-| pr_number | 26 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx; pnpm run check:design |
@@ -68,12 +68,11 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G1 doc-bootstrap（r11 入口）：goal.md 只读；prd hub 124 项·16 域含薄弱项汇总/8 维总表/功能索引
+- G1 doc-bootstrap（r12 入口）：goal.md 只读；prd hub 124 项·16 域含薄弱项汇总/8 维总表/功能索引
 - plan M1+M1B 全 [x]（16 项）；无含 `[ ]` 的活跃节
-- G0 PASS：PR #25 已合并 dev-auto@78fb630；deployed_automate_rev=bf60b94ec4f4
-- 技能规则索引 26 条未过期
-- P4 r11 验证完成：backend 178 passed 1 skipped；fe 48 passed + build + check:design 34 files PASS；ingestion.smoke 23 tests PASS
-- P5 r11 PRD 8 维重评完成：DATA-001 破 90（90.4）；DATA-002/003/ETL-001/005 总分 88.2–89.4（仍 <90）；STUCK DATA-* 4–6 轮
+- G0 PASS：无 Open PR；PR #26 已 Squash merge 至 dev-auto@0d63f3b；state 对账 phase→idle
+- 技能规则索引 26 条未过期；deployed_automate_rev=bf60b94ec4f4
+- P5 r11 收尾：DATA-001 破 90（90.4）；DATA-002/003/ETL-001/005 仍 88.2–89.4（<90）；STUCK DATA-* 4–6 轮
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
