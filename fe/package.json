@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "check:design": "node scripts/check-design.mjs",
-    "test": "vitest run",
+    "test": "vitest run && node --test scripts/check-design.fixture.test.mjs",
     "test:smoke": "vitest run src/routes.smoke.test.tsx"
   },
   "dependencies": {
