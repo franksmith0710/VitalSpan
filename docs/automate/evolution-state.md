@@ -7,17 +7,17 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r16.md |
-| design | docs/superpowers/specs/2026-07-03-m1-m1b-floor-polish-r16-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1-m1b-floor-polish-r16.md |
-| branch | feat/evolution-r16-m1-m1b-floor-polish |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r17.md |
+| design | docs/superpowers/specs/2026-07-03-m2-auth-rbac-kickoff-r17-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m2-auth-rbac-kickoff-r17.md |
+| branch | feat/evolution-r17-m2-auth-rbac-kickoff |
 | base_branch | dev-auto |
-| prd_ids | BOOT-001,BOOT-006,BOOT-004,DATA-003,ETL-001 |
-| pr_number | 33 |
-| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v`; `cd fe && pnpm test && pnpm build && pnpm run check:design` |
+| prd_ids | AUTH-001,AUTH-002,AUTH-003,AUTH-004,AUTH-005 |
+| pr_number | 34 |
+| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | vitest ingestion.smoke 35/35 + routes.smoke 16/16（viewport 1400/375）；check:design PASS；screenshots N/A headless |
-| skill_rule_index_generated_at | 2026-07-03T16:51:00Z |
+| last_ui_verified_command | N/A（纯后端 r17） |
+| skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,7 +66,13 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P5 r16 PRD 重评：BOOT-001/006/004 + DATA-003 + ETL-001 巩固 91.0–91.5（90.4–90.7→）；T-HLT-23~25、T-RTR-03~04、T-CFG-11~13、T-TRC-17~18、T-CI-10~12、T-ETL-23~25、T-ING-32~35；pytest 273 + vitest 68 + node:test 4
+- P5 r17 PRD 重评：AUTH-001~005 L1 破 13→86.7–88.9（均 <90）；T-AUTH-R/O/U/G/D + T-MIG-32~33；pytest 302/4 skipped；缺用户-组织/审计/资源可见性守卫
+- P4 r17 独立验证：backend ruff PASS + pytest 302 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r17-m2-auth-rbac-kickoff；base_branch dev-auto
+- P3 r17 实现完成：7 Task 全绿；backend ruff+pytest 302 passed/4 skipped（+29 AUTH smoke）；ui_design_skill: none；branch feat/evolution-r17-m2-auth-rbac-kickoff@62a80b8；base_branch dev-auto
+- P2 r17 计划完成：7 Task（基建 + AUTH-001~005 + 路由/迁移/文档）；18 文件；subagent-driven-development option 1；全 Task UI skill: none
+- P1 r17 设计完成：M2 AUTH RBAC 地基 — AUTH-001~005 L1（6 表 + 0003 migration + 5 API router + pytest smoke）
+- G2 r17 选题完成：M2 AUTH 地基 kickoff — AUTH-001/002/003/004/005（5 项）；最低分 AUTH-002(12.8)
+- P5 r16 PRD 重评：BOOT-001/006/004 + DATA-003 + ETL-001 巩固 91.0–91.5（90.4–90.7→）；pytest 273 + vitest 68 + node:test 4
 - P4 r16 独立验证：backend ruff+pytest 273 passed/2 skipped；fe vitest 68/68 + node:test 4/4；build+check:design PASS；ingestion smoke 35/35 + routes 16/16；UI viewport 1400/375 PASS；exit_code 0；branch feat/evolution-r16-m1-m1b-floor-polish@95f0e34
 - P3 r16 实现完成：5 Task 全绿；backend ruff+pytest 273 passed/2 skipped；fe vitest 68/68（ingestion 35）+ node:test 4/4；build+check:design PASS；ui_design_skill: b-design-system-tailadmin-radix；screenshots: N/A headless CI；branch feat/evolution-r16-m1-m1b-floor-polish@84738cf；base_branch dev-auto
 - P5 r15 PRD 重评：BOOT-004 破 90（89.5→90.6 STUCK 清零）；BOOT-003/005/006/002 巩固 90.2–90.9；middleware traceId 契约修复；pytest 254 + vitest 64 + node:test 4
@@ -86,4 +92,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| （无） | — | — | — |
+| AUTH-004 | 1 | 86.7 | 2026-07-03 |
+| AUTH-002 | 1 | 87.3 | 2026-07-03 |
+| AUTH-005 | 1 | 88.2 | 2026-07-03 |
+| AUTH-003 | 1 | 88.5 | 2026-07-03 |
+| AUTH-001 | 1 | 88.9 | 2026-07-03 |

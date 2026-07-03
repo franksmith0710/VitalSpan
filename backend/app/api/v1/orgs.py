@@ -1,0 +1,92 @@
+from __future__ import annotations
+
+import uuid
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse, Response
+from sqlalchemy.orm import Session
+
+from app.auth.deps import UserContext, get_current_user
+from app.auth.models import get_meta_session
+from app.auth.org import service as org_service
+from app.auth.schemas import OrgCreate, OrgListResponse, OrgOut, OrgUpdate
+
+router = APIRouter(prefix="/orgs", tags=["auth"])
+
+
+def _db() -> Session:
+    session = get_meta_session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def _org_error_response(exc: org_service.OrgError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+@router.get("", response_model=OrgListResponse)
+def list_orgs(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> OrgListResponse:
+    items = [OrgOut.model_validate(n) for n in org_service.list_org_nodes(db)]
+    return OrgListResponse(items=items)
+
+
+@router.post("", response_model=OrgOut, status_code=status.HTTP_201_CREATED)
+def create_org(
+    payload: OrgCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> OrgOut | JSONResponse:
+    try:
+        node = org_service.create_org_node(db, payload)
+    except org_service.OrgError as exc:
+        return _org_error_response(exc)
+    return OrgOut.model_validate(node)
+
+
+@router.get("/{org_id}", response_model=OrgOut)
+def get_org(
+    org_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> OrgOut | JSONResponse:
+    try:
+        node = org_service.get_org_node(db, org_id)
+    except org_service.OrgError as exc:
+        return _org_error_response(exc)
+    return OrgOut.model_validate(node)
+
+
+@router.put("/{org_id}", response_model=OrgOut)
+def update_org(
+    org_id: uuid.UUID,
+    payload: OrgUpdate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> OrgOut | JSONResponse:
+    try:
+        node = org_service.update_org_node(db, org_id, payload)
+    except org_service.OrgError as exc:
+        return _org_error_response(exc)
+    return OrgOut.model_validate(node)
+
+
+@router.delete("/{org_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_org(
+    org_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> Response:
+    try:
+        org_service.delete_org_node(db, org_id)
+    except org_service.OrgError as exc:
+        return _org_error_response(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

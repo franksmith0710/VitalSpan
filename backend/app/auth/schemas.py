@@ -1,0 +1,144 @@
+from __future__ import annotations
+
+import re
+import uuid
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+ROLE_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
+ResourceType = Literal["datasource", "dashboard", "report"]
+ValueType = Literal["string", "number", "boolean", "org_ref"]
+
+
+class RoleCreate(BaseModel):
+    code: str
+    name: str = Field(min_length=1, max_length=128)
+    description: str | None = None
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, value: str) -> str:
+        if not ROLE_CODE_RE.match(value):
+            raise ValueError("code must match ^[a-z][a-z0-9_]{1,63}$")
+        return value
+
+
+class RoleUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    description: str | None = None
+
+
+class RoleOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    code: str
+    name: str
+    description: str | None
+
+
+class RoleListResponse(BaseModel):
+    items: list[RoleOut]
+
+
+class OrgCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    parent_id: uuid.UUID | None = None
+
+
+class OrgUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    parent_id: uuid.UUID | None = None
+
+
+class OrgOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    parent_id: uuid.UUID | None
+    name: str
+    path: str
+    level: int
+
+
+class OrgListResponse(BaseModel):
+    items: list[OrgOut]
+
+
+class UserCreate(BaseModel):
+    username: str = Field(min_length=1, max_length=128)
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    username: str
+
+
+class UserRolesReplace(BaseModel):
+    role_ids: list[uuid.UUID]
+
+
+class UserRoleOut(BaseModel):
+    id: uuid.UUID
+    code: str
+    name: str
+
+
+class UserRolesResponse(BaseModel):
+    items: list[UserRoleOut]
+
+
+class ResourceGrantCreate(BaseModel):
+    role_id: uuid.UUID
+    resource_type: ResourceType
+    resource_id: uuid.UUID
+
+
+class ResourceGrantOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    role_id: uuid.UUID
+    resource_type: str
+    resource_id: uuid.UUID
+
+
+class ResourceGrantListResponse(BaseModel):
+    items: list[ResourceGrantOut]
+
+
+class DimensionTypeCreate(BaseModel):
+    code: str
+    name: str = Field(min_length=1, max_length=128)
+    value_type: ValueType
+    description: str | None = None
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, value: str) -> str:
+        if not ROLE_CODE_RE.match(value):
+            raise ValueError("code must match ^[a-z][a-z0-9_]{1,63}$")
+        return value
+
+
+class DimensionTypeUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    description: str | None = None
+
+
+class DimensionTypeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    code: str
+    name: str
+    value_type: str
+    org_dimension: bool
+    description: str | None
+
+
+class DimensionTypeListResponse(BaseModel):
+    items: list[DimensionTypeOut]

@@ -52,13 +52,14 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/roles` | 角色列表/创建 | 内部 | 一期 | AUTH-001 | 规划 | `backend/app/api/v1/roles.py` |
-| GET/PUT/DELETE | `/api/v1/roles/{id}` | 角色详情/更新/删除 | 内部 | 一期 | AUTH-001 | 规划 | `backend/app/api/v1/roles.py` |
-| GET/POST | `/api/v1/users` | 用户列表/创建 | 内部 | 一期 | AUTH-003 | 规划 | `backend/app/api/v1/users.py` |
+| GET/POST | `/api/v1/roles` | 角色列表/创建 | 内部 | 一期 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
+| GET/PUT/DELETE | `/api/v1/roles/{id}` | 角色详情/更新/删除 | 内部 | 一期 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
+| GET/POST | `/api/v1/users` | 用户列表/创建 | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | GET/PUT | `/api/v1/users/{id}` | 用户详情/更新 | 内部 | 一期 | AUTH-003 | 规划 | `backend/app/api/v1/users.py` |
-| PUT | `/api/v1/users/{id}/roles` | 用户角色绑定 | 内部 | 一期 | AUTH-003 | 规划 | `backend/app/api/v1/users.py` |
-| GET/POST | `/api/v1/orgs` | 组织树节点 | 内部 | 一期 | AUTH-002 | 规划 | `backend/app/api/v1/orgs.py` |
-| GET/POST | `/api/v1/rls/dimensions` | 权限维度类型 | 内部 | 一期 | AUTH-005 | 规划 | `backend/app/api/v1/rls.py` |
+| PUT | `/api/v1/users/{id}/roles` | 用户角色绑定 | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| GET/POST | `/api/v1/orgs` | 组织树节点 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
+| GET/POST/DELETE | `/api/v1/resource-grants` | AUTH-004 资源授权 CRUD | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
+| GET/POST | `/api/v1/rls/dimensions` | 权限维度类型 | 内部 | 一期 | AUTH-005 | 已实现 | `backend/app/api/v1/rls.py` |
 | GET/POST | `/api/v1/rls/groups` | 维度分组 | 内部 | 一期 | AUTH-006 | 规划 | `backend/app/api/v1/rls.py` |
 | GET | `/api/v1/audit-logs` | 操作审计 | 内部 | 一期 | AUTH-008 | 规划 | `backend/app/api/v1/audit.py` |
 
