@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r13.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r13-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r13.md |
@@ -17,7 +17,7 @@
 | last_verified_command | cd backend && ruff check . && pytest -v; cd backend && pytest -v ../tests/test_ingestion_config.py ../tests/test_sync_executor.py ../tests/test_scheduler.py ../tests/test_etl_rules.py ../tests/test_ingestion_api.py ../tests/test_ingestion_l1_smoke.py; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx && pnpm run check:design |
-| last_ui_screenshots | N/A headless CI — ingestion vitest 31/31 PASS; check:design passed (34 files) |
+| last_ui_screenshots | N/A headless CI — T-ING-28 desktop1400 run confirm, T-ING-29 mobile375 cancel, T-ING-30 mobile375 401 error; ingestion vitest 31/31 PASS; check:design 34 files |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T15:55:00Z |
 | skill_rule_index_source_count | 26 |
@@ -68,6 +68,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r13 独立验证：backend ruff+pytest 207 passed/2 skipped；ingestion 105 passed/1 skipped；fe vitest 56/56（ingestion 31/31）；build+check:design PASS
 - P3 r13 实现完成：6 Task 全绿；DATA-003 run AlertDialog ≤25 行；ingestion vitest 31 项；backend 207 passed
 - G2 r13 选题完成：M1B DATA companion 质量推分 r13 — DATA-004/003/002 + ETL-001 + DATA-001（5 项）；最低分 ETL-001(89.3)
 - plan M1+M1B 全 [x]（12 项勾选）；无含 `[ ]` 的活跃节；饱和熔断未触发（远期未实现占 Top10）
