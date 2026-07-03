@@ -13,7 +13,7 @@
 | branch | cursor/bc-2c340cbf-c91f-4930-9dd7-08d818233460-fb98 |
 | base_branch | dev-auto |
 | prd_ids | BOOT-001,BOOT-002,BOOT-003,BOOT-004,BOOT-005,BOOT-006 |
-| pr_number |  |
+| pr_number | 10 |
 | last_verified_command | python3 -m pytest (25) + pnpm test (6 vitest + 2 node) + ruff + pnpm build + check:design + P4 doc writeback aggregate |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
