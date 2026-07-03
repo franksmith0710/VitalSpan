@@ -1,5 +1,6 @@
 import os
 import time
+import uuid
 from unittest.mock import patch
 
 import pytest
@@ -583,5 +584,66 @@ def test_l1_data_smoke_orchestrator_under_2_5_seconds(
     assert final is not None
     assert final["status"] == "succeeded"
     assert elapsed < 2.5
+
+    smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+@pytest.mark.integration
+def test_l1_compose_mysql_to_analytics_write_through(
+    integration_env, smoke_client, auth_headers, monkeypatch
+):
+    """T-L1-09: compose 可用时样例 mysql→analytics 写穿；不可用 skip。"""
+    from app.core.config import get_settings
+
+    monkeypatch.setenv("ANALYTICS_DATABASE_URL", integration_env["analytics_url"])
+    get_settings.cache_clear()
+    target_table = f"orders_l1_compose_{uuid.uuid4().hex[:8]}"
+    payload = {
+        "name": "l1-compose-write",
+        "source": {
+            "type": "mysql",
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+            "table": "dirty_orders",
+        },
+        "target_table": target_table,
+        "schedule_cron": None,
+    }
+    create = smoke_client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert create.status_code == 201
+    job_id = create.json()["id"]
+
+    run = smoke_client.post(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+        headers=auth_headers,
+    )
+    assert run.status_code == 202
+    run_id = run.json()["run_id"]
+
+    deadline = time.time() + 30
+    final = None
+    while time.time() < deadline:
+        listed = smoke_client.get(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/runs",
+            headers=auth_headers,
+        )
+        match = next((i for i in listed.json()["items"] if i["id"] == run_id), None)
+        if match and match["status"] in ("succeeded", "failed"):
+            final = match
+            break
+        time.sleep(0.2)
+    assert final is not None
+    assert final["status"] == "succeeded"
+    assert final["rows_synced"] >= 1
+
+    from sqlalchemy import create_engine, text
+
+    engine = create_engine(integration_env["analytics_url"])
+    with engine.connect() as conn:
+        count = conn.execute(text(f'SELECT COUNT(*) FROM "{target_table}"')).scalar_one()
+        assert count >= 1
 
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)

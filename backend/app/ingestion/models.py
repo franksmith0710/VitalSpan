@@ -78,6 +78,16 @@ class SourceConnectionIn(BaseModel):
     table: str
 
 
+class SourceConnectionUpdateIn(BaseModel):
+    type: Literal["mysql", "postgres"]
+    host: str
+    port: int = Field(ge=1, le=65535)
+    database: str
+    username: str
+    password: str = ""
+    table: str
+
+
 class SourceConnectionOut(BaseModel):
     type: Literal["mysql", "postgres"]
     host: str

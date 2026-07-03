@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import * as ReactRouter from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -88,6 +88,8 @@ describe("ingestion admin smoke", () => {
     );
     const runBtn = await screen.findByRole("button", { name: "手动运行同步" });
     fireEvent.click(runBtn);
+    expect(await screen.findByText("确认手动运行同步？")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "运行" }));
     await waitFor(() => {
       expect(mockApiFetch).toHaveBeenCalledWith(
         "/api/v1/ingestion/sync-jobs/job-1/run",
@@ -332,7 +334,10 @@ describe("ingestion admin smoke", () => {
     );
     const runBtn = await screen.findByRole("button", { name: "手动运行同步" });
     fireEvent.click(runBtn);
-    fireEvent.click(runBtn);
+    expect(await screen.findByText("确认手动运行同步？")).toBeInTheDocument();
+    const confirmRun = screen.getByRole("button", { name: "运行" });
+    fireEvent.click(confirmRun);
+    fireEvent.click(confirmRun);
     const postRuns = mockApiFetch.mock.calls.filter(
       (c) => typeof c[0] === "string" && c[0].endsWith("/run"),
     );
@@ -658,5 +663,116 @@ describe("ingestion admin smoke", () => {
     );
     await screen.findByText("mobile-perf-job");
     expect(performance.now() - start).toBeLessThan(600);
+  });
+
+  it("SyncJobsPage_run_confirms_and_calls_post (T-ING-28)", async () => {
+    setViewport(1400);
+    mockApiFetch
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "job-run-confirm",
+            name: "待运行任务",
+            source_type: "mysql",
+            target_table: "t",
+            enabled: true,
+            schedule_cron: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce(undefined);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "手动运行同步" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("确认手动运行同步？")).toBeInTheDocument();
+    expect(within(dialog).getByText(/待运行任务/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "运行" }));
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/v1/ingestion/sync-jobs/job-run-confirm/run",
+        { method: "POST" },
+      );
+    });
+    const postRuns = mockApiFetch.mock.calls.filter(
+      (c) => typeof c[0] === "string" && c[0].endsWith("/run"),
+    );
+    expect(postRuns).toHaveLength(1);
+  });
+
+  it("SyncJobsPage_run_cancel_skips_api (T-ING-29)", async () => {
+    setViewport(375);
+    mockApiFetch.mockResolvedValueOnce({
+      items: [
+        {
+          id: "job-no-run",
+          name: "不运行",
+          source_type: "mysql",
+          target_table: "t",
+          enabled: true,
+          schedule_cron: null,
+        },
+      ],
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "手动运行同步" }));
+    fireEvent.click(screen.getByRole("button", { name: "取消" }));
+    const postRuns = mockApiFetch.mock.calls.filter(
+      (c) => typeof c[0] === "string" && c[0].endsWith("/run"),
+    );
+    expect(postRuns).toHaveLength(0);
+  });
+
+  it("SyncJobsPage_load_401_shows_error (T-ING-30)", async () => {
+    setViewport(375);
+    mockApiFetch.mockRejectedValueOnce(new Error("未登录或会话已过期"));
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("未登录或会话已过期")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "重试" })).toBeInTheDocument();
+  });
+
+  it("SyncJobHistoryPage_renders_100_rows_under_900ms (T-ING-31)", async () => {
+    setViewport(1400);
+    const runs = Array.from({ length: 100 }, (_, i) => ({
+      id: `run-${i}`,
+      status: "succeeded",
+      trace_id: `trace-100-${i}`,
+      started_at: `2026-07-03T10:${String(i % 60).padStart(2, "0")}:00Z`,
+      finished_at: `2026-07-03T10:${String(i % 60).padStart(2, "0")}:01Z`,
+      rows_synced: i,
+      error_message: null,
+      retry_count: 0,
+    }));
+    mockApiFetch.mockResolvedValueOnce({ items: runs });
+    const start = performance.now();
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/history"
+            element={<SyncJobHistoryPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText("trace-100-0");
+    expect(performance.now() - start).toBeLessThan(900);
   });
 });

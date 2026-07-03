@@ -198,3 +198,38 @@ def test_refresh_all_jobs_survives_three_cron_changes(mock_get_scheduler):
         mock_scheduler.remove_job.assert_called_with(str(cron_id))
         assert mock_scheduler.add_job.call_count == 1
         assert mock_scheduler.add_job.call_args.kwargs["replace_existing"] is True
+
+
+@patch("app.ingestion.scheduler.get_scheduler")
+def test_refresh_all_jobs_invalid_cron_does_not_crash(mock_get_scheduler):
+    """T-D02-26: schedule_cron='not-a-cron' refresh 不抛异常；scheduler 无该 job。"""
+    engine = get_meta_engine()
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM ingestion_sync_jobs"))
+    db = get_meta_session()
+    bad = SyncJob(
+        name="bad-cron-job",
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="db",
+        source_username="u",
+        source_password_encrypted=encrypt_password("p"),
+        source_table="t",
+        target_table="tgt_bad_cron",
+        schedule_cron="not-a-cron",
+        enabled=True,
+    )
+    db.add(bad)
+    db.commit()
+    bad_id = bad.id
+    db.close()
+
+    mock_scheduler = MagicMock()
+    mock_scheduler.get_jobs.return_value = []
+    mock_get_scheduler.return_value = mock_scheduler
+
+    refresh_all_jobs()
+
+    registered_ids = {c.kwargs.get("id") for c in mock_scheduler.add_job.call_args_list}
+    assert str(bad_id) not in registered_ids

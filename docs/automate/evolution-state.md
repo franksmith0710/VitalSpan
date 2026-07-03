@@ -6,20 +6,20 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
-| plan |  |
-| branch |  |
-| base_branch |  |
-| prd_ids |  |
-| pr_number |  |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd backend && pytest -v ../tests/test_ingestion_config.py ../tests/test_sync_executor.py ../tests/test_scheduler.py ../tests/test_etl_rules.py ../tests/test_ingestion_api.py ../tests/test_ingestion_l1_smoke.py ../tests/test_doc_anchors_data.py; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
+| phase | P5_DOCS_READY |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r13.md |
+| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r13-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r13.md |
+| branch | feat/evolution-r13-data-companion-push |
+| base_branch | dev-auto |
+| prd_ids | DATA-004,DATA-003,DATA-002,ETL-001,DATA-001 |
+| pr_number | 30 |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd backend && pytest -v ../tests/test_ingestion_config.py ../tests/test_sync_executor.py ../tests/test_scheduler.py ../tests/test_etl_rules.py ../tests/test_ingestion_api.py ../tests/test_ingestion_l1_smoke.py; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx && pnpm run check:design |
-| last_ui_screenshots | N/A headless CI — ingestion vitest 27/27 PASS; check:design passed (34 files) |
+| last_ui_screenshots | N/A headless CI — T-ING-28 desktop1400 run confirm, T-ING-29 mobile375 cancel, T-ING-30 mobile375 401 error; ingestion vitest 31/31 PASS; check:design 34 files |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T13:45:00Z |
+| skill_rule_index_generated_at | 2026-07-03T15:55:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -68,11 +68,12 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G1 doc-bootstrap（r13 入口）：goal.md 只读；prd hub 124 项·16 域含薄弱项汇总/8 维总表/功能索引
-- plan M1+M1B 全 [x]（12 项勾选）；无含 `[ ]` 的活跃节
-- G0 PASS：工作区干净；PR #28 已 merge 至 dev-auto@6e2f5c2；state 对账 phase→idle
-- 技能规则索引 26 条未过期；deployed_automate_rev=bf60b94ec4f4
-- 近 90 选题池：DATA-004(89.8)、DATA-003(89.6)、DATA-002(89.4) 最接近；BOOT 簇 87.9–89.5 饱和
+- P5 r13 PRD 重评：DATA-004/002/003/ETL-001 破 90（91.1/91.0/90.6/90.7）；DATA-001 巩固 91.3；STUCK DATA 簇清零
+- P4 r13 独立验证：backend ruff+pytest 207 passed/2 skipped；ingestion 105 passed/1 skipped；fe vitest 56/56（ingestion 31/31）；build+check:design PASS
+- P3 r13 实现完成：6 Task 全绿；DATA-003 run AlertDialog ≤25 行；ingestion vitest 31 项；backend 207 passed
+- G2 r13 选题完成：M1B DATA companion 质量推分 r13 — DATA-004/003/002 + ETL-001 + DATA-001（5 项）；最低分 ETL-001(89.3)
+- plan M1+M1B 全 [x]（12 项勾选）；无含 `[ ]` 的活跃节；饱和熔断未触发（远期未实现占 Top10）
+- G0 PASS：PR #29 已 merge 至 dev-auto@31c3fec；BOOT 簇 STUCK 7–11 轮本轮跳过
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -84,7 +85,3 @@
 | BOOT-001 | 10 | 89.2 | 2026-07-03 |
 | BOOT-004 | 10 | 89.5 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
-| DATA-004 | 5 | 89.8 | 2026-07-03 |
-| DATA-002 | 7 | 89.4 | 2026-07-03 |
-| DATA-003 | 7 | 89.6 | 2026-07-03 |
-| ETL-001 | 6 | 89.3 | 2026-07-03 |

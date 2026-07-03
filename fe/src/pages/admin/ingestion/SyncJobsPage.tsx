@@ -45,6 +45,7 @@ export function SyncJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [runTarget, setRunTarget] = useState<SyncJobSummary | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SyncJobSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -69,6 +70,7 @@ export function SyncJobsPage() {
     setRunningId(jobId);
     try {
       await apiFetch(`/api/v1/ingestion/sync-jobs/${jobId}/run`, { method: "POST" });
+      setRunTarget(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
     } finally {
@@ -167,7 +169,7 @@ export function SyncJobsPage() {
                           aria-label="手动运行同步"
                           disabled={runningId === job.id}
                           loading={runningId === job.id}
-                          onClick={() => void handleRun(job.id)}
+                          onClick={() => setRunTarget(job)}
                         >
                           <Play className="size-4" />
                         </IconButton>
@@ -231,6 +233,36 @@ export function SyncJobsPage() {
               }}
             >
               {deleting ? "删除中…" : "删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={runTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && runningId === null) setRunTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认手动运行同步？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {runTarget
+                ? `确定立即运行任务「${runTarget.name}」？将全量同步源表数据到托管分析库。`
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={runningId !== null}>取消</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={runningId !== null}
+              onClick={(event) => {
+                event.preventDefault();
+                if (runTarget) void handleRun(runTarget.id);
+              }}
+            >
+              {runningId === runTarget?.id ? "运行中…" : "运行"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
