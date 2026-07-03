@@ -14,7 +14,7 @@
 - 资源可见性：`ensure_resource_visible`、`list_visible_resource_ids`、`require_resource_visible` deps
 - 用户-组织：`auth_users.org_node_id` FK；`assign_user_org` / `clear_user_org`
 - 组织维度、多维行级权限（RLS）策略
-- 操作审计日志
+- 绑定操作审计 L1：`auth_audit_events` + `audit/service.py`（AUTH-003；非 AUTH-008 全平台）
 
 ## 边界
 
@@ -22,7 +22,7 @@
 |----|-----|
 | 身份、授权、RLS 策略定义 | 查询执行细节（→ `query` 消费策略） |
 | 租户/组织模型、用户组织归属 | 业务视图模板内容（→ `views`） |
-| L1 资源可见性守卫（域 + deps） | AUTH-006~008（维度分组、RLS 谓词注入、完整审计） |
+| L1 资源可见性守卫（域 + deps） | AUTH-006 维度分组实现、AUTH-007 RLS 谓词注入、AUTH-008 全平台审计（登录/数据源等） |
 
 ## 依赖
 
@@ -42,6 +42,8 @@
 | `GET /api/v1/me` | `api/v1/me.py`；`get_current_user` 注入 `UserContext` | BOOT-003 | M1 骨架 |
 | `UserContext` | 占位用户上下文 | BOOT-003 | M1 骨架 |
 | `Bearer dev` | 仅 `VITALSPAN_ENV=development` 接受 | BOOT-003 | M1 占位 |
+| `audit/service.py` | 审计写入与分页查询 L1 | AUTH-003 | 已实现 |
+| `GET /api/v1/audit/events` | 审计列表 API | AUTH-003 | 已实现 |
 | `PermissionService` | RBAC 校验 | AUTH-002~004 | 待建 |
 | `RlsPolicyService` | 行级策略 | AUTH-005~006 | 待建 |
 | `AuditService` | 审计写入 | AUTH-007~008 | 待建 |
