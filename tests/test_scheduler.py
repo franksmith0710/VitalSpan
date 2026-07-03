@@ -167,3 +167,34 @@ def test_refresh_all_jobs_reregisters_on_cron_change(mock_get_scheduler):
     assert second_kwargs["replace_existing"] is True
     assert isinstance(second_kwargs["trigger"], CronTrigger)
     assert second_kwargs["id"] == str(cron_id)
+
+
+@patch("app.ingestion.scheduler.get_scheduler")
+def test_refresh_all_jobs_survives_three_cron_changes(mock_get_scheduler):
+    """T-D02-22: 连续 3 次 cron 变更 refresh → remove/add 无未捕获异常。"""
+    engine = get_meta_engine()
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM ingestion_sync_jobs"))
+    cron_id, _ = _seed_scheduler_jobs()
+    mock_scheduler = MagicMock()
+    mock_get_scheduler.return_value = mock_scheduler
+
+    cron_exprs = ["0 2 * * *", "0 3 * * *", "0 4 * * *"]
+    for expr in cron_exprs:
+        db = get_meta_session()
+        job = db.get(SyncJob, cron_id)
+        assert job is not None
+        job.schedule_cron = expr
+        db.commit()
+        db.close()
+
+        registered = MagicMock()
+        registered.id = str(cron_id)
+        mock_scheduler.reset_mock()
+        mock_scheduler.get_jobs.return_value = [registered]
+
+        refresh_all_jobs()
+
+        mock_scheduler.remove_job.assert_called_with(str(cron_id))
+        assert mock_scheduler.add_job.call_count == 1
+        assert mock_scheduler.add_job.call_args.kwargs["replace_existing"] is True
