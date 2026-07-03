@@ -85,6 +85,18 @@ def replace_user_roles(session: Session, user_id: uuid.UUID, role_ids: list[uuid
     return list_user_roles(session, user_id)
 
 
+def bind_roles_batch(session: Session, user_id: uuid.UUID, role_ids: list[uuid.UUID]) -> list[AuthRole]:
+    get_user(session, user_id)
+    for role_id in role_ids:
+        if session.get(AuthRole, role_id) is None:
+            raise UserError("ROLE_NOT_FOUND", "Role not found", 404)
+        existing = session.get(AuthUserRole, {"user_id": user_id, "role_id": role_id})
+        if existing is None:
+            session.add(AuthUserRole(user_id=user_id, role_id=role_id))
+    session.commit()
+    return list_user_roles(session, user_id)
+
+
 def resolve_role_codes_for_user(session: Session, user_id: uuid.UUID) -> list[str]:
     if session.get(AuthUser, user_id) is None:
         return []
