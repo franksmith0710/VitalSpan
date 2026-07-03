@@ -169,6 +169,66 @@ redoc: /redoc
 | GET | `/api/v1/ingestion/sync-jobs/{id}/runs` | 运行历史 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | GET/PUT | `/api/v1/ingestion/sync-jobs/{id}/etl-rules` | 清洗规则配置 | 内部 | M1B | ETL-001 | 已实现 | `backend/app/ingestion/etl_rules.py` |
 
+### SourceConnection（`source` 嵌套对象）
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|:----:|------|
+| type | `mysql` \| `postgres` | ✓ | M1B executor 仅 mysql |
+| host | string | ✓ | 源库主机 |
+| port | int | ✓ | 1–65535 |
+| database | string | ✓ | 库名 |
+| username | string | ✓ | 用户名 |
+| password | string | ✓ | 请求明文；响应 `***` |
+| table | string | ✓ | 源表名 |
+
+### 请求/响应示例
+
+**POST `/api/v1/ingestion/sync-jobs`**（201）：
+
+```json
+{
+  "name": "sample-mysql-orders",
+  "source": {
+    "type": "mysql",
+    "host": "127.0.0.1",
+    "port": 3307,
+    "database": "sample_db",
+    "username": "sample",
+    "password": "sample",
+    "table": "dirty_orders"
+  },
+  "target_table": "orders_clean",
+  "schedule_cron": null
+}
+```
+
+响应 `source.password` 为 `"***"`。
+
+**POST `/api/v1/ingestion/sync-jobs/{id}/run`**（202）：
+
+```json
+{ "run_id": "550e8400-e29b-41d4-a716-446655440000", "status": "running" }
+```
+
+**GET `/api/v1/ingestion/sync-jobs/{id}/runs`**（200）：
+
+```json
+{
+  "items": [
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440001",
+      "status": "succeeded",
+      "started_at": "2026-07-03T08:00:00Z",
+      "finished_at": "2026-07-03T08:00:01Z",
+      "rows_synced": 4,
+      "error_message": null,
+      "trace_id": "e2e-trace-001",
+      "retry_count": 0
+    }
+  ]
+}
+```
+
 ---
 
 ## 10. 范围外（不实现）

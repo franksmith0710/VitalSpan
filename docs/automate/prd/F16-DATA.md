@@ -22,6 +22,19 @@
 - **期次**：M1B
 - **里程碑对齐**：M1B · 已完成 · 2026-07-03
 - **描述**：同步任务 CRUD（内联 `SourceConnection`、源表、目标表、调度）。
+
+**SourceConnection 字段（请求/响应 `source` 对象）**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|:----:|------|
+| type | `mysql` \| `postgres` | ✓ | M1B executor 仅 mysql |
+| host | string | ✓ | 源库主机 |
+| port | int 1–65535 | ✓ | 源库端口 |
+| database | string | ✓ | 库名 |
+| username | string | ✓ | 用户名 |
+| password | string | ✓ | 请求明文；响应 `***` |
+| table | string | ✓ | 源表名 |
+
 - **验收标准**：
   - [x] `GET/POST /api/v1/ingestion/sync-jobs` 可用
   - [x] OpenAPI 可访问
@@ -69,12 +82,12 @@
 
 ### [DATA-005] 端到端验收与文档回写
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §5（DATA-SMOKE）
 - **期次**：M1B
-- **描述**：DATA-SMOKE：源库 → 同步+清洗 → 托管库 → `dataSourceId` → SQL 出数。
+- **描述**：DATA-SMOKE **L1**：内联 SourceConnection → 同步+清洗 → 托管库目标表；运行历史含 traceId/行数/errorMessage。**L2**（dataSourceId + SQL 出数）见 M3/M4。
 - **验收标准**：
-  - [ ] DATA-SMOKE 用例通过
-  - [ ] SRS §3.6、api/README、services/ingestion 状态已回写
-- **代码锚点**：`docs/automate/plan.md` M1B
-- **演化建议**：M1B 收尾项
+  - [x] DATA-SMOKE L1 用例通过（`tests/test_ingestion_e2e.py`）
+  - [x] SRS §3.6、api/README §9、services/ingestion 状态已回写
+- **代码锚点**：`tests/test_ingestion_e2e.py` · `docs/automate/plan.md` M1B
+- **演化建议**：P4 compose 集成验证；L2 dataSourceId 登记见 M3/M4

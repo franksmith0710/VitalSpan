@@ -43,16 +43,16 @@ srs_ref: docs/srs/全生命周期系统需求规格说明书.md#8-实施分期
 
 ## M1B — 数据接入与清洗（FR-DATA / FR-ETL）
 
-**目标**：源库经同步+轻量清洗入托管分析库，再注册为 `dataSourceId` 供 BI 使用。
+**目标**：L1 同步+清洗闭环（内联 SourceConnection → 托管分析库）；L2 dataSourceId 登记 + SQL 出数见 M3/M4。
 
-**SRS**：FR-DATA · FR-ETL §3.6 · **验收**：DATA-SMOKE
+**SRS**：FR-DATA · FR-ETL §3.6 · **验收**：DATA-SMOKE L1
 
-- [ ] DATA-004: 托管分析库与配置项
-- [ ] DATA-001: 同步任务模型与 API
-- [ ] DATA-002: 同步执行器
-- [ ] ETL-001: 清洗规则引擎（轻量）
-- [ ] DATA-003: Admin 配置台页面
-- [ ] DATA-005: 端到端验收与文档回写
+- [x] DATA-004: 托管分析库与配置项
+- [x] DATA-001: 同步任务模型与 API
+- [x] DATA-002: 同步执行器
+- [x] ETL-001: 清洗规则引擎（轻量）
+- [x] DATA-003: Admin 配置台页面
+- [x] DATA-005: 端到端验收与文档回写
 
 ---
 

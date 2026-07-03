@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-close.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-close-design.md |
-| plan |  |
-| branch |  |
-| base_branch |  |
+| plan | docs/superpowers/plans/2026-07-03-m1b-close.md |
+| branch | cursor/bc-f55858a9-664a-4ce4-89a2-440201551df3-239a |
+| base_branch | dev-auto |
 | prd_ids | DATA-005,DATA-002,DATA-003,ETL-001,DATA-001 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T09:30:00Z |
+| skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -69,7 +69,7 @@
 - G0 PASS：无 Open PR；PR #14 Squash merge 至 dev-auto（sha 74937da）；PRD/plan 已对齐；phase 重置 idle
 - G1 doc-bootstrap：goal 只读；prd hub v1.2.8（16 分片 124 项）、8 维总表与薄弱项汇总就绪；plan 只读校验通过
 - plan 当前节 M1B（M1 BOOT+文档回写已全部 [x]）；M1B queued，`m1b_activation: after-M1-complete-not-in-current-execute-scope`
-- P2 planner：5 Task 计划 `docs/superpowers/plans/2026-07-03-m1b-activate.md`（004→001→ETL→002→003）；固定 subagent-driven-development option 1
+- P2 planner：6 Task 计划 `docs/superpowers/plans/2026-07-03-m1b-close.md`（001→ETL→002→005 L1→003 smoke→005 文档）；固定 subagent-driven-development option 1
 - G2 picker：M1B 收尾 DATA-005 L1 + 文档回写；同轮 companion DATA-002/003 + ETL-001 + DATA-001 测试/文档补强；META/DESIGN/CONN 远期让位
 - 薄弱项 Top3：META-001(10.8)、DESIGN-001(10.8)、CONN-021(10.9)；STUCK BOOT-001~006 均 <90（最高 BOOT-003 86.4）；入选 M1B 项连续未过轮次均 1（非 STUCK）
 
