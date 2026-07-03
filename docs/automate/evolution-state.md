@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r13.md |
 | design |  |
 | plan |  |
-| branch |  |
-| base_branch |  |
-| prd_ids |  |
+| branch | feat/evolution-r13-data-companion-push |
+| base_branch | dev-auto |
+| prd_ids | DATA-004,DATA-003,DATA-002,ETL-001,DATA-001 |
 | pr_number |  |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd backend && pytest -v ../tests/test_ingestion_config.py ../tests/test_sync_executor.py ../tests/test_scheduler.py ../tests/test_etl_rules.py ../tests/test_ingestion_api.py ../tests/test_ingestion_l1_smoke.py ../tests/test_doc_anchors_data.py; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
@@ -68,11 +68,11 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G1 doc-bootstrap（r13 入口）：goal.md 只读；prd hub 124 项·16 域含薄弱项汇总/8 维总表/功能索引
-- plan M1+M1B 全 [x]（12 项勾选）；无含 `[ ]` 的活跃节
-- G0 PASS：工作区干净；PR #28 已 merge 至 dev-auto@6e2f5c2；state 对账 phase→idle
+- G2 r13 选题完成：M1B DATA companion 质量推分 r13 — DATA-004/003/002 + ETL-001 + DATA-001（5 项）；最低分 ETL-001(89.3)
+- plan M1+M1B 全 [x]（12 项勾选）；无含 `[ ]` 的活跃节；饱和熔断未触发（远期未实现占 Top10）
+- G0 PASS：PR #29 已 merge 至 dev-auto@31c3fec；BOOT 簇 STUCK 7–11 轮本轮跳过
 - 技能规则索引 26 条未过期；deployed_automate_rev=bf60b94ec4f4
-- 近 90 选题池：DATA-004(89.8)、DATA-003(89.6)、DATA-002(89.4) 最接近；BOOT 簇 87.9–89.5 饱和
+- STUCK 入选：DATA-004(5)、DATA-002(7)、DATA-003(7)、ETL-001(6) 连续未过 90
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
