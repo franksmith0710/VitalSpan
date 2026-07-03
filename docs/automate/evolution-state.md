@@ -13,7 +13,7 @@
 | branch | feat/evolution-r14-boot-quality-push |
 | base_branch | dev-auto |
 | prd_ids | BOOT-003,BOOT-005,BOOT-006,BOOT-002,BOOT-001 |
-| pr_number |  |
+| pr_number | 31 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test && pnpm run check:design |
