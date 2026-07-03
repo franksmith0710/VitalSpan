@@ -382,3 +382,108 @@ def test_revision_0002_source_defines_ingestion_table_names():
     source = rev_path.read_text(encoding="utf-8")
     for table in ("ingestion_sync_jobs", "ingestion_sync_runs", "ingestion_etl_rules"):
         assert table in source
+
+
+def test_alembic_downgrade_base_sql_contains_ingestion_drop():
+    """T-MIG-21: alembic downgrade base --sql 子进程可预期降级链。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    env = os.environ.copy()
+    env.setdefault("DATABASE_URL", KNOWN_URL)
+    env.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
+    env.setdefault(
+        "CREDENTIAL_FERNET_KEY",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "downgrade", "head:base", "--sql"],
+        cwd=backend_dir,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    stdout_upper = result.stdout.upper()
+    assert "DROP" in stdout_upper or "ingestion_sync_jobs" in result.stdout
+
+
+def test_alembic_upgrade_sql_stdout_excludes_secrets():
+    """T-MIG-22: upgrade head --sql stdout 不含 SECRET_KEY 明文。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    secret = os.environ["SECRET_KEY"]
+    env = os.environ.copy()
+    env.setdefault("DATABASE_URL", KNOWN_URL)
+    env.setdefault("SECRET_KEY", secret)
+    env.setdefault(
+        "CREDENTIAL_FERNET_KEY",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=backend_dir,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    assert secret not in result.stdout
+    assert "ci-test-secret" not in result.stdout
+
+
+def test_settings_env_py_binding_end_to_end(monkeypatch):
+    """T-MIG-23: 同一 DATABASE_URL 下 Settings 与 env.py set_main_option 一致。"""
+    bound_url = "postgresql+psycopg://e2e:e2e@localhost:5432/e2e"
+    monkeypatch.setenv("DATABASE_URL", bound_url)
+    get_settings.cache_clear()
+    assert get_settings().database_url == bound_url
+
+    fake_settings = Settings(
+        database_url=bound_url,
+        secret_key="ci-test-secret-key-min-32-chars-long!!",
+        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
+    get_settings.cache_clear()
+    sys.modules.pop("migrations.env", None)
+
+    mock_config = MagicMock()
+    mock_config.config_file_name = None
+    mock_context = MagicMock()
+    mock_context.config = mock_config
+    mock_context.is_offline_mode.return_value = True
+
+    with patch("alembic.context", mock_context):
+        importlib.import_module("migrations.env")
+
+    mock_config.set_main_option.assert_called_with("sqlalchemy.url", bound_url)
+    sys.modules.pop("migrations.env", None)
+
+
+def test_migrations_env_reimport_under_budget(monkeypatch):
+    """T-MIG-24: DATABASE_URL 变更后重导入 migrations.env < 2s（rebind 路径）。"""
+    url_a = "postgresql+psycopg://perf:a@localhost:5432/a"
+    url_b = "postgresql+psycopg://perf:b@localhost:5432/b"
+
+    def import_env_timed() -> float:
+        sys.modules.pop("migrations.env", None)
+        mock_config = MagicMock()
+        mock_config.config_file_name = None
+        mock_context = MagicMock()
+        mock_context.config = mock_config
+        mock_context.is_offline_mode.return_value = True
+        mock_context.begin_transaction.return_value.__enter__ = MagicMock()
+        mock_context.begin_transaction.return_value.__exit__ = MagicMock(return_value=False)
+        start = time.perf_counter()
+        with patch("alembic.context", mock_context):
+            importlib.import_module("migrations.env")
+        return time.perf_counter() - start
+
+    monkeypatch.setenv("DATABASE_URL", url_a)
+    get_settings.cache_clear()
+    assert import_env_timed() < 2.0
+
+    monkeypatch.setenv("DATABASE_URL", url_b)
+    get_settings.cache_clear()
+    assert import_env_timed() < 2.0
+    sys.modules.pop("migrations.env", None)
