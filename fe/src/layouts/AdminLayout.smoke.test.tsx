@@ -32,4 +32,19 @@ describe("AdminLayout smoke", () => {
       screen.getAllByRole("button", { name: "切换深浅色主题" }).length,
     ).toBeGreaterThanOrEqual(1);
   });
+
+  it("renders mobile menu button with accessible label (T-FE-10)", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(
+      screen.getAllByRole("button", { name: "打开菜单" }).length,
+    ).toBeGreaterThanOrEqual(1);
+  });
 });

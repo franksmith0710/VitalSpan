@@ -24,3 +24,8 @@ test("T-FE-DG-02: @design-token-ok line exempts hex", () => {
   const result = runCheck(path.join(fixturesRoot, "ok-only"));
   assert.equal(result.status, 0, result.stdout + result.stderr);
 });
+
+test("T-FE-DG-03: rgb() in fixture fails check:design", () => {
+  const result = runCheck(path.join(fixturesRoot, "rgb-only"));
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+});
