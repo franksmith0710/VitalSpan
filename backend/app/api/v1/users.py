@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+import uuid
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse, Response
+from sqlalchemy.orm import Session
+
+from app.auth.deps import UserContext, get_current_user
+from app.auth.models import get_meta_session
+from app.auth.schemas import UserCreate, UserOut, UserRoleOut, UserRolesReplace, UserRolesResponse
+from app.auth.users import service as user_service
+
+router = APIRouter(prefix="/users", tags=["auth"])
+
+
+def _db() -> Session:
+    session = get_meta_session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def _user_error_response(exc: user_service.UserError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+@router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def create_user(
+    payload: UserCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> UserOut | JSONResponse:
+    try:
+        user = user_service.create_user(db, payload)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return UserOut.model_validate(user)
+
+
+@router.get("/{user_id}/roles", response_model=UserRolesResponse)
+def list_user_roles(
+    user_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> UserRolesResponse | JSONResponse:
+    try:
+        roles = user_service.list_user_roles(db, user_id)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    items = [UserRoleOut(id=r.id, code=r.code, name=r.name) for r in roles]
+    return UserRolesResponse(items=items)
+
+
+@router.put("/{user_id}/roles", response_model=UserRolesResponse)
+def replace_user_roles(
+    user_id: uuid.UUID,
+    payload: UserRolesReplace,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> UserRolesResponse | JSONResponse:
+    try:
+        roles = user_service.replace_user_roles(db, user_id, payload.role_ids)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    items = [UserRoleOut(id=r.id, code=r.code, name=r.name) for r in roles]
+    return UserRolesResponse(items=items)
+
+
+@router.post("/{user_id}/roles/{role_id}", status_code=status.HTTP_200_OK, response_model=None)
+def bind_user_role(
+    user_id: uuid.UUID,
+    role_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> JSONResponse | dict[str, str]:
+    try:
+        user_service.bind_role(db, user_id, role_id)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return {"status": "ok"}
+
+
+@router.delete("/{user_id}/roles/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
+def unbind_user_role(
+    user_id: uuid.UUID,
+    role_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> Response:
+    try:
+        user_service.unbind_role(db, user_id, role_id)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
