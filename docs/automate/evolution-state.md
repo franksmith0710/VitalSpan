@@ -13,7 +13,7 @@
 | branch | feat/m1b-data-quality-r12 |
 | base_branch | dev-auto |
 | prd_ids | DATA-002,ETL-001,DATA-004,DATA-003,DATA-005 |
-| pr_number |  |
+| pr_number | 28 |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd backend && pytest -v ../tests/test_ingestion_config.py ../tests/test_sync_executor.py ../tests/test_scheduler.py ../tests/test_etl_rules.py ../tests/test_ingestion_api.py ../tests/test_ingestion_l1_smoke.py ../tests/test_doc_anchors_data.py; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx && pnpm run check:design |
