@@ -87,3 +87,51 @@ def test_rule_chain_dirty_orders_subset():
     widget_b = next(r for r in result if r["product"] == "Widget B")
     assert widget_b["amount"] is None
     assert all(r["product"] != "Widget C" for r in result)
+
+
+def test_unknown_rule_type_is_ignored():
+    """T-ETL-05: 未知 type 不抛异常，行不变。"""
+    rows = [{"a": 1, "b": 2}]
+    rules = [{"type": "drop_table", "table": "users"}]
+    assert apply_rules(rows, rules) == [{"a": 1, "b": 2}]
+
+
+def test_rename_column_missing_from_key_no_crash():
+    """T-ETL-06: 缺必填键（无 from）不崩溃。"""
+    rows = [{"a": 1}]
+    rules = [{"type": "rename_column", "to": "x"}]
+    assert apply_rules(rows, rules) == [{"a": 1}]
+
+
+def test_cast_type_boolean():
+    """T-ETL-07: cast_type → boolean。"""
+    rows = [{"flag": "true"}, {"flag": "no"}, {"flag": "1"}]
+    rules = [{"type": "cast_type", "column": "flag", "to": "boolean"}]
+    result = apply_rules(rows, rules)
+    assert result[0]["flag"] is True
+    assert result[1]["flag"] is False
+    assert result[2]["flag"] is True
+
+
+def test_cast_type_integer_overflow_becomes_none():
+    """T-ETL-07: 超大整数 → None（记录现状）。"""
+    rows = [{"n": "999999999999999999999999999999999"}]
+    rules = [{"type": "cast_type", "column": "n", "to": "integer"}]
+    assert apply_rules(rows, rules)[0]["n"] is None
+
+
+def test_filter_rows_is_not_null():
+    """T-ETL-04: filter_rows is_not_null。"""
+    rows = [{"note": None}, {"note": ""}, {"note": "ok"}]
+    rules = [{"type": "filter_rows", "column": "note", "op": "is_not_null", "value": None}]
+    assert len(apply_rules(rows, rules)) == 1
+    assert apply_rules(rows, rules)[0]["note"] == "ok"
+
+
+def test_malicious_nested_json_rule_value_no_crash():
+    """T-ETL-05/06: 恶意嵌套 JSON 作 filter value 不崩溃。"""
+    rows = [{"a": 1}, {"a": 2}]
+    nested = {"level": {"deep": [{"x": 1}]}}
+    rules = [{"type": "filter_rows", "column": "a", "op": "eq", "value": nested}]
+    result = apply_rules(rows, rules)
+    assert result == []

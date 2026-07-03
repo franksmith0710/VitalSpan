@@ -227,3 +227,25 @@ def test_run_job_retry_reuses_same_run_id(mock_fetch, mock_write):
     assert runs[0].retry_count >= 1
     assert runs[0].status == "succeeded"
     assert mock_fetch.call_count == 2
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=1)
+@patch(
+    "app.ingestion.sync_executor._fetch_mysql_rows",
+    return_value=[
+        {"product_name": "Widget A", "amount": "12.5", "status": "active", "note": None},
+    ],
+)
+def test_run_job_write_receives_applied_rules(mock_fetch, mock_write):
+    """T-ETL-08: mock_write 收到 apply_rules 后的行集。"""
+    job_id = _seed_job_with_l1_rules()
+    run_job(job_id, "trace-etl-pipeline")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    written_rows = mock_write.call_args[0][1]
+    assert len(written_rows) == 1
+    row = written_rows[0]
+    assert row["product"] == "Widget A"
+    assert row["amount"] == 12.5
+    assert row["note"] == "无备注"
+    assert "product_name" not in row

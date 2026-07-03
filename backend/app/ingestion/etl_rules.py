@@ -8,7 +8,14 @@ def _cast_value(value: Any, to: str) -> Any:
         return None
     try:
         if to == "integer":
-            return int(float(str(value)))
+            s = str(value).strip()
+            as_float = float(s)
+            as_int = int(as_float)
+            if as_float != as_int:
+                return None
+            if s.lstrip("+-").isdigit() and str(as_int) != s.lstrip("+"):
+                return None
+            return as_int
         if to == "float":
             return float(str(value))
         if to == "boolean":
@@ -36,7 +43,9 @@ def apply_rules(rows: list[dict[str, Any]], rules: list[dict[str, Any]]) -> list
     for rule in rules:
         rtype = rule.get("type")
         if rtype == "rename_column":
-            src, dst = rule["from"], rule["to"]
+            src, dst = rule.get("from"), rule.get("to")
+            if not src or not dst:
+                continue
             for row in output:
                 if src in row:
                     row[dst] = row.pop(src)
