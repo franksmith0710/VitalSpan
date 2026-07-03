@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-fe-ci.md |
 | design | docs/superpowers/specs/2026-07-03-m1-fe-ci-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-fe-ci.md |
@@ -67,15 +67,16 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G1 doc-bootstrap：上一轮 PR #2 已合并（sha 2120e12），当前轮次已重置 idle
-- M1 剩余 plan 勾选：BOOT-002（React 壳层）、BOOT-006（CI 门禁）
-- `backend/` 已落地 BOOT-004/001/005/003；`fe/` 壳层待实现
+- P4 验证通过：ruff、pytest、`fe build`、`check:design`、/admin UI 截图
+- M1 plan 勾选 BOOT-002/006 已完成；待 M1 文档回写 checklist（api/services/arch）
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| BOOT-002 | 1 | 60.6 | 2026-07-03 |
 | BOOT-005 | 1 | 66.8 | 2026-07-03 |
+| BOOT-006 | 1 | 62.6 | 2026-07-03 |
 | BOOT-001 | 1 | 69.4 | 2026-07-03 |
 | BOOT-004 | 1 | 70.7 | 2026-07-03 |
 | BOOT-003 | 1 | 73.4 | 2026-07-03 |
