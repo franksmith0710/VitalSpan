@@ -453,3 +453,98 @@ def test_put_etl_rules_object_body_422_chinese_message(client, auth_headers, job
     )
     assert "规则" in message or "列表" in message
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_trigger_run_triple_post_all_409_when_running_seeded(client, auth_headers, job_payload):
+    """T-D02-23: seed running run 后连续 3 次 POST → 均 409 RUN_ALREADY_IN_PROGRESS。"""
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = uuid.UUID(create.json()["id"])
+    db = get_meta_session()
+    db.add(
+        SyncRun(
+            job_id=job_id,
+            status="running",
+            trace_id="seed-triple-409",
+            started_at=datetime.now(timezone.utc),
+        )
+    )
+    db.commit()
+    db.close()
+    with patch("app.api.v1.ingestion.sync.get_settings") as mock_get:
+        mock_get.return_value.analytics_database_url = "postgresql+psycopg://u:p@localhost:5433/a"
+        for _ in range(3):
+            response = client.post(
+                f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+                headers=auth_headers,
+            )
+            assert response.status_code == 409
+            assert response.json()["detail"]["code"] == "RUN_ALREADY_IN_PROGRESS"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+from app.ingestion.models import SyncJob, decrypt_password
+
+
+def test_put_empty_password_preserves_cipher_masks_response(client, auth_headers, job_payload):
+    """T-D01-23: PUT password='' 保留 DB 密文；GET detail password=='***'。"""
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    assert create.status_code == 201
+    job_id = create.json()["id"]
+    assert create.json()["source"]["password"] == "***"
+
+    db = get_meta_session()
+    job = db.get(SyncJob, uuid.UUID(job_id))
+    original_cipher = job.source_password_encrypted
+    db.close()
+
+    updated = {
+        **job_payload,
+        "name": "renamed-empty-pw",
+        "source": {**job_payload["source"], "password": ""},
+    }
+    put = client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}",
+        json=updated,
+        headers=auth_headers,
+    )
+    assert put.status_code == 200
+
+    detail = client.get(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+    assert detail.json()["source"]["password"] == "***"
+
+    db = get_meta_session()
+    job_after = db.get(SyncJob, uuid.UUID(job_id))
+    assert job_after.source_password_encrypted == original_cipher
+    assert decrypt_password(job_after.source_password_encrypted) == job_payload["source"]["password"]
+    db.close()
+
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_create_five_jobs_p95_under_800ms(client, auth_headers, job_payload):
+    """T-D01-24: 5 次 create 不同 name P95 <0.8s；各 201。"""
+    durations: list[float] = []
+    job_ids: list[str] = []
+    for i in range(5):
+        payload = {**job_payload, "name": f"perf-create-{i}"}
+        start = time.perf_counter()
+        response = client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+        durations.append(time.perf_counter() - start)
+        assert response.status_code == 201
+        job_ids.append(response.json()["id"])
+    durations_sorted = sorted(durations)
+    p95_index = max(0, int(len(durations_sorted) * 0.95) - 1)
+    assert durations_sorted[p95_index] < 0.8
+    for job_id in job_ids:
+        client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_openapi_sync_run_item_required_fields(client):
+    """T-D01-25: SyncRunItem.required 含 id,status,started_at,trace_id；paths 含 runs GET。"""
+    spec = client.get("/openapi.json").json()
+    required = set(spec["components"]["schemas"]["SyncRunItem"]["required"])
+    assert {"id", "status", "started_at", "trace_id"}.issubset(required)
+    runs_path = next(
+        p for p in spec["paths"] if p.endswith("/sync-jobs/{job_id}/runs")
+    )
+    assert "get" in spec["paths"][runs_path]

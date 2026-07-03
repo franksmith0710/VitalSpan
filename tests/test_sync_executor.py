@@ -572,3 +572,71 @@ def test_run_job_failure_isolation_between_jobs(mock_fetch, mock_write):
     assert run_a.status == "failed"
     assert run_b.status == "succeeded"
     assert "job-a fetch down" in (run_a.error_message or "")
+
+
+def test_apply_rules_10000_rows_under_three_seconds():
+    """T-D02-24: 10000 行空规则 apply_rules P95 <3.0s。"""
+    rows = [{"idx": i, "status": "active"} for i in range(10000)]
+    start = time.perf_counter()
+    result = apply_rules(rows, [])
+    elapsed = time.perf_counter() - start
+    assert len(result) == 10000
+    assert elapsed < 3.0
+
+
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", side_effect=ConnectionError("always fails"))
+def test_run_job_retry_count_one_and_history_queryable(mock_fetch):
+    """T-D02-25: 重试耗尽 retry_count==1；history GET 可查 failed + trace_id。"""
+    job_id = _seed_job()
+    run_job(job_id, "trace-retry-history")
+    run = _latest_run(job_id)
+    assert run.status == "failed"
+    assert run.trace_id == "trace-retry-history"
+    assert run.retry_count == 1
+    assert run.error_message is not None
+    assert mock_fetch.call_count >= 2
+
+
+@patch("app.ingestion.sync_executor._write_analytics")
+@patch("app.ingestion.sync_executor._fetch_mysql_rows")
+def test_run_job_dirty_amount_fill_null_write_through(mock_fetch, mock_write):
+    """T-ETL-22: amount='bad' + fill_null → write 行 amount is None 且 note 已填充。"""
+    mock_fetch.return_value = [
+        {"amount": "bad", "note": None, "status": "active"},
+    ]
+    mock_write.return_value = 1
+    db = get_meta_session()
+    job = SyncJob(
+        name="dirty-fill-job",
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="db",
+        source_username="u",
+        source_password_encrypted=encrypt_password("p"),
+        source_table="t",
+        target_table="tgt_dirty",
+        enabled=True,
+    )
+    db.add(job)
+    db.flush()
+    db.add(
+        EtlRuleSet(
+            job_id=job.id,
+            rules=[
+                {"type": "cast_type", "column": "amount", "to": "float"},
+                {"type": "fill_null", "column": "note", "value": "默认备注"},
+            ],
+        )
+    )
+    db.commit()
+    job_id = job.id
+    db.close()
+
+    run_job(job_id, "trace-dirty-fill")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    assert run.rows_synced == 1
+    written = mock_write.call_args[0][1]
+    assert written[0]["amount"] is None
+    assert written[0]["note"] == "默认备注"
