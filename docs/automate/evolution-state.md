@@ -13,7 +13,7 @@
 | branch | cursor/bc-64cdacda-49d6-4592-b740-6831a174fd09-3a52 |
 | base_branch | dev-auto |
 | prd_ids | DATA-003,DATA-002,ETL-001,DATA-004,DATA-001 |
-| pr_number | 24 |
+| pr_number | 25 |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test -- ingestion.smoke.test.tsx && pnpm run check:design |
