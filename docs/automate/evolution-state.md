@@ -13,7 +13,7 @@
 | plan | docs/superpowers/plans/2026-07-03-m1-boot-test-coverage.md |
 | branch | cursor/bc-afc41a77-bb35-4657-b738-753796c04beb-e1c0 |
 | base_branch | dev-auto |
-| pr_number | TBD |
+| pr_number | 7 |
 | merge_sha | TBD |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
