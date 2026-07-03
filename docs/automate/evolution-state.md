@@ -6,9 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r15.md |
+| design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r15-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r15.md |
+| branch | feat/evolution-r15-boot-quality-push |
+| base_branch | dev-auto |
 | prd_ids | BOOT-004,BOOT-005,BOOT-006,BOOT-002,BOOT-003 |
+| skill_rule_index_generated_at | 2026-07-03T16:51:00Z |
+| skill_rule_index_source_count | 26 |
 
 ## 待办池
 
