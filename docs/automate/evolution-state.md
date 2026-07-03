@@ -13,7 +13,7 @@
 | branch | feat/evolution-r27-m4-query-quality |
 | base_branch | dev-auto |
 | prd_ids | QUERY-004, QUERY-001, QUERY-002, QUERY-005, QUERY-006 |
-| pr_number |  |
+| pr_number | 49 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
