@@ -9,6 +9,7 @@ class TestConnectionResult:
     ok: bool
     message: str
     latency_ms: int | None
+    code: str | None = None
 
 
 class DialectConnector(Protocol):
