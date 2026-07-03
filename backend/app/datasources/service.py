@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.datasources.credentials import decrypt_credential, encrypt_credential
+from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
 from app.datasources.models import DataSource
 from app.datasources.registry import ConnectorNotFoundError, registry
 from app.datasources.schemas import (
@@ -166,7 +166,10 @@ def test_connection_by_id(session: Session, data_source_id: uuid.UUID) -> TestCo
     if row is None:
         raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
     connector = _resolve_connector(row.type)
-    password = decrypt_credential(row.password_encrypted)
+    try:
+        password = decrypt_credential(row.password_encrypted)
+    except CredentialDecryptError as exc:
+        raise DataSourceError("CREDENTIAL_DECRYPT_FAILED", str(exc), 500) from exc
     return _run_test(
         connector,
         host=row.host,

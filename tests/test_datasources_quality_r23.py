@@ -160,3 +160,135 @@ def test_mysql_invalid_ssl_mode_raises():
         MysqlConnector().test_connection(
             host="h", port=3306, database="d", username="u", password="p", ssl_mode="invalid",
         )
+
+
+import logging
+import uuid
+
+from fastapi.testclient import TestClient
+from sqlalchemy import text
+
+from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
+from app.datasources.models import Base, DataSource, get_meta_engine, get_meta_session
+from app.datasources.schemas import DataSourceCreate
+from app.datasources.service import create_data_source
+from app.main import app
+
+
+@pytest.fixture(scope="module", autouse=True)
+def ensure_data_sources_table():
+    from app.datasources.models import get_meta_engine
+
+    get_meta_engine.cache_clear()
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    yield
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM data_sources"))
+
+
+@pytest.fixture(autouse=True)
+def clean_data_sources_between_tests():
+    from app.datasources.models import get_meta_engine
+
+    yield
+    engine = get_meta_engine()
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM data_sources"))
+
+
+@pytest.fixture
+def client() -> TestClient:
+    return TestClient(app)
+
+
+@pytest.fixture
+def auth_headers() -> dict[str, str]:
+    return {"Authorization": "Bearer dev"}
+
+
+def _payload() -> dict:
+    return {
+        "name": "Demo MySQL",
+        "code": "demo_mysql",
+        "type": "mysql",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "database": "demo",
+        "username": "root",
+        "password": "plain-secret",
+    }
+
+
+def test_decrypt_corrupt_ciphertext_raises_credential_decrypt_error():
+    """T-DS-K05: 损坏密文 → CredentialDecryptError。"""
+    with pytest.raises(CredentialDecryptError):
+        decrypt_credential("not-valid-fernet-token")
+
+
+def test_decrypt_wrong_key_raises_credential_decrypt_error(monkeypatch):
+    """T-DS-K06 单元部分: 错密钥 decrypt 失败。"""
+    cipher = encrypt_credential("secret")
+    monkeypatch.setenv("CREDENTIAL_FERNET_KEY", "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
+    get_settings.cache_clear()
+    with pytest.raises(CredentialDecryptError):
+        decrypt_credential(cipher)
+
+
+def test_create_path_logs_no_plain_password(caplog):
+    """T-DS-K07: create 路径日志无 plain-secret。"""
+    caplog.set_level(logging.INFO)
+    session = get_meta_session()
+    try:
+        create_data_source(
+            session,
+            DataSourceCreate(
+                name="Caplog DS",
+                code="caplog_ds",
+                type="mysql",
+                host="127.0.0.1",
+                port=3306,
+                database="demo",
+                username="root",
+                password="plain-secret",
+            ),
+        )
+    finally:
+        session.close()
+    assert "plain-secret" not in caplog.text
+
+
+def test_api_responses_never_include_real_password(client, auth_headers):
+    """T-DS-K08: create/get/list 响应无真实密码。"""
+    payload = {
+        "name": "Mask DS",
+        "code": "mask_ds",
+        "type": "mysql",
+        "host": "127.0.0.1",
+        "port": 3306,
+        "database": "demo",
+        "username": "root",
+        "password": "plain-secret",
+    }
+    created = client.post("/api/v1/datasources", json=payload, headers=auth_headers)
+    assert created.status_code == 201
+    body = created.json()
+    assert body["password"] == "***"
+    assert "plain-secret" not in created.text
+    listed = client.get("/api/v1/datasources", headers=auth_headers)
+    assert "plain-secret" not in listed.text
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_saved_test_decrypt_failure_returns_500(mock_connect, client, auth_headers):
+    """T-DS-K06 API: 损坏密文 test → 500 CREDENTIAL_DECRYPT_FAILED。"""
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    session = get_meta_session()
+    row = session.get(DataSource, uuid.UUID(ds_id))
+    row.password_encrypted = "corrupt"
+    session.commit()
+    session.close()
+    resp = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert resp.status_code == 500
+    assert resp.json()["code"] == "CREDENTIAL_DECRYPT_FAILED"
