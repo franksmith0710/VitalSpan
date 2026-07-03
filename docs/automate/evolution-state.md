@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
-| plan |  |
-| branch |  |
-| base_branch |  |
-| prd_ids |  |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
+| design | docs/superpowers/specs/2026-07-03-boot-data-quality-design.md |
+| plan | docs/superpowers/plans/2026-07-03-boot-data-quality.md |
+| branch | feat/boot-data-quality-r6 |
+| base_branch | dev-auto |
+| prd_ids | BOOT-005,BOOT-006,BOOT-002,BOOT-003,DATA-003 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
 | skill_rule_index_source_count | 26 |
