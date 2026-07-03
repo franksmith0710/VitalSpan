@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r9.md |
-| design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r9-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r9.md |
-| branch | cursor/bc-bd69fc40-747b-441e-84b6-ad1d4d101de0-1ac0 |
-| base_branch | dev-auto |
-| prd_ids | BOOT-005,BOOT-006,BOOT-001,BOOT-004,BOOT-002 |
-| pr_number | 23 |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
-| last_verified_exit_code | 0 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | last_ui_verified_command | cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_ui_screenshots | NOT_RUN（无头环境；vitest viewport 375/1400 smoke + check:design 34 files PASS 覆盖 UI Acceptance） |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -68,9 +68,10 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G0 PASS：上轮 r8 PR #22 已合并至 dev-auto；本轮 r9 BOOT 质量推分（BOOT-005/006/001/004/002）PR #23 待合并
-- pytest 145 + vitest 39 + check:design PASS；P5 重评总分 88.6–89.5（均 <90）
-- STUCK BOOT-* 连续未过轮次 +1（11 轮）；技能规则索引 26 条未过期
+- G1 doc-bootstrap：prd hub（124 项·16 域）含薄弱项汇总/8 维总表/功能索引；goal.md 只读未改
+- plan M1+M1B 全 [x]（12 项 ID 与 prd 分片一致）；无活跃里程碑节
+- 上轮 r9 P5 完成；当前轮次已重置 idle；STUCK BOOT-* 最高 11 轮（BOOT-002/005/006）
+- deployed_automate_rev=bf60b94ec4f4；技能规则索引 26 条未过期
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
