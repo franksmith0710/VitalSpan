@@ -775,4 +775,117 @@ describe("ingestion admin smoke", () => {
     await screen.findByText("trace-100-0");
     expect(performance.now() - start).toBeLessThan(900);
   });
+
+  it("SyncJobHistoryPage_failed_row_shows_error_message (T-ING-32)", async () => {
+    setViewport(1400);
+    mockApiFetch.mockResolvedValueOnce({
+      items: [
+        {
+          id: "run-fail",
+          status: "failed",
+          started_at: "2026-07-03T10:00:00Z",
+          finished_at: "2026-07-03T10:00:02Z",
+          rows_synced: null,
+          error_message: "连接失败",
+          trace_id: "trace-fail-32",
+          retry_count: 1,
+        },
+      ],
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/history"
+            element={<SyncJobHistoryPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("连接失败")).toBeInTheDocument();
+  });
+
+  it("SyncJobsPage_list_shows_skeleton_while_loading (T-ING-33)", async () => {
+    setViewport(1400);
+    let resolveList: (value: { items: unknown[] }) => void;
+    const listPromise = new Promise<{ items: unknown[] }>((r) => {
+      resolveList = r;
+    });
+    mockApiFetch.mockImplementationOnce(() => listPromise);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const skeletons = document.querySelectorAll(
+      '[class*="skeleton"], [data-slot="skeleton"], [class*="animate-pulse"]',
+    );
+    expect(skeletons.length).toBeGreaterThanOrEqual(1);
+    resolveList!({ items: [] });
+    expect(await screen.findByText("暂无同步任务")).toBeInTheDocument();
+  });
+
+  it("EtlRulesPage_save_401_shows_error_no_success (T-ING-34)", async () => {
+    setViewport(375);
+    mockApiFetch
+      .mockResolvedValueOnce({
+        rules: [{ type: "rename_column", from: "a", to: "b" }],
+      })
+      .mockRejectedValueOnce(new Error("未授权"));
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/etl-rules"
+            element={<EtlRulesPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByRole("button", { name: "保存规则" });
+    fireEvent.click(screen.getByRole("button", { name: "保存规则" }));
+    expect(await screen.findByText("未授权")).toBeInTheDocument();
+    expect(screen.queryByText("已保存")).not.toBeInTheDocument();
+  });
+
+  it("SyncJobsPage_run_dialog_confirm_disables_controls_pending (T-ING-35)", async () => {
+    setViewport(1400);
+    let resolveRun: () => void;
+    const runPromise = new Promise<void>((r) => {
+      resolveRun = r;
+    });
+    mockApiFetch
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "job-dialog-pending",
+            name: "dialog-pending",
+            source_type: "mysql",
+            target_table: "t",
+            enabled: true,
+            schedule_cron: null,
+          },
+        ],
+      })
+      .mockImplementationOnce(() => runPromise);
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "手动运行同步" }));
+    const dialog = await screen.findByRole("alertdialog");
+    const runBtn = within(dialog).getByRole("button", { name: "运行" });
+    fireEvent.click(runBtn);
+    await waitFor(() => {
+      expect(runBtn).toBeDisabled();
+    });
+    const cancelBtn = within(dialog).getByRole("button", { name: "取消" });
+    expect(cancelBtn).toBeDisabled();
+    resolveRun!();
+  });
 });

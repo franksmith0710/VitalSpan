@@ -150,3 +150,76 @@ def test_vitest_routes_smoke_elapsed_under_budget():
     elapsed = time.perf_counter() - start
     assert result.returncode == 0, result.stderr
     assert elapsed < 45.0, f"vitest routes smoke took {elapsed:.1f}s"
+
+
+def test_pytest_collect_minimum_258():
+    """T-CI-10: pytest --collect-only 收集下限 ≥258。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", "../tests"],
+        cwd=backend_dir,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr
+    last_line = result.stdout.strip().splitlines()[-1]
+    count_str = last_line.split()[0]
+    assert int(count_str) >= 258, f"expected ≥258 tests, got: {last_line}"
+
+
+def test_ci_jobs_have_timeout_minutes(ci_yml_text):
+    """T-CI-11: ci.yml backend/frontend job 各含 timeout-minutes。"""
+    assert "timeout-minutes:" in ci_yml_text
+    backend_block = ci_yml_text.split("frontend:")[0]
+    frontend_block = ci_yml_text.split("frontend:")[1]
+    assert "timeout-minutes:" in backend_block
+    assert "timeout-minutes:" in frontend_block
+
+
+def test_ci_frontend_cache_dependency_path(ci_yml_text):
+    """T-CI-12: frontend job 含 cache-dependency-path: fe/pnpm-lock.yaml。"""
+    assert "cache-dependency-path: fe/pnpm-lock.yaml" in ci_yml_text
+
+
+def test_ingestion_vitest_case_floor():
+    """T-CI-13: ingestion.smoke.test.tsx 中 it( 计数 ≥35。"""
+    smoke_path = (
+        Path(__file__).resolve().parents[1]
+        / "fe"
+        / "src"
+        / "pages"
+        / "admin"
+        / "ingestion"
+        / "ingestion.smoke.test.tsx"
+    )
+    source = smoke_path.read_text(encoding="utf-8")
+    count = source.count("it(")
+    assert count >= 35, f"expected ≥35 vitest cases, got {count}"
+
+
+@pytest.mark.skipif(
+    shutil.which("pnpm") is None
+    or not (Path(__file__).resolve().parents[1] / "fe" / "node_modules").is_dir(),
+    reason="T-CI-14: ingestion vitest budget requires pnpm + fe deps",
+)
+def test_ingestion_vitest_elapsed_under_budget():
+    """T-CI-14: ingestion vitest 单文件 elapsed < 90s。"""
+    fe_dir = Path(__file__).resolve().parents[1] / "fe"
+    start = time.perf_counter()
+    result = subprocess.run(
+        [
+            "pnpm",
+            "exec",
+            "vitest",
+            "run",
+            "src/pages/admin/ingestion/ingestion.smoke.test.tsx",
+        ],
+        cwd=fe_dir,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    elapsed = time.perf_counter() - start
+    assert result.returncode == 0, result.stderr
+    assert elapsed < 90.0, f"ingestion vitest took {elapsed:.1f}s"

@@ -120,3 +120,29 @@ def test_query_timeout_seconds_zero_documents_behavior():
     """T-CFG-10: query_timeout_seconds=0 记录现状（当前无 ge 约束）。"""
     settings = Settings(**_BASE_KWARGS, query_timeout_seconds=0)
     assert settings.query_timeout_seconds == 0
+
+
+def test_cors_origins_raw_empty_string():
+    """T-CFG-11: cors_origins_raw='' → cors_origins == []。"""
+    settings = Settings(**_BASE_KWARGS, cors_origins_raw="")
+    assert settings.cors_origins == []
+
+
+def test_analytics_database_url_rejects_mysql():
+    """T-CFG-12: analytics_database_url=mysql:// → ValidationError 含 postgresql 提示。"""
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(**_BASE_KWARGS, analytics_database_url="mysql://bad")
+    message = str(exc_info.value)
+    assert "postgresql" in message
+
+
+def test_production_env_allows_sqlite_meta_url():
+    """T-CFG-13: vitalspan_env=production + sqlite database_url 可实例化（文档化现状）。"""
+    settings = Settings(
+        database_url="sqlite+pysqlite:///./meta.db",
+        secret_key="ci-test-secret-key-min-32-chars-long!!",
+        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        vitalspan_env="production",
+    )
+    assert settings.vitalspan_env == "production"
+    assert settings.database_url.startswith("sqlite+")

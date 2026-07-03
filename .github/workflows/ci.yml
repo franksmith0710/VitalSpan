@@ -8,6 +8,7 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       DATABASE_URL: postgresql+psycopg://vitalspan:vitalspan@localhost:5432/vitalspan
       SECRET_KEY: ci-test-secret-key-min-32-chars-long!!
@@ -29,6 +30,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: fe

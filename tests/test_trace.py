@@ -241,3 +241,61 @@ def test_error_log_level_suppresses_info_request_logs(client, monkeypatch):
         monkeypatch.delenv("LOG_LEVEL", raising=False)
         get_settings.cache_clear()
         configure_logging(get_settings())
+
+
+def test_consecutive_requests_trace_id_isolated(client):
+    """T-TRC-17: 连续两请求不同 X-Trace-Id；响应头与 request_started 日志各自匹配。"""
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    handler.setFormatter(JsonFormatter())
+    logger = logging.getLogger("vitalspan.http")
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    try:
+        trace_a = "a" * 32
+        trace_b = "b" * 32
+        resp_a = client.get("/health", headers={"X-Trace-Id": trace_a})
+        resp_b = client.get("/health", headers={"X-Trace-Id": trace_b})
+        assert resp_a.status_code == 200
+        assert resp_b.status_code == 200
+        assert resp_a.headers.get("X-Trace-Id") == trace_a
+        assert resp_b.headers.get("X-Trace-Id") == trace_b
+        assert resp_a.headers.get("X-Trace-Id") != resp_b.headers.get("X-Trace-Id")
+
+        payloads = [json.loads(line) for line in stream.getvalue().splitlines() if line.strip()]
+        started = [p for p in payloads if p.get("message") == "request_started"]
+        assert len(started) >= 2
+        trace_ids_in_logs = [p["traceId"] for p in started]
+        assert trace_a in trace_ids_in_logs
+        assert trace_b in trace_ids_in_logs
+    finally:
+        logger.removeHandler(handler)
+
+
+def test_log_level_hot_switch_suppresses_info_after_reconfigure(client, monkeypatch):
+    """T-TRC-18: DEBUG 配置后切 ERROR 重配；第二次 GET /health 无 INFO request_started。"""
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+    get_settings.cache_clear()
+    configure_logging(get_settings())
+
+    monkeypatch.setenv("LOG_LEVEL", "ERROR")
+    get_settings.cache_clear()
+    configure_logging(get_settings())
+
+    stream = io.StringIO()
+    handler = logging.StreamHandler(stream)
+    handler.setFormatter(JsonFormatter())
+    http_logger = logging.getLogger("vitalspan.http")
+    http_logger.addHandler(handler)
+    http_logger.setLevel(logging.ERROR)
+    try:
+        response = client.get("/health")
+        assert response.status_code == 200
+        payloads = [json.loads(line) for line in stream.getvalue().splitlines() if line.strip()]
+        started_rows = [p for p in payloads if p.get("message") == "request_started"]
+        assert started_rows == []
+    finally:
+        http_logger.removeHandler(handler)
+        monkeypatch.delenv("LOG_LEVEL", raising=False)
+        get_settings.cache_clear()
+        configure_logging(get_settings())
