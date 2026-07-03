@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r12.md |
-| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r12-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r12.md |
-| branch | feat/m1b-data-quality-r12 |
-| base_branch | dev-auto |
-| prd_ids | DATA-002,ETL-001,DATA-004,DATA-003,DATA-005 |
-| pr_number | 28 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd backend && pytest -v ../tests/test_ingestion_config.py ../tests/test_sync_executor.py ../tests/test_scheduler.py ../tests/test_etl_rules.py ../tests/test_ingestion_api.py ../tests/test_ingestion_l1_smoke.py ../tests/test_doc_anchors_data.py; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx && pnpm run check:design |
@@ -68,11 +68,11 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G1 doc-bootstrap（r12 入口）：goal.md 只读；prd hub 124 项·16 域含薄弱项汇总/8 维总表/功能索引
-- plan M1+M1B 全 [x]（16 项）；无含 `[ ]` 的活跃节
-- G0 PASS：无 Open PR；PR #26 已 Squash merge 至 dev-auto@0d63f3b；state 对账 phase→idle
+- G1 doc-bootstrap（r13 入口）：goal.md 只读；prd hub 124 项·16 域含薄弱项汇总/8 维总表/功能索引
+- plan M1+M1B 全 [x]（12 项勾选）；无含 `[ ]` 的活跃节
+- G0 PASS：工作区干净；PR #28 已 merge 至 dev-auto@6e2f5c2；state 对账 phase→idle
 - 技能规则索引 26 条未过期；deployed_automate_rev=bf60b94ec4f4
-- P5 r12 收尾：DATA-005 破 90（90.8）；DATA-004 89.8、DATA-003 89.6、DATA-002 89.4、ETL-001 89.3 仍 <90；pytest 194 + vitest ingestion 27
+- 近 90 选题池：DATA-004(89.8)、DATA-003(89.6)、DATA-002(89.4) 最接近；BOOT 簇 87.9–89.5 饱和
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
