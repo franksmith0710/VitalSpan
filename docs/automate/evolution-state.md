@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r20.md |
 | design | docs/superpowers/specs/2026-07-03-m2-auth-kickoff-r20-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m2-auth-kickoff-r20.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | AUTH-006,AUTH-007,AUTH-008 |
 | pr_number |  |
-| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -q` |
+| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r20 独立验证：backend ruff PASS + pytest 377 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r20-m2-auth-kickoff；base_branch dev-auto
 - P5 r19 PRD 重评：AUTH-001~005 巩固 90.8–92.1（89.4–91.2→）；AUTH-003 审计闭环破 90 STUCK 清零；pytest 348 + 4 skipped
 - P4 r19 独立验证：backend ruff PASS + pytest 348 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r19-m2-auth-quality-push@fe8c799；base_branch dev-auto
 - P3 r19 实现完成：7 Task 全绿；backend ruff+pytest 348 passed/4 skipped（+23 AUTH audit/boundary）；ui_design_skill: none；branch feat/evolution-r19-m2-auth-quality-push@b472e9a；base_branch dev-auto
