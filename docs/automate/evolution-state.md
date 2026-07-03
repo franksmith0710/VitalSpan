@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r16.md |
 | design | docs/superpowers/specs/2026-07-03-m1-m1b-floor-polish-r16-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-m1b-floor-polish-r16.md |
 | branch | feat/evolution-r16-m1-m1b-floor-polish |
 | base_branch | dev-auto |
 | prd_ids | BOOT-001,BOOT-006,BOOT-004,DATA-003,ETL-001 |
-| pr_number |  |
+| pr_number | 33 |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v`; `cd fe && pnpm test && pnpm build && pnpm run check:design` |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | vitest ingestion.smoke 35/35 + routes.smoke 16/16（viewport 1400/375）；check:design PASS；screenshots N/A headless |
