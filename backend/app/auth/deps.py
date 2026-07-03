@@ -1,9 +1,11 @@
 import uuid
+from uuid import UUID
 
 from fastapi import HTTPException, Request
 from pydantic import BaseModel
 
 from app.auth.models import get_meta_session
+from app.auth.resources.service import VisibilityError, ensure_resource_visible
 from app.auth.users import service as user_service
 
 
@@ -27,5 +29,23 @@ def resolve_user_roles(user_id: str) -> list[str]:
     session = get_meta_session()
     try:
         return user_service.resolve_role_codes_for_user(session, uuid.UUID(user_id))
+    finally:
+        session.close()
+
+
+async def require_resource_visible(
+    resource_type: str,
+    resource_id: UUID,
+    request: Request,
+) -> None:
+    user = await get_current_user(request)
+    session = get_meta_session()
+    try:
+        ensure_resource_visible(session, user.roles, resource_type, resource_id)
+    except VisibilityError as exc:
+        raise HTTPException(
+            status_code=exc.status,
+            detail={"code": exc.code, "message": exc.message, "detail": None},
+        ) from exc
     finally:
         session.close()

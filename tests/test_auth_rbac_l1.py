@@ -422,3 +422,329 @@ def test_dimension_type_delete_idle(client, auth_headers):
         headers=auth_headers,
     ).json()
     assert client.delete(f"/api/v1/rls/dimensions/{created['id']}", headers=auth_headers).status_code == 204
+
+
+from app.auth.resources.service import (
+    VisibilityError,
+    ensure_resource_visible,
+    list_visible_resource_ids,
+)
+
+
+def test_grant_revoke_visibility(client, auth_headers):
+    """T-AUTH-G06: 撤权后 ensure_resource_visible 抛 403 RESOURCE_FORBIDDEN。"""
+    role = client.post("/api/v1/roles", json={"code": "vis_r1", "name": "V"}, headers=auth_headers).json()
+    rid = uuid_mod.uuid4()
+    grant = client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(rid)},
+        headers=auth_headers,
+    ).json()
+    session = get_meta_session()
+    try:
+        ensure_resource_visible(session, ["vis_r1"], "datasource", rid)
+    finally:
+        session.close()
+    client.delete(f"/api/v1/resource-grants/{grant['id']}", headers=auth_headers)
+    session = get_meta_session()
+    try:
+        with pytest.raises(VisibilityError) as exc:
+            ensure_resource_visible(session, ["vis_r1"], "datasource", rid)
+        assert exc.value.code == "RESOURCE_FORBIDDEN"
+        assert exc.value.status == 403
+    finally:
+        session.close()
+
+
+def test_horizontal_privilege_denied(client, auth_headers):
+    """T-AUTH-G07: role_a 授权、role_b 未授权 → check False。"""
+    role_a = client.post("/api/v1/roles", json={"code": "role_a", "name": "A"}, headers=auth_headers).json()
+    client.post("/api/v1/roles", json={"code": "role_b", "name": "B"}, headers=auth_headers)
+    rid = uuid_mod.uuid4()
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": role_a["id"], "resource_type": "dashboard", "resource_id": str(rid)},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        assert check_resource_access(session, ["role_b"], "dashboard", rid) is False
+    finally:
+        session.close()
+
+
+def test_list_visible_resource_ids(client, auth_headers):
+    """T-AUTH-G08: 两角色各一资源 → 合并 role_codes 返回 2 个 id。"""
+    r1 = client.post("/api/v1/roles", json={"code": "lv_r1", "name": "1"}, headers=auth_headers).json()
+    r2 = client.post("/api/v1/roles", json={"code": "lv_r2", "name": "2"}, headers=auth_headers).json()
+    id1, id2 = uuid_mod.uuid4(), uuid_mod.uuid4()
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": r1["id"], "resource_type": "report", "resource_id": str(id1)},
+        headers=auth_headers,
+    )
+    client.post(
+        "/api/v1/resource-grants",
+        json={"role_id": r2["id"], "resource_type": "report", "resource_id": str(id2)},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        visible = list_visible_resource_ids(session, ["lv_r1", "lv_r2"], "report")
+        assert set(visible) == {id1, id2}
+    finally:
+        session.close()
+
+
+def test_invalid_resource_type_422():
+    """T-AUTH-G09: 非法 resource_type → 422 INVALID_RESOURCE_TYPE。"""
+    session = get_meta_session()
+    try:
+        with pytest.raises(VisibilityError) as exc:
+            ensure_resource_visible(session, ["any"], "widget", uuid_mod.uuid4())
+        assert exc.value.code == "INVALID_RESOURCE_TYPE"
+        assert exc.value.status == 422
+    finally:
+        session.close()
+
+
+def test_empty_roles_forbidden():
+    """T-AUTH-G10: role_codes=[] → ensure 403。"""
+    session = get_meta_session()
+    try:
+        with pytest.raises(VisibilityError) as exc:
+            ensure_resource_visible(session, [], "datasource", uuid_mod.uuid4())
+        assert exc.value.code == "RESOURCE_FORBIDDEN"
+        assert exc.value.status == 403
+    finally:
+        session.close()
+
+
+from app.auth.org import service as org_service
+from app.auth.users import service as users_service
+
+
+def test_user_org_bind_roundtrip(client, auth_headers):
+    """T-AUTH-OU01: 建 org + user → assign → get_user_org 一致。"""
+    org = client.post("/api/v1/orgs", json={"name": "Dept"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_user"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]))
+        node = users_service.get_user_org(session, uuid_mod.UUID(user["id"]))
+        assert node is not None
+        assert str(node.id) == org["id"]
+    finally:
+        session.close()
+
+
+def test_user_org_idempotent(client, auth_headers):
+    """T-AUTH-OU02: 重复 assign 同 org 仍成功。"""
+    org = client.post("/api/v1/orgs", json={"name": "Dept2"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_idem"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        uid, oid = uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"])
+        users_service.assign_user_org(session, uid, oid)
+        users_service.assign_user_org(session, uid, oid)
+        assert users_service.get_user_org(session, uid).id == oid
+    finally:
+        session.close()
+
+
+def test_user_org_invalid_org_404(client, auth_headers):
+    """T-AUTH-OU03: assign 随机 org UUID → 404 ORG_NOT_FOUND。"""
+    user = client.post("/api/v1/users", json={"username": "ou_bad"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        with pytest.raises(users_service.UserError) as exc:
+            users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.uuid4())
+        assert exc.value.code == "ORG_NOT_FOUND"
+        assert exc.value.status == 404
+    finally:
+        session.close()
+
+
+def test_user_org_clear(client, auth_headers):
+    """T-AUTH-OU04: clear 后 get → None。"""
+    org = client.post("/api/v1/orgs", json={"name": "Clr"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_clr"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        uid, oid = uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"])
+        users_service.assign_user_org(session, uid, oid)
+        users_service.clear_user_org(session, uid)
+        assert users_service.get_user_org(session, uid) is None
+    finally:
+        session.close()
+
+
+def test_delete_org_with_users_409(client, auth_headers):
+    """T-AUTH-O07: 用户绑定叶子 org → delete → 409 ORG_HAS_USERS。"""
+    org = client.post("/api/v1/orgs", json={"name": "Leaf"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "leaf_u"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]))
+        with pytest.raises(org_service.OrgError) as exc:
+            org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
+        assert exc.value.code == "ORG_HAS_USERS"
+        assert exc.value.status == 409
+    finally:
+        session.close()
+
+
+def test_delete_idle_leaf_org_204(client, auth_headers):
+    """T-AUTH-O08: 空闲叶子 → delete 成功。"""
+    org = client.post("/api/v1/orgs", json={"name": "IdleLeaf"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
+    finally:
+        session.close()
+
+
+def test_org_orphan_parent_still_404(client, auth_headers):
+    """T-AUTH-O09: 孤儿 parent 创建 → 404 ORG_PARENT_NOT_FOUND（回归）。"""
+    resp = client.post(
+        "/api/v1/orgs",
+        json={"name": "Orphan", "parent_id": str(uuid_mod.uuid4())},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "ORG_PARENT_NOT_FOUND"
+
+
+def test_user_org_http_roundtrip(client, auth_headers):
+    """T-AUTH-O10: PUT/GET/DELETE user-org HTTP 状态码与 body 一致。"""
+    org = client.post("/api/v1/orgs", json={"name": "HttpOrg"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "http_ou"}, headers=auth_headers).json()
+    put = client.put(
+        f"/api/v1/users/{user['id']}/org",
+        json={"org_node_id": org["id"]},
+        headers=auth_headers,
+    )
+    assert put.status_code == 200
+    got = client.get(f"/api/v1/users/{user['id']}/org", headers=auth_headers)
+    assert got.status_code == 200
+    assert got.json()["id"] == org["id"]
+    deleted = client.delete(f"/api/v1/users/{user['id']}/org", headers=auth_headers)
+    assert deleted.status_code == 204
+    missing = client.get(f"/api/v1/users/{user['id']}/org", headers=auth_headers)
+    assert missing.status_code == 404
+    assert missing.json()["code"] == "USER_ORG_NOT_SET"
+
+
+def test_dimension_delete_org_ref_in_use(client, auth_headers):
+    """T-AUTH-D06: org_ref 维度 + org 节点存在 → DELETE 409 DIMENSION_IN_USE。"""
+    client.post("/api/v1/orgs", json={"name": "OrgDim"}, headers=auth_headers)
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "org_dim", "name": "Org", "value_type": "org_ref"},
+        headers=auth_headers,
+    ).json()
+    resp = client.delete(f"/api/v1/rls/dimensions/{dim['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "DIMENSION_IN_USE"
+
+
+def test_dimension_delete_idle_non_org(client, auth_headers):
+    """T-AUTH-D07: 空闲非 org 维度 → 204（回归 D05）。"""
+    created = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "free_dim", "name": "Free", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    assert client.delete(f"/api/v1/rls/dimensions/{created['id']}", headers=auth_headers).status_code == 204
+
+
+def test_dimension_invalid_value_type_422(client, auth_headers):
+    """T-AUTH-D08: value_type=map → 422。"""
+    resp = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "bad_vt", "name": "Bad", "value_type": "map"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 422
+
+
+def test_bind_roles_batch(client, auth_headers):
+    """T-AUTH-U07: 批量绑定两角色 → GET roles 含 2 codes。"""
+    r1 = client.post("/api/v1/roles", json={"code": "batch_a", "name": "A"}, headers=auth_headers).json()
+    r2 = client.post("/api/v1/roles", json={"code": "batch_b", "name": "B"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "batch_u"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        roles = users_service.bind_roles_batch(
+            session, uuid_mod.UUID(user["id"]), [uuid_mod.UUID(r1["id"]), uuid_mod.UUID(r2["id"])]
+        )
+        codes = {r.code for r in roles}
+        assert codes == {"batch_a", "batch_b"}
+    finally:
+        session.close()
+
+
+def test_bind_invalid_user_404(client, auth_headers):
+    """T-AUTH-U08: 随机 user UUID bind → 404 USER_NOT_FOUND。"""
+    role = client.post("/api/v1/roles", json={"code": "bind_u8", "name": "R"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        with pytest.raises(users_service.UserError) as exc:
+            users_service.bind_role(session, uuid_mod.uuid4(), uuid_mod.UUID(role["id"]))
+        assert exc.value.code == "USER_NOT_FOUND"
+    finally:
+        session.close()
+
+
+def test_me_after_unbind(client, auth_headers):
+    """T-AUTH-U09: 绑定 a+b → 解绑 a → /me 仅含 b。"""
+    ra = client.post("/api/v1/roles", json={"code": "me_a", "name": "A"}, headers=auth_headers).json()
+    rb = client.post("/api/v1/roles", json={"code": "me_b", "name": "B"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{ra['id']}", headers=auth_headers)
+    client.post(f"/api/v1/users/{user['id']}/roles/{rb['id']}", headers=auth_headers)
+    client.delete(f"/api/v1/users/{user['id']}/roles/{ra['id']}", headers=auth_headers)
+    me = client.get("/api/v1/me", headers=auth_headers)
+    assert me.status_code == 200
+    roles = me.json()["roles"]
+    assert "me_b" in roles
+    assert "me_a" not in roles
+
+
+def test_me_roles_sorted(client, auth_headers):
+    """T-AUTH-U10: 多角色 me roles 按 code 字典序。"""
+    r1 = client.post("/api/v1/roles", json={"code": "z_role", "name": "Z"}, headers=auth_headers).json()
+    r2 = client.post("/api/v1/roles", json={"code": "a_role", "name": "A"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/users/{user['id']}/roles",
+        json={"role_ids": [r1["id"], r2["id"]]},
+        headers=auth_headers,
+    )
+    me = client.get("/api/v1/me", headers=auth_headers)
+    assert me.json()["roles"] == sorted(me.json()["roles"])
+
+
+def test_role_delete_with_user_binding_409(client, auth_headers):
+    """T-AUTH-R07: bind user → DELETE role → 409 ROLE_IN_USE。"""
+    role = client.post("/api/v1/roles", json={"code": "in_use", "name": "IU"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "iu_user"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    resp = client.delete(f"/api/v1/roles/{role['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "ROLE_IN_USE"
+
+
+def test_role_empty_name_422(client, auth_headers):
+    """T-AUTH-R08: POST name=\"\" → 422。"""
+    resp = client.post("/api/v1/roles", json={"code": "empty_nm", "name": ""}, headers=auth_headers)
+    assert resp.status_code == 422
+
+
+def test_role_list_limit(client, auth_headers):
+    """T-AUTH-R09: 创建 3 角色；GET ?limit=2 → items 长度 ≤2。"""
+    for code in ("lim_a", "lim_b", "lim_c"):
+        client.post("/api/v1/roles", json={"code": code, "name": code}, headers=auth_headers)
+    resp = client.get("/api/v1/roles?limit=2", headers=auth_headers)
+    assert resp.status_code == 200
+    assert len(resp.json()["items"]) <= 2

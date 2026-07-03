@@ -18,8 +18,17 @@ class RoleError(Exception):
         super().__init__(message)
 
 
-def list_roles(session: Session) -> list[AuthRole]:
-    return list(session.scalars(select(AuthRole).order_by(AuthRole.code)))
+def list_roles(
+    session: Session,
+    code_prefix: str | None = None,
+    limit: int = 100,
+) -> list[AuthRole]:
+    capped = min(max(limit, 1), 500)
+    stmt = select(AuthRole).order_by(AuthRole.code)
+    if code_prefix:
+        stmt = stmt.where(AuthRole.code.startswith(code_prefix))
+    stmt = stmt.limit(capped)
+    return list(session.scalars(stmt))
 
 
 def create_role(session: Session, payload: RoleCreate) -> AuthRole:

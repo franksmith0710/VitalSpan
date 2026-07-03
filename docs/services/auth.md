@@ -11,6 +11,8 @@
 
 - 用户认证（会话 / Token，与部署模式对齐）
 - RBAC：角色、权限点、资源绑定
+- 资源可见性：`ensure_resource_visible`、`list_visible_resource_ids`、`require_resource_visible` deps
+- 用户-组织：`auth_users.org_node_id` FK；`assign_user_org` / `clear_user_org`
 - 组织维度、多维行级权限（RLS）策略
 - 操作审计日志
 
@@ -19,7 +21,8 @@
 | In | Out |
 |----|-----|
 | 身份、授权、RLS 策略定义 | 查询执行细节（→ `query` 消费策略） |
-| 租户/组织模型 | 业务视图模板内容（→ `views`） |
+| 租户/组织模型、用户组织归属 | 业务视图模板内容（→ `views`） |
+| L1 资源可见性守卫（域 + deps） | AUTH-006~008（维度分组、RLS 谓词注入、完整审计） |
 
 ## 依赖
 

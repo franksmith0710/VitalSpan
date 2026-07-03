@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, get_current_user
 from app.auth.models import get_meta_session
-from app.auth.schemas import UserCreate, UserOut, UserRoleOut, UserRolesReplace, UserRolesResponse
+from app.auth.schemas import UserCreate, UserOrgAssign, UserOrgResponse, UserOut, UserRoleOut, UserRolesReplace, UserRolesResponse
 from app.auth.users import service as user_service
 
 router = APIRouter(prefix="/users", tags=["auth"])
@@ -95,6 +95,53 @@ def unbind_user_role(
 ) -> Response:
     try:
         user_service.unbind_role(db, user_id, role_id)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.put("/{user_id}/org", response_model=UserOrgResponse)
+def assign_user_org(
+    user_id: uuid.UUID,
+    payload: UserOrgAssign,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> UserOrgResponse | JSONResponse:
+    try:
+        user_service.assign_user_org(db, user_id, payload.org_node_id)
+        node = user_service.get_user_org(db, user_id)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    assert node is not None
+    return UserOrgResponse.model_validate(node)
+
+
+@router.get("/{user_id}/org", response_model=UserOrgResponse)
+def get_user_org(
+    user_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> UserOrgResponse | JSONResponse:
+    try:
+        node = user_service.get_user_org(db, user_id)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    if node is None:
+        return JSONResponse(
+            status_code=404,
+            content={"code": "USER_ORG_NOT_SET", "message": "User has no org assignment", "detail": None},
+        )
+    return UserOrgResponse.model_validate(node)
+
+
+@router.delete("/{user_id}/org", status_code=status.HTTP_204_NO_CONTENT)
+def clear_user_org_route(
+    user_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> Response:
+    try:
+        user_service.clear_user_org(db, user_id)
     except user_service.UserError as exc:
         return _user_error_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

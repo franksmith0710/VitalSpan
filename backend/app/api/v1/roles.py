@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
@@ -34,8 +34,10 @@ def _role_error_response(exc: role_service.RoleError) -> JSONResponse:
 def list_roles(
     _: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
+    code_prefix: str | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
 ) -> RoleListResponse:
-    items = [RoleOut.model_validate(r) for r in role_service.list_roles(db)]
+    items = [RoleOut.model_validate(r) for r in role_service.list_roles(db, code_prefix, limit)]
     return RoleListResponse(items=items)
 
 

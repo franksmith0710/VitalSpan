@@ -70,5 +70,13 @@ def update_dimension_type(
 
 def delete_dimension_type(session: Session, dim_id: uuid.UUID) -> None:
     dim = get_dimension_type(session, dim_id)
+    if dim.org_dimension:
+        org_count = session.scalar(select(func.count()).select_from(AuthOrgNode))
+        if org_count and org_count > 0:
+            raise DimensionError(
+                "DIMENSION_IN_USE",
+                "Cannot delete org dimension while org tree has nodes",
+                409,
+            )
     session.delete(dim)
     session.commit()

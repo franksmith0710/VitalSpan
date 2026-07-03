@@ -17,6 +17,14 @@ from app.core.config import Settings, get_settings
 KNOWN_URL = "postgresql+psycopg://mock:mock@localhost:5432/mock"
 
 
+def _migration_subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    env["DATABASE_URL"] = KNOWN_URL
+    env["SECRET_KEY"] = "ci-test-secret-key-min-32-chars-long!!"
+    env["CREDENTIAL_FERNET_KEY"] = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    return env
+
+
 @pytest.fixture(autouse=True)
 def clear_settings_cache():
     get_settings.cache_clear()
@@ -236,7 +244,7 @@ def test_migrations_offline_run_migrations_called(monkeypatch):
 
 
 def test_revision_directory_single_head_chain():
-    """T-MIG-15: versions/*.py revision 唯一、单链、head 为 0003。"""
+    """T-MIG-15: versions/*.py revision 唯一、单链、head 为 0004。"""
     versions_dir = (
         Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     )
@@ -247,15 +255,16 @@ def test_revision_directory_single_head_chain():
         module = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[module.revision] = module.down_revision
 
-    assert set(revisions.keys()) == {"0001", "0002", "0003"}
+    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004"}
     assert len(revisions) == len(set(revisions.keys()))
     assert revisions["0001"] is None
     assert revisions["0002"] == "0001"
     assert revisions["0003"] == "0002"
+    assert revisions["0004"] == "0003"
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0003"]
+    assert heads == ["0004"]
 
 
 def test_migrations_online_path_connects_and_runs(monkeypatch):
@@ -354,17 +363,10 @@ def test_migrations_env_rebinds_on_settings_change(monkeypatch):
 def test_alembic_upgrade_head_sql_contains_ingestion_tables():
     """T-MIG-19: alembic upgrade head --sql stdout 含 ingestion_sync_jobs。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
-    env = os.environ.copy()
-    env.setdefault("DATABASE_URL", KNOWN_URL)
-    env.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
-    env.setdefault(
-        "CREDENTIAL_FERNET_KEY",
-        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    )
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
         cwd=backend_dir,
-        env=env,
+        env=_migration_subprocess_env(),
         capture_output=True,
         text=True,
         timeout=60,
@@ -393,17 +395,10 @@ def test_revision_0002_source_defines_ingestion_table_names():
 def test_alembic_downgrade_base_sql_contains_ingestion_drop():
     """T-MIG-21: alembic downgrade base --sql 子进程可预期降级链。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
-    env = os.environ.copy()
-    env.setdefault("DATABASE_URL", KNOWN_URL)
-    env.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
-    env.setdefault(
-        "CREDENTIAL_FERNET_KEY",
-        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    )
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "downgrade", "head:base", "--sql"],
         cwd=backend_dir,
-        env=env,
+        env=_migration_subprocess_env(),
         capture_output=True,
         text=True,
         timeout=60,
@@ -416,14 +411,8 @@ def test_alembic_downgrade_base_sql_contains_ingestion_drop():
 def test_alembic_upgrade_sql_stdout_excludes_secrets():
     """T-MIG-22: upgrade head --sql stdout 不含 SECRET_KEY 明文。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
-    secret = os.environ["SECRET_KEY"]
-    env = os.environ.copy()
-    env.setdefault("DATABASE_URL", KNOWN_URL)
-    env.setdefault("SECRET_KEY", secret)
-    env.setdefault(
-        "CREDENTIAL_FERNET_KEY",
-        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    )
+    env = _migration_subprocess_env()
+    secret = env["SECRET_KEY"]
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
         cwd=backend_dir,
@@ -496,25 +485,18 @@ def test_migrations_env_reimport_under_budget(monkeypatch):
 
 
 def test_alembic_heads_single_head():
-    """T-MIG-25: alembic heads 子进程 returncode==0 且 stdout 含 0003（单 head）。"""
+    """T-MIG-25: alembic heads 子进程 returncode==0 且 stdout 含 0004（单 head）。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
-    env = os.environ.copy()
-    env.setdefault("DATABASE_URL", KNOWN_URL)
-    env.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
-    env.setdefault(
-        "CREDENTIAL_FERNET_KEY",
-        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    )
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "heads"],
         cwd=backend_dir,
-        env=env,
+        env=_migration_subprocess_env(),
         capture_output=True,
         text=True,
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
-    assert "0003" in result.stdout
+    assert "0004" in result.stdout
 
 
 def test_migrations_online_uses_null_pool(monkeypatch):
@@ -601,17 +583,10 @@ def test_migrations_online_connect_operational_error_propagates(monkeypatch):
 def test_alembic_upgrade_head_sql_subprocess_smoke():
     """T-MIG-29: alembic upgrade head --sql 子进程 returncode==0 且含 CREATE TABLE 或 ingestion_sync_jobs。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
-    env = os.environ.copy()
-    env.setdefault("DATABASE_URL", KNOWN_URL)
-    env.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
-    env.setdefault(
-        "CREDENTIAL_FERNET_KEY",
-        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    )
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
         cwd=backend_dir,
-        env=env,
+        env=_migration_subprocess_env(),
         capture_output=True,
         text=True,
         timeout=60,
@@ -622,7 +597,7 @@ def test_alembic_upgrade_head_sql_subprocess_smoke():
 
 
 def test_revision_chain_no_orphans_head_0003():
-    """T-MIG-30: revision 链无 orphan；唯一 head 为 0003。"""
+    """T-MIG-30: revision 链无 orphan；唯一 head 为 0004。"""
     versions_dir = (
         Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     )
@@ -640,11 +615,11 @@ def test_revision_chain_no_orphans_head_0003():
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0003"]
+    assert heads == ["0004"]
 
 
-def test_revision_chain_head_is_0003():
-    """T-MIG-32: revision 链唯一 head 为 0003；0003.down_revision==0002。"""
+def test_revision_chain_head_is_0004():
+    """T-MIG-34: revision 链唯一 head 为 0004；0004.down_revision==0003。"""
     versions_dir = Path(__file__).resolve().parents[1] / "backend" / "migrations" / "versions"
     revisions: dict[str, str | None] = {}
     for path in sorted(versions_dir.glob("*.py")):
@@ -654,10 +629,10 @@ def test_revision_chain_head_is_0003():
         revisions[module.revision] = module.down_revision
 
     heads = [rev for rev, down in revisions.items() if not any(d == rev for d in revisions.values())]
-    assert heads == ["0003"]
+    assert heads == ["0004"]
 
-    mod = importlib.import_module("migrations.versions.0003_auth_tables")
-    assert mod.down_revision == "0002"
+    mod = importlib.import_module("migrations.versions.0004_auth_user_org_node")
+    assert mod.down_revision == "0003"
 
 
 def test_alembic_upgrade_sql_contains_auth_roles():
@@ -666,6 +641,7 @@ def test_alembic_upgrade_sql_contains_auth_roles():
     result = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
         cwd=backend_dir,
+        env=_migration_subprocess_env(),
         capture_output=True,
         text=True,
         check=False,
