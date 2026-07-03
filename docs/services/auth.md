@@ -22,7 +22,7 @@
 
 | In | Out |
 |----|-----|
-| 身份、授权、RLS 策略定义与 L1 谓词 hook | 查询执行细节（→ `query` 消费 `get_query_rls_fragment`） |
+| 身份、授权、RLS 策略定义与 L1 谓词 hook | 查询执行细节（→ `query/rls/guard.py` 消费 `prepare_query_rls`） |
 | 租户/组织模型、用户组织归属 | 业务视图模板内容（→ `views`） |
 | L1 资源可见性守卫（域 + deps） | 全方言 SQL 改写、M3 数据源实查 RLS |
 | 维度分组 CRUD、角色维度/分组绑定、有效维度集 | 登录/数据源等非 auth 域审计（AUTH-008 后续扩展） |
