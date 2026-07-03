@@ -29,3 +29,12 @@ def test_settings_invalid_credential_fernet_key_length_raises(monkeypatch):
             database_url=os.environ["DATABASE_URL"],
             secret_key=os.environ["SECRET_KEY"],
         )
+
+
+def test_encrypt_password_with_env_fernet_key_roundtrip():
+    """T-D04-13: CREDENTIAL_FERNET_KEY 启用路径 encrypt ≠ 明文且 decrypt roundtrip。"""
+    assert os.environ.get("CREDENTIAL_FERNET_KEY")
+    plain = "analytics-source-password"
+    cipher = encrypt_password(plain)
+    assert cipher != plain
+    assert decrypt_password(cipher) == plain
