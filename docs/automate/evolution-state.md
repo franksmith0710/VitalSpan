@@ -6,20 +6,20 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r9.md |
 | design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r9-design.md |
-| plan | |
-| branch | |
+| plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r9.md |
+| branch | cursor/bc-bd69fc40-747b-441e-84b6-ad1d4d101de0-1ac0 |
 | base_branch | dev-auto |
 | prd_ids | BOOT-005,BOOT-006,BOOT-001,BOOT-004,BOOT-002 |
 | pr_number | |
-| last_verified_command | cd backend && python3 -m pytest -q; cd fe && pnpm test && pnpm run build && pnpm run check:design |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm test && pnpm run build && pnpm run check:design |
-| last_ui_screenshots | NOT_RUN（无头 CI；vitest viewport 1400/375 + check:design 已覆盖 UI Acceptance） |
+| last_ui_verified_command | cd fe && pnpm test && pnpm build && pnpm run check:design |
+| last_ui_screenshots | NOT_RUN（无头 CI；vitest viewport 375/1400 + check:design 覆盖 UI Acceptance） |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T12:30:00Z |
+| skill_rule_index_generated_at | 2026-07-03T13:10:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
