@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r13.md |
-| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r13-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r13.md |
-| branch | feat/evolution-r13-data-companion-push |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r14.md |
+| design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r14-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r14.md |
+| branch | feat/evolution-r14-boot-quality-push |
 | base_branch | dev-auto |
-| prd_ids | DATA-004,DATA-003,DATA-002,ETL-001,DATA-001 |
-| pr_number | 30 |
-| last_verified_command | cd backend && ruff check . && pytest -v; cd backend && pytest -v ../tests/test_ingestion_config.py ../tests/test_sync_executor.py ../tests/test_scheduler.py ../tests/test_etl_rules.py ../tests/test_ingestion_api.py ../tests/test_ingestion_l1_smoke.py; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
+| prd_ids | BOOT-003,BOOT-005,BOOT-006,BOOT-002,BOOT-001 |
+| pr_number |  |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx && pnpm run check:design |
-| last_ui_screenshots | N/A headless CI — T-ING-28 desktop1400 run confirm, T-ING-29 mobile375 cancel, T-ING-30 mobile375 401 error; ingestion vitest 31/31 PASS; check:design 34 files |
+| last_ui_verified_command | cd fe && pnpm test && pnpm run check:design |
+| last_ui_screenshots | N/A headless vitest — T-FE-24~27 tab focus smoke PASS; check:design 34 files |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T15:55:00Z |
 | skill_rule_index_source_count | 26 |
