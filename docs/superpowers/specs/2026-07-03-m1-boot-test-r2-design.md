@@ -170,7 +170,7 @@ status: design
 | `T-FE-04` | 路由表含 `/admin` path | 从 `routes.tsx` 导出结构或渲染后 URL 稳定；断言 `AdminHomePage` 占位文案「欢迎使用 VitalSpan」存在 |
 | `T-FE-05` | 未知路径重定向至 admin 壳层 | `initialEntries={["/unknown"]}` 后仍可见「VitalSpan」 |
 
-> `AdminHomePage` 文案以当前实现为准（实施前 Read 该文件取稳定锚点）。
+> `AdminHomePage` 稳定锚点：`欢迎使用 VitalSpan`（h1）。
 
 #### 7.2.2 新建 `fe/src/layouts/AdminLayout.smoke.test.tsx`
 
