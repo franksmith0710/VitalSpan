@@ -394,3 +394,97 @@ def test_acl_revoke_grant_forbidden(client, auth_headers):
     assert resp.status_code == 403
     assert resp.json()["code"] == "RESOURCE_FORBIDDEN"
     _restore_dev_admin(client, auth_headers)
+
+
+@patch("app.datasources.dialects.postgres.PostgresConnector.list_columns")
+@patch("app.datasources.metadata.service.pool_manager.pooled_connection")
+def test_metadata_columns_200(mock_pool, mock_cols, client):
+    """T-DS-MD03: columns mock 返回列定义。"""
+    from contextlib import contextmanager
+
+    from app.datasources.dialects.base import ColumnInfo
+
+    mock_cols.return_value = [ColumnInfo(name="id", data_type="uuid", nullable=False)]
+
+    @contextmanager
+    def _cm(*a, **k):
+        yield MagicMock()
+
+    mock_pool.side_effect = _cm
+    ds = _create_ds()
+    resp = client.get(
+        f"/api/v1/datasources/{ds.id}/columns?schema=public&table=users",
+        headers=AUTH,
+    )
+    assert resp.status_code == 200
+    body = resp.json()["items"][0]
+    assert body["name"] == "id"
+    assert body["dataType"] == "uuid"
+
+
+@patch("app.datasources.metadata.service.pool_manager.pooled_connection")
+def test_metadata_bad_credential_502_no_password(mock_pool, client):
+    """T-DS-MD04: 连接失败 502，响应无 password。"""
+    mock_pool.side_effect = Exception("connection failed")
+    ds = _create_ds()
+    resp = client.get(f"/api/v1/datasources/{ds.id}/schemas", headers=AUTH)
+    assert resp.status_code == 502
+    assert resp.json()["code"] == "METADATA_CONNECTION_FAILED"
+    assert "password" not in resp.text.lower()
+
+
+@patch("app.datasources.metadata.service.pool_manager.pooled_connection")
+@patch("app.datasources.dialects.postgres.PostgresConnector.list_schemas")
+def test_metadata_forbidden_403(mock_list, mock_pool, client, auth_headers):
+    """T-DS-MD05: 未授权用户 → 403。"""
+    from contextlib import contextmanager
+
+    mock_list.return_value = []
+
+    @contextmanager
+    def _cm(*a, **k):
+        yield MagicMock()
+
+    mock_pool.side_effect = _cm
+    _restore_dev_admin(client, auth_headers)
+    hidden = _create_ds_named("Hidden MD", f"acl-md-{uuid.uuid4().hex[:6]}")
+    role = client.post(
+        "/api/v1/roles",
+        json={"code": f"acl_md_{uuid.uuid4().hex[:6]}", "name": "Viewer"},
+        headers=auth_headers,
+    ).json()
+    _set_dev_roles(client, auth_headers, [role["id"]])
+    resp = client.get(f"/api/v1/datasources/{hidden.id}/schemas", headers=auth_headers)
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "RESOURCE_FORBIDDEN"
+    mock_list.assert_not_called()
+    _restore_dev_admin(client, auth_headers)
+
+
+@patch("app.datasources.pool.pool_manager.evict_pool")
+def test_delete_data_source_evicts_pool(mock_evict, client, auth_headers):
+    """T-DS-PL05: delete 触发 evict_pool。"""
+    _restore_dev_admin(client, auth_headers)
+    ds = _create_ds_named("Delete Pool", f"del-pool-{uuid.uuid4().hex[:6]}")
+    client.delete(f"/api/v1/datasources/{ds.id}", headers=auth_headers)
+    mock_evict.assert_called_once_with(ds.id)
+
+
+def test_metadata_columns_missing_params_400(client):
+    """T-DS-MD06: columns 缺 schema/table → 400。"""
+    ds = _create_ds()
+    resp = client.get(f"/api/v1/datasources/{ds.id}/columns", headers=AUTH)
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "METADATA_INVALID_REQUEST"
+
+
+def test_registry_postgresql_display_name():
+    """T-CONN-P05: postgresql display_name。"""
+    connector = registry.get("postgresql")
+    assert connector.display_name == "PostgreSQL"
+
+
+def test_mysql_schema_browser_in_registry():
+    """T-CONN-M15: mysql registry 含 schema_browser。"""
+    connector = registry.get("mysql")
+    assert "schema_browser" in connector.capabilities
