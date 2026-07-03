@@ -6,17 +6,17 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-fe-ci.md |
 | design | docs/superpowers/specs/2026-07-03-m1-fe-ci-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-03-m1-fe-ci.md |
+| branch | feat/m1-fe-ci |
 | base_branch | dev-auto |
 | prd_ids | BOOT-002,BOOT-006 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
-| last_ui_verified_command |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v && cd fe && pnpm build && pnpm run check:design |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | curl http://127.0.0.1:5173/admin (200) + headless chrome screenshots .superpowers/evolution/p4-screenshots/admin-{desktop,mobile}.png |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T04:10:00Z |
 | skill_rule_index_source_count | 26 |
