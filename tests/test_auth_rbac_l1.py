@@ -514,3 +514,87 @@ def test_empty_roles_forbidden():
         assert exc.value.status == 403
     finally:
         session.close()
+
+
+from app.auth.org import service as org_service
+from app.auth.users import service as users_service
+
+
+def test_user_org_bind_roundtrip(client, auth_headers):
+    """T-AUTH-OU01: 建 org + user → assign → get_user_org 一致。"""
+    org = client.post("/api/v1/orgs", json={"name": "Dept"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_user"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]))
+        node = users_service.get_user_org(session, uuid_mod.UUID(user["id"]))
+        assert node is not None
+        assert str(node.id) == org["id"]
+    finally:
+        session.close()
+
+
+def test_user_org_idempotent(client, auth_headers):
+    """T-AUTH-OU02: 重复 assign 同 org 仍成功。"""
+    org = client.post("/api/v1/orgs", json={"name": "Dept2"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_idem"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        uid, oid = uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"])
+        users_service.assign_user_org(session, uid, oid)
+        users_service.assign_user_org(session, uid, oid)
+        assert users_service.get_user_org(session, uid).id == oid
+    finally:
+        session.close()
+
+
+def test_user_org_invalid_org_404(client, auth_headers):
+    """T-AUTH-OU03: assign 随机 org UUID → 404 ORG_NOT_FOUND。"""
+    user = client.post("/api/v1/users", json={"username": "ou_bad"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        with pytest.raises(users_service.UserError) as exc:
+            users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.uuid4())
+        assert exc.value.code == "ORG_NOT_FOUND"
+        assert exc.value.status == 404
+    finally:
+        session.close()
+
+
+def test_user_org_clear(client, auth_headers):
+    """T-AUTH-OU04: clear 后 get → None。"""
+    org = client.post("/api/v1/orgs", json={"name": "Clr"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_clr"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        uid, oid = uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"])
+        users_service.assign_user_org(session, uid, oid)
+        users_service.clear_user_org(session, uid)
+        assert users_service.get_user_org(session, uid) is None
+    finally:
+        session.close()
+
+
+def test_delete_org_with_users_409(client, auth_headers):
+    """T-AUTH-O07: 用户绑定叶子 org → delete → 409 ORG_HAS_USERS。"""
+    org = client.post("/api/v1/orgs", json={"name": "Leaf"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "leaf_u"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        users_service.assign_user_org(session, uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"]))
+        with pytest.raises(org_service.OrgError) as exc:
+            org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
+        assert exc.value.code == "ORG_HAS_USERS"
+        assert exc.value.status == 409
+    finally:
+        session.close()
+
+
+def test_delete_idle_leaf_org_204(client, auth_headers):
+    """T-AUTH-O08: 空闲叶子 → delete 成功。"""
+    org = client.post("/api/v1/orgs", json={"name": "IdleLeaf"}, headers=auth_headers).json()
+    session = get_meta_session()
+    try:
+        org_service.delete_org_node(session, uuid_mod.UUID(org["id"]))
+    finally:
+        session.close()

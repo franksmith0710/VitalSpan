@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.auth.models import AuthRole, AuthUser, AuthUserRole
+from app.auth.models import AuthOrgNode, AuthRole, AuthUser, AuthUserRole
 from app.auth.schemas import UserCreate
 
 
@@ -97,3 +97,26 @@ def resolve_role_codes_for_username(session: Session, username: str) -> list[str
     if user is None:
         return []
     return resolve_role_codes_for_user(session, user.id)
+
+
+def assign_user_org(session: Session, user_id: uuid.UUID, org_node_id: uuid.UUID) -> AuthUser:
+    user = get_user(session, user_id)
+    if session.get(AuthOrgNode, org_node_id) is None:
+        raise UserError("ORG_NOT_FOUND", "Org node not found", 404)
+    user.org_node_id = org_node_id
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def get_user_org(session: Session, user_id: uuid.UUID) -> AuthOrgNode | None:
+    user = get_user(session, user_id)
+    if user.org_node_id is None:
+        return None
+    return session.get(AuthOrgNode, user.org_node_id)
+
+
+def clear_user_org(session: Session, user_id: uuid.UUID) -> None:
+    user = get_user(session, user_id)
+    user.org_node_id = None
+    session.commit()

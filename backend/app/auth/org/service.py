@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.auth.models import AuthOrgNode
+from app.auth.models import AuthOrgNode, AuthUser
 from app.auth.schemas import OrgCreate, OrgUpdate
 
 
@@ -97,5 +97,10 @@ def delete_org_node(session: Session, node_id: uuid.UUID) -> None:
     )
     if child_count and child_count > 0:
         raise OrgError("ORG_HAS_CHILDREN", "Cannot delete org node with children", 409)
+    user_count = session.scalar(
+        select(func.count()).select_from(AuthUser).where(AuthUser.org_node_id == node_id)
+    )
+    if user_count and user_count > 0:
+        raise OrgError("ORG_HAS_USERS", "Cannot delete org node with assigned users", 409)
     session.delete(node)
     session.commit()

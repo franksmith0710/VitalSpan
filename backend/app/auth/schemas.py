@@ -91,6 +91,20 @@ class UserRolesResponse(BaseModel):
     items: list[UserRoleOut]
 
 
+class UserOrgAssign(BaseModel):
+    org_node_id: uuid.UUID
+
+
+class UserOrgResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    parent_id: uuid.UUID | None
+    name: str
+    path: str
+    level: int
+
+
 class ResourceGrantCreate(BaseModel):
     role_id: uuid.UUID
     resource_type: ResourceType
