@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | design | docs/superpowers/specs/2026-07-03-m1-backend-bootstrap-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-backend-bootstrap.md |
-| branch |  |
-| base_branch |  |
+| branch | feat/m1-backend-bootstrap |
+| base_branch | dev-auto |
 | prd_ids | BOOT-004,BOOT-001,BOOT-005,BOOT-003 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && uvicorn + curl health/me + alembic upgrade head |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T04:10:00Z |
 | skill_rule_index_source_count | 26 |
