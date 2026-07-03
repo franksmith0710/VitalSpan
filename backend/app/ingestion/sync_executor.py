@@ -83,6 +83,8 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
     rules_row = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
     rules = rules_row.rules if rules_row else []
     try:
+        if not get_settings().analytics_database_url:
+            raise RuntimeError("ANALYTICS_DB_NOT_CONFIGURED")
         if job.source_type != "mysql":
             raise RuntimeError("M1B 仅支持 mysql 源")
         raw = _fetch_mysql_rows(job)
