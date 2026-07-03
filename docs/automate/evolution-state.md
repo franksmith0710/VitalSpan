@@ -6,12 +6,12 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r10.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r10-design.md |
-| plan |  |
+| plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r10.md |
 | branch |  |
-| base_branch |  |
+| base_branch | dev-auto |
 | prd_ids | DATA-003,DATA-002,ETL-001,DATA-004,DATA-001 |
 | pr_number |  |
 | last_verified_command |  |
@@ -19,7 +19,7 @@
 | last_ui_verified_command | cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_ui_screenshots | NOT_RUN（无头环境；vitest viewport 375/1400 smoke + check:design 34 files PASS 覆盖 UI Acceptance） |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T13:10:00Z |
+| skill_rule_index_generated_at | 2026-07-03T13:45:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -73,6 +73,7 @@
 - G2 r10 选题完成：M1B DATA companion 推分 DATA-003/002/ETL-001/004/001；BOOT rotation 饱和本轮 pivot
 - 上轮 r9 P5 完成；STUCK BOOT-* 最高 11 轮（BOOT-002/005/006）；DATA-* STUCK 3–4 轮
 - deployed_automate_rev=bf60b94ec4f4；技能规则索引 26 条未过期
+- P2 r10 计划完成：`docs/superpowers/plans/2026-07-03-m1b-data-quality-r10.md`（6 Task · 10 文件）
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
