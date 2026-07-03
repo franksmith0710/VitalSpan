@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | verify_done |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r10.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r10-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r10.md |
@@ -76,6 +76,7 @@
 - P2 r10 计划完成：`docs/superpowers/plans/2026-07-03-m1b-data-quality-r10.md`（6 Task · 10 文件）
 - P3 r10 实现完成：5 commits（DATA-004/001/002+ETL-001/003）；backend 162 passed；fe 44 passed + check:design PASS
 - P4 r10 验证完成：backend 162 passed 1 skipped；fe 44 passed + build + check:design 34 files PASS；UI ingestion.smoke 19 tests PASS
+- P5 r10 PRD 8 维重评完成：DATA-003/002/ETL-001/004/001 总分 87.5–89.5（均 <90）；STUCK DATA-* 3–5 轮
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -87,9 +88,9 @@
 | BOOT-001 | 10 | 89.2 | 2026-07-03 |
 | BOOT-004 | 10 | 89.5 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
-| DATA-004 | 3 | 87.5 | 2026-07-03 |
-| DATA-001 | 3 | 88.1 | 2026-07-03 |
-| DATA-002 | 4 | 85.5 | 2026-07-03 |
-| ETL-001 | 3 | 85.9 | 2026-07-03 |
-| DATA-003 | 4 | 85.4 | 2026-07-03 |
+| DATA-004 | 4 | 88.7 | 2026-07-03 |
+| DATA-001 | 4 | 89.5 | 2026-07-03 |
+| DATA-002 | 5 | 87.0 | 2026-07-03 |
+| ETL-001 | 4 | 87.5 | 2026-07-03 |
+| DATA-003 | 5 | 87.5 | 2026-07-03 |
 | DATA-005 | 3 | 88.4 | 2026-07-03 |

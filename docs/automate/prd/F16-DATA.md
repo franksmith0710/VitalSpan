@@ -13,7 +13,7 @@
   - [x] docker-compose 可启动托管 PostgreSQL（或独立 schema 方案已文档化）
   - [x] `Settings` 可加载 `ANALYTICS_DATABASE_URL`
 - **代码锚点**：`docker-compose.yml` · `backend/app/core/config.py`
-- **演化建议**：`tests/test_ingestion_config.py` T-D04-01~10 + `tests/test_ingestion_models_crypto.py` Fernet roundtrip/InvalidToken/非法 key 长度；`analytics_database_url` 空白→None、非法 scheme→ValidationError；CI compose 集成 job 跑 L1 e2e（当前 integration marker skip）
+- **演化建议**：`tests/test_ingestion_config.py` T-D04-11~13（pool_pre_ping、analytics_sqlite fixture、sqlite URL 拒绝）；`tests/test_ingestion_models_crypto.py` T-D04-13 Fernet env roundtrip；CI compose 集成 job 跑 L1 e2e（当前 integration marker skip）
 
 ### [DATA-001] 同步任务模型与 API
 
@@ -39,7 +39,7 @@
   - [x] `GET/POST /api/v1/ingestion/sync-jobs` 可用
   - [x] OpenAPI 可访问
 - **代码锚点**：`backend/app/ingestion/` · `backend/app/api/v1/ingestion/`
-- **演化建议**：`tests/test_ingestion_api.py` T-D01-09~13 + `sync.py` 并发 run 409 `RUN_ALREADY_IN_PROGRESS`；补 postgres 源类型 executor 覆盖；OpenAPI 示例与 api/README 持续对齐
+- **演化建议**：`tests/test_ingestion_api.py` T-D01-14~18（404/limit/OpenAPI tag/连续 409/耗时 smoke）；补 postgres 源类型 executor 覆盖；OpenAPI 示例与 api/README 持续对齐
 
 ### [DATA-002] 同步执行器
 
@@ -52,7 +52,7 @@
   - [x] 手动 `POST .../run` 可将源表写入托管库
   - [x] 运行历史含状态与 `traceId` 日志
 - **代码锚点**：`backend/app/ingestion/sync_executor.py` · `scheduler.py`
-- **演化建议**：`tests/test_sync_executor.py` T-D02-01~11 + `tests/test_scheduler.py` T-D02-12 cron 注册；扩展 postgres 源 executor；CI compose 跑 L1 全链路
+- **演化建议**：`tests/test_sync_executor.py` T-D02-13~14（5k 行 apply_rules <2s、filter 全剔除写空表）；`tests/test_scheduler.py` T-D02-15；`tests/test_ingestion_l1_smoke.py` T-L1-04 端到端 <3s；扩展 postgres 源 executor；CI compose 跑 L1 全链路
 
 ### [ETL-001] 清洗规则引擎（轻量）
 
@@ -65,7 +65,7 @@
   - [x] 规则在写托管库前生效
   - [x] 脏数据样例经规则后字段符合配置
 - **代码锚点**：`backend/app/ingestion/etl_rules.py`
-- **演化建议**：`tests/test_etl_rules.py` T-ETL-01~08 + executor apply_rules 管线断言；`etl_rules.py` T-ETL-06/07 缺键跳过与精度溢出→None；补 executor+rules 组合失败降级场景
+- **演化建议**：`tests/test_etl_rules.py` T-ETL-09~12（unknown op/cast fallback/empty chain）；`test_sync_executor` T-D02-14 cast 失败+fill_null 管线；补 executor+rules 组合失败降级场景
 
 ### [DATA-003] Admin 配置台页面
 
@@ -78,7 +78,7 @@
   - [x] 浏览器可创建任务并手动运行
   - [x] 可查看运行历史
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
-- **演化建议**：`admin-nav` 已含「数据接入」入口；`ingestion.smoke.test.tsx` 14 项覆盖空态/错误态/表单校验/密码掩码/ETL 默认行/删除确认/防重跑（T-ING-06~15）；二期 Playwright 真浏览器 L1
+- **演化建议**：`SyncJobFormPage`/`EtlRulesPage` handler 防重 guard；`ingestion.smoke.test.tsx` 19 项（T-ING-06~19 含 history error/limit=20/双次提交/首屏 <500ms）；二期 Playwright 真浏览器 L1
 
 ### [DATA-005] 端到端验收与文档回写
 
