@@ -13,7 +13,7 @@
 | branch | feat/evolution-r23-m3-datasource-quality |
 | base_branch | dev-auto |
 | prd_ids | CONN-001,DS-001,DS-003,DS-002,DS-005 |
-| pr_number | |
+| pr_number | 43 |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端 r23） |
