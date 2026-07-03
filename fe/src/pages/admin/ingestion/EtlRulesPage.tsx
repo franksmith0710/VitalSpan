@@ -88,6 +88,7 @@ export function EtlRulesPage() {
 
   const handleSave = async () => {
     if (!id) return;
+    if (saving) return;
     setSaving(true);
     setError(null);
     try {
