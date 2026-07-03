@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r26 实现完成：7 Task 全绿；backend ruff+pytest 532 passed/4 skipped（+31 query L1）；ui_design_skill: none；branch feat/evolution-r26-m4-query-l1-kickoff；base_branch dev-auto
 - G0 PR #46 遗留合并：rebase 至 dev-auto 后重置 phase=idle（r25 已在 PR #47 合并）
 - P5 r25 MERGED：PR #47 squash 至 dev-auto@d1b6c91；DS-004/006/007/008 + CONN-002 重评 90.1–91.6；pytest 501/4 skipped；head 分支已删
 - P5 r25 PRD 重评：DS-004/006/007/008 + CONN-002 companion kickoff 12.8–13.7→90.1–91.6（五 ID 破 90）；pytest 501 + 4 skipped；T-DS-TY/PL/MD/AC + T-CONN-P + M15
