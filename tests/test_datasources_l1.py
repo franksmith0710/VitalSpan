@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
+from app.core.config import Settings, get_settings
 from app.datasources import register_builtin_dialects
+from app.datasources.credentials import decrypt_credential, encrypt_credential
 from app.datasources.dialects.mysql import MysqlConnector
 from app.datasources.registry import (
     ConnectorAlreadyRegisteredError,
@@ -91,3 +95,23 @@ def test_mysql_mock_operational_error(mock_connect):
     assert result.ok is False
     assert "Access denied" in result.message
     assert "secret" not in result.message
+
+
+def test_credential_encrypt_decrypt_roundtrip():
+    """T-DS-K01: 加解密 round-trip。"""
+    plain = "mysql-source-password"
+    cipher = encrypt_credential(plain)
+    assert cipher != plain
+    assert decrypt_credential(cipher) == plain
+
+
+def test_settings_missing_credential_fernet_key_raises(monkeypatch):
+    """T-DS-K04: 缺 CREDENTIAL_FERNET_KEY 时 Settings 构造失败。"""
+    monkeypatch.delenv("CREDENTIAL_FERNET_KEY", raising=False)
+    get_settings.cache_clear()
+    with pytest.raises(ValidationError):
+        Settings(
+            database_url=os.environ["DATABASE_URL"],
+            secret_key=os.environ["SECRET_KEY"],
+        )
+    get_settings.cache_clear()
