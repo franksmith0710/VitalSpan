@@ -18,7 +18,7 @@
 
 | 附录 | 后端模块 | PRD 分片 | 里程碑 | 状态 |
 |------|----------|----------|--------|------|
-| [core.md](./core.md) | `app/core/` | F01-BOOT | M1 | 骨架 |
+| [core.md](./core.md) | `app/core/` | F01-BOOT | M1 | 已实现 |
 | [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | 未实现 |
 | [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 骨架 |
 | [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | 骨架 |
@@ -26,7 +26,7 @@
 | [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | 未实现 |
 | [reports.md](./reports.md) | `app/reports/` | F08-RPT | M6 | 未实现 |
 | [views.md](./views.md) | `app/views/` | F09-VIEW | FR-VIEW | 未实现 |
-| [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 骨架 |
+| [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 已实现 |
 | [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 未实现 |
 | [governance.md](./governance.md) | `app/governance/` | F10-GOV · F14-CAT | M8 | 未实现 |
 
