@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r13.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r13-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r13.md |
@@ -68,13 +68,12 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r13 PRD 重评：DATA-004/002/003/ETL-001 破 90（91.1/91.0/90.6/90.7）；DATA-001 巩固 91.3；STUCK DATA 簇清零
 - P4 r13 独立验证：backend ruff+pytest 207 passed/2 skipped；ingestion 105 passed/1 skipped；fe vitest 56/56（ingestion 31/31）；build+check:design PASS
 - P3 r13 实现完成：6 Task 全绿；DATA-003 run AlertDialog ≤25 行；ingestion vitest 31 项；backend 207 passed
 - G2 r13 选题完成：M1B DATA companion 质量推分 r13 — DATA-004/003/002 + ETL-001 + DATA-001（5 项）；最低分 ETL-001(89.3)
 - plan M1+M1B 全 [x]（12 项勾选）；无含 `[ ]` 的活跃节；饱和熔断未触发（远期未实现占 Top10）
 - G0 PASS：PR #29 已 merge 至 dev-auto@31c3fec；BOOT 簇 STUCK 7–11 轮本轮跳过
-- 技能规则索引 26 条未过期；deployed_automate_rev=bf60b94ec4f4
-- STUCK 入选：DATA-004(5)、DATA-002(7)、DATA-003(7)、ETL-001(6) 连续未过 90
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -86,7 +85,3 @@
 | BOOT-001 | 10 | 89.2 | 2026-07-03 |
 | BOOT-004 | 10 | 89.5 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
-| DATA-004 | 5 | 89.8 | 2026-07-03 |
-| DATA-002 | 7 | 89.4 | 2026-07-03 |
-| DATA-003 | 7 | 89.6 | 2026-07-03 |
-| ETL-001 | 6 | 89.3 | 2026-07-03 |

@@ -13,7 +13,7 @@
   - [x] docker-compose 可启动托管 PostgreSQL（或独立 schema 方案已文档化）
   - [x] `Settings` 可加载 `ANALYTICS_DATABASE_URL`
 - **代码锚点**：`docker-compose.yml` · `backend/app/core/config.py`
-- **演化建议**：`tests/test_ingestion_config.py` T-D04-14~16（analytics 连接失败、非法 URL runtime failed、Fernet 多任务隔离）；CI compose 集成 job 跑 L1 e2e（当前 integration marker skip）
+- **演化建议**：`tests/test_ingestion_config.py` T-D04-17~19（连接超时 failed、compose healthcheck 契约、缺失 analytics 503）；CI compose 集成 job 跑 L1 e2e（当前 integration marker skip）
 
 ### [DATA-001] 同步任务模型与 API
 
@@ -39,7 +39,7 @@
   - [x] `GET/POST /api/v1/ingestion/sync-jobs` 可用
   - [x] OpenAPI 可访问
 - **代码锚点**：`backend/app/ingestion/` · `backend/app/api/v1/ingestion/`
-- **演化建议**：`tests/test_ingestion_api.py` T-D01-19~22（OpenAPI snapshot、422 缺 host/table、rules 幂等 PUT、run P95 <0.5s）；补 postgres 源类型 executor 覆盖；OpenAPI 示例与 api/README 持续对齐
+- **演化建议**：`tests/test_ingestion_api.py` T-D01-23~25（PUT 空密码保留密文、create P95 <0.8s、OpenAPI SyncRunItem 快照）；补 postgres 源类型 executor 覆盖；OpenAPI 示例与 api/README 持续对齐
 
 ### [DATA-002] 同步执行器
 
@@ -52,7 +52,7 @@
   - [x] 手动 `POST .../run` 可将源表写入托管库
   - [x] 运行历史含状态与 `traceId` 日志
 - **代码锚点**：`backend/app/ingestion/sync_executor.py` · `scheduler.py`
-- **演化建议**：`tests/test_sync_executor.py` T-D02-19~21（全量刷新契约、源超时 failed+traceId、双 job 失败隔离）；`tests/test_scheduler.py` T-D02-22（cron 三次变更重注册）；`tests/test_ingestion_l1_smoke.py` T-L1-07~08 L1 编排 smoke；补增量同步与大批量分批写入 perf 基准
+- **演化建议**：`tests/test_sync_executor.py` T-D02-23~25（并发 POST 409、10000 行 P95 <3s、重试耗尽 failed+traceId）；`tests/test_scheduler.py` T-D02-26（非法 cron refresh 不崩）；`tests/test_ingestion_l1_smoke.py` T-L1-09 compose L1 编排；补增量同步与大批量分批写入 perf 基准
 
 ### [ETL-001] 清洗规则引擎（轻量）
 
@@ -65,7 +65,7 @@
   - [x] 规则在写托管库前生效
   - [x] 脏数据样例经规则后字段符合配置
 - **代码锚点**：`backend/app/ingestion/etl_rules.py`
-- **演化建议**：`tests/test_etl_rules.py` T-ETL-17~19（8 规则深链 <0.4s、脏数据 cast 可观测、恶意 JSON 422）；`test_sync_executor` T-ETL-15 L1 全规则链写字段；补 executor+rules 组合失败降级场景
+- **演化建议**：`tests/test_etl_rules.py` T-ETL-20~22（双 rename 链、超长 column 不崩、脏数据 fill_null executor 写穿）；`test_sync_executor` T-ETL-15 L1 全规则链写字段；补 executor+rules 组合失败降级场景
 
 ### [DATA-003] Admin 配置台页面
 
@@ -78,7 +78,7 @@
   - [x] 浏览器可创建任务并手动运行
   - [x] 可查看运行历史
 - **代码锚点**：`fe/src/pages/admin/ingestion/`
-- **演化建议**：`ingestion.smoke.test.tsx` 27 项（T-ING-24~27 50 行 <800ms、aria-invalid、role=alert、mobile <600ms）；二期 Playwright 真浏览器 L1
+- **演化建议**：`ingestion.smoke.test.tsx` 31 项（T-ING-28~31 run AlertDialog 确认/取消/401、历史 100 行 <900ms）；二期 Playwright 真浏览器 L1
 
 ### [DATA-005] 端到端验收与文档回写
 
