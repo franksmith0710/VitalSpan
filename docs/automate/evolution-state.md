@@ -6,16 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-activate-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-activate.md |
 | branch | cursor/bc-0d13bb06-9441-4bf6-971e-43912ce3df4b-bd04 |
 | base_branch | dev-auto |
 | prd_ids | DATA-004,DATA-001,DATA-002,ETL-001,DATA-003 |
-| pr_number |  |
-| last_verified_command | cd backend && python3 -m pytest ../tests -v; cd fe && pnpm build && pnpm check:design && pnpm test:smoke |
+| pr_number | 14 |
+| last_verified_command | cd backend && python3 -m pytest ../tests -v; cd fe && pnpm build && pnpm check:design && pnpm test:smoke && pnpm test |
 | last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm build && pnpm check:design && pnpm test:smoke |
+| last_ui_screenshot_status | SKIPPED — 无 docker/浏览器，desktop 1280px 与 mobile 390px 截图未运行 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T09:30:00Z |
 | skill_rule_index_source_count | 26 |
