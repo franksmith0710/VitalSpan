@@ -223,3 +223,27 @@ def test_dirty_cast_null_observable_with_fill_null():
     assert len(result) == 1
     assert result[0]["amount"] is None
     assert result[0]["note"] == "默认备注"
+
+
+def test_rename_column_chain_deterministic_last_wins():
+    """T-ETL-20: 同列双 rename_column 顺序应用 → 最终列 sku。"""
+    rows = [{"product_name": "Widget", "amount": "1"}]
+    rules = [
+        {"type": "rename_column", "from": "product_name", "to": "product"},
+        {"type": "rename_column", "from": "product", "to": "sku"},
+    ]
+    result = apply_rules(rows, rules)
+    assert len(result) == 1
+    assert "sku" in result[0]
+    assert result[0]["sku"] == "Widget"
+    assert "product_name" not in result[0]
+    assert "product" not in result[0]
+
+
+def test_apply_rules_oversized_column_name_does_not_crash():
+    """T-ETL-21: 超长 column 名（260+ 字符）apply 不崩且行数不变。"""
+    long_col = "c" * 260
+    rows = [{"amount": "bad", long_col: None}]
+    rules = [{"type": "fill_null", "column": long_col, "value": "filled"}]
+    result = apply_rules(rows, rules)
+    assert len(result) == 1
