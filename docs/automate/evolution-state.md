@@ -13,7 +13,7 @@
 | branch | cursor/bc-3e92750a-38c3-4750-9488-b81f4e2ff9f4-c8a2 |
 | base_branch | dev-auto |
 | prd_ids | BOOT-005,BOOT-002,BOOT-006,BOOT-001,BOOT-004 |
-| pr_number | TBD |
+| pr_number | 11 |
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test (vitest smoke T-FE-08~10) && pnpm run check:design |
