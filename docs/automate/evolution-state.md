@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-activate-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-activate.md |
@@ -14,8 +14,8 @@
 | base_branch | dev-auto |
 | prd_ids | DATA-004,DATA-001,DATA-002,ETL-001,DATA-003 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m pytest ../tests -v; cd fe && pnpm build && pnpm check:design && pnpm test:smoke |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T09:30:00Z |
 | skill_rule_index_source_count | 26 |
