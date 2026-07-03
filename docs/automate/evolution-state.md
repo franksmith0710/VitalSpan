@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
+| phase | MERGED |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r25.md |
 | design | docs/superpowers/specs/2026-07-03-m3-datasource-companion-r25-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m3-datasource-companion-r25.md |
 | branch | feat/evolution-r25-m3-datasource-companion |
 | base_branch | dev-auto |
 | prd_ids | DS-008,DS-007,DS-004,CONN-002,DS-006 |
-| pr_number |  |
+| pr_number | 47 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端 r25） |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r25 MERGED：PR #47 squash 至 dev-auto@d1b6c91；DS-004/006/007/008 + CONN-002 重评 90.1–91.6；pytest 501/4 skipped；head 分支已删
 - P5 r25 PRD 重评：DS-004/006/007/008 + CONN-002 companion kickoff 12.8–13.7→90.1–91.6（五 ID 破 90）；pytest 501 + 4 skipped；T-DS-TY/PL/MD/AC + T-CONN-P + M15
 - P4 r25 独立验证：backend ruff PASS + pytest 501 passed/4 skipped；test_datasources_companion_r25 25/25；round-target DS-008/DS-007/DS-004/CONN-002/DS-006 验收绿（plan Spec Self-Review）；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r25-m3-datasource-companion；base_branch dev-auto
 - P3 r25 实现完成：7 Task 全绿；backend ruff+pytest 501 passed/4 skipped（+25 companion）；ui_design_skill: none；branch feat/evolution-r25-m3-datasource-companion；base_branch dev-auto
