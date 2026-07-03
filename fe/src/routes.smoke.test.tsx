@@ -257,4 +257,14 @@ describe("AppRoutes smoke", () => {
     expect(screen.getAllByText("VitalSpan").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
   });
+
+  it("renders dashboards list route (T-DASH-R28-002-04)", async () => {
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+  });
 });

@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Database, Settings } from "lucide-react";
+import { ArrowLeftRight, Database, LayoutDashboard, Settings } from "lucide-react";
 import type { NavSection } from "@/components/layout/app-sidebar";
 
 export const ADMIN_NAV_GROUPS: NavSection[] = [
@@ -14,6 +14,16 @@ export const ADMIN_NAV_GROUPS: NavSection[] = [
         name: "数据接入",
         icon: <ArrowLeftRight className="size-6" aria-hidden />,
         path: "/admin/ingestion/sync-jobs",
+      },
+    ],
+  },
+  {
+    title: "分析",
+    items: [
+      {
+        name: "Dashboard",
+        icon: <LayoutDashboard className="size-6" aria-hidden />,
+        path: "/admin/dashboards",
       },
     ],
   },
