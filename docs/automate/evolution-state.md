@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-03-m1b-activate-design.md |
 | plan |  |
 | branch | cursor/bc-0d13bb06-9441-4bf6-971e-43912ce3df4b-bd04 |
 | base_branch | dev-auto |
