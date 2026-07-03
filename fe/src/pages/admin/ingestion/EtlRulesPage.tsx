@@ -43,11 +43,13 @@ export function EtlRulesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState(false);
 
   const loadRules = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setError(null);
+    setFieldErrors(false);
     try {
       const data = await apiFetch<{ rules: EtlRule[] }>(
         `/api/v1/ingestion/sync-jobs/${id}/etl-rules`,
@@ -94,6 +96,7 @@ export function EtlRulesPage() {
         rule.type === "rename_column" &&
         (!(rule.from?.trim()) || !(rule.to?.trim()))
       ) {
+        setFieldErrors(true);
         setError("请填写完整的列重命名规则");
         return;
       }
@@ -103,6 +106,7 @@ export function EtlRulesPage() {
           rule.type === "filter_rows") &&
         !(rule.column?.trim())
       ) {
+        setFieldErrors(true);
         setError("请填写规则涉及的列名");
         return;
       }
@@ -114,6 +118,7 @@ export function EtlRulesPage() {
         method: "PUT",
         body: JSON.stringify({ rules }),
       });
+      setFieldErrors(false);
       setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
@@ -145,7 +150,10 @@ export function EtlRulesPage() {
       <p className="text-theme-sm text-gray-500 dark:text-gray-400">{PLACEHOLDER_HINT}</p>
 
       {error ? (
-        <div className="rounded-xl border border-error-500 bg-error-50 p-4 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400">
+        <div
+          role="alert"
+          className="rounded-xl border border-error-500 bg-error-50 p-4 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400"
+        >
           {error}
         </div>
       ) : null}
@@ -196,6 +204,7 @@ export function EtlRulesPage() {
                   <Input
                     value={rule.from ?? ""}
                     placeholder="product_name"
+                    aria-invalid={fieldErrors && !rule.from?.trim() ? true : undefined}
                     onChange={(e) => updateRule(index, "from", e.target.value)}
                   />
                 </div>
@@ -204,6 +213,7 @@ export function EtlRulesPage() {
                   <Input
                     value={rule.to ?? ""}
                     placeholder="product"
+                    aria-invalid={fieldErrors && !rule.to?.trim() ? true : undefined}
                     onChange={(e) => updateRule(index, "to", e.target.value)}
                   />
                 </div>
@@ -217,6 +227,7 @@ export function EtlRulesPage() {
                   <Input
                     value={rule.column ?? ""}
                     placeholder="amount"
+                    aria-invalid={fieldErrors && !rule.column?.trim() ? true : undefined}
                     onChange={(e) => updateRule(index, "column", e.target.value)}
                   />
                 </div>
@@ -244,6 +255,7 @@ export function EtlRulesPage() {
                   <Input
                     value={rule.column ?? ""}
                     placeholder="note"
+                    aria-invalid={fieldErrors && !rule.column?.trim() ? true : undefined}
                     onChange={(e) => updateRule(index, "column", e.target.value)}
                   />
                 </div>
@@ -265,6 +277,7 @@ export function EtlRulesPage() {
                   <Input
                     value={rule.column ?? ""}
                     placeholder="status"
+                    aria-invalid={fieldErrors && !rule.column?.trim() ? true : undefined}
                     onChange={(e) => updateRule(index, "column", e.target.value)}
                   />
                 </div>

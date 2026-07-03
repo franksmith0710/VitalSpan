@@ -79,7 +79,10 @@ export function SyncJobHistoryPage() {
       </div>
 
       {error ? (
-        <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15"
+        >
           <p className="text-theme-sm text-error-700 dark:text-error-400">{error}</p>
           <Button type="button" variant="outline" size="sm" onClick={() => void loadRuns()}>
             重试

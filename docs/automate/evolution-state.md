@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
-| plan |  |
-| branch |  |
-| base_branch |  |
-| prd_ids |  |
-| pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
+| phase | P5_DOCS_READY |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r12.md |
+| design | docs/superpowers/specs/2026-07-03-m1b-data-quality-r12-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m1b-data-quality-r12.md |
+| branch | feat/m1b-data-quality-r12 |
+| base_branch | dev-auto |
+| prd_ids | DATA-002,ETL-001,DATA-004,DATA-003,DATA-005 |
+| pr_number | 28 |
+| last_verified_command | cd backend && ruff check . && pytest -v; cd backend && pytest -v ../tests/test_ingestion_config.py ../tests/test_sync_executor.py ../tests/test_scheduler.py ../tests/test_etl_rules.py ../tests/test_ingestion_api.py ../tests/test_ingestion_l1_smoke.py ../tests/test_doc_anchors_data.py; cd fe && pnpm install --frozen-lockfile && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx; pnpm run check:design |
-| last_ui_screenshots | N/A headless CI |
+| last_ui_verified_command | cd fe && pnpm exec vitest run src/pages/admin/ingestion/ingestion.smoke.test.tsx && pnpm run check:design |
+| last_ui_screenshots | N/A headless CI — ingestion vitest 27/27 PASS; check:design passed (34 files) |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T13:45:00Z |
 | skill_rule_index_source_count | 26 |
@@ -72,7 +72,7 @@
 - plan M1+M1B 全 [x]（16 项）；无含 `[ ]` 的活跃节
 - G0 PASS：无 Open PR；PR #26 已 Squash merge 至 dev-auto@0d63f3b；state 对账 phase→idle
 - 技能规则索引 26 条未过期；deployed_automate_rev=bf60b94ec4f4
-- P5 r11 收尾：DATA-001 破 90（90.4）；DATA-002/003/ETL-001/005 仍 88.2–89.4（<90）；STUCK DATA-* 4–6 轮
+- P5 r12 收尾：DATA-005 破 90（90.8）；DATA-004 89.8、DATA-003 89.6、DATA-002 89.4、ETL-001 89.3 仍 <90；pytest 194 + vitest ingestion 27
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
@@ -84,8 +84,7 @@
 | BOOT-001 | 10 | 89.2 | 2026-07-03 |
 | BOOT-004 | 10 | 89.5 | 2026-07-03 |
 | BOOT-003 | 7 | 87.9 | 2026-07-03 |
-| DATA-004 | 4 | 88.7 | 2026-07-03 |
-| DATA-002 | 6 | 88.2 | 2026-07-03 |
-| DATA-003 | 6 | 88.8 | 2026-07-03 |
-| ETL-001 | 5 | 88.5 | 2026-07-03 |
-| DATA-005 | 4 | 89.4 | 2026-07-03 |
+| DATA-004 | 5 | 89.8 | 2026-07-03 |
+| DATA-002 | 7 | 89.4 | 2026-07-03 |
+| DATA-003 | 7 | 89.6 | 2026-07-03 |
+| ETL-001 | 6 | 89.3 | 2026-07-03 |

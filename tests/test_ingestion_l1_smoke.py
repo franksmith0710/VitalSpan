@@ -462,3 +462,126 @@ def test_l1_runs_started_at_descending(
     assert len(items) >= 2
     assert items[0]["started_at"] >= items[1]["started_at"]
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=2)
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", return_value=MOCK_ROWS)
+def test_l1_data_smoke_orchestrator(mock_fetch, mock_write, smoke_client, auth_headers):
+    """T-L1-07: 单测编排 create→rules→run→poll→succeeded + trace + rows + 规则后列名。"""
+    payload = {
+        "name": "l1-orchestrator-smoke",
+        "source": {
+            "type": "mysql",
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+            "table": "dirty_orders",
+        },
+        "target_table": "orders_orchestrator",
+        "schedule_cron": None,
+    }
+    create = smoke_client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+
+    put_rules = smoke_client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules",
+        json={"rules": L1_RULES},
+        headers=auth_headers,
+    )
+    assert put_rules.status_code == 200
+
+    trace_headers = {**auth_headers, "X-Trace-Id": "l1-orchestrator-trace"}
+    run = smoke_client.post(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+        headers=trace_headers,
+    )
+    assert run.status_code == 202
+    run_id = run.json()["run_id"]
+
+    deadline = time.time() + 10
+    final = None
+    while time.time() < deadline:
+        listed = smoke_client.get(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/runs",
+            headers=auth_headers,
+        )
+        match = next((i for i in listed.json()["items"] if i["id"] == run_id), None)
+        if match and match["status"] in ("succeeded", "failed"):
+            final = match
+            break
+        time.sleep(0.05)
+
+    assert final is not None
+    assert final["status"] == "succeeded", final
+    assert final["trace_id"] == "l1-orchestrator-trace"
+    assert final["rows_synced"] == 2
+    written_rows = mock_write.call_args[0][1]
+    assert len(written_rows) == len(MOCK_ROWS)
+    assert "product" in written_rows[0]
+    assert "product_name" not in written_rows[0]
+
+    smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=2)
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", return_value=MOCK_ROWS)
+def test_l1_data_smoke_orchestrator_under_2_5_seconds(
+    mock_fetch, mock_write, smoke_client, auth_headers
+):
+    """T-L1-08: L1 编排全流程 mock 预算 <2.5s。"""
+    payload = {
+        "name": "l1-orchestrator-perf",
+        "source": {
+            "type": "mysql",
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+            "table": "dirty_orders",
+        },
+        "target_table": "orders_orchestrator_perf",
+        "schedule_cron": None,
+    }
+    start = time.perf_counter()
+
+    create = smoke_client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    assert create.status_code == 201
+    job_id = create.json()["id"]
+
+    put_rules = smoke_client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules",
+        json={"rules": L1_RULES},
+        headers=auth_headers,
+    )
+    assert put_rules.status_code == 200
+
+    run = smoke_client.post(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+        headers=auth_headers,
+    )
+    assert run.status_code == 202
+    run_id = run.json()["run_id"]
+
+    deadline = time.time() + 10
+    final = None
+    while time.time() < deadline:
+        listed = smoke_client.get(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/runs",
+            headers=auth_headers,
+        )
+        match = next((i for i in listed.json()["items"] if i["id"] == run_id), None)
+        if match and match["status"] in ("succeeded", "failed"):
+            final = match
+            break
+        time.sleep(0.05)
+
+    elapsed = time.perf_counter() - start
+    assert final is not None
+    assert final["status"] == "succeeded"
+    assert elapsed < 2.5
+
+    smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)

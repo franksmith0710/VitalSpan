@@ -111,7 +111,11 @@ def _seed_job_with_l1_rules() -> uuid.UUID:
 
 def _latest_run(job_id: uuid.UUID) -> SyncRun:
     db = get_meta_session()
-    run = db.scalar(select(SyncRun).where(SyncRun.job_id == job_id).order_by(SyncRun.started_at.desc()))
+    run = db.scalar(
+        select(SyncRun)
+        .where(SyncRun.job_id == job_id)
+        .order_by(SyncRun.finished_at.desc().nulls_last(), SyncRun.started_at.desc())
+    )
     db.close()
     assert run is not None
     return run
@@ -478,3 +482,93 @@ def test_run_job_l1_rule_chain_writes_transformed_fields(mock_fetch, mock_write)
     assert "product_name" not in first
     assert isinstance(first["amount"], float)
     assert first["note"] == "无备注"
+
+
+@patch("app.ingestion.sync_executor._write_analytics")
+@patch("app.ingestion.sync_executor._fetch_mysql_rows")
+def test_run_job_full_refresh_writes_latest_rows_not_cumulative(mock_fetch, mock_write):
+    """T-D02-19: 连续两次 run 第二次 write 行数等于最新 fetch（M1B 全量刷新，非累加）。"""
+    rows_first = [{"product_name": "A", "amount": "1", "status": "active", "note": None}]
+    rows_second = [
+        {"product_name": "A", "amount": "1", "status": "active", "note": None},
+        {"product_name": "B", "amount": "2", "status": "active", "note": None},
+    ]
+    mock_fetch.side_effect = [rows_first, rows_second]
+    mock_write.side_effect = [len(rows_first), len(rows_second)]
+
+    job_id = _seed_job()
+    run_job(job_id, "trace-full-refresh-1")
+    run_job(job_id, "trace-full-refresh-2")
+
+    assert mock_write.call_count == 2
+    second_written = mock_write.call_args_list[1][0][1]
+    assert len(second_written) == 2
+    first_written = mock_write.call_args_list[0][0][1]
+    assert len(first_written) == 1
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    assert run.rows_synced == 2
+
+
+@patch("app.ingestion.sync_executor.pymysql.connect")
+def test_run_job_source_timeout_failed_with_trace(mock_connect):
+    """T-D02-20: pymysql 超时 → failed + trace_id 保持 + error_message 含 timed out。"""
+    import pymysql
+
+    mock_connect.side_effect = pymysql.err.OperationalError(2003, "timed out")
+
+    job_id = _seed_job()
+    run_job(job_id, "trace-source-timeout")
+    run = _latest_run(job_id)
+    assert run.status == "failed"
+    assert run.trace_id == "trace-source-timeout"
+    assert run.error_message is not None
+    assert "timed out" in run.error_message.lower()
+    assert run.retry_count >= 1
+
+
+def _seed_named_job(name: str, target_table: str) -> uuid.UUID:
+    db = get_meta_session()
+    job = SyncJob(
+        name=name,
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="db",
+        source_username="u",
+        source_password_encrypted=encrypt_password("p"),
+        source_table="t",
+        target_table=target_table,
+        enabled=True,
+    )
+    db.add(job)
+    db.flush()
+    db.add(EtlRuleSet(job_id=job.id, rules=[]))
+    db.commit()
+    job_id = job.id
+    db.close()
+    return job_id
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=1)
+@patch("app.ingestion.sync_executor._fetch_mysql_rows")
+def test_run_job_failure_isolation_between_jobs(mock_fetch, mock_write):
+    """T-D02-21: job-A fetch 失败不影响 job-B succeeded。"""
+    job_a = _seed_named_job("fail-job-a", "tgt_fail_a")
+    job_b = _seed_named_job("ok-job-b", "tgt_ok_b")
+
+    def fetch_side_effect(job: SyncJob):
+        if job.target_table == "tgt_fail_a":
+            raise ConnectionError("job-a fetch down")
+        return [{"product_name": "A", "amount": "1", "status": "active", "note": None}]
+
+    mock_fetch.side_effect = fetch_side_effect
+
+    run_job(job_a, "trace-job-a-fail")
+    run_job(job_b, "trace-job-b-ok")
+
+    run_a = _latest_run(job_a)
+    run_b = _latest_run(job_b)
+    assert run_a.status == "failed"
+    assert run_b.status == "succeeded"
+    assert "job-a fetch down" in (run_a.error_message or "")

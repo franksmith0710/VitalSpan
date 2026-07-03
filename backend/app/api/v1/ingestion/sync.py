@@ -4,7 +4,7 @@ import uuid
 from typing import Annotated, Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -57,6 +57,13 @@ class SyncJobListResponse(BaseModel):
 
 class EtlRulesPayload(BaseModel):
     rules: list[dict[str, Any]]
+
+    @field_validator("rules", mode="before")
+    @classmethod
+    def rules_must_be_list(cls, value: Any) -> Any:
+        if not isinstance(value, list):
+            raise ValueError("规则须为 JSON 列表")
+        return value
 
 
 class EtlRulesResponse(BaseModel):
