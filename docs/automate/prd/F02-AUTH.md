@@ -4,14 +4,14 @@
 
 ### [AUTH-001] RoleRegistry 角色注册
 
-- **状态**：已实现（r19 quality push）
+- **状态**：已实现（r21 quality push）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：RoleRegistry 角色注册（SRS 追溯项）。
 - **验收标准**：
   - [x] 管理员可 CRUD 角色 code/显示名/描述
   - [x] 平台不预置业务角色
-- **代码锚点**：`backend/app/auth/roles/service.py` · `backend/app/api/v1/roles.py` · `tests/test_auth_rbac_l1.py` T-AUTH-R01~R09
+- **代码锚点**：`backend/app/auth/roles/service.py` · `backend/app/api/v1/roles.py` · `tests/test_auth_rbac_l1.py` T-AUTH-R01~R12 · migration `0007`
 - **演化建议**：生产管理员鉴权守卫；与 AUTH-008 全平台审计联动
 - **里程碑对齐**：
 
@@ -56,52 +56,52 @@
 
 ### [AUTH-005] 权限维度类型定义
 
-- **状态**：已实现（r19 quality push）
+- **状态**：已实现（r21 quality push）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：权限维度类型定义（SRS 追溯项）。
 - **验收标准**：
   - [x] 可定义物理对象/地域/时间/自定义维度
   - [x] 维度类型可扩展注册
-- **代码锚点**：`backend/app/auth/rls/dimensions/service.py` · `backend/app/api/v1/rls.py` · `tests/test_auth_rbac_l1.py` T-AUTH-D01~D08 · 维度分页 smoke
+- **代码锚点**：`backend/app/auth/rls/dimensions/service.py` · `backend/app/api/v1/rls.py` · `tests/test_auth_rbac_l1.py` T-AUTH-D01~D14
 - **演化建议**：AUTH-006 维度分组；AUTH-007 RLS 谓词消费维度元数据
 - **里程碑对齐**：
 
 ### [AUTH-006] 权限维度分组与角色关联
 
-- **状态**：L1 已实现（r20 kickoff）
+- **状态**：已实现（r21 quality push）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：权限维度分组与角色关联（SRS 追溯项）。
 - **验收标准**：
   - [x] 维度分组可关联角色
   - [x] 用户继承角色权限（有效维度集 = 直绑 ∪ 分组展开）
-- **代码锚点**：`backend/app/auth/rls/groups/service.py` · `backend/app/auth/rls/bindings/service.py` · `backend/app/api/v1/rls.py` · `backend/app/api/v1/roles.py` · `tests/test_auth_rbac_l1.py` T-AUTH-GP01~GP12
+- **代码锚点**：`backend/app/auth/rls/groups/service.py` · `backend/app/auth/rls/bindings/service.py` · `backend/app/api/v1/rls.py` · `backend/app/api/v1/roles.py` · `tests/test_auth_rbac_l1.py` T-AUTH-GP01~GP15
 - **演化建议**：Admin UI 维度分组配置；生产维度值校验扩展
 - **里程碑对齐**：
 
 ### [AUTH-007] RLS 谓词生成与注入
 
-- **状态**：L1 已实现（r20 kickoff）
+- **状态**：已实现（r21 quality push）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：RLS 谓词生成与注入（SRS 追溯项）。
 - **验收标准**：
   - [x] 查询执行前合并 WHERE 谓词（`get_query_rls_fragment` hook）
   - [x] 越权 smoke test 通过
-- **代码锚点**：`backend/app/auth/rls/predicate.py` · `backend/app/auth/rls/hooks.py` · `tests/test_auth_rbac_l1.py` T-AUTH-RLS01~RLS08
-- **演化建议**：M4 `query` 域对接 hook；全方言 SQL 改写
+- **代码锚点**：`backend/app/auth/rls/predicate.py` · `backend/app/auth/rls/hooks.py` · `backend/app/query/rls/guard.py` · `tests/test_auth_rbac_l1.py` T-AUTH-RLS01~RLS13
+- **演化建议**：M4 `query` 全方言 SQL 改写；生产 RLS 策略扩展
 - **里程碑对齐**：
 
 ### [AUTH-008] 操作审计日志
 
-- **状态**：L1 已实现（r20 kickoff）
+- **状态**：已实现（r21 quality push）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：操作审计日志（SRS 追溯项）。
 - **验收标准**：
   - [x] 权限变更写入审计日志（auth 域写路径挂钩）
   - [x] 敏感操作可追溯（admin 守卫分页查询）
-- **代码锚点**：`backend/app/auth/audit/write_hooks.py` · `backend/app/auth/audit/service.py` · `backend/app/api/v1/audit.py` · `tests/test_auth_rbac_l1.py` T-AUTH-AU01~AU10 · T-AUTH-A01~A09 回归
+- **代码锚点**：`backend/app/auth/audit/write_hooks.py` · `backend/app/auth/audit/service.py` · `backend/app/api/v1/audit.py` · `tests/test_auth_rbac_l1.py` T-AUTH-AU01~AU13 · T-AUTH-A01~A09 回归
 - **演化建议**：非 auth 域写操作扩展；生产留存策略
 - **里程碑对齐**：

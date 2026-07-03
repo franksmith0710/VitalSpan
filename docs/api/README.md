@@ -52,8 +52,8 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/roles` | 角色列表/创建（`?code_prefix=&limit=`，上限 500） | 内部 | 一期 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
-| GET/PUT/DELETE | `/api/v1/roles/{id}` | 角色详情/更新/删除 | 内部 | 一期 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
+| GET/POST | `/api/v1/roles` | 角色列表/创建（`?code_prefix=&limit=&offset=`；响应 `total`；`RoleOut.is_active`） | 内部 | 一期 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
+| GET/PUT/DELETE | `/api/v1/roles/{id}` | 角色详情/更新/删除（PUT body 可选 `is_active`） | 内部 | 一期 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
 | GET/POST | `/api/v1/users` | 用户列表/创建 | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | GET/PUT | `/api/v1/users/{id}` | 用户详情/更新 | 内部 | 一期 | AUTH-003 | 规划 | `backend/app/api/v1/users.py` |
 | PUT | `/api/v1/users/{id}/roles` | 用户角色绑定 | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
@@ -68,6 +68,8 @@ redoc: /redoc
 | PUT | `/api/v1/roles/{id}/dimension-values` | 角色直绑维度值全量替换 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
 | PUT | `/api/v1/roles/{id}/dimension-groups` | 角色分组绑定全量替换 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
 | GET | `/api/v1/roles/{id}/effective-dimensions` | 角色有效维度集 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
+
+> **Admin 权限工作流（FE 下轮）**：`GET /roles` → `GET /rls/dimensions` → `GET /rls/groups` → `PUT /roles/{id}/dimension-groups` → `GET /audit/events`
 
 ---
 
