@@ -177,3 +177,59 @@ class AuditEventOut(BaseModel):
 class AuditListResponse(BaseModel):
     items: list[AuditEventOut]
     total: int
+
+
+class DimensionGroupCreate(BaseModel):
+    dimension_type_id: uuid.UUID
+    code: str
+    name: str = Field(min_length=1, max_length=128)
+    parent_id: uuid.UUID | None = None
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, value: str) -> str:
+        if not ROLE_CODE_RE.match(value):
+            raise ValueError("code must match ^[a-z][a-z0-9_]{1,63}$")
+        return value
+
+
+class DimensionGroupUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    parent_id: uuid.UUID | None = None
+
+
+class DimensionGroupOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    dimension_type_id: uuid.UUID
+    code: str
+    name: str
+    parent_id: uuid.UUID | None
+
+
+class DimensionGroupListResponse(BaseModel):
+    items: list[DimensionGroupOut]
+    total: int
+
+
+class DimensionGroupValuesReplace(BaseModel):
+    values: list[str] = Field(min_length=1)
+
+
+class DimensionGroupValuesResponse(BaseModel):
+    items: list[str]
+
+
+class RoleDimensionValuesReplace(BaseModel):
+    dimension_type_id: uuid.UUID
+    values: list[str]
+
+
+class RoleDimensionGroupsReplace(BaseModel):
+    group_ids: list[uuid.UUID]
+
+
+class EffectiveDimensionsResponse(BaseModel):
+    dimension_type_id: uuid.UUID
+    values: list[str]

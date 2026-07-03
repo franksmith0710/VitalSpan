@@ -38,6 +38,10 @@ def ensure_auth_tables():
     yield
     with engine.begin() as conn:
         for table in (
+            "auth_role_dimension_groups",
+            "auth_role_dimension_values",
+            "auth_dimension_group_values",
+            "auth_dimension_groups",
             "auth_audit_events",
             "auth_dimension_type_refs",
             "auth_user_roles",
@@ -56,6 +60,10 @@ def clean_auth_tables_between_tests():
     engine = get_meta_engine()
     with engine.begin() as conn:
         for table in (
+            "auth_role_dimension_groups",
+            "auth_role_dimension_values",
+            "auth_dimension_group_values",
+            "auth_dimension_groups",
             "auth_audit_events",
             "auth_dimension_type_refs",
             "auth_user_roles",
