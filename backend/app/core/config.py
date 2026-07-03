@@ -37,6 +37,18 @@ class Settings(BaseSettings):
             raise ValueError("托管分析库 URL 须为 postgresql 或 postgresql+psycopg 协议")
         return stripped
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def validate_database_url(cls, value: Any) -> str:
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("DATABASE_URL 不能为空")
+        stripped = value.strip()
+        if not stripped.startswith(
+            ("postgresql://", "postgresql+psycopg://", "sqlite+")
+        ):
+            raise ValueError("平台元库 URL 须为 postgresql 或 postgresql+psycopg 协议")
+        return stripped
+
     @field_validator("credential_fernet_key")
     @classmethod
     def validate_credential_fernet_key(cls, value: str) -> str:

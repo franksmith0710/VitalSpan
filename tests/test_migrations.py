@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import pool as sa_pool
+from sqlalchemy.exc import OperationalError
 
 from app.core.config import Settings, get_settings
 
@@ -82,11 +84,13 @@ def test_alembic_ini_script_location_matches_repo():
     assert migrations_dir.is_dir()
 
 
-def test_settings_empty_database_url_documents_current_behavior(monkeypatch):
-    """T-MIG-06: 空白 DATABASE_URL 记录现状（当前无格式校验）。"""
+def test_settings_empty_database_url_raises(monkeypatch):
+    """T-MIG-06: 空白 DATABASE_URL → ValidationError。"""
     monkeypatch.setenv("DATABASE_URL", "")
     get_settings.cache_clear()
-    assert get_settings().database_url == ""
+    with pytest.raises(ValidationError) as exc_info:
+        get_settings()
+    assert "DATABASE_URL" in str(exc_info.value) or "不能为空" in str(exc_info.value)
 
 
 def test_settings_missing_secret_key_raises(monkeypatch):
@@ -135,14 +139,15 @@ def test_migrations_env_fails_when_get_settings_raises(monkeypatch):
             importlib.import_module("migrations.env")
 
 
-def test_settings_invalid_database_url_documents_current_behavior():
-    """T-MIG-10: 非法格式 database_url 记录现状（当前无 URL 校验）。"""
-    settings = Settings(
-        database_url="not-a-url",
-        secret_key="ci-test-secret-key-min-32-chars-long!!",
-        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-    )
-    assert settings.database_url == "not-a-url"
+def test_settings_invalid_database_url_raises():
+    """T-MIG-10: 非法格式 database_url → ValidationError 含协议提示。"""
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(
+            database_url="not-a-url",
+            secret_key="ci-test-secret-key-min-32-chars-long!!",
+            credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        )
+    assert "postgresql" in str(exc_info.value)
 
 
 def test_migrations_offline_url_matches_settings(monkeypatch):
@@ -486,4 +491,107 @@ def test_migrations_env_reimport_under_budget(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", url_b)
     get_settings.cache_clear()
     assert import_env_timed() < 2.0
+    sys.modules.pop("migrations.env", None)
+
+
+def test_alembic_heads_single_head():
+    """T-MIG-25: alembic heads 子进程 returncode==0 且 stdout 含 0002（单 head）。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    env = os.environ.copy()
+    env.setdefault("DATABASE_URL", KNOWN_URL)
+    env.setdefault("SECRET_KEY", "ci-test-secret-key-min-32-chars-long!!")
+    env.setdefault(
+        "CREDENTIAL_FERNET_KEY",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "heads"],
+        cwd=backend_dir,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "0002" in result.stdout
+
+
+def test_migrations_online_uses_null_pool(monkeypatch):
+    """T-MIG-26: online 路径 engine_from_config 使用 poolclass=NullPool。"""
+    fake_settings = Settings(
+        database_url=KNOWN_URL,
+        secret_key="ci-test-secret-key-min-32-chars-long!!",
+        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
+    get_settings.cache_clear()
+    sys.modules.pop("migrations.env", None)
+
+    mock_config = MagicMock()
+    mock_config.config_file_name = None
+    mock_config.get_section.return_value = {}
+
+    mock_connection = MagicMock()
+    mock_engine = MagicMock()
+    mock_engine.connect.return_value.__enter__ = MagicMock(return_value=mock_connection)
+    mock_engine.connect.return_value.__exit__ = MagicMock(return_value=False)
+
+    mock_context = MagicMock()
+    mock_context.config = mock_config
+    mock_context.is_offline_mode.return_value = False
+    mock_context.begin_transaction.return_value.__enter__ = MagicMock()
+    mock_context.begin_transaction.return_value.__exit__ = MagicMock(return_value=False)
+
+    captured_kwargs: dict = {}
+
+    def capture_engine_from_config(configuration, prefix="sqlalchemy.", **kwargs):
+        captured_kwargs.update(kwargs)
+        return mock_engine
+
+    with patch("alembic.context", mock_context):
+        with patch("sqlalchemy.engine_from_config", side_effect=capture_engine_from_config):
+            importlib.import_module("migrations.env")
+
+    assert captured_kwargs.get("poolclass") is sa_pool.NullPool
+    sys.modules.pop("migrations.env", None)
+
+
+def test_settings_mysql_protocol_raises():
+    """T-MIG-27: mysql:// 协议 Settings → ValidationError 含 postgresql。"""
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(
+            database_url="mysql://user:pass@localhost:3306/db",
+            secret_key="ci-test-secret-key-min-32-chars-long!!",
+            credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        )
+    assert "postgresql" in str(exc_info.value)
+
+
+def test_migrations_online_connect_operational_error_propagates(monkeypatch):
+    """T-MIG-28: online connect() 抛 OperationalError 向上传播。"""
+    fake_settings = Settings(
+        database_url=KNOWN_URL,
+        secret_key="ci-test-secret-key-min-32-chars-long!!",
+        credential_fernet_key="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+    )
+    monkeypatch.setattr("app.core.config.get_settings", lambda: fake_settings)
+    get_settings.cache_clear()
+    sys.modules.pop("migrations.env", None)
+
+    mock_config = MagicMock()
+    mock_config.config_file_name = None
+    mock_config.get_section.return_value = {}
+
+    mock_engine = MagicMock()
+    mock_engine.connect.side_effect = OperationalError("stmt", {}, Exception("connection refused"))
+
+    mock_context = MagicMock()
+    mock_context.config = mock_config
+    mock_context.is_offline_mode.return_value = False
+
+    with patch("alembic.context", mock_context):
+        with patch("sqlalchemy.engine_from_config", return_value=mock_engine):
+            with pytest.raises(OperationalError):
+                importlib.import_module("migrations.env")
+
     sys.modules.pop("migrations.env", None)
