@@ -185,3 +185,41 @@ def test_five_hundred_noop_rename_rules_under_one_second():
     elapsed = time.perf_counter() - start
     assert len(result) == len(rows)
     assert elapsed < 1.0
+
+
+EIGHT_RULE_CHAIN = [
+    *DEEP_RULE_CHAIN,
+    {"type": "rename_column", "from": "remark", "to": "remark_copy"},
+    {"type": "filter_rows", "column": "status", "op": "ne", "value": "deleted"},
+]
+
+
+def test_eight_rule_chain_100_rows_under_400ms():
+    """T-ETL-17: 8 规则深链在 100 行上 <0.4s。"""
+    rows = [
+        {
+            "product_name": f"Item{i}",
+            "amount": str(i),
+            "status": "active",
+            "note": None if i % 2 else f"n{i}",
+        }
+        for i in range(100)
+    ]
+    start = time.perf_counter()
+    result = apply_rules(rows, EIGHT_RULE_CHAIN)
+    elapsed = time.perf_counter() - start
+    assert len(result) >= 1
+    assert elapsed < 0.4
+
+
+def test_dirty_cast_null_observable_with_fill_null():
+    """T-ETL-18: amount='not-a-number' cast 失败变 None；fill_null 补默认；行保留。"""
+    rows = [{"amount": "not-a-number", "note": None, "status": "active"}]
+    rules = [
+        {"type": "cast_type", "column": "amount", "to": "float"},
+        {"type": "fill_null", "column": "note", "value": "默认备注"},
+    ]
+    result = apply_rules(rows, rules)
+    assert len(result) == 1
+    assert result[0]["amount"] is None
+    assert result[0]["note"] == "默认备注"

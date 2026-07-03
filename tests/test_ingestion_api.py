@@ -432,3 +432,24 @@ def test_put_etl_rules_non_list_body_422(client, auth_headers, job_payload):
     )
     assert response.status_code == 422
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_put_etl_rules_object_body_422_chinese_message(client, auth_headers, job_payload):
+    """T-ETL-19: PUT etl-rules body rules 为 object 非 list → 422 + message 含规则/列表。"""
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    response = client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules",
+        json={"rules": {"type": "rename_column"}},
+        headers=auth_headers,
+    )
+    assert response.status_code == 422
+    body = response.json()
+    raw = body.get("message") or body.get("detail") or body
+    message = (
+        " ".join(str(item.get("msg", item)) for item in raw)
+        if isinstance(raw, list)
+        else str(raw)
+    )
+    assert "规则" in message or "列表" in message
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
