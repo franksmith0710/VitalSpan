@@ -9,7 +9,7 @@
 | phase | P5_DOCS_READY |
 | branch | cursor/bc-f9be599f-3659-4ccf-88f3-8a04502e6c80-9b41 |
 | base_branch | dev-auto |
-| pr_number | |
+| pr_number | 13 |
 | last_verified_command | plan Task5 Step6 P4 precheck (rg + test) |
 | last_verified_exit_code | 0 |
 | design | docs/superpowers/specs/2026-07-03-m1-plan-close-design.md |
