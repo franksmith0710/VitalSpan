@@ -45,5 +45,5 @@
 
 ## 验收与 L1 smoke（DATA-005）
 
-- L1 端到端：`tests/test_ingestion_l1_smoke.py`（`T-L1-05` analytics_sqlite 写穿、`T-L1-06` 运行历史排序）
-- 文档锚点：`tests/test_doc_anchors_data.py` T-D05-08~09
+- L1 端到端：`tests/test_ingestion_l1_smoke.py`（`T-L1-07` L1 编排 smoke、`T-L1-08` 编排 <2.5s、`T-L1-05` analytics_sqlite 写穿、`T-L1-06` 运行历史排序）
+- 文档锚点：`tests/test_doc_anchors_data.py` T-D05-08~12

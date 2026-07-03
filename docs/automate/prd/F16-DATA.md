@@ -52,7 +52,7 @@
   - [x] 手动 `POST .../run` 可将源表写入托管库
   - [x] 运行历史含状态与 `traceId` 日志
 - **代码锚点**：`backend/app/ingestion/sync_executor.py` · `scheduler.py`
-- **演化建议**：`tests/test_sync_executor.py` T-D02-16~17（1000 行批量、重试耗尽 failed+traceId）；`tests/test_scheduler.py` T-D02-18（cron 变更重注册）；`tests/test_ingestion_l1_smoke.py` T-L1-04 端到端 <3s；扩展 postgres 源 executor；CI compose 跑 L1 全链路
+- **演化建议**：`tests/test_sync_executor.py` T-D02-19~21（全量刷新契约、源超时 failed+traceId、双 job 失败隔离）；`tests/test_scheduler.py` T-D02-22（cron 三次变更重注册）；`tests/test_ingestion_l1_smoke.py` T-L1-07~08 L1 编排 smoke
 
 ### [ETL-001] 清洗规则引擎（轻量）
 
@@ -91,4 +91,4 @@
   - [x] DATA-SMOKE L1 用例通过（`tests/test_ingestion_e2e.py`）
   - [x] SRS §3.6、api/README §9、services/ingestion 状态已回写
 - **代码锚点**：`tests/test_ingestion_e2e.py` · `tests/test_ingestion_l1_smoke.py` · `tests/test_doc_anchors_data.py` · `docs/automate/plan.md` M1B
-- **演化建议**：`tests/test_ingestion_l1_smoke.py` T-L1-05~06（analytics_sqlite 写穿、runs 时间序）；`tests/test_doc_anchors_data.py` T-D05-08~09 锚点对账；CI compose 跑 L1 integration（当前 skip）；L2 dataSourceId 登记见 M3/M4
+- **演化建议**：`tests/test_ingestion_l1_smoke.py` T-L1-07~08（`test_l1_data_smoke_orchestrator` L1 编排 + <2.5s）；`tests/test_doc_anchors_data.py` T-D05-10~12 锚点对账
