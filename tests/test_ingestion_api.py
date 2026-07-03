@@ -135,3 +135,93 @@ def test_put_etl_rules_roundtrip(client, auth_headers, job_payload):
     got = client.get(f"/api/v1/ingestion/sync-jobs/{job_id}/etl-rules", headers=auth_headers)
     assert got.json()["rules"] == rules
     client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+from datetime import datetime, timezone
+
+from app.ingestion.models import SyncRun, get_meta_session
+
+
+def test_update_sync_job_put_roundtrip(client, auth_headers, job_payload):
+    """T-D01-09: PUT 更新 name/target_table → GET 一致。"""
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    updated = {
+        **job_payload,
+        "name": "renamed-job",
+        "target_table": "orders_renamed",
+    }
+    put = client.put(
+        f"/api/v1/ingestion/sync-jobs/{job_id}",
+        json=updated,
+        headers=auth_headers,
+    )
+    assert put.status_code == 200
+    assert put.json()["name"] == "renamed-job"
+    assert put.json()["target_table"] == "orders_renamed"
+    got = client.get(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+    assert got.json()["name"] == "renamed-job"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_create_job_invalid_source_type_422(client, auth_headers, job_payload):
+    """T-D01-10: source.type oracle → 422。"""
+    bad = {**job_payload, "source": {**job_payload["source"], "type": "oracle"}}
+    response = client.post("/api/v1/ingestion/sync-jobs", json=bad, headers=auth_headers)
+    assert response.status_code == 422
+
+
+def test_trigger_run_conflict_when_running_exists_409(client, auth_headers, job_payload):
+    """T-D01-11: 已有 running run → POST run 409。"""
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = uuid.UUID(create.json()["id"])
+    db = get_meta_session()
+    db.add(
+        SyncRun(
+            job_id=job_id,
+            status="running",
+            trace_id="seed-running",
+            started_at=datetime.now(timezone.utc),
+        )
+    )
+    db.commit()
+    db.close()
+    with patch("app.api.v1.ingestion.sync.get_settings") as mock_get:
+        mock_get.return_value.analytics_database_url = "postgresql+psycopg://u:p@localhost:5433/a"
+        response = client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+            headers=auth_headers,
+        )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "RUN_ALREADY_IN_PROGRESS"
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+def test_openapi_lists_ingestion_sync_job_routes(client):
+    """T-D01-12: OpenAPI paths 含 sync-jobs CRUD、run、runs、etl-rules。"""
+    paths = client.get("/openapi.json").json()["paths"]
+    for fragment in (
+        "/ingestion/sync-jobs",
+        "/ingestion/sync-jobs/{job_id}/run",
+        "/ingestion/sync-jobs/{job_id}/runs",
+        "/ingestion/sync-jobs/{job_id}/etl-rules",
+    ):
+        assert any(fragment in p for p in paths), fragment
+
+
+@patch("app.api.v1.ingestion.sync.run_job")
+def test_trigger_run_manual_accepted_202(mock_run_job, client, auth_headers, job_payload):
+    """T-D01-13: 手动 run 202 + run_id。"""
+    create = client.post("/api/v1/ingestion/sync-jobs", json=job_payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    with patch("app.api.v1.ingestion.sync.get_settings") as mock_get:
+        mock_get.return_value.analytics_database_url = "postgresql+psycopg://u:p@localhost:5433/a"
+        response = client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+            headers=auth_headers,
+        )
+    assert response.status_code == 202
+    body = response.json()
+    assert body["status"] == "running"
+    assert "run_id" in body
+    client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
