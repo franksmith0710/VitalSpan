@@ -26,7 +26,7 @@
   - [x] `fe/` 可构建且 `/admin` 路由壳层可访问
   - [x] shadcn/ui + Tailwind v4 主题加载
 - **代码锚点**：`fe/src/layouts/AdminLayout.tsx` · `fe/src/routes.tsx` · `fe/src/index.css` · `fe/scripts/check-design.mjs` · `fe/src/components/README.md`
-- **演化建议**：vitest 18 项 + node:test 3 项覆盖 routes/AdminLayout/AdminHome a11y smoke（T-FE-08~14）与 `rgb()` design 门禁负向（T-FE-DG-03）；二期补 TanStack Query、`@/lib/api.ts` 与业务页
+- **演化建议**：vitest 28 项 + node:test 3 项覆盖 routes/AdminLayout/AdminHome a11y smoke（T-FE-08~19）含主题切换（T-FE-15）、vite proxy（T-FE-18）与 `rgb()` design 门禁负向（T-FE-DG-03）；二期补 TanStack Query、`@/lib/api.ts` 与业务页
 
 ### [BOOT-003] 鉴权中间件骨架
 
@@ -40,7 +40,7 @@
   - [x] 公开路径（`/health`、`/docs`、`/redoc`、`/openapi.json`）无需认证仍可访问
   - [x] 认证上下文可注入 handler
 - **代码锚点**：`backend/app/auth/middleware.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/me.py`（`main.py` 注册 `AuthMiddleware`）
-- **演化建议**：`docs/services/auth.md` 入口表已含 `api/v1/me.py` 锚点，与 api README §1 PUBLIC_PATHS 对齐；plan §文档回写已勾选；二期替换 `Bearer dev` 为正式 JWT；`tests/test_auth.py` + `test_me.py` 已覆盖 401 矩阵、公开路径与 OPTIONS 预检（T-AUTH-02~08）
+- **演化建议**：`docs/services/auth.md` 入口表已含 `api/v1/me.py` 锚点，与 api README §1 PUBLIC_PATHS 对齐；`tests/test_auth.py` + `test_me.py` 6 项覆盖 401 矩阵、Bearer invalid、production 拒绝 dev token 与公开路径（T-AUTH-02~08、T-ME-03~06）；二期替换 `Bearer dev` 为正式 JWT
 
 ### [BOOT-004] 配置与日志基线
 
@@ -66,7 +66,7 @@
   - [x] Alembic 或等价迁移可执行（`alembic upgrade head`）
   - [x] 平台元数据库可连接（`docker-compose.yml` 本地 PostgreSQL）
 - **代码锚点**：`backend/migrations/` · `docker-compose.yml` · `backend/migrations/env.py`
-- **演化建议**：`tests/test_migrations.py` 14 项覆盖 revision 链、offline `run_migrations`、凭证负例与 env 导入失败（T-MIG-01~14）；CI 仍不跑 docker `alembic upgrade`；M1B 增 ingestion 元表 revision
+- **演化建议**：`tests/test_migrations.py` 18 项覆盖 revision 链、online/offline `run_migrations`、settings rebind（T-MIG-01~18）；CI 仍不跑 docker `alembic upgrade`；M1B 增 ingestion 元表 revision
 
 ### [BOOT-006] CI 与质量门禁
 
@@ -79,4 +79,4 @@
   - [x] lint + 单元测试 CI 通过
   - [x] 前后端可本地联调
 - **代码锚点**：`.github/workflows/ci.yml` · `tests/conftest.py` · `tests/test_health.py`
-- **演化建议**：CI 已含 backend 77 pytest + frontend 18 vitest + node:test 3；`tests/test_conftest_contract.py` 3 项断言 `client`/`trace_id_headers` fixture 契约；二期增 docker postgres job 与 Playwright E2E
+- **演化建议**：CI 已含 backend 90 pytest + frontend 28 vitest + node:test 3；`tests/test_conftest_contract.py` 5 项断言 `client`/`auth_headers`/`trace_id_headers` fixture 契约；`.github/workflows/ci.yml` 显式 `DATABASE_URL`/`SECRET_KEY` env；二期增 docker postgres job 与 Playwright E2E

@@ -27,7 +27,7 @@ describe("AppRoutes smoke", () => {
     cleanup();
   });
 
-  it("renders nested sync-jobs route through AdminLayout (T-FE-11)", async () => {
+  it("renders nested sync-jobs route through AdminLayout (T-FE-11, T-FE-17)", async () => {
     setDesktopViewport();
     mockApiFetch.mockResolvedValueOnce({ items: [] });
     render(
@@ -36,8 +36,9 @@ describe("AppRoutes smoke", () => {
       </MemoryRouter>,
     );
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
+    const main = screen.getAllByRole("main")[0];
     expect(
-      await screen.findByRole("heading", { name: "同步任务" }),
+      within(main).getByRole("heading", { level: 1, name: "同步任务" }),
     ).toBeInTheDocument();
   });
 
@@ -107,6 +108,17 @@ describe("AppRoutes smoke", () => {
     const links = screen.getAllByRole("link", { name: "数据源" });
     expect(links.length).toBeGreaterThanOrEqual(1);
     expect(links[0]).toHaveAttribute("href", "/admin");
+  });
+
+  it("shows 数据接入 nav link at /admin (T-FE-19)", () => {
+    setDesktopViewport();
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole("link", { name: "数据接入" });
+    expect(link).toHaveAttribute("href", "/admin/ingestion/sync-jobs");
   });
 
   it("renders AdminHome welcome as h1 (T-FE-09)", () => {
