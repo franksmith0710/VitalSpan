@@ -7,16 +7,16 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r23.md |
-| design | docs/superpowers/specs/2026-07-03-m3-datasource-quality-r23-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m3-datasource-quality-r23.md |
-| branch | feat/evolution-r23-m3-datasource-quality |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r24.md |
+| design | docs/superpowers/specs/2026-07-03-m3-datasource-quality-r24-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m3-datasource-quality-r24.md |
+| branch | feat/evolution-r24-m3-datasource-quality |
 | base_branch | dev-auto |
-| prd_ids | CONN-001,DS-001,DS-003,DS-002,DS-005 |
-| pr_number | 43 |
+| prd_ids | CONN-001, DS-001, DS-002, DS-003, DS-005 |
+| pr_number | 45 |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端 r23） |
+| last_ui_verified_command | N/A（纯后端 r24） |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r24 PRD 重评：DS-001/002/003/005 + CONN-001 质量推分 89.1–91.9→90.1–92.1（CONN-001 破 90 STUCK 清零）；pytest 476 + 4 skipped；T-DS-R09~R12、C17~C22、T11~T15、K09~K12、CONN-M11~M16
+- P4 r24 独立验证：backend ruff PASS + pytest 476 passed/4 skipped；test_datasources_quality_r24 27/27 + r23/L1 53/53；round-target CONN-001/DS-001/002/003/005 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r24-m3-datasource-quality；base_branch dev-auto
 - P5 r23 PRD 重评：DS-001/002/003/005 + CONN-001 质量推分 86.8–91.1→89.1–91.9（DS-001 破 90 STUCK 清零；CONN-001 round 2）；pytest 449 + 4 skipped；T-DS-R05~R08、C09~C16、T06~T10、K05~K08、CONN-M05~M10
 - P4 r23 独立验证：backend ruff PASS + pytest 449 passed/4 skipped；round-target CONN-001/DS-001/002/003/005 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r23-m3-datasource-quality；base_branch dev-auto
 - P3 r23 实现完成：7 Task 全绿；backend ruff+pytest 449 passed/4 skipped（+30 datasources quality）；ui_design_skill: none；branch feat/evolution-r23-m3-datasource-quality；base_branch dev-auto
@@ -109,4 +111,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| CONN-001 | 2 | 89.1 | 2026-07-03 |

@@ -4,7 +4,7 @@
 
 ### [CONN-001] MySQL 连接器
 
-- **状态**：部分实现（L1 kickoff r22；quality r23）
+- **状态**：部分实现（L1 kickoff r22；quality r23/r24）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：MySQL 连接器（SRS 追溯项）。
@@ -12,7 +12,7 @@
   - [ ] type=`mysql` 已注册且 UI 可选
   - [ ] 连通性测试 + schema 浏览 + 只读查询通过
   - [x] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/mysql.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_datasources_l1.py` T-CONN-M01~M04 · `tests/test_datasources_quality_r23.py` T-CONN-M05~M10
+- **代码锚点**：`backend/app/datasources/dialects/mysql.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_datasources_l1.py` T-CONN-M01~M04 · `tests/test_datasources_quality_r23.py` T-CONN-M05~M10 · `tests/test_datasources_quality_r24.py` T-CONN-M11~M16
 - **演化建议**：DS-004 schema 元数据浏览；QUERY 只读查询对接；Admin UI 类型选择；真实 MySQL compose 集成测试
 - **里程碑对齐**：
 ### [CONN-002] PostgreSQL 连接器

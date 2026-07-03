@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.29
+version: 1.2.30
 last_updated: 2026-07-03
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-03 · P5 r23 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r23）；pytest 449/4 skipped；T-DS-R05~R08、C09~C16、T06~T10、K05~K08、CONN-M05~M10；migration 0009 soft delete + unregister/usage_checker + pagination/PATCH + test inflight/traceId + credential decrypt errors + MySQL error codes/ssl；完整度 88–96%→92–96%，可靠性 92–94%→94–96%，测试覆盖 96–100%→100%，安全性 88–92%→88–94%，总分 86.8–91.1→89.1–91.9（DS-001 破 90 STUCK 清零；CONN-001 仍 <90 STUCK round 2）；远期未实现项仍占 Top10
+> 更新：2026-07-03 · P5 r24 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r24）；pytest 476/4 skipped；T-DS-R09~R12、C17~C22、T11~T15、K09~K12、CONN-M11~M16；migration 0010 connectionOptions + code 复用 + registry RLock/export_type_catalog + inflight release + Fernet PREVIOUS key；完整度 86–96%→92–98%，可靠性 94–96%→96–98%，架构 90–92%→90–94%，安全性 88–94%→88–96%，总分 89.1–91.9→90.1–92.1（CONN-001 破 90 STUCK 清零）；远期未实现项仍占 Top10
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -54,15 +54,15 @@ domain_count: 16
 | AUTH-006 | 82 | 96 | 94 | N/A | 90 | 100 | 86 | 88 | 90.8 | 用户价值 |
 | AUTH-007 | 82 | 96 | 94 | N/A | 90 | 100 | 86 | 90 | 91.1 | 用户价值 |
 | AUTH-008 | 84 | 96 | 94 | N/A | 90 | 100 | 90 | 92 | 92.1 | 用户价值 |
-| DS-001 | 82 | 92 | 94 | N/A | 92 | 100 | 86 | 88 | 90.4 | 用户价值 |
-| DS-002 | 84 | 96 | 96 | N/A | 90 | 100 | 86 | 90 | 91.8 | 用户价值 |
-| DS-003 | 84 | 94 | 96 | N/A | 90 | 100 | 86 | 90 | 91.4 | 用户价值 |
+| DS-001 | 82 | 94 | 94 | N/A | 94 | 100 | 86 | 88 | 90.9 | 用户价值 |
+| DS-002 | 84 | 98 | 96 | N/A | 90 | 100 | 86 | 90 | 92.1 | 用户价值 |
+| DS-003 | 84 | 94 | 98 | N/A | 90 | 100 | 86 | 90 | 91.8 | 用户价值 |
 | DS-004 | 56 | 5 | 0 | N/A | 11 | 0 | 0 | 13 | 13.6 | 完整度 |
-| DS-005 | 82 | 96 | 96 | N/A | 90 | 100 | 86 | 94 | 91.9 | 用户价值 |
+| DS-005 | 82 | 96 | 96 | N/A | 90 | 100 | 86 | 96 | 92.1 | 用户价值 |
 | DS-006 | 58 | 5 | 0 | N/A | 13 | 0 | 0 | 9 | 13.7 | 完整度 |
 | DS-007 | 54 | 5 | 0 | N/A | 14 | 0 | 0 | 10 | 13.2 | 完整度 |
 | DS-008 | 55 | 5 | 0 | N/A | 8 | 0 | 0 | 11 | 12.8 | 完整度 |
-| CONN-001 | 82 | 86 | 94 | N/A | 90 | 100 | 86 | 88 | 89.1 | 完整度 |
+| CONN-001 | 82 | 92 | 94 | N/A | 90 | 100 | 86 | 88 | 90.1 | 用户价值 |
 | CONN-002 | 57 | 5 | 0 | N/A | 10 | 0 | 0 | 13 | 13.6 | 完整度 |
 | CONN-003 | 52 | 5 | 0 | N/A | 11 | 0 | 0 | 8 | 12.3 | 完整度 |
 | CONN-004 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 9 | 11.8 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.30 | 2026-07-03 | P5 r24 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r24）；pytest 476/4 skipped；T-DS-R09~R12、C17~C22、T11~T15、K09~K12、CONN-M11~M16；migration 0010 connectionOptions + code 复用 + registry RLock/export_type_catalog + inflight release + Fernet PREVIOUS key + MySQL collation/分层 timeout/结构化 code；完整度 86–96%→92–98%，可靠性 94–96%→96–98%，架构 90–92%→90–94%，安全性 88–94%→88–96%，总分 89.1–91.9→90.1–92.1（CONN-001 破 90 STUCK 清零） |
 | 1.2.29 | 2026-07-03 | P5 r23 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r23）；pytest 449/4 skipped；T-DS-R05~R08、C09~C16、T06~T10、K05~K08、CONN-M05~M10；migration 0009 + unregister/usage_checker + pagination/PATCH/soft delete + test inflight/traceId + credential decrypt errors + MySQL error codes/ssl；完整度 88–96%→92–96%，可靠性 92–94%→94–96%，测试覆盖 96–100%→100%，安全性 88–92%→88–94%，总分 86.8–91.1→89.1–91.9（DS-001 破 90 STUCK 清零；CONN-001 仍 <90 STUCK round 2） |
 | 1.2.28 | 2026-07-03 | P5 r22 重评 DS-001/002/005/003 + CONN-001（M3 datasource L1 kickoff r22）；pytest 419/4 skipped；T-DS-R01~R04、C01~C08、T01~T05、K01~K04、CONN-M01~M04；migration 0008 + ConnectorRegistry/MySQL/credentials/CRUD/test API；完整度 5%→78–96%，可靠性 0%→92–94%，测试覆盖 0%→96–100%，总分 12.8–13.6→86.8–91.1（DS-002/003/005 破 90；DS-001/CONN-001 <90 STUCK upsert） |
 | 1.2.27 | 2026-07-03 | P5 r21 重评 AUTH-007/006/008/005/001（M2 AUTH quality push r21）；pytest 394/4 skipped；T-AUTH-RLS09~13、GP13~15、AU11~13、D13~14、R10~12；migration 0007 + query/rls/guard + is_active/audit range/detail mask；完整度 90–94%→96%，性能 86%→90%（AUTH-008 P95<500ms），安全性 86–90%→90–92%，总分 89.5–91.5→90.8–92.1（AUTH-006~008 破 90 STUCK 清零） |
@@ -214,4 +215,3 @@ domain_count: 16
 | 1.2.22 | 2026-07-03 | P5 r16 重评 BOOT-001/006/004 + DATA-003 + ETL-001（M1+M1B floor polish r16）；pytest 273 + vitest 68 + node:test 4；T-HLT-23~25、T-RTR-03~04、T-CFG-11~13、T-TRC-17~18、T-CI-10~12、T-ETL-23~25、T-ING-32~35；可靠性 90–92%→92–94%，安全性 86–88%→88–90%，性能 86%→88%（DATA-003），用户价值 82%→84%（DATA-003/ETL-001），总分 90.4–90.7→91.0–91.5 |
 | 1.2.21 | 2026-07-03 | P5 r15 重评 BOOT-004/005/006/002/003（M1 BOOT 质量推分 r15）；pytest 254 + vitest 64 + node:test 4；T-CFG-08~10、T-TRC-13~16、T-MIG-29~31、T-ME-15~18、T-AUTH-09~11、T-CI-07~09、T-RUF-01~02、T-FE-28~31、T-FE-DG-04；middleware traceId 契约修复；用户价值 80–82%→82–84%，可靠性 88%→90%（BOOT-004），安全性 84–86%→88%，测试覆盖 94%→98%（BOOT-003），性能 86%→88%，总分 89.5–90.1→90.2–90.9（BOOT-004 破 90 STUCK 清零） |
 | 1.2.20 | 2026-07-03 | P5 r14 重评 BOOT-003/005/006/002/001（M1 BOOT 质量推分 r14）；pytest 227 + vitest 60；T-HLT-19~22、T-FE-24~26、T-ME-08~14、T-MIG-25~28、T-CFT-09~10、T-CI-04~06；用户价值 80–82%→82–84%，可靠性 84–88%→88–90%，测试覆盖 86–96%→94–100%，性能 84–86%→86–88%，总分 87.9–89.2→90.0–90.4（BOOT 五簇全破 90） |
-| 1.2.19 | 2026-07-03 | P5 r13 重评 DATA-004/003/002/ETL-001/001（M1B DATA companion 质量推分 r13）；pytest 207 + ingestion 105 + vitest ingestion.smoke 31；T-D04-17~19、T-ING-28~31、T-D02-23~26 T-L1-09、T-ETL-20~22、T-D01-23~25；用户价值 76–80%→80–84%，性能 82–86%→86–90%，可靠性 89%→92%，安全性 84%→88%，总分 89.3–90.4→90.6–91.3（DATA-004/002/003/ETL-001 破 90） |
