@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md |
 | design | docs/superpowers/specs/2026-07-03-m1b-activate-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1b-activate.md |
@@ -85,3 +85,8 @@
 | BOOT-001 | 8 | 86.0 | 2026-07-03 |
 | BOOT-004 | 8 | 86.1 | 2026-07-03 |
 | BOOT-003 | 6 | 86.4 | 2026-07-03 |
+| DATA-004 | 1 | 80.7 | 2026-07-03 |
+| DATA-001 | 1 | 83.2 | 2026-07-03 |
+| DATA-002 | 1 | 77.4 | 2026-07-03 |
+| ETL-001 | 1 | 80.8 | 2026-07-03 |
+| DATA-003 | 1 | 76.3 | 2026-07-03 |
