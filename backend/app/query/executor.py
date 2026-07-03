@@ -30,6 +30,8 @@ class QueryResult:
 
 
 def _serialize_cell(value: Any) -> Any:
+    if isinstance(value, bytes):
+        return "0x" + value.hex()
     if isinstance(value, datetime):
         return value.isoformat()
     if isinstance(value, date):
@@ -46,8 +48,15 @@ def _map_execution_error(exc: Exception) -> QueryError:
     lowered = msg.lower()
     if "timeout" in lowered or "timed out" in lowered:
         return QueryError("QUERY_TIMEOUT", msg, 504)
-    if "doesn't exist" in lowered or "does not exist" in lowered:
+    if (
+        "doesn't exist" in lowered
+        or "does not exist" in lowered
+        or "unknown table" in lowered
+        or "code: 60" in lowered
+    ):
         return QueryError("QUERY_TABLE_NOT_FOUND", msg, 404)
+    if "syntax error" in lowered or "code: 62" in lowered:
+        return QueryError("QUERY_SYNTAX_ERROR", msg, 400)
     return QueryError("QUERY_EXECUTION_ERROR", msg, 400)
 
 

@@ -6,19 +6,19 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | MERGED |
-| round_target | docs/superpowers/plans/2026-07-03-m4-query-l1-kickoff-r26.md（round-target-r26 缺失，自 plan 恢复） |
-| design | docs/superpowers/plans/2026-07-03-m4-query-l1-kickoff-r26.md |
-| plan | docs/superpowers/plans/2026-07-03-m4-query-l1-kickoff-r26.md |
-| branch | feat/evolution-r26-m4-query-l1-kickoff |
+| phase | P5_DOCS_READY |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r27.md |
+| design | docs/superpowers/specs/2026-07-03-m4-query-quality-r27-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m4-query-quality-r27.md |
+| branch | feat/evolution-r27-m4-query-quality |
 | base_branch | dev-auto |
-| prd_ids | QUERY-001,QUERY-002,QUERY-004,QUERY-005,QUERY-006 |
-| pr_number | 48 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| prd_ids | QUERY-004, QUERY-001, QUERY-002, QUERY-005, QUERY-006 |
+| pr_number | 49 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T22:10:00Z |
+| skill_rule_index_generated_at | 2026-07-03T23:20:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r27 PRD 重评：QUERY-001/002/004/005/006 质量推分 88.5–91.4→91.4–92.8（QUERY-004 破 90 STUCK 清零）；pytest 570 + 4 skipped；test_query_quality_r27 36/36；ClickHouse dialect + readonly/table/binding/RLS 边界
+- P4 r27 独立验证：backend ruff PASS + pytest 570 passed/4 skipped（≥560 目标）；test_query_quality_r27 36/36（≥28）；round-target QUERY-004/001/002/005/006 + plan T-MIG-40 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r27-m4-query-quality；base_branch dev-auto
+- P3 r27 实现完成：7 Task 全绿；backend ruff+pytest 570 passed/4 skipped（+38 query quality）；test_query_quality_r27 36/36；ui_design_skill: none；branch feat/evolution-r27-m4-query-quality；base_branch dev-auto
 - P5 r26 PRD 重评：QUERY-001/002/004/005/006 L1 kickoff 12.8–13.5→88.5–91.4（四 ID 破 90；QUERY-004 ClickHouse 缺口 STUCK upsert）；pytest 532 + 4 skipped；T-Q-020~055 + T-MIG-38~39
 - P4 r26 独立验证：backend ruff PASS + pytest 532 passed/4 skipped；test_query_l1_r26 29/29；test_migrations T-MIG-38~39 2/2；plan 验收 ≥531/4 skipped 绿（round-target-r26.md 缺失，按 plan Step 5 对照）；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r26-m4-query-l1-kickoff；base_branch dev-auto
 - P3 r26 实现完成：7 Task 全绿；backend ruff+pytest 532 passed/4 skipped（+31 query L1）；ui_design_skill: none；branch feat/evolution-r26-m4-query-l1-kickoff；base_branch dev-auto
@@ -119,4 +122,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| QUERY-004 | 1 | 88.5 | 2026-07-03 |

@@ -13,6 +13,18 @@ from app.query.rls.guard import validate_identifier
 from app.query.schemas import BindingCreate, BindingListResponse, BindingOut, BindingUpdate, QueryError
 
 
+def _assert_chart_id_available(
+    session: Session, chart_id: uuid.UUID | None, *, exclude_id: uuid.UUID | None = None,
+) -> None:
+    if chart_id is None:
+        return
+    stmt = select(ChartQueryBinding).where(ChartQueryBinding.chart_id == chart_id)
+    if exclude_id is not None:
+        stmt = stmt.where(ChartQueryBinding.id != exclude_id)
+    if session.scalar(stmt) is not None:
+        raise QueryError("BINDING_CHART_CONFLICT", "chartId already bound", 409)
+
+
 def _validate_binding_payload(payload: BindingCreate) -> None:
     cap = get_settings().query_default_limit
     if payload.default_limit > cap:
@@ -32,6 +44,7 @@ def create_binding(
 ) -> BindingOut:
     assert_visible(session, role_codes, payload.data_source_id)
     _validate_binding_payload(payload)
+    _assert_chart_id_available(session, payload.chart_id)
     row = ChartQueryBinding(
         name=payload.name,
         data_source_id=payload.data_source_id,
@@ -40,6 +53,7 @@ def create_binding(
         schema_name=payload.schema_name,
         table_name=payload.table_name,
         default_limit=payload.default_limit,
+        chart_id=payload.chart_id,
         created_by=created_by,
     )
     session.add(row)
@@ -94,6 +108,7 @@ def update_binding(
         raise QueryError("BINDING_NOT_FOUND", "Binding not found", 404) from None
     assert_visible(session, role_codes, payload.data_source_id)
     _validate_binding_payload(payload)
+    _assert_chart_id_available(session, payload.chart_id, exclude_id=binding_id)
     row.name = payload.name
     row.data_source_id = payload.data_source_id
     row.mode = payload.mode
@@ -101,6 +116,7 @@ def update_binding(
     row.schema_name = payload.schema_name
     row.table_name = payload.table_name
     row.default_limit = payload.default_limit
+    row.chart_id = payload.chart_id
     session.commit()
     session.refresh(row)
     return BindingOut.model_validate(row)

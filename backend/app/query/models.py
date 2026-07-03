@@ -25,6 +25,7 @@ class ChartQueryBinding(Base):
     schema_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     table_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     default_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
+    chart_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, unique=True, index=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

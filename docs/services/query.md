@@ -39,7 +39,7 @@
 | `QueryExecutor` | 统一执行入口（sql/table） | QUERY-001/002 | 已实现 |
 | `ExecuteRequest` / `ExecuteResponse` | Pydantic 契约 | QUERY-001 | 已实现 |
 | `ChartQueryBinding` / `binding_service` | 图表直连绑定 CRUD | QUERY-005 | 已实现 |
-| `query/dialects` | MySQL/PostgreSQL 方言适配 | QUERY-004 | 已实现 |
+| `query/dialects` | MySQL/PostgreSQL/ClickHouse 方言适配 | QUERY-004 | 已实现 |
 | `rls/guard` | 行级过滤注入 | QUERY-006 | 已实现 |
 
 ## 关联 API
@@ -49,4 +49,19 @@
 ## 实现笔记
 
 - r26：方言适配器 + 只读守卫 + QueryExecutor + RLS 执行链 + chart_query_bindings 迁移 0011
+- r27：ClickHouse dialect L1、只读守卫加固、chartId 唯一绑定（0012）、admin RLS bypass
 - 执行链：`assert_visible` → `readonly` → `dialect.wrap_limit` → `apply_rls_to_sql` → `pool_manager`
+
+### 方言适配器
+
+- **MySQL**（`mysql`）：反引号标识符、子查询包裹 LIMIT/OFFSET
+- **PostgreSQL**（`postgresql`）：双引号标识符、子查询包裹 LIMIT/OFFSET
+- **ClickHouse**（`clickhouse`）：L1 已注册 — 反引号标识符、后缀 `LIMIT/OFFSET`；执行错误映射 `QUERY_SYNTAX_ERROR` / `QUERY_TABLE_NOT_FOUND`；无 CONN-007 连接器（mock/单元测试验收）。
+
+### chart_query_bindings
+
+- 可选字段 `chartId`（UUID，全局唯一）；冲突 → `409 BINDING_CHART_CONFLICT`
+
+### RLS
+
+- `admin` 角色跳过行级谓词注入（数据源 ACL 仍生效）；viewer 无 org 仍降级 `1=0`
