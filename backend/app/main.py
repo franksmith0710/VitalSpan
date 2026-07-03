@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,9 +8,20 @@ from app.auth.middleware import AuthMiddleware
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.core.middleware import TraceIdMiddleware
+from app.ingestion.scheduler import get_scheduler, refresh_all_jobs
 
 settings = get_settings()
 configure_logging(settings)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    scheduler = get_scheduler()
+    refresh_all_jobs()
+    scheduler.start()
+    yield
+    scheduler.shutdown(wait=False)
+
 
 app = FastAPI(
     title="VitalSpan",
@@ -16,6 +29,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
