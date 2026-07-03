@@ -7,7 +7,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.datasources.credentials import decrypt_credential, encrypt_credential
-from app.datasources.dialects.base import TestConnectionResult
 from app.datasources.models import DataSource
 from app.datasources.registry import ConnectorNotFoundError, registry
 from app.datasources.schemas import (

@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/datasources/` |
 | PRD | [F03-DS](../automate/prd/F03-DS.md) · [F04-CONN](../automate/prd/F04-CONN.md) |
 | 里程碑 | 连接层（贯穿 M1–M4） |
-| 状态 | **骨架**（空包） |
+| 状态 | **已实现（L1）** |
 
 ## 职责
 
@@ -30,9 +30,9 @@
 
 | 符号 | 说明 | PRD | 状态 |
 |------|------|-----|------|
-| `ConnectorRegistry` | 连接器注册表 | CONN-001 | 待建 |
-| `dialects/*` | 各方言实现 | CONN-002~022 | 待建 |
-| `DataSourceService` | CRUD + 测试连接 | DS-001~008 | 待建 |
+| `ConnectorRegistry` | 连接器注册表 | CONN-001 | 已实现 |
+| `dialects/mysql.py` | MySQL 方言 | CONN-001 | 已实现 |
+| `DataSourceService` | CRUD + 测试连接 | DS-001~008 | 已实现（DS-002/003/005） |
 
 ## 关联 API
 
@@ -40,4 +40,4 @@
 
 ## 实现笔记
 
-<!-- 随 DS-* / CONN-* 落地补充 -->
+- L1：`data_sources` 表 + CRUD + 凭证 Fernet + 双连通测试端点；首期方言 `mysql`；不含连接池与 schema 浏览。
