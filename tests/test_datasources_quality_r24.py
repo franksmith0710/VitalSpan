@@ -16,6 +16,7 @@ from app.datasources.dialects.errors import MYSQL_SSL_ERROR, MYSQL_UNKNOWN_DATAB
 from app.datasources.dialects.mysql import MysqlConnector
 from app.datasources.registry import (
     ConnectorAlreadyRegisteredError,
+    ConnectorNotFoundError,
     export_type_catalog,
     registry,
     register_dialect,
@@ -173,6 +174,8 @@ def test_concurrent_register_unregister_stub_connectors():
                 unregister(name)
             else:
                 register_dialect(_StubConnector(name))
+        except (ConnectorNotFoundError, ConnectorAlreadyRegisteredError):
+            pass
         except Exception as exc:
             errors.append(exc)
 

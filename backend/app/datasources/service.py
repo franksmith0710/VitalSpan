@@ -13,7 +13,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.models import AuthResourceGrant
-from app.core.config import get_settings
 from app.core.logging import trace_id_var
 from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
 from app.datasources.models import DataSource, get_meta_session
