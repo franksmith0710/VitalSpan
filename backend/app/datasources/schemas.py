@@ -39,6 +39,16 @@ class DataSourceUpdate(BaseModel):
     description: str | None = None
 
 
+class DataSourcePatch(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    host: str | None = None
+    port: int | None = Field(default=None, ge=1, le=65535)
+    database: str | None = None
+    username: str | None = None
+    password: str | None = None
+    description: str | None = None
+
+
 class DataSourceOut(BaseModel):
     id: uuid.UUID
     name: str
@@ -54,6 +64,9 @@ class DataSourceOut(BaseModel):
 
 class DataSourceListResponse(BaseModel):
     items: list[DataSourceOut]
+    total: int
+    limit: int
+    offset: int
 
 
 class TestConnectionIn(DataSourceCreate):
