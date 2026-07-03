@@ -6,17 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r23.md |
-| design | docs/superpowers/specs/2026-07-03-m3-datasource-quality-r23-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m3-datasource-quality-r23.md |
-| branch | feat/evolution-r23-m3-datasource-quality |
-| base_branch | dev-auto |
-| prd_ids | CONN-001,DS-001,DS-003,DS-002,DS-005 |
-| pr_number | 43 |
-| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端 r23） |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
 | skill_rule_index_source_count | 26 |
