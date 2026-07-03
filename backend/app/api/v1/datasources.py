@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
 from app.datasources.schemas import (
+    ConnectorTypeListResponse,
+    ConnectorTypeOut,
     DataSourceCreate,
     DataSourceListResponse,
     DataSourceOut,
@@ -20,6 +22,7 @@ from app.datasources.schemas import (
     TestConnectionOut,
 )
 from app.datasources import service as ds_service
+from app.datasources.registry import export_type_catalog
 
 router = APIRouter(prefix="/datasources", tags=["datasources"])
 
@@ -61,6 +64,14 @@ def create_data_source(
         return ds_service.create_data_source(db, payload)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
+
+
+@router.get("/types", response_model=ConnectorTypeListResponse)
+def list_connector_types(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ConnectorTypeListResponse:
+    items = [ConnectorTypeOut.model_validate(item) for item in export_type_catalog()]
+    return ConnectorTypeListResponse(items=items)
 
 
 @router.get("/{data_source_id}", response_model=DataSourceOut)

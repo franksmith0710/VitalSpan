@@ -5,14 +5,17 @@ from unittest.mock import MagicMock, patch
 
 import psycopg
 import pytest
+from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
 from app.datasources import register_builtin_dialects
 from app.datasources.dialects.errors import PG_AUTH_FAILED
 from app.datasources.dialects.postgres import PostgresConnector
 from app.datasources.registry import registry
+from app.main import app
 
 _DS_SQLITE_URL = "sqlite+pysqlite:///file:ds_r25_test?mode=memory&cache=shared&uri=true"
+AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -86,3 +89,32 @@ def test_postgres_list_schemas(mock_open):
     mock_open.return_value = conn
     items = PostgresConnector().list_schemas(conn)
     assert [s.name for s in items] == ["public"]
+
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+
+
+def test_types_lists_mysql_and_postgresql(client):
+    """T-DS-TY01/TY02: GET /types 含 mysql 与 postgresql + capabilities。"""
+    resp = client.get("/api/v1/datasources/types", headers=AUTH)
+    assert resp.status_code == 200
+    types = {item["type"]: item for item in resp.json()["items"]}
+    assert "mysql" in types and "postgresql" in types
+    for key in ("displayName", "category", "capabilities"):
+        assert key in types["mysql"]
+    assert "connectivity_test" in types["mysql"]["capabilities"]
+
+
+def test_types_empty_registry(client):
+    """T-DS-TY03: 清空注册表 → items: []。"""
+    registry._connectors.clear()
+    resp = client.get("/api/v1/datasources/types", headers=AUTH)
+    assert resp.status_code == 200
+    assert resp.json()["items"] == []
+
+
+def test_types_unauthenticated_401(client):
+    """T-DS-TY04: 未认证 → 401。"""
+    assert client.get("/api/v1/datasources/types").status_code == 401

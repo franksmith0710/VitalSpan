@@ -19,6 +19,7 @@ class ConnectionOptions(BaseModel):
     )
     connect_timeout_sec: float = Field(default=5.0, ge=1.0, le=30.0, alias="connectTimeoutSec")
     read_timeout_sec: float | None = Field(default=None, alias="readTimeoutSec")
+    pool_size: int = Field(default=2, ge=1, le=10, alias="poolSize")
 
     model_config = {"populate_by_name": True}
 
@@ -116,3 +117,16 @@ class TestConnectionOut(BaseModel):
             trace_id=trace_id,
             code=result.code,
         )
+
+
+class ConnectorTypeOut(BaseModel):
+    type: str
+    display_name: str = Field(validation_alias="displayName", serialization_alias="displayName")
+    category: str
+    capabilities: list[str]
+
+    model_config = {"populate_by_name": True}
+
+
+class ConnectorTypeListResponse(BaseModel):
+    items: list[ConnectorTypeOut]
