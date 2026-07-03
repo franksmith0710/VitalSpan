@@ -566,4 +566,97 @@ describe("ingestion admin smoke", () => {
     const errorText = errorBanner?.querySelector("p");
     expect(errorText?.className).toMatch(/text-error-700|text-error-400/);
   });
+
+  it("SyncJobHistoryPage_renders_50_rows_under_800ms (T-ING-24)", async () => {
+    setViewport(1400);
+    const runs = Array.from({ length: 50 }, (_, i) => ({
+      id: `run-${i}`,
+      status: i % 4 === 0 ? "failed" : "succeeded",
+      trace_id: `trace-perf-${i}`,
+      started_at: `2026-07-0${(i % 9) + 1}T10:00:00Z`,
+      finished_at: `2026-07-0${(i % 9) + 1}T10:01:00Z`,
+      rows_synced: i,
+      error_message: i % 4 === 0 ? "mock sync error message" : null,
+      retry_count: 0,
+    }));
+    mockApiFetch.mockResolvedValueOnce({ items: runs });
+    const start = performance.now();
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/history"
+            element={<SyncJobHistoryPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText(`trace-perf-0`);
+    expect(performance.now() - start).toBeLessThan(800);
+  });
+
+  it("EtlRulesPage_empty_column_sets_aria_invalid (T-ING-25)", async () => {
+    setViewport(1400);
+    mockApiFetch.mockResolvedValueOnce({
+      rules: [{ type: "rename_column", from: "", to: "product" }],
+    });
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/etl-rules"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/etl-rules"
+            element={<EtlRulesPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const saveBtn = await screen.findByRole("button", { name: "保存规则" });
+    fireEvent.click(saveBtn);
+    await screen.findByText(/请填写完整的列重命名规则/);
+    const fromInput = screen.getByPlaceholderText("product_name");
+    expect(fromInput).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("SyncJobHistoryPage_error_banner_has_role_alert (T-ING-26)", async () => {
+    setViewport(1400);
+    mockApiFetch.mockRejectedValueOnce(new Error("加载历史失败"));
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs/job-1/history"]}>
+        <Routes>
+          <Route
+            path="/admin/ingestion/sync-jobs/:id/history"
+            element={<SyncJobHistoryPage />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText("加载历史失败");
+    expect(screen.getByRole("alert")).toHaveTextContent("加载历史失败");
+  });
+
+  it("SyncJobsPage_mobile_first_paint_under_600ms (T-ING-27)", async () => {
+    setViewport(375);
+    mockApiFetch.mockResolvedValueOnce({
+      items: [
+        {
+          id: "job-mobile",
+          name: "mobile-perf-job",
+          source_type: "mysql",
+          target_table: "orders_mobile",
+          enabled: true,
+          schedule_cron: null,
+        },
+      ],
+    });
+    const start = performance.now();
+    render(
+      <MemoryRouter initialEntries={["/admin/ingestion/sync-jobs"]}>
+        <Routes>
+          <Route path="/admin/ingestion/sync-jobs" element={<SyncJobsPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText("mobile-perf-job");
+    expect(performance.now() - start).toBeLessThan(600);
+  });
 });
