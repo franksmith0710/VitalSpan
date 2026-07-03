@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
-| design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r19-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r19.md |
-| branch | feat/evolution-r19-m2-auth-quality-push |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r20.md |
+| design | docs/superpowers/specs/2026-07-03-m2-auth-kickoff-r20-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m2-auth-kickoff-r20.md |
+| branch | feat/evolution-r20-m2-auth-kickoff |
 | base_branch | dev-auto |
-| prd_ids | AUTH-003,AUTH-005,AUTH-001,AUTH-002,AUTH-004 |
-| pr_number | 38 |
-| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
+| prd_ids | AUTH-006,AUTH-007,AUTH-008 |
+| pr_number |  |
+| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -q` |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
