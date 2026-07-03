@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -38,9 +39,21 @@ def list_audit_events(
     action: str | None = None,
     target_type: str | None = None,
     actor_id: str | None = None,
+    created_after: datetime | None = None,
+    created_before: datetime | None = None,
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> AuditListResponse | JSONResponse:
+    if created_after is not None and created_before is not None:
+        if created_after >= created_before:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "code": "AUDIT_RANGE_INVALID",
+                    "message": "created_after must be before created_before",
+                    "detail": None,
+                },
+            )
     try:
         audit_service.assert_audit_admin(actor.roles)
     except audit_service.AuditError as exc:
@@ -51,6 +64,8 @@ def list_audit_events(
         action=action,
         target_type=target_type,
         actor_id=actor_id,
+        created_after=created_after,
+        created_before=created_before,
         limit=limit,
         offset=offset,
     )

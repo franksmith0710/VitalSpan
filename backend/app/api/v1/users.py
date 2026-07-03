@@ -12,6 +12,7 @@ from app.auth.deps import UserContext, get_current_user
 from app.auth.models import get_meta_session
 from app.auth.schemas import UserCreate, UserOrgAssign, UserOrgResponse, UserOut, UserRoleOut, UserRolesReplace, UserRolesResponse
 from app.auth.users import service as user_service
+from app.auth.roles import service as role_service
 from app.core.logging import trace_id_var
 
 router = APIRouter(prefix="/users", tags=["auth"])
@@ -23,6 +24,13 @@ def _db() -> Session:
         yield session
     finally:
         session.close()
+
+
+def _role_error_response(exc: role_service.RoleError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
 
 
 def _user_error_response(exc: user_service.UserError) -> JSONResponse:
@@ -81,6 +89,8 @@ def replace_user_roles(
         roles = user_service.replace_user_roles(db, user_id, payload.role_ids, **ctx)
     except user_service.UserError as exc:
         return _user_error_response(exc)
+    except role_service.RoleError as exc:
+        return _role_error_response(exc)
     items = [UserRoleOut(id=r.id, code=r.code, name=r.name) for r in roles]
     return UserRolesResponse(items=items)
 
@@ -97,6 +107,8 @@ def bind_user_role(
         user_service.bind_role(db, user_id, role_id, **ctx)
     except user_service.UserError as exc:
         return _user_error_response(exc)
+    except role_service.RoleError as exc:
+        return _role_error_response(exc)
     return {"status": "ok"}
 
 

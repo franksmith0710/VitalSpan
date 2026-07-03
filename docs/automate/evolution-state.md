@@ -7,14 +7,14 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r20.md |
-| design | docs/superpowers/specs/2026-07-03-m2-auth-kickoff-r20-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m2-auth-kickoff-r20.md |
-| branch | feat/evolution-r20-m2-auth-kickoff |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r21.md |
+| design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r21-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r21.md |
+| branch | feat/evolution-r21-m2-auth-quality-push |
 | base_branch | dev-auto |
-| prd_ids | AUTH-006,AUTH-007,AUTH-008 |
-| pr_number | 39 |
-| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
+| prd_ids | AUTH-007,AUTH-006,AUTH-008,AUTH-005,AUTH-001 |
+| pr_number | 40 |
+| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v --tb=no -q` |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
@@ -66,6 +66,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r21 PRD 重评：AUTH-007/006/008/005/001 破 90（89.5–91.5→90.8–92.1）；AUTH-006~008 STUCK 清零；pytest 394 + 4 skipped；T-AUTH-RLS09~13、GP13~15、AU11~13、D13~14、R10~12
+- P4 r21 独立验证：backend ruff PASS + pytest 394 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r21-m2-auth-quality-push；base_branch dev-auto
+- P3 r21 实现完成：7 Task 全绿；backend ruff+pytest 394 passed/4 skipped（+17 AUTH quality）；ui_design_skill: none；branch feat/evolution-r21-m2-auth-quality-push；base_branch dev-auto
 - P5 r20 PRD 重评：AUTH-006~008 L1 kickoff 13.2–13.6→89.5–89.9（均 <90 STUCK upsert）；pytest 377 + 4 skipped；T-AUTH-GP/RLS/AU 30 smoke
 - P4 r20 独立验证：backend ruff PASS + pytest 377 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r20-m2-auth-kickoff；base_branch dev-auto
 - P5 r19 PRD 重评：AUTH-001~005 巩固 90.8–92.1（89.4–91.2→）；AUTH-003 审计闭环破 90 STUCK 清零；pytest 348 + 4 skipped
@@ -99,6 +102,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| AUTH-006 | 1 | 89.6 | 2026-07-03 |
-| AUTH-007 | 1 | 89.5 | 2026-07-03 |
-| AUTH-008 | 1 | 89.9 | 2026-07-03 |

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -23,13 +23,17 @@ def list_roles(
     session: Session,
     code_prefix: str | None = None,
     limit: int = 100,
-) -> list[AuthRole]:
+    offset: int = 0,
+) -> tuple[list[AuthRole], int]:
     capped = min(max(limit, 1), 500)
-    stmt = select(AuthRole).order_by(AuthRole.code)
+    base = select(AuthRole).order_by(AuthRole.code)
+    count_stmt = select(func.count()).select_from(AuthRole)
     if code_prefix:
-        stmt = stmt.where(AuthRole.code.startswith(code_prefix))
-    stmt = stmt.limit(capped)
-    return list(session.scalars(stmt))
+        base = base.where(AuthRole.code.startswith(code_prefix))
+        count_stmt = count_stmt.where(AuthRole.code.startswith(code_prefix))
+    total = session.scalar(count_stmt) or 0
+    items = list(session.scalars(base.limit(capped).offset(max(offset, 0))))
+    return items, total
 
 
 def create_role(
@@ -69,6 +73,11 @@ def get_role(session: Session, role_id: uuid.UUID) -> AuthRole:
     return role
 
 
+def assert_role_active(role: AuthRole) -> None:
+    if not role.is_active:
+        raise RoleError("ROLE_DISABLED", "Role is disabled", 409)
+
+
 def update_role(
     session: Session,
     role_id: uuid.UUID,
@@ -81,6 +90,8 @@ def update_role(
     role = get_role(session, role_id)
     role.name = payload.name
     role.description = payload.description
+    if payload.is_active is not None:
+        role.is_active = payload.is_active
     record_platform_event(
         session,
         actor_id=actor_id,

@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.auth.audit.masking import mask_audit_detail
 from app.auth.models import AuthAuditEvent
 
 
@@ -54,6 +56,8 @@ def list_events(
     action: str | None = None,
     target_type: str | None = None,
     actor_id: str | None = None,
+    created_after: datetime | None = None,
+    created_before: datetime | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[AuthAuditEvent], int]:
@@ -71,10 +75,18 @@ def list_events(
     if actor_id is not None:
         base = base.where(AuthAuditEvent.actor_id == actor_id)
         count_stmt = count_stmt.where(AuthAuditEvent.actor_id == actor_id)
+    if created_after is not None:
+        base = base.where(AuthAuditEvent.created_at >= created_after)
+        count_stmt = count_stmt.where(AuthAuditEvent.created_at >= created_after)
+    if created_before is not None:
+        base = base.where(AuthAuditEvent.created_at <= created_before)
+        count_stmt = count_stmt.where(AuthAuditEvent.created_at <= created_before)
     total = session.scalar(count_stmt) or 0
     items = list(
         session.scalars(
             base.order_by(AuthAuditEvent.created_at.desc()).limit(limit).offset(offset)
         )
     )
+    for event in items:
+        event.detail = mask_audit_detail(event.detail)
     return items, total

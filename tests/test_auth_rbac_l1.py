@@ -1009,7 +1009,7 @@ def test_dimension_list_pagination_performance(client, auth_headers):
 
 
 def test_role_code_format_boundary(client, auth_headers):
-    """T-AUTH-R10: code 过短 → 422；合法 ab → 201。"""
+    """T-AUTH-R13: code 过短 → 422；合法 ab → 201。"""
     assert client.post("/api/v1/roles", json={"code": "A", "name": "x"}, headers=auth_headers).status_code == 422
     assert client.post("/api/v1/roles", json={"code": "x", "name": "x"}, headers=auth_headers).status_code == 422
     ok = client.post("/api/v1/roles", json={"code": "ab", "name": "OK"}, headers=auth_headers)
@@ -1017,7 +1017,7 @@ def test_role_code_format_boundary(client, auth_headers):
 
 
 def test_role_delete_bound_regression(client, auth_headers):
-    """T-AUTH-R11: 删除已绑定角色 → 409 ROLE_IN_USE（回归 R07）。"""
+    """T-AUTH-R14: 删除已绑定角色 → 409 ROLE_IN_USE（回归 R07）。"""
     role = client.post("/api/v1/roles", json={"code": "bound_r19", "name": "B"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "bound_u19"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
@@ -1027,7 +1027,7 @@ def test_role_delete_bound_regression(client, auth_headers):
 
 
 def test_role_list_filter_sort(client, auth_headers):
-    """T-AUTH-R12: code_prefix + limit 边界。"""
+    """T-AUTH-R15: code_prefix + limit 边界。"""
     client.post("/api/v1/roles", json={"code": "pre_a", "name": "A"}, headers=auth_headers)
     client.post("/api/v1/roles", json={"code": "pre_b", "name": "B"}, headers=auth_headers)
     resp = client.get("/api/v1/roles?code_prefix=pre_&limit=1", headers=auth_headers)
@@ -1316,14 +1316,22 @@ def test_role_dimension_invalid_role_gp10(client, auth_headers):
     assert resp.json()["code"] == "ROLE_NOT_FOUND"
 
 
-def test_group_binding_forbidden_non_admin_gp11(client, operator_client, auth_headers):
+def test_group_binding_forbidden_non_admin_gp11(client, auth_headers):
     """T-AUTH-GP11: 非 admin 写分组 → 403 BINDING_FORBIDDEN。"""
     _, dim = _ensure_org_dim(client, auth_headers)
-    resp = operator_client.post(
-        "/api/v1/rls/groups",
-        json={"dimension_type_id": dim["id"], "code": "gp_op", "name": "O"},
-        headers={"Authorization": "Bearer dev"},
-    )
+
+    async def _operator():
+        return UserContext(id="op-1", username="operator", roles=["operator"])
+
+    app.dependency_overrides[get_current_user] = _operator
+    try:
+        resp = client.post(
+            "/api/v1/rls/groups",
+            json={"dimension_type_id": dim["id"], "code": "gp_op", "name": "O"},
+            headers=auth_headers,
+        )
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
     assert resp.status_code == 403
     assert resp.json()["code"] == "BINDING_FORBIDDEN"
 
@@ -1664,3 +1672,384 @@ def test_audit_filter_actor_id_au10(client, auth_headers):
     audit = client.get("/api/v1/audit/events?actor_id=dev", headers=auth_headers).json()
     assert audit["total"] >= 1
     assert all(i["actor_id"] == "dev" for i in audit["items"])
+
+
+def test_rls_multi_dimension_and_combination_rls09(client, auth_headers):
+    """T-AUTH-RLS09: org + string 双维度 AND 组合。"""
+    from app.auth.rls.hooks import prepare_query_rls
+
+    org, org_dim = _ensure_org_dim(client, auth_headers)
+    str_dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_str09", "name": "S", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "rls_r09", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u09"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": org_dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": str_dim["id"], "values": ["east"]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=["viewer"])
+        frag = prepare_query_rls(
+            session,
+            ctx,
+            column_by_dimension_id={
+                uuid_mod.UUID(org_dim["id"]): "org_node_id",
+                uuid_mod.UUID(str_dim["id"]): "region",
+            },
+            table_alias="t",
+        )
+        assert " AND " in frag
+        assert "org_node_id" in frag
+        assert "region" in frag
+        assert "east" in frag
+    finally:
+        session.close()
+
+
+def test_rls_invalid_column_raises_config_error_rls10(client, auth_headers):
+    """T-AUTH-RLS10: 非法列名 org-node → RlsConfigError。"""
+    from app.auth.rls.hooks import prepare_query_rls
+    from app.auth.rls.predicate import RlsConfigError
+
+    user = client.post("/api/v1/users", json={"username": "rls_u10"}, headers=auth_headers).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_d10", "name": "D", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=[])
+        with pytest.raises(RlsConfigError):
+            prepare_query_rls(
+                session,
+                ctx,
+                column_by_dimension_id={uuid_mod.UUID(dim["id"]): "org-node"},
+            )
+    finally:
+        session.close()
+
+
+def test_rls_empty_string_dimension_returns_false_predicate_rls11(client, auth_headers):
+    """T-AUTH-RLS11: string 维度空有效集 → 1=0。"""
+    from app.auth.rls.hooks import prepare_query_rls
+
+    user = client.post("/api/v1/users", json={"username": "rls_u11"}, headers=auth_headers).json()
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "rls_d11", "name": "D", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=[])
+        frag = prepare_query_rls(
+            session,
+            ctx,
+            column_by_dimension_id={uuid_mod.UUID(dim["id"]): "region"},
+        )
+        assert frag.strip() == "1=0"
+    finally:
+        session.close()
+
+
+def test_apply_rls_to_sql_merge_where_rls12(client, auth_headers):
+    """T-AUTH-RLS12: apply_rls_to_sql 合并 WHERE。"""
+    from app.query.rls.guard import apply_rls_to_sql
+
+    org, dim = _ensure_org_dim(client, auth_headers)
+    role = client.post("/api/v1/roles", json={"code": "rls_r12", "name": "R"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u12"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
+        headers=auth_headers,
+    )
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=["viewer"])
+        out = apply_rls_to_sql(
+            session,
+            ctx,
+            "SELECT * FROM facts t",
+            rls_config={"org_column": "org_node_id", "table_alias": "t"},
+        )
+        assert "WHERE" in out.upper()
+        assert "org_node_id" in out
+    finally:
+        session.close()
+
+
+def test_rls_hook_internal_error_degrades_to_empty_rls13(monkeypatch, client, auth_headers):
+    """T-AUTH-RLS13: hook 内部异常降级 → 1=0 片段，非 500。"""
+    import app.auth.rls.hooks as hooks_mod
+    from app.query.rls.guard import apply_rls_to_sql
+
+    user = client.post("/api/v1/users", json={"username": "rls_u13"}, headers=auth_headers).json()
+
+    def _boom(*_a, **_k):
+        raise RuntimeError("rls internal")
+
+    monkeypatch.setattr(hooks_mod, "prepare_query_rls", _boom)
+    session = get_meta_session()
+    try:
+        ctx = UserContext(id=user["id"], username=user["username"], roles=[])
+        out = apply_rls_to_sql(session, ctx, "SELECT 1", rls_config={})
+        assert "1=0" in out
+    finally:
+        session.close()
+
+
+def test_group_list_negative_offset_422_gp13(client, auth_headers):
+    """T-AUTH-GP13: GET /rls/groups?offset=-1 → 422。"""
+    resp = client.get("/api/v1/rls/groups?offset=-1", headers=auth_headers)
+    assert resp.status_code == 422
+
+
+def test_replace_role_groups_dedupe_idempotent_gp14(client, auth_headers):
+    """T-AUTH-GP14: 重复 group_ids → 204；有效集正确。"""
+    _, org_dim = _ensure_org_dim(client, auth_headers)
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": org_dim["id"], "code": "gp_g14", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "gp_r14", "name": "R"}, headers=auth_headers).json()
+    body = {"group_ids": [group["id"], group["id"]]}
+    r1 = client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json=body,
+        headers=auth_headers,
+    )
+    assert r1.status_code == 204
+    r2 = client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json=body,
+        headers=auth_headers,
+    )
+    assert r2.status_code == 204
+    eff = client.get(
+        f"/api/v1/roles/{role['id']}/effective-dimensions?dimension_type_id={org_dim['id']}",
+        headers=auth_headers,
+    )
+    assert eff.status_code == 200
+
+
+def test_bind_groups_to_disabled_role_409_gp15(client, auth_headers):
+    """T-AUTH-GP15: 绑定到 is_active=false 角色 → 409 ROLE_DISABLED。"""
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "gp_dim15", "name": "S", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    group = client.post(
+        "/api/v1/rls/groups",
+        json={"dimension_type_id": dim["id"], "code": "gp_g15", "name": "G"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "gp_r15", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}",
+        json={"name": "R", "description": None, "is_active": False},
+        headers=auth_headers,
+    )
+    resp = client.put(
+        f"/api/v1/roles/{role['id']}/dimension-groups",
+        json={"group_ids": [group["id"]]},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "ROLE_DISABLED"
+
+
+def test_group_list_pagination_perf_gp_perf(client, auth_headers):
+    """AUTH-006 性能 smoke: 50 分组 limit=20 P95 < 500ms。"""
+    import time
+
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "gp_perf", "name": "P", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    for i in range(50):
+        client.post(
+            "/api/v1/rls/groups",
+            json={"dimension_type_id": dim["id"], "code": f"gp_pf_{i:02d}", "name": f"G{i}"},
+            headers=auth_headers,
+        )
+    start = time.perf_counter()
+    resp = client.get("/api/v1/rls/groups?limit=20", headers=auth_headers)
+    elapsed = time.perf_counter() - start
+    assert resp.status_code == 200
+    assert len(resp.json()["items"]) == 20
+    assert elapsed < 0.5
+
+
+from datetime import datetime, timedelta, timezone
+
+
+def test_audit_created_range_filter_au11(client, auth_headers):
+    """T-AUTH-AU11: created_after/before 时间窗过滤。"""
+    from urllib.parse import quote
+
+    role = client.post("/api/v1/roles", json={"code": "au_r11", "name": "R"}, headers=auth_headers)
+    assert role.status_code == 201
+    now = datetime.now(timezone.utc)
+    after = quote((now - timedelta(hours=1)).isoformat())
+    before = quote((now + timedelta(hours=1)).isoformat())
+    resp = client.get(
+        f"/api/v1/audit/events?created_after={after}&created_before={before}",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    window_start = now - timedelta(hours=1)
+    window_end = now + timedelta(hours=1)
+    for item in resp.json()["items"]:
+        created = datetime.fromisoformat(item["created_at"].replace("Z", "+00:00"))
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        assert created >= window_start
+        assert created <= window_end
+
+
+def test_audit_detail_password_masked_au12(client, auth_headers):
+    """T-AUTH-AU12: detail 含 password 键 → 响应 ***。"""
+    from app.auth.audit.service import record_event
+
+    session = get_meta_session()
+    try:
+        record_event(
+            session,
+            actor_id="dev",
+            actor_username="dev",
+            target_type="user",
+            target_id=uuid_mod.uuid4(),
+            action="user.update",
+            detail={"password": "secret123", "note": "ok"},
+            trace_id="t-au12",
+        )
+        session.commit()
+    finally:
+        session.close()
+    resp = client.get("/api/v1/audit/events?action=user.update", headers=auth_headers)
+    assert resp.status_code == 200
+    found = [i for i in resp.json()["items"] if i.get("detail") and "password" in i["detail"]]
+    assert found
+    assert '"***"' in found[0]["detail"] or "***" in found[0]["detail"]
+
+
+def test_audit_bulk_query_pagination_perf_au13(client, auth_headers):
+    """T-AUTH-AU13: 200 条审计分页 P95 < 500ms；total 正确。"""
+    import time
+    from app.auth.audit.service import record_event
+
+    session = get_meta_session()
+    try:
+        for i in range(200):
+            record_event(
+                session,
+                actor_id="dev",
+                actor_username="dev",
+                target_type="role",
+                target_id=uuid_mod.uuid4(),
+                action="role.perf",
+                detail={"i": i},
+                trace_id=f"perf-{i}",
+            )
+        session.commit()
+    finally:
+        session.close()
+    start = time.perf_counter()
+    resp = client.get("/api/v1/audit/events?action=role.perf&limit=50&offset=0", headers=auth_headers)
+    elapsed = time.perf_counter() - start
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] >= 200
+    assert len(body["items"]) == 50
+    assert elapsed < 0.5
+
+
+def test_dimension_create_non_admin_forbidden_d13(operator_client, auth_headers):
+    """T-AUTH-D13: 非 admin POST /rls/dimensions → 403 DIMENSION_FORBIDDEN。"""
+    resp = operator_client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "d13_op", "name": "X", "value_type": "string"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "DIMENSION_FORBIDDEN"
+
+
+def test_dimension_delete_role_direct_ref_d14(client, auth_headers):
+    """T-AUTH-D14: auth_role_dimension_values 引用 → 409 DIMENSION_IN_USE。"""
+    dim = client.post(
+        "/api/v1/rls/dimensions",
+        json={"code": "d14_dim", "name": "D", "value_type": "string"},
+        headers=auth_headers,
+    ).json()
+    role = client.post("/api/v1/roles", json={"code": "d14_role", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}/dimension-values",
+        json={"dimension_type_id": dim["id"], "values": ["v1"]},
+        headers=auth_headers,
+    )
+    resp = client.delete(f"/api/v1/rls/dimensions/{dim['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "DIMENSION_IN_USE"
+
+
+def test_bind_user_to_disabled_role_409_r10(client, auth_headers):
+    """T-AUTH-R10: PUT is_active=false 后 bind 用户 → 409 ROLE_DISABLED。"""
+    role = client.post("/api/v1/roles", json={"code": "r10_dis", "name": "R"}, headers=auth_headers).json()
+    client.put(
+        f"/api/v1/roles/{role['id']}",
+        json={"name": "R", "description": None, "is_active": False},
+        headers=auth_headers,
+    )
+    user = client.post("/api/v1/users", json={"username": "r10_u"}, headers=auth_headers).json()
+    resp = client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "ROLE_DISABLED"
+
+
+def test_role_list_offset_total_r11(client, auth_headers):
+    """T-AUTH-R11: limit=2&offset=2 → items≤2；total≥5。"""
+    for i in range(5):
+        client.post(
+            "/api/v1/roles",
+            json={"code": f"r11_{i:02d}", "name": f"R{i}"},
+            headers=auth_headers,
+        )
+    resp = client.get("/api/v1/roles?limit=2&offset=2", headers=auth_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["items"]) <= 2
+    assert body["total"] >= 5
+
+
+def test_inactive_role_excluded_from_me_r12(client, auth_headers):
+    """T-AUTH-R12: 停用角色不出现在 resolve_user_roles / GET /me。"""
+    role = client.post("/api/v1/roles", json={"code": "r12_dis", "name": "R"}, headers=auth_headers).json()
+    dev_user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    client.post(f"/api/v1/users/{dev_user['id']}/roles/{role['id']}", headers=auth_headers)
+    client.put(
+        f"/api/v1/roles/{role['id']}",
+        json={"name": "R", "description": None, "is_active": False},
+        headers=auth_headers,
+    )
+    me = client.get("/api/v1/me", headers=auth_headers)
+    assert me.status_code == 200
+    codes = me.json().get("roles", [])
+    assert "r12_dis" not in codes

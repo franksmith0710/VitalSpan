@@ -55,6 +55,16 @@ def resolve_effective_values(
     return sorted(merged)
 
 
+def _dedupe_preserve_order(ids: list[uuid.UUID]) -> list[uuid.UUID]:
+    seen: set[uuid.UUID] = set()
+    out: list[uuid.UUID] = []
+    for gid in ids:
+        if gid not in seen:
+            seen.add(gid)
+            out.append(gid)
+    return out
+
+
 def replace_role_dimension_values(
     session: Session,
     role_id: uuid.UUID,
@@ -68,15 +78,19 @@ def replace_role_dimension_values(
 ) -> None:
     assert_binding_admin(actor_roles)
     role = get_role(session, role_id)
+    from app.auth.roles.service import assert_role_active
+
+    assert_role_active(role)
     dim = session.get(AuthDimensionType, dimension_type_id)
     if dim is None:
         raise BindingError("DIMENSION_NOT_FOUND", "Dimension type not found", 404)
-    for value in values:
+    unique_values = sorted(set(values))
+    for value in unique_values:
         validate_dimension_value(session, dim, value)
     session.query(AuthRoleDimensionValue).filter_by(
         role_id=role.id, dimension_type_id=dimension_type_id
     ).delete()
-    for value in values:
+    for value in unique_values:
         session.add(
             AuthRoleDimensionValue(
                 role_id=role.id, dimension_type_id=dimension_type_id, value=value
@@ -89,7 +103,7 @@ def replace_role_dimension_values(
         target_type="role",
         target_id=role.id,
         action="role.dimension.replace",
-        detail={"dimension_type_id": str(dimension_type_id), "values": values},
+        detail={"dimension_type_id": str(dimension_type_id), "values": unique_values},
         trace_id=trace_id,
     )
     session.commit()
@@ -107,12 +121,26 @@ def replace_role_dimension_groups(
 ) -> None:
     assert_binding_admin(actor_roles)
     role = get_role(session, role_id)
-    for group_id in group_ids:
+    from app.auth.roles.service import assert_role_active
+
+    assert_role_active(role)
+    unique_ids = _dedupe_preserve_order(group_ids)
+    for group_id in unique_ids:
         group = session.get(AuthDimensionGroup, group_id)
         if group is None:
             raise BindingError("GROUP_NOT_FOUND", "Group not found", 404)
+    existing = set(
+        session.scalars(
+            select(AuthRoleDimensionGroup.group_id).where(
+                AuthRoleDimensionGroup.role_id == role.id
+            )
+        )
+    )
+    desired = set(unique_ids)
+    if existing == desired:
+        return
     session.query(AuthRoleDimensionGroup).filter_by(role_id=role.id).delete()
-    for group_id in group_ids:
+    for group_id in unique_ids:
         session.add(AuthRoleDimensionGroup(role_id=role.id, group_id=group_id))
     record_platform_event(
         session,
@@ -121,7 +149,7 @@ def replace_role_dimension_groups(
         target_type="role",
         target_id=role.id,
         action="role.group.replace",
-        detail={"group_ids": [str(g) for g in group_ids]},
+        detail={"group_ids": [str(g) for g in unique_ids]},
         trace_id=trace_id,
     )
     session.commit()

@@ -14,7 +14,7 @@
 - 资源可见性：`ensure_resource_visible`、`list_visible_resource_ids`、`require_resource_visible` deps
 - 用户-组织：`auth_users.org_node_id` FK；`assign_user_org` / `clear_user_org`
 - 组织维度、多维行级权限（RLS）策略：维度分组、角色维度绑定、有效维度集解析
-- RLS L1：`resolve_user_org_node_ids`、`build_org_rls_fragment`、`get_query_rls_fragment`（供 `query` 域 M4 消费）
+- RLS L1：`resolve_user_org_node_ids`、`build_org_rls_fragment`、`prepare_query_rls`、`get_query_rls_fragment`（供 `query/rls/guard.py` 消费）
 - 绑定操作审计 L1：`auth_audit_events` + `audit/service.py`（AUTH-003 用户绑定子集）
 - 全平台 auth 域写操作审计 L1：`audit/write_hooks.py` + admin 守卫查询（AUTH-008）
 
@@ -22,7 +22,7 @@
 
 | In | Out |
 |----|-----|
-| 身份、授权、RLS 策略定义与 L1 谓词 hook | 查询执行细节（→ `query` 消费 `get_query_rls_fragment`） |
+| 身份、授权、RLS 策略定义与 L1 谓词 hook | 查询执行细节（→ `query/rls/guard.py` 消费 `prepare_query_rls`） |
 | 租户/组织模型、用户组织归属 | 业务视图模板内容（→ `views`） |
 | L1 资源可见性守卫（域 + deps） | 全方言 SQL 改写、M3 数据源实查 RLS |
 | 维度分组 CRUD、角色维度/分组绑定、有效维度集 | 登录/数据源等非 auth 域审计（AUTH-008 后续扩展） |
@@ -34,7 +34,7 @@
 
 ## 被依赖
 
-- `datasources`、`query`、`dashboard`、`reports`、`governance`、`views`
+- `datasources`、`query`（`query/rls/guard.py` 下游消费 auth RLS hook）、`dashboard`、`reports`、`governance`、`views`
 
 ## 主要类型 / 入口（M1 骨架）
 
@@ -51,7 +51,8 @@
 | `rls/groups/service.py` | 维度分组 CRUD 与成员值 | AUTH-006 | 已实现 |
 | `rls/bindings/service.py` | 角色维度/分组绑定、`resolve_effective_values` | AUTH-006 | 已实现 |
 | `rls/predicate.py` | 组织维度 RLS 谓词生成 | AUTH-007 | 已实现 |
-| `rls/hooks.py` | `get_query_rls_fragment` 查询入口 hook | AUTH-007 | 已实现 |
+| `rls/hooks.py` | `prepare_query_rls` / `get_query_rls_fragment` 查询入口 hook | AUTH-007 | 已实现 |
+| `query/rls/guard.py` | L1 SQL WHERE 合并与行过滤守卫（消费 auth RLS hook） | AUTH-007 | 已实现 |
 | `GET /api/v1/audit/events` | 审计列表 API（admin 守卫；`target_type`/`actor_id` 过滤） | AUTH-003, AUTH-008 | 已实现 |
 
 ## 关联 API
@@ -64,3 +65,4 @@
 - `OPTIONS` 预检直接放行，避免 CORS 被 401 拦截
 - RLS L1 仅 `org_dimension` 子树展开；无绑定时 `build_org_rls_fragment` 返回 `1=0`
 - Alembic `0006`：维度分组四表 + `ix_auth_audit_events_actor_created`
+- Alembic `0007`：`auth_roles.is_active` + `ix_auth_audit_events_created_at`
