@@ -30,7 +30,7 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET | `/health` | 健康检查 | — | P0 | BOOT-001 | 规划 | `backend/app/main.py` |
+| GET | `/health` | 健康检查 | — | P0 | BOOT-001 | 已实现 | `backend/app/main.py` |
 | GET | `/docs` | Swagger UI | — | 一期 | API-007 | 规划 | FastAPI 内置 |
 | GET | `/redoc` | ReDoc | — | 一期 | API-007 | 规划 | FastAPI 内置 |
 | GET | `/openapi.json` | OpenAPI 规范 | — | 一期 | API-007 | 规划 | FastAPI 内置 |
