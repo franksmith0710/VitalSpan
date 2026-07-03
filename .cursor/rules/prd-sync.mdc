@@ -16,7 +16,7 @@ alwaysApply: true
 | **业务域** | **`docs/services/<域>.md`** + `docs/services/README.md` | 域职责、边界、依赖、主流程衔接（研发向） | HTTP path/method/schema |
 | **API** | `docs/api/README.md` | REST 契约：路由、期次、状态、代码锚点 | 用户故事或 UI 交互 |
 | **架构** | `docs/arch.md` | 分层、模块、环境变量、部署 | 单域业务细则 |
-| **壳层 IA** | `docs/ui/layout.md` | 双端路由、导航、壳层规格 | 组件 Token 细节 |
+| **壳层 IA** | `docs/ui/layout.md` | 路由与导航、壳层规格 | 组件 Token 细节 |
 | **演化** | `docs/automate/goal.md` · `plan.md` | 方向、里程碑顺序 | 功能验收条款 |
 
 **阅读顺序**：SRS 边界 → PRD 索引定位功能 ID → **`docs/services/<域>.md` 理解域边界与依赖** → `docs/api/` 查契约 → 代码。
@@ -54,7 +54,7 @@ alwaysApply: true
 | 域职责、边界、依赖变化 | `docs/services/<域>.md` + `docs/services/README.md` 状态 |
 | 新增/修改 `/api/v1/*` 或 `/health` | `docs/api/README.md` 补一行 |
 | 架构、目录、环境变量 | `docs/arch.md`、`docs/api/README.md` |
-| 壳层、双端路由、导航 IA | `docs/ui/layout.md` |
+| 壳层、路由与导航 IA | `docs/ui/layout.md` |
 | 里程碑完成 / 功能已实现 | `prd/F*.md` 状态 + 上表相关附录 |
 
 ## PRD 同步评估

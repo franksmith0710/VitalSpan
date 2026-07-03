@@ -20,7 +20,7 @@ alwaysApply: false
 | M1 交付 | M1 不做（后续里程碑补） |
 |---------|-------------------------|
 | Admin 壳层、`routes.tsx` + `layouts/`、`components/ui` 最小集 | TanStack Query、`@/lib/queryKeys.ts`、`mapApiError` 全量数据层 |
-| `check:design` Token 门禁 | Portal/Embed 完整业务页 |
+| `check:design` Token 门禁 | Embed 业务页、消费态 view 模式页 |
 
 M1 仅静态壳层时，数据层/表单/envelope 章节为**预备约束**，落地业务 API 联调时起效。
 
@@ -50,7 +50,7 @@ M1 仅静态壳层时，数据层/表单/envelope 章节为**预备约束**，�
 - **视觉语言**：TailAdmin React Pro（经 shadcn/Radix 映射，见 Skill「shadcn 映射速查」）
 - **Token**：`fe/src/index.css` 语义 Token 须与 Skill `templates/globals.css` 对齐；**禁止硬编码 hex**（`check:design` 扫描，`@design-token-ok` 仅用于豁免行）
 - **壳层**：侧栏 290px/90px、顶栏 sticky、内容区 `max-w-(--breakpoint-2xl)`（见 `layout.md` §2）
-- **路由 IA**：`/admin/*` 配置台 · `/portal/*` 门户 · `/embed/*` 嵌入
+- **路由 IA**：`/admin/*` 单应用主壳层 · `/embed/*` 嵌入
 - **状态**：hover / focus-visible / disabled / loading / empty / error / dark / responsive 全覆盖
 - **检索**：先读 `SKILL.md` → 按需 `references/agent-retrieval-guide.md`；普通任务 ≤3 次 reference 读取
 

@@ -70,7 +70,7 @@ docs/arch.md                       ← 技术决策、目录、配置
 docs/srs/                          ← 需求权威（SRS + 附录；人工修订，演化只读）
 docs/api/README.md                 ← HTTP 路由索引
 docs/services/                     ← 域服务附录（随实现补充）
-docs/ui/layout.md                  ← 双端壳层与 IA（`.cursor/rules/fe-ui.mdc` · b-design-system）
+docs/ui/layout.md                  ← 壳层与 IA（单应用 + Embed · `.cursor/rules/fe-ui.mdc` · b-design-system）
 docs/automate/goal.md              ← 方向与边界（人工低频修订，create-evolution-goal）
 docs/automate/prd.md               ← PRD hub：8 维评分、薄弱项、功能索引（G2 只读）
 docs/automate/prd/                 ← 功能明细分片（15 域 · 118 项，按 ID 按需读）

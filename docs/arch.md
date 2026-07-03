@@ -18,8 +18,8 @@ prd_ref: docs/automate/prd.md
 ```mermaid
 flowchart TB
     subgraph client [客户端]
-        AdminUI[管理端 React]
-        Portal[门户嵌入 iframe/SDK]
+        WebApp[单应用 React /admin]
+        EmbedUI[嵌入 iframe/SDK /embed]
     end
     subgraph api [FastAPI /api/v1]
         AuthMW[鉴权中间件]
@@ -38,8 +38,8 @@ flowchart TB
         DB[(多类别数据源)]
         Bus[数据交换总线]
     end
-    AdminUI --> AuthMW
-    Portal --> AuthMW
+    WebApp --> AuthMW
+    EmbedUI --> AuthMW
     AuthMW --> DSAPI
     AuthMW --> QueryAPI
     AuthMW --> DashAPI
@@ -66,7 +66,8 @@ flowchart TB
 | ID | 决策 | 理由 | 状态 |
 |----|------|------|------|
 | ADR-01 | 后端 **FastAPI** + OpenAPI 自动生成 | 与 FR-1.1 总线 OpenAPI 对齐；Python 生态适合 SQL/连接器 | 已定 |
-| ADR-02 | 前端 **React + shadcn/ui + Radix + Tailwind v4** | SRS 已定目标栈；管理端与门户壳层统一 | 已定 |
+| ADR-02 | 前端 **React + shadcn/ui + Radix + Tailwind v4** | SRS 已定目标栈；单应用主壳层 + Embed | 已定 |
+| ADR-11 | 前端 **单应用 + RBAC 菜单**（非 `/portal` 双 URL） | 对标 DE/SS 权限模型；M1 兼容 `/admin/*`；见 `layout.md` ADR | 已定 |
 | ADR-03 | 图表 **ECharts**（主）/ **AntV L7**（GIS） | 与 UI 层解耦；对标 DE/SS 图表能力 | 已定 |
 | ADR-04 | **ConnectorRegistry** 插件式数据源 | NFR-04：新增类型不改核心服务与查询执行器 | 已定 |
 | ADR-05 | 查询双路径：**SqlCapable** + **NativeQuery** | 关系型/OLAP 走 SQL；时序/文档/搜索走原生 DSL | 已定 |
@@ -82,7 +83,7 @@ flowchart TB
 
 | 层次 | 技术 | 说明 |
 |------|------|------|
-| 前端 UI | React · shadcn/ui · Radix · Tailwind CSS v4 | 管理端、配置台 |
+| 前端 UI | React · shadcn/ui · Radix · Tailwind CSS v4 | 单应用主壳层（`/admin/*`） |
 | 前端图表 | ECharts · AntV L7 | 通用图表 · GIS/热力 |
 | 后端 API | FastAPI · Pydantic v2 · Uvicorn | REST `/api/v1/*` |
 | 平台库 | SQLAlchemy 2 · Alembic | 元数据 ORM + 迁移 |
@@ -107,7 +108,7 @@ VitalSpan/
 │       ├── datasources/     # 连接层 + ConnectorRegistry
 │       │   └── dialects/  # 按 type 分目录（CONN-*）
 │       └── query/           # M3-LITE 查询执行
-├── fe/                      # React 双端前端（M1 Admin 壳层已实现）
+├── fe/                      # React 单应用前端（M1 Admin 壳层已实现）
 ├── docs/
 │   ├── arch.md              # 本文件
 │   ├── api/                 # OpenAPI 端点索引
@@ -331,7 +332,7 @@ pnpm dev            # 默认 :5173
 | [automate/plan.md](automate/plan.md) | 活跃里程碑当前节 |
 | [api/README.md](api/README.md) | API 端点一行索引 |
 | [services/README.md](services/README.md) | 域服务附录（随实现补充） |
-| [ui/layout.md](ui/layout.md) | 双端壳层与信息架构 |
+| [ui/layout.md](ui/layout.md) | 壳层与信息架构（单应用 + Embed） |
 | [superpowers/README.md](superpowers/README.md) | 演化轮次 design/plan 产出（G2–P3） |
 | `.cursor/rules/` | Cursor 项目规则（见 `vitalspan-project.mdc`） |
 
@@ -342,3 +343,4 @@ pnpm dev            # 默认 :5173
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | 1.0.2 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；增 ingestion 域与 ANALYTICS_DATABASE_URL |
+| 1.0.3 | 2026-07-03 | ADR-11 单应用 + RBAC；架构图 WebApp + Embed；废止双 URL 双端 |
