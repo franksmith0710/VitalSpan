@@ -226,3 +226,28 @@ def test_health_consecutive_p95_smoke(client):
         assert response.json() == {"status": "ok"}
 
     assert max(elapsed_list) < 0.5
+
+
+@pytest.mark.parametrize("path", ["/docs", "/openapi.json"])
+def test_public_path_cors_preflight_illegal_origin(client, path):
+    """T-HLT-23/24: OPTIONS /docs 与 /openapi.json 非法 Origin → 400 无 evil ACAO。"""
+    response = client.options(
+        path,
+        headers={
+            "Origin": "http://evil.example",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 400
+    acao = response.headers.get("access-control-allow-origin")
+    assert acao is None or acao != "http://evil.example"
+
+
+def test_docs_and_openapi_public_without_auth(client):
+    """T-HLT-25: GET /docs 与 /openapi.json 无 Authorization → 200；OpenAPI 含 openapi 键。"""
+    docs = client.get("/docs")
+    assert docs.status_code == 200
+
+    openapi = client.get("/openapi.json")
+    assert openapi.status_code == 200
+    assert "openapi" in openapi.json()
