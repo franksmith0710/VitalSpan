@@ -13,7 +13,7 @@
 | branch | cursor/bc-138e6383-60a1-46a7-b8a2-8017c718af92-b8d3 |
 | base_branch | dev-auto |
 | prd_ids | DATA-003,DATA-002,DATA-004,DATA-001,DATA-005 |
-| pr_number |  |
+| pr_number | 22 |
 | last_verified_command | cd backend && python3 -m pytest -q; cd fe && pnpm test && pnpm run build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test && pnpm run build && pnpm run check:design |
