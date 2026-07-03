@@ -640,3 +640,61 @@ def test_run_job_dirty_amount_fill_null_write_through(mock_fetch, mock_write):
     written = mock_write.call_args[0][1]
     assert written[0]["amount"] is None
     assert written[0]["note"] == "默认备注"
+
+
+@patch("app.ingestion.sync_executor._write_analytics")
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", return_value=[{"amount": "1"}])
+@patch("app.ingestion.sync_executor.apply_rules", side_effect=RuntimeError("rules failed"))
+def test_run_job_apply_rules_exception_failed_no_write(mock_apply, mock_fetch, mock_write):
+    """T-ETL-25: apply_rules 异常 → status failed、error_message 含 rules failed、不写库。"""
+    job_id = _seed_job()
+    run_job(job_id, "trace-rules-fail")
+    run = _latest_run(job_id)
+    assert run.status == "failed"
+    assert run.error_message is not None
+    assert "rules failed" in run.error_message
+    mock_write.assert_not_called()
+
+
+@patch("app.ingestion.sync_executor._write_analytics")
+@patch("app.ingestion.sync_executor._fetch_mysql_rows")
+def test_run_job_dirty_amount_none_with_fill_null_note(mock_fetch, mock_write):
+    """T-ETL-26: amount='bad' cast 失败 + fill_null note → write 行 amount is None 且 note 已填充。"""
+    mock_fetch.return_value = [
+        {"amount": "bad", "note": None, "status": "active"},
+    ]
+    mock_write.return_value = 1
+    db = get_meta_session()
+    job = SyncJob(
+        name="dirty-amount-note-job",
+        source_type="mysql",
+        source_host="127.0.0.1",
+        source_port=3307,
+        source_database="db",
+        source_username="u",
+        source_password_encrypted=encrypt_password("p"),
+        source_table="t",
+        target_table="tgt_amount_note",
+        enabled=True,
+    )
+    db.add(job)
+    db.flush()
+    db.add(
+        EtlRuleSet(
+            job_id=job.id,
+            rules=[
+                {"type": "cast_type", "column": "amount", "to": "float"},
+                {"type": "fill_null", "column": "note", "value": "默认备注"},
+            ],
+        )
+    )
+    db.commit()
+    job_id = job.id
+    db.close()
+
+    run_job(job_id, "trace-dirty-amount-note")
+    run = _latest_run(job_id)
+    assert run.status == "succeeded"
+    written = mock_write.call_args[0][1]
+    assert written[0]["amount"] is None
+    assert written[0]["note"] == "默认备注"

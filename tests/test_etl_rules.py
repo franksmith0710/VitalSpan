@@ -1,3 +1,5 @@
+import pytest
+
 from app.ingestion.etl_rules import apply_rules
 
 DIRTY_ROWS = [
@@ -247,3 +249,18 @@ def test_apply_rules_oversized_column_name_does_not_crash():
     rules = [{"type": "fill_null", "column": long_col, "value": "filled"}]
     result = apply_rules(rows, rules)
     assert len(result) == 1
+
+
+def test_numeric_rule_type_ignored():
+    """T-ETL-23: 规则 type 为数字 → apply_rules 不抛，行集不变。"""
+    rows = [{"amount": "1"}]
+    rules = [{"type": 123}]
+    assert apply_rules(rows, rules) == [{"amount": "1"}]
+
+
+def test_cast_type_missing_column_raises_keyerror():
+    """T-ETL-24: cast_type 缺 column 键 → KeyError（与 executor failed 路径一致）。"""
+    rows = [{"amount": "bad"}]
+    rules = [{"type": "cast_type", "to": "float"}]
+    with pytest.raises(KeyError):
+        apply_rules(rows, rules)
