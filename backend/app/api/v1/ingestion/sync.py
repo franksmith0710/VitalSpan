@@ -14,6 +14,7 @@ from app.ingestion.models import (
     EtlRuleSet,
     SourceConnectionIn,
     SourceConnectionOut,
+    SourceConnectionUpdateIn,
     SyncJob,
     SyncRun,
     encrypt_password,
@@ -33,8 +34,12 @@ class SyncJobCreate(BaseModel):
     enabled: bool = True
 
 
-class SyncJobUpdate(SyncJobCreate):
-    pass
+class SyncJobUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    source: SourceConnectionUpdateIn
+    target_table: str
+    schedule_cron: str | None = None
+    enabled: bool = True
 
 
 class SyncJobSummary(BaseModel):
@@ -109,7 +114,12 @@ def _to_source_out(job: SyncJob) -> SourceConnectionOut:
     )
 
 
-def _apply_source(job: SyncJob, source: SourceConnectionIn, *, preserve_password: bool = False) -> None:
+def _apply_source(
+    job: SyncJob,
+    source: SourceConnectionIn | SourceConnectionUpdateIn,
+    *,
+    preserve_password: bool = False,
+) -> None:
     job.source_type = source.type
     job.source_host = source.host
     job.source_port = source.port
