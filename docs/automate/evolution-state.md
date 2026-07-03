@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | design | docs/superpowers/specs/2026-07-03-boot-test-coverage-design.md |
 | plan | docs/superpowers/plans/2026-07-03-boot-test-coverage.md |
@@ -17,7 +17,7 @@
 | last_verified_command | cd backend && ruff check . && pytest -v; cd fe && pnpm test && pnpm build && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test && pnpm build && pnpm run check:design |
-| last_ui_verified_note | vitest 18/18 (T-FE-11~14); build exit 0; check:design exit 0; ui_design_skill b-design-system-tailadmin-radix |
+| last_ui_verified_note | vitest 18/18 (4 files, T-FE-11~14 smoke); check:design fixture 3/3; build exit 0; check:design 33 files scanned exit 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T09:55:00Z |
 | skill_rule_index_source_count | 26 |
