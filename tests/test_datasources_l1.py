@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import text
 
 from app.core.config import Settings, get_settings
 from app.datasources import register_builtin_dialects
@@ -16,6 +17,46 @@ from app.datasources.registry import (
     registry,
     register_dialect,
 )
+
+_DS_SQLITE_URL = "sqlite+pysqlite:///file:ds_l1_test?mode=memory&cache=shared&uri=true"
+
+
+@pytest.fixture(scope="module", autouse=True)
+def ds_l1_sqlite_env():
+    previous = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = _DS_SQLITE_URL
+    get_settings.cache_clear()
+    from app.datasources.models import get_meta_engine
+
+    get_meta_engine.cache_clear()
+    yield
+    if previous is None:
+        os.environ.pop("DATABASE_URL", None)
+    else:
+        os.environ["DATABASE_URL"] = previous
+    get_settings.cache_clear()
+    get_meta_engine.cache_clear()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def ensure_data_sources_table():
+    from app.datasources.models import Base, get_meta_engine
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    yield
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM data_sources"))
+
+
+@pytest.fixture(autouse=True)
+def clean_data_sources_between_tests():
+    from app.datasources.models import get_meta_engine
+
+    yield
+    engine = get_meta_engine()
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM data_sources"))
 
 
 @pytest.fixture(autouse=True)
@@ -115,3 +156,11 @@ def test_settings_missing_credential_fernet_key_raises(monkeypatch):
             secret_key=os.environ["SECRET_KEY"],
         )
     get_settings.cache_clear()
+
+
+def test_data_sources_table_exists():
+    """T-DS-INFRA: data_sources 表 create_all 成功。"""
+    from app.datasources.models import Base, get_meta_engine
+
+    assert "data_sources" in Base.metadata.tables
+    assert get_meta_engine() is not None
