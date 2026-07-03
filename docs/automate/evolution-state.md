@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | prd_ids | BOOT-005,BOOT-004,BOOT-002,BOOT-001,BOOT-006 |
 | design | docs/superpowers/specs/2026-07-03-m1-boot-test-coverage-design.md |
