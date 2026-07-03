@@ -77,9 +77,10 @@ class TestConnectionOut(BaseModel):
     ok: bool
     message: str
     latency_ms: int | None = Field(serialization_alias="latencyMs")
+    trace_id: str | None = Field(default=None, serialization_alias="traceId")
 
     model_config = {"populate_by_name": True}
 
     @classmethod
-    def from_result(cls, result: TestConnectionResult) -> TestConnectionOut:
-        return cls(ok=result.ok, message=result.message, latency_ms=result.latency_ms)
+    def from_result(cls, result: TestConnectionResult, *, trace_id: str | None = None) -> TestConnectionOut:
+        return cls(ok=result.ok, message=result.message, latency_ms=result.latency_ms, trace_id=trace_id)

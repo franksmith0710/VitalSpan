@@ -292,3 +292,196 @@ def test_saved_test_decrypt_failure_returns_500(mock_connect, client, auth_heade
     resp = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
     assert resp.status_code == 500
     assert resp.json()["code"] == "CREDENTIAL_DECRYPT_FAILED"
+
+
+from app.auth.models import AuthResourceGrant, AuthRole, Base as AuthBase
+
+
+@pytest.fixture(scope="module", autouse=True)
+def ensure_auth_tables():
+    engine = get_meta_engine()
+    AuthBase.metadata.create_all(engine)
+    yield
+
+
+def test_list_pagination_total_and_items(client, auth_headers):
+    """T-DS-C09: limit=2 offset=0 → total=3, items 长度 2。"""
+    for i in range(3):
+        client.post(
+            "/api/v1/datasources",
+            json={**_payload(), "code": f"pg_{i}", "name": f"PG {i}"},
+            headers=auth_headers,
+        )
+    resp = client.get("/api/v1/datasources?limit=2&offset=0", headers=auth_headers)
+    body = resp.json()
+    assert body["total"] == 3
+    assert len(body["items"]) == 2
+    assert body["limit"] == 2
+    assert body["offset"] == 0
+
+
+def test_list_filter_by_type(client, auth_headers):
+    """T-DS-C10: GET ?type=mysql 过滤。"""
+    client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    resp = client.get("/api/v1/datasources?type=mysql", headers=auth_headers)
+    assert resp.status_code == 200
+    assert all(item["type"] == "mysql" for item in resp.json()["items"])
+
+
+def test_list_filter_by_q(client, auth_headers):
+    """T-DS-C10: GET ?q=demo 命中 name/code。"""
+    client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    resp = client.get("/api/v1/datasources?q=demo", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json()["total"] >= 1
+
+
+def test_patch_description_only(client, auth_headers):
+    """T-DS-C11: PATCH 仅改 description。"""
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    before = created.json()
+    patched = client.patch(
+        f"/api/v1/datasources/{ds_id}",
+        json={"description": "patched"},
+        headers=auth_headers,
+    )
+    assert patched.status_code == 200
+    assert patched.json()["description"] == "patched"
+    assert patched.json()["name"] == before["name"]
+
+
+def test_patch_name_conflict(client, auth_headers):
+    """T-DS-C12: PATCH 改 name 与既有冲突 → 409。"""
+    client.post(
+        "/api/v1/datasources",
+        json={**_payload(), "code": "first_ds", "name": "First DS"},
+        headers=auth_headers,
+    )
+    created = client.post(
+        "/api/v1/datasources",
+        json={**_payload(), "code": "second_ds", "name": "Second DS"},
+        headers=auth_headers,
+    )
+    ds_id = created.json()["id"]
+    resp = client.patch(
+        f"/api/v1/datasources/{ds_id}",
+        json={"name": "First DS"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "DATASOURCE_NAME_CONFLICT"
+
+
+def test_delete_blocked_when_grant_exists(client, auth_headers):
+    """T-DS-C13: AuthResourceGrant 引用 → 409 DATASOURCE_IN_USE。"""
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = uuid.UUID(created.json()["id"])
+    session = get_meta_session()
+    role = AuthRole(code="ds_role", name="DS Role")
+    session.add(role)
+    session.flush()
+    session.add(AuthResourceGrant(role_id=role.id, resource_type="datasource", resource_id=ds_id))
+    session.commit()
+    session.close()
+    resp = client.delete(f"/api/v1/datasources/{ds_id}", headers=auth_headers)
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "DATASOURCE_IN_USE"
+
+
+def test_soft_delete_then_get_404(client, auth_headers):
+    """T-DS-C14: DELETE 204 后 GET 404。"""
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    assert client.delete(f"/api/v1/datasources/{ds_id}", headers=auth_headers).status_code == 204
+    assert client.get(f"/api/v1/datasources/{ds_id}", headers=auth_headers).status_code == 404
+
+
+def test_list_unauthorized_401(client):
+    """T-DS-C15: 无 Authorization → 401。"""
+    assert client.get("/api/v1/datasources").status_code == 401
+
+
+def test_openapi_has_patch_and_list_params(client):
+    """T-DS-C16: OpenAPI 含 patch 与列表 query。"""
+    spec = client.get("/openapi.json").json()
+    list_op = spec["paths"]["/api/v1/datasources"]["get"]
+    assert any(p["name"] == "limit" for p in list_op.get("parameters", []))
+    assert "patch" in spec["paths"]["/api/v1/datasources/{data_source_id}"]
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_test_uses_updated_password(mock_connect, client, auth_headers):
+    """T-DS-T06: PUT 新 password 后 test 使用新凭据。"""
+    mock_connect.return_value = MagicMock()
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    client.put(
+        f"/api/v1/datasources/{ds_id}",
+        json={
+            "name": "Demo",
+            "host": "127.0.0.1",
+            "port": 3306,
+            "database": "demo",
+            "username": "root",
+            "password": "new-secret",
+            "description": None,
+        },
+        headers=auth_headers,
+    )
+    client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert mock_connect.call_args.kwargs["password"] == "new-secret"
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_duplicate_test_returns_429(mock_connect, client, auth_headers):
+    """T-DS-T07: 2s 内重复 test → 429 TEST_IN_PROGRESS。"""
+    mock_connect.return_value = MagicMock()
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    first = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert first.status_code == 200
+    second = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert second.status_code == 429
+    assert second.json()["code"] == "TEST_IN_PROGRESS"
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_slow_connection_latency_bounded(mock_connect, client, auth_headers):
+    """T-DS-T08: 慢连接 latencyMs 有值且合理。"""
+    def slow(**kwargs):
+        time.sleep(0.05)
+        return MagicMock()
+
+    mock_connect.side_effect = slow
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    time.sleep(2.1)
+    resp = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert resp.json()["latencyMs"] is not None
+    assert resp.json()["latencyMs"] < 10_000
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_failed_test_includes_trace_id(mock_connect, client, auth_headers):
+    """T-DS-T09: 失败响应含 message 与非空 traceId。"""
+    mock_connect.side_effect = pymysql.err.OperationalError(2003, "refused")
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    time.sleep(2.1)
+    resp = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    body = resp.json()
+    assert body["ok"] is False
+    assert body.get("traceId")
+    assert body["message"]
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_trace_id_header_matches_body(mock_connect, client, auth_headers):
+    """T-DS-T10: X-Trace-Id 与 body traceId 一致。"""
+    mock_connect.return_value = MagicMock()
+    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    ds_id = created.json()["id"]
+    time.sleep(2.1)
+    resp = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+    assert resp.headers.get("X-Trace-Id") == resp.json().get("traceId")

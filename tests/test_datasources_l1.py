@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 import uuid
 from unittest.mock import MagicMock, patch
 
@@ -49,9 +50,11 @@ def ds_l1_sqlite_env():
 @pytest.fixture(scope="module", autouse=True)
 def ensure_data_sources_table():
     from app.datasources.models import Base, get_meta_engine
+    from app.auth.models import Base as AuthBase
 
     engine = get_meta_engine()
     Base.metadata.create_all(engine)
+    AuthBase.metadata.create_all(engine)
     yield
     with engine.begin() as conn:
         conn.execute(text("DELETE FROM data_sources"))
@@ -249,7 +252,10 @@ def test_create_list_get_update_delete_roundtrip(client, auth_headers):
 
     listed = client.get("/api/v1/datasources", headers=auth_headers)
     assert listed.status_code == 200
-    assert any(item["id"] == ds_id for item in listed.json()["items"])
+    body = listed.json()
+    assert "items" in body
+    assert body.get("total", len(body["items"])) >= 1
+    assert any(item["id"] == ds_id for item in body["items"])
 
     detail = client.get(f"/api/v1/datasources/{ds_id}", headers=auth_headers)
     assert detail.status_code == 200
@@ -321,6 +327,7 @@ def test_draft_test_connection_refused(mock_connect, client, auth_headers):
     """T-DS-T02: mock 拒绝连接。"""
     import pymysql.err
 
+    time.sleep(2.1)
     mock_connect.side_effect = pymysql.err.OperationalError(2003, "Connection refused")
     resp = client.post("/api/v1/datasources/test", json=_payload(), headers=auth_headers)
     assert resp.status_code == 200
@@ -337,6 +344,7 @@ def test_saved_test_connection_success(mock_connect, client, auth_headers):
     mock_connect.return_value = connection
     created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
     ds_id = created.json()["id"]
+    time.sleep(2.1)
     resp = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
     assert resp.status_code == 200
     assert resp.json()["ok"] is True
@@ -348,8 +356,13 @@ def test_saved_test_bad_credentials(mock_connect, client, auth_headers):
     import pymysql.err
 
     mock_connect.side_effect = pymysql.err.OperationalError(1045, "Access denied for user 'root'@'localhost'")
-    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    created = client.post(
+        "/api/v1/datasources",
+        json={**_payload(), "code": "bad_cred_ds"},
+        headers=auth_headers,
+    )
     ds_id = created.json()["id"]
+    time.sleep(2.1)
     resp = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
     assert resp.status_code == 200
     assert resp.json()["ok"] is False
@@ -369,9 +382,14 @@ def test_end_to_end_create_and_test(mock_connect, client, auth_headers):
     """T-CONN-M04: 创建 mysql + test 串联。"""
     connection = MagicMock()
     mock_connect.return_value = connection
-    created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
+    created = client.post(
+        "/api/v1/datasources",
+        json={**_payload(), "code": "e2e_ds"},
+        headers=auth_headers,
+    )
     assert created.status_code == 201
     ds_id = created.json()["id"]
+    time.sleep(2.1)
     tested = client.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
     assert tested.status_code == 200
     assert tested.json()["ok"] is True
