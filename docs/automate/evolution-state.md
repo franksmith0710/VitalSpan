@@ -13,7 +13,7 @@
 | branch | feat/evolution-r22-m3-datasource-kickoff |
 | base_branch | dev-auto |
 | prd_ids | DS-001,DS-002,DS-005,DS-003,CONN-001 |
-| pr_number |  |
+| pr_number | 42 |
 | last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端 r22） |
