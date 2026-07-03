@@ -36,8 +36,11 @@ def meta_tables():
 
 
 @pytest.fixture
-def smoke_client(analytics_sqlite, monkeypatch) -> TestClient:
-    monkeypatch.setenv("ANALYTICS_DATABASE_URL", analytics_sqlite)
+def smoke_client(monkeypatch) -> TestClient:
+    monkeypatch.setenv(
+        "ANALYTICS_DATABASE_URL",
+        "postgresql+psycopg://vitalspan:vitalspan@localhost:5433/analytics",
+    )
     get_settings.cache_clear()
     return TestClient(app)
 
@@ -100,7 +103,62 @@ def test_l1_mock_smoke_success(mock_fetch, mock_write, smoke_client, auth_header
     assert final["error_message"] is None
     mock_fetch.assert_called()
     mock_write.assert_called()
+    written_rows = mock_write.call_args[0][1]
+    assert len(written_rows) == len(MOCK_ROWS)
 
+    smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+
+@patch("app.ingestion.sync_executor._write_analytics", return_value=1)
+@patch("app.ingestion.sync_executor._fetch_mysql_rows", return_value=MOCK_ROWS[:1])
+def test_l1_mock_smoke_history_list_order(mock_fetch, mock_write, smoke_client, auth_headers):
+    """T-D05-03: runs 按 started_at 降序。"""
+    payload = {
+        "name": "l1-order-smoke",
+        "source": {
+            "type": "mysql",
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+            "table": "dirty_orders",
+        },
+        "target_table": "orders_order_test",
+        "schedule_cron": None,
+    }
+    create = smoke_client.post("/api/v1/ingestion/sync-jobs", json=payload, headers=auth_headers)
+    job_id = create.json()["id"]
+    for _ in range(2):
+        run_resp = smoke_client.post(
+            f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+            headers=auth_headers,
+        )
+        if run_resp.status_code == 409:
+            time.sleep(0.2)
+            run_resp = smoke_client.post(
+                f"/api/v1/ingestion/sync-jobs/{job_id}/run",
+                headers=auth_headers,
+            )
+        assert run_resp.status_code == 202
+        deadline = time.time() + 15
+        while time.time() < deadline:
+            listed = smoke_client.get(
+                f"/api/v1/ingestion/sync-jobs/{job_id}/runs",
+                headers=auth_headers,
+            )
+            items = listed.json()["items"]
+            latest = items[0] if items else None
+            if latest and latest["status"] in ("succeeded", "failed"):
+                break
+            time.sleep(0.1)
+    items = smoke_client.get(
+        f"/api/v1/ingestion/sync-jobs/{job_id}/runs",
+        headers=auth_headers,
+    ).json()["items"]
+    assert len(items) >= 2
+    starts = [i["started_at"] for i in items]
+    assert starts == sorted(starts, reverse=True)
     smoke_client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
 
 

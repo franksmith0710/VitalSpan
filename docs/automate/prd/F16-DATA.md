@@ -90,5 +90,5 @@
 - **验收标准**：
   - [x] DATA-SMOKE L1 用例通过（`tests/test_ingestion_e2e.py`）
   - [x] SRS §3.6、api/README §9、services/ingestion 状态已回写
-- **代码锚点**：`tests/test_ingestion_e2e.py` · `docs/automate/plan.md` M1B
+- **代码锚点**：`tests/test_ingestion_e2e.py` · `tests/test_ingestion_l1_smoke.py` · `tests/test_doc_anchors_data.py` · `docs/automate/plan.md` M1B
 - **演化建议**：`tests/test_ingestion_l1_smoke.py` mock L1 成功/失败 + `tests/test_doc_anchors_data.py` 锚点对账 + `analytics_sqlite` fixture；CI compose 跑 L1 integration（当前 skip）；L2 dataSourceId 登记见 M3/M4

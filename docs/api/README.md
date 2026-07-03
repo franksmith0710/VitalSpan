@@ -165,6 +165,7 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | GET/POST | `/api/v1/ingestion/sync-jobs` | 同步任务 CRUD | 内部 | M1B | DATA-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
+| DELETE | `/api/v1/ingestion/sync-jobs/{id}` | 删除同步任务 | 内部 | M1B | DATA-001 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | POST | `/api/v1/ingestion/sync-jobs/{id}/run` | 手动触发同步 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/ingestion/sync_executor.py` |
 | GET | `/api/v1/ingestion/sync-jobs/{id}/runs` | 运行历史 | 内部 | M1B | DATA-002 | 已实现 | `backend/app/api/v1/ingestion/sync.py` |
 | GET/PUT | `/api/v1/ingestion/sync-jobs/{id}/etl-rules` | 清洗规则配置 | 内部 | M1B | ETL-001 | 已实现 | `backend/app/ingestion/etl_rules.py` |
@@ -208,6 +209,12 @@ redoc: /redoc
 
 ```json
 { "run_id": "550e8400-e29b-41d4-a716-446655440000", "status": "running" }
+```
+
+并发冲突（已有 `status=running` 的运行记录）返回 **409**：
+
+```json
+{ "code": "RUN_ALREADY_IN_PROGRESS", "message": "该任务正在运行中", "detail": null }
 ```
 
 **GET `/api/v1/ingestion/sync-jobs/{id}/runs`**（200）：
