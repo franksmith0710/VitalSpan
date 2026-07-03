@@ -17,16 +17,17 @@
 - **里程碑对齐**：
 ### [CONN-002] PostgreSQL 连接器
 
-- **状态**：未实现
+- **状态**：部分实现（L1 companion r25）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：PostgreSQL 连接器（SRS 追溯项）。
 - **验收标准**：
   - [ ] type=`postgresql` 已注册且 UI 可选
   - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/postgresql/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] category=`relational` 查询模式正确
+- **代码锚点**：`backend/app/datasources/dialects/postgres.py` · `backend/app/datasources/dialects/base.py` · `tests/test_datasources_companion_r25.py` T-CONN-P01~P05
+- **演化建议**：Admin UI 类型选择；QUERY 只读查询对接；真实 PostgreSQL compose 集成测试
+- **里程碑对齐**：
 ### [CONN-003] MariaDB 连接器
 
 - **状态**：未实现

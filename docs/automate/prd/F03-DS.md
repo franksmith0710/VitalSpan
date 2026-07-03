@@ -12,7 +12,7 @@
   - [x] 连接器可注册 type/category/capabilities
   - [x] 新增类型不改核心服务
 - **代码锚点**：`backend/app/datasources/registry.py` · `backend/app/datasources/dialects/` · `tests/test_datasources_l1.py` T-DS-R01~R04 · `tests/test_datasources_quality_r23.py` T-DS-R05~R08 · `tests/test_datasources_quality_r24.py` T-DS-R09~R12
-- **演化建议**：DS-007 GET `/types` API 对接 export_type_catalog；CONN-002 PostgreSQL 方言；连接池 DS-006；生产 usage_checker 对接 data_sources 表
+- **演化建议**：生产 usage_checker 对接 data_sources 表；Admin UI 类型选择；多方言 schema_browser 扩展
 - **里程碑对齐**：
 ### [DS-002] 数据源 CRUD API
 
@@ -40,15 +40,16 @@
 - **里程碑对齐**：
 ### [DS-004] Schema 元数据浏览
 
-- **状态**：未实现
+- **状态**：已实现（L1 companion r25）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：Schema 元数据浏览（SRS 追溯项）。
 - **验收标准**：
-  - [ ] schemas/tables/columns 三级浏览 API
-  - [ ] 仅返回已授权数据源
-- **代码锚点**：`backend/app/datasources/metadata/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] schemas/tables/columns 三级浏览 API
+  - [x] 仅返回已授权数据源
+- **代码锚点**：`backend/app/datasources/metadata/service.py` · `backend/app/api/v1/datasources.py` · `backend/app/datasources/dialects/base.py` · `tests/test_datasources_companion_r25.py` T-DS-MD01~MD06
+- **演化建议**：真实 compose MySQL/PostgreSQL 集成测试；Admin UI schema 浏览器；大数据量 schema 分页
+- **里程碑对齐**：
 ### [DS-005] 凭证加密存储
 
 - **状态**：已实现（L1 kickoff r22；quality r23/r24）
@@ -63,34 +64,37 @@
 - **里程碑对齐**：
 ### [DS-006] 连接池按 dataSourceId 隔离
 
-- **状态**：未实现
+- **状态**：已实现（L1 companion r25）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：连接池按 dataSourceId 隔离（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 每数据源独立连接池
-  - [ ] 池参数可配置
-- **代码锚点**：`backend/app/datasources/pool.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 每数据源独立连接池
+  - [x] 池参数可配置
+- **代码锚点**：`backend/app/datasources/pool.py` · `backend/app/datasources/service.py` · `tests/test_datasources_companion_r25.py` T-DS-PL01~PL05
+- **演化建议**：池大小/TTL 可配置；分布式环境池驱逐；连接健康检查与自动重连
+- **里程碑对齐**：
 ### [DS-007] 已注册类型清单 API
 
-- **状态**：未实现
+- **状态**：已实现（L1 companion r25）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：已注册类型清单 API（SRS 追溯项）。
 - **验收标准**：
-  - [ ] GET `/api/v1/datasources/types`
-  - [ ] 未注册类型不在 UI 展示
-- **代码锚点**：`backend/app/datasources/types.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] GET `/api/v1/datasources/types`
+  - [x] 未注册类型不在 UI 展示
+- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/registry.py` · `tests/test_datasources_companion_r25.py` T-DS-TY01~TY04
+- **演化建议**：Admin UI 类型选择器对接；按 category 过滤；类型图标与文档链接
+- **里程碑对齐**：
 ### [DS-008] 数据源授权与 M7 集成
 
-- **状态**：未实现
+- **状态**：已实现（L1 companion r25）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：数据源授权与 M7 集成（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 用户仅见已授权 dataSourceId
-  - [ ] 越权访问返回 403
-- **代码锚点**：`backend/app/datasources/acl.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 用户仅见已授权 dataSourceId
+  - [x] 越权访问返回 403
+- **代码锚点**：`backend/app/datasources/acl.py` · `backend/app/datasources/service.py` · `tests/test_datasources_companion_r25.py` T-DS-AC01~AC05
+- **演化建议**：M7 RLS 执行链对接 QUERY；资源授权 Admin UI；批量授权与继承
+- **里程碑对齐**：

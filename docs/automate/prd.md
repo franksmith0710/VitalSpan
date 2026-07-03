@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.30
+version: 1.2.31
 last_updated: 2026-07-03
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-03 · P5 r24 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r24）；pytest 476/4 skipped；T-DS-R09~R12、C17~C22、T11~T15、K09~K12、CONN-M11~M16；migration 0010 connectionOptions + code 复用 + registry RLock/export_type_catalog + inflight release + Fernet PREVIOUS key；完整度 86–96%→92–98%，可靠性 94–96%→96–98%，架构 90–92%→90–94%，安全性 88–94%→88–96%，总分 89.1–91.9→90.1–92.1（CONN-001 破 90 STUCK 清零）；远期未实现项仍占 Top10
+> 更新：2026-07-03 · P5 r25 重评 DS-004/006/007/008 + CONN-002（M3 datasource companion kickoff r25）；pytest 501/4 skipped；T-DS-TY01~TY04、PL01~PL05、MD01~MD06、AC01~AC05、T-CONN-P01~P05、M15；PostgreSQL 方言 + schema_browser 协议 + GET /types + per-id pool + metadata API + ACL 守卫；完整度 5%→92–96%，可靠性 0%→94–96%，测试覆盖 0%→100%，总分 12.8–13.7→90.1–91.6（五 ID 全破 90）；远期未实现项仍占 Top10
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -57,13 +57,13 @@ domain_count: 16
 | DS-001 | 82 | 94 | 94 | N/A | 94 | 100 | 86 | 88 | 90.9 | 用户价值 |
 | DS-002 | 84 | 98 | 96 | N/A | 90 | 100 | 86 | 90 | 92.1 | 用户价值 |
 | DS-003 | 84 | 94 | 98 | N/A | 90 | 100 | 86 | 90 | 91.8 | 用户价值 |
-| DS-004 | 56 | 5 | 0 | N/A | 11 | 0 | 0 | 13 | 13.6 | 完整度 |
+| DS-004 | 82 | 94 | 94 | N/A | 90 | 100 | 86 | 90 | 90.7 | 用户价值 |
 | DS-005 | 82 | 96 | 96 | N/A | 90 | 100 | 86 | 96 | 92.1 | 用户价值 |
-| DS-006 | 58 | 5 | 0 | N/A | 13 | 0 | 0 | 9 | 13.7 | 完整度 |
-| DS-007 | 54 | 5 | 0 | N/A | 14 | 0 | 0 | 10 | 13.2 | 完整度 |
-| DS-008 | 55 | 5 | 0 | N/A | 8 | 0 | 0 | 11 | 12.8 | 完整度 |
+| DS-006 | 82 | 96 | 96 | N/A | 92 | 100 | 88 | 88 | 91.6 | 用户价值 |
+| DS-007 | 84 | 96 | 94 | N/A | 90 | 100 | 86 | 88 | 91.2 | 用户价值 |
+| DS-008 | 84 | 94 | 96 | N/A | 90 | 100 | 86 | 92 | 91.6 | 用户价值 |
 | CONN-001 | 82 | 92 | 94 | N/A | 90 | 100 | 86 | 88 | 90.1 | 用户价值 |
-| CONN-002 | 57 | 5 | 0 | N/A | 10 | 0 | 0 | 13 | 13.6 | 完整度 |
+| CONN-002 | 82 | 92 | 94 | N/A | 90 | 100 | 86 | 88 | 90.1 | 用户价值 |
 | CONN-003 | 52 | 5 | 0 | N/A | 11 | 0 | 0 | 8 | 12.3 | 完整度 |
 | CONN-004 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 9 | 11.8 | 完整度 |
 | CONN-005 | 49 | 5 | 0 | N/A | 13 | 0 | 0 | 10 | 12.2 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.31 | 2026-07-03 | P5 r25 重评 DS-004/006/007/008 + CONN-002（M3 datasource companion kickoff r25）；pytest 501/4 skipped；T-DS-TY01~TY04、PL01~PL05、MD01~MD06、AC01~AC05、T-CONN-P01~P05、M15；PostgreSQL 方言 + schema_browser + GET /types + pool + metadata API + ACL；完整度 5%→92–96%，可靠性 0%→94–96%，测试覆盖 0%→100%，总分 12.8–13.7→90.1–91.6（五 ID 全破 90） |
 | 1.2.30 | 2026-07-03 | P5 r24 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r24）；pytest 476/4 skipped；T-DS-R09~R12、C17~C22、T11~T15、K09~K12、CONN-M11~M16；migration 0010 connectionOptions + code 复用 + registry RLock/export_type_catalog + inflight release + Fernet PREVIOUS key + MySQL collation/分层 timeout/结构化 code；完整度 86–96%→92–98%，可靠性 94–96%→96–98%，架构 90–92%→90–94%，安全性 88–94%→88–96%，总分 89.1–91.9→90.1–92.1（CONN-001 破 90 STUCK 清零） |
 | 1.2.29 | 2026-07-03 | P5 r23 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r23）；pytest 449/4 skipped；T-DS-R05~R08、C09~C16、T06~T10、K05~K08、CONN-M05~M10；migration 0009 + unregister/usage_checker + pagination/PATCH/soft delete + test inflight/traceId + credential decrypt errors + MySQL error codes/ssl；完整度 88–96%→92–96%，可靠性 92–94%→94–96%，测试覆盖 96–100%→100%，安全性 88–92%→88–94%，总分 86.8–91.1→89.1–91.9（DS-001 破 90 STUCK 清零；CONN-001 仍 <90 STUCK round 2） |
 | 1.2.28 | 2026-07-03 | P5 r22 重评 DS-001/002/005/003 + CONN-001（M3 datasource L1 kickoff r22）；pytest 419/4 skipped；T-DS-R01~R04、C01~C08、T01~T05、K01~K04、CONN-M01~M04；migration 0008 + ConnectorRegistry/MySQL/credentials/CRUD/test API；完整度 5%→78–96%，可靠性 0%→92–94%，测试覆盖 0%→96–100%，总分 12.8–13.6→86.8–91.1（DS-002/003/005 破 90；DS-001/CONN-001 <90 STUCK upsert） |
