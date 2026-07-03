@@ -168,6 +168,10 @@ class _StubConnector:
     def capabilities(self) -> tuple[str, ...]:
         return ("connectivity_test",)
 
+    @property
+    def display_name(self) -> str:
+        return self._type
+
     def test_connection(self, **kwargs) -> TestConnectionResult:
         return TestConnectionResult(ok=True, message="ok", latency_ms=0)
 
@@ -217,17 +221,18 @@ def test_export_type_catalog_matches_list_types():
     assert len(catalog) == len(listed)
     for entry, desc in zip(catalog, listed, strict=True):
         assert entry["type"] == desc.type
+        assert entry["displayName"] == desc.display_name
         assert entry["category"] == desc.category
         assert entry["capabilities"] == list(desc.capabilities)
 
 
 def test_ingestion_mysql_type_in_catalog():
-    """T-DS-R12: mysql ∈ catalog；postgres 未注册为已知差距（CONN-002）。"""
+    """T-DS-R12: mysql 与 postgresql ∈ catalog（CONN-002）。"""
     registry._connectors.clear()
     register_builtin_dialects()
     types = {entry["type"] for entry in export_type_catalog()}
     assert "mysql" in types
-    assert "postgres" not in types  # CONN-002 待实现
+    assert "postgresql" in types
 
 
 @pytest.fixture(autouse=True)

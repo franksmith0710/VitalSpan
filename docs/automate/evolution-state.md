@@ -7,18 +7,18 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-r24.md |
-| design | docs/superpowers/specs/2026-07-03-m3-datasource-quality-r24-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m3-datasource-quality-r24.md |
-| branch | feat/evolution-r24-m3-datasource-quality |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target-r25.md |
+| design | docs/superpowers/specs/2026-07-03-m3-datasource-companion-r25-design.md |
+| plan | docs/superpowers/plans/2026-07-03-m3-datasource-companion-r25.md |
+| branch | feat/evolution-r25-m3-datasource-companion |
 | base_branch | dev-auto |
-| prd_ids | CONN-001, DS-001, DS-002, DS-003, DS-005 |
-| pr_number | 45 |
-| last_verified_command | `cd backend && python3 -m ruff check . && python3 -m pytest -v` |
+| prd_ids | DS-008,DS-007,DS-004,CONN-002,DS-006 |
+| pr_number |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端 r24） |
+| last_ui_verified_command | N/A（纯后端 r25） |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-03T18:02:00Z |
+| skill_rule_index_generated_at | 2026-07-03T22:10:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r25 PRD 重评：DS-004/006/007/008 + CONN-002 companion kickoff 12.8–13.7→90.1–91.6（五 ID 破 90）；pytest 501 + 4 skipped；T-DS-TY/PL/MD/AC + T-CONN-P + M15
+- P4 r25 独立验证：backend ruff PASS + pytest 501 passed/4 skipped；test_datasources_companion_r25 25/25；round-target DS-008/DS-007/DS-004/CONN-002/DS-006 验收绿（plan Spec Self-Review）；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r25-m3-datasource-companion；base_branch dev-auto
+- P3 r25 实现完成：7 Task 全绿；backend ruff+pytest 501 passed/4 skipped（+25 companion）；ui_design_skill: none；branch feat/evolution-r25-m3-datasource-companion；base_branch dev-auto
 - P5 r24 PRD 重评：DS-001/002/003/005 + CONN-001 质量推分 89.1–91.9→90.1–92.1（CONN-001 破 90 STUCK 清零）；pytest 476 + 4 skipped；T-DS-R09~R12、C17~C22、T11~T15、K09~K12、CONN-M11~M16
 - P4 r24 独立验证：backend ruff PASS + pytest 476 passed/4 skipped；test_datasources_quality_r24 27/27 + r23/L1 53/53；round-target CONN-001/DS-001/002/003/005 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r24-m3-datasource-quality；base_branch dev-auto
 - P5 r23 PRD 重评：DS-001/002/003/005 + CONN-001 质量推分 86.8–91.1→89.1–91.9（DS-001 破 90 STUCK 清零；CONN-001 round 2）；pytest 449 + 4 skipped；T-DS-R05~R08、C09~C16、T06~T10、K05~K08、CONN-M05~M10

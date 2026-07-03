@@ -40,6 +40,7 @@ class ConnectorDescriptor:
     type: str
     category: str
     capabilities: tuple[str, ...]
+    display_name: str
 
 
 class ConnectorRegistry:
@@ -69,6 +70,7 @@ class ConnectorRegistry:
                     type=c.type,
                     category=c.category,
                     capabilities=c.capabilities,
+                    display_name=c.display_name,
                 )
                 for c in self._connectors.values()
             ]
@@ -85,6 +87,7 @@ def export_type_catalog() -> list[dict]:
     return [
         {
             "type": item.type,
+            "displayName": item.display_name,
             "category": item.category,
             "capabilities": list(item.capabilities),
         }

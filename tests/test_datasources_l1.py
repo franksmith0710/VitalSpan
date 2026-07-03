@@ -113,7 +113,8 @@ def test_mysql_connector_attributes():
     connector = MysqlConnector()
     assert connector.type == "mysql"
     assert connector.category == "relational"
-    assert connector.capabilities == ("connectivity_test",)
+    assert connector.capabilities == ("connectivity_test", "schema_browser")
+    assert connector.display_name == "MySQL"
 
 
 @patch("app.datasources.dialects.mysql.pymysql.connect")

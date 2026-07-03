@@ -77,7 +77,7 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET | `/api/v1/datasources/types` | 已注册连接器类型与 category | IF-06 | 一期 | DS-007 | 规划 | `backend/app/api/v1/datasources.py` |
+| GET | `/api/v1/datasources/types` | 已注册连接器类型清单（`type`、`displayName`、`category`、`capabilities`） | IF-06 | 一期 | DS-007 | 已实现 | `backend/app/api/v1/datasources.py` |
 | POST | `/api/v1/datasources` | 创建数据源；请求/响应可选 `connectionOptions`（charset/collation/sslMode/connectTimeoutSec/readTimeoutSec） | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources` | 数据源列表（`?limit=&offset=&type=&q=`）；列表项含 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources/{id}` | 数据源详情（无明文密码）；含 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
@@ -86,9 +86,11 @@ redoc: /redoc
 | DELETE | `/api/v1/datasources/{id}` | 软删数据源（引用中 409 `DATASOURCE_IN_USE`） | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | POST | `/api/v1/datasources/test` | 连通性测试（草稿配置；响应含可选 `code`（`MYSQL_*`）、`traceId`；inflight 并发 429） | IF-06 | 一期 | DS-003 | 已实现 | `backend/app/api/v1/datasources.py` |
 | POST | `/api/v1/datasources/{id}/test` | 连通性测试（已保存；同上；inflight 测试完成即释放槽位） | IF-06 | 一期 | DS-003 | 已实现 | `backend/app/api/v1/datasources.py` |
-| GET | `/api/v1/datasources/{id}/schemas` | Schema 列表 | IF-06 | 一期 | DS-004 | 规划 | `backend/app/api/v1/datasources.py` |
-| GET | `/api/v1/datasources/{id}/tables` | 表列表 | IF-06 | 一期 | DS-004 | 规划 | `backend/app/api/v1/datasources.py` |
-| GET | `/api/v1/datasources/{id}/columns` | 字段列表 | IF-06 | 一期 | DS-004 | 规划 | `backend/app/api/v1/datasources.py` |
+| GET | `/api/v1/datasources/{id}/schemas` | Schema 列表（ACL 过滤；连接失败 502 `METADATA_CONNECTION_FAILED`） | IF-06 | 一期 | DS-004 | 已实现 | `backend/app/api/v1/datasources.py` · `backend/app/datasources/metadata/service.py` |
+| GET | `/api/v1/datasources/{id}/tables` | 表列表（`schema` 必填；缺参 400 `METADATA_INVALID_REQUEST`） | IF-06 | 一期 | DS-004 | 已实现 | `backend/app/api/v1/datasources.py` · `backend/app/datasources/metadata/service.py` |
+| GET | `/api/v1/datasources/{id}/columns` | 列列表（`schema`+`table` 必填） | IF-06 | 一期 | DS-004 | 已实现 | `backend/app/api/v1/datasources.py` · `backend/app/datasources/metadata/service.py` |
+
+**方言实现（r25）**：`mysql` → `backend/app/datasources/dialects/mysql.py`（CONN-001）；`postgresql` → `backend/app/datasources/dialects/postgres.py`（CONN-002）。
 
 ---
 
