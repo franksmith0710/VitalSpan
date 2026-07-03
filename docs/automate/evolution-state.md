@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | design | docs/superpowers/specs/2026-07-03-boot-test-coverage-design.md |
 | plan | docs/superpowers/plans/2026-07-03-boot-test-coverage.md |
@@ -73,17 +73,17 @@
 - plan 当前节 M1B（M1 BOOT+文档回写已全部 [x]）；M1B queued，`m1b_activation: after-M1-complete-not-in-current-execute-scope`
 - P2 planner：6 Task 计划 `docs/superpowers/plans/2026-07-03-m1b-close.md`（001→ETL→002→005 L1→003 smoke→005 文档）；固定 subagent-driven-development option 1
 - G2 picker：M1B 收尾 DATA-005 L1 + 文档回写；同轮 companion DATA-002/003 + ETL-001 + DATA-001 测试/文档补强；META/DESIGN/CONN 远期让位
-- 薄弱项 Top3：META-001(10.8)、DESIGN-001(10.8)、CONN-021(10.9)；STUCK BOOT-001~006 均 <90（最高 BOOT-003 86.4）；入选 M1B 项连续未过轮次均 1（非 STUCK）
+- P5 r8 BOOT 测试 r5：pytest 77 + vitest 18；hub 重评 BOOT-001/002/004/005/006 总分 83.4–87.4（仍 <90）；STUCK 连续未过轮次 +1
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-002 | 8 | 84.7 | 2026-07-03 |
-| BOOT-005 | 7 | 82.4 | 2026-07-03 |
-| BOOT-006 | 8 | 84.5 | 2026-07-03 |
-| BOOT-001 | 8 | 86.0 | 2026-07-03 |
-| BOOT-004 | 8 | 86.1 | 2026-07-03 |
+| BOOT-002 | 9 | 85.7 | 2026-07-03 |
+| BOOT-005 | 8 | 83.4 | 2026-07-03 |
+| BOOT-006 | 9 | 85.3 | 2026-07-03 |
+| BOOT-001 | 9 | 86.5 | 2026-07-03 |
+| BOOT-004 | 9 | 87.4 | 2026-07-03 |
 | BOOT-003 | 6 | 86.4 | 2026-07-03 |
 | DATA-004 | 1 | 80.7 | 2026-07-03 |
 | DATA-001 | 2 | 85.8 | 2026-07-03 |
