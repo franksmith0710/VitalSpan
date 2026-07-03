@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r27.md |
 | design | docs/superpowers/specs/2026-07-03-m4-query-quality-r27-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m4-query-quality-r27.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r27 独立验证：backend ruff PASS + pytest 570 passed/4 skipped（≥560 目标）；test_query_quality_r27 36/36（≥28）；round-target QUERY-004/001/002/005/006 + plan T-MIG-40 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r27-m4-query-quality；base_branch dev-auto
 - P3 r27 实现完成：7 Task 全绿；backend ruff+pytest 570 passed/4 skipped（+38 query quality）；test_query_quality_r27 36/36；ui_design_skill: none；branch feat/evolution-r27-m4-query-quality；base_branch dev-auto
 - P5 r26 PRD 重评：QUERY-001/002/004/005/006 L1 kickoff 12.8–13.5→88.5–91.4（四 ID 破 90；QUERY-004 ClickHouse 缺口 STUCK upsert）；pytest 532 + 4 skipped；T-Q-020~055 + T-MIG-38~39
 - P4 r26 独立验证：backend ruff PASS + pytest 532 passed/4 skipped；test_query_l1_r26 29/29；test_migrations T-MIG-38~39 2/2；plan 验收 ≥531/4 skipped 绿（round-target-r26.md 缺失，按 plan Step 5 对照）；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r26-m4-query-l1-kickoff；base_branch dev-auto
