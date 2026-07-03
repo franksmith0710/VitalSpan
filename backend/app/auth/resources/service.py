@@ -57,6 +57,18 @@ def delete_grant(session: Session, grant_id: uuid.UUID) -> None:
     session.commit()
 
 
+def delete_grants_batch(session: Session, grant_ids: list[uuid.UUID]) -> int:
+    deleted = 0
+    for grant_id in grant_ids:
+        grant = session.get(AuthResourceGrant, grant_id)
+        if grant is not None:
+            session.delete(grant)
+            deleted += 1
+    if deleted:
+        session.commit()
+    return deleted
+
+
 def check_resource_access(
     session: Session,
     role_codes: list[str],

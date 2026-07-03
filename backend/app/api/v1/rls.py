@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
@@ -40,9 +40,14 @@ def _dim_error_response(exc: dim_service.DimensionError) -> JSONResponse:
 def list_dimensions(
     _: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
 ) -> DimensionTypeListResponse:
-    items = [DimensionTypeOut.model_validate(d) for d in dim_service.list_dimension_types(db)]
-    return DimensionTypeListResponse(items=items)
+    items, total = dim_service.list_dimension_types(db, limit=limit, offset=offset)
+    return DimensionTypeListResponse(
+        items=[DimensionTypeOut.model_validate(d) for d in items],
+        total=total,
+    )
 
 
 @dimensions_router.post("", response_model=DimensionTypeOut, status_code=status.HTTP_201_CREATED)
