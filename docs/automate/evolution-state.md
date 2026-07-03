@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
 | design | docs/superpowers/specs/2026-07-03-m2-auth-quality-push-r19-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m2-auth-quality-push-r19.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r19 PRD 重评：AUTH-001~005 巩固 90.8–92.1（89.4–91.2→）；AUTH-003 审计闭环破 90 STUCK 清零；pytest 348 + 4 skipped
 - P4 r19 独立验证：backend ruff PASS + pytest 348 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r19-m2-auth-quality-push@fe8c799；base_branch dev-auto
 - P3 r19 实现完成：7 Task 全绿；backend ruff+pytest 348 passed/4 skipped（+23 AUTH audit/boundary）；ui_design_skill: none；branch feat/evolution-r19-m2-auth-quality-push@b472e9a；base_branch dev-auto
 - P4 r18 独立验证：backend ruff PASS + pytest 325 passed/4 skipped；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r18-m2-auth-quality-push@62fdc65；base_branch dev-auto
@@ -96,4 +97,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| AUTH-003 | 2 | 89.4 | 2026-07-03 |
