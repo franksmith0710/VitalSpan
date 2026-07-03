@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | MERGED |
-| round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-fe-ci.md |
-| design | docs/superpowers/specs/2026-07-03-m1-fe-ci-design.md |
-| plan | docs/superpowers/plans/2026-07-03-m1-fe-ci.md |
-| branch | feat/m1-fe-ci |
+| phase | P1_DONE |
+| round_target | docs/superpowers/evolution/2026-07-03-round-target.md |
+| prd_ids | BOOT-001,BOOT-002,BOOT-003,BOOT-004,BOOT-006 |
+| design | docs/superpowers/specs/2026-07-03-m1-doc-writeback-design.md |
+| plan | — |
+| branch | — |
 | base_branch | dev-auto |
-| prd_ids | BOOT-002,BOOT-006 |
-| pr_number | 4 |
-| merge_sha | 8d09c24 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v && cd fe && pnpm build && pnpm run check:design |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | curl http://127.0.0.1:5173/admin (200) + headless chrome screenshots .superpowers/evolution/p4-screenshots/admin-{desktop,mobile}.png |
+| pr_number | — |
+| merge_sha | — |
+| last_verified_command | — |
+| last_verified_exit_code | — |
+| last_ui_verified_command | — |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T04:10:00Z |
 | skill_rule_index_source_count | 26 |
@@ -69,7 +69,8 @@
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
 - PR #4 已 Squash 合并至 dev-auto（sha 8d09c24）；M1 BOOT-002/006 已实现
-- M1 plan 六勾选项全部完成；待 M1 文档回写 checklist（api/services/arch）
+- M1 plan 六勾选项全部完成；G2 选题：M1 文档回写 4 项 + BOOT-003 `/me` smoke 测试
+- 待办池空；M1B queued 未激活
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
