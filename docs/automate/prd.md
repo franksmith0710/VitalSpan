@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.31
+version: 1.2.32
 last_updated: 2026-07-03
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-03 · P5 r25 重评 DS-004/006/007/008 + CONN-002（M3 datasource companion kickoff r25）；pytest 501/4 skipped；T-DS-TY01~TY04、PL01~PL05、MD01~MD06、AC01~AC05、T-CONN-P01~P05、M15；PostgreSQL 方言 + schema_browser 协议 + GET /types + per-id pool + metadata API + ACL 守卫；完整度 5%→92–96%，可靠性 0%→94–96%，测试覆盖 0%→100%，总分 12.8–13.7→90.1–91.6（五 ID 全破 90）；远期未实现项仍占 Top10
+> 更新：2026-07-03 · P5 r26 重评 QUERY-001/002/004/005/006（M4 query L1 kickoff r26）；pytest 532/4 skipped；T-Q-020~055 + T-MIG-38~39；POST /execute + bindings CRUD + dialects + RLS 链；完整度 5%→88–96%，可靠性 0%→94%，测试覆盖 0%→96–100%，总分 12.8–13.5→88.5–91.4（四 ID 破 90；QUERY-004 ClickHouse 缺口仍 <90）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -84,12 +84,12 @@ domain_count: 16
 | CONN-020 | 45 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.0 | 完整度 |
 | CONN-021 | 46 | 5 | 0 | N/A | 8 | 0 | 0 | 8 | 10.9 | 完整度 |
 | CONN-022 | 47 | 5 | 0 | N/A | 9 | 0 | 0 | 9 | 11.3 | 完整度 |
-| QUERY-001 | 58 | 5 | 0 | N/A | 10 | 0 | 0 | 10 | 13.5 | 完整度 |
-| QUERY-002 | 54 | 5 | 0 | N/A | 11 | 0 | 0 | 11 | 13.0 | 完整度 |
+| QUERY-001 | 82 | 96 | 94 | N/A | 90 | 100 | 86 | 90 | 91.1 | 用户价值 |
+| QUERY-002 | 82 | 94 | 94 | N/A | 90 | 100 | 86 | 88 | 90.5 | 用户价值 |
 | QUERY-003 | 47 | 5 | 0 | N/A | 12 | 0 | 0 | 12 | 12.0 | 完整度 |
-| QUERY-004 | 50 | 5 | 0 | N/A | 13 | 0 | 0 | 13 | 12.8 | 完整度 |
-| QUERY-005 | 57 | 5 | 0 | N/A | 14 | 0 | 0 | 8 | 13.5 | 完整度 |
-| QUERY-006 | 58 | 5 | 0 | N/A | 8 | 0 | 0 | 9 | 13.1 | 完整度 |
+| QUERY-004 | 80 | 88 | 92 | N/A | 92 | 96 | 86 | 88 | 88.5 | 完整度 |
+| QUERY-005 | 84 | 96 | 94 | N/A | 90 | 100 | 86 | 90 | 91.4 | 用户价值 |
+| QUERY-006 | 82 | 94 | 94 | N/A | 90 | 100 | 86 | 92 | 91.0 | 用户价值 |
 | QUERY-007 | 44 | 5 | 0 | N/A | 9 | 0 | 0 | 10 | 10.9 | 完整度 |
 | QUERY-008 | 45 | 5 | 0 | N/A | 10 | 0 | 0 | 11 | 11.3 | 完整度 |
 | QUERY-009 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 12 | 11.7 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.32 | 2026-07-03 | P5 r26 重评 QUERY-001/002/004/005/006（M4 query L1 kickoff r26）；pytest 532/4 skipped；T-Q-020~055、T-MIG-38~39；POST /execute + chart_query_bindings CRUD + MySQL/PG dialects + RLS guard；完整度 5%→88–96%，可靠性 0%→94%，测试覆盖 0%→96–100%，总分 12.8–13.5→88.5–91.4（QUERY-001/002/005/006 破 90；QUERY-004 ClickHouse 缺口仍 88.5） |
 | 1.2.31 | 2026-07-03 | P5 r25 重评 DS-004/006/007/008 + CONN-002（M3 datasource companion kickoff r25）；pytest 501/4 skipped；T-DS-TY01~TY04、PL01~PL05、MD01~MD06、AC01~AC05、T-CONN-P01~P05、M15；PostgreSQL 方言 + schema_browser + GET /types + pool + metadata API + ACL；完整度 5%→92–96%，可靠性 0%→94–96%，测试覆盖 0%→100%，总分 12.8–13.7→90.1–91.6（五 ID 全破 90） |
 | 1.2.30 | 2026-07-03 | P5 r24 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r24）；pytest 476/4 skipped；T-DS-R09~R12、C17~C22、T11~T15、K09~K12、CONN-M11~M16；migration 0010 connectionOptions + code 复用 + registry RLock/export_type_catalog + inflight release + Fernet PREVIOUS key + MySQL collation/分层 timeout/结构化 code；完整度 86–96%→92–98%，可靠性 94–96%→96–98%，架构 90–92%→90–94%，安全性 88–94%→88–96%，总分 89.1–91.9→90.1–92.1（CONN-001 破 90 STUCK 清零） |
 | 1.2.29 | 2026-07-03 | P5 r23 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r23）；pytest 449/4 skipped；T-DS-R05~R08、C09~C16、T06~T10、K05~K08、CONN-M05~M10；migration 0009 + unregister/usage_checker + pagination/PATCH/soft delete + test inflight/traceId + credential decrypt errors + MySQL error codes/ssl；完整度 88–96%→92–96%，可靠性 92–94%→94–96%，测试覆盖 96–100%→100%，安全性 88–92%→88–94%，总分 86.8–91.1→89.1–91.9（DS-001 破 90 STUCK 清零；CONN-001 仍 <90 STUCK round 2） |
