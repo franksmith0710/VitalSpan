@@ -6,13 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r15.md |
 | design | docs/superpowers/specs/2026-07-03-m1-boot-quality-r15-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-boot-quality-r15.md |
 | branch | feat/evolution-r15-boot-quality-push |
 | base_branch | dev-auto |
 | prd_ids | BOOT-004,BOOT-005,BOOT-006,BOOT-002,BOOT-003 |
+| pr_number | 待创建 |
 | last_verified_command | `cd backend && ruff check . && pytest -v`; `cd fe && pnpm test && pnpm build && pnpm run check:design` |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | `cd fe && pnpm test`（vitest 64/64 含 routes/theme smoke；node:test 4/4 check-design fixture）+ `pnpm run check:design` PASS |
@@ -65,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r15 PRD 重评：BOOT-004 破 90（89.5→90.6 STUCK 清零）；BOOT-003/005/006/002 巩固 90.2–90.9；middleware traceId 契约修复；pytest 254 + vitest 64 + node:test 4
 - P4 r15 独立验证：backend ruff+pytest 254 passed/2 skipped；fe vitest 64/64 + node:test 4/4；build+check:design PASS；UI smoke+design drift PASS；exit_code 0；branch feat/evolution-r15-boot-quality-push@362c8fb
 - P3 r15 实现完成：5 Task 全绿；backend ruff+pytest 254 passed/2 skipped；fe vitest 64/64 + node:test 4/4；build+check:design PASS；branch feat/evolution-r15-boot-quality-push@c8c75ce；base_branch dev-auto
 - P5 r14 PRD 重评：BOOT-003/005/006/002/001 破 90（90.0–90.4）；BOOT 簇 STUCK 五 ID 清零；BOOT-004 仍 89.5
@@ -81,4 +83,4 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| BOOT-004 | 10 | 89.5 | 2026-07-03 |
+| （无） | — | — | — |
