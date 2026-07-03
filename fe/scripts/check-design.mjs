@@ -10,6 +10,17 @@ const EXT_RE = /\.(ts|tsx|css)$/i;
 const HEX_RE = /#[0-9a-fA-F]{3,8}\b/;
 const RGB_RE = /rgba?\(/;
 
+function parseScanRoot() {
+  const args = process.argv.slice(2);
+  const rootIdx = args.indexOf("--root");
+  if (rootIdx >= 0 && args[rootIdx + 1]) {
+    return path.resolve(args[rootIdx + 1]);
+  }
+  return SRC_ROOT;
+}
+
+const SCAN_ROOT = parseScanRoot();
+
 function walk(dir, files = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -43,7 +54,7 @@ function checkFile(filePath) {
   return hits;
 }
 
-const files = walk(SRC_ROOT);
+const files = walk(SCAN_ROOT);
 let failed = false;
 
 for (const file of files) {
