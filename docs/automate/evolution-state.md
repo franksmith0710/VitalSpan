@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-m1-doc-writeback.md |
 | design | docs/superpowers/specs/2026-07-03-m1-doc-writeback-close-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m1-doc-writeback-close.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | BOOT-001,BOOT-002,BOOT-003,BOOT-004,BOOT-005,BOOT-006 |
 | pr_number |  |
-| last_verified_command | P4 doc writeback aggregate (design §8) |
+| last_verified_command | python3 -m pytest (25) + pnpm test (6 vitest + 2 node) + ruff + pnpm build + check:design + P4 doc writeback aggregate |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T07:24:00Z |
