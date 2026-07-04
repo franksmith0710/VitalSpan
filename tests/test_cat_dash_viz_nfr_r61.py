@@ -114,3 +114,62 @@ def test_r61_fixture_bootstraps(client):
 def test_r61_config_types_include_global_filter_linkage():
     """T-R61-000-02: config_store 允许 global_filter_linkage。"""
     assert "global_filter_linkage" in ALLOWED_CONFIG_TYPES
+
+
+def test_cat_r61_005_validate_ok(client):
+    """T-CAT-R61-005-01: POST /tickets/validate 合法 200 valid=true。"""
+    resp = client.post("/api/v1/gov/catalog/tickets/validate", headers=AUTH, json=_ticket_payload())
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["valid"] is True
+    assert body["categoryKey"] == "TICKET_OPS"
+    assert body["statusCount"] == 2
+
+
+def test_cat_r61_005_validate_empty_status_filters(client):
+    """T-CAT-R61-005-02: 空 statusFilters 422 CAT05_EMPTY_STATUS_FILTERS。"""
+    payload = _ticket_payload()
+    payload["statusFilters"] = []
+    resp = client.post("/api/v1/gov/catalog/tickets/validate", headers=AUTH, json=payload)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "CAT05_EMPTY_STATUS_FILTERS"
+
+
+def test_cat_r61_005_create_and_list(client):
+    """T-CAT-R61-005-03: POST items 201 + GET 列表含该项。"""
+    key = f"T_{uuid.uuid4().hex[:6].upper()}"
+    payload = _ticket_payload(key)
+    create = client.post("/api/v1/gov/catalog/tickets/items", headers=AUTH, json=payload)
+    assert create.status_code == 201, create.text
+    listed = client.get("/api/v1/gov/catalog/tickets/items", headers=AUTH)
+    assert listed.status_code == 200
+    keys = [i["ticketCategoryKey"] for i in listed.json()["items"]]
+    assert key in keys
+
+
+def test_cat_r61_005_create_conflict(client):
+    """T-CAT-R61-005-04: 重复 key 409 CAT05_KEY_CONFLICT。"""
+    key = f"DUP_{uuid.uuid4().hex[:4].upper()}"
+    payload = _ticket_payload(key)
+    assert client.post("/api/v1/gov/catalog/tickets/items", headers=AUTH, json=payload).status_code == 201
+    dup = client.post("/api/v1/gov/catalog/tickets/items", headers=AUTH, json=payload)
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "CAT05_KEY_CONFLICT"
+
+
+def test_cat_r61_005_stats_probe(client):
+    """T-CAT-R61-005-05: GET stats mock counts 200。"""
+    key = f"ST_{uuid.uuid4().hex[:4].upper()}"
+    client.post("/api/v1/gov/catalog/tickets/items", headers=AUTH, json=_ticket_payload(key))
+    resp = client.get(f"/api/v1/gov/catalog/tickets/items/{key}/stats", headers=AUTH)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert set(body.keys()) >= {"open", "closed", "pending", "sampledAt"}
+    assert isinstance(body["open"], int)
+
+
+def test_cat_r61_005_stats_not_found(client):
+    """T-CAT-R61-005-06: 未知 key 404 CAT05_NOT_FOUND。"""
+    resp = client.get("/api/v1/gov/catalog/tickets/items/MISSING_KEY/stats", headers=AUTH)
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "CAT05_NOT_FOUND"
