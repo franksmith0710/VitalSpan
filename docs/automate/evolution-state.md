@@ -13,7 +13,7 @@
 | branch | feat/evolution-r33-m11-meta-m12-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | META-001,META-002,QUERY-007,DESIGN-001,DESIGN-002 |
-| pr_number |  |
+| pr_number | 57 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest ../tests/test_meta_design_r33.py ../tests/test_meta_design_r32.py -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端，无 UI 改动） |
