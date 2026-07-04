@@ -8,6 +8,8 @@ import pymssql
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import map_sqlserver_operational_error
 
+SQLSERVER_MAX_COLUMNS = 500
+
 _SSL_MODES = frozenset({"disabled", "preferred", "required"})
 
 
@@ -94,8 +96,11 @@ class SqlserverConnector:
             """,
             (schema, table),
         )
-        return [
+        columns = [
             ColumnInfo(name=row[0], data_type=row[1], nullable=str(row[2]).upper() == "YES")
             for row in cursor.fetchall()
             if row
         ]
+        if len(columns) > SQLSERVER_MAX_COLUMNS:
+            return columns[:SQLSERVER_MAX_COLUMNS]
+        return columns
