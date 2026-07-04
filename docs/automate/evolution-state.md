@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design | docs/superpowers/specs/2026-07-04-nfr-gov-gbase-companion-quality-r51-design.md |
-| plan | docs/superpowers/plans/2026-07-04-nfr-gov-gbase-companion-quality-r51.md |
-| branch | feat/evolution-r51-nfr-gov-gbase-companion-quality |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | NFR-006,NFR-007,NFR-005,GOV-005,CONN-019 |
-| pr_number | 79 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest ../tests/test_nfr_gov_conn_r51.py ../tests/test_nfr_gov_conn_r46.py ../tests/test_design_conn_gov_query_r49.py -q |
-| last_verified_exit_code | 0 |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T13:15:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r52 bootstrap：r51 PR #79 已 Squash merge dev-auto；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 GOV-003(81.4)/DESIGN-005(81.4)/QUERY-003(82.5)；STUCK 五 ID 各 1 轮（GOV-003/DESIGN-005/QUERY-003/DESIGN-003/CONN-016，均 <90）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r51 PRD 重评：NFR-005/006/007 + GOV-005 + CONN-019 companion 质量推分；pytest 1248/4 skipped；test_nfr_gov_conn_r51 43/43 + r46 36/36 + r49 35/35；总分 79.2–84.1→90.0–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r51 验证通过：ruff clean；pytest 1248 passed/4 skipped（全量 exit_code 0）；test_nfr_gov_conn_r51 43/43 + r46 36/36 + r49 35/35 回归 114/114；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r51 实现完成：8 Task 全绿；NFR 横切 + GOV-005 + CONN-019 companion 质量推分 — NFR-006/007/005 + GOV-005 + CONN-019；43 测 test_nfr_gov_conn_r51 + r46 36/36 + r49 35/35 回归 114/114；ruff clean；ui_design_skill none；branch feat/evolution-r51-nfr-gov-gbase-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
