@@ -102,16 +102,19 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [CONN-009] StarRocks 连接器
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：StarRocks 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`starrocks` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`olap` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/starrocks/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] type=`starrocks` 已注册（types catalog，r34 L1）
+  - [ ] UI 可选
+  - [x] 连通性测试结构化错误（`STARROCKS_TIMEOUT`，r34 mock）
+  - [ ] schema 浏览 + 只读查询通过
+  - [x] category=`olap` 查询模式正确（r34）
+- **代码锚点**：`backend/app/datasources/dialects/starrocks.py` · `tests/test_connectors_gov_r34.py`
+- **演化建议**：r34 L1 完成 types + timeout 映射；后续补 schema 浏览集成测、只读查询与 Admin UI 选型
+- **里程碑对齐**：
 ### [CONN-010] Trino/Presto 连接器
 
 - **状态**：未实现
@@ -174,16 +177,20 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [CONN-015] Elasticsearch 连接器
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：Elasticsearch 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`elasticsearch` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`search` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/elasticsearch/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] type=`elasticsearch` 已注册（types catalog，r34 L1）
+  - [ ] UI 可选
+  - [x] 连通性测试 + index/mapping schema 浏览（r34 mock）
+  - [ ] 只读查询通过
+  - [x] category=`search` 查询模式正确（r34）
+  - [x] 空 host → `ES_INVALID_HOST` 结构化错误（r34）
+- **代码锚点**：`backend/app/datasources/dialects/elasticsearch.py` · `tests/test_connectors_gov_r34.py`
+- **演化建议**：r34 L1 完成 ES client、index 列表与 mapping 列浏览；后续补 search 只读查询与 UI
+- **里程碑对齐**：
 ### [CONN-016] OpenSearch 连接器
 
 - **状态**：未实现
@@ -246,16 +253,19 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [CONN-021] TiDB 连接器
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：TiDB 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`tidb` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/tidb/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] type=`tidb` 已注册（types catalog + `schema_browser` capability，r34 L1）
+  - [ ] UI 可选
+  - [x] 连通性测试（MySQL 委托 + mock pymysql，r34）
+  - [ ] schema 浏览 + 只读查询集成测通过
+  - [x] category=`relational` 查询模式正确（r34）
+- **代码锚点**：`backend/app/datasources/dialects/tidb.py` · `tests/test_connectors_gov_r34.py`
+- **演化建议**：r34 L1 MySQL 委托薄包装；后续补 schema 集成测、只读查询与 UI 选型
+- **里程碑对齐**：
 ### [CONN-022] GaussDB 连接器
 
 - **状态**：未实现
