@@ -12,6 +12,9 @@ from app.dashboard import service as dash_service
 from app.dashboard.schemas import DashboardCreate, DashboardLayoutUpdate, DashboardUpdate
 from app.dashboard.theme.errors import ThemeAnalysisError
 from app.dashboard.theme import service as theme_service
+from app.dashboard.entity_overview.errors import EntityOverviewError
+from app.dashboard.entity_overview.schemas import EntityOverviewItem, EntityOverviewOut
+from app.dashboard.entity_overview import service as overview_service
 from app.datasources.models import get_meta_session
 
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
@@ -42,6 +45,50 @@ def _parse_user_id(user: UserContext) -> uuid.UUID | None:
 def _theme_error(exc: ThemeAnalysisError) -> JSONResponse:
     detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+def _overview_error(exc: EntityOverviewError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/entity-overview/validate", response_model=EntityOverviewItem)
+def validate_entity_overview(
+    payload: EntityOverviewItem,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> EntityOverviewItem | JSONResponse:
+    try:
+        return overview_service.validate_overview(db, payload)
+    except EntityOverviewError as exc:
+        return _overview_error(exc)
+
+
+@router.put("/{dashboard_id}/entity-overview", response_model=EntityOverviewOut)
+def save_entity_overview(
+    dashboard_id: uuid.UUID,
+    payload: EntityOverviewItem,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> EntityOverviewOut | JSONResponse:
+    if payload.dashboard_id != dashboard_id:
+        return JSONResponse(status_code=422, content={"code": "DASH_OVERVIEW_ID_MISMATCH", "message": "dashboardId mismatch", "detail": None})
+    try:
+        return overview_service.save_overview(db, payload, user)
+    except EntityOverviewError as exc:
+        return _overview_error(exc)
+
+
+@router.get("/{dashboard_id}/entity-overview", response_model=EntityOverviewOut)
+def get_entity_overview(
+    dashboard_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> EntityOverviewOut | JSONResponse:
+    try:
+        return overview_service.get_overview(db, dashboard_id, user)
+    except EntityOverviewError as exc:
+        return _overview_error(exc)
 
 
 @router.post("/theme-analysis/execute-plan", response_model=None)

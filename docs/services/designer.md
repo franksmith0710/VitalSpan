@@ -13,6 +13,7 @@
 - **运算规则维护**（DESIGN-002）：表达式白名单、依赖环检测与持久化
 - **输出字段与聚合**（DESIGN-003）：字段注册表 + glossary 元字段引用校验与持久化
 - **传统 SQL 模式**（DESIGN-005）：只读 SQL 校验、能力声明与持久化
+- **设计器工单关联**（DESIGN-004）：workflow instance 引用 validate/save/get + publishReady 探测
 - 图表/Dashboard 设计器服务端契约（保存草稿、校验）
 - 与 `metadata` Dataset 的设计态绑定（四期）
 - 设计资源版本与协作锁（按需）
@@ -24,6 +25,7 @@
 | 查询条件/运算规则 schema 校验与 API | 画布 UI（前端 Admin） |
 | SQL 模式/输出字段 schema 校验与 API | 运行时查询（→ `query`） |
 | 配置持久化委托 `query/config_store` | 完整 BPM 工单 UI（四期） |
+| workflow-link 契约（`designer/workflow.py`） | BPM 状态推送/企微通知（companion） |
 
 ## 依赖
 
@@ -39,6 +41,7 @@
 | `ComputeRulesConfig` | 运算规则 schema v1.0 | DESIGN-002 | L1 已实现 |
 | `SqlModeSpec` / `sql_mode.py` | SQL 只读模式校验 + 持久化 | DESIGN-005 | L1 已实现 |
 | `OutputFieldsConfig` / `output_fields.py` | 输出字段/聚合校验 + 持久化 | DESIGN-003 | L1 已实现 |
+| `workflow.py` | 设计器项与工单实例关联 validate/save/get | DESIGN-004 | L1 已实现 r59 |
 | `designer/service` | 校验 + 委托 config_store | DESIGN-001/002 | L1 已实现 |
 | `DesignerService` | 草稿与校验（全量） | DESIGN-001~003 | 待建 |
 | `ChartViewConfig` | 图表配置契约（与 `schemas` 共享） | DESIGN-004~005 · F06-VIZ | 待建 |

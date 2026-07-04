@@ -18,6 +18,7 @@ from app.datasources.dialects.timescaledb import TimescaledbConnector
 from app.datasources.dialects.trino import TrinoConnector
 from app.core.nfr.plugin_extension import register_connector_plugin
 from app.datasources.dialects.gbase import GbaseConnector
+from app.datasources.dialects.kingbase import KingbaseConnector
 from app.datasources.dialects.oceanbase import OceanbaseConnector
 from app.datasources.dialects.opensearch import OpensearchConnector
 from app.datasources.registry import register_dialect
@@ -45,6 +46,7 @@ def register_builtin_dialects() -> None:
     register_connector_plugin(GbaseConnector())
     register_connector_plugin(OceanbaseConnector())
     register_connector_plugin(OpensearchConnector())
+    register_connector_plugin(KingbaseConnector())
 
 
 register_builtin_dialects()

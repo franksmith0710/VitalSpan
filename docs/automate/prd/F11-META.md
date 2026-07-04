@@ -41,15 +41,18 @@
 - **里程碑对齐**：
 ### [META-004] Dataset CRUD M1-DATASET
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r59）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：Dataset CRUD M1-DATASET（SRS 追溯项）。
 - **验收标准**：
-  - [ ] Dataset 对标 DE/SS
-  - [ ] 计算字段/指标
-- **代码锚点**：`backend/app/metadata/dataset/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] Dataset 内存 store + list/create/get/validate（r59 L1：`POST/GET /api/v1/datasets` + `POST validate` + `META_DATASET_*` 错误域）
+  - [x] 计算字段名校验链（空 tables/非法 field 名/冲突 409，r59）
+  - [ ] Dataset 对标 DE/SS 全量能力
+  - [ ] 计算字段执行与指标引擎
+- **代码锚点**：`backend/app/metadata/dataset/` · `backend/app/api/v1/datasets.py` · `tests/test_meta_cat_dash_conn_design_r59.py` T-META-R59-004-01~09
+- **演化建议**：r59 L1 闭合 list/create/get/validate 与 computed field 边界；后续补 DE/SS 对标、指标执行链与 Admin Dataset UI
+- **里程碑对齐**：
 ### [META-005] 物理表元数据登记 M1-ENTITY
 
 - **状态**：未实现

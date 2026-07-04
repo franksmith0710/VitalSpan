@@ -13,6 +13,7 @@
 - **业务主题树**（`themes/`）：多级主题节点、移动与环检测（META-002）
 - **维度字典**（`dimensions/`）：维度 code 与枚举值注册/维护（META-003）
 - **实体类型 schema**（`entity/`）：实体属性/生命周期配置（META-006）
+- **Dataset 元数据项**（`dataset/`）：内存 store L1 validate/list/create（META-004）
 - 逻辑数据集（Dataset）定义：表关联、计算字段、指标维度（四期）
 - 与物理数据源映射；版本与发布状态
 - 为 `query` 四期提供语义解析输入
@@ -25,7 +26,8 @@
 | 术语字典 CRUD、业务主题树 CRUD/move | 物理连接与方言（→ `datasources`） |
 | 维度字典 CRUD、枚举值注册/列表/删除 | 物理字段映射（META-001 后续） |
 | 实体类型 schema CRUD + GOV openapi 引用计数 | 物理字段映射（META-001 后续） |
-| Dataset / 语义模型 CRUD（四期） | 查询执行（→ `query`） |
+| Dataset 元数据项 validate/list/create（内存 store，非 ORM migration） | 物理字段映射（META-001 后续） |
+| Dataset / 语义模型 CRUD（四期完整 ORM） | 查询执行（→ `query`） |
 | 一至三期 | 图表直连查询不走本域 |
 
 ## 依赖
@@ -44,7 +46,8 @@
 | `ThemeNode` / `themes/service` | 主题树 CRUD/move、环检测 | META-002 | L1 已实现 |
 | `DimensionDict` / `dimensions/service` | 维度字典 CRUD + 枚举值注册 | META-003 | L1 已实现 |
 | `entity/service` | 实体类型 schema CRUD + `validate_entity_type_ref` | META-006 | L1 已实现 r54 |
-| `DatasetService` | 语义层 CRUD | META-001~003 | 待建 |
+| `dataset/service` | Dataset 元数据项内存 store + validate/list/create | META-004 | L1 已实现 r59 |
+| `DatasetService` | 语义层 CRUD（ORM 四期） | META-001~003 | 待建 |
 | `SemanticResolver` | 逻辑 → 物理 SQL | META-004 | 待建 |
 
 ## 错误码（L1）
@@ -71,6 +74,10 @@
 | `META_DIM_VALUE_INVALID_LABEL` | value label 空白 |
 | `META_DIM_VALUE_DUPLICATE_BATCH` | 同批次重复 value code |
 | `META_DIM_VALUE_NOT_FOUND` | 枚举值不存在 |
+| `META_DATASET_CONFLICT` | datasetId 重复 |
+| `META_DATASET_NOT_FOUND` | Dataset 不存在 |
+| `META_DATASET_EMPTY_TABLES` | tables 为空 |
+| `META_DATASET_INVALID_FIELD` | computedFields 名非法 |
 
 常量：`MAX_THEME_DEPTH=8`、`TERM_MAX_TEXT_LENGTH=4000`；migration `0016_dimension_dict.py`（`dimension_dicts` + `dimension_values`）。
 
