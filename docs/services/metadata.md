@@ -47,6 +47,7 @@
 | `DimensionDict` / `dimensions/service` | 维度字典 CRUD + 枚举值注册 | META-003 | L1 已实现 |
 | `entity/service` | 实体类型 schema CRUD + `validate_entity_type_ref` | META-006 | L1 已实现 r54 |
 | `dataset/service` | Dataset 元数据项内存 store + validate/list/create | META-004 | L1 已实现 r59 |
+| `physical/service` | 物理表登记 validate/register/list（内存 store） | META-005 | L1 已实现 r62 |
 | `DatasetService` | 语义层 CRUD（ORM 四期） | META-001~003 | 待建 |
 | `SemanticResolver` | 逻辑 → 物理 SQL | META-004 | 待建 |
 
@@ -90,3 +91,7 @@
 - r32：migration 0015（`glossary_terms`、`theme_nodes`）；`backend/app/api/v1/metadata.py` 统一 entry
 - r38：migration 0016（`dimension_dicts`、`dimension_values`）；`dimensions/` 域模块 + 8 REST 路由（META-003 L1）
 - r39：values `register_values` 批内重复预检；`list_values`/`list_dimensions` 分页 limit 上限 500（与 glossary 对齐）；`test_query_meta_conn_r39` T-META-R39-003-*
+
+### r65 companion 质量推分（META-005）
+
+- **META-005**：`physical/service` — `register_physical_table(user)` admin/analyst only（`META_PHYSICAL_FORBIDDEN`）；column name `^[a-z][a-z0-9_]{0,63}$`（`META_PHYSICAL_INVALID_COLUMN`）；`probe_validate_physical_budget_ms` / `probe_list_physical_tables_budget_ms` ≤50ms；内存 store 非 Alembic
