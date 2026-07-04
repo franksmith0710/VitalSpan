@@ -21,8 +21,8 @@ class ChartViewError(Exception):
         super().__init__(message)
 
 
-ChartTypeL1 = Literal["table", "line", "bar"]
-StyleVariantL1 = Literal["default"]
+ChartTypeL1 = Literal["table", "line", "bar"]  # 文档常量：r28 最小集，registry 为真理源
+StyleVariantL1 = Literal["default"]  # 文档常量
 
 
 class ChartFieldRef(BaseModel):
@@ -40,8 +40,8 @@ class ChartFilterRef(BaseModel):
 
 class ChartViewConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    chart_type: ChartTypeL1 = Field(alias="chartType")
-    style_variant: StyleVariantL1 = Field(default="default", alias="styleVariant")
+    chart_type: str = Field(alias="chartType")
+    style_variant: str = Field(default="default", alias="styleVariant")
     data_source_id: uuid.UUID | None = Field(default=None, alias="dataSourceId")
     binding_id: uuid.UUID | None = Field(default=None, alias="bindingId")
     chart_id: uuid.UUID | None = Field(default=None, alias="chartId")
@@ -55,8 +55,19 @@ class ChartViewConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_l1_rules(self) -> ChartViewConfig:
-        if self.chart_type not in ("table", "line", "bar"):
-            raise ValueError("CHART_INVALID_TYPE:Unsupported chartType")
+        from app.viz.registry import ChartTypeNotRegistered, get_spec
+
+        try:
+            spec = get_spec(self.chart_type)
+        except ChartTypeNotRegistered as exc:
+            raise ValueError("CHART_INVALID_TYPE:Unsupported chartType") from exc
+
+        if self.style_variant not in spec.style_variants:
+            raise ValueError(
+                "CHART_INVALID_STYLE_VARIANT:"
+                f"styleVariant '{self.style_variant}' is not valid for {self.chart_type}"
+            )
+
         inline = [self.mode, self.sql, self.schema_name, self.table_name, self.data_source_id]
         if self.binding_id is not None and any(v is not None for v in inline):
             raise ValueError("CHART_BINDING_CONFLICT:bindingId conflicts with inline fields")
@@ -69,11 +80,31 @@ class ChartViewConfig(BaseModel):
                 raise ValueError("CHART_MISSING_TABLE:schema and table are required for table mode")
             if self.mode is None:
                 raise ValueError("CHART_MISSING_MODE:mode is required when bindingId is absent")
+
+        if self.binding_id is not None:
+            return self
         if self.chart_type in ("line", "bar"):
             if not self.dimensions or not self.metrics:
                 raise ValueError(
                     "CHART_MISSING_SERIES:dimensions and metrics are required for line/bar",
                 )
+            return self
+        rule = spec.field_rule
+        dim_n = len(self.dimensions)
+        met_n = len(self.metrics)
+        note = f" {rule.note}" if rule.note else ""
+        if not (rule.min_dimensions <= dim_n <= rule.max_dimensions):
+            raise ValueError(
+                "CHART_FIELD_REQUIREMENT:"
+                f"{self.chart_type} requires {rule.min_dimensions}-{rule.max_dimensions} "
+                f"dimensions, got {dim_n}.{note}"
+            )
+        if not (rule.min_metrics <= met_n <= rule.max_metrics):
+            raise ValueError(
+                "CHART_FIELD_REQUIREMENT:"
+                f"{self.chart_type} requires {rule.min_metrics}-{rule.max_metrics} "
+                f"metrics, got {met_n}.{note}"
+            )
         return self
 
 
@@ -107,6 +138,8 @@ _CODE_FIELD_HINTS: dict[str, list[str]] = {
     "CHART_MISSING_SQL": ["sql"],
     "CHART_MISSING_TABLE": ["schema", "table"],
     "CHART_MISSING_MODE": ["mode"],
+    "CHART_INVALID_STYLE_VARIANT": ["styleVariant"],
+    "CHART_FIELD_REQUIREMENT": ["dimensions", "metrics"],
 }
 
 
@@ -129,8 +162,6 @@ def _map_validation_error(exc: ValidationError) -> ChartViewError:
         if msg.startswith("Value error, "):
             msg = msg.removeprefix("Value error, ")
         loc = err.get("loc", ())
-        if err.get("type") == "literal_error" and loc == ("chartType",):
-            return ChartViewError("CHART_INVALID_TYPE", "Unsupported chartType", 422)
         if msg.startswith("CHART_") and ":" in msg:
             err_code, text = msg.split(":", 1)
             code = err_code

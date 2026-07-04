@@ -90,3 +90,122 @@ def test_get_charts_types_unauthorized(client, unauthorized_headers):
     """T-VIZ-R42-003-08: GET /charts/types 无有效鉴权 → 401。"""
     resp = client.get("/api/v1/charts/types", headers=unauthorized_headers)
     assert resp.status_code == 401
+
+
+from app.schemas.chart_view import ChartViewError, validate_chart_view_config
+
+
+def _sql_base(chart_type: str, **extra) -> dict:
+    data = {
+        "chartType": chart_type,
+        "dataSourceId": str(uuid.uuid4()),
+        "mode": "sql",
+        "sql": "SELECT 1",
+    }
+    data.update(extra)
+    return data
+
+
+def test_style_variant_bar_stacked_ok():
+    """T-VIZ-R42-004-01: bar + stacked 通过。"""
+    cfg = validate_chart_view_config(
+        _sql_base("bar", styleVariant="stacked",
+                  dimensions=[{"field": "d"}], metrics=[{"field": "m"}])
+    )
+    assert cfg.style_variant == "stacked"
+
+
+def test_style_variant_line_area_ok():
+    """T-VIZ-R42-004-02: line + area 通过。"""
+    cfg = validate_chart_view_config(
+        _sql_base("line", styleVariant="area",
+                  dimensions=[{"field": "d"}], metrics=[{"field": "m"}])
+    )
+    assert cfg.style_variant == "area"
+
+
+def test_style_variant_pie_donut_ok():
+    """T-VIZ-R42-004-03: pie + donut 通过。"""
+    cfg = validate_chart_view_config(
+        _sql_base("pie", styleVariant="donut",
+                  dimensions=[{"field": "d"}], metrics=[{"field": "m"}])
+    )
+    assert cfg.style_variant == "donut"
+
+
+def test_style_variant_invalid_rejected():
+    """T-VIZ-R42-004-04: bar + donut（不属 bar）→ CHART_INVALID_STYLE_VARIANT。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            _sql_base("bar", styleVariant="donut",
+                      dimensions=[{"field": "d"}], metrics=[{"field": "m"}])
+        )
+    assert exc.value.code == "CHART_INVALID_STYLE_VARIANT"
+    assert any(f["field"] == "styleVariant" for f in exc.value.fields)
+
+
+def test_style_variant_default_backcompat():
+    """T-VIZ-R42-004-05: 省略 styleVariant 默认 default 通过。"""
+    cfg = validate_chart_view_config(_sql_base("table"))
+    assert cfg.style_variant == "default"
+
+
+def test_field_rule_sankey_ok():
+    """T-VIZ-R42-005-01: sankey 2 维+1 度量通过。"""
+    cfg = validate_chart_view_config(
+        _sql_base("sankey",
+                  dimensions=[{"field": "src"}, {"field": "dst"}],
+                  metrics=[{"field": "amt"}])
+    )
+    assert cfg.chart_type == "sankey"
+
+
+def test_field_rule_sankey_missing_dim():
+    """T-VIZ-R42-005-02: sankey 仅 1 维 → CHART_FIELD_REQUIREMENT。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            _sql_base("sankey", dimensions=[{"field": "src"}], metrics=[{"field": "amt"}])
+        )
+    assert exc.value.code == "CHART_FIELD_REQUIREMENT"
+    assert any(f["field"] == "dimensions" for f in exc.value.fields)
+
+
+def test_field_rule_funnel_missing_metric():
+    """T-VIZ-R42-005-03: funnel 缺度量 → CHART_FIELD_REQUIREMENT。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(_sql_base("funnel", dimensions=[{"field": "stage"}]))
+    assert exc.value.code == "CHART_FIELD_REQUIREMENT"
+
+
+def test_field_rule_gauge_dim_bounds():
+    """T-VIZ-R42-005-04: gauge 0 维+1 度量通过；含 1 维 → CHART_FIELD_REQUIREMENT。"""
+    ok = validate_chart_view_config(_sql_base("gauge", metrics=[{"field": "v"}]))
+    assert ok.chart_type == "gauge"
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            _sql_base("gauge", dimensions=[{"field": "d"}], metrics=[{"field": "v"}])
+        )
+    assert exc.value.code == "CHART_FIELD_REQUIREMENT"
+
+
+def test_field_rule_pie_ok():
+    """T-VIZ-R42-005-05: pie 1 维+1 度量通过。"""
+    cfg = validate_chart_view_config(
+        _sql_base("pie", dimensions=[{"field": "d"}], metrics=[{"field": "m"}])
+    )
+    assert cfg.chart_type == "pie"
+
+
+def test_field_rule_graph_zero_metric_ok():
+    """T-VIZ-R42-005-06: graph 2 维+0 度量通过（metrics 0-1）。"""
+    cfg = validate_chart_view_config(
+        _sql_base("graph", dimensions=[{"field": "a"}, {"field": "b"}])
+    )
+    assert cfg.chart_type == "graph"
+
+
+def test_field_rule_line_missing_series_backcompat():
+    """T-VIZ-R42-005-07: line 缺 metrics 仍 → CHART_MISSING_SERIES（向后兼容）。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(_sql_base("line", dimensions=[{"field": "x"}]))
+    assert exc.value.code == "CHART_MISSING_SERIES"
