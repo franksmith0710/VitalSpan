@@ -22,12 +22,17 @@ from app.reports.batch import service as batch_service
 from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.schemas import ScheduleCreate, ScheduleTransitionIn
 from app.reports.scheduler import service as scheduler_service
+from app.reports.scheduler import executor as scheduler_executor
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
 def _catalog_error(exc: ReportCatalogError) -> JSONResponse:
-    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": None})
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
 
 
 def _schedule_error(exc: ScheduleError) -> JSONResponse:
@@ -112,19 +117,19 @@ def batch_create_reports(
 
 @router.get("/catalog/nodes", response_model=list[CatalogNodeOut])
 def list_catalog_nodes(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     parent_id: uuid.UUID | None = Query(default=None, alias="parentId"),
 ):
-    return catalog_service.list_nodes(parent_id)
+    return catalog_service.list_nodes(parent_id, user)
 
 
 @router.post("/catalog/nodes", status_code=status.HTTP_201_CREATED, response_model=None)
 def create_catalog_node(
     payload: CatalogNodeCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
 ):
     try:
-        return catalog_service.create_node(payload)
+        return catalog_service.create_node(payload, user)
     except ReportCatalogError as exc:
         return _catalog_error(exc)
 
@@ -144,10 +149,10 @@ def get_catalog_node(
 def update_catalog_node(
     node_id: uuid.UUID,
     payload: CatalogNodeUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
 ):
     try:
-        return catalog_service.update_node(node_id, payload)
+        return catalog_service.update_node(node_id, payload, user)
     except ReportCatalogError as exc:
         return _catalog_error(exc)
 
@@ -155,10 +160,10 @@ def update_catalog_node(
 @router.delete("/catalog/nodes/{node_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_catalog_node(
     node_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
 ):
     try:
-        catalog_service.delete_node(node_id)
+        catalog_service.delete_node(node_id, user)
         return None
     except ReportCatalogError as exc:
         return _catalog_error(exc)
@@ -168,10 +173,10 @@ def delete_catalog_node(
 def move_catalog_node(
     node_id: uuid.UUID,
     payload: CatalogNodeMove,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
 ):
     try:
-        return catalog_service.move_node(node_id, payload)
+        return catalog_service.move_node(node_id, payload, user)
     except ReportCatalogError as exc:
         return _catalog_error(exc)
 
@@ -208,5 +213,17 @@ def transition_schedule(
 ):
     try:
         return scheduler_service.transition_schedule(schedule_id, payload.action)
+    except ScheduleError as exc:
+        return _schedule_error(exc)
+
+
+@router.post("/schedules/{schedule_id}/execute", response_model=None)
+def execute_schedule(
+    schedule_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+):
+    try:
+        return scheduler_executor.mock_execute_schedule(schedule_id, idempotency_key or "", user)
     except ScheduleError as exc:
         return _schedule_error(exc)

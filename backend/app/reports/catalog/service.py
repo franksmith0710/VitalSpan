@@ -3,6 +3,8 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
+from app.auth.deps import UserContext
+from app.reports.catalog import acl
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.catalog.schemas import CatalogNodeCreate, CatalogNodeMove, CatalogNodeOut, CatalogNodeUpdate
 
@@ -92,7 +94,8 @@ def _assert_depth(parent_id: uuid.UUID | None, subtree_root: uuid.UUID | None = 
         )
 
 
-def list_nodes(parent_id: uuid.UUID | None = None) -> list[CatalogNodeOut]:
+def list_nodes(parent_id: uuid.UUID | None, actor: UserContext) -> list[CatalogNodeOut]:
+    acl.assert_catalog_action(actor, "read")
     items = [_get(nid) for nid in _nodes]
     if parent_id is not None:
         items = [n for n in items if n.parent_id == parent_id]
@@ -101,7 +104,8 @@ def list_nodes(parent_id: uuid.UUID | None = None) -> list[CatalogNodeOut]:
     return [_to_out(n) for n in sorted(items, key=lambda x: (x.sort_order, x.name))]
 
 
-def create_node(payload: CatalogNodeCreate) -> CatalogNodeOut:
+def create_node(payload: CatalogNodeCreate, actor: UserContext) -> CatalogNodeOut:
+    acl.assert_catalog_action(actor, "create")
     if payload.parent_id is not None and payload.parent_id not in _nodes:
         raise ReportCatalogError("RPT_CATALOG_PARENT_NOT_FOUND", "Parent node not found", 404)
     _assert_depth(payload.parent_id)
@@ -114,6 +118,7 @@ def create_node(payload: CatalogNodeCreate) -> CatalogNodeOut:
         "template_kind": payload.template_kind,
         "sort_order": payload.sort_order,
     }
+    acl.register_node_owner(node_id, actor.id)
     return _to_out(_get(node_id))
 
 
@@ -121,7 +126,8 @@ def get_node(node_id: uuid.UUID) -> CatalogNodeOut:
     return _to_out(_get(node_id))
 
 
-def update_node(node_id: uuid.UUID, payload: CatalogNodeUpdate) -> CatalogNodeOut:
+def update_node(node_id: uuid.UUID, payload: CatalogNodeUpdate, actor: UserContext) -> CatalogNodeOut:
+    acl.assert_catalog_action(actor, "update", node_id)
     _get(node_id)
     if payload.name is not None:
         _nodes[node_id]["name"] = payload.name
@@ -130,14 +136,16 @@ def update_node(node_id: uuid.UUID, payload: CatalogNodeUpdate) -> CatalogNodeOu
     return _to_out(_get(node_id))
 
 
-def delete_node(node_id: uuid.UUID) -> None:
+def delete_node(node_id: uuid.UUID, actor: UserContext) -> None:
+    acl.assert_catalog_action(actor, "delete", node_id)
     _get(node_id)
     if any(raw["parent_id"] == node_id for raw in _nodes.values()):
         raise ReportCatalogError("RPT_CATALOG_HAS_CHILDREN", "Cannot delete node with children", 409)
     del _nodes[node_id]
 
 
-def move_node(node_id: uuid.UUID, payload: CatalogNodeMove) -> CatalogNodeOut:
+def move_node(node_id: uuid.UUID, payload: CatalogNodeMove, actor: UserContext) -> CatalogNodeOut:
+    acl.assert_catalog_action(actor, "move", node_id)
     _get(node_id)
     parent_id = payload.parent_id
     if parent_id == node_id:
