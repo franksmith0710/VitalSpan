@@ -18,7 +18,12 @@
 | ThemeToggleButton | `layout/theme-toggle.tsx` | 深浅色切换 |
 | AdminLayout | `../layouts/AdminLayout.tsx` | `/admin/*` 布局入口 |
 | ChartPanel | `charts/ChartPanel.tsx` | 图表壳：loading/empty/error |
-| ChartRenderer | `charts/ChartRenderer.tsx` | 表格/折线/柱渲染（VIZ-002） |
+| ChartRenderer | `charts/ChartRenderer.tsx` | 表格/折线/柱 + 高级 ECharts 渲染（VIZ-002/003） |
+| AdvancedEchartsChart | `charts/adapters/AdvancedEchartsChart.tsx` | 高级 ECharts 渲染（map/sankey/funnel/graph/gauge） |
+| ChartConfigPanel | `charts/ChartConfigPanel.tsx` | 字段 + styleVariant 配置 |
+| EmbedChartPage | `../embed/EmbedChartPage.tsx` | `/embed/chart/:chartId` |
+| EmbedSharePanel | `../embed/EmbedSharePanel.tsx` | `/embed/share` origin 配置 |
+| EmbedLayout | `../layouts/EmbedLayout.tsx` | Embed chromeless 布局 |
 | DashboardGrid | `dashboard/DashboardGrid.tsx` | 12 列栅格容器（edit/view） |
 | WidgetPalette | `dashboard/WidgetPalette.tsx` | 插入表格/折线/柱组件 |
 | DashboardWidget | `dashboard/DashboardWidget.tsx` | 单组件卡片 + 删除/排序 |

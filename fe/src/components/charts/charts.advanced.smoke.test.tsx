@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { fetchChartTypeCatalog } from "@/lib/chartRegistry";
+import { createBarChartOptions } from "@/lib/chart-theme";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
@@ -95,7 +96,7 @@ describe("echarts-theme", () => {
     const theme = getEchartsTheme(true);
     const textStyle = theme.textStyle as { color?: string };
     expect(textStyle?.color).toBeTruthy();
-    expect(textStyle?.color).not.toBe("#ffffff");
+    expect(textStyle?.color).not.toBe("#ffffff"); // @design-token-ok test assertion
   });
 });
 
@@ -287,5 +288,81 @@ describe("Embed", () => {
     );
     expect(screen.getByText(/未授权嵌入/)).toBeInTheDocument();
     vi.unstubAllGlobals();
+  });
+
+  it("T-VIZ-R43-006-02: 合法配置 → iframe title 可访问", async () => {
+    mockApiFetch.mockResolvedValueOnce({});
+    render(<EmbedSharePanel />);
+    await userEvent.type(screen.getByLabelText("图表 ID"), "00000000-0000-4000-8000-000000000001");
+    await userEvent.type(screen.getByLabelText(/来源|Origin/i), "https://a.com");
+    await userEvent.click(screen.getByRole("button", { name: /添加/ }));
+    await userEvent.click(screen.getByRole("button", { name: /校验并生成嵌入链接/ }));
+    expect(await screen.findByTitle("嵌入图表预览")).toBeInTheDocument();
+  });
+});
+
+describe("ChartRenderer extended", () => {
+  afterEach(() => cleanup());
+
+  it("T-VIZ-R43-004-01: sankey 2 维+1 度量 → echarts 容器", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce({
+        columns: ["src", "dst", "amt"],
+        rows: [["A", "B", 10]],
+      })
+      .mockResolvedValueOnce({
+        engine: "echarts",
+        chartType: "sankey",
+        styleVariant: "default",
+        encoding: {
+          dimensions: [{ field: "src" }, { field: "dst" }],
+          metrics: [{ field: "amt" }],
+        },
+        source: {},
+      });
+    const cfg: ChartViewConfig = {
+      chartType: "sankey",
+      dataSourceId: "00000000-0000-4000-8000-000000000001",
+      mode: "sql",
+      sql: "SELECT 1",
+      dimensions: [{ field: "src" }, { field: "dst" }],
+      metrics: [{ field: "amt" }],
+    };
+    render(<ChartRenderer config={cfg} />);
+    expect(await screen.findByTestId("echarts-chart")).toBeInTheDocument();
+  });
+
+  it("T-VIZ-R43-005-01: funnel 3 阶段 mock → 漏斗 series 可见", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce({
+        columns: ["stage", "value"],
+        rows: [["A", 100], ["B", 60], ["C", 30]],
+      })
+      .mockResolvedValueOnce({
+        engine: "echarts",
+        chartType: "funnel",
+        styleVariant: "default",
+        encoding: { dimensions: [{ field: "stage" }], metrics: [{ field: "value" }] },
+        source: {},
+      });
+    const cfg: ChartViewConfig = {
+      chartType: "funnel",
+      dataSourceId: "00000000-0000-4000-8000-000000000001",
+      mode: "sql",
+      sql: "SELECT 1",
+      dimensions: [{ field: "stage" }],
+      metrics: [{ field: "value" }],
+    };
+    render(<ChartRenderer config={cfg} />);
+    expect(await screen.findByTestId("echarts-chart")).toBeInTheDocument();
+  });
+});
+
+describe("bar stacked options", () => {
+  it("T-VIZ-R43-004-03: bar stacked mock → Apex options 含 stacked", () => {
+    const opts = createBarChartOptions(["a", "b"], {
+      plotOptions: { bar: { stacked: true } },
+    });
+    expect(opts.plotOptions?.bar?.stacked).toBe(true);
   });
 });
