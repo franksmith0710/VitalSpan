@@ -23,6 +23,7 @@ from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.schemas import ScheduleCreate, ScheduleTransitionIn
 from app.reports.scheduler import service as scheduler_service
 from app.reports.scheduler import executor as scheduler_executor
+from app.api.v1.reports.engine import router as engine_router
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -266,3 +267,5 @@ def get_execution_artifact(
         return meta
     except ReportCatalogError as exc:
         return _catalog_error(exc)
+
+router.include_router(engine_router)
