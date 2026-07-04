@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r34.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch |  |
-| prd_ids |  |
+| prd_ids | CONN-021,GOV-004,CONN-009,CONN-015,GOV-008 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 r34 选题完成：M11 连接器 + M13 治理 L1 kickoff — CONN-021/009/015 + GOV-004/008（5 项）；最低分 CONN-021(10.9)；饱和熔断未触发；STUCK 无；phase idle→G2_DONE
 - G1 r34 bootstrap：r33 PR #57 已合并 dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（M11/M12 无对应勾选行，已知 concern）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r33 PRD 重评：META-001/002 + QUERY-007 + DESIGN-001/002 companion 质量推分；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；总分 86.4–89.8→90.0–91.7（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r33 验证通过：ruff clean；pytest 727 passed/4 skipped；test_meta_design_r33 19/19 + test_meta_design_r32 21/21 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
