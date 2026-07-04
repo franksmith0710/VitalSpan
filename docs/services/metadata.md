@@ -66,6 +66,9 @@
 | `META_DIM_INVALID_NAME` | name 空白 |
 | `META_DIM_INVALID_STATUS` | status 非法 |
 | `META_DIM_VALUE_CODE_CONFLICT` | 同维度下 value code 重复 |
+| `META_DIM_VALUE_INVALID_CODE` | value code 空白或不符合 `^[a-z][a-z0-9_]{1,63}$` |
+| `META_DIM_VALUE_INVALID_LABEL` | value label 空白 |
+| `META_DIM_VALUE_DUPLICATE_BATCH` | 同批次重复 value code |
 | `META_DIM_VALUE_NOT_FOUND` | 枚举值不存在 |
 
 常量：`MAX_THEME_DEPTH=8`、`TERM_MAX_TEXT_LENGTH=4000`；migration `0016_dimension_dict.py`（`dimension_dicts` + `dimension_values`）。
@@ -78,3 +81,4 @@
 
 - r32：migration 0015（`glossary_terms`、`theme_nodes`）；`backend/app/api/v1/metadata.py` 统一 entry
 - r38：migration 0016（`dimension_dicts`、`dimension_values`）；`dimensions/` 域模块 + 8 REST 路由（META-003 L1）
+- r39：values `register_values` 批内重复预检；`list_values`/`list_dimensions` 分页 limit 上限 500（与 glossary 对齐）；`test_query_meta_conn_r39` T-META-R39-003-*

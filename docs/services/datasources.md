@@ -46,9 +46,9 @@
 | `dialects/sqlserver.py` | SQL Server 关系型（pymssql，TLS L1，`category=relational`） | CONN-005 | 已实现（L1 r36 + companion r37） |
 | `dialects/doris.py` | Apache Doris OLAP（MySQL 协议委托，port 9030） | CONN-008 | 已实现（L1 r36 + companion r37） |
 | `dialects/oracle.py` | Oracle 关系型（oracledb thin，service name，`category=relational`） | CONN-004 | 已实现（L1 r36 + companion r37） |
-| `dialects/gaussdb.py` | GaussDB 关系型（psycopg 3 委托 PostgresConnector，`GAUSSDB_*`） | CONN-022 | 已实现 L1 |
-| `dialects/dm.py` | 达梦 DM 关系型（dmPython，`DM_*`） | CONN-017 | 已实现 L1 |
-| `dialects/trino.py` | Trino 联邦湖仓（trino-python-client，catalog/schema 三级，`category=lake`） | CONN-010 | 已实现 L1 |
+| `dialects/gaussdb.py` | GaussDB 关系型（psycopg 3 委托 PostgresConnector，`GAUSSDB_*`） | CONN-022 | 已实现 L1 + companion r39 |
+| `dialects/dm.py` | 达梦 DM 关系型（dmPython，`DM_*`） | CONN-017 | 已实现 L1 + companion r39 |
+| `dialects/trino.py` | Trino 联邦湖仓（trino-python-client，catalog/schema 三级，`category=lake`） | CONN-010 | 已实现 L1 + companion r39 |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -125,3 +125,10 @@
 - 错误码前缀：`GAUSSDB_*`、`DM_*`、`TRINO_*`
 - 可选依赖：`connectors-ext` 增 `dmPython`、`trino`
 - 测试套件：`tests/test_query_meta_conn_r38.py`（CONN-010/017/022 段）
+
+### r39 companion 质量推分（2026-07-04）
+
+- **CONN-010 Trino**：`TRINO_*` timeout/auth 全路径 pytest；catalog 空→[]；`TRINO_MAX_COLUMNS=500`；HTTP test + metadata tables 缺 schema 400
+- **CONN-022 GaussDB**：`GAUSSDB_MAX_COLUMNS=500`；`GAUSSDB_TIMEOUT`/`GAUSSDB_AUTH_FAILED` HTTP 链；委托 PG schema 过滤
+- **CONN-017 DM**：多 owner `list_schemas` 过滤 SYS/SYSDBA；`DM_TIMEOUT`；HTTP test 响应不泄露请求 password；metadata 400 链
+- 回归：`test_query_meta_conn_r39.py` ≥30 条 + r38 36/36

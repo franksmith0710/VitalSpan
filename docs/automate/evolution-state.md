@@ -6,19 +6,19 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r39.md |
 | design | docs/superpowers/specs/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39.md |
+| branch | cursor/bc-fda56918-b209-4fa3-b5bc-f75bf68e9cfe-8879 |
 | base_branch | dev-auto |
 | prd_ids | QUERY-008,CONN-022,META-003,CONN-017,CONN-010 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest tests/test_query_meta_conn_r39.py tests/test_query_meta_conn_r38.py tests/test_connectors_gov_r37.py -v |
+| last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T04:56:00Z |
+| skill_rule_index_generated_at | 2026-07-04T06:25:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r39 实现完成：8 Task 全绿；CONN-010/022/017 + META-003 values 校验 + QUERY-008 translator 守卫；33 测 test_query_meta_conn_r39 + r38 36/36 + r37 40/40；pytest 924/4 skipped；branch cursor/bc-fda56918-b209-4fa3-b5bc-f75bf68e9cfe-8879；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P2 r39 计划完成：8 Task（errors 脚手架→Trino→GaussDB→DM→dimensions values→translator 守卫→回归门控→docs）；≥31 新测 test_query_meta_conn_r39；11 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
 - P1 r39 设计完成：M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 — QUERY-008/CONN-022/META-003/CONN-017/CONN-010；18 文件框定；三连接器 HTTP 链 + values 校验 + translator 算子守卫；ui_design_skill none；phase G2_DONE→P1_DONE
 - G2 r39 选题完成：M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 — QUERY-008/CONN-022/META-003/CONN-017/CONN-010（5 项）；最低分 CONN-010(87.1)；饱和熔断未触发；plan M11/M12/M13 无活跃勾选行（已知 concern）；STUCK 五 ID 各 1 轮（未达 ≥3 硬标注阈值）；phase idle→G2_DONE
 - G1 r39 bootstrap：r38 PR #64 已 Squash merge dev-auto（fee8a9c）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 VIZ-003(11.7)/QUERY-009(11.7)/CONN-006(12.6)；STUCK 五 ID 各 1 轮；phase P5_DOCS_READY→idle；待 G2 选题
