@@ -13,7 +13,7 @@
 | branch | feat/evolution-r51-nfr-gov-gbase-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | NFR-006,NFR-007,NFR-005,GOV-005,CONN-019 |
-| pr_number |  |
+| pr_number | 79 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest ../tests/test_nfr_gov_conn_r51.py ../tests/test_nfr_gov_conn_r46.py ../tests/test_design_conn_gov_query_r49.py -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
