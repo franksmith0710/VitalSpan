@@ -1,0 +1,49 @@
+# nfr — 非功能横切
+
+| 字段 | 值 |
+|------|-----|
+| 模块路径 | `backend/app/core/nfr/` |
+| PRD | [F15-NFR](../automate/prd/F15-NFR.md) |
+| 里程碑 | 横切（L1 kickoff r46） |
+| 状态 | **部分（L1）** |
+
+## 职责
+
+- NFR-005：连接器插件扩展点声明与 `register_connector_plugin` 登记钩子
+- NFR-006：浏览器/消息推送配置契约与 `resolve_push_mode` 降级守卫
+- NFR-007：信创国产化合规检查清单与 strict 模式守卫
+
+## 边界
+
+| In | Out |
+|----|-----|
+| 扩展点元数据、推送/信创 env 配置面、合规报告 domain 逻辑 | HTTP 路由（→ `api/v1/nfr.py` entry） |
+| `register_connector_plugin` 薄包装 `register_dialect` | 修改 `ConnectorRegistry` 核心（零侵入） |
+| | 真实企微/钉钉推送、信创全量认证 |
+| | Admin UI 配置界面 |
+
+## 依赖
+
+- `core/config`：`PUSH_*`、`XINCHUANG_MODE` 环境变量
+- `datasources/registry`：`register_dialect`、类型清单（信创连接器探测）
+- `governance/publish/errors`：GOV 发布错误码常量集中出口（`core/nfr/errors.py`）
+
+## 主要类型 / 入口
+
+| 符号 | 说明 | PRD | 状态 |
+|------|------|-----|------|
+| `PLUGIN_EXTENSION_POINTS` | 冻结扩展点清单 | NFR-005 | 已实现 L1 |
+| `register_connector_plugin()` | 插件路径登记 + `registered_via=plugin` 元数据 | NFR-005 | 已实现 L1 |
+| `resolve_push_mode()` / `PushConfigOut` | 推送 deliveryMode disabled/degraded/active | NFR-006 | 已实现 L1 |
+| `build_compliance_report()` / `assert_xinchuang_compliant()` | 信创合规清单与 strict 守卫 | NFR-007 | 已实现 L1 |
+| `GET /api/v1/nfr/*` | 横切只读/守卫 REST | NFR-005/006/007 | 已实现 L1 |
+
+## 关联 API
+
+见 [api/README.md](../api/README.md) §NFR 横切。
+
+## 实现笔记
+
+- r46：`core/nfr/` 五文件（errors、plugin_extension、push_config、xinchuang）；`gbase` 经 `register_connector_plugin` 登记演练扩展点路径
+- 推送 webhook 仅返回 configured 布尔，不泄露 URL 明文
+- `XINCHUANG_MODE=strict` 下平台元库非 postgresql/sqlite → 422 `XINCHUANG_NON_COMPLIANT`

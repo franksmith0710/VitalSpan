@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.51
+version: 1.2.52
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,20 +17,20 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r45 重评 API-003/004/005/006/007（M8/M12/M13 集成 API companion 质量推分 r45）；pytest 1134/4 skipped；test_integration_api_l1_r45 30/30 + r44 38/38 + r31 24/24 回归；报表 mock 生成/download、publish 参数幂等、发布自动总线注册、embed 过期/origin、OpenAPI v2 文档面；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.5–87.4→90.2–90.8（五 ID 破 90 STUCK 清零；生产级模板渲染/真实总线 SDK/异步大文件导出留后续）
+> 更新：2026-07-04 · P5 r46 重评 NFR-005/006/007 + GOV-005 + CONN-019（NFR 横切 + GOV 发布 FSM + GBase L1 kickoff r46）；pytest 1170/4 skipped；test_nfr_gov_conn_r46 36/36 + r45 30/30 + r41 36/36 回归；plugin_extension/registry 零侵入、push_config 降级、xinchuang 合规清单、gov publish FSM、gbase dialect mock HTTP 链；完整度 5%→76–78%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.4–11.6→79.2–84.1（五 ID 均 <90 STUCK upsert round 1；浏览器矩阵/真实推送/审批通知/UI 选型/只读查询留 companion）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
-| 1 | NFR-006 | 非功能项 | 11.4 | 完整度 | 见期次 |
-| 2 | NFR-007 | 非功能项 | 11.4 | 完整度 | 见期次 |
-| 3 | GOV-005 | 治理项 | 11.5 | 完整度 | 见期次 |
-| 4 | NFR-005 | 非功能项 | 11.5 | 完整度 | 见期次 |
-| 5 | CONN-019 | 南大通用 GBase 连接器 | 11.6 | 完整度 | 见期次 |
-| 6 | DESIGN-005 | 设计器项 | 11.6 | 完整度 | 见期次 |
-| 7 | DESIGN-003 | 设计器项 | 11.6 | 完整度 | 见期次 |
-| 8 | CONN-016 | OpenSearch 连接器 | 11.6 | 完整度 | 见期次 |
-| 9 | GOV-003 | 治理项 | 11.6 | 完整度 | 见期次 |
-| 10 | QUERY-003 | 查询项 | 12.0 | 完整度 | 见期次 |
+| 1 | DESIGN-005 | 设计器项 | 11.6 | 完整度 | 见期次 |
+| 2 | DESIGN-003 | 设计器项 | 11.6 | 完整度 | 见期次 |
+| 3 | CONN-016 | OpenSearch 连接器 | 11.6 | 完整度 | 见期次 |
+| 4 | GOV-003 | 治理项 | 11.6 | 完整度 | 见期次 |
+| 5 | QUERY-003 | 查询项 | 12.0 | 完整度 | 见期次 |
+| 6 | CONN-018 | 人大金仓 Kingbase 连接器 | 12.1 | 完整度 | 见期次 |
+| 7 | CONN-020 | OceanBase 连接器 | 12.0 | 完整度 | 见期次 |
+| 8 | VIEW-002 | 视图项 | 12.2 | 完整度 | 见期次 |
+| 9 | VIEW-003 | 视图项 | 12.2 | 完整度 | 见期次 |
+| 10 | RPT-001 | 报表项 | 12.2 | 完整度 | 见期次 |
 
 ---
 
@@ -80,7 +80,7 @@ domain_count: 16
 | CONN-016 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
 | CONN-017 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 性能 |
 | CONN-018 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 11 | 12.1 | 完整度 |
-| CONN-019 | 44 | 5 | 0 | N/A | 13 | 0 | 0 | 12 | 11.6 | 完整度 |
+| CONN-019 | 84 | 78 | 92 | N/A | 90 | 98 | 58 | 88 | 84.1 | 性能 |
 | CONN-020 | 45 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.0 | 完整度 |
 | CONN-021 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | CONN-022 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
@@ -121,7 +121,7 @@ domain_count: 16
 | GOV-002 | 82 | 92 | 94 | N/A | 88 | 96 | 86 | 90 | 90.4 | 性能 |
 | GOV-003 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
 | GOV-004 | 84 | 90 | 96 | N/A | 90 | 98 | 88 | 88 | 90.5 | 用户价值 |
-| GOV-005 | 45 | 5 | 0 | N/A | 12 | 0 | 0 | 11 | 11.5 | 完整度 |
+| GOV-005 | 76 | 78 | 94 | N/A | 88 | 98 | 58 | 86 | 82.6 | 性能 |
 | GOV-006 | 46 | 5 | 0 | N/A | 13 | 0 | 0 | 12 | 11.9 | 完整度 |
 | GOV-007 | 47 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.4 | 完整度 |
 | GOV-008 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 92 | 90.2 | 用户价值 |
@@ -154,9 +154,9 @@ domain_count: 16
 | NFR-002 | 49 | 5 | 0 | N/A | 14 | 0 | 0 | 11 | 12.5 | 完整度 |
 | NFR-003 | 50 | 5 | 0 | N/A | 8 | 0 | 0 | 12 | 12.1 | 完整度 |
 | NFR-004 | 57 | 5 | 0 | N/A | 9 | 0 | 0 | 13 | 13.5 | 完整度 |
-| NFR-005 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 8 | 11.5 | 完整度 |
-| NFR-006 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 9 | 11.4 | 完整度 |
-| NFR-007 | 45 | 5 | 0 | N/A | 12 | 0 | 0 | 10 | 11.4 | 完整度 |
+| NFR-005 | 76 | 76 | 92 | N/A | 88 | 96 | 58 | 82 | 81.2 | 性能 |
+| NFR-006 | 74 | 76 | 92 | N/A | 68 | 96 | 58 | 86 | 79.2 | 性能 |
+| NFR-007 | 76 | 76 | 92 | N/A | 72 | 96 | 58 | 88 | 80.0 | 性能 |
 | NFR-008 | 46 | 5 | 0 | N/A | 13 | 0 | 0 | 11 | 11.8 | 完整度 |
 | DATA-004 | 80 | 96 | 95 | N/A | 88 | 100 | 86 | 94 | 91.1 | 用户价值 |
 | DATA-001 | 82 | 96 | 94 | N/A | 88 | 100 | 88 | 92 | 91.3 | 用户价值 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.52 | 2026-07-04 | P5 r46 重评 NFR-005/006/007 + GOV-005 + CONN-019（NFR 横切 + GOV 发布 FSM + GBase L1 kickoff r46）；pytest 1170/4 skipped；test_nfr_gov_conn_r46 36/36 + r45 30/30 + r41 36/36 回归；core/nfr（plugin_extension/push_config/xinchuang）+ governance/publish FSM + gbase dialect + api/v1/nfr；完整度 5%→76–78%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.4–11.6→79.2–84.1（五 ID 均 <90 STUCK upsert round 1；浏览器矩阵/真实推送通道/审批通知/UI 选型/只读查询留 companion） |
 | 1.2.51 | 2026-07-04 | P5 r45 重评 API-003/004/005/006/007（M8/M12/M13 集成 API companion 质量推分 r45）；pytest 1134/4 skipped；test_integration_api_l1_r45 30/30 + r44 38/38 + r31 24/24 回归；reports_export mock 生成/download、query_services publish/参数幂等、bus_register 发布钩子、embed_token 过期/origin、openapi v2 文档面；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.5–87.4→90.2–90.8（五 ID 破 90 STUCK 清零） |
 | 1.2.50 | 2026-07-04 | P5 r44 重评 API-003/004/005/006/007（M8/M12/M13 集成 API L1 kickoff r44）；pytest 1104/4 skipped；test_integration_api_l1_r44 38/38 + r31 24/24 回归；integration 域（query_services/bus_register/reports_export/embed_token/errors）+ api/v1 四路由簇 + openapi/version_policy；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–13.1→86.5–87.4（五 ID 均 <90 STUCK upsert round 1；报表文件生成/发布自动注册/v2 文档留 companion） |
 | 1.2.49 | 2026-07-04 | P5 r43 重评 VIZ-003/004/005/006/008（M9 可视化高级图表类型 companion 质量推分 r43）；pytest 1068/2 skipped；test_viz_advanced_l1_r43 28/28 + r42 35/35 回归；vitest charts.advanced.smoke 22/22；fe chartRegistry/renderFromSpec/AdvancedEchartsChart/ChartConfigPanel/ChartRenderer + EmbedChartPage/EmbedSharePanel + is_origin_allowed；完整度 55–62%→88–90%，可靠性 62–65%→94–96%，测试覆盖 60–65%→96–98%，性能 50%→86–88%，总分 57.1–61.1→90.0–90.2（五 ID 破 90 STUCK 清零；VIZ-005 时间范围选择留后续） |
@@ -213,4 +214,3 @@ domain_count: 16
 | 1.2.45 | 2026-07-04 | P5 r39 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 r39）；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40；errors.py TRINO_/GAUSSDB_/DM_* 上浮、三连接器 MAX_COLUMNS=500/HTTP metadata 链、META_DIM_VALUE_* 校验与分页、translator 算子白名单/注入守卫；完整度 76–88%→90%，可靠性 92–94%→94%，测试覆盖 96–98%→98%，总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零） |
 | 1.2.44 | 2026-07-04 | P5 r38 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 L1 kickoff r38）；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40；translate API mysql/postgresql/clickhouse 参数化、GaussDB/DM/Trino dialects + types catalog、dimensions migration 0016 + 8 REST 路由；完整度 5%→76–88%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–11.6→87.1–89.6（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.43 | 2026-07-04 | P5 r37 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 companion 质量推分 r37）；pytest 854/4 skipped；test_connectors_gov_r37 40/40 + r36 37/37 + r35 35/35 + r34 15/15；errors.py 上浮 HIVE_/CLICKHOUSE_/DORIS_*、五方言 *_MAX_COLUMNS=500、HTTP test_connection/metadata 4xx/502 链；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.2–87.8→90.0–91.2（五 ID 破 90 STUCK 清零） |
-| 1.2.42 | 2026-07-04 | P5 r36 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 L1 kickoff r36）；pytest 814/4 skipped；test_connectors_gov_r36 37/37 + r35 35/35 + r34 15/15；Hive/ClickHouse/SQL Server/Doris/Oracle dialects + types catalog、HIVE_/CLICKHOUSE_/SQLSERVER_/DORIS_/ORACLE_* 错误域与 schema mock；F04-CONN ID 漂移修正（003=Hive/004=Oracle/005=SQL Server）；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→94–98%，总分 11.8–12.3→86.2–87.8（五 ID 均 <90 STUCK upsert round 1） |

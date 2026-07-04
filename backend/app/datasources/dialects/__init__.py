@@ -8,6 +8,7 @@ from app.datasources.dialects.base import (
 from app.datasources.dialects.clickhouse import ClickhouseConnector
 from app.datasources.dialects.doris import DorisConnector
 from app.datasources.dialects.elasticsearch import ElasticsearchConnector
+from app.datasources.dialects.gbase import GbaseConnector, GBASE_MAX_COLUMNS
 from app.datasources.dialects.dm import DmConnector, DM_MAX_COLUMNS
 from app.datasources.dialects.gaussdb import GaussdbConnector
 from app.datasources.dialects.hive import HiveConnector
@@ -38,6 +39,8 @@ __all__ = [
     "DORIS_UNKNOWN_DATABASE",
     "DorisConnector",
     "ElasticsearchConnector",
+    "GBASE_MAX_COLUMNS",
+    "GbaseConnector",
     "GaussdbConnector",
     "HIVE_UNKNOWN_DATABASE",
     "HiveConnector",

@@ -13,6 +13,7 @@
 - 总线 PoC 半自动注册 adapter 与登记 API（GOV-002）
 - 可视化查询设计聚合 validate/save/get（GOV-004）
 - 查询设计权限联动与 RLS 绑定守卫（GOV-008）
+- 查询服务发布状态机 submit/approve/reject（GOV-005）
 - 为开放 API 登记与 BPM 流水线奠基
 
 ## 边界
@@ -41,6 +42,8 @@
 | `query_design/` | 可视化查询设计聚合 service/schemas | GOV-004 | 已实现 |
 | `acl.py` | 查询设计 save/publish 权限联动 + RLS smoke | GOV-008 | 已实现 |
 | `POST/PUT/GET /api/v1/gov/query-design*` | 可视化查询设计 validate/save/get | GOV-004/008 | 已实现 |
+| `governance/publish/` | 查询服务发布状态机 submit/approve/reject | GOV-005 | 已实现 L1 |
+| `POST/GET /api/v1/gov/publish/entries/{id}/*` | 发布工作流 REST 骨架 | GOV-005 | 已实现 L1 |
 
 ## 关联 API
 
@@ -58,3 +61,8 @@
 
 - **GOV-008**：`assert_query_design_execute` + `POST /api/v1/gov/query-design/preview-execute`；viewer 403 `GOV_ACL_FORBIDDEN`；designer 无 org 403 `GOV_RLS_BINDING_REQUIRED`；admin bypass 审计日志 `gov_acl_bypass`；空 RLS 链返回 `rlsFragment: "1=0"`
 - **GOV-004**：gov validate 覆盖 `DESIGN_EMPTY_CONDITIONS`、`DESIGN_INVALID_AGGREGATE`（computeRules）、`GOV_QUERY_DESIGN_INVALID`、`GOV_QUERY_DESIGN_UNKNOWN_DATASOURCE`、`GOV_QUERY_DESIGN_NOT_FOUND`、`CONFIG_VERSION_CONFLICT` 均含 `detail.fields`（适用时）
+
+### r46 L1 kickoff（GOV-005）
+
+- **GOV-005**：`governance/publish/service` 在 `CatalogEntry.status` 上编排 `draft→pending_publish→published`；非法迁移 → 400 `GOV_PUBLISH_INVALID_TRANSITION`；pending 重复 submit → 409 `GOV_PUBLISH_ALREADY_PENDING`
+- integration 快路径 `POST /api/v1/services/{id}/publish` 仍保留 `draft→published`（r45 companion 不变）

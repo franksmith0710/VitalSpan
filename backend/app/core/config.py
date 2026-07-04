@@ -23,6 +23,19 @@ class Settings(BaseSettings):
     query_timeout_seconds: int = 30
     analytics_database_url: str | None = None
     api_openapi_version: str = "0.1.0"
+    push_browser_enabled: bool = False
+    push_wecom_webhook: str | None = None
+    push_dingtalk_webhook: str | None = None
+    xinchuang_mode: Literal["strict", "permissive"] = "permissive"
+
+    @field_validator("push_wecom_webhook", "push_dingtalk_webhook", mode="before")
+    @classmethod
+    def normalize_optional_webhook(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
 
     @field_validator("analytics_database_url", mode="before")
     @classmethod
