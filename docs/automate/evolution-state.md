@@ -6,11 +6,11 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r35.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-04-m11-conn-m13-gov-companion-quality-r35-design.md |
 | plan |  |
-| branch |  |
+| branch | cursor/bc-8c18737e-0c44-4d37-a690-cf6681f61819-520c |
 | base_branch | dev-auto |
 | prd_ids | CONN-021,CONN-009,GOV-008,GOV-004,CONN-015 |
 | pr_number |  |
@@ -68,6 +68,7 @@
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
 - G2 r35 选题完成：M11 连接器 + M13 治理 companion 质量推分 — CONN-021/009/015 + GOV-004/008（5 项）；最低分 CONN-021(86.0)；STUCK 五 ID 各 1 轮（未达 ≥3 硬标注阈值）；饱和熔断未触发；plan M11/M12/M13 无活跃勾选行（已知 concern）；phase idle→G2_DONE
+- P1 r35 设计完成：CONN-021/009/015 + GOV-004/008 companion 质量推分；17 文件框定；preview-execute ACL/RLS；TIDB_/STARROCKS_/ES 边界；ui_design_skill none；phase G2_DONE→P1_DONE
 - G1 r35 bootstrap：r34 PR #58 已合并 dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r34 PRD 重评：CONN-021/009/015 + GOV-004/008 L1 kickoff；pytest 742/4 skipped；test_connectors_gov_r34 15/15 + r33 19/19；总分 10.9–11.2→86.0–88.1（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r34 验证通过：ruff clean；pytest 742 passed/4 skipped；test_connectors_gov_r34 15/15 + test_meta_design_r33 19/19 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
