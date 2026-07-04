@@ -69,3 +69,53 @@ TIDB_AUTH_FAILED = "TIDB_AUTH_FAILED"
 TIDB_TIMEOUT = "TIDB_TIMEOUT"
 TIDB_UNKNOWN_DATABASE = "TIDB_UNKNOWN_DATABASE"
 TIDB_UNKNOWN = "TIDB_UNKNOWN"
+
+
+SQLSERVER_CONN_REFUSED = "SQLSERVER_CONN_REFUSED"
+SQLSERVER_AUTH_FAILED = "SQLSERVER_AUTH_FAILED"
+SQLSERVER_TIMEOUT = "SQLSERVER_TIMEOUT"
+SQLSERVER_UNKNOWN_DATABASE = "SQLSERVER_UNKNOWN_DATABASE"
+SQLSERVER_SSL_ERROR = "SQLSERVER_SSL_ERROR"
+SQLSERVER_UNKNOWN = "SQLSERVER_UNKNOWN"
+
+_SQLSERVER_CODE_MAP: dict[int, str] = {
+    20009: SQLSERVER_CONN_REFUSED,
+    18456: SQLSERVER_AUTH_FAILED,
+    4060: SQLSERVER_UNKNOWN_DATABASE,
+}
+
+
+def map_sqlserver_operational_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    errno = int(exc.args[0]) if getattr(exc, "args", None) and exc.args else 0
+    if errno in (20002, 20003):
+        return SQLSERVER_TIMEOUT, detail
+    if "ssl" in detail.lower() or "encrypt" in detail.lower():
+        return SQLSERVER_SSL_ERROR, detail
+    code = _SQLSERVER_CODE_MAP.get(errno, SQLSERVER_UNKNOWN)
+    if "timeout" in detail.lower():
+        return SQLSERVER_TIMEOUT, detail
+    return code, detail
+
+
+ORACLE_CONN_REFUSED = "ORACLE_CONN_REFUSED"
+ORACLE_AUTH_FAILED = "ORACLE_AUTH_FAILED"
+ORACLE_TIMEOUT = "ORACLE_TIMEOUT"
+ORACLE_UNKNOWN_SERVICE = "ORACLE_UNKNOWN_SERVICE"
+ORACLE_UNKNOWN = "ORACLE_UNKNOWN"
+
+_SYSTEM_OWNERS = frozenset({"SYS", "SYSTEM"})
+
+
+def map_oracle_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "ora-01017" in lowered:
+        return ORACLE_AUTH_FAILED, detail
+    if "ora-12514" in lowered or "unknown service" in lowered:
+        return ORACLE_UNKNOWN_SERVICE, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return ORACLE_TIMEOUT, detail
+    if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
+        return ORACLE_CONN_REFUSED, detail
+    return ORACLE_UNKNOWN, detail
