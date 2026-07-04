@@ -4,29 +4,11 @@ import time
 from typing import Any
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
+from app.datasources.dialects.errors import map_clickhouse_error
 
-CLICKHOUSE_CONN_REFUSED = "CLICKHOUSE_CONN_REFUSED"
-CLICKHOUSE_AUTH_FAILED = "CLICKHOUSE_AUTH_FAILED"
-CLICKHOUSE_TIMEOUT = "CLICKHOUSE_TIMEOUT"
-CLICKHOUSE_UNKNOWN_DATABASE = "CLICKHOUSE_UNKNOWN_DATABASE"
-CLICKHOUSE_UNKNOWN = "CLICKHOUSE_UNKNOWN"
 CLICKHOUSE_MAX_COLUMNS = 500
 
 _SYSTEM_DATABASES = frozenset({"system", "INFORMATION_SCHEMA"})
-
-
-def _map_clickhouse_error(exc: Exception) -> tuple[str, str]:
-    detail = str(exc)
-    lowered = detail.lower()
-    if "401" in detail or "unauthorized" in lowered or "auth" in lowered:
-        return CLICKHOUSE_AUTH_FAILED, detail
-    if "timeout" in lowered or "timed out" in lowered:
-        return CLICKHOUSE_TIMEOUT, detail
-    if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
-        return CLICKHOUSE_CONN_REFUSED, detail
-    if "database" in lowered and ("unknown" in lowered or "doesn't exist" in lowered):
-        return CLICKHOUSE_UNKNOWN_DATABASE, detail
-    return CLICKHOUSE_UNKNOWN, detail
 
 
 class ClickhouseConnector:
@@ -55,7 +37,7 @@ class ClickhouseConnector:
             client = self._client(**kwargs)
             client.command("SELECT 1")
         except Exception as exc:
-            code, detail = _map_clickhouse_error(exc)
+            code, detail = map_clickhouse_error(exc)
             latency_ms = int((time.perf_counter() - started) * 1000)
             return TestConnectionResult(
                 ok=False,
