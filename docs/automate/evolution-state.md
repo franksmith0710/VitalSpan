@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design | docs/superpowers/specs/2026-07-04-m13-design-opensearch-gov-query-l1-r49-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-l1-r49.md |
-| branch | feat/evolution-r49-m13-design-opensearch-gov-query-l1 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | DESIGN-005,DESIGN-003,CONN-016,GOV-003,QUERY-003 |
+| prd_ids |  |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
-| last_verified_exit_code | 0 |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T12:30:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r50 bootstrap：r49 PR #76 已 Squash merge dev-auto（c60ab89）；G0 PASS（PR #77 plan 恢复 docs-only 已合并）；工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 NFR-006(79.2)/NFR-007(80.0)/NFR-005(81.2)；STUCK 十 ID 各 1 轮（NFR-005/006/007 + GOV-003/005 + DESIGN-003/005 + CONN-016/019 + QUERY-003，均 <90）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r49 PRD 重评：DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003 L1 kickoff；pytest 1205/4 skipped；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36；总分 11.6–12.0→81.4–83.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r49 验证通过：ruff clean；pytest 1205 passed/4 skipped（全量 exit_code 0）；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36 回归 111/111；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r49 实现完成：8 Task 全绿；M13 设计器 + M11 OpenSearch + 治理/查询 L1 — DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003；35 测 test_design_conn_gov_query_r49 + r32 21/21 + r33 19/19 + r46 36/36 回归；pytest 1205/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r49-m13-design-opensearch-gov-query-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
