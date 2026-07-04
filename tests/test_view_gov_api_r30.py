@@ -58,7 +58,7 @@ def test_view_empty_widgets_allowed():
 def test_view_invalid_chart_type():
     """T-VIEW-R30-001-03: 非法 chartType → 422。"""
     layout = _valid_layout()
-    layout["widgets"][0]["chartConfig"]["chartType"] = "pie"
+    layout["widgets"][0]["chartConfig"]["chartType"] = "radar"
     with pytest.raises(ViewError) as exc:
         validate_dashboard_view({"name": "Bad", "layout": layout})
     assert exc.value.status == 422
