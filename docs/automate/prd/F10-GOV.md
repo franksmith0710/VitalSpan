@@ -4,26 +4,32 @@
 
 ### [GOV-001] 查询接口分类 catalog 附录 E
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：查询接口分类 catalog 附录 E（SRS 追溯项）。
 - **验收标准**：
+  - [x] CAT-01/02/03 三分法 taxonomy seed + list API（r30 L1）
+  - [x] catalog 条目 CRUD + 分类挂载
   - [ ] 7 类 taxonomy 可配置
   - [ ] WS-01 对齐纪要
-- **代码锚点**：`backend/app/governance/catalog/`
-- **演化建议**：按 plan.md 期次优先级落地
+- **代码锚点**：`backend/app/governance/catalog/` · `backend/migrations/versions/0014_gov_catalog.py` · `backend/app/api/v1/gov.py`
+- **演化建议**：r30 migration 0014 + seed 三分法 + entries API（T-GOV-R30-001~010）；后续扩展完整 7 类与 Admin UI
+- **里程碑对齐**：
 ### [GOV-002] 总线 PoC 半自动注册 FR-1.1
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：总线 PoC 半自动注册 FR-1.1（SRS 追溯项）。
 - **验收标准**：
-  - [ ] ≥2 API 半自动注册
-  - [ ] OpenAPI 描述
-- **代码锚点**：`backend/app/governance/bus/poc.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] `POST /api/v1/gov/bus/register` 半自动注册（内存 adapter）
+  - [x] OpenAPI operationId 与登记回执（traceId/busId）
+  - [ ] ≥2 真实总线端点对接
+  - [ ] 完整审批工单流水线
+- **代码锚点**：`backend/app/governance/bus/poc.py` · `backend/app/governance/catalog/service.py`
+- **演化建议**：r30 InMemoryBusPoCAdapter + draft/force-fail 分支（T-GOV-R30-011~015）；后续接真实总线 HTTP 与全自动发布
+- **里程碑对齐**：
 ### [GOV-003] 工单流程模板 FR-1.2
 
 - **状态**：未实现

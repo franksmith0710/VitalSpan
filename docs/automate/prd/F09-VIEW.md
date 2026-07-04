@@ -4,15 +4,18 @@
 
 ### [VIEW-001] DashboardView 视图协议 FR-VIEW-1
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：DashboardView 视图协议 FR-VIEW-1（SRS 追溯项）。
 - **验收标准**：
   - [ ] 全 BI 页面基于 DashboardView
-  - [ ] defaultViewId 模型
-- **代码锚点**：`backend/app/views/models.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] DashboardView schema + `POST /api/v1/views/validate`（r30 L1）
+  - [x] layout 与 DASH-001~003 互操作（委托 `dashboard.service.validate_layout`）
+  - [ ] defaultViewId 持久化与角色默认视图（VIEW-002）
+- **代码锚点**：`backend/app/views/schemas.py` · `backend/app/views/validate.py` · `backend/app/api/v1/views.py`
+- **演化建议**：r30 交付 L1 schema/validate + VIEW_UNKNOWN_CHART_REF 等业务码（T-VIEW-R30-001~004）；后续补全 BI 页面统一协议层与 defaultViewId 存储
+- **里程碑对齐**：
 ### [VIEW-002] 角色默认模板 FR-VIEW-3
 
 - **状态**：未实现

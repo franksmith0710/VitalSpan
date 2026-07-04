@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design | docs/superpowers/specs/2026-07-04-m5-view-m6-companion-r30-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m5-view-m6-companion-r30.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | VIEW-001,GOV-001,GOV-002,API-001,API-002 |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v (P4 independent) |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -67,13 +67,15 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P3 r30 实现完成：7 Task 全绿；backend ruff+pytest ≥660 passed/2 skipped；test_view_gov_api_r30 ≥30；ui_design_skill: none；branch feat/evolution-r30-m5-view-m6-companion；base_branch dev-auto
+- P5 r30 PRD 重评：VIEW-001/GOV-001/002/API-001/002 L1 kickoff；pytest 662/4 skipped；test_view_gov_api_r30 30/30；总分 12.9–13.7→88.6–90.9（VIEW-001/GOV-002 <90 STUCK upsert）
+- P4 r30 验证通过：pytest 662 passed/4 skipped；test_view_gov_api_r30 30/30；ruff clean
+- P3 r30 实现完成：7 Task 全绿；views/governance/openapi L1；migration 0014；branch feat/evolution-r30-m5-view-m6-companion；base_branch dev-auto
 - P2 r30 计划完成：7 Task（VIEW schema/API→GOV catalog migration/API→bus PoC→IF-06 OpenAPI→集成测试+文档）；20 文件；subagent-driven-development option 1；全 Task UI skill: none；migration 0014
 - G2 r30 选题完成：M5 VIEW-001 L1 + M6 companion kickoff — VIEW-001/GOV-002/GOV-001/API-001/API-002（5 项）；最低分 GOV-002(12.9)；饱和熔断未触发；phase idle→G2_DONE
-- G1 doc-bootstrap：hub+分片就绪（124 项·16 域）；薄弱项 Top3 META-001(10.8)/DESIGN-001(10.8)/CONN-021(10.9)；plan 无含 `[ ]` 活跃节（M1+M1B 全勾选）；phase P5_DOCS_READY→idle
-- P5 r29 PRD 重评：VIZ-001/002 + DASH-001/002/003 质量推分 86.8–91.0→90.7–92.4（VIZ-002/DASH-002/003 破 90 STUCK 清零）；pytest 632/2 skipped；test_viz_dash_quality_r29 32/32；fe vitest 90/90
 
 ## 选题卡住计数（连续未过 90 的功能项）
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| VIEW-001 | 1 | 88.6 | 2026-07-04 |
+| GOV-002 | 1 | 88.7 | 2026-07-04 |

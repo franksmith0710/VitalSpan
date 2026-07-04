@@ -4,26 +4,28 @@
 
 ### [API-001] IF-06 数据源管理 API
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：IF-06 数据源管理 API（SRS 追溯项）。
 - **验收标准**：
-  - [ ] datasources CRUD+test+metadata
-  - [ ] OpenAPI 文档完整
-- **代码锚点**：`backend/app/api/v1/datasources.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] datasources CRUD+test+metadata
+  - [x] OpenAPI IF-06 tag/示例（`openapi/extensions.py`）
+- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/openapi/extensions.py`
+- **演化建议**：r30 IF-06 tag + request/response 示例注入（T-API-R30-001~003）；后续可补对外 alias 与只读/管理分离策略文档
+- **里程碑对齐**：
 ### [API-002] IF-06 查询执行 API
 
-- **状态**：未实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
 - **描述**：IF-06 查询执行 API（SRS 追溯项）。
 - **验收标准**：
-  - [ ] POST query/execute
-  - [ ] 只读约束
-- **代码锚点**：`backend/app/api/v1/query.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] POST query/execute
+  - [x] 只读约束（复用 r27 readonly guard + RLS 链）
+- **代码锚点**：`backend/app/api/v1/query.py` · `backend/app/openapi/extensions.py`
+- **演化建议**：r30 OpenAPI summary/IF-06 tag + execute 示例（T-API-R30-004~006）；后续可补对外限流与 catalog 联动
+- **里程碑对齐**：
 ### [API-003] IF-02 查询服务 API
 
 - **状态**：未实现

@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.35
+version: 1.2.36
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r29 重评 VIZ-001/002 + DASH-001/002/003（M5 VIZ/DASH quality push r29）；pytest 632/2 skipped；test_viz_dash_quality_r29 32/32；fe vitest 90/90；字段级 validate、layout 业务校验、图表空/错/慢态与 table 分页、widget 标题/栅格 resize；完整度 84–96%→92–98%，可靠性 90–94%→94–96%，性能 86–88%→88–90%，总分 86.8–91.0→90.7–92.4（VIZ-002/DASH-002/003 破 90 STUCK 清零）
+> 更新：2026-07-04 · P5 r30 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW L1 + M6 companion kickoff r30）；pytest 662/4 skipped；test_view_gov_api_r30 30/30；views/governance/openapi L1；完整度 5%→74–88%，可靠性 0%→86–94%，测试覆盖 0%→92–100%，总分 12.9–13.7→88.6–90.9（VIEW-001/GOV-002 <90 STUCK upsert；GOV-001/API-001/002 破 90）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -114,11 +114,11 @@ domain_count: 16
 | RPT-005 | 47 | 5 | 0 | N/A | 9 | 0 | 0 | 13 | 11.8 | 完整度 |
 | RPT-006 | 50 | 5 | 0 | N/A | 10 | 0 | 0 | 8 | 11.8 | 完整度 |
 | RPT-007 | 49 | 5 | 0 | N/A | 11 | 0 | 0 | 9 | 11.9 | 完整度 |
-| VIEW-001 | 58 | 5 | 0 | N/A | 12 | 0 | 0 | 10 | 13.7 | 完整度 |
+| VIEW-001 | 78 | 74 | 86 | N/A | 86 | 92 | 84 | 84 | 88.6 | 完整度 |
 | VIEW-002 | 48 | 5 | 0 | N/A | 13 | 0 | 0 | 11 | 12.2 | 完整度 |
 | VIEW-003 | 47 | 5 | 0 | N/A | 14 | 0 | 0 | 12 | 12.2 | 完整度 |
-| GOV-001 | 56 | 5 | 0 | N/A | 8 | 0 | 0 | 13 | 13.2 | 完整度 |
-| GOV-002 | 57 | 5 | 0 | N/A | 9 | 0 | 0 | 8 | 12.9 | 完整度 |
+| GOV-001 | 78 | 80 | 88 | N/A | 88 | 94 | 84 | 86 | 90.7 | 完整度 |
+| GOV-002 | 78 | 76 | 86 | N/A | 86 | 92 | 84 | 82 | 88.7 | 完整度 |
 | GOV-003 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
 | GOV-004 | 44 | 5 | 0 | N/A | 11 | 0 | 0 | 10 | 11.1 | 完整度 |
 | GOV-005 | 45 | 5 | 0 | N/A | 12 | 0 | 0 | 11 | 11.5 | 完整度 |
@@ -136,8 +136,8 @@ domain_count: 16
 | DESIGN-003 | 47 | 5 | 0 | N/A | 10 | 0 | 0 | 11 | 11.6 | 完整度 |
 | DESIGN-004 | 48 | 5 | 0 | N/A | 11 | 0 | 0 | 12 | 12.1 | 完整度 |
 | DESIGN-005 | 44 | 5 | 0 | N/A | 12 | 0 | 0 | 13 | 11.6 | 完整度 |
-| API-001 | 55 | 5 | 0 | N/A | 13 | 0 | 0 | 8 | 13.1 | 完整度 |
-| API-002 | 56 | 5 | 0 | N/A | 14 | 0 | 0 | 9 | 13.5 | 完整度 |
+| API-001 | 78 | 80 | 88 | N/A | 88 | 96 | 84 | 86 | 90.9 | 完整度 |
+| API-002 | 78 | 80 | 90 | N/A | 88 | 96 | 86 | 86 | 90.8 | 完整度 |
 | API-003 | 47 | 5 | 0 | N/A | 8 | 0 | 0 | 10 | 11.3 | 完整度 |
 | API-004 | 48 | 5 | 0 | N/A | 9 | 0 | 0 | 11 | 11.7 | 完整度 |
 | API-005 | 46 | 5 | 0 | N/A | 10 | 0 | 0 | 12 | 11.6 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.36 | 2026-07-04 | P5 r30 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW L1 + M6 companion kickoff r30）；pytest 662/4 skipped；test_view_gov_api_r30 30/30；DashboardView schema/validate、catalog 三分法 + bus PoC、IF-06 OpenAPI tag/示例；完整度 5%→74–88%，可靠性 0%→86–94%，测试覆盖 0%→92–100%，总分 12.9–13.7→88.6–90.9（VIEW-001/GOV-002 <90 STUCK upsert；GOV-001/API-001/002 破 90） |
 | 1.2.35 | 2026-07-04 | P5 r29 重评 VIZ-001/002 + DASH-001/002/003（M5 VIZ/DASH quality push r29）；pytest 632/2 skipped；test_viz_dash_quality_r29 32/32 + test_viz_dash_l1_r28 26/26；fe vitest 90/90 + dashboard/chart smoke 19/19；ChartViewError.fields + POST validate detail.fields、layout DASH_* 业务码、ChartPanel 空/错/慢态 + table PAGE_SIZE=50、resizeWidget/标题编辑；完整度 84–96%→92–98%，可靠性 90–94%→94–96%，性能 86–88%→88–90%，总分 86.8–91.0→90.7–92.4（VIZ-002/DASH-002/003 破 90 STUCK 清零） |
 | 1.2.34 | 2026-07-04 | P5 r28 重评 VIZ-001/002 + DASH-001/002/003（M5 VIZ/DASH L1 kickoff r28）；pytest 600/2 skipped；test_viz_dash_l1_r28 26/26；T-MIG-41~42；fe vitest 81/81 + dashboard/chart smoke；ChartViewConfig schema/validate API、table/line/bar ChartRenderer、dashboards ORM/CRUD/layout、Admin 列表/编辑静态栅格；完整度 5%→84–96%，可靠性 0%→90–94%，测试覆盖 0%→96–100%，总分 13.2–13.9→86.8–91.0（VIZ-001/DASH-001 破 90；VIZ-002/DASH-002/003 <90 STUCK upsert） |
 | 1.2.33 | 2026-07-03 | P5 r27 重评 QUERY-001/002/004/005/006（M4 query quality push r27）；pytest 570/4 skipped；test_query_quality_r27 36/36；ClickHouse dialect L1 + error mapping、readonly guard（注释/多语句/超长）、table 边界、chartId 唯一绑定、RLS admin bypass/多维链；用户价值 80–84%→82–86%，完整度 88–96%→94–98%，可靠性 94%→96%，性能 86%→90%，总分 88.5–91.4→91.4–92.8（QUERY-004 破 90 STUCK 清零） |
@@ -213,4 +214,3 @@ domain_count: 16
 | 1.2.29 | 2026-07-03 | P5 r23 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r23）；pytest 449/4 skipped；T-DS-R05~R08、C09~C16、T06~T10、K05~K08、CONN-M05~M10；migration 0009 + unregister/usage_checker + pagination/PATCH/soft delete + test inflight/traceId + credential decrypt errors + MySQL error codes/ssl；完整度 88–96%→92–96%，可靠性 92–94%→94–96%，测试覆盖 96–100%→100%，安全性 88–92%→88–94%，总分 86.8–91.1→89.1–91.9（DS-001 破 90 STUCK 清零；CONN-001 仍 <90 STUCK round 2） |
 | 1.2.28 | 2026-07-03 | P5 r22 重评 DS-001/002/005/003 + CONN-001（M3 datasource L1 kickoff r22）；pytest 419/4 skipped；T-DS-R01~R04、C01~C08、T01~T05、K01~K04、CONN-M01~M04；migration 0008 + ConnectorRegistry/MySQL/credentials/CRUD/test API；完整度 5%→78–96%，可靠性 0%→92–94%，测试覆盖 0%→96–100%，总分 12.8–13.6→86.8–91.1（DS-002/003/005 破 90；DS-001/CONN-001 <90 STUCK upsert） |
 | 1.2.27 | 2026-07-03 | P5 r21 重评 AUTH-007/006/008/005/001（M2 AUTH quality push r21）；pytest 394/4 skipped；T-AUTH-RLS09~13、GP13~15、AU11~13、D13~14、R10~12；migration 0007 + query/rls/guard + is_active/audit range/detail mask；完整度 90–94%→96%，性能 86%→90%（AUTH-008 P95<500ms），安全性 86–90%→90–92%，总分 89.5–91.5→90.8–92.1（AUTH-006~008 破 90 STUCK 清零） |
-| 1.2.26 | 2026-07-03 | P5 r20 重评 AUTH-006~008（M2 AUTH kickoff r20）；pytest 377/4 skipped；T-AUTH-GP01~GP12、RLS01~RLS08、AU01~AU10；migration 0006 + 维度分组/角色绑定/RLS hook/审计写挂钩；完整度 5%→88–94%，可靠性 0%→92–94%，测试覆盖 0%→96–100%，总分 13.2–13.6→89.5–89.9（L1 kickoff 缺 Admin UI/query 对接，均 <90） |
