@@ -30,12 +30,13 @@
 - **错误码**：`DASH_THEME_*`（含 `DASH_THEME_CHART_VIEW_MISMATCH` + `detail.fields`、`DASH_THEME_FORBIDDEN`）、`DASH_NOT_FOUND`、`CONFIG_NOT_FOUND`
 - **性能**：`probe_link_chart_views_budget_ms` ≤50ms；`probe_theme_execute_plan_budget_ms` ≤40ms
 
-### global_filters/ 子域（DASH-004 · r61 L1）
+### global_filters/ 子域（DASH-004 · r61 L1 + r67 companion）
 
 - **In**：`GlobalFilterLinkageItem` 契约（filters/linkageRules/refreshMode）；validate/save/get；`config_store` `ref_type=global_filter_linkage` 持久化；layout widget 绑定探测（`affectedWidgetCount`）
 - **Out**：fe 全局筛选器 UI、SQL 注入执行、与 `entity_overview/` / `theme/` 路由交叉
 - **依赖**：`dashboard/service`（dashboard 存在性 + layout widgets + `created_by` ACL）、`query/config_store`
-- **错误码**：`DASH_FILTER_*`（含 `DASH_FILTER_FORBIDDEN` 非 owner 非 admin）
+- **错误码**：`DASH_FILTER_*`（含 `DASH_FILTER_FORBIDDEN` 非 owner 非 admin；**r67** `DASH_FILTER_INVALID_DIMENSION_REF` / `DASH_FILTER_DUPLICATE_PARAMETER_KEY`）
+- **r67 companion**：`set_user_filter_dashboard_scope` + viewer 禁写 + enterprise dashboard scope；`probe_validate_linkage_budget_ms` / `probe_get_linkage_budget_ms` ≤50ms
 
 ### entity_overview/ 子域（DASH-005 · r59 L1）
 
@@ -58,7 +59,7 @@
 | `DashboardService` | CRUD + `validate_layout` + `update_layout` | DASH-001~003 | 已实现 |
 | `DashboardLayout` | `version`/`widgets`/`globalFilters` JSON | DASH-002 | 已实现 |
 | `dashboard/theme/` | 实体主题分析 config（`entity_theme` via config_store）+ chart_view 联动 + execute-plan + ACL | DASH-006 | companion 已实现（r58） |
-| `dashboard/global_filters/` | 全局筛选联动 validate/save/get + widget 绑定 | DASH-004 | L1 已实现 r61 |
+| `dashboard/global_filters/` | 全局筛选联动 validate/save/get + widget 绑定 + ACL/probe | DASH-004 | companion 已实现 r67 |
 | `dashboard/entity_overview/` | 实体总览 item validate/save/get + publish 探测 | DASH-005 | L1 已实现 r59 |
 | `DashboardViewConfig` | 视图协议 | DASH-004 | 待建 |
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.auth.deps import UserContext
+from app.reports.templates.acl import assert_template_read_access, assert_template_write_access
 from app.reports.templates.errors import TemplateDefError
 from app.reports.templates.schemas import (
     TemplateBlock,
@@ -9,7 +11,16 @@ from app.reports.templates.schemas import (
 )
 
 _VALID_BLOCKS = frozenset({"sql", "table", "chart"})
+_VALID_CHART_TYPES = frozenset({"line", "bar", "pie"})
 _store: dict[str, dict] = {}
+
+
+def _block_identity(block: TemplateBlock) -> tuple[str, str]:
+    if block.block_type == "sql":
+        return block.block_type, block.query_ref or ""
+    if block.block_type == "table":
+        return block.block_type, block.table_ref or ""
+    return block.block_type, block.chart_type or ""
 
 
 def _validate_block(block: TemplateBlock) -> None:
@@ -19,15 +30,28 @@ def _validate_block(block: TemplateBlock) -> None:
         raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "sql block requires queryRef", 422)
     if block.block_type == "table" and not (block.table_ref and block.table_ref.strip()):
         raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "table block requires tableRef", 422)
-    if block.block_type == "chart" and block.chart_type is None:
-        raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "chart block requires chartType", 422)
+    if block.block_type == "chart":
+        if block.chart_type is None:
+            raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "chart block requires chartType", 422)
+        if block.chart_type not in _VALID_CHART_TYPES:
+            raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "Invalid chartType", 422)
 
 
 def _validate_definition(payload: TemplateDefinitionIn) -> TemplateDefinitionIn:
     if not payload.blocks:
         raise TemplateDefError("RPT_TEMPLATE_EMPTY_BLOCKS", "blocks must not be empty", 422)
+    seen: set[tuple[str, str]] = set()
     for block in payload.blocks:
         _validate_block(block)
+        identity = _block_identity(block)
+        if identity in seen:
+            raise TemplateDefError(
+                "RPT_TEMPLATE_DUPLICATE_BLOCK",
+                "Duplicate block in template",
+                422,
+                [{"field": "blocks", "message": "duplicate block"}],
+            )
+        seen.add(identity)
     return payload
 
 
@@ -36,7 +60,10 @@ def validate_template_definition(payload: TemplateDefinitionIn) -> TemplateValid
     return TemplateValidateOut(valid=True, template_key=item.template_key, block_count=len(item.blocks))
 
 
-def upsert_template_definition(key: str, payload: TemplateDefinitionIn) -> TemplateDefinitionOut:
+def upsert_template_definition(
+    key: str, payload: TemplateDefinitionIn, actor: UserContext,
+) -> TemplateDefinitionOut:
+    assert_template_write_access(actor, key)
     if key != payload.template_key:
         raise TemplateDefError("RPT_TEMPLATE_KEY_MISMATCH", "path template_key mismatch", 422)
     item = _validate_definition(payload)
@@ -44,7 +71,8 @@ def upsert_template_definition(key: str, payload: TemplateDefinitionIn) -> Templ
     return TemplateDefinitionOut.model_validate(_store[key])
 
 
-def get_template_definition(key: str) -> TemplateDefinitionOut:
+def get_template_definition(key: str, actor: UserContext) -> TemplateDefinitionOut:
+    assert_template_read_access(actor, key)
     if key not in _store:
         raise TemplateDefError("RPT_TEMPLATE_NOT_FOUND", f"templateKey not found: {key}", 404)
     return TemplateDefinitionOut.model_validate(_store[key])

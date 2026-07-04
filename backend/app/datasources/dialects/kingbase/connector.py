@@ -7,6 +7,7 @@ import psycopg
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import map_kingbase_error
+from app.datasources.dialects.kingbase.params import KingbaseParamsError, validate_kingbase_connection_params
 from app.datasources.dialects.postgres import PostgresConnector
 
 KINGBASE_MAX_COLUMNS = 500
@@ -23,6 +24,15 @@ class KingbaseConnector:
         self._inner = PostgresConnector()
 
     def test_connection(self, **kwargs) -> TestConnectionResult:
+        try:
+            validate_kingbase_connection_params(
+                host=kwargs.get("host"),
+                port=kwargs.get("port", KINGBASE_DEFAULT_PORT),
+                database=kwargs.get("database"),
+                username=kwargs.get("username"),
+            )
+        except KingbaseParamsError as exc:
+            return TestConnectionResult(ok=False, message=exc.message, latency_ms=0, code=exc.code)
         started = time.perf_counter()
         port = kwargs.get("port", KINGBASE_DEFAULT_PORT)
         conn_kwargs = {**kwargs, "port": port}

@@ -4,27 +4,29 @@
 
 ### [NFR-001] NFR-01 Dashboard 首屏性能
 
-- **状态**：部分实现（L1 kickoff r64）
+- **状态**：部分实现（companion r67）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：一期
 - **描述**：NFR-01 Dashboard 首屏性能（SRS 追溯项）。
 - **验收标准**：
   - [x] 首屏 ≤ 5s（r64 L1：`POST validate` + `POST /api/v1/nfr/dashboard-first-screen/probe` mock elapsedMs=800 + budgetMs default 5000 + `DASHBOARD_FIRST_SCREEN_*` 错误域 + simulateSlow breach）
+  - [x] companion ACL/probe 边界（r67：enterprise 越权 dashboardId 403、dashboardId 含空格 422；`probe_validate_first_screen_budget_ms`/`probe_first_screen_probe_budget_ms` ≤50ms）
   - [ ] 并发压测报告（mock probe only；无 `tests/perf/nfr01_dashboard/` 真实 perf suite）
-- **代码锚点**：`backend/app/core/nfr/dashboard_first_screen.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-001-01~06
-- **演化建议**：r64 L1 闭合 dashboard-first-screen validate/probe 与 budgetMs/widgetCount 边界；后续补真实首屏 perf suite 与并发压测报告
+- **代码锚点**：`backend/app/core/nfr/dashboard_first_screen.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-001-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-001-01~06
+- **演化建议**：r67 companion 闭合 dashboard-first-screen ACL、dashboardId 格式校验与 validate/probe perf probe；后续补真实首屏 perf suite 与并发压测报告
 - **里程碑对齐**：
 ### [NFR-002] NFR-01 报表查询性能
 
-- **状态**：部分实现（L1 kickoff r61）
+- **状态**：部分实现（companion r67）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：二期
 - **描述**：NFR-01 报表查询性能（SRS 追溯项）。
 - **验收标准**：
   - [x] 报表查询 ≤ 10s（r61 L1：`POST validate` + `POST /api/v1/nfr/report-perf/probe` + mock elapsedMs=120 + budgetMs default 10000 + `REPORT_PERF_*` 错误域）
+  - [x] companion ACL/probe 边界（r67：enterprise 越权 reportId 403、非法 sampleQueryId 422、simulateFailure 降级；`probe_validate_report_perf_budget_ms`/`probe_report_perf_probe_budget_ms` ≤50ms）
   - [ ] 抽样通过（mock probe only；无 `tests/perf/nfr01_report/` 真实 perf suite）
-- **代码锚点**：`backend/app/core/nfr/report_perf.py` · `backend/app/api/v1/nfr.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-NFR-R61-002-01~06
-- **演化建议**：r61 L1 闭合 report-perf validate/probe 与 budgetMs/sampleRows 边界；后续补真实报表查询 perf suite 与抽样门禁
+- **代码锚点**：`backend/app/core/nfr/report_perf.py` · `backend/app/api/v1/nfr.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-NFR-R61-002-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-002-01~06
+- **演化建议**：r67 companion 闭合 report-perf ACL、sampleQueryId 校验与 validate/probe perf probe；后续补真实报表查询 perf suite 与抽样门禁
 - **里程碑对齐**：
 ### [NFR-003] NFR-02 核心看板可用性
 

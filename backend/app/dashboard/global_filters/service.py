@@ -1,18 +1,66 @@
 from __future__ import annotations
 
+import re
 import uuid
 
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.dashboard import service as dash_service
-from app.dashboard.global_filters.errors import GlobalFilterError
+from app.dashboard.global_filters.errors import (
+    DASH_FILTER_DUPLICATE_PARAMETER_KEY,
+    DASH_FILTER_INVALID_DIMENSION_REF,
+    GlobalFilterError,
+)
 from app.dashboard.global_filters.schemas import GlobalFilterLinkageItem, GlobalFilterLinkageOut
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigError, ConfigUpsert
 
 _REF_TYPE = "global_filter_linkage"
 _CONFIG_TYPE = "global_filter_linkage"
+_DIMENSION_REF_RE = re.compile(r"^[a-z][a-z0-9_.]{0,127}$")
+_USER_FILTER_DASHBOARD_SCOPE: dict[str, set[uuid.UUID]] = {}
+
+
+def set_user_filter_dashboard_scope(user_id: str, allowed_dashboard_ids: set[uuid.UUID]) -> None:
+    _USER_FILTER_DASHBOARD_SCOPE[user_id] = set(allowed_dashboard_ids)
+
+
+def _assert_write_access(actor: UserContext) -> None:
+    if set(actor.roles) <= {"viewer"}:
+        raise GlobalFilterError("DASH_FILTER_FORBIDDEN", "viewer cannot modify global filter linkage", 403)
+
+
+def _assert_enterprise_scope(actor: UserContext, dashboard_id: uuid.UUID) -> None:
+    if "enterprise" not in actor.roles:
+        return
+    allowed = _USER_FILTER_DASHBOARD_SCOPE.get(actor.id)
+    if allowed is None:
+        return
+    if dashboard_id not in allowed:
+        raise GlobalFilterError("DASH_FILTER_FORBIDDEN", "enterprise user out of dashboard scope", 403)
+
+
+def _validate_filter_bindings(filters: list) -> None:
+    for f in filters:
+        if not _DIMENSION_REF_RE.match(f.dimension_ref):
+            raise GlobalFilterError(
+                DASH_FILTER_INVALID_DIMENSION_REF,
+                "Invalid dimensionRef",
+                422,
+                [{"field": "dimensionRef", "message": "invalid pattern"}],
+            )
+
+
+def _validate_linkage_rules(rules: list) -> None:
+    keys = [r.parameter_key for r in rules]
+    if len(keys) != len(set(keys)):
+        raise GlobalFilterError(
+            DASH_FILTER_DUPLICATE_PARAMETER_KEY,
+            "Duplicate parameterKey in linkageRules",
+            422,
+            [{"field": "parameterKey", "message": "duplicate"}],
+        )
 
 
 def _assert_access(actor: UserContext, dashboard_created_by: uuid.UUID | None) -> None:
@@ -34,6 +82,8 @@ def _widget_ids(session: Session, dashboard_id: uuid.UUID) -> set[str]:
 
 
 def _validate_linkage(session: Session, item: GlobalFilterLinkageItem) -> GlobalFilterLinkageItem:
+    _validate_filter_bindings(item.filters)
+    _validate_linkage_rules(item.linkage_rules)
     try:
         dash_service.get_dashboard(session, item.dashboard_id)
     except dash_service.DashboardError as exc:
@@ -75,8 +125,10 @@ def validate_linkage(session: Session, item: GlobalFilterLinkageItem) -> GlobalF
 
 
 def save_linkage(session: Session, item: GlobalFilterLinkageItem, actor: UserContext) -> GlobalFilterLinkageOut:
+    _assert_write_access(actor)
     _validate_linkage(session, item)
     dashboard = dash_service.get_dashboard(session, item.dashboard_id)
+    _assert_enterprise_scope(actor, item.dashboard_id)
     _assert_access(actor, dashboard.created_by)
     try:
         owner_id = uuid.UUID(actor.id)
@@ -98,6 +150,7 @@ def save_linkage(session: Session, item: GlobalFilterLinkageItem, actor: UserCon
 
 def get_linkage(session: Session, dashboard_id: uuid.UUID, actor: UserContext) -> GlobalFilterLinkageOut:
     dashboard = dash_service.get_dashboard(session, dashboard_id)
+    _assert_enterprise_scope(actor, dashboard_id)
     _assert_access(actor, dashboard.created_by)
     try:
         record = config_store.get_config_by_ref(session, _CONFIG_TYPE, _REF_TYPE, dashboard_id)

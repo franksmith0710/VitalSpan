@@ -38,7 +38,8 @@
 | `GET /health` | 存活探针 | `backend/app/main.py` |
 | `core/nfr/runtime_guard.py` | NFR-008 零 DE/SS pyproject 扫描 + 模块探测 | `backend/app/core/nfr/runtime_guard.py` |
 | `core/nfr/deployment_report.py` | NFR-008 部署验收报告（`overallAcceptance` + `remediation_index`） | `backend/app/core/nfr/deployment_report.py` |
-| `core/nfr/report_perf.py` | NFR-002 报表查询性能 mock probe + budget 守卫（companion 全量压测留 `tests/perf/nfr01_report/`） | `backend/app/core/nfr/report_perf.py` |
+| `core/nfr/report_perf.py` | NFR-002 报表查询性能 mock probe + budget 守卫 + ACL/sampleQueryId（companion 全量压测留 `tests/perf/nfr01_report/`） | `backend/app/core/nfr/report_perf.py` |
+| `core/nfr/dashboard_first_screen.py` | NFR-001 首屏 mock probe + budget 守卫 + ACL/dashboardId pattern（companion 全量压测留 `tests/perf/nfr01_dashboard/`） | `backend/app/core/nfr/dashboard_first_screen.py` |
 
 ## 关联 API
 
@@ -51,3 +52,6 @@
 - r53 NFR-008：`runtime_guard.py` 扫描 pyproject 禁止 superset/dataease 依赖 + `importlib` 模块探测；`GET/POST /api/v1/nfr/runtime-compliance`；env `NFR08_RUNTIME_MODE=strict|permissive`
 - r57 NFR-008 companion：`deployment_report.py` — `build_deployment_acceptance_report`（`reportVersion=nfr08-deployment-v1`）；`overallAcceptance` accepted/rejected/conditional；`remediation_index` 聚合 fail 项；`GET /api/v1/nfr/runtime-compliance/deployment-report`；`probe_deployment_report_budget_ms` ≤100ms
 - r61 NFR-002：`report_perf.py` — 进程内 mock `elapsedMs=120` + budget/sample 守卫；`POST /api/v1/nfr/report-query-perf/probe|validate`；错误码 `REPORT_PERF_*`
+- r64 NFR-001：`dashboard_first_screen.py` — 进程内 mock `elapsedMs=800` + budget/widget 守卫；`POST /api/v1/nfr/dashboard-first-screen/probe|validate`；错误码 `DASHBOARD_FIRST_SCREEN_*`
+- **r67 NFR-001 companion**：`set_user_first_screen_scope` + `DASHBOARD_FIRST_SCREEN_FORBIDDEN` / `INVALID_DASHBOARD_ID`；`probe_validate_first_screen_budget_ms` / `probe_first_screen_probe_budget_ms` ≤50ms
+- **r67 NFR-002 companion**：`set_user_report_perf_scope` + `REPORT_PERF_FORBIDDEN` / `INVALID_SAMPLE_QUERY`；`simulateFailure` 降级链；双 probe ≤50ms

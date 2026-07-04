@@ -286,7 +286,7 @@
 - **里程碑对齐**：
 ### [CONN-018] 人大金仓 连接器
 
-- **状态**：部分实现（L1 kickoff r59）
+- **状态**：部分实现（companion r67）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：人大金仓 连接器（SRS 追溯项）。
@@ -294,11 +294,12 @@
   - [x] type=`kingbase` 已注册（types catalog + `register_connector_plugin`，r59 L1）
   - [ ] UI 可选
   - [x] 连通性测试（`KINGBASE_AUTH_FAILED`/`KINGBASE_CONN_REFUSED` mock + HTTP draft test-connection + 响应无密码泄露，r59）
+  - [x] companion params/probe 边界（r67：缺 host/port=0 → 422 `KINGBASE_INVALID_PARAMS`/`KINGBASE_PORT_OUT_OF_RANGE`；`probe_test_connection_budget_ms` ≤50ms；响应无 password）
   - [x] list_columns 501→500 截断边界（r59）
   - [ ] schema 浏览 + 只读查询集成测通过
   - [x] category=`relational` 查询模式正确（r59 L1）
-- **代码锚点**：`backend/app/datasources/dialects/kingbase/` · `tests/test_meta_cat_dash_conn_design_r59.py` T-CONN-R59-018-01~06
-- **演化建议**：r59 L1 闭合 Kingbase PG 委托、HTTP 错误链与密码脱敏；后续补 UI 选型与只读查询集成测
+- **代码锚点**：`backend/app/datasources/dialects/kingbase/` · `tests/test_meta_cat_dash_conn_design_r59.py` T-CONN-R59-018-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-CONN-R67-018-01~06
+- **演化建议**：r67 companion 闭合 Kingbase params 校验、test-connection perf probe 与 HTTP 错误链；后续补 UI 选型与只读查询集成测
 - **里程碑对齐**：
 ### [CONN-019] 南大通用 GBase 连接器
 

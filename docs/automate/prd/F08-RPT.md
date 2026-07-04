@@ -31,16 +31,17 @@
 - **里程碑对齐**：
 ### [RPT-003] Word/Excel/PDF 模板定义
 
-- **状态**：部分实现（L1 kickoff r62）
+- **状态**：部分实现（companion r67）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：Word/Excel/PDF 模板定义（SRS 追溯项）。
 - **验收标准**：
   - [x] 模板可嵌 SQL/表格/图形（r62 L1：`PUT/GET /api/v1/reports/templates/{id}` word/excel/pdf blocks：sql/table/chart）
   - [x] 模板校验（r62 L1：`POST validate` + empty blocks/invalid block type 422 + `RPT_TEMPLATE_*` 错误域）
+  - [x] companion ACL/probe 边界（r67：viewer PUT/enterprise 越权 GET 403；duplicate sql block/非法 chartType 422；`probe_validate_template_budget_ms`/`probe_get_template_budget_ms` ≤50ms）
   - [ ] PDF/Word 真实渲染与 fe 模板设计器（无渲染引擎与 Admin UI）
-- **代码锚点**：`backend/app/reports/templates/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-RPT-R62-003-01~06
-- **演化建议**：r62 L1 闭合 template blocks validate/put/get roundtrip 与 format/block 边界；后续补 PDF/Word 渲染引擎与 fe 模板设计器
+- **代码锚点**：`backend/app/reports/templates/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-RPT-R62-003-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-RPT-R67-003-01~07
+- **演化建议**：r67 companion 闭合 template blocks ACL、duplicate block/chartType 校验与 validate/get perf probe；后续补 PDF/Word 渲染引擎与 fe 模板设计器
 - **里程碑对齐**：
 ### [RPT-004] 模板树形目录管理
 

@@ -33,10 +33,10 @@ def validate_template(
 def upsert_template(
     template_key: str,
     payload: TemplateDefinitionIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> TemplateDefinitionOut | JSONResponse:
     try:
-        return template_service.upsert_template_definition(template_key, payload)
+        return template_service.upsert_template_definition(template_key, payload, actor)
     except TemplateDefError as exc:
         return _template_error(exc)
 
@@ -44,9 +44,9 @@ def upsert_template(
 @router.get("/{template_key}", response_model=TemplateDefinitionOut)
 def get_template(
     template_key: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> TemplateDefinitionOut | JSONResponse:
     try:
-        return template_service.get_template_definition(template_key)
+        return template_service.get_template_definition(template_key, actor)
     except TemplateDefError as exc:
         return _template_error(exc)

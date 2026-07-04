@@ -44,6 +44,9 @@
 | `engine/acl.py` | run 访问控制 + `set_user_engine_scope` enterprise 白名单 | RPT-001 | companion 已实现 r66 |
 | `engine/probe.py` | `probe_run_template_budget_ms` ≤50ms | RPT-001 | companion 已实现 r66 |
 | `prefab/service.py` | 预制报表绑定 validate/upsert/list（内存 store） | RPT-002 | L1 已实现 r62 |
+| `templates/acl.py` | viewer 禁写 + enterprise scope（`set_user_template_scope`） | RPT-003 | companion 已实现 r67 |
+| `templates/probe.py` | validate/get perf probe ≤50ms | RPT-003 | companion 已实现 r67 |
+| `templates/service.py` | 模板块 validate/upsert/get + duplicate block 守卫 | RPT-003 | companion 已实现 r67 |
 | `ReportService` | 模板 CRUD | RPT-001~003 | 待建 |
 
 ## 关联 API
@@ -78,6 +81,10 @@
 ### r66 companion 质量推分（RPT-001）
 
 - **RPT-001**：`engine/acl.py` — `assert_engine_run_access` + `set_user_engine_scope`；viewer 非自有模板 / enterprise scope 外 → `RPT_ENGINE_FORBIDDEN`；`parameters` 保留键 `__proto__` → `RPT_ENGINE_INVALID_PARAMETER`；`engine/probe.py` — `probe_run_template_budget_ms` ≤50ms
+
+### r67 companion 质量推分（RPT-003）
+
+- **RPT-003**：`templates/acl.py` — `assert_template_write_access` + `set_user_template_scope`；viewer PUT / enterprise 越权 GET → `RPT_TEMPLATE_FORBIDDEN`；duplicate sql block → `RPT_TEMPLATE_DUPLICATE_BLOCK`；`templates/probe.py` — `probe_validate_template_budget_ms` / `probe_get_template_budget_ms` ≤50ms
 
 ### r65 companion 质量推分（RPT-002）
 
