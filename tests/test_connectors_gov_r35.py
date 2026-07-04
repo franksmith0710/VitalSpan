@@ -335,3 +335,209 @@ def test_gov_save_then_preview_execute_r35(_mock_org, _mock_rls, client):
         assert preview.status_code == 200
     finally:
         app.dependency_overrides.pop(get_current_user, None)
+
+
+def _valid_compute_rules_embedded(ref_id: str) -> dict:
+    return {
+        "schemaVersion": "1.0",
+        "rules": [
+            {
+                "id": "total_amount",
+                "name": "合计",
+                "ruleType": "sum",
+                "targetField": "order_amount",
+                "expression": "sum(order_amount)",
+                "dependsOn": [],
+            }
+        ],
+        "refType": "design_draft",
+        "refId": ref_id,
+    }
+
+
+def test_gov_validate_empty_conditions_r35(client):
+    """T-GOV-R35-004-01: conditions:[] → 422 DESIGN_EMPTY_CONDITIONS + fields。"""
+    body = _valid_visual_query_design()
+    body["conditions"]["conditions"] = []
+    resp = client.post("/api/v1/gov/query-design/validate", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "DESIGN_EMPTY_CONDITIONS"
+    assert resp.json()["detail"]["fields"]
+
+
+def test_gov_validate_invalid_aggregate_r35(client):
+    """T-GOV-R35-004-02: computeRules median(x) → 422 DESIGN_INVALID_AGGREGATE。"""
+    ref = str(uuid.uuid4())
+    body = _valid_visual_query_design(ref)
+    rules = _valid_compute_rules_embedded(ref)
+    rules["rules"][0]["expression"] = "median(order_amount)"
+    body["computeRules"] = rules
+    resp = client.post("/api/v1/gov/query-design/validate", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "DESIGN_INVALID_AGGREGATE"
+    assert resp.json()["detail"]["fields"]
+
+
+def test_gov_validate_blank_title_r35(client):
+    """T-GOV-R35-004-03: blank title → 422 GOV_QUERY_DESIGN_INVALID。"""
+    body = _valid_visual_query_design()
+    body["title"] = "   "
+    resp = client.post("/api/v1/gov/query-design/validate", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "GOV_QUERY_DESIGN_INVALID"
+    assert resp.json()["detail"]["fields"][0]["field"] == "title"
+
+
+def test_gov_validate_unknown_datasource_r35(client):
+    """T-GOV-R35-004-04: 随机 dataSourceId → 422 GOV_QUERY_DESIGN_UNKNOWN_DATASOURCE。"""
+    body = _valid_visual_query_design()
+    body["dataSourceId"] = str(uuid.uuid4())
+    resp = client.post("/api/v1/gov/query-design/validate", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "GOV_QUERY_DESIGN_UNKNOWN_DATASOURCE"
+    assert resp.json()["detail"]["fields"][0]["field"] == "dataSourceId"
+
+
+def test_gov_get_not_found_r35(client):
+    """T-GOV-R35-004-05: 随机 ref → 404 GOV_QUERY_DESIGN_NOT_FOUND。"""
+    resp = client.get(
+        "/api/v1/gov/query-design",
+        headers=AUTH,
+        params={"refId": str(uuid.uuid4())},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "GOV_QUERY_DESIGN_NOT_FOUND"
+
+
+def test_gov_revision_conflict_r35(client):
+    """T-GOV-R35-004-06: expectedRevision 冲突 → 409 CONFIG_VERSION_CONFLICT。"""
+    ref = str(uuid.uuid4())
+    body = _valid_visual_query_design(ref)
+    first = client.put("/api/v1/gov/query-design", headers=AUTH, json=body)
+    assert first.status_code == 200
+    body["expectedRevision"] = 0
+    conflict = client.put("/api/v1/gov/query-design", headers=AUTH, json=body)
+    assert conflict.status_code == 409
+    assert conflict.json()["code"] == "CONFIG_VERSION_CONFLICT"
+
+
+def test_gov_save_get_roundtrip_r35(client):
+    """T-GOV-R35-004-07: 合法 save + get revision 一致。"""
+    ref = str(uuid.uuid4())
+    body = _valid_visual_query_design(ref)
+    save = client.put("/api/v1/gov/query-design", headers=AUTH, json=body)
+    assert save.status_code == 200
+    rev = save.json()["revision"]
+    got = client.get("/api/v1/gov/query-design", headers=AUTH, params={"refId": ref})
+    assert got.status_code == 200
+    assert got.json()["revision"] == rev
+
+
+from app.datasources.dialects.elasticsearch import ElasticsearchConnector, _build_client
+
+
+@patch("app.datasources.dialects.elasticsearch.Elasticsearch")
+def test_es_auth_failed_r35(mock_es_cls):
+    """T-CONN-R35-015-01: mock 401 → ES_AUTH_FAILED。"""
+    client = MagicMock()
+    mock_es_cls.return_value = client
+    client.info.side_effect = Exception("authentication failed 401")
+    result = ElasticsearchConnector().test_connection(
+        host="127.0.0.1", port=9200, database="", username="u", password="p"
+    )
+    assert result.ok is False
+    assert result.code == "ES_AUTH_FAILED"
+
+
+@patch("app.datasources.dialects.elasticsearch.Elasticsearch")
+def test_es_connection_refused_r35(mock_es_cls):
+    """T-CONN-R35-015-02: connection refused → ES_CONNECTION_REFUSED。"""
+    client = MagicMock()
+    mock_es_cls.return_value = client
+    client.info.side_effect = Exception("Connection refused")
+    result = ElasticsearchConnector().test_connection(
+        host="127.0.0.1", port=9200, database="", username="", password=""
+    )
+    assert result.ok is False
+    assert result.code == "ES_CONNECTION_REFUSED"
+
+
+@patch("app.datasources.dialects.elasticsearch.Elasticsearch")
+def test_es_timeout_r35(mock_es_cls):
+    """T-CONN-R35-015-03: timeout → ES_TIMEOUT。"""
+    client = MagicMock()
+    mock_es_cls.return_value = client
+    client.info.side_effect = Exception("Connection timed out")
+    result = ElasticsearchConnector().test_connection(
+        host="127.0.0.1", port=9200, database="", username="", password=""
+    )
+    assert result.ok is False
+    assert result.code == "ES_TIMEOUT"
+
+
+@patch("app.datasources.dialects.elasticsearch.Elasticsearch")
+def test_es_multi_index_schemas_r35(mock_es_cls):
+    """T-CONN-R35-015-04: 多索引 list_schemas 含 2 个非系统 index。"""
+    client = MagicMock()
+    mock_es_cls.return_value = client
+    client.cat.indices.return_value = [
+        {"index": "orders"},
+        {"index": "events"},
+        {"index": ".system"},
+    ]
+    conn = ElasticsearchConnector().open_connection(
+        host="127.0.0.1", port=9200, database="", username="", password=""
+    )
+    names = [s.name for s in ElasticsearchConnector().list_schemas(conn)]
+    assert names == ["events", "orders"]
+
+
+@patch("app.datasources.dialects.elasticsearch.Elasticsearch")
+def test_es_empty_mapping_columns_r35(mock_es_cls):
+    """T-CONN-R35-015-05: 空 mapping → list_columns []。"""
+    client = MagicMock()
+    mock_es_cls.return_value = client
+    client.indices.get_mapping.return_value = {"idx": {"mappings": {"properties": {}}}}
+    conn = ElasticsearchConnector().open_connection(
+        host="127.0.0.1", port=9200, database="", username="", password=""
+    )
+    assert ElasticsearchConnector().list_columns(conn, "idx", "_doc") == []
+
+
+@patch("app.datasources.dialects.elasticsearch.Elasticsearch")
+def test_es_type_normalization_r35(mock_es_cls):
+    """T-CONN-R35-015-06: keyword/long → string/number。"""
+    client = MagicMock()
+    mock_es_cls.return_value = client
+    client.indices.get_mapping.return_value = {
+        "idx": {"mappings": {"properties": {"status": {"type": "keyword"}, "amount": {"type": "long"}}}}
+    }
+    conn = ElasticsearchConnector().open_connection(
+        host="127.0.0.1", port=9200, database="", username="", password=""
+    )
+    cols = {c.name: c.data_type for c in ElasticsearchConnector().list_columns(conn, "idx", "_doc")}
+    assert cols["status"] == "string"
+    assert cols["amount"] == "number"
+
+
+@patch("app.datasources.dialects.elasticsearch.Elasticsearch")
+def test_es_columns_limit_r35(mock_es_cls):
+    """T-CONN-R35-015-07: 600 fields → 返回 500。"""
+    client = MagicMock()
+    mock_es_cls.return_value = client
+    props = {f"f{i}": {"type": "keyword"} for i in range(600)}
+    client.indices.get_mapping.return_value = {"idx": {"mappings": {"properties": props}}}
+    conn = ElasticsearchConnector().open_connection(
+        host="127.0.0.1", port=9200, database="", username="", password=""
+    )
+    cols = ElasticsearchConnector().list_columns(conn, "idx", "_doc")
+    assert len(cols) == 500
+
+
+@patch("app.datasources.dialects.elasticsearch.Elasticsearch")
+def test_es_https_port_443_r35(mock_es_cls):
+    """T-CONN-R35-015-08: port 443 → hosts 含 https://。"""
+    mock_es_cls.return_value = MagicMock()
+    _build_client(host="es.example.com", port=443, username="", password="", timeout_sec=5.0)
+    kwargs = mock_es_cls.call_args.kwargs
+    assert kwargs["hosts"][0].startswith("https://")
