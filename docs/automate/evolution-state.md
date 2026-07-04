@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r55.md |
-| design | docs/superpowers/specs/2026-07-04-m10-m12-rpt-gov-meta-oceanbase-companion-quality-r55-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m10-m12-rpt-gov-meta-oceanbase-companion-quality-r55.md |
-| branch | feat/evolution-r55-m10-m12-rpt-gov-meta-oceanbase-companion-quality |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r57.md |
+| design | docs/superpowers/specs/2026-07-04-dash-rpt-query-nfr-companion-quality-r57-design.md |
+| plan | docs/superpowers/plans/2026-07-04-dash-rpt-query-nfr-companion-quality-r57.md |
+| branch | feat/evolution-r57-dash-rpt-query-nfr-companion-quality |
 | base_branch | dev-auto |
-| prd_ids | RPT-006,RPT-007,GOV-006,META-006,CONN-020 |
-| pr_number | 87 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest -q ../tests/test_rpt_gov_meta_conn_r55.py ../tests/test_rpt_gov_meta_conn_r54.py ../tests/test_dash_rpt_query_nfr_r53.py ../tests/test_design_conn_gov_query_r52.py |
+| prd_ids | QUERY-009,RPT-004,DASH-006,RPT-005,NFR-008 |
+| pr_number |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T13:15:00Z |
