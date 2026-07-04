@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r68.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | NFR-003,NFR-004,GOV-007,RPT-002,VIEW-002 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 r68 选题完成：跨域 STUCK 簇收尾 companion 质量推分 — NFR-003/NFR-004/GOV-007/RPT-002/VIEW-002（5 项）；最低分 NFR-003/NFR-004(84.2)；饱和熔断未触发（Top3 84.2–84.4≪90，#4/#5 为 90.0 非饱和）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 三核心 ID 各 1 轮未达 ≥3 硬标注阈值；CAT-001/CAT-002(90.0) 留后续 companion；phase idle→G2_DONE
 - G1 r68 bootstrap：r67 PR #102 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 NFR-003(84.2)/NFR-004(84.2)/GOV-007(84.4)；STUCK 三 ID 各 1 轮（NFR-003/NFR-004/GOV-007，均 84.2–84.4）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r67 PRD 重评：DASH-004/NFR-001/NFR-002/CONN-018/RPT-003 companion 质量推分；pytest 1786/4 skipped；test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 230/230；总分 84.2→90.0–90.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r67 验证通过：ruff clean（python3 -m ruff check .）；pytest 1786 passed/4 skipped（全量 exit_code 0）；test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 230/230；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
