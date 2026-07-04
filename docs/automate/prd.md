@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.45
+version: 1.2.46
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,20 +17,20 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r39 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 r39）；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归；TRINO_/GAUSSDB_/DM_* 错误域上浮、columns limit/HTTP metadata 链、META_DIM_VALUE_* 校验、translator 算子/注入守卫；完整度 76–88%→90%，可靠性 92–94%→94%，测试覆盖 96–98%→98%，总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零）
+> 更新：2026-07-04 · P5 r40 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 L1 kickoff r40）；pytest 967/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 回归；MONGODB_/INFLUX_/TDENGINE_/SQLITE_/TIMESCALE_* 错误域、五方言 types catalog + schema 自省 mock、SQLite 路径穿越守卫；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.5–12.8→86.1–88.8（五 ID 均 <90 STUCK upsert round 1）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
-| 1 | VIZ-003 | 地图可视化 | 11.7 | 完整度 | 见期次 |
-| 2 | QUERY-009 | Dataset 查询路径 | 11.7 | 完整度 | 见期次 |
-| 3 | CONN-006 | SQLite 连接器 | 12.6 | 完整度 | 见期次 |
-| 4 | CONN-011 | InfluxDB 连接器 | 11.9 | 完整度 | 见期次 |
-| 5 | CONN-012 | TDengine 连接器 | 12.4 | 完整度 | 见期次 |
-| 6 | CONN-013 | TimescaleDB 连接器 | 12.8 | 完整度 | 见期次 |
-| 7 | CONN-014 | MongoDB 连接器 | 11.5 | 完整度 | 见期次 |
-| 8 | CONN-016 | OpenSearch 连接器 | 11.6 | 完整度 | 见期次 |
-| 9 | CONN-018 | 人大金仓 连接器 | 12.1 | 完整度 | 见期次 |
-| 10 | CONN-019 | 南大通用 GBase 连接器 | 11.6 | 完整度 | 见期次 |
+| 1 | VIZ-004 | 桑基图 | 11.3 | 完整度 | 见期次 |
+| 2 | VIZ-008 | 关系图 | 11.4 | 完整度 | 见期次 |
+| 3 | CONN-016 | OpenSearch 连接器 | 11.6 | 完整度 | 见期次 |
+| 4 | CONN-019 | 南大通用 GBase 连接器 | 11.6 | 完整度 | 见期次 |
+| 5 | QUERY-009 | Dataset 查询路径 | 11.7 | 完整度 | 见期次 |
+| 6 | VIZ-003 | 地图可视化 | 11.7 | 完整度 | 见期次 |
+| 7 | VIZ-005 | 漏斗图 | 11.7 | 完整度 | 见期次 |
+| 8 | RPT-004 | 报表订阅 | 11.7 | 完整度 | 见期次 |
+| 9 | DASH-006 | 大屏模板 | 11.8 | 完整度 | 见期次 |
+| 10 | RPT-005 | 报表权限 | 11.8 | 完整度 | 见期次 |
 
 ---
 
@@ -67,15 +67,15 @@ domain_count: 16
 | CONN-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | CONN-004 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 90 | 90.0 | 用户价值 |
 | CONN-005 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 92 | 90.6 | 用户价值 |
-| CONN-006 | 50 | 5 | 0 | N/A | 14 | 0 | 0 | 11 | 12.6 | 完整度 |
+| CONN-006 | 84 | 80 | 94 | N/A | 90 | 98 | 88 | 88 | 88.4 | 完整度 |
 | CONN-007 | 84 | 90 | 96 | N/A | 90 | 100 | 92 | 88 | 91.2 | 安全性 |
 | CONN-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.4 | 用户价值 |
 | CONN-009 | 84 | 88 | 96 | N/A | 90 | 98 | 90 | 88 | 90.4 | 用户价值 |
 | CONN-010 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
-| CONN-011 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 10 | 11.9 | 完整度 |
-| CONN-012 | 49 | 5 | 0 | N/A | 13 | 0 | 0 | 11 | 12.4 | 完整度 |
-| CONN-013 | 50 | 5 | 0 | N/A | 14 | 0 | 0 | 12 | 12.8 | 完整度 |
-| CONN-014 | 46 | 5 | 0 | N/A | 8 | 0 | 0 | 13 | 11.5 | 完整度 |
+| CONN-011 | 82 | 78 | 92 | N/A | 90 | 96 | 86 | 88 | 86.8 | 完整度 |
+| CONN-012 | 82 | 78 | 94 | N/A | 90 | 98 | 88 | 88 | 87.9 | 完整度 |
+| CONN-013 | 84 | 80 | 94 | N/A | 92 | 98 | 88 | 90 | 88.8 | 完整度 |
+| CONN-014 | 82 | 76 | 92 | N/A | 88 | 96 | 86 | 86 | 86.1 | 完整度 |
 | CONN-015 | 84 | 90 | 96 | N/A | 90 | 100 | 88 | 90 | 91.0 | 用户价值 |
 | CONN-016 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
 | CONN-017 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 性能 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.46 | 2026-07-04 | P5 r40 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 L1 kickoff r40）；pytest 967/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；MongoDB/InfluxDB/TDengine/SQLite/TimescaleDB dialects + types catalog、MONGODB_/INFLUX_/TDENGINE_/SQLITE_/TIMESCALE_* 错误域与 schema mock、SQLite 路径穿越/只读守卫；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.5–12.8→86.1–88.8（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.45 | 2026-07-04 | P5 r39 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 r39）；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40；errors.py TRINO_/GAUSSDB_/DM_* 上浮、三连接器 MAX_COLUMNS=500/HTTP metadata 链、META_DIM_VALUE_* 校验与分页、translator 算子白名单/注入守卫；完整度 76–88%→90%，可靠性 92–94%→94%，测试覆盖 96–98%→98%，总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零） |
 | 1.2.44 | 2026-07-04 | P5 r38 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 L1 kickoff r38）；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40；translate API mysql/postgresql/clickhouse 参数化、GaussDB/DM/Trino dialects + types catalog、dimensions migration 0016 + 8 REST 路由；完整度 5%→76–88%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–11.6→87.1–89.6（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.43 | 2026-07-04 | P5 r37 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 companion 质量推分 r37）；pytest 854/4 skipped；test_connectors_gov_r37 40/40 + r36 37/37 + r35 35/35 + r34 15/15；errors.py 上浮 HIVE_/CLICKHOUSE_/DORIS_*、五方言 *_MAX_COLUMNS=500、HTTP test_connection/metadata 4xx/502 链；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.2–87.8→90.0–91.2（五 ID 破 90 STUCK 清零） |

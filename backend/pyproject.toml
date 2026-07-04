@@ -33,6 +33,9 @@ connectors-ext = [
     "clickhouse-connect>=0.7.0",
     "dmPython>=2.5.0",
     "trino>=0.330.0",
+    "pymongo>=4.6.0",
+    "influxdb-client>=1.40.0",
+    "taospy>=2.7.0",
 ]
 
 [tool.hatch.build.targets.wheel]

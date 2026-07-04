@@ -308,7 +308,7 @@ def test_duplicate_name_conflict(client, auth_headers):
 
 def test_invalid_connector_type(client, auth_headers):
     """T-DS-C08: 非法 type → 422。"""
-    bad = {**_payload(), "type": "mongodb", "code": "mongo_ds"}
+    bad = {**_payload(), "type": "couchdb", "code": "couch_ds"}
     resp = client.post("/api/v1/datasources", json=bad, headers=auth_headers)
     assert resp.status_code == 422
     assert resp.json()["code"] == "UNKNOWN_CONNECTOR_TYPE"
