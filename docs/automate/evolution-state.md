@@ -6,19 +6,19 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r31.md |
 | design | docs/superpowers/specs/2026-07-04-m5-view-m6-companion-quality-r31-design.md |
-| plan |  |
-| branch |  |
-| base_branch |  |
+| plan | docs/superpowers/plans/2026-07-04-m5-view-m6-companion-quality-r31.md |
+| branch | feat/evolution-r31-m5-view-m6-companion-quality |
+| base_branch | dev-auto |
 | prd_ids | VIEW-001,GOV-002,GOV-001,API-001,API-002 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
+| last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T01:10:00Z |
+| skill_rule_index_generated_at | 2026-07-04T01:52:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r31 实现完成：7 Task 全绿；VIEW bounds/cycle、GOV bus/catalog、IF-06 OpenAPI；24 新测；pytest 686/4 skipped；branch feat/evolution-r31-m5-view-m6-companion-quality；base_branch dev-auto
+- P2 r31 计划完成：7 Task（VIEW bounds/cycle→GOV bus 失败/幂等/鉴权→catalog DELETE→IF-06 OpenAPI×2→集成回归→文档）；≥18 新测；15+3 docs 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
 - P1 r31 设计完成：VIEW validate 边界 + GOV bus 失败/幂等/鉴权 + catalog DELETE + IF-06 OpenAPI 补全；18 文件框定；ui_design_skill none；phase G2_DONE→P1_DONE
 - G2 r31 选题完成：M5 VIEW-001 + M6 companion 质量推分 — VIEW-001/GOV-002/GOV-001/API-001/API-002（5 项）；最低分 GOV-002(88.7)；STUCK VIEW-001/GOV-002 各 1 轮；饱和熔断未触发；phase idle→G2_DONE
 - G1 r31 bootstrap：r30 PR #53 已合并 dev-auto；phase P5_DOCS_READY→idle；待 G2 选题
