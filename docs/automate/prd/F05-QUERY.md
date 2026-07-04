@@ -103,14 +103,14 @@
 - **里程碑对齐**：
 ### [QUERY-009] Dataset 查询路径
 
-- **状态**：部分实现（L1 kickoff r53）
+- **状态**：部分实现（companion r57）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：Dataset 查询路径（SRS 追溯项）。
 - **验收标准**：
   - [x] datasetId 查询可走通（r53 L1：`POST /api/v1/query/dataset/validate` + `GET /api/v1/query/dataset/routing` 三路径 sql/native/dataset 边界说明）
   - [x] 仅授权 Dataset（analyst role ACL + `QUERY_DATASET_FORBIDDEN`/`QUERY_DATASET_NOT_READONLY`/`QUERY_PATH_AMBIGUOUS` 守卫）
-  - [ ] Dataset 执行链贯通（validate 非 execute；Admin 可视化配置器留远期）
-- **代码锚点**：`backend/app/query/dataset/guard.py` · `backend/app/query/dataset/schemas.py` · `backend/app/api/v1/query.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-QUERY-R53-009-01~07
-- **演化建议**：r53 L1 闭合 validate 路径、ACL 与三路径 routing 文档；后续补 Dataset 执行链、META-004 联动与 Admin 配置 UI
+  - [x] Dataset execute-plan 四步链贯通（r57 companion：`POST /api/v1/query/dataset/execute-plan` planVersion=dataset-plan-v1；非真实 SQL 执行；Admin 可视化配置器留远期）
+- **代码锚点**：`backend/app/query/dataset/guard.py` · `backend/app/query/dataset/executor.py` · `backend/app/query/dataset/schemas.py` · `backend/app/api/v1/query.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-QUERY-R53-009-01~07 · `tests/test_dash_rpt_query_nfr_r57.py` T-QUERY-R57-009-01~07
+- **演化建议**：r57 companion 闭合 execute-plan 链、validate 一致性、参数注入守卫与 ≤30ms 性能预算；后续补真实 Dataset 执行、META-004 联动与 Admin 配置 UI
 - **里程碑对齐**：

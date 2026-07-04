@@ -83,14 +83,14 @@
 - **演化建议**：r51 companion 闭合合规检查非阻塞探测与 strict 模式拦截；后续补部署验收报告与全量信创认证
 ### [NFR-008] NFR-08 自主可控零 DE/SS
 
-- **状态**：部分实现（L1 kickoff r53）
+- **状态**：部分实现（companion r57）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：四期
 - **描述**：NFR-08 自主可控零 DE/SS（SRS 追溯项）。
 - **验收标准**：
   - [x] 生产无 Superset/DataEase 进程（r53 L1：`GET /api/v1/nfr/runtime-compliance` loaded-modules + pyproject 依赖扫描；非 OS 进程枚举）
   - [x] 依赖审计通过（pyproject-dependencies item + remediation；strict/permissive `POST assert`）
-  - [ ] 部署验收报告
-- **代码锚点**：`backend/app/core/nfr/runtime_guard.py` · `backend/app/api/v1/nfr.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-NFR-R53-008-01~06
-- **演化建议**：r53 L1 闭合 runtime-compliance API、pyproject/loaded-modules 违规探测与 strict 模式拦截；后续补 ops 部署验收报告与 CI 门禁集成
+  - [x] 部署验收报告（r57 companion：`GET /api/v1/nfr/deployment-report` accepted/conditional/rejected + remediation_index；≤100ms）
+- **代码锚点**：`backend/app/core/nfr/runtime_guard.py` · `backend/app/core/nfr/deployment_report.py` · `backend/app/api/v1/nfr.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-NFR-R53-008-01~06 · `tests/test_dash_rpt_query_nfr_r57.py` T-NFR-R57-008-01~05
+- **演化建议**：r57 companion 闭合 deployment-report API、strict 拒绝链与性能预算；后续补 ops 全量验收报告与 CI 门禁集成
 - **里程碑对齐**：

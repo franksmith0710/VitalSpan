@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r57.md |
 | design | docs/superpowers/specs/2026-07-04-dash-rpt-query-nfr-companion-quality-r57-design.md |
 | plan | docs/superpowers/plans/2026-07-04-dash-rpt-query-nfr-companion-quality-r57.md |
 | branch | feat/evolution-r57-dash-rpt-query-nfr-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | QUERY-009,RPT-004,DASH-006,RPT-005,NFR-008 |
-| pr_number |  |
+| pr_number | TBD |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -66,6 +66,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r57 PRD 重评：QUERY-009/NFR-008 破 90（90.0/91.3）STUCK 清零；DASH-006/RPT-004/005 companion 88.2–89.6 仍 <90 STUCK round 2；pytest 1452/4 skipped；test_dash_rpt_query_nfr_r57 37/37 + r53 38/38 + r55 35/35 + r52 52/52 回归 162/162；phase P4_DONE→P5_DOCS_READY
+- P4 r57 验证通过：ruff clean；pytest 1452 passed/4 skipped（全量 exit_code 0）；test_dash_rpt_query_nfr_r57 37/37 + r53 38/38 + r55 35/35 + r52 52/52 回归 162/162；UI: N/A（纯后端 ui_design_skill none）；PR #88 指向错误分支（G1 r56 bootstrap，非 r57；待新建正确 PR）；phase P3_DONE→P4_DONE
+- P3 r57 实现完成：8 Task 全绿；M9 主题分析 + M10/M12 报表 + M13 Dataset/NFR companion 质量推分 — DASH-006/RPT-005/QUERY-009/RPT-004/NFR-008；37 测 test_dash_rpt_query_nfr_r57 + r53 38/38 + r55 35/35 + r52 52/52 回归 162/162；pytest 1452/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r57-dash-rpt-query-nfr-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P5 r55 PRD 重评：RPT-006/007 + GOV-006 + META-006 + CONN-020 companion 质量推分；pytest 1415/4 skipped；test_rpt_gov_meta_conn_r55 35/35 + r54 42/42 + r53 38/38 + r52 52/52 回归 167/167；总分 88.4–89.9→90.0–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P3 r55 实现完成：8 Task 全绿；M10/M12 报表扩展 + M8 OpenAPI + META schema + OceanBase companion 质量推分 — RPT-006/007 + GOV-006 + META-006 + CONN-020；35 测 test_rpt_gov_meta_conn_r55 + r54 42/42 + r53 38/38 + r52 52/52 回归 167/167；pytest 1415/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r55-m10-m12-rpt-gov-meta-oceanbase-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - G1 r55 bootstrap：r54 PR #85 已 Squash merge dev-auto（9d3c562）；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 META-004(12.0)/CAT-004(12.0)/DASH-005(12.1)；STUCK 十 ID 各 1 轮（QUERY-009/RPT-004/DASH-006/RPT-005/NFR-008 + RPT-006/007/GOV-006/META-006/CONN-020，均 <90）；phase P5_DOCS_READY→idle；待 G2 选题
@@ -185,8 +188,6 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| QUERY-009 | 1 | 84.4 | 2026-07-04 |
-| RPT-004 | 1 | 84.4 | 2026-07-04 |
-| DASH-006 | 1 | 82.6 | 2026-07-04 |
-| RPT-005 | 1 | 84.2 | 2026-07-04 |
-| NFR-008 | 1 | 85.6 | 2026-07-04 |
+| DASH-006 | 2 | 88.2 | 2026-07-04 |
+| RPT-004 | 2 | 89.6 | 2026-07-04 |
+| RPT-005 | 2 | 89.5 | 2026-07-04 |
