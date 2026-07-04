@@ -86,4 +86,6 @@ class HiveConnector:
             if not row or not row[0] or str(row[0]).startswith("#"):
                 continue
             columns.append(ColumnInfo(name=str(row[0]), data_type=str(row[1]), nullable=True))
+        if len(columns) > HIVE_MAX_COLUMNS:
+            return columns[:HIVE_MAX_COLUMNS]
         return columns
