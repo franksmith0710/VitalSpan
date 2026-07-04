@@ -6,6 +6,8 @@ from typing import Any
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import _SYSTEM_OWNERS, map_oracle_error
 
+ORACLE_MAX_COLUMNS = 500
+
 
 class OracleConnector:
     type = "oracle"
@@ -82,8 +84,11 @@ class OracleConnector:
             owner=schema.upper(),
             table_name=table.upper(),
         )
-        return [
+        columns = [
             ColumnInfo(name=row[0], data_type=row[1], nullable=str(row[2]) == "Y")
             for row in cursor.fetchall()
             if row
         ]
+        if len(columns) > ORACLE_MAX_COLUMNS:
+            return columns[:ORACLE_MAX_COLUMNS]
+        return columns
