@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.auth.deps import UserContext, get_current_user
 from app.schemas.chart_view import ChartViewConfig, ChartViewError, validate_chart_view_config
 from app.viz.registry import export_chart_type_catalog
+from app.viz.render import build_render_spec
 
 router = APIRouter(prefix="/charts", tags=["charts"])
 
@@ -36,3 +37,15 @@ def validate_chart(
         return validate_chart_view_config(payload)
     except ChartViewError as exc:
         return _error_response(exc)
+
+
+@router.post("/render-spec", response_model=None)
+def render_spec_chart(
+    payload: dict,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> dict | JSONResponse:
+    try:
+        cfg = validate_chart_view_config(payload)
+    except ChartViewError as exc:
+        return _error_response(exc)
+    return build_render_spec(cfg)

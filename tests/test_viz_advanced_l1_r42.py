@@ -209,3 +209,70 @@ def test_field_rule_line_missing_series_backcompat():
     with pytest.raises(ChartViewError) as exc:
         validate_chart_view_config(_sql_base("line", dimensions=[{"field": "x"}]))
     assert exc.value.code == "CHART_MISSING_SERIES"
+
+
+from app.viz.render import build_render_spec
+
+
+def test_render_spec_table_engine():
+    """T-VIZ-R42-008-01: table → engine=table。"""
+    cfg = validate_chart_view_config(_sql_base("table"))
+    spec = build_render_spec(cfg)
+    assert spec["engine"] == "table"
+
+
+def test_render_spec_bar_echarts():
+    """T-VIZ-R42-008-02: bar → engine=echarts, chartType=bar。"""
+    cfg = validate_chart_view_config(
+        _sql_base("bar", dimensions=[{"field": "d"}], metrics=[{"field": "m"}])
+    )
+    spec = build_render_spec(cfg)
+    assert spec["engine"] == "echarts"
+    assert spec["chartType"] == "bar"
+
+
+def test_render_spec_encoding_matches_input():
+    """T-VIZ-R42-008-03: encoding.dimensions/metrics 与输入一致。"""
+    cfg = validate_chart_view_config(
+        _sql_base("sankey",
+                  dimensions=[{"field": "src"}, {"field": "dst"}],
+                  metrics=[{"field": "amt"}])
+    )
+    spec = build_render_spec(cfg)
+    assert [d["field"] for d in spec["encoding"]["dimensions"]] == ["src", "dst"]
+    assert [m["field"] for m in spec["encoding"]["metrics"]] == ["amt"]
+
+
+def test_render_spec_binding_only_source():
+    """T-VIZ-R42-008-04: binding-only → source={'bindingId':...}。"""
+    bid = uuid.uuid4()
+    cfg = validate_chart_view_config({"chartType": "table", "bindingId": str(bid)})
+    spec = build_render_spec(cfg)
+    assert spec["source"] == {"bindingId": str(bid)}
+
+
+def test_render_spec_style_variant_passthrough():
+    """T-VIZ-R42-008-06: styleVariant 透传入 render-spec。"""
+    cfg = validate_chart_view_config(
+        _sql_base("line", styleVariant="smooth",
+                  dimensions=[{"field": "d"}], metrics=[{"field": "m"}])
+    )
+    assert build_render_spec(cfg)["styleVariant"] == "smooth"
+
+
+def test_post_render_spec_http(client, auth_headers):
+    """T-VIZ-R42-008-05: POST /charts/render-spec 合法→200 含 engine；非法 type→422。"""
+    ok = client.post(
+        "/api/v1/charts/render-spec",
+        json=_sql_base("bar", dimensions=[{"field": "d"}], metrics=[{"field": "m"}]),
+        headers=auth_headers,
+    )
+    assert ok.status_code == 200
+    assert ok.json()["engine"] == "echarts"
+    bad = client.post(
+        "/api/v1/charts/render-spec",
+        json=_sql_base("radar"),
+        headers=auth_headers,
+    )
+    assert bad.status_code == 422
+    assert bad.json()["code"] == "CHART_INVALID_TYPE"
