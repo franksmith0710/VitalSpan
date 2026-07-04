@@ -8,7 +8,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+from app.auth.deps import UserContext, get_current_user
 from app.core.config import get_settings
+
 from app.datasources.dialects.tidb import TidbConnector
 from app.datasources.registry import export_type_catalog
 from app.main import app
@@ -139,3 +141,118 @@ def test_elasticsearch_invalid_host_r34():
     )
     assert result.ok is False
     assert result.code == "ES_INVALID_HOST"
+
+
+def _valid_visual_query_design(ref_id: str | None = None) -> dict:
+    rid = ref_id or str(uuid.uuid4())
+    return {
+        "schemaVersion": "1.0",
+        "refType": "gov_query_design",
+        "refId": rid,
+        "title": "销售分析",
+        "status": "draft",
+        "conditions": {
+            "schemaVersion": "1.0",
+            "logic": "AND",
+            "conditions": [
+                {"fieldId": "order_amount", "operator": "gte", "value": 100, "valueType": "number"}
+            ],
+            "refType": "design_draft",
+            "refId": rid,
+        },
+    }
+
+
+def test_gov_query_design_validate_ok_r34(client):
+    """T-GOV-R34-004-01: 合法 conditions → validate 200。"""
+    resp = client.post(
+        "/api/v1/gov/query-design/validate", headers=AUTH, json=_valid_visual_query_design()
+    )
+    assert resp.status_code == 200
+    assert resp.json()["title"] == "销售分析"
+
+
+def test_gov_query_design_unknown_field_r34(client):
+    """T-GOV-R34-004-02: 未知 fieldId → 422 + detail.fields。"""
+    body = _valid_visual_query_design()
+    body["conditions"]["conditions"][0]["fieldId"] = "bad_field"
+    resp = client.post("/api/v1/gov/query-design/validate", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["detail"]["fields"]
+
+
+def test_gov_query_design_save_get_revision_r34(client):
+    """T-GOV-R34-004-03: save + GET round-trip revision 递增。"""
+    ref = str(uuid.uuid4())
+    body = _valid_visual_query_design(ref)
+    save = client.put("/api/v1/gov/query-design", headers=AUTH, json=body)
+    assert save.status_code == 200
+    assert save.json()["revision"] == 1
+    got = client.get("/api/v1/gov/query-design", headers=AUTH, params={"refId": ref})
+    assert got.status_code == 200
+    assert got.json()["revision"] == 1
+    assert got.json()["title"] == "销售分析"
+
+
+def test_gov_query_design_revision_conflict_r34(client):
+    """T-GOV-R34-004-04: expectedRevision 冲突 → 409 CONFIG_VERSION_CONFLICT。"""
+    ref = str(uuid.uuid4())
+    body = _valid_visual_query_design(ref)
+    first = client.put("/api/v1/gov/query-design", headers=AUTH, json=body)
+    assert first.status_code == 200
+    body["expectedRevision"] = 0
+    conflict = client.put("/api/v1/gov/query-design", headers=AUTH, json=body)
+    assert conflict.status_code == 409
+    assert conflict.json()["code"] == "CONFIG_VERSION_CONFLICT"
+
+
+def test_gov_acl_pending_publish_forbidden_r34(client):
+    """T-GOV-R34-008-01: 普通用户 save pending_publish → 403 GOV_ACL_FORBIDDEN。"""
+    app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id="viewer-1", username="viewer", roles=["viewer"]
+    )
+    try:
+        body = _valid_visual_query_design()
+        body["status"] = "pending_publish"
+        resp = client.put("/api/v1/gov/query-design", headers=AUTH, json=body)
+        assert resp.status_code == 403
+        assert resp.json()["code"] == "GOV_ACL_FORBIDDEN"
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+@patch("app.governance.acl.resolve_user_org_node_ids", return_value={uuid.uuid4()})
+@patch("app.governance.acl.get_query_rls_fragment", return_value="1=1")
+def test_gov_acl_admin_pending_publish_ok_r34(_mock_rls, _mock_org, client):
+    """T-GOV-R34-008-02: admin save pending_publish 200。"""
+    app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id="admin-1", username="admin", roles=["admin"]
+    )
+    try:
+        body = _valid_visual_query_design()
+        body["status"] = "pending_publish"
+        resp = client.put("/api/v1/gov/query-design", headers=AUTH, json=body)
+        assert resp.status_code == 200
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+def test_registry_mysql_postgresql_still_present_r34():
+    """T-REG-R34-001: mysql/postgresql types 仍在。"""
+    types = {item["type"] for item in export_type_catalog()}
+    assert {"mysql", "postgresql", "tidb", "starrocks", "elasticsearch"}.issubset(types)
+
+
+def test_meta_design_r33_regression_r34():
+    """T-REG-R34-002: r33 套件仍可导入（完整回归在 Task 7）。"""
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "test_meta_design_r33",
+        Path(__file__).resolve().parent / "test_meta_design_r33.py",
+    )
+    assert spec is not None and spec.loader is not None
+    r33 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(r33)
+    assert hasattr(r33, "test_design_unknown_field_r33")
