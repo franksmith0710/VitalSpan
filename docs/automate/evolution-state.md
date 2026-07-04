@@ -13,7 +13,7 @@
 | branch | feat/evolution-r67-dash-nfr-conn-rpt-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | DASH-004,NFR-001,NFR-002,CONN-018,RPT-003 |
-| pr_number |  |
+| pr_number | 102 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_dash_nfr_conn_rpt_r67.py ../tests/test_cat_dash_rpt_meta_r66.py ../tests/test_cat_rpt_meta_r65.py ../tests/test_nfr_cat_r64.py ../tests/test_cat_nfr_rpt_meta_r62.py ../tests/test_cat_dash_viz_nfr_r61.py ../tests/test_meta_cat_dash_conn_design_r59.py -q && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
