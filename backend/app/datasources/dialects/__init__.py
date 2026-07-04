@@ -19,6 +19,7 @@ from app.datasources.dialects.errors import (
     DORIS_UNKNOWN_DATABASE,
     HIVE_UNKNOWN_DATABASE,
 )
+from app.datasources.dialects.oracle import ORACLE_MAX_COLUMNS
 
 __all__ = [
     "ClickhouseConnector",
@@ -31,6 +32,7 @@ __all__ = [
     "HiveConnector",
     "MysqlConnector",
     "OracleConnector",
+    "ORACLE_MAX_COLUMNS",
     "PostgresConnector",
     "SchemaInfo",
     "SqlserverConnector",
