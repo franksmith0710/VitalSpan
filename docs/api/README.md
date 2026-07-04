@@ -84,7 +84,7 @@ redoc: /redoc
 | PUT | `/api/v1/datasources/{id}` | 更新数据源 | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | PATCH | `/api/v1/datasources/{id}` | 部分更新数据源；支持部分更新 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | DELETE | `/api/v1/datasources/{id}` | 软删数据源（引用中 409 `DATASOURCE_IN_USE`） | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
-| POST | `/api/v1/datasources/test` | 连通性测试（草稿配置；响应含可选 `code`（`MYSQL_*`）、`traceId`；inflight 并发 429） | IF-06 | 一期 | DS-003 | 已实现 | `backend/app/api/v1/datasources.py` |
+| POST | `/api/v1/datasources/test` | 连通性测试（草稿配置；响应含可选 `code`（`MYSQL_*`/`KINGBASE_*`）、`traceId`；**r67** kingbase 参数预校验 422；inflight 并发 429） | IF-06 | 一期 | DS-003 | 已实现 | `backend/app/api/v1/datasources.py` |
 | POST | `/api/v1/datasources/{id}/test` | 连通性测试（已保存；同上；inflight 测试完成即释放槽位） | IF-06 | 一期 | DS-003 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources/{id}/schemas` | Schema 列表（ACL 过滤；连接失败 502 `METADATA_CONNECTION_FAILED`） | IF-06 | 一期 | DS-004 | 已实现 | `backend/app/api/v1/datasources.py` · `backend/app/datasources/metadata/service.py` |
 | GET | `/api/v1/datasources/{id}/tables` | 表列表（`schema` 必填；缺参 400 `METADATA_INVALID_REQUEST`） | IF-06 | 一期 | DS-004 | 已实现 | `backend/app/api/v1/datasources.py` · `backend/app/datasources/metadata/service.py` |
@@ -107,10 +107,10 @@ redoc: /redoc
 | GET | `/api/v1/nfr/runtime-compliance` | 零 DE/SS 运行时合规扫描报告（`policyVersion=nfr08-l1`） | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/runtime-compliance/assert` | strict 模式违规 → 503 `NFR_RUNTIME_VIOLATION`；permissive → 200 | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/runtime-compliance/deployment-report` | 部署验收报告（`overallAcceptance` + `remediationIndex`） | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
-| POST | `/api/v1/nfr/report-query-perf/probe` | 报表查询性能 mock probe（`withinBudget` + `elapsedMs` stub） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
-| POST | `/api/v1/nfr/report-query-perf/validate` | 报表查询性能配置校验（`REPORT_PERF_*`） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
-| POST | `/api/v1/nfr/dashboard-first-screen/validate` | NFR-001 首屏配置校验 | 内部 | 一期 | NFR-001 | 已实现 | `backend/app/api/v1/nfr.py` |
-| POST | `/api/v1/nfr/dashboard-first-screen/probe` | NFR-001 首屏 mock probe | 内部 | 一期 | NFR-001 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/report-query-perf/probe` | 报表查询性能 mock probe（`withinBudget` + `elapsedMs` stub；**r67** enterprise ACL + `simulateFailure`） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/report-query-perf/validate` | 报表查询性能配置校验（`REPORT_PERF_*`；**r67** `sampleQueryId` pattern） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/dashboard-first-screen/validate` | NFR-001 首屏配置校验（**r67** enterprise ACL + `dashboardId` pattern） | 内部 | 一期 | NFR-001 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/dashboard-first-screen/probe` | NFR-001 首屏 mock probe（**r67** enterprise ACL） | 内部 | 一期 | NFR-001 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/https-audit/status` | NFR-004 HTTPS 策略探测 | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/https-audit/mask-probe` | NFR-004 脱敏审计 mock | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
 
@@ -192,8 +192,9 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/reports/templates` | 报表模板目录 | 内部 | 二期 | RPT-003 | 规划 | `backend/app/api/v1/reports/templates.py` |
-| GET/PUT/DELETE | `/api/v1/reports/templates/{id}` | 模板 CRUD | 内部 | 二期 | RPT-004 | 规划 | `backend/app/api/v1/reports/templates.py` |
+| POST | `/api/v1/reports/templates/validate` | 模板块定义校验（`RPT_TEMPLATE_*`） | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
+| PUT | `/api/v1/reports/templates/{templateKey}` | 模板块 upsert（**r67** viewer/enterprise ACL） | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
+| GET | `/api/v1/reports/templates/{templateKey}` | 模板块查询（**r67** enterprise ACL） | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
 | GET/POST/PATCH/DELETE | `/api/v1/reports/catalog/nodes*` | 报表模板树 catalog CRUD/move（`RPT_CATALOG_*`） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |

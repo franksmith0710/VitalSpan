@@ -57,7 +57,7 @@
 | `dialects/timescaledb.py` | TimescaleDB 时序（PG 委托 + hypertable 标记） | CONN-013 | 已实现 L1 r40 + companion r41 |
 | `dialects/gbase.py` | 南大通用 GBase 8a（MySQL 协议委托，port 5258，`GBASE_*`） | CONN-019 | 已实现 L1 r46 |
 | `dialects/oceanbase.py` | OceanBase 关系型（MySQL 协议委托，port 2881，`OCEANBASE_*`；`register_connector_plugin`） | CONN-020 | 已实现 L1 r54 |
-| `dialects/kingbase/` | 人大金仓 KingbaseES（PG 协议委托，port 54321，`KINGBASE_*`；`register_connector_plugin`） | CONN-018 | L1 已实现 r59 |
+| `dialects/kingbase/` | 人大金仓 KingbaseES（PG 协议委托，port 54321，`KINGBASE_*`；`register_connector_plugin`；**r67** `params.py` 预校验 + `probe.py`） | CONN-018 | companion 已实现 r67 |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -176,3 +176,7 @@
 ### r55 companion 质量推分（CONN-020）
 
 - **CONN-020**：空库 `list_schemas` → `[]`（对称 GBase companion）；`OCEANBASE_MAX_COLUMNS=500` 列截断；HTTP test 200 `ok=false` + `code` + `traceId`；metadata tables 缺 schema 400 `METADATA_INVALID_REQUEST`；schemas 连接失败 502 `METADATA_CONNECTION_FAILED`；`probe_test_connection_budget_ms=100`
+
+### r67 companion 质量推分（CONN-018）
+
+- **CONN-018**：`kingbase/params.py` — `validate_kingbase_connection_params`；`KINGBASE_INVALID_PARAMS` / `KINGBASE_PORT_OUT_OF_RANGE`；HTTP `POST /datasources/test` kingbase 类型在 Pydantic 前预校验 → 422 + `detail.fields`；`kingbase/probe.py` — `probe_test_connection_budget_ms` ≤50ms（mock inner）
