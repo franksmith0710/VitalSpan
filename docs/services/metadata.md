@@ -52,6 +52,11 @@
 | `META_THEME_PARENT_NOT_FOUND` | 父节点不存在 |
 | `META_THEME_CYCLE` | 移动形成环 |
 | `META_THEME_HAS_CHILDREN` | 删除含子节点 |
+| `META_TERM_INVALID_NAME` | name 仅空白 |
+| `META_TERM_INVALID_STATUS` | status 非 active/inactive |
+| `META_THEME_MAX_DEPTH` | 主题树深度超过 8 |
+
+常量：`MAX_THEME_DEPTH=8`、`TERM_MAX_TEXT_LENGTH=4000`。
 
 ## 关联 API
 

@@ -47,6 +47,16 @@
 | `DESIGN_VALUE_TYPE_MISMATCH` | 值与 valueType 不匹配 |
 | `DESIGN_INVALID_EXPRESSION` | 表达式不在白名单 |
 | `DESIGN_RULE_CYCLE` | 规则 dependsOn 成环 |
+| `DESIGN_UNKNOWN_FIELD` | 未知 fieldId（不在注册表） |
+| `DESIGN_INVALID_CROSS_FIELD` | 跨字段/自引用 value |
+| `DESIGN_RULE_TYPE_MISMATCH` | ruleType 与 expression 不一致 |
+| `DESIGN_RULE_BROKEN_CHAIN` | dependsOn 引用未知规则 id |
+| `DESIGN_INVALID_AGGREGATE` | 非法聚合函数（如 median） |
+| `DESIGN_UNKNOWN_TARGET_FIELD` | targetField 不在注册表 |
+
+## 字段注册表（L1 stub）
+
+`DESIGNER_FIELD_REGISTRY`：`order_amount`、`order_date`、`customer_id`、`status`、`region_code`（及 r32 兼容 `amount`、`x`、`y`）。
 
 ## 关联 API
 
