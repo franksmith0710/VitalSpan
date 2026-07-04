@@ -55,6 +55,7 @@ class SqliteConnector:
         latency_ms = int((time.perf_counter() - started) * 1000)
         return TestConnectionResult(ok=True, message="Connection successful", latency_ms=latency_ms, code=None)
 
+    # r41: open_connection 与 test_connection 共用 _validate_db_path；只读 OperationalError → SQLITE_READONLY
     def open_connection(self, **kwargs: Any) -> Any:
         path, err_code = _validate_db_path(kwargs["host"])
         if err_code or path is None:
