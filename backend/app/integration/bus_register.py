@@ -10,6 +10,8 @@ from app.governance.catalog import service as catalog_service
 from app.governance.catalog.schemas import BusRegisterOut, CatalogEntryOut
 from app.integration.errors import IntegrationError
 
+_NIL_UUID = uuid.UUID(int=0)
+
 
 class RetryingBusAdapter:
     def __init__(self, inner: BusAdapter, max_attempts: int) -> None:
@@ -33,6 +35,26 @@ def _assert_integration_bus(actor: UserContext) -> None:
         "Bus registration requires integration or admin role",
         403,
     )
+
+
+def validate_register_payload(catalog_entry_id: uuid.UUID) -> None:
+    if catalog_entry_id == _NIL_UUID:
+        raise IntegrationError(
+            "BUS_REGISTER_INVALID_PAYLOAD",
+            "Invalid catalog entry id",
+            422,
+            fields=[{"field": "catalogEntryId", "message": "must not be nil uuid"}],
+        )
+
+
+def register_on_publish(
+    db: Session,
+    entry_id: uuid.UUID,
+    actor: UserContext,
+) -> BusRegisterOut:
+    validate_register_payload(entry_id)
+    out, _created = register_catalog_to_bus(db, entry_id, actor)
+    return out
 
 
 def register_catalog_to_bus(
