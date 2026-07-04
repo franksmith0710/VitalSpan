@@ -85,3 +85,7 @@
 ### r52 companion 质量推分（GOV-003）
 
 - **GOV-003**：`governance/workflow/node_roles.py` — `describe_node_roles` / `resolve_required_role` / `probe_transition_path`（<50ms smoke）；模板校验要求 `draft`+`published` 节点（缺节点 `detail.missingNodes`）；`GOV_WORKFLOW_CONFLICT`（重复 submit）、`GOV_WORKFLOW_ALREADY_TERMINAL`（published 后再迁移）；`GET /gov/workflow/templates/{id}/node-roles`
+
+### r55 companion 质量推分（GOV-006）
+
+- **GOV-006**：`SUPPORTED_API_VERSIONS` 仅 `v1`；`GOV_OPENAPI_MAP_UNSUPPORTED_VERSION` / `GOV_OPENAPI_MAP_INVALID_OPERATION_ID`；`validate_mapping` → `OpenApiMappingValidateOut`；`deactivate_mapping` + `GOV_OPENAPI_MAP_ALREADY_INACTIVE`（409）；`probe_openapi_validate_budget_ms=50`
