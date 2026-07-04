@@ -1,4 +1,17 @@
-export type ChartTypeL1 = "table" | "line" | "bar";
+import { isKnownChartType } from "./chartRegistry";
+
+export type ChartType =
+  | "table"
+  | "line"
+  | "bar"
+  | "pie"
+  | "gauge"
+  | "map"
+  | "sankey"
+  | "funnel"
+  | "graph";
+
+export type ChartTypeL1 = ChartType;
 
 export type ChartFieldRef = {
   field: string;
@@ -12,8 +25,8 @@ export type ChartFilterRef = {
 };
 
 export type ChartViewConfig = {
-  chartType: ChartTypeL1;
-  styleVariant?: "default";
+  chartType: ChartType;
+  styleVariant?: string;
   dataSourceId?: string;
   bindingId?: string;
   chartId?: string;
@@ -26,10 +39,18 @@ export type ChartViewConfig = {
   filters?: ChartFilterRef[];
 };
 
-const CHART_TYPES: ChartTypeL1[] = ["table", "line", "bar"];
+const BASIC_TYPES: ChartType[] = ["table", "line", "bar"];
+
+export function isBasicChartType(type: ChartType): boolean {
+  return BASIC_TYPES.includes(type);
+}
+
+export function isAdvancedEchartsType(type: ChartType): boolean {
+  return !isBasicChartType(type) && type !== "pie";
+}
 
 export function isChartViewConfig(value: unknown): value is ChartViewConfig {
   if (!value || typeof value !== "object") return false;
   const v = value as ChartViewConfig;
-  return CHART_TYPES.includes(v.chartType);
+  return typeof v.chartType === "string" && isKnownChartType(v.chartType);
 }

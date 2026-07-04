@@ -12,7 +12,11 @@ describe("chartViewConfig round-trip", () => {
     expect(isChartViewConfig(cfg)).toBe(true);
   });
 
+  it("accepts advanced chart types", () => {
+    expect(isChartViewConfig({ chartType: "funnel" })).toBe(true);
+  });
+
   it("rejects invalid chartType", () => {
-    expect(isChartViewConfig({ chartType: "pie" })).toBe(false);
+    expect(isChartViewConfig({ chartType: "radar" })).toBe(false);
   });
 });
