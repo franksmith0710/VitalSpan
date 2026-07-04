@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r61.md |
 | design | docs/superpowers/specs/2026-07-04-cat-dash-viz-nfr-l1-r61-design.md |
 | plan | docs/superpowers/plans/2026-07-04-cat-dash-viz-nfr-l1-r61.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r61 PRD 重评：CAT-005/DASH-004/VIZ-007/NFR-002/CAT-003 L1 kickoff；pytest 1590/4 skipped；test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 回归 138/138；总分 12.1–12.6→82.9–84.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r61 验证通过：ruff clean；pytest 1590 passed/4 skipped（全量 exit_code 0）；test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 回归 138/138；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r61 实现完成：8 Task 全绿；跨域远期薄弱项 L1 kickoff — CAT-005/DASH-004/VIZ-007/NFR-002/CAT-003；32 测 test_cat_dash_viz_nfr_r61 + r60 34/34 + r59 34/34 + r58 38/38 回归 138/138；pytest 1590/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r61-cat-dash-viz-nfr-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r61 计划完成：8 Task（fixture+config types→CAT-005 cat05→DASH-004 global_filters→VIZ-007 sdk_portal→NFR-002 report_perf→CAT-003 cat03→32 测回归门控→docs）；19 P3 生产文件 + 1 测试 ≤20；subagent-driven-development option 1；全 Task UI skill none；plan=docs/superpowers/plans/2026-07-04-cat-dash-viz-nfr-l1-r61.md；phase P1_DONE→P2_DONE
@@ -203,6 +204,11 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| CAT-003 | 1 | 83.9 | 2026-07-04 |
+| CAT-005 | 1 | 83.3 | 2026-07-04 |
+| DASH-004 | 1 | 84.2 | 2026-07-04 |
+| NFR-002 | 1 | 84.2 | 2026-07-04 |
+| VIZ-007 | 1 | 82.9 | 2026-07-04 |
 | META-004 | 1 | 84.2 | 2026-07-04 |
 | CAT-004 | 1 | 83.9 | 2026-07-04 |
 | DASH-005 | 1 | 84.0 | 2026-07-04 |

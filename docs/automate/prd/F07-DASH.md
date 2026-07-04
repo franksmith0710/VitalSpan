@@ -40,15 +40,16 @@
 - **里程碑对齐**：
 ### [DASH-004] 全局筛选器联动
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r61）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：全局筛选器联动（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 筛选器驱动组件刷新
-  - [ ] 联动规则可配置
-- **代码锚点**：`fe/src/components/dashboard/filters/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 联动规则可配置（r61 L1：`POST validate` + `PUT/GET /api/v1/dashboards/{id}/global-filters` + config_store `global_filter_linkage` + `DASH_FILTER_*` + widget 存在性校验 + viewer ACL）
+  - [ ] 筛选器驱动组件刷新（缺 fe 全局筛选器 UI 与 widget 刷新链）
+- **代码锚点**：`backend/app/dashboard/global_filters/` · `backend/app/api/v1/dashboards.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-01~07
+- **演化建议**：r61 L1 闭合 global_filter_linkage validate/save/get、widget 校验与 viewer 403；后续补 fe 筛选器驱动组件刷新与跨 widget 口径联动
+- **里程碑对齐**：
 ### [DASH-005] 实体总览页 FR-6.2
 
 - **状态**：部分实现（L1 kickoff r59）
