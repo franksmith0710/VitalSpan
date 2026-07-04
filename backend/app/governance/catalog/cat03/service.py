@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import uuid
 
-from app.governance.catalog.cat03.errors import Cat03Error
+from app.auth.deps import UserContext
+from app.governance.catalog.cat03.errors import CAT03_FORBIDDEN, Cat03Error
 from app.governance.catalog.cat03.schemas import (
     MAX_GEO_DEPTH,
     GeoRegionCreate,
@@ -13,6 +14,23 @@ from app.governance.catalog.cat03.schemas import (
 
 _nodes: dict[uuid.UUID, dict] = {}
 _codes: set[str] = set()
+_USER_REGION_SCOPE: dict[str, str] = {}
+
+
+def set_user_region_scope(user_id: str, region_code_prefix: str) -> None:
+    _USER_REGION_SCOPE[user_id] = region_code_prefix
+
+
+def _assert_geo_write_access(user: UserContext, region_code: str) -> None:
+    roles = set(user.roles)
+    if roles.intersection({"admin", "analyst"}):
+        return
+    if "viewer" in roles and not roles.intersection({"editor", "analyst", "admin"}):
+        raise Cat03Error(CAT03_FORBIDDEN, "viewer cannot modify geo regions", 403)
+    if "enterprise" in roles:
+        prefix = _USER_REGION_SCOPE.get(user.id, "CN")
+        if not region_code.startswith(prefix):
+            raise Cat03Error(CAT03_FORBIDDEN, "enterprise user out of region scope", 403)
 
 
 def _to_out(record: dict) -> GeoRegionOut:
@@ -86,7 +104,8 @@ def list_geo_nodes(parent_id: uuid.UUID | None, limit: int, offset: int) -> GeoR
     return GeoRegionListResponse(items=[_to_out(i) for i in page], total=len(items))
 
 
-def create_geo_node(payload: GeoRegionCreate) -> GeoRegionOut:
+def create_geo_node(payload: GeoRegionCreate, user: UserContext) -> GeoRegionOut:
+    _assert_geo_write_access(user, payload.region_code)
     if payload.region_code in _codes:
         raise Cat03Error("CAT03_CODE_CONFLICT", f"regionCode already exists: {payload.region_code}", 409)
     if payload.parent_id is not None and payload.parent_id not in _nodes:
@@ -106,9 +125,11 @@ def create_geo_node(payload: GeoRegionCreate) -> GeoRegionOut:
     return _to_out(record)
 
 
-def move_geo_node(region_id: uuid.UUID, payload: GeoRegionMove) -> GeoRegionOut:
+def move_geo_node(region_id: uuid.UUID, payload: GeoRegionMove, user: UserContext) -> GeoRegionOut:
     if region_id not in _nodes:
         raise Cat03Error("CAT03_NOT_FOUND", "regionId not found", 404)
+    record = _nodes[region_id]
+    _assert_geo_write_access(user, record["regionCode"])
     new_parent = payload.parent_id
     if new_parent == region_id:
         raise Cat03Error("CAT03_CYCLE", "cannot move node under itself", 422)
@@ -117,17 +138,18 @@ def move_geo_node(region_id: uuid.UUID, payload: GeoRegionMove) -> GeoRegionOut:
             raise Cat03Error("CAT03_PARENT_NOT_FOUND", "parentId not found", 404)
         if new_parent in _collect_descendants(region_id):
             raise Cat03Error("CAT03_CYCLE", "cannot move node under its descendant", 422)
+        _assert_geo_write_access(user, _nodes[new_parent]["regionCode"])
     _assert_depth(new_parent, subtree_root=region_id)
-    record = _nodes[region_id]
     record["parentId"] = new_parent
     if payload.sort_order is not None:
         record["sortOrder"] = payload.sort_order
     return _to_out(record)
 
 
-def delete_geo_node(region_id: uuid.UUID) -> None:
+def delete_geo_node(region_id: uuid.UUID, user: UserContext) -> None:
     if region_id not in _nodes:
         raise Cat03Error("CAT03_NOT_FOUND", "regionId not found", 404)
+    _assert_geo_write_access(user, _nodes[region_id]["regionCode"])
     if _children(region_id):
         raise Cat03Error("CAT03_HAS_CHILDREN", "cannot delete node with children", 409)
     code = _nodes[region_id]["regionCode"]
