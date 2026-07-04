@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design | docs/superpowers/specs/2026-07-04-m11-meta-m12-design-l1-r32-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m11-meta-m12-design-l1-r32.md |
-| branch | feat/evolution-r32-m11-meta-m12-design-l1 |
-| base_branch | dev-auto |
-| prd_ids | META-001,META-002,QUERY-007,DESIGN-001,DESIGN-002 |
-| pr_number | 55 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v && python3 -m pytest -v ../tests/test_meta_design_r32.py ../tests/test_view_gov_api_r31.py |
-| last_verified_exit_code | 0 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T01:52:00Z |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r33 bootstrap：r32 PR #55 已合并 dev-auto（ff3de75）；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（M11/M12 无活跃节，已知 concern）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r32 PRD 重评：META-001/002 + QUERY-007 + DESIGN-001/002 L1 kickoff；pytest 708/4 skipped；test_meta_design_r32 21/21；总分 10.8–11.2→86.4–89.8（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r32 验证通过：ruff clean；pytest 708 passed/4 skipped；test_meta_design_r32 21/21；test_view_gov_api_r31 24/24 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P3 r32 实现完成：7 Task 全绿；META-001/002 + QUERY-007 + DESIGN-001/002 L1；migration 0015；21 新测 test_meta_design_r32；pytest 707/4 skipped；r31 回归 24/24；branch feat/evolution-r32-m11-meta-m12-design-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
