@@ -10,6 +10,12 @@ DM_MAX_COLUMNS = 500
 _SYSTEM_OWNERS = frozenset({"SYS", "SYSDBA"})
 
 
+def _redact_secrets(message: str, password: str | None) -> str:
+    if password and password in message:
+        return message.replace(password, "***")
+    return message
+
+
 class DmConnector:
     type = "dm"
     category = "relational"
@@ -50,6 +56,7 @@ class DmConnector:
             )
         except Exception as exc:
             code, detail = map_dm_error(exc)
+            detail = _redact_secrets(detail, kwargs.get("password"))
             latency_ms = int((time.perf_counter() - started) * 1000)
             return TestConnectionResult(
                 ok=False, message=f"[{code}] {detail}", latency_ms=latency_ms, code=code,
