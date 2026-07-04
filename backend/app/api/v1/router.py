@@ -17,6 +17,10 @@ from app.api.v1.rls import router as rls_router
 from app.api.v1.roles import router as roles_router
 from app.api.v1.users import router as users_router
 from app.api.v1.views import router as views_router
+from app.api.v1.services import router as services_router
+from app.api.v1.integration_bus import router as integration_bus_router
+from app.api.v1.reports.export import router as reports_export_router
+from app.api.v1.embed import router as embed_router
 
 api_v1_router = APIRouter()
 api_v1_router.include_router(me_router)
@@ -36,3 +40,7 @@ api_v1_router.include_router(rls_router)
 api_v1_router.include_router(audit_router)
 api_v1_router.include_router(views_router)
 api_v1_router.include_router(metadata_router)
+api_v1_router.include_router(services_router)
+api_v1_router.include_router(integration_bus_router)
+api_v1_router.include_router(reports_export_router)
+api_v1_router.include_router(embed_router)

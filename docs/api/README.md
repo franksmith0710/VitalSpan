@@ -33,7 +33,7 @@ redoc: /redoc
 | GET | `/health` | 健康检查 | — | P0 | BOOT-001 | 已实现 | `backend/app/main.py` |
 | GET | `/docs` | Swagger UI | — | 一期 | API-007 | 规划 | FastAPI 内置 |
 | GET | `/redoc` | ReDoc | — | 一期 | API-007 | 规划 | FastAPI 内置 |
-| GET | `/openapi.json` | OpenAPI 规范（IF-06 tag 后处理；r31 补全 datasources path/response 与 execute 响应示例） | IF-06 | 一期 | API-001, API-002 | 已实现 | `backend/app/openapi/extensions.py` |
+| GET | `/openapi.json` | OpenAPI 规范（IF-01~04/06 tag 后处理；`x-api-version-policy`；r44 IF operationId 前缀） | IF-06 | 一期 | API-001, API-002, API-007 | 已实现 | `backend/app/openapi/extensions.py` · `backend/app/openapi/version_policy.py` |
 
 ---
 
@@ -137,7 +137,8 @@ redoc: /redoc
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 规划 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 规划 | `backend/app/api/v1/views.py` |
-| POST | `/api/v1/embed/token` | 门户嵌入 token 签发 | IF-04 | 三期 | API-006 | 规划 | `backend/app/api/v1/embed.py` |
+| POST | `/api/v1/embed/token` | 门户嵌入 token 签发（admin 或 `dashboard:share`；422 `EMBED_TARGET_CONFLICT`/`EMBED_INVALID_ORIGIN`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
+| GET | `/api/v1/embed/sdk-params` | 按 token 解析 SDK 参数（`containerId`/`apiBase`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
 
 ---
 
@@ -149,7 +150,7 @@ redoc: /redoc
 | GET/PUT/DELETE | `/api/v1/reports/templates/{id}` | 模板 CRUD | 内部 | 二期 | RPT-004 | 规划 | `backend/app/api/v1/reports/templates.py` |
 | POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表 | 内部 | 二期 | RPT-001 | 规划 | `backend/app/api/v1/reports/engine.py` |
 | GET/POST | `/api/v1/reports/schedules` | 调度任务 | 内部 | 三期 | RPT-005 | 规划 | `backend/app/api/v1/reports/schedules.py` |
-| GET | `/api/v1/reports/export` | 按模板/时间导出文档 | IF-03 | 三期 | API-005 | 规划 | `backend/app/api/v1/reports/export.py` |
+| GET | `/api/v1/reports/export` | 按模板/时间导出文档元数据（`templateId`+`format`；seed 模板 pending；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（骨架） | `backend/app/api/v1/reports/export.py` |
 
 ---
 
@@ -190,8 +191,12 @@ redoc: /redoc
 | GET/POST | `/api/v1/governance/tickets` | 查询工单 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/tickets/{id}/submit` | 提交审批 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/publish` | 发布查询服务 | 内部 | 四期 | GOV-005 | 规划 | `backend/app/api/v1/governance/publish.py` |
-| GET | `/api/v1/services` | 已发布查询服务列表 | IF-02 | 四期 | API-003 | 规划 | `backend/app/api/v1/services/` |
-| GET | `/api/v1/services/{serviceId}/openapi` | 服务 OpenAPI 描述 | IF-02 | 四期 | GOV-006 | 规划 | `backend/app/api/v1/services/` |
+| POST | `/api/v1/integration/bus/register` | IF-01 总线注册（`catalogEntryId`；integration/admin；幂等 201/200；retry `maxAttempts`） | IF-01 | 四期 | API-004 | 已实现（骨架） | `backend/app/api/v1/integration_bus.py` |
+| POST | `/api/v1/integration/bus/register/retry` | IF-01 总线注册重试 | IF-01 | 四期 | API-004 | 已实现（骨架） | `backend/app/api/v1/integration_bus.py` |
+| GET | `/api/v1/services` | 已发布查询服务列表（仅 `published`；`?category=&limit=&offset=`） | IF-02 | 四期 | API-003 | 已实现（骨架） | `backend/app/api/v1/services.py` |
+| GET | `/api/v1/services/{serviceId}` | 已发布查询服务详情 | IF-02 | 四期 | API-003 | 已实现（骨架） | `backend/app/api/v1/services.py` |
+| POST | `/api/v1/services/{serviceId}/execute` | 查询服务执行骨架（integration/admin；502 `SERVICE_EXECUTE_FAILED`） | IF-02 | 四期 | API-003 | 已实现（骨架） | `backend/app/api/v1/services.py` |
+| GET | `/api/v1/services/{serviceId}/openapi` | 服务 OpenAPI 描述片段 | IF-02 | 四期 | API-003, GOV-006 | 已实现（骨架） | `backend/app/api/v1/services.py` |
 
 ---
 
@@ -301,4 +306,5 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.2 | 2026-07-04 | M8/M12/M13 r44：IF-01~04 集成 API L1（services/integration_bus/reports/export/embed）；OpenAPI 版本策略 |
 | 1.0.1 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；§9 数据接入 API；移除 IF-05 范围外 |

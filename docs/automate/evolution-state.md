@@ -7,17 +7,17 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r43.md |
-| design | docs/superpowers/specs/2026-07-04-m9-viz-companion-quality-r43-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m9-viz-companion-quality-r43.md |
-| branch | feat/evolution-r43-m9-viz-companion-quality |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r44.md |
+| design | docs/superpowers/specs/2026-07-04-m8-m12-m13-integration-api-l1-r44-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m8-m12-m13-integration-api-l1-r44.md |
+| branch | feat/evolution-r44-m8-m12-m13-integration-api-l1 |
 | base_branch | dev-auto |
-| prd_ids | VIZ-003,VIZ-004,VIZ-005,VIZ-006,VIZ-008 |
-| pr_number | 69 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && cd ../fe && pnpm test && pnpm run check:design |
+| prd_ids | API-003,API-004,API-005,API-006,API-007 |
+| pr_number | 70 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T08:53:00Z |
+| skill_rule_index_generated_at | 2026-07-04T10:25:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,13 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r44 PRD 重评：API-003/004/005/006/007 L1 kickoff；pytest 1104/4 skipped；test_integration_api_l1_r44 38/38 + r31 24/24；总分 11.3–13.1→86.5–87.4（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
+- P4 r44 验证通过：ruff clean；pytest 1104 passed/4 skipped（全量二次运行 exit_code 0；首轮 1 例环境级 flaky test_me_concurrent_requests_stable 隔离通过、与 r44 无关）；test_integration_api_l1_r44 38/38 + test_view_gov_api_r31 24/24 回归 62/62；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
+- P3 r44 实现完成：8 Task 全绿；M8/M12/M13 集成 API L1 — API-003/004/005/006/007；IF-01~04 四路由簇 + integration 域 + bus/adapter + openapi/version_policy；38 测 test_integration_api_l1_r44 + r31 24/24 回归；pytest 1104/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r44-m8-m12-m13-integration-api-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P2 r44 计划完成：8 Task（errors→API-003 services→API-004 bus adapter/retry→API-005 reports export→API-006 embed token→API-007 openapi version_policy→回归门控→docs）；18 文件 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥38 新测 test_integration_api_l1_r44 + r31 24 回归；pytest 目标 ≥1096；plan=docs/superpowers/plans/2026-07-04-m8-m12-m13-integration-api-l1-r44.md；phase P1_DONE→P2_DONE
+- P1 r44 设计完成：M8/M12/M13 集成 API L1 kickoff — API-003/004/005/006/007；18 文件框定（integration 域 6 + api/v1 四路由簇 + bus/adapter + openapi/version_policy + r44 smoke ≥28 测）；IF-01~04 与 GOV-002/VIZ-006 边界闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
+- G2 r44 选题完成：M8/M12/M13 集成 API L1 kickoff — API-003/004/005/006/007（5 项，同 F13-API 域）；最低分 API-003(11.3) 全表最低；饱和熔断未触发（Top5 11.3–11.5«90）；plan M1/M1B 全勾选无活跃 `[ ]` 行（已知 concern，回落纯 8 维选题）；STUCK 表空（5 项首次入选）；phase idle→G2_DONE
+- G1 r44 bootstrap：r43 PR #69 已合并 dev-auto；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 API-003(11.3)/NFR-006(11.4)/NFR-007(11.4)；STUCK 表空（r43 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r43 PRD 重评：VIZ-003/004/005/006/008 companion 质量推分；pytest 1068/2 skipped；test_viz_advanced_l1_r43 28/28 + r42 35/35；vitest charts.advanced.smoke 22/22；总分 57.1–61.1→90.0–90.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P3 r43 实现完成：8 Task 全绿；VIZ-003/004/005/006/008 companion 质量推分 — fe 高级 ECharts（chartRegistry/renderFromSpec/AdvancedEchartsChart/ChartConfigPanel/ChartRenderer 集成）+ embed 表面 + is_origin_allowed；pytest r43 28/28 + r42 35/35；vitest charts 22/22（smoke 7 + advanced 15）；check:design exit 0；ui_design_skill b-design-system-tailadmin-radix；screenshots N/A（headless vitest，无浏览器 dev server）；branch feat/evolution-r43-m9-viz-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r43 计划完成：8 Task（deps+registry→theme+geo→renderFromSpec→AdvancedEchartsChart→ChartConfigPanel→ChartRenderer→Embed+is_origin_allowed→tests+README）；19 文件 ≤20；subagent-driven-development option 1；UI skill b-design-system-tailadmin-radix（6 个 fe Task）；pytest r43 ≥28 + vitest advanced + r42/r28 回归门控；plan=docs/superpowers/plans/2026-07-04-m9-viz-companion-quality-r43.md；phase P1_DONE→P2_DONE
@@ -140,4 +147,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| （无） | — | — | — |
+| API-003 | 1 | 86.6 | 2026-07-04 |
+| API-004 | 1 | 87.4 | 2026-07-04 |
+| API-005 | 1 | 86.5 | 2026-07-04 |
+| API-006 | 1 | 87.3 | 2026-07-04 |
+| API-007 | 1 | 87.4 | 2026-07-04 |

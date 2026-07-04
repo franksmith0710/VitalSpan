@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
 from app.core.config import get_settings
+from app.openapi.version_policy import apply_version_policy
 
 IF06_DATASOURCE_PREFIX = "/api/v1/datasources"
 IF06_QUERY_EXECUTE = "/api/v1/query/execute"
@@ -133,6 +134,7 @@ def customize_openapi(app: FastAPI) -> dict:
     _inject_datasource_openapi(schema)
     _inject_execute_openapi(schema)
     _inject_if06_tags(schema)
+    apply_version_policy(schema)
     schema["info"]["version"] = settings.api_openapi_version
     app.openapi_schema = schema
     return schema

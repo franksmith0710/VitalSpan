@@ -1,0 +1,58 @@
+from __future__ import annotations
+
+import uuid
+
+from sqlalchemy.orm import Session
+
+from app.auth.deps import UserContext
+from app.governance.bus.adapter import BusAdapter, InMemoryBusAdapter, register_with_retry
+from app.governance.catalog import service as catalog_service
+from app.governance.catalog.schemas import BusRegisterOut, CatalogEntryOut
+from app.integration.errors import IntegrationError
+
+
+class RetryingBusAdapter:
+    def __init__(self, inner: BusAdapter, max_attempts: int) -> None:
+        self._inner = inner
+        self._max_attempts = max_attempts
+
+    def register(self, *, entry: CatalogEntryOut, trace_id: str):
+        return register_with_retry(
+            self._inner,
+            entry=entry,
+            trace_id=trace_id,
+            max_attempts=self._max_attempts,
+        )
+
+
+def _assert_integration_bus(actor: UserContext) -> None:
+    if "admin" in actor.roles or "integration" in actor.roles:
+        return
+    raise IntegrationError(
+        "BUS_REGISTER_INTEGRATION_FORBIDDEN",
+        "Bus registration requires integration or admin role",
+        403,
+    )
+
+
+def register_catalog_to_bus(
+    db: Session,
+    entry_id: uuid.UUID,
+    actor: UserContext,
+    *,
+    max_attempts: int = 3,
+) -> tuple[BusRegisterOut, bool]:
+    _assert_integration_bus(actor)
+    adapter = RetryingBusAdapter(InMemoryBusAdapter(), max_attempts)
+    try:
+        return catalog_service.register_entry_to_bus(db, entry_id, adapter=adapter)
+    except catalog_service.CatalogError as exc:
+        trace_id = getattr(exc, "trace_id", None)
+        if exc.code == "BUS_REGISTRATION_TIMEOUT" and max_attempts > 1:
+            raise IntegrationError(
+                "BUS_REGISTER_RETRY_EXHAUSTED",
+                exc.message,
+                502,
+                trace_id=trace_id,
+            ) from exc
+        raise IntegrationError(exc.code, exc.message, exc.status, trace_id=trace_id) from exc
