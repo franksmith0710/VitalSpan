@@ -9,6 +9,7 @@ from app.datasources.dialects.clickhouse import ClickhouseConnector
 from app.datasources.dialects.doris import DorisConnector
 from app.datasources.dialects.elasticsearch import ElasticsearchConnector
 from app.datasources.dialects.gbase import GbaseConnector, GBASE_MAX_COLUMNS
+from app.datasources.dialects.kingbase import KINGBASE_MAX_COLUMNS, KingbaseConnector
 from app.datasources.dialects.oceanbase import OCEANBASE_MAX_COLUMNS, OceanbaseConnector
 from app.datasources.dialects.dm import DmConnector, DM_MAX_COLUMNS
 from app.datasources.dialects.gaussdb import GaussdbConnector
@@ -42,6 +43,8 @@ __all__ = [
     "ElasticsearchConnector",
     "GBASE_MAX_COLUMNS",
     "GbaseConnector",
+    "KINGBASE_MAX_COLUMNS",
+    "KingbaseConnector",
     "OCEANBASE_MAX_COLUMNS",
     "OceanbaseConnector",
     "GaussdbConnector",

@@ -14,6 +14,8 @@ from app.designer import service as designer_service
 from app.designer.schemas import ComputeRulesConfig, DesignerError, OutputFieldsConfig, QueryConditionsConfig, SqlModeSpec
 from app.designer import output_fields as output_fields_service
 from app.designer import sql_mode as sql_mode_service
+from app.designer import workflow as workflow_link_service
+from app.designer.workflow import DesignerWorkflowLinkIn, DesignerWorkflowLinkOut, DesignerWorkflowLinkValidateOut
 from app.query.config_store.schemas import ConfigError
 
 router = APIRouter(
@@ -276,3 +278,45 @@ def get_compute_rules(
         if isinstance(exc, DesignerError):
             return _designer_error(exc)
         raise
+
+
+@router.post("/workflow-link/validate", response_model=DesignerWorkflowLinkValidateOut)
+def validate_workflow_link(
+    body: dict,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DesignerWorkflowLinkValidateOut | JSONResponse:
+    if not body.get("designerItemId"):
+        return _designer_error(DesignerError("DESIGN_WORKFLOW_INVALID_ITEM", "designerItemId required", 422))
+    try:
+        payload = DesignerWorkflowLinkIn.model_validate(body)
+    except ValidationError:
+        return _designer_error(DesignerError("DESIGN_WORKFLOW_INVALID_ITEM", "designerItemId required", 422))
+    try:
+        return workflow_link_service.validate_workflow_link(db, payload)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.put("/workflow-link", response_model=DesignerWorkflowLinkOut)
+def save_workflow_link(
+    payload: DesignerWorkflowLinkIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DesignerWorkflowLinkOut | JSONResponse:
+    try:
+        return workflow_link_service.save_workflow_link(db, payload, _owner_uuid(actor))
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.get("/workflow-link", response_model=DesignerWorkflowLinkOut)
+def get_workflow_link(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    designer_item_id: uuid.UUID = Query(alias="designerItemId"),
+) -> DesignerWorkflowLinkOut | JSONResponse:
+    try:
+        return workflow_link_service.get_workflow_link(db, designer_item_id)
+    except DesignerError as exc:
+        return _designer_error(exc)

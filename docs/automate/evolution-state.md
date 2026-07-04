@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r59.md |
 | design | docs/superpowers/specs/2026-07-04-meta-cat-dash-kingbase-design-r59-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-04-meta-cat-dash-kingbase-design-r59.md |
+| branch | feat/evolution-r59-meta-cat-dash-kingbase-design-l1 |
 | base_branch | dev-auto |
 | prd_ids | META-004,CAT-004,DASH-005,CONN-018,DESIGN-004 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T13:15:00Z |
+| skill_rule_index_generated_at | 2026-07-04T17:40:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r59 实现完成：8 Task 全绿；跨域远期薄弱项 L1 kickoff — META-004/CAT-004/DASH-005/CONN-018/DESIGN-004；34 测 test_meta_cat_dash_conn_design_r59 + r58 38/38 + r57 37/37 回归；pytest 1524/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r59-meta-cat-dash-kingbase-design-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P2 r59 计划完成：8 Task（fixture+config types→META-004 dataset→CAT-004 classification→DASH-005 entity_overview→CONN-018 kingbase→DESIGN-004 workflow-link→32 测回归门控→docs）；21 P3 生产文件 + 1 测试 ≤22；subagent-driven-development option 1；全 Task UI skill none；≥32 新测 test_meta_cat_dash_conn_design_r59 + r58 38/38 + r57 37/37 回归；plan=docs/superpowers/plans/2026-07-04-meta-cat-dash-kingbase-design-r59.md；phase P1_DONE→P2_DONE
 - P1 r59 设计完成：跨域远期薄弱项 L1 kickoff — META-004/CAT-004/DASH-005/CONN-018/DESIGN-004；19 文件框定（metadata/dataset 4 + classification 3 + entity_overview 3 + kingbase 3 + designer/workflow 1 + api 薄 entry 3 + dialects 登记 2 + r59 smoke ≥32 测）；Dataset/分类树/实体总览/Kingbase PG 委托/workflow-link；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r59 选题完成：跨域远期薄弱项 L1 kickoff — META-004/CAT-004/DASH-005/CONN-018/DESIGN-004（5 项）；最低分 META-004/CAT-004(12.0)；饱和熔断未触发（Top5 12.0–12.1≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 表空（五 ID 远期 stub 首次入选）；phase idle→G2_DONE
 - G1 r59 bootstrap：r58 PR #90 已 Squash merge dev-auto（a9d5f41）；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 META-004(12.0)/CAT-004(12.0)/DASH-005(12.1)；STUCK 表空（r58 P5 DASH-006/RPT-004/005 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题

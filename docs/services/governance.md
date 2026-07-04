@@ -14,6 +14,7 @@
 - 可视化查询设计聚合 validate/save/get（GOV-004）
 - 查询设计权限联动与 RLS 绑定守卫（GOV-008）
 - 查询服务发布状态机 submit/approve/reject（GOV-005）
+- **分类树节点**（`catalog/classification/`）：内存树 CRUD/move、环检测与深度守卫（CAT-004）
 - 工单流程模板与五态 FSM 实例（GOV-003）
 - 发布引擎 OpenAPI 映射 store（GOV-006）
 - 为开放 API 登记与 BPM 流水线奠基
@@ -23,6 +24,7 @@
 | In | Out |
 |----|-----|
 | catalog 分类/条目 CRUD、bus PoC 登记记录 | 查询执行（→ `query`） |
+| classification 树节点 CRUD/move（内存 L1；`MAX_CLASS_DEPTH=8`） | timeseries 模板完整实现（CAT-04 companion） |
 | workflow 模板校验 + 五态 FSM 实例持久化 | 完整 BPM 工单与审批流水线 UI（GOV-003+） |
 | openapi 映射 store（published entry 校验 + entityTypeRef） | 与 `publish_service` 串联的跨域发布（本域 workflow 独立） |
 | | 真实总线 HTTP 对接（GOV-007+） |
@@ -51,6 +53,7 @@
 | `POST/GET /api/v1/gov/publish/entries/{id}/*` | 发布工作流 REST 骨架 | GOV-005 | 已实现 L1 |
 | `GET /api/v1/gov/publish/entries/{id}/notifications` | 审批通知事件列表（内存 store） | GOV-005 | 已实现 companion |
 | `GET/POST /api/v1/gov/workflow/*` | 工单模板/实例/迁移 REST | GOV-003 | 已实现 L1 |
+| `catalog/classification/service` | 分类树内存 store + cycle/depth 守卫 | CAT-004 | L1 已实现 r59 |
 
 ## 关联 API
 

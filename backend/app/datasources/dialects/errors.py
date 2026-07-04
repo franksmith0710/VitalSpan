@@ -333,6 +333,40 @@ def map_oceanbase_error(exc: Exception) -> tuple[str, str]:
     return OCEANBASE_UNKNOWN, str(exc)
 
 
+# KingbaseES (PostgreSQL protocol)
+KINGBASE_CONN_REFUSED = "KINGBASE_CONN_REFUSED"
+KINGBASE_AUTH_FAILED = "KINGBASE_AUTH_FAILED"
+KINGBASE_TIMEOUT = "KINGBASE_TIMEOUT"
+KINGBASE_UNKNOWN_DATABASE = "KINGBASE_UNKNOWN_DATABASE"
+KINGBASE_UNKNOWN = "KINGBASE_UNKNOWN"
+
+_KINGBASE_FROM_PG = {
+    PG_CONN_REFUSED: KINGBASE_CONN_REFUSED,
+    PG_AUTH_FAILED: KINGBASE_AUTH_FAILED,
+    PG_TIMEOUT: KINGBASE_TIMEOUT,
+    PG_UNKNOWN_DATABASE: KINGBASE_UNKNOWN_DATABASE,
+    PG_SSL_ERROR: KINGBASE_UNKNOWN,
+    PG_UNKNOWN: KINGBASE_UNKNOWN,
+}
+
+
+def map_kingbase_error(exc: Exception) -> tuple[str, str]:
+    if hasattr(exc, "sqlstate") or "OperationalError" in type(exc).__name__:
+        pg_code, detail = map_postgres_operational_error(exc)
+        return _KINGBASE_FROM_PG.get(pg_code, KINGBASE_UNKNOWN), detail
+    detail = str(exc)
+    lowered = detail.lower()
+    if "auth" in lowered or "password" in lowered:
+        return KINGBASE_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return KINGBASE_TIMEOUT, detail
+    if "refused" in lowered:
+        return KINGBASE_CONN_REFUSED, detail
+    if "database" in lowered and "not" in lowered:
+        return KINGBASE_UNKNOWN_DATABASE, detail
+    return KINGBASE_UNKNOWN, detail
+
+
 # MongoDB
 MONGODB_CONN_REFUSED = "MONGODB_CONN_REFUSED"
 MONGODB_AUTH_FAILED = "MONGODB_AUTH_FAILED"
@@ -523,6 +557,11 @@ __all__ = [
     "GBASE_TIMEOUT",
     "GBASE_UNKNOWN",
     "GBASE_UNKNOWN_DATABASE",
+    "KINGBASE_AUTH_FAILED",
+    "KINGBASE_CONN_REFUSED",
+    "KINGBASE_TIMEOUT",
+    "KINGBASE_UNKNOWN",
+    "KINGBASE_UNKNOWN_DATABASE",
     "OCEANBASE_AUTH_FAILED",
     "OCEANBASE_CONN_REFUSED",
     "OCEANBASE_TIMEOUT",
@@ -610,6 +649,7 @@ __all__ = [
     "map_doris_operational_error",
     "map_gaussdb_error",
     "map_gbase_error",
+    "map_kingbase_error",
     "map_oceanbase_error",
     "map_hive_error",
     "map_influx_error",

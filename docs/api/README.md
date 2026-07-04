@@ -90,7 +90,7 @@ redoc: /redoc
 | GET | `/api/v1/datasources/{id}/tables` | 表列表（`schema` 必填；缺参 400 `METADATA_INVALID_REQUEST`） | IF-06 | 一期 | DS-004 | 已实现 | `backend/app/api/v1/datasources.py` · `backend/app/datasources/metadata/service.py` |
 | GET | `/api/v1/datasources/{id}/columns` | 列列表（`schema`+`table` 必填） | IF-06 | 一期 | DS-004 | 已实现 | `backend/app/api/v1/datasources.py` · `backend/app/datasources/metadata/service.py` |
 
-**方言实现（r25）**：`mysql` → `backend/app/datasources/dialects/mysql.py`（CONN-001）；`postgresql` → `backend/app/datasources/dialects/postgres.py`（CONN-002）；`gbase` → `backend/app/datasources/dialects/gbase.py`（CONN-019）。
+**方言实现（r25）**：`mysql` → `backend/app/datasources/dialects/mysql.py`（CONN-001）；`postgresql` → `backend/app/datasources/dialects/postgres.py`（CONN-002）；`gbase` → `backend/app/datasources/dialects/gbase.py`（CONN-019）；`kingbase` → `backend/app/datasources/dialects/kingbase/`（CONN-018，PG 协议委托，默认 port 54321）。
 
 ---
 
@@ -137,6 +137,7 @@ redoc: /redoc
 | PUT/GET | `/api/v1/designer/sql-mode` | SQL 模式持久化（`config_type=sql_mode`；`?refId=`） | 内部 | 一期 | DESIGN-005 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/output-fields/validate` | 输出字段/聚合校验（`DESIGN_EMPTY_OUTPUT_FIELDS`/`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_AGGREGATE`） | 内部 | 一期 | DESIGN-003 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/output-fields` | 输出字段持久化（`config_type=output_fields`；`?refId=`） | 内部 | 一期 | DESIGN-003 | 已实现 | `backend/app/api/v1/designer.py` |
+| POST/PUT/GET | `/api/v1/designer/workflow-link` | 设计器项与工单实例关联 validate/save/get（`config_type=designer_workflow_link`） | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/query/preview` | 查询预览（设计器/图表配置） | 内部 | 二期 | QUERY-005 | 规划 | `backend/app/api/v1/query.py` |
 
 ---
@@ -165,6 +166,8 @@ redoc: /redoc
 | POST | `/api/v1/dashboards/theme-analysis/validate` | 实体主题分析 config 校验（`DASH_THEME_*`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/theme-analysis` | 实体主题分析 config 持久化/读取（`config_type=entity_theme`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET | `/api/v1/dashboards/theme-analysis/chart-bindings` | chartViewBindings 联动查询（`linkedWidgetCount`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| POST | `/api/v1/dashboards/entity-overview/validate` | 实体总览 item 校验（`DASH_OVERVIEW_*`） | 内部 | 一期 | DASH-005 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| PUT/GET | `/api/v1/dashboards/{id}/entity-overview` | 实体总览 save/get（`config_type=entity_overview`；含 `publishStatus` 探测） | 内部 | 一期 | DASH-005 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 规划 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 规划 | `backend/app/api/v1/views.py` |
@@ -213,8 +216,9 @@ redoc: /redoc
 | GET | `/api/v1/metadata/entity-types/{typeCode}/query-bindings` | 只读 query bindings（`readOnly=true`；json 不可 filter） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/entity-types/{typeCode}` | 实体类型详情/更新/删除（引用中 → 409 `META_ENTITY_TYPE_IN_USE`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | DELETE | `/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}` | 删除单条枚举值 | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
-| GET/POST | `/api/v1/datasets` | Dataset CRUD | 内部 | 四期 | META-004 | 规划 | `backend/app/api/v1/datasets.py` |
-| GET/PUT | `/api/v1/datasets/{id}` | Dataset 详情 | 内部 | 四期 | META-004 | 规划 | `backend/app/api/v1/datasets.py` |
+| GET/POST | `/api/v1/datasets` | Dataset list/create（内存 store L1；`META_DATASET_*`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
+| GET | `/api/v1/datasets/{dataset_id}` | Dataset 详情 | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
+| POST | `/api/v1/datasets/validate` | Dataset 草稿校验（不落库） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | GET/POST | `/api/v1/entities/types` | 实体类型 schema | 内部 | 二期 | META-006 | 规划 | `backend/app/api/v1/metadata/entities.py` |
 | POST | `/api/v1/datasets/migrate-binding` | 直连→datasetId 迁移 | 内部 | 四期 | QUERY-009 | 规划 | `backend/app/api/v1/datasets.py` |
 
@@ -229,6 +233,9 @@ redoc: /redoc
 | POST | `/api/v1/gov/catalog/entries` | 创建 catalog 条目 | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/entries/{id}` | catalog 条目详情 | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | DELETE | `/api/v1/gov/catalog/entries/{entry_id}` | 删除 catalog 条目（204；CASCADE bus_registrations） | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET/POST | `/api/v1/gov/catalog/classification/nodes` | 分类树节点 list/create（`?parentId=`；`CAT_CLASS_*`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/catalog/classification/nodes/{id}/move` | 分类树节点移动（环检测；超深 → 422 `CAT_CLASS_MAX_DEPTH`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
+| DELETE | `/api/v1/gov/catalog/classification/nodes/{id}` | 删除叶节点（含子节点 → 409 `CAT_CLASS_HAS_CHILDREN`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`；需 admin；幂等 201/200；403 `BUS_REGISTER_FORBIDDEN`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/query-design/validate` | 可视化查询设计校验（422 `detail.fields`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | PUT | `/api/v1/gov/query-design` | 可视化查询设计保存（409 `CONFIG_VERSION_CONFLICT`；403 ACL） | IF-06 | 一期 | GOV-004/008 | 已实现 | `backend/app/api/v1/gov.py` |

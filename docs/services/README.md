@@ -20,16 +20,16 @@
 |------|----------|----------|--------|------|
 | [core.md](./core.md) | `app/core/` | F01-BOOT | M1 | 已实现 |
 | [nfr.md](./nfr.md) | `app/core/nfr/` | F15-NFR | 横切 | 部分（L1） |
-| [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | 部分（L1） |
-| [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 骨架 |
+| [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | 部分（L1 · r59 META-004 dataset） |
+| [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 部分（L1 · r59 CONN-018 kingbase） |
 | [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | 部分（L1） |
-| [designer.md](./designer.md) | `app/designer/` | F12-DESIGN | M2（四期） | 部分（L1 · r49 DESIGN-003/005） |
-| [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | 部分（r29 layout 业务校验、widget 栅格） |
+| [designer.md](./designer.md) | `app/designer/` | F12-DESIGN | M2（四期） | 部分（L1 · r59 DESIGN-004 workflow-link） |
+| [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | 部分（r29 layout · r59 DASH-005 entity_overview） |
 | [reports.md](./reports.md) | `app/reports/` | F08-RPT | M6/M10/M12 | L1 kickoff（r54 extension+batch） |
 | [views.md](./views.md) | `app/views/` | F09-VIEW | FR-VIEW | 部分（L1） |
 | [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 已实现 |
 | [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 未实现 |
-| [governance.md](./governance.md) | `app/governance/` | F10-GOV · F14-CAT | M6 | 部分（L1 · r49 GOV-003 workflow） |
+| [governance.md](./governance.md) | `app/governance/` | F10-GOV · F14-CAT | M6 | 部分（L1 · r59 CAT-004 classification） |
 | [viz.md](./viz.md) | `app/viz/` | F06-VIZ | M9 | 骨架（L1 kickoff） |
 | [integration.md](./integration.md) | `app/integration/` | F13-API | M8/M12/M13 | companion 已实现（r45） |
 

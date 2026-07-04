@@ -56,6 +56,14 @@ from app.governance.openapi.schemas import (
     OpenApiMappingValidateOut,
 )
 from app.governance.openapi import service as openapi_service
+from app.governance.catalog.classification.errors import ClassificationError
+from app.governance.catalog.classification.schemas import (
+    ClassificationNodeCreate,
+    ClassificationNodeListResponse,
+    ClassificationNodeMove,
+    ClassificationNodeOut,
+)
+from app.governance.catalog.classification import service as classification_service
 
 router = APIRouter(prefix="/gov", tags=["governance", "IF-06"])
 
@@ -445,3 +453,56 @@ def transition_workflow_instance(
         return workflow_service.transition_instance(db, instance_id, payload.action, payload.actor_role)
     except WorkflowError as exc:
         return _workflow_error(exc)
+
+
+def _classification_error(exc: ClassificationError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
+
+
+@router.get("/catalog/classification/nodes", response_model=ClassificationNodeListResponse)
+def list_classification_nodes(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    parent_id: uuid.UUID | None = Query(default=None, alias="parentId"),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> ClassificationNodeListResponse:
+    return classification_service.list_nodes(parent_id, limit, offset)
+
+
+@router.post("/catalog/classification/nodes", response_model=ClassificationNodeOut, status_code=status.HTTP_201_CREATED)
+def create_classification_node(
+    payload: ClassificationNodeCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ClassificationNodeOut | JSONResponse:
+    try:
+        return classification_service.create_node(payload)
+    except ClassificationError as exc:
+        return _classification_error(exc)
+
+
+@router.post("/catalog/classification/nodes/{node_id}/move", response_model=ClassificationNodeOut)
+def move_classification_node(
+    node_id: uuid.UUID,
+    payload: ClassificationNodeMove,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ClassificationNodeOut | JSONResponse:
+    try:
+        return classification_service.move_node(node_id, payload)
+    except ClassificationError as exc:
+        return _classification_error(exc)
+
+
+@router.delete("/catalog/classification/nodes/{node_id}", response_model=None)
+def delete_classification_node(
+    node_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> Response | JSONResponse:
+    try:
+        classification_service.delete_node(node_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except ClassificationError as exc:
+        return _classification_error(exc)
