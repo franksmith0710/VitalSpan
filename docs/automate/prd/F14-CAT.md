@@ -51,15 +51,16 @@
 - **里程碑对齐**：
 ### [CAT-005] CAT-05 工单与业务受理类
 
-- **状态**：部分实现（L1 kickoff r61）
+- **状态**：部分实现（companion r63）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：二期
 - **描述**：CAT-05 工单与业务受理类（SRS 追溯项）。
 - **验收标准**：
   - [x] tickets stats 模板（r61 L1：`POST validate` + `POST/GET /api/v1/gov/ticket-stats` + stats probe + `CAT05_*` 错误域 + statusFilters 校验）
+  - [x] companion ticket ACL + perf probe（r63：enterprise scope `CAT05_FORBIDDEN`；viewer create 403；`probe_ticket_stats_budget_ms` ≤50ms；viewer stats 只读 200）
   - [ ] 权限绑定工单表（无真实工单表 ACL 与数据源绑定）
-- **代码锚点**：`backend/app/governance/catalog/cat05/` · `backend/app/api/v1/gov.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-CAT-R61-005-01~07
-- **演化建议**：r61 L1 闭合 ticket stats validate/create/list/stats probe 与 statusFilters 边界；后续补工单表权限绑定与真实数据源查询链
+- **代码锚点**：`backend/app/governance/catalog/cat05/` · `backend/app/api/v1/gov.py` · `tests/test_viz_view_design_cat_r63.py` T-CAT-R63-005-01~06 · `tests/test_cat_dash_viz_nfr_r61.py` T-CAT-R61-005-01~07
+- **演化建议**：r63 companion 闭合 ticket stats ACL、enterprise scope 与 stats probe；后续补工单表权限绑定与真实数据源查询链
 - **里程碑对齐**：
 ### [CAT-006] CAT-06 生产与销售统计类
 

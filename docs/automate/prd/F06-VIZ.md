@@ -76,15 +76,16 @@
 - **里程碑对齐**：
 ### [VIZ-007] SDK 嵌入门户
 
-- **状态**：部分实现（L1 kickoff r61）
+- **状态**：部分实现（companion r63）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
 - **描述**：SDK 嵌入门户（SRS 追溯项）。
 - **验收标准**：
   - [x] JS SDK 初始化与销毁（r61 L1 backend：`POST /api/v1/charts/sdk/validate` + lifecycle init/destroy + capabilities + `VIZ_SDK_*` 错误域；embed/validate 回归不变）
+  - [x] companion perf probe + lifecycle ACL（r63：`probe_validate_sdk_budget_ms`/`probe_lifecycle_budget_ms` ≤50ms；`VIZ_SDK_TOKEN_REQUIRED`/`VIZ_SDK_DUPLICATE_ORIGIN`/`VIZ_SDK_FORBIDDEN`）
   - [ ] 鉴权 token 传递（缺 fe `fe/src/sdk/` 与 embed token 签发/校验链）
-- **代码锚点**：`backend/app/viz/sdk_portal/` · `backend/app/api/v1/charts.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-VIZ-R61-007-01~07
-- **演化建议**：r61 L1 闭合 sdk portal validate/lifecycle/capabilities 与 origin 校验；后续补 fe JS SDK 初始化/销毁与 token 传递链
+- **代码锚点**：`backend/app/viz/sdk_portal/` · `backend/app/api/v1/charts.py` · `tests/test_viz_view_design_cat_r63.py` T-VIZ-R63-007-01~08 · `tests/test_cat_dash_viz_nfr_r61.py` T-VIZ-R61-007-01~07
+- **演化建议**：r63 companion 闭合 sdk portal probe、token 必填、duplicate origin 与 lifecycle ACL；后续补 fe JS SDK 初始化/销毁与 token 传递链
 - **里程碑对齐**：
 ### [VIZ-008] ECharts/AntV 渲染适配层
 

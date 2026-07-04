@@ -42,17 +42,18 @@
 - **里程碑对齐**：
 ### [DESIGN-004] 设计器与工单关联
 
-- **状态**：部分实现（L1 kickoff r59）
+- **状态**：部分实现（companion r63）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：设计器与工单关联（SRS 追溯项）。
 - **验收标准**：
   - [x] workflow-link validate/save/get（r59 L1：`POST validate` + `PUT/GET /api/v1/designer/workflow-link` + `publishReady` 探测 GOV workflow/publish）
   - [x] 未知 instance/非法 item/sql_mode 路由不变（r59）
+  - [x] companion catalog/designType 守卫 + perf probe（r63：`DESIGN_WORKFLOW_CATALOG_MISMATCH`；`probe_validate_workflow_link_budget_ms` ≤50ms；published workflow publishReady=true）
   - [ ] 设计完成进入 GOV-005 发布全链路
   - [ ] 状态同步（缺 fe 与 BPM 双向钩子）
-- **代码锚点**：`backend/app/designer/workflow.py` · `backend/app/api/v1/designer.py` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DESIGN-R59-004-01~06
-- **演化建议**：r59 L1 闭合 workflow-link validate/save/get 与 publish_ready 探测；后续补 GOV-005 发布全链路与状态同步 UI
+- **代码锚点**：`backend/app/designer/workflow.py` · `backend/app/api/v1/designer.py` · `tests/test_viz_view_design_cat_r63.py` T-DESIGN-R63-004-01~05 · `tests/test_meta_cat_dash_conn_design_r59.py` T-DESIGN-R59-004-01~06
+- **演化建议**：r63 companion 闭合 workflow-link catalog mismatch、validate probe 与 publishReady 回归；后续补 GOV-005 发布全链路与状态同步 UI
 - **里程碑对齐**：
 ### [DESIGN-005] 传统 SQL 模式
 
