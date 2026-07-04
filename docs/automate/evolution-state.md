@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r66.md |
 | design | docs/superpowers/specs/2026-07-04-cat-dash-rpt-meta-companion-quality-r66-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-04-cat-dash-rpt-meta-companion-quality-r66.md |
+| branch | feat/evolution-r66-cat-dash-rpt-meta-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | CAT-001,CAT-002,DASH-005,RPT-001,META-004 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T19:55:00Z |
+| skill_rule_index_generated_at | 2026-07-04T22:10:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P2 r66 计划完成：8 Task（fixtures→CAT-001 cat01 ACL/move/probe→CAT-002 cat02 ACL/list/probe→DASH-005 entity_overview validate/probe→RPT-001 engine acl/probe→META-004 dataset ACL/probe→六轮回归门控→docs）；P3 生产 18 + 测试 1 = 19 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥33 新测 test_cat_dash_rpt_meta_r66 + r65 32/32 + r64 33/33 + r62 32/32 + r61 32/32 + r59 34/34 回归 196/196；plan=docs/superpowers/plans/2026-07-04-cat-dash-rpt-meta-companion-quality-r66.md；phase P1_DONE→P2_DONE
 - P1 r66 设计完成：跨域 companion 质量推分 — CAT-001/CAT-002/DASH-005/RPT-001/META-004；18 文件框定；perf probe 50ms + ACL/NOT_FOUND/stage-move 闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r66 选题完成：跨域 companion 质量推分 — CAT-001/CAT-002/DASH-005/RPT-001/META-004（5 项）；最低分 CAT-001/CAT-002(83.9)；饱和熔断未触发（Top5 83.9–84.2≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 五入选 ID 各 1 轮未达 ≥3 硬标注阈值；phase idle→G2_DONE
 - G1 r66 bootstrap：r65 PR #99 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 CAT-001(83.9)/CAT-002(83.9)/DASH-005(84.0)；STUCK 十三 ID 各 1 轮（r64–r65 四 stub <90 upsert + 九 ID 远期 stub，均 83.9–84.4）；phase P5_DOCS_READY→idle；待 G2 选题

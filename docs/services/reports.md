@@ -41,6 +41,8 @@
 | `extension/service.py` | 模板节点扩展配置 CRUD（metrics/filters/revision） | RPT-006 | L1 已实现 r54 |
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |
 | `engine/service.py` | validate + `build_engine_render_spec` + run mock | RPT-001 | L1 已实现 r60 |
+| `engine/acl.py` | run 访问控制 + `set_user_engine_scope` enterprise 白名单 | RPT-001 | companion 已实现 r66 |
+| `engine/probe.py` | `probe_run_template_budget_ms` ≤50ms | RPT-001 | companion 已实现 r66 |
 | `prefab/service.py` | 预制报表绑定 validate/upsert/list（内存 store） | RPT-002 | L1 已实现 r62 |
 | `ReportService` | 模板 CRUD | RPT-001~003 | 待建 |
 
@@ -72,6 +74,10 @@
 - **RPT-007**：`RPT_BATCH_PARTIAL_FAILURE` 结构化 `detail.failedIndex` / `failedItemName` / `rolledBackCount`；`ReportBatchError.fields` 透传 HTTP `detail`；`probe_batch_create_budget_ms=200`
 - r53：`reports/catalog/` + `reports/scheduler/` 内存 registry；API 入口 `backend/app/api/v1/reports/__init__.py`（与 `reports/export.py` IF-03 导出共存，路径 `/reports/catalog` · `/reports/schedules` · `/reports/export` 分离）
 - 错误码：`RPT_CATALOG_*`、`RPT_SCHEDULE_*`、`RPT_EXT_*`、`RPT_BATCH_*`
+
+### r66 companion 质量推分（RPT-001）
+
+- **RPT-001**：`engine/acl.py` — `assert_engine_run_access` + `set_user_engine_scope`；viewer 非自有模板 / enterprise scope 外 → `RPT_ENGINE_FORBIDDEN`；`parameters` 保留键 `__proto__` → `RPT_ENGINE_INVALID_PARAMETER`；`engine/probe.py` — `probe_run_template_budget_ms` ≤50ms
 
 ### r65 companion 质量推分（RPT-002）
 

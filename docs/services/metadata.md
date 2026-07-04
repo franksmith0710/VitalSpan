@@ -46,7 +46,7 @@
 | `ThemeNode` / `themes/service` | 主题树 CRUD/move、环检测 | META-002 | L1 已实现 |
 | `DimensionDict` / `dimensions/service` | 维度字典 CRUD + 枚举值注册 | META-003 | L1 已实现 |
 | `entity/service` | 实体类型 schema CRUD + `validate_entity_type_ref` | META-006 | L1 已实现 r54 |
-| `dataset/service` | Dataset 元数据项内存 store + validate/list/create | META-004 | L1 已实现 r59 |
+| `dataset/service` | Dataset 元数据项内存 store + validate/list/create + scope ACL + probe | META-004 | companion 已实现 r66 |
 | `physical/service` | 物理表登记 validate/register/list（内存 store） | META-005 | L1 已实现 r62 |
 | `DatasetService` | 语义层 CRUD（ORM 四期） | META-001~003 | 待建 |
 | `SemanticResolver` | 逻辑 → 物理 SQL | META-004 | 待建 |
@@ -79,6 +79,8 @@
 | `META_DATASET_NOT_FOUND` | Dataset 不存在 |
 | `META_DATASET_EMPTY_TABLES` | tables 为空 |
 | `META_DATASET_INVALID_FIELD` | computedFields 名非法 |
+| `META_DATASET_FORBIDDEN` | viewer/enterprise scope 外写拒绝（r66） |
+| `META_DATASET_DUPLICATE_TABLE` | tables 中 name 重复（r66） |
 
 常量：`MAX_THEME_DEPTH=8`、`TERM_MAX_TEXT_LENGTH=4000`；migration `0016_dimension_dict.py`（`dimension_dicts` + `dimension_values`）。
 
@@ -91,6 +93,10 @@
 - r32：migration 0015（`glossary_terms`、`theme_nodes`）；`backend/app/api/v1/metadata.py` 统一 entry
 - r38：migration 0016（`dimension_dicts`、`dimension_values`）；`dimensions/` 域模块 + 8 REST 路由（META-003 L1）
 - r39：values `register_values` 批内重复预检；`list_values`/`list_dimensions` 分页 limit 上限 500（与 glossary 对齐）；`test_query_meta_conn_r39` T-META-R39-003-*
+
+### r66 companion 质量推分（META-004）
+
+- **META-004**：`dataset/service` — `set_user_dataset_scope` + `META_DATASET_FORBIDDEN`（viewer 写禁止 / enterprise `datasetId` 前缀 scope）；duplicate table name（`META_DATASET_DUPLICATE_TABLE`）；`probe_validate_dataset_budget_ms` / `probe_list_datasets_budget_ms` ≤50ms；内存 store 非 Alembic
 
 ### r65 companion 质量推分（META-005）
 

@@ -42,7 +42,8 @@
 - **In**：`EntityOverviewItem` 契约（statCards/filters/drillTargets）；validate/save/get；`config_store` `entity_overview` 持久化；可选 `catalogEntryId` → `publishStatus` 只读探测
 - **Out**：统计卡片真实 query 执行、fe 实体总览页、与 `theme-analysis` 路由交叉
 - **依赖**：`dashboard/service`（dashboard 存在性 + `created_by` ACL）、`governance/publish`（publish 探测）、`query/config_store`
-- **错误码**：`DASH_OVERVIEW_*`（含 `DASH_OVERVIEW_FORBIDDEN` 非 owner 非 admin）
+- **错误码**：`DASH_OVERVIEW_*`（含 `DASH_OVERVIEW_FORBIDDEN` 非 owner 非 admin；**r66** `DASH_OVERVIEW_INVALID_ENTITY_TYPE` / `DASH_OVERVIEW_INVALID_DRILL_WIDGET`）
+- **r66 companion**：`entityTypeRef` pattern `^[a-z][a-z0-9_]{1,63}$`；layout 含 widget 时 drill `widgetId` 须存在于 layout；`probe_validate_overview_budget_ms` / `probe_get_overview_budget_ms` ≤50ms
 
 ## 依赖
 
