@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r40.md |
 | design | docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | CONN-006,CONN-011,CONN-012,CONN-013,CONN-014 |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest ../tests/test_connectors_gov_r40.py ../tests/test_query_meta_conn_r39.py ../tests/test_connectors_gov_r37.py ../tests/test_connectors_gov_r36.py ../tests/test_datasources_l1.py::test_invalid_connector_type -v |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T07:25:00Z |
@@ -66,6 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r40 验证通过：ruff clean；pytest 967 passed/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 + test_invalid_connector_type 回归 154/154；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
+- P3 r40 实现完成：8 Task 全绿；CONN-014/011/012/006/013 五方言 L1；43 测 test_connectors_gov_r40 + r39 33/33 + r37 40/40 + r36 37/37；test_invalid_connector_type 修复；pytest 967/4 skipped；branch cursor/bc-03449787-f1c8-4cd0-b5c3-3a2ddb487945-3ca8；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r40 计划完成：8 Task（errors+scaffold→MongoDB→InfluxDB→TDengine→SQLite→TimescaleDB→registry→回归+docs）；≥37 新测 test_connectors_gov_r40；11 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
 - P1 r40 设计完成：M11 嵌入式/时序/文档连接器 L1 kickoff — CONN-014/011/012/006/013；17 文件框定；五方言 mock smoke + test_invalid_connector_type 修复（P4 blocker）；ui_design_skill none；phase G2_DONE→P1_DONE
 - G2 r40 选题完成：M11 嵌入式/时序/文档连接器 L1 kickoff — CONN-006/011/012/013/014（5 项）；最低分 CONN-014(11.5)；饱和熔断未触发；plan M1/M1B 无活跃勾选行（已知 concern）；STUCK 表空；phase idle→G2_DONE
