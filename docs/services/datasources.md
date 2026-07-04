@@ -171,3 +171,7 @@
 - HTTP 契约：test_connection 失败 200 + `ok=false` + `{PREFIX}_*` + `traceId`；metadata tables 缺 schema 400 `METADATA_INVALID_REQUEST`；schemas 连接失败 502 `METADATA_CONNECTION_FAILED`
 - 回归：r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 不删旧套件
 - PRD 对账：`F04-CONN.md` CONN-006/011/012/013/014 验收 P5 重评（非 P3）
+
+### r55 companion 质量推分（CONN-020）
+
+- **CONN-020**：空库 `list_schemas` → `[]`（对称 GBase companion）；`OCEANBASE_MAX_COLUMNS=500` 列截断；HTTP test 200 `ok=false` + `code` + `traceId`；metadata tables 缺 schema 400 `METADATA_INVALID_REQUEST`；schemas 连接失败 502 `METADATA_CONNECTION_FAILED`；`probe_test_connection_budget_ms=100`

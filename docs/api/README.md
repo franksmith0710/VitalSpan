@@ -179,6 +179,8 @@ redoc: /redoc
 | POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET/PUT/DELETE | `/api/v1/reports/catalog/nodes/{id}/extension` | 模板节点扩展配置 CRUD（metrics/filters；`RPT_EXT_*`） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/catalog/nodes/{id}/extension/render-spec` | 扩展配置渲染规格（`renderVersion=1.0`；仅 visible metrics） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/catalog/nodes/{id}/extension/revisions` | 扩展配置修订历史（changeNote 审计） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/batch` | 批量创建模板节点（Idempotency-Key；`RPT_BATCH_*`） | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表 | 内部 | 二期 | RPT-001 | 规划 | `backend/app/api/v1/reports/engine.py` |
 | GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
@@ -200,6 +202,8 @@ redoc: /redoc
 | GET/PUT/DELETE | `/api/v1/metadata/dimensions/{dimension_id}` | 维度详情/更新/删除（级联 values） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/dimensions/{dimension_id}/values` | 枚举值 list/批量注册（重复 value code → 409 `META_DIM_VALUE_CODE_CONFLICT`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/entity-types` | 实体类型 schema list/create（`META_ENTITY_TYPE_*`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
+| POST | `/api/v1/metadata/entity-types/validate` | 实体 schema 校验链（`META_ENTITY_SCHEMA_INVALID` + `detail.fields`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET | `/api/v1/metadata/entity-types/{typeCode}/query-bindings` | 只读 query bindings（`readOnly=true`；json 不可 filter） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/entity-types/{typeCode}` | 实体类型详情/更新/删除（引用中 → 409 `META_ENTITY_TYPE_IN_USE`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | DELETE | `/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}` | 删除单条枚举值 | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/datasets` | Dataset CRUD | 内部 | 四期 | META-004 | 规划 | `backend/app/api/v1/datasets.py` |
@@ -230,7 +234,8 @@ redoc: /redoc
 | GET | `/api/v1/gov/publish/entries/{entry_id}/notifications` | 审批通知事件列表（内存 store） | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/gov/openapi-mappings` | 发布引擎 OpenAPI 映射 list/register（`GOV_OPENAPI_MAP_*`） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/openapi-mappings/{id}` | OpenAPI 映射详情 | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
-| POST | `/api/v1/gov/openapi-mappings/validate` | OpenAPI 映射校验（entityTypeRef + path 前缀） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/openapi-mappings/validate` | OpenAPI 映射校验（apiVersion/operationId/path + entityTypeRef） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/openapi-mappings/{id}/deactivate` | OpenAPI 映射停用（409 `GOV_OPENAPI_MAP_ALREADY_INACTIVE`） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/workflow/templates` | 工单流程模板列表（`standard_query_release`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/workflow/templates/validate` | 工单模板校验 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/workflow/templates/{template_id}/node-roles` | 工单模板节点角色配置 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |

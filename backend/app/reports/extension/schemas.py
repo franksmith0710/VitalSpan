@@ -33,3 +33,33 @@ class ExtensionConfigUpsert(BaseModel):
 
 class ExtensionConfigOut(ExtensionConfigUpsert):
     revision: int
+
+
+class ExtensionRenderSpecOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    template_node_id: str = Field(alias="templateNodeId")
+    revision: int
+    template_kind: str | None = Field(default=None, alias="templateKind")
+    metrics: list[dict]
+    filters: list[dict]
+    render_version: str = Field(alias="renderVersion")
+
+
+class ExtensionRevisionOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    revision: int
+    change_note: str | None = Field(default=None, alias="changeNote")
+    updated_at: str = Field(alias="updatedAt")
+
+
+class ExtensionRevisionListOut(BaseModel):
+    items: list[ExtensionRevisionOut]
+
+
+class ExtensionPersistenceSnapshotOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    store: str
+    revision: int
+    metrics: list[dict]
+    filters: list[dict]
+    audit_entry_count: int = Field(alias="auditEntryCount")
