@@ -7,7 +7,9 @@ from datetime import UTC, datetime
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
+from app.auth.deps import UserContext
 from app.dashboard import service as dash_service
+from app.dashboard.theme.acl import assert_theme_action
 from app.dashboard.theme.errors import ThemeAnalysisError
 from app.dashboard.theme.schemas import EntityThemeConfig
 from app.query.config_store import service as config_store
@@ -93,10 +95,16 @@ def _assert_ref_exists(db: Session, config: EntityThemeConfig) -> None:
             raise
 
 
-def save_theme_config(db: Session, payload: dict, owner_id: uuid.UUID | None) -> EntityThemeConfig:
+def save_theme_config(db: Session, payload: dict, actor: UserContext) -> EntityThemeConfig:
+    assert_theme_action(actor, "write")
     config = validate_theme_config(payload)
     _assert_ref_exists(db, config)
     _link_chart_views(db, config)
+    owner_id: uuid.UUID | None = None
+    try:
+        owner_id = uuid.UUID(actor.id)
+    except ValueError:
+        pass
     config_store.upsert_config(
         db,
         ConfigUpsert(
@@ -114,6 +122,32 @@ def save_theme_config(db: Session, payload: dict, owner_id: uuid.UUID | None) ->
 def get_theme_config(db: Session, ref_type: str, ref_id: uuid.UUID) -> EntityThemeConfig:
     record = config_store.get_config_by_ref(db, "entity_theme", ref_type, ref_id)
     return validate_theme_config(record.payload)
+
+
+def resolve_chart_bindings_for_execute(db: Session, ref_type: str, ref_id: uuid.UUID) -> list[dict]:
+    config = get_theme_config(db, ref_type, ref_id)
+    if config.ref_type != "dashboard":
+        return []
+    dashboard = dash_service.get_dashboard(db, config.ref_id)
+    widgets = dashboard.layout_json.get("widgets", [])
+    widget_map = {str(w.get("id")): w for w in widgets if isinstance(w, dict)}
+    resolved: list[dict] = []
+    for binding in config.chart_view_bindings:
+        widget = widget_map.get(binding.widget_id)
+        if widget is None or widget.get("type") != "chart":
+            raise ThemeAnalysisError(
+                "DASH_THEME_CHART_VIEW_MISMATCH",
+                "chartViewBindings reference invalid widgets",
+                422,
+                fields=[binding.widget_id],
+            )
+        chart_config = widget.get("chartConfig") or {}
+        resolved.append({
+            "widgetId": binding.widget_id,
+            "chartType": chart_config.get("chartType", "unknown"),
+            "dimensionId": binding.dimension_id,
+        })
+    return resolved
 
 
 def get_chart_bindings(db: Session, ref_type: str, ref_id: uuid.UUID) -> dict:

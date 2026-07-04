@@ -44,6 +44,22 @@ def _theme_error(exc: ThemeAnalysisError) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
 
 
+@router.post("/theme-analysis/execute-plan", response_model=None)
+def execute_theme_plan(
+    payload: dict,
+    _: Annotated[UserContext, Depends(get_current_user)] = None,
+    db: Annotated[Session, Depends(_db)] = None,
+):
+    from app.dashboard.theme.execute import build_theme_execute_plan
+
+    ref_type = payload.get("refType", "dashboard")
+    ref_id = uuid.UUID(str(payload["refId"]))
+    try:
+        return build_theme_execute_plan(db, ref_type, ref_id)
+    except ThemeAnalysisError as exc:
+        return _theme_error(exc)
+
+
 @router.post("/theme-analysis/validate", response_model=None)
 def validate_theme_analysis(
     payload: dict,
@@ -62,7 +78,7 @@ def save_theme_analysis(
     db: Annotated[Session, Depends(_db)],
 ):
     try:
-        return theme_service.save_theme_config(db, payload, _parse_user_id(user))
+        return theme_service.save_theme_config(db, payload, user)
     except ThemeAnalysisError as exc:
         return _theme_error(exc)
 
@@ -71,10 +87,13 @@ def save_theme_analysis(
 def get_theme_analysis(
     ref_type: str = Query(default="dashboard", alias="refType"),
     ref_id: uuid.UUID = Query(alias="refId"),
-    _: Annotated[UserContext, Depends(get_current_user)] = None,
+    user: Annotated[UserContext, Depends(get_current_user)] = None,
     db: Annotated[Session, Depends(_db)] = None,
 ):
+    from app.dashboard.theme.acl import assert_theme_action
+
     try:
+        assert_theme_action(user, "read")
         return theme_service.get_theme_config(db, ref_type, ref_id)
     except ThemeAnalysisError as exc:
         return _theme_error(exc)

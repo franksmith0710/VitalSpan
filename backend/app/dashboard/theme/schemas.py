@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -46,3 +47,32 @@ class EntityThemeConfig(BaseModel):
         if value not in _VALID_GRANULARITY:
             raise ValueError("invalid granularity")
         return value
+
+
+class ThemePlanStep(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    step: Literal["config_load", "bindings_resolve", "granularity_window", "geo_check"]
+    status: Literal["pass", "skip", "fail"]
+    detail: str | None = None
+
+
+class CompareWindowInterval(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    start: str
+    end: str
+
+
+class CompareWindow(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    current: CompareWindowInterval
+    baseline: CompareWindowInterval
+
+
+class ThemeExecutePlanOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    plan_version: str = Field(default="theme-plan-v1", alias="planVersion")
+    ref_type: str = Field(alias="refType")
+    ref_id: uuid.UUID = Field(alias="refId")
+    steps: list[ThemePlanStep]
+    compare_window: CompareWindow | None = Field(default=None, alias="compareWindow")
+    resolved_widgets: list[dict] = Field(default_factory=list, alias="resolvedWidgets")

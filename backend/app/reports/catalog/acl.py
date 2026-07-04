@@ -7,6 +7,7 @@ from app.auth.deps import UserContext
 from app.reports.catalog.errors import ReportCatalogError
 
 _NODE_OWNERS: dict[uuid.UUID, str] = {}
+_ARTIFACT_OWNERS: dict[str, str] = {}
 _ACL_BUDGET_MS = 10
 
 
@@ -44,3 +45,16 @@ def probe_acl_budget_ms(actor: UserContext, action: str, node_id: uuid.UUID) -> 
     start = time.perf_counter()
     assert_catalog_action(actor, action, node_id)
     return (time.perf_counter() - start) * 1000.0
+
+
+def register_artifact_owner(artifact_ref: str, actor_id: str) -> None:
+    _ARTIFACT_OWNERS[artifact_ref] = actor_id
+
+
+def assert_artifact_access(actor: UserContext, artifact_ref: str) -> None:
+    if "admin" in set(actor.roles):
+        return
+    owner = _ARTIFACT_OWNERS.get(artifact_ref)
+    if owner is not None and owner == actor.id:
+        return
+    raise ReportCatalogError("RPT_ARTIFACT_FORBIDDEN", "artifact access denied", 403)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -32,7 +32,14 @@ class ScheduleExecuteOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     execution_id: uuid.UUID = Field(alias="executionId")
     schedule_id: uuid.UUID = Field(alias="scheduleId")
-    status: Literal["mock_succeeded", "mock_skipped"]
+    status: Literal[
+        "mock_succeeded",
+        "mock_skipped",
+        "semi_real_succeeded",
+        "semi_real_delivery_degraded",
+    ]
     artifact_ref: str = Field(alias="artifactRef")
     idempotency_key: str = Field(alias="idempotencyKey")
     executed_at: str = Field(alias="executedAt")
+    delivery_steps: list[dict[str, Any]] = Field(default_factory=list, alias="deliverySteps")
+    revision_snapshot: dict | None = Field(default=None, alias="revisionSnapshot")

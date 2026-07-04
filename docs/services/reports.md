@@ -49,6 +49,14 @@
 
 - r54：`reports/extension/` + `reports/batch/` 内存 store；extension 仅 template 节点；batch 幂等 + 原子回滚；错误码 `RPT_EXT_*`、`RPT_BATCH_*`
 
+### r58 companion 质量推分（DASH-006 / RPT-004~007）
+
+- **DASH-006**：`dashboard/theme/execute.py` — `build_theme_execute_plan` 四步（config_load → bindings_resolve → granularity_window → geo_check）；yoy/mom `compareWindow`；`dashboard/theme/acl.py` — `assert_theme_action`（viewer 禁写 `DASH_THEME_FORBIDDEN`）
+- **RPT-004**：`extension/compare.py` — `build_compare_slots`；`POST .../extension/compare-preview`；render-spec `compareMetrics` + `compareVersion=1.0`；`extension/acl.py` — `RPT_EXT_FORBIDDEN`
+- **RPT-005**：`scheduler/delivery.py` — `dispatch_artifact` mock 投递（fail/retry）；`semi_real_execute_schedule`（`X-Rpt-Semi-Real: 1`；`semi_real_succeeded`/`semi_real_delivery_degraded`）；`revisionSnapshot`；`probe_semi_real_execute_budget_ms` ≤35ms；保留 `mock_execute_schedule` 供 r57 兼容
+- **RPT-007**：`catalog/acl.assert_artifact_access` + `register_artifact_owner`；`GET .../executions/{id}/artifact`（`RPT_ARTIFACT_FORBIDDEN`）
+- **RPT-006/007**：batch 带 `compareMode` extension → render-spec 联动；`timed_batch_create_budget_ms` <200ms 回归
+
 ### r57 companion 质量推分（RPT-004/005）
 
 - **RPT-004**：`catalog/acl.py` — `assert_catalog_action`（admin bypass；viewer read-only；editor create；owner/editor write/delete）；`RPT_CATALOG_FORBIDDEN` + `detail.fields`；`probe_acl_budget_ms` ≤10ms

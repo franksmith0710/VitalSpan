@@ -15,7 +15,8 @@ from app.reports.extension.schemas import ExtensionConfigUpsert
 
 _ITEM_LIMIT = 50
 _idempotency_store: dict[str, dict] = {}
-probe_batch_create_budget_ms: int = 200
+_BATCH_BUDGET_MS = 200
+probe_batch_create_budget_ms: int = _BATCH_BUDGET_MS
 _BATCH_ACTOR = UserContext(id="batch-system", username="batch", roles=["admin"])
 
 
@@ -47,7 +48,7 @@ def _create_single_item(item: BatchReportItem) -> uuid.UUID:
         ext_body = item.extension.model_dump(exclude={"catalog_node_id"}, exclude_none=True)
         ext_payload = ExtensionConfigUpsert(catalog_node_id=node.id, **ext_body)
         try:
-            extension_service.upsert(node.id, ext_payload)
+            extension_service.upsert(node.id, ext_payload, _BATCH_ACTOR)
         except ReportExtensionError as exc:
             catalog_service.delete_node(node.id, _BATCH_ACTOR)
             raise ReportBatchError("RPT_BATCH_EXTENSION_INVALID", exc.message, exc.status) from exc
@@ -103,3 +104,11 @@ def batch_create(payload: BatchCreateReportsIn, idempotency_key: str | None) -> 
             "result": result.model_dump(mode="json"),
         }
     return result
+
+
+def timed_batch_create_budget_ms(payload: BatchCreateReportsIn, idempotency_key: str | None) -> float:
+    import time
+
+    start = time.perf_counter()
+    batch_create(payload, idempotency_key)
+    return (time.perf_counter() - start) * 1000.0
