@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r43.md |
-| design | docs/superpowers/specs/2026-07-04-m9-viz-companion-quality-r43-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m9-viz-companion-quality-r43.md |
-| branch | feat/evolution-r43-m9-viz-companion-quality |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | VIZ-003,VIZ-004,VIZ-005,VIZ-006,VIZ-008 |
-| pr_number | 69 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && cd ../fe && pnpm test && pnpm run check:design |
-| last_verified_exit_code | 0 |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T08:53:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r44 bootstrap：r43 PR #69 已合并 dev-auto；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 API-003(11.3)/NFR-006(11.4)/NFR-007(11.4)；STUCK 表空（r43 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r43 PRD 重评：VIZ-003/004/005/006/008 companion 质量推分；pytest 1068/2 skipped；test_viz_advanced_l1_r43 28/28 + r42 35/35；vitest charts.advanced.smoke 22/22；总分 57.1–61.1→90.0–90.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P3 r43 实现完成：8 Task 全绿；VIZ-003/004/005/006/008 companion 质量推分 — fe 高级 ECharts（chartRegistry/renderFromSpec/AdvancedEchartsChart/ChartConfigPanel/ChartRenderer 集成）+ embed 表面 + is_origin_allowed；pytest r43 28/28 + r42 35/35；vitest charts 22/22（smoke 7 + advanced 15）；check:design exit 0；ui_design_skill b-design-system-tailadmin-radix；screenshots N/A（headless vitest，无浏览器 dev server）；branch feat/evolution-r43-m9-viz-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r43 计划完成：8 Task（deps+registry→theme+geo→renderFromSpec→AdvancedEchartsChart→ChartConfigPanel→ChartRenderer→Embed+is_origin_allowed→tests+README）；19 文件 ≤20；subagent-driven-development option 1；UI skill b-design-system-tailadmin-radix（6 个 fe Task）；pytest r43 ≥28 + vitest advanced + r42/r28 回归门控；plan=docs/superpowers/plans/2026-07-04-m9-viz-companion-quality-r43.md；phase P1_DONE→P2_DONE
