@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r36.md |
 | design | docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-l1-r36-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-l1-r36.md |
 | branch | cursor/bc-4f2610de-f832-4ff1-8eff-1773a9d832a3-b1db |
 | base_branch | dev-auto |
 | prd_ids | CONN-003,CONN-007,CONN-005,CONN-008,CONN-004 |
-| pr_number |  |
+| pr_number | 61 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
@@ -103,3 +103,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| CONN-003 | 1 | 87.6 | 2026-07-04 |
+| CONN-004 | 1 | 86.2 | 2026-07-04 |
+| CONN-005 | 1 | 87.4 | 2026-07-04 |
+| CONN-007 | 1 | 87.8 | 2026-07-04 |
+| CONN-008 | 1 | 87.2 | 2026-07-04 |
