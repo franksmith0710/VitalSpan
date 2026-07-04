@@ -41,11 +41,11 @@
 | `dialects/tidb.py` | TiDB HTAP 方言（MySQL 协议委托，默认 port 4000） | CONN-021 | 已实现 |
 | `dialects/starrocks.py` | StarRocks OLAP 方言（MySQL 协议，port 9030，`category=olap`） | CONN-009 | 已实现 |
 | `dialects/elasticsearch.py` | Elasticsearch 搜索方言（index→schema 映射） | CONN-015 | 已实现 |
-| `dialects/hive.py` | Apache Hive 湖仓方言（HiveServer2，port 10000，`category=lake`） | CONN-003 | 已实现（L1 r36） |
-| `dialects/clickhouse.py` | ClickHouse OLAP 方言（HTTP，port 8123，`CLICKHOUSE_MAX_COLUMNS=500`） | CONN-007 | 已实现（L1 r36） |
-| `dialects/sqlserver.py` | SQL Server 关系型（pymssql，TLS L1，`category=relational`） | CONN-005 | 已实现（L1 r36） |
-| `dialects/doris.py` | Apache Doris OLAP（MySQL 协议委托，port 9030） | CONN-008 | 已实现（L1 r36） |
-| `dialects/oracle.py` | Oracle 关系型（oracledb thin，service name，`category=relational`） | CONN-004 | 已实现（L1 r36） |
+| `dialects/hive.py` | Apache Hive 湖仓方言（HiveServer2，port 10000，`category=lake`） | CONN-003 | 已实现（L1 r36 + companion r37） |
+| `dialects/clickhouse.py` | ClickHouse OLAP 方言（HTTP，port 8123，`CLICKHOUSE_MAX_COLUMNS=500`） | CONN-007 | 已实现（L1 r36 + companion r37） |
+| `dialects/sqlserver.py` | SQL Server 关系型（pymssql，TLS L1，`category=relational`） | CONN-005 | 已实现（L1 r36 + companion r37） |
+| `dialects/doris.py` | Apache Doris OLAP（MySQL 协议委托，port 9030） | CONN-008 | 已实现（L1 r36 + companion r37） |
+| `dialects/oracle.py` | Oracle 关系型（oracledb thin，service name，`category=relational`） | CONN-004 | 已实现（L1 r36 + companion r37） |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -94,3 +94,19 @@
 - **可选依赖**：`pyproject.toml` `[project.optional-dependencies] connectors-ext`（pyhive、pymssql、oracledb、clickhouse-connect）
 - **错误码**：`HIVE_*` / `CLICKHOUSE_*` / `SQLSERVER_*` / `DORIS_*` / `ORACLE_*` 结构化失败路径；连通性测试 HTTP 200 + `ok=false` + `code` + `traceId`
 - **PRD 对账**：`F04-CONN.md` 验收条款 P5 重评（非 P3）
+
+### r37 companion 质量推分（2026-07-04）
+
+五方言 companion 边界闭合（CONN-003/004/005/007/008）：
+
+| 方言 | 错误域上浮 | 列 limit | 边界闭合 |
+|------|-----------|---------|---------|
+| Oracle | `errors.map_oracle_error`（含 ORA-12505） | `ORACLE_MAX_COLUMNS=500` | 未知 owner → `[]`；多 owner schema 过滤 SYS/SYSTEM |
+| Doris | `errors.map_doris_operational_error`（含 `DORIS_UNKNOWN_DATABASE`） | `DORIS_MAX_COLUMNS=500` | 空用户库 schemas → `[]` |
+| SQL Server | `errors.map_sqlserver_operational_error` | `SQLSERVER_MAX_COLUMNS=500` | dbo/自定义 schema；`ssl_mode=disabled` → `encrypt=False` |
+| Hive | `errors.map_hive_error` | `HIVE_MAX_COLUMNS=500` | 全空库 schemas → `[]`；unknown database |
+| ClickHouse | `errors.map_clickhouse_error` | `CLICKHOUSE_MAX_COLUMNS=500`（r36） | 未知 table columns → `[]` |
+
+- 测试套件：`tests/test_connectors_gov_r37.py`（≥28 条 T-CONN-R37-* / T-REG-R37-*）
+- HTTP 契约：test_connection 失败 200 + `ok=false` + `{PREFIX}_*`；metadata 缺参 400 `METADATA_INVALID_REQUEST`；连接失败 502 `METADATA_CONNECTION_FAILED`
+- 回归：r36 37/37 + r35 35/35 + r34 15/15 不删旧套件
