@@ -48,37 +48,37 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [NFR-005] NFR-04 连接器插件扩展性
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：NFR-04 连接器插件扩展性（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 新增连接器不改核心
+  - [x] 新增连接器不改核心（`register_connector_plugin` + ConnectorRegistry 零侵入守卫，r46 L1）
   - [ ] 扩展演练 PR
-- **代码锚点**：`tests/extension/nfr04/`
-- **演化建议**：按 plan.md 期次优先级落地
+- **代码锚点**：`backend/app/core/nfr/plugin_extension.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r46.py`
+- **演化建议**：r46 L1 闭合扩展点清单与 registry 钩子；后续 companion 补扩展演练 PR 与第三方插件样例
 ### [NFR-006] NFR-05 浏览器与消息推送
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：三期
 - **描述**：NFR-05 浏览器与消息推送（SRS 追溯项）。
 - **验收标准**：
   - [ ] 主流浏览器兼容矩阵
-  - [ ] 企微/钉钉推送
-- **代码锚点**：`tests/compat/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 企微/钉钉推送配置契约 + 降级路径（`push_config` + GET `/nfr/push-config`，r46 L1）
+- **代码锚点**：`backend/app/core/nfr/push_config.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r46.py`
+- **演化建议**：r46 L1 闭合配置 schema 与非法 webhook 拦截；后续 companion 补浏览器矩阵与真实推送通道
 ### [NFR-007] NFR-06 信创国产化
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：NFR-06 信创国产化（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 信创 DB 按需连通
+  - [x] 信创 DB 按需连通（合规清单含 `registeredXinchuangConnectors` 含 gbase，r46 L1）
   - [ ] 部署验收报告
-- **代码锚点**：`tests/xinchuang/`
-- **演化建议**：按 plan.md 期次优先级落地
+- **代码锚点**：`backend/app/core/nfr/xinchuang.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r46.py`
+- **演化建议**：r46 L1 闭合合规清单与 strict 模式守卫；后续 companion 补部署验收报告与全量信创认证
 ### [NFR-008] NFR-08 自主可控零 DE/SS
 
 - **状态**：未实现

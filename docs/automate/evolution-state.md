@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r46.md |
 | design | docs/superpowers/specs/2026-07-04-nfr-gov-gbase-l1-r46-design.md |
 | plan | docs/superpowers/plans/2026-07-04-nfr-gov-gbase-l1-r46.md |
 | branch | feat/evolution-r46-nfr-gov-gbase-l1 |
 | base_branch | dev-auto |
-| prd_ids | NFR-006,NFR-007,GOV-005,NFR-005,CONN-019 |
+| prd_ids | NFR-005,NFR-006,NFR-007,GOV-005,CONN-019 |
 | pr_number |  |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
@@ -66,7 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P4 r46 验证通过：ruff clean；pytest 1170 passed/4 skipped（全量二次运行 exit_code 0；首轮 1 例环境级 flaky test_me_concurrent_requests_stable 隔离通过、与 r46 无关）；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
+- P5 r46 PRD 重评：NFR-005/006/007 + GOV-005 + CONN-019 L1 kickoff；pytest 1170/4 skipped；test_nfr_gov_conn_r46 36/36 + r45 30/30 + r41 36/36；总分 11.4–11.6→79.2–84.1（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P3 r46 实现完成：8 Task 全绿；NFR 横切 + GOV-005 发布状态机 + CONN-019 GBase L1 — NFR-005/006/007 + GOV-005 + CONN-019；36 测 test_nfr_gov_conn_r46 + r45 30/30 + r41 36/36 + datasources_l1 回归；pytest 1170/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r46-nfr-gov-gbase-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r46 计划完成：8 Task（nfr scaffold→NFR-005 plugin→CONN-019 gbase→NFR-007 xinchuang→NFR-006 push→NFR API→GOV-005 publish FSM→联动+回归+docs）；18 P3 文件 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥37 新测 test_nfr_gov_conn_r46（门槛 ≥32）+ r45 30/30 + r41 36/36 + datasources_l1 回归；plan=docs/superpowers/plans/2026-07-04-nfr-gov-gbase-l1-r46.md；phase P1_DONE→P2_DONE
 - P1 r46 设计完成：NFR 横切 + GOV-005 发布状态机 + CONN-019 GBase L1 kickoff — NFR-006/007/005 + GOV-005 + CONN-019；18 文件框定（core/nfr 5 + governance/publish 4 + gbase 4 + api 3 + r46 smoke ≥32 测）；插件扩展/registry 零侵入 + 推送降级 + 信创清单 + publish FSM + GBase MySQL 委托；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
@@ -158,3 +158,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| NFR-006 | 1 | 79.2 | 2026-07-04 |
+| NFR-007 | 1 | 80.0 | 2026-07-04 |
+| NFR-005 | 1 | 81.2 | 2026-07-04 |
+| GOV-005 | 1 | 82.6 | 2026-07-04 |
+| CONN-019 | 1 | 84.1 | 2026-07-04 |

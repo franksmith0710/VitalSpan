@@ -61,15 +61,15 @@
 - **里程碑对齐**：
 ### [GOV-005] 查询服务发布 FR-1.4
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：查询服务发布 FR-1.4（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 发布审批后自动创建接口
+  - [x] 发布审批后自动创建接口（draft→pending_publish→published FSM + integration list 可见，r46 L1）
   - [ ] 通知申请人
-- **代码锚点**：`backend/app/governance/publish/`
-- **演化建议**：按 plan.md 期次优先级落地
+- **代码锚点**：`backend/app/governance/publish/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_gov_conn_r46.py`
+- **演化建议**：r46 L1 闭合发布状态机与非法迁移拦截；后续 companion 补申请人通知与 BPM 工单流
 ### [GOV-006] 发布引擎 OpenAPI 映射
 
 - **状态**：未实现
