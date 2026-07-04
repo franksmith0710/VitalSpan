@@ -32,6 +32,13 @@ from app.metadata.themes.schemas import (
     ThemeUpdate,
 )
 from app.metadata.entity import service as entity_service
+from app.metadata.physical.errors import PhysicalTableError
+from app.metadata.physical.schemas import (
+    PhysicalTableOut,
+    PhysicalTableRegisterIn,
+    PhysicalTableValidateOut,
+)
+from app.metadata.physical import service as physical_service
 from app.metadata.entity.errors import EntityTypeError
 from app.metadata.entity.schemas import (
     EntityQueryBindingsOut,
@@ -419,3 +426,45 @@ def delete_dimension_value(
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except DimensionError as exc:
         return _dimension_error(exc)
+
+
+def _physical_error(exc: PhysicalTableError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.get("/physical-tables", response_model=None)
+def physical_tables_get(
+    fqn: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    _: Annotated[UserContext, Depends(get_current_user)] = None,
+):
+    if fqn is not None:
+        try:
+            return physical_service.get_physical_table(fqn)
+        except PhysicalTableError as exc:
+            return _physical_error(exc)
+    return physical_service.list_physical_tables(limit, offset)
+
+
+@router.post("/physical-tables", response_model=PhysicalTableOut, status_code=status.HTTP_201_CREATED)
+def physical_tables_register(
+    payload: PhysicalTableRegisterIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> PhysicalTableOut | JSONResponse:
+    try:
+        return physical_service.register_physical_table(payload)
+    except PhysicalTableError as exc:
+        return _physical_error(exc)
+
+
+@router.post("/physical-tables/validate", response_model=PhysicalTableValidateOut)
+def physical_tables_validate(
+    payload: PhysicalTableRegisterIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> PhysicalTableValidateOut | JSONResponse:
+    try:
+        return physical_service.validate_physical_table(payload)
+    except PhysicalTableError as exc:
+        return _physical_error(exc)

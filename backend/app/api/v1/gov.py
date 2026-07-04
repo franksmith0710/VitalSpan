@@ -64,6 +64,15 @@ from app.governance.catalog.classification.schemas import (
     ClassificationNodeOut,
 )
 from app.governance.catalog.classification import service as classification_service
+from app.governance.catalog.cat06.errors import Cat06Error
+from app.governance.catalog.cat06.schemas import (
+    ProductionStatsItemIn,
+    ProductionStatsItemOut,
+    ProductionStatsListResponse,
+    ProductionStatsProbeOut,
+    ProductionStatsValidateOut,
+)
+from app.governance.catalog.cat06 import service as cat06_service
 from app.governance.catalog.cat05.errors import Cat05Error
 from app.governance.catalog.cat05.schemas import (
     TicketStatsItemIn,
@@ -635,3 +644,50 @@ def delete_geo_region_node(
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Cat03Error as exc:
         return _cat03_error(exc)
+
+
+def _cat06_error(exc: Cat06Error) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/catalog/production-stats/validate", response_model=ProductionStatsValidateOut)
+def production_stats_validate(
+    payload: ProductionStatsItemIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ProductionStatsValidateOut | JSONResponse:
+    try:
+        return cat06_service.validate_production_stats(payload)
+    except Cat06Error as exc:
+        return _cat06_error(exc)
+
+
+@router.post("/catalog/production-stats", response_model=ProductionStatsItemOut, status_code=status.HTTP_201_CREATED)
+def production_stats_create(
+    payload: ProductionStatsItemIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> ProductionStatsItemOut | JSONResponse:
+    try:
+        return cat06_service.create_production_stats(payload, actor)
+    except Cat06Error as exc:
+        return _cat06_error(exc)
+
+
+@router.get("/catalog/production-stats", response_model=ProductionStatsListResponse)
+def production_stats_list(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    _: Annotated[UserContext, Depends(get_current_user)] = None,
+) -> ProductionStatsListResponse:
+    return cat06_service.list_production_stats(limit, offset)
+
+
+@router.get("/catalog/production-stats/{stats_key}/stats", response_model=ProductionStatsProbeOut)
+def production_stats_probe(
+    stats_key: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ProductionStatsProbeOut | JSONResponse:
+    try:
+        return cat06_service.get_production_stats(stats_key)
+    except Cat06Error as exc:
+        return _cat06_error(exc)

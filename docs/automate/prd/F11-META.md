@@ -55,15 +55,16 @@
 - **里程碑对齐**：
 ### [META-005] 物理表元数据登记 M1-ENTITY
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r62）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：物理表元数据登记 M1-ENTITY（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 物理表/字段登记
-  - [ ] 支撑 FR-6.2
-- **代码锚点**：`backend/app/metadata/entity/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 物理表/字段登记（r62 L1：`POST/GET /api/v1/metadata/physical-tables` + columns 登记 + duplicate column 422 + list）
+  - [ ] 支撑 FR-6.2（无 GOV catalog 引用释放与 lineage 全链路）
+- **代码锚点**：`backend/app/metadata/physical/` · `backend/app/api/v1/metadata.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-META-R62-005-01~06
+- **演化建议**：r62 L1 闭合 physical table register/list 与 empty columns/duplicate 边界；后续补 FR-6.2 GOV 引用释放与 lineage 联动
+- **里程碑对齐**：
 ### [META-006] 实体类型 schema 配置
 
 - **状态**：部分实现

@@ -16,26 +16,30 @@
 - **里程碑对齐**：
 ### [RPT-002] 预制分析报表体系 FR-3.1
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r62）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：预制分析报表体系 FR-3.1（SRS 追溯项）。
 - **验收标准**：
-  - [ ] N 实体×M 分析类型可配置
-  - [ ] 维度字典驱动
-- **代码锚点**：`backend/app/reports/prefab/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] N 实体×M 分析类型可配置（r62 L1：`PUT/GET /api/v1/reports/prefab/bindings` + entityType/analysisType 幂等 upsert + list）
+  - [x] 维度字典驱动（r62 L1：dimensionKey 校验 + `RPT_PREFAB_DIMENSION_UNKNOWN` 422）
+  - [ ] fe 预制报表选择与渲染（无 Admin 预制报表 UI）
+- **代码锚点**：`backend/app/reports/prefab/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-RPT-R62-002-01~06
+- **演化建议**：r62 L1 闭合 prefab binding validate/upsert/list 与 dimension/viewer ACL 边界；后续补 fe 预制报表选择与 M3-LITE 执行链
+- **里程碑对齐**：
 ### [RPT-003] Word/Excel/PDF 模板定义
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r62）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：Word/Excel/PDF 模板定义（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 模板可嵌 SQL/表格/图形
-  - [ ] 模板校验
-- **代码锚点**：`backend/app/reports/templates/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 模板可嵌 SQL/表格/图形（r62 L1：`PUT/GET /api/v1/reports/templates/{id}` word/excel/pdf blocks：sql/table/chart）
+  - [x] 模板校验（r62 L1：`POST validate` + empty blocks/invalid block type 422 + `RPT_TEMPLATE_*` 错误域）
+  - [ ] PDF/Word 真实渲染与 fe 模板设计器（无渲染引擎与 Admin UI）
+- **代码锚点**：`backend/app/reports/templates/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-RPT-R62-003-01~06
+- **演化建议**：r62 L1 闭合 template blocks validate/put/get roundtrip 与 format/block 边界；后续补 PDF/Word 渲染引擎与 fe 模板设计器
+- **里程碑对齐**：
 ### [RPT-004] 模板树形目录管理
 
 - **状态**：部分实现（companion r58）

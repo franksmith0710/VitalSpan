@@ -27,15 +27,17 @@
 - **里程碑对齐**：
 ### [NFR-003] NFR-02 核心看板可用性
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r62）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：二期
 - **描述**：NFR-02 核心看板可用性（SRS 追溯项）。
 - **验收标准**：
-  - [ ] SLA ≥ 99.5%
-  - [ ] 监控告警配置
-- **代码锚点**：`ops/sla/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] SLA ≥ 99.5%（r62 L1：`POST /api/v1/nfr/dashboard-sla/probe` mock uptime 99.7% + breach 模拟 + `withinSla` 判定）
+  - [x] 监控告警配置（r62 L1：`GET /api/v1/nfr/dashboard-sla/alerts` channels/threshold stub）
+  - [ ] 生产级 SLA 采集与 ops 告警联动（无真实 metrics store 与 PagerDuty 集成）
+- **代码锚点**：`backend/app/core/nfr/dashboard_sla.py` · `backend/app/api/v1/nfr.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-NFR-R62-003-01~06
+- **演化建议**：r62 L1 闭合 dashboard SLA validate/probe/alerts 与 windowHours/dashboardId 边界；后续补生产 metrics 采集与 ops 告警全链路
+- **里程碑对齐**：
 ### [NFR-004] NFR-03 HTTPS 脱敏审计
 
 - **状态**：未实现

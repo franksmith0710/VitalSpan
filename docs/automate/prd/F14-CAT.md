@@ -63,15 +63,17 @@
 - **里程碑对齐**：
 ### [CAT-006] CAT-06 生产与销售统计类
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r62）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：二期
 - **描述**：CAT-06 生产与销售统计类（SRS 追溯项）。
 - **验收标准**：
-  - [ ] production stats 模板
-  - [ ] 企业域隔离
-- **代码锚点**：`backend/app/governance/catalog/cat06.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] production stats 模板（r62 L1：`POST validate` + `POST/GET /api/v1/gov/production-stats` + stats probe + `CAT06_*` 错误域 + vendorType/metricKeys 校验）
+  - [x] 企业域隔离（r62 L1：`enterprise` 角色 brand scope 守卫 + `CAT06_BRAND_FORBIDDEN` 403）
+  - [ ] 真实生产数据源查询链（无 M3-LITE 绑定与 fe 统计页）
+- **代码锚点**：`backend/app/governance/catalog/cat06/` · `backend/app/api/v1/gov.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-CAT-R62-006-01~07
+- **演化建议**：r62 L1 闭合 production stats validate/create/list/probe 与 vendor/brand 边界；后续补真实数据源查询链与 fe 生产统计 UI
+- **里程碑对齐**：
 ### [CAT-007] CAT-07 组织行为审计类
 
 - **状态**：部分实现（L1 kickoff r60）
