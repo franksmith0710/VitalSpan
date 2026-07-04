@@ -62,15 +62,15 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [DASH-006] 实体主题分析 FR-4.1
 
-- **状态**：部分实现（companion r57）
+- **状态**：部分实现（companion r58）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：实体主题分析 FR-4.1（SRS 追溯项）。
 - **验收标准**：
   - [x] 时间域日/周/月（r53 L1：`POST validate` + `PUT/GET /api/v1/dashboards/theme-analysis` timeGranularity day/week/month + geoBinding 校验）
   - [x] chartViewBindings 联动（r57 companion：`PUT/GET /api/v1/dashboards/{id}/chart-bindings` widget/dimension/chartConfig 校验 + `_link_chart_views` ≤50ms）
-  - [ ] 同比环比计算链
-  - [ ] GIS 分布与行政区划下钻（无 fe 页面；geoBinding 仅 schema 校验）
-- **代码锚点**：`backend/app/dashboard/theme/service.py` · `backend/app/dashboard/theme/schemas.py` · `backend/app/query/config_store/schemas.py`（entity_theme）· `backend/app/api/v1/dashboards.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-DASH-R53-006-01~06 · `tests/test_dash_rpt_query_nfr_r57.py` T-DASH-R57-006-01~07
-- **演化建议**：r57 companion 闭合 chart_view bindings 联动与性能预算；后续补 fe theme-analysis 页面、GIS 下钻与同比环比计算
+  - [x] 同比环比计算链（r58 companion：`POST /api/v1/dashboards/theme-analysis/execute-plan` 四步链 + yoy/mom `compareWindow`；`probe_theme_execute_plan_budget_ms` ≤35ms）
+  - [ ] GIS 分布与行政区划下钻（无 fe 页面；geoBinding 仅 schema 校验 + execute-plan geo_check）
+- **代码锚点**：`backend/app/dashboard/theme/execute.py` · `backend/app/dashboard/theme/acl.py` · `backend/app/dashboard/theme/service.py` · `backend/app/dashboard/theme/schemas.py` · `backend/app/api/v1/dashboards.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-DASH-R53-006-01~06 · `tests/test_dash_rpt_query_nfr_r57.py` T-DASH-R57-006-01~07 · `tests/test_dash_rpt_r58.py` T-DASH-R58-006-01~12
+- **演化建议**：r58 companion 闭合 execute-plan 四步链、yoy/mom compareWindow、theme ACL（`DASH_THEME_FORBIDDEN`）与 semi-real 调度联动；后续补 fe theme-analysis 页面与 GIS 行政区划下钻
 - **里程碑对齐**：

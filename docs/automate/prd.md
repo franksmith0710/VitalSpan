@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.59
+version: 1.2.60
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r57 重评 QUERY-009 + RPT-004/005 + DASH-006 + NFR-008（M9 主题分析 + M10/M12 报表 + M13 Dataset/NFR companion 质量推分 r57）；pytest 1452/4 skipped；test_dash_rpt_query_nfr_r57 37/37 + r53 38/38 + r55 35/35 + r52 52/52 回归 162/162；dataset execute-plan、chart-bindings、catalog M7 ACL、mock schedule executor、deployment-report；性能 58%→88%，完整度 72–78%→84–90%，总分 82.6–85.6→88.2–91.3（QUERY-009/NFR-008 破 90 STUCK 清零；DASH-006/RPT-004/005 仍 <90；同比环比/GIS/fe/真实执行器/产物投递留远期）
+> 更新：2026-07-04 · P5 r58 重评 DASH-006 + RPT-004/005/006/007（M9/M10/M12 仪表板与报表 companion 质量推分 r58）；pytest 1490/4 skipped；test_dash_rpt_r58 38/38 + r57 37/37 + r55 35/35 + r53 38/38 + r52 52/52 回归 200/200；theme execute-plan 四步链 + yoy/mom compareWindow + theme ACL、reports compare-preview/render-spec + extension ACL、semi-real 调度 + mock 投递链 + artifact 守卫；完整度 84–88%→90%，安全性 86%→90–92%，总分 88.2–90.4→90.9–91.8（DASH-006/RPT-004/005 STUCK 清零破 90；GIS/fe/真实 SMTP/对象存储/管理员 UI 留远期）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -106,14 +106,14 @@ domain_count: 16
 | DASH-003 | 84 | 94 | 94 | N/A | 88 | 100 | 88 | 88 | 90.7 | 用户价值 |
 | DASH-004 | 52 | 5 | 0 | N/A | 9 | 0 | 0 | 12 | 12.5 | 完整度 |
 | DASH-005 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 13 | 12.1 | 完整度 |
-| DASH-006 | 82 | 84 | 94 | N/A | 88 | 98 | 88 | 86 | 88.2 | 完整度 |
+| DASH-006 | 84 | 90 | 96 | N/A | 90 | 100 | 90 | 90 | 91.2 | 用户价值 |
 | RPT-001 | 50 | 5 | 0 | N/A | 12 | 0 | 0 | 9 | 12.2 | 完整度 |
 | RPT-002 | 51 | 5 | 0 | N/A | 13 | 0 | 0 | 10 | 12.6 | 完整度 |
 | RPT-003 | 52 | 5 | 0 | N/A | 14 | 0 | 0 | 11 | 13.0 | 完整度 |
-| RPT-004 | 84 | 88 | 96 | N/A | 88 | 98 | 88 | 86 | 89.6 | 用户价值 |
-| RPT-005 | 84 | 86 | 96 | N/A | 90 | 98 | 88 | 86 | 89.5 | 用户价值 |
-| RPT-006 | 84 | 90 | 94 | N/A | 88 | 100 | 88 | 86 | 90.0 | 用户价值 |
-| RPT-007 | 84 | 90 | 96 | N/A | 90 | 98 | 88 | 86 | 90.4 | 用户价值 |
+| RPT-004 | 86 | 90 | 96 | N/A | 90 | 100 | 88 | 90 | 91.3 | 性能 |
+| RPT-005 | 86 | 90 | 96 | N/A | 90 | 100 | 90 | 90 | 91.5 | 用户价值 |
+| RPT-006 | 86 | 90 | 94 | N/A | 88 | 100 | 90 | 90 | 90.9 | 用户价值 |
+| RPT-007 | 86 | 90 | 96 | N/A | 90 | 100 | 90 | 92 | 91.8 | 用户价值 |
 | VIEW-001 | 82 | 94 | 94 | N/A | 90 | 96 | 88 | 88 | 90.2 | 用户价值 |
 | VIEW-002 | 48 | 5 | 0 | N/A | 13 | 0 | 0 | 11 | 12.2 | 完整度 |
 | VIEW-003 | 47 | 5 | 0 | N/A | 14 | 0 | 0 | 12 | 12.2 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.60 | 2026-07-04 | P5 r58 重评 DASH-006 + RPT-004/005/006/007（M9/M10/M12 仪表板与报表 companion 质量推分 r58）；pytest 1490/4 skipped；test_dash_rpt_r58 38/38 + r57 37/37 + r55 35/35 + r53 38/38 + r52 52/52 回归 200/200；theme execute-plan 四步链 + yoy/mom compareWindow + theme ACL、reports compare-preview/render-spec compareMetrics + extension ACL、semi-real 调度 + mock 投递链 + revisionSnapshot + artifact 访问守卫；完整度 84–88%→90%，安全性 86%→90–92%，总分 88.2–90.4→90.9–91.8（DASH-006/RPT-004/005 STUCK 清零破 90；GIS/fe/真实 SMTP/对象存储/管理员 UI 留远期） |
 | 1.2.59 | 2026-07-04 | P5 r57 重评 QUERY-009 + RPT-004/005 + DASH-006 + NFR-008（M9 主题分析 + M10/M12 报表 + M13 Dataset/NFR companion 质量推分 r57）；pytest 1452/4 skipped；test_dash_rpt_query_nfr_r57 37/37 + r53 38/38 + r55 35/35 + r52 52/52 回归 162/162；dataset execute-plan、chart-bindings linkage、catalog M7 ACL、mock schedule executor、deployment-report；性能 58%→88%，完整度 72–78%→84–90%，总分 82.6–85.6→88.2–91.3（QUERY-009/NFR-008 破 90 STUCK 清零；DASH-006/RPT-004/005 仍 <90 STUCK round 2；同比环比/GIS/fe/真实执行器/产物投递留远期） |
 | 1.2.58 | 2026-07-04 | P5 r55 重评 RPT-006/007 + GOV-006 + META-006 + CONN-020（M10/M12 报表扩展 + M8 OpenAPI + META schema + OceanBase companion 质量推分 r55）；pytest 1415/4 skipped；test_rpt_gov_meta_conn_r55 35/35 + r54 42/42 + r53 38/38 + r52 52/52 回归 167/167；gov openapi 版本/deactivate、batch 部分失败 detail、extension render-spec/revisions/snapshot、entity validate/query-bindings、oceanbase HTTP 4xx/502+limit；性能 58%→88%，完整度 74–78%→90%，总分 88.4–89.9→90.0–90.4（五 ID 破 90 STUCK 清零；管理员 UI/真实持久化/只读查询集成测/OpenAPI 文档生成留远期） |
 | 1.2.57 | 2026-07-04 | P5 r54 重评 RPT-006/007 + GOV-006 + META-006 + CONN-020（M10/M12 报表扩展 + M8 发布引擎 OpenAPI + 实体 schema + OceanBase L1 kickoff r54）；pytest 1380/4 skipped；test_rpt_gov_meta_conn_r54 42/42 + r53 38/38 + r52 52/52 + r49 35/35 + r46 36/36 回归 203/203；reports extension/batch、gov openapi-mappings、metadata entity schema、oceanbase dialect；完整度 5%→74–78%，可靠性 0%→94–96%，测试覆盖 0%→98%，总分 11.8–12.0→88.4–89.9（五 ID 均 <90 STUCK upsert round 1；渲染联动/持久化/UI/只读查询集成测留 companion） |
