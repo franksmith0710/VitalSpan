@@ -1,8 +1,8 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.33
-last_updated: 2026-07-03
+version: 1.2.34
+last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-03 · P5 r27 重评 QUERY-001/002/004/005/006（M4 query quality push r27）；pytest 570/4 skipped；test_query_quality_r27 36/36；ClickHouse dialect + readonly guard + table/binding/RLS 边界；用户价值 80–84%→82–86%，完整度 88–96%→94–98%，可靠性 94%→96%，性能 86%→90%，总分 88.5–91.4→91.4–92.8（QUERY-004 破 90 STUCK 清零）
+> 更新：2026-07-04 · P5 r28 重评 VIZ-001/002 + DASH-001/002/003（M5 VIZ/DASH L1 kickoff r28）；pytest 600/2 skipped；test_viz_dash_l1_r28 26/26；fe vitest 81/81；ChartViewConfig 双端协议 + dashboards CRUD/layout + Admin 栅格页；完整度 5%→84–96%，可靠性 0%→90–94%，测试覆盖 0%→96–100%，总分 13.2–13.9→86.8–91.0（VIZ-001/DASH-001 破 90；VIZ-002/DASH-002/003 <90 STUCK upsert）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -93,17 +93,17 @@ domain_count: 16
 | QUERY-007 | 44 | 5 | 0 | N/A | 9 | 0 | 0 | 10 | 10.9 | 完整度 |
 | QUERY-008 | 45 | 5 | 0 | N/A | 10 | 0 | 0 | 11 | 11.3 | 完整度 |
 | QUERY-009 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 12 | 11.7 | 完整度 |
-| VIZ-001 | 57 | 5 | 0 | N/A | 12 | 0 | 0 | 13 | 13.9 | 完整度 |
-| VIZ-002 | 58 | 5 | 0 | N/A | 13 | 0 | 0 | 8 | 13.6 | 完整度 |
+| VIZ-001 | 82 | 96 | 94 | N/A | 90 | 100 | 88 | 88 | 91.0 | 用户价值 |
+| VIZ-002 | 82 | 94 | 92 | N/A | 88 | 98 | 86 | 88 | 89.6 | 用户价值 |
 | VIZ-003 | 46 | 5 | 0 | N/A | 14 | 0 | 0 | 9 | 11.7 | 完整度 |
 | VIZ-004 | 47 | 5 | 0 | N/A | 8 | 0 | 0 | 10 | 11.3 | 完整度 |
 | VIZ-005 | 48 | 5 | 0 | N/A | 9 | 0 | 0 | 11 | 11.7 | 完整度 |
 | VIZ-006 | 49 | 5 | 0 | N/A | 10 | 0 | 0 | 12 | 12.1 | 完整度 |
 | VIZ-007 | 50 | 5 | 0 | N/A | 11 | 0 | 0 | 13 | 12.5 | 完整度 |
 | VIZ-008 | 46 | 5 | 0 | N/A | 12 | 0 | 0 | 8 | 11.4 | 完整度 |
-| DASH-001 | 55 | 5 | 0 | N/A | 13 | 0 | 0 | 9 | 13.2 | 完整度 |
-| DASH-002 | 56 | 5 | 0 | N/A | 14 | 0 | 0 | 10 | 13.6 | 完整度 |
-| DASH-003 | 57 | 5 | 0 | N/A | 8 | 0 | 0 | 11 | 13.2 | 完整度 |
+| DASH-001 | 82 | 96 | 94 | N/A | 90 | 100 | 88 | 88 | 91.0 | 用户价值 |
+| DASH-002 | 82 | 88 | 92 | N/A | 88 | 98 | 86 | 86 | 88.1 | 完整度 |
+| DASH-003 | 82 | 84 | 90 | N/A | 86 | 96 | 86 | 86 | 86.8 | 完整度 |
 | DASH-004 | 52 | 5 | 0 | N/A | 9 | 0 | 0 | 12 | 12.5 | 完整度 |
 | DASH-005 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 13 | 12.1 | 完整度 |
 | DASH-006 | 49 | 5 | 0 | N/A | 11 | 0 | 0 | 8 | 11.8 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.34 | 2026-07-04 | P5 r28 重评 VIZ-001/002 + DASH-001/002/003（M5 VIZ/DASH L1 kickoff r28）；pytest 600/2 skipped；test_viz_dash_l1_r28 26/26；T-MIG-41~42；fe vitest 81/81 + dashboard/chart smoke；ChartViewConfig schema/validate API、table/line/bar ChartRenderer、dashboards ORM/CRUD/layout、Admin 列表/编辑静态栅格；完整度 5%→84–96%，可靠性 0%→90–94%，测试覆盖 0%→96–100%，总分 13.2–13.9→86.8–91.0（VIZ-001/DASH-001 破 90；VIZ-002/DASH-002/003 <90 STUCK upsert） |
 | 1.2.33 | 2026-07-03 | P5 r27 重评 QUERY-001/002/004/005/006（M4 query quality push r27）；pytest 570/4 skipped；test_query_quality_r27 36/36；ClickHouse dialect L1 + error mapping、readonly guard（注释/多语句/超长）、table 边界、chartId 唯一绑定、RLS admin bypass/多维链；用户价值 80–84%→82–86%，完整度 88–96%→94–98%，可靠性 94%→96%，性能 86%→90%，总分 88.5–91.4→91.4–92.8（QUERY-004 破 90 STUCK 清零） |
 | 1.2.32 | 2026-07-03 | P5 r26 重评 QUERY-001/002/004/005/006（M4 query L1 kickoff r26）；pytest 532/4 skipped；T-Q-020~055、T-MIG-38~39；POST /execute + chart_query_bindings CRUD + MySQL/PG dialects + RLS guard；完整度 5%→88–96%，可靠性 0%→94%，测试覆盖 0%→96–100%，总分 12.8–13.5→88.5–91.4（QUERY-001/002/005/006 破 90；QUERY-004 ClickHouse 缺口仍 88.5） |
 | 1.2.31 | 2026-07-03 | P5 r25 重评 DS-004/006/007/008 + CONN-002（M3 datasource companion kickoff r25）；pytest 501/4 skipped；T-DS-TY01~TY04、PL01~PL05、MD01~MD06、AC01~AC05、T-CONN-P01~P05、M15；PostgreSQL 方言 + schema_browser + GET /types + pool + metadata API + ACL；完整度 5%→92–96%，可靠性 0%→94–96%，测试覆盖 0%→100%，总分 12.8–13.7→90.1–91.6（五 ID 全破 90） |
@@ -217,4 +218,3 @@ domain_count: 16
 | 1.2.23 | 2026-07-03 | P5 r17 重评 AUTH-001~005（M2 AUTH RBAC L1 kickoff r17）；pytest 302/4 skipped；T-AUTH-R/O/U/G/D01~、T-MIG-32~33；6 表 + 5 API 组 + 29 smoke；完整度 5%→88–96%，可靠性 0%→90–92%，测试覆盖 0%→92–96%，总分 12.8–13.6→86.7–88.9（L1 缺用户-组织/审计/资源可见性守卫，均 <90） |
 | 1.2.22 | 2026-07-03 | P5 r16 重评 BOOT-001/006/004 + DATA-003 + ETL-001（M1+M1B floor polish r16）；pytest 273 + vitest 68 + node:test 4；T-HLT-23~25、T-RTR-03~04、T-CFG-11~13、T-TRC-17~18、T-CI-10~12、T-ETL-23~25、T-ING-32~35；可靠性 90–92%→92–94%，安全性 86–88%→88–90%，性能 86%→88%（DATA-003），用户价值 82%→84%（DATA-003/ETL-001），总分 90.4–90.7→91.0–91.5 |
 | 1.2.21 | 2026-07-03 | P5 r15 重评 BOOT-004/005/006/002/003（M1 BOOT 质量推分 r15）；pytest 254 + vitest 64 + node:test 4；T-CFG-08~10、T-TRC-13~16、T-MIG-29~31、T-ME-15~18、T-AUTH-09~11、T-CI-07~09、T-RUF-01~02、T-FE-28~31、T-FE-DG-04；middleware traceId 契约修复；用户价值 80–82%→82–84%，可靠性 88%→90%（BOOT-004），安全性 84–86%→88%，测试覆盖 94%→98%（BOOT-003），性能 86%→88%，总分 89.5–90.1→90.2–90.9（BOOT-004 破 90 STUCK 清零） |
-| 1.2.20 | 2026-07-03 | P5 r14 重评 BOOT-003/005/006/002/001（M1 BOOT 质量推分 r14）；pytest 227 + vitest 60；T-HLT-19~22、T-FE-24~26、T-ME-08~14、T-MIG-25~28、T-CFT-09~10、T-CI-04~06；用户价值 80–82%→82–84%，可靠性 84–88%→88–90%，测试覆盖 86–96%→94–100%，性能 84–86%→86–88%，总分 87.9–89.2→90.0–90.4（BOOT 五簇全破 90） |
