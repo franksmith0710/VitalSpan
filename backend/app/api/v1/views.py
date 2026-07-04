@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, get_current_user
+from app.auth.models import get_meta_session
 from app.views.schemas import DashboardView, ViewError
 from app.views.validate import validate_dashboard_view
+from app.views.role_template import get_defaults, put_defaults
+from app.views.user_override import create_override, list_overrides
 
 router = APIRouter(prefix="/views", tags=["views", "IF-06"])
 
@@ -27,5 +33,72 @@ def validate_view(
 ) -> DashboardView | JSONResponse:
     try:
         return validate_dashboard_view(payload)
+    except ViewError as exc:
+        return _error_response(exc)
+
+
+role_defaults_router = APIRouter(prefix="/roles", tags=["views", "IF-06"])
+
+
+class RoleDefaultViewsIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    dashboard_id: uuid.UUID | None = Field(default=None, alias="dashboardId")
+    report_template_node_id: uuid.UUID | None = Field(default=None, alias="reportTemplateNodeId")
+    max_widget_count: int = Field(default=24, alias="maxWidgetCount", ge=1, le=256)
+
+
+def _views_db() -> Session:
+    session = get_meta_session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@role_defaults_router.get("/{role_id}/default-views", response_model=None)
+def read_role_default_views(
+    role_id: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    return get_defaults(role_id)
+
+
+@role_defaults_router.put("/{role_id}/default-views", response_model=None)
+def write_role_default_views(
+    role_id: str,
+    payload: RoleDefaultViewsIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_views_db)],
+):
+    try:
+        return put_defaults(db, role_id, payload.model_dump(by_alias=True), actor)
+    except ViewError as exc:
+        return _error_response(exc)
+
+
+user_views_router = APIRouter(prefix="/users", tags=["views", "IF-06"])
+
+
+class UserViewOverrideIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    name: str = Field(min_length=1, max_length=120)
+    dashboard_id: uuid.UUID = Field(alias="dashboardId")
+    layout: dict
+    classification_scope: str | None = Field(default=None, alias="classificationScope")
+
+
+@user_views_router.get("/me/views", response_model=None)
+def list_my_views(actor: Annotated[UserContext, Depends(get_current_user)]):
+    return list_overrides(actor.id)
+
+
+@user_views_router.post("/me/views", status_code=status.HTTP_201_CREATED, response_model=None)
+def create_my_view(
+    payload: UserViewOverrideIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_views_db)],
+):
+    try:
+        return create_override(db, actor, payload.model_dump(by_alias=True))
     except ViewError as exc:
         return _error_response(exc)
