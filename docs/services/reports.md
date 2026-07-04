@@ -18,8 +18,8 @@
 
 | In | Out |
 |----|-----|
-| `reports/catalog/` 模板树内存 registry + 循环/深度守卫 | 通用查询引擎（→ `query`） |
-| `reports/scheduler/` 调度实例 FSM + cron 五段校验 | APScheduler 生产执行器（远期） |
+| `reports/catalog/` 模板树内存 registry + 循环/深度守卫 + M7 ACL | 通用查询引擎（→ `query`） |
+| `reports/scheduler/` 调度实例 FSM + cron 五段校验 + mock 执行器 | APScheduler 生产执行器（远期） |
 | `reports/extension/` 模板节点扩展配置（metrics/filters CRUD） | 报表引擎真实渲染（RPT-001~003） |
 | `reports/batch/` 批量创建模板节点 + 幂等守卫 | 打印排版 UI（前端 `/admin/reports/*`） |
 | | 导出引擎异步任务（远期） |
@@ -33,8 +33,10 @@
 
 | 符号 | 说明 | PRD | 状态 |
 |------|------|-----|------|
-| `catalog/service.py` | 树 CRUD/move；`MAX_CATALOG_DEPTH=8` | RPT-004 | L1 已实现 |
-| `scheduler/service.py` | 调度 FSM + cron 校验 | RPT-005 | L1 已实现 |
+| `catalog/service.py` | 树 CRUD/move；`MAX_CATALOG_DEPTH=8`；mutating 接入 ACL | RPT-004 | companion 已实现（r57） |
+| `catalog/acl.py` | M7 目录 ACL + `_NODE_OWNERS` 内存 owner 登记 | RPT-004 | companion 已实现（r57） |
+| `scheduler/service.py` | 调度 FSM + cron 字段范围校验 | RPT-005 | companion 已实现（r57） |
+| `scheduler/executor.py` | `mock_execute_schedule` + Idempotency-Key 幂等 log | RPT-005 | companion 已实现（r57） |
 | `extension/service.py` | 模板节点扩展配置 CRUD（metrics/filters/revision） | RPT-006 | L1 已实现 r54 |
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |
 | `ReportService` | 模板 CRUD | RPT-001~003 | 待建 |
@@ -46,6 +48,12 @@
 ## 实现笔记
 
 - r54：`reports/extension/` + `reports/batch/` 内存 store；extension 仅 template 节点；batch 幂等 + 原子回滚；错误码 `RPT_EXT_*`、`RPT_BATCH_*`
+
+### r57 companion 质量推分（RPT-004/005）
+
+- **RPT-004**：`catalog/acl.py` — `assert_catalog_action`（admin bypass；viewer read-only；editor create；owner/editor write/delete）；`RPT_CATALOG_FORBIDDEN` + `detail.fields`；`probe_acl_budget_ms` ≤10ms
+- **RPT-005**：`scheduler/executor.py` — `mock_execute_schedule`（scheduled 状态 + Idempotency-Key）；`_EXECUTION_LOG` 幂等重放；cron 字段范围守卫（日 1–31、月 1–12）；`RPT_SCHEDULE_EXECUTE_NOT_READY` / `RPT_SCHEDULE_EXECUTE_INVALID`；`probe_mock_execute_budget_ms` ≤20ms
+- API：`POST /reports/schedules/{id}/execute`
 
 ### r55 companion 质量推分（RPT-006/007）
 
