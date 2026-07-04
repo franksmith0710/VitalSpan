@@ -30,6 +30,7 @@
 | [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 未实现 |
 | [governance.md](./governance.md) | `app/governance/` | F10-GOV · F14-CAT | M6 | 部分（L1） |
 | [viz.md](./viz.md) | `app/viz/` | F06-VIZ | M9 | 骨架（L1 kickoff） |
+| [integration.md](./integration.md) | `app/integration/` | F13-API | M8/M12/M13 | L1 已实现 |
 
 **横切**：F13-API（对外集成）、F15-NFR（非功能）——不单独成域，由各服务与 `core` 分担；详见各附录「边界」节。F06-VIZ 图表类型注册与渲染/嵌入配置契约现由 [viz.md](./viz.md) 域承载。
 
@@ -72,6 +73,7 @@ flowchart TB
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 0.5.0 | 2026-07-04 | M8/M12/M13 r44：新增 integration 域（IF-01~04 集成 API L1 + OpenAPI 版本策略，API-003~007） |
 | 0.4.0 | 2026-07-04 | M9 r42：新增 viz 域（ChartTypeRegistry + 9 类型、style/field 校验、render-spec、embed 契约，VIZ-003/004/005/006/008） |
 | 0.3.0 | 2026-07-04 | M5 r29：VIZ 字段级 validate、图表 table 客户端分页；DASH layout 业务校验与 widget 编辑 |
 | 0.2.0 | 2026-07-03 | 新增 ingestion 域（M1B / F16-DATA） |
