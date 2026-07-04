@@ -28,15 +28,16 @@
 - **里程碑对齐**：
 ### [META-003] 维度字典注册
 
-- **状态**：部分实现（L1 kickoff r38）
+- **状态**：部分实现（L1 kickoff r38 + companion r39）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：维度字典注册（SRS 追溯项）。
 - **验收标准**：
   - [x] 维度 code/枚举值可配置（migration 0016 + 8 REST 路由 CRUD/values；`META_DIM_*` 冲突与校验，r38 L1）
+  - [x] values 注册校验链（空 code/非法 pattern/重复 batch/空 label + list 分页 limit 500，r39）
   - [ ] M4/M5/M6 统一引用
-- **代码锚点**：`backend/app/metadata/dimensions/` · `backend/app/api/v1/metadata_dimensions.py` · `tests/test_query_meta_conn_r38.py` T-META-R38-003-01~07
-- **演化建议**：r38 闭合维度/枚举值 CRUD 与级联删除；后续接 M4/M5/M6 统一引用与 Admin 维度管理 UI
+- **代码锚点**：`backend/app/metadata/dimensions/` · `backend/app/api/v1/metadata_dimensions.py` · `tests/test_query_meta_conn_r38.py` T-META-R38-003-01~07 · `tests/test_query_meta_conn_r39.py` T-META-R39-003-01~06
+- **演化建议**：r39 闭合 values 校验与分页边界；后续接 M4/M5/M6 统一引用与 Admin 维度管理 UI
 - **里程碑对齐**：
 ### [META-004] Dataset CRUD M1-DATASET
 

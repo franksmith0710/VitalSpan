@@ -7,6 +7,8 @@ from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, Tes
 from app.datasources.dialects.errors import map_gaussdb_error
 from app.datasources.dialects.postgres import PostgresConnector
 
+GAUSSDB_MAX_COLUMNS = 500
+
 
 class GaussdbConnector:
     type = "gaussdb"
@@ -47,4 +49,5 @@ class GaussdbConnector:
         return self._delegate.list_tables(connection, schema) or []
 
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
-        return self._delegate.list_columns(connection, schema, table)
+        columns = self._delegate.list_columns(connection, schema, table)
+        return columns[:GAUSSDB_MAX_COLUMNS] if len(columns) > GAUSSDB_MAX_COLUMNS else columns

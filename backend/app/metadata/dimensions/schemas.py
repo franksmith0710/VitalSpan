@@ -66,6 +66,11 @@ class DimensionValueItem(BaseModel):
     label: str
     sort_order: int = Field(default=0, alias="sortOrder")
 
+    @field_validator("code", "label")
+    @classmethod
+    def strip_whitespace(cls, v: str) -> str:
+        return v.strip()
+
 
 class DimensionValuesRegister(BaseModel):
     model_config = ConfigDict(populate_by_name=True)

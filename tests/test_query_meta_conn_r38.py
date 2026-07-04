@@ -509,7 +509,7 @@ def test_meta_dimension_value_duplicate_r38(client):
     dim = client.post(
         "/api/v1/metadata/dimensions", headers=AUTH, json={"code": "dup_val_dim", "name": "D"},
     ).json()
-    body = {"items": [{"code": "a", "label": "A"}]}
+    body = {"items": [{"code": "aa", "label": "A"}]}
     assert client.post(f"/api/v1/metadata/dimensions/{dim['id']}/values", headers=AUTH, json=body).status_code in (200, 201)
     dup = client.post(f"/api/v1/metadata/dimensions/{dim['id']}/values", headers=AUTH, json=body)
     assert dup.status_code == 409

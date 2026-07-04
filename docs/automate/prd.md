@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.44
+version: 1.2.45
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r38 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 L1 kickoff r38）；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40 回归；translate API 三方言参数化、GaussDB/DM/Trino dialects + types catalog、dimensions CRUD/values 8 路由；完整度 5%→76–88%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–11.6→87.1–89.6（五 ID 均 <90 STUCK upsert round 1）
+> 更新：2026-07-04 · P5 r39 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 r39）；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归；TRINO_/GAUSSDB_/DM_* 错误域上浮、columns limit/HTTP metadata 链、META_DIM_VALUE_* 校验、translator 算子/注入守卫；完整度 76–88%→90%，可靠性 92–94%→94%，测试覆盖 96–98%→98%，总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -71,19 +71,19 @@ domain_count: 16
 | CONN-007 | 84 | 90 | 96 | N/A | 90 | 100 | 92 | 88 | 91.2 | 安全性 |
 | CONN-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.4 | 用户价值 |
 | CONN-009 | 84 | 88 | 96 | N/A | 90 | 98 | 90 | 88 | 90.4 | 用户价值 |
-| CONN-010 | 84 | 76 | 92 | N/A | 90 | 96 | 88 | 88 | 87.1 | 完整度 |
+| CONN-010 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
 | CONN-011 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 10 | 11.9 | 完整度 |
 | CONN-012 | 49 | 5 | 0 | N/A | 13 | 0 | 0 | 11 | 12.4 | 完整度 |
 | CONN-013 | 50 | 5 | 0 | N/A | 14 | 0 | 0 | 12 | 12.8 | 完整度 |
 | CONN-014 | 46 | 5 | 0 | N/A | 8 | 0 | 0 | 13 | 11.5 | 完整度 |
 | CONN-015 | 84 | 90 | 96 | N/A | 90 | 100 | 88 | 90 | 91.0 | 用户价值 |
 | CONN-016 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
-| CONN-017 | 84 | 78 | 93 | N/A | 90 | 96 | 88 | 88 | 87.6 | 完整度 |
+| CONN-017 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 性能 |
 | CONN-018 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 11 | 12.1 | 完整度 |
 | CONN-019 | 44 | 5 | 0 | N/A | 13 | 0 | 0 | 12 | 11.6 | 完整度 |
 | CONN-020 | 45 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.0 | 完整度 |
 | CONN-021 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
-| CONN-022 | 84 | 78 | 93 | N/A | 90 | 96 | 88 | 88 | 87.6 | 完整度 |
+| CONN-022 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
 | QUERY-001 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 92 | 92.8 | 架构健康 |
 | QUERY-002 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 88 | 92.4 | 安全性 |
 | QUERY-003 | 47 | 5 | 0 | N/A | 12 | 0 | 0 | 12 | 12.0 | 完整度 |
@@ -91,7 +91,7 @@ domain_count: 16
 | QUERY-005 | 84 | 98 | 96 | N/A | 90 | 100 | 90 | 90 | 92.6 | 用户价值 |
 | QUERY-006 | 86 | 96 | 96 | N/A | 90 | 100 | 86 | 94 | 92.6 | 性能 |
 | QUERY-007 | 84 | 94 | 96 | N/A | 92 | 98 | 90 | 88 | 91.7 | 安全性 |
-| QUERY-008 | 82 | 88 | 94 | N/A | 90 | 98 | 88 | 90 | 89.6 | 用户价值 |
+| QUERY-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 性能 |
 | QUERY-009 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 12 | 11.7 | 完整度 |
 | VIZ-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | VIZ-002 | 84 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 91.6 | 用户价值 |
@@ -127,7 +127,7 @@ domain_count: 16
 | GOV-008 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 92 | 90.2 | 用户价值 |
 | META-001 | 82 | 92 | 92 | N/A | 90 | 98 | 90 | 88 | 90.0 | 安全性 |
 | META-002 | 84 | 94 | 94 | N/A | 90 | 98 | 90 | 88 | 91.1 | 安全性 |
-| META-003 | 82 | 80 | 92 | N/A | 90 | 96 | 88 | 88 | 87.4 | 完整度 |
+| META-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
 | META-004 | 47 | 5 | 0 | N/A | 12 | 0 | 0 | 12 | 12.0 | 完整度 |
 | META-005 | 52 | 5 | 0 | N/A | 13 | 0 | 0 | 13 | 13.1 | 完整度 |
 | META-006 | 48 | 5 | 0 | N/A | 14 | 0 | 0 | 8 | 11.9 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.45 | 2026-07-04 | P5 r39 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 r39）；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40；errors.py TRINO_/GAUSSDB_/DM_* 上浮、三连接器 MAX_COLUMNS=500/HTTP metadata 链、META_DIM_VALUE_* 校验与分页、translator 算子白名单/注入守卫；完整度 76–88%→90%，可靠性 92–94%→94%，测试覆盖 96–98%→98%，总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零） |
 | 1.2.44 | 2026-07-04 | P5 r38 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 L1 kickoff r38）；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40；translate API mysql/postgresql/clickhouse 参数化、GaussDB/DM/Trino dialects + types catalog、dimensions migration 0016 + 8 REST 路由；完整度 5%→76–88%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–11.6→87.1–89.6（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.43 | 2026-07-04 | P5 r37 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 companion 质量推分 r37）；pytest 854/4 skipped；test_connectors_gov_r37 40/40 + r36 37/37 + r35 35/35 + r34 15/15；errors.py 上浮 HIVE_/CLICKHOUSE_/DORIS_*、五方言 *_MAX_COLUMNS=500、HTTP test_connection/metadata 4xx/502 链；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.2–87.8→90.0–91.2（五 ID 破 90 STUCK 清零） |
 | 1.2.42 | 2026-07-04 | P5 r36 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 L1 kickoff r36）；pytest 814/4 skipped；test_connectors_gov_r36 37/37 + r35 35/35 + r34 15/15；Hive/ClickHouse/SQL Server/Doris/Oracle dialects + types catalog、HIVE_/CLICKHOUSE_/SQLSERVER_/DORIS_/ORACLE_* 错误域与 schema mock；F04-CONN ID 漂移修正（003=Hive/004=Oracle/005=SQL Server）；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→94–98%，总分 11.8–12.3→86.2–87.8（五 ID 均 <90 STUCK upsert round 1） |
@@ -213,5 +214,3 @@ domain_count: 16
 | 1.2.38 | 2026-07-04 | P5 r32 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query design L1 kickoff r32）；pytest 708/4 skipped；test_meta_design_r32 21/21 + r31 24/24；migration 0015 + glossary/theme/config_store/designer API；完整度 5%→76–92%，可靠性 0%→92–94%，测试覆盖 0%→96%，总分 10.8–11.2→86.4–89.8（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.37 | 2026-07-04 | P5 r31 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW + M6 companion 质量推分 r31）；pytest 686/4 skipped；test_view_gov_api_r31 24/24 + r30 30/30；VIEW_LAYOUT_BOUNDS/VIEW_CHART_REF_CYCLE、bus timeout/4xx/5xx/幂等/admin 403、catalog 非法分类 4xx + DELETE、IF-06 OpenAPI 示例与 execute 越权/只读；完整度 74–80%→90–94%，可靠性 86–90%→92–94%，安全性 82–86%→88–90%，总分 88.6–90.9→90.0–90.4（VIEW-001/GOV-002 破 90 STUCK 清零） |
 | 1.2.36 | 2026-07-04 | P5 r30 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW L1 + M6 companion kickoff r30）；pytest 662/4 skipped；test_view_gov_api_r30 30/30；DashboardView schema/validate、catalog 三分法 + bus PoC、IF-06 OpenAPI tag/示例；完整度 5%→74–88%，可靠性 0%→86–94%，测试覆盖 0%→92–100%，总分 12.9–13.7→88.6–90.9（VIEW-001/GOV-002 <90 STUCK upsert；GOV-001/API-001/002 破 90） |
-| 1.2.35 | 2026-07-04 | P5 r29 重评 VIZ-001/002 + DASH-001/002/003（M5 VIZ/DASH quality push r29）；pytest 632/2 skipped；test_viz_dash_quality_r29 32/32 + test_viz_dash_l1_r28 26/26；fe vitest 90/90 + dashboard/chart smoke 19/19；ChartViewError.fields + POST validate detail.fields、layout DASH_* 业务码、ChartPanel 空/错/慢态 + table PAGE_SIZE=50、resizeWidget/标题编辑；完整度 84–96%→92–98%，可靠性 90–94%→94–96%，性能 86–88%→88–90%，总分 86.8–91.0→90.7–92.4（VIZ-002/DASH-002/003 破 90 STUCK 清零） |
-| 1.2.34 | 2026-07-04 | P5 r28 重评 VIZ-001/002 + DASH-001/002/003（M5 VIZ/DASH L1 kickoff r28）；pytest 600/2 skipped；test_viz_dash_l1_r28 26/26；T-MIG-41~42；fe vitest 81/81 + dashboard/chart smoke；ChartViewConfig schema/validate API、table/line/bar ChartRenderer、dashboards ORM/CRUD/layout、Admin 列表/编辑静态栅格；完整度 5%→84–96%，可靠性 0%→90–94%，测试覆盖 0%→96–100%，总分 13.2–13.9→86.8–91.0（VIZ-001/DASH-001 破 90；VIZ-002/DASH-002/003 <90 STUCK upsert） |

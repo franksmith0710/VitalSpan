@@ -65,6 +65,7 @@ class TrinoConnector:
         return TestConnectionResult(ok=True, message="Connection successful", latency_ms=latency_ms, code=None)
 
     def list_schemas(self, connection: Any, *, catalog: str | None = None) -> list[SchemaInfo]:
+        """Empty catalog returns [] — caller must supply catalog for SHOW SCHEMAS."""
         if not catalog:
             return []
         cursor = connection.cursor()
@@ -80,6 +81,7 @@ class TrinoConnector:
         return [TableInfo(name=row[0], type="table") for row in rows if row] if rows else []
 
     def list_columns(self, connection: Any, schema: str, table: str, *, catalog: str | None = None) -> list[ColumnInfo]:
+        """DESCRIBE result sliced to TRINO_MAX_COLUMNS (500)."""
         if not catalog or not schema.strip() or not table.strip():
             return []
         cursor = connection.cursor()

@@ -7,18 +7,18 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design | docs/superpowers/specs/2026-07-04-m12-query-m11-meta-conn-l1-r38-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-l1-r38.md |
-| branch | feat/r38-query-meta-conn-l1 |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r39.md |
+| design | docs/superpowers/specs/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39.md |
+| branch | cursor/bc-fda56918-b209-4fa3-b5bc-f75bf68e9cfe-8879 |
 | base_branch | dev-auto |
 | prd_ids | QUERY-008,CONN-022,META-003,CONN-017,CONN-010 |
-| pr_number | 64 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_query_meta_conn_r38.py ../tests/test_connectors_gov_r37.py -v && python3 -m pytest -q |
+| pr_number | 65 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command |  |
+| last_ui_verified_command | N/A（纯后端，ui_design_skill none） |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T04:56:00Z |
+| skill_rule_index_generated_at | 2026-07-04T06:25:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,13 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r39 PRD 重评：QUERY-008/CONN-022/META-003/CONN-017/CONN-010 companion 质量推分；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归 109/109；总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
+- P4 r39 验证通过：ruff clean；pytest 924 passed/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归 109/109；UI: N/A（纯后端）；PR #65 已提前创建（SOP 顺序 concern）；phase P3_DONE→P4_DONE
+- P3 r39 实现完成：8 Task 全绿；CONN-010/022/017 + META-003 values 校验 + QUERY-008 translator 守卫；33 测 test_query_meta_conn_r39 + r38 36/36 + r37 40/40；pytest 924/4 skipped；branch cursor/bc-fda56918-b209-4fa3-b5bc-f75bf68e9cfe-8879；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P2 r39 计划完成：8 Task（errors 脚手架→Trino→GaussDB→DM→dimensions values→translator 守卫→回归门控→docs）；≥31 新测 test_query_meta_conn_r39；11 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
+- P1 r39 设计完成：M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 — QUERY-008/CONN-022/META-003/CONN-017/CONN-010；18 文件框定；三连接器 HTTP 链 + values 校验 + translator 算子守卫；ui_design_skill none；phase G2_DONE→P1_DONE
+- G2 r39 选题完成：M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 — QUERY-008/CONN-022/META-003/CONN-017/CONN-010（5 项）；最低分 CONN-010(87.1)；饱和熔断未触发；plan M11/M12/M13 无活跃勾选行（已知 concern）；STUCK 五 ID 各 1 轮（未达 ≥3 硬标注阈值）；phase idle→G2_DONE
+- G1 r39 bootstrap：r38 PR #64 已 Squash merge dev-auto（fee8a9c）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 VIZ-003(11.7)/QUERY-009(11.7)/CONN-006(12.6)；STUCK 五 ID 各 1 轮；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r38 PRD 重评：QUERY-008/CONN-022/META-003/CONN-017/CONN-010 L1 kickoff；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40 回归 76/76；总分 11.3–11.6→87.1–89.6（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
 - P3 r38 实现完成：8 Task 全绿；QUERY-008 translate API + GaussDB/DM/Trino 三方言 + META-003 dimensions；36 测 test_query_meta_conn_r38 + r37 40/40；pytest 891/4 skipped；branch feat/r38-query-meta-conn-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P5 r37 PRD 重评：CONN-003/007/005/008/004 companion 质量推分；pytest 854/4 skipped；test_connectors_gov_r37 40/40 + r36 37/37 + r35 35/35 + r34 15/15 回归 127/127；总分 86.2–87.8→90.0–91.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
