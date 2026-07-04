@@ -535,7 +535,10 @@ def test_gov003_validate_template_ok_r49(client):
         json={
             "id": "custom_flow",
             "name": "Custom",
-            "nodes": [{"id": "draft", "role": "requester"}],
+            "nodes": [
+                {"id": "draft", "role": "requester"},
+                {"id": "published", "role": "publisher"},
+            ],
         },
     )
     assert resp.status_code == 200
