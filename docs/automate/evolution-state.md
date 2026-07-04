@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r36.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-l1-r36-design.md |
 | plan |  |
 | branch |  |
 | base_branch |  |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r36 设计完成：M11 关系型/OLAP 连接器 L1 kickoff — CONN-003/007/005/008/004；16 文件框定；五方言 hive/clickhouse/sqlserver/doris/oracle；PRD 分片 ID 漂移注记；ui_design_skill none；phase G2_DONE→P1_DONE
 - G2 r36 选题完成：M11 关系型/OLAP 连接器 L1 kickoff — CONN-003/007/005/008/004（5 项）；最低分 CONN-004(11.8)；饱和熔断未触发；plan M11/M12/M13 无活跃勾选行（已知 concern）；STUCK 表空；phase idle→G2_DONE
 - G1 r36 bootstrap：r35 PR #60 已合并 dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 CONN-003(12.3)/CONN-007(12.2)/CONN-005(12.2)；STUCK 表空；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r35 PRD 重评：CONN-021/009/015 + GOV-004/008 companion 质量推分；pytest 777/4 skipped；test_connectors_gov_r35 35/35 + r34 15/15 + r33 19/19；总分 86.0–88.1→90.1–91.0（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
