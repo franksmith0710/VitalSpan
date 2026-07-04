@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -80,7 +81,9 @@ def r30_sqlite_env():
     get_settings.cache_clear()
     from app.auth.models import get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine
-    import app.governance.catalog.models  # noqa: F401 — register ORM tables
+    import app.dashboard.models  # noqa: F401 — register ORM tables
+    import app.datasources.models  # noqa: F401
+    import app.governance.catalog.models  # noqa: F401
 
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()
@@ -311,3 +314,150 @@ def test_datasources_list_smoke(client):
     """T-API-R30-001-03: GET /datasources 200 Bearer dev。"""
     resp = client.get("/api/v1/datasources", headers=AUTH)
     assert resp.status_code == 200
+
+
+def _create_test_datasource(client) -> str:
+    code = f"r30{uuid.uuid4().hex[:6]}"
+    resp = client.post(
+        "/api/v1/datasources",
+        headers=AUTH,
+        json={
+            "name": f"R30 DS {uuid.uuid4().hex[:8]}",
+            "code": code,
+            "type": "mysql",
+            "host": "localhost",
+            "port": 3306,
+            "database": "test",
+            "username": "u",
+            "password": "p",
+        },
+    )
+    assert resp.status_code == 201
+    return resp.json()["id"]
+
+
+@patch("app.query.service.execute_query")
+def test_query_execute_openapi_smoke(mock_execute, client):
+    """T-API-R30-002-03: POST /execute mock → 200。"""
+    from app.query.schemas import ExecuteResponse
+
+    mock_execute.return_value = ExecuteResponse(
+        columns=["c"], rows=[["v"]], row_count=1, truncated=False, trace_id="t"
+    )
+    resp = client.post(
+        "/api/v1/query/execute",
+        headers=AUTH,
+        json={"dataSourceId": str(uuid.uuid4()), "mode": "sql", "sql": "SELECT 1"},
+    )
+    assert resp.status_code == 200
+
+
+def test_query_execute_forbidden_data_source(client):
+    """T-API-R30-002-04: 不可见 dataSource → 403。"""
+    resp = client.post(
+        "/api/v1/query/execute",
+        headers=AUTH,
+        json={"dataSourceId": str(uuid.uuid4()), "mode": "sql", "sql": "SELECT 1"},
+    )
+    assert resp.status_code in (403, 404)
+
+
+@patch("app.query.executor.QueryExecutor._load_row")
+def test_query_execute_not_readonly(mock_load_row, client):
+    """T-API-R30-002-05: INSERT → 400 QUERY_NOT_READONLY。"""
+    from unittest.mock import MagicMock
+
+    mock_load_row.return_value = MagicMock(type="mysql")
+    resp = client.post(
+        "/api/v1/query/execute",
+        headers=AUTH,
+        json={"dataSourceId": str(uuid.uuid4()), "mode": "sql", "sql": "INSERT INTO t VALUES (1)"},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "QUERY_NOT_READONLY"
+
+
+def test_views_validate_api_success(client):
+    """T-VIEW-R30-001-09: POST /views/validate 合法 → 200。"""
+    resp = client.post(
+        "/api/v1/views/validate",
+        headers=AUTH,
+        json={"name": "OK", "layout": _valid_layout()},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "OK"
+
+
+def test_gov_get_entry(client):
+    """T-GOV-R30-001-05: GET entry by id → 200。"""
+    created = client.post(
+        "/api/v1/gov/catalog/entries",
+        headers=AUTH,
+        json={
+            "name": "Detail",
+            "httpMethod": "GET",
+            "path": "/api/v1/detail",
+            "categoryCodes": ["CAT-03"],
+            "status": "active",
+        },
+    )
+    eid = created.json()["id"]
+    resp = client.get(f"/api/v1/gov/catalog/entries/{eid}", headers=AUTH)
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "Detail"
+
+
+def test_gov_get_entry_not_found(client):
+    """T-GOV-R30-001-06: GET 不存在 entry → 404。"""
+    resp = client.get(f"/api/v1/gov/catalog/entries/{uuid.uuid4()}", headers=AUTH)
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "CATALOG_ENTRY_NOT_FOUND"
+
+
+def test_openapi_views_if06_tag(client):
+    """T-API-R30-001-05: views validate OpenAPI IF-06 tag。"""
+    spec = client.get("/openapi.json").json()
+    op = spec["paths"]["/api/v1/views/validate"]["post"]
+    assert "IF-06" in op.get("tags", [])
+
+
+def test_openapi_gov_catalog_if06(client):
+    """T-API-R30-001-06: gov catalog OpenAPI IF-06 paths。"""
+    spec = client.get("/openapi.json").json()
+    assert "/api/v1/gov/catalog/categories" in spec["paths"]
+    assert "/api/v1/gov/bus/register" in spec["paths"]
+
+
+def test_gov_create_entry_multi_category(client):
+    """T-GOV-R30-001-07: 多分类挂载 → 201。"""
+    resp = client.post(
+        "/api/v1/gov/catalog/entries",
+        headers=AUTH,
+        json={
+            "name": "Multi",
+            "httpMethod": "GET",
+            "path": "/api/v1/multi",
+            "categoryCodes": ["CAT-01", "CAT-02"],
+            "status": "active",
+        },
+    )
+    assert resp.status_code == 201
+    assert set(resp.json()["categoryCodes"]) == {"CAT-01", "CAT-02"}
+
+
+def test_bus_register_response_has_bus_response(client):
+    """T-GOV-R30-002-05: succeeded 登记含 busResponse。"""
+    eid = _create_entry(client, path="/api/v1/stats/sum")
+    resp = client.post("/api/v1/gov/bus/register", headers=AUTH, json={"catalogEntryId": eid})
+    assert resp.status_code == 201
+    assert resp.json().get("busResponse")
+
+
+def test_view_validate_empty_name_rejected(client):
+    """T-VIEW-R30-001-10: 空 name → 422。"""
+    resp = client.post(
+        "/api/v1/views/validate",
+        headers=AUTH,
+        json={"name": "", "layout": {"version": 1, "widgets": [], "globalFilters": []}},
+    )
+    assert resp.status_code == 422

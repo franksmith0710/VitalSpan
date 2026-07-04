@@ -1,40 +1,44 @@
-# views — 角色与用户视图
+# views — DashboardView 视图协议
 
 | 字段 | 值 |
 |------|-----|
 | 模块路径 | `backend/app/views/` |
 | PRD | [F09-VIEW](../automate/prd/F09-VIEW.md) · VIEW-001 ~ VIEW-003 |
 | 里程碑 | FR-VIEW |
-| 状态 | **未实现** |
+| 状态 | **部分（L1）** |
 
 ## 职责
 
-- 按角色/用户配置单应用默认落地页与 RBAC 菜单可见性（见 `docs/ui/layout.md`）
-- 视图模板与默认落地页（不含预置业务场景包）
-- 与 `auth` 角色绑定
+- DashboardView 协议 schema 与校验（layout/widgets 与 DASH 互操作）
+- `POST /api/v1/views/validate` 校验入口
+- 为后续角色默认视图与用户覆盖（VIEW-002/003）奠基
 
 ## 边界
 
 | In | Out |
 |----|-----|
-| 视图配置、菜单 IA 数据 | 壳层渲染（前端 `fe/`） |
-| | Dashboard/报表实体（→ `dashboard` / `reports`） |
+| DashboardView 序列化、layout 校验、chart 引用检查 | 壳层渲染（前端 `fe/`） |
+| | Dashboard CRUD 持久化（→ `dashboard`） |
+| | 角色/用户视图解析（VIEW-002/003，M10+） |
 
 ## 依赖
 
-- `core`、`auth`
+- `core`、`dashboard`（`DashboardLayout`）、`schemas/chart_view`
 
-## 主要类型 / 入口（规划）
+## 主要类型 / 入口
 
 | 符号 | 说明 | PRD | 状态 |
 |------|------|-----|------|
-| `ViewTemplateService` | 模板 CRUD | VIEW-001 | 待建 |
-| `UserViewResolver` | 用户生效视图 | VIEW-002~003 | 待建 |
+| `DashboardView` | 视图协议 Pydantic 模型 | VIEW-001 | 已实现 |
+| `validate_dashboard_view` | 视图校验服务 | VIEW-001 | 已实现 |
+| `validate_layout_dict` | layout 校验（dashboard 委托） | VIEW-001 | 已实现 |
+| `POST /api/v1/views/validate` | HTTP 校验入口 | VIEW-001 | 已实现 |
 
 ## 关联 API
 
-见 [api/README.md](../api/README.md) §视图（规划）。
+见 [api/README.md](../api/README.md) §视图。
 
 ## 实现笔记
 
-<!-- 随 VIEW-* 落地补充 -->
+- r30 L1：`views.validate` 在 dashboard layout 规则之上增加 `VIEW_UNKNOWN_CHART_REF`、`VIEW_DEFAULT_SELF_REF`
+- `dashboard.service.validate_layout` 委托 `views.validate.validate_layout_dict`

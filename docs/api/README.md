@@ -6,7 +6,7 @@
 
 ```yaml
 version: 1.0.0
-last_updated: 2026-07-03
+last_updated: 2026-07-04
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -33,7 +33,7 @@ redoc: /redoc
 | GET | `/health` | 健康检查 | — | P0 | BOOT-001 | 已实现 | `backend/app/main.py` |
 | GET | `/docs` | Swagger UI | — | 一期 | API-007 | 规划 | FastAPI 内置 |
 | GET | `/redoc` | ReDoc | — | 一期 | API-007 | 规划 | FastAPI 内置 |
-| GET | `/openapi.json` | OpenAPI 规范 | — | 一期 | API-007 | 规划 | FastAPI 内置 |
+| GET | `/openapi.json` | OpenAPI 规范（IF-06 tag 后处理） | IF-06 | 一期 | API-001, API-002 | 已实现 | `backend/app/openapi/extensions.py` |
 
 ---
 
@@ -123,6 +123,7 @@ redoc: /redoc
 | GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET/PUT/DELETE | `/api/v1/dashboards/{id}` | Dashboard CRUD | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT | `/api/v1/dashboards/{id}/layout` | 布局与组件列表；422 码：`DASH_DUPLICATE_WIDGET` / `DASH_MISSING_CHART_CONFIG` / `DASH_CHART_ID_MISMATCH` | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 规划 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 规划 | `backend/app/api/v1/views.py` |
 | POST | `/api/v1/embed/token` | 门户嵌入 token 签发 | IF-04 | 三期 | API-006 | 规划 | `backend/app/api/v1/embed.py` |
@@ -159,8 +160,11 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET | `/api/v1/governance/catalog` | 查询接口分类 catalog（附录 E） | 内部 | 一期 | GOV-001 | 规划 | `backend/app/api/v1/governance/catalog.py` |
-| POST | `/api/v1/governance/bus/register` | 半自动/全自动总线注册 | IF-01 | 一期/四期 | GOV-002, API-004 | 规划 | `backend/app/governance/bus/` |
+| GET | `/api/v1/gov/catalog/categories` | catalog 分类列表（CAT-01~03 seed） | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/entries` | catalog 条目列表（`?category=&limit=&offset=`） | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/catalog/entries` | 创建 catalog 条目 | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/entries/{id}` | catalog 条目详情 | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/governance/tickets` | 查询工单 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/tickets/{id}/submit` | 提交审批 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/publish` | 发布查询服务 | 内部 | 四期 | GOV-005 | 规划 | `backend/app/api/v1/governance/publish.py` |
