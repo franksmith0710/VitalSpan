@@ -78,6 +78,19 @@ def get_theme_analysis(
         return theme_service.get_theme_config(db, ref_type, ref_id)
     except ThemeAnalysisError as exc:
         return _theme_error(exc)
+
+
+@router.get("/theme-analysis/chart-bindings", response_model=None)
+def get_theme_chart_bindings(
+    ref_type: str = Query(default="dashboard", alias="refType"),
+    ref_id: uuid.UUID = Query(alias="refId"),
+    _: Annotated[UserContext, Depends(get_current_user)] = None,
+    db: Annotated[Session, Depends(_db)] = None,
+):
+    try:
+        return theme_service.get_chart_bindings(db, ref_type, ref_id)
+    except ThemeAnalysisError as exc:
+        return _theme_error(exc)
     except Exception as exc:
         from app.query.config_store.schemas import ConfigError
         if isinstance(exc, ConfigError) and exc.code == "CONFIG_NOT_FOUND":

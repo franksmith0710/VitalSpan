@@ -22,12 +22,13 @@
 | | 发布/草稿版本、分享范围（远期 DASH-004+） |
 | | GIS 地图生产集成（DASH-006 companion） |
 
-### theme/ 子域（DASH-006 · r53）
+### theme/ 子域（DASH-006 · r53 + r57 companion）
 
-- **In**：`EntityThemeConfig` schema、validate/save/get、config_store `entity_theme` 持久化
+- **In**：`EntityThemeConfig` schema、validate/save/get、config_store `entity_theme` 持久化；`chartViewBindings` 与 layout chart widget 联动（`_link_chart_views`）；`GET .../chart-bindings`
 - **Out**：GIS SDK、主题分析 Admin UI、计算引擎（同比/环比仅配置声明）
-- **依赖**：`dashboard/service`（ref 校验）、`query/config_store`
-- **错误码**：`DASH_THEME_*`、`DASH_NOT_FOUND`
+- **依赖**：`dashboard/service`（ref 校验 + layout widgets）、`query/config_store`、`schemas/chart_view`
+- **错误码**：`DASH_THEME_*`（含 `DASH_THEME_CHART_VIEW_MISMATCH` + `detail.fields`）、`DASH_NOT_FOUND`
+- **性能**：`probe_link_chart_views_budget_ms` ≤50ms smoke（16 bindings）
 
 ## 依赖
 
@@ -41,7 +42,7 @@
 | `Dashboard` ORM | `dashboards` 表 | DASH-001 | 已实现 |
 | `DashboardService` | CRUD + `validate_layout` + `update_layout` | DASH-001~003 | 已实现 |
 | `DashboardLayout` | `version`/`widgets`/`globalFilters` JSON | DASH-002 | 已实现 |
-| `dashboard/theme/` | 实体主题分析 config（`entity_theme` via config_store） | DASH-006 | L1 已实现（r53） |
+| `dashboard/theme/` | 实体主题分析 config（`entity_theme` via config_store）+ chart_view 联动 | DASH-006 | companion 已实现（r57） |
 | `DashboardViewConfig` | 视图协议 | DASH-004 | 待建 |
 
 ## Layout JSON（L1）

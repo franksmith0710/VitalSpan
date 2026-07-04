@@ -37,30 +37,30 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [RPT-004] 模板树形目录管理
 
-- **状态**：部分实现（L1 kickoff r53）
+- **状态**：部分实现（companion r57）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：模板树形目录管理（SRS 追溯项）。
 - **验收标准**：
   - [x] 增删改查/移动（r53 L1：`POST/GET/DELETE /api/v1/reports/catalog/nodes` + move；无另存/手工执行）
   - [x] 树形边界守卫（cycle/max depth/has children/`RPT_CATALOG_*` 错误域）
-  - [ ] 目录权限受 M7 控制
+  - [x] 目录权限受 M7 控制（r57 companion：`reports/catalog/acl.py` viewer 禁写/owner 删叶/admin 绕过 move；ACL 判定 ≤10ms）
   - [ ] 另存为/手工执行
-- **代码锚点**：`backend/app/reports/catalog/service.py` · `backend/app/api/v1/reports/__init__.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-004-01~06
-- **演化建议**：r53 L1 闭合 catalog tree CRUD/move 与深度/环检测；后续补 M7 目录 ACL、另存为/手工执行与 fe 模板管理 UI
+- **代码锚点**：`backend/app/reports/catalog/service.py` · `backend/app/reports/catalog/acl.py` · `backend/app/api/v1/reports/__init__.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-004-01~06 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-004-01~06
+- **演化建议**：r57 companion 闭合 M7 角色 ACL 与性能预算；后续补另存为/手工执行与 fe 模板管理 UI
 - **里程碑对齐**：
 ### [RPT-005] 报表调度 FR-3.2
 
-- **状态**：部分实现（L1 kickoff r53）
+- **状态**：部分实现（companion r57）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
 - **描述**：报表调度 FR-3.2（SRS 追溯项）。
 - **验收标准**：
   - [x] 日/周/月/组合调度（r53 L1：cron 校验 + draft→scheduled→paused→cancelled FSM；无日/周/月组合粒度枚举）
   - [x] IF-03 文档 API 可提取（`GET/POST /api/v1/reports/schedules` + transition + allowedActions）
-  - [ ] 调度执行器与产物投递
-- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/api/v1/reports/__init__.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08
-- **演化建议**：r53 L1 闭合 schedule FSM、cron 校验与 catalogNodeId 绑定；后续补执行器、组合调度粒度与 IF-03 产物链
+  - [x] 调度 mock 执行器（r57 companion：`POST .../schedules/{id}/execute` Idempotency-Key + mock_succeeded；非真实产物投递）
+- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/api/v1/reports/__init__.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07
+- **演化建议**：r57 companion 闭合 mock 执行器、幂等重放、cron 边界与 ≤20ms 性能预算；后续补真实执行器、组合调度粒度与 IF-03 产物链
 - **里程碑对齐**：
 ### [RPT-006] 报表扩展配置 FR-6.3
 

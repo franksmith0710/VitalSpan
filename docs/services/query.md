@@ -45,6 +45,7 @@
 | `query/config_store` | 配置元模型 JSON 存储（revision upsert） | QUERY-007 | L1 已实现 |
 | `query/native/guard` | `resolve_query_mode` + `validate_native_spec` | QUERY-003 | L1 已实现 |
 | `query/dataset/guard` | 第三路径 dataset + 内置 ACL registry | QUERY-009 | L1 已实现（r53） |
+| `query/dataset/executor` | execute-plan 四步链 companion（stub） | QUERY-009 | companion 已实现（r57） |
 | `query/dialects` | MySQL/PostgreSQL/ClickHouse 方言适配 | QUERY-004 | 已实现 |
 | `rls/guard` | 行级过滤注入 | QUERY-006 | 已实现 |
 
@@ -66,6 +67,13 @@
 - **内置 datasets**：`demo-orders`（analyst）、`restricted-ledger`（finance）；admin bypass
 - **错误码**：`QUERY_DATASET_*`、`QUERY_PATH_AMBIGUOUS`
 - API：`GET /query/dataset/routing`、`POST /query/dataset/validate`
+
+### r57 companion 质量推分（QUERY-009）
+
+- **`query/dataset/executor.py`**：`build_dataset_execute_plan` 四步链（path_resolve → acl_check → readonly_guard → plan_ready）；stub 计划，**非真实 SQL execute**
+- **错误码**：`QUERY_DATASET_PLAN_INVALID_PARAMS`（禁止 `_sql`/`__proto__` 参数键）
+- API：`POST /query/dataset/execute-plan`（`planVersion=dataset-plan-v1`）
+- **性能**：`probe_execute_plan_budget_ms` ≤30ms smoke
 
 ### r52 companion 质量推分（QUERY-003）
 

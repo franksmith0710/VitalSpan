@@ -26,3 +26,13 @@ class ScheduleStatusOut(BaseModel):
     timezone: str
     status: str
     allowed_actions: list[str] = Field(alias="allowedActions")
+
+
+class ScheduleExecuteOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    execution_id: uuid.UUID = Field(alias="executionId")
+    schedule_id: uuid.UUID = Field(alias="scheduleId")
+    status: Literal["mock_succeeded", "mock_skipped"]
+    artifact_ref: str = Field(alias="artifactRef")
+    idempotency_key: str = Field(alias="idempotencyKey")
+    executed_at: str = Field(alias="executedAt")

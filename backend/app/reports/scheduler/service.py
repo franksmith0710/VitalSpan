@@ -27,6 +27,19 @@ def _validate_cron(cron: str) -> None:
     parts = cron.split()
     if len(parts) != 5 or not all(_CRON_PART.match(p) for p in parts):
         raise ScheduleError("RPT_SCHEDULE_INVALID_CRON", "Invalid cron expression", 422)
+    ranges = [(0, 59), (0, 23), (1, 31), (1, 12), (0, 7)]
+    for part, (lo, hi) in zip(parts, ranges, strict=True):
+        if part.isdigit():
+            val = int(part)
+            if val < lo or val > hi:
+                raise ScheduleError("RPT_SCHEDULE_INVALID_CRON", "Cron field out of range", 422)
+
+
+def _get_row(schedule_id: uuid.UUID) -> dict:
+    row = _schedules.get(schedule_id)
+    if row is None:
+        raise ScheduleError("RPT_SCHEDULE_NOT_FOUND", "Schedule not found", 404)
+    return row
 
 
 def _out(row: dict) -> ScheduleStatusOut:
@@ -57,16 +70,11 @@ def create_schedule(payload: ScheduleCreate) -> ScheduleStatusOut:
 
 
 def get_schedule(schedule_id: uuid.UUID) -> ScheduleStatusOut:
-    row = _schedules.get(schedule_id)
-    if row is None:
-        raise ScheduleError("RPT_SCHEDULE_NOT_FOUND", "Schedule not found", 404)
-    return _out(row)
+    return _out(_get_row(schedule_id))
 
 
 def transition_schedule(schedule_id: uuid.UUID, action: str) -> ScheduleStatusOut:
-    row = _schedules.get(schedule_id)
-    if row is None:
-        raise ScheduleError("RPT_SCHEDULE_NOT_FOUND", "Schedule not found", 404)
+    row = _get_row(schedule_id)
     status = row["status"]
     mapping = _TRANSITIONS.get(status, {})
     if action not in mapping:

@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.58
+version: 1.2.59
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r55 重评 RPT-006/007 + GOV-006 + META-006 + CONN-020（M10/M12 报表扩展 + M8 OpenAPI + META schema + OceanBase companion 质量推分 r55）；pytest 1415/4 skipped；test_rpt_gov_meta_conn_r55 35/35 + r54 42/42 + r53 38/38 + r52 52/52 回归 167/167；gov openapi 版本/deactivate、batch 部分失败 detail、extension render-spec/revisions/snapshot、entity validate/query-bindings、oceanbase HTTP 4xx/502+limit；性能 58%→88%，完整度 74–78%→90%，总分 88.4–89.9→90.0–90.4（五 ID 破 90 STUCK 清零；管理员 UI/真实持久化/只读查询集成测/OpenAPI 文档生成留远期）
+> 更新：2026-07-04 · P5 r57 重评 QUERY-009 + RPT-004/005 + DASH-006 + NFR-008（M9 主题分析 + M10/M12 报表 + M13 Dataset/NFR companion 质量推分 r57）；pytest 1452/4 skipped；test_dash_rpt_query_nfr_r57 37/37 + r53 38/38 + r55 35/35 + r52 52/52 回归 162/162；dataset execute-plan、chart-bindings、catalog M7 ACL、mock schedule executor、deployment-report；性能 58%→88%，完整度 72–78%→84–90%，总分 82.6–85.6→88.2–91.3（QUERY-009/NFR-008 破 90 STUCK 清零；DASH-006/RPT-004/005 仍 <90；同比环比/GIS/fe/真实执行器/产物投递留远期）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -92,7 +92,7 @@ domain_count: 16
 | QUERY-006 | 86 | 96 | 96 | N/A | 90 | 100 | 86 | 94 | 92.6 | 性能 |
 | QUERY-007 | 84 | 94 | 96 | N/A | 92 | 98 | 90 | 88 | 91.7 | 安全性 |
 | QUERY-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 性能 |
-| QUERY-009 | 84 | 76 | 94 | N/A | 90 | 98 | 58 | 90 | 84.4 | 性能 |
+| QUERY-009 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 90 | 90.0 | 用户价值 |
 | VIZ-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | VIZ-002 | 84 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 91.6 | 用户价值 |
 | VIZ-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
@@ -106,12 +106,12 @@ domain_count: 16
 | DASH-003 | 84 | 94 | 94 | N/A | 88 | 100 | 88 | 88 | 90.7 | 用户价值 |
 | DASH-004 | 52 | 5 | 0 | N/A | 9 | 0 | 0 | 12 | 12.5 | 完整度 |
 | DASH-005 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 13 | 12.1 | 完整度 |
-| DASH-006 | 82 | 72 | 94 | N/A | 88 | 98 | 58 | 86 | 82.6 | 完整度 |
+| DASH-006 | 82 | 84 | 94 | N/A | 88 | 98 | 88 | 86 | 88.2 | 完整度 |
 | RPT-001 | 50 | 5 | 0 | N/A | 12 | 0 | 0 | 9 | 12.2 | 完整度 |
 | RPT-002 | 51 | 5 | 0 | N/A | 13 | 0 | 0 | 10 | 12.6 | 完整度 |
 | RPT-003 | 52 | 5 | 0 | N/A | 14 | 0 | 0 | 11 | 13.0 | 完整度 |
-| RPT-004 | 84 | 78 | 96 | N/A | 88 | 98 | 58 | 86 | 84.4 | 性能 |
-| RPT-005 | 84 | 76 | 96 | N/A | 90 | 98 | 58 | 86 | 84.2 | 性能 |
+| RPT-004 | 84 | 88 | 96 | N/A | 88 | 98 | 88 | 86 | 89.6 | 用户价值 |
+| RPT-005 | 84 | 86 | 96 | N/A | 90 | 98 | 88 | 86 | 89.5 | 用户价值 |
 | RPT-006 | 84 | 90 | 94 | N/A | 88 | 100 | 88 | 86 | 90.0 | 用户价值 |
 | RPT-007 | 84 | 90 | 96 | N/A | 90 | 98 | 88 | 86 | 90.4 | 用户价值 |
 | VIEW-001 | 82 | 94 | 94 | N/A | 90 | 96 | 88 | 88 | 90.2 | 用户价值 |
@@ -157,7 +157,7 @@ domain_count: 16
 | NFR-005 | 82 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.0 | 用户价值 |
 | NFR-006 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | NFR-007 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
-| NFR-008 | 86 | 78 | 96 | N/A | 90 | 98 | 58 | 92 | 85.6 | 性能 |
+| NFR-008 | 86 | 90 | 96 | N/A | 90 | 98 | 88 | 92 | 91.3 | 用户价值 |
 | DATA-004 | 80 | 96 | 95 | N/A | 88 | 100 | 86 | 94 | 91.1 | 用户价值 |
 | DATA-001 | 82 | 96 | 94 | N/A | 88 | 100 | 88 | 92 | 91.3 | 用户价值 |
 | DATA-002 | 84 | 94 | 96 | N/A | 86 | 100 | 90 | 86 | 91.0 | 用户价值 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.59 | 2026-07-04 | P5 r57 重评 QUERY-009 + RPT-004/005 + DASH-006 + NFR-008（M9 主题分析 + M10/M12 报表 + M13 Dataset/NFR companion 质量推分 r57）；pytest 1452/4 skipped；test_dash_rpt_query_nfr_r57 37/37 + r53 38/38 + r55 35/35 + r52 52/52 回归 162/162；dataset execute-plan、chart-bindings linkage、catalog M7 ACL、mock schedule executor、deployment-report；性能 58%→88%，完整度 72–78%→84–90%，总分 82.6–85.6→88.2–91.3（QUERY-009/NFR-008 破 90 STUCK 清零；DASH-006/RPT-004/005 仍 <90 STUCK round 2；同比环比/GIS/fe/真实执行器/产物投递留远期） |
 | 1.2.58 | 2026-07-04 | P5 r55 重评 RPT-006/007 + GOV-006 + META-006 + CONN-020（M10/M12 报表扩展 + M8 OpenAPI + META schema + OceanBase companion 质量推分 r55）；pytest 1415/4 skipped；test_rpt_gov_meta_conn_r55 35/35 + r54 42/42 + r53 38/38 + r52 52/52 回归 167/167；gov openapi 版本/deactivate、batch 部分失败 detail、extension render-spec/revisions/snapshot、entity validate/query-bindings、oceanbase HTTP 4xx/502+limit；性能 58%→88%，完整度 74–78%→90%，总分 88.4–89.9→90.0–90.4（五 ID 破 90 STUCK 清零；管理员 UI/真实持久化/只读查询集成测/OpenAPI 文档生成留远期） |
 | 1.2.57 | 2026-07-04 | P5 r54 重评 RPT-006/007 + GOV-006 + META-006 + CONN-020（M10/M12 报表扩展 + M8 发布引擎 OpenAPI + 实体 schema + OceanBase L1 kickoff r54）；pytest 1380/4 skipped；test_rpt_gov_meta_conn_r54 42/42 + r53 38/38 + r52 52/52 + r49 35/35 + r46 36/36 回归 203/203；reports extension/batch、gov openapi-mappings、metadata entity schema、oceanbase dialect；完整度 5%→74–78%，可靠性 0%→94–96%，测试覆盖 0%→98%，总分 11.8–12.0→88.4–89.9（五 ID 均 <90 STUCK upsert round 1；渲染联动/持久化/UI/只读查询集成测留 companion） |
 | 1.2.56 | 2026-07-04 | P5 r53 重评 QUERY-009 + RPT-004/005 + DASH-006 + NFR-008（M9 主题分析 + M10/M12 报表 + M13 Dataset/NFR L1 kickoff r53）；pytest 1338/4 skipped；test_dash_rpt_query_nfr_r53 38/38 + r52 52/52 + r49 35/35 + r46 36/36 回归 161/161；dataset validate+ACL+routing、catalog tree CRUD/move、theme-analysis config_store、schedule FSM+cron、runtime-compliance pyproject/loaded-modules；完整度 5%→72–78%，可靠性 0%→94–96%，测试覆盖 0%→98%，总分 11.7–11.8→82.6–85.6（五 ID 均 <90 STUCK upsert round 1；Dataset 执行链/fe GIS/M7 目录 ACL/调度执行器/部署验收报告留 companion） |
@@ -213,6 +214,3 @@ domain_count: 16
 | 1.2.52 | 2026-07-04 | P5 r46 重评 NFR-005/006/007 + GOV-005 + CONN-019（NFR 横切 + GOV 发布 FSM + GBase L1 kickoff r46）；pytest 1170/4 skipped；test_nfr_gov_conn_r46 36/36 + r45 30/30 + r41 36/36 回归；core/nfr（plugin_extension/push_config/xinchuang）+ governance/publish FSM + gbase dialect + api/v1/nfr；完整度 5%→76–78%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.4–11.6→79.2–84.1（五 ID 均 <90 STUCK upsert round 1；浏览器矩阵/真实推送通道/审批通知/UI 选型/只读查询留 companion） |
 | 1.2.51 | 2026-07-04 | P5 r45 重评 API-003/004/005/006/007（M8/M12/M13 集成 API companion 质量推分 r45）；pytest 1134/4 skipped；test_integration_api_l1_r45 30/30 + r44 38/38 + r31 24/24 回归；reports_export mock 生成/download、query_services publish/参数幂等、bus_register 发布钩子、embed_token 过期/origin、openapi v2 文档面；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.5–87.4→90.2–90.8（五 ID 破 90 STUCK 清零） |
 | 1.2.50 | 2026-07-04 | P5 r44 重评 API-003/004/005/006/007（M8/M12/M13 集成 API L1 kickoff r44）；pytest 1104/4 skipped；test_integration_api_l1_r44 38/38 + r31 24/24 回归；integration 域（query_services/bus_register/reports_export/embed_token/errors）+ api/v1 四路由簇 + openapi/version_policy；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–13.1→86.5–87.4（五 ID 均 <90 STUCK upsert round 1；报表文件生成/发布自动注册/v2 文档留 companion） |
-| 1.2.49 | 2026-07-04 | P5 r43 重评 VIZ-003/004/005/006/008（M9 可视化高级图表类型 companion 质量推分 r43）；pytest 1068/2 skipped；test_viz_advanced_l1_r43 28/28 + r42 35/35 回归；vitest charts.advanced.smoke 22/22；fe chartRegistry/renderFromSpec/AdvancedEchartsChart/ChartConfigPanel/ChartRenderer + EmbedChartPage/EmbedSharePanel + is_origin_allowed；完整度 55–62%→88–90%，可靠性 62–65%→94–96%，测试覆盖 60–65%→96–98%，性能 50%→86–88%，总分 57.1–61.1→90.0–90.2（五 ID 破 90 STUCK 清零；VIZ-005 时间范围选择留后续） |
-| 1.2.48 | 2026-07-04 | P5 r42 重评 VIZ-003/004/005/006/008（M9 可视化高级图表类型 L1 kickoff r42）；pytest 1038/4 skipped；test_viz_advanced_l1_r42 35 用例/48 断言 + r28/r30 pie→radar 回归；新域 `app/viz/`（specs/registry/builtin 9 类型/render/embed）+ chart_view registry 驱动校验 + charts.py 3 新路由（GET /charts/types · POST /charts/render-spec · POST /charts/embed/validate）；完整度 5%→55–62%，可靠性 0%→62–65%，测试覆盖 0%→60–65%，架构 8–14%→66–72%，总分 11.3–12.1→57.1–61.1（五 ID <90 STUCK upsert round 1；前端渲染/配置 UI/iframe 页面/Tailwind 主题留 companion） |
-| 1.2.47 | 2026-07-04 | P5 r41 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 companion 质量推分 r41）；pytest 1003/4 skipped；test_connectors_gov_r41 36/36 + r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；五方言 HTTP test_connection/metadata 4xx/502 链、空库/空 collection 边界、列 limit=500 回归、SQLite 只读/路径穿越对称守卫、map_mongodb_error MONGODB_UNKNOWN_DATABASE；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.1–88.8→90.0–91.2（五 ID 破 90 STUCK 清零） |

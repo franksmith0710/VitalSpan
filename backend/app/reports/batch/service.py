@@ -4,6 +4,7 @@ import hashlib
 import json
 import uuid
 
+from app.auth.deps import UserContext
 from app.reports.batch.schemas import BatchCreateReportsIn, BatchCreateReportsOut, BatchReportItem
 from app.reports.catalog import service as catalog_service
 from app.reports.catalog.errors import ReportCatalogError
@@ -15,6 +16,7 @@ from app.reports.extension.schemas import ExtensionConfigUpsert
 _ITEM_LIMIT = 50
 _idempotency_store: dict[str, dict] = {}
 probe_batch_create_budget_ms: int = 200
+_BATCH_ACTOR = UserContext(id="batch-system", username="batch", roles=["admin"])
 
 
 def _body_fingerprint(payload: BatchCreateReportsIn) -> str:
@@ -32,21 +34,22 @@ def _create_single_item(item: BatchReportItem) -> uuid.UUID:
                 parent_id=item.parent_id,
                 node_type="template",
                 template_kind=item.template_kind or "excel",
-            )
+            ),
+            _BATCH_ACTOR,
         )
     except ReportCatalogError as exc:
         raise ReportBatchError(exc.code, exc.message, exc.status) from exc
     if item.extension is not None:
         ext_node_id = item.extension.catalog_node_id or node.id
         if ext_node_id != node.id:
-            catalog_service.delete_node(node.id)
+            catalog_service.delete_node(node.id, _BATCH_ACTOR)
             raise ReportBatchError("RPT_BATCH_EXTENSION_INVALID", "catalogNodeId mismatch", 422)
         ext_body = item.extension.model_dump(exclude={"catalog_node_id"}, exclude_none=True)
         ext_payload = ExtensionConfigUpsert(catalog_node_id=node.id, **ext_body)
         try:
             extension_service.upsert(node.id, ext_payload)
         except ReportExtensionError as exc:
-            catalog_service.delete_node(node.id)
+            catalog_service.delete_node(node.id, _BATCH_ACTOR)
             raise ReportBatchError("RPT_BATCH_EXTENSION_INVALID", exc.message, exc.status) from exc
     return node.id
 
@@ -78,7 +81,7 @@ def batch_create(payload: BatchCreateReportsIn, idempotency_key: str | None) -> 
                 rolled_back = len(created)
                 for node_id in created:
                     if catalog_service.node_exists(node_id):
-                        catalog_service.delete_node(node_id)
+                        catalog_service.delete_node(node_id, _BATCH_ACTOR)
                 if rolled_back == 0:
                     raise
                 raise ReportBatchError(
