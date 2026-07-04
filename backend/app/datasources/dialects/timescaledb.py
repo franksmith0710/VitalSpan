@@ -74,4 +74,5 @@ class TimescaledbConnector:
 
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
         columns = self._delegate.list_columns(connection, schema, table)
+        # r41: 委托 PG list_columns 后按 TIMESCALE_MAX_COLUMNS 切片
         return columns[:TIMESCALE_MAX_COLUMNS] if len(columns) > TIMESCALE_MAX_COLUMNS else columns
