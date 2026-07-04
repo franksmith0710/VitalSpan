@@ -74,3 +74,68 @@ def test_tidb_test_connection_ok_r34(mock_connect):
     assert result.ok is True
     conn.ping.assert_called_once_with(reconnect=False)
     conn.close.assert_called_once()
+
+
+import pymysql.err
+
+from app.datasources.dialects.starrocks import StarrocksConnector
+
+
+def test_starrocks_in_types_catalog_r34():
+    """T-CONN-R34-009-01: types 含 starrocks category olap。"""
+    types = {item["type"]: item for item in export_type_catalog()}
+    assert "starrocks" in types
+    assert types["starrocks"]["category"] == "olap"
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_starrocks_timeout_structured_r34(mock_connect):
+    """T-CONN-R34-009-02: 超时 OperationalError → ok=False 且 message 含 timeout 语义。"""
+    mock_connect.side_effect = pymysql.err.OperationalError(2013, "Lost connection: timeout expired")
+    result = StarrocksConnector().test_connection(
+        host="127.0.0.1", port=9030, database="test", username="root", password=""
+    )
+    assert result.ok is False
+    assert result.code == "STARROCKS_TIMEOUT"
+    assert "timeout" in result.message.lower()
+
+
+from app.datasources.dialects.elasticsearch import ElasticsearchConnector
+
+
+def test_elasticsearch_in_types_catalog_r34():
+    """T-CONN-R34-015-01: types 含 elasticsearch category search。"""
+    types = {item["type"]: item for item in export_type_catalog()}
+    assert "elasticsearch" in types
+    assert types["elasticsearch"]["category"] == "search"
+
+
+@patch("app.datasources.dialects.elasticsearch.Elasticsearch")
+def test_elasticsearch_list_schemas_and_columns_r34(mock_es_cls):
+    """T-CONN-R34-015-02: mock index list + mapping columns。"""
+    client = MagicMock()
+    mock_es_cls.return_value = client
+    client.info.return_value = {"version": {"number": "8.11.0"}}
+    client.cat.indices.return_value = [{"index": "orders"}, {"index": ".system"}]
+    client.indices.get_mapping.return_value = {
+        "orders": {"mappings": {"properties": {"amount": {"type": "long"}, "status": {"type": "keyword"}}}}
+    }
+    connector = ElasticsearchConnector()
+    ok = connector.test_connection(host="127.0.0.1", port=9200, database="", username="", password="")
+    assert ok.ok is True
+    conn = connector.open_connection(host="127.0.0.1", port=9200, database="", username="", password="")
+    schemas = connector.list_schemas(conn)
+    assert [s.name for s in schemas] == ["orders"]
+    tables = connector.list_tables(conn, "orders")
+    assert tables[0].name == "_doc"
+    cols = connector.list_columns(conn, "orders", "_doc")
+    assert {c.name for c in cols} == {"amount", "status"}
+
+
+def test_elasticsearch_invalid_host_r34():
+    """T-CONN-R34-015-03: 空 host → ok=False 结构化。"""
+    result = ElasticsearchConnector().test_connection(
+        host="", port=9200, database="", username="", password=""
+    )
+    assert result.ok is False
+    assert result.code == "ES_INVALID_HOST"
