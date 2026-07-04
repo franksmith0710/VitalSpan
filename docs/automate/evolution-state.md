@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r33.md |
-| design | docs/superpowers/specs/2026-07-04-m11-meta-m12-companion-quality-r33-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m11-meta-m12-companion-quality-r33.md |
-| branch | feat/evolution-r33-m11-meta-m12-companion-quality |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r34.md |
+| design | docs/superpowers/specs/2026-07-04-m11-connector-m13-gov-kickoff-r34-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m11-connector-m13-gov-kickoff-r34.md |
+| branch | feat/evolution-r34-m11-connector-m13-gov-kickoff |
 | base_branch | dev-auto |
-| prd_ids | META-001,META-002,QUERY-007,DESIGN-001,DESIGN-002 |
-| pr_number | 57 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest ../tests/test_meta_design_r33.py ../tests/test_meta_design_r32.py -q |
+| prd_ids | CONN-021,GOV-004,CONN-009,CONN-015,GOV-008 |
+| pr_number |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_connectors_gov_r34.py ../tests/test_meta_design_r33.py -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端，无 UI 改动） |
 | deployed_automate_rev | bf60b94ec4f4 |
