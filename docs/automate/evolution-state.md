@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r44.md |
 | design | docs/superpowers/specs/2026-07-04-m8-m12-m13-integration-api-l1-r44-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-04-m8-m12-m13-integration-api-l1-r44.md |
+| branch | feat/evolution-r44-m8-m12-m13-integration-api-l1 |
 | base_branch | dev-auto |
 | prd_ids | API-003,API-004,API-005,API-006,API-007 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests -q |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T08:53:00Z |
+| skill_rule_index_generated_at | 2026-07-04T10:25:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P2 r44 计划完成：8 Task（errors→API-003 services→API-004 bus adapter/retry→API-005 reports export→API-006 embed token→API-007 openapi version_policy→回归门控→docs）；18 文件 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥38 新测 test_integration_api_l1_r44 + r31 24 回归；pytest 目标 ≥1096；plan=docs/superpowers/plans/2026-07-04-m8-m12-m13-integration-api-l1-r44.md；phase P1_DONE→P2_DONE
 - P1 r44 设计完成：M8/M12/M13 集成 API L1 kickoff — API-003/004/005/006/007；18 文件框定（integration 域 6 + api/v1 四路由簇 + bus/adapter + openapi/version_policy + r44 smoke ≥28 测）；IF-01~04 与 GOV-002/VIZ-006 边界闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r44 选题完成：M8/M12/M13 集成 API L1 kickoff — API-003/004/005/006/007（5 项，同 F13-API 域）；最低分 API-003(11.3) 全表最低；饱和熔断未触发（Top5 11.3–11.5«90）；plan M1/M1B 全勾选无活跃 `[ ]` 行（已知 concern，回落纯 8 维选题）；STUCK 表空（5 项首次入选）；phase idle→G2_DONE
 - G1 r44 bootstrap：r43 PR #69 已合并 dev-auto；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 API-003(11.3)/NFR-006(11.4)/NFR-007(11.4)；STUCK 表空（r43 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
