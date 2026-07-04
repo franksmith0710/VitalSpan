@@ -6,17 +6,17 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r39.md |
 | design | docs/superpowers/specs/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39.md |
 | branch | cursor/bc-fda56918-b209-4fa3-b5bc-f75bf68e9cfe-8879 |
 | base_branch | dev-auto |
 | prd_ids | QUERY-008,CONN-022,META-003,CONN-017,CONN-010 |
-| pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest tests/test_query_meta_conn_r39.py tests/test_query_meta_conn_r38.py tests/test_connectors_gov_r37.py -v |
+| pr_number | 65 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command |  |
+| last_ui_verified_command | N/A（纯后端，ui_design_skill none） |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T06:25:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r39 PRD 重评：QUERY-008/CONN-022/META-003/CONN-017/CONN-010 companion 质量推分；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归 109/109；总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
+- P4 r39 验证通过：ruff clean；pytest 924 passed/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归 109/109；UI: N/A（纯后端）；PR #65 已提前创建（SOP 顺序 concern）；phase P3_DONE→P4_DONE
 - P3 r39 实现完成：8 Task 全绿；CONN-010/022/017 + META-003 values 校验 + QUERY-008 translator 守卫；33 测 test_query_meta_conn_r39 + r38 36/36 + r37 40/40；pytest 924/4 skipped；branch cursor/bc-fda56918-b209-4fa3-b5bc-f75bf68e9cfe-8879；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r39 计划完成：8 Task（errors 脚手架→Trino→GaussDB→DM→dimensions values→translator 守卫→回归门控→docs）；≥31 新测 test_query_meta_conn_r39；11 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
 - P1 r39 设计完成：M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 — QUERY-008/CONN-022/META-003/CONN-017/CONN-010；18 文件框定；三连接器 HTTP 链 + values 校验 + translator 算子守卫；ui_design_skill none；phase G2_DONE→P1_DONE
