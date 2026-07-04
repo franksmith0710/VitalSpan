@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.55
+version: 1.2.56
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,20 +17,20 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r52 重评 GOV-003 + DESIGN-005/003 + QUERY-003 + CONN-016（M13 设计器 + M11 OpenSearch + 治理/查询 companion 质量推分 r52）；pytest 1300/4 skipped；test_design_conn_gov_query_r52 52/52 + r49 35/35 + r51 43/43 + r46 36/36 回归；gov workflow 节点角色/并发幂等、sql_mode 只读链+chart_view 联动、native 注入+readonly-guard、output_fields 数量边界、OpenSearch HTTP/空索引边界；性能 58%→88%，完整度 76–78%→90%，总分 81.4–83.2→90.1–90.4（五 ID 破 90 STUCK 清零；SQL Lab UI/只读查询集成测/META-004 联动/BPM 可配置角色留远期）
+> 更新：2026-07-04 · P5 r53 重评 QUERY-009 + RPT-004/005 + DASH-006 + NFR-008（M9 主题分析 + M10/M12 报表 + M13 Dataset/NFR L1 kickoff r53）；pytest 1338/4 skipped；test_dash_rpt_query_nfr_r53 38/38 + r52 52/52 + r49 35/35 + r46 36/36 回归 161/161；dataset validate+ACL+routing、catalog tree CRUD/move、theme-analysis config_store、schedule FSM+cron、runtime-compliance pyproject/loaded-modules；完整度 5%→72–78%，可靠性 0%→94–96%，测试覆盖 0%→98%，总分 11.7–11.8→82.6–85.6（五 ID 均 <90 STUCK upsert round 1；Dataset 执行链/fe GIS/M7 目录 ACL/调度执行器/部署验收报告留 companion）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
-| 1 | QUERY-009 | 查询项 | 11.7 | 完整度 | 见期次 |
-| 2 | RPT-004 | 报表项 | 11.7 | 完整度 | 见期次 |
-| 3 | DASH-006 | 仪表板项 | 11.8 | 完整度 | 见期次 |
-| 4 | RPT-005 | 报表项 | 11.8 | 完整度 | 见期次 |
-| 5 | NFR-008 | 非功能项 | 11.8 | 完整度 | 见期次 |
-| 6 | CONN-020 | OceanBase 连接器 | 12.0 | 完整度 | 见期次 |
+| 1 | RPT-006 | 报表项 | 11.8 | 完整度 | 见期次 |
+| 2 | RPT-007 | 报表项 | 11.9 | 完整度 | 见期次 |
+| 3 | GOV-006 | 治理项 | 11.9 | 完整度 | 见期次 |
+| 4 | META-006 | 元数据项 | 11.9 | 完整度 | 见期次 |
+| 5 | CONN-020 | OceanBase 连接器 | 12.0 | 完整度 | 见期次 |
+| 6 | CAT-004 | 分类项 | 12.0 | 完整度 | 见期次 |
 | 7 | META-004 | 元数据项 | 12.0 | 完整度 | 见期次 |
 | 8 | CONN-018 | 人大金仓连接器 | 12.1 | 完整度 | 见期次 |
-| 9 | CONN-004 | 关系型连接器 | 90.0 | 用户价值 | 见期次 |
-| 10 | VIZ-005 | 可视化项 | 90.0 | 用户价值 | 见期次 |
+| 9 | DASH-005 | 仪表板项 | 12.1 | 完整度 | 见期次 |
+| 10 | DESIGN-004 | 设计器项 | 12.1 | 完整度 | 见期次 |
 
 ---
 
@@ -92,7 +92,7 @@ domain_count: 16
 | QUERY-006 | 86 | 96 | 96 | N/A | 90 | 100 | 86 | 94 | 92.6 | 性能 |
 | QUERY-007 | 84 | 94 | 96 | N/A | 92 | 98 | 90 | 88 | 91.7 | 安全性 |
 | QUERY-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 性能 |
-| QUERY-009 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 12 | 11.7 | 完整度 |
+| QUERY-009 | 84 | 76 | 94 | N/A | 90 | 98 | 58 | 90 | 84.4 | 性能 |
 | VIZ-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | VIZ-002 | 84 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 91.6 | 用户价值 |
 | VIZ-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
@@ -106,12 +106,12 @@ domain_count: 16
 | DASH-003 | 84 | 94 | 94 | N/A | 88 | 100 | 88 | 88 | 90.7 | 用户价值 |
 | DASH-004 | 52 | 5 | 0 | N/A | 9 | 0 | 0 | 12 | 12.5 | 完整度 |
 | DASH-005 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 13 | 12.1 | 完整度 |
-| DASH-006 | 49 | 5 | 0 | N/A | 11 | 0 | 0 | 8 | 11.8 | 完整度 |
+| DASH-006 | 82 | 72 | 94 | N/A | 88 | 98 | 58 | 86 | 82.6 | 完整度 |
 | RPT-001 | 50 | 5 | 0 | N/A | 12 | 0 | 0 | 9 | 12.2 | 完整度 |
 | RPT-002 | 51 | 5 | 0 | N/A | 13 | 0 | 0 | 10 | 12.6 | 完整度 |
 | RPT-003 | 52 | 5 | 0 | N/A | 14 | 0 | 0 | 11 | 13.0 | 完整度 |
-| RPT-004 | 48 | 5 | 0 | N/A | 8 | 0 | 0 | 12 | 11.7 | 完整度 |
-| RPT-005 | 47 | 5 | 0 | N/A | 9 | 0 | 0 | 13 | 11.8 | 完整度 |
+| RPT-004 | 84 | 78 | 96 | N/A | 88 | 98 | 58 | 86 | 84.4 | 性能 |
+| RPT-005 | 84 | 76 | 96 | N/A | 90 | 98 | 58 | 86 | 84.2 | 性能 |
 | RPT-006 | 50 | 5 | 0 | N/A | 10 | 0 | 0 | 8 | 11.8 | 完整度 |
 | RPT-007 | 49 | 5 | 0 | N/A | 11 | 0 | 0 | 9 | 11.9 | 完整度 |
 | VIEW-001 | 82 | 94 | 94 | N/A | 90 | 96 | 88 | 88 | 90.2 | 用户价值 |
@@ -157,7 +157,7 @@ domain_count: 16
 | NFR-005 | 82 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.0 | 用户价值 |
 | NFR-006 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | NFR-007 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
-| NFR-008 | 46 | 5 | 0 | N/A | 13 | 0 | 0 | 11 | 11.8 | 完整度 |
+| NFR-008 | 86 | 78 | 96 | N/A | 90 | 98 | 58 | 92 | 85.6 | 性能 |
 | DATA-004 | 80 | 96 | 95 | N/A | 88 | 100 | 86 | 94 | 91.1 | 用户价值 |
 | DATA-001 | 82 | 96 | 94 | N/A | 88 | 100 | 88 | 92 | 91.3 | 用户价值 |
 | DATA-002 | 84 | 94 | 96 | N/A | 86 | 100 | 90 | 86 | 91.0 | 用户价值 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.56 | 2026-07-04 | P5 r53 重评 QUERY-009 + RPT-004/005 + DASH-006 + NFR-008（M9 主题分析 + M10/M12 报表 + M13 Dataset/NFR L1 kickoff r53）；pytest 1338/4 skipped；test_dash_rpt_query_nfr_r53 38/38 + r52 52/52 + r49 35/35 + r46 36/36 回归 161/161；dataset validate+ACL+routing、catalog tree CRUD/move、theme-analysis config_store、schedule FSM+cron、runtime-compliance pyproject/loaded-modules；完整度 5%→72–78%，可靠性 0%→94–96%，测试覆盖 0%→98%，总分 11.7–11.8→82.6–85.6（五 ID 均 <90 STUCK upsert round 1；Dataset 执行链/fe GIS/M7 目录 ACL/调度执行器/部署验收报告留 companion） |
 | 1.2.55 | 2026-07-04 | P5 r52 重评 GOV-003 + DESIGN-005/003 + QUERY-003 + CONN-016（M13 设计器 + M11 OpenSearch + 治理/查询 companion 质量推分 r52）；pytest 1300/4 skipped；test_design_conn_gov_query_r52 52/52 + r49 35/35 + r51 43/43 + r46 36/36 回归；gov workflow 节点角色/并发幂等、sql_mode 只读链+chart_view 联动、native 注入+readonly-guard、output_fields 数量边界、OpenSearch HTTP/空索引边界；性能 58%→88%，完整度 76–78%→90%，总分 81.4–83.2→90.1–90.4（五 ID 破 90 STUCK 清零；SQL Lab UI/只读查询集成测/META-004 联动/BPM 可配置角色留远期） |
 | 1.2.54 | 2026-07-04 | P5 r51 重评 NFR-005/006/007 + GOV-005 + CONN-019（NFR 横切 + GOV 发布 + GBase companion 质量推分 r51）；pytest 1248/4 skipped；test_nfr_gov_conn_r51 43/43 + r46 36/36 + r49 35/35 回归；browser_matrix/push_channels 降级链、xinchuang remediation、plugin_extension 零侵入、publish 审批通知钩子、GBase HTTP 4xx/502+空库/limit 边界；性能 58%→88%，完整度 76–78%→90%，架构 68–72%→90%，总分 79.2–84.1→90.0–90.4（五 ID 破 90 STUCK 清零；Admin UI/真实推送 SDK/部署验收报告/只读查询集成测留远期） |
 | 1.2.53 | 2026-07-04 | P5 r49 重评 DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003（M13 设计器 + M11 OpenSearch + 治理/查询 L1 kickoff r49）；pytest 1205/4 skipped；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36 回归；designer sql_mode/output_fields、opensearch dialect、gov workflow FSM、query native guard；完整度 5%→76–78%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.6–12.0→81.4–83.2（五 ID 均 <90 STUCK upsert round 1；SQL Lab UI/只读查询/节点角色配置/META-004 全链路留 companion） |
@@ -214,4 +215,3 @@ domain_count: 16
 | 1.2.48 | 2026-07-04 | P5 r42 重评 VIZ-003/004/005/006/008（M9 可视化高级图表类型 L1 kickoff r42）；pytest 1038/4 skipped；test_viz_advanced_l1_r42 35 用例/48 断言 + r28/r30 pie→radar 回归；新域 `app/viz/`（specs/registry/builtin 9 类型/render/embed）+ chart_view registry 驱动校验 + charts.py 3 新路由（GET /charts/types · POST /charts/render-spec · POST /charts/embed/validate）；完整度 5%→55–62%，可靠性 0%→62–65%，测试覆盖 0%→60–65%，架构 8–14%→66–72%，总分 11.3–12.1→57.1–61.1（五 ID <90 STUCK upsert round 1；前端渲染/配置 UI/iframe 页面/Tailwind 主题留 companion） |
 | 1.2.47 | 2026-07-04 | P5 r41 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 companion 质量推分 r41）；pytest 1003/4 skipped；test_connectors_gov_r41 36/36 + r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；五方言 HTTP test_connection/metadata 4xx/502 链、空库/空 collection 边界、列 limit=500 回归、SQLite 只读/路径穿越对称守卫、map_mongodb_error MONGODB_UNKNOWN_DATABASE；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.1–88.8→90.0–91.2（五 ID 破 90 STUCK 清零） |
 | 1.2.46 | 2026-07-04 | P5 r40 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 L1 kickoff r40）；pytest 967/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；MongoDB/InfluxDB/TDengine/SQLite/TimescaleDB dialects + types catalog、MONGODB_/INFLUX_/TDENGINE_/SQLITE_/TIMESCALE_* 错误域与 schema mock、SQLite 路径穿越/只读守卫；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.5–12.8→86.1–88.8（五 ID 均 <90 STUCK upsert round 1） |
-| 1.2.45 | 2026-07-04 | P5 r39 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 r39）；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40；errors.py TRINO_/GAUSSDB_/DM_* 上浮、三连接器 MAX_COLUMNS=500/HTTP metadata 链、META_DIM_VALUE_* 校验与分页、translator 算子白名单/注入守卫；完整度 76–88%→90%，可靠性 92–94%→94%，测试覆盖 96–98%→98%，总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零） |
