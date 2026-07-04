@@ -161,6 +161,7 @@ redoc: /redoc
 | GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET/PUT/DELETE | `/api/v1/dashboards/{id}` | Dashboard CRUD | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT | `/api/v1/dashboards/{id}/layout` | 布局与组件列表；422 码：`DASH_DUPLICATE_WIDGET` / `DASH_MISSING_CHART_CONFIG` / `DASH_CHART_ID_MISMATCH` | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| POST | `/api/v1/dashboards/theme-analysis/execute-plan` | 主题分析 execute-plan 四步链（`theme-plan-v1`；yoy/mom compareWindow） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/theme-analysis/validate` | 实体主题分析 config 校验（`DASH_THEME_*`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/theme-analysis` | 实体主题分析 config 持久化/读取（`config_type=entity_theme`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET | `/api/v1/dashboards/theme-analysis/chart-bindings` | chartViewBindings 联动查询（`linkedWidgetCount`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
@@ -181,9 +182,11 @@ redoc: /redoc
 | GET/POST/PATCH/DELETE | `/api/v1/reports/catalog/nodes*` | 报表模板树 catalog CRUD/move（`RPT_CATALOG_*`） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| POST | `/api/v1/reports/schedules/{id}/execute` | 调度 mock 执行器（Idempotency-Key 幂等；`RPT_SCHEDULE_EXECUTE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| GET/PUT/DELETE | `/api/v1/reports/catalog/nodes/{id}/extension` | 模板节点扩展配置 CRUD（metrics/filters；`RPT_EXT_*`） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| GET | `/api/v1/reports/catalog/nodes/{id}/extension/render-spec` | 扩展配置渲染规格（`renderVersion=1.0`；仅 visible metrics） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST | `/api/v1/reports/schedules/{id}/execute` | 调度 semi-real 执行器（`X-Rpt-Semi-Real: 1`；mock 兼容默认；Idempotency-Key；`deliverySteps`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/schedules/executions/{executionId}/artifact` | 执行产物元数据（`RPT_ARTIFACT_FORBIDDEN` ACL） | 内部 | 一期 | RPT-005, RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET/PUT/DELETE | `/api/v1/reports/catalog/nodes/{id}/extension` | 模板节点扩展配置 CRUD（metrics/filters/compareMode；`RPT_EXT_*` ACL） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST | `/api/v1/reports/catalog/nodes/{id}/extension/compare-preview` | 同比环比预览槽位（yoy/mom slots） | 内部 | 二期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/catalog/nodes/{id}/extension/render-spec` | 扩展配置渲染规格（`renderVersion=1.0`；`compareMetrics`/`compareVersion`） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/catalog/nodes/{id}/extension/revisions` | 扩展配置修订历史（changeNote 审计） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/batch` | 批量创建模板节点（Idempotency-Key；`RPT_BATCH_*`） | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表 | 内部 | 二期 | RPT-001 | 规划 | `backend/app/api/v1/reports/engine.py` |

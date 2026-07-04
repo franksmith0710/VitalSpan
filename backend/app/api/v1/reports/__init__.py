@@ -67,19 +67,36 @@ def get_node_extension(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get
 def upsert_node_extension(
     node_id: uuid.UUID,
     payload: ExtensionConfigUpsert,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
 ):
     try:
-        return extension_service.upsert(node_id, payload)
+        return extension_service.upsert(node_id, payload, user)
     except ReportExtensionError as exc:
         return _extension_error(exc)
 
 
 @router.delete("/catalog/nodes/{node_id}/extension", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
-def delete_node_extension(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get_current_user)]):
+def delete_node_extension(
+    node_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+):
     try:
-        extension_service.delete_extension(node_id)
+        extension_service.delete_extension(node_id, user)
         return None
+    except ReportExtensionError as exc:
+        return _extension_error(exc)
+
+
+@router.post("/catalog/nodes/{node_id}/extension/compare-preview", response_model=None)
+def extension_compare_preview(
+    node_id: uuid.UUID,
+    payload: dict,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return extension_service.compare_preview(
+            node_id, payload.get("compareMode", "yoy"), payload.get("metricKeys")
+        )
     except ReportExtensionError as exc:
         return _extension_error(exc)
 
@@ -222,8 +239,30 @@ def execute_schedule(
     schedule_id: uuid.UUID,
     user: Annotated[UserContext, Depends(get_current_user)],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    delivery_mock: Annotated[str | None, Header(alias="X-Rpt-Delivery-Mock")] = None,
+    semi_real: Annotated[str | None, Header(alias="X-Rpt-Semi-Real")] = None,
 ):
     try:
-        return scheduler_executor.mock_execute_schedule(schedule_id, idempotency_key or "", user)
+        key = idempotency_key or ""
+        if semi_real == "1" or delivery_mock is not None:
+            return scheduler_executor.semi_real_execute_schedule(
+                schedule_id, key, user, delivery_mock
+            )
+        return scheduler_executor.mock_execute_schedule(schedule_id, key, user)
     except ScheduleError as exc:
         return _schedule_error(exc)
+
+
+@router.get("/schedules/executions/{execution_id}/artifact", response_model=None)
+def get_execution_artifact(
+    execution_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+):
+    from app.reports.catalog.acl import assert_artifact_access
+
+    try:
+        meta = scheduler_executor.get_execution_artifact_meta(execution_id)
+        assert_artifact_access(user, meta["artifactRef"])
+        return meta
+    except ReportCatalogError as exc:
+        return _catalog_error(exc)

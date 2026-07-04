@@ -13,6 +13,7 @@ class MetricAdjustment(BaseModel):
     label: str = Field(min_length=1, max_length=120)
     expression: str | None = None
     visible: bool = True
+    compare_mode: str = Field(default="none", alias="compareMode")
 
 
 class FilterAdjustment(BaseModel):
