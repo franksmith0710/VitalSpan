@@ -33,11 +33,13 @@ class DesignerError(Exception):
         message: str,
         status: int = 400,
         fields: list[dict[str, str]] | None = None,
+        remediation: str | None = None,
     ) -> None:
         self.code = code
         self.message = message
         self.status = status
         self.fields = fields or []
+        self.remediation = remediation
         super().__init__(message)
 
 
@@ -81,13 +83,16 @@ class SqlModeSpec(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     schema_version: str = Field(alias="schemaVersion", default="1.0")
     data_source_id: uuid.UUID = Field(alias="dataSourceId")
-    sql: str = Field(min_length=1, max_length=65536)
+    sql: str = Field(min_length=1)
     parameters: dict[str, object] = Field(default_factory=dict)
     ref_type: str = Field(default="design_draft", alias="refType")
     ref_id: uuid.UUID = Field(alias="refId")
 
 
 ALLOWED_OUTPUT_AGGREGATES = frozenset({"sum", "avg", "count", "min", "max"})
+
+MAX_OUTPUT_FIELDS = 64
+MAX_AGGREGATES = 16
 
 
 class OutputFieldItem(BaseModel):

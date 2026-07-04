@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import time
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
@@ -9,12 +11,22 @@ from app.designer.schemas import (
     AggregateItem,
     DESIGNER_FIELD_REGISTRY,
     DesignerError,
+    MAX_AGGREGATES,
+    MAX_OUTPUT_FIELDS,
     OutputFieldItem,
     OutputFieldsConfig,
 )
 from app.metadata.glossary import service as glossary_service
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigUpsert
+
+probe_output_fields_validate_budget_ms = 50
+
+
+@dataclass(frozen=True)
+class OutputFieldsProbeResult:
+    elapsed_ms: float
+    ok: bool
 
 
 def _glossary_codes(session: Session) -> set[str]:
@@ -29,6 +41,28 @@ def validate_output_fields_config(session: Session, config: OutputFieldsConfig) 
             "At least one output field is required",
             422,
             fields=[{"field": "fields", "message": "must not be empty"}],
+        )
+    if len(config.fields) > MAX_OUTPUT_FIELDS:
+        raise DesignerError(
+            "DESIGN_TOO_MANY_OUTPUT_FIELDS",
+            f"At most {MAX_OUTPUT_FIELDS} output fields allowed",
+            422,
+            fields=[{"field": "fields", "message": f"max {MAX_OUTPUT_FIELDS}"}],
+        )
+    field_ids = [f.field_id for f in config.fields]
+    if len(field_ids) != len(set(field_ids)):
+        raise DesignerError(
+            "DESIGN_DUPLICATE_OUTPUT_FIELD",
+            "Duplicate fieldId in output fields",
+            422,
+            fields=[{"field": "fields", "message": "duplicate fieldId"}],
+        )
+    if len(config.aggregates) > MAX_AGGREGATES:
+        raise DesignerError(
+            "DESIGN_TOO_MANY_AGGREGATES",
+            f"At most {MAX_AGGREGATES} aggregates allowed",
+            422,
+            fields=[{"field": "aggregates", "message": f"max {MAX_AGGREGATES}"}],
         )
     glossary = _glossary_codes(session)
     for idx, field in enumerate(config.fields):
@@ -78,6 +112,20 @@ def validate_output_fields_config(session: Session, config: OutputFieldsConfig) 
                     fields=[{"field": f"{prefix}.groupBy[{j}]", "message": f"{gb} not registered"}],
                 )
     return config
+
+
+def probe_validate_output_fields(session: Session) -> OutputFieldsProbeResult:
+    started = time.perf_counter()
+    cfg = OutputFieldsConfig(
+        fields=[OutputFieldItem(fieldId="order_amount")],
+        refId=uuid.uuid4(),
+    )
+    try:
+        validate_output_fields_config(session, cfg)
+        ok = True
+    except DesignerError:
+        ok = False
+    return OutputFieldsProbeResult(elapsed_ms=(time.perf_counter() - started) * 1000, ok=ok)
 
 
 def _payload(config: OutputFieldsConfig) -> dict:

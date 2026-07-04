@@ -48,3 +48,14 @@ class WorkflowInstanceOut(BaseModel):
     ref_id: uuid.UUID = Field(alias="refId")
     status: str
     allowed_actions: list[str] = Field(alias="allowedActions")
+
+
+class NodeRoleOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    node_id: str = Field(alias="nodeId")
+    role: str
+    description: str
+
+
+class WorkflowNodeRolesOut(BaseModel):
+    items: list[NodeRoleOut]
