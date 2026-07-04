@@ -313,7 +313,7 @@
 - **演化建议**：r51 companion 闭合 HTTP 错误链与元数据边界；后续补 UI 选型与只读查询集成测
 ### [CONN-020] OceanBase 连接器
 
-- **状态**：L1 已实现（r54）
+- **状态**：部分实现（L1 kickoff r54）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：OceanBase 连接器（SRS 追溯项）。
