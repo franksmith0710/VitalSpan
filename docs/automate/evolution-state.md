@@ -67,7 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P4 r36 验证通过：ruff clean；pytest 814 passed/4 skipped；test_connectors_gov_r36 37/37 + r35 35/35 + r34 15/15 回归 87/87；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
+- P5 r36 PRD 重评：CONN-003/007/005/008/004 L1 kickoff；pytest 814/4 skipped；test_connectors_gov_r36 37/37 + r35 35/35 + r34 15/15 回归 87/87；总分 11.8–12.3→86.2–87.8（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
 - P3 r36 实现完成：8 Task 全绿；CONN-003/007/005/008/004 五方言 L1；37 新测 test_connectors_gov_r36；pytest 814/4 skipped；r35 35/35 + r34 15/15 回归；branch cursor/bc-4f2610de-f832-4ff1-8eff-1773a9d832a3-b1db；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r36 计划完成：8 Task（infra→Hive→ClickHouse→SQL Server→Doris→Oracle→registry HTTP→docs+回归）；≥32 新测 test_connectors_gov_r36；11 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
 - P1 r36 设计完成：M11 关系型/OLAP 连接器 L1 kickoff — CONN-003/007/005/008/004；16 文件框定；五方言 hive/clickhouse/sqlserver/doris/oracle；PRD 分片 ID 漂移注记；ui_design_skill none；phase G2_DONE→P1_DONE
