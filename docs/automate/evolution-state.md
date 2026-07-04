@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | DESIGN-005,DESIGN-003,CONN-016,GOV-003,QUERY-003 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 r49 选题完成：M13 设计器 + M11 OpenSearch + 治理/查询 L1 kickoff — DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003（5 项）；最低分 DESIGN-005/003/CONN-016/GOV-003(11.6)；饱和熔断未触发（Top5 11.6–12.0≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 表五 ID 未入选（各 1 轮，79–84 分高于 Top5）；phase idle→G2_DONE
 - G1 r48 bootstrap：r47 PR #74 已 Squash merge dev-auto（799c32a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 DESIGN-005(11.6)/DESIGN-003(11.6)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（NFR-005/006/007 + GOV-005 + CONN-019，均 <90）；phase idle；待 G2 选题
 - G1 r47 bootstrap：r46 PR #73 已 Squash merge dev-auto（2d1f89a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 DESIGN-005(11.6)/DESIGN-003(11.6)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（NFR-005/006/007 + GOV-005 + CONN-019，r46 P5 <90 upsert）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r46 PRD 重评：NFR-005/006/007 + GOV-005 + CONN-019 L1 kickoff；pytest 1170/4 skipped；test_nfr_gov_conn_r46 36/36 + r45 30/30 + r41 36/36；总分 11.4–11.6→79.2–84.1（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY

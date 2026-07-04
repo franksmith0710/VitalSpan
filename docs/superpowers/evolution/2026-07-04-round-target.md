@@ -1,96 +1,108 @@
-# 演化轮次选题 — 2026-07-04（M11 关系型/OLAP 连接器 companion 质量推分 r37）
+# 本轮演化目标（共 5 项）— r49
+
+> 生成：2026-07-04 · G2 evolution-picker · 来源：prd.md hub 8 维评分（薄弱项汇总 Top5）
+> 主题：**M13 设计器 + M11 OpenSearch + 治理/查询 L1 kickoff**
 
 ## 本轮演化目标（共 5 项）
 
 ### 选题决策
 
-- **批量主题**：**M11 关系型/OLAP 连接器 companion 质量推分**（r36 已交付 CONN-003/007/005/008/004 五方言 L1 kickoff 并推分至 86.2–87.8；本轮聚焦 **五 ID 破 90**（STUCK 各 1 轮），闭合 Hive/ClickHouse/SQL Server/Doris/Oracle 的 test_connection/schema/types 边界、结构化错误域与 registry HTTP 链完整度缺口）
-- **来源**：`docs/automate/plan.md` §M1 + §M1B 勾选 **12/12 已完成**，无含 `[ ]` 的活跃节（M11/M12/M13 无活跃节，已知 concern）；`plan.archive.md` §M11 对应 CONN-003~008 已由 r36 L1 落地；`prd.md` hub 8 维 — **CONN-004 86.2**、**CONN-008 87.2**、**CONN-005 87.4**、**CONN-003 87.6**、**CONN-007 87.8** 为 r36 簇唯一 <90；`evolution-state.md` **STUCK: 五 ID 各连续 1 轮**；待办池空；`git log -5` r36 已合并（PR #61，sha 059d222；G0 r37 PR #62 已 Squash merge dev-auto sha 8354ba6）
-- **合并理由**：饱和熔断未触发（plan 无未完成项故执行熔断检查；Top5 薄弱汇总 QUERY-008/CONN-022/META-003 等为远期未实现 11.3–11.7，均 <90，非评分饱和；待办池无未消化项）；对齐 r34→r35、r32→r33 companion 质量推分节奏（L1 kickoff 后次轮破 90）；五 ID 同属 `datasources/` 方言插件面、共享 ConnectorRegistry 与 HIVE_/CLICKHOUSE_/SQLSERVER_/DORIS_/ORACLE_* 错误域，单轮批处理质量推分；符合 `goal.md` **G2 多类别数据源可配置接入** 与 NFR-04 插件扩展巩固
+- **批量主题**：设计器域（DESIGN-003/005）+ OpenSearch 连接器（CONN-016）+ 治理项（GOV-003）+ 查询项（QUERY-003）**L1 kickoff**（hub 当前绝对最低分簇，完整度均为 5%、可靠性/测试覆盖 0%，r46 后 Top5 已刷新为本簇）
+- **来源**：`docs/automate/plan.md` §M1 + §M1B 勾选 **12/12 已完成**，无含 `[ ]` 的活跃节（已知 concern，回落纯 8 维选题）；`prd.md` hub 薄弱项 Top5 — **DESIGN-005 11.6**、**DESIGN-003 11.6**、**CONN-016 11.6**、**GOV-003 11.6**、**QUERY-003 12.0**；`evolution-state.md` 待办池空；选题卡住计数表为 r46 五 ID（NFR-005/006/007、GOV-005、CONN-019，各 1 轮，加权 79.2–84.1，已非 hub Top5）；`git log -5` r48 G1 bootstrap 已合并（sha 6a46f6d；r46 feat 已 Squash merge #73 sha 2d1f89a）
+- **合并理由**：饱和熔断未触发（plan 无未完成 `[ ]` 故执行熔断检查；Top5 加权总分 11.6–12.0 均 ≪90，非评分饱和；待办池无未消化项）；r46 承接 NFR/GOV-005/CONN-019 后 hub Top5 已切换至本簇（r46 round-target 明示 DESIGN/CONN-016/GOV-003/QUERY-003 留后续）；五 ID 虽跨 DESIGN/CONN/GOV/QUERY 四域，但共享 **~11 分未实现 kickoff** 与「结构化错误域 + pytest smoke + 契约/方言骨架」交付模式，对齐 r32 DESIGN L1、r40 连接器 L1 批处理节奏；CONN-016 贴合 `goal.md` **G2**；GOV-003/QUERY-003 为 G5/G3 远期能力骨架，本轮仅 L1 契约不落全量 UI
 - **范围框定**：
-  - **模块**（1–2）：`backend/app/datasources/` 方言与连接器注册（CONN-003/004/005/007/008）；`backend/app/datasources/dialects/` 子包边界与 types catalog
-  - **文件**（合计约 14–18，≤20）：五方言 test_connection/schema 边界、types catalog 完整性、结构化 `code` 与 detail.fields、registry HTTP 链 smoke、pytest companion（`test_connectors_gov_r37`）；**不修改** `goal.md` / `plan.md` 结构
-  - **不含**：远期 QUERY-008/009、META-003~006、CONN-022 GaussDB；Hive/ClickHouse/Doris 生产级 HA 与完整 OLAP 优化；Admin 数据源配置全量 UI；r35 已破 90 的 CONN-021/009/015
-- **不足 5 项原因**：不适用 — 本轮满 5 项（r36 STUCK 簇 companion 质量推分）
+  - **模块**（≤3）：`backend/app/design/`（DESIGN-003/005 设计器契约与校验骨架，延续 r32 DESIGN-001/002 域）+ `backend/app/datasources/dialects/`（CONN-016 OpenSearch 方言 + registry 登记）+ `backend/app/governance/` 与 `backend/app/query/` 横切面（GOV-003 治理项 REST 骨架 + QUERY-003 查询项契约 smoke，共享错误域与 pytest 门控）
+  - **文件**（合计约 16–19，≤20）：设计器 spec/校验 REST；OpenSearch dialect test_connection/metadata/types catalog + OPENSEARCH_* 错误域；GOV-003 治理项状态/契约 endpoint；QUERY-003 查询项契约与守卫 smoke；pytest L1（`test_design_conn_gov_query_r49` 或同级）+ r32 design / r40 connector / r46 governance 回归门控
+  - **不含**：Admin 全量设计器 UI、OpenSearch 生产集群 HA、GOV BPM 全量工单、QUERY-003 Dataset 语义层全链路（M13 四期）、r46 STUCK 簇（79–84 分）companion 推分（留 r50+）；DESIGN-004 单独立项（12.1，本轮 Top5 已满）
+- **不足 5 项原因**：不适用 — 本轮满 5 项（hub Top5 薄弱项 L1 kickoff）
 
 ### 候选对比
 
 | 候选 prd ID | 加权总分 | 未选原因 |
 |-------------|:--------:|----------|
-| QUERY-008 | 11.3 | 配置→SQL 翻译器，M13 Dataset 路径，非连接器域 |
-| CONN-022 | 11.3 | GaussDB 信创扩展，M11 远期；本轮优先闭合 r36 五 ID |
-| META-003 | 11.6 | 维度字典注册，M13 后续项 |
-| VIZ-003 | 11.7 | 地图可视化，M7+ 展现域 |
-| QUERY-009 | 11.7 | Dataset 查询路径，M13 四期语义层 |
-| CONN-021 | 90.1 | r35 已破 90，非薄弱 |
-| GOV-004 | 90.5 | r35 已破 90，非薄弱 |
+| DESIGN-005 | 11.6 | **入选**（hub #1；用户价值簇内最低 44%） |
+| DESIGN-003 | 11.6 | **入选**（hub #2；延续 r32 DESIGN-001/002 L1） |
+| CONN-016 OpenSearch | 11.6 | **入选**（hub #3；G2 搜索类连接器 kickoff） |
+| GOV-003 | 11.6 | **入选**（hub #4；治理域未 kickoff 项） |
+| QUERY-003 | 12.0 | **入选**（hub #5；查询域契约 L1） |
+| NFR-005 | 81.2 | r46 L1 已交付；加权总分高于 Top5，companion 推分留后续轮 |
+| NFR-006 | 79.2 | 同上；STUCK 1 轮未达 ≥3 硬标注 |
+| NFR-007 | 80.0 | 同上 |
+| GOV-005 | 82.6 | r46 L1 已交付；STUCK 1 轮，本轮优先绝对最低分簇 |
+| CONN-019 GBase | 84.1 | r46 L1 已交付；STUCK 1 轮 |
+| DESIGN-004 | 12.1 | 略高于 Top5 第 5 名，本轮名额已满 |
+| CONN-018/020 | 12.0–12.1 | 信创/分布式库连接器，次轮候选 |
 
 ### STUCK 标注
 
-- **STUCK: CONN-004 连续 1 轮未过 90**（最近 86.2，完整度 76% — Oracle 方言 L1 后 test_connection/schema/types 边界未充分）— 本轮主攻（簇内最低分）
-- **STUCK: CONN-008 连续 1 轮未过 90**（最近 87.2，完整度 78% — Doris 连接与 schema 自省未闭合）— 本轮主攻
-- **STUCK: CONN-005 连续 1 轮未过 90**（最近 87.4，完整度 78% — SQL Server 实例/库/凭证错误路径未充分）— 本轮主攻
-- **STUCK: CONN-003 连续 1 轮未过 90**（最近 87.6，完整度 80% — Hive catalog/schema 边界与 types catalog 未闭合）— 本轮主攻
-- **STUCK: CONN-007 连续 1 轮未过 90**（最近 87.8，完整度 78% — ClickHouse 元数据 limit 与不可达端点降级未充分）— 本轮主攻
+- 本轮五 ID 均不在选题卡住计数表 — **首次入选**（r46 STUCK 五 ID 未入选本轮），未达 ≥3 轮硬标注阈值，不标 `STUCK:` 硬阻塞
+
+## 演化北极星自检
+
+1. **用户感知**：数据源类型列表出现 OpenSearch；设计器域具备可探测的 spec/校验契约；治理与查询项具备 REST 骨架与非法入参拦截。
+2. **补缺 or 创造**：补缺（PRD 已登记但完整度 5% 空壳）；CONN-016 符合 `goal.md` G2；GOV-003/QUERY-003 为 G5/G3 能力预埋骨架。
+3. **不做代价**：hub 绝对最低分簇持续 ~11 分，设计器与 OpenSearch 无法进入 companion 推分轨道。
+4. **能否批处理更小项**：已批处理为 Top5 跨域 L1 kickoff（单轮 ≤20 文件、≤3 模块域）。
+5. **共几项/文件模块**：5 项；design + datasources + governance/query + tests，估 ≤19 文件、3 模块域。
 
 ---
 
-### 子项 1：CONN-004 Oracle 连接器
+### 子项 1：DESIGN-005 设计器项
 
-- **选题理由**：hub **r36 簇最低分 86.2**；**完整度 76%**、**用户价值 82%**；r36 已交付 Oracle 方言 L1，SID/service name 错误、凭证失败与 schema owner/table 层级自省边界未充分闭合；STUCK upsert round 1
-- **选题时 PRD 加权总分**：86.2/100（用户价值 **82%** · 完整度 **76%** · 可靠性 **92%** · 架构 **90%** · 测试覆盖 **94%** · 性能 **86%** · 安全性 **88%** · 交互 N/A）
-- **主攻薄弱维**：完整度（76%→≥88% test_connection/schema/types）；可靠性（92%→≥94% ORACLE_* 结构化 code）
-- **用户感知**：Oracle 数据源在错误 SID/service、凭证失败、空 schema 时返回可定位 `ORACLE_*` 错误；schema 自省含 owner/table 层级稳定
-- **类型**：补缺（闭合 r36 L1 遗留缺口）
-- **验收标准**（来源 `prd.md` hub · CONN-004 + `plan.archive.md` §M11 + r36 基线）：
-  - test_connection：SID/service 错误、登录失败、未知 database 4xx + 结构化 `code` pytest
-  - schema/types catalog：空 schema、未知 owner、类型枚举完整性 smoke
-  - 加权总分目标 ≥90
+- **选题理由**：hub **#1（11.6）**；用户价值 **44%** 为簇内最低；完整度 **5%**、可靠性 **0%**、测试覆盖 **0%** 均为未实现空壳；延续 r32 DESIGN-001/002 已破 90 的设计器域
+- **选题时 PRD 加权总分**：11.6/100（用户价值 **44%** · 完整度 **5%** · 可靠性 **0%** · 架构 **12%** · 测试覆盖 **0%** · 性能 **0%** · 安全性 **13%** · 交互 N/A）
+- **主攻薄弱维**：完整度（5%→≥76% spec/校验 REST 骨架）；测试覆盖（0%→≥96% pytest smoke）
+- **用户感知**：设计器域具备可登记的设计项 spec 与基础校验入口（后端契约先行，无全量 Admin UI）
+- **类型**：补缺（设计器 L1 kickoff）
+- **验收标准**（来源 hub · DESIGN-005 + r32 设计器域基线）：
+  - 设计项 spec schema + 校验 REST 骨架 + 结构化 DESIGN_* 错误域
+  - pytest L1 smoke；与 DESIGN-001/002 域边界对齐
+  - 加权总分 L1 目标 ≥85
 
-### 子项 2：CONN-008 Doris 连接器
+### 子项 2：DESIGN-003 设计器项
 
-- **选题理由**：hub **87.2**；**完整度 78%**；r36 已交付 Doris 方言 L1，FE/BE 不可达与非法 catalog 降级路径未闭合；STUCK upsert round 1
-- **选题时 PRD 加权总分**：87.2/100（用户价值 **82%** · 完整度 **78%** · 可靠性 **93%** · 架构 **90%** · 测试覆盖 **96%** · 性能 **88%** · 安全性 **88%** · 交互 N/A）
-- **主攻薄弱维**：完整度（78%→≥88% schema 自省与 types）；可靠性（93%→≥94% DORIS_* 端点不可达降级）
-- **用户感知**：Doris 连接在 FE/BE 不可达时降级报错清晰；表/列元数据查询有 limit 守卫不 500
+- **选题理由**：hub **#2（11.6）**；与 DESIGN-005 同域同分，共享 `design/` 模块与交付模式
+- **选题时 PRD 加权总分**：11.6/100（用户价值 **47%** · 完整度 **5%** · 可靠性 **0%** · 架构 **10%** · 测试覆盖 **0%** · 性能 **0%** · 安全性 **11%** · 交互 N/A）
+- **主攻薄弱维**：完整度（5%→≥76%）；可靠性（0%→≥92% 非法 spec 拦截 smoke）
+- **用户感知**：第二类设计器能力具备独立契约与校验，可与 DESIGN-005 组合探测
 - **类型**：补缺
-- **验收标准**（来源 hub · CONN-008 + §M11 + r36 基线）：
-  - test_connection + schema：不可达端点、非法 catalog 4xx pytest
-  - 元数据 list 分页/limit 边界 smoke
-  - 加权总分目标 ≥90
+- **验收标准**（来源 hub · DESIGN-003）：
+  - 设计器项 B 类契约 endpoint + 守卫 smoke
+  - pytest L1 + DESIGN-005 联动回归
+  - 加权总分 L1 目标 ≥85
 
-### 子项 3：CONN-005 SQL Server 连接器
+### 子项 3：CONN-016 OpenSearch 连接器
 
-- **选题理由**：hub **87.4**；**完整度 78%**；r36 已交付 SQL Server 方言 L1，实例不可达、登录失败与 dbo/自定义 schema 自省未充分；STUCK upsert round 1
-- **选题时 PRD 加权总分**：87.4/100（用户价值 **82%** · 完整度 **78%** · 可靠性 **93%** · 架构 **90%** · 测试覆盖 **96%** · 性能 **88%** · 安全性 **90%** · 交互 N/A）
-- **主攻薄弱维**：完整度（78%→≥88% test_connection/schema/types）；安全性（90%→≥92% 凭证与 TLS 选项边界）
-- **用户感知**：SQL Server 在错误实例/库/凭证时返回可定位 `SQLSERVER_*` 错误；schema 自省覆盖 dbo 与自定义 schema
+- **选题理由**：hub **#3（11.6）**；搜索类数据源，补齐 M11 连接器族；完整度 **5%**；直接支撑 `goal.md` **G2 多类别数据源**
+- **选题时 PRD 加权总分**：11.6/100（用户价值 **48%** · 完整度 **5%** · 可靠性 **0%** · 架构 **10%** · 测试覆盖 **0%** · 性能 **0%** · 安全性 **9%** · 交互 N/A）
+- **主攻薄弱维**：完整度（5%→≥76% test_connection + metadata/types catalog）；测试覆盖（0%→≥96% dialect mock smoke）
+- **用户感知**：数据源类型可选 OpenSearch，测试连接与索引/映射元数据探测可用（mock/compose smoke）
 - **类型**：补缺
-- **验收标准**（来源 hub · CONN-005 + §M11 + r36 基线）：
-  - test_connection：实例不可达、登录失败、未知 database 4xx pytest
-  - schema/types catalog：空库、未知 schema、类型枚举 smoke
-  - 加权总分目标 ≥90
+- **验收标准**（来源 hub · CONN-016 + r40/r41 连接器 L1 模式）：
+  - OpenSearch dialect + types catalog + OPENSEARCH_* 错误域
+  - test_connection/metadata HTTP 链 pytest smoke
+  - registry 登记与 NFR-005 扩展点路径对齐；加权总分 L1 目标 ≥85
 
-### 子项 4：CONN-003 Hive 连接器
+### 子项 4：GOV-003 治理项
 
-- **选题理由**：hub **87.6**；**完整度 80%**；r36 已交付 Hive 方言 L1，catalog/schema 边界与 types catalog 完整性未闭合；STUCK upsert round 1
-- **选题时 PRD 加权总分**：87.6/100（用户价值 **82%** · 完整度 **80%** · 可靠性 **93%** · 架构 **90%** · 测试覆盖 **96%** · 性能 **88%** · 安全性 **88%** · 交互 N/A）
-- **主攻薄弱维**：完整度（80%→≥90% schema/types 边界）；测试覆盖（96%→≥98% 空库/未知 catalog 回归）
-- **用户感知**：Hive 数据源在错误 catalog、凭证失败时返回 `HIVE_*` 结构化错误；schema 自省可列出库/表骨架
+- **选题理由**：hub **#4（11.6）**；治理域未 kickoff 项；与 r30/r31 GOV-001/002 及 r46 GOV-005 发布 FSM 形成治理面递进
+- **选题时 PRD 加权总分**：11.6/100（用户价值 **48%** · 完整度 **5%** · 可靠性 **0%** · 架构 **10%** · 测试覆盖 **0%** · 性能 **0%** · 安全性 **9%** · 交互 N/A）
+- **主攻薄弱维**：完整度（5%→≥76% 治理项 REST 骨架）；可靠性（0%→≥92% 非法状态/入参拦截）
+- **用户感知**：治理域新增第三类治理项可探测、可登记（契约级，非全量 BPM UI）
 - **类型**：补缺
-- **验收标准**（来源 hub · CONN-003 + §M11 + r36 基线）：
-  - test_connection：超时/拒绝/错误凭证 4xx + `HIVE_*` code pytest
-  - schema/types：空库、未知 catalog、类型枚举 smoke
-  - 加权总分目标 ≥90
+- **验收标准**（来源 hub · GOV-003 + r46 governance 基线）：
+  - 治理项契约 REST + GOV_* 错误域 smoke
+  - 与 governance 域既有 catalog/bus 边界对齐
+  - pytest L1；加权总分 L1 目标 ≥85
 
-### 子项 5：CONN-007 ClickHouse 连接器
+### 子项 5：QUERY-003 查询项
 
-- **选题理由**：hub **87.8**（r36 簇最高仍 <90）；**完整度 78%**；r36 已交付 ClickHouse 方言 L1，宽表元数据 limit 与 HTTP/TCP 不可达结构化错误未充分；STUCK upsert round 1
-- **选题时 PRD 加权总分**：87.8/100（用户价值 **82%** · 完整度 **78%** · 可靠性 **94%** · 架构 **90%** · 测试覆盖 **98%** · 性能 **90%** · 安全性 **88%** · 交互 N/A）
-- **主攻薄弱维**：完整度（78%→≥88% schema 自省与 types）；性能（90%→≥92% 大表元数据 limit）
-- **用户感知**：ClickHouse 连接在不可达端点、非法 database/table 时返回 `CLICKHOUSE_*` 错误；元数据 list 在宽表场景有 limit 守卫
+- **选题理由**：hub **#5（12.0）**；查询域未 kickoff；完整度 **5%**；本轮仅契约 L1，不含 M13 Dataset 全链路
+- **选题时 PRD 加权总分**：12.0/100（用户价值 **47%** · 完整度 **5%** · 可靠性 **0%** · 架构 **12%** · 测试覆盖 **0%** · 性能 **0%** · 安全性 **12%** · 交互 N/A）
+- **主攻薄弱维**：完整度（5%→≥76% 查询项契约 + 守卫）；架构（12%→≥66% 与 query 域分层对齐）
+- **用户感知**：查询域第三类查询能力具备可探测契约与非法查询拦截（后端 smoke）
 - **类型**：补缺
-- **验收标准**（来源 hub · CONN-007 + §M11 + r36 基线）：
-  - test_connection + schema：不可达端点、非法 database/table 4xx pytest
-  - 元数据 list 分页/limit 边界与 types catalog 对齐 QUERY 方言 smoke
-  - 加权总分目标 ≥90
+- **验收标准**（来源 hub · QUERY-003 + r38 QUERY-008 翻译器域边界）：
+  - 查询项 spec/守卫 endpoint + QUERY_* 错误域
+  - pytest L1；与既有 query API 无循环依赖
+  - 加权总分 L1 目标 ≥85
