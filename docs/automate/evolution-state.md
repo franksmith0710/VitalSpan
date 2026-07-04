@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design | docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-companion-quality-r37-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-companion-quality-r37.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | CONN-004,CONN-008,CONN-005,CONN-003,CONN-007 |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && cd .. && PYTHONPATH=backend python3 -m pytest tests/test_connectors_gov_r37.py tests/test_connectors_gov_r36.py tests/test_connectors_gov_r35.py tests/test_connectors_gov_r34.py -q |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r37 验证通过：ruff clean；pytest 854 passed/4 skipped；test_r36_suite_import_no_conflict_r37 修复（ae10550）；UI N/A（纯后端）；phase P3_DONE→P4_DONE
 - P3 r37 实现完成：8 Task 全绿；CONN-004/008/005/003/007 companion 质量推分；40 新测 test_connectors_gov_r37；connector 回归 127/127；pytest 853/4 skipped；branch cursor/bc-031e3641-9a45-48b5-b7f1-1fea5c376dab-817d；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r37 计划完成：8 Task（errors 上浮→Oracle→Doris→SQL Server→Hive→ClickHouse→registry 回归→docs）；≥33 新测 test_connectors_gov_r37；9 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
 - P1 r37 设计完成：M11 关系型/OLAP 连接器 companion 质量推分 — CONN-004/008/005/003/007；16 文件框定；五方言错误域/limit/HTTP 链闭合；ui_design_skill none；phase G2_DONE→P1_DONE
