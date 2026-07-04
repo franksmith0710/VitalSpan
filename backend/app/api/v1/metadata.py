@@ -33,7 +33,13 @@ from app.metadata.themes.schemas import (
 )
 from app.metadata.entity import service as entity_service
 from app.metadata.entity.errors import EntityTypeError
-from app.metadata.entity.schemas import EntityTypeCreate, EntityTypeListOut, EntityTypeUpdate
+from app.metadata.entity.schemas import (
+    EntityQueryBindingsOut,
+    EntityTypeCreate,
+    EntityTypeListOut,
+    EntityTypeUpdate,
+    EntityTypeValidateOut,
+)
 
 router = APIRouter(prefix="/metadata", tags=["metadata"])
 
@@ -71,9 +77,10 @@ def _dimension_error(exc: DimensionError) -> JSONResponse:
 
 
 def _entity_type_error(exc: EntityTypeError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(
         status_code=exc.status,
-        content={"code": exc.code, "message": exc.message, "detail": None},
+        content={"code": exc.code, "message": exc.message, "detail": detail},
     )
 
 
@@ -91,6 +98,28 @@ def create_entity_type(
 ):
     try:
         return entity_service.create_entity_type(payload)
+    except EntityTypeError as exc:
+        return _entity_type_error(exc)
+
+
+@router.post("/entity-types/validate", response_model=EntityTypeValidateOut)
+def validate_entity_type(
+    payload: EntityTypeCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return entity_service.validate_entity_type_draft(payload)
+    except EntityTypeError as exc:
+        return _entity_type_error(exc)
+
+
+@router.get("/entity-types/{type_code}/query-bindings", response_model=EntityQueryBindingsOut)
+def get_entity_query_bindings(
+    type_code: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return entity_service.get_query_bindings(type_code)
     except EntityTypeError as exc:
         return _entity_type_error(exc)
 

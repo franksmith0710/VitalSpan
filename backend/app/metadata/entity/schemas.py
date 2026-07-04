@@ -41,3 +41,21 @@ class EntityTypeOut(BaseModel):
 
 class EntityTypeListOut(BaseModel):
     items: list[EntityTypeOut]
+
+
+class EntityTypeValidateOut(BaseModel):
+    valid: bool
+
+
+class EntityQueryBindingOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    name: str
+    data_type: str = Field(alias="dataType")
+    filterable: bool
+    read_only: bool = Field(alias="readOnly")
+
+
+class EntityQueryBindingsOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    type_code: str = Field(alias="typeCode")
+    bindings: list[EntityQueryBindingOut]

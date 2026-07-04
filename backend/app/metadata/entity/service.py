@@ -3,7 +3,17 @@ from __future__ import annotations
 import re
 
 from app.metadata.entity.errors import EntityTypeError
-from app.metadata.entity.schemas import EntityTypeCreate, EntityTypeOut, EntityTypeUpdate
+from app.metadata.entity.schemas import (
+    EntityQueryBindingsOut,
+    EntityTypeCreate,
+    EntityTypeOut,
+    EntityTypeUpdate,
+    EntityTypeValidateOut,
+)
+from app.metadata.entity.validation import (
+    build_readonly_query_bindings,
+    validate_entity_schema_payload,
+)
 from app.metadata.entity.schemas import _DEFAULT_LIFECYCLE
 
 _store: dict[str, dict] = {}
@@ -26,6 +36,9 @@ def create_entity_type(payload: EntityTypeCreate) -> EntityTypeOut:
         raise EntityTypeError("META_ENTITY_TYPE_CONFLICT", "Entity type already exists", 409)
     _validate_attributes(payload.attributes)
     lifecycle = payload.lifecycle_states or list(_DEFAULT_LIFECYCLE)
+    validate_entity_schema_payload(
+        payload.type_code, payload.display_name, payload.attributes, lifecycle
+    )
     record = {
         "typeCode": payload.type_code,
         "displayName": payload.display_name,
@@ -57,6 +70,7 @@ def update_entity_type(type_code: str, payload: EntityTypeUpdate) -> EntityTypeO
         raise EntityTypeError("META_ENTITY_TYPE_NOT_FOUND", "Entity type not found", 404)
     _validate_attributes(payload.attributes)
     lifecycle = payload.lifecycle_states or _store[type_code]["lifecycleStates"]
+    validate_entity_schema_payload(type_code, payload.display_name, payload.attributes, lifecycle)
     record = {
         "typeCode": type_code,
         "displayName": payload.display_name,
@@ -82,3 +96,17 @@ def increment_reference(type_code: str) -> None:
 def decrement_reference(type_code: str) -> None:
     if _ref_counts.get(type_code, 0) > 0:
         _ref_counts[type_code] -= 1
+
+
+def validate_entity_type_draft(payload: EntityTypeCreate) -> EntityTypeValidateOut:
+    _validate_attributes(payload.attributes)
+    lifecycle = payload.lifecycle_states or list(_DEFAULT_LIFECYCLE)
+    validate_entity_schema_payload(
+        payload.type_code, payload.display_name, payload.attributes, lifecycle
+    )
+    return EntityTypeValidateOut(valid=True)
+
+
+def get_query_bindings(type_code: str) -> EntityQueryBindingsOut:
+    entity_type = get_entity_type(type_code)
+    return build_readonly_query_bindings(entity_type)
