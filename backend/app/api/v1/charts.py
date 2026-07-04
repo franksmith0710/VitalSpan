@@ -12,9 +12,10 @@ router = APIRouter(prefix="/charts", tags=["charts"])
 
 
 def _error_response(exc: ChartViewError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(
         status_code=exc.status,
-        content={"code": exc.code, "message": exc.message, "detail": None},
+        content={"code": exc.code, "message": exc.message, "detail": detail},
     )
 
 
