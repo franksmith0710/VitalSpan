@@ -38,6 +38,9 @@
 | `ConnectorRegistry` | 连接器注册表 | DS-001 | 已实现 |
 | `dialects/mysql.py` | MySQL 方言 + schema_browser | CONN-001 | 已实现 |
 | `dialects/postgres.py` | PostgreSQL 方言 + schema_browser | CONN-002 | 已实现 |
+| `dialects/tidb.py` | TiDB HTAP 方言（MySQL 协议委托，默认 port 4000） | CONN-021 | 已实现 |
+| `dialects/starrocks.py` | StarRocks OLAP 方言（MySQL 协议，port 9030，`category=olap`） | CONN-009 | 已实现 |
+| `dialects/elasticsearch.py` | Elasticsearch 搜索方言（index→schema 映射） | CONN-015 | 已实现 |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -67,3 +70,9 @@
 - **DS-006**：`pool.py` 按 `dataSourceId` 隔离；删除数据源 `evict_pool`
 - **DS-004**：`metadata/` schema/table/column 只读 API；502 不泄露密码
 - **DS-008**：`acl.py` admin bypass + grant 过滤列表/守卫单条与测试
+
+### r34 connector kickoff（2026-07-04）
+
+- **CONN-021**：`dialects/tidb.py` — MySQL 协议委托；独立 `type=tidb`；默认 port 4000；`category=relational`
+- **CONN-009**：`dialects/starrocks.py` — MySQL 协议委托；独立 `type=starrocks`；默认 port 9030；`category=olap`；超时映射 `STARROCKS_*`（与 MySQL `MYSQL_*` 边界分离）
+- **CONN-015**：`dialects/elasticsearch.py` — 非 SQL 映射：`list_schemas`→index、`list_tables`→`_doc` 伪表、`list_columns`→mapping 字段；`category=search`

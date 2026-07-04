@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.39
+version: 1.2.40
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,15 +17,15 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r33 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query/design companion 质量推分 r33）；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；glossary 文本/status 边界 + list perf、theme MAX_DEPTH=8 + 宽树 perf、config_store 256KB/乐观锁、designer 字段注册表/规则链/detail.fields；完整度 76–92%→88–94%，性能 86%→88–90%，可靠性 92–94%→94–96%，总分 86.4–89.8→90.0–91.7（五 ID 全破 90 STUCK 清零）
+> 更新：2026-07-04 · P5 r34 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 L1 kickoff r34）；pytest 742/4 skipped；test_connectors_gov_r34 15/15 + r33 19/19 回归；TiDB/StarRocks/ES types + test_connection/schema、gov query-design validate/save/get + ACL/RLS smoke；完整度 5%→76–82%，可靠性 0%→92–94%，测试覆盖 0%→94–98%，总分 10.9–11.2→86.0–88.1（五 ID 均 <90 STUCK upsert round 1）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
-| 1 | CONN-021 | TiDB 连接器 | 10.9 | 完整度 | 见期次 |
-| 2 | CONN-009 | StarRocks 连接器 | 11.1 | 完整度 | 见期次 |
-| 3 | GOV-004 | 可视化查询设计 FR-1.3 | 11.1 | 完整度 | 见期次 |
-| 4 | CONN-015 | Elasticsearch 连接器 | 11.2 | 完整度 | 见期次 |
-| 5 | GOV-008 | 治理权限联动 FR-1.6 | 11.2 | 完整度 | 见期次 |
+| 1 | CONN-003 | Hive 连接器 | 12.3 | 完整度 | 见期次 |
+| 2 | CONN-007 | ClickHouse 连接器 | 12.2 | 完整度 | 见期次 |
+| 3 | CONN-005 | SQL Server 连接器 | 12.2 | 完整度 | 见期次 |
+| 4 | CONN-008 | Doris 连接器 | 12.3 | 完整度 | 见期次 |
+| 5 | CONN-004 | Oracle 连接器 | 11.8 | 完整度 | 见期次 |
 | 6 | QUERY-008 | 配置→SQL/API 翻译器 | 11.3 | 完整度 | 见期次 |
 | 7 | CONN-022 | GaussDB 连接器 | 11.3 | 完整度 | 见期次 |
 | 8 | META-003 | 维度字典注册 | 11.6 | 完整度 | 见期次 |
@@ -70,19 +70,19 @@ domain_count: 16
 | CONN-006 | 50 | 5 | 0 | N/A | 14 | 0 | 0 | 11 | 12.6 | 完整度 |
 | CONN-007 | 51 | 5 | 0 | N/A | 8 | 0 | 0 | 12 | 12.2 | 完整度 |
 | CONN-008 | 50 | 5 | 0 | N/A | 9 | 0 | 0 | 13 | 12.3 | 完整度 |
-| CONN-009 | 46 | 5 | 0 | N/A | 10 | 0 | 0 | 8 | 11.1 | 完整度 |
+| CONN-009 | 82 | 76 | 94 | N/A | 88 | 94 | 86 | 88 | 86.2 | 完整度 |
 | CONN-010 | 47 | 5 | 0 | N/A | 11 | 0 | 0 | 9 | 11.5 | 完整度 |
 | CONN-011 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 10 | 11.9 | 完整度 |
 | CONN-012 | 49 | 5 | 0 | N/A | 13 | 0 | 0 | 11 | 12.4 | 完整度 |
 | CONN-013 | 50 | 5 | 0 | N/A | 14 | 0 | 0 | 12 | 12.8 | 完整度 |
 | CONN-014 | 46 | 5 | 0 | N/A | 8 | 0 | 0 | 13 | 11.5 | 完整度 |
-| CONN-015 | 47 | 5 | 0 | N/A | 9 | 0 | 0 | 8 | 11.2 | 完整度 |
+| CONN-015 | 82 | 82 | 94 | N/A | 90 | 98 | 86 | 88 | 88.1 | 完整度 |
 | CONN-016 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
 | CONN-017 | 47 | 5 | 0 | N/A | 11 | 0 | 0 | 10 | 11.6 | 完整度 |
 | CONN-018 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 11 | 12.1 | 完整度 |
 | CONN-019 | 44 | 5 | 0 | N/A | 13 | 0 | 0 | 12 | 11.6 | 完整度 |
 | CONN-020 | 45 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.0 | 完整度 |
-| CONN-021 | 46 | 5 | 0 | N/A | 8 | 0 | 0 | 8 | 10.9 | 完整度 |
+| CONN-021 | 82 | 76 | 92 | N/A | 88 | 94 | 86 | 88 | 86.0 | 完整度 |
 | CONN-022 | 47 | 5 | 0 | N/A | 9 | 0 | 0 | 9 | 11.3 | 完整度 |
 | QUERY-001 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 92 | 92.8 | 架构健康 |
 | QUERY-002 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 88 | 92.4 | 安全性 |
@@ -120,11 +120,11 @@ domain_count: 16
 | GOV-001 | 82 | 92 | 92 | N/A | 90 | 96 | 86 | 88 | 90.2 | 用户价值 |
 | GOV-002 | 82 | 92 | 94 | N/A | 88 | 96 | 86 | 90 | 90.4 | 性能 |
 | GOV-003 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
-| GOV-004 | 44 | 5 | 0 | N/A | 11 | 0 | 0 | 10 | 11.1 | 完整度 |
+| GOV-004 | 80 | 80 | 94 | N/A | 90 | 96 | 86 | 88 | 87.2 | 完整度 |
 | GOV-005 | 45 | 5 | 0 | N/A | 12 | 0 | 0 | 11 | 11.5 | 完整度 |
 | GOV-006 | 46 | 5 | 0 | N/A | 13 | 0 | 0 | 12 | 11.9 | 完整度 |
 | GOV-007 | 47 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.4 | 完整度 |
-| GOV-008 | 48 | 5 | 0 | N/A | 8 | 0 | 0 | 8 | 11.2 | 完整度 |
+| GOV-008 | 82 | 76 | 92 | N/A | 88 | 94 | 86 | 90 | 86.8 | 完整度 |
 | META-001 | 82 | 92 | 92 | N/A | 90 | 98 | 90 | 88 | 90.0 | 安全性 |
 | META-002 | 84 | 94 | 94 | N/A | 90 | 98 | 90 | 88 | 91.1 | 安全性 |
 | META-003 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 11 | 11.6 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.40 | 2026-07-04 | P5 r34 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 L1 kickoff r34）；pytest 742/4 skipped；test_connectors_gov_r34 15/15 + r33 19/19；TiDB/StarRocks/ES dialects + types catalog、gov query-design validate/save/get + ACL/RLS smoke；完整度 5%→76–82%，可靠性 0%→92–94%，测试覆盖 0%→94–98%，总分 10.9–11.2→86.0–88.1（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.39 | 2026-07-04 | P5 r33 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query/design companion 质量推分 r33）；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；glossary 文本/status 边界 + list perf、theme MAX_DEPTH=8 + 宽树 perf、config_store 256KB/乐观锁、designer 字段注册表/规则链/detail.fields；完整度 76–92%→88–94%，性能 86%→88–90%，可靠性 92–94%→94–96%，总分 86.4–89.8→90.0–91.7（五 ID 全破 90 STUCK 清零） |
 | 1.2.38 | 2026-07-04 | P5 r32 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query design L1 kickoff r32）；pytest 708/4 skipped；test_meta_design_r32 21/21 + r31 24/24；migration 0015 + glossary/theme/config_store/designer API；完整度 5%→76–92%，可靠性 0%→92–94%，测试覆盖 0%→96%，总分 10.8–11.2→86.4–89.8（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.37 | 2026-07-04 | P5 r31 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW + M6 companion 质量推分 r31）；pytest 686/4 skipped；test_view_gov_api_r31 24/24 + r30 30/30；VIEW_LAYOUT_BOUNDS/VIEW_CHART_REF_CYCLE、bus timeout/4xx/5xx/幂等/admin 403、catalog 非法分类 4xx + DELETE、IF-06 OpenAPI 示例与 execute 越权/只读；完整度 74–80%→90–94%，可靠性 86–90%→92–94%，安全性 82–86%→88–90%，总分 88.6–90.9→90.0–90.4（VIEW-001/GOV-002 破 90 STUCK 清零） |

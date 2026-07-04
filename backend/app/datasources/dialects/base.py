@@ -1,3 +1,10 @@
+"""Dialect connector protocol.
+
+Non-SQL connectors (e.g. Elasticsearch) map metadata browse onto this protocol:
+``list_schemas`` → index names; ``list_tables`` → single ``_doc`` pseudo-table;
+``list_columns`` → mapping field names/types.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

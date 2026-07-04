@@ -6,7 +6,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 
-ALLOWED_CONFIG_TYPES = frozenset({"query_conditions", "compute_rules"})
+ALLOWED_CONFIG_TYPES = frozenset({"query_conditions", "compute_rules", "visual_query_design"})
 ALLOWED_SCHEMA_VERSIONS = frozenset({"1.0"})
 DEFAULT_REF_TYPE = "design_draft"
 MAX_CONFIG_PAYLOAD_BYTES = 262_144
