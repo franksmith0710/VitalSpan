@@ -4,15 +4,16 @@
 
 ### [RPT-001] 报表引擎渲染
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r60）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：报表引擎渲染（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 模板+数据→Web 展现
-  - [ ] 绑定 M3-LITE
-- **代码锚点**：`backend/app/reports/engine/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 模板+数据→Web 展现（r60 L1：`POST /api/v1/reports/templates/{id}/run` → renderSpec engineVersion=1.0；format web/html；`RPT_ENGINE_*` 错误域）
+  - [ ] 绑定 M3-LITE（无真实数据源执行链；无 PDF/Word 渲染）
+- **代码锚点**：`backend/app/reports/engine/` · `backend/app/api/v1/reports/engine.py` · `tests/test_rpt_view_cat_gov_r60.py` T-RPT-R60-001-01~07
+- **演化建议**：r60 L1 闭合 run API、format 守卫、incomplete template 422 与 probe <50ms；后续补 M3-LITE 绑定、PDF/Word 渲染与 fe 展现 UI
+- **里程碑对齐**：
 ### [RPT-002] 预制分析报表体系 FR-3.1
 
 - **状态**：未实现

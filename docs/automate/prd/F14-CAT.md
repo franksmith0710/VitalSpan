@@ -72,12 +72,13 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [CAT-007] CAT-07 组织行为审计类
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r60）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：三期
 - **描述**：CAT-07 组织行为审计类（SRS 追溯项）。
 - **验收标准**：
-  - [ ] workno behavior 模板
-  - [ ] 审计日志联动
-- **代码锚点**：`backend/app/governance/catalog/cat07.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] workno behavior 模板（r60 L1：`GET /api/v1/workno/behavior` + mock behaviors + `CAT07_*` 错误域 + limit/offset 分页）
+  - [ ] 审计日志联动（无真实 audit store 写入与跨系统 trace 链）
+- **代码锚点**：`backend/app/governance/catalog/cat07.py` · `backend/app/api/v1/workno.py` · `tests/test_rpt_view_cat_gov_r60.py` T-CAT-R60-007-01~07
+- **演化建议**：r60 L1 闭合 workno 查询模板、日期范围/limit 边界与 auditLinked smoke；后续补真实审计日志联动与 fe 行为审计 UI
+- **里程碑对齐**：
