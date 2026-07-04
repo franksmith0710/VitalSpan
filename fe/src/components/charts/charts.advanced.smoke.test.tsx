@@ -209,3 +209,55 @@ describe("ChartConfigPanel", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/样式|CHART_INVALID_STYLE_VARIANT/);
   });
 });
+
+import { ChartRenderer } from "@/components/charts/ChartRenderer";
+
+describe("ChartRenderer advanced", () => {
+  afterEach(() => cleanup());
+
+  it("T-VIZ-R43-008-03: funnel mock render-spec → data-testid=echarts-chart", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce({ columns: ["stage", "value"], rows: [["A", 10], ["B", 5]] })
+      .mockResolvedValueOnce({
+        engine: "echarts",
+        chartType: "funnel",
+        styleVariant: "default",
+        encoding: { dimensions: [{ field: "stage" }], metrics: [{ field: "value" }] },
+        source: {},
+      });
+    const cfg: ChartViewConfig = {
+      chartType: "funnel",
+      dataSourceId: "00000000-0000-4000-8000-000000000001",
+      mode: "sql",
+      sql: "SELECT 1",
+      dimensions: [{ field: "stage" }],
+      metrics: [{ field: "value" }],
+    };
+    render(<ChartRenderer config={cfg} />);
+    expect(await screen.findByTestId("echarts-chart")).toBeInTheDocument();
+  });
+
+  it("T-VIZ-R43-005-03: 501 行 → 警告 + 渲染不抛错", async () => {
+    const rows = Array.from({ length: 501 }, (_, i) => [`S${i}`, i]);
+    mockApiFetch
+      .mockResolvedValueOnce({ columns: ["stage", "value"], rows })
+      .mockResolvedValueOnce({
+        engine: "echarts",
+        chartType: "funnel",
+        styleVariant: "default",
+        encoding: { dimensions: [{ field: "stage" }], metrics: [{ field: "value" }] },
+        source: {},
+      });
+    const cfg: ChartViewConfig = {
+      chartType: "funnel",
+      dataSourceId: "00000000-0000-4000-8000-000000000001",
+      mode: "sql",
+      sql: "SELECT 1",
+      dimensions: [{ field: "stage" }],
+      metrics: [{ field: "value" }],
+    };
+    render(<ChartRenderer config={cfg} />);
+    expect(await screen.findByRole("status")).toHaveTextContent(/500/);
+    expect(screen.getByTestId("echarts-chart")).toBeInTheDocument();
+  });
+});
