@@ -14,6 +14,7 @@ from app.reports.extension.schemas import ExtensionConfigUpsert
 
 _ITEM_LIMIT = 50
 _idempotency_store: dict[str, dict] = {}
+probe_batch_create_budget_ms: int = 200
 
 
 def _body_fingerprint(payload: BatchCreateReportsIn) -> str:
@@ -70,12 +71,27 @@ def batch_create(payload: BatchCreateReportsIn, idempotency_key: str | None) -> 
     batch_id = uuid.uuid4()
     created: list[uuid.UUID] = []
     try:
-        for item in payload.items:
-            created.append(_create_single_item(item))
+        for idx, item in enumerate(payload.items):
+            try:
+                created.append(_create_single_item(item))
+            except ReportBatchError as exc:
+                rolled_back = len(created)
+                for node_id in created:
+                    if catalog_service.node_exists(node_id):
+                        catalog_service.delete_node(node_id)
+                if rolled_back == 0:
+                    raise
+                raise ReportBatchError(
+                    "RPT_BATCH_PARTIAL_FAILURE",
+                    exc.message,
+                    422,
+                    fields={
+                        "failedIndex": idx,
+                        "failedItemName": item.name,
+                        "rolledBackCount": rolled_back,
+                    },
+                ) from exc
     except ReportBatchError:
-        for node_id in created:
-            if catalog_service.node_exists(node_id):
-                catalog_service.delete_node(node_id)
         raise
     result = BatchCreateReportsOut(batch_id=batch_id, created_node_ids=created, idempotent_replay=False)
     if idempotency_key:

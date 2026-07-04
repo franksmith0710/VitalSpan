@@ -11,7 +11,11 @@ from app.reports.catalog.errors import ReportCatalogError
 from app.reports.catalog.schemas import CatalogNodeCreate, CatalogNodeMove, CatalogNodeOut, CatalogNodeUpdate
 from app.reports.catalog import service as catalog_service
 from app.reports.errors import ReportBatchError, ReportExtensionError
-from app.reports.extension.schemas import ExtensionConfigUpsert
+from app.reports.extension.schemas import (
+    ExtensionConfigUpsert,
+    ExtensionRevisionListOut,
+    ExtensionRevisionOut,
+)
 from app.reports.extension import service as extension_service
 from app.reports.batch.schemas import BatchCreateReportsIn
 from app.reports.batch import service as batch_service
@@ -31,11 +35,19 @@ def _schedule_error(exc: ScheduleError) -> JSONResponse:
 
 
 def _extension_error(exc: ReportExtensionError) -> JSONResponse:
-    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": None})
+    detail = exc.fields if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
 
 
 def _batch_error(exc: ReportBatchError) -> JSONResponse:
-    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": None})
+    detail = exc.fields if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
 
 
 @router.get("/catalog/nodes/{node_id}/extension", response_model=None)
@@ -63,6 +75,25 @@ def delete_node_extension(node_id: uuid.UUID, _: Annotated[UserContext, Depends(
     try:
         extension_service.delete_extension(node_id)
         return None
+    except ReportExtensionError as exc:
+        return _extension_error(exc)
+
+
+@router.get("/catalog/nodes/{node_id}/extension/render-spec", response_model=None)
+def get_extension_render_spec(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get_current_user)]):
+    try:
+        return extension_service.get_render_spec(node_id)
+    except ReportExtensionError as exc:
+        return _extension_error(exc)
+
+
+@router.get("/catalog/nodes/{node_id}/extension/revisions", response_model=ExtensionRevisionListOut)
+def list_extension_revisions(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get_current_user)]):
+    try:
+        items = extension_service.list_revision_history(node_id)
+        return ExtensionRevisionListOut(
+            items=[ExtensionRevisionOut.model_validate(i) for i in items]
+        )
     except ReportExtensionError as exc:
         return _extension_error(exc)
 
