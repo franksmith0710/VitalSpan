@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r54 实现完成：8 Task 全绿；M10/M12 报表扩展 + M8 发布引擎 OpenAPI + 实体 schema + OceanBase L1 — RPT-006/007 + GOV-006 + META-006 + CONN-020；42 测 test_rpt_gov_meta_conn_r54 + r53 38/38 + r46 36/36 + r51 43/43 + datasources_l1 回归；pytest 1380/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r54-m10-m12-rpt-gov-meta-oceanbase-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - G1 r54 bootstrap：r53 PR #83 已 Squash merge dev-auto；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 RPT-006(11.8)/RPT-007(11.9)/GOV-006(11.9)；STUCK 五 ID 各 1 轮（QUERY-009/RPT-004/DASH-006/RPT-005/NFR-008，均 <90）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r53 PRD 重评：QUERY-009/RPT-004/DASH-006/RPT-005/NFR-008 L1 kickoff；pytest 1338/4 skipped；test_dash_rpt_query_nfr_r53 38/38 + r52 52/52 + r49 35/35 + r46 36/36 回归 161/161；总分 11.7–11.8→82.6–85.6（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r53 验证通过：ruff clean；pytest 1338 passed/4 skipped（全量 exit_code 0）；test_dash_rpt_query_nfr_r53 38/38 + r52 52/52 + r49 35/35 + r46 36/36 回归 161/161；UI: N/A（纯后端 ui_design_skill none）；PR #82 可能已提前创建（已知 SOP 顺序 concern）；phase P3_DONE→P4_DONE
