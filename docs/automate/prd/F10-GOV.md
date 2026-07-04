@@ -34,15 +34,16 @@
 - **里程碑对齐**：
 ### [GOV-003] 工单流程模板 FR-1.2
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：工单流程模板 FR-1.2（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 草稿→待审批→设计中→待发布→已发布
-  - [ ] 节点角色可配置
-- **代码锚点**：`backend/app/governance/workflow/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 草稿→待审批→设计中→待发布→已发布（r49 L1：`standard_query_release` 五态 FSM + transition API）
+  - [ ] 节点角色可配置（r49 内置模板固定角色）
+- **代码锚点**：`backend/app/governance/workflow/` · `backend/app/api/v1/gov.py` · `tests/test_design_conn_gov_query_r49.py` T-GOV-R49-003-01~08
+- **演化建议**：r49 L1 闭合模板列表、实例创建、happy path 迁移、非法 transition/越权角色拦截；后续 companion 补可配置节点角色与 BPM UI
+- **里程碑对齐**：
 ### [GOV-004] 可视化查询设计 FR-1.3
 
 - **状态**：部分实现

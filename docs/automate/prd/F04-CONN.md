@@ -252,16 +252,20 @@
 - **里程碑对齐**：
 ### [CONN-016] OpenSearch 连接器
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：OpenSearch 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`opensearch` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`search` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/opensearch/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] type=`opensearch` 已注册（types catalog + plugin 登记，r49 L1）
+  - [ ] UI 可选
+  - [x] 连通性测试 + schema 浏览（r49 mock：`test_connection` + `list_columns` 500 limit）
+  - [ ] 只读查询通过
+  - [x] category=`search` 查询模式正确（r49）
+  - [x] 空 host → `OPENSEARCH_INVALID_HOST`；401 → `OPENSEARCH_AUTH_FAILED`（r49）
+- **代码锚点**：`backend/app/datasources/dialects/opensearch.py` · `tests/test_design_conn_gov_query_r49.py` T-CONN-R49-016-01~06
+- **演化建议**：r49 L1 闭合 types catalog、plugin meta、mock test_connection/auth/mapping truncate；后续 companion 补 HTTP 链、只读查询与 UI 选型
+- **里程碑对齐**：
 ### [CONN-017] 达梦 DM 连接器
 
 - **状态**：部分实现（L1 kickoff r38 + companion r39）

@@ -28,15 +28,16 @@
 - **里程碑对齐**：
 ### [QUERY-003] Native 查询双路径
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
 - **描述**：Native 查询双路径（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 时序/文档/搜索走 native
-  - [ ] 不做 SQL 伪装
-- **代码锚点**：`backend/app/query/native/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 时序/文档/搜索走 native（r49 L1：`GET /api/v1/query/routing/modes` opensearch→native）
+  - [x] 不做 SQL 伪装（r49 L1：`POST /api/v1/query/native/validate` + `QUERY_NATIVE_SQL_DISGUISE` 守卫）
+- **代码锚点**：`backend/app/query/native/` · `backend/app/api/v1/query.py` · `tests/test_design_conn_gov_query_r49.py` T-QUERY-R49-003-01~05
+- **演化建议**：r49 L1 闭合 routing modes、native validate、sql disguise/wrong mode/empty body 守卫；后续 companion 补 native 执行链与 OpenSearch 只读查询贯通
+- **里程碑对齐**：
 ### [QUERY-004] SQL 方言适配器
 
 - **状态**：已实现

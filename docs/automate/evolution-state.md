@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design | docs/superpowers/specs/2026-07-04-m13-design-opensearch-gov-query-l1-r49-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-l1-r49.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r49 PRD 重评：DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003 L1 kickoff；pytest 1205/4 skipped；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36；总分 11.6–12.0→81.4–83.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r49 验证通过：ruff clean；pytest 1205 passed/4 skipped（全量 exit_code 0）；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36 回归 111/111；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r49 实现完成：8 Task 全绿；M13 设计器 + M11 OpenSearch + 治理/查询 L1 — DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003；35 测 test_design_conn_gov_query_r49 + r32 21/21 + r33 19/19 + r46 36/36 回归；pytest 1205/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r49-m13-design-opensearch-gov-query-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r49 计划完成：8 Task（fixture+config types→DESIGN-005 sql-mode→DESIGN-003 output-fields→CONN-016 opensearch→GOV-003 workflow FSM→QUERY-003 native guard→联动+回归门控→docs）；19 P3 生产文件 + 1 测试 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥35 新测 test_design_conn_gov_query_r49 + r32 21/21 + r33 19/19 + r46 36/36 回归；plan=docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-l1-r49.md；phase P1_DONE→P2_DONE
@@ -168,5 +169,10 @@
 | NFR-006 | 1 | 79.2 | 2026-07-04 |
 | NFR-007 | 1 | 80.0 | 2026-07-04 |
 | NFR-005 | 1 | 81.2 | 2026-07-04 |
+| GOV-003 | 1 | 81.4 | 2026-07-04 |
+| DESIGN-005 | 1 | 81.4 | 2026-07-04 |
+| QUERY-003 | 1 | 82.5 | 2026-07-04 |
 | GOV-005 | 1 | 82.6 | 2026-07-04 |
+| DESIGN-003 | 1 | 82.9 | 2026-07-04 |
+| CONN-016 | 1 | 83.2 | 2026-07-04 |
 | CONN-019 | 1 | 84.1 | 2026-07-04 |
