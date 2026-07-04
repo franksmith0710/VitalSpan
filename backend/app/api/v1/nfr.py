@@ -260,3 +260,40 @@ def get_deployment_report(
             for i in report.acceptance_checklist
         ],
     }
+
+
+from app.core.nfr.report_perf import (
+    ReportPerfError,
+    ReportPerfProbeIn,
+    ReportPerfProbeOut,
+    ReportPerfValidateOut,
+    probe_report_perf,
+    validate_report_perf_config,
+)
+
+
+def _report_perf_error(exc: ReportPerfError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/report-query-perf/probe", response_model=ReportPerfProbeOut)
+def report_query_perf_probe(
+    payload: ReportPerfProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ReportPerfProbeOut | JSONResponse:
+    try:
+        return probe_report_perf(payload)
+    except ReportPerfError as exc:
+        return _report_perf_error(exc)
+
+
+@router.post("/report-query-perf/validate", response_model=ReportPerfValidateOut)
+def report_query_perf_validate(
+    payload: ReportPerfProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ReportPerfValidateOut | JSONResponse:
+    try:
+        return validate_report_perf_config(payload)
+    except ReportPerfError as exc:
+        return _report_perf_error(exc)
