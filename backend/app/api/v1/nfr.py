@@ -304,10 +304,10 @@ def _report_perf_error(exc: ReportPerfError) -> JSONResponse:
 @router.post("/report-query-perf/probe", response_model=ReportPerfProbeOut)
 def report_query_perf_probe(
     payload: ReportPerfProbeIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> ReportPerfProbeOut | JSONResponse:
     try:
-        return probe_report_perf(payload)
+        return probe_report_perf(payload, actor)
     except ReportPerfError as exc:
         return _report_perf_error(exc)
 
@@ -315,10 +315,10 @@ def report_query_perf_probe(
 @router.post("/report-query-perf/validate", response_model=ReportPerfValidateOut)
 def report_query_perf_validate(
     payload: ReportPerfProbeIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> ReportPerfValidateOut | JSONResponse:
     try:
-        return validate_report_perf_config(payload)
+        return validate_report_perf_config(payload, actor)
     except ReportPerfError as exc:
         return _report_perf_error(exc)
 
@@ -365,10 +365,10 @@ def _dashboard_first_screen_error(exc: DashboardFirstScreenError) -> JSONRespons
 @router.post("/dashboard-first-screen/validate", response_model=DashboardFirstScreenValidateOut)
 def dashboard_first_screen_validate(
     payload: DashboardFirstScreenProbeIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> DashboardFirstScreenValidateOut | JSONResponse:
     try:
-        return validate_dashboard_first_screen(payload)
+        return validate_dashboard_first_screen(payload, actor)
     except DashboardFirstScreenError as exc:
         return _dashboard_first_screen_error(exc)
 
@@ -376,10 +376,10 @@ def dashboard_first_screen_validate(
 @router.post("/dashboard-first-screen/probe", response_model=DashboardFirstScreenProbeOut)
 def dashboard_first_screen_probe(
     payload: DashboardFirstScreenProbeIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> DashboardFirstScreenProbeOut | JSONResponse:
     try:
-        return probe_dashboard_first_screen(payload)
+        return probe_dashboard_first_screen(payload, actor)
     except DashboardFirstScreenError as exc:
         return _dashboard_first_screen_error(exc)
 
