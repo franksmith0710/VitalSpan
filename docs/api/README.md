@@ -94,13 +94,16 @@ redoc: /redoc
 
 ---
 
-## 3b. NFR 横切（r46 L1）
+## 3b. NFR 横切（r46 L1 + r51 companion）
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | GET | `/api/v1/nfr/plugin-extension-points` | 连接器插件扩展点清单 | 内部 | 一期 | NFR-005 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/push-config` | 推送配置契约（不泄露 webhook 明文） | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/xinchuang/compliance` | 信创合规检查清单（strict 违规 → 422） | 内部 | 一期 | NFR-007 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/browser-matrix` | 浏览器兼容矩阵 + 可选 UA 探测 | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/push-probe` | 推送通道 mock 探测（不发送真实 HTTP） | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/registration-path/{connector_type}` | 连接器插件登记路径文档 | 内部 | 一期 | NFR-005 | 已实现 | `backend/app/api/v1/nfr.py` |
 
 ---
 
@@ -211,6 +214,7 @@ redoc: /redoc
 | POST | `/api/v1/gov/publish/entries/{entry_id}/approve` | pending_publish→published | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/publish/entries/{entry_id}/reject` | pending_publish→draft | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/publish/entries/{entry_id}/status` | 发布状态 + allowedActions | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/publish/entries/{entry_id}/notifications` | 审批通知事件列表（内存 store） | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/workflow/templates` | 工单流程模板列表（`standard_query_release`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/workflow/templates/validate` | 工单模板校验 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST/GET | `/api/v1/gov/workflow/instances` | 工单实例创建/读取（`config_type=workflow_instance`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |

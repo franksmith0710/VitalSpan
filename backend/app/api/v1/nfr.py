@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.auth.deps import UserContext, get_current_user
 from app.core.config import get_settings
+from app.core.nfr.browser_matrix import probe_browser_support
 from app.core.nfr.errors import XINCHUANG_NON_COMPLIANT
-from app.core.nfr.plugin_extension import list_extension_points
+from app.core.nfr.plugin_extension import describe_registration_path, list_extension_points
+from app.core.nfr.push_channels import dispatch_push_mock
 from app.core.nfr.push_config import PushConfigValidationError, resolve_push_mode
 from app.core.nfr.xinchuang import XinchuangComplianceError, assert_xinchuang_compliant, build_compliance_report
 
@@ -40,6 +42,7 @@ class ComplianceItemOut(BaseModel):
     id: str
     status: str
     message: str
+    remediation: str | None = None
 
 
 class ComplianceResponse(BaseModel):
@@ -48,6 +51,40 @@ class ComplianceResponse(BaseModel):
     overall_status: str = Field(alias="overallStatus")
     items: list[ComplianceItemOut]
     registered_xinchuang_connectors: list[str] = Field(alias="registeredXinchuangConnectors")
+
+
+class BrowserMatrixItemOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    name: str
+    min_version: int = Field(alias="minVersion")
+    status: str
+    notes: str | None = None
+
+
+class BrowserMatrixResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    items: list[BrowserMatrixItemOut]
+    detected_browser: dict | None = Field(default=None, alias="detectedBrowser")
+    overall_status: str = Field(alias="overallStatus")
+
+
+class PushProbeIn(BaseModel):
+    message: str = "probe"
+
+
+class PushProbeResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    status: str
+    channel: str | None = None
+    attempted_channels: list[str] = Field(alias="attemptedChannels")
+    code: str | None = None
+
+
+class RegistrationPathResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    connector_type: str = Field(alias="connectorType")
+    steps: list[str]
+    touches_core_registry: bool = Field(alias="touchesCoreRegistry")
 
 
 @router.get("/plugin-extension-points", response_model=ExtensionPointListResponse)
@@ -92,6 +129,60 @@ def get_xinchuang_compliance(
     return ComplianceResponse(
         mode=report.mode,
         overallStatus=report.overall_status,
-        items=[ComplianceItemOut(id=i.id, status=i.status, message=i.message) for i in report.items],
+        items=[
+            ComplianceItemOut(id=i.id, status=i.status, message=i.message, remediation=i.remediation)
+            for i in report.items
+        ],
         registeredXinchuangConnectors=list(report.registered_xinchuang_connectors),
+    )
+
+
+@router.get("/browser-matrix", response_model=BrowserMatrixResponse)
+def get_browser_matrix(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    user_agent: str | None = Query(default=None, alias="userAgent"),
+) -> BrowserMatrixResponse:
+    report = probe_browser_support(user_agent)
+    detected = None
+    if report.detected_browser:
+        detected = {
+            "name": report.detected_browser.name,
+            "majorVersion": report.detected_browser.major_version,
+            "supported": report.detected_browser.supported,
+            "status": report.detected_browser.status,
+        }
+    return BrowserMatrixResponse(
+        items=[
+            BrowserMatrixItemOut(name=i.name, minVersion=i.min_version, status=i.status, notes=i.notes)
+            for i in report.items
+        ],
+        detectedBrowser=detected,
+        overallStatus=report.overall_status,
+    )
+
+
+@router.post("/push-probe", response_model=PushProbeResponse)
+def post_push_probe(
+    payload: PushProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> PushProbeResponse:
+    result = dispatch_push_mock({"text": payload.message})
+    return PushProbeResponse(
+        status=result.status,
+        channel=result.channel,
+        attemptedChannels=list(result.attempted_channels),
+        code=result.code,
+    )
+
+
+@router.get("/registration-path/{connector_type}", response_model=RegistrationPathResponse)
+def get_registration_path(
+    connector_type: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> RegistrationPathResponse:
+    doc = describe_registration_path(connector_type)
+    return RegistrationPathResponse(
+        connectorType=doc.connector_type,
+        steps=list(doc.steps),
+        touchesCoreRegistry=doc.touches_core_registry,
     )

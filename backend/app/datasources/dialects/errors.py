@@ -289,6 +289,12 @@ GBASE_UNKNOWN = "GBASE_UNKNOWN"
 
 def map_gbase_error(exc: Exception) -> tuple[str, str]:
     if isinstance(exc, pymysql.err.OperationalError):
+        errno = int(exc.args[0]) if exc.args else 0
+        detail = str(exc.args[1]) if len(exc.args) > 1 else str(exc)
+        if errno == 2002 or "timed out" in detail.lower():
+            return GBASE_TIMEOUT, detail
+        if errno == 1049:
+            return GBASE_UNKNOWN_DATABASE, detail
         code, detail = map_mysql_operational_error(exc)
         mapping = {
             "MYSQL_TIMEOUT": GBASE_TIMEOUT,

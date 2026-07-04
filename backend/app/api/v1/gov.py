@@ -29,7 +29,13 @@ from app.governance.query_design.schemas import (
 )
 from app.governance.publish.errors import PublishError
 from app.governance.publish import service as publish_service
-from app.governance.publish.schemas import PublishActionOut, PublishStatusOut
+from app.governance.publish.notifications import list_notifications
+from app.governance.publish.schemas import (
+    PublishActionOut,
+    PublishNotificationListOut,
+    PublishNotificationOut,
+    PublishStatusOut,
+)
 from app.governance.workflow.errors import WorkflowError
 from app.governance.workflow import service as workflow_service
 from app.governance.workflow.schemas import (
@@ -206,6 +212,33 @@ def publish_status(
         return publish_service.get_publish_status(db, entry_id)
     except PublishError as exc:
         return _publish_error_response(exc)
+
+
+@router.get("/publish/entries/{entry_id}/notifications", response_model=PublishNotificationListOut)
+def publish_notifications(
+    entry_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> PublishNotificationListOut | JSONResponse:
+    try:
+        publish_service.get_publish_status(db, entry_id)
+    except PublishError as exc:
+        return _publish_error_response(exc)
+    events = list_notifications(entry_id)
+    return PublishNotificationListOut(
+        items=[
+            PublishNotificationOut(
+                id=e.id,
+                entryId=e.entry_id,
+                eventType=e.event_type,
+                timestamp=e.timestamp,
+                deliveryMode=e.delivery_mode,
+                notificationStatus=e.notification_status,
+                message=e.message,
+            )
+            for e in events
+        ]
+    )
 
 
 @router.post("/query-design/validate", response_model=VisualQueryDesignOut)

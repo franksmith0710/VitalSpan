@@ -12,6 +12,7 @@ from app.core.nfr.errors import (
 )
 from app.governance.catalog.models import CatalogEntry
 from app.governance.publish.errors import PublishError
+from app.governance.publish.notifications import emit_publish_notification
 from app.governance.publish.schemas import PublishActionOut, PublishStatusOut
 
 _ALLOWED: dict[str, frozenset[str]] = {
@@ -46,6 +47,7 @@ def submit_entry(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
     row.status = "pending_publish"
     db.commit()
     db.refresh(row)
+    emit_publish_notification(entry_id, "submitted")
     return PublishActionOut(id=row.id, status=row.status)
 
 
@@ -58,6 +60,7 @@ def approve_entry(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
     row.status = "published"
     db.commit()
     db.refresh(row)
+    emit_publish_notification(entry_id, "approved")
     return PublishActionOut(id=row.id, status=row.status)
 
 
@@ -68,4 +71,5 @@ def reject_entry(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
     row.status = "draft"
     db.commit()
     db.refresh(row)
+    emit_publish_notification(entry_id, "rejected")
     return PublishActionOut(id=row.id, status=row.status)

@@ -49,3 +49,10 @@ def resolve_push_mode(settings: Settings | None = None) -> PushConfigOut:
     if browser and (wecom_ok or ding_ok):
         return PushConfigOut(browser, wecom_ok, ding_ok, "active", None)
     return PushConfigOut(browser, wecom_ok, ding_ok, "degraded", "partial push channel configuration")
+
+
+def summarize_channel_probe(payload: dict | None = None) -> str:
+    from app.core.nfr.push_channels import dispatch_push_mock
+
+    result = dispatch_push_mock(payload or {"text": "probe"})
+    return f"{result.status}:{result.channel or 'none'}"

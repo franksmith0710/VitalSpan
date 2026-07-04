@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design | docs/superpowers/specs/2026-07-04-nfr-gov-gbase-companion-quality-r51-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-04-nfr-gov-gbase-companion-quality-r51.md |
+| branch | feat/evolution-r51-nfr-gov-gbase-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | NFR-006,NFR-007,NFR-005,GOV-005,CONN-019 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && ruff check . && pytest ../tests/test_nfr_gov_conn_r51.py ../tests/test_nfr_gov_conn_r46.py ../tests/test_design_conn_gov_query_r49.py -q |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T12:30:00Z |
+| skill_rule_index_generated_at | 2026-07-04T13:15:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r51 实现完成：8 Task 全绿；NFR 横切 + GOV-005 + CONN-019 companion 质量推分 — NFR-006/007/005 + GOV-005 + CONN-019；43 测 test_nfr_gov_conn_r51 + r46 36/36 + r49 35/35 回归 114/114；ruff clean；ui_design_skill none；branch feat/evolution-r51-nfr-gov-gbase-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P1 r51 设计完成：NFR 横切 + GOV-005 + CONN-019 companion 质量推分 — NFR-006/007/005 + GOV-005 + CONN-019；18 文件框定（core/nfr 7 + governance/publish 4 + gbase/errors 2 + api 薄 entry 2 + r51 smoke ≥30 测）；浏览器矩阵/推送 mock 降级链/信创 remediation/插件登记路径/审批通知钩子/GBase HTTP 链；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G1 r50 bootstrap：r49 PR #76 已 Squash merge dev-auto（c60ab89）；G0 PASS（PR #77 plan 恢复 docs-only 已合并）；工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 NFR-006(79.2)/NFR-007(80.0)/NFR-005(81.2)；STUCK 十 ID 各 1 轮（NFR-005/006/007 + GOV-003/005 + DESIGN-003/005 + CONN-016/019 + QUERY-003，均 <90）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r49 PRD 重评：DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003 L1 kickoff；pytest 1205/4 skipped；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36；总分 11.6–12.0→81.4–83.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
