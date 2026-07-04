@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r59.md |
 | design | docs/superpowers/specs/2026-07-04-meta-cat-dash-kingbase-design-r59-design.md |
 | plan | docs/superpowers/plans/2026-07-04-meta-cat-dash-kingbase-design-r59.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r59 PRD 重评：META-004/CAT-004/DASH-005/CONN-018/DESIGN-004 L1 kickoff；pytest 1524/4 skipped；test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 + test_dash_rpt_query_nfr_r57 37/37 回归 109/109；总分 12.0–12.1→82.9–84.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r59 验证通过：ruff clean；pytest 1524 passed/4 skipped（全量二次运行 exit_code 0；首轮 1 例环境级 flaky test_rpt_r58_render_spec_probe_under_50ms 全套件负载下 ~104ms>50ms 隔离 3/3 通过、与 r59 无关）；test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 + test_dash_rpt_query_nfr_r57 37/37 回归 109/109；UI: N/A（纯后端 ui_design_skill none）；PR #91 可能已提前创建（已知 SOP 顺序 concern）；phase P3_DONE→P4_DONE
 - P3 r59 实现完成：8 Task 全绿；跨域远期薄弱项 L1 kickoff — META-004/CAT-004/DASH-005/CONN-018/DESIGN-004；34 测 test_meta_cat_dash_conn_design_r59 + r58 38/38 + r57 37/37 回归；pytest 1524/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r59-meta-cat-dash-kingbase-design-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r59 计划完成：8 Task（fixture+config types→META-004 dataset→CAT-004 classification→DASH-005 entity_overview→CONN-018 kingbase→DESIGN-004 workflow-link→32 测回归门控→docs）；21 P3 生产文件 + 1 测试 ≤22；subagent-driven-development option 1；全 Task UI skill none；≥32 新测 test_meta_cat_dash_conn_design_r59 + r58 38/38 + r57 37/37 回归；plan=docs/superpowers/plans/2026-07-04-meta-cat-dash-kingbase-design-r59.md；phase P1_DONE→P2_DONE
@@ -196,3 +197,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| META-004 | 1 | 84.2 | 2026-07-04 |
+| CAT-004 | 1 | 83.9 | 2026-07-04 |
+| DASH-005 | 1 | 84.0 | 2026-07-04 |
+| CONN-018 | 1 | 84.2 | 2026-07-04 |
+| DESIGN-004 | 1 | 82.9 | 2026-07-04 |

@@ -37,15 +37,17 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [CAT-004] CAT-04 时间序列分析类
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r59 · 分类树骨架）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：二期
-- **描述**：CAT-04 时间序列分析类（SRS 追溯项）。
+- **描述**：CAT-04 时间序列分析类（SRS 追溯项）。**r59 按 round-target 交付分类树 L1**（`governance/catalog/classification/`），timeseries 模板留远期。
 - **验收标准**：
+  - [x] 分类树 CRUD + move + 环检测（r59 L1：`POST/GET/DELETE /api/v1/gov/classification` + move + `CAT_CLASS_*` + MAX_DEPTH=8）
   - [ ] timeseries API 模板
   - [ ] 粒度/同比环比参数
-- **代码锚点**：`backend/app/governance/catalog/cat04.py`
-- **演化建议**：按 plan.md 期次优先级落地
+- **代码锚点**：`backend/app/governance/catalog/classification/` · `backend/app/api/v1/gov.py` · `tests/test_meta_cat_dash_conn_design_r59.py` T-CAT-R59-004-01~08
+- **演化建议**：r59 L1 闭合分类树 CRUD/move/深度/code 冲突边界；后续补 timeseries API 模板与粒度/同比环比参数（PRD 字面 CAT-04）
+- **里程碑对齐**：
 ### [CAT-005] CAT-05 工单与业务受理类
 
 - **状态**：未实现

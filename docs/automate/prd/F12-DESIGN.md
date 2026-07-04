@@ -42,15 +42,18 @@
 - **里程碑对齐**：
 ### [DESIGN-004] 设计器与工单关联
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r59）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：设计器与工单关联（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 设计完成进入 GOV-005 发布
-  - [ ] 状态同步
-- **代码锚点**：`backend/app/designer/workflow.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] workflow-link validate/save/get（r59 L1：`POST validate` + `PUT/GET /api/v1/designer/workflow-link` + `publishReady` 探测 GOV workflow/publish）
+  - [x] 未知 instance/非法 item/sql_mode 路由不变（r59）
+  - [ ] 设计完成进入 GOV-005 发布全链路
+  - [ ] 状态同步（缺 fe 与 BPM 双向钩子）
+- **代码锚点**：`backend/app/designer/workflow.py` · `backend/app/api/v1/designer.py` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DESIGN-R59-004-01~06
+- **演化建议**：r59 L1 闭合 workflow-link validate/save/get 与 publish_ready 探测；后续补 GOV-005 发布全链路与状态同步 UI
+- **里程碑对齐**：
 ### [DESIGN-005] 传统 SQL 模式
 
 - **状态**：部分实现

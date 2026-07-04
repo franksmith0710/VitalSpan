@@ -51,15 +51,18 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [DASH-005] 实体总览页 FR-6.2
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r59）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：实体总览页 FR-6.2（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 统计卡片+详情筛选+下钻
+  - [x] 实体总览 config_store validate/save/get（r59 L1：`PUT/GET /api/v1/dashboards/{id}/entity-overview` + `POST validate` + `DASH_OVERVIEW_*` + viewer ACL）
+  - [x] 重复 metric 拦截 + theme-analysis 路由不变（r59 回归）
+  - [ ] 统计卡片+详情筛选+下钻（缺 fe 页面）
   - [ ] 跨组件口径一致
-- **代码锚点**：`fe/src/pages/entity-overview/`
-- **演化建议**：按 plan.md 期次优先级落地
+- **代码锚点**：`backend/app/dashboard/entity_overview/` · `backend/app/api/v1/dashboards.py` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DASH-R59-005-01~06
+- **演化建议**：r59 L1 闭合 entity_overview validate/save/get、viewer 403 与 duplicate metric；后续补 fe 实体总览页与跨组件口径联动
+- **里程碑对齐**：
 ### [DASH-006] 实体主题分析 FR-4.1
 
 - **状态**：部分实现（companion r58）
