@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r65.md |
-| design | docs/superpowers/specs/2026-07-04-cat-rpt-meta-companion-quality-r65-design.md |
+| design | docs/superpowers/plans/2026-07-04-cat-rpt-meta-companion-quality-r65.md |
 | plan | docs/superpowers/plans/2026-07-04-cat-rpt-meta-companion-quality-r65.md |
 | branch | feat/evolution-r65-cat-rpt-meta-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | CAT-003,CAT-004,CAT-006,RPT-002,META-005 |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_cat_rpt_meta_r65.py ../tests/test_nfr_cat_r64.py ../tests/test_cat_nfr_rpt_meta_r62.py ../tests/test_cat_dash_viz_nfr_r61.py ../tests/test_meta_cat_dash_conn_design_r59.py -v && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T19:55:00Z |

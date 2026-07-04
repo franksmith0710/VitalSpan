@@ -16,16 +16,17 @@
 - **里程碑对齐**：
 ### [RPT-002] 预制分析报表体系 FR-3.1
 
-- **状态**：部分实现（L1 kickoff r62）
+- **状态**：部分实现（companion r65）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：预制分析报表体系 FR-3.1（SRS 追溯项）。
 - **验收标准**：
   - [x] N 实体×M 分析类型可配置（r62 L1：`PUT/GET /api/v1/reports/prefab/bindings` + entityType/analysisType 幂等 upsert + list）
   - [x] 维度字典驱动（r62 L1：dimensionKey 校验 + `RPT_PREFAB_DIMENSION_UNKNOWN` 422）
+  - [x] companion binding ACL + perf probe（r65：`set_user_prefab_scope` + `RPT_PREFAB_EMPTY_ROLES`/`RPT_PREFAB_ANALYSIS_MISMATCH` 422；enterprise scope 403；`probe_prefab_validate_budget_ms`/`probe_prefab_list_budget_ms` ≤50ms）
   - [ ] fe 预制报表选择与渲染（无 Admin 预制报表 UI）
-- **代码锚点**：`backend/app/reports/prefab/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-RPT-R62-002-01~06
-- **演化建议**：r62 L1 闭合 prefab binding validate/upsert/list 与 dimension/viewer ACL 边界；后续补 fe 预制报表选择与 M3-LITE 执行链
+- **代码锚点**：`backend/app/reports/prefab/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_cat_rpt_meta_r65.py` T-RPT-R65-002-01~06 · `tests/test_cat_nfr_rpt_meta_r62.py` T-RPT-R62-002-01~06
+- **演化建议**：r65 companion 闭合 prefab binding ACL、allowedRoles/analysisType 联动与 validate/list perf probe；后续补 fe 预制报表选择与 M3-LITE 执行链
 - **里程碑对齐**：
 ### [RPT-003] Word/Excel/PDF 模板定义
 

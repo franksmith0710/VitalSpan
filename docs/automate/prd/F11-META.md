@@ -55,15 +55,16 @@
 - **里程碑对齐**：
 ### [META-005] 物理表元数据登记 M1-ENTITY
 
-- **状态**：部分实现（L1 kickoff r62）
+- **状态**：部分实现（companion r65）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：物理表元数据登记 M1-ENTITY（SRS 追溯项）。
 - **验收标准**：
   - [x] 物理表/字段登记（r62 L1：`POST/GET /api/v1/metadata/physical-tables` + columns 登记 + duplicate column 422 + list）
+  - [x] companion register ACL + perf probe（r65：viewer register 403 `META_PHYSICAL_FORBIDDEN`；column name pattern `META_PHYSICAL_INVALID_COLUMN` 422；`probe_physical_validate_budget_ms`/`probe_physical_list_budget_ms` ≤50ms）
   - [ ] 支撑 FR-6.2（无 GOV catalog 引用释放与 lineage 全链路）
-- **代码锚点**：`backend/app/metadata/physical/` · `backend/app/api/v1/metadata.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-META-R62-005-01~06
-- **演化建议**：r62 L1 闭合 physical table register/list 与 empty columns/duplicate 边界；后续补 FR-6.2 GOV 引用释放与 lineage 联动
+- **代码锚点**：`backend/app/metadata/physical/` · `backend/app/api/v1/metadata.py` · `tests/test_cat_rpt_meta_r65.py` T-META-R65-005-01~05 · `tests/test_cat_nfr_rpt_meta_r62.py` T-META-R62-005-01~06
+- **演化建议**：r65 companion 闭合 physical register ACL、column name pattern 与 validate/list perf probe；后续补 FR-6.2 GOV 引用释放与 lineage 联动
 - **里程碑对齐**：
 ### [META-006] 实体类型 schema 配置
 
