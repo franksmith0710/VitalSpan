@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import uuid
 from pathlib import Path
 from collections.abc import Generator
@@ -706,13 +707,13 @@ def test_r57_link_deployment_runtime_consistency(client: TestClient):
 def test_r57_link_regression_suites_green():
     """T-R57-LINK-04: r53+r55+r52 回归套件全绿（subprocess 门控）。"""
     cmd = [
-        "python3",
+        sys.executable,
         "-m",
         "pytest",
         "-q",
-        "../tests/test_dash_rpt_query_nfr_r53.py",
-        "../tests/test_rpt_gov_meta_conn_r55.py",
-        "../tests/test_design_conn_gov_query_r52.py",
+        str(_BACKEND_DIR.parent / "tests" / "test_dash_rpt_query_nfr_r53.py"),
+        str(_BACKEND_DIR.parent / "tests" / "test_rpt_gov_meta_conn_r55.py"),
+        str(_BACKEND_DIR.parent / "tests" / "test_design_conn_gov_query_r52.py"),
     ]
     proc = subprocess.run(cmd, cwd=str(_BACKEND_DIR), capture_output=True, text=True)
     assert proc.returncode == 0, proc.stdout + proc.stderr
