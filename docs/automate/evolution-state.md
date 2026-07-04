@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r35.md |
 | design | docs/superpowers/specs/2026-07-04-m11-conn-m13-gov-companion-quality-r35-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-conn-m13-gov-companion-quality-r35.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r35 PRD 重评：CONN-021/009/015 + GOV-004/008 companion 质量推分；pytest 777/4 skipped；test_connectors_gov_r35 35/35 + r34 15/15 + r33 19/19；总分 86.0–88.1→90.1–91.0（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r35 验证通过：ruff clean；pytest 777 passed/4 skipped；r35 35/35 + r34 15/15 + r33 19/19 回归 69/69；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P3 r35 实现完成：7 Task 全绿；CONN-021/009/015 + GOV-004/008 companion 质量推分；35 新测 test_connectors_gov_r35；pytest 777/4 skipped；r34 15/15 + r33 19/19 回归；branch cursor/bc-8c18737e-0c44-4d37-a690-cf6681f61819-520c；base_branch dev-auto；phase P2_DONE→P3_DONE
 - G2 r35 选题完成：M11 连接器 + M13 治理 companion 质量推分 — CONN-021/009/015 + GOV-004/008（5 项）；最低分 CONN-021(86.0)；STUCK 五 ID 各 1 轮（未达 ≥3 硬标注阈值）；饱和熔断未触发；plan M11/M12/M13 无活跃勾选行（已知 concern）；phase idle→G2_DONE
@@ -96,8 +97,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| CONN-021 | 1 | 86.0 | 2026-07-04 |
-| CONN-009 | 1 | 86.2 | 2026-07-04 |
-| CONN-015 | 1 | 88.1 | 2026-07-04 |
-| GOV-004 | 1 | 87.2 | 2026-07-04 |
-| GOV-008 | 1 | 86.8 | 2026-07-04 |
