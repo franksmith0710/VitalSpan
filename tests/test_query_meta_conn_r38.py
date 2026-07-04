@@ -26,6 +26,7 @@ def r38_sqlite_env():
     import app.datasources.models  # noqa: F401
     import app.governance.catalog.models  # noqa: F401
     import app.metadata.glossary.models  # noqa: F401
+    import app.metadata.dimensions.models  # noqa: F401
     import app.metadata.themes.models  # noqa: F401
     import app.query.config_store.models  # noqa: F401
     import app.query.models  # noqa: F401
@@ -454,3 +455,83 @@ def test_conn_trino_unknown_schema_tables_r38(mock_connect):
     cursor.fetchall.return_value = []
     conn.cursor.return_value = cursor
     assert TrinoConnector().list_tables(conn, "unknown", catalog="hive") == []
+
+
+def test_meta_dimension_create_and_list_r38(client):
+    """T-META-R38-003-01: POST 合法维度 → 201；GET list 含该项。"""
+    payload = {"code": "region", "name": "区域维度"}
+    created = client.post("/api/v1/metadata/dimensions", headers=AUTH, json=payload)
+    assert created.status_code == 201
+    listed = client.get("/api/v1/metadata/dimensions", headers=AUTH)
+    assert listed.status_code == 200
+    codes = [d["code"] for d in listed.json()["items"]]
+    assert "region" in codes
+
+
+def test_meta_dimension_duplicate_code_r38(client):
+    """T-META-R38-003-02: 重复 code → 409 META_DIM_CODE_CONFLICT。"""
+    payload = {"code": "dup_dim", "name": "A"}
+    assert client.post("/api/v1/metadata/dimensions", headers=AUTH, json=payload).status_code == 201
+    dup = client.post("/api/v1/metadata/dimensions", headers=AUTH, json=payload)
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "META_DIM_CODE_CONFLICT"
+
+
+def test_meta_dimension_invalid_code_r38(client):
+    """T-META-R38-003-03: 空/非法 code → 422 META_DIM_INVALID_CODE。"""
+    resp = client.post("/api/v1/metadata/dimensions", headers=AUTH, json={"code": "", "name": "X"})
+    assert resp.status_code == 422
+
+
+def test_meta_dimension_values_register_r38(client):
+    """T-META-R38-003-04: POST 批量 values → GET values 含条目。"""
+    dim = client.post(
+        "/api/v1/metadata/dimensions", headers=AUTH, json={"code": "status_dim", "name": "状态"},
+    ).json()
+    reg = client.post(
+        f"/api/v1/metadata/dimensions/{dim['id']}/values",
+        headers=AUTH,
+        json={"items": [{"code": "open", "label": "开启"}, {"code": "closed", "label": "关闭"}]},
+    )
+    assert reg.status_code in (200, 201)
+    values = client.get(f"/api/v1/metadata/dimensions/{dim['id']}/values", headers=AUTH)
+    assert values.status_code == 200
+    codes = [v["code"] for v in values.json()["items"]]
+    assert "open" in codes and "closed" in codes
+
+
+def test_meta_dimension_value_duplicate_r38(client):
+    """T-META-R38-003-05: 重复 value code → 409 META_DIM_VALUE_CODE_CONFLICT。"""
+    dim = client.post(
+        "/api/v1/metadata/dimensions", headers=AUTH, json={"code": "dup_val_dim", "name": "D"},
+    ).json()
+    body = {"items": [{"code": "a", "label": "A"}]}
+    assert client.post(f"/api/v1/metadata/dimensions/{dim['id']}/values", headers=AUTH, json=body).status_code in (200, 201)
+    dup = client.post(f"/api/v1/metadata/dimensions/{dim['id']}/values", headers=AUTH, json=body)
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "META_DIM_VALUE_CODE_CONFLICT"
+
+
+def test_meta_dimension_list_pagination_r38(client):
+    """T-META-R38-003-06: list limit=1 分页 total 正确。"""
+    for code in ("page_a", "page_b"):
+        client.post("/api/v1/metadata/dimensions", headers=AUTH, json={"code": code, "name": code})
+    resp = client.get("/api/v1/metadata/dimensions", headers=AUTH, params={"limit": 1, "offset": 0})
+    body = resp.json()
+    assert body["total"] >= 2
+    assert len(body["items"]) == 1
+
+
+def test_meta_dimension_delete_cascade_r38(client):
+    """T-META-R38-003-07: DELETE 维度 → values 级联不可见。"""
+    dim = client.post(
+        "/api/v1/metadata/dimensions", headers=AUTH, json={"code": "cascade_dim", "name": "C"},
+    ).json()
+    client.post(
+        f"/api/v1/metadata/dimensions/{dim['id']}/values",
+        headers=AUTH,
+        json={"items": [{"code": "v1", "label": "V1"}]},
+    )
+    assert client.delete(f"/api/v1/metadata/dimensions/{dim['id']}", headers=AUTH).status_code in (200, 204)
+    values = client.get(f"/api/v1/metadata/dimensions/{dim['id']}/values", headers=AUTH)
+    assert values.status_code == 404
