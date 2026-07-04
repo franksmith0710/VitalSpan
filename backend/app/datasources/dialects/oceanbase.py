@@ -11,6 +11,7 @@ from app.datasources.dialects.mysql import MysqlConnector
 
 OCEANBASE_MAX_COLUMNS = 500
 OCEANBASE_DEFAULT_PORT = 2881
+probe_test_connection_budget_ms: int = 100
 
 
 class OceanbaseConnector:
@@ -49,6 +50,7 @@ class OceanbaseConnector:
         return self._inner.open_connection(**{**kwargs, "port": port})
 
     def list_schemas(self, connection: Any) -> list[SchemaInfo]:
+        # Empty tenant/database returns [] — symmetric with GBase companion pattern.
         return self._inner.list_schemas(connection)
 
     def list_tables(self, connection: Any, schema: str) -> list[TableInfo]:
