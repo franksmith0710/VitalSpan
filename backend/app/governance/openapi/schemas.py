@@ -13,6 +13,14 @@ class OpenApiMappingCreate(BaseModel):
     path: str
     operation_id: str = Field(min_length=1, max_length=128, alias="operationId")
     entity_type_ref: str | None = Field(default=None, alias="entityTypeRef")
+    api_version: str = Field(default="v1", alias="apiVersion")
+
+
+class OpenApiMappingValidateOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    valid: bool
+    api_version: Literal["v1"] = Field(alias="apiVersion")
+    warnings: list[str] = Field(default_factory=list)
 
 
 class OpenApiMappingOut(OpenApiMappingCreate):

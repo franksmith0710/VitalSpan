@@ -50,7 +50,11 @@ from app.governance.workflow.schemas import (
     WorkflowTransitionIn,
 )
 from app.governance.openapi.errors import OpenApiMappingError
-from app.governance.openapi.schemas import OpenApiMappingCreate, OpenApiMappingListOut
+from app.governance.openapi.schemas import (
+    OpenApiMappingCreate,
+    OpenApiMappingListOut,
+    OpenApiMappingValidateOut,
+)
 from app.governance.openapi import service as openapi_service
 
 router = APIRouter(prefix="/gov", tags=["governance", "IF-06"])
@@ -342,13 +346,24 @@ def register_openapi_mapping(
         return _openapi_mapping_error(exc)
 
 
-@router.post("/openapi-mappings/validate", response_model=None)
+@router.post("/openapi-mappings/validate", response_model=OpenApiMappingValidateOut)
 def validate_openapi_mapping(
     payload: OpenApiMappingCreate,
     _: Annotated[UserContext, Depends(get_current_user)],
 ):
     try:
         return openapi_service.validate_mapping(payload)
+    except OpenApiMappingError as exc:
+        return _openapi_mapping_error(exc)
+
+
+@router.post("/openapi-mappings/{mapping_id}/deactivate", response_model=None)
+def deactivate_openapi_mapping(
+    mapping_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return openapi_service.deactivate_mapping(mapping_id)
     except OpenApiMappingError as exc:
         return _openapi_mapping_error(exc)
 
