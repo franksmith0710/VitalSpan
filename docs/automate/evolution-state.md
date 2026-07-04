@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | NFR-006,NFR-007,NFR-005,GOV-005,CONN-019 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
