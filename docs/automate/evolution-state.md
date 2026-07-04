@@ -13,7 +13,7 @@
 | branch | feat/evolution-r34-m11-connector-m13-gov-kickoff |
 | base_branch | dev-auto |
 | prd_ids | CONN-021,GOV-004,CONN-009,CONN-015,GOV-008 |
-| pr_number |  |
+| pr_number | 58 |
 | last_verified_command | cd backend && export DATABASE_URL=... SECRET_KEY=... CREDENTIAL_FERNET_KEY=... && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（纯后端，无 UI 改动） |
