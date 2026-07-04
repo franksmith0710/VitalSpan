@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r48 bootstrap：r47 PR #74 已 Squash merge dev-auto（799c32a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 DESIGN-005(11.6)/DESIGN-003(11.6)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（NFR-005/006/007 + GOV-005 + CONN-019，均 <90）；phase idle；待 G2 选题
 - G1 r47 bootstrap：r46 PR #73 已 Squash merge dev-auto（2d1f89a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 DESIGN-005(11.6)/DESIGN-003(11.6)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（NFR-005/006/007 + GOV-005 + CONN-019，r46 P5 <90 upsert）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r46 PRD 重评：NFR-005/006/007 + GOV-005 + CONN-019 L1 kickoff；pytest 1170/4 skipped；test_nfr_gov_conn_r46 36/36 + r45 30/30 + r41 36/36；总分 11.4–11.6→79.2–84.1（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P3 r46 实现完成：8 Task 全绿；NFR 横切 + GOV-005 发布状态机 + CONN-019 GBase L1 — NFR-005/006/007 + GOV-005 + CONN-019；36 测 test_nfr_gov_conn_r46 + r45 30/30 + r41 36/36 + datasources_l1 回归；pytest 1170/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r46-nfr-gov-gbase-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
