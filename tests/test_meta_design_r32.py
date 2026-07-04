@@ -104,3 +104,60 @@ def test_meta_term_delete_in_use_r32(client):
         deleted = client.delete(f"/api/v1/metadata/glossary/{term['id']}", headers=AUTH)
         assert deleted.status_code == 409
         assert deleted.json()["code"] == "META_TERM_IN_USE"
+
+
+def test_meta_theme_tree_and_filter_r32(client):
+    """T-META-R32-002-01: 建根 + 子节点；GET ?parent_id= 过滤正确。"""
+    root = client.post("/api/v1/metadata/themes", headers=AUTH, json={"name": "根主题"}).json()
+    child = client.post(
+        "/api/v1/metadata/themes",
+        headers=AUTH,
+        json={"name": "子主题", "parentId": root["id"]},
+    )
+    assert child.status_code == 201
+    roots = client.get("/api/v1/metadata/themes", headers=AUTH, params={"parent_id": "null"})
+    assert any(n["id"] == root["id"] for n in roots.json()["items"])
+
+
+def test_meta_theme_cycle_move_r32(client):
+    """T-META-R32-002-02: move 子到孙下形成环 → 422 META_THEME_CYCLE。"""
+    root = client.post("/api/v1/metadata/themes", headers=AUTH, json={"name": "R"}).json()
+    child = client.post(
+        "/api/v1/metadata/themes", headers=AUTH, json={"name": "C", "parentId": root["id"]}
+    ).json()
+    grand = client.post(
+        "/api/v1/metadata/themes", headers=AUTH, json={"name": "G", "parentId": child["id"]}
+    ).json()
+    resp = client.post(
+        f"/api/v1/metadata/themes/{root['id']}/move",
+        headers=AUTH,
+        json={"parentId": grand["id"]},
+    )
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "META_THEME_CYCLE"
+
+
+def test_meta_theme_self_move_r32(client):
+    """T-META-R32-002-03: 自引用 move → 422 META_THEME_CYCLE。"""
+    node = client.post("/api/v1/metadata/themes", headers=AUTH, json={"name": "Solo"}).json()
+    resp = client.post(
+        f"/api/v1/metadata/themes/{node['id']}/move",
+        headers=AUTH,
+        json={"parentId": node["id"]},
+    )
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "META_THEME_CYCLE"
+
+
+def test_meta_theme_term_link_r32(client):
+    """T-META-R32-002-04: 可选 term_id 关联已存在术语 → 200。"""
+    term = client.post(
+        "/api/v1/metadata/glossary", headers=AUTH, json={"code": "theme_link", "name": "T"}
+    ).json()
+    node = client.put(
+        f"/api/v1/metadata/themes/{client.post('/api/v1/metadata/themes', headers=AUTH, json={'name': 'N'}).json()['id']}",
+        headers=AUTH,
+        json={"name": "N", "termId": term["id"]},
+    )
+    assert node.status_code == 200
+    assert node.json()["termId"] == term["id"]
