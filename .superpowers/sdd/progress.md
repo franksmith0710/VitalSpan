@@ -1,10 +1,4 @@
-# M11 r41 companion P3 Progress Ledger
-
-Task 1: complete (map_mongodb_error MONGODB_UNKNOWN_DATABASE + scaffold, review clean)
-Task 2: complete (CONN-014 MongoDB boundary + HTTP chain, review clean)
-Task 3: complete (CONN-011 InfluxDB boundary + HTTP chain, review clean)
-Task 4: complete (CONN-012 TDengine boundary + HTTP 502 chain, review clean)
-Task 5: complete (CONN-006 SQLite readonly/path guard, review clean)
-Task 6: complete (CONN-013 TimescaleDB boundary + HTTP chain, review clean)
-Task 7: complete (T-REG-R41 + regression 189/189 connector gov, review clean)
-Task 8: complete (datasources.md §r41, review clean)
+# r42 M9 VIZ advanced charts L1 — progress ledger
+base_branch: dev-auto
+feature_branch: feat/evolution-r42-m9-viz-advanced-l1
+base_commit(HEAD at branch start): see git rev-parse
