@@ -6,10 +6,10 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r68.md |
 | design | docs/superpowers/specs/2026-07-04-nfr-gov-rpt-view-companion-quality-r68-design.md |
-| plan |  |
+| plan | docs/superpowers/plans/2026-07-04-nfr-gov-rpt-view-companion-quality-r68.md |
 | branch |  |
 | base_branch | dev-auto |
 | prd_ids | NFR-003,NFR-004,GOV-007,RPT-002,VIEW-002 |
@@ -17,7 +17,7 @@
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T22:55:00Z |
+| skill_rule_index_generated_at | 2026-07-04T23:25:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P2 r68 计划完成：8 Task（fixtures→NFR-003 dashboard_sla→NFR-004 https-audit→GOV-007 auto-register FSM/probe→RPT-002 prefab GET/ACL→VIEW-002 role cycle/scope→六轮回归门控 198/198→docs）；P3 生产 14 + 测试 1 = 15 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥35 新测 test_nfr_gov_rpt_view_r68 + r67 34/34 + r66 33/33 + r65 32/32 + r64 33/33 + r62 32/32 + r60 34/34 回归；plan=docs/superpowers/plans/2026-07-04-nfr-gov-rpt-view-companion-quality-r68.md；phase P1_DONE→P2_DONE
 - P1 r68 设计完成：跨域 STUCK 簇收尾 companion 质量推分 — NFR-003/NFR-004/GOV-007/RPT-002/VIEW-002；18 文件框定；perf probe 50ms + ACL/validate/NOT_FOUND/FSM 闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r68 选题完成：跨域 STUCK 簇收尾 companion 质量推分 — NFR-003/NFR-004/GOV-007/RPT-002/VIEW-002（5 项）；最低分 NFR-003/NFR-004(84.2)；饱和熔断未触发（Top3 84.2–84.4≪90，#4/#5 为 90.0 非饱和）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 三核心 ID 各 1 轮未达 ≥3 硬标注阈值；CAT-001/CAT-002(90.0) 留后续 companion；phase idle→G2_DONE
 - G1 r68 bootstrap：r67 PR #102 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 NFR-003(84.2)/NFR-004(84.2)/GOV-007(84.4)；STUCK 三 ID 各 1 轮（NFR-003/NFR-004/GOV-007，均 84.2–84.4）；phase P5_DOCS_READY→idle；待 G2 选题
