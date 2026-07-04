@@ -10,6 +10,7 @@ from app.core.nfr.errors import NFR_RUNTIME_VIOLATION
 
 _FORBIDDEN = frozenset({"superset", "dataease", "apache-superset"})
 _FORBIDDEN_MODULES = frozenset({"superset", "dataease"})
+SCAN_BUDGET_MS = 100
 
 
 @dataclass(frozen=True)

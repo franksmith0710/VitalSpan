@@ -11,6 +11,7 @@ from app.core.config import get_settings
 from app.core.nfr.browser_matrix import probe_browser_support
 from app.core.nfr.errors import NFR_RUNTIME_VIOLATION, XINCHUANG_NON_COMPLIANT
 from app.core.nfr.runtime_guard import RuntimeComplianceError, RuntimeComplianceReport, assert_runtime_compliant, build_runtime_report
+from app.core.nfr.deployment_report import build_deployment_acceptance_report
 from app.core.nfr.plugin_extension import describe_registration_path, list_extension_points
 from app.core.nfr.push_channels import dispatch_push_mock
 from app.core.nfr.push_config import PushConfigValidationError, resolve_push_mode
@@ -231,3 +232,31 @@ def post_runtime_compliance_assert(
         return _runtime_response(assert_runtime_compliant())
     except RuntimeComplianceError as exc:
         return JSONResponse(status_code=503, content={"code": NFR_RUNTIME_VIOLATION, "message": exc.message, "detail": None})
+
+
+@router.get("/runtime-compliance/deployment-report", response_model=None)
+def get_deployment_report(
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    report = build_deployment_acceptance_report()
+    return {
+        "reportVersion": report.report_version,
+        "generatedAt": report.generated_at,
+        "overallAcceptance": report.overall_acceptance,
+        "opsSummary": report.ops_summary,
+        "remediationIndex": report.remediation_index,
+        "runtime": {
+            "policyVersion": report.runtime.policy_version,
+            "overallStatus": report.runtime.overall_status,
+            "zeroThirdPartyBiRuntime": report.runtime.zero_third_party_bi_runtime,
+            "scannedAt": report.runtime.scanned_at,
+            "items": [
+                {"id": i.id, "status": i.status, "message": i.message, "remediation": i.remediation}
+                for i in report.runtime.items
+            ],
+        },
+        "acceptanceChecklist": [
+            {"id": i.id, "status": i.status, "message": i.message, "remediation": i.remediation}
+            for i in report.acceptance_checklist
+        ],
+    }
