@@ -41,4 +41,15 @@
 ## 实现笔记
 
 - r30 L1：`views.validate` 在 dashboard layout 规则之上增加 `VIEW_UNKNOWN_CHART_REF`、`VIEW_DEFAULT_SELF_REF`
+- r31：`VIEW_LAYOUT_BOUNDS`（colSpan/rowSpan/widgets 越界）、`VIEW_CHART_REF_CYCLE`（chartRef/chartId 循环引用）
 - `dashboard.service.validate_layout` 委托 `views.validate.validate_layout_dict`
+
+## 错误码
+
+| 码 | 说明 |
+|----|------|
+| `VIEW_INVALID_LAYOUT` | 通用 layout 校验失败 |
+| `VIEW_LAYOUT_BOUNDS` | colSpan/rowSpan/widgets 越界 |
+| `VIEW_UNKNOWN_CHART_REF` | chartRef 或 chartId 引用未知 widget |
+| `VIEW_CHART_REF_CYCLE` | chartRef/chartId 循环引用 |
+| `VIEW_DEFAULT_SELF_REF` | defaultViewId 等于自身 id |

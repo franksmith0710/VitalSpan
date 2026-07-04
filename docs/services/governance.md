@@ -34,8 +34,8 @@
 | `CatalogCategory` / `CatalogEntry` | catalog ORM | GOV-001 | 已实现 |
 | `BusRegistration` | 总线登记记录 | GOV-002 | 已实现 |
 | `BusPoCAdapter` / `InMemoryBusPoCAdapter` | PoC 注册适配器 | GOV-002 | 已实现 |
-| `GET/POST /api/v1/gov/catalog/*` | catalog API | GOV-001 | 已实现 |
-| `POST /api/v1/gov/bus/register` | 半自动注册 API | GOV-002 | 已实现 |
+| `GET/POST/DELETE /api/v1/gov/catalog/*` | catalog API | GOV-001 | 已实现 |
+| `POST /api/v1/gov/bus/register` | 半自动注册 API（admin；幂等） | GOV-002 | 已实现 |
 
 ## 关联 API
 
@@ -45,3 +45,5 @@
 
 - migration `0014` seed CAT-01~03；`trace_id` 取自 `trace_id_var`
 - `force-fail` path 段触发 PoC adapter 拒绝（502 `BUS_REGISTRATION_REJECTED`）
+- r31：`list_entries` 非法 `category` → 400 `CATALOG_INVALID_CATEGORY`；`DELETE /gov/catalog/entries/{id}` → 204（CASCADE `bus_registrations`）
+- r31：`POST /gov/bus/register` 需 admin 角色；幂等二次登记 200；失败码 `BUS_REGISTRATION_TIMEOUT`/`CLIENT_ERROR`/`SERVER_ERROR`；失败响应 `detail.traceId`
