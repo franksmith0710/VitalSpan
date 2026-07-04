@@ -6,10 +6,10 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design | docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-companion-quality-r37-design.md |
-| plan |  |
+| plan | docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-companion-quality-r37.md |
 | branch | cursor/bc-031e3641-9a45-48b5-b7f1-1fea5c376dab-817d |
 | base_branch | dev-auto |
 | prd_ids | CONN-004,CONN-008,CONN-005,CONN-003,CONN-007 |
@@ -18,7 +18,7 @@
 | last_verified_exit_code |  |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T04:25:00Z |
+| skill_rule_index_generated_at | 2026-07-04T04:56:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P2 r37 计划完成：8 Task（errors 上浮→Oracle→Doris→SQL Server→Hive→ClickHouse→registry 回归→docs）；≥33 新测 test_connectors_gov_r37；9 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
 - P1 r37 设计完成：M11 关系型/OLAP 连接器 companion 质量推分 — CONN-004/008/005/003/007；16 文件框定；五方言错误域/limit/HTTP 链闭合；ui_design_skill none；phase G2_DONE→P1_DONE
 - G2 r37 选题完成：M11 关系型/OLAP 连接器 companion 质量推分 — CONN-004/008/005/003/007（5 项）；最低分 CONN-004(86.2)；饱和熔断未触发；plan M11/M12/M13 无活跃勾选行（已知 concern）；STUCK 五 ID 各 1 轮（未达 ≥3 硬标注阈值）；phase idle→G2_DONE
 - G1 r37 bootstrap：r36 PR #61 已 Squash merge dev-auto（059d222）；G0 PR #62 已合并（8354ba6）；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 QUERY-008(11.3)/CONN-022(11.3)/META-003(11.6)；STUCK 五 ID 各 1 轮；phase P5_DOCS_READY→idle；待 G2 选题
