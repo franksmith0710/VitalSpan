@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r59.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | META-004,CAT-004,DASH-005,CONN-018,DESIGN-004 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 r59 选题完成：跨域远期薄弱项 L1 kickoff — META-004/CAT-004/DASH-005/CONN-018/DESIGN-004（5 项）；最低分 META-004/CAT-004(12.0)；饱和熔断未触发（Top5 12.0–12.1≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 表空（五 ID 远期 stub 首次入选）；phase idle→G2_DONE
 - G1 r59 bootstrap：r58 PR #90 已 Squash merge dev-auto（a9d5f41）；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 META-004(12.0)/CAT-004(12.0)/DASH-005(12.1)；STUCK 表空（r58 P5 DASH-006/RPT-004/005 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r58 PRD 重评：DASH-006/RPT-004/005 STUCK 清零破 90（91.2/91.3/91.5）；RPT-006/007 巩固 90.9/91.8；pytest 1490/4 skipped；test_dash_rpt_r58 38/38 + r57 37/37 + r55 35/35 + r53 38/38 + r52 52/52 回归 200/200；phase P4_DONE→P5_DOCS_READY；PR #90
 - P3 r58 实现完成：8 Task 全绿；M9/M10/M12 仪表板与报表 companion 质量推分 — DASH-006/RPT-004/005/006/007；38 测 test_dash_rpt_r58 + r57 37/37 + r55 35/35 + r53 38/38 + r52 52/52 回归 200/200；pytest 1490/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r58-dash-rpt-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
