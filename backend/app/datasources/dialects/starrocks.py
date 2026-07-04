@@ -14,6 +14,7 @@ STARROCKS_TIMEOUT = "STARROCKS_TIMEOUT"
 STARROCKS_CONN_REFUSED = "STARROCKS_CONN_REFUSED"
 STARROCKS_AUTH_FAILED = "STARROCKS_AUTH_FAILED"
 STARROCKS_UNKNOWN = "STARROCKS_UNKNOWN"
+STARROCKS_MAX_COLUMNS = 500
 
 
 def _map_starrocks_error(exc: pymysql.err.OperationalError) -> tuple[str, str]:
@@ -65,7 +66,12 @@ class StarrocksConnector:
         return self._inner.list_schemas(connection)
 
     def list_tables(self, connection: Any, schema: str) -> list[TableInfo]:
+        if not schema.strip():
+            return []
         return self._inner.list_tables(connection, schema)
 
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
-        return self._inner.list_columns(connection, schema, table)
+        columns = self._inner.list_columns(connection, schema, table)
+        if len(columns) > STARROCKS_MAX_COLUMNS:
+            return columns[:STARROCKS_MAX_COLUMNS]
+        return columns

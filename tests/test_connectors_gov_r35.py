@@ -138,3 +138,62 @@ def test_tidb_unknown_table_columns_r35(mock_connect):
         host="127.0.0.1", port=4000, database="test", username="root", password=""
     )
     assert connector.list_columns(connection, "missing_db", "missing_tbl") == []
+
+
+from app.datasources.dialects.starrocks import StarrocksConnector
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_starrocks_conn_refused_r35(mock_connect):
+    """T-CONN-R35-009-01: mock 2003 → STARROCKS_CONN_REFUSED。"""
+    mock_connect.side_effect = pymysql.err.OperationalError(2003, "Can't connect")
+    result = StarrocksConnector().test_connection(
+        host="127.0.0.1", port=9030, database="test", username="root", password=""
+    )
+    assert result.ok is False
+    assert result.code == "STARROCKS_CONN_REFUSED"
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_starrocks_auth_failed_r35(mock_connect):
+    """T-CONN-R35-009-02: mock 1045 → STARROCKS_AUTH_FAILED。"""
+    mock_connect.side_effect = pymysql.err.OperationalError(1045, "Access denied")
+    result = StarrocksConnector().test_connection(
+        host="127.0.0.1", port=9030, database="test", username="bad", password="bad"
+    )
+    assert result.ok is False
+    assert result.code == "STARROCKS_AUTH_FAILED"
+
+
+@patch("app.datasources.dialects.mysql.pymysql.connect")
+def test_starrocks_empty_schema_tables_r35(mock_connect):
+    """T-CONN-R35-009-03: schema='' → list_tables []。"""
+    conn = MagicMock()
+    mock_connect.return_value = conn
+    connector = StarrocksConnector()
+    connection = connector.open_connection(
+        host="127.0.0.1", port=9030, database="test", username="root", password=""
+    )
+    assert connector.list_tables(connection, "") == []
+
+
+def test_starrocks_columns_limit_r35():
+    """T-CONN-R35-009-04: 600 列 mock → 返回 500。"""
+    from app.datasources.dialects.base import ColumnInfo
+
+    connector = StarrocksConnector()
+    connector._inner.list_columns = MagicMock(
+        return_value=[
+            ColumnInfo(name=f"col_{i}", data_type="varchar", nullable=True) for i in range(600)
+        ]
+    )
+    cols = connector.list_columns(MagicMock(), "db", "wide_tbl")
+    assert len(cols) == 500
+    assert cols[0].name == "col_0"
+    assert cols[-1].name == "col_499"
+
+
+def test_starrocks_types_catalog_r35():
+    """T-CONN-R35-009-05: types 含 starrocks category olap。"""
+    types = {item["type"]: item for item in export_type_catalog()}
+    assert types["starrocks"]["category"] == "olap"
