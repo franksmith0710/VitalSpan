@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-03-round-target-r28.md |
 | design | docs/superpowers/specs/2026-07-03-m5-viz-dash-r28-design.md |
 | plan | docs/superpowers/plans/2026-07-03-m5-viz-dash-r28.md |
@@ -14,9 +14,9 @@
 | base_branch | dev-auto |
 | prd_ids | VIZ-001,VIZ-002,DASH-001,DASH-002,DASH-003 |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v; cd fe && pnpm run check:design && pnpm vitest run && pnpm run build |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm test && pnpm run build |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command |  |
+| last_ui_verified_command | cd fe && pnpm run check:design && pnpm vitest run src/pages/admin/dashboard/dashboard.smoke.test.tsx src/components/charts/charts.smoke.test.tsx src/routes.smoke.test.tsx -t "dashboard|ChartRenderer"; screenshots N/A (headless CI: no docker/postgres for full stack) |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-03T23:20:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r28 独立验证：backend ruff PASS + pytest 600 passed/2 skipped（≥600 目标；r27 570+4 未跌破）；test_viz_dash_l1_r28 26/26；test_migrations T-MIG-41~42 3/3；fe vitest 81/81 + node:test 4/4；check:design+build PASS；round-target 文件缺失，按 plan VIZ-001~002/DASH-001~003 验收绿；UI: PASS（check:design + dashboard/chart vitest smoke 11/11；截图 N/A headless CI）；exit_code 0；branch feat/evolution-r28-m5-viz-dash-kickoff；base_branch dev-auto
 - P3 r28 实现完成：8 Task 全绿；backend ruff+pytest 600 passed/2 skipped（+30 VIZ/DASH L1）；fe vitest 81/81；build+check:design PASS；ui_design_skill: b-design-system-tailadmin-radix；branch feat/evolution-r28-m5-viz-dash-kickoff；base_branch dev-auto
 - P5 r27 PRD 重评：QUERY-001/002/004/005/006 质量推分 88.5–91.4→91.4–92.8（QUERY-004 破 90 STUCK 清零）；pytest 570 + 4 skipped；test_query_quality_r27 36/36；ClickHouse dialect + readonly/table/binding/RLS 边界
 - P4 r27 独立验证：backend ruff PASS + pytest 570 passed/4 skipped（≥560 目标）；test_query_quality_r27 36/36（≥28）；round-target QUERY-004/001/002/005/006 + plan T-MIG-40 验收绿；UI: N/A（纯后端）；exit_code 0；branch feat/evolution-r27-m4-query-quality；base_branch dev-auto
