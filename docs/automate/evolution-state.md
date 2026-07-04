@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r40.md |
 | design | docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40.md |
-| branch |  |
+| branch | cursor/bc-03449787-f1c8-4cd0-b5c3-3a2ddb487945-3ca8 |
 | base_branch | dev-auto |
 | prd_ids | CONN-006,CONN-011,CONN-012,CONN-013,CONN-014 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T07:25:00Z |
 | skill_rule_index_source_count | 26 |
