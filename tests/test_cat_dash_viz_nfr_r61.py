@@ -271,6 +271,7 @@ def _sdk_init_payload(target_id: str | None = None) -> dict:
         "targetType": "chart",
         "targetId": target_id or str(uuid.uuid4()),
         "authMode": "token",
+        "embedToken": "tok-demo",
         "allowedOrigins": ["https://portal.example.com"],
         "lifecycleHooks": {"onInit": True, "onDestroy": True},
     }
