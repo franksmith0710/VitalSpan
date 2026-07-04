@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy.orm import Session
+
 from app.designer.schemas import (
     ALLOWED_LOGIC,
     ALLOWED_OPERATORS,
     ALLOWED_RULE_TYPES,
     ALLOWED_VALUE_TYPES,
+    ARITH_EXPR_RE,
+    AGG_EXPR_RE,
+    DESIGNER_FIELD_REGISTRY,
     EXPR_RE,
+    FORMAT_EXPR_RE,
     ComputeRuleItem,
     ComputeRulesConfig,
     ConditionItem,
@@ -16,7 +22,6 @@ from app.designer.schemas import (
 )
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigUpsert
-from sqlalchemy.orm import Session
 
 
 def _check_value_type(item: ConditionItem) -> None:
@@ -40,13 +45,64 @@ def _check_value_type(item: ConditionItem) -> None:
 
 def validate_conditions_config(config: QueryConditionsConfig) -> QueryConditionsConfig:
     if config.logic not in ALLOWED_LOGIC:
-        raise DesignerError("DESIGN_INVALID_LOGIC", f"Unknown logic: {config.logic}", 422)
+        raise DesignerError(
+            "DESIGN_INVALID_LOGIC",
+            f"Unknown logic: {config.logic}",
+            422,
+            fields=[{"field": "logic", "message": f"unknown logic {config.logic}"}],
+        )
     if not config.conditions:
-        raise DesignerError("DESIGN_EMPTY_CONDITIONS", "At least one condition is required", 422)
-    for item in config.conditions:
+        raise DesignerError(
+            "DESIGN_EMPTY_CONDITIONS",
+            "At least one condition is required",
+            422,
+            fields=[{"field": "conditions", "message": "must not be empty"}],
+        )
+    field_ids = {c.field_id for c in config.conditions}
+    for idx, item in enumerate(config.conditions):
+        prefix = f"conditions[{idx}]"
+        if item.field_id not in DESIGNER_FIELD_REGISTRY:
+            raise DesignerError(
+                "DESIGN_UNKNOWN_FIELD",
+                "Unknown field in condition",
+                422,
+                fields=[
+                    {
+                        "field": f"{prefix}.fieldId",
+                        "message": f"{item.field_id} is not a registered field",
+                    }
+                ],
+            )
         if item.operator not in ALLOWED_OPERATORS:
-            raise DesignerError("DESIGN_INVALID_OPERATOR", f"Unknown operator: {item.operator}", 422)
-        _check_value_type(item)
+            raise DesignerError(
+                "DESIGN_INVALID_OPERATOR",
+                f"Unknown operator: {item.operator}",
+                422,
+                fields=[
+                    {"field": f"{prefix}.operator", "message": f"unknown operator {item.operator}"}
+                ],
+            )
+        try:
+            _check_value_type(item)
+        except DesignerError as exc:
+            exc.fields = [{"field": f"{prefix}.value", "message": exc.message}]
+            raise
+        if isinstance(item.value, str) and item.value in field_ids and item.value != item.field_id:
+            raise DesignerError(
+                "DESIGN_INVALID_CROSS_FIELD",
+                "Cross-field reference is not allowed",
+                422,
+                fields=[
+                    {"field": f"{prefix}.value", "message": "cannot reference another fieldId"}
+                ],
+            )
+        if isinstance(item.value, str) and item.value == item.field_id:
+            raise DesignerError(
+                "DESIGN_INVALID_CROSS_FIELD",
+                "Field cannot reference itself",
+                422,
+                fields=[{"field": f"{prefix}.value", "message": "self-reference not allowed"}],
+            )
     return config
 
 
@@ -71,14 +127,89 @@ def detect_rule_cycle(rules: list[ComputeRuleItem]) -> None:
         dfs(rule_id)
 
 
+def _expression_matches_rule_type(rule: ComputeRuleItem) -> bool:
+    expr = rule.expression
+    rt = rule.rule_type
+    if rt in ("sum", "avg"):
+        return bool(AGG_EXPR_RE.match(expr)) and expr.startswith(f"{rt}(")
+    if rt in ("add", "sub", "mul", "div"):
+        return bool(ARITH_EXPR_RE.match(expr))
+    if rt == "format":
+        return bool(FORMAT_EXPR_RE.match(expr))
+    return False
+
+
 def validate_compute_rules_config(config: ComputeRulesConfig) -> ComputeRulesConfig:
     if not config.rules:
-        raise DesignerError("DESIGN_EMPTY_RULES", "At least one rule is required", 422)
-    for rule in config.rules:
+        raise DesignerError(
+            "DESIGN_EMPTY_RULES",
+            "At least one rule is required",
+            422,
+            fields=[{"field": "rules", "message": "must not be empty"}],
+        )
+    rule_ids = {r.id for r in config.rules}
+    for idx, rule in enumerate(config.rules):
+        prefix = f"rules[{idx}]"
         if rule.rule_type not in ALLOWED_RULE_TYPES:
-            raise DesignerError("DESIGN_INVALID_RULE_TYPE", f"Unknown rule type: {rule.rule_type}", 422)
-        if not EXPR_RE.match(rule.expression):
-            raise DesignerError("DESIGN_INVALID_EXPRESSION", "Expression is not allowed", 422)
+            raise DesignerError(
+                "DESIGN_INVALID_RULE_TYPE",
+                f"Unknown rule type: {rule.rule_type}",
+                422,
+                fields=[
+                    {"field": f"{prefix}.ruleType", "message": f"unknown rule type {rule.rule_type}"}
+                ],
+            )
+        if rule.target_field not in DESIGNER_FIELD_REGISTRY:
+            raise DesignerError(
+                "DESIGN_UNKNOWN_TARGET_FIELD",
+                "Unknown target field",
+                422,
+                fields=[
+                    {
+                        "field": f"{prefix}.targetField",
+                        "message": f"{rule.target_field} is not a registered field",
+                    }
+                ],
+            )
+        if rule.expression.startswith("median(") or rule.expression.startswith("min("):
+            raise DesignerError(
+                "DESIGN_INVALID_AGGREGATE",
+                "Aggregate function not allowed",
+                422,
+                fields=[{"field": f"{prefix}.expression", "message": "unsupported aggregate"}],
+            )
+        if not _expression_matches_rule_type(rule):
+            if not EXPR_RE.match(rule.expression) and not FORMAT_EXPR_RE.match(rule.expression):
+                raise DesignerError(
+                    "DESIGN_INVALID_EXPRESSION",
+                    "Expression is not allowed",
+                    422,
+                    fields=[{"field": f"{prefix}.expression", "message": "expression not allowed"}],
+                )
+            raise DesignerError(
+                "DESIGN_RULE_TYPE_MISMATCH",
+                "ruleType does not match expression",
+                422,
+                fields=[
+                    {
+                        "field": f"{prefix}.expression",
+                        "message": f"does not match ruleType {rule.rule_type}",
+                    }
+                ],
+            )
+        for j, dep in enumerate(rule.depends_on):
+            if dep not in rule_ids:
+                raise DesignerError(
+                    "DESIGN_RULE_BROKEN_CHAIN",
+                    "Broken rule dependency",
+                    422,
+                    fields=[
+                        {
+                            "field": f"{prefix}.dependsOn[{j}]",
+                            "message": f"unknown rule id {dep}",
+                        }
+                    ],
+                )
     detect_rule_cycle(config.rules)
     return config
 
@@ -108,6 +239,7 @@ def save_conditions(session: Session, config: QueryConditionsConfig, owner_id: u
             ref_type=config.ref_type,
             ref_id=config.ref_id,
             payload=_conditions_payload(config),
+            expected_revision=config.expected_revision,
         ),
         owner_id=owner_id,
     )

@@ -12,6 +12,7 @@ from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
 from app.designer import service as designer_service
 from app.designer.schemas import ComputeRulesConfig, DesignerError, QueryConditionsConfig
+from app.query.config_store.schemas import ConfigError
 
 router = APIRouter(prefix="/designer", tags=["designer", "DESIGN-001", "DESIGN-002"])
 
@@ -39,6 +40,14 @@ def _designer_error(exc: DesignerError) -> JSONResponse:
     )
 
 
+def _config_error(exc: ConfigError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
+
+
 @router.post("/conditions/validate", response_model=QueryConditionsConfig)
 def validate_conditions(
     payload: QueryConditionsConfig,
@@ -59,6 +68,8 @@ def save_conditions(
     try:
         config, _ = designer_service.save_conditions(db, payload, _owner_uuid(actor))
         return config
+    except ConfigError as exc:
+        return _config_error(exc)
     except DesignerError as exc:
         return _designer_error(exc)
     except ValidationError as exc:

@@ -12,9 +12,18 @@ ALLOWED_VALUE_TYPES = frozenset({"string", "number", "boolean", "date", "array"}
 ALLOWED_LOGIC = frozenset({"AND", "OR"})
 ALLOWED_RULE_TYPES = frozenset({"sum", "avg", "add", "sub", "mul", "div", "format"})
 
+DESIGNER_FIELD_REGISTRY = frozenset({
+    "order_amount", "order_date", "customer_id", "status", "region_code",
+    "amount",  # r32 compute smoke targetField
+    "x", "y",  # r32 cycle test fields
+})
+
 EXPR_RE = re.compile(
     r"^(sum|avg|count)\([a-zA-Z_][a-zA-Z0-9_]*\)$|^[a-zA-Z_][a-zA-Z0-9_]*[+\-*/][a-zA-Z_][a-zA-Z0-9_]*$"
 )
+FORMAT_EXPR_RE = re.compile(r"^format\([a-zA-Z_][a-zA-Z0-9_]*,'[^']*'\)$")
+AGG_EXPR_RE = re.compile(r"^(sum|avg|count)\([a-zA-Z_][a-zA-Z0-9_]*\)$")
+ARITH_EXPR_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*[+\-*/][a-zA-Z_][a-zA-Z0-9_]*$")
 
 
 class DesignerError(Exception):
@@ -47,6 +56,7 @@ class QueryConditionsConfig(BaseModel):
     conditions: list[ConditionItem]
     ref_type: str = Field(default="design_draft", alias="refType")
     ref_id: uuid.UUID = Field(alias="refId")
+    expected_revision: int | None = Field(default=None, alias="expectedRevision")
 
 
 class ComputeRuleItem(BaseModel):
