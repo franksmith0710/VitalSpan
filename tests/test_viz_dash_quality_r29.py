@@ -426,3 +426,359 @@ def test_chart_view_many_dimensions_boundary():
         }
     )
     assert len(cfg.dimensions) == 8
+
+
+def test_chart_view_too_many_dimensions():
+    """T-VIZ-R29-001-06: dimensions 超 8 项 → 422 + fields。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {
+                "chartType": "table",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "sql",
+                "sql": "SELECT 1",
+                "dimensions": [{"field": f"d{i}"} for i in range(9)],
+            }
+        )
+    assert exc.value.status == 422
+    assert exc.value.fields
+
+
+def test_chart_view_too_many_metrics():
+    """T-VIZ-R29-001-07: metrics 超 8 项 → 422。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {
+                "chartType": "line",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "sql",
+                "sql": "SELECT 1 AS x",
+                "dimensions": [{"field": "x"}],
+                "metrics": [{"field": f"m{i}"} for i in range(9)],
+            }
+        )
+    assert exc.value.status == 422
+
+
+def test_chart_view_oversized_metric_field():
+    """T-VIZ-R29-001-08: metrics[].field >128 → CHART_INVALID。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {
+                "chartType": "line",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "sql",
+                "sql": "SELECT 1 AS x, 2 AS y",
+                "dimensions": [{"field": "x"}],
+                "metrics": [{"field": "y" * 129}],
+            }
+        )
+    assert exc.value.code == "CHART_INVALID"
+
+
+def test_chart_view_missing_datasource_fields():
+    """T-VIZ-R29-001-09: 缺 dataSourceId → fields 含 dataSourceId。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {"chartType": "table", "mode": "sql", "sql": "SELECT 1"},
+        )
+    assert exc.value.code == "CHART_MISSING_DATASOURCE"
+    assert any("dataSourceId" in (f.get("field") or "") for f in exc.value.fields)
+
+
+def test_post_charts_validate_success_no_detail_fields(client, auth_headers):
+    """T-VIZ-R29-001-10: POST validate 合法 → detail 为 null。"""
+    resp = client.post(
+        "/api/v1/charts/validate",
+        json=_chart_table_config(),
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["chartType"] == "table"
+
+
+def test_chart_view_filters_max_boundary():
+    """T-VIZ-R29-001-11: 16 filters 边界通过。"""
+    filters = [{"field": f"f{i}", "operator": "eq", "value": "1"} for i in range(16)]
+    cfg = validate_chart_view_config(
+        {**_chart_table_config(), "filters": filters},
+    )
+    assert len(cfg.filters) == 16
+
+
+def test_chart_view_bar_missing_dimensions_fields():
+    """T-VIZ-R29-001-12: bar 缺 dimensions → fields 含 dimensions。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {
+                "chartType": "bar",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "sql",
+                "sql": "SELECT 1 AS y",
+                "dimensions": [],
+                "metrics": [{"field": "y"}],
+            }
+        )
+    assert exc.value.code == "CHART_MISSING_SERIES"
+    assert any("dimensions" in (f.get("field") or "") for f in exc.value.fields)
+
+
+def test_layout_normalizes_widget_order(client, auth_headers):
+    """T-DASH-R29-002-04: layout 保存后 order 从 0 连续递增。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Order", "slug": f"order-norm-{uuid.uuid4().hex[:8]}"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    w1, w2, w3 = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+    resp = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={
+            "layoutJson": {
+                "version": 1,
+                "widgets": [
+                    {
+                        "id": w2,
+                        "type": "chart",
+                        "title": "B",
+                        "colSpan": 6,
+                        "rowSpan": 1,
+                        "order": 5,
+                        "chartConfig": {**_chart_table_config(), "chartId": w2},
+                    },
+                    {
+                        "id": w1,
+                        "type": "chart",
+                        "title": "A",
+                        "colSpan": 6,
+                        "rowSpan": 1,
+                        "order": 2,
+                        "chartConfig": {**_chart_table_config(), "chartId": w1},
+                    },
+                    {
+                        "id": w3,
+                        "type": "chart",
+                        "title": "C",
+                        "colSpan": 6,
+                        "rowSpan": 1,
+                        "order": 9,
+                        "chartConfig": {**_chart_table_config(), "chartId": w3},
+                    },
+                ],
+                "globalFilters": [],
+            }
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    orders = [w["order"] for w in resp.json()["layoutJson"]["widgets"]]
+    assert orders == [0, 1, 2]
+
+
+def test_layout_valid_chart_id_match(client, auth_headers):
+    """T-DASH-R29-002-05: chartId 与 widget.id 一致 → 200。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Match", "slug": f"id-match-{uuid.uuid4().hex[:8]}"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    wid = str(uuid.uuid4())
+    resp = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={
+            "layoutJson": {
+                "version": 1,
+                "widgets": [
+                    {
+                        "id": wid,
+                        "type": "chart",
+                        "title": "OK",
+                        "colSpan": 6,
+                        "rowSpan": 1,
+                        "order": 0,
+                        "chartConfig": {**_chart_table_config(), "chartId": wid},
+                    },
+                ],
+                "globalFilters": [],
+            }
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+
+
+def test_layout_duplicate_widget_message(client, auth_headers):
+    """T-DASH-R29-002-06: DASH_DUPLICATE_WIDGET 中文 message。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "DupMsg", "slug": f"dup-msg-{uuid.uuid4().hex[:8]}"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    wid = str(uuid.uuid4())
+    resp = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={
+            "layoutJson": {
+                "version": 1,
+                "widgets": [
+                    {
+                        "id": wid,
+                        "type": "chart",
+                        "title": "A",
+                        "colSpan": 6,
+                        "rowSpan": 1,
+                        "order": 0,
+                        "chartConfig": {**_chart_table_config(), "chartId": wid},
+                    },
+                    {
+                        "id": wid,
+                        "type": "chart",
+                        "title": "B",
+                        "colSpan": 6,
+                        "rowSpan": 1,
+                        "order": 1,
+                        "chartConfig": {**_chart_table_config(), "chartId": wid},
+                    },
+                ],
+                "globalFilters": [],
+            }
+        },
+        headers=auth_headers,
+    )
+    assert resp.json()["message"] == "组件 ID 重复"
+
+
+def test_layout_widget_replace_via_put(client, auth_headers):
+    """T-DASH-R29-003-01: PUT layout 替换 widgets 列表。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Replace", "slug": f"replace-{uuid.uuid4().hex[:8]}"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    wid = str(uuid.uuid4())
+    client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={
+            "layoutJson": {
+                "version": 1,
+                "widgets": [
+                    {
+                        "id": wid,
+                        "type": "chart",
+                        "title": "Only",
+                        "colSpan": 12,
+                        "rowSpan": 1,
+                        "order": 0,
+                        "chartConfig": {**_chart_table_config(), "chartId": wid},
+                    },
+                ],
+                "globalFilters": [],
+            }
+        },
+        headers=auth_headers,
+    )
+    got = client.get(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
+    assert len(got.json()["layoutJson"]["widgets"]) == 1
+    assert got.json()["layoutJson"]["widgets"][0]["title"] == "Only"
+
+
+def test_layout_three_widgets_persisted(client, auth_headers):
+    """T-DASH-R29-003-02: 3 widgets 保存后 GET 数量一致。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Three", "slug": f"three-{uuid.uuid4().hex[:8]}"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    widgets = []
+    for i in range(3):
+        wid = str(uuid.uuid4())
+        widgets.append(
+            {
+                "id": wid,
+                "type": "chart",
+                "title": f"W{i}",
+                "colSpan": 4,
+                "rowSpan": 1,
+                "order": i,
+                "chartConfig": {**_chart_table_config(), "chartId": wid},
+            },
+        )
+    client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={"layoutJson": {"version": 1, "widgets": widgets, "globalFilters": []}},
+        headers=auth_headers,
+    )
+    got = client.get(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
+    assert len(got.json()["layoutJson"]["widgets"]) == 3
+
+
+def test_layout_col_span_values(client, auth_headers):
+    """T-DASH-R29-003-05: colSpan 4/8/12 均合法。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Spans", "slug": f"spans-{uuid.uuid4().hex[:8]}"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    widgets = []
+    for span in (4, 8, 12):
+        wid = str(uuid.uuid4())
+        widgets.append(
+            {
+                "id": wid,
+                "type": "chart",
+                "title": f"S{span}",
+                "colSpan": span,
+                "rowSpan": 1,
+                "order": len(widgets),
+                "chartConfig": {**_chart_table_config(), "chartId": wid},
+            },
+        )
+    resp = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={"layoutJson": {"version": 1, "widgets": widgets, "globalFilters": []}},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+
+
+def test_get_dashboard_after_create(client, auth_headers):
+    """T-DASH-R29-001-05: 创建后 GET 返回相同 name。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Fetch", "slug": f"fetch-{uuid.uuid4().hex[:8]}"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    got = client.get(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
+    assert got.status_code == 200
+    assert got.json()["name"] == "Fetch"
+
+
+def test_list_dashboards_default_limit(client, auth_headers):
+    """T-DASH-R29-001-06: 默认 limit=50。"""
+    resp = client.get("/api/v1/dashboards", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json()["limit"] == 50
+
+
+def test_update_dashboard_description(client, auth_headers):
+    """T-DASH-R29-001-07: PUT description 持久化。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Desc", "slug": f"desc-{uuid.uuid4().hex[:8]}", "description": "初稿"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    client.put(
+        f"/api/v1/dashboards/{dash_id}",
+        json={"description": "修订"},
+        headers=auth_headers,
+    )
+    got = client.get(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
+    assert got.json()["description"] == "修订"

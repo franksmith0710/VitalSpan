@@ -102,6 +102,24 @@ def _series_missing_fields(text: str) -> list[dict[str, str]]:
     ]
 
 
+_CODE_FIELD_HINTS: dict[str, list[str]] = {
+    "CHART_MISSING_DATASOURCE": ["dataSourceId"],
+    "CHART_MISSING_SQL": ["sql"],
+    "CHART_MISSING_TABLE": ["schema", "table"],
+    "CHART_MISSING_MODE": ["mode"],
+}
+
+
+def _fields_for_code(code: str, text: str, loc: tuple[object, ...]) -> list[dict[str, str]]:
+    if code == "CHART_MISSING_SERIES":
+        return _series_missing_fields(text)
+    hints = _CODE_FIELD_HINTS.get(code)
+    if hints:
+        return [{"field": name, "message": text} for name in hints]
+    field_name = _loc_to_field(loc)
+    return [{"field": field_name, "message": text}]
+
+
 def _map_validation_error(exc: ValidationError) -> ChartViewError:
     fields: list[dict[str, str]] = []
     code = "CHART_INVALID"
@@ -117,11 +135,7 @@ def _map_validation_error(exc: ValidationError) -> ChartViewError:
             err_code, text = msg.split(":", 1)
             code = err_code
             message = text
-            if err_code == "CHART_MISSING_SERIES":
-                fields.extend(_series_missing_fields(text))
-            else:
-                field_name = _loc_to_field(tuple(loc))
-                fields.append({"field": field_name, "message": text})
+            fields.extend(_fields_for_code(err_code, text, tuple(loc)))
             continue
         field_name = _loc_to_field(tuple(loc))
         fields.append({"field": field_name, "message": msg})
