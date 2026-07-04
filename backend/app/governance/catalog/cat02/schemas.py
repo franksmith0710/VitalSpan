@@ -24,6 +24,11 @@ class AggregateTemplateValidateOut(BaseModel):
     aggregate_key: str = Field(alias="aggregateKey")
 
 
+class AggregateTemplateListResponse(BaseModel):
+    items: list[AggregateTemplateOut]
+    total: int
+
+
 class AggregateAttributionOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     aggregate_key: str = Field(alias="aggregateKey")
