@@ -51,3 +51,16 @@ def assert_readonly_sql(sql: str) -> None:
         raise QueryError("QUERY_NOT_READONLY", "Write operations are not allowed", 400)
     if _FORBIDDEN_CLAUSES.search(normalized):
         raise QueryError("QUERY_NOT_READONLY", "Forbidden SQL clause", 400)
+
+
+_UNSAFE_PARAM_PATTERN = re.compile(r"(--|/\*|;|\bDROP\b|\bUNION\b)", re.IGNORECASE)
+
+
+def assert_safe_sql_parameters(parameters: dict[str, object]) -> None:
+    for key, value in parameters.items():
+        if isinstance(value, str) and _UNSAFE_PARAM_PATTERN.search(value):
+            raise QueryError(
+                "QUERY_PARAM_INJECTION_SUSPECT",
+                f"Unsafe value in parameter {key}",
+                422,
+            )

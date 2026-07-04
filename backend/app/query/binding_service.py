@@ -10,6 +10,7 @@ from app.core.config import get_settings
 from app.datasources.acl import assert_visible, list_visible_ids
 from app.query.models import ChartQueryBinding
 from app.query.rls.guard import validate_identifier
+from app.query.readonly import assert_readonly_sql
 from app.query.schemas import BindingCreate, BindingListResponse, BindingOut, BindingUpdate, QueryError
 
 
@@ -32,6 +33,10 @@ def _validate_binding_payload(payload: BindingCreate) -> None:
     if payload.mode == "sql":
         if not payload.sql:
             raise QueryError("QUERY_INVALID_REQUEST", "sql is required for sql mode", 400)
+        try:
+            assert_readonly_sql(payload.sql)
+        except QueryError as exc:
+            raise QueryError(exc.code, exc.message, exc.status) from exc
     else:
         if not payload.schema_name or not payload.table_name:
             raise QueryError("QUERY_INVALID_REQUEST", "schema and table are required for table mode", 400)
