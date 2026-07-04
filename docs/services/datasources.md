@@ -76,3 +76,9 @@
 - **CONN-021**：`dialects/tidb.py` — MySQL 协议委托；独立 `type=tidb`；默认 port 4000；`category=relational`
 - **CONN-009**：`dialects/starrocks.py` — MySQL 协议委托；独立 `type=starrocks`；默认 port 9030；`category=olap`；超时映射 `STARROCKS_*`（与 MySQL `MYSQL_*` 边界分离）
 - **CONN-015**：`dialects/elasticsearch.py` — 非 SQL 映射：`list_schemas`→index、`list_tables`→`_doc` 伪表、`list_columns`→mapping 字段；`category=search`
+
+### r35 companion 质量推分（CONN-021/009/015）
+
+- **TiDB**：`test_connection` 返回 `TIDB_TIMEOUT`/`TIDB_CONN_REFUSED`/`TIDB_AUTH_FAILED`/`TIDB_UNKNOWN_DATABASE`；空库 `list_schemas` 与未知表 `list_columns` 返回 `[]`
+- **StarRocks**：补全 `STARROCKS_CONN_REFUSED`/`STARROCKS_AUTH_FAILED` pytest；`list_tables(schema="")` 返回 `[]`；`list_columns` 宽表切片 `STARROCKS_MAX_COLUMNS=500`
+- **Elasticsearch**：`ES_AUTH_FAILED`/`ES_CONNECTION_REFUSED`/`ES_TIMEOUT`；`list_schemas` 多索引过滤 `.` 前缀；`_normalize_es_type` 映射 BI 类型；`ES_MAX_MAPPING_FIELDS=500`；port 443 使用 https
