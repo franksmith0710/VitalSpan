@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import subprocess
 import uuid
+from pathlib import Path
 from collections.abc import Generator
 from unittest.mock import patch
 
@@ -14,6 +15,7 @@ from app.auth.deps import UserContext, get_current_user
 from app.core.config import get_settings
 from app.main import app as fastapi_app
 
+_BACKEND_DIR = Path(__file__).resolve().parent.parent / "backend"
 _R57_SQLITE_URL = "sqlite+pysqlite:///file:dash_rpt_query_nfr_r57?mode=memory&cache=shared&uri=true"
 AUTH = {"Authorization": "Bearer dev"}
 
@@ -712,5 +714,5 @@ def test_r57_link_regression_suites_green():
         "../tests/test_rpt_gov_meta_conn_r55.py",
         "../tests/test_design_conn_gov_query_r52.py",
     ]
-    proc = subprocess.run(cmd, cwd="/workspace/backend", capture_output=True, text=True)
+    proc = subprocess.run(cmd, cwd=str(_BACKEND_DIR), capture_output=True, text=True)
     assert proc.returncode == 0, proc.stdout + proc.stderr
