@@ -4,26 +4,28 @@
 
 ### [META-001] 术语字典
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：术语字典（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 业务术语 CRUD
+  - [x] 业务术语 CRUD（r32 L1：`GlossaryTerm` + `POST/GET/PUT/DELETE /api/v1/metadata/glossary`）
   - [ ] 与物理字段映射
-- **代码锚点**：`backend/app/metadata/glossary/`
-- **演化建议**：按 plan.md 期次优先级落地
+- **代码锚点**：`backend/app/metadata/glossary/` · `backend/app/api/v1/metadata.py`
+- **演化建议**：r32 闭合 CRUD/重复 code/引用中删除（T-META-R32-001~004）；后续补物理字段映射与 Admin UI
+- **里程碑对齐**：
 ### [META-002] 业务主题树
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：业务主题树（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 主题→对象→属性树
-  - [ ] 可导航
-- **代码锚点**：`backend/app/metadata/themes/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 主题→对象→属性树（r32 L1：`ThemeNode` 多级 parent + `term_id` 关联）
+  - [ ] 可导航（缺 Admin 树形 UI；API `?parent_id=` 过滤 + move 环检测已 L1）
+- **代码锚点**：`backend/app/metadata/themes/` · `backend/app/api/v1/metadata.py`
+- **演化建议**：r32 闭合 move 环/自引用/子节点删除守卫（T-META-R32-005~008）；后续 Admin 主题树导航
+- **里程碑对齐**：
 ### [META-003] 维度字典注册
 
 - **状态**：未实现

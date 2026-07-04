@@ -7,14 +7,14 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r31.md |
-| design | docs/superpowers/specs/2026-07-04-m5-view-m6-companion-quality-r31-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m5-view-m6-companion-quality-r31.md |
-| branch | feat/evolution-r31-m5-view-m6-companion-quality |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
+| design | docs/superpowers/specs/2026-07-04-m11-meta-m12-design-l1-r32-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m11-meta-m12-design-l1-r32.md |
+| branch | feat/evolution-r32-m11-meta-m12-design-l1 |
 | base_branch | dev-auto |
-| prd_ids | VIEW-001,GOV-002,GOV-001,API-001,API-002 |
-| pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
+| prd_ids | META-001,META-002,QUERY-007,DESIGN-001,DESIGN-002 |
+| pr_number | 55 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v && python3 -m pytest -v ../tests/test_meta_design_r32.py ../tests/test_view_gov_api_r31.py |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -67,6 +67,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r32 PRD 重评：META-001/002 + QUERY-007 + DESIGN-001/002 L1 kickoff；pytest 708/4 skipped；test_meta_design_r32 21/21；总分 10.8–11.2→86.4–89.8（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
+- P4 r32 验证通过：ruff clean；pytest 708 passed/4 skipped；test_meta_design_r32 21/21；test_view_gov_api_r31 24/24 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
+- P3 r32 实现完成：7 Task 全绿；META-001/002 + QUERY-007 + DESIGN-001/002 L1；migration 0015；21 新测 test_meta_design_r32；pytest 707/4 skipped；r31 回归 24/24；branch feat/evolution-r32-m11-meta-m12-design-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P5 r31 PRD 重评：VIEW-001/GOV-002 破 90（90.2/90.4）STUCK 清零；GOV-001/API-001/002 巩固 90.0–90.2；pytest 686/4 skipped；test_view_gov_api_r31 24/24；phase P4_DONE→P5_DOCS_READY
 - P4 r31 验证通过：ruff clean；pytest 686 passed/4 skipped；test_view_gov_api_r31 24/24；test_view_gov_api_r30 30/30 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P3 r31 实现完成：7 Task 全绿；VIEW bounds/cycle、GOV bus/catalog、IF-06 OpenAPI；24 新测；pytest 686/4 skipped；branch feat/evolution-r31-m5-view-m6-companion-quality；base_branch dev-auto
@@ -82,3 +85,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| META-001 | 1 | 88.5 | 2026-07-04 |
+| META-002 | 1 | 89.5 | 2026-07-04 |
+| QUERY-007 | 1 | 89.8 | 2026-07-04 |
+| DESIGN-001 | 1 | 86.4 | 2026-07-04 |
+| DESIGN-002 | 1 | 86.7 | 2026-07-04 |
