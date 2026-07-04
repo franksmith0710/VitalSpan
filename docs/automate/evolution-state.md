@@ -13,7 +13,7 @@
 | branch | feat/evolution-r45-m8-m12-m13-integration-api-companion |
 | base_branch | dev-auto |
 | prd_ids | API-003,API-004,API-005,API-006,API-007 |
-| pr_number | 71 |
+| pr_number | 72 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests -q && python3 -m pytest ../tests/test_integration_api_l1_r45.py ../tests/test_integration_api_l1_r44.py ../tests/test_view_gov_api_r31.py -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
