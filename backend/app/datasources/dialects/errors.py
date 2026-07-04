@@ -277,6 +277,138 @@ def map_trino_error(exc: Exception) -> tuple[str, str]:
 # r39 companion: GAUSSDB_/DM_/TRINO_ timeout/auth 映射由 map_* 统一出口；
 # connector test_connection 与 HTTP test 链均消费本模块常量（勿在 dialect 文件内复制错误码）。
 
+# MongoDB
+MONGODB_CONN_REFUSED = "MONGODB_CONN_REFUSED"
+MONGODB_AUTH_FAILED = "MONGODB_AUTH_FAILED"
+MONGODB_TIMEOUT = "MONGODB_TIMEOUT"
+MONGODB_UNKNOWN_DATABASE = "MONGODB_UNKNOWN_DATABASE"
+MONGODB_INVALID_HOST = "MONGODB_INVALID_HOST"
+MONGODB_DRIVER_MISSING = "MONGODB_DRIVER_MISSING"
+MONGODB_UNKNOWN = "MONGODB_UNKNOWN"
+
+
+def map_mongodb_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    name = type(exc).__name__
+    lowered = detail.lower()
+    if "ServerSelectionTimeout" in name or "timeout" in lowered or "timed out" in lowered:
+        return MONGODB_TIMEOUT, detail
+    if "OperationFailure" in name or "authentication" in lowered or "code: 18" in lowered or "code: 13" in lowered:
+        return MONGODB_AUTH_FAILED, detail
+    if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
+        return MONGODB_CONN_REFUSED, detail
+    if "invalid" in lowered and "host" in lowered:
+        return MONGODB_INVALID_HOST, detail
+    return MONGODB_UNKNOWN, detail
+
+
+# InfluxDB 2.x
+INFLUX_CONN_REFUSED = "INFLUX_CONN_REFUSED"
+INFLUX_AUTH_FAILED = "INFLUX_AUTH_FAILED"
+INFLUX_TIMEOUT = "INFLUX_TIMEOUT"
+INFLUX_UNKNOWN_ORG = "INFLUX_UNKNOWN_ORG"
+INFLUX_UNKNOWN_BUCKET = "INFLUX_UNKNOWN_BUCKET"
+INFLUX_DRIVER_MISSING = "INFLUX_DRIVER_MISSING"
+INFLUX_UNKNOWN = "INFLUX_UNKNOWN"
+
+
+def map_influx_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "401" in detail or "403" in detail or "unauthorized" in lowered or "forbidden" in lowered:
+        return INFLUX_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return INFLUX_TIMEOUT, detail
+    if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
+        return INFLUX_CONN_REFUSED, detail
+    if "org" in lowered and ("not found" in lowered or "unknown" in lowered):
+        return INFLUX_UNKNOWN_ORG, detail
+    if "bucket" in lowered and ("not found" in lowered or "unknown" in lowered):
+        return INFLUX_UNKNOWN_BUCKET, detail
+    return INFLUX_UNKNOWN, detail
+
+
+# TDengine (taospy REST)
+TDENGINE_CONN_REFUSED = "TDENGINE_CONN_REFUSED"
+TDENGINE_AUTH_FAILED = "TDENGINE_AUTH_FAILED"
+TDENGINE_TIMEOUT = "TDENGINE_TIMEOUT"
+TDENGINE_UNKNOWN_DATABASE = "TDENGINE_UNKNOWN_DATABASE"
+TDENGINE_DRIVER_MISSING = "TDENGINE_DRIVER_MISSING"
+TDENGINE_UNKNOWN = "TDENGINE_UNKNOWN"
+
+
+def map_tdengine_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "auth" in lowered or "password" in lowered or "login" in lowered:
+        return TDENGINE_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return TDENGINE_TIMEOUT, detail
+    if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
+        return TDENGINE_CONN_REFUSED, detail
+    if "database" in lowered and ("not" in lowered or "unknown" in lowered):
+        return TDENGINE_UNKNOWN_DATABASE, detail
+    return TDENGINE_UNKNOWN, detail
+
+
+# SQLite (file path)
+SQLITE_FILE_NOT_FOUND = "SQLITE_FILE_NOT_FOUND"
+SQLITE_PATH_TRAVERSAL = "SQLITE_PATH_TRAVERSAL"
+SQLITE_PERMISSION_DENIED = "SQLITE_PERMISSION_DENIED"
+SQLITE_READONLY = "SQLITE_READONLY"
+SQLITE_CORRUPT = "SQLITE_CORRUPT"
+SQLITE_UNKNOWN = "SQLITE_UNKNOWN"
+
+
+def map_sqlite_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "unable to open" in lowered or "no such file" in lowered:
+        return SQLITE_FILE_NOT_FOUND, detail
+    if "readonly" in lowered or "read-only" in lowered:
+        return SQLITE_READONLY, detail
+    if "malformed" in lowered or "corrupt" in lowered:
+        return SQLITE_CORRUPT, detail
+    if "permission" in lowered or "denied" in lowered:
+        return SQLITE_PERMISSION_DENIED, detail
+    return SQLITE_UNKNOWN, detail
+
+
+# TimescaleDB (PG delegate)
+TIMESCALE_CONN_REFUSED = "TIMESCALE_CONN_REFUSED"
+TIMESCALE_AUTH_FAILED = "TIMESCALE_AUTH_FAILED"
+TIMESCALE_TIMEOUT = "TIMESCALE_TIMEOUT"
+TIMESCALE_UNKNOWN_DATABASE = "TIMESCALE_UNKNOWN_DATABASE"
+TIMESCALE_EXTENSION_MISSING = "TIMESCALE_EXTENSION_MISSING"
+TIMESCALE_UNKNOWN = "TIMESCALE_UNKNOWN"
+
+_TIMESCALE_FROM_PG = {
+    PG_CONN_REFUSED: TIMESCALE_CONN_REFUSED,
+    PG_AUTH_FAILED: TIMESCALE_AUTH_FAILED,
+    PG_TIMEOUT: TIMESCALE_TIMEOUT,
+    PG_UNKNOWN_DATABASE: TIMESCALE_UNKNOWN_DATABASE,
+    PG_SSL_ERROR: TIMESCALE_UNKNOWN,
+    PG_UNKNOWN: TIMESCALE_UNKNOWN,
+}
+
+
+def map_timescale_error(exc: Exception) -> tuple[str, str]:
+    if hasattr(exc, "sqlstate") or "OperationalError" in type(exc).__name__:
+        pg_code, detail = map_postgres_operational_error(exc)
+        return _TIMESCALE_FROM_PG.get(pg_code, TIMESCALE_UNKNOWN), detail
+    detail = str(exc)
+    lowered = detail.lower()
+    if "auth" in lowered or "password" in lowered:
+        return TIMESCALE_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return TIMESCALE_TIMEOUT, detail
+    if "refused" in lowered:
+        return TIMESCALE_CONN_REFUSED, detail
+    if "database" in lowered and "not" in lowered:
+        return TIMESCALE_UNKNOWN_DATABASE, detail
+    return TIMESCALE_UNKNOWN, detail
+
+
 __all__ = [
     "CLICKHOUSE_AUTH_FAILED",
     "CLICKHOUSE_CONN_REFUSED",
@@ -304,6 +436,20 @@ __all__ = [
     "HIVE_TIMEOUT",
     "HIVE_UNKNOWN",
     "HIVE_UNKNOWN_DATABASE",
+    "INFLUX_AUTH_FAILED",
+    "INFLUX_CONN_REFUSED",
+    "INFLUX_DRIVER_MISSING",
+    "INFLUX_TIMEOUT",
+    "INFLUX_UNKNOWN",
+    "INFLUX_UNKNOWN_BUCKET",
+    "INFLUX_UNKNOWN_ORG",
+    "MONGODB_AUTH_FAILED",
+    "MONGODB_CONN_REFUSED",
+    "MONGODB_DRIVER_MISSING",
+    "MONGODB_INVALID_HOST",
+    "MONGODB_TIMEOUT",
+    "MONGODB_UNKNOWN",
+    "MONGODB_UNKNOWN_DATABASE",
     "MYSQL_AUTH_FAILED",
     "MYSQL_CONN_REFUSED",
     "MYSQL_SSL_ERROR",
@@ -327,7 +473,25 @@ __all__ = [
     "SQLSERVER_TIMEOUT",
     "SQLSERVER_UNKNOWN",
     "SQLSERVER_UNKNOWN_DATABASE",
+    "SQLITE_CORRUPT",
+    "SQLITE_FILE_NOT_FOUND",
+    "SQLITE_PATH_TRAVERSAL",
+    "SQLITE_PERMISSION_DENIED",
+    "SQLITE_READONLY",
+    "SQLITE_UNKNOWN",
+    "TDENGINE_AUTH_FAILED",
+    "TDENGINE_CONN_REFUSED",
+    "TDENGINE_DRIVER_MISSING",
+    "TDENGINE_TIMEOUT",
+    "TDENGINE_UNKNOWN",
+    "TDENGINE_UNKNOWN_DATABASE",
     "TIDB_AUTH_FAILED",
+    "TIMESCALE_AUTH_FAILED",
+    "TIMESCALE_CONN_REFUSED",
+    "TIMESCALE_EXTENSION_MISSING",
+    "TIMESCALE_TIMEOUT",
+    "TIMESCALE_UNKNOWN",
+    "TIMESCALE_UNKNOWN_DATABASE",
     "TIDB_CONN_REFUSED",
     "TIDB_TIMEOUT",
     "TIDB_UNKNOWN",
@@ -343,10 +507,15 @@ __all__ = [
     "map_doris_operational_error",
     "map_gaussdb_error",
     "map_hive_error",
+    "map_influx_error",
+    "map_mongodb_error",
     "map_mysql_operational_error",
     "map_oracle_error",
     "map_postgres_operational_error",
     "map_sqlserver_operational_error",
+    "map_sqlite_error",
+    "map_tdengine_error",
+    "map_timescale_error",
     "map_trino_error",
     "pg_sslmode",
 ]
