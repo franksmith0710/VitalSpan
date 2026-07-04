@@ -5,6 +5,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.governance.workflow.errors import WorkflowError
+from app.governance.workflow.node_roles import _REQUIRED_TEMPLATE_NODES
 from app.governance.workflow.schemas import (
     WorkflowInstanceCreateIn,
     WorkflowInstanceOut,
@@ -50,6 +51,15 @@ def validate_template(payload: WorkflowTemplateValidateIn) -> WorkflowTemplateOu
         raise WorkflowError("GOV_WORKFLOW_INVALID_TEMPLATE", "Duplicate node ids", 422)
     if any(not n.role.strip() for n in payload.nodes):
         raise WorkflowError("GOV_WORKFLOW_INVALID_TEMPLATE", "Node role required", 422)
+    node_id_set = {n.id for n in payload.nodes}
+    missing = sorted(_REQUIRED_TEMPLATE_NODES - node_id_set)
+    if missing:
+        raise WorkflowError(
+            "GOV_WORKFLOW_INVALID_TEMPLATE",
+            "Template missing required nodes",
+            422,
+            detail={"missingNodes": missing},
+        )
     return WorkflowTemplateOut(id=payload.id, name=payload.name, nodes=payload.nodes)
 
 
@@ -107,6 +117,10 @@ def transition_instance(
 ) -> WorkflowInstanceOut:
     body = _load_instance_payload(session, instance_id)
     status = body["status"]
+    if status == "published":
+        raise WorkflowError("GOV_WORKFLOW_ALREADY_TERMINAL", "Workflow already published", 409)
+    if action == "submit" and status != "draft":
+        raise WorkflowError("GOV_WORKFLOW_CONFLICT", "Instance already submitted", 409)
     rules = _TRANSITIONS.get(status, {})
     if action not in rules:
         raise WorkflowError("GOV_WORKFLOW_INVALID_TRANSITION", f"Cannot {action} from {status}", 400)

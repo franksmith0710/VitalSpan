@@ -38,9 +38,12 @@ from app.governance.publish.schemas import (
 )
 from app.governance.workflow.errors import WorkflowError
 from app.governance.workflow import service as workflow_service
+from app.governance.workflow.node_roles import describe_node_roles
 from app.governance.workflow.schemas import (
+    NodeRoleOut,
     WorkflowInstanceCreateIn,
     WorkflowInstanceOut,
+    WorkflowNodeRolesOut,
     WorkflowTemplateListOut,
     WorkflowTemplateOut,
     WorkflowTemplateValidateIn,
@@ -294,7 +297,7 @@ def preview_execute_query_design(
 def _workflow_error(exc: WorkflowError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status,
-        content={"code": exc.code, "message": exc.message, "detail": None},
+        content={"code": exc.code, "message": exc.message, "detail": exc.detail},
     )
 
 
@@ -303,6 +306,23 @@ def list_workflow_templates(
     _: Annotated[UserContext, Depends(get_current_user)],
 ) -> WorkflowTemplateListOut:
     return WorkflowTemplateListOut(items=workflow_service.list_templates())
+
+
+@router.get("/workflow/templates/{template_id}/node-roles", response_model=WorkflowNodeRolesOut)
+def get_workflow_node_roles(
+    template_id: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> WorkflowNodeRolesOut | JSONResponse:
+    try:
+        items = describe_node_roles(template_id)
+        return WorkflowNodeRolesOut(
+            items=[
+                NodeRoleOut(nodeId=i.node_id, role=i.role, description=i.description)
+                for i in items
+            ]
+        )
+    except WorkflowError as exc:
+        return _workflow_error(exc)
 
 
 @router.post("/workflow/templates/validate", response_model=WorkflowTemplateOut)

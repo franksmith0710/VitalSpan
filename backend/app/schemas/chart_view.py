@@ -76,6 +76,14 @@ class ChartViewConfig(BaseModel):
                 raise ValueError("CHART_MISSING_DATASOURCE:dataSourceId is required")
             if self.mode == "sql" and not self.sql:
                 raise ValueError("CHART_MISSING_SQL:sql is required for sql mode")
+            if self.mode == "sql" and self.sql:
+                from app.query.readonly import assert_readonly_sql
+                from app.query.schemas import QueryError
+
+                try:
+                    assert_readonly_sql(self.sql)
+                except QueryError as exc:
+                    raise ValueError(f"CHART_SQL_NOT_READONLY:{exc.message}") from exc
             if self.mode == "table" and (not self.schema_name or not self.table_name):
                 raise ValueError("CHART_MISSING_TABLE:schema and table are required for table mode")
             if self.mode is None:
@@ -140,6 +148,7 @@ _CODE_FIELD_HINTS: dict[str, list[str]] = {
     "CHART_MISSING_MODE": ["mode"],
     "CHART_INVALID_STYLE_VARIANT": ["styleVariant"],
     "CHART_FIELD_REQUIREMENT": ["dimensions", "metrics"],
+    "CHART_SQL_NOT_READONLY": ["sql"],
 }
 
 

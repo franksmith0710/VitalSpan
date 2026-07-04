@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import time
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
@@ -12,17 +14,50 @@ from app.query.schemas import QueryError
 
 _MAX_SQL_LEN = 65536
 
+_REMEDIATION: dict[str, str] = {
+    "DESIGN_SQL_NOT_READONLY": "Use SELECT-only SQL; remove DML/DDL clauses",
+    "DESIGN_SQL_EMPTY": "Provide a non-empty SELECT statement",
+    "DESIGN_SQL_TOO_LONG": "Reduce SQL length below 65536 characters",
+}
+
+probe_sql_mode_validate_budget_ms = 50
+
+
+@dataclass(frozen=True)
+class SqlModeProbeResult:
+    elapsed_ms: float
+    ok: bool
+
+
+def _raise_sql_error(code: str, message: str, status: int = 422) -> None:
+    raise DesignerError(code, message, status, remediation=_REMEDIATION.get(code))
+
 
 def validate_sql_mode(spec: SqlModeSpec) -> SqlModeSpec:
     if not spec.sql.strip():
-        raise DesignerError("DESIGN_SQL_EMPTY", "SQL must not be empty", 422)
+        _raise_sql_error("DESIGN_SQL_EMPTY", "SQL must not be empty")
     try:
         assert_readonly_sql(spec.sql)
     except QueryError as exc:
         if exc.code == "QUERY_SQL_TOO_LONG":
-            raise DesignerError("DESIGN_SQL_TOO_LONG", exc.message, exc.status) from exc
-        raise DesignerError("DESIGN_SQL_NOT_READONLY", exc.message, 422) from exc
+            _raise_sql_error("DESIGN_SQL_TOO_LONG", exc.message, 422)
+        _raise_sql_error("DESIGN_SQL_NOT_READONLY", exc.message)
     return spec
+
+
+def probe_validate_sql_mode(sql: str = "SELECT 1") -> SqlModeProbeResult:
+    started = time.perf_counter()
+    dummy = SqlModeSpec(
+        dataSourceId=uuid.uuid4(),
+        sql=sql,
+        refId=uuid.uuid4(),
+    )
+    try:
+        validate_sql_mode(dummy)
+        ok = True
+    except DesignerError:
+        ok = False
+    return SqlModeProbeResult(elapsed_ms=(time.perf_counter() - started) * 1000, ok=ok)
 
 
 def sql_mode_capabilities() -> dict[str, object]:

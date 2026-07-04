@@ -57,6 +57,10 @@
 - r32：migration 0015 `query_config_records`；`config_store` upsert API（QUERY-007）
 - r33：`MAX_CONFIG_PAYLOAD_BYTES=262144`；PUT 可选 `expectedRevision` 乐观锁；超大 payload → 413 `CONFIG_PAYLOAD_TOO_LARGE`；revision 冲突 → 409 `CONFIG_VERSION_CONFLICT`
 - r49：`query/native/guard` 只读 `export_type_catalog()` 按 `category` 路由；`NATIVE_CATEGORIES={search,document,timeseries}`；`QUERY_NATIVE_*` 错误码；不含 native 执行器
+
+### r52 companion 质量推分（QUERY-003）
+
+- **QUERY-003**：`readonly.assert_safe_sql_parameters`；`guard_native_injection`（`QUERY_NATIVE_INJECTION_SUSPECT` / `QUERY_PARAM_INJECTION_SUSPECT`）；`POST /query/readonly-guard`（sql 模式只读 + native 模式拒绝 sql 字段）；`probe_list_routing_modes`（<50ms smoke）；binding 创建 sql 模式委托 `assert_readonly_sql`
 - 执行链：`assert_visible` → `readonly` → `dialect.wrap_limit` → `apply_rls_to_sql` → `pool_manager`
 
 ### 方言适配器

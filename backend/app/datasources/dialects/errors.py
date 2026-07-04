@@ -451,10 +451,13 @@ OPENSEARCH_CONNECTION_REFUSED = "OPENSEARCH_CONNECTION_REFUSED"
 OPENSEARCH_AUTH_FAILED = "OPENSEARCH_AUTH_FAILED"
 OPENSEARCH_TIMEOUT = "OPENSEARCH_TIMEOUT"
 OPENSEARCH_UNKNOWN = "OPENSEARCH_UNKNOWN"
+OPENSEARCH_INDEX_NOT_FOUND = "OPENSEARCH_INDEX_NOT_FOUND"
 
 
 def map_opensearch_error(exc: Exception) -> tuple[str, str]:
     msg = str(exc).lower()
+    if "index_not_found" in msg or "index not found" in msg or "404" in msg:
+        return OPENSEARCH_INDEX_NOT_FOUND, str(exc)
     if "timeout" in msg or "timed out" in msg:
         return OPENSEARCH_TIMEOUT, str(exc)
     if "connection refused" in msg or "failed to establish" in msg:
@@ -525,6 +528,7 @@ __all__ = [
     "ORACLE_UNKNOWN_SERVICE",
     "OPENSEARCH_AUTH_FAILED",
     "OPENSEARCH_CONNECTION_REFUSED",
+    "OPENSEARCH_INDEX_NOT_FOUND",
     "OPENSEARCH_INVALID_HOST",
     "OPENSEARCH_TIMEOUT",
     "OPENSEARCH_UNKNOWN",

@@ -93,6 +93,10 @@
 - **CONN-015**：`dialects/elasticsearch.py` — 非 SQL 映射：`list_schemas`→index、`list_tables`→`_doc` 伪表、`list_columns`→mapping 字段；`category=search`
 - **CONN-016**：`dialects/opensearch.py` — 镜像 ES 映射；`type=opensearch`；`register_connector_plugin(OpensearchConnector())`；`OPENSEARCH_*` 错误域；`opensearch-py>=2.4.0`（connectors-ext）
 
+### r52 companion 质量推分（CONN-016）
+
+- **CONN-016**：`errors.map_opensearch_error` 单出口（含 `OPENSEARCH_INDEX_NOT_FOUND`）；空 indices `list_schemas`→`[]`；空 properties `list_columns`→`[]`；`probe_list_columns_mock`（<100ms smoke）
+
 ### r35 companion 质量推分（CONN-021/009/015）
 
 - **TiDB**：`test_connection` 返回 `TIDB_TIMEOUT`/`TIDB_CONN_REFUSED`/`TIDB_AUTH_FAILED`/`TIDB_UNKNOWN_DATABASE`；空库 `list_schemas` 与未知表 `list_columns` 返回 `[]`

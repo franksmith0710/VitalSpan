@@ -38,10 +38,14 @@ def _owner_uuid(actor: UserContext) -> uuid.UUID | None:
 
 
 def _designer_error(exc: DesignerError) -> JSONResponse:
-    detail = {"fields": exc.fields} if exc.fields else None
+    detail: dict[str, object] = {}
+    if exc.fields:
+        detail["fields"] = exc.fields
+    if exc.remediation:
+        detail["remediation"] = exc.remediation
     return JSONResponse(
         status_code=exc.status,
-        content={"code": exc.code, "message": exc.message, "detail": detail},
+        content={"code": exc.code, "message": exc.message, "detail": detail or None},
     )
 
 

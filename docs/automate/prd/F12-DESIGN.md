@@ -35,9 +35,10 @@
 - **描述**：输出字段与聚合配置（SRS 追溯项）。
 - **验收标准**：
   - [x] 聚合规则可配置（r49 L1：`aggregates` 白名单 sum/count/avg/min/max + validate/save/get）
+  - [x] 数量/重复边界（r52 companion：`MAX_OUTPUT_FIELDS`/`MAX_AGGREGATES` + probe <50ms）
   - [ ] 与 META-004 联动
-- **代码锚点**：`backend/app/designer/output_fields.py` · `backend/app/api/v1/designer.py` · `tests/test_design_conn_gov_query_r49.py` T-DESIGN-R49-003-01~06
-- **演化建议**：r49 L1 闭合空 fields/未知 field/非法 aggregate/metaFieldRef glossary 校验；后续 companion 补 META-004 维度联动与 Admin 字段配置 UI
+- **代码锚点**：`backend/app/designer/output_fields.py` · `backend/app/api/v1/designer.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-DESIGN-R52-003-01~09
+- **演化建议**：r52 companion 闭合空/过多 fields、重复 fieldId、非法 aggregate 与 sql_mode 并存回归；后续补 META-004 维度联动与 Admin 字段配置 UI
 - **里程碑对齐**：
 ### [DESIGN-004] 设计器与工单关联
 
@@ -60,6 +61,7 @@
   - [ ] SQL Lab 式编辑
   - [ ] 语法高亮与执行
   - [x] SQL 只读校验与持久化（r49 L1：`POST validate` + `PUT/GET /api/v1/designer/sql-mode` + `DESIGN_SQL_*` 错误域）
-- **代码锚点**：`backend/app/designer/sql_mode.py` · `backend/app/api/v1/designer.py` · `tests/test_design_conn_gov_query_r49.py` T-DESIGN-R49-005-01~05
-- **演化建议**：r49 L1 闭合 SELECT 只读守卫/空 SQL/往返持久化/capabilities；后续 companion 补 SQL Lab UI、语法高亮与执行链
+  - [x] 只读链 companion（r52：DML/注释隐藏/FOR UPDATE/长度上限 + `detail.remediation` + chart_view `CHART_SQL_NOT_READONLY` 联动）
+- **代码锚点**：`backend/app/designer/sql_mode.py` · `backend/app/schemas/chart_view.py` · `backend/app/api/v1/designer.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-DESIGN-R52-005-01~10
+- **演化建议**：r52 companion 闭合只读 SQL 多语句/注释 DML/FOR UPDATE/超长与 render-spec 联动；后续补 SQL Lab UI、语法高亮与执行链
 - **里程碑对齐**：

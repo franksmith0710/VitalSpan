@@ -24,8 +24,14 @@ from app.query.schemas import (
 )
 from app.query.translator.schemas import TranslateError, TranslateRequest, TranslateResponse
 from app.query.translator import service as translator_service
-from app.query.native.guard import list_routing_modes, validate_native_spec
-from app.query.native.schemas import NativeQuerySpec, NativeValidateOut, RoutingModesOut
+from app.query.native.guard import assert_readonly_route_guard, list_routing_modes, validate_native_spec
+from app.query.native.schemas import (
+    NativeQuerySpec,
+    NativeValidateOut,
+    ReadonlyGuardIn,
+    ReadonlyGuardOut,
+    RoutingModesOut,
+)
 
 router = APIRouter(prefix="/query", tags=["query"])
 
@@ -193,5 +199,16 @@ def validate_native_query(
 ) -> NativeValidateOut | JSONResponse:
     try:
         return validate_native_spec(payload)
+    except QueryError as exc:
+        return _error_response(exc)
+
+
+@router.post("/readonly-guard", response_model=ReadonlyGuardOut)
+def readonly_route_guard(
+    payload: ReadonlyGuardIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ReadonlyGuardOut | JSONResponse:
+    try:
+        return assert_readonly_route_guard(payload)
     except QueryError as exc:
         return _error_response(exc)

@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import time
+from dataclasses import dataclass
 from typing import Any
 
 from opensearchpy import OpenSearch
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
+from app.datasources.dialects.errors import (
+    OPENSEARCH_INDEX_NOT_FOUND,
+    OPENSEARCH_INVALID_HOST,
+    map_opensearch_error,
+)
 
-OPENSEARCH_INVALID_HOST = "OPENSEARCH_INVALID_HOST"
-OPENSEARCH_CONNECTION_REFUSED = "OPENSEARCH_CONNECTION_REFUSED"
-OPENSEARCH_AUTH_FAILED = "OPENSEARCH_AUTH_FAILED"
-OPENSEARCH_TIMEOUT = "OPENSEARCH_TIMEOUT"
-OPENSEARCH_UNKNOWN = "OPENSEARCH_UNKNOWN"
+probe_opensearch_metadata_budget_ms = 100
 OPENSEARCH_MAX_MAPPING_FIELDS = 500
 
 _OS_TYPE_MAP = {
@@ -26,6 +28,12 @@ _OS_TYPE_MAP = {
     "object": "json",
     "nested": "json",
 }
+
+
+@dataclass(frozen=True)
+class OpensearchProbeResult:
+    elapsed_ms: float
+    ok: bool
 
 
 def _normalize_os_type(os_type: str) -> str:
@@ -74,16 +82,9 @@ class OpensearchConnector:
                 code=OPENSEARCH_INVALID_HOST,
             )
         except Exception as exc:
-            msg = str(exc).lower()
-            code = OPENSEARCH_UNKNOWN
-            if "timeout" in msg or "timed out" in msg:
-                code = OPENSEARCH_TIMEOUT
-            elif "connection refused" in msg or "failed to establish" in msg:
-                code = OPENSEARCH_CONNECTION_REFUSED
-            elif "authentication" in msg or "401" in msg or "403" in msg:
-                code = OPENSEARCH_AUTH_FAILED
+            code, detail = map_opensearch_error(exc)
             latency_ms = int((time.perf_counter() - started) * 1000)
-            return TestConnectionResult(ok=False, message=f"[{code}] {exc}", latency_ms=latency_ms, code=code)
+            return TestConnectionResult(ok=False, message=f"[{code}] {detail}", latency_ms=latency_ms, code=code)
         latency_ms = int((time.perf_counter() - started) * 1000)
         return TestConnectionResult(ok=True, message="Connection successful", latency_ms=latency_ms, code=None)
 
@@ -107,7 +108,7 @@ class OpensearchConnector:
         )
 
     def list_schemas(self, connection: OpenSearch) -> list[SchemaInfo]:
-        rows = connection.cat.indices(format="json")
+        rows = connection.cat.indices(format="json") or []
         names = [row["index"] for row in rows if not str(row["index"]).startswith(".")]
         return [SchemaInfo(name=n) for n in sorted(names)]
 
@@ -115,8 +116,14 @@ class OpensearchConnector:
         return [TableInfo(name="_doc", type="index")]
 
     def list_columns(self, connection: OpenSearch, schema: str, table: str) -> list[ColumnInfo]:
-        mapping = connection.indices.get_mapping(index=schema)
-        props = mapping.get(schema, {}).get("mappings", {}).get("properties", {})
+        try:
+            mapping = connection.indices.get_mapping(index=schema)
+        except Exception as exc:
+            code, _ = map_opensearch_error(exc)
+            if code == OPENSEARCH_INDEX_NOT_FOUND:
+                raise ValueError(f"[{code}] index not found: {schema}") from exc
+            raise
+        props = mapping.get(schema, {}).get("mappings", {}).get("properties") or {}
         columns = [
             ColumnInfo(
                 name=name,
@@ -128,3 +135,14 @@ class OpensearchConnector:
         if len(columns) > OPENSEARCH_MAX_MAPPING_FIELDS:
             return columns[:OPENSEARCH_MAX_MAPPING_FIELDS]
         return columns
+
+
+def probe_list_columns_mock(client: OpenSearch, index: str = "idx") -> OpensearchProbeResult:
+    started = time.perf_counter()
+    conn = OpensearchConnector()
+    try:
+        cols = conn.list_columns(client, index, "_doc")
+        ok = isinstance(cols, list)
+    except Exception:
+        ok = False
+    return OpensearchProbeResult(elapsed_ms=(time.perf_counter() - started) * 1000, ok=ok)
