@@ -7,7 +7,23 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.metadata.glossary.models import GlossaryTerm
-from app.metadata.glossary.schemas import GlossaryError, TermCreate, TermUpdate
+from app.metadata.glossary.schemas import (
+    GlossaryError,
+    TERM_STATUS_VALUES,
+    TermCreate,
+    TermUpdate,
+)
+
+
+def _validate_status(status: str | None) -> str:
+    if status is not None and status not in TERM_STATUS_VALUES:
+        raise GlossaryError(
+            "META_TERM_INVALID_STATUS",
+            "Invalid term status",
+            422,
+            fields=[{"field": "status", "message": f"Must be one of {sorted(TERM_STATUS_VALUES)}"}],
+        )
+    return status or "active"
 
 
 def list_terms(
@@ -28,11 +44,20 @@ def list_terms(
 
 
 def create_term(session: Session, payload: TermCreate) -> GlossaryTerm:
+    if not payload.name.strip():
+        raise GlossaryError(
+            "META_TERM_INVALID_NAME",
+            "Term name must not be blank",
+            422,
+            fields=[{"field": "name", "message": "must not be blank"}],
+        )
+    status = _validate_status(payload.status)
     term = GlossaryTerm(
         code=payload.code,
         name=payload.name,
         definition=payload.definition,
         description=payload.description,
+        status=status,
     )
     session.add(term)
     try:
@@ -52,10 +77,19 @@ def get_term(session: Session, term_id: uuid.UUID) -> GlossaryTerm:
 
 
 def update_term(session: Session, term_id: uuid.UUID, payload: TermUpdate) -> GlossaryTerm:
+    if not payload.name.strip():
+        raise GlossaryError(
+            "META_TERM_INVALID_NAME",
+            "Term name must not be blank",
+            422,
+            fields=[{"field": "name", "message": "must not be blank"}],
+        )
     term = get_term(session, term_id)
     term.name = payload.name
     term.definition = payload.definition
     term.description = payload.description
+    if payload.status is not None:
+        term.status = _validate_status(payload.status)
     session.commit()
     session.refresh(term)
     return term

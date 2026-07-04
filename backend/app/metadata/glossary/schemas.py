@@ -6,6 +6,8 @@ import uuid
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 TERM_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
+TERM_MAX_TEXT_LENGTH = 4000
+TERM_STATUS_VALUES = frozenset({"active", "inactive"})
 
 
 class GlossaryError(Exception):
@@ -26,8 +28,9 @@ class GlossaryError(Exception):
 class TermCreate(BaseModel):
     code: str
     name: str = Field(min_length=1, max_length=120)
-    definition: str | None = None
-    description: str | None = None
+    definition: str | None = Field(default=None, max_length=TERM_MAX_TEXT_LENGTH)
+    description: str | None = Field(default=None, max_length=TERM_MAX_TEXT_LENGTH)
+    status: str | None = None
 
     @field_validator("code")
     @classmethod
@@ -36,11 +39,26 @@ class TermCreate(BaseModel):
             raise ValueError("code must match ^[a-z][a-z0-9_]{1,63}$")
         return v
 
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str | None) -> str | None:
+        if v is not None and v not in TERM_STATUS_VALUES:
+            raise ValueError(f"status must be one of {sorted(TERM_STATUS_VALUES)}")
+        return v
+
 
 class TermUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
-    definition: str | None = None
-    description: str | None = None
+    definition: str | None = Field(default=None, max_length=TERM_MAX_TEXT_LENGTH)
+    description: str | None = Field(default=None, max_length=TERM_MAX_TEXT_LENGTH)
+    status: str | None = None
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: str | None) -> str | None:
+        if v is not None and v not in TERM_STATUS_VALUES:
+            raise ValueError(f"status must be one of {sorted(TERM_STATUS_VALUES)}")
+        return v
 
 
 class TermOut(BaseModel):
