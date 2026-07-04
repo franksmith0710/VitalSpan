@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 from starlette.responses import Response
 from sqlalchemy.orm import Session
@@ -49,6 +49,9 @@ from app.governance.workflow.schemas import (
     WorkflowTemplateValidateIn,
     WorkflowTransitionIn,
 )
+from app.governance.openapi.errors import OpenApiMappingError
+from app.governance.openapi.schemas import OpenApiMappingCreate, OpenApiMappingListOut
+from app.governance.openapi import service as openapi_service
 
 router = APIRouter(prefix="/gov", tags=["governance", "IF-06"])
 
@@ -299,6 +302,55 @@ def _workflow_error(exc: WorkflowError) -> JSONResponse:
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": exc.detail},
     )
+
+
+def _openapi_mapping_error(exc: OpenApiMappingError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+@router.get("/openapi-mappings", response_model=OpenApiMappingListOut)
+def list_openapi_mappings(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    catalog_entry_id: uuid.UUID | None = Query(default=None, alias="catalogEntryId"),
+) -> OpenApiMappingListOut:
+    return openapi_service.list_mappings(catalog_entry_id)
+
+
+@router.get("/openapi-mappings/{mapping_id}", response_model=None)
+def get_openapi_mapping(
+    mapping_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return openapi_service.get_mapping(mapping_id)
+    except OpenApiMappingError as exc:
+        return _openapi_mapping_error(exc)
+
+
+@router.post("/openapi-mappings", status_code=status.HTTP_201_CREATED, response_model=None)
+def register_openapi_mapping(
+    payload: OpenApiMappingCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        return openapi_service.register_mapping(db, payload)
+    except OpenApiMappingError as exc:
+        return _openapi_mapping_error(exc)
+
+
+@router.post("/openapi-mappings/validate", response_model=None)
+def validate_openapi_mapping(
+    payload: OpenApiMappingCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return openapi_service.validate_mapping(payload)
+    except OpenApiMappingError as exc:
+        return _openapi_mapping_error(exc)
 
 
 @router.get("/workflow/templates", response_model=WorkflowTemplateListOut)

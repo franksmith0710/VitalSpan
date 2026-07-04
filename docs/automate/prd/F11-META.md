@@ -63,12 +63,12 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [META-006] 实体类型 schema 配置
 
-- **状态**：未实现
+- **状态**：L1 已实现（r54）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：实体类型 schema 配置（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 实体属性/生命周期可配置
-  - [ ] 不预置业务实体
-- **代码锚点**：`backend/app/metadata/entity/types/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 实体属性/生命周期可配置（attributes + lifecycleStates 默认 draft/active/retired）
+  - [x] 不预置业务实体（内存 store，按需创建）
+- **代码锚点**：`backend/app/metadata/entity/` · `backend/app/api/v1/metadata.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-META-01~07
+- **演化建议**：r54 L1 闭合 entity schema CRUD；后续补物理表映射与 GOV 引用释放

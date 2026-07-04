@@ -306,6 +306,33 @@ def map_gbase_error(exc: Exception) -> tuple[str, str]:
     return GBASE_UNKNOWN, str(exc)
 
 
+# OceanBase (MySQL protocol)
+OCEANBASE_CONN_REFUSED = "OCEANBASE_CONN_REFUSED"
+OCEANBASE_AUTH_FAILED = "OCEANBASE_AUTH_FAILED"
+OCEANBASE_TIMEOUT = "OCEANBASE_TIMEOUT"
+OCEANBASE_UNKNOWN_DATABASE = "OCEANBASE_UNKNOWN_DATABASE"
+OCEANBASE_UNKNOWN = "OCEANBASE_UNKNOWN"
+
+
+def map_oceanbase_error(exc: Exception) -> tuple[str, str]:
+    if isinstance(exc, pymysql.err.OperationalError):
+        errno = int(exc.args[0]) if exc.args else 0
+        detail = str(exc.args[1]) if len(exc.args) > 1 else str(exc)
+        if errno == 2002 or "timed out" in detail.lower():
+            return OCEANBASE_TIMEOUT, detail
+        if errno == 1049:
+            return OCEANBASE_UNKNOWN_DATABASE, detail
+        code, detail = map_mysql_operational_error(exc)
+        mapping = {
+            "MYSQL_TIMEOUT": OCEANBASE_TIMEOUT,
+            "MYSQL_CONN_REFUSED": OCEANBASE_CONN_REFUSED,
+            "MYSQL_AUTH_FAILED": OCEANBASE_AUTH_FAILED,
+            "MYSQL_UNKNOWN_DATABASE": OCEANBASE_UNKNOWN_DATABASE,
+        }
+        return mapping.get(code, OCEANBASE_UNKNOWN), detail
+    return OCEANBASE_UNKNOWN, str(exc)
+
+
 # MongoDB
 MONGODB_CONN_REFUSED = "MONGODB_CONN_REFUSED"
 MONGODB_AUTH_FAILED = "MONGODB_AUTH_FAILED"
@@ -496,6 +523,11 @@ __all__ = [
     "GBASE_TIMEOUT",
     "GBASE_UNKNOWN",
     "GBASE_UNKNOWN_DATABASE",
+    "OCEANBASE_AUTH_FAILED",
+    "OCEANBASE_CONN_REFUSED",
+    "OCEANBASE_TIMEOUT",
+    "OCEANBASE_UNKNOWN",
+    "OCEANBASE_UNKNOWN_DATABASE",
     "HIVE_AUTH_FAILED",
     "HIVE_CONN_REFUSED",
     "HIVE_TIMEOUT",
@@ -578,6 +610,7 @@ __all__ = [
     "map_doris_operational_error",
     "map_gaussdb_error",
     "map_gbase_error",
+    "map_oceanbase_error",
     "map_hive_error",
     "map_influx_error",
     "map_mongodb_error",

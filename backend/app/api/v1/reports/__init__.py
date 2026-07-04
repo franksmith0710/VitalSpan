@@ -3,13 +3,18 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Header, Query, status
 from fastapi.responses import JSONResponse
 
 from app.auth.deps import UserContext, get_current_user
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.catalog.schemas import CatalogNodeCreate, CatalogNodeMove, CatalogNodeOut, CatalogNodeUpdate
 from app.reports.catalog import service as catalog_service
+from app.reports.errors import ReportBatchError, ReportExtensionError
+from app.reports.extension.schemas import ExtensionConfigUpsert
+from app.reports.extension import service as extension_service
+from app.reports.batch.schemas import BatchCreateReportsIn
+from app.reports.batch import service as batch_service
 from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.schemas import ScheduleCreate, ScheduleTransitionIn
 from app.reports.scheduler import service as scheduler_service
@@ -23,6 +28,55 @@ def _catalog_error(exc: ReportCatalogError) -> JSONResponse:
 
 def _schedule_error(exc: ScheduleError) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": None})
+
+
+def _extension_error(exc: ReportExtensionError) -> JSONResponse:
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": None})
+
+
+def _batch_error(exc: ReportBatchError) -> JSONResponse:
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": None})
+
+
+@router.get("/catalog/nodes/{node_id}/extension", response_model=None)
+def get_node_extension(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get_current_user)]):
+    try:
+        return extension_service.get_extension(node_id)
+    except ReportExtensionError as exc:
+        return _extension_error(exc)
+
+
+@router.put("/catalog/nodes/{node_id}/extension", response_model=None)
+def upsert_node_extension(
+    node_id: uuid.UUID,
+    payload: ExtensionConfigUpsert,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return extension_service.upsert(node_id, payload)
+    except ReportExtensionError as exc:
+        return _extension_error(exc)
+
+
+@router.delete("/catalog/nodes/{node_id}/extension", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def delete_node_extension(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get_current_user)]):
+    try:
+        extension_service.delete_extension(node_id)
+        return None
+    except ReportExtensionError as exc:
+        return _extension_error(exc)
+
+
+@router.post("/batch", status_code=status.HTTP_201_CREATED, response_model=None)
+def batch_create_reports(
+    payload: BatchCreateReportsIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+):
+    try:
+        return batch_service.batch_create(payload, idempotency_key)
+    except ReportBatchError as exc:
+        return _batch_error(exc)
 
 
 @router.get("/catalog/nodes", response_model=list[CatalogNodeOut])

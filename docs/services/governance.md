@@ -15,6 +15,7 @@
 - 查询设计权限联动与 RLS 绑定守卫（GOV-008）
 - 查询服务发布状态机 submit/approve/reject（GOV-005）
 - 工单流程模板与五态 FSM 实例（GOV-003）
+- 发布引擎 OpenAPI 映射 store（GOV-006）
 - 为开放 API 登记与 BPM 流水线奠基
 
 ## 边界
@@ -23,14 +24,14 @@
 |----|-----|
 | catalog 分类/条目 CRUD、bus PoC 登记记录 | 查询执行（→ `query`） |
 | workflow 模板校验 + 五态 FSM 实例持久化 | 完整 BPM 工单与审批流水线 UI（GOV-003+） |
-| | 与 `publish_service` 串联的跨域发布（本域 workflow 独立） |
+| openapi 映射 store（published entry 校验 + entityTypeRef） | 与 `publish_service` 串联的跨域发布（本域 workflow 独立） |
 | | 真实总线 HTTP 对接（GOV-007+） |
 | | 认证授权（→ `auth`） |
 
 ## 依赖
 
 - `core`、`datasources`（元库 ORM Base）
-- `query`（登记条目常引用 execute 类路径）
+- `governance`（publish 状态）、`metadata/entity`（entityTypeRef 校验）
 
 ## 主要类型 / 入口
 
@@ -46,6 +47,7 @@
 | `POST/PUT/GET /api/v1/gov/query-design*` | 可视化查询设计 validate/save/get | GOV-004/008 | 已实现 |
 | `governance/publish/` | 查询服务发布状态机 submit/approve/reject | GOV-005 | 已实现 L1 |
 | `governance/workflow/` | 工单模板 + 五态 FSM（draft→published） | GOV-003 | 已实现 L1 |
+| `governance/openapi/` | 发布引擎 OpenAPI 映射 store + validate | GOV-006 | 已实现 L1 r54 |
 | `POST/GET /api/v1/gov/publish/entries/{id}/*` | 发布工作流 REST 骨架 | GOV-005 | 已实现 L1 |
 | `GET /api/v1/gov/publish/entries/{id}/notifications` | 审批通知事件列表（内存 store） | GOV-005 | 已实现 companion |
 | `GET/POST /api/v1/gov/workflow/*` | 工单模板/实例/迁移 REST | GOV-003 | 已实现 L1 |

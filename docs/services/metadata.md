@@ -12,6 +12,7 @@
 - **术语字典**（`glossary/`）：业务术语 code/名称/定义维护（META-001）
 - **业务主题树**（`themes/`）：多级主题节点、移动与环检测（META-002）
 - **维度字典**（`dimensions/`）：维度 code 与枚举值注册/维护（META-003）
+- **实体类型 schema**（`entity/`）：实体属性/生命周期配置（META-006）
 - 逻辑数据集（Dataset）定义：表关联、计算字段、指标维度（四期）
 - 与物理数据源映射；版本与发布状态
 - 为 `query` 四期提供语义解析输入
@@ -23,10 +24,9 @@
 |----|-----|
 | 术语字典 CRUD、业务主题树 CRUD/move | 物理连接与方言（→ `datasources`） |
 | 维度字典 CRUD、枚举值注册/列表/删除 | 物理字段映射（META-001 后续） |
+| 实体类型 schema CRUD + GOV openapi 引用计数 | 物理字段映射（META-001 后续） |
 | Dataset / 语义模型 CRUD（四期） | 查询执行（→ `query`） |
 | 一至三期 | 图表直连查询不走本域 |
-| | M4/M5/M6 统一引用（本轮仅 API 就绪） |
-| | Dataset 语义层（META-004） |
 
 ## 依赖
 
@@ -43,6 +43,7 @@
 | `GlossaryTerm` / `glossary/service` | 术语字典 CRUD | META-001 | L1 已实现 |
 | `ThemeNode` / `themes/service` | 主题树 CRUD/move、环检测 | META-002 | L1 已实现 |
 | `DimensionDict` / `dimensions/service` | 维度字典 CRUD + 枚举值注册 | META-003 | L1 已实现 |
+| `entity/service` | 实体类型 schema CRUD + `validate_entity_type_ref` | META-006 | L1 已实现 r54 |
 | `DatasetService` | 语义层 CRUD | META-001~003 | 待建 |
 | `SemanticResolver` | 逻辑 → 物理 SQL | META-004 | 待建 |
 
