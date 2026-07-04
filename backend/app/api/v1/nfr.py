@@ -23,6 +23,16 @@ from app.core.nfr.report_perf import (
     probe_report_perf,
     validate_report_perf_config,
 )
+from app.core.nfr.dashboard_sla import (
+    DashboardSlaAlertsOut,
+    DashboardSlaError,
+    DashboardSlaProbeIn,
+    DashboardSlaProbeOut,
+    DashboardSlaValidateOut,
+    get_dashboard_sla_alerts,
+    probe_dashboard_sla,
+    validate_dashboard_sla,
+)
 from app.core.nfr.xinchuang import XinchuangComplianceError, assert_xinchuang_compliant, build_compliance_report
 
 router = APIRouter(prefix="/nfr", tags=["nfr"])
@@ -295,3 +305,37 @@ def report_query_perf_validate(
         return validate_report_perf_config(payload)
     except ReportPerfError as exc:
         return _report_perf_error(exc)
+
+
+def _dashboard_sla_error(exc: DashboardSlaError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/dashboard-sla/validate", response_model=DashboardSlaValidateOut)
+def dashboard_sla_validate(
+    payload: DashboardSlaProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> DashboardSlaValidateOut | JSONResponse:
+    try:
+        return validate_dashboard_sla(payload)
+    except DashboardSlaError as exc:
+        return _dashboard_sla_error(exc)
+
+
+@router.post("/dashboard-sla/probe", response_model=DashboardSlaProbeOut)
+def dashboard_sla_probe(
+    payload: DashboardSlaProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> DashboardSlaProbeOut | JSONResponse:
+    try:
+        return probe_dashboard_sla(payload)
+    except DashboardSlaError as exc:
+        return _dashboard_sla_error(exc)
+
+
+@router.get("/dashboard-sla/alerts", response_model=DashboardSlaAlertsOut)
+def dashboard_sla_alerts(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> DashboardSlaAlertsOut:
+    return get_dashboard_sla_alerts()
