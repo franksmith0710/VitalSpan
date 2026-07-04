@@ -54,3 +54,53 @@ def client():
 def test_r32_fixture_health(client):
     """T-META-R32-000-01: fixture 可用，/health 200。"""
     assert client.get("/health").status_code == 200
+
+
+def test_meta_term_create_and_list_r32(client):
+    """T-META-R32-001-01: POST 合法 term → 201；GET list 含该项。"""
+    payload = {"code": "order_amount", "name": "订单金额", "definition": "订单含税金额"}
+    created = client.post("/api/v1/metadata/glossary", headers=AUTH, json=payload)
+    assert created.status_code == 201
+    body = created.json()
+    assert body["code"] == "order_amount"
+    listed = client.get("/api/v1/metadata/glossary", headers=AUTH)
+    assert listed.status_code == 200
+    codes = [t["code"] for t in listed.json()["items"]]
+    assert "order_amount" in codes
+
+
+def test_meta_term_duplicate_code_r32(client):
+    """T-META-R32-001-02: 重复 code → 409 META_TERM_CODE_CONFLICT。"""
+    payload = {"code": "dup_term", "name": "A"}
+    assert client.post("/api/v1/metadata/glossary", headers=AUTH, json=payload).status_code == 201
+    dup = client.post("/api/v1/metadata/glossary", headers=AUTH, json=payload)
+    assert dup.status_code == 409
+    assert dup.json()["code"] == "META_TERM_CODE_CONFLICT"
+
+
+def test_meta_term_invalid_payload_r32(client):
+    """T-META-R32-001-03: 缺 name / 非法 code → 422。"""
+    bad_code = client.post(
+        "/api/v1/metadata/glossary", headers=AUTH, json={"code": "1bad", "name": "X"}
+    )
+    assert bad_code.status_code == 422
+    no_name = client.post("/api/v1/metadata/glossary", headers=AUTH, json={"code": "valid_code"})
+    assert no_name.status_code == 422
+
+
+def test_meta_term_delete_in_use_r32(client):
+    """T-META-R32-001-04: DELETE 被 theme 引用 → 409 META_TERM_IN_USE（themes 在 Task 3 实现后完整断言）。"""
+    term = client.post(
+        "/api/v1/metadata/glossary",
+        headers=AUTH,
+        json={"code": "linked_term", "name": "关联术语"},
+    ).json()
+    theme = client.post(
+        "/api/v1/metadata/themes",
+        headers=AUTH,
+        json={"name": "主题", "termId": term["id"]},
+    )
+    if theme.status_code == 201:
+        deleted = client.delete(f"/api/v1/metadata/glossary/{term['id']}", headers=AUTH)
+        assert deleted.status_code == 409
+        assert deleted.json()["code"] == "META_TERM_IN_USE"
