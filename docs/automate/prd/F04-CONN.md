@@ -263,8 +263,9 @@
   - [ ] 只读查询通过
   - [x] category=`search` 查询模式正确（r49）
   - [x] 空 host → `OPENSEARCH_INVALID_HOST`；401 → `OPENSEARCH_AUTH_FAILED`（r49）
-- **代码锚点**：`backend/app/datasources/dialects/opensearch.py` · `tests/test_design_conn_gov_query_r49.py` T-CONN-R49-016-01~06
-- **演化建议**：r49 L1 闭合 types catalog、plugin meta、mock test_connection/auth/mapping truncate；后续 companion 补 HTTP 链、只读查询与 UI 选型
+  - [x] HTTP/空索引边界 companion（r52：`map_opensearch_error` 统一 + 空 indices/properties + HTTP 4xx/502 链 + probe <100ms）
+- **代码锚点**：`backend/app/datasources/dialects/opensearch.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-CONN-R52-016-01~10
+- **演化建议**：r52 companion 闭合 HTTP test_connection/metadata 链、空索引边界与字段 truncate；后续补只读查询集成测与 UI 选型
 - **里程碑对齐**：
 ### [CONN-017] 达梦 DM 连接器
 

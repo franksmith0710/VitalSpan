@@ -40,9 +40,10 @@
 - **描述**：工单流程模板 FR-1.2（SRS 追溯项）。
 - **验收标准**：
   - [x] 草稿→待审批→设计中→待发布→已发布（r49 L1：`standard_query_release` 五态 FSM + transition API）
-  - [ ] 节点角色可配置（r49 内置模板固定角色）
-- **代码锚点**：`backend/app/governance/workflow/` · `backend/app/api/v1/gov.py` · `tests/test_design_conn_gov_query_r49.py` T-GOV-R49-003-01~08
-- **演化建议**：r49 L1 闭合模板列表、实例创建、happy path 迁移、非法 transition/越权角色拦截；后续 companion 补可配置节点角色与 BPM UI
+  - [x] 节点角色描述与 resolve（r52 companion：GET `workflow/templates/{id}/node-roles` + 并发/幂等/终态守卫）
+  - [ ] 节点角色可配置（r52 内置模板固定角色；BPM UI 留远期）
+- **代码锚点**：`backend/app/governance/workflow/` · `backend/app/governance/workflow/node_roles.py` · `backend/app/api/v1/gov.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-GOV-R52-003-01~10
+- **演化建议**：r52 companion 闭合节点角色 API、双 submit 409、终态再迁移拦截、probe <50ms；后续补 BPM 可配置角色与审批 UI
 - **里程碑对齐**：
 ### [GOV-004] 可视化查询设计 FR-1.3
 
