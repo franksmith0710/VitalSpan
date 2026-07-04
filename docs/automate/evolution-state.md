@@ -7,13 +7,13 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design | docs/superpowers/specs/2026-07-04-m13-design-opensearch-gov-query-companion-quality-r52-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-companion-quality-r52.md |
-| branch | feat/evolution-r52-m13-design-opensearch-gov-query-companion-quality |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r53.md |
+| design | docs/superpowers/specs/2026-07-04-dash-rpt-query-nfr-l1-r53-design.md |
+| plan | docs/superpowers/plans/2026-07-04-dash-rpt-query-nfr-l1-r53.md |
+| branch | feat/evolution-r53-dash-rpt-query-nfr-l1 |
 | base_branch | dev-auto |
-| prd_ids | GOV-003,DESIGN-005,QUERY-003,DESIGN-003,CONN-016 |
-| pr_number | 81 |
+| prd_ids | QUERY-009,RPT-004,DASH-006,RPT-005,NFR-008 |
+| pr_number | 83 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -66,6 +66,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r53 PRD 重评：QUERY-009/RPT-004/DASH-006/RPT-005/NFR-008 L1 kickoff；pytest 1338/4 skipped；test_dash_rpt_query_nfr_r53 38/38 + r52 52/52 + r49 35/35 + r46 36/36 回归 161/161；总分 11.7–11.8→82.6–85.6（五 ID <90 STUCK upsert round 1）；PR #82 head 漂移 concern 待修正；phase P4_DONE→P5_DOCS_READY
+- P4 r53 验证通过：ruff clean；pytest 1338 passed/4 skipped（全量 exit_code 0）；test_dash_rpt_query_nfr_r53 38/38 + r52 52/52 + r49 35/35 + r46 36/36 回归 161/161；UI: N/A（纯后端 ui_design_skill none）；PR #82 可能已提前创建（已知 SOP 顺序 concern）；phase P3_DONE→P4_DONE
+- P3 r53 实现完成：8 Task 全绿；M9 主题分析 + M10/M12 报表 + M13 Dataset/NFR L1 kickoff — QUERY-009/RPT-004/DASH-006/RPT-005/NFR-008；38 测 test_dash_rpt_query_nfr_r53 + r52 52/52 + r49 35/35 + r46 36/36 回归 161/161；pytest 1338/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r53-dash-rpt-query-nfr-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P5 r52 PRD 重评：GOV-003/DESIGN-005/QUERY-003/DESIGN-003/CONN-016 companion 质量推分；pytest 1300/4 skipped；test_design_conn_gov_query_r52 52/52 + r49 35/35 + r51 43/43 + r46 36/36；总分 81.4–83.2→90.1–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r52 验证通过：ruff clean；pytest 1300 passed/4 skipped（全量 exit_code 0）；test_design_conn_gov_query_r52 52/52 + r49 35/35 + r51 43/43 + r46 36/36 回归 166/166；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r52 实现完成：8 Task 全绿；M13 设计器 + M11 OpenSearch + 治理/查询 companion 质量推分 — GOV-003/DESIGN-005/QUERY-003/DESIGN-003/CONN-016；52 测 test_design_conn_gov_query_r52 + r49 35/35 + r51 43/43 + r46 36/36 回归 166/166；pytest 1300/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r52-m13-design-opensearch-gov-query-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
@@ -175,3 +178,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
+| QUERY-009 | 1 | 84.4 | 2026-07-04 |
+| RPT-004 | 1 | 84.4 | 2026-07-04 |
+| DASH-006 | 1 | 82.6 | 2026-07-04 |
+| RPT-005 | 1 | 84.2 | 2026-07-04 |
+| NFR-008 | 1 | 85.6 | 2026-07-04 |

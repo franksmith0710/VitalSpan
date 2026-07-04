@@ -104,6 +104,8 @@ redoc: /redoc
 | GET | `/api/v1/nfr/browser-matrix` | 浏览器兼容矩阵 + 可选 UA 探测 | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/push-probe` | 推送通道 mock 探测（不发送真实 HTTP） | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/registration-path/{connector_type}` | 连接器插件登记路径文档 | 内部 | 一期 | NFR-005 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/runtime-compliance` | 零 DE/SS 运行时合规扫描报告（`policyVersion=nfr08-l1`） | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/runtime-compliance/assert` | strict 模式违规 → 503 `NFR_RUNTIME_VIOLATION`；permissive → 200 | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
 
 ---
 
@@ -121,6 +123,8 @@ redoc: /redoc
 | GET | `/api/v1/query/bindings/{bindingId}` | 绑定详情 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | PUT | `/api/v1/query/bindings/{bindingId}` | 更新绑定（可选 `chartId` UUID；重复 → 409 `BINDING_CHART_CONFLICT`） | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | DELETE | `/api/v1/query/bindings/{bindingId}` | 删除绑定 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
+| GET | `/api/v1/query/dataset/routing` | Dataset 第三路径路由文档（sql/native/dataset） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/dataset/validate` | Dataset 路径 ACL/readonly 守卫（`QUERY_DATASET_*`/`QUERY_PATH_AMBIGUOUS`） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | GET/PUT | `/api/v1/query/configs` | 配置元模型存取（`configType`/`schemaVersion`/`refType`/`refId`；可选 `expectedRevision` 乐观锁；revision upsert；payload >256KB → 413 `CONFIG_PAYLOAD_TOO_LARGE`；revision 冲突 → 409 `CONFIG_VERSION_CONFLICT`） | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | GET | `/api/v1/query/configs/{config_id}` | 按 id 读取配置记录 | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | POST | `/api/v1/designer/conditions/validate` | 查询条件配置校验（不落库；422 含 `detail.fields`；`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_CROSS_FIELD`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
@@ -155,6 +159,8 @@ redoc: /redoc
 | GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET/PUT/DELETE | `/api/v1/dashboards/{id}` | Dashboard CRUD | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT | `/api/v1/dashboards/{id}/layout` | 布局与组件列表；422 码：`DASH_DUPLICATE_WIDGET` / `DASH_MISSING_CHART_CONFIG` / `DASH_CHART_ID_MISMATCH` | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| POST | `/api/v1/dashboards/theme-analysis/validate` | 实体主题分析 config 校验（`DASH_THEME_*`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| PUT/GET | `/api/v1/dashboards/theme-analysis` | 实体主题分析 config 持久化/读取（`config_type=entity_theme`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 规划 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 规划 | `backend/app/api/v1/views.py` |
@@ -169,8 +175,10 @@ redoc: /redoc
 |------|------|------|-----|------|-----|------|----------|
 | GET/POST | `/api/v1/reports/templates` | 报表模板目录 | 内部 | 二期 | RPT-003 | 规划 | `backend/app/api/v1/reports/templates.py` |
 | GET/PUT/DELETE | `/api/v1/reports/templates/{id}` | 模板 CRUD | 内部 | 二期 | RPT-004 | 规划 | `backend/app/api/v1/reports/templates.py` |
+| GET/POST/PATCH/DELETE | `/api/v1/reports/catalog/nodes*` | 报表模板树 catalog CRUD/move（`RPT_CATALOG_*`） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表 | 内部 | 二期 | RPT-001 | 规划 | `backend/app/api/v1/reports/engine.py` |
-| GET/POST | `/api/v1/reports/schedules` | 调度任务 | 内部 | 三期 | RPT-005 | 规划 | `backend/app/api/v1/reports/schedules.py` |
 | GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}/download` | 导出文件下载（`Content-Disposition: attachment`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |

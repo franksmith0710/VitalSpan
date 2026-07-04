@@ -62,12 +62,14 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [DASH-006] 实体主题分析 FR-4.1
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r53）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：实体主题分析 FR-4.1（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 时间域日/周/月/同比环比
-  - [ ] GIS 分布与行政区划下钻
-- **代码锚点**：`fe/src/pages/theme-analysis/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 时间域日/周/月（r53 L1：`POST validate` + `PUT/GET /api/v1/dashboards/theme-analysis` timeGranularity day/week/month + geoBinding 校验）
+  - [ ] 同比环比计算链
+  - [ ] GIS 分布与行政区划下钻（无 fe 页面；geoBinding 仅 schema 校验）
+- **代码锚点**：`backend/app/dashboard/theme/service.py` · `backend/app/query/config_store/schemas.py`（entity_theme）· `backend/app/api/v1/dashboards.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-DASH-R53-006-01~06
+- **演化建议**：r53 L1 闭合 entity_theme config_store 后端 validate/CRUD 与 dashboard ref 绑定；后续补 fe theme-analysis 页面、GIS 下钻与同比环比计算
+- **里程碑对齐**：

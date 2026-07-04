@@ -32,6 +32,8 @@ from app.query.native.schemas import (
     ReadonlyGuardOut,
     RoutingModesOut,
 )
+from app.query.dataset.guard import dataset_routing_doc, validate_dataset_spec
+from app.query.dataset.schemas import DatasetRoutingOut
 
 router = APIRouter(prefix="/query", tags=["query"])
 
@@ -210,5 +212,23 @@ def readonly_route_guard(
 ) -> ReadonlyGuardOut | JSONResponse:
     try:
         return assert_readonly_route_guard(payload)
+    except QueryError as exc:
+        return _error_response(exc)
+
+
+@router.get("/dataset/routing", response_model=DatasetRoutingOut)
+def get_dataset_routing(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> DatasetRoutingOut:
+    return dataset_routing_doc()
+
+
+@router.post("/dataset/validate", response_model=None)
+def validate_dataset_query(
+    payload: dict,
+    user: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return validate_dataset_spec(payload, user.roles)
     except QueryError as exc:
         return _error_response(exc)

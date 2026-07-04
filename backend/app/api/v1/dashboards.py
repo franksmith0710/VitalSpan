@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext, get_current_user
 from app.dashboard import service as dash_service
 from app.dashboard.schemas import DashboardCreate, DashboardLayoutUpdate, DashboardUpdate
+from app.dashboard.theme.errors import ThemeAnalysisError
+from app.dashboard.theme import service as theme_service
 from app.datasources.models import get_meta_session
 
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
@@ -35,6 +37,52 @@ def _parse_user_id(user: UserContext) -> uuid.UUID | None:
         return uuid.UUID(user.id)
     except ValueError:
         return None
+
+
+def _theme_error(exc: ThemeAnalysisError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/theme-analysis/validate", response_model=None)
+def validate_theme_analysis(
+    payload: dict,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return theme_service.validate_theme_config(payload)
+    except ThemeAnalysisError as exc:
+        return _theme_error(exc)
+
+
+@router.put("/theme-analysis", response_model=None)
+def save_theme_analysis(
+    payload: dict,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        return theme_service.save_theme_config(db, payload, _parse_user_id(user))
+    except ThemeAnalysisError as exc:
+        return _theme_error(exc)
+
+
+@router.get("/theme-analysis", response_model=None)
+def get_theme_analysis(
+    ref_type: str = Query(default="dashboard", alias="refType"),
+    ref_id: uuid.UUID = Query(alias="refId"),
+    _: Annotated[UserContext, Depends(get_current_user)] = None,
+    db: Annotated[Session, Depends(_db)] = None,
+):
+    try:
+        return theme_service.get_theme_config(db, ref_type, ref_id)
+    except ThemeAnalysisError as exc:
+        return _theme_error(exc)
+    except Exception as exc:
+        from app.query.config_store.schemas import ConfigError
+        if isinstance(exc, ConfigError) and exc.code == "CONFIG_NOT_FOUND":
+            return JSONResponse(status_code=404, content={"code": "CONFIG_NOT_FOUND", "message": exc.message, "detail": None})
+        raise
 
 
 @router.get("")

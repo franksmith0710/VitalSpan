@@ -13,6 +13,7 @@ ALLOWED_CONFIG_TYPES = frozenset({
     "sql_mode",
     "output_fields",
     "workflow_instance",
+    "entity_theme",
 })
 ALLOWED_SCHEMA_VERSIONS = frozenset({"1.0"})
 DEFAULT_REF_TYPE = "design_draft"
