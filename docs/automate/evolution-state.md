@@ -6,17 +6,17 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r34.md |
-| design | docs/superpowers/specs/2026-07-04-m11-connector-m13-gov-kickoff-r34-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m11-connector-m13-gov-kickoff-r34.md |
-| branch | feat/evolution-r34-m11-connector-m13-gov-kickoff |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | CONN-021,GOV-004,CONN-009,CONN-015,GOV-008 |
-| pr_number | 58 |
-| last_verified_command | cd backend && export DATABASE_URL=... SECRET_KEY=... CREDENTIAL_FERNET_KEY=... && python3 -m ruff check . && python3 -m pytest -q |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端，无 UI 改动） |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
+| last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T01:52:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r35 bootstrap：r34 PR #58 已合并 dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r34 PRD 重评：CONN-021/009/015 + GOV-004/008 L1 kickoff；pytest 742/4 skipped；test_connectors_gov_r34 15/15 + r33 19/19；总分 10.9–11.2→86.0–88.1（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r34 验证通过：ruff clean；pytest 742 passed/4 skipped；test_connectors_gov_r34 15/15 + test_meta_design_r33 19/19 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P5 r33 PRD 重评：META-001/002 + QUERY-007 + DESIGN-001/002 companion 质量推分；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；总分 86.4–89.8→90.0–91.7（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
