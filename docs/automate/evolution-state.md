@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r67.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-04-dash-nfr-conn-rpt-companion-quality-r67-design.md |
 | plan |  |
 | branch |  |
 | base_branch |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r67 设计完成：跨域 STUCK 簇 companion 质量推分 — DASH-004/NFR-001/NFR-002/CONN-018/RPT-003；19 文件框定；perf probe 50ms + ACL/validate/NOT_FOUND 闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r67 选题完成：跨域 STUCK 簇 companion 质量推分 — DASH-004/NFR-001/NFR-002/CONN-018/RPT-003（5 项）；最低分 DASH-004/NFR-001/NFR-002/CONN-018/RPT-003(84.2)；饱和熔断未触发（Top5 84.2≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 五入选 ID 各 1 轮未达 ≥3 硬标注阈值；NFR-003/NFR-004/GOV-007 留 r68+；phase idle→G2_DONE
 - G1 r67 bootstrap：r66 PR #101 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 DASH-004(84.2)/NFR-001(84.2)/NFR-002(84.2)；STUCK 八 ID 各 1 轮（CONN-018/DASH-004/GOV-007/NFR-001–004/RPT-003，均 84.2–84.4）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r66 PRD 重评：CAT-001/CAT-002/DASH-005/RPT-001/META-004 companion 质量推分；pytest 1752/4 skipped；test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 196/196；总分 83.9–84.2→90.0–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
