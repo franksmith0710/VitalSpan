@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design | docs/superpowers/specs/2026-07-04-m11-meta-m12-design-l1-r32-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-meta-m12-design-l1-r32.md |
 | branch | feat/evolution-r32-m11-meta-m12-design-l1 |
 | base_branch | dev-auto |
 | prd_ids | META-001,META-002,QUERY-007,DESIGN-001,DESIGN-002 |
-| pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
+| pr_number | 55 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v && python3 -m pytest -v ../tests/test_meta_design_r32.py ../tests/test_view_gov_api_r31.py |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r32 验证通过：ruff clean；pytest 708 passed/4 skipped；test_meta_design_r32 21/21；test_view_gov_api_r31 24/24 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
+- P3 r32 实现完成：7 Task 全绿；META-001/002 + QUERY-007 + DESIGN-001/002 L1；migration 0015；21 新测 test_meta_design_r32；pytest 707/4 skipped；r31 回归 24/24；branch feat/evolution-r32-m11-meta-m12-design-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P5 r31 PRD 重评：VIEW-001/GOV-002 破 90（90.2/90.4）STUCK 清零；GOV-001/API-001/002 巩固 90.0–90.2；pytest 686/4 skipped；test_view_gov_api_r31 24/24；phase P4_DONE→P5_DOCS_READY
 - P4 r31 验证通过：ruff clean；pytest 686 passed/4 skipped；test_view_gov_api_r31 24/24；test_view_gov_api_r30 30/30 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P3 r31 实现完成：7 Task 全绿；VIEW bounds/cycle、GOV bus/catalog、IF-06 OpenAPI；24 新测；pytest 686/4 skipped；branch feat/evolution-r31-m5-view-m6-companion-quality；base_branch dev-auto
