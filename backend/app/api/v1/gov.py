@@ -30,6 +30,16 @@ from app.governance.query_design.schemas import (
 from app.governance.publish.errors import PublishError
 from app.governance.publish import service as publish_service
 from app.governance.publish.schemas import PublishActionOut, PublishStatusOut
+from app.governance.workflow.errors import WorkflowError
+from app.governance.workflow import service as workflow_service
+from app.governance.workflow.schemas import (
+    WorkflowInstanceCreateIn,
+    WorkflowInstanceOut,
+    WorkflowTemplateListOut,
+    WorkflowTemplateOut,
+    WorkflowTemplateValidateIn,
+    WorkflowTransitionIn,
+)
 
 router = APIRouter(prefix="/gov", tags=["governance", "IF-06"])
 
@@ -246,3 +256,72 @@ def preview_execute_query_design(
         )
     except GovQueryDesignError as exc:
         return _gov_query_design_error(exc)
+
+
+def _workflow_error(exc: WorkflowError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+@router.get("/workflow/templates", response_model=WorkflowTemplateListOut)
+def list_workflow_templates(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> WorkflowTemplateListOut:
+    return WorkflowTemplateListOut(items=workflow_service.list_templates())
+
+
+@router.post("/workflow/templates/validate", response_model=WorkflowTemplateOut)
+def validate_workflow_template(
+    payload: WorkflowTemplateValidateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> WorkflowTemplateOut | JSONResponse:
+    try:
+        return workflow_service.validate_template(payload)
+    except WorkflowError as exc:
+        return _workflow_error(exc)
+
+
+@router.post("/workflow/instances", status_code=201, response_model=WorkflowInstanceOut)
+def create_workflow_instance(
+    payload: WorkflowInstanceCreateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> WorkflowInstanceOut | JSONResponse:
+    try:
+        return workflow_service.create_instance(db, payload)
+    except WorkflowError as exc:
+        return _workflow_error(exc)
+
+
+@router.get("/workflow/instances/{instance_id}", response_model=WorkflowInstanceOut)
+def get_workflow_instance(
+    instance_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> WorkflowInstanceOut | JSONResponse:
+    try:
+        return workflow_service.get_instance(db, instance_id)
+    except Exception as exc:
+        from app.query.config_store.schemas import ConfigError
+
+        if isinstance(exc, ConfigError):
+            return JSONResponse(
+                status_code=404,
+                content={"code": "GOV_WORKFLOW_INSTANCE_NOT_FOUND", "message": "Instance not found", "detail": None},
+            )
+        raise
+
+
+@router.post("/workflow/instances/{instance_id}/transition", response_model=WorkflowInstanceOut)
+def transition_workflow_instance(
+    instance_id: uuid.UUID,
+    payload: WorkflowTransitionIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> WorkflowInstanceOut | JSONResponse:
+    try:
+        return workflow_service.transition_instance(db, instance_id, payload.action, payload.actor_role)
+    except WorkflowError as exc:
+        return _workflow_error(exc)
