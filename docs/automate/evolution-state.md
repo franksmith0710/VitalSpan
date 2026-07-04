@@ -13,7 +13,7 @@
 | branch | feat/evolution-r60-rpt-view-cat-gov-l1 |
 | base_branch | dev-auto |
 | prd_ids | RPT-001,VIEW-002,VIEW-003,CAT-007,GOV-007 |
-| pr_number |  |
+| pr_number | 93 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest -q ../tests/test_rpt_view_cat_gov_r60.py ../tests/test_dash_rpt_r58.py ../tests/test_meta_cat_dash_conn_design_r59.py ../tests/test_view_gov_api_r31.py |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
