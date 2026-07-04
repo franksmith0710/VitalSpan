@@ -6,6 +6,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.dashboard.schemas import DashboardLayout
 
+# Error codes: VIEW_INVALID_LAYOUT, VIEW_LAYOUT_BOUNDS, VIEW_UNKNOWN_CHART_REF,
+# VIEW_CHART_REF_CYCLE, VIEW_DEFAULT_SELF_REF
+
 
 class ViewError(Exception):
     def __init__(

@@ -36,6 +36,47 @@ def _check_chart_refs(layout: DashboardLayout, raw_widgets: list[dict[str, Any]]
                 )
 
 
+def _map_validation_error(exc: ValidationError) -> ViewError:
+    fields = [
+        {"field": ".".join(str(p) for p in err.get("loc", ())), "message": str(err.get("msg", ""))}
+        for err in exc.errors()
+    ]
+    bounds_tokens = ("colSpan", "rowSpan", "widgets")
+    if any(any(t in f["field"] for t in bounds_tokens) for f in fields):
+        return ViewError("VIEW_LAYOUT_BOUNDS", "Layout bounds violation", 422, fields)
+    return ViewError("VIEW_INVALID_LAYOUT", "Invalid dashboard view", 422, fields)
+
+
+def _check_chart_ref_cycle(raw_widgets: list[dict[str, Any]]) -> None:
+    by_id = {str(w["id"]): w for w in raw_widgets if w.get("id")}
+    for i, widget in enumerate(raw_widgets):
+        visited: set[str] = set()
+        current: str | None = str(widget.get("id", ""))
+        while current:
+            if current in visited:
+                raise ViewError(
+                    "VIEW_CHART_REF_CYCLE",
+                    "Circular chart reference",
+                    422,
+                    [{"field": f"widgets[{i}].chartRef", "message": "Circular chart reference"}],
+                )
+            visited.add(current)
+            node = by_id.get(current)
+            if node is None:
+                break
+            chart_ref = node.get("chartRef")
+            if chart_ref is not None:
+                current = str(chart_ref)
+                continue
+            cfg = node.get("chartConfig") or {}
+            cid = cfg.get("chartId")
+            wid = node.get("id")
+            if cid is not None and str(cid) != str(wid):
+                current = str(cid)
+            else:
+                break
+
+
 def _check_default_view_id(view_id: uuid.UUID | None, default_view_id: uuid.UUID | None) -> None:
     if default_view_id is None:
         return
@@ -67,17 +108,14 @@ def validate_dashboard_view(data: dict[str, Any]) -> DashboardView:
     try:
         view = DashboardView.model_validate(data)
     except ValidationError as exc:
-        fields = [
-            {"field": ".".join(str(p) for p in err.get("loc", ())), "message": str(err.get("msg", ""))}
-            for err in exc.errors()
-        ]
-        raise ViewError("VIEW_INVALID_LAYOUT", "Invalid dashboard view", 422, fields) from exc
+        raise _map_validation_error(exc) from exc
 
     _check_default_view_id(view.id, view.default_view_id)
 
     raw_widgets = data.get("layout", {}).get("widgets", [])
     raw_widgets_list = raw_widgets if isinstance(raw_widgets, list) else []
     _check_chart_refs(view.layout, raw_widgets_list)
+    _check_chart_ref_cycle(raw_widgets_list)
 
     try:
         normalized_layout = validate_layout_dict(view.layout.model_dump(by_alias=True, mode="json"))
