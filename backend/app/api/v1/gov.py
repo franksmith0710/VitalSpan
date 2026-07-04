@@ -19,6 +19,8 @@ from app.governance.catalog.schemas import (
     CatalogListResponse,
     CategoryListResponse,
 )
+from app.governance.query_design import service as query_design_service
+from app.governance.query_design.schemas import GovQueryDesignError, VisualQueryDesignIn, VisualQueryDesignOut
 
 router = APIRouter(prefix="/gov", tags=["governance", "IF-06"])
 
@@ -122,3 +124,47 @@ def register_bus(
         )
     except catalog_service.CatalogError as exc:
         return _catalog_error_response(exc)
+
+
+def _gov_query_design_error(exc: GovQueryDesignError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
+
+
+@router.post("/query-design/validate", response_model=VisualQueryDesignOut)
+def validate_query_design(
+    payload: VisualQueryDesignIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> VisualQueryDesignOut | JSONResponse:
+    try:
+        return query_design_service.validate_visual_query_design(db, payload)
+    except GovQueryDesignError as exc:
+        return _gov_query_design_error(exc)
+
+
+@router.put("/query-design", response_model=VisualQueryDesignOut)
+def save_query_design(
+    payload: VisualQueryDesignIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> VisualQueryDesignOut | JSONResponse:
+    try:
+        return query_design_service.save_visual_query_design(db, payload, actor)
+    except GovQueryDesignError as exc:
+        return _gov_query_design_error(exc)
+
+
+@router.get("/query-design", response_model=VisualQueryDesignOut)
+def get_query_design(
+    ref_id: Annotated[uuid.UUID, Query(alias="refId")],
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> VisualQueryDesignOut | JSONResponse:
+    try:
+        return query_design_service.get_visual_query_design(db, ref_id)
+    except GovQueryDesignError as exc:
+        return _gov_query_design_error(exc)
