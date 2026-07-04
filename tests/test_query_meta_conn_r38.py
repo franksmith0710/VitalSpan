@@ -226,3 +226,91 @@ def test_query_translate_http_unknown_field_r38(client):
     resp = client.post("/api/v1/query/translate", headers=AUTH, json=payload)
     assert resp.status_code == 422
     assert resp.json()["code"] == "QUERY_TRANSLATE_UNKNOWN_FIELD"
+
+
+from unittest.mock import MagicMock, patch
+
+from app.datasources.dialects.gaussdb import GaussdbConnector
+from app.datasources.registry import export_type_catalog
+
+
+def test_conn_gaussdb_catalog_r38():
+    """T-CONN-R38-022-01: types catalog 含 gaussdb，category=relational。"""
+    types = {t["type"]: t for t in export_type_catalog()}
+    if "gaussdb" not in types:
+        from app.datasources.registry import register_dialect
+        register_dialect(GaussdbConnector())
+        types = {t["type"]: t for t in export_type_catalog()}
+    assert "gaussdb" in types
+    assert types["gaussdb"]["category"] == "relational"
+
+
+@patch("app.datasources.dialects.gaussdb.PostgresConnector.open_connection")
+def test_conn_gaussdb_success_r38(mock_open):
+    """T-CONN-R38-022-02: mock 成功 → ok=True。"""
+    conn = MagicMock()
+    mock_open.return_value = conn
+    result = GaussdbConnector().test_connection(
+        host="h", port=5432, database="db", username="u", password="p",
+    )
+    assert result.ok is True
+    conn.close.assert_called_once()
+
+
+@patch("app.datasources.dialects.gaussdb.PostgresConnector.open_connection")
+def test_conn_gaussdb_auth_failed_r38(mock_open):
+    """T-CONN-R38-022-03: mock 认证失败 → GAUSSDB_AUTH_FAILED。"""
+    import psycopg
+
+    exc = psycopg.OperationalError("password authentication failed")
+    exc.sqlstate = "28P01"
+    mock_open.side_effect = exc
+    result = GaussdbConnector().test_connection(
+        host="h", port=5432, database="db", username="u", password="bad",
+    )
+    assert result.ok is False
+    assert result.code == "GAUSSDB_AUTH_FAILED"
+
+
+@patch("app.datasources.dialects.gaussdb.PostgresConnector.open_connection")
+def test_conn_gaussdb_conn_refused_r38(mock_open):
+    """T-CONN-R38-022-04: mock 连接拒绝 → GAUSSDB_CONN_REFUSED。"""
+    mock_open.side_effect = ConnectionRefusedError("refused")
+    result = GaussdbConnector().test_connection(
+        host="h", port=5432, database="db", username="u", password="p",
+    )
+    assert result.ok is False
+    assert result.code == "GAUSSDB_CONN_REFUSED"
+
+
+@patch("app.datasources.dialects.gaussdb.PostgresConnector.open_connection")
+def test_conn_gaussdb_unknown_database_r38(mock_open):
+    """T-CONN-R38-022-05: mock 未知库 → GAUSSDB_UNKNOWN_DATABASE。"""
+    import psycopg
+
+    exc = psycopg.OperationalError("database does not exist")
+    exc.sqlstate = "3D000"
+    mock_open.side_effect = exc
+    result = GaussdbConnector().test_connection(
+        host="h", port=5432, database="missing", username="u", password="p",
+    )
+    assert result.ok is False
+    assert result.code == "GAUSSDB_UNKNOWN_DATABASE"
+
+
+def test_conn_gaussdb_empty_schemas_r38():
+    """T-CONN-R38-022-06: mock 空 schema 列表 → []。"""
+    conn = MagicMock()
+    connector = GaussdbConnector()
+    with patch.object(connector, "_delegate") as mock_delegate:
+        mock_delegate.list_schemas.return_value = []
+        assert connector.list_schemas(conn) == []
+
+
+def test_conn_gaussdb_unknown_schema_tables_r38():
+    """T-CONN-R38-022-07: mock 未知 schema list_tables → []。"""
+    conn = MagicMock()
+    connector = GaussdbConnector()
+    with patch.object(connector, "_delegate") as mock_delegate:
+        mock_delegate.list_tables.return_value = []
+        assert connector.list_tables(conn, "unknown_schema") == []
