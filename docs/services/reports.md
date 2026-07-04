@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/reports/` |
 | PRD | [F08-RPT](../automate/prd/F08-RPT.md) · RPT-001 ~ RPT-007 |
 | 里程碑 | M6 / M10 / M12 |
-| 状态 | **L1 kickoff 已实现（r54）**：catalog + scheduler + extension + batch |
+| 状态 | **L1 kickoff (r60)**：catalog + scheduler + extension + batch + engine run |
 
 ## 职责
 
@@ -20,9 +20,10 @@
 |----|-----|
 | `reports/catalog/` 模板树内存 registry + 循环/深度守卫 + M7 ACL | 通用查询引擎（→ `query`） |
 | `reports/scheduler/` 调度实例 FSM + cron 五段校验 + mock 执行器 | APScheduler 生产执行器（远期） |
-| `reports/extension/` 模板节点扩展配置（metrics/filters CRUD） | 报表引擎真实渲染（RPT-001~003） |
+| `reports/extension/` 模板节点扩展配置（metrics/filters CRUD） | 真实 PDF/Word 渲染、fe 展现 |
 | `reports/batch/` 批量创建模板节点 + 幂等守卫 | 打印排版 UI（前端 `/admin/reports/*`） |
-| | 导出引擎异步任务（远期） |
+| `reports/engine/` render run L1（`POST /reports/templates/{id}/run`） | 导出引擎异步任务（远期） |
+| | |
 
 ## 依赖
 
@@ -39,6 +40,7 @@
 | `scheduler/executor.py` | `mock_execute_schedule` + Idempotency-Key 幂等 log | RPT-005 | companion 已实现（r57） |
 | `extension/service.py` | 模板节点扩展配置 CRUD（metrics/filters/revision） | RPT-006 | L1 已实现 r54 |
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |
+| `engine/service.py` | validate + `build_engine_render_spec` + run mock | RPT-001 | L1 已实现 r60 |
 | `ReportService` | 模板 CRUD | RPT-001~003 | 待建 |
 
 ## 关联 API
