@@ -2,6 +2,8 @@ from fastapi import APIRouter
 
 from app.api.v1.audit import router as audit_router
 from app.api.v1.datasources import router as datasources_router
+from app.api.v1.charts import router as charts_router
+from app.api.v1.dashboards import router as dashboards_router
 from app.api.v1.query import router as query_router
 from app.api.v1.ingestion import router as ingestion_router
 from app.api.v1.me import router as me_router
@@ -16,6 +18,8 @@ api_v1_router.include_router(me_router)
 api_v1_router.include_router(ingestion_router)
 api_v1_router.include_router(datasources_router)
 api_v1_router.include_router(query_router)
+api_v1_router.include_router(charts_router)
+api_v1_router.include_router(dashboards_router)
 api_v1_router.include_router(roles_router)
 api_v1_router.include_router(orgs_router)
 api_v1_router.include_router(users_router)
