@@ -100,6 +100,7 @@ class InfluxdbConnector:
             unique = sorted(set(names))
             sliced = unique[:INFLUX_MAX_MEASUREMENTS]
             return [TableInfo(name=n, type="measurement") for n in sliced]
+        # r41: 空 bucket Flux 零行 → []（与 query 异常抛错区分，异常仍 → []）
         except Exception:
             return []
 
