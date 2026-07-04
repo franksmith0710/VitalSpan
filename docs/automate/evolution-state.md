@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r64.md |
-| design | docs/superpowers/specs/2026-07-04-nfr-cat-stub-l1-cat007-companion-r64-design.md |
-| plan | docs/superpowers/plans/2026-07-04-nfr-cat-stub-l1-cat007-companion-r64.md |
-| branch | feat/evolution-r64-nfr-cat-stub-l1-cat007-companion |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r65.md |
+| design | docs/superpowers/specs/2026-07-04-cat-rpt-meta-companion-quality-r65-design.md |
+| plan | docs/superpowers/plans/2026-07-04-cat-rpt-meta-companion-quality-r65.md |
+| branch | feat/evolution-r65-cat-rpt-meta-companion-quality |
 | base_branch | dev-auto |
-| prd_ids | NFR-001,CAT-001,NFR-004,CAT-002,CAT-007 |
-| pr_number | 98 |
+| prd_ids | CAT-003,CAT-004,CAT-006,RPT-002,META-005 |
+| pr_number |  |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
