@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     query_default_limit: int = 1000
     query_timeout_seconds: int = 30
     analytics_database_url: str | None = None
+    api_openapi_version: str = "0.1.0"
 
     @field_validator("analytics_database_url", mode="before")
     @classmethod

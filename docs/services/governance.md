@@ -4,40 +4,44 @@
 |------|-----|
 | 模块路径 | `backend/app/governance/` |
 | PRD | [F10-GOV](../automate/prd/F10-GOV.md) · [F14-CAT](../automate/prd/F14-CAT.md) |
-| 里程碑 | M8 |
-| 状态 | **未实现** |
+| 里程碑 | M6（L1 kickoff） |
+| 状态 | **部分（L1）** |
 
 ## 职责
 
-- 数据资产目录、血缘与标签（GOV + CAT）
-- 查询服务工单 BPM、审批与发布流水线
-- 数据交换总线注册与对外服务生命周期（API-00x 协同）
-- 与 `metadata` 资产元数据同步
+- 查询接口 catalog 三分法（CAT-01/02/03）分类与条目登记（GOV-001）
+- 总线 PoC 半自动注册 adapter 与登记 API（GOV-002）
+- 为开放 API 登记与 BPM 流水线奠基
 
 ## 边界
 
 | In | Out |
 |----|-----|
-| 治理流程、目录、总线对接 | 查询执行（→ `query`） |
+| catalog 分类/条目 CRUD、bus PoC 登记记录 | 查询执行（→ `query`） |
+| | 完整 BPM 工单与审批流水线（GOV-003+） |
+| | 真实总线 HTTP 对接（GOV-007+） |
 | | 认证授权（→ `auth`） |
 
 ## 依赖
 
-- `core`、`auth`、`metadata`、`query`
+- `core`、`datasources`（元库 ORM Base）
+- `query`（登记条目常引用 execute 类路径）
 
-## 主要类型 / 入口（规划）
+## 主要类型 / 入口
 
 | 符号 | 说明 | PRD | 状态 |
 |------|------|-----|------|
-| `CatalogService` | 资产目录 | CAT-001~004 | 待建 |
-| `WorkflowService` | 工单 BPM | GOV-001~004 | 待建 |
-| `PublishPipeline` | 发布流水线 | GOV-005~006 | 待建 |
-| `DataBusAdapter` | 总线注册 | GOV-007~008 · CAT-005~007 | 待建 |
+| `CatalogCategory` / `CatalogEntry` | catalog ORM | GOV-001 | 已实现 |
+| `BusRegistration` | 总线登记记录 | GOV-002 | 已实现 |
+| `BusPoCAdapter` / `InMemoryBusPoCAdapter` | PoC 注册适配器 | GOV-002 | 已实现 |
+| `GET/POST /api/v1/gov/catalog/*` | catalog API | GOV-001 | 已实现 |
+| `POST /api/v1/gov/bus/register` | 半自动注册 API | GOV-002 | 已实现 |
 
 ## 关联 API
 
-见 [api/README.md](../api/README.md) §治理 · §CAT 对外 API。
+见 [api/README.md](../api/README.md) §治理。
 
 ## 实现笔记
 
-<!-- 随 GOV-* / CAT-* 落地补充 -->
+- migration `0014` seed CAT-01~03；`trace_id` 取自 `trace_id_var`
+- `force-fail` path 段触发 PoC adapter 拒绝（502 `BUS_REGISTRATION_REJECTED`）

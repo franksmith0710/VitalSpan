@@ -17,7 +17,7 @@ from app.dashboard.schemas import (
     DashboardOut,
     DashboardUpdate,
 )
-from app.schemas.chart_view import ChartViewError, validate_chart_view_config
+from app.schemas.chart_view import ChartViewError
 
 DEFAULT_LAYOUT_JSON: dict[str, Any] = {"version": 1, "widgets": [], "globalFilters": []}
 
@@ -76,15 +76,9 @@ def _normalize_widget_orders(widgets: list) -> list:
 
 
 def validate_layout(layout: dict[str, Any]) -> dict[str, Any]:
-    parsed = DashboardLayout.model_validate(layout)
-    _validate_layout_business(parsed)
-    parsed.widgets = _normalize_widget_orders(list(parsed.widgets))
-    for widget in parsed.widgets:
-        if widget.type == "chart" and widget.chart_config is not None:
-            validate_chart_view_config(
-                widget.chart_config.model_dump(by_alias=True, mode="json"),
-            )
-    return parsed.model_dump(by_alias=True, mode="json")
+    from app.views.validate import validate_layout_dict
+
+    return validate_layout_dict(layout)
 
 
 def list_dashboards(db: Session, *, limit: int = 50, offset: int = 0) -> DashboardListResponse:
