@@ -29,6 +29,7 @@ class CatalogError(Exception):
         self.code = code
         self.message = message
         self.status = status
+        self.trace_id: str | None = None
         super().__init__(message)
 
 
@@ -91,6 +92,8 @@ def list_entries(
     offset: int,
 ) -> CatalogListResponse:
     _ensure_seed_categories(db)
+    if category is not None and category not in VALID_CATEGORY_CODES:
+        raise CatalogError("CATALOG_INVALID_CATEGORY", f"Unknown category: {category}", 400)
     rows = list(db.scalars(select(CatalogEntry).order_by(CatalogEntry.created_at.desc())).all())
     if category is not None:
         rows = [r for r in rows if category in r.category_codes]
@@ -111,6 +114,14 @@ def get_entry(db: Session, entry_id: uuid.UUID) -> CatalogEntryOut:
     return _entry_to_out(row)
 
 
+def delete_entry(db: Session, entry_id: uuid.UUID) -> None:
+    row = db.scalar(select(CatalogEntry).where(CatalogEntry.id == entry_id))
+    if row is None:
+        raise CatalogError("CATALOG_ENTRY_NOT_FOUND", "Catalog entry not found", 404)
+    db.delete(row)
+    db.commit()
+
+
 _default_bus_adapter: BusPoCAdapter = InMemoryBusPoCAdapter()
 
 
@@ -119,7 +130,7 @@ def register_entry_to_bus(
     entry_id: uuid.UUID,
     *,
     adapter: BusPoCAdapter | None = None,
-) -> BusRegisterOut:
+) -> tuple[BusRegisterOut, bool]:
     try:
         entry = get_entry(db, entry_id)
     except CatalogError:
@@ -129,15 +140,39 @@ def register_entry_to_bus(
         raise CatalogError("BUS_ENTRY_NOT_PUBLISHABLE", "Draft entry cannot be published", 400)
 
     trace_id = trace_id_var.get() or uuid.uuid4().hex
+    existing = db.scalar(
+        select(BusRegistration).where(
+            BusRegistration.catalog_entry_id == entry_id,
+            BusRegistration.status == "succeeded",
+        )
+    )
+    if existing is not None:
+        return (
+            BusRegisterOut(
+                id=existing.id,
+                status=existing.status,
+                trace_id=existing.trace_id,
+                bus_response=existing.bus_payload,
+            ),
+            False,
+        )
+
     bus = adapter or _default_bus_adapter
     result = bus.register(entry=entry, trace_id=trace_id)
 
     if result.status == "failed":
         code = result.error_code or "BUS_REGISTRATION_FAILED"
-        status = 502 if code == "BUS_REGISTRATION_REJECTED" else 400
-        if code == "BUS_ENTRY_NOT_PUBLISHABLE":
-            status = 400
-        raise CatalogError(code, result.error_message or "Bus registration failed", status)
+        status_map = {
+            "BUS_REGISTRATION_REJECTED": 502,
+            "BUS_REGISTRATION_SERVER_ERROR": 502,
+            "BUS_REGISTRATION_TIMEOUT": 504,
+            "BUS_REGISTRATION_CLIENT_ERROR": 400,
+            "BUS_ENTRY_NOT_PUBLISHABLE": 400,
+        }
+        status = status_map.get(code, 400)
+        err = CatalogError(code, result.error_message or "Bus registration failed", status)
+        err.trace_id = trace_id
+        raise err
 
     row = BusRegistration(
         catalog_entry_id=entry_id,
@@ -148,9 +183,12 @@ def register_entry_to_bus(
     db.add(row)
     db.commit()
     db.refresh(row)
-    return BusRegisterOut(
-        id=row.id,
-        status=row.status,
-        trace_id=row.trace_id,
-        bus_response=result.bus_payload,
+    return (
+        BusRegisterOut(
+            id=row.id,
+            status=row.status,
+            trace_id=row.trace_id,
+            bus_response=result.bus_payload,
+        ),
+        True,
     )
