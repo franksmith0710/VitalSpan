@@ -13,7 +13,7 @@
 | branch | feat/evolution-r61-cat-dash-viz-nfr-l1 |
 | base_branch | dev-auto |
 | prd_ids | CAT-005,DASH-004,VIZ-007,NFR-002,CAT-003 |
-| pr_number |  |
+| pr_number | 94 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
