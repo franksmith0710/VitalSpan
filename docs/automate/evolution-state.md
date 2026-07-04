@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r31.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch |  |
-| prd_ids |  |
+| prd_ids | VIEW-001,GOV-002,GOV-001,API-001,API-002 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 r31 选题完成：M5 VIEW-001 + M6 companion 质量推分 — VIEW-001/GOV-002/GOV-001/API-001/API-002（5 项）；最低分 GOV-002(88.7)；STUCK VIEW-001/GOV-002 各 1 轮；饱和熔断未触发；phase idle→G2_DONE
 - G1 r31 bootstrap：r30 PR #53 已合并 dev-auto；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r30 PRD 重评：VIEW-001/GOV-001/002/API-001/002 L1 kickoff；pytest 662/4 skipped；test_view_gov_api_r30 30/30；总分 12.9–13.7→88.6–90.9（VIEW-001/GOV-002 <90 STUCK upsert）
 - P4 r30 验证通过：pytest 662 passed/4 skipped；test_view_gov_api_r30 30/30；ruff clean
