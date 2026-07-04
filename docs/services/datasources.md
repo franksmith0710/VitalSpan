@@ -49,6 +49,11 @@
 | `dialects/gaussdb.py` | GaussDB 关系型（psycopg 3 委托 PostgresConnector，`GAUSSDB_*`） | CONN-022 | 已实现 L1 + companion r39 |
 | `dialects/dm.py` | 达梦 DM 关系型（dmPython，`DM_*`） | CONN-017 | 已实现 L1 + companion r39 |
 | `dialects/trino.py` | Trino 联邦湖仓（trino-python-client，catalog/schema 三级，`category=lake`） | CONN-010 | 已实现 L1 + companion r39 |
+| `dialects/mongodb.py` | MongoDB 文档型（pymongo，`category=document`） | CONN-014 | 已实现 L1 r40 |
+| `dialects/influxdb.py` | InfluxDB 2.x 时序（influxdb-client，org/bucket 语义映射） | CONN-011 | 已实现 L1 r40 |
+| `dialects/tdengine.py` | TDengine 时序（taospy REST，stable 标记） | CONN-012 | 已实现 L1 r40 |
+| `dialects/sqlite.py` | SQLite 嵌入式文件源（`host=路径`，路径穿越守卫） | CONN-006 | 已实现 L1 r40 |
+| `dialects/timescaledb.py` | TimescaleDB 时序（PG 委托 + hypertable 标记） | CONN-013 | 已实现 L1 r40 |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -132,3 +137,12 @@
 - **CONN-022 GaussDB**：`GAUSSDB_MAX_COLUMNS=500`；`GAUSSDB_TIMEOUT`/`GAUSSDB_AUTH_FAILED` HTTP 链；委托 PG schema 过滤
 - **CONN-017 DM**：多 owner `list_schemas` 过滤 SYS/SYSDBA；`DM_TIMEOUT`；HTTP test 响应不泄露请求 password；metadata 400 链
 - 回归：`test_query_meta_conn_r39.py` ≥30 条 + r38 36/36
+
+### r40 connector kickoff（2026-07-04）
+
+- 五方言 L1 — MongoDB/InfluxDB/TDengine/SQLite/TimescaleDB；`export_type_catalog()` 18 types
+- 错误码前缀：`MONGODB_*` / `INFLUX_*` / `TDENGINE_*` / `SQLITE_*` / `TIMESCALE_*`
+- 可选依赖：`connectors-ext` 增 pymongo、influxdb-client、taospy
+- 测试套件：`tests/test_connectors_gov_r40.py`（≥35 条 T-CONN-R40-* / T-REG-R40-*）
+- 回归修复：`test_datasources_l1.py::test_invalid_connector_type` 改用未注册 `couchdb`（CONN-014 注册后 `mongodb` 为合法 type）
+- PRD 对账：`F04-CONN.md` 验收条款 P5 重评（非 P3）
