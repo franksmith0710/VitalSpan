@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design | docs/superpowers/specs/2026-07-04-m5-viz-dash-quality-r29-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m5-viz-dash-quality-r29.md |
@@ -14,9 +14,9 @@
 | base_branch | dev-auto |
 | prd_ids | VIZ-002,DASH-002,DASH-003,VIZ-001,DASH-001 |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm exec vitest run |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm test |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run src/pages/admin/dashboard/dashboard.smoke.test.tsx src/components/charts/charts.smoke.test.tsx; screenshots N/A headless CI |
+| last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run src/pages/admin/dashboard/dashboard.smoke.test.tsx src/components/charts/charts.smoke.test.tsx (19/19); screenshots N/A headless CI |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T00:40:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r29 PRD 重评：VIZ-001/002 + DASH-001/002/003 质量推分 86.8–91.0→90.7–92.4（VIZ-002/DASH-002/003 破 90 STUCK 清零）；pytest 632/2 skipped；test_viz_dash_quality_r29 32/32；fe vitest 90/90
+- P4 r29 独立验证：backend ruff PASS + pytest 632 passed/2 skipped（首轮 631+1 flaky test_me_concurrent_requests_stable 后重跑全绿）；test_viz_dash_quality_r29 32/32 + test_viz_dash_l1_r28 26/26；fe vitest 90/90 + node:test 4/4；check:design PASS；UI smoke dashboard+chart 19/19；截图 N/A headless CI；exit_code 0；branch feat/evolution-r29-m5-viz-dash-quality；base_branch dev-auto
 - P3 r29 实现完成：7 Task 全绿；backend ruff+pytest 632 passed/2 skipped；test_viz_dash_quality_r29 32/32；test_viz_dash_l1_r28 26/26；fe vitest 90/90；check:design PASS；ui_design_skill: b-design-system-tailadmin-radix；branch feat/evolution-r29-m5-viz-dash-quality；base_branch dev-auto
 - P5 r28 PRD 重评：VIZ-001/002 + DASH-001/002/003 L1 kickoff 13.2–13.9→86.8–91.0（VIZ-001/DASH-001 破 90；VIZ-002/DASH-002/003 <90 STUCK upsert）；pytest 600/2 skipped；test_viz_dash_l1_r28 26/26；fe vitest 81/81
 - P4 r28 独立验证：backend ruff PASS + pytest 600 passed/2 skipped（≥600 目标；r27 570+4 未跌破）；test_viz_dash_l1_r28 26/26；test_migrations T-MIG-41~42 3/3；fe vitest 81/81 + node:test 4/4；check:design+build PASS；round-target 文件缺失，按 plan VIZ-001~002/DASH-001~003 验收绿；UI: PASS（check:design + dashboard/chart vitest smoke 11/11；截图 N/A headless CI）；exit_code 0；branch feat/evolution-r28-m5-viz-dash-kickoff；base_branch dev-auto
@@ -126,6 +128,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| VIZ-002 | 1 | 89.6 | 2026-07-04 |
-| DASH-002 | 1 | 88.1 | 2026-07-04 |
-| DASH-003 | 1 | 86.8 | 2026-07-04 |
