@@ -23,6 +23,14 @@ from app.core.nfr.report_perf import (
     probe_report_perf,
     validate_report_perf_config,
 )
+from app.core.nfr.dashboard_first_screen import (
+    DashboardFirstScreenError,
+    DashboardFirstScreenProbeIn,
+    DashboardFirstScreenProbeOut,
+    DashboardFirstScreenValidateOut,
+    probe_dashboard_first_screen,
+    validate_dashboard_first_screen,
+)
 from app.core.nfr.dashboard_sla import (
     DashboardSlaAlertsOut,
     DashboardSlaError,
@@ -32,6 +40,14 @@ from app.core.nfr.dashboard_sla import (
     get_dashboard_sla_alerts,
     probe_dashboard_sla,
     validate_dashboard_sla,
+)
+from app.core.nfr.https_audit import (
+    HttpsAuditError,
+    HttpsAuditMaskProbeIn,
+    HttpsAuditMaskProbeOut,
+    HttpsAuditStatusOut,
+    get_https_audit_status,
+    probe_https_mask,
 )
 from app.core.nfr.xinchuang import XinchuangComplianceError, assert_xinchuang_compliant, build_compliance_report
 
@@ -339,3 +355,53 @@ def dashboard_sla_alerts(
     _: Annotated[UserContext, Depends(get_current_user)],
 ) -> DashboardSlaAlertsOut:
     return get_dashboard_sla_alerts()
+
+
+def _dashboard_first_screen_error(exc: DashboardFirstScreenError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/dashboard-first-screen/validate", response_model=DashboardFirstScreenValidateOut)
+def dashboard_first_screen_validate(
+    payload: DashboardFirstScreenProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> DashboardFirstScreenValidateOut | JSONResponse:
+    try:
+        return validate_dashboard_first_screen(payload)
+    except DashboardFirstScreenError as exc:
+        return _dashboard_first_screen_error(exc)
+
+
+@router.post("/dashboard-first-screen/probe", response_model=DashboardFirstScreenProbeOut)
+def dashboard_first_screen_probe(
+    payload: DashboardFirstScreenProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> DashboardFirstScreenProbeOut | JSONResponse:
+    try:
+        return probe_dashboard_first_screen(payload)
+    except DashboardFirstScreenError as exc:
+        return _dashboard_first_screen_error(exc)
+
+
+def _https_audit_error(exc: HttpsAuditError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.get("/https-audit/status", response_model=HttpsAuditStatusOut)
+def https_audit_status(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> HttpsAuditStatusOut:
+    return get_https_audit_status()
+
+
+@router.post("/https-audit/mask-probe", response_model=HttpsAuditMaskProbeOut)
+def https_audit_mask_probe(
+    payload: HttpsAuditMaskProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> HttpsAuditMaskProbeOut | JSONResponse:
+    try:
+        return probe_https_mask(payload)
+    except HttpsAuditError as exc:
+        return _https_audit_error(exc)

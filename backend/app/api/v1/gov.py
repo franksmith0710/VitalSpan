@@ -73,6 +73,22 @@ from app.governance.catalog.cat06.schemas import (
     ProductionStatsValidateOut,
 )
 from app.governance.catalog.cat06 import service as cat06_service
+from app.governance.catalog.cat01.errors import Cat01Error
+from app.governance.catalog.cat01.schemas import (
+    LifecycleTemplateIn,
+    LifecycleTemplateListResponse,
+    LifecycleTemplateOut,
+    LifecycleTemplateValidateOut,
+)
+from app.governance.catalog.cat01 import service as cat01_service
+from app.governance.catalog.cat02.errors import Cat02Error
+from app.governance.catalog.cat02.schemas import (
+    AggregateAttributionOut,
+    AggregateTemplateIn,
+    AggregateTemplateOut,
+    AggregateTemplateValidateOut,
+)
+from app.governance.catalog.cat02 import service as cat02_service
 from app.governance.catalog.cat05.errors import Cat05Error
 from app.governance.catalog.cat05.schemas import (
     TicketStatsItemIn,
@@ -691,3 +707,77 @@ def production_stats_probe(
         return cat06_service.get_production_stats(stats_key)
     except Cat06Error as exc:
         return _cat06_error(exc)
+
+
+def _cat01_error(exc: Cat01Error) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/catalog/lifecycle-templates/validate", response_model=LifecycleTemplateValidateOut)
+def lifecycle_templates_validate(
+    payload: LifecycleTemplateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> LifecycleTemplateValidateOut | JSONResponse:
+    try:
+        return cat01_service.validate_lifecycle_template(payload)
+    except Cat01Error as exc:
+        return _cat01_error(exc)
+
+
+@router.post("/catalog/lifecycle-templates", response_model=LifecycleTemplateOut, status_code=status.HTTP_201_CREATED)
+def lifecycle_templates_create(
+    payload: LifecycleTemplateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> LifecycleTemplateOut | JSONResponse:
+    try:
+        return cat01_service.create_lifecycle_template(payload)
+    except Cat01Error as exc:
+        return _cat01_error(exc)
+
+
+@router.get("/catalog/lifecycle-templates", response_model=LifecycleTemplateListResponse)
+def lifecycle_templates_list(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    _: Annotated[UserContext, Depends(get_current_user)] = None,
+) -> LifecycleTemplateListResponse:
+    return cat01_service.list_lifecycle_templates(limit, offset)
+
+
+def _cat02_error(exc: Cat02Error) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/catalog/aggregate-templates/validate", response_model=AggregateTemplateValidateOut)
+def aggregate_templates_validate(
+    payload: AggregateTemplateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> AggregateTemplateValidateOut | JSONResponse:
+    try:
+        return cat02_service.validate_aggregate_template(payload)
+    except Cat02Error as exc:
+        return _cat02_error(exc)
+
+
+@router.post("/catalog/aggregate-templates", response_model=AggregateTemplateOut, status_code=status.HTTP_201_CREATED)
+def aggregate_templates_create(
+    payload: AggregateTemplateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> AggregateTemplateOut | JSONResponse:
+    try:
+        return cat02_service.create_aggregate_template(payload)
+    except Cat02Error as exc:
+        return _cat02_error(exc)
+
+
+@router.get("/catalog/aggregate-templates/{aggregate_key}/attribution", response_model=AggregateAttributionOut)
+def aggregate_templates_attribution(
+    aggregate_key: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> AggregateAttributionOut | JSONResponse:
+    try:
+        return cat02_service.get_aggregate_attribution(aggregate_key)
+    except Cat02Error as exc:
+        return _cat02_error(exc)

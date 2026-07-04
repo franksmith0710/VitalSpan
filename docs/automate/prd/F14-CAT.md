@@ -4,26 +4,29 @@
 
 ### [CAT-001] CAT-01 实体生命周期查询类
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r64）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：CAT-01 实体生命周期查询类（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 模板规格落地
-  - [ ] OpenAPI 只读
-- **代码锚点**：`backend/app/governance/catalog/cat01.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 模板规格落地（r64 L1：`POST validate` + `POST/GET /api/v1/gov/catalog/lifecycle-templates` + `CAT01_*` 错误域 + stages/entityType 校验 + readOnlyOpenApi 默认 true）
+  - [ ] OpenAPI 只读（无 IF-02 `GET /api/v1/entities/{entityType}/{entityId}` 实体查询链）
+- **代码锚点**：`backend/app/governance/catalog/cat01/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-001-01~06
+- **演化建议**：r64 L1 闭合 lifecycle 模板 validate/create/list 与 key 冲突/空 stages 边界；后续补 IF-02 实体生命周期只读查询与 fe 模板页
+- **里程碑对齐**：
 ### [CAT-002] CAT-02 统计分析聚合类
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r64）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：CAT-02 统计分析聚合类（SRS 追溯项）。
 - **验收标准**：
-  - [ ] aggregate API 模板
-  - [ ] PoC API 可归属
-- **代码锚点**：`backend/app/governance/catalog/cat02.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] aggregate API 模板（r64 L1：`POST validate` + `POST/GET /api/v1/gov/catalog/aggregate-templates` + `CAT02_*` 错误域 + dimensions/metrics/aggregationFn 校验）
+  - [x] PoC API 可归属（r64 L1：`attributionLabel` + `tableRef` stub 登记 + list 含已创建项）
+  - [ ] IF-02 `GET /api/v1/stats/aggregate` 真实聚合查询链
+- **代码锚点**：`backend/app/governance/catalog/cat02/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-002-01~06
+- **演化建议**：r64 L1 闭合 aggregate 模板 validate/create/list 与 key 冲突/空 metrics 边界；后续补 stats/aggregate 只读查询与数据源绑定
+- **里程碑对齐**：
 ### [CAT-003] CAT-03 地域维度查询类
 
 - **状态**：部分实现（L1 kickoff r61）
@@ -77,13 +80,14 @@
 - **里程碑对齐**：
 ### [CAT-007] CAT-07 组织行为审计类
 
-- **状态**：部分实现（L1 kickoff r60）
+- **状态**：部分实现（companion r64）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：三期
 - **描述**：CAT-07 组织行为审计类（SRS 追溯项）。
 - **验收标准**：
   - [x] workno behavior 模板（r60 L1：`GET /api/v1/workno/behavior` + mock behaviors + `CAT07_*` 错误域 + limit/offset 分页）
+  - [x] companion enterprise/viewer scope ACL + perf probe（r64：`set_user_workno_scope` + `CAT07_FORBIDDEN` 403；viewer 跨 scope 403；`probe_workno_behavior_budget_ms` ≤50ms）
   - [ ] 审计日志联动（无真实 audit store 写入与跨系统 trace 链）
-- **代码锚点**：`backend/app/governance/catalog/cat07.py` · `backend/app/api/v1/workno.py` · `tests/test_rpt_view_cat_gov_r60.py` T-CAT-R60-007-01~07
-- **演化建议**：r60 L1 闭合 workno 查询模板、日期范围/limit 边界与 auditLinked smoke；后续补真实审计日志联动与 fe 行为审计 UI
+- **代码锚点**：`backend/app/governance/catalog/cat07/` · `backend/app/api/v1/workno.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-007-01~07 · `tests/test_rpt_view_cat_gov_r60.py` T-CAT-R60-007-01~07
+- **演化建议**：r64 companion 闭合 workno scope ACL、enterprise 角色边界与 behavior perf probe；后续补真实审计日志联动与 fe 行为审计 UI
 - **里程碑对齐**：

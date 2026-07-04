@@ -23,7 +23,7 @@ def _cat07_error(exc: Cat07Error) -> JSONResponse:
 
 @router.get("/behavior", response_model=None)
 def get_workno_behavior(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     workno: str | None = Query(default=None),
     from_date: date | None = Query(default=None, alias="fromDate"),
     to_date: date | None = Query(default=None, alias="toDate"),
@@ -31,6 +31,6 @@ def get_workno_behavior(
     offset: int = Query(default=0, ge=0),
 ):
     try:
-        return cat07_service.query_behavior(workno, from_date, to_date, limit, offset)
+        return cat07_service.query_behavior(workno, from_date, to_date, limit, offset, actor)
     except Cat07Error as exc:
         return _cat07_error(exc)
