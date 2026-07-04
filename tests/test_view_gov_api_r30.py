@@ -80,6 +80,7 @@ def r30_sqlite_env():
     get_settings.cache_clear()
     from app.auth.models import get_meta_engine as auth_engine
     from app.datasources.models import Base, get_meta_engine
+    import app.governance.catalog.models  # noqa: F401 — register ORM tables
 
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()
@@ -160,3 +161,69 @@ def test_dashboard_layout_put_regression(client, db_session):
     )
     assert resp.status_code == 422
     assert resp.json()["code"] == "DASH_DUPLICATE_WIDGET"
+
+
+def test_gov_categories_three(client):
+    """T-GOV-R30-001-01: GET categories → 恰好 3 条 CAT-01/02/03。"""
+    resp = client.get("/api/v1/gov/catalog/categories", headers=AUTH)
+    assert resp.status_code == 200
+    codes = {item["code"] for item in resp.json()["items"]}
+    assert codes == {"CAT-01", "CAT-02", "CAT-03"}
+
+
+def test_gov_create_entry_ok(client):
+    """T-GOV-R30-001-02: POST entry categoryCodes CAT-02 → 201。"""
+    resp = client.post(
+        "/api/v1/gov/catalog/entries",
+        headers=AUTH,
+        json={
+            "name": "Aggregate stats",
+            "httpMethod": "GET",
+            "path": "/api/v1/stats/aggregate",
+            "categoryCodes": ["CAT-02"],
+            "status": "active",
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["categoryCodes"] == ["CAT-02"]
+
+
+def test_gov_create_entry_invalid_category(client):
+    """T-GOV-R30-001-03: categoryCodes CAT-99 → 400 CATALOG_INVALID_CATEGORY。"""
+    resp = client.post(
+        "/api/v1/gov/catalog/entries",
+        headers=AUTH,
+        json={"name": "Bad", "httpMethod": "GET", "path": "/x", "categoryCodes": ["CAT-99"]},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "CATALOG_INVALID_CATEGORY"
+
+
+def test_gov_list_entries_filter(client):
+    """T-GOV-R30-001-04: GET entries ?category=CAT-01 过滤。"""
+    client.post(
+        "/api/v1/gov/catalog/entries",
+        headers=AUTH,
+        json={
+            "name": "E1",
+            "httpMethod": "GET",
+            "path": "/api/v1/entities/x",
+            "categoryCodes": ["CAT-01"],
+            "status": "active",
+        },
+    )
+    client.post(
+        "/api/v1/gov/catalog/entries",
+        headers=AUTH,
+        json={
+            "name": "E2",
+            "httpMethod": "GET",
+            "path": "/api/v1/stats",
+            "categoryCodes": ["CAT-02"],
+            "status": "active",
+        },
+    )
+    resp = client.get("/api/v1/gov/catalog/entries?category=CAT-01", headers=AUTH)
+    assert resp.status_code == 200
+    for item in resp.json()["items"]:
+        assert "CAT-01" in item["categoryCodes"]
