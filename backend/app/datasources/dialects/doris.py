@@ -3,27 +3,14 @@ from __future__ import annotations
 import time
 from typing import Any
 
-import pymysql
 import pymysql.err
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
-from app.datasources.dialects.errors import map_mysql_operational_error
+from app.datasources.dialects.errors import map_doris_operational_error
 from app.datasources.dialects.mysql import MysqlConnector
 
-DORIS_TIMEOUT = "DORIS_TIMEOUT"
-DORIS_CONN_REFUSED = "DORIS_CONN_REFUSED"
-DORIS_AUTH_FAILED = "DORIS_AUTH_FAILED"
-DORIS_UNKNOWN = "DORIS_UNKNOWN"
 
-
-def _map_doris_error(exc: pymysql.err.OperationalError) -> tuple[str, str]:
-    code, detail = map_mysql_operational_error(exc)
-    mapping = {
-        "MYSQL_TIMEOUT": DORIS_TIMEOUT,
-        "MYSQL_CONN_REFUSED": DORIS_CONN_REFUSED,
-        "MYSQL_AUTH_FAILED": DORIS_AUTH_FAILED,
-    }
-    return mapping.get(code, DORIS_UNKNOWN), detail
+DORIS_MAX_COLUMNS = 500
 
 
 class DorisConnector:
@@ -44,7 +31,7 @@ class DorisConnector:
             finally:
                 connection.close()
         except pymysql.err.OperationalError as exc:
-            code, detail = _map_doris_error(exc)
+            code, detail = map_doris_operational_error(exc)
             latency_ms = int((time.perf_counter() - started) * 1000)
             return TestConnectionResult(
                 ok=False,

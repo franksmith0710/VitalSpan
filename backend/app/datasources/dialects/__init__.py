@@ -15,13 +15,19 @@ from app.datasources.dialects.postgres import PostgresConnector
 from app.datasources.dialects.sqlserver import SqlserverConnector
 from app.datasources.dialects.starrocks import StarrocksConnector
 from app.datasources.dialects.tidb import TidbConnector
+from app.datasources.dialects.errors import (
+    DORIS_UNKNOWN_DATABASE,
+    HIVE_UNKNOWN_DATABASE,
+)
 
 __all__ = [
     "ClickhouseConnector",
     "ColumnInfo",
     "DialectConnector",
+    "DORIS_UNKNOWN_DATABASE",
     "DorisConnector",
     "ElasticsearchConnector",
+    "HIVE_UNKNOWN_DATABASE",
     "HiveConnector",
     "MysqlConnector",
     "OracleConnector",

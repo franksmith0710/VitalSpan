@@ -4,28 +4,11 @@ import time
 from typing import Any
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
+from app.datasources.dialects.errors import map_hive_error
 
-HIVE_CONN_REFUSED = "HIVE_CONN_REFUSED"
-HIVE_AUTH_FAILED = "HIVE_AUTH_FAILED"
-HIVE_TIMEOUT = "HIVE_TIMEOUT"
-HIVE_UNKNOWN_DATABASE = "HIVE_UNKNOWN_DATABASE"
-HIVE_UNKNOWN = "HIVE_UNKNOWN"
+HIVE_MAX_COLUMNS = 500
 
 _SYSTEM_SCHEMAS = frozenset({"information_schema"})
-
-
-def _map_hive_error(exc: Exception) -> tuple[str, str]:
-    detail = str(exc)
-    lowered = detail.lower()
-    if "auth" in lowered or "denied" in lowered or "password" in lowered:
-        return HIVE_AUTH_FAILED, detail
-    if "timeout" in lowered or "timed out" in lowered:
-        return HIVE_TIMEOUT, detail
-    if "refused" in lowered or "could not connect" in lowered:
-        return HIVE_CONN_REFUSED, detail
-    if "database" in lowered and "not" in lowered:
-        return HIVE_UNKNOWN_DATABASE, detail
-    return HIVE_UNKNOWN, detail
 
 
 class HiveConnector:
@@ -63,7 +46,7 @@ class HiveConnector:
             finally:
                 connection.close()
         except Exception as exc:
-            code, detail = _map_hive_error(exc)
+            code, detail = map_hive_error(exc)
             latency_ms = int((time.perf_counter() - started) * 1000)
             return TestConnectionResult(
                 ok=False,

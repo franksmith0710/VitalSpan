@@ -112,10 +112,73 @@ def map_oracle_error(exc: Exception) -> tuple[str, str]:
     lowered = detail.lower()
     if "ora-01017" in lowered:
         return ORACLE_AUTH_FAILED, detail
-    if "ora-12514" in lowered or "unknown service" in lowered:
+    if "ora-12514" in lowered or "ora-12505" in lowered or "unknown service" in lowered:
         return ORACLE_UNKNOWN_SERVICE, detail
     if "timeout" in lowered or "timed out" in lowered:
         return ORACLE_TIMEOUT, detail
     if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
         return ORACLE_CONN_REFUSED, detail
     return ORACLE_UNKNOWN, detail
+
+
+# Hive
+HIVE_CONN_REFUSED = "HIVE_CONN_REFUSED"
+HIVE_AUTH_FAILED = "HIVE_AUTH_FAILED"
+HIVE_TIMEOUT = "HIVE_TIMEOUT"
+HIVE_UNKNOWN_DATABASE = "HIVE_UNKNOWN_DATABASE"
+HIVE_UNKNOWN = "HIVE_UNKNOWN"
+
+
+def map_hive_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "auth" in lowered or "denied" in lowered or "password" in lowered:
+        return HIVE_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return HIVE_TIMEOUT, detail
+    if "refused" in lowered or "could not connect" in lowered:
+        return HIVE_CONN_REFUSED, detail
+    if "database" in lowered and "not" in lowered:
+        return HIVE_UNKNOWN_DATABASE, detail
+    return HIVE_UNKNOWN, detail
+
+
+# ClickHouse
+CLICKHOUSE_CONN_REFUSED = "CLICKHOUSE_CONN_REFUSED"
+CLICKHOUSE_AUTH_FAILED = "CLICKHOUSE_AUTH_FAILED"
+CLICKHOUSE_TIMEOUT = "CLICKHOUSE_TIMEOUT"
+CLICKHOUSE_UNKNOWN_DATABASE = "CLICKHOUSE_UNKNOWN_DATABASE"
+CLICKHOUSE_UNKNOWN = "CLICKHOUSE_UNKNOWN"
+
+
+def map_clickhouse_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "401" in detail or "unauthorized" in lowered or "auth" in lowered:
+        return CLICKHOUSE_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return CLICKHOUSE_TIMEOUT, detail
+    if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
+        return CLICKHOUSE_CONN_REFUSED, detail
+    if "database" in lowered and ("unknown" in lowered or "doesn't exist" in lowered):
+        return CLICKHOUSE_UNKNOWN_DATABASE, detail
+    return CLICKHOUSE_UNKNOWN, detail
+
+
+# Doris (MySQL protocol alias)
+DORIS_TIMEOUT = "DORIS_TIMEOUT"
+DORIS_CONN_REFUSED = "DORIS_CONN_REFUSED"
+DORIS_AUTH_FAILED = "DORIS_AUTH_FAILED"
+DORIS_UNKNOWN_DATABASE = "DORIS_UNKNOWN_DATABASE"
+DORIS_UNKNOWN = "DORIS_UNKNOWN"
+
+
+def map_doris_operational_error(exc: pymysql.err.OperationalError) -> tuple[str, str]:
+    code, detail = map_mysql_operational_error(exc)
+    mapping = {
+        "MYSQL_TIMEOUT": DORIS_TIMEOUT,
+        "MYSQL_CONN_REFUSED": DORIS_CONN_REFUSED,
+        "MYSQL_AUTH_FAILED": DORIS_AUTH_FAILED,
+        "MYSQL_UNKNOWN_DATABASE": DORIS_UNKNOWN_DATABASE,
+    }
+    return mapping.get(code, DORIS_UNKNOWN), detail
