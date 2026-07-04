@@ -81,6 +81,16 @@ def _condition_sql(
     if op in ("is_null", "is_not_null"):
         suffix = "IS NULL" if op == "is_null" else "IS NOT NULL"
         return f"{col} {suffix}", param_index
+    if op == "in":
+        if not isinstance(item.value, list):
+            raise TranslateError("QUERY_TRANSLATE_INVALID_CONFIG", "in operator requires array value", 422)
+        placeholders = []
+        for val in item.value:
+            pname = _param_name(param_index)
+            placeholders.append(_placeholder(connector_type, pname, item.value_type))
+            parameters[pname] = val
+            param_index += 1
+        return f"{col} IN ({', '.join(placeholders)})", param_index
     pname = _param_name(param_index)
     placeholder = _placeholder(connector_type, pname, item.value_type)
     parameters[pname] = item.value
@@ -99,16 +109,6 @@ def _condition_sql(
         return f"{col} <= {placeholder}", param_index
     if op == "like":
         return f"{col} LIKE {placeholder}", param_index
-    if op == "in":
-        if not isinstance(item.value, list):
-            raise TranslateError("QUERY_TRANSLATE_INVALID_CONFIG", "in operator requires array value", 422)
-        placeholders = []
-        for val in item.value:
-            pname = _param_name(param_index)
-            placeholders.append(_placeholder(connector_type, pname, item.value_type))
-            parameters[pname] = val
-            param_index += 1
-        return f"{col} IN ({', '.join(placeholders)})", param_index
     raise TranslateError("QUERY_TRANSLATE_INVALID_OPERATOR", f"unsupported operator: {op}", 422)
 
 

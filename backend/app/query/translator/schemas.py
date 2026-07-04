@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+# L1 translator operators — subset of designer ALLOWED_OPERATORS.
+# Designer includes not_in; translator L1 intentionally excludes it (see QUERY-008 PRD).
 L1_OPERATORS = frozenset({
     "eq", "ne", "gt", "gte", "lt", "lte", "in", "like", "is_null", "is_not_null",
 })
