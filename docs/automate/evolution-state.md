@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r67.md |
 | design | docs/superpowers/specs/2026-07-04-dash-nfr-conn-rpt-companion-quality-r67-design.md |
 | plan | docs/superpowers/plans/2026-07-04-dash-nfr-conn-rpt-companion-quality-r67.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r67 PRD 重评：DASH-004/NFR-001/NFR-002/CONN-018/RPT-003 companion 质量推分；pytest 1786/4 skipped；test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 230/230；总分 84.2→90.0–90.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r67 验证通过：ruff clean（python3 -m ruff check .）；pytest 1786 passed/4 skipped（全量 exit_code 0）；test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 230/230；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r67 实现完成：8 Task 全绿；跨域 companion 质量推分 — DASH-004/NFR-001/NFR-002/CONN-018/RPT-003；34 测 test_dash_nfr_conn_rpt_r67 + r66 33/33 + r65 32/32 + r64 33/33 + r62 32/32 + r61 32/32 + r59 34/34 回归 230/230；pytest 1786/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r67-dash-nfr-conn-rpt-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P1 r67 设计完成：跨域 STUCK 簇 companion 质量推分 — DASH-004/NFR-001/NFR-002/CONN-018/RPT-003；19 文件框定；perf probe 50ms + ACL/validate/NOT_FOUND 闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
@@ -233,11 +234,6 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| CONN-018 | 1 | 84.2 | 2026-07-04 |
-| DASH-004 | 1 | 84.2 | 2026-07-04 |
 | GOV-007 | 1 | 84.4 | 2026-07-04 |
-| NFR-001 | 1 | 84.2 | 2026-07-04 |
-| NFR-002 | 1 | 84.2 | 2026-07-04 |
 | NFR-003 | 1 | 84.2 | 2026-07-04 |
 | NFR-004 | 1 | 84.2 | 2026-07-04 |
-| RPT-003 | 1 | 84.2 | 2026-07-04 |
