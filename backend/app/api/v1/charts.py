@@ -85,12 +85,15 @@ def validate_sdk_portal(
         return _sdk_error(exc)
 
 
-@router.post("/sdk/lifecycle", response_model=SdkLifecycleOut)
+@router.post("/sdk/lifecycle", response_model=None)
 def sdk_lifecycle(
     payload: SdkLifecycleIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
-) -> SdkLifecycleOut:
-    return sdk_portal_service.lifecycle_manifest(payload)
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> SdkLifecycleOut | JSONResponse:
+    try:
+        return sdk_portal_service.lifecycle_manifest(payload, actor)
+    except SdkPortalError as exc:
+        return _sdk_error(exc)
 
 
 @router.get("/sdk/capabilities", response_model=SdkCapabilitiesOut)
