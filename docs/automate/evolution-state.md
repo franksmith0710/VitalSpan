@@ -13,7 +13,7 @@
 | branch | feat/evolution-r68-nfr-gov-rpt-view-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | NFR-003,NFR-004,GOV-007,RPT-002,VIEW-002 |
-| pr_number |  |
+| pr_number | 103 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest ../tests/test_nfr_gov_rpt_view_r68.py -q && python3 -m pytest ../tests/test_dash_nfr_conn_rpt_r67.py ../tests/test_cat_dash_rpt_meta_r66.py ../tests/test_cat_rpt_meta_r65.py ../tests/test_nfr_cat_r64.py ../tests/test_cat_nfr_rpt_meta_r62.py ../tests/test_rpt_view_cat_gov_r60.py -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
