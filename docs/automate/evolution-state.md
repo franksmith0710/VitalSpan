@@ -13,7 +13,7 @@
 | branch | cursor/bc-239ae5b7-e62d-4698-9d7c-67793ddde421-db0d |
 | base_branch | dev-auto |
 | prd_ids | CONN-006,CONN-011,CONN-012,CONN-013,CONN-014 |
-| pr_number |  |
+| pr_number | 67 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests -q && python3 -m pytest ../tests/test_connectors_gov_r41.py ../tests/test_connectors_gov_r40.py ../tests/test_query_meta_conn_r39.py ../tests/test_connectors_gov_r37.py ../tests/test_connectors_gov_r36.py -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |

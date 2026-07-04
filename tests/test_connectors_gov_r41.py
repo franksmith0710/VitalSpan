@@ -20,6 +20,20 @@ _R41_SQLITE_URL = "sqlite+pysqlite:///file:connectors_gov_r41?mode=memory&cache=
 AUTH = {"Authorization": "Bearer dev"}
 
 
+def _dispose_meta_engines() -> None:
+    from app.auth.models import get_meta_engine as auth_engine
+    from app.datasources.models import get_meta_engine
+    from app.ingestion.models import get_meta_engine as ingestion_engine
+    from app.query.models import get_meta_engine as query_engine
+
+    for engine_fn in (get_meta_engine, auth_engine, query_engine, ingestion_engine):
+        try:
+            engine_fn().dispose()
+        except Exception:
+            pass
+        engine_fn.cache_clear()
+
+
 @pytest.fixture(scope="module", autouse=True)
 def r41_sqlite_env():
     previous = os.environ.get("DATABASE_URL")
@@ -44,13 +58,12 @@ def r41_sqlite_env():
     AuthBase.metadata.create_all(engine)
     QueryBase.metadata.create_all(engine)
     yield
+    _dispose_meta_engines()
     if previous is None:
         os.environ.pop("DATABASE_URL", None)
     else:
         os.environ["DATABASE_URL"] = previous
     get_settings.cache_clear()
-    get_meta_engine.cache_clear()
-    auth_engine.cache_clear()
 
 
 @pytest.fixture
