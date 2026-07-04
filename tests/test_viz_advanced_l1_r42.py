@@ -47,3 +47,30 @@ def test_get_spec_unknown_raises():
 def test_builtin_get_spec_category():
     """T-VIZ-R42-003-03: builtin sankey category=flow（依赖 Task 2 注册）。"""
     assert get_spec("sankey").category == "flow"
+
+
+from app.viz.builtin import register_builtin_chart_types
+from app.viz.registry import export_chart_type_catalog
+
+
+def test_catalog_has_nine_types_with_shape():
+    """T-VIZ-R42-003-01: catalog 含 9 类型，每项字段齐备。"""
+    catalog = export_chart_type_catalog()
+    types = {c["type"] for c in catalog}
+    assert {"table", "line", "bar", "pie", "gauge", "map", "sankey", "funnel", "graph"} <= types
+    for item in catalog:
+        for key in ("type", "displayName", "category", "renderer", "styleVariants", "fieldRule"):
+            assert key in item, key
+
+
+def test_catalog_has_advanced_types():
+    """T-VIZ-R42-003-02: 高级类型 sankey/graph/map/funnel/gauge/pie 出现。"""
+    types = {c["type"] for c in export_chart_type_catalog()}
+    assert {"sankey", "graph", "map", "funnel", "gauge", "pie"} <= types
+
+
+def test_register_builtin_idempotent():
+    """T-VIZ-R42-003-06: register_builtin_chart_types 幂等，二次调用不抛。"""
+    register_builtin_chart_types()
+    register_builtin_chart_types()
+    assert get_spec("bar").renderer == "echarts"
