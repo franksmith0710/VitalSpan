@@ -12,7 +12,7 @@
   - [x] 业务术语 CRUD（r32 L1：`GlossaryTerm` + `POST/GET/PUT/DELETE /api/v1/metadata/glossary`）
   - [ ] 与物理字段映射
 - **代码锚点**：`backend/app/metadata/glossary/` · `backend/app/api/v1/metadata.py`
-- **演化建议**：r32 闭合 CRUD/重复 code/引用中删除（T-META-R32-001~004）；后续补物理字段映射与 Admin UI
+- **演化建议**：r33 闭合 definition/name 边界、status 枚举与 list perf smoke（T-META-R33-001-01~04）；后续补物理字段映射与 Admin UI
 - **里程碑对齐**：
 ### [META-002] 业务主题树
 
@@ -24,7 +24,7 @@
   - [x] 主题→对象→属性树（r32 L1：`ThemeNode` 多级 parent + `term_id` 关联）
   - [ ] 可导航（缺 Admin 树形 UI；API `?parent_id=` 过滤 + move 环检测已 L1）
 - **代码锚点**：`backend/app/metadata/themes/` · `backend/app/api/v1/metadata.py`
-- **演化建议**：r32 闭合 move 环/自引用/子节点删除守卫（T-META-R32-005~008）；后续 Admin 主题树导航
+- **演化建议**：r33 闭合 MAX_DEPTH=8、move 深度合法性与 children list perf（T-META-R33-002-01~03）；后续 Admin 主题树导航
 - **里程碑对齐**：
 ### [META-003] 维度字典注册
 

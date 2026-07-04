@@ -53,6 +53,7 @@
 - r26：方言适配器 + 只读守卫 + QueryExecutor + RLS 执行链 + chart_query_bindings 迁移 0011
 - r27：ClickHouse dialect L1、只读守卫加固、chartId 唯一绑定（0012）、admin RLS bypass
 - r32：migration 0015 `query_config_records`；`config_store` upsert API（QUERY-007）
+- r33：`MAX_CONFIG_PAYLOAD_BYTES=262144`；PUT 可选 `expectedRevision` 乐观锁；超大 payload → 413 `CONFIG_PAYLOAD_TOO_LARGE`；revision 冲突 → 409 `CONFIG_VERSION_CONFLICT`
 - 执行链：`assert_visible` → `readonly` → `dialect.wrap_limit` → `apply_rls_to_sql` → `pool_manager`
 
 ### 方言适配器

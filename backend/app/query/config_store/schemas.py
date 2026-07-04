@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 ALLOWED_CONFIG_TYPES = frozenset({"query_conditions", "compute_rules"})
 ALLOWED_SCHEMA_VERSIONS = frozenset({"1.0"})
 DEFAULT_REF_TYPE = "design_draft"
+MAX_CONFIG_PAYLOAD_BYTES = 262_144
 
 
 class ConfigError(Exception):
@@ -33,6 +34,7 @@ class ConfigUpsert(BaseModel):
     ref_type: str | None = Field(default=DEFAULT_REF_TYPE, alias="refType")
     ref_id: uuid.UUID | None = Field(default=None, alias="refId")
     payload: Any
+    expected_revision: int | None = Field(default=None, alias="expectedRevision")
 
 
 class ConfigOut(BaseModel):

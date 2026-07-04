@@ -104,11 +104,11 @@ redoc: /redoc
 | GET | `/api/v1/query/bindings/{bindingId}` | 绑定详情 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | PUT | `/api/v1/query/bindings/{bindingId}` | 更新绑定（可选 `chartId` UUID；重复 → 409 `BINDING_CHART_CONFLICT`） | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | DELETE | `/api/v1/query/bindings/{bindingId}` | 删除绑定 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
-| GET/PUT | `/api/v1/query/configs` | 配置元模型存取（`configType`/`schemaVersion`/`refType`/`refId`；revision upsert） | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
+| GET/PUT | `/api/v1/query/configs` | 配置元模型存取（`configType`/`schemaVersion`/`refType`/`refId`；可选 `expectedRevision` 乐观锁；revision upsert；payload >256KB → 413 `CONFIG_PAYLOAD_TOO_LARGE`；revision 冲突 → 409 `CONFIG_VERSION_CONFLICT`） | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | GET | `/api/v1/query/configs/{config_id}` | 按 id 读取配置记录 | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
-| POST | `/api/v1/designer/conditions/validate` | 查询条件配置校验（不落库） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
-| PUT/GET | `/api/v1/designer/conditions` | 查询条件保存/读取（挂载 QUERY-007） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
-| PUT/GET | `/api/v1/designer/compute-rules` | 运算规则保存/读取（挂载 QUERY-007） | 内部 | 一期 | DESIGN-002 | 已实现 | `backend/app/api/v1/designer.py` |
+| POST | `/api/v1/designer/conditions/validate` | 查询条件配置校验（不落库；422 含 `detail.fields`；`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_CROSS_FIELD`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
+| PUT/GET | `/api/v1/designer/conditions` | 查询条件保存/读取（挂载 QUERY-007；可选 `expectedRevision`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
+| PUT/GET | `/api/v1/designer/compute-rules` | 运算规则保存/读取（挂载 QUERY-007；`DESIGN_RULE_TYPE_MISMATCH`/`DESIGN_RULE_BROKEN_CHAIN`/`DESIGN_INVALID_AGGREGATE`） | 内部 | 一期 | DESIGN-002 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/query/preview` | 查询预览（设计器/图表配置） | 内部 | 二期 | QUERY-005 | 规划 | `backend/app/api/v1/query.py` |
 
 ---
@@ -151,11 +151,11 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/metadata/glossary` | 术语字典 CRUD/list | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
-| GET/PUT/DELETE | `/api/v1/metadata/glossary/{term_id}` | 术语详情/更新/删除 | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
-| GET/POST | `/api/v1/metadata/themes` | 业务主题树 CRUD/list（`?parent_id=null` 根过滤） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/POST | `/api/v1/metadata/glossary` | 术语字典 CRUD/list（`TERM_MAX_TEXT_LENGTH=4000`；空白 name → 422 `META_TERM_INVALID_NAME`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/PUT/DELETE | `/api/v1/metadata/glossary/{term_id}` | 术语详情/更新/删除（非法 status → 422 `META_TERM_INVALID_STATUS`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/POST | `/api/v1/metadata/themes` | 业务主题树 CRUD/list（`?parent_id=null` 根过滤；深度 >8 → 422 `META_THEME_MAX_DEPTH`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/themes/{node_id}` | 主题节点详情/更新/删除 | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
-| POST | `/api/v1/metadata/themes/{node_id}/move` | 主题节点移动（环检测） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
+| POST | `/api/v1/metadata/themes/{node_id}/move` | 主题节点移动（环检测；超深 → 422 `META_THEME_MAX_DEPTH`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/dimensions` | 维度字典 | 内部 | 四期 | META-003 | 规划 | `backend/app/api/v1/metadata/dimensions.py` |
 | GET/POST | `/api/v1/datasets` | Dataset CRUD | 内部 | 四期 | META-004 | 规划 | `backend/app/api/v1/datasets.py` |
 | GET/PUT | `/api/v1/datasets/{id}` | Dataset 详情 | 内部 | 四期 | META-004 | 规划 | `backend/app/api/v1/datasets.py` |

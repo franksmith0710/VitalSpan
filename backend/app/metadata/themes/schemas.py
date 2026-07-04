@@ -4,6 +4,8 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
+MAX_THEME_DEPTH = 8
+
 
 class ThemeError(Exception):
     def __init__(

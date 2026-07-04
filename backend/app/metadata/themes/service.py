@@ -7,7 +7,59 @@ from sqlalchemy.orm import Session
 
 from app.metadata.glossary import service as glossary_service
 from app.metadata.themes.models import ThemeNode
-from app.metadata.themes.schemas import ThemeCreate, ThemeError, ThemeUpdate
+from app.metadata.themes.schemas import MAX_THEME_DEPTH, ThemeCreate, ThemeError, ThemeUpdate
+
+
+def _node_depth(session: Session, node_id: uuid.UUID | None) -> int:
+    if node_id is None:
+        return 0
+    depth = 0
+    current: uuid.UUID | None = node_id
+    seen: set[uuid.UUID] = set()
+    while current is not None:
+        if current in seen:
+            break
+        seen.add(current)
+        depth += 1
+        if depth > MAX_THEME_DEPTH:
+            break
+        node = session.get(ThemeNode, current)
+        if node is None:
+            break
+        current = node.parent_id
+    return depth
+
+
+def _subtree_height(session: Session, node_id: uuid.UUID) -> int:
+    max_h = 0
+    level = [node_id]
+    while level:
+        max_h += 1
+        if max_h > MAX_THEME_DEPTH:
+            break
+        next_level: list[uuid.UUID] = []
+        for nid in level:
+            next_level.extend(
+                session.scalars(select(ThemeNode.id).where(ThemeNode.parent_id == nid))
+            )
+        level = list(next_level)
+    return max_h
+
+
+def _assert_depth_allowed(
+    session: Session,
+    parent_id: uuid.UUID | None,
+    subtree_root: uuid.UUID | None = None,
+) -> None:
+    parent_depth = _node_depth(session, parent_id)
+    extra = _subtree_height(session, subtree_root) if subtree_root else 1
+    if parent_depth + extra > MAX_THEME_DEPTH:
+        raise ThemeError(
+            "META_THEME_MAX_DEPTH",
+            f"Theme tree depth cannot exceed {MAX_THEME_DEPTH}",
+            422,
+            fields=[{"field": "parentId", "message": f"max depth is {MAX_THEME_DEPTH}"}],
+        )
 
 
 def _collect_descendant_ids(session: Session, node_id: uuid.UUID) -> set[uuid.UUID]:
@@ -23,12 +75,21 @@ def _collect_descendant_ids(session: Session, node_id: uuid.UUID) -> set[uuid.UU
     return descendants
 
 
+def _resolve_parent_id(parent_id: uuid.UUID | None | str) -> uuid.UUID | None | str:
+    if parent_id == "null" or parent_id is None:
+        return parent_id
+    if isinstance(parent_id, str):
+        return uuid.UUID(parent_id)
+    return parent_id
+
+
 def list_theme_nodes(
     session: Session,
     parent_id: uuid.UUID | None | str = None,
     limit: int = 100,
     offset: int = 0,
 ) -> tuple[list[ThemeNode], int]:
+    parent_id = _resolve_parent_id(parent_id)
     capped = min(max(limit, 1), 500)
     base = select(ThemeNode).order_by(ThemeNode.sort_order, ThemeNode.name)
     count_stmt = select(func.count()).select_from(ThemeNode)
@@ -48,6 +109,7 @@ def create_theme_node(session: Session, payload: ThemeCreate) -> ThemeNode:
         raise ThemeError("META_THEME_PARENT_NOT_FOUND", "Parent node not found", 404)
     if payload.term_id is not None:
         glossary_service.get_term(session, payload.term_id)
+    _assert_depth_allowed(session, payload.parent_id)
     node = ThemeNode(
         name=payload.name,
         code=payload.code,
@@ -107,6 +169,7 @@ def move_theme_node(
             raise ThemeError("META_THEME_CYCLE", "Cannot move node under its descendant", 422)
         if session.get(ThemeNode, parent_id) is None:
             raise ThemeError("META_THEME_PARENT_NOT_FOUND", "Parent node not found", 404)
+    _assert_depth_allowed(session, parent_id, node_id)
     node.parent_id = parent_id
     if sort_order is not None:
         node.sort_order = sort_order
