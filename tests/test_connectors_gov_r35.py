@@ -541,3 +541,24 @@ def test_es_https_port_443_r35(mock_es_cls):
     _build_client(host="es.example.com", port=443, username="", password="", timeout_sec=5.0)
     kwargs = mock_es_cls.call_args.kwargs
     assert kwargs["hosts"][0].startswith("https://")
+
+
+def test_registry_core_types_r35():
+    """T-REG-R35-001: mysql/postgresql/tidb/starrocks/elasticsearch 均在 catalog。"""
+    types = {item["type"] for item in export_type_catalog()}
+    assert {"mysql", "postgresql", "tidb", "starrocks", "elasticsearch"}.issubset(types)
+
+
+def test_meta_design_r33_regression_r35():
+    """T-REG-R35-002: r33 套件可导入（完整回归在本 Task）。"""
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "test_meta_design_r33",
+        Path(__file__).resolve().parent / "test_meta_design_r33.py",
+    )
+    assert spec is not None and spec.loader is not None
+    r33 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(r33)
+    assert hasattr(r33, "test_design_invalid_aggregate_r33")
