@@ -700,8 +700,16 @@ def test_registry_create_five_types_visible_r37(client):
 
 def test_r36_suite_import_no_conflict_r37():
     """T-REG-R37-03: r36 test_connectors_gov_r36 模块可导入无冲突。"""
-    import tests.test_connectors_gov_r36 as r36_mod
+    import importlib.util
+    from pathlib import Path
 
+    spec = importlib.util.spec_from_file_location(
+        "test_connectors_gov_r36",
+        Path(__file__).resolve().parent / "test_connectors_gov_r36.py",
+    )
+    assert spec is not None and spec.loader is not None
+    r36_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(r36_mod)
     assert hasattr(r36_mod, "test_registry_ten_types_r36")
 
 
