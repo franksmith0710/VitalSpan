@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r62.md |
 | design | docs/superpowers/specs/2026-07-04-cat-nfr-rpt-meta-l1-r62-design.md |
 | plan | docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md |
-| branch |  |
+| branch | feat/evolution-r62-cat-nfr-rpt-meta-l1 |
 | base_branch | dev-auto |
 | prd_ids | CAT-006,NFR-003,RPT-002,RPT-003,META-005 |
-| pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| pr_number | 95 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T19:55:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,6 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r62 PRD 重评：CAT-006/NFR-003/RPT-002/RPT-003/META-005 L1 kickoff；pytest 1622/4 skipped；test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 回归 132/132；总分 12.1–13.1→83.9–84.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
+- P3 r62 实现完成：8 Task 全绿；跨域远期 stub L1 kickoff — CAT-006/NFR-003/RPT-002/RPT-003/META-005；32 测 test_cat_nfr_rpt_meta_r62 + r61 32/32 + r60 34/34 + r59 34/34 回归 132/132；pytest 1622/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r62-cat-nfr-rpt-meta-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r62 计划完成：8 Task（fixtures→CAT-006 cat06→NFR-003 dashboard_sla→RPT-002 prefab→RPT-003 templates→META-005 physical→32 测聚合→三轮回归门控）；19 P3 生产文件 + 1 测试 = 20 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥32 新测 test_cat_nfr_rpt_meta_r62 + r61 32/32 + r60 34/34 + r59 34/34 回归；plan=docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md；phase P1_DONE→P2_DONE
 - P1 r62 设计完成：跨域远期 stub L1 kickoff — CAT-006/NFR-003/RPT-002/RPT-003/META-005；18 文件框定（cat06 3 + dashboard_sla 1 + prefab 3 + templates 3 + physical 3 + api 薄 entry 5 + r62 smoke ≥30 测）；production stats/SLA probe/prefab binding/template blocks/physical table register；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r62 选题完成：跨域远期 stub L1 kickoff — CAT-006/NFR-003/RPT-002/RPT-003/META-005（5 项）；最低分 CAT-006/NFR-003(12.1)；饱和熔断未触发（Top5 12.1–13.1≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 十五 ID 各 1 轮未入选（未达 ≥3 硬标注阈值）；phase idle→G2_DONE
@@ -210,16 +212,21 @@
 |--------|:-----------:|:-----------:|------------|
 | CAT-003 | 1 | 83.9 | 2026-07-04 |
 | CAT-005 | 1 | 83.3 | 2026-07-04 |
+| CAT-006 | 1 | 83.9 | 2026-07-04 |
+| CAT-007 | 1 | 83.3 | 2026-07-04 |
 | DASH-004 | 1 | 84.2 | 2026-07-04 |
-| NFR-002 | 1 | 84.2 | 2026-07-04 |
-| VIZ-007 | 1 | 82.9 | 2026-07-04 |
-| META-004 | 1 | 84.2 | 2026-07-04 |
-| CAT-004 | 1 | 83.9 | 2026-07-04 |
 | DASH-005 | 1 | 84.0 | 2026-07-04 |
-| CONN-018 | 1 | 84.2 | 2026-07-04 |
 | DESIGN-004 | 1 | 82.9 | 2026-07-04 |
+| GOV-007 | 1 | 84.4 | 2026-07-04 |
+| META-004 | 1 | 84.2 | 2026-07-04 |
+| META-005 | 1 | 84.0 | 2026-07-04 |
+| NFR-002 | 1 | 84.2 | 2026-07-04 |
+| NFR-003 | 1 | 84.2 | 2026-07-04 |
 | RPT-001 | 1 | 84.2 | 2026-07-04 |
+| RPT-002 | 1 | 84.0 | 2026-07-04 |
+| RPT-003 | 1 | 84.2 | 2026-07-04 |
 | VIEW-002 | 1 | 82.9 | 2026-07-04 |
 | VIEW-003 | 1 | 84.2 | 2026-07-04 |
-| CAT-007 | 1 | 83.3 | 2026-07-04 |
-| GOV-007 | 1 | 84.4 | 2026-07-04 |
+| VIZ-007 | 1 | 82.9 | 2026-07-04 |
+| CONN-018 | 1 | 84.2 | 2026-07-04 |
+| CAT-004 | 1 | 83.9 | 2026-07-04 |
