@@ -63,7 +63,7 @@ def _create_typed_ds(ds_type: str, *, host: str | None = None, name_suffix: str 
     session = get_meta_session()
     try:
         defaults = {
-            "mongodb": dict(port=27017, database="app", username="", password=""),
+            "mongodb": dict(port=27017, database="app", username="x", password="x"),
             "influxdb": dict(port=8086, database="metrics", username="myorg", password="token"),
             "tdengine": dict(port=6041, database="power", username="root", password="taosdata"),
             "sqlite": dict(port=1, database="main", username="sqlite", password="x"),
@@ -103,3 +103,113 @@ def test_mongodb_unknown_database_r41(mock_get_client):
     )
     assert result.ok is False
     assert result.code == "MONGODB_UNKNOWN_DATABASE"
+
+
+from app.datasources.registry import export_type_catalog
+
+
+@patch("app.datasources.dialects.mongodb._get_client")
+def test_mongodb_empty_collection_columns_r41(mock_get_client):
+    """T-CONN-R41-014-02: mock 空 collection list_columns → []。"""
+    client = MagicMock()
+    collection = MagicMock()
+    collection.find_one.return_value = None
+    db = MagicMock()
+    db.__getitem__.return_value = collection
+    client.__getitem__.return_value = db
+    mock_get_client.return_value = client
+    connector = MongodbConnector()
+    connection = connector.open_connection(
+        host="127.0.0.1", port=27017, database="app", username="", password=""
+    )
+    assert connector.list_columns(connection, "app", "events") == []
+
+
+@patch("app.datasources.dialects.mongodb._get_client")
+def test_mongodb_empty_database_tables_r41(mock_get_client):
+    """T-CONN-R41-014-03: mock 空库 list_tables → []。"""
+    client = MagicMock()
+    db = MagicMock()
+    db.list_collection_names.return_value = []
+    client.__getitem__.return_value = db
+    mock_get_client.return_value = client
+    connector = MongodbConnector()
+    connection = connector.open_connection(
+        host="127.0.0.1", port=27017, database="app", username="", password=""
+    )
+    assert connector.list_tables(connection, "app") == []
+
+
+@patch("app.datasources.dialects.mongodb._get_client")
+def test_mongodb_bson_type_enum_r41(mock_get_client):
+    """T-CONN-R41-014-04: mock BSON 六类型 data_type 枚举。"""
+    from datetime import datetime
+
+    client = MagicMock()
+    collection = MagicMock()
+    collection.find_one.return_value = {
+        "s": "x",
+        "n": 1,
+        "b": True,
+        "dt": datetime(2026, 1, 1),
+        "j": {"a": 1},
+        "arr": [1, 2],
+    }
+    db = MagicMock()
+    db.__getitem__.return_value = collection
+    client.__getitem__.return_value = db
+    mock_get_client.return_value = client
+    connector = MongodbConnector()
+    connection = connector.open_connection(
+        host="127.0.0.1", port=27017, database="app", username="", password=""
+    )
+    types = {c.name: c.data_type for c in connector.list_columns(connection, "app", "events")}
+    assert types["s"] == "string"
+    assert types["n"] == "number"
+    assert types["b"] == "boolean"
+    assert types["dt"] == "datetime"
+    assert types["j"] == "json"
+    assert types["arr"] == "json"
+
+
+def test_mongodb_types_catalog_r41():
+    """T-CONN-R41-014-05: types catalog mongodb category=document + schema_browser + displayName。"""
+    types = {item["type"]: item for item in export_type_catalog()}
+    assert types["mongodb"]["category"] == "document"
+    assert "schema_browser" in types["mongodb"]["capabilities"]
+    assert types["mongodb"]["displayName"] == "MongoDB"
+
+
+@patch("app.datasources.dialects.mongodb._get_client")
+def test_mongodb_http_auth_failed_r41(mock_get_client, client):
+    """T-CONN-R41-014-06: HTTP POST test mock auth fail → 200 ok=false MONGODB_AUTH_FAILED traceId。"""
+    from pymongo.errors import OperationFailure
+
+    mock_get_client.side_effect = OperationFailure("Authentication failed", code=18)
+    resp = client.post(
+        "/api/v1/datasources/test",
+        headers=AUTH,
+        json={
+            "type": "mongodb",
+            "name": "mongo-test",
+            "code": f"mongo-{uuid.uuid4().hex[:8]}",
+            "host": "127.0.0.1",
+            "port": 27017,
+            "database": "app",
+            "username": "bad",
+            "password": "bad",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["ok"] is False
+    assert body["code"] == "MONGODB_AUTH_FAILED"
+    assert body.get("traceId")
+
+
+def test_mongodb_metadata_tables_missing_schema_400_r41(client):
+    """T-CONN-R41-014-07: HTTP GET tables 无 schema → 400 METADATA_INVALID_REQUEST。"""
+    ds = _create_typed_ds("mongodb")
+    resp = client.get(f"/api/v1/datasources/{ds.id}/tables", headers=AUTH)
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "METADATA_INVALID_REQUEST"
