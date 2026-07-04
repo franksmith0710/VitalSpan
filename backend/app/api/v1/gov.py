@@ -20,7 +20,13 @@ from app.governance.catalog.schemas import (
     CategoryListResponse,
 )
 from app.governance.query_design import service as query_design_service
-from app.governance.query_design.schemas import GovQueryDesignError, VisualQueryDesignIn, VisualQueryDesignOut
+from app.governance.query_design.schemas import (
+    GovQueryDesignError,
+    PreviewExecuteIn,
+    PreviewExecuteOut,
+    VisualQueryDesignIn,
+    VisualQueryDesignOut,
+)
 
 router = APIRouter(prefix="/gov", tags=["governance", "IF-06"])
 
@@ -166,5 +172,19 @@ def get_query_design(
 ) -> VisualQueryDesignOut | JSONResponse:
     try:
         return query_design_service.get_visual_query_design(db, ref_id)
+    except GovQueryDesignError as exc:
+        return _gov_query_design_error(exc)
+
+
+@router.post("/query-design/preview-execute", response_model=PreviewExecuteOut)
+def preview_execute_query_design(
+    payload: PreviewExecuteIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> PreviewExecuteOut | JSONResponse:
+    try:
+        return query_design_service.preview_query_design_execute(
+            db, actor, data_source_id=payload.data_source_id
+        )
     except GovQueryDesignError as exc:
         return _gov_query_design_error(exc)

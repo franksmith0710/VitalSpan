@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Literal
 
@@ -8,6 +9,8 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext
 from app.auth.rls.hooks import get_query_rls_fragment
 from app.auth.rls.predicate import resolve_user_org_node_ids
+
+logger = logging.getLogger(__name__)
 
 
 class GovAclError(Exception):
@@ -59,3 +62,26 @@ def _assert_rls_binding(session: Session, actor: UserContext) -> None:
     if not org_ids:
         raise GovAclError("GOV_RLS_BINDING_REQUIRED", "User has no organization binding", 403)
     get_query_rls_fragment(session, actor)
+
+
+def assert_query_design_execute(
+    session: Session,
+    actor: UserContext,
+    *,
+    data_source_id: uuid.UUID | None,
+) -> str:
+    if "admin" not in actor.roles and "designer" not in actor.roles:
+        raise GovAclError("GOV_ACL_FORBIDDEN", "execute requires designer or admin", 403)
+    if "admin" in actor.roles:
+        logger.info(
+            "gov_acl_bypass",
+            extra={"actor_id": actor.id, "action": "execute", "data_source_id": str(data_source_id)},
+        )
+        return get_query_rls_fragment(session, actor)
+    actor_uuid = _actor_uuid(actor.id)
+    if actor_uuid is None:
+        raise GovAclError("GOV_RLS_BINDING_REQUIRED", "User has no organization binding", 403)
+    org_ids = resolve_user_org_node_ids(session, actor_uuid)
+    if not org_ids:
+        raise GovAclError("GOV_RLS_BINDING_REQUIRED", "User has no organization binding", 403)
+    return get_query_rls_fragment(session, actor)

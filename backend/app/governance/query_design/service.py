@@ -7,12 +7,15 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext
 from app.designer import service as designer_service
 from app.designer.schemas import DesignerError
+from app.datasources import acl as datasource_acl
+from app.datasources.acl import VisibilityError
 from app.datasources.models import DataSource
 from app.governance import acl as gov_acl
 from app.governance.query_design.schemas import (
     GOV_CONFIG_TYPE,
     GOV_REF_TYPE,
     GovQueryDesignError,
+    PreviewExecuteOut,
     VisualQueryDesignIn,
     VisualQueryDesignOut,
 )
@@ -143,3 +146,27 @@ def _to_out(payload: VisualQueryDesignIn, *, revision: int) -> VisualQueryDesign
         ),
         revision=revision,
     )
+
+
+def preview_query_design_execute(
+    session: Session,
+    actor: UserContext,
+    *,
+    data_source_id: uuid.UUID | None,
+) -> PreviewExecuteOut:
+    try:
+        fragment = gov_acl.assert_query_design_execute(
+            session, actor, data_source_id=data_source_id
+        )
+    except gov_acl.GovAclError as exc:
+        raise GovQueryDesignError(exc.code, exc.message, exc.status) from exc
+    if data_source_id is not None:
+        try:
+            datasource_acl.assert_visible(session, list(actor.roles), data_source_id)
+        except VisibilityError as exc:
+            raise GovQueryDesignError(
+                "GOV_QUERY_DESIGN_UNKNOWN_DATASOURCE",
+                str(exc),
+                403,
+            ) from exc
+    return PreviewExecuteOut(rls_fragment=fragment)

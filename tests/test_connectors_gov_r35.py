@@ -197,3 +197,141 @@ def test_starrocks_types_catalog_r35():
     """T-CONN-R35-009-05: types 含 starrocks category olap。"""
     types = {item["type"]: item for item in export_type_catalog()}
     assert types["starrocks"]["category"] == "olap"
+
+
+def _valid_visual_query_design(ref_id: str | None = None) -> dict:
+    rid = ref_id or str(uuid.uuid4())
+    return {
+        "schemaVersion": "1.0",
+        "refType": "gov_query_design",
+        "refId": rid,
+        "title": "销售分析",
+        "status": "draft",
+        "conditions": {
+            "schemaVersion": "1.0",
+            "logic": "AND",
+            "conditions": [
+                {"fieldId": "order_amount", "operator": "gte", "value": 100, "valueType": "number"}
+            ],
+            "refType": "design_draft",
+            "refId": rid,
+        },
+    }
+
+
+def test_gov_preview_execute_viewer_forbidden_r35(client):
+    """T-GOV-R35-008-01: viewer POST preview-execute → 403 GOV_ACL_FORBIDDEN。"""
+    app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id="viewer-1", username="viewer", roles=["viewer"]
+    )
+    try:
+        resp = client.post(
+            "/api/v1/gov/query-design/preview-execute",
+            headers=AUTH,
+            json={"dataSourceId": None},
+        )
+        assert resp.status_code == 403
+        assert resp.json()["code"] == "GOV_ACL_FORBIDDEN"
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+@patch("app.governance.acl.resolve_user_org_node_ids", return_value=set())
+def test_gov_preview_execute_designer_no_binding_r35(_mock_org, client):
+    """T-GOV-R35-008-02: designer 无 org → 403 GOV_RLS_BINDING_REQUIRED。"""
+    app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id="designer-1", username="designer", roles=["designer"]
+    )
+    try:
+        resp = client.post(
+            "/api/v1/gov/query-design/preview-execute",
+            headers=AUTH,
+            json={"dataSourceId": None},
+        )
+        assert resp.status_code == 403
+        assert resp.json()["code"] == "GOV_RLS_BINDING_REQUIRED"
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+@patch("app.governance.acl.get_query_rls_fragment", return_value="t.org_node_id IN ('n1')")
+@patch("app.governance.acl.resolve_user_org_node_ids", return_value={uuid.uuid4()})
+def test_gov_preview_execute_admin_ok_r35(_mock_org, _mock_rls, client):
+    """T-GOV-R35-008-03: admin → 200 且 rlsFragment 非空。"""
+    app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id="admin-1", username="admin", roles=["admin"]
+    )
+    try:
+        resp = client.post(
+            "/api/v1/gov/query-design/preview-execute",
+            headers=AUTH,
+            json={"dataSourceId": None},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["rlsFragment"]
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+@patch("app.governance.acl.get_query_rls_fragment", return_value="t.org_node_id IN ('n1')")
+@patch("app.governance.acl.resolve_user_org_node_ids", return_value={uuid.uuid4()})
+def test_gov_preview_execute_admin_bypass_audit_r35(_mock_org, _mock_rls, client, caplog):
+    """T-GOV-R35-008-04: admin bypass 触发 gov_acl_bypass 日志。"""
+    import logging
+
+    caplog.set_level(logging.INFO, logger="app.governance.acl")
+    app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id="admin-1", username="admin", roles=["admin"]
+    )
+    try:
+        resp = client.post(
+            "/api/v1/gov/query-design/preview-execute",
+            headers=AUTH,
+            json={"dataSourceId": None},
+        )
+        assert resp.status_code == 200
+        assert any("gov_acl_bypass" in r.message for r in caplog.records)
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+@patch("app.governance.acl.get_query_rls_fragment", return_value="1=0")
+@patch("app.governance.acl.resolve_user_org_node_ids", return_value={uuid.uuid4()})
+def test_gov_preview_execute_empty_rls_chain_r35(_mock_org, _mock_rls, client):
+    """T-GOV-R35-008-05: 空 RLS 链 → 200 且 rlsFragment == '1=0'。"""
+    app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id="admin-1", username="admin", roles=["admin"]
+    )
+    try:
+        resp = client.post(
+            "/api/v1/gov/query-design/preview-execute",
+            headers=AUTH,
+            json={"dataSourceId": None},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["rlsFragment"] == "1=0"
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+
+
+@patch("app.governance.acl.get_query_rls_fragment", return_value="1=1")
+@patch("app.governance.acl.resolve_user_org_node_ids", return_value={uuid.uuid4()})
+def test_gov_save_then_preview_execute_r35(_mock_org, _mock_rls, client):
+    """T-GOV-R35-008-06: save draft 后 preview-execute 联合 200。"""
+    app.dependency_overrides[get_current_user] = lambda: UserContext(
+        id="admin-1", username="admin", roles=["admin"]
+    )
+    try:
+        ref = str(uuid.uuid4())
+        save = client.put(
+            "/api/v1/gov/query-design", headers=AUTH, json=_valid_visual_query_design(ref)
+        )
+        assert save.status_code == 200
+        preview = client.post(
+            "/api/v1/gov/query-design/preview-execute",
+            headers=AUTH,
+            json={"dataSourceId": None},
+        )
+        assert preview.status_code == 200
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)

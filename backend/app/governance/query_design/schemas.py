@@ -50,3 +50,13 @@ class VisualQueryDesignOut(BaseModel):
     conditions: dict
     compute_rules: dict | None = Field(alias="computeRules")
     revision: int
+
+
+class PreviewExecuteIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    data_source_id: uuid.UUID | None = Field(default=None, alias="dataSourceId")
+
+
+class PreviewExecuteOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    rls_fragment: str = Field(alias="rlsFragment")
