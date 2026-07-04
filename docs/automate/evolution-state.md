@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
+| phase | P1_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r44.md |
+| design | docs/superpowers/specs/2026-07-04-m8-m12-m13-integration-api-l1-r44-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | API-003,API-004,API-005,API-006,API-007 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r44 设计完成：M8/M12/M13 集成 API L1 kickoff — API-003/004/005/006/007；18 文件框定（integration 域 6 + api/v1 四路由簇 + bus/adapter + openapi/version_policy + r44 smoke ≥28 测）；IF-01~04 与 GOV-002/VIZ-006 边界闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
+- G2 r44 选题完成：M8/M12/M13 集成 API L1 kickoff — API-003/004/005/006/007（5 项，同 F13-API 域）；最低分 API-003(11.3) 全表最低；饱和熔断未触发（Top5 11.3–11.5«90）；plan M1/M1B 全勾选无活跃 `[ ]` 行（已知 concern，回落纯 8 维选题）；STUCK 表空（5 项首次入选）；phase idle→G2_DONE
 - G1 r44 bootstrap：r43 PR #69 已合并 dev-auto；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 API-003(11.3)/NFR-006(11.4)/NFR-007(11.4)；STUCK 表空（r43 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r43 PRD 重评：VIZ-003/004/005/006/008 companion 质量推分；pytest 1068/2 skipped；test_viz_advanced_l1_r43 28/28 + r42 35/35；vitest charts.advanced.smoke 22/22；总分 57.1–61.1→90.0–90.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P3 r43 实现完成：8 Task 全绿；VIZ-003/004/005/006/008 companion 质量推分 — fe 高级 ECharts（chartRegistry/renderFromSpec/AdvancedEchartsChart/ChartConfigPanel/ChartRenderer 集成）+ embed 表面 + is_origin_allowed；pytest r43 28/28 + r42 35/35；vitest charts 22/22（smoke 7 + advanced 15）；check:design exit 0；ui_design_skill b-design-system-tailadmin-radix；screenshots N/A（headless vitest，无浏览器 dev server）；branch feat/evolution-r43-m9-viz-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
