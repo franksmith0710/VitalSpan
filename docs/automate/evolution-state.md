@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r33.md |
 | design | docs/superpowers/specs/2026-07-04-m11-meta-m12-companion-quality-r33-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-meta-m12-companion-quality-r33.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r33 PRD 重评：META-001/002 + QUERY-007 + DESIGN-001/002 companion 质量推分；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；总分 86.4–89.8→90.0–91.7（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r33 验证通过：ruff clean；pytest 727 passed/4 skipped；test_meta_design_r33 19/19 + test_meta_design_r32 21/21 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P3 r33 实现完成：7 Task 全绿；META-001/002 + QUERY-007 + DESIGN-001/002 质量推分；19 新测 test_meta_design_r33；pytest 727/4 skipped；r32 21/21 回归；branch feat/evolution-r33-m11-meta-m12-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - G1 r33 bootstrap：r32 PR #55 已合并 dev-auto（ff3de75）；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（M11/M12 无活跃节，已知 concern）；phase P5_DOCS_READY→idle；待 G2 选题
@@ -88,8 +89,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| META-001 | 1 | 88.5 | 2026-07-04 |
-| META-002 | 1 | 89.5 | 2026-07-04 |
-| QUERY-007 | 1 | 89.8 | 2026-07-04 |
-| DESIGN-001 | 1 | 86.4 | 2026-07-04 |
-| DESIGN-002 | 1 | 86.7 | 2026-07-04 |

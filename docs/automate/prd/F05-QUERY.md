@@ -83,7 +83,7 @@
   - [x] 可视化配置可入库（r32 L1：`QueryConfigRecord` JSON upsert + `POST/GET /api/v1/query-configs`）
   - [x] 配置版本可追溯（`revision` 递增 + `updated_at`；同 ref 幂等 upsert）
 - **代码锚点**：`backend/app/query/config_store/` · `backend/app/api/v1/query_configs.py`
-- **演化建议**：r32 闭合 schema_version/类型校验与幂等 upsert（T-QCFG-R32-001~004）；后续接 QUERY-008 翻译器
+- **演化建议**：r33 闭合 256KB payload 上限、expectedRevision 409 乐观锁与大配置 round-trip perf（T-QUERY-R33-007-01~03）；后续接 QUERY-008 翻译器
 - **里程碑对齐**：
 ### [QUERY-008] 配置→SQL/API 翻译器
 

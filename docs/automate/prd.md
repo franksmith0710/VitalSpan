@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.38
+version: 1.2.39
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r32 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query design L1 kickoff r32）；pytest 708/4 skipped；test_meta_design_r32 21/21 + r31 24/24；migration 0015 glossary/theme/config_store、designer validate/save API；完整度 5%→76–92%，可靠性 0%→92–94%，测试覆盖 0%→96%，总分 10.8–11.2→86.4–89.8（五 ID 均 <90 STUCK upsert round 1）
+> 更新：2026-07-04 · P5 r33 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query/design companion 质量推分 r33）；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；glossary 文本/status 边界 + list perf、theme MAX_DEPTH=8 + 宽树 perf、config_store 256KB/乐观锁、designer 字段注册表/规则链/detail.fields；完整度 76–92%→88–94%，性能 86%→88–90%，可靠性 92–94%→94–96%，总分 86.4–89.8→90.0–91.7（五 ID 全破 90 STUCK 清零）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -90,7 +90,7 @@ domain_count: 16
 | QUERY-004 | 82 | 94 | 94 | N/A | 92 | 100 | 90 | 90 | 91.4 | 用户价值 |
 | QUERY-005 | 84 | 98 | 96 | N/A | 90 | 100 | 90 | 90 | 92.6 | 用户价值 |
 | QUERY-006 | 86 | 96 | 96 | N/A | 90 | 100 | 86 | 94 | 92.6 | 性能 |
-| QUERY-007 | 82 | 92 | 94 | N/A | 92 | 96 | 86 | 88 | 89.8 | 性能 |
+| QUERY-007 | 84 | 94 | 96 | N/A | 92 | 98 | 90 | 88 | 91.7 | 安全性 |
 | QUERY-008 | 45 | 5 | 0 | N/A | 10 | 0 | 0 | 11 | 11.3 | 完整度 |
 | QUERY-009 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 12 | 11.7 | 完整度 |
 | VIZ-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
@@ -125,14 +125,14 @@ domain_count: 16
 | GOV-006 | 46 | 5 | 0 | N/A | 13 | 0 | 0 | 12 | 11.9 | 完整度 |
 | GOV-007 | 47 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.4 | 完整度 |
 | GOV-008 | 48 | 5 | 0 | N/A | 8 | 0 | 0 | 8 | 11.2 | 完整度 |
-| META-001 | 80 | 88 | 92 | N/A | 90 | 96 | 86 | 88 | 88.5 | 性能 |
-| META-002 | 82 | 90 | 94 | N/A | 90 | 96 | 86 | 88 | 89.5 | 性能 |
+| META-001 | 82 | 92 | 92 | N/A | 90 | 98 | 90 | 88 | 90.0 | 安全性 |
+| META-002 | 84 | 94 | 94 | N/A | 90 | 98 | 90 | 88 | 91.1 | 安全性 |
 | META-003 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 11 | 11.6 | 完整度 |
 | META-004 | 47 | 5 | 0 | N/A | 12 | 0 | 0 | 12 | 12.0 | 完整度 |
 | META-005 | 52 | 5 | 0 | N/A | 13 | 0 | 0 | 13 | 13.1 | 完整度 |
 | META-006 | 48 | 5 | 0 | N/A | 14 | 0 | 0 | 8 | 11.9 | 完整度 |
-| DESIGN-001 | 78 | 76 | 92 | N/A | 90 | 96 | 86 | 88 | 86.4 | 完整度 |
-| DESIGN-002 | 78 | 78 | 92 | N/A | 90 | 96 | 86 | 88 | 86.7 | 完整度 |
+| DESIGN-001 | 82 | 92 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
+| DESIGN-002 | 82 | 90 | 96 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
 | DESIGN-003 | 47 | 5 | 0 | N/A | 10 | 0 | 0 | 11 | 11.6 | 完整度 |
 | DESIGN-004 | 48 | 5 | 0 | N/A | 11 | 0 | 0 | 12 | 12.1 | 完整度 |
 | DESIGN-005 | 44 | 5 | 0 | N/A | 12 | 0 | 0 | 13 | 11.6 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.39 | 2026-07-04 | P5 r33 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query/design companion 质量推分 r33）；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；glossary 文本/status 边界 + list perf、theme MAX_DEPTH=8 + 宽树 perf、config_store 256KB/乐观锁、designer 字段注册表/规则链/detail.fields；完整度 76–92%→88–94%，性能 86%→88–90%，可靠性 92–94%→94–96%，总分 86.4–89.8→90.0–91.7（五 ID 全破 90 STUCK 清零） |
 | 1.2.38 | 2026-07-04 | P5 r32 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query design L1 kickoff r32）；pytest 708/4 skipped；test_meta_design_r32 21/21 + r31 24/24；migration 0015 + glossary/theme/config_store/designer API；完整度 5%→76–92%，可靠性 0%→92–94%，测试覆盖 0%→96%，总分 10.8–11.2→86.4–89.8（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.37 | 2026-07-04 | P5 r31 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW + M6 companion 质量推分 r31）；pytest 686/4 skipped；test_view_gov_api_r31 24/24 + r30 30/30；VIEW_LAYOUT_BOUNDS/VIEW_CHART_REF_CYCLE、bus timeout/4xx/5xx/幂等/admin 403、catalog 非法分类 4xx + DELETE、IF-06 OpenAPI 示例与 execute 越权/只读；完整度 74–80%→90–94%，可靠性 86–90%→92–94%，安全性 82–86%→88–90%，总分 88.6–90.9→90.0–90.4（VIEW-001/GOV-002 破 90 STUCK 清零） |
 | 1.2.36 | 2026-07-04 | P5 r30 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW L1 + M6 companion kickoff r30）；pytest 662/4 skipped；test_view_gov_api_r30 30/30；DashboardView schema/validate、catalog 三分法 + bus PoC、IF-06 OpenAPI tag/示例；完整度 5%→74–88%，可靠性 0%→86–94%，测试覆盖 0%→92–100%，总分 12.9–13.7→88.6–90.9（VIEW-001/GOV-002 <90 STUCK upsert；GOV-001/API-001/002 破 90） |
