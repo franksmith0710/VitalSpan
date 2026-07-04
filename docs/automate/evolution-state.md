@@ -6,17 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r39.md |
-| design | docs/superpowers/specs/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39.md |
-| branch | cursor/bc-fda56918-b209-4fa3-b5bc-f75bf68e9cfe-8879 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | QUERY-008,CONN-022,META-003,CONN-017,CONN-010 |
-| pr_number | 65 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端，ui_design_skill none） |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T06:25:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r40 bootstrap：r39 PR #65 已 Squash merge dev-auto（c09246a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 VIZ-003(11.7)/QUERY-009(11.7)/CONN-006(12.6)；STUCK 表空（r39 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r39 PRD 重评：QUERY-008/CONN-022/META-003/CONN-017/CONN-010 companion 质量推分；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归 109/109；总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r39 验证通过：ruff clean；pytest 924 passed/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归 109/109；UI: N/A（纯后端）；PR #65 已提前创建（SOP 顺序 concern）；phase P3_DONE→P4_DONE
 - P3 r39 实现完成：8 Task 全绿；CONN-010/022/017 + META-003 values 校验 + QUERY-008 translator 守卫；33 测 test_query_meta_conn_r39 + r38 36/36 + r37 40/40；pytest 924/4 skipped；branch cursor/bc-fda56918-b209-4fa3-b5bc-f75bf68e9cfe-8879；base_branch dev-auto；phase P2_DONE→P3_DONE
@@ -118,8 +118,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| QUERY-008 | 1 | 89.6 | 2026-07-04 |
-| CONN-022 | 1 | 87.6 | 2026-07-04 |
-| META-003 | 1 | 87.4 | 2026-07-04 |
-| CONN-017 | 1 | 87.6 | 2026-07-04 |
-| CONN-010 | 1 | 87.1 | 2026-07-04 |
