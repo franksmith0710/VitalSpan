@@ -384,3 +384,73 @@ def test_conn_dm_unknown_schema_tables_r38(mock_connect):
     conn.cursor.return_value = cursor
     mock_connect.return_value = conn
     assert DmConnector().list_tables(conn, "UNKNOWN") == []
+
+
+from app.datasources.dialects.trino import TrinoConnector
+
+
+def test_conn_trino_catalog_r38():
+    """T-CONN-R38-010-01: types catalog 含 trino，category=lake。"""
+    types = {t["type"]: t for t in export_type_catalog()}
+    assert "trino" in types
+    assert types["trino"]["category"] == "lake"
+
+
+@patch("trino.dbapi.connect")
+def test_conn_trino_success_r38(mock_connect):
+    """T-CONN-R38-010-02: mock coordinator 成功 → ok=True。"""
+    conn = MagicMock()
+    cursor = MagicMock()
+    cursor.fetchall.return_value = [(1,)]
+    conn.cursor.return_value = cursor
+    mock_connect.return_value = conn
+    result = TrinoConnector().test_connection(
+        host="coordinator", port=8080, database="hive", username="u", password="",
+    )
+    assert result.ok is True
+
+
+@patch("trino.dbapi.connect")
+def test_conn_trino_conn_refused_r38(mock_connect):
+    """T-CONN-R38-010-03: mock 不可达 → TRINO_CONN_REFUSED。"""
+    mock_connect.side_effect = ConnectionRefusedError("refused")
+    result = TrinoConnector().test_connection(
+        host="coordinator", port=8080, database="hive", username="u", password="",
+    )
+    assert result.ok is False
+    assert result.code == "TRINO_CONN_REFUSED"
+
+
+@patch("trino.dbapi.connect")
+def test_conn_trino_unknown_catalog_r38(mock_connect):
+    """T-CONN-R38-010-04: mock 非法 catalog → TRINO_UNKNOWN_CATALOG。"""
+    mock_connect.side_effect = Exception("Catalog 'bad' not found")
+    result = TrinoConnector().test_connection(
+        host="coordinator", port=8080, database="bad", username="u", password="",
+    )
+    assert result.ok is False
+    assert result.code == "TRINO_UNKNOWN_CATALOG"
+
+
+@patch("trino.dbapi.connect")
+def test_conn_trino_empty_schemas_r38(mock_connect):
+    """T-CONN-R38-010-05: mock SHOW SCHEMAS 空 → []。"""
+    conn = MagicMock()
+    cursor = MagicMock()
+    cursor.fetchall.return_value = []
+    conn.cursor.return_value = cursor
+    mock_connect.return_value = conn
+    opened = TrinoConnector().open_connection(
+        host="h", port=8080, database="hive", username="u", password="",
+    )
+    assert TrinoConnector().list_schemas(opened, catalog="hive") == []
+
+
+@patch("trino.dbapi.connect")
+def test_conn_trino_unknown_schema_tables_r38(mock_connect):
+    """T-CONN-R38-010-06: mock 未知 schema list_tables → []。"""
+    conn = MagicMock()
+    cursor = MagicMock()
+    cursor.fetchall.return_value = []
+    conn.cursor.return_value = cursor
+    assert TrinoConnector().list_tables(conn, "unknown", catalog="hive") == []

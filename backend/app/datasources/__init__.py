@@ -1,6 +1,8 @@
 from app.datasources.dialects.clickhouse import ClickhouseConnector
+from app.datasources.dialects.dm import DmConnector
 from app.datasources.dialects.doris import DorisConnector
 from app.datasources.dialects.elasticsearch import ElasticsearchConnector
+from app.datasources.dialects.gaussdb import GaussdbConnector
 from app.datasources.dialects.hive import HiveConnector
 from app.datasources.dialects.mysql import MysqlConnector
 from app.datasources.dialects.oracle import OracleConnector
@@ -8,6 +10,7 @@ from app.datasources.dialects.postgres import PostgresConnector
 from app.datasources.dialects.sqlserver import SqlserverConnector
 from app.datasources.dialects.starrocks import StarrocksConnector
 from app.datasources.dialects.tidb import TidbConnector
+from app.datasources.dialects.trino import TrinoConnector
 from app.datasources.registry import register_dialect
 
 
@@ -22,6 +25,9 @@ def register_builtin_dialects() -> None:
     register_dialect(SqlserverConnector())
     register_dialect(DorisConnector())
     register_dialect(OracleConnector())
+    register_dialect(GaussdbConnector())
+    register_dialect(DmConnector())
+    register_dialect(TrinoConnector())
 
 
 register_builtin_dialects()
