@@ -26,3 +26,9 @@ class LifecycleTemplateValidateOut(BaseModel):
 class LifecycleTemplateListResponse(BaseModel):
     items: list[LifecycleTemplateOut]
     total: int
+
+
+class LifecycleStageMove(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    stage_name: str = Field(alias="stageName", min_length=1, max_length=64)
+    to_index: int = Field(alias="toIndex", ge=0)
