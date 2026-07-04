@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r62.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-04-cat-nfr-rpt-meta-l1-r62-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r62 设计完成：跨域远期 stub L1 kickoff — CAT-006/NFR-003/RPT-002/RPT-003/META-005；18 文件框定（cat06 3 + dashboard_sla 1 + prefab 3 + templates 3 + physical 3 + api 薄 entry 5 + r62 smoke ≥30 测）；production stats/SLA probe/prefab binding/template blocks/physical table register；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r62 选题完成：跨域远期 stub L1 kickoff — CAT-006/NFR-003/RPT-002/RPT-003/META-005（5 项）；最低分 CAT-006/NFR-003(12.1)；饱和熔断未触发（Top5 12.1–13.1≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 十五 ID 各 1 轮未入选（未达 ≥3 硬标注阈值）；phase idle→G2_DONE
 - G1 r62 bootstrap：r61 PR #94 已 Squash merge dev-auto（cd011ad）；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 CAT-006(12.1)/NFR-003(12.1)/RPT-002(12.6)；STUCK 十五 ID 各 1 轮（r59–r61 五 ID <90 upsert，均 82.9–84.4）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r61 PRD 重评：CAT-005/DASH-004/VIZ-007/NFR-002/CAT-003 L1 kickoff；pytest 1590/4 skipped；test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 回归 138/138；总分 12.1–12.6→82.9–84.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
