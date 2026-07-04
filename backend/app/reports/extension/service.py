@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from app.reports.catalog import service as catalog_service
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.errors import ReportExtensionError
+from app.reports.extension.render import build_extension_render_spec
 from app.reports.extension.schemas import ExtensionConfigOut, ExtensionConfigUpsert
 
 _MAX_METRICS = 32
@@ -87,3 +88,41 @@ def delete_extension(node_id: uuid.UUID) -> None:
     if node_id not in _store:
         raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "Extension config not found", 404)
     del _store[node_id]
+
+
+def list_revision_history(node_id: uuid.UUID) -> list[dict]:
+    _assert_template_node(node_id)
+    record = _store.get(node_id)
+    if record is None:
+        raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "Extension config not found", 404)
+    entries = [e for e in _audit_log if e.get("nodeId") == str(node_id)]
+    if not entries:
+        return [{
+            "revision": record["revision"],
+            "changeNote": None,
+            "updatedAt": datetime.now(UTC).isoformat(),
+        }]
+    return [
+        {"revision": record["revision"], "changeNote": e["changeNote"], "updatedAt": e["updatedAt"]}
+        for e in entries
+    ]
+
+
+def export_persistence_snapshot(node_id: uuid.UUID) -> dict:
+    record = _store[node_id]
+    return {
+        "store": "memory",
+        "revision": record["revision"],
+        "metrics": record["metrics"],
+        "filters": record["filters"],
+        "auditEntryCount": sum(1 for e in _audit_log if e.get("nodeId") == str(node_id)),
+    }
+
+
+def get_render_spec(node_id: uuid.UUID) -> dict:
+    _assert_template_node(node_id)
+    record = _store.get(node_id)
+    if record is None:
+        raise ReportExtensionError("RPT_EXT_NODE_NOT_FOUND", "Extension config not found", 404)
+    node = catalog_service.get_node(node_id)
+    return build_extension_render_spec(record, node.template_kind)
