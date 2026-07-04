@@ -210,3 +210,239 @@ def test_dashboard_layout_invalid_chart(client, auth_headers):
     )
     assert resp.status_code == 422
     assert resp.json()["code"] == "DASH_INVALID_LAYOUT"
+
+
+def test_charts_validate_success(client, auth_headers):
+    """T-VIZ-R28-001-07: POST validate 合法配置 → 200。"""
+    resp = client.post(
+        "/api/v1/charts/validate",
+        json={
+            "chartType": "table",
+            "dataSourceId": str(uuid.uuid4()),
+            "mode": "sql",
+            "sql": "SELECT 1",
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["chartType"] == "table"
+
+
+def test_chart_view_line_valid():
+    """T-VIZ-R28-001-08: line 配置含 dimensions/metrics 通过。"""
+    cfg = validate_chart_view_config(
+        {
+            "chartType": "line",
+            "dataSourceId": str(uuid.uuid4()),
+            "mode": "sql",
+            "sql": "SELECT 1 AS x, 2 AS y",
+            "dimensions": [{"field": "x"}],
+            "metrics": [{"field": "y"}],
+        }
+    )
+    assert cfg.chart_type == "line"
+
+
+def test_chart_view_bar_valid():
+    """T-VIZ-R28-001-09: bar 配置含 dimensions/metrics 通过。"""
+    cfg = validate_chart_view_config(
+        {
+            "chartType": "bar",
+            "dataSourceId": str(uuid.uuid4()),
+            "mode": "sql",
+            "sql": "SELECT 1 AS x, 2 AS y",
+            "dimensions": [{"field": "x"}],
+            "metrics": [{"field": "y"}],
+        }
+    )
+    assert cfg.chart_type == "bar"
+
+
+def test_chart_view_binding_only():
+    """T-VIZ-R28-001-10: 仅 bindingId 无 inline 字段通过。"""
+    cfg = validate_chart_view_config(
+        {"chartType": "table", "bindingId": str(uuid.uuid4())}
+    )
+    assert cfg.binding_id is not None
+
+
+def test_list_dashboards_api(client, auth_headers):
+    """T-DASH-R28-001-02: GET /dashboards 返回列表结构。"""
+    client.post(
+        "/api/v1/dashboards",
+        json={"name": "L", "slug": "list-test"},
+        headers=auth_headers,
+    )
+    resp = client.get("/api/v1/dashboards", headers=auth_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "items" in body
+    assert body["total"] >= 1
+
+
+def test_dashboard_duplicate_slug_api(client, auth_headers):
+    """T-DASH-R28-001-05-api: 重复 slug → 409。"""
+    client.post(
+        "/api/v1/dashboards",
+        json={"name": "A", "slug": "dup-api"},
+        headers=auth_headers,
+    )
+    resp = client.post(
+        "/api/v1/dashboards",
+        json={"name": "B", "slug": "dup-api"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "DASH_SLUG_CONFLICT"
+
+
+def test_delete_dashboard_api(client, auth_headers):
+    """T-DASH-R28-001-03: DELETE → 204。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Del", "slug": "del-test"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    resp = client.delete(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
+    assert resp.status_code == 204
+    got = client.get(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
+    assert got.status_code == 404
+
+
+def test_update_dashboard_name_api(client, auth_headers):
+    """T-DASH-R28-001-04: PUT 更新名称。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Old", "slug": "upd-test"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    resp = client.put(
+        f"/api/v1/dashboards/{dash_id}",
+        json={"name": "New Name"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "New Name"
+
+
+def test_get_dashboard_not_found(client, auth_headers):
+    """T-DASH-R28-001-07: 不存在 id → 404。"""
+    resp = client.get(
+        f"/api/v1/dashboards/{uuid.uuid4()}",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "DASH_NOT_FOUND"
+
+
+def test_update_layout_service(db_session, auth_user_id):
+    """T-DASH-R28-003-01: service update_layout 持久化 chartConfig。"""
+    out = create_dashboard(db_session, name="L", slug="layout-svc", created_by=auth_user_id)
+    layout = {
+        "version": 1,
+        "widgets": [{
+            "id": str(uuid.uuid4()),
+            "type": "chart",
+            "title": "T",
+            "colSpan": 6,
+            "rowSpan": 1,
+            "order": 0,
+            "chartConfig": {
+                "chartType": "bar",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "sql",
+                "sql": "SELECT 1 AS x, 2 AS y",
+                "dimensions": [{"field": "x"}],
+                "metrics": [{"field": "y"}],
+            },
+        }],
+        "globalFilters": [],
+    }
+    updated = update_layout(db_session, out.id, layout)
+    assert updated.layout_json["widgets"][0]["chartConfig"]["chartType"] == "bar"
+    got = get_dashboard(db_session, out.id)
+    assert got.layout_json["widgets"][0]["title"] == "T"
+
+
+def test_chart_view_missing_sql():
+    """T-VIZ-R28-001-11: sql mode 缺 sql → CHART_MISSING_SQL。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {
+                "chartType": "table",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "sql",
+            }
+        )
+    assert exc.value.code == "CHART_MISSING_SQL"
+
+
+def test_chart_view_missing_series():
+    """T-VIZ-R28-001-12: line 缺 metrics → CHART_MISSING_SERIES。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {
+                "chartType": "line",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "sql",
+                "sql": "SELECT 1",
+                "dimensions": [{"field": "x"}],
+            }
+        )
+    assert exc.value.code == "CHART_MISSING_SERIES"
+
+
+def test_chart_view_table_mode():
+    """T-VIZ-R28-001-13: table mode 需 schema+table。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {
+                "chartType": "table",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "table",
+                "schema": "public",
+            }
+        )
+    assert exc.value.code == "CHART_MISSING_TABLE"
+
+
+def test_dashboard_auto_slug(client, auth_headers):
+    """T-DASH-R28-001-08: 省略 slug 自动生成。"""
+    resp = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Auto Slug Board"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 201
+    assert resp.json()["slug"]
+
+
+def test_dashboard_layout_empty_widgets(client, auth_headers):
+    """T-DASH-R28-001-09: 空 widgets layout 合法。"""
+    created = client.post(
+        "/api/v1/dashboards",
+        json={"name": "Empty", "slug": "empty-layout"},
+        headers=auth_headers,
+    )
+    dash_id = created.json()["id"]
+    resp = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={"layoutJson": {"version": 1, "widgets": [], "globalFilters": []}},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["layoutJson"]["widgets"] == []
+
+
+def test_create_dashboard_with_description(db_session, auth_user_id):
+    """T-DASH-R28-001-10: 创建含 description。"""
+    out = create_dashboard(
+        db_session,
+        name="Desc",
+        slug="with-desc",
+        description="备注",
+        created_by=auth_user_id,
+    )
+    assert out.description == "备注"

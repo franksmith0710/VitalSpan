@@ -108,13 +108,21 @@ redoc: /redoc
 
 ---
 
+## 4b. 图表配置（M5 · VIZ）
+
+| 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
+|------|------|------|-----|------|-----|------|----------|
+| POST | `/api/v1/charts/validate` | ChartViewConfig 预校验 | 内部 | 一期 | VIZ-001 | 已实现 | `backend/app/api/v1/charts.py` |
+
+---
+
 ## 5. Dashboard 与视图（M5 · FR-VIEW）
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建 | 内部 | 一期 | DASH-001 | 规划 | `backend/app/api/v1/dashboards.py` |
-| GET/PUT/DELETE | `/api/v1/dashboards/{id}` | Dashboard CRUD | 内部 | 一期 | DASH-002 | 规划 | `backend/app/api/v1/dashboards.py` |
-| PUT | `/api/v1/dashboards/{id}/layout` | 布局与组件列表 | 内部 | 一期 | DASH-002 | 规划 | `backend/app/api/v1/dashboards.py` |
+| GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| GET/PUT/DELETE | `/api/v1/dashboards/{id}` | Dashboard CRUD | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| PUT | `/api/v1/dashboards/{id}/layout` | 布局与组件列表 | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 规划 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 规划 | `backend/app/api/v1/views.py` |
 | POST | `/api/v1/embed/token` | 门户嵌入 token 签发 | IF-04 | 三期 | API-006 | 规划 | `backend/app/api/v1/embed.py` |

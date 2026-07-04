@@ -759,6 +759,20 @@ def test_revision_chain_head_0013_down_revision_t_mig41():
     assert revisions["0013"] == "0012"
 
 
+def test_alembic_upgrade_head_sql_contains_dashboards_t_mig42():
+    """T-MIG-42: upgrade head --sql 含 dashboards 表。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=backend_dir,
+        env=_migration_subprocess_env(),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "dashboards" in result.stdout
+
+
 def test_alembic_upgrade_head_sql_contains_chart_id():
     """T-MIG-40b: upgrade head --sql 含 chart_id 列。"""
     backend_dir = Path(__file__).resolve().parents[1] / "backend"
