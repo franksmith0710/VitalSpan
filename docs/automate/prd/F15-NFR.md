@@ -4,15 +4,16 @@
 
 ### [NFR-001] NFR-01 Dashboard 首屏性能
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r64）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：一期
 - **描述**：NFR-01 Dashboard 首屏性能（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 首屏 ≤ 5s
-  - [ ] 并发压测报告
-- **代码锚点**：`tests/perf/nfr01_dashboard/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 首屏 ≤ 5s（r64 L1：`POST validate` + `POST /api/v1/nfr/dashboard-first-screen/probe` mock elapsedMs=800 + budgetMs default 5000 + `DASHBOARD_FIRST_SCREEN_*` 错误域 + simulateSlow breach）
+  - [ ] 并发压测报告（mock probe only；无 `tests/perf/nfr01_dashboard/` 真实 perf suite）
+- **代码锚点**：`backend/app/core/nfr/dashboard_first_screen.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-001-01~06
+- **演化建议**：r64 L1 闭合 dashboard-first-screen validate/probe 与 budgetMs/widgetCount 边界；后续补真实首屏 perf suite 与并发压测报告
+- **里程碑对齐**：
 ### [NFR-002] NFR-01 报表查询性能
 
 - **状态**：部分实现（L1 kickoff r61）
@@ -40,15 +41,17 @@
 - **里程碑对齐**：
 ### [NFR-004] NFR-03 HTTPS 脱敏审计
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r64）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：一期
 - **描述**：NFR-03 HTTPS 脱敏审计（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 全站 HTTPS
-  - [ ] 敏感字段脱敏+审计
-- **代码锚点**：`backend/app/core/security/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 全站 HTTPS（r64 L1：`GET /api/v1/nfr/https-audit/status` httpsEnforced/webhookHttpsOnly/tlsMinVersion stub）
+  - [x] 敏感字段脱敏+审计（r64 L1：`POST /api/v1/nfr/https-audit/mask-probe` password/apiKey/token 脱敏 + maskedFields + auditLogged mock）
+  - [ ] 生产 TLS 终止与全链路审计 store（无 ingress 强制与持久化审计写入）
+- **代码锚点**：`backend/app/core/nfr/https_audit.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-004-01~06
+- **演化建议**：r64 L1 闭合 https-audit status/mask-probe 与敏感字段枚举边界；后续补生产 TLS 强制与审计 store 全链路
+- **里程碑对齐**：
 ### [NFR-005] NFR-04 连接器插件扩展性
 
 - **状态**：部分实现
