@@ -107,6 +107,8 @@ redoc: /redoc
 | GET | `/api/v1/nfr/runtime-compliance` | 零 DE/SS 运行时合规扫描报告（`policyVersion=nfr08-l1`） | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/runtime-compliance/assert` | strict 模式违规 → 503 `NFR_RUNTIME_VIOLATION`；permissive → 200 | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/runtime-compliance/deployment-report` | 部署验收报告（`overallAcceptance` + `remediationIndex`） | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/report-query-perf/probe` | 报表查询性能 mock probe（`withinBudget` + `elapsedMs` stub） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/report-query-perf/validate` | 报表查询性能配置校验（`REPORT_PERF_*`） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
 
 ---
 
@@ -150,6 +152,9 @@ redoc: /redoc
 | GET | `/api/v1/charts/types` | 图表类型 catalog（9 类型注册表）；只读 | 内部 | 一期 | VIZ-003 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
 | POST | `/api/v1/charts/render-spec` | 校验并归一为引擎无关 render-spec；非法 type → 422 `CHART_INVALID_TYPE` | 内部 | 一期 | VIZ-008 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
 | POST | `/api/v1/charts/embed/validate` | 图表嵌入配置校验（目标唯一性 + origin 白名单） | 内部 | 一期 | VIZ-006 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
+| POST | `/api/v1/charts/sdk/validate` | SDK portal init 配置校验（`VIZ_SDK_*`） | 内部 | 一期 | VIZ-007 | 已实现 | `backend/app/api/v1/charts.py` |
+| POST | `/api/v1/charts/sdk/lifecycle` | SDK lifecycle manifest（init/destroy） | 内部 | 一期 | VIZ-007 | 已实现 | `backend/app/api/v1/charts.py` |
+| GET | `/api/v1/charts/sdk/capabilities` | SDK 支持的 targetType/authMode 列表 | 内部 | 一期 | VIZ-007 | 已实现 | `backend/app/api/v1/charts.py` |
 
 > M9 r42 新增校验错误码：`CHART_INVALID_STYLE_VARIANT`（VIZ-004）、`CHART_FIELD_REQUIREMENT`（VIZ-005）；嵌入错误码 `EMBED_MISSING_TARGET`/`EMBED_TARGET_CONFLICT`/`EMBED_INVALID_ORIGIN`/`EMBED_INVALID`（VIZ-006）。域附录见 [services/viz.md](../services/viz.md)。
 
@@ -168,6 +173,8 @@ redoc: /redoc
 | GET | `/api/v1/dashboards/theme-analysis/chart-bindings` | chartViewBindings 联动查询（`linkedWidgetCount`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/entity-overview/validate` | 实体总览 item 校验（`DASH_OVERVIEW_*`） | 内部 | 一期 | DASH-005 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/{id}/entity-overview` | 实体总览 save/get（`config_type=entity_overview`；含 `publishStatus` 探测） | 内部 | 一期 | DASH-005 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| POST | `/api/v1/dashboards/global-filters/validate` | 全局筛选联动校验（`DASH_FILTER_*`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| PUT/GET | `/api/v1/dashboards/{id}/global-filters` | 全局筛选联动 save/get（`config_type=global_filter_linkage`；含 `affectedWidgetCount`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
@@ -236,6 +243,12 @@ redoc: /redoc
 | GET/POST | `/api/v1/gov/catalog/classification/nodes` | 分类树节点 list/create（`?parentId=`；`CAT_CLASS_*`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/classification/nodes/{id}/move` | 分类树节点移动（环检测；超深 → 422 `CAT_CLASS_MAX_DEPTH`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | DELETE | `/api/v1/gov/catalog/classification/nodes/{id}` | 删除叶节点（含子节点 → 409 `CAT_CLASS_HAS_CHILDREN`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET/POST | `/api/v1/gov/catalog/geo-regions/nodes` | 地域 geo 树 list/create（`?parentId=`；`CAT03_*`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/catalog/geo-regions/nodes/{id}/move` | geo 树节点移动（环检测；超深 → 422 `CAT03_MAX_DEPTH`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| DELETE | `/api/v1/gov/catalog/geo-regions/nodes/{id}` | 删除叶节点（含子节点 → 409 `CAT03_HAS_CHILDREN`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/catalog/tickets/validate` | 工单 stats item 校验（`CAT05_*`） | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST/GET | `/api/v1/gov/catalog/tickets/items` | 工单 stats item 登记/列表 | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/tickets/items/{key}/stats` | 工单 stats mock probe | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`；需 admin；幂等 201/200；403 `BUS_REGISTER_FORBIDDEN`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/auto-register` | 总线全自动注册 FSM（`catalogEntryId`；integration/admin；幂等 201/200；403 `GOV_AUTO_BUS_FORBIDDEN`） | IF-06 | 四期 | GOV-007 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/query-design/validate` | 可视化查询设计校验（422 `detail.fields`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |

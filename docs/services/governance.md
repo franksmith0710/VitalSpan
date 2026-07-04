@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/governance/` |
 | PRD | [F10-GOV](../automate/prd/F10-GOV.md) · [F14-CAT](../automate/prd/F14-CAT.md) |
 | 里程碑 | M6（L1 kickoff） |
-| 状态 | **L1 kickoff (r60)** |
+| 状态 | **L1 kickoff (r61)** |
 
 ## 职责
 
@@ -15,6 +15,8 @@
 - 查询设计权限联动与 RLS 绑定守卫（GOV-008）
 - 查询服务发布状态机 submit/approve/reject（GOV-005）
 - **分类树节点**（`catalog/classification/`）：内存树 CRUD/move、环检测与深度守卫（CAT-004）
+- **地域 geo 树**（`catalog/cat03/`）：内存树 CRUD/move、环检测与 `MAX_GEO_DEPTH=6`（CAT-003）
+- **工单 stats item**（`catalog/cat05/`）：扁平 item 登记 + validate/stats probe（CAT-005）
 - **工号行为审计**（`catalog/cat07/`）：mock seed + `GET /workno/behavior`（CAT-007）
 - **总线全自动注册 FSM**（`bus/auto.py`）：`POST /gov/bus/auto-register`（GOV-007）
 - 工单流程模板与五态 FSM 实例（GOV-003）
@@ -27,6 +29,8 @@
 |----|-----|
 | catalog 分类/条目 CRUD、bus PoC 登记记录 | 查询执行（→ `query`） |
 | classification 树节点 CRUD/move（内存 L1；`MAX_CLASS_DEPTH=8`） | timeseries 模板完整实现（CAT-04 companion） |
+| `catalog/cat03/` geo region 树（内存 L1；`MAX_GEO_DEPTH=6`；与 classification 独立 store） | M7 地域权限 RLS（companion） |
+| `catalog/cat05/` tickets stats item 扁平登记 + mock stats probe | 真实工单表联调、权限绑定工单表 |
 | workflow 模板校验 + 五态 FSM 实例持久化 | 完整 BPM 工单与审批流水线 UI（GOV-003+） |
 | openapi 映射 store（published entry 校验 + entityTypeRef） | 与 `publish_service` 串联的跨域发布（本域 workflow 独立） |
 | `catalog/cat07/` workno behavior mock；`bus/auto.py` 全自动注册 FSM | 真实审计 DB、publish hook 内嵌、真实总线 HTTP |
@@ -58,6 +62,8 @@
 | `GET /api/v1/gov/publish/entries/{id}/notifications` | 审批通知事件列表（内存 store） | GOV-005 | 已实现 companion |
 | `GET/POST /api/v1/gov/workflow/*` | 工单模板/实例/迁移 REST | GOV-003 | 已实现 L1 |
 | `catalog/classification/service` | 分类树内存 store + cycle/depth 守卫 | CAT-004 | L1 已实现 r59 |
+| `catalog/cat03/service` | 地域 geo 树内存 store + cycle/depth 守卫 | CAT-003 | L1 已实现 r61 |
+| `catalog/cat05/service` | 工单 stats item validate/create/list/stats probe | CAT-005 | L1 已实现 r61 |
 
 ## 关联 API
 

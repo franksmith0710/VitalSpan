@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/viz/` |
 | PRD | [F06-VIZ](../automate/prd/F06-VIZ.md) · VIZ-003/004/005/006/008 |
 | 里程碑 | M9 |
-| 状态 | **骨架（L1 kickoff）** |
+| 状态 | **L1 kickoff (r61)** |
 
 ## 职责
 
@@ -19,8 +19,9 @@
 | In | Out |
 |----|-----|
 | 类型注册与 catalog、`style_variant`/`field_rule` 校验规则源 | 真实 ECharts/AntV 渲染 |
-| 引擎无关 render-spec 归一 | `fe/` 图表组件、iframe 嵌入页面、嵌入 SDK（VIZ-007） |
+| 引擎无关 render-spec 归一 | `fe/` 图表组件、iframe 嵌入页面 |
 | embed origin 白名单/目标唯一性校验 | 图表出数（复用 `query` 链）、嵌入 token 签发与 CSP 响应头 |
+| `sdk_portal/` SDK init validate + lifecycle manifest（只读引用 `_ORIGIN_RE`） | npm JS SDK 发布、修改 `embed.py` 校验语义 |
 
 ## 依赖
 
@@ -36,6 +37,7 @@
 | `get_spec` / `export_chart_type_catalog` | 查规格 / 导出 catalog | VIZ-003 | 已实现（骨架） |
 | `build_render_spec` | render-spec 归一映射 | VIZ-008 | 已实现（骨架） |
 | `validate_chart_embed_config` / `ChartEmbedConfig` | 嵌入配置校验与契约 | VIZ-006 | 已实现（骨架） |
+| `viz/sdk_portal/` | SDK portal init validate + lifecycle manifest + capabilities | VIZ-007 | L1 已实现 r61 |
 
 ## 关联 API
 

@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design | docs/superpowers/specs/2026-07-04-rpt-view-cat-gov-l1-r60-design.md |
-| plan | docs/superpowers/plans/2026-07-04-rpt-view-cat-gov-l1-r60.md |
-| branch | feat/evolution-r60-rpt-view-cat-gov-l1 |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r61.md |
+| design | docs/superpowers/specs/2026-07-04-cat-dash-viz-nfr-l1-r61-design.md |
+| plan | docs/superpowers/plans/2026-07-04-cat-dash-viz-nfr-l1-r61.md |
+| branch | feat/evolution-r61-cat-dash-viz-nfr-l1 |
 | base_branch | dev-auto |
-| prd_ids | RPT-001,VIEW-002,VIEW-003,CAT-007,GOV-007 |
-| pr_number | 93 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest -q ../tests/test_rpt_view_cat_gov_r60.py ../tests/test_dash_rpt_r58.py ../tests/test_meta_cat_dash_conn_design_r59.py ../tests/test_view_gov_api_r31.py |
+| prd_ids | CAT-005,DASH-004,VIZ-007,NFR-002,CAT-003 |
+| pr_number |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T18:30:00Z |
