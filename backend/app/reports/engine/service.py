@@ -4,9 +4,11 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+from app.auth.deps import UserContext
 from app.reports.catalog import service as catalog_service
 from app.reports.catalog.schemas import CatalogNodeOut
-from app.reports.engine.errors import ReportEngineError
+from app.reports.engine import acl as engine_acl
+from app.reports.engine.errors import RPT_ENGINE_INVALID_PARAMETER, ReportEngineError
 from app.reports.engine.schemas import EngineRenderSpec, RenderRunIn, RenderRunOut
 from app.reports.errors import ReportExtensionError
 from app.reports.extension import service as extension_service
@@ -38,7 +40,18 @@ def _assert_extension_when_kind(node: CatalogNodeOut) -> None:
         ) from None
 
 
-def run_template(template_id: uuid.UUID, payload: RenderRunIn) -> RenderRunOut:
+def _validate_parameters(parameters: dict) -> dict:
+    for key in parameters:
+        if not isinstance(key, str):
+            raise ReportEngineError(RPT_ENGINE_INVALID_PARAMETER, "parameter keys must be strings", 422)
+        if key == "__proto__":
+            raise ReportEngineError(RPT_ENGINE_INVALID_PARAMETER, "reserved parameter key", 422)
+    return parameters
+
+
+def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContext) -> RenderRunOut:
+    engine_acl.assert_engine_run_access(actor, template_id)
+    _validate_parameters(payload.parameters or {})
     if payload.format == "pdf":
         raise ReportEngineError(
             "RPT_ENGINE_FORMAT_NOT_SUPPORTED",

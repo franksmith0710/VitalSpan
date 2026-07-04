@@ -26,9 +26,9 @@ def _engine_error(exc: ReportEngineError) -> JSONResponse:
 def run_report_template(
     template_id: uuid.UUID,
     payload: RenderRunIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> RenderRunOut | JSONResponse:
     try:
-        return engine_service.run_template(template_id, payload)
+        return engine_service.run_template(template_id, payload, actor)
     except ReportEngineError as exc:
         return _engine_error(exc)
