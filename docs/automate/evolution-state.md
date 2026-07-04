@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r59.md |
 | design | docs/superpowers/specs/2026-07-04-meta-cat-dash-kingbase-design-r59-design.md |
 | plan | docs/superpowers/plans/2026-07-04-meta-cat-dash-kingbase-design-r59.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r59 验证通过：ruff clean；pytest 1524 passed/4 skipped（全量二次运行 exit_code 0；首轮 1 例环境级 flaky test_rpt_r58_render_spec_probe_under_50ms 全套件负载下 ~104ms>50ms 隔离 3/3 通过、与 r59 无关）；test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 + test_dash_rpt_query_nfr_r57 37/37 回归 109/109；UI: N/A（纯后端 ui_design_skill none）；PR #91 可能已提前创建（已知 SOP 顺序 concern）；phase P3_DONE→P4_DONE
 - P3 r59 实现完成：8 Task 全绿；跨域远期薄弱项 L1 kickoff — META-004/CAT-004/DASH-005/CONN-018/DESIGN-004；34 测 test_meta_cat_dash_conn_design_r59 + r58 38/38 + r57 37/37 回归；pytest 1524/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r59-meta-cat-dash-kingbase-design-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r59 计划完成：8 Task（fixture+config types→META-004 dataset→CAT-004 classification→DASH-005 entity_overview→CONN-018 kingbase→DESIGN-004 workflow-link→32 测回归门控→docs）；21 P3 生产文件 + 1 测试 ≤22；subagent-driven-development option 1；全 Task UI skill none；≥32 新测 test_meta_cat_dash_conn_design_r59 + r58 38/38 + r57 37/37 回归；plan=docs/superpowers/plans/2026-07-04-meta-cat-dash-kingbase-design-r59.md；phase P1_DONE→P2_DONE
 - P1 r59 设计完成：跨域远期薄弱项 L1 kickoff — META-004/CAT-004/DASH-005/CONN-018/DESIGN-004；19 文件框定（metadata/dataset 4 + classification 3 + entity_overview 3 + kingbase 3 + designer/workflow 1 + api 薄 entry 3 + dialects 登记 2 + r59 smoke ≥32 测）；Dataset/分类树/实体总览/Kingbase PG 委托/workflow-link；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
