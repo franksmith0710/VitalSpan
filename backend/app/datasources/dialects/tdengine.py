@@ -99,6 +99,7 @@ class TdengineConnector:
                 ColumnInfo(name=row[0], data_type=str(row[1]), nullable=True)
                 for row in cur.fetchall()
             ]
+            # r41: DESCRIBE 结果超 TDENGINE_MAX_COLUMNS 时切片（与 Oracle/ClickHouse 对称）
             return columns[:TDENGINE_MAX_COLUMNS] if len(columns) > TDENGINE_MAX_COLUMNS else columns
         except Exception:
             return []
