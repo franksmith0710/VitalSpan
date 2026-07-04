@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r41.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch |  |
-| prd_ids |  |
+| prd_ids | CONN-006,CONN-011,CONN-012,CONN-013,CONN-014 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 r41 选题完成：M11 嵌入式/时序/文档连接器 companion 质量推分 — CONN-006/011/012/013/014（5 项）；最低分 CONN-014(86.1)；饱和熔断未触发；plan M1/M1B 无活跃勾选行（已知 concern）；STUCK 五 ID 各 1 轮（未达 ≥3 硬标注阈值）；phase idle→G2_DONE
 - G1 r41 bootstrap：r40 PR #66 已 Squash merge dev-auto（ddfeb11）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 VIZ-004(11.3)/VIZ-008(11.4)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（CONN-006/011/012/013/014）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r40 PRD 重评：CONN-006/011/012/013/014 L1 kickoff；pytest 967/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 回归；总分 11.5–12.8→86.1–88.8（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r40 验证通过：ruff clean；pytest 967 passed/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 + test_invalid_connector_type 回归 154/154；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
