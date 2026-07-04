@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design |  |
-| plan |  |
-| branch |  |
+| design | docs/superpowers/specs/2026-07-04-nfr-gov-gbase-companion-quality-r51-design.md |
+| plan | docs/superpowers/plans/2026-07-04-nfr-gov-gbase-companion-quality-r51.md |
+| branch | feat/evolution-r51-nfr-gov-gbase-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | NFR-006,NFR-007,NFR-005,GOV-005,CONN-019 |
-| pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| pr_number | 79 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest ../tests/test_nfr_gov_conn_r51.py ../tests/test_nfr_gov_conn_r46.py ../tests/test_design_conn_gov_query_r49.py -q |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T12:30:00Z |
+| skill_rule_index_generated_at | 2026-07-04T13:15:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,10 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r51 PRD 重评：NFR-005/006/007 + GOV-005 + CONN-019 companion 质量推分；pytest 1248/4 skipped；test_nfr_gov_conn_r51 43/43 + r46 36/36 + r49 35/35；总分 79.2–84.1→90.0–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
+- P4 r51 验证通过：ruff clean；pytest 1248 passed/4 skipped（全量 exit_code 0）；test_nfr_gov_conn_r51 43/43 + r46 36/36 + r49 35/35 回归 114/114；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
+- P3 r51 实现完成：8 Task 全绿；NFR 横切 + GOV-005 + CONN-019 companion 质量推分 — NFR-006/007/005 + GOV-005 + CONN-019；43 测 test_nfr_gov_conn_r51 + r46 36/36 + r49 35/35 回归 114/114；ruff clean；ui_design_skill none；branch feat/evolution-r51-nfr-gov-gbase-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P1 r51 设计完成：NFR 横切 + GOV-005 + CONN-019 companion 质量推分 — NFR-006/007/005 + GOV-005 + CONN-019；18 文件框定（core/nfr 7 + governance/publish 4 + gbase/errors 2 + api 薄 entry 2 + r51 smoke ≥30 测）；浏览器矩阵/推送 mock 降级链/信创 remediation/插件登记路径/审批通知钩子/GBase HTTP 链；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G1 r50 bootstrap：r49 PR #76 已 Squash merge dev-auto（c60ab89）；G0 PASS（PR #77 plan 恢复 docs-only 已合并）；工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 NFR-006(79.2)/NFR-007(80.0)/NFR-005(81.2)；STUCK 十 ID 各 1 轮（NFR-005/006/007 + GOV-003/005 + DESIGN-003/005 + CONN-016/019 + QUERY-003，均 <90）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r49 PRD 重评：DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003 L1 kickoff；pytest 1205/4 skipped；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36；总分 11.6–12.0→81.4–83.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r49 验证通过：ruff clean；pytest 1205 passed/4 skipped（全量 exit_code 0）；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36 回归 111/111；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
@@ -167,13 +171,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| NFR-006 | 1 | 79.2 | 2026-07-04 |
-| NFR-007 | 1 | 80.0 | 2026-07-04 |
-| NFR-005 | 1 | 81.2 | 2026-07-04 |
 | GOV-003 | 1 | 81.4 | 2026-07-04 |
 | DESIGN-005 | 1 | 81.4 | 2026-07-04 |
 | QUERY-003 | 1 | 82.5 | 2026-07-04 |
-| GOV-005 | 1 | 82.6 | 2026-07-04 |
 | DESIGN-003 | 1 | 82.9 | 2026-07-04 |
 | CONN-016 | 1 | 83.2 | 2026-07-04 |
-| CONN-019 | 1 | 84.1 | 2026-07-04 |

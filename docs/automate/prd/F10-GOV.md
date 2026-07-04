@@ -68,9 +68,9 @@
 - **描述**：查询服务发布 FR-1.4（SRS 追溯项）。
 - **验收标准**：
   - [x] 发布审批后自动创建接口（draft→pending_publish→published FSM + integration list 可见，r46 L1）
-  - [ ] 通知申请人
-- **代码锚点**：`backend/app/governance/publish/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_gov_conn_r46.py`
-- **演化建议**：r46 L1 闭合发布状态机与非法迁移拦截；后续 companion 补申请人通知与 BPM 工单流
+  - [x] 审批通知钩子（submit/approve/reject 通知 + 幂等双批单通知，r51 companion）
+- **代码锚点**：`backend/app/governance/publish/` · `backend/app/governance/publish/notifications.py` · `backend/app/api/v1/gov.py` · `tests/test_nfr_gov_conn_r51.py`
+- **演化建议**：r51 companion 闭合审批通知契约与非法状态/并发拦截；后续补申请人 UI 通知与 BPM 工单流
 ### [GOV-006] 发布引擎 OpenAPI 映射
 
 - **状态**：未实现

@@ -47,6 +47,7 @@
 | `governance/publish/` | 查询服务发布状态机 submit/approve/reject | GOV-005 | 已实现 L1 |
 | `governance/workflow/` | 工单模板 + 五态 FSM（draft→published） | GOV-003 | 已实现 L1 |
 | `POST/GET /api/v1/gov/publish/entries/{id}/*` | 发布工作流 REST 骨架 | GOV-005 | 已实现 L1 |
+| `GET /api/v1/gov/publish/entries/{id}/notifications` | 审批通知事件列表（内存 store） | GOV-005 | 已实现 companion |
 | `GET/POST /api/v1/gov/workflow/*` | 工单模板/实例/迁移 REST | GOV-003 | 已实现 L1 |
 
 ## 关联 API
@@ -70,6 +71,10 @@
 
 - **GOV-005**：`governance/publish/service` 在 `CatalogEntry.status` 上编排 `draft→pending_publish→published`；非法迁移 → 400 `GOV_PUBLISH_INVALID_TRANSITION`；pending 重复 submit → 409 `GOV_PUBLISH_ALREADY_PENDING`
 - integration 快路径 `POST /api/v1/services/{id}/publish` 仍保留 `draft→published`（r45 companion 不变）
+
+### r51 companion 质量推分（GOV-005）
+
+- **GOV-005**：`governance/publish/notifications.py` 内存 `_PUBLISH_NOTIFICATIONS`；`submit`/`approve`/`reject` 成功后 `emit_publish_notification`；幂等 double approve 不重复发 approved 通知；`GET /gov/publish/entries/{id}/notifications` 只读；非持久化、非真实 IM 发送
 
 ### r49 L1 kickoff（GOV-003）
 
