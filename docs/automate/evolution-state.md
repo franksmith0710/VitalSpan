@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
+| phase | idle |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r41.md |
 | design | docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r42 bootstrap：r41 PR #67 已合并 dev-auto；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 VIZ-004(11.3)/VIZ-008(11.4)/CONN-016(11.6)；STUCK 表空（r41 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r41 PRD 重评：CONN-006/011/012/013/014 companion 质量推分；pytest 1003/4 skipped；test_connectors_gov_r41 36/36 + connector 回归 189/189；总分 86.1–88.8→90.0–91.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r41 验证通过：ruff clean；pytest 1003 passed/4 skipped；test_connectors_gov_r41 36/36 + connector 回归 189/189（r40 43 + r39 33 + r37 40 + r36 37）；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P3 r41 实现完成：8 Task 全绿；CONN-006/011/012/013/014 companion 质量推分；36 测 test_connectors_gov_r41 + r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；pytest 1003/4 skipped；branch cursor/bc-239ae5b7-e62d-4698-9d7c-67793ddde421-db0d；base_branch dev-auto；phase P2_DONE→P3_DONE
