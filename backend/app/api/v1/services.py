@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Header, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -80,10 +80,33 @@ def execute_service(
     payload: svc.QueryServiceExecuteIn,
     actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
         return svc.execute_published_service(
-            db, service_id, payload.parameters, actor
+            db,
+            service_id,
+            payload.parameters,
+            actor,
+            idempotency_key=idempotency_key,
+        )
+    except IntegrationError as exc:
+        return _err(exc)
+
+
+@router.post("/{service_id}/publish")
+def publish_service_route(
+    service_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        out, created = svc.publish_service(db, service_id, actor)
+        service_out = svc._entry_to_service(out)
+        status_code = 201 if created else 200
+        return JSONResponse(
+            status_code=status_code,
+            content=service_out.model_dump(by_alias=True, mode="json"),
         )
     except IntegrationError as exc:
         return _err(exc)

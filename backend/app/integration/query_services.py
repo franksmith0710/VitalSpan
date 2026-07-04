@@ -10,7 +10,10 @@ from app.auth.deps import UserContext
 from app.core.logging import trace_id_var
 from app.governance.catalog import service as catalog_service
 from app.governance.catalog.schemas import CatalogEntryOut
+from app.integration import bus_register
 from app.integration.errors import IntegrationError
+
+_IDEMPOTENCY_STORE: dict[str, QueryServiceExecuteOut] = {}
 
 
 class QueryServiceOut(BaseModel):
@@ -78,6 +81,36 @@ def _require_published(entry: CatalogEntryOut) -> None:
         )
 
 
+def _parse_required_params(path: str) -> list[str]:
+    if ";requires=" not in path:
+        return []
+    _, fragment = path.split(";requires=", 1)
+    return [p.strip() for p in fragment.split(",") if p.strip()]
+
+
+def _validate_execute_parameters(
+    required: list[str],
+    parameters: dict[str, str | int | float | bool | None],
+) -> None:
+    missing = []
+    for name in required:
+        if name not in parameters:
+            missing.append({"field": name, "message": "required"})
+            continue
+        val = parameters[name]
+        if val is None or (isinstance(val, str) and val.strip() == ""):
+            missing.append({"field": name, "message": "required"})
+        elif not isinstance(val, (str, int, float, bool)):
+            missing.append({"field": name, "message": "invalid type"})
+    if missing:
+        raise IntegrationError(
+            "SERVICE_EXECUTE_INVALID",
+            "Invalid execute parameters",
+            422,
+            fields=missing,
+        )
+
+
 def list_published_services(
     db: Session,
     *,
@@ -131,9 +164,22 @@ def execute_published_service(
     service_id: uuid.UUID,
     parameters: dict,
     actor: UserContext,
+    *,
+    idempotency_key: str | None = None,
 ) -> QueryServiceExecuteOut:
     _assert_service_invoke(actor)
-    service = get_published_service(db, service_id)
+    if idempotency_key:
+        cache_key = f"{service_id}:{idempotency_key}"
+        cached = _IDEMPOTENCY_STORE.get(cache_key)
+        if cached is not None:
+            return cached
+    try:
+        entry = catalog_service.get_entry(db, service_id)
+    except catalog_service.CatalogError:
+        raise IntegrationError("SERVICE_NOT_FOUND", "Service not found", 404) from None
+    _require_published(entry)
+    service = _entry_to_service(entry)
+    _validate_execute_parameters(_parse_required_params(service.path), parameters)
     if "force-error" in service.path:
         trace = trace_id_var.get() or uuid.uuid4().hex
         raise IntegrationError(
@@ -143,10 +189,40 @@ def execute_published_service(
             trace_id=trace,
         )
     trace = trace_id_var.get() or uuid.uuid4().hex
-    return QueryServiceExecuteOut(
+    result = QueryServiceExecuteOut(
         columns=["value"],
         rows=[[1]],
         row_count=1,
         truncated=False,
         trace_id=trace,
     )
+    if idempotency_key:
+        _IDEMPOTENCY_STORE[f"{service_id}:{idempotency_key}"] = result
+    return result
+
+
+def publish_service(
+    db: Session,
+    service_id: uuid.UUID,
+    actor: UserContext,
+) -> tuple[CatalogEntryOut, bool]:
+    _assert_service_invoke(actor)
+    try:
+        entry = catalog_service.get_entry(db, service_id)
+    except catalog_service.CatalogError:
+        raise IntegrationError("SERVICE_NOT_FOUND", "Service not found", 404) from None
+    if entry.status == "published":
+        try:
+            bus_register.register_on_publish(db, service_id, actor)
+        except IntegrationError:
+            pass
+        return entry, False
+    try:
+        published = catalog_service.publish_entry(db, service_id)
+    except catalog_service.CatalogError as exc:
+        raise IntegrationError(exc.code, exc.message, exc.status) from exc
+    try:
+        bus_register.register_on_publish(db, service_id, actor)
+    except IntegrationError:
+        pass
+    return published, True
