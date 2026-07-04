@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r35.md |
 | design | docs/superpowers/specs/2026-07-04-m11-conn-m13-gov-companion-quality-r35-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-conn-m13-gov-companion-quality-r35.md |
 | branch | cursor/bc-8c18737e-0c44-4d37-a690-cf6681f61819-520c |
 | base_branch | dev-auto |
 | prd_ids | CONN-021,CONN-009,GOV-008,GOV-004,CONN-015 |
-| pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| pr_number | 60 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest tests/test_connectors_gov_r35.py tests/test_connectors_gov_r34.py tests/test_meta_design_r33.py -v |
+| last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T03:55:00Z |
