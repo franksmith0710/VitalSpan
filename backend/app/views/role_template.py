@@ -58,9 +58,24 @@ def get_defaults(role_id: str) -> dict[str, Any]:
     }
 
 
+_MIN_WIDGETS = 1
+_MAX_WIDGETS = 64
+
+
+def _assert_widget_bounds(max_widgets: int) -> None:
+    if max_widgets < _MIN_WIDGETS or max_widgets > _MAX_WIDGETS:
+        raise ViewError(
+            "VIEW_DEFAULT_OUT_OF_BOUNDS",
+            f"maxWidgetCount must be between {_MIN_WIDGETS} and {_MAX_WIDGETS}",
+            422,
+            [{"field": "maxWidgetCount", "message": "out of bounds"}],
+        )
+
+
 def put_defaults(db: Session, role_id: str, payload: dict[str, Any], actor: UserContext) -> dict[str, Any]:
     _assert_admin(actor)
-    max_widgets = payload.get("maxWidgetCount", 24)
+    max_widgets = int(payload.get("maxWidgetCount", 24))
+    _assert_widget_bounds(max_widgets)
     body = {
         "dashboardId": payload.get("dashboardId"),
         "reportTemplateNodeId": payload.get("reportTemplateNodeId"),
