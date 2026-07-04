@@ -4,28 +4,30 @@
 
 ### [CAT-001] CAT-01 实体生命周期查询类
 
-- **状态**：部分实现（L1 kickoff r64）
+- **状态**：部分实现（companion r66）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：CAT-01 实体生命周期查询类（SRS 追溯项）。
 - **验收标准**：
   - [x] 模板规格落地（r64 L1：`POST validate` + `POST/GET /api/v1/gov/catalog/lifecycle-templates` + `CAT01_*` 错误域 + stages/entityType 校验 + readOnlyOpenApi 默认 true）
+  - [x] companion lifecycle scope ACL + perf probe（r66：`set_user_lifecycle_scope` + `CAT01_FORBIDDEN` 403；GET/stage-move NOT_FOUND 404；`probe_list_lifecycle_templates_budget_ms`/`probe_validate_lifecycle_budget_ms` ≤50ms）
   - [ ] OpenAPI 只读（无 IF-02 `GET /api/v1/entities/{entityType}/{entityId}` 实体查询链）
-- **代码锚点**：`backend/app/governance/catalog/cat01/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-001-01~06
-- **演化建议**：r64 L1 闭合 lifecycle 模板 validate/create/list 与 key 冲突/空 stages 边界；后续补 IF-02 实体生命周期只读查询与 fe 模板页
+- **代码锚点**：`backend/app/governance/catalog/cat01/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-001-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-CAT-R66-001-01~06
+- **演化建议**：r66 companion 闭合 lifecycle scope ACL、GET/stage-move NOT_FOUND 与 list/validate perf probe；后续补 IF-02 实体生命周期只读查询与 fe 模板页
 - **里程碑对齐**：
 ### [CAT-002] CAT-02 统计分析聚合类
 
-- **状态**：部分实现（L1 kickoff r64）
+- **状态**：部分实现（companion r66）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：CAT-02 统计分析聚合类（SRS 追溯项）。
 - **验收标准**：
   - [x] aggregate API 模板（r64 L1：`POST validate` + `POST/GET /api/v1/gov/catalog/aggregate-templates` + `CAT02_*` 错误域 + dimensions/metrics/aggregationFn 校验）
   - [x] PoC API 可归属（r64 L1：`attributionLabel` + `tableRef` stub 登记 + list 含已创建项）
+  - [x] companion aggregate scope ACL + perf probe（r66：`set_user_aggregate_scope` + `CAT02_FORBIDDEN` 403；duplicate dimensions/metrics 422；`probe_validate_aggregate_budget_ms`/`probe_list_aggregate_budget_ms` ≤50ms）
   - [ ] IF-02 `GET /api/v1/stats/aggregate` 真实聚合查询链
-- **代码锚点**：`backend/app/governance/catalog/cat02/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-002-01~06
-- **演化建议**：r64 L1 闭合 aggregate 模板 validate/create/list 与 key 冲突/空 metrics 边界；后续补 stats/aggregate 只读查询与数据源绑定
+- **代码锚点**：`backend/app/governance/catalog/cat02/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-002-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-CAT-R66-002-01~06
+- **演化建议**：r66 companion 闭合 aggregate scope ACL、duplicate dim/metric 守卫与 validate/list perf probe；后续补 stats/aggregate 只读查询与数据源绑定
 - **里程碑对齐**：
 ### [CAT-003] CAT-03 地域维度查询类
 

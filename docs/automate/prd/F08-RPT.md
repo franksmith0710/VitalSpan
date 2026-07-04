@@ -4,15 +4,16 @@
 
 ### [RPT-001] 报表引擎渲染
 
-- **状态**：部分实现（L1 kickoff r60）
+- **状态**：部分实现（companion r66）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：报表引擎渲染（SRS 追溯项）。
 - **验收标准**：
   - [x] 模板+数据→Web 展现（r60 L1：`POST /api/v1/reports/templates/{id}/run` → renderSpec engineVersion=1.0；format web/html；`RPT_ENGINE_*` 错误域）
+  - [x] companion engine run ACL + parameter guard + perf probe（r66：`set_user_engine_scope` + `RPT_ENGINE_FORBIDDEN` 403；`__proto__` parameter 422；`probe_run_template_budget_ms` ≤50ms）
   - [ ] 绑定 M3-LITE（无真实数据源执行链；无 PDF/Word 渲染）
-- **代码锚点**：`backend/app/reports/engine/` · `backend/app/api/v1/reports/engine.py` · `tests/test_rpt_view_cat_gov_r60.py` T-RPT-R60-001-01~07
-- **演化建议**：r60 L1 闭合 run API、format 守卫、incomplete template 422 与 probe <50ms；后续补 M3-LITE 绑定、PDF/Word 渲染与 fe 展现 UI
+- **代码锚点**：`backend/app/reports/engine/` · `backend/app/api/v1/reports/engine.py` · `tests/test_rpt_view_cat_gov_r60.py` T-RPT-R60-001-01~07 · `tests/test_cat_dash_rpt_meta_r66.py` T-RPT-R66-001-01~05
+- **演化建议**：r66 companion 闭合 engine run ACL、parameter injection guard 与 run perf probe；后续补 M3-LITE 绑定、PDF/Word 渲染与 fe 展现 UI
 - **里程碑对齐**：
 ### [RPT-002] 预制分析报表体系 FR-3.1
 
