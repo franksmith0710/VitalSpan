@@ -11,6 +11,8 @@
 
 - **查询条件配置**（DESIGN-001）：字段/操作符/值类型校验与持久化
 - **运算规则维护**（DESIGN-002）：表达式白名单、依赖环检测与持久化
+- **输出字段与聚合**（DESIGN-003）：字段注册表 + glossary 元字段引用校验与持久化
+- **传统 SQL 模式**（DESIGN-005）：只读 SQL 校验、能力声明与持久化
 - 图表/Dashboard 设计器服务端契约（保存草稿、校验）
 - 与 `metadata` Dataset 的设计态绑定（四期）
 - 设计资源版本与协作锁（按需）
@@ -20,12 +22,13 @@
 | In | Out |
 |----|-----|
 | 查询条件/运算规则 schema 校验与 API | 画布 UI（前端 Admin） |
-| 配置持久化委托 `query/config_store` | 运行时查询（→ `query`） |
+| SQL 模式/输出字段 schema 校验与 API | 运行时查询（→ `query`） |
+| 配置持久化委托 `query/config_store` | 完整 BPM 工单 UI（四期） |
 
 ## 依赖
 
 - `core`、`auth`
-- `query/config_store`（QUERY-007）：`query_conditions` / `compute_rules` 类型存储
+- `query/config_store`（QUERY-007）：`query_conditions` / `compute_rules` / `sql_mode` / `output_fields` 类型存储
 - `metadata`、`dashboard`（发布衔接，四期）
 
 ## 主要类型 / 入口
@@ -34,6 +37,8 @@
 |------|------|-----|------|
 | `QueryConditionsConfig` | 查询条件 schema v1.0 | DESIGN-001 | L1 已实现 |
 | `ComputeRulesConfig` | 运算规则 schema v1.0 | DESIGN-002 | L1 已实现 |
+| `SqlModeSpec` / `sql_mode.py` | SQL 只读模式校验 + 持久化 | DESIGN-005 | L1 已实现 |
+| `OutputFieldsConfig` / `output_fields.py` | 输出字段/聚合校验 + 持久化 | DESIGN-003 | L1 已实现 |
 | `designer/service` | 校验 + 委托 config_store | DESIGN-001/002 | L1 已实现 |
 | `DesignerService` | 草稿与校验（全量） | DESIGN-001~003 | 待建 |
 | `ChartViewConfig` | 图表配置契约（与 `schemas` 共享） | DESIGN-004~005 · F06-VIZ | 待建 |
@@ -52,6 +57,9 @@
 | `DESIGN_RULE_TYPE_MISMATCH` | ruleType 与 expression 不一致 |
 | `DESIGN_RULE_BROKEN_CHAIN` | dependsOn 引用未知规则 id |
 | `DESIGN_INVALID_AGGREGATE` | 非法聚合函数（如 median） |
+| `DESIGN_EMPTY_OUTPUT_FIELDS` | 输出字段列表为空 |
+| `DESIGN_SQL_NOT_READONLY` | SQL 非只读 |
+| `DESIGN_SQL_EMPTY` | SQL 为空 |
 | `DESIGN_UNKNOWN_TARGET_FIELD` | targetField 不在注册表 |
 
 ## 字段注册表（L1 stub）
@@ -65,3 +73,4 @@
 ## 实现笔记
 
 - r32：`backend/app/api/v1/designer.py`；持久化 type=`query_conditions`|`compute_rules` 经 QUERY-007
+- r49：`sql_mode.py`/`output_fields.py`；`config_type=sql_mode`|`output_fields`；DESIGN-005 委托 `query/readonly.assert_readonly_sql`

@@ -41,6 +41,7 @@
 | `dialects/tidb.py` | TiDB HTAP 方言（MySQL 协议委托，默认 port 4000） | CONN-021 | 已实现 |
 | `dialects/starrocks.py` | StarRocks OLAP 方言（MySQL 协议，port 9030，`category=olap`） | CONN-009 | 已实现 |
 | `dialects/elasticsearch.py` | Elasticsearch 搜索方言（index→schema 映射） | CONN-015 | 已实现 |
+| `dialects/opensearch.py` | OpenSearch 搜索方言（镜像 ES；`register_connector_plugin`） | CONN-016 | 已实现 L1 |
 | `dialects/hive.py` | Apache Hive 湖仓方言（HiveServer2，port 10000，`category=lake`） | CONN-003 | 已实现（L1 r36 + companion r37） |
 | `dialects/clickhouse.py` | ClickHouse OLAP 方言（HTTP，port 8123，`CLICKHOUSE_MAX_COLUMNS=500`） | CONN-007 | 已实现（L1 r36 + companion r37） |
 | `dialects/sqlserver.py` | SQL Server 关系型（pymssql，TLS L1，`category=relational`） | CONN-005 | 已实现（L1 r36 + companion r37） |
@@ -90,6 +91,7 @@
 - **CONN-021**：`dialects/tidb.py` — MySQL 协议委托；独立 `type=tidb`；默认 port 4000；`category=relational`
 - **CONN-009**：`dialects/starrocks.py` — MySQL 协议委托；独立 `type=starrocks`；默认 port 9030；`category=olap`；超时映射 `STARROCKS_*`（与 MySQL `MYSQL_*` 边界分离）
 - **CONN-015**：`dialects/elasticsearch.py` — 非 SQL 映射：`list_schemas`→index、`list_tables`→`_doc` 伪表、`list_columns`→mapping 字段；`category=search`
+- **CONN-016**：`dialects/opensearch.py` — 镜像 ES 映射；`type=opensearch`；`register_connector_plugin(OpensearchConnector())`；`OPENSEARCH_*` 错误域；`opensearch-py>=2.4.0`（connectors-ext）
 
 ### r35 companion 质量推分（CONN-021/009/015）
 
