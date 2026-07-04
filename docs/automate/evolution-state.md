@@ -13,7 +13,7 @@
 | branch | feat/evolution-r57-dash-rpt-query-nfr-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | QUERY-009,RPT-004,DASH-006,RPT-005,NFR-008 |
-| pr_number | TBD |
+| pr_number | 89 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
