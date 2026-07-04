@@ -54,9 +54,10 @@
 - **描述**：NFR-04 连接器插件扩展性（SRS 追溯项）。
 - **验收标准**：
   - [x] 新增连接器不改核心（`register_connector_plugin` + ConnectorRegistry 零侵入守卫，r46 L1）
+  - [x] GBase 登记路径 companion（`verify_zero_invasion` + `gbase_registration_path`，r51 companion）
   - [ ] 扩展演练 PR
-- **代码锚点**：`backend/app/core/nfr/plugin_extension.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r46.py`
-- **演化建议**：r46 L1 闭合扩展点清单与 registry 钩子；后续 companion 补扩展演练 PR 与第三方插件样例
+- **代码锚点**：`backend/app/core/nfr/plugin_extension.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r46.py` · `tests/test_nfr_gov_conn_r51.py`
+- **演化建议**：r51 companion 闭合 registry 探测预算与 GBase 插件登记路径；后续补扩展演练 PR 与第三方插件样例
 ### [NFR-006] NFR-05 浏览器与消息推送
 
 - **状态**：部分实现
@@ -64,10 +65,10 @@
 - **期次**：三期
 - **描述**：NFR-05 浏览器与消息推送（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 主流浏览器兼容矩阵
-  - [x] 企微/钉钉推送配置契约 + 降级路径（`push_config` + GET `/nfr/push-config`，r46 L1）
-- **代码锚点**：`backend/app/core/nfr/push_config.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r46.py`
-- **演化建议**：r46 L1 闭合配置 schema 与非法 webhook 拦截；后续 companion 补浏览器矩阵与真实推送通道
+  - [x] 主流浏览器兼容矩阵（`browser_matrix` ≥4 浏览器 + probe budget，r51 companion）
+  - [x] 企微/钉钉推送配置契约 + 降级路径（`push_config` + `push_channels` mock/降级，r46 L1 + r51 companion）
+- **代码锚点**：`backend/app/core/nfr/push_config.py` · `backend/app/core/nfr/browser_matrix.py` · `backend/app/core/nfr/push_channels.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r51.py`
+- **演化建议**：r51 companion 闭合浏览器矩阵探测与推送通道降级链；后续补真实推送 SDK 全量对接与 Admin UI
 ### [NFR-007] NFR-06 信创国产化
 
 - **状态**：部分实现
@@ -76,9 +77,10 @@
 - **描述**：NFR-06 信创国产化（SRS 追溯项）。
 - **验收标准**：
   - [x] 信创 DB 按需连通（合规清单含 `registeredXinchuangConnectors` 含 gbase，r46 L1）
+  - [x] 不合规项枚举与修复指引（`enumerate_non_compliant` + remediation，r51 companion）
   - [ ] 部署验收报告
-- **代码锚点**：`backend/app/core/nfr/xinchuang.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r46.py`
-- **演化建议**：r46 L1 闭合合规清单与 strict 模式守卫；后续 companion 补部署验收报告与全量信创认证
+- **代码锚点**：`backend/app/core/nfr/xinchuang.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r51.py`
+- **演化建议**：r51 companion 闭合合规检查非阻塞探测与 strict 模式拦截；后续补部署验收报告与全量信创认证
 ### [NFR-008] NFR-08 自主可控零 DE/SS
 
 - **状态**：未实现

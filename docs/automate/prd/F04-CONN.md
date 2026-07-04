@@ -304,11 +304,12 @@
 - **验收标准**：
   - [x] type=`gbase` 已注册（types catalog + `register_connector_plugin`，r46 L1）
   - [ ] UI 可选
-  - [x] 连通性测试（`GBASE_AUTH_FAILED`/`GBASE_CONN_REFUSED` mock，r46 L1）
+  - [x] 连通性测试（`GBASE_AUTH_FAILED`/`GBASE_CONN_REFUSED`/`GBASE_TIMEOUT` mock + HTTP 4xx/502 链，r46 L1 + r51 companion）
+  - [x] 空库/列 limit 边界（`list_schemas` 空库 + `list_columns` 501→500 截断，r51 companion）
   - [ ] schema 浏览 + 只读查询集成测通过
   - [x] category=`relational` 查询模式正确（r46 L1）
-- **代码锚点**：`backend/app/datasources/dialects/gbase.py` · `tests/test_nfr_gov_conn_r46.py`
-- **演化建议**：r46 L1 闭合 GBase dialect + 错误域 + HTTP test draft 链；后续 companion 补 UI 选型与只读查询集成测
+- **代码锚点**：`backend/app/datasources/dialects/gbase.py` · `tests/test_nfr_gov_conn_r46.py` · `tests/test_nfr_gov_conn_r51.py`
+- **演化建议**：r51 companion 闭合 HTTP 错误链与元数据边界；后续补 UI 选型与只读查询集成测
 ### [CONN-020] OceanBase 连接器
 
 - **状态**：未实现
