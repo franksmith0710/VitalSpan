@@ -96,6 +96,7 @@ def issue_embed_token(
         "container_id": container_id,
         "theme": payload.theme,
         "api_base": api_base,
+        "allowed_origins": list(payload.allowed_origins),
     }
     return EmbedTokenOut(
         token=token,
@@ -110,12 +111,15 @@ def issue_embed_token(
     )
 
 
-def resolve_sdk_params(token: str) -> dict:
+def resolve_sdk_params(token: str, origin_header: str | None = None) -> dict:
     row = _TOKEN_STORE.get(token)
     if row is None:
         raise IntegrationError("EMBED_TOKEN_INVALID", "Invalid embed token", 404)
     if datetime.now(UTC) > row["expires_at"]:
-        raise IntegrationError("EMBED_TOKEN_INVALID", "Embed token expired", 404)
+        raise IntegrationError("EMBED_TOKEN_EXPIRED", "Embed token expired", 404)
+    allowed = row.get("allowed_origins") or []
+    if allowed and origin_header and origin_header not in allowed:
+        raise IntegrationError("EMBED_ORIGIN_DENIED", "Origin not allowed", 403)
     return {
         "containerId": row["container_id"],
         "theme": row["theme"],

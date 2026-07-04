@@ -36,8 +36,9 @@ def post_embed_token(
 def get_embed_sdk_params(
     _: Annotated[UserContext, Depends(get_current_user)],
     token: str = Query(),
+    origin: Annotated[str | None, Header(alias="Origin")] = None,
 ):
     try:
-        return et.resolve_sdk_params(token)
+        return et.resolve_sdk_params(token, origin)
     except IntegrationError as exc:
         return _err(exc)
