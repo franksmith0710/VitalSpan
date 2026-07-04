@@ -202,6 +202,7 @@ _GAUSSDB_FROM_PG = {
 
 
 def map_gaussdb_error(exc: Exception) -> tuple[str, str]:
+    # PG_TIMEOUT → GAUSSDB_TIMEOUT via _GAUSSDB_FROM_PG; PG_AUTH_FAILED → GAUSSDB_AUTH_FAILED
     if hasattr(exc, "sqlstate") or "OperationalError" in type(exc).__name__:
         pg_code, detail = map_postgres_operational_error(exc)
         return _GAUSSDB_FROM_PG.get(pg_code, GAUSSDB_UNKNOWN), detail
@@ -209,7 +210,7 @@ def map_gaussdb_error(exc: Exception) -> tuple[str, str]:
     lowered = detail.lower()
     if "auth" in lowered or "password" in lowered:
         return GAUSSDB_AUTH_FAILED, detail
-    if "timeout" in lowered:
+    if "timeout" in lowered or "timed out" in lowered:
         return GAUSSDB_TIMEOUT, detail
     if "refused" in lowered:
         return GAUSSDB_CONN_REFUSED, detail
@@ -228,6 +229,7 @@ DM_DRIVER_MISSING = "DM_DRIVER_MISSING"
 
 
 def map_dm_error(exc: Exception) -> tuple[str, str]:
+    # auth: password/login/-2501 → DM_AUTH_FAILED; timeout → DM_TIMEOUT
     detail = str(exc)
     lowered = detail.lower()
     if "dmpython" in lowered or "no module named" in lowered and "dm" in lowered:
@@ -253,6 +255,7 @@ TRINO_DRIVER_MISSING = "TRINO_DRIVER_MISSING"
 
 
 def map_trino_error(exc: Exception) -> tuple[str, str]:
+    # auth: 401/unauthorized → TRINO_AUTH_FAILED; timeout → TRINO_TIMEOUT
     detail = str(exc)
     lowered = detail.lower()
     if "no module named" in lowered and "trino" in lowered:
@@ -269,3 +272,81 @@ def map_trino_error(exc: Exception) -> tuple[str, str]:
         if "catalog" in lowered:
             return TRINO_UNKNOWN_CATALOG, detail
     return TRINO_UNKNOWN, detail
+
+
+# r39 companion: GAUSSDB_/DM_/TRINO_ timeout/auth 映射由 map_* 统一出口；
+# connector test_connection 与 HTTP test 链均消费本模块常量（勿在 dialect 文件内复制错误码）。
+
+__all__ = [
+    "CLICKHOUSE_AUTH_FAILED",
+    "CLICKHOUSE_CONN_REFUSED",
+    "CLICKHOUSE_TIMEOUT",
+    "CLICKHOUSE_UNKNOWN",
+    "CLICKHOUSE_UNKNOWN_DATABASE",
+    "DM_AUTH_FAILED",
+    "DM_CONN_REFUSED",
+    "DM_DRIVER_MISSING",
+    "DM_TIMEOUT",
+    "DM_UNKNOWN",
+    "DM_UNKNOWN_DATABASE",
+    "DORIS_AUTH_FAILED",
+    "DORIS_CONN_REFUSED",
+    "DORIS_TIMEOUT",
+    "DORIS_UNKNOWN",
+    "DORIS_UNKNOWN_DATABASE",
+    "GAUSSDB_AUTH_FAILED",
+    "GAUSSDB_CONN_REFUSED",
+    "GAUSSDB_TIMEOUT",
+    "GAUSSDB_UNKNOWN",
+    "GAUSSDB_UNKNOWN_DATABASE",
+    "HIVE_AUTH_FAILED",
+    "HIVE_CONN_REFUSED",
+    "HIVE_TIMEOUT",
+    "HIVE_UNKNOWN",
+    "HIVE_UNKNOWN_DATABASE",
+    "MYSQL_AUTH_FAILED",
+    "MYSQL_CONN_REFUSED",
+    "MYSQL_SSL_ERROR",
+    "MYSQL_TIMEOUT",
+    "MYSQL_UNKNOWN",
+    "MYSQL_UNKNOWN_DATABASE",
+    "ORACLE_AUTH_FAILED",
+    "ORACLE_CONN_REFUSED",
+    "ORACLE_TIMEOUT",
+    "ORACLE_UNKNOWN",
+    "ORACLE_UNKNOWN_SERVICE",
+    "PG_AUTH_FAILED",
+    "PG_CONN_REFUSED",
+    "PG_SSL_ERROR",
+    "PG_TIMEOUT",
+    "PG_UNKNOWN",
+    "PG_UNKNOWN_DATABASE",
+    "SQLSERVER_AUTH_FAILED",
+    "SQLSERVER_CONN_REFUSED",
+    "SQLSERVER_SSL_ERROR",
+    "SQLSERVER_TIMEOUT",
+    "SQLSERVER_UNKNOWN",
+    "SQLSERVER_UNKNOWN_DATABASE",
+    "TIDB_AUTH_FAILED",
+    "TIDB_CONN_REFUSED",
+    "TIDB_TIMEOUT",
+    "TIDB_UNKNOWN",
+    "TIDB_UNKNOWN_DATABASE",
+    "TRINO_AUTH_FAILED",
+    "TRINO_CONN_REFUSED",
+    "TRINO_DRIVER_MISSING",
+    "TRINO_TIMEOUT",
+    "TRINO_UNKNOWN",
+    "TRINO_UNKNOWN_CATALOG",
+    "map_clickhouse_error",
+    "map_dm_error",
+    "map_doris_operational_error",
+    "map_gaussdb_error",
+    "map_hive_error",
+    "map_mysql_operational_error",
+    "map_oracle_error",
+    "map_postgres_operational_error",
+    "map_sqlserver_operational_error",
+    "map_trino_error",
+    "pg_sslmode",
+]
