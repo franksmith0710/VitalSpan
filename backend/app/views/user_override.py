@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
+from app.dashboard.service import DashboardError, get_dashboard
 from app.views import store
 from app.views.role_template import resolve_defaults_for_roles
 from app.views.schemas import ViewError
@@ -24,6 +25,13 @@ def list_overrides(user_id: str) -> dict[str, Any]:
     return {"items": store.list_user_overrides(user_id)}
 
 
+def get_override(user_id: str, view_id: str) -> dict[str, Any]:
+    for item in store.list_user_overrides(user_id):
+        if item.get("id") == view_id:
+            return item
+    raise ViewError("VIEW_OVERRIDE_NOT_FOUND", "View override not found", 404)
+
+
 def create_override(db: Session, actor: UserContext, payload: dict[str, Any]) -> dict[str, Any]:
     name = payload["name"]
     user_id = actor.id
@@ -38,6 +46,11 @@ def create_override(db: Session, actor: UserContext, payload: dict[str, Any]) ->
             "Classification scope not allowed",
             422,
         )
+
+    try:
+        get_dashboard(db, uuid.UUID(str(payload["dashboardId"])))
+    except DashboardError:
+        raise ViewError("VIEW_OVERRIDE_DASHBOARD_NOT_FOUND", "Dashboard not found", 404) from None
 
     bounds = resolve_defaults_for_roles(list(actor.roles))
     layout = payload.get("layout") or {}

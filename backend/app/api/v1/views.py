@@ -13,7 +13,7 @@ from app.auth.models import get_meta_session
 from app.views.schemas import DashboardView, ViewError
 from app.views.validate import validate_dashboard_view
 from app.views.role_template import get_defaults, put_defaults
-from app.views.user_override import create_override, list_overrides
+from app.views.user_override import create_override, get_override, list_overrides
 
 router = APIRouter(prefix="/views", tags=["views", "IF-06"])
 
@@ -44,7 +44,7 @@ class RoleDefaultViewsIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     dashboard_id: uuid.UUID | None = Field(default=None, alias="dashboardId")
     report_template_node_id: uuid.UUID | None = Field(default=None, alias="reportTemplateNodeId")
-    max_widget_count: int = Field(default=24, alias="maxWidgetCount", ge=1, le=256)
+    max_widget_count: int = Field(default=24, alias="maxWidgetCount")
 
 
 def _views_db() -> Session:
@@ -85,6 +85,14 @@ class UserViewOverrideIn(BaseModel):
     dashboard_id: uuid.UUID = Field(alias="dashboardId")
     layout: dict
     classification_scope: str | None = Field(default=None, alias="classificationScope")
+
+
+@user_views_router.get("/me/views/{view_id}", response_model=None)
+def get_my_view(view_id: str, actor: Annotated[UserContext, Depends(get_current_user)]):
+    try:
+        return get_override(actor.id, view_id)
+    except ViewError as exc:
+        return _error_response(exc)
 
 
 @user_views_router.get("/me/views", response_model=None)

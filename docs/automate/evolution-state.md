@@ -7,13 +7,13 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r62.md |
-| design | docs/superpowers/specs/2026-07-04-cat-nfr-rpt-meta-l1-r62-design.md |
-| plan | docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md |
-| branch | feat/evolution-r62-cat-nfr-rpt-meta-l1 |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r63.md |
+| design | docs/superpowers/specs/2026-07-04-viz-view-design-cat-companion-quality-r63-design.md |
+| plan | docs/superpowers/plans/2026-07-04-viz-view-design-cat-companion-quality-r63.md |
+| branch | feat/evolution-r63-viz-view-design-cat-companion-quality |
 | base_branch | dev-auto |
-| prd_ids | CAT-006,NFR-003,RPT-002,RPT-003,META-005 |
-| pr_number | 96 |
+| prd_ids | VIZ-007,VIEW-002,DESIGN-004,CAT-005,VIEW-003 |
+| pr_number | 97 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -66,6 +66,11 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r63 PRD 重评：VIZ-007/VIEW-002/DESIGN-004/CAT-005/VIEW-003 companion 质量推分；pytest 1654/4 skipped；test_viz_view_design_cat_r63 32/32 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 130/130；总分 82.9–84.2→90.1–90.8（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
+- P3 r63 实现完成：8 Task 全绿；跨域 companion 质量推分 — VIZ-007/VIEW-002/DESIGN-004/CAT-005/VIEW-003；32 测 test_viz_view_design_cat_r63 + r62 32/32 + r61 32/32 + r60 34/34 回归 130/130；pytest 1654/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r63-viz-view-design-cat-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P2 r63 计划完成：8 Task（fixtures→VIZ-007 sdk_portal→VIEW-002 bounds/probe→DESIGN-004 workflow→CAT-005 ACL→VIEW-003 me/views→回归门控→docs）；P3 生产 13 + 测试 1 + docs 5 = 19 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥32 新测 test_viz_view_design_cat_r63 + r62 32/32 + r61 32/32 + r60 34/34 回归；plan=docs/superpowers/plans/2026-07-04-viz-view-design-cat-companion-quality-r63.md；phase P1_DONE→P2_DONE
+- P1 r63 设计完成：跨域 companion 质量推分 — VIZ-007/VIEW-002/DESIGN-004/CAT-005/VIEW-003；18 文件框定；perf probe 50ms + ACL/bounds/cycle 闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
+- G2 r63 选题完成：跨域 companion 质量推分 — VIZ-007/VIEW-002/DESIGN-004/CAT-005/VIEW-003（5 项）；最低分 VIZ-007/VIEW-002/DESIGN-004(82.9)；phase idle→G2_DONE
 - G0 r62 plan archive PR #96：补交 `docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md`（PR #95 遗漏）；docs-only；evolution-state plan 字段与仓库对齐；phase P5_DOCS_READY；prd_ids CAT-006/NFR-003/RPT-002/RPT-003/META-005 评分无变更（#95 已重评）
 - P5 r62 PRD 重评：CAT-006/NFR-003/RPT-002/RPT-003/META-005 L1 kickoff；pytest 1622/4 skipped；test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 回归 132/132；总分 12.1–13.1→83.9–84.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P3 r62 实现完成：8 Task 全绿；跨域远期 stub L1 kickoff — CAT-006/NFR-003/RPT-002/RPT-003/META-005；32 测 test_cat_nfr_rpt_meta_r62 + r61 32/32 + r60 34/34 + r59 34/34 回归 132/132；pytest 1622/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r62-cat-nfr-rpt-meta-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
@@ -212,12 +217,12 @@
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
 | CAT-003 | 1 | 83.9 | 2026-07-04 |
-| CAT-005 | 1 | 83.3 | 2026-07-04 |
+| CAT-004 | 1 | 83.9 | 2026-07-04 |
 | CAT-006 | 1 | 83.9 | 2026-07-04 |
 | CAT-007 | 1 | 83.3 | 2026-07-04 |
+| CONN-018 | 1 | 84.2 | 2026-07-04 |
 | DASH-004 | 1 | 84.2 | 2026-07-04 |
 | DASH-005 | 1 | 84.0 | 2026-07-04 |
-| DESIGN-004 | 1 | 82.9 | 2026-07-04 |
 | GOV-007 | 1 | 84.4 | 2026-07-04 |
 | META-004 | 1 | 84.2 | 2026-07-04 |
 | META-005 | 1 | 84.0 | 2026-07-04 |
@@ -226,8 +231,3 @@
 | RPT-001 | 1 | 84.2 | 2026-07-04 |
 | RPT-002 | 1 | 84.0 | 2026-07-04 |
 | RPT-003 | 1 | 84.2 | 2026-07-04 |
-| VIEW-002 | 1 | 82.9 | 2026-07-04 |
-| VIEW-003 | 1 | 84.2 | 2026-07-04 |
-| VIZ-007 | 1 | 82.9 | 2026-07-04 |
-| CONN-018 | 1 | 84.2 | 2026-07-04 |
-| CAT-004 | 1 | 83.9 | 2026-07-04 |

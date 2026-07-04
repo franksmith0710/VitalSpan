@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import time
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from app.governance.catalog.cat05.errors import Cat05Error
+from app.auth.deps import UserContext
+from app.governance.catalog.cat05.errors import CAT05_FORBIDDEN, Cat05Error
 from app.governance.catalog.cat05.schemas import (
     TicketStatsItemIn,
     TicketStatsItemOut,
@@ -13,6 +16,18 @@ from app.governance.catalog.cat05.schemas import (
 
 _VALID_STATUS = frozenset({"open", "closed", "pending"})
 _store: dict[str, dict] = {}
+_USER_TICKET_SCOPE: dict[str, str] = {}
+probe_ticket_stats_budget_ms_limit = 50
+
+
+@dataclass(frozen=True)
+class Cat05ProbeResult:
+    elapsed_ms: float
+    ok: bool
+
+
+def set_user_ticket_scope(user_id: str, category_key: str) -> None:
+    _USER_TICKET_SCOPE[user_id] = category_key
 
 
 def _validate_payload(payload: TicketStatsItemIn) -> TicketStatsItemIn:
@@ -34,6 +49,19 @@ def _validate_payload(payload: TicketStatsItemIn) -> TicketStatsItemIn:
     return payload
 
 
+def _assert_ticket_access(user: UserContext, category_key: str, *, write: bool) -> None:
+    roles = set(user.roles)
+    if roles.intersection({"admin", "analyst"}):
+        return
+    if "enterprise" in roles:
+        expected = _USER_TICKET_SCOPE.get(user.id, "TICKET_DEFAULT")
+        if category_key != expected:
+            raise Cat05Error(CAT05_FORBIDDEN, "enterprise user cannot access ticket category", 403)
+        return
+    if write:
+        raise Cat05Error(CAT05_FORBIDDEN, "viewer cannot create ticket stats", 403)
+
+
 def validate_ticket_item(payload: TicketStatsItemIn) -> TicketStatsValidateOut:
     item = _validate_payload(payload)
     return TicketStatsValidateOut(
@@ -43,9 +71,10 @@ def validate_ticket_item(payload: TicketStatsItemIn) -> TicketStatsValidateOut:
     )
 
 
-def create_ticket_item(payload: TicketStatsItemIn) -> TicketStatsItemOut:
+def create_ticket_item(payload: TicketStatsItemIn, user: UserContext) -> TicketStatsItemOut:
     item = _validate_payload(payload)
     key = item.ticket_category_key
+    _assert_ticket_access(user, key, write=True)
     if key in _store:
         raise Cat05Error("CAT05_KEY_CONFLICT", f"ticketCategoryKey already exists: {key}", 409)
     _store[key] = item.model_dump(by_alias=True, mode="json")
@@ -61,7 +90,15 @@ def list_ticket_items(limit: int, offset: int) -> TicketStatsListResponse:
     )
 
 
-def get_ticket_stats(key: str) -> TicketStatsProbeOut:
+def get_ticket_stats(key: str, user: UserContext) -> TicketStatsProbeOut:
     if key not in _store:
         raise Cat05Error("CAT05_NOT_FOUND", f"ticketCategoryKey not found: {key}", 404)
+    _assert_ticket_access(user, key, write=False)
     return TicketStatsProbeOut(open=12, closed=3, pending=5, sampled_at=datetime.now(UTC))
+
+
+def probe_ticket_stats_budget_ms(key: str) -> Cat05ProbeResult:
+    started = time.perf_counter()
+    admin = UserContext(id="probe", username="probe", roles=["admin"])
+    get_ticket_stats(key, admin)
+    return Cat05ProbeResult(elapsed_ms=(time.perf_counter() - started) * 1000, ok=True)

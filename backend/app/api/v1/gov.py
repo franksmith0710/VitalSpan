@@ -568,10 +568,10 @@ def validate_ticket_stats_item(
 @router.post("/catalog/tickets/items", response_model=TicketStatsItemOut, status_code=status.HTTP_201_CREATED)
 def create_ticket_stats_item(
     payload: TicketStatsItemIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> TicketStatsItemOut | JSONResponse:
     try:
-        return cat05_service.create_ticket_item(payload)
+        return cat05_service.create_ticket_item(payload, actor)
     except Cat05Error as exc:
         return _cat05_error(exc)
 
@@ -588,10 +588,10 @@ def list_ticket_stats_items(
 @router.get("/catalog/tickets/items/{key}/stats", response_model=TicketStatsProbeOut)
 def probe_ticket_stats(
     key: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> TicketStatsProbeOut | JSONResponse:
     try:
-        return cat05_service.get_ticket_stats(key)
+        return cat05_service.get_ticket_stats(key, actor)
     except Cat05Error as exc:
         return _cat05_error(exc)
 

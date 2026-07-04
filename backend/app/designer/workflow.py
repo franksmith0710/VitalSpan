@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import uuid
 from typing import Literal
 
@@ -14,6 +15,8 @@ from app.query.config_store.schemas import ConfigError, ConfigUpsert
 
 _CONFIG_TYPE = "designer_workflow_link"
 _REF_TYPE = "designer"
+
+probe_validate_workflow_link_budget_ms_limit = 50
 
 
 class DesignerWorkflowLinkIn(BaseModel):
@@ -54,6 +57,13 @@ def _compute_publish_ready(session: Session, link: DesignerWorkflowLinkIn) -> bo
 
 
 def validate_workflow_link(session: Session, link: DesignerWorkflowLinkIn) -> DesignerWorkflowLinkValidateOut:
+    if link.design_type == "query" and link.catalog_entry_id is not None:
+        raise DesignerError(
+            "DESIGN_WORKFLOW_CATALOG_MISMATCH",
+            "query designType must not include catalogEntryId",
+            422,
+            fields=[{"field": "catalogEntryId", "message": "not allowed for query designType"}],
+        )
     if not str(link.designer_item_id):
         raise DesignerError("DESIGN_WORKFLOW_INVALID_ITEM", "designerItemId required", 422)
     _workflow_status(session, link.workflow_instance_id)
@@ -86,3 +96,9 @@ def get_workflow_link(session: Session, designer_item_id: uuid.UUID) -> Designer
         **link.model_dump(),
         publishReady=_compute_publish_ready(session, link),
     )
+
+
+def probe_validate_workflow_link_budget_ms(session: Session, link: DesignerWorkflowLinkIn) -> float:
+    started = time.perf_counter()
+    validate_workflow_link(session, link)
+    return (time.perf_counter() - started) * 1000

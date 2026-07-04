@@ -59,3 +59,8 @@
 
 - r42 L1 kickoff：注册表驱动 `chart_view` 校验；注册 `pie` 后 r28/r30「非法 type」样例改用未注册 `radar`
 - `schemas/chart_view` 校验查 registry 用函数内惰性 import，`app.viz` 包内为 submodule-only import，无循环依赖
+
+### Companion r63（VIZ-007）
+
+- `viz/sdk_portal/probe.py`：`probe_validate_sdk_budget_ms` / `probe_lifecycle_budget_ms`（50ms 同进程 perf_counter）
+- ACL：`VIZ_SDK_TOKEN_REQUIRED`（token 模式缺 embedToken）、`VIZ_SDK_DUPLICATE_ORIGIN`、`VIZ_SDK_FORBIDDEN`（destroy 需 admin/editor）

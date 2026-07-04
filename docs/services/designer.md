@@ -82,3 +82,7 @@
 
 - **DESIGN-005**：`sql_mode` 校验失败 `detail.remediation`；`probe_validate_sql_mode`；`chart_view` sql 模式联动 `CHART_SQL_NOT_READONLY`（委托 `assert_readonly_sql`）
 - **DESIGN-003**：`MAX_OUTPUT_FIELDS=64`、`MAX_AGGREGATES=16`；重复 fieldId → `DESIGN_DUPLICATE_OUTPUT_FIELD`；`probe_validate_output_fields`（<50ms smoke）
+
+### r63 companion 质量推分（DESIGN-004）
+
+- `probe_validate_workflow_link_budget_ms`（50ms）；`DESIGN_WORKFLOW_CATALOG_MISMATCH`（query designType 禁止 catalogEntryId）
