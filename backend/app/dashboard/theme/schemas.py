@@ -21,6 +21,12 @@ class GeoBinding(BaseModel):
     admin_code_field: str | None = Field(default=None, alias="adminCodeField")
 
 
+class ThemeChartViewBinding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    widget_id: str = Field(alias="widgetId", min_length=1, max_length=64)
+    dimension_id: str | None = Field(default=None, alias="dimensionId")
+
+
 class EntityThemeConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     schema_version: str = Field(default="1.0", alias="schemaVersion")
@@ -30,6 +36,9 @@ class EntityThemeConfig(BaseModel):
     geo_binding: GeoBinding | None = Field(default=None, alias="geoBinding")
     ref_type: str = Field(default="dashboard", alias="refType")
     ref_id: uuid.UUID = Field(alias="refId")
+    chart_view_bindings: list[ThemeChartViewBinding] = Field(
+        default_factory=list, alias="chartViewBindings", max_length=16
+    )
 
     @field_validator("time_granularity")
     @classmethod

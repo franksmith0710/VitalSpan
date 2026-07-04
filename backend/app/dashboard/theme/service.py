@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import time
 import uuid
+from datetime import UTC, datetime
 
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -10,6 +12,50 @@ from app.dashboard.theme.errors import ThemeAnalysisError
 from app.dashboard.theme.schemas import EntityThemeConfig
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigUpsert
+
+_LINK_CHART_VIEWS_BUDGET_MS = 50
+
+
+def _link_chart_views(db: Session, config: EntityThemeConfig) -> None:
+    if not config.chart_view_bindings:
+        return
+    if config.ref_type != "dashboard":
+        return
+    dashboard = dash_service.get_dashboard(db, config.ref_id)
+    widgets = dashboard.layout_json.get("widgets", [])
+    widget_map = {str(w.get("id")): w for w in widgets if isinstance(w, dict)}
+    dim_ids = {d.dimension_id for d in config.dimensions}
+    bad: list[str] = []
+    for binding in config.chart_view_bindings:
+        wid = binding.widget_id
+        widget = widget_map.get(wid)
+        if widget is None or widget.get("type") != "chart":
+            bad.append(wid)
+            continue
+        if binding.dimension_id and binding.dimension_id not in dim_ids:
+            bad.append(wid)
+            continue
+        chart_config = widget.get("chartConfig")
+        if chart_config:
+            from app.schemas.chart_view import ChartViewError, validate_chart_view_config
+
+            try:
+                validate_chart_view_config(chart_config)
+            except ChartViewError:
+                bad.append(wid)
+    if bad:
+        raise ThemeAnalysisError(
+            "DASH_THEME_CHART_VIEW_MISMATCH",
+            "chartViewBindings reference invalid widgets or dimensions",
+            422,
+            fields=bad,
+        )
+
+
+def probe_link_chart_views_budget_ms(db: Session, config: EntityThemeConfig) -> float:
+    start = time.perf_counter()
+    _link_chart_views(db, config)
+    return (time.perf_counter() - start) * 1000.0
 
 
 def _map_validation(exc: ValidationError) -> ThemeAnalysisError:
@@ -50,6 +96,7 @@ def _assert_ref_exists(db: Session, config: EntityThemeConfig) -> None:
 def save_theme_config(db: Session, payload: dict, owner_id: uuid.UUID | None) -> EntityThemeConfig:
     config = validate_theme_config(payload)
     _assert_ref_exists(db, config)
+    _link_chart_views(db, config)
     config_store.upsert_config(
         db,
         ConfigUpsert(
@@ -67,3 +114,12 @@ def save_theme_config(db: Session, payload: dict, owner_id: uuid.UUID | None) ->
 def get_theme_config(db: Session, ref_type: str, ref_id: uuid.UUID) -> EntityThemeConfig:
     record = config_store.get_config_by_ref(db, "entity_theme", ref_type, ref_id)
     return validate_theme_config(record.payload)
+
+
+def get_chart_bindings(db: Session, ref_type: str, ref_id: uuid.UUID) -> dict:
+    config = get_theme_config(db, ref_type, ref_id)
+    return {
+        "bindings": [b.model_dump(mode="json", by_alias=True) for b in config.chart_view_bindings],
+        "linkedWidgetCount": len(config.chart_view_bindings),
+        "validatedAt": datetime.now(UTC).isoformat(),
+    }
