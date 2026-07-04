@@ -144,16 +144,20 @@
 - **里程碑对齐**：
 ### [CONN-010] Trino/Presto 连接器
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r38）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：Trino/Presto 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`trino` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`lake` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/trino/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] type=`trino` 已注册（types catalog + `schema_browser` capability，r38 L1）
+  - [ ] UI 可选
+  - [x] 连通性测试结构化错误（`TRINO_CONN_REFUSED`/`TRINO_UNKNOWN_CATALOG`，r38 mock）
+  - [x] schema 空 catalog/未知 schema 边界（r38 mock）
+  - [ ] 只读查询通过
+  - [x] category=`lake` 查询模式正确（r38）
+- **代码锚点**：`backend/app/datasources/dialects/trino.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-010-01~06
+- **演化建议**：r38 闭合 coordinator 连通与 catalog/schema 边界；后续补只读查询集成测、HTTP metadata 链与 Admin UI 选型
+- **里程碑对齐**：
 ### [CONN-011] InfluxDB 连接器
 
 - **状态**：未实现
@@ -233,16 +237,20 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [CONN-017] 达梦 DM 连接器
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r38）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：达梦 DM 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`dm` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/dm/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] type=`dm` 已注册（types catalog，r38 L1）
+  - [ ] UI 可选
+  - [x] 连通性测试结构化错误（`DM_AUTH_FAILED`/`DM_CONN_REFUSED`/`DM_UNKNOWN_DATABASE`，r38 mock）
+  - [x] schema 未知 schema 边界（r38 mock）
+  - [ ] 只读查询通过
+  - [x] category=`relational` 查询模式正确（r38）
+- **代码锚点**：`backend/app/datasources/dialects/dm.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-017-01~06
+- **演化建议**：r38 闭合 dmPython 连通与 schema 边界；后续补 columns limit、HTTP metadata 链、只读查询集成测与 UI 选型
+- **里程碑对齐**：
 ### [CONN-018] 人大金仓 连接器
 
 - **状态**：未实现
@@ -297,13 +305,17 @@
 - **里程碑对齐**：
 ### [CONN-022] GaussDB 连接器
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r38）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：GaussDB 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`gaussdb` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/gaussdb/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] type=`gaussdb` 已注册（types catalog，r38 L1）
+  - [ ] UI 可选
+  - [x] 连通性测试结构化错误（`GAUSSDB_AUTH_FAILED`/`GAUSSDB_CONN_REFUSED`/`GAUSSDB_UNKNOWN_DATABASE`，r38 mock）
+  - [x] schema 空库/未知 schema 边界（r38 mock）
+  - [ ] 只读查询通过
+  - [x] category=`relational` 查询模式正确（r38）
+- **代码锚点**：`backend/app/datasources/dialects/gaussdb.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-022-01~07
+- **演化建议**：r38 闭合 Postgres 委托连通与 schema 边界；后续补 columns limit、HTTP metadata 链、只读查询集成测与 UI 选型
+- **里程碑对齐**：

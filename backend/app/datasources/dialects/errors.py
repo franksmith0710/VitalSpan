@@ -182,3 +182,90 @@ def map_doris_operational_error(exc: pymysql.err.OperationalError) -> tuple[str,
         "MYSQL_UNKNOWN_DATABASE": DORIS_UNKNOWN_DATABASE,
     }
     return mapping.get(code, DORIS_UNKNOWN), detail
+
+
+# GaussDB (PostgreSQL-compatible alias)
+GAUSSDB_CONN_REFUSED = "GAUSSDB_CONN_REFUSED"
+GAUSSDB_AUTH_FAILED = "GAUSSDB_AUTH_FAILED"
+GAUSSDB_TIMEOUT = "GAUSSDB_TIMEOUT"
+GAUSSDB_UNKNOWN_DATABASE = "GAUSSDB_UNKNOWN_DATABASE"
+GAUSSDB_UNKNOWN = "GAUSSDB_UNKNOWN"
+
+_GAUSSDB_FROM_PG = {
+    PG_CONN_REFUSED: GAUSSDB_CONN_REFUSED,
+    PG_AUTH_FAILED: GAUSSDB_AUTH_FAILED,
+    PG_TIMEOUT: GAUSSDB_TIMEOUT,
+    PG_UNKNOWN_DATABASE: GAUSSDB_UNKNOWN_DATABASE,
+    PG_SSL_ERROR: GAUSSDB_UNKNOWN,
+    PG_UNKNOWN: GAUSSDB_UNKNOWN,
+}
+
+
+def map_gaussdb_error(exc: Exception) -> tuple[str, str]:
+    if hasattr(exc, "sqlstate") or "OperationalError" in type(exc).__name__:
+        pg_code, detail = map_postgres_operational_error(exc)
+        return _GAUSSDB_FROM_PG.get(pg_code, GAUSSDB_UNKNOWN), detail
+    detail = str(exc)
+    lowered = detail.lower()
+    if "auth" in lowered or "password" in lowered:
+        return GAUSSDB_AUTH_FAILED, detail
+    if "timeout" in lowered:
+        return GAUSSDB_TIMEOUT, detail
+    if "refused" in lowered:
+        return GAUSSDB_CONN_REFUSED, detail
+    if "database" in lowered and "not" in lowered:
+        return GAUSSDB_UNKNOWN_DATABASE, detail
+    return GAUSSDB_UNKNOWN, detail
+
+
+# DM (Dameng)
+DM_CONN_REFUSED = "DM_CONN_REFUSED"
+DM_AUTH_FAILED = "DM_AUTH_FAILED"
+DM_TIMEOUT = "DM_TIMEOUT"
+DM_UNKNOWN_DATABASE = "DM_UNKNOWN_DATABASE"
+DM_UNKNOWN = "DM_UNKNOWN"
+DM_DRIVER_MISSING = "DM_DRIVER_MISSING"
+
+
+def map_dm_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "dmpython" in lowered or "no module named" in lowered and "dm" in lowered:
+        return DM_DRIVER_MISSING, detail
+    if "password" in lowered or "login" in lowered or "-2501" in detail:
+        return DM_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return DM_TIMEOUT, detail
+    if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
+        return DM_CONN_REFUSED, detail
+    if "database" in lowered and ("unknown" in lowered or "not exist" in lowered):
+        return DM_UNKNOWN_DATABASE, detail
+    return DM_UNKNOWN, detail
+
+
+# Trino
+TRINO_CONN_REFUSED = "TRINO_CONN_REFUSED"
+TRINO_AUTH_FAILED = "TRINO_AUTH_FAILED"
+TRINO_TIMEOUT = "TRINO_TIMEOUT"
+TRINO_UNKNOWN_CATALOG = "TRINO_UNKNOWN_CATALOG"
+TRINO_UNKNOWN = "TRINO_UNKNOWN"
+TRINO_DRIVER_MISSING = "TRINO_DRIVER_MISSING"
+
+
+def map_trino_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "no module named" in lowered and "trino" in lowered:
+        return TRINO_DRIVER_MISSING, detail
+    if "unauthorized" in lowered or "401" in detail or "access denied" in lowered:
+        return TRINO_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return TRINO_TIMEOUT, detail
+    if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
+        return TRINO_CONN_REFUSED, detail
+    if "catalog" in lowered and ("not found" in lowered or "does not exist" in lowered):
+        return TRINO_UNKNOWN_CATALOG, detail
+    if type(exc).__name__ == "TrinoUserError":
+        if "catalog" in lowered:
+            return TRINO_UNKNOWN_CATALOG, detail
+    return TRINO_UNKNOWN, detail

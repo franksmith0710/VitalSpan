@@ -8,13 +8,13 @@
 |------|----|
 | phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design | docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-companion-quality-r37-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-companion-quality-r37.md |
-| branch | cursor/bc-031e3641-9a45-48b5-b7f1-1fea5c376dab-817d |
+| design | docs/superpowers/specs/2026-07-04-m12-query-m11-meta-conn-l1-r38-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-l1-r38.md |
+| branch | feat/r38-query-meta-conn-l1 |
 | base_branch | dev-auto |
-| prd_ids | CONN-004,CONN-008,CONN-005,CONN-003,CONN-007 |
-| pr_number | 63 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| prd_ids | QUERY-008,CONN-022,META-003,CONN-017,CONN-010 |
+| pr_number | 64 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_query_meta_conn_r38.py ../tests/test_connectors_gov_r37.py -v && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r38 PRD 重评：QUERY-008/CONN-022/META-003/CONN-017/CONN-010 L1 kickoff；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40 回归 76/76；总分 11.3–11.6→87.1–89.6（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
+- P3 r38 实现完成：8 Task 全绿；QUERY-008 translate API + GaussDB/DM/Trino 三方言 + META-003 dimensions；36 测 test_query_meta_conn_r38 + r37 40/40；pytest 891/4 skipped；branch feat/r38-query-meta-conn-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P5 r37 PRD 重评：CONN-003/007/005/008/004 companion 质量推分；pytest 854/4 skipped；test_connectors_gov_r37 40/40 + r36 37/37 + r35 35/35 + r34 15/15 回归 127/127；总分 86.2–87.8→90.0–91.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P3 r37 实现完成：8 Task 全绿；CONN-004/008/005/003/007 companion 质量推分；40 新测 test_connectors_gov_r37；connector 回归 127/127；pytest 853/4 skipped；branch cursor/bc-031e3641-9a45-48b5-b7f1-1fea5c376dab-817d；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r37 计划完成：8 Task（errors 上浮→Oracle→Doris→SQL Server→Hive→ClickHouse→registry 回归→docs）；≥33 新测 test_connectors_gov_r37；9 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
@@ -109,4 +111,8 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| 无 | — | — | — |
+| QUERY-008 | 1 | 89.6 | 2026-07-04 |
+| CONN-022 | 1 | 87.6 | 2026-07-04 |
+| META-003 | 1 | 87.4 | 2026-07-04 |
+| CONN-017 | 1 | 87.6 | 2026-07-04 |
+| CONN-010 | 1 | 87.1 | 2026-07-04 |

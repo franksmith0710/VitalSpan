@@ -11,6 +11,17 @@ from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
 from app.metadata.glossary import service as glossary_service
 from app.metadata.glossary.schemas import GlossaryError, TermCreate, TermListResponse, TermOut, TermUpdate
+from app.metadata.dimensions import service as dimension_service
+from app.metadata.dimensions.schemas import (
+    DimensionCreate,
+    DimensionError,
+    DimensionListResponse,
+    DimensionOut,
+    DimensionUpdate,
+    DimensionValueListResponse,
+    DimensionValueOut,
+    DimensionValuesRegister,
+)
 from app.metadata.themes import service as themes_service
 from app.metadata.themes.schemas import (
     ThemeCreate,
@@ -41,6 +52,14 @@ def _glossary_error(exc: GlossaryError) -> JSONResponse:
 
 
 def _theme_error(exc: ThemeError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
+
+
+def _dimension_error(exc: DimensionError) -> JSONResponse:
     detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(
         status_code=exc.status,
@@ -190,3 +209,121 @@ def move_theme_node(
     except ThemeError as exc:
         return _theme_error(exc)
     return ThemeOut.model_validate(node)
+
+
+@router.get("/dimensions", response_model=DimensionListResponse)
+def list_dimensions(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    code_prefix: str | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> DimensionListResponse:
+    items, total = dimension_service.list_dimensions(db, code_prefix, limit, offset)
+    return DimensionListResponse(items=[DimensionOut.model_validate(d) for d in items], total=total)
+
+
+@router.post("/dimensions", response_model=DimensionOut, status_code=status.HTTP_201_CREATED)
+def create_dimension(
+    payload: DimensionCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DimensionOut | JSONResponse:
+    try:
+        dimension = dimension_service.create_dimension(db, payload)
+    except DimensionError as exc:
+        return _dimension_error(exc)
+    return DimensionOut.model_validate(dimension)
+
+
+@router.get("/dimensions/{dimension_id}", response_model=DimensionOut)
+def get_dimension(
+    dimension_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DimensionOut | JSONResponse:
+    try:
+        dimension = dimension_service.get_dimension(db, dimension_id)
+    except DimensionError as exc:
+        return _dimension_error(exc)
+    return DimensionOut.model_validate(dimension)
+
+
+@router.put("/dimensions/{dimension_id}", response_model=DimensionOut)
+def update_dimension(
+    dimension_id: uuid.UUID,
+    payload: DimensionUpdate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DimensionOut | JSONResponse:
+    try:
+        dimension = dimension_service.update_dimension(db, dimension_id, payload)
+    except DimensionError as exc:
+        return _dimension_error(exc)
+    return DimensionOut.model_validate(dimension)
+
+
+@router.delete("/dimensions/{dimension_id}", response_model=None)
+def delete_dimension(
+    dimension_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> Response | JSONResponse:
+    try:
+        dimension_service.delete_dimension(db, dimension_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except DimensionError as exc:
+        return _dimension_error(exc)
+
+
+@router.get("/dimensions/{dimension_id}/values", response_model=DimensionValueListResponse)
+def list_dimension_values(
+    dimension_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> DimensionValueListResponse | JSONResponse:
+    try:
+        items, total = dimension_service.list_values(db, dimension_id, limit, offset)
+    except DimensionError as exc:
+        return _dimension_error(exc)
+    return DimensionValueListResponse(
+        items=[DimensionValueOut.model_validate(v) for v in items],
+        total=total,
+    )
+
+
+@router.post(
+    "/dimensions/{dimension_id}/values",
+    response_model=DimensionValueListResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def register_dimension_values(
+    dimension_id: uuid.UUID,
+    payload: DimensionValuesRegister,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DimensionValueListResponse | JSONResponse:
+    try:
+        items = dimension_service.register_values(db, dimension_id, payload.items)
+    except DimensionError as exc:
+        return _dimension_error(exc)
+    return DimensionValueListResponse(
+        items=[DimensionValueOut.model_validate(v) for v in items],
+        total=len(items),
+    )
+
+
+@router.delete("/dimensions/{dimension_id}/values/{value_id}", response_model=None)
+def delete_dimension_value(
+    dimension_id: uuid.UUID,
+    value_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> Response | JSONResponse:
+    try:
+        dimension_service.delete_value(db, dimension_id, value_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except DimensionError as exc:
+        return _dimension_error(exc)

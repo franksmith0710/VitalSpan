@@ -87,15 +87,17 @@
 - **里程碑对齐**：
 ### [QUERY-008] 配置→SQL/API 翻译器
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r38）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：配置→SQL/API 翻译器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] DSL/JSON 生成可执行 SQL
-  - [ ] 参数化防注入
-- **代码锚点**：`backend/app/query/translator/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] DSL/JSON 生成可执行 SQL（`POST /api/v1/query/translate`；mysql/postgresql/clickhouse 三方言 SELECT/WHERE/LIMIT，r38 L1）
+  - [x] 参数化防注入（`%(p0)s` 占位符 + `parameters` 字典；无字面量拼接，r38）
+  - [x] 结构化错误域（`QUERY_TRANSLATE_UNSUPPORTED_DIALECT`/`QUERY_TRANSLATE_UNKNOWN_FIELD`/`QUERY_TRANSLATE_INVALID_CONFIG`，r38）
+- **代码锚点**：`backend/app/query/translator/` · `backend/app/api/v1/query_translate.py` · `tests/test_query_meta_conn_r38.py` T-QUERY-R38-008-01~09
+- **演化建议**：r38 闭合三方言 translate HTTP 链；后续扩展 hive/trino 等方言、Dataset 路径与 Admin 可视化配置器对接
+- **里程碑对齐**：
 ### [QUERY-009] Dataset 查询路径
 
 - **状态**：未实现

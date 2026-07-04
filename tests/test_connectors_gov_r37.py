@@ -436,7 +436,7 @@ def test_sqlserver_http_auth_failed_r37(mock_connect, client):
 # --- CONN-003 Hive ---
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_unknown_database_r37(mock_connect):
     """T-CONN-R37-003-01: mock unknown database → HIVE_UNKNOWN_DATABASE。"""
     mock_connect.side_effect = Exception("Database X does not exist")
@@ -447,7 +447,7 @@ def test_hive_unknown_database_r37(mock_connect):
     assert result.code == "HIVE_UNKNOWN_DATABASE"
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_empty_schemas_r37(mock_connect):
     """T-CONN-R37-003-02: mock 仅 information_schema → list_schemas []。"""
     conn = MagicMock()
@@ -462,7 +462,7 @@ def test_hive_empty_schemas_r37(mock_connect):
     assert connector.list_schemas(connection) == []
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_column_types_smoke_r37(mock_connect):
     """T-CONN-R37-003-03: mock DESCRIBE 类型枚举 ≥3 种 data_type。"""
     conn = MagicMock()
@@ -483,7 +483,7 @@ def test_hive_column_types_smoke_r37(mock_connect):
     assert len(dtypes) >= 3
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_columns_limit_r37(mock_connect):
     """T-CONN-R37-003-04: mock 600 列 DESCRIBE → list_columns 返回 500。"""
     conn = MagicMock()
@@ -506,7 +506,7 @@ def test_hive_types_catalog_r37():
     assert types["hive"]["displayName"]
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_http_auth_failed_r37(mock_connect, client):
     """T-CONN-R37-003-06: HTTP POST test mock auth fail → 200 ok=false HIVE_AUTH_FAILED。"""
     mock_connect.side_effect = Exception("Authentication failed: invalid credentials")
@@ -658,7 +658,7 @@ def test_registry_create_five_types_visible_r37(client):
     """T-REG-R37-02: 创建五 type 各一 DataSource → GET /types 均可见。"""
     created_types = []
     for ds_type, patch_target in [
-        ("hive", "pyhive.hive.connect"),
+        ("hive", "app.datasources.dialects.hive.HiveConnector._connect"),
         ("clickhouse", "clickhouse_connect.get_client"),
         ("sqlserver", "app.datasources.dialects.sqlserver.pymssql.connect"),
         ("doris", "app.datasources.dialects.mysql.pymysql.connect"),

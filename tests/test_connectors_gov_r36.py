@@ -79,7 +79,7 @@ def test_hive_types_catalog_r36():
     assert "schema_browser" in types["hive"]["capabilities"]
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_test_connection_ok_r36(mock_connect):
     """T-CONN-R36-003-02: mock 成功 → ok=True。"""
     conn = MagicMock()
@@ -93,7 +93,7 @@ def test_hive_test_connection_ok_r36(mock_connect):
     cursor.execute.assert_called()
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_auth_failed_r36(mock_connect):
     """T-CONN-R36-003-03: mock 认证失败 → HIVE_AUTH_FAILED。"""
     mock_connect.side_effect = Exception("Authentication failed: invalid credentials")
@@ -104,7 +104,7 @@ def test_hive_auth_failed_r36(mock_connect):
     assert result.code == "HIVE_AUTH_FAILED"
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_conn_refused_r36(mock_connect):
     """T-CONN-R36-003-04: mock 连接拒绝 → HIVE_CONN_REFUSED。"""
     mock_connect.side_effect = Exception("Connection refused")
@@ -115,7 +115,7 @@ def test_hive_conn_refused_r36(mock_connect):
     assert result.code == "HIVE_CONN_REFUSED"
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_timeout_r36(mock_connect):
     """T-CONN-R36-003-05: mock 超时 → HIVE_TIMEOUT。"""
     mock_connect.side_effect = Exception("timed out waiting for response")
@@ -126,7 +126,7 @@ def test_hive_timeout_r36(mock_connect):
     assert result.code == "HIVE_TIMEOUT"
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_empty_schemas_r36(mock_connect):
     """T-CONN-R36-003-06: mock 仅 default 库 → list_schemas 过滤 information_schema。"""
     conn = MagicMock()
@@ -144,7 +144,7 @@ def test_hive_empty_schemas_r36(mock_connect):
     assert "default" in names
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_unknown_database_tables_r36(mock_connect):
     """T-CONN-R36-003-07: mock 未知库 list_tables → []。"""
     conn = MagicMock()
@@ -472,7 +472,7 @@ def test_registry_ten_types_r36():
     assert len(types) >= 10
 
 
-@patch("pyhive.hive.connect")
+@patch("app.datasources.dialects.hive.HiveConnector._connect")
 def test_hive_http_test_connection_r36(mock_connect, client):
     """T-REG-R36-02: POST /datasources/test type=hive mock 成功 → 200 ok=true traceId。"""
     conn = MagicMock()
