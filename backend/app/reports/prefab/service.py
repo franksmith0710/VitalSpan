@@ -6,7 +6,9 @@ from app.auth.deps import UserContext
 from app.reports.prefab.errors import (
     PrefabError,
     RPT_PREFAB_ANALYSIS_MISMATCH,
+    RPT_PREFAB_DUPLICATE_DIMENSION,
     RPT_PREFAB_EMPTY_ROLES,
+    RPT_PREFAB_NOT_FOUND,
 )
 from app.reports.prefab.schemas import (
     PrefabBindingIn,
@@ -42,6 +44,13 @@ def _assert_write_access(user: UserContext) -> None:
 
 
 def _validate_binding(payload: PrefabBindingIn) -> PrefabBindingIn:
+    if len(payload.dimension_codes) != len(set(payload.dimension_codes)):
+        raise PrefabError(
+            RPT_PREFAB_DUPLICATE_DIMENSION,
+            "duplicate dimensionCodes",
+            422,
+            [{"field": "dimensionCodes", "message": "duplicate entries"}],
+        )
     if not _ENTITY_RE.match(payload.entity_type_code):
         raise PrefabError(
             "RPT_PREFAB_INVALID_ENTITY",
@@ -74,12 +83,23 @@ def _validate_binding(payload: PrefabBindingIn) -> PrefabBindingIn:
     return payload
 
 
-def list_prefab_bindings() -> PrefabBindingListResponse:
+def list_prefab_bindings(user: UserContext | None = None) -> PrefabBindingListResponse:
     items = list(_store.values())
+    if user and "enterprise" in set(user.roles):
+        prefix = _USER_PREFAB_SCOPE.get(user.id, "bind-cn")
+        items = [i for i in items if str(i.get("bindingKey", "")).startswith(prefix)]
     return PrefabBindingListResponse(
         items=[PrefabBindingOut.model_validate(i) for i in items],
         total=len(items),
     )
+
+
+def get_prefab_binding(key: str, user: UserContext) -> PrefabBindingOut:
+    _assert_prefab_scope(user, key)
+    stored = _store.get(key)
+    if stored is None:
+        raise PrefabError(RPT_PREFAB_NOT_FOUND, "Prefab binding not found", 404)
+    return PrefabBindingOut.model_validate(stored)
 
 
 def validate_prefab_binding(payload: PrefabBindingIn) -> PrefabBindingValidateOut:

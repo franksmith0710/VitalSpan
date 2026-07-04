@@ -76,3 +76,7 @@
 
 - `views/probe.py`：`probe_resolve_defaults_budget_ms` / `probe_create_override_budget_ms`（50ms）
 - `VIEW_DEFAULT_OUT_OF_BOUNDS` [1,64] 域校验；`GET /users/me/views/{id}`；dashboard 404 / cycle 检测闭合
+
+### r68 companion 质量推分（VIEW-002）
+
+- **VIEW-002**：`inheritFromRoleId` 环检测（`VIEW_DEFAULT_ROLE_CYCLE`）；`set_user_role_default_scope` + enterprise GET scope（`VIEW_DEFAULT_FORBIDDEN`）；`probe_put_role_defaults_budget_ms` ≤50ms；`GET /roles/{id}/default-views` actor 透传

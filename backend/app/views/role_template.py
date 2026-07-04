@@ -12,6 +12,12 @@ from app.reports.catalog.errors import ReportCatalogError
 from app.views.schemas import ViewError
 from app.views import store
 
+_USER_ROLE_DEFAULT_SCOPE: dict[str, str] = {}
+
+
+def set_user_role_default_scope(user_id: str, role_prefix: str) -> None:
+    _USER_ROLE_DEFAULT_SCOPE[user_id] = role_prefix
+
 
 def _normalize_role_key(role_id: str) -> str:
     try:
@@ -23,6 +29,32 @@ def _normalize_role_key(role_id: str) -> str:
 def _assert_admin(actor: UserContext) -> None:
     if "admin" not in actor.roles:
         raise ViewError("VIEW_DEFAULT_FORBIDDEN", "Admin role required", 403)
+
+
+def _assert_read_scope(actor: UserContext, role_id: str) -> None:
+    if "enterprise" not in set(actor.roles):
+        return
+    prefix = _USER_ROLE_DEFAULT_SCOPE.get(actor.id, "role-")
+    if not role_id.startswith(prefix):
+        raise ViewError("VIEW_DEFAULT_FORBIDDEN", "enterprise user out of role default scope", 403)
+
+
+def _detect_inherit_cycle(role_id: str, inherit_from: str | None) -> None:
+    if not inherit_from:
+        return
+    seen = {role_id}
+    current = inherit_from
+    while current:
+        if current in seen:
+            raise ViewError(
+                "VIEW_DEFAULT_ROLE_CYCLE",
+                "inheritFromRoleId creates a cycle",
+                422,
+                [{"field": "inheritFromRoleId", "message": "cycle detected"}],
+            )
+        seen.add(current)
+        stored = store.get_role_defaults(current)
+        current = (stored or {}).get("inheritFromRoleId")
 
 
 def _validate_refs(db: Session, payload: dict[str, Any]) -> None:
@@ -46,7 +78,9 @@ def _validate_refs(db: Session, payload: dict[str, Any]) -> None:
             raise ViewError("VIEW_DEFAULT_REPORT_NOT_FOUND", "Report template not found", 404)
 
 
-def get_defaults(role_id: str) -> dict[str, Any]:
+def get_defaults(role_id: str, actor: UserContext | None = None) -> dict[str, Any]:
+    if actor is not None:
+        _assert_read_scope(actor, role_id)
     key = _normalize_role_key(role_id)
     stored = store.get_role_defaults(key)
     if stored is None:
@@ -55,6 +89,7 @@ def get_defaults(role_id: str) -> dict[str, Any]:
         "dashboardId": stored.get("dashboardId"),
         "reportTemplateNodeId": stored.get("reportTemplateNodeId"),
         "maxWidgetCount": stored.get("maxWidgetCount", 24),
+        "inheritFromRoleId": stored.get("inheritFromRoleId"),
     }
 
 
@@ -76,13 +111,16 @@ def put_defaults(db: Session, role_id: str, payload: dict[str, Any], actor: User
     _assert_admin(actor)
     max_widgets = int(payload.get("maxWidgetCount", 24))
     _assert_widget_bounds(max_widgets)
+    inherit = payload.get("inheritFromRoleId")
+    key = _normalize_role_key(role_id)
+    _detect_inherit_cycle(key, inherit)
     body = {
         "dashboardId": payload.get("dashboardId"),
         "reportTemplateNodeId": payload.get("reportTemplateNodeId"),
         "maxWidgetCount": max_widgets,
+        "inheritFromRoleId": inherit,
     }
     _validate_refs(db, body)
-    key = _normalize_role_key(role_id)
     return store.set_role_defaults(key, body)
 
 

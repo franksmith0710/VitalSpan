@@ -121,3 +121,7 @@
 
 - `cat05/_assert_ticket_access` / `set_user_ticket_scope`；`CAT05_FORBIDDEN`（viewer 写 / enterprise scope 外读）
 - `probe_ticket_stats_budget_ms`（50ms smoke）
+
+### r68 companion 质量推分（GOV-007）
+
+- **GOV-007**：`bus/auto.py` — failed/auto_registering 状态重试 → 409 `GOV_AUTO_BUS_INVALID_TRANSITION`；`set_user_auto_bus_scope` + enterprise entry path scope（`GOV_AUTO_BUS_FORBIDDEN`）；`bus/probe.py` — `probe_auto_register_budget_ms` ≤50ms；`GET /gov/bus/auto-register/probe`

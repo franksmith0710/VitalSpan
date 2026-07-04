@@ -89,3 +89,7 @@
 ### r65 companion 质量推分（RPT-002）
 
 - **RPT-002**：`prefab/probe.py` — validate/list perf probe ≤50ms；`allowedRoles` 非空（`RPT_PREFAB_EMPTY_ROLES`）；`analysisType=distribution` 需 `region` 维度（`RPT_PREFAB_ANALYSIS_MISMATCH`）；`set_user_prefab_scope` + enterprise `bindingKey` 前缀 scope；`GET /api/v1/reports/prefab/probe`
+
+### r68 companion 质量推分（RPT-002）
+
+- **RPT-002**：`get_prefab_binding` + `RPT_PREFAB_NOT_FOUND`；`RPT_PREFAB_DUPLICATE_DIMENSION`；`list_prefab_bindings(user)` enterprise scope 过滤；`probe_get_prefab_binding_budget_ms` ≤50ms；`GET /api/v1/reports/prefab/bindings/{binding_key}`

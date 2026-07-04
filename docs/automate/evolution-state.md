@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r67.md |
-| design | docs/superpowers/specs/2026-07-04-dash-nfr-conn-rpt-companion-quality-r67-design.md |
-| plan | docs/superpowers/plans/2026-07-04-dash-nfr-conn-rpt-companion-quality-r67.md |
-| branch | feat/evolution-r67-dash-nfr-conn-rpt-companion-quality |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r68.md |
+| design | docs/superpowers/specs/2026-07-04-nfr-gov-rpt-view-companion-quality-r68-design.md |
+| plan | docs/superpowers/plans/2026-07-04-nfr-gov-rpt-view-companion-quality-r68.md |
+| branch | feat/evolution-r68-nfr-gov-rpt-view-companion-quality |
 | base_branch | dev-auto |
-| prd_ids | DASH-004,NFR-001,NFR-002,CONN-018,RPT-003 |
-| pr_number | 102 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_dash_nfr_conn_rpt_r67.py ../tests/test_cat_dash_rpt_meta_r66.py ../tests/test_cat_rpt_meta_r65.py ../tests/test_nfr_cat_r64.py ../tests/test_cat_nfr_rpt_meta_r62.py ../tests/test_cat_dash_viz_nfr_r61.py ../tests/test_meta_cat_dash_conn_design_r59.py -q && python3 -m pytest -q |
+| prd_ids | NFR-003,NFR-004,GOV-007,RPT-002,VIEW-002 |
+| pr_number |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T22:55:00Z |

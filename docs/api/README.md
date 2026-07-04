@@ -111,8 +111,11 @@ redoc: /redoc
 | POST | `/api/v1/nfr/report-query-perf/validate` | 报表查询性能配置校验（`REPORT_PERF_*`；**r67** `sampleQueryId` pattern） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/dashboard-first-screen/validate` | NFR-001 首屏配置校验（**r67** enterprise ACL + `dashboardId` pattern） | 内部 | 一期 | NFR-001 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/dashboard-first-screen/probe` | NFR-001 首屏 mock probe（**r67** enterprise ACL） | 内部 | 一期 | NFR-001 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/dashboard-sla/validate` | NFR-003 SLA 配置校验（**r68** enterprise ACL + `dashboardId` pattern） | 内部 | 一期 | NFR-003 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/dashboard-sla/probe` | NFR-003 SLA mock probe（**r68** actor 透传） | 内部 | 一期 | NFR-003 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/dashboard-sla/alerts` | NFR-003 SLA 告警配置（**r68** `thresholdPercent` query） | 内部 | 一期 | NFR-003 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/https-audit/status` | NFR-004 HTTPS 策略探测 | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
-| POST | `/api/v1/nfr/https-audit/mask-probe` | NFR-004 脱敏审计 mock | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/https-audit/mask-probe` | NFR-004 脱敏审计 mock（**r68** `auditScope` ACL + `simulateAuditFailure`） | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
 
 ---
 
@@ -210,6 +213,7 @@ redoc: /redoc
 | GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}/download` | 导出文件下载（`Content-Disposition: attachment`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET/PUT | `/api/v1/reports/prefab/bindings*` | 预制报表绑定 list/upsert（`RPT_PREFAB_*`） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
+| GET | `/api/v1/reports/prefab/bindings/{binding_key}` | 预制 binding 单条读取（`RPT_PREFAB_NOT_FOUND`） | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
 | POST | `/api/v1/reports/prefab/bindings/validate` | 预制绑定校验（allowedRoles/analysisType 联动） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
 | GET | `/api/v1/reports/prefab/probe` | prefab validate/list perf probe 预算探测 | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
 
@@ -269,6 +273,7 @@ redoc: /redoc
 | GET | `/api/v1/gov/catalog/aggregate-templates/{aggregate_key}/attribution` | CAT-002 PoC 归属 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`；需 admin；幂等 201/200；403 `BUS_REGISTER_FORBIDDEN`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/auto-register` | 总线全自动注册 FSM（`catalogEntryId`；integration/admin；幂等 201/200；403 `GOV_AUTO_BUS_FORBIDDEN`） | IF-06 | 四期 | GOV-007 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/bus/auto-register/probe` | auto-register perf probe（`elapsedMs`/`withinBudget`） | IF-06 | 四期 | GOV-007 | 已实现（companion） | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/query-design/validate` | 可视化查询设计校验（422 `detail.fields`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | PUT | `/api/v1/gov/query-design` | 可视化查询设计保存（409 `CONFIG_VERSION_CONFLICT`；403 ACL） | IF-06 | 一期 | GOV-004/008 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/query-design` | 可视化查询设计读取（`?refId=`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |

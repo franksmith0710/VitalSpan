@@ -55,3 +55,5 @@
 - r64 NFR-001：`dashboard_first_screen.py` — 进程内 mock `elapsedMs=800` + budget/widget 守卫；`POST /api/v1/nfr/dashboard-first-screen/probe|validate`；错误码 `DASHBOARD_FIRST_SCREEN_*`
 - **r67 NFR-001 companion**：`set_user_first_screen_scope` + `DASHBOARD_FIRST_SCREEN_FORBIDDEN` / `INVALID_DASHBOARD_ID`；`probe_validate_first_screen_budget_ms` / `probe_first_screen_probe_budget_ms` ≤50ms
 - **r67 NFR-002 companion**：`set_user_report_perf_scope` + `REPORT_PERF_FORBIDDEN` / `INVALID_SAMPLE_QUERY`；`simulateFailure` 降级链；双 probe ≤50ms
+- **r68 NFR-003 companion**：`dashboard_sla.py` — `set_user_dashboard_sla_scope` + `DASHBOARD_SLA_FORBIDDEN` / `INVALID_DASHBOARD_ID` / `ALERT_THRESHOLD_OUT_OF_RANGE`；`validate_dashboard_sla` / `probe_dashboard_sla` actor 透传；`get_dashboard_sla_alerts(thresholdPercent)`；`probe_validate_dashboard_sla_budget_ms` / `probe_dashboard_sla_probe_budget_ms` ≤50ms
+- **r68 NFR-004 companion**：`https_audit.py` — `auditScope` ACL（`set_user_https_audit_scope` + `HTTPS_AUDIT_FORBIDDEN` / `INVALID_SCOPE`）；`simulateAuditFailure`；`probe_https_mask_budget_ms` / `probe_https_status_budget_ms` ≤50ms
