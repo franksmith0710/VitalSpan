@@ -53,4 +53,36 @@ describe("ChartRenderer smoke", () => {
     render(<ChartRenderer config={lineConfig} />);
     expect(await screen.findByTestId("apex-chart-container")).toBeInTheDocument();
   });
+
+  it("T-VIZ-R29-002-01: table 101 rows paginates to 50 visible", async () => {
+    const rows = Array.from({ length: 101 }, (_, i) => [i + 1]);
+    mockApiFetch.mockResolvedValueOnce({ columns: ["id"], rows });
+    render(<ChartRenderer config={tableConfig} title="大表" />);
+    expect(await screen.findByText("id")).toBeInTheDocument();
+    expect(screen.getAllByRole("cell").length).toBeLessThanOrEqual(50);
+    expect(screen.getByText(/第 1\/3 页/)).toBeInTheDocument();
+    expect(screen.getByText(/共 101 条/)).toBeInTheDocument();
+  });
+
+  it("T-VIZ-R29-002-02: QUERY_TIMEOUT shows Chinese timeout message", async () => {
+    const err = Object.assign(new Error("查询超时，请缩小数据范围"), { code: "QUERY_TIMEOUT" });
+    mockApiFetch.mockRejectedValueOnce(err);
+    render(<ChartRenderer config={tableConfig} />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("查询超时，请缩小数据范围");
+    expect(screen.getByRole("button", { name: "重试" })).toBeInTheDocument();
+  });
+
+  it("T-VIZ-R29-002-03: bar chart smoke renders apex container", async () => {
+    mockApiFetch.mockResolvedValueOnce({ columns: ["x", "y"], rows: [[1, 2]] });
+    const barConfig: ChartViewConfig = {
+      chartType: "bar",
+      dataSourceId: "00000000-0000-4000-8000-000000000001",
+      mode: "sql",
+      sql: "SELECT 1 AS x, 2 AS y",
+      dimensions: [{ field: "x" }],
+      metrics: [{ field: "y" }],
+    };
+    render(<ChartRenderer config={barConfig} />);
+    expect(await screen.findByTestId("apex-chart-container")).toBeInTheDocument();
+  });
 });
