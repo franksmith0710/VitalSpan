@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
-| plan |  |
+| phase | P2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r40.md |
+| design | docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40.md |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | CONN-006,CONN-011,CONN-012,CONN-013,CONN-014 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T06:25:00Z |
+| skill_rule_index_generated_at | 2026-07-04T07:25:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P2 r40 计划完成：8 Task（errors+scaffold→MongoDB→InfluxDB→TDengine→SQLite→TimescaleDB→registry→回归+docs）；≥37 新测 test_connectors_gov_r40；11 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
+- P1 r40 设计完成：M11 嵌入式/时序/文档连接器 L1 kickoff — CONN-014/011/012/006/013；17 文件框定；五方言 mock smoke + test_invalid_connector_type 修复（P4 blocker）；ui_design_skill none；phase G2_DONE→P1_DONE
+- G2 r40 选题完成：M11 嵌入式/时序/文档连接器 L1 kickoff — CONN-006/011/012/013/014（5 项）；最低分 CONN-014(11.5)；饱和熔断未触发；plan M1/M1B 无活跃勾选行（已知 concern）；STUCK 表空；phase idle→G2_DONE
 - G1 r40 bootstrap：r39 PR #65 已 Squash merge dev-auto（c09246a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 VIZ-003(11.7)/QUERY-009(11.7)/CONN-006(12.6)；STUCK 表空（r39 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r39 PRD 重评：QUERY-008/CONN-022/META-003/CONN-017/CONN-010 companion 质量推分；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归 109/109；总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r39 验证通过：ruff clean；pytest 924 passed/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40 回归 109/109；UI: N/A（纯后端）；PR #65 已提前创建（SOP 顺序 concern）；phase P3_DONE→P4_DONE
