@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 
 from sqlalchemy import and_, func, select
@@ -9,10 +10,15 @@ from app.query.config_store.models import QueryConfigRecord
 from app.query.config_store.schemas import (
     ALLOWED_CONFIG_TYPES,
     ALLOWED_SCHEMA_VERSIONS,
+    MAX_CONFIG_PAYLOAD_BYTES,
     ConfigError,
     ConfigUpsert,
     DEFAULT_REF_TYPE,
 )
+
+
+def _payload_byte_size(payload: object) -> int:
+    return len(json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
 
 
 def _validate_upsert(payload: ConfigUpsert) -> None:
@@ -22,6 +28,14 @@ def _validate_upsert(payload: ConfigUpsert) -> None:
         raise ConfigError("CONFIG_UNKNOWN_SCHEMA_VERSION", "Unknown schema version", 422)
     if not isinstance(payload.payload, dict):
         raise ConfigError("CONFIG_INVALID_PAYLOAD", "Payload must be a JSON object", 422)
+    size = _payload_byte_size(payload.payload)
+    if size > MAX_CONFIG_PAYLOAD_BYTES:
+        raise ConfigError(
+            "CONFIG_PAYLOAD_TOO_LARGE",
+            f"Payload exceeds {MAX_CONFIG_PAYLOAD_BYTES} bytes",
+            413,
+            fields=[{"field": "payload", "message": f"size {size} exceeds limit"}],
+        )
 
 
 def upsert_config(
@@ -41,6 +55,21 @@ def upsert_config(
     )
     existing = session.scalar(stmt)
     if existing is not None:
+        if payload.expected_revision is not None and payload.expected_revision != existing.revision:
+            raise ConfigError(
+                "CONFIG_VERSION_CONFLICT",
+                "Config revision conflict",
+                409,
+                fields=[
+                    {
+                        "field": "expectedRevision",
+                        "message": (
+                            f"expected {payload.expected_revision} "
+                            f"but current is {existing.revision}"
+                        ),
+                    }
+                ],
+            )
         existing.payload = payload.payload
         existing.revision += 1
         if owner_id is not None:
@@ -48,6 +77,13 @@ def upsert_config(
         session.commit()
         session.refresh(existing)
         return existing
+    if payload.expected_revision is not None and payload.expected_revision != 0:
+        raise ConfigError(
+            "CONFIG_VERSION_CONFLICT",
+            "Config revision conflict",
+            409,
+            fields=[{"field": "expectedRevision", "message": "expected 0 for new config"}],
+        )
     record = QueryConfigRecord(
         config_type=payload.config_type,
         schema_version=payload.schema_version,
