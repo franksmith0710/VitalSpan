@@ -6,6 +6,7 @@ from app.api.v1.charts import router as charts_router
 from app.api.v1.dashboards import router as dashboards_router
 from app.api.v1.gov import router as gov_router
 from app.api.v1.query import router as query_router
+from app.api.v1.query_configs import router as query_configs_router
 from app.api.v1.ingestion import router as ingestion_router
 from app.api.v1.me import router as me_router
 from app.api.v1.metadata import router as metadata_router
@@ -21,6 +22,7 @@ api_v1_router.include_router(me_router)
 api_v1_router.include_router(ingestion_router)
 api_v1_router.include_router(datasources_router)
 api_v1_router.include_router(query_router)
+api_v1_router.include_router(query_configs_router)
 api_v1_router.include_router(charts_router)
 api_v1_router.include_router(dashboards_router)
 api_v1_router.include_router(gov_router)

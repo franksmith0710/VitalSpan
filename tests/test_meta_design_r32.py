@@ -161,3 +161,69 @@ def test_meta_theme_term_link_r32(client):
     )
     assert node.status_code == 200
     assert node.json()["termId"] == term["id"]
+
+
+REF_ID = "00000000-0000-4000-8000-000000000001"
+
+
+def test_query_config_roundtrip_r32(client):
+    """T-QUERY-R32-007-01: PUT 合法 payload → GET 往返一致。"""
+    body = {
+        "configType": "query_conditions",
+        "schemaVersion": "1.0",
+        "refType": "design_draft",
+        "refId": REF_ID,
+        "payload": {"logic": "AND", "conditions": []},
+    }
+    put = client.put("/api/v1/query/configs", headers=AUTH, json=body)
+    assert put.status_code == 200
+    got = client.get(
+        "/api/v1/query/configs",
+        headers=AUTH,
+        params={"config_type": "query_conditions", "ref_type": "design_draft", "ref_id": REF_ID},
+    )
+    assert got.status_code == 200
+    assert got.json()["items"][0]["payload"]["logic"] == "AND"
+
+
+def test_query_config_unknown_schema_version_r32(client):
+    """T-QUERY-R32-007-02: 未知 schema_version → 422 CONFIG_UNKNOWN_SCHEMA_VERSION。"""
+    body = {
+        "configType": "query_conditions",
+        "schemaVersion": "9.9",
+        "refType": "design_draft",
+        "refId": REF_ID,
+        "payload": {},
+    }
+    resp = client.put("/api/v1/query/configs", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "CONFIG_UNKNOWN_SCHEMA_VERSION"
+
+
+def test_query_config_invalid_payload_type_r32(client):
+    """T-QUERY-R32-007-03: payload 非 object → 422 CONFIG_INVALID_PAYLOAD。"""
+    body = {
+        "configType": "query_conditions",
+        "schemaVersion": "1.0",
+        "refType": "design_draft",
+        "refId": REF_ID,
+        "payload": "not-an-object",
+    }
+    resp = client.put("/api/v1/query/configs", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "CONFIG_INVALID_PAYLOAD"
+
+
+def test_query_config_upsert_idempotent_r32(client):
+    """T-QUERY-R32-007-04: 同 key 连续 PUT 两次 → 同 id、revision 2。"""
+    body = {
+        "configType": "compute_rules",
+        "schemaVersion": "1.0",
+        "refType": "design_draft",
+        "refId": REF_ID,
+        "payload": {"rules": []},
+    }
+    first = client.put("/api/v1/query/configs", headers=AUTH, json=body).json()
+    second = client.put("/api/v1/query/configs", headers=AUTH, json=body).json()
+    assert first["id"] == second["id"]
+    assert second["revision"] == 2
