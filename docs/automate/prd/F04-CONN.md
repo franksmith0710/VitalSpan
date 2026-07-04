@@ -313,7 +313,7 @@
 - **演化建议**：r51 companion 闭合 HTTP 错误链与元数据边界；后续补 UI 选型与只读查询集成测
 ### [CONN-020] OceanBase 连接器
 
-- **状态**：部分实现（L1 kickoff r54）
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：OceanBase 连接器（SRS 追溯项）。
@@ -321,8 +321,11 @@
   - [x] type=`oceanbase` 已注册且 types catalog 可见（`register_connector_plugin`）
   - [x] 连通性测试 + schema 浏览 L1（MySQL 协议委托，port 2881）
   - [x] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/oceanbase.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-CONN-01~08
-- **演化建议**：r54 L1 闭合 OceanBase 方言骨架；后续补 UI 选型与只读查询集成测
+  - [ ] UI 可选
+  - [x] HTTP 4xx/502 错误链 + 空库/列 limit 边界（`OCEANBASE_AUTH_FAILED`/`OCEANBASE_CONN_REFUSED`/`OCEANBASE_TIMEOUT` + list_columns 501→500，r55 companion）
+  - [ ] 只读查询集成测通过
+- **代码锚点**：`backend/app/datasources/dialects/oceanbase.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-CONN-01~08 · `tests/test_rpt_gov_meta_conn_r55.py` T-CONN-R55-01~09
+- **演化建议**：r55 companion 闭合 HTTP test_connection/schemas/tables 4xx/502 链、空库注释、列 limit 与 probe <200ms；后续补 UI 选型与只读查询集成测
 ### [CONN-021] TiDB 连接器
 
 - **状态**：部分实现

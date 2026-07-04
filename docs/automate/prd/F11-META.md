@@ -63,12 +63,14 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [META-006] 实体类型 schema 配置
 
-- **状态**：部分实现（L1 kickoff r54）
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：实体类型 schema 配置（SRS 追溯项）。
 - **验收标准**：
   - [x] 实体属性/生命周期可配置（attributes + lifecycleStates 默认 draft/active/retired）
   - [x] 不预置业务实体（内存 store，按需创建）
-- **代码锚点**：`backend/app/metadata/entity/` · `backend/app/api/v1/metadata.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-META-01~07
-- **演化建议**：r54 L1 闭合 entity schema CRUD；后续补物理表映射与 GOV 引用释放
+  - [x] schema 校验链 + 只读 query bindings（r55 companion：POST validate + GET query-bindings）
+  - [ ] 物理表映射与 GOV 引用释放
+- **代码锚点**：`backend/app/metadata/entity/` · `backend/app/api/v1/metadata.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-META-01~07 · `tests/test_rpt_gov_meta_conn_r55.py` T-META-R55-01~08
+- **演化建议**：r55 companion 闭合 duplicate attributes/lifecycle 校验、json 不可筛选守卫、entity-in-use 409 与 probe <200ms；后续补物理表映射

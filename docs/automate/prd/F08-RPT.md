@@ -64,23 +64,28 @@
 - **里程碑对齐**：
 ### [RPT-006] 报表扩展配置 FR-6.3
 
-- **状态**：部分实现（L1 kickoff r54）
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：报表扩展配置 FR-6.3（SRS 追溯项）。
 - **验收标准**：
   - [x] 可调整既有报表指标/筛选器（template 节点 extension CRUD；metrics/filters 校验）
   - [x] 变更可追溯（revision + changeNote 审计）
-- **代码锚点**：`backend/app/reports/extension/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-RPT-01~07
-- **演化建议**：r54 L1 闭合 extension 内存 store 与 REST；后续补真实渲染联动与持久化
+  - [x] render-spec 可见指标/修订历史/内存持久化快照（r55 companion：`build_extension_render_spec` + revisions + snapshot）
+  - [ ] 真实 DB 持久化与前端渲染 UI
+- **代码锚点**：`backend/app/reports/extension/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-RPT-01~07 · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-01~08
+- **演化建议**：r55 companion 闭合 render-spec、revision history、persistence snapshot 与 probe <200ms；后续补真实持久化与管理员 UI
+- **里程碑对齐**：
 ### [RPT-007] 批量新增报表 FR-6.4
 
-- **状态**：部分实现（L1 kickoff r54）
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
 - **描述**：批量新增报表 FR-6.4（SRS 追溯项）。
 - **验收标准**：
   - [x] 基于模板批量复制（batch create template 节点 + 可选 extension）
   - [x] 幂等守卫（Idempotency-Key + 原子回滚）
-- **代码锚点**：`backend/app/reports/batch/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-RPT-08~15
-- **演化建议**：r54 L1 闭合 batch 内存 store；后续补管理员 UI 与异步导出链
+  - [x] 部分失败结构化 detail + rolledBackCount（r55 companion）
+  - [ ] 管理员 UI 与异步导出链
+- **代码锚点**：`backend/app/reports/batch/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-RPT-08~15 · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-09~15
+- **演化建议**：r55 companion 闭合部分失败 index/detail、幂等冲突 409、原子回滚与 probe <200ms；后续补管理员 UI 与异步导出链
