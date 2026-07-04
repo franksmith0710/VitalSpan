@@ -33,7 +33,8 @@ from app.query.native.schemas import (
     RoutingModesOut,
 )
 from app.query.dataset.guard import dataset_routing_doc, validate_dataset_spec
-from app.query.dataset.schemas import DatasetRoutingOut
+from app.query.dataset.executor import build_dataset_execute_plan
+from app.query.dataset.schemas import DatasetExecutePlanOut, DatasetRoutingOut
 
 router = APIRouter(prefix="/query", tags=["query"])
 
@@ -230,5 +231,16 @@ def validate_dataset_query(
 ):
     try:
         return validate_dataset_spec(payload, user.roles)
+    except QueryError as exc:
+        return _error_response(exc)
+
+
+@router.post("/dataset/execute-plan", response_model=DatasetExecutePlanOut)
+def post_dataset_execute_plan(
+    payload: dict,
+    user: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return build_dataset_execute_plan(payload, user.roles)
     except QueryError as exc:
         return _error_response(exc)
