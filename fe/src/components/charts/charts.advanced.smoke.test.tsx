@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { fetchChartTypeCatalog } from "@/lib/chartRegistry";
 
 const mockApiFetch = vi.fn();
@@ -139,7 +139,7 @@ vi.mock("echarts-for-react", () => ({
   default: () => <div data-testid="echarts-chart" />,
 }));
 
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { AdvancedEchartsChart } from "@/components/charts/adapters/AdvancedEchartsChart";
 
 describe("AdvancedEchartsChart", () => {
@@ -159,5 +159,53 @@ describe("AdvancedEchartsChart", () => {
       />,
     );
     expect(screen.getByTestId("echarts-chart")).toBeInTheDocument();
+  });
+});
+
+import userEvent from "@testing-library/user-event";
+import { ChartConfigPanel } from "@/components/charts/ChartConfigPanel";
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
+
+describe("ChartConfigPanel", () => {
+  afterEach(() => cleanup());
+
+  it("T-VIZ-R43-005-02: funnel 缺 metric → 配置面板展示字段错误文案", async () => {
+    const cfg: ChartViewConfig = {
+      chartType: "funnel",
+      dataSourceId: "00000000-0000-4000-8000-000000000001",
+      mode: "sql",
+      sql: "SELECT 1",
+      dimensions: [{ field: "stage" }],
+      metrics: [],
+    };
+    mockApiFetch.mockResolvedValueOnce([]);
+    mockApiFetch.mockRejectedValueOnce(
+      Object.assign(new Error("字段不符合要求"), {
+        code: "CHART_FIELD_REQUIREMENT",
+        fields: [{ field: "metrics", message: "至少 1 个度量" }],
+      }),
+    );
+    render(<ChartConfigPanel config={cfg} columns={["stage", "value"]} onChange={() => {}} />);
+    await userEvent.click(screen.getByRole("button", { name: "校验配置" }));
+    expect(await screen.findByText("至少 1 个度量")).toBeInTheDocument();
+  });
+
+  it("T-VIZ-R43-004-02: styleVariant=invalid → alert 含样式或错误码", async () => {
+    const cfg: ChartViewConfig = {
+      chartType: "bar",
+      dataSourceId: "00000000-0000-4000-8000-000000000001",
+      mode: "sql",
+      sql: "SELECT 1",
+      styleVariant: "invalid",
+      dimensions: [{ field: "d" }],
+      metrics: [{ field: "m" }],
+    };
+    mockApiFetch.mockResolvedValueOnce([]);
+    mockApiFetch.mockRejectedValueOnce(
+      Object.assign(new Error("样式无效"), { code: "CHART_INVALID_STYLE_VARIANT" }),
+    );
+    render(<ChartConfigPanel config={cfg} columns={["d", "m"]} onChange={() => {}} />);
+    await userEvent.click(screen.getByRole("button", { name: "校验配置" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/样式|CHART_INVALID_STYLE_VARIANT/);
   });
 });
