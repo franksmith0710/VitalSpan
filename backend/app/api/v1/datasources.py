@@ -4,7 +4,7 @@ import uuid
 from typing import Annotated
 
 import app.datasources  # noqa: F401 — trigger register_builtin_dialects
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
@@ -27,6 +27,7 @@ from app.datasources.schemas import (
     TestConnectionOut,
 )
 from app.datasources import service as ds_service
+from app.datasources.dialects.kingbase.params import KingbaseParamsError, validate_kingbase_connection_params
 from app.datasources.registry import export_type_catalog
 
 router = APIRouter(prefix="/datasources", tags=["datasources"])
@@ -170,10 +171,32 @@ def delete_data_source(
 
 
 @router.post("/test", response_model=TestConnectionOut)
-def test_connection_draft(
-    payload: TestConnectionIn,
+async def test_connection_draft(
+    request: Request,
     _: Annotated[UserContext, Depends(get_current_user)],
 ) -> TestConnectionOut | JSONResponse:
+    body = await request.json()
+    if body.get("type") == "kingbase":
+        try:
+            validate_kingbase_connection_params(
+                host=body.get("host"),
+                port=body.get("port"),
+                database=body.get("database"),
+                username=body.get("username"),
+            )
+        except KingbaseParamsError as exc:
+            detail = {"fields": exc.fields} if exc.fields else None
+            return JSONResponse(
+                status_code=422,
+                content={"code": exc.code, "message": exc.message, "detail": detail},
+            )
+    try:
+        payload = TestConnectionIn.model_validate(body)
+    except Exception as exc:
+        return JSONResponse(
+            status_code=422,
+            content={"code": "VALIDATION_ERROR", "message": str(exc), "detail": None},
+        )
     try:
         return ds_service.test_connection_draft(payload)
     except ds_service.DataSourceError as exc:
