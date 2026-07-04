@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.47
+version: 1.2.48
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,20 +17,20 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r41 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 companion 质量推分 r41）；pytest 1003/4 skipped；test_connectors_gov_r41 36/36 + r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 回归；五方言 HTTP test_connection/metadata 4xx/502 链、空库/空 collection 边界、列 limit=500 回归、SQLite 只读/路径穿越对称守卫；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.1–88.8→90.0–91.2（五 ID 破 90 STUCK 清零）
+> 更新：2026-07-04 · P5 r42 重评 VIZ-003/004/005/006/008（M9 可视化高级图表类型 L1 kickoff r42）；pytest 1038/4 skipped；test_viz_advanced_l1_r42 35 用例/48 断言 + r28/r30 pie→radar 回归修复；后端 chart-spec 契约先行——`ChartTypeRegistry` + 9 类型骨架 + `GET /charts/types`、style_variants + `CHART_INVALID_STYLE_VARIANT`、FieldRule + `CHART_FIELD_REQUIREMENT`、`build_render_spec` + `POST /charts/render-spec`、embed 契约 + origin 白名单 + `POST /charts/embed/validate`；完整度 5%→55–62%，可靠性 0%→62–65%，测试覆盖 0%→60–65%，总分 11.3–12.1→57.1–61.1（五 ID <90 STUCK upsert round 1；前端渲染/配置 UI/iframe 页面留 companion）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
-| 1 | VIZ-004 | 桑基图 | 11.3 | 完整度 | 见期次 |
-| 2 | VIZ-008 | 关系图 | 11.4 | 完整度 | 见期次 |
-| 3 | CONN-016 | OpenSearch 连接器 | 11.6 | 完整度 | 见期次 |
-| 4 | CONN-019 | 南大通用 GBase 连接器 | 11.6 | 完整度 | 见期次 |
-| 5 | QUERY-009 | Dataset 查询路径 | 11.7 | 完整度 | 见期次 |
-| 6 | VIZ-003 | 地图可视化 | 11.7 | 完整度 | 见期次 |
-| 7 | VIZ-005 | 漏斗图 | 11.7 | 完整度 | 见期次 |
-| 8 | RPT-004 | 报表订阅 | 11.7 | 完整度 | 见期次 |
-| 9 | DASH-006 | 大屏模板 | 11.8 | 完整度 | 见期次 |
-| 10 | RPT-005 | 报表权限 | 11.8 | 完整度 | 见期次 |
+| 1 | API-003 | 集成 API 项 | 11.3 | 完整度 | 见期次 |
+| 2 | NFR-006 | 非功能项 | 11.4 | 完整度 | 见期次 |
+| 3 | NFR-007 | 非功能项 | 11.4 | 完整度 | 见期次 |
+| 4 | GOV-005 | 治理项 | 11.5 | 完整度 | 见期次 |
+| 5 | NFR-005 | 非功能项 | 11.5 | 完整度 | 见期次 |
+| 6 | CONN-019 | 南大通用 GBase 连接器 | 11.6 | 完整度 | 见期次 |
+| 7 | DESIGN-005 | 设计器项 | 11.6 | 完整度 | 见期次 |
+| 8 | API-005 | 集成 API 项 | 11.6 | 完整度 | 见期次 |
+| 9 | DESIGN-003 | 设计器项 | 11.6 | 完整度 | 见期次 |
+| 10 | CONN-016 | OpenSearch 连接器 | 11.6 | 完整度 | 见期次 |
 
 ---
 
@@ -95,12 +95,12 @@ domain_count: 16
 | QUERY-009 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 12 | 11.7 | 完整度 |
 | VIZ-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | VIZ-002 | 84 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 91.6 | 用户价值 |
-| VIZ-003 | 46 | 5 | 0 | N/A | 14 | 0 | 0 | 9 | 11.7 | 完整度 |
-| VIZ-004 | 47 | 5 | 0 | N/A | 8 | 0 | 0 | 10 | 11.3 | 完整度 |
-| VIZ-005 | 48 | 5 | 0 | N/A | 9 | 0 | 0 | 11 | 11.7 | 完整度 |
-| VIZ-006 | 49 | 5 | 0 | N/A | 10 | 0 | 0 | 12 | 12.1 | 完整度 |
+| VIZ-003 | 58 | 62 | 65 | N/A | 72 | 65 | 50 | 55 | 61.1 | 性能 |
+| VIZ-004 | 55 | 58 | 62 | N/A | 68 | 60 | 50 | 52 | 57.9 | 性能 |
+| VIZ-005 | 52 | 55 | 62 | N/A | 68 | 62 | 50 | 52 | 57.1 | 性能 |
+| VIZ-006 | 52 | 55 | 62 | N/A | 66 | 62 | 50 | 55 | 57.2 | 性能 |
 | VIZ-007 | 50 | 5 | 0 | N/A | 11 | 0 | 0 | 13 | 12.5 | 完整度 |
-| VIZ-008 | 46 | 5 | 0 | N/A | 12 | 0 | 0 | 8 | 11.4 | 完整度 |
+| VIZ-008 | 55 | 58 | 62 | N/A | 68 | 60 | 50 | 52 | 57.9 | 性能 |
 | DASH-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | DASH-002 | 84 | 92 | 94 | N/A | 90 | 100 | 88 | 88 | 90.7 | 用户价值 |
 | DASH-003 | 84 | 94 | 94 | N/A | 88 | 100 | 88 | 88 | 90.7 | 用户价值 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.48 | 2026-07-04 | P5 r42 重评 VIZ-003/004/005/006/008（M9 可视化高级图表类型 L1 kickoff r42）；pytest 1038/4 skipped；test_viz_advanced_l1_r42 35 用例/48 断言 + r28/r30 pie→radar 回归；新域 `app/viz/`（specs/registry/builtin 9 类型/render/embed）+ chart_view registry 驱动校验 + charts.py 3 新路由（GET /charts/types · POST /charts/render-spec · POST /charts/embed/validate）；完整度 5%→55–62%，可靠性 0%→62–65%，测试覆盖 0%→60–65%，架构 8–14%→66–72%，总分 11.3–12.1→57.1–61.1（五 ID <90 STUCK upsert round 1；前端渲染/配置 UI/iframe 页面/Tailwind 主题留 companion） |
 | 1.2.47 | 2026-07-04 | P5 r41 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 companion 质量推分 r41）；pytest 1003/4 skipped；test_connectors_gov_r41 36/36 + r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；五方言 HTTP test_connection/metadata 4xx/502 链、空库/空 collection 边界、列 limit=500 回归、SQLite 只读/路径穿越对称守卫、map_mongodb_error MONGODB_UNKNOWN_DATABASE；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.1–88.8→90.0–91.2（五 ID 破 90 STUCK 清零） |
 | 1.2.46 | 2026-07-04 | P5 r40 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 L1 kickoff r40）；pytest 967/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；MongoDB/InfluxDB/TDengine/SQLite/TimescaleDB dialects + types catalog、MONGODB_/INFLUX_/TDENGINE_/SQLITE_/TIMESCALE_* 错误域与 schema mock、SQLite 路径穿越/只读守卫；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.5–12.8→86.1–88.8（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.45 | 2026-07-04 | P5 r39 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 r39）；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40；errors.py TRINO_/GAUSSDB_/DM_* 上浮、三连接器 MAX_COLUMNS=500/HTTP metadata 链、META_DIM_VALUE_* 校验与分页、translator 算子白名单/注入守卫；完整度 76–88%→90%，可靠性 92–94%→94%，测试覆盖 96–98%→98%，总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零） |
@@ -213,5 +214,3 @@ domain_count: 16
 | 1.2.41 | 2026-07-04 | P5 r35 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 companion 质量推分 r35）；pytest 777/4 skipped；test_connectors_gov_r35 35/35 + r34 15/15 + r33 19/19；TIDB_/STARROCKS_/ES 错误域与 schema 边界、preview-execute ACL/RLS 链与 bypass 审计、GOV-004 validate detail.fields/computeRules、ES mapping 归一/limit；完整度 76–82%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.0–88.1→90.1–91.0（五 ID 全破 90 STUCK 清零） |
 | 1.2.40 | 2026-07-04 | P5 r34 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 L1 kickoff r34）；pytest 742/4 skipped；test_connectors_gov_r34 15/15 + r33 19/19；TiDB/StarRocks/ES dialects + types catalog、gov query-design validate/save/get + ACL/RLS smoke；完整度 5%→76–82%，可靠性 0%→92–94%，测试覆盖 0%→94–98%，总分 10.9–11.2→86.0–88.1（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.39 | 2026-07-04 | P5 r33 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query/design companion 质量推分 r33）；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；glossary 文本/status 边界 + list perf、theme MAX_DEPTH=8 + 宽树 perf、config_store 256KB/乐观锁、designer 字段注册表/规则链/detail.fields；完整度 76–92%→88–94%，性能 86%→88–90%，可靠性 92–94%→94–96%，总分 86.4–89.8→90.0–91.7（五 ID 全破 90 STUCK 清零） |
-| 1.2.38 | 2026-07-04 | P5 r32 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query design L1 kickoff r32）；pytest 708/4 skipped；test_meta_design_r32 21/21 + r31 24/24；migration 0015 + glossary/theme/config_store/designer API；完整度 5%→76–92%，可靠性 0%→92–94%，测试覆盖 0%→96%，总分 10.8–11.2→86.4–89.8（五 ID 均 <90 STUCK upsert round 1） |
-| 1.2.37 | 2026-07-04 | P5 r31 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW + M6 companion 质量推分 r31）；pytest 686/4 skipped；test_view_gov_api_r31 24/24 + r30 30/30；VIEW_LAYOUT_BOUNDS/VIEW_CHART_REF_CYCLE、bus timeout/4xx/5xx/幂等/admin 403、catalog 非法分类 4xx + DELETE、IF-06 OpenAPI 示例与 execute 越权/只读；完整度 74–80%→90–94%，可靠性 86–90%→92–94%，安全性 82–86%→88–90%，总分 88.6–90.9→90.0–90.4（VIEW-001/GOV-002 破 90 STUCK 清零） |

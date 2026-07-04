@@ -81,11 +81,11 @@ def test_chart_view_missing_datasource():
 
 
 def test_chart_view_invalid_type():
-    """T-VIZ-R28-001-03: chartType=pie → CHART_INVALID_TYPE。"""
+    """T-VIZ-R28-001-03: chartType=radar（未注册）→ CHART_INVALID_TYPE。"""
     with pytest.raises(ChartViewError) as exc:
         validate_chart_view_config(
             {
-                "chartType": "pie",
+                "chartType": "radar",
                 "dataSourceId": str(uuid.uuid4()),
                 "mode": "sql",
                 "sql": "SELECT 1",
@@ -130,7 +130,7 @@ def test_post_charts_validate_rejects_invalid(client, auth_headers):
     """T-VIZ-R28-001-06: POST /api/v1/charts/validate 非法 → 422 结构化 body。"""
     resp = client.post(
         "/api/v1/charts/validate",
-        json={"chartType": "pie"},
+        json={"chartType": "radar"},
         headers=auth_headers,
     )
     assert resp.status_code == 422
@@ -204,7 +204,7 @@ def test_dashboard_layout_invalid_chart(client, auth_headers):
         json={"layoutJson": {"version": 1, "widgets": [{
             "id": str(uuid.uuid4()), "type": "chart", "title": "t",
             "colSpan": 6, "rowSpan": 1, "order": 0,
-            "chartConfig": {"chartType": "pie"},
+            "chartConfig": {"chartType": "radar"},
         }], "globalFilters": []}},
         headers=auth_headers,
     )
