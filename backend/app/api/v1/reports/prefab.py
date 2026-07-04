@@ -23,6 +23,22 @@ def _prefab_error(exc: PrefabError) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
 
 
+@router.get("/probe")
+def prefab_probe(_: Annotated[UserContext, Depends(get_current_user)]) -> dict:
+    from app.reports.prefab.probe import (
+        probe_list_prefab_bindings_budget_ms,
+        probe_validate_prefab_budget_ms,
+    )
+
+    v = probe_validate_prefab_budget_ms()
+    list_result = probe_list_prefab_bindings_budget_ms()
+    return {
+        "validateElapsedMs": v.elapsed_ms,
+        "listElapsedMs": list_result.elapsed_ms,
+        "withinBudget": v.ok and list_result.ok,
+    }
+
+
 @router.get("/bindings", response_model=PrefabBindingListResponse)
 def list_bindings(_: Annotated[UserContext, Depends(get_current_user)]) -> PrefabBindingListResponse:
     return prefab_service.list_prefab_bindings()

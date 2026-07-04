@@ -41,6 +41,7 @@
 | `extension/service.py` | 模板节点扩展配置 CRUD（metrics/filters/revision） | RPT-006 | L1 已实现 r54 |
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |
 | `engine/service.py` | validate + `build_engine_render_spec` + run mock | RPT-001 | L1 已实现 r60 |
+| `prefab/service.py` | 预制报表绑定 validate/upsert/list（内存 store） | RPT-002 | L1 已实现 r62 |
 | `ReportService` | 模板 CRUD | RPT-001~003 | 待建 |
 
 ## 关联 API
@@ -71,3 +72,7 @@
 - **RPT-007**：`RPT_BATCH_PARTIAL_FAILURE` 结构化 `detail.failedIndex` / `failedItemName` / `rolledBackCount`；`ReportBatchError.fields` 透传 HTTP `detail`；`probe_batch_create_budget_ms=200`
 - r53：`reports/catalog/` + `reports/scheduler/` 内存 registry；API 入口 `backend/app/api/v1/reports/__init__.py`（与 `reports/export.py` IF-03 导出共存，路径 `/reports/catalog` · `/reports/schedules` · `/reports/export` 分离）
 - 错误码：`RPT_CATALOG_*`、`RPT_SCHEDULE_*`、`RPT_EXT_*`、`RPT_BATCH_*`
+
+### r65 companion 质量推分（RPT-002）
+
+- **RPT-002**：`prefab/probe.py` — validate/list perf probe ≤50ms；`allowedRoles` 非空（`RPT_PREFAB_EMPTY_ROLES`）；`analysisType=distribution` 需 `region` 维度（`RPT_PREFAB_ANALYSIS_MISMATCH`）；`set_user_prefab_scope` + enterprise `bindingKey` 前缀 scope；`GET /api/v1/reports/prefab/probe`

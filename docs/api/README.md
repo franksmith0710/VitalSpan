@@ -208,6 +208,9 @@ redoc: /redoc
 | GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}/download` | 导出文件下载（`Content-Disposition: attachment`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
+| GET/PUT | `/api/v1/reports/prefab/bindings*` | 预制报表绑定 list/upsert（`RPT_PREFAB_*`） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
+| POST | `/api/v1/reports/prefab/bindings/validate` | 预制绑定校验（allowedRoles/analysisType 联动） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
+| GET | `/api/v1/reports/prefab/probe` | prefab validate/list perf probe 预算探测 | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
 
 ---
 

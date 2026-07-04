@@ -533,10 +533,10 @@ def list_classification_nodes(
 @router.post("/catalog/classification/nodes", response_model=ClassificationNodeOut, status_code=status.HTTP_201_CREATED)
 def create_classification_node(
     payload: ClassificationNodeCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> ClassificationNodeOut | JSONResponse:
     try:
-        return classification_service.create_node(payload)
+        return classification_service.create_node(payload, actor)
     except ClassificationError as exc:
         return _classification_error(exc)
 
@@ -545,10 +545,10 @@ def create_classification_node(
 def move_classification_node(
     node_id: uuid.UUID,
     payload: ClassificationNodeMove,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> ClassificationNodeOut | JSONResponse:
     try:
-        return classification_service.move_node(node_id, payload)
+        return classification_service.move_node(node_id, payload, actor)
     except ClassificationError as exc:
         return _classification_error(exc)
 
@@ -556,10 +556,10 @@ def move_classification_node(
 @router.delete("/catalog/classification/nodes/{node_id}", response_model=None)
 def delete_classification_node(
     node_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> Response | JSONResponse:
     try:
-        classification_service.delete_node(node_id)
+        classification_service.delete_node(node_id, actor)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except ClassificationError as exc:
         return _classification_error(exc)
@@ -630,10 +630,10 @@ def list_geo_region_nodes(
 @router.post("/catalog/geo-regions/nodes", response_model=GeoRegionOut, status_code=status.HTTP_201_CREATED)
 def create_geo_region_node(
     payload: GeoRegionCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> GeoRegionOut | JSONResponse:
     try:
-        return cat03_service.create_geo_node(payload)
+        return cat03_service.create_geo_node(payload, actor)
     except Cat03Error as exc:
         return _cat03_error(exc)
 
@@ -642,10 +642,10 @@ def create_geo_region_node(
 def move_geo_region_node(
     region_id: uuid.UUID,
     payload: GeoRegionMove,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> GeoRegionOut | JSONResponse:
     try:
-        return cat03_service.move_geo_node(region_id, payload)
+        return cat03_service.move_geo_node(region_id, payload, actor)
     except Cat03Error as exc:
         return _cat03_error(exc)
 
@@ -653,10 +653,10 @@ def move_geo_region_node(
 @router.delete("/catalog/geo-regions/nodes/{region_id}", response_model=None)
 def delete_geo_region_node(
     region_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> Response | JSONResponse:
     try:
-        cat03_service.delete_geo_node(region_id)
+        cat03_service.delete_geo_node(region_id, actor)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Cat03Error as exc:
         return _cat03_error(exc)
@@ -691,20 +691,20 @@ def production_stats_create(
 
 @router.get("/catalog/production-stats", response_model=ProductionStatsListResponse)
 def production_stats_list(
-    limit: int = Query(default=50, ge=1, le=200),
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
-    _: Annotated[UserContext, Depends(get_current_user)] = None,
 ) -> ProductionStatsListResponse:
-    return cat06_service.list_production_stats(limit, offset)
+    return cat06_service.list_production_stats(actor, limit, offset)
 
 
 @router.get("/catalog/production-stats/{stats_key}/stats", response_model=ProductionStatsProbeOut)
 def production_stats_probe(
     stats_key: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> ProductionStatsProbeOut | JSONResponse:
     try:
-        return cat06_service.get_production_stats(stats_key)
+        return cat06_service.get_production_stats(stats_key, actor)
     except Cat06Error as exc:
         return _cat06_error(exc)
 

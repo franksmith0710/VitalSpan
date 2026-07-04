@@ -3,7 +3,11 @@ from __future__ import annotations
 import re
 
 from app.auth.deps import UserContext
-from app.reports.prefab.errors import PrefabError
+from app.reports.prefab.errors import (
+    PrefabError,
+    RPT_PREFAB_ANALYSIS_MISMATCH,
+    RPT_PREFAB_EMPTY_ROLES,
+)
 from app.reports.prefab.schemas import (
     PrefabBindingIn,
     PrefabBindingListResponse,
@@ -14,6 +18,21 @@ from app.reports.prefab.schemas import (
 _ENTITY_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 _KNOWN_DIMENSIONS = frozenset({"region", "status"})
 _store: dict[str, dict] = {}
+_USER_PREFAB_SCOPE: dict[str, str] = {}
+
+
+def set_user_prefab_scope(user_id: str, key_prefix: str) -> None:
+    _USER_PREFAB_SCOPE[user_id] = key_prefix
+
+
+def _assert_prefab_scope(user: UserContext, binding_key: str) -> None:
+    roles = set(user.roles)
+    if roles.intersection({"admin", "analyst"}):
+        return
+    if "enterprise" in roles:
+        prefix = _USER_PREFAB_SCOPE.get(user.id, "bind-cn")
+        if not binding_key.startswith(prefix):
+            raise PrefabError("RPT_PREFAB_FORBIDDEN", "enterprise user out of prefab binding scope", 403)
 
 
 def _assert_write_access(user: UserContext) -> None:
@@ -38,6 +57,20 @@ def _validate_binding(payload: PrefabBindingIn) -> PrefabBindingIn:
             422,
             [{"field": "dimensionCodes", "message": f"unknown: {unknown[0]}"}],
         )
+    if not payload.allowed_roles:
+        raise PrefabError(
+            RPT_PREFAB_EMPTY_ROLES,
+            "allowedRoles must not be empty",
+            422,
+            [{"field": "allowedRoles", "message": "must not be empty"}],
+        )
+    if payload.analysis_type == "distribution" and "region" not in payload.dimension_codes:
+        raise PrefabError(
+            RPT_PREFAB_ANALYSIS_MISMATCH,
+            "distribution analysis requires region dimension",
+            422,
+            [{"field": "dimensionCodes", "message": "distribution requires region"}],
+        )
     return payload
 
 
@@ -56,6 +89,7 @@ def validate_prefab_binding(payload: PrefabBindingIn) -> PrefabBindingValidateOu
 
 def upsert_prefab_binding(key: str, payload: PrefabBindingIn, user: UserContext) -> PrefabBindingOut:
     _assert_write_access(user)
+    _assert_prefab_scope(user, key)
     if key != payload.binding_key:
         raise PrefabError("RPT_PREFAB_KEY_MISMATCH", "path binding_key mismatch", 422)
     item = _validate_binding(payload)

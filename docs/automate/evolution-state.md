@@ -7,14 +7,14 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r64.md |
-| design | docs/superpowers/specs/2026-07-04-nfr-cat-stub-l1-cat007-companion-r64-design.md |
-| plan | docs/superpowers/plans/2026-07-04-nfr-cat-stub-l1-cat007-companion-r64.md |
-| branch | feat/evolution-r64-nfr-cat-stub-l1-cat007-companion |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r65.md |
+| design | docs/superpowers/plans/2026-07-04-cat-rpt-meta-companion-quality-r65.md |
+| plan | docs/superpowers/plans/2026-07-04-cat-rpt-meta-companion-quality-r65.md |
+| branch | feat/evolution-r65-cat-rpt-meta-companion-quality |
 | base_branch | dev-auto |
-| prd_ids | NFR-001,CAT-001,NFR-004,CAT-002,CAT-007 |
-| pr_number | 98 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| prd_ids | CAT-003,CAT-004,CAT-006,RPT-002,META-005 |
+| pr_number | 99 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_cat_rpt_meta_r65.py ../tests/test_nfr_cat_r64.py ../tests/test_cat_nfr_rpt_meta_r62.py ../tests/test_cat_dash_viz_nfr_r61.py ../tests/test_meta_cat_dash_conn_design_r59.py -v && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T19:55:00Z |
@@ -66,6 +66,9 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r65 PRD 重评：CAT-003/CAT-004/CAT-006/RPT-002/META-005 companion 质量推分；pytest 1719/4 skipped；test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 163/163；总分 83.9–84.0→90.0–90.5（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
+- P4 r65 验证通过：ruff clean；pytest 1719 passed/4 skipped（全量 exit_code 0）；test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 163/163；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
+- P3 r65 实现完成：8 Task 全绿；跨域 companion 质量推分 — CAT-003/CAT-004/CAT-006/RPT-002/META-005；32 测 test_cat_rpt_meta_r65 + r64 33/33 + r62 32/32 + r61 32/32 + r59 34/34 回归 163/163；pytest 1719/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r65-cat-rpt-meta-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P5 r64 PRD 重评：NFR-001/CAT-001/NFR-004/CAT-002 stub L1 + CAT-007 companion；pytest 1687/4 skipped；test_nfr_cat_r64 33/33 + test_viz_view_design_cat_r63 32/32 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 163/163；总分 13.1–13.9→83.9–84.2（四 stub <90 STUCK upsert round 1）、CAT-007 83.3→90.2 STUCK 清零；phase P4_DONE→P5_DOCS_READY
 - P4 r64 验证通过：ruff clean；pytest 1687 passed/4 skipped（全量 exit_code 0）；test_nfr_cat_r64 33/33 + test_viz_view_design_cat_r63 32/32 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 163/163；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r64 实现完成：8 Task 全绿；跨域 NFR/CAT 远期 stub L1 + CAT-007 companion — NFR-001/004 CAT-001/002 stub + workno ACL/perf probe；33 测 test_nfr_cat_r64 + r63 32/32 + r62 32/32 + r61 32/32 + r60 34/34 回归 163/163；pytest 1687/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r64-nfr-cat-stub-l1-cat007-companion；base_branch dev-auto；phase P2_DONE→P3_DONE
@@ -221,19 +224,14 @@
 |--------|:-----------:|:-----------:|------------|
 | CAT-001 | 1 | 83.9 | 2026-07-04 |
 | CAT-002 | 1 | 83.9 | 2026-07-04 |
-| CAT-003 | 1 | 83.9 | 2026-07-04 |
-| CAT-004 | 1 | 83.9 | 2026-07-04 |
-| CAT-006 | 1 | 83.9 | 2026-07-04 |
 | CONN-018 | 1 | 84.2 | 2026-07-04 |
 | DASH-004 | 1 | 84.2 | 2026-07-04 |
 | DASH-005 | 1 | 84.0 | 2026-07-04 |
 | GOV-007 | 1 | 84.4 | 2026-07-04 |
 | META-004 | 1 | 84.2 | 2026-07-04 |
-| META-005 | 1 | 84.0 | 2026-07-04 |
 | NFR-001 | 1 | 84.2 | 2026-07-04 |
 | NFR-002 | 1 | 84.2 | 2026-07-04 |
 | NFR-003 | 1 | 84.2 | 2026-07-04 |
 | NFR-004 | 1 | 84.2 | 2026-07-04 |
 | RPT-001 | 1 | 84.2 | 2026-07-04 |
-| RPT-002 | 1 | 84.0 | 2026-07-04 |
 | RPT-003 | 1 | 84.2 | 2026-07-04 |

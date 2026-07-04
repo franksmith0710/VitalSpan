@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import time
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from app.auth.deps import UserContext
-from app.governance.catalog.cat06.errors import Cat06Error
+from app.governance.catalog.cat06.errors import CAT06_EMPTY_METRICS, Cat06Error
 from app.governance.catalog.cat06.schemas import (
     ProductionStatsItemIn,
     ProductionStatsItemOut,
@@ -15,6 +17,13 @@ from app.governance.catalog.cat06.schemas import (
 _VALID_VENDOR = frozenset({"enterprise", "scheme", "model", "dcas"})
 _store: dict[str, dict] = {}
 _USER_BRAND_SCOPE: dict[str, str] = {}
+probe_production_stats_budget_ms_limit = 50
+
+
+@dataclass(frozen=True)
+class Cat06ProbeResult:
+    elapsed_ms: float
+    ok: bool
 
 
 def set_user_brand_scope(user_id: str, brand_id: str) -> None:
@@ -43,7 +52,7 @@ def _validate_payload(payload: ProductionStatsItemIn) -> ProductionStatsItemIn:
         )
     if not payload.metric_keys:
         raise Cat06Error(
-            "CAT06_EMPTY_METRICS",
+            CAT06_EMPTY_METRICS,
             "metricKeys must not be empty",
             422,
             [{"field": "metricKeys", "message": "must not be empty"}],
@@ -65,8 +74,12 @@ def create_production_stats(payload: ProductionStatsItemIn, user: UserContext) -
     return ProductionStatsItemOut.model_validate(_store[item.stats_key])
 
 
-def list_production_stats(limit: int, offset: int) -> ProductionStatsListResponse:
+def list_production_stats(user: UserContext, limit: int, offset: int) -> ProductionStatsListResponse:
+    roles = set(user.roles)
     items = list(_store.values())
+    if "enterprise" in roles and not roles.intersection({"admin", "analyst"}):
+        expected = _USER_BRAND_SCOPE.get(user.id, "BRAND01")
+        items = [i for i in items if i.get("brandId") == expected]
     page = items[offset : offset + limit]
     return ProductionStatsListResponse(
         items=[ProductionStatsItemOut.model_validate(i) for i in page],
@@ -74,9 +87,11 @@ def list_production_stats(limit: int, offset: int) -> ProductionStatsListRespons
     )
 
 
-def get_production_stats(key: str) -> ProductionStatsProbeOut:
+def get_production_stats(key: str, user: UserContext) -> ProductionStatsProbeOut:
     if key not in _store:
         raise Cat06Error("CAT06_NOT_FOUND", f"statsKey not found: {key}", 404)
+    brand_id = _store[key]["brandId"]
+    _assert_brand_access(user, brand_id)
     return ProductionStatsProbeOut(
         inbound=120,
         inventory=85,
@@ -84,3 +99,26 @@ def get_production_stats(key: str) -> ProductionStatsProbeOut:
         activated=22,
         sampled_at=datetime.now(UTC),
     )
+
+
+def probe_production_stats_budget_ms(key: str) -> Cat06ProbeResult:
+    started = time.perf_counter()
+    admin = UserContext(id="probe", username="probe", roles=["admin"])
+    get_production_stats(key, admin)
+    elapsed = (time.perf_counter() - started) * 1000
+    return Cat06ProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_production_stats_budget_ms_limit)
+
+
+def probe_validate_production_stats_budget_ms() -> Cat06ProbeResult:
+    started = time.perf_counter()
+    sample = ProductionStatsItemIn.model_validate({
+        "statsKey": "PS_PROBE",
+        "displayName": "Probe",
+        "vendorType": "enterprise",
+        "brandId": "BRAND01",
+        "locType": "all",
+        "metricKeys": ["inbound"],
+    })
+    validate_production_stats(sample)
+    elapsed = (time.perf_counter() - started) * 1000
+    return Cat06ProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_production_stats_budget_ms_limit)

@@ -64,6 +64,13 @@
 | `catalog/classification/service` | 分类树内存 store + cycle/depth 守卫 | CAT-004 | L1 已实现 r59 |
 | `catalog/cat03/service` | 地域 geo 树内存 store + cycle/depth 守卫 | CAT-003 | L1 已实现 r61 |
 | `catalog/cat05/service` | 工单 stats item validate/create/list/stats probe | CAT-005 | L1 已实现 r61 |
+| `catalog/cat06/service` | 生产销售统计 validate/create/list/stats probe | CAT-006 | L1 已实现 r62 |
+
+### r65 companion 质量推分（CAT-003/004/006）
+
+- **CAT-003**：`cat03/probe.py` — `probe_list_geo_nodes_budget_ms` / `probe_move_geo_region_budget_ms` ≤50ms；`set_user_region_scope` + `CAT03_FORBIDDEN`（viewer 写禁止 / enterprise regionCode 前缀 scope）；create/move/delete 透传 `UserContext`
+- **CAT-004**：`classification/probe.py` — list/move perf probe ≤50ms；`CAT_CLASS_NOT_FOUND`（move/delete 未知 node）；`set_user_class_scope` + `CAT_CLASS_FORBIDDEN` classification scope ACL
+- **CAT-006**：`get_production_stats(user)` brand ACL；`list_production_stats(user)` enterprise 按 `brandId` 过滤；`probe_production_stats_budget_ms` / `probe_validate_production_stats_budget_ms` ≤50ms；`CAT06_EMPTY_METRICS` 常量导出
 
 ## 关联 API
 
