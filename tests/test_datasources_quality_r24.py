@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+import asyncio
+import logging
 import os
 import threading
 import time
+import uuid
 from unittest.mock import MagicMock, patch
 
-import logging
-import uuid
-from concurrent.futures import ThreadPoolExecutor
-
+import httpx
 import pymysql.err
 import pytest
 from cryptography.fernet import Fernet
-from fastapi.testclient import TestClient
+from httpx import ASGITransport
 from sqlalchemy import text
 
 from app.core.config import get_settings
@@ -446,7 +446,7 @@ def test_back_to_back_test_without_waiting(mock_connect, client, auth_headers):
 
 @patch("app.datasources.dialects.mysql.pymysql.connect")
 def test_concurrent_test_same_id(mock_connect, client, auth_headers):
-    """T-DS-T13: 3 线程并行 test → 无 500。"""
+    """T-DS-T13: 3 路并行 test → 无 500（async ASGI，避免 TestClient 线程 SIGSEGV）。"""
     def slow(**kwargs):
         time.sleep(0.05)
         return MagicMock()
@@ -455,17 +455,18 @@ def test_concurrent_test_same_id(mock_connect, client, auth_headers):
     created = client.post("/api/v1/datasources", json=_payload(code="conc_test"), headers=auth_headers)
     ds_id = created.json()["id"]
 
-    def run_test():
-        thread_client = TestClient(app)
-        try:
-            return thread_client.post(
-                f"/api/v1/datasources/{ds_id}/test", headers=auth_headers
-            ).status_code
-        finally:
-            thread_client.close()
+    async def run_parallel() -> list[int]:
+        transport = ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as ac:
+            responses = await asyncio.gather(
+                *[
+                    ac.post(f"/api/v1/datasources/{ds_id}/test", headers=auth_headers)
+                    for _ in range(3)
+                ]
+            )
+            return [r.status_code for r in responses]
 
-    with ThreadPoolExecutor(max_workers=3) as pool:
-        codes = list(pool.map(lambda _: run_test(), range(3)))
+    codes = asyncio.run(run_parallel())
     assert all(c in (200, 429) for c in codes)
     assert 500 not in codes
 
