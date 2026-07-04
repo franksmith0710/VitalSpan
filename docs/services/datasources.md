@@ -46,6 +46,9 @@
 | `dialects/sqlserver.py` | SQL Server 关系型（pymssql，TLS L1，`category=relational`） | CONN-005 | 已实现（L1 r36 + companion r37） |
 | `dialects/doris.py` | Apache Doris OLAP（MySQL 协议委托，port 9030） | CONN-008 | 已实现（L1 r36 + companion r37） |
 | `dialects/oracle.py` | Oracle 关系型（oracledb thin，service name，`category=relational`） | CONN-004 | 已实现（L1 r36 + companion r37） |
+| `dialects/gaussdb.py` | GaussDB 关系型（psycopg 3 委托 PostgresConnector，`GAUSSDB_*`） | CONN-022 | 已实现 L1 |
+| `dialects/dm.py` | 达梦 DM 关系型（dmPython，`DM_*`） | CONN-017 | 已实现 L1 |
+| `dialects/trino.py` | Trino 联邦湖仓（trino-python-client，catalog/schema 三级，`category=lake`） | CONN-010 | 已实现 L1 |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -110,3 +113,15 @@
 - 测试套件：`tests/test_connectors_gov_r37.py`（≥28 条 T-CONN-R37-* / T-REG-R37-*）
 - HTTP 契约：test_connection 失败 200 + `ok=false` + `{PREFIX}_*`；metadata 缺参 400 `METADATA_INVALID_REQUEST`；连接失败 502 `METADATA_CONNECTION_FAILED`
 - 回归：r36 37/37 + r35 35/35 + r34 15/15 不删旧套件
+
+### r38 connector kickoff（2026-07-04）
+
+| type | display_name | category | driver | 状态 |
+|------|--------------|----------|--------|------|
+| gaussdb | GaussDB | relational | psycopg 3（PG 兼容委托） | 已实现 L1 |
+| dm | 达梦 DM | relational | dmPython | 已实现 L1 |
+| trino | Trino | lake | trino-python-client | 已实现 L1 |
+
+- 错误码前缀：`GAUSSDB_*`、`DM_*`、`TRINO_*`
+- 可选依赖：`connectors-ext` 增 `dmPython`、`trino`
+- 测试套件：`tests/test_query_meta_conn_r38.py`（CONN-010/017/022 段）

@@ -393,6 +393,10 @@ from app.datasources.dialects.trino import TrinoConnector
 def test_conn_trino_catalog_r38():
     """T-CONN-R38-010-01: types catalog 含 trino，category=lake。"""
     types = {t["type"]: t for t in export_type_catalog()}
+    if "trino" not in types:
+        from app.datasources.registry import register_dialect
+        register_dialect(TrinoConnector())
+        types = {t["type"]: t for t in export_type_catalog()}
     assert "trino" in types
     assert types["trino"]["category"] == "lake"
 

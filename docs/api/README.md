@@ -99,6 +99,7 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | POST | `/api/v1/query/execute` | 只读查询（sql/table） | IF-06 | 一期 | QUERY-001 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/translate` | 可视化查询配置→参数化 SQL | IF-06 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/bindings` | 图表直连绑定列表 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/bindings` | 创建绑定（可选 `chartId` UUID；重复 → 409 `BINDING_CHART_CONFLICT`） | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/bindings/{bindingId}` | 绑定详情 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
@@ -156,7 +157,10 @@ redoc: /redoc
 | GET/POST | `/api/v1/metadata/themes` | 业务主题树 CRUD/list（`?parent_id=null` 根过滤；深度 >8 → 422 `META_THEME_MAX_DEPTH`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/themes/{node_id}` | 主题节点详情/更新/删除 | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | POST | `/api/v1/metadata/themes/{node_id}/move` | 主题节点移动（环检测；超深 → 422 `META_THEME_MAX_DEPTH`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
-| GET/POST | `/api/v1/metadata/dimensions` | 维度字典 | 内部 | 四期 | META-003 | 规划 | `backend/app/api/v1/metadata/dimensions.py` |
+| GET/POST | `/api/v1/metadata/dimensions` | 维度字典 list/create（`?code_prefix=`；重复 code → 409 `META_DIM_CODE_CONFLICT`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/PUT/DELETE | `/api/v1/metadata/dimensions/{dimension_id}` | 维度详情/更新/删除（级联 values） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/POST | `/api/v1/metadata/dimensions/{dimension_id}/values` | 枚举值 list/批量注册（重复 value code → 409 `META_DIM_VALUE_CODE_CONFLICT`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
+| DELETE | `/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}` | 删除单条枚举值 | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/datasets` | Dataset CRUD | 内部 | 四期 | META-004 | 规划 | `backend/app/api/v1/datasets.py` |
 | GET/PUT | `/api/v1/datasets/{id}` | Dataset 详情 | 内部 | 四期 | META-004 | 规划 | `backend/app/api/v1/datasets.py` |
 | GET/POST | `/api/v1/entities/types` | 实体类型 schema | 内部 | 二期 | META-006 | 规划 | `backend/app/api/v1/metadata/entities.py` |
