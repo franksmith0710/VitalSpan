@@ -13,7 +13,7 @@
 | branch | feat/evolution-r46-nfr-gov-gbase-l1 |
 | base_branch | dev-auto |
 | prd_ids | NFR-005,NFR-006,NFR-007,GOV-005,CONN-019 |
-| pr_number |  |
+| pr_number | 73 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
