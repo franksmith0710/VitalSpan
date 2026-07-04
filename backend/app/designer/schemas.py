@@ -75,3 +75,40 @@ class ComputeRulesConfig(BaseModel):
     rules: list[ComputeRuleItem]
     ref_type: str = Field(default="design_draft", alias="refType")
     ref_id: uuid.UUID = Field(alias="refId")
+
+
+class SqlModeSpec(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    schema_version: str = Field(alias="schemaVersion", default="1.0")
+    data_source_id: uuid.UUID = Field(alias="dataSourceId")
+    sql: str = Field(min_length=1, max_length=65536)
+    parameters: dict[str, object] = Field(default_factory=dict)
+    ref_type: str = Field(default="design_draft", alias="refType")
+    ref_id: uuid.UUID = Field(alias="refId")
+
+
+ALLOWED_OUTPUT_AGGREGATES = frozenset({"sum", "avg", "count", "min", "max"})
+
+
+class OutputFieldItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    field_id: str = Field(alias="fieldId")
+    alias: str | None = None
+    visible: bool = True
+    meta_field_ref: str | None = Field(default=None, alias="metaFieldRef")
+
+
+class AggregateItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    fn: str
+    field_id: str = Field(alias="fieldId")
+    group_by: list[str] = Field(default_factory=list, alias="groupBy")
+
+
+class OutputFieldsConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    schema_version: str = Field(alias="schemaVersion", default="1.0")
+    fields: list[OutputFieldItem]
+    aggregates: list[AggregateItem] = Field(default_factory=list)
+    ref_type: str = Field(default="design_draft", alias="refType")
+    ref_id: uuid.UUID = Field(alias="refId")
