@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r42.md |
 | design | docs/superpowers/specs/2026-07-04-m9-viz-advanced-charts-l1-r42-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41.md |
-| branch | cursor/bc-239ae5b7-e62d-4698-9d7c-67793ddde421-db0d |
+| plan | docs/superpowers/plans/2026-07-04-m9-viz-advanced-charts-l1-r42.md |
+| branch | feat/evolution-r42-m9-viz-advanced-l1 |
 | base_branch | dev-auto |
-| prd_ids | VIZ-004,VIZ-008,VIZ-003,VIZ-005,VIZ-006 |
+| prd_ids | VIZ-003,VIZ-004,VIZ-005,VIZ-006,VIZ-008 |
 | pr_number | 67 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests -q && python3 -m pytest ../tests/test_connectors_gov_r41.py ../tests/test_connectors_gov_r40.py ../tests/test_query_meta_conn_r39.py ../tests/test_connectors_gov_r37.py ../tests/test_connectors_gov_r36.py -q |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests -q -p no:cacheprovider --deselect ../tests/test_ci_env_contract.py::test_pytest_subset_elapsed_under_budget --deselect ../tests/test_me.py::test_me_concurrent_requests_stable |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T08:10:00Z |
+| skill_rule_index_generated_at | 2026-07-04T08:53:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r42 实现完成：8 Task 全绿（双 review 通过）；VIZ-003/004/005/006/008 —— 新域 `app/viz/`（specs/registry/builtin 9 类型/render/embed）+ chart_view registry 驱动校验 + charts.py 3 新路由（GET /charts/types · POST /charts/render-spec · POST /charts/embed/validate）；35 测 test_viz_advanced_l1_r42（≥30 目标达标）+ r28/r30 `pie`→`radar` 回归修复；ruff clean；pytest 1038 passed/4 skipped（排除 2 个环境级 flaky 计时/并发测 test_pytest_subset_elapsed_under_budget、test_me_concurrent_requests_stable，二者隔离运行均通过、与 viz 无关）；触及 14 文件；UI: none（纯后端不触 fe/）；response_model=None 为 FastAPI union 返回必要微调；branch feat/evolution-r42-m9-viz-advanced-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P2 r42 计划完成：8 Task（specs+registry→builtin 9 类型→GET /charts/types→chart_view registry 驱动校验 VIZ-004/005→render-spec VIZ-008→embed VIZ-006→pie→radar 回归门控→docs）；≥30 新测 test_viz_advanced_l1_r42（34 断言）；14 文件框定 ≤20；subagent-driven-development option 1；全 Task UI skill none（纯后端）；shared→domain 惰性 import 消循环；plan=docs/superpowers/plans/2026-07-04-m9-viz-advanced-charts-l1-r42.md；phase P1_DONE→P2_DONE
 - P1 r42 设计完成：M9 可视化高级图表类型 L1 kickoff — VIZ-003/004/005/006/008（后端 chart-spec 契约先行）；14 文件框定（新域 `app/viz/` registry/specs/builtin/render/embed + chart_view 校验改 registry 驱动 + charts.py 3 新路由 + r42 smoke ≥30 测）；核心洞察 VIZ-003=ChartTypeRegistry（镜像 datasources/registry.py），9 类型骨架含桑基/关系/地图/漏斗/仪表/饼；PRD 分片语义漂移注记（PRD 字面为准，高级类型作注册表载体，VIZ-006=iframe 嵌入契约）；P4 blocker 预置修复 r28/r30 `pie`→`radar` 非法 type 样例（4 例）；ui_design_skill none（纯后端不触 fe/）；phase G2_DONE→P1_DONE
 - G2 r42 选题完成：M9 可视化高级图表类型 L1 kickoff — VIZ-004/VIZ-008/VIZ-003/VIZ-005/VIZ-006（5 项，同 VIZ 域）；最低分 VIZ-004(11.3)，捕获全表两个绝对最低分 VIZ-004(11.3)/VIZ-008(11.4)；饱和熔断未触发（Top5 11.3–11.7«90）；plan M1/M1B 全勾选无活跃 `[ ]` 行（已知 concern，回落纯 8 维选题）；STUCK 表空（5 项首次入选）；phase idle→G2_DONE
 - G1 r42 bootstrap：r41 PR #67 已合并 dev-auto；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 VIZ-004(11.3)/VIZ-008(11.4)/CONN-016(11.6)；STUCK 表空（r41 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
