@@ -74,3 +74,8 @@
 
 - r32：`backend/app/api/v1/designer.py`；持久化 type=`query_conditions`|`compute_rules` 经 QUERY-007
 - r49：`sql_mode.py`/`output_fields.py`；`config_type=sql_mode`|`output_fields`；DESIGN-005 委托 `query/readonly.assert_readonly_sql`
+
+### r52 companion 质量推分（DESIGN-005/003）
+
+- **DESIGN-005**：`sql_mode` 校验失败 `detail.remediation`；`probe_validate_sql_mode`；`chart_view` sql 模式联动 `CHART_SQL_NOT_READONLY`（委托 `assert_readonly_sql`）
+- **DESIGN-003**：`MAX_OUTPUT_FIELDS=64`、`MAX_AGGREGATES=16`；重复 fieldId → `DESIGN_DUPLICATE_OUTPUT_FIELD`；`probe_validate_output_fields`（<50ms smoke）

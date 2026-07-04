@@ -115,6 +115,7 @@ redoc: /redoc
 | POST | `/api/v1/query/translate` | 可视化查询配置→参数化 SQL | IF-06 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/routing/modes` | 连接器路由模式（search/document/timeseries→native，其余→sql） | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/native/validate` | Native 查询守卫（`QUERY_NATIVE_*`；禁止 sql 字段） | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/readonly-guard` | 只读 SQL / native 路由守卫 smoke | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/bindings` | 图表直连绑定列表 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/bindings` | 创建绑定（可选 `chartId` UUID；重复 → 409 `BINDING_CHART_CONFLICT`） | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/bindings/{bindingId}` | 绑定详情 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
@@ -217,6 +218,7 @@ redoc: /redoc
 | GET | `/api/v1/gov/publish/entries/{entry_id}/notifications` | 审批通知事件列表（内存 store） | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/workflow/templates` | 工单流程模板列表（`standard_query_release`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/workflow/templates/validate` | 工单模板校验 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/workflow/templates/{template_id}/node-roles` | 工单模板节点角色配置 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST/GET | `/api/v1/gov/workflow/instances` | 工单实例创建/读取（`config_type=workflow_instance`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/workflow/instances/{id}/transition` | 五态 FSM 迁移（`GOV_WORKFLOW_*`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/governance/tickets` | 查询工单 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |

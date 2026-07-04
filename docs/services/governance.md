@@ -79,3 +79,7 @@
 ### r49 L1 kickoff（GOV-003）
 
 - **GOV-003**：`governance/workflow/service` 内置 `standard_query_release` 模板；五态 FSM `draft→pending_approval→designing→pending_publish→published`；实例持久化 `config_type=workflow_instance`；不调用 `publish_service`
+
+### r52 companion 质量推分（GOV-003）
+
+- **GOV-003**：`governance/workflow/node_roles.py` — `describe_node_roles` / `resolve_required_role` / `probe_transition_path`（<50ms smoke）；模板校验要求 `draft`+`published` 节点（缺节点 `detail.missingNodes`）；`GOV_WORKFLOW_CONFLICT`（重复 submit）、`GOV_WORKFLOW_ALREADY_TERMINAL`（published 后再迁移）；`GET /gov/workflow/templates/{id}/node-roles`
