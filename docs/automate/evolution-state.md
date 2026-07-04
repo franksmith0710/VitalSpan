@@ -13,7 +13,7 @@
 | branch | feat/evolution-r44-m8-m12-m13-integration-api-l1 |
 | base_branch | dev-auto |
 | prd_ids | API-003,API-004,API-005,API-006,API-007 |
-| pr_number |  |
+| pr_number | 70 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
