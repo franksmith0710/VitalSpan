@@ -15,6 +15,14 @@ from app.core.nfr.deployment_report import build_deployment_acceptance_report
 from app.core.nfr.plugin_extension import describe_registration_path, list_extension_points
 from app.core.nfr.push_channels import dispatch_push_mock
 from app.core.nfr.push_config import PushConfigValidationError, resolve_push_mode
+from app.core.nfr.report_perf import (
+    ReportPerfError,
+    ReportPerfProbeIn,
+    ReportPerfProbeOut,
+    ReportPerfValidateOut,
+    probe_report_perf,
+    validate_report_perf_config,
+)
 from app.core.nfr.xinchuang import XinchuangComplianceError, assert_xinchuang_compliant, build_compliance_report
 
 router = APIRouter(prefix="/nfr", tags=["nfr"])
@@ -260,16 +268,6 @@ def get_deployment_report(
             for i in report.acceptance_checklist
         ],
     }
-
-
-from app.core.nfr.report_perf import (
-    ReportPerfError,
-    ReportPerfProbeIn,
-    ReportPerfProbeOut,
-    ReportPerfValidateOut,
-    probe_report_perf,
-    validate_report_perf_config,
-)
 
 
 def _report_perf_error(exc: ReportPerfError) -> JSONResponse:
