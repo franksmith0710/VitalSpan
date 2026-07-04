@@ -276,6 +276,8 @@ def map_trino_error(exc: Exception) -> tuple[str, str]:
 
 # r39 companion: GAUSSDB_/DM_/TRINO_ timeout/auth 映射由 map_* 统一出口；
 # connector test_connection 与 HTTP test 链均消费本模块常量（勿在 dialect 文件内复制错误码）。
+# r41 companion: MONGODB_/INFLUX_/TDENGINE_/SQLITE_/TIMESCALE_ timeout/auth/unknown_database
+# 映射由 map_* 统一出口；connector test_connection 与 HTTP test 链均消费本模块常量。
 
 # MongoDB
 MONGODB_CONN_REFUSED = "MONGODB_CONN_REFUSED"
@@ -293,6 +295,14 @@ def map_mongodb_error(exc: Exception) -> tuple[str, str]:
     lowered = detail.lower()
     if "ServerSelectionTimeout" in name or "timeout" in lowered or "timed out" in lowered:
         return MONGODB_TIMEOUT, detail
+    # NamespaceNotFound / unknown database — 须在 auth 泛化匹配之前
+    exc_code = getattr(exc, "code", None)
+    if exc_code == 26:
+        return MONGODB_UNKNOWN_DATABASE, detail
+    if "database" in lowered and (
+        "not found" in lowered or "does not exist" in lowered or "ns not found" in lowered
+    ):
+        return MONGODB_UNKNOWN_DATABASE, detail
     if "OperationFailure" in name or "authentication" in lowered or "code: 18" in lowered or "code: 13" in lowered:
         return MONGODB_AUTH_FAILED, detail
     if "refused" in lowered or isinstance(exc, ConnectionRefusedError):

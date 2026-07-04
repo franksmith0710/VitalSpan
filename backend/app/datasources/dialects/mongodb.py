@@ -108,6 +108,7 @@ class MongodbConnector:
     def list_tables(self, connection: Any, schema: str) -> list[TableInfo]:
         if not schema.strip():
             return []
+        # r41: 空库 list_collection_names → []（mock 或真实零 collection）
         try:
             db = connection[schema]
             return [TableInfo(name=n, type="collection") for n in sorted(db.list_collection_names())]
@@ -121,6 +122,7 @@ class MongodbConnector:
             doc = connection[schema][table].find_one()
         except Exception:
             return []
+        # r41: 空 collection（find_one None）→ []，与未知 database 区分
         if not doc:
             return []
         columns = [

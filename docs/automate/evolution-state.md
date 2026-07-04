@@ -7,17 +7,17 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r40.md |
-| design | docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40.md |
-| branch | cursor/bc-03449787-f1c8-4cd0-b5c3-3a2ddb487945-3ca8 |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r41.md |
+| design | docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41.md |
+| branch | cursor/bc-239ae5b7-e62d-4698-9d7c-67793ddde421-db0d |
 | base_branch | dev-auto |
 | prd_ids | CONN-006,CONN-011,CONN-012,CONN-013,CONN-014 |
-| pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest ../tests/test_connectors_gov_r40.py ../tests/test_query_meta_conn_r39.py ../tests/test_connectors_gov_r37.py ../tests/test_connectors_gov_r36.py ../tests/test_datasources_l1.py::test_invalid_connector_type -v |
+| pr_number | 67 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests -q && python3 -m pytest ../tests/test_connectors_gov_r41.py ../tests/test_connectors_gov_r40.py ../tests/test_query_meta_conn_r39.py ../tests/test_connectors_gov_r37.py ../tests/test_connectors_gov_r36.py -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T07:25:00Z |
+| skill_rule_index_generated_at | 2026-07-04T08:10:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,13 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r41 PRD 重评：CONN-006/011/012/013/014 companion 质量推分；pytest 1003/4 skipped；test_connectors_gov_r41 36/36 + connector 回归 189/189；总分 86.1–88.8→90.0–91.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
+- P4 r41 验证通过：ruff clean；pytest 1003 passed/4 skipped；test_connectors_gov_r41 36/36 + connector 回归 189/189（r40 43 + r39 33 + r37 40 + r36 37）；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
+- P3 r41 实现完成：8 Task 全绿；CONN-006/011/012/013/014 companion 质量推分；36 测 test_connectors_gov_r41 + r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；pytest 1003/4 skipped；branch cursor/bc-239ae5b7-e62d-4698-9d7c-67793ddde421-db0d；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P2 r41 计划完成：8 Task（errors→MongoDB→InfluxDB→TDengine→SQLite→TimescaleDB→回归门控→docs）；35 新测 test_connectors_gov_r41；9 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
+- P1 r41 设计完成：M11 嵌入式/时序/文档连接器 companion 质量推分 — CONN-014/011/012/006/013；16 文件框定；五方言错误域/HTTP 链/schema-types 边界闭合；ui_design_skill none；phase G2_DONE→P1_DONE
+- G2 r41 选题完成：M11 嵌入式/时序/文档连接器 companion 质量推分 — CONN-006/011/012/013/014（5 项）；最低分 CONN-014(86.1)；饱和熔断未触发；plan M1/M1B 无活跃勾选行（已知 concern）；STUCK 五 ID 各 1 轮（未达 ≥3 硬标注阈值）；phase idle→G2_DONE
+- G1 r41 bootstrap：r40 PR #66 已 Squash merge dev-auto（ddfeb11）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 VIZ-004(11.3)/VIZ-008(11.4)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（CONN-006/011/012/013/014）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r40 PRD 重评：CONN-006/011/012/013/014 L1 kickoff；pytest 967/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 回归；总分 11.5–12.8→86.1–88.8（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r40 验证通过：ruff clean；pytest 967 passed/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 + test_invalid_connector_type 回归 154/154；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P3 r40 实现完成：8 Task 全绿；CONN-014/011/012/006/013 五方言 L1；43 测 test_connectors_gov_r40 + r39 33/33 + r37 40/40 + r36 37/37；test_invalid_connector_type 修复；pytest 967/4 skipped；branch cursor/bc-03449787-f1c8-4cd0-b5c3-3a2ddb487945-3ca8；base_branch dev-auto；phase P2_DONE→P3_DONE
@@ -124,8 +131,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| CONN-006 | 1 | 88.4 | 2026-07-04 |
-| CONN-011 | 1 | 86.8 | 2026-07-04 |
-| CONN-012 | 1 | 87.9 | 2026-07-04 |
-| CONN-013 | 1 | 88.8 | 2026-07-04 |
-| CONN-014 | 1 | 86.1 | 2026-07-04 |

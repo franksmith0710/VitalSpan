@@ -81,20 +81,21 @@
 - **里程碑对齐**：
 ### [CONN-006] SQLite 连接器
 
-- **状态**：部分实现（L1 kickoff r40）
+- **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：二期
 - **描述**：SQLite 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`sqlite` 已注册（types catalog + `schema_browser` capability，r40 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`SQLITE_FILE_NOT_FOUND`/`SQLITE_PATH_TRAVERSAL`/`SQLITE_PERMISSION_DENIED`/`SQLITE_CORRUPT`，r40 mock）
-  - [x] schema 表/列自省 + 列元数据 500 limit（r40 mock）
-  - [x] 文件路径穿越与只读库边界守卫（r40）
+  - [x] 连通性测试结构化错误（`SQLITE_FILE_NOT_FOUND`/`SQLITE_PATH_TRAVERSAL`/`SQLITE_PERMISSION_DENIED`/`SQLITE_CORRUPT`/`SQLITE_READONLY`，r40+r41 mock）
+  - [x] schema 表/列自省 + 列元数据 500 limit（r40+r41 mock）
+  - [x] 文件路径穿越与只读库边界守卫（r40+r41 对称）
+  - [x] HTTP test_connection 失败链 + metadata tables 400 链（r41）
   - [ ] 只读查询通过
   - [x] category=`embedded` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/sqlite.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-006-01~07
-- **演化建议**：r40 已闭合路径穿越/只读守卫与 columns limit；后续补只读查询集成测与 Admin UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/sqlite.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-006-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-006-01~06
+- **演化建议**：r41 已闭合 HTTP 链与只读/路径穿越对称守卫；后续补只读查询集成测与 Admin UI 选型
 - **里程碑对齐**：
 ### [CONN-007] ClickHouse 连接器
 
@@ -166,67 +167,71 @@
 - **里程碑对齐**：
 ### [CONN-011] InfluxDB 连接器
 
-- **状态**：部分实现（L1 kickoff r40）
+- **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：InfluxDB 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`influxdb` 已注册（types catalog + `schema_browser` capability，r40 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`INFLUX_CONN_REFUSED`/`INFLUX_AUTH_FAILED`/`INFLUX_TIMEOUT`/`INFLUX_UNKNOWN_BUCKET`/`INFLUX_INVALID_ORG`，r40 mock）
-  - [x] schema bucket/measurement 自省 + measurement 500 limit（r40 mock）
+  - [x] 连通性测试结构化错误（`INFLUX_CONN_REFUSED`/`INFLUX_AUTH_FAILED`/`INFLUX_TIMEOUT`/`INFLUX_UNKNOWN_BUCKET`/`INFLUX_INVALID_ORG`，r40+r41 mock）
+  - [x] schema bucket/measurement 自省 + measurement 500 limit（r40+r41 mock）
+  - [x] HTTP test_connection/metadata 4xx 链（r41）
   - [ ] 只读查询通过
   - [x] category=`timeseries` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/influxdb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-011-01~07
-- **演化建议**：r40 已闭合 org/bucket 错误域与 measurement limit；后续补只读查询集成测与 Admin UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/influxdb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-011-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-011-01~06
+- **演化建议**：r41 已闭合 HTTP 链与 fieldKeys/tagKeys 类型枚举；后续补只读查询集成测与 Admin UI 选型
 - **里程碑对齐**：
 ### [CONN-012] TDengine 连接器
 
-- **状态**：部分实现（L1 kickoff r40）
+- **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：TDengine 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`tdengine` 已注册（types catalog + `schema_browser` capability，r40 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`TDENGINE_CONN_REFUSED`/`TDENGINE_AUTH_FAILED`/`TDENGINE_TIMEOUT`/`TDENGINE_UNKNOWN_DATABASE`，r40 mock）
-  - [x] schema 超级表/子表自省 + 列元数据 500 limit（r40 mock）
+  - [x] 连通性测试结构化错误（`TDENGINE_CONN_REFUSED`/`TDENGINE_AUTH_FAILED`/`TDENGINE_TIMEOUT`/`TDENGINE_UNKNOWN_DATABASE`，r40+r41 mock）
+  - [x] schema 超级表/子表自省 + 列元数据 500 limit（r40+r41 mock）
+  - [x] HTTP test_connection 失败链 + metadata schemas 502 链（r41）
   - [ ] 只读查询通过
   - [x] category=`timeseries` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/tdengine.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-012-01~07
-- **演化建议**：r40 已闭合端点不可达/登录失败与 columns limit；后续补只读查询集成测与 Admin UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/tdengine.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-012-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-012-01~07
+- **演化建议**：r41 已闭合 HTTP 502 链与 600 列 limit 回归；后续补只读查询集成测与 Admin UI 选型
 - **里程碑对齐**：
 ### [CONN-013] TimescaleDB 连接器
 
-- **状态**：部分实现（L1 kickoff r40）
+- **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：TimescaleDB 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`timescaledb` 已注册（types catalog + `schema_browser` capability，r40 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`TIMESCALE_CONN_REFUSED`/`TIMESCALE_AUTH_FAILED`/`TIMESCALE_TIMEOUT`/`TIMESCALE_UNKNOWN_DATABASE`/`TIMESCALE_EXTENSION_MISSING`，r40 mock）
-  - [x] schema 表自省 + hypertable 标记 + 列元数据 500 limit（r40 mock）
+  - [x] 连通性测试结构化错误（`TIMESCALE_CONN_REFUSED`/`TIMESCALE_AUTH_FAILED`/`TIMESCALE_TIMEOUT`/`TIMESCALE_UNKNOWN_DATABASE`/`TIMESCALE_EXTENSION_MISSING`，r40+r41 mock）
+  - [x] schema 表自省 + hypertable 标记 + 列元数据 500 limit（r40+r41 mock）
+  - [x] HTTP test_connection/metadata 4xx 链（r41）
   - [ ] 只读查询通过
   - [x] category=`timeseries` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/timescaledb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-013-01~07
-- **演化建议**：r40 已闭合 PG 兼容层委托与 hypertable 标记；后续补只读查询集成测与 Admin UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/timescaledb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-013-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-013-01~07
+- **演化建议**：r41 已闭合 HTTP 链与 PG 类型枚举/宽表 limit；后续补只读查询集成测与 Admin UI 选型
 - **里程碑对齐**：
 ### [CONN-014] MongoDB 连接器
 
-- **状态**：部分实现（L1 kickoff r40）
+- **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：MongoDB 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`mongodb` 已注册（types catalog + `schema_browser` capability，r40 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`MONGODB_CONN_REFUSED`/`MONGODB_AUTH_FAILED`/`MONGODB_TIMEOUT`/`MONGODB_UNKNOWN_DATABASE`/`MONGODB_INVALID_HOST`，r40 mock）
-  - [x] schema database/collection 自省 + 字段 500 limit（r40 mock）
+  - [x] 连通性测试结构化错误（`MONGODB_CONN_REFUSED`/`MONGODB_AUTH_FAILED`/`MONGODB_TIMEOUT`/`MONGODB_UNKNOWN_DATABASE`/`MONGODB_INVALID_HOST`，r40+r41 mock）
+  - [x] schema database/collection 自省 + 字段 500 limit（r40+r41 mock）
+  - [x] HTTP test_connection/metadata 4xx 链（r41）
   - [ ] 只读查询通过
   - [x] category=`document` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/mongodb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-014-01~08
-- **演化建议**：r40 已闭合 database/collection 边界与字段 limit；后续补只读查询集成测与 Admin UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/mongodb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-014-01~08 · `tests/test_connectors_gov_r41.py` T-CONN-R41-014-01~07
+- **演化建议**：r41 已闭合 HTTP 链、BSON 六类型枚举与 `map_mongodb_error` UNKNOWN_DATABASE；后续补只读查询集成测与 Admin UI 选型
 - **里程碑对齐**：
 ### [CONN-015] Elasticsearch 连接器
 

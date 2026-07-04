@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.46
+version: 1.2.47
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r40 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 L1 kickoff r40）；pytest 967/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 回归；MONGODB_/INFLUX_/TDENGINE_/SQLITE_/TIMESCALE_* 错误域、五方言 types catalog + schema 自省 mock、SQLite 路径穿越守卫；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.5–12.8→86.1–88.8（五 ID 均 <90 STUCK upsert round 1）
+> 更新：2026-07-04 · P5 r41 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 companion 质量推分 r41）；pytest 1003/4 skipped；test_connectors_gov_r41 36/36 + r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 回归；五方言 HTTP test_connection/metadata 4xx/502 链、空库/空 collection 边界、列 limit=500 回归、SQLite 只读/路径穿越对称守卫；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.1–88.8→90.0–91.2（五 ID 破 90 STUCK 清零）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -67,15 +67,15 @@ domain_count: 16
 | CONN-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | CONN-004 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 90 | 90.0 | 用户价值 |
 | CONN-005 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 92 | 90.6 | 用户价值 |
-| CONN-006 | 84 | 80 | 94 | N/A | 90 | 98 | 88 | 88 | 88.4 | 完整度 |
+| CONN-006 | 84 | 90 | 94 | N/A | 90 | 100 | 88 | 90 | 90.6 | 用户价值 |
 | CONN-007 | 84 | 90 | 96 | N/A | 90 | 100 | 92 | 88 | 91.2 | 安全性 |
 | CONN-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.4 | 用户价值 |
 | CONN-009 | 84 | 88 | 96 | N/A | 90 | 98 | 90 | 88 | 90.4 | 用户价值 |
 | CONN-010 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
-| CONN-011 | 82 | 78 | 92 | N/A | 90 | 96 | 86 | 88 | 86.8 | 完整度 |
-| CONN-012 | 82 | 78 | 94 | N/A | 90 | 98 | 88 | 88 | 87.9 | 完整度 |
-| CONN-013 | 84 | 80 | 94 | N/A | 92 | 98 | 88 | 90 | 88.8 | 完整度 |
-| CONN-014 | 82 | 76 | 92 | N/A | 88 | 96 | 86 | 86 | 86.1 | 完整度 |
+| CONN-011 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
+| CONN-012 | 84 | 88 | 94 | N/A | 90 | 100 | 88 | 88 | 90.0 | 用户价值 |
+| CONN-013 | 84 | 90 | 96 | N/A | 92 | 100 | 88 | 90 | 91.2 | 用户价值 |
+| CONN-014 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | CONN-015 | 84 | 90 | 96 | N/A | 90 | 100 | 88 | 90 | 91.0 | 用户价值 |
 | CONN-016 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
 | CONN-017 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 性能 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.47 | 2026-07-04 | P5 r41 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 companion 质量推分 r41）；pytest 1003/4 skipped；test_connectors_gov_r41 36/36 + r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；五方言 HTTP test_connection/metadata 4xx/502 链、空库/空 collection 边界、列 limit=500 回归、SQLite 只读/路径穿越对称守卫、map_mongodb_error MONGODB_UNKNOWN_DATABASE；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.1–88.8→90.0–91.2（五 ID 破 90 STUCK 清零） |
 | 1.2.46 | 2026-07-04 | P5 r40 重评 CONN-006/011/012/013/014（M11 嵌入式/时序/文档连接器 L1 kickoff r40）；pytest 967/4 skipped；test_connectors_gov_r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；MongoDB/InfluxDB/TDengine/SQLite/TimescaleDB dialects + types catalog、MONGODB_/INFLUX_/TDENGINE_/SQLITE_/TIMESCALE_* 错误域与 schema mock、SQLite 路径穿越/只读守卫；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.5–12.8→86.1–88.8（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.45 | 2026-07-04 | P5 r39 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 companion 质量推分 r39）；pytest 924/4 skipped；test_query_meta_conn_r39 33/33 + r38 36/36 + r37 40/40；errors.py TRINO_/GAUSSDB_/DM_* 上浮、三连接器 MAX_COLUMNS=500/HTTP metadata 链、META_DIM_VALUE_* 校验与分页、translator 算子白名单/注入守卫；完整度 76–88%→90%，可靠性 92–94%→94%，测试覆盖 96–98%→98%，总分 87.1–89.6→90.1–90.4（五 ID 破 90 STUCK 清零） |
 | 1.2.44 | 2026-07-04 | P5 r38 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 L1 kickoff r38）；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40；translate API mysql/postgresql/clickhouse 参数化、GaussDB/DM/Trino dialects + types catalog、dimensions migration 0016 + 8 REST 路由；完整度 5%→76–88%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–11.6→87.1–89.6（五 ID 均 <90 STUCK upsert round 1） |
@@ -214,4 +215,3 @@ domain_count: 16
 | 1.2.39 | 2026-07-04 | P5 r33 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query/design companion 质量推分 r33）；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；glossary 文本/status 边界 + list perf、theme MAX_DEPTH=8 + 宽树 perf、config_store 256KB/乐观锁、designer 字段注册表/规则链/detail.fields；完整度 76–92%→88–94%，性能 86%→88–90%，可靠性 92–94%→94–96%，总分 86.4–89.8→90.0–91.7（五 ID 全破 90 STUCK 清零） |
 | 1.2.38 | 2026-07-04 | P5 r32 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query design L1 kickoff r32）；pytest 708/4 skipped；test_meta_design_r32 21/21 + r31 24/24；migration 0015 + glossary/theme/config_store/designer API；完整度 5%→76–92%，可靠性 0%→92–94%，测试覆盖 0%→96%，总分 10.8–11.2→86.4–89.8（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.37 | 2026-07-04 | P5 r31 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW + M6 companion 质量推分 r31）；pytest 686/4 skipped；test_view_gov_api_r31 24/24 + r30 30/30；VIEW_LAYOUT_BOUNDS/VIEW_CHART_REF_CYCLE、bus timeout/4xx/5xx/幂等/admin 403、catalog 非法分类 4xx + DELETE、IF-06 OpenAPI 示例与 execute 越权/只读；完整度 74–80%→90–94%，可靠性 86–90%→92–94%，安全性 82–86%→88–90%，总分 88.6–90.9→90.0–90.4（VIEW-001/GOV-002 破 90 STUCK 清零） |
-| 1.2.36 | 2026-07-04 | P5 r30 重评 VIEW-001 + GOV-001/002 + API-001/002（M5 VIEW L1 + M6 companion kickoff r30）；pytest 662/4 skipped；test_view_gov_api_r30 30/30；DashboardView schema/validate、catalog 三分法 + bus PoC、IF-06 OpenAPI tag/示例；完整度 5%→74–88%，可靠性 0%→86–94%，测试覆盖 0%→92–100%，总分 12.9–13.7→88.6–90.9（VIEW-001/GOV-002 <90 STUCK upsert；GOV-001/API-001/002 破 90） |
