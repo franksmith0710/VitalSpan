@@ -19,16 +19,17 @@
 - **里程碑对齐**：
 ### [VIEW-002] 角色默认模板 FR-VIEW-3
 
-- **状态**：部分实现（companion r63）
+- **状态**：部分实现（companion r68）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：二期
 - **描述**：角色默认模板 FR-VIEW-3（SRS 追溯项）。
 - **验收标准**：
   - [x] 角色绑定默认 Dashboard/报表（r60 L1：`PUT/GET /api/v1/roles/{id}/default-views` + `resolve_defaults_for_roles`；admin 写/viewer 403 `VIEW_DEFAULT_*`）
   - [x] companion bounds + perf probe（r63：`maxWidgetCount` [1,64] 域校验 `VIEW_DEFAULT_OUT_OF_BOUNDS`；`probe_resolve_defaults_budget_ms` ≤50ms；空 roles 默认 maxWidgetCount=24）
+  - [x] companion inheritFromRoleId cycle + enterprise GET scope + put probe（r68：`VIEW_DEFAULT_ROLE_CYCLE` 422；`set_user_role_default_scope` enterprise GET 403；`probe_role_default_put_budget_ms` ≤50ms；r63 bounds 回归保留）
   - [ ] 新用户继承（无登录/onboarding 自动应用链；内存 store）
-- **代码锚点**：`backend/app/views/role_template.py` · `backend/app/views/probe.py` · `backend/app/views/store.py` · `backend/app/api/v1/views.py` · `tests/test_viz_view_design_cat_r63.py` T-VIEW-R63-002-01~06 · `tests/test_rpt_view_cat_gov_r60.py` T-VIEW-R60-002-01~06
-- **演化建议**：r63 companion 闭合 role default bounds、resolve probe 与 r60 回归；后续补新用户继承链、DB 持久化与 fe 默认视图 UI
+- **代码锚点**：`backend/app/views/role_template.py` · `backend/app/views/probe.py` · `backend/app/views/store.py` · `backend/app/api/v1/views.py` · `tests/test_viz_view_design_cat_r63.py` T-VIEW-R63-002-01~06 · `tests/test_rpt_view_cat_gov_r60.py` T-VIEW-R60-002-01~06 · `tests/test_nfr_gov_rpt_view_r68.py` T-VIEW-R68-002-01~06
+- **演化建议**：r68 companion 闭合 inheritFromRoleId cycle detection、enterprise GET scope 与 put perf probe；后续补新用户继承链、DB 持久化与 fe 默认视图 UI
 - **里程碑对齐**：
 ### [VIEW-003] 用户视图覆盖 FR-VIEW-4
 

@@ -30,29 +30,31 @@
 - **里程碑对齐**：
 ### [NFR-003] NFR-02 核心看板可用性
 
-- **状态**：部分实现（L1 kickoff r62）
+- **状态**：部分实现（companion r68）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：二期
 - **描述**：NFR-02 核心看板可用性（SRS 追溯项）。
 - **验收标准**：
   - [x] SLA ≥ 99.5%（r62 L1：`POST /api/v1/nfr/dashboard-sla/probe` mock uptime 99.7% + breach 模拟 + `withinSla` 判定）
   - [x] 监控告警配置（r62 L1：`GET /api/v1/nfr/dashboard-sla/alerts` channels/threshold stub）
+  - [x] companion enterprise ACL + dashboardId 校验 + alerts threshold + perf probe（r68：`set_user_dashboard_sla_scope` + `NFR_SLA_DASHBOARD_ID_INVALID`/`NFR_SLA_ALERTS_THRESHOLD_OUT_OF_RANGE` 422；enterprise scope 403；`probe_dashboard_sla_validate_budget_ms`/`probe_dashboard_sla_budget_ms` ≤50ms）
   - [ ] 生产级 SLA 采集与 ops 告警联动（无真实 metrics store 与 PagerDuty 集成）
-- **代码锚点**：`backend/app/core/nfr/dashboard_sla.py` · `backend/app/api/v1/nfr.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-NFR-R62-003-01~06
-- **演化建议**：r62 L1 闭合 dashboard SLA validate/probe/alerts 与 windowHours/dashboardId 边界；后续补生产 metrics 采集与 ops 告警全链路
+- **代码锚点**：`backend/app/core/nfr/dashboard_sla.py` · `backend/app/api/v1/nfr.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-NFR-R62-003-01~06 · `tests/test_nfr_gov_rpt_view_r68.py` T-NFR-R68-003-01~10
+- **演化建议**：r68 companion 闭合 dashboard SLA enterprise ACL、dashboardId pattern、alerts threshold 与 validate/probe perf probe；后续补生产 metrics 采集与 ops 告警全链路
 - **里程碑对齐**：
 ### [NFR-004] NFR-03 HTTPS 脱敏审计
 
-- **状态**：部分实现（L1 kickoff r64）
+- **状态**：部分实现（companion r68）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：一期
 - **描述**：NFR-03 HTTPS 脱敏审计（SRS 追溯项）。
 - **验收标准**：
   - [x] 全站 HTTPS（r64 L1：`GET /api/v1/nfr/https-audit/status` httpsEnforced/webhookHttpsOnly/tlsMinVersion stub）
   - [x] 敏感字段脱敏+审计（r64 L1：`POST /api/v1/nfr/https-audit/mask-probe` password/apiKey/token 脱敏 + maskedFields + auditLogged mock）
+  - [x] companion auditScope ACL + simulateAuditFailure + perf probe（r68：`set_user_https_audit_scope` + `NFR_HTTPS_AUDIT_SCOPE_INVALID` 422；enterprise scope 403；`simulateAuditFailure` 503；`probe_https_audit_mask_budget_ms`/`probe_https_audit_status_budget_ms` ≤50ms）
   - [ ] 生产 TLS 终止与全链路审计 store（无 ingress 强制与持久化审计写入）
-- **代码锚点**：`backend/app/core/nfr/https_audit.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-004-01~06
-- **演化建议**：r64 L1 闭合 https-audit status/mask-probe 与敏感字段枚举边界；后续补生产 TLS 强制与审计 store 全链路
+- **代码锚点**：`backend/app/core/nfr/https_audit.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-004-01~06 · `tests/test_nfr_gov_rpt_view_r68.py` T-NFR-R68-004-01~09
+- **演化建议**：r68 companion 闭合 https-audit auditScope ACL、simulateAuditFailure 与 mask/status perf probe；后续补生产 TLS 强制与审计 store 全链路
 - **里程碑对齐**：
 ### [NFR-005] NFR-04 连接器插件扩展性
 

@@ -87,16 +87,17 @@
 - **演化建议**：r55 companion 闭合 apiVersion/operationId 校验、deactivate 409 守卫、draft entry 拒绝与 probe <200ms；后续补只读 GET 聚合与 OpenAPI 文档生成
 ### [GOV-007] 总线全自动注册 FR-1.1
 
-- **状态**：部分实现（L1 kickoff r60）
+- **状态**：部分实现（companion r68）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：总线全自动注册 FR-1.1（SRS 追溯项）。
 - **验收标准**：
   - [x] 发布引擎→总线全自动（r60 L1：`POST /api/v1/gov/bus/auto-register` + FSM draft→registering→succeeded/failed + 幂等 201/200）
   - [x] ≥ PoC 能力（integration/admin 角色；published catalog entry 前置；403 `GOV_AUTO_BUS_*` 守卫；mock busId）
+  - [x] companion FSM 非法转移守卫 + path scope + HTTP probe（r68：`GOV_AUTO_BUS_INVALID_TRANSITION` 409 failed→retry；`set_user_auto_bus_scope` enterprise 403；`GET /api/v1/gov/bus/auto-register/probe` ≤50ms；r60 force_fail 回归保留）
   - [ ] 真实总线 HTTP 对接与失败重试/熔断
-- **代码锚点**：`backend/app/governance/bus/auto.py` · `backend/app/api/v1/gov.py` · `tests/test_rpt_view_cat_gov_r60.py` T-GOV-R60-007-01~08
-- **演化建议**：r60 L1 闭合 auto-register FSM、幂等与角色/状态守卫；后续补真实总线 HTTP、失败重试链与 publish 引擎联动
+- **代码锚点**：`backend/app/governance/bus/auto.py` · `backend/app/governance/bus/probe.py` · `backend/app/api/v1/gov.py` · `tests/test_rpt_view_cat_gov_r60.py` T-GOV-R60-007-01~08 · `tests/test_nfr_gov_rpt_view_r68.py` T-GOV-R68-007-01~07
+- **演化建议**：r68 companion 闭合 auto-register FSM 非法转移、enterprise path scope 与 HTTP probe；后续补真实总线 HTTP、失败重试链与 publish 引擎联动
 - **里程碑对齐**：
 ### [GOV-008] 治理权限联动 FR-1.6
 

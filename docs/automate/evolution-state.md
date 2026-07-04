@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r68.md |
 | design | docs/superpowers/specs/2026-07-04-nfr-gov-rpt-view-companion-quality-r68-design.md |
 | plan | docs/superpowers/plans/2026-07-04-nfr-gov-rpt-view-companion-quality-r68.md |
@@ -66,7 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P4 r68 验证通过：ruff clean（python3 -m ruff check .）；pytest 1821 passed/4 skipped（全量 exit_code 0）；test_nfr_gov_rpt_view_r68 35/35 + test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 233/233；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
+- P5 r68 PRD 重评：NFR-003/NFR-004/GOV-007/RPT-002/VIEW-002 companion 质量推分；pytest 1821/4 skipped；test_nfr_gov_rpt_view_r68 35/35 + test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 233/233；总分 84.2–90.1→90.0–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P3 r68 实现完成：8 Task 全绿；跨域 companion 质量推分 — NFR-003/NFR-004/GOV-007/RPT-002/VIEW-002；35 测 test_nfr_gov_rpt_view_r68 + r67–r60 六套件 233/233 回归；pytest 1821/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r68-nfr-gov-rpt-view-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P5 r67 PRD 重评：DASH-004/NFR-001/NFR-002/CONN-018/RPT-003 companion 质量推分；pytest 1786/4 skipped；test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 230/230；总分 84.2→90.0–90.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r67 验证通过：ruff clean（python3 -m ruff check .）；pytest 1786 passed/4 skipped（全量 exit_code 0）；test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 230/230；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
@@ -236,6 +236,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| GOV-007 | 1 | 84.4 | 2026-07-04 |
-| NFR-003 | 1 | 84.2 | 2026-07-04 |
-| NFR-004 | 1 | 84.2 | 2026-07-04 |
