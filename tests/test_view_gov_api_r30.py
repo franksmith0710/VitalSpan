@@ -280,3 +280,34 @@ def test_bus_register_force_fail(client):
     resp = client.post("/api/v1/gov/bus/register", headers=AUTH, json={"catalogEntryId": eid})
     assert resp.status_code == 502
     assert resp.json()["code"] == "BUS_REGISTRATION_REJECTED"
+
+
+def test_openapi_datasources_if06_paths(client):
+    """T-API-R30-001-01/02: OpenAPI 含 datasources CRUD + IF-06 tag。"""
+    spec = client.get("/openapi.json").json()
+    paths = spec["paths"]
+    assert "/api/v1/datasources" in paths
+    post_op = paths["/api/v1/datasources"]["post"]
+    assert "IF-06" in post_op.get("tags", [])
+    assert post_op.get("operationId", "").startswith("if06.datasources.")
+
+
+def test_openapi_info_version(client):
+    """T-API-R30-001-04: info.version 存在。"""
+    spec = client.get("/openapi.json").json()
+    assert "version" in spec["info"]
+
+
+def test_openapi_query_execute_if06(client):
+    """T-API-R30-002-01/02: execute 路径 + requestBody 示例。"""
+    spec = client.get("/openapi.json").json()
+    op = spec["paths"]["/api/v1/query/execute"]["post"]
+    assert "IF-06" in op.get("tags", [])
+    assert op.get("operationId") == "if06.query.execute"
+    assert "requestBody" in op
+
+
+def test_datasources_list_smoke(client):
+    """T-API-R30-001-03: GET /datasources 200 Bearer dev。"""
+    resp = client.get("/api/v1/datasources", headers=AUTH)
+    assert resp.status_code == 200

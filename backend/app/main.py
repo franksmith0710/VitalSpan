@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.core.middleware import TraceIdMiddleware
 from app.ingestion.scheduler import get_scheduler, refresh_all_jobs
+from app.openapi.extensions import customize_openapi
 
 settings = get_settings()
 configure_logging(settings)
@@ -49,3 +50,10 @@ def health() -> dict[str, str]:
 
 
 app.include_router(api_v1_router, prefix="/api/v1")
+
+
+def _openapi() -> dict:
+    return customize_openapi(app)
+
+
+app.openapi = _openapi

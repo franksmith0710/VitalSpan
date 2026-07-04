@@ -55,7 +55,15 @@ def _parse_user_id(user: UserContext) -> uuid.UUID | None:
         return None
 
 
-@router.post("/execute", response_model=ExecuteResponse)
+@router.post(
+    "/execute",
+    response_model=ExecuteResponse,
+    summary="Execute read-only query (IF-06)",
+    responses={
+        400: {"description": "QUERY_NOT_READONLY — mutating SQL rejected"},
+        403: {"description": "Data source not visible to caller"},
+    },
+)
 def execute_query(
     payload: ExecuteRequest,
     user: Annotated[UserContext, Depends(get_current_user)],

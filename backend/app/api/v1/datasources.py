@@ -68,7 +68,29 @@ def list_data_sources(
     )
 
 
-@router.post("", response_model=DataSourceOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=DataSourceOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create data source (IF-06)",
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "name": "Analytics MySQL",
+                        "type": "mysql",
+                        "host": "db.example.com",
+                        "port": 3306,
+                        "database": "analytics",
+                        "username": "reader",
+                        "password": "***",
+                    }
+                }
+            }
+        }
+    },
+)
 def create_data_source(
     payload: DataSourceCreate,
     _: Annotated[UserContext, Depends(get_current_user)],
