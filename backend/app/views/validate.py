@@ -6,7 +6,6 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.dashboard.schemas import DashboardLayout
-from app.dashboard.service import DashboardError, validate_layout
 from app.views.schemas import DashboardView, ViewError
 
 
@@ -50,8 +49,18 @@ def _check_default_view_id(view_id: uuid.UUID | None, default_view_id: uuid.UUID
 
 
 def validate_layout_dict(layout: dict[str, Any]) -> dict[str, Any]:
-    """Delegate to dashboard layout rules; used by dashboard.service."""
-    return validate_layout(layout)
+    from app.dashboard.service import _normalize_widget_orders, _validate_layout_business
+    from app.schemas.chart_view import validate_chart_view_config
+
+    parsed = DashboardLayout.model_validate(layout)
+    _validate_layout_business(parsed)
+    parsed.widgets = _normalize_widget_orders(list(parsed.widgets))
+    for widget in parsed.widgets:
+        if widget.type == "chart" and widget.chart_config is not None:
+            validate_chart_view_config(
+                widget.chart_config.model_dump(by_alias=True, mode="json"),
+            )
+    return parsed.model_dump(by_alias=True, mode="json")
 
 
 def validate_dashboard_view(data: dict[str, Any]) -> DashboardView:
@@ -71,10 +80,12 @@ def validate_dashboard_view(data: dict[str, Any]) -> DashboardView:
     _check_chart_refs(view.layout, raw_widgets_list)
 
     try:
-        normalized_layout = validate_layout(view.layout.model_dump(by_alias=True, mode="json"))
-    except DashboardError as exc:
-        raise ViewError(exc.code, exc.message, exc.status) from exc
+        normalized_layout = validate_layout_dict(view.layout.model_dump(by_alias=True, mode="json"))
     except Exception as exc:
+        from app.dashboard.service import DashboardError
+
+        if isinstance(exc, DashboardError):
+            raise ViewError(exc.code, exc.message, exc.status) from exc
         raise ViewError("VIEW_INVALID_LAYOUT", "Invalid layout", 422) from exc
 
     parsed_layout = DashboardLayout.model_validate(normalized_layout)
