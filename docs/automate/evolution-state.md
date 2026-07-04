@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r61.md |
-| design | docs/superpowers/specs/2026-07-04-cat-dash-viz-nfr-l1-r61-design.md |
-| plan | docs/superpowers/plans/2026-07-04-cat-dash-viz-nfr-l1-r61.md |
-| branch | feat/evolution-r61-cat-dash-viz-nfr-l1 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | CAT-005,DASH-004,VIZ-007,NFR-002,CAT-003 |
-| pr_number | 94 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
-| last_verified_exit_code | 0 |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T18:30:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r62 bootstrap：r61 PR #94 已 Squash merge dev-auto（cd011ad）；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 CAT-006(12.1)/NFR-003(12.1)/RPT-002(12.6)；STUCK 十五 ID 各 1 轮（r59–r61 五 ID <90 upsert，均 82.9–84.4）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r61 PRD 重评：CAT-005/DASH-004/VIZ-007/NFR-002/CAT-003 L1 kickoff；pytest 1590/4 skipped；test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 回归 138/138；总分 12.1–12.6→82.9–84.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r61 验证通过：ruff clean；pytest 1590 passed/4 skipped（全量 exit_code 0）；test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 回归 138/138；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r61 实现完成：8 Task 全绿；跨域远期薄弱项 L1 kickoff — CAT-005/DASH-004/VIZ-007/NFR-002/CAT-003；32 测 test_cat_dash_viz_nfr_r61 + r60 34/34 + r59 34/34 + r58 38/38 回归 138/138；pytest 1590/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r61-cat-dash-viz-nfr-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
