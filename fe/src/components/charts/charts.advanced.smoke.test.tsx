@@ -87,3 +87,14 @@ describe("chartRegistry", () => {
     expect(catalog.length).toBe(9);
   });
 });
+
+import { getEchartsTheme } from "@/lib/echarts-theme";
+
+describe("echarts-theme", () => {
+  it("T-VIZ-R43-003-03: echarts-theme 暗色 label 色非空", () => {
+    const theme = getEchartsTheme(true);
+    const textStyle = theme.textStyle as { color?: string };
+    expect(textStyle?.color).toBeTruthy();
+    expect(textStyle?.color).not.toBe("#ffffff");
+  });
+});
