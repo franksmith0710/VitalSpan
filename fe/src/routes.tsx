@@ -1,5 +1,8 @@
 import { Navigate, Route, Routes } from "react-router";
 import { AdminLayout } from "@/layouts/AdminLayout";
+import { EmbedLayout } from "@/layouts/EmbedLayout";
+import { EmbedChartPage } from "@/embed/EmbedChartPage";
+import { EmbedSharePanel } from "@/embed/EmbedSharePanel";
 import { AdminHomePage } from "@/pages/admin/AdminHomePage";
 import { SyncJobsPage } from "@/pages/admin/ingestion/SyncJobsPage";
 import { SyncJobFormPage } from "@/pages/admin/ingestion/SyncJobFormPage";
@@ -22,6 +25,10 @@ export function AppRoutes() {
         <Route path="dashboards" element={<DashboardListPage />} />
         <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
         <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
+      </Route>
+      <Route path="/embed" element={<EmbedLayout />}>
+        <Route path="chart/:chartId" element={<EmbedChartPage />} />
+        <Route path="share" element={<EmbedSharePanel />} />
       </Route>
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>

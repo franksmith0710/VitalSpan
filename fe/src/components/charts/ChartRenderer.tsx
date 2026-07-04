@@ -1,14 +1,23 @@
 import { useEffect, useState } from "react";
 import Chart from "react-apexcharts";
-import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import type { ApexOptions } from "apexcharts";
+import { apiFetch } from "@/lib/api";
+import {
+  isAdvancedEchartsType,
+  type ChartViewConfig,
+} from "@/lib/chartViewConfig";
 import { createBarChartOptions, createLineChartOptions } from "@/lib/chart-theme";
 import { Button } from "@/components/ui/button";
+import { AdvancedEchartsChart } from "./adapters/AdvancedEchartsChart";
+import type { RenderSpec } from "./adapters/renderFromSpec";
+import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
 import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
 
 type ChartRendererProps = {
   config: ChartViewConfig;
   title?: string;
+  mode?: "preview" | "config";
 };
 
 const PAGE_SIZE = 50;
@@ -18,20 +27,53 @@ function pickColumns(columns: string[], fields: string[]): string[] {
   return fields.filter((f) => columns.includes(f));
 }
 
-export function ChartRenderer({ config, title = "图表" }: ChartRendererProps) {
+export function ChartRenderer({ config, title = "图表", mode = "preview" }: ChartRendererProps) {
   const { columns, rows, loading, error, slowHint, retry } = useChartExecute(config);
   const [page, setPage] = useState(1);
+  const [renderSpec, setRenderSpec] = useState<RenderSpec | null>(null);
+  const [localConfig, setLocalConfig] = useState(config);
   const empty = !loading && !error && rows.length === 0;
+
+  useEffect(() => {
+    setLocalConfig(config);
+  }, [config]);
 
   useEffect(() => {
     setPage(1);
   }, [config]);
 
+  useEffect(() => {
+    if (!isAdvancedEchartsType(localConfig.chartType) || loading || error) {
+      setRenderSpec(null);
+      return;
+    }
+    apiFetch<RenderSpec>("/api/v1/charts/render-spec", {
+      method: "POST",
+      body: JSON.stringify(localConfig),
+    })
+      .then(setRenderSpec)
+      .catch(() => setRenderSpec(null));
+  }, [localConfig, loading, error]);
+
   const renderBody = () => {
-    if (config.chartType === "table") {
+    if (isAdvancedEchartsType(localConfig.chartType)) {
+      if (!renderSpec) {
+        return <p className="text-theme-sm text-gray-500">渲染配置加载中…</p>;
+      }
+      return (
+        <AdvancedEchartsChart
+          spec={renderSpec}
+          rows={rows as unknown[][]}
+          columns={columns}
+          ariaLabel={title}
+        />
+      );
+    }
+
+    if (localConfig.chartType === "table") {
       const fields = [
-        ...(config.dimensions?.map((d) => d.field) ?? []),
-        ...(config.metrics?.map((m) => m.field) ?? []),
+        ...(localConfig.dimensions?.map((d) => d.field) ?? []),
+        ...(localConfig.metrics?.map((m) => m.field) ?? []),
       ];
       const displayCols = pickColumns(columns, fields);
       const cols = displayCols.length ? displayCols : columns;
@@ -108,8 +150,8 @@ export function ChartRenderer({ config, title = "图表" }: ChartRendererProps) 
       );
     }
 
-    const dim = config.dimensions?.[0]?.field;
-    const metricFields = config.metrics?.map((m) => m.field) ?? [];
+    const dim = localConfig.dimensions?.[0]?.field;
+    const metricFields = localConfig.metrics?.map((m) => m.field) ?? [];
     if (!dim || !metricFields.length || !columns.includes(dim)) {
       return <p className="text-theme-sm text-gray-500">列不存在，请检查维度与指标配置</p>;
     }
@@ -118,16 +160,22 @@ export function ChartRenderer({ config, title = "图表" }: ChartRendererProps) 
       name: field,
       data: rows.map((r) => Number(r[columns.indexOf(field)] ?? 0)),
     }));
-    const options =
-      config.chartType === "line"
-        ? createLineChartOptions(categories)
-        : createBarChartOptions(categories);
+    let options: ApexOptions;
+    if (localConfig.chartType === "line") {
+      options = createLineChartOptions(categories);
+    } else {
+      const barOverrides: ApexOptions | undefined =
+        localConfig.styleVariant === "stacked"
+          ? { chart: { stacked: true } }
+          : undefined;
+      options = createBarChartOptions(categories, barOverrides);
+    }
     return (
       <div>
         <Chart
           options={options}
           series={series}
-          type={config.chartType === "line" ? "line" : "bar"}
+          type={localConfig.chartType === "line" ? "line" : "bar"}
           height={180}
         />
       </div>
@@ -143,7 +191,18 @@ export function ChartRenderer({ config, title = "图表" }: ChartRendererProps) 
       slowHint={slowHint}
       onRetry={retry}
     >
-      {!loading && !error && !empty ? renderBody() : null}
+      {!loading && !error && !empty ? (
+        <div className={mode === "config" ? "grid gap-4 lg:grid-cols-2" : ""}>
+          {mode === "config" ? (
+            <ChartConfigPanel
+              config={localConfig}
+              columns={columns}
+              onChange={setLocalConfig}
+            />
+          ) : null}
+          <div>{renderBody()}</div>
+        </div>
+      ) : null}
     </ChartPanel>
   );
 }

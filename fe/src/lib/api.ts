@@ -2,10 +2,17 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 export class ApiRequestError extends Error {
   code?: string;
-  constructor(message: string, code?: string) {
+  fields?: Array<{ field: string; message: string }>;
+
+  constructor(
+    message: string,
+    code?: string,
+    fields?: Array<{ field: string; message: string }>,
+  ) {
     super(message);
     this.name = "ApiRequestError";
     this.code = code;
+    this.fields = fields;
   }
 }
 
@@ -28,8 +35,16 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     throw new Error("请使用开发令牌登录");
   }
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new ApiRequestError(body.message ?? "操作失败，请稍后重试", body.code);
+    const body = (await response.json().catch(() => ({}))) as {
+      message?: string;
+      code?: string;
+      detail?: { fields?: Array<{ field: string; message: string }> };
+    };
+    throw new ApiRequestError(
+      body.message ?? "操作失败，请稍后重试",
+      body.code,
+      body.detail?.fields,
+    );
   }
   if (response.status === 204) {
     return undefined as T;
