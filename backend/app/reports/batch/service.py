@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+import hashlib
+import json
+import uuid
+
+from app.reports.batch.schemas import BatchCreateReportsIn, BatchCreateReportsOut, BatchReportItem
+from app.reports.catalog import service as catalog_service
+from app.reports.catalog.errors import ReportCatalogError
+from app.reports.catalog.schemas import CatalogNodeCreate
+from app.reports.errors import ReportBatchError, ReportExtensionError
+from app.reports.extension import service as extension_service
+from app.reports.extension.schemas import ExtensionConfigUpsert
+
+_ITEM_LIMIT = 50
+_idempotency_store: dict[str, dict] = {}
+
+
+def _body_fingerprint(payload: BatchCreateReportsIn) -> str:
+    raw = json.dumps(payload.model_dump(mode="json"), sort_keys=True)
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _create_single_item(item: BatchReportItem) -> uuid.UUID:
+    if item.parent_id is not None and not catalog_service.node_exists(item.parent_id):
+        raise ReportBatchError("RPT_BATCH_PARENT_NOT_FOUND", "Parent node not found", 404)
+    try:
+        node = catalog_service.create_node(
+            CatalogNodeCreate(
+                name=item.name,
+                parent_id=item.parent_id,
+                node_type="template",
+                template_kind=item.template_kind or "excel",
+            )
+        )
+    except ReportCatalogError as exc:
+        raise ReportBatchError(exc.code, exc.message, exc.status) from exc
+    if item.extension is not None:
+        ext_node_id = item.extension.catalog_node_id or node.id
+        if ext_node_id != node.id:
+            catalog_service.delete_node(node.id)
+            raise ReportBatchError("RPT_BATCH_EXTENSION_INVALID", "catalogNodeId mismatch", 422)
+        ext_body = item.extension.model_dump(exclude={"catalog_node_id"}, exclude_none=True)
+        ext_payload = ExtensionConfigUpsert(catalog_node_id=node.id, **ext_body)
+        try:
+            extension_service.upsert(node.id, ext_payload)
+        except ReportExtensionError as exc:
+            catalog_service.delete_node(node.id)
+            raise ReportBatchError("RPT_BATCH_EXTENSION_INVALID", exc.message, exc.status) from exc
+    return node.id
+
+
+def batch_create(payload: BatchCreateReportsIn, idempotency_key: str | None) -> BatchCreateReportsOut:
+    if not payload.items:
+        raise ReportBatchError("RPT_BATCH_EMPTY", "Batch items must not be empty", 422)
+    if len(payload.items) > _ITEM_LIMIT:
+        raise ReportBatchError("RPT_BATCH_ITEM_LIMIT", f"Batch cannot exceed {_ITEM_LIMIT} items", 422)
+    fingerprint = _body_fingerprint(payload)
+    if idempotency_key:
+        cached = _idempotency_store.get(idempotency_key)
+        if cached is not None:
+            if cached["fingerprint"] != fingerprint:
+                raise ReportBatchError(
+                    "RPT_BATCH_IDEMPOTENCY_CONFLICT",
+                    "Idempotency key reused with different body",
+                    409,
+                )
+            out = BatchCreateReportsOut.model_validate(cached["result"])
+            return out.model_copy(update={"idempotent_replay": True})
+    batch_id = uuid.uuid4()
+    created: list[uuid.UUID] = []
+    try:
+        for item in payload.items:
+            created.append(_create_single_item(item))
+    except ReportBatchError:
+        for node_id in created:
+            if catalog_service.node_exists(node_id):
+                catalog_service.delete_node(node_id)
+        raise
+    result = BatchCreateReportsOut(batch_id=batch_id, created_node_ids=created, idempotent_replay=False)
+    if idempotency_key:
+        _idempotency_store[idempotency_key] = {
+            "fingerprint": fingerprint,
+            "result": result.model_dump(mode="json"),
+        }
+    return result

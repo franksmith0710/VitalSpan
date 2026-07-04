@@ -313,16 +313,16 @@
 - **演化建议**：r51 companion 闭合 HTTP 错误链与元数据边界；后续补 UI 选型与只读查询集成测
 ### [CONN-020] OceanBase 连接器
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r54）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：OceanBase 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`oceanbase` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
-  - [ ] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/oceanbase/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] type=`oceanbase` 已注册且 types catalog 可见（`register_connector_plugin`）
+  - [x] 连通性测试 + schema 浏览 L1（MySQL 协议委托，port 2881）
+  - [x] category=`relational` 查询模式正确
+- **代码锚点**：`backend/app/datasources/dialects/oceanbase.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-CONN-01~08
+- **演化建议**：r54 L1 闭合 OceanBase 方言骨架；后续补 UI 选型与只读查询集成测
 ### [CONN-021] TiDB 连接器
 
 - **状态**：部分实现

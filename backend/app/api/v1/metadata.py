@@ -31,6 +31,9 @@ from app.metadata.themes.schemas import (
     ThemeOut,
     ThemeUpdate,
 )
+from app.metadata.entity import service as entity_service
+from app.metadata.entity.errors import EntityTypeError
+from app.metadata.entity.schemas import EntityTypeCreate, EntityTypeListOut, EntityTypeUpdate
 
 router = APIRouter(prefix="/metadata", tags=["metadata"])
 
@@ -65,6 +68,66 @@ def _dimension_error(exc: DimensionError) -> JSONResponse:
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": detail},
     )
+
+
+def _entity_type_error(exc: EntityTypeError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+@router.get("/entity-types", response_model=EntityTypeListOut)
+def list_entity_types(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> EntityTypeListOut:
+    return EntityTypeListOut(items=entity_service.list_entity_types())
+
+
+@router.post("/entity-types", status_code=status.HTTP_201_CREATED, response_model=None)
+def create_entity_type(
+    payload: EntityTypeCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return entity_service.create_entity_type(payload)
+    except EntityTypeError as exc:
+        return _entity_type_error(exc)
+
+
+@router.get("/entity-types/{type_code}", response_model=None)
+def get_entity_type(
+    type_code: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return entity_service.get_entity_type(type_code)
+    except EntityTypeError as exc:
+        return _entity_type_error(exc)
+
+
+@router.put("/entity-types/{type_code}", response_model=None)
+def update_entity_type(
+    type_code: str,
+    payload: EntityTypeUpdate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return entity_service.update_entity_type(type_code, payload)
+    except EntityTypeError as exc:
+        return _entity_type_error(exc)
+
+
+@router.delete("/entity-types/{type_code}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def delete_entity_type(
+    type_code: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        entity_service.delete_entity_type(type_code)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except EntityTypeError as exc:
+        return _entity_type_error(exc)
 
 
 @router.get("/glossary", response_model=TermListResponse)
