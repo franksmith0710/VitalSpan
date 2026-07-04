@@ -119,6 +119,11 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | POST | `/api/v1/charts/validate` | ChartViewConfig 预校验；422 时 `detail.fields: [{field, message}]` | 内部 | 一期 | VIZ-001 | 已实现 | `backend/app/api/v1/charts.py` |
+| GET | `/api/v1/charts/types` | 图表类型 catalog（9 类型注册表）；只读 | 内部 | 一期 | VIZ-003 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
+| POST | `/api/v1/charts/render-spec` | 校验并归一为引擎无关 render-spec；非法 type → 422 `CHART_INVALID_TYPE` | 内部 | 一期 | VIZ-008 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
+| POST | `/api/v1/charts/embed/validate` | 图表嵌入配置校验（目标唯一性 + origin 白名单） | 内部 | 一期 | VIZ-006 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
+
+> M9 r42 新增校验错误码：`CHART_INVALID_STYLE_VARIANT`（VIZ-004）、`CHART_FIELD_REQUIREMENT`（VIZ-005）；嵌入错误码 `EMBED_MISSING_TARGET`/`EMBED_TARGET_CONFLICT`/`EMBED_INVALID_ORIGIN`/`EMBED_INVALID`（VIZ-006）。域附录见 [services/viz.md](../services/viz.md)。
 
 ---
 
