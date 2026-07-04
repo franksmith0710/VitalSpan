@@ -53,8 +53,32 @@ def _to_out(row: Dashboard) -> DashboardOut:
     )
 
 
+def _validate_layout_business(parsed: DashboardLayout) -> None:
+    seen: set[str] = set()
+    for widget in parsed.widgets:
+        wid = str(widget.id)
+        if wid in seen:
+            raise DashboardError("DASH_DUPLICATE_WIDGET", "组件 ID 重复", 422)
+        seen.add(wid)
+        if widget.type == "chart":
+            if widget.chart_config is None:
+                raise DashboardError("DASH_MISSING_CHART_CONFIG", "图表组件缺少 chartConfig", 422)
+            cfg = widget.chart_config
+            if cfg.chart_id is not None and str(cfg.chart_id) != wid:
+                raise DashboardError("DASH_CHART_ID_MISMATCH", "chartId 与组件 ID 不一致", 422)
+
+
+def _normalize_widget_orders(widgets: list) -> list:
+    ordered = sorted(widgets, key=lambda w: w.order)
+    for i, w in enumerate(ordered):
+        w.order = i
+    return ordered
+
+
 def validate_layout(layout: dict[str, Any]) -> dict[str, Any]:
     parsed = DashboardLayout.model_validate(layout)
+    _validate_layout_business(parsed)
+    parsed.widgets = _normalize_widget_orders(list(parsed.widgets))
     for widget in parsed.widgets:
         if widget.type == "chart" and widget.chart_config is not None:
             validate_chart_view_config(
@@ -143,6 +167,8 @@ def update_layout(db: Session, dashboard_id: uuid.UUID, layout_json: dict[str, A
         raise DashboardError("DASH_NOT_FOUND", "Dashboard not found", 404)
     try:
         validated = validate_layout(layout_json)
+    except DashboardError:
+        raise
     except ChartViewError as exc:
         raise DashboardError("DASH_INVALID_LAYOUT", exc.message, 422) from exc
     except Exception as exc:

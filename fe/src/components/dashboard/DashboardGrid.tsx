@@ -38,7 +38,8 @@ export function DashboardGrid({
           className,
         )}
       >
-        <p className="text-theme-sm text-gray-500 dark:text-gray-400">暂无组件</p>
+        <p className="text-theme-sm font-medium text-gray-700 dark:text-gray-300">仪表板还没有组件</p>
+        <p className="text-theme-xs text-gray-500">从左侧添加表格、折线图或柱状图</p>
         {mode === "edit" && onAddWidget ? (
           <Button type="button" variant="primary" onClick={onAddWidget}>
             添加组件

@@ -7,6 +7,8 @@ import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import {
   defaultChartConfig,
   moveWidget,
+  normalizeWidgetIds,
+  resizeWidget,
   sortWidgets,
   type DashboardLayout,
   type LayoutWidget,
@@ -84,14 +86,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setSaving(true);
     setError(null);
     try {
+      const normalized = normalizeWidgetIds(sortWidgets(widgets));
       await apiFetch(`/api/v1/dashboards/${id}/layout`, {
         method: "PUT",
         body: JSON.stringify({
-          layoutJson: { version: 1, widgets: sortWidgets(widgets), globalFilters: [] },
+          layoutJson: { version: 1, widgets: normalized, globalFilters: [] },
         }),
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      const apiErr = err as Error & { code?: string };
+      setError(apiErr.message || "操作失败，请稍后重试");
     } finally {
       setSaving(false);
     }
@@ -142,6 +146,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 mode={mode}
                 onDelete={(wid) => setWidgets((prev) => prev.filter((w) => w.id !== wid))}
                 onMove={(wid, direction) => setWidgets((prev) => moveWidget(prev, wid, direction))}
+                onResize={(wid, patch) => setWidgets((prev) => resizeWidget(prev, wid, patch))}
+                onTitleChange={(wid, title) =>
+                  setWidgets((prev) => resizeWidget(prev, wid, { title }))
+                }
               />
             )}
           />

@@ -62,7 +62,7 @@ describe("dashboard admin smoke", () => {
     render(
       <DashboardGrid mode="edit" widgets={[]} onAddWidget={() => {}} renderWidget={() => null} />,
     );
-    expect(screen.getByText("暂无组件")).toBeInTheDocument();
+    expect(screen.getByText("仪表板还没有组件")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "添加组件" })).toBeInTheDocument();
   });
 
@@ -83,6 +83,8 @@ describe("dashboard admin smoke", () => {
         mode="edit"
         onDelete={onDelete}
         onMove={() => {}}
+        onResize={() => {}}
+        onTitleChange={() => {}}
       />,
     );
     await user.click(screen.getByRole("button", { name: "删除组件" }));
@@ -122,6 +124,99 @@ describe("dashboard admin smoke", () => {
       </MemoryRouter>,
     );
     expect(await screen.findByText("销售看板")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 4, name: "A" })).toBeInTheDocument();
+    expect(screen.getByLabelText("组件标题")).toHaveValue("A");
+  });
+
+  it("T-DASH-R29-002-04: colSpan 6→12 updates grid class", () => {
+    const widget = { ...sampleWidgets[0], colSpan: 12 as const };
+    const { container } = render(
+      <DashboardGrid mode="edit" widgets={[widget]} renderWidget={() => <div />} />,
+    );
+    expect(container.querySelector(".xl\\:col-span-12")).toBeTruthy();
+  });
+
+  it("T-DASH-R29-002-05: illegal layout save shows Chinese error banner", async () => {
+    const user = userEvent.setup();
+    mockApiFetch
+      .mockResolvedValueOnce({
+        id: "d1",
+        name: "X",
+        layoutJson: { version: 1, widgets: sampleWidgets.slice(0, 1), globalFilters: [] },
+      })
+      .mockRejectedValueOnce(
+        Object.assign(new Error("组件 ID 重复"), { code: "DASH_DUPLICATE_WIDGET" }),
+      );
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>
+        <Routes>
+          <Route path="/admin/dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText("X");
+    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    expect(await screen.findByText("组件 ID 重复")).toBeInTheDocument();
+  });
+
+  it("T-DASH-R29-003-01: title change reflected in save payload", async () => {
+    const user = userEvent.setup();
+    let putBody: { layoutJson?: { widgets?: { title: string }[] } } | undefined;
+    mockApiFetch
+      .mockResolvedValueOnce({
+        id: "d1",
+        name: "编辑",
+        layoutJson: { version: 1, widgets: sampleWidgets.slice(0, 1), globalFilters: [] },
+      })
+      .mockImplementationOnce(async (_path, init) => {
+        putBody = JSON.parse((init as RequestInit).body as string);
+        return { layoutJson: putBody?.layoutJson };
+      });
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>
+        <Routes>
+          <Route path="/admin/dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByLabelText("组件标题");
+    const titleInput = screen.getByLabelText("组件标题");
+    await user.clear(titleInput);
+    await user.type(titleInput, "新标题");
+    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    expect(putBody?.layoutJson?.widgets?.[0]?.title).toBe("新标题");
+  });
+
+  it("T-DASH-R29-003-02: empty grid shows enhanced guidance", () => {
+    render(
+      <DashboardGrid mode="edit" widgets={[]} onAddWidget={() => {}} renderWidget={() => null} />,
+    );
+    expect(screen.getByText("仪表板还没有组件")).toBeInTheDocument();
+    expect(screen.getByText(/从左侧添加/)).toBeInTheDocument();
+  });
+
+  it("T-DASH-R29-003-05: delete middle widget reorders without error", () => {
+    const remaining = sampleWidgets.filter((w) => w.id !== "w2");
+    const sorted = sortWidgets(remaining);
+    expect(sorted.map((w) => w.id)).toEqual(["w1", "w3"]);
+  });
+
+  it("T-DASH-R29-001-05: list page renders paginated row count", async () => {
+    mockApiFetch.mockResolvedValueOnce({
+      items: [
+        { id: "1", name: "A", slug: "a", updatedAt: "2026-01-01" },
+        { id: "2", name: "B", slug: "b", updatedAt: "2026-01-02" },
+      ],
+      total: 5,
+      limit: 2,
+      offset: 0,
+    });
+    render(
+      <MemoryRouter>
+        <DashboardListPage />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("A")).toBeInTheDocument();
+    expect(screen.getByText("B")).toBeInTheDocument();
+    expect(screen.queryByText("C")).not.toBeInTheDocument();
   });
 });

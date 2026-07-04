@@ -33,6 +33,21 @@ export function moveWidget(widgets: LayoutWidget[], id: string, direction: "up" 
   return next;
 }
 
+export function resizeWidget(
+  widgets: LayoutWidget[],
+  id: string,
+  patch: Partial<Pick<LayoutWidget, "colSpan" | "rowSpan" | "title">>,
+): LayoutWidget[] {
+  return widgets.map((w) => (w.id === id ? { ...w, ...patch } : w));
+}
+
+export function normalizeWidgetIds(widgets: LayoutWidget[]): LayoutWidget[] {
+  return widgets.map((w) => ({
+    ...w,
+    chartConfig: { ...w.chartConfig, chartId: w.id },
+  }));
+}
+
 export function defaultChartConfig(type: ChartTypeL1): ChartViewConfig {
   const base = {
     dataSourceId: "00000000-0000-4000-8000-000000000099",
