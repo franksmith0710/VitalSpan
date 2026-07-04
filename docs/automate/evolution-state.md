@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r63.md |
 | design | docs/superpowers/specs/2026-07-04-viz-view-design-cat-companion-quality-r63-design.md |
 | plan | docs/superpowers/plans/2026-07-04-viz-view-design-cat-companion-quality-r63.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | VIZ-007,VIEW-002,DESIGN-004,CAT-005,VIEW-003 |
 | pr_number |  |
-| last_verified_command | cd backend && ruff check . && pytest -q |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T19:55:00Z |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r63 验证通过：ruff clean；pytest 1654 passed/4 skipped（全量 exit_code 0）；test_viz_view_design_cat_r63 32/32 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 130/130；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r63 实现完成：8 Task 全绿；跨域 companion 质量推分 — VIZ-007/VIEW-002/DESIGN-004/CAT-005/VIEW-003；32 测 test_viz_view_design_cat_r63 + r62 32/32 + r61 32/32 + r60 34/34 回归 130/130；pytest 1654/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r63-viz-view-design-cat-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r63 计划完成：8 Task（fixtures→VIZ-007 sdk_portal→VIEW-002 bounds/probe→DESIGN-004 workflow→CAT-005 ACL→VIEW-003 me/views→回归门控→docs）；P3 生产 13 + 测试 1 + docs 5 = 19 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥32 新测 test_viz_view_design_cat_r63 + r62 32/32 + r61 32/32 + r60 34/34 回归；plan=docs/superpowers/plans/2026-07-04-viz-view-design-cat-companion-quality-r63.md；phase P1_DONE→P2_DONE
 - P1 r63 设计完成：跨域 companion 质量推分 — VIZ-007/VIEW-002/DESIGN-004/CAT-005/VIEW-003；18 文件框定；perf probe 50ms + ACL/bounds/cycle 闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
