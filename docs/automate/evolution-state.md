@@ -13,7 +13,7 @@
 | branch | feat/evolution-r28-m5-viz-dash-kickoff |
 | base_branch | dev-auto |
 | prd_ids | VIZ-001,VIZ-002,DASH-001,DASH-002,DASH-003 |
-| pr_number |  |
+| pr_number | 51 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm test && pnpm run build |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm vitest run src/pages/admin/dashboard/dashboard.smoke.test.tsx src/components/charts/charts.smoke.test.tsx src/routes.smoke.test.tsx -t "dashboard|ChartRenderer"; screenshots N/A (headless CI: no docker/postgres for full stack) |
