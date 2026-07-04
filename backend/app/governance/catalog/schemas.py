@@ -45,3 +45,16 @@ class CatalogListResponse(BaseModel):
 
 class CategoryListResponse(BaseModel):
     items: list[CatalogCategoryOut]
+
+
+class BusRegisterIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    catalog_entry_id: uuid.UUID = Field(alias="catalogEntryId")
+
+
+class BusRegisterOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    id: uuid.UUID
+    status: str
+    trace_id: str = Field(alias="traceId")
+    bus_response: dict | None = Field(default=None, alias="busResponse")

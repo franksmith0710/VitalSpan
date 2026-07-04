@@ -8,16 +8,20 @@ from sqlalchemy.orm import Session
 from app.governance.catalog.models import (
     SEED_CATEGORIES,
     VALID_CATEGORY_CODES,
+    BusRegistration,
     CatalogCategory,
     CatalogEntry,
 )
 from app.governance.catalog.schemas import (
+    BusRegisterOut,
     CatalogEntryCreate,
     CatalogEntryOut,
     CatalogListResponse,
     CategoryListResponse,
     CatalogCategoryOut,
 )
+from app.governance.bus.poc import BusPoCAdapter, InMemoryBusPoCAdapter
+from app.core.logging import trace_id_var
 
 
 class CatalogError(Exception):
@@ -105,3 +109,48 @@ def get_entry(db: Session, entry_id: uuid.UUID) -> CatalogEntryOut:
     if row is None:
         raise CatalogError("CATALOG_ENTRY_NOT_FOUND", "Catalog entry not found", 404)
     return _entry_to_out(row)
+
+
+_default_bus_adapter: BusPoCAdapter = InMemoryBusPoCAdapter()
+
+
+def register_entry_to_bus(
+    db: Session,
+    entry_id: uuid.UUID,
+    *,
+    adapter: BusPoCAdapter | None = None,
+) -> BusRegisterOut:
+    try:
+        entry = get_entry(db, entry_id)
+    except CatalogError:
+        raise CatalogError("CATALOG_ENTRY_NOT_FOUND", "Catalog entry not found", 404) from None
+
+    if entry.status == "draft":
+        raise CatalogError("BUS_ENTRY_NOT_PUBLISHABLE", "Draft entry cannot be published", 400)
+
+    trace_id = trace_id_var.get() or uuid.uuid4().hex
+    bus = adapter or _default_bus_adapter
+    result = bus.register(entry=entry, trace_id=trace_id)
+
+    if result.status == "failed":
+        code = result.error_code or "BUS_REGISTRATION_FAILED"
+        status = 502 if code == "BUS_REGISTRATION_REJECTED" else 400
+        if code == "BUS_ENTRY_NOT_PUBLISHABLE":
+            status = 400
+        raise CatalogError(code, result.error_message or "Bus registration failed", status)
+
+    row = BusRegistration(
+        catalog_entry_id=entry_id,
+        status="succeeded",
+        trace_id=trace_id,
+        bus_payload=result.bus_payload,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return BusRegisterOut(
+        id=row.id,
+        status=row.status,
+        trace_id=row.trace_id,
+        bus_response=result.bus_payload,
+    )

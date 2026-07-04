@@ -227,3 +227,56 @@ def test_gov_list_entries_filter(client):
     assert resp.status_code == 200
     for item in resp.json()["items"]:
         assert "CAT-01" in item["categoryCodes"]
+
+
+def _create_entry(client, *, path: str, status: str = "active") -> str:
+    resp = client.post(
+        "/api/v1/gov/catalog/entries",
+        headers=AUTH,
+        json={
+            "name": "Reg",
+            "httpMethod": "POST",
+            "path": path,
+            "categoryCodes": ["CAT-01"],
+            "status": status,
+        },
+    )
+    assert resp.status_code == 201
+    return resp.json()["id"]
+
+
+def test_bus_register_active_succeeded(client):
+    """T-GOV-R30-002-01: active entry → 201 status=succeeded + traceId。"""
+    eid = _create_entry(client, path="/api/v1/query/execute")
+    resp = client.post("/api/v1/gov/bus/register", headers=AUTH, json={"catalogEntryId": eid})
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["status"] == "succeeded"
+    assert body["traceId"]
+
+
+def test_bus_register_draft_not_publishable(client):
+    """T-GOV-R30-002-02: draft → 400 BUS_ENTRY_NOT_PUBLISHABLE。"""
+    eid = _create_entry(client, path="/api/v1/x", status="draft")
+    resp = client.post("/api/v1/gov/bus/register", headers=AUTH, json={"catalogEntryId": eid})
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "BUS_ENTRY_NOT_PUBLISHABLE"
+
+
+def test_bus_register_not_found(client):
+    """T-GOV-R30-002-03: 不存在 entryId → 404 CATALOG_ENTRY_NOT_FOUND。"""
+    resp = client.post(
+        "/api/v1/gov/bus/register",
+        headers=AUTH,
+        json={"catalogEntryId": str(uuid.uuid4())},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "CATALOG_ENTRY_NOT_FOUND"
+
+
+def test_bus_register_force_fail(client):
+    """T-GOV-R30-002-04: path 含 force-fail → 502 BUS_REGISTRATION_REJECTED。"""
+    eid = _create_entry(client, path="/api/v1/force-fail/demo")
+    resp = client.post("/api/v1/gov/bus/register", headers=AUTH, json={"catalogEntryId": eid})
+    assert resp.status_code == 502
+    assert resp.json()["code"] == "BUS_REGISTRATION_REJECTED"

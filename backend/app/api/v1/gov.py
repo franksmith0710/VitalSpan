@@ -11,6 +11,8 @@ from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
 from app.governance.catalog import service as catalog_service
 from app.governance.catalog.schemas import (
+    BusRegisterIn,
+    BusRegisterOut,
     CatalogEntryCreate,
     CatalogEntryOut,
     CatalogListResponse,
@@ -74,5 +76,17 @@ def get_catalog_entry(
 ) -> CatalogEntryOut | JSONResponse:
     try:
         return catalog_service.get_entry(db, entry_id)
+    except catalog_service.CatalogError as exc:
+        return _catalog_error_response(exc)
+
+
+@router.post("/bus/register", status_code=201, response_model=BusRegisterOut)
+def register_bus(
+    payload: BusRegisterIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> BusRegisterOut | JSONResponse:
+    try:
+        return catalog_service.register_entry_to_bus(db, payload.catalog_entry_id)
     except catalog_service.CatalogError as exc:
         return _catalog_error_response(exc)
