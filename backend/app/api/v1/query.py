@@ -24,6 +24,8 @@ from app.query.schemas import (
 )
 from app.query.translator.schemas import TranslateError, TranslateRequest, TranslateResponse
 from app.query.translator import service as translator_service
+from app.query.native.guard import list_routing_modes, validate_native_spec
+from app.query.native.schemas import NativeQuerySpec, NativeValidateOut, RoutingModesOut
 
 router = APIRouter(prefix="/query", tags=["query"])
 
@@ -173,5 +175,23 @@ def delete_binding(
     try:
         binding_service.delete_binding(db, user.roles, binding_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except QueryError as exc:
+        return _error_response(exc)
+
+
+@router.get("/routing/modes", response_model=RoutingModesOut)
+def get_routing_modes(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> RoutingModesOut:
+    return list_routing_modes()
+
+
+@router.post("/native/validate", response_model=NativeValidateOut)
+def validate_native_query(
+    payload: NativeQuerySpec,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> NativeValidateOut | JSONResponse:
+    try:
+        return validate_native_spec(payload)
     except QueryError as exc:
         return _error_response(exc)
