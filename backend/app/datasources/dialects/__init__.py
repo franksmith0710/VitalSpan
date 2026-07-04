@@ -28,7 +28,7 @@ from app.datasources.dialects.errors import (
     DORIS_UNKNOWN_DATABASE,
     HIVE_UNKNOWN_DATABASE,
 )
-from app.datasources.dialects.oracle import ORACLE_MAX_COLUMNS
+from app.datasources.dialects.opensearch import OPENSEARCH_MAX_MAPPING_FIELDS, OpensearchConnector
 
 __all__ = [
     "ClickhouseConnector",
@@ -49,6 +49,8 @@ __all__ = [
     "MONGODB_MAX_FIELDS",
     "MongodbConnector",
     "MysqlConnector",
+    "OPENSEARCH_MAX_MAPPING_FIELDS",
+    "OpensearchConnector",
     "OracleConnector",
     "ORACLE_MAX_COLUMNS",
     "PostgresConnector",
