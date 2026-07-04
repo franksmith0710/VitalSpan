@@ -104,7 +104,7 @@ flowchart TB
 VitalSpan/
 ├── backend/                 # FastAPI 应用（骨架）
 │   └── app/
-│       ├── core/            # 配置、鉴权、日志
+│       ├── core/            # 配置、鉴权、日志；nfr/ 横切（插件扩展/推送/信创）
 │       ├── datasources/     # 连接层 + ConnectorRegistry
 │       │   └── dialects/  # 按 type 分目录（CONN-*）
 │       └── query/           # M3-LITE 查询执行
@@ -128,7 +128,7 @@ VitalSpan/
 backend/
 ├── app/
 │   ├── main.py
-│   ├── core/           # config, logging, TraceIdMiddleware；鉴权委托 auth/（AuthMiddleware 由 main.py 注册）
+│   ├── core/           # config, logging, TraceIdMiddleware；core/nfr/ 横切 NFR；鉴权委托 auth/
 │   ├── api/v1/         # 路由聚合：datasources, query, dashboard, reports…
 │   ├── auth/           # M7：roles, org, rls, audit
 │   ├── datasources/    # registry, credentials, pool, metadata, dialects/*

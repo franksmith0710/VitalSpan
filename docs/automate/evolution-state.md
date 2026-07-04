@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r46.md |
 | design | docs/superpowers/specs/2026-07-04-nfr-gov-gbase-l1-r46-design.md |
 | plan | docs/superpowers/plans/2026-07-04-nfr-gov-gbase-l1-r46.md |
-| branch |  |
+| branch | feat/evolution-r46-nfr-gov-gbase-l1 |
 | base_branch | dev-auto |
 | prd_ids | NFR-006,NFR-007,GOV-005,NFR-005,CONN-019 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T11:35:00Z |
 | skill_rule_index_source_count | 26 |

@@ -27,6 +27,9 @@ from app.governance.query_design.schemas import (
     VisualQueryDesignIn,
     VisualQueryDesignOut,
 )
+from app.governance.publish.errors import PublishError
+from app.governance.publish import service as publish_service
+from app.governance.publish.schemas import PublishActionOut, PublishStatusOut
 
 router = APIRouter(prefix="/gov", tags=["governance", "IF-06"])
 
@@ -138,6 +141,61 @@ def _gov_query_design_error(exc: GovQueryDesignError) -> JSONResponse:
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": detail},
     )
+
+
+def _publish_error_response(exc: PublishError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+@router.post("/publish/entries/{entry_id}/submit", response_model=PublishActionOut)
+def publish_submit(
+    entry_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> PublishActionOut | JSONResponse:
+    try:
+        return publish_service.submit_entry(db, entry_id)
+    except PublishError as exc:
+        return _publish_error_response(exc)
+
+
+@router.post("/publish/entries/{entry_id}/approve", response_model=PublishActionOut)
+def publish_approve(
+    entry_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> PublishActionOut | JSONResponse:
+    try:
+        return publish_service.approve_entry(db, entry_id)
+    except PublishError as exc:
+        return _publish_error_response(exc)
+
+
+@router.post("/publish/entries/{entry_id}/reject", response_model=PublishActionOut)
+def publish_reject(
+    entry_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> PublishActionOut | JSONResponse:
+    try:
+        return publish_service.reject_entry(db, entry_id)
+    except PublishError as exc:
+        return _publish_error_response(exc)
+
+
+@router.get("/publish/entries/{entry_id}/status", response_model=PublishStatusOut)
+def publish_status(
+    entry_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> PublishStatusOut | JSONResponse:
+    try:
+        return publish_service.get_publish_status(db, entry_id)
+    except PublishError as exc:
+        return _publish_error_response(exc)
 
 
 @router.post("/query-design/validate", response_model=VisualQueryDesignOut)

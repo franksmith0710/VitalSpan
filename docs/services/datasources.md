@@ -54,6 +54,7 @@
 | `dialects/tdengine.py` | TDengine 时序（taospy REST，stable 标记） | CONN-012 | 已实现 L1 r40 + companion r41 |
 | `dialects/sqlite.py` | SQLite 嵌入式文件源（`host=路径`，路径穿越守卫） | CONN-006 | 已实现 L1 r40 + companion r41 |
 | `dialects/timescaledb.py` | TimescaleDB 时序（PG 委托 + hypertable 标记） | CONN-013 | 已实现 L1 r40 + companion r41 |
+| `dialects/gbase.py` | 南大通用 GBase 8a（MySQL 协议委托，port 5258，`GBASE_*`） | CONN-019 | 已实现 L1 r46 |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |

@@ -19,6 +19,7 @@
 | 附录 | 后端模块 | PRD 分片 | 里程碑 | 状态 |
 |------|----------|----------|--------|------|
 | [core.md](./core.md) | `app/core/` | F01-BOOT | M1 | 已实现 |
+| [nfr.md](./nfr.md) | `app/core/nfr/` | F15-NFR | 横切 | 部分（L1） |
 | [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | 部分（L1） |
 | [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 骨架 |
 | [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | 部分（L1） |
@@ -32,7 +33,7 @@
 | [viz.md](./viz.md) | `app/viz/` | F06-VIZ | M9 | 骨架（L1 kickoff） |
 | [integration.md](./integration.md) | `app/integration/` | F13-API | M8/M12/M13 | companion 已实现（r45） |
 
-**横切**：F13-API（对外集成）、F15-NFR（非功能）——不单独成域，由各服务与 `core` 分担；详见各附录「边界」节。F06-VIZ 图表类型注册与渲染/嵌入配置契约现由 [viz.md](./viz.md) 域承载。
+**横切**：F13-API（对外集成）、F15-NFR（非功能）——F15-NFR 域附录见 [nfr.md](./nfr.md)；其余横切由各服务与 `core` 分担。F06-VIZ 图表类型注册与渲染/嵌入配置契约现由 [viz.md](./viz.md) 域承载。
 
 ## 域依赖图（目标态）
 

@@ -279,6 +279,27 @@ def map_trino_error(exc: Exception) -> tuple[str, str]:
 # r41 companion: MONGODB_/INFLUX_/TDENGINE_/SQLITE_/TIMESCALE_ timeout/auth/unknown_database
 # 映射由 map_* 统一出口；connector test_connection 与 HTTP test 链均消费本模块常量。
 
+# GBase 8a (MySQL protocol)
+GBASE_CONN_REFUSED = "GBASE_CONN_REFUSED"
+GBASE_AUTH_FAILED = "GBASE_AUTH_FAILED"
+GBASE_TIMEOUT = "GBASE_TIMEOUT"
+GBASE_UNKNOWN_DATABASE = "GBASE_UNKNOWN_DATABASE"
+GBASE_UNKNOWN = "GBASE_UNKNOWN"
+
+
+def map_gbase_error(exc: Exception) -> tuple[str, str]:
+    if isinstance(exc, pymysql.err.OperationalError):
+        code, detail = map_mysql_operational_error(exc)
+        mapping = {
+            "MYSQL_TIMEOUT": GBASE_TIMEOUT,
+            "MYSQL_CONN_REFUSED": GBASE_CONN_REFUSED,
+            "MYSQL_AUTH_FAILED": GBASE_AUTH_FAILED,
+            "MYSQL_UNKNOWN_DATABASE": GBASE_UNKNOWN_DATABASE,
+        }
+        return mapping.get(code, GBASE_UNKNOWN), detail
+    return GBASE_UNKNOWN, str(exc)
+
+
 # MongoDB
 MONGODB_CONN_REFUSED = "MONGODB_CONN_REFUSED"
 MONGODB_AUTH_FAILED = "MONGODB_AUTH_FAILED"
@@ -441,6 +462,11 @@ __all__ = [
     "GAUSSDB_TIMEOUT",
     "GAUSSDB_UNKNOWN",
     "GAUSSDB_UNKNOWN_DATABASE",
+    "GBASE_AUTH_FAILED",
+    "GBASE_CONN_REFUSED",
+    "GBASE_TIMEOUT",
+    "GBASE_UNKNOWN",
+    "GBASE_UNKNOWN_DATABASE",
     "HIVE_AUTH_FAILED",
     "HIVE_CONN_REFUSED",
     "HIVE_TIMEOUT",
@@ -516,6 +542,7 @@ __all__ = [
     "map_dm_error",
     "map_doris_operational_error",
     "map_gaussdb_error",
+    "map_gbase_error",
     "map_hive_error",
     "map_influx_error",
     "map_mongodb_error",
