@@ -61,3 +61,11 @@ def map_postgres_operational_error(exc: Exception) -> tuple[str, str]:
     if "connection refused" in lowered or "could not connect" in lowered:
         return PG_CONN_REFUSED, detail
     return PG_UNKNOWN, detail
+
+
+# TiDB aliases (mapped from MYSQL_* at connector layer)
+TIDB_CONN_REFUSED = "TIDB_CONN_REFUSED"
+TIDB_AUTH_FAILED = "TIDB_AUTH_FAILED"
+TIDB_TIMEOUT = "TIDB_TIMEOUT"
+TIDB_UNKNOWN_DATABASE = "TIDB_UNKNOWN_DATABASE"
+TIDB_UNKNOWN = "TIDB_UNKNOWN"
