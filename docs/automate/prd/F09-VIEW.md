@@ -12,9 +12,10 @@
   - [ ] 全 BI 页面基于 DashboardView
   - [x] DashboardView schema + `POST /api/v1/views/validate`（r30 L1）
   - [x] layout 与 DASH-001~003 互操作（委托 `dashboard.service.validate_layout`）
+  - [x] validate 边界：空 widgets、colSpan/order 越界、chartRef 环检测（r31，`VIEW_LAYOUT_BOUNDS`/`VIEW_CHART_REF_CYCLE`）
   - [ ] defaultViewId 持久化与角色默认视图（VIEW-002）
 - **代码锚点**：`backend/app/views/schemas.py` · `backend/app/views/validate.py` · `backend/app/api/v1/views.py`
-- **演化建议**：r30 交付 L1 schema/validate + VIEW_UNKNOWN_CHART_REF 等业务码（T-VIEW-R30-001~004）；后续补全 BI 页面统一协议层与 defaultViewId 存储
+- **演化建议**：r31 闭合 bounds/cycle/空 widgets 与 DASH layout 回归（T-VIEW-R31-001~006）；后续补全 BI 页面统一协议层与 defaultViewId 存储
 - **里程碑对齐**：
 ### [VIEW-002] 角色默认模板 FR-VIEW-3
 

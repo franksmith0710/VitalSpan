@@ -11,10 +11,11 @@
 - **验收标准**：
   - [x] CAT-01/02/03 三分法 taxonomy seed + list API（r30 L1）
   - [x] catalog 条目 CRUD + 分类挂载
+  - [x] 非法 category 过滤 4xx + 分页边界 + DELETE 解绑（r31，`CATALOG_INVALID_CATEGORY`）
   - [ ] 7 类 taxonomy 可配置
   - [ ] WS-01 对齐纪要
 - **代码锚点**：`backend/app/governance/catalog/` · `backend/migrations/versions/0014_gov_catalog.py` · `backend/app/api/v1/gov.py`
-- **演化建议**：r30 migration 0014 + seed 三分法 + entries API（T-GOV-R30-001~010）；后续扩展完整 7 类与 Admin UI
+- **演化建议**：r31 扩展非法分类 4xx、分页与 DELETE 解绑 + bus 联动回归（T-GOV-R31-001~005）；后续扩展完整 7 类与 Admin UI
 - **里程碑对齐**：
 ### [GOV-002] 总线 PoC 半自动注册 FR-1.1
 
@@ -25,10 +26,11 @@
 - **验收标准**：
   - [x] `POST /api/v1/gov/bus/register` 半自动注册（内存 adapter）
   - [x] OpenAPI operationId 与登记回执（traceId/busId）
+  - [x] 总线失败路径：timeout/4xx/5xx + 幂等登记 + admin 403（r31）
   - [ ] ≥2 真实总线端点对接
   - [ ] 完整审批工单流水线
 - **代码锚点**：`backend/app/governance/bus/poc.py` · `backend/app/governance/catalog/service.py`
-- **演化建议**：r30 InMemoryBusPoCAdapter + draft/force-fail 分支（T-GOV-R30-011~015）；后续接真实总线 HTTP 与全自动发布
+- **演化建议**：r31 扩展 force-timeout/4xx/5xx、幂等 201→200、admin 守卫与失败不留 succeeded 行（T-GOV-R31-002~005）；后续接真实总线 HTTP 与全自动发布
 - **里程碑对齐**：
 ### [GOV-003] 工单流程模板 FR-1.2
 

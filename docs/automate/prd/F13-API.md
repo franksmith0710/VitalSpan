@@ -11,8 +11,9 @@
 - **验收标准**：
   - [x] datasources CRUD+test+metadata
   - [x] OpenAPI IF-06 tag/示例（`openapi/extensions.py`）
+  - [x] path 参数与 POST/GET response example + 401 smoke（r31）
 - **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/openapi/extensions.py`
-- **演化建议**：r30 IF-06 tag + request/response 示例注入（T-API-R30-001~003）；后续可补对外 alias 与只读/管理分离策略文档
+- **演化建议**：r31 IF-06 datasources path/response 示例与鉴权 smoke（T-API-R31-001~004）；后续可补对外 alias 与只读/管理分离策略文档
 - **里程碑对齐**：
 ### [API-002] IF-06 查询执行 API
 
@@ -23,8 +24,9 @@
 - **验收标准**：
   - [x] POST query/execute
   - [x] 只读约束（复用 r27 readonly guard + RLS 链）
+  - [x] IF-06 execute OpenAPI 200 example + 401/403/只读拒绝 pytest（r31）
 - **代码锚点**：`backend/app/api/v1/query.py` · `backend/app/openapi/extensions.py`
-- **演化建议**：r30 OpenAPI summary/IF-06 tag + execute 示例（T-API-R30-004~006）；后续可补对外限流与 catalog 联动
+- **演化建议**：r31 execute response example 与越权/多语句拒绝回归（T-API-R31-002~004）；后续可补对外限流与 catalog 联动
 - **里程碑对齐**：
 ### [API-003] IF-02 查询服务 API
 
