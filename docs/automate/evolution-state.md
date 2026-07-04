@@ -13,7 +13,7 @@
 | branch | feat/evolution-r43-m9-viz-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | VIZ-003,VIZ-004,VIZ-005,VIZ-006,VIZ-008 |
-| pr_number |  |
+| pr_number | 69 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && cd ../fe && pnpm test && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
