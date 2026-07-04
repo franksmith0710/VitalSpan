@@ -132,12 +132,41 @@ def list_values(
     return items, total
 
 
+def _validate_value_item(item: DimensionValueItem) -> None:
+    from app.metadata.dimensions.schemas import DIM_CODE_RE
+    if not item.code or not DIM_CODE_RE.match(item.code):
+        raise DimensionError(
+            "META_DIM_VALUE_INVALID_CODE",
+            "Invalid dimension value code",
+            422,
+            fields=[{"field": "code", "message": "must match ^[a-z][a-z0-9_]{1,63}$"}],
+        )
+    if not item.label:
+        raise DimensionError(
+            "META_DIM_VALUE_INVALID_LABEL",
+            "Dimension value label must not be blank",
+            422,
+            fields=[{"field": "label", "message": "must not be blank"}],
+        )
+
+
 def register_values(
     session: Session,
     dimension_id: uuid.UUID,
     items: list[DimensionValueItem],
 ) -> list[DimensionValue]:
     get_dimension(session, dimension_id)
+    seen: set[str] = set()
+    for item in items:
+        _validate_value_item(item)
+        if item.code in seen:
+            raise DimensionError(
+                "META_DIM_VALUE_DUPLICATE_BATCH",
+                "Duplicate value code in batch",
+                422,
+                fields=[{"field": "code", "message": f"duplicate: {item.code}"}],
+            )
+        seen.add(item.code)
     created: list[DimensionValue] = []
     for item in items:
         value = DimensionValue(
