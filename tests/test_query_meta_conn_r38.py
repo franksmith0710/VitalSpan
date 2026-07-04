@@ -185,3 +185,44 @@ def test_query_sql_dialect_registry_smoke_r38():
     for t in ("mysql", "postgresql", "clickhouse"):
         d = get_sql_dialect(t)
         assert d.connector_type == t
+
+
+def test_query_translate_http_postgresql_r38(client):
+    """T-QUERY-R38-008-08: POST /translate postgresql → 200 + sql。"""
+    payload = {
+        "connectorType": "postgresql",
+        "schema": "public",
+        "table": "orders",
+        "columns": ["order_amount"],
+        "conditions": {
+            "logic": "AND",
+            "conditions": [
+                {"fieldId": "status", "operator": "eq", "value": "open", "valueType": "string"},
+            ],
+        },
+        "limit": 10,
+    }
+    resp = client.post("/api/v1/query/translate", headers=AUTH, json=payload)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "sql" in body
+    assert body["connectorType"] == "postgresql"
+
+
+def test_query_translate_http_unknown_field_r38(client):
+    """T-QUERY-R38-008-09: POST /translate 未知字段 → 422 + code。"""
+    payload = {
+        "connectorType": "mysql",
+        "schema": "db",
+        "table": "t",
+        "columns": ["status"],
+        "conditions": {
+            "logic": "AND",
+            "conditions": [
+                {"fieldId": "bogus_field", "operator": "eq", "value": "x", "valueType": "string"},
+            ],
+        },
+    }
+    resp = client.post("/api/v1/query/translate", headers=AUTH, json=payload)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "QUERY_TRANSLATE_UNKNOWN_FIELD"

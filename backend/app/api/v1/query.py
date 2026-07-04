@@ -22,6 +22,8 @@ from app.query.schemas import (
     ExecuteResponse,
     QueryError,
 )
+from app.query.translator.schemas import TranslateError, TranslateRequest, TranslateResponse
+from app.query.translator import service as translator_service
 
 router = APIRouter(prefix="/query", tags=["query"])
 
@@ -41,6 +43,14 @@ def _error_response(exc: QueryError) -> JSONResponse:
     )
 
 
+def _translate_error(exc: TranslateError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
+
+
 def _visibility_response(exc: VisibilityError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status,
@@ -53,6 +63,24 @@ def _parse_user_id(user: UserContext) -> uuid.UUID | None:
         return uuid.UUID(user.id)
     except ValueError:
         return None
+
+
+@router.post(
+    "/translate",
+    response_model=TranslateResponse,
+    summary="Translate visual query config to parameterized SQL (QUERY-008)",
+    responses={
+        422: {"description": "QUERY_TRANSLATE_* — invalid config, unknown field, unsupported dialect"},
+    },
+)
+def translate_query(
+    payload: TranslateRequest,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> TranslateResponse | JSONResponse:
+    try:
+        return translator_service.translate_config_to_sql(payload)
+    except TranslateError as exc:
+        return _translate_error(exc)
 
 
 @router.post(
