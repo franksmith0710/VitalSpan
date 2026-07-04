@@ -1,5 +1,14 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+export class ApiRequestError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.code = code;
+  }
+}
+
 export type ApiEnvelope<T> = {
   code?: number | string;
   message?: string;
@@ -20,7 +29,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   }
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.message ?? "操作失败，请稍后重试");
+    throw new ApiRequestError(body.message ?? "操作失败，请稍后重试", body.code);
   }
   if (response.status === 204) {
     return undefined as T;

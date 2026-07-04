@@ -7,10 +7,17 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 
 class ChartViewError(Exception):
-    def __init__(self, code: str, message: str, status: int = 422) -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        status: int = 422,
+        fields: list[dict[str, str]] | None = None,
+    ) -> None:
         self.code = code
         self.message = message
         self.status = status
+        self.fields = fields or []
         super().__init__(message)
 
 
@@ -64,21 +71,77 @@ class ChartViewConfig(BaseModel):
                 raise ValueError("CHART_MISSING_MODE:mode is required when bindingId is absent")
         if self.chart_type in ("line", "bar"):
             if not self.dimensions or not self.metrics:
-                raise ValueError("CHART_MISSING_SERIES:dimensions and metrics are required for line/bar")
+                raise ValueError(
+                    "CHART_MISSING_SERIES:dimensions and metrics are required for line/bar",
+                )
         return self
 
 
+def _loc_to_field(loc: tuple[object, ...]) -> str:
+    parts: list[str] = []
+    for item in loc:
+        if item == "chart_type":
+            parts.append("chartType")
+        elif item == "data_source_id":
+            parts.append("dataSourceId")
+        elif isinstance(item, str):
+            parts.append(item)
+        elif isinstance(item, int):
+            parts[-1] = f"{parts[-1]}[{item}]" if parts else str(item)
+    if not parts:
+        return "config"
+    # Collapse indexed list paths (e.g. dimensions[0].field → dimensions)
+    root = parts[0].split("[", 1)[0]
+    return root
+
+
+def _series_missing_fields(text: str) -> list[dict[str, str]]:
+    return [
+        {"field": "dimensions", "message": text},
+        {"field": "metrics", "message": text},
+    ]
+
+
+_CODE_FIELD_HINTS: dict[str, list[str]] = {
+    "CHART_MISSING_DATASOURCE": ["dataSourceId"],
+    "CHART_MISSING_SQL": ["sql"],
+    "CHART_MISSING_TABLE": ["schema", "table"],
+    "CHART_MISSING_MODE": ["mode"],
+}
+
+
+def _fields_for_code(code: str, text: str, loc: tuple[object, ...]) -> list[dict[str, str]]:
+    if code == "CHART_MISSING_SERIES":
+        return _series_missing_fields(text)
+    hints = _CODE_FIELD_HINTS.get(code)
+    if hints:
+        return [{"field": name, "message": text} for name in hints]
+    field_name = _loc_to_field(loc)
+    return [{"field": field_name, "message": text}]
+
+
 def _map_validation_error(exc: ValidationError) -> ChartViewError:
+    fields: list[dict[str, str]] = []
+    code = "CHART_INVALID"
+    message = "Invalid chart config"
     for err in exc.errors():
         msg = str(err.get("msg", "Invalid chart config"))
         if msg.startswith("Value error, "):
             msg = msg.removeprefix("Value error, ")
-        if err.get("type") == "literal_error" and err.get("loc") == ("chartType",):
+        loc = err.get("loc", ())
+        if err.get("type") == "literal_error" and loc == ("chartType",):
             return ChartViewError("CHART_INVALID_TYPE", "Unsupported chartType", 422)
         if msg.startswith("CHART_") and ":" in msg:
-            code, text = msg.split(":", 1)
-            return ChartViewError(code, text, 422)
-    return ChartViewError("CHART_INVALID", "Invalid chart config", 422)
+            err_code, text = msg.split(":", 1)
+            code = err_code
+            message = text
+            fields.extend(_fields_for_code(err_code, text, tuple(loc)))
+            continue
+        field_name = _loc_to_field(tuple(loc))
+        fields.append({"field": field_name, "message": msg})
+    if fields:
+        return ChartViewError(code, message, 422, fields)
+    return ChartViewError(code, message, 422, fields)
 
 
 def validate_chart_view_config(data: dict[str, Any]) -> ChartViewConfig:

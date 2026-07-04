@@ -23,7 +23,7 @@
 | [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 骨架 |
 | [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | 骨架 |
 | [designer.md](./designer.md) | `app/designer/` | F12-DESIGN | M2（四期） | 未实现 |
-| [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | 未实现 |
+| [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | 部分（r29 layout 业务校验、widget 栅格） |
 | [reports.md](./reports.md) | `app/reports/` | F08-RPT | M6 | 未实现 |
 | [views.md](./views.md) | `app/views/` | F09-VIEW | FR-VIEW | 未实现 |
 | [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 已实现 |
@@ -71,4 +71,5 @@ flowchart TB
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 0.3.0 | 2026-07-04 | M5 r29：VIZ 字段级 validate、图表 table 客户端分页；DASH layout 业务校验与 widget 编辑 |
 | 0.2.0 | 2026-07-03 | 新增 ingestion 域（M1B / F16-DATA） |

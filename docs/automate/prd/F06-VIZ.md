@@ -12,7 +12,7 @@
   - [x] chartType/style/dimensions/metrics/filters Schema
   - [x] 前后端校验一致
 - **代码锚点**：`backend/app/schemas/chart_view.py` · `backend/app/api/v1/charts.py` · `fe/src/lib/chartViewConfig.ts`
-- **演化建议**：r28 交付 L1 双端协议 + POST `/api/v1/charts/validate`；后续可补 `filters[]` SQL 注入防护与 styleVariant 全量枚举
+- **演化建议**：r29 字段级 `ChartViewError.fields` + POST validate `detail.fields`（T-VIZ-R29-001）；后续可补 `filters[]` SQL 注入防护与 styleVariant 全量枚举
 - **里程碑对齐**：
 ### [VIZ-002] 最小图表集 M4-MIN
 
@@ -24,7 +24,7 @@
   - [x] 表格+折线+柱状可渲染
   - [x] 绑定 QUERY-005 出数
 - **代码锚点**：`fe/src/components/charts/` · `fe/src/lib/chart-theme.ts`
-- **演化建议**：r28 交付 ChartRenderer + useChartExecute（M4 execute）；缺饼图/地图与配置 UI（VIZ-005）；后续可补 Apex 主题与大数据虚拟化
+- **演化建议**：r29 空/错/慢态 + table 客户端分页 PAGE_SIZE=50 + query 错误码映射（T-VIZ-R29-002）；缺饼图/地图与配置 UI（VIZ-005）；后续可补 Apex 主题与大数据虚拟化
 - **里程碑对齐**：
 ### [VIZ-003] 图表类型插件注册
 
