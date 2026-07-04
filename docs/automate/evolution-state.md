@@ -13,7 +13,7 @@
 | branch | feat/evolution-r62-cat-nfr-rpt-meta-l1 |
 | base_branch | dev-auto |
 | prd_ids | CAT-006,NFR-003,RPT-002,RPT-003,META-005 |
-| pr_number | 95 |
+| pr_number | 96 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G0 r62 plan archive PR #96：补交 `docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md`（PR #95 遗漏）；docs-only；evolution-state plan 字段与仓库对齐；phase P5_DOCS_READY；prd_ids CAT-006/NFR-003/RPT-002/RPT-003/META-005 评分无变更（#95 已重评）
 - P5 r62 PRD 重评：CAT-006/NFR-003/RPT-002/RPT-003/META-005 L1 kickoff；pytest 1622/4 skipped；test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 回归 132/132；总分 12.1–13.1→83.9–84.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P3 r62 实现完成：8 Task 全绿；跨域远期 stub L1 kickoff — CAT-006/NFR-003/RPT-002/RPT-003/META-005；32 测 test_cat_nfr_rpt_meta_r62 + r61 32/32 + r60 34/34 + r59 34/34 回归 132/132；pytest 1622/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r62-cat-nfr-rpt-meta-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r62 计划完成：8 Task（fixtures→CAT-006 cat06→NFR-003 dashboard_sla→RPT-002 prefab→RPT-003 templates→META-005 physical→32 测聚合→三轮回归门控）；19 P3 生产文件 + 1 测试 = 20 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥32 新测 test_cat_nfr_rpt_meta_r62 + r61 32/32 + r60 34/34 + r59 34/34 回归；plan=docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md；phase P1_DONE→P2_DONE
