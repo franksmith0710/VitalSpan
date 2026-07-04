@@ -6,19 +6,19 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r36.md |
 | design | docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-l1-r36-design.md |
-| plan |  |
-| branch |  |
-| base_branch |  |
+| plan | docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-l1-r36.md |
+| branch | cursor/bc-4f2610de-f832-4ff1-8eff-1773a9d832a3-b1db |
+| base_branch | dev-auto |
 | prd_ids | CONN-003,CONN-007,CONN-005,CONN-008,CONN-004 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_connectors_gov_r36.py ../tests/test_connectors_gov_r35.py ../tests/test_connectors_gov_r34.py -v |
+| last_verified_exit_code | 0 |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T03:55:00Z |
+| skill_rule_index_generated_at | 2026-07-04T04:25:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r36 实现完成：8 Task 全绿；CONN-003/007/005/008/004 五方言 L1；37 新测 test_connectors_gov_r36；pytest 814/4 skipped；r35 35/35 + r34 15/15 回归；branch cursor/bc-4f2610de-f832-4ff1-8eff-1773a9d832a3-b1db；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P2 r36 计划完成：8 Task（infra→Hive→ClickHouse→SQL Server→Doris→Oracle→registry HTTP→docs+回归）；≥32 新测 test_connectors_gov_r36；11 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
 - P1 r36 设计完成：M11 关系型/OLAP 连接器 L1 kickoff — CONN-003/007/005/008/004；16 文件框定；五方言 hive/clickhouse/sqlserver/doris/oracle；PRD 分片 ID 漂移注记；ui_design_skill none；phase G2_DONE→P1_DONE
 - G2 r36 选题完成：M11 关系型/OLAP 连接器 L1 kickoff — CONN-003/007/005/008/004（5 项）；最低分 CONN-004(11.8)；饱和熔断未触发；plan M11/M12/M13 无活跃勾选行（已知 concern）；STUCK 表空；phase idle→G2_DONE
 - G1 r36 bootstrap：r35 PR #60 已合并 dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 CONN-003(12.3)/CONN-007(12.2)/CONN-005(12.2)；STUCK 表空；phase P5_DOCS_READY→idle；待 G2 选题
