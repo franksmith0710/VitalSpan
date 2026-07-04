@@ -178,6 +178,7 @@ redoc: /redoc
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
+| GET | `/api/v1/users/me/views/{view_id}` | IF-06 | 已实现 | `api/v1/views.py` | 用户视图覆盖按 id 读取（r63 VIEW-003） |
 | POST | `/api/v1/embed/token` | 门户嵌入 token 签发（admin 或 `dashboard:share`；422 `EMBED_TARGET_CONFLICT`/`EMBED_INVALID_ORIGIN`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
 | GET | `/api/v1/embed/sdk-params` | 按 token 解析 SDK 参数（`containerId`/`apiBase`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
 

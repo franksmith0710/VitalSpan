@@ -102,3 +102,8 @@
 ### r55 companion 质量推分（GOV-006）
 
 - **GOV-006**：`SUPPORTED_API_VERSIONS` 仅 `v1`；`GOV_OPENAPI_MAP_UNSUPPORTED_VERSION` / `GOV_OPENAPI_MAP_INVALID_OPERATION_ID`；`validate_mapping` → `OpenApiMappingValidateOut`；`deactivate_mapping` + `GOV_OPENAPI_MAP_ALREADY_INACTIVE`（409）；`probe_openapi_validate_budget_ms=50`
+
+### r63 companion 质量推分（CAT-005）
+
+- `cat05/_assert_ticket_access` / `set_user_ticket_scope`；`CAT05_FORBIDDEN`（viewer 写 / enterprise scope 外读）
+- `probe_ticket_stats_budget_ms`（50ms smoke）

@@ -40,6 +40,7 @@
 | `user_override.py` | list/create + bounds 守卫 | VIEW-003 | L1 已实现 r60 |
 | `GET/PUT /api/v1/roles/{id}/default-views` | 角色默认视图 CRUD | VIEW-002 | L1 已实现 r60 |
 | `GET/POST /api/v1/users/me/views` | 用户个人视图覆盖 | VIEW-003 | L1 已实现 r60 |
+| `GET /api/v1/users/me/views/{view_id}` | 用户视图按 id 读取 | VIEW-003 | r63 已实现 |
 
 ## 关联 API
 
@@ -67,3 +68,11 @@
 | `VIEW_OVERRIDE_OUT_OF_BOUNDS` | widget 数超角色默认 maxWidgetCount |
 | `VIEW_OVERRIDE_CLASSIFICATION_DENIED` | classificationScope 不在 allowlist |
 | `VIEW_OVERRIDE_CONFLICT` | 重复视图名 |
+| `VIEW_DEFAULT_OUT_OF_BOUNDS` | maxWidgetCount 不在 [1,64] |
+| `VIEW_OVERRIDE_NOT_FOUND` | 用户视图 id 不存在 |
+| `VIEW_OVERRIDE_DASHBOARD_NOT_FOUND` | 创建覆盖时 dashboard 不存在 |
+
+### Companion r63（VIEW-002/003）
+
+- `views/probe.py`：`probe_resolve_defaults_budget_ms` / `probe_create_override_budget_ms`（50ms）
+- `VIEW_DEFAULT_OUT_OF_BOUNDS` [1,64] 域校验；`GET /users/me/views/{id}`；dashboard 404 / cycle 检测闭合
