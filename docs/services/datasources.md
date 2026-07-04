@@ -41,6 +41,11 @@
 | `dialects/tidb.py` | TiDB HTAP 方言（MySQL 协议委托，默认 port 4000） | CONN-021 | 已实现 |
 | `dialects/starrocks.py` | StarRocks OLAP 方言（MySQL 协议，port 9030，`category=olap`） | CONN-009 | 已实现 |
 | `dialects/elasticsearch.py` | Elasticsearch 搜索方言（index→schema 映射） | CONN-015 | 已实现 |
+| `dialects/hive.py` | Apache Hive 湖仓方言（HiveServer2，port 10000，`category=lake`） | CONN-003 | 已实现（L1 r36） |
+| `dialects/clickhouse.py` | ClickHouse OLAP 方言（HTTP，port 8123，`CLICKHOUSE_MAX_COLUMNS=500`） | CONN-007 | 已实现（L1 r36） |
+| `dialects/sqlserver.py` | SQL Server 关系型（pymssql，TLS L1，`category=relational`） | CONN-005 | 已实现（L1 r36） |
+| `dialects/doris.py` | Apache Doris OLAP（MySQL 协议委托，port 9030） | CONN-008 | 已实现（L1 r36） |
+| `dialects/oracle.py` | Oracle 关系型（oracledb thin，service name，`category=relational`） | CONN-004 | 已实现（L1 r36） |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -82,3 +87,10 @@
 - **TiDB**：`test_connection` 返回 `TIDB_TIMEOUT`/`TIDB_CONN_REFUSED`/`TIDB_AUTH_FAILED`/`TIDB_UNKNOWN_DATABASE`；空库 `list_schemas` 与未知表 `list_columns` 返回 `[]`
 - **StarRocks**：补全 `STARROCKS_CONN_REFUSED`/`STARROCKS_AUTH_FAILED` pytest；`list_tables(schema="")` 返回 `[]`；`list_columns` 宽表切片 `STARROCKS_MAX_COLUMNS=500`
 - **Elasticsearch**：`ES_AUTH_FAILED`/`ES_CONNECTION_REFUSED`/`ES_TIMEOUT`；`list_schemas` 多索引过滤 `.` 前缀；`_normalize_es_type` 映射 BI 类型；`ES_MAX_MAPPING_FIELDS=500`；port 443 使用 https
+
+### r36 connector kickoff（2026-07-04）
+
+- **CONN-003/007/005/008/004**：五方言 L1 — Hive/ClickHouse/SQL Server/Doris/Oracle 注册至 `ConnectorRegistry`；`test_connection` + schema 自省 + `export_type_catalog()` 可见
+- **可选依赖**：`pyproject.toml` `[project.optional-dependencies] connectors-ext`（pyhive、pymssql、oracledb、clickhouse-connect）
+- **错误码**：`HIVE_*` / `CLICKHOUSE_*` / `SQLSERVER_*` / `DORIS_*` / `ORACLE_*` 结构化失败路径；连通性测试 HTTP 200 + `ok=false` + `code` + `traceId`
+- **PRD 对账**：`F04-CONN.md` 验收条款 P5 重评（非 P3）

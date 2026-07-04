@@ -26,6 +26,12 @@ dev = [
     "pytest>=8.3.0",
     "httpx>=0.28.0",
 ]
+connectors-ext = [
+    "pyhive>=0.7.0",
+    "pymssql>=2.3.0",
+    "oracledb>=2.5.0",
+    "clickhouse-connect>=0.7.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
