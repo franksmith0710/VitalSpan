@@ -49,6 +49,52 @@ _EXECUTE_200_EXAMPLE = {
     "traceId": "abc123trace",
 }
 
+_BUS_REGISTER_EXAMPLE = {
+    "id": "00000000-0000-4000-8000-00000000b001",
+    "status": "succeeded",
+    "traceId": "trace-bus-r45",
+    "busResponse": {"busId": "bus-r45-demo"},
+}
+
+_SERVICES_LIST_EXAMPLE = {
+    "items": [{
+        "id": "00000000-0000-4000-8000-00000000s001",
+        "name": "Demo Service",
+        "httpMethod": "POST",
+        "path": "/api/v1/demo",
+        "categoryCodes": ["CAT-01"],
+        "status": "published",
+        "version": "v1",
+        "createdAt": "2026-07-04T00:00:00Z",
+    }],
+    "total": 1,
+    "limit": 50,
+    "offset": 0,
+}
+
+_EXPORT_READY_EXAMPLE = {
+    "exportId": "00000000-0000-4000-8000-00000000e001",
+    "templateId": "00000000-0000-4000-8000-0000000000a1",
+    "format": "pdf",
+    "status": "ready",
+    "downloadUrl": "/api/v1/reports/export/00000000-0000-4000-8000-00000000e001/download",
+    "expiresAt": "2026-07-04T01:00:00Z",
+    "requestedAt": "2026-07-04T00:00:00Z",
+    "traceId": "trace-export-r45",
+}
+
+_EMBED_TOKEN_EXAMPLE = {
+    "token": "embed-token-r45-demo",
+    "expiresAt": "2026-07-04T01:00:00Z",
+    "embedUrl": "/embed/embed-token-r45-demo",
+    "sdkParams": {
+        "containerId": "embed-demo",
+        "theme": "light",
+        "apiBase": "/api/v1",
+        "token": "embed-token-r45-demo",
+    },
+}
+
 
 def _inject_datasource_openapi(schema: dict) -> None:
     paths = schema.get("paths", {})
@@ -98,6 +144,30 @@ def _inject_if06_tags(schema: dict) -> None:
                 op["tags"] = tags
 
 
+def _inject_integration_openapi_examples(schema: dict) -> None:
+    paths = schema.get("paths", {})
+    bus_post = paths.get("/api/v1/integration/bus/register", {}).get("post")
+    if bus_post:
+        resp = bus_post.setdefault("responses", {}).setdefault("201", {})
+        content = resp.setdefault("content", {}).setdefault("application/json", {})
+        content["example"] = _BUS_REGISTER_EXAMPLE
+    services_get = paths.get("/api/v1/services", {}).get("get")
+    if services_get:
+        resp = services_get.setdefault("responses", {}).setdefault("200", {})
+        content = resp.setdefault("content", {}).setdefault("application/json", {})
+        content["example"] = _SERVICES_LIST_EXAMPLE
+    export_get = paths.get("/api/v1/reports/export", {}).get("get")
+    if export_get:
+        resp = export_get.setdefault("responses", {}).setdefault("200", {})
+        content = resp.setdefault("content", {}).setdefault("application/json", {})
+        content["example"] = _EXPORT_READY_EXAMPLE
+    embed_post = paths.get("/api/v1/embed/token", {}).get("post")
+    if embed_post:
+        resp = embed_post.setdefault("responses", {}).setdefault("201", {})
+        content = resp.setdefault("content", {}).setdefault("application/json", {})
+        content["example"] = _EMBED_TOKEN_EXAMPLE
+
+
 def customize_openapi(app: FastAPI) -> dict:
     if app.openapi_schema:
         return app.openapi_schema
@@ -133,6 +203,7 @@ def customize_openapi(app: FastAPI) -> dict:
                 json_content.setdefault("examples", _EXECUTE_REQUEST_EXAMPLES)
     _inject_datasource_openapi(schema)
     _inject_execute_openapi(schema)
+    _inject_integration_openapi_examples(schema)
     _inject_if06_tags(schema)
     apply_version_policy(schema)
     schema["info"]["version"] = settings.api_openapi_version

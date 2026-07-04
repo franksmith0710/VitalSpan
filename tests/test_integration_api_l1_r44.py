@@ -302,13 +302,15 @@ def test_reports_export_unauthorized_r44(client):
 
 
 def test_reports_export_ok_r44(client):
-    """T-API-R44-005-02: seed template → 200 status=pending。"""
+    """T-API-R44-005-02: seed template → 200 status=ready + downloadUrl（r45 companion）。"""
     resp = client.get(
         f"/api/v1/reports/export?templateId={SEED_TEMPLATE_ID}&format=pdf",
         headers=AUTH,
     )
     assert resp.status_code == 200
-    assert resp.json()["status"] == "pending"
+    body = resp.json()
+    assert body["status"] == "ready"
+    assert body["downloadUrl"]
 
 
 def test_reports_export_invalid_format_r44(client):

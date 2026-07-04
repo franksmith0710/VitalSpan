@@ -150,7 +150,9 @@ redoc: /redoc
 | GET/PUT/DELETE | `/api/v1/reports/templates/{id}` | 模板 CRUD | 内部 | 二期 | RPT-004 | 规划 | `backend/app/api/v1/reports/templates.py` |
 | POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表 | 内部 | 二期 | RPT-001 | 规划 | `backend/app/api/v1/reports/engine.py` |
 | GET/POST | `/api/v1/reports/schedules` | 调度任务 | 内部 | 三期 | RPT-005 | 规划 | `backend/app/api/v1/reports/schedules.py` |
-| GET | `/api/v1/reports/export` | 按模板/时间导出文档元数据（`templateId`+`format`；seed 模板 pending；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（骨架） | `backend/app/api/v1/reports/export.py` |
+| GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
+| GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
+| GET | `/api/v1/reports/export/{exportId}/download` | 导出文件下载（`Content-Disposition: attachment`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 
 ---
 
@@ -191,12 +193,15 @@ redoc: /redoc
 | GET/POST | `/api/v1/governance/tickets` | 查询工单 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/tickets/{id}/submit` | 提交审批 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/publish` | 发布查询服务 | 内部 | 四期 | GOV-005 | 规划 | `backend/app/api/v1/governance/publish.py` |
-| POST | `/api/v1/integration/bus/register` | IF-01 总线注册（`catalogEntryId`；integration/admin；幂等 201/200；retry `maxAttempts`） | IF-01 | 四期 | API-004 | 已实现（骨架） | `backend/app/api/v1/integration_bus.py` |
-| POST | `/api/v1/integration/bus/register/retry` | IF-01 总线注册重试 | IF-01 | 四期 | API-004 | 已实现（骨架） | `backend/app/api/v1/integration_bus.py` |
-| GET | `/api/v1/services` | 已发布查询服务列表（仅 `published`；`?category=&limit=&offset=`） | IF-02 | 四期 | API-003 | 已实现（骨架） | `backend/app/api/v1/services.py` |
-| GET | `/api/v1/services/{serviceId}` | 已发布查询服务详情 | IF-02 | 四期 | API-003 | 已实现（骨架） | `backend/app/api/v1/services.py` |
-| POST | `/api/v1/services/{serviceId}/execute` | 查询服务执行骨架（integration/admin；502 `SERVICE_EXECUTE_FAILED`） | IF-02 | 四期 | API-003 | 已实现（骨架） | `backend/app/api/v1/services.py` |
-| GET | `/api/v1/services/{serviceId}/openapi` | 服务 OpenAPI 描述片段 | IF-02 | 四期 | API-003, GOV-006 | 已实现（骨架） | `backend/app/api/v1/services.py` |
+| POST | `/api/v1/integration/bus/register` | IF-01 总线注册（`catalogEntryId`；nil UUID → 422；integration/admin；幂等 201/200；retry `maxAttempts`） | IF-01 | 四期 | API-004 | 已实现（companion） | `backend/app/api/v1/integration_bus.py` |
+| POST | `/api/v1/integration/bus/register/retry` | IF-01 总线注册重试 | IF-01 | 四期 | API-004 | 已实现（companion） | `backend/app/api/v1/integration_bus.py` |
+| GET | `/api/v1/services` | 已发布查询服务列表（仅 `published`；`?category=&limit=&offset=`） | IF-02 | 四期 | API-003 | 已实现（companion） | `backend/app/api/v1/services.py` |
+| GET | `/api/v1/services/{serviceId}` | 已发布查询服务详情 | IF-02 | 四期 | API-003 | 已实现（companion） | `backend/app/api/v1/services.py` |
+| POST | `/api/v1/services/{serviceId}/execute` | 查询服务执行（`;requires=` 参数校验；`Idempotency-Key`；502 `SERVICE_EXECUTE_FAILED`） | IF-02 | 四期 | API-003 | 已实现（companion） | `backend/app/api/v1/services.py` |
+| POST | `/api/v1/services/{serviceId}/publish` | draft→published + 自动总线注册（201/200 幂等） | IF-02 | 四期 | API-003/004 | 已实现（companion） | `backend/app/api/v1/services.py` |
+| GET | `/api/v1/services/{serviceId}/openapi` | 服务 OpenAPI 描述片段 | IF-02 | 四期 | API-003, GOV-006 | 已实现（companion） | `backend/app/api/v1/services.py` |
+
+> **OpenAPI 注记（API-007）**：`GET /openapi.json` 的 `info.x-supported-versions` 含 `v1` 与 `v2`；IF-01~04 平行 `/api/v2/*` 为稳定文档面（`x-implements-version: v2`），**无**真实 `/api/v2/*` 运行时路由。
 
 ---
 

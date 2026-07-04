@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid as _uuid
 from datetime import datetime
 from typing import Annotated
 
@@ -13,11 +14,18 @@ from app.integration.errors import IntegrationError
 router = APIRouter(prefix="/reports", tags=["integration", "IF-03"])
 
 
+def _err_detail(exc: IntegrationError) -> dict | None:
+    if exc.fields:
+        return {"fields": exc.fields}
+    if exc.trace_id:
+        return {"traceId": exc.trace_id}
+    return None
+
+
 def _err(exc: IntegrationError) -> JSONResponse:
-    detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(
         status_code=exc.status,
-        content={"code": exc.code, "message": exc.message, "detail": detail},
+        content={"code": exc.code, "message": exc.message, "detail": _err_detail(exc)},
     )
 
 
@@ -41,5 +49,32 @@ def get_report_export(
         response.headers["X-RateLimit-Limit"] = "60"
         response.headers["X-RateLimit-Remaining"] = "59"
         return out
+    except IntegrationError as exc:
+        return _err(exc)
+
+
+@router.get("/export/{export_id}", response_model=rex.ReportExportOut)
+def get_export_status_route(
+    export_id: _uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return rex.get_export_status(export_id)
+    except IntegrationError as exc:
+        return _err(exc)
+
+
+@router.get("/export/{export_id}/download")
+def download_export(
+    export_id: _uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        data, content_type, filename = rex.get_export_file(export_id)
+        return Response(
+            content=data,
+            media_type=content_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     except IntegrationError as exc:
         return _err(exc)

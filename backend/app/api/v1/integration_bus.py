@@ -38,7 +38,11 @@ def _db() -> Session:
 
 
 def _err(exc: IntegrationError) -> JSONResponse:
-    detail = {"traceId": exc.trace_id} if exc.trace_id else None
+    detail: dict | None = None
+    if exc.fields:
+        detail = {"fields": exc.fields}
+    elif exc.trace_id:
+        detail = {"traceId": exc.trace_id}
     return JSONResponse(
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": detail},
@@ -55,6 +59,7 @@ def register_integration_bus(
     if payload.retry and "maxAttempts" in payload.retry:
         max_attempts = int(payload.retry["maxAttempts"])
     try:
+        bus_register.validate_register_payload(payload.catalog_entry_id)
         out, created = bus_register.register_catalog_to_bus(
             db, payload.catalog_entry_id, actor, max_attempts=max_attempts
         )

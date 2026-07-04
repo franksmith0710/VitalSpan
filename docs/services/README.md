@@ -30,7 +30,7 @@
 | [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 未实现 |
 | [governance.md](./governance.md) | `app/governance/` | F10-GOV · F14-CAT | M6 | 部分（L1） |
 | [viz.md](./viz.md) | `app/viz/` | F06-VIZ | M9 | 骨架（L1 kickoff） |
-| [integration.md](./integration.md) | `app/integration/` | F13-API | M8/M12/M13 | L1 已实现 |
+| [integration.md](./integration.md) | `app/integration/` | F13-API | M8/M12/M13 | companion 已实现（r45） |
 
 **横切**：F13-API（对外集成）、F15-NFR（非功能）——不单独成域，由各服务与 `core` 分担；详见各附录「边界」节。F06-VIZ 图表类型注册与渲染/嵌入配置契约现由 [viz.md](./viz.md) 域承载。
 

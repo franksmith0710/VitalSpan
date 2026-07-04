@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.50
+version: 1.2.51
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r44 重评 API-003/004/005/006/007（M8/M12/M13 集成 API L1 kickoff r44）；pytest 1104/4 skipped；test_integration_api_l1_r44 38/38 + r31 24/24 回归；IF-01~04 四路由簇 + integration 域 + bus_register + openapi/version_policy；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–13.1→86.5–87.4（五 ID 均 <90 STUCK upsert round 1；报表文件生成/发布自动注册/v2 文档留 companion）
+> 更新：2026-07-04 · P5 r45 重评 API-003/004/005/006/007（M8/M12/M13 集成 API companion 质量推分 r45）；pytest 1134/4 skipped；test_integration_api_l1_r45 30/30 + r44 38/38 + r31 24/24 回归；报表 mock 生成/download、publish 参数幂等、发布自动总线注册、embed 过期/origin、OpenAPI v2 文档面；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.5–87.4→90.2–90.8（五 ID 破 90 STUCK 清零；生产级模板渲染/真实总线 SDK/异步大文件导出留后续）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -138,11 +138,11 @@ domain_count: 16
 | DESIGN-005 | 44 | 5 | 0 | N/A | 12 | 0 | 0 | 13 | 11.6 | 完整度 |
 | API-001 | 82 | 90 | 90 | N/A | 90 | 96 | 86 | 88 | 90.0 | 性能 |
 | API-002 | 82 | 90 | 92 | N/A | 88 | 96 | 86 | 88 | 90.2 | 性能 |
-| API-003 | 82 | 78 | 92 | N/A | 88 | 96 | 86 | 88 | 86.6 | 完整度 |
-| API-004 | 84 | 78 | 94 | N/A | 90 | 96 | 86 | 88 | 87.4 | 完整度 |
-| API-005 | 82 | 76 | 92 | N/A | 88 | 96 | 86 | 90 | 86.5 | 完整度 |
-| API-006 | 84 | 78 | 92 | N/A | 90 | 96 | 86 | 90 | 87.3 | 完整度 |
-| API-007 | 82 | 80 | 92 | N/A | 90 | 98 | 86 | 88 | 87.4 | 完整度 |
+| API-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
+| API-004 | 84 | 90 | 96 | N/A | 90 | 98 | 88 | 90 | 90.7 | 用户价值 |
+| API-005 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 92 | 90.2 | 用户价值 |
+| API-006 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 92 | 90.6 | 用户价值 |
+| API-007 | 84 | 90 | 94 | N/A | 92 | 100 | 88 | 90 | 90.8 | 用户价值 |
 | CAT-001 | 57 | 5 | 0 | N/A | 13 | 0 | 0 | 9 | 13.5 | 完整度 |
 | CAT-002 | 58 | 5 | 0 | N/A | 14 | 0 | 0 | 10 | 13.9 | 完整度 |
 | CAT-003 | 54 | 5 | 0 | N/A | 8 | 0 | 0 | 11 | 12.6 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.51 | 2026-07-04 | P5 r45 重评 API-003/004/005/006/007（M8/M12/M13 集成 API companion 质量推分 r45）；pytest 1134/4 skipped；test_integration_api_l1_r45 30/30 + r44 38/38 + r31 24/24 回归；reports_export mock 生成/download、query_services publish/参数幂等、bus_register 发布钩子、embed_token 过期/origin、openapi v2 文档面；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 96–98%→98–100%，总分 86.5–87.4→90.2–90.8（五 ID 破 90 STUCK 清零） |
 | 1.2.50 | 2026-07-04 | P5 r44 重评 API-003/004/005/006/007（M8/M12/M13 集成 API L1 kickoff r44）；pytest 1104/4 skipped；test_integration_api_l1_r44 38/38 + r31 24/24 回归；integration 域（query_services/bus_register/reports_export/embed_token/errors）+ api/v1 四路由簇 + openapi/version_policy；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–13.1→86.5–87.4（五 ID 均 <90 STUCK upsert round 1；报表文件生成/发布自动注册/v2 文档留 companion） |
 | 1.2.49 | 2026-07-04 | P5 r43 重评 VIZ-003/004/005/006/008（M9 可视化高级图表类型 companion 质量推分 r43）；pytest 1068/2 skipped；test_viz_advanced_l1_r43 28/28 + r42 35/35 回归；vitest charts.advanced.smoke 22/22；fe chartRegistry/renderFromSpec/AdvancedEchartsChart/ChartConfigPanel/ChartRenderer + EmbedChartPage/EmbedSharePanel + is_origin_allowed；完整度 55–62%→88–90%，可靠性 62–65%→94–96%，测试覆盖 60–65%→96–98%，性能 50%→86–88%，总分 57.1–61.1→90.0–90.2（五 ID 破 90 STUCK 清零；VIZ-005 时间范围选择留后续） |
 | 1.2.48 | 2026-07-04 | P5 r42 重评 VIZ-003/004/005/006/008（M9 可视化高级图表类型 L1 kickoff r42）；pytest 1038/4 skipped；test_viz_advanced_l1_r42 35 用例/48 断言 + r28/r30 pie→radar 回归；新域 `app/viz/`（specs/registry/builtin 9 类型/render/embed）+ chart_view registry 驱动校验 + charts.py 3 新路由（GET /charts/types · POST /charts/render-spec · POST /charts/embed/validate）；完整度 5%→55–62%，可靠性 0%→62–65%，测试覆盖 0%→60–65%，架构 8–14%→66–72%，总分 11.3–12.1→57.1–61.1（五 ID <90 STUCK upsert round 1；前端渲染/配置 UI/iframe 页面/Tailwind 主题留 companion） |
@@ -213,4 +214,3 @@ domain_count: 16
 | 1.2.44 | 2026-07-04 | P5 r38 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 L1 kickoff r38）；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40；translate API mysql/postgresql/clickhouse 参数化、GaussDB/DM/Trino dialects + types catalog、dimensions migration 0016 + 8 REST 路由；完整度 5%→76–88%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–11.6→87.1–89.6（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.43 | 2026-07-04 | P5 r37 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 companion 质量推分 r37）；pytest 854/4 skipped；test_connectors_gov_r37 40/40 + r36 37/37 + r35 35/35 + r34 15/15；errors.py 上浮 HIVE_/CLICKHOUSE_/DORIS_*、五方言 *_MAX_COLUMNS=500、HTTP test_connection/metadata 4xx/502 链；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.2–87.8→90.0–91.2（五 ID 破 90 STUCK 清零） |
 | 1.2.42 | 2026-07-04 | P5 r36 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 L1 kickoff r36）；pytest 814/4 skipped；test_connectors_gov_r36 37/37 + r35 35/35 + r34 15/15；Hive/ClickHouse/SQL Server/Doris/Oracle dialects + types catalog、HIVE_/CLICKHOUSE_/SQLSERVER_/DORIS_/ORACLE_* 错误域与 schema mock；F04-CONN ID 漂移修正（003=Hive/004=Oracle/005=SQL Server）；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→94–98%，总分 11.8–12.3→86.2–87.8（五 ID 均 <90 STUCK upsert round 1） |
-| 1.2.41 | 2026-07-04 | P5 r35 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 companion 质量推分 r35）；pytest 777/4 skipped；test_connectors_gov_r35 35/35 + r34 15/15 + r33 19/19；TIDB_/STARROCKS_/ES 错误域与 schema 边界、preview-execute ACL/RLS 链与 bypass 审计、GOV-004 validate detail.fields/computeRules、ES mapping 归一/limit；完整度 76–82%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.0–88.1→90.1–91.0（五 ID 全破 90 STUCK 清零） |

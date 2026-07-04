@@ -122,6 +122,24 @@ def delete_entry(db: Session, entry_id: uuid.UUID) -> None:
     db.commit()
 
 
+def publish_entry(db: Session, entry_id: uuid.UUID) -> CatalogEntryOut:
+    row = db.scalar(select(CatalogEntry).where(CatalogEntry.id == entry_id))
+    if row is None:
+        raise CatalogError("CATALOG_ENTRY_NOT_FOUND", "Catalog entry not found", 404)
+    if row.status == "published":
+        return _entry_to_out(row)
+    if row.status != "draft":
+        raise CatalogError(
+            "CATALOG_INVALID_STATUS",
+            f"Cannot publish from status {row.status}",
+            400,
+        )
+    row.status = "published"
+    db.commit()
+    db.refresh(row)
+    return _entry_to_out(row)
+
+
 _default_bus_adapter: BusPoCAdapter = InMemoryBusPoCAdapter()
 
 
