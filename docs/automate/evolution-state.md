@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r41.md |
 | design | docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r41 PRD 重评：CONN-006/011/012/013/014 companion 质量推分；pytest 1003/4 skipped；test_connectors_gov_r41 36/36 + connector 回归 189/189；总分 86.1–88.8→90.0–91.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r41 验证通过：ruff clean；pytest 1003 passed/4 skipped；test_connectors_gov_r41 36/36 + connector 回归 189/189（r40 43 + r39 33 + r37 40 + r36 37）；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P3 r41 实现完成：8 Task 全绿；CONN-006/011/012/013/014 companion 质量推分；36 测 test_connectors_gov_r41 + r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37；pytest 1003/4 skipped；branch cursor/bc-239ae5b7-e62d-4698-9d7c-67793ddde421-db0d；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r41 计划完成：8 Task（errors→MongoDB→InfluxDB→TDengine→SQLite→TimescaleDB→回归门控→docs）；35 新测 test_connectors_gov_r41；9 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
@@ -130,8 +131,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| CONN-006 | 1 | 88.4 | 2026-07-04 |
-| CONN-011 | 1 | 86.8 | 2026-07-04 |
-| CONN-012 | 1 | 87.9 | 2026-07-04 |
-| CONN-013 | 1 | 88.8 | 2026-07-04 |
-| CONN-014 | 1 | 86.1 | 2026-07-04 |
