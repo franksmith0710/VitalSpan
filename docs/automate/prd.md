@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.43
+version: 1.2.44
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,20 +17,20 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r37 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 companion 质量推分 r37）；pytest 854/4 skipped；test_connectors_gov_r37 40/40 + r36 37/37 + r35 35/35 + r34 15/15 回归；五方言 HIVE_/CLICKHOUSE_/SQLSERVER_/DORIS_/ORACLE_* 错误域上浮、*_MAX_COLUMNS=500、HTTP test_connection/metadata 4xx/502 链；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.2–87.8→90.0–91.2（五 ID 破 90 STUCK 清零）
+> 更新：2026-07-04 · P5 r38 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 L1 kickoff r38）；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40 回归；translate API 三方言参数化、GaussDB/DM/Trino dialects + types catalog、dimensions CRUD/values 8 路由；完整度 5%→76–88%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–11.6→87.1–89.6（五 ID 均 <90 STUCK upsert round 1）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
-| 1 | QUERY-008 | 配置→SQL/API 翻译器 | 11.3 | 完整度 | 见期次 |
-| 2 | CONN-022 | GaussDB 连接器 | 11.3 | 完整度 | 见期次 |
-| 3 | META-003 | 维度字典注册 | 11.6 | 完整度 | 见期次 |
-| 4 | VIZ-003 | 地图可视化 | 11.7 | 完整度 | 见期次 |
-| 5 | QUERY-009 | Dataset 查询路径 | 11.7 | 完整度 | 见期次 |
-| 6 | CONN-010 | Trino/Presto 连接器 | 11.5 | 完整度 | 见期次 |
-| 7 | CONN-016 | OpenSearch 连接器 | 11.6 | 完整度 | 见期次 |
-| 8 | CONN-006 | SQLite 连接器 | 12.6 | 完整度 | 见期次 |
-| 9 | CONN-017 | 达梦 DM 连接器 | 11.6 | 完整度 | 见期次 |
-| 10 | CONN-011 | InfluxDB 连接器 | 11.9 | 完整度 | 见期次 |
+| 1 | VIZ-003 | 地图可视化 | 11.7 | 完整度 | 见期次 |
+| 2 | QUERY-009 | Dataset 查询路径 | 11.7 | 完整度 | 见期次 |
+| 3 | CONN-006 | SQLite 连接器 | 12.6 | 完整度 | 见期次 |
+| 4 | CONN-011 | InfluxDB 连接器 | 11.9 | 完整度 | 见期次 |
+| 5 | CONN-012 | TDengine 连接器 | 12.4 | 完整度 | 见期次 |
+| 6 | CONN-013 | TimescaleDB 连接器 | 12.8 | 完整度 | 见期次 |
+| 7 | CONN-014 | MongoDB 连接器 | 11.5 | 完整度 | 见期次 |
+| 8 | CONN-016 | OpenSearch 连接器 | 11.6 | 完整度 | 见期次 |
+| 9 | CONN-018 | 人大金仓 连接器 | 12.1 | 完整度 | 见期次 |
+| 10 | CONN-019 | 南大通用 GBase 连接器 | 11.6 | 完整度 | 见期次 |
 
 ---
 
@@ -71,19 +71,19 @@ domain_count: 16
 | CONN-007 | 84 | 90 | 96 | N/A | 90 | 100 | 92 | 88 | 91.2 | 安全性 |
 | CONN-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.4 | 用户价值 |
 | CONN-009 | 84 | 88 | 96 | N/A | 90 | 98 | 90 | 88 | 90.4 | 用户价值 |
-| CONN-010 | 47 | 5 | 0 | N/A | 11 | 0 | 0 | 9 | 11.5 | 完整度 |
+| CONN-010 | 84 | 76 | 92 | N/A | 90 | 96 | 88 | 88 | 87.1 | 完整度 |
 | CONN-011 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 10 | 11.9 | 完整度 |
 | CONN-012 | 49 | 5 | 0 | N/A | 13 | 0 | 0 | 11 | 12.4 | 完整度 |
 | CONN-013 | 50 | 5 | 0 | N/A | 14 | 0 | 0 | 12 | 12.8 | 完整度 |
 | CONN-014 | 46 | 5 | 0 | N/A | 8 | 0 | 0 | 13 | 11.5 | 完整度 |
 | CONN-015 | 84 | 90 | 96 | N/A | 90 | 100 | 88 | 90 | 91.0 | 用户价值 |
 | CONN-016 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
-| CONN-017 | 47 | 5 | 0 | N/A | 11 | 0 | 0 | 10 | 11.6 | 完整度 |
+| CONN-017 | 84 | 78 | 93 | N/A | 90 | 96 | 88 | 88 | 87.6 | 完整度 |
 | CONN-018 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 11 | 12.1 | 完整度 |
 | CONN-019 | 44 | 5 | 0 | N/A | 13 | 0 | 0 | 12 | 11.6 | 完整度 |
 | CONN-020 | 45 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.0 | 完整度 |
 | CONN-021 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
-| CONN-022 | 47 | 5 | 0 | N/A | 9 | 0 | 0 | 9 | 11.3 | 完整度 |
+| CONN-022 | 84 | 78 | 93 | N/A | 90 | 96 | 88 | 88 | 87.6 | 完整度 |
 | QUERY-001 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 92 | 92.8 | 架构健康 |
 | QUERY-002 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 88 | 92.4 | 安全性 |
 | QUERY-003 | 47 | 5 | 0 | N/A | 12 | 0 | 0 | 12 | 12.0 | 完整度 |
@@ -91,7 +91,7 @@ domain_count: 16
 | QUERY-005 | 84 | 98 | 96 | N/A | 90 | 100 | 90 | 90 | 92.6 | 用户价值 |
 | QUERY-006 | 86 | 96 | 96 | N/A | 90 | 100 | 86 | 94 | 92.6 | 性能 |
 | QUERY-007 | 84 | 94 | 96 | N/A | 92 | 98 | 90 | 88 | 91.7 | 安全性 |
-| QUERY-008 | 45 | 5 | 0 | N/A | 10 | 0 | 0 | 11 | 11.3 | 完整度 |
+| QUERY-008 | 82 | 88 | 94 | N/A | 90 | 98 | 88 | 90 | 89.6 | 用户价值 |
 | QUERY-009 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 12 | 11.7 | 完整度 |
 | VIZ-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | VIZ-002 | 84 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 91.6 | 用户价值 |
@@ -127,7 +127,7 @@ domain_count: 16
 | GOV-008 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 92 | 90.2 | 用户价值 |
 | META-001 | 82 | 92 | 92 | N/A | 90 | 98 | 90 | 88 | 90.0 | 安全性 |
 | META-002 | 84 | 94 | 94 | N/A | 90 | 98 | 90 | 88 | 91.1 | 安全性 |
-| META-003 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 11 | 11.6 | 完整度 |
+| META-003 | 82 | 80 | 92 | N/A | 90 | 96 | 88 | 88 | 87.4 | 完整度 |
 | META-004 | 47 | 5 | 0 | N/A | 12 | 0 | 0 | 12 | 12.0 | 完整度 |
 | META-005 | 52 | 5 | 0 | N/A | 13 | 0 | 0 | 13 | 13.1 | 完整度 |
 | META-006 | 48 | 5 | 0 | N/A | 14 | 0 | 0 | 8 | 11.9 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.44 | 2026-07-04 | P5 r38 重评 QUERY-008/CONN-022/META-003/CONN-017/CONN-010（M12 Query 翻译器 + M11 信创/专项连接器 + META 维度 L1 kickoff r38）；pytest 891/4 skipped；test_query_meta_conn_r38 36/36 + test_connectors_gov_r37 40/40；translate API mysql/postgresql/clickhouse 参数化、GaussDB/DM/Trino dialects + types catalog、dimensions migration 0016 + 8 REST 路由；完整度 5%→76–88%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 11.3–11.6→87.1–89.6（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.43 | 2026-07-04 | P5 r37 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 companion 质量推分 r37）；pytest 854/4 skipped；test_connectors_gov_r37 40/40 + r36 37/37 + r35 35/35 + r34 15/15；errors.py 上浮 HIVE_/CLICKHOUSE_/DORIS_*、五方言 *_MAX_COLUMNS=500、HTTP test_connection/metadata 4xx/502 链；完整度 76–80%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.2–87.8→90.0–91.2（五 ID 破 90 STUCK 清零） |
 | 1.2.42 | 2026-07-04 | P5 r36 重评 CONN-003/007/005/008/004（M11 关系型/OLAP 连接器 L1 kickoff r36）；pytest 814/4 skipped；test_connectors_gov_r36 37/37 + r35 35/35 + r34 15/15；Hive/ClickHouse/SQL Server/Doris/Oracle dialects + types catalog、HIVE_/CLICKHOUSE_/SQLSERVER_/DORIS_/ORACLE_* 错误域与 schema mock；F04-CONN ID 漂移修正（003=Hive/004=Oracle/005=SQL Server）；完整度 5%→76–80%，可靠性 0%→92–94%，测试覆盖 0%→94–98%，总分 11.8–12.3→86.2–87.8（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.41 | 2026-07-04 | P5 r35 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 companion 质量推分 r35）；pytest 777/4 skipped；test_connectors_gov_r35 35/35 + r34 15/15 + r33 19/19；TIDB_/STARROCKS_/ES 错误域与 schema 边界、preview-execute ACL/RLS 链与 bypass 审计、GOV-004 validate detail.fields/computeRules、ES mapping 归一/limit；完整度 76–82%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.0–88.1→90.1–91.0（五 ID 全破 90 STUCK 清零） |
