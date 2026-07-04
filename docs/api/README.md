@@ -109,6 +109,10 @@ redoc: /redoc
 | GET | `/api/v1/nfr/runtime-compliance/deployment-report` | 部署验收报告（`overallAcceptance` + `remediationIndex`） | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/report-query-perf/probe` | 报表查询性能 mock probe（`withinBudget` + `elapsedMs` stub） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/report-query-perf/validate` | 报表查询性能配置校验（`REPORT_PERF_*`） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/dashboard-first-screen/validate` | NFR-001 首屏配置校验 | 内部 | 一期 | NFR-001 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/dashboard-first-screen/probe` | NFR-001 首屏 mock probe | 内部 | 一期 | NFR-001 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/https-audit/status` | NFR-004 HTTPS 策略探测 | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/https-audit/mask-probe` | NFR-004 脱敏审计 mock | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
 
 ---
 
@@ -250,6 +254,12 @@ redoc: /redoc
 | POST | `/api/v1/gov/catalog/tickets/validate` | 工单 stats item 校验（`CAT05_*`） | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST/GET | `/api/v1/gov/catalog/tickets/items` | 工单 stats item 登记/列表 | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/tickets/items/{key}/stats` | 工单 stats mock probe | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/catalog/lifecycle-templates/validate` | CAT-001 lifecycle 校验 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 创建 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 列表 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/catalog/aggregate-templates/validate` | CAT-002 aggregate 校验 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/catalog/aggregate-templates` | CAT-002 aggregate 创建 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/aggregate-templates/{aggregate_key}/attribution` | CAT-002 PoC 归属 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`；需 admin；幂等 201/200；403 `BUS_REGISTER_FORBIDDEN`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/auto-register` | 总线全自动注册 FSM（`catalogEntryId`；integration/admin；幂等 201/200；403 `GOV_AUTO_BUS_FORBIDDEN`） | IF-06 | 四期 | GOV-007 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/query-design/validate` | 可视化查询设计校验（422 `detail.fields`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
@@ -297,7 +307,7 @@ redoc: /redoc
 | GET | `/api/v1/timeseries` | CAT-04 时间序列分析 | IF-02 | 二期+ | CAT-004 | 规划 | `backend/app/governance/catalog/cat04.py` |
 | GET | `/api/v1/tickets/stats` | CAT-05 工单与受理统计 | IF-02 | 二期+ | CAT-005 | 规划 | `backend/app/governance/catalog/cat05.py` |
 | GET | `/api/v1/production/stats` | CAT-06 生产销售统计 | IF-02 | 二期+ | CAT-006 | 规划 | `backend/app/governance/catalog/cat06.py` |
-| GET | `/api/v1/workno/behavior` | CAT-07 组织行为审计 | IF-02 | 三期+ | CAT-007 | 已实现 | `backend/app/api/v1/workno.py` |
+| GET | `/api/v1/workno/behavior` | CAT-07 组织行为审计（r64 companion：enterprise/viewer scope ACL + perf probe） | IF-02 | 三期+ | CAT-007 | 已实现 | `backend/app/api/v1/workno.py` |
 
 ---
 
