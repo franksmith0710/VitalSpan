@@ -20,6 +20,14 @@
 | Dashboard 领域模型、`DashboardService`、layout JSON 契约 | 单图表查询执行（→ `query`） |
 | layout 内 `chartConfig` 校验（→ `schemas/chart_view`） | 图表类型插件、全局筛选 SQL 注入（远期） |
 | | 发布/草稿版本、分享范围（远期 DASH-004+） |
+| | GIS 地图生产集成（DASH-006 companion） |
+
+### theme/ 子域（DASH-006 · r53）
+
+- **In**：`EntityThemeConfig` schema、validate/save/get、config_store `entity_theme` 持久化
+- **Out**：GIS SDK、主题分析 Admin UI、计算引擎（同比/环比仅配置声明）
+- **依赖**：`dashboard/service`（ref 校验）、`query/config_store`
+- **错误码**：`DASH_THEME_*`、`DASH_NOT_FOUND`
 
 ## 依赖
 
@@ -33,6 +41,7 @@
 | `Dashboard` ORM | `dashboards` 表 | DASH-001 | 已实现 |
 | `DashboardService` | CRUD + `validate_layout` + `update_layout` | DASH-001~003 | 已实现 |
 | `DashboardLayout` | `version`/`widgets`/`globalFilters` JSON | DASH-002 | 已实现 |
+| `dashboard/theme/` | 实体主题分析 config（`entity_theme` via config_store） | DASH-006 | L1 已实现（r53） |
 | `DashboardViewConfig` | 视图协议 | DASH-004 | 待建 |
 
 ## Layout JSON（L1）

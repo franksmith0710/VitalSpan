@@ -36,6 +36,7 @@
 | `TraceIdMiddleware` | 请求 trace；响应头 `X-Trace-Id` | `backend/app/core/middleware.py` |
 | `CORSMiddleware` | 由 `main.py` 挂载；来源 `Settings.cors_origins` | `backend/app/main.py` |
 | `GET /health` | 存活探针 | `backend/app/main.py` |
+| `core/nfr/runtime_guard.py` | NFR-008 零 DE/SS pyproject 扫描 + 模块探测 | `backend/app/core/nfr/runtime_guard.py` |
 
 ## 关联 API
 
@@ -45,3 +46,4 @@
 
 - 中间件注册顺序（`main.py`）：CORS → TraceId → Auth（后注册者先执行）
 - 鉴权逻辑委托 `auth/`；`AuthMiddleware` 由 `main.py` 注册，不在 `core/` 内实现
+- r53 NFR-008：`runtime_guard.py` 扫描 pyproject 禁止 superset/dataease 依赖 + `importlib` 模块探测；`GET/POST /api/v1/nfr/runtime-compliance`；env `NFR08_RUNTIME_MODE=strict|permissive`

@@ -23,6 +23,7 @@
 | M3-LITE 直连 SQL + mode=table | 四期 Dataset 语义层（→ `metadata`） |
 | L1 chart_query_bindings CRUD + bindingId 执行 | Native 查询执行器（仅路由守卫 L1） |
 | L1 配置元模型存储（`query_conditions`/`compute_rules`/… JSON） | 设计器画布 UI |
+| `query/dataset/guard` 第三路径 routing + ACL/readonly | Dataset ORM/META-004 CRUD（companion） |
 | `query/native/guard` 路由模式探测 + native spec 校验 | SQL 模式执行（仍走 sql 路径） |
 | 执行前 RLS WHERE 注入 | 图表/Dashboard 持久化（→ `dashboard` / `designer`） |
 | | M5 VIZ 渲染 |
@@ -43,6 +44,7 @@
 | `ChartQueryBinding` / `binding_service` | 图表直连绑定 CRUD | QUERY-005 | 已实现 |
 | `query/config_store` | 配置元模型 JSON 存储（revision upsert） | QUERY-007 | L1 已实现 |
 | `query/native/guard` | `resolve_query_mode` + `validate_native_spec` | QUERY-003 | L1 已实现 |
+| `query/dataset/guard` | 第三路径 dataset + 内置 ACL registry | QUERY-009 | L1 已实现（r53） |
 | `query/dialects` | MySQL/PostgreSQL/ClickHouse 方言适配 | QUERY-004 | 已实现 |
 | `rls/guard` | 行级过滤注入 | QUERY-006 | 已实现 |
 
@@ -57,6 +59,13 @@
 - r32：migration 0015 `query_config_records`；`config_store` upsert API（QUERY-007）
 - r33：`MAX_CONFIG_PAYLOAD_BYTES=262144`；PUT 可选 `expectedRevision` 乐观锁；超大 payload → 413 `CONFIG_PAYLOAD_TOO_LARGE`；revision 冲突 → 409 `CONFIG_VERSION_CONFLICT`
 - r49：`query/native/guard` 只读 `export_type_catalog()` 按 `category` 路由；`NATIVE_CATEGORIES={search,document,timeseries}`；`QUERY_NATIVE_*` 错误码；不含 native 执行器
+
+### r53 L1 kickoff（QUERY-009）
+
+- **三路径**：`sql`（dataSourceId+sql/table）· `native`（connectorType+body）· `dataset`（datasetId+parameters）
+- **内置 datasets**：`demo-orders`（analyst）、`restricted-ledger`（finance）；admin bypass
+- **错误码**：`QUERY_DATASET_*`、`QUERY_PATH_AMBIGUOUS`
+- API：`GET /query/dataset/routing`、`POST /query/dataset/validate`
 
 ### r52 companion 质量推分（QUERY-003）
 

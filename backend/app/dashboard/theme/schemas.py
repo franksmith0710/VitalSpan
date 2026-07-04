@@ -1,0 +1,39 @@
+from __future__ import annotations
+
+import uuid
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+_VALID_GRANULARITY = frozenset({"day", "week", "month", "yoy", "mom"})
+
+
+class ThemeDimensionBinding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    dimension_id: str = Field(alias="dimensionId", min_length=1, max_length=64)
+    label: str | None = None
+    sort_order: int = Field(default=0, alias="sortOrder")
+
+
+class GeoBinding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    lat_field: str = Field(alias="latField", min_length=1)
+    lng_field: str = Field(alias="lngField", min_length=1)
+    admin_code_field: str | None = Field(default=None, alias="adminCodeField")
+
+
+class EntityThemeConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    schema_version: str = Field(default="1.0", alias="schemaVersion")
+    entity_type: str = Field(alias="entityType", min_length=1, max_length=64)
+    time_granularity: str = Field(alias="timeGranularity")
+    dimensions: list[ThemeDimensionBinding] = Field(min_length=1)
+    geo_binding: GeoBinding | None = Field(default=None, alias="geoBinding")
+    ref_type: str = Field(default="dashboard", alias="refType")
+    ref_id: uuid.UUID = Field(alias="refId")
+
+    @field_validator("time_granularity")
+    @classmethod
+    def _granularity(cls, value: str) -> str:
+        if value not in _VALID_GRANULARITY:
+            raise ValueError("invalid granularity")
+        return value
