@@ -36,6 +36,24 @@ class InMemoryBusPoCAdapter:
                 error_code="BUS_REGISTRATION_REJECTED",
                 error_message="Bus rejected",
             )
+        if "force-timeout" in entry.path:
+            return BusRegisterResult(
+                status="failed",
+                error_code="BUS_REGISTRATION_TIMEOUT",
+                error_message="Bus registration timed out",
+            )
+        if "force-4xx" in entry.path:
+            return BusRegisterResult(
+                status="failed",
+                error_code="BUS_REGISTRATION_CLIENT_ERROR",
+                error_message="Bus client error",
+            )
+        if "force-5xx" in entry.path:
+            return BusRegisterResult(
+                status="failed",
+                error_code="BUS_REGISTRATION_SERVER_ERROR",
+                error_message="Bus server error",
+            )
         bus_id = str(uuid.uuid4())
         now = datetime.now(UTC).isoformat()
         return BusRegisterResult(

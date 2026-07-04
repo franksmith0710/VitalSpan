@@ -33,7 +33,7 @@ redoc: /redoc
 | GET | `/health` | 健康检查 | — | P0 | BOOT-001 | 已实现 | `backend/app/main.py` |
 | GET | `/docs` | Swagger UI | — | 一期 | API-007 | 规划 | FastAPI 内置 |
 | GET | `/redoc` | ReDoc | — | 一期 | API-007 | 规划 | FastAPI 内置 |
-| GET | `/openapi.json` | OpenAPI 规范（IF-06 tag 后处理） | IF-06 | 一期 | API-001, API-002 | 已实现 | `backend/app/openapi/extensions.py` |
+| GET | `/openapi.json` | OpenAPI 规范（IF-06 tag 后处理；r31 补全 datasources path/response 与 execute 响应示例） | IF-06 | 一期 | API-001, API-002 | 已实现 | `backend/app/openapi/extensions.py` |
 
 ---
 
@@ -164,7 +164,8 @@ redoc: /redoc
 | GET | `/api/v1/gov/catalog/entries` | catalog 条目列表（`?category=&limit=&offset=`） | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/entries` | 创建 catalog 条目 | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/entries/{id}` | catalog 条目详情 | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
-| POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
+| DELETE | `/api/v1/gov/catalog/entries/{entry_id}` | 删除 catalog 条目（204；CASCADE bus_registrations） | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`；需 admin；幂等 201/200；403 `BUS_REGISTER_FORBIDDEN`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/governance/tickets` | 查询工单 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/tickets/{id}/submit` | 提交审批 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/publish` | 发布查询服务 | 内部 | 四期 | GOV-005 | 规划 | `backend/app/api/v1/governance/publish.py` |
