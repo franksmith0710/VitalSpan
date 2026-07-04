@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.auth.deps import UserContext, get_current_user
 from app.schemas.chart_view import ChartViewConfig, ChartViewError, validate_chart_view_config
+from app.viz.embed import ChartEmbedConfig, ChartEmbedError, validate_chart_embed_config
 from app.viz.registry import export_chart_type_catalog
 from app.viz.render import build_render_spec
 
@@ -49,3 +50,22 @@ def render_spec_chart(
     except ChartViewError as exc:
         return _error_response(exc)
     return build_render_spec(cfg)
+
+
+def _embed_error_response(exc: ChartEmbedError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
+
+
+@router.post("/embed/validate", response_model=None)
+def validate_embed(
+    payload: dict,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ChartEmbedConfig | JSONResponse:
+    try:
+        return validate_chart_embed_config(payload)
+    except ChartEmbedError as exc:
+        return _embed_error_response(exc)

@@ -276,3 +276,79 @@ def test_post_render_spec_http(client, auth_headers):
     )
     assert bad.status_code == 422
     assert bad.json()["code"] == "CHART_INVALID_TYPE"
+
+
+from app.viz.embed import ChartEmbedError, validate_chart_embed_config
+
+
+def test_embed_chart_id_only_ok():
+    """T-VIZ-R42-006-01: 仅 chartId + 合法 origins 通过。"""
+    cfg = validate_chart_embed_config(
+        {"chartId": str(uuid.uuid4()), "allowedOrigins": ["https://a.com"]}
+    )
+    assert cfg.chart_id is not None
+
+
+def test_embed_dashboard_id_only_ok():
+    """T-VIZ-R42-006-02: 仅 dashboardId 通过。"""
+    cfg = validate_chart_embed_config({"dashboardId": str(uuid.uuid4())})
+    assert cfg.dashboard_id is not None
+
+
+def test_embed_missing_target():
+    """T-VIZ-R42-006-03: 都缺 → EMBED_MISSING_TARGET。"""
+    with pytest.raises(ChartEmbedError) as exc:
+        validate_chart_embed_config({"allowedOrigins": []})
+    assert exc.value.code == "EMBED_MISSING_TARGET"
+
+
+def test_embed_target_conflict():
+    """T-VIZ-R42-006-04: 都给 → EMBED_TARGET_CONFLICT。"""
+    with pytest.raises(ChartEmbedError) as exc:
+        validate_chart_embed_config(
+            {"chartId": str(uuid.uuid4()), "dashboardId": str(uuid.uuid4())}
+        )
+    assert exc.value.code == "EMBED_TARGET_CONFLICT"
+
+
+def test_embed_invalid_origin():
+    """T-VIZ-R42-006-05: allowedOrigins=['not-a-url'] → EMBED_INVALID_ORIGIN。"""
+    with pytest.raises(ChartEmbedError) as exc:
+        validate_chart_embed_config(
+            {"chartId": str(uuid.uuid4()), "allowedOrigins": ["not-a-url"]}
+        )
+    assert exc.value.code == "EMBED_INVALID_ORIGIN"
+
+
+def test_embed_origin_with_port_ok():
+    """T-VIZ-R42-006-06: https://a.com:8443 通过。"""
+    cfg = validate_chart_embed_config(
+        {"chartId": str(uuid.uuid4()), "allowedOrigins": ["https://a.com:8443"]}
+    )
+    assert cfg.allowed_origins == ["https://a.com:8443"]
+
+
+def test_embed_http_endpoint(client, auth_headers, unauthorized_headers):
+    """T-VIZ-R42-006-07: POST /charts/embed/validate 非法→422 结构化；无鉴权→401。"""
+    bad = client.post(
+        "/api/v1/charts/embed/validate",
+        json={"allowedOrigins": []},
+        headers=auth_headers,
+    )
+    assert bad.status_code == 422
+    assert bad.json()["code"] == "EMBED_MISSING_TARGET"
+    noauth = client.post(
+        "/api/v1/charts/embed/validate",
+        json={"chartId": str(uuid.uuid4())},
+        headers=unauthorized_headers,
+    )
+    assert noauth.status_code == 401
+
+
+def test_embed_theme_default_and_invalid():
+    """T-VIZ-R42-006-08: 默认 theme=light；theme=pink → EMBED_INVALID。"""
+    ok = validate_chart_embed_config({"chartId": str(uuid.uuid4())})
+    assert ok.theme == "light"
+    with pytest.raises(ChartEmbedError) as exc:
+        validate_chart_embed_config({"chartId": str(uuid.uuid4()), "theme": "pink"})
+    assert exc.value.code == "EMBED_INVALID"
