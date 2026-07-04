@@ -361,8 +361,8 @@ describe("ChartRenderer extended", () => {
 describe("bar stacked options", () => {
   it("T-VIZ-R43-004-03: bar stacked mock → Apex options 含 stacked", () => {
     const opts = createBarChartOptions(["a", "b"], {
-      plotOptions: { bar: { stacked: true } },
+      chart: { stacked: true },
     });
-    expect(opts.plotOptions?.bar?.stacked).toBe(true);
+    expect(opts.chart?.stacked).toBe(true);
   });
 });

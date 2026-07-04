@@ -119,7 +119,7 @@ export function EmbedSharePanel() {
             {alertError}
           </div>
         ) : null}
-        <Button type="button" variant="default" onClick={validateAndGenerate}>
+        <Button type="button" variant="primary" onClick={validateAndGenerate}>
           校验并生成嵌入链接
         </Button>
         {embedUrl ? (

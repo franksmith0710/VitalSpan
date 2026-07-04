@@ -124,7 +124,7 @@ export function ChartConfigPanel({ config, columns, onChange }: Props) {
             {error}
           </div>
         ) : null}
-        <Button type="button" variant="default" className="h-11 rounded-lg" onClick={validate}>
+        <Button type="button" variant="primary" className="h-11 rounded-lg" onClick={validate}>
           校验配置
         </Button>
       </div>

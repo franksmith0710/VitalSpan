@@ -166,7 +166,7 @@ export function ChartRenderer({ config, title = "图表", mode = "preview" }: Ch
     } else {
       const barOverrides: ApexOptions | undefined =
         localConfig.styleVariant === "stacked"
-          ? { plotOptions: { bar: { stacked: true } } }
+          ? { chart: { stacked: true } }
           : undefined;
       options = createBarChartOptions(categories, barOverrides);
     }
