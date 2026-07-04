@@ -6,10 +6,10 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r46.md |
 | design | docs/superpowers/specs/2026-07-04-nfr-gov-gbase-l1-r46-design.md |
-| plan |  |
+| plan | docs/superpowers/plans/2026-07-04-nfr-gov-gbase-l1-r46.md |
 | branch |  |
 | base_branch | dev-auto |
 | prd_ids | NFR-006,NFR-007,GOV-005,NFR-005,CONN-019 |
@@ -17,7 +17,7 @@
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T10:52:00Z |
+| skill_rule_index_generated_at | 2026-07-04T11:35:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P2 r46 计划完成：8 Task（nfr scaffold→NFR-005 plugin→CONN-019 gbase→NFR-007 xinchuang→NFR-006 push→NFR API→GOV-005 publish FSM→联动+回归+docs）；18 P3 文件 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥37 新测 test_nfr_gov_conn_r46（门槛 ≥32）+ r45 30/30 + r41 36/36 + datasources_l1 回归；plan=docs/superpowers/plans/2026-07-04-nfr-gov-gbase-l1-r46.md；phase P1_DONE→P2_DONE
 - P1 r46 设计完成：NFR 横切 + GOV-005 发布状态机 + CONN-019 GBase L1 kickoff — NFR-006/007/005 + GOV-005 + CONN-019；18 文件框定（core/nfr 5 + governance/publish 4 + gbase 4 + api 3 + r46 smoke ≥32 测）；插件扩展/registry 零侵入 + 推送降级 + 信创清单 + publish FSM + GBase MySQL 委托；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r46 选题完成：NFR 非功能横切 + GOV-005 查询服务发布 + CONN-019 GBase L1 kickoff — NFR-006/007/005 + GOV-005 + CONN-019（5 项）；最低分 NFR-006/007(11.4)；饱和熔断未触发（Top5 11.4–11.6≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 表空（5 项首次入选）；phase idle→G2_DONE
 - G1 r46 bootstrap：r45 PR #72 已 Squash merge dev-auto（65548c7）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 NFR-006(11.4)/NFR-007(11.4)/GOV-005(11.5)；STUCK 表空（r45 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
