@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r66.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-04-cat-dash-rpt-meta-companion-quality-r66-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r66 设计完成：跨域 companion 质量推分 — CAT-001/CAT-002/DASH-005/RPT-001/META-004；18 文件框定；perf probe 50ms + ACL/NOT_FOUND/stage-move 闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r66 选题完成：跨域 companion 质量推分 — CAT-001/CAT-002/DASH-005/RPT-001/META-004（5 项）；最低分 CAT-001/CAT-002(83.9)；饱和熔断未触发（Top5 83.9–84.2≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 五入选 ID 各 1 轮未达 ≥3 硬标注阈值；phase idle→G2_DONE
 - G1 r66 bootstrap：r65 PR #99 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 CAT-001(83.9)/CAT-002(83.9)/DASH-005(84.0)；STUCK 十三 ID 各 1 轮（r64–r65 四 stub <90 upsert + 九 ID 远期 stub，均 83.9–84.4）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r65 PRD 重评：CAT-003/CAT-004/CAT-006/RPT-002/META-005 companion 质量推分；pytest 1719/4 skipped；test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 163/163；总分 83.9–84.0→90.0–90.5（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
