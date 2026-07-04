@@ -5,36 +5,53 @@
 | 模块路径 | `backend/app/designer/` |
 | PRD | [F12-DESIGN](../automate/prd/F12-DESIGN.md) · DESIGN-001 ~ DESIGN-005 |
 | 里程碑 | M2（四期） |
-| 状态 | **未实现** |
+| 状态 | **部分（L1）** |
 
 ## 职责
 
+- **查询条件配置**（DESIGN-001）：字段/操作符/值类型校验与持久化
+- **运算规则维护**（DESIGN-002）：表达式白名单、依赖环检测与持久化
 - 图表/Dashboard 设计器服务端契约（保存草稿、校验）
-- 与 `metadata` Dataset 的设计态绑定
+- 与 `metadata` Dataset 的设计态绑定（四期）
 - 设计资源版本与协作锁（按需）
 
 ## 边界
 
 | In | Out |
 |----|-----|
-| 设计器 API、配置校验 | 画布 UI（前端 Admin） |
-| | 运行时查询（→ `query`） |
+| 查询条件/运算规则 schema 校验与 API | 画布 UI（前端 Admin） |
+| 配置持久化委托 `query/config_store` | 运行时查询（→ `query`） |
 
 ## 依赖
 
-- `core`、`auth`、`metadata`、`dashboard`（发布衔接）
+- `core`、`auth`
+- `query/config_store`（QUERY-007）：`query_conditions` / `compute_rules` 类型存储
+- `metadata`、`dashboard`（发布衔接，四期）
 
-## 主要类型 / 入口（规划）
+## 主要类型 / 入口
 
 | 符号 | 说明 | PRD | 状态 |
 |------|------|-----|------|
-| `DesignerService` | 草稿与校验 | DESIGN-001~003 | 待建 |
+| `QueryConditionsConfig` | 查询条件 schema v1.0 | DESIGN-001 | L1 已实现 |
+| `ComputeRulesConfig` | 运算规则 schema v1.0 | DESIGN-002 | L1 已实现 |
+| `designer/service` | 校验 + 委托 config_store | DESIGN-001/002 | L1 已实现 |
+| `DesignerService` | 草稿与校验（全量） | DESIGN-001~003 | 待建 |
 | `ChartViewConfig` | 图表配置契约（与 `schemas` 共享） | DESIGN-004~005 · F06-VIZ | 待建 |
+
+## 错误码（L1）
+
+| code | 场景 |
+|------|------|
+| `DESIGN_EMPTY_CONDITIONS` | 条件列表为空 |
+| `DESIGN_INVALID_OPERATOR` | 未知操作符 |
+| `DESIGN_VALUE_TYPE_MISMATCH` | 值与 valueType 不匹配 |
+| `DESIGN_INVALID_EXPRESSION` | 表达式不在白名单 |
+| `DESIGN_RULE_CYCLE` | 规则 dependsOn 成环 |
 
 ## 关联 API
 
-见 [api/README.md](../api/README.md) §设计器（规划）。
+见 [api/README.md](../api/README.md) §4 查询配置与 §设计器。
 
 ## 实现笔记
 
-<!-- 随 DESIGN-* 落地补充 -->
+- r32：`backend/app/api/v1/designer.py`；持久化 type=`query_conditions`|`compute_rules` 经 QUERY-007

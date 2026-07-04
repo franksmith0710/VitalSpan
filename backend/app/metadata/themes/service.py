@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.metadata.glossary import service as glossary_service
 from app.metadata.themes.models import ThemeNode
-from app.metadata.themes.schemas import ThemeCreate, ThemeError, ThemeMove, ThemeUpdate
+from app.metadata.themes.schemas import ThemeCreate, ThemeError, ThemeUpdate
 
 
 def _collect_descendant_ids(session: Session, node_id: uuid.UUID) -> set[uuid.UUID]:
