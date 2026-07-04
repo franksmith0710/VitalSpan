@@ -13,7 +13,7 @@
 | branch | feat/evolution-r59-meta-cat-dash-kingbase-design-l1 |
 | base_branch | dev-auto |
 | prd_ids | META-004,CAT-004,DASH-005,CONN-018,DESIGN-004 |
-| pr_number |  |
+| pr_number | 92 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
