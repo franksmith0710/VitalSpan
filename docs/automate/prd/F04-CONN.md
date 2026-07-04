@@ -30,51 +30,54 @@
 - **里程碑对齐**：
 ### [CONN-003] Hive 连接器
 
-- **状态**：部分实现（L1 kickoff r36；hub ID 原标 MariaDB，本轮按设计交付 Hive）
+- **状态**：部分实现（L1 kickoff r36 + companion 质量推分 r37；hub ID 原标 MariaDB，本轮按设计交付 Hive）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：二期
 - **描述**：Apache Hive 湖仓连接器（SRS 追溯项；hub 分片 ID 与方言名历史漂移，r36 设计已对齐）。
 - **验收标准**：
   - [x] type=`hive` 已注册（types catalog + `schema_browser` capability，r36 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`HIVE_CONN_REFUSED`/`HIVE_AUTH_FAILED`/`HIVE_TIMEOUT`/`HIVE_UNKNOWN_DATABASE`，r36 mock）
-  - [x] schema 空库/未知库边界 + `information_schema` 过滤（r36 mock）
+  - [x] 连通性测试结构化错误（`HIVE_CONN_REFUSED`/`HIVE_AUTH_FAILED`/`HIVE_TIMEOUT`/`HIVE_UNKNOWN_DATABASE`，r36+r37 mock）
+  - [x] schema 空库/未知库边界 + `information_schema` 过滤 + 列元数据 500 limit（r36+r37 mock）
+  - [x] HTTP test_connection 失败链 + metadata schemas 502 链（r37）
   - [ ] 只读查询通过
   - [x] category=`lake` 查询模式正确（r36）
-- **代码锚点**：`backend/app/datasources/dialects/hive.py` · `tests/test_connectors_gov_r36.py` T-CONN-R36-003-01~07
-- **演化建议**：r37 companion 闭合 columns limit 与 HTTP API 4xx 链；后续补只读查询集成测与 Admin UI 选型；MariaDB 独立连接器待 SRS 回流后新 ID
+- **代码锚点**：`backend/app/datasources/dialects/hive.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r36.py` · `tests/test_connectors_gov_r37.py` T-CONN-R37-003-01~07
+- **演化建议**：r37 已闭合 columns limit 与 HTTP API 4xx/502 链；后续补只读查询集成测与 Admin UI 选型；MariaDB 独立连接器待 SRS 回流后新 ID
 - **里程碑对齐**：
 ### [CONN-004] Oracle 连接器
 
-- **状态**：部分实现（L1 kickoff r36；hub ID 原标 SQL Server，本轮按设计交付 Oracle）
+- **状态**：部分实现（L1 kickoff r36 + companion 质量推分 r37；hub ID 原标 SQL Server，本轮按设计交付 Oracle）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：二期
 - **描述**：Oracle 关系型连接器（SRS 追溯项；hub 分片 ID 与方言名历史漂移，r36 设计已对齐）。
 - **验收标准**：
   - [x] type=`oracle` 已注册（types catalog，r36 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`ORACLE_CONN_REFUSED`/`ORACLE_AUTH_FAILED`/`ORACLE_TIMEOUT`/`ORACLE_UNKNOWN_SERVICE`，r36 mock）
-  - [x] schema owner/table 层级 + 系统 owner 过滤（r36 mock）
+  - [x] 连通性测试结构化错误（`ORACLE_CONN_REFUSED`/`ORACLE_AUTH_FAILED`/`ORACLE_TIMEOUT`/`ORACLE_UNKNOWN_SERVICE`，r36+r37 mock）
+  - [x] schema owner/table 层级 + 系统 owner 过滤 + 列元数据 500 limit（r36+r37 mock）
+  - [x] HTTP test_connection 失败链（r37）
   - [ ] 只读查询通过
   - [x] category=`relational` 查询模式正确（r36）
-- **代码锚点**：`backend/app/datasources/dialects/oracle.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r36.py` T-CONN-R36-004-01~07
-- **演化建议**：r37 companion 闭合 SID/service name 边界与 columns limit；后续补只读查询集成测与 UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/oracle.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r36.py` · `tests/test_connectors_gov_r37.py` T-CONN-R37-004-01~07
+- **演化建议**：r37 已闭合 SID/service name 边界与 columns limit；后续补只读查询集成测与 UI 选型
 - **里程碑对齐**：
 ### [CONN-005] SQL Server 连接器
 
-- **状态**：部分实现（L1 kickoff r36；hub ID 原标 Oracle，本轮按设计交付 SQL Server）
+- **状态**：部分实现（L1 kickoff r36 + companion 质量推分 r37；hub ID 原标 Oracle，本轮按设计交付 SQL Server）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：二期
 - **描述**：SQL Server 关系型连接器（SRS 追溯项；hub 分片 ID 与方言名历史漂移，r36 设计已对齐）。
 - **验收标准**：
   - [x] type=`sqlserver` 已注册（types catalog，r36 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`SQLSERVER_CONN_REFUSED`/`SQLSERVER_AUTH_FAILED`/`SQLSERVER_TIMEOUT`/`SQLSERVER_UNKNOWN_DATABASE`/`SQLSERVER_SSL_ERROR`，r36 mock）
-  - [x] schema dbo/自定义 schema 边界（r36 mock）
+  - [x] 连通性测试结构化错误（`SQLSERVER_CONN_REFUSED`/`SQLSERVER_AUTH_FAILED`/`SQLSERVER_TIMEOUT`/`SQLSERVER_UNKNOWN_DATABASE`/`SQLSERVER_SSL_ERROR`，r36+r37 mock）
+  - [x] schema dbo/自定义 schema 边界 + 列元数据 500 limit（r36+r37 mock）
+  - [x] TLS `encrypt=false` 选项与 HTTP test_connection 失败链（r37）
   - [ ] 只读查询通过
   - [x] category=`relational` 查询模式正确（r36）
-- **代码锚点**：`backend/app/datasources/dialects/sqlserver.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r36.py` T-CONN-R36-005-01~07
-- **演化建议**：r37 companion 闭合 TLS 选项与 columns limit；后续补只读查询集成测与 UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/sqlserver.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r36.py` · `tests/test_connectors_gov_r37.py` T-CONN-R37-005-01~08
+- **演化建议**：r37 已闭合 TLS 选项与 columns limit；后续补只读查询集成测与 UI 选型
 - **里程碑对齐**：
 ### [CONN-006] SQLite 连接器
 
@@ -90,36 +93,38 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [CONN-007] ClickHouse 连接器
 
-- **状态**：部分实现（L1 kickoff r36）
+- **状态**：部分实现（L1 kickoff r36 + companion 质量推分 r37）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：二期
 - **描述**：ClickHouse OLAP 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`clickhouse` 已注册（types catalog，r36 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`CLICKHOUSE_CONN_REFUSED`/`CLICKHOUSE_AUTH_FAILED`/`CLICKHOUSE_TIMEOUT`/`CLICKHOUSE_UNKNOWN_DATABASE`，r36 mock）
-  - [x] schema 未知 database 边界 + 列元数据 500 limit（r36 mock）
+  - [x] 连通性测试结构化错误（`CLICKHOUSE_CONN_REFUSED`/`CLICKHOUSE_AUTH_FAILED`/`CLICKHOUSE_TIMEOUT`/`CLICKHOUSE_UNKNOWN_DATABASE`，r36+r37 mock）
+  - [x] schema 未知 database/table 边界 + 列元数据 500 limit + 宽表 perf 守卫（r36+r37 mock）
+  - [x] HTTP test_connection 失败链 + metadata tables 400 链（r37）
   - [ ] 只读查询通过
   - [x] category=`olap` 查询模式正确（r36）
-  - [x] `get_sql_dialect(clickhouse)` QUERY-004 回归不回归（r36）
-- **代码锚点**：`backend/app/datasources/dialects/clickhouse.py` · `tests/test_connectors_gov_r36.py` T-CONN-R36-007-01~07
-- **演化建议**：r37 companion 闭合 HTTP/TCP 不可达与宽表 perf；后续补只读查询集成测与 Admin UI 选型
+  - [x] `get_sql_dialect(clickhouse)` QUERY-004 回归不回归（r36+r37）
+- **代码锚点**：`backend/app/datasources/dialects/clickhouse.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r36.py` · `tests/test_connectors_gov_r37.py` T-CONN-R37-007-01~07
+- **演化建议**：r37 已闭合 HTTP/TCP 不可达与宽表 perf；后续补只读查询集成测与 Admin UI 选型
 - **里程碑对齐**：
 ### [CONN-008] Apache Doris 连接器
 
-- **状态**：部分实现（L1 kickoff r36）
+- **状态**：部分实现（L1 kickoff r36 + companion 质量推分 r37）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：Apache Doris 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`doris` 已注册（types catalog，r36 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`DORIS_CONN_REFUSED`/`DORIS_AUTH_FAILED`/`DORIS_TIMEOUT`，r36 mock）
-  - [x] schema 空 catalog/未知表边界（r36 mock）
+  - [x] 连通性测试结构化错误（`DORIS_CONN_REFUSED`/`DORIS_AUTH_FAILED`/`DORIS_TIMEOUT`/`DORIS_UNKNOWN_DATABASE`，r36+r37 mock）
+  - [x] schema 空 catalog/未知表边界 + 列元数据 500 limit（r36+r37 mock）
+  - [x] HTTP test_connection 失败链 + metadata tables 400 链（r37）
   - [ ] 只读查询通过
   - [x] category=`olap` 查询模式正确（r36）
-- **代码锚点**：`backend/app/datasources/dialects/doris.py` · `tests/test_connectors_gov_r36.py` T-CONN-R36-008-01~07
-- **演化建议**：r37 companion 对齐 StarRocks columns limit 与 FE/BE 不可达降级；后续补只读查询集成测与 UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/doris.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r36.py` · `tests/test_connectors_gov_r37.py` T-CONN-R37-008-01~06
+- **演化建议**：r37 已对齐 StarRocks columns limit 与 FE/BE 不可达降级；后续补只读查询集成测与 UI 选型
 - **里程碑对齐**：
 ### [CONN-009] StarRocks 连接器
 

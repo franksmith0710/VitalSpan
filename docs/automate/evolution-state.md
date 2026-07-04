@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design | docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-companion-quality-r37-design.md |
 | plan | docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-companion-quality-r37.md |
@@ -67,7 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P4 r37 验证通过：ruff clean；pytest 854 passed/4 skipped；test_r36_suite_import_no_conflict_r37 修复（ae10550）；UI N/A（纯后端）；phase P3_DONE→P4_DONE
+- P5 r37 PRD 重评：CONN-003/007/005/008/004 companion 质量推分；pytest 854/4 skipped；test_connectors_gov_r37 40/40 + r36 37/37 + r35 35/35 + r34 15/15 回归 127/127；总分 86.2–87.8→90.0–91.2（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P3 r37 实现完成：8 Task 全绿；CONN-004/008/005/003/007 companion 质量推分；40 新测 test_connectors_gov_r37；connector 回归 127/127；pytest 853/4 skipped；branch cursor/bc-031e3641-9a45-48b5-b7f1-1fea5c376dab-817d；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P2 r37 计划完成：8 Task（errors 上浮→Oracle→Doris→SQL Server→Hive→ClickHouse→registry 回归→docs）；≥33 新测 test_connectors_gov_r37；9 P3 文件；subagent-driven-development option 1；全 Task UI skill none；phase P1_DONE→P2_DONE
 - P1 r37 设计完成：M11 关系型/OLAP 连接器 companion 质量推分 — CONN-004/008/005/003/007；16 文件框定；五方言错误域/limit/HTTP 链闭合；ui_design_skill none；phase G2_DONE→P1_DONE
@@ -109,8 +109,4 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| CONN-003 | 1 | 87.6 | 2026-07-04 |
-| CONN-004 | 1 | 86.2 | 2026-07-04 |
-| CONN-005 | 1 | 87.4 | 2026-07-04 |
-| CONN-007 | 1 | 87.8 | 2026-07-04 |
-| CONN-008 | 1 | 87.2 | 2026-07-04 |
+| 无 | — | — | — |
