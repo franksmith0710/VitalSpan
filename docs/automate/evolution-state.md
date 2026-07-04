@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r53.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-04-dash-rpt-query-nfr-l1-r53-design.md |
 | plan |  |
 | branch | cursor/bc-837c1a91-77ef-4670-a5cd-4a2c82ec610c-a750 |
 | base_branch | dev-auto |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r53 设计完成：M9 主题分析 + M10/M12 报表模板调度 + M13 Dataset/NFR L1 kickoff — QUERY-009/RPT-004/DASH-006/RPT-005/NFR-008；18 文件框定（reports catalog+scheduler 6 + dashboard/theme 3 + query/dataset 2 + core/nfr runtime_guard 1 + api 4 + r53 smoke ≥38 测）；三路径 query 边界/模板树 FSM/实体主题 schema/DE·SS 依赖扫描；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r53 选题完成：M9 主题分析 + M10/M12 报表模板调度 + M13 Dataset/NFR L1 kickoff — QUERY-009/RPT-004/DASH-006/RPT-005/NFR-008（5 项）；最低分 QUERY-009/RPT-004(11.7)；饱和熔断未触发（Top5 11.7–11.8≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 表空（五 ID 首次入选）；phase idle→G2_DONE
 - G1 r53 bootstrap：r52 PR #81 已 Squash merge dev-auto（40e4832）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无活跃 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 QUERY-009(11.7)/RPT-004(11.7)/DASH-006(11.8)（读 hub 不重评）；STUCK 表空（r52 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r52 PRD 重评：GOV-003/DESIGN-005/QUERY-003/DESIGN-003/CONN-016 companion 质量推分；pytest 1300/4 skipped；test_design_conn_gov_query_r52 52/52 + r49 35/35 + r51 43/43 + r46 36/36；总分 81.4–83.2→90.1–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
