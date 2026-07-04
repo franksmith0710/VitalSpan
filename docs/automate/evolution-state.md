@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
-| plan |  |
-| branch |  |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r55.md |
+| design | docs/superpowers/specs/2026-07-04-m10-m12-rpt-gov-meta-oceanbase-companion-quality-r55-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m10-m12-rpt-gov-meta-oceanbase-companion-quality-r55.md |
+| branch | feat/evolution-r55-m10-m12-rpt-gov-meta-oceanbase-companion-quality |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | RPT-006,RPT-007,GOV-006,META-006,CONN-020 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T13:15:00Z |
 | skill_rule_index_source_count | 26 |
