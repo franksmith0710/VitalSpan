@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-04-m13-design-opensearch-gov-query-l1-r49-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r49 设计完成：M13 设计器 + M11 OpenSearch + 治理/查询 L1 kickoff — DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003；18 文件框定（designer 5 + opensearch 4 + workflow 4 + native 3 + r49 smoke ≥35 测）；SQL 模式/输出字段/OpenSearch 方言/五态工单 FSM/native 路由守卫；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r49 选题完成：M13 设计器 + M11 OpenSearch + 治理/查询 L1 kickoff — DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003（5 项）；最低分 DESIGN-005/003/CONN-016/GOV-003(11.6)；饱和熔断未触发（Top5 11.6–12.0≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 表五 ID 未入选（各 1 轮，79–84 分高于 Top5）；phase idle→G2_DONE
 - G1 r48 bootstrap：r47 PR #74 已 Squash merge dev-auto（799c32a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 DESIGN-005(11.6)/DESIGN-003(11.6)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（NFR-005/006/007 + GOV-005 + CONN-019，均 <90）；phase idle；待 G2 选题
 - G1 r47 bootstrap：r46 PR #73 已 Squash merge dev-auto（2d1f89a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 DESIGN-005(11.6)/DESIGN-003(11.6)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（NFR-005/006/007 + GOV-005 + CONN-019，r46 P5 <90 upsert）；phase P5_DOCS_READY→idle；待 G2 选题
