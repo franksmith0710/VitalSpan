@@ -15,6 +15,9 @@ from app.dashboard.theme import service as theme_service
 from app.dashboard.entity_overview.errors import EntityOverviewError
 from app.dashboard.entity_overview.schemas import EntityOverviewItem, EntityOverviewOut
 from app.dashboard.entity_overview import service as overview_service
+from app.dashboard.global_filters.errors import GlobalFilterError
+from app.dashboard.global_filters.schemas import GlobalFilterLinkageItem, GlobalFilterLinkageOut
+from app.dashboard.global_filters import service as global_filter_service
 from app.datasources.models import get_meta_session
 
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
@@ -50,6 +53,53 @@ def _theme_error(exc: ThemeAnalysisError) -> JSONResponse:
 def _overview_error(exc: EntityOverviewError) -> JSONResponse:
     detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+def _filter_error(exc: GlobalFilterError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/global-filters/validate", response_model=GlobalFilterLinkageItem)
+def validate_global_filters(
+    payload: GlobalFilterLinkageItem,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> GlobalFilterLinkageItem | JSONResponse:
+    try:
+        return global_filter_service.validate_linkage(db, payload)
+    except GlobalFilterError as exc:
+        return _filter_error(exc)
+
+
+@router.put("/{dashboard_id}/global-filters", response_model=GlobalFilterLinkageOut)
+def save_global_filters(
+    dashboard_id: uuid.UUID,
+    payload: GlobalFilterLinkageItem,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> GlobalFilterLinkageOut | JSONResponse:
+    if payload.dashboard_id != dashboard_id:
+        return JSONResponse(
+            status_code=422,
+            content={"code": "DASH_FILTER_ID_MISMATCH", "message": "dashboardId mismatch", "detail": None},
+        )
+    try:
+        return global_filter_service.save_linkage(db, payload, user)
+    except GlobalFilterError as exc:
+        return _filter_error(exc)
+
+
+@router.get("/{dashboard_id}/global-filters", response_model=GlobalFilterLinkageOut)
+def get_global_filters(
+    dashboard_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> GlobalFilterLinkageOut | JSONResponse:
+    try:
+        return global_filter_service.get_linkage(db, dashboard_id, user)
+    except GlobalFilterError as exc:
+        return _filter_error(exc)
 
 
 @router.post("/entity-overview/validate", response_model=EntityOverviewItem)
