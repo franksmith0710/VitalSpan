@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r42.md |
-| design | docs/superpowers/specs/2026-07-04-m9-viz-advanced-charts-l1-r42-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m9-viz-advanced-charts-l1-r42.md |
-| branch | feat/evolution-r42-m9-viz-advanced-l1 |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r43.md |
+| design | docs/superpowers/specs/2026-07-04-m9-viz-companion-quality-r43-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m9-viz-companion-quality-r43.md |
+| branch | feat/evolution-r43-m9-viz-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | VIZ-003,VIZ-004,VIZ-005,VIZ-006,VIZ-008 |
-| pr_number | 68 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| pr_number |  |
+| last_verified_command | cd backend && python3 -m pytest ../tests/test_viz_advanced_l1_r43.py ../tests/test_viz_advanced_l1_r42.py -q && cd fe && pnpm exec vitest run src/components/charts/ && pnpm run check:design |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T08:53:00Z |
