@@ -1,0 +1,152 @@
+from __future__ import annotations
+
+import uuid
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
+from sqlalchemy.orm import Session
+
+from app.auth.deps import UserContext, get_current_user
+from app.datasources.models import get_meta_session
+from app.designer import service as designer_service
+from app.designer.schemas import ComputeRulesConfig, DesignerError, QueryConditionsConfig
+
+router = APIRouter(prefix="/designer", tags=["designer", "DESIGN-001", "DESIGN-002"])
+
+
+def _db() -> Session:
+    session = get_meta_session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def _owner_uuid(actor: UserContext) -> uuid.UUID | None:
+    try:
+        return uuid.UUID(actor.id)
+    except ValueError:
+        return None
+
+
+def _designer_error(exc: DesignerError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
+
+
+@router.post("/conditions/validate", response_model=QueryConditionsConfig)
+def validate_conditions(
+    payload: QueryConditionsConfig,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> QueryConditionsConfig | JSONResponse:
+    try:
+        return designer_service.validate_conditions_config(payload)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.put("/conditions", response_model=QueryConditionsConfig)
+def save_conditions(
+    payload: QueryConditionsConfig,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> QueryConditionsConfig | JSONResponse:
+    try:
+        config, _ = designer_service.save_conditions(db, payload, _owner_uuid(actor))
+        return config
+    except DesignerError as exc:
+        return _designer_error(exc)
+    except ValidationError as exc:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "DESIGN_INVALID_CONDITIONS",
+                "message": "Invalid conditions payload",
+                "detail": {
+                    "fields": [
+                        {"field": ".".join(str(x) for x in e["loc"]), "message": e["msg"]}
+                        for e in exc.errors()
+                    ]
+                },
+            },
+        )
+
+
+@router.get("/conditions", response_model=QueryConditionsConfig)
+def get_conditions(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    ref_type: str = "design_draft",
+    ref_id: uuid.UUID | None = None,
+) -> QueryConditionsConfig | JSONResponse:
+    if ref_id is None:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "DESIGN_MISSING_REF",
+                "message": "ref_id is required",
+                "detail": None,
+            },
+        )
+    try:
+        return designer_service.get_conditions(db, ref_type, ref_id)
+    except Exception as exc:
+        from app.query.config_store.schemas import ConfigError
+
+        if isinstance(exc, ConfigError):
+            return JSONResponse(
+                status_code=exc.status,
+                content={"code": exc.code, "message": exc.message, "detail": None},
+            )
+        if isinstance(exc, DesignerError):
+            return _designer_error(exc)
+        raise
+
+
+@router.put("/compute-rules", response_model=ComputeRulesConfig)
+def save_compute_rules(
+    payload: ComputeRulesConfig,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> ComputeRulesConfig | JSONResponse:
+    try:
+        config, _ = designer_service.save_compute_rules(db, payload, _owner_uuid(actor))
+        return config
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.get("/compute-rules", response_model=ComputeRulesConfig)
+def get_compute_rules(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    ref_type: str = "design_draft",
+    ref_id: uuid.UUID | None = None,
+) -> ComputeRulesConfig | JSONResponse:
+    if ref_id is None:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "DESIGN_MISSING_REF",
+                "message": "ref_id is required",
+                "detail": None,
+            },
+        )
+    try:
+        return designer_service.get_compute_rules(db, ref_type, ref_id)
+    except Exception as exc:
+        from app.query.config_store.schemas import ConfigError
+
+        if isinstance(exc, ConfigError):
+            return JSONResponse(
+                status_code=exc.status,
+                content={"code": exc.code, "message": exc.message, "detail": None},
+            )
+        if isinstance(exc, DesignerError):
+            return _designer_error(exc)
+        raise

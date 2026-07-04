@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
@@ -227,3 +228,122 @@ def test_query_config_upsert_idempotent_r32(client):
     second = client.put("/api/v1/query/configs", headers=AUTH, json=body).json()
     assert first["id"] == second["id"]
     assert second["revision"] == 2
+
+
+def _valid_conditions(ref_id: str) -> dict:
+    return {
+        "schemaVersion": "1.0",
+        "logic": "AND",
+        "conditions": [
+            {"fieldId": "order_amount", "operator": "gte", "value": 100, "valueType": "number"}
+        ],
+        "refType": "design_draft",
+        "refId": ref_id,
+    }
+
+
+def test_design_conditions_save_roundtrip_r32(client):
+    """T-DESIGN-R32-001-01: 合法条件 PUT → GET 往返。"""
+    ref = str(uuid.uuid4())
+    put = client.put("/api/v1/designer/conditions", headers=AUTH, json=_valid_conditions(ref))
+    assert put.status_code == 200
+    got = client.get(
+        "/api/v1/designer/conditions",
+        headers=AUTH,
+        params={"ref_type": "design_draft", "ref_id": ref},
+    )
+    assert got.status_code == 200
+    assert got.json()["conditions"][0]["fieldId"] == "order_amount"
+
+
+def test_design_conditions_empty_r32(client):
+    """T-DESIGN-R32-001-02: 空 conditions → 422 DESIGN_EMPTY_CONDITIONS。"""
+    ref = str(uuid.uuid4())
+    body = {"schemaVersion": "1.0", "logic": "AND", "conditions": [], "refType": "design_draft", "refId": ref}
+    resp = client.put("/api/v1/designer/conditions", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "DESIGN_EMPTY_CONDITIONS"
+
+
+def test_design_conditions_unknown_operator_r32(client):
+    """T-DESIGN-R32-001-03: 未知 operator → 422 DESIGN_INVALID_OPERATOR。"""
+    ref = str(uuid.uuid4())
+    body = _valid_conditions(ref)
+    body["conditions"][0]["operator"] = "bogus"
+    resp = client.put("/api/v1/designer/conditions", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "DESIGN_INVALID_OPERATOR"
+
+
+def test_design_conditions_type_mismatch_r32(client):
+    """T-DESIGN-R32-001-04: valueType=number 但 value='x' → 422 DESIGN_VALUE_TYPE_MISMATCH。"""
+    ref = str(uuid.uuid4())
+    body = _valid_conditions(ref)
+    body["conditions"][0]["value"] = "x"
+    resp = client.put("/api/v1/designer/conditions", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "DESIGN_VALUE_TYPE_MISMATCH"
+
+
+def _valid_compute_rules(ref_id: str) -> dict:
+    return {
+        "schemaVersion": "1.0",
+        "rules": [
+            {
+                "id": "total_amount",
+                "name": "合计金额",
+                "ruleType": "sum",
+                "targetField": "amount",
+                "expression": "sum(amount)",
+                "dependsOn": [],
+            }
+        ],
+        "refType": "design_draft",
+        "refId": ref_id,
+    }
+
+
+def test_design_compute_rules_roundtrip_r32(client):
+    """T-DESIGN-R32-002-01: 规则 PUT → GET 往返。"""
+    ref = str(uuid.uuid4())
+    put = client.put("/api/v1/designer/compute-rules", headers=AUTH, json=_valid_compute_rules(ref))
+    assert put.status_code == 200
+    got = client.get(
+        "/api/v1/designer/compute-rules",
+        headers=AUTH,
+        params={"ref_type": "design_draft", "ref_id": ref},
+    )
+    assert got.json()["rules"][0]["id"] == "total_amount"
+
+
+def test_design_compute_invalid_expression_r32(client):
+    """T-DESIGN-R32-002-02: 非法 expression → 422 DESIGN_INVALID_EXPRESSION。"""
+    ref = str(uuid.uuid4())
+    body = _valid_compute_rules(ref)
+    body["rules"][0]["expression"] = "DROP TABLE x"
+    resp = client.put("/api/v1/designer/compute-rules", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "DESIGN_INVALID_EXPRESSION"
+
+
+def test_design_compute_rule_cycle_r32(client):
+    """T-DESIGN-R32-002-03: dependsOn 环 → 422 DESIGN_RULE_CYCLE。"""
+    ref = str(uuid.uuid4())
+    body = _valid_compute_rules(ref)
+    body["rules"] = [
+        {"id": "a", "name": "A", "ruleType": "sum", "targetField": "x", "expression": "sum(x)", "dependsOn": ["b"]},
+        {"id": "b", "name": "B", "ruleType": "sum", "targetField": "y", "expression": "sum(y)", "dependsOn": ["a"]},
+    ]
+    resp = client.put("/api/v1/designer/compute-rules", headers=AUTH, json=body)
+    assert resp.status_code == 422
+    assert resp.json()["code"] == "DESIGN_RULE_CYCLE"
+
+
+def test_design_conditions_and_compute_same_ref_r32(client):
+    """T-DESIGN-R32-002-04: 同 ref_id 分别读取 conditions + compute_rules。"""
+    ref = str(uuid.uuid4())
+    assert client.put("/api/v1/designer/conditions", headers=AUTH, json=_valid_conditions(ref)).status_code == 200
+    assert client.put("/api/v1/designer/compute-rules", headers=AUTH, json=_valid_compute_rules(ref)).status_code == 200
+    cond = client.get("/api/v1/designer/conditions", headers=AUTH, params={"ref_type": "design_draft", "ref_id": ref})
+    comp = client.get("/api/v1/designer/compute-rules", headers=AUTH, params={"ref_type": "design_draft", "ref_id": ref})
+    assert cond.status_code == 200 and comp.status_code == 200
