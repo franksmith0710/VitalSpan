@@ -13,7 +13,7 @@
 | branch | feat/evolution-r55-m10-m12-rpt-gov-meta-oceanbase-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | RPT-006,RPT-007,GOV-006,META-006,CONN-020 |
-| pr_number |  |
+| pr_number | 87 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest -q ../tests/test_rpt_gov_meta_conn_r55.py ../tests/test_rpt_gov_meta_conn_r54.py ../tests/test_dash_rpt_query_nfr_r53.py ../tests/test_design_conn_gov_query_r52.py |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
