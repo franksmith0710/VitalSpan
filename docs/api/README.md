@@ -110,6 +110,8 @@ redoc: /redoc
 |------|------|------|-----|------|-----|------|----------|
 | POST | `/api/v1/query/execute` | 只读查询（sql/table） | IF-06 | 一期 | QUERY-001 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/translate` | 可视化查询配置→参数化 SQL | IF-06 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query.py` |
+| GET | `/api/v1/query/routing/modes` | 连接器路由模式（search/document/timeseries→native，其余→sql） | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/native/validate` | Native 查询守卫（`QUERY_NATIVE_*`；禁止 sql 字段） | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/bindings` | 图表直连绑定列表 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/bindings` | 创建绑定（可选 `chartId` UUID；重复 → 409 `BINDING_CHART_CONFLICT`） | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/bindings/{bindingId}` | 绑定详情 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
@@ -120,6 +122,11 @@ redoc: /redoc
 | POST | `/api/v1/designer/conditions/validate` | 查询条件配置校验（不落库；422 含 `detail.fields`；`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_CROSS_FIELD`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/conditions` | 查询条件保存/读取（挂载 QUERY-007；可选 `expectedRevision`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/compute-rules` | 运算规则保存/读取（挂载 QUERY-007；`DESIGN_RULE_TYPE_MISMATCH`/`DESIGN_RULE_BROKEN_CHAIN`/`DESIGN_INVALID_AGGREGATE`） | 内部 | 一期 | DESIGN-002 | 已实现 | `backend/app/api/v1/designer.py` |
+| POST | `/api/v1/designer/sql-mode/validate` | SQL 只读校验（`DESIGN_SQL_NOT_READONLY`/`DESIGN_SQL_EMPTY`） | 内部 | 一期 | DESIGN-005 | 已实现 | `backend/app/api/v1/designer.py` |
+| GET | `/api/v1/designer/sql-mode/capabilities` | SQL 模式能力（`maxSqlLength=65536`） | 内部 | 一期 | DESIGN-005 | 已实现 | `backend/app/api/v1/designer.py` |
+| PUT/GET | `/api/v1/designer/sql-mode` | SQL 模式持久化（`config_type=sql_mode`；`?refId=`） | 内部 | 一期 | DESIGN-005 | 已实现 | `backend/app/api/v1/designer.py` |
+| POST | `/api/v1/designer/output-fields/validate` | 输出字段/聚合校验（`DESIGN_EMPTY_OUTPUT_FIELDS`/`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_AGGREGATE`） | 内部 | 一期 | DESIGN-003 | 已实现 | `backend/app/api/v1/designer.py` |
+| PUT/GET | `/api/v1/designer/output-fields` | 输出字段持久化（`config_type=output_fields`；`?refId=`） | 内部 | 一期 | DESIGN-003 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/query/preview` | 查询预览（设计器/图表配置） | 内部 | 二期 | QUERY-005 | 规划 | `backend/app/api/v1/query.py` |
 
 ---
@@ -204,6 +211,10 @@ redoc: /redoc
 | POST | `/api/v1/gov/publish/entries/{entry_id}/approve` | pending_publish→published | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/publish/entries/{entry_id}/reject` | pending_publish→draft | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/publish/entries/{entry_id}/status` | 发布状态 + allowedActions | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/workflow/templates` | 工单流程模板列表（`standard_query_release`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/workflow/templates/validate` | 工单模板校验 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST/GET | `/api/v1/gov/workflow/instances` | 工单实例创建/读取（`config_type=workflow_instance`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/workflow/instances/{id}/transition` | 五态 FSM 迁移（`GOV_WORKFLOW_*`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/governance/tickets` | 查询工单 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/tickets/{id}/submit` | 提交审批 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/publish` | 发布查询服务 | 内部 | 四期 | GOV-005 | 规划 | `backend/app/api/v1/governance/publish.py` |

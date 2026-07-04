@@ -29,15 +29,16 @@
 - **里程碑对齐**：
 ### [DESIGN-003] 输出字段与聚合配置
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：输出字段与聚合配置（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 聚合规则可配置
+  - [x] 聚合规则可配置（r49 L1：`aggregates` 白名单 sum/count/avg/min/max + validate/save/get）
   - [ ] 与 META-004 联动
-- **代码锚点**：`frontend/src/pages/designer/fields/`
-- **演化建议**：按 plan.md 期次优先级落地
+- **代码锚点**：`backend/app/designer/output_fields.py` · `backend/app/api/v1/designer.py` · `tests/test_design_conn_gov_query_r49.py` T-DESIGN-R49-003-01~06
+- **演化建议**：r49 L1 闭合空 fields/未知 field/非法 aggregate/metaFieldRef glossary 校验；后续 companion 补 META-004 维度联动与 Admin 字段配置 UI
+- **里程碑对齐**：
 ### [DESIGN-004] 设计器与工单关联
 
 - **状态**：未实现
@@ -51,12 +52,14 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [DESIGN-005] 传统 SQL 模式
 
-- **状态**：未实现
+- **状态**：部分实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：传统 SQL 模式（SRS 追溯项）。
 - **验收标准**：
   - [ ] SQL Lab 式编辑
   - [ ] 语法高亮与执行
-- **代码锚点**：`frontend/src/pages/designer/sql/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] SQL 只读校验与持久化（r49 L1：`POST validate` + `PUT/GET /api/v1/designer/sql-mode` + `DESIGN_SQL_*` 错误域）
+- **代码锚点**：`backend/app/designer/sql_mode.py` · `backend/app/api/v1/designer.py` · `tests/test_design_conn_gov_query_r49.py` T-DESIGN-R49-005-01~05
+- **演化建议**：r49 L1 闭合 SELECT 只读守卫/空 SQL/往返持久化/capabilities；后续 companion 补 SQL Lab UI、语法高亮与执行链
+- **里程碑对齐**：

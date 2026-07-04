@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design |  |
-| plan |  |
-| branch |  |
+| design | docs/superpowers/specs/2026-07-04-m13-design-opensearch-gov-query-l1-r49-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-l1-r49.md |
+| branch | feat/evolution-r49-m13-design-opensearch-gov-query-l1 |
 | base_branch | dev-auto |
 | prd_ids | DESIGN-005,DESIGN-003,CONN-016,GOV-003,QUERY-003 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T11:35:00Z |
+| skill_rule_index_generated_at | 2026-07-04T12:30:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,11 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r49 PRD 重评：DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003 L1 kickoff；pytest 1205/4 skipped；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36；总分 11.6–12.0→81.4–83.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
+- P4 r49 验证通过：ruff clean；pytest 1205 passed/4 skipped（全量 exit_code 0）；test_design_conn_gov_query_r49 35/35 + r32 21/21 + r33 19/19 + r46 36/36 回归 111/111；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
+- P3 r49 实现完成：8 Task 全绿；M13 设计器 + M11 OpenSearch + 治理/查询 L1 — DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003；35 测 test_design_conn_gov_query_r49 + r32 21/21 + r33 19/19 + r46 36/36 回归；pytest 1205/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r49-m13-design-opensearch-gov-query-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
+- P2 r49 计划完成：8 Task（fixture+config types→DESIGN-005 sql-mode→DESIGN-003 output-fields→CONN-016 opensearch→GOV-003 workflow FSM→QUERY-003 native guard→联动+回归门控→docs）；19 P3 生产文件 + 1 测试 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥35 新测 test_design_conn_gov_query_r49 + r32 21/21 + r33 19/19 + r46 36/36 回归；plan=docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-l1-r49.md；phase P1_DONE→P2_DONE
+- P1 r49 设计完成：M13 设计器 + M11 OpenSearch + 治理/查询 L1 kickoff — DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003；18 文件框定（designer 5 + opensearch 4 + workflow 4 + native 3 + r49 smoke ≥35 测）；SQL 模式/输出字段/OpenSearch 方言/五态工单 FSM/native 路由守卫；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r49 选题完成：M13 设计器 + M11 OpenSearch + 治理/查询 L1 kickoff — DESIGN-005/003 + CONN-016 + GOV-003 + QUERY-003（5 项）；最低分 DESIGN-005/003/CONN-016/GOV-003(11.6)；饱和熔断未触发（Top5 11.6–12.0≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 表五 ID 未入选（各 1 轮，79–84 分高于 Top5）；phase idle→G2_DONE
 - G1 r48 bootstrap：r47 PR #74 已 Squash merge dev-auto（799c32a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 DESIGN-005(11.6)/DESIGN-003(11.6)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（NFR-005/006/007 + GOV-005 + CONN-019，均 <90）；phase idle；待 G2 选题
 - G1 r47 bootstrap：r46 PR #73 已 Squash merge dev-auto（2d1f89a）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 DESIGN-005(11.6)/DESIGN-003(11.6)/CONN-016(11.6)；STUCK 五 ID 各 1 轮（NFR-005/006/007 + GOV-005 + CONN-019，r46 P5 <90 upsert）；phase P5_DOCS_READY→idle；待 G2 选题
@@ -164,5 +169,10 @@
 | NFR-006 | 1 | 79.2 | 2026-07-04 |
 | NFR-007 | 1 | 80.0 | 2026-07-04 |
 | NFR-005 | 1 | 81.2 | 2026-07-04 |
+| GOV-003 | 1 | 81.4 | 2026-07-04 |
+| DESIGN-005 | 1 | 81.4 | 2026-07-04 |
+| QUERY-003 | 1 | 82.5 | 2026-07-04 |
 | GOV-005 | 1 | 82.6 | 2026-07-04 |
+| DESIGN-003 | 1 | 82.9 | 2026-07-04 |
+| CONN-016 | 1 | 83.2 | 2026-07-04 |
 | CONN-019 | 1 | 84.1 | 2026-07-04 |

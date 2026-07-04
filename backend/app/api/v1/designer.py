@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
@@ -11,10 +11,15 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
 from app.designer import service as designer_service
-from app.designer.schemas import ComputeRulesConfig, DesignerError, QueryConditionsConfig
+from app.designer.schemas import ComputeRulesConfig, DesignerError, OutputFieldsConfig, QueryConditionsConfig, SqlModeSpec
+from app.designer import output_fields as output_fields_service
+from app.designer import sql_mode as sql_mode_service
 from app.query.config_store.schemas import ConfigError
 
-router = APIRouter(prefix="/designer", tags=["designer", "DESIGN-001", "DESIGN-002"])
+router = APIRouter(
+    prefix="/designer",
+    tags=["designer", "DESIGN-001", "DESIGN-002", "DESIGN-003", "DESIGN-005"],
+)
 
 
 def _db() -> Session:
@@ -93,9 +98,11 @@ def get_conditions(
     _: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
     ref_type: str = "design_draft",
-    ref_id: uuid.UUID | None = None,
+    ref_id: uuid.UUID | None = Query(default=None, alias="ref_id"),
+    ref_id_camel: uuid.UUID | None = Query(default=None, alias="refId"),
 ) -> QueryConditionsConfig | JSONResponse:
-    if ref_id is None:
+    resolved_ref = ref_id if ref_id is not None else ref_id_camel
+    if resolved_ref is None:
         return JSONResponse(
             status_code=422,
             content={
@@ -105,7 +112,7 @@ def get_conditions(
             },
         )
     try:
-        return designer_service.get_conditions(db, ref_type, ref_id)
+        return designer_service.get_conditions(db, ref_type, resolved_ref)
     except Exception as exc:
         from app.query.config_store.schemas import ConfigError
 
@@ -117,6 +124,110 @@ def get_conditions(
         if isinstance(exc, DesignerError):
             return _designer_error(exc)
         raise
+
+
+@router.post("/sql-mode/validate", response_model=SqlModeSpec)
+def validate_sql_mode(
+    payload: SqlModeSpec,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> SqlModeSpec | JSONResponse:
+    try:
+        return sql_mode_service.validate_sql_mode(payload)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.get("/sql-mode/capabilities")
+def get_sql_mode_capabilities(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> dict:
+    return sql_mode_service.sql_mode_capabilities()
+
+
+@router.put("/sql-mode", response_model=SqlModeSpec)
+def save_sql_mode(
+    payload: SqlModeSpec,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> SqlModeSpec | JSONResponse:
+    try:
+        config, _ = sql_mode_service.save_sql_mode(db, payload, _owner_uuid(actor))
+        return config
+    except ConfigError as exc:
+        return _config_error(exc)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.get("/sql-mode", response_model=SqlModeSpec)
+def get_sql_mode(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    ref_type: str = "design_draft",
+    ref_id: uuid.UUID | None = Query(default=None, alias="ref_id"),
+    ref_id_camel: uuid.UUID | None = Query(default=None, alias="refId"),
+) -> SqlModeSpec | JSONResponse:
+    resolved_ref = ref_id if ref_id is not None else ref_id_camel
+    if resolved_ref is None:
+        return JSONResponse(
+            status_code=422,
+            content={"code": "DESIGN_MISSING_REF", "message": "ref_id is required", "detail": None},
+        )
+    try:
+        return sql_mode_service.get_sql_mode(db, ref_type, resolved_ref)
+    except ConfigError as exc:
+        return _config_error(exc)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.post("/output-fields/validate", response_model=OutputFieldsConfig)
+def validate_output_fields(
+    payload: OutputFieldsConfig,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> OutputFieldsConfig | JSONResponse:
+    try:
+        return output_fields_service.validate_output_fields_config(db, payload)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.put("/output-fields", response_model=OutputFieldsConfig)
+def save_output_fields(
+    payload: OutputFieldsConfig,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> OutputFieldsConfig | JSONResponse:
+    try:
+        config, _ = output_fields_service.save_output_fields(db, payload, _owner_uuid(actor))
+        return config
+    except ConfigError as exc:
+        return _config_error(exc)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.get("/output-fields", response_model=OutputFieldsConfig)
+def get_output_fields(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    ref_type: str = "design_draft",
+    ref_id: uuid.UUID | None = Query(default=None, alias="ref_id"),
+    ref_id_camel: uuid.UUID | None = Query(default=None, alias="refId"),
+) -> OutputFieldsConfig | JSONResponse:
+    resolved_ref = ref_id if ref_id is not None else ref_id_camel
+    if resolved_ref is None:
+        return JSONResponse(
+            status_code=422,
+            content={"code": "DESIGN_MISSING_REF", "message": "ref_id is required", "detail": None},
+        )
+    try:
+        return output_fields_service.get_output_fields(db, ref_type, resolved_ref)
+    except ConfigError as exc:
+        return _config_error(exc)
+    except DesignerError as exc:
+        return _designer_error(exc)
 
 
 @router.put("/compute-rules", response_model=ComputeRulesConfig)

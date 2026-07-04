@@ -440,6 +440,26 @@ def map_timescale_error(exc: Exception) -> tuple[str, str]:
     return TIMESCALE_UNKNOWN, detail
 
 
+OPENSEARCH_INVALID_HOST = "OPENSEARCH_INVALID_HOST"
+OPENSEARCH_CONNECTION_REFUSED = "OPENSEARCH_CONNECTION_REFUSED"
+OPENSEARCH_AUTH_FAILED = "OPENSEARCH_AUTH_FAILED"
+OPENSEARCH_TIMEOUT = "OPENSEARCH_TIMEOUT"
+OPENSEARCH_UNKNOWN = "OPENSEARCH_UNKNOWN"
+
+
+def map_opensearch_error(exc: Exception) -> tuple[str, str]:
+    msg = str(exc).lower()
+    if "timeout" in msg or "timed out" in msg:
+        return OPENSEARCH_TIMEOUT, str(exc)
+    if "connection refused" in msg or "failed to establish" in msg:
+        return OPENSEARCH_CONNECTION_REFUSED, str(exc)
+    if "authentication" in msg or "401" in msg or "403" in msg:
+        return OPENSEARCH_AUTH_FAILED, str(exc)
+    if "host is required" in msg:
+        return OPENSEARCH_INVALID_HOST, str(exc)
+    return OPENSEARCH_UNKNOWN, str(exc)
+
+
 __all__ = [
     "CLICKHOUSE_AUTH_FAILED",
     "CLICKHOUSE_CONN_REFUSED",
@@ -497,6 +517,11 @@ __all__ = [
     "ORACLE_TIMEOUT",
     "ORACLE_UNKNOWN",
     "ORACLE_UNKNOWN_SERVICE",
+    "OPENSEARCH_AUTH_FAILED",
+    "OPENSEARCH_CONNECTION_REFUSED",
+    "OPENSEARCH_INVALID_HOST",
+    "OPENSEARCH_TIMEOUT",
+    "OPENSEARCH_UNKNOWN",
     "PG_AUTH_FAILED",
     "PG_CONN_REFUSED",
     "PG_SSL_ERROR",
@@ -547,6 +572,7 @@ __all__ = [
     "map_influx_error",
     "map_mongodb_error",
     "map_mysql_operational_error",
+    "map_opensearch_error",
     "map_oracle_error",
     "map_postgres_operational_error",
     "map_sqlserver_operational_error",
