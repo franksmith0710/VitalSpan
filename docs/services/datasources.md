@@ -49,11 +49,11 @@
 | `dialects/gaussdb.py` | GaussDB 关系型（psycopg 3 委托 PostgresConnector，`GAUSSDB_*`） | CONN-022 | 已实现 L1 + companion r39 |
 | `dialects/dm.py` | 达梦 DM 关系型（dmPython，`DM_*`） | CONN-017 | 已实现 L1 + companion r39 |
 | `dialects/trino.py` | Trino 联邦湖仓（trino-python-client，catalog/schema 三级，`category=lake`） | CONN-010 | 已实现 L1 + companion r39 |
-| `dialects/mongodb.py` | MongoDB 文档型（pymongo，`category=document`） | CONN-014 | 已实现 L1 r40 |
-| `dialects/influxdb.py` | InfluxDB 2.x 时序（influxdb-client，org/bucket 语义映射） | CONN-011 | 已实现 L1 r40 |
-| `dialects/tdengine.py` | TDengine 时序（taospy REST，stable 标记） | CONN-012 | 已实现 L1 r40 |
-| `dialects/sqlite.py` | SQLite 嵌入式文件源（`host=路径`，路径穿越守卫） | CONN-006 | 已实现 L1 r40 |
-| `dialects/timescaledb.py` | TimescaleDB 时序（PG 委托 + hypertable 标记） | CONN-013 | 已实现 L1 r40 |
+| `dialects/mongodb.py` | MongoDB 文档型（pymongo，`category=document`） | CONN-014 | 已实现 L1 r40 + companion r41 |
+| `dialects/influxdb.py` | InfluxDB 2.x 时序（influxdb-client，org/bucket 语义映射） | CONN-011 | 已实现 L1 r40 + companion r41 |
+| `dialects/tdengine.py` | TDengine 时序（taospy REST，stable 标记） | CONN-012 | 已实现 L1 r40 + companion r41 |
+| `dialects/sqlite.py` | SQLite 嵌入式文件源（`host=路径`，路径穿越守卫） | CONN-006 | 已实现 L1 r40 + companion r41 |
+| `dialects/timescaledb.py` | TimescaleDB 时序（PG 委托 + hypertable 标记） | CONN-013 | 已实现 L1 r40 + companion r41 |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -146,3 +146,20 @@
 - 测试套件：`tests/test_connectors_gov_r40.py`（≥35 条 T-CONN-R40-* / T-REG-R40-*）
 - 回归修复：`test_datasources_l1.py::test_invalid_connector_type` 改用未注册 `couchdb`（CONN-014 注册后 `mongodb` 为合法 type）
 - PRD 对账：`F04-CONN.md` 验收条款 P5 重评（非 P3）
+
+### r41 companion 质量推分（2026-07-04）
+
+五方言 companion 边界闭合（CONN-006/011/012/013/014）：
+
+| 方言 | 错误域闭合 | 列 limit | 边界闭合 |
+|------|-----------|---------|---------|
+| MongoDB | `map_mongodb_error` 补 `MONGODB_UNKNOWN_DATABASE`（code 26 / ns not found） | `MONGODB_MAX_FIELDS=500` | 空库/空 collection → `[]`；BSON 六类型枚举 |
+| InfluxDB | `INFLUX_TIMEOUT`/`INFLUX_UNKNOWN_BUCKET` test_connection 全路径 | `INFLUX_MAX_MEASUREMENTS=500` | 空 bucket measurements → `[]`；fieldKeys/tagKeys 类型枚举 |
+| TDengine | `TDENGINE_TIMEOUT`/`TDENGINE_UNKNOWN_DATABASE` test_connection 全路径 | `TDENGINE_MAX_COLUMNS=500` | 空库 SHOW 零行 → `[]`；DESCRIBE 类型枚举 |
+| SQLite | `SQLITE_READONLY` + `open_connection` 路径穿越对称 | `SQLITE_MAX_COLUMNS=500` | 只读/非法路径/空库边界 |
+| TimescaleDB | `TIMESCALE_TIMEOUT`/`TIMESCALE_CONN_REFUSED` test_connection 全路径 | `TIMESCALE_MAX_COLUMNS=500` | 空 schema → `[]`；hypertable 标记保留 r40 |
+
+- 测试套件：`tests/test_connectors_gov_r41.py`（35 条 T-CONN-R41-* / T-REG-R41-*）
+- HTTP 契约：test_connection 失败 200 + `ok=false` + `{PREFIX}_*` + `traceId`；metadata tables 缺 schema 400 `METADATA_INVALID_REQUEST`；schemas 连接失败 502 `METADATA_CONNECTION_FAILED`
+- 回归：r40 43/43 + r39 33/33 + r37 40/40 + r36 37/37 不删旧套件
+- PRD 对账：`F04-CONN.md` CONN-006/011/012/013/014 验收 P5 重评（非 P3）
