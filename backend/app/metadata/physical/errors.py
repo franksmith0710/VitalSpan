@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+META_PHYSICAL_FORBIDDEN = "META_PHYSICAL_FORBIDDEN"
+META_PHYSICAL_INVALID_COLUMN = "META_PHYSICAL_INVALID_COLUMN"
+
 
 class PhysicalTableError(Exception):
     def __init__(self, code: str, message: str, status: int = 422, fields: list | None = None) -> None:

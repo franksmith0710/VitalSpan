@@ -451,10 +451,10 @@ def physical_tables_get(
 @router.post("/physical-tables", response_model=PhysicalTableOut, status_code=status.HTTP_201_CREATED)
 def physical_tables_register(
     payload: PhysicalTableRegisterIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> PhysicalTableOut | JSONResponse:
     try:
-        return physical_service.register_physical_table(payload)
+        return physical_service.register_physical_table(payload, actor)
     except PhysicalTableError as exc:
         return _physical_error(exc)
 
