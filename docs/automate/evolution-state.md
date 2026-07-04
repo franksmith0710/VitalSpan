@@ -13,7 +13,7 @@
 | branch | feat/evolution-r52-m13-design-opensearch-gov-query-companion-quality |
 | base_branch | dev-auto |
 | prd_ids | GOV-003,DESIGN-005,QUERY-003,DESIGN-003,CONN-016 |
-| pr_number |  |
+| pr_number | 81 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
