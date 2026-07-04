@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install backend
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,connectors-ext]"
       - name: Ruff
         run: ruff check .
       - name: Pytest
