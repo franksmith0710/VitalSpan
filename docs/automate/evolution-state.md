@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
 | design | docs/superpowers/specs/2026-07-04-rpt-view-cat-gov-l1-r60-design.md |
 | plan | docs/superpowers/plans/2026-07-04-rpt-view-cat-gov-l1-r60.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | RPT-001,VIEW-002,VIEW-003,CAT-007,GOV-007 |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest -q ../tests/test_rpt_view_cat_gov_r60.py ../tests/test_dash_rpt_r58.py ../tests/test_meta_cat_dash_conn_design_r59.py ../tests/test_view_gov_api_r31.py |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T18:30:00Z |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r60 验证通过：ruff clean；pytest 1558 passed/4 skipped（全量 exit_code 0）；test_rpt_view_cat_gov_r60 34/34 + test_dash_rpt_r58 38/38 + test_meta_cat_dash_conn_design_r59 34/34 + test_view_gov_api_r31 24/24 回归 130/130；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r60 实现完成：8 Task 全绿；跨域远期 stub L1 kickoff — RPT-001/VIEW-002/VIEW-003/CAT-007/GOV-007；34 测 test_rpt_view_cat_gov_r60 + r58 38/38 + r59 34/34 + r31 24/24 回归 130/130；pytest 1558/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r60-rpt-view-cat-gov-l1；base_branch dev-auto；phase P2_DONE→P3_DONE
 - P5 r59 PRD 重评：META-004/CAT-004/DASH-005/CONN-018/DESIGN-004 L1 kickoff；pytest 1524/4 skipped；test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 + test_dash_rpt_query_nfr_r57 37/37 回归 109/109；总分 12.0–12.1→82.9–84.2（五 ID <90 STUCK upsert round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r59 验证通过：ruff clean；pytest 1524 passed/4 skipped（全量二次运行 exit_code 0；首轮 1 例环境级 flaky test_rpt_r58_render_spec_probe_under_50ms 全套件负载下 ~104ms>50ms 隔离 3/3 通过、与 r59 无关）；test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 + test_dash_rpt_query_nfr_r57 37/37 回归 109/109；UI: N/A（纯后端 ui_design_skill none）；PR #91 可能已提前创建（已知 SOP 顺序 concern）；phase P3_DONE→P4_DONE
