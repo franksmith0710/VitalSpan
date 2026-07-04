@@ -45,6 +45,7 @@ class RoleDefaultViewsIn(BaseModel):
     dashboard_id: uuid.UUID | None = Field(default=None, alias="dashboardId")
     report_template_node_id: uuid.UUID | None = Field(default=None, alias="reportTemplateNodeId")
     max_widget_count: int = Field(default=24, alias="maxWidgetCount")
+    inherit_from_role_id: str | None = Field(default=None, alias="inheritFromRoleId")
 
 
 def _views_db() -> Session:
@@ -58,9 +59,12 @@ def _views_db() -> Session:
 @role_defaults_router.get("/{role_id}/default-views", response_model=None)
 def read_role_default_views(
     role_id: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ):
-    return get_defaults(role_id)
+    try:
+        return get_defaults(role_id, actor)
+    except ViewError as exc:
+        return _error_response(exc)
 
 
 @role_defaults_router.put("/{role_id}/default-views", response_model=None)

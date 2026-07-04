@@ -1,20 +1,34 @@
 from __future__ import annotations
 
 import os
+import time
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.auth.deps import UserContext
 from app.core.config import get_settings
 from app.core.nfr.errors import (
     HTTPS_AUDIT_EMPTY_PAYLOAD,
+    HTTPS_AUDIT_FORBIDDEN,
     HTTPS_AUDIT_INSECURE_URL,
+    HTTPS_AUDIT_INVALID_SCOPE,
     HTTPS_AUDIT_UNKNOWN_FIELD,
 )
 
 _SENSITIVE_DEFAULTS = frozenset({"password", "apiKey", "credential", "secret"})
 _MASK_KEYS = frozenset({"password", "apiKey", "credential", "secret"})
+_ALLOWED_SCOPES = frozenset({"api", "webhook", "connector"})
+_USER_HTTPS_AUDIT_SCOPE: dict[str, frozenset[str]] = {}
+probe_https_audit_budget_ms_limit = 50
+
+
+@dataclass(frozen=True)
+class HttpsAuditProbeResult:
+    elapsed_ms: float
+    ok: bool
 
 
 class HttpsAuditError(Exception):
@@ -42,6 +56,8 @@ class HttpsAuditMaskProbeIn(BaseModel):
         alias="sensitiveFields",
     )
     webhook_url: str | None = Field(default=None, alias="webhookUrl")
+    audit_scope: str = Field(default="api", alias="auditScope")
+    simulate_audit_failure: bool = Field(default=False, alias="simulateAuditFailure")
 
 
 class HttpsAuditMaskProbeOut(BaseModel):
@@ -50,6 +66,28 @@ class HttpsAuditMaskProbeOut(BaseModel):
     masked_fields: list[str] = Field(alias="maskedFields")
     audit_logged: bool = Field(default=True, alias="auditLogged")
     insecure_webhook: bool = Field(default=False, alias="insecureWebhook")
+
+
+def set_user_https_audit_scope(user_id: str, allowed_scopes: frozenset[str]) -> None:
+    _USER_HTTPS_AUDIT_SCOPE[user_id] = allowed_scopes
+
+
+def _assert_acl(actor: UserContext, audit_scope: str) -> None:
+    if "enterprise" not in set(actor.roles):
+        return
+    allowed = _USER_HTTPS_AUDIT_SCOPE.get(actor.id, frozenset({"api", "webhook"}))
+    if audit_scope not in allowed:
+        raise HttpsAuditError(HTTPS_AUDIT_FORBIDDEN, "enterprise user out of https audit scope", 403)
+
+
+def _guard_scope(audit_scope: str) -> None:
+    if audit_scope not in _ALLOWED_SCOPES:
+        raise HttpsAuditError(
+            HTTPS_AUDIT_INVALID_SCOPE,
+            "Invalid auditScope",
+            422,
+            [{"field": "auditScope", "message": f"must be one of {sorted(_ALLOWED_SCOPES)}"}],
+        )
 
 
 def get_https_audit_status() -> HttpsAuditStatusOut:
@@ -65,7 +103,10 @@ def get_https_audit_status() -> HttpsAuditStatusOut:
     )
 
 
-def probe_https_mask(payload: HttpsAuditMaskProbeIn) -> HttpsAuditMaskProbeOut:
+def probe_https_mask(payload: HttpsAuditMaskProbeIn, actor: UserContext | None = None) -> HttpsAuditMaskProbeOut:
+    actor = actor or UserContext(id="dev", username="dev", roles=["admin"])
+    _guard_scope(payload.audit_scope)
+    _assert_acl(actor, payload.audit_scope)
     if not payload.sample_payload:
         raise HttpsAuditError(HTTPS_AUDIT_EMPTY_PAYLOAD, "samplePayload must not be empty", 422)
     unknown = [f for f in payload.sensitive_fields if f not in _SENSITIVE_DEFAULTS and f not in _MASK_KEYS]
@@ -89,9 +130,27 @@ def probe_https_mask(payload: HttpsAuditMaskProbeIn) -> HttpsAuditMaskProbeOut:
             masked[key] = "***"
             masked_fields.append(key)
     insecure = bool(payload.webhook_url and payload.webhook_url.startswith("http://"))
+    audit_logged = not payload.simulate_audit_failure
     return HttpsAuditMaskProbeOut(
         maskedPayload=masked,
         maskedFields=masked_fields,
-        auditLogged=True,
+        auditLogged=audit_logged,
         insecureWebhook=insecure,
     )
+
+
+def probe_https_mask_budget_ms(actor: UserContext) -> HttpsAuditProbeResult:
+    started = time.perf_counter()
+    probe_https_mask(
+        HttpsAuditMaskProbeIn(samplePayload={"password": "x"}, auditScope="api"),
+        actor,
+    )
+    elapsed = (time.perf_counter() - started) * 1000
+    return HttpsAuditProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_https_audit_budget_ms_limit)
+
+
+def probe_https_status_budget_ms() -> HttpsAuditProbeResult:
+    started = time.perf_counter()
+    get_https_audit_status()
+    elapsed = (time.perf_counter() - started) * 1000
+    return HttpsAuditProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_https_audit_budget_ms_limit)

@@ -40,8 +40,19 @@ def prefab_probe(_: Annotated[UserContext, Depends(get_current_user)]) -> dict:
 
 
 @router.get("/bindings", response_model=PrefabBindingListResponse)
-def list_bindings(_: Annotated[UserContext, Depends(get_current_user)]) -> PrefabBindingListResponse:
-    return prefab_service.list_prefab_bindings()
+def list_bindings(actor: Annotated[UserContext, Depends(get_current_user)]) -> PrefabBindingListResponse:
+    return prefab_service.list_prefab_bindings(actor)
+
+
+@router.get("/bindings/{binding_key}", response_model=PrefabBindingOut)
+def get_binding(
+    binding_key: str,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> PrefabBindingOut | JSONResponse:
+    try:
+        return prefab_service.get_prefab_binding(binding_key, actor)
+    except PrefabError as exc:
+        return _prefab_error(exc)
 
 
 @router.post("/bindings/validate", response_model=PrefabBindingValidateOut)

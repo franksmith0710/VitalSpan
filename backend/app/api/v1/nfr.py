@@ -331,10 +331,10 @@ def _dashboard_sla_error(exc: DashboardSlaError) -> JSONResponse:
 @router.post("/dashboard-sla/validate", response_model=DashboardSlaValidateOut)
 def dashboard_sla_validate(
     payload: DashboardSlaProbeIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> DashboardSlaValidateOut | JSONResponse:
     try:
-        return validate_dashboard_sla(payload)
+        return validate_dashboard_sla(payload, actor)
     except DashboardSlaError as exc:
         return _dashboard_sla_error(exc)
 
@@ -342,10 +342,10 @@ def dashboard_sla_validate(
 @router.post("/dashboard-sla/probe", response_model=DashboardSlaProbeOut)
 def dashboard_sla_probe(
     payload: DashboardSlaProbeIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> DashboardSlaProbeOut | JSONResponse:
     try:
-        return probe_dashboard_sla(payload)
+        return probe_dashboard_sla(payload, actor)
     except DashboardSlaError as exc:
         return _dashboard_sla_error(exc)
 
@@ -353,8 +353,12 @@ def dashboard_sla_probe(
 @router.get("/dashboard-sla/alerts", response_model=DashboardSlaAlertsOut)
 def dashboard_sla_alerts(
     _: Annotated[UserContext, Depends(get_current_user)],
-) -> DashboardSlaAlertsOut:
-    return get_dashboard_sla_alerts()
+    threshold_percent: float | None = Query(default=None, alias="thresholdPercent"),
+) -> DashboardSlaAlertsOut | JSONResponse:
+    try:
+        return get_dashboard_sla_alerts(threshold_percent)
+    except DashboardSlaError as exc:
+        return _dashboard_sla_error(exc)
 
 
 def _dashboard_first_screen_error(exc: DashboardFirstScreenError) -> JSONResponse:
@@ -399,9 +403,9 @@ def https_audit_status(
 @router.post("/https-audit/mask-probe", response_model=HttpsAuditMaskProbeOut)
 def https_audit_mask_probe(
     payload: HttpsAuditMaskProbeIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> HttpsAuditMaskProbeOut | JSONResponse:
     try:
-        return probe_https_mask(payload)
+        return probe_https_mask(payload, actor)
     except HttpsAuditError as exc:
         return _https_audit_error(exc)

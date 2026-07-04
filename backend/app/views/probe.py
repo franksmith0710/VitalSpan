@@ -36,3 +36,17 @@ def probe_create_override_budget_ms(
     except ViewError:
         ok = False
     return ViewProbeResult(elapsed_ms=(time.perf_counter() - started) * 1000, ok=ok)
+
+
+def probe_put_role_defaults_budget_ms(
+    db: Session, actor: UserContext, role_id: str, payload: dict,
+) -> ViewProbeResult:
+    from app.views.role_template import put_defaults
+
+    started = time.perf_counter()
+    try:
+        put_defaults(db, role_id, payload, actor)
+    except ViewError:
+        pass
+    elapsed = (time.perf_counter() - started) * 1000
+    return ViewProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_resolve_defaults_budget_ms_limit)

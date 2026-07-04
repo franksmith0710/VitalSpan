@@ -39,3 +39,12 @@ def probe_list_prefab_bindings_budget_ms() -> PrefabProbeResult:
     prefab_service.list_prefab_bindings()
     elapsed = (time.perf_counter() - started) * 1000
     return PrefabProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_prefab_budget_ms_limit)
+
+
+def probe_get_prefab_binding_budget_ms(key: str) -> PrefabProbeResult:
+    from app.auth.deps import UserContext
+
+    started = time.perf_counter()
+    prefab_service.get_prefab_binding(key, UserContext(id="admin", username="admin", roles=["admin"]))
+    elapsed = (time.perf_counter() - started) * 1000
+    return PrefabProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_prefab_budget_ms_limit)

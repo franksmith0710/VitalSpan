@@ -228,6 +228,35 @@ def auto_register_bus(
         return _catalog_error_response(exc)
 
 
+@router.get("/bus/auto-register/probe", response_model=None)
+def auto_register_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> JSONResponse:
+    from app.governance.bus.probe import probe_auto_register_budget_ms
+
+    if "viewer" in actor.roles and actor.roles == ["viewer"]:
+        return JSONResponse(
+            status_code=403,
+            content={"code": "GOV_AUTO_BUS_FORBIDDEN", "message": "viewer forbidden", "detail": None},
+        )
+    entry = catalog_service.create_entry(
+        db,
+        CatalogEntryCreate(
+            name="probe-fixture",
+            http_method="POST",
+            path=f"/api/v1/r68/probe-{uuid.uuid4().hex[:8]}",
+            category_codes=["CAT-01"],
+            status="published",
+        ),
+    )
+    result = probe_auto_register_budget_ms(db, actor, entry.id)
+    return JSONResponse(
+        status_code=200,
+        content={"elapsedMs": result.elapsed_ms, "withinBudget": result.ok},
+    )
+
+
 def _gov_query_design_error(exc: GovQueryDesignError) -> JSONResponse:
     detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(
