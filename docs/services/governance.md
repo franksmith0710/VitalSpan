@@ -11,6 +11,8 @@
 
 - 查询接口 catalog 三分法（CAT-01/02/03）分类与条目登记（GOV-001）
 - 总线 PoC 半自动注册 adapter 与登记 API（GOV-002）
+- 可视化查询设计聚合 validate/save/get（GOV-004）
+- 查询设计权限联动与 RLS 绑定守卫（GOV-008）
 - 为开放 API 登记与 BPM 流水线奠基
 
 ## 边界
@@ -36,6 +38,9 @@
 | `BusPoCAdapter` / `InMemoryBusPoCAdapter` | PoC 注册适配器 | GOV-002 | 已实现 |
 | `GET/POST/DELETE /api/v1/gov/catalog/*` | catalog API | GOV-001 | 已实现 |
 | `POST /api/v1/gov/bus/register` | 半自动注册 API（admin；幂等） | GOV-002 | 已实现 |
+| `query_design/` | 可视化查询设计聚合 service/schemas | GOV-004 | 已实现 |
+| `acl.py` | 查询设计 save/publish 权限联动 + RLS smoke | GOV-008 | 已实现 |
+| `POST/PUT/GET /api/v1/gov/query-design*` | 可视化查询设计 validate/save/get | GOV-004/008 | 已实现 |
 
 ## 关联 API
 
@@ -47,3 +52,4 @@
 - `force-fail` path 段触发 PoC adapter 拒绝（502 `BUS_REGISTRATION_REJECTED`）
 - r31：`list_entries` 非法 `category` → 400 `CATALOG_INVALID_CATEGORY`；`DELETE /gov/catalog/entries/{id}` → 204（CASCADE `bus_registrations`）
 - r31：`POST /gov/bus/register` 需 admin 角色；幂等二次登记 200；失败码 `BUS_REGISTRATION_TIMEOUT`/`CLIENT_ERROR`/`SERVER_ERROR`；失败响应 `detail.traceId`
+- r34：`query_design/` 聚合 `VisualQueryDesignIn/Out`；validate 委托 `designer.service`；持久化 `config_type=visual_query_design`；`acl.py` 按 status/角色守卫 save；非 UUID dev token 跳过 RLS binding smoke

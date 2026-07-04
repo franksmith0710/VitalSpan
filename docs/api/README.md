@@ -174,6 +174,9 @@ redoc: /redoc
 | GET | `/api/v1/gov/catalog/entries/{id}` | catalog 条目详情 | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | DELETE | `/api/v1/gov/catalog/entries/{entry_id}` | 删除 catalog 条目（204；CASCADE bus_registrations） | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`；需 admin；幂等 201/200；403 `BUS_REGISTER_FORBIDDEN`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/query-design/validate` | 可视化查询设计校验（422 `detail.fields`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
+| PUT | `/api/v1/gov/query-design` | 可视化查询设计保存（409 `CONFIG_VERSION_CONFLICT`；403 ACL） | IF-06 | 一期 | GOV-004/008 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/query-design` | 可视化查询设计读取（`?refId=`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/governance/tickets` | 查询工单 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/tickets/{id}/submit` | 提交审批 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/publish` | 发布查询服务 | 内部 | 四期 | GOV-005 | 规划 | `backend/app/api/v1/governance/publish.py` |
