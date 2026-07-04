@@ -74,3 +74,19 @@ def test_register_builtin_idempotent():
     register_builtin_chart_types()
     register_builtin_chart_types()
     assert get_spec("bar").renderer == "echarts"
+
+
+def test_get_charts_types_ok(client, auth_headers):
+    """T-VIZ-R42-003-07: GET /charts/types → 200，9 项列表。"""
+    resp = client.get("/api/v1/charts/types", headers=auth_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert isinstance(body, list)
+    types = {c["type"] for c in body}
+    assert {"sankey", "funnel", "graph", "map", "gauge", "pie"} <= types
+
+
+def test_get_charts_types_unauthorized(client, unauthorized_headers):
+    """T-VIZ-R42-003-08: GET /charts/types 无有效鉴权 → 401。"""
+    resp = client.get("/api/v1/charts/types", headers=unauthorized_headers)
+    assert resp.status_code == 401
