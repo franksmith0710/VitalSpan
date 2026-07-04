@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import uuid
 
-from app.governance.catalog.classification.errors import ClassificationError
+from app.auth.deps import UserContext
+from app.governance.catalog.classification.errors import (
+    CAT_CLASS_FORBIDDEN,
+    CAT_CLASS_NOT_FOUND,
+    ClassificationError,
+)
 from app.governance.catalog.classification.schemas import (
     MAX_CLASS_DEPTH,
     ClassificationNodeCreate,
@@ -13,6 +18,23 @@ from app.governance.catalog.classification.schemas import (
 
 _nodes: dict[uuid.UUID, dict] = {}
 _codes: set[str] = set()
+_USER_CLASS_SCOPE: dict[str, str] = {}
+
+
+def set_user_class_scope(user_id: str, code_prefix: str) -> None:
+    _USER_CLASS_SCOPE[user_id] = code_prefix
+
+
+def _assert_classification_write_access(user: UserContext, code: str) -> None:
+    roles = set(user.roles)
+    if roles.intersection({"admin", "analyst"}):
+        return
+    if "viewer" in roles and not roles.intersection({"editor", "analyst", "admin"}):
+        raise ClassificationError(CAT_CLASS_FORBIDDEN, "viewer cannot modify classification nodes", 403)
+    if "enterprise" in roles:
+        prefix = _USER_CLASS_SCOPE.get(user.id, "CAT")
+        if not code.startswith(prefix):
+            raise ClassificationError(CAT_CLASS_FORBIDDEN, "enterprise user out of classification scope", 403)
 
 
 def _to_out(record: dict) -> ClassificationNodeOut:
@@ -87,7 +109,8 @@ def list_nodes(parent_id: uuid.UUID | None = None, limit: int = 100, offset: int
     return ClassificationNodeListResponse(items=[_to_out(n) for n in sliced], total=len(items))
 
 
-def create_node(payload: ClassificationNodeCreate) -> ClassificationNodeOut:
+def create_node(payload: ClassificationNodeCreate, user: UserContext) -> ClassificationNodeOut:
+    _assert_classification_write_access(user, payload.code)
     if payload.code in _codes:
         raise ClassificationError("CAT_CLASS_CODE_CONFLICT", "Classification code already exists", 409)
     if payload.parent_id is not None and payload.parent_id not in _nodes:
@@ -107,10 +130,11 @@ def create_node(payload: ClassificationNodeCreate) -> ClassificationNodeOut:
     return _to_out(record)
 
 
-def move_node(node_id: uuid.UUID, payload: ClassificationNodeMove) -> ClassificationNodeOut:
+def move_node(node_id: uuid.UUID, payload: ClassificationNodeMove, user: UserContext) -> ClassificationNodeOut:
     record = _nodes.get(node_id)
     if record is None:
-        raise ClassificationError("CAT_CLASS_PARENT_NOT_FOUND", "Node not found", 404)
+        raise ClassificationError(CAT_CLASS_NOT_FOUND, "Node not found", 404)
+    _assert_classification_write_access(user, record["code"])
     parent_id = payload.parent_id
     if parent_id == node_id:
         raise ClassificationError("CAT_CLASS_CYCLE", "Cannot move node under itself", 422)
@@ -126,9 +150,10 @@ def move_node(node_id: uuid.UUID, payload: ClassificationNodeMove) -> Classifica
     return _to_out(record)
 
 
-def delete_node(node_id: uuid.UUID) -> None:
+def delete_node(node_id: uuid.UUID, user: UserContext) -> None:
     if node_id not in _nodes:
-        raise ClassificationError("CAT_CLASS_PARENT_NOT_FOUND", "Node not found", 404)
+        raise ClassificationError(CAT_CLASS_NOT_FOUND, "Node not found", 404)
+    _assert_classification_write_access(user, _nodes[node_id]["code"])
     if _children(node_id):
         raise ClassificationError("CAT_CLASS_HAS_CHILDREN", "Cannot delete node with children", 409)
     code = _nodes[node_id]["code"]
