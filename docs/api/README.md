@@ -169,8 +169,8 @@ redoc: /redoc
 | POST | `/api/v1/dashboards/entity-overview/validate` | 实体总览 item 校验（`DASH_OVERVIEW_*`） | 内部 | 一期 | DASH-005 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/{id}/entity-overview` | 实体总览 save/get（`config_type=entity_overview`；含 `publishStatus` 探测） | 内部 | 一期 | DASH-005 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
-| GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 规划 | `backend/app/api/v1/views.py` |
-| GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 规划 | `backend/app/api/v1/views.py` |
+| GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 已实现 | `backend/app/api/v1/views.py` |
+| GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | POST | `/api/v1/embed/token` | 门户嵌入 token 签发（admin 或 `dashboard:share`；422 `EMBED_TARGET_CONFLICT`/`EMBED_INVALID_ORIGIN`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
 | GET | `/api/v1/embed/sdk-params` | 按 token 解析 SDK 参数（`containerId`/`apiBase`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
 
@@ -192,7 +192,7 @@ redoc: /redoc
 | GET | `/api/v1/reports/catalog/nodes/{id}/extension/render-spec` | 扩展配置渲染规格（`renderVersion=1.0`；`compareMetrics`/`compareVersion`） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/catalog/nodes/{id}/extension/revisions` | 扩展配置修订历史（changeNote 审计） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/batch` | 批量创建模板节点（Idempotency-Key；`RPT_BATCH_*`） | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表 | 内部 | 二期 | RPT-001 | 规划 | `backend/app/api/v1/reports/engine.py` |
+| POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表 | 内部 | 二期 | RPT-001 | 已实现 | `backend/app/api/v1/reports/engine.py` |
 | GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}/download` | 导出文件下载（`Content-Disposition: attachment`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
@@ -237,6 +237,7 @@ redoc: /redoc
 | POST | `/api/v1/gov/catalog/classification/nodes/{id}/move` | 分类树节点移动（环检测；超深 → 422 `CAT_CLASS_MAX_DEPTH`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | DELETE | `/api/v1/gov/catalog/classification/nodes/{id}` | 删除叶节点（含子节点 → 409 `CAT_CLASS_HAS_CHILDREN`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`；需 admin；幂等 201/200；403 `BUS_REGISTER_FORBIDDEN`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/bus/auto-register` | 总线全自动注册 FSM（`catalogEntryId`；integration/admin；幂等 201/200；403 `GOV_AUTO_BUS_FORBIDDEN`） | IF-06 | 四期 | GOV-007 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/query-design/validate` | 可视化查询设计校验（422 `detail.fields`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | PUT | `/api/v1/gov/query-design` | 可视化查询设计保存（409 `CONFIG_VERSION_CONFLICT`；403 ACL） | IF-06 | 一期 | GOV-004/008 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/query-design` | 可视化查询设计读取（`?refId=`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
@@ -282,7 +283,7 @@ redoc: /redoc
 | GET | `/api/v1/timeseries` | CAT-04 时间序列分析 | IF-02 | 二期+ | CAT-004 | 规划 | `backend/app/governance/catalog/cat04.py` |
 | GET | `/api/v1/tickets/stats` | CAT-05 工单与受理统计 | IF-02 | 二期+ | CAT-005 | 规划 | `backend/app/governance/catalog/cat05.py` |
 | GET | `/api/v1/production/stats` | CAT-06 生产销售统计 | IF-02 | 二期+ | CAT-006 | 规划 | `backend/app/governance/catalog/cat06.py` |
-| GET | `/api/v1/workno/behavior` | CAT-07 组织行为审计 | IF-02 | 三期+ | CAT-007 | 规划 | `backend/app/governance/catalog/cat07.py` |
+| GET | `/api/v1/workno/behavior` | CAT-07 组织行为审计 | IF-02 | 三期+ | CAT-007 | 已实现 | `backend/app/api/v1/workno.py` |
 
 ---
 

@@ -64,6 +64,8 @@ from app.governance.catalog.classification.schemas import (
     ClassificationNodeOut,
 )
 from app.governance.catalog.classification import service as classification_service
+from app.governance.bus.auto import auto_register
+from app.governance.bus.auto_schemas import AutoRegisterIn, AutoRegisterOut
 
 router = APIRouter(prefix="/gov", tags=["governance", "IF-06"])
 
@@ -165,6 +167,19 @@ def register_bus(
             status_code=201 if created else 200,
             content=out.model_dump(by_alias=True, mode="json"),
         )
+    except catalog_service.CatalogError as exc:
+        return _catalog_error_response(exc)
+
+
+@router.post("/bus/auto-register", response_model=None)
+def auto_register_bus(
+    payload: AutoRegisterIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> AutoRegisterOut | JSONResponse:
+    try:
+        out, code = auto_register(db, actor, payload.catalog_entry_id)
+        return JSONResponse(status_code=code, content=out.model_dump(by_alias=True, mode="json"))
     except catalog_service.CatalogError as exc:
         return _catalog_error_response(exc)
 

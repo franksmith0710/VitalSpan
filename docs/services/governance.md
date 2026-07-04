@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/governance/` |
 | PRD | [F10-GOV](../automate/prd/F10-GOV.md) · [F14-CAT](../automate/prd/F14-CAT.md) |
 | 里程碑 | M6（L1 kickoff） |
-| 状态 | **部分（L1）** |
+| 状态 | **L1 kickoff (r60)** |
 
 ## 职责
 
@@ -15,6 +15,8 @@
 - 查询设计权限联动与 RLS 绑定守卫（GOV-008）
 - 查询服务发布状态机 submit/approve/reject（GOV-005）
 - **分类树节点**（`catalog/classification/`）：内存树 CRUD/move、环检测与深度守卫（CAT-004）
+- **工号行为审计**（`catalog/cat07/`）：mock seed + `GET /workno/behavior`（CAT-007）
+- **总线全自动注册 FSM**（`bus/auto.py`）：`POST /gov/bus/auto-register`（GOV-007）
 - 工单流程模板与五态 FSM 实例（GOV-003）
 - 发布引擎 OpenAPI 映射 store（GOV-006）
 - 为开放 API 登记与 BPM 流水线奠基
@@ -27,7 +29,7 @@
 | classification 树节点 CRUD/move（内存 L1；`MAX_CLASS_DEPTH=8`） | timeseries 模板完整实现（CAT-04 companion） |
 | workflow 模板校验 + 五态 FSM 实例持久化 | 完整 BPM 工单与审批流水线 UI（GOV-003+） |
 | openapi 映射 store（published entry 校验 + entityTypeRef） | 与 `publish_service` 串联的跨域发布（本域 workflow 独立） |
-| | 真实总线 HTTP 对接（GOV-007+） |
+| `catalog/cat07/` workno behavior mock；`bus/auto.py` 全自动注册 FSM | 真实审计 DB、publish hook 内嵌、真实总线 HTTP |
 | | 认证授权（→ `auth`） |
 
 ## 依赖
@@ -44,6 +46,8 @@
 | `BusPoCAdapter` / `InMemoryBusPoCAdapter` | PoC 注册适配器 | GOV-002 | 已实现 |
 | `GET/POST/DELETE /api/v1/gov/catalog/*` | catalog API | GOV-001 | 已实现 |
 | `POST /api/v1/gov/bus/register` | 半自动注册 API（admin；幂等） | GOV-002 | 已实现 |
+| `POST /api/v1/gov/bus/auto-register` | 全自动注册 FSM（integration/admin；幂等） | GOV-007 | L1 已实现 r60 |
+| `GET /api/v1/workno/behavior` | CAT-07 工号行为审计查询 mock | CAT-007 | L1 已实现 r60 |
 | `query_design/` | 可视化查询设计聚合 service/schemas | GOV-004 | 已实现 |
 | `acl.py` | 查询设计 save/publish 权限联动 + RLS smoke | GOV-008 | 已实现 |
 | `POST/PUT/GET /api/v1/gov/query-design*` | 可视化查询设计 validate/save/get | GOV-004/008 | 已实现 |

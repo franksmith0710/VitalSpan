@@ -5,21 +5,24 @@
 | 模块路径 | `backend/app/views/` |
 | PRD | [F09-VIEW](../automate/prd/F09-VIEW.md) · VIEW-001 ~ VIEW-003 |
 | 里程碑 | FR-VIEW |
-| 状态 | **部分（L1）** |
+| 状态 | **L1 kickoff (r60)** |
 
 ## 职责
 
 - DashboardView 协议 schema 与校验（layout/widgets 与 DASH 互操作）
 - `POST /api/v1/views/validate` 校验入口
 - 为后续角色默认视图与用户覆盖（VIEW-002/003）奠基
+- `role_template.py` 角色默认视图 CRUD（GET/PUT `/roles/{id}/default-views`）
+- `user_override.py` 用户覆盖 save/list + bounds/M7 stub（GET/POST `/users/me/views`）
 
 ## 边界
 
 | In | Out |
 |----|-----|
 | DashboardView 序列化、layout 校验、chart 引用检查 | 壳层渲染（前端 `fe/`） |
+| `role_template.py` 角色默认视图 CRUD；`user_override.py` 用户覆盖 + bounds/M7 stub | ORM 持久化、Admin UI |
+| `store.py` 进程内 role default + user override 内存 store | |
 | | Dashboard CRUD 持久化（→ `dashboard`） |
-| | 角色/用户视图解析（VIEW-002/003，M10+） |
 
 ## 依赖
 
@@ -33,6 +36,10 @@
 | `validate_dashboard_view` | 视图校验服务 | VIEW-001 | 已实现 |
 | `validate_layout_dict` | layout 校验（dashboard 委托） | VIEW-001 | 已实现 |
 | `POST /api/v1/views/validate` | HTTP 校验入口 | VIEW-001 | 已实现 |
+| `role_template.py` | get/put/resolve 角色默认视图 | VIEW-002 | L1 已实现 r60 |
+| `user_override.py` | list/create + bounds 守卫 | VIEW-003 | L1 已实现 r60 |
+| `GET/PUT /api/v1/roles/{id}/default-views` | 角色默认视图 CRUD | VIEW-002 | L1 已实现 r60 |
+| `GET/POST /api/v1/users/me/views` | 用户个人视图覆盖 | VIEW-003 | L1 已实现 r60 |
 
 ## 关联 API
 
@@ -53,3 +60,10 @@
 | `VIEW_UNKNOWN_CHART_REF` | chartRef 或 chartId 引用未知 widget |
 | `VIEW_CHART_REF_CYCLE` | chartRef/chartId 循环引用 |
 | `VIEW_DEFAULT_SELF_REF` | defaultViewId 等于自身 id |
+| `VIEW_DEFAULT_FORBIDDEN` | 非 admin PUT 角色默认视图 |
+| `VIEW_DEFAULT_EMPTY` | dashboard/report 双 null |
+| `VIEW_DEFAULT_DASHBOARD_NOT_FOUND` | 未知 dashboard |
+| `VIEW_DEFAULT_REPORT_NOT_FOUND` | 未知 report template |
+| `VIEW_OVERRIDE_OUT_OF_BOUNDS` | widget 数超角色默认 maxWidgetCount |
+| `VIEW_OVERRIDE_CLASSIFICATION_DENIED` | classificationScope 不在 allowlist |
+| `VIEW_OVERRIDE_CONFLICT` | 重复视图名 |
