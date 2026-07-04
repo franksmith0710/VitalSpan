@@ -65,6 +65,13 @@
 | `catalog/cat03/service` | 地域 geo 树内存 store + cycle/depth 守卫 | CAT-003 | L1 已实现 r61 |
 | `catalog/cat05/service` | 工单 stats item validate/create/list/stats probe | CAT-005 | L1 已实现 r61 |
 | `catalog/cat06/service` | 生产销售统计 validate/create/list/stats probe | CAT-006 | L1 已实现 r62 |
+| `catalog/cat01/service` | lifecycle 模板 validate/create/list/get/stage-move + scope ACL | CAT-001 | companion 已实现 r66 |
+| `catalog/cat02/service` | aggregate 模板 validate/create/list + scope ACL | CAT-002 | companion 已实现 r66 |
+
+### r66 companion 质量推分（CAT-001/002）
+
+- **CAT-001**（`catalog/cat01/`）：`set_user_entity_scope` + `CAT01_FORBIDDEN`（viewer 写禁止 / enterprise `entityTypeCode` 前缀 scope）；`get_lifecycle_template` / `move_lifecycle_stage` NOT_FOUND 闭合（`CAT01_NOT_FOUND` / `CAT01_STAGE_NOT_FOUND` / `CAT01_STAGE_INDEX_OUT_OF_BOUNDS`）；`probe_list_lifecycle_templates_budget_ms` / `probe_validate_lifecycle_budget_ms` ≤50ms
+- **CAT-002**（`catalog/cat02/`）：`set_user_aggregate_scope` + `CAT02_FORBIDDEN`；`list_aggregate_templates` enterprise 过滤；duplicate dimension/metric（`CAT02_DUPLICATE_DIMENSION` / `CAT02_DUPLICATE_METRIC`）；`probe_validate_aggregate_budget_ms` / `probe_list_aggregate_budget_ms` ≤50ms
 
 ### r65 companion 质量推分（CAT-003/004/006）
 

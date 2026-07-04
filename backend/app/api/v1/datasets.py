@@ -23,20 +23,20 @@ def _dataset_error(exc: DatasetError) -> JSONResponse:
 
 @router.get("", response_model=DatasetListResponse)
 def list_datasets(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> DatasetListResponse:
-    return dataset_service.list_datasets(limit, offset)
+    return dataset_service.list_datasets(limit, offset, actor)
 
 
 @router.post("", response_model=DatasetItemOut, status_code=status.HTTP_201_CREATED)
 def create_dataset(
     payload: DatasetItemIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> DatasetItemOut | JSONResponse:
     try:
-        return dataset_service.create_dataset(payload)
+        return dataset_service.create_dataset(payload, actor)
     except DatasetError as exc:
         return _dataset_error(exc)
 

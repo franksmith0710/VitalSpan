@@ -260,8 +260,11 @@ redoc: /redoc
 | POST | `/api/v1/gov/catalog/lifecycle-templates/validate` | CAT-001 lifecycle 校验 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 创建 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 列表 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/lifecycle-templates/{templateKey}` | CAT-001 lifecycle 按 key 查询 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/catalog/lifecycle-templates/{templateKey}/stages/move` | CAT-001 lifecycle 阶段重排 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/aggregate-templates/validate` | CAT-002 aggregate 校验 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/aggregate-templates` | CAT-002 aggregate 创建 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/aggregate-templates` | CAT-002 aggregate 列表 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/aggregate-templates/{aggregate_key}/attribution` | CAT-002 PoC 归属 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`；需 admin；幂等 201/200；403 `BUS_REGISTER_FORBIDDEN`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/auto-register` | 总线全自动注册 FSM（`catalogEntryId`；integration/admin；幂等 201/200；403 `GOV_AUTO_BUS_FORBIDDEN`） | IF-06 | 四期 | GOV-007 | 已实现 | `backend/app/api/v1/gov.py` |

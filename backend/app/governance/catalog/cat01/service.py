@@ -2,14 +2,21 @@ from __future__ import annotations
 
 import re
 
+from app.auth.deps import UserContext
 from app.governance.catalog.cat01.errors import (
+    CAT01_EMPTY_ROLES,
     CAT01_DUPLICATE_STAGE,
     CAT01_EMPTY_STAGES,
+    CAT01_FORBIDDEN,
     CAT01_INVALID_ENTITY_TYPE,
     CAT01_KEY_CONFLICT,
+    CAT01_NOT_FOUND,
+    CAT01_STAGE_INDEX_OUT_OF_BOUNDS,
+    CAT01_STAGE_NOT_FOUND,
     Cat01Error,
 )
 from app.governance.catalog.cat01.schemas import (
+    LifecycleStageMove,
     LifecycleTemplateIn,
     LifecycleTemplateListResponse,
     LifecycleTemplateOut,
@@ -18,6 +25,23 @@ from app.governance.catalog.cat01.schemas import (
 
 _ENTITY_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 _store: dict[str, dict] = {}
+_USER_ENTITY_SCOPE: dict[str, str] = {}
+
+
+def set_user_entity_scope(user_id: str, entity_prefix: str) -> None:
+    _USER_ENTITY_SCOPE[user_id] = entity_prefix
+
+
+def _assert_lifecycle_write_access(user: UserContext, entity_type_code: str) -> None:
+    roles = set(user.roles)
+    if roles.intersection({"admin", "analyst"}):
+        return
+    if "viewer" in roles and not roles.intersection({"editor", "analyst", "admin"}):
+        raise Cat01Error(CAT01_FORBIDDEN, "viewer cannot modify lifecycle templates", 403)
+    if "enterprise" in roles:
+        prefix = _USER_ENTITY_SCOPE.get(user.id, "ticket")
+        if not entity_type_code.startswith(prefix):
+            raise Cat01Error(CAT01_FORBIDDEN, "enterprise user out of entity scope", 403)
 
 
 def _validate_payload(payload: LifecycleTemplateIn) -> LifecycleTemplateIn:
@@ -32,6 +56,13 @@ def _validate_payload(payload: LifecycleTemplateIn) -> LifecycleTemplateIn:
         raise Cat01Error(CAT01_DUPLICATE_STAGE, "duplicate lifecycle stage", 422)
     if not _ENTITY_RE.match(payload.entity_type_code):
         raise Cat01Error(CAT01_INVALID_ENTITY_TYPE, "invalid entityTypeCode", 422)
+    if not payload.allowed_roles:
+        raise Cat01Error(
+            CAT01_EMPTY_ROLES,
+            "allowedRoles must not be empty",
+            422,
+            [{"field": "allowedRoles", "message": "must not be empty"}],
+        )
     return payload
 
 
@@ -40,8 +71,16 @@ def validate_lifecycle_template(payload: LifecycleTemplateIn) -> LifecycleTempla
     return LifecycleTemplateValidateOut(valid=True, template_key=item.template_key)
 
 
-def create_lifecycle_template(payload: LifecycleTemplateIn) -> LifecycleTemplateOut:
+def get_lifecycle_template(template_key: str) -> LifecycleTemplateOut:
+    row = _store.get(template_key)
+    if row is None:
+        raise Cat01Error(CAT01_NOT_FOUND, f"templateKey not found: {template_key}", 404)
+    return LifecycleTemplateOut.model_validate(row)
+
+
+def create_lifecycle_template(payload: LifecycleTemplateIn, user: UserContext) -> LifecycleTemplateOut:
     item = _validate_payload(payload)
+    _assert_lifecycle_write_access(user, item.entity_type_code)
     key = item.template_key
     if key in _store:
         raise Cat01Error(CAT01_KEY_CONFLICT, f"templateKey already exists: {key}", 409)
@@ -49,10 +88,45 @@ def create_lifecycle_template(payload: LifecycleTemplateIn) -> LifecycleTemplate
     return LifecycleTemplateOut.model_validate(_store[key])
 
 
-def list_lifecycle_templates(limit: int, offset: int) -> LifecycleTemplateListResponse:
+def list_lifecycle_templates(
+    limit: int, offset: int, user: UserContext | None = None,
+) -> LifecycleTemplateListResponse:
     items = list(_store.values())
+    if user is not None and "enterprise" in set(user.roles) and "admin" not in set(user.roles):
+        prefix = _USER_ENTITY_SCOPE.get(user.id, "ticket")
+        items = [i for i in items if str(i.get("entityTypeCode", "")).startswith(prefix)]
     page = items[offset : offset + limit]
     return LifecycleTemplateListResponse(
         items=[LifecycleTemplateOut.model_validate(i) for i in page],
         total=len(items),
     )
+
+
+def move_lifecycle_stage(
+    template_key: str, payload: LifecycleStageMove, user: UserContext,
+) -> LifecycleTemplateOut:
+    row = _store.get(template_key)
+    if row is None:
+        raise Cat01Error(CAT01_NOT_FOUND, f"templateKey not found: {template_key}", 404)
+    _assert_lifecycle_write_access(user, row["entityTypeCode"])
+    stages: list[str] = list(row["lifecycleStages"])
+    try:
+        from_index = stages.index(payload.stage_name)
+    except ValueError as exc:
+        raise Cat01Error(
+            CAT01_STAGE_NOT_FOUND,
+            f"stageName not found: {payload.stage_name}",
+            404,
+        ) from exc
+    if payload.to_index < 0 or payload.to_index >= len(stages):
+        raise Cat01Error(
+            CAT01_STAGE_INDEX_OUT_OF_BOUNDS,
+            "toIndex out of bounds",
+            422,
+            [{"field": "toIndex", "message": f"must be 0..{len(stages) - 1}"}],
+        )
+    stage = stages.pop(from_index)
+    stages.insert(payload.to_index, stage)
+    row["lifecycleStages"] = stages
+    _store[template_key] = row
+    return LifecycleTemplateOut.model_validate(row)

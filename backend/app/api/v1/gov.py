@@ -75,6 +75,7 @@ from app.governance.catalog.cat06.schemas import (
 from app.governance.catalog.cat06 import service as cat06_service
 from app.governance.catalog.cat01.errors import Cat01Error
 from app.governance.catalog.cat01.schemas import (
+    LifecycleStageMove,
     LifecycleTemplateIn,
     LifecycleTemplateListResponse,
     LifecycleTemplateOut,
@@ -85,6 +86,7 @@ from app.governance.catalog.cat02.errors import Cat02Error
 from app.governance.catalog.cat02.schemas import (
     AggregateAttributionOut,
     AggregateTemplateIn,
+    AggregateTemplateListResponse,
     AggregateTemplateOut,
     AggregateTemplateValidateOut,
 )
@@ -728,10 +730,21 @@ def lifecycle_templates_validate(
 @router.post("/catalog/lifecycle-templates", response_model=LifecycleTemplateOut, status_code=status.HTTP_201_CREATED)
 def lifecycle_templates_create(
     payload: LifecycleTemplateIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> LifecycleTemplateOut | JSONResponse:
+    try:
+        return cat01_service.create_lifecycle_template(payload, actor)
+    except Cat01Error as exc:
+        return _cat01_error(exc)
+
+
+@router.get("/catalog/lifecycle-templates/{template_key}", response_model=LifecycleTemplateOut)
+def lifecycle_templates_get(
+    template_key: str,
     _: Annotated[UserContext, Depends(get_current_user)],
 ) -> LifecycleTemplateOut | JSONResponse:
     try:
-        return cat01_service.create_lifecycle_template(payload)
+        return cat01_service.get_lifecycle_template(template_key)
     except Cat01Error as exc:
         return _cat01_error(exc)
 
@@ -740,9 +753,21 @@ def lifecycle_templates_create(
 def lifecycle_templates_list(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    _: Annotated[UserContext, Depends(get_current_user)] = None,
+    actor: Annotated[UserContext, Depends(get_current_user)] = None,
 ) -> LifecycleTemplateListResponse:
-    return cat01_service.list_lifecycle_templates(limit, offset)
+    return cat01_service.list_lifecycle_templates(limit, offset, actor)
+
+
+@router.post("/catalog/lifecycle-templates/{template_key}/stages/move", response_model=LifecycleTemplateOut)
+def lifecycle_templates_stage_move(
+    template_key: str,
+    payload: LifecycleStageMove,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> LifecycleTemplateOut | JSONResponse:
+    try:
+        return cat01_service.move_lifecycle_stage(template_key, payload, actor)
+    except Cat01Error as exc:
+        return _cat01_error(exc)
 
 
 def _cat02_error(exc: Cat02Error) -> JSONResponse:
@@ -764,12 +789,21 @@ def aggregate_templates_validate(
 @router.post("/catalog/aggregate-templates", response_model=AggregateTemplateOut, status_code=status.HTTP_201_CREATED)
 def aggregate_templates_create(
     payload: AggregateTemplateIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> AggregateTemplateOut | JSONResponse:
     try:
-        return cat02_service.create_aggregate_template(payload)
+        return cat02_service.create_aggregate_template(payload, actor)
     except Cat02Error as exc:
         return _cat02_error(exc)
+
+
+@router.get("/catalog/aggregate-templates", response_model=AggregateTemplateListResponse)
+def aggregate_templates_list(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    actor: Annotated[UserContext, Depends(get_current_user)] = None,
+) -> AggregateTemplateListResponse:
+    return cat02_service.list_aggregate_templates(limit, offset, actor)
 
 
 @router.get("/catalog/aggregate-templates/{aggregate_key}/attribution", response_model=AggregateAttributionOut)

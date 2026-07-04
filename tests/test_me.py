@@ -104,8 +104,13 @@ def test_me_malformed_bearer_header_returns_401(client, malformed_auth_headers):
     assert response.json() == UNAUTHORIZED_BODY
 
 
-def test_me_concurrent_requests_stable(client, auth_headers):
+def test_me_concurrent_requests_stable(client, auth_headers, monkeypatch):
     """T-ME-12: 并发 5× GET /api/v1/me + auth_headers 全部 200 且用户上下文一致。"""
+    monkeypatch.setattr(
+        "app.auth.middleware.user_service.resolve_role_codes_for_username",
+        lambda _session, _username: ["admin"],
+    )
+
     def fetch_me():
         return client.get("/api/v1/me", headers=auth_headers)
 

@@ -1,18 +1,24 @@
 from __future__ import annotations
 
+import re
 import uuid
 
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.dashboard import service as dash_service
-from app.dashboard.entity_overview.errors import EntityOverviewError
+from app.dashboard.entity_overview.errors import (
+    DASH_OVERVIEW_INVALID_DRILL_WIDGET,
+    DASH_OVERVIEW_INVALID_ENTITY_TYPE,
+    EntityOverviewError,
+)
 from app.dashboard.entity_overview.schemas import EntityOverviewItem, EntityOverviewOut
 from app.governance.publish import service as publish_service
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigError, ConfigUpsert
 
 _REF_TYPE = "entity_overview"
+_ENTITY_TYPE_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 
 
 def _assert_access(actor: UserContext, dashboard_created_by: uuid.UUID | None) -> None:
@@ -37,12 +43,33 @@ def _validate_item(session: Session, item: EntityOverviewItem) -> EntityOverview
     keys = [c.metric_key for c in item.stat_cards]
     if len(keys) != len(set(keys)):
         raise EntityOverviewError("DASH_OVERVIEW_DUPLICATE_METRIC", "Duplicate metricKey", 422)
+    if not _ENTITY_TYPE_RE.match(item.entity_type_ref):
+        raise EntityOverviewError(
+            DASH_OVERVIEW_INVALID_ENTITY_TYPE,
+            "Invalid entityTypeRef",
+            422,
+            fields=[{"field": "entityTypeRef", "message": "must match ^[a-z][a-z0-9_]{1,63}$"}],
+        )
     try:
-        dash_service.get_dashboard(session, item.dashboard_id)
+        dashboard = dash_service.get_dashboard(session, item.dashboard_id)
     except dash_service.DashboardError as exc:
         if exc.code == "DASH_NOT_FOUND":
             raise EntityOverviewError("DASH_OVERVIEW_DASHBOARD_NOT_FOUND", "Dashboard not found", 404) from exc
         raise
+    widget_ids = {
+        str(w.get("id"))
+        for w in (dashboard.layout_json or {}).get("widgets", [])
+        if isinstance(w, dict) and w.get("id") is not None
+    }
+    if widget_ids:
+        for drill in item.drill_targets:
+            if drill.widget_id not in widget_ids:
+                raise EntityOverviewError(
+                    DASH_OVERVIEW_INVALID_DRILL_WIDGET,
+                    f"drill widget not in layout: {drill.widget_id}",
+                    422,
+                    fields=[{"field": "drillTargets.widgetId", "message": drill.widget_id}],
+                )
     return item
 
 

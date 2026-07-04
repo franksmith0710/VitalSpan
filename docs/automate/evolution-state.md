@@ -7,17 +7,17 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r65.md |
-| design | docs/superpowers/plans/2026-07-04-cat-rpt-meta-companion-quality-r65.md |
-| plan | docs/superpowers/plans/2026-07-04-cat-rpt-meta-companion-quality-r65.md |
-| branch | feat/evolution-r65-cat-rpt-meta-companion-quality |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r66.md |
+| design | docs/superpowers/specs/2026-07-04-cat-dash-rpt-meta-companion-quality-r66-design.md |
+| plan | docs/superpowers/plans/2026-07-04-cat-dash-rpt-meta-companion-quality-r66.md |
+| branch | feat/evolution-r66-cat-dash-rpt-meta-companion-quality |
 | base_branch | dev-auto |
-| prd_ids | CAT-003,CAT-004,CAT-006,RPT-002,META-005 |
-| pr_number | 99 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_cat_rpt_meta_r65.py ../tests/test_nfr_cat_r64.py ../tests/test_cat_nfr_rpt_meta_r62.py ../tests/test_cat_dash_viz_nfr_r61.py ../tests/test_meta_cat_dash_conn_design_r59.py -v && python3 -m pytest -q |
+| prd_ids | CAT-001,CAT-002,DASH-005,RPT-001,META-004 |
+| pr_number | 101 |
+| last_verified_command | cd backend && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T19:55:00Z |
+| skill_rule_index_generated_at | 2026-07-04T22:10:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,12 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r66 PRD 重评：CAT-001/CAT-002/DASH-005/RPT-001/META-004 companion 质量推分；pytest 1752/4 skipped；test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 196/196；总分 83.9–84.2→90.0–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
+- P4 r66 验证通过：ruff clean（python3 -m ruff check .）；pytest 1752 passed/4 skipped（全量 exit_code 0）；test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 196/196；UI: N/A（纯后端 ui_design_skill none）；PR #100 可能已提前创建（已知 SOP 顺序 concern）；phase P3_DONE→P4_DONE
+- P2 r66 计划完成：8 Task（fixtures→CAT-001 cat01 ACL/move/probe→CAT-002 cat02 ACL/list/probe→DASH-005 entity_overview validate/probe→RPT-001 engine acl/probe→META-004 dataset ACL/probe→六轮回归门控→docs）；P3 生产 18 + 测试 1 = 19 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥33 新测 test_cat_dash_rpt_meta_r66 + r65 32/32 + r64 33/33 + r62 32/32 + r61 32/32 + r59 34/34 回归 196/196；plan=docs/superpowers/plans/2026-07-04-cat-dash-rpt-meta-companion-quality-r66.md；phase P1_DONE→P2_DONE
+- P1 r66 设计完成：跨域 companion 质量推分 — CAT-001/CAT-002/DASH-005/RPT-001/META-004；18 文件框定；perf probe 50ms + ACL/NOT_FOUND/stage-move 闭合；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
+- G2 r66 选题完成：跨域 companion 质量推分 — CAT-001/CAT-002/DASH-005/RPT-001/META-004（5 项）；最低分 CAT-001/CAT-002(83.9)；饱和熔断未触发（Top5 83.9–84.2≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 五入选 ID 各 1 轮未达 ≥3 硬标注阈值；phase idle→G2_DONE
+- G1 r66 bootstrap：r65 PR #99 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 CAT-001(83.9)/CAT-002(83.9)/DASH-005(84.0)；STUCK 十三 ID 各 1 轮（r64–r65 四 stub <90 upsert + 九 ID 远期 stub，均 83.9–84.4）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r65 PRD 重评：CAT-003/CAT-004/CAT-006/RPT-002/META-005 companion 质量推分；pytest 1719/4 skipped；test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 163/163；总分 83.9–84.0→90.0–90.5（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P4 r65 验证通过：ruff clean；pytest 1719 passed/4 skipped（全量 exit_code 0）；test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 163/163；UI: N/A（纯后端 ui_design_skill none）；phase P3_DONE→P4_DONE
 - P3 r65 实现完成：8 Task 全绿；跨域 companion 质量推分 — CAT-003/CAT-004/CAT-006/RPT-002/META-005；32 测 test_cat_rpt_meta_r65 + r64 33/33 + r62 32/32 + r61 32/32 + r59 34/34 回归 163/163；pytest 1719/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r65-cat-rpt-meta-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
@@ -222,16 +228,11 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| CAT-001 | 1 | 83.9 | 2026-07-04 |
-| CAT-002 | 1 | 83.9 | 2026-07-04 |
 | CONN-018 | 1 | 84.2 | 2026-07-04 |
 | DASH-004 | 1 | 84.2 | 2026-07-04 |
-| DASH-005 | 1 | 84.0 | 2026-07-04 |
 | GOV-007 | 1 | 84.4 | 2026-07-04 |
-| META-004 | 1 | 84.2 | 2026-07-04 |
 | NFR-001 | 1 | 84.2 | 2026-07-04 |
 | NFR-002 | 1 | 84.2 | 2026-07-04 |
 | NFR-003 | 1 | 84.2 | 2026-07-04 |
 | NFR-004 | 1 | 84.2 | 2026-07-04 |
-| RPT-001 | 1 | 84.2 | 2026-07-04 |
 | RPT-003 | 1 | 84.2 | 2026-07-04 |

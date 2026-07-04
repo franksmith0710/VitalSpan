@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+META_DATASET_FORBIDDEN = "META_DATASET_FORBIDDEN"
+META_DATASET_DUPLICATE_TABLE = "META_DATASET_DUPLICATE_TABLE"
+
 
 class DatasetError(Exception):
     def __init__(self, code: str, message: str, status: int = 400, fields: list | None = None) -> None:

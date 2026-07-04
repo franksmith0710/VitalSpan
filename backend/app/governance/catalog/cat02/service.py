@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from app.auth.deps import UserContext
 from app.governance.catalog.cat02.errors import (
+    CAT02_DUPLICATE_DIMENSION,
+    CAT02_DUPLICATE_METRIC,
     CAT02_EMPTY_DIMENSIONS,
     CAT02_EMPTY_METRICS,
+    CAT02_FORBIDDEN,
     CAT02_INVALID_AGGREGATION,
     CAT02_KEY_CONFLICT,
     CAT02_NOT_FOUND,
@@ -11,12 +15,30 @@ from app.governance.catalog.cat02.errors import (
 from app.governance.catalog.cat02.schemas import (
     AggregateAttributionOut,
     AggregateTemplateIn,
+    AggregateTemplateListResponse,
     AggregateTemplateOut,
     AggregateTemplateValidateOut,
 )
 
 _VALID_FN = frozenset({"sum", "avg", "count"})
 _store: dict[str, dict] = {}
+_USER_AGGREGATE_SCOPE: dict[str, str] = {}
+
+
+def set_user_aggregate_scope(user_id: str, key_prefix: str) -> None:
+    _USER_AGGREGATE_SCOPE[user_id] = key_prefix
+
+
+def _assert_aggregate_write_access(user: UserContext, aggregate_key: str) -> None:
+    roles = set(user.roles)
+    if roles.intersection({"admin", "analyst"}):
+        return
+    if "viewer" in roles and not roles.intersection({"editor", "analyst", "admin"}):
+        raise Cat02Error(CAT02_FORBIDDEN, "viewer cannot modify aggregate templates", 403)
+    if "enterprise" in roles:
+        prefix = _USER_AGGREGATE_SCOPE.get(user.id, "AGG")
+        if not aggregate_key.startswith(prefix):
+            raise Cat02Error(CAT02_FORBIDDEN, "enterprise user out of aggregate scope", 403)
 
 
 def _validate_payload(payload: AggregateTemplateIn) -> AggregateTemplateIn:
@@ -28,6 +50,10 @@ def _validate_payload(payload: AggregateTemplateIn) -> AggregateTemplateIn:
         raise Cat02Error(CAT02_INVALID_AGGREGATION, "invalid aggregationFn", 422)
     if not payload.attribution_label or not payload.attribution_label.strip():
         raise Cat02Error("CAT02_ATTRIBUTION_REQUIRED", "attributionLabel is required", 422)
+    if len(payload.dimensions) != len(set(payload.dimensions)):
+        raise Cat02Error(CAT02_DUPLICATE_DIMENSION, "duplicate dimension", 422)
+    if len(payload.metrics) != len(set(payload.metrics)):
+        raise Cat02Error(CAT02_DUPLICATE_METRIC, "duplicate metric", 422)
     return payload
 
 
@@ -36,13 +62,28 @@ def validate_aggregate_template(payload: AggregateTemplateIn) -> AggregateTempla
     return AggregateTemplateValidateOut(valid=True, aggregate_key=item.aggregate_key)
 
 
-def create_aggregate_template(payload: AggregateTemplateIn) -> AggregateTemplateOut:
+def create_aggregate_template(payload: AggregateTemplateIn, user: UserContext) -> AggregateTemplateOut:
     item = _validate_payload(payload)
+    _assert_aggregate_write_access(user, item.aggregate_key)
     key = item.aggregate_key
     if key in _store:
         raise Cat02Error(CAT02_KEY_CONFLICT, f"aggregateKey already exists: {key}", 409)
     _store[key] = item.model_dump(by_alias=True, mode="json")
     return AggregateTemplateOut.model_validate(_store[key])
+
+
+def list_aggregate_templates(
+    limit: int, offset: int, user: UserContext | None = None,
+) -> AggregateTemplateListResponse:
+    items = list(_store.values())
+    if user is not None and "enterprise" in set(user.roles) and "admin" not in set(user.roles):
+        prefix = _USER_AGGREGATE_SCOPE.get(user.id, "AGG")
+        items = [i for i in items if str(i.get("aggregateKey", "")).startswith(prefix)]
+    page = items[offset : offset + limit]
+    return AggregateTemplateListResponse(
+        items=[AggregateTemplateOut.model_validate(i) for i in page],
+        total=len(items),
+    )
 
 
 def get_aggregate_attribution(aggregate_key: str) -> AggregateAttributionOut:
