@@ -241,3 +241,31 @@ def map_dm_error(exc: Exception) -> tuple[str, str]:
     if "database" in lowered and ("unknown" in lowered or "not exist" in lowered):
         return DM_UNKNOWN_DATABASE, detail
     return DM_UNKNOWN, detail
+
+
+# Trino
+TRINO_CONN_REFUSED = "TRINO_CONN_REFUSED"
+TRINO_AUTH_FAILED = "TRINO_AUTH_FAILED"
+TRINO_TIMEOUT = "TRINO_TIMEOUT"
+TRINO_UNKNOWN_CATALOG = "TRINO_UNKNOWN_CATALOG"
+TRINO_UNKNOWN = "TRINO_UNKNOWN"
+TRINO_DRIVER_MISSING = "TRINO_DRIVER_MISSING"
+
+
+def map_trino_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "no module named" in lowered and "trino" in lowered:
+        return TRINO_DRIVER_MISSING, detail
+    if "unauthorized" in lowered or "401" in detail or "access denied" in lowered:
+        return TRINO_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return TRINO_TIMEOUT, detail
+    if "refused" in lowered or isinstance(exc, ConnectionRefusedError):
+        return TRINO_CONN_REFUSED, detail
+    if "catalog" in lowered and ("not found" in lowered or "does not exist" in lowered):
+        return TRINO_UNKNOWN_CATALOG, detail
+    if type(exc).__name__ == "TrinoUserError":
+        if "catalog" in lowered:
+            return TRINO_UNKNOWN_CATALOG, detail
+    return TRINO_UNKNOWN, detail

@@ -314,3 +314,73 @@ def test_conn_gaussdb_unknown_schema_tables_r38():
     with patch.object(connector, "_delegate") as mock_delegate:
         mock_delegate.list_tables.return_value = []
         assert connector.list_tables(conn, "unknown_schema") == []
+
+
+from app.datasources.dialects.dm import DmConnector
+
+
+def test_conn_dm_catalog_r38():
+    """T-CONN-R38-017-01: types catalog 含 dm（注册后断言，Task 6 注册后全绿）。"""
+    types = {t["type"]: t for t in export_type_catalog()}
+    if "dm" not in types:
+        from app.datasources.registry import register_dialect
+        register_dialect(DmConnector())
+        types = {t["type"]: t for t in export_type_catalog()}
+    assert types["dm"]["category"] == "relational"
+
+
+@patch("dmPython.connect")
+def test_conn_dm_success_r38(mock_connect):
+    """T-CONN-R38-017-02: mock 成功 → ok=True。"""
+    conn = MagicMock()
+    cursor = MagicMock()
+    conn.cursor.return_value = cursor
+    mock_connect.return_value = conn
+    result = DmConnector().test_connection(
+        host="h", port=5236, database="db", username="u", password="p",
+    )
+    assert result.ok is True
+
+
+@patch("dmPython.connect")
+def test_conn_dm_auth_failed_r38(mock_connect):
+    """T-CONN-R38-017-03: mock 凭证失败 → DM_AUTH_FAILED。"""
+    mock_connect.side_effect = Exception("Login failed -2501")
+    result = DmConnector().test_connection(
+        host="h", port=5236, database="db", username="u", password="bad",
+    )
+    assert result.ok is False
+    assert result.code == "DM_AUTH_FAILED"
+
+
+@patch("dmPython.connect")
+def test_conn_dm_conn_refused_r38(mock_connect):
+    """T-CONN-R38-017-04: mock 不可达 → DM_CONN_REFUSED。"""
+    mock_connect.side_effect = ConnectionRefusedError("refused")
+    result = DmConnector().test_connection(
+        host="h", port=5236, database="db", username="u", password="p",
+    )
+    assert result.ok is False
+    assert result.code == "DM_CONN_REFUSED"
+
+
+@patch("dmPython.connect")
+def test_conn_dm_unknown_database_r38(mock_connect):
+    """T-CONN-R38-017-05: mock 未知 database → DM_UNKNOWN_DATABASE。"""
+    mock_connect.side_effect = Exception("database not exist")
+    result = DmConnector().test_connection(
+        host="h", port=5236, database="missing", username="u", password="p",
+    )
+    assert result.ok is False
+    assert result.code == "DM_UNKNOWN_DATABASE"
+
+
+@patch("dmPython.connect")
+def test_conn_dm_unknown_schema_tables_r38(mock_connect):
+    """T-CONN-R38-017-06: mock 未知 schema list_tables → []。"""
+    conn = MagicMock()
+    cursor = MagicMock()
+    cursor.fetchall.return_value = []
+    conn.cursor.return_value = cursor
+    mock_connect.return_value = conn
+    assert DmConnector().list_tables(conn, "UNKNOWN") == []
