@@ -13,7 +13,7 @@
 | branch | feat/evolution-r29-m5-viz-dash-quality |
 | base_branch | dev-auto |
 | prd_ids | VIZ-002,DASH-002,DASH-003,VIZ-001,DASH-001 |
-| pr_number |  |
+| pr_number | 52 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm test |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run src/pages/admin/dashboard/dashboard.smoke.test.tsx src/components/charts/charts.smoke.test.tsx (19/19); screenshots N/A headless CI |
