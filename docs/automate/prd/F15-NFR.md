@@ -15,15 +15,16 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [NFR-002] NFR-01 报表查询性能
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r61）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：二期
 - **描述**：NFR-01 报表查询性能（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 报表查询 ≤ 10s
-  - [ ] 抽样通过
-- **代码锚点**：`tests/perf/nfr01_report/`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] 报表查询 ≤ 10s（r61 L1：`POST validate` + `POST /api/v1/nfr/report-perf/probe` + mock elapsedMs=120 + budgetMs default 10000 + `REPORT_PERF_*` 错误域）
+  - [ ] 抽样通过（mock probe only；无 `tests/perf/nfr01_report/` 真实 perf suite）
+- **代码锚点**：`backend/app/core/nfr/report_perf.py` · `backend/app/api/v1/nfr.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-NFR-R61-002-01~06
+- **演化建议**：r61 L1 闭合 report-perf validate/probe 与 budgetMs/sampleRows 边界；后续补真实报表查询 perf suite 与抽样门禁
+- **里程碑对齐**：
 ### [NFR-003] NFR-02 核心看板可用性
 
 - **状态**：未实现

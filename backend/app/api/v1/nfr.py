@@ -15,6 +15,14 @@ from app.core.nfr.deployment_report import build_deployment_acceptance_report
 from app.core.nfr.plugin_extension import describe_registration_path, list_extension_points
 from app.core.nfr.push_channels import dispatch_push_mock
 from app.core.nfr.push_config import PushConfigValidationError, resolve_push_mode
+from app.core.nfr.report_perf import (
+    ReportPerfError,
+    ReportPerfProbeIn,
+    ReportPerfProbeOut,
+    ReportPerfValidateOut,
+    probe_report_perf,
+    validate_report_perf_config,
+)
 from app.core.nfr.xinchuang import XinchuangComplianceError, assert_xinchuang_compliant, build_compliance_report
 
 router = APIRouter(prefix="/nfr", tags=["nfr"])
@@ -260,3 +268,30 @@ def get_deployment_report(
             for i in report.acceptance_checklist
         ],
     }
+
+
+def _report_perf_error(exc: ReportPerfError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/report-query-perf/probe", response_model=ReportPerfProbeOut)
+def report_query_perf_probe(
+    payload: ReportPerfProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ReportPerfProbeOut | JSONResponse:
+    try:
+        return probe_report_perf(payload)
+    except ReportPerfError as exc:
+        return _report_perf_error(exc)
+
+
+@router.post("/report-query-perf/validate", response_model=ReportPerfValidateOut)
+def report_query_perf_validate(
+    payload: ReportPerfProbeIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> ReportPerfValidateOut | JSONResponse:
+    try:
+        return validate_report_perf_config(payload)
+    except ReportPerfError as exc:
+        return _report_perf_error(exc)

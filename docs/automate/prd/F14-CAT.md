@@ -26,15 +26,16 @@
 - **演化建议**：按 plan.md 期次优先级落地
 ### [CAT-003] CAT-03 地域维度查询类
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r61）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：CAT-03 地域维度查询类（SRS 追溯项）。
 - **验收标准**：
-  - [ ] geo distribution 模板
-  - [ ] M7 地域权限
-- **代码锚点**：`backend/app/governance/catalog/cat03.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] geo distribution 模板（r61 L1：`POST/GET/DELETE /api/v1/gov/geo-regions` + move + `CAT03_*` 错误域 + MAX_DEPTH=8 + code 冲突/环检测）
+  - [ ] M7 地域权限（无 RLS 注入与地域 ACL 联动）
+- **代码锚点**：`backend/app/governance/catalog/cat03/` · `backend/app/api/v1/gov.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-CAT-R61-003-01~06
+- **演化建议**：r61 L1 闭合 geo region 树 CRUD/move/深度/code 冲突边界；后续补 M7 地域权限 RLS 与 fe geo distribution 模板
+- **里程碑对齐**：
 ### [CAT-004] CAT-04 时间序列分析类
 
 - **状态**：部分实现（L1 kickoff r59 · 分类树骨架）
@@ -50,15 +51,16 @@
 - **里程碑对齐**：
 ### [CAT-005] CAT-05 工单与业务受理类
 
-- **状态**：未实现
+- **状态**：部分实现（L1 kickoff r61）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：二期
 - **描述**：CAT-05 工单与业务受理类（SRS 追溯项）。
 - **验收标准**：
-  - [ ] tickets stats 模板
-  - [ ] 权限绑定工单表
-- **代码锚点**：`backend/app/governance/catalog/cat05.py`
-- **演化建议**：按 plan.md 期次优先级落地
+  - [x] tickets stats 模板（r61 L1：`POST validate` + `POST/GET /api/v1/gov/ticket-stats` + stats probe + `CAT05_*` 错误域 + statusFilters 校验）
+  - [ ] 权限绑定工单表（无真实工单表 ACL 与数据源绑定）
+- **代码锚点**：`backend/app/governance/catalog/cat05/` · `backend/app/api/v1/gov.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-CAT-R61-005-01~07
+- **演化建议**：r61 L1 闭合 ticket stats validate/create/list/stats probe 与 statusFilters 边界；后续补工单表权限绑定与真实数据源查询链
+- **里程碑对齐**：
 ### [CAT-006] CAT-06 生产与销售统计类
 
 - **状态**：未实现

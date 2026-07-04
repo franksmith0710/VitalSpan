@@ -19,7 +19,7 @@
 |----|-----|
 | Dashboard 领域模型、`DashboardService`、layout JSON 契约 | 单图表查询执行（→ `query`） |
 | layout 内 `chartConfig` 校验（→ `schemas/chart_view`） | 图表类型插件、全局筛选 SQL 注入（远期） |
-| | 发布/草稿版本、分享范围（远期 DASH-004+） |
+| | 发布/草稿版本、分享范围（远期 companion） |
 | | GIS 地图生产集成（DASH-006 companion） |
 
 ### theme/ 子域（DASH-006 · r53 + r57 + r58 companion）
@@ -29,6 +29,13 @@
 - **依赖**：`dashboard/service`（ref 校验 + layout widgets）、`query/config_store`、`schemas/chart_view`
 - **错误码**：`DASH_THEME_*`（含 `DASH_THEME_CHART_VIEW_MISMATCH` + `detail.fields`、`DASH_THEME_FORBIDDEN`）、`DASH_NOT_FOUND`、`CONFIG_NOT_FOUND`
 - **性能**：`probe_link_chart_views_budget_ms` ≤50ms；`probe_theme_execute_plan_budget_ms` ≤40ms
+
+### global_filters/ 子域（DASH-004 · r61 L1）
+
+- **In**：`GlobalFilterLinkageItem` 契约（filters/linkageRules/refreshMode）；validate/save/get；`config_store` `ref_type=global_filter_linkage` 持久化；layout widget 绑定探测（`affectedWidgetCount`）
+- **Out**：fe 全局筛选器 UI、SQL 注入执行、与 `entity_overview/` / `theme/` 路由交叉
+- **依赖**：`dashboard/service`（dashboard 存在性 + layout widgets + `created_by` ACL）、`query/config_store`
+- **错误码**：`DASH_FILTER_*`（含 `DASH_FILTER_FORBIDDEN` 非 owner 非 admin）
 
 ### entity_overview/ 子域（DASH-005 · r59 L1）
 
@@ -50,6 +57,7 @@
 | `DashboardService` | CRUD + `validate_layout` + `update_layout` | DASH-001~003 | 已实现 |
 | `DashboardLayout` | `version`/`widgets`/`globalFilters` JSON | DASH-002 | 已实现 |
 | `dashboard/theme/` | 实体主题分析 config（`entity_theme` via config_store）+ chart_view 联动 + execute-plan + ACL | DASH-006 | companion 已实现（r58） |
+| `dashboard/global_filters/` | 全局筛选联动 validate/save/get + widget 绑定 | DASH-004 | L1 已实现 r61 |
 | `dashboard/entity_overview/` | 实体总览 item validate/save/get + publish 探测 | DASH-005 | L1 已实现 r59 |
 | `DashboardViewConfig` | 视图协议 | DASH-004 | 待建 |
 

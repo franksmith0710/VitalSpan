@@ -38,6 +38,7 @@
 | `GET /health` | 存活探针 | `backend/app/main.py` |
 | `core/nfr/runtime_guard.py` | NFR-008 零 DE/SS pyproject 扫描 + 模块探测 | `backend/app/core/nfr/runtime_guard.py` |
 | `core/nfr/deployment_report.py` | NFR-008 部署验收报告（`overallAcceptance` + `remediation_index`） | `backend/app/core/nfr/deployment_report.py` |
+| `core/nfr/report_perf.py` | NFR-002 报表查询性能 mock probe + budget 守卫（companion 全量压测留 `tests/perf/nfr01_report/`） | `backend/app/core/nfr/report_perf.py` |
 
 ## 关联 API
 
@@ -49,3 +50,4 @@
 - 鉴权逻辑委托 `auth/`；`AuthMiddleware` 由 `main.py` 注册，不在 `core/` 内实现
 - r53 NFR-008：`runtime_guard.py` 扫描 pyproject 禁止 superset/dataease 依赖 + `importlib` 模块探测；`GET/POST /api/v1/nfr/runtime-compliance`；env `NFR08_RUNTIME_MODE=strict|permissive`
 - r57 NFR-008 companion：`deployment_report.py` — `build_deployment_acceptance_report`（`reportVersion=nfr08-deployment-v1`）；`overallAcceptance` accepted/rejected/conditional；`remediation_index` 聚合 fail 项；`GET /api/v1/nfr/runtime-compliance/deployment-report`；`probe_deployment_report_budget_ms` ≤100ms
+- r61 NFR-002：`report_perf.py` — 进程内 mock `elapsedMs=120` + budget/sample 守卫；`POST /api/v1/nfr/report-query-perf/probe|validate`；错误码 `REPORT_PERF_*`

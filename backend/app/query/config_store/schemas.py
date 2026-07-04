@@ -16,6 +16,7 @@ ALLOWED_CONFIG_TYPES = frozenset({
     "entity_theme",
     "entity_overview",
     "designer_workflow_link",
+    "global_filter_linkage",
 })
 ALLOWED_SCHEMA_VERSIONS = frozenset({"1.0"})
 DEFAULT_REF_TYPE = "design_draft"

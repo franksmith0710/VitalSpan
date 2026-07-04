@@ -8,6 +8,15 @@ from fastapi.responses import JSONResponse
 from app.auth.deps import UserContext, get_current_user
 from app.schemas.chart_view import ChartViewConfig, ChartViewError, validate_chart_view_config
 from app.viz.embed import ChartEmbedConfig, ChartEmbedError, validate_chart_embed_config
+from app.viz.sdk_portal.errors import SdkPortalError
+from app.viz.sdk_portal.schemas import (
+    SdkCapabilitiesOut,
+    SdkLifecycleIn,
+    SdkLifecycleOut,
+    SdkPortalInitIn,
+    SdkPortalValidateOut,
+)
+from app.viz.sdk_portal import service as sdk_portal_service
 from app.viz.registry import export_chart_type_catalog
 from app.viz.render import build_render_spec
 
@@ -58,6 +67,37 @@ def _embed_error_response(exc: ChartEmbedError) -> JSONResponse:
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": detail},
     )
+
+
+def _sdk_error(exc: SdkPortalError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/sdk/validate", response_model=SdkPortalValidateOut)
+def validate_sdk_portal(
+    payload: SdkPortalInitIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> SdkPortalValidateOut | JSONResponse:
+    try:
+        return sdk_portal_service.validate_sdk_init(payload)
+    except SdkPortalError as exc:
+        return _sdk_error(exc)
+
+
+@router.post("/sdk/lifecycle", response_model=SdkLifecycleOut)
+def sdk_lifecycle(
+    payload: SdkLifecycleIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> SdkLifecycleOut:
+    return sdk_portal_service.lifecycle_manifest(payload)
+
+
+@router.get("/sdk/capabilities", response_model=SdkCapabilitiesOut)
+def sdk_capabilities(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> SdkCapabilitiesOut:
+    return sdk_portal_service.list_capabilities()
 
 
 @router.post("/embed/validate", response_model=None)

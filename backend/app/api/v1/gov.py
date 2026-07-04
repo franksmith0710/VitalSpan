@@ -64,6 +64,23 @@ from app.governance.catalog.classification.schemas import (
     ClassificationNodeOut,
 )
 from app.governance.catalog.classification import service as classification_service
+from app.governance.catalog.cat05.errors import Cat05Error
+from app.governance.catalog.cat05.schemas import (
+    TicketStatsItemIn,
+    TicketStatsItemOut,
+    TicketStatsListResponse,
+    TicketStatsProbeOut,
+    TicketStatsValidateOut,
+)
+from app.governance.catalog.cat05 import service as cat05_service
+from app.governance.catalog.cat03.errors import Cat03Error
+from app.governance.catalog.cat03.schemas import (
+    GeoRegionCreate,
+    GeoRegionListResponse,
+    GeoRegionMove,
+    GeoRegionOut,
+)
+from app.governance.catalog.cat03 import service as cat03_service
 from app.governance.bus.auto import auto_register
 from app.governance.bus.auto_schemas import AutoRegisterIn, AutoRegisterOut
 
@@ -521,3 +538,100 @@ def delete_classification_node(
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except ClassificationError as exc:
         return _classification_error(exc)
+
+
+def _cat05_error(exc: Cat05Error) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.post("/catalog/tickets/validate", response_model=TicketStatsValidateOut)
+def validate_ticket_stats_item(
+    payload: TicketStatsItemIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> TicketStatsValidateOut | JSONResponse:
+    try:
+        return cat05_service.validate_ticket_item(payload)
+    except Cat05Error as exc:
+        return _cat05_error(exc)
+
+
+@router.post("/catalog/tickets/items", response_model=TicketStatsItemOut, status_code=status.HTTP_201_CREATED)
+def create_ticket_stats_item(
+    payload: TicketStatsItemIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> TicketStatsItemOut | JSONResponse:
+    try:
+        return cat05_service.create_ticket_item(payload)
+    except Cat05Error as exc:
+        return _cat05_error(exc)
+
+
+@router.get("/catalog/tickets/items", response_model=TicketStatsListResponse)
+def list_ticket_stats_items(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> TicketStatsListResponse:
+    return cat05_service.list_ticket_items(limit, offset)
+
+
+@router.get("/catalog/tickets/items/{key}/stats", response_model=TicketStatsProbeOut)
+def probe_ticket_stats(
+    key: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> TicketStatsProbeOut | JSONResponse:
+    try:
+        return cat05_service.get_ticket_stats(key)
+    except Cat05Error as exc:
+        return _cat05_error(exc)
+
+
+def _cat03_error(exc: Cat03Error) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
+
+
+@router.get("/catalog/geo-regions/nodes", response_model=GeoRegionListResponse)
+def list_geo_region_nodes(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    parent_id: uuid.UUID | None = Query(default=None, alias="parentId"),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> GeoRegionListResponse:
+    return cat03_service.list_geo_nodes(parent_id, limit, offset)
+
+
+@router.post("/catalog/geo-regions/nodes", response_model=GeoRegionOut, status_code=status.HTTP_201_CREATED)
+def create_geo_region_node(
+    payload: GeoRegionCreate,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> GeoRegionOut | JSONResponse:
+    try:
+        return cat03_service.create_geo_node(payload)
+    except Cat03Error as exc:
+        return _cat03_error(exc)
+
+
+@router.post("/catalog/geo-regions/nodes/{region_id}/move", response_model=GeoRegionOut)
+def move_geo_region_node(
+    region_id: uuid.UUID,
+    payload: GeoRegionMove,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> GeoRegionOut | JSONResponse:
+    try:
+        return cat03_service.move_geo_node(region_id, payload)
+    except Cat03Error as exc:
+        return _cat03_error(exc)
+
+
+@router.delete("/catalog/geo-regions/nodes/{region_id}", response_model=None)
+def delete_geo_region_node(
+    region_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> Response | JSONResponse:
+    try:
+        cat03_service.delete_geo_node(region_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Cat03Error as exc:
+        return _cat03_error(exc)
