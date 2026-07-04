@@ -53,3 +53,8 @@
 - r31：`list_entries` 非法 `category` → 400 `CATALOG_INVALID_CATEGORY`；`DELETE /gov/catalog/entries/{id}` → 204（CASCADE `bus_registrations`）
 - r31：`POST /gov/bus/register` 需 admin 角色；幂等二次登记 200；失败码 `BUS_REGISTRATION_TIMEOUT`/`CLIENT_ERROR`/`SERVER_ERROR`；失败响应 `detail.traceId`
 - r34：`query_design/` 聚合 `VisualQueryDesignIn/Out`；validate 委托 `designer.service`；持久化 `config_type=visual_query_design`；`acl.py` 按 status/角色守卫 save；非 UUID dev token 跳过 RLS binding smoke
+
+### r35 companion 质量推分（GOV-004/008）
+
+- **GOV-008**：`assert_query_design_execute` + `POST /api/v1/gov/query-design/preview-execute`；viewer 403 `GOV_ACL_FORBIDDEN`；designer 无 org 403 `GOV_RLS_BINDING_REQUIRED`；admin bypass 审计日志 `gov_acl_bypass`；空 RLS 链返回 `rlsFragment: "1=0"`
+- **GOV-004**：gov validate 覆盖 `DESIGN_EMPTY_CONDITIONS`、`DESIGN_INVALID_AGGREGATE`（computeRules）、`GOV_QUERY_DESIGN_INVALID`、`GOV_QUERY_DESIGN_UNKNOWN_DATASOURCE`、`GOV_QUERY_DESIGN_NOT_FOUND`、`CONFIG_VERSION_CONFLICT` 均含 `detail.fields`（适用时）

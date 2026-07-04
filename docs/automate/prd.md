@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.40
+version: 1.2.41
 last_updated: 2026-07-04
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-04 · P5 r34 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 L1 kickoff r34）；pytest 742/4 skipped；test_connectors_gov_r34 15/15 + r33 19/19 回归；TiDB/StarRocks/ES types + test_connection/schema、gov query-design validate/save/get + ACL/RLS smoke；完整度 5%→76–82%，可靠性 0%→92–94%，测试覆盖 0%→94–98%，总分 10.9–11.2→86.0–88.1（五 ID 均 <90 STUCK upsert round 1）
+> 更新：2026-07-04 · P5 r35 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 companion 质量推分 r35）；pytest 777/4 skipped；test_connectors_gov_r35 35/35 + r34 15/15 + r33 19/19 回归；TIDB_/STARROCKS_/ES 错误域与 schema 边界、preview-execute ACL/RLS 链、GOV-004 validate detail.fields/computeRules、ES mapping 归一/limit；完整度 76–82%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.0–88.1→90.1–91.0（五 ID 全破 90 STUCK 清零）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -70,19 +70,19 @@ domain_count: 16
 | CONN-006 | 50 | 5 | 0 | N/A | 14 | 0 | 0 | 11 | 12.6 | 完整度 |
 | CONN-007 | 51 | 5 | 0 | N/A | 8 | 0 | 0 | 12 | 12.2 | 完整度 |
 | CONN-008 | 50 | 5 | 0 | N/A | 9 | 0 | 0 | 13 | 12.3 | 完整度 |
-| CONN-009 | 82 | 76 | 94 | N/A | 88 | 94 | 86 | 88 | 86.2 | 完整度 |
+| CONN-009 | 84 | 88 | 96 | N/A | 90 | 98 | 90 | 88 | 90.4 | 用户价值 |
 | CONN-010 | 47 | 5 | 0 | N/A | 11 | 0 | 0 | 9 | 11.5 | 完整度 |
 | CONN-011 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 10 | 11.9 | 完整度 |
 | CONN-012 | 49 | 5 | 0 | N/A | 13 | 0 | 0 | 11 | 12.4 | 完整度 |
 | CONN-013 | 50 | 5 | 0 | N/A | 14 | 0 | 0 | 12 | 12.8 | 完整度 |
 | CONN-014 | 46 | 5 | 0 | N/A | 8 | 0 | 0 | 13 | 11.5 | 完整度 |
-| CONN-015 | 82 | 82 | 94 | N/A | 90 | 98 | 86 | 88 | 88.1 | 完整度 |
+| CONN-015 | 84 | 90 | 96 | N/A | 90 | 100 | 88 | 90 | 91.0 | 用户价值 |
 | CONN-016 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
 | CONN-017 | 47 | 5 | 0 | N/A | 11 | 0 | 0 | 10 | 11.6 | 完整度 |
 | CONN-018 | 48 | 5 | 0 | N/A | 12 | 0 | 0 | 11 | 12.1 | 完整度 |
 | CONN-019 | 44 | 5 | 0 | N/A | 13 | 0 | 0 | 12 | 11.6 | 完整度 |
 | CONN-020 | 45 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.0 | 完整度 |
-| CONN-021 | 82 | 76 | 92 | N/A | 88 | 94 | 86 | 88 | 86.0 | 完整度 |
+| CONN-021 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | CONN-022 | 47 | 5 | 0 | N/A | 9 | 0 | 0 | 9 | 11.3 | 完整度 |
 | QUERY-001 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 92 | 92.8 | 架构健康 |
 | QUERY-002 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 88 | 92.4 | 安全性 |
@@ -120,11 +120,11 @@ domain_count: 16
 | GOV-001 | 82 | 92 | 92 | N/A | 90 | 96 | 86 | 88 | 90.2 | 用户价值 |
 | GOV-002 | 82 | 92 | 94 | N/A | 88 | 96 | 86 | 90 | 90.4 | 性能 |
 | GOV-003 | 48 | 5 | 0 | N/A | 10 | 0 | 0 | 9 | 11.6 | 完整度 |
-| GOV-004 | 80 | 80 | 94 | N/A | 90 | 96 | 86 | 88 | 87.2 | 完整度 |
+| GOV-004 | 84 | 90 | 96 | N/A | 90 | 98 | 88 | 88 | 90.5 | 用户价值 |
 | GOV-005 | 45 | 5 | 0 | N/A | 12 | 0 | 0 | 11 | 11.5 | 完整度 |
 | GOV-006 | 46 | 5 | 0 | N/A | 13 | 0 | 0 | 12 | 11.9 | 完整度 |
 | GOV-007 | 47 | 5 | 0 | N/A | 14 | 0 | 0 | 13 | 12.4 | 完整度 |
-| GOV-008 | 82 | 76 | 92 | N/A | 88 | 94 | 86 | 90 | 86.8 | 完整度 |
+| GOV-008 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 92 | 90.2 | 用户价值 |
 | META-001 | 82 | 92 | 92 | N/A | 90 | 98 | 90 | 88 | 90.0 | 安全性 |
 | META-002 | 84 | 94 | 94 | N/A | 90 | 98 | 90 | 88 | 91.1 | 安全性 |
 | META-003 | 46 | 5 | 0 | N/A | 11 | 0 | 0 | 11 | 11.6 | 完整度 |
@@ -204,6 +204,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.41 | 2026-07-04 | P5 r35 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 companion 质量推分 r35）；pytest 777/4 skipped；test_connectors_gov_r35 35/35 + r34 15/15 + r33 19/19；TIDB_/STARROCKS_/ES 错误域与 schema 边界、preview-execute ACL/RLS 链与 bypass 审计、GOV-004 validate detail.fields/computeRules、ES mapping 归一/limit；完整度 76–82%→88–90%，可靠性 92–94%→94–96%，测试覆盖 94–98%→98–100%，总分 86.0–88.1→90.1–91.0（五 ID 全破 90 STUCK 清零） |
 | 1.2.40 | 2026-07-04 | P5 r34 重评 CONN-021/009/015 + GOV-004/008（M11 连接器 + M13 治理 L1 kickoff r34）；pytest 742/4 skipped；test_connectors_gov_r34 15/15 + r33 19/19；TiDB/StarRocks/ES dialects + types catalog、gov query-design validate/save/get + ACL/RLS smoke；完整度 5%→76–82%，可靠性 0%→92–94%，测试覆盖 0%→94–98%，总分 10.9–11.2→86.0–88.1（五 ID 均 <90 STUCK upsert round 1） |
 | 1.2.39 | 2026-07-04 | P5 r33 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query/design companion 质量推分 r33）；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；glossary 文本/status 边界 + list perf、theme MAX_DEPTH=8 + 宽树 perf、config_store 256KB/乐观锁、designer 字段注册表/规则链/detail.fields；完整度 76–92%→88–94%，性能 86%→88–90%，可靠性 92–94%→94–96%，总分 86.4–89.8→90.0–91.7（五 ID 全破 90 STUCK 清零） |
 | 1.2.38 | 2026-07-04 | P5 r32 重评 META-001/002 + QUERY-007 + DESIGN-001/002（M11 META + M12 query design L1 kickoff r32）；pytest 708/4 skipped；test_meta_design_r32 21/21 + r31 24/24；migration 0015 + glossary/theme/config_store/designer API；完整度 5%→76–92%，可靠性 0%→92–94%，测试覆盖 0%→96%，总分 10.8–11.2→86.4–89.8（五 ID 均 <90 STUCK upsert round 1） |
@@ -213,7 +214,3 @@ domain_count: 16
 | 1.2.34 | 2026-07-04 | P5 r28 重评 VIZ-001/002 + DASH-001/002/003（M5 VIZ/DASH L1 kickoff r28）；pytest 600/2 skipped；test_viz_dash_l1_r28 26/26；T-MIG-41~42；fe vitest 81/81 + dashboard/chart smoke；ChartViewConfig schema/validate API、table/line/bar ChartRenderer、dashboards ORM/CRUD/layout、Admin 列表/编辑静态栅格；完整度 5%→84–96%，可靠性 0%→90–94%，测试覆盖 0%→96–100%，总分 13.2–13.9→86.8–91.0（VIZ-001/DASH-001 破 90；VIZ-002/DASH-002/003 <90 STUCK upsert） |
 | 1.2.33 | 2026-07-03 | P5 r27 重评 QUERY-001/002/004/005/006（M4 query quality push r27）；pytest 570/4 skipped；test_query_quality_r27 36/36；ClickHouse dialect L1 + error mapping、readonly guard（注释/多语句/超长）、table 边界、chartId 唯一绑定、RLS admin bypass/多维链；用户价值 80–84%→82–86%，完整度 88–96%→94–98%，可靠性 94%→96%，性能 86%→90%，总分 88.5–91.4→91.4–92.8（QUERY-004 破 90 STUCK 清零） |
 | 1.2.32 | 2026-07-03 | P5 r26 重评 QUERY-001/002/004/005/006（M4 query L1 kickoff r26）；pytest 532/4 skipped；T-Q-020~055、T-MIG-38~39；POST /execute + chart_query_bindings CRUD + MySQL/PG dialects + RLS guard；完整度 5%→88–96%，可靠性 0%→94%，测试覆盖 0%→96–100%，总分 12.8–13.5→88.5–91.4（QUERY-001/002/005/006 破 90；QUERY-004 ClickHouse 缺口仍 88.5） |
-| 1.2.31 | 2026-07-03 | P5 r25 重评 DS-004/006/007/008 + CONN-002（M3 datasource companion kickoff r25）；pytest 501/4 skipped；T-DS-TY01~TY04、PL01~PL05、MD01~MD06、AC01~AC05、T-CONN-P01~P05、M15；PostgreSQL 方言 + schema_browser + GET /types + pool + metadata API + ACL；完整度 5%→92–96%，可靠性 0%→94–96%，测试覆盖 0%→100%，总分 12.8–13.7→90.1–91.6（五 ID 全破 90） |
-| 1.2.30 | 2026-07-03 | P5 r24 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r24）；pytest 476/4 skipped；T-DS-R09~R12、C17~C22、T11~T15、K09~K12、CONN-M11~M16；migration 0010 connectionOptions + code 复用 + registry RLock/export_type_catalog + inflight release + Fernet PREVIOUS key + MySQL collation/分层 timeout/结构化 code；完整度 86–96%→92–98%，可靠性 94–96%→96–98%，架构 90–92%→90–94%，安全性 88–94%→88–96%，总分 89.1–91.9→90.1–92.1（CONN-001 破 90 STUCK 清零） |
-| 1.2.29 | 2026-07-03 | P5 r23 重评 DS-001/002/005/003 + CONN-001（M3 datasource quality push r23）；pytest 449/4 skipped；T-DS-R05~R08、C09~C16、T06~T10、K05~K08、CONN-M05~M10；migration 0009 + unregister/usage_checker + pagination/PATCH/soft delete + test inflight/traceId + credential decrypt errors + MySQL error codes/ssl；完整度 88–96%→92–96%，可靠性 92–94%→94–96%，测试覆盖 96–100%→100%，安全性 88–92%→88–94%，总分 86.8–91.1→89.1–91.9（DS-001 破 90 STUCK 清零；CONN-001 仍 <90 STUCK round 2） |
-| 1.2.28 | 2026-07-03 | P5 r22 重评 DS-001/002/005/003 + CONN-001（M3 datasource L1 kickoff r22）；pytest 419/4 skipped；T-DS-R01~R04、C01~C08、T01~T05、K01~K04、CONN-M01~M04；migration 0008 + ConnectorRegistry/MySQL/credentials/CRUD/test API；完整度 5%→78–96%，可靠性 0%→92–94%，测试覆盖 0%→96–100%，总分 12.8–13.6→86.8–91.1（DS-002/003/005 破 90；DS-001/CONN-001 <90 STUCK upsert） |

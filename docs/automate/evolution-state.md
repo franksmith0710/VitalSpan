@@ -7,18 +7,18 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target-r34.md |
-| design | docs/superpowers/specs/2026-07-04-m11-connector-m13-gov-kickoff-r34-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m11-connector-m13-gov-kickoff-r34.md |
-| branch | feat/evolution-r34-m11-connector-m13-gov-kickoff |
+| round_target | docs/superpowers/evolution/2026-07-04-round-target-r35.md |
+| design | docs/superpowers/specs/2026-07-04-m11-conn-m13-gov-companion-quality-r35-design.md |
+| plan | docs/superpowers/plans/2026-07-04-m11-conn-m13-gov-companion-quality-r35.md |
+| branch | cursor/bc-8c18737e-0c44-4d37-a690-cf6681f61819-520c |
 | base_branch | dev-auto |
-| prd_ids | CONN-021,GOV-004,CONN-009,CONN-015,GOV-008 |
-| pr_number | 58 |
-| last_verified_command | cd backend && export DATABASE_URL=... SECRET_KEY=... CREDENTIAL_FERNET_KEY=... && python3 -m ruff check . && python3 -m pytest -q |
+| prd_ids | CONN-021,CONN-009,GOV-008,GOV-004,CONN-015 |
+| pr_number | 60 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q && python3 -m pytest ../tests/test_connectors_gov_r35.py ../tests/test_connectors_gov_r34.py ../tests/test_meta_design_r33.py -q |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（纯后端，无 UI 改动） |
+| last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T01:52:00Z |
+| skill_rule_index_generated_at | 2026-07-04T03:55:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,12 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r35 PRD 重评：CONN-021/009/015 + GOV-004/008 companion 质量推分；pytest 777/4 skipped；test_connectors_gov_r35 35/35 + r34 15/15 + r33 19/19；总分 86.0–88.1→90.1–91.0（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
+- P4 r35 验证通过：ruff clean；pytest 777 passed/4 skipped；r35 35/35 + r34 15/15 + r33 19/19 回归 69/69；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
+- P3 r35 实现完成：7 Task 全绿；CONN-021/009/015 + GOV-004/008 companion 质量推分；35 新测 test_connectors_gov_r35；pytest 777/4 skipped；r34 15/15 + r33 19/19 回归；branch cursor/bc-8c18737e-0c44-4d37-a690-cf6681f61819-520c；base_branch dev-auto；phase P2_DONE→P3_DONE
+- G2 r35 选题完成：M11 连接器 + M13 治理 companion 质量推分 — CONN-021/009/015 + GOV-004/008（5 项）；最低分 CONN-021(86.0)；STUCK 五 ID 各 1 轮（未达 ≥3 硬标注阈值）；饱和熔断未触发；plan M11/M12/M13 无活跃勾选行（已知 concern）；phase idle→G2_DONE
+- P1 r35 设计完成：CONN-021/009/015 + GOV-004/008 companion 质量推分；17 文件框定；preview-execute ACL/RLS；TIDB_/STARROCKS_/ES 边界；ui_design_skill none；phase G2_DONE→P1_DONE
+- G1 r35 bootstrap：r34 PR #58 已合并 dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r34 PRD 重评：CONN-021/009/015 + GOV-004/008 L1 kickoff；pytest 742/4 skipped；test_connectors_gov_r34 15/15 + r33 19/19；总分 10.9–11.2→86.0–88.1（五 ID <90 STUCK round 1）；phase P4_DONE→P5_DOCS_READY
 - P4 r34 验证通过：ruff clean；pytest 742 passed/4 skipped；test_connectors_gov_r34 15/15 + test_meta_design_r33 19/19 回归；UI: N/A（纯后端）；phase P3_DONE→P4_DONE
 - P5 r33 PRD 重评：META-001/002 + QUERY-007 + DESIGN-001/002 companion 质量推分；pytest 727/4 skipped；test_meta_design_r33 19/19 + r32 21/21；总分 86.4–89.8→90.0–91.7（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
@@ -91,8 +97,3 @@
 
 | prd ID | 连续未过轮次 | 最近加权总分 | 最近评分日期 |
 |--------|:-----------:|:-----------:|------------|
-| CONN-021 | 1 | 86.0 | 2026-07-04 |
-| CONN-009 | 1 | 86.2 | 2026-07-04 |
-| CONN-015 | 1 | 88.1 | 2026-07-04 |
-| GOV-004 | 1 | 87.2 | 2026-07-04 |
-| GOV-008 | 1 | 86.8 | 2026-07-04 |

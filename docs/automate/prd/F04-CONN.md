@@ -109,11 +109,12 @@
 - **验收标准**：
   - [x] type=`starrocks` 已注册（types catalog，r34 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`STARROCKS_TIMEOUT`，r34 mock）
-  - [ ] schema 浏览 + 只读查询通过
+  - [x] 连通性测试结构化错误（`STARROCKS_CONN_REFUSED`/`STARROCKS_AUTH_FAILED`，r34+r35）
+  - [x] schema 空 catalog/未知表边界 + 列元数据 500 limit（r35 mock）
+  - [ ] 只读查询通过
   - [x] category=`olap` 查询模式正确（r34）
-- **代码锚点**：`backend/app/datasources/dialects/starrocks.py` · `tests/test_connectors_gov_r34.py`
-- **演化建议**：r34 L1 完成 types + timeout 映射；后续补 schema 浏览集成测、只读查询与 Admin UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/starrocks.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
+- **演化建议**：r35 闭合 auth/refused 与 columns limit；后续补只读查询集成测与 Admin UI 选型
 - **里程碑对齐**：
 ### [CONN-010] Trino/Presto 连接器
 
@@ -184,12 +185,13 @@
 - **验收标准**：
   - [x] type=`elasticsearch` 已注册（types catalog，r34 L1）
   - [ ] UI 可选
-  - [x] 连通性测试 + index/mapping schema 浏览（r34 mock）
+  - [x] 连通性测试 + index/mapping schema 浏览（r34+r35 mock）
   - [ ] 只读查询通过
   - [x] category=`search` 查询模式正确（r34）
   - [x] 空 host → `ES_INVALID_HOST` 结构化错误（r34）
-- **代码锚点**：`backend/app/datasources/dialects/elasticsearch.py` · `tests/test_connectors_gov_r34.py`
-- **演化建议**：r34 L1 完成 ES client、index 列表与 mapping 列浏览；后续补 search 只读查询与 UI
+  - [x] 多索引 list_schemas、mapping 类型归一、字段 500 limit、`ES_AUTH_FAILED`/`ES_CONNECTION_REFUSED`/`ES_TIMEOUT`（r35）
+- **代码锚点**：`backend/app/datasources/dialects/elasticsearch.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
+- **演化建议**：r35 闭合 ES 错误域、多索引/mapping 归一与字段 limit；后续补 search 只读查询与 UI
 - **里程碑对齐**：
 ### [CONN-016] OpenSearch 连接器
 
@@ -260,11 +262,12 @@
 - **验收标准**：
   - [x] type=`tidb` 已注册（types catalog + `schema_browser` capability，r34 L1）
   - [ ] UI 可选
-  - [x] 连通性测试（MySQL 委托 + mock pymysql，r34）
-  - [ ] schema 浏览 + 只读查询集成测通过
+  - [x] 连通性测试（`TIDB_AUTH_FAILED`/`TIDB_CONN_REFUSED`/`TIDB_TIMEOUT`，r34+r35 mock）
+  - [x] schema 空库/未知表边界（r35 mock）
+  - [ ] 只读查询集成测通过
   - [x] category=`relational` 查询模式正确（r34）
-- **代码锚点**：`backend/app/datasources/dialects/tidb.py` · `tests/test_connectors_gov_r34.py`
-- **演化建议**：r34 L1 MySQL 委托薄包装；后续补 schema 集成测、只读查询与 UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/tidb.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
+- **演化建议**：r35 闭合 TIDB_* 错误域与 schema 边界；后续补只读查询集成测与 UI 选型
 - **里程碑对齐**：
 ### [CONN-022] GaussDB 连接器
 

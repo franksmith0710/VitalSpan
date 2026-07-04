@@ -12,6 +12,24 @@ ES_CONNECTION_REFUSED = "ES_CONNECTION_REFUSED"
 ES_AUTH_FAILED = "ES_AUTH_FAILED"
 ES_TIMEOUT = "ES_TIMEOUT"
 ES_UNKNOWN = "ES_UNKNOWN"
+ES_MAX_MAPPING_FIELDS = 500
+
+_ES_TYPE_MAP = {
+    "keyword": "string",
+    "text": "string",
+    "long": "number",
+    "integer": "number",
+    "double": "number",
+    "float": "number",
+    "date": "datetime",
+    "boolean": "boolean",
+    "object": "json",
+    "nested": "json",
+}
+
+
+def _normalize_es_type(es_type: str) -> str:
+    return _ES_TYPE_MAP.get(es_type, "unknown")
 
 
 def _build_client(*, host: str, port: int, username: str, password: str, timeout_sec: float) -> Elasticsearch:
@@ -99,7 +117,14 @@ class ElasticsearchConnector:
     def list_columns(self, connection: Elasticsearch, schema: str, table: str) -> list[ColumnInfo]:
         mapping = connection.indices.get_mapping(index=schema)
         props = mapping.get(schema, {}).get("mappings", {}).get("properties", {})
-        return [
-            ColumnInfo(name=name, data_type=str(meta.get("type", "object")), nullable=True)
+        columns = [
+            ColumnInfo(
+                name=name,
+                data_type=_normalize_es_type(str(meta.get("type", "object"))),
+                nullable=True,
+            )
             for name, meta in sorted(props.items())
         ]
+        if len(columns) > ES_MAX_MAPPING_FIELDS:
+            return columns[:ES_MAX_MAPPING_FIELDS]
+        return columns

@@ -53,10 +53,11 @@
   - [x] 查询条件 validate/save/get API（`visual_query_design` config_store，r34 L1）
   - [x] 未知 fieldId → 422 + `detail.fields`（r34）
   - [x] revision 乐观锁冲突 → 409 `CONFIG_VERSION_CONFLICT`（r34）
+  - [x] 空 conditions、非法 aggregate、blank title、未知 dataSourceId、get 404 边界 + `detail.fields`（r35）
   - [ ] 拖拽配置查询条件与运算规则（前端）
   - [ ] 加减乘除/聚合运算规则链
-- **代码锚点**：`backend/app/governance/query_design/` · `backend/app/api/v1/gov.py` · `tests/test_connectors_gov_r34.py`
-- **演化建议**：r34 L1 后端 aggregate + config_store 持久化；后续接 explore 拖拽 UI 与 compute_rules 链
+- **代码锚点**：`backend/app/governance/query_design/` · `backend/app/api/v1/gov.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
+- **演化建议**：r35 巩固 gov validate/save/get 边界与 computeRules detail.fields；后续接 explore 拖拽 UI 与 compute_rules 链
 - **里程碑对齐**：
 ### [GOV-005] 查询服务发布 FR-1.4
 
@@ -100,8 +101,9 @@
 - **验收标准**：
   - [x] query-design save `pending_publish` ACL（viewer 403 `GOV_ACL_FORBIDDEN`，admin 200，r34）
   - [x] RLS 绑定 smoke（`resolve_user_org_node_ids` + `get_query_rls_fragment`，r34 mock）
+  - [x] `POST preview-execute` ACL/RLS 链：viewer 403、designer 无 org 403、admin bypass 审计、空 RLS 链、save 联合回归（r35）
   - [ ] 完整发布流程与 M7 权限联动
   - [ ] 发布后 RLS 端到端生效
-- **代码锚点**：`backend/app/governance/acl.py` · `backend/app/governance/query_design/service.py` · `tests/test_connectors_gov_r34.py`
-- **演化建议**：r34 L1 ACL hooks + RLS smoke；后续接 publish 引擎与真实 org 绑定回归
+- **代码锚点**：`backend/app/governance/acl.py` · `backend/app/governance/query_design/service.py` · `backend/app/api/v1/gov.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
+- **演化建议**：r35 闭合 preview-execute ACL/RLS 链与 bypass 审计；后续接 publish 引擎与真实 org 绑定回归
 - **里程碑对齐**：
