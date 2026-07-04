@@ -261,3 +261,31 @@ describe("ChartRenderer advanced", () => {
     expect(screen.getByTestId("echarts-chart")).toBeInTheDocument();
   });
 });
+
+import { EmbedSharePanel } from "@/embed/EmbedSharePanel";
+import { EmbedChartPage } from "@/embed/EmbedChartPage";
+import { MemoryRouter, Route, Routes } from "react-router";
+
+describe("Embed", () => {
+  afterEach(() => cleanup());
+
+  it("T-VIZ-R43-006-01: EmbedSharePanel 非法 origin not-a-url → 字段错误", async () => {
+    render(<EmbedSharePanel />);
+    await userEvent.type(screen.getByLabelText(/来源|Origin/i), "not-a-url");
+    await userEvent.click(screen.getByRole("button", { name: /添加/ }));
+    expect(await screen.findByText(/无效|格式/)).toBeInTheDocument();
+  });
+
+  it("T-VIZ-R43-006-03: 未授权 origin → 错误态文案", () => {
+    vi.stubGlobal("location", { ...window.location, origin: "https://evil.com" });
+    render(
+      <MemoryRouter initialEntries={["/embed/chart/test-id"]}>
+        <Routes>
+          <Route path="/embed/chart/:chartId" element={<EmbedChartPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText(/未授权嵌入/)).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+});

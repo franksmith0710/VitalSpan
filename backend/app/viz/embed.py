@@ -9,6 +9,14 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 _ORIGIN_RE = re.compile(r"^https?://[a-zA-Z0-9.-]+(:\d+)?$")
 
 
+def is_origin_allowed(origin: str, allowed: list[str]) -> bool:
+    if not allowed:
+        return True
+    if not _ORIGIN_RE.match(origin):
+        return False
+    return origin in allowed
+
+
 class ChartEmbedError(Exception):
     def __init__(
         self,
