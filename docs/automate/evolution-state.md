@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-04-round-target.md |
-| design | docs/superpowers/specs/2026-07-04-m5-view-m6-companion-r30-design.md |
-| plan | docs/superpowers/plans/2026-07-04-m5-view-m6-companion-r30.md |
-| branch | feat/evolution-r30-m5-view-m6-companion |
-| base_branch | dev-auto |
-| prd_ids | VIEW-001,GOV-001,GOV-002,API-001,API-002 |
-| pr_number | 53 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -v (P4 independent) |
-| last_verified_exit_code | 0 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
+| base_branch |  |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | last_ui_verified_command |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-04T01:10:00Z |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r31 bootstrap：r30 PR #53 已合并 dev-auto；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r30 PRD 重评：VIEW-001/GOV-001/002/API-001/002 L1 kickoff；pytest 662/4 skipped；test_view_gov_api_r30 30/30；总分 12.9–13.7→88.6–90.9（VIEW-001/GOV-002 <90 STUCK upsert）
 - P4 r30 验证通过：pytest 662 passed/4 skipped；test_view_gov_api_r30 30/30；ruff clean
 - P3 r30 实现完成：7 Task 全绿；views/governance/openapi L1；migration 0014；branch feat/evolution-r30-m5-view-m6-companion；base_branch dev-auto
