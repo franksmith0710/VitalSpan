@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r46.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-04-nfr-gov-gbase-l1-r46-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r46 设计完成：NFR 横切 + GOV-005 发布状态机 + CONN-019 GBase L1 kickoff — NFR-006/007/005 + GOV-005 + CONN-019；18 文件框定（core/nfr 5 + governance/publish 4 + gbase 4 + api 3 + r46 smoke ≥32 测）；插件扩展/registry 零侵入 + 推送降级 + 信创清单 + publish FSM + GBase MySQL 委托；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r46 选题完成：NFR 非功能横切 + GOV-005 查询服务发布 + CONN-019 GBase L1 kickoff — NFR-006/007/005 + GOV-005 + CONN-019（5 项）；最低分 NFR-006/007(11.4)；饱和熔断未触发（Top5 11.4–11.6≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 表空（5 项首次入选）；phase idle→G2_DONE
 - G1 r46 bootstrap：r45 PR #72 已 Squash merge dev-auto（65548c7）；G0 PASS 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 NFR-006(11.4)/NFR-007(11.4)/GOV-005(11.5)；STUCK 表空（r45 P5 五 ID 破 90 清零）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r45 PRD 重评：API-003/004/005/006/007 companion 质量推分；pytest 1134/4 skipped；test_integration_api_l1_r45 30/30 + r44 38/38 + r31 24/24；总分 86.5–87.4→90.2–90.8（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY；PR #72
