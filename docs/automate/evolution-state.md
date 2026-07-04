@@ -6,10 +6,10 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-04-round-target-r62.md |
 | design | docs/superpowers/specs/2026-07-04-cat-nfr-rpt-meta-l1-r62-design.md |
-| plan |  |
+| plan | docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md |
 | branch |  |
 | base_branch | dev-auto |
 | prd_ids | CAT-006,NFR-003,RPT-002,RPT-003,META-005 |
@@ -17,7 +17,7 @@
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-04T18:30:00Z |
+| skill_rule_index_generated_at | 2026-07-04T19:55:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P2 r62 计划完成：8 Task（fixtures→CAT-006 cat06→NFR-003 dashboard_sla→RPT-002 prefab→RPT-003 templates→META-005 physical→32 测聚合→三轮回归门控）；19 P3 生产文件 + 1 测试 = 20 ≤20；subagent-driven-development option 1；全 Task UI skill none；≥32 新测 test_cat_nfr_rpt_meta_r62 + r61 32/32 + r60 34/34 + r59 34/34 回归；plan=docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md；phase P1_DONE→P2_DONE
 - P1 r62 设计完成：跨域远期 stub L1 kickoff — CAT-006/NFR-003/RPT-002/RPT-003/META-005；18 文件框定（cat06 3 + dashboard_sla 1 + prefab 3 + templates 3 + physical 3 + api 薄 entry 5 + r62 smoke ≥30 测）；production stats/SLA probe/prefab binding/template blocks/physical table register；ui_design_skill none（纯后端）；phase G2_DONE→P1_DONE
 - G2 r62 选题完成：跨域远期 stub L1 kickoff — CAT-006/NFR-003/RPT-002/RPT-003/META-005（5 项）；最低分 CAT-006/NFR-003(12.1)；饱和熔断未触发（Top5 12.1–13.1≪90）；plan M1/M1B 无活跃勾选行（已知 concern，回落纯 8 维选题）；STUCK 十五 ID 各 1 轮未入选（未达 ≥3 硬标注阈值）；phase idle→G2_DONE
 - G1 r62 bootstrap：r61 PR #94 已 Squash merge dev-auto（cd011ad）；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 CAT-006(12.1)/NFR-003(12.1)/RPT-002(12.6)；STUCK 十五 ID 各 1 轮（r59–r61 五 ID <90 upsert，均 82.9–84.4）；phase P5_DOCS_READY→idle；待 G2 选题
