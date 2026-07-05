@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-05-round-target.md |
 | design |  |
 | plan |  |
-| branch |  |
+| branch | cursor/bc-ca5f56c4-6e6f-4a1d-9218-2cf613bf80c9-8564 |
 | base_branch | dev-auto |
 | prd_ids |  |
-| pr_number |  |
+| pr_number | 162 |
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
