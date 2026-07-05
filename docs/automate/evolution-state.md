@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
+| phase | P5_DOCS_READY |
 | round_target |  |
 | design |  |
 | plan |  |
 | branch | cursor/bc-0d1b47aa-ba1b-4ee6-b688-8547216f5090-7eea |
 | base_branch | dev-auto |
 | prd_ids |  |
-| pr_number |  |
+| pr_number | 123 |
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G0 docs-only PR #123：G1 r96 bootstrap 扫描摘要 + G2 r97 饱和熔断记录；docs-only 无 prd_ids；PRD 重评无（评分无变更）；checks 绿 mergeable clean；phase P5_DOCS_READY；待 Squash merge dev-auto
 - G2 r97 选题熔断：饱和熔断触发（plan M1/M1B 全勾选无活跃 `[ ]` 故执行熔断检查；hub 薄弱项 Top5 CAT-001/CAT-002/CONN-004/DASH-004/NFR-001 加权总分均 90.0 ≥90；待办池空；STUCK 表空）；status BLOCKED SATURATED；禁止进入 P1/bounded-explorer；建议人工 `create-evolution-plan` 排新里程碑或 `create-evolution-goal` 修订方向；phase idle
 - G1 r96 bootstrap：G0 PR #122 已 Squash merge dev-auto（0a336d7）；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r95 BLOCKED SATURATED；phase idle；待 G2 选题
 - G2 r95 选题熔断：饱和熔断触发（plan M1/M1B 全勾选无活跃 `[ ]` 故执行熔断检查；hub 薄弱项 Top5 CAT-001/CAT-002/CONN-004/DASH-004/NFR-001 加权总分均 90.0 ≥90；待办池空；STUCK 表空）；status BLOCKED SATURATED；禁止进入 P1/bounded-explorer；建议人工 `create-evolution-plan` 排新里程碑或 `create-evolution-goal` 修订方向；phase idle
