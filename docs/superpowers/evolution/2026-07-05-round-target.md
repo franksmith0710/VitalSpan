@@ -1,4 +1,4 @@
-# G2 选题熔断 — SATURATED（r157）
+# G2 选题熔断 — SATURATED（r160）
 
 > 生成：2026-07-05 · G2 evolution-picker · **status: BLOCKED**
 > 来源：`docs/automate/prd.md` hub 薄弱项汇总 · `docs/automate/plan.md`（只读）· `docs/automate/evolution-state.md`
@@ -8,7 +8,7 @@
 ### 选题决策
 
 - **批量主题**：N/A — **评分饱和熔断**，本轮无入选 prd ID
-- **来源**：`docs/automate/plan.md` §M1 + §M1B 勾选 **12/12 已完成**，无含 `[ ]` 的活跃节（熔断前置检查已执行）；`prd.md` hub 薄弱项 **Top5 加权总分均 ≥90** — CAT-001(90.0)、CAT-002(90.0)、CONN-004(90.0)、DASH-004(90.0)、NFR-001(90.0)；`evolution-state.md` **待办池空**（无未消化 `[ ]` 条目）；**选题卡住计数表空**；`git log -5` 最新 f237332（G1 r156 bootstrap #169）+ fc95444（G1 r155 #168）+ 74bf730（G1 r154 #167）+ a5f0d71（G1 r152 + G2 r153 SATURATED #166）+ 3cfa357（G1 r151 + G2 r151 SATURATED #165）；上游 G0 PR #169 已 Squash merge dev-auto（f237332）；G1 r156 DONE；plan M1/M1B 全勾选无活跃 `[ ]`（已知 concern）
+- **来源**：`docs/automate/plan.md` §M1 + §M1B 勾选 **12/12 已完成**，无含 `[ ]` 的活跃节（熔断前置检查已执行）；`prd.md` hub 薄弱项 **Top5 加权总分均 ≥90** — CAT-001(90.0)、CAT-002(90.0)、CONN-004(90.0)、DASH-004(90.0)、NFR-001(90.0)；`evolution-state.md` **待办池空**（无未消化 `[ ]` 条目）；**选题卡住计数表空**；`git log -5` 最新 5e838ec（G1 r159 bootstrap #172）+ 6c5f2a9（G1 r158 #171）+ f68ffd0（G2 r157 SATURATED #170）+ f237332（G1 r156 #169）+ fc95444（G1 r155 #168）；上游 G1 r159 DONE phase=idle；plan M1/M1B 全勾选无活跃 `[ ]`（已知 concern）
 - **熔断判定**：按 `evolution-topic-picker` 饱和熔断规则 — plan 无未完成项 → 执行熔断检查；hub Top5 全部 ≥90 且待办池无未消化项 → **SATURATED**；**禁止**派 `evolution-bounded-explorer` 凑项；**禁止**进入 P1
 - **不足 5 项原因**：饱和熔断 — 无合法薄弱项可选（最低分 Top5 均为 90.0，无 <90 可推分目标；继续 companion 推分将违反饱和门控）
 - **人工干预建议**：
