@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G0 docs-only PR #141：G1 r118 bootstrap 扫描摘要；docs-only 无 prd_ids；PRD 重评无（评分无变更）；checks 绿 mergeable clean；phase idle；Squash merge dev-auto
 - G1 r118 bootstrap：G0 PR #140 已 Squash merge dev-auto（270cda7）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；修正 PR #140 squash 合并后 phase 残留 P5_DOCS_READY→idle；待 G2 选题
 - G0 docs-only PR #140：G1 r117 bootstrap 扫描摘要 + G2 r116 饱和熔断记录；docs-only 无 prd_ids；PRD 重评无（评分无变更）；checks 绿 mergeable clean；phase P5_DOCS_READY；Squash merge dev-auto
 - G1 r117 bootstrap：G0 PR #139 已 Squash merge dev-auto（e559817）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r116 BLOCKED SATURATED；phase P5_DOCS_READY→idle；待 G2 选题
