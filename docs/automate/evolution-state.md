@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 r70 选题熔断：饱和熔断触发（plan M1/M1B 全勾选无活跃 `[ ]` 故执行熔断检查；hub 薄弱项 Top5 CAT-001/CAT-002/CONN-004/DASH-004/NFR-001 加权总分均 90.0 ≥90；待办池空；STUCK 表空）；status BLOCKED SATURATED；禁止进入 P1/bounded-explorer；建议人工 `create-evolution-plan` 排新里程碑或 `create-evolution-goal` 修订方向；phase idle
 - G1 r69 bootstrap：r68 PR #103 已 Squash merge dev-auto（cbd0ebc）；G0 PASS 无 Open PR 工作区干净；goal/prd hub+分片就绪（16 域 · 124 项）；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 BLOCKED SATURATED；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r68 PRD 重评：NFR-003/NFR-004/GOV-007/RPT-002/VIEW-002 companion 质量推分；pytest 1821/4 skipped；test_nfr_gov_rpt_view_r68 35/35 + test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 233/233；总分 84.2–90.1→90.0–90.4（五 ID 破 90 STUCK 清零）；phase P4_DONE→P5_DOCS_READY
 - P3 r68 实现完成：8 Task 全绿；跨域 companion 质量推分 — NFR-003/NFR-004/GOV-007/RPT-002/VIEW-002；35 测 test_nfr_gov_rpt_view_r68 + r67–r60 六套件 233/233 回归；pytest 1821/4 skipped；ruff clean；ui_design_skill none；branch feat/evolution-r68-nfr-gov-rpt-view-companion-quality；base_branch dev-auto；phase P2_DONE→P3_DONE
