@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-05-round-target.md |
 | design |  |
 | plan |  |
