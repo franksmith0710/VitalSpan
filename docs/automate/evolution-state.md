@@ -10,7 +10,7 @@
 | round_target |  |
 | design |  |
 | plan |  |
-| branch | chore/g1-r174-doc-bootstrap |
+| branch | chore/g1-r175-doc-bootstrap |
 | base_branch | dev-auto |
 | prd_ids |  |
 | pr_number |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r175 bootstrap：G0 PR #187 已 Squash merge dev-auto（cf61551）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r160 BLOCKED SATURATED；phase idle；待 G2 选题
 - G1 r174 bootstrap：G0 PR #186 已 Squash merge dev-auto（5fb6e43）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r160 BLOCKED SATURATED；phase P5_DOCS_READY→idle；待 G2 选题
 - G0 docs-only PR #186：G1 r173 bootstrap；docs-only 无 prd_ids；PRD 重评无（评分无变更）；checks 绿 mergeable clean；phase P5_DOCS_READY；Squash merge dev-auto
 - G1 r173 bootstrap：G0 PR #185 已 Squash merge dev-auto（5e7af10）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r160 BLOCKED SATURATED；phase idle；PR #186 待 G0 合并；待 G2 选题
