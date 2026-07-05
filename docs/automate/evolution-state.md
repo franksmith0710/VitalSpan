@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
+| phase | idle |
 | round_target |  |
 | design |  |
 | plan |  |
-| branch | cursor/bc-c285961d-5fad-41e6-b19c-0f6853075acd-3d5b |
+| branch |  |
 | base_branch | dev-auto |
 | prd_ids |  |
-| pr_number | 145 |
+| pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 r126 bootstrap：G0 PR #145 已 Squash merge dev-auto（812d86e）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r124 BLOCKED SATURATED；phase P5_DOCS_READY→idle；待 G2 选题
 - G0 docs-only PR #145：G1 r125 bootstrap 扫描摘要；docs-only 无 prd_ids；PRD 重评无（评分无变更）；checks 绿 mergeable clean；phase P5_DOCS_READY；待 Squash merge dev-auto
 - G1 r125 bootstrap：G0 PR #144 已 Squash merge dev-auto（e637a5f）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r124 BLOCKED SATURATED（遗留分支 cursor/bc-8ead79ed… 无 Open PR）；phase P5_DOCS_READY→idle；待 G2 选题
 - G0 docs-only PR #144：G1 r122 bootstrap 扫描摘要 + G2 r122 饱和熔断记录；docs-only 无 prd_ids；PRD 重评无（评分无变更）；checks 待重跑；phase P5_DOCS_READY；待 Squash merge dev-auto
