@@ -13,7 +13,7 @@
 | branch | cursor/bc-411c9bcd-9714-41f4-8142-0d93de70e947-0f92 |
 | base_branch | dev-auto |
 | prd_ids |  |
-| pr_number |  |
+| pr_number | 176 |
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
