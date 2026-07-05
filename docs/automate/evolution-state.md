@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-05-round-target.md |
 | design |  |
 | plan |  |
-| branch | cursor/bc-7719a70b-63e0-4097-9ecd-277a56d22b1c-126e |
+| branch | chore/g2-r157-saturated |
 | base_branch | dev-auto |
 | prd_ids |  |
-| pr_number | 169 |
+| pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -66,7 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- G0 docs-only PR #169：G1 r156 bootstrap；docs-only 无 prd_ids；PRD 重评无（评分无变更）；checks 绿 mergeable clean；phase P5_DOCS_READY；待 Squash merge dev-auto
+- G2 r157 选题熔断：饱和熔断触发（plan M1/M1B 全勾选无活跃 `[ ]` 故执行熔断检查；hub 薄弱项 Top5 CAT-001/CAT-002/CONN-004/DASH-004/NFR-001 加权总分均 90.0 ≥90；待办池空；STUCK 表空）；status BLOCKED SATURATED；禁止进入 P1/bounded-explorer；round-target=docs/superpowers/evolution/2026-07-05-round-target.md；建议人工 `create-evolution-plan` 排新里程碑或 `create-evolution-goal` 修订方向；phase P5_DOCS_READY→G2_DONE；branch chore/g2-r157-saturated
+- G0 docs-only PR #169：G1 r156 bootstrap；docs-only 无 prd_ids；PRD 重评无（评分无变更）；Squash merge dev-auto（f237332）；phase idle；待 G2 选题
 - G1 r156 bootstrap：G0 PR #168 已 Squash merge dev-auto（fc95444）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r153 BLOCKED SATURATED；phase idle；待 G2 选题
 - G0 docs-only PR #168：G1 r155 bootstrap；docs-only 无 prd_ids；PRD 重评无（评分无变更）；Squash merge dev-auto（fc95444）
 - G1 r155 bootstrap：G0 PR #167 已 Squash merge dev-auto（74bf730）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r153 BLOCKED SATURATED；phase P5_DOCS_READY→idle；待 G2 选题
