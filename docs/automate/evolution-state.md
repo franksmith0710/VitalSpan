@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
+| phase | P5_DOCS_READY |
 | round_target |  |
 | design |  |
 | plan |  |
-| branch |  |
+| branch | cursor/bc-ccc0a809-ea9a-441c-aba6-b84f77553fe4-29dd |
 | base_branch | dev-auto |
 | prd_ids |  |
-| pr_number |  |
+| pr_number | 110 |
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
