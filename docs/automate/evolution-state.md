@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
+| phase | G2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-05-round-target.md |
 | design |  |
 | plan |  |
