@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
+| phase | P1_DONE |
+| round_target | docs/superpowers/evolution/2026-07-06-round-target-view-003-m3-conn.md |
+| design | docs/superpowers/specs/2026-07-06-view-003-m3-conn-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | VIEW-003,CONN-001,CONN-002 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r207 设计：VIEW-003 收官（Playwright E2E + 用户覆盖优先解析 + 边缘单测）+ CONN-001/002 compose 集成验收；ui_design_skill=b-design-system-tailadmin-radix；范围框定 12 主文件（fe defaultView/e2e + tests compose + docs P5）；方言代码预期零改动；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-06-view-003-m3-conn-design.md；待 P2 evolution-planner
+- G2 r206 选题：饱和熔断已跳过（plan §M-FE-3 含 1 项 `[ ]` VIEW-003；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 VIEW-003/CONN-001/CONN-002（M-FE-3 收官 + M3 关系型连接器）；hub 最低分入选 CONN-001/002 90.1；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-view-003-m3-conn.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap：G0 PR #207 已 Squash merge dev-auto（2427627）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M-FE-3**（1 项 `[ ]` VIEW-003；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M-FE-3 完成（VIEW-003 plan 未勾）；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r205 收尾：PRD 重评 AUTH-001/AUTH-003/VIEW-003/DASH-004（M-FE-3）；hub 总分 90.0–92.1→91.9–93.1；plan M-FE-3 勾选 AUTH-001/AUTH-003/DASH-004（VIEW-003 分片部分实现未勾）；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r204 验证：独立全量 ruff clean + pytest 1830 passed/3 skipped exit 0（需 connectors-ext 装 dmPython）；fe check:design 110 files + vitest 129/129 + build exit 0；UI design_drift PASS + smoke 覆盖 AUTH-001/003/VIEW-003/DASH-004；screenshots 未运行（无 postgres，sqlite alembic FK 不支持 live FE）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
