@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-06-round-target.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | BOOT-003,BOOT-002,DS-002,DS-003,DS-007 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 r192 选题：饱和熔断已跳过（plan M-FE-1 含 5 项 `[ ]`）；入选 BOOT-003/BOOT-002/DS-002/DS-003/DS-007（M-FE-1 认证与数据源 FE companion）；hub 最低分入选 BOOT-003 90.9；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 r191 bootstrap：G0 PR #204 已 Squash merge dev-auto（ba9cbdd）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan v2.1 只读当前节 **M-FE-1**（5 项 `[ ]` · P1–P3 执行范围 49 项待完成；M13 冻结）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（hub 评分饱和；plan 已有活跃节可选题）；STUCK 表空；待办池空；上轮 G2 r188 BLOCKED SATURATED；phase idle（已就绪）；待 G2 选题
 - G1 r190 bootstrap：G0 PR #203 已 Squash merge dev-auto（267f1fe）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r188 BLOCKED SATURATED；phase idle（已就绪）；待 G2 选题
 - G1 r189 bootstrap：G0 PR #202 已 Squash merge dev-auto（7236981）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读 M1/M1B 全勾选无 `[ ]`（活跃节标注 M1 与演化进度漂移，已知 concern）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 G2 r188 BLOCKED SATURATED；phase idle（已就绪）；待 G2 选题
