@@ -13,7 +13,7 @@
 | branch | cursor/bc-d2219f87-5c8f-465d-b6ad-bee0437205d8-a258 |
 | base_branch | dev-auto |
 | prd_ids | AUTH-001,AUTH-003,VIEW-003,DASH-004 |
-| pr_number |  |
+| pr_number | 207 |
 | last_verified_command | cd backend && pip install -e ".[dev,connectors-ext]" && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm test && pnpm build |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm test（roles/users/dashboard-view/defaultViewResolve smoke） |
