@@ -5,6 +5,7 @@ from typing import Any
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import _SYSTEM_OWNERS, map_oracle_error
+from app.datasources.dialects.relational_hints import normalize_column_type
 
 ORACLE_MAX_COLUMNS = 500
 
@@ -85,7 +86,11 @@ class OracleConnector:
             table_name=table.upper(),
         )
         columns = [
-            ColumnInfo(name=row[0], data_type=row[1], nullable=str(row[2]) == "Y")
+            ColumnInfo(
+                name=row[0],
+                data_type=normalize_column_type("oracle", str(row[1])),
+                nullable=str(row[2]) == "Y",
+            )
             for row in cursor.fetchall()
             if row
         ]

@@ -63,6 +63,44 @@ from app.datasources.dialects.mariadb import MariadbConnector
 from app.datasources.registry import export_type_catalog, registry
 
 
+from app.datasources.dialects.relational_hints import (
+    build_limit_clause,
+    normalize_column_type,
+    quote_identifier,
+)
+
+
+def test_conn_r228_005_01_quote_oracle():
+    """T-CONN-R228-005-01: quote_identifier oracle → 大写双引号。"""
+    assert quote_identifier("oracle", "My Table") == '"MY TABLE"'
+
+
+def test_conn_r228_005_02_quote_sqlserver():
+    """T-CONN-R228-005-02: quote_identifier sqlserver → bracket。"""
+    assert quote_identifier("sqlserver", "My Table") == "[My Table]"
+
+
+def test_conn_r228_005_03_build_limit_sqlserver():
+    """T-CONN-R228-005-03: build_limit_clause 含 OFFSET/FETCH。"""
+    clause = build_limit_clause("sqlserver", 10, 20)
+    assert "OFFSET 20" in clause
+    assert "FETCH NEXT 10" in clause
+
+
+def test_conn_r228_005_04_normalize_oracle_number():
+    """T-CONN-R228-005-04: normalize_column_type oracle NUMBER → decimal。"""
+    assert normalize_column_type("oracle", "NUMBER") == "decimal"
+    assert normalize_column_type("oracle", "VARCHAR2") == "string"
+    assert normalize_column_type("oracle", "DATE") == "datetime"
+
+
+def test_conn_r228_005_05_normalize_sqlserver_types():
+    """T-CONN-R228-005-05: normalize_column_type sqlserver nvarchar/datetime2/bit。"""
+    assert normalize_column_type("sqlserver", "nvarchar") == "string"
+    assert normalize_column_type("sqlserver", "datetime2") == "datetime"
+    assert normalize_column_type("sqlserver", "bit") == "boolean"
+
+
 def test_conn_r228_003_01_mariadb_type_and_catalog():
     """T-CONN-R228-003-01: MariadbConnector.type=mariadb；catalog 含 mariadb+hive。"""
     assert MariadbConnector().type == "mariadb"
