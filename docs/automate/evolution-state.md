@@ -6,17 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-06-round-target-m5-dash.md |
-| design | docs/superpowers/specs/2026-07-06-m5-dash-view-nfr-design.md |
-| plan | docs/superpowers/plans/2026-07-06-m5-dash-view-nfr.md |
-| branch | cursor/bc-2b892a4a-889d-4644-911c-fc1aa96a65fb-17e6 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | DASH-003,VIEW-001,NFR-001 |
-| pr_number | 209 |
-| last_verified_command | cd backend && pip install -e ".[dev,connectors-ext]" && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm vitest run |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm run check:design && pnpm vitest run src/components/charts/charts.dash003.smoke.test.tsx src/pages/admin/dashboard/dashboard.smoke.test.tsx src/pages/admin/dashboard/dashboard-first-screen.perf.smoke.test.tsx |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T15:54:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 bootstrap：G0 PR #209 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M5**（1 项 `[ ]` VIEW-001；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M5 DASH-003/VIEW-001/NFR-001 完成；phase P5_DOCS_READY→idle；待 G2 选题
 - G0 r216 闸门：修复 test_viz_advanced_l1_r43 图表类型 9→12；全量 pytest 1840/13 skipped + fe vitest 142/142 + check:design PASS；P5 doc sync DASH-003/VIEW-001/NFR-001 重评 + plan M5 DASH-003 勾选；phase P3_DONE→P5_DOCS_READY；待 Squash merge PR #209 dev-auto
 - P4 r215 验证：plan Task6 子集 ruff clean + pytest 36/36 + check:design 113 files + vitest 20/20 + build exit 0；全量 pytest 1841 passed/1 failed（test_viz_advanced_l1_r43.py::test_get_charts_types_nine_types 期望 9 实际 12，DASH-003 未更新）；UI design_drift PASS + DASH-003/NFR-001 smoke PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE（BLOCKED 全量 exit 1）；待修复 r43 断言或 P3 补测
 - P3 r214 实现：6 Task 完成（DASH-003 heatmap/kpi/timeline BE+FE+Palette、VIEW-001 protocolVersion round-trip、NFR-001 perf smoke）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 113 files PASS；screenshots 未运行（P3 headless vitest mock）；branch=cursor/bc-2b892a4a-889d-4644-911c-fc1aa96a65fb-17e6；base_branch=dev-auto；pytest 36/36 + fe vitest 20/20 exit 0；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
