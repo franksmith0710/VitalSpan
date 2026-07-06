@@ -17,6 +17,7 @@ import { LoginPage } from "@/pages/login/LoginPage";
 import { ConnectorsPage } from "@/pages/admin/connectors/ConnectorsPage";
 import { DatasourceListPage } from "@/pages/admin/datasources/DatasourceListPage";
 import { DatasourceFormPage } from "@/pages/admin/datasources/DatasourceFormPage";
+import { DatasourceDetailPage } from "@/pages/admin/datasources/DatasourceDetailPage";
 import { RoleListPage } from "@/pages/admin/system/roles/RoleListPage";
 import { UserListPage } from "@/pages/admin/system/users/UserListPage";
 
