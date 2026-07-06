@@ -85,11 +85,11 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §5（DATA-SMOKE）
 - **期次**：M1B
-- **里程碑对齐**：M1B · 已完成 · 2026-07-03
+- **里程碑对齐**：M1B · 已完成 · 2026-07-03；M-FE-2 L2 · 已完成 · 2026-07-06
 - **描述**：DATA-SMOKE **L1**：内联 SourceConnection → 同步+清洗 → 托管库目标表；运行历史含 traceId/行数/errorMessage。**L2**（dataSourceId + SQL 出数）M-FE-2 已实现。
 - **验收标准**：
   - [x] DATA-SMOKE L1 用例通过（`tests/test_ingestion_e2e.py`）
   - [x] SRS §3.6、api/README §9、services/ingestion 状态已回写
   - [x] DATA-SMOKE L2：dataSourceId + SQL 出数（`tests/test_data_p1_smoke_l2.py`）
 - **代码锚点**：`tests/test_ingestion_e2e.py` · `tests/test_ingestion_l1_smoke.py` · `tests/test_doc_anchors_data.py` · `tests/test_data_p1_smoke_l2.py` · `docs/automate/plan.md` M1B
-- **演化建议**：`tests/test_ingestion_l1_smoke.py` T-L1-07~08（`test_l1_data_smoke_orchestrator` L1 编排 + <2.5s）；`tests/test_doc_anchors_data.py` T-D05-10~12 锚点对账；L2 dataSourceId+SQL 出数待 M3/M4
+- **演化建议**：`tests/test_ingestion_l1_smoke.py` T-L1-07~08 L1 编排 + <2.5s；Playwright E2E P1-SMOKE 真实 DB 浏览器验收

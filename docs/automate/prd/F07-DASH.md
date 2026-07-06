@@ -16,16 +16,16 @@
 - **里程碑对齐**：
 ### [DASH-002] Dashboard 容器与布局引擎
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
+- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06
 - **描述**：Dashboard 容器与布局引擎（SRS 追溯项）。
 - **验收标准**：
   - [x] 空 Dashboard 可创建展示
   - [x] 网格布局可拖拽（react-grid-layout + edit/view 切换）
 - **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/components/dashboard/` · `fe/src/components/dashboard/gridLayoutAdapter.ts` · `fe/src/components/dashboard/DashboardGrid.tsx`
-- **演化建议**：r29 resizeWidget/标题编辑 + 增强空态引导（T-DASH-R29-002）；仍缺 react-grid-layout 拖拽，待后续轮次
-- **里程碑对齐**：
+- **演化建议**：r29 resizeWidget/标题编辑 + 增强空态引导（T-DASH-R29-002）；Playwright E2E 编辑拖拽持久化验收
 ### [DASH-003] Dashboard 组件库
 
 - **状态**：部分实现

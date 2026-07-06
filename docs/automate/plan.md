@@ -345,10 +345,10 @@ DS-004 → VIZ-002 → DASH-002 → DATA-005
 
 ### 勾选清单
 
-- [ ] DS-004: Schema 浏览器 UI（schemas/tables/columns 三级浏览）
-- [ ] VIZ-002: 最小图表集 FE 渲染（表格/折线/柱在 Dashboard 出数）
-- [ ] DASH-002: Dashboard 网格拖拽布局（分片未勾「网格布局可拖拽」）
-- [ ] DATA-005: DATA-SMOKE L2 全链路验收（托管库登记 `dataSourceId` → SQL 查询出数 + 文档回写）
+- [x] DS-004: Schema 浏览器 UI（schemas/tables/columns 三级浏览）（完成于 2026-07-06）
+- [x] VIZ-002: 最小图表集 FE 渲染（表格/折线/柱在 Dashboard 出数）（完成于 2026-07-06）
+- [x] DASH-002: Dashboard 网格拖拽布局（分片未勾「网格布局可拖拽」）（完成于 2026-07-06）
+- [x] DATA-005: DATA-SMOKE L2 全链路验收（托管库登记 `dataSourceId` → SQL 查询出数 + 文档回写）（完成于 2026-07-06）
 
 ### M-FE-2 验收信号
 
@@ -435,7 +435,7 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [x] VIZ-001: ChartViewConfig 协议（完成于 2026-07-04）
 - [x] VIZ-002: 最小图表集 M4-MIN（完成于 2026-07-04）
 - [x] DASH-001: DashboardView 数据模型（完成于 2026-07-04）
-- [ ] DASH-002: Dashboard 容器与布局引擎（缺网格拖拽 FE）
+- [x] DASH-002: Dashboard 容器与布局引擎（完成于 2026-07-06）
 - [ ] DASH-003: Dashboard 组件库（地图/热力/KPI/时间轴待补）
 - [ ] VIEW-001: DashboardView 视图协议 FR-VIEW-1
 

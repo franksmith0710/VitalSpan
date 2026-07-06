@@ -19,13 +19,14 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
-- **描述**：最小图表集 M4-MIN（SRS 追溯项）。
+- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06
+- **描述**：最小图表集 M4-MIN（SRS 追溯项）；M-FE-2 补齐 Dashboard widget SQL 配置与 view 模式出数。
 - **验收标准**：
   - [x] 表格+折线+柱状可渲染
   - [x] 绑定 QUERY-005 出数
-- **代码锚点**：`fe/src/components/charts/` · `fe/src/lib/chart-theme.ts`
-- **演化建议**：r29 空/错/慢态 + table 客户端分页 PAGE_SIZE=50 + query 错误码映射（T-VIZ-R29-002）；缺饼图/地图与配置 UI（VIZ-005）；后续可补 Apex 主题与大数据虚拟化
-- **里程碑对齐**：
+  - [x] Dashboard edit/view widget FE 出数（`WidgetSqlPanel` + `DashboardWidget`）
+- **代码锚点**：`fe/src/components/charts/` · `fe/src/components/dashboard/WidgetSqlPanel.tsx` · `fe/src/components/dashboard/DashboardWidget.tsx` · `fe/src/lib/chart-theme.ts` · `fe/src/pages/admin/dashboard/dashboard.smoke.test.tsx`
+- **演化建议**：饼图/地图与配置 UI（VIZ-005）；Apex 主题与大数据虚拟化；Playwright E2E 真实查询出数
 ### [VIZ-003] 图表类型插件注册
 
 - **状态**：已实现

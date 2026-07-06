@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m-fe-2.md |
 | design | docs/superpowers/specs/2026-07-06-m-fe-2-p1-smoke-design.md |
 | plan | docs/superpowers/plans/2026-07-06-m-fe-2-p1-smoke.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r199 收尾：PRD 重评 DS-004/VIZ-002/DASH-002/DATA-005（M-FE-2）；hub 总分 90.7–91.6→92.4–93.5；plan M-FE-2 四 ID + M5 DASH-002 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r199 验证：独立全量 ruff+pytest 1829 passed/3 skipped exit 0；fe check:design 92 files + vitest 117/117 + build exit 0；UI design_drift PASS + smoke 覆盖 DS-004/VIZ-002/DASH-002；screenshots 未运行（无 docker/postgres，sqlite 后端无 seed admin）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 r198 实现：M-FE-2 五 Task 完成（DS-004 SchemaBrowser、VIZ-002 WidgetSqlPanel、DASH-002 react-grid-layout、vitest smoke 117/117、DATA-005 L2 pytest 1829 passed）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 91 files PASS；screenshots 未运行（P3 headless 无后端联调 live FE）；branch=cursor/bc-324ccb4b-6f07-4687-be57-4d6900130e97-0d44；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 r197 计划：M-FE-2 P1 最小出数闭环 5 Task（DS-004 SchemaBrowser、VIZ-002 WidgetSqlPanel、DASH-002 react-grid-layout、vitest smoke、DATA-005 L2 pytest+PRD）；subagent-driven-development option 1；预估 20 文件；ui_design_skill=b-design-system-tailadmin-radix；skill_rule_index 26 源刷新；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-m-fe-2-p1-smoke.md；待 P3 evolution-implementer
