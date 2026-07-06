@@ -6,17 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-06-round-target-m-fe-2.md |
-| design | docs/superpowers/specs/2026-07-06-m-fe-2-p1-smoke-design.md |
-| plan | docs/superpowers/plans/2026-07-06-m-fe-2-p1-smoke.md |
-| branch | cursor/bc-324ccb4b-6f07-4687-be57-4d6900130e97-0d44 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | DS-004,VIZ-002,DASH-002,DATA-005 |
-| pr_number | |
-| last_verified_command | cd backend && ruff check . && pytest -q (1829 passed, 3 skipped); cd fe && check:design (92 files) && vitest (117 passed) && build |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | check:design + vitest smoke (DS-004/VIZ-002/DASH-002); screenshots 未运行（无 docker/postgres，sqlite 后端无 seed admin） |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T12:30:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 bootstrap：G0 PR #206 已 Squash merge dev-auto（ce725cc）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M-FE-3**（4 项 `[ ]`；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M-FE-2 P1 完成；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r199 收尾：PRD 重评 DS-004/VIZ-002/DASH-002/DATA-005（M-FE-2）；hub 总分 90.7–91.6→92.4–93.5；plan M-FE-2 四 ID + M5 DASH-002 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r199 验证：独立全量 ruff+pytest 1829 passed/3 skipped exit 0；fe check:design 92 files + vitest 117/117 + build exit 0；UI design_drift PASS + smoke 覆盖 DS-004/VIZ-002/DASH-002；screenshots 未运行（无 docker/postgres，sqlite 后端无 seed admin）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 r198 实现：M-FE-2 五 Task 完成（DS-004 SchemaBrowser、VIZ-002 WidgetSqlPanel、DASH-002 react-grid-layout、vitest smoke 117/117、DATA-005 L2 pytest 1829 passed）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 91 files PASS；screenshots 未运行（P3 headless 无后端联调 live FE）；branch=cursor/bc-324ccb4b-6f07-4687-be57-4d6900130e97-0d44；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
