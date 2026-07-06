@@ -4,11 +4,13 @@ import type { ApexOptions } from "apexcharts";
 import { apiFetch } from "@/lib/api";
 import {
   isAdvancedEchartsType,
+  isKpiType,
   type ChartViewConfig,
 } from "@/lib/chartViewConfig";
 import { createBarChartOptions, createLineChartOptions } from "@/lib/chart-theme";
 import { Button } from "@/components/ui/button";
 import { AdvancedEchartsChart } from "./adapters/AdvancedEchartsChart";
+import { KpiCard } from "./adapters/KpiCard";
 import type { RenderSpec } from "./adapters/renderFromSpec";
 import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
@@ -54,7 +56,7 @@ export function ChartRenderer({
   }, [config]);
 
   useEffect(() => {
-    if (!isAdvancedEchartsType(localConfig.chartType) || loading || error) {
+    if (isKpiType(localConfig.chartType) || !isAdvancedEchartsType(localConfig.chartType) || loading || error) {
       setRenderSpec(null);
       return;
     }
@@ -67,6 +69,17 @@ export function ChartRenderer({
   }, [localConfig, loading, error]);
 
   const renderBody = () => {
+    if (isKpiType(localConfig.chartType)) {
+      return (
+        <KpiCard
+          title={title}
+          metrics={localConfig.metrics ?? []}
+          columns={columns}
+          rows={rows as unknown[][]}
+        />
+      );
+    }
+
     if (isAdvancedEchartsType(localConfig.chartType)) {
       if (!renderSpec) {
         return <p className="text-theme-sm text-gray-500">渲染配置加载中…</p>;

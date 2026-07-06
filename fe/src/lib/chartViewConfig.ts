@@ -7,6 +7,9 @@ export type ChartType =
   | "pie"
   | "gauge"
   | "map"
+  | "heatmap"
+  | "kpi"
+  | "timeline"
   | "sankey"
   | "funnel"
   | "graph";
@@ -40,13 +43,18 @@ export type ChartViewConfig = {
 };
 
 const BASIC_TYPES: ChartType[] = ["table", "line", "bar"];
+const KPI_TYPES: ChartType[] = ["kpi"];
 
 export function isBasicChartType(type: ChartType): boolean {
   return BASIC_TYPES.includes(type);
 }
 
+export function isKpiType(type: ChartType): boolean {
+  return KPI_TYPES.includes(type);
+}
+
 export function isAdvancedEchartsType(type: ChartType): boolean {
-  return !isBasicChartType(type) && type !== "pie";
+  return !isBasicChartType(type) && !isKpiType(type) && type !== "pie";
 }
 
 export function isChartViewConfig(value: unknown): value is ChartViewConfig {
