@@ -50,7 +50,7 @@ export function normalizeWidgetIds(widgets: LayoutWidget[]): LayoutWidget[] {
 
 export function defaultChartConfig(type: ChartTypeL1): ChartViewConfig {
   const base = {
-    dataSourceId: "00000000-0000-4000-8000-000000000099",
+    dataSourceId: "",
     mode: "sql" as const,
   };
   if (type === "table") {
