@@ -116,6 +116,7 @@ redoc: /redoc
 | GET | `/api/v1/nfr/dashboard-sla/alerts` | NFR-003 SLA 告警配置（**r68** `thresholdPercent` query） | 内部 | 一期 | NFR-003 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/https-audit/status` | NFR-004 HTTPS 策略探测 | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/https-audit/mask-probe` | NFR-004 脱敏审计 mock（**r68** `auditScope` ACL + `simulateAuditFailure`） | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/https-audit/audit-probe` | NFR-004 响应审计 ring buffer probe | 内部 | 一期 | NFR-004 | 已实现 | `backend/app/api/v1/nfr.py` |
 
 ---
 
@@ -266,6 +267,7 @@ redoc: /redoc
 | POST | `/api/v1/gov/catalog/classification/nodes/{id}/move` | 分类树节点移动（环检测；超深 → 422 `CAT_CLASS_MAX_DEPTH`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | DELETE | `/api/v1/gov/catalog/classification/nodes/{id}` | 删除叶节点（含子节点 → 409 `CAT_CLASS_HAS_CHILDREN`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/gov/catalog/geo-regions/nodes` | 地域 geo 树 list/create（`?parentId=`；`CAT03_*`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/geo-regions/m6-probe` | CAT-003 M6 集成 probe | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/geo-regions/nodes/{id}/move` | geo 树节点移动（环检测；超深 → 422 `CAT03_MAX_DEPTH`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | DELETE | `/api/v1/gov/catalog/geo-regions/nodes/{id}` | 删除叶节点（含子节点 → 409 `CAT03_HAS_CHILDREN`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/tickets/validate` | 工单 stats item 校验（`CAT05_*`） | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
@@ -274,13 +276,17 @@ redoc: /redoc
 | POST | `/api/v1/gov/catalog/lifecycle-templates/validate` | CAT-001 lifecycle 校验 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 创建 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 列表 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/lifecycle-templates/m6-probe` | CAT-001 M6 集成 probe | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/lifecycle-templates/{templateKey}` | CAT-001 lifecycle 按 key 查询 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/lifecycle-templates/{templateKey}/stages/move` | CAT-001 lifecycle 阶段重排 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/aggregate-templates/validate` | CAT-002 aggregate 校验 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/aggregate-templates` | CAT-002 aggregate 创建 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/aggregate-templates` | CAT-002 aggregate 列表 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/aggregate-templates/m6-probe` | CAT-002 M6 集成 probe | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/aggregate-templates/{aggregate_key}/attribution` | CAT-002 PoC 归属 | IF-06 | 一期 | CAT-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/register` | 总线 PoC 半自动注册（`catalogEntryId`；需 admin；幂等 201/200；403 `BUS_REGISTER_FORBIDDEN`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/bus/register/fsm` | GOV-002 semi-auto FSM 查询（`catalogEntryId`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/bus/register/probe` | GOV-002 半自动登记 perf probe | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/auto-register` | 总线全自动注册 FSM（`catalogEntryId`；integration/admin；幂等 201/200；403 `GOV_AUTO_BUS_FORBIDDEN`） | IF-06 | 四期 | GOV-007 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/bus/auto-register/probe` | auto-register perf probe（`elapsedMs`/`withinBudget`） | IF-06 | 四期 | GOV-007 | 已实现（companion） | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/query-design/validate` | 可视化查询设计校验（422 `detail.fields`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |

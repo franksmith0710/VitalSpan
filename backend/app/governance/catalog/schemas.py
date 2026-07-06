@@ -66,3 +66,10 @@ class BusRegisterOut(BaseModel):
     status: str
     trace_id: str = Field(alias="traceId")
     bus_response: dict | None = Field(default=None, alias="busResponse")
+
+
+class SemiAutoFsmOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    fsm_state: str = Field(alias="fsmState")
+    catalog_entry_id: uuid.UUID = Field(alias="catalogEntryId")
+    bus_id: str | None = Field(default=None, alias="busId")

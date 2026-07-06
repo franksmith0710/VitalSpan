@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+from collections import deque
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -19,10 +20,12 @@ from app.core.nfr.errors import (
 )
 
 _SENSITIVE_DEFAULTS = frozenset({"password", "apiKey", "credential", "secret"})
-_MASK_KEYS = frozenset({"password", "apiKey", "credential", "secret"})
+_MASK_KEYS = frozenset({"password", "apiKey", "credential", "secret", "token"})
 _ALLOWED_SCOPES = frozenset({"api", "webhook", "connector"})
 _USER_HTTPS_AUDIT_SCOPE: dict[str, frozenset[str]] = {}
 probe_https_audit_budget_ms_limit = 50
+
+_AUDIT_RING: deque[dict] = deque(maxlen=32)
 
 
 @dataclass(frozen=True)
@@ -66,6 +69,22 @@ class HttpsAuditMaskProbeOut(BaseModel):
     masked_fields: list[str] = Field(alias="maskedFields")
     audit_logged: bool = Field(default=True, alias="auditLogged")
     insecure_webhook: bool = Field(default=False, alias="insecureWebhook")
+
+
+class AuditEventOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    trace_id: str = Field(alias="traceId")
+    path: str
+    method: str
+    masked_fields: list[str] = Field(alias="maskedFields")
+    timestamp: datetime
+
+
+class AuditProbeOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    events: list[AuditEventOut]
+    event_count: int = Field(alias="eventCount")
+    plaintext_leaked: bool = Field(alias="plaintextLeaked")
 
 
 def set_user_https_audit_scope(user_id: str, allowed_scopes: frozenset[str]) -> None:
@@ -154,3 +173,42 @@ def probe_https_status_budget_ms() -> HttpsAuditProbeResult:
     get_https_audit_status()
     elapsed = (time.perf_counter() - started) * 1000
     return HttpsAuditProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_https_audit_budget_ms_limit)
+
+
+def record_audit_event(
+    *, trace_id: str, path: str, method: str, body: dict,
+) -> list[str]:
+    masked_fields: list[str] = []
+    for key in body:
+        if key in _MASK_KEYS and body[key] not in (None, "***"):
+            masked_fields.append(key)
+    _AUDIT_RING.append({
+        "traceId": trace_id,
+        "path": path,
+        "method": method,
+        "maskedFields": masked_fields,
+        "timestamp": datetime.now(UTC).isoformat(),
+    })
+    return masked_fields
+
+
+def _ring_has_plaintext_leak() -> bool:
+    for entry in _AUDIT_RING:
+        for key in _MASK_KEYS:
+            if key in entry and entry[key] not in (None, "***"):
+                return True
+    return False
+
+
+def export_audit_probe(actor: UserContext) -> AuditProbeOut:
+    _assert_acl(actor, "api")
+    events = [AuditEventOut.model_validate(e) for e in list(_AUDIT_RING)]
+    return AuditProbeOut(
+        events=events,
+        eventCount=len(events),
+        plaintextLeaked=_ring_has_plaintext_leak(),
+    )
+
+
+def clear_audit_ring_for_tests() -> None:
+    _AUDIT_RING.clear()

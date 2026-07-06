@@ -8,6 +8,7 @@ from app.auth.middleware import AuthMiddleware
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.core.middleware import TraceIdMiddleware
+from app.core.middleware.https_audit_guard import HttpsAuditGuardMiddleware
 from app.ingestion.scheduler import get_scheduler, refresh_all_jobs
 from app.openapi.extensions import customize_openapi
 
@@ -42,6 +43,7 @@ app.add_middleware(
 )
 app.add_middleware(TraceIdMiddleware)
 app.add_middleware(AuthMiddleware)
+app.add_middleware(HttpsAuditGuardMiddleware)
 
 
 @app.get("/health")

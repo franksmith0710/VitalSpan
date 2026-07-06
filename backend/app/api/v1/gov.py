@@ -19,6 +19,7 @@ from app.governance.catalog.schemas import (
     CatalogEntryOut,
     CatalogListResponse,
     CategoryListResponse,
+    SemiAutoFsmOut,
 )
 from app.governance.query_design import service as query_design_service
 from app.governance.query_design.schemas import (
@@ -133,13 +134,6 @@ def _catalog_error_response(exc: catalog_service.CatalogError) -> JSONResponse:
     )
 
 
-def _assert_bus_register_admin(actor: UserContext) -> None:
-    if "admin" not in actor.roles:
-        raise catalog_service.CatalogError(
-            "BUS_REGISTER_FORBIDDEN", "Bus registration requires admin role", 403
-        )
-
-
 @router.get("/catalog/categories", response_model=CategoryListResponse)
 def list_catalog_categories(
     _: Annotated[UserContext, Depends(get_current_user)],
@@ -216,7 +210,10 @@ def register_bus(
     db: Annotated[Session, Depends(_db)],
 ) -> BusRegisterOut | JSONResponse:
     try:
-        _assert_bus_register_admin(actor)
+        entry = catalog_service.get_entry(db, payload.catalog_entry_id)
+        from app.governance.bus.poc_fsm import assert_bus_register_path_scope
+
+        assert_bus_register_path_scope(actor, entry.path)
         out, created = catalog_service.register_entry_to_bus(db, payload.catalog_entry_id)
         return JSONResponse(
             status_code=201 if created else 200,
@@ -224,6 +221,54 @@ def register_bus(
         )
     except catalog_service.CatalogError as exc:
         return _catalog_error_response(exc)
+
+
+@router.get("/bus/register/fsm", response_model=None)
+def get_bus_register_fsm(
+    catalog_entry_id: Annotated[uuid.UUID, Query(alias="catalogEntryId")],
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> JSONResponse:
+    from sqlalchemy import select
+
+    from app.governance.bus.poc_fsm import get_semi_auto_fsm
+    from app.governance.catalog.models import BusRegistration
+
+    try:
+        catalog_service.get_entry(db, catalog_entry_id)
+    except catalog_service.CatalogError as exc:
+        return _catalog_error_response(exc)
+    state = get_semi_auto_fsm(db, catalog_entry_id)
+    bus_id = None
+    row = db.scalar(
+        select(BusRegistration).where(
+            BusRegistration.catalog_entry_id == catalog_entry_id,
+            BusRegistration.status == "succeeded",
+        )
+    )
+    if row and row.bus_payload:
+        bus_id = row.bus_payload.get("busId")
+    out = SemiAutoFsmOut(fsmState=state, catalogEntryId=catalog_entry_id, busId=bus_id)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
+
+
+@router.get("/bus/register/probe", response_model=None)
+def semi_auto_register_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> JSONResponse:
+    from app.governance.bus.probe import probe_semi_auto_register_budget_ms
+
+    if "admin" not in actor.roles:
+        return JSONResponse(
+            status_code=403,
+            content={"code": "BUS_REGISTER_FORBIDDEN", "message": "probe requires admin", "detail": None},
+        )
+    result = probe_semi_auto_register_budget_ms(db, actor)
+    return JSONResponse(
+        status_code=200,
+        content={"elapsedMs": result.elapsed_ms, "ok": result.ok},
+    )
 
 
 @router.post("/bus/auto-register", response_model=None)
@@ -659,6 +704,16 @@ def _cat03_error(exc: Cat03Error) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
 
 
+@router.get("/catalog/geo-regions/m6-probe", response_model=None)
+def cat03_m6_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat03.handler import run_cat03_catalog_probe
+
+    out = run_cat03_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
+
+
 @router.get("/catalog/geo-regions/nodes", response_model=GeoRegionListResponse)
 def list_geo_region_nodes(
     _: Annotated[UserContext, Depends(get_current_user)],
@@ -778,6 +833,16 @@ def lifecycle_templates_create(
         return _cat01_error(exc)
 
 
+@router.get("/catalog/lifecycle-templates/m6-probe", response_model=None)
+def cat01_m6_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat01.handler import run_cat01_catalog_probe
+
+    out = run_cat01_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
+
+
 @router.get("/catalog/lifecycle-templates/{template_key}", response_model=LifecycleTemplateOut)
 def lifecycle_templates_get(
     template_key: str,
@@ -844,6 +909,16 @@ def aggregate_templates_list(
     actor: Annotated[UserContext, Depends(get_current_user)] = None,
 ) -> AggregateTemplateListResponse:
     return cat02_service.list_aggregate_templates(limit, offset, actor)
+
+
+@router.get("/catalog/aggregate-templates/m6-probe", response_model=None)
+def cat02_m6_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat02.handler import run_cat02_catalog_probe
+
+    out = run_cat02_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
 
 
 @router.get("/catalog/aggregate-templates/{aggregate_key}/attribution", response_model=AggregateAttributionOut)

@@ -42,10 +42,12 @@ from app.core.nfr.dashboard_sla import (
     validate_dashboard_sla,
 )
 from app.core.nfr.https_audit import (
+    AuditProbeOut,
     HttpsAuditError,
     HttpsAuditMaskProbeIn,
     HttpsAuditMaskProbeOut,
     HttpsAuditStatusOut,
+    export_audit_probe,
     get_https_audit_status,
     probe_https_mask,
 )
@@ -407,5 +409,15 @@ def https_audit_mask_probe(
 ) -> HttpsAuditMaskProbeOut | JSONResponse:
     try:
         return probe_https_mask(payload, actor)
+    except HttpsAuditError as exc:
+        return _https_audit_error(exc)
+
+
+@router.get("/https-audit/audit-probe", response_model=AuditProbeOut)
+def https_audit_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> AuditProbeOut | JSONResponse:
+    try:
+        return export_audit_probe(actor)
     except HttpsAuditError as exc:
         return _https_audit_error(exc)

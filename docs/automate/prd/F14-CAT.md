@@ -4,20 +4,21 @@
 
 ### [CAT-001] CAT-01 实体生命周期查询类
 
-- **状态**：部分实现（companion r66）
+- **状态**：已实现（M6 probe handler L1）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：CAT-01 实体生命周期查询类（SRS 追溯项）。
 - **验收标准**：
   - [x] 模板规格落地（r64 L1：`POST validate` + `POST/GET /api/v1/gov/catalog/lifecycle-templates` + `CAT01_*` 错误域 + stages/entityType 校验 + readOnlyOpenApi 默认 true）
   - [x] companion lifecycle scope ACL + perf probe（r66：`set_user_lifecycle_scope` + `CAT01_FORBIDDEN` 403；GET/stage-move NOT_FOUND 404；`probe_list_lifecycle_templates_budget_ms`/`probe_validate_lifecycle_budget_ms` ≤50ms）
+  - [x] M6 catalog probe handler + `GET /api/v1/gov/catalog/m6-probe/cat01` + ACL/perf 回归（`cat01/handler.py` · `test_cat_001_lifecycle_m6.py` T-CAT-001-M6-01~04）
   - [ ] OpenAPI 只读（无 IF-02 `GET /api/v1/entities/{entityType}/{entityId}` 实体查询链）
-- **代码锚点**：`backend/app/governance/catalog/cat01/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-001-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-CAT-R66-001-01~06
-- **演化建议**：r66 companion 闭合 lifecycle scope ACL、GET/stage-move NOT_FOUND 与 list/validate perf probe；后续补 IF-02 实体生命周期只读查询与 fe 模板页
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/governance/catalog/cat01/` · `backend/app/governance/catalog/cat01/handler.py` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-001-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-CAT-R66-001-01~06 · `tests/test_cat_001_lifecycle_m6.py`
+- **演化建议**：M6 L1 已闭合 m6-probe handler + ACL/perf 回归；后续补 IF-02 实体生命周期只读查询与 fe 模板页
+- **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [CAT-002] CAT-02 统计分析聚合类
 
-- **状态**：部分实现（companion r66）
+- **状态**：已实现（M6 probe handler L1）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：CAT-02 统计分析聚合类（SRS 追溯项）。
@@ -25,23 +26,25 @@
   - [x] aggregate API 模板（r64 L1：`POST validate` + `POST/GET /api/v1/gov/catalog/aggregate-templates` + `CAT02_*` 错误域 + dimensions/metrics/aggregationFn 校验）
   - [x] PoC API 可归属（r64 L1：`attributionLabel` + `tableRef` stub 登记 + list 含已创建项）
   - [x] companion aggregate scope ACL + perf probe（r66：`set_user_aggregate_scope` + `CAT02_FORBIDDEN` 403；duplicate dimensions/metrics 422；`probe_validate_aggregate_budget_ms`/`probe_list_aggregate_budget_ms` ≤50ms）
+  - [x] M6 catalog probe handler + `GET /api/v1/gov/catalog/m6-probe/cat02` + ACL/perf 回归（`cat02/handler.py` · `test_cat_002_aggregate_m6.py` T-CAT-002-M6-01~04）
   - [ ] IF-02 `GET /api/v1/stats/aggregate` 真实聚合查询链
-- **代码锚点**：`backend/app/governance/catalog/cat02/` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-002-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-CAT-R66-002-01~06
-- **演化建议**：r66 companion 闭合 aggregate scope ACL、duplicate dim/metric 守卫与 validate/list perf probe；后续补 stats/aggregate 只读查询与数据源绑定
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/governance/catalog/cat02/` · `backend/app/governance/catalog/cat02/handler.py` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-002-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-CAT-R66-002-01~06 · `tests/test_cat_002_aggregate_m6.py`
+- **演化建议**：M6 L1 已闭合 m6-probe handler + ACL/perf 回归；后续补 stats/aggregate 只读查询与数据源绑定
+- **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [CAT-003] CAT-03 地域维度查询类
 
-- **状态**：部分实现（companion r65）
+- **状态**：已实现（M6 probe handler L1）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：CAT-03 地域维度查询类（SRS 追溯项）。
 - **验收标准**：
   - [x] geo distribution 模板（r61 L1：`POST/GET/DELETE /api/v1/gov/geo-regions` + move + `CAT03_*` 错误域 + MAX_DEPTH=8 + code 冲突/环检测）
   - [x] companion region scope ACL + perf probe（r65：`set_user_region_scope` + `CAT03_FORBIDDEN` 403；viewer create 403；`probe_geo_list_budget_ms`/`probe_geo_move_budget_ms` ≤50ms）
+  - [x] M6 catalog probe handler + `GET /api/v1/gov/catalog/m6-probe/cat03` + ACL/perf 回归（`cat03/handler.py` · `test_cat_003_region_m6.py` T-CAT-003-M6-01~04）
   - [ ] M7 地域权限（无 RLS 注入与地域 ACL 联动）
-- **代码锚点**：`backend/app/governance/catalog/cat03/` · `backend/app/api/v1/gov.py` · `tests/test_cat_rpt_meta_r65.py` T-CAT-R65-003-01~07 · `tests/test_cat_dash_viz_nfr_r61.py` T-CAT-R61-003-01~06
-- **演化建议**：r65 companion 闭合 geo region scope ACL、viewer 写禁止与 list/move perf probe；后续补 M7 地域权限 RLS 与 fe geo distribution 模板
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/governance/catalog/cat03/` · `backend/app/governance/catalog/cat03/handler.py` · `backend/app/api/v1/gov.py` · `tests/test_cat_rpt_meta_r65.py` T-CAT-R65-003-01~07 · `tests/test_cat_dash_viz_nfr_r61.py` T-CAT-R61-003-01~06 · `tests/test_cat_003_region_m6.py`
+- **演化建议**：M6 L1 已闭合 m6-probe handler + ACL/perf 回归；后续补 M7 地域权限 RLS 与 fe geo distribution 模板
+- **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [CAT-004] CAT-04 时间序列分析类
 
 - **状态**：部分实现（companion r65 · 分类树骨架）

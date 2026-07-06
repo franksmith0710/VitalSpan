@@ -50,6 +50,9 @@
 | `BusPoCAdapter` / `InMemoryBusPoCAdapter` | PoC 注册适配器 | GOV-002 | 已实现 |
 | `GET/POST/DELETE /api/v1/gov/catalog/*` | catalog API | GOV-001 | 已实现 |
 | `POST /api/v1/gov/bus/register` | 半自动注册 API（admin；幂等） | GOV-002 | 已实现 |
+| `bus/poc_fsm.py` | semi-auto FSM `pending/registered/failed`；`set_user_bus_register_scope` enterprise path ACL | GOV-002 | 已实现 |
+| `GET /gov/bus/register/fsm` · `GET /gov/bus/register/probe` | semi-auto FSM 查询与 perf probe | GOV-002 | 已实现 |
+| CAT-001~003 | `cat0x/handler.py` + `GET .../m6-probe` M6 集成验收面 | CAT-001~003 | 已实现 |
 | `POST /api/v1/gov/bus/auto-register` | 全自动注册 FSM（integration/admin；幂等） | GOV-007 | L1 已实现 r60 |
 | `GET /api/v1/workno/behavior` | CAT-07 工号行为审计查询 mock | CAT-007 | L1 已实现 r60 |
 | `query_design/` | 可视化查询设计聚合 service/schemas | GOV-004 | 已实现 |
