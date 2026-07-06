@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
@@ -16,6 +17,7 @@ vi.mock("@/context/auth-context", () => ({
 
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
+import { gridLayoutToWidgets, widgetsToGridLayout } from "@/components/dashboard/gridLayoutAdapter";
 import {
   defaultChartConfig,
   moveWidget,
@@ -27,6 +29,7 @@ import { DashboardEditPage } from "./DashboardEditPage";
 import { DashboardListPage } from "./DashboardListPage";
 
 const mockApiFetch = vi.fn();
+const DS_ID = "00000000-0000-4000-8000-000000000010";
 
 vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
@@ -36,6 +39,10 @@ vi.mock("@/components/charts/ChartRenderer", () => ({
   ChartRenderer: ({ title }: { title?: string }) => <div data-testid="chart-mock">{title}</div>,
 }));
 
+function withDs(config: ReturnType<typeof defaultChartConfig>) {
+  return { ...config, dataSourceId: DS_ID };
+}
+
 const sampleWidgets: LayoutWidget[] = [
   {
     id: "w1",
@@ -44,7 +51,7 @@ const sampleWidgets: LayoutWidget[] = [
     colSpan: 6,
     rowSpan: 1,
     order: 0,
-    chartConfig: defaultChartConfig("table"),
+    chartConfig: withDs(defaultChartConfig("table")),
   },
   {
     id: "w2",
@@ -53,7 +60,7 @@ const sampleWidgets: LayoutWidget[] = [
     colSpan: 6,
     rowSpan: 1,
     order: 1,
-    chartConfig: defaultChartConfig("line"),
+    chartConfig: withDs(defaultChartConfig("line")),
   },
   {
     id: "w3",
@@ -62,9 +69,34 @@ const sampleWidgets: LayoutWidget[] = [
     colSpan: 6,
     rowSpan: 1,
     order: 2,
-    chartConfig: defaultChartConfig("bar"),
+    chartConfig: withDs(defaultChartConfig("bar")),
   },
 ];
+
+function renderEditPage(path = "/admin/dashboards/d1/edit") {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[path]}>
+        <Routes>
+          <Route path="/admin/dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
+          <Route path="/admin/dashboards/:id" element={<DashboardEditPage mode="view" />} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+function mockDashboardLoad(widgets: LayoutWidget[]) {
+  mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+    const path = String(args[0] ?? "");
+    if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+    if (path.includes("/dashboards/")) {
+      return { id: "d1", name: "销售看板", layoutJson: { version: 1, widgets, globalFilters: [] } };
+    }
+    return {};
+  });
+}
 
 describe("dashboard admin smoke", () => {
   beforeEach(() => mockApiFetch.mockReset());
@@ -112,6 +144,12 @@ describe("dashboard admin smoke", () => {
     expect(sortWidgets(moved).map((w) => w.id)).toEqual(["w2", "w1", "w3"]);
   });
 
+  it("T-DASH-002-01: gridLayoutAdapter round-trip order", () => {
+    const layout = widgetsToGridLayout(sampleWidgets);
+    const next = gridLayoutToWidgets(layout, sampleWidgets);
+    expect(next.map((w) => w.id)).toEqual(["w1", "w2", "w3"]);
+  });
+
   it("T-DASH-R28-002-02: list page empty state", async () => {
     mockApiFetch.mockResolvedValueOnce({ items: [] });
     render(
@@ -123,18 +161,8 @@ describe("dashboard admin smoke", () => {
   });
 
   it("T-DASH-R28-002-03: edit page loads layout", async () => {
-    mockApiFetch.mockResolvedValueOnce({
-      id: "d1",
-      name: "销售看板",
-      layoutJson: { version: 1, widgets: sampleWidgets.slice(0, 1), globalFilters: [] },
-    });
-    render(
-      <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>
-        <Routes>
-          <Route path="/admin/dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
-        </Routes>
-      </MemoryRouter>,
-    );
+    mockDashboardLoad(sampleWidgets.slice(0, 1));
+    renderEditPage();
     expect(await screen.findByText("销售看板")).toBeInTheDocument();
     expect(screen.getByLabelText("组件标题")).toHaveValue("A");
   });
@@ -142,29 +170,27 @@ describe("dashboard admin smoke", () => {
   it("T-DASH-R29-002-04: colSpan 6→12 updates grid class", () => {
     const widget = { ...sampleWidgets[0], colSpan: 12 as const };
     const { container } = render(
-      <DashboardGrid mode="edit" widgets={[widget]} renderWidget={() => <div />} />,
+      <DashboardGrid mode="view" widgets={[widget]} renderWidget={() => <div />} />,
     );
     expect(container.querySelector(".xl\\:col-span-12")).toBeTruthy();
   });
 
   it("T-DASH-R29-002-05: illegal layout save shows Chinese error banner", async () => {
     const user = userEvent.setup();
-    mockApiFetch
-      .mockResolvedValueOnce({
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      if (init?.method === "PUT") {
+        throw Object.assign(new Error("组件 ID 重复"), { code: "DASH_DUPLICATE_WIDGET" });
+      }
+      return {
         id: "d1",
         name: "X",
         layoutJson: { version: 1, widgets: sampleWidgets.slice(0, 1), globalFilters: [] },
-      })
-      .mockRejectedValueOnce(
-        Object.assign(new Error("组件 ID 重复"), { code: "DASH_DUPLICATE_WIDGET" }),
-      );
-    render(
-      <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>
-        <Routes>
-          <Route path="/admin/dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
-        </Routes>
-      </MemoryRouter>,
-    );
+      };
+    });
+    renderEditPage();
     await screen.findByText("X");
     await user.click(screen.getByRole("button", { name: "保存布局" }));
     expect(await screen.findByText("组件 ID 重复")).toBeInTheDocument();
@@ -173,29 +199,62 @@ describe("dashboard admin smoke", () => {
   it("T-DASH-R29-003-01: title change reflected in save payload", async () => {
     const user = userEvent.setup();
     let putBody: { layoutJson?: { widgets?: { title: string }[] } } | undefined;
-    mockApiFetch
-      .mockResolvedValueOnce({
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      if (init?.method === "PUT") {
+        putBody = JSON.parse(init.body as string);
+        return { layoutJson: putBody?.layoutJson };
+      }
+      return {
         id: "d1",
         name: "编辑",
         layoutJson: { version: 1, widgets: sampleWidgets.slice(0, 1), globalFilters: [] },
-      })
-      .mockImplementationOnce(async (_path, init) => {
-        putBody = JSON.parse((init as RequestInit).body as string);
-        return { layoutJson: putBody?.layoutJson };
-      });
-    render(
-      <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>
-        <Routes>
-          <Route path="/admin/dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
-        </Routes>
-      </MemoryRouter>,
-    );
+      };
+    });
+    renderEditPage();
     await screen.findByLabelText("组件标题");
     const titleInput = screen.getByLabelText("组件标题");
     await user.clear(titleInput);
     await user.type(titleInput, "新标题");
     await user.click(screen.getByRole("button", { name: "保存布局" }));
     expect(putBody?.layoutJson?.widgets?.[0]?.title).toBe("新标题");
+  });
+
+  it("T-VIZ-002-01: save layout includes edited dataSourceId and sql", async () => {
+    const user = userEvent.setup();
+    let putBody: {
+      layoutJson?: { widgets?: { chartConfig?: { dataSourceId?: string; sql?: string } }[] };
+    } | undefined;
+    const widgetNoDs = {
+      ...sampleWidgets[0],
+      chartConfig: { ...defaultChartConfig("table"), dataSourceId: "" },
+    };
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      if (init?.method === "PUT") {
+        putBody = JSON.parse(init.body as string);
+        return {};
+      }
+      return {
+        id: "d1",
+        name: "编辑",
+        layoutJson: { version: 1, widgets: [widgetNoDs], globalFilters: [] },
+      };
+    });
+    renderEditPage();
+    await screen.findByLabelText("数据源");
+    await user.click(screen.getByRole("combobox"));
+    await user.click(await screen.findByRole("option", { name: /分析库/ }));
+    const sql = screen.getByLabelText("SQL");
+    await user.clear(sql);
+    await user.type(sql, "SELECT 2 AS id");
+    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    expect(putBody?.layoutJson?.widgets?.[0]?.chartConfig?.dataSourceId).toBe(DS_ID);
+    expect(putBody?.layoutJson?.widgets?.[0]?.chartConfig?.sql).toBe("SELECT 2 AS id");
   });
 
   it("T-DASH-R29-003-02: empty grid shows enhanced guidance", () => {
