@@ -20,4 +20,10 @@ export const queryKeys = {
     list: () => ["dashboards", "list"] as const,
     globalFilters: (id: string) => ["dashboards", id, "globalFilters"] as const,
   },
+  users: {
+    all: ["users"] as const,
+    list: (params?: { q?: string; limit?: number; offset?: number }) =>
+      ["users", "list", params] as const,
+    roles: (userId: string) => ["users", userId, "roles"] as const,
+  },
 };

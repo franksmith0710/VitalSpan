@@ -81,6 +81,11 @@ class UserOut(BaseModel):
     username: str
 
 
+class UserListResponse(BaseModel):
+    items: list[UserOut]
+    total: int
+
+
 class UserRolesReplace(BaseModel):
     role_ids: list[uuid.UUID]
 

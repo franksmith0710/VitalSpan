@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -67,6 +67,24 @@ def get_user(session: Session, user_id: uuid.UUID) -> AuthUser:
 
 def get_user_by_username(session: Session, username: str) -> AuthUser | None:
     return session.scalar(select(AuthUser).where(AuthUser.username == username))
+
+
+def list_users(
+    session: Session,
+    q: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> tuple[list[AuthUser], int]:
+    capped = min(max(limit, 1), 500)
+    base = select(AuthUser).order_by(AuthUser.username)
+    count_stmt = select(func.count()).select_from(AuthUser)
+    if q:
+        pattern = f"%{q}%"
+        base = base.where(AuthUser.username.ilike(pattern))
+        count_stmt = count_stmt.where(AuthUser.username.ilike(pattern))
+    total = session.scalar(count_stmt) or 0
+    items = list(session.scalars(base.limit(capped).offset(max(offset, 0))))
+    return items, total
 
 
 def list_user_roles(session: Session, user_id: uuid.UUID) -> list[AuthRole]:

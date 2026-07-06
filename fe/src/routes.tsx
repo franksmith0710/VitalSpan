@@ -18,6 +18,7 @@ import { ConnectorsPage } from "@/pages/admin/connectors/ConnectorsPage";
 import { DatasourceListPage } from "@/pages/admin/datasources/DatasourceListPage";
 import { DatasourceFormPage } from "@/pages/admin/datasources/DatasourceFormPage";
 import { RoleListPage } from "@/pages/admin/system/roles/RoleListPage";
+import { UserListPage } from "@/pages/admin/system/users/UserListPage";
 
 export function AppRoutes() {
   return (
@@ -43,6 +44,7 @@ export function AppRoutes() {
           <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
           <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
           <Route path="system/roles" element={<RoleListPage />} />
+          <Route path="system/users" element={<UserListPage />} />
         </Route>
       </Route>
       <Route path="/embed" element={<EmbedLayout />}>
