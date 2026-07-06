@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m5-dash.md |
 | design | docs/superpowers/specs/2026-07-06-m5-dash-view-nfr-design.md |
 | plan | docs/superpowers/plans/2026-07-06-m5-dash-view-nfr.md |
 | branch | cursor/bc-2b892a4a-889d-4644-911c-fc1aa96a65fb-17e6 |
 | base_branch | dev-auto |
 | prd_ids | DASH-003,VIEW-001,NFR-001 |
-| pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_dash_m5_widgets.py ../tests/test_view_m5_protocol.py ../tests/test_nfr_001_first_screen_smoke.py ../tests/test_view_gov_api_r31.py -q && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm vitest run src/components/charts/charts.dash003.smoke.test.tsx src/pages/admin/dashboard/dashboard.smoke.test.tsx src/pages/admin/dashboard/dashboard-first-screen.perf.smoke.test.tsx && pnpm build |
-| last_verified_exit_code | 1 |
+| pr_number | 209 |
+| last_verified_command | cd backend && pip install -e ".[dev,connectors-ext]" && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm vitest run |
+| last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm vitest run src/components/charts/charts.dash003.smoke.test.tsx src/pages/admin/dashboard/dashboard.smoke.test.tsx src/pages/admin/dashboard/dashboard-first-screen.perf.smoke.test.tsx |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T15:54:00Z |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G0 r216 闸门：修复 test_viz_advanced_l1_r43 图表类型 9→12；全量 pytest 1840/13 skipped + fe vitest 142/142 + check:design PASS；P5 doc sync DASH-003/VIEW-001/NFR-001 重评 + plan M5 DASH-003 勾选；phase P3_DONE→P5_DOCS_READY；待 Squash merge PR #209 dev-auto
 - P4 r215 验证：plan Task6 子集 ruff clean + pytest 36/36 + check:design 113 files + vitest 20/20 + build exit 0；全量 pytest 1841 passed/1 failed（test_viz_advanced_l1_r43.py::test_get_charts_types_nine_types 期望 9 实际 12，DASH-003 未更新）；UI design_drift PASS + DASH-003/NFR-001 smoke PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE（BLOCKED 全量 exit 1）；待修复 r43 断言或 P3 补测
 - P3 r214 实现：6 Task 完成（DASH-003 heatmap/kpi/timeline BE+FE+Palette、VIEW-001 protocolVersion round-trip、NFR-001 perf smoke）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 113 files PASS；screenshots 未运行（P3 headless vitest mock）；branch=cursor/bc-2b892a4a-889d-4644-911c-fc1aa96a65fb-17e6；base_branch=dev-auto；pytest 36/36 + fe vitest 20/20 exit 0；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 r213 计划：6 Task（DASH-003 BE registry、FE 渲染 KpiCard/heatmap/timeline、Palette+defaults、VIEW-001 protocolVersion、NFR-001 perf smoke、回归门控）；subagent-driven-development option 1；预估 18 主文件；ui_design_skill=b-design-system-tailadmin-radix；skill_rule_index 26 源刷新时间戳；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-m5-dash-view-nfr.md；待 P3 evolution-implementer

@@ -4,16 +4,17 @@
 
 ### [NFR-001] NFR-01 Dashboard 首屏性能
 
-- **状态**：部分实现（companion r67）
+- **状态**：部分实现（companion M5 perf smoke）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：一期
 - **描述**：NFR-01 Dashboard 首屏性能（SRS 追溯项）。
 - **验收标准**：
   - [x] 首屏 ≤ 5s（r64 L1：`POST validate` + `POST /api/v1/nfr/dashboard-first-screen/probe` mock elapsedMs=800 + budgetMs default 5000 + `DASHBOARD_FIRST_SCREEN_*` 错误域 + simulateSlow breach）
   - [x] companion ACL/probe 边界（r67：enterprise 越权 dashboardId 403、dashboardId 含空格 422；`probe_validate_first_screen_budget_ms`/`probe_first_screen_probe_budget_ms` ≤50ms）
+  - [x] fe 首屏 P95 smoke（M5：`dashboard-first-screen.perf.smoke.test.tsx` 四类扩展 widget 首屏 P95 ≤3000ms + `test_nfr_001_first_screen_smoke.py`）
   - [ ] 并发压测报告（mock probe only；无 `tests/perf/nfr01_dashboard/` 真实 perf suite）
-- **代码锚点**：`backend/app/core/nfr/dashboard_first_screen.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-001-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-001-01~06
-- **演化建议**：r67 companion 闭合 dashboard-first-screen ACL、dashboardId 格式校验与 validate/probe perf probe；后续补真实首屏 perf suite 与并发压测报告
+- **代码锚点**：`backend/app/core/nfr/dashboard_first_screen.py` · `backend/app/api/v1/nfr.py` · `fe/src/pages/admin/dashboard/dashboard-first-screen.perf.smoke.test.tsx` · `tests/test_nfr_cat_r64.py` T-NFR-R64-001-01~06 · `tests/test_nfr_001_first_screen_smoke.py` · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-001-01~06
+- **演化建议**：M5 companion 闭合 fe 首屏 P95 smoke；后续补真实首屏 perf suite 与并发压测报告
 - **里程碑对齐**：
 ### [NFR-002] NFR-01 报表查询性能
 
