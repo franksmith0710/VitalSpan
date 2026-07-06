@@ -47,7 +47,7 @@
 | `DimensionDict` / `dimensions/service` | 维度字典 CRUD + 枚举值注册 | META-003 | L1 已实现 |
 | `entity/service` | 实体类型 schema CRUD + `validate_entity_type_ref` | META-006 | L1 已实现 r54 |
 | `dataset/service` | Dataset 元数据项内存 store + validate/list/create + scope ACL + probe | META-004 | companion 已实现 r66 |
-| `physical/service` | 物理表登记 validate/register/list（内存 store） | META-005 | L1 已实现 r62 |
+| `physical/service` | 物理表 validate/register/list/update/delete + register-from-schema + `_ds_table_index` 复合唯一 | META-005 | L1 M8 r232 收官 |
 | `DatasetService` | 语义层 CRUD（ORM 四期） | META-001~003 | 待建 |
 | `SemanticResolver` | 逻辑 → 物理 SQL | META-004 | 待建 |
 
@@ -81,6 +81,7 @@
 | `META_DATASET_INVALID_FIELD` | computedFields 名非法 |
 | `META_DATASET_FORBIDDEN` | viewer/enterprise scope 外写拒绝（r66） |
 | `META_DATASET_DUPLICATE_TABLE` | tables 中 name 重复（r66） |
+| `META_PHYSICAL_DS_TABLE_CONFLICT` | 同 dataSourceId+schema+table 重复 register-from-schema |
 
 常量：`MAX_THEME_DEPTH=8`、`TERM_MAX_TEXT_LENGTH=4000`；migration `0016_dimension_dict.py`（`dimension_dicts` + `dimension_values`）。
 
