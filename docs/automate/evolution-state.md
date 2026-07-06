@@ -7,18 +7,18 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-06-round-target-view-003-m3-conn.md |
-| design | docs/superpowers/specs/2026-07-06-view-003-m3-conn-design.md |
-| plan | docs/superpowers/plans/2026-07-06-view-003-m3-conn.md |
-| branch | cursor/bc-2e5efc51-bc22-4d05-8373-1d817e8b85d2-2e0c |
+| round_target | docs/superpowers/evolution/2026-07-06-round-target-m5-dash.md |
+| design | docs/superpowers/specs/2026-07-06-m5-dash-view-nfr-design.md |
+| plan | docs/superpowers/plans/2026-07-06-m5-dash-view-nfr.md |
+| branch | cursor/bc-2b892a4a-889d-4644-911c-fc1aa96a65fb-17e6 |
 | base_branch | dev-auto |
-| prd_ids | VIEW-003,CONN-001,CONN-002 |
-| pr_number | 208 |
-| last_verified_command | cd fe && pnpm run check:design && pnpm test && pnpm build && pnpm test:e2e; cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| prd_ids | DASH-003,VIEW-001,NFR-001 |
+| pr_number | 209 |
+| last_verified_command | cd backend && pip install -e ".[dev,connectors-ext]" && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm vitest run |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm run check:design && pnpm test:e2e（6/6 VIEW-003 E2E PASS；screenshots 未运行：无 live BE/postgres，e2e mock 路由） |
+| last_ui_verified_command | cd fe && pnpm run check:design && pnpm vitest run src/components/charts/charts.dash003.smoke.test.tsx src/pages/admin/dashboard/dashboard.smoke.test.tsx src/pages/admin/dashboard/dashboard-first-screen.perf.smoke.test.tsx |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-06T14:10:00Z |
+| skill_rule_index_generated_at | 2026-07-06T15:54:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,12 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G0 r216 闸门：修复 test_viz_advanced_l1_r43 图表类型 9→12；全量 pytest 1840/13 skipped + fe vitest 142/142 + check:design PASS；P5 doc sync DASH-003/VIEW-001/NFR-001 重评 + plan M5 DASH-003 勾选；phase P3_DONE→P5_DOCS_READY；待 Squash merge PR #209 dev-auto
+- P4 r215 验证：plan Task6 子集 ruff clean + pytest 36/36 + check:design 113 files + vitest 20/20 + build exit 0；全量 pytest 1841 passed/1 failed（test_viz_advanced_l1_r43.py::test_get_charts_types_nine_types 期望 9 实际 12，DASH-003 未更新）；UI design_drift PASS + DASH-003/NFR-001 smoke PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE（BLOCKED 全量 exit 1）；待修复 r43 断言或 P3 补测
+- P3 r214 实现：6 Task 完成（DASH-003 heatmap/kpi/timeline BE+FE+Palette、VIEW-001 protocolVersion round-trip、NFR-001 perf smoke）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 113 files PASS；screenshots 未运行（P3 headless vitest mock）；branch=cursor/bc-2b892a4a-889d-4644-911c-fc1aa96a65fb-17e6；base_branch=dev-auto；pytest 36/36 + fe vitest 20/20 exit 0；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
+- P2 r213 计划：6 Task（DASH-003 BE registry、FE 渲染 KpiCard/heatmap/timeline、Palette+defaults、VIEW-001 protocolVersion、NFR-001 perf smoke、回归门控）；subagent-driven-development option 1；预估 18 主文件；ui_design_skill=b-design-system-tailadmin-radix；skill_rule_index 26 源刷新时间戳；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-m5-dash-view-nfr.md；待 P3 evolution-implementer
+- G2 r212 选题：饱和熔断已跳过（plan §M5 含 2 项 `[ ]` DASH-003/VIEW-001；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 DASH-003/VIEW-001/NFR-001（M5 Dashboard 收官 + 首屏 perf companion）；hub 最低分入选 NFR-001 90.0；plan 同节仅 2 项故 hub M6 NFR-001 补足达 3 项下限；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-m5-dash.md；phase idle→G2_DONE；待 P1 evolution-designer
+- G1 bootstrap：G0 PR #208 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M5**（2 项 `[ ]` DASH-003/VIEW-001；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M-FE-3+M3 CONN-001/002 完成；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r211 收尾：PRD 重评 VIEW-003/CONN-001/CONN-002（M-FE-3 收官 + M3 compose）；hub 总分 90.1–91.9→92.5–93.0；plan M-FE-3 VIEW-003 + M3 CONN-001/002 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r210 验证：独立全量 ruff clean + pytest 1830 passed/11 skipped exit 0；fe check:design 110 files + vitest 136/136 + build + e2e 6/6 exit 0；UI design_drift PASS + VIEW-003 E2E 覆盖（role default / user override / mobile viewport）；screenshots 未运行（无 live BE/postgres，e2e mock 路由）；compose 集成 11 skipped（无 docker）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 r209 实现：5 Task 完成（VIEW-003 用户覆盖优先 defaultViewResolve+7 vitest 边缘、Playwright E2E 6 passed、connector_compose_env 夹具、CONN-001/002 compose 集成 8 测 skip 无 compose）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 110 files PASS；screenshots 未运行（P3 headless mock E2E）；branch=cursor/bc-2e5efc51-bc22-4d05-8373-1d817e8b85d2-2e0c；base_branch=dev-auto；fe vitest 136/136 + e2e 6/6 exit 0；pytest datasources regression 105 passed；integration 8 skipped（compose down）；phase P2_DONE→P3_DONE；待 P4 evolution-verifier

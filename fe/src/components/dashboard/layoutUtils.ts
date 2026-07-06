@@ -1,4 +1,4 @@
-import type { ChartViewConfig, ChartTypeL1 } from "@/lib/chartViewConfig";
+import type { ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
 
 export type LayoutWidget = {
   id: string;
@@ -48,13 +48,49 @@ export function normalizeWidgetIds(widgets: LayoutWidget[]): LayoutWidget[] {
   }));
 }
 
-export function defaultChartConfig(type: ChartTypeL1): ChartViewConfig {
+export function defaultChartConfig(type: ChartType): ChartViewConfig {
   const base = {
     dataSourceId: "",
     mode: "sql" as const,
   };
   if (type === "table") {
     return { chartType: "table", ...base, sql: "SELECT 1 AS id", dimensions: [], metrics: [] };
+  }
+  if (type === "map") {
+    return {
+      chartType: "map",
+      ...base,
+      sql: "SELECT '北京' AS region, 100 AS value",
+      dimensions: [{ field: "region" }],
+      metrics: [{ field: "value" }],
+    };
+  }
+  if (type === "heatmap") {
+    return {
+      chartType: "heatmap",
+      ...base,
+      sql: "SELECT 'A' AS x, '1' AS y, 10 AS v",
+      dimensions: [{ field: "x" }, { field: "y" }],
+      metrics: [{ field: "v" }],
+    };
+  }
+  if (type === "kpi") {
+    return {
+      chartType: "kpi",
+      ...base,
+      sql: "SELECT 1280 AS total, 12.5 AS rate",
+      dimensions: [],
+      metrics: [{ field: "total" }, { field: "rate" }],
+    };
+  }
+  if (type === "timeline") {
+    return {
+      chartType: "timeline",
+      ...base,
+      sql: "SELECT '2026-01-01' AS t, 1 AS v",
+      dimensions: [{ field: "t" }],
+      metrics: [{ field: "v" }],
+    };
   }
   return {
     chartType: type,

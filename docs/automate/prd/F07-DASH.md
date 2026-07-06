@@ -28,16 +28,16 @@
 - **演化建议**：r29 resizeWidget/标题编辑 + 增强空态引导（T-DASH-R29-002）；Playwright E2E 编辑拖拽持久化验收
 ### [DASH-003] Dashboard 组件库
 
-- **状态**：部分实现
+- **状态**：已实现（M5 DASH-003）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
 - **描述**：Dashboard 组件库（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 地图/热力/KPI/时间轴可插拔
+  - [x] 地图/热力/KPI/时间轴可插拔（M5：`builtin.py` heatmap/kpi/timeline registry + `KpiCard`/heatmap/timeline FE 渲染 + `WidgetPalette` 分组插槽；`test_dash_m5_widgets.py` + `charts.dash003.smoke.test.tsx`）
   - [x] 出厂无预装页
-- **代码锚点**：`fe/src/components/dashboard/` · `fe/src/components/charts/ChartRenderer.tsx`
-- **演化建议**：r29 WidgetPalette 标题/栅格编排 + chart 组件插槽（T-DASH-R29-003）；地图/热力/KPI/时间轴待后续轮次；保持无预装业务页
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/viz/builtin.py` · `fe/src/components/charts/ChartRenderer.tsx` · `fe/src/components/charts/adapters/KpiCard.tsx` · `fe/src/components/dashboard/WidgetPalette.tsx` · `tests/test_dash_m5_widgets.py` · `fe/src/components/charts/charts.dash003.smoke.test.tsx`
+- **演化建议**：Playwright E2E 拖拽插拔四类 widget 与真实数据源出数留 companion
+- **里程碑对齐**：M5 · 已完成 · 2026-07-06
 ### [DASH-004] 全局筛选器联动
 
 - **状态**：已实现（M-FE-3 FE companion）

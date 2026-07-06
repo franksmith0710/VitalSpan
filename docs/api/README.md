@@ -183,6 +183,13 @@ redoc: /redoc
 | POST | `/api/v1/dashboards/global-filters/validate` | 全局筛选联动校验（`DASH_FILTER_*`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/{id}/global-filters` | 全局筛选联动 save/get（`config_type=global_filter_linkage`；含 `affectedWidgetCount`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
+
+**DashboardView 协议字段（FR-VIEW-1 · M5 VIEW-001）**
+
+| 模型 | 字段 | 值 | 说明 |
+|------|------|-----|------|
+| DashboardView | `protocolVersion` | `1` | FR-VIEW-1 视图文档版本（M5 VIEW-001） |
+
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | GET | `/api/v1/users/me/views/{view_id}` | IF-06 | 已实现 | `api/v1/views.py` | 用户视图覆盖按 id 读取（r63 VIEW-003） |

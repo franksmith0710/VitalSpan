@@ -17,6 +17,10 @@ export type ChartTypeCatalogItem = {
 
 let cache: ChartTypeCatalogItem[] | null = null;
 
+export function resetChartTypeCatalogCache(): void {
+  cache = null;
+}
+
 const FALLBACK_TYPES = [
   "table",
   "line",
@@ -24,6 +28,9 @@ const FALLBACK_TYPES = [
   "pie",
   "gauge",
   "map",
+  "heatmap",
+  "kpi",
+  "timeline",
   "sankey",
   "funnel",
   "graph",
@@ -40,6 +47,10 @@ export function isKnownChartType(type: string): boolean {
 
 export async function fetchChartTypeCatalog(): Promise<ChartTypeCatalogItem[]> {
   const body = await apiFetch<ChartTypeCatalogItem[]>("/api/v1/charts/types");
+  if (!Array.isArray(body)) {
+    cache = null;
+    throw new Error("Invalid chart type catalog response");
+  }
   cache = body;
   return body;
 }

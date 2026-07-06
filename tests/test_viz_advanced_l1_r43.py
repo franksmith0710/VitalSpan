@@ -100,14 +100,15 @@ def test_post_render_spec_radar_422(client, auth_headers):
     assert bad.json()["code"] == "CHART_INVALID_TYPE"
 
 
-def test_get_charts_types_nine_types(client, auth_headers):
-    """T-VIZ-R43-003-04: GET /charts/types 9 类型含 map fieldRule。"""
+def test_get_charts_types_twelve_types(client, auth_headers):
+    """T-VIZ-R43-003-04: GET /charts/types 12 类型含 map fieldRule + DASH-003 heatmap/kpi/timeline。"""
     resp = client.get("/api/v1/charts/types", headers=auth_headers)
     assert resp.status_code == 200
     body = resp.json()
-    assert len(body) == 9
+    assert len(body) == 12
     types = {c["type"] for c in body}
     assert "map" in types
+    assert {"heatmap", "kpi", "timeline"} <= types
     map_item = next(c for c in body if c["type"] == "map")
     assert "fieldRule" in map_item
 
