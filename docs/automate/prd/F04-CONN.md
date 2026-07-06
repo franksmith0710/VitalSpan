@@ -127,7 +127,7 @@
 - **里程碑对齐**：M7 · 已完成 · 2026-07-06
 ### [CONN-008] Apache Doris 连接器
 
-- **状态**：部分实现（L1 kickoff r36 + companion 质量推分 r37）
+- **状态**：已实现（M7 r229 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：Apache Doris 连接器（SRS 追溯项）。
@@ -135,13 +135,14 @@
   - [x] type=`doris` 已注册（types catalog，r36 L1）
   - [ ] UI 可选
   - [x] 连通性测试结构化错误（`DORIS_CONN_REFUSED`/`DORIS_AUTH_FAILED`/`DORIS_TIMEOUT`/`DORIS_UNKNOWN_DATABASE`，r36+r37 mock）
-  - [x] schema 空 catalog/未知表边界 + 列元数据 500 limit（r36+r37 mock）
-  - [x] HTTP test_connection 失败链 + metadata tables 400 链（r37）
+  - [x] compose 连通性 + schema 浏览（r229 T-CONN-R229-008-04；无 compose 分层 skip）
+  - [x] schema 空 catalog/未知表边界 + 列元数据 500 limit（r36+r37 mock + r229 T-CONN-R229-008-03）
+  - [x] HTTP test_connection 失败链 + metadata tables 链（r37 + r229 T-CONN-R229-008-02~03）
   - [ ] 只读查询通过
   - [x] category=`olap` 查询模式正确（r36）
-- **代码锚点**：`backend/app/datasources/dialects/doris.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r36.py` · `tests/test_connectors_gov_r37.py` T-CONN-R37-008-01~06
-- **演化建议**：r37 已对齐 StarRocks columns limit 与 FE/BE 不可达降级；后续补只读查询集成测与 UI 选型
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/doris.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_m7_r229.py` T-CONN-R229-008-01~04 · `tests/test_connectors_gov_r36.py` · `tests/test_connectors_gov_r37.py` T-CONN-R37-008-01~06
+- **演化建议**：M7 r229 已闭合 compose 集成与 HTTP metadata 链；后续补只读查询集成测与 Admin UI 选型
+- **里程碑对齐**：M7 · 已完成 · 2026-07-06
 ### [CONN-009] StarRocks 连接器
 
 - **状态**：部分实现
