@@ -37,6 +37,7 @@ from app.metadata.physical.schemas import (
     PhysicalTableOut,
     PhysicalTableRegisterFromSchemaIn,
     PhysicalTableRegisterIn,
+    PhysicalTableUpdateIn,
     PhysicalTableValidateOut,
 )
 from app.metadata.physical import service as physical_service
@@ -484,5 +485,29 @@ def physical_tables_validate(
 ) -> PhysicalTableValidateOut | JSONResponse:
     try:
         return physical_service.validate_physical_table(payload)
+    except PhysicalTableError as exc:
+        return _physical_error(exc)
+
+
+@router.put("/physical-tables/{fqn}", response_model=None)
+def physical_tables_update(
+    fqn: str,
+    payload: PhysicalTableUpdateIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return physical_service.update_physical_table(fqn, payload, actor)
+    except PhysicalTableError as exc:
+        return _physical_error(exc)
+
+
+@router.delete("/physical-tables/{fqn}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def physical_tables_delete(
+    fqn: str,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        physical_service.delete_physical_table(fqn, actor)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except PhysicalTableError as exc:
         return _physical_error(exc)
