@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m7-conn-ext.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-06-m7-conn-ext-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 r224 设计：M7 批次 1 CONN-003~007（mariadb 新增+Hive、Oracle HTTP 链、sqlserver relational_hints、SQLite fixture、ClickHouse compose）；18 文件范围框定；ui_design_skill=none；design=docs/superpowers/specs/2026-07-06-m7-conn-ext-design.md；phase G2_DONE→P1_DONE；待 P2 evolution-planner
 - G2 选题：饱和熔断已跳过（plan §M7 含 6 项 `[ ]` CONN-003~008；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 CONN-003/004/005/006/007（M7 二期数据源类型扩展批次 1）；hub 最低分入选 CONN-004 90.0；plan 同节 6 项取前 5 项 CONN-008 留批次 2；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-m7-conn-ext.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap：G0 PR #211 已 Squash merge dev-auto（8244b65）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M7**（6 项 `[ ]` CONN-003~008；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CONN-004(90.0)/QUERY-009(90.0)/VIZ-005(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M6 集成验收收官完成；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r223 收尾：PRD 重评 GOV-002/CAT-001/002/003/NFR-004（M6 集成验收收官）；hub 总分 90.0–90.4→91.5–92.4；plan M6 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；PR #211 squash merge dev-auto
