@@ -373,10 +373,10 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 ### 勾选清单
 
-- [ ] AUTH-001: 角色管理 Admin UI（`/admin/system/roles`）
-- [ ] AUTH-003: 用户角色绑定 Admin UI（`/admin/system/users`）
+- [x] AUTH-001: 角色管理 Admin UI（`/admin/system/roles`）（完成于 2026-07-06）
+- [x] AUTH-003: 用户角色绑定 Admin UI（`/admin/system/users`）（完成于 2026-07-06）
 - [ ] VIEW-003: 用户默认视图 FE（登录后按角色重定向默认 Dashboard）
-- [ ] DASH-004: 全局筛选器 FE 联动（分片未勾「筛选器驱动组件刷新」）
+- [x] DASH-004: 全局筛选器 FE 联动（分片未勾「筛选器驱动组件刷新」）（完成于 2026-07-06）
 
 ### M-FE-3 验收信号
 

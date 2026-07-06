@@ -2054,3 +2054,15 @@ def test_inactive_role_excluded_from_me_r12(client, auth_headers):
     assert me.status_code == 200
     codes = me.json().get("roles", [])
     assert "r12_dis" not in codes
+
+
+def test_list_users_paginated(client, auth_headers):
+    client.post("/api/v1/users", json={"username": "u_list_a"}, headers=auth_headers)
+    client.post("/api/v1/users", json={"username": "u_list_b"}, headers=auth_headers)
+    resp = client.get("/api/v1/users?limit=10&offset=0", headers=auth_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] >= 2
+    usernames = {u["username"] for u in body["items"]}
+    assert "u_list_a" in usernames
+    assert "u_list_b" in usernames

@@ -7,18 +7,18 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-06-round-target-m-fe-2.md |
-| design | docs/superpowers/specs/2026-07-06-m-fe-2-p1-smoke-design.md |
-| plan | docs/superpowers/plans/2026-07-06-m-fe-2-p1-smoke.md |
-| branch | cursor/bc-324ccb4b-6f07-4687-be57-4d6900130e97-0d44 |
+| round_target | docs/superpowers/evolution/2026-07-06-round-target-m-fe-3.md |
+| design | docs/superpowers/specs/2026-07-06-m-fe-3-system-admin-consumption-design.md |
+| plan | docs/superpowers/plans/2026-07-06-m-fe-3-system-admin-consumption.md |
+| branch | cursor/bc-d2219f87-5c8f-465d-b6ad-bee0437205d8-a258 |
 | base_branch | dev-auto |
-| prd_ids | DS-004,VIZ-002,DASH-002,DATA-005 |
-| pr_number | |
-| last_verified_command | cd backend && ruff check . && pytest -q (1829 passed, 3 skipped); cd fe && check:design (92 files) && vitest (117 passed) && build |
+| prd_ids | AUTH-001,AUTH-003,VIEW-003,DASH-004 |
+| pr_number | 207 |
+| last_verified_command | cd backend && pip install -e ".[dev,connectors-ext]" && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm test && pnpm build |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | check:design + vitest smoke (DS-004/VIZ-002/DASH-002); screenshots 未运行（无 docker/postgres，sqlite 后端无 seed admin） |
+| last_ui_verified_command | cd fe && pnpm run check:design && pnpm test（roles/users/dashboard-view/defaultViewResolve smoke） |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-06T12:30:00Z |
+| skill_rule_index_generated_at | 2026-07-06T13:15:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -67,6 +67,13 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r205 收尾：PRD 重评 AUTH-001/AUTH-003/VIEW-003/DASH-004（M-FE-3）；hub 总分 90.0–92.1→91.9–93.1；plan M-FE-3 勾选 AUTH-001/AUTH-003/DASH-004（VIEW-003 分片部分实现未勾）；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
+- P4 r204 验证：独立全量 ruff clean + pytest 1830 passed/3 skipped exit 0（需 connectors-ext 装 dmPython）；fe check:design 110 files + vitest 129/129 + build exit 0；UI design_drift PASS + smoke 覆盖 AUTH-001/003/VIEW-003/DASH-004；screenshots 未运行（无 postgres，sqlite alembic FK 不支持 live FE）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
+- P3 r203 实现：M-FE-3 五 Task 完成（AUTH-001 角色管理、AUTH-003 GET users+用户绑定、VIEW-003 defaultViewResolve、DASH-004 GlobalFilterBar+execute 链、集成验收）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 110 files PASS；screenshots 未运行（P3 headless 无 live FE）；branch=cursor/bc-d2219f87-5c8f-465d-b6ad-bee0437205d8-a258；base_branch=dev-auto；fe vitest 129/129 + build exit 0；pytest list_users PASS；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
+- P2 r202 计划：M-FE-3 五 Task（共享基元+AUTH-001 角色管理、AUTH-003 GET users+用户绑定、VIEW-003 defaultViewResolve、DASH-004 GlobalFilterBar+execute 链、集成验收）；subagent-driven-development option 1；预估 20 主文件+6 UI 基元；ui_design_skill=b-design-system-tailadmin-radix；skill_rule_index 26 源刷新；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-m-fe-3-system-admin-consumption.md；待 P3 evolution-implementer
+- P1 r201 设计：M-FE-3 四子项 design 覆盖（AUTH-001 角色 CRUD+默认 Dashboard、AUTH-003 用户角色绑定、VIEW-003 登录默认视图重定向、DASH-004 GlobalFilterBar+widget 刷新链）；ui_design_skill=b-design-system-tailadmin-radix；范围框定 fe+tests+docs 约 18 文件；依赖例外 GET /api/v1/users 列表缺失；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-06-m-fe-3-system-admin-consumption-design.md；待 P2 evolution-planner
+- G2 r200 选题：饱和熔断已跳过（plan §M-FE-3 含 4 项 `[ ]`；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 AUTH-001/AUTH-003/VIEW-003/DASH-004（M-FE-3 系统管理与消费态）；hub 最低分入选 DASH-004 90.0；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-m-fe-3.md；phase idle→G2_DONE；待 P1 evolution-designer
+- G1 bootstrap：G0 PR #206 已 Squash merge dev-auto（ce725cc）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M-FE-3**（4 项 `[ ]`；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M-FE-2 P1 完成；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r199 收尾：PRD 重评 DS-004/VIZ-002/DASH-002/DATA-005（M-FE-2）；hub 总分 90.7–91.6→92.4–93.5；plan M-FE-2 四 ID + M5 DASH-002 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r199 验证：独立全量 ruff+pytest 1829 passed/3 skipped exit 0；fe check:design 92 files + vitest 117/117 + build exit 0；UI design_drift PASS + smoke 覆盖 DS-004/VIZ-002/DASH-002；screenshots 未运行（无 docker/postgres，sqlite 后端无 seed admin）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 r198 实现：M-FE-2 五 Task 完成（DS-004 SchemaBrowser、VIZ-002 WidgetSqlPanel、DASH-002 react-grid-layout、vitest smoke 117/117、DATA-005 L2 pytest 1829 passed）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 91 files PASS；screenshots 未运行（P3 headless 无后端联调 live FE）；branch=cursor/bc-324ccb4b-6f07-4687-be57-4d6900130e97-0d44；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier

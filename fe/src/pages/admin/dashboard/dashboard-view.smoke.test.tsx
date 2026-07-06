@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -48,6 +49,9 @@ describe("dashboard view mode chart render", () => {
   it("T-VIZ-002-02: view mode renders table headers from ChartRenderer", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
+      if (path.includes("/global-filters")) {
+        return { filters: [], linkageRules: [], refreshMode: "eager" };
+      }
       if (path.includes("/query/execute")) return { columns: ["id"], rows: [[1]] };
       return {
         id: "d1",
@@ -67,5 +71,65 @@ describe("dashboard view mode chart render", () => {
     );
     expect(await screen.findByText("id")).toBeInTheDocument();
     expect(screen.getByText("1")).toBeInTheDocument();
+  });
+
+  it("T-DASH-004-01: filter change triggers second execute with substituted SQL", async () => {
+    const filterWidget: LayoutWidget = {
+      ...viewWidget,
+      chartConfig: {
+        ...viewWidget.chartConfig,
+        mode: "sql",
+        sql: "SELECT '{{region}}' AS region",
+      },
+    };
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path.includes("/global-filters")) {
+        return {
+          dashboardId: "d1",
+          filters: [{ filterId: "f1", dimensionRef: "区域", defaultValue: "all" }],
+          linkageRules: [{ sourceFilterId: "f1", targetWidgetIds: ["w1"], parameterKey: "region" }],
+          refreshMode: "eager",
+          affectedWidgetCount: 1,
+        };
+      }
+      if (path.includes("/query/execute")) {
+        const body = JSON.parse(String(init?.body ?? "{}")) as { sql?: string };
+        if (body.sql?.includes("east")) {
+          return { columns: ["region"], rows: [["east"]] };
+        }
+        return { columns: ["region"], rows: [["all"]] };
+      }
+      return {
+        id: "d1",
+        name: "预览",
+        layoutJson: { version: 1, widgets: [filterWidget], globalFilters: [] },
+      };
+    });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={["/admin/dashboards/d1"]}>
+          <Routes>
+            <Route path="/admin/dashboards/:id" element={<DashboardEditPage mode="view" />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    const input = await screen.findByLabelText("区域");
+    await userEvent.clear(input);
+    await userEvent.type(input, "east");
+    await waitFor(() => {
+      const executeCalls = mockApiFetch.mock.calls.filter((c) =>
+        String(c[0]).includes("/query/execute"),
+      );
+      const withEast = executeCalls.some((c) => {
+        const body = JSON.parse(String((c[1] as RequestInit)?.body ?? "{}")) as { sql?: string };
+        return body.sql?.includes("east");
+      });
+      expect(withEast).toBe(true);
+    });
+    expect(await screen.findByText("east")).toBeInTheDocument();
   });
 });

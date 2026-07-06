@@ -18,6 +18,8 @@ type ChartRendererProps = {
   config: ChartViewConfig;
   title?: string;
   mode?: "preview" | "config";
+  filterParameters?: Record<string, string>;
+  executeKey?: string;
 };
 
 const PAGE_SIZE = 50;
@@ -27,8 +29,17 @@ function pickColumns(columns: string[], fields: string[]): string[] {
   return fields.filter((f) => columns.includes(f));
 }
 
-export function ChartRenderer({ config, title = "图表", mode = "preview" }: ChartRendererProps) {
-  const { columns, rows, loading, error, slowHint, retry } = useChartExecute(config);
+export function ChartRenderer({
+  config,
+  title = "图表",
+  mode = "preview",
+  filterParameters,
+  executeKey,
+}: ChartRendererProps) {
+  const { columns, rows, loading, error, slowHint, retry } = useChartExecute(config, {
+    filterParameters,
+    executeKey,
+  });
   const [page, setPage] = useState(1);
   const [renderSpec, setRenderSpec] = useState<RenderSpec | null>(null);
   const [localConfig, setLocalConfig] = useState(config);

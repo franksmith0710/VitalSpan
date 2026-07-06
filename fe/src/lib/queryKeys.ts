@@ -10,4 +10,20 @@ export const queryKeys = {
       ["datasources", id, "columns", schema, table] as const,
   },
   connectorTypes: ["connectorTypes"] as const,
+  roles: {
+    all: ["roles"] as const,
+    list: (params?: { codePrefix?: string; limit?: number; offset?: number }) =>
+      ["roles", "list", params] as const,
+  },
+  dashboards: {
+    all: ["dashboards"] as const,
+    list: () => ["dashboards", "list"] as const,
+    globalFilters: (id: string) => ["dashboards", id, "globalFilters"] as const,
+  },
+  users: {
+    all: ["users"] as const,
+    list: (params?: { q?: string; limit?: number; offset?: number }) =>
+      ["users", "list", params] as const,
+    roles: (userId: string) => ["users", userId, "roles"] as const,
+  },
 };

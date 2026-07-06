@@ -4,13 +4,13 @@ import uuid
 import uuid as uuid_mod
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, get_current_user
 from app.auth.models import get_meta_session
-from app.auth.schemas import UserCreate, UserOrgAssign, UserOrgResponse, UserOut, UserRoleOut, UserRolesReplace, UserRolesResponse
+from app.auth.schemas import UserCreate, UserListResponse, UserOrgAssign, UserOrgResponse, UserOut, UserRoleOut, UserRolesReplace, UserRolesResponse
 from app.auth.users import service as user_service
 from app.auth.roles import service as role_service
 from app.core.logging import trace_id_var
@@ -48,6 +48,18 @@ def _binding_context(actor: UserContext) -> dict[str, str | list[str] | None]:
         "actor_roles": actor.roles,
         "trace_id": trace,
     }
+
+
+@router.get("", response_model=UserListResponse)
+def list_users(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    q: str | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+) -> UserListResponse:
+    items, total = user_service.list_users(db, q, limit, offset)
+    return UserListResponse(items=[UserOut.model_validate(u) for u in items], total=total)
 
 
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)

@@ -25,6 +25,8 @@ type DashboardWidgetProps = {
   onResize: (id: string, patch: Partial<Pick<LayoutWidget, "colSpan" | "rowSpan" | "title">>) => void;
   onTitleChange: (id: string, title: string) => void;
   onChartConfigChange?: (id: string, config: ChartViewConfig) => void;
+  filterParameters?: Record<string, string>;
+  executeKey?: string;
 };
 
 export function DashboardWidget({
@@ -35,6 +37,8 @@ export function DashboardWidget({
   onResize,
   onTitleChange,
   onChartConfigChange,
+  filterParameters,
+  executeKey,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -135,7 +139,12 @@ export function DashboardWidget({
         />
       ) : null}
       <div className="flex-1 p-2">
-        <ChartRenderer config={widget.chartConfig} title={widget.title} />
+        <ChartRenderer
+          config={widget.chartConfig}
+          title={widget.title}
+          filterParameters={filterParameters}
+          executeKey={executeKey}
+        />
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

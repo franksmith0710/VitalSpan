@@ -40,17 +40,17 @@
 - **里程碑对齐**：
 ### [DASH-004] 全局筛选器联动
 
-- **状态**：部分实现（companion r67）
+- **状态**：已实现（M-FE-3 FE companion）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：全局筛选器联动（SRS 追溯项）。
 - **验收标准**：
   - [x] 联动规则可配置（r61 L1：`POST validate` + `PUT/GET /api/v1/dashboards/{id}/global-filters` + config_store `global_filter_linkage` + `DASH_FILTER_*` + widget 存在性校验 + viewer ACL）
   - [x] companion validate/get perf probe + ACL 边界（r67：非法 dimensionRef/重复 parameterKey 422；enterprise 越权 GET 403、viewer save 403；`probe_validate_linkage_budget_ms`/`probe_get_linkage_budget_ms` ≤50ms）
-  - [ ] 筛选器驱动组件刷新（缺 fe 全局筛选器 UI 与 widget 刷新链）
-- **代码锚点**：`backend/app/dashboard/global_filters/` · `backend/app/api/v1/dashboards.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-01~07 · `tests/test_dash_nfr_conn_rpt_r67.py` T-DASH-R67-004-01~07
-- **演化建议**：r67 companion 闭合 global_filter_linkage validate/get perf probe、dimensionRef/parameterKey 边界与 viewer/enterprise ACL；后续补 fe 筛选器驱动组件刷新与跨 widget 口径联动
-- **里程碑对齐**：
+  - [x] 筛选器驱动组件刷新（M-FE-3：`GlobalFilterBar` + `dashboardFilterUtils` + `useChartExecute` 参数注入；`dashboard-view.smoke.test.tsx` T-DASH-004-01）
+- **代码锚点**：`backend/app/dashboard/global_filters/` · `backend/app/api/v1/dashboards.py` · `fe/src/components/dashboard/GlobalFilterBar.tsx` · `fe/src/components/dashboard/dashboardFilterUtils.ts` · `tests/test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-01~07 · `fe/src/pages/admin/dashboard/dashboard-view.smoke.test.tsx`
+- **演化建议**：M-FE-3 闭合 view 模式全局筛选器与 widget execute 刷新链；跨 widget 口径联动与 Playwright E2E 留 companion
+- **里程碑对齐**：M-FE-3 · 已完成 · 2026-07-06
 ### [DASH-005] 实体总览页 FR-6.2
 
 - **状态**：部分实现（companion r66）
