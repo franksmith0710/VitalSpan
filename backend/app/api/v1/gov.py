@@ -19,6 +19,7 @@ from app.governance.catalog.schemas import (
     CatalogEntryOut,
     CatalogListResponse,
     CategoryListResponse,
+    SemiAutoFsmOut,
 )
 from app.governance.query_design import service as query_design_service
 from app.governance.query_design.schemas import (
@@ -133,13 +134,6 @@ def _catalog_error_response(exc: catalog_service.CatalogError) -> JSONResponse:
     )
 
 
-def _assert_bus_register_admin(actor: UserContext) -> None:
-    if "admin" not in actor.roles:
-        raise catalog_service.CatalogError(
-            "BUS_REGISTER_FORBIDDEN", "Bus registration requires admin role", 403
-        )
-
-
 @router.get("/catalog/categories", response_model=CategoryListResponse)
 def list_catalog_categories(
     _: Annotated[UserContext, Depends(get_current_user)],
@@ -216,7 +210,10 @@ def register_bus(
     db: Annotated[Session, Depends(_db)],
 ) -> BusRegisterOut | JSONResponse:
     try:
-        _assert_bus_register_admin(actor)
+        entry = catalog_service.get_entry(db, payload.catalog_entry_id)
+        from app.governance.bus.poc_fsm import assert_bus_register_path_scope
+
+        assert_bus_register_path_scope(actor, entry.path)
         out, created = catalog_service.register_entry_to_bus(db, payload.catalog_entry_id)
         return JSONResponse(
             status_code=201 if created else 200,
@@ -224,6 +221,54 @@ def register_bus(
         )
     except catalog_service.CatalogError as exc:
         return _catalog_error_response(exc)
+
+
+@router.get("/bus/register/fsm", response_model=None)
+def get_bus_register_fsm(
+    catalog_entry_id: Annotated[uuid.UUID, Query(alias="catalogEntryId")],
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> JSONResponse:
+    from sqlalchemy import select
+
+    from app.governance.bus.poc_fsm import get_semi_auto_fsm
+    from app.governance.catalog.models import BusRegistration
+
+    try:
+        catalog_service.get_entry(db, catalog_entry_id)
+    except catalog_service.CatalogError as exc:
+        return _catalog_error_response(exc)
+    state = get_semi_auto_fsm(db, catalog_entry_id)
+    bus_id = None
+    row = db.scalar(
+        select(BusRegistration).where(
+            BusRegistration.catalog_entry_id == catalog_entry_id,
+            BusRegistration.status == "succeeded",
+        )
+    )
+    if row and row.bus_payload:
+        bus_id = row.bus_payload.get("busId")
+    out = SemiAutoFsmOut(fsmState=state, catalogEntryId=catalog_entry_id, busId=bus_id)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
+
+
+@router.get("/bus/register/probe", response_model=None)
+def semi_auto_register_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> JSONResponse:
+    from app.governance.bus.probe import probe_semi_auto_register_budget_ms
+
+    if "admin" not in actor.roles:
+        return JSONResponse(
+            status_code=403,
+            content={"code": "BUS_REGISTER_FORBIDDEN", "message": "probe requires admin", "detail": None},
+        )
+    result = probe_semi_auto_register_budget_ms(db, actor)
+    return JSONResponse(
+        status_code=200,
+        content={"elapsedMs": result.elapsed_ms, "ok": result.ok},
+    )
 
 
 @router.post("/bus/auto-register", response_model=None)
