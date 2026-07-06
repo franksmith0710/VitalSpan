@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-06-round-target-m7-conn008-m8-kickoff.md |
-| design | docs/superpowers/specs/2026-07-06-m7-conn008-m8-entity-kickoff-design.md |
-| plan | docs/superpowers/plans/2026-07-06-m7-conn008-m8-entity-kickoff.md |
-| branch | feat/m7-conn008-m8-entity-kickoff-r231 |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-06-round-target-m8-completion.md |
+| design | docs/superpowers/specs/2026-07-06-m8-entity-metadata-completion-design.md |
+| plan | docs/superpowers/plans/2026-07-06-m8-entity-metadata-completion.md |
+| branch | feat/m8-entity-metadata-completion-r232 |
 | base_branch | dev-auto |
-| prd_ids | CONN-008, META-005, META-006, DASH-004, DASH-005 |
-| pr_number | 215 |
-| last_verified_command | cd backend && ruff check . && pytest -q; cd fe && pnpm run check:design && pnpm test && pnpm run build |
+| prd_ids | META-005,META-006,DASH-005 |
+| pr_number |  |
+| last_verified_command | cd backend && ruff check . && pytest ../tests/test_meta_dash_m8_r232.py ../tests/test_meta_dash_m8_r231.py -q; cd fe && pnpm run check:design && pnpm exec vitest run src/pages/admin/entities/entities-overview.smoke.test.tsx && pnpm run build |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-06T19:40:00Z |
+| skill_rule_index_generated_at | 2026-07-06T22:35:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r232 实现（cron 2026-07-06 ~22:30 UTC）：6 Task 完成（META-005 PUT/DELETE+`_ds_table_index`、API 路由、pytest r232 9 用例、useEntityOverview+EntityDetailSheet、EntityOverviewPage 收官+vitest 7 用例、docs 锚点）；ui_design_skill=b-design-system-tailadmin-radix；pytest r232+r231 24 passed + ruff clean + FE vitest 7/7 + check:design 117 files + build exit 0；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P2_DONE→P3_DONE；branch=feat/m8-entity-metadata-completion-r232；base_branch=dev-auto；待 P4 evolution-verifier
 - P5 r231 收尾：PRD 重评 CONN-008/META-005/006/DASH-004/005（M7 Doris 收官 + M8 kickoff）；hub 总分 90.4–92.1→91.3–93.0；plan M7 CONN-008 + M8 DASH-004 勾选（META-005/006/DASH-005 部分实现未勾）；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r231 验证（cron 2026-07-06 ~22:10 UTC）：独立全量 ruff clean + pytest 1921 passed/19 skipped exit 0（含 test_dash_r61_004_forbidden_viewer PASS）；fe check:design 115 files + vitest 145/145 + design fixture 4/4 + build exit 0；UI design_drift PASS；screenshots 未运行（headless vitest mock）；CONCERN charts.dash003 heatmap 首轮偶发 echarts clearRect flake 复跑通过；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 r231 实现（cron 2026-07-06 ~21:30 UTC）：7 Task 完成（rebase dev-auto + ACL §7.4.1 修复、CONN-008 r229、META-005/006、DASH-004 execute+`_load_linkage_payload`、DASH-005 EntityOverviewPage、docs 回归）；ui_design_skill=b-design-system-tailadmin-radix；pytest 1921 passed/19 skipped + ruff clean + FE vitest 145/145 + check:design 115 files + build exit 0；design_drift_checks=check:design PASS；screenshots 未运行（无 dev server）；phase P2_DONE→P3_DONE；branch=feat/m7-conn008-m8-entity-kickoff-r231；base_branch=dev-auto；待 P4 evolution-verifier
