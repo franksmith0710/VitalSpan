@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/auth-context";
-import { ApiRequestError } from "@/lib/api";
+import { ApiRequestError, apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { setAuthToken } from "@/lib/auth-token";
+import { resolveDefaultDashboardPath } from "@/lib/defaultViewResolve";
 
 type LoginResponse = {
   accessToken: string;
@@ -53,7 +54,9 @@ export function LoginPage() {
       }
       setAuthToken(body.accessToken);
       await refresh();
-      navigate(from, { replace: true });
+      const me = await apiFetch<{ roles: string[] }>("/api/v1/me");
+      const resolved = await resolveDefaultDashboardPath(me.roles ?? []);
+      navigate(resolved ?? from, { replace: true });
     } catch (err) {
       setError(mapApiError(err));
     } finally {

@@ -1,4 +1,5 @@
-import { Link } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router";
 import { Database, LayoutDashboard, Shield, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,10 @@ import {
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/context/auth-context";
+import { resolveDefaultDashboardPath } from "@/lib/defaultViewResolve";
+import { canManagePlatform, sessionUserFromAuth } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const M1_METRICS = [
@@ -49,6 +54,30 @@ function MetricCard({
 }
 
 export function AdminHomePage() {
+  const { user, isLoading } = useAuth();
+  const [redirect, setRedirect] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (isLoading || !user) return;
+    const session = sessionUserFromAuth(user.username, user.roles);
+    if (canManagePlatform(session)) {
+      setRedirect(null);
+      return;
+    }
+    void resolveDefaultDashboardPath(user.roles).then((path) => {
+      setRedirect(path ?? "/admin/dashboards");
+    });
+  }, [user, isLoading]);
+
+  if (isLoading || redirect === undefined) {
+    return (
+      <div className="flex min-h-[240px] items-center justify-center">
+        <Skeleton className="h-10 w-48" />
+      </div>
+    );
+  }
+  if (redirect) return <Navigate to={redirect} replace />;
+
   return (
     <AdminPageShell
       breadcrumb={
@@ -101,7 +130,7 @@ export function AdminHomePage() {
             {[
               { to: "/admin/datasources", icon: Database, label: "数据源", disabled: true },
               { to: "/admin/dashboards", icon: LayoutDashboard, label: "Dashboard", disabled: false },
-              { to: "/admin/users", icon: Users, label: "用户与角色", disabled: true },
+              { to: "/admin/system/users", icon: Users, label: "用户与角色", disabled: false },
               { to: "/admin", icon: Shield, label: "系统设置", disabled: true },
             ].map((item) => (
               <QuickLink key={item.label} {...item} />
