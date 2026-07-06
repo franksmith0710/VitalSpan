@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m6-integration.md |
 | design | docs/superpowers/specs/2026-07-06-m6-integration-gov-cat-nfr-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-06-m6-integration-gov-cat-nfr.md |
+| branch | cursor/bc-5b6f8124-df13-4ab2-99ab-b59506b31b68-c4be |
 | base_branch | dev-auto |
 | prd_ids | GOV-002,CAT-001,CAT-002,CAT-003,NFR-004 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && ruff check . && pytest M6 regression subset |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-06T18:29:00Z |
+| skill_rule_index_generated_at | 2026-07-06T19:12:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r222 实现：7 Task 完成（GOV-002 semi-auto FSM+GET/probe、CAT-001/002/003 m6-probe handler、NFR-004 https audit guard+audit-probe、docs 回归）；ui_design_skill=none；branch=cursor/bc-5b6f8124-df13-4ab2-99ab-b59506b31b68-c4be；base_branch=dev-auto；pytest M6 回归 55/55 + ruff clean exit 0；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
+- P2 r221 计划：7 Task（GOV-002 FSM+API、CAT-001/002/003 m6-probe handler、NFR-004 audit guard、docs 回归）；subagent-driven-development option 1；预估 18 主文件；ui_design_skill=none；skill_rule_index 26 源刷新时间戳；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-m6-integration-gov-cat-nfr.md；待 P3 evolution-implementer
 - P1 r220 设计：M6 集成收官 GOV-002 semi-auto FSM pending/registered/failed + CAT-001~003 m6-probe handler + NFR-004 https audit guard middleware；18 文件范围框定；ui_design_skill=none；design=docs/superpowers/specs/2026-07-06-m6-integration-gov-cat-nfr-design.md；phase G2_DONE→P1_DONE；待 P2 evolution-planner
 - G2 选题：饱和熔断已跳过（plan §M6 含 5 项 `[ ]` GOV-002/CAT-001/002/003/NFR-004；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 GOV-002/CAT-001/CAT-002/CAT-003/NFR-004（M6 一期集成验收收官）；hub 最低分入选 CAT-001/002 90.0；plan 同节恰好 5 项无需补足；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-m6-integration.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap：G0 PR #210 已 Squash merge dev-auto（0a069cd）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M6**（5 项 `[ ]` GOV-002/CAT-001/002/003/NFR-004；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M5 VIEW-001 + M6 NFR-001/GOV-001 完成；phase P5_DOCS_READY→idle；待 G2 选题
