@@ -704,6 +704,16 @@ def _cat03_error(exc: Cat03Error) -> JSONResponse:
     return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
 
 
+@router.get("/catalog/geo-regions/m6-probe", response_model=None)
+def cat03_m6_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat03.handler import run_cat03_catalog_probe
+
+    out = run_cat03_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
+
+
 @router.get("/catalog/geo-regions/nodes", response_model=GeoRegionListResponse)
 def list_geo_region_nodes(
     _: Annotated[UserContext, Depends(get_current_user)],
@@ -823,6 +833,16 @@ def lifecycle_templates_create(
         return _cat01_error(exc)
 
 
+@router.get("/catalog/lifecycle-templates/m6-probe", response_model=None)
+def cat01_m6_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat01.handler import run_cat01_catalog_probe
+
+    out = run_cat01_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
+
+
 @router.get("/catalog/lifecycle-templates/{template_key}", response_model=LifecycleTemplateOut)
 def lifecycle_templates_get(
     template_key: str,
@@ -889,6 +909,16 @@ def aggregate_templates_list(
     actor: Annotated[UserContext, Depends(get_current_user)] = None,
 ) -> AggregateTemplateListResponse:
     return cat02_service.list_aggregate_templates(limit, offset, actor)
+
+
+@router.get("/catalog/aggregate-templates/m6-probe", response_model=None)
+def cat02_m6_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat02.handler import run_cat02_catalog_probe
+
+    out = run_cat02_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
 
 
 @router.get("/catalog/aggregate-templates/{aggregate_key}/attribution", response_model=AggregateAttributionOut)
