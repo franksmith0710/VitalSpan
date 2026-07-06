@@ -35,6 +35,7 @@ from app.metadata.entity import service as entity_service
 from app.metadata.physical.errors import PhysicalTableError
 from app.metadata.physical.schemas import (
     PhysicalTableOut,
+    PhysicalTableRegisterFromSchemaIn,
     PhysicalTableRegisterIn,
     PhysicalTableValidateOut,
 )
@@ -436,6 +437,7 @@ def _physical_error(exc: PhysicalTableError) -> JSONResponse:
 @router.get("/physical-tables", response_model=None)
 def physical_tables_get(
     fqn: str | None = Query(default=None),
+    entity_type_code: str | None = Query(default=None, alias="entityTypeCode"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     _: Annotated[UserContext, Depends(get_current_user)] = None,
@@ -445,7 +447,23 @@ def physical_tables_get(
             return physical_service.get_physical_table(fqn)
         except PhysicalTableError as exc:
             return _physical_error(exc)
-    return physical_service.list_physical_tables(limit, offset)
+    return physical_service.list_physical_tables(limit, offset, entity_type_code)
+
+
+@router.post(
+    "/physical-tables/register-from-schema",
+    status_code=status.HTTP_201_CREATED,
+    response_model=None,
+)
+def physical_tables_register_from_schema(
+    payload: PhysicalTableRegisterFromSchemaIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        return physical_service.register_from_schema(db, actor.roles, payload, actor)
+    except PhysicalTableError as exc:
+        return _physical_error(exc)
 
 
 @router.post("/physical-tables", response_model=PhysicalTableOut, status_code=status.HTTP_201_CREATED)

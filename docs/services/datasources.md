@@ -190,3 +190,7 @@
 - **CONN-006**：`tests/fixtures/m7/sample.db` 只读集成
 - **CONN-007**：可选 compose `sample-clickhouse:8124`
 - 集成测：`tests/test_connectors_m7_r228.py`（`@pytest.mark.integration`，无 compose 时分层 skip）
+
+### M7 r229 集成验收（CONN-008 · 2026-07-06）
+
+- **M7 r229** (`tests/test_connectors_m7_r229.py`): CONN-008 Doris M7 收官 — types catalog + HTTP test/metadata mock 链 + optional 9030 compose skip
