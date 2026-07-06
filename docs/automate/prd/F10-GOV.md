@@ -4,7 +4,7 @@
 
 ### [GOV-001] 查询接口分类 catalog 附录 E
 
-- **状态**：部分实现
+- **状态**：已实现（M6 appendix E L1）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：查询接口分类 catalog 附录 E（SRS 追溯项）。
@@ -12,11 +12,12 @@
   - [x] CAT-01/02/03 三分法 taxonomy seed + list API（r30 L1）
   - [x] catalog 条目 CRUD + 分类挂载
   - [x] 非法 category 过滤 4xx + 分页边界 + DELETE 解绑（r31，`CATALOG_INVALID_CATEGORY`）
-  - [ ] 7 类 taxonomy 可配置
+  - [x] 7 类 taxonomy 可配置（M6 r219：`GET /api/v1/gov/catalog/appendix-e` CAT-01~07 + `appendix_e.py` schema；`categories` 同步 7 类）
+  - [x] appendix E probe ≤50ms + enterprise ACL `GOV_APPENDIX_E_FORBIDDEN`（`test_gov_001_catalog_appendix_e.py` T-GOV-001-04~05）
   - [ ] WS-01 对齐纪要
-- **代码锚点**：`backend/app/governance/catalog/` · `backend/migrations/versions/0014_gov_catalog.py` · `backend/app/api/v1/gov.py`
-- **演化建议**：r31 扩展非法分类 4xx、分页与 DELETE 解绑 + bus 联动回归（T-GOV-R31-001~005）；后续扩展完整 7 类与 Admin UI
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/governance/catalog/` · `backend/app/governance/catalog/appendix_e.py` · `backend/app/governance/catalog/probe.py` · `backend/migrations/versions/0014_gov_catalog.py` · `backend/app/api/v1/gov.py` · `tests/test_gov_001_catalog_appendix_e.py`
+- **演化建议**：M6 L1 已闭合 7 类 appendix E taxonomy + probe/ACL；后续补 WS-01 对齐纪要与 Admin UI
+- **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [GOV-002] 总线 PoC 半自动注册 FR-1.1
 
 - **状态**：部分实现

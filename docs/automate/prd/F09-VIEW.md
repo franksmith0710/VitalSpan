@@ -4,7 +4,7 @@
 
 ### [VIEW-001] DashboardView 视图协议 FR-VIEW-1
 
-- **状态**：部分实现（companion M5 protocolVersion）
+- **状态**：已实现（M5 FR-VIEW-1）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：DashboardView 视图协议 FR-VIEW-1（SRS 追溯项）。
@@ -14,10 +14,13 @@
   - [x] layout 与 DASH-001~003 互操作（委托 `dashboard.service.validate_layout`）
   - [x] validate 边界：空 widgets、colSpan/order 越界、chartRef 环检测（r31，`VIEW_LAYOUT_BOUNDS`/`VIEW_CHART_REF_CYCLE`）
   - [x] `protocolVersion` + `round_trip_view_document`（M5：`VIEW_PROTOCOL_VERSION` + `test_view_m5_protocol.py` 往返/破坏性用例）
+  - [x] 扩展 widget 类型校验 map/heatmap/kpi/timeline + `CHART_FIELD_REQUIREMENT`（M5 r219：`validate.py` + `test_view_m5_protocol.py` T-VIEW-001-01~04）
+  - [x] `VIEW_PROTOCOL_UNSUPPORTED` protocolVersion=2 守卫 + `GET /api/v1/views/schema`（M5 r219）
+  - [x] Dashboard `PUT/GET layoutJson` 存储 round-trip（`test_view_m5_protocol.py` T-VIEW-001-05）
   - [ ] defaultViewId 持久化与角色默认视图（VIEW-002）
 - **代码锚点**：`backend/app/views/schemas.py` · `backend/app/views/protocol.py` · `backend/app/views/validate.py` · `backend/app/api/v1/views.py` · `tests/test_view_m5_protocol.py`
-- **演化建议**：M5 companion 闭合 protocolVersion 往返；后续补全 BI 页面统一协议层与 defaultViewId 存储
-- **里程碑对齐**：
+- **演化建议**：M5 FR-VIEW-1 已闭合扩展 widget 校验、protocolVersion 守卫与存储 round-trip；后续补全 BI 页面统一协议层与 defaultViewId 存储
+- **里程碑对齐**：M5 · 已完成 · 2026-07-06
 ### [VIEW-002] 角色默认模板 FR-VIEW-3
 
 - **状态**：部分实现（companion r68）

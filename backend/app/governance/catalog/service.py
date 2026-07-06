@@ -2,17 +2,23 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth.deps import UserContext
+from app.governance.catalog.appendix_e import (
+    APPENDIX_E_TAXONOMY,
+    export_appendix_e_schema,
+    taxonomy_as_dicts,
+)
 from app.governance.catalog.models import (
-    SEED_CATEGORIES,
     VALID_CATEGORY_CODES,
     BusRegistration,
     CatalogCategory,
     CatalogEntry,
 )
 from app.governance.catalog.schemas import (
+    AppendixETaxonomyOut,
     BusRegisterOut,
     CatalogEntryCreate,
     CatalogEntryOut,
@@ -33,12 +39,49 @@ class CatalogError(Exception):
         super().__init__(message)
 
 
-def _ensure_seed_categories(db: Session) -> None:
-    count = db.scalar(select(func.count()).select_from(CatalogCategory)) or 0
-    if count > 0:
+_USER_CATALOG_TAXONOMY_SCOPE: dict[str, str] = {}
+
+
+def set_user_catalog_taxonomy_scope(user_id: str, allowed_prefix: str) -> None:
+    _USER_CATALOG_TAXONOMY_SCOPE[user_id] = allowed_prefix
+
+
+def _assert_appendix_acl(actor: UserContext) -> None:
+    if "enterprise" not in set(actor.roles):
         return
-    for code, name, kind, description in SEED_CATEGORIES:
-        db.add(CatalogCategory(code=code, name=name, kind=kind, description=description))
+    prefix = _USER_CATALOG_TAXONOMY_SCOPE.get(actor.id, "CAT-")
+    if prefix != "CAT-":
+        raise CatalogError(
+            "GOV_APPENDIX_E_FORBIDDEN",
+            "enterprise user out of appendix-e taxonomy scope",
+            403,
+        )
+
+
+def get_appendix_e_taxonomy() -> AppendixETaxonomyOut:
+    return AppendixETaxonomyOut(
+        taxonomy=taxonomy_as_dicts(),
+        schema_=export_appendix_e_schema(),
+    )
+
+
+def get_appendix_e_taxonomy_for_actor(actor: UserContext) -> AppendixETaxonomyOut:
+    _assert_appendix_acl(actor)
+    return get_appendix_e_taxonomy()
+
+
+def _ensure_seed_categories(db: Session) -> None:
+    for cat in APPENDIX_E_TAXONOMY:
+        existing = db.get(CatalogCategory, cat.code)
+        if existing is None:
+            db.add(
+                CatalogCategory(
+                    code=cat.code,
+                    name=cat.name,
+                    kind=cat.kind,
+                    description=cat.description,
+                )
+            )
     db.commit()
 
 

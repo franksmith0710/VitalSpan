@@ -12,6 +12,7 @@ from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
 from app.governance.catalog import service as catalog_service
 from app.governance.catalog.schemas import (
+    AppendixETaxonomyOut,
     BusRegisterIn,
     BusRegisterOut,
     CatalogEntryCreate,
@@ -145,6 +146,16 @@ def list_catalog_categories(
     db: Annotated[Session, Depends(_db)],
 ) -> CategoryListResponse | JSONResponse:
     return catalog_service.list_categories(db)
+
+
+@router.get("/catalog/appendix-e", response_model=None)
+def read_appendix_e_taxonomy(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> AppendixETaxonomyOut | JSONResponse:
+    try:
+        return catalog_service.get_appendix_e_taxonomy_for_actor(actor)
+    except catalog_service.CatalogError as exc:
+        return _catalog_error_response(exc)
 
 
 @router.get("/catalog/entries", response_model=CatalogListResponse)

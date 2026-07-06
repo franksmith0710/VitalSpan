@@ -1,3 +1,4 @@
+/** NFR-001: vitest P95 ≤3000ms 为 CI 稳定门槛；SRS/API budgetMs 默认 5000ms。 */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
@@ -52,7 +53,22 @@ function setupMocks(widgets: LayoutWidget[]) {
       return { columns: ["x", "y"], rows: [[1, 2]], rowCount: 1 };
     }
     if (path === "/api/v1/charts/render-spec") {
-      return { engine: "echarts", chartType: "map", encoding: { dimensions: [], metrics: [] }, source: {} };
+      const body = (args[1] as { body?: string } | undefined)?.body;
+      let chartType = "map";
+      if (typeof body === "string") {
+        try {
+          chartType = String(JSON.parse(body).chartType ?? "map");
+        } catch {
+          chartType = "map";
+        }
+      }
+      const engine = chartType === "kpi" ? "kpi" : "echarts";
+      return {
+        engine,
+        chartType,
+        encoding: { dimensions: [], metrics: [] },
+        source: {},
+      };
     }
     return {};
   });

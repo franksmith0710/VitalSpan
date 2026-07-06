@@ -287,10 +287,10 @@ def test_gov_list_entries_pagination_r31(client):
 
 
 def test_gov_categories_kind_enum_r31(client):
-    """T-GOV-R31-001-03: 三分法 kind 分别为 entity/aggregate/geo。"""
+    """T-GOV-R31-001-03: 附录 E 七分法 kind 覆盖 entity~audit。"""
     resp = client.get("/api/v1/gov/catalog/categories", headers=AUTH)
     kinds = {item["kind"] for item in resp.json()["items"]}
-    assert kinds == {"entity", "aggregate", "geo"}
+    assert kinds == {"entity", "aggregate", "geo", "timeseries", "ticket", "production", "audit"}
 
 
 def test_gov_delete_entry_r31(client):

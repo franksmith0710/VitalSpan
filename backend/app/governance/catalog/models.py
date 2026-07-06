@@ -8,12 +8,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.datasources.models import Base
 
-VALID_CATEGORY_CODES = frozenset({"CAT-01", "CAT-02", "CAT-03"})
+from app.governance.catalog.appendix_e import APPENDIX_E_TAXONOMY
+
+VALID_CATEGORY_CODES = frozenset(cat.code for cat in APPENDIX_E_TAXONOMY)
 
 SEED_CATEGORIES = [
-    ("CAT-01", "实体生命周期查询类", "entity", "附录 E 实体类"),
-    ("CAT-02", "统计分析聚合类", "aggregate", "附录 E 聚合类"),
-    ("CAT-03", "地域维度查询类", "geo", "附录 E 地域类"),
+    (cat.code, cat.name, cat.kind, cat.description)
+    for cat in APPENDIX_E_TAXONOMY
 ]
 
 

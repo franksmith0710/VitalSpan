@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, get_current_user
 from app.auth.models import get_meta_session
+from app.views.protocol import export_view_json_schema
 from app.views.schemas import DashboardView, ViewError
 from app.views.validate import validate_dashboard_view
 from app.views.role_template import get_defaults, put_defaults
@@ -24,6 +25,13 @@ def _error_response(exc: ViewError) -> JSONResponse:
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": detail},
     )
+
+
+@router.get("/schema", response_model=None)
+def read_view_schema(
+    _: Annotated[UserContext, Depends(get_current_user)],
+) -> dict:
+    return export_view_json_schema()
 
 
 @router.post("/validate", response_model=DashboardView)
