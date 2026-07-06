@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m7-conn-ext.md |
 | design | docs/superpowers/specs/2026-07-06-m7-conn-ext-design.md |
 | plan | docs/superpowers/plans/2026-07-06-m7-conn-ext.md |
 | branch | cursor/bc-b6351236-9555-4ed3-aa1f-434ebab06e57-8a5d |
 | base_branch | dev-auto |
 | prd_ids | CONN-003,CONN-004,CONN-005,CONN-006,CONN-007 |
-| pr_number |  |
-| last_verified_command | cd backend && python3 -m pytest ../tests/test_connectors_m7_r228.py ../tests/test_connectors_compose_r207.py ../tests/test_connectors_gov_r36.py ../tests/test_connectors_gov_r37.py ../tests/test_connectors_gov_r40.py ../tests/test_connectors_gov_r41.py -v --tb=short |
+| pr_number | 212 |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q --tb=no |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T19:40:00Z |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r228 验证：独立全量 ruff clean + pytest 1901 passed/20 skipped exit 0；UI: N/A（ui_design_skill none，纯后端无 FE 改动）；screenshots 未运行；PR #212 Draft open dev-auto（未 merge）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P1 r224 设计：M7 批次 1 CONN-003~007（mariadb 新增+Hive、Oracle HTTP 链、sqlserver relational_hints、SQLite fixture、ClickHouse compose）；18 文件范围框定；ui_design_skill=none；design=docs/superpowers/specs/2026-07-06-m7-conn-ext-design.md；phase G2_DONE→P1_DONE；待 P2 evolution-planner
 - G2 选题：饱和熔断已跳过（plan §M7 含 6 项 `[ ]` CONN-003~008；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 CONN-003/004/005/006/007（M7 二期数据源类型扩展批次 1）；hub 最低分入选 CONN-004 90.0；plan 同节 6 项取前 5 项 CONN-008 留批次 2；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-m7-conn-ext.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap：G0 PR #211 已 Squash merge dev-auto（8244b65）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M7**（6 项 `[ ]` CONN-003~008；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CONN-004(90.0)/QUERY-009(90.0)/VIZ-005(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M6 集成验收收官完成；phase P5_DOCS_READY→idle；待 G2 选题
