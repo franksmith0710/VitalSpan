@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "check:design": "node scripts/check-design.mjs",
     "test": "vitest run && node --test scripts/check-design.fixture.test.mjs",
+    "test:e2e": "playwright test",
     "test:smoke": "vitest run src/routes.smoke.test.tsx"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.49.1",
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
