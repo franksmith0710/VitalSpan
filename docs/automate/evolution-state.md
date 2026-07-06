@@ -6,17 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-06-round-target-view-003-m3-conn.md |
-| design | docs/superpowers/specs/2026-07-06-view-003-m3-conn-design.md |
-| plan | docs/superpowers/plans/2026-07-06-view-003-m3-conn.md |
-| branch | cursor/bc-2e5efc51-bc22-4d05-8373-1d817e8b85d2-2e0c |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | VIEW-003,CONN-001,CONN-002 |
-| pr_number | 208 |
-| last_verified_command | cd fe && pnpm run check:design && pnpm test && pnpm build && pnpm test:e2e; cd backend && python3 -m ruff check . && python3 -m pytest -q |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm run check:design && pnpm test:e2e（6/6 VIEW-003 E2E PASS；screenshots 未运行：无 live BE/postgres，e2e mock 路由） |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T14:10:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 bootstrap：G0 PR #208 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M5**（2 项 `[ ]` DASH-003/VIEW-001；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M-FE-3+M3 CONN-001/002 完成；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r211 收尾：PRD 重评 VIEW-003/CONN-001/CONN-002（M-FE-3 收官 + M3 compose）；hub 总分 90.1–91.9→92.5–93.0；plan M-FE-3 VIEW-003 + M3 CONN-001/002 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r210 验证：独立全量 ruff clean + pytest 1830 passed/11 skipped exit 0；fe check:design 110 files + vitest 136/136 + build + e2e 6/6 exit 0；UI design_drift PASS + VIEW-003 E2E 覆盖（role default / user override / mobile viewport）；screenshots 未运行（无 live BE/postgres，e2e mock 路由）；compose 集成 11 skipped（无 docker）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 r209 实现：5 Task 完成（VIEW-003 用户覆盖优先 defaultViewResolve+7 vitest 边缘、Playwright E2E 6 passed、connector_compose_env 夹具、CONN-001/002 compose 集成 8 测 skip 无 compose）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 110 files PASS；screenshots 未运行（P3 headless mock E2E）；branch=cursor/bc-2e5efc51-bc22-4d05-8373-1d817e8b85d2-2e0c；base_branch=dev-auto；fe vitest 136/136 + e2e 6/6 exit 0；pytest datasources regression 105 passed；integration 8 skipped（compose down）；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
