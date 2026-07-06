@@ -183,14 +183,14 @@ def m7_compose_env():
 @pytest.fixture(scope="session")
 def m7_mariadb_env(m7_compose_env):
     if not m7_compose_env["mariadb"]["_available"]:
-        pytest.skip("sample-mariadb not running — docker compose up -d sample-mariadb")
+        pytest.skip("sample-mariadb:3308 not running — docker compose up -d sample-mariadb")
     return m7_compose_env["mariadb"]
 
 
 @pytest.fixture(scope="session")
 def m7_clickhouse_env(m7_compose_env):
     if not m7_compose_env["clickhouse"]["_available"]:
-        pytest.skip("sample-clickhouse not running — docker compose up -d sample-clickhouse")
+        pytest.skip("sample-clickhouse:8124 not running — docker compose up -d sample-clickhouse")
     return m7_compose_env["clickhouse"]
 
 
