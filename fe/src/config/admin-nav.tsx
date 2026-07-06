@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Cable, Database, LayoutDashboard, Settings } from "lucide-react";
+import { ArrowLeftRight, Cable, Database, LayoutDashboard, Shield, Users } from "lucide-react";
 import type { NavSection } from "@/components/layout/app-sidebar";
 
 export const ADMIN_NAV_GROUPS: NavSection[] = [
@@ -36,9 +36,14 @@ export const ADMIN_NAV_GROUPS: NavSection[] = [
     title: "系统",
     items: [
       {
+        name: "角色管理",
+        icon: <Shield className="size-6" aria-hidden />,
+        path: "/admin/system/roles",
+      },
+      {
         name: "用户管理",
-        icon: <Settings className="size-6" aria-hidden />,
-        path: "#",
+        icon: <Users className="size-6" aria-hidden />,
+        path: "/admin/system/users",
       },
     ],
   },

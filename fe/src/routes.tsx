@@ -17,7 +17,7 @@ import { LoginPage } from "@/pages/login/LoginPage";
 import { ConnectorsPage } from "@/pages/admin/connectors/ConnectorsPage";
 import { DatasourceListPage } from "@/pages/admin/datasources/DatasourceListPage";
 import { DatasourceFormPage } from "@/pages/admin/datasources/DatasourceFormPage";
-import { DatasourceDetailPage } from "@/pages/admin/datasources/DatasourceDetailPage";
+import { RoleListPage } from "@/pages/admin/system/roles/RoleListPage";
 
 export function AppRoutes() {
   return (
@@ -42,6 +42,7 @@ export function AppRoutes() {
           <Route path="dashboards" element={<DashboardListPage />} />
           <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
           <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
+          <Route path="system/roles" element={<RoleListPage />} />
         </Route>
       </Route>
       <Route path="/embed" element={<EmbedLayout />}>
