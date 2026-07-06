@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-06-round-target-m6-integration.md |
-| design | docs/superpowers/specs/2026-07-06-m6-integration-gov-cat-nfr-design.md |
-| plan | docs/superpowers/plans/2026-07-06-m6-integration-gov-cat-nfr.md |
-| branch | cursor/bc-5b6f8124-df13-4ab2-99ab-b59506b31b68-c4be |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | GOV-002,CAT-001,CAT-002,CAT-003,NFR-004 |
-| pr_number | 211 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
-| last_verified_exit_code | 0 |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T19:12:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,7 +66,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
-- P5 r223 收尾：PRD 重评 GOV-002/CAT-001/002/003/NFR-004（M6 集成验收收官）；hub 总分 90.0–90.4→91.5–92.4；plan M6 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
+- G1 bootstrap：G0 PR #211 已 Squash merge dev-auto（8244b65）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M7**（6 项 `[ ]` CONN-003~008；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CONN-004(90.0)/QUERY-009(90.0)/VIZ-005(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M6 集成验收收官完成；phase P5_DOCS_READY→idle；待 G2 选题
+- P5 r223 收尾：PRD 重评 GOV-002/CAT-001/002/003/NFR-004（M6 集成验收收官）；hub 总分 90.0–90.4→91.5–92.4；plan M6 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；PR #211 squash merge dev-auto
 - P4 r223 验证：独立全量 ruff clean + pytest 1877 passed/13 skipped exit 0；UI: N/A（ui_design_skill none，纯后端无 FE 改动）；screenshots 未运行；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 r222 实现：7 Task 完成（GOV-002 semi-auto FSM+GET/probe、CAT-001/002/003 m6-probe handler、NFR-004 https audit guard+audit-probe、docs 回归）；ui_design_skill=none；branch=cursor/bc-5b6f8124-df13-4ab2-99ab-b59506b31b68-c4be；base_branch=dev-auto；pytest M6 回归 55/55 + ruff clean exit 0；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 r221 计划：7 Task（GOV-002 FSM+API、CAT-001/002/003 m6-probe handler、NFR-004 audit guard、docs 回归）；subagent-driven-development option 1；预估 18 主文件；ui_design_skill=none；skill_rule_index 26 源刷新时间戳；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-m6-integration-gov-cat-nfr.md；待 P3 evolution-implementer
