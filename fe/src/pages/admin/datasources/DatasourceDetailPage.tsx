@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import { SchemaBrowser } from "@/components/datasources/SchemaBrowser";
 
 type DataSourceOut = {
   id: string;
@@ -138,6 +139,10 @@ export function DatasourceDetailPage() {
           </dl>
         </CardContent>
       </Card>
+
+      <div className="mt-6">
+        <SchemaBrowser dataSourceId={id} />
+      </div>
 
       {testError ? (
         <div className="max-w-3xl rounded-xl border border-error-500 bg-error-50 p-4 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400">
