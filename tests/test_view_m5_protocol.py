@@ -107,6 +107,102 @@ def test_view_001_03_unknown_chart_type_rejected():
     assert exc.value.status == 422
 
 
+def test_view_001_04a_heatmap_one_dimension_rejected():
+    doc = _view_doc([_m5_layout_widget("heatmap", ["x"], ["v"])])
+    with pytest.raises(ViewError) as exc:
+        validate_dashboard_view(doc)
+    assert exc.value.code == "CHART_FIELD_REQUIREMENT"
+    assert any("dimensions" in f.get("field", "") for f in exc.value.fields)
+
+
+def test_view_001_04b_kpi_empty_metrics_rejected():
+    doc = _view_doc([_m5_layout_widget("kpi", [], [])])
+    with pytest.raises(ViewError) as exc:
+        validate_dashboard_view(doc)
+    assert exc.value.code == "CHART_FIELD_REQUIREMENT"
+    assert any("metrics" in f.get("field", "") for f in exc.value.fields)
+
+
+def test_view_001_04c_timeline_empty_dimensions_rejected():
+    doc = _view_doc([_m5_layout_widget("timeline", [], ["v"])])
+    with pytest.raises(ViewError) as exc:
+        validate_dashboard_view(doc)
+    assert exc.value.code == "CHART_FIELD_REQUIREMENT"
+
+
+def test_view_001_04d_protocol_version_2_rejected():
+    doc = _view_doc([_m5_layout_widget("kpi", [], ["total"])])
+    doc["protocolVersion"] = 2
+    with pytest.raises(ViewError) as exc:
+        validate_dashboard_view(doc)
+    assert exc.value.code == "VIEW_PROTOCOL_UNSUPPORTED"
+    assert any(f.get("field") == "protocolVersion" for f in exc.value.fields)
+
+
+def test_view_001_04e_extended_widget_colspan_3_rejected():
+    w = _m5_layout_widget("map", ["region"], ["value"])
+    w["colSpan"] = 3
+    doc = _view_doc([w])
+    with pytest.raises(ViewError) as exc:
+        validate_dashboard_view(doc)
+    assert exc.value.code == "VIEW_LAYOUT_BOUNDS"
+
+
+def test_view_001_04g_chart_ref_cycle_with_kpi():
+    id_a, id_b = str(uuid.uuid4()), str(uuid.uuid4())
+    layout = {
+        "version": 1,
+        "widgets": [
+            {
+                "id": id_a,
+                "type": "chart",
+                "title": "KPI",
+                "colSpan": 6,
+                "order": 0,
+                "chartRef": id_b,
+                "chartConfig": {
+                    "chartType": "kpi",
+                    "chartId": id_a,
+                    "mode": "sql",
+                    "dataSourceId": "00000000-0000-4000-8000-000000000010",
+                    "sql": "SELECT 1",
+                    "dimensions": [],
+                    "metrics": [{"field": "total"}],
+                },
+            },
+            {
+                "id": id_b,
+                "type": "chart",
+                "title": "Map",
+                "colSpan": 6,
+                "order": 1,
+                "chartRef": id_a,
+                "chartConfig": {
+                    "chartType": "map",
+                    "chartId": id_b,
+                    "mode": "sql",
+                    "dataSourceId": "00000000-0000-4000-8000-000000000010",
+                    "sql": "SELECT 1",
+                    "dimensions": [{"field": "region"}],
+                    "metrics": [{"field": "value"}],
+                },
+            },
+        ],
+        "globalFilters": [],
+    }
+    with pytest.raises(ViewError) as exc:
+        validate_dashboard_view({"name": "cycle", "layout": layout})
+    assert exc.value.code == "VIEW_CHART_REF_CYCLE"
+
+
+def test_view_001_06_get_schema_api(client: TestClient):
+    resp = client.get("/api/v1/views/schema", headers=AUTH)
+    assert resp.status_code == 200
+    schema = resp.json()
+    assert "properties" in schema
+    assert "protocolVersion" in schema["properties"]
+
+
 def test_view_001_05_dashboard_put_get_round_trip(client: TestClient):
     create = client.post("/api/v1/dashboards", headers=AUTH, json={"name": "M5-RT", "description": ""})
     assert create.status_code == 201

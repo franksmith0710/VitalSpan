@@ -37,6 +37,14 @@ def _check_chart_refs(layout: DashboardLayout, raw_widgets: list[dict[str, Any]]
 
 
 def _map_validation_error(exc: ValidationError) -> ViewError:
+    from app.schemas.chart_view import _map_validation_error as map_chart_error
+
+    for err in exc.errors():
+        loc = err.get("loc", ())
+        if any(str(part) in ("chartConfig", "chart_config") for part in loc):
+            chart_exc = map_chart_error(exc)
+            return ViewError(chart_exc.code, chart_exc.message, chart_exc.status, chart_exc.fields)
+
     fields = [
         {"field": ".".join(str(p) for p in err.get("loc", ())), "message": str(err.get("msg", ""))}
         for err in exc.errors()
@@ -91,20 +99,27 @@ def _check_default_view_id(view_id: uuid.UUID | None, default_view_id: uuid.UUID
 
 def validate_layout_dict(layout: dict[str, Any]) -> dict[str, Any]:
     from app.dashboard.service import _normalize_widget_orders, _validate_layout_business
-    from app.schemas.chart_view import validate_chart_view_config
+    from app.schemas.chart_view import ChartViewError, validate_chart_view_config
 
     parsed = DashboardLayout.model_validate(layout)
     _validate_layout_business(parsed)
     parsed.widgets = _normalize_widget_orders(list(parsed.widgets))
     for widget in parsed.widgets:
         if widget.type == "chart" and widget.chart_config is not None:
-            validate_chart_view_config(
-                widget.chart_config.model_dump(by_alias=True, mode="json"),
-            )
+            try:
+                validate_chart_view_config(
+                    widget.chart_config.model_dump(by_alias=True, mode="json"),
+                )
+            except ChartViewError as exc:
+                raise ViewError(exc.code, exc.message, exc.status, exc.fields) from exc
     return parsed.model_dump(by_alias=True, mode="json")
 
 
 def validate_dashboard_view(data: dict[str, Any]) -> DashboardView:
+    from app.schemas.chart_view import ChartViewError
+    from app.views.protocol import assert_protocol_version
+
+    assert_protocol_version(data)
     try:
         view = DashboardView.model_validate(data)
     except ValidationError as exc:
@@ -119,6 +134,8 @@ def validate_dashboard_view(data: dict[str, Any]) -> DashboardView:
 
     try:
         normalized_layout = validate_layout_dict(view.layout.model_dump(by_alias=True, mode="json"))
+    except ChartViewError as exc:
+        raise ViewError(exc.code, exc.message, exc.status, exc.fields) from exc
     except Exception as exc:
         from app.dashboard.service import DashboardError
 
