@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m7-conn-ext.md |
 | design | docs/superpowers/specs/2026-07-06-m7-conn-ext-design.md |
 | plan | docs/superpowers/plans/2026-07-06-m7-conn-ext.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r228 收尾：PRD 重评 CONN-003~007（M7 二期数据源类型扩展批次 1）；hub 总分 90.0–91.2→91.9–93.2；plan M7 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；PR #212 squash merge dev-auto
 - P4 r228 验证：独立全量 ruff clean + pytest 1901 passed/20 skipped exit 0；UI: N/A（ui_design_skill none，纯后端无 FE 改动）；screenshots 未运行；PR #212 Draft open dev-auto（未 merge）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P1 r224 设计：M7 批次 1 CONN-003~007（mariadb 新增+Hive、Oracle HTTP 链、sqlserver relational_hints、SQLite fixture、ClickHouse compose）；18 文件范围框定；ui_design_skill=none；design=docs/superpowers/specs/2026-07-06-m7-conn-ext-design.md；phase G2_DONE→P1_DONE；待 P2 evolution-planner
 - G2 选题：饱和熔断已跳过（plan §M7 含 6 项 `[ ]` CONN-003~008；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 CONN-003/004/005/006/007（M7 二期数据源类型扩展批次 1）；hub 最低分入选 CONN-004 90.0；plan 同节 6 项取前 5 项 CONN-008 留批次 2；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-m7-conn-ext.md；phase idle→G2_DONE；待 P1 evolution-designer
