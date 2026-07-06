@@ -1,8 +1,18 @@
+import { useMemo } from "react";
 import type { ReactNode } from "react";
+import { Responsive, WidthProvider } from "react-grid-layout/legacy";
+import "react-grid-layout/css/styles.css";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { LayoutWidget } from "./layoutUtils";
 import { sortWidgets } from "./layoutUtils";
+import {
+  GRID_ROW_HEIGHT,
+  gridLayoutToWidgets,
+  widgetsToGridLayout,
+} from "./gridLayoutAdapter";
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 export type DashboardGridMode = "edit" | "view";
 
@@ -11,6 +21,7 @@ type DashboardGridProps = {
   widgets: LayoutWidget[];
   renderWidget: (widget: LayoutWidget) => ReactNode;
   onAddWidget?: () => void;
+  onLayoutChange?: (widgets: LayoutWidget[]) => void;
   className?: string;
 };
 
@@ -26,9 +37,11 @@ export function DashboardGrid({
   widgets,
   renderWidget,
   onAddWidget,
+  onLayoutChange,
   className,
 }: DashboardGridProps) {
   const sorted = sortWidgets(widgets);
+  const gridLayout = useMemo(() => widgetsToGridLayout(sorted), [sorted]);
 
   if (sorted.length === 0) {
     return (
@@ -45,6 +58,29 @@ export function DashboardGrid({
             添加组件
           </Button>
         ) : null}
+      </div>
+    );
+  }
+
+  if (mode === "edit" && onLayoutChange) {
+    return (
+      <div className={cn("dashboard-grid-edit", className)}>
+        <ResponsiveGridLayout
+          className="layout"
+          layouts={{ xl: gridLayout, lg: gridLayout, md: gridLayout, sm: gridLayout, xs: gridLayout }}
+          cols={{ xl: 12, lg: 12, md: 12, sm: 6, xs: 4 }}
+          rowHeight={GRID_ROW_HEIGHT}
+          isDraggable
+          isResizable
+          draggableHandle=".dashboard-drag-handle"
+          onLayoutChange={(layout) => onLayoutChange(gridLayoutToWidgets(layout, sorted))}
+        >
+          {sorted.map((widget) => (
+            <div key={widget.id} className="min-w-0 overflow-hidden">
+              {renderWidget(widget)}
+            </div>
+          ))}
+        </ResponsiveGridLayout>
       </div>
     );
   }

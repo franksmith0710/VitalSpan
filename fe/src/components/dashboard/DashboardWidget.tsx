@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ArrowDown, ArrowUp, Minus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, GripVertical, Minus, Plus, Trash2 } from "lucide-react";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +15,7 @@ import {
 import { IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { LayoutWidget } from "./layoutUtils";
+import { WidgetSqlPanel } from "./WidgetSqlPanel";
 
 type DashboardWidgetProps = {
   widget: LayoutWidget;
@@ -22,6 +24,7 @@ type DashboardWidgetProps = {
   onMove: (id: string, direction: "up" | "down") => void;
   onResize: (id: string, patch: Partial<Pick<LayoutWidget, "colSpan" | "rowSpan" | "title">>) => void;
   onTitleChange: (id: string, title: string) => void;
+  onChartConfigChange?: (id: string, config: ChartViewConfig) => void;
 };
 
 export function DashboardWidget({
@@ -31,6 +34,7 @@ export function DashboardWidget({
   onMove,
   onResize,
   onTitleChange,
+  onChartConfigChange,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -38,7 +42,11 @@ export function DashboardWidget({
     <div className="flex h-full flex-col rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-2 dark:border-gray-800">
         {mode === "edit" ? (
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="dashboard-drag-handle cursor-grab text-gray-400" aria-label="拖拽组件">
+              <GripVertical className="size-4" />
+            </span>
+            <div className="min-w-0 flex-1">
             <Input
               value={widget.title}
               onChange={(e) => onTitleChange(widget.id, e.target.value)}
@@ -48,6 +56,7 @@ export function DashboardWidget({
             <p className="mt-1 truncate text-theme-xs text-gray-500">
               {widget.chartConfig.mode ?? "sql"} · {(widget.chartConfig.sql ?? "").slice(0, 40)}
             </p>
+          </div>
           </div>
         ) : (
           <h4 className="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">
@@ -119,6 +128,12 @@ export function DashboardWidget({
           </div>
         ) : null}
       </div>
+      {mode === "edit" && onChartConfigChange ? (
+        <WidgetSqlPanel
+          widget={widget}
+          onChange={(chartConfig) => onChartConfigChange(widget.id, chartConfig)}
+        />
+      ) : null}
       <div className="flex-1 p-2">
         <ChartRenderer config={widget.chartConfig} title={widget.title} />
       </div>

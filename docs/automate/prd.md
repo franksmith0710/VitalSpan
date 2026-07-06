@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.75
+version: 1.2.76
 last_updated: 2026-07-06
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-06 · P5 r195 重评 BOOT-003 + BOOT-002 + DS-002 + DS-003 + DS-007（M-FE-1 FE companion）；pytest 1827/4 skipped；fe vitest 112/112 + check:design PASS + P4 screenshots QA PASS；JWT 登录端点、`/login` 守卫、datasources/connectors 页、TanStack Query/api.ts/mapApiError；交互 N/A→86–94%，用户价值 84%→88–92%，总分 90.7–92.1→91.9–94.1（五 ID ≥90 STUCK 保持空；Playwright E2E/真实 DB 连通性浏览器验收留 M-FE-2 companion）
+> 更新：2026-07-06 · P5 r199 重评 DS-004 + VIZ-002 + DASH-002 + DATA-005（M-FE-2 P1 最小出数闭环）；pytest 1829/3 skipped；fe vitest 117/117 + check:design PASS；SchemaBrowser、WidgetSqlPanel、react-grid-layout、DATA-SMOKE L2；交互 N/A→86–88%，用户价值 82–84%→90–92%，总分 90.7–91.6→92.4–93.5（四 ID ≥90 STUCK 空；Playwright E2E/真实 DB 浏览器验收留 companion）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -57,7 +57,7 @@ domain_count: 16
 | DS-001 | 82 | 94 | 94 | N/A | 94 | 100 | 86 | 88 | 90.9 | 用户价值 |
 | DS-002 | 92 | 100 | 96 | 88 | 92 | 100 | 88 | 90 | 93.7 | 性能 |
 | DS-003 | 90 | 100 | 98 | 88 | 90 | 100 | 86 | 90 | 93.3 | 性能 |
-| DS-004 | 82 | 94 | 94 | N/A | 90 | 100 | 86 | 90 | 90.7 | 用户价值 |
+| DS-004 | 90 | 100 | 94 | 86 | 90 | 100 | 86 | 90 | 92.4 | 性能 |
 | DS-005 | 82 | 96 | 96 | N/A | 90 | 100 | 86 | 96 | 92.1 | 用户价值 |
 | DS-006 | 82 | 96 | 96 | N/A | 92 | 100 | 88 | 88 | 91.6 | 用户价值 |
 | DS-007 | 88 | 100 | 94 | 86 | 90 | 100 | 86 | 88 | 91.9 | 用户价值 |
@@ -94,7 +94,7 @@ domain_count: 16
 | QUERY-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 性能 |
 | QUERY-009 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 90 | 90.0 | 用户价值 |
 | VIZ-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
-| VIZ-002 | 84 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 91.6 | 用户价值 |
+| VIZ-002 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 90 | 93.2 | 性能 |
 | VIZ-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | VIZ-004 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | VIZ-005 | 84 | 88 | 96 | N/A | 90 | 98 | 88 | 88 | 90.0 | 用户价值 |
@@ -102,7 +102,7 @@ domain_count: 16
 | VIZ-007 | 84 | 90 | 94 | N/A | 88 | 98 | 88 | 90 | 90.1 | 用户价值 |
 | VIZ-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | DASH-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
-| DASH-002 | 84 | 92 | 94 | N/A | 90 | 100 | 88 | 88 | 90.7 | 用户价值 |
+| DASH-002 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 88 | 92.9 | 安全性 |
 | DASH-003 | 84 | 94 | 94 | N/A | 88 | 100 | 88 | 88 | 90.7 | 用户价值 |
 | DASH-004 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.0 | 用户价值 |
 | DASH-005 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
@@ -163,7 +163,7 @@ domain_count: 16
 | DATA-002 | 84 | 94 | 96 | N/A | 86 | 100 | 90 | 86 | 91.0 | 用户价值 |
 | ETL-001 | 84 | 96 | 94 | N/A | 88 | 100 | 88 | 90 | 91.4 | 用户价值 |
 | DATA-003 | 84 | 96 | 92 | 95 | 87 | 100 | 88 | 90 | 91.5 | 用户价值 |
-| DATA-005 | 82 | 98 | 92 | N/A | 88 | 100 | 88 | 88 | 90.8 | 用户价值 |
+| DATA-005 | 92 | 100 | 94 | N/A | 90 | 100 | 88 | 88 | 93.5 | 性能 |
 
 ---
 
@@ -219,6 +219,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.76 | 2026-07-06 | P5 r199 重评 DS-004 + VIZ-002 + DASH-002 + DATA-005（M-FE-2 P1 最小出数闭环）；pytest 1829/3 skipped；fe vitest 117/117 + check:design PASS；SchemaBrowser、WidgetSqlPanel、react-grid-layout、DATA-SMOKE L2；交互 N/A→86–88%，用户价值 82–84%→90–92%，总分 90.7–91.6→92.4–93.5（四 ID ≥90 STUCK 空；Playwright E2E/真实 DB 浏览器验收留 companion） |
 | 1.2.75 | 2026-07-06 | P5 r195 重评 BOOT-003 + BOOT-002 + DS-002 + DS-003 + DS-007（M-FE-1 FE companion）；pytest 1827/4 skipped；fe 112 tests + design_drift PASS；JWT 登录、`/login` 守卫、datasources/connectors 页；交互 N/A→86–94%，用户价值 84%→88–92%，总分 90.7–92.1→91.9–94.1（五 ID ≥90 STUCK 空；Playwright E2E/真实 DB 浏览器验收留 M-FE-2） |
 | 1.2.74 | 2026-07-06 | PRD 同步：118→124 计数修正；新增「执行范围」节对齐 plan v2.1 P1–P3 |
 | 1.2.73 | 2026-07-06 | plan v2.1：执行范围收窄为 **前三期 P1–P3**（M-FE + M2–M12）；**M13 四期冻结** |
@@ -228,7 +229,3 @@ domain_count: 16
 | 1.2.68 | 2026-07-04 | P5 r66 重评 CAT-001 + CAT-002 + DASH-005 + RPT-001 + META-004（跨域 companion 质量推分 r66）；pytest 1752/4 skipped；test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 196/196；lifecycle/aggregate scope ACL、entity_overview validate/drill、engine run ACL/__proto__ guard、dataset write ACL + 各域 probe ≤50ms；性能 58%→88%，完整度 74–76%→90%，总分 83.9–84.2→90.0–90.4（五 ID 破 90 STUCK 清零；IF-02 查询/fe 页面/M3-LITE/PDF/DE 对标留 companion） |
 | 1.2.67 | 2026-07-04 | P5 r65 重评 CAT-003 + CAT-004 + CAT-006 + RPT-002 + META-005（跨域 companion 质量推分 r65）；pytest 1719/4 skipped；test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 163/163；geo/classification scope ACL、production stats probe、prefab binding ACL、physical register ACL + 各域 probe ≤50ms；性能 58%→88%，完整度 76%→90%，总分 83.9–84.0→90.0–90.5（五 ID 破 90 STUCK 清零；M7 RLS/fe 页面/FR-6.2 lineage/真实数据源链留 companion） |
 | 1.2.66 | 2026-07-04 | P5 r64 重评 NFR-001 + CAT-001 + NFR-004 + CAT-002 + CAT-007（跨域 NFR/CAT 远期 stub L1 + CAT-007 companion r64）；pytest 1687/4 skipped；test_nfr_cat_r64 33/33 + test_viz_view_design_cat_r63 32/32 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 163/163；dashboard-first-screen、lifecycle/aggregate 模板、https-audit mask-probe、workno scope ACL + perf probe；完整度 5%→76%，可靠性 0%→94%，测试覆盖 0%→98%，CAT-007 性能 58%→88%、完整度 76%→90%；总分 13.1–13.9→83.9–84.2（四 stub <90 STUCK upsert round 1）、CAT-007 83.3→90.2 STUCK 清零；fe 首屏/IF-02 查询/生产 TLS/真实审计 store 留 companion） |
-| 1.2.65 | 2026-07-04 | P5 r63 重评 VIZ-007 + VIEW-002 + DESIGN-004 + CAT-005 + VIEW-003（跨域 companion 质量推分 r63）；pytest 1654/4 skipped；test_viz_view_design_cat_r63 32/32 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 130/130；sdk portal probe/ACL、role default bounds、workflow-link catalog guard、ticket stats ACL、me/views GET/404/cycle probe；性能 58%→88%，完整度 74–76%→90%，总分 82.9–84.2→90.1–90.8（五 ID 破 90 STUCK 清零；fe SDK/工单表绑定/GOV-005 全链路/M7 RLS fe 留 companion） |
-| 1.2.64 | 2026-07-04 | P5 r62 重评 CAT-006 + NFR-003 + RPT-002 + RPT-003 + META-005（跨域远期 stub L1 kickoff r62）；pytest 1622/4 skipped；test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 回归 132/132；production stats、dashboard SLA probe/alerts、prefab bindings、template blocks、physical table register；完整度 5%→76%，可靠性 0%→94%，测试覆盖 0%→96–98%，总分 12.1–13.1→83.9–84.2（五 ID 均 <90 STUCK upsert round 1；fe 统计页/真实 SLA metrics/PDF 渲染/FR-6.2 lineage 留 companion） |
-| 1.2.63 | 2026-07-04 | P5 r61 重评 CAT-005 + DASH-004 + VIZ-007 + NFR-002 + CAT-003（跨域远期 stub L1 kickoff r61）；pytest 1590/4 skipped；test_cat_dash_viz_nfr_r61 32/32 + test_rpt_view_cat_gov_r60 34/34 + test_meta_cat_dash_conn_design_r59 34/34 + test_dash_rpt_r58 38/38 回归 138/138；ticket stats、global_filter_linkage config_store、sdk portal lifecycle、report-perf mock probe、geo region 树；完整度 5%→74–76%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 12.1–12.6→82.9–84.2（五 ID 均 <90 STUCK upsert round 1；fe 筛选器/SDK/工单表 ACL/M7 地域权限/真实 perf suite 留 companion） |
-| 1.2.62 | 2026-07-04 | P5 r60 重评 RPT-001 + VIEW-002 + VIEW-003 + CAT-007 + GOV-007（跨域远期 stub L1 kickoff r60）；pytest 1558/4 skipped；test_rpt_view_cat_gov_r60 34/34 + test_dash_rpt_r58 38/38 + test_meta_cat_dash_conn_design_r59 34/34 + test_view_gov_api_r31 24/24 回归 130/130；reports engine run、role default-views、user me/views bounds、workno behavior、gov bus auto-register FSM；完整度 5%→74–76%，可靠性 0%→92–94%，测试覆盖 0%→96–98%，总分 12.2–12.4→82.9–84.4（五 ID 均 <90 STUCK upsert round 1；M3-LITE/PDF/fe 视图 UI/真实审计/总线 HTTP 留 companion） |

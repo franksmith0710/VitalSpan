@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router";
+import { Toaster } from "sonner";
 import { AuthProvider } from "@/context/auth-context";
 import { AppRoutes } from "@/routes";
 
@@ -14,6 +15,7 @@ export default function App() {
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>
+        <Toaster position="top-center" richColors />
       </BrowserRouter>
     </QueryClientProvider>
   );

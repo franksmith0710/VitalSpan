@@ -45,16 +45,17 @@
 - **演化建议**：可配置超时；真实 compose MySQL 集成测试 + 浏览器 E2E（M-FE-2）；分布式 inflight 锁
 ### [DS-004] Schema 元数据浏览
 
-- **状态**：已实现（L1 companion r25）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
+- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06
 - **描述**：Schema 元数据浏览（SRS 追溯项）。
 - **验收标准**：
   - [x] schemas/tables/columns 三级浏览 API
   - [x] 仅返回已授权数据源
-- **代码锚点**：`backend/app/datasources/metadata/service.py` · `backend/app/api/v1/datasources.py` · `backend/app/datasources/dialects/base.py` · `tests/test_datasources_companion_r25.py` T-DS-MD01~MD06
-- **演化建议**：真实 compose MySQL/PostgreSQL 集成测试；Admin UI schema 浏览器；大数据量 schema 分页
-- **里程碑对齐**：
+  - [x] Admin UI schema 三级浏览（数据源详情页）
+- **代码锚点**：`backend/app/datasources/metadata/service.py` · `backend/app/api/v1/datasources.py` · `backend/app/datasources/dialects/base.py` · `tests/test_datasources_companion_r25.py` T-DS-MD01~MD06 · `fe/src/components/datasources/SchemaBrowser.tsx`
+- **演化建议**：真实 compose MySQL/PostgreSQL 集成测试；大数据量 schema 分页；Playwright E2E 浏览器验收
 ### [DS-005] 凭证加密存储
 
 - **状态**：已实现（L1 kickoff r22；quality r23/r24）
