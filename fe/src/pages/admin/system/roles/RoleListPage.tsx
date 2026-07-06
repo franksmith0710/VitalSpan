@@ -61,6 +61,7 @@ type RoleOut = {
 };
 
 type DashboardSummary = { id: string; name: string };
+type CatalogTemplateNode = { id: string; name: string; nodeType: string };
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -78,6 +79,7 @@ const EMPTY_CREATE: RoleCreateValues = {
   name: "",
   description: "",
   defaultDashboardId: "",
+  defaultReportTemplateNodeId: "",
 };
 
 export function RoleListPage() {
@@ -119,6 +121,14 @@ export function RoleListPage() {
     queryFn: () => apiFetch<{ items: DashboardSummary[] }>("/api/v1/dashboards"),
   });
 
+  const { data: reportTemplates } = useQuery({
+    queryKey: queryKeys.reports.catalogNodes("all-templates"),
+    queryFn: async () => {
+      const data = await apiFetch<{ items: CatalogTemplateNode[] }>("/api/v1/reports/catalog/nodes");
+      return { items: data.items.filter((n) => n.nodeType === "template") };
+    },
+  });
+
   const openCreate = () => {
     setEditing(null);
     setForm(EMPTY_CREATE);
@@ -132,11 +142,14 @@ export function RoleListPage() {
     setFormErrors({});
     setActionError(null);
     let defaultDashboardId = "";
+    let defaultReportTemplateNodeId = "";
     try {
-      const dv = await apiFetch<{ dashboardId: string | null }>(
-        `/api/v1/roles/${role.id}/default-views`,
-      );
+      const dv = await apiFetch<{
+        dashboardId: string | null;
+        reportTemplateNodeId?: string | null;
+      }>(`/api/v1/roles/${role.id}/default-views`);
       defaultDashboardId = dv.dashboardId ?? "";
+      defaultReportTemplateNodeId = dv.reportTemplateNodeId ?? "";
     } catch {
       /* optional */
     }
@@ -145,6 +158,7 @@ export function RoleListPage() {
       description: role.description ?? "",
       isActive: role.isActive,
       defaultDashboardId,
+      defaultReportTemplateNodeId,
     });
     setDialogOpen(true);
   };
@@ -167,6 +181,7 @@ export function RoleListPage() {
       setFormErrors({});
       const values = parsed.data;
       const dashId = values.defaultDashboardId || null;
+      const reportId = values.defaultReportTemplateNodeId || null;
 
       if (isEdit && editing) {
         await apiFetch(`/api/v1/roles/${editing.id}`, {
@@ -179,7 +194,7 @@ export function RoleListPage() {
         });
         await apiFetch(`/api/v1/roles/${editing.id}/default-views`, {
           method: "PUT",
-          body: JSON.stringify({ dashboardId: dashId }),
+          body: JSON.stringify({ dashboardId: dashId, reportTemplateNodeId: reportId }),
         });
       } else {
         const created = await apiFetch<RoleOut>("/api/v1/roles", {
@@ -190,10 +205,10 @@ export function RoleListPage() {
             description: values.description || null,
           }),
         });
-        if (dashId) {
+        if (dashId || reportId) {
           await apiFetch(`/api/v1/roles/${created.id}/default-views`, {
             method: "PUT",
-            body: JSON.stringify({ dashboardId: dashId }),
+            body: JSON.stringify({ dashboardId: dashId, reportTemplateNodeId: reportId }),
           });
         }
       }
@@ -235,7 +250,7 @@ export function RoleListPage() {
         </Breadcrumb>
       }
       title="角色管理"
-      description="创建与管理角色，可配置默认 Dashboard。"
+      description="创建与管理角色，可配置默认 Dashboard 与报表模板。"
       actions={
         <Button type="button" variant="primary" onClick={openCreate}>
           新建角色
@@ -405,6 +420,29 @@ export function RoleListPage() {
                   {dashboards?.items.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
                       {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="role-report-tpl">默认报表模板</Label>
+              <Select
+                value={form.defaultReportTemplateNodeId || "__none__"}
+                onValueChange={(v) =>
+                  setForm({ ...form, defaultReportTemplateNodeId: v === "__none__" ? "" : v })
+                }
+              >
+                <SelectTrigger id="role-report-tpl">
+                  <SelectValue placeholder="不设置" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">不设置</SelectItem>
+                  {reportTemplates?.items.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      <span className="truncate" title={t.name}>
+                        {t.name}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>

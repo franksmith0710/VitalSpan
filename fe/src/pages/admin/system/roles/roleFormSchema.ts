@@ -10,6 +10,7 @@ export const roleCreateSchema = z.object({
   name: z.string().min(1, "请输入显示名").max(128, "显示名过长"),
   description: z.string().max(512, "描述过长").optional().or(z.literal("")),
   defaultDashboardId: z.string().uuid().optional().or(z.literal("")),
+  defaultReportTemplateNodeId: z.string().uuid().optional().or(z.literal("")),
 });
 
 export const roleEditSchema = roleCreateSchema.omit({ code: true }).extend({
