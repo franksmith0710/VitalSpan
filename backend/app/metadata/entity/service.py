@@ -15,6 +15,8 @@ from app.metadata.entity.validation import (
     validate_entity_schema_payload,
 )
 from app.metadata.entity.schemas import _DEFAULT_LIFECYCLE
+from app.metadata.physical import service as physical_service
+from app.metadata.physical.errors import PhysicalTableError
 
 _store: dict[str, dict] = {}
 _ref_counts: dict[str, int] = {}
@@ -31,6 +33,25 @@ def _validate_attributes(attrs: list) -> None:
             raise EntityTypeError("META_ENTITY_TYPE_INVALID_ATTR", "Invalid attribute name", 422)
 
 
+def _apply_physical_mapping(type_code: str, physical_fqn: str | None) -> None:
+    if not physical_fqn:
+        return
+    try:
+        physical = physical_service.get_physical_table(physical_fqn)
+    except PhysicalTableError as exc:
+        raise EntityTypeError("META_PHYSICAL_NOT_FOUND", exc.message, 422) from exc
+    existing = physical.entity_type_code
+    if existing and existing != type_code:
+        raise EntityTypeError(
+            "META_ENTITY_TYPE_MAPPING_CONFLICT",
+            f"physical table already mapped to {existing}",
+            409,
+        )
+    if not existing:
+        physical_service.bind_entity_type_code(physical_fqn, type_code)
+        increment_reference(type_code)
+
+
 def create_entity_type(payload: EntityTypeCreate) -> EntityTypeOut:
     if payload.type_code in _store:
         raise EntityTypeError("META_ENTITY_TYPE_CONFLICT", "Entity type already exists", 409)
@@ -44,9 +65,11 @@ def create_entity_type(payload: EntityTypeCreate) -> EntityTypeOut:
         "displayName": payload.display_name,
         "attributes": [a.model_dump(by_alias=True) for a in payload.attributes],
         "lifecycleStates": lifecycle,
+        "physicalTableFqn": payload.physical_table_fqn,
     }
     _store[payload.type_code] = record
     _ref_counts.setdefault(payload.type_code, 0)
+    _apply_physical_mapping(payload.type_code, payload.physical_table_fqn)
     return _to_out(record)
 
 
@@ -76,8 +99,13 @@ def update_entity_type(type_code: str, payload: EntityTypeUpdate) -> EntityTypeO
         "displayName": payload.display_name,
         "attributes": [a.model_dump(by_alias=True) for a in payload.attributes],
         "lifecycleStates": lifecycle,
+        "physicalTableFqn": payload.physical_table_fqn
+        if payload.physical_table_fqn is not None
+        else _store[type_code].get("physicalTableFqn"),
     }
     _store[type_code] = record
+    if payload.physical_table_fqn is not None:
+        _apply_physical_mapping(type_code, payload.physical_table_fqn)
     return _to_out(record)
 
 

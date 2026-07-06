@@ -1,10 +1,10 @@
-# m5-dash-view-nfr — progress ledger
+# m7-conn008-m8-entity-kickoff-r231 — progress ledger
 base_branch: dev-auto
-feature_branch: cursor/bc-2b892a4a-889d-4644-911c-fc1aa96a65fb-17e6
+feature_branch: feat/m7-conn008-m8-entity-kickoff-r231
 
-Task 1: complete (46ee5cf, review clean)
-Task 2: complete (6e72de5, review clean)
-Task 3: complete (0a4b149, review clean)
-Task 4: complete (cdc1e6e, review clean)
-Task 5: complete (533cd96, review clean)
-Task 6: complete (regression 36 BE + 20 FE vitest, review clean)
+Task 1: complete (CONN-008 r229 tests + datasources.md, review clean)
+Task 2: complete (META-005 register-from-schema, review clean)
+Task 3: complete (META-006 physicalTableFqn, review clean)
+Task 4: complete (DASH-004 execute + sql_parameters, review clean)
+Task 5: complete (DASH-005 EntityOverviewPage + smoke, ui_acceptance PASS, review clean)
+Task 6: complete (docs api/services + regression gate, review clean)

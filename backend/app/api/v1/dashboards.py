@@ -5,6 +5,7 @@ from typing import Annotated, Generator
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, get_current_user
@@ -21,6 +22,11 @@ from app.dashboard.global_filters import service as global_filter_service
 from app.datasources.models import get_meta_session
 
 router = APIRouter(prefix="/dashboards", tags=["dashboards"])
+
+
+class WidgetExecuteIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    filter_values: dict[str, str] = Field(default_factory=dict, alias="filterValues")
 
 
 def _db() -> Generator[Session, None, None]:
@@ -100,6 +106,28 @@ def get_global_filters(
         return global_filter_service.get_linkage(db, dashboard_id, user)
     except GlobalFilterError as exc:
         return _filter_error(exc)
+
+
+@router.post("/{dashboard_id}/widgets/{widget_id}/execute", response_model=None)
+def execute_dashboard_widget(
+    dashboard_id: uuid.UUID,
+    widget_id: str,
+    payload: WidgetExecuteIn,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    from app.dashboard.global_filters.execute import execute_widget_with_filters
+    from app.query.schemas import QueryError
+
+    try:
+        return execute_widget_with_filters(db, dashboard_id, widget_id, payload.filter_values, user)
+    except GlobalFilterError as exc:
+        return _filter_error(exc)
+    except QueryError as exc:
+        return JSONResponse(
+            status_code=exc.status,
+            content={"code": exc.code, "message": exc.message, "detail": None},
+        )
 
 
 @router.post("/entity-overview/validate", response_model=EntityOverviewItem)

@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
-| plan |  |
-| branch |  |
+| phase | P2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-06-round-target-m7-conn008-m8-kickoff.md |
+| design | docs/superpowers/specs/2026-07-06-m7-conn008-m8-entity-kickoff-design.md |
+| plan | docs/superpowers/plans/2026-07-06-m7-conn008-m8-entity-kickoff.md |
+| branch | feat/m7-conn008-m8-entity-kickoff-r231 |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | CONN-008, META-005, META-006, DASH-004, DASH-005 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && pytest test_connectors_m7_r229.py test_meta_dash_m8_r231.py; cd fe && vitest entities-overview + check:design + build |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T19:40:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +67,7 @@
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
 - G1 bootstrap（cron 2026-07-06 ~21:30 UTC）：G0 PASS PR #213 已 merge dev-auto（e0b427e）无 Open PR；goal 只读未改；prd hub+分片就绪（16 域 · 124 项；hub 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M7**（1 项 `[ ]` CONN-008；M8 含 4 项 kickoff；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 QUERY-009(90.0)/VIZ-005(90.0)/META-001(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；CONCERN 孤儿分支 `feat/m7-conn008-m8-entity-kickoff-r231` 含未合并实现（ACL test_dash_r61_004_forbidden_viewer）；phase idle；待 G2 选题
+- G2 选题：饱和熔断已跳过（plan §M7 含 1 项 `[ ]` CONN-008；§M8 含 4 项 kickoff；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 CONN-008/META-005/META-006/DASH-004/DASH-005（M7 Doris 收官 + M8 实体元数据 kickoff）；hub 最低分入选 CONN-008/META-006/DASH-005 90.4；M7 仅 1 项故 M8 四 ID 补足达 5 项；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-m7-conn008-m8-kickoff.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap：G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M7**（1 项 `[ ]` CONN-008；M8 含 4 项 kickoff；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 QUERY-009(90.0)/VIZ-005(90.0)/META-001(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 PR #212 CONN-003~007 完成；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r228 收尾：PRD 重评 CONN-003~007（M7 二期数据源类型扩展批次 1）；hub 总分 90.0–91.2→91.9–93.2；plan M7 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；PR #212 squash merge dev-auto
 - P4 r228 验证：独立全量 ruff clean + pytest 1901 passed/20 skipped exit 0；UI: N/A（ui_design_skill none，纯后端无 FE 改动）；screenshots 未运行；PR #212 Draft open dev-auto（未 merge）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github

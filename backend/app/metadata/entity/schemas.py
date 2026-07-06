@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 _ATTR_NAME_PATTERN = r"^[a-z][a-z0-9_]{1,63}$"
+_FQN_PATTERN = r"^[a-z][a-z0-9_]{0,62}\.[a-z][a-z0-9_]{1,63}$"
 _DEFAULT_LIFECYCLE = ["draft", "active", "retired"]
 
 
@@ -22,6 +23,7 @@ class EntityTypeCreate(BaseModel):
     display_name: str = Field(min_length=1, max_length=120, alias="displayName")
     attributes: list[EntityAttributeDef] = Field(default_factory=list, max_length=64)
     lifecycle_states: list[str] | None = Field(default=None, alias="lifecycleStates")
+    physical_table_fqn: str | None = Field(default=None, alias="physicalTableFqn", pattern=_FQN_PATTERN)
 
 
 class EntityTypeUpdate(BaseModel):
@@ -29,6 +31,7 @@ class EntityTypeUpdate(BaseModel):
     display_name: str = Field(min_length=1, max_length=120, alias="displayName")
     attributes: list[EntityAttributeDef] = Field(default_factory=list, max_length=64)
     lifecycle_states: list[str] | None = Field(default=None, alias="lifecycleStates")
+    physical_table_fqn: str | None = Field(default=None, alias="physicalTableFqn", pattern=_FQN_PATTERN)
 
 
 class EntityTypeOut(BaseModel):
@@ -37,6 +40,7 @@ class EntityTypeOut(BaseModel):
     display_name: str = Field(alias="displayName")
     attributes: list[EntityAttributeDef]
     lifecycle_states: list[str] = Field(alias="lifecycleStates")
+    physical_table_fqn: str | None = Field(default=None, alias="physicalTableFqn")
 
 
 class EntityTypeListOut(BaseModel):
