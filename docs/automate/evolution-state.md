@@ -6,11 +6,11 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target.md |
 | design | docs/superpowers/specs/2026-07-06-m-fe-1-auth-datasource-fe-design.md |
 | plan | docs/superpowers/plans/2026-07-06-m-fe-1-auth-datasource-fe.md |
-| branch |  |
+| branch | feat/m-fe-1-auth-datasource-fe |
 | base_branch | dev-auto |
 | prd_ids | BOOT-003,BOOT-002,DS-002,DS-003,DS-007 |
 | pr_number |  |

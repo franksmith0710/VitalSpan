@@ -13,7 +13,7 @@ const mockUseAuth = vi.fn(() => ({
 }));
 
 vi.mock("@/context/auth-context", () => ({
-  useAuth: (...args: unknown[]) => mockUseAuth(...args),
+  useAuth: () => mockUseAuth(),
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -248,7 +248,7 @@ describe("AppRoutes smoke", () => {
       isAuthenticated: false,
       logout: vi.fn(),
       refresh: vi.fn(async () => {}),
-    });
+    } as unknown as ReturnType<typeof mockUseAuth>);
     renderRoutes(["/login"]);
     expect(screen.getByRole("button", { name: /登录/ })).toBeInTheDocument();
   });
