@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy import select, text
 
+from jwt_auth import jwt_auth_headers
 from app.core.config import Settings, get_settings
 from app.datasources import register_builtin_dialects
 from app.datasources.credentials import decrypt_credential, encrypt_credential
@@ -224,7 +225,7 @@ def client() -> TestClient:
 
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
-    return {"Authorization": "Bearer dev"}
+    return jwt_auth_headers()
 
 
 def _payload() -> dict:

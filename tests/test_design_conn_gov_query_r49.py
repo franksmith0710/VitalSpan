@@ -11,7 +11,6 @@ from app.core.config import get_settings
 from app.main import app
 
 _R49_SQLITE_URL = "sqlite+pysqlite:///file:design_conn_gov_query_r49?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -279,6 +278,7 @@ from unittest.mock import MagicMock, patch
 from app.core.nfr.plugin_extension import get_plugin_registration_meta
 from app.datasources.dialects.opensearch import OpensearchConnector
 from app.datasources.registry import export_type_catalog
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_conn016_opensearch_in_catalog_r49():

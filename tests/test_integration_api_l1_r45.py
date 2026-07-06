@@ -11,7 +11,6 @@ from app.core.config import get_settings
 from app.main import app
 
 _R45_SQLITE_URL = "sqlite+pysqlite:///file:integration_r45?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 SEED_TEMPLATE_ID = "00000000-0000-4000-8000-0000000000a1"
 FORCE_FAIL_TEMPLATE_ID = "00000000-0000-4000-8000-00000000f001"
 
@@ -337,6 +336,7 @@ from datetime import UTC, datetime, timedelta
 
 from app.integration import embed_token as et
 from app.integration.errors import IntegrationError
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_embed_resolve_without_origin_ok_r45(client):

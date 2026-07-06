@@ -10,7 +10,6 @@ from app.core.config import get_settings
 from app.main import app
 
 _R38_SQLITE_URL = "sqlite+pysqlite:///file:query_meta_conn_r38?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -388,6 +387,7 @@ def test_conn_dm_unknown_schema_tables_r38(mock_connect):
 
 
 from app.datasources.dialects.trino import TrinoConnector
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_conn_trino_catalog_r38():

@@ -9,9 +9,9 @@ from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
 from app.main import app
+from jwt_auth import AUTH, jwt_auth_headers
 
 _R32_SQLITE_URL = "sqlite+pysqlite:///file:meta_design_r32?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)

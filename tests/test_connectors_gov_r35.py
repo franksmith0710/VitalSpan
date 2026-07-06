@@ -16,7 +16,6 @@ from app.datasources.registry import export_type_catalog
 from app.main import app
 
 _R35_SQLITE_URL = "sqlite+pysqlite:///file:connectors_gov_r35?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -434,6 +433,7 @@ def test_gov_save_get_roundtrip_r35(client):
 
 
 from app.datasources.dialects.elasticsearch import ElasticsearchConnector, _build_client
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 @patch("app.datasources.dialects.elasticsearch.Elasticsearch")

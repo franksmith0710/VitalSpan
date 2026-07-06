@@ -4,6 +4,7 @@ import os
 
 import pytest
 
+from jwt_auth import jwt_auth_headers
 from app.core.config import get_settings
 from app.datasources import register_builtin_dialects
 from app.datasources.dialects.mysql import MysqlConnector
@@ -213,7 +214,7 @@ def client() -> TestClient:
 
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
-    return {"Authorization": "Bearer dev"}
+    return jwt_auth_headers()
 
 
 def _payload() -> dict:

@@ -57,6 +57,7 @@ class AuthUser(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     username: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False, server_default="")
     org_node_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("auth_org_nodes.id", ondelete="SET NULL"), nullable=True, index=True
     )

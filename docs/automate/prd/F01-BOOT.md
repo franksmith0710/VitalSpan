@@ -20,27 +20,35 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：P0
-- **里程碑对齐**：M1 · 已完成 · 2026-07-03
-- **描述**：React 管理端壳层（SRS 追溯项）。
+- **里程碑对齐**：M-FE-1 · 已完成 · 2026-07-06
+- **描述**：React 管理端壳层（SRS 追溯项）；M-FE-1 补齐 TanStack Query 与统一 API 客户端。
 - **验收标准**：
   - [x] `fe/` 可构建且 `/admin` 路由壳层可访问
   - [x] shadcn/ui + Tailwind v4 主题加载
-- **代码锚点**：`fe/src/layouts/AdminLayout.tsx` · `fe/src/routes.tsx` · `fe/src/index.css` · `fe/scripts/check-design.mjs` · `fe/src/components/README.md`
-- **演化建议**：vitest 44 项 + node:test 4 项覆盖 routes/AdminLayout a11y smoke（T-FE-08~31）含非法 `/admin/*` 壳层守卫（T-FE-28~29）、主题 localStorage 降级（T-FE-30~31）、check-design 混合 fixture（T-FE-DG-04）；二期补 TanStack Query、`@/lib/api.ts` 与业务页
+  - [x] `@/lib/api.ts` 统一 fetch + Authorization 头
+  - [x] `@/lib/queryKeys.ts` 与 TanStack Query provider
+  - [x] `mapApiError` 结构化错误展示
+  - [x] datasources 页可调用 DS CRUD API
+- **代码锚点**：`fe/src/layouts/AdminLayout.tsx` · `fe/src/routes.tsx` · `fe/src/lib/api.ts` · `fe/src/lib/queryKeys.ts` · `fe/src/lib/apiError.ts` · `fe/src/App.tsx` · `fe/scripts/check-design.mjs`
+- **演化建议**：vitest 112 项含 routes smoke（M-FE-1 login/connectors/datasources 路由）；二期补 Playwright E2E 与业务页 Query 缓存策略调优
 
 ### [BOOT-003] 鉴权中间件骨架
 
 - **状态**：已实现
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：P0
-- **里程碑对齐**：M1 · 已完成 · 2026-07-03
-- **描述**：鉴权中间件骨架（SRS 追溯项）。
+- **里程碑对齐**：M-FE-1 · 已完成 · 2026-07-06
+- **描述**：鉴权中间件骨架（SRS 追溯项）；M-FE-1 交付正式 JWT 登录与会话。
 - **验收标准**：
   - [x] 未认证访问受保护路由返回 401
   - [x] 公开路径（`/health`、`/docs`、`/redoc`、`/openapi.json`）无需认证仍可访问
   - [x] 认证上下文可注入 handler
-- **代码锚点**：`backend/app/auth/middleware.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/me.py`（`main.py` 注册 `AuthMiddleware`）
-- **演化建议**：`tests/test_me.py` 18 项覆盖 `/healthz` 非公开（T-ME-15）、Basic scheme（T-ME-16）、占位 token（T-ME-17）、DI 分支（T-ME-18）；`test_auth.py` T-AUTH-09~11 鉴权矩阵；二期替换 `Bearer dev` 为正式 JWT
+  - [x] `POST /api/v1/auth/login` 返回 JWT
+  - [x] `/login` 页与路由守卫（`RequireAuth`）
+  - [x] `fe/src/lib/api.ts` 读 token，移除 `Bearer dev` 硬编码
+  - [x] 未登录访问 `/admin/*` → `/login`；登录后 `GET /api/v1/me` 200
+- **代码锚点**：`backend/app/auth/middleware.py` · `backend/app/auth/jwt.py` · `backend/app/auth/login/service.py` · `backend/app/api/v1/auth.py` · `fe/src/pages/login/LoginPage.tsx` · `fe/src/components/auth/require-auth.tsx` · `fe/src/lib/auth-token.ts` · `backend/migrations/versions/0017_auth_user_password.py`
+- **演化建议**：`tests/test_me.py` JWT 矩阵 + fe routes smoke（M-FE-1 login 守卫）；二期补 refresh token、MFA 与密码重置
 
 ### [BOOT-004] 配置与日志基线
 

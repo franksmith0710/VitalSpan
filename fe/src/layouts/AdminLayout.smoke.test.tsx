@@ -1,7 +1,19 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: { id: "1", username: "admin", roles: ["admin"] },
+    isLoading: false,
+    isAuthenticated: true,
+    logout: vi.fn(),
+    refresh: vi.fn(async () => {}),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 import { AdminLayout } from "./AdminLayout";
 
 describe("AdminLayout smoke", () => {

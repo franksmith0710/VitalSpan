@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.v1.auth import router as auth_router
 from app.api.v1.audit import router as audit_router
 from app.api.v1.datasources import router as datasources_router
 from app.api.v1.charts import router as charts_router
@@ -28,6 +29,7 @@ from app.api.v1.embed import router as embed_router
 
 api_v1_router = APIRouter()
 api_v1_router.include_router(me_router)
+api_v1_router.include_router(auth_router)
 api_v1_router.include_router(ingestion_router)
 api_v1_router.include_router(datasources_router)
 api_v1_router.include_router(query_router)

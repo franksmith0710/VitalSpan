@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Database, LayoutDashboard, Settings } from "lucide-react";
+import { ArrowLeftRight, Cable, Database, LayoutDashboard, Settings } from "lucide-react";
 import type { NavSection } from "@/components/layout/app-sidebar";
 
 export const ADMIN_NAV_GROUPS: NavSection[] = [
@@ -8,7 +8,12 @@ export const ADMIN_NAV_GROUPS: NavSection[] = [
       {
         name: "数据源",
         icon: <Database className="size-6" aria-hidden />,
-        path: "/admin",
+        path: "/admin/datasources",
+      },
+      {
+        name: "连接器",
+        icon: <Cable className="size-6" aria-hidden />,
+        path: "/admin/connectors",
       },
       {
         name: "数据接入",

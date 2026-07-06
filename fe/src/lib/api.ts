@@ -1,6 +1,15 @@
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.DEV ? "" : "http://localhost:8000");
+import { clearAuthToken, getAuthToken } from "@/lib/auth-token";
+
+let onUnauthorized: (() => void) | null = null;
+
+export function registerUnauthorizedHandler(handler: () => void): void {
+  onUnauthorized = handler;
+}
+
+function getAuthHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export class ApiRequestError extends Error {
   code?: string;
@@ -24,17 +33,23 @@ export type ApiEnvelope<T> = {
   data?: T;
 } & T;
 
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.DEV ? "" : "http://localhost:8000");
+
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      Authorization: "Bearer dev",
+      ...getAuthHeaders(),
       ...(init.headers ?? {}),
     },
   });
   if (response.status === 401) {
-    throw new Error("请使用开发令牌登录");
+    clearAuthToken();
+    onUnauthorized?.();
+    throw new ApiRequestError("登录已过期，请重新登录", "UNAUTHORIZED");
   }
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as {

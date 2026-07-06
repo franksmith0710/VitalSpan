@@ -19,9 +19,9 @@ from app.datasources.dialects.errors import (
 from app.datasources.dialects.oceanbase import OCEANBASE_MAX_COLUMNS, OceanbaseConnector
 from app.datasources.registry import registry
 from app.main import app
+from jwt_auth import AUTH, jwt_auth_headers
 
 _R54_SQLITE_URL = "sqlite+pysqlite:///file:rpt_gov_meta_conn_r54?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)

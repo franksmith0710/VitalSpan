@@ -13,9 +13,9 @@ from app.datasources.models import get_meta_session
 from app.datasources.schemas import DataSourceCreate
 from app.datasources.service import create_data_source
 from app.main import app
+from jwt_auth import AUTH, jwt_auth_headers
 
 _R39_SQLITE_URL = "sqlite+pysqlite:///file:query_meta_conn_r39?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)

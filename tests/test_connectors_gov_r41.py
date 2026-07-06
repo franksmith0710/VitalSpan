@@ -17,7 +17,6 @@ from app.datasources.service import create_data_source
 from app.main import app
 
 _R41_SQLITE_URL = "sqlite+pysqlite:///file:connectors_gov_r41?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 def _dispose_meta_engines() -> None:
@@ -523,6 +522,7 @@ def test_sqlite_metadata_tables_missing_schema_400_r41(client, tmp_path):
 
 from app.datasources.dialects.base import ColumnInfo
 from app.datasources.dialects.timescaledb import TIMESCALE_MAX_COLUMNS, TimescaledbConnector
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 @patch("app.datasources.dialects.timescaledb.PostgresConnector.open_connection")

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     push_wecom_webhook: str | None = None
     push_dingtalk_webhook: str | None = None
     xinchuang_mode: Literal["strict", "permissive"] = "permissive"
+    vitalspan_dev_admin_password: str = "changeme"
 
     @field_validator("push_wecom_webhook", "push_dingtalk_webhook", mode="before")
     @classmethod

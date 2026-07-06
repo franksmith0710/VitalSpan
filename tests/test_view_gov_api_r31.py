@@ -13,7 +13,6 @@ from app.views.schemas import ViewError
 from app.views.validate import validate_dashboard_view
 
 _R31_SQLITE_URL = "sqlite+pysqlite:///file:view_gov_r31?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 def _valid_layout(widget_id: str | None = None) -> dict:
@@ -177,6 +176,7 @@ def test_view_unknown_chart_ref_regression_r31():
 
 
 from app.auth.deps import UserContext, get_current_user
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def _create_entry(client, *, path: str, status: str = "active") -> str:

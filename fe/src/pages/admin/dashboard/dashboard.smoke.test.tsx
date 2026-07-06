@@ -2,6 +2,18 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: { id: "1", username: "admin", roles: ["admin"] },
+    isLoading: false,
+    isAuthenticated: true,
+    logout: vi.fn(),
+    refresh: vi.fn(async () => {}),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import {

@@ -12,11 +12,15 @@ import { UserDropdown } from "@/components/layout/user-dropdown";
 import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
 import { ADMIN_NAV_GROUPS } from "@/config/admin-nav";
 import { USER_NAV_GROUPS } from "@/config/user-nav";
-import { canManagePlatform, getSessionUser } from "@/lib/session";
+import { canManagePlatform, sessionUserFromAuth } from "@/lib/session";
+import { useAuth } from "@/context/auth-context";
 
 function AdminLayoutContent() {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
-  const sessionUser = getSessionUser();
+  const { user: authUser } = useAuth();
+  const sessionUser = authUser
+    ? sessionUserFromAuth(authUser.username, authUser.roles)
+    : sessionUserFromAuth("用户", ["viewer"]);
   const navSections = canManagePlatform(sessionUser)
     ? ADMIN_NAV_GROUPS
     : USER_NAV_GROUPS;
