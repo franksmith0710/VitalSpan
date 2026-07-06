@@ -166,12 +166,12 @@ def test_dashboard_layout_put_regression(client, db_session):
     assert resp.json()["code"] == "DASH_DUPLICATE_WIDGET"
 
 
-def test_gov_categories_three(client):
-    """T-GOV-R30-001-01: GET categories → 恰好 3 条 CAT-01/02/03。"""
+def test_gov_categories_seven(client):
+    """T-GOV-R30-001-01: GET categories → 恰好 7 条 CAT-01~07。"""
     resp = client.get("/api/v1/gov/catalog/categories", headers=AUTH)
     assert resp.status_code == 200
     codes = {item["code"] for item in resp.json()["items"]}
-    assert codes == {"CAT-01", "CAT-02", "CAT-03"}
+    assert codes == {f"CAT-{i:02d}" for i in range(1, 8)}
 
 
 def test_gov_create_entry_ok(client):

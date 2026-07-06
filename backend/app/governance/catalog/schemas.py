@@ -47,6 +47,14 @@ class CategoryListResponse(BaseModel):
     items: list[CatalogCategoryOut]
 
 
+class AppendixETaxonomyOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    appendix: str = "E"
+    version: int = 1
+    taxonomy: list[dict[str, str]]
+    schema_: dict[str, object] = Field(alias="schema")
+
+
 class BusRegisterIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     catalog_entry_id: uuid.UUID = Field(alias="catalogEntryId")

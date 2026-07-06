@@ -183,6 +183,7 @@ redoc: /redoc
 | POST | `/api/v1/dashboards/global-filters/validate` | 全局筛选联动校验（`DASH_FILTER_*`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/{id}/global-filters` | 全局筛选联动 save/get（`config_type=global_filter_linkage`；含 `affectedWidgetCount`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
+| GET | `/api/v1/views/schema` | DashboardView JSON Schema | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 
 **DashboardView 协议字段（FR-VIEW-1 · M5 VIEW-001）**
 
@@ -255,7 +256,8 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET | `/api/v1/gov/catalog/categories` | catalog 分类列表（CAT-01~03 seed） | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/categories` | catalog 分类列表（CAT-01~07 seed） | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/appendix-e` | 附录 E 七分法 taxonomy + schema | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/entries` | catalog 条目列表（`?category=&limit=&offset=`） | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/entries` | 创建 catalog 条目 | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/entries/{id}` | catalog 条目详情 | IF-06 | 一期 | GOV-001 | 已实现 | `backend/app/api/v1/gov.py` |
