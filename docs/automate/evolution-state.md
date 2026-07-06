@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-06-round-target-m7-conn-ext.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | CONN-003,CONN-004,CONN-005,CONN-006,CONN-007 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 选题：饱和熔断已跳过（plan §M7 含 6 项 `[ ]` CONN-003~008；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 CONN-003/004/005/006/007（M7 二期数据源类型扩展批次 1）；hub 最低分入选 CONN-004 90.0；plan 同节 6 项取前 5 项 CONN-008 留批次 2；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-m7-conn-ext.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap：G0 PR #211 已 Squash merge dev-auto（8244b65）；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M7**（6 项 `[ ]` CONN-003~008；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CONN-004(90.0)/QUERY-009(90.0)/VIZ-005(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M6 集成验收收官完成；phase P5_DOCS_READY→idle；待 G2 选题
 - P5 r223 收尾：PRD 重评 GOV-002/CAT-001/002/003/NFR-004（M6 集成验收收官）；hub 总分 90.0–90.4→91.5–92.4；plan M6 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；PR #211 squash merge dev-auto
 - P4 r223 验证：独立全量 ruff clean + pytest 1877 passed/13 skipped exit 0；UI: N/A（ui_design_skill none，纯后端无 FE 改动）；screenshots 未运行；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
