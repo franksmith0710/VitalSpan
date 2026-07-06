@@ -23,6 +23,20 @@ _DASHBOARD_ID_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$")
 _USER_FIRST_SCREEN_SCOPE: dict[str, str] = {}
 probe_first_screen_budget_ms_limit = 50
 
+M5_EXTENDED_WIDGET_FIXTURE: dict[str, object] = {
+    "id": "dash-m5-extended",
+    "widgetTypes": ["map", "heatmap", "kpi", "timeline"],
+    "widgetCount": 4,
+}
+
+
+def _resolve_fixture_profile(dashboard_id: str, widget_count: int) -> dict[str, object] | None:
+    if dashboard_id == M5_EXTENDED_WIDGET_FIXTURE["id"]:
+        return dict(M5_EXTENDED_WIDGET_FIXTURE)
+    if widget_count == 4 and os.environ.get("NFR001_FIXTURE_PROFILE") == "extended":
+        return dict(M5_EXTENDED_WIDGET_FIXTURE)
+    return None
+
 
 @dataclass(frozen=True)
 class FirstScreenProbeResult:
@@ -62,6 +76,7 @@ class DashboardFirstScreenProbeOut(BaseModel):
     budget_ms: int = Field(alias="budgetMs")
     widget_count: int = Field(alias="widgetCount")
     sampled_at: datetime = Field(alias="sampledAt")
+    fixture_profile: dict[str, object] | None = Field(default=None, alias="fixtureProfile")
 
 
 def _default_actor() -> UserContext:
@@ -145,6 +160,7 @@ def probe_dashboard_first_screen(
         budget_ms=item.budget_ms,
         widget_count=item.widget_count,
         sampled_at=datetime.now(UTC),
+        fixture_profile=_resolve_fixture_profile(item.dashboard_id, item.widget_count),
     )
 
 
