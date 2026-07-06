@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m9-theme-prefab-report.md |
 | design | docs/superpowers/specs/2026-07-06-m9-theme-prefab-report-design.md |
 | plan | docs/superpowers/plans/2026-07-06-m9-theme-prefab-report.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | RPT-001,RPT-002,DASH-006 |
 | pr_number | |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest tests/test_m9_rpt_theme_r233.py tests/test_rpt_view_cat_gov_r60.py tests/test_nfr_gov_rpt_view_r68.py tests/test_dash_rpt_r58.py -q; cd fe && pnpm run check:design && pnpm exec vitest run src/pages/admin/reports/prefab-reports.smoke.test.tsx src/pages/admin/themes/theme-analysis.smoke.test.tsx && pnpm run build |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm test && pnpm run build |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T22:35:00Z |
