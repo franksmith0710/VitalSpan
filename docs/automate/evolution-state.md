@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m7-conn008-m8-kickoff.md |
 | design | docs/superpowers/specs/2026-07-06-m7-conn008-m8-entity-kickoff-design.md |
 | plan | docs/superpowers/plans/2026-07-06-m7-conn008-m8-entity-kickoff.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | CONN-008, META-005, META-006, DASH-004, DASH-005 |
 | pr_number |  |
-| last_verified_command | cd backend && ruff check . && pytest -q; cd fe && check:design && vitest run && build |
+| last_verified_command | cd backend && ruff check . && pytest -q; cd fe && pnpm run check:design && pnpm test && pnpm run build |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T19:40:00Z |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r231 验证（cron 2026-07-06 ~22:10 UTC）：独立全量 ruff clean + pytest 1921 passed/19 skipped exit 0（含 test_dash_r61_004_forbidden_viewer PASS）；fe check:design 115 files + vitest 145/145 + design fixture 4/4 + build exit 0；UI design_drift PASS；screenshots 未运行（headless vitest mock）；CONCERN charts.dash003 heatmap 首轮偶发 echarts clearRect flake 复跑通过；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 r231 实现（cron 2026-07-06 ~21:30 UTC）：7 Task 完成（rebase dev-auto + ACL §7.4.1 修复、CONN-008 r229、META-005/006、DASH-004 execute+`_load_linkage_payload`、DASH-005 EntityOverviewPage、docs 回归）；ui_design_skill=b-design-system-tailadmin-radix；pytest 1921 passed/19 skipped + ruff clean + FE vitest 145/145 + check:design 115 files + build exit 0；design_drift_checks=check:design PASS；screenshots 未运行（无 dev server）；phase P2_DONE→P3_DONE；branch=feat/m7-conn008-m8-entity-kickoff-r231；base_branch=dev-auto；待 P4 evolution-verifier
 - G1 bootstrap（cron 2026-07-06 ~21:30 UTC）：G0 PASS PR #213 已 merge dev-auto（e0b427e）无 Open PR；goal 只读未改；prd hub+分片就绪（16 域 · 124 项；hub 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M7**（1 项 `[ ]` CONN-008；M8 含 4 项 kickoff；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 QUERY-009(90.0)/VIZ-005(90.0)/META-001(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；CONCERN 孤儿分支 `feat/m7-conn008-m8-entity-kickoff-r231` 含未合并实现（ACL test_dash_r61_004_forbidden_viewer）；phase idle；待 G2 选题
 - G2 选题：饱和熔断已跳过（plan §M7 含 1 项 `[ ]` CONN-008；§M8 含 4 项 kickoff；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 CONN-008/META-005/META-006/DASH-004/DASH-005（M7 Doris 收官 + M8 实体元数据 kickoff）；hub 最低分入选 CONN-008/META-006/DASH-005 90.4；M7 仅 1 项故 M8 四 ID 补足达 5 项；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-m7-conn008-m8-kickoff.md；phase idle→G2_DONE；待 P1 evolution-designer
