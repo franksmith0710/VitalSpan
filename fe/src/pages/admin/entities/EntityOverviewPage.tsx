@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,60 +13,9 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/context/auth-context";
-import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import { queryKeys } from "@/lib/queryKeys";
-
-type EntityTypeOut = {
-  typeCode: string;
-  displayName: string;
-  attributes: unknown[];
-  lifecycleStates: string[];
-};
-
-type EntityTypeListOut = {
-  items: EntityTypeOut[];
-};
-
-type PhysicalTableOut = {
-  tableFqn: string;
-  displayName: string;
-  dataSourceId: string;
-  columns: unknown[];
-};
-
-type PhysicalTableListResponse = {
-  items: PhysicalTableOut[];
-  total: number;
-};
-
-type DashboardListItem = {
-  id: string;
-  name: string;
-};
-
-type DashboardListResponse = {
-  items: DashboardListItem[];
-};
-
-type StatCardDef = {
-  metricKey: string;
-  label: string;
-};
-
-type DrillTargetDef = {
-  widgetId: string;
-  targetDashboardId?: string | null;
-};
-
-type EntityOverviewOut = {
-  dashboardId: string;
-  entityTypeRef: string;
-  statCards: StatCardDef[];
-  filters: unknown[];
-  drillTargets: DrillTargetDef[];
-};
+import { EntityDetailSheet } from "./EntityDetailSheet";
+import { useEntityOverview } from "./useEntityOverview";
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -80,61 +28,29 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
   );
 }
 
-function canViewEntityOverview(roles: string[]): boolean {
-  return roles.some((r) => r === "admin" || r === "analyst");
-}
-
 export function EntityOverviewPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const roles = user?.roles ?? [];
-  const canRead = canViewEntityOverview(roles);
+  const {
+    canRead,
+    activeType,
+    setActiveType,
+    dashboardId,
+    setDashboardId,
+    selectedRow,
+    setSelectedRow,
+    entityTypesQuery,
+    physicalQuery,
+    dashboardsQuery,
+    overviewQuery,
+    drillTargetId,
+    entityTypeMismatch,
+    activeEntityType,
+    entityTypes,
+    physicalItems,
+    statCards,
+  } = useEntityOverview();
 
-  const [activeType, setActiveType] = useState<string | null>(null);
-  const [dashboardId, setDashboardId] = useState<string>("");
-
-  const entityTypesQuery = useQuery({
-    queryKey: queryKeys.metadata.entityTypes,
-    queryFn: () => apiFetch<EntityTypeListOut>("/api/v1/metadata/entity-types"),
-    enabled: canRead,
-  });
-
-  useEffect(() => {
-    const first = entityTypesQuery.data?.items[0]?.typeCode;
-    if (first && !activeType) setActiveType(first);
-  }, [entityTypesQuery.data, activeType]);
-
-  const physicalQuery = useQuery({
-    queryKey: queryKeys.metadata.physicalTables(activeType ?? undefined),
-    enabled: Boolean(activeType) && canRead,
-    queryFn: () =>
-      apiFetch<PhysicalTableListResponse>(
-        `/api/v1/metadata/physical-tables?entityTypeCode=${encodeURIComponent(activeType!)}`,
-      ),
-  });
-
-  const dashboardsQuery = useQuery({
-    queryKey: queryKeys.dashboards.list(),
-    queryFn: () => apiFetch<DashboardListResponse>("/api/v1/dashboards"),
-    enabled: canRead,
-  });
-
-  useEffect(() => {
-    const first = dashboardsQuery.data?.items[0]?.id;
-    if (first && !dashboardId) setDashboardId(first);
-  }, [dashboardsQuery.data, dashboardId]);
-
-  const overviewQuery = useQuery({
-    queryKey: queryKeys.metadata.entityOverview(dashboardId),
-    enabled: Boolean(dashboardId) && canRead,
-    queryFn: () =>
-      apiFetch<EntityOverviewOut>(`/api/v1/dashboards/${dashboardId}/entity-overview`),
-  });
-
-  const drillTargetId = useMemo(() => {
-    const targets = overviewQuery.data?.drillTargets ?? [];
-    return targets.find((t) => t.targetDashboardId)?.targetDashboardId ?? null;
-  }, [overviewQuery.data]);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   if (!canRead) {
     return (
@@ -147,10 +63,6 @@ export function EntityOverviewPage() {
       </AdminPageShell>
     );
   }
-
-  const entityTypes = entityTypesQuery.data?.items ?? [];
-  const physicalItems = physicalQuery.data?.items ?? [];
-  const statCards = overviewQuery.data?.statCards ?? [];
 
   return (
     <AdminPageShell
@@ -193,7 +105,7 @@ export function EntityOverviewPage() {
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 text-theme-sm text-gray-600 dark:text-gray-400">
+        <div className="flex flex-wrap items-center gap-2 text-theme-sm text-gray-600 dark:text-gray-400">
           <span>关联 Dashboard</span>
           <Select value={dashboardId} onValueChange={setDashboardId}>
             <SelectTrigger className="w-[220px]" aria-label="选择 Dashboard">
@@ -207,6 +119,11 @@ export function EntityOverviewPage() {
               ))}
             </SelectContent>
           </Select>
+          {entityTypeMismatch ? (
+            <Badge variant="light" color="warning" size="sm">
+              配置实体类型与当前 Tab 不一致
+            </Badge>
+          ) : null}
         </div>
         {activeType ? (
           <Badge variant="light" color="primary" size="sm">
@@ -260,12 +177,15 @@ export function EntityOverviewPage() {
               ))}
             </div>
           ) : physicalItems.length === 0 ? (
-            <p className="p-6 text-center text-theme-sm text-gray-600 dark:text-gray-400">
-              暂无登记的实体表
-            </p>
+            <div className="space-y-3 p-6 text-center">
+              <p className="text-theme-sm text-gray-600 dark:text-gray-400">暂无登记的实体表</p>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/admin/datasources">前往数据源浏览 schema</Link>
+              </Button>
+            </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-[640px] w-full text-left text-theme-sm">
+              <table className="min-w-[640px] w-full text-left text-theme-sm" aria-label="登记物理表">
                 <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                   <tr>
                     <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">显示名</th>
@@ -284,18 +204,34 @@ export function EntityOverviewPage() {
                         {row.tableFqn}
                       </td>
                       <td className="px-4 py-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="focus-visible:ring-2"
-                          disabled={!drillTargetId}
-                          onClick={() => {
-                            if (drillTargetId) navigate(`/admin/dashboards/${drillTargetId}`);
-                          }}
-                        >
-                          下钻
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="focus-visible:ring-2"
+                            aria-label="详情"
+                            onClick={() => {
+                              setSelectedRow(row);
+                              setDetailOpen(true);
+                            }}
+                          >
+                            详情
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="focus-visible:ring-2"
+                            disabled={!drillTargetId}
+                            title={drillTargetId ? undefined : "请先在 Dashboard 配置实体总览下钻目标"}
+                            onClick={() => {
+                              if (drillTargetId) navigate(`/admin/dashboards/${drillTargetId}`);
+                            }}
+                          >
+                            下钻
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -305,6 +241,18 @@ export function EntityOverviewPage() {
           )}
         </CardContent>
       </Card>
+
+      <EntityDetailSheet
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        row={selectedRow}
+        entityType={activeEntityType}
+        drillTargetId={drillTargetId}
+        onDrill={() => {
+          if (drillTargetId) navigate(`/admin/dashboards/${drillTargetId}`);
+        }}
+        loading={physicalQuery.isLoading}
+      />
     </AdminPageShell>
   );
 }
