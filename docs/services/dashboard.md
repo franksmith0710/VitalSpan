@@ -40,9 +40,9 @@
 
 ### M8 r231 kickoff（DASH-004 · 2026-07-06）
 
-- **`global_filters/execute.py`**：`execute_widget_with_filters` — linkage merge + `query/sql_parameters.inject_sql_parameters`（与 FE `dashboardFilterUtils` 对称）
+- **`global_filters/execute.py`**：`execute_widget_with_filters` — `_load_linkage_payload`（无 actor ACL）+ linkage merge + `query/sql_parameters.inject_sql_parameters`（与 FE `dashboardFilterUtils` 对称）
 - **`query/sql_parameters.py`**：`inject_sql_parameters` / `build_widget_filter_params`；`POST /dashboards/{id}/widgets/{widgetId}/execute`
-- **viewer 读 linkage**：`get_linkage` 允许 viewer/analyst/admin 只读消费（widget execute 链）
+- **ACL 拆分**：管理 API `get_linkage` 严格 owner/admin（非 owner viewer → 403 `DASH_FILTER_FORBIDDEN`）；execute 消费链经 `_load_linkage_payload` 允许 viewer 执行已配置 linkage
 - 测试锚点：`tests/test_meta_dash_m8_r231.py` T-DASH-R231-004-*
 
 ### entity_overview/ 子域（DASH-005 · r59 L1）
