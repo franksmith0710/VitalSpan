@@ -1,9 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { apiFetch } from "@/lib/api";
 import type { ChartTypeL1 } from "@/lib/chartViewConfig";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
+import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
+import {
+  buildWidgetFilterParams,
+  type Linkage,
+} from "@/components/dashboard/dashboardFilterUtils";
 import {
   defaultChartConfig,
   moveWidget,
@@ -45,6 +50,23 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [linkage, setLinkage] = useState<Linkage | null>(null);
+
+  const loadFilters = useCallback(async () => {
+    if (!id || mode !== "view") return;
+    try {
+      const data = await apiFetch<Linkage>(`/api/v1/dashboards/${id}/global-filters`);
+      setLinkage(data);
+      const initial: Record<string, string> = {};
+      for (const f of data.filters ?? []) {
+        if (f.defaultValue) initial[f.filterId] = f.defaultValue;
+      }
+      setFilterValues(initial);
+    } catch {
+      setLinkage(null);
+    }
+  }, [id, mode]);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -64,6 +86,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    void loadFilters();
+  }, [loadFilters]);
+
+  const executeKey = useMemo(() => JSON.stringify(filterValues), [filterValues]);
 
   const handleInsert = (type: ChartTypeL1) => {
     const widgetId = crypto.randomUUID();
@@ -147,6 +175,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
       {error ? <ErrorBanner message={error} onRetry={() => void load()} /> : null}
 
+      {mode === "view" && id ? (
+        <GlobalFilterBar
+          dashboardId={id}
+          values={filterValues}
+          onChange={(filterId, value) =>
+            setFilterValues((prev) => ({ ...prev, [filterId]: value }))
+          }
+        />
+      ) : null}
+
       <div className="flex flex-col gap-6 lg:flex-row">
         {mode === "edit" ? <WidgetPalette onInsert={handleInsert} /> : null}
         <div className="min-w-0 flex-1">
@@ -157,10 +195,17 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             onLayoutChange={
               mode === "edit" ? (next) => setWidgets(sortWidgets(next)) : undefined
             }
-            renderWidget={(widget) => (
+            renderWidget={(widget) => {
+              const filterParameters =
+                mode === "view" && linkage
+                  ? buildWidgetFilterParams(widget.id, linkage, filterValues)
+                  : undefined;
+              return (
               <DashboardWidget
                 widget={widget}
                 mode={mode}
+                filterParameters={filterParameters}
+                executeKey={mode === "view" ? executeKey : undefined}
                 onDelete={(wid) => setWidgets((prev) => prev.filter((w) => w.id !== wid))}
                 onMove={(wid, direction) => setWidgets((prev) => moveWidget(prev, wid, direction))}
                 onResize={(wid, patch) => setWidgets((prev) => resizeWidget(prev, wid, patch))}
@@ -173,7 +218,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   )
                 }
               />
-            )}
+              );
+            }}
           />
         </div>
       </div>

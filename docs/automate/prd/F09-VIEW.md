@@ -33,7 +33,7 @@
 - **里程碑对齐**：
 ### [VIEW-003] 用户视图覆盖 FR-VIEW-4
 
-- **状态**：部分实现（companion r63）
+- **状态**：部分实现（M-FE-3 FE companion）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：三期
 - **描述**：用户视图覆盖 FR-VIEW-4（SRS 追溯项）。
@@ -41,7 +41,8 @@
   - [x] 用户可保存个人视图（r60 L1：`POST/GET /api/v1/users/me/views` + 409 冲突守卫）
   - [x] 不突破 M7（r60 L1：`maxWidgetCount` bounds + `classificationScope` 校验 + chartRef cycle 映射 `VIEW_OVERRIDE_*`/`VIEW_CHART_REF_CYCLE`）
   - [x] companion GET by id + dashboard 404 + create probe（r63：`GET /api/v1/users/me/views/{id}` `VIEW_OVERRIDE_NOT_FOUND`；`VIEW_OVERRIDE_DASHBOARD_NOT_FOUND`；`probe_create_override_budget_ms` ≤50ms）
+  - [x] M-FE-3 FE 默认视图：登录后按角色 `default-views` 重定向（`defaultViewResolve.ts` + `LoginPage`/`AdminHomePage`；`defaultViewResolve.test.ts`）
   - [ ] 完整 M7 RLS/ACL 端到端（无 org 绑定与发布后 RLS 联动）
-- **代码锚点**：`backend/app/views/user_override.py` · `backend/app/views/probe.py` · `backend/app/views/store.py` · `backend/app/api/v1/views.py` · `tests/test_viz_view_design_cat_r63.py` T-VIEW-R63-003-01~06 · `tests/test_rpt_view_cat_gov_r60.py` T-VIEW-R60-003-01~06
-- **演化建议**：r63 companion 闭合 me/views GET by id、dashboard 404、cycle 路径与 create probe；后续补 M7 全链路 RLS、DB 持久化与 fe 个人视图 UI
+- **代码锚点**：`backend/app/views/user_override.py` · `backend/app/views/probe.py` · `backend/app/views/store.py` · `backend/app/api/v1/views.py` · `fe/src/lib/defaultViewResolve.ts` · `tests/test_viz_view_design_cat_r63.py` T-VIEW-R63-003-01~06 · `fe/src/lib/defaultViewResolve.test.ts`
+- **演化建议**：M-FE-3 闭合角色默认 Dashboard 登录重定向；后续补 M7 全链路 RLS、DB 持久化与 fe 个人视图 UI
 - **里程碑对齐**：

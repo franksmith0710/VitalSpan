@@ -4,16 +4,17 @@
 
 ### [AUTH-001] RoleRegistry 角色注册
 
-- **状态**：已实现（r21 quality push）
+- **状态**：已实现（M-FE-3 FE companion）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：RoleRegistry 角色注册（SRS 追溯项）。
 - **验收标准**：
   - [x] 管理员可 CRUD 角色 code/显示名/描述
   - [x] 平台不预置业务角色
-- **代码锚点**：`backend/app/auth/roles/service.py` · `backend/app/api/v1/roles.py` · `tests/test_auth_rbac_l1.py` T-AUTH-R01~R12 · migration `0007`
-- **演化建议**：生产管理员鉴权守卫；与 AUTH-008 全平台审计联动
-- **里程碑对齐**：
+  - [x] M-FE-3 Admin UI：`/admin/system/roles` 列表/新建/编辑/删除 + 默认 Dashboard 绑定（`roles.smoke.test.tsx` T-AUTH-001-01~02）
+- **代码锚点**：`backend/app/auth/roles/service.py` · `backend/app/api/v1/roles.py` · `fe/src/pages/admin/system/roles/RoleListPage.tsx` · `tests/test_auth_rbac_l1.py` T-AUTH-R01~R12 · `fe/src/pages/admin/system/roles/roles.smoke.test.tsx`
+- **演化建议**：生产管理员鉴权守卫；与 AUTH-008 全平台审计联动；Playwright E2E 留 companion
+- **里程碑对齐**：M-FE-3 · 已完成 · 2026-07-06
 
 ### [AUTH-002] 组织树配置
 
@@ -30,16 +31,17 @@
 
 ### [AUTH-003] 用户角色绑定
 
-- **状态**：已实现（r19 quality push）
+- **状态**：已实现（M-FE-3 FE companion）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
 - **描述**：用户角色绑定（SRS 追溯项）。
 - **验收标准**：
   - [x] 用户与角色多对多绑定
   - [x] 变更有审计记录
-- **代码锚点**：`backend/app/auth/users/service.py` · `backend/app/auth/audit/service.py` · `backend/app/api/v1/users.py` · `backend/app/api/v1/audit.py` · `tests/test_auth_rbac_l1.py` T-AUTH-U01~U10 · T-AUTH-A01~A09
-- **演化建议**：AUTH-008 全平台敏感操作审计；生产登录与用户生命周期
-- **里程碑对齐**：
+  - [x] M-FE-3 Admin UI：`GET /api/v1/users` 列表 + `/admin/system/users` 角色绑定（`users.smoke.test.tsx` T-AUTH-003-01~02）
+- **代码锚点**：`backend/app/auth/users/service.py` · `backend/app/auth/audit/service.py` · `backend/app/api/v1/users.py` · `fe/src/pages/admin/system/users/UserListPage.tsx` · `tests/test_auth_rbac_l1.py` T-AUTH-U01~U10 · `fe/src/pages/admin/system/users/users.smoke.test.tsx`
+- **演化建议**：AUTH-008 全平台敏感操作审计；生产登录与用户生命周期；Playwright E2E 留 companion
+- **里程碑对齐**：M-FE-3 · 已完成 · 2026-07-06
 
 ### [AUTH-004] 资源授权绑定
 
