@@ -117,6 +117,28 @@ def integration_env():
     }
 
 
+@pytest.fixture(scope="session")
+def connector_compose_env():
+    if not (_port_open("127.0.0.1", 3307) and _port_open("127.0.0.1", 5433)):
+        pytest.skip("compose not running — docker compose up -d sample-mysql analytics-postgres")
+    return {
+        "mysql": {
+            "host": "127.0.0.1",
+            "port": 3307,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+        },
+        "postgresql": {
+            "host": "127.0.0.1",
+            "port": 5433,
+            "database": "analytics",
+            "username": "vitalspan",
+            "password": "vitalspan",
+        },
+    }
+
+
 @pytest.fixture
 def analytics_sqlite() -> str:
     """In-memory sqlite URL for mock L1 analytics (no compose)."""
