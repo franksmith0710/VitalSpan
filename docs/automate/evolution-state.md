@@ -13,7 +13,7 @@
 | branch | feat/m8-entity-metadata-completion-r232 |
 | base_branch | dev-auto |
 | prd_ids | META-005,META-006,DASH-005 |
-| pr_number |  |
+| pr_number | 216 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm test && pnpm run build |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
