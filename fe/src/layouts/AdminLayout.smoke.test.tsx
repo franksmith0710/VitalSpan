@@ -1,10 +1,14 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { AdminLayout } from "./AdminLayout";
 
 describe("AdminLayout smoke", () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+  });
   function setMobileViewport(width = 375) {
     Object.defineProperty(window, "innerWidth", {
       writable: true,
@@ -225,5 +229,40 @@ describe("AdminLayout smoke", () => {
     await user.tab();
     await user.tab();
     expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows return to workspace in user menu on account pages (T-FE-32)", async () => {
+    setDesktopViewport(1400);
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboards" element={<div>workspace home</div>} />
+            <Route path="account/profile" element={<div>profile page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("workspace home")).toBeInTheDocument();
+
+    const userMenu = screen.getAllByRole("button", { name: "用户菜单" })[0];
+    await user.click(userMenu);
+    expect(screen.queryByRole("menuitem", { name: "返回工作台" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("menuitem", { name: "个人资料" }));
+    expect(screen.getByText("profile page")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "返回工作台" }).length).toBeGreaterThanOrEqual(1);
+
+    await user.click(userMenu);
+    expect(screen.getByRole("menuitem", { name: "返回工作台" })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(screen.getAllByRole("button", { name: "返回工作台" }).length).toBeGreaterThanOrEqual(1);
+
+    await user.click(screen.getAllByRole("button", { name: "返回工作台" })[0]);
+    expect(screen.getByText("workspace home")).toBeInTheDocument();
   });
 });

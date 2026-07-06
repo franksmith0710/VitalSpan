@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Pencil } from "lucide-react";
+import { Eye, Pencil } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { canEditDashboards } from "@/lib/session";
 
 type DashboardSummary = {
   id: string;
@@ -29,6 +30,7 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
 
 export function DashboardListPage() {
   const navigate = useNavigate();
+  const canEdit = canEditDashboards();
   const [items, setItems] = useState<DashboardSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,8 +71,8 @@ export function DashboardListPage() {
 
   return (
     <div className="space-y-6">
-      <nav className="text-theme-sm text-gray-500 dark:text-gray-400">
-        <span>管理</span>
+      <nav className="text-theme-sm text-gray-500 dark:text-gray-400" aria-label="面包屑">
+        <span>{canEdit ? "管理" : "分析"}</span>
         <span className="mx-2">/</span>
         <span className="text-gray-800 dark:text-white/90">Dashboard</span>
       </nav>
@@ -78,11 +80,20 @@ export function DashboardListPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">管理数据看板与布局</p>
+          <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
+            {canEdit ? "管理数据看板与布局" : "查看已授权的数据看板"}
+          </p>
         </div>
-        <Button type="button" variant="primary" disabled={creating} onClick={() => void handleCreate()}>
-          新建 Dashboard
-        </Button>
+        {!canEdit ? null : (
+          <Button
+            type="button"
+            variant="primary"
+            disabled={creating}
+            onClick={() => void handleCreate()}
+          >
+            新建 Dashboard
+          </Button>
+        )}
       </div>
 
       {error ? <ErrorBanner message={error} onRetry={() => void load()} /> : null}
@@ -97,9 +108,16 @@ export function DashboardListPage() {
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">
             <p className="text-theme-sm text-gray-500 dark:text-gray-400">暂无 Dashboard</p>
-            <Button type="button" variant="primary" disabled={creating} onClick={() => void handleCreate()}>
-              新建 Dashboard
-            </Button>
+            {!canEdit ? null : (
+              <Button
+                type="button"
+                variant="primary"
+                disabled={creating}
+                onClick={() => void handleCreate()}
+              >
+                新建 Dashboard
+              </Button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -121,9 +139,24 @@ export function DashboardListPage() {
                       {new Date(row.updatedAt).toLocaleString("zh-CN")}
                     </td>
                     <td className="px-6 py-4">
-                      <IconButton asChild variant="ghost" size="sm" aria-label="编辑">
-                        <Link to={`/admin/dashboards/${row.id}/edit`}>
-                          <Pencil className="size-4" />
+                      <IconButton
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        aria-label={canEdit ? "编辑" : "查看"}
+                      >
+                        <Link
+                          to={
+                            canEdit
+                              ? `/admin/dashboards/${row.id}/edit`
+                              : `/admin/dashboards/${row.id}`
+                          }
+                        >
+                          {canEdit ? (
+                            <Eye className="size-4" />
+                          ) : (
+                            <Pencil className="size-4" />
+                          )}
                         </Link>
                       </IconButton>
                     </td>

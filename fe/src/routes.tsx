@@ -8,6 +8,8 @@ import { SyncJobsPage } from "@/pages/admin/ingestion/SyncJobsPage";
 import { SyncJobFormPage } from "@/pages/admin/ingestion/SyncJobFormPage";
 import { SyncJobHistoryPage } from "@/pages/admin/ingestion/SyncJobHistoryPage";
 import { EtlRulesPage } from "@/pages/admin/ingestion/EtlRulesPage";
+import { AccountProfilePage } from "@/pages/admin/account/AccountProfilePage";
+import { AccountSettingsPage } from "@/pages/admin/account/AccountSettingsPage";
 import { DashboardListPage } from "@/pages/admin/dashboard/DashboardListPage";
 import { DashboardEditPage } from "@/pages/admin/dashboard/DashboardEditPage";
 
@@ -22,6 +24,8 @@ export function AppRoutes() {
         <Route path="ingestion/sync-jobs/:id/edit" element={<SyncJobFormPage />} />
         <Route path="ingestion/sync-jobs/:id/history" element={<SyncJobHistoryPage />} />
         <Route path="ingestion/sync-jobs/:id/etl-rules" element={<EtlRulesPage />} />
+        <Route path="account/profile" element={<AccountProfilePage />} />
+        <Route path="account/settings" element={<AccountSettingsPage />} />
         <Route path="dashboards" element={<DashboardListPage />} />
         <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
         <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />

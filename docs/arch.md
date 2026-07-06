@@ -308,6 +308,7 @@ docker compose up -d   # postgres + 可选 mysql/pg 样例库
 # 2. 后端
 cd backend
 cp .env.example .env
+alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 
 # 3. 前端

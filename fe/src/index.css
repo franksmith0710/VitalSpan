@@ -91,6 +91,14 @@
   @apply truncate;
 }
 
+@utility menu-group {
+  @apply mb-6 last:mb-0;
+}
+
+@utility menu-group-title {
+  @apply mb-2 flex px-3 text-theme-xs font-medium leading-5 text-gray-400;
+}
+
 @utility menu-dropdown-item {
   @apply block rounded-lg px-3 py-2 text-theme-sm;
 }

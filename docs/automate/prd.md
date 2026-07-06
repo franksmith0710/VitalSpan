@@ -1,8 +1,8 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.70
-last_updated: 2026-07-04
+version: 1.2.74
+last_updated: 2026-07-06
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
@@ -36,7 +36,7 @@ domain_count: 16
 
 ## 功能项 8 维评分总表
 
-> 各列存**维度分%**；末列加权总分（高×3/中×2）。完整 118 行 — 详见分片。
+> 各列存**维度分%**；末列加权总分（高×3/中×2）。完整 **124** 行 — 详见分片。
 
 | ID | 用户价值 | 完整度 | 可靠性 | 交互体验 | 架构健康 | 测试覆盖 | 性能 | 安全性 | 加权总分 | 薄弱项 |
 |----|:--------:|:------:|:------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|--------|
@@ -193,10 +193,25 @@ domain_count: 16
 
 ---
 
+## 执行范围（与 plan 对齐）
+
+> 更新：2026-07-06 · 来源 [`plan.md`](./plan.md) v2.1
+
+| 字段 | 值 |
+|------|-----|
+| 当前执行 | **P1–P3**（M-FE + M2–M12，94 PRD 项） |
+| 冻结 | **M13 四期**（30 项；Dataset/设计器/治理全流程/信创连接器） |
+| 当前节 | **M-FE-1** |
+| G2 选题 | 仅从执行范围内含 `[ ]` 的 plan 节选取；**禁止** M13 |
+
+**说明**：分片 `期次` 字段不变；四期 ID 仍为需求真理源，仅演化排期后置。
+
+---
+
 ## 里程碑
 
-- **归档**：[`plan.archive.md`](./plan.archive.md)（M1–M13，118 项 PRD 全量映射）
-- **活跃**：[`plan.md`](./plan.md)（当前节 **M1**，`create-evolution-plan` 人工维护）
+- **归档**：[`plan.archive.md`](./plan.archive.md)（M1–M13，**124** 项 PRD 全量映射）
+- **活跃**：[`plan.md`](./plan.md)（**执行范围 P1–P3**；M-FE + M2–M12；**M13 冻结**；当前节 **M-FE-1**）
 
 ---
 
@@ -204,6 +219,9 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.74 | 2026-07-06 | PRD 同步：118→124 计数修正；新增「执行范围」节对齐 plan v2.1 P1–P3 |
+| 1.2.73 | 2026-07-06 | plan v2.1：执行范围收窄为 **前三期 P1–P3**（M-FE + M2–M12）；**M13 四期冻结** |
+| 1.2.72 | 2026-07-06 | `create-evolution-plan` v2.0：四期全量 M2–M13 迁入活跃 plan（124 项 · 47 已实现 / 77 待完成） |
 | 1.2.70 | 2026-07-04 | P5 r68 重评 NFR-003 + NFR-004 + GOV-007 + RPT-002 + VIEW-002（跨域 companion 质量推分 r68）；pytest 1821/4 skipped；test_nfr_gov_rpt_view_r68 35/35 + test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_rpt_view_cat_gov_r60 34/34 回归 233/233；dashboard SLA/https-audit enterprise ACL、auto-register FSM/path scope、prefab GET/duplicate guard、role default cycle/scope + 各域 probe ≤50ms；性能 58%→88%，完整度 76%→90%，总分 84.2–90.1→90.0–90.4（五 ID 破 90 STUCK 清零；fe 统计页/生产 TLS/真实总线 HTTP/fe 预制报表 UI 留 companion） |
 | 1.2.69 | 2026-07-04 | P5 r67 重评 DASH-004 + NFR-001 + NFR-002 + CONN-018 + RPT-003（跨域 companion 质量推分 r67）；pytest 1786/4 skipped；test_dash_nfr_conn_rpt_r67 34/34 + test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 230/230；global_filter_linkage ACL/probe、dashboard-first-screen/report-perf ACL/probe、kingbase params/probe、template blocks ACL/probe + 各域 probe ≤50ms；性能 58%→88%，完整度 76%→90%，总分 84.2→90.0–90.2（五 ID 破 90 STUCK 清零；fe 筛选器/真实 perf suite/PDF 渲染/只读查询集成测留 companion） |
 | 1.2.68 | 2026-07-04 | P5 r66 重评 CAT-001 + CAT-002 + DASH-005 + RPT-001 + META-004（跨域 companion 质量推分 r66）；pytest 1752/4 skipped；test_cat_dash_rpt_meta_r66 33/33 + test_cat_rpt_meta_r65 32/32 + test_nfr_cat_r64 33/33 + test_cat_nfr_rpt_meta_r62 32/32 + test_cat_dash_viz_nfr_r61 32/32 + test_meta_cat_dash_conn_design_r59 34/34 回归 196/196；lifecycle/aggregate scope ACL、entity_overview validate/drill、engine run ACL/__proto__ guard、dataset write ACL + 各域 probe ≤50ms；性能 58%→88%，完整度 74–76%→90%，总分 83.9–84.2→90.0–90.4（五 ID 破 90 STUCK 清零；IF-02 查询/fe 页面/M3-LITE/PDF/DE 对标留 companion） |

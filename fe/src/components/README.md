@@ -8,14 +8,22 @@
 | Input | `ui/input.tsx` | 表单输入（skill 模板） |
 | Label | `ui/label.tsx` | 表单标签 |
 | Badge | `ui/badge.tsx` | 状态标签 |
+| Breadcrumb | `ui/breadcrumb.tsx` | 页面面包屑 |
+| Card | `ui/card.tsx` | 区块卡片（ComponentCard） |
 | Skeleton | `ui/skeleton.tsx` | 加载占位 |
 | Select | `ui/select.tsx` | 下拉选择（Radix） |
+| DropdownMenu | `ui/dropdown-menu.tsx` | 下拉菜单（Radix） |
+| Avatar | `ui/avatar.tsx` | 用户头像 |
 | AlertDialog | `ui/alert-dialog.tsx` | 破坏性操作确认 |
 | FormContext | `ui/form-context.tsx` | Input 皮肤上下文 |
 | AppSidebar | `layout/app-sidebar.tsx` | Admin 侧栏 290px |
 | AppHeader | `layout/app-header.tsx` | sticky 顶栏 |
 | Backdrop | `layout/backdrop.tsx` | 移动端侧栏遮罩 |
 | ThemeToggleButton | `layout/theme-toggle.tsx` | 深浅色切换 |
+| UserDropdown | `layout/user-dropdown.tsx` | 顶栏用户菜单（资料/设置/返回工作台/退出） |
+| ReturnToWorkspaceButton | `layout/return-to-workspace-button.tsx` | 账号管理页顶栏「返回工作台」 |
+| VitalSpanLogo | `layout/vitalspan-logo.tsx` | 侧栏品牌标（展开/折叠） |
+| AdminPageShell | `layout/admin-page-shell.tsx` | PageHeader：面包屑 + 标题 + `gap-6` 主内容栅格 |
 | AdminLayout | `../layouts/AdminLayout.tsx` | `/admin/*` 布局入口 |
 | ChartPanel | `charts/ChartPanel.tsx` | 图表壳：loading/empty/error |
 | ChartRenderer | `charts/ChartRenderer.tsx` | 表格/折线/柱 + 高级 ECharts 渲染（VIZ-002/003） |

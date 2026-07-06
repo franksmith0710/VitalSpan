@@ -159,8 +159,8 @@ export function AppHeader({
 
         <div
           className={cn(
-            "w-full items-center justify-between gap-4 px-5 py-4 shadow-theme-md xl:flex xl:justify-end xl:px-0 xl:shadow-none",
-            isApplicationMenuOpen ? "flex" : "hidden",
+            "w-full items-center gap-3 px-5 py-4 shadow-theme-md xl:flex xl:justify-end xl:gap-2 xl:px-0 xl:py-0 xl:shadow-none",
+            isApplicationMenuOpen ? "flex justify-end" : "hidden xl:flex",
           )}
         >
           {actions}

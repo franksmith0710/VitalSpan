@@ -2,44 +2,51 @@ import { Outlet } from "react-router";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/context/theme-context";
 import { SidebarProvider, useSidebar } from "@/context/sidebar-context";
+import { WorkspaceProvider } from "@/context/workspace-context";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { Backdrop } from "@/components/layout/backdrop";
+import { ReturnToWorkspaceButton } from "@/components/layout/return-to-workspace-button";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
+import { UserDropdown } from "@/components/layout/user-dropdown";
+import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
 import { ADMIN_NAV_GROUPS } from "@/config/admin-nav";
+import { USER_NAV_GROUPS } from "@/config/user-nav";
+import { canManagePlatform, getSessionUser } from "@/lib/session";
 
 function AdminLayoutContent() {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const sessionUser = getSessionUser();
+  const navSections = canManagePlatform(sessionUser)
+    ? ADMIN_NAV_GROUPS
+    : USER_NAV_GROUPS;
 
   return (
-    <div className="min-h-screen">
+    <div className="h-full min-h-screen">
       <AppSidebar
-        sections={ADMIN_NAV_GROUPS}
-        logo={
-          <span className="text-theme-xl font-semibold text-gray-900 dark:text-white">
-            VitalSpan
-          </span>
-        }
+        sections={navSections}
+        logo={<VitalSpanLogo />}
+        collapsedLogo={<VitalSpanLogo variant="icon" />}
       />
       <Backdrop />
       <div
         className={cn(
-          "flex min-h-screen flex-col transition-[margin] duration-300 ease-in-out",
+          "flex h-full min-h-0 flex-col transition-[margin] duration-300 ease-in-out",
           isExpanded || isHovered ? "xl:ml-[290px]" : "xl:ml-[90px]",
           isMobileOpen ? "ml-0" : "",
         )}
       >
         <AppHeader
+          logo={<VitalSpanLogo linked={false} />}
           actions={
-            <div className="flex items-center gap-3">
+            <>
+              <ReturnToWorkspaceButton />
               <ThemeToggleButton />
-              <span className="hidden text-theme-sm text-gray-500 sm:inline dark:text-gray-400">
-                管理员
-              </span>
-            </div>
+              <UserDropdown />
+            </>
           }
         />
-        <main className="mx-auto w-full max-w-(--breakpoint-2xl) flex-1 p-4 md:p-6">
+        <main className="mx-auto min-h-0 w-full max-w-(--breakpoint-2xl) flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-24">
           <Outlet />
         </main>
       </div>
@@ -51,7 +58,9 @@ export function AdminLayout() {
   return (
     <ThemeProvider>
       <SidebarProvider>
-        <AdminLayoutContent />
+        <WorkspaceProvider>
+          <AdminLayoutContent />
+        </WorkspaceProvider>
       </SidebarProvider>
     </ThemeProvider>
   );

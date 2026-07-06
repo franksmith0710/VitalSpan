@@ -1,33 +1,150 @@
+import { Link } from "react-router";
+import { Database, LayoutDashboard, Shield, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
+const M1_METRICS = [
+  { label: "数据源", value: "—", hint: "M2 开放" },
+  { label: "Dashboard", value: "—", hint: "M5 开放" },
+  { label: "图表组件", value: "—", hint: "M6 开放" },
+  { label: "活跃用户", value: "—", hint: "M3 开放" },
+] as const;
+
+function MetricCard({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+      <span className="text-theme-sm text-gray-500 dark:text-gray-400">{label}</span>
+      <strong className="mt-2 block text-title-sm font-semibold tabular-nums text-gray-400 dark:text-gray-500">
+        {value}
+      </strong>
+      <span className="mt-1 block text-theme-xs text-gray-500 dark:text-gray-400">
+        {hint}
+      </span>
+    </div>
+  );
+}
 
 export function AdminHomePage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">
-          欢迎使用 VitalSpan
-        </h1>
-        <p className="mt-2 text-theme-sm text-gray-500 dark:text-gray-400">
-          M1 管理端壳层已就绪。数据源与权限配置将在后续里程碑开放。
-        </p>
+    <AdminPageShell
+      breadcrumb={
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbPage>运营总览</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      }
+      title="欢迎使用 VitalSpan"
+      description="M1 管理端壳层已就绪。数据源与权限配置将在后续里程碑开放。"
+    >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {M1_METRICS.map((metric) => (
+          <MetricCard key={metric.label} {...metric} />
+        ))}
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-        <h2 className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-          壳层预览
-        </h2>
-        <div className="mt-4 grid max-w-md gap-3">
-          <div className="space-y-2">
-            <Label htmlFor="demo-input">示例输入</Label>
-            <Input id="demo-input" placeholder="占位，无 API 联调" readOnly />
-          </div>
-          <Button type="button" variant="primary">
-            主操作示例
-          </Button>
-        </div>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <Card className="xl:col-span-2" elevation={1}>
+          <CardHeader>
+            <div>
+              <CardTitle>壳层预览</CardTitle>
+              <CardDescription>组件与设计 Token 冒烟区，暂无 API 联调。</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="demo-input">示例输入</Label>
+                <Input id="demo-input" placeholder="占位，无 API 联调" readOnly />
+              </div>
+              <div className="flex items-end">
+                <Button type="button" variant="primary">
+                  主操作示例
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card elevation={1}>
+          <CardHeader>
+            <CardTitle>快捷入口</CardTitle>
+            <CardDescription>后续里程碑将在此接入真实导航。</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2">
+            {[
+              { to: "/admin/datasources", icon: Database, label: "数据源", disabled: true },
+              { to: "/admin/dashboards", icon: LayoutDashboard, label: "Dashboard", disabled: false },
+              { to: "/admin/users", icon: Users, label: "用户与角色", disabled: true },
+              { to: "/admin", icon: Shield, label: "系统设置", disabled: true },
+            ].map((item) => (
+              <QuickLink key={item.label} {...item} />
+            ))}
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </AdminPageShell>
+  );
+}
+
+function QuickLink({
+  to,
+  icon: Icon,
+  label,
+  disabled,
+}: {
+  to: string;
+  icon: typeof Database;
+  label: string;
+  disabled?: boolean;
+}) {
+  const className = cn(
+    "flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-theme-sm font-medium transition-colors dark:border-gray-800",
+    disabled
+      ? "cursor-not-allowed text-gray-400 dark:text-gray-500"
+      : "text-gray-700 hover:border-brand-200 hover:bg-brand-50/50 hover:text-brand-600 dark:text-gray-300 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10 dark:hover:text-brand-400",
+  );
+
+  if (disabled) {
+    return (
+      <div className={className} aria-disabled="true">
+        <Icon className="size-5 shrink-0" aria-hidden />
+        <span>{label}</span>
+        <span className="ml-auto text-theme-xs text-gray-400">即将开放</span>
+      </div>
+    );
+  }
+
+  return (
+    <Link to={to} className={className}>
+      <Icon className="size-5 shrink-0" aria-hidden />
+      <span>{label}</span>
+    </Link>
   );
 }

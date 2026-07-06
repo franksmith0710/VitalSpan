@@ -218,21 +218,21 @@ export function AppSidebar({
     >
       <div
         className={cn(
-          "flex py-8",
+          "flex shrink-0 py-6",
           !showLabels ? "xl:justify-center" : "justify-start",
         )}
       >
         {showLabels ? logo : (collapsedLogo ?? logo)}
       </div>
 
-      <div className="no-scrollbar flex flex-1 flex-col overflow-y-auto duration-300 ease-linear">
-        <nav className="mb-6 flex flex-col gap-4" aria-label="管理端导航">
+      <div className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pb-6 duration-300 ease-linear">
+        <nav className="flex flex-col" aria-label="管理端导航">
           {sections.map((section) => (
-            <div key={section.title}>
+            <div key={section.title} className="menu-group">
               <h2
                 className={cn(
-                  "mb-4 flex text-xs leading-5 text-gray-400 uppercase",
-                  !showLabels ? "xl:justify-center" : "justify-start",
+                  "menu-group-title",
+                  !showLabels ? "xl:justify-center xl:px-0" : "justify-start",
                 )}
               >
                 {showLabels ? (
@@ -241,7 +241,7 @@ export function AppSidebar({
                   <MoreHorizontal className="size-6" aria-hidden />
                 )}
               </h2>
-              <ul className="flex flex-col gap-1">
+              <ul className="flex flex-col gap-0.5">
                 {section.items.map((item) => (
                   <li key={item.name}>
                     <SidebarNavItem item={item} showLabels={showLabels} />

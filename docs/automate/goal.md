@@ -73,7 +73,7 @@ docs/services/                     ← 域服务附录（随实现补充）
 docs/ui/layout.md                  ← 壳层与 IA（单应用 + Embed · `.cursor/rules/fe-ui.mdc` · b-design-system）
 docs/automate/goal.md              ← 方向与边界（人工低频修订，create-evolution-goal）
 docs/automate/prd.md               ← PRD hub：8 维评分、薄弱项、功能索引（G2 只读）
-docs/automate/prd/                 ← 功能明细分片（15 域 · 118 项，按 ID 按需读）
+docs/automate/prd/                 ← 功能明细分片（16 域 · 124 项，按 ID 按需读）
 docs/automate/plan.archive.md      ← 里程碑归档 M1–M13（全量 PRD 映射，只读参考）
 docs/automate/plan.md              ← 活跃里程碑当前节（可选，create-evolution-plan；演化 agent 只读）
 docs/automate/evolution-state.md   ← 当前轮次、待办池、模块地图、项目 skill/rule 索引、STUCK 计数
