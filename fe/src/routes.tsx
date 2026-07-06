@@ -14,6 +14,10 @@ import { AccountSettingsPage } from "@/pages/admin/account/AccountSettingsPage";
 import { DashboardListPage } from "@/pages/admin/dashboard/DashboardListPage";
 import { DashboardEditPage } from "@/pages/admin/dashboard/DashboardEditPage";
 import { LoginPage } from "@/pages/login/LoginPage";
+import { ConnectorsPage } from "@/pages/admin/connectors/ConnectorsPage";
+import { DatasourceListPage } from "@/pages/admin/datasources/DatasourceListPage";
+import { DatasourceFormPage } from "@/pages/admin/datasources/DatasourceFormPage";
+import { DatasourceDetailPage } from "@/pages/admin/datasources/DatasourceDetailPage";
 
 export function AppRoutes() {
   return (
@@ -23,6 +27,11 @@ export function AppRoutes() {
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
           <Route index element={<AdminHomePage />} />
+          <Route path="datasources" element={<DatasourceListPage />} />
+          <Route path="datasources/new" element={<DatasourceFormPage mode="create" />} />
+          <Route path="datasources/:id/edit" element={<DatasourceFormPage mode="edit" />} />
+          <Route path="datasources/:id" element={<DatasourceDetailPage />} />
+          <Route path="connectors" element={<ConnectorsPage />} />
           <Route path="ingestion/sync-jobs" element={<SyncJobsPage />} />
           <Route path="ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
           <Route path="ingestion/sync-jobs/:id/edit" element={<SyncJobFormPage />} />

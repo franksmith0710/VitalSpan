@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/auth-context";
 import { ApiRequestError } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
 import { setAuthToken } from "@/lib/auth-token";
 
 type LoginResponse = {
@@ -54,7 +55,7 @@ export function LoginPage() {
       await refresh();
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setSubmitting(false);
     }
