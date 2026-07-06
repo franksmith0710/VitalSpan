@@ -20,7 +20,7 @@
 - **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [GOV-002] 总线 PoC 半自动注册 FR-1.1
 
-- **状态**：部分实现
+- **状态**：已实现（M6 PoC FSM L1）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：一期
 - **描述**：总线 PoC 半自动注册 FR-1.1（SRS 追溯项）。
@@ -28,11 +28,12 @@
   - [x] `POST /api/v1/gov/bus/register` 半自动注册（内存 adapter）
   - [x] OpenAPI operationId 与登记回执（traceId/busId）
   - [x] 总线失败路径：timeout/4xx/5xx + 幂等登记 + admin 403（r31）
+  - [x] M6 semi-auto FSM pending/registered/failed + `GET /api/v1/gov/bus/register/fsm` + scope ACL + probe ≤50ms（`poc_fsm.py` · `test_gov_002_bus_poc_fsm.py` T-GOV-002-01~06）
   - [ ] ≥2 真实总线端点对接
   - [ ] 完整审批工单流水线
-- **代码锚点**：`backend/app/governance/bus/poc.py` · `backend/app/governance/catalog/service.py`
-- **演化建议**：r31 扩展 force-timeout/4xx/5xx、幂等 201→200、admin 守卫与失败不留 succeeded 行（T-GOV-R31-002~005）；后续接真实总线 HTTP 与全自动发布
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/governance/bus/poc.py` · `backend/app/governance/bus/poc_fsm.py` · `backend/app/governance/bus/probe.py` · `backend/app/governance/catalog/service.py` · `backend/app/api/v1/gov.py` · `tests/test_gov_002_bus_poc_fsm.py`
+- **演化建议**：M6 L1 已闭合 semi-auto FSM + GET/probe/ACL；后续接 ≥2 真实总线 HTTP 端点与 GOV-007 全自动发布
+- **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [GOV-003] 工单流程模板 FR-1.2
 
 - **状态**：部分实现

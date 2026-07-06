@@ -46,7 +46,7 @@
 - **里程碑对齐**：
 ### [NFR-004] NFR-03 HTTPS 脱敏审计
 
-- **状态**：部分实现（companion r68）
+- **状态**：已实现（M6 audit guard L1）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：一期
 - **描述**：NFR-03 HTTPS 脱敏审计（SRS 追溯项）。
@@ -54,10 +54,11 @@
   - [x] 全站 HTTPS（r64 L1：`GET /api/v1/nfr/https-audit/status` httpsEnforced/webhookHttpsOnly/tlsMinVersion stub）
   - [x] 敏感字段脱敏+审计（r64 L1：`POST /api/v1/nfr/https-audit/mask-probe` password/apiKey/token 脱敏 + maskedFields + auditLogged mock）
   - [x] companion auditScope ACL + simulateAuditFailure + perf probe（r68：`set_user_https_audit_scope` + `NFR_HTTPS_AUDIT_SCOPE_INVALID` 422；enterprise scope 403；`simulateAuditFailure` 503；`probe_https_audit_mask_budget_ms`/`probe_https_audit_status_budget_ms` ≤50ms）
+  - [x] M6 HTTPS audit guard middleware + `GET /api/v1/nfr/https-audit/audit-probe` 响应脱敏无明文泄漏（`core/middleware/https_audit_guard.py` · `test_nfr_004_https_audit.py` T-NFR-004-M6-01~05）
   - [ ] 生产 TLS 终止与全链路审计 store（无 ingress 强制与持久化审计写入）
-- **代码锚点**：`backend/app/core/nfr/https_audit.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-004-01~06 · `tests/test_nfr_gov_rpt_view_r68.py` T-NFR-R68-004-01~09
-- **演化建议**：r68 companion 闭合 https-audit auditScope ACL、simulateAuditFailure 与 mask/status perf probe；后续补生产 TLS 强制与审计 store 全链路
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/core/nfr/https_audit.py` · `backend/app/core/middleware/https_audit_guard.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_cat_r64.py` T-NFR-R64-004-01~06 · `tests/test_nfr_gov_rpt_view_r68.py` T-NFR-R68-004-01~09 · `tests/test_nfr_004_https_audit.py`
+- **演化建议**：M6 L1 已闭合 audit guard middleware + audit-probe 无泄漏回归；后续补生产 TLS 强制与审计 store 全链路
+- **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [NFR-005] NFR-04 连接器插件扩展性
 
 - **状态**：部分实现
