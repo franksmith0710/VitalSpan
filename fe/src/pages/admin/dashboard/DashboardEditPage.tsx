@@ -83,6 +83,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const handleSave = async () => {
     if (!id) return;
+    const missingDs = widgets.some((w) => !w.chartConfig.dataSourceId);
+    if (missingDs) {
+      setError("请为所有组件选择数据源");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -124,6 +129,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             <Link to="/admin/dashboards">返回列表</Link>
           </Button>
           {mode === "edit" ? (
+            <Button asChild variant="outline">
+              <Link to={`/admin/dashboards/${id}`}>预览</Link>
+            </Button>
+          ) : (
+            <Button asChild variant="outline">
+              <Link to={`/admin/dashboards/${id}/edit`}>编辑布局</Link>
+            </Button>
+          )}
+          {mode === "edit" ? (
             <Button type="button" variant="primary" disabled={saving} onClick={() => void handleSave()}>
               {saving ? "保存中…" : "保存布局"}
             </Button>
@@ -140,6 +154,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             mode={mode}
             widgets={widgets}
             onAddWidget={mode === "edit" ? () => handleInsert("table") : undefined}
+            onLayoutChange={
+              mode === "edit" ? (next) => setWidgets(sortWidgets(next)) : undefined
+            }
             renderWidget={(widget) => (
               <DashboardWidget
                 widget={widget}
@@ -149,6 +166,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onResize={(wid, patch) => setWidgets((prev) => resizeWidget(prev, wid, patch))}
                 onTitleChange={(wid, title) =>
                   setWidgets((prev) => resizeWidget(prev, wid, { title }))
+                }
+                onChartConfigChange={(wid, chartConfig) =>
+                  setWidgets((prev) =>
+                    prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
+                  )
                 }
               />
             )}
