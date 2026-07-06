@@ -22,8 +22,8 @@
 - **描述**：Dashboard 容器与布局引擎（SRS 追溯项）。
 - **验收标准**：
   - [x] 空 Dashboard 可创建展示
-  - [ ] 网格布局可拖拽
-- **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/components/dashboard/`
+  - [x] 网格布局可拖拽（react-grid-layout + edit/view 切换）
+- **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/components/dashboard/` · `fe/src/components/dashboard/gridLayoutAdapter.ts` · `fe/src/components/dashboard/DashboardGrid.tsx`
 - **演化建议**：r29 resizeWidget/标题编辑 + 增强空态引导（T-DASH-R29-002）；仍缺 react-grid-layout 拖拽，待后续轮次
 - **里程碑对齐**：
 ### [DASH-003] Dashboard 组件库

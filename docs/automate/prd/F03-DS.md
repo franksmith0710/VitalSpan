@@ -52,7 +52,8 @@
 - **验收标准**：
   - [x] schemas/tables/columns 三级浏览 API
   - [x] 仅返回已授权数据源
-- **代码锚点**：`backend/app/datasources/metadata/service.py` · `backend/app/api/v1/datasources.py` · `backend/app/datasources/dialects/base.py` · `tests/test_datasources_companion_r25.py` T-DS-MD01~MD06
+  - [x] Admin UI schema 三级浏览（数据源详情页）
+- **代码锚点**：`backend/app/datasources/metadata/service.py` · `backend/app/api/v1/datasources.py` · `backend/app/datasources/dialects/base.py` · `tests/test_datasources_companion_r25.py` T-DS-MD01~MD06 · `fe/src/components/datasources/SchemaBrowser.tsx`
 - **演化建议**：真实 compose MySQL/PostgreSQL 集成测试；Admin UI schema 浏览器；大数据量 schema 分页
 - **里程碑对齐**：
 ### [DS-005] 凭证加密存储
