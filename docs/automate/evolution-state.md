@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m7-conn-ext.md |
 | design | docs/superpowers/specs/2026-07-06-m7-conn-ext-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-06-m7-conn-ext.md |
+| branch | cursor/bc-b6351236-9555-4ed3-aa1f-434ebab06e57-8a5d |
 | base_branch | dev-auto |
 | prd_ids | CONN-003,CONN-004,CONN-005,CONN-006,CONN-007 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m pytest ../tests/test_connectors_m7_r228.py ../tests/test_connectors_compose_r207.py ../tests/test_connectors_gov_r36.py ../tests/test_connectors_gov_r37.py ../tests/test_connectors_gov_r40.py ../tests/test_connectors_gov_r41.py -v --tb=short |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-06T19:12:00Z |
+| skill_rule_index_generated_at | 2026-07-06T19:40:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
