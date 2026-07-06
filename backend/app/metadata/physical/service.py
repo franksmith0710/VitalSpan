@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from app.auth.deps import UserContext
 from app.metadata.physical.errors import (
+    META_PHYSICAL_DS_TABLE_CONFLICT,
     META_PHYSICAL_FORBIDDEN,
     META_PHYSICAL_INVALID_COLUMN,
     PhysicalTableError,
@@ -20,13 +21,27 @@ from app.metadata.physical.schemas import (
     PhysicalTableOut,
     PhysicalTableRegisterFromSchemaIn,
     PhysicalTableRegisterIn,
+    PhysicalTableUpdateIn,
     PhysicalTableValidateOut,
 )
 
 _FQN_RE = re.compile(r"^[a-z][a-z0-9_]{0,62}\.[a-z][a-z0-9_]{1,63}$")
 _COLUMN_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 _store: dict[str, dict] = {}
+_ds_table_index: dict[tuple[str, str, str], str] = {}
 probe_physical_budget_ms_limit = 50
+
+
+def _ds_key(data_source_id, schema: str, table: str) -> tuple[str, str, str]:
+    return (str(data_source_id).lower(), schema.lower(), table.lower())
+
+
+def _remove_ds_index(record: dict) -> None:
+    schema = record.get("sourceSchema")
+    table = record.get("sourceTable")
+    ds_id = record.get("dataSourceId")
+    if schema and table and ds_id:
+        _ds_table_index.pop(_ds_key(ds_id, schema, table), None)
 
 
 @dataclass(frozen=True)
@@ -124,6 +139,13 @@ def register_from_schema(
             raise PhysicalTableError("DATASOURCE_NOT_FOUND", exc.message, 404) from exc
         raise PhysicalTableError(exc.code, exc.message, exc.status) from exc
     table_fqn = _normalize_fqn(payload.schema_name, payload.table, payload.table_fqn)
+    ds_key = _ds_key(payload.data_source_id, payload.schema_name, payload.table)
+    if ds_key in _ds_table_index:
+        raise PhysicalTableError(
+            META_PHYSICAL_DS_TABLE_CONFLICT,
+            "dataSourceId+schema+table already registered",
+            409,
+        )
     register_in = PhysicalTableRegisterIn(
         tableFqn=table_fqn,
         dataSourceId=payload.data_source_id,
@@ -134,10 +156,13 @@ def register_from_schema(
             for c in columns_resp.items
         ],
     )
-    out = register_physical_table(register_in, user)
+    register_physical_table(register_in, user)
     if payload.entity_type_code:
         entity_service.increment_reference(payload.entity_type_code)
-    return out
+    _store[table_fqn]["sourceSchema"] = payload.schema_name
+    _store[table_fqn]["sourceTable"] = payload.table
+    _ds_table_index[ds_key] = table_fqn
+    return PhysicalTableOut.model_validate(_store[table_fqn])
 
 
 def list_physical_tables(
@@ -174,3 +199,42 @@ def probe_list_physical_tables_budget_ms() -> PhysicalProbeResult:
     list_physical_tables(limit=50, offset=0)
     elapsed = (time.perf_counter() - started) * 1000
     return PhysicalProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_physical_budget_ms_limit)
+
+
+def update_physical_table(fqn: str, payload: PhysicalTableUpdateIn, user: UserContext) -> PhysicalTableOut:
+    _assert_physical_write_access(user)
+    if fqn not in _store:
+        raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+    record = _store[fqn]
+    if payload.display_name is not None:
+        record["displayName"] = payload.display_name
+    if payload.entity_type_code is not None:
+        old_type = record.get("entityTypeCode")
+        new_type = payload.entity_type_code or None
+        if new_type:
+            try:
+                entity_service.get_entity_type(new_type)
+            except EntityTypeError as exc:
+                if exc.code == "META_ENTITY_TYPE_NOT_FOUND":
+                    raise PhysicalTableError("META_ENTITY_TYPE_NOT_FOUND", exc.message, 422) from exc
+                raise
+        if old_type and old_type != new_type:
+            entity_service.decrement_reference(old_type)
+        if new_type and new_type != old_type:
+            entity_service.increment_reference(new_type)
+        record["entityTypeCode"] = new_type
+        if new_type:
+            bind_entity_type_code(fqn, new_type)
+    return PhysicalTableOut.model_validate(record)
+
+
+def delete_physical_table(fqn: str, user: UserContext) -> None:
+    _assert_physical_write_access(user)
+    if fqn not in _store:
+        raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+    record = _store[fqn]
+    type_code = record.get("entityTypeCode")
+    if type_code:
+        entity_service.decrement_reference(type_code)
+    _remove_ds_index(record)
+    del _store[fqn]

@@ -52,6 +52,7 @@
 - **依赖**：`dashboard/service`（dashboard 存在性 + `created_by` ACL）、`governance/publish`（publish 探测）、`query/config_store`
 - **错误码**：`DASH_OVERVIEW_*`（含 `DASH_OVERVIEW_FORBIDDEN` 非 owner 非 admin；**r66** `DASH_OVERVIEW_INVALID_ENTITY_TYPE` / `DASH_OVERVIEW_INVALID_DRILL_WIDGET`）
 - **r66 companion**：`entityTypeRef` pattern `^[a-z][a-z0-9_]{1,63}$`；layout 含 widget 时 drill `widgetId` 须存在于 layout；`probe_validate_overview_budget_ms` / `probe_get_overview_budget_ms` ≤50ms
+- **FE 消费**：`fe/src/pages/admin/entities/EntityOverviewPage.tsx` + `useEntityOverview.ts` + `EntityDetailSheet.tsx`（DASH-005 M8 r232 收官：详情 Sheet、空态引导、权限/下钻 vitest）
 
 ## 依赖
 

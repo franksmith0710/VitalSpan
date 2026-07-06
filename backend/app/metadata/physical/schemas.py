@@ -35,8 +35,15 @@ class PhysicalTableRegisterIn(BaseModel):
     columns: list[PhysicalColumn]
 
 
+class PhysicalTableUpdateIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    display_name: str | None = Field(default=None, alias="displayName", min_length=1, max_length=120)
+    entity_type_code: str | None = Field(default=None, alias="entityTypeCode", max_length=64)
+
+
 class PhysicalTableOut(PhysicalTableRegisterIn):
-    pass
+    source_schema: str | None = Field(default=None, alias="sourceSchema", max_length=128)
+    source_table: str | None = Field(default=None, alias="sourceTable", max_length=128)
 
 
 class PhysicalTableValidateOut(BaseModel):

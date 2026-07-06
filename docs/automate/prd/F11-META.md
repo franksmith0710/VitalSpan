@@ -56,7 +56,7 @@
 - **里程碑对齐**：
 ### [META-005] 物理表元数据登记 M1-ENTITY
 
-- **状态**：部分实现（M8 r231 kickoff）
+- **状态**：已实现（M8 r232 收官）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：物理表元数据登记 M1-ENTITY（SRS 追溯项）。
@@ -64,13 +64,14 @@
   - [x] 物理表/字段登记（r62 L1：`POST/GET /api/v1/metadata/physical-tables` + columns 登记 + duplicate column 422 + list）
   - [x] companion register ACL + perf probe（r65：viewer register 403 `META_PHYSICAL_FORBIDDEN`；column name pattern `META_PHYSICAL_INVALID_COLUMN` 422；`probe_physical_validate_budget_ms`/`probe_physical_list_budget_ms` ≤50ms）
   - [x] register-from-schema 编排（r231：`POST /api/v1/metadata/physical-tables/register-from-schema` + `datasources.metadata.list_columns` + entityTypeCode 过滤 GET；`test_meta_dash_m8_r231.py` T-META-R231-005-01~04）
-  - [ ] 支撑 FR-6.2（无 GOV catalog 引用释放与 lineage 全链路）
-- **代码锚点**：`backend/app/metadata/physical/` · `backend/app/api/v1/metadata.py` · `tests/test_meta_dash_m8_r231.py` T-META-R231-005-01~04 · `tests/test_cat_rpt_meta_r65.py` T-META-R65-005-01~05 · `tests/test_cat_nfr_rpt_meta_r62.py` T-META-R62-005-01~06
-- **演化建议**：r231 kickoff 闭合 register-from-schema 与 entityTypeCode 过滤；后续补 FR-6.2 GOV 引用释放与 lineage 联动
+  - [x] PUT/DELETE CRUD + dataSourceId+schema+table 复合唯一（r232：`PUT/DELETE /api/v1/metadata/physical-tables/{fqn}` + `_ds_table_index` 409 `META_PHYSICAL_DS_TABLE_CONFLICT` + viewer 403；`test_meta_dash_m8_r232.py` T-META-R232-005-01~05）
+  - [ ] GOV catalog 引用释放与 lineage 全链路（companion）
+- **代码锚点**：`backend/app/metadata/physical/` · `backend/app/api/v1/metadata.py` · `tests/test_meta_dash_m8_r232.py` T-META-R232-005-01~05 · `tests/test_meta_dash_m8_r231.py` T-META-R231-005-01~04 · `tests/test_cat_rpt_meta_r65.py` T-META-R65-005-01~05 · `tests/test_cat_nfr_rpt_meta_r62.py` T-META-R62-005-01~06
+- **演化建议**：r232 收官闭合 M8 plan 物理表 CRUD 与复合唯一；GOV 引用释放与 lineage 联动留 companion
 - **里程碑对齐**：M8 · 已完成 · 2026-07-06
 ### [META-006] 实体类型 schema 配置
 
-- **状态**：部分实现（M8 r231 kickoff）
+- **状态**：已实现（M8 r232 收官）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：实体类型 schema 配置（SRS 追溯项）。
@@ -79,7 +80,8 @@
   - [x] 不预置业务实体（内存 store，按需创建）
   - [x] schema 校验链 + 只读 query bindings（r55 companion：POST validate + GET query-bindings）
   - [x] physicalTableFqn 映射主链（r231：类型配置 physicalTableFqn + unknown 422 + 冲突 409 + create 回写 physical；`test_meta_dash_m8_r231.py` T-META-R231-006-01~04）
-  - [ ] 物理表映射与 GOV 引用释放
-- **代码锚点**：`backend/app/metadata/entity/` · `backend/app/api/v1/metadata.py` · `tests/test_meta_dash_m8_r231.py` T-META-R231-006-01~04 · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-META-01~07 · `tests/test_rpt_gov_meta_conn_r55.py` T-META-R55-01~08
-- **演化建议**：r231 kickoff 闭合 physicalTableFqn 映射与登记→类型→query-bindings 主链；后续补 GOV 引用释放
+  - [x] 引用计数生命周期对称（r232：登记→删 physical→删 type 链 + in_use 409 `META_ENTITY_TYPE_IN_USE` + PUT 改绑 entityTypeCode；`test_meta_dash_m8_r232.py` T-META-R232-006-01~04）
+  - [ ] GOV 引用释放（companion）
+- **代码锚点**：`backend/app/metadata/entity/` · `backend/app/api/v1/metadata.py` · `tests/test_meta_dash_m8_r232.py` T-META-R232-006-01~04 · `tests/test_meta_dash_m8_r231.py` T-META-R231-006-01~04 · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-META-01~07 · `tests/test_rpt_gov_meta_conn_r55.py` T-META-R55-01~08
+- **演化建议**：r232 收官闭合 physical 删/改绑与 `_ref_counts` 对称；GOV 引用释放留 companion
 - **里程碑对齐**：M8 · 已完成 · 2026-07-06
