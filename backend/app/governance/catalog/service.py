@@ -26,6 +26,7 @@ from app.governance.catalog.schemas import (
     CategoryListResponse,
     CatalogCategoryOut,
 )
+from app.governance.bus import poc_fsm
 from app.governance.bus.poc import BusPoCAdapter, InMemoryBusPoCAdapter
 from app.core.logging import trace_id_var
 
@@ -208,6 +209,7 @@ def register_entry_to_bus(
         )
     )
     if existing is not None:
+        poc_fsm.transition_semi_auto_fsm(entry_id, "registered")
         return (
             BusRegisterOut(
                 id=existing.id,
@@ -218,6 +220,7 @@ def register_entry_to_bus(
             False,
         )
 
+    poc_fsm.transition_semi_auto_fsm(entry_id, "pending")
     bus = adapter or _default_bus_adapter
     result = bus.register(entry=entry, trace_id=trace_id)
 
@@ -231,6 +234,7 @@ def register_entry_to_bus(
             "BUS_ENTRY_NOT_PUBLISHABLE": 400,
         }
         status = status_map.get(code, 400)
+        poc_fsm.transition_semi_auto_fsm(entry_id, "failed")
         err = CatalogError(code, result.error_message or "Bus registration failed", status)
         err.trace_id = trace_id
         raise err
@@ -244,6 +248,7 @@ def register_entry_to_bus(
     db.add(row)
     db.commit()
     db.refresh(row)
+    poc_fsm.transition_semi_auto_fsm(entry_id, "registered")
     return (
         BusRegisterOut(
             id=row.id,
