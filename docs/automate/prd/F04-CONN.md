@@ -4,30 +4,32 @@
 
 ### [CONN-001] MySQL 连接器
 
-- **状态**：部分实现（L1 kickoff r22；quality r23/r24）
+- **状态**：已实现（M3 compose 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：MySQL 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`mysql` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
+  - [x] type=`mysql` 已注册且 UI 可选（`ConnectorRegistry` + `DatasourceFormPage`）
+  - [x] 连通性测试 + schema 浏览通过（compose r207：`test_connectors_compose_r207.py` T-CONN-R207-M01~M05）
+  - [ ] 只读查询通过（QUERY 对接留 companion）
   - [x] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/mysql.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_datasources_l1.py` T-CONN-M01~M04 · `tests/test_datasources_quality_r23.py` T-CONN-M05~M10 · `tests/test_datasources_quality_r24.py` T-CONN-M11~M16
-- **演化建议**：DS-004 schema 元数据浏览；QUERY 只读查询对接；Admin UI 类型选择；真实 MySQL compose 集成测试
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/mysql.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_datasources_l1.py` T-CONN-M01~M04 · `tests/test_datasources_quality_r23.py` T-CONN-M05~M10 · `tests/test_datasources_quality_r24.py` T-CONN-M11~M16 · `tests/test_connectors_compose_r207.py` T-CONN-R207-M01~M05
+- **演化建议**：M3 compose 集成已闭合连通性与元数据浏览；后续补只读查询端到端与 P1-SMOKE 出数链
+- **里程碑对齐**：M3 · 已完成 · 2026-07-06
 ### [CONN-002] PostgreSQL 连接器
 
-- **状态**：部分实现（L1 companion r25）
+- **状态**：已实现（M3 compose 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
 - **描述**：PostgreSQL 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [ ] type=`postgresql` 已注册且 UI 可选
-  - [ ] 连通性测试 + schema 浏览 + 只读查询通过
+  - [x] type=`postgresql` 已注册且 UI 可选（`ConnectorRegistry` + `DatasourceFormPage`）
+  - [x] 连通性测试 + schema 浏览通过（compose r207：`test_connectors_compose_r207.py` T-CONN-R207-P01~P03）
+  - [ ] 只读查询通过（QUERY 对接留 companion）
   - [x] category=`relational` 查询模式正确
-- **代码锚点**：`backend/app/datasources/dialects/postgres.py` · `backend/app/datasources/dialects/base.py` · `tests/test_datasources_companion_r25.py` T-CONN-P01~P05
-- **演化建议**：Admin UI 类型选择；QUERY 只读查询对接；真实 PostgreSQL compose 集成测试
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/postgres.py` · `backend/app/datasources/dialects/base.py` · `tests/test_datasources_companion_r25.py` T-CONN-P01~P05 · `tests/test_connectors_compose_r207.py` T-CONN-R207-P01~P03
+- **演化建议**：M3 compose 集成已闭合连通性与元数据浏览；后续补只读查询端到端与 P1-SMOKE 出数链
+- **里程碑对齐**：M3 · 已完成 · 2026-07-06
 ### [CONN-003] Hive 连接器
 
 - **状态**：部分实现（L1 kickoff r36 + companion 质量推分 r37；hub ID 原标 MariaDB，本轮按设计交付 Hive）

@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-view-003-m3-conn.md |
 | design | docs/superpowers/specs/2026-07-06-view-003-m3-conn-design.md |
 | plan | docs/superpowers/plans/2026-07-06-view-003-m3-conn.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r211 收尾：PRD 重评 VIEW-003/CONN-001/CONN-002（M-FE-3 收官 + M3 compose）；hub 总分 90.1–91.9→92.5–93.0；plan M-FE-3 VIEW-003 + M3 CONN-001/002 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r210 验证：独立全量 ruff clean + pytest 1830 passed/11 skipped exit 0；fe check:design 110 files + vitest 136/136 + build + e2e 6/6 exit 0；UI design_drift PASS + VIEW-003 E2E 覆盖（role default / user override / mobile viewport）；screenshots 未运行（无 live BE/postgres，e2e mock 路由）；compose 集成 11 skipped（无 docker）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 r209 实现：5 Task 完成（VIEW-003 用户覆盖优先 defaultViewResolve+7 vitest 边缘、Playwright E2E 6 passed、connector_compose_env 夹具、CONN-001/002 compose 集成 8 测 skip 无 compose）；ui_design_skill=b-design-system-tailadmin-radix；design_drift check:design 110 files PASS；screenshots 未运行（P3 headless mock E2E）；branch=cursor/bc-2e5efc51-bc22-4d05-8373-1d817e8b85d2-2e0c；base_branch=dev-auto；fe vitest 136/136 + e2e 6/6 exit 0；pytest datasources regression 105 passed；integration 8 skipped（compose down）；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 r208 计划：5 Task（VIEW-003 defaultViewResolve 用户覆盖+vitest 边缘、Playwright E2E、connector_compose_env 夹具、CONN-001/002 compose 集成 8 测、回归门控）；subagent-driven-development option 1；预估 12 主文件；ui_design_skill=b-design-system-tailadmin-radix；skill_rule_index 26 源刷新时间戳；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-view-003-m3-conn.md；待 P3 evolution-implementer

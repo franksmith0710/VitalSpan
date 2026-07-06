@@ -375,7 +375,7 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 - [x] AUTH-001: 角色管理 Admin UI（`/admin/system/roles`）（完成于 2026-07-06）
 - [x] AUTH-003: 用户角色绑定 Admin UI（`/admin/system/users`）（完成于 2026-07-06）
-- [ ] VIEW-003: 用户默认视图 FE（登录后按角色重定向默认 Dashboard）
+- [x] VIEW-003: 用户默认视图 FE（登录后按角色重定向默认 Dashboard）（完成于 2026-07-06）
 - [x] DASH-004: 全局筛选器 FE 联动（分片未勾「筛选器驱动组件刷新」）（完成于 2026-07-06）
 
 ### M-FE-3 验收信号
@@ -412,8 +412,8 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [x] DS-006: 连接池按 dataSourceId 隔离（完成于 2026-07-04）
 - [x] DS-007: 已注册类型清单 API（完成于 2026-07-04）
 - [x] DS-008: 数据源授权与 M7 集成（完成于 2026-07-04）
-- [ ] CONN-001: MySQL 连接器
-- [ ] CONN-002: PostgreSQL 连接器
+- [x] CONN-001: MySQL 连接器（完成于 2026-07-06）
+- [x] CONN-002: PostgreSQL 连接器（完成于 2026-07-06）
 
 ---
 
