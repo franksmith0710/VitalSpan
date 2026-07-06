@@ -7,6 +7,7 @@ import pymssql
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import map_sqlserver_operational_error
+from app.datasources.dialects.relational_hints import normalize_column_type
 
 SQLSERVER_MAX_COLUMNS = 500
 
@@ -97,7 +98,11 @@ class SqlserverConnector:
             (schema, table),
         )
         columns = [
-            ColumnInfo(name=row[0], data_type=row[1], nullable=str(row[2]).upper() == "YES")
+            ColumnInfo(
+                name=row[0],
+                data_type=normalize_column_type("sqlserver", str(row[1])),
+                nullable=str(row[2]).upper() == "YES",
+            )
             for row in cursor.fetchall()
             if row
         ]

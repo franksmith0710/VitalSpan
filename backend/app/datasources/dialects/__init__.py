@@ -14,6 +14,7 @@ from app.datasources.dialects.oceanbase import OCEANBASE_MAX_COLUMNS, OceanbaseC
 from app.datasources.dialects.dm import DmConnector, DM_MAX_COLUMNS
 from app.datasources.dialects.gaussdb import GaussdbConnector
 from app.datasources.dialects.hive import HiveConnector
+from app.datasources.dialects.mariadb import MariadbConnector
 from app.datasources.dialects.influxdb import INFLUX_MAX_MEASUREMENTS, InfluxdbConnector
 from app.datasources.dialects.mongodb import MONGODB_MAX_FIELDS, MongodbConnector
 from app.datasources.dialects.mysql import MysqlConnector
@@ -50,6 +51,7 @@ __all__ = [
     "GaussdbConnector",
     "HIVE_UNKNOWN_DATABASE",
     "HiveConnector",
+    "MariadbConnector",
     "INFLUX_MAX_MEASUREMENTS",
     "InfluxdbConnector",
     "MONGODB_MAX_FIELDS",

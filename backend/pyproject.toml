@@ -51,5 +51,5 @@ target-version = "py311"
 [tool.pytest.ini_options]
 testpaths = ["../tests"]
 markers = [
-    "integration: requires docker compose sample-mysql and analytics-postgres",
+    "integration: requires docker compose services (see test_connectors_m7_r228.py module docstring; optional sample-mariadb:3308 sample-clickhouse:8124)",
 ]

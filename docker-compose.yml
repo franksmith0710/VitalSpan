@@ -48,6 +48,35 @@ services:
       timeout: 5s
       retries: 10
 
+  sample-mariadb:
+    image: mariadb:11
+    ports:
+      - "3308:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: sample_db
+      MARIADB_USER: sample
+      MARIADB_PASSWORD: sample
+    volumes:
+      - ./docker/sample-mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sample-clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    ports:
+      - "8124:8123"
+    volumes:
+      - ./docker/sample-clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   vitalspan_pg_data:
   vitalspan_analytics_pg_data:

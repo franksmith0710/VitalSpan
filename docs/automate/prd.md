@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.81
+version: 1.2.82
 last_updated: 2026-07-06
 truth_source: true
 evolution_hub: true
@@ -17,20 +17,20 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-06 · P5 r223 重评 GOV-002 + CAT-001/002/003 + NFR-004（M6 集成验收收官）；pytest 1877/13 skipped；semi-auto FSM+GET/probe、CAT m6-probe handler、HTTPS audit guard middleware；用户价值 82–84%→86–88%，完整度 90–92%→94–96%，性能 86–88%→88–90%，总分 90.0–90.4→91.5–92.4（五 ID ≥90 STUCK 空；plan M6 五 ID 勾选）
+> 更新：2026-07-06 · P5 r228 重评 CONN-003~007（M7 二期数据源类型扩展批次 1）；pytest 1901/20 skipped；MariadbConnector+compose 3308、relational_hints Oracle/SQL Server、Oracle HTTP 凭证脱敏、SQLite fixture、ClickHouse compose 8124；test_connectors_m7_r228 24/31 passed 7 skipped；用户价值 84%→86–88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，性能 88%→90%（CONN-005 池复用），总分 90.0–91.2→91.9–93.2（五 ID ≥90 STUCK 空；plan M7 五 ID 勾选）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
-| 1 | CONN-004 | 连接器项 | 90.0 | 用户价值 | 见期次 |
-| 2 | QUERY-009 | 查询项 | 90.0 | 用户价值 | 见期次 |
-| 3 | VIZ-005 | 可视化项 | 90.0 | 用户价值 | 见期次 |
-| 4 | META-001 | 元数据项 | 90.0 | 安全性 | 见期次 |
-| 5 | API-001 | 集成项 | 90.0 | 性能 | 见期次 |
-| 6 | CONN-018 | 连接器项 | 90.0 | 用户价值 | 见期次 |
-| 7 | NFR-005 | 非功能项 | 90.0 | 用户价值 | 见期次 |
-| 8 | CONN-012 | 连接器项 | 90.0 | 用户价值 | 见期次 |
-| 9 | GOV-003 | 治理项 | 90.1 | 用户价值 | 见期次 |
-| 10 | CAT-004 | 分类项 | 90.1 | 用户价值 | 见期次 |
+| 1 | QUERY-009 | 查询项 | 90.0 | 用户价值 | 见期次 |
+| 2 | VIZ-005 | 可视化项 | 90.0 | 用户价值 | 见期次 |
+| 3 | META-001 | 元数据项 | 90.0 | 安全性 | 见期次 |
+| 4 | API-001 | 集成项 | 90.0 | 性能 | 见期次 |
+| 5 | CONN-018 | 连接器项 | 90.0 | 用户价值 | 见期次 |
+| 6 | NFR-005 | 非功能项 | 90.0 | 用户价值 | 见期次 |
+| 7 | CONN-012 | 连接器项 | 90.0 | 用户价值 | 见期次 |
+| 8 | GOV-003 | 治理项 | 90.1 | 用户价值 | 见期次 |
+| 9 | CAT-004 | 分类项 | 90.1 | 用户价值 | 见期次 |
+| 10 | CONN-010 | 连接器项 | 90.1 | 性能 | 见期次 |
 
 ---
 
@@ -64,11 +64,11 @@ domain_count: 16
 | DS-008 | 84 | 94 | 96 | N/A | 90 | 100 | 86 | 92 | 91.6 | 用户价值 |
 | CONN-001 | 88 | 96 | 96 | N/A | 90 | 100 | 86 | 90 | 92.5 | 性能 |
 | CONN-002 | 88 | 96 | 96 | N/A | 90 | 100 | 86 | 90 | 92.5 | 性能 |
-| CONN-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
-| CONN-004 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 90 | 90.0 | 用户价值 |
-| CONN-005 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 92 | 90.6 | 用户价值 |
-| CONN-006 | 84 | 90 | 94 | N/A | 90 | 100 | 88 | 90 | 90.6 | 用户价值 |
-| CONN-007 | 84 | 90 | 96 | N/A | 90 | 100 | 92 | 88 | 91.2 | 安全性 |
+| CONN-003 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 92.4 | 性能 |
+| CONN-004 | 86 | 94 | 94 | N/A | 90 | 100 | 88 | 92 | 91.9 | 用户价值 |
+| CONN-005 | 86 | 94 | 94 | N/A | 90 | 100 | 90 | 92 | 92.1 | 用户价值 |
+| CONN-006 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 92 | 92.4 | 性能 |
+| CONN-007 | 88 | 96 | 96 | N/A | 90 | 100 | 92 | 90 | 93.2 | 用户价值 |
 | CONN-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.4 | 用户价值 |
 | CONN-009 | 84 | 88 | 96 | N/A | 90 | 98 | 90 | 88 | 90.4 | 用户价值 |
 | CONN-010 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
@@ -219,6 +219,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.82 | 2026-07-06 | P5 r228 重评 CONN-003~007（M7 二期数据源类型扩展批次 1）；pytest 1901/20 skipped；test_connectors_m7_r228 24/31 + r207/r36/r37/r40/r41 回归；MariadbConnector+compose 3308、relational_hints、Oracle HTTP 凭证脱敏、SQLite fixture、ClickHouse compose 8124；用户价值 84%→86–88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，性能 88%→90%（CONN-005 池复用），总分 90.0–91.2→91.9–93.2（五 ID ≥90 STUCK 空；plan M7 五 ID 勾选；只读查询/UI 选型留 companion） |
 | 1.2.81 | 2026-07-06 | P5 r223 重评 GOV-002 + CAT-001/002/003 + NFR-004（M6 集成验收收官）；pytest 1877/13 skipped；test_gov_002_bus_poc_fsm 6/6 + test_cat_00*_m6 12/12 + test_nfr_004_https_audit 5/5；semi-auto FSM pending/registered/failed+GET/probe、CAT m6-probe handler+ACL、HTTPS audit guard middleware+audit-probe 无泄漏；用户价值 82–84%→86–88%，完整度 90–92%→94–96%，性能 86–88%→88–90%，总分 90.0–90.4→91.5–92.4（五 ID ≥90 STUCK 空；plan M6 五 ID 勾选；真实总线 HTTP/IF-02 查询/生产 TLS 留 companion） |
 | 1.2.80 | 2026-07-06 | P5 r219 重评 VIEW-001 + NFR-001 + GOV-001（M5 VIEW 协议收官 + M6 perf/catalog companion）；pytest 1854/11 skipped；fe vitest 142/142 + check:design PASS；扩展 widget CHART_FIELD_REQUIREMENT+GET /views/schema、appendix E 7 类 taxonomy+probe/ACL、M5_EXTENDED_WIDGET_FIXTURE 首屏 perf；用户价值 82–86%→86–88%，完整度 92–96%→96–98%，性能 86–90%→88–92%，总分 90.2–91.3→92.5–92.8（三 ID ≥90 STUCK 空；plan M5 VIEW-001 + M6 NFR-001/GOV-001 勾选） |
 | 1.2.79 | 2026-07-06 | P5 r216 重评 DASH-003 + VIEW-001 + NFR-001（M5 Dashboard 收官）；pytest 1840/13 skipped；fe vitest 142/142 + check:design PASS；heatmap/kpi/timeline BE+FE、VIEW protocolVersion round-trip、NFR fe 首屏 P95 smoke；完整度 90–94%→92–98%，测试覆盖 96–100%→98–100%，总分 90.0–90.7→91.2–92.5（三 ID ≥90 STUCK 空；plan M5 DASH-003 勾选；VIEW-001/NFR-001 部分实现 plan 未勾） |

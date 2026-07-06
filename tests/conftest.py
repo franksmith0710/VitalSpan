@@ -139,6 +139,66 @@ def connector_compose_env():
     }
 
 
+from pathlib import Path
+
+_FIXTURES_M7 = Path(__file__).resolve().parent / "fixtures" / "m7"
+
+
+@pytest.fixture(scope="session")
+def m7_compose_env():
+    """M7 optional compose: mariadb:3308, clickhouse:8124, sqlite fixture file."""
+    mariadb_ok = _port_open("127.0.0.1", 3308)
+    clickhouse_ok = _port_open("127.0.0.1", 8124)
+    sqlite_path = _FIXTURES_M7 / "sample.db"
+    if not sqlite_path.is_file():
+        pytest.skip(f"sqlite fixture missing: {sqlite_path}")
+    return {
+        "mariadb": {
+            "host": "127.0.0.1",
+            "port": 3308,
+            "database": "sample_db",
+            "username": "sample",
+            "password": "sample",
+            "_available": mariadb_ok,
+        },
+        "clickhouse": {
+            "host": "127.0.0.1",
+            "port": 8124,
+            "database": "sample_db",
+            "username": "default",
+            "password": "",
+            "_available": clickhouse_ok,
+        },
+        "sqlite": {
+            "host": str(sqlite_path.resolve()),
+            "port": 1,
+            "database": "main",
+            "username": "sqlite",
+            "password": "x",
+            "_available": True,
+        },
+    }
+
+
+@pytest.fixture(scope="session")
+def m7_mariadb_env(m7_compose_env):
+    if not m7_compose_env["mariadb"]["_available"]:
+        pytest.skip("sample-mariadb:3308 not running — docker compose up -d sample-mariadb")
+    return m7_compose_env["mariadb"]
+
+
+@pytest.fixture(scope="session")
+def m7_clickhouse_env(m7_compose_env):
+    if not m7_compose_env["clickhouse"]["_available"]:
+        pytest.skip("sample-clickhouse:8124 not running — docker compose up -d sample-clickhouse")
+    return m7_compose_env["clickhouse"]
+
+
+@pytest.fixture(scope="session")
+def m7_sqlite_env(m7_compose_env):
+    return m7_compose_env["sqlite"]
+
+
 @pytest.fixture
 def analytics_sqlite() -> str:
     """In-memory sqlite URL for mock L1 analytics (no compose)."""

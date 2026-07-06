@@ -462,11 +462,11 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 **SRS**：二期关系型/OLAP · **验收**：§9.1 二期 FR-2.0-EXT
 
-- [ ] CONN-003: MariaDB / Hive 连接器
-- [ ] CONN-004: SQL Server / Oracle 连接器
-- [ ] CONN-005: Oracle / SQL Server 连接器
-- [ ] CONN-006: SQLite 连接器
-- [ ] CONN-007: ClickHouse 连接器
+- [x] CONN-003: MariaDB / Hive 连接器（完成于 2026-07-06）
+- [x] CONN-004: SQL Server / Oracle 连接器（完成于 2026-07-06）
+- [x] CONN-005: Oracle / SQL Server 连接器（完成于 2026-07-06）
+- [x] CONN-006: SQLite 连接器（完成于 2026-07-06）
+- [x] CONN-007: ClickHouse 连接器（完成于 2026-07-06）
 - [ ] CONN-008: Apache Doris 连接器
 
 ---
