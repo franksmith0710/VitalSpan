@@ -25,6 +25,7 @@ import {
   type LayoutWidget,
 } from "@/components/dashboard/layoutUtils";
 import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
+import { resetChartTypeCatalogCache } from "@/lib/chartRegistry";
 import { DashboardEditPage } from "./DashboardEditPage";
 import { DashboardListPage } from "./DashboardListPage";
 
@@ -99,7 +100,10 @@ function mockDashboardLoad(widgets: LayoutWidget[]) {
 }
 
 describe("dashboard admin smoke", () => {
-  beforeEach(() => mockApiFetch.mockReset());
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    resetChartTypeCatalogCache();
+  });
   afterEach(() => cleanup());
 
   it("T-DASH-R28-002-01: empty grid shows guidance", () => {
@@ -116,6 +120,19 @@ describe("dashboard admin smoke", () => {
     render(<WidgetPalette onInsert={onInsert} />);
     await user.click(screen.getByRole("button", { name: "折线图" }));
     expect(onInsert).toHaveBeenCalledWith("line");
+  });
+
+  it("T-DASH-003-04: palette shows extended group", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockResolvedValueOnce([
+      { type: "table", displayName: "表格", category: "basic", renderer: "table", styleVariants: ["default"], fieldRule: {} },
+      { type: "heatmap", displayName: "热力图", category: "geo", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
+    ]);
+    const onInsert = vi.fn();
+    render(<WidgetPalette onInsert={onInsert} />);
+    expect(await screen.findByText("扩展组件")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "热力图" }));
+    expect(onInsert).toHaveBeenCalledWith("heatmap");
   });
 
   it("T-DASH-R28-003-03: delete middle widget", async () => {

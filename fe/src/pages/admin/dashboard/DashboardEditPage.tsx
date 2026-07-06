@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { apiFetch } from "@/lib/api";
-import type { ChartTypeL1 } from "@/lib/chartViewConfig";
+import type { ChartType } from "@/lib/chartViewConfig";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
@@ -93,14 +93,24 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const executeKey = useMemo(() => JSON.stringify(filterValues), [filterValues]);
 
-  const handleInsert = (type: ChartTypeL1) => {
+  const TITLE_MAP: Record<string, string> = {
+    table: "表格",
+    line: "折线图",
+    bar: "柱状图",
+    map: "地图",
+    heatmap: "热力图",
+    kpi: "KPI 指标",
+    timeline: "时间轴",
+  };
+
+  const handleInsert = (type: ChartType) => {
     const widgetId = crypto.randomUUID();
     const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
     const chartConfig = { ...defaultChartConfig(type), chartId: widgetId };
     const next: LayoutWidget = {
       id: widgetId,
       type: "chart",
-      title: type === "table" ? "表格" : type === "line" ? "折线图" : "柱状图",
+      title: TITLE_MAP[type] ?? type,
       colSpan: 6,
       rowSpan: 1,
       order: maxOrder + 1,
