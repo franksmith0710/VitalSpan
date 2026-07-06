@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target.md |
 | design | docs/superpowers/specs/2026-07-06-m-fe-1-auth-datasource-fe-design.md |
 | plan | docs/superpowers/plans/2026-07-06-m-fe-1-auth-datasource-fe.md |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r195 PRD 对齐：重评 BOOT-003/002/DS-002/003/007（M-FE-1 FE companion）；总分 90.7–92.1→91.9–94.1；plan M-FE-1 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r195 验证：独立全量 ruff+pytest 1827 passed/3 skipped exit 0；fe check:design 85 files + vitest 112/112 + build exit 0；UI design_drift PASS；login desktop/mobile 截图 QA PASS（docs/superpowers/evolution/p4-screenshots/login-{desktop,mobile}.png）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P2 r194 计划：M-FE-1 实现计划 7 Task（BOOT-003 后端 JWT+迁移 0017、FE 登录守卫、BOOT-002 Query/apiError、DS-007/002/003 数据源与连接器页、smoke+API 文档）；subagent-driven-development option 1；预估 28 文件；ui_design_skill=b-design-system-tailadmin-radix；skill_rule_index 26 源刷新时间戳；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-m-fe-1-auth-datasource-fe.md；待 P3 evolution-implementer
 - P1 r193 设计：M-FE-1 五子项 design 覆盖（BOOT-003 JWT 登录+守卫、BOOT-002 Query/apiError、DS-002/003/007 数据源与连接器页）；ui_design_skill=b-design-system-tailadmin-radix；范围框定 fe+auth+api/v1 约 28 文件（含测试）；JWT+bcrypt 替代 Bearer dev；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-06-m-fe-1-auth-datasource-fe-design.md；待 P2 evolution-planner

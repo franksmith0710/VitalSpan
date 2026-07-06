@@ -315,11 +315,11 @@ BOOT-003 → BOOT-002 → DS-002 → DS-003 → DS-007
 
 ### 勾选清单
 
-- [ ] BOOT-003: 正式登录与会话（`POST /api/v1/auth/login`、JWT、`/login` 页、`api.ts` 读 token）
-- [ ] BOOT-002: API 客户端与 TanStack Query（`@/lib/api.ts`、`queryKeys`、`mapApiError`）
-- [ ] DS-002: 数据源管理页（`/admin/datasources` 列表/新建/编辑）
-- [ ] DS-003: 连通性测试 UI（详情页触发 test、展示结构化错误）
-- [ ] DS-007: 连接器类型只读页（`/admin/connectors` 对接 types API）
+- [x] BOOT-003: 正式登录与会话（`POST /api/v1/auth/login`、JWT、`/login` 页、`api.ts` 读 token）（完成于 2026-07-06）
+- [x] BOOT-002: API 客户端与 TanStack Query（`@/lib/api.ts`、`queryKeys`、`mapApiError`）（完成于 2026-07-06）
+- [x] DS-002: 数据源管理页（`/admin/datasources` 列表/新建/编辑）（完成于 2026-07-06）
+- [x] DS-003: 连通性测试 UI（详情页触发 test、展示结构化错误）（完成于 2026-07-06）
+- [x] DS-007: 连接器类型只读页（`/admin/connectors` 对接 types API）（完成于 2026-07-06）
 
 ### M-FE-1 验收信号
 
