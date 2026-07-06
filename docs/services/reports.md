@@ -40,10 +40,14 @@
 | `scheduler/executor.py` | `mock_execute_schedule` + Idempotency-Key 幂等 log | RPT-005 | companion 已实现（r57） |
 | `extension/service.py` | 模板节点扩展配置 CRUD（metrics/filters/revision） | RPT-006 | L1 已实现 r54 |
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |
-| `engine/service.py` | validate + `build_engine_render_spec` + run mock | RPT-001 | L1 已实现 r60 |
+| `engine/service.py` | validate + `run_template`（M3-LITE：`dataSourceId` 驱动 `engine/execute`；无 ds placeholder 回归 r60） | RPT-001 | M3-LITE 已实现 r233 |
+| `engine/execute.py` | extension metrics → `query.execute_query`；`build_sections_from_extension` | RPT-001 | M3-LITE 已实现 r233 |
 | `engine/acl.py` | run 访问控制 + `set_user_engine_scope` enterprise 白名单 | RPT-001 | companion 已实现 r66 |
 | `engine/probe.py` | `probe_run_template_budget_ms` ≤50ms | RPT-001 | companion 已实现 r66 |
 | `prefab/service.py` | 预制报表绑定 validate/upsert/list（内存 store） | RPT-002 | L1 已实现 r62 |
+| `prefab/run.py` | binding → analysisType SQL → `engine/execute`；`RPT_PREFAB_RUN_FORBIDDEN` | RPT-002 | M3-LITE 已实现 r233 |
+| `prefab/seed.py` | 内置 lifecycle/distribution binding 幂等 upsert | RPT-002 | M3-LITE 已实现 r233 |
+| **FE** | `fe/src/pages/admin/reports/PrefabReportsPage.tsx` + `usePrefabReports.ts`（列表/运行/空态 vitest） | RPT-002 | M3-LITE 已实现 r233 |
 | `templates/acl.py` | viewer 禁写 + enterprise scope（`set_user_template_scope`） | RPT-003 | companion 已实现 r67 |
 | `templates/probe.py` | validate/get perf probe ≤50ms | RPT-003 | companion 已实现 r67 |
 | `templates/service.py` | 模板块 validate/upsert/get + duplicate block 守卫 | RPT-003 | companion 已实现 r67 |

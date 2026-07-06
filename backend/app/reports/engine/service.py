@@ -4,12 +4,16 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy.orm import Session
+
 from app.auth.deps import UserContext
+from app.datasources.models import get_meta_engine
 from app.reports.catalog import service as catalog_service
 from app.reports.catalog.schemas import CatalogNodeOut
 from app.reports.engine import acl as engine_acl
-from app.reports.engine.errors import RPT_ENGINE_INVALID_PARAMETER, ReportEngineError
-from app.reports.engine.schemas import EngineRenderSpec, RenderRunIn, RenderRunOut
+from app.reports.engine import execute as engine_execute
+from app.reports.engine.errors import RPT_ENGINE_DATASOURCE_REQUIRED, RPT_ENGINE_INVALID_PARAMETER, ReportEngineError
+from app.reports.engine.schemas import EngineRenderSpec, QueryMeta, RenderRunIn, RenderRunOut
 from app.reports.errors import ReportExtensionError
 from app.reports.extension import service as extension_service
 
@@ -51,7 +55,7 @@ def _validate_parameters(parameters: dict) -> dict:
 
 def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContext) -> RenderRunOut:
     engine_acl.assert_engine_run_access(actor, template_id)
-    _validate_parameters(payload.parameters or {})
+    parameters = _validate_parameters(payload.parameters or {})
     if payload.format == "pdf":
         raise ReportEngineError(
             "RPT_ENGINE_FORMAT_NOT_SUPPORTED",
@@ -78,5 +82,38 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
         raise ReportEngineError("RPT_ENGINE_NOT_TEMPLATE", "Node is not a template", 422)
 
     _assert_extension_when_kind(node)
-    spec = build_engine_render_spec(node, payload.parameters, payload.format)
-    return RenderRunOut(status="ready", renderSpec=spec)
+
+    ds_id = payload.data_source_id
+    has_extension = False
+    try:
+        ext = extension_service.get_extension(template_id)
+        has_extension = True
+    except ReportExtensionError:
+        ext = None
+
+    if has_extension and ds_id is None:
+        raise ReportEngineError(
+            RPT_ENGINE_DATASOURCE_REQUIRED,
+            "dataSourceId required when template has extension metrics",
+            422,
+        )
+
+    query_meta: QueryMeta | None = None
+    if ds_id is not None and ext is not None:
+        with Session(bind=get_meta_engine()) as db:
+            sections, elapsed = engine_execute.build_sections_from_extension(
+                db, actor, ext, ds_id, parameters,
+            )
+        spec = EngineRenderSpec(
+            templateNodeId=node.id,
+            engineVersion="1.0",
+            format=payload.format,
+            sections=sections,
+            parameters=parameters,
+            renderedAt=datetime.now(UTC),
+        )
+        query_meta = QueryMeta(sectionCount=len(sections), elapsedMs=round(elapsed, 2))
+    else:
+        spec = build_engine_render_spec(node, parameters, payload.format)
+
+    return RenderRunOut(status="ready", renderSpec=spec, queryMeta=query_meta)

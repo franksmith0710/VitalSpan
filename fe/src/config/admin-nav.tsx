@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Boxes, Cable, Database, LayoutDashboard, Shield, Users } from "lucide-react";
+import { ArrowLeftRight, Boxes, Cable, Database, FileBarChart, Layers, LayoutDashboard, Shield, Users } from "lucide-react";
 import type { NavSection } from "@/components/layout/app-sidebar";
 
 export const ADMIN_NAV_GROUPS: NavSection[] = [
@@ -30,6 +30,11 @@ export const ADMIN_NAV_GROUPS: NavSection[] = [
         icon: <LayoutDashboard className="size-6" aria-hidden />,
         path: "/admin/dashboards",
       },
+      {
+        name: "预制报表",
+        icon: <FileBarChart className="size-6" aria-hidden />,
+        path: "/admin/reports",
+      },
     ],
   },
   {
@@ -39,6 +44,11 @@ export const ADMIN_NAV_GROUPS: NavSection[] = [
         name: "实体总览",
         icon: <Boxes className="size-6" aria-hidden />,
         path: "/admin/entities/overview",
+      },
+      {
+        name: "主题分析",
+        icon: <Layers className="size-6" aria-hidden />,
+        path: "/admin/themes/default",
       },
     ],
   },

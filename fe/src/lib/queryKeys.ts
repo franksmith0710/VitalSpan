@@ -27,6 +27,17 @@ export const queryKeys = {
     entityOverview: (dashboardId: string) =>
       ["metadata", "entityOverview", dashboardId] as const,
   },
+  reports: {
+    prefabBindings: ["reports", "prefabBindings"] as const,
+    prefabRun: (bindingKey: string) => ["reports", "prefabRun", bindingKey] as const,
+  },
+  themes: {
+    config: (refType: string, refId: string) => ["themes", "config", refType, refId] as const,
+    chartBindings: (refType: string, refId: string) =>
+      ["themes", "chartBindings", refType, refId] as const,
+    drill: (refType: string, refId: string, dimensionId: string) =>
+      ["themes", "drill", refType, refId, dimensionId] as const,
+  },
   users: {
     all: ["users"] as const,
     list: (params?: { q?: string; limit?: number; offset?: number }) =>

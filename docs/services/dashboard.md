@@ -24,8 +24,9 @@
 
 ### theme/ 子域（DASH-006 · r53 + r57 + r58 companion）
 
-- **In**：`EntityThemeConfig` schema、validate/save/get、config_store `entity_theme` 持久化；`chartViewBindings` 与 layout chart widget 联动（`_link_chart_views`）；`GET .../chart-bindings`；**r58** `POST .../theme-analysis/execute-plan` 四步链（`theme-plan-v1` + yoy/mom `compareWindow`）；`dashboard/theme/acl.py` 写守卫（`DASH_THEME_FORBIDDEN`）
-- **Out**：GIS SDK、主题分析 Admin UI、计算引擎（同比/环比仅配置声明）
+- **In**：`EntityThemeConfig` schema、validate/save/get、config_store `entity_theme` 持久化；`chartViewBindings` 与 layout chart widget 联动（`_link_chart_views`）；`GET .../chart-bindings`；**r58** `POST .../theme-analysis/execute-plan` 四步链（`theme-plan-v1` + yoy/mom `compareWindow`）；**r233** `POST .../theme-analysis/query` 维度钻取（`theme/query.py` → `metadata.physical` + `engine/execute`）；`dashboard/theme/acl.py` 写守卫（`DASH_THEME_FORBIDDEN`）
+- **Out**：GIS SDK、计算引擎（同比/环比仅配置声明）
+- **FE**：`fe/src/pages/admin/themes/ThemeAnalysisPage.tsx`（配置/分析 Tabs；DASH-006 r233）
 - **依赖**：`dashboard/service`（ref 校验 + layout widgets）、`query/config_store`、`schemas/chart_view`
 - **错误码**：`DASH_THEME_*`（含 `DASH_THEME_CHART_VIEW_MISMATCH` + `detail.fields`、`DASH_THEME_FORBIDDEN`）、`DASH_NOT_FOUND`、`CONFIG_NOT_FOUND`
 - **性能**：`probe_link_chart_views_budget_ms` ≤50ms；`probe_theme_execute_plan_budget_ms` ≤40ms
@@ -66,7 +67,7 @@
 | `Dashboard` ORM | `dashboards` 表 | DASH-001 | 已实现 |
 | `DashboardService` | CRUD + `validate_layout` + `update_layout` | DASH-001~003 | 已实现 |
 | `DashboardLayout` | `version`/`widgets`/`globalFilters` JSON | DASH-002 | 已实现 |
-| `dashboard/theme/` | 实体主题分析 config（`entity_theme` via config_store）+ chart_view 联动 + execute-plan + ACL | DASH-006 | companion 已实现（r58） |
+| `dashboard/theme/` | 实体主题分析 config（`entity_theme` via config_store）+ chart_view 联动 + execute-plan + drill query + ACL | DASH-006 | M3-LITE 已实现（r233） |
 | `dashboard/global_filters/` | 全局筛选联动 validate/save/get + widget 绑定 + ACL/probe | DASH-004 | companion 已实现 r67 |
 | `dashboard/entity_overview/` | 实体总览 item validate/save/get + publish 探测 | DASH-005 | L1 已实现 r59 |
 | `DashboardViewConfig` | 视图协议 | DASH-004 | 待建 |

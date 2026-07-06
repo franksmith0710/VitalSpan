@@ -21,6 +21,8 @@ import { DatasourceDetailPage } from "@/pages/admin/datasources/DatasourceDetail
 import { RoleListPage } from "@/pages/admin/system/roles/RoleListPage";
 import { UserListPage } from "@/pages/admin/system/users/UserListPage";
 import { EntityOverviewPage } from "@/pages/admin/entities/EntityOverviewPage";
+import { PrefabReportsPage } from "@/pages/admin/reports/PrefabReportsPage";
+import { ThemeAnalysisPage } from "@/pages/admin/themes/ThemeAnalysisPage";
 
 export function AppRoutes() {
   return (
@@ -46,6 +48,8 @@ export function AppRoutes() {
           <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
           <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
           <Route path="entities/overview" element={<EntityOverviewPage />} />
+          <Route path="reports" element={<PrefabReportsPage />} />
+          <Route path="themes/:dashboardId" element={<ThemeAnalysisPage />} />
           <Route path="system/roles" element={<RoleListPage />} />
           <Route path="system/users" element={<UserListPage />} />
         </Route>

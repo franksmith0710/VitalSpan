@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Literal
+import uuid
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -30,3 +31,18 @@ class PrefabBindingValidateOut(BaseModel):
 class PrefabBindingListResponse(BaseModel):
     items: list[PrefabBindingOut]
     total: int
+
+
+class PrefabRunIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    parameters: dict[str, Any] = Field(default_factory=dict)
+    limit: int = Field(default=100, ge=1, le=500)
+
+
+class PrefabRunOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    binding_key: str = Field(alias="bindingKey")
+    analysis_type: AnalysisType = Field(alias="analysisType")
+    render_spec: dict[str, Any] = Field(alias="renderSpec")
+    data_source_id: uuid.UUID = Field(alias="dataSourceId")
+    status: Literal["ready"] = "ready"

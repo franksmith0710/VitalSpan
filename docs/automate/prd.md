@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.84
+version: 1.2.85
 last_updated: 2026-07-06
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-06 · P5 r232 重评 META-005/006 + DASH-005（M8 实体元数据与总览页收官）；pytest 1930/19 skipped；fe vitest 149/149 + entities-overview smoke 7/7 + check:design PASS；test_meta_dash_m8_r232 9/9 + r231 回归；PUT/DELETE physical-tables、`_ds_table_index`、引用计数对称、EntityDetailSheet+空态引导；用户价值 86%→88%，完整度 92–94%→96–98%，交互 84%→90%（DASH-005），总分 91.3–91.7→92.4–93.1（三 ID ≥90 STUCK 空；plan M8 三 ID 勾选）
+> 更新：2026-07-06 · P5 r233 重评 DASH-006 + RPT-001 + RPT-002（M9 主题分析与预制报表收官）；pytest 1948/19 skipped；fe vitest 157/157 + prefab/theme smoke 8/8 + check:design PASS；test_m9_rpt_theme_r233 18/18 + r60/r68/r58 回归；engine M3-LITE execute、prefab seed/run API、theme drill query、PrefabReportsPage+ThemeAnalysisPage；用户价值 84%→88–90%，完整度 90%→96%，交互 N/A→88%（RPT-002/DASH-006），总分 90.1–91.2→92.2–92.4（三 ID ≥90 STUCK 空；plan M9 三 ID 勾选；PDF/Word/GIS/binding 编辑留 companion）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -106,9 +106,9 @@ domain_count: 16
 | DASH-003 | 88 | 98 | 94 | N/A | 90 | 100 | 88 | 88 | 92.5 | 用户价值 |
 | DASH-004 | 90 | 100 | 96 | 86 | 90 | 100 | 88 | 90 | 93.0 | 性能 |
 | DASH-005 | 88 | 98 | 94 | 90 | 90 | 100 | 88 | 90 | 92.4 | 性能 |
-| DASH-006 | 84 | 90 | 96 | N/A | 90 | 100 | 90 | 90 | 91.2 | 用户价值 |
-| RPT-001 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.2 | 用户价值 |
-| RPT-002 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
+| DASH-006 | 88 | 96 | 96 | 88 | 90 | 100 | 90 | 90 | 92.4 | 用户价值 |
+| RPT-001 | 88 | 96 | 94 | N/A | 90 | 100 | 90 | 88 | 92.4 | 用户价值 |
+| RPT-002 | 90 | 96 | 94 | 88 | 90 | 100 | 90 | 88 | 92.2 | 安全性 |
 | RPT-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.2 | 用户价值 |
 | RPT-004 | 86 | 90 | 96 | N/A | 90 | 100 | 88 | 90 | 91.3 | 性能 |
 | RPT-005 | 86 | 90 | 96 | N/A | 90 | 100 | 90 | 90 | 91.5 | 用户价值 |
@@ -219,6 +219,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.85 | 2026-07-06 | P5 r233 重评 DASH-006 + RPT-001 + RPT-002（M9 主题分析与预制报表收官）；pytest 1948/19 skipped；fe vitest 157/157 + prefab/theme smoke 8/8 + check:design PASS；test_m9_rpt_theme_r233 18/18 + r60/r68/r58 回归；engine M3-LITE execute、prefab seed/run API、theme drill query、PrefabReportsPage+ThemeAnalysisPage；用户价值 84%→88–90%，完整度 90%→96%，交互 N/A→88%（RPT-002/DASH-006），总分 90.1–91.2→92.2–92.4（三 ID ≥90 STUCK 空；plan M9 三 ID 勾选；PDF/Word/GIS/binding 编辑留 companion） |
 | 1.2.84 | 2026-07-06 | P5 r232 重评 META-005/006 + DASH-005（M8 实体元数据与总览页收官）；pytest 1930/19 skipped；fe vitest 149/149 + entities-overview smoke 7/7 + check:design PASS；test_meta_dash_m8_r232 9/9 + r231 回归；PUT/DELETE physical-tables、`_ds_table_index`、引用计数对称、EntityDetailSheet+空态引导；用户价值 86%→88%，完整度 92–94%→96–98%，交互 84%→90%（DASH-005），总分 91.3–91.7→92.4–93.1（三 ID ≥90 STUCK 空；plan M8 三 ID 勾选；GOV/lineage/跨组件口径留 companion） |
 | 1.2.83 | 2026-07-06 | P5 r231 重评 CONN-008 + META-005/006 + DASH-004/005（M7 Doris 收官 + M8 实体元数据 kickoff）；pytest 1921/19 skipped；fe vitest 145/145 + check:design PASS；test_connectors_m7_r229 + test_meta_dash_m8_r231 + ACL §7.4.1 回归；register-from-schema、physicalTableFqn、BE execute linkage、EntityOverviewPage；用户价值 84%→86–88%，完整度 90–98%→92–100%，交互 N/A→84–86%（DASH-005），总分 90.4–92.1→91.3–93.0（五 ID ≥90 STUCK 空；plan M7 CONN-008 + M8 DASH-004 勾选；META-005/006/DASH-005 部分实现 plan 未勾） |
 | 1.2.82 | 2026-07-06 | P5 r228 重评 CONN-003~007（M7 二期数据源类型扩展批次 1）；pytest 1901/20 skipped；test_connectors_m7_r228 24/31 + r207/r36/r37/r40/r41 回归；MariadbConnector+compose 3308、relational_hints、Oracle HTTP 凭证脱敏、SQLite fixture、ClickHouse compose 8124；用户价值 84%→86–88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，性能 88%→90%（CONN-005 池复用），总分 90.0–91.2→91.9–93.2（五 ID ≥90 STUCK 空；plan M7 五 ID 勾选；只读查询/UI 选型留 companion） |

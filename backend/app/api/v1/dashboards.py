@@ -242,6 +242,24 @@ def get_theme_chart_bindings(
         raise
 
 
+@router.post("/theme-analysis/query", response_model=None)
+def theme_analysis_query(
+    payload: dict,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    from app.dashboard.theme.query import execute_theme_drill
+
+    ref_type = payload.get("refType", "dashboard")
+    ref_id = uuid.UUID(str(payload["refId"]))
+    dimension_id = str(payload["dimensionId"])
+    filters = payload.get("filters")
+    try:
+        return execute_theme_drill(db, user, ref_type, ref_id, dimension_id, filters)
+    except ThemeAnalysisError as exc:
+        return _theme_error(exc)
+
+
 @router.get("")
 def list_dashboards(
     user: Annotated[UserContext, Depends(get_current_user)],
