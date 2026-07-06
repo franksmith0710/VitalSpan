@@ -59,6 +59,27 @@ def client():
     return TestClient(app)
 
 
+from app.datasources.dialects.mariadb import MariadbConnector
+from app.datasources.registry import export_type_catalog, registry
+
+
+def test_conn_r228_003_01_mariadb_type_and_catalog():
+    """T-CONN-R228-003-01: MariadbConnector.type=mariadb；catalog 含 mariadb+hive。"""
+    assert MariadbConnector().type == "mariadb"
+    types = {item["type"]: item for item in export_type_catalog()}
+    assert "mariadb" in types
+    assert types["mariadb"]["category"] == "relational"
+    assert "hive" in types
+    assert types["hive"]["category"] == "lake"
+
+
+def test_conn_r228_003_05_registry_no_conflict():
+    """T-CONN-R228-005-05 预检: registry 同时含 oracle 与 sqlserver（mariadb 注册后不冲突）。"""
+    assert registry.get("mariadb") is not None
+    assert registry.get("oracle") is not None
+    assert registry.get("sqlserver") is not None
+
+
 def test_r228_scaffold():
     """占位：fixture 可加载。"""
     assert app is not None

@@ -4,6 +4,7 @@ from app.datasources.dialects.doris import DorisConnector
 from app.datasources.dialects.elasticsearch import ElasticsearchConnector
 from app.datasources.dialects.gaussdb import GaussdbConnector
 from app.datasources.dialects.hive import HiveConnector
+from app.datasources.dialects.mariadb import MariadbConnector
 from app.datasources.dialects.influxdb import InfluxdbConnector
 from app.datasources.dialects.mongodb import MongodbConnector
 from app.datasources.dialects.mysql import MysqlConnector
@@ -31,6 +32,7 @@ def register_builtin_dialects() -> None:
     register_dialect(StarrocksConnector())
     register_dialect(ElasticsearchConnector())
     register_dialect(HiveConnector())
+    register_dialect(MariadbConnector())
     register_dialect(ClickhouseConnector())
     register_dialect(SqlserverConnector())
     register_dialect(DorisConnector())
