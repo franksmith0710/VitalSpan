@@ -54,7 +54,7 @@
 - **里程碑对齐**：M8 · 已完成 · 2026-07-06
 ### [DASH-005] 实体总览页 FR-6.2
 
-- **状态**：部分实现（M8 r231 FE kickoff）
+- **状态**：已实现（M8 r232 收官）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：实体总览页 FR-6.2（SRS 追溯项）。
@@ -63,9 +63,10 @@
   - [x] 重复 metric 拦截 + theme-analysis 路由不变（r59 回归）
   - [x] companion entityTypeRef/drill widget 校验 + perf probe（r66：非法 entityTypeRef/drill widget 422；viewer save 403；`probe_validate_overview_budget_ms`/`probe_get_overview_budget_ms` ≤50ms）
   - [x] 统计卡片+详情筛选+下钻（r231：`EntityOverviewPage` + `/admin/entities` 导航 + entity-types/physical-tables/entity-overview 数据链；`entities-overview.smoke.test.tsx`）
-  - [ ] 跨组件口径一致
-- **代码锚点**：`backend/app/dashboard/entity_overview/` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/entities/EntityOverviewPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/admin-nav.tsx` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DASH-R59-005-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-DASH-R66-005-01~06 · `fe/src/pages/admin/entities/entities-overview.smoke.test.tsx`
-- **演化建议**：r231 kickoff 闭合 Admin 实体总览页与 META-005/006 数据链；跨组件口径联动与 Playwright E2E 留 companion
+  - [x] 详情 Sheet + 空态引导 + 权限/下钻/Tab vitest（r232：`useEntityOverview` + `EntityDetailSheet` + 7 用例 smoke；页内 stat count 对齐 physical total）
+  - [ ] 跨组件口径一致（companion）
+- **代码锚点**：`backend/app/dashboard/entity_overview/` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/entities/EntityOverviewPage.tsx` · `fe/src/pages/admin/entities/useEntityOverview.ts` · `fe/src/pages/admin/entities/EntityDetailSheet.tsx` · `fe/src/routes.tsx` · `fe/src/config/admin-nav.tsx` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DASH-R59-005-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-DASH-R66-005-01~06 · `fe/src/pages/admin/entities/entities-overview.smoke.test.tsx`
+- **演化建议**：r232 收官闭合 M8 实体总览交互与 META-005/006 消费链；跨组件口径联动与 Playwright E2E 留 companion
 - **里程碑对齐**：M8 · 已完成 · 2026-07-06
 ### [DASH-006] 实体主题分析 FR-4.1
 

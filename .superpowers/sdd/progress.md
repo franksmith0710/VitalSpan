@@ -1,10 +1,10 @@
-# m7-conn008-m8-entity-kickoff-r231 — progress ledger
+# m8-entity-metadata-completion-r232 — progress ledger
 base_branch: dev-auto
-feature_branch: feat/m7-conn008-m8-entity-kickoff-r231
+feature_branch: feat/m8-entity-metadata-completion-r232
 
-Task 1: complete (CONN-008 r229 tests + datasources.md, review clean)
-Task 2: complete (META-005 register-from-schema, review clean)
-Task 3: complete (META-006 physicalTableFqn, review clean)
-Task 4: complete (DASH-004 execute + sql_parameters, review clean)
-Task 5: complete (DASH-005 EntityOverviewPage + smoke, ui_acceptance PASS, review clean)
-Task 6: complete (docs api/services + regression gate, review clean)
+Task 1: complete (META-005 schemas+service CRUD+ds index, review clean)
+Task 2: complete (API PUT/DELETE routes, review clean)
+Task 3: complete (pytest r232 9 cases, review clean)
+Task 4: complete (useEntityOverview+EntityDetailSheet, ui_acceptance PASS, review clean)
+Task 5: complete (EntityOverviewPage+vitest 7 cases, ui_acceptance PASS, review clean)
+Task 6: complete (docs api/services anchors, review clean)
