@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 TemplateFormat = Literal["word", "excel", "pdf"]
 BlockType = Literal["sql", "table", "chart"]
 ChartType = Literal["line", "bar", "pie"]
+_STORAGE_REF_RE = r"^mock://templates/[a-z0-9_-]+\.(word|excel|pdf)$"
 
 
 class TemplateBlock(BaseModel):
@@ -17,16 +18,29 @@ class TemplateBlock(BaseModel):
     chart_type: ChartType | None = Field(default=None, alias="chartType")
 
 
+class ExportHookOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    integration_path: str = Field(alias="integrationPath")
+    format: TemplateFormat
+    placeholder: bool = True
+
+
 class TemplateDefinitionIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     template_key: str = Field(alias="templateKey", pattern=r"^[a-z][a-z0-9_-]{1,63}$")
     format: TemplateFormat
     display_name: str = Field(min_length=1, max_length=120, alias="displayName")
     blocks: list[TemplateBlock]
+    storage_ref: str | None = Field(default=None, alias="storageRef", pattern=_STORAGE_REF_RE)
 
 
 class TemplateDefinitionOut(TemplateDefinitionIn):
-    pass
+    export_hook: ExportHookOut = Field(alias="exportHook")
+
+
+class TemplateListOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    items: list[TemplateDefinitionOut]
 
 
 class TemplateValidateOut(BaseModel):

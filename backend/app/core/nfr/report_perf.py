@@ -19,6 +19,13 @@ _SAMPLE_QUERY_RE = re.compile(r"^[a-z][a-z0-9_-]{1,63}$")
 _USER_REPORT_PERF_SCOPE: dict[str, str] = {}
 probe_report_perf_budget_ms_limit = 50
 
+REPORT_QUERY_FIXTURE: dict[str, object] = {
+    "id": "rpt-m10-query-smoke",
+    "templateKey": "sales_summary",
+    "budgetMs": 10000,
+    "mockElapsedMs": 120,
+}
+
 
 @dataclass(frozen=True)
 class ReportPerfProbeBudgetResult:
@@ -58,6 +65,7 @@ class ReportPerfProbeOut(BaseModel):
     within_budget: bool = Field(alias="withinBudget")
     sample_passed: bool = Field(alias="samplePassed")
     budget_ms: int = Field(alias="budgetMs")
+    fixture_profile: dict[str, object] | None = Field(default=None, alias="fixtureProfile")
 
 _MOCK_ELAPSED_MS = 120
 
@@ -105,6 +113,12 @@ def _guard_config(payload: ReportPerfProbeIn, actor: UserContext) -> ReportPerfP
     return payload
 
 
+def _resolve_fixture_profile(report_id: str) -> dict[str, object] | None:
+    if report_id == REPORT_QUERY_FIXTURE["id"]:
+        return dict(REPORT_QUERY_FIXTURE)
+    return None
+
+
 def validate_report_perf_config(payload: ReportPerfProbeIn, actor: UserContext | None = None) -> ReportPerfValidateOut:
     item = _guard_config(payload, actor or _default_actor())
     return ReportPerfValidateOut(valid=True, report_id=item.report_id, budget_ms=item.budget_ms)
@@ -112,6 +126,7 @@ def validate_report_perf_config(payload: ReportPerfProbeIn, actor: UserContext |
 
 def probe_report_perf(payload: ReportPerfProbeIn, actor: UserContext | None = None) -> ReportPerfProbeOut:
     item = _guard_config(payload, actor or _default_actor())
+    profile = _resolve_fixture_profile(item.report_id)
     within = _MOCK_ELAPSED_MS <= item.budget_ms
     sample_passed = not item.simulate_failure
     return ReportPerfProbeOut(
@@ -120,6 +135,7 @@ def probe_report_perf(payload: ReportPerfProbeIn, actor: UserContext | None = No
         within_budget=within,
         sample_passed=sample_passed,
         budget_ms=item.budget_ms,
+        fixture_profile=profile,
     )
 
 

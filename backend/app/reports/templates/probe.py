@@ -28,3 +28,10 @@ def probe_get_template_budget_ms(key: str, actor: UserContext) -> TemplateProbeR
     template_service.get_template_definition(key, actor)
     elapsed = (time.perf_counter() - started) * 1000
     return TemplateProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_template_budget_ms_limit)
+
+
+def probe_list_templates_budget_ms(actor: UserContext) -> TemplateProbeResult:
+    started = time.perf_counter()
+    template_service.list_template_definitions(actor)
+    elapsed = (time.perf_counter() - started) * 1000
+    return TemplateProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_template_budget_ms_limit)

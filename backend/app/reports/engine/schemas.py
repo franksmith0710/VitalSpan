@@ -7,10 +7,17 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class ExportHookOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    integration_path: str = Field(alias="integrationPath")
+    format: str
+    placeholder: bool = True
+
+
 class RenderRunIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     parameters: dict[str, Any] = Field(default_factory=dict)
-    format: Literal["web", "html", "pdf"] = "web"
+    format: Literal["web", "html", "pdf", "word", "excel"] = "web"
     data_source_id: uuid.UUID | None = Field(default=None, alias="dataSourceId")
 
 
@@ -45,3 +52,4 @@ class RenderRunOut(BaseModel):
     status: Literal["ready"] = "ready"
     render_spec: EngineRenderSpec = Field(alias="renderSpec")
     query_meta: QueryMeta | None = Field(default=None, alias="queryMeta")
+    export_hook: ExportHookOut | None = Field(default=None, alias="exportHook")

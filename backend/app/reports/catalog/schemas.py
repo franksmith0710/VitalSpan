@@ -12,6 +12,7 @@ class CatalogNodeCreate(BaseModel):
     parent_id: uuid.UUID | None = Field(default=None, alias="parentId")
     node_type: Literal["folder", "template"] = Field(default="folder", alias="nodeType")
     template_kind: Literal["word", "excel", "pdf"] | None = Field(default=None, alias="templateKind")
+    template_key: str | None = Field(default=None, alias="templateKey", pattern=r"^[a-z][a-z0-9_-]{1,63}$")
     sort_order: int = Field(default=0, alias="sortOrder")
 
 
@@ -33,4 +34,5 @@ class CatalogNodeOut(BaseModel):
     parent_id: uuid.UUID | None = Field(alias="parentId")
     node_type: str = Field(alias="nodeType")
     template_kind: str | None = Field(default=None, alias="templateKind")
+    template_key: str | None = Field(default=None, alias="templateKey")
     sort_order: int = Field(alias="sortOrder")
