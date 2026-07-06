@@ -13,7 +13,7 @@
 | branch | cursor/bc-8cc645b2-a251-43b9-96f9-8a3921b5e927-0ed1 |
 | base_branch | dev-auto |
 | prd_ids | VIEW-001,NFR-001,GOV-001 |
-| pr_number |  |
+| pr_number | 210 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm exec vitest run && pnpm run build |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run src/pages/admin/dashboard/dashboard-first-screen.perf.smoke.test.tsx && pnpm exec vitest run && pnpm run build |
