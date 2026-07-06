@@ -13,7 +13,7 @@
 | branch | cursor/bc-2e5efc51-bc22-4d05-8373-1d817e8b85d2-2e0c |
 | base_branch | dev-auto |
 | prd_ids | VIEW-003,CONN-001,CONN-002 |
-| pr_number |  |
+| pr_number | 208 |
 | last_verified_command | cd fe && pnpm run check:design && pnpm test && pnpm build && pnpm test:e2e; cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm test:e2e（6/6 VIEW-003 E2E PASS；screenshots 未运行：无 live BE/postgres，e2e mock 路由） |
