@@ -305,7 +305,7 @@ def test_nfr007_assert_raises_on_non_compliant():
 
 from app.core.nfr.push_config import PushConfigValidationError, resolve_push_mode, validate_push_settings
 from app.core.nfr.errors import PUSH_CONFIG_INVALID
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_nfr006_default_disabled(monkeypatch):

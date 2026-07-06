@@ -1,6 +1,6 @@
 import pytest
 
-from tests.jwt_auth import jwt_auth_headers
+from jwt_auth import jwt_auth_headers
 
 UNAUTHORIZED_BODY = {
     "code": "UNAUTHORIZED",
@@ -23,9 +23,9 @@ def test_me_empty_bearer_token_returns_401(client):
     assert response.json() == UNAUTHORIZED_BODY
 
 
-def test_me_bearer_jwt_returns_200(client, auth_headers):
-    """T-AUTH-04: JWT auth_headers → 200。"""
-    response = client.get("/api/v1/me", headers=auth_headers)
+def test_me_bearer_jwt_returns_200(client, admin_auth_headers):
+    """T-AUTH-04: JWT admin_auth_headers → 200。"""
+    response = client.get("/api/v1/me", headers=admin_auth_headers)
     assert response.status_code == 200
     assert response.json()["username"] == "admin"
     assert response.json()["id"] != "dev"
@@ -66,7 +66,7 @@ def test_healthz_returns_401(client):
         ({}, 401),
         ({"Authorization": "Bearer "}, 401),
         ({"Authorization": "Bearer invalid"}, 401),
-        (jwt_auth_headers(), 200),
+        (jwt_auth_headers(user_id="00000000-0000-0000-0000-000000000001", username="admin"), 200),
         ({"Authorization": "Basic dev"}, 401),
     ],
 )

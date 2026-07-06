@@ -119,7 +119,7 @@ def _ticket_payload(key: str = "TICKET_OPS") -> dict:
 
 
 from app.query.config_store.schemas import ALLOWED_CONFIG_TYPES
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_r61_fixture_bootstraps(client):

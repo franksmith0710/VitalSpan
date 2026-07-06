@@ -632,7 +632,7 @@ from unittest.mock import MagicMock, patch
 
 from app.datasources.dialects.opensearch import OpensearchConnector, probe_list_columns_mock
 from app.datasources.registry import export_type_catalog
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_conn_r52_016_catalog_regression():

@@ -189,7 +189,7 @@ def test_services_execute_force_error_r44(client):
 from app.governance.bus.adapter import InMemoryBusAdapter, register_with_retry
 from app.governance.catalog.schemas import CatalogEntryOut
 from datetime import UTC, datetime
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_register_with_retry_timeout_exhausted_r44():

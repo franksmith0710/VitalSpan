@@ -522,7 +522,7 @@ def test_sqlite_metadata_tables_missing_schema_400_r41(client, tmp_path):
 
 from app.datasources.dialects.base import ColumnInfo
 from app.datasources.dialects.timescaledb import TIMESCALE_MAX_COLUMNS, TimescaledbConnector
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 @patch("app.datasources.dialects.timescaledb.PostgresConnector.open_connection")

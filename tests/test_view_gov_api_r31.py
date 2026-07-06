@@ -176,7 +176,7 @@ def test_view_unknown_chart_ref_regression_r31():
 
 
 from app.auth.deps import UserContext, get_current_user
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def _create_entry(client, *, path: str, status: str = "active") -> str:

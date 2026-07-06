@@ -20,8 +20,8 @@ def test_me_without_token_returns_401(client):
     assert response.json() == UNAUTHORIZED_BODY
 
 
-def test_me_with_jwt_returns_200(client, auth_headers):
-    response = client.get("/api/v1/me", headers=auth_headers)
+def test_me_with_jwt_returns_200(client, admin_auth_headers):
+    response = client.get("/api/v1/me", headers=admin_auth_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["username"] == "admin"
@@ -53,7 +53,7 @@ def test_public_paths_accessible_without_token(client, path):
     assert response.status_code == 200
 
 
-def test_me_jwt_valid_in_production(client, auth_headers, monkeypatch):
+def test_me_jwt_valid_in_production(client, admin_auth_headers, monkeypatch):
     """T-ME-08: production 环境 JWT 仍有效（secret 一致）。"""
     from app.auth.middleware import AuthMiddleware
     from app.core.config import get_settings
@@ -73,7 +73,7 @@ def test_me_jwt_valid_in_production(client, auth_headers, monkeypatch):
         monkeypatch.setenv("VITALSPAN_ENV", "production")
         get_settings.cache_clear()
         auth_mw.settings = get_settings()
-        response = client.get("/api/v1/me", headers=auth_headers)
+        response = client.get("/api/v1/me", headers=admin_auth_headers)
         assert response.status_code == 200
         assert response.json()["username"] == "admin"
     finally:
@@ -103,7 +103,7 @@ def test_me_malformed_bearer_header_returns_401(client, malformed_auth_headers):
     assert response.json() == UNAUTHORIZED_BODY
 
 
-def test_me_concurrent_requests_stable(client, auth_headers, monkeypatch):
+def test_me_concurrent_requests_stable(client, admin_auth_headers, monkeypatch):
     """T-ME-12: 并发 5× GET /api/v1/me + auth_headers 全部 200 且用户上下文一致。"""
     monkeypatch.setattr(
         "app.auth.middleware.user_service.resolve_role_codes_for_user",
@@ -111,7 +111,7 @@ def test_me_concurrent_requests_stable(client, auth_headers, monkeypatch):
     )
 
     def fetch_me():
-        return client.get("/api/v1/me", headers=auth_headers)
+        return client.get("/api/v1/me", headers=admin_auth_headers)
 
     with ThreadPoolExecutor(max_workers=5) as executor:
         responses = list(executor.map(lambda _: fetch_me(), range(5)))

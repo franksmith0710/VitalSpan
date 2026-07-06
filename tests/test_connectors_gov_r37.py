@@ -26,7 +26,7 @@ from app.datasources.schemas import DataSourceCreate
 from app.datasources.service import create_data_source
 from app.main import app
 from app.query.dialects import get_sql_dialect
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 _R37_SQLITE_URL = "sqlite+pysqlite:///file:connectors_gov_r37?mode=memory&cache=shared&uri=true"
 

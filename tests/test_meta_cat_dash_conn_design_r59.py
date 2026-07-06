@@ -349,7 +349,7 @@ def test_dash_r59_005_theme_route_unchanged(client):
 
 from app.datasources.registry import export_type_catalog
 from app.datasources.dialects.kingbase.connector import KINGBASE_MAX_COLUMNS, KingbaseConnector
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_conn_r59_018_catalog_has_kingbase():

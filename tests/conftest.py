@@ -34,8 +34,22 @@ def client() -> TestClient:
 
 
 @pytest.fixture
-def auth_headers(client: TestClient) -> dict[str, str]:
+def auth_headers() -> dict[str, str]:
+    """JWT as dev user (replaces legacy Bearer dev)."""
+    from jwt_auth import jwt_auth_headers
+
+    return jwt_auth_headers()
+
+
+@pytest.fixture
+def admin_auth_headers() -> dict[str, str]:
+    """JWT as admin user for /me and login contract tests."""
     try:
+        from fastapi.testclient import TestClient
+
+        from app.main import app
+
+        client = TestClient(app)
         response = client.post(
             "/api/v1/auth/login",
             json={"username": "admin", "password": os.environ.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme")},
@@ -63,10 +77,10 @@ def trace_id_headers() -> dict[str, str]:
 
 @pytest.fixture
 def combined_auth_trace_headers(
-    auth_headers: dict[str, str],
+    admin_auth_headers: dict[str, str],
     trace_id_headers: dict[str, str],
 ) -> dict[str, str]:
-    return {**auth_headers, **trace_id_headers}
+    return {**admin_auth_headers, **trace_id_headers}
 
 
 @pytest.fixture

@@ -125,7 +125,7 @@ def test_types_unauthenticated_401(client):
 
 
 from app.datasources.pool import DataSourcePoolManager
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_pool_reuses_connection_same_id():

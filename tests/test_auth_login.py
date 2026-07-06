@@ -26,8 +26,8 @@ def test_login_invalid_credentials_401(client):
     assert response.json()["code"] == "AUTH_INVALID_CREDENTIALS"
 
 
-def test_me_with_jwt_returns_user(client, auth_headers):
-    response = client.get("/api/v1/me", headers=auth_headers)
+def test_me_with_jwt_returns_user(client, admin_auth_headers):
+    response = client.get("/api/v1/me", headers=admin_auth_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["username"] == "admin"

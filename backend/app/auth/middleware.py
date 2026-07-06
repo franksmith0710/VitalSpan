@@ -58,9 +58,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         db_roles: list[str] = []
         try:
             try:
-                db_roles = user_service.resolve_role_codes_for_user(session, uuid.UUID(str(user_id)))
-            except (OperationalError, ProgrammingError, ValueError):
-                db_roles = []
+                user_uuid = uuid.UUID(str(user_id))
+                db_roles = user_service.resolve_role_codes_for_user(session, user_uuid)
+            except ValueError:
+                db_roles = user_service.resolve_role_codes_for_username(session, str(username))
+        except (OperationalError, ProgrammingError):
+            db_roles = []
         finally:
             try:
                 session.close()

@@ -20,7 +20,7 @@ from app.datasources.dialects.sqlserver import SqlserverConnector
 from app.datasources.registry import ConnectorRegistry, export_type_catalog, register_dialect
 from app.main import app
 from app.query.dialects import get_sql_dialect
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 _R36_SQLITE_URL = "sqlite+pysqlite:///file:connectors_gov_r36?mode=memory&cache=shared&uri=true"
 

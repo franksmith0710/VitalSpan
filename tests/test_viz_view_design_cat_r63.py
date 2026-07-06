@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from app.auth.deps import UserContext, get_current_user
 from app.core.config import get_settings
 from app.main import app as fastapi_app
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 _R63_SQLITE_URL = "sqlite+pysqlite:///file:viz_view_design_cat_r63?mode=memory&cache=shared&uri=true"
 

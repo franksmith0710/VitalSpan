@@ -278,7 +278,7 @@ from unittest.mock import MagicMock, patch
 from app.core.nfr.plugin_extension import get_plugin_registration_meta
 from app.datasources.dialects.opensearch import OpensearchConnector
 from app.datasources.registry import export_type_catalog
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_conn016_opensearch_in_catalog_r49():

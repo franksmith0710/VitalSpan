@@ -102,7 +102,7 @@ def test_starrocks_timeout_structured_r34(mock_connect):
 
 
 from app.datasources.dialects.elasticsearch import ElasticsearchConnector
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_elasticsearch_in_types_catalog_r34():

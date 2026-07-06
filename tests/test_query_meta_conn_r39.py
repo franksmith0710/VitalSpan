@@ -13,6 +13,7 @@ from app.datasources.models import get_meta_session
 from app.datasources.schemas import DataSourceCreate
 from app.datasources.service import create_data_source
 from app.main import app
+from jwt_auth import AUTH, jwt_auth_headers
 
 _R39_SQLITE_URL = "sqlite+pysqlite:///file:query_meta_conn_r39?mode=memory&cache=shared&uri=true"
 
@@ -415,7 +416,6 @@ def test_meta_dimension_list_limit_500_r39(client):
 
 from app.query.translator import service as translator_service
 from app.query.translator.schemas import (
-from tests.jwt_auth import AUTH, jwt_auth_headers
     TranslateConditionItem,
     TranslateConditions,
     TranslateError,

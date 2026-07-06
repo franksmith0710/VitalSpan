@@ -172,7 +172,7 @@ from app.reports.templates import service as template_service
 from app.reports.templates.acl import set_user_template_scope
 from app.reports.templates.probe import probe_get_template_budget_ms, probe_validate_template_budget_ms
 from unittest.mock import MagicMock, patch
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def _admin_actor() -> UserContext:

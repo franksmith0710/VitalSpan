@@ -387,7 +387,7 @@ def test_conn_dm_unknown_schema_tables_r38(mock_connect):
 
 
 from app.datasources.dialects.trino import TrinoConnector
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_conn_trino_catalog_r38():

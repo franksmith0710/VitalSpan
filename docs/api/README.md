@@ -42,7 +42,7 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | GET | `/api/v1/me` | M1 占位：当前用户（开发 `Bearer dev`） | 内部 | P0 | BOOT-003 | 已实现 | `backend/app/api/v1/me.py` |
-| POST | `/api/v1/auth/login` | 登录，返回 token | 内部 | 一期 | BOOT-003 | 规划 | `backend/app/api/v1/auth.py` |
+| POST | `/api/v1/auth/login` | 登录，返回 token | 内部 | 一期 | BOOT-003 | 已实现 | `backend/app/api/v1/auth.py` |
 | POST | `/api/v1/auth/logout` | 注销 | 内部 | 一期 | BOOT-003 | 规划 | `backend/app/api/v1/auth.py` |
 | GET | `/api/v1/auth/me` | 当前用户与角色；二期正式路径，M1 占位见 `GET /api/v1/me` | 内部 | 一期 | AUTH-003 | 规划 | `backend/app/api/v1/auth.py` |
 

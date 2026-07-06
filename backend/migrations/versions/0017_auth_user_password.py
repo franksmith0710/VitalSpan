@@ -12,7 +12,7 @@ from typing import Sequence, Union
 
 import bcrypt
 import sqlalchemy as sa
-from alembic import op
+from alembic import context, op
 
 revision: str = "0017"
 down_revision: Union[str, None] = "0016"
@@ -25,6 +25,8 @@ def upgrade() -> None:
         "auth_users",
         sa.Column("password_hash", sa.String(255), nullable=False, server_default=""),
     )
+    if context.is_offline_mode():
+        return
     bind = op.get_bind()
     env = os.environ.get("VITALSPAN_ENV", "development")
     if env != "development":

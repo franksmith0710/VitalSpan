@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
+from jwt_auth import jwt_auth_headers
 from app.auth.models import Base, get_meta_engine
 from app.core.config import get_settings
 

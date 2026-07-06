@@ -543,7 +543,7 @@ from app.datasources.dialects.errors import (
     map_oceanbase_error,
 )
 from app.datasources.dialects.oceanbase import OCEANBASE_MAX_COLUMNS, OceanbaseConnector, probe_test_connection_budget_ms
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_conn_r55_oceanbase_timeout_code():

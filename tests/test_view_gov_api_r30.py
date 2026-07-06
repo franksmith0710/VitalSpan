@@ -12,7 +12,7 @@ from app.core.config import get_settings
 from app.views.schemas import ViewError
 from app.views.validate import validate_dashboard_view
 from app.main import app
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 _R30_SQLITE_URL = "sqlite+pysqlite:///file:view_gov_r30?mode=memory&cache=shared&uri=true"
 

@@ -336,7 +336,7 @@ from datetime import UTC, datetime, timedelta
 
 from app.integration import embed_token as et
 from app.integration.errors import IntegrationError
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_embed_resolve_without_origin_ok_r45(client):

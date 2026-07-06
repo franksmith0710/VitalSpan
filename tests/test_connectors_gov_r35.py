@@ -433,7 +433,7 @@ def test_gov_save_get_roundtrip_r35(client):
 
 
 from app.datasources.dialects.elasticsearch import ElasticsearchConnector, _build_client
-from tests.jwt_auth import AUTH, jwt_auth_headers
+from jwt_auth import AUTH, jwt_auth_headers
 
 
 @patch("app.datasources.dialects.elasticsearch.Elasticsearch")
