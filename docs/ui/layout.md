@@ -148,9 +148,9 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分组 | 图标区 | 典型权限 | 一期可用 |
 |------|--------|----------|----------|
 | 数据 | 数据源、连接器 | `datasource:*` | ✅ 数据源 |
-| 分析 | Dashboard、探索 | `dashboard:read` / `dashboard:edit` | ✅ Dashboard |
+| 分析 | Dashboard、预制报表 | `dashboard:read` / `dashboard:edit` / `report:read` | ✅ Dashboard · ✅ 预制报表（r233） |
 | 报表 | 列表、模板、调度 | `report:read` / `report:edit` | 二期起 |
-| 主题与实体 | 主题、实体总览 | 二期权限点 | 二期起 |
+| 主题与实体 | 主题分析、实体总览 | 二期权限点 | ✅ 主题分析 · ✅ 实体总览（r233） |
 | 治理 | 分类、工单、发布 | 治理权限 | PoC 起 / 四期完整 |
 | 语义层 | 术语、Dataset | 四期 | 四期 |
 | 我的 | 视图覆盖 | `view:override` | 三期 |
@@ -177,6 +177,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | `/admin/dashboards/:id/edit` | `bi-dashboard-builder`（edit） | DASH-*, VIZ-* |
 | `/admin/dashboards/:id` | `bi-dashboard-builder`（view） | DASH-*, VIEW-* |
 | `/admin/dashboards/:id/share` | `bi-share-embed` | VIZ-006, API-006 |
+| `/admin/reports` | `table-list` + 运行结果区 | RPT-002 |
+| `/admin/themes/:dashboardId` | hub-tabs（配置 \| 分析） | DASH-006 |
 | `/admin/system/rls` | `form-composition` | AUTH-* |
 | `/admin/governance/tickets` | `master-detail-ops` | GOV-* |
 | `/admin/datasets` | `bi-dataset-management` | META-* |

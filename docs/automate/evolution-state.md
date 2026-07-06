@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-06-round-target-m8-completion.md |
-| design | docs/superpowers/specs/2026-07-06-m8-entity-metadata-completion-design.md |
-| plan | docs/superpowers/plans/2026-07-06-m8-entity-metadata-completion.md |
-| branch | feat/m8-entity-metadata-completion-r232 |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-06-round-target-m9-theme-prefab-report.md |
+| design | docs/superpowers/specs/2026-07-06-m9-theme-prefab-report-design.md |
+| plan | docs/superpowers/plans/2026-07-06-m9-theme-prefab-report.md |
+| branch | feat/m9-theme-prefab-report-r233 |
 | base_branch | dev-auto |
-| prd_ids | META-005,META-006,DASH-005 |
-| pr_number | 216 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm test && pnpm run build |
+| prd_ids | RPT-001,RPT-002,DASH-006 |
+| pr_number | |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest tests/test_m9_rpt_theme_r233.py tests/test_rpt_view_cat_gov_r60.py tests/test_nfr_gov_rpt_view_r68.py tests/test_dash_rpt_r58.py -q; cd fe && pnpm run check:design && pnpm exec vitest run src/pages/admin/reports/prefab-reports.smoke.test.tsx src/pages/admin/themes/theme-analysis.smoke.test.tsx && pnpm run build |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T22:35:00Z |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r233 实现（cron 2026-07-06 ~23:14 UTC）：9 Task 完成（RPT-001 engine M3-LITE execute、RPT-002 prefab seed/run API、DASH-006 theme drill query、pytest r233 18 用例、PrefabReportsPage+ThemeAnalysisPage+routes/nav、docs 同步）；ui_design_skill=b-design-system-tailadmin-radix；pytest 125 passed + ruff clean + FE vitest 8/8 + check:design 124 files + build exit 0；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P2_DONE→P3_DONE；branch=feat/m9-theme-prefab-report-r233；base_branch=dev-auto；待 P4 evolution-verifier
 - P5 r232 收尾：PRD 重评 META-005/006/DASH-005（M8 实体元数据与总览页收官）；hub 总分 91.3–91.7→92.4–93.1；plan M8 三 ID 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r232 验证（cron 2026-07-06 ~22:41 UTC）：独立全量 ruff clean + pytest 1930 passed/19 skipped exit 0；fe check:design 117 files + vitest 149/149 + design fixture 4/4 + entities-overview smoke 7/7 + build exit 0；UI design_drift PASS + META/DASH smoke PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE→P4_DONE；branch=feat/m8-entity-metadata-completion-r232；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 r232 实现（cron 2026-07-06 ~22:30 UTC）：6 Task 完成（META-005 PUT/DELETE+`_ds_table_index`、API 路由、pytest r232 9 用例、useEntityOverview+EntityDetailSheet、EntityOverviewPage 收官+vitest 7 用例、docs 锚点）；ui_design_skill=b-design-system-tailadmin-radix；pytest r232+r231 24 passed + ruff clean + FE vitest 7/7 + check:design 117 files + build exit 0；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P2_DONE→P3_DONE；branch=feat/m8-entity-metadata-completion-r232；base_branch=dev-auto；待 P4 evolution-verifier

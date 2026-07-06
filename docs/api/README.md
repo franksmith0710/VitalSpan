@@ -179,6 +179,7 @@ redoc: /redoc
 | POST | `/api/v1/dashboards/theme-analysis/validate` | 实体主题分析 config 校验（`DASH_THEME_*`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/theme-analysis` | 实体主题分析 config 持久化/读取（`config_type=entity_theme`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET | `/api/v1/dashboards/theme-analysis/chart-bindings` | chartViewBindings 联动查询（`linkedWidgetCount`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| POST | `/api/v1/dashboards/theme-analysis/query` | 主题维度钻取查询（`dimensionId` → columns/rows；`DASH_THEME_DIMENSION_UNKNOWN`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/entity-overview/validate` | 实体总览 item 校验（`DASH_OVERVIEW_*`） | 内部 | 一期 | DASH-005 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/{id}/entity-overview` | 实体总览 save/get（`config_type=entity_overview`；含 `publishStatus` 探测） | 内部 | 一期 | DASH-005 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/global-filters/validate` | 全局筛选联动校验（`DASH_FILTER_*`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
@@ -218,13 +219,14 @@ redoc: /redoc
 | GET | `/api/v1/reports/catalog/nodes/{id}/extension/render-spec` | 扩展配置渲染规格（`renderVersion=1.0`；`compareMetrics`/`compareVersion`） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/catalog/nodes/{id}/extension/revisions` | 扩展配置修订历史（changeNote 审计） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/batch` | 批量创建模板节点（Idempotency-Key；`RPT_BATCH_*`） | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表 | 内部 | 二期 | RPT-001 | 已实现 | `backend/app/api/v1/reports/engine.py` |
+| POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表（M3-LITE：`dataSourceId`+extension → 真实 sections；无 ds → placeholder 回归 r60） | 内部 | 二期 | RPT-001 | M3-LITE 已实现 | `backend/app/api/v1/reports/engine.py` |
 | GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}/download` | 导出文件下载（`Content-Disposition: attachment`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET/PUT | `/api/v1/reports/prefab/bindings*` | 预制报表绑定 list/upsert（`RPT_PREFAB_*`） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
 | GET | `/api/v1/reports/prefab/bindings/{binding_key}` | 预制 binding 单条读取（`RPT_PREFAB_NOT_FOUND`） | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
 | POST | `/api/v1/reports/prefab/bindings/validate` | 预制绑定校验（allowedRoles/analysisType 联动） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
+| POST | `/api/v1/reports/prefab/bindings/{binding_key}/run` | 预制 binding 运行（analysisType SQL 模板 + physical table 解析 → renderSpec） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
 | GET | `/api/v1/reports/prefab/probe` | prefab validate/list perf probe 预算探测 | 内部 | 二期 | RPT-002 | 已实现（companion） | `backend/app/api/v1/reports/prefab.py` |
 
 ---
