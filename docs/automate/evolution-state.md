@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-view-001-m6.md |
 | design | docs/superpowers/specs/2026-07-06-view-001-m6-companion-design.md |
 | plan | docs/superpowers/plans/2026-07-06-view-001-m6-companion.md |
@@ -14,8 +14,9 @@
 | base_branch | dev-auto |
 | prd_ids | VIEW-001,NFR-001,GOV-001 |
 | pr_number |  |
-| last_verified_command | cd backend && ruff check . && pytest tests/test_view_m5_protocol.py tests/test_nfr_001_first_screen_smoke.py tests/test_gov_001_catalog_appendix_e.py tests/test_view_gov_api_r31.py tests/test_dash_nfr_conn_rpt_r67.py -q; cd fe && vitest dashboard-first-screen.perf.smoke |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm exec vitest run && pnpm run build |
 | last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run src/pages/admin/dashboard/dashboard-first-screen.perf.smoke.test.tsx && pnpm exec vitest run && pnpm run build |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T18:29:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r219 验证：独立全量 ruff clean + pytest 1854 passed/11 skipped exit 0（GOV-001 ACL 13 失败已修复）；fe check:design 113 files + vitest 142/142 + NFR-001 smoke 1/1 + build exit 0；UI design_drift PASS + perf smoke PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P2 r218 计划：6 Task（VIEW-001 protocol guard+schema+破坏性、NFR-001 fixtureProfile BE+FE perf mock、GOV-001 appendix-e taxonomy+probe+ACL）；subagent-driven-development option 1；预估 16 主文件；ui_design_skill=b-design-system-tailadmin-radix；skill_rule_index 26 源刷新时间戳；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-view-001-m6-companion.md；待 P3 evolution-implementer
 - G2 r217 选题：饱和熔断已跳过（plan §M5 含 1 项 `[ ]` VIEW-001；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 VIEW-001/NFR-001/GOV-001（M5 VIEW 协议收官 + M6 perf/catalog companion）；hub 最低分入选 GOV-001 90.2；plan 同节仅 1 项故 M6 NFR-001+GOV-001 补足达 3 项下限；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-view-001-m6.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap：G0 PR #209 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M5**（1 项 `[ ]` VIEW-001；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M5 DASH-003/VIEW-001/NFR-001 完成；phase P5_DOCS_READY→idle；待 G2 选题
