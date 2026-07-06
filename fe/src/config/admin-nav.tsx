@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Cable, Database, LayoutDashboard, Shield, Users } from "lucide-react";
+import { ArrowLeftRight, Boxes, Cable, Database, LayoutDashboard, Shield, Users } from "lucide-react";
 import type { NavSection } from "@/components/layout/app-sidebar";
 
 export const ADMIN_NAV_GROUPS: NavSection[] = [
@@ -29,6 +29,16 @@ export const ADMIN_NAV_GROUPS: NavSection[] = [
         name: "Dashboard",
         icon: <LayoutDashboard className="size-6" aria-hidden />,
         path: "/admin/dashboards",
+      },
+    ],
+  },
+  {
+    title: "主题与实体",
+    items: [
+      {
+        name: "实体总览",
+        icon: <Boxes className="size-6" aria-hidden />,
+        path: "/admin/entities/overview",
       },
     ],
   },

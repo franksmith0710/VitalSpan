@@ -20,6 +20,13 @@ export const queryKeys = {
     list: () => ["dashboards", "list"] as const,
     globalFilters: (id: string) => ["dashboards", id, "globalFilters"] as const,
   },
+  metadata: {
+    entityTypes: ["metadata", "entityTypes"] as const,
+    physicalTables: (entityTypeCode?: string) =>
+      ["metadata", "physicalTables", entityTypeCode ?? "all"] as const,
+    entityOverview: (dashboardId: string) =>
+      ["metadata", "entityOverview", dashboardId] as const,
+  },
   users: {
     all: ["users"] as const,
     list: (params?: { q?: string; limit?: number; offset?: number }) =>
