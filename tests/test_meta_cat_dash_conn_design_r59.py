@@ -14,7 +14,6 @@ from app.core.config import get_settings
 from app.main import app as fastapi_app
 
 _R59_SQLITE_URL = "sqlite+pysqlite:///file:meta_cat_dash_conn_design_r59?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -350,6 +349,7 @@ def test_dash_r59_005_theme_route_unchanged(client):
 
 from app.datasources.registry import export_type_catalog
 from app.datasources.dialects.kingbase.connector import KINGBASE_MAX_COLUMNS, KingbaseConnector
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_conn_r59_018_catalog_has_kingbase():

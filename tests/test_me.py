@@ -6,7 +6,6 @@ import pytest
 from fastapi import HTTPException, Request
 
 from app.auth.deps import get_current_user
-from app.core.config import get_settings
 
 UNAUTHORIZED_BODY = {
     "code": "UNAUTHORIZED",
@@ -21,14 +20,13 @@ def test_me_without_token_returns_401(client):
     assert response.json() == UNAUTHORIZED_BODY
 
 
-def test_me_with_bearer_dev_returns_200(client, auth_headers):
+def test_me_with_jwt_returns_200(client, auth_headers):
     response = client.get("/api/v1/me", headers=auth_headers)
     assert response.status_code == 200
-    assert response.json() == {
-        "id": "dev",
-        "username": "dev",
-        "roles": ["admin"],
-    }
+    body = response.json()
+    assert body["username"] == "admin"
+    assert "admin" in body["roles"]
+    assert body["id"] != "dev"
 
 
 def test_me_invalid_bearer_returns_401(client, unauthorized_headers):
@@ -55,9 +53,10 @@ def test_public_paths_accessible_without_token(client, path):
     assert response.status_code == 200
 
 
-def test_me_bearer_dev_rejected_in_production(client, auth_headers, monkeypatch):
-    """T-ME-08: production 环境拒绝 Bearer dev。"""
+def test_me_jwt_valid_in_production(client, auth_headers, monkeypatch):
+    """T-ME-08: production 环境 JWT 仍有效（secret 一致）。"""
     from app.auth.middleware import AuthMiddleware
+    from app.core.config import get_settings
     from app.main import app
 
     client.get("/health")
@@ -75,8 +74,8 @@ def test_me_bearer_dev_rejected_in_production(client, auth_headers, monkeypatch)
         get_settings.cache_clear()
         auth_mw.settings = get_settings()
         response = client.get("/api/v1/me", headers=auth_headers)
-        assert response.status_code == 401
-        assert response.json() == UNAUTHORIZED_BODY
+        assert response.status_code == 200
+        assert response.json()["username"] == "admin"
     finally:
         auth_mw.settings = prev_settings
         get_settings.cache_clear()
@@ -107,8 +106,8 @@ def test_me_malformed_bearer_header_returns_401(client, malformed_auth_headers):
 def test_me_concurrent_requests_stable(client, auth_headers, monkeypatch):
     """T-ME-12: 并发 5× GET /api/v1/me + auth_headers 全部 200 且用户上下文一致。"""
     monkeypatch.setattr(
-        "app.auth.middleware.user_service.resolve_role_codes_for_username",
-        lambda _session, _username: ["admin"],
+        "app.auth.middleware.user_service.resolve_role_codes_for_user",
+        lambda _session, _user_id: ["admin"],
     )
 
     def fetch_me():
@@ -120,8 +119,7 @@ def test_me_concurrent_requests_stable(client, auth_headers, monkeypatch):
     for response in responses:
         assert response.status_code == 200
         body = response.json()
-        assert body["id"] == "dev"
-        assert body["username"] == "dev"
+        assert body["username"] == "admin"
         assert body["roles"] == ["admin"]
 
 

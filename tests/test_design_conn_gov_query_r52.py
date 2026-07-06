@@ -11,7 +11,6 @@ from app.core.config import get_settings
 from app.main import app
 
 _R52_SQLITE_URL = "sqlite+pysqlite:///file:design_conn_gov_query_r52?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -633,6 +632,7 @@ from unittest.mock import MagicMock, patch
 
 from app.datasources.dialects.opensearch import OpensearchConnector, probe_list_columns_mock
 from app.datasources.registry import export_type_catalog
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_conn_r52_016_catalog_regression():

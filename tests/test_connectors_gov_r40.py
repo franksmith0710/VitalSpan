@@ -17,9 +17,9 @@ from app.datasources.dialects.tdengine import TDENGINE_MAX_COLUMNS, TdengineConn
 from app.datasources.dialects.timescaledb import TIMESCALE_MAX_COLUMNS, TimescaledbConnector
 from app.datasources.registry import ConnectorRegistry, export_type_catalog
 from app.main import app
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 _R40_SQLITE_URL = "sqlite+pysqlite:///file:connectors_gov_r40?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)

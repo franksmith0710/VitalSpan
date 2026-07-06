@@ -20,7 +20,6 @@ from app.datasources.service import create_data_source
 from app.main import app
 
 _DS_SQLITE_URL = "sqlite+pysqlite:///file:ds_r25_test?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -126,6 +125,7 @@ def test_types_unauthenticated_401(client):
 
 
 from app.datasources.pool import DataSourcePoolManager
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_pool_reuses_connection_same_id():

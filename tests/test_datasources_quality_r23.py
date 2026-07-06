@@ -213,7 +213,7 @@ def client() -> TestClient:
 
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
-    return {"Authorization": "Bearer dev"}
+    return jwt_auth_headers()
 
 
 def _payload() -> dict:

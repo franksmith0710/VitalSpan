@@ -13,7 +13,6 @@ from app.core.config import get_settings
 from app.main import app as fastapi_app
 
 _R67_SQLITE_URL = "sqlite+pysqlite:///file:dash_nfr_conn_rpt_r67?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 _R67_WIDGET_ID = "22222222-2222-4222-8222-222222222222"
 
 
@@ -173,6 +172,7 @@ from app.reports.templates import service as template_service
 from app.reports.templates.acl import set_user_template_scope
 from app.reports.templates.probe import probe_get_template_budget_ms, probe_validate_template_budget_ms
 from unittest.mock import MagicMock, patch
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 
 def _admin_actor() -> UserContext:

@@ -16,7 +16,6 @@ from app.datasources.registry import export_type_catalog
 from app.main import app
 
 _R34_SQLITE_URL = "sqlite+pysqlite:///file:connectors_gov_r34?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -103,6 +102,7 @@ def test_starrocks_timeout_structured_r34(mock_connect):
 
 
 from app.datasources.dialects.elasticsearch import ElasticsearchConnector
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_elasticsearch_in_types_catalog_r34():

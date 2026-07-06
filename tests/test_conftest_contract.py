@@ -18,10 +18,10 @@ def test_client_fixture_me_unauthorized(client):
 
 
 def test_client_fixture_me_with_auth_headers(client, auth_headers):
-    """T-CFT-03: client + auth_headers GET /api/v1/me → 200 username dev。"""
+    """T-CFT-03: client + auth_headers GET /api/v1/me → 200 admin。"""
     response = client.get("/api/v1/me", headers=auth_headers)
     assert response.status_code == 200
-    assert response.json()["username"] == "dev"
+    assert response.json()["username"] == "admin"
 
 
 def test_unauthorized_headers_fixture_returns_401(client, unauthorized_headers):
@@ -43,7 +43,7 @@ def test_combined_auth_trace_headers_fixture(client, combined_auth_trace_headers
     """T-CFT-06: combined_auth_trace_headers 同时满足 me 200 + trace 回显。"""
     me = client.get("/api/v1/me", headers=combined_auth_trace_headers)
     assert me.status_code == 200
-    assert me.json()["username"] == "dev"
+    assert me.json()["username"] == "admin"
 
     incoming = combined_auth_trace_headers["X-Trace-Id"]
     health = client.get("/health", headers=combined_auth_trace_headers)
@@ -61,10 +61,11 @@ def test_consecutive_client_requests_trace_isolation(client):
     assert second.headers.get("X-Trace-Id")
 
 
-def test_development_env_allows_dev_token(client, auth_headers):
-    """T-CFT-08: development 环境 auth_headers Bearer dev 可达 /api/v1/me。"""
+def test_development_env_allows_jwt_token(client, auth_headers):
+    """T-CFT-08: development 环境 auth_headers JWT 可达 /api/v1/me。"""
     assert get_settings().vitalspan_env == "development"
-    assert auth_headers == {"Authorization": "Bearer dev"}
+    assert auth_headers["Authorization"].startswith("Bearer ")
+    assert "dev" not in auth_headers["Authorization"]
     response = client.get("/api/v1/me", headers=auth_headers)
     assert response.status_code == 200
 

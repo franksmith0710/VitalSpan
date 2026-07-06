@@ -19,7 +19,7 @@ from app.main import app
 
 # Fixture contract (BOOT-006):
 # - client: TestClient(app) for all backend HTTP tests
-# - auth_headers: {"Authorization": "Bearer dev"} for protected routes in development
+# - auth_headers: JWT Bearer for protected routes (login or signed fallback)
 # - unauthorized_headers: {"Authorization": "Bearer invalid"} for 401 negative cases
 # - trace_id_headers: {"X-Trace-Id": "<32-hex>"} for TraceId passthrough tests
 # - combined_auth_trace_headers: auth_headers ∪ trace_id_headers for me+trace combo tests
@@ -34,8 +34,21 @@ def client() -> TestClient:
 
 
 @pytest.fixture
-def auth_headers() -> dict[str, str]:
-    return {"Authorization": "Bearer dev"}
+def auth_headers(client: TestClient) -> dict[str, str]:
+    try:
+        response = client.post(
+            "/api/v1/auth/login",
+            json={"username": "admin", "password": os.environ.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme")},
+        )
+        if response.status_code == 200:
+            token = response.json()["accessToken"]
+            return {"Authorization": f"Bearer {token}"}
+    except Exception:
+        pass
+    from app.auth.jwt import create_access_token
+
+    token = create_access_token("00000000-0000-0000-0000-000000000001", "admin")
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture

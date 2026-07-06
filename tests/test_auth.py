@@ -1,5 +1,7 @@
 import pytest
 
+from tests.jwt_auth import jwt_auth_headers
+
 UNAUTHORIZED_BODY = {
     "code": "UNAUTHORIZED",
     "message": "Missing or invalid bearer token",
@@ -21,11 +23,12 @@ def test_me_empty_bearer_token_returns_401(client):
     assert response.json() == UNAUTHORIZED_BODY
 
 
-def test_me_bearer_dev_returns_200(client, auth_headers):
-    """T-AUTH-04: Bearer dev → 200（与 test_me.py 行为一致）。"""
+def test_me_bearer_jwt_returns_200(client, auth_headers):
+    """T-AUTH-04: JWT auth_headers → 200。"""
     response = client.get("/api/v1/me", headers=auth_headers)
     assert response.status_code == 200
-    assert response.json()["id"] == "dev"
+    assert response.json()["username"] == "admin"
+    assert response.json()["id"] != "dev"
 
 
 @pytest.mark.parametrize(
@@ -63,7 +66,7 @@ def test_healthz_returns_401(client):
         ({}, 401),
         ({"Authorization": "Bearer "}, 401),
         ({"Authorization": "Bearer invalid"}, 401),
-        ({"Authorization": "Bearer dev"}, 200),
+        (jwt_auth_headers(), 200),
         ({"Authorization": "Basic dev"}, 401),
     ],
 )
@@ -74,7 +77,8 @@ def test_me_auth_matrix(client, headers, expected_status):
     if expected_status == 401:
         assert response.json() == UNAUTHORIZED_BODY
     else:
-        assert response.json()["id"] == "dev"
+        assert response.json()["username"] == "admin"
+        assert response.json()["id"] != "dev"
 
 
 def test_redoc_public_path_returns_200(client):

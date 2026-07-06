@@ -83,7 +83,7 @@ def client() -> TestClient:
 
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
-    return {"Authorization": "Bearer dev"}
+    return jwt_auth_headers()
 
 
 from app.auth.deps import UserContext, get_current_user
@@ -920,7 +920,7 @@ def test_binding_forbidden_non_admin(client, operator_client, auth_headers):
     user = client.post("/api/v1/users", json={"username": "aud_op"}, headers=auth_headers).json()
     resp = operator_client.post(
         f"/api/v1/users/{user['id']}/roles/{role['id']}",
-        headers={"Authorization": "Bearer dev"},
+        headers=jwt_auth_headers(),
     )
     assert resp.status_code == 403
     assert resp.json()["code"] == "BINDING_FORBIDDEN"
@@ -1641,7 +1641,7 @@ def test_audit_role_dimension_replace_au06(client, auth_headers):
 
 def test_audit_forbidden_non_admin_au07(client, operator_client, auth_headers):
     """T-AUTH-AU07: 非 admin 查询审计 → 403 AUDIT_FORBIDDEN。"""
-    resp = operator_client.get("/api/v1/audit/events", headers={"Authorization": "Bearer dev"})
+    resp = operator_client.get("/api/v1/audit/events", headers=jwt_auth_headers())
     assert resp.status_code == 403
     assert resp.json()["code"] == "AUDIT_FORBIDDEN"
 

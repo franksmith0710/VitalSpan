@@ -50,9 +50,9 @@ from app.datasources.dialects.errors import (
 from app.datasources.registry import registry
 from app.governance.publish.notifications import clear_notifications, list_notifications
 from app.main import app
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 _R51_SQLITE_URL = "sqlite+pysqlite:///file:nfr_gov_conn_r51?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)

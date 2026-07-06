@@ -13,7 +13,6 @@ from app.core.config import get_settings
 from app.main import app as fastapi_app
 
 _R61_SQLITE_URL = "sqlite+pysqlite:///file:cat_dash_viz_nfr_r61?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -120,6 +119,7 @@ def _ticket_payload(key: str = "TICKET_OPS") -> dict:
 
 
 from app.query.config_store.schemas import ALLOWED_CONFIG_TYPES
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_r61_fixture_bootstraps(client):

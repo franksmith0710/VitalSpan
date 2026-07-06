@@ -11,7 +11,6 @@ from app.core.config import get_settings
 from app.main import app
 
 _R44_SQLITE_URL = "sqlite+pysqlite:///file:integration_r44?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 SEED_TEMPLATE_ID = "00000000-0000-4000-8000-0000000000a1"
 
 
@@ -190,6 +189,7 @@ def test_services_execute_force_error_r44(client):
 from app.governance.bus.adapter import InMemoryBusAdapter, register_with_retry
 from app.governance.catalog.schemas import CatalogEntryOut
 from datetime import UTC, datetime
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_register_with_retry_timeout_exhausted_r44():

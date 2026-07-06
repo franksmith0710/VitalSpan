@@ -12,7 +12,6 @@ from app.core.config import get_settings
 from app.main import app
 
 _R46_SQLITE_URL = "sqlite+pysqlite:///file:nfr_gov_conn_r46?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -306,6 +305,7 @@ def test_nfr007_assert_raises_on_non_compliant():
 
 from app.core.nfr.push_config import PushConfigValidationError, resolve_push_mode, validate_push_settings
 from app.core.nfr.errors import PUSH_CONFIG_INVALID
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_nfr006_default_disabled(monkeypatch):

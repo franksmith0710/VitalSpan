@@ -14,7 +14,6 @@ from app.core.config import get_settings
 from app.main import app as fastapi_app
 
 _R53_SQLITE_URL = "sqlite+pysqlite:///file:dash_rpt_query_nfr_r53?mode=memory&cache=shared&uri=true"
-AUTH = {"Authorization": "Bearer dev"}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -91,6 +90,7 @@ def _theme_config_payload(ref_id: str) -> dict:
 
 
 from app.query.config_store.schemas import ALLOWED_CONFIG_TYPES
+from tests.jwt_auth import AUTH, jwt_auth_headers
 
 
 def test_r53_fixture_bootstraps(client):
