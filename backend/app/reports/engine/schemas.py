@@ -24,7 +24,24 @@ class EngineRenderSpec(BaseModel):
     rendered_at: datetime = Field(alias="renderedAt")
 
 
+class EngineSection(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    kind: Literal["table", "chart"]
+    chart_type: str | None = Field(default=None, alias="chartType")
+    columns: list[str] = Field(default_factory=list)
+    rows: list[list[Any]] = Field(default_factory=list)
+    metric_key: str | None = Field(default=None, alias="metricKey")
+    placeholder: bool = False
+
+
+class QueryMeta(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    section_count: int = Field(alias="sectionCount")
+    elapsed_ms: float = Field(alias="elapsedMs")
+
+
 class RenderRunOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     status: Literal["ready"] = "ready"
     render_spec: EngineRenderSpec = Field(alias="renderSpec")
+    query_meta: QueryMeta | None = Field(default=None, alias="queryMeta")
