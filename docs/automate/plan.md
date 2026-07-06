@@ -437,7 +437,7 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [x] DASH-001: DashboardView 数据模型（完成于 2026-07-04）
 - [x] DASH-002: Dashboard 容器与布局引擎（完成于 2026-07-06）
 - [x] DASH-003: Dashboard 组件库（完成于 2026-07-06）
-- [ ] VIEW-001: DashboardView 视图协议 FR-VIEW-1
+- [x] VIEW-001: DashboardView 视图协议 FR-VIEW-1（完成于 2026-07-06）
 
 ---
 
@@ -448,12 +448,12 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [x] API-001: IF-06 数据源管理 API（完成于 2026-07-04）
 - [x] API-002: IF-06 查询执行 API（完成于 2026-07-04）
 - [x] API-007: OpenAPI 规范与版本策略（完成于 2026-07-04）
-- [ ] GOV-001: 查询接口分类 catalog 附录 E
+- [x] GOV-001: 查询接口分类 catalog 附录 E（完成于 2026-07-06）
 - [ ] GOV-002: 总线 PoC 半自动注册 FR-1.1
 - [ ] CAT-001: CAT-01 实体生命周期查询类
 - [ ] CAT-002: CAT-02 统计分析聚合类
 - [ ] CAT-003: CAT-03 地域维度查询类
-- [ ] NFR-001: NFR-01 Dashboard 首屏性能
+- [x] NFR-001: NFR-01 Dashboard 首屏性能（完成于 2026-07-06）
 - [ ] NFR-004: NFR-03 HTTPS 脱敏审计
 
 ---

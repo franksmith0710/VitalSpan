@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-view-001-m6.md |
 | design | docs/superpowers/specs/2026-07-06-view-001-m6-companion-design.md |
 | plan | docs/superpowers/plans/2026-07-06-view-001-m6-companion.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r219 收尾：PRD 重评 VIEW-001/NFR-001/GOV-001（M5 VIEW 协议收官 + M6 perf/catalog companion）；hub 总分 90.2–91.3→92.5–92.8；plan M5 VIEW-001 + M6 NFR-001/GOV-001 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r219 验证：独立全量 ruff clean + pytest 1854 passed/11 skipped exit 0（GOV-001 ACL 13 失败已修复）；fe check:design 113 files + vitest 142/142 + NFR-001 smoke 1/1 + build exit 0；UI design_drift PASS + perf smoke PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P2 r218 计划：6 Task（VIEW-001 protocol guard+schema+破坏性、NFR-001 fixtureProfile BE+FE perf mock、GOV-001 appendix-e taxonomy+probe+ACL）；subagent-driven-development option 1；预估 16 主文件；ui_design_skill=b-design-system-tailadmin-radix；skill_rule_index 26 源刷新时间戳；phase P1_DONE→P2_DONE；plan=docs/superpowers/plans/2026-07-06-view-001-m6-companion.md；待 P3 evolution-implementer
 - G2 r217 选题：饱和熔断已跳过（plan §M5 含 1 项 `[ ]` VIEW-001；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 VIEW-001/NFR-001/GOV-001（M5 VIEW 协议收官 + M6 perf/catalog companion）；hub 最低分入选 GOV-001 90.2；plan 同节仅 1 项故 M6 NFR-001+GOV-001 补足达 3 项下限；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-view-001-m6.md；phase idle→G2_DONE；待 P1 evolution-designer
