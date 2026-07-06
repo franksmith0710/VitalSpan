@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-view-001-m6.md |
 | design | docs/superpowers/specs/2026-07-06-view-001-m6-companion-design.md |
 | plan | docs/superpowers/plans/2026-07-06-view-001-m6-companion.md |
-| branch |  |
+| branch | cursor/bc-8cc645b2-a251-43b9-96f9-8a3921b5e927-0ed1 |
 | base_branch | dev-auto |
 | prd_ids | VIEW-001,NFR-001,GOV-001 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && ruff check . && pytest tests/test_view_m5_protocol.py tests/test_nfr_001_first_screen_smoke.py tests/test_gov_001_catalog_appendix_e.py tests/test_view_gov_api_r31.py tests/test_dash_nfr_conn_rpt_r67.py -q; cd fe && vitest dashboard-first-screen.perf.smoke |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T18:29:00Z |
 | skill_rule_index_source_count | 26 |
