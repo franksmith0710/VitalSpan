@@ -5,10 +5,14 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
-import { getSessionUser } from "@/lib/session";
+import { useAuth } from "@/context/auth-context";
+import { sessionUserFromAuth } from "@/lib/session";
 
 export function AccountProfilePage() {
-  const user = getSessionUser();
+  const { user: authUser } = useAuth();
+  const user = authUser
+    ? sessionUserFromAuth(authUser.username, authUser.roles)
+    : sessionUserFromAuth("用户", ["viewer"]);
 
   return (
     <AdminPageShell

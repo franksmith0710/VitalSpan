@@ -9,7 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useWorkspace } from "@/context/workspace-context";
-import { getSessionUser } from "@/lib/session";
+import { useAuth } from "@/context/auth-context";
+import { sessionUserFromAuth } from "@/lib/session";
 import {
   ACCOUNT_PROFILE_PATH,
   ACCOUNT_SETTINGS_PATH,
@@ -17,7 +18,10 @@ import {
 import { cn } from "@/lib/utils";
 
 export function UserDropdown({ className }: { className?: string }) {
-  const user = getSessionUser();
+  const { user: authUser, logout } = useAuth();
+  const user = authUser
+    ? sessionUserFromAuth(authUser.username, authUser.roles)
+    : sessionUserFromAuth("用户", ["viewer"]);
   const { canReturnToWorkspace, returnToWorkspace, beginAccountManagement } =
     useWorkspace();
   const [open, setOpen] = React.useState(false);
@@ -111,18 +115,18 @@ export function UserDropdown({ className }: { className?: string }) {
 
         <DropdownMenuSeparator className="my-0" />
 
-        <DropdownMenuItem asChild>
-          <Link
-            to="/login"
-            className="group mt-1 flex items-center gap-3 px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-            onClick={() => setOpen(false)}
-          >
-            <LogOut
-              className="size-5 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
-              aria-hidden
-            />
-            退出登录
-          </Link>
+        <DropdownMenuItem
+          onSelect={() => {
+            logout();
+            setOpen(false);
+          }}
+          className="group mt-1 flex cursor-pointer items-center gap-3 px-3 py-2 font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+        >
+          <LogOut
+            className="size-5 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+            aria-hidden
+          />
+          退出登录
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

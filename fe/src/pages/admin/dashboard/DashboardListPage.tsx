@@ -4,7 +4,8 @@ import { Eye, Pencil } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { canEditDashboards } from "@/lib/session";
+import { canEditDashboards, sessionUserFromAuth } from "@/lib/session";
+import { useAuth } from "@/context/auth-context";
 
 type DashboardSummary = {
   id: string;
@@ -30,7 +31,11 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
 
 export function DashboardListPage() {
   const navigate = useNavigate();
-  const canEdit = canEditDashboards();
+  const { user: authUser } = useAuth();
+  const sessionUser = authUser
+    ? sessionUserFromAuth(authUser.username, authUser.roles)
+    : sessionUserFromAuth("用户", ["viewer"]);
+  const canEdit = canEditDashboards(sessionUser);
   const [items, setItems] = useState<DashboardSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
