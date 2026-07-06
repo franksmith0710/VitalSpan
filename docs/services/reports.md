@@ -49,8 +49,11 @@
 | `prefab/seed.py` | 内置 lifecycle/distribution binding 幂等 upsert | RPT-002 | M3-LITE 已实现 r233 |
 | **FE** | `fe/src/pages/admin/reports/PrefabReportsPage.tsx` + `usePrefabReports.ts`（列表/运行/空态 vitest） | RPT-002 | M3-LITE 已实现 r233 |
 | `templates/acl.py` | viewer 禁写 + enterprise scope（`set_user_template_scope`） | RPT-003 | companion 已实现 r67 |
-| `templates/probe.py` | validate/get perf probe ≤50ms | RPT-003 | companion 已实现 r67 |
-| `templates/service.py` | 模板块 validate/upsert/get + duplicate block 守卫 | RPT-003 | companion 已实现 r67 |
+| `templates/probe.py` | validate/get/list perf probe ≤50ms | RPT-003 | M10 已实现 r234 |
+| `templates/service.py` | 模板块 validate/upsert/get/list/delete + `storageRef`/`exportHook` + duplicate block 守卫 | RPT-003 | M10 已实现 r234 |
+| `catalog/probe.py` | `probe_list_catalog_budget_ms` ≤50ms | RPT-004 | M10 已实现 r234 |
+| `catalog/service.py` | `templateKey` 存在性/唯一性/kind 校验；`count_nodes_by_template_key` | RPT-004 | M10 已实现 r234 |
+| **FE** | `fe/src/pages/admin/reports/ReportTemplatesPage.tsx` + `useReportTemplates.ts`（master-detail 树/扩展/预览） | RPT-004/006 | M10 已实现 r234 |
 | `ReportService` | 模板 CRUD | RPT-001~003 | 待建 |
 
 ## 关联 API
@@ -89,6 +92,12 @@
 ### r67 companion 质量推分（RPT-003）
 
 - **RPT-003**：`templates/acl.py` — `assert_template_write_access` + `set_user_template_scope`；viewer PUT / enterprise 越权 GET → `RPT_TEMPLATE_FORBIDDEN`；duplicate sql block → `RPT_TEMPLATE_DUPLICATE_BLOCK`；`templates/probe.py` — `probe_validate_template_budget_ms` / `probe_get_template_budget_ms` ≤50ms
+
+### M10 r234（RPT-003/004/006）
+
+- **RPT-003**：`GET/DELETE /reports/templates`；`storageRef` 默认 `mock://templates/{key}.{format}`；`exportHook`（IF-03 placeholder）；`engine/service.run_template` word/excel/pdf 返回 `exportHook`
+- **RPT-004**：catalog `templateKey` 外键唯一；`RPT_CATALOG_DUPLICATE_TEMPLATE_KEY` / `RPT_CATALOG_TEMPLATE_KIND_MISMATCH`；`catalog/probe.py` list ≤50ms
+- **RPT-006**：`ReportTemplatesPage` 扩展配置 Tab（metrics 行 + changeNote PUT）；预览 Tab `render-spec` JSON
 
 ### r65 companion 质量推分（RPT-002）
 
