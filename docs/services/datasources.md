@@ -37,6 +37,8 @@
 |------|------|-----|------|
 | `ConnectorRegistry` | 连接器注册表 | DS-001 | 已实现 |
 | `dialects/mysql.py` | MySQL 方言 + schema_browser | CONN-001 | 已实现 |
+| `dialects/mariadb.py` | MariaDB 关系型（MySQL 协议委托，`type=mariadb`） | CONN-003 | 已实现（M7 r228） |
+| `dialects/relational_hints.py` | Oracle/SQL Server 标识符/分页/类型映射纯函数 | CONN-005 | 已实现（M7 r228） |
 | `dialects/postgres.py` | PostgreSQL 方言 + schema_browser | CONN-002 | 已实现 |
 | `dialects/tidb.py` | TiDB HTAP 方言（MySQL 协议委托，默认 port 4000） | CONN-021 | 已实现 |
 | `dialects/starrocks.py` | StarRocks OLAP 方言（MySQL 协议，port 9030，`category=olap`） | CONN-009 | 已实现 |
@@ -180,3 +182,11 @@
 ### r67 companion 质量推分（CONN-018）
 
 - **CONN-018**：`kingbase/params.py` — `validate_kingbase_connection_params`；`KINGBASE_INVALID_PARAMS` / `KINGBASE_PORT_OUT_OF_RANGE`；HTTP `POST /datasources/test` kingbase 类型在 Pydantic 前预校验 → 422 + `detail.fields`；`kingbase/probe.py` — `probe_test_connection_budget_ms` ≤50ms（mock inner）
+
+### M7 r228 集成验收（2026-07-06）
+
+- **CONN-003**：`MariadbConnector` 注册；可选 compose `sample-mariadb:3308`
+- **CONN-004~005**：Oracle/SQL Server mock HTTP 链 + `relational_hints` 列类型归一化
+- **CONN-006**：`tests/fixtures/m7/sample.db` 只读集成
+- **CONN-007**：可选 compose `sample-clickhouse:8124`
+- 集成测：`tests/test_connectors_m7_r228.py`（`@pytest.mark.integration`，无 compose 时分层 skip）
