@@ -74,6 +74,14 @@ def _assert_access(actor: UserContext, dashboard_created_by: uuid.UUID | None) -
         raise GlobalFilterError("DASH_FILTER_FORBIDDEN", "Access denied", 403)
 
 
+def _load_linkage_payload(session: Session, dashboard_id: uuid.UUID) -> GlobalFilterLinkageItem:
+    try:
+        record = config_store.get_config_by_ref(session, _CONFIG_TYPE, _REF_TYPE, dashboard_id)
+    except ConfigError as exc:
+        raise GlobalFilterError("DASH_FILTER_NOT_FOUND", "Global filter linkage not configured", 404) from exc
+    return GlobalFilterLinkageItem.model_validate(record.payload)
+
+
 def _widget_ids(session: Session, dashboard_id: uuid.UUID) -> set[str]:
     dashboard = dash_service.get_dashboard(session, dashboard_id)
     layout = dashboard.layout_json or {}

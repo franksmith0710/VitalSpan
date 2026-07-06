@@ -11,9 +11,14 @@ from app.metadata.physical.errors import (
     META_PHYSICAL_INVALID_COLUMN,
     PhysicalTableError,
 )
+from app.metadata.entity.errors import EntityTypeError
+from app.metadata.entity import service as entity_service
+from app.datasources.metadata import service as ds_metadata_service
+from app.datasources.service import DataSourceError
 from app.metadata.physical.schemas import (
     PhysicalTableListResponse,
     PhysicalTableOut,
+    PhysicalTableRegisterFromSchemaIn,
     PhysicalTableRegisterIn,
     PhysicalTableValidateOut,
 )
@@ -80,8 +85,69 @@ def get_physical_table(fqn: str) -> PhysicalTableOut:
     return PhysicalTableOut.model_validate(_store[fqn])
 
 
-def list_physical_tables(limit: int = 50, offset: int = 0) -> PhysicalTableListResponse:
+def bind_entity_type_code(fqn: str, type_code: str) -> None:
+    if fqn not in _store:
+        raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+    _store[fqn]["entityTypeCode"] = type_code
+
+
+def _normalize_fqn(schema: str, table: str, explicit: str | None) -> str:
+    if explicit:
+        return explicit.lower()
+    return f"{schema.lower()}.{table.lower()}"
+
+
+def register_from_schema(
+    session,
+    roles: list[str],
+    payload: PhysicalTableRegisterFromSchemaIn,
+    user: UserContext,
+) -> PhysicalTableOut:
+    _assert_physical_write_access(user)
+    if payload.entity_type_code:
+        try:
+            entity_service.get_entity_type(payload.entity_type_code)
+        except EntityTypeError as exc:
+            if exc.code == "META_ENTITY_TYPE_NOT_FOUND":
+                raise PhysicalTableError("META_ENTITY_TYPE_NOT_FOUND", exc.message, 422) from exc
+            raise
+    try:
+        columns_resp = ds_metadata_service.list_columns(
+            session,
+            roles,
+            payload.data_source_id,
+            payload.schema_name,
+            payload.table,
+        )
+    except DataSourceError as exc:
+        if exc.code == "DATASOURCE_NOT_FOUND":
+            raise PhysicalTableError("DATASOURCE_NOT_FOUND", exc.message, 404) from exc
+        raise PhysicalTableError(exc.code, exc.message, exc.status) from exc
+    table_fqn = _normalize_fqn(payload.schema_name, payload.table, payload.table_fqn)
+    register_in = PhysicalTableRegisterIn(
+        tableFqn=table_fqn,
+        dataSourceId=payload.data_source_id,
+        displayName=payload.display_name,
+        entityTypeCode=payload.entity_type_code,
+        columns=[
+            {"name": c.name, "dataType": c.data_type, "nullable": c.nullable}
+            for c in columns_resp.items
+        ],
+    )
+    out = register_physical_table(register_in, user)
+    if payload.entity_type_code:
+        entity_service.increment_reference(payload.entity_type_code)
+    return out
+
+
+def list_physical_tables(
+    limit: int = 50,
+    offset: int = 0,
+    entity_type_code: str | None = None,
+) -> PhysicalTableListResponse:
     items = list(_store.values())
+    if entity_type_code:
+        items = [i for i in items if i.get("entityTypeCode") == entity_type_code]
     page = items[offset : offset + limit]
     return PhysicalTableListResponse(
         items=[PhysicalTableOut.model_validate(i) for i in page],

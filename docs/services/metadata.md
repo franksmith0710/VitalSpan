@@ -101,3 +101,8 @@
 ### r65 companion 质量推分（META-005）
 
 - **META-005**：`physical/service` — `register_physical_table(user)` admin/analyst only（`META_PHYSICAL_FORBIDDEN`）；column name `^[a-z][a-z0-9_]{0,63}$`（`META_PHYSICAL_INVALID_COLUMN`）；`probe_validate_physical_budget_ms` / `probe_list_physical_tables_budget_ms` ≤50ms；内存 store 非 Alembic
+
+### M8 r231 kickoff（META-005 / META-006 · 2026-07-06）
+
+- **META-005**：`register_from_schema` → `datasources.metadata.list_columns` 单一真理源；`GET /physical-tables?entityTypeCode=` 过滤；测试锚点 `tests/test_meta_dash_m8_r231.py` T-META-R231-005-*
+- **META-006**：`EntityTypeCreate/Update/Out.physicalTableFqn`；`bind_entity_type_code` 公有方法 + `_ref_counts` 交叉 guard（`META_ENTITY_TYPE_MAPPING_CONFLICT`）；测试锚点 `tests/test_meta_dash_m8_r231.py` T-META-R231-006-*

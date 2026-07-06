@@ -20,6 +20,7 @@ import { DatasourceFormPage } from "@/pages/admin/datasources/DatasourceFormPage
 import { DatasourceDetailPage } from "@/pages/admin/datasources/DatasourceDetailPage";
 import { RoleListPage } from "@/pages/admin/system/roles/RoleListPage";
 import { UserListPage } from "@/pages/admin/system/users/UserListPage";
+import { EntityOverviewPage } from "@/pages/admin/entities/EntityOverviewPage";
 
 export function AppRoutes() {
   return (
@@ -44,6 +45,7 @@ export function AppRoutes() {
           <Route path="dashboards" element={<DashboardListPage />} />
           <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
           <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
+          <Route path="entities/overview" element={<EntityOverviewPage />} />
           <Route path="system/roles" element={<RoleListPage />} />
           <Route path="system/users" element={<UserListPage />} />
         </Route>

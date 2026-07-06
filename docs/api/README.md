@@ -183,6 +183,7 @@ redoc: /redoc
 | PUT/GET | `/api/v1/dashboards/{id}/entity-overview` | 实体总览 save/get（`config_type=entity_overview`；含 `publishStatus` 探测） | 内部 | 一期 | DASH-005 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/global-filters/validate` | 全局筛选联动校验（`DASH_FILTER_*`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/{id}/global-filters` | 全局筛选联动 save/get（`config_type=global_filter_linkage`；含 `affectedWidgetCount`） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| POST | `/api/v1/dashboards/{dashboard_id}/widgets/{widget_id}/execute` | M8 DASH-004 BE filter execute（linkage 合并 + SQL 参数注入） | 内部 | 一期 | DASH-004 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/views/validate` | DashboardView 协议校验；422 码：`VIEW_UNKNOWN_CHART_REF` / `VIEW_DEFAULT_SELF_REF` | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 | GET | `/api/v1/views/schema` | DashboardView JSON Schema | IF-06 | 一期 | VIEW-001 | 已实现 | `backend/app/api/v1/views.py` |
 
@@ -244,6 +245,8 @@ redoc: /redoc
 | POST | `/api/v1/metadata/entity-types/validate` | 实体 schema 校验链（`META_ENTITY_SCHEMA_INVALID` + `detail.fields`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET | `/api/v1/metadata/entity-types/{typeCode}/query-bindings` | 只读 query bindings（`readOnly=true`；json 不可 filter） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/entity-types/{typeCode}` | 实体类型详情/更新/删除（引用中 → 409 `META_ENTITY_TYPE_IN_USE`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
+| POST | `/api/v1/metadata/physical-tables/register-from-schema` | M8 META-005 schema 登记（`list_columns` 真理源） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET | `/api/v1/metadata/physical-tables?entityTypeCode=` | M8 META-005 按类型过滤物理表列表 | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | DELETE | `/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}` | 删除单条枚举值 | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/datasets` | Dataset list/create（内存 store L1；`META_DATASET_*`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | GET | `/api/v1/datasets/{dataset_id}` | Dataset 详情 | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |

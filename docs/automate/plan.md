@@ -467,7 +467,7 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [x] CONN-005: Oracle / SQL Server 连接器（完成于 2026-07-06）
 - [x] CONN-006: SQLite 连接器（完成于 2026-07-06）
 - [x] CONN-007: ClickHouse 连接器（完成于 2026-07-06）
-- [ ] CONN-008: Apache Doris 连接器
+- [x] CONN-008: Apache Doris 连接器（完成于 2026-07-06）
 
 ---
 
@@ -477,7 +477,7 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 - [ ] META-005: 物理表元数据登记 M1-ENTITY
 - [ ] META-006: 实体类型 schema 配置
-- [ ] DASH-004: 全局筛选器联动（BE 已 L1；FE 刷新链见 M-FE-3）
+- [x] DASH-004: 全局筛选器联动（BE 已 L1；FE 刷新链见 M-FE-3）（完成于 2026-07-06）
 - [ ] DASH-005: 实体总览页 FR-6.2
 
 ---

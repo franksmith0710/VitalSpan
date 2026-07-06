@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.82
+version: 1.2.83
 last_updated: 2026-07-06
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-06 · P5 r228 重评 CONN-003~007（M7 二期数据源类型扩展批次 1）；pytest 1901/20 skipped；MariadbConnector+compose 3308、relational_hints Oracle/SQL Server、Oracle HTTP 凭证脱敏、SQLite fixture、ClickHouse compose 8124；test_connectors_m7_r228 24/31 passed 7 skipped；用户价值 84%→86–88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，性能 88%→90%（CONN-005 池复用），总分 90.0–91.2→91.9–93.2（五 ID ≥90 STUCK 空；plan M7 五 ID 勾选）
+> 更新：2026-07-06 · P5 r231 重评 CONN-008 + META-005/006 + DASH-004/005（M7 Doris 收官 + M8 实体元数据 kickoff）；pytest 1921/19 skipped；test_connectors_m7_r229 + test_meta_dash_m8_r231 + ACL §7.4.1 回归；register-from-schema、physicalTableFqn、BE execute linkage、EntityOverviewPage；用户价值 84%→86–88%，完整度 90–98%→92–100%，交互 N/A→84–86%（DASH-005），总分 90.4–92.1→91.3–93.0（五 ID ≥90 STUCK 空；plan M7 CONN-008 + M8 DASH-004 勾选；META-005/006/DASH-005 部分实现 plan 未勾）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -69,7 +69,7 @@ domain_count: 16
 | CONN-005 | 86 | 94 | 94 | N/A | 90 | 100 | 90 | 92 | 92.1 | 用户价值 |
 | CONN-006 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 92 | 92.4 | 性能 |
 | CONN-007 | 88 | 96 | 96 | N/A | 90 | 100 | 92 | 90 | 93.2 | 用户价值 |
-| CONN-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.4 | 用户价值 |
+| CONN-008 | 88 | 96 | 96 | N/A | 90 | 100 | 90 | 90 | 92.9 | 用户价值 |
 | CONN-009 | 84 | 88 | 96 | N/A | 90 | 98 | 90 | 88 | 90.4 | 用户价值 |
 | CONN-010 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
 | CONN-011 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
@@ -104,8 +104,8 @@ domain_count: 16
 | DASH-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | DASH-002 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 88 | 92.9 | 安全性 |
 | DASH-003 | 88 | 98 | 94 | N/A | 90 | 100 | 88 | 88 | 92.5 | 用户价值 |
-| DASH-004 | 90 | 98 | 94 | 86 | 90 | 100 | 88 | 88 | 92.1 | 安全性 |
-| DASH-005 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
+| DASH-004 | 90 | 100 | 96 | 86 | 90 | 100 | 88 | 90 | 93.0 | 性能 |
+| DASH-005 | 86 | 92 | 94 | 84 | 90 | 100 | 88 | 90 | 91.3 | 交互体验 |
 | DASH-006 | 84 | 90 | 96 | N/A | 90 | 100 | 90 | 90 | 91.2 | 用户价值 |
 | RPT-001 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.2 | 用户价值 |
 | RPT-002 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
@@ -129,8 +129,8 @@ domain_count: 16
 | META-002 | 84 | 94 | 94 | N/A | 90 | 98 | 90 | 88 | 91.1 | 安全性 |
 | META-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
 | META-004 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.2 | 用户价值 |
-| META-005 | 84 | 90 | 94 | N/A | 88 | 96 | 88 | 90 | 90.5 | 用户价值 |
-| META-006 | 84 | 90 | 94 | N/A | 90 | 100 | 88 | 88 | 90.4 | 用户价值 |
+| META-005 | 86 | 94 | 94 | N/A | 90 | 100 | 88 | 90 | 91.7 | 用户价值 |
+| META-006 | 86 | 94 | 94 | N/A | 90 | 100 | 88 | 90 | 91.7 | 用户价值 |
 | DESIGN-001 | 82 | 92 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
 | DESIGN-002 | 82 | 90 | 96 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
 | DESIGN-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.2 | 用户价值 |
@@ -219,6 +219,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.83 | 2026-07-06 | P5 r231 重评 CONN-008 + META-005/006 + DASH-004/005（M7 Doris 收官 + M8 实体元数据 kickoff）；pytest 1921/19 skipped；fe vitest 145/145 + check:design PASS；test_connectors_m7_r229 + test_meta_dash_m8_r231 + ACL §7.4.1 回归；register-from-schema、physicalTableFqn、BE execute linkage、EntityOverviewPage；用户价值 84%→86–88%，完整度 90–98%→92–100%，交互 N/A→84–86%（DASH-005），总分 90.4–92.1→91.3–93.0（五 ID ≥90 STUCK 空；plan M7 CONN-008 + M8 DASH-004 勾选；META-005/006/DASH-005 部分实现 plan 未勾） |
 | 1.2.82 | 2026-07-06 | P5 r228 重评 CONN-003~007（M7 二期数据源类型扩展批次 1）；pytest 1901/20 skipped；test_connectors_m7_r228 24/31 + r207/r36/r37/r40/r41 回归；MariadbConnector+compose 3308、relational_hints、Oracle HTTP 凭证脱敏、SQLite fixture、ClickHouse compose 8124；用户价值 84%→86–88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，性能 88%→90%（CONN-005 池复用），总分 90.0–91.2→91.9–93.2（五 ID ≥90 STUCK 空；plan M7 五 ID 勾选；只读查询/UI 选型留 companion） |
 | 1.2.81 | 2026-07-06 | P5 r223 重评 GOV-002 + CAT-001/002/003 + NFR-004（M6 集成验收收官）；pytest 1877/13 skipped；test_gov_002_bus_poc_fsm 6/6 + test_cat_00*_m6 12/12 + test_nfr_004_https_audit 5/5；semi-auto FSM pending/registered/failed+GET/probe、CAT m6-probe handler+ACL、HTTPS audit guard middleware+audit-probe 无泄漏；用户价值 82–84%→86–88%，完整度 90–92%→94–96%，性能 86–88%→88–90%，总分 90.0–90.4→91.5–92.4（五 ID ≥90 STUCK 空；plan M6 五 ID 勾选；真实总线 HTTP/IF-02 查询/生产 TLS 留 companion） |
 | 1.2.80 | 2026-07-06 | P5 r219 重评 VIEW-001 + NFR-001 + GOV-001（M5 VIEW 协议收官 + M6 perf/catalog companion）；pytest 1854/11 skipped；fe vitest 142/142 + check:design PASS；扩展 widget CHART_FIELD_REQUIREMENT+GET /views/schema、appendix E 7 类 taxonomy+probe/ACL、M5_EXTENDED_WIDGET_FIXTURE 首屏 perf；用户价值 82–86%→86–88%，完整度 92–96%→96–98%，性能 86–90%→88–92%，总分 90.2–91.3→92.5–92.8（三 ID ≥90 STUCK 空；plan M5 VIEW-001 + M6 NFR-001/GOV-001 勾选） |

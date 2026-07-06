@@ -38,6 +38,13 @@
 - **错误码**：`DASH_FILTER_*`（含 `DASH_FILTER_FORBIDDEN` 非 owner 非 admin；**r67** `DASH_FILTER_INVALID_DIMENSION_REF` / `DASH_FILTER_DUPLICATE_PARAMETER_KEY`）
 - **r67 companion**：`set_user_filter_dashboard_scope` + viewer 禁写 + enterprise dashboard scope；`probe_validate_linkage_budget_ms` / `probe_get_linkage_budget_ms` ≤50ms
 
+### M8 r231 kickoff（DASH-004 · 2026-07-06）
+
+- **`global_filters/execute.py`**：`execute_widget_with_filters` — `_load_linkage_payload`（无 actor ACL）+ linkage merge + `query/sql_parameters.inject_sql_parameters`（与 FE `dashboardFilterUtils` 对称）
+- **`query/sql_parameters.py`**：`inject_sql_parameters` / `build_widget_filter_params`；`POST /dashboards/{id}/widgets/{widgetId}/execute`
+- **ACL 拆分**：管理 API `get_linkage` 严格 owner/admin（非 owner viewer → 403 `DASH_FILTER_FORBIDDEN`）；execute 消费链经 `_load_linkage_payload` 允许 viewer 执行已配置 linkage
+- 测试锚点：`tests/test_meta_dash_m8_r231.py` T-DASH-R231-004-*
+
 ### entity_overview/ 子域（DASH-005 · r59 L1）
 
 - **In**：`EntityOverviewItem` 契约（statCards/filters/drillTargets）；validate/save/get；`config_store` `entity_overview` 持久化；可选 `catalogEntryId` → `publishStatus` 只读探测

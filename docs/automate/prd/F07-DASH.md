@@ -40,7 +40,7 @@
 - **里程碑对齐**：M5 · 已完成 · 2026-07-06
 ### [DASH-004] 全局筛选器联动
 
-- **状态**：已实现（M-FE-3 FE companion）
+- **状态**：已实现（M-FE-3 FE + M8 r231 BE execute）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：全局筛选器联动（SRS 追溯项）。
@@ -48,12 +48,13 @@
   - [x] 联动规则可配置（r61 L1：`POST validate` + `PUT/GET /api/v1/dashboards/{id}/global-filters` + config_store `global_filter_linkage` + `DASH_FILTER_*` + widget 存在性校验 + viewer ACL）
   - [x] companion validate/get perf probe + ACL 边界（r67：非法 dimensionRef/重复 parameterKey 422；enterprise 越权 GET 403、viewer save 403；`probe_validate_linkage_budget_ms`/`probe_get_linkage_budget_ms` ≤50ms）
   - [x] 筛选器驱动组件刷新（M-FE-3：`GlobalFilterBar` + `dashboardFilterUtils` + `useChartExecute` 参数注入；`dashboard-view.smoke.test.tsx` T-DASH-004-01）
-- **代码锚点**：`backend/app/dashboard/global_filters/` · `backend/app/api/v1/dashboards.py` · `fe/src/components/dashboard/GlobalFilterBar.tsx` · `fe/src/components/dashboard/dashboardFilterUtils.ts` · `tests/test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-01~07 · `fe/src/pages/admin/dashboard/dashboard-view.smoke.test.tsx`
-- **演化建议**：M-FE-3 闭合 view 模式全局筛选器与 widget execute 刷新链；跨 widget 口径联动与 Playwright E2E 留 companion
-- **里程碑对齐**：M-FE-3 · 已完成 · 2026-07-06
+  - [x] BE widget execute 合并 linkage（r231：`sql_parameters.py` + `execute.py` + `_load_linkage_payload`；GET linkage 严格 owner/admin ACL；viewer execute 200；`test_meta_dash_m8_r231.py` T-DASH-R231-004-03~07 + `test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-04）
+- **代码锚点**：`backend/app/dashboard/global_filters/` · `backend/app/query/sql_parameters.py` · `backend/app/api/v1/dashboards.py` · `fe/src/components/dashboard/GlobalFilterBar.tsx` · `fe/src/components/dashboard/dashboardFilterUtils.ts` · `tests/test_meta_dash_m8_r231.py` T-DASH-R231-004-03~07 · `tests/test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-01~07 · `fe/src/pages/admin/dashboard/dashboard-view.smoke.test.tsx`
+- **演化建议**：M8 r231 闭合 BE execute linkage 与 §7.4.1 ACL 回归；跨 widget 口径联动与 Playwright E2E 留 companion
+- **里程碑对齐**：M8 · 已完成 · 2026-07-06
 ### [DASH-005] 实体总览页 FR-6.2
 
-- **状态**：部分实现（companion r66）
+- **状态**：部分实现（M8 r231 FE kickoff）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：实体总览页 FR-6.2（SRS 追溯项）。
@@ -61,11 +62,11 @@
   - [x] 实体总览 config_store validate/save/get（r59 L1：`PUT/GET /api/v1/dashboards/{id}/entity-overview` + `POST validate` + `DASH_OVERVIEW_*` + viewer ACL）
   - [x] 重复 metric 拦截 + theme-analysis 路由不变（r59 回归）
   - [x] companion entityTypeRef/drill widget 校验 + perf probe（r66：非法 entityTypeRef/drill widget 422；viewer save 403；`probe_validate_overview_budget_ms`/`probe_get_overview_budget_ms` ≤50ms）
-  - [ ] 统计卡片+详情筛选+下钻（缺 fe 页面）
+  - [x] 统计卡片+详情筛选+下钻（r231：`EntityOverviewPage` + `/admin/entities` 导航 + entity-types/physical-tables/entity-overview 数据链；`entities-overview.smoke.test.tsx`）
   - [ ] 跨组件口径一致
-- **代码锚点**：`backend/app/dashboard/entity_overview/` · `backend/app/api/v1/dashboards.py` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DASH-R59-005-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-DASH-R66-005-01~06
-- **演化建议**：r66 companion 闭合 entityTypeRef/drill widget 校验、viewer 403 与 validate/get perf probe；后续补 fe 实体总览页与跨组件口径联动
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/dashboard/entity_overview/` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/entities/EntityOverviewPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/admin-nav.tsx` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DASH-R59-005-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-DASH-R66-005-01~06 · `fe/src/pages/admin/entities/entities-overview.smoke.test.tsx`
+- **演化建议**：r231 kickoff 闭合 Admin 实体总览页与 META-005/006 数据链；跨组件口径联动与 Playwright E2E 留 companion
+- **里程碑对齐**：M8 · 已完成 · 2026-07-06
 ### [DASH-006] 实体主题分析 FR-4.1
 
 - **状态**：部分实现（companion r58）

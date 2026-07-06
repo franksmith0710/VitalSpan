@@ -13,6 +13,16 @@ class PhysicalColumn(BaseModel):
     description: str | None = Field(default=None, max_length=256)
 
 
+class PhysicalTableRegisterFromSchemaIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    data_source_id: uuid.UUID = Field(alias="dataSourceId")
+    schema_name: str = Field(alias="schema", min_length=1, max_length=128)
+    table: str = Field(min_length=1, max_length=128)
+    display_name: str = Field(min_length=1, max_length=120, alias="displayName")
+    entity_type_code: str | None = Field(default=None, alias="entityTypeCode", max_length=64)
+    table_fqn: str | None = Field(default=None, alias="tableFqn")
+
+
 class PhysicalTableRegisterIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     table_fqn: str = Field(
