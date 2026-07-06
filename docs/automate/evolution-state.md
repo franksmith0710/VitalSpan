@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
+| phase | P1_DONE |
+| round_target | docs/superpowers/evolution/2026-07-06-round-target-view-001-m6.md |
+| design | docs/superpowers/specs/2026-07-06-view-001-m6-companion-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | VIEW-001,NFR-001,GOV-001 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 r217 选题：饱和熔断已跳过（plan §M5 含 1 项 `[ ]` VIEW-001；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 VIEW-001/NFR-001/GOV-001（M5 VIEW 协议收官 + M6 perf/catalog companion）；hub 最低分入选 GOV-001 90.2；plan 同节仅 1 项故 M6 NFR-001+GOV-001 补足达 3 项下限；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-06-round-target-view-001-m6.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap：G0 PR #209 已 Squash merge dev-auto；G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal/prd hub+分片就绪（16 域 · 124 项）；hub 含薄弱项汇总+8 维总表+功能索引完整；plan 只读实际当前节 **M5**（1 项 `[ ]` VIEW-001；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CAT-001(90.0)/CAT-002(90.0)/CONN-004(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M5 DASH-003/VIEW-001/NFR-001 完成；phase P5_DOCS_READY→idle；待 G2 选题
 - G0 r216 闸门：修复 test_viz_advanced_l1_r43 图表类型 9→12；全量 pytest 1840/13 skipped + fe vitest 142/142 + check:design PASS；P5 doc sync DASH-003/VIEW-001/NFR-001 重评 + plan M5 DASH-003 勾选；phase P3_DONE→P5_DOCS_READY；待 Squash merge PR #209 dev-auto
 - P4 r215 验证：plan Task6 子集 ruff clean + pytest 36/36 + check:design 113 files + vitest 20/20 + build exit 0；全量 pytest 1841 passed/1 failed（test_viz_advanced_l1_r43.py::test_get_charts_types_nine_types 期望 9 实际 12，DASH-003 未更新）；UI design_drift PASS + DASH-003/NFR-001 smoke PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE（BLOCKED 全量 exit 1）；待修复 r43 断言或 P3 补测
