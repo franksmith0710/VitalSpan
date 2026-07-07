@@ -836,6 +836,16 @@ def cat06_m11_probe(
     return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
 
 
+@router.get("/catalog/workno-behavior/m12-probe", response_model=None)
+def cat07_m12_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat07.handler import run_cat07_catalog_probe
+
+    out = run_cat07_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
+
+
 def _cat01_error(exc: Cat01Error) -> JSONResponse:
     detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
