@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
+| phase | P1_DONE |
+| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch4.md |
+| design | docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch4-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | GOV-007,GOV-008,NFR-003,NFR-005,NFR-007 |
 | pr_number |  |
 | last_verified_command | cd backend && python3 -m ruff check . && PYTHONPATH=/workspace/backend:/workspace/tests python3 -m pytest /workspace/tests -q |
 | last_verified_exit_code | 0 |
@@ -70,6 +70,8 @@
 
 ## 演化历史（最近）
 
+- P1 设计（cron 2026-07-07 ~18:19 UTC）：F-E/F-F 批次 4 五 ID（GOV-007~008 治理收官 + NFR-003/005/007 companion 验收缺口补全）；16 文件框定（IF-01 工厂、bus deferred 降级、ACL 补洞、dashboard smoke、plugin drill 连通链、xinchuang markdown）；ui_design_skill none；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch4-design.md；base_branch=dev-auto；待 P2 evolution-planner
+- G2 选题（cron 2026-07-07 ~18:17 UTC）：饱和熔断已跳过（plan §M-FINAL · F-E 含 GOV-007~008 `[ ]`；Top5 薄弱项最低分 CONN-026/027 85.4 <90）；入选 F-E/F-F 批次 4 五 ID（GOV-007~008 治理收官 + NFR-003/005/007 四期 NFR companion）；hub 最低分入选 GOV-008/NFR-003/NFR-005 91.2；批次 3 r247 部分实现待勾 plan；F-G CONN-023~027 留专批；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch4.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~18:16 UTC）：G0 PASS PR #234 已 squash merge dev-auto（193e921）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.105 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-E**（GOV-007~008 2 项 `[ ]` 待完成；F-F 4 项 NFR + F-G 5 项 CONN 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-E/F-F 批次 3（GOV-007~008/NFR-003/005/007）r247 PR #234 完成；phase idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~18:15 UTC）：确认 PR #234 已 squash merge dev-auto（193e921）feat/mfinal-fe-gov-batch3-r247→dev-auto；无 Open PR；工作区干净；M-FINAL F-E/F-F 批次 3 收官（GOV-007~008、NFR-003/005/007）；PRD/plan 已于 #234 同步；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 r247 收尾（cron 2026-07-07 ~18:10 UTC）：PRD 重评 GOV-007~008、NFR-003/005/007；hub v1.2.105；总分 90.0–90.4→91.2–91.6；五 ID 仍部分实现 plan 未勾选；phase P4_DONE→P5_DOCS_READY；pr=234；待 squash merge dev-auto
