@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fe-design-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-fe-design.md |
@@ -14,9 +14,9 @@
 | base_branch | dev-auto |
 | prd_ids | DESIGN-001,DESIGN-002,DESIGN-003,GOV-003,DESIGN-004 |
 | pr_number |  |
-| last_verified_command | PYTHONPATH=backend pytest tests/test_mfinal_fe_design_r245.py tests/test_design_conn_gov_query_r52.py tests/test_viz_view_design_cat_r63.py -q; cd fe && pnpm run build && pnpm exec vitest run src/pages/admin/designer/designer.smoke.test.tsx |
+| last_verified_command | cd backend && python3 -m pytest ../tests -q; cd backend && python3 -m pytest ../tests/test_mfinal_fe_design_r245.py -q; cd fe && pnpm run build && pnpm run check:design && pnpm exec vitest run && pnpm exec vitest run src/pages/admin/designer/designer.smoke.test.tsx |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm run check:design |
+| last_ui_verified_command | cd fe && pnpm run check:design; pnpm exec vitest run src/pages/admin/designer/designer.smoke.test.tsx (screenshots N/A headless) |
 | last_ui_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T16:30:00Z |

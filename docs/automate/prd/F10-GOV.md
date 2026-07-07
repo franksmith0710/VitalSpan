@@ -36,17 +36,17 @@
 - **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [GOV-003] 工单流程模板 FR-1.2
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：工单流程模板 FR-1.2（SRS 追溯项）。
 - **验收标准**：
-  - [x] 草稿→待审批→设计中→待发布→已发布（r49 L1：`standard_query_release` 五态 FSM + transition API）
-  - [x] 节点角色描述与 resolve（r52 companion：GET `workflow/templates/{id}/node-roles` + 并发/幂等/终态守卫）
-  - [ ] 节点角色可配置（r52 内置模板固定角色；BPM UI 留远期）
-- **代码锚点**：`backend/app/governance/workflow/` · `backend/app/governance/workflow/node_roles.py` · `backend/app/api/v1/gov.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-GOV-R52-003-01~10
-- **演化建议**：r52 companion 闭合节点角色 API、双 submit 409、终态再迁移拦截、probe <50ms；后续补 BPM 可配置角色与审批 UI
-- **里程碑对齐**：
+  - [x] 草稿→待审批→设计中→待发布→已发布（r49 L1 + r245 FSM happy path T-GOV-R245-003-06）
+  - [x] 节点角色描述与 resolve（r52 companion + r245 自定义模板 `describe_node_roles` T-GOV-R245-003-03）
+  - [x] 节点角色可配置（r245：`POST/PUT/DELETE /workflow/templates` 自定义模板 + `CreateWorkflowTemplateDialog`；内置 `standard_query_release` 只读 T-GOV-R245-003-01~05）
+- **代码锚点**：`backend/app/governance/workflow/` · `backend/app/governance/workflow/templates_store.py` · `backend/app/governance/workflow/node_roles.py` · `backend/app/api/v1/gov.py` · `fe/src/pages/admin/governance/components/CreateWorkflowTemplateDialog.tsx` · `tests/test_mfinal_fe_design_r245.py` T-GOV-R245-003-01~08
+- **演化建议**：F-E 批次 1 已闭合自定义模板 CRUD 与 FSM；远期可补 BPM 可视化编排与审批收件箱 UI
+- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
 ### [GOV-004] 可视化查询设计 FR-1.3
 
 - **状态**：部分实现
