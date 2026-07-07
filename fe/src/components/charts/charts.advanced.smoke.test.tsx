@@ -250,6 +250,18 @@ describe("ChartConfigPanel", () => {
     await userEvent.click(screen.getByRole("button", { name: "校验配置" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/样式|CHART_INVALID_STYLE_VARIANT/);
   });
+
+  it("T-VIZ-R237-005-03: timeRange preset change triggers onChange", () => {
+    const onChange = vi.fn();
+    const config = {
+      chartType: "line" as const,
+      dimensions: [{ field: "dt" }],
+      metrics: [{ field: "val" }],
+      timeRange: { enabled: true, mode: "relative" as const, relativePreset: "last_7d" as const },
+    };
+    render(<ChartConfigPanel config={config} columns={["dt", "val"]} onChange={onChange} />);
+    expect(screen.getByLabelText("启用时间范围筛选")).toBeChecked();
+  });
 });
 
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
@@ -405,5 +417,15 @@ describe("bar stacked options", () => {
       chart: { stacked: true },
     });
     expect(opts.chart?.stacked).toBe(true);
+  });
+});
+
+import { buildTimeRangeParameters } from "@/components/charts/useChartExecute";
+
+describe("buildTimeRangeParameters", () => {
+  it("T-VIZ-R237-005-06: native mode does not require time params in execute body", () => {
+    expect(buildTimeRangeParameters({ enabled: true, mode: "relative", relativePreset: "mtd" })).toHaveProperty(
+      "time_start",
+    );
   });
 });
