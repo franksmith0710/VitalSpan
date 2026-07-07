@@ -70,7 +70,7 @@
 
 ## 演化历史（最近）
 
-- P5 收尾（cron 2026-07-07 ~18:40 UTC）：PRD 重评 GOV-007~008、NFR-003/005/007；hub v1.2.106；总分 91.2–91.6→91.9–92.9；五 ID 已实现；plan M-FINAL F-E 二 ID + F-F 三 ID 勾选（完成于 2026-07-07）；F-E 收官；phase P4_DONE→P5_DOCS_READY；branch=feat/mfinal-fe-gov-batch4-r248；base_branch=dev-auto；待 squash merge dev-auto
+- P5 收尾（cron 2026-07-07 ~18:40 UTC）：PRD 重评 GOV-007~008、NFR-003/005/007；hub v1.2.106；总分 91.2–91.6→91.9–92.9；五 ID 已实现；plan M-FINAL F-E 二 ID + F-F 三 ID 勾选（完成于 2026-07-07）；F-E 收官；phase P4_DONE→P5_DOCS_READY；pr=235；待 squash merge dev-auto
 - P4 验证（cron 2026-07-07 ~18:31 UTC）：独立 ruff exit 0；全量 pytest（backend cwd）2252 passed/34 skipped exit 0；r248 28 passed exit 0；r247 回归 36 passed exit 0；UI: N/A（无 fe/ 改动，ui_design_skill none）；screenshots 未运行；phase P3_DONE→P4_DONE；branch=feat/mfinal-fe-gov-batch4-r248；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 实现（cron 2026-07-07 ~18:30 UTC）：F-E/F-F 批次 4 五 ID 全部 8 Tasks 完成；IF-01 工厂 + deferred 降级 + publish busRegisterStatus；ACL self-approve/workflow publish；NFR smoke/drill/xinchuang markdown；28/28 r248 + r247 回归 + 全量 pytest 2252 passed；docs/api + governance + nfr 同步；branch=feat/mfinal-fe-gov-batch4-r248；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 计划（cron 2026-07-07 ~18:22 UTC）：F-E/F-F 批次 4 五 ID 计划完成（GOV-007 IF-01 工厂 + deferred 降级 + publish busRegisterStatus；GOV-008 ACL self-approve/workflow publish；NFR-003 dashboard smoke；NFR-005 drill 连通/只读；NFR-007 xinchuang markdown；≥28 pytest r248 + P4-SMOKE 尾段 + docs）；8 Tasks / 17 文件操作（3 新建 + 14 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fe-gov-batch4.md；执行模式 subagent-driven-development option 1；ui_design_skill none；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
