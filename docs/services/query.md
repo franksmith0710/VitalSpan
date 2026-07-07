@@ -23,6 +23,7 @@
 | M3-LITE 直连 SQL + mode=table | 四期 Dataset 语义层（→ `metadata`） |
 | L1 chart_query_bindings CRUD + bindingId 执行 | Native 查询执行器（仅路由守卫 L1） |
 | L1 配置元模型存储（`query_conditions`/`compute_rules`/… JSON） | 设计器画布 UI |
+| 已存 `dataset_query` 翻译与执行（configId→SQL→execute） | Dataset ORM/META-004 CRUD（companion） |
 | `query/dataset/guard` 第三路径 routing + ACL/readonly | Dataset ORM/META-004 CRUD（companion） |
 | `query/native/guard` 路由模式探测 + native spec 校验 | SQL 模式执行（仍走 sql 路径） |
 | 执行前 RLS WHERE 注入 | 图表/Dashboard 持久化（→ `dashboard` / `designer`） |
@@ -75,6 +76,13 @@
 - **错误码**：`QUERY_DATASET_PLAN_INVALID_PARAMS`（禁止 `_sql`/`__proto__` 参数键）
 - API：`POST /query/dataset/execute-plan`（`planVersion=dataset-plan-v1`）
 - **性能**：`probe_execute_plan_budget_ms` ≤30ms smoke
+
+### r243 F-D kickoff（QUERY-007~009）
+
+- **QUERY-007**：`dataset_query` 配置类型 + `DatasetQueryConfigPayload` 校验 + `config_store/access.py` owner 守卫
+- **QUERY-008**：`translator/from_config.py` → `POST /query/configs/{id}/translate`
+- **QUERY-009**：`dataset/execute_config.py` → `POST /query/dataset/execute`（与 r53 内置 `demo-orders` 正交）
+- **集成测**：`tests/test_mfinal_fd_r243.py` ≥18 断言
 
 ### r52 companion 质量推分（QUERY-003）
 

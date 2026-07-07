@@ -147,7 +147,7 @@
 ### r39 companion 质量推分（2026-07-04）
 
 - **CONN-010 Trino**：`TRINO_*` timeout/auth 全路径 pytest；catalog 空→[]；`TRINO_MAX_COLUMNS=500`；HTTP test + metadata tables 缺 schema 400
-- **CONN-022 GaussDB**：`GAUSSDB_MAX_COLUMNS=500`；`GAUSSDB_TIMEOUT`/`GAUSSDB_AUTH_FAILED` HTTP 链；委托 PG schema 过滤
+- **CONN-022 GaussDB**：`GAUSSDB_MAX_COLUMNS=500`；`GAUSSDB_TIMEOUT`/`GAUSSDB_AUTH_FAILED` HTTP 链；委托 PG schema 过滤；**r243** `probe_readonly_sql` + FE hints port 5432
 - **CONN-017 DM**：多 owner `list_schemas` 过滤 SYS/SYSDBA；`DM_TIMEOUT`；HTTP test 响应不泄露请求 password；metadata 400 链
 - 回归：`test_query_meta_conn_r39.py` ≥30 条 + r38 36/36
 

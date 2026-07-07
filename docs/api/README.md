@@ -95,6 +95,8 @@ redoc: /redoc
 
 **信创 companion r242（CONN-017~021）**：`dm`/`kingbase`/`gbase`/`oceanbase`/`tidb` — Admin `DatasourceFormPage` 可选五型 + `probe_readonly_sql` 只读探针；集成测 `tests/test_mfinal_fc_r242.py`。
 
+**GaussDB companion r243（CONN-022）**：`probe_readonly_sql`（psycopg `SELECT 1`）+ Admin `DatasourceFormPage` hints；集成测 `tests/test_mfinal_fc_r242.py` T-CONN-R242-022-*。
+
 ---
 
 ## 3b. NFR 横切（r46 L1 + r51 companion）
@@ -144,6 +146,8 @@ redoc: /redoc
 | POST | `/api/v1/query/dataset/execute-plan` | Dataset execute-plan 四步链 companion（`dataset-plan-v1`；非真实 SQL execute） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | GET/PUT | `/api/v1/query/configs` | 配置元模型存取（`configType`/`schemaVersion`/`refType`/`refId`；可选 `expectedRevision` 乐观锁；revision upsert；payload >256KB → 413 `CONFIG_PAYLOAD_TOO_LARGE`；revision 冲突 → 409 `CONFIG_VERSION_CONFLICT`） | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | GET | `/api/v1/query/configs/{config_id}` | 按 id 读取配置记录 | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
+| POST | `/api/v1/query/configs/{config_id}/translate` | 已存 `dataset_query` 配置翻译为参数化 SQL | 内部 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query_configs.py` |
+| POST | `/api/v1/query/dataset/execute` | `dataSourceId` + `configId` 存储→翻译→执行 | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/designer/conditions/validate` | 查询条件配置校验（不落库；422 含 `detail.fields`；`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_CROSS_FIELD`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/conditions` | 查询条件保存/读取（挂载 QUERY-007；可选 `expectedRevision`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/compute-rules` | 运算规则保存/读取（挂载 QUERY-007；`DESIGN_RULE_TYPE_MISMATCH`/`DESIGN_RULE_BROKEN_CHAIN`/`DESIGN_INVALID_AGGREGATE`） | 内部 | 一期 | DESIGN-002 | 已实现 | `backend/app/api/v1/designer.py` |
