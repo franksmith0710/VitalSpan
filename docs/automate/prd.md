@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.105
+version: 1.2.106
 last_updated: 2026-07-07
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-07 · 规范见 `prd-scoring` · 本轮重评：GOV-007~008、NFR-003/005/007（91.2~91.6↑）
+> 更新：2026-07-07 · 规范见 `prd-scoring` · 本轮重评：GOV-007~008、NFR-003/005/007（92.1~92.9↑；F-E 收官 + F-F 首批三 ID）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -128,8 +128,8 @@ domain_count: 16
 | GOV-004 | 88 | 94 | 96 | 86 | 90 | 100 | 88 | 90 | 91.7 | 交互体验 |
 | GOV-005 | 88 | 96 | 96 | 88 | 90 | 100 | 88 | 90 | 92.2 | 用户价值 |
 | GOV-006 | 88 | 94 | 94 | 88 | 90 | 100 | 88 | 90 | 91.6 | 用户价值 |
-| GOV-007 | 88 | 92 | 94 | N/A | 90 | 100 | 88 | 90 | 91.6 | 用户价值 |
-| GOV-008 | 86 | 90 | 94 | N/A | 90 | 100 | 88 | 92 | 91.2 | 用户价值 |
+| GOV-007 | 89 | 93 | 94 | N/A | 91 | 100 | 88 | 91 | 92.2 | 用户价值 |
+| GOV-008 | 88 | 92 | 94 | N/A | 91 | 100 | 88 | 94 | 92.2 | 用户价值 |
 | META-001 | 88 | 96 | 94 | 86 | 92 | 100 | 92 | 92 | 92.3 | 交互体验 |
 | META-002 | 90 | 98 | 96 | 88 | 92 | 100 | 92 | 92 | 93.7 | 交互体验 |
 | META-003 | 88 | 94 | 96 | 86 | 92 | 100 | 90 | 92 | 92.3 | 交互体验 |
@@ -157,11 +157,11 @@ domain_count: 16
 | CAT-007 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | NFR-001 | 88 | 96 | 94 | N/A | 90 | 100 | 92 | 88 | 92.6 | 用户价值 |
 | NFR-002 | 88 | 96 | 94 | N/A | 90 | 100 | 90 | 88 | 92.4 | 安全性 |
-| NFR-003 | 86 | 92 | 94 | N/A | 90 | 100 | 88 | 90 | 91.2 | 用户价值 |
+| NFR-003 | 87 | 94 | 94 | N/A | 90 | 100 | 90 | 90 | 92.1 | 用户价值 |
 | NFR-004 | 88 | 94 | 94 | N/A | 92 | 100 | 90 | 90 | 92.4 | 用户价值 |
-| NFR-005 | 86 | 92 | 94 | N/A | 90 | 100 | 88 | 90 | 91.2 | 用户价值 |
+| NFR-005 | 87 | 94 | 94 | N/A | 91 | 100 | 88 | 90 | 91.9 | 用户价值 |
 | NFR-006 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
-| NFR-007 | 88 | 94 | 94 | N/A | 90 | 100 | 88 | 92 | 91.6 | 用户价值 |
+| NFR-007 | 89 | 96 | 94 | N/A | 91 | 100 | 88 | 92 | 92.9 | 用户价值 |
 | NFR-008 | 86 | 90 | 96 | N/A | 90 | 98 | 88 | 92 | 91.3 | 用户价值 |
 | DATA-004 | 80 | 96 | 95 | N/A | 88 | 100 | 86 | 94 | 91.1 | 用户价值 |
 | DATA-001 | 82 | 96 | 94 | N/A | 88 | 100 | 88 | 92 | 91.3 | 用户价值 |
@@ -218,8 +218,9 @@ domain_count: 16
 |------|--------|----------|
 | F-D | META-001 ~ META-004 | 已实现 |
 | F-E | DESIGN-001 ~ DESIGN-003、GOV-003、DESIGN-004 ~ DESIGN-005、GOV-004 ~ GOV-006 | 已实现 |
-| F-E | GOV-007 ~ GOV-008 | 部分实现 |
-| F-F | NFR-003、NFR-005、NFR-007、NFR-008 | 部分实现 |
+| F-E | GOV-007 ~ GOV-008 | 已实现 |
+| F-F | NFR-003、NFR-005、NFR-007 | 已实现 |
+| F-F | NFR-008 | 部分实现 |
 | F-G | CONN-023 ~ CONN-027 | 未实现 |
 
 > F-A/F-B 为 companion（BOOT-002、DS-007、AUTH-004 FE），对应分片状态「已实现」指后端/API 已交付。
@@ -237,6 +238,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.106 | 2026-07-07 | P5 r248 重评 GOV-007~008、NFR-003/005/007（M-FINAL F-E 收官 + F-F 首批三 ID）；pytest 2252/34 skipped + test_mfinal_fe_gov_batch4_r248 28/28 + r247 36/36 regression；IF-01 工厂 + publish deferred 降级 + busRegisterStatus、ACL self-approve/workflow publish、dashboard smoke、plugin drill 连通/只读、xinchuang Markdown；用户价值 86–88%→87–89%、完整度 90–94%→92–96%、架构健康 90%→91%、性能 88%→90%（NFR-003）；总分 91.2–91.6→91.9–92.9（五 ID ≥90 STUCK 空；plan F-E 二 ID + F-F 三 ID 勾选） |
 | 1.2.105 | 2026-07-07 | P5 r247 重评 GOV-007~008、NFR-003/005/007（M-FINAL F-E/F-F 批次 3）；pytest 2224/34 skipped + test_mfinal_fe_gov_batch3_r247 36/36 + r246 32/32 regression；bus pipeline+retry/audit、ACL matrix+role guards、dashboard availability、plugin drill、xinchuang deployment-report；用户价值 82–84%→86–88%、完整度 88–90%→90–94%、测试覆盖 98%→100%；总分 90.0–90.4→91.2–91.6（五 ID ≥90 STUCK 空；plan 留部分实现未勾选） |
 | 1.2.104 | 2026-07-07 | P5 r246 重评 DESIGN-004~005、GOV-004~006（M-FINAL F-E 批次 2）；pytest 2190/32 skipped + test_mfinal_fe_design_r246 32/32 + r245 34/34 regression；fe check:design 201 files + vitest 227/227 + designer/gov batch2 smoke；快照 ACL/双向 link/SQL 模式/审批态设计/from-workflow 发布/OpenAPI 3.1；用户价值 84–88%→88–90%、完整度 90–94%→92–96%、交互 N/A→86–88%、测试覆盖 98%→100%；总分 90.1–91.2→91.6–92.8（五 ID ≥90 STUCK 空；plan M-FINAL F-E 五 ID 勾选） |
 | 1.2.103 | 2026-07-07 | P5 r245 重评 DESIGN-001~003、GOV-003、DESIGN-004（M-FINAL F-E 批次 1）；pytest 2158/32 skipped + test_mfinal_fe_design_r245 34/34；fe check:design 197 files + vitest 220/220 + designer.smoke 6/6；设计器三面板+预览+快照提交+工单模板 CRUD；用户价值 82–84%→88%、完整度 90–92%→90–94%、交互 N/A→86–88%、测试覆盖 98%→100%；总分 90.1–90.4→91.2–92.1（五 ID ≥90 STUCK 空；plan M-FINAL F-E 四 ID 勾选；DESIGN-004 留批次 2） |
