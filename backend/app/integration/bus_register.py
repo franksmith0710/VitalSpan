@@ -5,26 +5,12 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
-from app.governance.bus.adapter import BusAdapter, InMemoryBusAdapter, register_with_retry
 from app.governance.catalog import service as catalog_service
-from app.governance.catalog.schemas import BusRegisterOut, CatalogEntryOut
+from app.governance.catalog.schemas import BusRegisterOut
+from app.integration.bus_adapter_factory import get_bus_adapter
 from app.integration.errors import IntegrationError
 
 _NIL_UUID = uuid.UUID(int=0)
-
-
-class RetryingBusAdapter:
-    def __init__(self, inner: BusAdapter, max_attempts: int) -> None:
-        self._inner = inner
-        self._max_attempts = max_attempts
-
-    def register(self, *, entry: CatalogEntryOut, trace_id: str):
-        return register_with_retry(
-            self._inner,
-            entry=entry,
-            trace_id=trace_id,
-            max_attempts=self._max_attempts,
-        )
 
 
 def _assert_integration_bus(actor: UserContext) -> None:
@@ -57,6 +43,20 @@ def register_on_publish(
     return out
 
 
+def _build_adapter(*, max_attempts: int = 3):
+    return get_bus_adapter(max_attempts=max_attempts)
+
+
+def register_with_if01_adapter(
+    db: Session,
+    entry_id: uuid.UUID,
+    actor: UserContext,
+    *,
+    max_attempts: int = 3,
+) -> tuple[BusRegisterOut, bool]:
+    return register_catalog_to_bus(db, entry_id, actor, max_attempts=max_attempts)
+
+
 def register_catalog_to_bus(
     db: Session,
     entry_id: uuid.UUID,
@@ -65,7 +65,7 @@ def register_catalog_to_bus(
     max_attempts: int = 3,
 ) -> tuple[BusRegisterOut, bool]:
     _assert_integration_bus(actor)
-    adapter = RetryingBusAdapter(InMemoryBusAdapter(), max_attempts)
+    adapter = _build_adapter(max_attempts=max_attempts)
     try:
         return catalog_service.register_entry_to_bus(db, entry_id, adapter=adapter)
     except catalog_service.CatalogError as exc:

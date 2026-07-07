@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from app.auth.audit.write_hooks import record_platform_event
 from app.auth.deps import UserContext
 from app.core.logging import trace_id_var
-from app.governance.bus.adapter import InMemoryBusAdapter, register_with_retry
 from app.governance.bus.auto import (
     _assert_auto_role,
     _assert_entry_path_scope,
@@ -17,22 +16,9 @@ from app.governance.bus.auto import (
     get_fsm_state,
 )
 from app.governance.bus.auto_schemas import AutoRegisterOut
+from app.governance.bus.degradation import BusRegisterOutcome, record_deferred_registration
 from app.governance.catalog import service as catalog_service
-from app.governance.catalog.schemas import CatalogEntryOut
-
-
-class RetryingBusAdapter:
-    def __init__(self, inner: InMemoryBusAdapter, max_attempts: int = 3) -> None:
-        self._inner = inner
-        self._max_attempts = max_attempts
-
-    def register(self, *, entry: CatalogEntryOut, trace_id: str):
-        return register_with_retry(
-            self._inner,
-            entry=entry,
-            trace_id=trace_id,
-            max_attempts=self._max_attempts,
-        )
+from app.integration.bus_adapter_factory import get_bus_adapter
 
 
 def _audit_bus_event(
@@ -100,7 +86,7 @@ def trigger_auto_bus_register(
     trace_id = trace_id_var.get() or uuid.uuid4().hex
     _set_fsm(entry_id, "auto_registering")
     try:
-        adapter = RetryingBusAdapter(InMemoryBusAdapter(), max_attempts=3)
+        adapter = get_bus_adapter(max_attempts=3)
         out, created = catalog_service.register_entry_to_bus(db, entry_id, adapter=adapter)
         _set_fsm(entry_id, "succeeded")
         bus_id = _extract_bus_id(out)
@@ -114,21 +100,41 @@ def trigger_auto_bus_register(
             code,
         )
     except catalog_service.CatalogError as exc:
-        _set_fsm(entry_id, "failed")
-        _audit_bus_event(
-            db, actor, entry_id, "bus_auto_register_failed", trace_id, source=source
+        mapped = _map_retry_exhausted(exc)
+        if source != "publish":
+            _set_fsm(entry_id, "failed")
+            _audit_bus_event(
+                db, actor, entry_id, "bus_auto_register_failed", trace_id, source=source
+            )
+            db.commit()
+        raise mapped from exc
+
+
+def attempt_auto_bus_register_for_publish(
+    db: Session, actor: UserContext, entry_id: uuid.UUID
+) -> BusRegisterOutcome:
+    try:
+        out, _code = trigger_auto_bus_register(db, actor, entry_id, source="publish")
+        return BusRegisterOutcome(status="succeeded", bus_id=out.bus_id)
+    except catalog_service.CatalogError as exc:
+        trace_id = trace_id_var.get() or uuid.uuid4().hex
+        code = (
+            exc.code
+            if exc.code == "BUS_REGISTER_RETRY_EXHAUSTED"
+            else "BUS_REGISTER_RETRY_EXHAUSTED"
         )
+        record_deferred_registration(db, actor, entry_id, trace_id, code)
         db.commit()
-        raise _map_retry_exhausted(exc)
+        return BusRegisterOutcome(status="deferred", error_code=code)
 
 
 def retry_auto_register(
     db: Session, actor: UserContext, entry_id: uuid.UUID
 ) -> tuple[AutoRegisterOut, int]:
-    if get_fsm_state(entry_id) != "failed":
+    if get_fsm_state(entry_id) not in ("failed", "deferred"):
         raise catalog_service.CatalogError(
             "GOV_AUTO_BUS_INVALID_TRANSITION",
-            "Retry only allowed from failed fsm state",
+            "Retry only allowed from failed or deferred fsm state",
             409,
         )
     return trigger_auto_bus_register(db, actor, entry_id, source="retry")

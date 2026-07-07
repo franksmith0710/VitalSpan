@@ -56,8 +56,10 @@
 | CAT-001~003 | `cat0x/handler.py` + `GET .../m6-probe` M6 集成验收面 | CAT-001~003 | 已实现 |
 | `POST /api/v1/gov/bus/auto-register` | 全自动注册 FSM（integration/admin；幂等） | GOV-007 | L1 已实现 r60 |
 | `bus/pipeline.py` | `trigger_auto_bus_register` 发布钩子 + retry + audit | GOV-007 | 已实现 r247 |
+| `integration/bus_adapter_factory.py` | IF-01 `get_bus_adapter()` 统一 `RetryingBusAdapter` 构造（r248） | GOV-007 | 已实现 r248 |
+| `bus/degradation.py` | publish 源失败降级 FSM `deferred` + `bus_auto_register_deferred` 审计（r248） | GOV-007 | 已实现 r248 |
 | `acl_matrix.py` | `describe_gov_permission_matrix` + `GET /gov/acl/matrix` | GOV-008 | 已实现 r247 |
-| `acl.py` | publish/workflow/bus `assert_*` 守卫 + `gov_catalog_entry` grant | GOV-008 | 已实现 r247 |
+| `acl.py` | publish/workflow/bus `assert_*` 守卫 + `gov_catalog_entry` grant + self-approve（r248） | GOV-008 | 已实现 r248 |
 | `GET /api/v1/workno/behavior` | CAT-07 工号行为审计查询 mock | CAT-007 | L1 已实现 r60 |
 | `query_design/` | 可视化查询设计聚合 + 工单快照投影/确认 | GOV-004 | 已实现 r246 |
 | `acl.py` | 查询设计 save/publish 权限联动 + RLS smoke | GOV-008 | 已实现 |
@@ -132,6 +134,11 @@
 ### r68 companion 质量推分（GOV-007）
 
 - **GOV-007**：`bus/auto.py` — failed/auto_registering 状态重试 → 409 `GOV_AUTO_BUS_INVALID_TRANSITION`；`set_user_auto_bus_scope` + enterprise entry path scope（`GOV_AUTO_BUS_FORBIDDEN`）；`bus/probe.py` — `probe_auto_register_budget_ms` ≤50ms；`GET /gov/bus/auto-register/probe`
+
+### r248 companion 收官（GOV-007/008）
+
+- **GOV-007**：`integration/bus_adapter_factory.get_bus_adapter()` IF-01 统一适配器；publish 源总线失败 → FSM `deferred` + `bus_auto_register_deferred` 审计（不 rollback 发布）；`PublishActionOut.busRegisterStatus`/`busRegisterErrorCode`；手动 auto-register 仍 `failed` + 502
+- **GOV-008**：`GOV_ACL_SELF_APPROVE_FORBIDDEN`（publisher 自批 submitter）；workflow `publish` action 要求 publisher/admin；`record_publish_submitter` 内存追踪
 
 ### M11 m11-probe（CAT-04~06）
 

@@ -104,11 +104,12 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | GET | `/api/v1/nfr/plugin-extension-points` | 连接器插件扩展点清单 | 内部 | 一期 | NFR-005 | 已实现 | `backend/app/api/v1/nfr.py` |
-| GET | `/api/v1/nfr/plugin-extension/drill` | 连接器扩展演练（`drill_stub` 注册 + zeroInvasion；pytest/DRILL_MODE） | 内部 | 四期 | NFR-005 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/plugin-extension/drill` | 连接器扩展演练（`drill_stub` 注册 + `connectivityOk`/`readonlyQueryOk` + zeroInvasion；pytest/DRILL_MODE） | 内部 | 四期 | NFR-005 | 已实现（r248） | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/dashboard-availability/report` | 核心看板可用性复合报告（SLA + 首屏 P95；strict 503） | 内部 | 四期 | NFR-003 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/dashboard-availability/smoke` | 核心看板批量可用性 smoke（`CORE_DASHBOARD_IDS`；`simulateBreach`；strict→503） | 内部 | 四期 | NFR-003 | 已实现（r248） | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/push-config` | 推送配置契约（不泄露 webhook 明文） | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/xinchuang/compliance` | 信创合规检查清单（strict 违规 → 422） | 内部 | 一期 | NFR-007 | 已实现 | `backend/app/api/v1/nfr.py` |
-| GET | `/api/v1/nfr/xinchuang/deployment-report` | 信创部署验收报告（compose 服务清单 + 方言 smoke） | 内部 | 四期 | NFR-007 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/xinchuang/deployment-report` | 信创部署验收报告（`format=json\|markdown`；`schemaVersion`/`missingExpectedTypes` + compose 方言 smoke） | 内部 | 四期 | NFR-007 | 已实现（r248） | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/browser-matrix` | 浏览器兼容矩阵 + 可选 UA 探测 | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/notifications` | 站内推送通知创建（mock 投递） | 内部 | 三期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/notifications/{id}` | 推送通知状态查询 | 内部 | 三期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
@@ -339,7 +340,7 @@ redoc: /redoc
 | GET | `/api/v1/gov/query-design` | 可视化查询设计读取（`?refId=`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/query-design/preview-execute` | 查询设计执行预览（RLS fragment；GOV-008） | 内部 | 一期 | GOV-008 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/publish/entries/{entry_id}/submit` | draft→pending_publish | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
-| POST | `/api/v1/gov/publish/entries/{entry_id}/approve` | pending_publish→published | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/publish/entries/{entry_id}/approve` | pending_publish→published；响应含 `busRegisterStatus`/`busRegisterErrorCode`（r248） | IF-06 | 一期 | GOV-005/007 | 已实现（r248） | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/publish/entries/{entry_id}/reject` | pending_publish→draft | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/publish/entries/{entry_id}/status` | 发布状态 + allowedActions | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/publish/entries/{entry_id}/notifications` | 审批通知事件列表（内存 store） | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |

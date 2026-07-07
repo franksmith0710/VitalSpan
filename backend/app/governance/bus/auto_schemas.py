@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-FsmState = Literal["idle", "auto_registering", "succeeded", "failed"]
+FsmState = Literal["idle", "auto_registering", "succeeded", "failed", "deferred"]
 
 
 class AutoRegisterIn(BaseModel):
