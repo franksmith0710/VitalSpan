@@ -4,6 +4,7 @@ import importlib.util
 import pathlib
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from app.core.config import Settings, get_settings
 from app.core.nfr.errors import NFR_PROBE_TIMEOUT, XINCHUANG_NON_COMPLIANT
@@ -11,6 +12,7 @@ from app.core.nfr.plugin_extension import PLUGIN_EXTENSION_POINTS
 from app.datasources.registry import registry
 
 _XINCHUANG_DB_TYPES = frozenset({"gbase", "dm", "gaussdb", "kingbase"})
+EXPECTED_XINCHUANG_TYPES = ("dm", "kingbase", "gbase", "oceanbase", "tidb", "gaussdb")
 _FORBIDDEN_MODULES = frozenset({"superset", "dataease"})
 
 _REMEDIATION: dict[str, str] = {
@@ -139,6 +141,9 @@ def assert_xinchuang_compliant(settings: Settings | None = None) -> None:
 
 @dataclass(frozen=True)
 class XinchuangDeploymentReport:
+    schema_version: str
+    generated_at: str
+    missing_expected_types: tuple[str, ...]
     components: tuple[dict, ...]
     registered_xinchuang_connectors: tuple[str, ...]
     compose_services: tuple[str, ...]
@@ -170,6 +175,8 @@ def _parse_compose_services() -> tuple[str, ...]:
 def build_xinchuang_deployment_report() -> XinchuangDeploymentReport:
     settings = get_settings()
     xc = _registered_xinchuang()
+    registered_set = set(xc)
+    missing = sorted(set(EXPECTED_XINCHUANG_TYPES) - registered_set)
     smoke = []
     for t in xc:
         conn = registry.get(t)
@@ -179,6 +186,9 @@ def build_xinchuang_deployment_report() -> XinchuangDeploymentReport:
     if settings.xinchuang_deploy_mode == "strict" and not xc:
         raise XinchuangComplianceError(XINCHUANG_NON_COMPLIANT, "missing xinchuang connectors")
     return XinchuangDeploymentReport(
+        schema_version="1.0",
+        generated_at=datetime.now(UTC).isoformat(),
+        missing_expected_types=tuple(missing),
         components=(
             {"kind": "db", "name": "postgres", "status": "sample"},
             {"kind": "middleware", "name": "none", "status": "warn"},
@@ -189,6 +199,31 @@ def build_xinchuang_deployment_report() -> XinchuangDeploymentReport:
         dialect_readonly_smoke=tuple(smoke),
         overall_acceptance=overall,
     )
+
+
+def render_deployment_report_markdown(report: XinchuangDeploymentReport) -> str:
+    lines = [
+        "## 信创部署验收报告",
+        "",
+        f"- schemaVersion: {report.schema_version}",
+        f"- generatedAt: {report.generated_at}",
+        f"- overallAcceptance: {report.overall_acceptance}",
+        "",
+        "### 已注册信创连接器",
+    ]
+    for conn in report.registered_xinchuang_connectors:
+        lines.append(f"- {conn}")
+    if report.missing_expected_types:
+        lines.extend(["", "### 缺失预期类型"])
+        for missing in report.missing_expected_types:
+            lines.append(f"- {missing}")
+    lines.extend(["", "### Compose 服务"])
+    for svc in report.compose_services:
+        lines.append(f"- {svc}")
+    lines.extend(["", "### 方言只读 smoke"])
+    for item in report.dialect_readonly_smoke:
+        lines.append(f"- {item['type']}: {'ok' if item['ok'] else 'fail'}")
+    return "\n".join(lines)
 
 
 def probe_deployment_report_budget_ms() -> DeploymentProbeResult:

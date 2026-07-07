@@ -15,6 +15,9 @@ from app.core.nfr.errors import DASHBOARD_SLA_BELOW_TARGET
 
 OVERALL = Literal["available", "degraded", "unavailable"]
 
+CORE_DASHBOARD_IDS = ("core-dash", "executive-overview")
+P95_THRESHOLD_MS = 5000
+
 
 @dataclass(frozen=True)
 class DashboardAvailabilityReport:
@@ -64,6 +67,15 @@ def build_dashboard_availability_report(
         sla_uptime_percent=sla_uptime,
         first_screen_p95_ms=float(fs.budget_ms),
     )
+
+
+def probe_core_dashboards_smoke(
+    actor: UserContext, *, simulate_breach: bool = False
+) -> list[DashboardAvailabilityReport]:
+    return [
+        build_dashboard_availability_report(did, actor, simulate_breach=simulate_breach)
+        for did in CORE_DASHBOARD_IDS
+    ]
 
 
 def probe_dashboard_availability_budget_ms(actor: UserContext) -> AvailabilityProbeResult:

@@ -4,7 +4,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.auth.deps import UserContext, get_current_user
@@ -13,7 +13,12 @@ from app.core.nfr.browser_matrix import probe_browser_support
 from app.core.nfr.errors import NFR_RUNTIME_VIOLATION, XINCHUANG_NON_COMPLIANT
 from app.core.nfr.runtime_guard import RuntimeComplianceError, RuntimeComplianceReport, assert_runtime_compliant, build_runtime_report
 from app.core.nfr.deployment_report import build_deployment_acceptance_report
-from app.core.nfr.dashboard_availability import build_dashboard_availability_report
+from app.core.nfr.dashboard_availability import (
+    CORE_DASHBOARD_IDS,
+    P95_THRESHOLD_MS,
+    build_dashboard_availability_report,
+    probe_core_dashboards_smoke,
+)
 from app.core.nfr.plugin_extension import (
     describe_registration_path,
     list_extension_points,
@@ -63,6 +68,7 @@ from app.core.nfr.xinchuang import (
     assert_xinchuang_compliant,
     build_compliance_report,
     build_xinchuang_deployment_report,
+    render_deployment_report_markdown,
 )
 
 router = APIRouter(prefix="/nfr", tags=["nfr"])
@@ -165,9 +171,44 @@ def plugin_extension_drill(_: Annotated[UserContext, Depends(get_current_user)])
             "types": list(result.types),
             "zeroInvasion": result.zero_invasion,
             "elapsedMs": result.elapsed_ms,
+            "connectivityOk": result.connectivity_ok,
+            "readonlyQueryOk": result.readonly_query_ok,
         }
     finally:
         teardown_extension_drill()
+
+
+@router.get("/dashboard-availability/smoke")
+def dashboard_availability_smoke(
+    simulate_breach: bool = Query(False, alias="simulateBreach"),
+    actor: Annotated[UserContext, Depends(get_current_user)] = ...,
+):
+    reports = probe_core_dashboards_smoke(actor, simulate_breach=simulate_breach)
+    all_ok = all(r.within_sla and r.within_first_screen_budget for r in reports)
+    if get_settings().dashboard_availability_mode == "strict" and not all_ok:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "code": "DASHBOARD_AVAILABILITY_BREACH",
+                "message": "SLA breach",
+                "detail": None,
+            },
+        )
+    return {
+        "dashboards": [
+            {
+                "dashboardId": r.dashboard_id,
+                "withinSla": r.within_sla,
+                "withinFirstScreenBudget": r.within_first_screen_budget,
+                "overallStatus": r.overall_status,
+                "firstScreenP95Ms": r.first_screen_p95_ms,
+            }
+            for r in reports
+        ],
+        "allAvailable": all_ok,
+        "p95ThresholdMs": P95_THRESHOLD_MS,
+        "coreDashboardIds": list(CORE_DASHBOARD_IDS),
+    }
 
 
 @router.get("/dashboard-availability/report")
@@ -207,7 +248,10 @@ def dashboard_availability_report(
 
 
 @router.get("/xinchuang/deployment-report")
-def xinchuang_deployment_report(_: Annotated[UserContext, Depends(get_current_user)]):
+def xinchuang_deployment_report(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    format: str = Query("json"),
+):
     try:
         report = build_xinchuang_deployment_report()
     except XinchuangComplianceError as exc:
@@ -215,7 +259,13 @@ def xinchuang_deployment_report(_: Annotated[UserContext, Depends(get_current_us
             status_code=422,
             content={"code": exc.code, "message": exc.message, "detail": None},
         )
+    if format == "markdown":
+        md = render_deployment_report_markdown(report)
+        return Response(content=md, media_type="text/markdown")
     return {
+        "schemaVersion": report.schema_version,
+        "generatedAt": report.generated_at,
+        "missingExpectedTypes": list(report.missing_expected_types),
         "registeredXinchuangConnectors": list(report.registered_xinchuang_connectors),
         "composeServices": list(report.compose_services),
         "dialectReadOnlySmoke": list(report.dialect_readonly_smoke),
