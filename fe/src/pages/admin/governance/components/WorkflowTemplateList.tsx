@@ -1,6 +1,6 @@
 import { ChevronRight, Workflow } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { nodeLabel, type WorkflowTemplate } from "./workflow-labels";
+import { type WorkflowTemplate } from "./workflow-labels";
 
 type WorkflowTemplateListProps = {
   templates: WorkflowTemplate[];
