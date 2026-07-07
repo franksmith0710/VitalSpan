@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fg-finish.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-fg-finish-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-fg-finish.md |
-| branch | cursor/bc-bf8e0023-29c8-4dee-906c-e27cc675db4f-cebb |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | CONN-027,API-001,VIZ-003,VIZ-004,VIZ-008 |
-| pr_number | 240 |
-| last_verified_command | python3 -m pytest ../tests/ --tb=no -q (backend cwd) |
-| last_verified_exit_code | 1 (32 pre-existing env failures: clickhouse_connect/dmPython not installed; r250 13/13 exit 0; fe vitest 37/37; check:design 201 files exit 0) |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T21:57:00Z |
 | skill_rule_index_source_count | 26 |
@@ -68,6 +68,7 @@
 
 ## 演化历史（最近）
 
+- G0 闸门（cron 2026-07-07 ~23:30 UTC）：确认 PR #240 已 squash merge dev-auto（d31b66e）；无 Open PR；工作区干净；M-FINAL F-G 收官（CONN-027 Redshift + API-001/VIZ-003/004/008 companion）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 收尾（cron 2026-07-07 ~22:24 UTC）：PRD 重评 CONN-027、API-001、VIZ-003/004/008；hub v1.2.108；CONN-027: 85.4→90.1（未实现→已实现）；API-001: 90.0→90.6；VIZ-003/004/008: 90.1→91.4；五 ID ≥90 STUCK 空；plan F-G CONN-027 勾选（完成于 2026-07-07）；M-FINAL 全 PRD 已实现（124 已实现 + 5 部分实现 + 0 未实现）；phase P4_DONE→P5_DOCS_READY；pr=240；待 squash merge dev-auto
 - P4 验证（cron 2026-07-07 ~22:20 UTC）：ruff exit 0；全量 pytest 2263 passed/32 failed(pre-existing: clickhouse_connect/dmPython 未安装)/32 skipped exit 1；r250 scoped 13/13 passed exit 0；fe vitest 37/37 passed exit 0；check:design 201 files exit 0；UI design drift PASS；pre-existing failures unrelated to P3（r36/r37/r38/r39/r235/r242 非 P3 diff）；phase P3_DONE→P4_DONE；待 P5 evolution-pr-finisher-github
 - P3 实现（cron 2026-07-07 ~22:13 UTC）：F-G 收官五 ID 全部 6 Tasks 完成；CONN-027 RedshiftConnector（委托 PG，port 5439，ssl=required，REDSHIFT_* 错误常量）；catalog count 29→30（r40/r41 回归通过）；r250 11 pytest passed；FE datasource hint port=5439 + smoke T-CONN-R250-FE-01/02（12/12 vitest）；VIZ-003/004/008 renderFromSpec FALLBACK+buildBarOption+buildPieOption+空数据防护+AdvancedEchartsChart 空态覆盖层（25/25 vitest）；check:design 201 files PASS；docs/api/README.md + services/datasources.md 同步；branch=cursor/bc-bf8e0023-29c8-4dee-906c-e27cc675db4f-cebb；base_branch=dev-auto；ui_design_skill=b-design-system-tailadmin-radix；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
