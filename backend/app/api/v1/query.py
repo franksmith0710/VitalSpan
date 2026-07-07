@@ -34,7 +34,13 @@ from app.query.native.schemas import (
 )
 from app.query.dataset.guard import dataset_routing_doc, validate_dataset_spec
 from app.query.dataset.executor import build_dataset_execute_plan
-from app.query.dataset.schemas import DatasetExecutePlanOut, DatasetRoutingOut
+from app.query.dataset.execute_config import execute_dataset_from_config
+from app.query.dataset.schemas import (
+    DatasetExecutePlanOut,
+    DatasetExecuteRequest,
+    DatasetExecuteResponse,
+    DatasetRoutingOut,
+)
 
 router = APIRouter(prefix="/query", tags=["query"])
 
@@ -242,5 +248,21 @@ def post_dataset_execute_plan(
 ):
     try:
         return build_dataset_execute_plan(payload, user.roles)
+    except QueryError as exc:
+        return _error_response(exc)
+
+
+@router.post(
+    "/dataset/execute",
+    response_model=DatasetExecuteResponse,
+    summary="Execute dataset query from stored config (QUERY-009)",
+)
+def execute_dataset_config(
+    payload: DatasetExecuteRequest,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DatasetExecuteResponse | JSONResponse:
+    try:
+        return execute_dataset_from_config(db, user, payload)
     except QueryError as exc:
         return _error_response(exc)
