@@ -38,7 +38,7 @@ export function ChartRenderer({
   filterParameters,
   executeKey,
 }: ChartRendererProps) {
-  const { columns, rows, loading, error, slowHint, retry } = useChartExecute(config, {
+  const { columns, rows, loading, error, slowHint, rerun } = useChartExecute(config, {
     filterParameters,
     executeKey,
   });
@@ -213,7 +213,7 @@ export function ChartRenderer({
       error={error}
       empty={empty}
       slowHint={slowHint}
-      onRetry={retry}
+      onRetry={rerun}
     >
       {!loading && !error && !empty ? (
         <div className={mode === "config" ? "grid gap-4 lg:grid-cols-2" : ""}>
