@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
+| phase | P1_DONE |
+| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-ff-fg-batch1.md |
+| design | docs/superpowers/specs/2026-07-07-mfinal-ff-fg-batch1-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | NFR-008,CONN-023,CONN-024,CONN-025,CONN-026 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -70,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- G2 选题（cron 2026-07-07 ~19:05 UTC）：饱和熔断已跳过（plan §M-FINAL · F-F 含 NFR-008 `[ ]` + F-G 五型 `[ ]`；Top5 薄弱项最低分 CONN-026/027 85.4 <90）；入选 F-F/F-G 批次 1 五 ID（NFR-008 F-F 收官 + CONN-023~026 缺口连接器首批）；hub 最低分入选 CONN-026 85.4；CONN-027 留 F-G 批次 2；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-ff-fg-batch1.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G0 闸门（cron 2026-07-07 ~19:00 UTC）：确认 PR #235 已 squash merge dev-auto（dd697f4）+ PR #236 docs 补 round-target/plan；无 Open PR；工作区干净；M-FINAL F-E/F-F 批次 4 收官（GOV-007~008、NFR-003/005/007）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 收尾（cron 2026-07-07 ~18:40 UTC）：PRD 重评 GOV-007~008、NFR-003/005/007；hub v1.2.106；总分 91.2–91.6→91.9–92.9；五 ID 已实现；plan M-FINAL F-E 二 ID + F-F 三 ID 勾选（完成于 2026-07-07）；F-E 收官；phase P4_DONE→P5_DOCS_READY；pr=235；待 squash merge dev-auto
 - P4 验证（cron 2026-07-07 ~18:31 UTC）：独立 ruff exit 0；全量 pytest（backend cwd）2252 passed/34 skipped exit 0；r248 28 passed exit 0；r247 回归 36 passed exit 0；UI: N/A（无 fe/ 改动，ui_design_skill none）；screenshots 未运行；phase P3_DONE→P4_DONE；branch=feat/mfinal-fe-gov-batch4-r248；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
