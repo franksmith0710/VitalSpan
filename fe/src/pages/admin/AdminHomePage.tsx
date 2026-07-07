@@ -3,12 +3,6 @@ import { Link, Navigate } from "react-router";
 import { Database, LayoutDashboard, Shield, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -80,15 +74,6 @@ export function AdminHomePage() {
 
   return (
     <AdminPageShell
-      breadcrumb={
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbPage>运营总览</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      }
       title="欢迎使用 VitalSpan"
       description="M1 管理端壳层已就绪。数据源与权限配置将在后续里程碑开放。"
     >

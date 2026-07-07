@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { apiFetch } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
 import type { ChartType } from "@/lib/chartViewConfig";
+import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
@@ -19,6 +21,8 @@ import {
   type LayoutWidget,
 } from "@/components/dashboard/layoutUtils";
 import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
+import { WidgetInspector } from "@/components/dashboard/WidgetInspector";
+import { WIDGET_CHART_LABELS } from "@/components/dashboard/widgetIcons";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -43,6 +47,8 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
   );
 }
 
+const TITLE_MAP: Record<string, string> = WIDGET_CHART_LABELS;
+
 export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const { id } = useParams<{ id: string }>();
   const [name, setName] = useState("");
@@ -52,6 +58,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [linkage, setLinkage] = useState<Linkage | null>(null);
+  const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
 
   const loadFilters = useCallback(async () => {
     if (!id || mode !== "view") return;
@@ -77,7 +84,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       setName(data.name);
       setWidgets(sortWidgets(data.layoutJson.widgets ?? []));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setLoading(false);
     }
@@ -91,17 +98,23 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     void loadFilters();
   }, [loadFilters]);
 
-  const executeKey = useMemo(() => JSON.stringify(filterValues), [filterValues]);
+  useEffect(() => {
+    if (mode !== "edit") return;
+    if (widgets.length === 0) {
+      setSelectedWidgetId(null);
+      return;
+    }
+    if (!selectedWidgetId || !widgets.some((w) => w.id === selectedWidgetId)) {
+      setSelectedWidgetId(widgets[0].id);
+    }
+  }, [mode, widgets, selectedWidgetId]);
 
-  const TITLE_MAP: Record<string, string> = {
-    table: "表格",
-    line: "折线图",
-    bar: "柱状图",
-    map: "地图",
-    heatmap: "热力图",
-    kpi: "KPI 指标",
-    timeline: "时间轴",
-  };
+  const selectedWidget = useMemo(
+    () => widgets.find((w) => w.id === selectedWidgetId) ?? null,
+    [widgets, selectedWidgetId],
+  );
+
+  const executeKey = useMemo(() => JSON.stringify(filterValues), [filterValues]);
 
   const handleInsert = (type: ChartType) => {
     const widgetId = crypto.randomUUID();
@@ -112,11 +125,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       type: "chart",
       title: TITLE_MAP[type] ?? type,
       colSpan: 6,
-      rowSpan: 1,
+      rowSpan: 3,
       order: maxOrder + 1,
       chartConfig,
     };
     setWidgets((prev) => sortWidgets([...prev, next]));
+    setSelectedWidgetId(widgetId);
   };
 
   const handleSave = async () => {
@@ -137,53 +151,50 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         }),
       });
     } catch (err) {
-      const apiErr = err as Error & { code?: string };
-      setError(apiErr.message || "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setSaving(false);
     }
   };
 
+  const headerActions = (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button asChild variant="outline" size="sm">
+        <Link to="/admin/dashboards">返回列表</Link>
+      </Button>
+      {mode === "edit" ? (
+        <Button asChild variant="outline" size="sm">
+          <Link to={`/admin/dashboards/${id}`}>预览</Link>
+        </Button>
+      ) : (
+        <Button asChild variant="outline" size="sm">
+          <Link to={`/admin/dashboards/${id}/edit`}>编辑布局</Link>
+        </Button>
+      )}
+      {mode === "edit" ? (
+        <Button type="button" variant="primary" size="sm" disabled={saving} onClick={() => void handleSave()}>
+          {saving ? "保存中…" : "保存布局"}
+        </Button>
+      ) : null}
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="space-y-4">
+      <AdminPageShell title="Dashboard" description="加载中…">
         <Skeleton className="h-10 w-64" />
-        <Skeleton className="min-h-[320px] w-full" />
-      </div>
+        <Skeleton className="min-h-[320px] w-full rounded-2xl" />
+      </AdminPageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">{name || "Dashboard"}</h1>
-          <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-            {mode === "edit" ? "编辑布局" : "预览"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link to="/admin/dashboards">返回列表</Link>
-          </Button>
-          {mode === "edit" ? (
-            <Button asChild variant="outline">
-              <Link to={`/admin/dashboards/${id}`}>预览</Link>
-            </Button>
-          ) : (
-            <Button asChild variant="outline">
-              <Link to={`/admin/dashboards/${id}/edit`}>编辑布局</Link>
-            </Button>
-          )}
-          {mode === "edit" ? (
-            <Button type="button" variant="primary" disabled={saving} onClick={() => void handleSave()}>
-              {saving ? "保存中…" : "保存布局"}
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
-      {error ? <ErrorBanner message={error} onRetry={() => void load()} /> : null}
+    <AdminPageShell
+      title={name || "Dashboard"}
+      description={mode === "edit" ? "拖拽排列组件，配置数据源与 SQL 后保存。" : "预览模式，查看图表与全局筛选效果。"}
+      actions={headerActions}
+    >
+      {error ? <ErrorBanner message={error} onRetry={() => (error.includes("数据源") ? setError(null) : void load())} /> : null}
 
       {mode === "view" && id ? (
         <GlobalFilterBar
@@ -195,44 +206,61 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         />
       ) : null}
 
-      <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
         {mode === "edit" ? <WidgetPalette onInsert={handleInsert} /> : null}
-        <div className="min-w-0 flex-1">
-          <DashboardGrid
-            mode={mode}
-            widgets={widgets}
-            onAddWidget={mode === "edit" ? () => handleInsert("table") : undefined}
-            onLayoutChange={
-              mode === "edit" ? (next) => setWidgets(sortWidgets(next)) : undefined
-            }
-            renderWidget={(widget) => {
-              const filterParameters =
-                mode === "view" && linkage
-                  ? buildWidgetFilterParams(widget.id, linkage, filterValues)
-                  : undefined;
-              return (
-              <DashboardWidget
-                widget={widget}
+        <div className="flex min-w-0 flex-1 flex-col gap-4 xl:flex-row xl:items-start">
+          <div className="min-w-0 flex-1">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
+              <DashboardGrid
                 mode={mode}
-                filterParameters={filterParameters}
-                executeKey={mode === "view" ? executeKey : undefined}
-                onDelete={(wid) => setWidgets((prev) => prev.filter((w) => w.id !== wid))}
-                onMove={(wid, direction) => setWidgets((prev) => moveWidget(prev, wid, direction))}
-                onResize={(wid, patch) => setWidgets((prev) => resizeWidget(prev, wid, patch))}
-                onTitleChange={(wid, title) =>
-                  setWidgets((prev) => resizeWidget(prev, wid, { title }))
+                widgets={widgets}
+                onAddWidget={mode === "edit" ? () => handleInsert("table") : undefined}
+                onLayoutChange={
+                  mode === "edit" ? (next) => setWidgets(sortWidgets(next)) : undefined
                 }
-                onChartConfigChange={(wid, chartConfig) =>
-                  setWidgets((prev) =>
-                    prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
-                  )
-                }
+                renderWidget={(widget) => {
+                  const filterParameters =
+                    mode === "view" && linkage
+                      ? buildWidgetFilterParams(widget.id, linkage, filterValues)
+                      : undefined;
+                  return (
+                    <DashboardWidget
+                      widget={widget}
+                      mode={mode}
+                      selected={mode === "edit" && widget.id === selectedWidgetId}
+                      onSelect={() => setSelectedWidgetId(widget.id)}
+                      filterParameters={filterParameters}
+                      executeKey={mode === "view" ? executeKey : undefined}
+                      onDelete={(wid) => setWidgets((prev) => prev.filter((w) => w.id !== wid))}
+                      onMove={(wid, direction) => setWidgets((prev) => moveWidget(prev, wid, direction))}
+                      onResize={(wid, patch) => setWidgets((prev) => resizeWidget(prev, wid, patch))}
+                      onTitleChange={(wid, title) =>
+                        setWidgets((prev) => resizeWidget(prev, wid, { title }))
+                      }
+                      onChartConfigChange={(wid, chartConfig) =>
+                        setWidgets((prev) =>
+                          prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
+                        )
+                      }
+                    />
+                  );
+                }}
               />
-              );
-            }}
-          />
+            </div>
+          </div>
+          {mode === "edit" ? (
+            <WidgetInspector
+              widget={selectedWidget}
+              onChange={(chartConfig) => {
+                if (!selectedWidgetId) return;
+                setWidgets((prev) =>
+                  prev.map((w) => (w.id === selectedWidgetId ? { ...w, chartConfig } : w)),
+                );
+              }}
+            />
+          ) : null}
         </div>
       </div>
-    </div>
+    </AdminPageShell>
   );
 }

@@ -7,9 +7,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.auth.deps import UserContext, get_current_user
 from app.auth.jwt import DEFAULT_EXPIRES_MINUTES, create_access_token
 from app.auth.login import service as login_service
 from app.auth.models import get_meta_session
+from app.auth.users import service as user_service
+from app.core.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -25,6 +28,10 @@ class LoginResponse(BaseModel):
     expires_in: int = Field(serialization_alias="expiresIn")
 
     model_config = {"populate_by_name": True}
+
+
+class DevSwitchRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=128)
 
 
 def _db() -> Session:
@@ -43,6 +50,30 @@ def login(payload: LoginRequest, db: Annotated[Session, Depends(_db)]) -> LoginR
         return JSONResponse(
             status_code=exc.status,
             content={"code": exc.code, "message": exc.message, "detail": None},
+        )
+    token = create_access_token(str(user.id), user.username)
+    return LoginResponse(
+        access_token=token,
+        expires_in=DEFAULT_EXPIRES_MINUTES * 60,
+    )
+
+
+@router.post("/dev-switch", response_model=LoginResponse)
+def dev_switch(
+    payload: DevSwitchRequest,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> LoginResponse | JSONResponse:
+    if get_settings().vitalspan_env != "development":
+        return JSONResponse(
+            status_code=404,
+            content={"code": "NOT_FOUND", "message": "Not found", "detail": None},
+        )
+    user = user_service.get_user_by_username(db, payload.username)
+    if user is None:
+        return JSONResponse(
+            status_code=404,
+            content={"code": "USER_NOT_FOUND", "message": "用户不存在", "detail": None},
         )
     token = create_access_token(str(user.id), user.username)
     return LoginResponse(

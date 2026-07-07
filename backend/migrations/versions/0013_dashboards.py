@@ -28,7 +28,9 @@ def upgrade() -> None:
             "layout_json",
             sa.JSON(),
             nullable=False,
-            server_default=sa.text("'{\"version\":1,\"widgets\":[],\"globalFilters\":[]}'"),
+            server_default=sa.text(
+                "'{\"version\"\\:1,\"widgets\"\\:[],\"globalFilters\"\\:[]}'::json"
+            ),
         ),
         sa.Column("created_by", sa.Uuid(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("CURRENT_TIMESTAMP"), nullable=False),

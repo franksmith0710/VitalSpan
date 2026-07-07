@@ -24,3 +24,15 @@ export function canManagePlatform(user: SessionUser): boolean {
 export function canEditDashboards(user: SessionUser): boolean {
   return user.roles.includes("admin") || user.roles.includes("analyst");
 }
+
+const ROLE_LABELS: Record<SessionRole, string> = {
+  admin: "管理员",
+  analyst: "分析师",
+  viewer: "查看者",
+};
+
+export function primaryRoleLabel(roles: SessionRole[]): string {
+  if (roles.includes("admin")) return ROLE_LABELS.admin;
+  if (roles.includes("analyst")) return ROLE_LABELS.analyst;
+  return ROLE_LABELS.viewer;
+}

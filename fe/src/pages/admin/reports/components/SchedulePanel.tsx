@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -179,14 +180,20 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
   if (!schedule) {
     return (
       <Card>
-        <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-          <Clock className="size-8 text-gray-400" aria-hidden />
-          <p className="text-theme-sm text-gray-600 dark:text-gray-400">尚未配置调度</p>
-          {!readOnly ? (
-            <Button type="button" variant="primary" disabled={createMutation.isPending} onClick={handleSave}>
-              {createMutation.isPending ? "创建中…" : "创建调度"}
-            </Button>
-          ) : null}
+        <CardContent>
+          <PanelEmptyState
+            icon={<Clock className="size-7" aria-hidden />}
+            title="尚未配置调度"
+            description="为当前报表模板创建定时任务，系统将按计划自动生成并投递报表。"
+            action={
+              !readOnly ? (
+                <Button type="button" variant="primary" disabled={createMutation.isPending} onClick={handleSave}>
+                  {createMutation.isPending ? "创建中…" : "创建调度"}
+                </Button>
+              ) : undefined
+            }
+            size="md"
+          />
         </CardContent>
       </Card>
     );

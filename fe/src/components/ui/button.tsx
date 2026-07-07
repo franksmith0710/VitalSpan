@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -18,9 +18,9 @@ const buttonVariants = cva(
         surface:
           "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-300 dark:ring-brand-500/20 dark:hover:bg-brand-500/15",
         outline:
-          "bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] dark:hover:text-gray-300",
+          "bg-white text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-white/[0.04]",
         ghost:
-          "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5",
+          "text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200",
         dashed:
           "border border-dashed border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/[0.03]",
         filled:
@@ -31,13 +31,19 @@ const buttonVariants = cva(
           "bg-error-500 text-white shadow-theme-xs hover:bg-error-600",
       },
       size: {
-        xs: "h-8 min-w-8 px-3 text-xs",
-        sm: "px-4 py-3",
-        md: "px-5 py-3.5",
-        lg: "px-6 py-4 text-base",
-        icon: "size-11",
+        xs: "h-8 gap-1.5 px-2.5 text-xs [&_svg]:size-3.5",
+        sm: "h-9 gap-1.5 px-3.5 text-sm [&_svg]:size-4",
+        md: "h-10 gap-2 px-4 text-sm [&_svg]:size-4",
+        lg: "h-11 gap-2 px-5 text-sm [&_svg]:size-[1.125rem]",
+        icon: "size-9 [&_svg]:size-4",
       },
     },
+    compoundVariants: [
+      {
+        variant: ["solid", "primary", "destructive"],
+        className: "text-white",
+      },
+    ],
     defaultVariants: {
       variant: "primary",
       size: "md",
@@ -60,7 +66,7 @@ function ButtonSpinner({ className }: { className?: string }) {
     <span
       aria-hidden="true"
       className={cn(
-        "size-4 animate-spin rounded-full border-2 border-current border-t-transparent opacity-80",
+        "size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent opacity-80",
         className,
       )}
     />
@@ -126,21 +132,21 @@ export interface IconButtonProps extends Omit<ButtonProps, "size"> {
   rounded?: "default" | "full";
 }
 
-const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, size = "icon", rounded = "default", children, ...props }, ref) => {
-    const iconSizeClass = {
-      xs: "size-8",
-      sm: "size-9",
-      md: "size-11",
-      lg: "size-12",
-      icon: "size-11",
-    }[size];
+const iconButtonSizeClass = {
+  xs: "size-7 [&_svg]:size-3.5",
+  sm: "size-8 [&_svg]:size-4",
+  md: "size-9 [&_svg]:size-4",
+  lg: "size-10 [&_svg]:size-[1.125rem]",
+  icon: "size-9 [&_svg]:size-4",
+} as const;
 
+const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
+  ({ className, size = "sm", rounded = "default", children, ...props }, ref) => {
     return (
       <Button
         ref={ref}
         size="icon"
-        className={cn(iconSizeClass, rounded === "full" && "rounded-full", className)}
+        className={cn(iconButtonSizeClass[size], rounded === "full" && "rounded-full", className)}
         {...props}
       >
         {children}
@@ -165,8 +171,7 @@ CloseButton.displayName = "CloseButton";
 
 type DownloadPayload = string | Blob | File;
 
-export interface DownloadTriggerProps
-  extends Omit<ButtonProps, "onClick"> {
+export interface DownloadTriggerProps extends Omit<ButtonProps, "onClick"> {
   data: DownloadPayload | Promise<DownloadPayload>;
   fileName: string;
   mimeType?: string;
@@ -175,7 +180,10 @@ export interface DownloadTriggerProps
 }
 
 const DownloadTrigger = React.forwardRef<HTMLButtonElement, DownloadTriggerProps>(
-  ({ data, fileName, mimeType = "application/octet-stream", onClick, onDownloaded, children = "Download", ...props }, ref) => {
+  (
+    { data, fileName, mimeType = "application/octet-stream", onClick, onDownloaded, children = "Download", ...props },
+    ref,
+  ) => {
     const handleClick: React.MouseEventHandler<HTMLButtonElement> = async (event) => {
       onClick?.(event);
       if (event.defaultPrevented || typeof document === "undefined") return;

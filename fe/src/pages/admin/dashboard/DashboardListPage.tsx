@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, LayoutDashboard, Pencil } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Button, IconButton } from "@/components/ui/button";
+import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { canEditDashboards, sessionUserFromAuth } from "@/lib/session";
 import { useAuth } from "@/context/auth-context";
@@ -76,12 +77,6 @@ export function DashboardListPage() {
 
   return (
     <div className="space-y-6">
-      <nav className="text-theme-sm text-gray-500 dark:text-gray-400" aria-label="面包屑">
-        <span>{canEdit ? "管理" : "分析"}</span>
-        <span className="mx-2">/</span>
-        <span className="text-gray-800 dark:text-white/90">Dashboard</span>
-      </nav>
-
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">Dashboard</h1>
@@ -93,6 +88,7 @@ export function DashboardListPage() {
           <Button
             type="button"
             variant="primary"
+            size="sm"
             disabled={creating}
             onClick={() => void handleCreate()}
           >
@@ -111,19 +107,25 @@ export function DashboardListPage() {
             ))}
           </div>
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">
-            <p className="text-theme-sm text-gray-500 dark:text-gray-400">暂无 Dashboard</p>
-            {!canEdit ? null : (
-              <Button
-                type="button"
-                variant="primary"
-                disabled={creating}
-                onClick={() => void handleCreate()}
-              >
-                新建 Dashboard
-              </Button>
-            )}
-          </div>
+          <PanelEmptyState
+            icon={<LayoutDashboard className="size-7" aria-hidden />}
+            title="暂无 Dashboard"
+            description="创建第一个 Dashboard，拖拽组件并配置数据源后即可在预览模式查看图表。"
+            action={
+              !canEdit ? null : (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  disabled={creating}
+                  onClick={() => void handleCreate()}
+                >
+                  新建 Dashboard
+                </Button>
+              )
+            }
+            size="lg"
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-theme-sm">

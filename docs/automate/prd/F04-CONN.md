@@ -300,7 +300,7 @@
   - [x] category=`relational` 查询模式正确（r38）
 - **代码锚点**：`backend/app/datasources/dialects/dm.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-017-01~06 · `tests/test_query_meta_conn_r39.py` T-CONN-R39-017-01~06
 - **演化建议**：r39 闭合 DM owner 层级、密码脱敏与 HTTP metadata 链；后续补只读查询集成测与 UI 选型
-- **里程碑对齐**：
+- **里程碑对齐**：M-FINAL · F-C
 ### [CONN-018] 人大金仓 连接器
 
 - **状态**：部分实现（companion r67）
@@ -317,7 +317,7 @@
   - [x] category=`relational` 查询模式正确（r59 L1）
 - **代码锚点**：`backend/app/datasources/dialects/kingbase/` · `tests/test_meta_cat_dash_conn_design_r59.py` T-CONN-R59-018-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-CONN-R67-018-01~06
 - **演化建议**：r67 companion 闭合 Kingbase params 校验、test-connection perf probe 与 HTTP 错误链；后续补 UI 选型与只读查询集成测
-- **里程碑对齐**：
+- **里程碑对齐**：M-FINAL · F-C
 ### [CONN-019] 南大通用 GBase 连接器
 
 - **状态**：部分实现
@@ -333,6 +333,7 @@
   - [x] category=`relational` 查询模式正确（r46 L1）
 - **代码锚点**：`backend/app/datasources/dialects/gbase.py` · `tests/test_nfr_gov_conn_r46.py` · `tests/test_nfr_gov_conn_r51.py`
 - **演化建议**：r51 companion 闭合 HTTP 错误链与元数据边界；后续补 UI 选型与只读查询集成测
+- **里程碑对齐**：M-FINAL · F-C
 ### [CONN-020] OceanBase 连接器
 
 - **状态**：部分实现
@@ -348,6 +349,7 @@
   - [ ] 只读查询集成测通过
 - **代码锚点**：`backend/app/datasources/dialects/oceanbase.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-CONN-01~08 · `tests/test_rpt_gov_meta_conn_r55.py` T-CONN-R55-01~09
 - **演化建议**：r55 companion 闭合 HTTP test_connection/schemas/tables 4xx/502 链、空库注释、列 limit 与 probe <200ms；后续补 UI 选型与只读查询集成测
+- **里程碑对齐**：M-FINAL · F-C
 ### [CONN-021] TiDB 连接器
 
 - **状态**：部分实现
@@ -363,7 +365,7 @@
   - [x] category=`relational` 查询模式正确（r34）
 - **代码锚点**：`backend/app/datasources/dialects/tidb.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
 - **演化建议**：r35 闭合 TIDB_* 错误域与 schema 边界；后续补只读查询集成测与 UI 选型
-- **里程碑对齐**：
+- **里程碑对齐**：M-FINAL · F-C
 ### [CONN-022] GaussDB 连接器
 
 - **状态**：部分实现（L1 kickoff r38 + companion r39）
@@ -380,4 +382,99 @@
   - [x] category=`relational` 查询模式正确（r38）
 - **代码锚点**：`backend/app/datasources/dialects/gaussdb.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-022-01~07 · `tests/test_query_meta_conn_r39.py` T-CONN-R39-022-01~06
 - **演化建议**：r39 闭合 GAUSSDB_* 错误域、columns limit 与 HTTP metadata 链；后续补只读查询集成测与 UI 选型
-- **里程碑对齐**：
+- **里程碑对齐**：M-FINAL · F-C
+### [CONN-023] REST API 数据源连接器
+
+- **状态**：未实现
+- **goal_ref**：goal.md §2.2（G2）
+- **期次**：收官（M-FINAL · F-G）
+- **描述**：REST API 外部数据源连接器（SRS `rest_api` · FR-2.0-EXT 收官补缺；对标 DataEase API 数据源）。通过可配置 base URL、认证与请求模板拉取 JSON/表格化数据，走 **NativeQuery** 路径，不经 SQL 伪装。
+- **验收标准**：
+  - [ ] type=`rest_api` 已注册（`ConnectorRegistry` + `GET /api/v1/datasources/types` 可见）
+  - [ ] UI 可选（`DatasourceFormPage` 表单项：baseUrl、authType、headers、probePath）
+  - [ ] 连通性测试结构化错误（`REST_API_INVALID_URL`/`REST_API_AUTH_FAILED`/`REST_API_TIMEOUT`/`REST_API_PROBE_FAILED`）
+  - [ ] 元数据浏览：将响应 JSON 映射为逻辑 schema/table/column（至少 1 层嵌套对象）
+  - [ ] 只读 native 查询通过（`execute_native_query` 或等价路径；Dashboard/SQL 探索可出数）
+  - [ ] category=`api` 查询模式正确；凭证 API 响应无明文 secret
+  - [ ] 插件零侵入（NFR-04）：仅新增 `dialects/rest_api.py` + 注册，不改 `ConnectorRegistry` 核心
+  - [ ] compose 或 mock 集成 smoke（`test_connectors_mfinal_r*.py` 至少 6 断言）
+- **代码锚点**：`backend/app/datasources/dialects/rest_api.py`（规划）· `backend/app/datasources/registry.py` · `backend/app/datasources/dialects/__init__.py` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx`
+- **依赖**：DS-001、DS-002、QUERY-003（Native 双路径）
+- **演化建议**：OAuth2 client_credentials 与分页游标留 companion；OpenAPI 导入自动生成 schema 留 companion
+- **里程碑对齐**：M-FINAL · F-G
+### [CONN-024] Excel/CSV 文件源连接器
+
+- **状态**：未实现
+- **goal_ref**：goal.md §2.2（G2）
+- **期次**：收官（M-FINAL · F-G）
+- **描述**：本地 Excel（`.xlsx`）/ CSV 及可配置远程文件 URL 数据源（对标 DataEase 文件源；SRS 新增 `excel`/`csv` 类型）。文件解析后暴露为逻辑表供只读查询。
+- **验收标准**：
+  - [ ] type=`excel` 与 type=`csv` 已注册（types catalog 可见两项或统一 `spreadsheet` 子格式，须在分片与 SRS 一致）
+  - [ ] UI 可选：本地上传路径或平台托管存储引用 + 远程 URL（HTTPS）二选一
+  - [ ] 连通性测试：文件不存在/格式错误/远程 404 返回结构化错误（`FILE_NOT_FOUND`/`FILE_PARSE_ERROR`/`FILE_REMOTE_HTTP_ERROR`）
+  - [ ] 元数据浏览：sheet 名（Excel）或单表（CSV）+ 列名与推断类型
+  - [ ] 只读查询通过（表模式 `mode=table` 或 native tabular；至少 1 条 Dashboard 出数 smoke）
+  - [ ] category=`file` 查询模式正确；上传文件大小与扩展名白名单可配置
+  - [ ] 插件零侵入（NFR-04）；凭证/路径 API 响应脱敏
+  - [ ] compose 或 fixture 集成 smoke
+- **代码锚点**：`backend/app/datasources/dialects/excel.py`（规划）· `backend/app/datasources/dialects/csv_file.py`（规划）· `backend/app/core/config.py`（`FILE_UPLOAD_MAX_MB` 等，规划）
+- **依赖**：DS-001、DS-002、QUERY-002
+- **演化建议**：多 sheet 关联、定时刷新远程文件、同步入托管分析库（DATA 域）留 companion
+- **里程碑对齐**：M-FINAL · F-G
+### [CONN-025] IBM Db2 连接器
+
+- **状态**：未实现
+- **goal_ref**：goal.md §2.2（G2）
+- **期次**：收官（M-FINAL · F-G）
+- **描述**：IBM Db2 关系型连接器（SRS `db2` · FR-2.0-EXT 收官补缺；对标 DataEase Db2）。
+- **验收标准**：
+  - [ ] type=`db2` 已注册（types catalog + optional `ibm_db` 驱动包）
+  - [ ] UI 可选（host/port/database/auth；`DatasourceFormPage`）
+  - [ ] 连通性测试结构化错误（`DB2_AUTH_FAILED`/`DB2_CONN_REFUSED`/`DB2_UNKNOWN_DATABASE`/`DB2_TIMEOUT`）
+  - [ ] schema 浏览：schema/table/column 三级；系统 schema 过滤
+  - [ ] 只读 SQL 查询集成测通过（M3-LITE `mode=sql` + compose 或 mock）
+  - [ ] category=`relational` 查询模式正确；响应无密码泄露
+  - [ ] 插件零侵入（NFR-04）
+  - [ ] compose 集成 smoke（有分层 skip 契约时文档化）
+- **代码锚点**：`backend/app/datasources/dialects/db2.py`（规划）· `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_mfinal_r*.py`（规划）
+- **依赖**：DS-001、QUERY-001、QUERY-004
+- **演化建议**：Db2 LUW vs z/OS 方言差异、连接池调优留 companion
+- **里程碑对齐**：M-FINAL · F-G
+### [CONN-026] Apache Impala 连接器
+
+- **状态**：未实现
+- **goal_ref**：goal.md §2.2（G2）
+- **期次**：收官（M-FINAL · F-G）
+- **描述**：Apache Impala OLAP/湖仓 SQL 连接器（SRS `impala` · 对标 DataEase Impala；Hive 协议族，可复用部分元数据逻辑）。
+- **验收标准**：
+  - [ ] type=`impala` 已注册（types catalog）
+  - [ ] UI 可选
+  - [ ] 连通性测试结构化错误（`IMPALA_AUTH_FAILED`/`IMPALA_CONN_REFUSED`/`IMPALA_UNKNOWN_DATABASE`/`IMPALA_TIMEOUT`）
+  - [ ] schema 浏览：`SHOW DATABASES` / `SHOW TABLES` 等价元数据链；空库与未知库边界
+  - [ ] 只读 SQL 查询集成测通过
+  - [ ] category=`olap`（或 `lake`，与 SRS 枚举一致）查询模式正确
+  - [ ] 插件零侵入（NFR-04）
+  - [ ] compose 或 mock 集成 smoke
+- **代码锚点**：`backend/app/datasources/dialects/impala.py`（规划）· `backend/app/datasources/dialects/hive.py`（可复用参考）· `tests/test_connectors_mfinal_r*.py`（规划）
+- **依赖**：DS-001、QUERY-001、CONN-003（Hive 元数据模式参考）
+- **演化建议**：Kerberos/SASL 认证、LDAP 留 companion
+- **里程碑对齐**：M-FINAL · F-G
+### [CONN-027] AWS Redshift 连接器
+
+- **状态**：未实现
+- **goal_ref**：goal.md §2.2（G2）
+- **期次**：收官（M-FINAL · F-G）
+- **描述**：AWS Redshift 数据仓库 SQL 连接器（SRS `redshift` · 对标 DataEase/Superset Redshift；PostgreSQL 协议族，可委托或专用方言）。
+- **验收标准**：
+  - [ ] type=`redshift` 已注册（types catalog）
+  - [ ] UI 可选（host/port/database/sslMode）
+  - [ ] 连通性测试结构化错误（`REDSHIFT_AUTH_FAILED`/`REDSHIFT_CONN_REFUSED`/`REDSHIFT_SSL_REQUIRED`/`REDSHIFT_TIMEOUT`）
+  - [ ] schema 浏览：PG 兼容 `information_schema` 或 Redshift 系统表路径
+  - [ ] 只读 SQL 查询集成测通过
+  - [ ] category=`olap` 查询模式正确；SSL 默认推荐
+  - [ ] 插件零侵入（NFR-04）
+  - [ ] compose 集成 smoke（`redshift` 样例容器可选分层 skip）
+- **代码锚点**：`backend/app/datasources/dialects/redshift.py`（规划）· `backend/app/datasources/dialects/postgres.py`（委托参考）· `tests/test_connectors_mfinal_r*.py`（规划）
+- **依赖**：DS-001、QUERY-001、CONN-002（PG 协议参考）
+- **演化建议**：Redshift Serverless、IAM 认证、UNLOAD 外链留 companion
+- **里程碑对齐**：M-FINAL · F-G

@@ -266,15 +266,12 @@ describe("AdminLayout smoke", () => {
 
     await user.click(screen.getByRole("menuitem", { name: "个人资料" }));
     expect(screen.getByText("profile page")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "返回工作台" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole("button", { name: "返回工作台" })).not.toBeInTheDocument();
 
     await user.click(userMenu);
     expect(screen.getByRole("menuitem", { name: "返回工作台" })).toBeInTheDocument();
 
-    await user.keyboard("{Escape}");
-    expect(screen.getAllByRole("button", { name: "返回工作台" }).length).toBeGreaterThanOrEqual(1);
-
-    await user.click(screen.getAllByRole("button", { name: "返回工作台" })[0]);
+    await user.click(screen.getByRole("menuitem", { name: "返回工作台" }));
     expect(screen.getByText("workspace home")).toBeInTheDocument();
   });
 });

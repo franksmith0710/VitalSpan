@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { FilePlus, FolderOpen, FolderPlus, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth-context";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
+import { cn } from "@/lib/utils";
 import { CatalogTreeNode } from "./components/CatalogTreeNode";
+import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
 import { useReportTemplates } from "./useReportTemplates";
 
@@ -39,6 +41,10 @@ export function ReportTemplatesPage() {
   const nodes = nodesQuery.data?.items ?? [];
   const selected = nodes.find((n) => n.id === selectedId) ?? null;
 
+  useEffect(() => {
+    if (nodeId) setSelectedId(nodeId);
+  }, [nodeId]);
+
   const handleCreate = (nodeType: "folder" | "template") => {
     createNode.mutate(
       {
@@ -50,56 +56,77 @@ export function ReportTemplatesPage() {
     );
   };
 
-  const treePanel = (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-        <CardTitle className="text-theme-base">目录</CardTitle>
-        {!readOnly ? (
-          <div className="flex gap-1">
-            <Button type="button" variant="outline" size="sm" onClick={() => handleCreate("folder")}>
-              新建文件夹
-            </Button>
-            <Button type="button" variant="primary" size="sm" onClick={() => handleCreate("template")}>
-              新建模板
-            </Button>
-          </div>
-        ) : null}
-      </CardHeader>
-      <CardContent>
-        {nodesQuery.isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-8 w-full" />
-            ))}
-          </div>
-        ) : nodes.length === 0 ? (
-          <p className="py-10 text-center text-theme-sm text-gray-600 dark:text-gray-400">暂无模板目录</p>
-        ) : (
-          <ScrollArea className="max-h-[480px] pr-2">
-            <div className="space-y-0.5">
-              {nodes.map((node) => (
-                <CatalogTreeNode
-                  key={node.id}
-                  node={node}
-                  selectedId={selectedId}
-                  onSelect={setSelectedId}
-                />
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
+  const createActions = !readOnly ? (
+    <>
+      <Button type="button" variant="outline" onClick={() => handleCreate("folder")}>
+        <FolderPlus className="size-4" aria-hidden />
+        新建文件夹
+      </Button>
+      <Button type="button" variant="primary" onClick={() => handleCreate("template")}>
+        <FilePlus className="size-4" aria-hidden />
+        新建模板
+      </Button>
+    </>
+  ) : null;
+
+  const catalogBody = nodesQuery.isLoading ? (
+    <div className="space-y-2 px-1">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Skeleton key={i} className="h-9 w-full rounded-lg" />
+      ))}
+    </div>
+  ) : nodes.length === 0 ? (
+    <PanelEmptyState
+      icon={<FolderOpen className="size-7" aria-hidden />}
+      title="暂无模板目录"
+      description="创建文件夹组织模板，或新建 Word / Excel / PDF 报表模板。"
+      action={createActions}
+      size="lg"
+    />
+  ) : (
+    <ScrollArea className="h-full max-h-[min(560px,calc(100vh-280px))] pr-2">
+      <div className="space-y-0.5 px-1">
+        {nodes.map((node) => (
+          <CatalogTreeNode
+            key={node.id}
+            node={node}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        ))}
+      </div>
+    </ScrollArea>
   );
 
+  const detailBody =
+    selected && selected.nodeType === "template" ? (
+      <TemplateDetailPanel node={selected} readOnly={readOnly} />
+    ) : (
+      <PanelEmptyState
+        icon={<MousePointerClick className="size-7" aria-hidden />}
+        title={selectedId ? "请选择模板节点" : "从目录选择模板"}
+        description={
+          selectedId
+            ? "当前选中的是文件夹，请展开目录并选择具体模板查看配置。"
+            : "在左侧目录中选择 Word、Excel 或 PDF 模板，查看扩展配置、预览与调度。"
+        }
+        size="lg"
+      />
+    );
+
   return (
-    <AdminPageShell title="报表模板" description="管理 Word/Excel/PDF 报表模板与目录结构。">
+    <AdminPageShell
+      title="报表模板"
+      description="管理 Word、Excel、PDF 报表模板与目录结构。"
+      actions={nodes.length > 0 ? createActions : null}
+    >
       {nodesQuery.isError ? (
         <ErrorBanner message={mapApiError(nodesQuery.error)} onRetry={() => void nodesQuery.refetch()} />
       ) : null}
+
       <div className="mb-4 lg:hidden">
         <Select value={selectedId ?? "__none__"} onValueChange={(v) => setSelectedId(v === "__none__" ? null : v)}>
-          <SelectTrigger aria-label="选择目录节点">
+          <SelectTrigger aria-label="选择目录节点" className="h-11">
             <SelectValue placeholder="选择节点" />
           </SelectTrigger>
           <SelectContent>
@@ -112,16 +139,29 @@ export function ReportTemplatesPage() {
           </SelectContent>
         </Select>
       </div>
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <div className="hidden lg:block">{treePanel}</div>
-        {selected && selected.nodeType === "template" ? (
-          <TemplateDetailPanel node={selected} readOnly={readOnly} />
+
+      <div
+        className={cn(
+          "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm",
+          "dark:border-gray-800 dark:bg-white/[0.03]",
+        )}
+      >
+        {nodes.length === 0 && !nodesQuery.isLoading ? (
+          <div className="min-h-[420px]">{catalogBody}</div>
         ) : (
-          <Card>
-            <CardContent className="flex min-h-[240px] items-center justify-center py-16 text-theme-sm text-gray-500 dark:text-gray-400">
-              {selectedId ? "请选择模板节点查看详情" : "从左侧目录选择模板节点"}
-            </CardContent>
-          </Card>
+          <div className="grid min-h-[560px] lg:grid-cols-[minmax(260px,300px)_1fr]">
+            <aside className="hidden flex-col border-b border-gray-200 lg:flex lg:border-b-0 lg:border-r dark:border-gray-800">
+              <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+                <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">模板目录</h2>
+                <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                  {nodes.length > 0 ? `${nodes.length} 个根节点` : "按文件夹组织报表"}
+                </p>
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col p-3">{catalogBody}</div>
+            </aside>
+
+            <section className="flex min-h-[420px] flex-col">{detailBody}</section>
+          </div>
         )}
       </div>
     </AdminPageShell>

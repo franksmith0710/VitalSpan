@@ -1,164 +1,44 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Copy, MoreHorizontal } from "lucide-react";
-import { toast } from "sonner";
+import { Database, FolderTree } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { SearchField } from "@/components/ui/search-field";
 import { Skeleton } from "@/components/ui/skeleton";
-import { buildSelectSql, mapMetadataError, qualifiedTableName } from "./schemaBrowserUtils";
+import { cn } from "@/lib/utils";
+import { SchemaTreePanel } from "./SchemaTreePanel";
+import {
+  mapMetadataError,
+  matchesSearch,
+  partitionSchemas,
+  type TableMeta,
+  type TableSelection,
+} from "./schemaBrowserUtils";
+import { TableColumnsPanel } from "./TableColumnsPanel";
 
 type SchemaItem = { name: string };
-type TableItem = { name: string; type: string };
-type ColumnItem = { name: string; dataType: string; nullable: boolean };
 
-async function copyText(text: string, label: string) {
-  await navigator.clipboard.writeText(text);
-  toast.success(`已复制${label}`);
-}
-
-type SchemaSectionProps = {
-  dataSourceId: string;
-  schema: string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  openTables: Record<string, boolean>;
-  setOpenTables: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-};
-
-function SchemaSection({
+export function SchemaBrowser({
   dataSourceId,
-  schema,
-  open,
-  onOpenChange,
-  openTables,
-  setOpenTables,
-}: SchemaSectionProps) {
-  const tablesQuery = useQuery({
-    queryKey: queryKeys.datasources.tables(dataSourceId, schema),
-    queryFn: () =>
-      apiFetch<{ items: TableItem[] }>(
-        `/api/v1/datasources/${dataSourceId}/tables?schema=${encodeURIComponent(schema)}`,
-      ),
-    enabled: open && Boolean(dataSourceId),
-  });
-
-  return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
-      <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-theme-sm hover:bg-gray-50 dark:hover:bg-white/5">
-        <ChevronRight className={`size-4 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
-        <span className="truncate font-medium" title={schema}>
-          {schema}
-        </span>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="ml-6 space-y-0.5 border-l border-gray-100 pl-3 dark:border-gray-800">
-        {tablesQuery.isLoading ? <Skeleton className="my-1 h-6 w-full" /> : null}
-        {tablesQuery.isError ? (
-          <p className="py-1 text-theme-xs text-error-500">{mapMetadataError(tablesQuery.error)}</p>
-        ) : null}
-        {(tablesQuery.data?.items ?? []).map((table) => (
-          <TableSection
-            key={table.name}
-            dataSourceId={dataSourceId}
-            schema={schema}
-            table={table}
-            open={Boolean(openTables[`${schema}.${table.name}`])}
-            onOpenChange={(o) =>
-              setOpenTables((s) => ({ ...s, [`${schema}.${table.name}`]: o }))
-            }
-          />
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
-type TableSectionProps = {
+  className,
+  embedded = false,
+  defaultDatabase,
+}: {
   dataSourceId: string;
-  schema: string;
-  table: TableItem;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-};
-
-function TableSection({ dataSourceId, schema, table, open, onOpenChange }: TableSectionProps) {
-  const tableKey = qualifiedTableName(schema, table.name);
-  const columnsQuery = useQuery({
-    queryKey: queryKeys.datasources.columns(dataSourceId, schema, table.name),
-    queryFn: () =>
-      apiFetch<{ items: ColumnItem[] }>(
-        `/api/v1/datasources/${dataSourceId}/columns?schema=${encodeURIComponent(schema)}&table=${encodeURIComponent(table.name)}`,
-      ),
-    enabled: open && Boolean(dataSourceId),
-  });
-
-  return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
-      <div className="flex items-center gap-1">
-        <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1 text-left text-theme-sm hover:bg-gray-50 dark:hover:bg-white/5">
-          <ChevronRight className={`size-3 shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
-          <span className="truncate" title={table.name}>
-            {table.name}
-          </span>
-          <Badge variant="light" className="shrink-0 text-theme-xs">
-            {table.type}
-          </Badge>
-        </CollapsibleTrigger>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="size-7 shrink-0 p-0" aria-label="表操作">
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => void copyText(tableKey, "表名")}>
-              <Copy className="mr-2 size-3.5" />
-              复制表名
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => void copyText(buildSelectSql(schema, table.name), "SQL")}>
-              <Copy className="mr-2 size-3.5" />
-              生成 SELECT
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <CollapsibleContent className="ml-5 space-y-0.5 border-l border-gray-100 pl-3 dark:border-gray-800">
-        {columnsQuery.isLoading ? <Skeleton className="my-1 h-5 w-full" /> : null}
-        {(columnsQuery.data?.items ?? []).map((col) => (
-          <div
-            key={col.name}
-            className="flex items-center justify-between gap-2 py-0.5 text-theme-xs text-gray-600 dark:text-gray-400"
-          >
-            <span className="truncate" title={col.name}>
-              {col.name}
-            </span>
-            <span className="shrink-0 text-gray-400">
-              {col.dataType}
-              {col.nullable ? "" : " · NOT NULL"}
-            </span>
-          </div>
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
-export function SchemaBrowser({ dataSourceId }: { dataSourceId: string }) {
-  const [openSchemas, setOpenSchemas] = useState<Record<string, boolean>>({});
-  const [openTables, setOpenTables] = useState<Record<string, boolean>>({});
+  className?: string;
+  embedded?: boolean;
+  defaultDatabase?: string;
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hideSystem, setHideSystem] = useState(true);
+  const [expandedSchemas, setExpandedSchemas] = useState<Record<string, boolean>>({});
+  const [selection, setSelection] = useState<TableSelection | null>(null);
+  const initRef = useRef(false);
 
   const schemasQuery = useQuery({
     queryKey: queryKeys.datasources.schemas(dataSourceId),
@@ -166,62 +46,176 @@ export function SchemaBrowser({ dataSourceId }: { dataSourceId: string }) {
     enabled: Boolean(dataSourceId),
   });
 
-  if (schemasQuery.isLoading) {
+  const schemaNames = useMemo(
+    () => (schemasQuery.data?.items ?? []).map((s) => s.name),
+    [schemasQuery.data?.items],
+  );
+
+  const { user: userSchemas, system: systemSchemas } = useMemo(
+    () => partitionSchemas(schemaNames, defaultDatabase),
+    [defaultDatabase, schemaNames],
+  );
+
+  const filteredUserSchemas = useMemo(
+    () => userSchemas.filter((s) => matchesSearch(s, searchQuery)),
+    [searchQuery, userSchemas],
+  );
+
+  useEffect(() => {
+    if (!schemaNames.length || initRef.current) return;
+    const preferred =
+      (defaultDatabase && schemaNames.includes(defaultDatabase) && defaultDatabase) ||
+      userSchemas[0] ||
+      schemaNames[0];
+    if (preferred) {
+      setExpandedSchemas((s) => ({ ...s, [preferred]: true }));
+    }
+  }, [defaultDatabase, schemaNames, userSchemas]);
+
+  const handleTablesLoaded = useCallback((schema: string, tables: TableMeta[]) => {
+    if (initRef.current || !tables.length) return;
+    initRef.current = true;
+    setSelection({ schema, table: tables[0].name, type: tables[0].type });
+  }, []);
+
+  const handleToggleSchema = (schema: string) => {
+    setExpandedSchemas((s) => ({ ...s, [schema]: !s[schema] }));
+  };
+
+  const handleSelectTable = (schema: string, table: TableMeta) => {
+    setSelection({ schema, table: table.name, type: table.type });
+  };
+
+  const cardClassName = cn("flex h-full flex-col overflow-hidden", className);
+
+  const renderHeader = (extra?: ReactNode) =>
+    embedded ? null : (
+      <CardHeader className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+              <FolderTree className="size-4" aria-hidden />
+            </div>
+            <div>
+              <CardTitle className="text-theme-base">元数据浏览</CardTitle>
+              <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                Schema · 表 · 字段三级结构
+              </p>
+            </div>
+          </div>
+          {extra}
+        </div>
+      </CardHeader>
+    );
+
+  const browserBody = (content: ReactNode) => {
+    if (embedded) {
+      return <div className={cn("flex min-h-0 flex-1 flex-col", className)}>{content}</div>;
+    }
     return (
-      <Card className="max-w-3xl">
-        <CardHeader>
-          <CardTitle>元数据浏览</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-8 w-full" />
-        </CardContent>
+      <Card elevation={1} className={cardClassName}>
+        {content}
       </Card>
+    );
+  };
+
+  if (schemasQuery.isLoading) {
+    return browserBody(
+      <CardContent className="p-5">
+        <Skeleton className="h-11 w-full rounded-lg" />
+        <Skeleton className="mt-4 h-[360px] w-full rounded-xl" />
+      </CardContent>,
     );
   }
 
   if (schemasQuery.isError) {
     const msg = mapMetadataError(schemasQuery.error);
-    return (
-      <Card className="max-w-3xl">
-        <CardHeader>
-          <CardTitle>元数据浏览</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-xl border border-error-500 bg-error-50 p-4 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400">
-            <p>{msg}</p>
-            <Button className="mt-3" variant="outline" size="sm" onClick={() => void schemasQuery.refetch()}>
-              重试
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    return browserBody(
+      <CardContent className="flex flex-1 flex-col items-center justify-center p-6 text-center">
+        <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-400">
+          <Database className="size-6" aria-hidden />
+        </div>
+        <p className="max-w-sm text-theme-sm text-error-700 dark:text-error-400">{msg}</p>
+        <Button className="mt-4" variant="outline" size="sm" onClick={() => void schemasQuery.refetch()}>
+          重试
+        </Button>
+      </CardContent>,
     );
   }
 
-  const schemas = schemasQuery.data?.items ?? [];
+  if (schemaNames.length === 0) {
+    return browserBody(
+      <CardContent className="flex flex-1 items-center justify-center py-16">
+        <p className="text-theme-sm text-gray-500 dark:text-gray-400">暂无 schema</p>
+      </CardContent>,
+    );
+  }
 
-  return (
-    <Card className="max-w-3xl">
-      <CardHeader>
-        <CardTitle>元数据浏览</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-1">
-        {schemas.length === 0 ? (
-          <p className="text-theme-sm text-gray-500">暂无 schema</p>
-        ) : (
-          schemas.map((schema) => (
-            <SchemaSection
-              key={schema.name}
-              dataSourceId={dataSourceId}
-              schema={schema.name}
-              open={Boolean(openSchemas[schema.name])}
-              onOpenChange={(o) => setOpenSchemas((s) => ({ ...s, [schema.name]: o }))}
-              openTables={openTables}
-              setOpenTables={setOpenTables}
-            />
-          ))
-        )}
-      </CardContent>
-    </Card>
+  const toolbar = (
+    <div className="flex shrink-0 flex-col gap-3 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800 sm:px-5">
+      <SearchField
+        className="w-full sm:max-w-xs"
+        inputClassName="h-10"
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="搜索 Schema 或表名…"
+        aria-label="搜索元数据"
+      />
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="hide-system-schemas"
+            checked={hideSystem}
+            onCheckedChange={(v) => setHideSystem(v === true)}
+          />
+          <Label htmlFor="hide-system-schemas" className="cursor-pointer text-theme-sm text-gray-600 dark:text-gray-400">
+            隐藏系统库
+          </Label>
+        </div>
+        <Badge variant="light" color="light" size="sm">
+          {schemaNames.length} 个 schema
+        </Badge>
+      </div>
+    </div>
+  );
+
+  const splitView = (
+    <div className="grid min-h-[420px] flex-1 lg:grid-cols-[minmax(260px,320px)_1fr]">
+      <SchemaTreePanel
+        dataSourceId={dataSourceId}
+        userSchemas={filteredUserSchemas}
+        systemSchemas={systemSchemas}
+        hideSystem={hideSystem}
+        defaultDatabase={defaultDatabase}
+        searchQuery={searchQuery}
+        expandedSchemas={expandedSchemas}
+        selection={selection}
+        onToggleSchema={handleToggleSchema}
+        onSelectTable={handleSelectTable}
+        onTablesLoaded={handleTablesLoaded}
+      />
+      <TableColumnsPanel dataSourceId={dataSourceId} selection={selection} />
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
+        {toolbar}
+        {splitView}
+      </div>
+    );
+  }
+
+  return browserBody(
+    <>
+      {renderHeader(
+        <Badge variant="light" color="light" size="sm">
+          {schemaNames.length} 个 schema
+        </Badge>,
+      )}
+      {toolbar}
+      {splitView}
+    </>,
   );
 }

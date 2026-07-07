@@ -105,7 +105,7 @@ export function LoginPage() {
                 required
               />
             </div>
-            <Button type="submit" variant="primary" className="h-11 w-full" disabled={submitting}>
+            <Button type="submit" variant="primary" size="lg" className="w-full" disabled={submitting}>
               <LogIn className="size-4" aria-hidden />
               {submitting ? "登录中…" : "登录"}
             </Button>

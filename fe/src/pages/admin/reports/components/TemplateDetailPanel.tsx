@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,6 +17,21 @@ import {
   useExtensionRenderSpec,
   useReportTemplates,
 } from "../useReportTemplates";
+
+const KIND_LABELS: Record<NonNullable<CatalogNode["templateKind"]>, string> = {
+  word: "Word",
+  excel: "Excel",
+  pdf: "PDF",
+};
+
+function BasicInfoRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-1 sm:grid-cols-[120px_1fr] sm:items-center sm:gap-4">
+      <dt className="text-theme-xs text-gray-500 dark:text-gray-400">{label}</dt>
+      <dd className="text-theme-sm font-medium text-gray-800 dark:text-white/90">{children}</dd>
+    </div>
+  );
+}
 
 export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; readOnly: boolean }) {
   const [tab, setTab] = useState("basic");
@@ -58,50 +73,63 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-theme-base">{node.name}</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="flex h-full flex-col">
+      <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-theme-lg font-semibold text-gray-900 dark:text-white">{node.name}</h2>
+          {node.templateKind ? (
+            <Badge variant="light" color="primary" size="sm">
+              {KIND_LABELS[node.templateKind]}
+            </Badge>
+          ) : null}
+        </div>
+        {node.templateKey ? (
+          <p className="mt-1 font-mono text-theme-xs text-gray-500 dark:text-gray-400">{node.templateKey}</p>
+        ) : null}
+      </div>
+
+      <div className="flex-1 p-6 pt-4">
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
+          <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="basic">基本信息</TabsTrigger>
             <TabsTrigger value="extension">扩展配置</TabsTrigger>
             <TabsTrigger value="preview">预览</TabsTrigger>
-            {node.nodeType === "template" ? (
-              <>
-                <TabsTrigger value="schedule">调度</TabsTrigger>
-                <TabsTrigger value="batch">批量导入</TabsTrigger>
-              </>
-            ) : null}
+            <TabsTrigger value="schedule">调度</TabsTrigger>
+            <TabsTrigger value="batch">批量导入</TabsTrigger>
           </TabsList>
-          <TabsContent value="basic" className="mt-4 space-y-3 text-theme-sm">
-            <p>
-              <span className="text-gray-500 dark:text-gray-400">类型：</span>
-              {node.nodeType === "template" ? (node.templateKind ?? "模板") : "文件夹"}
-            </p>
-            {node.templateKey ? (
-              <p>
-                <span className="text-gray-500 dark:text-gray-400">模板键：</span>
-                <code className="font-mono text-theme-xs">{node.templateKey}</code>
-              </p>
-            ) : null}
+
+          <TabsContent value="basic" className="mt-6">
+            <dl className="grid gap-4 rounded-xl border border-gray-200 p-5 dark:border-gray-800">
+              <BasicInfoRow label="节点类型">报表模板</BasicInfoRow>
+              <BasicInfoRow label="模板格式">
+                {node.templateKind ? KIND_LABELS[node.templateKind] : "—"}
+              </BasicInfoRow>
+              <BasicInfoRow label="模板键">{node.templateKey ?? "—"}</BasicInfoRow>
+            </dl>
           </TabsContent>
-          <TabsContent value="extension" className="mt-4 space-y-4">
-            {extQuery.isLoading ? <Skeleton className="h-20 w-full" /> : null}
-            <ul className="space-y-2">
-              {metrics.map((m) => (
-                <li
-                  key={m.key}
-                  className="rounded-lg border border-gray-200 px-3 py-2 text-theme-sm dark:border-gray-800"
-                >
-                  {m.label} <span className="text-gray-500">({m.key})</span>
-                </li>
-              ))}
-            </ul>
+
+          <TabsContent value="extension" className="mt-6 space-y-4">
+            {extQuery.isLoading ? <Skeleton className="h-20 w-full rounded-xl" /> : null}
+            {metrics.length === 0 && !extQuery.isLoading ? (
+              <p className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                暂无扩展指标，可在下方添加。
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {metrics.map((m) => (
+                  <li
+                    key={m.key}
+                    className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 text-theme-sm dark:border-gray-800"
+                  >
+                    <span className="font-medium text-gray-800 dark:text-white/90">{m.label}</span>
+                    <code className="text-theme-xs text-gray-500 dark:text-gray-400">{m.key}</code>
+                  </li>
+                ))}
+              </ul>
+            )}
             {!readOnly ? (
-              <>
-                <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-4 rounded-xl border border-gray-200 p-5 dark:border-gray-800">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="grid gap-2">
                     <Label htmlFor="metric-key">指标键</Label>
                     <Input id="metric-key" value={metricKey} onChange={(e) => setMetricKey(e.target.value)} />
@@ -123,34 +151,35 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
                 >
                   {saveExtension.isPending ? "保存中…" : "保存扩展配置"}
                 </Button>
-              </>
+              </div>
             ) : null}
           </TabsContent>
-          <TabsContent value="preview" className="mt-4">
-            {renderQuery.isLoading ? <Skeleton className="h-40 w-full" /> : null}
+
+          <TabsContent value="preview" className="mt-6">
+            {renderQuery.isLoading ? <Skeleton className="h-48 w-full rounded-xl" /> : null}
             {renderQuery.isError ? (
-              <p className="text-theme-sm text-gray-600 dark:text-gray-400">暂无渲染规格，请先配置扩展。</p>
+              <p className="rounded-xl border border-dashed border-gray-200 px-4 py-10 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                暂无渲染规格，请先在扩展配置中保存指标。
+              </p>
             ) : null}
             {renderQuery.data ? (
-              <ScrollArea className="max-h-[360px] rounded-lg border border-gray-200 p-3 dark:border-gray-800">
-                <pre className="text-theme-xs text-gray-700 dark:text-gray-300">
+              <ScrollArea className="max-h-[400px] rounded-xl border border-gray-200 dark:border-gray-800">
+                <pre className="p-4 text-theme-xs text-gray-700 dark:text-gray-300">
                   {JSON.stringify(renderQuery.data, null, 2)}
                 </pre>
               </ScrollArea>
             ) : null}
           </TabsContent>
-          {node.nodeType === "template" ? (
-            <>
-              <TabsContent value="schedule" className="mt-4">
-                <SchedulePanel catalogNodeId={node.id} readOnly={readOnly} />
-              </TabsContent>
-              <TabsContent value="batch" className="mt-4">
-                <BatchImportPanel readOnly={readOnly} />
-              </TabsContent>
-            </>
-          ) : null}
+
+          <TabsContent value="schedule" className="mt-6">
+            <SchedulePanel catalogNodeId={node.id} readOnly={readOnly} />
+          </TabsContent>
+
+          <TabsContent value="batch" className="mt-6">
+            <BatchImportPanel readOnly={readOnly} />
+          </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

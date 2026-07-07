@@ -40,6 +40,48 @@ def test_bearer_dev_rejected(client):
     assert response.status_code == 401
 
 
+def test_dev_switch_not_found_in_production(client, admin_auth_headers, monkeypatch):
+    monkeypatch.setenv("VITALSPAN_ENV", "production")
+    from app.core.config import get_settings
+
+    get_settings.cache_clear()
+    response = client.post(
+        "/api/v1/auth/dev-switch",
+        json={"username": "admin"},
+        headers=admin_auth_headers,
+    )
+    get_settings.cache_clear()
+    assert response.status_code == 404
+
+
+def test_dev_switch_success_in_development(client, admin_auth_headers):
+    response = client.post(
+        "/api/v1/auth/dev-switch",
+        json={"username": "admin"},
+        headers=admin_auth_headers,
+    )
+    if response.status_code == 404:
+        pytest.skip("not in development env")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["accessToken"]
+    me = client.get("/api/v1/me", headers={"Authorization": f"Bearer {body['accessToken']}"})
+    assert me.status_code == 200
+    assert me.json()["username"] == "admin"
+
+
+def test_dev_switch_user_not_found(client, admin_auth_headers):
+    response = client.post(
+        "/api/v1/auth/dev-switch",
+        json={"username": "__no_such_user__"},
+        headers=admin_auth_headers,
+    )
+    if response.status_code == 404 and response.json().get("code") == "NOT_FOUND":
+        pytest.skip("not in development env")
+    assert response.status_code == 404
+    assert response.json()["code"] == "USER_NOT_FOUND"
+
+
 def test_login_public_without_auth(client):
     response = client.post("/api/v1/auth/login", json={"username": "x", "password": "y"})
     assert response.status_code == 401

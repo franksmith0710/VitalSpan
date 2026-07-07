@@ -8,6 +8,12 @@ const METADATA_MESSAGES: Record<string, string> = {
   RESOURCE_FORBIDDEN: "无权访问该数据源",
 };
 
+const SYSTEM_SCHEMA_PATTERN = /^(information_schema|performance_schema|mysql|sys|pg_.*)$/i;
+
+export type TableMeta = { name: string; type: string };
+export type ColumnMeta = { name: string; dataType: string; nullable: boolean };
+export type TableSelection = { schema: string; table: string; type: string };
+
 export function mapMetadataError(err: unknown): string {
   const code = (err as { code?: string })?.code;
   if (code && METADATA_MESSAGES[code]) return METADATA_MESSAGES[code];
@@ -20,4 +26,36 @@ export function qualifiedTableName(schema: string, table: string): string {
 
 export function buildSelectSql(schema: string, table: string): string {
   return `SELECT * FROM ${qualifiedTableName(schema, table)} LIMIT 100`;
+}
+
+export function isSystemSchema(name: string): boolean {
+  return SYSTEM_SCHEMA_PATTERN.test(name);
+}
+
+export function partitionSchemas(names: string[], defaultDatabase?: string) {
+  const user: string[] = [];
+  const system: string[] = [];
+  for (const name of names) {
+    (isSystemSchema(name) ? system : user).push(name);
+  }
+  const sortByDefault = (a: string, b: string) => {
+    if (defaultDatabase) {
+      if (a === defaultDatabase) return -1;
+      if (b === defaultDatabase) return 1;
+    }
+    return a.localeCompare(b);
+  };
+  user.sort(sortByDefault);
+  system.sort(sortByDefault);
+  return { user, system };
+}
+
+export function matchesSearch(text: string, query: string): boolean {
+  if (!query.trim()) return true;
+  return text.toLowerCase().includes(query.trim().toLowerCase());
+}
+
+export function filterTables(tables: TableMeta[], query: string): TableMeta[] {
+  if (!query.trim()) return tables;
+  return tables.filter((t) => matchesSearch(t.name, query));
 }

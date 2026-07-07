@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router";
 import { RequireAuth } from "@/components/auth/require-auth";
+import { RequirePlatformAdmin } from "@/components/auth/require-capability";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { EmbedLayout } from "@/layouts/EmbedLayout";
 import { EmbedChartPage } from "@/embed/EmbedChartPage";
@@ -25,6 +26,18 @@ import { PrefabReportsPage } from "@/pages/admin/reports/PrefabReportsPage";
 import { ReportTemplatesPage } from "@/pages/admin/reports/ReportTemplatesPage";
 import { ThemeAnalysisPage } from "@/pages/admin/themes/ThemeAnalysisPage";
 import { EmbedSdkDemoPage } from "@/pages/embed/EmbedSdkDemoPage";
+import { OrgTreePage } from "@/pages/admin/system/orgs/OrgTreePage";
+import { RlsAdminPage } from "@/pages/admin/system/rls/RlsAdminPage";
+import { AuditLogPage } from "@/pages/admin/system/audit/AuditLogPage";
+import { GovernanceCatalogPage } from "@/pages/admin/governance/GovernanceCatalogPage";
+import { GovernanceWorkflowPage } from "@/pages/admin/governance/GovernanceWorkflowPage";
+import { GovernancePublishPage } from "@/pages/admin/governance/GovernancePublishPage";
+import { MetadataHubPage } from "@/pages/admin/metadata/MetadataHubPage";
+import { DatasetListPage } from "@/pages/admin/datasets/DatasetListPage";
+import { DesignerPage } from "@/pages/admin/designer/DesignerPage";
+import { ChartExplorePage } from "@/pages/admin/charts/ChartExplorePage";
+import { ReportSchedulesPage } from "@/pages/admin/reports/ReportSchedulesPage";
+import { MyViewsPage } from "@/pages/admin/account/MyViewsPage";
 
 export function AppRoutes() {
   return (
@@ -34,16 +47,16 @@ export function AppRoutes() {
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
           <Route index element={<AdminHomePage />} />
-          <Route path="datasources" element={<DatasourceListPage />} />
-          <Route path="datasources/new" element={<DatasourceFormPage mode="create" />} />
-          <Route path="datasources/:id/edit" element={<DatasourceFormPage mode="edit" />} />
-          <Route path="datasources/:id" element={<DatasourceDetailPage />} />
-          <Route path="connectors" element={<ConnectorsPage />} />
-          <Route path="ingestion/sync-jobs" element={<SyncJobsPage />} />
-          <Route path="ingestion/sync-jobs/new" element={<SyncJobFormPage />} />
-          <Route path="ingestion/sync-jobs/:id/edit" element={<SyncJobFormPage />} />
-          <Route path="ingestion/sync-jobs/:id/history" element={<SyncJobHistoryPage />} />
-          <Route path="ingestion/sync-jobs/:id/etl-rules" element={<EtlRulesPage />} />
+          <Route path="datasources" element={<RequirePlatformAdmin><DatasourceListPage /></RequirePlatformAdmin>} />
+          <Route path="datasources/new" element={<RequirePlatformAdmin><DatasourceFormPage mode="create" /></RequirePlatformAdmin>} />
+          <Route path="datasources/:id/edit" element={<RequirePlatformAdmin><DatasourceFormPage mode="edit" /></RequirePlatformAdmin>} />
+          <Route path="datasources/:id" element={<RequirePlatformAdmin><DatasourceDetailPage /></RequirePlatformAdmin>} />
+          <Route path="connectors" element={<RequirePlatformAdmin><ConnectorsPage /></RequirePlatformAdmin>} />
+          <Route path="ingestion/sync-jobs" element={<RequirePlatformAdmin><SyncJobsPage /></RequirePlatformAdmin>} />
+          <Route path="ingestion/sync-jobs/new" element={<RequirePlatformAdmin><SyncJobFormPage /></RequirePlatformAdmin>} />
+          <Route path="ingestion/sync-jobs/:id/edit" element={<RequirePlatformAdmin><SyncJobFormPage /></RequirePlatformAdmin>} />
+          <Route path="ingestion/sync-jobs/:id/history" element={<RequirePlatformAdmin><SyncJobHistoryPage /></RequirePlatformAdmin>} />
+          <Route path="ingestion/sync-jobs/:id/etl-rules" element={<RequirePlatformAdmin><EtlRulesPage /></RequirePlatformAdmin>} />
           <Route path="account/profile" element={<AccountProfilePage />} />
           <Route path="account/settings" element={<AccountSettingsPage />} />
           <Route path="dashboards" element={<DashboardListPage />} />
@@ -53,9 +66,22 @@ export function AppRoutes() {
           <Route path="reports" element={<PrefabReportsPage />} />
           <Route path="reports/templates" element={<ReportTemplatesPage />} />
           <Route path="reports/templates/:nodeId" element={<ReportTemplatesPage />} />
+          <Route path="reports/schedules" element={<ReportSchedulesPage />} />
+          <Route path="charts/explore" element={<ChartExplorePage />} />
+          <Route path="designer" element={<DesignerPage />} />
+          <Route path="governance/catalog" element={<RequirePlatformAdmin><GovernanceCatalogPage /></RequirePlatformAdmin>} />
+          <Route path="governance/tickets" element={<RequirePlatformAdmin><GovernanceWorkflowPage /></RequirePlatformAdmin>} />
+          <Route path="governance/publish" element={<RequirePlatformAdmin><GovernancePublishPage /></RequirePlatformAdmin>} />
+          <Route path="metadata" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
+          <Route path="metadata/glossary" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
+          <Route path="datasets" element={<RequirePlatformAdmin><DatasetListPage /></RequirePlatformAdmin>} />
+          <Route path="me/views" element={<MyViewsPage />} />
           <Route path="themes/:dashboardId" element={<ThemeAnalysisPage />} />
-          <Route path="system/roles" element={<RoleListPage />} />
-          <Route path="system/users" element={<UserListPage />} />
+          <Route path="system/roles" element={<RequirePlatformAdmin><RoleListPage /></RequirePlatformAdmin>} />
+          <Route path="system/users" element={<RequirePlatformAdmin><UserListPage /></RequirePlatformAdmin>} />
+          <Route path="system/orgs" element={<RequirePlatformAdmin><OrgTreePage /></RequirePlatformAdmin>} />
+          <Route path="system/rls" element={<RequirePlatformAdmin><RlsAdminPage /></RequirePlatformAdmin>} />
+          <Route path="system/audit" element={<RequirePlatformAdmin><AuditLogPage /></RequirePlatformAdmin>} />
         </Route>
       </Route>
       <Route path="/embed" element={<EmbedLayout />}>

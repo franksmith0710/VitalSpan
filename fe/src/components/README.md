@@ -4,8 +4,9 @@
 
 | 组件 | 路径 | 用途 |
 |------|------|------|
-| Button | `ui/button.tsx` | 主/次操作（skill 模板） |
+| Button | `ui/button.tsx` | 主/次操作；尺寸 `xs` h-8 · `sm` h-9 · `md` h-10（默认）· `lg` h-11 · IconButton 默认 `sm` |
 | Input | `ui/input.tsx` | 表单输入（skill 模板） |
+| SearchField | `ui/search-field.tsx` | 列表页搜索框（图标 + 清除） |
 | Label | `ui/label.tsx` | 表单标签 |
 | Badge | `ui/badge.tsx` | 状态标签 |
 | Breadcrumb | `ui/breadcrumb.tsx` | 页面面包屑 |
@@ -13,6 +14,7 @@
 | Table | `ui/table.tsx` | 数据表格（TailAdmin 风格） |
 | Alert | `ui/alert.tsx` | 字段级/区块提示 |
 | Skeleton | `ui/skeleton.tsx` | 加载占位 |
+| PanelEmptyState | `ui/panel-empty-state.tsx` | 面板空态；`ListGhostEmptyState` 列表骨架空态、`PanelEmptyStateSteps` 引导步骤 |
 | Select | `ui/select.tsx` | 下拉选择（Radix） |
 | DropdownMenu | `ui/dropdown-menu.tsx` | 下拉菜单（Radix） |
 | Avatar | `ui/avatar.tsx` | 用户头像 |
@@ -22,10 +24,11 @@
 | AppHeader | `layout/app-header.tsx` | sticky 顶栏 |
 | Backdrop | `layout/backdrop.tsx` | 移动端侧栏遮罩 |
 | ThemeToggleButton | `layout/theme-toggle.tsx` | 深浅色切换 |
-| UserDropdown | `layout/user-dropdown.tsx` | 顶栏用户菜单（资料/设置/返回工作台/退出） |
-| ReturnToWorkspaceButton | `layout/return-to-workspace-button.tsx` | 账号管理页顶栏「返回工作台」 |
+| UserDropdown | `layout/user-dropdown.tsx` | 顶栏用户菜单（资料/设置/开发态切换用户/退出） |
+| DevUserSwitcher | `layout/dev-user-switcher.tsx` | 用户菜单内开发态 RBAC 用户切换 |
+| RequireCapability | `auth/require-capability.tsx` | 路由级 RBAC 守卫（与侧栏 `resolveNavGroups` 对齐） |
 | VitalSpanLogo | `layout/vitalspan-logo.tsx` | 侧栏品牌标（展开/折叠） |
-| AdminPageShell | `layout/admin-page-shell.tsx` | PageHeader：面包屑 + 标题 + `gap-6` 主内容栅格 |
+| AdminPageShell | `layout/admin-page-shell.tsx` | PageHeader：标题 + 描述 + 操作区 + `gap-6` 主内容栅格 |
 | AdminLayout | `../layouts/AdminLayout.tsx` | `/admin/*` 布局入口 |
 | ChartPanel | `charts/ChartPanel.tsx` | 图表壳：loading/empty/error |
 | ChartRenderer | `charts/ChartRenderer.tsx` | 表格/折线/柱 + 高级 ECharts 渲染（VIZ-002/003） |
@@ -42,4 +45,4 @@
 | dashboardFilterUtils | `dashboard/dashboardFilterUtils.ts` | linkage 解析与 SQL `{{key}}` 占位符注入 |
 | EntityOverviewPage | `../pages/admin/entities/EntityOverviewPage.tsx` | M8 DASH-005 Admin 实体总览（类型 Tab + 物理表 + 下钻） |
 | SchemaBrowser | `datasources/SchemaBrowser.tsx` | 数据源详情三级 metadata 树 |
-| WidgetSqlPanel | `dashboard/WidgetSqlPanel.tsx` | Dashboard edit widget SQL/数据源配置 |
+| WidgetInspector | `dashboard/WidgetInspector.tsx` | Dashboard 编辑右侧组件配置面板（数据源 / SQL） |

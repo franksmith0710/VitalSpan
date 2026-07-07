@@ -48,5 +48,42 @@ export const queryKeys = {
     list: (params?: { q?: string; limit?: number; offset?: number }) =>
       ["users", "list", params] as const,
     roles: (userId: string) => ["users", userId, "roles"] as const,
+    views: ["users", "me", "views"] as const,
   },
+  orgs: {
+    all: ["orgs"] as const,
+  },
+  rls: {
+    dimensions: (params?: { limit?: number; offset?: number }) =>
+      ["rls", "dimensions", params] as const,
+    groups: (dimensionTypeId?: string) => ["rls", "groups", dimensionTypeId ?? "all"] as const,
+  },
+  audit: {
+    events: (params?: Record<string, string | number | undefined>) =>
+      ["audit", "events", params] as const,
+  },
+  gov: {
+    categories: ["gov", "categories"] as const,
+    entries: (params?: { category?: string; limit?: number; offset?: number }) =>
+      ["gov", "entries", params] as const,
+    workflowTemplates: ["gov", "workflowTemplates"] as const,
+    workflowNodeRoles: (templateId: string) =>
+      ["gov", "workflowNodeRoles", templateId] as const,
+  },
+  metadataHub: {
+    glossary: (params?: { codePrefix?: string }) => ["metadata", "glossary", params] as const,
+    themes: (parentId?: string | null) => ["metadata", "themes", parentId ?? "root"] as const,
+    dimensions: (params?: { codePrefix?: string }) => ["metadata", "dimensions", params] as const,
+  },
+  datasets: {
+    list: (params?: { limit?: number; offset?: number }) => ["datasets", "list", params] as const,
+  },
+  charts: {
+    types: ["charts", "types"] as const,
+  },
+  designer: {
+    sqlCapabilities: ["designer", "sqlCapabilities"] as const,
+  },
+  reportSchedules: (catalogNodeId?: string) =>
+    ["reports", "schedules", catalogNodeId ?? "all"] as const,
 };

@@ -328,9 +328,9 @@ pnpm dev            # 默认 :5173
 | [srs/README.md](srs/README.md) | 需求权威（SRS + 附录） |
 | [全生命周期系统需求规格说明书.md](srs/全生命周期系统需求规格说明书.md) | SRS 主文档 |
 | [automate/goal.md](automate/goal.md) | 产品方向与边界 |
-| [automate/prd.md](automate/prd.md) | 功能真理源 hub（124 项） |
+| [automate/prd.md](automate/prd.md) | 功能真理源 hub（129 项） |
 | [automate/plan.archive.md](automate/plan.archive.md) | 里程碑 M1–M13 |
-| [automate/plan.md](automate/plan.md) | 活跃里程碑当前节 |
+| [automate/plan.md](automate/plan.md) | 活跃里程碑（当前 **P1–P3**；节 **M-FE-1**） |
 | [api/README.md](api/README.md) | API 端点一行索引 |
 | [services/README.md](services/README.md) | 域服务附录（随实现补充） |
 | [ui/layout.md](ui/layout.md) | 壳层与信息架构（单应用 + Embed） |

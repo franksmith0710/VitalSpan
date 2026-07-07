@@ -2,14 +2,14 @@
 
 > **归档层**：全量里程碑定义与 PRD ID 映射；**只读参考**，不随每轮演化自动改写。
 > **活跃计划**：见 [`plan.md`](./plan.md)（可选；`create-evolution-plan` 人工维护当前节）。
-> **来源**：[`docs/srs/`](../srs/README.md) SRS V3.7 §8 四期交付 + 附录 F 追溯矩阵 + PRD 118 项。
+> **来源**：[`docs/srs/`](../srs/README.md) SRS V3.7 §8 四期交付 + 附录 F 追溯矩阵 + PRD **124** 项（含 F16/M1B）。
 
 ```yaml
 version: 1.0.0
 last_updated: 2026-07-03
 archive: true
 milestone_range: M1-M13
-prd_item_count: 118
+prd_item_count: 124
 srs_ref: docs/srs/全生命周期系统需求规格说明书.md#8-实施分期
 ```
 
@@ -280,4 +280,5 @@ srs_ref: docs/srs/全生命周期系统需求规格说明书.md#8-实施分期
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
-| 1.0.0 | 2026-07-03 | 初版：M1–M13 归档，118 项 PRD 全量映射 |
+| 1.0.1 | 2026-07-06 | PRD 计数 118→124（含 F16）；活跃执行见 plan.md v2.1 P1–P3 |
+| 1.0.0 | 2026-07-03 | 初版：M1–M13 归档，124 项 PRD 全量映射 |

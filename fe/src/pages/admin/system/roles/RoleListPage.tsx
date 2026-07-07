@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
@@ -13,15 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchField } from "@/components/ui/search-field";
 import {
   Select,
   SelectContent,
@@ -44,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import { cn } from "@/lib/utils";
 import { mapRoleError } from "./roleErrors";
 import {
   roleCreateSchema,
@@ -86,6 +81,7 @@ export function RoleListPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [debouncedPrefix, setDebouncedPrefix] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<RoleOut | null>(null);
   const [form, setForm] = useState<RoleCreateValues | RoleEditValues>(EMPTY_CREATE);
@@ -115,6 +111,13 @@ export function RoleListPage() {
       return apiFetch<{ items: RoleOut[]; total: number }>(`/api/v1/roles?${params}`);
     },
   });
+
+  const filteredItems = useMemo(() => {
+    const items = data?.items ?? [];
+    if (statusFilter === "active") return items.filter((row) => row.isActive);
+    if (statusFilter === "inactive") return items.filter((row) => !row.isActive);
+    return items;
+  }, [data?.items, statusFilter]);
 
   const { data: dashboards } = useQuery({
     queryKey: queryKeys.dashboards.list(),
@@ -236,19 +239,6 @@ export function RoleListPage() {
 
   return (
     <AdminPageShell
-      breadcrumb={
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/admin">系统</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>角色管理</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      }
       title="角色管理"
       description="创建与管理角色，可配置默认 Dashboard 与报表模板。"
       actions={
@@ -257,13 +247,37 @@ export function RoleListPage() {
         </Button>
       }
     >
-      <Input
-        className="max-w-md"
-        placeholder="搜索角色编码…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        aria-label="搜索角色"
-      />
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchField
+            className="w-full sm:max-w-md"
+            value={search}
+            onChange={setSearch}
+            placeholder="按编码前缀搜索…"
+            aria-label="搜索角色"
+          />
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")}
+          >
+            <SelectTrigger className="h-11 w-full sm:w-[140px]" aria-label="筛选角色状态">
+              <SelectValue placeholder="状态" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部状态</SelectItem>
+              <SelectItem value="active">仅启用</SelectItem>
+              <SelectItem value="inactive">仅停用</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {!isLoading && data ? (
+          <p className="shrink-0 text-theme-sm text-gray-500 dark:text-gray-400">
+            {debouncedPrefix || statusFilter !== "all"
+              ? `显示 ${filteredItems.length} 个`
+              : `共 ${data.total} 个角色`}
+          </p>
+        ) : null}
+      </div>
 
       {isError ? (
         <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
@@ -295,21 +309,37 @@ export function RoleListPage() {
                   </tr>
                 ))
               : null}
+            {!isLoading && data && data.items.length > 0 && filteredItems.length === 0 ? (
+              <tr>
+                <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={5}>
+                  当前筛选条件下暂无角色
+                </td>
+              </tr>
+            ) : null}
             {!isLoading && data?.items.length === 0 ? (
               <tr>
                 <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={5}>
-                  暂无角色
-                  <div className="mt-3">
-                    <Button type="button" variant="primary" size="sm" onClick={openCreate}>
-                      新建角色
-                    </Button>
-                  </div>
+                  {debouncedPrefix ? (
+                    <>未找到编码以「{debouncedPrefix}」开头的角色</>
+                  ) : (
+                    <>
+                      暂无角色
+                      <div className="mt-3">
+                        <Button type="button" variant="primary" size="sm" onClick={openCreate}>
+                          新建角色
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </td>
               </tr>
             ) : null}
             {!isLoading
-              ? data?.items.map((row) => (
-                  <tr key={row.id} className="border-b border-gray-100 dark:border-gray-800">
+              ? filteredItems.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]"
+                  >
                     <td className="px-4 py-3 font-mono text-gray-800 dark:text-white/90">
                       {row.code}
                     </td>
@@ -323,21 +353,31 @@ export function RoleListPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" size="sm" onClick={() => void openEdit(row)}>
-                          编辑
-                        </Button>
-                        <Button
+                      <div className="flex items-center justify-end gap-0.5">
+                        <IconButton
                           type="button"
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
+                          aria-label="编辑"
+                          onClick={() => void openEdit(row)}
+                        >
+                          <Pencil className="size-4" />
+                        </IconButton>
+                        <IconButton
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "text-gray-500 hover:text-error-600 dark:text-gray-400 dark:hover:text-error-400",
+                          )}
+                          aria-label="删除"
                           onClick={() => {
                             setActionError(null);
                             setDeleteTarget(row);
                           }}
                         >
-                          删除
-                        </Button>
+                          <Trash2 className="size-4" />
+                        </IconButton>
                       </div>
                     </td>
                   </tr>

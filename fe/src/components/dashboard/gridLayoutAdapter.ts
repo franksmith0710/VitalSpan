@@ -3,8 +3,8 @@ import type { LayoutWidget } from "./layoutUtils";
 import { sortWidgets } from "./layoutUtils";
 
 const COL_SPANS: LayoutWidget["colSpan"][] = [4, 6, 8, 12];
-export const GRID_ROW_HEIGHT = 80;
-const MIN_CHART_ROWS = 2;
+export const GRID_ROW_HEIGHT = 88;
+const MIN_CHART_ROWS = 3;
 
 function snapColSpan(w: number): LayoutWidget["colSpan"] {
   let best: LayoutWidget["colSpan"] = 4;
@@ -32,7 +32,7 @@ export function widgetsToGridLayout(widgets: LayoutWidget[]): Layout {
       y += rowMaxH;
       rowMaxH = 0;
     }
-    out.push({ i: w.id, x, y, w: w.colSpan, h, minW: 4, maxW: 12, minH: 1, maxH: 8 });
+    out.push({ i: w.id, x, y, w: w.colSpan, h, minW: 4, maxW: 12, minH: MIN_CHART_ROWS, maxH: 8 });
     x += w.colSpan;
     rowMaxH = Math.max(rowMaxH, h);
     if (x >= 12) {

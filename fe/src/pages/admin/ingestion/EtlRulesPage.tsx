@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { Plus, Trash2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Button, IconButton } from "@/components/ui/button";
@@ -138,14 +138,6 @@ export function EtlRulesPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <nav className="text-theme-sm text-gray-500 dark:text-gray-400">
-        <Link to="/admin/ingestion/sync-jobs" className="hover:text-brand-500">
-          同步任务
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-gray-800 dark:text-white/90">清洗规则</span>
-      </nav>
-
       <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">清洗规则</h1>
       <p className="text-theme-sm text-gray-500 dark:text-gray-400">{PLACEHOLDER_HINT}</p>
 

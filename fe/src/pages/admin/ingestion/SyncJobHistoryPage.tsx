@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import { Copy } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
@@ -63,14 +63,6 @@ export function SyncJobHistoryPage() {
 
   return (
     <div className="space-y-6">
-      <nav className="text-theme-sm text-gray-500 dark:text-gray-400">
-        <Link to="/admin/ingestion/sync-jobs" className="hover:text-brand-500">
-          同步任务
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-gray-800 dark:text-white/90">运行历史</span>
-      </nav>
-
       <div className="flex items-center justify-between">
         <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">运行历史</h1>
         <Button type="button" variant="outline" size="sm" onClick={() => void loadRuns()}>

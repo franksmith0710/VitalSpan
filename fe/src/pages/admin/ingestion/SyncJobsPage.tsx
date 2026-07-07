@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { History, Pencil, Play, Settings2, Trash2 } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { Plus } from "lucide-react";
+import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,26 +12,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button, IconButton } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-
-type SyncJobSummary = {
-  id: string;
-  name: string;
-  source_type: string;
-  target_table: string;
-  enabled: boolean;
-  schedule_cron: string | null;
-};
-
-type SyncJobListResponse = {
-  items: SyncJobSummary[];
-};
+import { apiFetch } from "@/lib/api";
+import { SyncJobsEmptyState } from "./components/SyncJobsEmptyState";
+import { SyncJobsMetrics } from "./components/SyncJobsMetrics";
+import { SyncJobsTable } from "./components/SyncJobsTable";
+import {
+  SyncJobsToolbar,
+  type SyncJobStatusFilter,
+} from "./components/SyncJobsToolbar";
+import { type SyncJobListResponse, type SyncJobSummary } from "./components/sync-job-types";
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
+    <div
+      role="alert"
+      className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15"
+    >
       <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
       <Button type="button" variant="outline" size="sm" onClick={onRetry}>
         重试
@@ -40,10 +38,25 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
   );
 }
 
+function filterByStatus(jobs: SyncJobSummary[], statusFilter: SyncJobStatusFilter) {
+  switch (statusFilter) {
+    case "enabled":
+      return jobs.filter((job) => job.enabled);
+    case "disabled":
+      return jobs.filter((job) => !job.enabled);
+    case "scheduled":
+      return jobs.filter((job) => Boolean(job.schedule_cron));
+    default:
+      return jobs;
+  }
+}
+
 export function SyncJobsPage() {
   const [jobs, setJobs] = useState<SyncJobSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<SyncJobStatusFilter>("all");
   const [runningId, setRunningId] = useState<string | null>(null);
   const [runTarget, setRunTarget] = useState<SyncJobSummary | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SyncJobSummary | null>(null);
@@ -65,6 +78,33 @@ export function SyncJobsPage() {
   useEffect(() => {
     void loadJobs();
   }, [loadJobs]);
+
+  const stats = useMemo(
+    () => ({
+      total: jobs.length,
+      enabled: jobs.filter((j) => j.enabled).length,
+      disabled: jobs.filter((j) => !j.enabled).length,
+      scheduled: jobs.filter((j) => j.schedule_cron).length,
+    }),
+    [jobs],
+  );
+
+  const filteredJobs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const byStatus = filterByStatus(jobs, statusFilter);
+    if (!q) return byStatus;
+    return byStatus.filter(
+      (job) =>
+        job.name.toLowerCase().includes(q) ||
+        job.target_table.toLowerCase().includes(q) ||
+        job.source_type.toLowerCase().includes(q),
+    );
+  }, [jobs, search, statusFilter]);
+
+  const resultLabel = useMemo(() => {
+    const hasFilter = Boolean(search.trim()) || statusFilter !== "all";
+    return hasFilter ? `显示 ${filteredJobs.length} 个` : `共 ${jobs.length} 个任务`;
+  }, [filteredJobs.length, jobs.length, search, statusFilter]);
 
   const handleRun = async (jobId: string) => {
     setRunningId(jobId);
@@ -93,119 +133,63 @@ export function SyncJobsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <nav className="text-theme-sm text-gray-500 dark:text-gray-400">
-        <span>管理</span>
-        <span className="mx-2">/</span>
-        <span>数据接入</span>
-        <span className="mx-2">/</span>
-        <span className="text-gray-800 dark:text-white/90">同步任务</span>
-      </nav>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-theme-xl font-semibold text-gray-900 dark:text-white">同步任务</h1>
-          <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-            管理源库到托管分析库的全量同步任务
-          </p>
-        </div>
+    <AdminPageShell
+      title="同步任务"
+      description="管理源库到托管分析库的全量同步任务，配置定时计划与清洗规则。"
+      actions={
         <Button asChild variant="primary">
-          <Link to="/admin/ingestion/sync-jobs/new">新建任务</Link>
+          <Link to="/admin/ingestion/sync-jobs/new">
+            <Plus className="size-4" aria-hidden />
+            新建任务
+          </Link>
         </Button>
-      </div>
-
+      }
+    >
       {error ? <ErrorBanner message={error} onRetry={() => void loadJobs()} /> : null}
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-        {loading ? (
-          <div className="space-y-3 p-6">
+      {loading ? (
+        <div className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
+              <Skeleton key={i} className="h-[88px] rounded-xl" />
             ))}
           </div>
-        ) : jobs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">
-            <p className="text-theme-sm text-gray-500 dark:text-gray-400">暂无同步任务</p>
-            <Button asChild variant="primary">
-              <Link to="/admin/ingestion/sync-jobs/new">新建任务</Link>
-            </Button>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="mb-3 h-10 w-full rounded-lg last:mb-0" />
+            ))}
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-theme-sm">
-              <thead className="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                <tr>
-                  <th className="px-6 py-4 font-medium">名称</th>
-                  <th className="px-6 py-4 font-medium">源类型</th>
-                  <th className="px-6 py-4 font-medium">目标表</th>
-                  <th className="px-6 py-4 font-medium">定时</th>
-                  <th className="px-6 py-4 font-medium">状态</th>
-                  <th className="px-6 py-4 font-medium">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((job) => (
-                  <tr
-                    key={job.id}
-                    className="border-b border-gray-100 last:border-0 dark:border-gray-800"
-                  >
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{job.name}</td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{job.source_type}</td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{job.target_table}</td>
-                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
-                      {job.schedule_cron ?? "手动"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge color={job.enabled ? "success" : "light"} variant="light">
-                        {job.enabled ? "已启用" : "已停用"}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1">
-                        <IconButton
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          aria-label="手动运行同步"
-                          disabled={runningId === job.id}
-                          loading={runningId === job.id}
-                          onClick={() => setRunTarget(job)}
-                        >
-                          <Play className="size-4" />
-                        </IconButton>
-                        <IconButton asChild variant="ghost" size="sm" aria-label="查看运行历史">
-                          <Link to={`/admin/ingestion/sync-jobs/${job.id}/history`}>
-                            <History className="size-4" />
-                          </Link>
-                        </IconButton>
-                        <IconButton asChild variant="ghost" size="sm" aria-label="配置清洗规则">
-                          <Link to={`/admin/ingestion/sync-jobs/${job.id}/etl-rules`}>
-                            <Settings2 className="size-4" />
-                          </Link>
-                        </IconButton>
-                        <IconButton asChild variant="ghost" size="sm" aria-label="编辑任务">
-                          <Link to={`/admin/ingestion/sync-jobs/${job.id}/edit`}>
-                            <Pencil className="size-4" />
-                          </Link>
-                        </IconButton>
-                        <IconButton
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          aria-label="删除任务"
-                          onClick={() => setDeleteTarget(job)}
-                        >
-                          <Trash2 className="size-4" />
-                        </IconButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        </div>
+      ) : jobs.length === 0 ? (
+        <SyncJobsEmptyState />
+      ) : (
+        <>
+          <SyncJobsMetrics stats={stats} />
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+            <SyncJobsToolbar
+              search={search}
+              onSearchChange={setSearch}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              resultLabel={resultLabel}
+            />
+            {filteredJobs.length === 0 ? (
+              <div className="px-6 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">
+                {search.trim()
+                  ? `未找到匹配「${search.trim()}」的任务`
+                  : "当前筛选条件下暂无任务"}
+              </div>
+            ) : (
+              <SyncJobsTable
+                jobs={filteredJobs}
+                runningId={runningId}
+                onRun={setRunTarget}
+                onDelete={setDeleteTarget}
+              />
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       <AlertDialog
         open={deleteTarget !== null}
@@ -267,6 +251,6 @@ export function SyncJobsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </AdminPageShell>
   );
 }

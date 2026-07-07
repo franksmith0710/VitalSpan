@@ -32,9 +32,13 @@ import { DashboardListPage } from "./DashboardListPage";
 const mockApiFetch = vi.fn();
 const DS_ID = "00000000-0000-4000-8000-000000000010";
 
-vi.mock("@/lib/api", () => ({
-  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+  };
+});
 
 vi.mock("@/components/charts/ChartRenderer", () => ({
   ChartRenderer: ({ title }: { title?: string }) => <div data-testid="chart-mock">{title}</div>,
@@ -110,8 +114,8 @@ describe("dashboard admin smoke", () => {
     render(
       <DashboardGrid mode="edit" widgets={[]} onAddWidget={() => {}} renderWidget={() => null} />,
     );
-    expect(screen.getByText("仪表板还没有组件")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "添加组件" })).toBeInTheDocument();
+    expect(screen.getByText("画布还是空的")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "添加表格组件" })).toBeInTheDocument();
   });
 
   it("T-DASH-R28-003-02: palette inserts chart type", async () => {
@@ -264,7 +268,7 @@ describe("dashboard admin smoke", () => {
     });
     renderEditPage();
     await screen.findByLabelText("数据源");
-    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByLabelText("数据源"));
     await user.click(await screen.findByRole("option", { name: /分析库/ }));
     const sql = screen.getByLabelText("SQL");
     await user.clear(sql);
@@ -278,8 +282,8 @@ describe("dashboard admin smoke", () => {
     render(
       <DashboardGrid mode="edit" widgets={[]} onAddWidget={() => {}} renderWidget={() => null} />,
     );
-    expect(screen.getByText("仪表板还没有组件")).toBeInTheDocument();
-    expect(screen.getByText(/从左侧添加/)).toBeInTheDocument();
+    expect(screen.getByText("画布还是空的")).toBeInTheDocument();
+    expect(screen.getByText(/从左侧组件库/)).toBeInTheDocument();
   });
 
   it("T-DASH-R29-003-05: delete middle widget reorders without error", () => {

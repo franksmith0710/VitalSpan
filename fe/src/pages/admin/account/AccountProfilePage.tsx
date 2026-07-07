@@ -1,9 +1,3 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { useAuth } from "@/context/auth-context";
 import { sessionUserFromAuth } from "@/lib/session";
@@ -16,15 +10,6 @@ export function AccountProfilePage() {
 
   return (
     <AdminPageShell
-      breadcrumb={
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbPage>个人资料</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      }
       title="个人资料"
       description="查看与维护当前登录账号的基本信息。"
     >

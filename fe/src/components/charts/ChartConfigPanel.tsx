@@ -155,7 +155,7 @@ export function ChartConfigPanel({ config, columns, onChange }: Props) {
           <div className="flex items-center justify-between">
             <Label>维度字段</Label>
             {rule && (config.dimensions?.length ?? 0) < (rule.maxDimensions ?? 8) ? (
-              <Button type="button" variant="ghost" size="sm" className="h-8" onClick={addDimension}>
+              <Button type="button" variant="ghost" size="sm" onClick={addDimension}>
                 <Plus className="mr-1 size-4" />
                 添加维度
               </Button>
@@ -182,7 +182,7 @@ export function ChartConfigPanel({ config, columns, onChange }: Props) {
           <div className="flex items-center justify-between">
             <Label>度量字段</Label>
             {rule && (config.metrics?.length ?? 0) < (rule.maxMetrics ?? 8) ? (
-              <Button type="button" variant="ghost" size="sm" className="h-8" onClick={addMetric}>
+              <Button type="button" variant="ghost" size="sm" onClick={addMetric}>
                 <Plus className="mr-1 size-4" />
                 添加指标
               </Button>
@@ -205,7 +205,7 @@ export function ChartConfigPanel({ config, columns, onChange }: Props) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>筛选条件</Label>
-            <Button type="button" variant="ghost" size="sm" className="h-8" onClick={addFilter}>
+            <Button type="button" variant="ghost" size="sm" onClick={addFilter}>
               <Plus className="mr-1 size-4" />
               添加筛选
             </Button>

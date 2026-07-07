@@ -20,8 +20,8 @@
 |----|------|------------|
 | **SRS** | `docs/srs/` | 客户/立项要什么？分期与 FR 边界？ |
 | **Goal** | `docs/automate/goal.md` | 产品方向与终极目标（G1–G5） |
-| **PRD** | `docs/automate/prd/` | 118 项可验收功能与代码锚点 |
-| **Plan** | `docs/automate/plan.md` | 当前先做哪几项、执行顺序 |
+| **PRD** | `docs/automate/prd/` | 124 项可验收功能与代码锚点（16 域） |
+| **Plan** | `docs/automate/plan.md` | 当前执行范围 **P1–P3**（M-FE + M2–M12）；M13 冻结 |
 
 附录 F（需求追溯）与 `plan.archive.md`（M1–M13 勾选）来源相关、用途不同：前者是 FR 映射表，后者是演化执行清单。
 

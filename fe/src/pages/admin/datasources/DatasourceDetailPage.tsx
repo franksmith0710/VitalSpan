@@ -1,14 +1,21 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Database, Pencil, PlugZap } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
-import { SchemaBrowser } from "@/components/datasources/SchemaBrowser";
+import {
+  ConnectionStatusBadge,
+  deriveConnectionStatus,
+} from "./components/ConnectionStatusBadge";
+import { DatasourceDetailPanel } from "./components/DatasourceDetailPanel";
+import { type TestConnectionResult } from "./components/DatasourceTestStatus";
+import { sourceTypeLabel } from "./components/datasource-labels";
 
 type DataSourceOut = {
   id: string;
@@ -22,17 +29,17 @@ type DataSourceOut = {
   description?: string | null;
 };
 
-type TestConnectionOut = {
-  ok: boolean;
-  message: string;
-  latencyMs?: number | null;
-  code?: string | null;
-  traceId?: string | null;
-};
+function DetailSkeleton() {
+  return (
+    <AdminPageShell title="数据源详情">
+      <Skeleton className="h-[520px] w-full rounded-xl" />
+    </AdminPageShell>
+  );
+}
 
 export function DatasourceDetailPage() {
   const { id = "" } = useParams();
-  const [testResult, setTestResult] = useState<TestConnectionOut | null>(null);
+  const [testResult, setTestResult] = useState<TestConnectionResult | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -47,7 +54,7 @@ export function DatasourceDetailPage() {
 
   const testMutation = useMutation({
     mutationFn: () =>
-      apiFetch<TestConnectionOut>(`/api/v1/datasources/${id}/test`, { method: "POST" }),
+      apiFetch<TestConnectionResult>(`/api/v1/datasources/${id}/test`, { method: "POST" }),
     onSuccess: (result) => {
       setTestResult(result);
       setTestError(null);
@@ -58,32 +65,34 @@ export function DatasourceDetailPage() {
     },
   });
 
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        <Skeleton className="h-48 w-full max-w-3xl" />
-      </div>
-    );
-  }
+  if (isLoading) return <DetailSkeleton />;
 
   if (isError) {
     const message = mapApiError(error);
     const notFound = message.includes("不存在");
     return (
       <AdminPageShell title="数据源详情">
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex flex-col items-center rounded-xl border border-gray-200 bg-white px-6 py-16 text-center shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400">
+            <Database className="size-6" aria-hidden />
+          </div>
           <p className="text-theme-sm text-gray-600 dark:text-gray-400">
             {notFound ? "数据源不存在" : message}
           </p>
-          {!notFound ? (
-            <Button className="mt-4" variant="outline" onClick={() => void refetch()}>
-              重试
-            </Button>
-          ) : (
-            <Button asChild className="mt-4" variant="outline">
-              <Link to="/admin/datasources">返回列表</Link>
-            </Button>
-          )}
+          <div className="mt-6">
+            {notFound ? (
+              <Button asChild variant="outline">
+                <Link to="/admin/datasources">
+                  <ArrowLeft className="size-4" aria-hidden />
+                  返回列表
+                </Link>
+              </Button>
+            ) : (
+              <Button variant="outline" onClick={() => void refetch()}>
+                重试
+              </Button>
+            )}
+          </div>
         </div>
       </AdminPageShell>
     );
@@ -91,88 +100,55 @@ export function DatasourceDetailPage() {
 
   if (!data) return null;
 
+  const connectionStatus = deriveConnectionStatus(
+    testMutation.isPending,
+    testError,
+    testResult,
+  );
+
   return (
     <AdminPageShell
       title={data.name}
-      description={`标识 ${data.code} · 类型 ${data.type}`}
+      description={
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="light" color="primary" size="sm">
+            {sourceTypeLabel(data.type)}
+          </Badge>
+          <span className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">
+            {data.code}
+          </span>
+          <ConnectionStatusBadge status={connectionStatus} />
+        </div>
+      }
       actions={
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="primary"
+            size="sm"
             disabled={testMutation.isPending}
             onClick={() => testMutation.mutate()}
           >
+            <PlugZap aria-hidden />
             {testMutation.isPending ? "测试中…" : "测试连接"}
           </Button>
-          <Button asChild variant="outline">
-            <Link to={`/admin/datasources/${id}/edit`}>编辑</Link>
-          </Button>
+          <IconButton asChild variant="ghost" size="sm" aria-label="编辑">
+            <Link to={`/admin/datasources/${id}/edit`}>
+              <Pencil className="size-4" />
+            </Link>
+          </IconButton>
         </div>
       }
     >
-      <Card className="max-w-3xl">
-        <CardHeader>
-          <CardTitle>连接信息</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt className="text-theme-xs text-gray-500 dark:text-gray-400">主机</dt>
-              <dd className="mt-1 text-theme-sm font-medium">
-                {data.host}:{data.port}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-theme-xs text-gray-500 dark:text-gray-400">数据库</dt>
-              <dd className="mt-1 text-theme-sm font-medium">{data.database}</dd>
-            </div>
-            <div>
-              <dt className="text-theme-xs text-gray-500 dark:text-gray-400">用户名</dt>
-              <dd className="mt-1 text-theme-sm font-medium">{data.username}</dd>
-            </div>
-            {data.description ? (
-              <div className="sm:col-span-2">
-                <dt className="text-theme-xs text-gray-500 dark:text-gray-400">描述</dt>
-                <dd className="mt-1 text-theme-sm">{data.description}</dd>
-              </div>
-            ) : null}
-          </dl>
-        </CardContent>
-      </Card>
-
-      <div className="mt-6">
-        <SchemaBrowser dataSourceId={id} />
-      </div>
-
-      {testError ? (
-        <div className="max-w-3xl rounded-xl border border-error-500 bg-error-50 p-4 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400">
-          {testError}
-        </div>
-      ) : null}
-
-      {testResult ? (
-        <div
-          className={
-            testResult.ok
-              ? "max-w-3xl rounded-xl border border-success-500 bg-success-50 p-4 text-theme-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/15 dark:text-success-400"
-              : "max-w-3xl rounded-xl border border-error-500 bg-error-50 p-4 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400"
-          }
-        >
-          <p>{testResult.message}</p>
-          {testResult.ok && testResult.latencyMs != null ? (
-            <p className="mt-1">延迟 {testResult.latencyMs} ms</p>
-          ) : null}
-          {!testResult.ok && testResult.code ? (
-            <p className="mt-1 text-theme-xs opacity-80">错误码：{testResult.code}</p>
-          ) : null}
-          {testResult.traceId ? (
-            <details className="mt-2 text-theme-xs">
-              <summary className="cursor-pointer">技术详情</summary>
-              <p className="mt-1 break-all">traceId: {testResult.traceId}</p>
-            </details>
-          ) : null}
-        </div>
-      ) : null}
+      <DatasourceDetailPanel
+        dataSourceId={id}
+        host={data.host}
+        port={data.port}
+        database={data.database}
+        username={data.username}
+        description={data.description}
+        testError={testError}
+        testResult={testResult}
+      />
     </AdminPageShell>
   );
 }

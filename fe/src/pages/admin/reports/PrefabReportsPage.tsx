@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/auth-context";
+import { Lock } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
 import { ApiRequestError } from "@/lib/api";
+import { PanelEmptyState } from "@/components/ui/panel-empty-state";
+import { PrefabReportsEmptyPreview } from "./components/PrefabReportsEmptyPreview";
 import { usePrefabReports } from "./usePrefabReports";
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
@@ -57,8 +60,13 @@ export function PrefabReportsPage() {
     return (
       <AdminPageShell title="预制分析报表" description="浏览并运行系统预置的分析报表。">
         <Card>
-          <CardContent className="py-10 text-center text-theme-sm text-gray-600 dark:text-gray-400">
-            无权运行预制报表
+          <CardContent>
+            <PanelEmptyState
+              icon={<Lock className="size-7" aria-hidden />}
+              title="无权运行预制报表"
+              description="当前账号仅有查看权限，请联系管理员开通分析或管理权限。"
+              variant="framed"
+            />
           </CardContent>
         </Card>
       </AdminPageShell>
@@ -93,9 +101,7 @@ export function PrefabReportsPage() {
                 <Skeleton className="h-10 w-full" />
               </div>
             ) : bindings.length === 0 ? (
-              <p className="py-10 text-center text-theme-sm text-gray-600 dark:text-gray-400">
-                暂无预制报表，请联系管理员配置
-              </p>
+              <PrefabReportsEmptyPreview />
             ) : (
               <ScrollArea className="max-h-[320px]">
                 <ul className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -131,8 +137,13 @@ export function PrefabReportsPage() {
 
         {runForbidden ? (
           <Card>
-            <CardContent className="py-10 text-center text-theme-sm text-gray-600 dark:text-gray-400">
-              无权运行预制报表
+            <CardContent>
+              <PanelEmptyState
+                icon={<Lock className="size-7" aria-hidden />}
+                title="无权运行预制报表"
+                description="当前账号没有运行该报表的权限，请联系管理员调整角色或绑定范围。"
+                variant="framed"
+              />
             </CardContent>
           </Card>
         ) : null}

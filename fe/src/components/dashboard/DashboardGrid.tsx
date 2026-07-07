@@ -47,15 +47,17 @@ export function DashboardGrid({
     return (
       <div
         className={cn(
-          "flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-gray-300 p-8 text-center dark:border-gray-700",
+          "flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center dark:border-gray-700 dark:bg-white/[0.02]",
           className,
         )}
       >
-        <p className="text-theme-sm font-medium text-gray-700 dark:text-gray-300">仪表板还没有组件</p>
-        <p className="text-theme-xs text-gray-500">从左侧添加表格、折线图或柱状图</p>
+        <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">画布还是空的</p>
+        <p className="max-w-sm text-theme-xs text-gray-500 dark:text-gray-400">
+          从左侧组件库选择表格、折线图或柱状图，添加到此处开始编排。
+        </p>
         {mode === "edit" && onAddWidget ? (
-          <Button type="button" variant="primary" onClick={onAddWidget}>
-            添加组件
+          <Button type="button" variant="primary" size="sm" onClick={onAddWidget}>
+            添加表格组件
           </Button>
         ) : null}
       </div>
@@ -64,7 +66,13 @@ export function DashboardGrid({
 
   if (mode === "edit" && onLayoutChange) {
     return (
-      <div className={cn("dashboard-grid-edit", className)}>
+      <div
+        className={cn(
+          "dashboard-grid-edit min-h-[360px]",
+          "[&_.react-grid-item>div]:h-full",
+          className,
+        )}
+      >
         <ResponsiveGridLayout
           className="layout"
           layouts={{ xl: gridLayout, lg: gridLayout, md: gridLayout, sm: gridLayout, xs: gridLayout }}
@@ -76,7 +84,7 @@ export function DashboardGrid({
           onLayoutChange={(layout) => onLayoutChange(gridLayoutToWidgets(layout, sorted))}
         >
           {sorted.map((widget) => (
-            <div key={widget.id} className="min-w-0 overflow-hidden">
+            <div key={widget.id} className="h-full min-w-0 overflow-hidden">
               {renderWidget(widget)}
             </div>
           ))}

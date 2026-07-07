@@ -1,6 +1,8 @@
 import * as React from "react";
 import { Link } from "react-router";
 import { ArrowLeft, ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,11 +12,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useWorkspace } from "@/context/workspace-context";
 import { useAuth } from "@/context/auth-context";
-import { sessionUserFromAuth } from "@/lib/session";
+import {
+  primaryRoleLabel,
+  sessionUserFromAuth,
+} from "@/lib/session";
 import {
   ACCOUNT_PROFILE_PATH,
   ACCOUNT_SETTINGS_PATH,
 } from "@/lib/workspace";
+import { DevUserSwitcher } from "@/components/layout/dev-user-switcher";
 import { cn } from "@/lib/utils";
 
 export function UserDropdown({ className }: { className?: string }) {
@@ -22,6 +28,8 @@ export function UserDropdown({ className }: { className?: string }) {
   const user = authUser
     ? sessionUserFromAuth(authUser.username, authUser.roles)
     : sessionUserFromAuth("用户", ["viewer"]);
+  const label = user.name;
+  const roleLabel = primaryRoleLabel(user.roles);
   const { canReturnToWorkspace, returnToWorkspace, beginAccountManagement } =
     useWorkspace();
   const [open, setOpen] = React.useState(false);
@@ -32,19 +40,24 @@ export function UserDropdown({ className }: { className?: string }) {
         <button
           type="button"
           className={cn(
-            "dropdown-toggle flex items-center text-gray-700 dark:text-gray-400",
+            "dropdown-toggle flex items-center gap-2 rounded-lg px-2 py-1.5 text-gray-700 transition-colors",
+            "hover:bg-gray-100 focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/10",
+            "dark:text-gray-400 dark:hover:bg-white/[0.03]",
             className,
           )}
           aria-label="用户菜单"
           aria-expanded={open}
           aria-haspopup="menu"
         >
-          <span className="mr-1 hidden font-medium text-theme-sm sm:block">
-            {user.name}
+          <Avatar size="sm" shape="circle">
+            <AvatarFallback name={label} className="text-theme-xs font-semibold" />
+          </Avatar>
+          <span className="hidden max-w-[120px] truncate font-medium text-theme-sm sm:block">
+            {label}
           </span>
           <ChevronDown
             className={cn(
-              "size-[18px] stroke-gray-500 transition-transform duration-200 dark:stroke-gray-400",
+              "size-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400",
               open && "rotate-180",
             )}
             aria-hidden
@@ -56,14 +69,27 @@ export function UserDropdown({ className }: { className?: string }) {
         align="end"
         className="w-[260px] rounded-2xl border-gray-200 p-3 shadow-theme-lg dark:border-gray-800"
       >
-        <div className="min-w-0">
-          <span className="block font-medium text-theme-sm text-gray-700 dark:text-gray-400">
-            {user.name}
-          </span>
-          <span className="mt-0.5 block truncate text-theme-xs text-gray-500 dark:text-gray-400">
-            {user.email}
-          </span>
+        <div className="flex items-start gap-3">
+          <Avatar size="md" shape="circle">
+            <AvatarFallback name={label} />
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <span className="block truncate font-medium text-theme-sm text-gray-800 dark:text-white/90">
+              {label}
+            </span>
+            <span className="mt-0.5 block truncate text-theme-xs text-gray-500 dark:text-gray-400">
+              {user.email}
+            </span>
+            <Badge variant="light" color="primary" className="mt-2">
+              {roleLabel}
+            </Badge>
+          </div>
         </div>
+
+        <DevUserSwitcher
+          currentUsername={user.name}
+          onSwitched={() => setOpen(false)}
+        />
 
         <ul className="flex flex-col gap-1 border-b border-gray-200 pt-4 pb-3 dark:border-gray-800">
           {canReturnToWorkspace ? (

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type ChartPanelProps = {
@@ -48,9 +50,14 @@ export function ChartPanel({
           </Button>
         </div>
       ) : empty ? (
-        <div className="flex min-h-[180px] items-center justify-center text-theme-sm text-gray-500">
-          暂无数据
-        </div>
+        <PanelEmptyState
+          icon={<BarChart3 className="size-6" aria-hidden />}
+          title="暂无数据"
+          description="当前查询未返回结果，请调整筛选条件或 SQL 后重试。"
+          size="sm"
+          tone="neutral"
+          className="rounded-lg border border-dashed border-gray-200 dark:border-gray-800"
+        />
       ) : (
         children
       )}

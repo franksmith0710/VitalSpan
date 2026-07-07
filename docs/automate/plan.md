@@ -1,46 +1,68 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = 第一个含未完成 `[ ]` 的节（**M-FE-1**）。
-> **全量路线图**：本文件含 **M1–M13 + M-FE**（**124** 项 PRD）；**当前执行范围** = **前三期**（M-FE + M2–M12，**94** 项）；**M13 四期冻结**。
+> **当前节** = **M-FINAL · 四期收官 + 连接器补缺**（**唯一活跃节**）。**P1–P3 已收官**（94/94）；**最后一期**共 **38** 项待办（33 PRD + 5 companion†）；**CONN-023~027 已立项**（prd v1.2.97 · F-G，状态未实现）。
+> **全量路线图**：M1–M12 + M-FE-1~3 已完成；**PRD 总数 129**；当前 **96 / 129 已实现**。
 > **完成定义**：`[x]` = PRD 分片「已实现」且验收标准全勾；`[ ]` =「部分实现」或未达浏览器/集成验收（含 FE companion）。
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F01-BOOT.md`](./prd/F01-BOOT.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)。
 
 ```yaml
-version: 2.1.0
-last_updated: 2026-07-06
+version: 2.5.1
+last_updated: 2026-07-07
 archive_ref: docs/automate/plan.archive.md
-execute_scope: P1-P3
-frozen_milestone: M13
-roadmap: M1-M12+M-FE
-prd_total: 124
-prd_in_scope: 94
-prd_completed_in_scope: 45
-prd_remaining_in_scope: 49
-current_milestone: M-FE-1
-queued_milestone: M-FE-2
-intervention: scope-p1-p3-first-2026-07-06
-scope_change: M13-deferred-until-P1-P2-P3-smoke-pass
-plan_review: 2026-07-06-three-phase-execution
+execute_scope: M-FINAL
+frozen_milestone: null
+roadmap: M1-M12+M-FE-1~3+M-FINAL
+prd_total: 129
+prd_in_scope: 129
+prd_completed_in_scope: 96
+prd_remaining_in_scope: 33
+companion_scope: M-FINAL-F-A,M-FINAL-F-B
+companion_remaining: 5
+current_milestone: M-FINAL
+queued_milestone: null
+intervention: plan-prd-v1.2.95-align-2026-07-07
+scope_change: M-FE-4-5-M13-F-G-merged-to-M-FINAL
+plan_review: 2026-07-07-final-phase-audit
+prd_hub_ref: docs/automate/prd.md@v1.2.97
+f_g_prd_status: registered-unimplemented
 ```
 
-### 执行范围：前三期（产品决策 2026-07-06）
+### 执行范围：M-FINAL 最后一期收官（产品决策 2026-07-07 人工确认）
 
-> **决策**：先交付 SRS **一期 + 二期 + 三期**核心 BI 能力（建源→查询→Dashboard/报表→嵌入）；**四期 M13**（Dataset、设计器、治理全流程、信创连接器）冻结，待 P1/P2/P3-SMOKE 全过后再 `create-evolution-plan` 激活。  
-> **依据**：`goal.md` G1–G3 主体在一～三期；G5/M1-DATASET 属四期；一至三期图表仍 **直连 dataSourceId + SQL**（不经 Dataset）。
+> **决策**：将 **M-FE-4/5**（FE companion）、**M13**（四期 28 项）、**F-G**（CONN-023~027 缺口连接器）合并为单一当前节 **§M-FINAL**；收官后无后续 PRD 里程碑（companion 清扫不在本合同内）。  
+> **PRD 对齐**：`CONN-023~027` 已于 prd **v1.2.97** 写入 `F04-CONN.md` + hub（`feature_count: 129`）；`goal.md` §4 In Scope 已同步。  
+> **依据**：`goal.md` G3/G4/G5；`layout.md` §3/§6；一至三期图表仍 **直连 dataSourceId + SQL**（不经 Dataset）。
 
-| 范围 | 里程碑 | PRD 项 | 已实现 | 待完成 | 状态 |
-|------|--------|--------|--------|--------|------|
+| 范围 | 子批 | PRD 项 | 已实现 | 待完成 | 状态 |
+|------|------|--------|--------|--------|------|
 | P0 | M1 + M1B | 12 | 12 | 0 | 已完成 |
-| FE 先导 | M-FE-1 ~ M-FE-3 | 13* | 0 | 13 | **当前执行** |
-| **一期** | M2 – M6 | 38 | 26 | 12 | **当前执行** |
-| **二期** | M7 – M10 | 25 | 0 | 25 | 排队 |
-| **三期** | M11 – M12 | 26 | 7 | 19 | 排队 |
-| ~~四期~~ | ~~M13~~ | ~~30~~ | ~~2~~ | ~~28~~ | **冻结** |
+| FE 先导 | M-FE-1 ~ M-FE-3 | 13* | 13 | 0 | 已完成 |
+| **最后一期** | **M-FINAL · F-A**（IA） | **5†** | **0** | **5** | **当前节 · 建议首轮** |
+| | **M-FINAL · F-B**（RBAC FE） | † | 0 | 2 | 依赖 F-A |
+| | **M-FINAL · F-C**（信创连接器） | 6 | 0 | 6 | 可并行 F-A 后 |
+| | **M-FINAL · F-D**（语义层） | 7 | 0 | 7 | 依赖 F-A |
+| | **M-FINAL · F-E**（设计器治理） | 11 | 0 | 11 | 依赖 F-D |
+| | **M-FINAL · F-F**（四期 NFR） | 6 | 2 | 4 | F-E 后 |
+| | **M-FINAL · F-G**（缺口连接器） | 5 | 0 | 5 | F-F 后（已立项） |
+| 一期–三期 | M2 – M12 | 88 | 88 | 0 | 已完成 |
 
-\* M-FE 与 M2–M5 有 ID 重叠，为浏览器交付轨。
+\* M-FE 与 M2–M5 有 ID 重叠，为浏览器交付轨。  
+† F-A/F-B companion 行映射既有 PRD ID（BOOT-002、DS-007、AUTH-004），不计入 129 PRD 计数。
 
-**推荐执行顺序**：`M-FE-1 → M-FE-2 → M-FE-3 → M3 CONN → M5 → M6（P1-SMOKE）→ M7–M10 → M11–M12（P3-SMOKE）`
+**推荐执行顺序（全局）**：
+
+```
+F-A  BOOT-002(manifest) → DS-007(连接器子项) → BOOT-002(里程碑过滤+报表 subItems)
+  → F-B  AUTH-004(资源授权 UI) → BOOT-002(能力驱动导航)
+  ∥ F-C  CONN-017~022（信创连接器 UI + compose 收官）
+  → F-D  META-001~004 + QUERY-007~009（语义层 / Dataset）
+  → F-E  DESIGN-001~005 + GOV-003~008（设计器 + 治理闭环）
+  → F-F  NFR-003/005/007/008（四期 NFR）
+  → F-G  CONN-023~027（API/Excel/Db2/Impala/Redshift）
+```
+
+**G2 选题约束**：每轮从 **§M-FINAL 含 `[ ]` 的子批**取 **3–5 项**；**首轮建议 F-A 全量 3 项**；F-B 依赖 F-A manifest；**F-G 建议 F-A 收官后、F-F 前可选**（CONN-023~027 已立项，分片状态未实现）。
 
 **前三期完成信号**（不新增 PRD ID）：
 
@@ -49,6 +71,32 @@ plan_review: 2026-07-06-three-phase-execution
 | P1-SMOKE | M-FE-2 + M6 · MySQL/PG 建源 → SQL → Dashboard 出数 + 越权失败 |
 | P2-SMOKE | M8–M10 · 扩展连接器 + 实体总览 + 预制报表/模板 |
 | P3-SMOKE | M11–M12 · 调度 + 嵌入 SDK + 完整图表消费路径 |
+
+### 对标校准（DataEase / Superset · 2026-07-07 调研）
+
+> **结论**：**大方向不改**（`goal.md` G1–G5 仍成立）；差距主要在 **体验层（IA/RBAC FE）**、**四期语义层收官**、**F-G 连接器实现**；**不追** DataEase SQLBot/AI 问数（无 SRS/PRD，非当期对标项）。
+
+| 维度 | DataEase 2.x | Superset 4.x+ | VitalSpan 现状 | plan 动作 |
+|------|--------------|---------------|----------------|-----------|
+| 产品形态 | 单应用；数据源→**数据集**→仪表板 | 单应用；Data→SQL Lab→Charts→Dashboards | 单应用 `/admin/*` + RBAC 分菜单 | ✅ 与 SRS ADR 一致；**M-FE-4** 收拢 IA |
+| 数据路径 | 数据集（Calcite SQL）为中心 | Dataset + 新兴 Semantic Layer 扩展 | 一至三期 **直连 SQL**；四期 **Dataset**（M13-B） | ✅ 分期合理；M13-B 对齐 DE Dataset / SS Dataset，**不含** SS Semantic Layer 插件体系 |
+| 连接器 | 20+ 型；缺项 CONN-023~027 | Database 连接器 + 多引擎 | **22** 方言已注册；F-G 五型已立项未实现 | **F-C** 信创收官 → **F-G** 补缺 |
+| 权限 | 组织+角色+资源+行列权限 | Role+Permission；Dataset/Dashboard；`DASHBOARD_RBAC` | 后端 AUTH 全栈；FE 缺资源授权 UI；nav 硬编码三档 | **M-FE-5** |
+| 报表/调度 | 定时报告、模板 | Alerts & Reports | RPT-001~007 已交付 | ✅ 已对标 |
+| 嵌入 | SDK/iframe/API | Embed + SDK | VIZ-006/007 + `/embed/*` | ✅ 已对标 |
+| 数据同步/ETL | SeaTunnel/同步任务 | 无原生（需外部） | **M1B ingestion** 已交付 | ✅ **差异化优势**，保持 |
+| 查询治理/总线 | 无完整对标 | 无完整对标 | M8 GOV + 工单/发布（M13-C） | ✅ **G5 差异化**，保持优先于 AI |
+| AI 问数 | SQLBot 集成（2026） | 社区探索，非核心 | 无 | **Out of Scope**；不纳入 M-FINAL，除非 `create-evolution-goal` 修订 |
+
+**导航工作流对齐（供 M-FE-4 manifest 参考，非新 PRD）**：
+
+```
+数据（源/接入/类型） → 分析（Dashboard/探索） → 报表（模板/运行/调度） → 主题与实体 → 语义层 → 治理 → 系统
+```
+
+对标 DE「数据准备→可视化」与 SS「Data→Explore→Dashboard」；**不把 SQL Lab 单列为顶栏**——由「图表探索 + 查询设计器」分担（SRS FR-1.3 / M13-C）。
+
+**G2 禁止选题（调研登记）**：AI/SQL 智能问数、Superset Semantic Layer 插件扩展、fork DE/SS 运行时。
 
 ## M1 — P0 工程基线
 
@@ -298,7 +346,7 @@ DATA-004 → DATA-001 → DATA-002 → ETL-001 → DATA-003 → DATA-005
 
 ---
 
-## M-FE-1 — 认证与数据源 FE（当前节）
+## M-FE-1 — 认证与数据源 FE【已完成】
 
 > **人工干预（2026-07-06）**：G2 r188 **SATURATED** 熔断后新增；聚焦浏览器可感知缺口（登录、数据源 UI），不重复后端已交付 API。  
 > **PRD 状态说明**：下列 ID 在分片标「已实现」者为本轮 **FE companion 深化**；验收以浏览器可走通 + 分片未勾 `[ ]` 为准，完成后再回写分片。
@@ -544,11 +592,35 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 ---
 
-## M13 — 四期语义层与治理闭环【冻结 · 不在当前执行范围】
+## M-FINAL — 四期收官 + 连接器补缺【当前节】
 
-> **冻结（2026-07-06）**：待 **P1/P2/P3-SMOKE** 全通过后，经 `create-evolution-plan` 激活本节。  
-> **演化 agent**：**只读**本节；G2 **禁止**从本节选题。  
-> **SRS**：§8.4 四期 Workstream、FR-1.2~1.6、FR-2.2、NFR-04/06/08 · **验收**：§8.4 端到端 + §9.1 四期
+> **人工干预（2026-07-07）**：`create-evolution-plan` 最后一期收官确认；合并原 **M-FE-4/5**、**M13**、**F-G（CONN-023~027）** 为单一活跃节 **§M-FINAL**。  
+> **目标**：**129** 项 PRD 全勾「已实现」；达成 `goal.md` §5 四期末治理验收、G3 Dataset 路径、G4 RBAC FE、G5 治理闭环。  
+> **分片状态**：F-C~F-F 多为 **部分实现（L1/companion）**；勾选须 PRD 验收全勾 + 浏览器/集成 smoke。  
+> **SRS**：§8.4 四期 Workstream、FR-1.2~1.6、FR-2.2、NFR-04/06/08 · **验收**：§8.4 端到端 + §9.1 四期 + F-G compose smoke
+
+### F-A — 壳层 IA 与里程碑导航（原 M-FE-4）
+
+> **现状**：`admin-nav.tsx` / `analyst-nav.tsx` / `user-nav.tsx` 平行维护；`resolve-nav.ts` 硬编码三档；**先于** F-B 与 F-D 语义层 FE。
+
+- [ ] BOOT-002: `fe/src/config/nav-manifest.ts` + `resolveNavGroups` 派生侧栏（废弃三份平行 nav 拷贝；「报表」父菜单 `subItems`：预制报表 / 模板 / 调度；路由守卫与 manifest 可见性矩阵一致）
+- [ ] DS-007: 连接器收拢为「数据」分组子项（保留 `/admin/connectors` 路由与 `ConnectorsPage` 只读目录；方案 A：`subItems`「连接管理」「连接器类型」）
+- [ ] BOOT-002: `layout.md` §6 里程碑可见性（viewer/analyst 过滤未到期项；admin 对四期未交付项标「预览」；禁止死链；同步 `docs/ui/layout.md` §3 分组表）
+
+**验收信号**：`resolve-nav.test.ts` · `AdminLayout.smoke.test.tsx` · `routes.smoke.test.tsx` 覆盖三档角色；admin 报表为父菜单 + 子项。
+
+### F-B — RBAC 授权与能力导航（原 M-FE-5）
+
+> **依赖**：F-A `nav-manifest` 完成后再做能力过滤（避免双轨 nav）。
+
+- [ ] AUTH-004: 资源授权 Admin UI（`/admin/system/grants`；对接 `GET/POST /api/v1/resource-grants`；按角色×资源类型 datasource/dashboard/report 绑定）
+- [ ] BOOT-002: 侧栏能力驱动过滤（manifest 项绑定 capability；替代 `canManagePlatform` / `canEditDashboards` 硬编码三档 nav；自定义 role code 在能力满足时可见对应分组）
+
+**验收信号**：dev-switch 切换演示用户后，侧栏由能力点驱动；未授权资源列表与侧栏不可见。
+
+### F-C — 信创连接器 companion 收官（原 M13-A）
+
+> **背景**：后端 L1 已注册（`dialects/dm.py` 等）；PRD 分片未勾「UI 可选」「只读查询集成测」。
 
 - [ ] CONN-017: 达梦 DM 连接器
 - [ ] CONN-018: 人大金仓 连接器
@@ -556,6 +628,9 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [ ] CONN-020: OceanBase 连接器
 - [ ] CONN-021: TiDB 连接器
 - [ ] CONN-022: GaussDB 连接器
+
+### F-D — 语义层与 Dataset 路径（原 M13-B）
+
 - [ ] QUERY-007: 配置元模型存储
 - [ ] QUERY-008: 配置→SQL/API 翻译器
 - [ ] QUERY-009: Dataset 查询路径
@@ -563,6 +638,9 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [ ] META-002: 业务主题树
 - [ ] META-003: 维度字典注册
 - [ ] META-004: Dataset CRUD M1-DATASET
+
+### F-E — 设计器与治理闭环（原 M13-C）
+
 - [ ] DESIGN-001: 拖拽查询条件配置
 - [ ] DESIGN-002: 运算规则维护
 - [ ] DESIGN-003: 输出字段与聚合配置
@@ -574,6 +652,9 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [ ] GOV-006: 发布引擎 OpenAPI 映射
 - [ ] GOV-007: 总线全自动注册 FR-1.1
 - [ ] GOV-008: 治理权限联动 FR-1.6
+
+### F-F — 四期 NFR（原 M13-D）
+
 - [x] API-003: IF-02 查询服务 API（完成于 2026-07-04）
 - [x] API-004: IF-01 总线注册适配（完成于 2026-07-04）
 - [ ] NFR-003: NFR-02 核心看板可用性
@@ -581,4 +662,33 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [ ] NFR-007: NFR-06 信创国产化
 - [ ] NFR-008: NFR-08 自主可控零 DE/SS
 
-> **前三期总验收**（不新增 PRD ID）：见文首「前三期完成信号」表；四期全量回归待 M13 激活后执行。
+### F-G — DataEase 缺口连接器（CONN-023~027）
+
+> **PRD**：`F04-CONN.md` · hub **v1.2.97** · 状态 **未实现** · `goal.md` §4 In Scope 已纳入。  
+> **顺序**：API → Excel/CSV → Db2 → Impala → Redshift。
+
+| 缺口类型 | 对标 DataEase | PRD ID | 优先级 |
+|----------|---------------|--------|--------|
+| API | API 数据源 | CONN-023 | P1 |
+| 文件 | 本地 Excel/CSV、远程文件 | CONN-024 | P1 |
+| OLTP | Db2 | CONN-025 | P2 |
+| OLAP | Apache Impala | CONN-026 | P3 |
+| 数据湖 | AWS Redshift | CONN-027 | P3 |
+
+- [ ] CONN-023: REST API 数据源连接器
+- [ ] CONN-024: Excel/CSV 文件源连接器
+- [ ] CONN-025: IBM Db2 连接器
+- [ ] CONN-026: Apache Impala 连接器
+- [ ] CONN-027: AWS Redshift 连接器
+
+### M-FINAL 收官信号
+
+| 验收 | 映射 |
+|------|------|
+| P4-SMOKE | F-D~F-E · Dataset 建表 → 设计器 → 工单审批 → 发布 → 总线注册 |
+| 四期 NFR | F-F · 可用性/插件扩展/信创/零 DE·SS 部署报告 |
+| 连接器补缺 | F-G · `GET /datasources/types` 含 5 新类型 + compose smoke |
+| 全量回归 | M-FINAL 收官后 · P1~P3 smoke 不重跑绑定模型变更 |
+
+> **前三期总验收**（不新增 PRD ID）：见文首「前三期完成信号」表。  
+> **明确不含**：DataEase SQLBot / AI 问数（见文首「对标校准」）。
