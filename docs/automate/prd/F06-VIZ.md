@@ -53,17 +53,17 @@
 - **里程碑对齐**：
 ### [VIZ-005] 维度指标筛选配置 UI
 
-- **状态**：部分实现（r236 companion：多维度/指标/筛选器动态增删 + native mode 执行链）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
-- **描述**：维度指标筛选配置 UI（SRS 追溯项）。r42 交付 FieldRule + registry 驱动校验；r43 companion 交付 `ChartConfigPanel` 维度/指标字段绑定与 style_variant 选择；r236 交付多字段/筛选器动态增删与 native execute 联动；时间范围选择器留后续。
+- **描述**：维度指标筛选配置 UI（SRS 追溯项）。r42 交付 FieldRule + registry 驱动校验；r43 companion 交付 `ChartConfigPanel` 维度/指标字段绑定与 style_variant 选择；r236 交付多字段/筛选器动态增删与 native execute 联动；r237 交付 `timeRange` 相对/绝对 preset + sql `time_start`/`time_end` 注入链。
 - **验收标准**：
   - [x] 维度/指标/筛选器可配置（`ChartConfigPanel` 多字段动态增删 + operator/value 筛选器 + 后端 FieldRule 校验链）
   - [x] native mode 图表执行链（r236：`useChartExecute` mode=native + `ChartRenderer` rerun）
-  - [ ] 时间范围选择（未实现，留后续轮次）
-- **代码锚点**：`backend/app/viz/specs.py`（FieldRule）· `backend/app/schemas/chart_view.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartViewConfig.ts` · `fe/src/lib/chartViewConfig.test.ts`
-- **演化建议**：时间范围选择器 + 筛选器与 query 执行参数联动；Playwright E2E 真实出数
-- **里程碑对齐**：
+  - [x] 时间范围选择（r237：`TimeRangeConfig` + `ChartTimeRangeRef` FE/BE 校验 + `buildTimeRangeParameters` sql 注入）
+- **代码锚点**：`backend/app/viz/specs.py`（FieldRule）· `backend/app/schemas/chart_view.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/TimeRangeConfig.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartViewConfig.ts` · `tests/test_m11_batch3_r237.py` T-VIZ-R237-005-01~02
+- **演化建议**：Playwright E2E 真实出数；native mode timeRange 执行链扩展
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [VIZ-006] iframe 嵌入门户
 
 - **状态**：已实现
@@ -78,17 +78,17 @@
 - **里程碑对齐**：
 ### [VIZ-007] SDK 嵌入门户
 
-- **状态**：部分实现（companion r63）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
-- **描述**：SDK 嵌入门户（SRS 追溯项）。
+- **描述**：SDK 嵌入门户（SRS 追溯项）。r61 L1 后端 sdk_portal + lifecycle；r63 companion perf probe/ACL；r237 交付 FE `embedSdk.ts` + `public/sdk/vitalspan-embed.js` + `EmbedSdkDemoPage` token 透传 iframe 链。
 - **验收标准**：
   - [x] JS SDK 初始化与销毁（r61 L1 backend：`POST /api/v1/charts/sdk/validate` + lifecycle init/destroy + capabilities + `VIZ_SDK_*` 错误域；embed/validate 回归不变）
   - [x] companion perf probe + lifecycle ACL（r63：`probe_validate_sdk_budget_ms`/`probe_lifecycle_budget_ms` ≤50ms；`VIZ_SDK_TOKEN_REQUIRED`/`VIZ_SDK_DUPLICATE_ORIGIN`/`VIZ_SDK_FORBIDDEN`）
-  - [ ] 鉴权 token 传递（缺 fe `fe/src/sdk/` 与 embed token 签发/校验链）
-- **代码锚点**：`backend/app/viz/sdk_portal/` · `backend/app/api/v1/charts.py` · `tests/test_viz_view_design_cat_r63.py` T-VIZ-R63-007-01~08 · `tests/test_cat_dash_viz_nfr_r61.py` T-VIZ-R61-007-01~07
-- **演化建议**：r63 companion 闭合 sdk portal probe、token 必填、duplicate origin 与 lifecycle ACL；后续补 fe JS SDK 初始化/销毁与 token 传递链
-- **里程碑对齐**：
+  - [x] 鉴权 token 传递（r237：`fe/src/sdk/embedSdk.ts` init 调 `GET /embed/sdk-params` + iframe `token` query；`fe/src/sdk/embedSdk.test.ts` T-VIZ-R237-007-01~03）
+- **代码锚点**：`backend/app/viz/sdk_portal/` · `backend/app/api/v1/embed.py`（GET /embed/sdk-params）· `fe/src/sdk/embedSdk.ts` · `fe/public/sdk/vitalspan-embed.js` · `fe/src/pages/embed/EmbedSdkDemoPage.tsx` · `tests/test_m11_batch3_r237.py` T-VIZ-R237-007-04
+- **演化建议**：完整 iframe 跨域 SSO 与 embed token 签发轮换；M12 VIEW-003 用户视图覆盖联动
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [VIZ-008] ECharts/AntV 渲染适配层
 
 - **状态**：已实现

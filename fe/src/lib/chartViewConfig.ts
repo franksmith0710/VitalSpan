@@ -27,6 +27,22 @@ export type ChartFilterRef = {
   value: string | number | boolean | string[];
 };
 
+export type ChartTimeRangePreset =
+  | "last_7d"
+  | "last_30d"
+  | "last_90d"
+  | "mtd"
+  | "ytd";
+
+export type ChartTimeRangeRef = {
+  enabled: boolean;
+  mode: "relative" | "absolute";
+  field?: string;
+  relativePreset?: ChartTimeRangePreset;
+  start?: string;
+  end?: string;
+};
+
 export type ChartViewConfig = {
   chartType: ChartType;
   styleVariant?: string;
@@ -42,6 +58,7 @@ export type ChartViewConfig = {
   dimensions?: ChartFieldRef[];
   metrics?: ChartFieldRef[];
   filters?: ChartFilterRef[];
+  timeRange?: ChartTimeRangeRef;
 };
 
 const BASIC_TYPES: ChartType[] = ["table", "line", "bar"];

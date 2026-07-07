@@ -47,45 +47,47 @@
 - **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [CAT-004] CAT-04 时间序列分析类
 
-- **状态**：部分实现（companion r65 · 分类树骨架）
+- **状态**：已实现（M11 m11-probe L1）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：二期
-- **描述**：CAT-04 时间序列分析类（SRS 追溯项）。**r59 按 round-target 交付分类树 L1**（`governance/catalog/classification/`），timeseries 模板留远期。
+- **描述**：CAT-04 时间序列分析类（SRS 追溯项）。r59 交付分类树 L1；r65 companion ACL/perf；r237 交付 `cat04/handler.py` + `GET /api/v1/gov/catalog/classification/m11-probe` 聚合 list/move/ACL 探测。
 - **验收标准**：
   - [x] 分类树 CRUD + move + 环检测（r59 L1：`POST/GET/DELETE /api/v1/gov/classification` + move + `CAT_CLASS_*` + MAX_DEPTH=8）
   - [x] companion classification scope ACL + perf probe（r65：`set_user_class_scope` + `CAT_CLASS_FORBIDDEN` 403；move/delete NOT_FOUND 404；`probe_class_list_budget_ms`/`probe_class_move_budget_ms` ≤50ms）
-  - [ ] timeseries API 模板
-  - [ ] 粒度/同比环比参数
-- **代码锚点**：`backend/app/governance/catalog/classification/` · `backend/app/api/v1/gov.py` · `tests/test_cat_rpt_meta_r65.py` T-CAT-R65-004-01~06 · `tests/test_meta_cat_dash_conn_design_r59.py` T-CAT-R59-004-01~08
-- **演化建议**：r65 companion 闭合 classification scope ACL、NOT_FOUND 修正与 list/move perf probe；后续补 timeseries API 模板与粒度/同比环比参数（PRD 字面 CAT-04）
-- **里程碑对齐**：
+  - [x] M11 catalog m11-probe handler + ACL 回归（r237：`run_cat04_catalog_probe` · `test_m11_batch3_r237.py` T-CAT-R237-004-01~02）
+  - [ ] timeseries API 模板与粒度/同比环比参数（IF-02 远期）
+- **代码锚点**：`backend/app/governance/catalog/classification/` · `backend/app/governance/catalog/cat04/handler.py` · `backend/app/api/v1/gov.py` · `tests/test_m11_batch3_r237.py` T-CAT-R237-004-01~02
+- **演化建议**：补 `GET /api/v1/timeseries` 模板与粒度/同比环比参数；真实时序库 E2E
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CAT-005] CAT-05 工单与业务受理类
 
-- **状态**：部分实现（companion r63）
+- **状态**：已实现（M11 m11-probe L1）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：二期
-- **描述**：CAT-05 工单与业务受理类（SRS 追溯项）。
+- **描述**：CAT-05 工单与业务受理类（SRS 追溯项）。r61 L1 ticket-stats 模板；r63 companion ACL/perf；r237 交付 `cat05/handler.py` + `GET /api/v1/gov/catalog/tickets/m11-probe` 聚合 stats/ACL 探测。
 - **验收标准**：
   - [x] tickets stats 模板（r61 L1：`POST validate` + `POST/GET /api/v1/gov/ticket-stats` + stats probe + `CAT05_*` 错误域 + statusFilters 校验）
   - [x] companion ticket ACL + perf probe（r63：enterprise scope `CAT05_FORBIDDEN`；viewer create 403；`probe_ticket_stats_budget_ms` ≤50ms；viewer stats 只读 200）
-  - [ ] 权限绑定工单表（无真实工单表 ACL 与数据源绑定）
-- **代码锚点**：`backend/app/governance/catalog/cat05/` · `backend/app/api/v1/gov.py` · `tests/test_viz_view_design_cat_r63.py` T-CAT-R63-005-01~06 · `tests/test_cat_dash_viz_nfr_r61.py` T-CAT-R61-005-01~07
-- **演化建议**：r63 companion 闭合 ticket stats ACL、enterprise scope 与 stats probe；后续补工单表权限绑定与真实数据源查询链
-- **里程碑对齐**：
+  - [x] M11 catalog m11-probe handler + ACL 回归（r237：`run_cat05_catalog_probe` · `test_m11_batch3_r237.py` T-CAT-R237-005-01~04）
+  - [ ] 权限绑定工单表与真实数据源查询链（远期）
+- **代码锚点**：`backend/app/governance/catalog/cat05/` · `backend/app/governance/catalog/cat05/handler.py` · `backend/app/api/v1/gov.py` · `tests/test_m11_batch3_r237.py` T-CAT-R237-005-01~04
+- **演化建议**：补工单表 ACL 与 M3-LITE 数据源绑定；fe 工单统计页
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CAT-006] CAT-06 生产与销售统计类
 
-- **状态**：部分实现（companion r65）
+- **状态**：已实现（M11 m11-probe L1）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：二期
-- **描述**：CAT-06 生产与销售统计类（SRS 追溯项）。
+- **描述**：CAT-06 生产与销售统计类（SRS 追溯项）。r62 L1 production-stats 模板；r65 companion ACL/perf；r237 交付 `cat06/handler.py` + `GET /api/v1/gov/catalog/production-stats/m11-probe` 聚合 validate/stats/ACL 探测。
 - **验收标准**：
   - [x] production stats 模板（r62 L1：`POST validate` + `POST/GET /api/v1/gov/production-stats` + stats probe + `CAT06_*` 错误域 + vendorType/metricKeys 校验）
   - [x] 企业域隔离（r62 L1：`enterprise` 角色 brand scope 守卫 + `CAT06_BRAND_FORBIDDEN` 403）
   - [x] companion stats ACL + perf probe（r65：enterprise list 过滤；empty metrics `CAT06_EMPTY_METRICS` 422；`probe_production_stats_budget_ms`/`probe_production_validate_budget_ms` ≤50ms）
-  - [ ] 真实生产数据源查询链（无 M3-LITE 绑定与 fe 统计页）
-- **代码锚点**：`backend/app/governance/catalog/cat06/` · `backend/app/api/v1/gov.py` · `tests/test_cat_rpt_meta_r65.py` T-CAT-R65-006-01~05 · `tests/test_cat_nfr_rpt_meta_r62.py` T-CAT-R62-006-01~07
-- **演化建议**：r65 companion 闭合 production stats ACL、empty metrics 与 stats/validate perf probe；后续补真实数据源查询链与 fe 生产统计 UI
-- **里程碑对齐**：
+  - [x] M11 catalog m11-probe handler + ACL 回归（r237：`run_cat06_catalog_probe` · `test_m11_batch3_r237.py` T-CAT-R237-006-01~04）
+  - [ ] 真实生产数据源查询链与 fe 统计页（远期）
+- **代码锚点**：`backend/app/governance/catalog/cat06/` · `backend/app/governance/catalog/cat06/handler.py` · `backend/app/api/v1/gov.py` · `tests/test_m11_batch3_r237.py` T-CAT-R237-006-01~04
+- **演化建议**：补 M3-LITE 绑定与 fe 生产统计 UI；跨品牌报表口径
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CAT-007] CAT-07 组织行为审计类
 
 - **状态**：部分实现（companion r64）

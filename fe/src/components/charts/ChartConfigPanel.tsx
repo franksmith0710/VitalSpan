@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { TimeRangeConfig } from "@/components/charts/TimeRangeConfig";
 
 type Props = {
   config: ChartViewConfig;
@@ -258,6 +259,13 @@ export function ChartConfigPanel({ config, columns, onChange }: Props) {
             </div>
           ))}
         </div>
+
+        <TimeRangeConfig
+          value={config.timeRange}
+          columns={columns}
+          disabled={columnsDisabled}
+          onChange={(timeRange) => onChange({ ...config, timeRange })}
+        />
 
         <div>
           <Label>样式子类型</Label>

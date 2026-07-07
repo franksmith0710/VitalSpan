@@ -24,6 +24,7 @@ import { EntityOverviewPage } from "@/pages/admin/entities/EntityOverviewPage";
 import { PrefabReportsPage } from "@/pages/admin/reports/PrefabReportsPage";
 import { ReportTemplatesPage } from "@/pages/admin/reports/ReportTemplatesPage";
 import { ThemeAnalysisPage } from "@/pages/admin/themes/ThemeAnalysisPage";
+import { EmbedSdkDemoPage } from "@/pages/embed/EmbedSdkDemoPage";
 
 export function AppRoutes() {
   return (
@@ -60,6 +61,7 @@ export function AppRoutes() {
       <Route path="/embed" element={<EmbedLayout />}>
         <Route path="chart/:chartId" element={<EmbedChartPage />} />
         <Route path="share" element={<EmbedSharePanel />} />
+        <Route path="sdk-demo" element={<EmbedSdkDemoPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>

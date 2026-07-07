@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import uuid
 from typing import Any, Literal
 
@@ -38,6 +39,35 @@ class ChartFilterRef(BaseModel):
     value: str | int | float | bool | list[str]
 
 
+ChartTimeRangePreset = Literal["last_7d", "last_30d", "last_90d", "mtd", "ytd"]
+
+
+class ChartTimeRangeRef(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    enabled: bool = False
+    mode: Literal["relative", "absolute"] = "relative"
+    field: str | None = Field(default=None, max_length=128)
+    relative_preset: ChartTimeRangePreset | None = Field(default=None, alias="relativePreset")
+    start: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    end: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+    @model_validator(mode="after")
+    def validate_time_range(self) -> ChartTimeRangeRef:
+        if not self.enabled:
+            return self
+        if self.field is not None and not re.match(r"^[a-zA-Z_][\w]*$", self.field):
+            raise ValueError("CHART_INVALID_TIME_FIELD:field must be a valid identifier")
+        if self.mode == "relative":
+            if self.relative_preset is None:
+                raise ValueError("CHART_MISSING_TIME_PRESET:relativePreset is required")
+            return self
+        if not self.start or not self.end:
+            raise ValueError("CHART_MISSING_TIME_BOUNDS:start and end are required for absolute mode")
+        if self.start > self.end:
+            raise ValueError("CHART_INVALID_TIME_BOUNDS:start must be <= end")
+        return self
+
+
 class ChartViewConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     chart_type: str = Field(alias="chartType")
@@ -54,6 +84,7 @@ class ChartViewConfig(BaseModel):
     dimensions: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     metrics: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     filters: list[ChartFilterRef] = Field(default_factory=list, max_length=16)
+    time_range: ChartTimeRangeRef | None = Field(default=None, alias="timeRange")
 
     @model_validator(mode="after")
     def validate_l1_rules(self) -> ChartViewConfig:
