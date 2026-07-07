@@ -350,12 +350,12 @@ describe("AdminLayout smoke", () => {
   it("viewer role: sidebar has no 系统 or 数据 section headings (T-FE-SMFA-04)", () => {
     setDesktopViewport(1400);
     mockUseAuth.mockReturnValueOnce({
-      user: { id: "2", username: "viewer", roles: ["viewer"] as const },
+      user: { id: "2", username: "viewer", roles: ["viewer"] },
       isLoading: false,
       isAuthenticated: true,
       logout: vi.fn(),
       refresh: vi.fn(async () => {}),
-    });
+    } as unknown as ReturnType<typeof mockUseAuth>);
 
     render(
       <MemoryRouter initialEntries={["/admin"]}>

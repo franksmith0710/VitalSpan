@@ -74,7 +74,6 @@ describe("resolveNavGroups", () => {
       sessionUserFromAuth("admin", ["admin"]),
       new Set(["M1"]),
     );
-    const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
     // M13 items show as preview for admin even with M1-only caps
     const allItems = groups.flatMap((g) => g.items);
     const designer = allItems.find((i) => i.name === "查询设计器");
