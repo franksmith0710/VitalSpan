@@ -13,7 +13,7 @@
   - [x] OpenAPI IF-06 tag/示例（`openapi/extensions.py`）
   - [x] path 参数与 POST/GET response example + 401 smoke（r31）
 - **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/openapi/extensions.py`
-- **演化建议**：r31 IF-06 datasources path/response 示例与鉴权 smoke（T-API-R31-001~004）；后续可补对外 alias 与只读/管理分离策略文档
+- **演化建议**：r31 IF-06 datasources path/response 示例与鉴权 smoke（T-API-R31-001~004）；r250 补 P95≤500ms 验证（T-API-R250-001-01~02）、invalid UUID 结构化错误（T-API-R250-001-03）、X-Trace-Id 透传（T-API-R250-001-04）；后续可补对外 alias 与只读/管理分离策略文档
 - **里程碑对齐**：
 ### [API-002] IF-06 查询执行 API
 

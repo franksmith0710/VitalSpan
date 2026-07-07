@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.107
+version: 1.2.108
 last_updated: 2026-07-07
 truth_source: true
 evolution_hub: true
@@ -17,20 +17,20 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-07 · 规范见 `prd-scoring` · 本轮重评：NFR-008、CONN-023~026（91.0~94.1↑；F-F 收官 + F-G 首批四型）
+> 更新：2026-07-07 · 规范见 `prd-scoring` · 本轮重评：CONN-027、API-001、VIZ-003、VIZ-004、VIZ-008（90.1~91.4↑；M-FINAL F-G 收官）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
-| 1 | CONN-027 | 连接器项 | 85.4 | 完整度 | M-FINAL · F-G |
-| 2 | API-001 | 集成项 | 90.0 | 性能 | 见期次 |
-| 3 | VIZ-003 | 可视化项 | 90.1 | 用户价值 | 见期次 |
-| 4 | VIZ-004 | 可视化项 | 90.1 | 用户价值 | 见期次 |
-| 5 | VIZ-008 | 可视化项 | 90.1 | 用户价值 | 见期次 |
-| 6 | VIZ-006 | 可视化项 | 90.2 | 性能 | 见期次 |
-| 7 | API-002 | 集成项 | 90.2 | 性能 | 见期次 |
-| 8 | API-005 | 集成项 | 90.2 | 用户价值 | 见期次 |
-| 9 | VIZ-007 | 可视化项 | 90.2 | 用户价值 | 见期次 |
-| 10 | API-003 | 集成项 | 90.4 | 用户价值 | 见期次 |
+| 1 | CONN-027 | 连接器项 | 90.1 | 性能 | M-FINAL 已收官 |
+| 2 | API-002 | 集成项 | 90.2 | 性能 | 见期次 |
+| 3 | API-005 | 集成项 | 90.2 | 用户价值 | 见期次 |
+| 4 | VIZ-006 | 可视化项 | 90.2 | 性能 | 见期次 |
+| 5 | API-003 | 集成项 | 90.4 | 用户价值 | 见期次 |
+| 6 | API-001 | 集成项 | 90.6 | 用户价值 | 见期次 |
+| 7 | API-006 | 集成项 | 90.6 | 用户价值 | 见期次 |
+| 8 | BOOT-005 | 启动项 | 90.7 | 用户价值 | 见期次 |
+| 9 | API-004 | 集成项 | 90.7 | 用户价值 | 见期次 |
+| 10 | AUTH-006 | 鉴权项 | 90.8 | 用户价值 | 见期次 |
 
 ---
 
@@ -88,7 +88,7 @@ domain_count: 16
 | CONN-024 | 88 | 96 | 94 | N/A | 90 | 98 | 88 | 90 | 92.4 | 性能 |
 | CONN-025 | 88 | 96 | 94 | N/A | 90 | 98 | 88 | 90 | 92.4 | 性能 |
 | CONN-026 | 88 | 94 | 92 | N/A | 90 | 96 | 88 | 88 | 91.0 | 安全性 |
-| CONN-027 | 86 | 84 | 84 | N/A | 88 | 84 | 86 | 86 | 85.4 | 完整度 |
+| CONN-027 | 88 | 92 | 92 | N/A | 90 | 92 | 86 | 90 | 90.1 | 性能 |
 | QUERY-001 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 92 | 92.8 | 架构健康 |
 | QUERY-002 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 88 | 92.4 | 安全性 |
 | QUERY-003 | 88 | 94 | 96 | N/A | 90 | 100 | 90 | 90 | 92.6 | 用户价值 |
@@ -100,12 +100,12 @@ domain_count: 16
 | QUERY-009 | 88 | 96 | 94 | N/A | 90 | 98 | 90 | 90 | 92.6 | 用户价值 |
 | VIZ-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | VIZ-002 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 90 | 93.2 | 性能 |
-| VIZ-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
-| VIZ-004 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
+| VIZ-003 | 86 | 92 | 96 | N/A | 90 | 100 | 88 | 88 | 91.4 | 用户价值 |
+| VIZ-004 | 86 | 92 | 96 | N/A | 90 | 100 | 88 | 88 | 91.4 | 用户价值 |
 | VIZ-005 | 88 | 98 | 96 | N/A | 90 | 100 | 88 | 88 | 93.0 | 用户价值 |
 | VIZ-006 | 84 | 90 | 94 | N/A | 88 | 98 | 86 | 90 | 90.2 | 性能 |
 | VIZ-007 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
-| VIZ-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
+| VIZ-008 | 86 | 92 | 96 | N/A | 90 | 100 | 88 | 88 | 91.4 | 用户价值 |
 | DASH-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | DASH-002 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 88 | 92.9 | 安全性 |
 | DASH-003 | 88 | 98 | 94 | N/A | 90 | 100 | 88 | 88 | 92.5 | 用户价值 |
@@ -141,7 +141,7 @@ domain_count: 16
 | DESIGN-003 | 88 | 94 | 94 | 88 | 92 | 100 | 90 | 90 | 92.0 | 用户价值 |
 | DESIGN-004 | 90 | 94 | 96 | 88 | 90 | 100 | 90 | 94 | 92.8 | 用户价值 |
 | DESIGN-005 | 88 | 92 | 96 | 86 | 90 | 100 | 90 | 90 | 91.6 | 交互体验 |
-| API-001 | 82 | 90 | 90 | N/A | 90 | 96 | 86 | 88 | 90.0 | 性能 |
+| API-001 | 84 | 92 | 92 | N/A | 90 | 98 | 92 | 88 | 90.6 | 用户价值 |
 | API-002 | 82 | 90 | 92 | N/A | 88 | 96 | 86 | 88 | 90.2 | 性能 |
 | API-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
 | API-004 | 84 | 90 | 96 | N/A | 90 | 98 | 88 | 90 | 90.7 | 用户价值 |
@@ -200,15 +200,15 @@ domain_count: 16
 
 ## 执行范围（与 plan 对齐）
 
-> 更新：2026-07-07 · 来源 [`plan.md`](./plan.md) v2.5.1 · hub **v1.2.107**
+> 更新：2026-07-07 · 来源 [`plan.md`](./plan.md) v2.5.1 · hub **v1.2.108**
 
 | 字段 | 值 |
 |------|-----|
-| 当前执行 | **M-FINAL 最后一期收官**（22 待办：21 PRD + 1 companion†） |
-| 已收官 | **P1–P3**（M-FE-1~3 + M2–M12，94 项）+ **M-FINAL F-A/F-B/F-C/F-F** companion |
-| PRD 进度 | **123** 已实现 · **5** 部分实现 · **1** 未实现（**129** 合同项） |
-| 当前节 | **M-FINAL · F-G**（CONN-027 Redshift 余 1 项；F-F 已于 2026-07-07 收官） |
-| G2 选题 | 从 M-FINAL 含 `[ ]` 的子批取 3–5 项；**F-G CONN-027** 余 1 项 |
+| 当前执行 | **M-FINAL 全部收官**（22 待办全部完成：21 PRD + 1 companion†） |
+| 已收官 | **P1–P3**（M-FE-1~3 + M2–M12，94 项）+ **M-FINAL F-A/F-B/F-C/F-F/F-G** |
+| PRD 进度 | **124** 已实现 · **5** 部分实现 · **0** 未实现（**129** 合同项） |
+| 当前节 | **M-FINAL · F-G 已收官**（CONN-027 Redshift 已实现；M-FINAL 全 PRD 已实现） |
+| G2 选题 | M-FINAL 全 PRD 已实现；下轮由 picker 决定（饱和态或归档） |
 
 **说明**：PRD 合同 **129** 项（含 M-FINAL · F-G 五型 CONN-023~027）；† companion 不计入 PRD 总数。
 
@@ -221,7 +221,7 @@ domain_count: 16
 | F-E | GOV-007 ~ GOV-008 | 已实现 |
 | F-F | NFR-003、NFR-005、NFR-007、NFR-008 | 已实现 |
 | F-G | CONN-023 ~ CONN-026 | 已实现 |
-| F-G | CONN-027 | 未实现 |
+| F-G | CONN-027 | 已实现 |
 
 > F-A/F-B 为 companion（BOOT-002、DS-007、AUTH-004 FE），对应分片状态「已实现」指后端/API 已交付。
 
@@ -238,6 +238,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.108 | 2026-07-07 | P5 r250 重评 CONN-027、API-001、VIZ-003/004/008（M-FINAL F-G 收官 + hub companion）；r250 13/13 + fe vitest 37/37 + ruff 0 + check:design 201 files；CONN-027 RedshiftConnector PG 委托 + REDSHIFT_* 错误域 + probe_readonly_sql + 7 backend + 2 FE smoke；API-001 P95≤500ms + traceId + structured error；VIZ-003 fallback/isKnownChartType；VIZ-004 buildBarOption/buildPieOption；VIZ-008 empty data 防护 + AdvancedEchartsChart 空态覆盖；CONN-027: 85.4→90.1（未实现→已实现）；API-001: 90.0→90.6；VIZ-003/004/008: 90.1→91.4（五 ID ≥90 STUCK 空；plan F-G CONN-027 勾选；M-FINAL 全 PRD 已实现）|
 | 1.2.107 | 2026-07-07 | P5 r249 重评 NFR-008、CONN-023~026（M-FINAL F-F 收官 + F-G 首批四型）；pytest 2284/32 skipped + test_mfinal_ff_fg_batch1_r249 30/30 + r242/r248 回归 58/58；NFR-008 compose 禁入 + Markdown 部署报告；CONN-023 REST API + CONN-024 Excel/CSV + CONN-025 Db2 + CONN-026 Impala 方言注册/连通/native 或 SQL 链；用户价值 86%→88–90%、完整度 84–90%→94–98%、测试覆盖 84–98%→96–100%；总分 85.4–91.3→91.0–94.1（五 ID ≥90 STUCK 空；plan F-F NFR-008 + F-G 四 ID 勾选；F-F 收官） |
 | 1.2.106 | 2026-07-07 | P5 r248 重评 GOV-007~008、NFR-003/005/007（M-FINAL F-E 收官 + F-F 首批三 ID）；pytest 2252/34 skipped + test_mfinal_fe_gov_batch4_r248 28/28 + r247 36/36 regression；IF-01 工厂 + publish deferred 降级 + busRegisterStatus、ACL self-approve/workflow publish、dashboard smoke、plugin drill 连通/只读、xinchuang Markdown；用户价值 86–88%→87–89%、完整度 90–94%→92–96%、架构健康 90%→91%、性能 88%→90%（NFR-003）；总分 91.2–91.6→91.9–92.9（五 ID ≥90 STUCK 空；plan F-E 二 ID + F-F 三 ID 勾选） |
 | 1.2.105 | 2026-07-07 | P5 r247 重评 GOV-007~008、NFR-003/005/007（M-FINAL F-E/F-F 批次 3）；pytest 2224/34 skipped + test_mfinal_fe_gov_batch3_r247 36/36 + r246 32/32 regression；bus pipeline+retry/audit、ACL matrix+role guards、dashboard availability、plugin drill、xinchuang deployment-report；用户价值 82–84%→86–88%、完整度 88–90%→90–94%、测试覆盖 98%→100%；总分 90.0–90.4→91.2–91.6（五 ID ≥90 STUCK 空；plan 留部分实现未勾选） |
@@ -247,7 +248,3 @@ domain_count: 16
 | 1.2.101 | 2026-07-07 | P5 r243 重评 CONN-022 + QUERY-007~009（M-FINAL F-C2 GaussDB 收官 + F-D 查询链 kickoff）；pytest 2096/31 skipped + test_mfinal_fc_r242 022 + test_mfinal_fd_r243 14/14；fe check:design 188 files + vitest 214/214 + datasource-form.smoke T-CONN-R243-FE-01~02；GaussDB probe_readonly_sql + dataset_query ACL + translate-from-config + dataset/execute 链；用户价值 84%→86–88%、完整度 88–90%→94–96%、测试覆盖 98%→100%、安全性 88–90%→90–92%；总分 90.0–91.7→92.2–93.2（四 ID ≥90 STUCK 空；plan M-FINAL F-C CONN-022 + F-D QUERY-007~009 勾选；F-C 收官） |
 | 1.2.100 | 2026-07-07 | P5 r242 重评 CONN-017~021（M-FINAL F-C 批次 1 信创 companion 收官）；pytest 2077/31 skipped + test_mfinal_fc_r242 25/25；fe check:design 188 files + vitest 212/212 + datasource-form.smoke T-CONN-R242-FE-01~04；五型 probe_readonly_sql + CONNECTOR_FIELD_HINTS + readonly-guard；用户价值 84%→88%、完整度 90%→96%、测试覆盖 98%→100%、性能 88%→90%；总分 90.0–90.4→92.4–92.6（五 ID ≥90 STUCK 空；plan M-FINAL F-C 五 ID 勾选） |
 | 1.2.99 | 2026-07-07 | P5 r241 重评 AUTH-004 + BOOT-002（M-FINAL F-B RBAC grants + capability-nav 收官）；fe check:design 187 files + vitest 208/208 + build PASS；GrantsPage 列表/表单 + capabilities.ts + manifest capability + T-NAV-CAP-01~04 + T-FE-SMFB-01~03 + T-RT-GRANTS-01；AUTH-004 用户价值 84%→92%、交互 N/A→90%、总分 92.1→94.1；BOOT-002 架构健康 96%→98%、安全性 92%→94%、总分 95.3→95.9（两 ID ≥90 STUCK 空；plan M-FINAL F-B 二 ID 勾选；F-B 收官） |
-| 1.2.98 | 2026-07-07 | P5 r240 重评 BOOT-002（×2）+ DS-007（M-FINAL F-A nav-manifest 收官）；fe check:design 180 files + vitest 196/196 + build PASS；nav-manifest 单一真理源 + resolveNavGroups 三档角色 + 里程碑过滤 + preview badge + 连接器收拢「数据」subItem；用户价值 88–92%→92–95%，交互 86–94%→94–96%，架构健康 90–94%→94–96%，总分 91.9–94.1→93.8–95.3（两 ID ≥90；plan M-FINAL F-A 三 ID 勾选；F-A 收官） |
-| 1.2.97 | 2026-07-07 | 人工体检（create-evolution-prd）：hub 执行范围澄清（129 项三分状态 + M-FINAL 33 项映射表）；F04 信创/收官里程碑对齐；SRS §FR-2.0-EXT 收官行 |
-| 1.2.96 | 2026-07-07 | plan v2.5.1 对齐（create-evolution-plan）：去除 F-G「待 PRD」；G2 可选 CONN-023~027；hub 执行范围与 plan frontmatter 同步 |
-| 1.2.95 | 2026-07-07 | 人工修订（create-evolution-prd）：立项 CONN-023~027（M-FINAL F-G）；F04-CONN 分片 + hub 129 项 + SRS §FR-2.0 枚举同步（rest_api/excel/csv/db2/impala/redshift）；8 维初评 85.4–85.6 |

@@ -461,20 +461,20 @@
 - **里程碑对齐**：M-FINAL · F-G · 已完成 · 2026-07-07
 ### [CONN-027] AWS Redshift 连接器
 
-- **状态**：未实现
+- **状态**：已实现（M-FINAL F-G r250 收官）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：收官（M-FINAL · F-G）
-- **描述**：AWS Redshift 数据仓库 SQL 连接器（SRS `redshift` · 对标 DataEase/Superset Redshift；PostgreSQL 协议族，可委托或专用方言）。
+- **描述**：AWS Redshift 数据仓库 SQL 连接器（SRS `redshift` · 对标 DataEase/Superset Redshift；PostgreSQL 协议委托，port 5439，ssl=required 默认）。
 - **验收标准**：
-  - [ ] type=`redshift` 已注册（types catalog）
-  - [ ] UI 可选（host/port/database/sslMode）
-  - [ ] 连通性测试结构化错误（`REDSHIFT_AUTH_FAILED`/`REDSHIFT_CONN_REFUSED`/`REDSHIFT_SSL_REQUIRED`/`REDSHIFT_TIMEOUT`）
-  - [ ] schema 浏览：PG 兼容 `information_schema` 或 Redshift 系统表路径
-  - [ ] 只读 SQL 查询集成测通过
-  - [ ] category=`olap` 查询模式正确；SSL 默认推荐
-  - [ ] 插件零侵入（NFR-04）
-  - [ ] compose 集成 smoke（`redshift` 样例容器可选分层 skip）
-- **代码锚点**：`backend/app/datasources/dialects/redshift.py`（规划）· `backend/app/datasources/dialects/postgres.py`（委托参考）· `tests/test_connectors_mfinal_r*.py`（规划）
-- **依赖**：DS-001、QUERY-001、CONN-002（PG 协议参考）
-- **演化建议**：Redshift Serverless、IAM 认证、UNLOAD 外链留 companion
-- **里程碑对齐**：M-FINAL · F-G
+  - [x] type=`redshift` 已注册（types catalog；T-CONN-R250-027-01 catalog count==30 + category=olap）
+  - [x] UI 可选（host/port/database/sslMode；DatasourceFormPage hint；T-CONN-R250-FE-01~02 dropdown + port autofill 5439）
+  - [x] 连通性测试结构化错误（`REDSHIFT_AUTH_FAILED`/`REDSHIFT_CONN_REFUSED`/`REDSHIFT_SSL_REQUIRED`/`REDSHIFT_TIMEOUT`；T-CONN-R250-027-03~04 + `map_redshift_error`）
+  - [x] schema 浏览：PG 兼容 `information_schema`（PG delegate `list_schemas`/`list_tables`/`list_columns`）
+  - [x] 只读 SQL 查询集成测通过（`probe_readonly_sql` mock；T-CONN-R250-027-06）
+  - [x] category=`olap` 查询模式正确；SSL 默认推荐（`ssl_mode="required"` default）
+  - [x] 插件零侵入（NFR-04；delegation 模式，无核心侵入）
+  - [ ] compose 集成 smoke（`redshift` 样例容器可选分层 skip；无真实 Redshift Docker 可用）
+- **代码锚点**：`backend/app/datasources/dialects/redshift.py`（RedshiftConnector，PG 委托）· `backend/app/datasources/dialects/errors.py`（REDSHIFT_* 常量 + `map_redshift_error`）· `backend/app/datasources/__init__.py`（注册）· `fe/src/pages/admin/datasources/DatasourceFormPage.tsx`（port=5439 hint）· `tests/test_mfinal_fg_r250.py` T-CONN-R250-027-01~07 · `fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx` T-CONN-R250-FE-01~02
+- **依赖**：DS-001、QUERY-001、CONN-002（PG 协议委托基础）
+- **演化建议**：r250 PG 委托 + REDSHIFT_* 错误域 + 7 backend + 2 FE smoke 通过；后续 Redshift Serverless IAM 认证、UNLOAD 外链、compose 集成 smoke 留 companion
+- **里程碑对齐**：M-FINAL · F-G · 已完成 · 2026-07-07

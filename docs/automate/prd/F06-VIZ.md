@@ -37,7 +37,7 @@
   - [x] 折线/柱/饼/仪表/表格/地图最小集（registry 9 类型 + fe 高级渲染对接 render-spec）
   - [x] 新类型可插件注册（`ChartTypeRegistry.register` + `register_builtin_chart_types()` 幂等；`fetchChartTypeCatalog` 镜像）
 - **代码锚点**：`backend/app/viz/registry.py` · `backend/app/viz/builtin.py` · `backend/app/api/v1/charts.py`（GET /charts/types）· `fe/src/lib/chartRegistry.ts` · `fe/src/components/charts/adapters/renderFromSpec.ts`
-- **演化建议**：类型元数据（icon/预览缩略图）扩展；生产级地图瓦片 CDN 与完整地理编码
+- **演化建议**：类型元数据（icon/预览缩略图）扩展；生产级地图瓦片 CDN 与完整地理编码；r250 补 `isKnownChartType` + `getFallbackChartType` → table fallback（T-VIZ-R250-003-01~02）
 - **里程碑对齐**：
 ### [VIZ-004] 图表样式子类型
 
@@ -49,7 +49,7 @@
   - [x] 堆叠/分组/面积/环形等（`bar`: stacked/grouped/horizontal；`line`: area/smooth；`pie`: donut）
   - [x] styleVariant 生效（后端校验 + 前端 `renderFromSpec`/`ChartConfigPanel` 变体渲染）
 - **代码锚点**：`backend/app/viz/specs.py` · `backend/app/viz/builtin.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/adapters/renderFromSpec.ts`
-- **演化建议**：styleVariant 与 dashboard 主题全局联动；更多高级类型变体
+- **演化建议**：styleVariant 与 dashboard 主题全局联动；更多高级类型变体；r250 补 `buildBarOption`/`buildPieOption` 显式构建函数（T-VIZ-R250-004-01~02：stacked→stack非空、donut→radius数组）
 - **里程碑对齐**：
 ### [VIZ-005] 维度指标筛选配置 UI
 
@@ -99,5 +99,5 @@
   - [x] 统一 ChartConfig→渲染器映射（`build_render_spec` + `renderFromSpec` ECharts option 构造）
   - [x] 主题与 Tailwind 协调（`echarts-theme.ts` + `createBarChartOptions` Token 对齐）
 - **代码锚点**：`backend/app/viz/render.py` · `backend/app/api/v1/charts.py`（POST /charts/render-spec）· `fe/src/components/charts/adapters/renderFromSpec.ts` · `fe/src/components/charts/adapters/AdvancedEchartsChart.tsx` · `fe/src/lib/echarts-theme.ts`
-- **演化建议**：AntV 适配器分支；大数据量虚拟化与性能 profiling
+- **演化建议**：AntV 适配器分支；大数据量虚拟化与性能 profiling；r250 补 rows=[] 空数据防护 + `AdvancedEchartsChart` 空态覆盖层（T-VIZ-R250-008-01~02：空数据不抛错、主路径 bar type 回归）
 - **里程碑对齐**：
