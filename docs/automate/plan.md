@@ -622,11 +622,11 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 > **背景**：后端 L1 已注册（`dialects/dm.py` 等）；PRD 分片未勾「UI 可选」「只读查询集成测」。
 
-- [ ] CONN-017: 达梦 DM 连接器
-- [ ] CONN-018: 人大金仓 连接器
-- [ ] CONN-019: 南大通用 GBase 连接器
-- [ ] CONN-020: OceanBase 连接器
-- [ ] CONN-021: TiDB 连接器
+- [x] CONN-017: 达梦 DM 连接器（完成于 2026-07-07）
+- [x] CONN-018: 人大金仓 连接器（完成于 2026-07-07）
+- [x] CONN-019: 南大通用 GBase 连接器（完成于 2026-07-07）
+- [x] CONN-020: OceanBase 连接器（完成于 2026-07-07）
+- [x] CONN-021: TiDB 连接器（完成于 2026-07-07）
 - [ ] CONN-022: GaussDB 连接器
 
 ### F-D — 语义层与 Dataset 路径（原 M13-B）

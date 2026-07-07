@@ -69,6 +69,11 @@ const CONNECTOR_FIELD_HINTS: Record<string, { port: string; databaseLabel: strin
   mongodb: { port: "27017", databaseLabel: "认证库", usernameLabel: "用户名" },
   elasticsearch: { port: "9200", databaseLabel: "默认索引（可选）", usernameLabel: "用户名" },
   opensearch: { port: "9200", databaseLabel: "默认索引（可选）", usernameLabel: "用户名" },
+  dm: { port: "5236", databaseLabel: "库/模式（OWNER）", usernameLabel: "用户名" },
+  kingbase: { port: "54321", databaseLabel: "数据库", usernameLabel: "用户名" },
+  gbase: { port: "5258", databaseLabel: "数据库", usernameLabel: "用户名" },
+  oceanbase: { port: "2881", databaseLabel: "租户/数据库", usernameLabel: "用户名" },
+  tidb: { port: "4000", databaseLabel: "数据库", usernameLabel: "用户名" },
 };
 
 export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
@@ -219,6 +224,14 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                   ))}
                 </SelectContent>
               </Select>
+              {form.type === "oceanbase" ? (
+                <p
+                  id="oceanbase-hint"
+                  className="text-theme-sm text-gray-500 dark:text-gray-400"
+                >
+                  使用 MySQL 兼容协议连接；集群部署请填写 OBProxy 主机与租户名。
+                </p>
+              ) : null}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
@@ -232,7 +245,13 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="database">{CONNECTOR_FIELD_HINTS[form.type]?.databaseLabel ?? "数据库"}</Label>
-              <Input id="database" value={form.database} onChange={(e) => setField("database", e.target.value)} required />
+              <Input
+                id="database"
+                value={form.database}
+                onChange={(e) => setField("database", e.target.value)}
+                required
+                aria-describedby={form.type === "oceanbase" ? "oceanbase-hint" : undefined}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="username">{CONNECTOR_FIELD_HINTS[form.type]?.usernameLabel ?? "用户名"}</Label>

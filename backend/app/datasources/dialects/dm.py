@@ -109,3 +109,9 @@ class DmConnector:
             if row
         ]
         return columns[:DM_MAX_COLUMNS] if len(columns) > DM_MAX_COLUMNS else columns
+
+    def probe_readonly_sql(self, connection: Any) -> bool:
+        """Execute minimal read-only probe; return True on success."""
+        cursor = connection.cursor()
+        cursor.execute("SELECT 1 FROM DUAL")
+        return True
