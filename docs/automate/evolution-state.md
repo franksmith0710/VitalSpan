@@ -13,7 +13,7 @@
 | branch | feat/mfinal-fc-xinchuang-r242 |
 | base_branch | dev-auto |
 | prd_ids | CONN-017,CONN-018,CONN-019,CONN-020,CONN-021 |
-| pr_number | |
+| pr_number | 227 |
 | last_verified_command | cd backend && python3 -m pytest -q && cd ../fe && pnpm run check:design && pnpm vitest run && pnpm run build |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
