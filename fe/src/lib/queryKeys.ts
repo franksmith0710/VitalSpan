@@ -88,6 +88,11 @@ export const queryKeys = {
   },
   designer: {
     sqlCapabilities: ["designer", "sqlCapabilities"] as const,
+    fields: (datasetId?: string | null) => ["designer", "fields", datasetId ?? "none"] as const,
+    conditions: (refId: string) => ["designer", "conditions", refId] as const,
+    computeRules: (refId: string) => ["designer", "computeRules", refId] as const,
+    outputFields: (refId: string) => ["designer", "outputFields", refId] as const,
+    preview: (refId: string) => ["designer", "preview", refId] as const,
   },
   reportSchedules: (catalogNodeId?: string) =>
     ["reports", "schedules", catalogNodeId ?? "all"] as const,

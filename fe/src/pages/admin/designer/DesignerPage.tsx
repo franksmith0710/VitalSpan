@@ -1,75 +1,255 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
+import { Send } from "lucide-react";
+import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import {
+  ComputeRulesPanel,
+  ConditionsPanel,
+  OutputFieldsPanel,
+} from "./designer-panels";
+import { useDesignerWorkspace } from "./useDesignerWorkspace";
 
-type SqlModeCapabilities = {
-  allowedStatements: string[];
-  maxSqlLength: number;
-  highlightSupported: boolean;
-};
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+function PreviewPanel({
+  sql,
+  loading,
+  mobileTab,
+}: {
+  sql: string;
+  loading: boolean;
+  mobileTab?: boolean;
+}) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
+    <div className={mobileTab ? "space-y-2" : "sticky top-4 space-y-2"}>
+      <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">SQL 预览</h3>
+      {loading ? <Skeleton className="h-48 w-full rounded-xl" /> : null}
+      <Textarea
+        readOnly
+        className="min-h-[200px] font-mono text-theme-xs"
+        value={sql || "保存条件后将自动生成预览…"}
+        aria-label="SQL 预览"
+      />
     </div>
   );
 }
 
 export function DesignerPage() {
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: queryKeys.designer.sqlCapabilities,
-    queryFn: () => apiFetch<SqlModeCapabilities>("/api/v1/designer/sql-mode/capabilities"),
+  const ws = useDesignerWorkspace();
+  const [submitOpen, setSubmitOpen] = useState(false);
+  const [submitResult, setSubmitResult] = useState<{ workflowInstanceId: string } | null>(null);
+  const [mainTab, setMainTab] = useState("conditions");
+  const [mobilePreview, setMobilePreview] = useState(false);
+
+  const datasetsQuery = useQuery({
+    queryKey: queryKeys.datasets.list(),
+    queryFn: () => apiFetch<{ items: Array<{ id: string; name: string }> }>("/api/v1/datasets"),
   });
+
+  const handleSubmit = async () => {
+    if (!ws.allBlocksSaved) {
+      toast.error("请先保存条件、运算规则与输出字段");
+      return;
+    }
+    try {
+      const result = await ws.submitWorkflow.mutateAsync();
+      setSubmitResult({ workflowInstanceId: result.workflowInstanceId });
+      setSubmitOpen(true);
+    } catch (err) {
+      toast.error(mapApiError(err));
+    }
+  };
+
+  const actions = (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={ws.saveConditions.isPending}
+        onClick={() => void ws.saveConditions.mutateAsync()}
+      >
+        保存条件
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={ws.saveComputeRules.isPending}
+        onClick={() => void ws.saveComputeRules.mutateAsync()}
+      >
+        保存规则
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={ws.saveOutputFields.isPending}
+        onClick={() => void ws.saveOutputFields.mutateAsync()}
+      >
+        保存输出
+      </Button>
+      <Button
+        type="button"
+        variant="primary"
+        size="sm"
+        disabled={ws.submitWorkflow.isPending}
+        onClick={() => void handleSubmit()}
+      >
+        <Send className="size-4" aria-hidden />
+        提交查询服务申请
+      </Button>
+    </div>
+  );
 
   return (
     <AdminPageShell
       title="查询设计器"
-      description="可视化/SQL 查询设计能力入口（DESIGN-001~005）；当前展示 SQL 模式能力契约。"
+      description="配置查询条件、运算规则与输出字段，预览 SQL 并提交工单审批（DESIGN-001~004）。"
+      actions={actions}
     >
-      {isError ? <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
-
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
-        {isLoading ? <Skeleton className="h-32 w-full rounded-xl" /> : null}
-        {data ? (
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt className="text-theme-xs text-gray-500 dark:text-gray-400">允许语句</dt>
-              <dd className="mt-1 flex flex-wrap gap-1">
-                {data.allowedStatements.map((s) => (
-                  <Badge key={s} variant="light" color="primary" size="sm">
-                    {s}
-                  </Badge>
-                ))}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-theme-xs text-gray-500 dark:text-gray-400">最大 SQL 长度</dt>
-              <dd className="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                {data.maxSqlLength.toLocaleString()} 字符
-              </dd>
-            </div>
-            <div>
-              <dt className="text-theme-xs text-gray-500 dark:text-gray-400">语法高亮</dt>
-              <dd className="mt-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                {data.highlightSupported ? "支持" : "暂不支持"}
-              </dd>
-            </div>
-          </dl>
-        ) : null}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <span className="text-theme-sm text-gray-500 dark:text-gray-400">数据集（可选）</span>
+        <Select
+          value={ws.datasetId ?? "__none__"}
+          onValueChange={(v) => ws.setDatasetId(v === "__none__" ? null : v)}
+        >
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="选择数据集" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">不关联数据集</SelectItem>
+            {(datasetsQuery.data?.items ?? []).map((ds) => (
+              <SelectItem key={ds.id} value={ds.id}>
+                {ds.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-        完整设计器（条件、输出字段、运算规则、工单关联）将在四期里程碑与 Dashboard 构建器深度集成。
-      </p>
+      <div className="lg:hidden">
+        <Tabs value={mobilePreview ? "preview" : mainTab} onValueChange={(v) => {
+          if (v === "preview") setMobilePreview(true);
+          else {
+            setMobilePreview(false);
+            setMainTab(v);
+          }
+        }}>
+          <TabsList className="w-full">
+            <TabsTrigger value="conditions">条件</TabsTrigger>
+            <TabsTrigger value="rules">规则</TabsTrigger>
+            <TabsTrigger value="output">输出</TabsTrigger>
+            <TabsTrigger value="preview">预览</TabsTrigger>
+          </TabsList>
+          <TabsContent value="conditions" className="mt-4">
+            <ConditionsPanel
+              logic={ws.logic}
+              onLogicChange={ws.setLogic}
+              conditions={ws.conditions}
+              onChange={ws.setConditions}
+              fieldOptions={ws.fieldOptions}
+              fieldErrors={ws.fieldErrors}
+            />
+          </TabsContent>
+          <TabsContent value="rules" className="mt-4">
+            <ComputeRulesPanel rules={ws.rules} onChange={ws.setRules} fieldOptions={ws.fieldOptions} />
+          </TabsContent>
+          <TabsContent value="output" className="mt-4">
+            <OutputFieldsPanel
+              fields={ws.outputFields}
+              aggregates={ws.aggregates}
+              onFieldsChange={ws.setOutputFields}
+              onAggregatesChange={ws.setAggregates}
+              fieldOptions={ws.fieldOptions}
+              glossaryOptions={ws.glossaryOptions}
+            />
+          </TabsContent>
+          <TabsContent value="preview" className="mt-4">
+            <PreviewPanel sql={ws.previewSql} loading={ws.previewMutation.isPending} mobileTab />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      <div className="hidden gap-6 lg:grid lg:grid-cols-[1fr_360px]">
+        <Tabs value={mainTab} onValueChange={setMainTab}>
+          <TabsList>
+            <TabsTrigger value="conditions">条件</TabsTrigger>
+            <TabsTrigger value="rules">运算规则</TabsTrigger>
+            <TabsTrigger value="output">输出字段</TabsTrigger>
+          </TabsList>
+          <TabsContent value="conditions" className="mt-4">
+            <ConditionsPanel
+              logic={ws.logic}
+              onLogicChange={ws.setLogic}
+              conditions={ws.conditions}
+              onChange={ws.setConditions}
+              fieldOptions={ws.fieldOptions}
+              fieldErrors={ws.fieldErrors}
+            />
+          </TabsContent>
+          <TabsContent value="rules" className="mt-4">
+            <ComputeRulesPanel rules={ws.rules} onChange={ws.setRules} fieldOptions={ws.fieldOptions} />
+          </TabsContent>
+          <TabsContent value="output" className="mt-4">
+            <OutputFieldsPanel
+              fields={ws.outputFields}
+              aggregates={ws.aggregates}
+              onFieldsChange={ws.setOutputFields}
+              onAggregatesChange={ws.setAggregates}
+              fieldOptions={ws.fieldOptions}
+              glossaryOptions={ws.glossaryOptions}
+            />
+          </TabsContent>
+        </Tabs>
+        <PreviewPanel sql={ws.previewSql} loading={ws.previewMutation.isPending} />
+      </div>
+
+      <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>工单已提交</DialogTitle>
+            <DialogDescription>
+              查询服务申请已进入审批流程，可在治理工单中查看进度。
+            </DialogDescription>
+          </DialogHeader>
+          {submitResult ? (
+            <p className="font-mono text-theme-xs text-gray-600 dark:text-gray-300">
+              工单实例：{submitResult.workflowInstanceId}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setSubmitOpen(false)}>
+              关闭
+            </Button>
+            <Button type="button" variant="primary" asChild>
+              <Link to="/admin/governance/tickets">查看工单</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminPageShell>
   );
 }
