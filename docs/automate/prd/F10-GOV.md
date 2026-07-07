@@ -95,7 +95,7 @@
 - **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
 ### [GOV-007] 总线全自动注册 FR-1.1
 
-- **状态**：部分实现（companion r68）
+- **状态**：部分实现（companion r247）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：总线全自动注册 FR-1.1（SRS 追溯项）。
@@ -103,13 +103,14 @@
   - [x] 发布引擎→总线全自动（r60 L1：`POST /api/v1/gov/bus/auto-register` + FSM draft→registering→succeeded/failed + 幂等 201/200）
   - [x] ≥ PoC 能力（integration/admin 角色；published catalog entry 前置；403 `GOV_AUTO_BUS_*` 守卫；mock busId）
   - [x] companion FSM 非法转移守卫 + path scope + HTTP probe（r68：`GOV_AUTO_BUS_INVALID_TRANSITION` 409 failed→retry；`set_user_auto_bus_scope` enterprise 403；`GET /api/v1/gov/bus/auto-register/probe` ≤50ms；r60 force_fail 回归保留）
-  - [ ] 真实总线 HTTP 对接与失败重试/熔断
-- **代码锚点**：`backend/app/governance/bus/auto.py` · `backend/app/governance/bus/probe.py` · `backend/app/api/v1/gov.py` · `tests/test_rpt_view_cat_gov_r60.py` T-GOV-R60-007-01~08 · `tests/test_nfr_gov_rpt_view_r68.py` T-GOV-R68-007-01~07
-- **演化建议**：r68 companion 闭合 auto-register FSM 非法转移、enterprise path scope 与 HTTP probe；后续补真实总线 HTTP、失败重试链与 publish 引擎联动
+  - [x] publish 审批链触发总线注册 + 重试管线 + 审计事件（r247：`trigger_auto_bus_register` pipeline；`POST approve` 联动；`POST /bus/auto-register/retry`；`BUS_REGISTER_RETRY_EXHAUSTED` 502；audit `traceId`；T-GOV-R247-007-01~08）
+  - [ ] 真实总线 HTTP 对接与生产级熔断
+- **代码锚点**：`backend/app/governance/bus/pipeline.py` · `backend/app/governance/bus/auto.py` · `backend/app/governance/bus/probe.py` · `backend/app/api/v1/gov.py` · `tests/test_mfinal_fe_gov_batch3_r247.py` T-GOV-R247-007-01~08 · `tests/test_nfr_gov_rpt_view_r68.py` T-GOV-R68-007-01~07
+- **演化建议**：r247 companion 闭合 publish→bus pipeline、retry exhausted 映射与审计 trace；后续补真实总线 HTTP 端点与生产熔断
 - **里程碑对齐**：
 ### [GOV-008] 治理权限联动 FR-1.6
 
-- **状态**：部分实现
+- **状态**：部分实现（companion r247）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：治理权限联动 FR-1.6（SRS 追溯项）。
@@ -117,8 +118,8 @@
   - [x] query-design save `pending_publish` ACL（viewer 403 `GOV_ACL_FORBIDDEN`，admin 200，r34）
   - [x] RLS 绑定 smoke（`resolve_user_org_node_ids` + `get_query_rls_fragment`，r34 mock）
   - [x] `POST preview-execute` ACL/RLS 链：viewer 403、designer 无 org 403、admin bypass 审计、空 RLS 链、save 联合回归（r35）
-  - [ ] 完整发布流程与 M7 权限联动
-  - [ ] 发布后 RLS 端到端生效
-- **代码锚点**：`backend/app/governance/acl.py` · `backend/app/governance/query_design/service.py` · `backend/app/api/v1/gov.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
-- **演化建议**：r35 闭合 preview-execute ACL/RLS 链与 bypass 审计；后续接 publish 引擎与真实 org 绑定回归
+  - [x] 发布/审批/总线角色矩阵 + resource grant 守卫（r247：`acl_matrix.py` + `GET /gov/acl/matrix`；`assert_publish_approve`/`assert_workflow_action`/`assert_bus_register`；`gov_catalog_entry` grants；T-GOV-R247-008-01~07）
+  - [ ] 发布后 RLS 端到端生效（真实 org 绑定全链路）
+- **代码锚点**：`backend/app/governance/acl_matrix.py` · `backend/app/governance/acl.py` · `backend/app/auth/resources/service.py` · `backend/app/api/v1/gov.py` · `tests/test_mfinal_fe_gov_batch3_r247.py` T-GOV-R247-008-01~07 · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
+- **演化建议**：r247 companion 闭合 ACL 矩阵与 publish/workflow/bus 角色守卫；后续补发布后 RLS 端到端与真实 org 回归
 - **里程碑对齐**：
