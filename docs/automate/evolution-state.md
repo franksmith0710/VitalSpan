@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc2-fd-kickoff.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fc2-fd-kickoff-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-fc2-fd-kickoff.md |
@@ -14,8 +14,8 @@
 | base_branch | dev-auto |
 | prd_ids | CONN-022,QUERY-007,QUERY-008,QUERY-009 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && ruff check . && pytest regression; cd fe && check:design && vitest && build |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T15:00:00Z |
 | skill_rule_index_source_count | 26 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r243 实现（cron 2026-07-07 ~15:13 UTC）：8 Task 全量完成（GaussDB probe_readonly_sql + test_mfinal_fc_r242 30 passed/6 skipped + dataset_query ACL + translate-from-config + dataset/execute 四步链 + DatasourceForm GaussDB hints + smoke 6/6 + docs/api+services r243 锚点）；每任务 spec+quality 自审通过；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS(188 files)；backend ruff+pytest regression 207 passed/6 skipped；fe vitest 214/214 + build exit 0；screenshots 未运行（headless 云环境；UI Acceptance 由 RTL smoke 覆盖）；branch=feat/mfinal-fc2-fd-kickoff-r243；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 计划（cron 2026-07-07 ~15:00 UTC）：F-C 收官 CONN-022 + F-D QUERY-007~009 查询链计划完成（GaussDB probe + FE hints/smoke + dataset_query 存储/owner + translate-from-config + dataset/execute 四步链）；8 Tasks / 17 文件操作（3 新建 + 14 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fc2-fd-kickoff.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~15:00 UTC）：F-C 收官 CONN-022（GaussDB probe_readonly_sql + FE hints + test_mfinal_fc_r242 扩展）+ F-D 查询链奠基 QUERY-007~009（dataset_query 存储 + owner 守卫 + translate-from-config + dataset/execute 四步链）；17 文件框定；ui_design_skill=b-design-system-tailadmin-radix（GaussDB 表单 only）；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fc2-fd-kickoff-design.md；branch=feat/mfinal-fc2-fd-kickoff-r243；base_branch=dev-auto；待 P2 evolution-planner
 - G0 闸门（cron 2026-07-07 ~14:46 UTC）：确认 PR #227 已 squash merge dev-auto（a9911da）feat/mfinal-fc-xinchuang-r242→dev-auto；无 Open PR；工作区干净；M-FINAL F-C 批次 1 收官（CONN-017~021）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
