@@ -1,30 +1,18 @@
 from __future__ import annotations
 
-import time
 from typing import Any
 
-import pymysql
-import pymysql.err
-
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
-from app.datasources.dialects.errors import map_mysql_operational_error
+from app.datasources.dialects.errors import (
+    STARROCKS_AUTH_FAILED,
+    STARROCKS_CONN_REFUSED,
+    STARROCKS_TIMEOUT,
+    STARROCKS_UNKNOWN,
+    STARROCKS_UNKNOWN_DATABASE,
+)
 from app.datasources.dialects.mysql import MysqlConnector
 
-STARROCKS_TIMEOUT = "STARROCKS_TIMEOUT"
-STARROCKS_CONN_REFUSED = "STARROCKS_CONN_REFUSED"
-STARROCKS_AUTH_FAILED = "STARROCKS_AUTH_FAILED"
-STARROCKS_UNKNOWN = "STARROCKS_UNKNOWN"
 STARROCKS_MAX_COLUMNS = 500
-
-
-def _map_starrocks_error(exc: pymysql.err.OperationalError) -> tuple[str, str]:
-    code, detail = map_mysql_operational_error(exc)
-    mapping = {
-        "MYSQL_TIMEOUT": STARROCKS_TIMEOUT,
-        "MYSQL_CONN_REFUSED": STARROCKS_CONN_REFUSED,
-        "MYSQL_AUTH_FAILED": STARROCKS_AUTH_FAILED,
-    }
-    return mapping.get(code, STARROCKS_UNKNOWN), detail
 
 
 class StarrocksConnector:
@@ -37,27 +25,22 @@ class StarrocksConnector:
         self._inner = MysqlConnector()
 
     def test_connection(self, **kwargs) -> TestConnectionResult:
-        started = time.perf_counter()
-        try:
-            connection = self._inner.open_connection(**kwargs)
-            try:
-                connection.ping(reconnect=False)
-            finally:
-                connection.close()
-        except pymysql.err.OperationalError as exc:
-            code, detail = _map_starrocks_error(exc)
-            latency_ms = int((time.perf_counter() - started) * 1000)
-            return TestConnectionResult(
-                ok=False,
-                message=f"[{code}] {detail}",
-                latency_ms=latency_ms,
-                code=code,
-            )
-        except Exception as exc:
-            latency_ms = int((time.perf_counter() - started) * 1000)
-            return TestConnectionResult(ok=False, message=str(exc), latency_ms=latency_ms, code=None)
-        latency_ms = int((time.perf_counter() - started) * 1000)
-        return TestConnectionResult(ok=True, message="Connection successful", latency_ms=latency_ms, code=None)
+        result = self._inner.test_connection(**kwargs)
+        if result.ok or not result.code:
+            return result
+        mapping = {
+            "MYSQL_TIMEOUT": STARROCKS_TIMEOUT,
+            "MYSQL_CONN_REFUSED": STARROCKS_CONN_REFUSED,
+            "MYSQL_AUTH_FAILED": STARROCKS_AUTH_FAILED,
+            "MYSQL_UNKNOWN_DATABASE": STARROCKS_UNKNOWN_DATABASE,
+        }
+        code = mapping.get(result.code, STARROCKS_UNKNOWN)
+        return TestConnectionResult(
+            ok=result.ok,
+            message=result.message.replace(result.code, code) if result.code in result.message else result.message,
+            latency_ms=result.latency_ms,
+            code=code,
+        )
 
     def open_connection(self, **kwargs) -> Any:
         return self._inner.open_connection(**kwargs)
