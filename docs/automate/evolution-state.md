@@ -6,10 +6,10 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-ff-fg-batch1.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-ff-fg-batch1-design.md |
-| plan |  |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-ff-fg-batch1.md |
 | branch |  |
 | base_branch | dev-auto |
 | prd_ids | NFR-008,CONN-023,CONN-024,CONN-025,CONN-026 |
@@ -19,7 +19,7 @@
 | last_ui_verified_command |  |
 | last_ui_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-07T18:22:00Z |
+| skill_rule_index_generated_at | 2026-07-07T19:12:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -70,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- P2 计划（cron 2026-07-07 ~19:12 UTC）：F-F/F-G 批次 1 五 ID 计划完成（NFR-008 compose 禁入 + markdown 部署报告 + ops 文档；CONN-023 REST API；CONN-024 Excel/CSV；CONN-025 Db2；CONN-026 Impala + guard api/file；≥30 pytest r249 + FE hints/smoke + docs）；7 Tasks / 18 文件操作（6 新建 + 12 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-ff-fg-batch1.md；执行模式 subagent-driven-development option 1；ui_design_skill=b-design-system-tailadmin-radix（FE hints+smoke only）；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - G2 选题（cron 2026-07-07 ~19:05 UTC）：饱和熔断已跳过（plan §M-FINAL · F-F 含 NFR-008 `[ ]` + F-G 五型 `[ ]`；Top5 薄弱项最低分 CONN-026/027 85.4 <90）；入选 F-F/F-G 批次 1 五 ID（NFR-008 F-F 收官 + CONN-023~026 缺口连接器首批）；hub 最低分入选 CONN-026 85.4；CONN-027 留 F-G 批次 2；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-ff-fg-batch1.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G0 闸门（cron 2026-07-07 ~19:00 UTC）：确认 PR #235 已 squash merge dev-auto（dd697f4）+ PR #236 docs 补 round-target/plan；无 Open PR；工作区干净；M-FINAL F-E/F-F 批次 4 收官（GOV-007~008、NFR-003/005/007）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 收尾（cron 2026-07-07 ~18:40 UTC）：PRD 重评 GOV-007~008、NFR-003/005/007；hub v1.2.106；总分 91.2–91.6→91.9–92.9；五 ID 已实现；plan M-FINAL F-E 二 ID + F-F 三 ID 勾选（完成于 2026-07-07）；F-E 收官；phase P4_DONE→P5_DOCS_READY；pr=235；待 squash merge dev-auto
