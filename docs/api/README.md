@@ -124,7 +124,7 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| POST | `/api/v1/query/execute` | 只读查询（sql/table） | IF-06 | 一期 | QUERY-001 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/execute` | 只读查询（`mode=sql\|table\|native`；native 需 `nativeBody` + 可选 `index`） | IF-06 | 一期 | QUERY-001/003 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/translate` | 可视化查询配置→参数化 SQL | IF-06 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/routing/modes` | 连接器路由模式（search/document/timeseries→native，其余→sql） | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/native/validate` | Native 查询守卫（`QUERY_NATIVE_*`；禁止 sql 字段） | IF-06 | 一期 | QUERY-003 | 已实现 | `backend/app/api/v1/query.py` |

@@ -21,6 +21,7 @@
 | In | Out |
 |----|-----|
 | 连接配置、方言适配、池化、元数据浏览 L1 API | SQL 语义解析与图表绑定（→ `query`） |
+| CONN-014~016：`probe_readonly_*` + `execute_native_query`（MongoDB find / ES·OS search） | GridFS 写入、集群管理、OpenSearch Dashboards 嵌入 |
 | 连接器插件目录 `dialects/`（mysql、postgresql） | Dataset 语义层（四期 → `metadata` + `query`） |
 | 数据源列表/详情 ACL 过滤（grant 可见性） | M7 完整 RLS 执行链 |
 | 类型发现、schema 浏览 REST API | Admin UI 数据源管理界面 |
