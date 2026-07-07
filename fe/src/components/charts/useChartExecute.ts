@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "@/lib/api";
-import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import type { ChartFilterRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import { injectSqlParameters } from "@/components/dashboard/dashboardFilterUtils";
 
 type ExecuteResult = {
@@ -15,6 +15,20 @@ type ChartExecuteOptions = {
   filterParameters?: Record<string, string>;
   executeKey?: string;
 };
+
+export function buildFilterParameters(filters: ChartFilterRef[]): Record<string, string> {
+  const params: Record<string, string> = {};
+  filters.forEach((f, i) => {
+    const key = `filter_${f.field}_${i}`;
+    if (f.operator === "in") {
+      const val = Array.isArray(f.value) ? f.value : String(f.value).split(",");
+      params[key] = val.map(String).join(",");
+    } else {
+      params[key] = String(f.value);
+    }
+  });
+  return params;
+}
 
 export function mapChartQueryError(code: string | undefined, message: string): string {
   switch (code) {
@@ -43,21 +57,36 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     setSlowHint(false);
     const started = Date.now();
     try {
+      const filterParams =
+        config.mode === "sql" && config.filters?.length
+          ? { ...filterParameters, ...buildFilterParameters(config.filters) }
+          : filterParameters;
+
       let sql = config.sql;
-      if (sql && filterParameters && Object.keys(filterParameters).length) {
-        sql = injectSqlParameters(sql, filterParameters);
+      if (sql && filterParams && Object.keys(filterParams).length) {
+        sql = injectSqlParameters(sql, filterParams);
       }
+
       const body = config.bindingId
         ? { bindingId: config.bindingId, rls: { enabled: false } }
-        : {
-            dataSourceId: config.dataSourceId,
-            mode: config.mode,
-            sql,
-            schema: config.schema,
-            table: config.table,
-            limit: CHART_EXECUTE_LIMIT,
-            rls: { enabled: false },
-          };
+        : config.mode === "native"
+          ? {
+              dataSourceId: config.dataSourceId,
+              mode: "native",
+              nativeBody: config.nativeBody,
+              index: config.index,
+              limit: CHART_EXECUTE_LIMIT,
+              rls: { enabled: false },
+            }
+          : {
+              dataSourceId: config.dataSourceId,
+              mode: config.mode,
+              sql,
+              schema: config.schema,
+              table: config.table,
+              limit: CHART_EXECUTE_LIMIT,
+              rls: { enabled: false },
+            };
       const data = await apiFetch<ExecuteResult>("/api/v1/query/execute", {
         method: "POST",
         body: JSON.stringify(body),
@@ -78,11 +107,11 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     } finally {
       setLoading(false);
     }
-  }, [config, filterParameters, executeKey]);
+  }, [config, filterParameters]);
 
   useEffect(() => {
     void run();
-  }, [run]);
+  }, [run, executeKey]);
 
-  return { columns, rows, loading, error, slowHint, retry: run };
+  return { columns, rows, loading, error, slowHint, rerun: run };
 }
