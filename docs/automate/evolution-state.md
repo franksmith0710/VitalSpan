@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fa.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-07-mfinal-fa-nav-manifest-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P1 设计（cron 2026-07-07 ~12:25 UTC）：F-A 全量 3 项（BOOT-002 nav-manifest+resolveNavGroups、DS-007 数据连接 subItems、BOOT-002 里程碑可见性矩阵）；ui_design_skill=b-design-system-tailadmin-radix；范围框定 12 文件；NAV_MANIFEST + ACTIVE_MILESTONES + preview badge 设计完成；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fa-nav-manifest-design.md；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~12:22 UTC）：饱和熔断已跳过（plan §M-FINAL · F-A 含 3 项 `[ ]` BOOT-002×2/DS-007；Top5 薄弱项最低分 CONN-027 85.4 <90）；入选 M-FINAL · F-A 全量 3 项（BOOT-002 manifest/resolveNavGroups、DS-007 连接器收拢「数据」分组、BOOT-002 里程碑可见性）；3 项为 plan「首轮建议 F-A 全量 3 项」下限（F-B 依赖 manifest；F-G 建议 F-A 后选）；hub 最低分入选 DS-007 91.9；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fa.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~12:18 UTC）：G0 PASS PR #224 已 merge dev-auto（07f194b）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-A**（3 项 `[ ]` BOOT-002×2/DS-007；F-B/F-C~F-G 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 M12 batch1（RPT-005/007/VIEW-003/NFR-006/CAT-007）PR #223 完成；孤儿分支 feat/mfinal-fa-nav-manifest-r239（BOOT-002/DS-007 r239）可 RESUME 后续轮次；phase idle；待 G2 选题
 - G1 bootstrap（cron 2026-07-07 ~11:24 UTC）：G0 PASS PR #223 已 squash merge dev-auto（bdd0cf1）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-A**（3 项 `[ ]` BOOT-002×2/DS-007；frontmatter 标 M-FINAL 与正文一致）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和）；STUCK 表空；待办池空；上轮 M12 batch1（RPT-005/007 + VIEW-003 + NFR-006 + CAT-007）完成；phase P5_DOCS_READY→idle；待 G2 选题
