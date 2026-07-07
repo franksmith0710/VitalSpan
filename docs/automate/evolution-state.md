@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch4.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch4-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-fe-gov-batch4.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | GOV-007,GOV-008,NFR-003,NFR-005,NFR-007 |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && PYTHONPATH=/workspace/backend:/workspace/tests python3 -m pytest /workspace/tests -q |
+| last_verified_command | cd backend && python3 -m ruff check . && PYTHONPATH=/workspace/backend:/workspace/tests python3 -m pytest -q && python3 -m pytest ../tests/test_mfinal_fe_gov_batch4_r248.py -q && python3 -m pytest ../tests/test_mfinal_fe_gov_batch3_r247.py -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（本轮无 fe/ 改动，ui_design_skill none） |
 | last_ui_verified_exit_code | N/A |
@@ -70,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- P4 验证（cron 2026-07-07 ~18:31 UTC）：独立 ruff exit 0；全量 pytest（backend cwd）2252 passed/34 skipped exit 0；r248 28 passed exit 0；r247 回归 36 passed exit 0；UI: N/A（无 fe/ 改动，ui_design_skill none）；screenshots 未运行；phase P3_DONE→P4_DONE；branch=feat/mfinal-fe-gov-batch4-r248；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 实现（cron 2026-07-07 ~18:30 UTC）：F-E/F-F 批次 4 五 ID 全部 8 Tasks 完成；IF-01 工厂 + deferred 降级 + publish busRegisterStatus；ACL self-approve/workflow publish；NFR smoke/drill/xinchuang markdown；28/28 r248 + r247 回归 + 全量 pytest 2252 passed；docs/api + governance + nfr 同步；branch=feat/mfinal-fe-gov-batch4-r248；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 计划（cron 2026-07-07 ~18:22 UTC）：F-E/F-F 批次 4 五 ID 计划完成（GOV-007 IF-01 工厂 + deferred 降级 + publish busRegisterStatus；GOV-008 ACL self-approve/workflow publish；NFR-003 dashboard smoke；NFR-005 drill 连通/只读；NFR-007 xinchuang markdown；≥28 pytest r248 + P4-SMOKE 尾段 + docs）；8 Tasks / 17 文件操作（3 新建 + 14 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fe-gov-batch4.md；执行模式 subagent-driven-development option 1；ui_design_skill none；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~18:19 UTC）：F-E/F-F 批次 4 五 ID（GOV-007~008 治理收官 + NFR-003/005/007 companion 验收缺口补全）；16 文件框定（IF-01 工厂、bus deferred 降级、ACL 补洞、dashboard smoke、plugin drill 连通链、xinchuang markdown）；ui_design_skill none；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch4-design.md；base_branch=dev-auto；待 P2 evolution-planner
