@@ -33,7 +33,7 @@
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [NFR-003] NFR-02 核心看板可用性
 
-- **状态**：部分实现（companion r68）
+- **状态**：部分实现（companion r247）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：二期
 - **描述**：NFR-02 核心看板可用性（SRS 追溯项）。
@@ -41,9 +41,10 @@
   - [x] SLA ≥ 99.5%（r62 L1：`POST /api/v1/nfr/dashboard-sla/probe` mock uptime 99.7% + breach 模拟 + `withinSla` 判定）
   - [x] 监控告警配置（r62 L1：`GET /api/v1/nfr/dashboard-sla/alerts` channels/threshold stub）
   - [x] companion enterprise ACL + dashboardId 校验 + alerts threshold + perf probe（r68：`set_user_dashboard_sla_scope` + `NFR_SLA_DASHBOARD_ID_INVALID`/`NFR_SLA_ALERTS_THRESHOLD_OUT_OF_RANGE` 422；enterprise scope 403；`probe_dashboard_sla_validate_budget_ms`/`probe_dashboard_sla_budget_ms` ≤50ms）
+  - [x] 可用性复合报告 + strict 503（r247：`GET /api/v1/nfr/dashboard-availability/report` composite SLA+首屏 P95；`simulate_breach`；`docs/nfr/dashboard-availability.md`；T-NFR-R247-003-01~05）
   - [ ] 生产级 SLA 采集与 ops 告警联动（无真实 metrics store 与 PagerDuty 集成）
-- **代码锚点**：`backend/app/core/nfr/dashboard_sla.py` · `backend/app/api/v1/nfr.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-NFR-R62-003-01~06 · `tests/test_nfr_gov_rpt_view_r68.py` T-NFR-R68-003-01~10
-- **演化建议**：r68 companion 闭合 dashboard SLA enterprise ACL、dashboardId pattern、alerts threshold 与 validate/probe perf probe；后续补生产 metrics 采集与 ops 告警全链路
+- **代码锚点**：`backend/app/core/nfr/dashboard_availability.py` · `backend/app/core/nfr/dashboard_sla.py` · `docs/nfr/dashboard-availability.md` · `backend/app/api/v1/nfr.py` · `tests/test_mfinal_fe_gov_batch3_r247.py` T-NFR-R247-003-01~05 · `tests/test_nfr_gov_rpt_view_r68.py` T-NFR-R68-003-01~10
+- **演化建议**：r247 companion 闭合 dashboard availability 复合报告与 strict 模式；后续补生产 metrics 采集与 ops 告警全链路
 - **里程碑对齐**：
 ### [NFR-004] NFR-03 HTTPS 脱敏审计
 
@@ -62,16 +63,17 @@
 - **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [NFR-005] NFR-04 连接器插件扩展性
 
-- **状态**：部分实现
+- **状态**：部分实现（companion r247）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：NFR-04 连接器插件扩展性（SRS 追溯项）。
 - **验收标准**：
   - [x] 新增连接器不改核心（`register_connector_plugin` + ConnectorRegistry 零侵入守卫，r46 L1）
   - [x] GBase 登记路径 companion（`verify_zero_invasion` + `gbase_registration_path`，r51 companion）
-  - [ ] 扩展演练 PR
-- **代码锚点**：`backend/app/core/nfr/plugin_extension.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r46.py` · `tests/test_nfr_gov_conn_r51.py`
-- **演化建议**：r51 companion 闭合 registry 探测预算与 GBase 插件登记路径；后续补扩展演练 PR 与第三方插件样例
+  - [x] 扩展演练 API（r247：`GET /api/v1/nfr/plugin-extension/drill` drill_stub 注册 + zeroInvasion + teardown；T-NFR-R247-005-01~05）
+  - [ ] 第三方插件样例 PR（真实连接器扩展仓库演练）
+- **代码锚点**：`backend/app/core/nfr/plugin_extension.py` · `backend/app/api/v1/nfr.py` · `tests/test_mfinal_fe_gov_batch3_r247.py` T-NFR-R247-005-01~05 · `tests/test_nfr_gov_conn_r46.py` · `tests/test_nfr_gov_conn_r51.py`
+- **演化建议**：r247 companion 闭合 plugin-extension drill API 与 zeroInvasion 回归；后续补第三方插件样例 PR
 ### [NFR-006] NFR-05 浏览器与消息推送
 
 - **状态**：已实现（M12 r238）
@@ -90,16 +92,17 @@
 - **里程碑对齐**：M12 · 已完成 · 2026-07-07
 ### [NFR-007] NFR-06 信创国产化
 
-- **状态**：部分实现
+- **状态**：部分实现（companion r247）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：NFR-06 信创国产化（SRS 追溯项）。
 - **验收标准**：
   - [x] 信创 DB 按需连通（合规清单含 `registeredXinchuangConnectors` 含 gbase，r46 L1）
   - [x] 不合规项枚举与修复指引（`enumerate_non_compliant` + remediation，r51 companion）
-  - [ ] 部署验收报告
-- **代码锚点**：`backend/app/core/nfr/xinchuang.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r51.py`
-- **演化建议**：r51 companion 闭合合规检查非阻塞探测与 strict 模式拦截；后续补部署验收报告与全量信创认证
+  - [x] 部署验收报告（r247：`GET /api/v1/nfr/xinchuang/deployment-report` compose 服务清单 + 方言 readonly smoke；`docs/nfr/xinchuang-deployment.md`；T-NFR-R247-007-01~05）
+  - [ ] 全量信创认证与生产部署签收
+- **代码锚点**：`backend/app/core/nfr/xinchuang.py` · `docs/nfr/xinchuang-deployment.md` · `backend/app/api/v1/nfr.py` · `tests/test_mfinal_fe_gov_batch3_r247.py` T-NFR-R247-007-01~05 · `tests/test_nfr_gov_conn_r51.py`
+- **演化建议**：r247 companion 闭合 xinchuang deployment-report 与 compose/dialect smoke；后续补全量信创认证与生产签收
 ### [NFR-008] NFR-08 自主可控零 DE/SS
 
 - **状态**：部分实现（companion r57）

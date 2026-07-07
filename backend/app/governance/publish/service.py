@@ -15,6 +15,7 @@ from app.designer import workflow as workflow_link_service
 from app.governance.catalog import service as catalog_service
 from app.governance.catalog.schemas import CatalogEntryCreate
 from app.governance.catalog.models import CatalogEntry
+from app.governance.acl import assert_publish_action
 from app.governance.publish.errors import PublishError
 from app.governance.publish.notifications import emit_publish_notification
 from app.governance.publish.schemas import PublishActionOut, PublishFromWorkflowOut, PublishStatusOut
@@ -45,7 +46,11 @@ def get_publish_status(db: Session, entry_id: uuid.UUID) -> PublishStatusOut:
     )
 
 
-def submit_entry(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
+def submit_entry(
+    db: Session, entry_id: uuid.UUID, actor: UserContext | None = None
+) -> PublishActionOut:
+    if actor is not None:
+        assert_publish_action(db, actor, "submit", entry_id)
     row = _get_row(db, entry_id)
     if row.status == "pending_publish":
         raise PublishError(GOV_PUBLISH_ALREADY_PENDING, "Entry already pending publish", 409)
@@ -58,7 +63,11 @@ def submit_entry(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
     return PublishActionOut(id=row.id, status=row.status)
 
 
-def approve_entry(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
+def approve_entry(
+    db: Session, entry_id: uuid.UUID, actor: UserContext | None = None
+) -> PublishActionOut:
+    if actor is not None:
+        assert_publish_action(db, actor, "approve", entry_id)
     row = _get_row(db, entry_id)
     if row.status == "published":
         return PublishActionOut(id=row.id, status=row.status)
@@ -68,10 +77,21 @@ def approve_entry(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
     db.commit()
     db.refresh(row)
     emit_publish_notification(entry_id, "approved")
+    if actor is not None:
+        from app.governance.bus.pipeline import trigger_auto_bus_register
+
+        try:
+            trigger_auto_bus_register(db, actor, entry_id, source="publish")
+        except catalog_service.CatalogError:
+            pass
     return PublishActionOut(id=row.id, status=row.status)
 
 
-def reject_entry(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
+def reject_entry(
+    db: Session, entry_id: uuid.UUID, actor: UserContext | None = None
+) -> PublishActionOut:
+    if actor is not None:
+        assert_publish_action(db, actor, "reject", entry_id)
     row = _get_row(db, entry_id)
     if row.status != "pending_publish":
         raise PublishError(GOV_PUBLISH_INVALID_TRANSITION, f"Cannot reject from {row.status}", 400)
@@ -141,8 +161,8 @@ def publish_from_workflow(
         ),
     )
     workflow_link_service.update_link_catalog_entry(db, link.designer_item_id, entry.id)
-    submit_entry(db, entry.id)
-    approve_entry(db, entry.id)
+    submit_entry(db, entry.id, actor)
+    approve_entry(db, entry.id, actor)
     _append_version_history(db, entry.id, "published")
     from app.governance.openapi import service as openapi_service
 

@@ -7,6 +7,7 @@ from typing import Literal
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
+from app.auth.resources.service import check_resource_access
 from app.auth.rls.hooks import get_query_rls_fragment
 from app.auth.rls.predicate import resolve_user_org_node_ids
 
@@ -85,3 +86,41 @@ def assert_query_design_execute(
     if not org_ids:
         raise GovAclError("GOV_RLS_BINDING_REQUIRED", "User has no organization binding", 403)
     return get_query_rls_fragment(session, actor)
+
+
+def assert_workflow_transition(actor: UserContext, action: str, actor_role: str) -> None:
+    role_map = {
+        "submit": "requester",
+        "approve": "approver",
+        "reject": "approver",
+        "complete_design": "designer",
+    }
+    required = role_map.get(action)
+    if "admin" in actor.roles:
+        return
+    if required and actor_role != required and required not in actor.roles:
+        raise GovAclError("GOV_WORKFLOW_FORBIDDEN", f"Role cannot {action}", 403)
+
+
+def assert_publish_action(
+    session: Session,
+    actor: UserContext,
+    action: Literal["submit", "approve", "reject"],
+    entry_id: uuid.UUID,
+) -> None:
+    if "admin" in actor.roles:
+        return
+    role_req = {"submit": "designer", "approve": "publisher", "reject": "publisher"}
+    needed = role_req[action]
+    if needed not in actor.roles:
+        raise GovAclError("GOV_ACL_FORBIDDEN", f"{action} requires {needed} or admin", 403)
+    if action == "approve" and "publisher" in actor.roles:
+        if not check_resource_access(session, actor.roles, "gov_catalog_entry", entry_id):
+            raise GovAclError("GOV_RESOURCE_FORBIDDEN", "Missing gov_catalog_entry grant", 403)
+
+
+def assert_bus_register(session: Session, actor: UserContext, entry_path: str) -> None:
+    _ = (session, entry_path)
+    if "admin" in actor.roles or "integration" in actor.roles:
+        return
+    raise GovAclError("GOV_AUTO_BUS_FORBIDDEN", "Bus register requires integration or admin", 403)

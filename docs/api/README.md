@@ -104,8 +104,11 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | GET | `/api/v1/nfr/plugin-extension-points` | 连接器插件扩展点清单 | 内部 | 一期 | NFR-005 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/plugin-extension/drill` | 连接器扩展演练（`drill_stub` 注册 + zeroInvasion；pytest/DRILL_MODE） | 内部 | 四期 | NFR-005 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/dashboard-availability/report` | 核心看板可用性复合报告（SLA + 首屏 P95；strict 503） | 内部 | 四期 | NFR-003 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/push-config` | 推送配置契约（不泄露 webhook 明文） | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/xinchuang/compliance` | 信创合规检查清单（strict 违规 → 422） | 内部 | 一期 | NFR-007 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/xinchuang/deployment-report` | 信创部署验收报告（compose 服务清单 + 方言 smoke） | 内部 | 四期 | NFR-007 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/browser-matrix` | 浏览器兼容矩阵 + 可选 UA 探测 | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/notifications` | 站内推送通知创建（mock 投递） | 内部 | 三期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/notifications/{id}` | 推送通知状态查询 | 内部 | 三期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
@@ -328,7 +331,9 @@ redoc: /redoc
 | GET | `/api/v1/gov/bus/register/fsm` | GOV-002 semi-auto FSM 查询（`catalogEntryId`） | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/bus/register/probe` | GOV-002 半自动登记 perf probe | IF-06 | 一期 | GOV-002 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/bus/auto-register` | 总线全自动注册 FSM（`catalogEntryId`；integration/admin；幂等 201/200；403 `GOV_AUTO_BUS_FORBIDDEN`） | IF-06 | 四期 | GOV-007 | 已实现 | `backend/app/api/v1/gov.py` |
-| GET | `/api/v1/gov/bus/auto-register/probe` | auto-register perf probe（`elapsedMs`/`withinBudget`） | IF-06 | 四期 | GOV-007 | 已实现（companion） | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/bus/auto-register/retry` | failed FSM 重试全自动注册（integration/admin；502 `BUS_REGISTER_RETRY_EXHAUSTED`） | IF-06 | 四期 | GOV-007 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/bus/auto-register/probe` | auto-register perf probe（`elapsedMs`/`withinBudget`/`ok`） | IF-06 | 四期 | GOV-007 | 已实现（companion） | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/acl/matrix` | 治理权限矩阵（admin；`describe_gov_permission_matrix`） | IF-06 | 四期 | GOV-008 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/query-design/validate` | 可视化查询设计校验（422 `detail.fields`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | PUT | `/api/v1/gov/query-design` | 可视化查询设计保存（409 `CONFIG_VERSION_CONFLICT`；403 ACL） | IF-06 | 一期 | GOV-004/008 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/query-design` | 可视化查询设计读取（`?refId=`） | IF-06 | 一期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |

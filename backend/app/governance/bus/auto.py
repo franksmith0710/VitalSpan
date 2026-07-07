@@ -5,7 +5,6 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
-from app.governance.bus.adapter import InMemoryBusAdapter
 from app.governance.bus.auto_schemas import AutoRegisterOut, FsmState
 from app.governance.catalog import service as catalog_service
 from app.governance.catalog.schemas import BusRegisterOut
@@ -49,43 +48,9 @@ def _assert_entry_path_scope(actor: UserContext, entry_path: str) -> None:
 
 
 def auto_register(db: Session, actor: UserContext, entry_id: uuid.UUID) -> tuple[AutoRegisterOut, int]:
-    _assert_auto_role(actor)
-    state = get_fsm_state(entry_id)
-    if state in ("failed", "auto_registering"):
-        raise catalog_service.CatalogError(
-            "GOV_AUTO_BUS_INVALID_TRANSITION",
-            f"Cannot auto-register from fsm state {state}",
-            409,
-        )
-    try:
-        entry = catalog_service.get_entry(db, entry_id)
-    except catalog_service.CatalogError:
-        raise catalog_service.CatalogError("CATALOG_ENTRY_NOT_FOUND", "Catalog entry not found", 404) from None
+    from app.governance.bus.pipeline import trigger_auto_bus_register
 
-    _assert_entry_path_scope(actor, entry.path)
-
-    if entry.status == "draft":
-        raise catalog_service.CatalogError(
-            "GOV_AUTO_BUS_NOT_PUBLISHABLE",
-            "Draft entry cannot be auto-registered",
-            400,
-        )
-
-    _set_fsm(entry_id, "auto_registering")
-    try:
-        out, created = catalog_service.register_entry_to_bus(
-            db, entry_id, adapter=InMemoryBusAdapter()
-        )
-        _set_fsm(entry_id, "succeeded")
-        bus_id = _extract_bus_id(out)
-        status_code = 201 if created else 200
-        return (
-            AutoRegisterOut(autoRegistered=True, busId=bus_id, fsmState="succeeded"),
-            status_code,
-        )
-    except catalog_service.CatalogError as exc:
-        _set_fsm(entry_id, "failed")
-        raise exc
+    return trigger_auto_bus_register(db, actor, entry_id, source="manual")
 
 
 def _extract_bus_id(out: BusRegisterOut) -> str | None:

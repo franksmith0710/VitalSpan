@@ -115,8 +115,11 @@ from app.governance.catalog.cat03.schemas import (
     GeoRegionOut,
 )
 from app.governance.catalog.cat03 import service as cat03_service
+from app.governance.acl import GovAclError, assert_workflow_transition
+from app.governance.acl_matrix import describe_gov_permission_matrix
 from app.governance.bus.auto import auto_register
 from app.governance.bus.auto_schemas import AutoRegisterIn, AutoRegisterOut
+from app.governance.bus.pipeline import retry_auto_register
 
 router = APIRouter(prefix="/gov", tags=["governance", "IF-06"])
 
@@ -276,6 +279,29 @@ def semi_auto_register_probe(
     )
 
 
+@router.post("/bus/auto-register/retry", response_model=None)
+def auto_register_retry(
+    payload: AutoRegisterIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        out, code = retry_auto_register(db, actor, payload.catalog_entry_id)
+        return JSONResponse(status_code=code, content=out.model_dump(by_alias=True, mode="json"))
+    except catalog_service.CatalogError as exc:
+        return _catalog_error_response(exc)
+
+
+@router.get("/acl/matrix")
+def gov_acl_matrix(actor: Annotated[UserContext, Depends(get_current_user)]):
+    if "admin" not in actor.roles:
+        return JSONResponse(
+            status_code=403,
+            content={"code": "GOV_ACL_FORBIDDEN", "message": "admin only", "detail": None},
+        )
+    return describe_gov_permission_matrix()
+
+
 @router.post("/bus/auto-register", response_model=None)
 def auto_register_bus(
     payload: AutoRegisterIn,
@@ -314,7 +340,11 @@ def auto_register_probe(
     result = probe_auto_register_budget_ms(db, actor, entry.id)
     return JSONResponse(
         status_code=200,
-        content={"elapsedMs": result.elapsed_ms, "withinBudget": result.ok},
+        content={
+            "elapsedMs": result.elapsed_ms,
+            "withinBudget": result.ok,
+            "ok": result.ok,
+        },
     )
 
 
@@ -333,40 +363,53 @@ def _publish_error_response(exc: PublishError) -> JSONResponse:
     )
 
 
+def _gov_acl_error(exc: GovAclError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
 @router.post("/publish/entries/{entry_id}/submit", response_model=PublishActionOut)
 def publish_submit(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishActionOut | JSONResponse:
     try:
-        return publish_service.submit_entry(db, entry_id)
+        return publish_service.submit_entry(db, entry_id, actor)
     except PublishError as exc:
         return _publish_error_response(exc)
+    except GovAclError as exc:
+        return _gov_acl_error(exc)
 
 
 @router.post("/publish/entries/{entry_id}/approve", response_model=PublishActionOut)
 def publish_approve(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishActionOut | JSONResponse:
     try:
-        return publish_service.approve_entry(db, entry_id)
+        return publish_service.approve_entry(db, entry_id, actor)
     except PublishError as exc:
         return _publish_error_response(exc)
+    except GovAclError as exc:
+        return _gov_acl_error(exc)
 
 
 @router.post("/publish/entries/{entry_id}/reject", response_model=PublishActionOut)
 def publish_reject(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishActionOut | JSONResponse:
     try:
-        return publish_service.reject_entry(db, entry_id)
+        return publish_service.reject_entry(db, entry_id, actor)
     except PublishError as exc:
         return _publish_error_response(exc)
+    except GovAclError as exc:
+        return _gov_acl_error(exc)
 
 
 @router.get("/publish/entries/{entry_id}/status", response_model=PublishStatusOut)
@@ -673,11 +716,14 @@ def get_workflow_instance(
 def transition_workflow_instance(
     instance_id: uuid.UUID,
     payload: WorkflowTransitionIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> WorkflowInstanceOut | JSONResponse:
     try:
+        assert_workflow_transition(actor, payload.action, payload.actor_role)
         return workflow_service.transition_instance(db, instance_id, payload.action, payload.actor_role)
+    except GovAclError as exc:
+        return _gov_acl_error(exc)
     except WorkflowError as exc:
         return _workflow_error(exc)
 

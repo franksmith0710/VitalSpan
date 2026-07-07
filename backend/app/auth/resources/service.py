@@ -90,7 +90,7 @@ def check_resource_access(
     return session.scalar(stmt) is not None
 
 
-VALID_RESOURCE_TYPES = frozenset({"datasource", "dashboard", "report"})
+VALID_RESOURCE_TYPES = frozenset({"datasource", "dashboard", "report", "gov_catalog_entry"})
 
 
 class VisibilityError(Exception):

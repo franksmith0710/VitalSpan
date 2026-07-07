@@ -7,17 +7,17 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design-batch2.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-fe-design-batch2-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-fe-design-batch2.md |
-| branch | feat/mfinal-fe-design-batch2-r246 |
+| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch3.md |
+| design | docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch3-design.md |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fe-gov-batch3.md |
+| branch | feat/mfinal-fe-gov-batch3-r247 |
 | base_branch | dev-auto |
-| prd_ids | DESIGN-004,DESIGN-005,GOV-004,GOV-005,GOV-006 |
-| pr_number | 233 |
-| last_verified_command | cd backend && python3 -m pytest ../tests -q; cd backend && python3 -m pytest ../tests/test_mfinal_fe_design_r246.py -q; cd backend && python3 -m pytest ../tests/test_mfinal_fe_design_r245.py -q; cd fe && pnpm run build && pnpm run check:design && pnpm exec vitest run |
+| prd_ids | GOV-007,GOV-008,NFR-005,NFR-003,NFR-007 |
+| pr_number | |
+| last_verified_command | cd backend && python3 -m ruff check . && PYTHONPATH=/workspace/backend:/workspace/tests python3 -m pytest /workspace/tests -q |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm run check:design (201 files); pnpm exec vitest run (227/227); screenshots N/A headless |
-| last_ui_verified_exit_code | 0 |
+| last_ui_verified_command | N/A（本轮无 fe/ 改动，ui_design_skill none） |
+| last_ui_verified_exit_code | N/A |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T16:30:00Z |
 | skill_rule_index_source_count | 26 |
@@ -70,6 +70,8 @@
 
 ## 演化历史（最近）
 
+- P5 r247 收尾（cron 2026-07-07 ~18:10 UTC）：PRD 重评 GOV-007~008、NFR-003/005/007；hub v1.2.105；总分 90.0–90.4→91.2–91.6；五 ID 仍部分实现 plan 未勾选；phase P4_DONE→P5_DOCS_READY；pr=234；待 squash merge dev-auto
+- P4 验证（cron 2026-07-07 ~18:05 UTC）：独立全量 backend ruff clean + pytest 2224 passed/34 skipped exit 0；mfinal r247 36 passed exit 0；mfinal r246 32 passed exit 0；UI: N/A（无 fe/ 改动，ui_design_skill none）；screenshots 未运行；phase P3_DONE→P4_DONE；branch=feat/mfinal-fe-gov-batch3-r247；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P5 r246 收尾（cron 2026-07-07 ~17:30 UTC）：PRD 重评 DESIGN-004~005、GOV-004~006；hub v1.2.104；plan M-FINAL F-E 五 ID 勾选（完成于 2026-07-07）；总分 90.1–91.2→91.6–92.8；phase P4_DONE→P5_DOCS_READY；pr=233；待 squash merge dev-auto
 - P4 验证（cron 2026-07-07 ~17:26 UTC）：独立全量 backend pytest 2190 passed/32 skipped exit 0；mfinal r246 32 passed exit 0；mfinal r245 34 passed/1 skipped exit 0；fe build + check:design 201 files + vitest 227/227 exit 0；UI design_drift PASS；screenshots 未运行（headless）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fe-design-batch2-r246；pr=233；待 P5 evolution-pr-finisher-github
 - P3 r246 实现（cron 2026-07-07 ~17:22 UTC）：8 Task 全量完成（DESIGN-004 快照 ACL/双向 link + DESIGN-005 design_mode/SQL UI + GOV-004~006 审批态设计/发布/OpenAPI）；32 pytest r246 + r245 66 passed；fe build + check:design 201 files + vitest 13/13 designer/governance smoke exit 0；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS；screenshots 未运行（headless）；branch=feat/mfinal-fe-design-batch2-r246；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
