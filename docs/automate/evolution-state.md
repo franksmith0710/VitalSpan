@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target | |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc.md |
 | design | |
 | plan | |
 | branch | |
 | base_branch | dev-auto |
-| prd_ids | |
+| prd_ids | CONN-017,CONN-018,CONN-019,CONN-020,CONN-021 |
 | pr_number | |
 | last_verified_command | cd fe && pnpm run check:design && pnpm vitest run && node --test scripts/check-design.fixture.test.mjs && pnpm run build |
 | last_verified_exit_code | 0 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 选题（cron 2026-07-07 ~14:17 UTC）：饱和熔断已跳过（plan §M-FINAL · F-C 含 6 项 `[ ]` CONN-017~022；Top5 薄弱项最低分 CONN-027 85.4 <90）；入选 M-FINAL · F-C 批次 1 五 ID（CONN-017~021 达梦/金仓/GBase/OceanBase/TiDB 信创 companion）；CONN-022 GaussDB 留 F-C 批次 2；hub 最低分入选 CONN-018 90.0；F-G CONN-023~027 留专批；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~14:16 UTC）：G0 PASS PR #226 已 merge dev-auto（274cfa4）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.99 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-C**（6 项 `[ ]` CONN-017~022 信创连接器；F-A/F-B 已收官；F-D~F-G 含后续待办；frontmatter 摘要表仍标 F-A 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-B RBAC grants+capability-nav（AUTH-004/BOOT-002）PR #226 完成；phase idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~14:00 UTC）：PR #226 已 squash merge dev-auto（d8da325）feat/mfinal-fb-rbac-grants-r241→dev-auto；无 Open PR；M-FINAL F-B 收官（AUTH-004/BOOT-002）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 r241 收尾（cron 2026-07-07 ~14:00 UTC）：PR #226 feat/mfinal-fb-rbac-grants-r241→dev-auto；重评 AUTH-004/BOOT-002；hub 总分 92.1/95.3→94.1/95.9；plan M-FINAL F-B 二 ID 勾选（完成于 2026-07-07）；F-B 收官；phase P4_DONE→P5_DOCS_READY；待 squash merge
