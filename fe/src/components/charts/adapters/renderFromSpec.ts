@@ -16,6 +16,21 @@ export type RenderSpec = {
 
 type EChartsOption = Record<string, unknown>;
 
+export const FALLBACK_CHART_TYPE = "table";
+
+export function getFallbackChartType(type: string): string {
+  const known = [
+    "bar", "line", "pie", "table", "funnel", "sankey",
+    "graph", "map", "heatmap", "timeline", "gauge", "kpi",
+  ];
+  return known.includes(type) ? type : FALLBACK_CHART_TYPE;
+}
+
+export function safeColIndex(columns: string[], field: string): number | null {
+  const idx = columns.indexOf(field);
+  return idx >= 0 ? idx : null;
+}
+
 function colIndex(columns: string[], field: string): number {
   return columns.indexOf(field);
 }
@@ -26,6 +41,7 @@ export function capRows<T>(rows: T[], cap: number): { rows: T[]; truncated: bool
 }
 
 function buildFunnelOption(spec: RenderSpec, rows: unknown[][], columns: string[]): EChartsOption {
+  if (rows.length === 0) return { series: [], dataset: { source: [] } };
   const dim = spec.encoding.dimensions[0]?.field ?? "";
   const metric = spec.encoding.metrics[0]?.field ?? "";
   const di = colIndex(columns, dim);
@@ -35,6 +51,7 @@ function buildFunnelOption(spec: RenderSpec, rows: unknown[][], columns: string[
 }
 
 function buildSankeyOption(spec: RenderSpec, rows: unknown[][], columns: string[]): EChartsOption {
+  if (rows.length === 0) return { series: [], dataset: { source: [] } };
   const src = spec.encoding.dimensions[0]?.field ?? "";
   const dst = spec.encoding.dimensions[1]?.field ?? "";
   const metric = spec.encoding.metrics[0]?.field ?? "";
@@ -52,6 +69,7 @@ function buildSankeyOption(spec: RenderSpec, rows: unknown[][], columns: string[
 }
 
 function buildGraphOption(spec: RenderSpec, rows: unknown[][], columns: string[]): EChartsOption {
+  if (rows.length === 0) return { series: [], dataset: { source: [] } };
   const src = spec.encoding.dimensions[0]?.field ?? "";
   const dst = spec.encoding.dimensions[1]?.field ?? "";
   const si = colIndex(columns, src);
@@ -91,6 +109,7 @@ function buildMapOption(spec: RenderSpec, rows: unknown[][], columns: string[]):
 }
 
 function buildHeatmapOption(spec: RenderSpec, rows: unknown[][], columns: string[]): EChartsOption {
+  if (rows.length === 0) return { series: [], dataset: { source: [] } };
   const xField = spec.encoding.dimensions[0]?.field ?? "";
   const yField = spec.encoding.dimensions[1]?.field ?? "";
   const metric = spec.encoding.metrics[0]?.field ?? "";
@@ -111,6 +130,7 @@ function buildHeatmapOption(spec: RenderSpec, rows: unknown[][], columns: string
 }
 
 function buildTimelineOption(spec: RenderSpec, rows: unknown[][], columns: string[]): EChartsOption {
+  if (rows.length === 0) return { series: [], dataset: { source: [] } };
   const timeField = spec.encoding.dimensions[0]?.field ?? "";
   const metric = spec.encoding.metrics[0]?.field ?? "";
   const ti = colIndex(columns, timeField);
@@ -131,6 +151,59 @@ function buildGaugeOption(spec: RenderSpec, rows: unknown[][], columns: string[]
   return { series: [{ type: "gauge", data: [{ value }] }] };
 }
 
+export function buildBarOption(
+  spec: RenderSpec,
+  rows: unknown[][],
+  columns: string[],
+): EChartsOption {
+  if (rows.length === 0) return { series: [], dataset: { source: [] } };
+  const dim = spec.encoding.dimensions[0]?.field ?? "";
+  const metrics = spec.encoding.metrics.map((m) => m.field);
+  const di = safeColIndex(columns, dim);
+  const xData = di !== null ? rows.map((r) => String(r[di] ?? "")) : [];
+  const series = metrics.map((metric) => {
+    const mi = safeColIndex(columns, metric);
+    const data = mi !== null ? rows.map((r) => Number(r[mi] ?? 0)) : [];
+    const base: Record<string, unknown> = { type: "bar", name: metric, data };
+    if (spec.styleVariant === "stacked" || spec.styleVariant === "grouped") {
+      base.stack = spec.styleVariant === "stacked" ? "total" : undefined;
+    }
+    if (spec.styleVariant === "horizontal") {
+      return { ...base, type: "bar" };
+    }
+    return base;
+  });
+  const isHorizontal = spec.styleVariant === "horizontal";
+  return {
+    xAxis: isHorizontal
+      ? { type: "value" }
+      : { type: "category", data: xData },
+    yAxis: isHorizontal
+      ? { type: "category", data: xData }
+      : { type: "value" },
+    series,
+  };
+}
+
+export function buildPieOption(
+  spec: RenderSpec,
+  rows: unknown[][],
+  columns: string[],
+): EChartsOption {
+  if (rows.length === 0) return { series: [], dataset: { source: [] } };
+  const dim = spec.encoding.dimensions[0]?.field ?? "";
+  const metric = spec.encoding.metrics[0]?.field ?? "";
+  const di = safeColIndex(columns, dim);
+  const mi = safeColIndex(columns, metric);
+  const data = rows.map((r) => ({
+    name: di !== null ? String(r[di] ?? "") : "",
+    value: mi !== null ? Number(r[mi] ?? 0) : 0,
+  }));
+  const radius: string | string[] =
+    spec.styleVariant === "donut" ? ["40%", "70%"] : "70%";
+  return { series: [{ type: "pie", radius, data }] };
+}
+
 export function buildEchartsOption(
   spec: RenderSpec,
   rows: unknown[][],
@@ -138,6 +211,8 @@ export function buildEchartsOption(
 ): EChartsOption {
   const { rows: capped } = capRows(rows, ADVANCED_CHART_ROW_CAP);
   switch (spec.chartType) {
+    case "bar":
+      return buildBarOption(spec, capped, columns);
     case "funnel":
       return buildFunnelOption(spec, capped, columns);
     case "sankey":
@@ -152,7 +227,9 @@ export function buildEchartsOption(
       return buildTimelineOption(spec, capped, columns);
     case "gauge":
       return buildGaugeOption(spec, capped, columns);
+    case "pie":
+      return buildPieOption(spec, capped, columns);
     default:
-      return { series: [{ type: "bar", data: [] }] };
+      return { series: [], dataset: { source: [] } };
   }
 }

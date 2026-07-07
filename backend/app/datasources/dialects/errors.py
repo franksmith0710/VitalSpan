@@ -613,6 +613,39 @@ IMPALA_TIMEOUT = "IMPALA_TIMEOUT"
 map_impala_error = map_hive_error
 
 
+# Redshift (Postgres-compatible; error codes remap to REDSHIFT_ prefix)
+REDSHIFT_AUTH_FAILED = "REDSHIFT_AUTH_FAILED"
+REDSHIFT_CONN_REFUSED = "REDSHIFT_CONN_REFUSED"
+REDSHIFT_SSL_REQUIRED = "REDSHIFT_SSL_REQUIRED"
+REDSHIFT_TIMEOUT = "REDSHIFT_TIMEOUT"
+REDSHIFT_UNKNOWN_DATABASE = "REDSHIFT_UNKNOWN_DATABASE"
+REDSHIFT_UNKNOWN = "REDSHIFT_UNKNOWN"
+
+_PG_TO_REDSHIFT: dict[str, str] = {
+    PG_CONN_REFUSED: REDSHIFT_CONN_REFUSED,
+    PG_AUTH_FAILED: REDSHIFT_AUTH_FAILED,
+    PG_TIMEOUT: REDSHIFT_TIMEOUT,
+    PG_UNKNOWN_DATABASE: REDSHIFT_UNKNOWN_DATABASE,
+    PG_SSL_ERROR: REDSHIFT_SSL_REQUIRED,
+    PG_UNKNOWN: REDSHIFT_UNKNOWN,
+}
+
+
+def map_redshift_error(exc: Exception) -> tuple[str, str]:
+    """Map psycopg/network exception to REDSHIFT_* error code."""
+    import psycopg  # local import, avoids hard dep if psycopg unavailable
+
+    if isinstance(exc, psycopg.OperationalError):
+        pg_code, detail = map_postgres_operational_error(exc)
+        if "ssl" in detail.lower():
+            return REDSHIFT_SSL_REQUIRED, detail
+        return _PG_TO_REDSHIFT.get(pg_code, REDSHIFT_UNKNOWN), detail
+    detail = str(exc)
+    if "ssl" in detail.lower():
+        return REDSHIFT_SSL_REQUIRED, detail
+    return REDSHIFT_UNKNOWN, detail
+
+
 __all__ = [
     "DB2_AUTH_FAILED",
     "DB2_CONN_REFUSED",
@@ -770,4 +803,11 @@ __all__ = [
     "map_timescale_error",
     "map_trino_error",
     "pg_sslmode",
+    "REDSHIFT_AUTH_FAILED",
+    "REDSHIFT_CONN_REFUSED",
+    "REDSHIFT_SSL_REQUIRED",
+    "REDSHIFT_TIMEOUT",
+    "REDSHIFT_UNKNOWN",
+    "REDSHIFT_UNKNOWN_DATABASE",
+    "map_redshift_error",
 ]

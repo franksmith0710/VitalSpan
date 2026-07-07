@@ -679,7 +679,7 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [x] CONN-024: Excel/CSV 文件源连接器（完成于 2026-07-07）
 - [x] CONN-025: IBM Db2 连接器（完成于 2026-07-07）
 - [x] CONN-026: Apache Impala 连接器（完成于 2026-07-07）
-- [ ] CONN-027: AWS Redshift 连接器
+- [x] CONN-027: AWS Redshift 连接器（完成于 2026-07-07）
 
 ### M-FINAL 收官信号
 

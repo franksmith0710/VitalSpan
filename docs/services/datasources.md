@@ -67,6 +67,7 @@
 | `dialects/excel.py` · `dialects/csv_file.py` | Excel/CSV 文件源（本地路径 + HTTPS URL，`category=file`，`FILE_*`） | CONN-024 | 已实现（r249） |
 | `dialects/db2.py` | IBM Db2 关系型（ibm_db，`probe_readonly_sql`，`DB2_*`） | CONN-025 | 已实现（r249） |
 | `dialects/impala.py` | Apache Impala 湖仓（pyhive.hive，`category=lake`，`IMPALA_*`） | CONN-026 | 已实现（r249） |
+| `dialects/redshift.py` | AWS Redshift 云数仓（psycopg3 委托 PostgresConnector，port 5439，SSL required，`category=olap`，`REDSHIFT_*`） | CONN-027 | 已实现（r250，M-FINAL F-G 收官） |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
