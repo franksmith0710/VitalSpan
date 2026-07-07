@@ -88,6 +88,8 @@ class ExtensionDrillResult:
     types: tuple[str, ...]
     zero_invasion: bool
     elapsed_ms: float
+    connectivity_ok: bool = False
+    readonly_query_ok: bool = False
 
 
 class DrillStubConnector:
@@ -110,6 +112,20 @@ class DrillStubConnector:
     def list_columns(self, **kwargs):
         return []
 
+    def probe_readonly_sql(self, **kwargs):
+        return ("SELECT 1", True)
+
+
+def assert_core_module_unchanged() -> bool:
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parents[2] / "datasources"
+    allowed = {pathlib.Path(__file__).resolve(), root / "dialects"}
+    for py in root.rglob("*.py"):
+        if "drill_stub" in py.read_text() and py.resolve() not in allowed:
+            return False
+    return verify_zero_invasion()
+
 
 def run_extension_drill() -> ExtensionDrillResult:
     import os
@@ -120,8 +136,12 @@ def run_extension_drill() -> ExtensionDrillResult:
     stub = DrillStubConnector()
     register_connector_plugin(stub)
     types = tuple(t.type for t in registry.list_types())
+    conn_ok = stub.test_connection().ok
+    ro_ok = stub.probe_readonly_sql()[1]
     elapsed = (time.perf_counter() - started) * 1000
-    return ExtensionDrillResult(True, types, verify_zero_invasion(), elapsed)
+    return ExtensionDrillResult(
+        True, types, verify_zero_invasion(), elapsed, conn_ok, ro_ok
+    )
 
 
 def teardown_extension_drill() -> None:
