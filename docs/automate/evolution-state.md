@@ -13,7 +13,7 @@
 | branch | feat/m11-batch3-viz-time-sdk-cat-r237 |
 | base_branch | dev-auto |
 | prd_ids | VIZ-005,VIZ-007,CAT-004,CAT-005,CAT-006 |
-| pr_number |  |
+| pr_number | 221 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm test && pnpm run build |
