@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.88
+version: 1.2.89
 last_updated: 2026-07-07
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-07 · P5 r236 重评 CONN-014~016 + QUERY-003 + VIZ-005（M11 三期 NoSQL/搜索 native execute + 维度指标筛选 UI）；pytest 2018/23 skipped；test_m11_batch2_r236 28/28 + r235/r49/r52 回归；fe vitest 167/167 + check:design PASS；Mongo/ES/OpenSearch probe+execute_native_query、NativeQueryExecutor、ChartConfigPanel filters/native mode；用户价值 84%→86–88%，完整度 90%→92–96%，测试覆盖 98%→100%，总分 90.0–91.0→91.4–93.0（四 ID ≥90 STUCK 空；plan M11 四 ID 勾选；VIZ-005 时间范围留 companion plan 未勾）
+> 更新：2026-07-07 · P5 r237 重评 VIZ-005/007 + CAT-004~006（M11 三期 timeRange companion + SDK 嵌入 FE + CAT m11-probe）；pytest 2031/23 skipped；test_m11_batch3_r237 13/13 + r236/r63/r65 回归；fe vitest 174/174 + check:design PASS；timeRange FE/BE、embedSdk/public/demo、CAT-04~06 m11-probe handler；用户价值 84–86%→86–88%，完整度 90–92%→94–98%，架构健康 88%→90%，总分 90.1–91.4→91.8–93.0（五 ID ≥90 STUCK 空；plan M11 五 ID 勾选；M11 收官）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -27,10 +27,10 @@ domain_count: 16
 | 4 | CONN-018 | 连接器项 | 90.0 | 用户价值 | 见期次 |
 | 5 | NFR-005 | 非功能项 | 90.0 | 用户价值 | 见期次 |
 | 6 | GOV-003 | 治理项 | 90.1 | 用户价值 | 见期次 |
-| 7 | CAT-004 | 分类项 | 90.1 | 用户价值 | 见期次 |
-| 8 | VIZ-007 | 可视化项 | 90.1 | 用户价值 | 见期次 |
-| 9 | VIZ-003 | 可视化项 | 90.1 | 用户价值 | 见期次 |
-| 10 | VIZ-004 | 可视化项 | 90.1 | 用户价值 | 见期次 |
+| 7 | VIZ-003 | 可视化项 | 90.1 | 用户价值 | 见期次 |
+| 8 | VIZ-004 | 可视化项 | 90.1 | 用户价值 | 见期次 |
+| 9 | VIZ-008 | 可视化项 | 90.1 | 用户价值 | 见期次 |
+| 10 | GOV-006 | 治理项 | 90.1 | 用户价值 | 见期次 |
 
 ---
 
@@ -97,9 +97,9 @@ domain_count: 16
 | VIZ-002 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 90 | 93.2 | 性能 |
 | VIZ-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | VIZ-004 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
-| VIZ-005 | 86 | 92 | 96 | N/A | 90 | 100 | 88 | 88 | 91.4 | 用户价值 |
+| VIZ-005 | 88 | 98 | 96 | N/A | 90 | 100 | 88 | 88 | 93.0 | 用户价值 |
 | VIZ-006 | 84 | 90 | 94 | N/A | 88 | 98 | 86 | 90 | 90.2 | 性能 |
-| VIZ-007 | 84 | 90 | 94 | N/A | 88 | 98 | 88 | 90 | 90.1 | 用户价值 |
+| VIZ-007 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | VIZ-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | DASH-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
 | DASH-002 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 88 | 92.9 | 安全性 |
@@ -146,9 +146,9 @@ domain_count: 16
 | CAT-001 | 88 | 94 | 94 | N/A | 88 | 100 | 88 | 88 | 91.5 | 架构健康 |
 | CAT-002 | 88 | 94 | 94 | N/A | 88 | 100 | 88 | 88 | 91.5 | 架构健康 |
 | CAT-003 | 88 | 94 | 94 | N/A | 88 | 100 | 88 | 88 | 91.5 | 架构健康 |
-| CAT-004 | 84 | 90 | 94 | N/A | 88 | 98 | 88 | 88 | 90.1 | 用户价值 |
-| CAT-005 | 84 | 90 | 94 | N/A | 88 | 98 | 88 | 92 | 90.4 | 用户价值 |
-| CAT-006 | 84 | 90 | 94 | N/A | 88 | 98 | 88 | 88 | 90.1 | 用户价值 |
+| CAT-004 | 88 | 94 | 94 | N/A | 90 | 100 | 88 | 88 | 91.8 | 用户价值 |
+| CAT-005 | 86 | 94 | 94 | N/A | 90 | 100 | 88 | 92 | 92.1 | 用户价值 |
+| CAT-006 | 88 | 94 | 94 | N/A | 90 | 100 | 88 | 88 | 91.8 | 用户价值 |
 | CAT-007 | 84 | 90 | 94 | N/A | 88 | 98 | 88 | 90 | 90.2 | 用户价值 |
 | NFR-001 | 88 | 96 | 94 | N/A | 90 | 100 | 92 | 88 | 92.6 | 用户价值 |
 | NFR-002 | 88 | 96 | 94 | N/A | 90 | 100 | 90 | 88 | 92.4 | 安全性 |
@@ -219,6 +219,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.89 | 2026-07-07 | P5 r237 重评 VIZ-005/007 + CAT-004~006（M11 三期 timeRange companion + SDK 嵌入 FE + CAT m11-probe）；pytest 2031/23 skipped；test_m11_batch3_r237 13/13 + r236/r63/r65 回归；fe vitest 174/174 + check:design PASS；timeRange FE/BE、embedSdk/public/demo、CAT-04~06 m11-probe handler；用户价值 84–86%→86–88%，完整度 90–92%→94–98%，架构健康 88%→90%，总分 90.1–91.4→91.8–93.0（五 ID ≥90 STUCK 空；plan M11 五 ID 勾选；M11 收官） |
 | 1.2.88 | 2026-07-07 | P5 r236 重评 CONN-014~016 + QUERY-003 + VIZ-005（M11 三期 NoSQL/搜索 native execute + 维度指标筛选 UI）；pytest 2018/23 skipped；test_m11_batch2_r236 28/28 + r235/r49/r52 回归；fe vitest 167/167 + check:design PASS；Mongo/ES/OpenSearch probe+execute_native_query、NativeQueryExecutor、ChartConfigPanel filters/native mode；用户价值 84%→86–88%，完整度 90%→92–96%，测试覆盖 98%→100%，总分 90.0–91.0→91.4–93.0（四 ID ≥90 STUCK 空；plan M11 四 ID 勾选；VIZ-005 时间范围留 companion plan 未勾） |
 | 1.2.87 | 2026-07-07 | P5 r235 重评 CONN-009~013（M11 三期原生连接器扩展批次 1）；pytest 1988/25 skipped；test_connectors_m11_r235 21/21 + r34–r41 回归；m11_compose_env、presto 别名、catalog 元数据、Flux/SQL 只读探测；用户价值 84%→88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，总分 90.0–91.2→91.9–92.6（五 ID ≥90 STUCK 空；plan M11 五 ID 勾选；只读查询/UI 选型留 companion） |
 | 1.2.86 | 2026-07-07 | P5 r234 重评 RPT-003/004/006 + VIEW-002 + NFR-002（M10 报表模板与角色默认视图收官）；pytest 1967/21 skipped；fe vitest 164/164 + report-templates smoke P95 + check:design PASS；test_m10_report_templates_r234 21/21 + test_nfr_002_report_query_smoke 2/2；templates storageRef/DELETE/exportHook、catalog templateKey+probe、ReportTemplatesPage、RoleListPage+defaultViewResolve、REPORT_QUERY_FIXTURE；用户价值 84–86%→88%，完整度 90%→96%，交互 N/A→88–90%，总分 90.1–91.3→92.0–92.6（五 ID ≥90 STUCK 空；plan M10 五 ID 勾选；PDF 真实排版/onboarding 全链留 companion） |
@@ -228,5 +229,4 @@ domain_count: 16
 | 1.2.82 | 2026-07-06 | P5 r228 重评 CONN-003~007（M7 二期数据源类型扩展批次 1）；pytest 1901/20 skipped；test_connectors_m7_r228 24/31 + r207/r36/r37/r40/r41 回归；MariadbConnector+compose 3308、relational_hints、Oracle HTTP 凭证脱敏、SQLite fixture、ClickHouse compose 8124；用户价值 84%→86–88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，性能 88%→90%（CONN-005 池复用），总分 90.0–91.2→91.9–93.2（五 ID ≥90 STUCK 空；plan M7 五 ID 勾选；只读查询/UI 选型留 companion） |
 | 1.2.81 | 2026-07-06 | P5 r223 重评 GOV-002 + CAT-001/002/003 + NFR-004（M6 集成验收收官）；pytest 1877/13 skipped；test_gov_002_bus_poc_fsm 6/6 + test_cat_00*_m6 12/12 + test_nfr_004_https_audit 5/5；semi-auto FSM pending/registered/failed+GET/probe、CAT m6-probe handler+ACL、HTTPS audit guard middleware+audit-probe 无泄漏；用户价值 82–84%→86–88%，完整度 90–92%→94–96%，性能 86–88%→88–90%，总分 90.0–90.4→91.5–92.4（五 ID ≥90 STUCK 空；plan M6 五 ID 勾选；真实总线 HTTP/IF-02 查询/生产 TLS 留 companion） |
 | 1.2.80 | 2026-07-06 | P5 r219 重评 VIEW-001 + NFR-001 + GOV-001（M5 VIEW 协议收官 + M6 perf/catalog companion）；pytest 1854/11 skipped；fe vitest 142/142 + check:design PASS；扩展 widget CHART_FIELD_REQUIREMENT+GET /views/schema、appendix E 7 类 taxonomy+probe/ACL、M5_EXTENDED_WIDGET_FIXTURE 首屏 perf；用户价值 82–86%→86–88%，完整度 92–96%→96–98%，性能 86–90%→88–92%，总分 90.2–91.3→92.5–92.8（三 ID ≥90 STUCK 空；plan M5 VIEW-001 + M6 NFR-001/GOV-001 勾选） |
-| 1.2.79 | 2026-07-06 | P5 r216 重评 DASH-003 + VIEW-001 + NFR-001（M5 Dashboard 收官）；pytest 1840/13 skipped；fe vitest 142/142 + check:design PASS；heatmap/kpi/timeline BE+FE、VIEW protocolVersion round-trip、NFR fe 首屏 P95 smoke；完整度 90–94%→92–98%，测试覆盖 96–100%→98–100%，总分 90.0–90.7→91.2–92.5（三 ID ≥90 STUCK 空；plan M5 DASH-003 勾选；VIEW-001/NFR-001 部分实现 plan 未勾） |
 | 1.2.77 | 2026-07-06 | P5 r205 重评 AUTH-001 + AUTH-003 + VIEW-003 + DASH-004（M-FE-3 系统管理与消费态）；pytest 1830/3 skipped；fe vitest 129/129 + check:design PASS；RoleListPage/UserListPage/defaultViewResolve/GlobalFilterBar+widget execute 链；交互 N/A→86%，用户价值 82–84%→90%，总分 90.0–92.1→91.9–93.1（三 ID ≥90 STUCK 空；VIEW-003 部分实现 plan 未勾；Playwright E2E 留 companion） |
