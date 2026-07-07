@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { mapApiError } from "@/lib/apiError";
+import { BatchImportPanel } from "./BatchImportPanel";
+import { SchedulePanel } from "./SchedulePanel";
 import {
   type CatalogNode,
   useCatalogExtension,
@@ -66,6 +68,12 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
             <TabsTrigger value="basic">基本信息</TabsTrigger>
             <TabsTrigger value="extension">扩展配置</TabsTrigger>
             <TabsTrigger value="preview">预览</TabsTrigger>
+            {node.nodeType === "template" ? (
+              <>
+                <TabsTrigger value="schedule">调度</TabsTrigger>
+                <TabsTrigger value="batch">批量导入</TabsTrigger>
+              </>
+            ) : null}
           </TabsList>
           <TabsContent value="basic" className="mt-4 space-y-3 text-theme-sm">
             <p>
@@ -131,6 +139,16 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
               </ScrollArea>
             ) : null}
           </TabsContent>
+          {node.nodeType === "template" ? (
+            <>
+              <TabsContent value="schedule" className="mt-4">
+                <SchedulePanel catalogNodeId={node.id} readOnly={readOnly} />
+              </TabsContent>
+              <TabsContent value="batch" className="mt-4">
+                <BatchImportPanel readOnly={readOnly} />
+              </TabsContent>
+            </>
+          ) : null}
         </Tabs>
       </CardContent>
     </Card>
