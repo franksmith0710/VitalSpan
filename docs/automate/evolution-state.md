@@ -13,7 +13,7 @@
 | branch | feat/mfinal-fb-rbac-grants-r241 |
 | base_branch | dev-auto |
 | prd_ids | AUTH-004,BOOT-002 |
-| pr_number |  |
+| pr_number | 226 |
 | last_verified_command | cd fe && pnpm run check:design && pnpm vitest run && pnpm run build |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r241 实现（cron 2026-07-07 ~13:52 UTC）：8 Task 全量完成（Task1 capabilities.ts+session 委托；Task2 nav-manifest capability+资源授权项；Task3 resolveNavGroups ResolveNavOptions+T-NAV-CAP-01~04；Task4 queryKeys+grantFormSchema+grantErrors；Task5 GrantsPage+useGrantsPage+GrantsDialogs；Task6 grants.smoke T-AUTH-004-FE-01~04；Task7 routes grants+AdminLayout useMemo；Task8 AdminLayout.smoke T-FE-SMFB-01~03+routes.smoke T-RT-GRANTS-01+layout.md）；每任务 spec+quality 自审通过；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS(187 files)；fe vitest 208/208 + build(tsc -b + vite) exit 0；screenshots 未运行（headless 云环境；UI Acceptance 由 RTL smoke 覆盖）；backend 未触及（无 pytest）；branch=feat/mfinal-fb-rbac-grants-r241；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 计划（cron 2026-07-07 ~13:45 UTC）：F-B 全量 4 子项计划完成（AUTH-004 grants 列表+表单、BOOT-002 capability 过滤+smoke）；8 Tasks / 16 文件操作（4 新建+12 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fb-rbac-grants-capability-nav.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~13:40 UTC）：F-B 全量 4 子项（AUTH-004 grants 列表+表单、BOOT-002 capability 过滤+smoke）；ui_design_skill=b-design-system-tailadmin-radix；范围框定 16 文件；capabilities.ts + manifest capability + GrantsPage + resolveNavGroups options 签名设计完成；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fb-rbac-grants-capability-nav-design.md；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~13:33 UTC）：饱和熔断已跳过（plan §M-FINAL · F-B 含 2 项 `[ ]` AUTH-004/BOOT-002 能力导航；Top5 薄弱项最低分 CONN-027 85.4 <90）；入选 M-FINAL · F-B 全量 2 PRD ID 拆 4 子项（AUTH-004 grants 列表+表单、BOOT-002 capability 过滤+smoke）；不足 5 项因 plan F-B 仅 2 行 companion；hub 最低分入选 AUTH-004 92.1；F-G CONN-023~027 留专批；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fb.md；phase idle→G2_DONE；待 P1 evolution-designer
