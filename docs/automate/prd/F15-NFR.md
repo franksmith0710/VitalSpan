@@ -110,7 +110,7 @@
 - **里程碑对齐**：M-FINAL · F-F · 已完成 · 2026-07-07
 ### [NFR-008] NFR-08 自主可控零 DE/SS
 
-- **状态**：部分实现（companion r57）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：四期
 - **描述**：NFR-08 自主可控零 DE/SS（SRS 追溯项）。
@@ -118,6 +118,9 @@
   - [x] 生产无 Superset/DataEase 进程（r53 L1：`GET /api/v1/nfr/runtime-compliance` loaded-modules + pyproject 依赖扫描；非 OS 进程枚举）
   - [x] 依赖审计通过（pyproject-dependencies item + remediation；strict/permissive `POST assert`）
   - [x] 部署验收报告（r57 companion：`GET /api/v1/nfr/deployment-report` accepted/conditional/rejected + remediation_index；≤100ms）
-- **代码锚点**：`backend/app/core/nfr/runtime_guard.py` · `backend/app/core/nfr/deployment_report.py` · `backend/app/api/v1/nfr.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-NFR-R53-008-01~06 · `tests/test_dash_rpt_query_nfr_r57.py` T-NFR-R57-008-01~05
-- **演化建议**：r57 companion 闭合 deployment-report API、strict 拒绝链与性能预算；后续补 ops 全量验收报告与 CI 门禁集成
-- **里程碑对齐**：
+  - [x] compose 禁入扫描（r249：`forbiddenComposeHits` mock superset/dataease 镜像 → conditional/rejected；`NFR08_RUNTIME_MODE=strict`）
+  - [x] Markdown 部署报告（r249：`format=markdown` `text/markdown` 含 `## 零第三方 BI`；`docs/nfr/zero-de-ss-deployment.md`）
+  - [x] 性能预算与 strict assert（r249：`probe_deployment_report_budget_ms` ≤100ms；`POST assert` strict 违规 → 503 `NFR_RUNTIME_VIOLATION`）
+- **代码锚点**：`backend/app/core/nfr/runtime_guard.py` · `backend/app/core/nfr/deployment_report.py` · `backend/app/api/v1/nfr.py` · `docs/nfr/zero-de-ss-deployment.md` · `tests/test_dash_rpt_query_nfr_r53.py` T-NFR-R53-008-01~06 · `tests/test_dash_rpt_query_nfr_r57.py` T-NFR-R57-008-01~05 · `tests/test_mfinal_ff_fg_batch1_r249.py` T-NFR-R249-008-01~06
+- **演化建议**：r249 闭合 compose 禁入、Markdown 报告与 strict 门禁链；后续补 CI 门禁集成与生产签收流程
+- **里程碑对齐**：M-FINAL · F-F · 已完成 · 2026-07-07

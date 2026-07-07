@@ -628,9 +628,9 @@ _R41_TYPES = ("mongodb", "influxdb", "tdengine", "sqlite", "timescaledb")
 
 
 def test_r41_export_type_catalog_count():
-    """T-REG-R41-01: export_type_catalog() 仍返回 20 种 type（含 r46 gbase + r49 opensearch）。"""
+    """T-REG-R41-01: export_type_catalog() 仍返回 29 种 type（含 r46 gbase + r49 opensearch + r249 五型）。"""
     catalog = export_type_catalog()
-    assert len(catalog) == 24
+    assert len(catalog) == 29
     for t in _R41_TYPES:
         assert t in {item["type"] for item in catalog}
 

@@ -660,7 +660,7 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [x] NFR-003: NFR-02 核心看板可用性（完成于 2026-07-07）
 - [x] NFR-005: NFR-04 连接器插件扩展性（完成于 2026-07-07）
 - [x] NFR-007: NFR-06 信创国产化（完成于 2026-07-07）
-- [ ] NFR-008: NFR-08 自主可控零 DE/SS
+- [x] NFR-008: NFR-08 自主可控零 DE/SS（完成于 2026-07-07）
 
 ### F-G — DataEase 缺口连接器（CONN-023~027）
 
@@ -675,10 +675,10 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 | OLAP | Apache Impala | CONN-026 | P3 |
 | 数据湖 | AWS Redshift | CONN-027 | P3 |
 
-- [ ] CONN-023: REST API 数据源连接器
-- [ ] CONN-024: Excel/CSV 文件源连接器
-- [ ] CONN-025: IBM Db2 连接器
-- [ ] CONN-026: Apache Impala 连接器
+- [x] CONN-023: REST API 数据源连接器（完成于 2026-07-07）
+- [x] CONN-024: Excel/CSV 文件源连接器（完成于 2026-07-07）
+- [x] CONN-025: IBM Db2 连接器（完成于 2026-07-07）
+- [x] CONN-026: Apache Impala 连接器（完成于 2026-07-07）
 - [ ] CONN-027: AWS Redshift 连接器
 
 ### M-FINAL 收官信号

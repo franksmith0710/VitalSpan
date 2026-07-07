@@ -540,8 +540,85 @@ def map_opensearch_error(exc: Exception) -> tuple[str, str]:
     return OPENSEARCH_UNKNOWN, str(exc)
 
 
+REST_API_INVALID_URL = "REST_API_INVALID_URL"
+REST_API_AUTH_FAILED = "REST_API_AUTH_FAILED"
+REST_API_TIMEOUT = "REST_API_TIMEOUT"
+REST_API_PROBE_FAILED = "REST_API_PROBE_FAILED"
+
+
+def map_rest_api_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "401" in lowered or "unauthorized" in lowered:
+        return REST_API_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return REST_API_TIMEOUT, detail
+    if "invalid url" in lowered or "missing scheme" in lowered:
+        return REST_API_INVALID_URL, detail
+    return REST_API_PROBE_FAILED, detail
+
+
+FILE_NOT_FOUND = "FILE_NOT_FOUND"
+FILE_PARSE_ERROR = "FILE_PARSE_ERROR"
+FILE_REMOTE_HTTP_ERROR = "FILE_REMOTE_HTTP_ERROR"
+FILE_EXTENSION_DENIED = "FILE_EXTENSION_DENIED"
+FILE_PATH_TRAVERSAL = "FILE_PATH_TRAVERSAL"
+FILE_DRIVER_MISSING = "FILE_DRIVER_MISSING"
+
+
+def map_file_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "traversal" in lowered or ".." in detail:
+        return FILE_PATH_TRAVERSAL, detail
+    if "404" in detail or "not found" in lowered:
+        return FILE_NOT_FOUND, detail
+    if "extension" in lowered:
+        return FILE_EXTENSION_DENIED, detail
+    if "openpyxl" in lowered or "driver" in lowered:
+        return FILE_DRIVER_MISSING, detail
+    if "http" in lowered and ("ssl" in lowered or "remote" in lowered):
+        return FILE_REMOTE_HTTP_ERROR, detail
+    return FILE_PARSE_ERROR, detail
+
+
+DB2_AUTH_FAILED = "DB2_AUTH_FAILED"
+DB2_CONN_REFUSED = "DB2_CONN_REFUSED"
+DB2_UNKNOWN_DATABASE = "DB2_UNKNOWN_DATABASE"
+DB2_TIMEOUT = "DB2_TIMEOUT"
+DB2_DRIVER_MISSING = "DB2_DRIVER_MISSING"
+
+
+def map_db2_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "security" in lowered or "28000" in detail or "sql30082" in lowered:
+        return DB2_AUTH_FAILED, detail
+    if "timeout" in lowered:
+        return DB2_TIMEOUT, detail
+    if "connection refused" in lowered or "sql30081" in lowered:
+        return DB2_CONN_REFUSED, detail
+    if "unknown database" in lowered or "sql1013" in lowered:
+        return DB2_UNKNOWN_DATABASE, detail
+    if "import" in lowered or "ibm_db" in lowered:
+        return DB2_DRIVER_MISSING, detail
+    return DB2_CONN_REFUSED, detail
+
+
+IMPALA_AUTH_FAILED = "IMPALA_AUTH_FAILED"
+IMPALA_CONN_REFUSED = "IMPALA_CONN_REFUSED"
+IMPALA_UNKNOWN_DATABASE = "IMPALA_UNKNOWN_DATABASE"
+IMPALA_TIMEOUT = "IMPALA_TIMEOUT"
+
+map_impala_error = map_hive_error
+
+
 __all__ = [
-    "CLICKHOUSE_AUTH_FAILED",
+    "DB2_AUTH_FAILED",
+    "DB2_CONN_REFUSED",
+    "DB2_DRIVER_MISSING",
+    "DB2_TIMEOUT",
+    "DB2_UNKNOWN_DATABASE",
     "CLICKHOUSE_CONN_REFUSED",
     "CLICKHOUSE_TIMEOUT",
     "CLICKHOUSE_UNKNOWN",
@@ -552,7 +629,12 @@ __all__ = [
     "DM_TIMEOUT",
     "DM_UNKNOWN",
     "DM_UNKNOWN_DATABASE",
-    "DORIS_AUTH_FAILED",
+    "FILE_DRIVER_MISSING",
+    "FILE_EXTENSION_DENIED",
+    "FILE_NOT_FOUND",
+    "FILE_PARSE_ERROR",
+    "FILE_PATH_TRAVERSAL",
+    "FILE_REMOTE_HTTP_ERROR",
     "DORIS_CONN_REFUSED",
     "DORIS_TIMEOUT",
     "DORIS_UNKNOWN",
@@ -582,7 +664,10 @@ __all__ = [
     "OCEANBASE_TIMEOUT",
     "OCEANBASE_UNKNOWN",
     "OCEANBASE_UNKNOWN_DATABASE",
-    "HIVE_AUTH_FAILED",
+    "IMPALA_AUTH_FAILED",
+    "IMPALA_CONN_REFUSED",
+    "IMPALA_TIMEOUT",
+    "IMPALA_UNKNOWN_DATABASE",
     "HIVE_CONN_REFUSED",
     "HIVE_TIMEOUT",
     "HIVE_UNKNOWN",
@@ -618,7 +703,10 @@ __all__ = [
     "OPENSEARCH_INVALID_HOST",
     "OPENSEARCH_TIMEOUT",
     "OPENSEARCH_UNKNOWN",
-    "PG_AUTH_FAILED",
+    "REST_API_AUTH_FAILED",
+    "REST_API_INVALID_URL",
+    "REST_API_PROBE_FAILED",
+    "REST_API_TIMEOUT",
     "PG_CONN_REFUSED",
     "PG_SSL_ERROR",
     "PG_TIMEOUT",
@@ -659,7 +747,8 @@ __all__ = [
     "TRINO_TIMEOUT",
     "TRINO_UNKNOWN",
     "TRINO_UNKNOWN_CATALOG",
-    "map_clickhouse_error",
+    "map_db2_error",
+    "map_file_error",
     "map_dm_error",
     "map_doris_operational_error",
     "map_gaussdb_error",
@@ -667,12 +756,14 @@ __all__ = [
     "map_kingbase_error",
     "map_oceanbase_error",
     "map_hive_error",
+    "map_impala_error",
     "map_influx_error",
     "map_mongodb_error",
     "map_mysql_operational_error",
     "map_opensearch_error",
     "map_oracle_error",
     "map_postgres_operational_error",
+    "map_rest_api_error",
     "map_sqlserver_operational_error",
     "map_sqlite_error",
     "map_tdengine_error",

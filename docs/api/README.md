@@ -78,7 +78,7 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET | `/api/v1/datasources/types` | 已注册连接器类型清单（含 M11：`starrocks`/`trino`/`presto`/`influxdb`/`tdengine`/`timescaledb`；`type`、`displayName`、`category`、`capabilities`） | IF-06 | 一期 | DS-007 · CONN-020 | 已实现 | `backend/app/api/v1/datasources.py` |
+| GET | `/api/v1/datasources/types` | 已注册连接器类型清单（含 M11：`starrocks`/`trino`/`presto`/`influxdb`/`tdengine`/`timescaledb`；**r249** `rest_api`/`excel`/`csv`/`db2`/`impala`；`type`、`displayName`、`category`、`capabilities`） | IF-06 | 一期 | DS-007 · CONN-023~026 | 已实现（r249） | `backend/app/api/v1/datasources.py` |
 | POST | `/api/v1/datasources` | 创建数据源；请求/响应可选 `connectionOptions`（charset/collation/sslMode/connectTimeoutSec/readTimeoutSec） | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources` | 数据源列表（`?limit=&offset=&type=&q=`）；列表项含 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources/{id}` | 数据源详情（无明文密码）；含 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
@@ -117,7 +117,7 @@ redoc: /redoc
 | GET | `/api/v1/nfr/registration-path/{connector_type}` | 连接器插件登记路径文档 | 内部 | 一期 | NFR-005 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/runtime-compliance` | 零 DE/SS 运行时合规扫描报告（`policyVersion=nfr08-l1`） | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/runtime-compliance/assert` | strict 模式违规 → 503 `NFR_RUNTIME_VIOLATION`；permissive → 200 | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
-| GET | `/api/v1/nfr/runtime-compliance/deployment-report` | 部署验收报告（`overallAcceptance` + `remediationIndex`） | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/runtime-compliance/deployment-report` | 零 DE/SS 部署验收（`format=json\|markdown`；`schemaVersion`/`composeServices`/`forbiddenComposeHits`） | 内部 | 一期 | NFR-008 | 已实现（r249） | `backend/app/core/nfr/deployment_report.py` |
 | POST | `/api/v1/nfr/report-query-perf/probe` | 报表查询性能 mock probe（`withinBudget` + `elapsedMs` stub；**r67** enterprise ACL + `simulateFailure`） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/report-query-perf/validate` | 报表查询性能配置校验（`REPORT_PERF_*`；**r67** `sampleQueryId` pattern） | 内部 | 一期 | NFR-002 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/dashboard-first-screen/validate` | NFR-001 首屏配置校验（**r67** enterprise ACL + `dashboardId` pattern） | 内部 | 一期 | NFR-001 | 已实现 | `backend/app/api/v1/nfr.py` |

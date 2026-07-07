@@ -33,6 +33,11 @@ from app.datasources.dialects.errors import (
     HIVE_UNKNOWN_DATABASE,
 )
 from app.datasources.dialects.opensearch import OPENSEARCH_MAX_MAPPING_FIELDS, OpensearchConnector
+from app.datasources.dialects.rest_api import RestApiConnector
+from app.datasources.dialects.excel import ExcelConnector
+from app.datasources.dialects.csv_file import CsvFileConnector
+from app.datasources.dialects.db2 import Db2Connector
+from app.datasources.dialects.impala import ImpalaConnector
 
 __all__ = [
     "ClickhouseConnector",
@@ -42,6 +47,9 @@ __all__ = [
     "DmConnector",
     "DORIS_UNKNOWN_DATABASE",
     "DorisConnector",
+    "CsvFileConnector",
+    "Db2Connector",
+    "ExcelConnector",
     "ElasticsearchConnector",
     "GBASE_MAX_COLUMNS",
     "GbaseConnector",
@@ -55,6 +63,7 @@ __all__ = [
     "MariadbConnector",
     "INFLUX_MAX_MEASUREMENTS",
     "InfluxdbConnector",
+    "ImpalaConnector",
     "MONGODB_MAX_FIELDS",
     "MongodbConnector",
     "MysqlConnector",
@@ -64,6 +73,7 @@ __all__ = [
     "ORACLE_MAX_COLUMNS",
     "PostgresConnector",
     "PrestoConnector",
+    "RestApiConnector",
     "SchemaInfo",
     "SqliteConnector",
     "SqlserverConnector",

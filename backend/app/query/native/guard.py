@@ -16,7 +16,7 @@ from app.query.native.schemas import (
 from app.query.readonly import assert_readonly_sql, assert_safe_sql_parameters
 from app.query.schemas import QueryError
 
-NATIVE_CATEGORIES = frozenset({"search", "document", "timeseries"})
+NATIVE_CATEGORIES = frozenset({"search", "document", "timeseries", "api", "file"})
 
 probe_native_routing_budget_ms = 50
 
