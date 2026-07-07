@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design-batch2.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fe-design-batch2-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-fe-design-batch2.md |
@@ -70,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- P5 r246 收尾（cron 2026-07-07 ~17:30 UTC）：PRD 重评 DESIGN-004~005、GOV-004~006；hub v1.2.104；plan M-FINAL F-E 五 ID 勾选（完成于 2026-07-07）；总分 90.1–91.2→91.6–92.8；phase P4_DONE→P5_DOCS_READY；pr=233；待 squash merge dev-auto
 - P4 验证（cron 2026-07-07 ~17:26 UTC）：独立全量 backend pytest 2190 passed/32 skipped exit 0；mfinal r246 32 passed exit 0；mfinal r245 34 passed/1 skipped exit 0；fe build + check:design 201 files + vitest 227/227 exit 0；UI design_drift PASS；screenshots 未运行（headless）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fe-design-batch2-r246；pr=233；待 P5 evolution-pr-finisher-github
 - P3 r246 实现（cron 2026-07-07 ~17:22 UTC）：8 Task 全量完成（DESIGN-004 快照 ACL/双向 link + DESIGN-005 design_mode/SQL UI + GOV-004~006 审批态设计/发布/OpenAPI）；32 pytest r246 + r245 66 passed；fe build + check:design 201 files + vitest 13/13 designer/governance smoke exit 0；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS；screenshots 未运行（headless）；branch=feat/mfinal-fe-design-batch2-r246；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P5 r245 收尾（cron 2026-07-07 ~16:45 UTC）：PRD 重评 DESIGN-001~003/GOV-003/DESIGN-004；hub v1.2.103；plan M-FINAL F-E 四 ID 勾选（DESIGN-001~003、GOV-003 完成于 2026-07-07）；DESIGN-004 留部分实现；phase P4_DONE→P5_DOCS_READY；待 squash merge
