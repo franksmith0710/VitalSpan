@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-m11-batch2.md |
 | design | docs/superpowers/specs/2026-07-07-m11-batch2-nosql-native-viz-design.md |
 | plan | docs/superpowers/plans/2026-07-07-m11-batch2-nosql-native-viz.md |
 | branch | feat/m11-batch2-nosql-native-viz-r236 |
 | base_branch | dev-auto |
 | prd_ids | CONN-014,CONN-015,CONN-016,QUERY-003,VIZ-005 |
-| pr_number |  |
+| pr_number | 220 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm test && pnpm run build |
