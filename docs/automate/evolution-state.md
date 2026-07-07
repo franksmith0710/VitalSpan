@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch4.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch4-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-fe-gov-batch4.md |
-| branch | feat/mfinal-fe-gov-batch4-r248 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | GOV-007,GOV-008,NFR-003,NFR-005,NFR-007 |
-| pr_number | 235 |
-| last_verified_command | cd backend && python3 -m ruff check . && PYTHONPATH=/workspace/backend:/workspace/tests python3 -m pytest -q && python3 -m pytest ../tests/test_mfinal_fe_gov_batch4_r248.py -q && python3 -m pytest ../tests/test_mfinal_fe_gov_batch3_r247.py -q |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | N/A（本轮无 fe/ 改动，ui_design_skill none） |
-| last_ui_verified_exit_code | N/A |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
+| last_ui_verified_command |  |
+| last_ui_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T18:22:00Z |
 | skill_rule_index_source_count | 26 |
@@ -70,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- G0 闸门（cron 2026-07-07 ~19:00 UTC）：确认 PR #235 已 squash merge dev-auto（dd697f4）+ PR #236 docs 补 round-target/plan；无 Open PR；工作区干净；M-FINAL F-E/F-F 批次 4 收官（GOV-007~008、NFR-003/005/007）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 收尾（cron 2026-07-07 ~18:40 UTC）：PRD 重评 GOV-007~008、NFR-003/005/007；hub v1.2.106；总分 91.2–91.6→91.9–92.9；五 ID 已实现；plan M-FINAL F-E 二 ID + F-F 三 ID 勾选（完成于 2026-07-07）；F-E 收官；phase P4_DONE→P5_DOCS_READY；pr=235；待 squash merge dev-auto
 - P4 验证（cron 2026-07-07 ~18:31 UTC）：独立 ruff exit 0；全量 pytest（backend cwd）2252 passed/34 skipped exit 0；r248 28 passed exit 0；r247 回归 36 passed exit 0；UI: N/A（无 fe/ 改动，ui_design_skill none）；screenshots 未运行；phase P3_DONE→P4_DONE；branch=feat/mfinal-fe-gov-batch4-r248；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 实现（cron 2026-07-07 ~18:30 UTC）：F-E/F-F 批次 4 五 ID 全部 8 Tasks 完成；IF-01 工厂 + deferred 降级 + publish busRegisterStatus；ACL self-approve/workflow publish；NFR smoke/drill/xinchuang markdown；28/28 r248 + r247 回归 + 全量 pytest 2252 passed；docs/api + governance + nfr 同步；branch=feat/mfinal-fe-gov-batch4-r248；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
