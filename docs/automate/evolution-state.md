@@ -13,7 +13,7 @@
 | branch | feat/mfinal-ff-fg-batch1-r249 |
 | base_branch | dev-auto |
 | prd_ids | NFR-008,CONN-023,CONN-024,CONN-025,CONN-026 |
-| pr_number |  |
+| pr_number | 237 |
 | last_verified_command | cd backend && ruff check . && pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm test:smoke && pnpm check:design && pnpm run build |
