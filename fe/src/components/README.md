@@ -10,6 +10,8 @@
 | Badge | `ui/badge.tsx` | 状态标签 |
 | Breadcrumb | `ui/breadcrumb.tsx` | 页面面包屑 |
 | Card | `ui/card.tsx` | 区块卡片（ComponentCard） |
+| Table | `ui/table.tsx` | 数据表格（TailAdmin 风格） |
+| Alert | `ui/alert.tsx` | 字段级/区块提示 |
 | Skeleton | `ui/skeleton.tsx` | 加载占位 |
 | Select | `ui/select.tsx` | 下拉选择（Radix） |
 | DropdownMenu | `ui/dropdown-menu.tsx` | 下拉菜单（Radix） |
