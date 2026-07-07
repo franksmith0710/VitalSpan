@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_BLOCKED |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-fd-meta.md |
@@ -14,8 +14,10 @@
 | base_branch | dev-auto |
 | prd_ids | META-001,META-002,META-003,META-004 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd backend && python3 -m pytest -q |
+| last_verified_exit_code | 1 |
+| last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run && pnpm run build |
+| last_ui_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T15:00:00Z |
 | skill_rule_index_source_count | 26 |
@@ -68,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- P4 r244 验证（cron 2026-07-07 ~16:00 UTC）：独立全量 backend pytest 2113 passed/11 failed/31 skipped exit 1（test_migrations.py 11 条仍断言 head 0018，实际 0019）；r244 专项 28/28 exit 0；fe check:design 193 files + vitest 214/214 + build exit 0；UI design_drift PASS；screenshots 未运行（headless）；phase P3_DONE→P4_BLOCKED；branch=feat/mfinal-fd-meta-r244；待 P3 修复 migration gate 后重验
 - P2 计划（cron 2026-07-07 ~15:50 UTC）：F-D 批次 2 收官 META-001~004 计划完成（共享写 ACL + 术语/主题/维度 probe + migration 0019 theme FK + Dataset PUT/DELETE/bind + QUERY 四步集成测 + metadata-panels CRUD UI + Dataset 编辑删除）；8 Tasks / 19 文件操作（4 新建 + 15 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fd-meta.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~15:37 UTC）：F-D 批次 2 收官 META-001~004（术语/主题/维度写 ACL + 主题树/维度 Admin CRUD UI + Dataset PUT/DELETE/bind-query-config + QUERY 四步集成测）；18 文件框定；ui_design_skill=b-design-system-tailadmin-radix；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md；base_branch=dev-auto；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~15:45 UTC）：饱和熔断已跳过（plan §M-FINAL · F-D 含 4 项 `[ ]` META-001~004；Top5 薄弱项最低分 CONN-026/027 85.4 <90）；入选 F-D 批次 2 全量四 ID（META-001~004 术语/主题树/维度/Dataset CRUD）；不足 5 项因 F-D 批次 2 仅余四行、待办池空；hub 最低分入选 META-001 90.0；F-G CONN-023~027 留专批；STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md；phase idle→G2_DONE；待 P1 evolution-designer
