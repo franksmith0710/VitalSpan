@@ -652,6 +652,16 @@ def delete_classification_node(
         return _classification_error(exc)
 
 
+@router.get("/catalog/classification/m11-probe", response_model=None)
+def cat04_m11_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat04.handler import run_cat04_catalog_probe
+
+    out = run_cat04_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
+
+
 def _cat05_error(exc: Cat05Error) -> JSONResponse:
     detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(status_code=exc.status, content={"code": exc.code, "message": exc.message, "detail": detail})
@@ -697,6 +707,16 @@ def probe_ticket_stats(
         return cat05_service.get_ticket_stats(key, actor)
     except Cat05Error as exc:
         return _cat05_error(exc)
+
+
+@router.get("/catalog/tickets/m11-probe", response_model=None)
+def cat05_m11_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat05.handler import run_cat05_catalog_probe
+
+    out = run_cat05_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
 
 
 def _cat03_error(exc: Cat03Error) -> JSONResponse:
@@ -804,6 +824,16 @@ def production_stats_probe(
         return cat06_service.get_production_stats(stats_key, actor)
     except Cat06Error as exc:
         return _cat06_error(exc)
+
+
+@router.get("/catalog/production-stats/m11-probe", response_model=None)
+def cat06_m11_probe(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> JSONResponse:
+    from app.governance.catalog.cat06.handler import run_cat06_catalog_probe
+
+    out = run_cat06_catalog_probe(actor)
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
 
 
 def _cat01_error(exc: Cat01Error) -> JSONResponse:

@@ -277,6 +277,7 @@ redoc: /redoc
 | GET/POST | `/api/v1/gov/catalog/classification/nodes` | 分类树节点 list/create（`?parentId=`；`CAT_CLASS_*`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/classification/nodes/{id}/move` | 分类树节点移动（环检测；超深 → 422 `CAT_CLASS_MAX_DEPTH`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
 | DELETE | `/api/v1/gov/catalog/classification/nodes/{id}` | 删除叶节点（含子节点 → 409 `CAT_CLASS_HAS_CHILDREN`） | IF-06 | 一期 | CAT-004 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/classification/m11-probe` | M11 | CAT-004 m11-probe | 已实现 |
 | GET/POST | `/api/v1/gov/catalog/geo-regions/nodes` | 地域 geo 树 list/create（`?parentId=`；`CAT03_*`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/geo-regions/m6-probe` | CAT-003 M6 集成 probe | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/geo-regions/nodes/{id}/move` | geo 树节点移动（环检测；超深 → 422 `CAT03_MAX_DEPTH`） | IF-06 | 一期 | CAT-003 | 已实现 | `backend/app/api/v1/gov.py` |
@@ -284,6 +285,11 @@ redoc: /redoc
 | POST | `/api/v1/gov/catalog/tickets/validate` | 工单 stats item 校验（`CAT05_*`） | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST/GET | `/api/v1/gov/catalog/tickets/items` | 工单 stats item 登记/列表 | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/tickets/items/{key}/stats` | 工单 stats mock probe | IF-06 | 一期 | CAT-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/tickets/m11-probe` | M11 | CAT-005 m11-probe | 已实现 |
+| POST | `/api/v1/gov/catalog/production-stats/validate` | 生产销售 stats 校验（`CAT06_*`） | IF-06 | 一期 | CAT-006 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST/GET | `/api/v1/gov/catalog/production-stats` | 生产销售 stats 登记/列表 | IF-06 | 一期 | CAT-006 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/production-stats/{stats_key}/stats` | 生产销售 stats mock probe | IF-06 | 一期 | CAT-006 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/catalog/production-stats/m11-probe` | M11 | CAT-006 m11-probe | 已实现 |
 | POST | `/api/v1/gov/catalog/lifecycle-templates/validate` | CAT-001 lifecycle 校验 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 创建 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 列表 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |

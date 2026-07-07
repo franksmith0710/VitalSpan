@@ -128,3 +128,9 @@
 ### r68 companion 质量推分（GOV-007）
 
 - **GOV-007**：`bus/auto.py` — failed/auto_registering 状态重试 → 409 `GOV_AUTO_BUS_INVALID_TRANSITION`；`set_user_auto_bus_scope` + enterprise entry path scope（`GOV_AUTO_BUS_FORBIDDEN`）；`bus/probe.py` — `probe_auto_register_budget_ms` ≤50ms；`GET /gov/bus/auto-register/probe`
+
+### M11 m11-probe（CAT-04~06）
+
+- `GET .../classification|tickets|production-stats/m11-probe` 聚合 list/validate/move 或 stats probe + `aclReady`
+- 与 M6 `m6-probe` 路由并存；不替代 CRUD
+- CAT-04 委托 `classification/`；不实现真实 timeseries API
