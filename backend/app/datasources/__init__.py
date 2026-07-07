@@ -28,6 +28,7 @@ from app.datasources.dialects.excel import ExcelConnector
 from app.datasources.dialects.csv_file import CsvFileConnector
 from app.datasources.dialects.db2 import Db2Connector
 from app.datasources.dialects.impala import ImpalaConnector
+from app.datasources.dialects.redshift import RedshiftConnector
 from app.datasources.registry import register_dialect
 
 
@@ -61,6 +62,7 @@ def register_builtin_dialects() -> None:
     register_dialect(CsvFileConnector())
     register_dialect(Db2Connector())
     register_dialect(ImpalaConnector())
+    register_dialect(RedshiftConnector())
 
 
 register_builtin_dialects()
