@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-m11-batch2.md |
 | design | docs/superpowers/specs/2026-07-07-m11-batch2-nosql-native-viz-design.md |
 | plan | docs/superpowers/plans/2026-07-07-m11-batch2-nosql-native-viz.md |
@@ -14,9 +14,9 @@
 | base_branch | dev-auto |
 | prd_ids | CONN-014,CONN-015,CONN-016,QUERY-003,VIZ-005 |
 | pr_number |  |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest ../tests/test_m11_batch2_r236.py -q |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run src/lib/chartViewConfig.test.ts src/components/charts/charts.advanced.smoke.test.tsx |
+| last_ui_verified_command | cd fe && pnpm run check:design && pnpm test && pnpm run build |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T22:35:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r236 验证（cron 2026-07-07 ~01:27 UTC）：独立全量 ruff clean + pytest 2018 passed/23 skipped exit 0；fe check:design 129 files + vitest 167/167 + design fixture 4/4 + build exit 0（P4 修复 ChartRenderer retry→rerun TS2339）；UI design_drift PASS；screenshots 未运行（headless vitest mock）；plan.md 在分支未改（P5 勾选）；phase P3_DONE→P4_DONE；branch=feat/m11-batch2-nosql-native-viz-r236；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 r236 实现（cron 2026-07-07 ~01:25 UTC）：8 Task 完成（r236 scaffold + CONN-014/015/016 native probe/execute + QUERY-003 NativeQueryExecutor + VIZ-005 types/UI + DatasourceFormPage hints + docs 回归）；ui_design_skill=b-design-system-tailadmin-radix；pytest r236 28/28 + r235/r49/r52 回归 + ruff clean；fe check:design 129 files + vitest 21/21 PASS；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P2_DONE→P3_DONE；branch=feat/m11-batch2-nosql-native-viz-r236；base_branch=dev-auto；待 P4 evolution-verifier
 - P5 r235 收尾：PRD 重评 CONN-009~013（M11 三期原生连接器扩展批次 1）；hub 总分 90.0–91.2→91.9–92.6；plan M11 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；PR #219 squash merge dev-auto
 - P4 r235 验证（cron 2026-07-07 ~00:48 UTC）：独立全量 pytest 1988 passed/25 skipped exit 0；UI N/A（backend only）；phase P3_DONE→P4_DONE；branch=feat/m11-conn-ext-batch1-r235；base_branch=dev-auto；pr=219；待 P5 evolution-pr-finisher-github
