@@ -92,7 +92,14 @@ def test_gov_r52_node_roles_standard_template(client):
 
 def test_gov_r52_resolve_required_role_pending_approval():
     """T-GOV-R52-003-02: resolve_required_role pending_approval == approver。"""
-    assert resolve_required_role("standard_query_release", "pending_approval") == "approver"
+    from app.datasources.models import get_meta_session
+    from app.governance.workflow.node_roles import resolve_required_role
+
+    session = get_meta_session()
+    try:
+        assert resolve_required_role(session, "standard_query_release", "pending_approval") == "approver"
+    finally:
+        session.close()
 
 
 def test_gov_r52_validate_template_missing_published_node(client):

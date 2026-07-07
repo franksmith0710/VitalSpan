@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -117,3 +118,43 @@ class OutputFieldsConfig(BaseModel):
     aggregates: list[AggregateItem] = Field(default_factory=list)
     ref_type: str = Field(default="design_draft", alias="refType")
     ref_id: uuid.UUID = Field(alias="refId")
+
+
+class FieldRegistryOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    registry: list[str]
+    glossary: list[str]
+    dataset_fields: list[str] = Field(alias="datasetFields")
+
+
+class PreviewTranslateIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    conditions: QueryConditionsConfig
+    compute_rules: ComputeRulesConfig = Field(alias="computeRules")
+    output_fields: OutputFieldsConfig = Field(alias="outputFields")
+    dataset_id: uuid.UUID | None = Field(default=None, alias="datasetId")
+
+
+class DesignerSubmitWorkflowIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    designer_item_id: uuid.UUID = Field(alias="designerItemId")
+    template_id: str = Field(alias="templateId", default="standard_query_release")
+    design_type: Literal["chart", "report", "query"] = Field(default="query", alias="designType")
+    catalog_entry_id: uuid.UUID | None = Field(default=None, alias="catalogEntryId")
+
+
+class DesignerSubmitWorkflowOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    workflow_instance_id: uuid.UUID = Field(alias="workflowInstanceId")
+    design_snapshot_id: uuid.UUID = Field(alias="designSnapshotId")
+    status: str
+    publish_ready: bool = Field(alias="publishReady", default=False)
+
+
+class DesignerSnapshotOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    conditions: dict
+    compute_rules: dict = Field(alias="computeRules")
+    output_fields: dict = Field(alias="outputFields")
+    revisions: dict
+    captured_at: str = Field(alias="capturedAt")

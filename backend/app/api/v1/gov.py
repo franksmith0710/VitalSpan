@@ -46,8 +46,10 @@ from app.governance.workflow.schemas import (
     WorkflowInstanceCreateIn,
     WorkflowInstanceOut,
     WorkflowNodeRolesOut,
+    WorkflowTemplateCreateIn,
     WorkflowTemplateListOut,
     WorkflowTemplateOut,
+    WorkflowTemplateUpdateIn,
     WorkflowTemplateValidateIn,
     WorkflowTransitionIn,
 )
@@ -523,17 +525,19 @@ def deactivate_openapi_mapping(
 @router.get("/workflow/templates", response_model=WorkflowTemplateListOut)
 def list_workflow_templates(
     _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
 ) -> WorkflowTemplateListOut:
-    return WorkflowTemplateListOut(items=workflow_service.list_templates())
+    return WorkflowTemplateListOut(items=workflow_service.list_templates(db))
 
 
 @router.get("/workflow/templates/{template_id}/node-roles", response_model=WorkflowNodeRolesOut)
 def get_workflow_node_roles(
     template_id: str,
     _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
 ) -> WorkflowNodeRolesOut | JSONResponse:
     try:
-        items = describe_node_roles(template_id)
+        items = describe_node_roles(db, template_id)
         return WorkflowNodeRolesOut(
             items=[
                 NodeRoleOut(nodeId=i.node_id, role=i.role, description=i.description)
@@ -555,6 +559,44 @@ def validate_workflow_template(
         return _workflow_error(exc)
 
 
+@router.post("/workflow/templates", status_code=201, response_model=WorkflowTemplateOut)
+def create_workflow_template(
+    payload: WorkflowTemplateCreateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> WorkflowTemplateOut | JSONResponse:
+    try:
+        return workflow_service.create_template(db, payload)
+    except WorkflowError as exc:
+        return _workflow_error(exc)
+
+
+@router.put("/workflow/templates/{template_id}", response_model=WorkflowTemplateOut)
+def update_workflow_template(
+    template_id: str,
+    payload: WorkflowTemplateUpdateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> WorkflowTemplateOut | JSONResponse:
+    try:
+        return workflow_service.update_template(db, template_id, payload)
+    except WorkflowError as exc:
+        return _workflow_error(exc)
+
+
+@router.delete("/workflow/templates/{template_id}")
+def delete_workflow_template(
+    template_id: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        workflow_service.delete_template(db, template_id)
+        return Response(status_code=204)
+    except WorkflowError as exc:
+        return _workflow_error(exc)
+
+
 @router.post("/workflow/instances", status_code=201, response_model=WorkflowInstanceOut)
 def create_workflow_instance(
     payload: WorkflowInstanceCreateIn,
@@ -572,9 +614,10 @@ def get_workflow_instance(
     instance_id: uuid.UUID,
     _: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
+    include_design_snapshot: bool = Query(default=False, alias="includeDesignSnapshot"),
 ) -> WorkflowInstanceOut | JSONResponse:
     try:
-        return workflow_service.get_instance(db, instance_id)
+        return workflow_service.get_instance(db, instance_id, include_snapshot=include_design_snapshot)
     except Exception as exc:
         from app.query.config_store.schemas import ConfigError
 

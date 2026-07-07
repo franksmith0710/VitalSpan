@@ -148,6 +148,9 @@ redoc: /redoc
 | GET | `/api/v1/query/configs/{config_id}` | 按 id 读取配置记录 | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | POST | `/api/v1/query/configs/{config_id}/translate` | 已存 `dataset_query` 配置翻译为参数化 SQL | 内部 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | POST | `/api/v1/query/dataset/execute` | `dataSourceId` + `configId` 存储→翻译→执行 | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
+| GET | `/api/v1/designer/fields` | 设计器字段注册表 + glossary + dataset 字段 | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
+| POST | `/api/v1/designer/preview/translate` | 三块配置合并 SQL 预览（含规则注释） | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
+| POST | `/api/v1/designer/submit-workflow` | 快照 + 工单实例 + 自动 submit | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/conditions/validate` | 查询条件配置校验（不落库；422 含 `detail.fields`；`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_CROSS_FIELD`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/conditions` | 查询条件保存/读取（挂载 QUERY-007；可选 `expectedRevision`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/compute-rules` | 运算规则保存/读取（挂载 QUERY-007；`DESIGN_RULE_TYPE_MISMATCH`/`DESIGN_RULE_BROKEN_CHAIN`/`DESIGN_INVALID_AGGREGATE`） | 内部 | 一期 | DESIGN-002 | 已实现 | `backend/app/api/v1/designer.py` |
@@ -337,7 +340,8 @@ redoc: /redoc
 | GET | `/api/v1/gov/openapi-mappings/{id}` | OpenAPI 映射详情 | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/openapi-mappings/validate` | OpenAPI 映射校验（apiVersion/operationId/path + entityTypeRef） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/openapi-mappings/{id}/deactivate` | OpenAPI 映射停用（409 `GOV_OPENAPI_MAP_ALREADY_INACTIVE`） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
-| GET | `/api/v1/gov/workflow/templates` | 工单流程模板列表（`standard_query_release`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST/PUT/DELETE | `/api/v1/gov/workflow/templates` | 自定义工单模板 CRUD（builtin 只读） | IF-06 | 四期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/workflow/templates` | 工单流程模板列表（builtin + custom） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/workflow/templates/validate` | 工单模板校验 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/workflow/templates/{template_id}/node-roles` | 工单模板节点角色配置 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST/GET | `/api/v1/gov/workflow/instances` | 工单实例创建/读取（`config_type=workflow_instance`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |

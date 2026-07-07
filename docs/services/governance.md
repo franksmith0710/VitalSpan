@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/governance/` |
 | PRD | [F10-GOV](../automate/prd/F10-GOV.md) · [F14-CAT](../automate/prd/F14-CAT.md) |
 | 里程碑 | M6（L1 kickoff） |
-| 状态 | **L1 kickoff (r61)** |
+| 状态 | **L1 + F-E 批次 1（GOV-003 自定义模板）** |
 
 ## 职责
 
@@ -19,7 +19,7 @@
 - **工单 stats item**（`catalog/cat05/`）：扁平 item 登记 + validate/stats probe（CAT-005）
 - **工号行为审计**（`catalog/cat07/`）：mock seed + `GET /workno/behavior`（CAT-007）
 - **总线全自动注册 FSM**（`bus/auto.py`）：`POST /gov/bus/auto-register`（GOV-007）
-- 工单流程模板与五态 FSM 实例（GOV-003）
+- 工单流程模板与五态 FSM 实例（GOV-003）；**自定义模板 CRUD**（`workflow_template` config_store；builtin 只读）
 - 发布引擎 OpenAPI 映射 store（GOV-006）
 - 为开放 API 登记与 BPM 流水线奠基
 

@@ -11,7 +11,24 @@ export const ROLE_LABELS: Record<string, string> = {
   approver: "审批人",
   designer: "设计人",
   publisher: "发布人",
+  admin: "管理员",
 };
+
+export const ALLOWED_WORKFLOW_ROLES = [
+  "requester",
+  "approver",
+  "designer",
+  "publisher",
+  "admin",
+] as const;
+
+const STANDARD_NODES: WorkflowTemplate["nodes"] = [
+  { id: "draft", role: "requester" },
+  { id: "pending_approval", role: "approver" },
+  { id: "designing", role: "designer" },
+  { id: "pending_publish", role: "publisher" },
+  { id: "published", role: "admin" },
+];
 
 export function nodeLabel(id: string) {
   return NODE_LABELS[id] ?? id;
@@ -32,3 +49,5 @@ export type WorkflowNodeRole = {
   role: string;
   description: string;
 };
+
+export { STANDARD_NODES };

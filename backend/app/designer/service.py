@@ -283,3 +283,12 @@ def get_compute_rules(session: Session, ref_type: str, ref_id: uuid.UUID) -> Com
         ref_type=ref_type,
         ref_id=ref_id,
     )
+
+
+# DESIGN-001 preview translate (r245) — re-export from preview module
+from app.designer import preview as designer_preview  # noqa: E402
+
+build_preview_translate_request = designer_preview.build_preview_translate_request
+list_designer_fields = designer_preview.list_designer_fields
+preview_translate_sql = designer_preview.preview_translate_sql
+probe_preview_translate_budget_ms = designer_preview.probe_preview_translate_budget_ms
