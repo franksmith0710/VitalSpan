@@ -33,10 +33,12 @@ export type ChartViewConfig = {
   dataSourceId?: string;
   bindingId?: string;
   chartId?: string;
-  mode?: "sql" | "table";
+  mode?: "sql" | "table" | "native";
   sql?: string;
   schema?: string;
   table?: string;
+  nativeBody?: Record<string, unknown>;
+  index?: string;
   dimensions?: ChartFieldRef[];
   metrics?: ChartFieldRef[];
   filters?: ChartFilterRef[];

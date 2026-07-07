@@ -45,10 +45,12 @@ class ChartViewConfig(BaseModel):
     data_source_id: uuid.UUID | None = Field(default=None, alias="dataSourceId")
     binding_id: uuid.UUID | None = Field(default=None, alias="bindingId")
     chart_id: uuid.UUID | None = Field(default=None, alias="chartId")
-    mode: Literal["sql", "table"] | None = None
+    mode: Literal["sql", "table", "native"] | None = None
     sql: str | None = None
     schema_name: str | None = Field(default=None, alias="schema")
     table_name: str | None = Field(default=None, alias="table")
+    native_body: dict[str, Any] | None = Field(default=None, alias="nativeBody")
+    index: str | None = None
     dimensions: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     metrics: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     filters: list[ChartFilterRef] = Field(default_factory=list, max_length=16)
@@ -74,6 +76,11 @@ class ChartViewConfig(BaseModel):
         if self.binding_id is None:
             if self.data_source_id is None:
                 raise ValueError("CHART_MISSING_DATASOURCE:dataSourceId is required")
+            if self.mode == "native":
+                if not self.native_body:
+                    raise ValueError("CHART_MISSING_NATIVE_BODY:nativeBody is required for native mode")
+                if self.sql:
+                    raise ValueError("CHART_NATIVE_SQL_DISGUISE:sql is not allowed in native mode")
             if self.mode == "sql" and not self.sql:
                 raise ValueError("CHART_MISSING_SQL:sql is required for sql mode")
             if self.mode == "sql" and self.sql:
@@ -146,6 +153,7 @@ _CODE_FIELD_HINTS: dict[str, list[str]] = {
     "CHART_MISSING_SQL": ["sql"],
     "CHART_MISSING_TABLE": ["schema", "table"],
     "CHART_MISSING_MODE": ["mode"],
+    "CHART_MISSING_NATIVE_BODY": ["nativeBody"],
     "CHART_INVALID_STYLE_VARIANT": ["styleVariant"],
     "CHART_FIELD_REQUIREMENT": ["dimensions", "metrics"],
     "CHART_SQL_NOT_READONLY": ["sql"],
