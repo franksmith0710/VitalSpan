@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-m12-batch1.md |
 | design | docs/superpowers/specs/2026-07-07-m12-batch1-design.md |
 | plan | docs/superpowers/plans/2026-07-07-m12-batch1-rpt-view-nfr-cat.md |
@@ -67,6 +67,8 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r238 验证（cron 2026-07-07 ~02:53 UTC）：独立全量 ruff clean + pytest 2051 passed/23 skipped exit 0；fe check:design 143 files + vitest 180/180 + design fixture 4/4 + build exit 0；UI design_drift PASS（check:design）；screenshots 未运行（headless vitest mock）；phase P3_DONE→P4_DONE；branch=feat/m12-batch1-rpt-view-nfr-cat-r238；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
+- P3 r238 修复（cron 2026-07-07 ~02:53 UTC）：rebase dev-auto 313ce21；修复 r57 create_schedule/transition_schedule actor 回归 + r58 semi_real_failed 契约对齐；全量 pytest 2051 passed/23 skipped + ruff clean；fe check:design 143 files + vitest 180/180 + build exit 0；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE；branch=feat/m12-batch1-rpt-view-nfr-cat-r238；base_branch=dev-auto；待 P4 evolution-verifier
 - P3 r238 实现（cron 2026-07-07 ~02:30 UTC）：10 Task 完成（RPT-005 APScheduler+历史+SchedulePanel、RPT-007 failures/BatchImportPanel、VIEW-003 CRUD/UserViewsSection、NFR-006 notifications/browserCompat/doc、CAT-007 m12-probe + test_m12_batch1_r238 20 用例）；ui_design_skill=b-design-system-tailadmin-radix；pytest r238 20/20 + r58 schedule/batch 回归 + ruff clean；fe check:design 143 files + vitest 19/19 + build exit 0；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P2_DONE→P3_DONE；branch=feat/m12-batch1-rpt-view-nfr-cat-r238；base_branch=dev-auto；待 P4 evolution-verifier
 - P1 设计（cron 2026-07-07 ~02:18 UTC）：M12 收官批五 ID design 覆盖（RPT-005 APScheduler+历史+SchedulePanel、RPT-007 BatchImportPanel、VIEW-003 个人设置 CRUD+合并验收、NFR-006 browser-compat 文档+notifications 骨架、CAT-007 m12-probe handler）；ui_design_skill=b-design-system-tailadmin-radix；范围框定 20 主文件；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-m12-batch1-design.md；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~02:16 UTC）：饱和熔断已跳过（plan §M12 含 5 项 `[ ]` RPT-005/RPT-007/VIEW-003/NFR-006/CAT-007；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 M12 收官批五 ID 全量（plan 恰好 5 项）；hub 最低分入选 NFR-006 90.1；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-m12-batch1.md；phase idle→G2_DONE；待 P1 evolution-designer
