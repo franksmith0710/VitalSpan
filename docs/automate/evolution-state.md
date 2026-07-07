@@ -6,20 +6,20 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fe-design-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fe-design.md |
+| branch | feat/mfinal-fe-design-r245 |
 | base_branch | dev-auto |
 | prd_ids | DESIGN-001,DESIGN-002,DESIGN-003,GOV-003,DESIGN-004 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
-| last_ui_verified_command |  |
-| last_ui_verified_exit_code |  |
+| last_verified_command | PYTHONPATH=backend pytest tests/test_mfinal_fe_design_r245.py tests/test_design_conn_gov_query_r52.py tests/test_viz_view_design_cat_r63.py -q; cd fe && pnpm run build && pnpm exec vitest run src/pages/admin/designer/designer.smoke.test.tsx |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm run check:design |
+| last_ui_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-07T15:00:00Z |
+| skill_rule_index_generated_at | 2026-07-07T16:30:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -70,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- P2 计划（cron 2026-07-07 ~16:30 UTC）：F-E 批次 1 五 ID 计划完成（DESIGN-001 fields+preview+条件面板、DESIGN-002 规则面板、DESIGN-003 输出/META 联动、GOV-003 模板 CRUD、DESIGN-004 snapshot+submit-workflow）；8 Tasks / 18 文件操作（4 新建 + 14 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fe-design.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~16:25 UTC）：F-E 批次 1 五 ID（DESIGN-001~003 设计器三面板+预览、GOV-003 模板 CRUD、DESIGN-004 快照提交）；18 文件框定；ui_design_skill=b-design-system-tailadmin-radix；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fe-design-design.md；base_branch=dev-auto；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~16:20 UTC）：饱和熔断已跳过（plan §M-FINAL · F-E 含 11 项 `[ ]`；Top5 薄弱项最低分 CONN-026/027 85.4 <90）；入选 F-E 批次 1 五 ID（DESIGN-001~003 + GOV-003 + DESIGN-004 设计器奠基与工单模板）；hub 最低分入选 DESIGN-001/002/GOV-003 90.1；F-G CONN-023~027 留专批；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~16:17 UTC）：G0 PASS PR #230 已 squash merge dev-auto（9095495）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.102 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-E**（F-A~F-D 已收官；F-E 11 项 `[ ]` DESIGN-001~005/GOV-003~008 待完成；F-F/F-G 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-D 批次 2（META-001~004）r244 PR #230 完成；phase idle；待 G2 evolution-picker
