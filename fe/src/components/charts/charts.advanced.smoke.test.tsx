@@ -429,3 +429,86 @@ describe("buildTimeRangeParameters", () => {
     );
   });
 });
+
+// ─── VIZ-003/004/008 r250 补强 ──────────────────────────────────────────────
+
+import { isKnownChartType } from "@/lib/chartRegistry";
+import { getFallbackChartType } from "@/components/charts/adapters/renderFromSpec";
+
+describe("VIZ-003 未知 chartType 降级", () => {
+  it("T-VIZ-R250-003-01: isKnownChartType('line')→true; isKnownChartType('unknown_xyz')→false", () => {
+    expect(isKnownChartType("line")).toBe(true);
+    expect(isKnownChartType("unknown_xyz")).toBe(false);
+  });
+
+  it("T-VIZ-R250-003-02: buildEchartsOption unknown_xyz → series 为空数组（table fallback）", () => {
+    const spec: RenderSpec = {
+      engine: "echarts",
+      chartType: "unknown_xyz",
+      styleVariant: "default",
+      encoding: { dimensions: [{ field: "d" }], metrics: [{ field: "m" }] },
+      source: {},
+    };
+    const option = buildEchartsOption(spec, [["A", 1]], ["d", "m"]);
+    expect(Array.isArray((option as { series?: unknown[] }).series)).toBe(true);
+    expect((option as { series?: unknown[] }).series!.length).toBe(0);
+  });
+});
+
+describe("VIZ-004 样式子类型 smoke", () => {
+  it("T-VIZ-R250-004-01: buildEchartsOption bar stacked → series[0].stack 非空", () => {
+    const spec: RenderSpec = {
+      engine: "echarts",
+      chartType: "bar",
+      styleVariant: "stacked",
+      encoding: { dimensions: [{ field: "cat" }], metrics: [{ field: "val" }] },
+      source: {},
+    };
+    const option = buildEchartsOption(spec, [["A", 10], ["B", 20]], ["cat", "val"]);
+    const s = (option.series as Array<{ stack?: string }>)[0];
+    expect(s.stack).toBeTruthy();
+  });
+
+  it("T-VIZ-R250-004-02: buildEchartsOption pie donut → series[0].radius 为长度 2 数组", () => {
+    const spec: RenderSpec = {
+      engine: "echarts",
+      chartType: "pie",
+      styleVariant: "donut",
+      encoding: { dimensions: [{ field: "name" }], metrics: [{ field: "val" }] },
+      source: {},
+    };
+    const option = buildEchartsOption(spec, [["A", 10]], ["name", "val"]);
+    const radius = (option.series as Array<{ radius?: unknown }>)[0].radius;
+    expect(Array.isArray(radius)).toBe(true);
+    expect((radius as unknown[]).length).toBe(2);
+  });
+});
+
+describe("VIZ-008 空数据 + 异常态", () => {
+  it("T-VIZ-R250-008-01: buildEchartsOption rows=[] → series 为 [] 不抛错", () => {
+    const spec: RenderSpec = {
+      engine: "echarts",
+      chartType: "funnel",
+      styleVariant: "default",
+      encoding: { dimensions: [{ field: "stage" }], metrics: [{ field: "value" }] },
+      source: {},
+    };
+    let option: ReturnType<typeof buildEchartsOption> | undefined;
+    expect(() => {
+      option = buildEchartsOption(spec, [], ["stage", "value"]);
+    }).not.toThrow();
+    expect((option as { series?: unknown[] })?.series?.length).toBe(0);
+  });
+
+  it("T-VIZ-R250-008-02: buildEchartsOption bar 正常数据 → series[0].type==='bar'（主路径回归）", () => {
+    const spec: RenderSpec = {
+      engine: "echarts",
+      chartType: "bar",
+      styleVariant: "default",
+      encoding: { dimensions: [{ field: "cat" }], metrics: [{ field: "val" }] },
+      source: {},
+    };
+    const option = buildEchartsOption(spec, [["X", 5]], ["cat", "val"]);
+    expect((option.series as Array<{ type: string }>)[0].type).toBe("bar");
+  });
+});
