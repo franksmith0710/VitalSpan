@@ -6,10 +6,10 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc2-fd-kickoff.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fc2-fd-kickoff-design.md |
-| plan |  |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fc2-fd-kickoff.md |
 | branch | feat/mfinal-fc2-fd-kickoff-r243 |
 | base_branch | dev-auto |
 | prd_ids | CONN-022,QUERY-007,QUERY-008,QUERY-009 |
@@ -17,7 +17,7 @@
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-07T14:25:00Z |
+| skill_rule_index_generated_at | 2026-07-07T15:00:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P2 计划（cron 2026-07-07 ~15:00 UTC）：F-C 收官 CONN-022 + F-D QUERY-007~009 查询链计划完成（GaussDB probe + FE hints/smoke + dataset_query 存储/owner + translate-from-config + dataset/execute 四步链）；8 Tasks / 17 文件操作（3 新建 + 14 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fc2-fd-kickoff.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~15:00 UTC）：F-C 收官 CONN-022（GaussDB probe_readonly_sql + FE hints + test_mfinal_fc_r242 扩展）+ F-D 查询链奠基 QUERY-007~009（dataset_query 存储 + owner 守卫 + translate-from-config + dataset/execute 四步链）；17 文件框定；ui_design_skill=b-design-system-tailadmin-radix（GaussDB 表单 only）；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fc2-fd-kickoff-design.md；branch=feat/mfinal-fc2-fd-kickoff-r243；base_branch=dev-auto；待 P2 evolution-planner
 - G0 闸门（cron 2026-07-07 ~14:46 UTC）：确认 PR #227 已 squash merge dev-auto（a9911da）feat/mfinal-fc-xinchuang-r242→dev-auto；无 Open PR；工作区干净；M-FINAL F-C 批次 1 收官（CONN-017~021）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 r242 收尾（cron 2026-07-07 ~14:40 UTC）：PRD 重评 CONN-017~021；hub 总分 90.0–90.4→92.4–92.6；plan M-FINAL F-C 五 ID 勾选（完成于 2026-07-07）；hub v1.2.100；phase P4_DONE→P5_DOCS_READY；PR #227 squash merge dev-auto（a9911da）
