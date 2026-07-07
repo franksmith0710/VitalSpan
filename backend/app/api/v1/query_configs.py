@@ -11,7 +11,10 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
 from app.query.config_store import service as config_service
+from app.query.config_store.access import assert_config_readable
 from app.query.config_store.schemas import ConfigError, ConfigListResponse, ConfigOut, ConfigUpsert
+from app.query.translator.from_config import translate_from_config_record
+from app.query.translator.schemas import TranslateError, TranslateResponse
 
 router = APIRouter(prefix="/query/configs", tags=["query", "QUERY-007"])
 
@@ -32,6 +35,14 @@ def _db() -> Session:
 
 
 def _config_error(exc: ConfigError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
+
+
+def _translate_error(exc: TranslateError) -> JSONResponse:
     detail = {"fields": exc.fields} if exc.fields else None
     return JSONResponse(
         status_code=exc.status,
@@ -68,7 +79,7 @@ def upsert_query_config(
 
 @router.get("", response_model=ConfigListResponse)
 def list_query_configs(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
     config_type: str | None = None,
     ref_type: str | None = None,
@@ -76,18 +87,44 @@ def list_query_configs(
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> ConfigListResponse:
-    items, total = config_service.list_configs(db, config_type, ref_type, ref_id, limit, offset)
+    items, total = config_service.list_configs(
+        db,
+        config_type,
+        ref_type,
+        ref_id,
+        limit,
+        offset,
+        actor_id=_owner_uuid(actor),
+        is_admin="admin" in actor.roles,
+    )
     return ConfigListResponse(items=[ConfigOut.model_validate(r) for r in items], total=total)
 
 
 @router.get("/{config_id}", response_model=ConfigOut)
 def get_query_config(
     config_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> ConfigOut | JSONResponse:
     try:
         record = config_service.get_config_by_id(db, config_id)
+        assert_config_readable(actor, record)
     except ConfigError as exc:
         return _config_error(exc)
     return ConfigOut.model_validate(record)
+
+
+@router.post("/{config_id}/translate", response_model=TranslateResponse)
+def translate_query_config(
+    config_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> TranslateResponse | JSONResponse:
+    try:
+        record = config_service.get_config_by_id(db, config_id)
+        assert_config_readable(actor, record)
+        return translate_from_config_record(record)
+    except ConfigError as exc:
+        return _config_error(exc)
+    except TranslateError as exc:
+        return _translate_error(exc)

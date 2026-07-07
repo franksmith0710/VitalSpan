@@ -3,7 +3,9 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.query.translator.schemas import TranslateConditions
 
 
 ALLOWED_CONFIG_TYPES = frozenset({
@@ -17,6 +19,7 @@ ALLOWED_CONFIG_TYPES = frozenset({
     "entity_overview",
     "designer_workflow_link",
     "global_filter_linkage",
+    "dataset_query",
 })
 ALLOWED_SCHEMA_VERSIONS = frozenset({"1.0"})
 DEFAULT_REF_TYPE = "design_draft"
@@ -63,3 +66,22 @@ class ConfigOut(BaseModel):
 class ConfigListResponse(BaseModel):
     items: list[ConfigOut]
     total: int
+
+
+class DatasetQueryConfigPayload(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    data_source_id: uuid.UUID = Field(alias="dataSourceId")
+    connector_type: str = Field(alias="connectorType")
+    schema_name: str = Field(alias="schema")
+    table: str
+    columns: list[str] = Field(min_length=1)
+    conditions: TranslateConditions | None = None
+    limit: int | None = Field(default=None, ge=1)
+    offset: int = Field(default=0, ge=0)
+
+    @field_validator("columns")
+    @classmethod
+    def reject_star(cls, cols: list[str]) -> list[str]:
+        if any(c.strip() == "*" for c in cols):
+            raise ValueError("wildcard * is not allowed")
+        return cols

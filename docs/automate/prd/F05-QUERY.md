@@ -78,19 +78,20 @@
 - **里程碑对齐**：
 ### [QUERY-007] 配置元模型存储
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：配置元模型存储（SRS 追溯项）。
 - **验收标准**：
   - [x] 可视化配置可入库（r32 L1：`QueryConfigRecord` JSON upsert + `POST/GET /api/v1/query-configs`）
   - [x] 配置版本可追溯（`revision` 递增 + `updated_at`；同 ref 幂等 upsert）
-- **代码锚点**：`backend/app/query/config_store/` · `backend/app/api/v1/query_configs.py`
-- **演化建议**：r33 闭合 256KB payload 上限、expectedRevision 409 乐观锁与大配置 round-trip perf（T-QUERY-R33-007-01~03）；后续接 QUERY-008 翻译器
-- **里程碑对齐**：
+  - [x] `dataset_query` 类型可持久化 + owner/admin ACL（r243 `PUT/GET /api/v1/query-configs` + `config_store/access.py`；`test_mfinal_fd_r243` T-QUERY-R243-007-01~05）
+- **代码锚点**：`backend/app/query/config_store/` · `backend/app/query/config_store/access.py` · `backend/app/api/v1/query_configs.py` · `tests/test_mfinal_fd_r243.py` T-QUERY-R243-007-01~05
+- **演化建议**：Admin 可视化 Dataset 配置器 UI 留 F-D companion（META-004 联动）
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
 ### [QUERY-008] 配置→SQL/API 翻译器
 
-- **状态**：部分实现（L1 kickoff r38 + companion r39）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：配置→SQL/API 翻译器（SRS 追溯项）。
@@ -99,12 +100,13 @@
   - [x] 参数化防注入（`%(p0)s` 占位符 + `parameters` 字典；`in` 三参数化修复，r38+r39）
   - [x] 结构化错误域（`QUERY_TRANSLATE_UNSUPPORTED_DIALECT`/`QUERY_TRANSLATE_UNKNOWN_FIELD`/`QUERY_TRANSLATE_INVALID_CONFIG`/`QUERY_TRANSLATE_INVALID_OPERATOR`，r38+r39）
   - [x] 算子白名单与标识符注入守卫（r39）
-- **代码锚点**：`backend/app/query/translator/` · `backend/app/api/v1/query_translate.py` · `tests/test_query_meta_conn_r38.py` T-QUERY-R38-008-01~09 · `tests/test_query_meta_conn_r39.py` T-QUERY-R39-008-01~08
-- **演化建议**：r39 闭合算子白名单、标识符注入守卫与多方言参数化边界；后续扩展 hive/trino 等方言、Dataset 路径与 Admin 可视化配置器对接
-- **里程碑对齐**：
+  - [x] 已存 `dataset_query` 配置可翻译（r243 `POST /api/v1/query/translate-from-config` + `translator/from_config.py`；`test_mfinal_fd_r243` T-QUERY-R243-008-01~04）
+- **代码锚点**：`backend/app/query/translator/` · `backend/app/query/translator/from_config.py` · `backend/app/api/v1/query_translate.py` · `tests/test_query_meta_conn_r38.py` T-QUERY-R38-008-01~09 · `tests/test_query_meta_conn_r39.py` T-QUERY-R39-008-01~08 · `tests/test_mfinal_fd_r243.py` T-QUERY-R243-008-01~04
+- **演化建议**：扩展 hive/trino/gaussdb 等方言 translate-from-config；Admin 可视化配置器对接留 F-D companion
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
 ### [QUERY-009] Dataset 查询路径
 
-- **状态**：部分实现（companion r57）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：Dataset 查询路径（SRS 追溯项）。
@@ -112,6 +114,7 @@
   - [x] datasetId 查询可走通（r53 L1：`POST /api/v1/query/dataset/validate` + `GET /api/v1/query/dataset/routing` 三路径 sql/native/dataset 边界说明）
   - [x] 仅授权 Dataset（analyst role ACL + `QUERY_DATASET_FORBIDDEN`/`QUERY_DATASET_NOT_READONLY`/`QUERY_PATH_AMBIGUOUS` 守卫）
   - [x] Dataset execute-plan 四步链贯通（r57 companion：`POST /api/v1/query/dataset/execute-plan` planVersion=dataset-plan-v1；非真实 SQL 执行；Admin 可视化配置器留远期）
-- **代码锚点**：`backend/app/query/dataset/guard.py` · `backend/app/query/dataset/executor.py` · `backend/app/query/dataset/schemas.py` · `backend/app/api/v1/query.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-QUERY-R53-009-01~07 · `tests/test_dash_rpt_query_nfr_r57.py` T-QUERY-R57-009-01~07
-- **演化建议**：r57 companion 闭合 execute-plan 链、validate 一致性、参数注入守卫与 ≤30ms 性能预算；后续补真实 Dataset 执行、META-004 联动与 Admin 配置 UI
-- **里程碑对齐**：
+  - [x] `dataSourceId` + `configId` 存储→翻译→执行端到端（r243 `POST /api/v1/query/dataset/execute` + `execute_config.py`；mock 执行链；`test_mfinal_fd_r243` T-QUERY-R243-009-01~05）
+- **代码锚点**：`backend/app/query/dataset/guard.py` · `backend/app/query/dataset/executor.py` · `backend/app/query/dataset/execute_config.py` · `backend/app/query/dataset/schemas.py` · `backend/app/api/v1/query.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-QUERY-R53-009-01~07 · `tests/test_dash_rpt_query_nfr_r57.py` T-QUERY-R57-009-01~07 · `tests/test_mfinal_fd_r243.py` T-QUERY-R243-009-01~05
+- **演化建议**：真实 Dataset SQL 执行（非 mock）与 META-004 CRUD 联动留 F-D companion；Admin 配置 UI 留远期
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07

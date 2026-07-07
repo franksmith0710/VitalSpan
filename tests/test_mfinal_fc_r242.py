@@ -385,6 +385,72 @@ def test_conn_r242_021_06_optional_compose_live():
     pytest.skip("xinchuang DB not in compose")
 
 
+from app.datasources.dialects.gaussdb import GaussdbConnector
+
+
+# --- CONN-022 GaussDB ---
+
+
+def test_conn_r242_022_01_types_catalog_gaussdb():
+    """T-CONN-R242-022-01: export_type_catalog 含 gaussdb，displayName 含 GaussDB，category=relational。"""
+    types = {item["type"]: item for item in export_type_catalog()}
+    assert "gaussdb" in types
+    assert "GaussDB" in types["gaussdb"]["displayName"]
+    assert types["gaussdb"]["category"] == "relational"
+
+
+def test_conn_r242_022_02_probe_readonly_sql():
+    """T-CONN-R242-022-02: mock psycopg connection → probe_readonly_sql True；execute SELECT 1。"""
+    conn = MagicMock()
+    assert GaussdbConnector().probe_readonly_sql(conn) is True
+    conn.execute.assert_called_once_with("SELECT 1")
+
+
+@patch("app.datasources.dialects.gaussdb.PostgresConnector.open_connection")
+def test_conn_r242_022_03_http_test_no_password(mock_open, client):
+    """T-CONN-R242-022-03: POST /datasources/test type=gaussdb mock 失败 → 响应无 password。"""
+    mock_open.side_effect = Exception("Login failed gauss_secret_xyz")
+    resp = client.post(
+        "/api/v1/datasources/test",
+        headers=AUTH,
+        json={
+            "type": "gaussdb",
+            "name": "gauss-r243",
+            "code": f"gauss-{uuid.uuid4().hex[:8]}",
+            "host": "127.0.0.1",
+            "port": 5432,
+            "database": "postgres",
+            "username": "u",
+            "password": "gauss_secret_xyz",
+        },
+    )
+    assert resp.status_code == 200
+    assert "gauss_secret_xyz" not in json.dumps(resp.json())
+    assert "password" not in resp.text.lower()
+
+
+def test_conn_r242_022_04_readonly_guard_gaussdb(client):
+    """T-CONN-R242-022-04: readonly-guard connectorType=gaussdb sql=SELECT 1 → 200 ok。"""
+    resp = client.post(
+        "/api/v1/query/readonly-guard",
+        headers=AUTH,
+        json={"connectorType": "gaussdb", "sql": "SELECT 1"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["ok"] is True
+
+
+def test_conn_r242_022_05_probe_readonly_budget_smoke():
+    """T-CONN-R242-022-05: mock probe_readonly_sql elapsed <30ms（与 r242 OceanBase 同级 smoke）。"""
+    import time
+
+    conn = MagicMock()
+    start = time.perf_counter()
+    GaussdbConnector().probe_readonly_sql(conn)
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    assert elapsed_ms < 30
+
+
 # --- 五型 compose skip 占位 ---
 
 

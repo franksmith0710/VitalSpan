@@ -64,10 +64,11 @@ class QueryExecutor:
     def execute_sql(
         self, session: Session, user: UserContext, data_source_id: uuid.UUID, sql: str, *,
         limit: int, offset: int = 0, rls_config: dict | None = None, apply_rls: bool = True,
+        parameters: dict[str, object] | None = None,
     ) -> QueryResult:
         return self._run(
             session, user, data_source_id, sql, limit=limit, offset=offset,
-            rls_config=rls_config, apply_rls=apply_rls,
+            rls_config=rls_config, apply_rls=apply_rls, parameters=parameters,
         )
 
     def execute_table(
@@ -115,7 +116,7 @@ class QueryExecutor:
     def _run(
         self, session: Session, user: UserContext, data_source_id: uuid.UUID, sql: str, *,
         limit: int, offset: int, rls_config: dict | None, apply_rls: bool,
-        skip_wrap_limit: bool = False,
+        skip_wrap_limit: bool = False, parameters: dict[str, object] | None = None,
     ) -> QueryResult:
         row = self._load_row(session, data_source_id)
         dialect = get_sql_dialect(row.type)
@@ -129,7 +130,10 @@ class QueryExecutor:
                 data_source_id, connector=connector, connect_kwargs=kwargs, pool_size=pool_size,
             ) as conn:
                 cur = conn.cursor()
-                cur.execute(final_sql)
+                if parameters:
+                    cur.execute(final_sql, parameters)
+                else:
+                    cur.execute(final_sql)
                 columns = [col[0] for col in (cur.description or [])]
                 raw_rows = cur.fetchmany(limit + 1)
         except QueryError:

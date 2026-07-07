@@ -13,12 +13,31 @@ from app.query.config_store.schemas import (
     MAX_CONFIG_PAYLOAD_BYTES,
     ConfigError,
     ConfigUpsert,
+    DatasetQueryConfigPayload,
     DEFAULT_REF_TYPE,
 )
 
 
 def _payload_byte_size(payload: object) -> int:
     return len(json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+
+
+def _validate_dataset_query_payload(payload: dict) -> None:
+    from pydantic import ValidationError
+
+    try:
+        DatasetQueryConfigPayload.model_validate(payload)
+    except ValidationError as exc:
+        fields = [
+            {"field": ".".join(str(x) for x in e["loc"]), "message": e["msg"]}
+            for e in exc.errors()
+        ]
+        raise ConfigError(
+            "CONFIG_INVALID_DATASET_QUERY",
+            "Invalid dataset_query payload",
+            422,
+            fields=fields,
+        ) from exc
 
 
 def _validate_upsert(payload: ConfigUpsert) -> None:
@@ -36,6 +55,8 @@ def _validate_upsert(payload: ConfigUpsert) -> None:
             413,
             fields=[{"field": "payload", "message": f"size {size} exceeds limit"}],
         )
+    if payload.config_type == "dataset_query":
+        _validate_dataset_query_payload(payload.payload)
 
 
 def upsert_config(
@@ -113,6 +134,8 @@ def list_configs(
     ref_id: uuid.UUID | None = None,
     limit: int = 100,
     offset: int = 0,
+    actor_id: uuid.UUID | None = None,
+    is_admin: bool = True,
 ) -> tuple[list[QueryConfigRecord], int]:
     capped = min(max(limit, 1), 500)
     base = select(QueryConfigRecord).order_by(QueryConfigRecord.updated_at.desc())
@@ -126,6 +149,13 @@ def list_configs(
     if ref_id is not None:
         base = base.where(QueryConfigRecord.ref_id == ref_id)
         count_stmt = count_stmt.where(QueryConfigRecord.ref_id == ref_id)
+    if not is_admin and actor_id is not None:
+        owner_filter = (
+            QueryConfigRecord.owner_id.is_(None)
+            | (QueryConfigRecord.owner_id == actor_id)
+        )
+        base = base.where(owner_filter)
+        count_stmt = count_stmt.where(owner_filter)
     total = session.scalar(count_stmt) or 0
     items = list(session.scalars(base.limit(capped).offset(max(offset, 0))))
     return items, total
