@@ -9,6 +9,8 @@ class PublishActionOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     id: uuid.UUID
     status: str
+    bus_register_status: str | None = Field(default=None, alias="busRegisterStatus")
+    bus_register_error_code: str | None = Field(default=None, alias="busRegisterErrorCode")
 
 
 class PublishStatusOut(BaseModel):

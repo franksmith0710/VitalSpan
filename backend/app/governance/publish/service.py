@@ -15,7 +15,7 @@ from app.designer import workflow as workflow_link_service
 from app.governance.catalog import service as catalog_service
 from app.governance.catalog.schemas import CatalogEntryCreate
 from app.governance.catalog.models import CatalogEntry
-from app.governance.acl import assert_publish_action
+from app.governance.acl import assert_publish_action, record_publish_submitter
 from app.governance.publish.errors import PublishError
 from app.governance.publish.notifications import emit_publish_notification
 from app.governance.publish.schemas import PublishActionOut, PublishFromWorkflowOut, PublishStatusOut
@@ -59,6 +59,8 @@ def submit_entry(
     row.status = "pending_publish"
     db.commit()
     db.refresh(row)
+    if actor is not None:
+        record_publish_submitter(entry_id, actor.id)
     emit_publish_notification(entry_id, "submitted")
     return PublishActionOut(id=row.id, status=row.status)
 
@@ -77,14 +79,20 @@ def approve_entry(
     db.commit()
     db.refresh(row)
     emit_publish_notification(entry_id, "approved")
+    bus_status: str | None = None
+    bus_error: str | None = None
     if actor is not None:
-        from app.governance.bus.pipeline import trigger_auto_bus_register
+        from app.governance.bus.pipeline import attempt_auto_bus_register_for_publish
 
-        try:
-            trigger_auto_bus_register(db, actor, entry_id, source="publish")
-        except catalog_service.CatalogError:
-            pass
-    return PublishActionOut(id=row.id, status=row.status)
+        outcome = attempt_auto_bus_register_for_publish(db, actor, entry_id)
+        bus_status = outcome.status
+        bus_error = outcome.error_code
+    return PublishActionOut(
+        id=row.id,
+        status=row.status,
+        bus_register_status=bus_status,
+        bus_register_error_code=bus_error,
+    )
 
 
 def reject_entry(

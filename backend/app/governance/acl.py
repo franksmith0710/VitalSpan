@@ -13,6 +13,12 @@ from app.auth.rls.predicate import resolve_user_org_node_ids
 
 logger = logging.getLogger(__name__)
 
+_PUBLISH_SUBMITTERS: dict[uuid.UUID, str] = {}
+
+
+def record_publish_submitter(entry_id: uuid.UUID, actor_id: str) -> None:
+    _PUBLISH_SUBMITTERS[entry_id] = actor_id
+
 
 class GovAclError(Exception):
     def __init__(self, code: str, message: str, status: int = 403) -> None:
@@ -94,6 +100,7 @@ def assert_workflow_transition(actor: UserContext, action: str, actor_role: str)
         "approve": "approver",
         "reject": "approver",
         "complete_design": "designer",
+        "publish": "publisher",
     }
     required = role_map.get(action)
     if "admin" in actor.roles:
@@ -115,6 +122,13 @@ def assert_publish_action(
     if needed not in actor.roles:
         raise GovAclError("GOV_ACL_FORBIDDEN", f"{action} requires {needed} or admin", 403)
     if action == "approve" and "publisher" in actor.roles:
+        submitter_id = _PUBLISH_SUBMITTERS.get(entry_id)
+        if submitter_id and submitter_id == actor.id and "admin" not in actor.roles:
+            raise GovAclError(
+                "GOV_ACL_SELF_APPROVE_FORBIDDEN",
+                "Publisher cannot approve own submission without admin",
+                403,
+            )
         if not check_resource_access(session, actor.roles, "gov_catalog_entry", entry_id):
             raise GovAclError("GOV_RESOURCE_FORBIDDEN", "Missing gov_catalog_entry grant", 403)
 
