@@ -70,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- G1 bootstrap（cron 2026-07-07 ~18:16 UTC）：G0 PASS PR #234 已 squash merge dev-auto（193e921）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.105 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-E**（GOV-007~008 2 项 `[ ]` 待完成；F-F 4 项 NFR + F-G 5 项 CONN 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-E/F-F 批次 3（GOV-007~008/NFR-003/005/007）r247 PR #234 完成；phase idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~18:15 UTC）：确认 PR #234 已 squash merge dev-auto（193e921）feat/mfinal-fe-gov-batch3-r247→dev-auto；无 Open PR；工作区干净；M-FINAL F-E/F-F 批次 3 收官（GOV-007~008、NFR-003/005/007）；PRD/plan 已于 #234 同步；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 r247 收尾（cron 2026-07-07 ~18:10 UTC）：PRD 重评 GOV-007~008、NFR-003/005/007；hub v1.2.105；总分 90.0–90.4→91.2–91.6；五 ID 仍部分实现 plan 未勾选；phase P4_DONE→P5_DOCS_READY；pr=234；待 squash merge dev-auto
 - P4 验证（cron 2026-07-07 ~18:05 UTC）：独立全量 backend ruff clean + pytest 2224 passed/34 skipped exit 0；mfinal r247 36 passed exit 0；mfinal r246 32 passed exit 0；UI: N/A（无 fe/ 改动，ui_design_skill none）；screenshots 未运行；phase P3_DONE→P4_DONE；branch=feat/mfinal-fe-gov-batch3-r247；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
