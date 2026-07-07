@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import time
-from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from app.auth.deps import UserContext
@@ -17,15 +15,6 @@ from app.governance.catalog.cat05.schemas import (
 _VALID_STATUS = frozenset({"open", "closed", "pending"})
 _store: dict[str, dict] = {}
 _USER_TICKET_SCOPE: dict[str, str] = {}
-probe_ticket_stats_budget_ms_limit = 50
-
-
-@dataclass(frozen=True)
-class Cat05ProbeResult:
-    elapsed_ms: float
-    ok: bool
-
-
 def set_user_ticket_scope(user_id: str, category_key: str) -> None:
     _USER_TICKET_SCOPE[user_id] = category_key
 
@@ -97,8 +86,4 @@ def get_ticket_stats(key: str, user: UserContext) -> TicketStatsProbeOut:
     return TicketStatsProbeOut(open=12, closed=3, pending=5, sampled_at=datetime.now(UTC))
 
 
-def probe_ticket_stats_budget_ms(key: str) -> Cat05ProbeResult:
-    started = time.perf_counter()
-    admin = UserContext(id="probe", username="probe", roles=["admin"])
-    get_ticket_stats(key, admin)
-    return Cat05ProbeResult(elapsed_ms=(time.perf_counter() - started) * 1000, ok=True)
+from app.governance.catalog.cat05.probe import Cat05ProbeResult, probe_ticket_stats_budget_ms  # noqa: F401, E402

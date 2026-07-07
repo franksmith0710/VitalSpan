@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import time
-from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from app.auth.deps import UserContext
@@ -17,15 +15,6 @@ from app.governance.catalog.cat06.schemas import (
 _VALID_VENDOR = frozenset({"enterprise", "scheme", "model", "dcas"})
 _store: dict[str, dict] = {}
 _USER_BRAND_SCOPE: dict[str, str] = {}
-probe_production_stats_budget_ms_limit = 50
-
-
-@dataclass(frozen=True)
-class Cat06ProbeResult:
-    elapsed_ms: float
-    ok: bool
-
-
 def set_user_brand_scope(user_id: str, brand_id: str) -> None:
     _USER_BRAND_SCOPE[user_id] = brand_id
 
@@ -101,24 +90,8 @@ def get_production_stats(key: str, user: UserContext) -> ProductionStatsProbeOut
     )
 
 
-def probe_production_stats_budget_ms(key: str) -> Cat06ProbeResult:
-    started = time.perf_counter()
-    admin = UserContext(id="probe", username="probe", roles=["admin"])
-    get_production_stats(key, admin)
-    elapsed = (time.perf_counter() - started) * 1000
-    return Cat06ProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_production_stats_budget_ms_limit)
-
-
-def probe_validate_production_stats_budget_ms() -> Cat06ProbeResult:
-    started = time.perf_counter()
-    sample = ProductionStatsItemIn.model_validate({
-        "statsKey": "PS_PROBE",
-        "displayName": "Probe",
-        "vendorType": "enterprise",
-        "brandId": "BRAND01",
-        "locType": "all",
-        "metricKeys": ["inbound"],
-    })
-    validate_production_stats(sample)
-    elapsed = (time.perf_counter() - started) * 1000
-    return Cat06ProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_production_stats_budget_ms_limit)
+from app.governance.catalog.cat06.probe import (  # noqa: F401, E402
+    Cat06ProbeResult,
+    probe_production_stats_budget_ms,
+    probe_validate_production_stats_budget_ms,
+)
