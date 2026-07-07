@@ -65,6 +65,12 @@ const emptyForm: FormState = {
   description: "",
 };
 
+const CONNECTOR_FIELD_HINTS: Record<string, { port: string; databaseLabel: string; usernameLabel: string }> = {
+  mongodb: { port: "27017", databaseLabel: "认证库", usernameLabel: "用户名" },
+  elasticsearch: { port: "9200", databaseLabel: "默认索引（可选）", usernameLabel: "用户名" },
+  opensearch: { port: "9200", databaseLabel: "默认索引（可选）", usernameLabel: "用户名" },
+};
+
 export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -191,7 +197,17 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
             </div>
             <div className="grid gap-2">
               <Label>类型</Label>
-              <Select value={form.type} onValueChange={(v) => setField("type", v)}>
+              <Select
+                value={form.type}
+                onValueChange={(v) => {
+                  const hints = CONNECTOR_FIELD_HINTS[v];
+                  setForm((prev) => ({
+                    ...prev,
+                    type: v,
+                    port: hints?.port ?? prev.port,
+                  }));
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="选择类型" />
                 </SelectTrigger>
@@ -215,11 +231,11 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="database">数据库</Label>
+              <Label htmlFor="database">{CONNECTOR_FIELD_HINTS[form.type]?.databaseLabel ?? "数据库"}</Label>
               <Input id="database" value={form.database} onChange={(e) => setField("database", e.target.value)} required />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="username">用户名</Label>
+              <Label htmlFor="username">{CONNECTOR_FIELD_HINTS[form.type]?.usernameLabel ?? "用户名"}</Label>
               <Input id="username" value={form.username} onChange={(e) => setField("username", e.target.value)} required />
             </div>
             <div className="grid gap-2">

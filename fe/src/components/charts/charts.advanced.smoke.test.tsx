@@ -140,7 +140,7 @@ vi.mock("echarts-for-react", () => ({
   default: () => <div data-testid="echarts-chart" />,
 }));
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { AdvancedEchartsChart } from "@/components/charts/adapters/AdvancedEchartsChart";
 
 describe("AdvancedEchartsChart", () => {
@@ -169,6 +169,47 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 describe("ChartConfigPanel", () => {
   afterEach(() => cleanup());
+
+  it("T-VIZ-R236-005-02: ChartConfigPanel add/remove filter rows", () => {
+    const onChange = vi.fn();
+    render(
+      <ChartConfigPanel
+        config={{ chartType: "funnel", dimensions: [{ field: "stage" }], metrics: [{ field: "cnt" }], filters: [] }}
+        columns={["stage", "cnt", "region"]}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /添加筛选/i }));
+    expect(onChange).toHaveBeenCalled();
+    const last = onChange.mock.calls.at(-1)?.[0];
+    expect(last.filters?.length).toBe(1);
+  });
+
+  it("T-VIZ-R236-005-03: funnel fieldRule min metrics hint preserved", async () => {
+    mockApiFetch.mockResolvedValueOnce([
+      {
+        type: "funnel",
+        displayName: "漏斗",
+        styleVariants: ["default"],
+        fieldRule: { minMetrics: 2, maxMetrics: 4, note: "至少 2 个度量" },
+      },
+    ]);
+    render(
+      <ChartConfigPanel
+        config={{
+          chartType: "funnel",
+          dataSourceId: "00000000-0000-4000-8000-000000000001",
+          mode: "sql",
+          sql: "SELECT 1",
+          dimensions: [{ field: "stage" }],
+          metrics: [{ field: "cnt" }, { field: "cnt2" }],
+        }}
+        columns={["stage", "cnt", "cnt2"]}
+        onChange={() => {}}
+      />,
+    );
+    expect(await screen.findByText("至少 2 个度量")).toBeInTheDocument();
+  });
 
   it("T-VIZ-R43-005-02: funnel 缺 metric → 配置面板展示字段错误文案", async () => {
     const cfg: ChartViewConfig = {

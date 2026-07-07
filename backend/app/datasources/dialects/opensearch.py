@@ -6,12 +6,15 @@ from typing import Any
 
 from opensearchpy import OpenSearch
 
+from app.core.config import get_settings
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import (
     OPENSEARCH_INDEX_NOT_FOUND,
     OPENSEARCH_INVALID_HOST,
     map_opensearch_error,
 )
+from app.query.native.guard import guard_native_injection
+from app.query.schemas import QueryError
 
 probe_opensearch_metadata_budget_ms = 100
 OPENSEARCH_MAX_MAPPING_FIELDS = 500
@@ -38,6 +41,16 @@ class OpensearchProbeResult:
 
 def _normalize_os_type(os_type: str) -> str:
     return _OS_TYPE_MAP.get(os_type, "unknown")
+
+
+def probe_readonly_search(connection: Any, *, index: str) -> bool:
+    if not index.strip():
+        return False
+    try:
+        connection.search(index=index, body={"query": {"match_all": {}}, "size": 1})
+        return True
+    except Exception:
+        return False
 
 
 def _build_client(*, host: str, port: int, username: str, password: str, timeout_sec: float) -> OpenSearch:
@@ -135,6 +148,40 @@ class OpensearchConnector:
         if len(columns) > OPENSEARCH_MAX_MAPPING_FIELDS:
             return columns[:OPENSEARCH_MAX_MAPPING_FIELDS]
         return columns
+
+    def execute_native_query(
+        self,
+        connection: Any,
+        *,
+        body: dict,
+        index: str | None,
+        limit: int,
+    ) -> tuple[list[str], list[list], bool]:
+        guard_native_injection(body)
+        if not isinstance(body.get("query"), dict):
+            raise QueryError("QUERY_NATIVE_INVALID_BODY", "body.query object is required", 422)
+        resolved_index = index or body.get("index")
+        if not isinstance(resolved_index, str) or not resolved_index.strip():
+            raise QueryError("QUERY_NATIVE_INVALID_BODY", "index is required", 422)
+        cap = min(limit, get_settings().query_default_limit)
+        search_body = dict(body)
+        search_body["size"] = cap + 1
+        try:
+            result = connection.search(index=resolved_index, body=search_body)
+        except Exception as exc:
+            code, _ = map_opensearch_error(exc)
+            if code == OPENSEARCH_INDEX_NOT_FOUND:
+                raise QueryError("QUERY_TABLE_NOT_FOUND", str(exc), 404) from exc
+            raise QueryError("QUERY_EXECUTION_ERROR", str(exc), 400) from exc
+        hits = result.get("hits", {}).get("hits", [])
+        truncated = len(hits) > cap
+        hits = hits[:cap]
+        if not hits:
+            return [], [], False
+        source = hits[0].get("_source", {})
+        columns = sorted(source.keys())
+        rows = [[h.get("_source", {}).get(c) for c in columns] for h in hits]
+        return columns, rows, truncated
 
 
 def probe_list_columns_mock(client: OpenSearch, index: str = "idx") -> OpensearchProbeResult:

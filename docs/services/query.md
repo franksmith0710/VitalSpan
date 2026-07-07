@@ -44,6 +44,7 @@
 | `ChartQueryBinding` / `binding_service` | 图表直连绑定 CRUD | QUERY-005 | 已实现 |
 | `query/config_store` | 配置元模型 JSON 存储（revision upsert） | QUERY-007 | L1 已实现 |
 | `query/native/guard` | `resolve_query_mode` + `validate_native_spec` | QUERY-003 | L1 已实现 |
+| `query/native/executor` | `NativeQueryExecutor`（MongoDB/ES/OpenSearch native 出数） | QUERY-003 | L1 已实现（r236） |
 | `query/dataset/guard` | 第三路径 dataset + 内置 ACL registry | QUERY-009 | L1 已实现（r53） |
 | `query/dataset/executor` | execute-plan 四步链 companion（stub） | QUERY-009 | companion 已实现（r57） |
 | `query/dialects` | MySQL/PostgreSQL/ClickHouse 方言适配 | QUERY-004 | 已实现 |
@@ -78,6 +79,8 @@
 ### r52 companion 质量推分（QUERY-003）
 
 - **QUERY-003**：`readonly.assert_safe_sql_parameters`；`guard_native_injection`（`QUERY_NATIVE_INJECTION_SUSPECT` / `QUERY_PARAM_INJECTION_SUSPECT`）；`POST /query/readonly-guard`（sql 模式只读 + native 模式拒绝 sql 字段）；`probe_list_routing_modes`（<50ms smoke）；binding 创建 sql 模式委托 `assert_readonly_sql`
+- **r236 execute**：`POST /query/execute` `mode=native` + `nativeBody`/`index`；`NativeQueryExecutor` 复用 `validate_native_spec` + `pool_manager`；ES/OS **不支持 offset**（`QUERY_NATIVE_OFFSET_UNSUPPORTED`）；**不注入 SQL RLS**
+- **Out**：Influx/TDengine native execute（`QUERY_NATIVE_EXECUTE_UNSUPPORTED`）；ES filter DSL 自动拼接；SQL RLS on native
 - 执行链：`assert_visible` → `readonly` → `dialect.wrap_limit` → `apply_rls_to_sql` → `pool_manager`
 
 ### 方言适配器

@@ -26,10 +26,12 @@ class RlsOptions(BaseModel):
 class ExecuteRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     data_source_id: uuid.UUID | None = Field(default=None, alias="dataSourceId")
-    mode: Literal["sql", "table"] | None = None
+    mode: Literal["sql", "table", "native"] | None = None
     sql: str | None = None
     schema: str | None = None
     table: str | None = None
+    native_body: dict[str, Any] | None = Field(default=None, alias="nativeBody")
+    index: str | None = None
     limit: int | None = Field(default=None, ge=1)
     offset: int = Field(default=0, ge=0)
     binding_id: uuid.UUID | None = Field(default=None, alias="bindingId")
@@ -55,6 +57,9 @@ class ExecuteRequest(BaseModel):
         elif self.mode == "table":
             if self.data_source_id is None or not self.schema or not self.table:
                 raise ValueError("table mode requires dataSourceId, schema and table")
+        elif self.mode == "native":
+            if self.data_source_id is None or not self.native_body:
+                raise ValueError("native mode requires dataSourceId and nativeBody")
         else:
             raise ValueError("mode is required when bindingId is absent")
         return self

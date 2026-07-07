@@ -235,7 +235,7 @@
 - **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-014] MongoDB 连接器
 
-- **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）
+- **状态**：已实现（M11 r236 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：MongoDB 连接器（SRS 追溯项）。
@@ -245,14 +245,14 @@
   - [x] 连通性测试结构化错误（`MONGODB_CONN_REFUSED`/`MONGODB_AUTH_FAILED`/`MONGODB_TIMEOUT`/`MONGODB_UNKNOWN_DATABASE`/`MONGODB_INVALID_HOST`，r40+r41 mock）
   - [x] schema database/collection 自省 + 字段 500 limit（r40+r41 mock）
   - [x] HTTP test_connection/metadata 4xx 链（r41）
-  - [ ] 只读查询通过
+  - [x] 只读查询通过（r236：`probe_readonly_find` + `execute_native_query` + QUERY-003 native execute mock；`$where` 注入 `QUERY_NATIVE_INJECTION_SUSPECT`）
   - [x] category=`document` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/mongodb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-014-01~08 · `tests/test_connectors_gov_r41.py` T-CONN-R41-014-01~07
-- **演化建议**：r41 已闭合 HTTP 链、BSON 六类型枚举与 `map_mongodb_error` UNKNOWN_DATABASE；后续补只读查询集成测与 Admin UI 选型
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/mongodb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-014-01~08 · `tests/test_connectors_gov_r41.py` T-CONN-R41-014-01~07 · `tests/test_m11_batch2_r236.py` T-CONN-R236-014-01~05
+- **演化建议**：M11 r236 已闭合 native find 探测与 execute 链；后续补 Admin UI 选型与 compose 集成 E2E
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-015] Elasticsearch 连接器
 
-- **状态**：部分实现
+- **状态**：已实现（M11 r236 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：Elasticsearch 连接器（SRS 追溯项）。
@@ -260,16 +260,16 @@
   - [x] type=`elasticsearch` 已注册（types catalog，r34 L1）
   - [ ] UI 可选
   - [x] 连通性测试 + index/mapping schema 浏览（r34+r35 mock）
-  - [ ] 只读查询通过
+  - [x] 只读查询通过（r236：`probe_readonly_search` + `execute_native_query` + QUERY-003 native execute；HTTP test 凭证不落响应）
   - [x] category=`search` 查询模式正确（r34）
   - [x] 空 host → `ES_INVALID_HOST` 结构化错误（r34）
   - [x] 多索引 list_schemas、mapping 类型归一、字段 500 limit、`ES_AUTH_FAILED`/`ES_CONNECTION_REFUSED`/`ES_TIMEOUT`（r35）
-- **代码锚点**：`backend/app/datasources/dialects/elasticsearch.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
-- **演化建议**：r35 闭合 ES 错误域、多索引/mapping 归一与字段 limit；后续补 search 只读查询与 UI
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/elasticsearch.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py` · `tests/test_m11_batch2_r236.py` T-CONN-R236-015-01~05
+- **演化建议**：M11 r236 已闭合 search 只读探测与 native execute 链；后续补 Admin UI 选型与 compose 集成 E2E
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-016] OpenSearch 连接器
 
-- **状态**：部分实现
+- **状态**：已实现（M11 r236 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：OpenSearch 连接器（SRS 追溯项）。
@@ -277,13 +277,13 @@
   - [x] type=`opensearch` 已注册（types catalog + plugin 登记，r49 L1）
   - [ ] UI 可选
   - [x] 连通性测试 + schema 浏览（r49 mock：`test_connection` + `list_columns` 500 limit）
-  - [ ] 只读查询通过
+  - [x] 只读查询通过（r236：`probe_readonly_search` + `execute_native_query` + `QUERY_TABLE_NOT_FOUND` 映射；与 ES registry 独立）
   - [x] category=`search` 查询模式正确（r49）
   - [x] 空 host → `OPENSEARCH_INVALID_HOST`；401 → `OPENSEARCH_AUTH_FAILED`（r49）
   - [x] HTTP/空索引边界 companion（r52：`map_opensearch_error` 统一 + 空 indices/properties + HTTP 4xx/502 链 + probe <100ms）
-- **代码锚点**：`backend/app/datasources/dialects/opensearch.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-CONN-R52-016-01~10
-- **演化建议**：r52 companion 闭合 HTTP test_connection/metadata 链、空索引边界与字段 truncate；后续补只读查询集成测与 UI 选型
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/opensearch.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-CONN-R52-016-01~10 · `tests/test_m11_batch2_r236.py` T-CONN-R236-016-01~06
+- **演化建议**：M11 r236 已闭合 search 只读探测与 native execute 链；后续补 Admin UI 选型与 compose 集成 E2E
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-017] 达梦 DM 连接器
 
 - **状态**：部分实现（L1 kickoff r38 + companion r39）

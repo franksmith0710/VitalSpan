@@ -5,7 +5,10 @@ from typing import Any
 
 from elasticsearch import Elasticsearch
 
+from app.core.config import get_settings
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
+from app.query.native.guard import guard_native_injection
+from app.query.schemas import QueryError
 
 ES_INVALID_HOST = "ES_INVALID_HOST"
 ES_CONNECTION_REFUSED = "ES_CONNECTION_REFUSED"
@@ -30,6 +33,16 @@ _ES_TYPE_MAP = {
 
 def _normalize_es_type(es_type: str) -> str:
     return _ES_TYPE_MAP.get(es_type, "unknown")
+
+
+def probe_readonly_search(connection: Any, *, index: str) -> bool:
+    if not index.strip():
+        return False
+    try:
+        connection.search(index=index, body={"query": {"match_all": {}}, "size": 1})
+        return True
+    except Exception:
+        return False
 
 
 def _build_client(*, host: str, port: int, username: str, password: str, timeout_sec: float) -> Elasticsearch:
@@ -128,3 +141,34 @@ class ElasticsearchConnector:
         if len(columns) > ES_MAX_MAPPING_FIELDS:
             return columns[:ES_MAX_MAPPING_FIELDS]
         return columns
+
+    def execute_native_query(
+        self,
+        connection: Any,
+        *,
+        body: dict,
+        index: str | None,
+        limit: int,
+    ) -> tuple[list[str], list[list], bool]:
+        guard_native_injection(body)
+        if not isinstance(body.get("query"), dict):
+            raise QueryError("QUERY_NATIVE_INVALID_BODY", "body.query object is required", 422)
+        resolved_index = index or body.get("index")
+        if not isinstance(resolved_index, str) or not resolved_index.strip():
+            raise QueryError("QUERY_NATIVE_INVALID_BODY", "index is required", 422)
+        cap = min(limit, get_settings().query_default_limit)
+        search_body = dict(body)
+        search_body["size"] = cap + 1
+        try:
+            result = connection.search(index=resolved_index, body=search_body)
+        except Exception as exc:
+            raise QueryError("QUERY_EXECUTION_ERROR", str(exc), 400) from exc
+        hits = result.get("hits", {}).get("hits", [])
+        truncated = len(hits) > cap
+        hits = hits[:cap]
+        if not hits:
+            return [], [], False
+        source = hits[0].get("_source", {})
+        columns = sorted(source.keys())
+        rows = [[h.get("_source", {}).get(c) for c in columns] for h in hits]
+        return columns, rows, truncated

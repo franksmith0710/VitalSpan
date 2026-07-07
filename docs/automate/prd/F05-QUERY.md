@@ -28,7 +28,7 @@
 - **里程碑对齐**：
 ### [QUERY-003] Native 查询双路径
 
-- **状态**：部分实现
+- **状态**：已实现（M11 r236 集成验收）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
 - **描述**：Native 查询双路径（SRS 追溯项）。
@@ -36,9 +36,10 @@
   - [x] 时序/文档/搜索走 native（r49 L1：`GET /api/v1/query/routing/modes` opensearch→native）
   - [x] 不做 SQL 伪装（r49 L1：`POST /api/v1/query/native/validate` + `QUERY_NATIVE_SQL_DISGUISE` 守卫）
   - [x] 注入与 readonly-guard companion（r52：`QUERY_NATIVE_INJECTION_SUSPECT`/`QUERY_PARAM_INJECTION_SUSPECT` + POST `query/readonly-guard` + probe <50ms）
-- **代码锚点**：`backend/app/query/native/` · `backend/app/query/readonly.py` · `backend/app/api/v1/query.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-QUERY-R52-003-01~10
-- **演化建议**：r52 companion 闭合 native 注入、参数注入、readonly-guard 双路径与 binding sql 模式对齐；后续补 native 执行链与 OpenSearch 只读查询贯通
-- **里程碑对齐**：
+  - [x] native execute 链 Mongo/ES/OpenSearch（r236：`NativeQueryExecutor` + `POST /api/v1/query/execute` mode=native + ACL/`QUERY_NATIVE_WRONG_MODE`/空 body 422 + routing probe <50ms）
+- **代码锚点**：`backend/app/query/native/` · `backend/app/query/native/executor.py` · `backend/app/query/readonly.py` · `backend/app/api/v1/query.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-QUERY-R52-003-01~10 · `tests/test_m11_batch2_r236.py` T-QUERY-R236-003-01~09
+- **演化建议**：M11 r236 已闭合 Mongo/ES/OpenSearch native execute 与 M4 合并验收；后续补 compose 集成 E2E 与 ES offset 限制文档化
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [QUERY-004] SQL 方言适配器
 
 - **状态**：已实现
