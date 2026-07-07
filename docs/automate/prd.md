@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.87
+version: 1.2.88
 last_updated: 2026-07-07
 truth_source: true
 evolution_hub: true
@@ -17,20 +17,20 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-07 · P5 r235 重评 CONN-009~013（M11 三期原生连接器扩展批次 1）；pytest 1988/25 skipped；test_connectors_m11_r235 21/21 + r34–r41 回归；m11_compose_env 五端口分层 skip、presto 别名、catalog 元数据、Flux/SQL 只读探测；用户价值 84%→88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，总分 90.0–91.2→91.9–92.6（五 ID ≥90 STUCK 空；plan M11 五 ID 勾选；只读查询/UI 选型留 companion）
+> 更新：2026-07-07 · P5 r236 重评 CONN-014~016 + QUERY-003 + VIZ-005（M11 三期 NoSQL/搜索 native execute + 维度指标筛选 UI）；pytest 2018/23 skipped；test_m11_batch2_r236 28/28 + r235/r49/r52 回归；fe vitest 167/167 + check:design PASS；Mongo/ES/OpenSearch probe+execute_native_query、NativeQueryExecutor、ChartConfigPanel filters/native mode；用户价值 84%→86–88%，完整度 90%→92–96%，测试覆盖 98%→100%，总分 90.0–91.0→91.4–93.0（四 ID ≥90 STUCK 空；plan M11 四 ID 勾选；VIZ-005 时间范围留 companion plan 未勾）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
 | 1 | QUERY-009 | 查询项 | 90.0 | 用户价值 | 见期次 |
-| 2 | VIZ-005 | 可视化项 | 90.0 | 用户价值 | 见期次 |
-| 3 | META-001 | 元数据项 | 90.0 | 安全性 | 见期次 |
-| 4 | API-001 | 集成项 | 90.0 | 性能 | 见期次 |
-| 5 | CONN-018 | 连接器项 | 90.0 | 用户价值 | 见期次 |
-| 6 | NFR-005 | 非功能项 | 90.0 | 用户价值 | 见期次 |
-| 7 | GOV-003 | 治理项 | 90.1 | 用户价值 | 见期次 |
-| 8 | CAT-004 | 分类项 | 90.1 | 用户价值 | 见期次 |
-| 9 | CONN-014 | 连接器项 | 90.1 | 用户价值 | 见期次 |
-| 10 | CONN-016 | 连接器项 | 90.4 | 用户价值 | 见期次 |
+| 2 | META-001 | 元数据项 | 90.0 | 安全性 | 见期次 |
+| 3 | API-001 | 集成项 | 90.0 | 性能 | 见期次 |
+| 4 | CONN-018 | 连接器项 | 90.0 | 用户价值 | 见期次 |
+| 5 | NFR-005 | 非功能项 | 90.0 | 用户价值 | 见期次 |
+| 6 | GOV-003 | 治理项 | 90.1 | 用户价值 | 见期次 |
+| 7 | CAT-004 | 分类项 | 90.1 | 用户价值 | 见期次 |
+| 8 | VIZ-007 | 可视化项 | 90.1 | 用户价值 | 见期次 |
+| 9 | VIZ-003 | 可视化项 | 90.1 | 用户价值 | 见期次 |
+| 10 | VIZ-004 | 可视化项 | 90.1 | 用户价值 | 见期次 |
 
 ---
 
@@ -75,9 +75,9 @@ domain_count: 16
 | CONN-011 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 88 | 91.9 | 性能 |
 | CONN-012 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 88 | 91.9 | 用户价值 |
 | CONN-013 | 86 | 96 | 96 | N/A | 92 | 100 | 88 | 90 | 92.6 | 用户价值 |
-| CONN-014 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
-| CONN-015 | 84 | 90 | 96 | N/A | 90 | 100 | 88 | 90 | 91.0 | 用户价值 |
-| CONN-016 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
+| CONN-014 | 88 | 96 | 96 | N/A | 90 | 100 | 90 | 90 | 93.0 | 用户价值 |
+| CONN-015 | 88 | 96 | 96 | N/A | 90 | 100 | 90 | 90 | 93.0 | 用户价值 |
+| CONN-016 | 88 | 94 | 94 | N/A | 90 | 100 | 90 | 90 | 92.2 | 用户价值 |
 | CONN-017 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 性能 |
 | CONN-018 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.0 | 用户价值 |
 | CONN-019 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
@@ -86,7 +86,7 @@ domain_count: 16
 | CONN-022 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
 | QUERY-001 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 92 | 92.8 | 架构健康 |
 | QUERY-002 | 86 | 96 | 96 | N/A | 90 | 100 | 90 | 88 | 92.4 | 安全性 |
-| QUERY-003 | 84 | 90 | 96 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
+| QUERY-003 | 88 | 94 | 96 | N/A | 90 | 100 | 90 | 90 | 92.6 | 用户价值 |
 | QUERY-004 | 82 | 94 | 94 | N/A | 92 | 100 | 90 | 90 | 91.4 | 用户价值 |
 | QUERY-005 | 84 | 98 | 96 | N/A | 90 | 100 | 90 | 90 | 92.6 | 用户价值 |
 | QUERY-006 | 86 | 96 | 96 | N/A | 90 | 100 | 86 | 94 | 92.6 | 性能 |
@@ -97,7 +97,7 @@ domain_count: 16
 | VIZ-002 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 90 | 93.2 | 性能 |
 | VIZ-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | VIZ-004 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
-| VIZ-005 | 84 | 88 | 96 | N/A | 90 | 98 | 88 | 88 | 90.0 | 用户价值 |
+| VIZ-005 | 86 | 92 | 96 | N/A | 90 | 100 | 88 | 88 | 91.4 | 用户价值 |
 | VIZ-006 | 84 | 90 | 94 | N/A | 88 | 98 | 86 | 90 | 90.2 | 性能 |
 | VIZ-007 | 84 | 90 | 94 | N/A | 88 | 98 | 88 | 90 | 90.1 | 用户价值 |
 | VIZ-008 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
@@ -219,6 +219,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.88 | 2026-07-07 | P5 r236 重评 CONN-014~016 + QUERY-003 + VIZ-005（M11 三期 NoSQL/搜索 native execute + 维度指标筛选 UI）；pytest 2018/23 skipped；test_m11_batch2_r236 28/28 + r235/r49/r52 回归；fe vitest 167/167 + check:design PASS；Mongo/ES/OpenSearch probe+execute_native_query、NativeQueryExecutor、ChartConfigPanel filters/native mode；用户价值 84%→86–88%，完整度 90%→92–96%，测试覆盖 98%→100%，总分 90.0–91.0→91.4–93.0（四 ID ≥90 STUCK 空；plan M11 四 ID 勾选；VIZ-005 时间范围留 companion plan 未勾） |
 | 1.2.87 | 2026-07-07 | P5 r235 重评 CONN-009~013（M11 三期原生连接器扩展批次 1）；pytest 1988/25 skipped；test_connectors_m11_r235 21/21 + r34–r41 回归；m11_compose_env、presto 别名、catalog 元数据、Flux/SQL 只读探测；用户价值 84%→88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，总分 90.0–91.2→91.9–92.6（五 ID ≥90 STUCK 空；plan M11 五 ID 勾选；只读查询/UI 选型留 companion） |
 | 1.2.86 | 2026-07-07 | P5 r234 重评 RPT-003/004/006 + VIEW-002 + NFR-002（M10 报表模板与角色默认视图收官）；pytest 1967/21 skipped；fe vitest 164/164 + report-templates smoke P95 + check:design PASS；test_m10_report_templates_r234 21/21 + test_nfr_002_report_query_smoke 2/2；templates storageRef/DELETE/exportHook、catalog templateKey+probe、ReportTemplatesPage、RoleListPage+defaultViewResolve、REPORT_QUERY_FIXTURE；用户价值 84–86%→88%，完整度 90%→96%，交互 N/A→88–90%，总分 90.1–91.3→92.0–92.6（五 ID ≥90 STUCK 空；plan M10 五 ID 勾选；PDF 真实排版/onboarding 全链留 companion） |
 | 1.2.85 | 2026-07-06 | P5 r233 重评 DASH-006 + RPT-001 + RPT-002（M9 主题分析与预制报表收官）；pytest 1948/19 skipped；fe vitest 157/157 + prefab/theme smoke 8/8 + check:design PASS；test_m9_rpt_theme_r233 18/18 + r60/r68/r58 回归；engine M3-LITE execute、prefab seed/run API、theme drill query、PrefabReportsPage+ThemeAnalysisPage；用户价值 84%→88–90%，完整度 90%→96%，交互 N/A→88%（RPT-002/DASH-006），总分 90.1–91.2→92.2–92.4（三 ID ≥90 STUCK 空；plan M9 三 ID 勾选；PDF/Word/GIS/binding 编辑留 companion） |

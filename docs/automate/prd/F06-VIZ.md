@@ -53,15 +53,16 @@
 - **里程碑对齐**：
 ### [VIZ-005] 维度指标筛选配置 UI
 
-- **状态**：部分实现
+- **状态**：部分实现（r236 companion：多维度/指标/筛选器动态增删 + native mode 执行链）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
-- **描述**：维度指标筛选配置 UI（SRS 追溯项）。r42 交付 FieldRule + registry 驱动校验；r43 companion 交付 `ChartConfigPanel` 维度/指标字段绑定与 style_variant 选择；时间范围选择器留后续。
+- **描述**：维度指标筛选配置 UI（SRS 追溯项）。r42 交付 FieldRule + registry 驱动校验；r43 companion 交付 `ChartConfigPanel` 维度/指标字段绑定与 style_variant 选择；r236 交付多字段/筛选器动态增删与 native execute 联动；时间范围选择器留后续。
 - **验收标准**：
-  - [x] 维度/指标/筛选器可配置（`ChartConfigPanel` 字段绑定 + 后端 FieldRule 校验链）
+  - [x] 维度/指标/筛选器可配置（`ChartConfigPanel` 多字段动态增删 + operator/value 筛选器 + 后端 FieldRule 校验链）
+  - [x] native mode 图表执行链（r236：`useChartExecute` mode=native + `ChartRenderer` rerun）
   - [ ] 时间范围选择（未实现，留后续轮次）
-- **代码锚点**：`backend/app/viz/specs.py`（FieldRule）· `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/lib/chartViewConfig.ts`
-- **演化建议**：时间范围选择器 + 筛选器 UI 与 query 执行联动
+- **代码锚点**：`backend/app/viz/specs.py`（FieldRule）· `backend/app/schemas/chart_view.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartViewConfig.ts` · `fe/src/lib/chartViewConfig.test.ts`
+- **演化建议**：时间范围选择器 + 筛选器与 query 执行参数联动；Playwright E2E 真实出数
 - **里程碑对齐**：
 ### [VIZ-006] iframe 嵌入门户
 

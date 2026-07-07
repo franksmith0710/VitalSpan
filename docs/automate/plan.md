@@ -513,10 +513,10 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [x] CONN-011: InfluxDB 连接器（完成于 2026-07-07）
 - [x] CONN-012: TDengine 连接器（完成于 2026-07-07）
 - [x] CONN-013: TimescaleDB 连接器（完成于 2026-07-07）
-- [ ] CONN-014: MongoDB 连接器
-- [ ] CONN-015: Elasticsearch 连接器
-- [ ] CONN-016: OpenSearch 连接器
-- [ ] QUERY-003: Native 查询双路径（与 M4 合并验收）
+- [x] CONN-014: MongoDB 连接器（完成于 2026-07-07）
+- [x] CONN-015: Elasticsearch 连接器（完成于 2026-07-07）
+- [x] CONN-016: OpenSearch 连接器（完成于 2026-07-07）
+- [x] QUERY-003: Native 查询双路径（与 M4 合并验收）（完成于 2026-07-07）
 - [x] QUERY-004: SQL 方言适配器（完成于 2026-07-04）
 - [x] VIZ-003: 图表类型插件注册（完成于 2026-07-04）
 - [x] VIZ-004: 图表样式子类型（完成于 2026-07-04）

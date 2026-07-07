@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r236 PRD 对齐（cron 2026-07-07 ~01:30 UTC）：重评 CONN-014~016 + QUERY-003 + VIZ-005；hub 总分 90.0–91.0→91.4–93.0；plan M11 四 ID 勾选（VIZ-005 部分实现未勾）；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r236 验证（cron 2026-07-07 ~01:27 UTC）：独立全量 ruff clean + pytest 2018 passed/23 skipped exit 0；fe check:design 129 files + vitest 167/167 + design fixture 4/4 + build exit 0（P4 修复 ChartRenderer retry→rerun TS2339）；UI design_drift PASS；screenshots 未运行（headless vitest mock）；plan.md 在分支未改（P5 勾选）；phase P3_DONE→P4_DONE；branch=feat/m11-batch2-nosql-native-viz-r236；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 r236 实现（cron 2026-07-07 ~01:25 UTC）：8 Task 完成（r236 scaffold + CONN-014/015/016 native probe/execute + QUERY-003 NativeQueryExecutor + VIZ-005 types/UI + DatasourceFormPage hints + docs 回归）；ui_design_skill=b-design-system-tailadmin-radix；pytest r236 28/28 + r235/r49/r52 回归 + ruff clean；fe check:design 129 files + vitest 21/21 PASS；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P2_DONE→P3_DONE；branch=feat/m11-batch2-nosql-native-viz-r236；base_branch=dev-auto；待 P4 evolution-verifier
 - P5 r235 收尾：PRD 重评 CONN-009~013（M11 三期原生连接器扩展批次 1）；hub 总分 90.0–91.2→91.9–92.6；plan M11 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；PR #219 squash merge dev-auto
