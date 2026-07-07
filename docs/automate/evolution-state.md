@@ -70,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- G1 bootstrap（cron 2026-07-07 ~16:17 UTC）：G0 PASS PR #230 已 squash merge dev-auto（9095495）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.102 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-E**（F-A~F-D 已收官；F-E 11 项 `[ ]` DESIGN-001~005/GOV-003~008 待完成；F-F/F-G 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-D 批次 2（META-001~004）r244 PR #230 完成；phase idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~16:15 UTC）：确认 PR #230 已 squash merge dev-auto（9095495）feat/mfinal-fd-meta-r244→dev-auto；无 Open PR；工作区干净；M-FINAL F-D 批次 2 收官（META-001~004）；PRD/plan 已于 #230 同步；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 r244 收尾（cron 2026-07-07 ~16:10 UTC）：PRD 重评 META-001~004；hub 总分 90.0–91.1→92.3–93.7；plan M-FINAL F-D 四 ID 勾选（完成于 2026-07-07）；F-D 语义层收官；phase P4_DONE→P5_DOCS_READY；PR #230 squash merge dev-auto（9095495）
 - P4 r244 重验（cron 2026-07-07 ~16:05 UTC）：独立全量 backend pytest 2124 passed/31 skipped exit 0；fe check:design 193 files + vitest 214/214 + build exit 0；UI design_drift PASS；screenshots 未运行（headless）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fd-meta-r244；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
