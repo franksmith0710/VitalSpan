@@ -83,14 +83,13 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
     if node.node_type != "template":
         raise ReportEngineError("RPT_ENGINE_NOT_TEMPLATE", "Node is not a template", 422)
 
-    _assert_extension_when_kind(node)
-
     if node.template_kind in _EXPORT_KINDS and payload.format == node.template_kind:
+        _assert_extension_when_kind(node)
         spec = build_engine_render_spec(node, parameters, payload.format)
         export_hook = _build_export_hook(node)
         return RenderRunOut(status="ready", renderSpec=spec, queryMeta=None, exportHook=export_hook)
 
-    if payload.format == "pdf" and node.template_kind not in _EXPORT_KINDS:
+    if payload.format == "pdf":
         raise ReportEngineError(
             "RPT_ENGINE_FORMAT_NOT_SUPPORTED",
             "PDF render is not supported in L1",
@@ -98,6 +97,8 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
         )
     if payload.format not in _SUPPORTED_FORMATS:
         raise ReportEngineError("RPT_ENGINE_FORMAT_NOT_SUPPORTED", "Unsupported format", 422)
+
+    _assert_extension_when_kind(node)
 
     ds_id = payload.data_source_id
     has_extension = False
