@@ -145,88 +145,94 @@
 - **里程碑对齐**：M7 · 已完成 · 2026-07-06
 ### [CONN-009] StarRocks 连接器
 
-- **状态**：部分实现
+- **状态**：已实现（M11 r235 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：StarRocks 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`starrocks` 已注册（types catalog，r34 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`STARROCKS_CONN_REFUSED`/`STARROCKS_AUTH_FAILED`，r34+r35）
-  - [x] schema 空 catalog/未知表边界 + 列元数据 500 limit（r35 mock）
+  - [x] 连通性测试结构化错误（`STARROCKS_CONN_REFUSED`/`STARROCKS_AUTH_FAILED`/`STARROCKS_UNKNOWN_DATABASE`，r34+r35+r235）
+  - [x] compose 连通性 + schema 浏览（r235 T-CONN-R235-009-05；无 compose 分层 skip）
+  - [x] schema 空 catalog/未知表边界 + 列元数据 500 limit（r35 mock + r235 T-CONN-R235-009-03~04）
+  - [x] HTTP test_connection 失败链 + metadata tables/columns 链（r235 T-CONN-R235-009-02~03）
   - [ ] 只读查询通过
   - [x] category=`olap` 查询模式正确（r34）
-- **代码锚点**：`backend/app/datasources/dialects/starrocks.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
-- **演化建议**：r35 闭合 auth/refused 与 columns limit；后续补只读查询集成测与 Admin UI 选型
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/starrocks.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py` · `tests/test_connectors_m11_r235.py` T-CONN-R235-009-01~05
+- **演化建议**：M11 r235 已闭合 compose 集成与 `STARROCKS_UNKNOWN_DATABASE` 对称 Doris；后续补只读查询集成测与 Admin UI 选型
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-010] Trino/Presto 连接器
 
-- **状态**：部分实现（L1 kickoff r38 + companion r39）
+- **状态**：已实现（M11 r235 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：Trino/Presto 连接器（SRS 追溯项）。
 - **验收标准**：
-  - [x] type=`trino` 已注册（types catalog + `schema_browser` capability，r38 L1）
+  - [x] type=`trino` 与 `presto` 已注册（types catalog + `schema_browser` capability，r38 L1 + r235 presto 别名）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`TRINO_CONN_REFUSED`/`TRINO_UNKNOWN_CATALOG`/`TRINO_AUTH_FAILED`/`TRINO_TIMEOUT`，r38+r39 mock）
-  - [x] schema 空 catalog/未知 schema 边界 + columns 500 limit + 多 schema 自省（r38+r39 mock）
-  - [x] HTTP test_connection/metadata 4xx 链（r39）
+  - [x] 连通性测试结构化错误（`TRINO_CONN_REFUSED`/`TRINO_UNKNOWN_CATALOG`/`TRINO_AUTH_FAILED`/`TRINO_TIMEOUT`，r38+r39+r235 mock）
+  - [x] compose 连通性（r235 T-CONN-R235-010-05；无 compose 分层 skip）
+  - [x] schema catalog 自省 + columns 500 limit（r38+r39 mock + r235 T-CONN-R235-010-03）
+  - [x] HTTP test_connection/metadata 链 + PrestoConnector 委托 TrinoConnector（r39+r235 T-CONN-R235-010-02~04）
   - [ ] 只读查询通过
   - [x] category=`lake` 查询模式正确（r38）
-- **代码锚点**：`backend/app/datasources/dialects/trino.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-010-01~06 · `tests/test_query_meta_conn_r39.py` T-CONN-R39-010-01~06
-- **演化建议**：r39 闭合 TRINO_* 错误域、columns limit 与 HTTP metadata 链；后续补只读查询集成测与 Admin UI 选型
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/trino.py` · `backend/app/datasources/dialects/presto.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-010-01~06 · `tests/test_query_meta_conn_r39.py` T-CONN-R39-010-01~06 · `tests/test_connectors_m11_r235.py` T-CONN-R235-010-01~05
+- **演化建议**：M11 r235 已闭合 presto 别名、metadata `catalog=row.database` 与 compose 集成；后续补只读查询集成测与 Admin UI 选型
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-011] InfluxDB 连接器
 
-- **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）
+- **状态**：已实现（M11 r235 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：InfluxDB 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`influxdb` 已注册（types catalog + `schema_browser` capability，r40 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`INFLUX_CONN_REFUSED`/`INFLUX_AUTH_FAILED`/`INFLUX_TIMEOUT`/`INFLUX_UNKNOWN_BUCKET`/`INFLUX_INVALID_ORG`，r40+r41 mock）
-  - [x] schema bucket/measurement 自省 + measurement 500 limit（r40+r41 mock）
-  - [x] HTTP test_connection/metadata 4xx 链（r41）
+  - [x] 连通性测试结构化错误（`INFLUX_CONN_REFUSED`/`INFLUX_AUTH_FAILED`/`INFLUX_TIMEOUT`/`INFLUX_UNKNOWN_BUCKET`/`INFLUX_INVALID_ORG`，r40+r41+r235 mock）
+  - [x] schema bucket/measurement 自省 + measurement 500 limit（r40+r41 mock + r235 T-CONN-R235-011-03）
+  - [x] HTTP test_connection/metadata 链（r41+r235 T-CONN-R235-011-02~03）
+  - [x] InfluxDB 2.x 只读 Flux 探测 `limit(n:1)`（r235 T-CONN-R235-011-04 + 边界文档）
   - [ ] 只读查询通过
   - [x] category=`timeseries` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/influxdb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-011-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-011-01~06
-- **演化建议**：r41 已闭合 HTTP 链与 fieldKeys/tagKeys 类型枚举；后续补只读查询集成测与 Admin UI 选型
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/influxdb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-011-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-011-01~06 · `tests/test_connectors_m11_r235.py` T-CONN-R235-011-01~04
+- **演化建议**：M11 r235 已闭合 v2 边界文档、HTTP 链与只读 Flux 探测；后续补只读查询集成测与 Admin UI 选型
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-012] TDengine 连接器
 
-- **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）
+- **状态**：已实现（M11 r235 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：TDengine 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`tdengine` 已注册（types catalog + `schema_browser` capability，r40 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`TDENGINE_CONN_REFUSED`/`TDENGINE_AUTH_FAILED`/`TDENGINE_TIMEOUT`/`TDENGINE_UNKNOWN_DATABASE`，r40+r41 mock）
-  - [x] schema 超级表/子表自省 + 列元数据 500 limit（r40+r41 mock）
-  - [x] HTTP test_connection 失败链 + metadata schemas 502 链（r41）
+  - [x] 连通性测试结构化错误（`TDENGINE_CONN_REFUSED`/`TDENGINE_AUTH_FAILED`/`TDENGINE_TIMEOUT`/`TDENGINE_UNKNOWN_DATABASE`/`TDENGINE_DRIVER_MISSING`，r40+r41+r235 mock）
+  - [x] compose 连通性（r235 T-CONN-R235-012-05；无 compose 分层 skip）
+  - [x] schema 超级表/子表自省 + 列元数据 500 limit（r40+r41 mock + r235 T-CONN-R235-012-03）
+  - [x] HTTP test_connection 失败链 + metadata 超级表链（r41+r235 T-CONN-R235-012-02~04）
   - [ ] 只读查询通过
   - [x] category=`timeseries` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/tdengine.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-012-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-012-01~07
-- **演化建议**：r41 已闭合 HTTP 502 链与 600 列 limit 回归；后续补只读查询集成测与 Admin UI 选型
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/tdengine.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-012-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-012-01~07 · `tests/test_connectors_m11_r235.py` T-CONN-R235-012-01~05
+- **演化建议**：M11 r235 已闭合 compose 集成与 HTTP 超级表 metadata 链；后续补只读查询集成测与 Admin UI 选型
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-013] TimescaleDB 连接器
 
-- **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）
+- **状态**：已实现（M11 r235 集成验收）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：三期
 - **描述**：TimescaleDB 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`timescaledb` 已注册（types catalog + `schema_browser` capability，r40 L1）
   - [ ] UI 可选
-  - [x] 连通性测试结构化错误（`TIMESCALE_CONN_REFUSED`/`TIMESCALE_AUTH_FAILED`/`TIMESCALE_TIMEOUT`/`TIMESCALE_UNKNOWN_DATABASE`/`TIMESCALE_EXTENSION_MISSING`，r40+r41 mock）
-  - [x] schema 表自省 + hypertable 标记 + 列元数据 500 limit（r40+r41 mock）
-  - [x] HTTP test_connection/metadata 4xx 链（r41）
+  - [x] 连通性测试结构化错误（`TIMESCALE_CONN_REFUSED`/`TIMESCALE_AUTH_FAILED`/`TIMESCALE_TIMEOUT`/`TIMESCALE_UNKNOWN_DATABASE`/`TIMESCALE_EXTENSION_MISSING`，r40+r41+r235 mock）
+  - [x] compose 连通性（r235 T-CONN-R235-013-05；无 compose 分层 skip）
+  - [x] schema 表自省 + hypertable 标记 + 列元数据 500 limit（r40+r41 mock + r235 T-CONN-R235-013-03）
+  - [x] HTTP test_connection/metadata 链 + `probe_readonly_sql`（r41+r235 T-CONN-R235-013-02~04）
   - [ ] 只读查询通过
   - [x] category=`timeseries` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/timescaledb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-013-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-013-01~07
-- **演化建议**：r41 已闭合 HTTP 链与 PG 类型枚举/宽表 limit；后续补只读查询集成测与 Admin UI 选型
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/datasources/dialects/timescaledb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-013-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-013-01~07 · `tests/test_connectors_m11_r235.py` T-CONN-R235-013-01~05
+- **演化建议**：M11 r235 已闭合 compose 集成、hypertable metadata 与只读 SQL 探测；后续补只读查询集成测与 Admin UI 选型
+- **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-014] MongoDB 连接器
 
 - **状态**：部分实现（L1 kickoff r40 + companion 质量推分 r41）

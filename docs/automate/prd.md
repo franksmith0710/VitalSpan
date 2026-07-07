@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.86
+version: 1.2.87
 last_updated: 2026-07-07
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-07 · P5 r234 重评 RPT-003/004/006 + VIEW-002 + NFR-002（M10 报表模板与角色默认视图收官）；pytest 1967/21 skipped；fe vitest 164/164 + report-templates smoke P95 + check:design PASS；test_m10_report_templates_r234 21/21 + test_nfr_002_report_query_smoke 2/2；templates storageRef/DELETE/exportHook、catalog templateKey+probe、ReportTemplatesPage、RoleListPage+defaultViewResolve、REPORT_QUERY_FIXTURE；用户价值 84–86%→88%，完整度 90%→96%，交互 N/A→88–90%（RPT/VIEW FE），总分 90.1–91.3→92.0–92.6（五 ID ≥90 STUCK 空；plan M10 五 ID 勾选；PDF 真实排版/onboarding 全链留 companion）
+> 更新：2026-07-07 · P5 r235 重评 CONN-009~013（M11 三期原生连接器扩展批次 1）；pytest 1988/25 skipped；test_connectors_m11_r235 21/21 + r34–r41 回归；m11_compose_env 五端口分层 skip、presto 别名、catalog 元数据、Flux/SQL 只读探测；用户价值 84%→88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，总分 90.0–91.2→91.9–92.6（五 ID ≥90 STUCK 空；plan M11 五 ID 勾选；只读查询/UI 选型留 companion）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -27,10 +27,10 @@ domain_count: 16
 | 4 | API-001 | 集成项 | 90.0 | 性能 | 见期次 |
 | 5 | CONN-018 | 连接器项 | 90.0 | 用户价值 | 见期次 |
 | 6 | NFR-005 | 非功能项 | 90.0 | 用户价值 | 见期次 |
-| 7 | CONN-012 | 连接器项 | 90.0 | 用户价值 | 见期次 |
-| 8 | GOV-003 | 治理项 | 90.1 | 用户价值 | 见期次 |
-| 9 | CAT-004 | 分类项 | 90.1 | 用户价值 | 见期次 |
-| 10 | CONN-010 | 连接器项 | 90.1 | 性能 | 见期次 |
+| 7 | GOV-003 | 治理项 | 90.1 | 用户价值 | 见期次 |
+| 8 | CAT-004 | 分类项 | 90.1 | 用户价值 | 见期次 |
+| 9 | CONN-014 | 连接器项 | 90.1 | 用户价值 | 见期次 |
+| 10 | CONN-016 | 连接器项 | 90.4 | 用户价值 | 见期次 |
 
 ---
 
@@ -70,11 +70,11 @@ domain_count: 16
 | CONN-006 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 92 | 92.4 | 性能 |
 | CONN-007 | 88 | 96 | 96 | N/A | 90 | 100 | 92 | 90 | 93.2 | 用户价值 |
 | CONN-008 | 88 | 96 | 96 | N/A | 90 | 100 | 90 | 90 | 92.9 | 用户价值 |
-| CONN-009 | 84 | 88 | 96 | N/A | 90 | 98 | 90 | 88 | 90.4 | 用户价值 |
-| CONN-010 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 性能 |
-| CONN-011 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
-| CONN-012 | 84 | 88 | 94 | N/A | 90 | 100 | 88 | 88 | 90.0 | 用户价值 |
-| CONN-013 | 84 | 90 | 96 | N/A | 92 | 100 | 88 | 90 | 91.2 | 用户价值 |
+| CONN-009 | 88 | 96 | 96 | N/A | 90 | 100 | 90 | 88 | 92.6 | 用户价值 |
+| CONN-010 | 88 | 94 | 94 | N/A | 90 | 100 | 90 | 88 | 91.9 | 性能 |
+| CONN-011 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 88 | 91.9 | 性能 |
+| CONN-012 | 88 | 96 | 94 | N/A | 90 | 100 | 88 | 88 | 91.9 | 用户价值 |
+| CONN-013 | 86 | 96 | 96 | N/A | 92 | 100 | 88 | 90 | 92.6 | 用户价值 |
 | CONN-014 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 88 | 90.1 | 用户价值 |
 | CONN-015 | 84 | 90 | 96 | N/A | 90 | 100 | 88 | 90 | 91.0 | 用户价值 |
 | CONN-016 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
@@ -219,6 +219,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.87 | 2026-07-07 | P5 r235 重评 CONN-009~013（M11 三期原生连接器扩展批次 1）；pytest 1988/25 skipped；test_connectors_m11_r235 21/21 + r34–r41 回归；m11_compose_env、presto 别名、catalog 元数据、Flux/SQL 只读探测；用户价值 84%→88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，总分 90.0–91.2→91.9–92.6（五 ID ≥90 STUCK 空；plan M11 五 ID 勾选；只读查询/UI 选型留 companion） |
 | 1.2.86 | 2026-07-07 | P5 r234 重评 RPT-003/004/006 + VIEW-002 + NFR-002（M10 报表模板与角色默认视图收官）；pytest 1967/21 skipped；fe vitest 164/164 + report-templates smoke P95 + check:design PASS；test_m10_report_templates_r234 21/21 + test_nfr_002_report_query_smoke 2/2；templates storageRef/DELETE/exportHook、catalog templateKey+probe、ReportTemplatesPage、RoleListPage+defaultViewResolve、REPORT_QUERY_FIXTURE；用户价值 84–86%→88%，完整度 90%→96%，交互 N/A→88–90%，总分 90.1–91.3→92.0–92.6（五 ID ≥90 STUCK 空；plan M10 五 ID 勾选；PDF 真实排版/onboarding 全链留 companion） |
 | 1.2.85 | 2026-07-06 | P5 r233 重评 DASH-006 + RPT-001 + RPT-002（M9 主题分析与预制报表收官）；pytest 1948/19 skipped；fe vitest 157/157 + prefab/theme smoke 8/8 + check:design PASS；test_m9_rpt_theme_r233 18/18 + r60/r68/r58 回归；engine M3-LITE execute、prefab seed/run API、theme drill query、PrefabReportsPage+ThemeAnalysisPage；用户价值 84%→88–90%，完整度 90%→96%，交互 N/A→88%（RPT-002/DASH-006），总分 90.1–91.2→92.2–92.4（三 ID ≥90 STUCK 空；plan M9 三 ID 勾选；PDF/Word/GIS/binding 编辑留 companion） |
 | 1.2.84 | 2026-07-06 | P5 r232 重评 META-005/006 + DASH-005（M8 实体元数据与总览页收官）；pytest 1930/19 skipped；fe vitest 149/149 + entities-overview smoke 7/7 + check:design PASS；test_meta_dash_m8_r232 9/9 + r231 回归；PUT/DELETE physical-tables、`_ds_table_index`、引用计数对称、EntityDetailSheet+空态引导；用户价值 86%→88%，完整度 92–94%→96–98%，交互 84%→90%（DASH-005），总分 91.3–91.7→92.4–93.1（三 ID ≥90 STUCK 空；plan M8 三 ID 勾选；GOV/lineage/跨组件口径留 companion） |
@@ -227,5 +228,4 @@ domain_count: 16
 | 1.2.81 | 2026-07-06 | P5 r223 重评 GOV-002 + CAT-001/002/003 + NFR-004（M6 集成验收收官）；pytest 1877/13 skipped；test_gov_002_bus_poc_fsm 6/6 + test_cat_00*_m6 12/12 + test_nfr_004_https_audit 5/5；semi-auto FSM pending/registered/failed+GET/probe、CAT m6-probe handler+ACL、HTTPS audit guard middleware+audit-probe 无泄漏；用户价值 82–84%→86–88%，完整度 90–92%→94–96%，性能 86–88%→88–90%，总分 90.0–90.4→91.5–92.4（五 ID ≥90 STUCK 空；plan M6 五 ID 勾选；真实总线 HTTP/IF-02 查询/生产 TLS 留 companion） |
 | 1.2.80 | 2026-07-06 | P5 r219 重评 VIEW-001 + NFR-001 + GOV-001（M5 VIEW 协议收官 + M6 perf/catalog companion）；pytest 1854/11 skipped；fe vitest 142/142 + check:design PASS；扩展 widget CHART_FIELD_REQUIREMENT+GET /views/schema、appendix E 7 类 taxonomy+probe/ACL、M5_EXTENDED_WIDGET_FIXTURE 首屏 perf；用户价值 82–86%→86–88%，完整度 92–96%→96–98%，性能 86–90%→88–92%，总分 90.2–91.3→92.5–92.8（三 ID ≥90 STUCK 空；plan M5 VIEW-001 + M6 NFR-001/GOV-001 勾选） |
 | 1.2.79 | 2026-07-06 | P5 r216 重评 DASH-003 + VIEW-001 + NFR-001（M5 Dashboard 收官）；pytest 1840/13 skipped；fe vitest 142/142 + check:design PASS；heatmap/kpi/timeline BE+FE、VIEW protocolVersion round-trip、NFR fe 首屏 P95 smoke；完整度 90–94%→92–98%，测试覆盖 96–100%→98–100%，总分 90.0–90.7→91.2–92.5（三 ID ≥90 STUCK 空；plan M5 DASH-003 勾选；VIEW-001/NFR-001 部分实现 plan 未勾） |
-| 1.2.78 | 2026-07-06 | P5 r211 重评 VIEW-003 + CONN-001 + CONN-002（M-FE-3 收官 + M3 compose 集成）；pytest 1830/11 skipped；fe vitest 136/136 + e2e 6/6 + check:design PASS；Playwright 登录默认 Dashboard、用户覆盖优先 defaultViewResolve、MySQL/PG compose T-CONN-R207 8 测；用户价值 82–90%→88–92%，完整度 92–94%→96%，交互 86%→90%，总分 90.1–91.9→92.5–93.0（三 ID ≥90 STUCK 空；plan M-FE-3 VIEW-003 + M3 CONN-001/002 勾选） |
 | 1.2.77 | 2026-07-06 | P5 r205 重评 AUTH-001 + AUTH-003 + VIEW-003 + DASH-004（M-FE-3 系统管理与消费态）；pytest 1830/3 skipped；fe vitest 129/129 + check:design PASS；RoleListPage/UserListPage/defaultViewResolve/GlobalFilterBar+widget execute 链；交互 N/A→86%，用户价值 82–84%→90%，总分 90.0–92.1→91.9–93.1（三 ID ≥90 STUCK 空；VIEW-003 部分实现 plan 未勾；Playwright E2E 留 companion） |

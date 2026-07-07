@@ -1,3 +1,8 @@
+"""InfluxDB 2.x connector (CONN-011).
+
+Supported: InfluxDB 2.x — username=org, password=token, database=bucket.
+Not supported: InfluxDB 1.x HTTP API / InfluxQL (migrate to 2.x or use another type).
+"""
 from __future__ import annotations
 
 import time
@@ -34,8 +39,20 @@ def _query_api(connection: Any) -> Any:
     return connection.query_api()
 
 
+def _probe_readonly_flux(connection: Any, bucket: str) -> bool:
+    """Minimal read-only Flux probe: from(bucket) |> range(-1m) |> limit(1)."""
+    if not bucket.strip():
+        return False
+    flux = f'from(bucket: "{bucket}") |> range(start: -1m) |> limit(n: 1)'
+    try:
+        _query_api(connection).query(flux)
+        return True
+    except Exception:
+        return False
+
+
 class InfluxdbConnector:
-    """InfluxDB 2.x: username=org, password=token, database=bucket."""
+    """InfluxDB 2.x: username=org, password=token, database=bucket. Not InfluxDB 1.x / InfluxQL."""
 
     type = "influxdb"
     category = "timeseries"

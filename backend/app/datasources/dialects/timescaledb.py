@@ -72,6 +72,10 @@ class TimescaledbConnector:
             for t in tables
         ]
 
+    def probe_readonly_sql(self, connection: Any) -> bool:
+        connection.execute("SELECT 1")
+        return True
+
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
         columns = self._delegate.list_columns(connection, schema, table)
         # r41: 委托 PG list_columns 后按 TIMESCALE_MAX_COLUMNS 切片
