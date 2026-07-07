@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fc-xinchuang-connectors-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-fc-xinchuang-connectors.md |
@@ -14,7 +14,7 @@
 | base_branch | dev-auto |
 | prd_ids | CONN-017,CONN-018,CONN-019,CONN-020,CONN-021 |
 | pr_number | |
-| last_verified_command | cd backend && python3 -m pytest ../tests/test_mfinal_fc_r242.py -q && cd ../fe && pnpm run check:design && pnpm vitest run && pnpm run build |
+| last_verified_command | cd backend && python3 -m pytest -q && cd ../fe && pnpm run check:design && pnpm vitest run && pnpm run build |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T14:25:00Z |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P4 r242 验证（cron 2026-07-07 ~14:35 UTC）：独立全量 backend pytest 2077 passed/31 skipped exit 0；fe check:design 188 files + vitest 212/212 + build(tsc -b + vite) exit 0；UI design_drift PASS（check:design）；screenshots 未运行（headless 云环境；UI Acceptance 由 datasource-form.smoke T-CONN-R242-FE-01~04 RTL 覆盖）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fc-xinchuang-r242；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 r242 实现（cron 2026-07-07 ~14:32 UTC）：8 Task 全量完成（五型 probe_readonly_sql + test_mfinal_fc_r242 25 passed/6 skipped + DatasourceForm CONNECTOR_FIELD_HINTS/OceanBase 文案 + datasource-form.smoke 4/4 + docs/api+services r242 锚点）；每任务 spec+quality 自审通过；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS(188 files)；backend pytest r242 25/25 + 回归 181 passed/6 skipped；fe vitest 212/212 + build exit 0；screenshots 未运行（headless 云环境；UI Acceptance 由 RTL smoke 覆盖）；branch=feat/mfinal-fc-xinchuang-r242（rebase 于 cloud branch 含 P1/P2 doc）；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 计划（cron 2026-07-07 ~14:25 UTC）：F-C 批次 1 五 ID 计划完成（CONN-017~021 probe_readonly_sql + test_mfinal_fc_r242 ≥25 断言 + DatasourceForm hints/smoke + docs）；8 Tasks / 10 文件操作（1 新建 test + 1 新建 smoke + 8 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fc-xinchuang-connectors.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~14:19 UTC）：F-C 批次 1 五 ID（CONN-017~021 达梦/金仓/GBase/OceanBase/TiDB 信创 companion）；probe_readonly_sql + test_mfinal_fc_r242 + DatasourceForm hints/smoke；ui_design_skill=b-design-system-tailadmin-radix；范围框定 16 文件；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fc-xinchuang-connectors-design.md；待 P2 evolution-planner
