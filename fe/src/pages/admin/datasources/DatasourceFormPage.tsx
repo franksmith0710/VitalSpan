@@ -74,6 +74,7 @@ const CONNECTOR_FIELD_HINTS: Record<string, { port: string; databaseLabel: strin
   gbase: { port: "5258", databaseLabel: "数据库", usernameLabel: "用户名" },
   oceanbase: { port: "2881", databaseLabel: "租户/数据库", usernameLabel: "用户名" },
   tidb: { port: "4000", databaseLabel: "数据库", usernameLabel: "用户名" },
+  gaussdb: { port: "5432", databaseLabel: "数据库 / Schema", usernameLabel: "用户名" },
 };
 
 export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
@@ -232,6 +233,14 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                   使用 MySQL 兼容协议连接；集群部署请填写 OBProxy 主机与租户名。
                 </p>
               ) : null}
+              {form.type === "gaussdb" ? (
+                <p
+                  id="gaussdb-hint"
+                  className="text-theme-sm text-gray-500 dark:text-gray-400"
+                >
+                  GaussDB 兼容 PostgreSQL 协议，默认端口 5432
+                </p>
+              ) : null}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
@@ -250,7 +259,13 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                 value={form.database}
                 onChange={(e) => setField("database", e.target.value)}
                 required
-                aria-describedby={form.type === "oceanbase" ? "oceanbase-hint" : undefined}
+                aria-describedby={
+                  form.type === "oceanbase"
+                    ? "oceanbase-hint"
+                    : form.type === "gaussdb"
+                      ? "gaussdb-hint"
+                      : undefined
+                }
               />
             </div>
             <div className="grid gap-2">
