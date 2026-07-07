@@ -27,6 +27,7 @@ const MOCK_TYPES = {
     { type: "gbase", displayName: "南大通用 GBase" },
     { type: "oceanbase", displayName: "OceanBase" },
     { type: "tidb", displayName: "TiDB" },
+    { type: "gaussdb", displayName: "GaussDB" },
   ],
 };
 
@@ -86,6 +87,23 @@ describe("DatasourceFormPage xinchuang smoke", () => {
     await selectType("OceanBase");
     expect(
       screen.getByText(/使用 MySQL 兼容协议连接/),
+    ).toBeInTheDocument();
+  });
+
+  it("T-CONN-R243-FE-01: selecting gaussdb sets port 5432", async () => {
+    renderForm();
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+    await selectType("GaussDB");
+    expect(screen.getByLabelText("端口")).toHaveValue(5432);
+  });
+
+  it("T-CONN-R243-FE-02: selecting gaussdb shows Schema database label and hint", async () => {
+    renderForm();
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+    await selectType("GaussDB");
+    expect(screen.getByLabelText(/Schema/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/GaussDB 兼容 PostgreSQL 协议/),
     ).toBeInTheDocument();
   });
 });
