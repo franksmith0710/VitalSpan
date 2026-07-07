@@ -68,6 +68,7 @@
 
 ## 演化历史（最近）
 
+- G1 bootstrap（cron 2026-07-07 ~21:16 UTC）：G0 PASS PR #237/#238 已 merge dev-auto（3a5ad22）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.107 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-G**（CONN-027 余 1 项 `[ ]`；F-A~F-F 已收官）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-027(85.4)/API-001(90.0)/VIZ-003(90.1)；STUCK 表空；待办池空；上轮 F-F/F-G 批次 1（NFR-008、CONN-023~026）PR #237 完成；phase idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~19:45 UTC）：确认 PR #237 已 squash merge dev-auto（11cf204）+ PR #238 docs 补 round-target/plan（2f33a88）；无 Open PR；工作区干净；M-FINAL F-F 收官 + F-G 缺口连接器首批（NFR-008、CONN-023~026）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 收尾（cron 2026-07-07 ~19:30 UTC）：PRD 重评 NFR-008、CONN-023~026；hub v1.2.107；总分 85.4–91.3→91.0–94.1；五 ID 已实现；plan M-FINAL F-F NFR-008 + F-G 四 ID 勾选（完成于 2026-07-07）；F-F 收官；phase P4_DONE→P5_DOCS_READY；待 squash merge dev-auto
 - P4 重验（cron 2026-07-07 ~19:24 UTC）：P3 修复 ca2933f catalog count 24→29；独立 ruff exit 0；全量 pytest 2284 passed/32 skipped exit 0；fe smoke 21/21 + check:design 201 files + build exit 0；UI design_drift PASS；screenshots 未运行（headless vitest mock）；phase P4_BLOCKED→P4_DONE；branch=feat/mfinal-ff-fg-batch1-r249；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
