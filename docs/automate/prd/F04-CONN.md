@@ -286,57 +286,57 @@
 - **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-017] 达梦 DM 连接器
 
-- **状态**：部分实现（L1 kickoff r38 + companion r39）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：达梦 DM 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`dm` 已注册（types catalog，r38 L1）
-  - [ ] UI 可选
+  - [x] UI 可选（r242：`DatasourceFormPage` CONNECTOR_FIELD_HINTS port 5236/OWNER 标签 + smoke T-CONN-R242-FE-01~03）
   - [x] 连通性测试结构化错误（`DM_AUTH_FAILED`/`DM_CONN_REFUSED`/`DM_UNKNOWN_DATABASE`/`DM_TIMEOUT`，r38+r39 mock）
   - [x] schema 未知 schema 边界 + owner 多 schema + 列类型 smoke（r38+r39 mock）
-  - [x] HTTP test_connection 凭证失败链 + 响应无密码泄露（r39）
-  - [ ] 只读查询通过
+  - [x] HTTP test_connection 凭证失败链 + 响应无密码泄露（r39+r242 T-CONN-R242-017-03）
+  - [x] 只读查询通过（r242：`probe_readonly_sql` SELECT 1 FROM DUAL + readonly-guard T-CONN-R242-017-02/04）
   - [x] category=`relational` 查询模式正确（r38）
-- **代码锚点**：`backend/app/datasources/dialects/dm.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-017-01~06 · `tests/test_query_meta_conn_r39.py` T-CONN-R39-017-01~06
-- **演化建议**：r39 闭合 DM owner 层级、密码脱敏与 HTTP metadata 链；后续补只读查询集成测与 UI 选型
-- **里程碑对齐**：M-FINAL · F-C
+- **代码锚点**：`backend/app/datasources/dialects/dm.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-017-01~06 · `tests/test_query_meta_conn_r39.py` T-CONN-R39-017-01~06 · `tests/test_mfinal_fc_r242.py` T-CONN-R242-017-01~04 · `fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx` T-CONN-R242-FE-01~03
+- **演化建议**：r242 闭合 Admin 可选、只读探针与 HTTP 脱敏链；compose 真机 E2E 留信创环境专批
+- **里程碑对齐**：M-FINAL · F-C · 已完成 · 2026-07-07
 ### [CONN-018] 人大金仓 连接器
 
-- **状态**：部分实现（companion r67）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：人大金仓 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`kingbase` 已注册（types catalog + `register_connector_plugin`，r59 L1）
-  - [ ] UI 可选
-  - [x] 连通性测试（`KINGBASE_AUTH_FAILED`/`KINGBASE_CONN_REFUSED` mock + HTTP draft test-connection + 响应无密码泄露，r59）
+  - [x] UI 可选（r242：`DatasourceFormPage` CONNECTOR_FIELD_HINTS port 54321 + smoke T-CONN-R242-FE-01）
+  - [x] 连通性测试（`KINGBASE_AUTH_FAILED`/`KINGBASE_CONN_REFUSED` mock + HTTP draft test-connection + 响应无密码泄露，r59+r242 T-CONN-R242-018-05）
   - [x] companion params/probe 边界（r67：缺 host/port=0 → 422 `KINGBASE_INVALID_PARAMS`/`KINGBASE_PORT_OUT_OF_RANGE`；`probe_test_connection_budget_ms` ≤50ms；响应无 password）
   - [x] list_columns 501→500 截断边界（r59）
-  - [ ] schema 浏览 + 只读查询集成测通过
+  - [x] schema 浏览 + 只读查询集成测通过（r59 schema + r242 `probe_readonly_sql` + readonly-guard T-CONN-R242-018-02/04）
   - [x] category=`relational` 查询模式正确（r59 L1）
-- **代码锚点**：`backend/app/datasources/dialects/kingbase/` · `tests/test_meta_cat_dash_conn_design_r59.py` T-CONN-R59-018-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-CONN-R67-018-01~06
-- **演化建议**：r67 companion 闭合 Kingbase params 校验、test-connection perf probe 与 HTTP 错误链；后续补 UI 选型与只读查询集成测
-- **里程碑对齐**：M-FINAL · F-C
+- **代码锚点**：`backend/app/datasources/dialects/kingbase/` · `tests/test_meta_cat_dash_conn_design_r59.py` T-CONN-R59-018-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-CONN-R67-018-01~06 · `tests/test_mfinal_fc_r242.py` T-CONN-R242-018-01~05
+- **演化建议**：r242 闭合 Admin 可选与只读探针；compose 真机 E2E 留信创环境专批
+- **里程碑对齐**：M-FINAL · F-C · 已完成 · 2026-07-07
 ### [CONN-019] 南大通用 GBase 连接器
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：南大通用 GBase 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`gbase` 已注册（types catalog + `register_connector_plugin`，r46 L1）
-  - [ ] UI 可选
-  - [x] 连通性测试（`GBASE_AUTH_FAILED`/`GBASE_CONN_REFUSED`/`GBASE_TIMEOUT` mock + HTTP 4xx/502 链，r46 L1 + r51 companion）
+  - [x] UI 可选（r242：`DatasourceFormPage` CONNECTOR_FIELD_HINTS port 5258 + smoke T-CONN-R242-FE-01）
+  - [x] 连通性测试（`GBASE_AUTH_FAILED`/`GBASE_CONN_REFUSED`/`GBASE_TIMEOUT` mock + HTTP 4xx/502 链，r46 L1 + r51 companion + r242 T-CONN-R242-019-03）
   - [x] 空库/列 limit 边界（`list_schemas` 空库 + `list_columns` 501→500 截断，r51 companion）
-  - [ ] schema 浏览 + 只读查询集成测通过
+  - [x] schema 浏览 + 只读查询集成测通过（r51 schema + r242 `probe_readonly_sql` + readonly-guard T-CONN-R242-019-02/04）
   - [x] category=`relational` 查询模式正确（r46 L1）
-- **代码锚点**：`backend/app/datasources/dialects/gbase.py` · `tests/test_nfr_gov_conn_r46.py` · `tests/test_nfr_gov_conn_r51.py`
-- **演化建议**：r51 companion 闭合 HTTP 错误链与元数据边界；后续补 UI 选型与只读查询集成测
-- **里程碑对齐**：M-FINAL · F-C
+- **代码锚点**：`backend/app/datasources/dialects/gbase.py` · `tests/test_nfr_gov_conn_r46.py` · `tests/test_nfr_gov_conn_r51.py` · `tests/test_mfinal_fc_r242.py` T-CONN-R242-019-01~04
+- **演化建议**：r242 闭合 Admin 可选与只读探针；compose 真机 E2E 留信创环境专批
+- **里程碑对齐**：M-FINAL · F-C · 已完成 · 2026-07-07
 ### [CONN-020] OceanBase 连接器
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：OceanBase 连接器（SRS 追溯项）。
@@ -344,28 +344,28 @@
   - [x] type=`oceanbase` 已注册且 types catalog 可见（`register_connector_plugin`）
   - [x] 连通性测试 + schema 浏览 L1（MySQL 协议委托，port 2881）
   - [x] category=`relational` 查询模式正确
-  - [ ] UI 可选
-  - [x] HTTP 4xx/502 错误链 + 空库/列 limit 边界（`OCEANBASE_AUTH_FAILED`/`OCEANBASE_CONN_REFUSED`/`OCEANBASE_TIMEOUT` + list_columns 501→500，r55 companion）
-  - [ ] 只读查询集成测通过
-- **代码锚点**：`backend/app/datasources/dialects/oceanbase.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-CONN-01~08 · `tests/test_rpt_gov_meta_conn_r55.py` T-CONN-R55-01~09
-- **演化建议**：r55 companion 闭合 HTTP test_connection/schemas/tables 4xx/502 链、空库注释、列 limit 与 probe <200ms；后续补 UI 选型与只读查询集成测
-- **里程碑对齐**：M-FINAL · F-C
+  - [x] UI 可选（r242：`DatasourceFormPage` CONNECTOR_FIELD_HINTS port 2881 + 兼容模式文案 + smoke T-CONN-R242-FE-01/04）
+  - [x] HTTP 4xx/502 错误链 + 空库/列 limit 边界（`OCEANBASE_AUTH_FAILED`/`OCEANBASE_CONN_REFUSED`/`OCEANBASE_TIMEOUT` + list_columns 501→500，r55 companion + r242 T-CONN-R242-020-03/06）
+  - [x] 只读查询集成测通过（r242：`probe_readonly_sql` + readonly-guard T-CONN-R242-020-02/04）
+- **代码锚点**：`backend/app/datasources/dialects/oceanbase.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-CONN-01~08 · `tests/test_rpt_gov_meta_conn_r55.py` T-CONN-R55-01~09 · `tests/test_mfinal_fc_r242.py` T-CONN-R242-020-01~06 · `fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx` T-CONN-R242-FE-04
+- **演化建议**：r242 闭合 Admin 可选、只读探针与 OceanBase 兼容提示；compose 真机 E2E 留信创环境专批
+- **里程碑对齐**：M-FINAL · F-C · 已完成 · 2026-07-07
 ### [CONN-021] TiDB 连接器
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：TiDB 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`tidb` 已注册（types catalog + `schema_browser` capability，r34 L1）
-  - [ ] UI 可选
-  - [x] 连通性测试（`TIDB_AUTH_FAILED`/`TIDB_CONN_REFUSED`/`TIDB_TIMEOUT`，r34+r35 mock）
+  - [x] UI 可选（r242：`DatasourceFormPage` CONNECTOR_FIELD_HINTS port 4000 + smoke T-CONN-R242-FE-01/02）
+  - [x] 连通性测试（`TIDB_AUTH_FAILED`/`TIDB_CONN_REFUSED`/`TIDB_TIMEOUT`，r34+r35 mock + r242 T-CONN-R242-021-03/05）
   - [x] schema 空库/未知表边界（r35 mock）
-  - [ ] 只读查询集成测通过
+  - [x] 只读查询集成测通过（r242：`probe_readonly_sql` + readonly-guard T-CONN-R242-021-02/04；compose skip T-CONN-R242-021-06）
   - [x] category=`relational` 查询模式正确（r34）
-- **代码锚点**：`backend/app/datasources/dialects/tidb.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
-- **演化建议**：r35 闭合 TIDB_* 错误域与 schema 边界；后续补只读查询集成测与 UI 选型
-- **里程碑对齐**：M-FINAL · F-C
+- **代码锚点**：`backend/app/datasources/dialects/tidb.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py` · `tests/test_mfinal_fc_r242.py` T-CONN-R242-021-01~06 · `fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx` T-CONN-R242-FE-02
+- **演化建议**：r242 闭合 Admin 可选与只读探针；compose 真机 E2E 留信创环境专批（TiDB skip 占位）
+- **里程碑对齐**：M-FINAL · F-C · 已完成 · 2026-07-07
 ### [CONN-022] GaussDB 连接器
 
 - **状态**：部分实现（L1 kickoff r38 + companion r39）
