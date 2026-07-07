@@ -51,5 +51,5 @@ target-version = "py311"
 [tool.pytest.ini_options]
 testpaths = ["../tests"]
 markers = [
-    "integration: requires docker compose services (see test_connectors_m7_r228.py module docstring; optional sample-mariadb:3308 sample-clickhouse:8124)",
+    "integration: M7/M11 optional compose — sample-mariadb:3308 sample-clickhouse:8124; M11 optional starrocks:9030 trino:8080 influxdb:8086 tdengine:6041 timescaledb:5433 (see test_connectors_m11_r235.py)",
 ]

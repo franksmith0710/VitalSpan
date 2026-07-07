@@ -199,6 +199,53 @@ def m7_sqlite_env(m7_compose_env):
     return m7_compose_env["sqlite"]
 
 
+@pytest.fixture(scope="session")
+def m11_compose_env():
+    """M11 optional compose ports — per-service _available; missing ports do not fail session."""
+    return {
+        "starrocks": {
+            "host": "127.0.0.1",
+            "port": 9030,
+            "database": "test",
+            "username": "root",
+            "password": "",
+            "_available": _port_open("127.0.0.1", 9030),
+        },
+        "trino": {
+            "host": "127.0.0.1",
+            "port": 8080,
+            "database": "hive",
+            "username": "trino",
+            "password": "",
+            "_available": _port_open("127.0.0.1", 8080),
+        },
+        "influxdb": {
+            "host": "127.0.0.1",
+            "port": 8086,
+            "database": "metrics",
+            "username": "myorg",
+            "password": "token",
+            "_available": _port_open("127.0.0.1", 8086),
+        },
+        "tdengine": {
+            "host": "127.0.0.1",
+            "port": 6041,
+            "database": "power",
+            "username": "root",
+            "password": "taosdata",
+            "_available": _port_open("127.0.0.1", 6041),
+        },
+        "timescaledb": {
+            "host": "127.0.0.1",
+            "port": 5433,
+            "database": "analytics",
+            "username": "vitalspan",
+            "password": "vitalspan",
+            "_available": _port_open("127.0.0.1", 5433),
+        },
+    }
+
+
 @pytest.fixture
 def analytics_sqlite() -> str:
     """In-memory sqlite URL for mock L1 analytics (no compose)."""
