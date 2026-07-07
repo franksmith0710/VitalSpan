@@ -6,18 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-ff-fg-batch1.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-ff-fg-batch1-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-ff-fg-batch1.md |
-| branch | feat/mfinal-ff-fg-batch1-r249 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | NFR-008,CONN-023,CONN-024,CONN-025,CONN-026 |
-| pr_number | 237 |
-| last_verified_command | cd backend && ruff check . && pytest -q |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm test:smoke && pnpm check:design && pnpm run build |
-| last_ui_verified_exit_code | 0 |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T19:12:00Z |
 | skill_rule_index_source_count | 26 |
@@ -70,6 +68,7 @@
 
 ## 演化历史（最近）
 
+- G0 闸门（cron 2026-07-07 ~19:45 UTC）：确认 PR #237 已 squash merge dev-auto（11cf204）+ PR #238 docs 补 round-target/plan（2f33a88）；无 Open PR；工作区干净；M-FINAL F-F 收官 + F-G 缺口连接器首批（NFR-008、CONN-023~026）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 收尾（cron 2026-07-07 ~19:30 UTC）：PRD 重评 NFR-008、CONN-023~026；hub v1.2.107；总分 85.4–91.3→91.0–94.1；五 ID 已实现；plan M-FINAL F-F NFR-008 + F-G 四 ID 勾选（完成于 2026-07-07）；F-F 收官；phase P4_DONE→P5_DOCS_READY；待 squash merge dev-auto
 - P4 重验（cron 2026-07-07 ~19:24 UTC）：P3 修复 ca2933f catalog count 24→29；独立 ruff exit 0；全量 pytest 2284 passed/32 skipped exit 0；fe smoke 21/21 + check:design 201 files + build exit 0；UI design_drift PASS；screenshots 未运行（headless vitest mock）；phase P4_BLOCKED→P4_DONE；branch=feat/mfinal-ff-fg-batch1-r249；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P4 验证（cron 2026-07-07 ~19:20 UTC）：独立 ruff exit 0；全量 pytest（backend cwd）2282 passed/2 failed/32 skipped exit 1（r40/r41 export_type_catalog_count 期望 24 实际 29）；r249 30 passed exit 0；r242/r248 回归 58 passed exit 0；fe smoke 21/21 + check:design 201 files + build exit 0；UI design_drift PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE→P4_BLOCKED；branch=feat/mfinal-ff-fg-batch1-r249；base_branch=dev-auto；待 P3 修复 r40/r41 catalog count 断言
