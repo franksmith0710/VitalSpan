@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiRequestError, apiFetch } from "@/lib/api";
-import type { ChartFilterRef, ChartViewConfig } from "@/lib/chartViewConfig";
+import type { ChartFilterRef, ChartTimeRangeRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import { injectSqlParameters } from "@/components/dashboard/dashboardFilterUtils";
 
 type ExecuteResult = {
@@ -30,6 +30,51 @@ export function buildFilterParameters(filters: ChartFilterRef[]): Record<string,
   return params;
 }
 
+function formatUtcDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function utcToday(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+export function buildTimeRangeParameters(tr?: ChartTimeRangeRef): Record<string, string> {
+  if (!tr?.enabled) return {};
+  const today = utcToday();
+  let start: Date;
+  const end: Date = today;
+  if (tr.mode === "absolute") {
+    if (!tr.start || !tr.end) return {};
+    return { time_start: tr.start, time_end: tr.end };
+  }
+  const preset = tr.relativePreset ?? "last_7d";
+  switch (preset) {
+    case "last_7d":
+      start = new Date(today);
+      start.setUTCDate(start.getUTCDate() - 7);
+      break;
+    case "last_30d":
+      start = new Date(today);
+      start.setUTCDate(start.getUTCDate() - 30);
+      break;
+    case "last_90d":
+      start = new Date(today);
+      start.setUTCDate(start.getUTCDate() - 90);
+      break;
+    case "mtd":
+      start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      break;
+    case "ytd":
+      start = new Date(Date.UTC(today.getUTCFullYear(), 0, 1));
+      break;
+    default:
+      start = new Date(today);
+      start.setUTCDate(start.getUTCDate() - 7);
+  }
+  return { time_start: formatUtcDate(start), time_end: formatUtcDate(end) };
+}
+
 export function mapChartQueryError(code: string | undefined, message: string): string {
   switch (code) {
     case "QUERY_TIMEOUT":
@@ -57,9 +102,14 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     setSlowHint(false);
     const started = Date.now();
     try {
+      const timeParams = config.mode === "sql" ? buildTimeRangeParameters(config.timeRange) : {};
       const filterParams =
-        config.mode === "sql" && config.filters?.length
-          ? { ...filterParameters, ...buildFilterParameters(config.filters) }
+        config.mode === "sql"
+          ? {
+              ...filterParameters,
+              ...buildFilterParameters(config.filters ?? []),
+              ...timeParams,
+            }
           : filterParameters;
 
       let sql = config.sql;
