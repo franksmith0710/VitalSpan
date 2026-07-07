@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import uuid
 
 from sqlalchemy.orm import Session
@@ -58,6 +59,22 @@ def _map_metadata_error(exc: Exception) -> DataSourceError:
     return DataSourceError("METADATA_CONNECTION_FAILED", msg, 502)
 
 
+def _catalog_kwargs(row: DataSource) -> dict[str, str]:
+    if row.type in ("trino", "presto") and row.database:
+        return {"catalog": row.database}
+    return {}
+
+
+def _call_metadata(connector, method_name: str, conn, *args, row: DataSource):
+    method = getattr(connector, method_name)
+    extra = _catalog_kwargs(row)
+    if extra:
+        params = inspect.signature(method).parameters
+        if "catalog" in params or row.type in ("trino", "presto"):
+            return method(conn, *args, **extra)
+    return method(conn, *args)
+
+
 def list_schemas(session: Session, role_codes: list[str], data_source_id: uuid.UUID) -> SchemaListResponse:
     assert_visible(session, role_codes, data_source_id)
     row = _load_row(session, data_source_id)
@@ -66,7 +83,7 @@ def list_schemas(session: Session, role_codes: list[str], data_source_id: uuid.U
         with pool_manager.pooled_connection(
             data_source_id, connector=connector, connect_kwargs=kwargs, pool_size=pool_size,
         ) as conn:
-            items = connector.list_schemas(conn)
+            items = _call_metadata(connector, "list_schemas", conn, row=row)
     except DataSourceError:
         raise
     except Exception as exc:
@@ -84,7 +101,7 @@ def list_tables(session: Session, role_codes: list[str], data_source_id: uuid.UU
         with pool_manager.pooled_connection(
             data_source_id, connector=connector, connect_kwargs=kwargs, pool_size=pool_size,
         ) as conn:
-            items = connector.list_tables(conn, schema)
+            items = _call_metadata(connector, "list_tables", conn, schema, row=row)
     except DataSourceError:
         raise
     except Exception as exc:
@@ -104,7 +121,7 @@ def list_columns(
         with pool_manager.pooled_connection(
             data_source_id, connector=connector, connect_kwargs=kwargs, pool_size=pool_size,
         ) as conn:
-            items = connector.list_columns(conn, schema, table)
+            items = _call_metadata(connector, "list_columns", conn, schema, table, row=row)
     except DataSourceError:
         raise
     except Exception as exc:

@@ -10,6 +10,7 @@ from app.datasources.dialects.mongodb import MongodbConnector
 from app.datasources.dialects.mysql import MysqlConnector
 from app.datasources.dialects.oracle import OracleConnector
 from app.datasources.dialects.postgres import PostgresConnector
+from app.datasources.dialects.presto import PrestoConnector
 from app.datasources.dialects.sqlite import SqliteConnector
 from app.datasources.dialects.sqlserver import SqlserverConnector
 from app.datasources.dialects.starrocks import StarrocksConnector
@@ -40,6 +41,7 @@ def register_builtin_dialects() -> None:
     register_dialect(GaussdbConnector())
     register_dialect(DmConnector())
     register_dialect(TrinoConnector())
+    register_dialect(PrestoConnector())
     register_dialect(MongodbConnector())
     register_dialect(InfluxdbConnector())
     register_dialect(TdengineConnector())

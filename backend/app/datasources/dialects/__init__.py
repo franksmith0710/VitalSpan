@@ -20,6 +20,7 @@ from app.datasources.dialects.mongodb import MONGODB_MAX_FIELDS, MongodbConnecto
 from app.datasources.dialects.mysql import MysqlConnector
 from app.datasources.dialects.oracle import OracleConnector
 from app.datasources.dialects.postgres import PostgresConnector
+from app.datasources.dialects.presto import PrestoConnector
 from app.datasources.dialects.sqlite import SqliteConnector
 from app.datasources.dialects.sqlserver import SqlserverConnector
 from app.datasources.dialects.starrocks import StarrocksConnector
@@ -62,6 +63,7 @@ __all__ = [
     "OracleConnector",
     "ORACLE_MAX_COLUMNS",
     "PostgresConnector",
+    "PrestoConnector",
     "SchemaInfo",
     "SqliteConnector",
     "SqlserverConnector",
