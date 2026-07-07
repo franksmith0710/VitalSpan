@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch3.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch3-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-fe-gov-batch3.md |
-| branch | feat/mfinal-fe-gov-batch3-r247 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | GOV-007,GOV-008,NFR-005,NFR-003,NFR-007 |
-| pr_number | |
+| prd_ids |  |
+| pr_number |  |
 | last_verified_command | cd backend && python3 -m ruff check . && PYTHONPATH=/workspace/backend:/workspace/tests python3 -m pytest /workspace/tests -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | N/A（本轮无 fe/ 改动，ui_design_skill none） |
@@ -70,6 +70,7 @@
 
 ## 演化历史（最近）
 
+- G0 闸门（cron 2026-07-07 ~18:15 UTC）：确认 PR #234 已 squash merge dev-auto（193e921）feat/mfinal-fe-gov-batch3-r247→dev-auto；无 Open PR；工作区干净；M-FINAL F-E/F-F 批次 3 收官（GOV-007~008、NFR-003/005/007）；PRD/plan 已于 #234 同步；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 r247 收尾（cron 2026-07-07 ~18:10 UTC）：PRD 重评 GOV-007~008、NFR-003/005/007；hub v1.2.105；总分 90.0–90.4→91.2–91.6；五 ID 仍部分实现 plan 未勾选；phase P4_DONE→P5_DOCS_READY；pr=234；待 squash merge dev-auto
 - P4 验证（cron 2026-07-07 ~18:05 UTC）：独立全量 backend ruff clean + pytest 2224 passed/34 skipped exit 0；mfinal r247 36 passed exit 0；mfinal r246 32 passed exit 0；UI: N/A（无 fe/ 改动，ui_design_skill none）；screenshots 未运行；phase P3_DONE→P4_DONE；branch=feat/mfinal-fe-gov-batch3-r247；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P5 r246 收尾（cron 2026-07-07 ~17:30 UTC）：PRD 重评 DESIGN-004~005、GOV-004~006；hub v1.2.104；plan M-FINAL F-E 五 ID 勾选（完成于 2026-07-07）；总分 90.1–91.2→91.6–92.8；phase P4_DONE→P5_DOCS_READY；pr=233；待 squash merge dev-auto
