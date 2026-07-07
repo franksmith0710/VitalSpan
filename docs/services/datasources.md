@@ -52,6 +52,7 @@
 | `dialects/gaussdb.py` | GaussDB 关系型（psycopg 3 委托 PostgresConnector，`GAUSSDB_*`） | CONN-022 | 已实现 L1 + companion r39 |
 | `dialects/dm.py` | 达梦 DM 关系型（dmPython，`DM_*`） | CONN-017 | 已实现 L1 + companion r39 |
 | `dialects/trino.py` | Trino 联邦湖仓（trino-python-client，catalog/schema 三级，`category=lake`） | CONN-010 | 已实现 L1 + companion r39 |
+| `dialects/presto.py` | Presto 联邦湖仓（委托 TrinoConnector，`type=presto`） | CONN-010 | 已实现（M11 r235） |
 | `dialects/mongodb.py` | MongoDB 文档型（pymongo，`category=document`） | CONN-014 | 已实现 L1 r40 + companion r41 |
 | `dialects/influxdb.py` | InfluxDB 2.x 时序（influxdb-client，org/bucket 语义映射） | CONN-011 | 已实现 L1 r40 + companion r41 |
 | `dialects/tdengine.py` | TDengine 时序（taospy REST，stable 标记） | CONN-012 | 已实现 L1 r40 + companion r41 |
@@ -194,3 +195,13 @@
 ### M7 r229 集成验收（CONN-008 · 2026-07-06）
 
 - **M7 r229** (`tests/test_connectors_m7_r229.py`): CONN-008 Doris M7 收官 — types catalog + HTTP test/metadata mock 链 + optional 9030 compose skip
+
+### M11 r235 集成验收（CONN-009~013 · 2026-07-07）
+
+- **CONN-009**：`STARROCKS_UNKNOWN_DATABASE` 对称 Doris；`tests/test_connectors_m11_r235.py` HTTP test/metadata mock + optional 9030 skip
+- **CONN-010**：`PrestoConnector` 委托 `TrinoConnector`（`type=presto`）；`metadata/service.py` 对 `trino`/`presto` 传 `catalog=row.database`
+- **CONN-011**：InfluxDB **2.x only**（`username=org`, `password=token`, `database=bucket`）；**不支持** InfluxDB 1.x / InfluxQL；连接器级只读 Flux `limit(n:1)` 探测
+- **CONN-012**：`taospy>=2.7.0`（`connectors-ext`）；HTTP metadata stable 类型标记
+- **CONN-013**：`probe_readonly_sql` → `SELECT 1`；hypertable 元数据标记
+- 集成测：`tests/test_connectors_m11_r235.py`（`@pytest.mark.integration`，无 compose 时分层 skip）
+- 回归：r34~r35、r38~r39、r40~r41 不删旧套件
