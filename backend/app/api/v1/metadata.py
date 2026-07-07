@@ -183,11 +183,11 @@ def list_glossary_terms(
 @router.post("/glossary", response_model=TermOut, status_code=status.HTTP_201_CREATED)
 def create_glossary_term(
     payload: TermCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> TermOut | JSONResponse:
     try:
-        term = glossary_service.create_term(db, payload)
+        term = glossary_service.create_term(db, payload, actor)
     except GlossaryError as exc:
         return _glossary_error(exc)
     return TermOut.model_validate(term)
@@ -210,11 +210,11 @@ def get_glossary_term(
 def update_glossary_term(
     term_id: uuid.UUID,
     payload: TermUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> TermOut | JSONResponse:
     try:
-        term = glossary_service.update_term(db, term_id, payload)
+        term = glossary_service.update_term(db, term_id, payload, actor)
     except GlossaryError as exc:
         return _glossary_error(exc)
     return TermOut.model_validate(term)
@@ -223,11 +223,11 @@ def update_glossary_term(
 @router.delete("/glossary/{term_id}", response_model=None)
 def delete_glossary_term(
     term_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
-        glossary_service.delete_term(db, term_id)
+        glossary_service.delete_term(db, term_id, actor)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except GlossaryError as exc:
         return _glossary_error(exc)
@@ -248,11 +248,11 @@ def list_theme_nodes(
 @router.post("/themes", response_model=ThemeOut, status_code=status.HTTP_201_CREATED)
 def create_theme_node(
     payload: ThemeCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> ThemeOut | JSONResponse:
     try:
-        node = themes_service.create_theme_node(db, payload)
+        node = themes_service.create_theme_node(db, payload, actor)
     except ThemeError as exc:
         return _theme_error(exc)
     return ThemeOut.model_validate(node)
@@ -275,11 +275,11 @@ def get_theme_node(
 def update_theme_node(
     node_id: uuid.UUID,
     payload: ThemeUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> ThemeOut | JSONResponse:
     try:
-        node = themes_service.update_theme_node(db, node_id, payload)
+        node = themes_service.update_theme_node(db, node_id, payload, actor)
     except ThemeError as exc:
         return _theme_error(exc)
     return ThemeOut.model_validate(node)
@@ -288,11 +288,11 @@ def update_theme_node(
 @router.delete("/themes/{node_id}", response_model=None)
 def delete_theme_node(
     node_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
-        themes_service.delete_theme_node(db, node_id)
+        themes_service.delete_theme_node(db, node_id, actor)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except ThemeError as exc:
         return _theme_error(exc)
@@ -302,11 +302,11 @@ def delete_theme_node(
 def move_theme_node(
     node_id: uuid.UUID,
     payload: ThemeMove,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> ThemeOut | JSONResponse:
     try:
-        node = themes_service.move_theme_node(db, node_id, payload.parent_id, payload.sort_order)
+        node = themes_service.move_theme_node(db, node_id, payload.parent_id, payload.sort_order, actor)
     except ThemeError as exc:
         return _theme_error(exc)
     return ThemeOut.model_validate(node)
@@ -327,11 +327,11 @@ def list_dimensions(
 @router.post("/dimensions", response_model=DimensionOut, status_code=status.HTTP_201_CREATED)
 def create_dimension(
     payload: DimensionCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionOut | JSONResponse:
     try:
-        dimension = dimension_service.create_dimension(db, payload)
+        dimension = dimension_service.create_dimension(db, payload, actor)
     except DimensionError as exc:
         return _dimension_error(exc)
     return DimensionOut.model_validate(dimension)
@@ -354,11 +354,11 @@ def get_dimension(
 def update_dimension(
     dimension_id: uuid.UUID,
     payload: DimensionUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionOut | JSONResponse:
     try:
-        dimension = dimension_service.update_dimension(db, dimension_id, payload)
+        dimension = dimension_service.update_dimension(db, dimension_id, payload, actor)
     except DimensionError as exc:
         return _dimension_error(exc)
     return DimensionOut.model_validate(dimension)
@@ -367,11 +367,11 @@ def update_dimension(
 @router.delete("/dimensions/{dimension_id}", response_model=None)
 def delete_dimension(
     dimension_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
-        dimension_service.delete_dimension(db, dimension_id)
+        dimension_service.delete_dimension(db, dimension_id, actor)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except DimensionError as exc:
         return _dimension_error(exc)
@@ -403,11 +403,11 @@ def list_dimension_values(
 def register_dimension_values(
     dimension_id: uuid.UUID,
     payload: DimensionValuesRegister,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionValueListResponse | JSONResponse:
     try:
-        items = dimension_service.register_values(db, dimension_id, payload.items)
+        items = dimension_service.register_values(db, dimension_id, payload.items, actor)
     except DimensionError as exc:
         return _dimension_error(exc)
     return DimensionValueListResponse(
@@ -420,11 +420,11 @@ def register_dimension_values(
 def delete_dimension_value(
     dimension_id: uuid.UUID,
     value_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
-        dimension_service.delete_value(db, dimension_id, value_id)
+        dimension_service.delete_value(db, dimension_id, value_id, actor)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except DimensionError as exc:
         return _dimension_error(exc)

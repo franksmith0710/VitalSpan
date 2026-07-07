@@ -3,11 +3,17 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.auth.deps import UserContext, get_current_user
 from app.metadata.dataset.errors import DatasetError
-from app.metadata.dataset.schemas import DatasetItemIn, DatasetItemOut, DatasetListResponse, DatasetValidateOut
+from app.metadata.dataset.schemas import (
+    DatasetBindConfigIn,
+    DatasetItemIn,
+    DatasetItemOut,
+    DatasetListResponse,
+    DatasetValidateOut,
+)
 from app.metadata.dataset import service as dataset_service
 
 router = APIRouter(prefix="/datasets", tags=["metadata", "META-004"])
@@ -59,5 +65,41 @@ def validate_dataset(
 ) -> DatasetValidateOut | JSONResponse:
     try:
         return dataset_service.validate_dataset_draft(payload)
+    except DatasetError as exc:
+        return _dataset_error(exc)
+
+
+@router.put("/{dataset_id}", response_model=DatasetItemOut)
+def update_dataset(
+    dataset_id: str,
+    payload: DatasetItemIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> DatasetItemOut | JSONResponse:
+    try:
+        return dataset_service.update_dataset(dataset_id, payload, actor)
+    except DatasetError as exc:
+        return _dataset_error(exc)
+
+
+@router.delete("/{dataset_id}", response_model=None)
+def delete_dataset(
+    dataset_id: str,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> Response | JSONResponse:
+    try:
+        dataset_service.delete_dataset(dataset_id, actor)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except DatasetError as exc:
+        return _dataset_error(exc)
+
+
+@router.post("/{dataset_id}/bind-query-config", response_model=DatasetItemOut)
+def bind_query_config(
+    dataset_id: str,
+    payload: DatasetBindConfigIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+) -> DatasetItemOut | JSONResponse:
+    try:
+        return dataset_service.bind_query_config(dataset_id, payload.config_id, actor)
     except DatasetError as exc:
         return _dataset_error(exc)

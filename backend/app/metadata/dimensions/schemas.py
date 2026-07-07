@@ -5,6 +5,8 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+META_DIM_FORBIDDEN = "META_DIM_FORBIDDEN"
+
 DIM_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 DIM_STATUS_VALUES = frozenset({"active", "inactive"})
 
@@ -25,10 +27,12 @@ class DimensionError(Exception):
 
 
 class DimensionCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     code: str
     name: str = Field(min_length=1, max_length=120)
     description: str | None = None
     status: str | None = None
+    theme_node_id: uuid.UUID | None = Field(default=None, alias="themeNodeId")
 
     @field_validator("code")
     @classmethod
@@ -41,18 +45,21 @@ class DimensionCreate(BaseModel):
 
 
 class DimensionUpdate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     name: str = Field(min_length=1, max_length=120)
     description: str | None = None
     status: str | None = None
+    theme_node_id: uuid.UUID | None = Field(default=None, alias="themeNodeId")
 
 
 class DimensionOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: uuid.UUID
     code: str
     name: str
     description: str | None
     status: str
+    theme_node_id: uuid.UUID | None = Field(default=None, alias="themeNodeId")
 
 
 class DimensionListResponse(BaseModel):

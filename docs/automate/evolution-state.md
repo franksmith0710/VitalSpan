@@ -7,15 +7,17 @@
 | 字段 | 值 |
 |------|----|
 | phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc2-fd-kickoff.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-fc2-fd-kickoff-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-fc2-fd-kickoff.md |
-| branch | feat/mfinal-fc2-fd-kickoff-r243 |
+| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md |
+| design | docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fd-meta.md |
+| branch | feat/mfinal-fd-meta-r244 |
 | base_branch | dev-auto |
-| prd_ids | CONN-022,QUERY-007,QUERY-008,QUERY-009 |
-| pr_number | 229 |
-| last_verified_command | cd backend && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm exec vitest run && pnpm run build |
+| prd_ids | META-001,META-002,META-003,META-004 |
+| pr_number | 230 |
+| last_verified_command | cd backend && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run && pnpm run build |
+| last_ui_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T15:00:00Z |
 | skill_rule_index_source_count | 26 |
@@ -68,6 +70,13 @@
 
 ## 演化历史（最近）
 
+- P5 r244 收尾（cron 2026-07-07 ~16:10 UTC）：PRD 重评 META-001~004；hub 总分 90.0–91.1→92.3–93.7；plan M-FINAL F-D 四 ID 勾选（完成于 2026-07-07）；F-D 语义层收官；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
+- P4 r244 重验（cron 2026-07-07 ~16:05 UTC）：独立全量 backend pytest 2124 passed/31 skipped exit 0；fe check:design 193 files + vitest 214/214 + build exit 0；UI design_drift PASS；screenshots 未运行（headless）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fd-meta-r244；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
+- P4 r244 验证（cron 2026-07-07 ~16:00 UTC）：独立全量 backend pytest 2113 passed/11 failed/31 skipped exit 1（test_migrations.py 11 条仍断言 head 0018，实际 0019）；r244 专项 28/28 exit 0；fe check:design 193 files + vitest 214/214 + build exit 0；UI design_drift PASS；screenshots 未运行（headless）；phase P3_DONE→P4_BLOCKED；branch=feat/mfinal-fd-meta-r244；待 P3 修复 migration gate 后重验
+- P2 计划（cron 2026-07-07 ~15:50 UTC）：F-D 批次 2 收官 META-001~004 计划完成（共享写 ACL + 术语/主题/维度 probe + migration 0019 theme FK + Dataset PUT/DELETE/bind + QUERY 四步集成测 + metadata-panels CRUD UI + Dataset 编辑删除）；8 Tasks / 19 文件操作（4 新建 + 15 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fd-meta.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
+- P1 设计（cron 2026-07-07 ~15:37 UTC）：F-D 批次 2 收官 META-001~004（术语/主题/维度写 ACL + 主题树/维度 Admin CRUD UI + Dataset PUT/DELETE/bind-query-config + QUERY 四步集成测）；18 文件框定；ui_design_skill=b-design-system-tailadmin-radix；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md；base_branch=dev-auto；待 P2 evolution-planner
+- G2 选题（cron 2026-07-07 ~15:45 UTC）：饱和熔断已跳过（plan §M-FINAL · F-D 含 4 项 `[ ]` META-001~004；Top5 薄弱项最低分 CONN-026/027 85.4 <90）；入选 F-D 批次 2 全量四 ID（META-001~004 术语/主题树/维度/Dataset CRUD）；不足 5 项因 F-D 批次 2 仅余四行、待办池空；hub 最低分入选 META-001 90.0；F-G CONN-023~027 留专批；STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md；phase idle→G2_DONE；待 P1 evolution-designer
+- G1 bootstrap（cron 2026-07-07 ~15:40 UTC）：G0 PASS PR #229 已 squash merge dev-auto（377aed8）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.101 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-D**（F-C 六型信创已收官；QUERY-007~009 已勾选；META-001~004 等 4 项 `[ ]` 待批次 2；F-E~F-G 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-C2+F-D kickoff（CONN-022/QUERY-007~009）r243 PR #229 完成；phase P5_DOCS_READY→idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~15:35 UTC）：遗留 PR #229 Draft 转正；rebase dev-auto 解冲突；补齐 r243 G1/G2 历史与 round-target；PRD/plan 已于 #228 同步；phase P5_DOCS_READY pr=229；待 squash merge dev-auto
 - P5 r243 收尾（cron 2026-07-07 ~15:30 UTC）：PRD 重评 CONN-022 + QUERY-007~009；hub 总分 90.0–91.7→92.2–93.2；plan M-FINAL F-C CONN-022 + F-D QUERY-007~009 勾选（完成于 2026-07-07）；hub v1.2.101；F-C 六型信创连接器收官；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r243 验证（cron 2026-07-07 ~15:17 UTC）：独立全量 backend pytest 2096 passed/31 skipped exit 0；fe check:design 188 files + vitest 214/214 + build(tsc -b + vite) exit 0；UI design_drift PASS（check:design）；screenshots 未运行（headless 云环境；UI Acceptance 由 datasource-form.smoke T-CONN-R243-FE-01~06 RTL 覆盖）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fc2-fd-kickoff-r243；base_branch=dev-auto；待 P5 evolution-pr-finisher-github

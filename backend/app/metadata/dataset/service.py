@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import time
+import uuid
 from dataclasses import dataclass
 
 from app.auth.deps import UserContext
@@ -16,6 +17,8 @@ from app.metadata.dataset.schemas import (
     DatasetListResponse,
     DatasetValidateOut,
 )
+
+META_DATASET_CONFIG_TYPE_INVALID = "META_DATASET_CONFIG_TYPE_INVALID"
 
 _store: dict[str, dict] = {}
 _FIELD_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
@@ -76,6 +79,7 @@ def create_dataset(payload: DatasetItemIn, user: UserContext) -> DatasetItemOut:
     if payload.dataset_id in _store:
         raise DatasetError("META_DATASET_CONFLICT", "Dataset already exists", 409)
     record = payload.model_dump(by_alias=True)
+    record["boundConfigId"] = None
     _store[payload.dataset_id] = record
     return _to_out(record)
 
@@ -126,3 +130,43 @@ def probe_list_datasets_budget_ms() -> DatasetProbeResult:
     list_datasets(limit=50, offset=0)
     elapsed = (time.perf_counter() - started) * 1000
     return DatasetProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_dataset_budget_ms_limit)
+
+
+def update_dataset(dataset_id: str, payload: DatasetItemIn, user: UserContext) -> DatasetItemOut:
+    _assert_dataset_write_access(user, dataset_id)
+    if dataset_id not in _store:
+        raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
+    if payload.dataset_id != dataset_id:
+        raise DatasetError("META_DATASET_ID_MISMATCH", "datasetId mismatch", 422)
+    _validate_body(payload)
+    record = payload.model_dump(by_alias=True)
+    record["boundConfigId"] = _store[dataset_id].get("boundConfigId")
+    _store[dataset_id] = record
+    return _to_out(record)
+
+
+def delete_dataset(dataset_id: str, user: UserContext) -> None:
+    _assert_dataset_write_access(user, dataset_id)
+    if dataset_id not in _store:
+        raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
+    del _store[dataset_id]
+
+
+def bind_query_config(dataset_id: str, config_id: uuid.UUID, user: UserContext) -> DatasetItemOut:
+    _assert_dataset_write_access(user, dataset_id)
+    if dataset_id not in _store:
+        raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
+    from app.datasources.models import get_meta_session
+    from app.query.config_store.service import get_config_by_id
+
+    session = get_meta_session()
+    try:
+        record = get_config_by_id(session, config_id)
+        if record.config_type != "dataset_query":
+            raise DatasetError(
+                META_DATASET_CONFIG_TYPE_INVALID, "config must be dataset_query", 422,
+            )
+    finally:
+        session.close()
+    _store[dataset_id]["boundConfigId"] = str(config_id)
+    return _to_out(_store[dataset_id])

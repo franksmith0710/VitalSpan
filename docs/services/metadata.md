@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/metadata/` |
 | PRD | [F11-META](../automate/prd/F11-META.md) · META-001 ~ META-006 |
 | 里程碑 | M1（四期 Dataset 语义层） |
-| 状态 | **部分（L1）** |
+| 状态 | **部分（L1）** · F-D r244 收官（META-001~004 写 ACL + Admin CRUD UI） |
 
 ## 职责
 
@@ -26,7 +26,7 @@
 | 术语字典 CRUD、业务主题树 CRUD/move | 物理连接与方言（→ `datasources`） |
 | 维度字典 CRUD、枚举值注册/列表/删除 | 物理字段映射（META-001 后续） |
 | 实体类型 schema CRUD + GOV openapi 引用计数 | 物理字段映射（META-001 后续） |
-| Dataset 元数据项 validate/list/create（内存 store，非 ORM migration） | 物理字段映射（META-001 后续） |
+| Dataset 元数据项 validate/list/create/update/delete/bind（内存 store） | 物理字段映射（META-001 后续） |
 | Dataset / 语义模型 CRUD（四期完整 ORM） | 查询执行（→ `query`） |
 | 一至三期 | 图表直连查询不走本域 |
 
@@ -46,7 +46,7 @@
 | `ThemeNode` / `themes/service` | 主题树 CRUD/move、环检测 | META-002 | L1 已实现 |
 | `DimensionDict` / `dimensions/service` | 维度字典 CRUD + 枚举值注册 | META-003 | L1 已实现 |
 | `entity/service` | 实体类型 schema CRUD + `validate_entity_type_ref` | META-006 | L1 已实现 r54 |
-| `dataset/service` | Dataset 元数据项内存 store + validate/list/create + scope ACL + probe | META-004 | companion 已实现 r66 |
+| `dataset/service` | Dataset 内存 store + validate/list/create/update/delete/bind + scope ACL + probe | META-004 | companion r244 收官 |
 | `physical/service` | 物理表 validate/register/list/update/delete + register-from-schema + `_ds_table_index` 复合唯一 | META-005 | L1 M8 r232 收官 |
 | `DatasetService` | 语义层 CRUD（ORM 四期） | META-001~003 | 待建 |
 | `SemanticResolver` | 逻辑 → 物理 SQL | META-004 | 待建 |
@@ -55,7 +55,10 @@
 
 | code | 场景 |
 |------|------|
-| `META_TERM_CODE_CONFLICT` | 术语 code 重复 |
+| `META_TERM_FORBIDDEN` | viewer/editor 写术语被拒（r244） |
+| `META_THEME_FORBIDDEN` | viewer/editor 写主题被拒（r244） |
+| `META_DIM_FORBIDDEN` | viewer/editor 写维度被拒（r244） |
+| `META_DATASET_CONFIG_TYPE_INVALID` | bind 非 dataset_query 配置（r244） |
 | `META_TERM_NOT_FOUND` | 术语不存在 |
 | `META_TERM_IN_USE` | 术语被主题节点引用 |
 | `META_THEME_NOT_FOUND` | 主题节点不存在 |
@@ -83,7 +86,23 @@
 | `META_DATASET_DUPLICATE_TABLE` | tables 中 name 重复（r66） |
 | `META_PHYSICAL_DS_TABLE_CONFLICT` | 同 dataSourceId+schema+table 重复 register-from-schema |
 
-常量：`MAX_THEME_DEPTH=8`、`TERM_MAX_TEXT_LENGTH=4000`；migration `0016_dimension_dict.py`（`dimension_dicts` + `dimension_values`）。
+常量：`MAX_THEME_DEPTH=8`、`TERM_MAX_TEXT_LENGTH=4000`；migration `0016_dimension_dict.py`（`dimension_dicts` + `dimension_values`）；`0019_dimension_theme_node.py`（`dimension_dicts.theme_node_id` nullable FK → `theme_nodes.id`）。
+
+### 写 ACL（r244 · META-001~003）
+
+| 角色 | 读 | 写（POST/PUT/DELETE/move/register values） |
+|------|----|---------------------------------------------|
+| admin, analyst | 允许 | 允许 |
+| editor, viewer, enterprise | 允许 | **拒绝** 403 `META_*_FORBIDDEN` |
+
+实现：`metadata/_acl.py` → glossary/themes/dimensions service 写入口；Dataset 复用 r66 `_assert_dataset_write_access`。
+
+列表探针：`probe_list_terms_budget_ms` / `probe_list_themes_budget_ms` / `probe_list_dimensions_budget_ms` ≤50ms。
+
+### r244 F-D 收官（META-001~004 · 2026-07-07）
+
+- **META-001~003**：共享写 ACL + Admin CRUD UI（`metadata-panels.tsx`）；维度可选 `themeNodeId` FK
+- **META-004**：`PUT/DELETE /datasets/{id}`、`POST …/bind-query-config`；`boundConfigId` 内存字段；四步 QUERY 集成测 `tests/test_mfinal_fd_meta_r244.py`（28 条）
 
 ## 关联 API
 

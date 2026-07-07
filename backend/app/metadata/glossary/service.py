@@ -1,18 +1,35 @@
 from __future__ import annotations
 
+import time
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.auth.deps import UserContext
+from app.metadata._acl import _assert_meta_write
 from app.metadata.glossary.models import GlossaryTerm
 from app.metadata.glossary.schemas import (
     GlossaryError,
+    META_TERM_FORBIDDEN,
     TERM_STATUS_VALUES,
     TermCreate,
     TermUpdate,
 )
+
+probe_list_terms_budget_ms_limit = 50
+
+
+@dataclass(frozen=True)
+class TermProbeResult:
+    elapsed_ms: float
+    ok: bool
+
+
+def _forbidden() -> GlossaryError:
+    return GlossaryError(META_TERM_FORBIDDEN, "insufficient role to modify glossary terms", 403)
 
 
 def _validate_status(status: str | None) -> str:
@@ -43,7 +60,8 @@ def list_terms(
     return items, total
 
 
-def create_term(session: Session, payload: TermCreate) -> GlossaryTerm:
+def create_term(session: Session, payload: TermCreate, user: UserContext) -> GlossaryTerm:
+    _assert_meta_write(user, raise_forbidden=_forbidden)
     if not payload.name.strip():
         raise GlossaryError(
             "META_TERM_INVALID_NAME",
@@ -76,7 +94,10 @@ def get_term(session: Session, term_id: uuid.UUID) -> GlossaryTerm:
     return term
 
 
-def update_term(session: Session, term_id: uuid.UUID, payload: TermUpdate) -> GlossaryTerm:
+def update_term(
+    session: Session, term_id: uuid.UUID, payload: TermUpdate, user: UserContext,
+) -> GlossaryTerm:
+    _assert_meta_write(user, raise_forbidden=_forbidden)
     if not payload.name.strip():
         raise GlossaryError(
             "META_TERM_INVALID_NAME",
@@ -95,7 +116,8 @@ def update_term(session: Session, term_id: uuid.UUID, payload: TermUpdate) -> Gl
     return term
 
 
-def delete_term(session: Session, term_id: uuid.UUID) -> None:
+def delete_term(session: Session, term_id: uuid.UUID, user: UserContext) -> None:
+    _assert_meta_write(user, raise_forbidden=_forbidden)
     from app.metadata.themes.models import ThemeNode
 
     term = get_term(session, term_id)
@@ -106,3 +128,10 @@ def delete_term(session: Session, term_id: uuid.UUID) -> None:
         raise GlossaryError("META_TERM_IN_USE", "Term is referenced by theme nodes", 409)
     session.delete(term)
     session.commit()
+
+
+def probe_list_terms_budget_ms(session: Session) -> TermProbeResult:
+    started = time.perf_counter()
+    list_terms(session, limit=50, offset=0)
+    elapsed = (time.perf_counter() - started) * 1000
+    return TermProbeResult(elapsed_ms=elapsed, ok=elapsed <= probe_list_terms_budget_ms_limit)
