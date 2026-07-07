@@ -20,6 +20,7 @@ type NavManifestSubItem = {
   name: string;
   path: string;
   milestone?: string;
+  capability?: string;
 };
 
 type NavManifestItem = {
@@ -29,18 +30,21 @@ type NavManifestItem = {
   subItems?: NavManifestSubItem[];
   milestone?: string;
   roles?: SessionRole[];
+  capability?: string;
 };
 
 type NavManifestSection = {
   title: string;
   items: NavManifestItem[];
   roles: SessionRole[];
+  capability?: string;
 };
 
 export const NAV_MANIFEST: NavManifestSection[] = [
   {
     title: "数据",
     roles: ["admin"],
+    capability: "datasource:*",
     items: [
       {
         name: "数据连接",
@@ -68,20 +72,21 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         icon: <LayoutDashboard className="size-6" aria-hidden />,
         path: "/admin/dashboards",
         milestone: "M1",
+        capability: "dashboard:read",
       },
       {
         name: "图表探索",
         icon: <LineChart className="size-6" aria-hidden />,
         path: "/admin/charts/explore",
         milestone: "M11",
-        roles: ["admin", "analyst"],
+        capability: "dashboard:edit",
       },
       {
         name: "查询设计器",
         icon: <SlidersHorizontal className="size-6" aria-hidden />,
         path: "/admin/designer",
         milestone: "M13",
-        roles: ["admin"],
+        capability: "dashboard:edit",
       },
     ],
   },
@@ -93,9 +98,19 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         name: "报表",
         icon: <FileBarChart className="size-6" aria-hidden />,
         subItems: [
-          { name: "预制报表", path: "/admin/reports", milestone: "M1" },
-          { name: "报表模板", path: "/admin/reports/templates", milestone: "M7" },
-          { name: "报表调度", path: "/admin/reports/schedules", milestone: "M11" },
+          { name: "预制报表", path: "/admin/reports", milestone: "M1", capability: "report:read" },
+          {
+            name: "报表模板",
+            path: "/admin/reports/templates",
+            milestone: "M7",
+            capability: "report:*",
+          },
+          {
+            name: "报表调度",
+            path: "/admin/reports/schedules",
+            milestone: "M11",
+            capability: "report:*",
+          },
         ],
       },
     ],
@@ -103,6 +118,7 @@ export const NAV_MANIFEST: NavManifestSection[] = [
   {
     title: "主题与实体",
     roles: ["admin", "analyst"],
+    capability: "theme:*",
     items: [
       {
         name: "实体总览",
@@ -121,6 +137,7 @@ export const NAV_MANIFEST: NavManifestSection[] = [
   {
     title: "治理",
     roles: ["admin"],
+    capability: "governance:*",
     items: [
       {
         name: "接口目录",
@@ -151,24 +168,34 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         icon: <Boxes className="size-6" aria-hidden />,
         path: "/admin/metadata",
         milestone: "M13",
+        capability: "metadata:*",
       },
       {
         name: "Dataset",
         icon: <Database className="size-6" aria-hidden />,
         path: "/admin/datasets",
         milestone: "M13",
+        capability: "dataset:*",
       },
     ],
   },
   {
     title: "系统",
     roles: ["admin"],
+    capability: "system:*",
     items: [
       {
         name: "角色管理",
         icon: <Shield className="size-6" aria-hidden />,
         path: "/admin/system/roles",
         milestone: "M1",
+      },
+      {
+        name: "资源授权",
+        icon: <Shield className="size-6" aria-hidden />,
+        path: "/admin/system/grants",
+        milestone: "M1",
+        capability: "system:*",
       },
       {
         name: "用户管理",

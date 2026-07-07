@@ -45,16 +45,20 @@
 
 ### [AUTH-004] 资源授权绑定
 
-- **状态**：已实现（r19 quality push）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
-- **描述**：资源授权绑定（SRS 追溯项）。
+- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07
+- **描述**：资源授权绑定（SRS 追溯项）；M-FINAL F-B 补齐 Admin UI（`/admin/system/grants` 列表 + 绑定/撤销表单）。
 - **验收标准**：
   - [x] 角色可绑定数据源/Dashboard/报表资源
   - [x] 未授权资源不可见
-- **代码锚点**：`backend/app/auth/resources/service.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/resource_grants.py` · `tests/test_auth_rbac_l1.py` T-AUTH-G01~G12
-- **演化建议**：M3 数据源 API 接入 `require_resource_visible`；列表端点过滤未授权资源
-- **里程碑对齐**：
+  - [x] `/admin/system/grants` 路由注册，manifest 系统管理分组可见（admin）
+  - [x] 对接 `GET/POST /api/v1/resource-grants`，列表展示角色×资源类型×资源 ID
+  - [x] 表单校验与高危撤销确认；成功后列表刷新
+  - [x] `grants.smoke.test.tsx` T-AUTH-004-FE-01~04 PASS
+- **代码锚点**：`backend/app/auth/resources/service.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/resource_grants.py` · `tests/test_auth_rbac_l1.py` T-AUTH-G01~G12 · `fe/src/pages/admin/system/grants/GrantsPage.tsx` · `fe/src/pages/admin/system/grants/grants.smoke.test.tsx`
+- **演化建议**：vitest 208/208（F-B grants smoke 4 用例）；M3 数据源 API 接入 `require_resource_visible` 过滤未授权资源列表；二期 Playwright E2E
 
 ### [AUTH-005] 权限维度类型定义
 

@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
-| design |  |
-| plan |  |
-| branch |  |
+| phase | P5_DOCS_READY |
+| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fb.md |
+| design | docs/superpowers/specs/2026-07-07-mfinal-fb-rbac-grants-capability-nav-design.md |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fb-rbac-grants-capability-nav.md |
+| branch | feat/mfinal-fb-rbac-grants-r241 |
 | base_branch | dev-auto |
-| prd_ids |  |
-| pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| prd_ids | AUTH-004,BOOT-002 |
+| pr_number | 226 |
+| last_verified_command | cd fe && pnpm run check:design && pnpm vitest run && node --test scripts/check-design.fixture.test.mjs && pnpm run build |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-07T12:35:00Z |
+| skill_rule_index_generated_at | 2026-07-07T13:45:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,12 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r241 收尾（cron 2026-07-07 ~14:00 UTC）：PR #226 feat/mfinal-fb-rbac-grants-r241→dev-auto；重评 AUTH-004/BOOT-002；hub 总分 92.1/95.3→94.1/95.9；plan M-FINAL F-B 二 ID 勾选（完成于 2026-07-07）；F-B 收官；phase P4_DONE→P5_DOCS_READY；待 squash merge
+- P4 r241 验证（cron 2026-07-07 ~13:54 UTC）：独立全量 fe check:design 187 files + vitest 208/208 + design fixture 4/4 + build(tsc -b + vite) exit 0；UI design_drift PASS（check:design）；screenshots 未运行（headless 云环境；UI Acceptance 由 RTL smoke 覆盖）；backend 未触及（plan 约束无 pytest）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fb-rbac-grants-r241；base_branch=dev-auto；pr=226；待 P5 evolution-pr-finisher-github
+- P3 r241 实现（cron 2026-07-07 ~13:52 UTC）：8 Task 全量完成（Task1 capabilities.ts+session 委托；Task2 nav-manifest capability+资源授权项；Task3 resolveNavGroups ResolveNavOptions+T-NAV-CAP-01~04；Task4 queryKeys+grantFormSchema+grantErrors；Task5 GrantsPage+useGrantsPage+GrantsDialogs；Task6 grants.smoke T-AUTH-004-FE-01~04；Task7 routes grants+AdminLayout useMemo；Task8 AdminLayout.smoke T-FE-SMFB-01~03+routes.smoke T-RT-GRANTS-01+layout.md）；每任务 spec+quality 自审通过；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS(187 files)；fe vitest 208/208 + build(tsc -b + vite) exit 0；screenshots 未运行（headless 云环境；UI Acceptance 由 RTL smoke 覆盖）；backend 未触及（无 pytest）；branch=feat/mfinal-fb-rbac-grants-r241；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
+- P2 计划（cron 2026-07-07 ~13:45 UTC）：F-B 全量 4 子项计划完成（AUTH-004 grants 列表+表单、BOOT-002 capability 过滤+smoke）；8 Tasks / 16 文件操作（4 新建+12 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fb-rbac-grants-capability-nav.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
+- P1 设计（cron 2026-07-07 ~13:40 UTC）：F-B 全量 4 子项（AUTH-004 grants 列表+表单、BOOT-002 capability 过滤+smoke）；ui_design_skill=b-design-system-tailadmin-radix；范围框定 16 文件；capabilities.ts + manifest capability + GrantsPage + resolveNavGroups options 签名设计完成；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fb-rbac-grants-capability-nav-design.md；待 P2 evolution-planner
+- G2 选题（cron 2026-07-07 ~13:33 UTC）：饱和熔断已跳过（plan §M-FINAL · F-B 含 2 项 `[ ]` AUTH-004/BOOT-002 能力导航；Top5 薄弱项最低分 CONN-027 85.4 <90）；入选 M-FINAL · F-B 全量 2 PRD ID 拆 4 子项（AUTH-004 grants 列表+表单、BOOT-002 capability 过滤+smoke）；不足 5 项因 plan F-B 仅 2 行 companion；hub 最低分入选 AUTH-004 92.1；F-G CONN-023~027 留专批；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fb.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~13:32 UTC）：G0 PASS PR #225 已 merge dev-auto（0da0c4d）+ G0 闸门提交 355a811；无 Open PR；工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.98 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-B**（2 项 `[ ]` AUTH-004/BOOT-002 能力导航；F-A 已收官；F-C~F-G 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-A nav-manifest（BOOT-002×2/DS-007）PR #225 完成；phase idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~13:30 UTC）：PR #225 已 squash merge dev-auto（0da0c4d）feat/mfinal-fa-nav-manifest-r240→dev-auto；无 Open PR；工作区干净；M-FINAL F-A 收官（BOOT-002×2/DS-007）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P3 r240 实现（cron 2026-07-07 ~12:47 UTC）：7 Task 全量完成（Task1 nav-manifest.tsx 单一真理源；Task2 NavItem.preview+NavBadge preview variant+index.css preview badge tokens；Task3 TDD 重写 resolve-nav.ts manifest 派生+ACTIVE_MILESTONES+里程碑过滤 resolve-nav.test.ts 10/10；Task4 删除 admin/analyst/user-nav 三拷贝；Task5 AdminLayout.smoke T-FE-SMFA-01~04 16/16；Task6 routes.smoke T-FE-08 改名+T-RT-DL-01 死链 20/20；Task7 layout.md §3/§6 同步 v1.2.0）；每任务 spec+quality 自审通过；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS(180 files)；fe vitest 196/196 + build(tsc -b + vite) exit 0（P3 修复 tsc -b 严格错误：未用变量 + viewer mock role 字面量类型）；screenshots 未运行（headless 云环境无浏览器/显示；UI Acceptance 由 RTL smoke 覆盖：Collapsible 展开+subItem 链接+预览 badge+viewer 角色过滤）；backend 未触及（无 pytest）；孤儿分支 feat/mfinal-fa-nav-manifest-r239 未复用（实现异于当前 plan：含超范围 RequireNavAccess 路由守卫）；branch=feat/mfinal-fa-nav-manifest-r240（含 P1/P2 doc 产出，rebase 于 cloud branch）；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier

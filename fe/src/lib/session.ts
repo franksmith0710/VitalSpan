@@ -1,6 +1,8 @@
 /**
  * Session role helpers. User identity comes from AuthProvider / GET /api/v1/me.
  */
+import { hasCapability } from "@/lib/capabilities";
+
 export type SessionRole = "admin" | "analyst" | "viewer";
 
 export type SessionUser = {
@@ -18,11 +20,11 @@ export function sessionUserFromAuth(username: string, roles: SessionRole[]): Ses
 }
 
 export function canManagePlatform(user: SessionUser): boolean {
-  return user.roles.includes("admin");
+  return hasCapability(user, "system:*");
 }
 
 export function canEditDashboards(user: SessionUser): boolean {
-  return user.roles.includes("admin") || user.roles.includes("analyst");
+  return hasCapability(user, "dashboard:edit");
 }
 
 const ROLE_LABELS: Record<SessionRole, string> = {

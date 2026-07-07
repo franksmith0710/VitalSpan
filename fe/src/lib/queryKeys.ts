@@ -15,6 +15,11 @@ export const queryKeys = {
     list: (params?: { codePrefix?: string; limit?: number; offset?: number }) =>
       ["roles", "list", params] as const,
   },
+  resourceGrants: {
+    all: ["resourceGrants"] as const,
+    list: (params?: { roleId?: string; resourceType?: string }) =>
+      ["resourceGrants", "list", params] as const,
+  },
   dashboards: {
     all: ["dashboards"] as const,
     list: () => ["dashboards", "list"] as const,

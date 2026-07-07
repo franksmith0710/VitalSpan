@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Outlet, useMatch } from "react-router";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/context/theme-context";
@@ -19,7 +20,7 @@ function AdminLayoutContent() {
   const sessionUser = authUser
     ? sessionUserFromAuth(authUser.username, authUser.roles)
     : sessionUserFromAuth("用户", ["viewer"]);
-  const navSections = resolveNavGroups(sessionUser);
+  const navSections = useMemo(() => resolveNavGroups(sessionUser), [sessionUser]);
   const isFillHeightRoute = Boolean(useMatch("/admin/charts/explore"));
 
   return (

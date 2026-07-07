@@ -265,6 +265,20 @@ describe("AppRoutes smoke", () => {
     expect(await screen.findByRole("heading", { name: "连接器类型" })).toBeInTheDocument();
   });
 
+  it("T-RT-GRANTS-01: /admin/system/grants route renders 资源授权 heading", async () => {
+    setDesktopViewport();
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path.startsWith("/api/v1/roles")) return { items: [], total: 0 };
+      if (path.startsWith("/api/v1/resource-grants")) return { items: [] };
+      return {};
+    });
+    renderRoutes(["/admin/system/grants"]);
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "资源授权" }),
+    ).toBeInTheDocument();
+  });
+
   it("M1 nav links have valid non-empty hrefs (T-RT-DL-01)", () => {
     setDesktopViewport();
     renderRoutes(["/admin"]);

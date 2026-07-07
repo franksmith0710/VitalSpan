@@ -371,4 +371,56 @@ describe("AdminLayout smoke", () => {
     expect(screen.queryByRole("heading", { name: "数据" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "分析" })).toBeInTheDocument();
   });
+
+  it("T-FE-SMFB-01: admin sidebar 系统 group has 资源授权 link", () => {
+    setDesktopViewport(1400);
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole("link", { name: "资源授权" });
+    expect(link).toHaveAttribute("href", "/admin/system/grants");
+  });
+
+  it("T-FE-SMFB-02: viewer sidebar has no 资源授权 text", () => {
+    mockUseAuth.mockReturnValueOnce({
+      user: { id: "2", username: "viewer", roles: ["viewer"] },
+      isLoading: false,
+      isAuthenticated: true,
+      logout: vi.fn(),
+      refresh: vi.fn(async () => {}),
+    } as unknown as ReturnType<typeof mockUseAuth>);
+    setDesktopViewport(1400);
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByText("资源授权")).not.toBeInTheDocument();
+  });
+
+  it("T-FE-SMFB-03: admin still has 报表 subItems (no regression T-FE-SMFA-01)", async () => {
+    setDesktopViewport(1400);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole("button", { name: "报表" }));
+    expect(screen.getByRole("link", { name: "预制报表" })).toBeInTheDocument();
+  });
 });

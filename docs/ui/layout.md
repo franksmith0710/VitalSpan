@@ -140,7 +140,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
     ├── /system/users                # AUTH
     ├── /system/orgs                 # AUTH
     ├── /system/rls                  # 行级权限 · form-composition
-    └── /system/audit                # 审计日志 · table-list
+    ├── /system/audit                # 审计日志 · table-list
+    └── /system/grants               # 资源授权 · table-list + dialog form
 ```
 
 ### 侧栏导航分组（RBAC 可见）
@@ -153,7 +154,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 主题与实体 | 实体总览、主题分析 | 二期权限点 | M7 | admin/analyst |
 | 治理 | 接口目录（M1）、治理工单（M13·预览）、发布流水线（M13·预览） | 治理权限 | M1/M13 | admin |
 | 语义层 | 元数据（M13·预览）、Dataset（M13·预览） | 四期 | M13 | admin |
-| 系统 | 角色/用户/组织/行级权限/审计日志 | `system:*` | M1 | admin |
+| 系统 | 角色/用户/组织/行级权限/审计日志/资源授权 | `system:*` | M1 | admin |
 
 > **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生函数：`fe/src/lib/resolve-nav.ts`。
 > 三档角色（admin / analyst / viewer）侧栏由 `resolveNavGroups(user)` 从 manifest 派生，不再维护三份平行 nav 文件。

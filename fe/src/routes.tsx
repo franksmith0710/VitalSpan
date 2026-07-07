@@ -29,6 +29,7 @@ import { EmbedSdkDemoPage } from "@/pages/embed/EmbedSdkDemoPage";
 import { OrgTreePage } from "@/pages/admin/system/orgs/OrgTreePage";
 import { RlsAdminPage } from "@/pages/admin/system/rls/RlsAdminPage";
 import { AuditLogPage } from "@/pages/admin/system/audit/AuditLogPage";
+import { GrantsPage } from "@/pages/admin/system/grants/GrantsPage";
 import { GovernanceCatalogPage } from "@/pages/admin/governance/GovernanceCatalogPage";
 import { GovernanceWorkflowPage } from "@/pages/admin/governance/GovernanceWorkflowPage";
 import { GovernancePublishPage } from "@/pages/admin/governance/GovernancePublishPage";
@@ -82,6 +83,14 @@ export function AppRoutes() {
           <Route path="system/orgs" element={<RequirePlatformAdmin><OrgTreePage /></RequirePlatformAdmin>} />
           <Route path="system/rls" element={<RequirePlatformAdmin><RlsAdminPage /></RequirePlatformAdmin>} />
           <Route path="system/audit" element={<RequirePlatformAdmin><AuditLogPage /></RequirePlatformAdmin>} />
+          <Route
+            path="system/grants"
+            element={
+              <RequirePlatformAdmin>
+                <GrantsPage />
+              </RequirePlatformAdmin>
+            }
+          />
         </Route>
       </Route>
       <Route path="/embed" element={<EmbedLayout />}>
