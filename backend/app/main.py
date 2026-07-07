@@ -10,6 +10,7 @@ from app.core.logging import configure_logging
 from app.core.middleware import TraceIdMiddleware
 from app.core.middleware.https_audit_guard import HttpsAuditGuardMiddleware
 from app.ingestion.scheduler import get_scheduler, refresh_all_jobs
+from app.reports.scheduler.jobs import get_report_scheduler, refresh_schedule_jobs
 from app.openapi.extensions import customize_openapi
 
 settings = get_settings()
@@ -21,7 +22,11 @@ async def lifespan(_app: FastAPI):
     scheduler = get_scheduler()
     refresh_all_jobs()
     scheduler.start()
+    refresh_schedule_jobs()
+    report_scheduler = get_report_scheduler()
+    report_scheduler.start()
     yield
+    report_scheduler.shutdown(wait=False)
     scheduler.shutdown(wait=False)
 
 
