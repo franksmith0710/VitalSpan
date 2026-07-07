@@ -6,8 +6,8 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-07-round-target-saturated.md |
 | design |  |
 | plan |  |
 | branch |  |
@@ -68,6 +68,7 @@
 
 ## 演化历史（最近）
 
+- G2 选题（cron 2026-07-07 ~23:32 UTC）：**饱和熔断 BLOCKED** — plan §M-FINAL 全 `[x]` 已收官（无未完成节）；hub v1.2.108 Top5 加权总分均 ≥90（最低 CONN-027 90.1）；待办池空 STUCK 表空；**禁止**派 bounded-explorer；round-target=docs/superpowers/evolution/2026-07-07-round-target-saturated.md；phase idle→G2_DONE；建议人工 `create-evolution-plan` / `create-evolution-goal`
 - G1 bootstrap（cron 2026-07-07 ~23:31 UTC）：G0 PASS d6ad65c 无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.108 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读 M-FINAL 全 `[x]` 已收官（饱和态；无未完成节）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-027(90.1)/API-002(90.2)/API-005(90.2)；STUCK 表空；待办池空；phase idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~23:30 UTC）：确认 PR #240 已 squash merge dev-auto（d31b66e）；无 Open PR；工作区干净；M-FINAL F-G 收官（CONN-027 Redshift + API-001/VIZ-003/004/008 companion）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 收尾（cron 2026-07-07 ~22:24 UTC）：PRD 重评 CONN-027、API-001、VIZ-003/004/008；hub v1.2.108；CONN-027: 85.4→90.1（未实现→已实现）；API-001: 90.0→90.6；VIZ-003/004/008: 90.1→91.4；五 ID ≥90 STUCK 空；plan F-G CONN-027 勾选（完成于 2026-07-07）；M-FINAL 全 PRD 已实现（124 已实现 + 5 部分实现 + 0 未实现）；phase P4_DONE→P5_DOCS_READY；pr=240；待 squash merge dev-auto
