@@ -508,11 +508,11 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 **SRS**：FR-2.0-EXT 三期、FR-2.1、NFR-07 · **验收**：§9.1 三期
 
-- [ ] CONN-009: StarRocks 连接器
-- [ ] CONN-010: Trino/Presto 连接器
-- [ ] CONN-011: InfluxDB 连接器
-- [ ] CONN-012: TDengine 连接器
-- [ ] CONN-013: TimescaleDB 连接器
+- [x] CONN-009: StarRocks 连接器（完成于 2026-07-07）
+- [x] CONN-010: Trino/Presto 连接器（完成于 2026-07-07）
+- [x] CONN-011: InfluxDB 连接器（完成于 2026-07-07）
+- [x] CONN-012: TDengine 连接器（完成于 2026-07-07）
+- [x] CONN-013: TimescaleDB 连接器（完成于 2026-07-07）
 - [ ] CONN-014: MongoDB 连接器
 - [ ] CONN-015: Elasticsearch 连接器
 - [ ] CONN-016: OpenSearch 连接器

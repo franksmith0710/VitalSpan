@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-m11-conn-ext.md |
 | design | docs/superpowers/specs/2026-07-07-m11-conn-ext-batch1-design.md |
 | plan | docs/superpowers/plans/2026-07-07-m11-conn-ext-batch1.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r235 收尾：PRD 重评 CONN-009~013（M11 三期原生连接器扩展批次 1）；hub 总分 90.0–91.2→91.9–92.6；plan M11 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；PR #219 squash merge dev-auto
 - P4 r235 验证（cron 2026-07-07 ~00:48 UTC）：独立全量 pytest 1988 passed/25 skipped exit 0；UI N/A（backend only）；phase P3_DONE→P4_DONE；branch=feat/m11-conn-ext-batch1-r235；base_branch=dev-auto；pr=219；待 P5 evolution-pr-finisher-github
 - P3 r235 实现（cron 2026-07-07 ~00:25 UTC）：8 Task 完成（m11_compose_env + CONN-009~013 五连接器增量 + presto 别名 + catalog 元数据 + Flux/SQL 探测 + docs + 回归闸门）；ui_design_skill=none；pytest 1988 passed/25 skipped + ruff clean；phase P2_DONE→P3_DONE；branch=feat/m11-conn-ext-batch1-r235；base_branch=dev-auto；待 P4 evolution-verifier
 - P5 r234 收尾：PRD 重评 RPT-003/004/006 + VIEW-002 + NFR-002（M10 报表模板与角色默认视图收官）；hub 总分 90.1–91.3→92.0–92.6；plan M10 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
