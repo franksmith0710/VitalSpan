@@ -59,3 +59,9 @@ class OceanbaseConnector:
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
         cols = self._inner.list_columns(connection, schema, table)
         return cols[:OCEANBASE_MAX_COLUMNS]
+
+    def probe_readonly_sql(self, connection: Any) -> bool:
+        """Execute minimal read-only probe; return True on success."""
+        cursor = connection.cursor()
+        cursor.execute("SELECT 1")
+        return True
