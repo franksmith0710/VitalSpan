@@ -38,7 +38,7 @@
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [VIEW-003] 用户视图覆盖 FR-VIEW-4
 
-- **状态**：已实现（M-FE-3 FE companion）
+- **状态**：已实现（M12 r238）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：三期
 - **描述**：用户视图覆盖 FR-VIEW-4（SRS 追溯项）。
@@ -49,7 +49,9 @@
   - [x] M-FE-3 FE 默认视图：登录后按角色 `default-views` 重定向（`defaultViewResolve.ts` + `LoginPage`/`AdminHomePage`；`defaultViewResolve.test.ts`）
   - [x] 用户覆盖优先于角色默认（r207：`fetchUserOverridePath` + `resolveDefaultDashboardPath`；vitest 边缘 + Playwright E2E 6/6）
   - [x] Playwright E2E：登录 → 默认 Dashboard（role default / user override / mobile viewport；`fe/e2e/login-default-dashboard.spec.ts`）
+  - [x] 用户视图 PUT/DELETE CRUD（r238：`PUT/DELETE /api/v1/users/me/views/{id}` + `store.py` helpers）
+  - [x] 个人设置 UI（r238：`UserViewsSection` + `AccountSettingsPage` 集成；`UserViewsSection.smoke.test.tsx`）
   - [ ] 完整 M7 RLS/ACL 端到端（M7 远期；无 org 绑定与发布后 RLS 联动）
-- **代码锚点**：`backend/app/views/user_override.py` · `backend/app/views/probe.py` · `backend/app/views/store.py` · `backend/app/api/v1/views.py` · `fe/src/lib/defaultViewResolve.ts` · `fe/e2e/login-default-dashboard.spec.ts` · `tests/test_viz_view_design_cat_r63.py` T-VIEW-R63-003-01~06 · `fe/src/lib/defaultViewResolve.test.ts`
-- **演化建议**：M-FE-3 companion 已闭合登录重定向与用户覆盖优先；后续补 M7 全链路 RLS、DB 持久化与 fe 个人视图管理 UI
-- **里程碑对齐**：M-FE-3 · 已完成 · 2026-07-06
+- **代码锚点**：`backend/app/views/user_override.py` · `backend/app/views/probe.py` · `backend/app/views/store.py` · `backend/app/api/v1/views.py` · `fe/src/pages/admin/account/components/UserViewsSection.tsx` · `fe/src/lib/defaultViewResolve.ts` · `fe/e2e/login-default-dashboard.spec.ts` · `tests/test_m12_batch1_r238.py` T-VIEW-R238-* · `tests/test_viz_view_design_cat_r63.py` T-VIEW-R63-003-01~06 · `fe/src/lib/defaultViewResolve.test.ts`
+- **演化建议**：r238 闭合 FR-VIEW-4 用户级覆盖 CRUD 与个人设置 UI，与 M-FE-3 默认视图链合并验收；M7 全链路 RLS 与 DB 持久化留 companion
+- **里程碑对齐**：M12 · 已完成 · 2026-07-07

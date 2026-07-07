@@ -74,15 +74,20 @@
 - **演化建议**：r51 companion 闭合 registry 探测预算与 GBase 插件登记路径；后续补扩展演练 PR 与第三方插件样例
 ### [NFR-006] NFR-05 浏览器与消息推送
 
-- **状态**：部分实现
+- **状态**：已实现（M12 r238）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：三期
 - **描述**：NFR-05 浏览器与消息推送（SRS 追溯项）。
 - **验收标准**：
   - [x] 主流浏览器兼容矩阵（`browser_matrix` ≥4 浏览器 + probe budget，r51 companion）
   - [x] 企微/钉钉推送配置契约 + 降级路径（`push_config` + `push_channels` mock/降级，r46 L1 + r51 companion）
-- **代码锚点**：`backend/app/core/nfr/push_config.py` · `backend/app/core/nfr/browser_matrix.py` · `backend/app/core/nfr/push_channels.py` · `backend/app/api/v1/nfr.py` · `tests/test_nfr_gov_conn_r51.py`
-- **演化建议**：r51 companion 闭合浏览器矩阵探测与推送通道降级链；后续补真实推送 SDK 全量对接与 Admin UI
+  - [x] 消息推送 API 骨架（r238：`POST/GET /api/v1/nfr/notifications` + 状态流转 + 404）
+  - [x] 浏览器兼容矩阵文档（r238：`docs/nfr/browser-compatibility.md`）
+  - [x] FE browserCompat smoke（r238：`browserCompat.ts` + `browserCompat.test.ts`）
+  - [ ] 真实 SMS/邮件供应商集成（companion）
+- **代码锚点**：`backend/app/core/nfr/push_config.py` · `backend/app/core/nfr/browser_matrix.py` · `backend/app/core/nfr/push_channels.py` · `backend/app/core/nfr/notifications.py` · `docs/nfr/browser-compatibility.md` · `fe/src/lib/browserCompat.ts` · `backend/app/api/v1/nfr.py` · `tests/test_m12_batch1_r238.py` T-NFR-R238-* · `tests/test_nfr_gov_conn_r51.py`
+- **演化建议**：r238 闭合 notifications API、浏览器兼容文档与 FE smoke；真实 SMS/邮件供应商与 Admin UI 留 companion
+- **里程碑对齐**：M12 · 已完成 · 2026-07-07
 ### [NFR-007] NFR-06 信创国产化
 
 - **状态**：部分实现

@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-m12-batch1.md |
 | design | docs/superpowers/specs/2026-07-07-m12-batch1-design.md |
 | plan | docs/superpowers/plans/2026-07-07-m12-batch1-rpt-view-nfr-cat.md |

@@ -90,14 +90,15 @@
 - **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CAT-007] CAT-07 组织行为审计类
 
-- **状态**：部分实现（companion r64）
+- **状态**：已实现（M12 r238）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：三期
 - **描述**：CAT-07 组织行为审计类（SRS 追溯项）。
 - **验收标准**：
   - [x] workno behavior 模板（r60 L1：`GET /api/v1/workno/behavior` + mock behaviors + `CAT07_*` 错误域 + limit/offset 分页）
   - [x] companion enterprise/viewer scope ACL + perf probe（r64：`set_user_workno_scope` + `CAT07_FORBIDDEN` 403；viewer 跨 scope 403；`probe_workno_behavior_budget_ms` ≤50ms）
+  - [x] m12-probe handler（r238：`GET /api/v1/catalog/m12-probe` + CAT-07 taxonomy + elapsed budget）
   - [ ] 审计日志联动（无真实 audit store 写入与跨系统 trace 链）
-- **代码锚点**：`backend/app/governance/catalog/cat07/` · `backend/app/api/v1/workno.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-007-01~07 · `tests/test_rpt_view_cat_gov_r60.py` T-CAT-R60-007-01~07
-- **演化建议**：r64 companion 闭合 workno scope ACL、enterprise 角色边界与 behavior perf probe；后续补真实审计日志联动与 fe 行为审计 UI
-- **里程碑对齐**：
+- **代码锚点**：`backend/app/governance/catalog/cat07/` · `backend/app/governance/catalog/m12_probe.py` · `backend/app/api/v1/workno.py` · `tests/test_m12_batch1_r238.py` T-CAT-R238-* · `tests/test_nfr_cat_r64.py` T-CAT-R64-007-01~07 · `tests/test_rpt_view_cat_gov_r60.py` T-CAT-R60-007-01~07
+- **演化建议**：r238 闭合 m12-probe handler 与 M12 集成门控；真实审计日志联动与 fe 行为审计 UI 留 companion
+- **里程碑对齐**：M12 · 已完成 · 2026-07-07
