@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P4_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-ff-fg-batch1.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-ff-fg-batch1-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-ff-fg-batch1.md |
-| branch |  |
+| branch | feat/mfinal-ff-fg-batch1-r249 |
 | base_branch | dev-auto |
 | prd_ids | NFR-008,CONN-023,CONN-024,CONN-025,CONN-026 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
-| last_ui_verified_command |  |
-| last_ui_verified_exit_code |  |
+| last_verified_command | cd backend && ruff check . && pytest -q |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm test:smoke && pnpm check:design && pnpm run build |
+| last_ui_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T19:12:00Z |
 | skill_rule_index_source_count | 26 |
@@ -70,6 +70,9 @@
 
 ## 演化历史（最近）
 
+- P4 重验（cron 2026-07-07 ~19:24 UTC）：P3 修复 ca2933f catalog count 24→29；独立 ruff exit 0；全量 pytest 2284 passed/32 skipped exit 0；fe smoke 21/21 + check:design 201 files + build exit 0；UI design_drift PASS；screenshots 未运行（headless vitest mock）；phase P4_BLOCKED→P4_DONE；branch=feat/mfinal-ff-fg-batch1-r249；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
+- P4 验证（cron 2026-07-07 ~19:20 UTC）：独立 ruff exit 0；全量 pytest（backend cwd）2282 passed/2 failed/32 skipped exit 1（r40/r41 export_type_catalog_count 期望 24 实际 29）；r249 30 passed exit 0；r242/r248 回归 58 passed exit 0；fe smoke 21/21 + check:design 201 files + build exit 0；UI design_drift PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE→P4_BLOCKED；branch=feat/mfinal-ff-fg-batch1-r249；base_branch=dev-auto；待 P3 修复 r40/r41 catalog count 断言
+- P3 实现（cron 2026-07-07 ~19:17 UTC）：F-F/F-G 批次 1 五 ID 全部 7 Tasks 完成；NFR-008 compose 禁入 + markdown 部署报告；CONN-023~026 四型方言 + guard api/file；30/30 r249 pytest + r242/r248 回归 58 passed；fe vitest 10/10 smoke + check:design 201 files + build exit 0；ui_design_skill=b-design-system-tailadmin-radix；branch=feat/mfinal-ff-fg-batch1-r249；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 计划（cron 2026-07-07 ~19:12 UTC）：F-F/F-G 批次 1 五 ID 计划完成（NFR-008 compose 禁入 + markdown 部署报告 + ops 文档；CONN-023 REST API；CONN-024 Excel/CSV；CONN-025 Db2；CONN-026 Impala + guard api/file；≥30 pytest r249 + FE hints/smoke + docs）；7 Tasks / 18 文件操作（6 新建 + 12 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-ff-fg-batch1.md；执行模式 subagent-driven-development option 1；ui_design_skill=b-design-system-tailadmin-radix（FE hints+smoke only）；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - G2 选题（cron 2026-07-07 ~19:05 UTC）：饱和熔断已跳过（plan §M-FINAL · F-F 含 NFR-008 `[ ]` + F-G 五型 `[ ]`；Top5 薄弱项最低分 CONN-026/027 85.4 <90）；入选 F-F/F-G 批次 1 五 ID（NFR-008 F-F 收官 + CONN-023~026 缺口连接器首批）；hub 最低分入选 CONN-026 85.4；CONN-027 留 F-G 批次 2；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-ff-fg-batch1.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G0 闸门（cron 2026-07-07 ~19:00 UTC）：确认 PR #235 已 squash merge dev-auto（dd697f4）+ PR #236 docs 补 round-target/plan；无 Open PR；工作区干净；M-FINAL F-E/F-F 批次 4 收官（GOV-007~008、NFR-003/005/007）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
