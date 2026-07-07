@@ -4,8 +4,8 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.1.0
-last_updated: 2026-07-03
+version: 1.2.0
+last_updated: 2026-07-07
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
 layout_pattern_ref: references/layout-patterns/app-shell.md
@@ -145,16 +145,18 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 ### 侧栏导航分组（RBAC 可见）
 
-| 分组 | 图标区 | 典型权限 | 一期可用 |
-|------|--------|----------|----------|
-| 数据 | 数据源、连接器 | `datasource:*` | ✅ 数据源 |
-| 分析 | Dashboard、预制报表、报表模板 | `dashboard:read` / `dashboard:edit` / `report:read` | ✅ Dashboard · ✅ 预制报表（r233）· ✅ 报表模板（r234） |
-| 报表 | 列表、模板、调度 | `report:read` / `report:edit` | 二期起 |
-| 主题与实体 | 主题分析、实体总览 | 二期权限点 | ✅ 主题分析 · ✅ 实体总览（r233） |
-| 治理 | 分类、工单、发布 | 治理权限 | PoC 起 / 四期完整 |
-| 语义层 | 术语、Dataset | 四期 | 四期 |
-| 我的 | 视图覆盖 | `view:override` | 三期 |
-| 系统 | 角色、用户、权限、审计 | `system:*` | ✅ 角色/权限地基 |
+| 分组 | 图标区 | 典型权限 | 里程碑 | 角色 |
+|------|--------|----------|--------|------|
+| 数据 | 数据连接（subItems: 连接管理/连接器类型）、数据接入 | `datasource:*` | M1 | admin |
+| 分析 | Dashboard、图表探索（M11）、查询设计器（M13·预览） | `dashboard:read/edit` | M1/M11/M13 | admin/analyst/viewer |
+| 报表 | 报表（subItems: 预制报表/报表模板/报表调度） | `report:read/edit` | M1/M7/M11 | admin/analyst/viewer |
+| 主题与实体 | 实体总览、主题分析 | 二期权限点 | M7 | admin/analyst |
+| 治理 | 接口目录（M1）、治理工单（M13·预览）、发布流水线（M13·预览） | 治理权限 | M1/M13 | admin |
+| 语义层 | 元数据（M13·预览）、Dataset（M13·预览） | 四期 | M13 | admin |
+| 系统 | 角色/用户/组织/行级权限/审计日志 | `system:*` | M1 | admin |
+
+> **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生函数：`fe/src/lib/resolve-nav.ts`。
+> 三档角色（admin / analyst / viewer）侧栏由 `resolveNavGroups(user)` 从 manifest 派生，不再维护三份平行 nav 文件。
 
 ---
 
@@ -194,12 +196,17 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 里程碑 | 单应用新增导航 / 能力 |
 |--------|----------------------|
-| M1–M6 一期 | 数据、Dashboard（edit + view）、系统/权限 |
-| M7–M10 二期 | 报表、主题、实体；角色默认视图（FR-VIEW-3） |
-| M11–M12 三期 | 图表探索、调度、我的视图（FR-VIEW-4）、Embed SDK |
+| M1–M6 一期 | 数据、Dashboard（edit + view）、系统/权限、连接器 |
+| M7–M10 二期 | 报表模板、报表调度、主题、实体；角色默认视图（FR-VIEW-3） |
+| M11–M12 三期 | 图表探索、报表调度、我的视图（FR-VIEW-4）、Embed SDK |
 | M13 四期 | 语义层、治理工单/发布、设计器、已发布查询服务入口（可选） |
 
 未到期能力：**侧栏不展示**或标「即将推出」；禁止死链。
+
+> **里程碑可见性矩阵（M-FINAL · F-A）**：
+> - `ACTIVE_MILESTONES = {"M1", "M7", "M11"}`；M13 项在 viewer/analyst 侧栏**隐藏**，admin 侧栏标「预览」badge
+> - 单一真理源：`fe/src/config/nav-manifest.tsx`；派生函数：`resolveNavGroups(user, capabilities?)`
+> - `capabilities` 参数为 F-B ability-nav 扩展预留（默认使用 `ACTIVE_MILESTONES`）
 
 ---
 
