@@ -6,17 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fa.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-fa-nav-manifest-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-fa-nav-manifest.md |
-| branch | feat/mfinal-fa-nav-manifest-r240 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | BOOT-002,DS-007 |
-| pr_number | 225 |
-| last_verified_command | pnpm run check:design && pnpm run test && pnpm run build |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | pnpm run check:design (180 files); pnpm run test (vitest 196/196) |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T12:35:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G0 闸门（cron 2026-07-07 ~13:30 UTC）：PR #225 已 squash merge dev-auto（0da0c4d）feat/mfinal-fa-nav-manifest-r240→dev-auto；无 Open PR；工作区干净；M-FINAL F-A 收官（BOOT-002×2/DS-007）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P3 r240 实现（cron 2026-07-07 ~12:47 UTC）：7 Task 全量完成（Task1 nav-manifest.tsx 单一真理源；Task2 NavItem.preview+NavBadge preview variant+index.css preview badge tokens；Task3 TDD 重写 resolve-nav.ts manifest 派生+ACTIVE_MILESTONES+里程碑过滤 resolve-nav.test.ts 10/10；Task4 删除 admin/analyst/user-nav 三拷贝；Task5 AdminLayout.smoke T-FE-SMFA-01~04 16/16；Task6 routes.smoke T-FE-08 改名+T-RT-DL-01 死链 20/20；Task7 layout.md §3/§6 同步 v1.2.0）；每任务 spec+quality 自审通过；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS(180 files)；fe vitest 196/196 + build(tsc -b + vite) exit 0（P3 修复 tsc -b 严格错误：未用变量 + viewer mock role 字面量类型）；screenshots 未运行（headless 云环境无浏览器/显示；UI Acceptance 由 RTL smoke 覆盖：Collapsible 展开+subItem 链接+预览 badge+viewer 角色过滤）；backend 未触及（无 pytest）；孤儿分支 feat/mfinal-fa-nav-manifest-r239 未复用（实现异于当前 plan：含超范围 RequireNavAccess 路由守卫）；branch=feat/mfinal-fa-nav-manifest-r240（含 P1/P2 doc 产出，rebase 于 cloud branch）；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P5 r240 收尾（cron 2026-07-07 ~13:00 UTC）：PR #225 创建 feat/mfinal-fa-nav-manifest-r240→dev-auto；重评 BOOT-002（×2 sub-task）/DS-007；hub 总分 91.9–94.1→93.8–95.3；plan M-FINAL F-A 三 ID 勾选（BOOT-002×2/DS-007 完成于 2026-07-07）；F-A 收官；phase P4_DONE→P5_DOCS_READY；待 squash merge
 - P2 计划（cron 2026-07-07 ~12:35 UTC）：F-A 全量 3 项计划完成（BOOT-002 nav-manifest+resolveNavGroups+里程碑可见性矩阵、DS-007 数据连接 subItems）；7 Tasks / 11 文件操作（3 删除+1 新建+7 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fa-nav-manifest.md；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
