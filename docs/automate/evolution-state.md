@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md |
-| design |  |
+| design | docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
