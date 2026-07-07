@@ -10,6 +10,12 @@ from app.datasources.dialects.postgres import PostgresConnector
 GAUSSDB_MAX_COLUMNS = 500
 
 
+def _redact_secrets(message: str, password: str | None) -> str:
+    if password and password in message:
+        return message.replace(password, "***")
+    return message
+
+
 class GaussdbConnector:
     type = "gaussdb"
     category = "relational"
@@ -32,6 +38,7 @@ class GaussdbConnector:
                 conn.close()
         except Exception as exc:
             code, detail = map_gaussdb_error(exc)
+            detail = _redact_secrets(detail, kwargs.get("password"))
             latency_ms = int((time.perf_counter() - started) * 1000)
             return TestConnectionResult(
                 ok=False, message=f"[{code}] {detail}", latency_ms=latency_ms, code=code,
@@ -51,3 +58,8 @@ class GaussdbConnector:
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
         columns = self._delegate.list_columns(connection, schema, table)
         return columns[:GAUSSDB_MAX_COLUMNS] if len(columns) > GAUSSDB_MAX_COLUMNS else columns
+
+    def probe_readonly_sql(self, connection: Any) -> bool:
+        """Execute minimal read-only probe; return True on success."""
+        connection.execute("SELECT 1")
+        return True
