@@ -6,11 +6,11 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fd-meta.md |
+| branch | feat/mfinal-fd-meta-r244 |
 | base_branch | dev-auto |
 | prd_ids | META-001,META-002,META-003,META-004 |
 | pr_number |  |
@@ -68,6 +68,8 @@
 
 ## 演化历史（最近）
 
+- P2 计划（cron 2026-07-07 ~15:50 UTC）：F-D 批次 2 收官 META-001~004 计划完成（共享写 ACL + 术语/主题/维度 probe + migration 0019 theme FK + Dataset PUT/DELETE/bind + QUERY 四步集成测 + metadata-panels CRUD UI + Dataset 编辑删除）；8 Tasks / 19 文件操作（4 新建 + 15 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fd-meta.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
+- P1 设计（cron 2026-07-07 ~15:37 UTC）：F-D 批次 2 收官 META-001~004（术语/主题/维度写 ACL + 主题树/维度 Admin CRUD UI + Dataset PUT/DELETE/bind-query-config + QUERY 四步集成测）；18 文件框定；ui_design_skill=b-design-system-tailadmin-radix；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md；base_branch=dev-auto；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~15:45 UTC）：饱和熔断已跳过（plan §M-FINAL · F-D 含 4 项 `[ ]` META-001~004；Top5 薄弱项最低分 CONN-026/027 85.4 <90）；入选 F-D 批次 2 全量四 ID（META-001~004 术语/主题树/维度/Dataset CRUD）；不足 5 项因 F-D 批次 2 仅余四行、待办池空；hub 最低分入选 META-001 90.0；F-G CONN-023~027 留专批；STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~15:40 UTC）：G0 PASS PR #229 已 squash merge dev-auto（377aed8）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.101 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-D**（F-C 六型信创已收官；QUERY-007~009 已勾选；META-001~004 等 4 项 `[ ]` 待批次 2；F-E~F-G 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-C2+F-D kickoff（CONN-022/QUERY-007~009）r243 PR #229 完成；phase P5_DOCS_READY→idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~15:35 UTC）：遗留 PR #229 Draft 转正；rebase dev-auto 解冲突；补齐 r243 G1/G2 历史与 round-target；PRD/plan 已于 #228 同步；phase P5_DOCS_READY pr=229；待 squash merge dev-auto

@@ -251,12 +251,12 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/metadata/glossary` | 术语字典 CRUD/list（`TERM_MAX_TEXT_LENGTH=4000`；空白 name → 422 `META_TERM_INVALID_NAME`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
-| GET/PUT/DELETE | `/api/v1/metadata/glossary/{term_id}` | 术语详情/更新/删除（非法 status → 422 `META_TERM_INVALID_STATUS`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
-| GET/POST | `/api/v1/metadata/themes` | 业务主题树 CRUD/list（`?parent_id=null` 根过滤；深度 >8 → 422 `META_THEME_MAX_DEPTH`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/POST | `/api/v1/metadata/glossary` | 术语字典 CRUD/list；写操作 admin/analyst only（viewer/editor → 403 `META_TERM_FORBIDDEN`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/PUT/DELETE | `/api/v1/metadata/glossary/{term_id}` | 术语详情/更新/删除（写 ACL；非法 status → 422 `META_TERM_INVALID_STATUS`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/POST | `/api/v1/metadata/themes` | 业务主题树 CRUD/list；写 ACL（403 `META_THEME_FORBIDDEN`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/themes/{node_id}` | 主题节点详情/更新/删除 | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | POST | `/api/v1/metadata/themes/{node_id}/move` | 主题节点移动（环检测；超深 → 422 `META_THEME_MAX_DEPTH`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
-| GET/POST | `/api/v1/metadata/dimensions` | 维度字典 list/create（`?code_prefix=`；重复 code → 409 `META_DIM_CODE_CONFLICT`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/POST | `/api/v1/metadata/dimensions` | 维度字典 list/create；可选 `themeNodeId` FK；写 ACL（403 `META_DIM_FORBIDDEN`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/dimensions/{dimension_id}` | 维度详情/更新/删除（级联 values） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/dimensions/{dimension_id}/values` | 枚举值 list/批量注册（重复 value code → 409 `META_DIM_VALUE_CODE_CONFLICT`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/entity-types` | 实体类型 schema list/create（`META_ENTITY_TYPE_*`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
@@ -271,7 +271,10 @@ redoc: /redoc
 | GET | `/api/v1/metadata/physical-tables?entityTypeCode=` | M8 META-005 按类型过滤物理表列表 | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | DELETE | `/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}` | 删除单条枚举值 | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/datasets` | Dataset list/create（内存 store L1；`META_DATASET_*`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
-| GET | `/api/v1/datasets/{dataset_id}` | Dataset 详情 | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
+| GET | `/api/v1/datasets/{dataset_id}` | Dataset 详情（含 `boundConfigId`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
+| PUT | `/api/v1/datasets/{dataset_id}` | Dataset 全量更新（写 ACL；403 `META_DATASET_FORBIDDEN`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
+| DELETE | `/api/v1/datasets/{dataset_id}` | Dataset 删除（204） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
+| POST | `/api/v1/datasets/{dataset_id}/bind-query-config` | body `{configId}` 绑定 `dataset_query` 配置（非 dataset_query → 422 `META_DATASET_CONFIG_TYPE_INVALID`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | POST | `/api/v1/datasets/validate` | Dataset 草稿校验（不落库） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | GET/POST | `/api/v1/entities/types` | 实体类型 schema | 内部 | 二期 | META-006 | 规划 | `backend/app/api/v1/metadata/entities.py` |
 | POST | `/api/v1/datasets/migrate-binding` | 直连→datasetId 迁移 | 内部 | 四期 | QUERY-009 | 规划 | `backend/app/api/v1/datasets.py` |

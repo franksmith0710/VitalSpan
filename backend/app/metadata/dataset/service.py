@@ -12,7 +12,6 @@ from app.metadata.dataset.errors import (
     DatasetError,
 )
 from app.metadata.dataset.schemas import (
-    DatasetBindConfigIn,
     DatasetItemIn,
     DatasetItemOut,
     DatasetListResponse,
