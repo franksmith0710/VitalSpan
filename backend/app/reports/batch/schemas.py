@@ -30,8 +30,17 @@ class BatchCreateReportsIn(BaseModel):
     items: list[BatchReportItem]
 
 
+class BatchFailureItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    index: int
+    code: str
+    message: str
+
+
 class BatchCreateReportsOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     batch_id: uuid.UUID = Field(alias="batchId")
     created_node_ids: list[uuid.UUID] = Field(alias="createdNodeIds")
     idempotent_replay: bool = Field(default=False, alias="idempotentReplay")
+    failures: list[BatchFailureItem] = Field(default_factory=list)
+    rolled_back_count: int = Field(default=0, alias="rolledBackCount")

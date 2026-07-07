@@ -60,6 +60,16 @@ def batch_create(payload: BatchCreateReportsIn, idempotency_key: str | None) -> 
         raise ReportBatchError("RPT_BATCH_EMPTY", "Batch items must not be empty", 422)
     if len(payload.items) > _ITEM_LIMIT:
         raise ReportBatchError("RPT_BATCH_ITEM_LIMIT", f"Batch cannot exceed {_ITEM_LIMIT} items", 422)
+    names = [item.name for item in payload.items]
+    dup_indexes = [i for i, n in enumerate(names) if names.count(n) > 1]
+    if dup_indexes:
+        unique_dup = sorted(set(dup_indexes))
+        raise ReportBatchError(
+            "RPT_BATCH_DUPLICATE_NAME",
+            "Duplicate names in batch payload",
+            422,
+            fields={"indexes": unique_dup},
+        )
     fingerprint = _body_fingerprint(payload)
     if idempotency_key:
         cached = _idempotency_store.get(idempotency_key)
@@ -93,11 +103,17 @@ def batch_create(payload: BatchCreateReportsIn, idempotency_key: str | None) -> 
                         "failedIndex": idx,
                         "failedItemName": item.name,
                         "rolledBackCount": rolled_back,
+                        "failures": [{"index": idx, "code": exc.code, "message": exc.message}],
                     },
                 ) from exc
     except ReportBatchError:
         raise
-    result = BatchCreateReportsOut(batch_id=batch_id, created_node_ids=created, idempotent_replay=False)
+    result = BatchCreateReportsOut(
+        batch_id=batch_id,
+        created_node_ids=created,
+        idempotent_replay=False,
+        rolled_back_count=0,
+    )
     if idempotency_key:
         _idempotency_store[idempotency_key] = {
             "fingerprint": fingerprint,
