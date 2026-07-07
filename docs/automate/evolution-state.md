@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fb.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fb-rbac-grants-capability-nav-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fb-rbac-grants-capability-nav.md |
+| branch | feat/mfinal-fb-rbac-grants-r241 |
 | base_branch | dev-auto |
 | prd_ids | AUTH-004,BOOT-002 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
+| last_verified_command | cd fe && pnpm run check:design && pnpm vitest run && pnpm run build |
+| last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-07T12:35:00Z |
+| skill_rule_index_generated_at | 2026-07-07T13:45:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P2 计划（cron 2026-07-07 ~13:45 UTC）：F-B 全量 4 子项计划完成（AUTH-004 grants 列表+表单、BOOT-002 capability 过滤+smoke）；8 Tasks / 16 文件操作（4 新建+12 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fb-rbac-grants-capability-nav.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~13:40 UTC）：F-B 全量 4 子项（AUTH-004 grants 列表+表单、BOOT-002 capability 过滤+smoke）；ui_design_skill=b-design-system-tailadmin-radix；范围框定 16 文件；capabilities.ts + manifest capability + GrantsPage + resolveNavGroups options 签名设计完成；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fb-rbac-grants-capability-nav-design.md；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~13:33 UTC）：饱和熔断已跳过（plan §M-FINAL · F-B 含 2 项 `[ ]` AUTH-004/BOOT-002 能力导航；Top5 薄弱项最低分 CONN-027 85.4 <90）；入选 M-FINAL · F-B 全量 2 PRD ID 拆 4 子项（AUTH-004 grants 列表+表单、BOOT-002 capability 过滤+smoke）；不足 5 项因 plan F-B 仅 2 行 companion；hub 最低分入选 AUTH-004 92.1；F-G CONN-023~027 留专批；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fb.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~13:32 UTC）：G0 PASS PR #225 已 merge dev-auto（0da0c4d）+ G0 闸门提交 355a811；无 Open PR；工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.98 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-B**（2 项 `[ ]` AUTH-004/BOOT-002 能力导航；F-A 已收官；F-C~F-G 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-A nav-manifest（BOOT-002×2/DS-007）PR #225 完成；phase idle；待 G2 evolution-picker
