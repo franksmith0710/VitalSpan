@@ -441,6 +441,11 @@ describe("VIZ-003 未知 chartType 降级", () => {
     expect(isKnownChartType("unknown_xyz")).toBe(false);
   });
 
+  it("T-VIZ-R250-003-03: getFallbackChartType('line')→'line'; getFallbackChartType('xyz')→'table'", () => {
+    expect(getFallbackChartType("line")).toBe("line");
+    expect(getFallbackChartType("unknown_xyz")).toBe("table");
+  });
+
   it("T-VIZ-R250-003-02: buildEchartsOption unknown_xyz → series 为空数组（table fallback）", () => {
     const spec: RenderSpec = {
       engine: "echarts",
