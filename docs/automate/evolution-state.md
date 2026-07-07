@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-06-round-target-m10-report-templates.md |
 | design | docs/superpowers/specs/2026-07-06-m10-report-templates-design.md |
 | plan | docs/superpowers/plans/2026-07-06-m10-report-templates-r234.md |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P5 r234 收尾：PRD 重评 RPT-003/004/006 + VIEW-002 + NFR-002（M10 报表模板与角色默认视图收官）；hub 总分 90.1–91.3→92.0–92.6；plan M10 五 ID 勾选；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r234 验证（cron 2026-07-07 ~00:07 UTC）：独立全量 ruff clean + pytest 1967 passed/21 skipped exit 0（含 test_rpt_run_pdf_not_supported PASS）；fe check:design 129 files + vitest 164/164 + design fixture 4/4 + build exit 0；UI design_drift PASS + report-templates smoke 含 vitest；screenshots 未运行（headless vitest mock）；phase P3_DONE→P4_DONE；branch=feat/m10-report-templates-r234；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 r234 resume（cron 2026-07-07 ~00:05 UTC）：修复 reports engine `run_template` 错误码优先级（export-kind 匹配后先校验 pdf/unsupported format，再 `_assert_extension_when_kind`）；触及 1 文件 backend/app/reports/engine/service.py；ruff clean + pytest r60 pdf + r234 19/19 + r66 pdf 回归 exit 0；phase P4_BLOCKED→P3_DONE；branch=feat/m10-report-templates-r234；base_branch=dev-auto；待 P4 evolution-verifier
 - P4 r234 验证（cron 2026-07-06 ~23:45 UTC）：独立全量 ruff clean + pytest 1968 passed/1 failed/19 skipped exit 1（test_rpt_view_cat_gov_r60.py::test_rpt_run_pdf_not_supported 期望 RPT_ENGINE_FORMAT_NOT_SUPPORTED 实际 RPT_ENGINE_INCOMPLETE_TEMPLATE）；fe check:design 129 files + vitest 164/164 + design fixture 4/4 + build exit 0；UI design_drift PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE（BLOCKED 全量 pytest exit 1）；待 P3 修复 r60 断言或引擎错误码优先级

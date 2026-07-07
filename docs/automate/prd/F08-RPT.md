@@ -34,7 +34,7 @@
 - **里程碑对齐**：M9 · 已完成 · 2026-07-06
 ### [RPT-003] Word/Excel/PDF 模板定义
 
-- **状态**：部分实现（companion r67）
+- **状态**：已实现（M10 r234）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：Word/Excel/PDF 模板定义（SRS 追溯项）。
@@ -42,13 +42,15 @@
   - [x] 模板可嵌 SQL/表格/图形（r62 L1：`PUT/GET /api/v1/reports/templates/{id}` word/excel/pdf blocks：sql/table/chart）
   - [x] 模板校验（r62 L1：`POST validate` + empty blocks/invalid block type 422 + `RPT_TEMPLATE_*` 错误域）
   - [x] companion ACL/probe 边界（r67：viewer PUT/enterprise 越权 GET 403；duplicate sql block/非法 chartType 422；`probe_validate_template_budget_ms`/`probe_get_template_budget_ms` ≤50ms）
-  - [ ] PDF/Word 真实渲染与 fe 模板设计器（无渲染引擎与 Admin UI）
-- **代码锚点**：`backend/app/reports/templates/` · `backend/app/api/v1/reports/__init__.py` · `tests/test_cat_nfr_rpt_meta_r62.py` T-RPT-R62-003-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-RPT-R67-003-01~07
-- **演化建议**：r67 companion 闭合 template blocks ACL、duplicate block/chartType 校验与 validate/get perf probe；后续补 PDF/Word 渲染引擎与 fe 模板设计器
-- **里程碑对齐**：
+  - [x] M10 storageRef/DELETE/list/exportHook（r234：`GET/DELETE /reports/templates` + `storageRef` mock URI；`RPT_TEMPLATE_IN_USE` 409；`engine/service.run_template` word/excel/pdf 占位 `exportHook`；`probe_list_templates_budget_ms` ≤50ms）
+  - [x] M10 FE 模板元数据页（r234：`ReportTemplatesPage` + `useReportTemplates.ts`；vitest smoke 含树加载/空态）
+  - [ ] PDF/Word 真实排版引擎与 WYSIWYG 设计器（companion）
+- **代码锚点**：`backend/app/reports/templates/service.py` · `backend/app/reports/engine/service.py` · `fe/src/pages/admin/reports/ReportTemplatesPage.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `tests/test_cat_nfr_rpt_meta_r62.py` T-RPT-R62-003-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-RPT-R67-003-01~07 · `tests/test_m10_report_templates_r234.py` T-RPT-R234-003-01~09
+- **演化建议**：r234 闭合 storageRef/delete-in-use/exportHook 与 Admin 模板元数据页；真实 PDF/Word 排版引擎与 WYSIWYG 设计器留 companion
+- **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [RPT-004] 模板树形目录管理
 
-- **状态**：部分实现（companion r58）
+- **状态**：已实现（M10 r234）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：模板树形目录管理（SRS 追溯项）。
@@ -57,10 +59,11 @@
   - [x] 树形边界守卫（cycle/max depth/has children/`RPT_CATALOG_*` 错误域）
   - [x] 目录权限受 M7 控制（r57 companion：`reports/catalog/acl.py` viewer 禁写/owner 删叶/admin 绕过 move；ACL 判定 ≤10ms）
   - [x] extension 同比环比（r58 companion：`compareMode` yoy/mom + `POST .../compare-preview` + render-spec `compareMetrics`；`extension/acl.py` viewer 禁写）
-  - [ ] 另存为/手工执行
-- **代码锚点**：`backend/app/reports/catalog/service.py` · `backend/app/reports/catalog/acl.py` · `backend/app/reports/extension/compare.py` · `backend/app/reports/extension/acl.py` · `backend/app/api/v1/reports/__init__.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-004-01~06 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-004-01~06 · `tests/test_dash_rpt_r58.py` T-RPT-R58-004-01~08
-- **演化建议**：r58 companion 闭合 compare-preview/render-spec compareMetrics 与 extension ACL；后续补另存为/手工执行与 fe 模板管理 UI
-- **里程碑对齐**：
+  - [x] M10 templateKey 唯一关联 + list probe（r234：`RPT_CATALOG_DUPLICATE_TEMPLATE_KEY`/`RPT_CATALOG_TEMPLATE_KIND_MISMATCH`/`RPT_CATALOG_TEMPLATE_NOT_FOUND`；`catalog/probe.py` list ≤50ms；`ReportTemplatesPage` 树浏览）
+  - [ ] 另存为/手工执行（companion）
+- **代码锚点**：`backend/app/reports/catalog/service.py` · `backend/app/reports/catalog/probe.py` · `fe/src/pages/admin/reports/components/CatalogTreeNode.tsx` · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-004-01~06 · `tests/test_dash_rpt_r58.py` T-RPT-R58-004-01~08 · `tests/test_m10_report_templates_r234.py` T-RPT-R234-004-01~06
+- **演化建议**：r234 闭合 catalog `templateKey` 外键唯一、list perf probe 与 FE 树形管理；另存为/手工执行留 companion
+- **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [RPT-005] 报表调度 FR-3.2
 
 - **状态**：部分实现（companion r58）
@@ -77,7 +80,7 @@
 - **里程碑对齐**：
 ### [RPT-006] 报表扩展配置 FR-6.3
 
-- **状态**：部分实现（companion r58）
+- **状态**：已实现（M10 r234）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
 - **描述**：报表扩展配置 FR-6.3（SRS 追溯项）。
@@ -86,10 +89,11 @@
   - [x] 变更可追溯（revision + changeNote 审计）
   - [x] render-spec 可见指标/修订历史/内存持久化快照（r55 companion：`build_extension_render_spec` + revisions + snapshot）
   - [x] batch compare 联动（r58 companion：batch yoy render-spec compareMetrics + `probe_render_spec_budget_ms` ≤50ms）
-  - [ ] 真实 DB 持久化与前端渲染 UI
-- **代码锚点**：`backend/app/reports/extension/` · `backend/app/reports/batch/service.py` · `backend/app/api/v1/reports/__init__.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-RPT-01~07 · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-01~08 · `tests/test_dash_rpt_r58.py` T-RPT-R58-006-01~03
-- **演化建议**：r58 companion 巩固 batch compare render 联动与性能探测；后续补真实持久化与管理员 UI
-- **里程碑对齐**：
+  - [x] M10 Admin 扩展配置 UI（r234：`TemplateDetailPanel` 扩展 Tab metrics/changeNote PUT + 预览 Tab render-spec JSON；folder 节点 extension 422 回归）
+  - [ ] 真实 DB 持久化与运行时渲染展现（companion）
+- **代码锚点**：`backend/app/reports/extension/` · `fe/src/pages/admin/reports/components/TemplateDetailPanel.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-01~08 · `tests/test_m10_report_templates_r234.py` T-RPT-R234-006-01~03
+- **演化建议**：r234 闭合 Admin 扩展配置与 render-spec 预览 UI；真实 DB 持久化与运行时渲染展现留 companion
+- **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [RPT-007] 批量新增报表 FR-6.4
 
 - **状态**：部分实现（companion r58）
