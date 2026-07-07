@@ -6,16 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc2-fd-kickoff.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-fc2-fd-kickoff-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-fc2-fd-kickoff.md |
-| branch | feat/mfinal-fc2-fd-kickoff-r243 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | CONN-022,QUERY-007,QUERY-008,QUERY-009 |
-| pr_number | 229 |
-| last_verified_command | cd backend && python3 -m pytest -q; cd fe && pnpm run check:design && pnpm exec vitest run && pnpm run build |
-| last_verified_exit_code | 0 |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T15:00:00Z |
 | skill_rule_index_source_count | 26 |
@@ -68,6 +68,7 @@
 
 ## 演化历史（最近）
 
+- G1 bootstrap（cron 2026-07-07 ~15:40 UTC）：G0 PASS PR #229 已 squash merge dev-auto（377aed8）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.101 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-D**（F-C 六型信创已收官；QUERY-007~009 已勾选；META-001~004 等 4 项 `[ ]` 待批次 2；F-E~F-G 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-C2+F-D kickoff（CONN-022/QUERY-007~009）r243 PR #229 完成；phase P5_DOCS_READY→idle；待 G2 evolution-picker
 - G0 闸门（cron 2026-07-07 ~15:35 UTC）：遗留 PR #229 Draft 转正；rebase dev-auto 解冲突；补齐 r243 G1/G2 历史与 round-target；PRD/plan 已于 #228 同步；phase P5_DOCS_READY pr=229；待 squash merge dev-auto
 - P5 r243 收尾（cron 2026-07-07 ~15:30 UTC）：PRD 重评 CONN-022 + QUERY-007~009；hub 总分 90.0–91.7→92.2–93.2；plan M-FINAL F-C CONN-022 + F-D QUERY-007~009 勾选（完成于 2026-07-07）；hub v1.2.101；F-C 六型信创连接器收官；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
 - P4 r243 验证（cron 2026-07-07 ~15:17 UTC）：独立全量 backend pytest 2096 passed/31 skipped exit 0；fe check:design 188 files + vitest 214/214 + build(tsc -b + vite) exit 0；UI design_drift PASS（check:design）；screenshots 未运行（headless 云环境；UI Acceptance 由 datasource-form.smoke T-CONN-R243-FE-01~06 RTL 覆盖）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fc2-fd-kickoff-r243；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
