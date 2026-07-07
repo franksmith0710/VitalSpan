@@ -5,6 +5,8 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+META_TERM_FORBIDDEN = "META_TERM_FORBIDDEN"
+
 TERM_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 TERM_MAX_TEXT_LENGTH = 4000
 TERM_STATUS_VALUES = frozenset({"active", "inactive"})

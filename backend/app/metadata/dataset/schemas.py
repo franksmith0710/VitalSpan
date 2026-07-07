@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import re
+import time
+import uuid
+from dataclasses import dataclass
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -42,6 +45,12 @@ class DatasetItemOut(BaseModel):
     tables: list[DatasetTableDef]
     computed_fields: list[DatasetComputedField] = Field(alias="computedFields")
     allowed_roles: list[str] = Field(alias="allowedRoles")
+    bound_config_id: uuid.UUID | None = Field(default=None, alias="boundConfigId")
+
+
+class DatasetBindConfigIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    config_id: uuid.UUID = Field(alias="configId")
 
 
 class DatasetListResponse(BaseModel):

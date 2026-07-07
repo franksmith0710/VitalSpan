@@ -4,6 +4,8 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
+META_THEME_FORBIDDEN = "META_THEME_FORBIDDEN"
+
 MAX_THEME_DEPTH = 8
 
 

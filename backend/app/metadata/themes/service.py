@@ -1,13 +1,36 @@
 from __future__ import annotations
 
+import time
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.auth.deps import UserContext
+from app.metadata._acl import _assert_meta_write
 from app.metadata.glossary import service as glossary_service
+from app.metadata.glossary.schemas import GlossaryError
 from app.metadata.themes.models import ThemeNode
-from app.metadata.themes.schemas import MAX_THEME_DEPTH, ThemeCreate, ThemeError, ThemeUpdate
+from app.metadata.themes.schemas import (
+    MAX_THEME_DEPTH,
+    META_THEME_FORBIDDEN,
+    ThemeCreate,
+    ThemeError,
+    ThemeUpdate,
+)
+
+probe_list_themes_budget_ms_limit = 50
+
+
+@dataclass(frozen=True)
+class ThemeProbeResult:
+    elapsed_ms: float
+    ok: bool
+
+
+def _forbidden() -> ThemeError:
+    return ThemeError(META_THEME_FORBIDDEN, "insufficient role to modify theme nodes", 403)
 
 
 def _node_depth(session: Session, node_id: uuid.UUID | None) -> int:
@@ -104,11 +127,15 @@ def list_theme_nodes(
     return items, total
 
 
-def create_theme_node(session: Session, payload: ThemeCreate) -> ThemeNode:
+def create_theme_node(session: Session, payload: ThemeCreate, user: UserContext) -> ThemeNode:
+    _assert_meta_write(user, raise_forbidden=_forbidden)
     if payload.parent_id is not None and session.get(ThemeNode, payload.parent_id) is None:
         raise ThemeError("META_THEME_PARENT_NOT_FOUND", "Parent node not found", 404)
     if payload.term_id is not None:
-        glossary_service.get_term(session, payload.term_id)
+        try:
+            glossary_service.get_term(session, payload.term_id)
+        except GlossaryError as exc:
+            raise ThemeError(exc.code, exc.message, exc.status) from exc
     _assert_depth_allowed(session, payload.parent_id)
     node = ThemeNode(
         name=payload.name,
@@ -130,10 +157,16 @@ def get_theme_node(session: Session, node_id: uuid.UUID) -> ThemeNode:
     return node
 
 
-def update_theme_node(session: Session, node_id: uuid.UUID, payload: ThemeUpdate) -> ThemeNode:
+def update_theme_node(
+    session: Session, node_id: uuid.UUID, payload: ThemeUpdate, user: UserContext,
+) -> ThemeNode:
+    _assert_meta_write(user, raise_forbidden=_forbidden)
     node = get_theme_node(session, node_id)
     if payload.term_id is not None:
-        glossary_service.get_term(session, payload.term_id)
+        try:
+            glossary_service.get_term(session, payload.term_id)
+        except GlossaryError as exc:
+            raise ThemeError(exc.code, exc.message, exc.status) from exc
     node.name = payload.name
     node.code = payload.code
     node.term_id = payload.term_id
@@ -144,7 +177,8 @@ def update_theme_node(session: Session, node_id: uuid.UUID, payload: ThemeUpdate
     return node
 
 
-def delete_theme_node(session: Session, node_id: uuid.UUID) -> None:
+def delete_theme_node(session: Session, node_id: uuid.UUID, user: UserContext) -> None:
+    _assert_meta_write(user, raise_forbidden=_forbidden)
     node = get_theme_node(session, node_id)
     child_count = session.scalar(
         select(func.count()).select_from(ThemeNode).where(ThemeNode.parent_id == node_id)
@@ -159,8 +193,10 @@ def move_theme_node(
     session: Session,
     node_id: uuid.UUID,
     parent_id: uuid.UUID | None,
-    sort_order: int | None = None,
+    sort_order: int | None,
+    user: UserContext,
 ) -> ThemeNode:
+    _assert_meta_write(user, raise_forbidden=_forbidden)
     node = get_theme_node(session, node_id)
     if parent_id == node_id:
         raise ThemeError("META_THEME_CYCLE", "Cannot move node under itself", 422)
@@ -176,3 +212,10 @@ def move_theme_node(
     session.commit()
     session.refresh(node)
     return node
+
+
+def probe_list_themes_budget_ms(session: Session) -> ThemeProbeResult:
+    started = time.perf_counter()
+    list_theme_nodes(session, parent_id="null", limit=50)
+    elapsed = (time.perf_counter() - started) * 1000
+    return ThemeProbeResult(elapsed_ms=elapsed, ok=elapsed <= probe_list_themes_budget_ms_limit)
