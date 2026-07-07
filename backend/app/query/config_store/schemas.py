@@ -18,6 +18,8 @@ ALLOWED_CONFIG_TYPES = frozenset({
     "entity_theme",
     "entity_overview",
     "designer_workflow_link",
+    "workflow_template",
+    "designer_snapshot",
     "global_filter_linkage",
     "dataset_query",
 })

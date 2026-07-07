@@ -11,6 +11,7 @@ import { WorkflowEmptyState } from "./components/WorkflowEmptyState";
 import { WorkflowMetrics } from "./components/WorkflowMetrics";
 import { WorkflowTemplateDetail } from "./components/WorkflowTemplateDetail";
 import { WorkflowTemplateList } from "./components/WorkflowTemplateList";
+import { CreateWorkflowTemplateDialog } from "./components/CreateWorkflowTemplateDialog";
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -54,6 +55,7 @@ export function GovernanceWorkflowPage() {
     <AdminPageShell
       title="治理工单"
       description="查看标准查询发布等工作流模板，了解各节点状态与负责角色配置（GOV-003）。"
+      actions={<CreateWorkflowTemplateDialog onCreated={setSelectedId} />}
     >
       {isError ? <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
 

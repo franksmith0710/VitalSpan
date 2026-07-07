@@ -29,6 +29,21 @@ class WorkflowTemplateValidateIn(BaseModel):
     nodes: list[WorkflowNode]
 
 
+ALLOWED_NODE_ROLES = frozenset({"requester", "approver", "designer", "publisher", "admin"})
+
+
+class WorkflowTemplateCreateIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    name: str = Field(min_length=1)
+    nodes: list[WorkflowNode]
+
+
+class WorkflowTemplateUpdateIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    name: str | None = None
+    nodes: list[WorkflowNode] | None = None
+
+
 class WorkflowInstanceCreateIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     template_id: str = Field(alias="templateId")
@@ -48,6 +63,7 @@ class WorkflowInstanceOut(BaseModel):
     ref_id: uuid.UUID = Field(alias="refId")
     status: str
     allowed_actions: list[str] = Field(alias="allowedActions")
+    design_snapshot: dict | None = Field(default=None, alias="designSnapshot")
 
 
 class NodeRoleOut(BaseModel):

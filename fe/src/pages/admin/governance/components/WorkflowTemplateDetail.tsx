@@ -126,8 +126,8 @@ export function WorkflowTemplateDetail({ template }: WorkflowTemplateDetailProps
               {template.id}
             </p>
           </div>
-          <Badge variant="light" color="success" size="sm">
-            内置模板
+          <Badge variant="light" color={template.id.startsWith("custom_") ? "primary" : "success"} size="sm">
+            {template.id.startsWith("custom_") ? "自定义模板" : "内置模板"}
           </Badge>
         </div>
       </div>

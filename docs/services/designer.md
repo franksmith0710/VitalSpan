@@ -5,11 +5,12 @@
 | 模块路径 | `backend/app/designer/` |
 | PRD | [F12-DESIGN](../automate/prd/F12-DESIGN.md) · DESIGN-001 ~ DESIGN-005 |
 | 里程碑 | M2（四期） |
-| 状态 | **部分（L1）** |
+| 状态 | **部分（L1 + F-E 批次 1）** |
 
 ## 职责
 
-- **查询条件配置**（DESIGN-001）：字段/操作符/值类型校验与持久化
+- **字段注册表与 SQL 预览**（DESIGN-001 r245）：`GET /fields`、`POST /preview/translate`
+- **配置快照与一键提交工单**（DESIGN-004 r245）：`capture_snapshot` + `POST /submit-workflow`
 - **运算规则维护**（DESIGN-002）：表达式白名单、依赖环检测与持久化
 - **输出字段与聚合**（DESIGN-003）：字段注册表 + glossary 元字段引用校验与持久化
 - **传统 SQL 模式**（DESIGN-005）：只读 SQL 校验、能力声明与持久化
@@ -41,7 +42,9 @@
 | `ComputeRulesConfig` | 运算规则 schema v1.0 | DESIGN-002 | L1 已实现 |
 | `SqlModeSpec` / `sql_mode.py` | SQL 只读模式校验 + 持久化 | DESIGN-005 | L1 已实现 |
 | `OutputFieldsConfig` / `output_fields.py` | 输出字段/聚合校验 + 持久化 | DESIGN-003 | L1 已实现 |
-| `workflow.py` | 设计器项与工单实例关联 validate/save/get | DESIGN-004 | L1 已实现 r59 |
+| `preview.py` | 字段注册表 + 预览翻译（DESIGN-001 r245） | DESIGN-001 | L1 已实现 |
+| `snapshot.py` | 设计器三块配置不可变快照 | DESIGN-004 | L1 已实现 r245 |
+| `workflow.py` | 设计器项与工单实例关联 + submit_with_snapshot | DESIGN-004 | L1 已实现 r245 |
 | `designer/service` | 校验 + 委托 config_store | DESIGN-001/002 | L1 已实现 |
 | `DesignerService` | 草稿与校验（全量） | DESIGN-001~003 | 待建 |
 | `ChartViewConfig` | 图表配置契约（与 `schemas` 共享） | DESIGN-004~005 · F06-VIZ | 待建 |

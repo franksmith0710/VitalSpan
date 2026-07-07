@@ -11,11 +11,13 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
 from app.designer import service as designer_service
-from app.designer.schemas import ComputeRulesConfig, DesignerError, OutputFieldsConfig, QueryConditionsConfig, SqlModeSpec
+from app.designer.schemas import ComputeRulesConfig, DesignerError, DesignerSubmitWorkflowIn, DesignerSubmitWorkflowOut, FieldRegistryOut, OutputFieldsConfig, PreviewTranslateIn, QueryConditionsConfig, SqlModeSpec
 from app.designer import output_fields as output_fields_service
 from app.designer import sql_mode as sql_mode_service
 from app.designer import workflow as workflow_link_service
 from app.designer.workflow import DesignerWorkflowLinkIn, DesignerWorkflowLinkOut, DesignerWorkflowLinkValidateOut
+from app.query.config_store import service as config_store_service
+from app.query.config_store.access import assert_config_readable
 from app.query.config_store.schemas import ConfigError
 
 router = APIRouter(
@@ -77,6 +79,14 @@ def save_conditions(
     db: Annotated[Session, Depends(_db)],
 ) -> QueryConditionsConfig | JSONResponse:
     try:
+        try:
+            existing = config_store_service.get_config_by_ref(
+                db, "query_conditions", payload.ref_type, payload.ref_id
+            )
+            assert_config_readable(actor, existing)
+        except ConfigError as exc:
+            if exc.code != "CONFIG_NOT_FOUND":
+                return _config_error(exc)
         config, _ = designer_service.save_conditions(db, payload, _owner_uuid(actor))
         return config
     except ConfigError as exc:
@@ -192,9 +202,10 @@ def validate_output_fields(
     payload: OutputFieldsConfig,
     _: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
+    dataset_id: uuid.UUID | None = Query(default=None, alias="datasetId"),
 ) -> OutputFieldsConfig | JSONResponse:
     try:
-        return output_fields_service.validate_output_fields_config(db, payload)
+        return output_fields_service.validate_output_fields_config(db, payload, dataset_id=dataset_id)
     except DesignerError as exc:
         return _designer_error(exc)
 
@@ -204,8 +215,10 @@ def save_output_fields(
     payload: OutputFieldsConfig,
     actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
+    dataset_id: uuid.UUID | None = Query(default=None, alias="datasetId"),
 ) -> OutputFieldsConfig | JSONResponse:
     try:
+        output_fields_service.validate_output_fields_config(db, payload, dataset_id=dataset_id)
         config, _ = output_fields_service.save_output_fields(db, payload, _owner_uuid(actor))
         return config
     except ConfigError as exc:
@@ -318,5 +331,38 @@ def get_workflow_link(
 ) -> DesignerWorkflowLinkOut | JSONResponse:
     try:
         return workflow_link_service.get_workflow_link(db, designer_item_id)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.get("/fields", response_model=FieldRegistryOut)
+def get_designer_fields(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    dataset_id: uuid.UUID | None = Query(default=None, alias="datasetId"),
+) -> FieldRegistryOut:
+    return designer_service.list_designer_fields(db, dataset_id)
+
+
+@router.post("/preview/translate", response_model=None)
+def preview_translate(
+    payload: PreviewTranslateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> dict | JSONResponse:
+    try:
+        return designer_service.preview_translate_sql(db, payload)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.post("/submit-workflow", status_code=201, response_model=DesignerSubmitWorkflowOut)
+def submit_designer_workflow(
+    payload: DesignerSubmitWorkflowIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DesignerSubmitWorkflowOut | JSONResponse:
+    try:
+        return workflow_link_service.submit_with_snapshot(db, payload, actor)
     except DesignerError as exc:
         return _designer_error(exc)

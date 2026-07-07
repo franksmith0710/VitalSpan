@@ -3,6 +3,8 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
+from sqlalchemy.orm import Session
+
 from app.governance.workflow.errors import WorkflowError
 
 probe_workflow_transition_budget_ms = 50
@@ -32,12 +34,10 @@ _ROLE_DESCRIPTIONS: dict[str, str] = {
 }
 
 
-def describe_node_roles(template_id: str) -> list[NodeRoleDescriptor]:
-    from app.governance.workflow.service import _BUILTIN_TEMPLATES
+def describe_node_roles(session: Session, template_id: str) -> list[NodeRoleDescriptor]:
+    from app.governance.workflow.service import get_template
 
-    template = _BUILTIN_TEMPLATES.get(template_id)
-    if template is None:
-        raise WorkflowError("GOV_WORKFLOW_TEMPLATE_NOT_FOUND", "Template not found", 404)
+    template = get_template(session, template_id)
     return [
         NodeRoleDescriptor(
             node_id=node.id,
@@ -48,12 +48,10 @@ def describe_node_roles(template_id: str) -> list[NodeRoleDescriptor]:
     ]
 
 
-def resolve_required_role(template_id: str, status: str) -> str:
-    from app.governance.workflow.service import _BUILTIN_TEMPLATES
+def resolve_required_role(session: Session, template_id: str, status: str) -> str:
+    from app.governance.workflow.service import get_template
 
-    template = _BUILTIN_TEMPLATES.get(template_id)
-    if template is None:
-        raise WorkflowError("GOV_WORKFLOW_TEMPLATE_NOT_FOUND", "Template not found", 404)
+    template = get_template(session, template_id)
     for node in template.nodes:
         if node.id == status:
             return node.role

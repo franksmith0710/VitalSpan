@@ -7,13 +7,19 @@ from sqlalchemy.orm import Session
 from app.governance.workflow.errors import WorkflowError
 from app.governance.workflow.node_roles import _REQUIRED_TEMPLATE_NODES
 from app.governance.workflow.schemas import (
+    ALLOWED_NODE_ROLES,
     WorkflowInstanceCreateIn,
     WorkflowInstanceOut,
+    WorkflowTemplateCreateIn,
     WorkflowTemplateOut,
+    WorkflowTemplateUpdateIn,
     WorkflowTemplateValidateIn,
 )
+from app.governance.workflow import templates_store
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigUpsert
+
+_BUILTIN_IDS = frozenset({"standard_query_release"})
 
 _BUILTIN_TEMPLATES: dict[str, WorkflowTemplateOut] = {
     "standard_query_release": WorkflowTemplateOut(
@@ -41,8 +47,58 @@ _TRANSITIONS: dict[str, dict[str, tuple[str, str]]] = {
 }
 
 
-def list_templates() -> list[WorkflowTemplateOut]:
-    return list(_BUILTIN_TEMPLATES.values())
+def list_templates(session: Session) -> list[WorkflowTemplateOut]:
+    return list(_BUILTIN_TEMPLATES.values()) + list(templates_store._load_custom_templates(session).values())
+
+
+def get_template(session: Session, template_id: str) -> WorkflowTemplateOut:
+    if template_id in _BUILTIN_TEMPLATES:
+        return _BUILTIN_TEMPLATES[template_id]
+    custom = templates_store.get_custom_template(session, template_id)
+    if custom is None:
+        raise WorkflowError("GOV_WORKFLOW_TEMPLATE_NOT_FOUND", "Template not found", 404)
+    return custom
+
+
+def create_template(session: Session, payload: WorkflowTemplateCreateIn) -> WorkflowTemplateOut:
+    tpl_id = f"custom_{uuid.uuid4().hex[:12]}"
+    candidate = WorkflowTemplateValidateIn(id=tpl_id, name=payload.name, nodes=payload.nodes)
+    validated = validate_template(candidate)
+    for node in validated.nodes:
+        if node.role not in ALLOWED_NODE_ROLES:
+            raise WorkflowError(
+                "GOV_WORKFLOW_INVALID_TEMPLATE",
+                f"Invalid role: {node.role}",
+                422,
+            )
+    templates_store.save_custom_template(session, validated)
+    return validated
+
+
+def update_template(
+    session: Session, template_id: str, payload: WorkflowTemplateUpdateIn
+) -> WorkflowTemplateOut:
+    if template_id in _BUILTIN_IDS:
+        raise WorkflowError("GOV_WORKFLOW_BUILTIN_READONLY", "Builtin template readonly", 403)
+    existing = templates_store.get_custom_template(session, template_id)
+    if existing is None:
+        raise WorkflowError("GOV_WORKFLOW_TEMPLATE_NOT_FOUND", "Template not found", 404)
+    name = payload.name if payload.name is not None else existing.name
+    nodes = payload.nodes if payload.nodes is not None else existing.nodes
+    validated = validate_template(WorkflowTemplateValidateIn(id=template_id, name=name, nodes=nodes))
+    for node in validated.nodes:
+        if node.role not in ALLOWED_NODE_ROLES:
+            raise WorkflowError("GOV_WORKFLOW_INVALID_TEMPLATE", f"Invalid role: {node.role}", 422)
+    templates_store.save_custom_template(session, validated)
+    return validated
+
+
+def delete_template(session: Session, template_id: str) -> None:
+    if template_id in _BUILTIN_IDS:
+        raise WorkflowError("GOV_WORKFLOW_BUILTIN_READONLY", "Builtin template readonly", 403)
+    if templates_store.template_in_use(session, template_id):
+        raise WorkflowError("GOV_WORKFLOW_TEMPLATE_IN_USE", "Template referenced by instances", 409)
+    templates_store.delete_custom_template(session, template_id)
 
 
 def validate_template(payload: WorkflowTemplateValidateIn) -> WorkflowTemplateOut:
@@ -73,8 +129,7 @@ def _load_instance_payload(session: Session, instance_id: uuid.UUID) -> dict:
 
 
 def create_instance(session: Session, payload: WorkflowInstanceCreateIn) -> WorkflowInstanceOut:
-    if payload.template_id not in _BUILTIN_TEMPLATES:
-        raise WorkflowError("GOV_WORKFLOW_TEMPLATE_NOT_FOUND", "Template not found", 404)
+    get_template(session, payload.template_id)
     instance_id = uuid.uuid4()
     body = {
         "templateId": payload.template_id,
@@ -101,14 +156,23 @@ def create_instance(session: Session, payload: WorkflowInstanceCreateIn) -> Work
     )
 
 
-def get_instance(session: Session, instance_id: uuid.UUID) -> WorkflowInstanceOut:
+def get_instance(session: Session, instance_id: uuid.UUID, include_snapshot: bool = False) -> WorkflowInstanceOut:
     body = _load_instance_payload(session, instance_id)
+    design_snapshot = None
+    if include_snapshot and body.get("designSnapshotId"):
+        from app.designer import snapshot as snapshot_service
+
+        try:
+            design_snapshot = snapshot_service.get_snapshot(session, uuid.UUID(body["designSnapshotId"]))
+        except Exception:
+            design_snapshot = None
     return WorkflowInstanceOut(
         id=instance_id,
         templateId=body["templateId"],
         refId=uuid.UUID(body["refId"]),
         status=body["status"],
         allowedActions=_allowed_actions(body["status"]),
+        designSnapshot=design_snapshot,
     )
 
 
