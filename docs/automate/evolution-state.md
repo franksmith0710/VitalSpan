@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_BLOCKED |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-fd-meta.md |
@@ -15,7 +15,7 @@
 | prd_ids | META-001,META-002,META-003,META-004 |
 | pr_number |  |
 | last_verified_command | cd backend && python3 -m pytest -q |
-| last_verified_exit_code | 1 |
+| last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run && pnpm run build |
 | last_ui_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
