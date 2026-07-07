@@ -5,16 +5,17 @@
 | 模块路径 | `backend/app/designer/` |
 | PRD | [F12-DESIGN](../automate/prd/F12-DESIGN.md) · DESIGN-001 ~ DESIGN-005 |
 | 里程碑 | M2（四期） |
-| 状态 | **部分（L1 + F-E 批次 1）** |
+| 状态 | **部分（L1 + F-E 批次 2）** |
 
 ## 职责
 
 - **字段注册表与 SQL 预览**（DESIGN-001 r245）：`GET /fields`、`POST /preview/translate`
-- **配置快照与一键提交工单**（DESIGN-004 r245）：`capture_snapshot` + `POST /submit-workflow`
+- **配置快照与一键提交工单**（DESIGN-004 r245/r246）：`capture_snapshot` + `POST /submit-workflow`；`GET /snapshots/{id}` ACL；`snapshotRevision` 写入实例 payload
+- **设计器工单关联**（DESIGN-004 r246）：双向 `workflow-link` 查询/撤回；实例列表与快照回看
+- **传统 SQL 模式**（DESIGN-005 r246）：`design_mode` 切换 + Admin SQL 面板；submit 按 mode 分支完整性校验
 - **运算规则维护**（DESIGN-002）：表达式白名单、依赖环检测与持久化
 - **输出字段与聚合**（DESIGN-003）：字段注册表 + glossary 元字段引用校验与持久化
-- **传统 SQL 模式**（DESIGN-005）：只读 SQL 校验、能力声明与持久化
-- **设计器工单关联**（DESIGN-004）：workflow instance 引用 validate/save/get + publishReady 探测
+- **传统 SQL 模式**（DESIGN-005）：只读 SQL 校验、能力声明与持久化（`design_mode` + `sql_mode`）
 - 图表/Dashboard 设计器服务端契约（保存草稿、校验）
 - 与 `metadata` Dataset 的设计态绑定（四期）
 - 设计资源版本与协作锁（按需）
@@ -43,7 +44,9 @@
 | `SqlModeSpec` / `sql_mode.py` | SQL 只读模式校验 + 持久化 | DESIGN-005 | L1 已实现 |
 | `OutputFieldsConfig` / `output_fields.py` | 输出字段/聚合校验 + 持久化 | DESIGN-003 | L1 已实现 |
 | `preview.py` | 字段注册表 + 预览翻译（DESIGN-001 r245） | DESIGN-001 | L1 已实现 |
-| `snapshot.py` | 设计器三块配置不可变快照 | DESIGN-004 | L1 已实现 r245 |
+| `snapshot.py` | 设计器三块配置不可变快照 + owner ACL | DESIGN-004 | L1 已实现 r245/r246 |
+| `workflow.py` | 工单 link 双向查询/撤回 + submit 快照修订 | DESIGN-004 | L1 已实现 r246 |
+| `sql_mode.py` | `design_mode` + SQL 只读模式 | DESIGN-005 | L1 已实现 r246 |
 | `workflow.py` | 设计器项与工单实例关联 + submit_with_snapshot | DESIGN-004 | L1 已实现 r245 |
 | `designer/service` | 校验 + 委托 config_store | DESIGN-001/002 | L1 已实现 |
 | `DesignerService` | 草稿与校验（全量） | DESIGN-001~003 | 待建 |

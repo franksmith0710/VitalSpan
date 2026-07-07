@@ -42,7 +42,7 @@
 - **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
 ### [DESIGN-004] 设计器与工单关联
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：设计器与工单关联（SRS 追溯项）。
@@ -51,22 +51,24 @@
   - [x] 未知 instance/非法 item/sql_mode 路由不变（r59）
   - [x] companion catalog/designType 守卫 + perf probe（r63 + r245 catalog mismatch T-DESIGN-R245-004-05）
   - [x] 设计器配置快照提交工单（r245：`capture_snapshot` + `POST /submit-workflow` + 不可变快照 T-DESIGN-R245-004-01/04/08）
-  - [ ] 设计完成进入 GOV-005 发布全链路
-  - [ ] 状态同步（缺 fe 与 BPM 双向钩子）
-- **代码锚点**：`backend/app/designer/workflow.py` · `backend/app/designer/snapshot.py` · `backend/app/api/v1/designer.py` · `fe/src/pages/admin/designer/DesignerPage.tsx` · `tests/test_mfinal_fe_design_r245.py` T-DESIGN-R245-004-01~08
-- **演化建议**：r245 闭合快照提交与自定义模板工单；F-E 批次 2 补 GOV-005 发布全链路与 BPM 状态同步 UI
-- **里程碑对齐**：
+  - [x] 快照 ACL + 双向 link 查询 + draft 撤回守卫（r246：`GET /snapshots/{id}` viewer 403 `DESIGN_SNAPSHOT_FORBIDDEN`；`workflow-link?workflowInstanceId=`；`DELETE` 非 draft 409 T-DESIGN-R246-004-01~04）
+  - [x] 工单实例列表与快照回看（r246：`GET /gov/workflow/instances` + `includeDesignSnapshot` + `snapshotRevision` 不可变 T-DESIGN-R246-004-05~08；FE `WorkflowInstancesPanel` T-GOV-R246-FE-01~02）
+  - [x] 设计完成进入 GOV-005 发布全链路（r246：`confirm-design` → `publish/from-workflow` → `catalogEntryId` 回写 link T-GOV-R246-005-01~05）
+- **代码锚点**：`backend/app/designer/workflow.py` · `backend/app/designer/snapshot.py` · `backend/app/api/v1/designer.py` · `fe/src/pages/admin/governance/WorkflowInstancesPanel.tsx` · `tests/test_mfinal_fe_design_r245.py` T-DESIGN-R245-004-01~08 · `tests/test_mfinal_fe_design_r246.py` T-DESIGN-R246-004-01~08
+- **演化建议**：F-E 批次 2 已闭合快照 ACL、双向关联、实例回看与发布链；远期可补 BPM 外部系统双向状态钩子
+- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
 ### [DESIGN-005] 传统 SQL 模式
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：传统 SQL 模式（SRS 追溯项）。
 - **验收标准**：
-  - [ ] SQL Lab 式编辑
-  - [ ] 语法高亮与执行
-  - [x] SQL 只读校验与持久化（r49 L1：`POST validate` + `PUT/GET /api/v1/designer/sql-mode` + `DESIGN_SQL_*` 错误域）
+  - [x] SQL Lab 式编辑（r246 FE：`designer-sql-panel.tsx` Segmented 可视化/SQL 切换 + Textarea 编辑 T-DESIGN-R246-FE-01~02）
+  - [x] SQL 只读校验与持久化（r49 L1 + r246：`design-mode` GET/PUT + `PUT/GET sql-mode` + `submit-workflow` 完整性分支 T-DESIGN-R246-005-01~05）
   - [x] 只读链 companion（r52：DML/注释隐藏/FOR UPDATE/长度上限 + `detail.remediation` + chart_view `CHART_SQL_NOT_READONLY` 联动）
-- **代码锚点**：`backend/app/designer/sql_mode.py` · `backend/app/schemas/chart_view.py` · `backend/app/api/v1/designer.py` · `tests/test_design_conn_gov_query_r49.py` · `tests/test_design_conn_gov_query_r52.py` T-DESIGN-R52-005-01~10
-- **演化建议**：r52 companion 闭合只读 SQL 多语句/注释 DML/FOR UPDATE/超长与 render-spec 联动；后续补 SQL Lab UI、语法高亮与执行链
-- **里程碑对齐**：
+  - [x] validate probe ≤50ms（r246 `probe_validate_sql_mode` T-DESIGN-R246-005-06）
+  - [ ] 语法高亮与在线执行（计划外：不引入 Monaco/CodeMirror）
+- **代码锚点**：`backend/app/designer/sql_mode.py` · `backend/app/api/v1/designer.py` · `fe/src/pages/admin/designer/designer-sql-panel.tsx` · `fe/src/pages/admin/designer/DesignerPage.tsx` · `tests/test_mfinal_fe_design_r246.py` T-DESIGN-R246-005-01~06 · `tests/test_design_conn_gov_query_r52.py` T-DESIGN-R52-005-01~10
+- **演化建议**：r246 闭合 Admin SQL 模式与只读校验链；远期可补语法高亮与数据源在线执行
+- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07

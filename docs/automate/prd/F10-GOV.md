@@ -49,7 +49,7 @@
 - **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
 ### [GOV-004] 可视化查询设计 FR-1.3
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：可视化查询设计 FR-1.3（SRS 追溯项）。
@@ -58,25 +58,28 @@
   - [x] 未知 fieldId → 422 + `detail.fields`（r34）
   - [x] revision 乐观锁冲突 → 409 `CONFIG_VERSION_CONFLICT`（r34）
   - [x] 空 conditions、非法 aggregate、blank title、未知 dataSourceId、get 404 边界 + `detail.fields`（r35）
-  - [ ] 拖拽配置查询条件与运算规则（前端）
-  - [ ] 加减乘除/聚合运算规则链
-- **代码锚点**：`backend/app/governance/query_design/` · `backend/app/api/v1/gov.py` · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
-- **演化建议**：r35 巩固 gov validate/save/get 边界与 computeRules detail.fields；后续接 explore 拖拽 UI 与 compute_rules 链
-- **里程碑对齐**：
+  - [x] 拖拽配置查询条件与运算规则（r245 设计器三面板 DESIGN-001~003 + r246 工单快照投影）
+  - [x] 审批态设计确认（r246：`GET approved-design` + `POST confirm-design` viewer 403 / 双确认 409；`query-design` 可读 T-GOV-R246-004-01~06）
+- **代码锚点**：`backend/app/governance/query_design/service.py` · `backend/app/api/v1/gov.py` · `fe/src/pages/admin/governance/WorkflowInstancesPanel.tsx` · `tests/test_mfinal_fe_design_r246.py` T-GOV-R246-004-01~06 · `tests/test_connectors_gov_r34.py` · `tests/test_connectors_gov_r35.py`
+- **演化建议**：r246 闭合工单快照→审批态设计确认链；远期可补 explore 元数据拖入与独立治理设计器页
+- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
 ### [GOV-005] 查询服务发布 FR-1.4
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：查询服务发布 FR-1.4（SRS 追溯项）。
 - **验收标准**：
   - [x] 发布审批后自动创建接口（draft→pending_publish→published FSM + integration list 可见，r46 L1）
   - [x] 审批通知钩子（submit/approve/reject 通知 + 幂等双批单通知，r51 companion）
-- **代码锚点**：`backend/app/governance/publish/` · `backend/app/governance/publish/notifications.py` · `backend/app/api/v1/gov.py` · `tests/test_nfr_gov_conn_r51.py`
-- **演化建议**：r51 companion 闭合审批通知契约与非法状态/并发拦截；后续补申请人 UI 通知与 BPM 工单流
+  - [x] 从工单实例发布（r246：`POST /gov/publish/from-workflow` 非法态 400 / viewer 403 / 幂等 T-GOV-R246-005-01~04）
+  - [x] catalogEntryId 回写 workflow-link + 版本回滚骨架（r246 T-GOV-R246-005-05~06；FE `GovernancePublishPage` 行内发布 T-GOV-R246-FE-03）
+- **代码锚点**：`backend/app/governance/publish/service.py` · `backend/app/governance/publish/notifications.py` · `backend/app/api/v1/gov.py` · `fe/src/pages/admin/governance/GovernancePublishPage.tsx` · `tests/test_mfinal_fe_design_r246.py` T-GOV-R246-005-01~06
+- **演化建议**：r246 闭合 from-workflow 发布链与 Admin 发布页；远期可补申请人收件箱通知与 BPM 可视化编排
+- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
 ### [GOV-006] 发布引擎 OpenAPI 映射
 
-- **状态**：部分实现
+- **状态**：已实现
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：发布引擎 OpenAPI 映射（SRS 追溯项）。
@@ -84,9 +87,12 @@
   - [x] 配置项自动映射 OpenAPI（published catalog entry → openapi-mappings store）
   - [x] validate 端点支持 entityTypeRef 与 path 前缀校验
   - [x] apiVersion 边界 + operationId 校验 + deactivate 幂等（r55 companion）
-  - [ ] 只读 GET 查询聚合与 OpenAPI 文档生成
-- **代码锚点**：`backend/app/governance/openapi/` · `backend/app/api/v1/gov.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-GOV-01~08 · `tests/test_rpt_gov_meta_conn_r55.py` T-GOV-R55-01~08
-- **演化建议**：r55 companion 闭合 apiVersion/operationId 校验、deactivate 409 守卫、draft entry 拒绝与 probe <200ms；后续补只读 GET 聚合与 OpenAPI 文档生成
+  - [x] 发布后 OpenAPI 3.1 文档生成（r246：`GET /publish/entries/{id}/openapi` draft 422 `GOV_OPENAPI_DOC_NOT_PUBLISHED`；`redact_openapi_fields`；probe ≤50ms T-GOV-R246-006-01~06）
+  - [x] Admin OpenAPI 预览（r246 FE `GovernancePublishPage` Sheet T-GOV-R246-FE-04）
+  - [ ] 只读 GET 查询聚合文档（多 entry 合并导出留远期）
+- **代码锚点**：`backend/app/governance/openapi/service.py` · `backend/app/api/v1/gov.py` · `fe/src/pages/admin/governance/GovernancePublishPage.tsx` · `tests/test_mfinal_fe_design_r246.py` T-GOV-R246-006-01~06 · `tests/test_rpt_gov_meta_conn_r55.py` T-GOV-R55-01~08
+- **演化建议**：r246 闭合单 entry OpenAPI 3.1 生成与脱敏；远期可补多 entry 聚合导出与 Swagger UI
+- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
 ### [GOV-007] 总线全自动注册 FR-1.1
 
 - **状态**：部分实现（companion r68）

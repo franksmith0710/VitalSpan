@@ -31,6 +31,7 @@ import {
   ConditionsPanel,
   OutputFieldsPanel,
 } from "./designer-panels";
+import { DesignerSqlPanel } from "./designer-sql-panel";
 import { useDesignerWorkspace } from "./useDesignerWorkspace";
 
 function PreviewPanel({
@@ -59,7 +60,10 @@ function PreviewPanel({
 export function DesignerPage() {
   const ws = useDesignerWorkspace();
   const [submitOpen, setSubmitOpen] = useState(false);
-  const [submitResult, setSubmitResult] = useState<{ workflowInstanceId: string } | null>(null);
+  const [submitResult, setSubmitResult] = useState<{
+    workflowInstanceId: string;
+    designSnapshotId?: string;
+  } | null>(null);
   const [mainTab, setMainTab] = useState("conditions");
   const [mobilePreview, setMobilePreview] = useState(false);
 
@@ -75,7 +79,10 @@ export function DesignerPage() {
     }
     try {
       const result = await ws.submitWorkflow.mutateAsync();
-      setSubmitResult({ workflowInstanceId: result.workflowInstanceId });
+      setSubmitResult({
+        workflowInstanceId: result.workflowInstanceId,
+        designSnapshotId: result.designSnapshotId,
+      });
       setSubmitOpen(true);
     } catch (err) {
       toast.error(mapApiError(err));
@@ -131,6 +138,28 @@ export function DesignerPage() {
       actions={actions}
     >
       <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="flex rounded-lg border border-gray-200 p-0.5 dark:border-gray-700">
+          <Button
+            type="button"
+            size="sm"
+            variant={ws.designMode === "visual" ? "primary" : "ghost"}
+            aria-pressed={ws.designMode === "visual"}
+            disabled={ws.designModePending}
+            onClick={() => ws.setDesignMode("visual")}
+          >
+            可视化
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={ws.designMode === "sql" ? "primary" : "ghost"}
+            aria-pressed={ws.designMode === "sql"}
+            disabled={ws.designModePending}
+            onClick={() => ws.setDesignMode("sql")}
+          >
+            传统 SQL
+          </Button>
+        </div>
         <span className="text-theme-sm text-gray-500 dark:text-gray-400">数据集（可选）</span>
         <Select
           value={ws.datasetId ?? "__none__"}
@@ -150,6 +179,23 @@ export function DesignerPage() {
         </Select>
       </div>
 
+      {ws.designMode === "sql" ? (
+        <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6">
+          <DesignerSqlPanel
+            refId={ws.designerItemId}
+            onSaved={() => ws.setSqlModeSaved(true)}
+            onSqlChange={ws.setEditorSql}
+          />
+          <div className="mt-4 lg:mt-0">
+            <PreviewPanel
+              sql={ws.editorSql || "保存 SQL 后在此预览…"}
+              loading={false}
+              mobileTab
+            />
+          </div>
+        </div>
+      ) : (
+        <>
       <div className="lg:hidden">
         <Tabs value={mobilePreview ? "preview" : mainTab} onValueChange={(v) => {
           if (v === "preview") setMobilePreview(true);
@@ -226,6 +272,8 @@ export function DesignerPage() {
         </Tabs>
         <PreviewPanel sql={ws.previewSql} loading={ws.previewMutation.isPending} />
       </div>
+        </>
+      )}
 
       <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
         <DialogContent>
@@ -236,9 +284,14 @@ export function DesignerPage() {
             </DialogDescription>
           </DialogHeader>
           {submitResult ? (
-            <p className="font-mono text-theme-xs text-gray-600 dark:text-gray-300">
-              工单实例：{submitResult.workflowInstanceId}
-            </p>
+            <div className="space-y-2 font-mono text-theme-xs text-gray-600 dark:text-gray-300">
+              <p>工单实例：{submitResult.workflowInstanceId}</p>
+              {submitResult.designSnapshotId ? (
+                <p className="break-all">
+                  快照：/api/v1/designer/snapshots/{submitResult.designSnapshotId}
+                </p>
+              ) : null}
+            </div>
           ) : null}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setSubmitOpen(false)}>

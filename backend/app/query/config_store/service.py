@@ -161,6 +161,23 @@ def list_configs(
     return items, total
 
 
+def list_configs_by_type(session: Session, config_type: str) -> list[QueryConfigRecord]:
+    stmt = select(QueryConfigRecord).where(QueryConfigRecord.config_type == config_type)
+    return list(session.scalars(stmt))
+
+
+def delete_config_by_ref(
+    session: Session,
+    config_type: str,
+    ref_type: str,
+    ref_id: uuid.UUID,
+    schema_version: str = "1.0",
+) -> None:
+    record = get_config_by_ref(session, config_type, ref_type, ref_id, schema_version)
+    session.delete(record)
+    session.commit()
+
+
 def get_config_by_ref(
     session: Session,
     config_type: str,

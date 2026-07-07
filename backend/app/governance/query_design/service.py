@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.designer import service as designer_service
-from app.designer.schemas import DesignerError
+from app.designer import snapshot as snapshot_service
+from app.designer.schemas import ComputeRulesConfig, DesignerError, QueryConditionsConfig
 from app.datasources import acl as datasource_acl
 from app.datasources.acl import VisibilityError
 from app.datasources.models import DataSource
@@ -19,6 +20,8 @@ from app.governance.query_design.schemas import (
     VisualQueryDesignIn,
     VisualQueryDesignOut,
 )
+from app.governance.workflow import service as workflow_service
+from app.governance.workflow.schemas import WorkflowInstanceOut
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigError, ConfigUpsert
 
@@ -170,3 +173,57 @@ def preview_query_design_execute(
                 403,
             ) from exc
     return PreviewExecuteOut(rls_fragment=fragment)
+
+
+def load_design_from_workflow(
+    session: Session, instance_id: uuid.UUID, actor: UserContext
+) -> VisualQueryDesignOut:
+    inst = workflow_service.get_instance(session, instance_id)
+    if inst.status not in ("designing", "pending_publish", "published"):
+        raise GovQueryDesignError("GOV_QUERY_DESIGN_NOT_APPROVED", "Design not in approved state", 404)
+    body = workflow_service._load_instance_payload(session, instance_id)
+    snap_id = uuid.UUID(body["designSnapshotId"])
+    snap = snapshot_service.get_snapshot_for_actor(session, snap_id, actor)
+    status_map = {"designing": "approved", "pending_publish": "ready", "published": "ready"}
+    return VisualQueryDesignOut(
+        schema_version="1.0",
+        ref_type="design_draft",
+        ref_id=inst.ref_id,
+        title=f"设计 {str(inst.ref_id)[:8]}",
+        status=status_map[inst.status],
+        data_source_id=None,
+        conditions=snap["conditions"],
+        compute_rules=snap.get("computeRules"),
+        revision=0,
+    )
+
+
+def confirm_approved_design(
+    session: Session, instance_id: uuid.UUID, actor: UserContext
+) -> WorkflowInstanceOut:
+    inst = workflow_service.get_instance(session, instance_id)
+    if inst.status != "designing":
+        raise GovQueryDesignError("GOV_QUERY_DESIGN_ALREADY_CONFIRMED", "Already confirmed", 409)
+    if not any(r in actor.roles for r in ("admin", "approver")):
+        raise GovQueryDesignError("GOV_WORKFLOW_FORBIDDEN_ROLE", "Confirm requires approver", 403)
+    design = load_design_from_workflow(session, instance_id, actor)
+    compute_rules = None
+    if design.compute_rules is not None:
+        compute_rules = ComputeRulesConfig.model_validate(
+            {**design.compute_rules, "refType": "design_draft", "refId": str(design.ref_id)}
+        )
+    save_visual_query_design(
+        session,
+        VisualQueryDesignIn(
+            schemaVersion="1.0",
+            refId=design.ref_id,
+            title=design.title,
+            status="draft",
+            conditions=QueryConditionsConfig.model_validate(
+                {**design.conditions, "refType": "design_draft", "refId": str(design.ref_id)}
+            ),
+            computeRules=compute_rules,
+        ),
+        actor,
+    )
+    return workflow_service.transition_instance(session, instance_id, "complete_design", "designer")

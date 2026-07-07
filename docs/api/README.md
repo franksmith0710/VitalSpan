@@ -151,6 +151,8 @@ redoc: /redoc
 | GET | `/api/v1/designer/fields` | 设计器字段注册表 + glossary + dataset 字段 | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/preview/translate` | 三块配置合并 SQL 预览（含规则注释） | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/submit-workflow` | 快照 + 工单实例 + 自动 submit | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
+| GET | `/api/v1/designer/snapshots/{snapshotId}` | 设计器快照读取（owner/admin ACL；`DESIGN_SNAPSHOT_FORBIDDEN`） | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
+| GET/PUT | `/api/v1/designer/design-mode` | 可视化/SQL 模式切换（`config_type=design_mode`） | 内部 | 四期 | DESIGN-005 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/conditions/validate` | 查询条件配置校验（不落库；422 含 `detail.fields`；`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_CROSS_FIELD`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/conditions` | 查询条件保存/读取（挂载 QUERY-007；可选 `expectedRevision`） | 内部 | 一期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/compute-rules` | 运算规则保存/读取（挂载 QUERY-007；`DESIGN_RULE_TYPE_MISMATCH`/`DESIGN_RULE_BROKEN_CHAIN`/`DESIGN_INVALID_AGGREGATE`） | 内部 | 一期 | DESIGN-002 | 已实现 | `backend/app/api/v1/designer.py` |
@@ -159,7 +161,7 @@ redoc: /redoc
 | PUT/GET | `/api/v1/designer/sql-mode` | SQL 模式持久化（`config_type=sql_mode`；`?refId=`） | 内部 | 一期 | DESIGN-005 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/output-fields/validate` | 输出字段/聚合校验（`DESIGN_EMPTY_OUTPUT_FIELDS`/`DESIGN_UNKNOWN_FIELD`/`DESIGN_INVALID_AGGREGATE`） | 内部 | 一期 | DESIGN-003 | 已实现 | `backend/app/api/v1/designer.py` |
 | PUT/GET | `/api/v1/designer/output-fields` | 输出字段持久化（`config_type=output_fields`；`?refId=`） | 内部 | 一期 | DESIGN-003 | 已实现 | `backend/app/api/v1/designer.py` |
-| POST/PUT/GET | `/api/v1/designer/workflow-link` | 设计器项与工单实例关联 validate/save/get（`config_type=designer_workflow_link`） | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
+| POST/PUT/GET/DELETE | `/api/v1/designer/workflow-link` | 设计器项与工单实例关联 validate/save/get/delete（双向 query；draft 可撤回） | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/query/preview` | 查询预览（设计器/图表配置） | 内部 | 二期 | QUERY-005 | 规划 | `backend/app/api/v1/query.py` |
 
 ---
@@ -344,7 +346,12 @@ redoc: /redoc
 | GET | `/api/v1/gov/workflow/templates` | 工单流程模板列表（builtin + custom） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/workflow/templates/validate` | 工单模板校验 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/workflow/templates/{template_id}/node-roles` | 工单模板节点角色配置 | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
-| POST/GET | `/api/v1/gov/workflow/instances` | 工单实例创建/读取（`config_type=workflow_instance`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST/GET | `/api/v1/gov/workflow/instances` | 工单实例创建/列表（`config_type=workflow_instance`） | IF-06 | 一期 | GOV-003/004 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/workflow/instances/{id}` | 实例详情（可选 `includeDesignSnapshot`） | IF-06 | 一期 | DESIGN-004 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/workflow/instances/{id}/approved-design` | 审批态可视化查询设计投影 | IF-06 | 四期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/workflow/instances/{id}/confirm-design` | 审批通过设计确认 → `pending_publish` | IF-06 | 四期 | GOV-004 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/publish/from-workflow` | 工单实例一键发布查询服务 | IF-06 | 四期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| GET | `/api/v1/gov/publish/entries/{entryId}/openapi` | 已发布条目 OpenAPI 3.1 文档 | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/workflow/instances/{id}/transition` | 五态 FSM 迁移（`GOV_WORKFLOW_*`） | IF-06 | 一期 | GOV-003 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/governance/tickets` | 查询工单 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |
 | POST | `/api/v1/governance/tickets/{id}/submit` | 提交审批 | 内部 | 四期 | GOV-003 | 规划 | `backend/app/api/v1/governance/tickets.py` |

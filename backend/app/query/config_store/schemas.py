@@ -20,6 +20,8 @@ ALLOWED_CONFIG_TYPES = frozenset({
     "designer_workflow_link",
     "workflow_template",
     "designer_snapshot",
+    "design_mode",
+    "publish_version_history",
     "global_filter_linkage",
     "dataset_query",
 })

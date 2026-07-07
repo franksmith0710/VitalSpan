@@ -55,12 +55,12 @@
 | CAT-001~003 | `cat0x/handler.py` + `GET .../m6-probe` M6 集成验收面 | CAT-001~003 | 已实现 |
 | `POST /api/v1/gov/bus/auto-register` | 全自动注册 FSM（integration/admin；幂等） | GOV-007 | L1 已实现 r60 |
 | `GET /api/v1/workno/behavior` | CAT-07 工号行为审计查询 mock | CAT-007 | L1 已实现 r60 |
-| `query_design/` | 可视化查询设计聚合 service/schemas | GOV-004 | 已实现 |
+| `query_design/` | 可视化查询设计聚合 + 工单快照投影/确认 | GOV-004 | 已实现 r246 |
 | `acl.py` | 查询设计 save/publish 权限联动 + RLS smoke | GOV-008 | 已实现 |
 | `POST/PUT/GET /api/v1/gov/query-design*` | 可视化查询设计 validate/save/get | GOV-004/008 | 已实现 |
-| `governance/publish/` | 查询服务发布状态机 submit/approve/reject | GOV-005 | 已实现 L1 |
-| `governance/workflow/` | 工单模板 + 五态 FSM（draft→published） | GOV-003 | 已实现 L1 |
-| `governance/openapi/` | 发布引擎 OpenAPI 映射 store + validate | GOV-006 | 已实现 L1 r54 |
+| `governance/publish/` | 查询服务发布状态机 + from-workflow 发布链 | GOV-005 | 已实现 r246 |
+| `governance/workflow/` | 工单模板 + 五态 FSM + 实例列表 | GOV-003/004 | 已实现 r246 |
+| `governance/openapi/` | 发布 OpenAPI 3.1 文档生成 + mapping | GOV-006 | 已实现 r246 |
 | `POST/GET /api/v1/gov/publish/entries/{id}/*` | 发布工作流 REST 骨架 | GOV-005 | 已实现 L1 |
 | `GET /api/v1/gov/publish/entries/{id}/notifications` | 审批通知事件列表（内存 store） | GOV-005 | 已实现 companion |
 | `GET/POST /api/v1/gov/workflow/*` | 工单模板/实例/迁移 REST | GOV-003 | 已实现 L1 |

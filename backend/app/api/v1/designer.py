@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
-from pydantic import ValidationError
+from fastapi.responses import JSONResponse, Response
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
+from app.designer import snapshot as snapshot_service
 from app.designer import service as designer_service
 from app.designer.schemas import ComputeRulesConfig, DesignerError, DesignerSubmitWorkflowIn, DesignerSubmitWorkflowOut, FieldRegistryOut, OutputFieldsConfig, PreviewTranslateIn, QueryConditionsConfig, SqlModeSpec
 from app.designer import output_fields as output_fields_service
@@ -59,6 +60,12 @@ def _config_error(exc: ConfigError) -> JSONResponse:
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": detail},
     )
+
+
+class DesignModeIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    ref_id: uuid.UUID = Field(alias="refId")
+    mode: Literal["visual", "sql"]
 
 
 @router.post("/conditions/validate", response_model=QueryConditionsConfig)
@@ -327,10 +334,70 @@ def save_workflow_link(
 def get_workflow_link(
     _: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
-    designer_item_id: uuid.UUID = Query(alias="designerItemId"),
+    designer_item_id: uuid.UUID | None = Query(default=None, alias="designerItemId"),
+    workflow_instance_id: uuid.UUID | None = Query(default=None, alias="workflowInstanceId"),
 ) -> DesignerWorkflowLinkOut | JSONResponse:
     try:
-        return workflow_link_service.get_workflow_link(db, designer_item_id)
+        if designer_item_id is not None:
+            return workflow_link_service.get_workflow_link(db, designer_item_id)
+        if workflow_instance_id is not None:
+            return workflow_link_service.get_link_by_instance(db, workflow_instance_id)
+        return _designer_error(
+            DesignerError(
+                "DESIGN_WORKFLOW_INVALID_ITEM",
+                "designerItemId or workflowInstanceId required",
+                422,
+            )
+        )
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.delete("/workflow-link", status_code=204)
+def delete_workflow_link_route(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    designer_item_id: uuid.UUID = Query(alias="designerItemId"),
+):
+    try:
+        workflow_link_service.delete_workflow_link(db, designer_item_id, actor)
+        return Response(status_code=204)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.get("/snapshots/{snapshot_id}")
+def get_designer_snapshot(
+    snapshot_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        return snapshot_service.get_snapshot_for_actor(db, snapshot_id, actor)
+    except DesignerError as exc:
+        return _designer_error(exc)
+
+
+@router.get("/design-mode")
+def get_design_mode_route(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    ref_id: uuid.UUID = Query(alias="refId"),
+    ref_type: str = Query(default="design_draft", alias="refType"),
+):
+    return {"refId": str(ref_id), "mode": sql_mode_service.get_design_mode(db, ref_type, ref_id)}
+
+
+@router.put("/design-mode")
+def put_design_mode_route(
+    payload: DesignModeIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        return sql_mode_service.set_design_mode(
+            db, "design_draft", payload.ref_id, payload.mode, _owner_uuid(actor)
+        )
     except DesignerError as exc:
         return _designer_error(exc)
 

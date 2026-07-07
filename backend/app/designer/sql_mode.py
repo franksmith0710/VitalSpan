@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.designer.schemas import DesignerError, SqlModeSpec
 from app.query.config_store import service as config_store
-from app.query.config_store.schemas import ConfigUpsert
+from app.query.config_store.schemas import ConfigError, ConfigUpsert
 from app.query.readonly import assert_readonly_sql
 from app.query.schemas import QueryError
 
@@ -104,3 +104,38 @@ def get_sql_mode(session: Session, ref_type: str, ref_id: uuid.UUID) -> SqlModeS
         ref_type=ref_type,
         ref_id=ref_id,
     )
+
+
+_DESIGN_MODE_TYPE = "design_mode"
+_DEFAULT_MODE = "visual"
+
+
+def get_design_mode(session: Session, ref_type: str, ref_id: uuid.UUID) -> str:
+    try:
+        record = config_store.get_config_by_ref(session, _DESIGN_MODE_TYPE, ref_type, ref_id)
+        return record.payload.get("mode", _DEFAULT_MODE)
+    except ConfigError:
+        return _DEFAULT_MODE
+
+
+def set_design_mode(
+    session: Session,
+    ref_type: str,
+    ref_id: uuid.UUID,
+    mode: str,
+    owner_id: uuid.UUID | None = None,
+) -> dict:
+    if mode not in ("visual", "sql"):
+        raise DesignerError("DESIGN_MODE_INVALID", "mode must be visual or sql", 422)
+    config_store.upsert_config(
+        session,
+        ConfigUpsert(
+            config_type=_DESIGN_MODE_TYPE,
+            schema_version="1.0",
+            ref_type=ref_type,
+            ref_id=ref_id,
+            payload={"mode": mode},
+        ),
+        owner_id=owner_id,
+    )
+    return {"refId": str(ref_id), "mode": mode}

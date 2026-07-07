@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import re
+import time
 import uuid
 
 from sqlalchemy.orm import Session
 
+from app.governance.catalog import service as catalog_service
 from app.governance.openapi.errors import OpenApiMappingError
 from app.governance.openapi.schemas import (
     OpenApiMappingCreate,
@@ -23,6 +25,67 @@ SUPPORTED_API_VERSIONS = frozenset({"v1"})
 _OPERATION_ID_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9_]{0,127}$")
 _PATH_RE = re.compile(r"^/api/v1/[a-z0-9/_-]+$")
 probe_openapi_validate_budget_ms: int = 50
+_REDACT_KEYS = frozenset({"password", "secret", "token", "credential"})
+
+
+def redact_openapi_fields(schema: dict) -> dict:
+    props = schema.get("properties", {})
+    filtered = {k: v for k, v in props.items() if not any(r in k.lower() for r in _REDACT_KEYS)}
+    return {**schema, "properties": filtered}
+
+
+def generate_openapi_document(db: Session, catalog_entry_id: uuid.UUID) -> dict:
+    status = publish_service.get_publish_status(db, catalog_entry_id)
+    if status.status != "published":
+        raise OpenApiMappingError("GOV_OPENAPI_DOC_NOT_PUBLISHED", "Entry not published", 422)
+    entry = catalog_service.get_entry(db, catalog_entry_id)
+    slug = entry.path.rsplit("/", 1)[-1].replace("-", "_")
+    request_schema = redact_openapi_fields(
+        {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer"},
+                "password_hash": {"type": "string"},
+            },
+        }
+    )
+    doc = {
+        "openapi": "3.1.0",
+        "info": {"title": entry.name, "version": "1"},
+        "paths": {
+            entry.path: {
+                entry.http_method.lower(): {
+                    "operationId": f"query_{slug}",
+                    "requestBody": {
+                        "content": {"application/json": {"schema": request_schema}},
+                    },
+                    "responses": {"200": {"description": "Query result"}},
+                }
+            }
+        },
+    }
+    existing = list_mappings(catalog_entry_id)
+    if not existing.items:
+        register_mapping(
+            db,
+            OpenApiMappingCreate(
+                catalogEntryId=catalog_entry_id,
+                httpMethod=entry.http_method,
+                path=entry.path,
+                operationId=f"query_{slug}",
+                apiVersion="v1",
+            ),
+        )
+    return doc
+
+
+def probe_generate_openapi_budget_ms(db: Session, entry_id: uuid.UUID) -> float:
+    started = time.perf_counter()
+    try:
+        generate_openapi_document(db, entry_id)
+    except OpenApiMappingError:
+        pass
+    return (time.perf_counter() - started) * 1000
 
 
 def _validate_entity_ref(entity_type_ref: str | None) -> None:

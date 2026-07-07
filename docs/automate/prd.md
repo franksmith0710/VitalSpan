@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.103
+version: 1.2.104
 last_updated: 2026-07-07
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-07 · 规范见 `prd-scoring` · 本轮重评：DESIGN-001~003、GOV-003、DESIGN-004（92.0~92.1↑）
+> 更新：2026-07-07 · 规范见 `prd-scoring` · 本轮重评：DESIGN-004~005、GOV-004~006（91.6~92.8↑）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -125,9 +125,9 @@ domain_count: 16
 | GOV-001 | 86 | 96 | 94 | N/A | 90 | 100 | 92 | 90 | 92.5 | 用户价值 |
 | GOV-002 | 86 | 96 | 94 | N/A | 90 | 100 | 88 | 90 | 92.0 | 性能 |
 | GOV-003 | 88 | 94 | 96 | 86 | 90 | 100 | 90 | 90 | 91.9 | 交互体验 |
-| GOV-004 | 84 | 90 | 96 | N/A | 90 | 98 | 88 | 88 | 90.5 | 用户价值 |
-| GOV-005 | 84 | 90 | 96 | N/A | 88 | 98 | 88 | 88 | 90.2 | 架构健康 |
-| GOV-006 | 84 | 90 | 94 | N/A | 88 | 98 | 88 | 88 | 90.1 | 用户价值 |
+| GOV-004 | 88 | 94 | 96 | 86 | 90 | 100 | 88 | 90 | 91.7 | 交互体验 |
+| GOV-005 | 88 | 96 | 96 | 88 | 90 | 100 | 88 | 90 | 92.2 | 用户价值 |
+| GOV-006 | 88 | 94 | 94 | 88 | 90 | 100 | 88 | 90 | 91.6 | 用户价值 |
 | GOV-007 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.2 | 用户价值 |
 | GOV-008 | 84 | 88 | 94 | N/A | 90 | 98 | 88 | 92 | 90.2 | 用户价值 |
 | META-001 | 88 | 96 | 94 | 86 | 92 | 100 | 92 | 92 | 92.3 | 交互体验 |
@@ -139,8 +139,8 @@ domain_count: 16
 | DESIGN-001 | 88 | 94 | 94 | 86 | 92 | 100 | 90 | 90 | 92.1 | 交互体验 |
 | DESIGN-002 | 88 | 94 | 96 | 86 | 92 | 100 | 90 | 90 | 92.1 | 交互体验 |
 | DESIGN-003 | 88 | 94 | 94 | 88 | 92 | 100 | 90 | 90 | 92.0 | 用户价值 |
-| DESIGN-004 | 88 | 90 | 96 | 86 | 90 | 100 | 90 | 92 | 91.2 | 完整度 |
-| DESIGN-005 | 84 | 90 | 94 | N/A | 88 | 98 | 88 | 88 | 90.1 | 用户价值 |
+| DESIGN-004 | 90 | 94 | 96 | 88 | 90 | 100 | 90 | 94 | 92.8 | 用户价值 |
+| DESIGN-005 | 88 | 92 | 96 | 86 | 90 | 100 | 90 | 90 | 91.6 | 交互体验 |
 | API-001 | 82 | 90 | 90 | N/A | 90 | 96 | 86 | 88 | 90.0 | 性能 |
 | API-002 | 82 | 90 | 92 | N/A | 88 | 96 | 86 | 88 | 90.2 | 性能 |
 | API-003 | 84 | 90 | 94 | N/A | 90 | 98 | 88 | 90 | 90.4 | 用户价值 |
@@ -200,13 +200,13 @@ domain_count: 16
 
 ## 执行范围（与 plan 对齐）
 
-> 更新：2026-07-07 · 来源 [`plan.md`](./plan.md) v2.5.1 · hub **v1.2.103**
+> 更新：2026-07-07 · 来源 [`plan.md`](./plan.md) v2.5.1 · hub **v1.2.104**
 
 | 字段 | 值 |
 |------|-----|
 | 当前执行 | **M-FINAL 最后一期收官**（27 待办：24 PRD + 3 companion†） |
 | 已收官 | **P1–P3**（M-FE-1~3 + M2–M12，94 项）+ **M-FINAL F-A/F-B/F-C** companion |
-| PRD 进度 | **113** 已实现 · **11** 部分实现 · **5** 未实现（**129** 合同项） |
+| PRD 进度 | **118** 已实现 · **6** 部分实现 · **5** 未实现（**129** 合同项） |
 | 当前节 | **M-FINAL · F-E**（设计器 + 治理；F-D 语义层 / Dataset 已收官 2026-07-07） |
 | G2 选题 | 从 M-FINAL 含 `[ ]` 的子批取 3–5 项；**F-G（CONN-023~027）已可选题** |
 
@@ -217,8 +217,8 @@ domain_count: 16
 | 子批 | PRD ID | 分片状态 |
 |------|--------|----------|
 | F-D | META-001 ~ META-004 | 已实现 |
-| F-E | DESIGN-001 ~ DESIGN-003、GOV-003 | 已实现 |
-| F-E | DESIGN-004 ~ DESIGN-005、GOV-004 ~ GOV-008 | 部分实现 |
+| F-E | DESIGN-001 ~ DESIGN-003、GOV-003、DESIGN-004 ~ DESIGN-005、GOV-004 ~ GOV-006 | 已实现 |
+| F-E | GOV-007 ~ GOV-008 | 部分实现 |
 | F-F | NFR-003、NFR-005、NFR-007、NFR-008 | 部分实现 |
 | F-G | CONN-023 ~ CONN-027 | 未实现 |
 
@@ -237,6 +237,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.104 | 2026-07-07 | P5 r246 重评 DESIGN-004~005、GOV-004~006（M-FINAL F-E 批次 2）；pytest 2190/32 skipped + test_mfinal_fe_design_r246 32/32 + r245 34/34 regression；fe check:design 201 files + vitest 227/227 + designer/gov batch2 smoke；快照 ACL/双向 link/SQL 模式/审批态设计/from-workflow 发布/OpenAPI 3.1；用户价值 84–88%→88–90%、完整度 90–94%→92–96%、交互 N/A→86–88%、测试覆盖 98%→100%；总分 90.1–91.2→91.6–92.8（五 ID ≥90 STUCK 空；plan M-FINAL F-E 五 ID 勾选） |
 | 1.2.103 | 2026-07-07 | P5 r245 重评 DESIGN-001~003、GOV-003、DESIGN-004（M-FINAL F-E 批次 1）；pytest 2158/32 skipped + test_mfinal_fe_design_r245 34/34；fe check:design 197 files + vitest 220/220 + designer.smoke 6/6；设计器三面板+预览+快照提交+工单模板 CRUD；用户价值 82–84%→88%、完整度 90–92%→90–94%、交互 N/A→86–88%、测试覆盖 98%→100%；总分 90.1–90.4→91.2–92.1（五 ID ≥90 STUCK 空；plan M-FINAL F-E 四 ID 勾选；DESIGN-004 留批次 2） |
 | 1.2.102 | 2026-07-07 | P5 r244 重评 META-001~004（M-FINAL F-D 语义层收官）；pytest 2124/31 skipped + test_mfinal_fd_meta_r244 28/28；fe check:design 193 files + vitest 214/214 + metadata-panels + DatasetListPage CRUD；写 ACL + theme FK migration 0019 + Dataset PUT/DELETE/bind + QUERY 四步集成测；用户价值 82–84%→88–90%、完整度 90–94%→94–98%、交互 N/A→86–88%、测试覆盖 98%→100%、安全性 88%→92%；总分 90.0–91.1→92.3–93.7（四 ID ≥90 STUCK 空；plan M-FINAL F-D 四 ID 勾选；F-D 收官） |
 | 1.2.101 | 2026-07-07 | P5 r243 重评 CONN-022 + QUERY-007~009（M-FINAL F-C2 GaussDB 收官 + F-D 查询链 kickoff）；pytest 2096/31 skipped + test_mfinal_fc_r242 022 + test_mfinal_fd_r243 14/14；fe check:design 188 files + vitest 214/214 + datasource-form.smoke T-CONN-R243-FE-01~02；GaussDB probe_readonly_sql + dataset_query ACL + translate-from-config + dataset/execute 链；用户价值 84%→86–88%、完整度 88–90%→94–96%、测试覆盖 98%→100%、安全性 88–90%→90–92%；总分 90.0–91.7→92.2–93.2（四 ID ≥90 STUCK 空；plan M-FINAL F-C CONN-022 + F-D QUERY-007~009 勾选；F-C 收官） |
