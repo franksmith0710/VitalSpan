@@ -14,7 +14,7 @@ from app.views.protocol import export_view_json_schema
 from app.views.schemas import DashboardView, ViewError
 from app.views.validate import validate_dashboard_view
 from app.views.role_template import get_defaults, put_defaults
-from app.views.user_override import create_override, get_override, list_overrides
+from app.views.user_override import create_override, delete_override, get_override, list_overrides, update_override
 
 router = APIRouter(prefix="/views", tags=["views", "IF-06"])
 
@@ -120,5 +120,30 @@ def create_my_view(
 ):
     try:
         return create_override(db, actor, payload.model_dump(by_alias=True))
+    except ViewError as exc:
+        return _error_response(exc)
+
+
+@user_views_router.put("/me/views/{view_id}", response_model=None)
+def update_my_view(
+    view_id: str,
+    payload: UserViewOverrideIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_views_db)],
+):
+    try:
+        return update_override(db, actor, view_id, payload.model_dump(by_alias=True))
+    except ViewError as exc:
+        return _error_response(exc)
+
+
+@user_views_router.delete("/me/views/{view_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def delete_my_view(
+    view_id: str,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        delete_override(actor, view_id)
+        return None
     except ViewError as exc:
         return _error_response(exc)

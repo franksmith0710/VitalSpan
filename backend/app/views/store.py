@@ -27,3 +27,21 @@ def add_user_override(user_id: str, item: dict[str, Any]) -> dict[str, Any]:
     bucket = _user_overrides.setdefault(user_id, [])
     bucket.append(item)
     return item
+
+
+def update_user_override(user_id: str, view_id: str, patch: dict[str, Any]) -> dict[str, Any]:
+    bucket = _user_overrides.get(user_id, [])
+    for idx, item in enumerate(bucket):
+        if item.get("id") == view_id:
+            updated = {**item, **patch}
+            bucket[idx] = updated
+            return updated
+    raise KeyError(view_id)
+
+
+def remove_user_override(user_id: str, view_id: str) -> None:
+    bucket = _user_overrides.get(user_id, [])
+    next_bucket = [i for i in bucket if i.get("id") != view_id]
+    if len(next_bucket) == len(bucket):
+        raise KeyError(view_id)
+    _user_overrides[user_id] = next_bucket

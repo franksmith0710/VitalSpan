@@ -102,6 +102,8 @@ redoc: /redoc
 | GET | `/api/v1/nfr/push-config` | 推送配置契约（不泄露 webhook 明文） | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/xinchuang/compliance` | 信创合规检查清单（strict 违规 → 422） | 内部 | 一期 | NFR-007 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/browser-matrix` | 浏览器兼容矩阵 + 可选 UA 探测 | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
+| POST | `/api/v1/nfr/notifications` | 站内推送通知创建（mock 投递） | 内部 | 三期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
+| GET | `/api/v1/nfr/notifications/{id}` | 推送通知状态查询 | 内部 | 三期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | POST | `/api/v1/nfr/push-probe` | 推送通道 mock 探测（不发送真实 HTTP） | 内部 | 一期 | NFR-006 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/registration-path/{connector_type}` | 连接器插件登记路径文档 | 内部 | 一期 | NFR-005 | 已实现 | `backend/app/api/v1/nfr.py` |
 | GET | `/api/v1/nfr/runtime-compliance` | 零 DE/SS 运行时合规扫描报告（`policyVersion=nfr08-l1`） | 内部 | 一期 | NFR-008 | 已实现 | `backend/app/api/v1/nfr.py` |
@@ -197,6 +199,8 @@ redoc: /redoc
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | GET | `/api/v1/users/me/views/{view_id}` | IF-06 | 已实现 | `api/v1/views.py` | 用户视图覆盖按 id 读取（r63 VIEW-003） |
+| PUT | `/api/v1/users/me/views/{id}` | 用户视图覆盖更新 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
+| DELETE | `/api/v1/users/me/views/{id}` | 用户视图覆盖删除 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | POST | `/api/v1/embed/token` | 门户嵌入 token 签发（admin 或 `dashboard:share`；422 `EMBED_TARGET_CONFLICT`/`EMBED_INVALID_ORIGIN`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
 | GET | `/api/v1/embed/sdk-params` | 按 token 解析 SDK 参数（`containerId`/`apiBase`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
 
@@ -214,6 +218,9 @@ redoc: /redoc
 | GET/POST/PATCH/DELETE | `/api/v1/reports/catalog/nodes*` | 报表模板树 catalog CRUD/move（`RPT_CATALOG_*`；template 节点可选 `templateKey` 唯一关联） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/schedules` | 调度列表（可选 `catalogNodeId`） | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/schedules/{id}/executions` | 调度执行历史 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST | `/api/v1/reports/schedules/executions/{executionId}/retry` | 失败/降级执行重试 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/{id}/execute` | 调度 semi-real 执行器（`X-Rpt-Semi-Real: 1`；mock 兼容默认；Idempotency-Key；`deliverySteps`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/executions/{executionId}/artifact` | 执行产物元数据（`RPT_ARTIFACT_FORBIDDEN` ACL） | 内部 | 一期 | RPT-005, RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET/PUT/DELETE | `/api/v1/reports/catalog/nodes/{id}/extension` | 模板节点扩展配置 CRUD（metrics/filters/compareMode；`RPT_EXT_*` ACL） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
@@ -290,6 +297,7 @@ redoc: /redoc
 | POST/GET | `/api/v1/gov/catalog/production-stats` | 生产销售 stats 登记/列表 | IF-06 | 一期 | CAT-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/production-stats/{stats_key}/stats` | 生产销售 stats mock probe | IF-06 | 一期 | CAT-006 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/production-stats/m11-probe` | M11 | CAT-006 m11-probe | 已实现 |
+| GET | `/api/v1/gov/catalog/workno-behavior/m12-probe` | M12 | CAT-007 m12-probe | 已实现 |
 | POST | `/api/v1/gov/catalog/lifecycle-templates/validate` | CAT-001 lifecycle 校验 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 创建 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/catalog/lifecycle-templates` | CAT-001 lifecycle 列表 | IF-06 | 一期 | CAT-001 | 已实现 | `backend/app/api/v1/gov.py` |

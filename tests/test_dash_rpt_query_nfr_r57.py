@@ -611,9 +611,10 @@ def test_rpt005_execute_performance(client: TestClient):
     from app.reports.scheduler.schemas import ScheduleCreate
 
     sched = scheduler_service.create_schedule(
-        ScheduleCreate(catalogNodeId=node.id, cron="0 0 * * *")
+        ScheduleCreate(catalogNodeId=node.id, cron="0 0 * * *"),
+        admin,
     )
-    scheduler_service.transition_schedule(sched.id, "schedule")
+    scheduler_service.transition_schedule(sched.id, "schedule", admin)
     elapsed = probe_mock_execute_budget_ms(sched.id, f"perf-{uuid.uuid4().hex[:8]}", admin)
     assert elapsed <= 20.0
 

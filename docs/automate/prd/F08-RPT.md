@@ -66,7 +66,7 @@
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [RPT-005] 报表调度 FR-3.2
 
-- **状态**：部分实现（companion r58）
+- **状态**：已实现（M12 r238）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
 - **描述**：报表调度 FR-3.2（SRS 追溯项）。
@@ -75,9 +75,14 @@
   - [x] IF-03 文档 API 可提取（`GET/POST /api/v1/reports/schedules` + transition + allowedActions）
   - [x] 调度 mock 执行器（r57 companion：`POST .../schedules/{id}/execute` Idempotency-Key + mock_succeeded；非真实产物投递）
   - [x] semi-real 执行器 + mock 投递链（r58 companion：`X-Rpt-Semi-Real: 1` + `delivery.py` success/fail/retry + `revisionSnapshot`；`probe_semi_real_execute_budget_ms` ≤35ms）
-- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery.py` · `backend/app/api/v1/reports/__init__.py` · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
-- **演化建议**：r58 companion 闭合 semi-real 执行器、mock 投递链、revisionSnapshot 与幂等重放；后续补真实 SMTP/对象存储投递、组合调度粒度与 fe 调度 UI
-- **里程碑对齐**：
+  - [x] APScheduler 调度注册 + lifespan（r238：`scheduler/jobs.py` + `main.py` lifespan hook）
+  - [x] 列表/历史/重试 API（r238：`GET /api/v1/reports/schedules` + `GET .../executions` + `POST .../retry` + failed 错误信息）
+  - [x] M12 Admin 调度 UI（r238：`SchedulePanel` + `TemplateDetailPanel` 调度 Tab；`SchedulePanel.smoke.test.tsx`）
+  - [ ] 真实 SMTP/对象存储投递（companion）
+  - [ ] 组合调度粒度枚举（companion）
+- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery.py` · `fe/src/pages/admin/reports/components/SchedulePanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
+- **演化建议**：r238 闭合 APScheduler 注册、历史/重试链路与 Admin SchedulePanel；真实 SMTP/对象存储投递与组合调度粒度留 companion
+- **里程碑对齐**：M12 · 已完成 · 2026-07-07
 ### [RPT-006] 报表扩展配置 FR-6.3
 
 - **状态**：已实现（M10 r234）
@@ -96,7 +101,7 @@
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [RPT-007] 批量新增报表 FR-6.4
 
-- **状态**：部分实现（companion r58）
+- **状态**：已实现（M12 r238）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
 - **描述**：批量新增报表 FR-6.4（SRS 追溯项）。
@@ -105,6 +110,9 @@
   - [x] 幂等守卫（Idempotency-Key + 原子回滚）
   - [x] 部分失败结构化 detail + rolledBackCount（r55 companion）
   - [x] 产物访问守卫（r58 companion：`GET .../executions/{id}/artifact` owner 可读/viewer 他人 403；batch 10 项 `probe_batch_budget_ms` ≤200ms）
-  - [ ] 管理员 UI 与异步导出链
-- **代码锚点**：`backend/app/reports/batch/` · `backend/app/reports/catalog/acl.py`（`assert_artifact_access`）· `backend/app/api/v1/reports/__init__.py` · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-RPT-08~15 · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-09~15 · `tests/test_dash_rpt_r58.py` T-RPT-R58-007-01~04
-- **演化建议**：r58 companion 闭合 artifact 访问守卫与 batch 性能探测；后续补管理员 UI 与异步导出链
+  - [x] 重复命名 422 + failures 索引（r238：`batch/service.py` duplicate name + `failures` 字段）
+  - [x] 管理员批量导入 UI（r238：`BatchImportPanel` + `TemplateDetailPanel` 批量 Tab；`BatchImportPanel.smoke.test.tsx`）
+  - [ ] 异步导出链（companion）
+- **代码锚点**：`backend/app/reports/batch/` · `backend/app/reports/catalog/acl.py`（`assert_artifact_access`）· `fe/src/pages/admin/reports/components/BatchImportPanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-007-* · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-RPT-08~15 · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-09~15 · `tests/test_dash_rpt_r58.py` T-RPT-R58-007-01~04
+- **演化建议**：r238 闭合 duplicate name、failures 索引与 Admin BatchImportPanel；异步导出链留 companion
+- **里程碑对齐**：M12 · 已完成 · 2026-07-07

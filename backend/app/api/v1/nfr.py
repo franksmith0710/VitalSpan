@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -104,6 +105,25 @@ class BrowserMatrixResponse(BaseModel):
     items: list[BrowserMatrixItemOut]
     detected_browser: dict | None = Field(default=None, alias="detectedBrowser")
     overall_status: str = Field(alias="overallStatus")
+    documentation_url: str = Field(
+        default="/docs/nfr/browser-compatibility.md",
+        alias="documentationUrl",
+    )
+
+
+class NotificationCreateIn(BaseModel):
+    message: str
+    channel: str = "browser"
+
+
+class NotificationOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    id: uuid.UUID
+    channel: str
+    message: str
+    status: str
+    created_at: str = Field(alias="createdAt")
+    delivery: dict | None = None
 
 
 class PushProbeIn(BaseModel):
@@ -196,7 +216,36 @@ def get_browser_matrix(
         ],
         detectedBrowser=detected,
         overallStatus=report.overall_status,
+        documentationUrl="/docs/nfr/browser-compatibility.md",
     )
+
+
+@router.post("/notifications", status_code=201, response_model=None)
+def create_notification_route(
+    payload: NotificationCreateIn,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    from app.core.nfr.notifications import create_notification
+
+    out = create_notification(payload.message, payload.channel)
+    return JSONResponse(status_code=201, content=out.model_dump(by_alias=True, mode="json"))
+
+
+@router.get("/notifications/{notification_id}", response_model=None)
+def get_notification_route(
+    notification_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    from app.core.nfr.notifications import get_notification
+
+    try:
+        out = get_notification(notification_id)
+    except KeyError:
+        return JSONResponse(
+            status_code=404,
+            content={"code": "NFR_NOTIFICATION_NOT_FOUND", "message": "Notification not found", "detail": None},
+        )
+    return JSONResponse(status_code=200, content=out.model_dump(by_alias=True, mode="json"))
 
 
 @router.post("/push-probe", response_model=PushProbeResponse)

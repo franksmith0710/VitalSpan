@@ -204,10 +204,10 @@ def move_catalog_node(
 @router.post("/schedules", status_code=status.HTTP_201_CREATED, response_model=None)
 def create_schedule(
     payload: ScheduleCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
 ):
     try:
-        return scheduler_service.create_schedule(payload)
+        return scheduler_service.create_schedule(payload, user)
     except ReportCatalogError as exc:
         return _catalog_error(exc)
     except ScheduleError as exc:
@@ -229,10 +229,53 @@ def get_schedule(
 def transition_schedule(
     schedule_id: uuid.UUID,
     payload: ScheduleTransitionIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
 ):
     try:
-        return scheduler_service.transition_schedule(schedule_id, payload.action)
+        return scheduler_service.transition_schedule(schedule_id, payload.action, user)
+    except ScheduleError as exc:
+        return _schedule_error(exc)
+
+
+@router.get("/schedules", response_model=None)
+def list_schedules(
+    user: Annotated[UserContext, Depends(get_current_user)],
+    catalog_node_id: uuid.UUID | None = Query(default=None, alias="catalogNodeId"),
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
+    try:
+        return scheduler_service.list_schedules(
+            user, catalog_node_id=catalog_node_id, limit=limit, offset=offset
+        )
+    except ScheduleError as exc:
+        return _schedule_error(exc)
+
+
+@router.get("/schedules/{schedule_id}/executions", response_model=None)
+def list_schedule_executions(
+    schedule_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+):
+    try:
+        row = scheduler_service._get_row(schedule_id)
+        from app.reports.scheduler import acl as schedule_acl
+        schedule_acl.assert_schedule_read(user, row)
+        return scheduler_executor.list_executions(schedule_id, limit, offset)
+    except ScheduleError as exc:
+        return _schedule_error(exc)
+
+
+@router.post("/schedules/executions/{execution_id}/retry", response_model=None)
+def retry_schedule_execution(
+    execution_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(get_current_user)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+):
+    try:
+        return scheduler_executor.retry_execution(execution_id, idempotency_key or "", user)
     except ScheduleError as exc:
         return _schedule_error(exc)
 
