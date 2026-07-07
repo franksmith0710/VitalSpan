@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+import json
 import time
 from typing import Any
 
+from app.core.config import get_settings
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import MONGODB_DRIVER_MISSING, map_mongodb_error
+from app.query.native.guard import guard_native_injection
+from app.query.schemas import QueryError
+
+_FORBIDDEN_MONGO_BODY_KEYS = frozenset({"$where", "mapReduce", "$out", "$merge"})
 
 MONGODB_MAX_FIELDS = 500
 _SYSTEM_DBS = frozenset({"admin", "local", "config"})
@@ -54,6 +60,23 @@ def _get_client(**kwargs: Any) -> Any:
 
 def _normalize_bson_type(value: Any) -> str:
     return _BSON_TYPE_MAP.get(type(value).__name__, "unknown")
+
+
+def _serialize_mongo_cell(value: Any) -> Any:
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, default=str)
+    return value
+
+
+def probe_readonly_find(connection: Any, *, database: str, collection: str) -> bool:
+    if not database.strip() or not collection.strip():
+        return False
+    try:
+        cursor = connection[database][collection].find({}, projection={"_id": 1}).limit(1)
+        list(cursor)
+        return True
+    except Exception:
+        return False
 
 
 class MongodbConnector:
@@ -130,3 +153,43 @@ class MongodbConnector:
             for k, v in sorted(doc.items())
         ]
         return columns[:MONGODB_MAX_FIELDS] if len(columns) > MONGODB_MAX_FIELDS else columns
+
+    def execute_native_query(
+        self,
+        connection: Any,
+        *,
+        body: dict,
+        limit: int,
+        offset: int = 0,
+        database: str | None = None,
+    ) -> tuple[list[str], list[list], bool]:
+        for key in body:
+            if key in _FORBIDDEN_MONGO_BODY_KEYS:
+                raise QueryError("QUERY_NATIVE_INJECTION_SUSPECT", f"Forbidden key: {key}", 422)
+        guard_native_injection(body)
+        collection = body.get("collection")
+        if not isinstance(collection, str) or not collection.strip():
+            raise QueryError("QUERY_NATIVE_INVALID_BODY", "body.collection is required", 422)
+        db_name = body.get("database") or database or ""
+        if not db_name.strip():
+            raise QueryError("QUERY_NATIVE_INVALID_BODY", "database is required", 422)
+        filt = body.get("filter") if isinstance(body.get("filter"), dict) else {}
+        projection = body.get("projection") if isinstance(body.get("projection"), dict) else None
+        cap = min(limit, get_settings().query_default_limit)
+        try:
+            coll = connection[db_name][collection]
+            cursor = coll.find(filt, projection).skip(offset).limit(cap + 1)
+            docs = list(cursor)
+        except Exception as exc:
+            msg = str(exc).lower()
+            if "ns not found" in msg or "not found" in msg:
+                raise QueryError("QUERY_TABLE_NOT_FOUND", str(exc), 404) from exc
+            raise QueryError("QUERY_EXECUTION_ERROR", str(exc), 400) from exc
+        truncated = len(docs) > cap
+        docs = docs[:cap]
+        if not docs:
+            return [], [], False
+        keys = sorted({k for doc in docs for k in doc if k != "_id"})
+        columns = keys if keys else ["_id"]
+        rows = [[_serialize_mongo_cell(doc.get(c)) for c in columns] for doc in docs]
+        return columns, rows, truncated
