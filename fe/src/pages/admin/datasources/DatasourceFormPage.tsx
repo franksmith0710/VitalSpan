@@ -80,6 +80,7 @@ const CONNECTOR_FIELD_HINTS: Record<string, { port: string; databaseLabel: strin
   csv: { port: "1", databaseLabel: "数据库", usernameLabel: "用户名" },
   db2: { port: "50000", databaseLabel: "数据库", usernameLabel: "用户名" },
   impala: { port: "21050", databaseLabel: "数据库", usernameLabel: "用户名" },
+  redshift: { port: "5439", databaseLabel: "数据库", usernameLabel: "用户名" },
 };
 
 export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {

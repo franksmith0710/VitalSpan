@@ -33,6 +33,7 @@ const MOCK_TYPES = {
     { type: "csv", displayName: "CSV" },
     { type: "db2", displayName: "IBM Db2" },
     { type: "impala", displayName: "Apache Impala" },
+    { type: "redshift", displayName: "AWS Redshift" },
   ],
 };
 
@@ -143,5 +144,29 @@ describe("DatasourceFormPage xinchuang smoke", () => {
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
     await selectType("Apache Impala");
     expect(screen.getByText(/兼容 Hive 协议/)).toBeInTheDocument();
+  });
+});
+
+describe("DatasourceFormPage redshift smoke", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+  });
+  afterEach(() => cleanup());
+
+  it("T-CONN-R250-FE-01: redshift 类型在下拉中可选", async () => {
+    mockApiFetch.mockResolvedValueOnce(MOCK_TYPES);
+    renderForm();
+    await waitFor(() => screen.getByRole("combobox"));
+    await selectType("AWS Redshift");
+    expect(screen.getByRole("combobox")).toHaveTextContent("AWS Redshift");
+  });
+
+  it("T-CONN-R250-FE-02: 选中 redshift 后 port 自动填充 5439", async () => {
+    mockApiFetch.mockResolvedValueOnce(MOCK_TYPES);
+    renderForm();
+    await waitFor(() => screen.getByRole("combobox"));
+    await selectType("AWS Redshift");
+    const portInput = screen.getByLabelText(/端口/i) as HTMLInputElement;
+    expect(portInput.value).toBe("5439");
   });
 });
