@@ -13,7 +13,7 @@
 | branch | feat/mfinal-fd-meta-r244 |
 | base_branch | dev-auto |
 | prd_ids | META-001,META-002,META-003,META-004 |
-| pr_number |  |
+| pr_number | 230 |
 | last_verified_command | cd backend && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run && pnpm run build |
