@@ -627,13 +627,13 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 - [x] CONN-019: 南大通用 GBase 连接器（完成于 2026-07-07）
 - [x] CONN-020: OceanBase 连接器（完成于 2026-07-07）
 - [x] CONN-021: TiDB 连接器（完成于 2026-07-07）
-- [ ] CONN-022: GaussDB 连接器
+- [x] CONN-022: GaussDB 连接器（完成于 2026-07-07）
 
 ### F-D — 语义层与 Dataset 路径（原 M13-B）
 
-- [ ] QUERY-007: 配置元模型存储
-- [ ] QUERY-008: 配置→SQL/API 翻译器
-- [ ] QUERY-009: Dataset 查询路径
+- [x] QUERY-007: 配置元模型存储（完成于 2026-07-07）
+- [x] QUERY-008: 配置→SQL/API 翻译器（完成于 2026-07-07）
+- [x] QUERY-009: Dataset 查询路径（完成于 2026-07-07）
 - [ ] META-001: 术语字典
 - [ ] META-002: 业务主题树
 - [ ] META-003: 维度字典注册

@@ -368,21 +368,21 @@
 - **里程碑对齐**：M-FINAL · F-C · 已完成 · 2026-07-07
 ### [CONN-022] GaussDB 连接器
 
-- **状态**：部分实现（L1 kickoff r38 + companion r39）
+- **状态**：已实现
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：四期
 - **描述**：GaussDB 连接器（SRS 追溯项）。
 - **验收标准**：
   - [x] type=`gaussdb` 已注册（types catalog，r38 L1）
-  - [ ] UI 可选
+  - [x] UI 可选（r243 `DatasourceFormPage` GaussDB hints + port 5432；`datasource-form.smoke` T-CONN-R243-FE-01~02）
   - [x] 连通性测试结构化错误（`GAUSSDB_AUTH_FAILED`/`GAUSSDB_CONN_REFUSED`/`GAUSSDB_UNKNOWN_DATABASE`/`GAUSSDB_TIMEOUT`，r38+r39 mock）
   - [x] schema 空库/未知 schema 边界 + columns 500 limit + 多 schema 自省（r38+r39 mock）
   - [x] HTTP test_connection/metadata 4xx 链（r39）
-  - [ ] 只读查询通过
+  - [x] 只读查询通过（r243 `probe_readonly_sql` + readonly-guard；`test_mfinal_fc_r242` T-CONN-R242-022-02~05）
   - [x] category=`relational` 查询模式正确（r38）
-- **代码锚点**：`backend/app/datasources/dialects/gaussdb.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-022-01~07 · `tests/test_query_meta_conn_r39.py` T-CONN-R39-022-01~06
-- **演化建议**：r39 闭合 GAUSSDB_* 错误域、columns limit 与 HTTP metadata 链；后续补只读查询集成测与 UI 选型
-- **里程碑对齐**：M-FINAL · F-C
+- **代码锚点**：`backend/app/datasources/dialects/gaussdb.py` · `tests/test_query_meta_conn_r38.py` T-CONN-R38-022-01~07 · `tests/test_query_meta_conn_r39.py` T-CONN-R39-022-01~06 · `tests/test_mfinal_fc_r242.py` T-CONN-R242-022-01~05 · `fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx` T-CONN-R243-FE-01~02
+- **演化建议**：compose 真机 GaussDB E2E 留信创环境专批（与 F-C 其他五型同级）
+- **里程碑对齐**：M-FINAL · F-C · 已完成 · 2026-07-07
 ### [CONN-023] REST API 数据源连接器
 
 - **状态**：未实现
