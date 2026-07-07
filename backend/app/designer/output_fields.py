@@ -16,6 +16,7 @@ from app.designer.schemas import (
     OutputFieldItem,
     OutputFieldsConfig,
 )
+from app.metadata.dataset import service as dataset_service
 from app.metadata.glossary import service as glossary_service
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigUpsert
@@ -34,7 +35,21 @@ def _glossary_codes(session: Session) -> set[str]:
     return {item.code for item in items}
 
 
-def validate_output_fields_config(session: Session, config: OutputFieldsConfig) -> OutputFieldsConfig:
+def _dataset_field_names(dataset_id: uuid.UUID | None) -> set[str]:
+    if dataset_id is None:
+        return set()
+    try:
+        ds = dataset_service.get_dataset(str(dataset_id))
+        return {cf.name for cf in ds.computed_fields}
+    except Exception:
+        return set()
+
+
+def validate_output_fields_config(
+    session: Session,
+    config: OutputFieldsConfig,
+    dataset_id: uuid.UUID | None = None,
+) -> OutputFieldsConfig:
     if not config.fields:
         raise DesignerError(
             "DESIGN_EMPTY_OUTPUT_FIELDS",
@@ -65,9 +80,10 @@ def validate_output_fields_config(session: Session, config: OutputFieldsConfig) 
             fields=[{"field": "aggregates", "message": f"max {MAX_AGGREGATES}"}],
         )
     glossary = _glossary_codes(session)
+    allowed_fields = DESIGNER_FIELD_REGISTRY | _dataset_field_names(dataset_id)
     for idx, field in enumerate(config.fields):
         prefix = f"fields[{idx}]"
-        if field.field_id not in DESIGNER_FIELD_REGISTRY:
+        if field.field_id not in allowed_fields:
             raise DesignerError(
                 "DESIGN_UNKNOWN_FIELD",
                 "Unknown field in output",
@@ -96,7 +112,7 @@ def validate_output_fields_config(session: Session, config: OutputFieldsConfig) 
                 422,
                 fields=[{"field": f"{prefix}.fn", "message": "not in whitelist"}],
             )
-        if agg.field_id not in DESIGNER_FIELD_REGISTRY:
+        if agg.field_id not in allowed_fields:
             raise DesignerError(
                 "DESIGN_UNKNOWN_FIELD",
                 "Unknown field in aggregate",
@@ -104,7 +120,7 @@ def validate_output_fields_config(session: Session, config: OutputFieldsConfig) 
                 fields=[{"field": f"{prefix}.fieldId", "message": f"{agg.field_id} not registered"}],
             )
         for j, gb in enumerate(agg.group_by):
-            if gb not in DESIGNER_FIELD_REGISTRY:
+            if gb not in allowed_fields:
                 raise DesignerError(
                     "DESIGN_UNKNOWN_FIELD",
                     "Unknown groupBy field",
@@ -128,7 +144,7 @@ def probe_validate_output_fields(session: Session) -> OutputFieldsProbeResult:
     return OutputFieldsProbeResult(elapsed_ms=(time.perf_counter() - started) * 1000, ok=ok)
 
 
-def _payload(config: OutputFieldsConfig) -> dict:
+def _output_payload(config: OutputFieldsConfig) -> dict:
     return {
         "schemaVersion": config.schema_version,
         "fields": [f.model_dump(by_alias=True) for f in config.fields],
@@ -145,7 +161,7 @@ def save_output_fields(session: Session, config: OutputFieldsConfig, owner_id: u
             schema_version=config.schema_version,
             ref_type=config.ref_type,
             ref_id=config.ref_id,
-            payload=_payload(config),
+            payload=_output_payload(config),
         ),
         owner_id=owner_id,
     )

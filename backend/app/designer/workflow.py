@@ -7,9 +7,12 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from app.designer.schemas import DesignerError
+from app.auth.deps import UserContext
+from app.designer.schemas import DesignerError, DesignerSubmitWorkflowIn, DesignerSubmitWorkflowOut
+from app.designer import snapshot as snapshot_service
 from app.governance.publish import service as publish_service
 from app.governance.workflow import service as workflow_service
+from app.governance.workflow.schemas import WorkflowInstanceCreateIn
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigError, ConfigUpsert
 
@@ -102,3 +105,72 @@ def probe_validate_workflow_link_budget_ms(session: Session, link: DesignerWorkf
     started = time.perf_counter()
     validate_workflow_link(session, link)
     return (time.perf_counter() - started) * 1000
+
+
+def _assert_submit_actor(actor: UserContext) -> None:
+    if not any(r in actor.roles for r in ("admin", "analyst")):
+        raise DesignerError("DESIGN_SUBMIT_FORBIDDEN", "Submit requires admin or analyst role", 403)
+
+
+def _assert_design_complete(session: Session, designer_item_id: uuid.UUID) -> None:
+    from app.designer import service as designer_service
+    from app.designer import output_fields as output_fields_service
+
+    try:
+        designer_service.get_conditions(session, "design_draft", designer_item_id)
+        designer_service.get_compute_rules(session, "design_draft", designer_item_id)
+        output_fields_service.get_output_fields(session, "design_draft", designer_item_id)
+    except ConfigError as exc:
+        raise DesignerError("DESIGN_SUBMIT_INCOMPLETE", "Designer configuration incomplete", 422) from exc
+
+
+def submit_with_snapshot(
+    session: Session,
+    payload: DesignerSubmitWorkflowIn,
+    actor: UserContext,
+) -> DesignerSubmitWorkflowOut:
+    _assert_submit_actor(actor)
+    if payload.design_type == "query" and payload.catalog_entry_id is not None:
+        raise DesignerError(
+            "DESIGN_WORKFLOW_CATALOG_MISMATCH",
+            "query designType must not include catalogEntryId",
+            422,
+        )
+    _assert_design_complete(session, payload.designer_item_id)
+    owner_id: uuid.UUID | None = None
+    try:
+        owner_id = uuid.UUID(actor.id)
+    except ValueError:
+        pass
+    snapshot_id, _ = snapshot_service.capture_snapshot(session, payload.designer_item_id, owner_id)
+    instance = workflow_service.create_instance(
+        session,
+        WorkflowInstanceCreateIn(templateId=payload.template_id, refId=payload.designer_item_id),
+    )
+    record = config_store.get_config_by_ref(session, "workflow_instance", "workflow", instance.id)
+    body = dict(record.payload)
+    body["designSnapshotId"] = str(snapshot_id)
+    config_store.upsert_config(
+        session,
+        ConfigUpsert(
+            config_type="workflow_instance",
+            schema_version="1.0",
+            ref_type="workflow",
+            ref_id=instance.id,
+            payload=body,
+        ),
+    )
+    link = DesignerWorkflowLinkIn(
+        designerItemId=payload.designer_item_id,
+        workflowInstanceId=instance.id,
+        catalogEntryId=payload.catalog_entry_id,
+        designType=payload.design_type,
+    )
+    save_workflow_link(session, link, owner_id)
+    transitioned = workflow_service.transition_instance(session, instance.id, "submit", "requester")
+    return DesignerSubmitWorkflowOut(
+        workflowInstanceId=instance.id,
+        designSnapshotId=snapshot_id,
+        status=transitioned.status,
+        publishReady=False,
+    )
