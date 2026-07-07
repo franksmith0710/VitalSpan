@@ -13,7 +13,7 @@
 | branch | feat/m12-batch1-rpt-view-nfr-cat-r238 |
 | base_branch | dev-auto |
 | prd_ids | RPT-005,RPT-007,VIEW-003,NFR-006,CAT-007 |
-| pr_number |  |
+| pr_number | 223 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm test && pnpm run build |
