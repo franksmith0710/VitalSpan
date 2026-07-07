@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { OPTIONAL_ROLE_CAPABILITY_MAP } from "./capabilities";
 import { resolveNavGroups, ACTIVE_MILESTONES } from "./resolve-nav";
 import { sessionUserFromAuth } from "./session";
 
@@ -24,18 +25,14 @@ describe("resolveNavGroups", () => {
     expect(sectionTitles).toContain("报表");
     expect(sectionTitles).not.toContain("系统");
     expect(sectionTitles).not.toContain("数据");
-    // 分析 section has Dashboard
     const analysisSection = groups.find((g) => g.title === "分析");
     expect(analysisSection?.items.map((i) => i.name)).toContain("Dashboard");
-    // no legacy top-level 数据源 item
     const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
     expect(allItemNames).not.toContain("数据源");
-    // 报表 parent item exists
     const reportSection = groups.find((g) => g.title === "报表");
     expect(reportSection?.items.map((i) => i.name)).toContain("报表");
   });
 
-  // T-NAV-MF-01: viewer does not see M13 items
   it("T-NAV-MF-01: viewer does not see M13 items", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("viewer", ["viewer"]));
     const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
@@ -46,7 +43,6 @@ describe("resolveNavGroups", () => {
     expect(allItemNames).not.toContain("Dataset");
   });
 
-  // T-NAV-MF-02: analyst does not see M13 items
   it("T-NAV-MF-02: analyst does not see M13 items", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
     const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
@@ -56,7 +52,6 @@ describe("resolveNavGroups", () => {
     expect(allItemNames).not.toContain("Dataset");
   });
 
-  // T-NAV-MF-03: admin sees M13 items with preview=true
   it("T-NAV-MF-03: admin sees M13 items with preview: true", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const allItems = groups.flatMap((g) => g.items);
@@ -68,32 +63,24 @@ describe("resolveNavGroups", () => {
     expect(ticket?.preview).toBe(true);
   });
 
-  // T-NAV-MF-04: capabilities override — admin with only M1 filters M7/M11/M13
   it("T-NAV-MF-04: capabilities override filters M7/M11/M13 for admin", () => {
-    const groups = resolveNavGroups(
-      sessionUserFromAuth("admin", ["admin"]),
-      new Set(["M1"]),
-    );
-    // M13 items show as preview for admin even with M1-only caps
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]), {
+      activeMilestones: new Set(["M1"]),
+    });
     const allItems = groups.flatMap((g) => g.items);
     const designer = allItems.find((i) => i.name === "查询设计器");
     expect(designer?.preview).toBe(true);
-    // M7 items like 实体总览 have preview=true for admin
     const entity = allItems.find((i) => i.name === "实体总览");
     expect(entity?.preview).toBe(true);
-    // 报表 parent subItems: 报表模板(M7) and 报表调度(M11) get preview for admin
     const reportSection = groups.find((g) => g.title === "报表");
     const reportParent = reportSection?.items.find((i) => i.name === "报表");
-    // All 3 subItems still appear for admin (preview applies at item level, subItems filtered differently)
     expect(reportParent?.subItems?.map((s) => s.name)).toContain("预制报表");
   });
 
-  // T-NAV-MF-05: viewer with M1-only capabilities — 报表 subItems only contains 预制报表
   it("T-NAV-MF-05: viewer with M1-only capabilities sees 报表 parent with only 预制报表 subItem", () => {
-    const groups = resolveNavGroups(
-      sessionUserFromAuth("viewer", ["viewer"]),
-      new Set(["M1"]),
-    );
+    const groups = resolveNavGroups(sessionUserFromAuth("viewer", ["viewer"]), {
+      activeMilestones: new Set(["M1"]),
+    });
     const reportSection = groups.find((g) => g.title === "报表");
     expect(reportSection).toBeDefined();
     const reportParent = reportSection?.items.find((i) => i.name === "报表");
@@ -104,7 +91,6 @@ describe("resolveNavGroups", () => {
     expect(subNames).not.toContain("报表调度");
   });
 
-  // T-NAV-MF-06: admin 数据 section has 数据连接 item with 连接器类型 subItem
   it("T-NAV-MF-06: admin 数据 section has 数据连接 with 连接器类型 subItem", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const dataSection = groups.find((g) => g.title === "数据");
@@ -114,6 +100,44 @@ describe("resolveNavGroups", () => {
     const subNames = dataConn?.subItems?.map((s) => s.name) ?? [];
     expect(subNames).toContain("连接管理");
     expect(subNames).toContain("连接器类型");
+  });
+
+  it("T-NAV-CAP-01: admin sees 系统 section with 资源授权 item", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
+    const system = groups.find((g) => g.title === "系统");
+    expect(system).toBeDefined();
+    const names = system?.items.map((i) => i.name) ?? [];
+    expect(names).toContain("资源授权");
+  });
+
+  it("T-NAV-CAP-02: viewer does not see 系统 section", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("viewer", ["viewer"]));
+    expect(groups.some((g) => g.title === "系统")).toBe(false);
+  });
+
+  it("T-NAV-CAP-03: custom role with report:* sees 报表 only", () => {
+    OPTIONAL_ROLE_CAPABILITY_MAP.reports_editor = ["report:*"];
+    try {
+      const groups = resolveNavGroups(
+        sessionUserFromAuth("editor", ["viewer"]),
+        { userCapabilities: new Set(["report:*"]) },
+      );
+      const titles = groups.map((g) => g.title);
+      expect(titles).toContain("报表");
+      expect(titles).not.toContain("系统");
+      expect(titles).not.toContain("数据");
+    } finally {
+      delete OPTIONAL_ROLE_CAPABILITY_MAP.reports_editor;
+    }
+  });
+
+  it("T-NAV-CAP-04: analyst sees 分析 and 报表, not 数据 or 系统", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
+    const titles = groups.map((g) => g.title);
+    expect(titles).toContain("分析");
+    expect(titles).toContain("报表");
+    expect(titles).not.toContain("数据");
+    expect(titles).not.toContain("系统");
   });
 });
 

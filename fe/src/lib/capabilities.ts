@@ -37,6 +37,7 @@ export function matchesCapability(userCaps: Set<string>, required: string): bool
   const colon = required.indexOf(":");
   if (colon === -1) return false;
   const prefix = required.slice(0, colon);
+  if (userCaps.has(`${prefix}:*`)) return true;
   if (!required.endsWith(":*")) return false;
   for (const cap of userCaps) {
     if (cap === required) return true;
