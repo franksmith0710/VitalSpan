@@ -6,11 +6,11 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch4.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch4-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fe-gov-batch4.md |
+| branch | feat/mfinal-fe-gov-batch4-r248 |
 | base_branch | dev-auto |
 | prd_ids | GOV-007,GOV-008,NFR-003,NFR-005,NFR-007 |
 | pr_number |  |
@@ -19,7 +19,7 @@
 | last_ui_verified_command | N/A（本轮无 fe/ 改动，ui_design_skill none） |
 | last_ui_verified_exit_code | N/A |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-07T16:30:00Z |
+| skill_rule_index_generated_at | 2026-07-07T18:22:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -70,6 +70,8 @@
 
 ## 演化历史（最近）
 
+- P3 实现（cron 2026-07-07 ~18:30 UTC）：F-E/F-F 批次 4 五 ID 全部 8 Tasks 完成；IF-01 工厂 + deferred 降级 + publish busRegisterStatus；ACL self-approve/workflow publish；NFR smoke/drill/xinchuang markdown；28/28 r248 + r247 回归 + 全量 pytest 2252 passed；docs/api + governance + nfr 同步；branch=feat/mfinal-fe-gov-batch4-r248；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
+- P2 计划（cron 2026-07-07 ~18:22 UTC）：F-E/F-F 批次 4 五 ID 计划完成（GOV-007 IF-01 工厂 + deferred 降级 + publish busRegisterStatus；GOV-008 ACL self-approve/workflow publish；NFR-003 dashboard smoke；NFR-005 drill 连通/只读；NFR-007 xinchuang markdown；≥28 pytest r248 + P4-SMOKE 尾段 + docs）；8 Tasks / 17 文件操作（3 新建 + 14 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fe-gov-batch4.md；执行模式 subagent-driven-development option 1；ui_design_skill none；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~18:19 UTC）：F-E/F-F 批次 4 五 ID（GOV-007~008 治理收官 + NFR-003/005/007 companion 验收缺口补全）；16 文件框定（IF-01 工厂、bus deferred 降级、ACL 补洞、dashboard smoke、plugin drill 连通链、xinchuang markdown）；ui_design_skill none；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch4-design.md；base_branch=dev-auto；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~18:17 UTC）：饱和熔断已跳过（plan §M-FINAL · F-E 含 GOV-007~008 `[ ]`；Top5 薄弱项最低分 CONN-026/027 85.4 <90）；入选 F-E/F-F 批次 4 五 ID（GOV-007~008 治理收官 + NFR-003/005/007 四期 NFR companion）；hub 最低分入选 GOV-008/NFR-003/NFR-005 91.2；批次 3 r247 部分实现待勾 plan；F-G CONN-023~027 留专批；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch4.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~18:16 UTC）：G0 PASS PR #234 已 squash merge dev-auto（193e921）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.105 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-E**（GOV-007~008 2 项 `[ ]` 待完成；F-F 4 项 NFR + F-G 5 项 CONN 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 F-E/F-F 批次 3（GOV-007~008/NFR-003/005/007）r247 PR #234 完成；phase idle；待 G2 evolution-picker
