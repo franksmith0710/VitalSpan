@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.97
+version: 1.2.98
 last_updated: 2026-07-07
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-07 · 规范见 `prd-scoring` · **CONN-023~027 新立项初评（待 P5 重评）**
+> 更新：2026-07-07 · 规范见 `prd-scoring` · 本轮重评：BOOT-002（95.3↑）、DS-007（93.8↑）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -41,7 +41,7 @@ domain_count: 16
 | ID | 用户价值 | 完整度 | 可靠性 | 交互体验 | 架构健康 | 测试覆盖 | 性能 | 安全性 | 加权总分 | 薄弱项 |
 |----|:--------:|:------:|:------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|--------|
 | BOOT-001 | 84 | 98 | 92 | N/A | 88 | 98 | 88 | 88 | 91.0 | 用户价值 |
-| BOOT-002 | 92 | 100 | 92 | 94 | 94 | 100 | 88 | 92 | 94.1 | 性能 |
+| BOOT-002 | 95 | 100 | 94 | 96 | 96 | 100 | 88 | 92 | 95.3 | 性能 |
 | BOOT-003 | 92 | 100 | 94 | 90 | 90 | 100 | 88 | 94 | 93.8 | 性能 |
 | BOOT-004 | 84 | 98 | 92 | N/A | 90 | 98 | 88 | 88 | 91.2 | 用户价值 |
 | BOOT-005 | 84 | 96 | 90 | N/A | 88 | 100 | 88 | 90 | 90.7 | 用户价值 |
@@ -60,7 +60,7 @@ domain_count: 16
 | DS-004 | 90 | 100 | 94 | 86 | 90 | 100 | 86 | 90 | 92.4 | 性能 |
 | DS-005 | 82 | 96 | 96 | N/A | 90 | 100 | 86 | 96 | 92.1 | 用户价值 |
 | DS-006 | 82 | 96 | 96 | N/A | 92 | 100 | 88 | 88 | 91.6 | 用户价值 |
-| DS-007 | 88 | 100 | 94 | 86 | 90 | 100 | 86 | 88 | 91.9 | 用户价值 |
+| DS-007 | 92 | 100 | 94 | 94 | 94 | 100 | 86 | 88 | 93.8 | 性能 |
 | DS-008 | 84 | 94 | 96 | N/A | 90 | 100 | 86 | 92 | 91.6 | 用户价值 |
 | CONN-001 | 88 | 96 | 96 | N/A | 90 | 100 | 86 | 90 | 92.5 | 性能 |
 | CONN-002 | 88 | 96 | 96 | N/A | 90 | 100 | 86 | 90 | 92.5 | 性能 |
@@ -200,14 +200,14 @@ domain_count: 16
 
 ## 执行范围（与 plan 对齐）
 
-> 更新：2026-07-07 · 来源 [`plan.md`](./plan.md) v2.5.1 · hub **v1.2.97**
+> 更新：2026-07-07 · 来源 [`plan.md`](./plan.md) v2.5.1 · hub **v1.2.98**
 
 | 字段 | 值 |
 |------|-----|
 | 当前执行 | **M-FINAL 最后一期收官**（38 待办：33 PRD + 5 companion†） |
 | 已收官 | **P1–P3**（M-FE-1~3 + M2–M12，94 项） |
 | PRD 进度 | **96** 已实现 · **28** 部分实现 · **5** 未实现（**129** 合同项） |
-| 当前节 | **M-FINAL · F-A**（壳层 IA，建议首轮 3 项） |
+| 当前节 | **M-FINAL · F-B**（RBAC FE，F-A 已收官 2026-07-07） |
 | G2 选题 | 从 M-FINAL 含 `[ ]` 的子批取 3–5 项；**F-G（CONN-023~027）已可选题**（建议 F-A 收官后） |
 
 **说明**：PRD 合同 **129** 项（含 M-FINAL · F-G 五型 CONN-023~027）；† companion 不计入 PRD 总数。
@@ -237,6 +237,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.98 | 2026-07-07 | P5 r240 重评 BOOT-002（×2）+ DS-007（M-FINAL F-A nav-manifest 收官）；fe check:design 180 files + vitest 196/196 + build PASS；nav-manifest 单一真理源 + resolveNavGroups 三档角色 + 里程碑过滤 + preview badge + 连接器收拢「数据」subItem；用户价值 88–92%→92–95%，交互 86–94%→94–96%，架构健康 90–94%→94–96%，总分 91.9–94.1→93.8–95.3（两 ID ≥90；plan M-FINAL F-A 三 ID 勾选；F-A 收官） |
 | 1.2.97 | 2026-07-07 | 人工体检（create-evolution-prd）：hub 执行范围澄清（129 项三分状态 + M-FINAL 33 项映射表）；F04 信创/收官里程碑对齐；SRS §FR-2.0-EXT 收官行 |
 | 1.2.96 | 2026-07-07 | plan v2.5.1 对齐（create-evolution-plan）：去除 F-G「待 PRD」；G2 可选 CONN-023~027；hub 执行范围与 plan frontmatter 同步 |
 | 1.2.95 | 2026-07-07 | 人工修订（create-evolution-prd）：立项 CONN-023~027（M-FINAL F-G）；F04-CONN 分片 + hub 129 项 + SRS §FR-2.0 枚举同步（rest_api/excel/csv/db2/impala/redshift）；8 维初评 85.4–85.6 |
@@ -249,4 +250,3 @@ domain_count: 16
 | 1.2.87 | 2026-07-07 | P5 r235 重评 CONN-009~013（M11 三期原生连接器扩展批次 1）；pytest 1988/25 skipped；test_connectors_m11_r235 21/21 + r34–r41 回归；m11_compose_env、presto 别名、catalog 元数据、Flux/SQL 只读探测；用户价值 84%→88%，完整度 88–90%→94–96%，测试覆盖 98%→100%，总分 90.0–91.2→91.9–92.6（五 ID ≥90 STUCK 空；plan M11 五 ID 勾选；只读查询/UI 选型留 companion） |
 | 1.2.85 | 2026-07-06 | P5 r233 重评 DASH-006 + RPT-001 + RPT-002（M9 主题分析与预制报表收官）；pytest 1948/19 skipped；fe vitest 157/157 + prefab/theme smoke 8/8 + check:design PASS；test_m9_rpt_theme_r233 18/18 + r60/r68/r58 回归；engine M3-LITE execute、prefab seed/run API、theme drill query、PrefabReportsPage+ThemeAnalysisPage；用户价值 84%→88–90%，完整度 90%→96%，交互 N/A→88%（RPT-002/DASH-006），总分 90.1–91.2→92.2–92.4（三 ID ≥90 STUCK 空；plan M9 三 ID 勾选；PDF/Word/GIS/binding 编辑留 companion） |
 | 1.2.84 | 2026-07-06 | P5 r232 重评 META-005/006 + DASH-005（M8 实体元数据与总览页收官）；pytest 1930/19 skipped；fe vitest 149/149 + entities-overview smoke 7/7 + check:design PASS；test_meta_dash_m8_r232 9/9 + r231 回归；PUT/DELETE physical-tables、`_ds_table_index`、引用计数对称、EntityDetailSheet+空态引导；用户价值 86%→88%，完整度 92–94%→96–98%，交互 84%→90%（DASH-005），总分 91.3–91.7→92.4–93.1（三 ID ≥90 STUCK 空；plan M8 三 ID 勾选；GOV/lineage/跨组件口径留 companion） |
-| 1.2.83 | 2026-07-06 | P5 r231 重评 CONN-008 + META-005/006 + DASH-004/005（M7 Doris 收官 + M8 实体元数据 kickoff）；pytest 1921/19 skipped；fe vitest 145/145 + check:design PASS；test_connectors_m7_r229 + test_meta_dash_m8_r231 + ACL §7.4.1 回归；register-from-schema、physicalTableFqn、BE execute linkage、EntityOverviewPage；用户价值 84%→86–88%，完整度 90–98%→92–100%，交互 N/A→84–86%（DASH-005），总分 90.4–92.1→91.3–93.0（五 ID ≥90 STUCK 空；plan M7 CONN-008 + M8 DASH-004 勾选；META-005/006/DASH-005 部分实现 plan 未勾） |

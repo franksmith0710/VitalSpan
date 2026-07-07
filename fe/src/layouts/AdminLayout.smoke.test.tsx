@@ -3,14 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const mockUseAuth = vi.fn(() => ({
+  user: { id: "1", username: "admin", roles: ["admin"] as const },
+  isLoading: false,
+  isAuthenticated: true,
+  logout: vi.fn(),
+  refresh: vi.fn(async () => {}),
+}));
+
 vi.mock("@/context/auth-context", () => ({
-  useAuth: () => ({
-    user: { id: "1", username: "admin", roles: ["admin"] },
-    isLoading: false,
-    isAuthenticated: true,
-    logout: vi.fn(),
-    refresh: vi.fn(async () => {}),
-  }),
+  useAuth: () => mockUseAuth(),
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -20,6 +22,14 @@ describe("AdminLayout smoke", () => {
   afterEach(() => {
     cleanup();
     localStorage.clear();
+    mockUseAuth.mockReset();
+    mockUseAuth.mockImplementation(() => ({
+      user: { id: "1", username: "admin", roles: ["admin"] as const },
+      isLoading: false,
+      isAuthenticated: true,
+      logout: vi.fn(),
+      refresh: vi.fn(async () => {}),
+    }));
   });
   function setMobileViewport(width = 375) {
     Object.defineProperty(window, "innerWidth", {
@@ -273,5 +283,92 @@ describe("AdminLayout smoke", () => {
 
     await user.click(screen.getByRole("menuitem", { name: "返回工作台" }));
     expect(screen.getByText("workspace home")).toBeInTheDocument();
+  });
+
+  it("admin sidebar has 报表 collapsible that expands to show sub-items (T-FE-SMFA-01)", async () => {
+    setDesktopViewport(1400);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const reportTrigger = screen.getByRole("button", { name: "报表" });
+    expect(reportTrigger).toBeInTheDocument();
+
+    await user.click(reportTrigger);
+
+    expect(screen.getByRole("link", { name: "预制报表" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "报表模板" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "报表调度" })).toBeInTheDocument();
+  });
+
+  it("admin sidebar has 数据连接 collapsible with 连接管理 and 连接器类型 (T-FE-SMFA-02)", async () => {
+    setDesktopViewport(1400);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const dataConnTrigger = screen.getByRole("button", { name: "数据连接" });
+    await user.click(dataConnTrigger);
+
+    const connMgrLink = screen.getByRole("link", { name: "连接管理" });
+    expect(connMgrLink).toHaveAttribute("href", "/admin/datasources");
+
+    const connTypeLink = screen.getByRole("link", { name: "连接器类型" });
+    expect(connTypeLink).toHaveAttribute("href", "/admin/connectors");
+  });
+
+  it("admin sidebar shows 预览 badge for M13 items (T-FE-SMFA-03)", () => {
+    setDesktopViewport(1400);
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    // M13 items (查询设计器, 治理工单, 发布流水线, 元数据, Dataset) each have 预览 badge
+    expect(screen.getAllByText("预览").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("viewer role: sidebar has no 系统 or 数据 section headings (T-FE-SMFA-04)", () => {
+    setDesktopViewport(1400);
+    mockUseAuth.mockReturnValueOnce({
+      user: { id: "2", username: "viewer", roles: ["viewer"] },
+      isLoading: false,
+      isAuthenticated: true,
+      logout: vi.fn(),
+      refresh: vi.fn(async () => {}),
+    } as unknown as ReturnType<typeof mockUseAuth>);
+
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole("heading", { name: "系统" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "数据" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "分析" })).toBeInTheDocument();
   });
 });

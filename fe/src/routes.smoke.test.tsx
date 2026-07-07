@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
@@ -125,10 +125,15 @@ describe("AppRoutes smoke", () => {
     expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders datasource nav link pointing to /admin (T-FE-08)", () => {
+  it("renders datasource nav link pointing to /admin/datasources (T-FE-08)", () => {
     setDesktopViewport();
     renderRoutes(["/admin"]);
-    const links = screen.getAllByRole("link", { name: "数据源" });
+
+    // 数据连接 Collapsible.Trigger — click to reveal subItems
+    const dataConnTrigger = screen.getByRole("button", { name: "数据连接" });
+    fireEvent.click(dataConnTrigger);
+
+    const links = screen.getAllByRole("link", { name: "连接管理" });
     expect(links.length).toBeGreaterThanOrEqual(1);
     expect(links[0]).toHaveAttribute("href", "/admin/datasources");
   });
@@ -253,9 +258,38 @@ describe("AppRoutes smoke", () => {
     expect(screen.getByRole("button", { name: /登录/ })).toBeInTheDocument();
   });
 
+  // T-RT-CONN-01: /admin/connectors 可达，渲染「连接器类型」heading — 已被 M-FE-1 用例覆盖
   it("renders connectors route with mocked auth (M-FE-1)", async () => {
     mockApiFetch.mockResolvedValueOnce({ items: [] });
     renderRoutes(["/admin/connectors"]);
     expect(await screen.findByRole("heading", { name: "连接器类型" })).toBeInTheDocument();
+  });
+
+  it("M1 nav links have valid non-empty hrefs (T-RT-DL-01)", () => {
+    setDesktopViewport();
+    renderRoutes(["/admin"]);
+
+    // Open 数据连接 collapsible
+    const dataConnTrigger = screen.getByRole("button", { name: "数据连接" });
+    fireEvent.click(dataConnTrigger);
+
+    const connMgr = screen.getByRole("link", { name: "连接管理" });
+    expect(connMgr.getAttribute("href")).toBe("/admin/datasources");
+
+    const connType = screen.getByRole("link", { name: "连接器类型" });
+    expect(connType.getAttribute("href")).toBe("/admin/connectors");
+
+    const dashLinks = screen.getAllByRole("link", { name: "Dashboard" });
+    expect(dashLinks[0].getAttribute("href")).toBe("/admin/dashboards");
+
+    // Verify no link in nav points to "#" or is empty
+    const allNavLinks = screen
+      .getByRole("navigation", { name: "管理端导航" })
+      .querySelectorAll("a[href]");
+    for (const link of Array.from(allNavLinks)) {
+      const href = link.getAttribute("href");
+      expect(href).not.toBe("#");
+      expect(href).not.toBe("");
+    }
   });
 });
