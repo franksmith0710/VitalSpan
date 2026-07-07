@@ -13,7 +13,13 @@ from app.core.nfr.browser_matrix import probe_browser_support
 from app.core.nfr.errors import NFR_RUNTIME_VIOLATION, XINCHUANG_NON_COMPLIANT
 from app.core.nfr.runtime_guard import RuntimeComplianceError, RuntimeComplianceReport, assert_runtime_compliant, build_runtime_report
 from app.core.nfr.deployment_report import build_deployment_acceptance_report
-from app.core.nfr.plugin_extension import describe_registration_path, list_extension_points
+from app.core.nfr.dashboard_availability import build_dashboard_availability_report
+from app.core.nfr.plugin_extension import (
+    describe_registration_path,
+    list_extension_points,
+    run_extension_drill,
+    teardown_extension_drill,
+)
 from app.core.nfr.push_channels import dispatch_push_mock
 from app.core.nfr.push_config import PushConfigValidationError, resolve_push_mode
 from app.core.nfr.report_perf import (
@@ -52,7 +58,12 @@ from app.core.nfr.https_audit import (
     get_https_audit_status,
     probe_https_mask,
 )
-from app.core.nfr.xinchuang import XinchuangComplianceError, assert_xinchuang_compliant, build_compliance_report
+from app.core.nfr.xinchuang import (
+    XinchuangComplianceError,
+    assert_xinchuang_compliant,
+    build_compliance_report,
+    build_xinchuang_deployment_report,
+)
 
 router = APIRouter(prefix="/nfr", tags=["nfr"])
 
@@ -143,6 +154,74 @@ class RegistrationPathResponse(BaseModel):
     connector_type: str = Field(alias="connectorType")
     steps: list[str]
     touches_core_registry: bool = Field(alias="touchesCoreRegistry")
+
+
+@router.get("/plugin-extension/drill")
+def plugin_extension_drill(_: Annotated[UserContext, Depends(get_current_user)]):
+    try:
+        result = run_extension_drill()
+        return {
+            "registered": result.registered,
+            "types": list(result.types),
+            "zeroInvasion": result.zero_invasion,
+            "elapsedMs": result.elapsed_ms,
+        }
+    finally:
+        teardown_extension_drill()
+
+
+@router.get("/dashboard-availability/report")
+def dashboard_availability_report(
+    dashboard_id: str = Query(alias="dashboardId"),
+    simulate_breach: bool = Query(False, alias="simulateBreach"),
+    actor: Annotated[UserContext, Depends(get_current_user)] = ...,
+):
+    try:
+        report = build_dashboard_availability_report(
+            dashboard_id, actor, simulate_breach=simulate_breach
+        )
+    except DashboardSlaError as exc:
+        return _dashboard_sla_error(exc)
+    except DashboardFirstScreenError as exc:
+        return _dashboard_first_screen_error(exc)
+    if (
+        get_settings().dashboard_availability_mode == "strict"
+        and report.overall_status != "available"
+    ):
+        return JSONResponse(
+            status_code=503,
+            content={
+                "code": "DASHBOARD_AVAILABILITY_BREACH",
+                "message": "SLA breach",
+                "detail": None,
+            },
+        )
+    return {
+        "dashboardId": report.dashboard_id,
+        "withinSla": report.within_sla,
+        "withinFirstScreenBudget": report.within_first_screen_budget,
+        "overallStatus": report.overall_status,
+        "slaUptimePercent": report.sla_uptime_percent,
+        "firstScreenP95Ms": report.first_screen_p95_ms,
+    }
+
+
+@router.get("/xinchuang/deployment-report")
+def xinchuang_deployment_report(_: Annotated[UserContext, Depends(get_current_user)]):
+    try:
+        report = build_xinchuang_deployment_report()
+    except XinchuangComplianceError as exc:
+        return JSONResponse(
+            status_code=422,
+            content={"code": exc.code, "message": exc.message, "detail": None},
+        )
+    return {
+        "registeredXinchuangConnectors": list(report.registered_xinchuang_connectors),
+        "composeServices": list(report.compose_services),
+        "dialectReadOnlySmoke": list(report.dialect_readonly_smoke),
+        "overallAcceptance": report.overall_acceptance,
+        "components": list(report.components),
+    }
 
 
 @router.get("/plugin-extension-points", response_model=ExtensionPointListResponse)

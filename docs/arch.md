@@ -278,6 +278,8 @@ dataSourceId + ChartViewConfig + DashboardView
 | `QUERY_DEFAULT_LIMIT` | | 查询硬上限 | `1000` |
 | `QUERY_TIMEOUT_SECONDS` | | 单次查询超时 | `30` |
 | `ANALYTICS_DATABASE_URL` | | 平台托管分析库（M1B 同步/清洗目标库） | — |
+| `DASHBOARD_AVAILABILITY_MODE` | | 核心看板可用性门禁：`strict`（不达标 503）/ `permissive` | `permissive` |
+| `XINCHUANG_DEPLOY_MODE` | | 信创部署验收：`strict` / `permissive` / `conditional` | `permissive` |
 
 ### 7.3 前端环境变量（规划）
 

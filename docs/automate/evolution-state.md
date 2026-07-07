@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design-batch2.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-fe-design-batch2-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-fe-design-batch2.md |
-| branch | feat/mfinal-fe-design-batch2-r246 |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch3.md |
+| design | docs/superpowers/specs/2026-07-07-mfinal-fe-gov-batch3-design.md |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fe-gov-batch3.md |
+| branch | feat/mfinal-fe-gov-batch3-r247 |
 | base_branch | dev-auto |
-| prd_ids | DESIGN-004,DESIGN-005,GOV-004,GOV-005,GOV-006 |
-| pr_number | 233 |
-| last_verified_command | cd backend && python3 -m pytest ../tests -q; cd backend && python3 -m pytest ../tests/test_mfinal_fe_design_r246.py -q; cd backend && python3 -m pytest ../tests/test_mfinal_fe_design_r245.py -q; cd fe && pnpm run build && pnpm run check:design && pnpm exec vitest run |
+| prd_ids | GOV-007,GOV-008,NFR-005,NFR-003,NFR-007 |
+| pr_number | |
+| last_verified_command | cd backend && PYTHONPATH=/workspace/backend:/workspace/tests python3 -m pytest /workspace/tests/test_mfinal_fe_gov_batch3_r247.py -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design (201 files); pnpm exec vitest run (227/227); screenshots N/A headless |
 | last_ui_verified_exit_code | 0 |

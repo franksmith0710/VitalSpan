@@ -18,7 +18,8 @@
 - **地域 geo 树**（`catalog/cat03/`）：内存树 CRUD/move、环检测与 `MAX_GEO_DEPTH=6`（CAT-003）
 - **工单 stats item**（`catalog/cat05/`）：扁平 item 登记 + validate/stats probe（CAT-005）
 - **工号行为审计**（`catalog/cat07/`）：mock seed + `GET /workno/behavior`（CAT-007）
-- **总线全自动注册 FSM**（`bus/auto.py`）：`POST /gov/bus/auto-register`（GOV-007）
+- **总线全自动注册 FSM**（`bus/auto.py` + `bus/pipeline.py`）：`POST /gov/bus/auto-register`、发布 approve 钩子、`POST .../retry`（GOV-007）
+- **治理 ACL 矩阵**（`acl_matrix.py` + `acl.py`）：publish/workflow/bus 守卫；`gov_catalog_entry` 资源授权（GOV-008）
 - 工单流程模板与五态 FSM 实例（GOV-003）；**自定义模板 CRUD**（`workflow_template` config_store；builtin 只读）
 - 发布引擎 OpenAPI 映射 store（GOV-006）
 - 为开放 API 登记与 BPM 流水线奠基
@@ -54,6 +55,9 @@
 | `GET /gov/bus/register/fsm` · `GET /gov/bus/register/probe` | semi-auto FSM 查询与 perf probe | GOV-002 | 已实现 |
 | CAT-001~003 | `cat0x/handler.py` + `GET .../m6-probe` M6 集成验收面 | CAT-001~003 | 已实现 |
 | `POST /api/v1/gov/bus/auto-register` | 全自动注册 FSM（integration/admin；幂等） | GOV-007 | L1 已实现 r60 |
+| `bus/pipeline.py` | `trigger_auto_bus_register` 发布钩子 + retry + audit | GOV-007 | 已实现 r247 |
+| `acl_matrix.py` | `describe_gov_permission_matrix` + `GET /gov/acl/matrix` | GOV-008 | 已实现 r247 |
+| `acl.py` | publish/workflow/bus `assert_*` 守卫 + `gov_catalog_entry` grant | GOV-008 | 已实现 r247 |
 | `GET /api/v1/workno/behavior` | CAT-07 工号行为审计查询 mock | CAT-007 | L1 已实现 r60 |
 | `query_design/` | 可视化查询设计聚合 + 工单快照投影/确认 | GOV-004 | 已实现 r246 |
 | `acl.py` | 查询设计 save/publish 权限联动 + RLS smoke | GOV-008 | 已实现 |

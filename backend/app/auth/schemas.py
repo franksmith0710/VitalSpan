@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 ROLE_CODE_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
-ResourceType = Literal["datasource", "dashboard", "report"]
+ResourceType = Literal["datasource", "dashboard", "report", "gov_catalog_entry"]
 ValueType = Literal["string", "number", "boolean", "org_ref"]
 
 

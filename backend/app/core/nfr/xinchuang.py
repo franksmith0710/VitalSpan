@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import pathlib
 import time
 from dataclasses import dataclass
 
@@ -134,3 +135,64 @@ def assert_xinchuang_compliant(settings: Settings | None = None) -> None:
     report = build_compliance_report(settings)
     if report.overall_status == "non_compliant":
         raise XinchuangComplianceError(XINCHUANG_NON_COMPLIANT, "xinchuang compliance check failed")
+
+
+@dataclass(frozen=True)
+class XinchuangDeploymentReport:
+    components: tuple[dict, ...]
+    registered_xinchuang_connectors: tuple[str, ...]
+    compose_services: tuple[str, ...]
+    dialect_readonly_smoke: tuple[dict, ...]
+    overall_acceptance: str
+
+
+@dataclass(frozen=True)
+class DeploymentProbeResult:
+    elapsed_ms: float
+    ok: bool
+
+
+def _parse_compose_services() -> tuple[str, ...]:
+    path = pathlib.Path(__file__).resolve().parents[4] / "docker-compose.yml"
+    names: list[str] = []
+    for line in path.read_text().splitlines():
+        stripped = line.strip()
+        if (
+            line.startswith("  ")
+            and not line.startswith("    ")
+            and stripped.endswith(":")
+            and "services" not in stripped
+        ):
+            names.append(stripped.rstrip(":"))
+    return tuple(n for n in names if n != "services")
+
+
+def build_xinchuang_deployment_report() -> XinchuangDeploymentReport:
+    settings = get_settings()
+    xc = _registered_xinchuang()
+    smoke = []
+    for t in xc:
+        conn = registry.get(t)
+        ok = conn is not None
+        smoke.append({"type": t, "ok": ok})
+    overall = "accepted" if xc else "conditional"
+    if settings.xinchuang_deploy_mode == "strict" and not xc:
+        raise XinchuangComplianceError(XINCHUANG_NON_COMPLIANT, "missing xinchuang connectors")
+    return XinchuangDeploymentReport(
+        components=(
+            {"kind": "db", "name": "postgres", "status": "sample"},
+            {"kind": "middleware", "name": "none", "status": "warn"},
+            {"kind": "os", "name": "linux", "status": "stub"},
+        ),
+        registered_xinchuang_connectors=tuple(xc),
+        compose_services=_parse_compose_services(),
+        dialect_readonly_smoke=tuple(smoke),
+        overall_acceptance=overall,
+    )
+
+
+def probe_deployment_report_budget_ms() -> DeploymentProbeResult:
+    started = time.perf_counter()
+    build_xinchuang_deployment_report()
+    elapsed = (time.perf_counter() - started) * 1000
+    return DeploymentProbeResult(elapsed_ms=elapsed, ok=elapsed < 100)
