@@ -6,13 +6,13 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fa.md |
 | design |  |
 | plan |  |
 | branch |  |
 | base_branch | dev-auto |
-| prd_ids |  |
+| prd_ids | BOOT-002,DS-007 |
 | pr_number |  |
 | last_verified_command |  |
 | last_verified_exit_code |  |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G2 选题（cron 2026-07-07 ~12:22 UTC）：饱和熔断已跳过（plan §M-FINAL · F-A 含 3 项 `[ ]` BOOT-002×2/DS-007；Top5 薄弱项最低分 CONN-027 85.4 <90）；入选 M-FINAL · F-A 全量 3 项（BOOT-002 manifest/resolveNavGroups、DS-007 连接器收拢「数据」分组、BOOT-002 里程碑可见性）；3 项为 plan「首轮建议 F-A 全量 3 项」下限（F-B 依赖 manifest；F-G 建议 F-A 后选）；hub 最低分入选 DS-007 91.9；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fa.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~12:18 UTC）：G0 PASS PR #224 已 merge dev-auto（07f194b）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-A**（3 项 `[ ]` BOOT-002×2/DS-007；F-B/F-C~F-G 含后续待办）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和态）；STUCK 表空；待办池空；上轮 M12 batch1（RPT-005/007/VIEW-003/NFR-006/CAT-007）PR #223 完成；孤儿分支 feat/mfinal-fa-nav-manifest-r239（BOOT-002/DS-007 r239）可 RESUME 后续轮次；phase idle；待 G2 选题
 - G1 bootstrap（cron 2026-07-07 ~11:24 UTC）：G0 PASS PR #223 已 squash merge dev-auto（bdd0cf1）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-A**（3 项 `[ ]` BOOT-002×2/DS-007；frontmatter 标 M-FINAL 与正文一致）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和）；STUCK 表空；待办池空；上轮 M12 batch1（RPT-005/007 + VIEW-003 + NFR-006 + CAT-007）完成；phase P5_DOCS_READY→idle；待 G2 选题
 - P4 r238 验证（cron 2026-07-07 ~02:53 UTC）：独立全量 ruff clean + pytest 2051 passed/23 skipped exit 0；fe check:design 143 files + vitest 180/180 + design fixture 4/4 + build exit 0；UI design_drift PASS（check:design）；screenshots 未运行（headless vitest mock）；phase P3_DONE→P4_DONE；branch=feat/m12-batch1-rpt-view-nfr-cat-r238；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
