@@ -6,10 +6,10 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P2_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fg-finish.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fg-finish-design.md |
-| plan |  |
+| plan | docs/superpowers/plans/2026-07-07-mfinal-fg-finish.md |
 | branch |  |
 | base_branch | dev-auto |
 | prd_ids | CONN-027,API-001,VIZ-003,VIZ-004,VIZ-008 |
@@ -17,7 +17,7 @@
 | last_verified_command |  |
 | last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-07T19:12:00Z |
+| skill_rule_index_generated_at | 2026-07-07T21:57:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 待办池
@@ -68,6 +68,7 @@
 
 ## 演化历史（最近）
 
+- P2 计划（cron 2026-07-07 ~21:57 UTC）：F-G 收官五 ID 计划完成（CONN-027 Redshift 委托 PG + REDSHIFT_* 错误 + catalog 29→30 + r250 11 断言 + FE hint/smoke；API-001 P95/traceId/结构化错误；VIZ-003/004/008 renderFromSpec fallback+buildBarOption+buildPieOption+空数据防护+AdvancedEchartsChart 空态覆盖层）；6 Tasks / 13 文件（3 新建 + 10 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fg-finish.md；执行模式 subagent-driven-development option 1；ui_design_skill=b-design-system-tailadmin-radix（Task 3+5 FE）；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~21:48 UTC）：F-G 收官五 ID（CONN-027 Redshift + API-001 性能 + VIZ-003/004/008 渲染层 companion）；13 文件框定（3 新建 + 10 修改；dialects/redshift + errors + __init__ + datasources/__init__ + r250 pytest + r40/r41 catalog count 29→30 + DatasourceFormPage hint + renderFromSpec 降级 + AdvancedEchartsChart 空态）；ui_design_skill=b-design-system-tailadmin-radix（DatasourceFormPage.tsx 追加 redshift hint）；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fg-finish-design.md；base_branch=dev-auto；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~21:17 UTC）：饱和熔断已跳过（plan §M-FINAL · F-G 含 CONN-027 `[ ]` 1 项；Top5 最低 CONN-027 85.4 <90）；入选 F-G 收官 + hub companion 五 ID（CONN-027 Redshift + API-001/VIZ-003/004/008 薄弱维补强）；hub 最低分 CONN-027 85.4；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fg-finish.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~21:16 UTC）：G0 PASS PR #237/#238 已 merge dev-auto（3a5ad22）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.107 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-G**（CONN-027 余 1 项 `[ ]`；F-A~F-F 已收官）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-027(85.4)/API-001(90.0)/VIZ-003(90.1)；STUCK 表空；待办池空；上轮 F-F/F-G 批次 1（NFR-008、CONN-023~026）PR #237 完成；phase idle；待 G2 evolution-picker
