@@ -6,11 +6,11 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P2_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fg-finish.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fg-finish-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-fg-finish.md |
-| branch |  |
+| branch | cursor/bc-bf8e0023-29c8-4dee-906c-e27cc675db4f-cebb |
 | base_branch | dev-auto |
 | prd_ids | CONN-027,API-001,VIZ-003,VIZ-004,VIZ-008 |
 | pr_number |  |
@@ -68,6 +68,7 @@
 
 ## 演化历史（最近）
 
+- P3 实现（cron 2026-07-07 ~22:13 UTC）：F-G 收官五 ID 全部 6 Tasks 完成；CONN-027 RedshiftConnector（委托 PG，port 5439，ssl=required，REDSHIFT_* 错误常量）；catalog count 29→30（r40/r41 回归通过）；r250 11 pytest passed；FE datasource hint port=5439 + smoke T-CONN-R250-FE-01/02（12/12 vitest）；VIZ-003/004/008 renderFromSpec FALLBACK+buildBarOption+buildPieOption+空数据防护+AdvancedEchartsChart 空态覆盖层（25/25 vitest）；check:design 201 files PASS；docs/api/README.md + services/datasources.md 同步；branch=cursor/bc-bf8e0023-29c8-4dee-906c-e27cc675db4f-cebb；base_branch=dev-auto；ui_design_skill=b-design-system-tailadmin-radix；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P2 计划（cron 2026-07-07 ~21:57 UTC）：F-G 收官五 ID 计划完成（CONN-027 Redshift 委托 PG + REDSHIFT_* 错误 + catalog 29→30 + r250 11 断言 + FE hint/smoke；API-001 P95/traceId/结构化错误；VIZ-003/004/008 renderFromSpec fallback+buildBarOption+buildPieOption+空数据防护+AdvancedEchartsChart 空态覆盖层）；6 Tasks / 13 文件（3 新建 + 10 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fg-finish.md；执行模式 subagent-driven-development option 1；ui_design_skill=b-design-system-tailadmin-radix（Task 3+5 FE）；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~21:48 UTC）：F-G 收官五 ID（CONN-027 Redshift + API-001 性能 + VIZ-003/004/008 渲染层 companion）；13 文件框定（3 新建 + 10 修改；dialects/redshift + errors + __init__ + datasources/__init__ + r250 pytest + r40/r41 catalog count 29→30 + DatasourceFormPage hint + renderFromSpec 降级 + AdvancedEchartsChart 空态）；ui_design_skill=b-design-system-tailadmin-radix（DatasourceFormPage.tsx 追加 redshift hint）；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fg-finish-design.md；base_branch=dev-auto；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~21:17 UTC）：饱和熔断已跳过（plan §M-FINAL · F-G 含 CONN-027 `[ ]` 1 项；Top5 最低 CONN-027 85.4 <90）；入选 F-G 收官 + hub companion 五 ID（CONN-027 Redshift + API-001/VIZ-003/004/008 薄弱维补强）；hub 最低分 CONN-027 85.4；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-mfinal-fg-finish.md；phase idle→G2_DONE；待 P1 evolution-designer
