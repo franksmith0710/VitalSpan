@@ -394,7 +394,7 @@ describe("AdminLayout smoke", () => {
       isAuthenticated: true,
       logout: vi.fn(),
       refresh: vi.fn(async () => {}),
-    } as ReturnType<typeof mockUseAuth>);
+    } as unknown as ReturnType<typeof mockUseAuth>);
     setDesktopViewport(1400);
     render(
       <MemoryRouter initialEntries={["/admin"]}>

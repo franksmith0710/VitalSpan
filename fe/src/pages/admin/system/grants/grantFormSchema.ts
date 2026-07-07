@@ -5,9 +5,7 @@ export type ResourceType = (typeof RESOURCE_TYPES)[number];
 
 export const grantCreateSchema = z.object({
   roleId: z.string().min(1, "请选择角色").uuid("请选择有效角色"),
-  resourceType: z.enum(RESOURCE_TYPES, {
-    errorMap: () => ({ message: "请选择资源类型" }),
-  }),
+  resourceType: z.enum(RESOURCE_TYPES, { message: "请选择资源类型" }),
   resourceId: z.string().min(1, "请输入资源 ID").uuid("请输入有效的资源 ID（UUID 格式）"),
 });
 
