@@ -28,6 +28,11 @@ const MOCK_TYPES = {
     { type: "oceanbase", displayName: "OceanBase" },
     { type: "tidb", displayName: "TiDB" },
     { type: "gaussdb", displayName: "GaussDB" },
+    { type: "rest_api", displayName: "REST API" },
+    { type: "excel", displayName: "Excel" },
+    { type: "csv", displayName: "CSV" },
+    { type: "db2", displayName: "IBM Db2" },
+    { type: "impala", displayName: "Apache Impala" },
   ],
 };
 
@@ -105,5 +110,38 @@ describe("DatasourceFormPage xinchuang smoke", () => {
     expect(
       screen.getByText(/GaussDB 兼容 PostgreSQL 协议/),
     ).toBeInTheDocument();
+  });
+
+  it("T-CONN-R249-FE-01: renders rest_api excel csv db2 impala in types", async () => {
+    renderForm();
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("combobox"));
+    expect(await screen.findByRole("option", { name: "REST API" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Excel" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "CSV" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "IBM Db2" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Apache Impala" })).toBeInTheDocument();
+  });
+
+  it("T-CONN-R249-FE-02: selecting rest_api sets port 443", async () => {
+    renderForm();
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+    await selectType("REST API");
+    expect(screen.getByLabelText("端口")).toHaveValue(443);
+  });
+
+  it("T-CONN-R249-FE-03: selecting db2 sets port 50000", async () => {
+    renderForm();
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+    await selectType("IBM Db2");
+    expect(screen.getByLabelText("端口")).toHaveValue(50000);
+  });
+
+  it("T-CONN-R249-FE-04: selecting impala shows protocol hint", async () => {
+    renderForm();
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+    await selectType("Apache Impala");
+    expect(screen.getByText(/兼容 Hive 协议/)).toBeInTheDocument();
   });
 });

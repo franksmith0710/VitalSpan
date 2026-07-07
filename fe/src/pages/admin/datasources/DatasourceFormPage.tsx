@@ -75,6 +75,11 @@ const CONNECTOR_FIELD_HINTS: Record<string, { port: string; databaseLabel: strin
   oceanbase: { port: "2881", databaseLabel: "租户/数据库", usernameLabel: "用户名" },
   tidb: { port: "4000", databaseLabel: "数据库", usernameLabel: "用户名" },
   gaussdb: { port: "5432", databaseLabel: "数据库 / Schema", usernameLabel: "用户名" },
+  rest_api: { port: "443", databaseLabel: "API 探测路径", usernameLabel: "用户名（Basic，可选）" },
+  excel: { port: "1", databaseLabel: "Sheet 名（可选）", usernameLabel: "用户名" },
+  csv: { port: "1", databaseLabel: "数据库", usernameLabel: "用户名" },
+  db2: { port: "50000", databaseLabel: "数据库", usernameLabel: "用户名" },
+  impala: { port: "21050", databaseLabel: "数据库", usernameLabel: "用户名" },
 };
 
 export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
@@ -241,6 +246,26 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                   GaussDB 兼容 PostgreSQL 协议，默认端口 5432
                 </p>
               ) : null}
+              {form.type === "rest_api" ? (
+                <p id="rest-api-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
+                  base URL 填主机地址；HTTPS 默认 443
+                </p>
+              ) : null}
+              {form.type === "excel" ? (
+                <p id="excel-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
+                  host 填本地 .xlsx 路径或 HTTPS 文件 URL
+                </p>
+              ) : null}
+              {form.type === "csv" ? (
+                <p id="csv-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
+                  host 填本地 .csv 路径或 HTTPS URL
+                </p>
+              ) : null}
+              {form.type === "impala" ? (
+                <p id="impala-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
+                  兼容 Hive 协议；默认 LDAP/无认证由后端处理
+                </p>
+              ) : null}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
@@ -264,7 +289,15 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                     ? "oceanbase-hint"
                     : form.type === "gaussdb"
                       ? "gaussdb-hint"
-                      : undefined
+                      : form.type === "rest_api"
+                        ? "rest-api-hint"
+                        : form.type === "excel"
+                          ? "excel-hint"
+                          : form.type === "csv"
+                            ? "csv-hint"
+                            : form.type === "impala"
+                              ? "impala-hint"
+                              : undefined
                 }
               />
             </div>
