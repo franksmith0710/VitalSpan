@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fb.md |
-| design | docs/superpowers/specs/2026-07-07-mfinal-fb-rbac-grants-capability-nav-design.md |
-| plan | docs/superpowers/plans/2026-07-07-mfinal-fb-rbac-grants-capability-nav.md |
-| branch | feat/mfinal-fb-rbac-grants-r241 |
+| phase | idle |
+| round_target | |
+| design | |
+| plan | |
+| branch | |
 | base_branch | dev-auto |
-| prd_ids | AUTH-004,BOOT-002 |
-| pr_number | 226 |
+| prd_ids | |
+| pr_number | |
 | last_verified_command | cd fe && pnpm run check:design && pnpm vitest run && node --test scripts/check-design.fixture.test.mjs && pnpm run build |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -66,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G0 闸门（cron 2026-07-07 ~14:00 UTC）：PR #226 已 squash merge dev-auto（d8da325）feat/mfinal-fb-rbac-grants-r241→dev-auto；无 Open PR；M-FINAL F-B 收官（AUTH-004/BOOT-002）；phase P5_DOCS_READY→idle；base_branch=dev-auto；待 G1 evolution-doc-bootstrap
 - P5 r241 收尾（cron 2026-07-07 ~14:00 UTC）：PR #226 feat/mfinal-fb-rbac-grants-r241→dev-auto；重评 AUTH-004/BOOT-002；hub 总分 92.1/95.3→94.1/95.9；plan M-FINAL F-B 二 ID 勾选（完成于 2026-07-07）；F-B 收官；phase P4_DONE→P5_DOCS_READY；待 squash merge
 - P4 r241 验证（cron 2026-07-07 ~13:54 UTC）：独立全量 fe check:design 187 files + vitest 208/208 + design fixture 4/4 + build(tsc -b + vite) exit 0；UI design_drift PASS（check:design）；screenshots 未运行（headless 云环境；UI Acceptance 由 RTL smoke 覆盖）；backend 未触及（plan 约束无 pytest）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fb-rbac-grants-r241；base_branch=dev-auto；pr=226；待 P5 evolution-pr-finisher-github
 - P3 r241 实现（cron 2026-07-07 ~13:52 UTC）：8 Task 全量完成（Task1 capabilities.ts+session 委托；Task2 nav-manifest capability+资源授权项；Task3 resolveNavGroups ResolveNavOptions+T-NAV-CAP-01~04；Task4 queryKeys+grantFormSchema+grantErrors；Task5 GrantsPage+useGrantsPage+GrantsDialogs；Task6 grants.smoke T-AUTH-004-FE-01~04；Task7 routes grants+AdminLayout useMemo；Task8 AdminLayout.smoke T-FE-SMFB-01~03+routes.smoke T-RT-GRANTS-01+layout.md）；每任务 spec+quality 自审通过；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS(187 files)；fe vitest 208/208 + build(tsc -b + vite) exit 0；screenshots 未运行（headless 云环境；UI Acceptance 由 RTL smoke 覆盖）；backend 未触及（无 pytest）；branch=feat/mfinal-fb-rbac-grants-r241；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
