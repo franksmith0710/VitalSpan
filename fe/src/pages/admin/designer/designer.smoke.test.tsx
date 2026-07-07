@@ -132,6 +132,6 @@ describe("DesignerPage smoke", () => {
     const submitBtns = screen.getAllByRole("button", { name: /提交查询服务申请/ });
     await user.click(submitBtns[0]);
     expect(await screen.findByText("工单已提交")).toBeInTheDocument();
-    expect(within(screen.getByRole("dialog")).getByText(/00000000/)).toBeInTheDocument();
+    expect(within(screen.getByRole("dialog")).getAllByText(/00000000/).length).toBeGreaterThan(0);
   });
 });

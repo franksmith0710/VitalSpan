@@ -34,6 +34,8 @@ from app.governance.publish import service as publish_service
 from app.governance.publish.notifications import list_notifications
 from app.governance.publish.schemas import (
     PublishActionOut,
+    PublishFromWorkflowIn,
+    PublishFromWorkflowOut,
     PublishNotificationListOut,
     PublishNotificationOut,
     PublishStatusOut,
@@ -44,6 +46,7 @@ from app.governance.workflow.node_roles import describe_node_roles
 from app.governance.workflow.schemas import (
     NodeRoleOut,
     WorkflowInstanceCreateIn,
+    WorkflowInstanceListOut,
     WorkflowInstanceOut,
     WorkflowNodeRolesOut,
     WorkflowTemplateCreateIn,
@@ -378,6 +381,30 @@ def publish_status(
         return _publish_error_response(exc)
 
 
+@router.get("/publish/entries/{entry_id}/openapi")
+def get_publish_openapi(
+    entry_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        return openapi_service.generate_openapi_document(db, entry_id)
+    except OpenApiMappingError as exc:
+        return _openapi_mapping_error(exc)
+
+
+@router.post("/publish/from-workflow", response_model=PublishFromWorkflowOut)
+def publish_from_workflow_route(
+    payload: PublishFromWorkflowIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> PublishFromWorkflowOut | JSONResponse:
+    try:
+        return publish_service.publish_from_workflow(db, payload.workflow_instance_id, actor)
+    except PublishError as exc:
+        return _publish_error_response(exc)
+
+
 @router.get("/publish/entries/{entry_id}/notifications", response_model=PublishNotificationListOut)
 def publish_notifications(
     entry_id: uuid.UUID,
@@ -609,15 +636,28 @@ def create_workflow_instance(
         return _workflow_error(exc)
 
 
+@router.get("/workflow/instances", response_model=WorkflowInstanceListOut)
+def list_workflow_instances(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    status: str | None = None,
+) -> WorkflowInstanceListOut:
+    return workflow_service.list_instances(db, limit=limit, offset=offset, status=status)
+
+
 @router.get("/workflow/instances/{instance_id}", response_model=WorkflowInstanceOut)
 def get_workflow_instance(
     instance_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
     include_design_snapshot: bool = Query(default=False, alias="includeDesignSnapshot"),
 ) -> WorkflowInstanceOut | JSONResponse:
     try:
-        return workflow_service.get_instance(db, instance_id, include_snapshot=include_design_snapshot)
+        return workflow_service.get_instance(
+            db, instance_id, include_snapshot=include_design_snapshot, actor=actor
+        )
     except Exception as exc:
         from app.query.config_store.schemas import ConfigError
 
@@ -640,6 +680,30 @@ def transition_workflow_instance(
         return workflow_service.transition_instance(db, instance_id, payload.action, payload.actor_role)
     except WorkflowError as exc:
         return _workflow_error(exc)
+
+
+@router.get("/workflow/instances/{instance_id}/approved-design", response_model=VisualQueryDesignOut)
+def get_approved_design(
+    instance_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> VisualQueryDesignOut | JSONResponse:
+    try:
+        return query_design_service.load_design_from_workflow(db, instance_id, actor)
+    except GovQueryDesignError as exc:
+        return _gov_query_design_error(exc)
+
+
+@router.post("/workflow/instances/{instance_id}/confirm-design", response_model=WorkflowInstanceOut)
+def confirm_design(
+    instance_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> WorkflowInstanceOut | JSONResponse:
+    try:
+        return query_design_service.confirm_approved_design(db, instance_id, actor)
+    except GovQueryDesignError as exc:
+        return _gov_query_design_error(exc)
 
 
 def _classification_error(exc: ClassificationError) -> JSONResponse:

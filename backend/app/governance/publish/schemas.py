@@ -31,3 +31,15 @@ class PublishNotificationOut(BaseModel):
 
 class PublishNotificationListOut(BaseModel):
     items: list[PublishNotificationOut]
+
+
+class PublishFromWorkflowIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    workflow_instance_id: uuid.UUID = Field(alias="workflowInstanceId")
+
+
+class PublishFromWorkflowOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    catalog_entry_id: uuid.UUID = Field(alias="catalogEntryId")
+    publish_version: int = Field(alias="publishVersion")
+    idempotent: bool = False

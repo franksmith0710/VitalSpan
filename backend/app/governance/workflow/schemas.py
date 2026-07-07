@@ -64,6 +64,12 @@ class WorkflowInstanceOut(BaseModel):
     status: str
     allowed_actions: list[str] = Field(alias="allowedActions")
     design_snapshot: dict | None = Field(default=None, alias="designSnapshot")
+    snapshot_revision: dict | None = Field(default=None, alias="snapshotRevision")
+
+
+class WorkflowInstanceListOut(BaseModel):
+    items: list[WorkflowInstanceOut]
+    total: int
 
 
 class NodeRoleOut(BaseModel):

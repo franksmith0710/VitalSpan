@@ -5,15 +5,22 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth.deps import UserContext
 from app.core.nfr.errors import (
     GOV_PUBLISH_ALREADY_PENDING,
     GOV_PUBLISH_ENTRY_NOT_FOUND,
     GOV_PUBLISH_INVALID_TRANSITION,
 )
+from app.designer import workflow as workflow_link_service
+from app.governance.catalog import service as catalog_service
+from app.governance.catalog.schemas import CatalogEntryCreate
 from app.governance.catalog.models import CatalogEntry
 from app.governance.publish.errors import PublishError
 from app.governance.publish.notifications import emit_publish_notification
-from app.governance.publish.schemas import PublishActionOut, PublishStatusOut
+from app.governance.publish.schemas import PublishActionOut, PublishFromWorkflowOut, PublishStatusOut
+from app.governance.workflow import service as workflow_service
+from app.query.config_store import service as config_store
+from app.query.config_store.schemas import ConfigUpsert
 
 _ALLOWED: dict[str, frozenset[str]] = {
     "draft": frozenset({"submit"}),
@@ -73,3 +80,76 @@ def reject_entry(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
     db.refresh(row)
     emit_publish_notification(entry_id, "rejected")
     return PublishActionOut(id=row.id, status=row.status)
+
+
+def _version_history(db: Session, entry_id: uuid.UUID) -> list[dict]:
+    try:
+        rec = config_store.get_config_by_ref(db, "publish_version_history", "catalog", entry_id)
+        return list(rec.payload.get("history", []))
+    except Exception:
+        return []
+
+
+def _append_version_history(db: Session, entry_id: uuid.UUID, status: str) -> list[dict]:
+    history = _version_history(db, entry_id)
+    history.append({"publishVersion": len(history) + 1, "status": status})
+    config_store.upsert_config(
+        db,
+        ConfigUpsert(
+            config_type="publish_version_history",
+            schema_version="1.0",
+            ref_type="catalog",
+            ref_id=entry_id,
+            payload={"history": history},
+        ),
+    )
+    return history
+
+
+def rollback_entry_skeleton(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
+    row = _get_row(db, entry_id)
+    _append_version_history(db, entry_id, row.status)
+    row.status = "draft"
+    db.commit()
+    db.refresh(row)
+    return PublishActionOut(id=row.id, status=row.status)
+
+
+def publish_from_workflow(
+    db: Session, workflow_instance_id: uuid.UUID, actor: UserContext
+) -> PublishFromWorkflowOut:
+    link = workflow_link_service.get_link_by_instance(db, workflow_instance_id)
+    if link.catalog_entry_id is not None:
+        return PublishFromWorkflowOut(
+            catalogEntryId=link.catalog_entry_id,
+            publishVersion=len(_version_history(db, link.catalog_entry_id)) or 1,
+            idempotent=True,
+        )
+    inst = workflow_service.get_instance(db, workflow_instance_id)
+    if inst.status != "pending_publish":
+        raise PublishError("GOV_PUBLISH_INVALID_STATE", "Instance must be pending_publish", 400)
+    if not any(r in actor.roles for r in ("admin", "publisher")):
+        raise PublishError("GOV_PUBLISH_FORBIDDEN", "Publish requires publisher or admin", 403)
+    slug = f"query_{str(inst.ref_id)[:8].replace('-', '_')}"
+    entry = catalog_service.create_entry(
+        db,
+        CatalogEntryCreate(
+            name=f"Query {slug}",
+            path=f"/api/v1/services/{slug}",
+            httpMethod="POST",
+            categoryCodes=["CAT-02"],
+        ),
+    )
+    workflow_link_service.update_link_catalog_entry(db, link.designer_item_id, entry.id)
+    submit_entry(db, entry.id)
+    approve_entry(db, entry.id)
+    _append_version_history(db, entry.id, "published")
+    from app.governance.openapi import service as openapi_service
+
+    openapi_service.generate_openapi_document(db, entry.id)
+    workflow_service.transition_instance(db, workflow_instance_id, "publish", "publisher")
+    return PublishFromWorkflowOut(
+        catalogEntryId=entry.id,
+        publishVersion=1,
+        idempotent=False,
+    )

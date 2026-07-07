@@ -9,6 +9,7 @@ from app.governance.workflow.node_roles import _REQUIRED_TEMPLATE_NODES
 from app.governance.workflow.schemas import (
     ALLOWED_NODE_ROLES,
     WorkflowInstanceCreateIn,
+    WorkflowInstanceListOut,
     WorkflowInstanceOut,
     WorkflowTemplateCreateIn,
     WorkflowTemplateOut,
@@ -128,6 +129,36 @@ def _load_instance_payload(session: Session, instance_id: uuid.UUID) -> dict:
     return record.payload
 
 
+def _to_instance_out(rec) -> WorkflowInstanceOut:
+    body = rec.payload
+    return WorkflowInstanceOut(
+        id=rec.ref_id,
+        templateId=body["templateId"],
+        refId=uuid.UUID(body["refId"]),
+        status=body["status"],
+        allowedActions=_allowed_actions(body["status"]),
+        snapshotRevision=body.get("snapshotRevision"),
+    )
+
+
+def list_instances(
+    session: Session,
+    *,
+    limit: int = 50,
+    offset: int = 0,
+    status: str | None = None,
+) -> WorkflowInstanceListOut:
+    records = config_store.list_configs_by_type(session, "workflow_instance")
+    items = []
+    for rec in sorted(records, key=lambda r: r.payload.get("capturedAt", str(r.updated_at)), reverse=True):
+        inst = _to_instance_out(rec)
+        if status and inst.status != status:
+            continue
+        items.append(inst)
+    page = items[offset : offset + limit]
+    return WorkflowInstanceListOut(items=page, total=len(items))
+
+
 def create_instance(session: Session, payload: WorkflowInstanceCreateIn) -> WorkflowInstanceOut:
     get_template(session, payload.template_id)
     instance_id = uuid.uuid4()
@@ -156,14 +187,23 @@ def create_instance(session: Session, payload: WorkflowInstanceCreateIn) -> Work
     )
 
 
-def get_instance(session: Session, instance_id: uuid.UUID, include_snapshot: bool = False) -> WorkflowInstanceOut:
+def get_instance(
+    session: Session,
+    instance_id: uuid.UUID,
+    include_snapshot: bool = False,
+    actor=None,
+) -> WorkflowInstanceOut:
     body = _load_instance_payload(session, instance_id)
     design_snapshot = None
     if include_snapshot and body.get("designSnapshotId"):
         from app.designer import snapshot as snapshot_service
 
+        snap_id = uuid.UUID(body["designSnapshotId"])
         try:
-            design_snapshot = snapshot_service.get_snapshot(session, uuid.UUID(body["designSnapshotId"]))
+            if actor is not None:
+                design_snapshot = snapshot_service.get_snapshot_for_actor(session, snap_id, actor)
+            else:
+                design_snapshot = snapshot_service.get_snapshot(session, snap_id)
         except Exception:
             design_snapshot = None
     return WorkflowInstanceOut(
@@ -173,13 +213,14 @@ def get_instance(session: Session, instance_id: uuid.UUID, include_snapshot: boo
         status=body["status"],
         allowedActions=_allowed_actions(body["status"]),
         designSnapshot=design_snapshot,
+        snapshotRevision=body.get("snapshotRevision"),
     )
 
 
 def transition_instance(
     session: Session, instance_id: uuid.UUID, action: str, actor_role: str
 ) -> WorkflowInstanceOut:
-    body = _load_instance_payload(session, instance_id)
+    body = dict(_load_instance_payload(session, instance_id))
     status = body["status"]
     if status == "published":
         raise WorkflowError("GOV_WORKFLOW_ALREADY_TERMINAL", "Workflow already published", 409)

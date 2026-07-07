@@ -74,6 +74,11 @@ export const queryKeys = {
     workflowTemplates: ["gov", "workflowTemplates"] as const,
     workflowNodeRoles: (templateId: string) =>
       ["gov", "workflowNodeRoles", templateId] as const,
+    workflowInstances: (params?: { status?: string }) =>
+      ["gov", "workflowInstances", params ?? {}] as const,
+    workflowInstance: (id: string, withSnapshot?: boolean) =>
+      ["gov", "workflowInstance", id, withSnapshot ? "snap" : "base"] as const,
+    publishOpenapi: (entryId: string) => ["gov", "publishOpenapi", entryId] as const,
   },
   metadataHub: {
     glossary: (params?: { codePrefix?: string }) => ["metadata", "glossary", params] as const,
@@ -93,6 +98,9 @@ export const queryKeys = {
     computeRules: (refId: string) => ["designer", "computeRules", refId] as const,
     outputFields: (refId: string) => ["designer", "outputFields", refId] as const,
     preview: (refId: string) => ["designer", "preview", refId] as const,
+    designMode: (refId: string) => ["designer", "designMode", refId] as const,
+    sqlMode: (refId: string) => ["designer", "sqlMode", refId] as const,
+    snapshot: (id: string) => ["designer", "snapshot", id] as const,
   },
   reportSchedules: (catalogNodeId?: string) =>
     ["reports", "schedules", catalogNodeId ?? "all"] as const,

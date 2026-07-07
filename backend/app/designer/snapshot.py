@@ -6,8 +6,10 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.auth.deps import UserContext
 from app.designer import service as designer_service
 from app.designer import output_fields as output_fields_service
+from app.designer.schemas import DesignerError
 from app.query.config_store import service as config_store
 from app.query.config_store.schemas import ConfigUpsert
 
@@ -60,3 +62,22 @@ def capture_snapshot(
 def get_snapshot(session: Session, snapshot_id: uuid.UUID) -> dict:
     record = config_store.get_config_by_ref(session, _CONFIG_TYPE, _REF_TYPE, snapshot_id)
     return record.payload
+
+
+def assert_snapshot_readable(session: Session, snapshot_id: uuid.UUID, actor: UserContext) -> None:
+    if "admin" in actor.roles:
+        return
+    record = config_store.get_config_by_ref(session, _CONFIG_TYPE, _REF_TYPE, snapshot_id)
+    if record.owner_id is None:
+        return
+    try:
+        actor_uuid = uuid.UUID(actor.id)
+    except ValueError:
+        raise DesignerError("DESIGN_SNAPSHOT_FORBIDDEN", "Snapshot access denied", 403)
+    if record.owner_id != actor_uuid:
+        raise DesignerError("DESIGN_SNAPSHOT_FORBIDDEN", "Snapshot access denied", 403)
+
+
+def get_snapshot_for_actor(session: Session, snapshot_id: uuid.UUID, actor: UserContext) -> dict:
+    assert_snapshot_readable(session, snapshot_id, actor)
+    return get_snapshot(session, snapshot_id)

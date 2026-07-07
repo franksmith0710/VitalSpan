@@ -101,6 +101,50 @@ def get_workflow_link(session: Session, designer_item_id: uuid.UUID) -> Designer
     )
 
 
+def get_link_by_instance(session: Session, workflow_instance_id: uuid.UUID) -> DesignerWorkflowLinkOut:
+    records = config_store.list_configs_by_type(session, _CONFIG_TYPE)
+    for rec in records:
+        link = DesignerWorkflowLinkIn.model_validate(rec.payload)
+        if link.workflow_instance_id == workflow_instance_id:
+            return DesignerWorkflowLinkOut(
+                **link.model_dump(),
+                publishReady=_compute_publish_ready(session, link),
+            )
+    raise DesignerError("DESIGN_WORKFLOW_LINK_NOT_FOUND", "Workflow link not found", 404)
+
+
+def delete_workflow_link(session: Session, designer_item_id: uuid.UUID, actor: UserContext) -> None:
+    link = get_workflow_link(session, designer_item_id)
+    status = _workflow_status(session, link.workflow_instance_id)
+    if status != "draft":
+        raise DesignerError(
+            "DESIGN_WORKFLOW_LINK_NOT_REVOKABLE",
+            "Link can only be revoked in draft status",
+            409,
+        )
+    if not any(r in actor.roles for r in ("admin", "analyst")):
+        raise DesignerError("DESIGN_SUBMIT_FORBIDDEN", "Revoke requires admin or analyst", 403)
+    config_store.delete_config_by_ref(session, _CONFIG_TYPE, _REF_TYPE, designer_item_id)
+
+
+def update_link_catalog_entry(
+    session: Session, designer_item_id: uuid.UUID, catalog_entry_id: uuid.UUID
+) -> None:
+    record = config_store.get_config_by_ref(session, _CONFIG_TYPE, _REF_TYPE, designer_item_id)
+    body = dict(record.payload)
+    body["catalogEntryId"] = str(catalog_entry_id)
+    config_store.upsert_config(
+        session,
+        ConfigUpsert(
+            config_type=_CONFIG_TYPE,
+            schema_version="1.0",
+            ref_type=_REF_TYPE,
+            ref_id=designer_item_id,
+            payload=body,
+        ),
+    )
+
+
 def probe_validate_workflow_link_budget_ms(session: Session, link: DesignerWorkflowLinkIn) -> float:
     started = time.perf_counter()
     validate_workflow_link(session, link)
@@ -115,7 +159,15 @@ def _assert_submit_actor(actor: UserContext) -> None:
 def _assert_design_complete(session: Session, designer_item_id: uuid.UUID) -> None:
     from app.designer import service as designer_service
     from app.designer import output_fields as output_fields_service
+    from app.designer import sql_mode as sql_mode_service
 
+    mode = sql_mode_service.get_design_mode(session, "design_draft", designer_item_id)
+    if mode == "sql":
+        try:
+            sql_mode_service.get_sql_mode(session, "design_draft", designer_item_id)
+        except ConfigError as exc:
+            raise DesignerError("DESIGN_SUBMIT_INCOMPLETE", "SQL mode configuration incomplete", 422) from exc
+        return
     try:
         designer_service.get_conditions(session, "design_draft", designer_item_id)
         designer_service.get_compute_rules(session, "design_draft", designer_item_id)
@@ -142,7 +194,7 @@ def submit_with_snapshot(
         owner_id = uuid.UUID(actor.id)
     except ValueError:
         pass
-    snapshot_id, _ = snapshot_service.capture_snapshot(session, payload.designer_item_id, owner_id)
+    snapshot_id, snap_payload = snapshot_service.capture_snapshot(session, payload.designer_item_id, owner_id)
     instance = workflow_service.create_instance(
         session,
         WorkflowInstanceCreateIn(templateId=payload.template_id, refId=payload.designer_item_id),
@@ -150,6 +202,7 @@ def submit_with_snapshot(
     record = config_store.get_config_by_ref(session, "workflow_instance", "workflow", instance.id)
     body = dict(record.payload)
     body["designSnapshotId"] = str(snapshot_id)
+    body["snapshotRevision"] = snap_payload.get("revisions", {})
     config_store.upsert_config(
         session,
         ConfigUpsert(

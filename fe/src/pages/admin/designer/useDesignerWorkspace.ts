@@ -62,7 +62,31 @@ export function useDesignerWorkspace() {
   const [conditionsSaved, setConditionsSaved] = useState(false);
   const [rulesSaved, setRulesSaved] = useState(false);
   const [outputSaved, setOutputSaved] = useState(false);
+  const [sqlModeSaved, setSqlModeSaved] = useState(false);
   const [previewSql, setPreviewSql] = useState("");
+  const [editorSql, setEditorSql] = useState("");
+
+  const designModeQuery = useQuery({
+    queryKey: queryKeys.designer.designMode(designerItemId),
+    queryFn: () =>
+      apiFetch<{ mode: "visual" | "sql" }>(
+        `/api/v1/designer/design-mode?refId=${designerItemId}`,
+      ),
+  });
+
+  const designMode = designModeQuery.data?.mode ?? "visual";
+
+  const setModeMutation = useMutation({
+    mutationFn: (mode: "visual" | "sql") =>
+      apiFetch("/api/v1/designer/design-mode", {
+        method: "PUT",
+        body: JSON.stringify({ refId: designerItemId, mode }),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.designer.designMode(designerItemId) });
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
 
   const fieldsQuery = useQuery({
     queryKey: queryKeys.designer.fields(datasetId),
@@ -229,12 +253,24 @@ export function useDesignerWorkspace() {
       }),
   });
 
-  const allBlocksSaved = conditionsSaved && rulesSaved && outputSaved;
+  const allBlocksSaved =
+    designMode === "sql" ? sqlModeSaved : conditionsSaved && rulesSaved && outputSaved;
+
+  const setDesignMode = (mode: "visual" | "sql") => {
+    void setModeMutation.mutateAsync(mode);
+  };
 
   return {
     designerItemId,
     datasetId,
     setDatasetId,
+    designMode,
+    setDesignMode,
+    designModePending: setModeMutation.isPending,
+    editorSql,
+    setEditorSql,
+    sqlModeSaved,
+    setSqlModeSaved,
     logic,
     setLogic,
     conditions,
