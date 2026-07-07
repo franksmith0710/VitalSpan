@@ -135,6 +135,18 @@
   @apply menu-dropdown-badge-inactive;
 }
 
+@utility menu-dropdown-badge-preview {
+  @apply menu-dropdown-badge;
+}
+
+@utility menu-dropdown-badge-preview-active {
+  @apply bg-gray-200 text-gray-700 dark:bg-gray-700/40 dark:text-gray-300;
+}
+
+@utility menu-dropdown-badge-preview-inactive {
+  @apply bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-500;
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

@@ -18,6 +18,7 @@ export type NavItem = {
   icon: React.ReactNode;
   path?: string;
   new?: boolean;
+  preview?: boolean;
   target?: string;
   subItems?: NavSubItem[];
 };
@@ -41,19 +42,28 @@ function NavBadge({
   active,
 }: {
   label: string;
-  variant: "new" | "pro";
+  variant: "new" | "pro" | "preview";
   active?: boolean;
 }) {
-  const base =
-    variant === "pro" ? "menu-dropdown-badge-pro" : "menu-dropdown-badge";
-  const state =
-    variant === "pro"
-      ? active
-        ? "menu-dropdown-badge-pro-active"
-        : "menu-dropdown-badge-pro-inactive"
-      : active
-        ? "menu-dropdown-badge-active"
-        : "menu-dropdown-badge-inactive";
+  let base: string;
+  let state: string;
+
+  if (variant === "pro") {
+    base = "menu-dropdown-badge-pro";
+    state = active
+      ? "menu-dropdown-badge-pro-active"
+      : "menu-dropdown-badge-pro-inactive";
+  } else if (variant === "preview") {
+    base = "menu-dropdown-badge-preview";
+    state = active
+      ? "menu-dropdown-badge-preview-active"
+      : "menu-dropdown-badge-preview-inactive";
+  } else {
+    base = "menu-dropdown-badge";
+    state = active
+      ? "menu-dropdown-badge-active"
+      : "menu-dropdown-badge-inactive";
+  }
 
   return <span className={cn("ml-auto", state, base)}>{label}</span>;
 }
@@ -102,6 +112,13 @@ function SidebarNavItem({
           {showLabels && <span className="menu-item-text">{item.name}</span>}
           {item.new && showLabels && (
             <NavBadge label="new" variant="new" active={open} />
+          )}
+          {item.preview && showLabels && (
+            <NavBadge
+              label="预览"
+              variant="preview"
+              active={open || hasActiveChild}
+            />
           )}
           {showLabels && (
             <ChevronDown
@@ -174,6 +191,9 @@ function SidebarNavItem({
         {item.icon}
       </span>
       {showLabels && <span className="menu-item-text">{item.name}</span>}
+      {item.preview && showLabels && (
+        <NavBadge label="预览" variant="preview" active={active} />
+      )}
     </Link>
   );
 }
