@@ -22,6 +22,7 @@
 |----|-----|
 | 连接配置、方言适配、池化、元数据浏览 L1 API | SQL 语义解析与图表绑定（→ `query`） |
 | CONN-014~016：`probe_readonly_*` + `execute_native_query`（MongoDB find / ES·OS search） | GridFS 写入、集群管理、OpenSearch Dashboards 嵌入 |
+| CONN-023~026（**r249**）：REST API / Excel·CSV 文件 / Db2 / Impala 方言注册与连通链 | OAuth2 专用表单项、文件上传 UI、`query/native/executor` HTTP 出数（companion） |
 | 连接器插件目录 `dialects/`（mysql、postgresql） | Dataset 语义层（四期 → `metadata` + `query`） |
 | 数据源列表/详情 ACL 过滤（grant 可见性） | M7 完整 RLS 执行链 |
 | 类型发现、schema 浏览 REST API | Admin UI 数据源管理界面 |
@@ -62,6 +63,10 @@
 | `dialects/gbase.py` | 南大通用 GBase 8a（MySQL 协议委托，port 5258，`GBASE_*`；**r242** `probe_readonly_sql`） | CONN-019 | 已实现 L1 r46 + companion r242 |
 | `dialects/oceanbase.py` | OceanBase 关系型（MySQL 协议委托，port 2881，`OCEANBASE_*`；**r242** `probe_readonly_sql`；`register_connector_plugin`） | CONN-020 | 已实现 L1 r54 + companion r242 |
 | `dialects/kingbase/` | 人大金仓 KingbaseES（PG 协议委托，port 54321，`KINGBASE_*`；**r242** `probe_readonly_sql`；`register_connector_plugin`；**r67** `params.py` 预校验 + `probe.py`） | CONN-018 | companion 已实现 r67 + r242 |
+| `dialects/rest_api.py` | REST API 数据源（httpx，`category=api`，`REST_API_*`；`probe_readonly_fetch` + `execute_native_query`） | CONN-023 | 已实现（r249） |
+| `dialects/excel.py` · `dialects/csv_file.py` | Excel/CSV 文件源（本地路径 + HTTPS URL，`category=file`，`FILE_*`） | CONN-024 | 已实现（r249） |
+| `dialects/db2.py` | IBM Db2 关系型（ibm_db，`probe_readonly_sql`，`DB2_*`） | CONN-025 | 已实现（r249） |
+| `dialects/impala.py` | Apache Impala 湖仓（pyhive.hive，`category=lake`，`IMPALA_*`） | CONN-026 | 已实现（r249） |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
