@@ -13,7 +13,7 @@
 | branch | feat/m10-report-templates-r234 |
 | base_branch | dev-auto |
 | prd_ids | RPT-003,RPT-004,RPT-006,VIEW-002,NFR-002 |
-| pr_number | |
+| pr_number | 218 |
 | last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | cd fe && pnpm run check:design && pnpm exec vitest run && node --test scripts/check-design.fixture.test.mjs && pnpm run build |
