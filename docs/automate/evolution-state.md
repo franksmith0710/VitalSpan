@@ -6,11 +6,11 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-m12-batch1.md |
 | design | docs/superpowers/specs/2026-07-07-m12-batch1-design.md |
-| plan |  |
-| branch |  |
+| plan | docs/superpowers/plans/2026-07-07-m12-batch1-rpt-view-nfr-cat.md |
+| branch | feat/m12-batch1-rpt-view-nfr-cat-r238 |
 | base_branch | dev-auto |
 | prd_ids | RPT-005,RPT-007,VIEW-003,NFR-006,CAT-007 |
 | pr_number |  |
@@ -67,6 +67,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- P3 r238 实现（cron 2026-07-07 ~02:30 UTC）：10 Task 完成（RPT-005 APScheduler+历史+SchedulePanel、RPT-007 failures/BatchImportPanel、VIEW-003 CRUD/UserViewsSection、NFR-006 notifications/browserCompat/doc、CAT-007 m12-probe + test_m12_batch1_r238 20 用例）；ui_design_skill=b-design-system-tailadmin-radix；pytest r238 20/20 + r58 schedule/batch 回归 + ruff clean；fe check:design 143 files + vitest 19/19 + build exit 0；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P2_DONE→P3_DONE；branch=feat/m12-batch1-rpt-view-nfr-cat-r238；base_branch=dev-auto；待 P4 evolution-verifier
 - P1 设计（cron 2026-07-07 ~02:18 UTC）：M12 收官批五 ID design 覆盖（RPT-005 APScheduler+历史+SchedulePanel、RPT-007 BatchImportPanel、VIEW-003 个人设置 CRUD+合并验收、NFR-006 browser-compat 文档+notifications 骨架、CAT-007 m12-probe handler）；ui_design_skill=b-design-system-tailadmin-radix；范围框定 20 主文件；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-m12-batch1-design.md；待 P2 evolution-planner
 - G2 选题（cron 2026-07-07 ~02:16 UTC）：饱和熔断已跳过（plan §M12 含 5 项 `[ ]` RPT-005/RPT-007/VIEW-003/NFR-006/CAT-007；frontmatter/hub 仍标 M-FE-1 为已知漂移）；入选 M12 收官批五 ID 全量（plan 恰好 5 项）；hub 最低分入选 NFR-006 90.1；待办池空 STUCK 表空；round-target=docs/superpowers/evolution/2026-07-07-round-target-m12-batch1.md；phase idle→G2_DONE；待 P1 evolution-designer
 - G1 bootstrap（cron 2026-07-07 ~02:15 UTC）：G0 PASS PR #221 已 merge dev-auto 无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 124 项；hub 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M12**（5 项 `[ ]` RPT-005/RPT-007/VIEW-003/NFR-006/CAT-007；frontmatter/hub 仍标 M-FE-1 为已知漂移）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 QUERY-009(90.0)/META-001(90.0)/API-001(90.0) 均 ≥90（饱和态）；STUCK 表空；待办池空；上轮 M11 batch3（VIZ-005/007 + CAT-004~006）完成；phase P5_DOCS_READY→idle；待 G2 选题
