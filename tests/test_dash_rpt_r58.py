@@ -543,10 +543,11 @@ def test_rpt_r58_semi_real_execute_succeeded(client):
 
 
 def test_rpt_r58_semi_real_delivery_fail(client):
-    """D58-005-02: X-Rpt-Delivery-Mock: fail → semi_real_delivery_degraded。"""
+    """D58-005-02: X-Rpt-Delivery-Mock: fail → semi_real_failed (RPT-005 r238 契约)."""
     node_id = _create_template_node(client)
     body = _schedule_and_execute(client, node_id, delivery_mock="fail")
-    assert body["status"] == "semi_real_delivery_degraded"
+    assert body["status"] == "semi_real_failed"
+    assert body.get("errorMessage")
 
 
 def test_rpt_r58_semi_real_delivery_retry(client):

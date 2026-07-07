@@ -14,9 +14,9 @@
 | base_branch | dev-auto |
 | prd_ids | RPT-005,RPT-007,VIEW-003,NFR-006,CAT-007 |
 | pr_number |  |
-| last_verified_command |  |
-| last_verified_exit_code |  |
-| last_ui_verified_command |  |
+| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | cd fe && pnpm run check:design && pnpm test && pnpm run build |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T22:35:00Z |
 | skill_rule_index_source_count | 26 |
