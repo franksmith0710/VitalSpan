@@ -82,18 +82,21 @@
 - **里程碑对齐**：
 ### [DS-007] 已注册类型清单 API
 
-- **状态**：已实现（L1 companion r25；M-FE-1 FE companion r195）
+- **状态**：已实现（L1 companion r25；M-FE-1 FE companion r195；M-FINAL F-A nav-manifest r240）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
-- **里程碑对齐**：M-FE-1 · 已完成 · 2026-07-06
-- **描述**：已注册类型清单 API（SRS 追溯项）；M-FE-1 补齐 `/admin/connectors` 只读页。
+- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07
+- **描述**：已注册类型清单 API（SRS 追溯项）；M-FE-1 补齐 `/admin/connectors` 只读页；M-FINAL F-A 将连接器收拢为「数据」分组 subItem（`连接管理` + `连接器类型`）。
 - **验收标准**：
   - [x] GET `/api/v1/datasources/types`
   - [x] 未注册类型不在 UI 展示
   - [x] `/admin/connectors` 路由与只读列表页
   - [x] 对接 types API；侧栏可导航
-- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/registry.py` · `fe/src/pages/admin/connectors/ConnectorsPage.tsx` · `fe/src/routes.tsx`
-- **演化建议**：按 category 过滤；类型图标与文档链接；二期 connector 详情页
+  - [x] manifest「数据」分组含 subItems：`连接管理（/admin/datasources）`、`连接器类型（/admin/connectors）`
+  - [x] `routes.smoke.test.tsx` 覆盖 `/admin/connectors` 路由可达（T-FE-08 + T-RT-DL-01）
+  - [x] `AdminLayout.smoke.test.tsx` 数据分组子项可见
+- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/registry.py` · `fe/src/pages/admin/connectors/ConnectorsPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.ts` T-NAV-MF-06
+- **演化建议**：按 category 过滤；类型图标与文档链接；ConnectorsPage 路由懒加载（React.lazy）；二期 connector 详情页
 ### [DS-008] 数据源授权与 M7 集成
 
 - **状态**：已实现（L1 companion r25）

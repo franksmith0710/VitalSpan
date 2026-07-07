@@ -20,8 +20,8 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：P0
-- **里程碑对齐**：M-FE-1 · 已完成 · 2026-07-06
-- **描述**：React 管理端壳层（SRS 追溯项）；M-FE-1 补齐 TanStack Query 与统一 API 客户端。
+- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07
+- **描述**：React 管理端壳层（SRS 追溯项）；M-FE-1 补齐 TanStack Query 与统一 API 客户端；M-FINAL F-A 建立 nav-manifest 单一真理源、resolveNavGroups 角色派生与里程碑可见性矩阵。
 - **验收标准**：
   - [x] `fe/` 可构建且 `/admin` 路由壳层可访问
   - [x] shadcn/ui + Tailwind v4 主题加载
@@ -29,8 +29,15 @@
   - [x] `@/lib/queryKeys.ts` 与 TanStack Query provider
   - [x] `mapApiError` 结构化错误展示
   - [x] datasources 页可调用 DS CRUD API
-- **代码锚点**：`fe/src/layouts/AdminLayout.tsx` · `fe/src/routes.tsx` · `fe/src/lib/api.ts` · `fe/src/lib/queryKeys.ts` · `fe/src/lib/apiError.ts` · `fe/src/App.tsx` · `fe/scripts/check-design.mjs`
-- **演化建议**：vitest 112 项含 routes smoke（M-FE-1 login/connectors/datasources 路由）；二期补 Playwright E2E 与业务页 Query 缓存策略调优
+  - [x] `fe/src/config/nav-manifest.tsx` 存在，`resolveNavGroups(role)` 派生三档侧栏
+  - [x] `resolve-nav.test.ts` 覆盖 admin/analyst/viewer 三档 + 里程碑过滤（10 用例）
+  - [x] 「报表」菜单含 subItems：预制报表 / 模板 / 调度
+  - [x] 旧 `admin-nav.tsx`/`analyst-nav.tsx`/`user-nav.tsx` 已废弃/移除
+  - [x] `AdminLayout.smoke.test.tsx` T-FE-SMFA-01~04 PASS（16 断言）
+  - [x] viewer/analyst 不见未到期里程碑项；admin 见「预览」badge
+  - [x] `routes.smoke.test.tsx` T-RT-DL-01 死链检测 PASS
+- **代码锚点**：`fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.ts` · `fe/src/lib/resolve-nav.test.ts` · `fe/src/layouts/AdminLayout.tsx` · `fe/src/layouts/AdminLayout.smoke.test.tsx` · `fe/src/routes.tsx` · `fe/src/routes.smoke.test.tsx` · `fe/src/lib/api.ts` · `fe/src/lib/queryKeys.ts` · `fe/src/lib/apiError.ts` · `fe/scripts/check-design.mjs`
+- **演化建议**：vitest 196/196（M-FINAL F-A 含 resolve-nav 10 用例 + AdminLayout smoke 16 断言 + routes smoke 20 断言）；check:design 180 files PASS；F-B 能力驱动导航（manifest 项绑定 capability，替代硬编码三档）；二期补 Playwright E2E 与业务页 Query 缓存策略调优
 
 ### [BOOT-003] 鉴权中间件骨架
 

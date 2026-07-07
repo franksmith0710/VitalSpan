@@ -603,9 +603,9 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 > **现状**：`admin-nav.tsx` / `analyst-nav.tsx` / `user-nav.tsx` 平行维护；`resolve-nav.ts` 硬编码三档；**先于** F-B 与 F-D 语义层 FE。
 
-- [ ] BOOT-002: `fe/src/config/nav-manifest.ts` + `resolveNavGroups` 派生侧栏（废弃三份平行 nav 拷贝；「报表」父菜单 `subItems`：预制报表 / 模板 / 调度；路由守卫与 manifest 可见性矩阵一致）
-- [ ] DS-007: 连接器收拢为「数据」分组子项（保留 `/admin/connectors` 路由与 `ConnectorsPage` 只读目录；方案 A：`subItems`「连接管理」「连接器类型」）
-- [ ] BOOT-002: `layout.md` §6 里程碑可见性（viewer/analyst 过滤未到期项；admin 对四期未交付项标「预览」；禁止死链；同步 `docs/ui/layout.md` §3 分组表）
+- [x] BOOT-002: `fe/src/config/nav-manifest.ts` + `resolveNavGroups` 派生侧栏（废弃三份平行 nav 拷贝；「报表」父菜单 `subItems`：预制报表 / 模板 / 调度；路由守卫与 manifest 可见性矩阵一致）（完成于 2026-07-07）
+- [x] DS-007: 连接器收拢为「数据」分组子项（保留 `/admin/connectors` 路由与 `ConnectorsPage` 只读目录；方案 A：`subItems`「连接管理」「连接器类型」）（完成于 2026-07-07）
+- [x] BOOT-002: `layout.md` §6 里程碑可见性（viewer/analyst 过滤未到期项；admin 对四期未交付项标「预览」；禁止死链；同步 `docs/ui/layout.md` §3 分组表）（完成于 2026-07-07）
 
 **验收信号**：`resolve-nav.test.ts` · `AdminLayout.smoke.test.tsx` · `routes.smoke.test.tsx` 覆盖三档角色；admin 报表为父菜单 + 子项。
 
