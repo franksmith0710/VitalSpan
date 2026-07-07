@@ -9,10 +9,12 @@ from app.core.config import get_settings
 from app.core.logging import trace_id_var
 from app.datasources.acl import assert_visible
 from app.query.executor import QueryExecutor
+from app.query.native.executor import NativeQueryExecutor
 from app.query.schemas import ExecuteRequest, ExecuteResponse, QueryError
 
 
 _executor = QueryExecutor()
+_native_executor = NativeQueryExecutor()
 
 
 def _effective_limit(request: ExecuteRequest, binding_default: int | None = None) -> int:
@@ -50,6 +52,12 @@ def execute_query(session: Session, user: UserContext, payload: ExecuteRequest) 
         schema = payload.schema
         table = payload.table
         limit = _effective_limit(payload)
+        if mode == "native" and (payload.sql or payload.schema or payload.table):
+            raise QueryError(
+                "QUERY_NATIVE_SQL_DISGUISE",
+                "sql/schema/table fields are not allowed in native mode",
+                422,
+            )
 
     try:
         assert_visible(session, user.roles, data_source_id)
@@ -67,10 +75,20 @@ def execute_query(session: Session, user: UserContext, payload: ExecuteRequest) 
                 session, user, data_source_id, sql or "", limit=limit, offset=payload.offset,
                 rls_config=rls_config, apply_rls=apply_rls,
             )
-        else:
+        elif mode == "table":
             result = _executor.execute_table(
                 session, user, data_source_id, schema or "", table or "",
                 limit=limit, offset=payload.offset, rls_config=rls_config, apply_rls=apply_rls,
+            )
+        else:
+            result = _native_executor.execute(
+                session,
+                user,
+                data_source_id,  # type: ignore[arg-type]
+                body=payload.native_body or {},
+                index=payload.index,
+                limit=limit,
+                offset=payload.offset,
             )
     except RlsConfigError as exc:
         raise QueryError("RLS_CONFIG_INVALID", str(exc), 400) from exc
