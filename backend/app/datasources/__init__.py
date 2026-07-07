@@ -23,6 +23,11 @@ from app.datasources.dialects.gbase import GbaseConnector
 from app.datasources.dialects.kingbase import KingbaseConnector
 from app.datasources.dialects.oceanbase import OceanbaseConnector
 from app.datasources.dialects.opensearch import OpensearchConnector
+from app.datasources.dialects.rest_api import RestApiConnector
+from app.datasources.dialects.excel import ExcelConnector
+from app.datasources.dialects.csv_file import CsvFileConnector
+from app.datasources.dialects.db2 import Db2Connector
+from app.datasources.dialects.impala import ImpalaConnector
 from app.datasources.registry import register_dialect
 
 
@@ -51,6 +56,11 @@ def register_builtin_dialects() -> None:
     register_connector_plugin(OceanbaseConnector())
     register_connector_plugin(OpensearchConnector())
     register_connector_plugin(KingbaseConnector())
+    register_dialect(RestApiConnector())
+    register_dialect(ExcelConnector())
+    register_dialect(CsvFileConnector())
+    register_dialect(Db2Connector())
+    register_dialect(ImpalaConnector())
 
 
 register_builtin_dialects()
