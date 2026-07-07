@@ -4,6 +4,7 @@ from app.auth.deps import UserContext
 from app.reports.templates.acl import assert_template_read_access, assert_template_write_access
 from app.reports.templates.errors import TemplateDefError
 from app.reports.templates.schemas import (
+    ExportHookOut,
     TemplateBlock,
     TemplateDefinitionIn,
     TemplateDefinitionOut,
@@ -13,6 +14,29 @@ from app.reports.templates.schemas import (
 _VALID_BLOCKS = frozenset({"sql", "table", "chart"})
 _VALID_CHART_TYPES = frozenset({"line", "bar", "pie"})
 _store: dict[str, dict] = {}
+
+
+def _default_storage_ref(key: str, fmt: str) -> str:
+    return f"mock://templates/{key}.{fmt}"
+
+
+def build_export_hook(template_key: str, fmt: str, *, node_id: str | None = None) -> ExportHookOut:
+    nid = node_id if node_id else template_key
+    return ExportHookOut(
+        integrationPath=f"/api/v1/reports/export?templateId={nid}&format={fmt}",
+        format=fmt,  # type: ignore[arg-type]
+        placeholder=True,
+    )
+
+
+def _with_export_hook(raw: dict) -> TemplateDefinitionOut:
+    key = raw["templateKey"]
+    fmt = raw["format"]
+    storage = raw.get("storageRef") or _default_storage_ref(key, fmt)
+    hook = build_export_hook(key, fmt)
+    return TemplateDefinitionOut.model_validate(
+        {**raw, "storageRef": storage, "exportHook": hook.model_dump(by_alias=True)},
+    )
 
 
 def _block_identity(block: TemplateBlock) -> tuple[str, str]:
@@ -68,11 +92,30 @@ def upsert_template_definition(
         raise TemplateDefError("RPT_TEMPLATE_KEY_MISMATCH", "path template_key mismatch", 422)
     item = _validate_definition(payload)
     _store[key] = item.model_dump(by_alias=True, mode="json")
-    return TemplateDefinitionOut.model_validate(_store[key])
+    return _with_export_hook(_store[key])
 
 
 def get_template_definition(key: str, actor: UserContext) -> TemplateDefinitionOut:
     assert_template_read_access(actor, key)
     if key not in _store:
         raise TemplateDefError("RPT_TEMPLATE_NOT_FOUND", f"templateKey not found: {key}", 404)
-    return TemplateDefinitionOut.model_validate(_store[key])
+    return _with_export_hook(_store[key])
+
+
+def list_template_definitions(actor: UserContext, prefix: str | None = None) -> list[TemplateDefinitionOut]:
+    assert_template_read_access(actor, "*")
+    items = [_with_export_hook(v) for v in _store.values()]
+    if prefix:
+        items = [i for i in items if i.template_key.startswith(prefix)]
+    return sorted(items, key=lambda x: x.template_key)
+
+
+def delete_template_definition(key: str, actor: UserContext) -> None:
+    assert_template_write_access(actor, key)
+    if key not in _store:
+        raise TemplateDefError("RPT_TEMPLATE_NOT_FOUND", f"templateKey not found: {key}", 404)
+    from app.reports.catalog import service as catalog_service
+
+    if catalog_service.count_nodes_by_template_key(key) > 0:
+        raise TemplateDefError("RPT_TEMPLATE_IN_USE", "Template is referenced by catalog", 409)
+    del _store[key]

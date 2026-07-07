@@ -2,6 +2,7 @@ import { apiFetch } from "@/lib/api";
 
 type DefaultViews = {
   dashboardId: string | null;
+  reportTemplateNodeId?: string | null;
   inheritFromRoleId?: string | null;
 };
 
@@ -43,7 +44,7 @@ async function fetchRoleDefaults(roleKey: string): Promise<DefaultViews | null> 
   }
 }
 
-async function resolveInherited(
+async function resolveInheritedLanding(
   roleKey: string,
   depth: number,
   visited: Set<string>,
@@ -53,19 +54,25 @@ async function resolveInherited(
   const data = await fetchRoleDefaults(roleKey);
   if (!data) return null;
   if (data.dashboardId) return `/admin/dashboards/${data.dashboardId}`;
+  if (data.reportTemplateNodeId) {
+    return `/admin/reports/templates/${data.reportTemplateNodeId}?panel=run`;
+  }
   if (data.inheritFromRoleId) {
-    return resolveInherited(data.inheritFromRoleId, depth + 1, visited);
+    return resolveInheritedLanding(data.inheritFromRoleId, depth + 1, visited);
+  }
+  return null;
+}
+
+export async function resolveDefaultLandingPath(roleCodes: string[]): Promise<string | null> {
+  const userPath = await fetchUserOverridePath();
+  if (userPath) return userPath;
+  for (const code of roleCodes) {
+    const path = await resolveInheritedLanding(code, 0, new Set());
+    if (path) return path;
   }
   return null;
 }
 
 export async function resolveDefaultDashboardPath(roleCodes: string[]): Promise<string | null> {
-  const userPath = await fetchUserOverridePath();
-  if (userPath) return userPath;
-
-  for (const code of roleCodes) {
-    const path = await resolveInherited(code, 0, new Set());
-    if (path) return path;
-  }
-  return null;
+  return resolveDefaultLandingPath(roleCodes);
 }

@@ -35,6 +35,11 @@ export const ADMIN_NAV_GROUPS: NavSection[] = [
         icon: <FileBarChart className="size-6" aria-hidden />,
         path: "/admin/reports",
       },
+      {
+        name: "报表模板",
+        icon: <FileBarChart className="size-6" aria-hidden />,
+        path: "/admin/reports/templates",
+      },
     ],
   },
   {

@@ -13,11 +13,12 @@ from app.reports.catalog.schemas import CatalogNodeOut
 from app.reports.engine import acl as engine_acl
 from app.reports.engine import execute as engine_execute
 from app.reports.engine.errors import RPT_ENGINE_DATASOURCE_REQUIRED, RPT_ENGINE_INVALID_PARAMETER, ReportEngineError
-from app.reports.engine.schemas import EngineRenderSpec, QueryMeta, RenderRunIn, RenderRunOut
+from app.reports.engine.schemas import EngineRenderSpec, ExportHookOut, QueryMeta, RenderRunIn, RenderRunOut
 from app.reports.errors import ReportExtensionError
 from app.reports.extension import service as extension_service
 
 _SUPPORTED_FORMATS = frozenset({"web", "html"})
+_EXPORT_KINDS = frozenset({"word", "excel", "pdf"})
 
 
 def build_engine_render_spec(node: CatalogNodeOut, parameters: dict[str, Any], fmt: str) -> EngineRenderSpec:
@@ -28,6 +29,15 @@ def build_engine_render_spec(node: CatalogNodeOut, parameters: dict[str, Any], f
         sections=[{"kind": "table", "placeholder": True}],
         parameters=parameters,
         renderedAt=datetime.now(UTC),
+    )
+
+
+def _build_export_hook(node: CatalogNodeOut) -> ExportHookOut:
+    kind = node.template_kind or "pdf"
+    return ExportHookOut(
+        integrationPath=f"/api/v1/reports/export?templateId={node.id}&format={kind}",
+        format=kind,
+        placeholder=True,
     )
 
 
@@ -56,14 +66,6 @@ def _validate_parameters(parameters: dict) -> dict:
 def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContext) -> RenderRunOut:
     engine_acl.assert_engine_run_access(actor, template_id)
     parameters = _validate_parameters(payload.parameters or {})
-    if payload.format == "pdf":
-        raise ReportEngineError(
-            "RPT_ENGINE_FORMAT_NOT_SUPPORTED",
-            "PDF render is not supported in L1",
-            422,
-        )
-    if payload.format not in _SUPPORTED_FORMATS:
-        raise ReportEngineError("RPT_ENGINE_FORMAT_NOT_SUPPORTED", "Unsupported format", 422)
 
     try:
         node = catalog_service.get_node(template_id)
@@ -81,6 +83,21 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
     if node.node_type != "template":
         raise ReportEngineError("RPT_ENGINE_NOT_TEMPLATE", "Node is not a template", 422)
 
+    if node.template_kind in _EXPORT_KINDS and payload.format == node.template_kind:
+        _assert_extension_when_kind(node)
+        spec = build_engine_render_spec(node, parameters, payload.format)
+        export_hook = _build_export_hook(node)
+        return RenderRunOut(status="ready", renderSpec=spec, queryMeta=None, exportHook=export_hook)
+
+    if payload.format == "pdf":
+        raise ReportEngineError(
+            "RPT_ENGINE_FORMAT_NOT_SUPPORTED",
+            "PDF render is not supported in L1",
+            422,
+        )
+    if payload.format not in _SUPPORTED_FORMATS:
+        raise ReportEngineError("RPT_ENGINE_FORMAT_NOT_SUPPORTED", "Unsupported format", 422)
+
     _assert_extension_when_kind(node)
 
     ds_id = payload.data_source_id
@@ -97,6 +114,10 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
             "dataSourceId required when template has extension metrics",
             422,
         )
+
+    export_hook: ExportHookOut | None = None
+    if node.template_kind in _EXPORT_KINDS:
+        export_hook = _build_export_hook(node)
 
     query_meta: QueryMeta | None = None
     if ds_id is not None and ext is not None:
@@ -116,4 +137,4 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
     else:
         spec = build_engine_render_spec(node, parameters, payload.format)
 
-    return RenderRunOut(status="ready", renderSpec=spec, queryMeta=query_meta)
+    return RenderRunOut(status="ready", renderSpec=spec, queryMeta=query_meta, exportHook=export_hook)

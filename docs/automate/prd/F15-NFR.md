@@ -19,17 +19,18 @@
 - **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [NFR-002] NFR-01 报表查询性能
 
-- **状态**：部分实现（companion r67）
+- **状态**：已实现（M10 r234）
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：二期
 - **描述**：NFR-01 报表查询性能（SRS 追溯项）。
 - **验收标准**：
   - [x] 报表查询 ≤ 10s（r61 L1：`POST validate` + `POST /api/v1/nfr/report-perf/probe` + mock elapsedMs=120 + budgetMs default 10000 + `REPORT_PERF_*` 错误域）
   - [x] companion ACL/probe 边界（r67：enterprise 越权 reportId 403、非法 sampleQueryId 422、simulateFailure 降级；`probe_validate_report_perf_budget_ms`/`probe_report_perf_probe_budget_ms` ≤50ms）
-  - [ ] 抽样通过（mock probe only；无 `tests/perf/nfr01_report/` 真实 perf suite）
-- **代码锚点**：`backend/app/core/nfr/report_perf.py` · `backend/app/api/v1/nfr.py` · `tests/test_cat_dash_viz_nfr_r61.py` T-NFR-R61-002-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-002-01~06
-- **演化建议**：r67 companion 闭合 report-perf ACL、sampleQueryId 校验与 validate/probe perf probe；后续补真实报表查询 perf suite 与抽样门禁
-- **里程碑对齐**：
+  - [x] M10 REPORT_QUERY_FIXTURE + CI smoke（r234：`REPORT_QUERY_FIXTURE` + `fixtureProfile` 出参；`test_nfr_002_report_query_smoke.py` 2/2；`report-templates.smoke.test.tsx` mock run P95 ≤3000ms）
+  - [ ] `tests/perf/nfr01_report/` 全量并发压测与抽样门禁（companion）
+- **代码锚点**：`backend/app/core/nfr/report_perf.py` · `tests/test_nfr_002_report_query_smoke.py` · `fe/src/pages/admin/reports/report-templates.smoke.test.tsx` · `tests/test_cat_dash_viz_nfr_r61.py` T-NFR-R61-002-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-002-01~06
+- **演化建议**：r234 闭合 REPORT_QUERY_FIXTURE、pytest smoke 与 FE P95 回归；全量并发压测 suite 留 companion
+- **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [NFR-003] NFR-02 核心看板可用性
 
 - **状态**：部分实现（companion r68）

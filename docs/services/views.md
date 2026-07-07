@@ -36,7 +36,7 @@
 | `validate_dashboard_view` | 视图校验服务 | VIEW-001 | 已实现 |
 | `validate_layout_dict` | layout 校验（dashboard 委托） | VIEW-001 | 已实现 |
 | `POST /api/v1/views/validate` | HTTP 校验入口 | VIEW-001 | 已实现 |
-| `role_template.py` | get/put/resolve 角色默认视图 | VIEW-002 | L1 已实现 r60 |
+| `role_template.py` | get/put/resolve 角色默认视图（dashboard + reportTemplateNodeId） | VIEW-002 | M10 已实现 r234 |
 | `user_override.py` | list/create + bounds 守卫 | VIEW-003 | L1 已实现 r60 |
 | `GET/PUT /api/v1/roles/{id}/default-views` | 角色默认视图 CRUD | VIEW-002 | L1 已实现 r60 |
 | `GET/POST /api/v1/users/me/views` | 用户个人视图覆盖 | VIEW-003 | L1 已实现 r60 |
@@ -80,3 +80,13 @@
 ### r68 companion 质量推分（VIEW-002）
 
 - **VIEW-002**：`inheritFromRoleId` 环检测（`VIEW_DEFAULT_ROLE_CYCLE`）；`set_user_role_default_scope` + enterprise GET scope（`VIEW_DEFAULT_FORBIDDEN`）；`probe_put_role_defaults_budget_ms` ≤50ms；`GET /roles/{id}/default-views` actor 透传
+
+### M10 r234 登录落地优先级（VIEW-002）
+
+1. 用户覆盖 Dashboard（`GET /users/me/views`）
+2. 角色 Dashboard（`roles/{id}/default-views.dashboardId`）
+3. 角色报表模板（`reportTemplateNodeId` → `/admin/reports/templates/{id}?panel=run`）
+4. `inheritFromRoleId` 链式继承
+5. `null`（无默认）
+
+FE：`fe/src/lib/defaultViewResolve.ts` — `resolveDefaultLandingPath`；`RoleListPage` 双 Select（默认 Dashboard + 默认报表模板）

@@ -206,10 +206,12 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
+| GET | `/api/v1/reports/templates` | 模板列表（可选 `prefix`）；含 `storageRef` + `exportHook` | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
+| DELETE | `/api/v1/reports/templates/{templateKey}` | 删除模板；catalog 引用 → 409 `RPT_TEMPLATE_IN_USE` | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
 | POST | `/api/v1/reports/templates/validate` | 模板块定义校验（`RPT_TEMPLATE_*`） | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
 | PUT | `/api/v1/reports/templates/{templateKey}` | 模板块 upsert（**r67** viewer/enterprise ACL） | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
 | GET | `/api/v1/reports/templates/{templateKey}` | 模板块查询（**r67** enterprise ACL） | 内部 | 二期 | RPT-003 | 已实现 | `backend/app/api/v1/reports/templates.py` |
-| GET/POST/PATCH/DELETE | `/api/v1/reports/catalog/nodes*` | 报表模板树 catalog CRUD/move（`RPT_CATALOG_*`） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET/POST/PATCH/DELETE | `/api/v1/reports/catalog/nodes*` | 报表模板树 catalog CRUD/move（`RPT_CATALOG_*`；template 节点可选 `templateKey` 唯一关联） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/move` | 模板树节点移动（循环/深度守卫） | 内部 | 一期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/{id}/execute` | 调度 semi-real 执行器（`X-Rpt-Semi-Real: 1`；mock 兼容默认；Idempotency-Key；`deliverySteps`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |

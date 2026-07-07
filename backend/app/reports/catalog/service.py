@@ -19,6 +19,7 @@ class _Node:
     parent_id: uuid.UUID | None
     node_type: str
     template_kind: str | None
+    template_key: str | None
     sort_order: int
 
 
@@ -29,6 +30,7 @@ def _to_out(node: _Node) -> CatalogNodeOut:
         parentId=node.parent_id,
         nodeType=node.node_type,
         templateKind=node.template_kind,
+        templateKey=node.template_key,
         sortOrder=node.sort_order,
     )
 
@@ -94,6 +96,45 @@ def _assert_depth(parent_id: uuid.UUID | None, subtree_root: uuid.UUID | None = 
         )
 
 
+def _validate_template_key(
+    payload: CatalogNodeCreate, actor: UserContext, *, exclude_id: uuid.UUID | None = None,
+) -> None:
+    if payload.node_type == "folder":
+        if payload.template_key:
+            raise ReportCatalogError("RPT_CATALOG_INVALID_TEMPLATE_KEY", "folder cannot have templateKey", 422)
+        return
+    if not payload.template_key:
+        return
+    from app.reports.templates import service as template_service
+    from app.reports.templates.errors import TemplateDefError
+
+    try:
+        tpl = template_service.get_template_definition(payload.template_key, actor)
+    except TemplateDefError as exc:
+        if exc.status == 404:
+            raise ReportCatalogError("RPT_CATALOG_TEMPLATE_NOT_FOUND", "templateKey not found", 422) from exc
+        raise
+    if payload.template_kind and tpl.format != payload.template_kind:
+        raise ReportCatalogError(
+            "RPT_CATALOG_TEMPLATE_KIND_MISMATCH",
+            "templateKind does not match template format",
+            422,
+        )
+    for nid, raw in _nodes.items():
+        if exclude_id and nid == exclude_id:
+            continue
+        if raw.get("template_key") == payload.template_key:
+            raise ReportCatalogError(
+                "RPT_CATALOG_DUPLICATE_TEMPLATE_KEY",
+                "templateKey already linked to another catalog node",
+                422,
+            )
+
+
+def count_nodes_by_template_key(template_key: str) -> int:
+    return sum(1 for raw in _nodes.values() if raw.get("template_key") == template_key)
+
+
 def list_nodes(parent_id: uuid.UUID | None, actor: UserContext) -> list[CatalogNodeOut]:
     acl.assert_catalog_action(actor, "read")
     items = [_get(nid) for nid in _nodes]
@@ -109,6 +150,7 @@ def create_node(payload: CatalogNodeCreate, actor: UserContext) -> CatalogNodeOu
     if payload.parent_id is not None and payload.parent_id not in _nodes:
         raise ReportCatalogError("RPT_CATALOG_PARENT_NOT_FOUND", "Parent node not found", 404)
     _assert_depth(payload.parent_id)
+    _validate_template_key(payload, actor)
     node_id = uuid.uuid4()
     _nodes[node_id] = {
         "id": node_id,
@@ -116,6 +158,7 @@ def create_node(payload: CatalogNodeCreate, actor: UserContext) -> CatalogNodeOu
         "parent_id": payload.parent_id,
         "node_type": payload.node_type,
         "template_kind": payload.template_kind,
+        "template_key": payload.template_key,
         "sort_order": payload.sort_order,
     }
     acl.register_node_owner(node_id, actor.id)

@@ -148,7 +148,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分组 | 图标区 | 典型权限 | 一期可用 |
 |------|--------|----------|----------|
 | 数据 | 数据源、连接器 | `datasource:*` | ✅ 数据源 |
-| 分析 | Dashboard、预制报表 | `dashboard:read` / `dashboard:edit` / `report:read` | ✅ Dashboard · ✅ 预制报表（r233） |
+| 分析 | Dashboard、预制报表、报表模板 | `dashboard:read` / `dashboard:edit` / `report:read` | ✅ Dashboard · ✅ 预制报表（r233）· ✅ 报表模板（r234） |
 | 报表 | 列表、模板、调度 | `report:read` / `report:edit` | 二期起 |
 | 主题与实体 | 主题分析、实体总览 | 二期权限点 | ✅ 主题分析 · ✅ 实体总览（r233） |
 | 治理 | 分类、工单、发布 | 治理权限 | PoC 起 / 四期完整 |
@@ -178,6 +178,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | `/admin/dashboards/:id` | `bi-dashboard-builder`（view） | DASH-*, VIEW-* |
 | `/admin/dashboards/:id/share` | `bi-share-embed` | VIZ-006, API-006 |
 | `/admin/reports` | `table-list` + 运行结果区 | RPT-002 |
+| `/admin/reports/templates` | `master-detail` 树 + 扩展配置 Tabs | RPT-004/006 |
+| `/admin/reports/templates/:nodeId` | 同上（深链选中节点） | RPT-004/006 |
 | `/admin/themes/:dashboardId` | hub-tabs（配置 \| 分析） | DASH-006 |
 | `/admin/system/rls` | `form-composition` | AUTH-* |
 | `/admin/governance/tickets` | `master-detail-ops` | GOV-* |

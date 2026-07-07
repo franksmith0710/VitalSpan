@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
 
-import { resolveDefaultDashboardPath } from "./defaultViewResolve";
+import { resolveDefaultDashboardPath, resolveDefaultLandingPath } from "./defaultViewResolve";
 
 describe("resolveDefaultDashboardPath", () => {
   beforeEach(() => mockApiFetch.mockReset());
@@ -136,5 +136,51 @@ describe("resolveDefaultDashboardPath", () => {
         maxWidgetCount: 24,
       });
     expect(await resolveDefaultDashboardPath(["viewer"])).toBe("/admin/dashboards/d-fallback");
+  });
+});
+
+describe("resolveDefaultLandingPath report template fallback", () => {
+  beforeEach(() => mockApiFetch.mockReset());
+
+  it("falls back to report template when no dashboard", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({
+        dashboardId: null,
+        reportTemplateNodeId: "tpl-node-1",
+        inheritFromRoleId: null,
+      });
+    expect(await resolveDefaultLandingPath(["viewer"])).toBe(
+      "/admin/reports/templates/tpl-node-1?panel=run",
+    );
+  });
+
+  it("prefers dashboard over report template on same role", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({
+        dashboardId: "d-1",
+        reportTemplateNodeId: "tpl-node-1",
+        inheritFromRoleId: null,
+      });
+    expect(await resolveDefaultLandingPath(["viewer"])).toBe("/admin/dashboards/d-1");
+  });
+
+  it("inherits report template from parent role", async () => {
+    mockApiFetch
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValueOnce({
+        dashboardId: null,
+        reportTemplateNodeId: null,
+        inheritFromRoleId: "analyst",
+      })
+      .mockResolvedValueOnce({
+        dashboardId: null,
+        reportTemplateNodeId: "tpl-inherited",
+        inheritFromRoleId: null,
+      });
+    expect(await resolveDefaultLandingPath(["viewer"])).toBe(
+      "/admin/reports/templates/tpl-inherited?panel=run",
+    );
   });
 });
