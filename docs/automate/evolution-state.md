@@ -6,17 +6,16 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-07-round-target-m12-batch1.md |
-| design | docs/superpowers/specs/2026-07-07-m12-batch1-design.md |
-| plan | docs/superpowers/plans/2026-07-07-m12-batch1-rpt-view-nfr-cat.md |
-| branch | feat/m12-batch1-rpt-view-nfr-cat-r238 |
+| phase | idle |
+| round_target |  |
+| design |  |
+| plan |  |
+| branch |  |
 | base_branch | dev-auto |
-| prd_ids | RPT-005,RPT-007,VIEW-003,NFR-006,CAT-007 |
-| pr_number | 223 |
-| last_verified_command | cd backend && python3 -m ruff check . && python3 -m pytest -q |
-| last_verified_exit_code | 0 |
-| last_ui_verified_command | cd fe && pnpm run check:design && pnpm test && pnpm run build |
+| prd_ids |  |
+| pr_number |  |
+| last_verified_command |  |
+| last_verified_exit_code |  |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-06T22:35:00Z |
 | skill_rule_index_source_count | 26 |
@@ -67,6 +66,7 @@
 
 <!-- bounded-explorer 写 3-5 条，禁止贴源码。 -->
 
+- G1 bootstrap（cron 2026-07-07 ~11:24 UTC）：G0 PASS PR #223 已 squash merge dev-auto（bdd0cf1）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读实际当前节 **M-FINAL · F-A**（3 项 `[ ]` BOOT-002×2/DS-007；frontmatter 标 M-FINAL 与正文一致）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（无需刷新）；薄弱项 Top3 CONN-023(85.6)/CONN-024(85.6)/CONN-025(85.6) 均 <90（非饱和）；STUCK 表空；待办池空；上轮 M12 batch1（RPT-005/007 + VIEW-003 + NFR-006 + CAT-007）完成；phase P5_DOCS_READY→idle；待 G2 选题
 - P4 r238 验证（cron 2026-07-07 ~02:53 UTC）：独立全量 ruff clean + pytest 2051 passed/23 skipped exit 0；fe check:design 143 files + vitest 180/180 + design fixture 4/4 + build exit 0；UI design_drift PASS（check:design）；screenshots 未运行（headless vitest mock）；phase P3_DONE→P4_DONE；branch=feat/m12-batch1-rpt-view-nfr-cat-r238；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 r238 修复（cron 2026-07-07 ~02:53 UTC）：rebase dev-auto 313ce21；修复 r57 create_schedule/transition_schedule actor 回归 + r58 semi_real_failed 契约对齐；全量 pytest 2051 passed/23 skipped + ruff clean；fe check:design 143 files + vitest 180/180 + build exit 0；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P3_DONE；branch=feat/m12-batch1-rpt-view-nfr-cat-r238；base_branch=dev-auto；待 P4 evolution-verifier
 - P3 r238 实现（cron 2026-07-07 ~02:30 UTC）：10 Task 完成（RPT-005 APScheduler+历史+SchedulePanel、RPT-007 failures/BatchImportPanel、VIEW-003 CRUD/UserViewsSection、NFR-006 notifications/browserCompat/doc、CAT-007 m12-probe + test_m12_batch1_r238 20 用例）；ui_design_skill=b-design-system-tailadmin-radix；pytest r238 20/20 + r58 schedule/batch 回归 + ruff clean；fe check:design 143 files + vitest 19/19 + build exit 0；design_drift_checks=check:design PASS；screenshots 未运行（headless vitest mock）；phase P2_DONE→P3_DONE；branch=feat/m12-batch1-rpt-view-nfr-cat-r238；base_branch=dev-auto；待 P4 evolution-verifier

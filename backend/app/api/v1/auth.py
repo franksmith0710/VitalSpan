@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, get_current_user
@@ -69,7 +70,13 @@ def dev_switch(
             status_code=404,
             content={"code": "NOT_FOUND", "message": "Not found", "detail": None},
         )
-    user = user_service.get_user_by_username(db, payload.username)
+    try:
+        user = user_service.get_user_by_username(db, payload.username)
+    except OperationalError:
+        return JSONResponse(
+            status_code=404,
+            content={"code": "NOT_FOUND", "message": "Not found", "detail": None},
+        )
     if user is None:
         return JSONResponse(
             status_code=404,
