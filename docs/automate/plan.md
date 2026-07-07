@@ -613,8 +613,8 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 > **依赖**：F-A `nav-manifest` 完成后再做能力过滤（避免双轨 nav）。
 
-- [ ] AUTH-004: 资源授权 Admin UI（`/admin/system/grants`；对接 `GET/POST /api/v1/resource-grants`；按角色×资源类型 datasource/dashboard/report 绑定）
-- [ ] BOOT-002: 侧栏能力驱动过滤（manifest 项绑定 capability；替代 `canManagePlatform` / `canEditDashboards` 硬编码三档 nav；自定义 role code 在能力满足时可见对应分组）
+- [x] AUTH-004: 资源授权 Admin UI（`/admin/system/grants`；对接 `GET/POST /api/v1/resource-grants`；按角色×资源类型 datasource/dashboard/report 绑定）（完成于 2026-07-07）
+- [x] BOOT-002: 侧栏能力驱动过滤（manifest 项绑定 capability；替代 `canManagePlatform` / `canEditDashboards` 硬编码三档 nav；自定义 role code 在能力满足时可见对应分组）（完成于 2026-07-07）
 
 **验收信号**：dev-switch 切换演示用户后，侧栏由能力点驱动；未授权资源列表与侧栏不可见。
 
