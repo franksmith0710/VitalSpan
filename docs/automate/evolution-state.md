@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P3_DONE |
+| phase | P5_DOCS_READY |
 | round_target | docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md |
 | design | docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md |
 | plan | docs/superpowers/plans/2026-07-07-mfinal-fd-meta.md |
@@ -70,6 +70,8 @@
 
 ## 演化历史（最近）
 
+- P5 r244 收尾（cron 2026-07-07 ~16:10 UTC）：PRD 重评 META-001~004；hub 总分 90.0–91.1→92.3–93.7；plan M-FINAL F-D 四 ID 勾选（完成于 2026-07-07）；F-D 语义层收官；phase P4_DONE→P5_DOCS_READY；待建 PR squash merge dev-auto
+- P4 r244 重验（cron 2026-07-07 ~16:05 UTC）：独立全量 backend pytest 2124 passed/31 skipped exit 0；fe check:design 193 files + vitest 214/214 + build exit 0；UI design_drift PASS；screenshots 未运行（headless）；phase P3_DONE→P4_DONE；branch=feat/mfinal-fd-meta-r244；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P4 r244 验证（cron 2026-07-07 ~16:00 UTC）：独立全量 backend pytest 2113 passed/11 failed/31 skipped exit 1（test_migrations.py 11 条仍断言 head 0018，实际 0019）；r244 专项 28/28 exit 0；fe check:design 193 files + vitest 214/214 + build exit 0；UI design_drift PASS；screenshots 未运行（headless）；phase P3_DONE→P4_BLOCKED；branch=feat/mfinal-fd-meta-r244；待 P3 修复 migration gate 后重验
 - P2 计划（cron 2026-07-07 ~15:50 UTC）：F-D 批次 2 收官 META-001~004 计划完成（共享写 ACL + 术语/主题/维度 probe + migration 0019 theme FK + Dataset PUT/DELETE/bind + QUERY 四步集成测 + metadata-panels CRUD UI + Dataset 编辑删除）；8 Tasks / 19 文件操作（4 新建 + 15 修改）；skill_rule_index 26 源未变（20 skills + 6 rules）；plan=docs/superpowers/plans/2026-07-07-mfinal-fd-meta.md；执行模式 subagent-driven-development option 1；phase P1_DONE→P2_DONE；待 P3 evolution-implementer
 - P1 设计（cron 2026-07-07 ~15:37 UTC）：F-D 批次 2 收官 META-001~004（术语/主题/维度写 ACL + 主题树/维度 Admin CRUD UI + Dataset PUT/DELETE/bind-query-config + QUERY 四步集成测）；18 文件框定；ui_design_skill=b-design-system-tailadmin-radix；phase G2_DONE→P1_DONE；design=docs/superpowers/specs/2026-07-07-mfinal-fd-meta-design.md；base_branch=dev-auto；待 P2 evolution-planner

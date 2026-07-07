@@ -4,44 +4,48 @@
 
 ### [META-001] 术语字典
 
-- **状态**：部分实现
+- **状态**：已实现（M-FINAL F-D r244 收官）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：术语字典（SRS 追溯项）。
 - **验收标准**：
   - [x] 业务术语 CRUD（r32 L1：`GlossaryTerm` + `POST/GET/PUT/DELETE /api/v1/metadata/glossary`）
-  - [ ] 与物理字段映射
-- **代码锚点**：`backend/app/metadata/glossary/` · `backend/app/api/v1/metadata.py`
-- **演化建议**：r33 闭合 definition/name 边界、status 枚举与 list perf smoke（T-META-R33-001-01~04）；后续补物理字段映射与 Admin UI
-- **里程碑对齐**：
+  - [x] 写 ACL + 空名拦截 + 引用中删除 409 + list perf probe（r244：`metadata/_acl.py` viewer POST/PUT 403；`probe_list_terms_budget_ms` ≤50ms；`test_mfinal_fd_meta_r244.py` T-META-R244-001-01~06）
+  - [x] Admin 术语面板 CRUD（r244：`fe/src/pages/admin/metadata/glossary-panel.tsx` + `MetadataHubPage`）
+  - [ ] 与物理字段映射（companion）
+- **代码锚点**：`backend/app/metadata/glossary/` · `backend/app/metadata/_acl.py` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/metadata/glossary-panel.tsx` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-001-01~06
+- **演化建议**：r244 收官 F-D plan 术语字典（写 ACL + probe + Admin UI）；物理字段映射留 companion
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
 ### [META-002] 业务主题树
 
-- **状态**：部分实现
+- **状态**：已实现（M-FINAL F-D r244 收官）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：业务主题树（SRS 追溯项）。
 - **验收标准**：
   - [x] 主题→对象→属性树（r32 L1：`ThemeNode` 多级 parent + `term_id` 关联）
-  - [ ] 可导航（缺 Admin 树形 UI；API `?parent_id=` 过滤 + move 环检测已 L1）
-- **代码锚点**：`backend/app/metadata/themes/` · `backend/app/api/v1/metadata.py`
-- **演化建议**：r33 闭合 MAX_DEPTH=8、move 深度合法性与 children list perf（T-META-R33-002-01~03）；后续 Admin 主题树导航
-- **里程碑对齐**：
+  - [x] 可导航 Admin 主题面板 + 写 ACL + 环检测/子节点删除守卫（r244：`themes-panel.tsx`；viewer POST 403；move cycle 422；delete children 409；`probe_list_themes_budget_ms` ≤50ms；T-META-R244-002-01~07）
+  - [ ] 深层级树形拖拽导航（companion）
+- **代码锚点**：`backend/app/metadata/themes/` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/metadata/themes-panel.tsx` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-002-01~07
+- **演化建议**：r244 收官 F-D plan 主题树（Admin 列表/表单 + 写 ACL + probe）；深层级树形 UX 留 companion
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
 ### [META-003] 维度字典注册
 
-- **状态**：部分实现（L1 kickoff r38 + companion r39）
+- **状态**：已实现（M-FINAL F-D r244 收官）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：维度字典注册（SRS 追溯项）。
 - **验收标准**：
   - [x] 维度 code/枚举值可配置（migration 0016 + 8 REST 路由 CRUD/values；`META_DIM_*` 冲突与校验，r38 L1）
   - [x] values 注册校验链（空 code/非法 pattern/重复 batch/空 label + list 分页 limit 500，r39）
-  - [ ] M4/M5/M6 统一引用
-- **代码锚点**：`backend/app/metadata/dimensions/` · `backend/app/api/v1/metadata_dimensions.py` · `tests/test_query_meta_conn_r38.py` T-META-R38-003-01~07 · `tests/test_query_meta_conn_r39.py` T-META-R39-003-01~06
-- **演化建议**：r39 闭合 values 校验与分页边界；后续接 M4/M5/M6 统一引用与 Admin 维度管理 UI
-- **里程碑对齐**：
+  - [x] 主题 FK + 写 ACL + Admin 维度面板（r244：migration 0019 `theme_node_id` FK；`dimensions-panel.tsx`；viewer POST 403；`probe_list_dimensions_budget_ms` ≤50ms；T-META-R244-003-01~07）
+  - [ ] M4/M5/M6 统一引用（companion）
+- **代码锚点**：`backend/app/metadata/dimensions/` · `backend/migrations/versions/0019_dimension_theme_node.py` · `backend/app/api/v1/metadata_dimensions.py` · `fe/src/pages/admin/metadata/dimensions-panel.tsx` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-003-01~07
+- **演化建议**：r244 收官 F-D plan 维度注册（theme FK + Admin UI + 写 ACL）；M4/M5/M6 统一引用留 companion
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
 ### [META-004] Dataset CRUD M1-DATASET
 
-- **状态**：部分实现（companion r66）
+- **状态**：已实现（M-FINAL F-D r244 收官）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
 - **描述**：Dataset CRUD M1-DATASET（SRS 追溯项）。
@@ -49,11 +53,12 @@
   - [x] Dataset 内存 store + list/create/get/validate（r59 L1：`POST/GET /api/v1/datasets` + `POST validate` + `META_DATASET_*` 错误域）
   - [x] 计算字段名校验链（空 tables/非法 field 名/冲突 409，r59）
   - [x] companion dataset write ACL + duplicate table guard + perf probe（r66：viewer create 403 `META_DATASET_FORBIDDEN`；duplicate table 409；`probe_validate_dataset_budget_ms`/`probe_list_datasets_budget_ms` ≤50ms）
-  - [ ] Dataset 对标 DE/SS 全量能力
-  - [ ] 计算字段执行与指标引擎
-- **代码锚点**：`backend/app/metadata/dataset/` · `backend/app/api/v1/datasets.py` · `tests/test_meta_cat_dash_conn_design_r59.py` T-META-R59-004-01~09 · `tests/test_cat_dash_rpt_meta_r66.py` T-META-R66-004-01~05
-- **演化建议**：r66 companion 闭合 dataset write ACL、duplicate table guard 与 validate/list perf probe；后续补 DE/SS 对标、指标执行链与 Admin Dataset UI
-- **里程碑对齐**：
+  - [x] PUT/DELETE + bind-query-config + QUERY 四步集成测（r244：`PUT/DELETE /api/v1/datasets/{id}`；`POST bind-query-config`；create→bind→execute 链；`DatasetListPage` 编辑/删除；T-META-R244-004-01~08）
+  - [ ] Dataset 对标 DE/SS 全量能力（companion）
+  - [ ] 计算字段执行与指标引擎（companion）
+- **代码锚点**：`backend/app/metadata/dataset/` · `backend/app/api/v1/datasets.py` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-004-01~08
+- **演化建议**：r244 收官 F-D plan Dataset CRUD（PUT/DELETE/bind + QUERY 链集成 + Admin UI）；DE/SS 对标与指标执行链留 companion
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
 ### [META-005] 物理表元数据登记 M1-ENTITY
 
 - **状态**：已实现（M8 r232 收官）
