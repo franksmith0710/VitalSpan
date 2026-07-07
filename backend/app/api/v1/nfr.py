@@ -12,7 +12,10 @@ from app.core.config import get_settings
 from app.core.nfr.browser_matrix import probe_browser_support
 from app.core.nfr.errors import NFR_RUNTIME_VIOLATION, XINCHUANG_NON_COMPLIANT
 from app.core.nfr.runtime_guard import RuntimeComplianceError, RuntimeComplianceReport, assert_runtime_compliant, build_runtime_report
-from app.core.nfr.deployment_report import build_deployment_acceptance_report
+from app.core.nfr.deployment_report import (
+    build_deployment_acceptance_report,
+    render_nfr08_deployment_markdown,
+)
 from app.core.nfr.dashboard_availability import (
     CORE_DASHBOARD_IDS,
     P95_THRESHOLD_MS,
@@ -451,14 +454,21 @@ def post_runtime_compliance_assert(
 @router.get("/runtime-compliance/deployment-report", response_model=None)
 def get_deployment_report(
     _: Annotated[UserContext, Depends(get_current_user)],
+    format: str = Query("json"),
 ):
     report = build_deployment_acceptance_report()
+    if format == "markdown":
+        md = render_nfr08_deployment_markdown(report)
+        return Response(content=md, media_type="text/markdown")
     return {
+        "schemaVersion": report.schema_version,
         "reportVersion": report.report_version,
         "generatedAt": report.generated_at,
         "overallAcceptance": report.overall_acceptance,
         "opsSummary": report.ops_summary,
         "remediationIndex": report.remediation_index,
+        "composeServices": list(report.compose_services),
+        "forbiddenComposeHits": list(report.forbidden_compose_hits),
         "runtime": {
             "policyVersion": report.runtime.policy_version,
             "overallStatus": report.runtime.overall_status,
