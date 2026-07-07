@@ -93,6 +93,8 @@ redoc: /redoc
 
 **方言实现（r25）**：`mysql` → `backend/app/datasources/dialects/mysql.py`（CONN-001）；`postgresql` → `backend/app/datasources/dialects/postgres.py`（CONN-002）；`gbase` → `backend/app/datasources/dialects/gbase.py`（CONN-019）；`kingbase` → `backend/app/datasources/dialects/kingbase/`（CONN-018，PG 协议委托，默认 port 54321）。
 
+**信创 companion r242（CONN-017~021）**：`dm`/`kingbase`/`gbase`/`oceanbase`/`tidb` — Admin `DatasourceFormPage` 可选五型 + `probe_readonly_sql` 只读探针；集成测 `tests/test_mfinal_fc_r242.py`。
+
 ---
 
 ## 3b. NFR 横切（r46 L1 + r51 companion）

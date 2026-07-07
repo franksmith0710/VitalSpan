@@ -41,7 +41,7 @@
 | `dialects/mariadb.py` | MariaDB 关系型（MySQL 协议委托，`type=mariadb`） | CONN-003 | 已实现（M7 r228） |
 | `dialects/relational_hints.py` | Oracle/SQL Server 标识符/分页/类型映射纯函数 | CONN-005 | 已实现（M7 r228） |
 | `dialects/postgres.py` | PostgreSQL 方言 + schema_browser | CONN-002 | 已实现 |
-| `dialects/tidb.py` | TiDB HTAP 方言（MySQL 协议委托，默认 port 4000） | CONN-021 | 已实现 |
+| `dialects/tidb.py` | TiDB HTAP 方言（MySQL 协议委托，默认 port 4000；**r242** `probe_readonly_sql`） | CONN-021 | 已实现 + companion r242 |
 | `dialects/starrocks.py` | StarRocks OLAP 方言（MySQL 协议，port 9030，`category=olap`） | CONN-009 | 已实现 |
 | `dialects/elasticsearch.py` | Elasticsearch 搜索方言（index→schema 映射） | CONN-015 | 已实现 |
 | `dialects/opensearch.py` | OpenSearch 搜索方言（镜像 ES；`register_connector_plugin`） | CONN-016 | 已实现 L1 |
@@ -51,7 +51,7 @@
 | `dialects/doris.py` | Apache Doris OLAP（MySQL 协议委托，port 9030） | CONN-008 | 已实现（L1 r36 + companion r37） |
 | `dialects/oracle.py` | Oracle 关系型（oracledb thin，service name，`category=relational`） | CONN-004 | 已实现（L1 r36 + companion r37） |
 | `dialects/gaussdb.py` | GaussDB 关系型（psycopg 3 委托 PostgresConnector，`GAUSSDB_*`） | CONN-022 | 已实现 L1 + companion r39 |
-| `dialects/dm.py` | 达梦 DM 关系型（dmPython，`DM_*`） | CONN-017 | 已实现 L1 + companion r39 |
+| `dialects/dm.py` | 达梦 DM 关系型（dmPython，`DM_*`；**r242** `probe_readonly_sql`） | CONN-017 | 已实现 L1 + companion r242 |
 | `dialects/trino.py` | Trino 联邦湖仓（trino-python-client，catalog/schema 三级，`category=lake`） | CONN-010 | 已实现 L1 + companion r39 |
 | `dialects/presto.py` | Presto 联邦湖仓（委托 TrinoConnector，`type=presto`） | CONN-010 | 已实现（M11 r235） |
 | `dialects/mongodb.py` | MongoDB 文档型（pymongo，`category=document`） | CONN-014 | 已实现 L1 r40 + companion r41 |
@@ -59,9 +59,9 @@
 | `dialects/tdengine.py` | TDengine 时序（taospy REST，stable 标记） | CONN-012 | 已实现 L1 r40 + companion r41 |
 | `dialects/sqlite.py` | SQLite 嵌入式文件源（`host=路径`，路径穿越守卫） | CONN-006 | 已实现 L1 r40 + companion r41 |
 | `dialects/timescaledb.py` | TimescaleDB 时序（PG 委托 + hypertable 标记） | CONN-013 | 已实现 L1 r40 + companion r41 |
-| `dialects/gbase.py` | 南大通用 GBase 8a（MySQL 协议委托，port 5258，`GBASE_*`） | CONN-019 | 已实现 L1 r46 |
-| `dialects/oceanbase.py` | OceanBase 关系型（MySQL 协议委托，port 2881，`OCEANBASE_*`；`register_connector_plugin`） | CONN-020 | 已实现 L1 r54 |
-| `dialects/kingbase/` | 人大金仓 KingbaseES（PG 协议委托，port 54321，`KINGBASE_*`；`register_connector_plugin`；**r67** `params.py` 预校验 + `probe.py`） | CONN-018 | companion 已实现 r67 |
+| `dialects/gbase.py` | 南大通用 GBase 8a（MySQL 协议委托，port 5258，`GBASE_*`；**r242** `probe_readonly_sql`） | CONN-019 | 已实现 L1 r46 + companion r242 |
+| `dialects/oceanbase.py` | OceanBase 关系型（MySQL 协议委托，port 2881，`OCEANBASE_*`；**r242** `probe_readonly_sql`；`register_connector_plugin`） | CONN-020 | 已实现 L1 r54 + companion r242 |
+| `dialects/kingbase/` | 人大金仓 KingbaseES（PG 协议委托，port 54321，`KINGBASE_*`；**r242** `probe_readonly_sql`；`register_connector_plugin`；**r67** `params.py` 预校验 + `probe.py`） | CONN-018 | companion 已实现 r67 + r242 |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -206,3 +206,14 @@
 - **CONN-013**：`probe_readonly_sql` → `SELECT 1`；hypertable 元数据标记
 - 集成测：`tests/test_connectors_m11_r235.py`（`@pytest.mark.integration`，无 compose 时分层 skip）
 - 回归：r34~r35、r38~r39、r40~r41 不删旧套件
+
+### r242 companion 收官（CONN-017~021 · 2026-07-07）
+
+- **r242 companion（CONN-017~021）**：五型 `probe_readonly_sql`（DM `SELECT 1 FROM DUAL`；Kingbase psycopg `SELECT 1`；GBase/OceanBase/TiDB pymysql `SELECT 1`）；FE `CONNECTOR_FIELD_HINTS` 默认端口 5236/54321/5258/2881/4000；集成测 `tests/test_mfinal_fc_r242.py` ≥25 断言
+- **CONN-017**：`probe_readonly_sql` + Admin 表单可选达梦（port 5236）
+- **CONN-018**：`KingbaseConnector.probe_readonly_sql` + FE hints port 54321
+- **CONN-019**：`GbaseConnector.probe_readonly_sql` + FE hints port 5258
+- **CONN-020**：`OceanbaseConnector.probe_readonly_sql` + FE 租户提示文案
+- **CONN-021**：`TidbConnector.probe_readonly_sql` + FE hints port 4000（独立 `type=tidb`）
+- 集成测：`tests/test_mfinal_fc_r242.py`（25 passed / 6 skipped compose 占位）
+- FE smoke：`fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx`（T-CONN-R242-FE-01~04）
