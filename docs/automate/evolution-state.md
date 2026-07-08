@@ -6,17 +6,17 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-08-round-target-mproduct-fb.md |
-| design | docs/superpowers/specs/2026-07-08-mproduct-fb-ds007-taxonomy-design.md |
-| plan | docs/superpowers/plans/2026-07-08-mproduct-fb-ds007-taxonomy.md |
-| branch | feat/mproduct-fb-ds007-taxonomy |
+| phase | P3_DONE |
+| round_target | docs/superpowers/evolution/2026-07-08-round-target.md |
+| design | docs/superpowers/specs/2026-07-08-mproduct-fa-fc-design.md |
+| plan | docs/superpowers/plans/2026-07-08-mproduct-fa-fc-companion-ia.md |
+| branch | feat/mproduct-fa-fc-companion-ia |
 | base_branch | dev-auto |
-| prd_ids | DS-007 |
-| pr_number | 246 |
-| last_verified_command | python3 -m pytest ../tests 2311 passed/29 skipped exit 0; pytest test_datasources_display_group_fb.py 8 passed exit 0; pnpm exec vitest run 250 passed exit 0; pnpm run check:design 212 files exit 0; ruff datasources taxonomy/registry/schemas exit 0 |
+| prd_ids | CONN-023, CONN-024, BOOT-002, VIZ-002, DESIGN-004 |
+| pr_number |  |
+| last_verified_command | pnpm exec vitest run datasource-form.smoke resolve-nav.test AdminLayout.smoke 70 passed exit 0; pnpm run check:design 220 files exit 0; DatasourceFormPage.tsx 257 lines |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | vitest ConnectorsPage.smoke 3 passed + datasource-form.smoke 16 passed; check:design 212 files exit 0; screenshots=未运行（headless vitest mock，无 live dev server） |
+| last_ui_verified_command | ui_design_skill=b-design-system-tailadmin-radix; design_drift_checks=pnpm run check:design PASS (220 files); screenshots=未运行（headless vitest mock，无 live dev server QA） |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-08T16:35:00Z |
 | skill_rule_index_source_count | 26 |
@@ -81,6 +81,7 @@
 
 ## 演化历史（最近）
 
+- P3 实现（cron 2026-07-08 ~17:27 UTC）：M-PRODUCT F-A/F-C 五 ID 6 Tasks 完成；CONN-023 REST API companion + CONN-024 file Tabs companion；BOOT-002/VIZ-002 engineering+advanced IA 过滤；DESIGN-004 设计器移治理+Badge；layout.md §3/§6 同步；vitest 70/70 + check:design 220 files exit 0；DatasourceFormPage 257 行；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=PASS；screenshots=未运行（headless vitest mock）；branch=feat/mproduct-fa-fc-companion-ia；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - P5 收尾（cron 2026-07-08 ~17:00 UTC）：PRD 重评 DS-007；hub v1.2.110；总分 93.8→94.1（用户价值 92%→94%、交互体验 94%→96%、架构健康 94%→92% DatasourceFormPage 530 行）；plan M-PRODUCT F-B 三行勾选（完成于 2026-07-08）；DS-007 ≥90 STUCK 空；phase P4_DONE→P5_DOCS_READY；branch=feat/mproduct-fb-ds007-taxonomy；base_branch=dev-auto；待 squash merge dev-auto
 - P4 验证（cron 2026-07-08 ~16:48 UTC）：全量 pytest 2311 passed/29 skipped exit 0；DS-007 scoped 8/8；vitest 38 files 250 passed exit 0；ConnectorsPage+datasource-form smoke 19/19；check:design 212 files exit 0；ruff taxonomy/registry/schemas exit 0；UI design_drift PASS；screenshots 未运行（headless vitest mock）；concern DatasourceFormPage.tsx 530 行超 fe-ui 软约束 300；round-target 3 子项验收达标；phase P3_DONE→P4_DONE；branch=feat/mproduct-fb-ds007-taxonomy；base_branch=dev-auto；待 P5 evolution-pr-finisher-github
 - P3 实现（cron 2026-07-08 ~16:44 UTC）：M-PRODUCT F-B DS-007 taxonomy 3 Tasks 完成；displayGroup/categoryLabel API + ConnectorsPage Tabs + DatasourceFormPage 三步向导；pytest 8/8 + vitest 19/19 + check:design exit 0；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=pnpm run check:design PASS；screenshots=未运行（headless vitest mock，无 live dev server QA）；branch=feat/mproduct-fb-ds007-taxonomy；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
