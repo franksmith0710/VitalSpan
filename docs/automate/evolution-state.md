@@ -13,7 +13,7 @@
 | branch | feat/mproduct-fa-fc-companion-ia |
 | base_branch | dev-auto |
 | prd_ids | CONN-023, CONN-024, BOOT-002, VIZ-002, DESIGN-004 |
-| pr_number |  |
+| pr_number | 247 |
 | last_verified_command | ruff exit 0; pytest 2311 passed/29 skipped exit 0; vitest 38 files 269 passed exit 0; check:design 220 files exit 0; pnpm build exit 0 |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | ui_design_skill=b-design-system-tailadmin-radix; design_drift_checks=pnpm run check:design PASS; build=pnpm build exit 0; screenshots=未运行（headless vitest mock） |
