@@ -66,7 +66,7 @@ export function DashboardWidget({
   onSelect,
   onDelete,
   onMove,
-  onResize,
+  onResize: _onResize,
   onTitleChange,
   filterParameters,
   executeKey,

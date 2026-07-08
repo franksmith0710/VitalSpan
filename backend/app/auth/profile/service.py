@@ -21,6 +21,16 @@ class ProfileError(Exception):
         super().__init__(message)
 
 
+def resolve_actor_user_id(session: Session, user_id: str, username: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(user_id)
+    except ValueError:
+        user = user_service.get_user_by_username(session, username)
+        if user is None:
+            raise ProfileError("USER_NOT_FOUND", "User not found", 404)
+        return user.id
+
+
 def _default_email(username: str) -> str:
     return f"{username}@vitalspan.local"
 

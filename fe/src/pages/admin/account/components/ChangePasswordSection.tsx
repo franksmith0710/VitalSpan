@@ -40,7 +40,7 @@ export function ChangePasswordSection() {
       setError(null);
     },
     onError: (err: unknown) => {
-      setError(mapApiError(err, "密码更新失败"));
+      setError(mapApiError(err));
     },
   });
 

@@ -138,9 +138,9 @@ def test_r67_fixture_bootstraps(client):
     assert resp.status_code == 200
 
 
-def test_r67_fixture_auth_smoke(client):
+def test_r67_fixture_auth_smoke(client, admin_auth_headers):
     """T-R67-000-02: /api/v1/me 可达。"""
-    resp = client.get("/api/v1/me", headers=AUTH)
+    resp = client.get("/api/v1/me", headers=admin_auth_headers)
     assert resp.status_code == 200
 
 

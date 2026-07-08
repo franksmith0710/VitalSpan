@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
@@ -76,9 +75,10 @@ def change_password(
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
+        user_id = profile_service.resolve_actor_user_id(db, actor.id, actor.username)
         profile_service.change_password(
             db,
-            user_id=uuid.UUID(actor.id),
+            user_id=user_id,
             actor_username=actor.username,
             current_password=payload.current_password,
             new_password=payload.new_password,
