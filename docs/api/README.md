@@ -80,7 +80,7 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET | `/api/v1/datasources/types` | 已注册连接器类型清单（含 M11：`starrocks`/`trino`/`presto`/`influxdb`/`tdengine`/`timescaledb`；**r249** `rest_api`/`excel`/`csv`/`db2`/`impala`；**r250** `redshift`（category=olap）；`type`、`displayName`、`category`、`capabilities`） | IF-06 | 一期 | DS-007 · CONN-023~027 | 已实现（r250） | `backend/app/api/v1/datasources.py` |
+| GET | `/api/v1/datasources/types` | 已注册连接器类型清单（含 M11：`starrocks`/`trino`/`presto`/`influxdb`/`tdengine`/`timescaledb`；**r249** `rest_api`/`excel`/`csv`/`db2`/`impala`；**r250** `redshift`（category=olap）；`type`、`displayName`、`category`、`capabilities`、**`displayGroup`**（`oltp`/`olap`/`warehouse`/`file`/`api`/`extension`）、**`categoryLabel`**（中文组名）） | IF-06 | 一期 | DS-007 · CONN-023~027 | 已实现（r250） | `backend/app/api/v1/datasources.py` |
 | POST | `/api/v1/datasources` | 创建数据源；请求/响应可选 `connectionOptions`（charset/collation/sslMode/connectTimeoutSec/readTimeoutSec） | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources` | 数据源列表（`?limit=&offset=&type=&q=`）；列表项含 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources/{id}` | 数据源详情（无明文密码）；含 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |

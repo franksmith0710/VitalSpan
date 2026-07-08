@@ -124,6 +124,8 @@ class ConnectorTypeOut(BaseModel):
     display_name: str = Field(validation_alias="displayName", serialization_alias="displayName")
     category: str
     capabilities: list[str]
+    display_group: str = Field(validation_alias="displayGroup", serialization_alias="displayGroup")
+    category_label: str = Field(validation_alias="categoryLabel", serialization_alias="categoryLabel")
 
     model_config = {"populate_by_name": True}
 

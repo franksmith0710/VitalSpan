@@ -5,6 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from app.datasources.dialects.base import DialectConnector
+from app.datasources.taxonomy import label_for_display_group, resolve_display_group
 
 
 class ConnectorNotFoundError(KeyError):
@@ -84,12 +85,17 @@ def register_dialect(connector: DialectConnector) -> None:
 
 
 def export_type_catalog() -> list[dict]:
-    return [
-        {
-            "type": item.type,
-            "displayName": item.display_name,
-            "category": item.category,
-            "capabilities": list(item.capabilities),
-        }
-        for item in registry.list_types()
-    ]
+    result: list[dict] = []
+    for item in registry.list_types():
+        group = resolve_display_group(item.category)
+        result.append(
+            {
+                "type": item.type,
+                "displayName": item.display_name,
+                "category": item.category,
+                "capabilities": list(item.capabilities),
+                "displayGroup": group,
+                "categoryLabel": label_for_display_group(group),
+            }
+        )
+    return result
