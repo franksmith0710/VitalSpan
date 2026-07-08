@@ -4,8 +4,8 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.2.0
-last_updated: 2026-07-07
+version: 1.2.1
+last_updated: 2026-07-08
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
 layout_pattern_ref: references/layout-patterns/app-shell.md
@@ -112,8 +112,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
 │   ├── /dashboards/:id/preview      # 构建器 preview
 │   ├── /dashboards/:id/share        # 分享/嵌入 · bi-share-embed（有 edit 权）
-│   ├── /charts/explore              # 即席图表（三期）· bi-chart-builder
-│   └── /designer                    # 查询设计器（四期）· form-composition
+│   ├── /charts/explore              # 即席图表（三期）· bi-chart-builder（高级入口，默认仅 admin 侧栏）
 │
 ├── 报表
 │   ├── /reports                     # 授权报表列表（消费）
@@ -147,15 +146,19 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 ### 侧栏导航分组（RBAC 可见）
 
-| 分组 | 图标区 | 典型权限 | 里程碑 | 角色 |
-|------|--------|----------|--------|------|
-| 数据 | 数据连接（连接管理/连接器类型）、数据接入、语义建模（元数据/Dataset） | `datasource:*` / `metadata:*` / `dataset:*` 分项 | M1/M13 | admin |
-| 分析 | Dashboard、图表探索（M11）、查询设计器（M13） | `dashboard:read/edit` | M1/M11/M13 | admin/analyst/viewer |
-| 报表 | 报表（subItems: 预制报表/报表模板/报表调度） | `report:read/edit` | M1/M7/M11 | admin/analyst/viewer |
-| 主题与实体 | 实体总览、主题分析 | 二期权限点 | M7 | admin/analyst |
-| 治理 | 接口目录（M1）、治理工单（M13）、发布流水线（M13）、查询服务（M13） | 治理权限 | M1/M13 | admin |
-| 我的 | 账号设置 | — | — | admin/analyst/viewer |
-| 系统 | 角色/用户/组织/行级权限/审计日志/资源授权 | `system:*` | M1 | admin |
+| 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA（analyst/viewer） |
+|------|--------|----------|--------|------|---------------------------|
+| 数据 | 数据连接（连接管理/连接器类型）、数据接入、语义建模（元数据/Dataset） | `datasource:*` / `metadata:*` / `dataset:*` 分项 | M1/M13 | admin | **隐藏** |
+| 分析 | Dashboard | —（角色驱动） | M1 | admin/analyst/viewer | **可见**（主路径） |
+| 分析 | 图表探索（M11） | `dashboard:edit` | M11 | admin（侧栏）；analyst/viewer 经 Dashboard `WidgetPalette` 建图 | **隐藏**（高级入口） |
+| 报表 | 报表（subItems: 预制报表/报表模板/报表调度） | `report:read/edit` | M1/M7/M11 | admin/analyst/viewer | **可见** |
+| 主题与实体 | 实体总览、主题分析 | `theme:*` | M7 | admin | **隐藏** |
+| 治理 | 接口目录（M1）、治理工单（M13）、发布流水线（M13）、查询服务（M13）、**查询设计器**（M13，标注「治理专用」） | `governance:*` | M1/M13 | admin | **隐藏** |
+| 我的 | 账号设置 | — | — | admin/analyst/viewer | **可见** |
+| 系统 | 角色/用户/组织/行级权限/审计日志/资源授权 | `system:*` | M1 | admin | **隐藏** |
+
+> **数据工程** = `数据` + `主题与实体` 分组；非 admin 默认侧栏不展示（`iaTier: engineering`）。
+> **图表探索**为高级入口（M11），默认仅 admin 侧栏展示；analyst/viewer 经 Dashboard 编辑 `WidgetPalette` 完成建图。
 
 > **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生函数：`fe/src/lib/resolve-nav.ts`。
 > 三档角色（admin / analyst / viewer）侧栏由 `resolveNavGroups(user)` 从 manifest 派生，不再维护三份平行 nav 文件。
@@ -209,6 +212,24 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 > - `ACTIVE_MILESTONES = {"M1", "M7", "M11", "M13"}`；M13 项对具备能力的角色可见，不再标「预览」badge
 > - 单一真理源：`fe/src/config/nav-manifest.tsx`；派生函数：`resolveNavGroups(user, capabilities?)`
 > - `capabilities` 参数为 F-B ability-nav 扩展预留（默认使用 `ACTIVE_MILESTONES`）
+
+### 默认 IA 矩阵（F-C · BOOT-002 / VIZ-002 / DESIGN-004）
+
+| 分组 | admin | analyst | viewer |
+|------|-------|---------|--------|
+| 数据 | 可见 | 隐藏 | 隐藏 |
+| 主题与实体 | 可见 | 隐藏 | 隐藏 |
+| 治理 | 可见 | 隐藏 | 隐藏 |
+| 分析（主路径：Dashboard） | 可见 | 可见 | 可见 |
+| 报表 | 可见 | 可见 | 可见 |
+| 我的 | 可见 | 可见 | 可见 |
+| 系统 | 可见 | 隐藏 | 隐藏 |
+
+脚注：
+
+- **数据工程** = `数据` + `主题与实体` 分组（`iaTier: engineering`）
+- **图表探索**（`iaPriority: advanced`）默认仅 admin 侧栏；路由 `/admin/charts/explore` 保留
+- **查询设计器**位于治理分组，侧栏 Badge「治理专用」；普通分析请使用 Dashboard
 
 ---
 
