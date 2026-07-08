@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P4_BLOCKED |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-08-round-target.md |
 | design | docs/superpowers/specs/2026-07-08-mproduct-fa-fc-design.md |
 | plan | docs/superpowers/plans/2026-07-08-mproduct-fa-fc-companion-ia.md |
@@ -14,9 +14,9 @@
 | base_branch | dev-auto |
 | prd_ids | CONN-023, CONN-024, BOOT-002, VIZ-002, DESIGN-004 |
 | pr_number |  |
-| last_verified_command | ruff exit 0; pytest 2311 passed/29 skipped exit 0; pnpm test vitest 38 files 269 passed exit 0; pnpm build exit 2 (TS6133); check:design 220 files exit 0 |
-| last_verified_exit_code | 2 |
-| last_ui_verified_command | ui_design_skill=b-design-system-tailadmin-radix; design_drift_checks=pnpm run check:design PASS (220 files); build=FAIL TS6133 FileSourceConnectionFields.tsx; screenshots=未运行（headless vitest mock，无 live dev server QA） |
+| last_verified_command | pnpm build exit 0 (fix TS6133 FILE_SIZE_WARN_BYTES); prior P4: vitest 269 passed; check:design 220 files exit 0 |
+| last_verified_exit_code | 0 |
+| last_ui_verified_command | ui_design_skill=b-design-system-tailadmin-radix; design_drift_checks=pnpm run check:design PASS; build=pnpm build exit 0; screenshots=未运行（headless vitest mock） |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-08T16:35:00Z |
 | skill_rule_index_source_count | 26 |
