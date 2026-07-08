@@ -43,6 +43,8 @@ function filterItemForRole(
   userCaps: Set<string>,
   activeMilestones: Set<string>,
 ): NavItem | null {
+  if (!isAdmin(user) && item.iaPriority === "advanced") return null;
+
   const sectionCap = section.capability;
   const requiredCap = item.capability ?? sectionCap;
 
@@ -71,6 +73,7 @@ function filterItemForRole(
     ...(item.path ? { path: item.path } : {}),
     ...(addPreview ? { preview: true } : {}),
     ...(filteredSubItems ? { subItems: filteredSubItems } : {}),
+    ...(item.badgeLabel ? { badgeLabel: item.badgeLabel } : {}),
   };
 }
 
@@ -89,6 +92,8 @@ export function resolveNavGroups(
     } else if (!hasRole(user, section.roles)) {
       continue;
     }
+
+    if (!isAdmin(user) && section.iaTier === "engineering") continue;
 
     const items: NavItem[] = [];
     for (const item of section.items) {

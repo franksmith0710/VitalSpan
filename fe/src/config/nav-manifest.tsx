@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import type { SessionRole } from "@/lib/session";
 
+type IaTier = "core" | "engineering";
+type IaPriority = "primary" | "advanced";
+
 type NavManifestSubItem = {
   name: string;
   path: string;
@@ -32,6 +35,8 @@ type NavManifestItem = {
   milestone?: string;
   roles?: SessionRole[];
   capability?: string;
+  iaPriority?: IaPriority;
+  badgeLabel?: string;
 };
 
 type NavManifestSection = {
@@ -39,12 +44,14 @@ type NavManifestSection = {
   items: NavManifestItem[];
   roles: SessionRole[];
   capability?: string;
+  iaTier?: IaTier;
 };
 
 export const NAV_MANIFEST: NavManifestSection[] = [
   {
     title: "数据",
     roles: ["admin"],
+    iaTier: "engineering",
     items: [
       {
         name: "数据连接",
@@ -93,7 +100,6 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         icon: <LayoutDashboard className="size-6" aria-hidden />,
         path: "/admin/dashboards",
         milestone: "M1",
-        capability: "dashboard:read",
       },
       {
         name: "图表探索",
@@ -101,13 +107,7 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         path: "/admin/charts/explore",
         milestone: "M11",
         capability: "dashboard:edit",
-      },
-      {
-        name: "查询设计器",
-        icon: <SlidersHorizontal className="size-6" aria-hidden />,
-        path: "/admin/designer",
-        milestone: "M13",
-        capability: "dashboard:edit",
+        iaPriority: "advanced",
       },
     ],
   },
@@ -138,7 +138,8 @@ export const NAV_MANIFEST: NavManifestSection[] = [
   },
   {
     title: "主题与实体",
-    roles: ["admin", "analyst"],
+    roles: ["admin"],
+    iaTier: "engineering",
     capability: "theme:*",
     items: [
       {
@@ -158,6 +159,7 @@ export const NAV_MANIFEST: NavManifestSection[] = [
   {
     title: "治理",
     roles: ["admin"],
+    iaTier: "engineering",
     capability: "governance:*",
     items: [
       {
@@ -184,6 +186,14 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         path: "/admin/services",
         milestone: "M13",
         capability: "governance:*",
+      },
+      {
+        name: "查询设计器",
+        icon: <SlidersHorizontal className="size-6" aria-hidden />,
+        path: "/admin/designer",
+        milestone: "M13",
+        capability: "governance:*",
+        badgeLabel: "治理专用",
       },
     ],
   },

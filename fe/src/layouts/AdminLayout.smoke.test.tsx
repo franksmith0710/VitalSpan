@@ -347,7 +347,7 @@ describe("AdminLayout smoke", () => {
     );
 
     expect(screen.queryByText("预览")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "查询设计器" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /查询设计器/ })).toBeInTheDocument();
   });
 
   it("viewer role: sidebar has no 系统 or 数据 section headings (T-FE-SMFA-04)", () => {
@@ -425,5 +425,42 @@ describe("AdminLayout smoke", () => {
     );
     await user.click(screen.getByRole("button", { name: "报表" }));
     expect(screen.getByRole("link", { name: "预制报表" })).toBeInTheDocument();
+  });
+
+  it("T-NAV-FC-04: analyst sidebar has no 实体总览 or 连接管理", () => {
+    mockUseAuth.mockReturnValueOnce({
+      user: { id: "3", username: "analyst", roles: ["analyst"] },
+      isLoading: false,
+      isAuthenticated: true,
+      logout: vi.fn(),
+      refresh: vi.fn(async () => {}),
+    } as unknown as ReturnType<typeof mockUseAuth>);
+    setDesktopViewport(1400);
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboards" element={<div>d</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole("link", { name: "实体总览" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "连接管理" })).not.toBeInTheDocument();
+  });
+
+  it("T-DESIGN-FC-01-smoke: admin sees 治理专用 badge on designer link", () => {
+    setDesktopViewport(1400);
+    render(
+      <MemoryRouter initialEntries={["/admin/governance/tickets"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="governance/tickets" element={<div>t</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("治理专用")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /查询设计器/ })).toBeInTheDocument();
   });
 });
