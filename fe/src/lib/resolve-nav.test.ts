@@ -44,24 +44,24 @@ describe("resolveNavGroups", () => {
     expect(allItemNames).not.toContain("Dataset");
   });
 
-  it("T-NAV-MF-02: analyst does not see M13 items", () => {
+  it("T-NAV-MF-02: analyst sees 查询设计器 when M13 is active", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
     const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
-    expect(allItemNames).not.toContain("查询设计器");
+    expect(allItemNames).toContain("查询设计器");
     expect(allItemNames).not.toContain("治理工单");
     expect(allItemNames).not.toContain("元数据");
     expect(allItemNames).not.toContain("Dataset");
   });
 
-  it("T-NAV-MF-03: admin sees M13 items with preview: true", () => {
+  it("T-NAV-MF-03: admin sees M13 items without preview badge", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const allItems = groups.flatMap((g) => g.items);
     const designer = allItems.find((i) => i.name === "查询设计器");
     expect(designer).toBeDefined();
-    expect(designer?.preview).toBe(true);
+    expect(designer?.preview).toBeFalsy();
     const ticket = allItems.find((i) => i.name === "治理工单");
     expect(ticket).toBeDefined();
-    expect(ticket?.preview).toBe(true);
+    expect(ticket?.preview).toBeFalsy();
   });
 
   it("T-NAV-MF-04: capabilities override filters M7/M11/M13 for admin", () => {
@@ -92,15 +92,21 @@ describe("resolveNavGroups", () => {
     expect(subNames).not.toContain("报表调度");
   });
 
-  it("T-NAV-MF-06: admin 数据 section has 数据连接 with 连接器类型 subItem", () => {
+  it("T-NAV-MF-06: admin 数据 section has 连接与语义建模子项", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const dataSection = groups.find((g) => g.title === "数据");
     expect(dataSection).toBeDefined();
     const dataConn = dataSection?.items.find((i) => i.name === "数据连接");
     expect(dataConn).toBeDefined();
-    const subNames = dataConn?.subItems?.map((s) => s.name) ?? [];
-    expect(subNames).toContain("连接管理");
-    expect(subNames).toContain("连接器类型");
+    const connSubs = dataConn?.subItems?.map((s) => s.name) ?? [];
+    expect(connSubs).toContain("连接管理");
+    expect(connSubs).toContain("连接器类型");
+    const semantic = dataSection?.items.find((i) => i.name === "语义建模");
+    expect(semantic).toBeDefined();
+    const semanticSubs = semantic?.subItems?.map((s) => s.name) ?? [];
+    expect(semanticSubs).toContain("元数据");
+    expect(semanticSubs).toContain("Dataset");
+    expect(groups.some((g) => g.title === "语义层")).toBe(false);
   });
 
   it("T-NAV-CAP-01: admin sees 系统 section with 资源授权 item", () => {
@@ -159,10 +165,10 @@ describe("resolveSidebarSections", () => {
 });
 
 describe("ACTIVE_MILESTONES", () => {
-  it("exports ACTIVE_MILESTONES containing M1, M7, M11 but not M13", () => {
+  it("exports ACTIVE_MILESTONES containing M1, M7, M11, M13", () => {
     expect(ACTIVE_MILESTONES.has("M1")).toBe(true);
     expect(ACTIVE_MILESTONES.has("M7")).toBe(true);
     expect(ACTIVE_MILESTONES.has("M11")).toBe(true);
-    expect(ACTIVE_MILESTONES.has("M13")).toBe(false);
+    expect(ACTIVE_MILESTONES.has("M13")).toBe(true);
   });
 });

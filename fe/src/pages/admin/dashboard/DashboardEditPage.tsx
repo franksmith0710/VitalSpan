@@ -20,7 +20,9 @@ import {
   type DashboardLayout,
   type LayoutWidget,
 } from "@/components/dashboard/layoutUtils";
+import { placeNewWidget } from "@/components/dashboard/gridLayoutAdapter";
 import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
+import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
 import { WidgetInspector } from "@/components/dashboard/WidgetInspector";
 import { WIDGET_CHART_LABELS } from "@/components/dashboard/widgetIcons";
 import { Button } from "@/components/ui/button";
@@ -120,7 +122,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     const widgetId = crypto.randomUUID();
     const maxOrder = widgets.reduce((m, w) => Math.max(m, w.order), -1);
     const chartConfig = { ...defaultChartConfig(type), chartId: widgetId };
-    const next: LayoutWidget = {
+    const next: LayoutWidget = placeNewWidget(widgets, {
       id: widgetId,
       type: "chart",
       title: TITLE_MAP[type] ?? type,
@@ -128,7 +130,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       rowSpan: 3,
       order: maxOrder + 1,
       chartConfig,
-    };
+    });
     setWidgets((prev) => sortWidgets([...prev, next]));
     setSelectedWidgetId(widgetId);
   };
@@ -172,6 +174,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         </Button>
       )}
       {mode === "edit" ? (
+        <Button asChild variant="outline" size="sm">
+          <Link to={`/admin/dashboards/${id}/share`}>分享</Link>
+        </Button>
+      ) : null}
+      {mode === "edit" ? (
         <Button type="button" variant="primary" size="sm" disabled={saving} onClick={() => void handleSave()}>
           {saving ? "保存中…" : "保存布局"}
         </Button>
@@ -190,8 +197,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   return (
     <AdminPageShell
+      layout={mode === "edit" ? "fill" : "default"}
       title={name || "Dashboard"}
-      description={mode === "edit" ? "拖拽排列组件，配置数据源与 SQL 后保存。" : "预览模式，查看图表与全局筛选效果。"}
+      description={
+        mode === "edit"
+          ? "从左侧拖入组件，在画布中拖拽排列与缩放，右侧配置数据后保存。"
+          : "预览模式，查看图表与全局筛选效果。"
+      }
       actions={headerActions}
     >
       {error ? <ErrorBanner message={error} onRetry={() => (error.includes("数据源") ? setError(null) : void load())} /> : null}
@@ -206,49 +218,37 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         />
       ) : null}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        {mode === "edit" ? <WidgetPalette onInsert={handleInsert} /> : null}
-        <div className="flex min-w-0 flex-1 flex-col gap-4 xl:flex-row xl:items-start">
-          <div className="min-w-0 flex-1">
-            <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
-              <DashboardGrid
-                mode={mode}
-                widgets={widgets}
-                onAddWidget={mode === "edit" ? () => handleInsert("table") : undefined}
-                onLayoutChange={
-                  mode === "edit" ? (next) => setWidgets(sortWidgets(next)) : undefined
-                }
-                renderWidget={(widget) => {
-                  const filterParameters =
-                    mode === "view" && linkage
-                      ? buildWidgetFilterParams(widget.id, linkage, filterValues)
-                      : undefined;
-                  return (
-                    <DashboardWidget
-                      widget={widget}
-                      mode={mode}
-                      selected={mode === "edit" && widget.id === selectedWidgetId}
-                      onSelect={() => setSelectedWidgetId(widget.id)}
-                      filterParameters={filterParameters}
-                      executeKey={mode === "view" ? executeKey : undefined}
-                      onDelete={(wid) => setWidgets((prev) => prev.filter((w) => w.id !== wid))}
-                      onMove={(wid, direction) => setWidgets((prev) => moveWidget(prev, wid, direction))}
-                      onResize={(wid, patch) => setWidgets((prev) => resizeWidget(prev, wid, patch))}
-                      onTitleChange={(wid, title) =>
-                        setWidgets((prev) => resizeWidget(prev, wid, { title }))
-                      }
-                      onChartConfigChange={(wid, chartConfig) =>
-                        setWidgets((prev) =>
-                          prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
-                        )
-                      }
-                    />
-                  );
-                }}
-              />
-            </div>
-          </div>
-          {mode === "edit" ? (
+      {mode === "edit" ? (
+        <DashboardEditWorkspace
+          palette={<WidgetPalette onInsert={handleInsert} />}
+          canvas={
+            <DashboardGrid
+              mode="edit"
+              widgets={widgets}
+              onAddWidget={() => handleInsert("table")}
+              onLayoutChange={(next) => setWidgets(sortWidgets(next))}
+              renderWidget={(widget) => (
+                <DashboardWidget
+                  widget={widget}
+                  mode="edit"
+                  selected={widget.id === selectedWidgetId}
+                  onSelect={() => setSelectedWidgetId(widget.id)}
+                  onDelete={(wid) => setWidgets((prev) => prev.filter((w) => w.id !== wid))}
+                  onMove={(wid, direction) => setWidgets((prev) => moveWidget(prev, wid, direction))}
+                  onResize={(wid, patch) => setWidgets((prev) => resizeWidget(prev, wid, patch))}
+                  onTitleChange={(wid, title) =>
+                    setWidgets((prev) => resizeWidget(prev, wid, { title }))
+                  }
+                  onChartConfigChange={(wid, chartConfig) =>
+                    setWidgets((prev) =>
+                      prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
+                    )
+                  }
+                />
+              )}
+            />
+          }
+          inspector={
             <WidgetInspector
               widget={selectedWidget}
               onChange={(chartConfig) => {
@@ -258,9 +258,33 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 );
               }}
             />
-          ) : null}
+          }
+        />
+      ) : (
+        <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
+          <DashboardGrid
+            mode="view"
+            widgets={widgets}
+            renderWidget={(widget) => {
+              const filterParameters = linkage
+                ? buildWidgetFilterParams(widget.id, linkage, filterValues)
+                : undefined;
+              return (
+                <DashboardWidget
+                  widget={widget}
+                  mode="view"
+                  filterParameters={filterParameters}
+                  executeKey={executeKey}
+                  onDelete={() => {}}
+                  onMove={() => {}}
+                  onResize={() => {}}
+                  onTitleChange={() => {}}
+                />
+              );
+            }}
+          />
         </div>
-      </div>
+      )}
     </AdminPageShell>
   );
 }

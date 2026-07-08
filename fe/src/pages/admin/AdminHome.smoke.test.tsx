@@ -25,28 +25,25 @@ describe("AdminHomePage smoke", () => {
       logout: vi.fn(),
       refresh: vi.fn(async () => {}),
     });
+    mockResolve.mockResolvedValue("/admin/dashboards");
   });
 
   afterEach(() => cleanup());
 
-  it("renders shell preview card with form controls (T-FE-13)", async () => {
+  it("T-FE-14: admin redirects to default dashboards list", async () => {
     render(
       <MemoryRouter initialEntries={["/admin"]}>
-        <AdminHomePage />
+        <Routes>
+          <Route path="/admin" element={<AdminHomePage />} />
+          <Route path="/admin/dashboards" element={<div>Dashboard 列表</div>} />
+        </Routes>
       </MemoryRouter>,
     );
-    expect(await screen.findByRole("heading", { name: "壳层预览" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "主操作示例" })).toBeInTheDocument();
-    expect(screen.getByLabelText("示例输入")).toBeInTheDocument();
-  });
 
-  it("shows welcome copy for M1 shell (T-FE-14)", async () => {
-    render(
-      <MemoryRouter initialEntries={["/admin"]}>
-        <AdminHomePage />
-      </MemoryRouter>,
-    );
-    expect(await screen.findByRole("heading", { name: "欢迎使用 VitalSpan" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Dashboard 列表")).toBeInTheDocument();
+    });
+    expect(mockResolve).toHaveBeenCalledWith(["admin"]);
   });
 
   it("T-VIEW-003-01: viewer redirects to default dashboard", async () => {

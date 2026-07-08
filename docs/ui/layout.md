@@ -99,7 +99,10 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /datasources                 # 数据源列表 · crud-flow
 │   ├── /datasources/new             # 新建 · form-flow
 │   ├── /datasources/:id             # 详情/连通性/schema · detail-page
-│   └── /connectors                  # 已注册类型只读（DS-007）
+│   ├── /connectors                  # 已注册类型只读（DS-007）
+│   ├── /ingestion/sync-jobs         # 数据接入
+│   ├── /metadata                    # 元数据（术语/主题/维度）
+│   └── /datasets                    # Dataset 语义建模（META-004）
 │
 ├── 分析                            # 建设 + 消费
 │   ├── /dashboards                  # Dashboard 列表 · table-list（全员可见授权项）
@@ -122,20 +125,16 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /themes/:id                  # 主题阅读态（消费，二期）
 │   └── /entities/overview           # 实体总览配置（二期）
 │
-├── 治理
-│   ├── /governance/catalog          # 接口分类（一期 PoC）
-│   ├── /governance/tickets          # 工单（四期）· master-detail-ops
-│   └── /governance/publish          # 发布流水线（四期）
-│
-├── 语义层（四期）
-│   ├── /metadata/glossary
-│   ├── /metadata/themes
-│   └── /datasets                    # bi-dataset-management
-│
 ├── 我的
-│   └── /me/views                    # 我的视图 / 覆盖（三期）· FR-VIEW-4
+│   └── /account/settings            # 账号设置（个人资料与密码在子路由）
 │
-└── 系统                            # 管理员（RBAC）
+├── 治理
+│   ├── /governance/catalog
+│   ├── /governance/tickets
+│   ├── /governance/publish
+│   └── /services                    # 已发布查询服务（IF-02）
+│
+└── 系统
     ├── /system/roles                # AUTH · crud-flow
     ├── /system/users                # AUTH
     ├── /system/orgs                 # AUTH
@@ -148,12 +147,12 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 分组 | 图标区 | 典型权限 | 里程碑 | 角色 |
 |------|--------|----------|--------|------|
-| 数据 | 数据连接（subItems: 连接管理/连接器类型）、数据接入 | `datasource:*` | M1 | admin |
-| 分析 | Dashboard、图表探索（M11）、查询设计器（M13·预览） | `dashboard:read/edit` | M1/M11/M13 | admin/analyst/viewer |
+| 数据 | 数据连接（连接管理/连接器类型）、数据接入、语义建模（元数据/Dataset） | `datasource:*` / `metadata:*` / `dataset:*` 分项 | M1/M13 | admin |
+| 分析 | Dashboard、图表探索（M11）、查询设计器（M13） | `dashboard:read/edit` | M1/M11/M13 | admin/analyst/viewer |
 | 报表 | 报表（subItems: 预制报表/报表模板/报表调度） | `report:read/edit` | M1/M7/M11 | admin/analyst/viewer |
 | 主题与实体 | 实体总览、主题分析 | 二期权限点 | M7 | admin/analyst |
-| 治理 | 接口目录（M1）、治理工单（M13·预览）、发布流水线（M13·预览） | 治理权限 | M1/M13 | admin |
-| 语义层 | 元数据（M13·预览）、Dataset（M13·预览） | 四期 | M13 | admin |
+| 治理 | 接口目录（M1）、治理工单（M13）、发布流水线（M13）、查询服务（M13） | 治理权限 | M1/M13 | admin |
+| 我的 | 账号设置 | — | — | admin/analyst/viewer |
 | 系统 | 角色/用户/组织/行级权限/审计日志/资源授权 | `system:*` | M1 | admin |
 
 > **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生函数：`fe/src/lib/resolve-nav.ts`。
@@ -200,12 +199,12 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | M1–M6 一期 | 数据、Dashboard（edit + view）、系统/权限、连接器 |
 | M7–M10 二期 | 报表模板、报表调度、主题、实体；角色默认视图（FR-VIEW-3） |
 | M11–M12 三期 | 图表探索、报表调度、我的视图（FR-VIEW-4）、Embed SDK |
-| M13 四期 | 语义层、治理工单/发布、设计器、已发布查询服务入口（可选） |
+| M13 四期 | 数据组内语义建模、治理工单/发布、设计器、已发布查询服务入口（可选） |
 
 未到期能力：**侧栏不展示**或标「即将推出」；禁止死链。
 
 > **里程碑可见性矩阵（M-FINAL · F-A）**：
-> - `ACTIVE_MILESTONES = {"M1", "M7", "M11"}`；M13 项在 viewer/analyst 侧栏**隐藏**，admin 侧栏标「预览」badge
+> - `ACTIVE_MILESTONES = {"M1", "M7", "M11", "M13"}`；M13 项对具备能力的角色可见，不再标「预览」badge
 > - 单一真理源：`fe/src/config/nav-manifest.tsx`；派生函数：`resolveNavGroups(user, capabilities?)`
 > - `capabilities` 参数为 F-B ability-nav 扩展预留（默认使用 `ACTIVE_MILESTONES`）
 

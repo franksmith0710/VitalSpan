@@ -20,8 +20,8 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：P0
-- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07
-- **描述**：React 管理端壳层（SRS 追溯项）；M-FE-1 补齐 TanStack Query 与统一 API 客户端；M-FINAL F-A 建立 nav-manifest 单一真理源、resolveNavGroups 角色派生与里程碑可见性矩阵；M-FINAL F-B 能力驱动侧栏过滤（`capabilities.ts` + manifest `capability` 字段）。
+- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07；M-PRODUCT F-A · 壳层清扫 · 2026-07-08
+- **描述**：React 管理端壳层（SRS 追溯项）；M-FE-1 补齐 TanStack Query 与统一 API 客户端；M-FINAL F-A 建立 nav-manifest 单一真理源、resolveNavGroups 角色派生与里程碑可见性矩阵；M-FINAL F-B 能力驱动侧栏过滤（`capabilities.ts` + manifest `capability` 字段）；M-PRODUCT F-A 登录默认 Dashboard、M13 去预览、「我的」与「语义建模」IA 收拢。
 - **验收标准**：
   - [x] `fe/` 可构建且 `/admin` 路由壳层可访问
   - [x] shadcn/ui + Tailwind v4 主题加载
@@ -34,13 +34,16 @@
   - [x] 「报表」菜单含 subItems：预制报表 / 模板 / 调度
   - [x] 旧 `admin-nav.tsx`/`analyst-nav.tsx`/`user-nav.tsx` 已废弃/移除
   - [x] `AdminLayout.smoke.test.tsx` T-FE-SMFA-01~04 PASS（16 断言）
-  - [x] viewer/analyst 不见未到期里程碑项；admin 见「预览」badge
+  - [x] viewer/analyst 不见未到期里程碑项；已交付里程碑（含 M13）admin 不显示「预览」badge（`ACTIVE_MILESTONES` 含 M13）
   - [x] `routes.smoke.test.tsx` T-RT-DL-01 死链检测 PASS
   - [x] manifest 项含 `capability`；`resolveNavGroups` 按能力过滤（T-NAV-CAP-01~04）
   - [x] 移除 `canManagePlatform`/`canEditDashboards` 硬编码三档 nav；自定义 role 在能力满足时可见分组
   - [x] manifest 系统管理含 grants 子项；`AdminLayout.smoke` T-FE-SMFB-01~03；`routes.smoke` T-RT-GRANTS-01
-- **代码锚点**：`fe/src/config/nav-manifest.tsx` · `fe/src/lib/capabilities.ts` · `fe/src/lib/resolve-nav.ts` · `fe/src/lib/resolve-nav.test.ts` · `fe/src/layouts/AdminLayout.tsx` · `fe/src/layouts/AdminLayout.smoke.test.tsx` · `fe/src/routes.tsx` · `fe/src/routes.smoke.test.tsx` · `fe/src/lib/api.ts` · `fe/src/lib/queryKeys.ts` · `fe/src/lib/apiError.ts` · `fe/scripts/check-design.mjs`
-- **演化建议**：vitest 208/208（F-B 含 T-NAV-CAP-01~04 + T-FE-SMFB-01~03 + T-RT-GRANTS-01 + grants smoke）；check:design 187 files PASS；二期补 Playwright E2E 与业务页 Query 缓存策略调优
+  - [x] 登录后各角色默认跳转 Dashboard（`AdminHomePage` + `resolveDefaultDashboardPath`；`AdminHome.smoke.test.tsx`）
+  - [x] manifest「我的」→ `/admin/account/settings`
+  - [x] manifest「数据」含「语义建模」subItems：元数据 / Dataset（`resolve-nav.test.ts` T-NAV-MF-06）
+- **代码锚点**：`fe/src/config/nav-manifest.tsx` · `fe/src/lib/capabilities.ts` · `fe/src/lib/resolve-nav.ts` · `fe/src/lib/resolve-nav.test.ts` · `fe/src/layouts/AdminLayout.tsx` · `fe/src/layouts/AdminLayout.smoke.test.tsx` · `fe/src/pages/admin/AdminHomePage.tsx` · `fe/src/lib/defaultViewResolve.ts` · `fe/src/routes.tsx` · `fe/src/routes.smoke.test.tsx` · `fe/src/lib/api.ts` · `fe/src/lib/queryKeys.ts` · `fe/src/lib/apiError.ts` · `fe/scripts/check-design.mjs`
+- **演化建议**：M-PRODUCT F-C 角色菜单瘦身与图表探索降权；Playwright E2E 登录落点与业务页 Query 缓存策略调优
 
 ### [BOOT-003] 鉴权中间件骨架
 

@@ -13,6 +13,7 @@ import {
   SlidersHorizontal,
   Users,
   Workflow,
+  UserCircle,
 } from "lucide-react";
 import type { SessionRole } from "@/lib/session";
 
@@ -44,12 +45,12 @@ export const NAV_MANIFEST: NavManifestSection[] = [
   {
     title: "数据",
     roles: ["admin"],
-    capability: "datasource:*",
     items: [
       {
         name: "数据连接",
         icon: <Database className="size-6" aria-hidden />,
         milestone: "M1",
+        capability: "datasource:*",
         subItems: [
           { name: "连接管理", path: "/admin/datasources", milestone: "M1" },
           { name: "连接器类型", path: "/admin/connectors", milestone: "M1" },
@@ -60,6 +61,26 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         icon: <ArrowLeftRight className="size-6" aria-hidden />,
         path: "/admin/ingestion/sync-jobs",
         milestone: "M1",
+        capability: "datasource:*",
+      },
+      {
+        name: "语义建模",
+        icon: <Layers className="size-6" aria-hidden />,
+        milestone: "M13",
+        subItems: [
+          {
+            name: "元数据",
+            path: "/admin/metadata",
+            milestone: "M13",
+            capability: "metadata:*",
+          },
+          {
+            name: "Dataset",
+            path: "/admin/datasets",
+            milestone: "M13",
+            capability: "dataset:*",
+          },
+        ],
       },
     ],
   },
@@ -157,25 +178,23 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         path: "/admin/governance/publish",
         milestone: "M13",
       },
+      {
+        name: "查询服务",
+        icon: <GitBranch className="size-6" aria-hidden />,
+        path: "/admin/services",
+        milestone: "M13",
+        capability: "governance:*",
+      },
     ],
   },
   {
-    title: "语义层",
-    roles: ["admin"],
+    title: "我的",
+    roles: ["admin", "analyst", "viewer"],
     items: [
       {
-        name: "元数据",
-        icon: <Boxes className="size-6" aria-hidden />,
-        path: "/admin/metadata",
-        milestone: "M13",
-        capability: "metadata:*",
-      },
-      {
-        name: "Dataset",
-        icon: <Database className="size-6" aria-hidden />,
-        path: "/admin/datasets",
-        milestone: "M13",
-        capability: "dataset:*",
+        name: "账号设置",
+        icon: <UserCircle className="size-6" aria-hidden />,
+        path: "/admin/account/settings",
       },
     ],
   },

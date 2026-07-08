@@ -16,7 +16,7 @@ Cursor Build: disabled
   → Dashboard 组件选 Dataset 出图 → 预览有真实数据
 ```
 
-**当前断点**：Dashboard `WidgetInspector` 仅 `dataSourceId + SQL`；`useChartExecute` 仅 `POST /api/v1/query/execute`（sql 路径）。
+**当前状态（2026-07-08）**：Dashboard `WidgetInspector` 已支持 Dataset 模式；`useChartExecute` 可走 `POST /api/v1/query/dataset/execute`（见 QUERY-009 · META-004）。
 
 ---
 

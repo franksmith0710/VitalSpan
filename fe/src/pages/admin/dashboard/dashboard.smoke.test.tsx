@@ -45,7 +45,12 @@ vi.mock("@/components/charts/ChartRenderer", () => ({
 }));
 
 function withDs(config: ReturnType<typeof defaultChartConfig>) {
-  return { ...config, dataSourceId: DS_ID };
+  return {
+    ...config,
+    dataSourceId: DS_ID,
+    mode: "sql" as const,
+    sql: "SELECT 1 AS id",
+  };
 }
 
 const sampleWidgets: LayoutWidget[] = [
@@ -96,6 +101,7 @@ function mockDashboardLoad(widgets: LayoutWidget[]) {
   mockApiFetch.mockImplementation(async (...args: unknown[]) => {
     const path = String(args[0] ?? "");
     if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+    if (path.includes("/api/v1/datasets")) return { items: [] };
     if (path.includes("/dashboards/")) {
       return { id: "d1", name: "销售看板", layoutJson: { version: 1, widgets, globalFilters: [] } };
     }
@@ -270,6 +276,7 @@ describe("dashboard admin smoke", () => {
     await screen.findByLabelText("数据源");
     await user.click(screen.getByLabelText("数据源"));
     await user.click(await screen.findByRole("option", { name: /分析库/ }));
+    await user.click(screen.getByRole("tab", { name: "高级 SQL" }));
     const sql = screen.getByLabelText("SQL");
     await user.clear(sql);
     await user.type(sql, "SELECT 2 AS id");

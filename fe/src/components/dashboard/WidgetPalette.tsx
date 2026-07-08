@@ -109,7 +109,7 @@ export function WidgetPalette({ onInsert }: WidgetPaletteProps) {
   }, [catalog]);
 
   return (
-    <aside className="w-full shrink-0 lg:w-[220px]">
+    <aside className="w-full shrink-0">
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
         <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">组件库</h2>
         <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">点击添加到画布</p>

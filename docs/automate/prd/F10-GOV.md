@@ -74,9 +74,10 @@
   - [x] 审批通知钩子（submit/approve/reject 通知 + 幂等双批单通知，r51 companion）
   - [x] 从工单实例发布（r246：`POST /gov/publish/from-workflow` 非法态 400 / viewer 403 / 幂等 T-GOV-R246-005-01~04）
   - [x] catalogEntryId 回写 workflow-link + 版本回滚骨架（r246 T-GOV-R246-005-05~06；FE `GovernancePublishPage` 行内发布 T-GOV-R246-FE-03）
-- **代码锚点**：`backend/app/governance/publish/service.py` · `backend/app/governance/publish/notifications.py` · `backend/app/api/v1/gov.py` · `fe/src/pages/admin/governance/GovernancePublishPage.tsx` · `tests/test_mfinal_fe_design_r246.py` T-GOV-R246-005-01~06
-- **演化建议**：r246 闭合 from-workflow 发布链与 Admin 发布页；远期可补申请人收件箱通知与 BPM 可视化编排
-- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
+  - [x] 发布页 → 查询服务导航串联 + `/admin/services` 列表页（M-PRODUCT F-A；`GovernancePublishPage` · `QueryServicesPage`）
+- **代码锚点**：`backend/app/governance/publish/service.py` · `backend/app/governance/publish/notifications.py` · `backend/app/api/v1/gov.py` · `fe/src/pages/admin/governance/GovernancePublishPage.tsx` · `fe/src/pages/admin/services/QueryServicesPage.tsx` · `tests/test_mfinal_fe_design_r246.py` T-GOV-R246-005-01~06
+- **演化建议**：M-PRODUCT F-D P4-SMOKE 发布→服务试跑浏览器链；远期可补申请人收件箱通知与 BPM 可视化编排
+- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07；M-PRODUCT F-A · 服务页 FE · 2026-07-08
 ### [GOV-006] 发布引擎 OpenAPI 映射
 
 - **状态**：已实现

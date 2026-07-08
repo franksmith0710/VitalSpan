@@ -164,3 +164,93 @@ body,
 #root {
   height: 100%;
 }
+
+/* Dashboard 编辑画布：点阵底 + 拖拽缩放把手 */
+.dashboard-canvas-surface {
+  background-color: rgb(249 250 251);
+  background-image: radial-gradient(rgb(228 231 236 / 0.9) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.dark .dashboard-canvas-surface {
+  background-color: rgb(255 255 255 / 0.02);
+  background-image: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
+}
+
+.dashboard-grid-edit .react-grid-item {
+  transition: box-shadow 0.15s ease;
+}
+
+.dashboard-grid-edit .react-grid-item.react-draggable-dragging {
+  z-index: 20;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle {
+  position: absolute;
+  z-index: 10;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  border-radius: 2px;
+  background: rgb(70 95 255 / 0.55);
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-se {
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  cursor: se-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-se::after {
+  right: 0;
+  bottom: 0;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid rgb(70 95 255);
+  border-bottom: 2px solid rgb(70 95 255);
+  background: transparent;
+  border-radius: 0 0 3px 0;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-e {
+  right: 2px;
+  top: 25%;
+  height: 50%;
+  width: 8px;
+  cursor: e-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-e::after {
+  right: 2px;
+  top: 50%;
+  width: 3px;
+  height: 24px;
+  transform: translateY(-50%);
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-s {
+  bottom: 2px;
+  left: 25%;
+  width: 50%;
+  height: 8px;
+  cursor: s-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-s::after {
+  bottom: 2px;
+  left: 50%;
+  width: 24px;
+  height: 3px;
+  transform: translateX(-50%);
+}
+
+.dashboard-grid-edit .react-grid-placeholder {
+  border-radius: 1rem;
+  border: 1px dashed rgb(70 95 255 / 45%);
+  background: rgb(70 95 255 / 10%) !important;
+  opacity: 1 !important;
+}

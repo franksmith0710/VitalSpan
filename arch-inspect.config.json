@@ -1,0 +1,51 @@
+{
+  "version": "1.0",
+  "projectName": "VitalSpan",
+  "paths": {
+    "apiDocs": "docs/api",
+    "domainDocs": "docs/services",
+    "sourceRoot": "backend/app",
+    "pages": "fe/src/pages",
+    "routes": "fe/src/routes.tsx"
+  },
+  "collectors": {
+    "api": {
+      "format": "readme_table",
+      "readmeTable": {
+        "file": "docs/api/README.md",
+        "skipStatuses": ["规划", "范围外"],
+        "includeStatuses": ["已实现"],
+        "matchImplementedSubstring": true
+      }
+    }
+  },
+  "include": ["backend/**", "fe/**", "docs/**"],
+  "exclude": ["**/node_modules/**", "**/.venv/**", "**/dist/**", "**/__pycache__/**", "**/migrations/**"],
+  "scan": {
+    "shardSize": 30,
+    "shardSizeByType": {
+      "api": 30,
+      "domain_doc": 20,
+      "entity": 20,
+      "code_module": 8,
+      "page_route": 15
+    },
+    "maxConcurrency": { "full": 6, "incremental": 3 },
+    "incremental": { "maxChangedFiles": 200 },
+    "subagentTimeoutMs": 120000,
+    "maxRelatedPathsPerAsset": 3
+  },
+  "gate": {
+    "blockOn": ["P0", "P1"],
+    "minHealthScore": 75,
+    "requireEvidenceFor": ["P0", "P1"],
+    "dimensionWeights": {
+      "business": 0.2,
+      "api": 0.2,
+      "code": 0.2,
+      "page": 0.2,
+      "doc": 0.2
+    }
+  },
+  "fingerprintRulesVersion": "1.1-readme-table"
+}

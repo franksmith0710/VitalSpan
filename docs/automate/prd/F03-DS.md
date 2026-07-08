@@ -27,7 +27,7 @@
   - [x] `/admin/datasources` 列表/新建/编辑路由注册
   - [x] 对接 `GET/POST/PATCH /api/v1/datasources`
   - [x] `fe/src/routes.tsx` 与侧栏「数据」分组对齐 `layout.md` §3
-- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/service.py` · `fe/src/pages/admin/datasources/DatasourceListPage.tsx` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx` · `fe/src/config/admin-nav.tsx`
+- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/service.py` · `fe/src/pages/admin/datasources/DatasourceListPage.tsx` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx` · `fe/src/config/nav-manifest.tsx`
 - **演化建议**：Admin UI 数据源管理页已交付；M7 ACL 列表过滤；`sourceDataSourceId` 与 ingestion 对接；二期 Playwright E2E 真实建源
 ### [DS-003] 连通性测试
 
@@ -85,8 +85,8 @@
 - **状态**：已实现（L1 companion r25；M-FE-1 FE companion r195；M-FINAL F-A nav-manifest r240）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
-- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07
-- **描述**：已注册类型清单 API（SRS 追溯项）；M-FE-1 补齐 `/admin/connectors` 只读页；M-FINAL F-A 将连接器收拢为「数据」分组 subItem（`连接管理` + `连接器类型`）。
+- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07；M-PRODUCT F-A nav · 2026-07-08
+- **描述**：已注册类型清单 API（SRS 追溯项）；M-FE-1 补齐 `/admin/connectors` 只读页；M-FINAL F-A 将连接器收拢为「数据」分组 subItem（`连接管理` + `连接器类型`）；M-PRODUCT F-A 将元数据/Dataset 收拢为「语义建模」subItems；F-B 计划 DataEase 五类 `displayGroup` 分组选型。
 - **验收标准**：
   - [x] GET `/api/v1/datasources/types`
   - [x] 未注册类型不在 UI 展示
@@ -95,8 +95,10 @@
   - [x] manifest「数据」分组含 subItems：`连接管理（/admin/datasources）`、`连接器类型（/admin/connectors）`
   - [x] `routes.smoke.test.tsx` 覆盖 `/admin/connectors` 路由可达（T-FE-08 + T-RT-DL-01）
   - [x] `AdminLayout.smoke.test.tsx` 数据分组子项可见
-- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/registry.py` · `fe/src/pages/admin/connectors/ConnectorsPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.ts` T-NAV-MF-06
-- **演化建议**：按 category 过滤；类型图标与文档链接；ConnectorsPage 路由懒加载（React.lazy）；二期 connector 详情页
+  - [x] manifest「数据」含「语义建模」subItems：元数据 / Dataset（`resolve-nav.test.ts` T-NAV-MF-06）
+  - [ ] `displayGroup` 五类中文分组 + ConnectorsPage/DatasourceForm 大类卡片选型（M-PRODUCT F-B companion；对标 DataEase）
+- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/registry.py` · `fe/src/pages/admin/connectors/ConnectorsPage.tsx` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.ts` T-NAV-MF-06
+- **演化建议**：M-PRODUCT F-B 交付 `fe/src/lib/connector-taxonomy.ts`（displayGroup）；类型图标与文档链接；ConnectorsPage 路由懒加载（React.lazy）
 ### [DS-008] 数据源授权与 M7 集成
 
 - **状态**：已实现（L1 companion r25）

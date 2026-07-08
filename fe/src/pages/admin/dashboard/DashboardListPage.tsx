@@ -38,6 +38,7 @@ export function DashboardListPage() {
     : sessionUserFromMe({ username: "用户", roles: ["viewer"] });
   const canEdit = canEditDashboards(sessionUser);
   const [items, setItems] = useState<DashboardSummary[]>([]);
+  const [datasourceCount, setDatasourceCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -48,6 +49,14 @@ export function DashboardListPage() {
     try {
       const data = await apiFetch<DashboardListResponse>("/api/v1/dashboards");
       setItems(data.items);
+      if (sessionUser.roles.includes("admin")) {
+        try {
+          const ds = await apiFetch<{ items: unknown[] }>("/api/v1/datasources");
+          setDatasourceCount(ds.items.length);
+        } catch {
+          setDatasourceCount(null);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
     } finally {
@@ -96,6 +105,25 @@ export function DashboardListPage() {
           </Button>
         )}
       </div>
+
+      {!loading ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+            <p className="text-theme-xs text-gray-500 dark:text-gray-400">Dashboard</p>
+            <p className="mt-1 text-title-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+              {items.length}
+            </p>
+          </div>
+          {datasourceCount !== null ? (
+            <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-theme-xs text-gray-500 dark:text-gray-400">数据源</p>
+              <p className="mt-1 text-title-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+                {datasourceCount}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {error ? <ErrorBanner message={error} onRetry={() => void load()} /> : null}
 

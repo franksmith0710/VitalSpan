@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileJson } from "lucide-react";
 import { toast } from "sonner";
@@ -153,15 +154,20 @@ export function GovernancePublishPage() {
                       </>
                     ) : null}
                     {e.status === "published" ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setOpenapiEntryId(e.id)}
-                      >
-                        <FileJson className="size-4" aria-hidden />
-                        OpenAPI
-                      </Button>
+                      <>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setOpenapiEntryId(e.id)}
+                        >
+                          <FileJson className="size-4" aria-hidden />
+                          OpenAPI
+                        </Button>
+                        <Button asChild size="sm" variant="outline">
+                          <Link to="/admin/services">查询服务</Link>
+                        </Button>
+                      </>
                     ) : null}
                   </div>
                 </td>

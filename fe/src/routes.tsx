@@ -14,6 +14,7 @@ import { AccountProfilePage } from "@/pages/admin/account/AccountProfilePage";
 import { AccountSettingsPage } from "@/pages/admin/account/AccountSettingsPage";
 import { DashboardListPage } from "@/pages/admin/dashboard/DashboardListPage";
 import { DashboardEditPage } from "@/pages/admin/dashboard/DashboardEditPage";
+import { DashboardSharePage } from "@/pages/admin/dashboard/DashboardSharePage";
 import { LoginPage } from "@/pages/login/LoginPage";
 import { ConnectorsPage } from "@/pages/admin/connectors/ConnectorsPage";
 import { DatasourceListPage } from "@/pages/admin/datasources/DatasourceListPage";
@@ -33,6 +34,7 @@ import { GrantsPage } from "@/pages/admin/system/grants/GrantsPage";
 import { GovernanceCatalogPage } from "@/pages/admin/governance/GovernanceCatalogPage";
 import { GovernanceWorkflowPage } from "@/pages/admin/governance/GovernanceWorkflowPage";
 import { GovernancePublishPage } from "@/pages/admin/governance/GovernancePublishPage";
+import { QueryServicesPage } from "@/pages/admin/services/QueryServicesPage";
 import { MetadataHubPage } from "@/pages/admin/metadata/MetadataHubPage";
 import { DatasetListPage } from "@/pages/admin/datasets/DatasetListPage";
 import { DesignerPage } from "@/pages/admin/designer/DesignerPage";
@@ -62,6 +64,7 @@ export function AppRoutes() {
           <Route path="account/settings" element={<AccountSettingsPage />} />
           <Route path="dashboards" element={<DashboardListPage />} />
           <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
+          <Route path="dashboards/:id/share" element={<DashboardSharePage />} />
           <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
           <Route path="entities/overview" element={<EntityOverviewPage />} />
           <Route path="reports" element={<PrefabReportsPage />} />
@@ -73,6 +76,7 @@ export function AppRoutes() {
           <Route path="governance/catalog" element={<RequirePlatformAdmin><GovernanceCatalogPage /></RequirePlatformAdmin>} />
           <Route path="governance/tickets" element={<RequirePlatformAdmin><GovernanceWorkflowPage /></RequirePlatformAdmin>} />
           <Route path="governance/publish" element={<RequirePlatformAdmin><GovernancePublishPage /></RequirePlatformAdmin>} />
+          <Route path="services" element={<RequirePlatformAdmin><QueryServicesPage /></RequirePlatformAdmin>} />
           <Route path="metadata" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
           <Route path="metadata/glossary" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
           <Route path="datasets" element={<RequirePlatformAdmin><DatasetListPage /></RequirePlatformAdmin>} />

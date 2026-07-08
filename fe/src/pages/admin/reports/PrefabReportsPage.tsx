@@ -9,6 +9,7 @@ import { mapApiError } from "@/lib/apiError";
 import { ApiRequestError } from "@/lib/api";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { PrefabReportsEmptyPreview } from "./components/PrefabReportsEmptyPreview";
+import { ReportExportCard } from "./components/ReportExportCard";
 import { usePrefabReports } from "./usePrefabReports";
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
@@ -134,6 +135,8 @@ export function PrefabReportsPage() {
             )}
           </CardContent>
         </Card>
+
+        <ReportExportCard />
 
         {runForbidden ? (
           <Card>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { GripVertical, MoreHorizontal, Trash2 } from "lucide-react";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,18 +21,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { LayoutWidget } from "./layoutUtils";
 import { widgetChartIcon } from "./widgetIcons";
-
-const WIDTH_OPTIONS = [4, 6, 8, 12] as const;
 
 type DashboardWidgetProps = {
   widget: LayoutWidget;
@@ -111,7 +103,7 @@ export function DashboardWidget({
       >
         {mode === "edit" ? (
           <span
-            className="dashboard-drag-handle shrink-0 cursor-grab text-gray-400 active:cursor-grabbing"
+            className="dashboard-drag-handle flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 active:cursor-grabbing dark:hover:bg-white/5 dark:hover:text-gray-300"
             aria-label="拖拽组件"
             onClick={stopBubble}
           >
@@ -135,24 +127,10 @@ export function DashboardWidget({
           </h4>
         )}
         {mode === "edit" ? (
-          <div className="flex shrink-0 items-center gap-0.5" onClick={stopBubble}>
-            <Select
-              value={String(widget.colSpan)}
-              onValueChange={(value) =>
-                onResize(widget.id, { colSpan: Number(value) as LayoutWidget["colSpan"] })
-              }
-            >
-              <SelectTrigger className="h-8 w-[4.5rem] px-2 text-theme-xs" aria-label="组件宽度">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {WIDTH_OPTIONS.map((span) => (
-                  <SelectItem key={span} value={String(span)}>
-                    {span} 列
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex shrink-0 items-center gap-1" onClick={stopBubble}>
+            <Badge variant="light" color="light" size="sm" className="hidden sm:inline-flex">
+              {widget.colSpan} 列
+            </Badge>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton type="button" variant="ghost" size="sm" aria-label="更多操作">

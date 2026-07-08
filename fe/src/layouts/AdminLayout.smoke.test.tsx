@@ -334,20 +334,20 @@ describe("AdminLayout smoke", () => {
     expect(connTypeLink).toHaveAttribute("href", "/admin/connectors");
   });
 
-  it("admin sidebar shows 预览 badge for M13 items (T-FE-SMFA-03)", () => {
+  it("admin sidebar has no 预览 badge after M13 GA (T-FE-SMFA-03)", () => {
     setDesktopViewport(1400);
     render(
-      <MemoryRouter initialEntries={["/admin"]}>
+      <MemoryRouter initialEntries={["/admin/dashboards"]}>
         <Routes>
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<div>home</div>} />
+            <Route path="dashboards" element={<div>dashboards</div>} />
           </Route>
         </Routes>
       </MemoryRouter>,
     );
 
-    // M13 items (查询设计器, 治理工单, 发布流水线, 元数据, Dataset) each have 预览 badge
-    expect(screen.getAllByText("预览").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("预览")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "查询设计器" })).toBeInTheDocument();
   });
 
   it("viewer role: sidebar has no 系统 or 数据 section headings (T-FE-SMFA-04)", () => {

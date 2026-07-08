@@ -39,6 +39,8 @@ const viewWidget: LayoutWidget = {
   chartConfig: {
     ...defaultChartConfig("table"),
     dataSourceId: DS_ID,
+    mode: "sql",
+    sql: "SELECT 1 AS id",
   },
 };
 

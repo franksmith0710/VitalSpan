@@ -41,7 +41,8 @@ services:
       MYSQL_USER: sample
       MYSQL_PASSWORD: sample
     volumes:
-      - ./docker/sample-mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./docker/sample-mysql/01-bootstrap.sql:/docker-entrypoint-initdb.d/01-bootstrap.sql:ro
+      - ./docker/demo-mysql/tables.sql:/docker-entrypoint-initdb.d/02-tables.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-usample", "-psample"]
       interval: 5s

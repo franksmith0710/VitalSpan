@@ -49,10 +49,12 @@ export type ChartViewConfig = {
   dataSourceId?: string;
   bindingId?: string;
   chartId?: string;
-  mode?: "sql" | "table" | "native";
+  mode?: "sql" | "table" | "native" | "dataset";
   sql?: string;
   schema?: string;
   table?: string;
+  datasetId?: string;
+  configId?: string;
   nativeBody?: Record<string, unknown>;
   index?: string;
   dimensions?: ChartFieldRef[];

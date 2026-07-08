@@ -19,12 +19,13 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
-- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06
+- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT F-A · 分享页 · 2026-07-08
 - **描述**：Dashboard 容器与布局引擎（SRS 追溯项）。
 - **验收标准**：
   - [x] 空 Dashboard 可创建展示
   - [x] 网格布局可拖拽（react-grid-layout + edit/view 切换）
-- **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/components/dashboard/` · `fe/src/components/dashboard/gridLayoutAdapter.ts` · `fe/src/components/dashboard/DashboardGrid.tsx`
+  - [x] `/admin/dashboards/:id/share` 分享页 + 编辑页分享入口（`DashboardSharePage` · `DashboardEditPage`）
+- **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/pages/admin/dashboard/DashboardSharePage.tsx` · `fe/src/components/dashboard/` · `fe/src/components/dashboard/gridLayoutAdapter.ts` · `fe/src/components/dashboard/DashboardGrid.tsx`
 - **演化建议**：r29 resizeWidget/标题编辑 + 增强空态引导（T-DASH-R29-002）；Playwright E2E 编辑拖拽持久化验收
 ### [DASH-003] Dashboard 组件库
 
@@ -65,7 +66,7 @@
   - [x] 统计卡片+详情筛选+下钻（r231：`EntityOverviewPage` + `/admin/entities` 导航 + entity-types/physical-tables/entity-overview 数据链；`entities-overview.smoke.test.tsx`）
   - [x] 详情 Sheet + 空态引导 + 权限/下钻/Tab vitest（r232：`useEntityOverview` + `EntityDetailSheet` + 7 用例 smoke；页内 stat count 对齐 physical total）
   - [ ] 跨组件口径一致（companion）
-- **代码锚点**：`backend/app/dashboard/entity_overview/` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/entities/EntityOverviewPage.tsx` · `fe/src/pages/admin/entities/useEntityOverview.ts` · `fe/src/pages/admin/entities/EntityDetailSheet.tsx` · `fe/src/routes.tsx` · `fe/src/config/admin-nav.tsx` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DASH-R59-005-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-DASH-R66-005-01~06 · `fe/src/pages/admin/entities/entities-overview.smoke.test.tsx`
+- **代码锚点**：`backend/app/dashboard/entity_overview/` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/entities/EntityOverviewPage.tsx` · `fe/src/pages/admin/entities/useEntityOverview.ts` · `fe/src/pages/admin/entities/EntityDetailSheet.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DASH-R59-005-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-DASH-R66-005-01~06 · `fe/src/pages/admin/entities/entities-overview.smoke.test.tsx`
 - **演化建议**：r232 收官闭合 M8 实体总览交互与 META-005/006 消费链；跨组件口径联动与 Playwright E2E 留 companion
 - **里程碑对齐**：M8 · 已完成 · 2026-07-06
 ### [DASH-006] 实体主题分析 FR-4.1

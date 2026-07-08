@@ -38,7 +38,9 @@
 | EmbedChartPage | `../embed/EmbedChartPage.tsx` | `/embed/chart/:chartId` |
 | EmbedSharePanel | `../embed/EmbedSharePanel.tsx` | `/embed/share` origin 配置 |
 | EmbedLayout | `../layouts/EmbedLayout.tsx` | Embed chromeless 布局 |
-| DashboardGrid | `dashboard/DashboardGrid.tsx` | 12 列栅格容器（edit/view） |
+| DashboardGrid | `dashboard/DashboardGrid.tsx` | 12 列栅格容器（edit: react-grid-layout 拖拽缩放） |
+| DashboardEditWorkspace | `dashboard/DashboardEditWorkspace.tsx` | Dashboard 编辑三栏（组件库 / 画布 / 配置） |
+| DashboardEditWorkspace | `dashboard/DashboardEditWorkspace.tsx` | Dashboard 编辑三栏工作区（组件库 / 画布 / 配置） |
 | WidgetPalette | `dashboard/WidgetPalette.tsx` | 插入基础/扩展图表组件（DASH-003） |
 | DashboardWidget | `dashboard/DashboardWidget.tsx` | 单组件卡片 + 删除/排序 |
 | GlobalFilterBar | `dashboard/GlobalFilterBar.tsx` | Dashboard view 顶栏全局筛选器 |

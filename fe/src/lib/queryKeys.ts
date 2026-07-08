@@ -88,6 +88,9 @@ export const queryKeys = {
   datasets: {
     list: (params?: { limit?: number; offset?: number }) => ["datasets", "list", params] as const,
   },
+  services: {
+    list: (params?: { limit?: number; offset?: number }) => ["services", "list", params] as const,
+  },
   charts: {
     types: ["charts", "types"] as const,
   },

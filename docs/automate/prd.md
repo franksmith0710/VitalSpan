@@ -1,8 +1,8 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.108
-last_updated: 2026-07-07
+version: 1.2.109
+last_updated: 2026-07-08
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
@@ -200,37 +200,37 @@ domain_count: 16
 
 ## 执行范围（与 plan 对齐）
 
-> 更新：2026-07-07 · 来源 [`plan.md`](./plan.md) v2.5.1 · hub **v1.2.108**
+> 更新：2026-07-08 · 来源 [`plan.md`](./plan.md) v2.6.0 · hub **v1.2.109**
 
 | 字段 | 值 |
 |------|-----|
-| 当前执行 | **M-FINAL 全部收官**（22 待办全部完成：21 PRD + 1 companion†） |
-| 已收官 | **P1–P3**（M-FE-1~3 + M2–M12，94 项）+ **M-FINAL F-A/F-B/F-C/F-F/F-G** |
-| PRD 进度 | **124** 已实现 · **5** 部分实现 · **0** 未实现（**129** 合同项） |
-| 当前节 | **M-FINAL · F-G 已收官**（CONN-027 Redshift 已实现；M-FINAL 全 PRD 已实现） |
-| G2 选题 | M-FINAL 全 PRD 已实现；下轮由 picker 决定（饱和态或归档） |
+| 已冻结 | **M-FINAL**（129/129 PRD 合同项） |
+| 当前执行 | **M-PRODUCT · 成品对标与体验收官**（companion 清扫） |
+| PRD 合同 | **129** 已实现 · **0** 未实现 |
+| companion | 约 **70** 条验收 `[ ]`（META/RPT/CAT/NFR/CONN 远期等） |
+| 当前节 | **M-PRODUCT F-A**（壳层收尾）→ **F-B**（DS-007 五类分组）建议首轮 |
+| G2 选题 | 每轮从 plan §M-PRODUCT 含 `[ ]` 子批取 3–5 项 |
 
-**说明**：PRD 合同 **129** 项（含 M-FINAL · F-G 五型 CONN-023~027）；† companion 不计入 PRD 总数。
+**说明**：PRD 合同 **129** 项全勾「已实现」；差距在 **companion 验收**与 **浏览器主路径/E2E**，见 `plan.md` §M-PRODUCT 与 `docs/automate/plans/2026-07-08-product-polish-checklist.md`。
 
-**M-FINAL 待完成 PRD（28 项，与 plan 子批对齐）**：
+**M-PRODUCT 子批（与 plan 对齐）**：
 
-| 子批 | PRD ID | 分片状态 |
-|------|--------|----------|
-| F-D | META-001 ~ META-004 | 已实现 |
-| F-E | DESIGN-001 ~ DESIGN-003、GOV-003、DESIGN-004 ~ DESIGN-005、GOV-004 ~ GOV-006 | 已实现 |
-| F-E | GOV-007 ~ GOV-008 | 已实现 |
-| F-F | NFR-003、NFR-005、NFR-007、NFR-008 | 已实现 |
-| F-G | CONN-023 ~ CONN-026 | 已实现 |
-| F-G | CONN-027 | 已实现 |
-
-> F-A/F-B 为 companion（BOOT-002、DS-007、AUTH-004 FE），对应分片状态「已实现」指后端/API 已交付。
+| 子批 | 主题 | 代表 PRD ID |
+|------|------|-------------|
+| F-A | 壳层与主路径 FE | BOOT-002 · QUERY-009 · META-004 · API-003 · GOV-005 · DASH-002 · API-005 |
+| F-B | DataEase 数据源分类 | DS-007 companion |
+| F-C | IA 主路径收敛 | BOOT-002 · VIZ-002 · DESIGN-004 |
+| F-D | Goal E2E | QUERY-009 · GOV-005 · GOV-007 · DATA-001 |
+| F-E | 文档与契约对账 | DS-007 · API-007 · BOOT-006 |
+| F-F | Companion 深度（可选） | META · RPT · CAT · DASH · VIEW · NFR |
 
 ---
 
 ## 里程碑
 
 - **归档**：[`plan.archive.md`](./plan.archive.md)（M1–M12 全量映射）
-- **活跃**：[`plan.md`](./plan.md)（**M-FINAL 最后一期**；收官后 plan 可归档至 `plan.archive.md`）
+- **已冻结**：[`plan.md`](./plan.md) §M-FINAL（129/129 合同）
+- **活跃**：[`plan.md`](./plan.md) §**M-PRODUCT**（人工维护，`create-evolution-plan` 2026-07-08）
 
 ---
 
@@ -238,6 +238,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.109 | 2026-07-08 | 人工 PRD 同步（M-PRODUCT · plan v2.6.0）：hub 执行范围/里程碑节对齐 M-PRODUCT；`prd/README` 129 合同 + companion 语义；分片 F01/F03/F05/F07/F10/F11/F13 补记 2026-07-08 成品清扫 companion 验收（BOOT-002 壳层、QUERY-009 Dashboard Dataset、DS-007 语义建模 nav、DASH-002 分享、API-003/005 Admin FE、GOV-005 发布链）；锚点 `admin-nav`→`nav-manifest` |
 | 1.2.108 | 2026-07-07 | P5 r250 重评 CONN-027、API-001、VIZ-003/004/008（M-FINAL F-G 收官 + hub companion）；r250 13/13 + fe vitest 37/37 + ruff 0 + check:design 201 files；CONN-027 RedshiftConnector PG 委托 + REDSHIFT_* 错误域 + probe_readonly_sql + 7 backend + 2 FE smoke；API-001 P95≤500ms + traceId + structured error；VIZ-003 fallback/isKnownChartType；VIZ-004 buildBarOption/buildPieOption；VIZ-008 empty data 防护 + AdvancedEchartsChart 空态覆盖；CONN-027: 85.4→90.1（未实现→已实现）；API-001: 90.0→90.6；VIZ-003/004/008: 90.1→91.4（五 ID ≥90 STUCK 空；plan F-G CONN-027 勾选；M-FINAL 全 PRD 已实现）|
 | 1.2.107 | 2026-07-07 | P5 r249 重评 NFR-008、CONN-023~026（M-FINAL F-F 收官 + F-G 首批四型）；pytest 2284/32 skipped + test_mfinal_ff_fg_batch1_r249 30/30 + r242/r248 回归 58/58；NFR-008 compose 禁入 + Markdown 部署报告；CONN-023 REST API + CONN-024 Excel/CSV + CONN-025 Db2 + CONN-026 Impala 方言注册/连通/native 或 SQL 链；用户价值 86%→88–90%、完整度 84–90%→94–98%、测试覆盖 84–98%→96–100%；总分 85.4–91.3→91.0–94.1（五 ID ≥90 STUCK 空；plan F-F NFR-008 + F-G 四 ID 勾选；F-F 收官） |
 | 1.2.106 | 2026-07-07 | P5 r248 重评 GOV-007~008、NFR-003/005/007（M-FINAL F-E 收官 + F-F 首批三 ID）；pytest 2252/34 skipped + test_mfinal_fe_gov_batch4_r248 28/28 + r247 36/36 regression；IF-01 工厂 + publish deferred 降级 + busRegisterStatus、ACL self-approve/workflow publish、dashboard smoke、plugin drill 连通/只读、xinchuang Markdown；用户价值 86–88%→87–89%、完整度 90–94%→92–96%、架构健康 90%→91%、性能 88%→90%（NFR-003）；总分 91.2–91.6→91.9–92.9（五 ID ≥90 STUCK 空；plan F-E 二 ID + F-F 三 ID 勾选） |

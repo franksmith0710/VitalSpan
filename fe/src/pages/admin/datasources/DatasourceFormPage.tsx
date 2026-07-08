@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { ChevronDown } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiFetch } from "@/lib/api";
+import { ApiRequestError, apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,16 @@ const emptyForm: FormState = {
   description: "",
 };
 
+function hostFieldLabel(type: string): string {
+  if (type === "rest_api") return "Base URL";
+  if (type === "excel" || type === "csv") return "文件路径 / URL";
+  return "主机";
+}
+
+function hidePortField(type: string): boolean {
+  return type === "excel" || type === "csv";
+}
+
 const CONNECTOR_FIELD_HINTS: Record<string, { port: string; databaseLabel: string; usernameLabel: string }> = {
   mongodb: { port: "27017", databaseLabel: "认证库", usernameLabel: "用户名" },
   elasticsearch: { port: "9200", databaseLabel: "默认索引（可选）", usernameLabel: "用户名" },
@@ -90,6 +101,9 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const codeInputRef = useRef<HTMLInputElement>(null);
 
   const typesQuery = useQuery({
     queryKey: queryKeys.connectorTypes,
@@ -119,8 +133,27 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     }
   }, [detailQuery.data]);
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
+  useEffect(() => {
+    if (errorCode === "DATASOURCE_CODE_CONFLICT" && mode === "create") {
+      codeInputRef.current?.focus();
+      codeInputRef.current?.select();
+    }
+  }, [errorCode, mode]);
+
+  const clearError = () => {
+    setError(null);
+    setErrorCode(null);
+  };
+
+  const setField = (key: keyof FormState, value: string) => {
+    clearError();
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = async () => {
+    clearError();
+    setIsSaving(true);
+    try {
       const payload: Record<string, unknown> = {
         name: form.name,
         type: form.type,
@@ -130,29 +163,31 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
         username: form.username,
         description: form.description || null,
       };
+      let saved: DataSourceOut;
       if (mode === "create") {
         payload.code = form.code;
         payload.password = form.password;
-        return apiFetch<DataSourceOut>("/api/v1/datasources", {
+        saved = await apiFetch<DataSourceOut>("/api/v1/datasources", {
           method: "POST",
           body: JSON.stringify(payload),
         });
+      } else {
+        if (form.password) payload.password = form.password;
+        saved = await apiFetch<DataSourceOut>(`/api/v1/datasources/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
       }
-      if (form.password) payload.password = form.password;
-      return apiFetch<DataSourceOut>(`/api/v1/datasources/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      });
-    },
-    onSuccess: async (saved) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.datasources.all });
       navigate(`/admin/datasources/${saved.id}`);
-    },
-    onError: (err) => setError(mapApiError(err)),
-  });
-
-  const setField = (key: keyof FormState, value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    } catch (err) {
+      if (err instanceof ApiRequestError) {
+        setErrorCode(err.code ?? null);
+      }
+      setError(mapApiError(err));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (mode === "edit" && detailQuery.isLoading) {
@@ -182,29 +217,43 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
             className="grid gap-4"
             onSubmit={(e) => {
               e.preventDefault();
-              setError(null);
-              saveMutation.mutate();
+              void handleSave();
             }}
           >
             {error ? (
-              <div className="rounded-xl border border-error-500 bg-error-50 p-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400">
-                {error}
-              </div>
+              <Alert severity="error" closable onClose={clearError}>
+                <AlertDescription className="text-theme-sm text-error-700 dark:text-error-400">
+                  {error}
+                </AlertDescription>
+              </Alert>
             ) : null}
 
             <div className="grid gap-2">
               <Label htmlFor="name">名称</Label>
-              <Input id="name" value={form.name} onChange={(e) => setField("name", e.target.value)} required />
+              <Input
+                id="name"
+                value={form.name}
+                onChange={(e) => setField("name", e.target.value)}
+                required
+                fieldState={errorCode === "DATASOURCE_NAME_CONFLICT" ? "error" : "default"}
+                aria-invalid={errorCode === "DATASOURCE_NAME_CONFLICT" || undefined}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="code">标识</Label>
               <Input
+                ref={codeInputRef}
                 id="code"
                 value={form.code}
                 onChange={(e) => setField("code", e.target.value)}
                 required
                 readOnly={mode === "edit"}
-                disabled={mode === "edit"}
+                fieldState={
+                  errorCode === "DATASOURCE_CODE_CONFLICT" && mode === "create" ? "error" : "default"
+                }
+                aria-invalid={
+                  errorCode === "DATASOURCE_CODE_CONFLICT" && mode === "create" ? true : undefined
+                }
               />
             </div>
             <div className="grid gap-2">
@@ -212,6 +261,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
               <Select
                 value={form.type}
                 onValueChange={(v) => {
+                  clearError();
                   const hints = CONNECTOR_FIELD_HINTS[v];
                   setForm((prev) => ({
                     ...prev,
@@ -270,13 +320,15 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="host">主机</Label>
+                <Label htmlFor="host">{hostFieldLabel(form.type)}</Label>
                 <Input id="host" value={form.host} onChange={(e) => setField("host", e.target.value)} required />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="port">端口</Label>
-                <Input id="port" type="number" value={form.port} onChange={(e) => setField("port", e.target.value)} required />
-              </div>
+              {hidePortField(form.type) ? null : (
+                <div className="grid gap-2">
+                  <Label htmlFor="port">端口</Label>
+                  <Input id="port" type="number" value={form.port} onChange={(e) => setField("port", e.target.value)} required />
+                </div>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="database">{CONNECTOR_FIELD_HINTS[form.type]?.databaseLabel ?? "数据库"}</Label>
@@ -338,8 +390,8 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
               </Collapsible.Content>
             </Collapsible.Root>
 
-            <Button type="submit" variant="primary" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? "保存中…" : "保存"}
+            <Button type="submit" variant="primary" disabled={isSaving} loading={isSaving} loadingText="保存中…">
+              保存
             </Button>
           </form>
         </CardContent>

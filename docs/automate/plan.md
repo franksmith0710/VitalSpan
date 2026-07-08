@@ -1,54 +1,49 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **M-FINAL · 四期收官 + 连接器补缺**（**唯一活跃节**）。**P1–P3 已收官**（94/94）；**最后一期**共 **38** 项待办（33 PRD + 5 companion†）；**CONN-023~027 已立项**（prd v1.2.97 · F-G，状态未实现）。
-> **全量路线图**：M1–M12 + M-FE-1~3 已完成；**PRD 总数 129**；当前 **96 / 129 已实现**。
+> **当前节** = **M-PRODUCT · 成品对标与体验收官**（**唯一活跃节**）。**M-FINAL 已冻结**（129/129 合同勾完）；差距在 **浏览器主路径、IA 收敛、DataEase 数据源分类、PRD 分片 companion 验收未勾**。
+> **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL 已完成；**PRD 总数 129**（合同已实现）；**companion 验收**见 §M-PRODUCT · F-A–F-F 与 `prd/README.md`（约 28 部分 + 5 未实现分片状态待对账）。
 > **完成定义**：`[x]` = PRD 分片「已实现」且验收标准全勾；`[ ]` =「部分实现」或未达浏览器/集成验收（含 FE companion）。
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F01-BOOT.md`](./prd/F01-BOOT.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)。
 
 ```yaml
-version: 2.5.1
-last_updated: 2026-07-07
+version: 2.6.0
+last_updated: 2026-07-08
 archive_ref: docs/automate/plan.archive.md
-execute_scope: M-FINAL
-frozen_milestone: null
-roadmap: M1-M12+M-FE-1~3+M-FINAL
+execute_scope: M-PRODUCT
+frozen_milestone: M-FINAL
+roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT
 prd_total: 129
 prd_in_scope: 129
-prd_completed_in_scope: 96
-prd_remaining_in_scope: 33
-companion_scope: M-FINAL-F-A,M-FINAL-F-B
-companion_remaining: 5
-current_milestone: M-FINAL
+prd_completed_in_scope: 129
+prd_remaining_in_scope: 0
+companion_scope: M-PRODUCT-F-A,M-PRODUCT-F-B,M-PRODUCT-F-C,M-PRODUCT-F-D,M-PRODUCT-F-E,M-PRODUCT-F-F
+companion_remaining: 33
+current_milestone: M-PRODUCT
 queued_milestone: null
-intervention: plan-prd-v1.2.95-align-2026-07-07
-scope_change: M-FE-4-5-M13-F-G-merged-to-M-FINAL
-plan_review: 2026-07-07-final-phase-audit
-prd_hub_ref: docs/automate/prd.md@v1.2.97
-f_g_prd_status: registered-unimplemented
+intervention: create-evolution-plan-product-de-ia-2026-07-08
+scope_change: M-FINAL-frozen-M-PRODUCT-active
+plan_review: 2026-07-08-product-gap-audit
+prd_hub_ref: docs/automate/prd.md@v1.2.109
+polish_checklist_ref: docs/automate/plans/2026-07-08-product-polish-checklist.md
 ```
 
-### 执行范围：M-FINAL 最后一期收官（产品决策 2026-07-07 人工确认）
+### 执行范围：M-FINAL 已冻结 · M-PRODUCT 当前节（产品决策 2026-07-08 人工确认）
 
-> **决策**：将 **M-FE-4/5**（FE companion）、**M13**（四期 28 项）、**F-G**（CONN-023~027 缺口连接器）合并为单一当前节 **§M-FINAL**；收官后无后续 PRD 里程碑（companion 清扫不在本合同内）。  
-> **PRD 对齐**：`CONN-023~027` 已于 prd **v1.2.97** 写入 `F04-CONN.md` + hub（`feature_count: 129`）；`goal.md` §4 In Scope 已同步。  
-> **依据**：`goal.md` G3/G4/G5；`layout.md` §3/§6；一至三期图表仍 **直连 dataSourceId + SQL**（不经 Dataset）。
+> **决策（2026-07-07）**：将 **M-FE-4/5**、**M13**、**F-G** 合并为 **§M-FINAL**；**2026-07-08 收官**（129/129 PRD 合同勾完）。  
+> **决策（2026-07-08）**：追加 **§M-PRODUCT** 处理成品感、DataEase 数据源分类、IA 收敛与 companion 验收清扫。  
+> **依据**：`goal.md` G3/G4/G5；`layout.md` §3/§6；`docs/automate/plans/2026-07-08-product-polish-checklist.md`。
 
 | 范围 | 子批 | PRD 项 | 已实现 | 待完成 | 状态 |
 |------|------|--------|--------|--------|------|
 | P0 | M1 + M1B | 12 | 12 | 0 | 已完成 |
 | FE 先导 | M-FE-1 ~ M-FE-3 | 13* | 13 | 0 | 已完成 |
-| **最后一期** | **M-FINAL · F-A**（IA） | **5†** | **0** | **5** | **当前节 · 建议首轮** |
-| | **M-FINAL · F-B**（RBAC FE） | † | 0 | 2 | 依赖 F-A |
-| | **M-FINAL · F-C**（信创连接器） | 6 | 0 | 6 | 可并行 F-A 后 |
-| | **M-FINAL · F-D**（语义层） | 7 | 0 | 7 | 依赖 F-A |
-| | **M-FINAL · F-E**（设计器治理） | 11 | 0 | 11 | 依赖 F-D |
-| | **M-FINAL · F-F**（四期 NFR） | 6 | 2 | 4 | F-E 后 |
-| | **M-FINAL · F-G**（缺口连接器） | 5 | 0 | 5 | F-F 后（已立项） |
+| **最后一期** | **M-FINAL · F-A ~ F-G** | **38†** | **38** | **0** | **已冻结** |
+| **成品收官** | **M-PRODUCT · F-A ~ F-F** | **companion** | **9** | **33** | **当前节** |
 | 一期–三期 | M2 – M12 | 88 | 88 | 0 | 已完成 |
 
 \* M-FE 与 M2–M5 有 ID 重叠，为浏览器交付轨。  
-† F-A/F-B companion 行映射既有 PRD ID（BOOT-002、DS-007、AUTH-004），不计入 129 PRD 计数。
+† M-FINAL companion 行映射既有 PRD ID，合同 129 项已全部勾选。
 
 **推荐执行顺序（全局）**：
 
@@ -62,7 +57,7 @@ F-A  BOOT-002(manifest) → DS-007(连接器子项) → BOOT-002(里程碑过滤
   → F-G  CONN-023~027（API/Excel/Db2/Impala/Redshift）
 ```
 
-**G2 选题约束**：每轮从 **§M-FINAL 含 `[ ]` 的子批**取 **3–5 项**；**首轮建议 F-A 全量 3 项**；F-B 依赖 F-A manifest；**F-G 建议 F-A 收官后、F-F 前可选**（CONN-023~027 已立项，分片状态未实现）。
+**G2 选题约束**：每轮从 **§M-PRODUCT 含 `[ ]` 的子批**取 **3–5 项**；**首轮建议 F-B 全量**（DataEase 数据源五类分组）；F-A 仅余 CONN-023/024 companion。
 
 **前三期完成信号**（不新增 PRD ID）：
 
@@ -592,7 +587,7 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 ---
 
-## M-FINAL — 四期收官 + 连接器补缺【当前节】
+## M-FINAL — 四期收官 + 连接器补缺【已冻结】
 
 > **人工干预（2026-07-07）**：`create-evolution-plan` 最后一期收官确认；合并原 **M-FE-4/5**、**M13**、**F-G（CONN-023~027）** 为单一活跃节 **§M-FINAL**。  
 > **目标**：**129** 项 PRD 全勾「已实现」；达成 `goal.md` §5 四期末治理验收、G3 Dataset 路径、G4 RBAC FE、G5 治理闭环。  
@@ -692,3 +687,139 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 > **前三期总验收**（不新增 PRD ID）：见文首「前三期完成信号」表。  
 > **明确不含**：DataEase SQLBot / AI 问数（见文首「对标校准」）。
+
+---
+
+## M-PRODUCT — 成品对标与体验收官【当前节】
+
+> **人工干预（2026-07-08）**：`create-evolution-plan` · 用户反馈「功能乱、重复、距 DE/SS 远」；在 M-FINAL 合同勾完后追加 **体验与 companion 清扫**节。  
+> **实施细则**：`docs/automate/plans/2026-07-08-product-polish-checklist.md` · `docs/ui/layout.md` · DataEase 数据源五类对标（OLTP/OLAP/数仓库湖/文件/API）。  
+> **完成定义**：`[x]` = 浏览器可走通 + 对应 PRD 分片验收项可勾选；companion 远期项见 §F-F（按需裁剪）。
+
+| 子批 | 主题 | PRD 映射 | 待完成 | 状态 |
+|------|------|----------|--------|------|
+| **F-A** | 壳层与主路径 FE | BOOT-002 · QUERY-009 · META-004 · API-003 · GOV-005 · DASH-002 · API-005 · CONN-023~024 | 2 | **当前 · 收尾** |
+| **F-B** | DataEase 数据源分类 | DS-007 companion | 3 | 依赖 F-A |
+| **F-C** | IA 主路径收敛 | BOOT-002 · VIZ-002 · DESIGN-004 | 3 | 依赖 F-B |
+| **F-D** | Goal 验收 E2E | QUERY-009 · GOV-005 · GOV-007 · DATA-001 | 4 | 依赖 F-A |
+| **F-E** | 文档与契约对账 | DS-007 · API-007 · BOOT-006 | 3 | 可并行 F-D |
+| **F-F** | Companion 深度（可选） | META · RPT · CAT · DASH · VIEW · NFR | 19 | 不阻塞演示 |
+
+**推荐执行顺序**：
+
+```
+F-A  收尾（CONN-023/024 表单 · API-005 导出验收）
+  → F-B  DS-007 displayGroup 五类 + ConnectorsPage/DatasourceForm 分组选型（对标 DE）
+  → F-C  BOOT-002 角色菜单瘦身 · 图表探索/设计器降权 · 单主路径文案
+  → F-D  P4-SMOKE / DATA-SMOKE 浏览器 E2E 固化
+  ∥ F-E  prd/README 对账 · layout.md · API auth 文档债（arch-inspect）
+  → F-F  META/RPT/CAT companion（按交付合同裁剪）
+```
+
+**G2 选题约束**：每轮从 **§M-PRODUCT 含 `[ ]` 的子批**取 **3–5 项**；**首轮建议 F-B 全量**（数据源分类，用户显性痛点）。
+
+### F-A — 壳层与主路径 FE
+
+> **背景**：`product-polish-checklist` P0/P1；2026-07-08 已交付大部分，本节对账勾选。
+
+- [x] BOOT-002: 登录默认工作台 + M13 去预览 + 「我的」导航（完成于 2026-07-08）
+- [x] BOOT-002: 「数据」分组收拢语义建模（元数据/Dataset subItems）（完成于 2026-07-08）
+- [x] QUERY-009: Dashboard Dataset 执行路径（`WidgetInspector` + `/query/dataset/execute`）（完成于 2026-07-08）
+- [x] META-004: Dashboard 绑定 Dataset/boundConfigId 出图 FE（完成于 2026-07-08）
+- [x] API-003: 已发布查询服务 Admin 页 `/admin/services`（完成于 2026-07-08）
+- [x] GOV-005: 发布流水线 → 查询服务导航串联（完成于 2026-07-08）
+- [x] DASH-002: Dashboard `/admin/dashboards/:id/share` 与编辑页分享入口（完成于 2026-07-08）
+- [x] API-005: 预制报表页嵌入导出卡片（`ReportExportCard` · IF-03 基础链）（完成于 2026-07-08）
+- [ ] CONN-023: REST API 建源专用表单项（OAuth/探测路径 companion；当前仅 host 标签）
+- [ ] CONN-024: Excel/CSV 建源上传与远程文件 companion（当前仅 host 标签）
+
+**验收信号**：`vitest` AdminLayout/resolve-nav/dashboard/charts 绿；手动 MySQL → Dataset → Dashboard 出图。
+
+### F-B — DataEase 数据源分类（DS-007 companion）
+
+> **对标**：DataEase 五类——OLTP / OLAP / 数仓库湖 / 文件 / API；扩展类（时序/搜索/文档）归「更多」。  
+> **原则**：引擎 `category` 不改；新增 FE `displayGroup` + 中文 `categoryLabel`。
+
+- [ ] DS-007: `displayGroup` 展示 taxonomy（oltp · olap · warehouse · file · api · extension）
+- [ ] DS-007: `ConnectorsPage` 按类分组 Tab/手风琴 + 类型图标
+- [ ] DS-007: `DatasourceFormPage` 先选大类卡片再选具体库（对标 DE 新建源向导）
+
+**验收信号**：新建数据源页与连接器目录均中文分组；与 DataEase 走查对照表通过。
+
+### F-C — IA 主路径收敛
+
+> **目标**：单故事线「连库 → Dataset → Dashboard」；治理/探索/设计器降权，不删 API。
+
+- [ ] BOOT-002: analyst/viewer 侧栏默认隐藏治理与数据工程分组（能力驱动已有，补默认 IA 文档）
+- [ ] VIZ-002: 「图表探索」降为高级入口或并入 Dashboard 新建图表向导（二选一，更新 `layout.md`）
+- [ ] DESIGN-004: 「查询设计器」标注治理专用，侧栏移入治理分组或折叠
+
+**验收信号**：新用户 3 次点击内完成建源→Dataset→出图；侧栏项数 admin ≤ 当前 70%。
+
+### F-D — Goal 成功指标浏览器 E2E
+
+> **映射**：`goal.md` §5 P1/P4/DATA-SMOKE。
+
+- [ ] QUERY-009: P4-SMOKE 前半段——Dataset 建模 → Dashboard 组件出图（手动或 `fe/e2e`）
+- [ ] GOV-005: P4-SMOKE 后半段——设计器(可选) → 工单 → 发布 → 查询服务试跑
+- [ ] GOV-007: 发布 → 总线注册浏览器验收（含 `/admin/services` 可见）
+- [ ] DATA-001: DATA-SMOKE——同步任务 → 托管库 → 建源 → SQL/Dataset 出数 E2E
+
+**验收信号**：`goal.md` §5 四行可判定指标有书面 pass 记录。
+
+### F-E — 文档与契约对账
+
+> **背景**：arch-inspect 2026-07-08 健康分 40（API auth 文档债）；`prd/README` 与 hub 不同步。
+
+- [ ] API-007: `docs/api/README.md` auth 声明与 `AuthMiddleware` 公开路径对账（消 P0 `api.auth`）
+- [ ] DS-007: `layout.md` §3 与 `nav-manifest` 同步（含 F-B 分类文案）
+- [x] BOOT-006: `prd/README.md` hub 状态与分片「已实现」对账（129 合同 + companion 表）（完成于 2026-07-08）
+
+**验收信号**：arch-inspect 复检 P0=0 或已登记豁免；hub `last_updated` 与 plan 一致。
+
+### F-F — Companion 深度（按合同裁剪 · 不阻塞演示）
+
+> **说明**：下列 ID 分片状态「已实现」但验收标准含 `[ ]` companion；全勾对标 DE/SS 全量，按需选题。
+
+**语义层（F11-META）**
+
+- [ ] META-001: 术语字典与物理字段映射 companion
+- [ ] META-002: 业务主题树深层级拖拽导航 companion
+- [ ] META-003: 维度字典 M4/M5/M6 统一引用 companion
+- [ ] META-004: Dataset 对标 DE/SS 全量 + 计算字段引擎 companion
+- [ ] META-005: 实体总览 GOV catalog lineage companion
+- [ ] META-006: 实体 schema GOV 引用释放 companion
+
+**报表（F08-RPT）**
+
+- [ ] RPT-001: PDF/Word 真实渲染 companion
+- [ ] RPT-002: 预制报表 Admin binding 编辑表单 companion
+- [ ] RPT-003: 模板 WYSIWYG 排版引擎 companion
+- [ ] RPT-005: 调度真实 SMTP/对象存储投递 companion
+- [ ] RPT-007: 批量报表异步导出链 companion
+
+**目录/实体（F14-CAT · F07-DASH）**
+
+- [ ] CAT-002: IF-02 真实聚合查询链（非 probe）
+- [ ] CAT-003: 地域维度 RLS 联动 companion
+- [ ] DASH-005: 实体总览跨组件口径一致 companion
+- [ ] DASH-006: 主题分析 GIS 下钻 companion
+
+**视图与非功能（F09-VIEW · F15-NFR）**
+
+- [ ] VIEW-001: 全 BI 页面 DashboardView 统一 companion
+- [ ] VIEW-003: 新用户 onboarding 视图继承链 companion
+- [ ] NFR-003: Dashboard 并发压测真实 perf suite companion
+- [ ] NFR-005: 报表并发压测 companion
+
+### M-PRODUCT 收官信号
+
+| 验收 | 映射 |
+|------|------|
+| DE 数据源分类 | F-B · 五类分组选型 + 中文标签 |
+| 单主路径 IA | F-C · 连库→Dataset→Dashboard ≤3 步导航 |
+| P4-SMOKE | F-D · 浏览器 E2E 书面 pass |
+| 成品感 demo | F-A 全勾 + F-B 全勾 |
+| 全量对标 DE/SS | F-F 按合同裁剪（非默认 gate） |
+
+> **明确不含**：DataEase SQLBot / AI 问数；Superset Semantic Layer 插件体系（见 M-FINAL「对标校准」）。

@@ -7,6 +7,10 @@ export type LayoutWidget = {
   colSpan: 4 | 6 | 8 | 12;
   rowSpan: number;
   order: number;
+  /** react-grid-layout 列坐标（0–11），拖拽后持久化 */
+  gridX?: number;
+  /** react-grid-layout 行坐标 */
+  gridY?: number;
   chartConfig: ChartViewConfig;
 };
 
@@ -51,16 +55,15 @@ export function normalizeWidgetIds(widgets: LayoutWidget[]): LayoutWidget[] {
 export function defaultChartConfig(type: ChartType): ChartViewConfig {
   const base = {
     dataSourceId: "",
-    mode: "sql" as const,
+    mode: "dataset" as const,
   };
   if (type === "table") {
-    return { chartType: "table", ...base, sql: "SELECT 1 AS id", dimensions: [], metrics: [] };
+    return { chartType: "table", ...base, dimensions: [], metrics: [] };
   }
   if (type === "map") {
     return {
       chartType: "map",
       ...base,
-      sql: "SELECT '北京' AS region, 100 AS value",
       dimensions: [{ field: "region" }],
       metrics: [{ field: "value" }],
     };
@@ -69,7 +72,6 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
     return {
       chartType: "heatmap",
       ...base,
-      sql: "SELECT 'A' AS x, '1' AS y, 10 AS v",
       dimensions: [{ field: "x" }, { field: "y" }],
       metrics: [{ field: "v" }],
     };
@@ -78,7 +80,6 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
     return {
       chartType: "kpi",
       ...base,
-      sql: "SELECT 1280 AS total, 12.5 AS rate",
       dimensions: [],
       metrics: [{ field: "total" }, { field: "rate" }],
     };
@@ -87,7 +88,6 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
     return {
       chartType: "timeline",
       ...base,
-      sql: "SELECT '2026-01-01' AS t, 1 AS v",
       dimensions: [{ field: "t" }],
       metrics: [{ field: "v" }],
     };
@@ -95,7 +95,6 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
   return {
     chartType: type,
     ...base,
-    sql: "SELECT 1 AS x, 1 AS y",
     dimensions: [{ field: "x" }],
     metrics: [{ field: "y" }],
   };

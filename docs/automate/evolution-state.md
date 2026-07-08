@@ -7,14 +7,14 @@
 | 字段 | 值 |
 |------|----|
 | phase | DONE |
-| round_target | account-self-service |
-| design | 保留个人资料+账号设置双入口；/me/views → /account/settings |
-| plan | docs/automate/plans/2026-07-08-account-self-service.md |
+| round_target | product-polish-checklist |
+| design | P0 shell + P1 core path per 2026-07-08-product-polish-checklist.md |
+| plan | docs/automate/plans/2026-07-08-product-polish-checklist.md |
 | branch |  |
 | base_branch | dev-auto |
 | prd_ids | AUTH-003, BOOT-003, VIEW-003 |
 | pr_number |  |
-| last_verified_command | pytest tests/test_auth_profile.py tests/test_me.py; vitest fe/src/pages/admin/account |
+| last_verified_command | vitest AdminLayout/resolve-nav/AdminHome/dashboard/charts (92 passed); pytest auth profile pending path |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T21:57:00Z |
@@ -22,15 +22,15 @@
 
 ## 当前需求契约
 
-- request: 实现账号中心（个人资料后端+FE、改密码、IA 去重）
-- type: feature
-- goal: 用户菜单内个人资料/账号设置具备真实后端与可编辑 UI
-- scope_include: auth_users 扩展字段、GET/PATCH /me、POST /auth/change-password、AccountProfilePage、ChangePasswordSection、/me/views 重定向
-- scope_exclude: 头像上传、邮箱唯一约束、OAuth、系统用户管理改造
-- acceptance: pytest test_auth_profile + test_me 通过；vitest account smoke 通过
+- request: 跑完 product-polish-checklist（P0+P1，跳过 P2 companion）
+- type: existing-plan
+- goal: 产品化收尾：壳层去 M1 占位、M13 GA、Dashboard Dataset 路径、治理/报表/分享 FE 补齐
+- scope_include: P0-1~P0-5, P1-1~P1-6 per checklist
+- scope_exclude: P2 companion 深度
+- acceptance: vitest shell+dashboard+charts 通过
 - risk_level: low
 - autonomy_policy: auto_accept_low_risk
-- assumptions: IA 采用「保留双入口 + /me/views 重定向设置页」
+- assumptions: D1 Dataset 默认/D2 登录落 dashboards/D3 去预览/D4 我的→账号设置
 
 ## 待办池
 

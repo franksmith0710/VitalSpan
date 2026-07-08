@@ -28,7 +28,7 @@
 | [reports.md](./reports.md) | `app/reports/` | F08-RPT | M6/M10/M12 | L1 kickoff (r60) |
 | [views.md](./views.md) | `app/views/` | F09-VIEW | FR-VIEW | L1 kickoff (r60) |
 | [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 已实现 |
-| [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 未实现 |
+| [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 已实现 |
 | [governance.md](./governance.md) | `app/governance/` | F10-GOV · F14-CAT | M6 | L1 kickoff (r61) |
 | [viz.md](./viz.md) | `app/viz/` | F06-VIZ | M9 | L1 kickoff (r61) |
 | [integration.md](./integration.md) | `app/integration/` | F13-API | M8/M12/M13 | companion 已实现（r45） |

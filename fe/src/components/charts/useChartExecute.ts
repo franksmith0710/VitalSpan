@@ -102,6 +102,28 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     setSlowHint(false);
     const started = Date.now();
     try {
+      if (config.mode === "dataset") {
+        if (!config.dataSourceId || !config.configId) {
+          setError("请选择数据源与已绑定配置的 Dataset");
+          setColumns([]);
+          setRows([]);
+          return;
+        }
+        const data = await apiFetch<ExecuteResult>("/api/v1/query/dataset/execute", {
+          method: "POST",
+          body: JSON.stringify({
+            dataSourceId: config.dataSourceId,
+            configId: config.configId,
+            limit: CHART_EXECUTE_LIMIT,
+            rls: { enabled: false },
+          }),
+        });
+        setColumns(data.columns);
+        setRows(data.rows);
+        setSlowHint(Date.now() - started > SLOW_THRESHOLD_MS);
+        return;
+      }
+
       const timeParams = config.mode === "sql" ? buildTimeRangeParameters(config.timeRange) : {};
       const filterParams =
         config.mode === "sql"

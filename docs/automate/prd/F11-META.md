@@ -54,11 +54,12 @@
   - [x] 计算字段名校验链（空 tables/非法 field 名/冲突 409，r59）
   - [x] companion dataset write ACL + duplicate table guard + perf probe（r66：viewer create 403 `META_DATASET_FORBIDDEN`；duplicate table 409；`probe_validate_dataset_budget_ms`/`probe_list_datasets_budget_ms` ≤50ms）
   - [x] PUT/DELETE + bind-query-config + QUERY 四步集成测（r244：`PUT/DELETE /api/v1/datasets/{id}`；`POST bind-query-config`；create→bind→execute 链；`DatasetListPage` 编辑/删除；T-META-R244-004-01~08）
+  - [x] Dashboard 组件绑定 Dataset/boundConfigId 出图（M-PRODUCT F-A companion；`WidgetInspector` + `useChartExecute` dataset 路径）
   - [ ] Dataset 对标 DE/SS 全量能力（companion）
   - [ ] 计算字段执行与指标引擎（companion）
-- **代码锚点**：`backend/app/metadata/dataset/` · `backend/app/api/v1/datasets.py` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-004-01~08
-- **演化建议**：r244 收官 F-D plan Dataset CRUD（PUT/DELETE/bind + QUERY 链集成 + Admin UI）；DE/SS 对标与指标执行链留 companion
-- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
+- **代码锚点**：`backend/app/metadata/dataset/` · `backend/app/api/v1/datasets.py` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/charts/useChartExecute.ts` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-004-01~08
+- **演化建议**：M-PRODUCT F-A 已闭合 Dashboard Dataset 出图 FE；DE/SS 全量对标与指标执行链留 F-F companion
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard 绑定 · 2026-07-08
 ### [META-005] 物理表元数据登记 M1-ENTITY
 
 - **状态**：已实现（M8 r232 收官）

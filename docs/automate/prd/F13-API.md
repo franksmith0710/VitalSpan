@@ -39,9 +39,10 @@
   - [x] GET `/api/v1/services/{id}` + POST `/{id}/execute` 鉴权与 draft 拒绝（r44）
   - [x] 配置生成的标准查询接口（publish 路由 + `;requires=` 参数校验 + Idempotency-Key，r45 companion）
   - [x] 版本 v1 前缀（`/api/v1/services`）
-- **代码锚点**：`backend/app/api/v1/services.py` · `backend/app/integration/query_services.py`
-- **演化建议**：r45 publish/execute 参数幂等与发布状态守卫（T-API-R45-003-01~06）；后续可补真实查询执行链路与 OpenAPI per-service fragment 自动发布
-- **里程碑对齐**：
+  - [x] `/admin/services` 查询服务 Admin 列表页（M-PRODUCT F-A；`QueryServicesPage` · manifest 治理分组）
+- **代码锚点**：`backend/app/api/v1/services.py` · `backend/app/integration/query_services.py` · `fe/src/pages/admin/services/QueryServicesPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx`
+- **演化建议**：M-PRODUCT F-D 浏览器 E2E 发布→服务试跑；后续可补真实查询执行链路与 OpenAPI per-service fragment 自动发布
+- **里程碑对齐**：M-PRODUCT F-A · 服务页 FE · 2026-07-08
 ### [API-004] IF-01 总线注册适配
 
 - **状态**：已实现
@@ -66,8 +67,9 @@
   - [x] GET `/api/v1/reports/export` 元数据契约 + templateId/format/from/to 校验（r44 L1）
   - [x] 鉴权 401/403 + `X-RateLimit-*` 头与限流拒绝（r44）
   - [x] 按模板/时间提取 Word/PDF/Excel（mock 同步生成 + download 路由，r45 companion）
-- **代码锚点**：`backend/app/api/v1/reports/export.py` · `backend/app/integration/reports_export.py`
-- **演化建议**：r45 报表 mock 生成/download/MIME/502 错误域（T-API-R45-005-01~06）；后续可补真实模板渲染与异步大文件导出
+  - [x] 预制报表页嵌入导出卡片（M-PRODUCT F-A；`ReportExportCard` · `PrefabReportsPage`）
+- **代码锚点**：`backend/app/api/v1/reports/export.py` · `backend/app/integration/reports_export.py` · `fe/src/pages/admin/reports/components/ReportExportCard.tsx` · `fe/src/pages/admin/reports/PrefabReportsPage.tsx`
+- **演化建议**：M-PRODUCT F-F 真实 PDF/Word 渲染留 companion；r45 报表 mock 生成/download/MIME/502 错误域已闭合
 - **里程碑对齐**：
 ### [API-006] IF-04 门户嵌入 API
 

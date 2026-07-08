@@ -5,7 +5,13 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockApiFetch = vi.fn();
-vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+  };
+});
 vi.mock("@/context/auth-context", () => ({
   useAuth: () => ({
     user: { id: "1", username: "admin", roles: ["admin"] },
@@ -17,6 +23,7 @@ vi.mock("@/context/auth-context", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+import { ApiRequestError } from "@/lib/api";
 import { DatasourceFormPage } from "./DatasourceFormPage";
 
 const MOCK_TYPES = {
@@ -168,5 +175,52 @@ describe("DatasourceFormPage redshift smoke", () => {
     await selectType("AWS Redshift");
     const portInput = screen.getByLabelText(/端口/i) as HTMLInputElement;
     expect(portInput.value).toBe("5439");
+  });
+});
+
+describe("DatasourceFormPage save error recovery", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/datasources/types") return MOCK_TYPES;
+      if (path === "/api/v1/datasources" && init?.method === "POST") {
+        throw new ApiRequestError("Data source code already exists", "DATASOURCE_CODE_CONFLICT");
+      }
+      throw new Error(`unexpected path ${path}`);
+    });
+  });
+  afterEach(() => cleanup());
+
+  it("T-CONN-FE-SAVE-01: 标识冲突报错后仍可修改标识并再次提交", async () => {
+    renderForm();
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/datasources/types"));
+
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("名称"), "重复测试源");
+    await user.type(screen.getByLabelText("标识"), "dup-code");
+    await user.type(screen.getByLabelText("主机"), "127.0.0.1");
+    await user.type(screen.getByLabelText("数据库"), "demo");
+    await user.type(screen.getByLabelText("用户名"), "root");
+    await user.type(screen.getByLabelText("密码"), "secret");
+
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("数据源标识已存在");
+
+    const codeInput = screen.getByLabelText("标识");
+    expect(codeInput).not.toBeDisabled();
+    await user.clear(codeInput);
+    await user.type(codeInput, "unique-code");
+    expect(codeInput).toHaveValue("unique-code");
+
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/datasources/types") return MOCK_TYPES;
+      if (path === "/api/v1/datasources" && init?.method === "POST") {
+        return { id: "ds-new", code: "unique-code", name: "重复测试源", type: "mysql", host: "127.0.0.1", port: 3306, database: "demo", username: "root" };
+      }
+      throw new Error(`unexpected path ${path}`);
+    });
+
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(3));
   });
 });
