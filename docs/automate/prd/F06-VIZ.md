@@ -19,13 +19,15 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
-- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06
-- **描述**：最小图表集 M4-MIN（SRS 追溯项）；M-FE-2 补齐 Dashboard widget SQL 配置与 view 模式出数。
+- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT · F-C · 已完成 · 2026-07-08
+- **描述**：最小图表集 M4-MIN（SRS 追溯项）；M-FE-2 补齐 Dashboard widget SQL 配置与 view 模式出数；M-PRODUCT F-C 图表探索降为高级入口（非 admin 侧栏隐藏）。
 - **验收标准**：
   - [x] 表格+折线+柱状可渲染
   - [x] 绑定 QUERY-005 出数
   - [x] Dashboard edit/view widget FE 出数（`WidgetSqlPanel` + `DashboardWidget`）
-- **代码锚点**：`fe/src/components/charts/` · `fe/src/components/dashboard/WidgetSqlPanel.tsx` · `fe/src/components/dashboard/DashboardWidget.tsx` · `fe/src/lib/chart-theme.ts` · `fe/src/pages/admin/dashboard/dashboard.smoke.test.tsx`
+  - [x] 「图表探索」`iaPriority=advanced` 对非 admin 侧栏隐藏（T-VIZ-FC-01~02）；路由 `/admin/charts/explore` 保留
+  - [x] `layout.md` §3/§6 同步图表探索高级入口定位
+- **代码锚点**：`fe/src/components/charts/` · `fe/src/components/dashboard/WidgetSqlPanel.tsx` · `fe/src/components/dashboard/DashboardWidget.tsx` · `fe/src/lib/chart-theme.ts` · `fe/src/pages/admin/dashboard/dashboard.smoke.test.tsx` · `fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.test.ts` T-VIZ-FC-01~02 · `docs/ui/layout.md`
 - **演化建议**：饼图/地图与配置 UI（VIZ-005）；Apex 主题与大数据虚拟化；Playwright E2E 真实查询出数
 ### [VIZ-003] 图表类型插件注册
 

@@ -14,7 +14,7 @@ describe("resolveNavGroups", () => {
   it("returns analyst nav without system or data groups", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
     expect(groups.some((g) => g.title === "分析")).toBe(true);
-    expect(groups.some((g) => g.title === "主题与实体")).toBe(true);
+    expect(groups.some((g) => g.title === "主题与实体")).toBe(false);
     expect(groups.some((g) => g.title === "系统")).toBe(false);
     expect(groups.some((g) => g.title === "数据")).toBe(false);
   });
@@ -44,13 +44,10 @@ describe("resolveNavGroups", () => {
     expect(allItemNames).not.toContain("Dataset");
   });
 
-  it("T-NAV-MF-02: analyst sees 查询设计器 when M13 is active", () => {
+  it("T-NAV-MF-02: analyst does not see 查询设计器 in default IA", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
     const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
-    expect(allItemNames).toContain("查询设计器");
-    expect(allItemNames).not.toContain("治理工单");
-    expect(allItemNames).not.toContain("元数据");
-    expect(allItemNames).not.toContain("Dataset");
+    expect(allItemNames).not.toContain("查询设计器");
   });
 
   it("T-NAV-MF-03: admin sees M13 items without preview badge", () => {
@@ -145,6 +142,69 @@ describe("resolveNavGroups", () => {
     expect(titles).toContain("报表");
     expect(titles).not.toContain("数据");
     expect(titles).not.toContain("系统");
+  });
+
+  it("T-NAV-FC-01: analyst hides engineering sections", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
+    const titles = groups.map((g) => g.title);
+    expect(titles).not.toContain("数据");
+    expect(titles).not.toContain("主题与实体");
+    expect(titles).not.toContain("治理");
+  });
+
+  it("T-NAV-FC-02: viewer hides engineering sections", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("viewer", ["viewer"]));
+    const titles = groups.map((g) => g.title);
+    expect(titles).not.toContain("数据");
+    expect(titles).not.toContain("主题与实体");
+    expect(titles).not.toContain("治理");
+  });
+
+  it("T-NAV-FC-03: admin still sees engineering sections", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
+    const titles = groups.map((g) => g.title);
+    expect(titles).toContain("数据");
+    expect(titles).toContain("主题与实体");
+    expect(titles).toContain("治理");
+  });
+
+  it("T-VIZ-FC-01: analyst viewer nav excludes 图表探索", () => {
+    for (const role of ["analyst", "viewer"] as const) {
+      const groups = resolveNavGroups(sessionUserFromAuth(role, [role]));
+      const names = groups.flatMap((g) => g.items.map((i) => i.name));
+      expect(names).not.toContain("图表探索");
+    }
+  });
+
+  it("T-VIZ-FC-02: admin nav includes 图表探索", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
+    const names = groups.flatMap((g) => g.items.map((i) => i.name));
+    expect(names).toContain("图表探索");
+  });
+
+  it("T-DESIGN-FC-01: admin governance group has 查询设计器 with badge", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
+    const gov = groups.find((g) => g.title === "治理");
+    const designer = gov?.items.find((i) => i.name === "查询设计器");
+    expect(designer).toBeDefined();
+    expect(designer?.badgeLabel).toBe("治理专用");
+  });
+
+  it("T-DESIGN-FC-02: analyst viewer nav excludes 查询设计器", () => {
+    for (const role of ["analyst", "viewer"] as const) {
+      const names = resolveNavGroups(sessionUserFromAuth(role, [role])).flatMap((g) =>
+        g.items.map((i) => i.name),
+      );
+      expect(names).not.toContain("查询设计器");
+    }
+  });
+
+  it("T-DESIGN-FC-03: admin analysis group excludes 查询设计器", () => {
+    const analysis = resolveNavGroups(sessionUserFromAuth("admin", ["admin"])).find(
+      (g) => g.title === "分析",
+    );
+    const names = analysis?.items.map((i) => i.name) ?? [];
+    expect(names).not.toContain("查询设计器");
   });
 });
 

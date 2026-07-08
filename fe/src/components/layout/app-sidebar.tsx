@@ -21,6 +21,7 @@ export type NavItem = {
   preview?: boolean;
   target?: string;
   subItems?: NavSubItem[];
+  badgeLabel?: string;
 };
 
 export type NavSection = {
@@ -44,7 +45,7 @@ function NavBadge({
   active,
 }: {
   label: string;
-  variant: "new" | "pro" | "preview";
+  variant: "new" | "pro" | "preview" | "governance";
   active?: boolean;
 }) {
   let base: string;
@@ -60,6 +61,9 @@ function NavBadge({
     state = active
       ? "menu-dropdown-badge-preview-active"
       : "menu-dropdown-badge-preview-inactive";
+  } else if (variant === "governance") {
+    base = "menu-dropdown-badge";
+    state = "bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400";
   } else {
     base = "menu-dropdown-badge";
     state = active
@@ -178,6 +182,7 @@ function SidebarNavItem({
     <Link
       to={item.path}
       target={item.target}
+      title={item.badgeLabel ? "面向数据治理闭环；普通分析请使用 Dashboard。" : undefined}
       className={cn(
         "group menu-item",
         active ? "menu-item-active" : "menu-item-inactive",
@@ -193,6 +198,9 @@ function SidebarNavItem({
         {item.icon}
       </span>
       {showLabels && <span className="menu-item-text">{item.name}</span>}
+      {item.badgeLabel && showLabels ? (
+        <NavBadge label={item.badgeLabel} variant="governance" active={active} />
+      ) : null}
       {item.preview && showLabels && (
         <NavBadge label="预览" variant="preview" active={active} />
       )}
