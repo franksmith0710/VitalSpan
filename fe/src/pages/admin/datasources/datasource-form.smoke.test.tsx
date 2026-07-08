@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -341,5 +341,67 @@ describe("CONN-023 REST API companion", () => {
     await selectType("API", "REST API");
     expect(screen.getByText(/选择类型/)).toBeInTheDocument();
     expect(screen.getByLabelText("Base URL")).toBeInTheDocument();
+  });
+});
+
+describe("CONN-024 file source companion", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/datasources/types") return MOCK_TYPES;
+      if (path === "/api/v1/datasources" && init?.method === "POST") {
+        return JSON.parse(String(init.body));
+      }
+      throw new Error(`unexpected path ${path}`);
+    });
+  });
+  afterEach(() => cleanup());
+
+  it("T-CONN-024-FE-01: Excel shows remote and local tabs", async () => {
+    renderForm();
+    await selectType("文件", "Excel");
+    expect(screen.getByRole("tab", { name: "远程文件 URL" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "本地文件" })).toBeInTheDocument();
+  });
+
+  it("T-CONN-024-FE-02: local tab shows filename after xlsx select rejects pdf", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await selectType("文件", "Excel");
+    await user.click(screen.getByRole("tab", { name: "本地文件" }));
+    await waitFor(() => expect(document.querySelector('input[type="file"]')).toBeTruthy());
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const xlsx = new File(["x"], "book.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    Object.defineProperty(input, "files", { value: [xlsx], configurable: true });
+    fireEvent.change(input);
+    expect(await screen.findByText("book.xlsx")).toBeInTheDocument();
+    const pdf = new File(["p"], "bad.pdf", { type: "application/pdf" });
+    Object.defineProperty(input, "files", { value: [pdf], configurable: true });
+    fireEvent.change(input);
+    expect(screen.getByText(/仅支持/)).toBeInTheDocument();
+  });
+
+  it("T-CONN-024-FE-03: remote tab save sets host to URL", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await selectType("文件", "CSV");
+    await user.type(screen.getByLabelText("名称"), "csv-src");
+    await user.type(screen.getByLabelText("标识"), "csv-code");
+    await user.type(screen.getByLabelText("文件 URL"), "https://example.com/a.csv");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
+    const body = JSON.parse(
+      String(mockApiFetch.mock.calls.find((c) => c[0] === "/api/v1/datasources")?.[1]?.body),
+    );
+    expect(body.host).toBe("https://example.com/a.csv");
+    expect(body.port).toBe(1);
+  });
+
+  it("T-CONN-024-FE-04: CSV hides sheet name field", async () => {
+    renderForm();
+    await selectType("文件", "CSV");
+    expect(screen.queryByLabelText(/Sheet/)).not.toBeInTheDocument();
   });
 });

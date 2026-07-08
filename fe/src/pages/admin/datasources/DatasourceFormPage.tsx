@@ -31,10 +31,12 @@ import {
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import { RestApiConnectionFields } from "./components/RestApiConnectionFields";
+import { FileSourceConnectionFields } from "./components/FileSourceConnectionFields";
 import {
+  buildFileSourcePayload,
   buildRestApiPayload,
+  defaultFileSourceCompanion,
   defaultRestApiCompanion,
-  type RestApiCompanionState,
 } from "./components/datasource-form-types";
 
 type WizardStep = "category" | "type" | "form";
@@ -91,10 +93,6 @@ function hidePortField(type: string): boolean {
   return type === "excel" || type === "csv" || type === "rest_api";
 }
 
-function isCompanionType(type: string): boolean {
-  return type === "rest_api" || type === "excel" || type === "csv";
-}
-
 const CONNECTOR_FIELD_HINTS: Record<string, { port: string; databaseLabel: string; usernameLabel: string }> = {
   mongodb: { port: "27017", databaseLabel: "认证库", usernameLabel: "用户名" },
   elasticsearch: { port: "9200", databaseLabel: "默认索引（可选）", usernameLabel: "用户名" },
@@ -125,6 +123,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [restApiCompanion, setRestApiCompanion] = useState(defaultRestApiCompanion);
+  const [fileCompanion, setFileCompanion] = useState(defaultFileSourceCompanion);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   const typesQuery = useQuery({
@@ -171,6 +170,16 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
           healthPath: ds.database || "/",
           connectTimeoutSec: ds.connectionOptions?.connectTimeoutSec ?? 5,
         });
+      } else if (ds.type === "excel" || ds.type === "csv") {
+        const isRemote = ds.host.startsWith("http://") || ds.host.startsWith("https://");
+        setFileCompanion({
+          mode: isRemote ? "remote" : "local",
+          remoteUrl: isRemote ? ds.host : "",
+          serverPath: isRemote ? "" : ds.host,
+          sheetName: ds.database || "",
+          selectedFileName: isRemote ? "" : ds.host.split("/").pop() ?? "",
+          fileError: null,
+        });
       }
     }
   }, [detailQuery.data]);
@@ -201,6 +210,13 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
         payload = buildRestApiPayload(
           { name: form.name, code: form.code, type: form.type, description: form.description },
           restApiCompanion,
+          mode,
+          form.password,
+        );
+      } else if (form.type === "excel" || form.type === "csv") {
+        payload = buildFileSourcePayload(
+          { name: form.name, code: form.code, type: form.type, description: form.description },
+          fileCompanion,
           mode,
           form.password,
         );
@@ -419,17 +435,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                         GaussDB 兼容 PostgreSQL 协议，默认端口 5432
                       </p>
                     ) : null}
-                    {form.type === "excel" ? (
-                      <p id="excel-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
-                        host 填本地 .xlsx 路径或 HTTPS 文件 URL
-                      </p>
-                    ) : null}
-                    {form.type === "csv" ? (
-                      <p id="csv-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
-                        host 填本地 .csv 路径或 HTTPS URL
-                      </p>
-                    ) : null}
-                    {form.type === "impala" ? (
+                    {form.type === "excel" || form.type === "csv" ? null : form.type === "impala" ? (
                       <p id="impala-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
                         兼容 Hive 协议；默认 LDAP/无认证由后端处理
                       </p>
@@ -449,17 +455,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                         GaussDB 兼容 PostgreSQL 协议，默认端口 5432
                       </p>
                     ) : null}
-                    {form.type === "excel" ? (
-                      <p id="excel-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
-                        host 填本地 .xlsx 路径或 HTTPS 文件 URL
-                      </p>
-                    ) : null}
-                    {form.type === "csv" ? (
-                      <p id="csv-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
-                        host 填本地 .csv 路径或 HTTPS URL
-                      </p>
-                    ) : null}
-                    {form.type === "impala" ? (
+                    {form.type === "excel" || form.type === "csv" ? null : form.type === "impala" ? (
                       <p id="impala-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
                         兼容 Hive 协议；默认 LDAP/无认证由后端处理
                       </p>
@@ -468,6 +464,12 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                 )}
                 {form.type === "rest_api" ? (
                   <RestApiConnectionFields value={restApiCompanion} onChange={setRestApiCompanion} />
+                ) : form.type === "excel" || form.type === "csv" ? (
+                  <FileSourceConnectionFields
+                    sourceType={form.type}
+                    value={fileCompanion}
+                    onChange={setFileCompanion}
+                  />
                 ) : (
                   <>
                     <div className="grid gap-4 sm:grid-cols-2">

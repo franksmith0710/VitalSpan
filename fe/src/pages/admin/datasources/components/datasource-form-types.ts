@@ -89,3 +89,65 @@ export function buildRestApiPayload(
   }
   return payload;
 }
+
+export type FileSourceMode = "remote" | "local";
+
+export type FileSourceCompanionState = {
+  mode: FileSourceMode;
+  remoteUrl: string;
+  serverPath: string;
+  sheetName: string;
+  selectedFileName: string;
+  fileError: string | null;
+};
+
+export const defaultFileSourceCompanion = (): FileSourceCompanionState => ({
+  mode: "remote",
+  remoteUrl: "",
+  serverPath: "",
+  sheetName: "",
+  selectedFileName: "",
+  fileError: null,
+});
+
+const FILE_PLACEHOLDER_USER = "file";
+const FILE_PLACEHOLDER_PASS = "-";
+
+export function buildFileSourcePayload(
+  form: BaseFormSlice,
+  companion: FileSourceCompanionState,
+  mode: "create" | "edit",
+  passwordFromForm: string,
+): Record<string, unknown> {
+  const host =
+    companion.mode === "remote"
+      ? companion.remoteUrl.trim()
+      : companion.serverPath.trim();
+
+  const payload: Record<string, unknown> = {
+    name: form.name,
+    type: form.type,
+    host,
+    port: 1,
+    database: companion.sheetName || "",
+    username: FILE_PLACEHOLDER_USER,
+    description: form.description || null,
+  };
+  if (mode === "create") {
+    payload.code = form.code;
+    payload.password = FILE_PLACEHOLDER_PASS;
+  } else if (passwordFromForm) {
+    payload.password = passwordFromForm;
+  }
+  return payload;
+}
+
+export function validateFileExtension(filename: string, sourceType: "excel" | "csv"): string | null {
+  const lower = filename.toLowerCase();
+  if (sourceType === "excel") {
+    return lower.endsWith(".xlsx") || lower.endsWith(".xls") ? null : "仅支持 .xlsx 或 .xls 文件";
+  }
+  return lower.endsWith(".csv") ? null : "仅支持 .csv 文件";
+}
+
+export const FILE_SIZE_WARN_BYTES = 50 * 1024 * 1024;
