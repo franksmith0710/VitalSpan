@@ -6,8 +6,8 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | idle |
-| round_target |  |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-08-round-target-saturated.md |
 | design |  |
 | plan |  |
 | branch |  |
@@ -68,6 +68,7 @@
 
 ## 演化历史（最近）
 
+- G2 选题（cron 2026-07-08 ~00:00 UTC）：**饱和熔断 BLOCKED** — plan §M-FINAL 全 `[x]` 已收官（无未完成节）；hub v1.2.108 Top5 加权总分均 ≥90（最低 CONN-027 90.1）；待办池空 STUCK 表空；**禁止**派 bounded-explorer；round-target=docs/superpowers/evolution/2026-07-08-round-target-saturated.md；phase idle→G2_DONE；建议人工 `create-evolution-plan` / `create-evolution-goal`
 - G0 闸门（cron 2026-07-07 ~23:59 UTC）：遗留 Draft PR #242 转正；rebase dev-auto 解 evolution-state 冲突；checks 绿；squash merge dev-auto（cd595d5）；删除 head 分支；无 Open PR；G1 bootstrap 验证已入账；phase→idle；base_branch=dev-auto；待 evolution-picker（预计饱和 BLOCKED）
 - G1 bootstrap（cron 2026-07-07 ~23:54 UTC）：G0 PASS PR #240/#241 已 merge dev-auto（96ee0d5）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.108 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读 M-FINAL 全 `[x]` 已收官（饱和态；无未完成节；frontmatter 96/129 摘要漂移已知）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-027(90.1)/API-002(90.2)/API-005(90.2) 均 ≥90（饱和熔断）；STUCK 表空；待办池空；phase idle；待 evolution-picker（预计饱和 BLOCKED）
 - G0 闸门（cron 2026-07-07 ~23:50 UTC）：确认 PR #240 已 squash merge dev-auto（d31b66e）；遗留 Draft PR #241 转正并 squash merge dev-auto（96ee0d5）；checks 绿无 rebase 需求；无 Open PR；工作区干净；#241 含 G1 saturated audit + G2 SATURATED BLOCKED round-target；phase 与 dev-auto 对齐 G2_DONE；base_branch=dev-auto；待 orchestrator（G2 熔断需人工 `create-evolution-plan`/`create-evolution-goal`）
