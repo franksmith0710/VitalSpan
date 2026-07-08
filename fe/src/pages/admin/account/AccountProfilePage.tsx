@@ -50,7 +50,7 @@ export function AccountProfilePage() {
       setError(null);
     },
     onError: (err: unknown) => {
-      setError(mapApiError(err, "保存失败"));
+      setError(mapApiError(err));
     },
   });
 

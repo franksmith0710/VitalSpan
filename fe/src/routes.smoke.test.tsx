@@ -24,15 +24,17 @@ vi.mock("@/lib/auth-token", () => ({
 }));
 
 const mockApiFetch = vi.fn();
-const mockResolveDefaultDashboardPath = vi.fn(async () => "/admin/dashboards");
+const mockResolveDefaultDashboardPath = vi.fn(async (_roleCodes: string[]) => "/admin/dashboards");
 
 vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
 vi.mock("@/lib/defaultViewResolve", () => ({
-  resolveDefaultDashboardPath: (...args: unknown[]) => mockResolveDefaultDashboardPath(...args),
-  resolveDefaultLandingPath: (...args: unknown[]) => mockResolveDefaultDashboardPath(...args),
+  resolveDefaultDashboardPath: (roleCodes: string[]) =>
+    mockResolveDefaultDashboardPath(roleCodes),
+  resolveDefaultLandingPath: (roleCodes: string[]) =>
+    mockResolveDefaultDashboardPath(roleCodes),
 }));
 
 import { AppRoutes } from "./routes";
