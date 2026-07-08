@@ -133,7 +133,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /governance/catalog
 │   ├── /governance/tickets
 │   ├── /governance/publish
-│   └── /services                    # 已发布查询服务（IF-02）
+│   ├── /services                    # 已发布查询服务（IF-02）
+│   └── /designer                    # 查询设计器（四期）· 治理专用 Badge
 │
 └── 系统
     ├── /system/roles                # AUTH · crud-flow

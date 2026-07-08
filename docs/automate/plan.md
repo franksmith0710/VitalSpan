@@ -730,8 +730,8 @@ F-A  收尾（CONN-023/024 表单 · API-005 导出验收）
 - [x] GOV-005: 发布流水线 → 查询服务导航串联（完成于 2026-07-08）
 - [x] DASH-002: Dashboard `/admin/dashboards/:id/share` 与编辑页分享入口（完成于 2026-07-08）
 - [x] API-005: 预制报表页嵌入导出卡片（`ReportExportCard` · IF-03 基础链）（完成于 2026-07-08）
-- [ ] CONN-023: REST API 建源专用表单项（OAuth/探测路径 companion；当前仅 host 标签）
-- [ ] CONN-024: Excel/CSV 建源上传与远程文件 companion（当前仅 host 标签）
+- [x] CONN-023: REST API 建源专用表单项（OAuth/探测路径 companion；当前仅 host 标签）（完成于 2026-07-08）
+- [x] CONN-024: Excel/CSV 建源上传与远程文件 companion（当前仅 host 标签）（完成于 2026-07-08）
 
 **验收信号**：`vitest` AdminLayout/resolve-nav/dashboard/charts 绿；手动 MySQL → Dataset → Dashboard 出图。
 
@@ -750,9 +750,9 @@ F-A  收尾（CONN-023/024 表单 · API-005 导出验收）
 
 > **目标**：单故事线「连库 → Dataset → Dashboard」；治理/探索/设计器降权，不删 API。
 
-- [ ] BOOT-002: analyst/viewer 侧栏默认隐藏治理与数据工程分组（能力驱动已有，补默认 IA 文档）
-- [ ] VIZ-002: 「图表探索」降为高级入口或并入 Dashboard 新建图表向导（二选一，更新 `layout.md`）
-- [ ] DESIGN-004: 「查询设计器」标注治理专用，侧栏移入治理分组或折叠
+- [x] BOOT-002: analyst/viewer 侧栏默认隐藏治理与数据工程分组（能力驱动已有，补默认 IA 文档）（完成于 2026-07-08）
+- [x] VIZ-002: 「图表探索」降为高级入口或并入 Dashboard 新建图表向导（二选一，更新 `layout.md`）（完成于 2026-07-08）
+- [x] DESIGN-004: 「查询设计器」标注治理专用，侧栏移入治理分组或折叠（完成于 2026-07-08）
 
 **验收信号**：新用户 3 次点击内完成建源→Dataset→出图；侧栏项数 admin ≤ 当前 70%。
 

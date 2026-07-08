@@ -54,9 +54,10 @@
   - [x] 快照 ACL + 双向 link 查询 + draft 撤回守卫（r246：`GET /snapshots/{id}` viewer 403 `DESIGN_SNAPSHOT_FORBIDDEN`；`workflow-link?workflowInstanceId=`；`DELETE` 非 draft 409 T-DESIGN-R246-004-01~04）
   - [x] 工单实例列表与快照回看（r246：`GET /gov/workflow/instances` + `includeDesignSnapshot` + `snapshotRevision` 不可变 T-DESIGN-R246-004-05~08；FE `WorkflowInstancesPanel` T-GOV-R246-FE-01~02）
   - [x] 设计完成进入 GOV-005 发布全链路（r246：`confirm-design` → `publish/from-workflow` → `catalogEntryId` 回写 link T-GOV-R246-005-01~05）
-- **代码锚点**：`backend/app/designer/workflow.py` · `backend/app/designer/snapshot.py` · `backend/app/api/v1/designer.py` · `fe/src/pages/admin/governance/WorkflowInstancesPanel.tsx` · `tests/test_mfinal_fe_design_r245.py` T-DESIGN-R245-004-01~08 · `tests/test_mfinal_fe_design_r246.py` T-DESIGN-R246-004-01~08
-- **演化建议**：F-E 批次 2 已闭合快照 ACL、双向关联、实例回看与发布链；远期可补 BPM 外部系统双向状态钩子
-- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
+  - [x] 查询设计器移入治理分组 + Badge「治理专用」（T-DESIGN-FC-01~03）；analyst/viewer 侧栏排除
+- **代码锚点**：`backend/app/designer/workflow.py` · `backend/app/designer/snapshot.py` · `backend/app/api/v1/designer.py` · `fe/src/pages/admin/governance/WorkflowInstancesPanel.tsx` · `fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.test.ts` T-DESIGN-FC-01~03 · `fe/src/layouts/AdminLayout.smoke.test.tsx` T-DESIGN-FC-01-smoke · `tests/test_mfinal_fe_design_r245.py` T-DESIGN-R245-004-01~08 · `tests/test_mfinal_fe_design_r246.py` T-DESIGN-R246-004-01~08 · `docs/ui/layout.md`
+- **演化建议**：F-E 批次 2 已闭合快照 ACL、双向关联、实例回看与发布链；F-C 已闭合治理分组 IA；远期可补 BPM 外部系统双向状态钩子
+- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07；M-PRODUCT · F-C · 已完成 · 2026-07-08
 ### [DESIGN-005] 传统 SQL 模式
 
 - **状态**：已实现

@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.110
+version: 1.2.111
 last_updated: 2026-07-08
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-08 · 规范见 `prd-scoring` · 本轮重评：DS-007（93.8→94.1↑；M-PRODUCT F-B displayGroup taxonomy companion）
+> 更新：2026-07-08 · 规范见 `prd-scoring` · 本轮重评：CONN-023/024、BOOT-002、VIZ-002、DESIGN-004（M-PRODUCT F-A/F-C companion IA）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -41,7 +41,7 @@ domain_count: 16
 | ID | 用户价值 | 完整度 | 可靠性 | 交互体验 | 架构健康 | 测试覆盖 | 性能 | 安全性 | 加权总分 | 薄弱项 |
 |----|:--------:|:------:|:------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|--------|
 | BOOT-001 | 84 | 98 | 92 | N/A | 88 | 98 | 88 | 88 | 91.0 | 用户价值 |
-| BOOT-002 | 96 | 100 | 94 | 96 | 98 | 100 | 88 | 94 | 95.9 | 性能 |
+| BOOT-002 | 98 | 100 | 94 | 98 | 98 | 100 | 90 | 94 | 96.6 | 性能 |
 | BOOT-003 | 92 | 100 | 94 | 90 | 90 | 100 | 88 | 94 | 93.8 | 性能 |
 | BOOT-004 | 84 | 98 | 92 | N/A | 90 | 98 | 88 | 88 | 91.2 | 用户价值 |
 | BOOT-005 | 84 | 96 | 90 | N/A | 88 | 100 | 88 | 90 | 90.7 | 用户价值 |
@@ -84,8 +84,8 @@ domain_count: 16
 | CONN-020 | 88 | 96 | 94 | N/A | 90 | 100 | 90 | 90 | 92.6 | 架构健康 |
 | CONN-021 | 88 | 96 | 94 | N/A | 90 | 100 | 90 | 88 | 92.4 | 安全性 |
 | CONN-022 | 88 | 96 | 94 | N/A | 90 | 100 | 90 | 88 | 92.4 | 用户价值 |
-| CONN-023 | 88 | 96 | 94 | N/A | 90 | 98 | 88 | 90 | 92.4 | 性能 |
-| CONN-024 | 88 | 96 | 94 | N/A | 90 | 98 | 88 | 90 | 92.4 | 性能 |
+| CONN-023 | 92 | 100 | 94 | 90 | 90 | 100 | 90 | 90 | 93.6 | 性能 |
+| CONN-024 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 90 | 93.2 | 性能 |
 | CONN-025 | 88 | 96 | 94 | N/A | 90 | 98 | 88 | 90 | 92.4 | 性能 |
 | CONN-026 | 88 | 94 | 92 | N/A | 90 | 96 | 88 | 88 | 91.0 | 安全性 |
 | CONN-027 | 88 | 92 | 92 | N/A | 90 | 92 | 86 | 90 | 90.1 | 性能 |
@@ -99,7 +99,7 @@ domain_count: 16
 | QUERY-008 | 86 | 94 | 94 | N/A | 90 | 100 | 90 | 92 | 92.2 | 用户价值 |
 | QUERY-009 | 88 | 96 | 94 | N/A | 90 | 98 | 90 | 90 | 92.6 | 用户价值 |
 | VIZ-001 | 84 | 98 | 96 | N/A | 90 | 100 | 88 | 90 | 92.4 | 用户价值 |
-| VIZ-002 | 92 | 100 | 94 | 88 | 90 | 100 | 88 | 90 | 93.2 | 性能 |
+| VIZ-002 | 94 | 100 | 94 | 92 | 90 | 100 | 90 | 90 | 94.1 | 性能 |
 | VIZ-003 | 86 | 92 | 96 | N/A | 90 | 100 | 88 | 88 | 91.4 | 用户价值 |
 | VIZ-004 | 86 | 92 | 96 | N/A | 90 | 100 | 88 | 88 | 91.4 | 用户价值 |
 | VIZ-005 | 88 | 98 | 96 | N/A | 90 | 100 | 88 | 88 | 93.0 | 用户价值 |
@@ -139,7 +139,7 @@ domain_count: 16
 | DESIGN-001 | 88 | 94 | 94 | 86 | 92 | 100 | 90 | 90 | 92.1 | 交互体验 |
 | DESIGN-002 | 88 | 94 | 96 | 86 | 92 | 100 | 90 | 90 | 92.1 | 交互体验 |
 | DESIGN-003 | 88 | 94 | 94 | 88 | 92 | 100 | 90 | 90 | 92.0 | 用户价值 |
-| DESIGN-004 | 90 | 94 | 96 | 88 | 90 | 100 | 90 | 94 | 92.8 | 用户价值 |
+| DESIGN-004 | 94 | 94 | 96 | 92 | 90 | 100 | 90 | 94 | 94.8 | 用户价值 |
 | DESIGN-005 | 88 | 92 | 96 | 86 | 90 | 100 | 90 | 90 | 91.6 | 交互体验 |
 | API-001 | 84 | 92 | 92 | N/A | 90 | 98 | 92 | 88 | 90.6 | 用户价值 |
 | API-002 | 82 | 90 | 92 | N/A | 88 | 96 | 86 | 88 | 90.2 | 性能 |
@@ -208,7 +208,7 @@ domain_count: 16
 | 当前执行 | **M-PRODUCT · 成品对标与体验收官**（companion 清扫） |
 | PRD 合同 | **129** 已实现 · **0** 未实现 |
 | companion | 约 **70** 条验收 `[ ]`（META/RPT/CAT/NFR/CONN 远期等） |
-| 当前节 | **M-PRODUCT F-C**（IA 主路径收敛）建议首轮 |
+| 当前节 | **M-PRODUCT F-D**（Goal 验收 E2E）建议首轮 |
 | G2 选题 | 每轮从 plan §M-PRODUCT 含 `[ ]` 子批取 3–5 项 |
 
 **说明**：PRD 合同 **129** 项全勾「已实现」；差距在 **companion 验收**与 **浏览器主路径/E2E**，见 `plan.md` §M-PRODUCT 与 `docs/automate/plans/2026-07-08-product-polish-checklist.md`。
@@ -238,6 +238,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.111 | 2026-07-08 | P5 重评 CONN-023/024、BOOT-002、VIZ-002、DESIGN-004（M-PRODUCT F-A/F-C companion IA）；pytest 2311/29 skipped + vitest 269/269 + check:design 220 files + build PASS；CONN-023 RestApiConnectionFields + CONN-024 FileSourceConnectionFields Tabs；BOOT-002/VIZ-002 iaTier/iaPriority 过滤 + DESIGN-004 治理分组 Badge；用户价值 88–92%→92–98%、完整度 96%→100%、交互 N/A→88–98%；总分 92.4–95.9→93.2–96.6（五 ID ≥90 STUCK 空；plan F-A CONN-023/024 + F-C 三行勾选） |
 | 1.2.110 | 2026-07-08 | P5 DS-007 重评（M-PRODUCT F-B displayGroup taxonomy companion）；pytest test_datasources_display_group_fb 8/8 + vitest ConnectorsPage+datasource-form 19/19 + check:design 212 files；displayGroup/categoryLabel API + ConnectorsPage Tabs + DatasourceFormPage 三步向导；用户价值 92%→94%、交互体验 94%→96%、架构健康 94%→92%（DatasourceFormPage 530 行超 fe-ui 软约束）；总分 93.8→94.1（≥90 STUCK 空；plan F-B 三行勾选） |
 | 1.2.109 | 2026-07-08 | 人工 PRD 同步（M-PRODUCT · plan v2.6.0）：hub 执行范围/里程碑节对齐 M-PRODUCT；`prd/README` 129 合同 + companion 语义；分片 F01/F03/F05/F07/F10/F11/F13 补记 2026-07-08 成品清扫 companion 验收（BOOT-002 壳层、QUERY-009 Dashboard Dataset、DS-007 语义建模 nav、DASH-002 分享、API-003/005 Admin FE、GOV-005 发布链）；锚点 `admin-nav`→`nav-manifest` |
 | 1.2.108 | 2026-07-07 | P5 r250 重评 CONN-027、API-001、VIZ-003/004/008（M-FINAL F-G 收官 + hub companion）；r250 13/13 + fe vitest 37/37 + ruff 0 + check:design 201 files；CONN-027 RedshiftConnector PG 委托 + REDSHIFT_* 错误域 + probe_readonly_sql + 7 backend + 2 FE smoke；API-001 P95≤500ms + traceId + structured error；VIZ-003 fallback/isKnownChartType；VIZ-004 buildBarOption/buildPieOption；VIZ-008 empty data 防护 + AdvancedEchartsChart 空态覆盖；CONN-027: 85.4→90.1（未实现→已实现）；API-001: 90.0→90.6；VIZ-003/004/008: 90.1→91.4（五 ID ≥90 STUCK 空；plan F-G CONN-027 勾选；M-FINAL 全 PRD 已实现）|

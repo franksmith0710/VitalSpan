@@ -398,10 +398,13 @@
   - [x] category=`api` 查询模式正确；凭证 API 响应无明文 secret（r249 routing `mode=native` T-CONN-R249-023-06~07）
   - [x] 插件零侵入（NFR-04）：`dialects/rest_api.py` + 注册，未改 `ConnectorRegistry` 核心
   - [x] mock 集成 smoke（r249 `test_mfinal_ff_fg_batch1_r249.py` 7 断言）
-- **代码锚点**：`backend/app/datasources/dialects/rest_api.py` · `backend/app/datasources/registry.py` · `backend/app/datasources/dialects/__init__.py` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx` · `tests/test_mfinal_ff_fg_batch1_r249.py` T-CONN-R249-023-01~07 · `fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx` T-CONN-R249-FE-01~02
+  - [x] `RestApiConnectionFields`：Base URL、认证方式（none/basic/bearer/oauth2 预览）、健康检查路径（T-CONN-023-FE-01~05）
+  - [x] F-B `displayGroup=api` 三步向导衔接（T-CONN-023-FE-05 wizard path）
+  - [x] save 映射 host/database/port + Bearer 字段重标（T-CONN-023-FE-02/04）
+- **代码锚点**：`backend/app/datasources/dialects/rest_api.py` · `backend/app/datasources/registry.py` · `backend/app/datasources/dialects/__init__.py` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx` · `fe/src/pages/admin/datasources/components/RestApiConnectionFields.tsx` · `tests/test_mfinal_ff_fg_batch1_r249.py` T-CONN-R249-023-01~07 · `fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx` T-CONN-R249-FE-01~02 · T-CONN-023-FE-01~05
 - **依赖**：DS-001、DS-002、QUERY-003（Native 双路径）
-- **演化建议**：r249 闭合注册/连通/native 查询与 HTTP 脱敏链；OAuth2 client_credentials 与分页游标留 companion
-- **里程碑对齐**：M-FINAL · F-G · 已完成 · 2026-07-07
+- **演化建议**：r251 闭合 companion 表单与 save 映射链；OAuth2 client_credentials 与分页游标留远期
+- **里程碑对齐**：M-FINAL · F-G · 已完成 · 2026-07-07；M-PRODUCT · F-A · 已完成 · 2026-07-08
 ### [CONN-024] Excel/CSV 文件源连接器
 
 - **状态**：已实现
@@ -417,10 +420,13 @@
   - [x] category=`file` 查询模式正确（r249 routing `mode=native` T-CONN-R249-024-06）
   - [x] 插件零侵入（NFR-04）；`dialects/excel.py` + `csv_file.py` + 注册
   - [x] fixture 集成 smoke（r249 `tests/fixtures/sample.xlsx` + `sample.csv` 6 断言）
-- **代码锚点**：`backend/app/datasources/dialects/excel.py` · `backend/app/datasources/dialects/csv_file.py` · `tests/fixtures/sample.xlsx` · `tests/fixtures/sample.csv` · `tests/test_mfinal_ff_fg_batch1_r249.py` T-CONN-R249-024-01~06 · `fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx` T-CONN-R249-FE-01~02
+  - [x] `FileSourceConnectionFields`：本地/远程 Tabs、xlsx/csv 上传与远程 URL（T-CONN-024-FE-01~04）
+  - [x] 大文件 50MB warning Alert（`FILE_SIZE_WARN_BYTES`）
+  - [x] F-B `displayGroup=file` 向导衔接
+- **代码锚点**：`backend/app/datasources/dialects/excel.py` · `backend/app/datasources/dialects/csv_file.py` · `tests/fixtures/sample.xlsx` · `tests/fixtures/sample.csv` · `tests/test_mfinal_ff_fg_batch1_r249.py` T-CONN-R249-024-01~06 · `fe/src/pages/admin/datasources/datasource-form.smoke.test.tsx` T-CONN-R249-FE-01~02 · `fe/src/pages/admin/datasources/components/FileSourceConnectionFields.tsx` · T-CONN-024-FE-01~04
 - **依赖**：DS-001、DS-002、QUERY-002
-- **演化建议**：r249 闭合本地文件解析与 native 查询链；远程 URL 与多 sheet 关联、同步入托管分析库留 companion
-- **里程碑对齐**：M-FINAL · F-G · 已完成 · 2026-07-07
+- **演化建议**：r251 闭合上传/远程 companion 表单链；多 sheet 关联、同步入托管分析库留远期
+- **里程碑对齐**：M-FINAL · F-G · 已完成 · 2026-07-07；M-PRODUCT · F-A · 已完成 · 2026-07-08
 ### [CONN-025] IBM Db2 连接器
 
 - **状态**：已实现
