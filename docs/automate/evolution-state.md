@@ -6,9 +6,9 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | G2_DONE |
+| phase | P1_DONE |
 | round_target | docs/superpowers/evolution/2026-07-08-round-target-mproduct-fb.md |
-| design | — |
+| design | docs/superpowers/specs/2026-07-08-mproduct-fb-ds007-taxonomy-design.md |
 | plan | docs/automate/plan.md §M-PRODUCT · F-B（只读） |
 | branch | — |
 | base_branch | dev-auto |
