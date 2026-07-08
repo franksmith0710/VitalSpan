@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
@@ -12,6 +13,8 @@ from app.auth.deps import UserContext, get_current_user
 from app.auth.jwt import DEFAULT_EXPIRES_MINUTES, create_access_token
 from app.auth.login import service as login_service
 from app.auth.models import get_meta_session
+from app.auth.profile import service as profile_service
+from app.auth.profile.schemas import ChangePasswordIn
 from app.auth.users import service as user_service
 from app.core.config import get_settings
 
@@ -57,6 +60,32 @@ def login(payload: LoginRequest, db: Annotated[Session, Depends(_db)]) -> LoginR
         access_token=token,
         expires_in=DEFAULT_EXPIRES_MINUTES * 60,
     )
+
+
+def _profile_error_response(exc: profile_service.ProfileError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def change_password(
+    payload: ChangePasswordIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> Response | JSONResponse:
+    try:
+        profile_service.change_password(
+            db,
+            user_id=uuid.UUID(actor.id),
+            actor_username=actor.username,
+            current_password=payload.current_password,
+            new_password=payload.new_password,
+        )
+    except profile_service.ProfileError as exc:
+        return _profile_error_response(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/dev-switch", response_model=LoginResponse)

@@ -5,7 +5,7 @@ import { apiFetch } from "@/lib/api";
 import { Button, IconButton } from "@/components/ui/button";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { canEditDashboards, sessionUserFromAuth } from "@/lib/session";
+import { canEditDashboards, sessionUserFromMe } from "@/lib/session";
 import { useAuth } from "@/context/auth-context";
 
 type DashboardSummary = {
@@ -34,8 +34,8 @@ export function DashboardListPage() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const sessionUser = authUser
-    ? sessionUserFromAuth(authUser.username, authUser.roles)
-    : sessionUserFromAuth("用户", ["viewer"]);
+    ? sessionUserFromMe(authUser)
+    : sessionUserFromMe({ username: "用户", roles: ["viewer"] });
   const canEdit = canEditDashboards(sessionUser);
   const [items, setItems] = useState<DashboardSummary[]>([]);
   const [loading, setLoading] = useState(true);

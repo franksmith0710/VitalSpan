@@ -1,26 +1,33 @@
 import { useMemo } from "react";
-import { Outlet, useMatch } from "react-router";
+import { Outlet, useLocation, useMatch } from "react-router";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/context/theme-context";
 import { SidebarProvider, useSidebar } from "@/context/sidebar-context";
 import { WorkspaceProvider } from "@/context/workspace-context";
+import { AccountSidebarBack } from "@/components/layout/account-sidebar-back";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { Backdrop } from "@/components/layout/backdrop";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { UserDropdown } from "@/components/layout/user-dropdown";
 import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
-import { resolveNavGroups } from "@/lib/resolve-nav";
-import { sessionUserFromAuth } from "@/lib/session";
+import { resolveSidebarSections } from "@/lib/resolve-nav";
+import { sessionUserFromMe } from "@/lib/session";
+import { isAccountManagementPath } from "@/lib/workspace";
 import { useAuth } from "@/context/auth-context";
 
 function AdminLayoutContent() {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const location = useLocation();
   const { user: authUser } = useAuth();
   const sessionUser = authUser
-    ? sessionUserFromAuth(authUser.username, authUser.roles)
-    : sessionUserFromAuth("用户", ["viewer"]);
-  const navSections = useMemo(() => resolveNavGroups(sessionUser), [sessionUser]);
+    ? sessionUserFromMe(authUser)
+    : sessionUserFromMe({ username: "用户", roles: ["viewer"] });
+  const isAccountArea = isAccountManagementPath(location.pathname);
+  const navSections = useMemo(
+    () => resolveSidebarSections(sessionUser, location.pathname),
+    [sessionUser, location.pathname],
+  );
   const isFillHeightRoute = Boolean(useMatch("/admin/charts/explore"));
 
   return (
@@ -29,6 +36,8 @@ function AdminLayoutContent() {
         sections={navSections}
         logo={<VitalSpanLogo />}
         collapsedLogo={<VitalSpanLogo variant="icon" />}
+        leading={isAccountArea ? <AccountSidebarBack /> : undefined}
+        navAriaLabel={isAccountArea ? "账号导航" : "管理端导航"}
       />
       <Backdrop />
       <div

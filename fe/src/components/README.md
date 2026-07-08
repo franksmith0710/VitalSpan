@@ -21,7 +21,7 @@
 | AlertDialog | `ui/alert-dialog.tsx` | 破坏性操作确认 |
 | FormContext | `ui/form-context.tsx` | Input 皮肤上下文 |
 | AppSidebar | `layout/app-sidebar.tsx` | Admin 侧栏 290px |
-| AppHeader | `layout/app-header.tsx` | sticky 顶栏 |
+| AppHeader | `layout/app-header.tsx` | sticky 顶栏 72px：侧栏切换 + 可选 `leading` + `actions` |
 | Backdrop | `layout/backdrop.tsx` | 移动端侧栏遮罩 |
 | ThemeToggleButton | `layout/theme-toggle.tsx` | 深浅色切换 |
 | UserDropdown | `layout/user-dropdown.tsx` | 顶栏用户菜单（资料/设置/开发态切换用户/退出） |

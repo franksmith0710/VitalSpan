@@ -3,7 +3,7 @@ import { Navigate } from "react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
-import { sessionUserFromAuth, type SessionUser } from "@/lib/session";
+import { sessionUserFromMe, type SessionUser } from "@/lib/session";
 import { WORKSPACE_HOME_PATH } from "@/lib/workspace";
 
 type RequireCapabilityProps = {
@@ -37,7 +37,7 @@ export function RequireCapability({
     return <Navigate to="/login" replace />;
   }
 
-  const session = sessionUserFromAuth(user.username, user.roles);
+  const session = sessionUserFromMe(user);
   if (!check(session)) {
     return fallbackTo ? <Navigate to={fallbackTo} replace /> : <ForbiddenState />;
   }

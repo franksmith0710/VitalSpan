@@ -15,6 +15,8 @@ import type { SessionRole } from "@/lib/session";
 export type AuthUser = {
   id: string;
   username: string;
+  displayName: string;
+  email: string;
   roles: SessionRole[];
 };
 
@@ -48,7 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const me = await apiFetch<AuthUser>("/api/v1/me");
-      setUser({ ...me, roles: me.roles as SessionRole[] });
+      setUser({
+        id: me.id,
+        username: me.username,
+        displayName: me.displayName ?? me.username,
+        email: me.email ?? `${me.username}@vitalspan.local`,
+        roles: me.roles as SessionRole[],
+      });
     } catch {
       clearAuthToken();
       setUser(null);

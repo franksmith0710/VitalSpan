@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
 import { resolveDefaultDashboardPath } from "@/lib/defaultViewResolve";
-import { canManagePlatform, sessionUserFromAuth } from "@/lib/session";
+import { canManagePlatform, sessionUserFromMe } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const M1_METRICS = [
@@ -53,7 +53,7 @@ export function AdminHomePage() {
 
   useEffect(() => {
     if (isLoading || !user) return;
-    const session = sessionUserFromAuth(user.username, user.roles);
+    const session = sessionUserFromMe(user);
     if (canManagePlatform(session)) {
       setRedirect(null);
       return;

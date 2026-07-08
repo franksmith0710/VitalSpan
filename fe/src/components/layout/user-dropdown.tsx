@@ -14,7 +14,7 @@ import { useWorkspace } from "@/context/workspace-context";
 import { useAuth } from "@/context/auth-context";
 import {
   primaryRoleLabel,
-  sessionUserFromAuth,
+  sessionUserFromMe,
 } from "@/lib/session";
 import {
   ACCOUNT_PROFILE_PATH,
@@ -26,8 +26,8 @@ import { cn } from "@/lib/utils";
 export function UserDropdown({ className }: { className?: string }) {
   const { user: authUser, logout } = useAuth();
   const user = authUser
-    ? sessionUserFromAuth(authUser.username, authUser.roles)
-    : sessionUserFromAuth("用户", ["viewer"]);
+    ? sessionUserFromMe(authUser)
+    : sessionUserFromMe({ username: "用户", displayName: "用户", email: "user@vitalspan.local", roles: ["viewer"] });
   const label = user.name;
   const roleLabel = primaryRoleLabel(user.roles);
   const { canReturnToWorkspace, returnToWorkspace, beginAccountManagement } =

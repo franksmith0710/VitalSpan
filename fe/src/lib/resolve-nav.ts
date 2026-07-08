@@ -1,5 +1,7 @@
 import { NAV_MANIFEST } from "@/config/nav-manifest";
+import { ACCOUNT_NAV_SECTIONS } from "@/config/account-nav";
 import { matchesCapability, resolveUserCapabilities } from "@/lib/capabilities";
+import { isAccountManagementPath } from "@/lib/workspace";
 import type { NavSection, NavItem, NavSubItem } from "@/components/layout/app-sidebar";
 import type { SessionUser, SessionRole } from "@/lib/session";
 
@@ -96,4 +98,15 @@ export function resolveNavGroups(
     if (items.length > 0) result.push({ title: section.title, items });
   }
   return result;
+}
+
+export function resolveSidebarSections(
+  user: SessionUser,
+  pathname: string,
+  options?: ResolveNavOptions,
+): NavSection[] {
+  if (isAccountManagementPath(pathname)) {
+    return ACCOUNT_NAV_SECTIONS;
+  }
+  return resolveNavGroups(user, options);
 }

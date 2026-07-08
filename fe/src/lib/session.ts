@@ -11,12 +11,28 @@ export type SessionUser = {
   roles: SessionRole[];
 };
 
-export function sessionUserFromAuth(username: string, roles: SessionRole[]): SessionUser {
+export function sessionUserFromAuth(
+  username: string,
+  roles: SessionRole[],
+  profile?: { displayName?: string; email?: string },
+): SessionUser {
   return {
-    name: username,
-    email: `${username}@vitalspan.local`,
+    name: profile?.displayName?.trim() || username,
+    email: profile?.email?.trim() || `${username}@vitalspan.local`,
     roles,
   };
+}
+
+export function sessionUserFromMe(user: {
+  username: string;
+  displayName?: string;
+  email?: string;
+  roles: SessionRole[];
+}): SessionUser {
+  return sessionUserFromAuth(user.username, user.roles, {
+    displayName: user.displayName,
+    email: user.email,
+  });
 }
 
 export function canManagePlatform(user: SessionUser): boolean {

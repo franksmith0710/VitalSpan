@@ -38,7 +38,7 @@ import { DatasetListPage } from "@/pages/admin/datasets/DatasetListPage";
 import { DesignerPage } from "@/pages/admin/designer/DesignerPage";
 import { ChartExplorePage } from "@/pages/admin/charts/ChartExplorePage";
 import { ReportSchedulesPage } from "@/pages/admin/reports/ReportSchedulesPage";
-import { MyViewsPage } from "@/pages/admin/account/MyViewsPage";
+import { ACCOUNT_SETTINGS_PATH } from "@/lib/workspace";
 
 export function AppRoutes() {
   return (
@@ -76,7 +76,7 @@ export function AppRoutes() {
           <Route path="metadata" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
           <Route path="metadata/glossary" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
           <Route path="datasets" element={<RequirePlatformAdmin><DatasetListPage /></RequirePlatformAdmin>} />
-          <Route path="me/views" element={<MyViewsPage />} />
+          <Route path="me/views" element={<Navigate to={ACCOUNT_SETTINGS_PATH} replace />} />
           <Route path="themes/:dashboardId" element={<ThemeAnalysisPage />} />
           <Route path="system/roles" element={<RequirePlatformAdmin><RoleListPage /></RequirePlatformAdmin>} />
           <Route path="system/users" element={<RequirePlatformAdmin><UserListPage /></RequirePlatformAdmin>} />

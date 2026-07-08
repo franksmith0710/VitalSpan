@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { OPTIONAL_ROLE_CAPABILITY_MAP } from "./capabilities";
-import { resolveNavGroups, ACTIVE_MILESTONES } from "./resolve-nav";
+import { resolveNavGroups, resolveSidebarSections, ACTIVE_MILESTONES } from "./resolve-nav";
+import { ACCOUNT_PROFILE_PATH } from "./workspace";
 import { sessionUserFromAuth } from "./session";
 
 describe("resolveNavGroups", () => {
@@ -138,6 +139,22 @@ describe("resolveNavGroups", () => {
     expect(titles).toContain("报表");
     expect(titles).not.toContain("数据");
     expect(titles).not.toContain("系统");
+  });
+});
+
+describe("resolveSidebarSections", () => {
+  it("uses account nav on profile/settings paths", () => {
+    const admin = sessionUserFromAuth("admin", ["admin"]);
+    const sections = resolveSidebarSections(admin, ACCOUNT_PROFILE_PATH);
+    expect(sections).toHaveLength(1);
+    expect(sections[0]?.title).toBe("账号");
+    expect(sections[0]?.items.map((i) => i.name)).toEqual(["个人资料", "账号设置"]);
+  });
+
+  it("uses workspace nav elsewhere", () => {
+    const admin = sessionUserFromAuth("admin", ["admin"]);
+    const sections = resolveSidebarSections(admin, "/admin/dashboards");
+    expect(sections.some((g) => g.title === "数据")).toBe(true);
   });
 });
 

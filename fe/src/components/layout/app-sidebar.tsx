@@ -33,6 +33,8 @@ export type AppSidebarProps = {
   logo?: React.ReactNode;
   collapsedLogo?: React.ReactNode;
   widget?: React.ReactNode;
+  leading?: React.ReactNode;
+  navAriaLabel?: string;
   className?: string;
 };
 
@@ -203,6 +205,8 @@ export function AppSidebar({
   logo,
   collapsedLogo,
   widget,
+  leading,
+  navAriaLabel = "管理端导航",
   className,
 }: AppSidebarProps) {
   const {
@@ -246,7 +250,8 @@ export function AppSidebar({
       </div>
 
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pb-6 duration-300 ease-linear">
-        <nav className="flex flex-col" aria-label="管理端导航">
+        <nav className="flex flex-col" aria-label={navAriaLabel}>
+          {leading}
           {sections.map((section) => (
             <div key={section.title} className="menu-group">
               <h2
