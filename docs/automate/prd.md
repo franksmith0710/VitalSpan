@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.109
+version: 1.2.110
 last_updated: 2026-07-08
 truth_source: true
 evolution_hub: true
@@ -17,7 +17,7 @@ domain_count: 16
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
-> 更新：2026-07-07 · 规范见 `prd-scoring` · 本轮重评：CONN-027、API-001、VIZ-003、VIZ-004、VIZ-008（90.1~91.4↑；M-FINAL F-G 收官）
+> 更新：2026-07-08 · 规范见 `prd-scoring` · 本轮重评：DS-007（93.8→94.1↑；M-PRODUCT F-B displayGroup taxonomy companion）
 
 | 排名 | ID | 功能 | 总分 | 最薄弱维度 | 建议优先级 |
 |------|-----|------|------|------------|------------|
@@ -60,7 +60,7 @@ domain_count: 16
 | DS-004 | 90 | 100 | 94 | 86 | 90 | 100 | 86 | 90 | 92.4 | 性能 |
 | DS-005 | 82 | 96 | 96 | N/A | 90 | 100 | 86 | 96 | 92.1 | 用户价值 |
 | DS-006 | 82 | 96 | 96 | N/A | 92 | 100 | 88 | 88 | 91.6 | 用户价值 |
-| DS-007 | 92 | 100 | 94 | 94 | 94 | 100 | 86 | 88 | 93.8 | 性能 |
+| DS-007 | 94 | 100 | 94 | 96 | 92 | 100 | 86 | 88 | 94.1 | 性能 |
 | DS-008 | 84 | 94 | 96 | N/A | 90 | 100 | 86 | 92 | 91.6 | 用户价值 |
 | CONN-001 | 88 | 96 | 96 | N/A | 90 | 100 | 86 | 90 | 92.5 | 性能 |
 | CONN-002 | 88 | 96 | 96 | N/A | 90 | 100 | 86 | 90 | 92.5 | 性能 |
@@ -208,7 +208,7 @@ domain_count: 16
 | 当前执行 | **M-PRODUCT · 成品对标与体验收官**（companion 清扫） |
 | PRD 合同 | **129** 已实现 · **0** 未实现 |
 | companion | 约 **70** 条验收 `[ ]`（META/RPT/CAT/NFR/CONN 远期等） |
-| 当前节 | **M-PRODUCT F-A**（壳层收尾）→ **F-B**（DS-007 五类分组）建议首轮 |
+| 当前节 | **M-PRODUCT F-C**（IA 主路径收敛）建议首轮 |
 | G2 选题 | 每轮从 plan §M-PRODUCT 含 `[ ]` 子批取 3–5 项 |
 
 **说明**：PRD 合同 **129** 项全勾「已实现」；差距在 **companion 验收**与 **浏览器主路径/E2E**，见 `plan.md` §M-PRODUCT 与 `docs/automate/plans/2026-07-08-product-polish-checklist.md`。
@@ -238,6 +238,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.110 | 2026-07-08 | P5 DS-007 重评（M-PRODUCT F-B displayGroup taxonomy companion）；pytest test_datasources_display_group_fb 8/8 + vitest ConnectorsPage+datasource-form 19/19 + check:design 212 files；displayGroup/categoryLabel API + ConnectorsPage Tabs + DatasourceFormPage 三步向导；用户价值 92%→94%、交互体验 94%→96%、架构健康 94%→92%（DatasourceFormPage 530 行超 fe-ui 软约束）；总分 93.8→94.1（≥90 STUCK 空；plan F-B 三行勾选） |
 | 1.2.109 | 2026-07-08 | 人工 PRD 同步（M-PRODUCT · plan v2.6.0）：hub 执行范围/里程碑节对齐 M-PRODUCT；`prd/README` 129 合同 + companion 语义；分片 F01/F03/F05/F07/F10/F11/F13 补记 2026-07-08 成品清扫 companion 验收（BOOT-002 壳层、QUERY-009 Dashboard Dataset、DS-007 语义建模 nav、DASH-002 分享、API-003/005 Admin FE、GOV-005 发布链）；锚点 `admin-nav`→`nav-manifest` |
 | 1.2.108 | 2026-07-07 | P5 r250 重评 CONN-027、API-001、VIZ-003/004/008（M-FINAL F-G 收官 + hub companion）；r250 13/13 + fe vitest 37/37 + ruff 0 + check:design 201 files；CONN-027 RedshiftConnector PG 委托 + REDSHIFT_* 错误域 + probe_readonly_sql + 7 backend + 2 FE smoke；API-001 P95≤500ms + traceId + structured error；VIZ-003 fallback/isKnownChartType；VIZ-004 buildBarOption/buildPieOption；VIZ-008 empty data 防护 + AdvancedEchartsChart 空态覆盖；CONN-027: 85.4→90.1（未实现→已实现）；API-001: 90.0→90.6；VIZ-003/004/008: 90.1→91.4（五 ID ≥90 STUCK 空；plan F-G CONN-027 勾选；M-FINAL 全 PRD 已实现）|
 | 1.2.107 | 2026-07-07 | P5 r249 重评 NFR-008、CONN-023~026（M-FINAL F-F 收官 + F-G 首批四型）；pytest 2284/32 skipped + test_mfinal_ff_fg_batch1_r249 30/30 + r242/r248 回归 58/58；NFR-008 compose 禁入 + Markdown 部署报告；CONN-023 REST API + CONN-024 Excel/CSV + CONN-025 Db2 + CONN-026 Impala 方言注册/连通/native 或 SQL 链；用户价值 86%→88–90%、完整度 84–90%→94–98%、测试覆盖 84–98%→96–100%；总分 85.4–91.3→91.0–94.1（五 ID ≥90 STUCK 空；plan F-F NFR-008 + F-G 四 ID 勾选；F-F 收官） |

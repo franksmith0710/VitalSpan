@@ -740,9 +740,9 @@ F-A  收尾（CONN-023/024 表单 · API-005 导出验收）
 > **对标**：DataEase 五类——OLTP / OLAP / 数仓库湖 / 文件 / API；扩展类（时序/搜索/文档）归「更多」。  
 > **原则**：引擎 `category` 不改；新增 FE `displayGroup` + 中文 `categoryLabel`。
 
-- [ ] DS-007: `displayGroup` 展示 taxonomy（oltp · olap · warehouse · file · api · extension）
-- [ ] DS-007: `ConnectorsPage` 按类分组 Tab/手风琴 + 类型图标
-- [ ] DS-007: `DatasourceFormPage` 先选大类卡片再选具体库（对标 DE 新建源向导）
+- [x] DS-007: `displayGroup` 展示 taxonomy（oltp · olap · warehouse · file · api · extension）（完成于 2026-07-08）
+- [x] DS-007: `ConnectorsPage` 按类分组 Tab/手风琴 + 类型图标（完成于 2026-07-08）
+- [x] DS-007: `DatasourceFormPage` 先选大类卡片再选具体库（对标 DE 新建源向导）（完成于 2026-07-08）
 
 **验收信号**：新建数据源页与连接器目录均中文分组；与 DataEase 走查对照表通过。
 
