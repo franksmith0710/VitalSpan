@@ -13,7 +13,7 @@
 | branch | feat/mproduct-fb-ds007-taxonomy |
 | base_branch | dev-auto |
 | prd_ids | DS-007 |
-| pr_number | — |
+| pr_number | 246 |
 | last_verified_command | python3 -m pytest ../tests 2311 passed/29 skipped exit 0; pytest test_datasources_display_group_fb.py 8 passed exit 0; pnpm exec vitest run 250 passed exit 0; pnpm run check:design 212 files exit 0; ruff datasources taxonomy/registry/schemas exit 0 |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | vitest ConnectorsPage.smoke 3 passed + datasource-form.smoke 16 passed; check:design 212 files exit 0; screenshots=未运行（headless vitest mock，无 live dev server） |
