@@ -6,14 +6,14 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-08-round-target-saturated.md |
-| design | N/A — G2 SATURATED BLOCKED |
-| plan | docs/automate/plan.md §M-FINAL（只读，全 `[x]` 饱和） |
-| branch | cursor/bc-d6815491-4344-4ace-b223-4e19f3821441-e7ba |
+| phase | G2_DONE |
+| round_target | docs/superpowers/evolution/2026-07-08-round-target-mproduct-fb.md |
+| design | — |
+| plan | docs/automate/plan.md §M-PRODUCT · F-B（只读） |
+| branch | — |
 | base_branch | dev-auto |
-| prd_ids | — |
-| pr_number | 245 |
+| prd_ids | DS-007 |
+| pr_number | — |
 | last_verified_command | pytest 2303 passed; vitest fe full suite |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
