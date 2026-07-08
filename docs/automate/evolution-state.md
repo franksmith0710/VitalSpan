@@ -6,18 +6,18 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P1_DONE |
+| phase | P3_DONE |
 | round_target | docs/superpowers/evolution/2026-07-08-round-target-mproduct-fb.md |
 | design | docs/superpowers/specs/2026-07-08-mproduct-fb-ds007-taxonomy-design.md |
-| plan | docs/automate/plan.md §M-PRODUCT · F-B（只读） |
-| branch | — |
+| plan | docs/superpowers/plans/2026-07-08-mproduct-fb-ds007-taxonomy.md |
+| branch | feat/mproduct-fb-ds007-taxonomy |
 | base_branch | dev-auto |
 | prd_ids | DS-007 |
 | pr_number | — |
-| last_verified_command | pytest 2303 passed; vitest fe full suite |
+| last_verified_command | pytest test_datasources_display_group_fb.py 8 passed; vitest ConnectorsPage+datasource-form 19 passed; check:design exit 0 |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-07T21:57:00Z |
+| skill_rule_index_generated_at | 2026-07-08T16:35:00Z |
 | skill_rule_index_source_count | 26 |
 
 ## 当前需求契约
@@ -80,6 +80,7 @@
 
 ## 演化历史（最近）
 
+- P3 实现（cron 2026-07-08 ~16:44 UTC）：M-PRODUCT F-B DS-007 taxonomy 3 Tasks 完成；displayGroup/categoryLabel API + ConnectorsPage Tabs + DatasourceFormPage 三步向导；pytest 8/8 + vitest 19/19 + check:design exit 0；ui_design_skill=b-design-system-tailadmin-radix；design_drift_checks=pnpm run check:design PASS；screenshots=未运行（headless vitest mock，无 live dev server QA）；branch=feat/mproduct-fb-ds007-taxonomy；base_branch=dev-auto；phase P2_DONE→P3_DONE；待 P4 evolution-verifier
 - G0 PR 闸门（cron 2026-07-08 ~15:30 UTC）：Open PR #245 合并前同步 — dev-auto ac350e1/a3daf40 致 CI 失败；修复 migration head 0020、sqlite meta seed、/me profile UUID 解析、fe routes.smoke+admin dashboard:read；pytest 2303 passed vitest 全绿；phase→P5_DOCS_READY pr_number=245
 - G2 选题（cron 2026-07-08 ~01:46 UTC）：**饱和熔断 BLOCKED** — plan §M-FINAL 全 `[x]` 已收官（无未完成节）；hub v1.2.108 Top5 加权总分均 ≥90（最低 CONN-027 90.1）；待办池空 STUCK 表空；**禁止**派 bounded-explorer；round-target=docs/superpowers/evolution/2026-07-08-round-target-saturated.md；phase idle→G2_DONE；建议人工 `create-evolution-plan` / `create-evolution-goal`
 - G1 bootstrap（cron 2026-07-08 ~01:46 UTC）：G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.108 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读 M-FINAL 全 `[x]` 已收官（饱和态；无未完成节；frontmatter 96/129 摘要漂移已知，禁止修改）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-027(90.1)/API-002(90.2)/API-005(90.2) 均 ≥90（饱和熔断）；STUCK 表空；待办池空；phase idle；待 evolution-picker（预计饱和 BLOCKED）
