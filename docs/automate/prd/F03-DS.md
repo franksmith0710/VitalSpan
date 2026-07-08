@@ -82,11 +82,11 @@
 - **里程碑对齐**：
 ### [DS-007] 已注册类型清单 API
 
-- **状态**：已实现（L1 companion r25；M-FE-1 FE companion r195；M-FINAL F-A nav-manifest r240）
+- **状态**：已实现（L1 companion r25；M-FE-1 FE companion r195；M-FINAL F-A nav-manifest r240；M-PRODUCT F-B displayGroup taxonomy r251）
 - **goal_ref**：goal.md §2.2（G2）
 - **期次**：一期
-- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07；M-PRODUCT F-A nav · 2026-07-08
-- **描述**：已注册类型清单 API（SRS 追溯项）；M-FE-1 补齐 `/admin/connectors` 只读页；M-FINAL F-A 将连接器收拢为「数据」分组 subItem（`连接管理` + `连接器类型`）；M-PRODUCT F-A 将元数据/Dataset 收拢为「语义建模」subItems；F-B 计划 DataEase 五类 `displayGroup` 分组选型。
+- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07；M-PRODUCT F-A nav · 2026-07-08；M-PRODUCT F-B · 已完成 · 2026-07-08
+- **描述**：已注册类型清单 API（SRS 追溯项）；M-FE-1 补齐 `/admin/connectors` 只读页；M-FINAL F-A 将连接器收拢为「数据」分组 subItem（`连接管理` + `连接器类型`）；M-PRODUCT F-A 将元数据/Dataset 收拢为「语义建模」subItems；M-PRODUCT F-B 交付 DataEase 五类 `displayGroup` 分组选型（ConnectorsPage Tabs + DatasourceFormPage 三步向导）。
 - **验收标准**：
   - [x] GET `/api/v1/datasources/types`
   - [x] 未注册类型不在 UI 展示
@@ -96,9 +96,9 @@
   - [x] `routes.smoke.test.tsx` 覆盖 `/admin/connectors` 路由可达（T-FE-08 + T-RT-DL-01）
   - [x] `AdminLayout.smoke.test.tsx` 数据分组子项可见
   - [x] manifest「数据」含「语义建模」subItems：元数据 / Dataset（`resolve-nav.test.ts` T-NAV-MF-06）
-  - [ ] `displayGroup` 五类中文分组 + ConnectorsPage/DatasourceForm 大类卡片选型（M-PRODUCT F-B companion；对标 DataEase）
-- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/registry.py` · `fe/src/pages/admin/connectors/ConnectorsPage.tsx` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.ts` T-NAV-MF-06
-- **演化建议**：M-PRODUCT F-B 交付 `fe/src/lib/connector-taxonomy.ts`（displayGroup）；类型图标与文档链接；ConnectorsPage 路由懒加载（React.lazy）
+  - [x] `displayGroup` 五类中文分组 + ConnectorsPage/DatasourceForm 大类卡片选型（M-PRODUCT F-B companion；对标 DataEase）
+- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/registry.py` · `backend/app/datasources/taxonomy.py` · `fe/src/lib/connector-taxonomy.ts` · `fe/src/pages/admin/connectors/ConnectorsPage.tsx` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `tests/test_datasources_display_group_fb.py` FB-1~FB-3
+- **演化建议**：拆分 `DatasourceFormPage.tsx`（530 行超 fe-ui 软约束）为向导子组件；ConnectorsPage 路由懒加载（React.lazy）；类型文档链接；F-E `layout.md` §3 分类文案同步
 ### [DS-008] 数据源授权与 M7 集成
 
 - **状态**：已实现（L1 companion r25）

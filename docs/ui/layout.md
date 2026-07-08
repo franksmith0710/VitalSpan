@@ -100,6 +100,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /datasources/new             # 新建 · form-flow
 │   ├── /datasources/:id             # 详情/连通性/schema · detail-page
 │   ├── /connectors                  # 已注册类型只读（DS-007）
+│
+│   > **F-B taxonomy（DS-007）**：`/admin/connectors` 按 **关系型数据库 / OLAP / 数仓·湖仓 / 文件 / API / 更多** 六类 Tab 展示（对标 DataEase）。`/admin/datasources/new` 新建向导 Step 1 大类选择与上述 `categoryLabel` 一致；编辑已有数据源跳过向导直达连接表单。
 │   ├── /ingestion/sync-jobs         # 数据接入
 │   ├── /metadata                    # 元数据（术语/主题/维度）
 │   └── /datasets                    # Dataset 语义建模（META-004）
