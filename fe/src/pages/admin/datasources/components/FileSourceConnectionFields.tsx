@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ type Props = {
 
 export function FileSourceConnectionFields({ sourceType, value, onChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFileSize, setSelectedFileSize] = useState(0);
   const accept = sourceType === "excel" ? ".xlsx,.xls" : ".csv";
   const selectLabel = sourceType === "excel" ? "选择 Excel 文件" : "选择 CSV 文件";
 
@@ -32,9 +33,11 @@ export function FileSourceConnectionFields({ sourceType, value, onChange }: Prop
   const handleFileSelect = (file: File) => {
     const error = validateFileExtension(file.name, sourceType);
     if (error) {
+      setSelectedFileSize(0);
       onChange({ ...value, fileError: error });
       return;
     }
+    setSelectedFileSize(file.size);
     onChange({
       ...value,
       fileError: null,
@@ -117,6 +120,14 @@ export function FileSourceConnectionFields({ sourceType, value, onChange }: Prop
 
           {value.fileError ? (
             <p className="text-theme-sm text-error-600">{value.fileError}</p>
+          ) : null}
+
+          {selectedFileSize > FILE_SIZE_WARN_BYTES ? (
+            <Alert severity="warning">
+              <AlertDescription className="text-theme-sm">
+                文件超过 50MB，解析可能较慢，建议使用远程 URL 或拆分文件。
+              </AlertDescription>
+            </Alert>
           ) : null}
 
           <div className="grid gap-2">
