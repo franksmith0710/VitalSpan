@@ -30,6 +30,12 @@ import {
 } from "@/lib/connector-taxonomy";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
+import { RestApiConnectionFields } from "./components/RestApiConnectionFields";
+import {
+  buildRestApiPayload,
+  defaultRestApiCompanion,
+  type RestApiCompanionState,
+} from "./components/datasource-form-types";
 
 type WizardStep = "category" | "type" | "form";
 type ConnectorTypeListResponse = { items: ConnectorTypeItem[] };
@@ -82,7 +88,11 @@ function hostFieldLabel(type: string): string {
 }
 
 function hidePortField(type: string): boolean {
-  return type === "excel" || type === "csv";
+  return type === "excel" || type === "csv" || type === "rest_api";
+}
+
+function isCompanionType(type: string): boolean {
+  return type === "rest_api" || type === "excel" || type === "csv";
 }
 
 const CONNECTOR_FIELD_HINTS: Record<string, { port: string; databaseLabel: string; usernameLabel: string }> = {
@@ -114,6 +124,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [restApiCompanion, setRestApiCompanion] = useState(defaultRestApiCompanion);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
   const typesQuery = useQuery({
@@ -151,6 +162,16 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
         password: "",
         description: ds.description ?? "",
       });
+      if (ds.type === "rest_api") {
+        setRestApiCompanion({
+          baseUrl: ds.host,
+          authMode: ds.username === "none" ? "none" : ds.username === "oauth2" ? "oauth2" : "basic",
+          username: ds.username === "none" || ds.username === "oauth2" ? "" : ds.username,
+          password: "",
+          healthPath: ds.database || "/",
+          connectTimeoutSec: ds.connectionOptions?.connectTimeoutSec ?? 5,
+        });
+      }
     }
   }, [detailQuery.data]);
 
@@ -175,15 +196,25 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     clearError();
     setIsSaving(true);
     try {
-      const payload: Record<string, unknown> = {
-        name: form.name,
-        type: form.type,
-        host: form.host,
-        port: Number(form.port),
-        database: form.database,
-        username: form.username,
-        description: form.description || null,
-      };
+      let payload: Record<string, unknown>;
+      if (form.type === "rest_api") {
+        payload = buildRestApiPayload(
+          { name: form.name, code: form.code, type: form.type, description: form.description },
+          restApiCompanion,
+          mode,
+          form.password,
+        );
+      } else {
+        payload = {
+          name: form.name,
+          type: form.type,
+          host: form.host,
+          port: Number(form.port),
+          database: form.database,
+          username: form.username,
+          description: form.description || null,
+        };
+      }
       let saved: DataSourceOut;
       if (mode === "create") {
         payload.code = form.code;
@@ -380,17 +411,12 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                         使用 MySQL 兼容协议连接；集群部署请填写 OBProxy 主机与租户名。
                       </p>
                     ) : null}
-                    {form.type === "gaussdb" ? (
+                    {form.type === "rest_api" ? null : form.type === "gaussdb" ? (
                       <p
                         id="gaussdb-hint"
                         className="text-theme-sm text-gray-500 dark:text-gray-400"
                       >
                         GaussDB 兼容 PostgreSQL 协议，默认端口 5432
-                      </p>
-                    ) : null}
-                    {form.type === "rest_api" ? (
-                      <p id="rest-api-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
-                        base URL 填主机地址；HTTPS 默认 443
                       </p>
                     ) : null}
                     {form.type === "excel" ? (
@@ -418,14 +444,9 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                         使用 MySQL 兼容协议连接；集群部署请填写 OBProxy 主机与租户名。
                       </p>
                     ) : null}
-                    {form.type === "gaussdb" ? (
+                    {form.type === "rest_api" ? null : form.type === "gaussdb" ? (
                       <p id="gaussdb-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
                         GaussDB 兼容 PostgreSQL 协议，默认端口 5432
-                      </p>
-                    ) : null}
-                    {form.type === "rest_api" ? (
-                      <p id="rest-api-hint" className="text-theme-sm text-gray-500 dark:text-gray-400">
-                        base URL 填主机地址；HTTPS 默认 443
                       </p>
                     ) : null}
                     {form.type === "excel" ? (
@@ -445,57 +466,61 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                     ) : null}
                   </div>
                 )}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label htmlFor="host">{hostFieldLabel(form.type)}</Label>
-                    <Input id="host" value={form.host} onChange={(e) => setField("host", e.target.value)} required />
-                  </div>
-                  {hidePortField(form.type) ? null : (
-                    <div className="grid gap-2">
-                      <Label htmlFor="port">端口</Label>
-                      <Input id="port" type="number" value={form.port} onChange={(e) => setField("port", e.target.value)} required />
+                {form.type === "rest_api" ? (
+                  <RestApiConnectionFields value={restApiCompanion} onChange={setRestApiCompanion} />
+                ) : (
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor="host">{hostFieldLabel(form.type)}</Label>
+                        <Input id="host" value={form.host} onChange={(e) => setField("host", e.target.value)} required />
+                      </div>
+                      {hidePortField(form.type) ? null : (
+                        <div className="grid gap-2">
+                          <Label htmlFor="port">端口</Label>
+                          <Input id="port" type="number" value={form.port} onChange={(e) => setField("port", e.target.value)} required />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="database">{CONNECTOR_FIELD_HINTS[form.type]?.databaseLabel ?? "数据库"}</Label>
-                  <Input
-                    id="database"
-                    value={form.database}
-                    onChange={(e) => setField("database", e.target.value)}
-                    required
-                    aria-describedby={
-                      form.type === "oceanbase"
-                        ? "oceanbase-hint"
-                        : form.type === "gaussdb"
-                          ? "gaussdb-hint"
-                          : form.type === "rest_api"
-                            ? "rest-api-hint"
-                            : form.type === "excel"
-                              ? "excel-hint"
-                              : form.type === "csv"
-                                ? "csv-hint"
-                                : form.type === "impala"
-                                  ? "impala-hint"
-                                  : undefined
-                    }
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="username">{CONNECTOR_FIELD_HINTS[form.type]?.usernameLabel ?? "用户名"}</Label>
-                  <Input id="username" value={form.username} onChange={(e) => setField("username", e.target.value)} required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">{mode === "edit" ? "密码（留空不修改）" : "密码"}</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => setField("password", e.target.value)}
-                    required={mode === "create"}
-                    autoComplete={mode === "create" ? "new-password" : "current-password"}
-                  />
-                </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="database">{CONNECTOR_FIELD_HINTS[form.type]?.databaseLabel ?? "数据库"}</Label>
+                      <Input
+                        id="database"
+                        value={form.database}
+                        onChange={(e) => setField("database", e.target.value)}
+                        required
+                        aria-describedby={
+                          form.type === "oceanbase"
+                            ? "oceanbase-hint"
+                            : form.type === "gaussdb"
+                              ? "gaussdb-hint"
+                              : form.type === "excel"
+                                ? "excel-hint"
+                                : form.type === "csv"
+                                  ? "csv-hint"
+                                  : form.type === "impala"
+                                    ? "impala-hint"
+                                    : undefined
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="username">{CONNECTOR_FIELD_HINTS[form.type]?.usernameLabel ?? "用户名"}</Label>
+                      <Input id="username" value={form.username} onChange={(e) => setField("username", e.target.value)} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="password">{mode === "edit" ? "密码（留空不修改）" : "密码"}</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={form.password}
+                        onChange={(e) => setField("password", e.target.value)}
+                        required={mode === "create"}
+                        autoComplete={mode === "create" ? "new-password" : "current-password"}
+                      />
+                    </div>
+                  </>
+                )}
 
                 <Collapsible.Root open={advancedOpen} onOpenChange={setAdvancedOpen}>
                   <Collapsible.Trigger

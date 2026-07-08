@@ -176,11 +176,12 @@ describe("DatasourceFormPage xinchuang smoke", () => {
     expect(screen.getByRole("button", { name: /OLAP/ })).toBeInTheDocument();
   });
 
-  it("T-CONN-R249-FE-02: selecting rest_api sets port 443", async () => {
+  it("T-CONN-R249-FE-02: selecting rest_api shows companion fields not port", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
     await selectType("API", "REST API");
-    expect(screen.getByLabelText("端口")).toHaveValue(443);
+    expect(screen.getByLabelText("Base URL")).toBeInTheDocument();
+    expect(screen.queryByLabelText("端口")).not.toBeInTheDocument();
   });
 
   it("T-CONN-R249-FE-03: selecting db2 sets port 50000", async () => {
@@ -267,5 +268,78 @@ describe("DatasourceFormPage save error recovery", () => {
 
     await user.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalledTimes(3));
+  });
+});
+
+describe("CONN-023 REST API companion", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/datasources/types") return MOCK_TYPES;
+      if (path === "/api/v1/datasources" && init?.method === "POST") {
+        return JSON.parse(String(init.body));
+      }
+      throw new Error(`unexpected path ${path}`);
+    });
+  });
+  afterEach(() => cleanup());
+
+  it("T-CONN-023-FE-01: REST API shows Base URL auth health path not port", async () => {
+    renderForm();
+    await selectType("API", "REST API");
+    expect(screen.getByLabelText("Base URL")).toBeInTheDocument();
+    expect(screen.getByLabelText("认证方式")).toBeInTheDocument();
+    expect(screen.getByLabelText("健康检查路径")).toBeInTheDocument();
+    expect(screen.queryByLabelText("端口")).not.toBeInTheDocument();
+  });
+
+  it("T-CONN-023-FE-02: Bearer auth relabels password field", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await selectType("API", "REST API");
+    await user.click(screen.getByRole("combobox", { name: /认证方式/ }));
+    await user.click(screen.getByRole("option", { name: "Bearer" }));
+    expect(screen.getByLabelText("Bearer Token")).toBeInTheDocument();
+  });
+
+  it("T-CONN-023-FE-03: OAuth2 shows info alert and disabled oauth fields", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await selectType("API", "REST API");
+    await user.click(screen.getByRole("combobox", { name: /认证方式/ }));
+    await user.click(screen.getByRole("option", { name: /OAuth2/ }));
+    expect(screen.getByRole("status")).toHaveTextContent(/后续版本启用/);
+    expect(screen.getByLabelText("OAuth2 客户端 ID")).toBeDisabled();
+    expect(screen.getByLabelText("OAuth2 Token URL")).toBeDisabled();
+  });
+
+  it("T-CONN-023-FE-04: save rest_api maps host database port", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await selectType("API", "REST API");
+    await user.type(screen.getByLabelText("名称"), "api-src");
+    await user.type(screen.getByLabelText("标识"), "api-src-code");
+    await user.type(screen.getByLabelText("Base URL"), "https://api.example.com");
+    await user.type(screen.getByLabelText("健康检查路径"), "/health");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => expect(mockApiFetch).toHaveBeenCalledWith(
+      "/api/v1/datasources",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining('"host":"https://api.example.com"'),
+      }),
+    ));
+    const body = JSON.parse(
+      String(mockApiFetch.mock.calls.find((c) => c[0] === "/api/v1/datasources")?.[1]?.body),
+    );
+    expect(body.port).toBe(443);
+    expect(body.database).toBe("/health");
+  });
+
+  it("T-CONN-023-FE-05: wizard API → REST API → form path", async () => {
+    renderForm();
+    await selectType("API", "REST API");
+    expect(screen.getByText(/选择类型/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Base URL")).toBeInTheDocument();
   });
 });
