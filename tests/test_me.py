@@ -105,10 +105,27 @@ def test_me_malformed_bearer_header_returns_401(client, malformed_auth_headers):
 
 def test_me_concurrent_requests_stable(client, admin_auth_headers, monkeypatch):
     """T-ME-12: 并发 5× GET /api/v1/me + auth_headers 全部 200 且用户上下文一致。"""
+    from uuid import UUID
+
+    from app.auth.profile.schemas import MeProfileOut
+
+    admin_id = UUID("00000000-0000-0000-0000-000000000001")
+
+    def fake_build_me_profile(_db, user_id, roles):
+        return MeProfileOut(
+            id=str(user_id),
+            username="admin",
+            display_name="Admin",
+            email="admin@vitalspan.local",
+            roles=roles,
+        )
+
     monkeypatch.setattr(
         "app.auth.middleware.user_service.resolve_role_codes_for_user",
         lambda _session, _user_id: ["admin"],
     )
+    monkeypatch.setattr("app.api.v1.me.profile_service.resolve_actor_user_id", lambda _db, _uid, _name: admin_id)
+    monkeypatch.setattr("app.api.v1.me.profile_service.build_me_profile", fake_build_me_profile)
 
     def fetch_me():
         return client.get("/api/v1/me", headers=admin_auth_headers)

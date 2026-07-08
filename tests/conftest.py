@@ -9,13 +9,61 @@ os.environ.setdefault(
     "CREDENTIAL_FERNET_KEY",
     "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
 )
+os.environ.setdefault("VITALSPAN_ENV", "development")
 
 import socket
+import uuid
 
+import bcrypt
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from app.main import app
+
+_META_SQLITE_URL = "sqlite+pysqlite:///file:vitalspan_meta_test?mode=memory&cache=shared&uri=true"
+_ADMIN_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+
+
+def _clear_meta_engine_caches() -> None:
+    from app.auth.models import get_meta_engine as auth_engine
+    from app.core.config import get_settings
+    from app.datasources.models import get_meta_engine as ds_engine
+    from app.ingestion.models import get_meta_engine as ing_engine
+    from app.query.models import get_meta_engine as query_engine
+
+    get_settings.cache_clear()
+    for engine_fn in (auth_engine, ds_engine, ing_engine, query_engine):
+        engine_fn.cache_clear()
+
+
+def _seed_ci_admin_user() -> None:
+    from app.auth.models import AuthRole, AuthUser, AuthUserRole, Base, get_meta_engine
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    password = os.environ.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme")
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    with Session(engine) as session:
+        admin_role = session.query(AuthRole).filter(AuthRole.code == "admin").first()
+        if admin_role is None:
+            admin_role = AuthRole(code="admin", name="管理员", is_active=True)
+            session.add(admin_role)
+            session.flush()
+
+        if session.get(AuthUser, _ADMIN_USER_ID) is None:
+            session.add(
+                AuthUser(
+                    id=_ADMIN_USER_ID,
+                    username="admin",
+                    display_name="Admin",
+                    email="admin@vitalspan.local",
+                    password_hash=hashed,
+                )
+            )
+            session.add(AuthUserRole(user_id=_ADMIN_USER_ID, role_id=admin_role.id))
+
+        session.commit()
 
 # Fixture contract (BOOT-006):
 # - client: TestClient(app) for all backend HTTP tests
@@ -104,6 +152,49 @@ def _port_open(host: str, port: int, timeout: float = 1.0) -> bool:
             return True
     except OSError:
         return False
+
+
+@pytest.fixture(scope="session", autouse=True)
+def ci_meta_sqlite_when_no_postgres():
+    """CI and local runs without compose postgres: in-memory sqlite + demo admin seed."""
+    if _port_open("127.0.0.1", 5432):
+        yield
+        return
+
+    previous = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = _META_SQLITE_URL
+    _clear_meta_engine_caches()
+    _seed_ci_admin_user()
+    yield
+    if previous is None:
+        os.environ.pop("DATABASE_URL", None)
+    else:
+        os.environ["DATABASE_URL"] = previous
+    _clear_meta_engine_caches()
+
+
+def _ensure_ci_admin_user_present() -> None:
+    from app.auth.models import AuthUser, Base, get_meta_engine
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        if session.get(AuthUser, _ADMIN_USER_ID) is not None:
+            return
+    _seed_ci_admin_user()
+
+
+@pytest.fixture(autouse=True)
+def _reapply_sqlite_meta_when_no_postgres():
+    """Other test modules may restore postgres DATABASE_URL on teardown."""
+    if _port_open("127.0.0.1", 5432):
+        yield
+        return
+    if not os.environ.get("DATABASE_URL", "").startswith("sqlite"):
+        os.environ["DATABASE_URL"] = _META_SQLITE_URL
+        _clear_meta_engine_caches()
+    _ensure_ci_admin_user_present()
+    yield
 
 
 @pytest.fixture(scope="session")

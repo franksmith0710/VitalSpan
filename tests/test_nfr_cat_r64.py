@@ -117,11 +117,11 @@ def _aggregate_payload(key: str = "AGG_SALES") -> dict:
     }
 
 
-def test_r64_fixture_bootstraps(client):
+def test_r64_fixture_bootstraps(client, admin_auth_headers):
     """Bootstrap: health + auth smoke."""
     resp = client.get("/health")
     assert resp.status_code == 200
-    me = client.get("/api/v1/me", headers=AUTH)
+    me = client.get("/api/v1/me", headers=admin_auth_headers)
     assert me.status_code == 200
 
 

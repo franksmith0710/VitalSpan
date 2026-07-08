@@ -36,7 +36,8 @@ def read_me(
     db: Annotated[Session, Depends(_db)],
 ) -> MeProfileOut | JSONResponse:
     try:
-        return profile_service.build_me_profile(db, uuid.UUID(current_user.id), current_user.roles)
+        user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
+        return profile_service.build_me_profile(db, user_id, current_user.roles)
     except profile_service.ProfileError as exc:
         return _profile_error_response(exc)
 
@@ -48,9 +49,10 @@ def update_me(
     db: Annotated[Session, Depends(_db)],
 ) -> MeProfileOut | JSONResponse:
     try:
+        user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
         return profile_service.update_me_profile(
             db,
-            user_id=uuid.UUID(current_user.id),
+            user_id=user_id,
             roles=current_user.roles,
             actor_username=current_user.username,
             payload=payload,

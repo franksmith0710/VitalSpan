@@ -6,15 +6,15 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | DONE |
-| round_target | product-polish-checklist |
-| design | P0 shell + P1 core path per 2026-07-08-product-polish-checklist.md |
-| plan | docs/automate/plans/2026-07-08-product-polish-checklist.md |
-| branch |  |
+| phase | P5_DOCS_READY |
+| round_target | docs/superpowers/evolution/2026-07-08-round-target-saturated.md |
+| design | N/A — G2 SATURATED BLOCKED |
+| plan | docs/automate/plan.md §M-FINAL（只读，全 `[x]` 饱和） |
+| branch | cursor/bc-d6815491-4344-4ace-b223-4e19f3821441-e7ba |
 | base_branch | dev-auto |
-| prd_ids | AUTH-003, BOOT-003, VIEW-003 |
-| pr_number |  |
-| last_verified_command | vitest AdminLayout/resolve-nav/AdminHome/dashboard/charts (92 passed); pytest auth profile pending path |
+| prd_ids | — |
+| pr_number | 245 |
+| last_verified_command | pytest 2303 passed; vitest fe full suite |
 | last_verified_exit_code | 0 |
 | deployed_automate_rev | bf60b94ec4f4 |
 | skill_rule_index_generated_at | 2026-07-07T21:57:00Z |
@@ -80,6 +80,7 @@
 
 ## 演化历史（最近）
 
+- G0 PR 闸门（cron 2026-07-08 ~15:30 UTC）：Open PR #245 合并前同步 — dev-auto ac350e1/a3daf40 致 CI 失败；修复 migration head 0020、sqlite meta seed、/me profile UUID 解析、fe routes.smoke+admin dashboard:read；pytest 2303 passed vitest 全绿；phase→P5_DOCS_READY pr_number=245
 - G2 选题（cron 2026-07-08 ~01:46 UTC）：**饱和熔断 BLOCKED** — plan §M-FINAL 全 `[x]` 已收官（无未完成节）；hub v1.2.108 Top5 加权总分均 ≥90（最低 CONN-027 90.1）；待办池空 STUCK 表空；**禁止**派 bounded-explorer；round-target=docs/superpowers/evolution/2026-07-08-round-target-saturated.md；phase idle→G2_DONE；建议人工 `create-evolution-plan` / `create-evolution-goal`
 - G1 bootstrap（cron 2026-07-08 ~01:46 UTC）：G0 PASS 无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.108 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读 M-FINAL 全 `[x]` 已收官（饱和态；无未完成节；frontmatter 96/129 摘要漂移已知，禁止修改）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-027(90.1)/API-002(90.2)/API-005(90.2) 均 ≥90（饱和熔断）；STUCK 表空；待办池空；phase idle；待 evolution-picker（预计饱和 BLOCKED）
 - G1 bootstrap（cron 2026-07-08 ~00:32 UTC）：G0 PASS PR #243 已 merge dev-auto（a8742f7）无 Open PR 工作区干净 base_branch=dev-auto；goal 只读未改；prd hub+分片就绪（16 域 · 129 项；hub v1.2.108 含薄弱项汇总+8 维总表+功能索引完整）；plan 只读 M-FINAL 全 `[x]` 已收官（饱和态；无未完成节；frontmatter 96/129 摘要漂移已知）；deployed_automate_rev bf60b94ec4f4；skill_rule_index 26 源未变（20 skills + 6 rules，无需刷新）；薄弱项 Top3 CONN-027(90.1)/API-002(90.2)/API-005(90.2) 均 ≥90（饱和熔断）；STUCK 表空；待办池空；phase G2_DONE→idle；待 evolution-picker（预计饱和 BLOCKED）

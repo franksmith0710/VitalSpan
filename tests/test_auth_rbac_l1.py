@@ -9,6 +9,17 @@ from app.auth.models import Base, get_meta_engine
 from app.core.config import get_settings
 
 _AUTH_RBAC_SQLITE_URL = "sqlite+pysqlite:///file:auth_rbac_test?mode=memory&cache=shared&uri=true"
+_META_FALLBACK_SQLITE_URL = "sqlite+pysqlite:///file:vitalspan_meta_test?mode=memory&cache=shared&uri=true"
+
+
+def _postgres_meta_available() -> bool:
+    import socket
+
+    try:
+        with socket.create_connection(("127.0.0.1", 5432), timeout=1.0):
+            return True
+    except OSError:
+        return False
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -20,8 +31,10 @@ def auth_rbac_sqlite_env():
     yield
     if previous is None:
         os.environ.pop("DATABASE_URL", None)
-    else:
+    elif _postgres_meta_available():
         os.environ["DATABASE_URL"] = previous
+    else:
+        os.environ["DATABASE_URL"] = _META_FALLBACK_SQLITE_URL
     get_settings.cache_clear()
     get_meta_engine.cache_clear()
 

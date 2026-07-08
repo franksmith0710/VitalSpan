@@ -23,13 +23,19 @@ vi.mock("@/lib/auth-token", () => ({
   clearAuthToken: vi.fn(),
 }));
 
-import { AppRoutes } from "./routes";
-
 const mockApiFetch = vi.fn();
+const mockResolveDefaultDashboardPath = vi.fn(async () => "/admin/dashboards");
 
 vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
+
+vi.mock("@/lib/defaultViewResolve", () => ({
+  resolveDefaultDashboardPath: (...args: unknown[]) => mockResolveDefaultDashboardPath(...args),
+  resolveDefaultLandingPath: (...args: unknown[]) => mockResolveDefaultDashboardPath(...args),
+}));
+
+import { AppRoutes } from "./routes";
 
 function setDesktopViewport() {
   Object.defineProperty(window, "innerWidth", {
@@ -65,6 +71,8 @@ function renderRoutes(initialEntries: string[]) {
 describe("AppRoutes smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    mockResolveDefaultDashboardPath.mockReset();
+    mockResolveDefaultDashboardPath.mockResolvedValue("/admin/dashboards");
     mockUseAuth.mockReturnValue({
       user: { id: "1", username: "admin", roles: ["admin"] },
       isLoading: false,
@@ -112,11 +120,11 @@ describe("AppRoutes smoke", () => {
     expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("shows AdminHomePage welcome heading at /admin (T-FE-04)", () => {
+  it("redirects /admin home to default dashboards list (T-FE-04)", async () => {
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
     renderRoutes(["/admin"]);
-    expect(
-      screen.getAllByRole("heading", { name: "欢迎使用 VitalSpan" }).length,
-    ).toBeGreaterThanOrEqual(1);
+    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+    expect(mockResolveDefaultDashboardPath).toHaveBeenCalledWith(["admin"]);
   });
 
   it("redirects unknown paths to admin shell (T-FE-05)", () => {
@@ -145,12 +153,13 @@ describe("AppRoutes smoke", () => {
     expect(link).toHaveAttribute("href", "/admin/ingestion/sync-jobs");
   });
 
-  it("renders AdminHome welcome as h1 (T-FE-09)", () => {
+  it("redirects AdminHome to dashboards h1 after resolve (T-FE-09)", async () => {
     setDesktopViewport();
+    mockApiFetch.mockResolvedValueOnce({ items: [] });
     renderRoutes(["/admin"]);
     const main = screen.getAllByRole("main")[0];
     expect(
-      within(main).getByRole("heading", { level: 1, name: "欢迎使用 VitalSpan" }),
+      await within(main).findByRole("heading", { level: 1, name: "Dashboard" }),
     ).toBeInTheDocument();
   });
 
