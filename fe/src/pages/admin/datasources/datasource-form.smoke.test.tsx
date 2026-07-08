@@ -28,19 +28,19 @@ import { DatasourceFormPage } from "./DatasourceFormPage";
 
 const MOCK_TYPES = {
   items: [
-    { type: "mysql", displayName: "MySQL" },
-    { type: "dm", displayName: "达梦 DM" },
-    { type: "kingbase", displayName: "人大金仓 KingbaseES" },
-    { type: "gbase", displayName: "南大通用 GBase" },
-    { type: "oceanbase", displayName: "OceanBase" },
-    { type: "tidb", displayName: "TiDB" },
-    { type: "gaussdb", displayName: "GaussDB" },
-    { type: "rest_api", displayName: "REST API" },
-    { type: "excel", displayName: "Excel" },
-    { type: "csv", displayName: "CSV" },
-    { type: "db2", displayName: "IBM Db2" },
-    { type: "impala", displayName: "Apache Impala" },
-    { type: "redshift", displayName: "AWS Redshift" },
+    { type: "mysql", displayName: "MySQL", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
+    { type: "dm", displayName: "达梦 DM", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
+    { type: "kingbase", displayName: "人大金仓 KingbaseES", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
+    { type: "gbase", displayName: "南大通用 GBase", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
+    { type: "oceanbase", displayName: "OceanBase", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
+    { type: "tidb", displayName: "TiDB", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
+    { type: "gaussdb", displayName: "GaussDB", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
+    { type: "rest_api", displayName: "REST API", category: "api", capabilities: ["api"], displayGroup: "api", categoryLabel: "API" },
+    { type: "excel", displayName: "Excel", category: "file", capabilities: ["file"], displayGroup: "file", categoryLabel: "文件" },
+    { type: "csv", displayName: "CSV", category: "file", capabilities: ["file"], displayGroup: "file", categoryLabel: "文件" },
+    { type: "db2", displayName: "IBM Db2", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
+    { type: "impala", displayName: "Apache Impala", category: "lake", capabilities: ["sql"], displayGroup: "warehouse", categoryLabel: "数仓/湖仓" },
+    { type: "redshift", displayName: "AWS Redshift", category: "olap", capabilities: ["sql"], displayGroup: "olap", categoryLabel: "OLAP" },
   ],
 };
 
@@ -57,11 +57,58 @@ function renderForm() {
   );
 }
 
-async function selectType(label: string) {
+async function selectType(categoryLabel: string, typeLabel: string) {
   const user = userEvent.setup();
-  await user.click(screen.getByRole("combobox"));
-  await user.click(await screen.findByRole("option", { name: label }));
+  await waitFor(() => screen.getByRole("button", { name: new RegExp(categoryLabel) }));
+  await user.click(screen.getByRole("button", { name: new RegExp(categoryLabel) }));
+  await user.click(screen.getByRole("button", { name: new RegExp(typeLabel) }));
 }
+
+describe("DatasourceFormPage wizard smoke", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasources/types") return MOCK_TYPES;
+      throw new Error(`unexpected path ${path}`);
+    });
+  });
+  afterEach(() => cleanup());
+
+  it("FB-3-01: create mode shows category cards first", async () => {
+    renderForm();
+    await waitFor(() => expect(screen.getByRole("button", { name: /关系型数据库/ })).toBeInTheDocument());
+    expect(screen.queryByLabelText("名称")).not.toBeInTheDocument();
+  });
+
+  it("FB-3-02: OLTP → MySQL → form fields visible", async () => {
+    renderForm();
+    await selectType("关系型数据库", "MySQL");
+    expect(await screen.findByLabelText("名称")).toBeInTheDocument();
+    expect(screen.getByLabelText("主机")).toBeInTheDocument();
+  });
+
+  it("FB-3-03: edit mode skips wizard", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasources/types") return MOCK_TYPES;
+      if (path === "/api/v1/datasources/ds-1") {
+        return { id: "ds-1", name: "prod", code: "prod", type: "mysql", host: "h", port: 3306, database: "d", username: "u" };
+      }
+      throw new Error(path);
+    });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter initialEntries={["/admin/datasources/ds-1/edit"]}>
+          <Routes>
+            <Route path="/admin/datasources/:id/edit" element={<DatasourceFormPage mode="edit" />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByLabelText("名称")).toHaveValue("prod"));
+    expect(screen.queryByRole("button", { name: /关系型数据库/ })).not.toBeInTheDocument();
+  });
+});
 
 describe("DatasourceFormPage xinchuang smoke", () => {
   beforeEach(() => {
@@ -76,28 +123,28 @@ describe("DatasourceFormPage xinchuang smoke", () => {
   it("T-CONN-R242-FE-01: renders five xinchuang types plus mysql", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/datasources/types"));
-    await selectType("达梦 DM");
-    expect(screen.getByRole("combobox")).toHaveTextContent("达梦 DM");
+    await selectType("关系型数据库", "达梦 DM");
+    expect(screen.getByText("达梦 DM")).toBeInTheDocument();
   });
 
   it("T-CONN-R242-FE-02: selecting tidb sets port 4000", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
-    await selectType("TiDB");
+    await selectType("关系型数据库", "TiDB");
     expect(screen.getByLabelText("端口")).toHaveValue(4000);
   });
 
   it("T-CONN-R242-FE-03: selecting dm shows OWNER database label", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
-    await selectType("达梦 DM");
+    await selectType("关系型数据库", "达梦 DM");
     expect(screen.getByLabelText(/OWNER/)).toBeInTheDocument();
   });
 
   it("T-CONN-R242-FE-04: selecting oceanbase shows compatibility hint", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
-    await selectType("OceanBase");
+    await selectType("关系型数据库", "OceanBase");
     expect(
       screen.getByText(/使用 MySQL 兼容协议连接/),
     ).toBeInTheDocument();
@@ -106,14 +153,14 @@ describe("DatasourceFormPage xinchuang smoke", () => {
   it("T-CONN-R243-FE-01: selecting gaussdb sets port 5432", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
-    await selectType("GaussDB");
+    await selectType("关系型数据库", "GaussDB");
     expect(screen.getByLabelText("端口")).toHaveValue(5432);
   });
 
   it("T-CONN-R243-FE-02: selecting gaussdb shows Schema database label and hint", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
-    await selectType("GaussDB");
+    await selectType("关系型数据库", "GaussDB");
     expect(screen.getByLabelText(/Schema/)).toBeInTheDocument();
     expect(
       screen.getByText(/GaussDB 兼容 PostgreSQL 协议/),
@@ -123,33 +170,30 @@ describe("DatasourceFormPage xinchuang smoke", () => {
   it("T-CONN-R249-FE-01: renders rest_api excel csv db2 impala in types", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
-    const user = userEvent.setup();
-    await user.click(screen.getByRole("combobox"));
-    expect(await screen.findByRole("option", { name: "REST API" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Excel" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "CSV" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "IBM Db2" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Apache Impala" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: /API/ })).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /文件/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /数仓/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /OLAP/ })).toBeInTheDocument();
   });
 
   it("T-CONN-R249-FE-02: selecting rest_api sets port 443", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
-    await selectType("REST API");
+    await selectType("API", "REST API");
     expect(screen.getByLabelText("端口")).toHaveValue(443);
   });
 
   it("T-CONN-R249-FE-03: selecting db2 sets port 50000", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
-    await selectType("IBM Db2");
+    await selectType("关系型数据库", "IBM Db2");
     expect(screen.getByLabelText("端口")).toHaveValue(50000);
   });
 
   it("T-CONN-R249-FE-04: selecting impala shows protocol hint", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalled());
-    await selectType("Apache Impala");
+    await selectType("数仓", "Apache Impala");
     expect(screen.getByText(/兼容 Hive 协议/)).toBeInTheDocument();
   });
 });
@@ -163,16 +207,16 @@ describe("DatasourceFormPage redshift smoke", () => {
   it("T-CONN-R250-FE-01: redshift 类型在下拉中可选", async () => {
     mockApiFetch.mockResolvedValueOnce(MOCK_TYPES);
     renderForm();
-    await waitFor(() => screen.getByRole("combobox"));
-    await selectType("AWS Redshift");
-    expect(screen.getByRole("combobox")).toHaveTextContent("AWS Redshift");
+    await waitFor(() => screen.getByRole("button", { name: /OLAP/ }));
+    await selectType("OLAP", "AWS Redshift");
+    expect(screen.getByText("AWS Redshift")).toBeInTheDocument();
   });
 
   it("T-CONN-R250-FE-02: 选中 redshift 后 port 自动填充 5439", async () => {
     mockApiFetch.mockResolvedValueOnce(MOCK_TYPES);
     renderForm();
-    await waitFor(() => screen.getByRole("combobox"));
-    await selectType("AWS Redshift");
+    await waitFor(() => screen.getByRole("button", { name: /OLAP/ }));
+    await selectType("OLAP", "AWS Redshift");
     const portInput = screen.getByLabelText(/端口/i) as HTMLInputElement;
     expect(portInput.value).toBe("5439");
   });
@@ -194,6 +238,7 @@ describe("DatasourceFormPage save error recovery", () => {
   it("T-CONN-FE-SAVE-01: 标识冲突报错后仍可修改标识并再次提交", async () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/datasources/types"));
+    await selectType("关系型数据库", "MySQL");
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("名称"), "重复测试源");
