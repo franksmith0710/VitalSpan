@@ -8,7 +8,7 @@
 ### 选题决策
 
 - **批量主题**：N/A — **评分饱和熔断**，本轮无入选 prd ID
-- **来源**：`docs/automate/plan.md` §**M-FINAL** 全批 **38/38 已勾选 `[x]`**（F-A~F-G 收官；无含 `[ ]` 的活跃节，熔断前置检查已执行）；`prd.md` hub 薄弱项 **Top5 加权总分均 ≥90** — CONN-027(90.1)、API-002(90.2)、API-005(90.2)、VIZ-006(90.2)、API-003(90.4)；Top10 最低 AUTH-006(90.8)；`evolution-state.md` **待办池空**（无未消化 `[ ]` 条目）；**选题卡住计数表空**；`git log -5` e74875f（G0 #242 merge idle）+ cd595d5（G1 bootstrap #242）+ 96ee0d5（G1+G2 SATURATED #241）+ d31b66e（M-FINAL F-G #240）+ e2086be（G2 F-G round-target #239）；上游 G0 PASS PR #240/#241/#242 · G1 DONE hub v1.2.108 · base_branch=dev-auto
+- **来源**：`docs/automate/plan.md` §**M-FINAL** 全批 **38/38 已勾选 `[x]`**（F-A~F-G 收官；无含 `[ ]` 的活跃节，熔断前置检查已执行）；`prd.md` hub 薄弱项 **Top5 加权总分均 ≥90** — CONN-027(90.1)、API-002(90.2)、API-005(90.2)、VIZ-006(90.2)、API-003(90.4)；Top10 最低 AUTH-006(90.8)；`evolution-state.md` **待办池空**（无未消化 `[ ]` 条目）；**选题卡住计数表空**；`git log -5` 5ee5105（G1 bootstrap idle）+ e19ab62（G2 SATURATED BLOCKED）+ e74875f（G0 #242 merge idle）+ cd595d5（G1 bootstrap #242）+ 96ee0d5（G1+G2 SATURATED #241）；上游 G0 PASS · G1 DONE hub v1.2.108 · base_branch=dev-auto
 - **熔断判定**：按 `evolution-topic-picker` 饱和熔断规则 — plan 无未完成项 → 执行熔断检查；hub Top5 全部 ≥90 且待办池无未消化项 → **SATURATED**；**禁止**派 `evolution-bounded-explorer` 凑项；**禁止**进入 P1
 - **不足 5 项原因**：饱和熔断 — 无合法薄弱项可选（最低分 CONN-027 90.1，无 <90 可推分目标；继续 companion 推分将违反饱和门控）
 - **人工干预建议**：
