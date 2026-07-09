@@ -253,3 +253,18 @@ body,
   background: rgb(156 163 175 / 12%) !important;
   opacity: 1 !important;
 }
+
+.dashboard-grid-snap-guides {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  pointer-events: none;
+}
+
+.dashboard-grid-snap-guides > div {
+  border-left: 1px dashed rgb(70 95 255 / 18%);
+}

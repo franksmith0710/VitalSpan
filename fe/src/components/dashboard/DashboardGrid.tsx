@@ -19,11 +19,10 @@ import {
   gridLayoutToWidgets,
   widgetsToGridLayout,
 } from "./gridLayoutAdapter";
+import { GRID_COLS, snapLayoutToGrid } from "./gridSnapUtils";
 
 const EMPTY_CANVAS_MIN_HEIGHT = 480;
 const GRID_MARGIN: [number, number] = [12, 12];
-const GRID_COLS = 12;
-
 export type DashboardGridMode = "edit" | "view";
 
 type DashboardGridProps = {
@@ -107,6 +106,7 @@ export function DashboardGrid({
   const sortedRef = useRef(sorted);
   const layoutKeyRef = useRef(derivedLayoutKey);
   const [dragActive, setDragActive] = useState(false);
+  const [snapGuidesVisible, setSnapGuidesVisible] = useState(false);
   const { ref: widthRef, width } = useStableGridWidth();
   sortedRef.current = sorted;
 
@@ -117,11 +117,12 @@ export function DashboardGrid({
   }, [derivedLayout, derivedLayoutKey]);
 
   const persistLayout = useCallback(
-    (next: Layout) => {
+    (next: Layout, snap = false) => {
       if (!onLayoutChange || next.length !== sortedRef.current.length) return;
-      layoutKeyRef.current = layoutKey(next);
-      setLayout(next);
-      onLayoutChange(gridLayoutToWidgets(next, sortedRef.current));
+      const resolved = snap ? snapLayoutToGrid(next) : next;
+      layoutKeyRef.current = layoutKey(resolved);
+      setLayout(resolved);
+      onLayoutChange(gridLayoutToWidgets(resolved, sortedRef.current));
     },
     [onLayoutChange],
   );
@@ -176,6 +177,13 @@ export function DashboardGrid({
         onDrop={handleDrop}
       >
         {isEmpty ? <DashboardCanvasEmpty dragActive={dragActive} /> : null}
+        {snapGuidesVisible ? (
+          <div className="dashboard-grid-snap-guides" aria-hidden>
+            {Array.from({ length: GRID_COLS }, (_, i) => (
+              <div key={i} />
+            ))}
+          </div>
+        ) : null}
         <ReactGridLayout
           className={cn("layout", isEmpty && "dashboard-grid-empty")}
           width={width}
@@ -197,17 +205,21 @@ export function DashboardGrid({
           style={isEmpty ? { minHeight: EMPTY_CANVAS_MIN_HEIGHT } : undefined}
           onDragStart={() => {
             interactingRef.current = true;
+            setSnapGuidesVisible(true);
           }}
           onDragStop={(nextLayout) => {
             interactingRef.current = false;
-            persistLayout(nextLayout);
+            setSnapGuidesVisible(false);
+            persistLayout(nextLayout, true);
           }}
           onResizeStart={() => {
             interactingRef.current = true;
+            setSnapGuidesVisible(true);
           }}
           onResizeStop={(nextLayout) => {
             interactingRef.current = false;
-            persistLayout(nextLayout);
+            setSnapGuidesVisible(false);
+            persistLayout(nextLayout, true);
           }}
           onLayoutChange={(next) => {
             if (!interactingRef.current) return;
