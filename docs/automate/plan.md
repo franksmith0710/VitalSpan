@@ -899,10 +899,10 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 
 **视图与非功能（F09-VIEW · F15-NFR）**
 
-- [ ] VIEW-001: 全 BI 页面 DashboardView 统一 companion
-- [ ] VIEW-003: 新用户 onboarding 视图继承链 companion
-- [ ] NFR-003: Dashboard 并发压测真实 perf suite companion
-- [ ] NFR-005: 报表并发压测 companion
+- [x] VIEW-001: 全 BI 页面 DashboardView 统一 companion（完成于 2026-07-09）
+- [x] VIEW-003: 新用户 onboarding 视图继承链 companion（完成于 2026-07-09）
+- [x] NFR-003: Dashboard 并发压测真实 perf suite companion（完成于 2026-07-09）
+- [x] NFR-005: 报表并发压测 companion（完成于 2026-07-09）
 
 ### M-PRODUCT 收官信号
 

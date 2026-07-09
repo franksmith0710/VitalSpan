@@ -11,6 +11,7 @@ from app.reports.catalog import service as catalog_service
 from app.reports.catalog.errors import ReportCatalogError
 from app.views.schemas import ViewError
 from app.views import store
+from app.views import role_defaults_repo
 
 _USER_ROLE_DEFAULT_SCOPE: dict[str, str] = {}
 
@@ -39,7 +40,15 @@ def _assert_read_scope(actor: UserContext, role_id: str) -> None:
         raise ViewError("VIEW_DEFAULT_FORBIDDEN", "enterprise user out of role default scope", 403)
 
 
-def _detect_inherit_cycle(role_id: str, inherit_from: str | None) -> None:
+def _load_role_defaults(db: Session | None, role_key: str) -> dict[str, Any] | None:
+    if db is not None:
+        stored = role_defaults_repo.get_role_defaults(db, role_key)
+        if stored is not None:
+            return stored
+    return store.get_role_defaults(role_key)
+
+
+def _detect_inherit_cycle(db: Session | None, role_id: str, inherit_from: str | None) -> None:
     if not inherit_from:
         return
     seen = {role_id}
@@ -53,7 +62,7 @@ def _detect_inherit_cycle(role_id: str, inherit_from: str | None) -> None:
                 [{"field": "inheritFromRoleId", "message": "cycle detected"}],
             )
         seen.add(current)
-        stored = store.get_role_defaults(current)
+        stored = _load_role_defaults(db, current)
         current = (stored or {}).get("inheritFromRoleId")
 
 
@@ -78,11 +87,11 @@ def _validate_refs(db: Session, payload: dict[str, Any]) -> None:
             raise ViewError("VIEW_DEFAULT_REPORT_NOT_FOUND", "Report template not found", 404)
 
 
-def get_defaults(role_id: str, actor: UserContext | None = None) -> dict[str, Any]:
+def get_defaults(role_id: str, actor: UserContext | None = None, db: Session | None = None) -> dict[str, Any]:
     if actor is not None:
         _assert_read_scope(actor, role_id)
     key = _normalize_role_key(role_id)
-    stored = store.get_role_defaults(key)
+    stored = _load_role_defaults(db, key)
     if stored is None:
         return {"dashboardId": None, "reportTemplateNodeId": None, "maxWidgetCount": 24}
     return {
@@ -113,7 +122,7 @@ def put_defaults(db: Session, role_id: str, payload: dict[str, Any], actor: User
     _assert_widget_bounds(max_widgets)
     inherit = payload.get("inheritFromRoleId")
     key = _normalize_role_key(role_id)
-    _detect_inherit_cycle(key, inherit)
+    _detect_inherit_cycle(db, key, inherit)
     body = {
         "dashboardId": payload.get("dashboardId"),
         "reportTemplateNodeId": payload.get("reportTemplateNodeId"),
@@ -121,16 +130,47 @@ def put_defaults(db: Session, role_id: str, payload: dict[str, Any], actor: User
         "inheritFromRoleId": inherit,
     }
     _validate_refs(db, body)
-    return store.set_role_defaults(key, body)
+    saved = role_defaults_repo.set_role_defaults(db, key, body)
+    store.set_role_defaults(key, saved)
+    return saved
 
 
-def resolve_defaults_for_roles(role_codes: list[str]) -> dict[str, Any]:
+def _resolve_role_chain(
+    db: Session | None,
+    role_key: str,
+    *,
+    depth: int = 0,
+    visited: set[str] | None = None,
+) -> dict[str, Any] | None:
+    if depth > 8:
+        return None
+    if visited is None:
+        visited = set()
+    if role_key in visited:
+        return None
+    visited.add(role_key)
+    stored = _load_role_defaults(db, role_key)
+    if stored is None:
+        return None
+    if stored.get("dashboardId") or stored.get("reportTemplateNodeId"):
+        return stored
+    inherit = stored.get("inheritFromRoleId")
+    if inherit:
+        return _resolve_role_chain(db, inherit, depth=depth + 1, visited=visited)
+    return stored
+
+
+def resolve_inherited_defaults(db: Session | None, role_codes: list[str]) -> dict[str, Any]:
     for code in role_codes:
-        stored = store.get_role_defaults(code)
-        if stored is not None:
+        resolved = _resolve_role_chain(db, code)
+        if resolved is not None:
             return {
-                "dashboardId": stored.get("dashboardId"),
-                "reportTemplateNodeId": stored.get("reportTemplateNodeId"),
-                "maxWidgetCount": stored.get("maxWidgetCount", 24),
+                "dashboardId": resolved.get("dashboardId"),
+                "reportTemplateNodeId": resolved.get("reportTemplateNodeId"),
+                "maxWidgetCount": resolved.get("maxWidgetCount", 24),
             }
     return {"dashboardId": None, "reportTemplateNodeId": None, "maxWidgetCount": 24}
+
+
+def resolve_defaults_for_roles(role_codes: list[str], db: Session | None = None) -> dict[str, Any]:
+    return resolve_inherited_defaults(db, role_codes)

@@ -4,7 +4,7 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.2.2
+version: 1.2.3
 last_updated: 2026-07-09
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
@@ -185,6 +185,9 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | `/admin/dashboards/:id/edit` | `bi-dashboard-builder`（edit） | DASH-*, VIZ-* |
 | `/admin/dashboards/:id` | `bi-dashboard-builder`（view） | DASH-*, VIEW-* |
 | `/admin/dashboards/:id/share` | `bi-share-embed` | VIZ-006, API-006 |
+
+**DashboardView 适配（VIEW-001 companion）**：Dashboard 存储形态为 `layoutJson`（widgets + globalFilters）；消费/校验时经 `dashboardLayoutToView()`（`fe/src/lib/dashboardLayoutToView.ts` · 后端 `views/adapter.py`）映射为 FR-VIEW-1 `DashboardView` 文档（含 `protocolVersion: 1` 与 `dashboardId`）。`PUT /api/v1/dashboards/{id}/layout` 在持久化前执行 DashboardView 校验，与 `POST /api/v1/views/validate` 同域错误码。
+
 | `/admin/reports` | `table-list` + 运行结果区 | RPT-002 |
 | `/admin/reports/templates` | `master-detail` 树 + 扩展配置 Tabs | RPT-004/006 |
 | `/admin/reports/templates/:nodeId` | 同上（深链选中节点） | RPT-004/006 |
@@ -271,6 +274,6 @@ fe/src/
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
-| 1.2.2 | 2026-07-09 | F-E DS-007 nav-manifest 对账：修正「实体与主题」为「数据」分组内嵌子分组（非独立侧栏一级分组，与 `nav-manifest.tsx` 一致）；修正主题路由为 `/admin/themes/:dashboardId`（原 `/themes`、`/themes/:id` 与实际路由 `themes/:dashboardId` 不符） |
+| 1.2.3 | 2026-07-09 | F-F VIEW-001 companion：`dashboardLayoutToView` 适配层与 Dashboard PUT 校验说明 |
 | 1.0.0 | 2026-07-03 | 初版：Admin/Portal/Embed 双端 IA（已废止） |
 | 1.1.0 | 2026-07-03 | 单应用 + Embed；合并消费路由；ADR 不做 `/portal/*` |
