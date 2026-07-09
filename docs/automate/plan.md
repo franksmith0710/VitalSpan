@@ -1,34 +1,34 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **M-DASH-UX · Dashboard 编辑体验对标**（**唯一活跃节**）。**M-FINAL 已冻结**；**M-PRODUCT 排队**（F-A~E 已勾；**F-F 非默认 gate**）。  
+> **当前节** = **项目整体毕业**（plan companion 全勾）。**M-FINAL 已冻结**；**M-PRODUCT + M-DASH-UX 已收官**。  
 > **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL 已完成；**PRD 总数 129**（合同已实现）；companion 见 §M-DASH-UX + §M-PRODUCT。  
 > **完成定义**：`[x]` = companion 浏览器可感知 / 合同项分片「已实现」；`[ ]` = companion 未达；标「可选」不阻塞收官。  
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F07-DASH.md`](./prd/F07-DASH.md) · [`prd/F06-VIZ.md`](./prd/F06-VIZ.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)。
 
 ```yaml
-version: 2.8.0
+version: 2.9.0
 last_updated: 2026-07-09
 archive_ref: docs/automate/plan.archive.md
-execute_scope: M-DASH-UX
+execute_scope: GRADUATION-COMPLETE
 frozen_milestone: M-FINAL
-queued_milestone: M-PRODUCT
+queued_milestone: none
 roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX
 prd_total: 129
 prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
-companion_scope: M-DASH-UX-F-A,M-DASH-UX-F-B,M-DASH-UX-F-C,M-DASH-UX-F-D,M-PRODUCT-F-D,M-PRODUCT-F-E,M-PRODUCT-F-F
-companion_remaining: 25
-current_milestone: M-DASH-UX
-intervention: create-evolution-plan-dash-ux-align-code-2026-07-09
-scope_change: M-PRODUCT-queued-M-DASH-UX-active
-plan_review: 2026-07-09-code-align-must-optional
-prd_hub_ref: docs/automate/prd.md@v1.2.113
+companion_scope: M-DASH-UX,M-PRODUCT
+companion_remaining: 0
+current_milestone: GRADUATION-COMPLETE
+intervention: ff-companion-full-2026-07-09
+scope_change: F-F-unlocked-full-companion-sweep
+plan_review: 2026-07-09-ff-five-track-merge
+prd_hub_ref: docs/automate/prd.md@v1.2.115
 polish_checklist_ref: docs/automate/plans/2026-07-08-product-polish-checklist.md
 e2e_pass_ref: docs/automate/plans/2026-07-09-graduation-e2e-pass.md
 bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-flicker.md
-code_gap_note: edit-mode WidgetEditPreview blocks ChartRenderer; ChartConfigPanel unused in WidgetInspector
+code_gap_note: none — plan companion lines all checked
 ```
 
 ### 执行范围：M-FINAL 已冻结 · M-DASH-UX 当前节 · M-PRODUCT 排队（产品决策 2026-07-09 人工确认）
@@ -44,13 +44,13 @@ code_gap_note: edit-mode WidgetEditPreview blocks ChartRenderer; ChartConfigPane
 | P0 | M1 + M1B | 12 | 12 | 0 | 已完成 |
 | FE 先导 | M-FE-1 ~ M-FE-3 | 13* | 13 | 0 | 已完成 |
 | **最后一期** | **M-FINAL · F-A ~ F-G** | **38†** | **38** | **0** | **已冻结** |
-| **成品收官** | **M-PRODUCT · F-A ~ F-F** | **companion** | **20‡** | **20** | **排队** |
-| **编辑体验** | **M-DASH-UX · F-A ~ F-D** | **companion** | **1** | **9 必做 + 2 可选** | **当前节** |
+| **成品收官** | **M-PRODUCT · F-A ~ F-F** | **companion** | **38‡** | **0** | **已完成** |
+| **编辑体验** | **M-DASH-UX · F-A ~ F-D** | **companion** | **12** | **0** | **已完成** |
 | 一期–三期 | M2 – M12 | 88 | 88 | 0 | 已完成 |
 
 \* M-FE 与 M2–M5 有 ID 重叠，为浏览器交付轨。  
 † M-FINAL companion 行映射既有 PRD ID，合同 129 项已全部勾选。  
-‡ M-PRODUCT F-A~E 已勾（F-D 书面 E2E 见 `plans/2026-07-09-graduation-e2e-pass.md`）；F-F 18 项非默认 gate。
+‡ M-PRODUCT F-A~F 全勾（2026-07-09 五轨 worktree merge）。
 
 **推荐执行顺序（全局 · 当前）**：
 
@@ -793,22 +793,18 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 
 ---
 
-## M-PRODUCT — 成品对标与体验收官【排队】
+## M-PRODUCT — 成品对标与体验收官【已完成】
 
 > **人工干预（2026-07-08）**：成品感 / DE 数据源分类 / IA / companion 清扫。  
-> **状态（2026-07-09）**：**queued** — F-A~E 已勾（F-D 见 [`plans/2026-07-09-graduation-e2e-pass.md`](./plans/2026-07-09-graduation-e2e-pass.md)）；**F-F = 非默认 gate（G2 禁止选题）**。  
-> **完成定义**：`[x]` = 浏览器可走通 + 分片可勾；F-F 仅合同点名才做。
+> **状态（2026-07-09）**：**已完成** — F-A~F 全勾（F-F 五轨 worktree 2026-07-09）。  
+> **完成定义**：`[x]` = 浏览器可走通 + 分片可勾。
 
 | 子批 | 主题 | 待完成 | 状态 | G2 |
 |------|------|--------|------|-----|
 | F-A ~ F-C | 壳层 / 数据源分类 / IA | 0 | 已完成 | — |
 | **F-D** | Goal 验收 E2E | 0 | **已完成**（书面记录） | — |
 | **F-E** | 文档与契约对账 | 0 | 已完成（2026-07-09） | — |
-| **F-F** | Companion 深度 | 18 | **非默认 gate** | **禁止** |
-
-**恢复为当前节后顺序**：M-DASH-UX 收官后可选 M-PRODUCT F-F（仅人工点名）。
-
-**G2 选题约束（排队期）**：**禁止**选题；M-DASH-UX 收官前不得从 F-F 取题。
+| **F-F** | Companion 深度 | 0 | **已完成**（2026-07-09） | — |
 
 ### F-A — 壳层与主路径 FE
 

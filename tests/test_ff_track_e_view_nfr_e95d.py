@@ -169,7 +169,7 @@ def test_view003_first_login_inherit_user_override(client: TestClient):
 
 
 def test_nfr001_dashboard_concurrent_get_probe(client: TestClient):
-    from tests.perf.nfr01_dashboard.concurrent_probe import (
+    from perf.nfr01_dashboard.concurrent_probe import (
         render_report_stub,
         run_concurrent_dashboard_get_probe,
     )
@@ -194,7 +194,7 @@ def test_nfr001_dashboard_concurrent_get_probe(client: TestClient):
 
 
 def test_nfr002_report_concurrent_template_run_probe(client: TestClient):
-    from tests.perf.nfr01_report.concurrent_probe import run_concurrent_template_run_probe
+    from perf.nfr01_report.concurrent_probe import run_concurrent_template_run_probe
 
     template_body = {
         "templateKey": "sales_summary",

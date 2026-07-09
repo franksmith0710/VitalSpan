@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.114
+version: 1.2.115
 last_updated: 2026-07-09
 truth_source: true
 evolution_hub: true
@@ -200,28 +200,26 @@ domain_count: 16
 
 ## 执行范围（与 plan 对齐）
 
-> 更新：2026-07-09 · 来源 [`plan.md`](./plan.md) v2.8.0 · hub **v1.2.113**
+> 更新：2026-07-09 · 来源 [`plan.md`](./plan.md) v2.9.0 · hub **v1.2.115**
 
 | 字段 | 值 |
 |------|-----|
 | 已冻结 | **M-FINAL**（129/129 PRD 合同项） |
-| 当前执行 | **毕业收官** — M-DASH-UX 必做已勾；M-PRODUCT F-A~E 已勾 |
-| 排队 | **M-PRODUCT F-F**（18 项 · **非默认 gate**） |
+| 当前执行 | **全量 companion 收官** — M-DASH-UX + M-PRODUCT F-A~F 已勾 |
+| 排队 | — |
 | PRD 合同 | **129** 已实现 · **0** 未实现 |
-| companion | M-DASH-UX **必做 0** + **可选 2**；M-PRODUCT F-F **18** |
-| 当前节 | **毕业最小可交付**（编辑态接线 + 撤销 + 编辑筛选 + 书面 E2E） |
-| G2 选题 | **禁止**默认从 F-F 取题；可选 companion 仅人工点名 |
+| companion（plan） | **0** 待办（`plan.md` 无 `[ ]`） |
+| 当前节 | **项目整体毕业** |
+| G2 选题 | 饱和；PRD 分片远期 `[ ]` 仅文档参考，非 plan gate |
 
-**说明**：PRD 合同 **129** 项全勾「已实现」；M-DASH-UX 必做 companion 已于 2026-07-09 收官（见 `plan.md` §M-DASH-UX + `plans/2026-07-09-graduation-e2e-pass.md`）。剩余差距为 **可选 companion 2 项** + **M-PRODUCT F-F 18 项**（非默认 gate）。
+**说明**：`plan.md` 全部 companion 行已于 2026-07-09 勾选完成（含 M-DASH-UX 可选 2 项 + M-PRODUCT F-F 18 项）。PRD 分片内仍有部分远期 companion `[ ]`（如 GOV 真实总线、NFR 生产 SLA），不计入 plan 收官。
 
-**M-DASH-UX 子批（收官状态）**：
+**M-DASH-UX + M-PRODUCT 收官状态**：
 
-| 子批 | 主题 | 必做 | 可选 | 状态 |
-|------|------|------|------|------|
-| F-A | 编辑态接线真出图 | 5/5 | — | **已勾** |
-| F-B | 检视器数据/样式 | 2/2 | — | **已勾** |
-| F-C | 撤销 + 稳定性 | 2/2 | 1 可选 | **必做已勾** |
-| F-D | 编辑页筛选/联动 | 1/1 | 1 可选 | **必做已勾** |
+| 里程碑 | 状态 |
+|--------|------|
+| M-DASH-UX F-A~D 必做 + 可选 | **全勾** |
+| M-PRODUCT F-A~F | **全勾** |
 
 ---
 
@@ -238,6 +236,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.115 | 2026-07-09 | F-F 全量 companion 收官：plan 20 项全勾；五轨 worktree merge；hub 执行范围→整体毕业 |
 | 1.2.114 | 2026-07-09 | 毕业收官：M-DASH-UX 必做全勾 + M-PRODUCT F-D 书面 E2E；执行范围更新；剩余 F-F 18 + 可选 2 |
 | 1.2.113 | 2026-07-09 | 人工 plan 对账：§M-DASH-UX 对齐代码（F-A 加 QUERY-005、接线优先；F-C 稳定性勾选；F-C/F-D 拆必做/可选；F-F gate）；执行范围对齐 plan v2.8.0 |
 | 1.2.112 | 2026-07-09 | 人工 plan 干预：§M-DASH-UX 升为当前节（方案 A）；§M-PRODUCT 排队；执行范围/里程碑指针对齐 plan v2.7.0 |
