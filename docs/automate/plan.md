@@ -795,17 +795,17 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 ## M-PRODUCT — 成品对标与体验收官【排队】
 
 > **人工干预（2026-07-08）**：成品感 / DE 数据源分类 / IA / companion 清扫。  
-> **状态（2026-07-09）**：**queued** — F-A/B/C 已勾；F-D/E 收官后恢复；**F-F = 非默认 gate（G2 禁止选题）**。  
+> **状态（2026-07-09）**：**queued** — F-A/B/C/E 已勾；F-D 收官后恢复；**F-F = 非默认 gate（G2 禁止选题）**。  
 > **完成定义**：`[x]` = 浏览器可走通 + 分片可勾；F-F 仅合同点名才做。
 
 | 子批 | 主题 | 待完成 | 状态 | G2 |
 |------|------|--------|------|-----|
 | F-A ~ F-C | 壳层 / 数据源分类 / IA | 0 | 已完成 | — |
 | **F-D** | Goal 验收 E2E | 4 | **排队 · 收官后优先** | 允许 |
-| **F-E** | 文档与契约对账 | 2 | **排队** | 允许 |
+| **F-E** | 文档与契约对账 | 0 | 已完成（2026-07-09） | — |
 | **F-F** | Companion 深度 | 18 | **非默认 gate** | **禁止** |
 
-**恢复为当前节后顺序**：`F-D 书面 E2E → F-E 文档`；F-F 仅人工点名。
+**恢复为当前节后顺序**：F-E 已收口；`F-D 书面 E2E` 待收官；F-F 仅人工点名。
 
 **G2 选题约束（排队期）**：**禁止**选题；M-DASH-UX 收官前不得从 F-F 取题。
 
@@ -862,8 +862,8 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 
 > **背景**：arch-inspect 2026-07-08 健康分 40（API auth 文档债）；`prd/README` 与 hub 不同步。
 
-- [ ] API-007: `docs/api/README.md` auth 声明与 `AuthMiddleware` 公开路径对账（消 P0 `api.auth`）
-- [ ] DS-007: `layout.md` §3 与 `nav-manifest` 同步（含 F-B 分类文案）
+- [x] API-007: `docs/api/README.md` auth 声明与 `AuthMiddleware` 公开路径对账（消 P0 `api.auth`）（完成于 2026-07-09）
+- [x] DS-007: `layout.md` §3 与 `nav-manifest` 同步（含 F-B 分类文案）（完成于 2026-07-09）
 - [x] BOOT-006: `prd/README.md` hub 状态与分片「已实现」对账（129 合同 + companion 表）（完成于 2026-07-08）
 
 **验收信号**：arch-inspect 复检 P0=0 或已登记豁免；hub `last_updated` 与 plan 一致。
