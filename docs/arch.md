@@ -280,6 +280,10 @@ dataSourceId + ChartViewConfig + DashboardView
 | `ANALYTICS_DATABASE_URL` | | 平台托管分析库（M1B 同步/清洗目标库） | — |
 | `DASHBOARD_AVAILABILITY_MODE` | | 核心看板可用性门禁：`strict`（不达标 503）/ `permissive` | `permissive` |
 | `XINCHUANG_DEPLOY_MODE` | | 信创部署验收：`strict` / `permissive` / `conditional` | `permissive` |
+| `RPT_DELIVERY_MODE` | | 报表调度投递：`mock` / `smtp`（MailHog 默认 1025） | `mock` |
+| `RPT_SMTP_HOST` | | SMTP 主机（`RPT_DELIVERY_MODE=smtp`） | `localhost` |
+| `RPT_SMTP_PORT` | | SMTP 端口 | `1025` |
+| `RPT_SMTP_FROM` | | 发件人地址 | `reports@vitalspan.local` |
 
 ### 7.3 前端环境变量（规划）
 

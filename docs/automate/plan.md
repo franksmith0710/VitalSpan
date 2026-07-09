@@ -884,11 +884,11 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 
 **报表（F08-RPT）**
 
-- [ ] RPT-001: PDF/Word 真实渲染 companion
-- [ ] RPT-002: 预制报表 Admin binding 编辑表单 companion
-- [ ] RPT-003: 模板 WYSIWYG 排版引擎 companion
-- [ ] RPT-005: 调度真实 SMTP/对象存储投递 companion
-- [ ] RPT-007: 批量报表异步导出链 companion
+- [x] RPT-001: PDF/Word 真实渲染 companion（完成于 2026-07-09）
+- [x] RPT-002: 预制报表 Admin binding 编辑表单 companion（完成于 2026-07-09）
+- [x] RPT-003: 模板 WYSIWYG 排版引擎 companion（完成于 2026-07-09）
+- [x] RPT-005: 调度真实 SMTP/对象存储投递 companion（完成于 2026-07-09）
+- [x] RPT-007: 批量报表异步导出链 companion（完成于 2026-07-09）
 
 **目录/实体（F14-CAT · F07-DASH）**
 

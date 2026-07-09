@@ -4,7 +4,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Query, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.auth.deps import UserContext, get_current_user
 from app.reports.catalog.errors import ReportCatalogError
@@ -17,8 +17,9 @@ from app.reports.extension.schemas import (
     ExtensionRevisionOut,
 )
 from app.reports.extension import service as extension_service
-from app.reports.batch.schemas import BatchCreateReportsIn
+from app.reports.batch.schemas import BatchCreateReportsIn, BatchExportJobIn
 from app.reports.batch import service as batch_service
+from app.reports.batch import export_jobs as batch_export_jobs
 from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.schemas import ScheduleCreate, ScheduleTransitionIn
 from app.reports.scheduler import service as scheduler_service
@@ -131,6 +132,44 @@ def batch_create_reports(
 ):
     try:
         return batch_service.batch_create(payload, idempotency_key)
+    except ReportBatchError as exc:
+        return _batch_error(exc)
+
+
+@router.post("/batch/export", status_code=status.HTTP_202_ACCEPTED, response_model=None)
+def submit_batch_export_job(
+    payload: BatchExportJobIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return batch_export_jobs.submit_batch_export(payload, actor)
+    except ReportBatchError as exc:
+        return _batch_error(exc)
+
+
+@router.get("/jobs/{job_id}", response_model=None)
+def get_batch_export_job(
+    job_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return batch_export_jobs.get_batch_export_job(job_id, actor)
+    except ReportBatchError as exc:
+        return _batch_error(exc)
+
+
+@router.get("/jobs/{job_id}/download", response_model=None)
+def download_batch_export_job(
+    job_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        data, content_type, filename = batch_export_jobs.get_batch_export_download(job_id, actor)
+        return Response(
+            content=data,
+            media_type=content_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     except ReportBatchError as exc:
         return _batch_error(exc)
 

@@ -129,7 +129,7 @@ def test_rpt003_04_run_word_export_hook(client: TestClient):
     )
     assert run.status_code == 200, run.text
     assert run.json()["exportHook"]["format"] == "word"
-    assert run.json()["exportHook"]["placeholder"] is True
+    assert run.json()["exportHook"]["placeholder"] is False
 
 
 def test_rpt003_05_viewer_delete_forbidden(client: TestClient):

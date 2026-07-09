@@ -93,7 +93,13 @@
 
 - **RPT-003**：`templates/acl.py` — `assert_template_write_access` + `set_user_template_scope`；viewer PUT / enterprise 越权 GET → `RPT_TEMPLATE_FORBIDDEN`；duplicate sql block → `RPT_TEMPLATE_DUPLICATE_BLOCK`；`templates/probe.py` — `probe_validate_template_budget_ms` / `probe_get_template_budget_ms` ≤50ms
 
-### M10 r234（RPT-003/004/006）
+### F-F companion r-e95d
+
+- **RPT-001**：`integration/reports_export.py` catalog 模板 UUID 导出链 + mock bytes；`exportHook.placeholder=false`
+- **RPT-002**：FE `PrefabBindingForm` + PUT prefab bindings
+- **RPT-003**：FE `TemplateBlockEditor` 块列表/SQL/重排
+- **RPT-005**：`scheduler/delivery_adapter.py` — `RPT_DELIVERY_MODE=mock|smtp`
+- **RPT-007**：`batch/export_jobs.py` — `POST /batch/export` + `GET /jobs/{id}` 轮询
 
 - **RPT-003**：`GET/DELETE /reports/templates`；`storageRef` 默认 `mock://templates/{key}.{format}`；`exportHook`（IF-03 placeholder）；`engine/service.run_template` word/excel/pdf 返回 `exportHook`
 - **RPT-004**：catalog `templateKey` 外键唯一；`RPT_CATALOG_DUPLICATE_TEMPLATE_KEY` / `RPT_CATALOG_TEMPLATE_KIND_MISMATCH`；`catalog/probe.py` list ≤50ms
