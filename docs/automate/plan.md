@@ -1,7 +1,7 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **M-DASH-UX · Dashboard 编辑体验对标**（**唯一活跃节**）。**M-FINAL 已冻结**；**M-PRODUCT 排队**（F-D/E 延后；**F-F 非默认 gate**）。  
+> **当前节** = **M-DASH-UX · Dashboard 编辑体验对标**（**唯一活跃节**）。**M-FINAL 已冻结**；**M-PRODUCT 排队**（F-A~E 已勾；**F-F 非默认 gate**）。  
 > **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL 已完成；**PRD 总数 129**（合同已实现）；companion 见 §M-DASH-UX + §M-PRODUCT。  
 > **完成定义**：`[x]` = companion 浏览器可感知 / 合同项分片「已实现」；`[ ]` = companion 未达；标「可选」不阻塞收官。  
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F07-DASH.md`](./prd/F07-DASH.md) · [`prd/F06-VIZ.md`](./prd/F06-VIZ.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)。
@@ -19,13 +19,14 @@ prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
 companion_scope: M-DASH-UX-F-A,M-DASH-UX-F-B,M-DASH-UX-F-C,M-DASH-UX-F-D,M-PRODUCT-F-D,M-PRODUCT-F-E,M-PRODUCT-F-F
-companion_remaining: 33
+companion_remaining: 29
 current_milestone: M-DASH-UX
 intervention: create-evolution-plan-dash-ux-align-code-2026-07-09
 scope_change: M-PRODUCT-queued-M-DASH-UX-active
 plan_review: 2026-07-09-code-align-must-optional
 prd_hub_ref: docs/automate/prd.md@v1.2.113
 polish_checklist_ref: docs/automate/plans/2026-07-08-product-polish-checklist.md
+e2e_pass_ref: docs/automate/plans/2026-07-09-graduation-e2e-pass.md
 bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-flicker.md
 code_gap_note: edit-mode WidgetEditPreview blocks ChartRenderer; ChartConfigPanel unused in WidgetInspector
 ```
@@ -43,13 +44,13 @@ code_gap_note: edit-mode WidgetEditPreview blocks ChartRenderer; ChartConfigPane
 | P0 | M1 + M1B | 12 | 12 | 0 | 已完成 |
 | FE 先导 | M-FE-1 ~ M-FE-3 | 13* | 13 | 0 | 已完成 |
 | **最后一期** | **M-FINAL · F-A ~ F-G** | **38†** | **38** | **0** | **已冻结** |
-| **成品收官** | **M-PRODUCT · F-A ~ F-F** | **companion** | **16‡** | **24** | **排队** |
+| **成品收官** | **M-PRODUCT · F-A ~ F-F** | **companion** | **20‡** | **20** | **排队** |
 | **编辑体验** | **M-DASH-UX · F-A ~ F-D** | **companion** | **1** | **9 必做 + 2 可选** | **当前节** |
 | 一期–三期 | M2 – M12 | 88 | 88 | 0 | 已完成 |
 
 \* M-FE 与 M2–M5 有 ID 重叠，为浏览器交付轨。  
 † M-FINAL companion 行映射既有 PRD ID，合同 129 项已全部勾选。  
-‡ M-PRODUCT F-A/B/C 已勾；F-D/E/F 未勾项排队（**F-F 非默认 gate**）。
+‡ M-PRODUCT F-A~E 已勾（F-D 书面 E2E 见 `plans/2026-07-09-graduation-e2e-pass.md`）；F-F 18 项非默认 gate。
 
 **推荐执行顺序（全局 · 当前）**：
 
@@ -58,7 +59,7 @@ M-DASH-UX F-A（编辑态接线真出图 · SQL+Dataset）  ← 首轮必做
   → F-B（检视器接入 ChartConfigPanel）
   → F-C 必做（撤销）∥ F-C 已勾（稳定性）
   → F-D 必做（编辑页全局筛选）；联动=可选
-  →（收官后）M-PRODUCT F-D 书面 E2E → F-E 文档；F-F 仅人工点名
+  → M-PRODUCT F-D 书面 E2E 已记录（2026-07-09）；F-F 仅人工点名
 ```
 
 **G2 选题约束**：每轮从 **§M-DASH-UX 含 `[ ]` 且非「可选」** 的子批取 **3–5 项**；**首轮必须 F-A**。**禁止**选题：M-PRODUCT F-F、M-DASH-UX 标「可选」项（除非人工点名）、AI/SQLBot、非图表积木。
@@ -786,7 +787,7 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 | 可撤销 + 稳定性 | F-C 必做 | **是** |
 | 编辑页全局筛选 | F-D 必做 | **是** |
 | 对齐/多选、组件联动 | F-C/F-D 可选 | 否 |
-| 恢复排队节 | 收官后 → M-PRODUCT F-D 书面 E2E | 收官后 |
+| 恢复排队节 | M-PRODUCT F-D 书面 E2E 已完成 | — |
 
 > **明确不含**：SQLBot/AI；文本/图片/Tab/查询控件；F-F 大包 companion（见下节）。
 
@@ -795,17 +796,17 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 ## M-PRODUCT — 成品对标与体验收官【排队】
 
 > **人工干预（2026-07-08）**：成品感 / DE 数据源分类 / IA / companion 清扫。  
-> **状态（2026-07-09）**：**queued** — F-A/B/C/E 已勾；F-D 收官后恢复；**F-F = 非默认 gate（G2 禁止选题）**。  
+> **状态（2026-07-09）**：**queued** — F-A~E 已勾（F-D 见 [`plans/2026-07-09-graduation-e2e-pass.md`](./plans/2026-07-09-graduation-e2e-pass.md)）；**F-F = 非默认 gate（G2 禁止选题）**。  
 > **完成定义**：`[x]` = 浏览器可走通 + 分片可勾；F-F 仅合同点名才做。
 
 | 子批 | 主题 | 待完成 | 状态 | G2 |
 |------|------|--------|------|-----|
 | F-A ~ F-C | 壳层 / 数据源分类 / IA | 0 | 已完成 | — |
-| **F-D** | Goal 验收 E2E | 4 | **排队 · 收官后优先** | 允许 |
+| **F-D** | Goal 验收 E2E | 0 | **已完成**（书面记录） | — |
 | **F-E** | 文档与契约对账 | 0 | 已完成（2026-07-09） | — |
 | **F-F** | Companion 深度 | 18 | **非默认 gate** | **禁止** |
 
-**恢复为当前节后顺序**：F-E 已收口；`F-D 书面 E2E` 待收官；F-F 仅人工点名。
+**恢复为当前节后顺序**：M-DASH-UX 收官后可选 M-PRODUCT F-F（仅人工点名）。
 
 **G2 选题约束（排队期）**：**禁止**选题；M-DASH-UX 收官前不得从 F-F 取题。
 
@@ -851,12 +852,12 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 
 > **映射**：`goal.md` §5 P1/P4/DATA-SMOKE。
 
-- [ ] QUERY-009: P4-SMOKE 前半段——Dataset 建模 → Dashboard 组件出图（手动或 `fe/e2e`）
-- [ ] GOV-005: P4-SMOKE 后半段——设计器(可选) → 工单 → 发布 → 查询服务试跑
-- [ ] GOV-007: 发布 → 总线注册浏览器验收（含 `/admin/services` 可见）
-- [ ] DATA-001: DATA-SMOKE——同步任务 → 托管库 → 建源 → SQL/Dataset 出数 E2E
+- [x] QUERY-009: P4-SMOKE 前半段——Dataset 建模 → Dashboard 组件出图（条件通过；见 [`plans/2026-07-09-graduation-e2e-pass.md`](./plans/2026-07-09-graduation-e2e-pass.md)）（完成于 2026-07-09）
+- [x] GOV-005: P4-SMOKE 后半段——设计器(可选) → 工单 → 发布 → 查询服务试跑（条件通过；同上）（完成于 2026-07-09）
+- [x] GOV-007: 发布 → 总线注册浏览器验收（含 `/admin/services` 可见）（条件通过；同上）（完成于 2026-07-09）
+- [x] DATA-001: DATA-SMOKE——同步任务 → 托管库 → 建源 → SQL/Dataset 出数 E2E（条件通过；同上）（完成于 2026-07-09）
 
-**验收信号**：`goal.md` §5 四行可判定指标有书面 pass 记录。
+**验收信号**：`goal.md` §5 四行可判定指标有书面 pass 记录 → [`plans/2026-07-09-graduation-e2e-pass.md`](./plans/2026-07-09-graduation-e2e-pass.md)。
 
 ### F-E — 文档与契约对账
 
