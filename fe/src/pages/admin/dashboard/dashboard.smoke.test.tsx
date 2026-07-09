@@ -35,6 +35,13 @@ import { DashboardListPage } from "./DashboardListPage";
 const mockApiFetch = vi.fn();
 const DS_ID = "00000000-0000-4000-8000-000000000010";
 
+const EMPTY_LINKAGE = { filters: [], linkageRules: [] as { sourceFilterId: string; targetWidgetIds: string[]; parameterKey: string }[] };
+
+function mockGlobalFiltersPath(path: string): typeof EMPTY_LINKAGE | null {
+  if (path.includes("/global-filters")) return EMPTY_LINKAGE;
+  return null;
+}
+
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
   return {
@@ -106,6 +113,8 @@ function mockDashboardLoad(widgets: LayoutWidget[]) {
     const path = String(args[0] ?? "");
     if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
     if (path.includes("/api/v1/datasets")) return { items: [] };
+    const filters = mockGlobalFiltersPath(path);
+    if (filters) return filters;
     if (path.includes("/dashboards/")) {
       return { id: "d1", name: "销售看板", layoutJson: { version: 1, widgets, globalFilters: [] } };
     }
@@ -292,6 +301,8 @@ describe("dashboard admin smoke", () => {
       const path = String(args[0] ?? "");
       const init = args[1] as RequestInit | undefined;
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
       if (init?.method === "PUT") {
         throw Object.assign(new Error("组件 ID 重复"), { code: "DASH_DUPLICATE_WIDGET" });
       }
@@ -316,6 +327,8 @@ describe("dashboard admin smoke", () => {
       const path = String(args[0] ?? "");
       const init = args[1] as RequestInit | undefined;
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
       if (init?.method === "PUT") {
         putBody = JSON.parse(init.body as string);
         return { layoutJson: putBody?.layoutJson };
@@ -348,6 +361,8 @@ describe("dashboard admin smoke", () => {
       const path = String(args[0] ?? "");
       const init = args[1] as RequestInit | undefined;
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
       if (init?.method === "PUT") {
         putBody = JSON.parse(init.body as string);
         return {};
@@ -418,6 +433,8 @@ describe("dashboard admin smoke", () => {
       const path = String(args[0] ?? "");
       const init = args[1] as RequestInit | undefined;
       if (path === "/api/v1/datasources") return { items: [] };
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
       if (init?.method === "DELETE") return undefined;
       return {
         id: "d1",
@@ -456,5 +473,37 @@ describe("dashboard admin smoke", () => {
     expect(await screen.findByText("A")).toBeInTheDocument();
     expect(screen.getByText("B")).toBeInTheDocument();
     expect(screen.queryByText("C")).not.toBeInTheDocument();
+  });
+
+  it("F-C: undo restores previous widget layout after adding widget", async () => {
+    const user = userEvent.setup();
+    mockDashboardLoad(sampleWidgets.slice(0, 1));
+    renderEditPage();
+    await screen.findByLabelText("组件标题");
+    expect(screen.getAllByLabelText("组件标题")).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "折线图" }));
+    expect(await screen.findAllByLabelText("组件标题")).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: "撤销" }));
+    expect(screen.getAllByLabelText("组件标题")).toHaveLength(1);
+  });
+
+  it("F-D: edit mode loads global filters and renders filter bar", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      if (path.includes("/global-filters")) {
+        return {
+          filters: [{ filterId: "f1", dimensionRef: "区域", defaultValue: "华东" }],
+          linkageRules: [],
+        };
+      }
+      if (path.includes("/dashboards/")) {
+        return { id: "d1", name: "销售看板", layoutJson: { version: 1, widgets: sampleWidgets.slice(0, 1), globalFilters: [] } };
+      }
+      return {};
+    });
+    renderEditPage();
+    expect(await screen.findByLabelText("区域")).toBeInTheDocument();
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/dashboards/d1/global-filters");
   });
 });

@@ -11,6 +11,7 @@ import {
   buildWidgetFilterParams,
   type Linkage,
 } from "@/components/dashboard/dashboardFilterUtils";
+import { layoutFingerprint } from "@/components/dashboard/layoutHistory";
 import {
   normalizeWidgetIds,
   resizeWidget,
@@ -20,6 +21,7 @@ import {
 } from "@/components/dashboard/layoutUtils";
 import { placeNewWidget, normalizeWidgetLayout, placeWidgetAt } from "@/components/dashboard/gridLayoutAdapter";
 import { createLayoutWidget } from "@/components/dashboard/createLayoutWidget";
+import { useLayoutHistory } from "@/hooks/useLayoutHistory";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
@@ -58,15 +60,13 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
   );
 }
 
-function layoutFingerprint(widgets: LayoutWidget[]): string {
-  return JSON.stringify(sortWidgets(widgets));
-}
-
 export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const [widgets, setWidgets] = useState<LayoutWidget[]>([]);
+  const { widgets, setWidgets, resetWidgets, undo, redo, canUndo, canRedo } = useLayoutHistory({
+    keyboardEnabled: mode === "edit",
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -82,14 +82,14 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const leaveEditShell = useCallback(() => {
     // 先清脏标记，避免离开守卫/二次操作卡在僵尸编辑态
     setMissing(true);
-    setWidgets([]);
+    resetWidgets([]);
     setSavedFingerprint(null);
     setDeleteDashboardOpen(false);
     navigate("/admin/dashboards", { replace: true });
-  }, [navigate]);
+  }, [navigate, resetWidgets]);
 
   const loadFilters = useCallback(async () => {
-    if (!id || mode !== "view") return;
+    if (!id) return;
     try {
       const data = await apiFetch<Linkage>(`/api/v1/dashboards/${id}/global-filters`);
       setLinkage(data);
@@ -101,7 +101,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     } catch {
       setLinkage(null);
     }
-  }, [id, mode]);
+  }, [id]);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -112,13 +112,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       setMissing(false);
       setName(data.name);
       const loaded = normalizeWidgetLayout(sortWidgets(data.layoutJson.widgets ?? []));
-      setWidgets(loaded);
+      resetWidgets(loaded);
       setSavedFingerprint(layoutFingerprint(loaded));
       setSelectedWidgetId(null);
     } catch (err) {
       if (isDashboardNotFound(err)) {
         setMissing(true);
-        setWidgets([]);
+        resetWidgets([]);
         setSavedFingerprint(layoutFingerprint([]));
         setError(mapApiError(err));
       } else {
@@ -127,7 +127,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, resetWidgets]);
 
   useEffect(() => {
     void load();
@@ -224,7 +224,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           layoutJson: { version: 1, widgets: normalized, globalFilters: [] },
         }),
       });
-      setWidgets(normalized);
+      resetWidgets(normalized);
       setSavedFingerprint(layoutFingerprint(normalized));
       return true;
     } catch (err) {
@@ -331,7 +331,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         />
       ) : null}
 
-      {mode === "view" && id ? (
+      {id ? (
         <GlobalFilterBar
           dashboardId={id}
           values={filterValues}
@@ -346,6 +346,26 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           widgetCount={widgets.length}
           canvasActions={
             <div className="flex shrink-0 items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canUndo}
+                onClick={undo}
+                title="撤销 (Ctrl+Z)"
+              >
+                撤销
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!canRedo}
+                onClick={redo}
+                title="重做 (Ctrl+Shift+Z)"
+              >
+                重做
+              </Button>
               <span className="hidden text-theme-xs text-gray-400 sm:inline">12 列</span>
               <Button
                 type="button"
@@ -365,23 +385,30 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               widgets={widgets}
               onInsertChart={handleDropInsert}
               onLayoutChange={(next) => setWidgets(sortWidgets(next))}
-              renderWidget={(widget) => (
-                <DashboardWidget
-                  widget={widget}
-                  mode="edit"
-                  selected={widget.id === selectedWidgetId}
-                  onSelect={() => setSelectedWidgetId(widget.id)}
-                  onDelete={handleDeleteWidget}
-                  onTitleChange={(wid, title) =>
-                    setWidgets((prev) => resizeWidget(prev, wid, { title }))
-                  }
-                  onChartConfigChange={(wid, chartConfig) =>
-                    setWidgets((prev) =>
-                      prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
-                    )
-                  }
-                />
-              )}
+              renderWidget={(widget) => {
+                const filterParameters = linkage
+                  ? buildWidgetFilterParams(widget.id, linkage, filterValues)
+                  : undefined;
+                return (
+                  <DashboardWidget
+                    widget={widget}
+                    mode="edit"
+                    selected={widget.id === selectedWidgetId}
+                    filterParameters={filterParameters}
+                    executeKey={executeKey}
+                    onSelect={() => setSelectedWidgetId(widget.id)}
+                    onDelete={handleDeleteWidget}
+                    onTitleChange={(wid, title) =>
+                      setWidgets((prev) => resizeWidget(prev, wid, { title }))
+                    }
+                    onChartConfigChange={(wid, chartConfig) =>
+                      setWidgets((prev) =>
+                        prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
+                      )
+                    }
+                  />
+                );
+              }}
             />
           }
           inspector={
