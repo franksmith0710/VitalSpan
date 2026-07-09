@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.113
+version: 1.2.114
 last_updated: 2026-07-09
 truth_source: true
 evolution_hub: true
@@ -205,23 +205,23 @@ domain_count: 16
 | 字段 | 值 |
 |------|-----|
 | 已冻结 | **M-FINAL**（129/129 PRD 合同项） |
-| 当前执行 | **M-DASH-UX · Dashboard 编辑体验对标** |
-| 排队 | **M-PRODUCT**（F-D/E 收官后恢复；**F-F 非默认 gate**） |
+| 当前执行 | **毕业收官** — M-DASH-UX 必做已勾；M-PRODUCT F-A~E 已勾 |
+| 排队 | **M-PRODUCT F-F**（18 项 · **非默认 gate**） |
 | PRD 合同 | **129** 已实现 · **0** 未实现 |
-| companion | M-DASH-UX **9 必做 + 2 可选**（稳定性已勾 1）+ M-PRODUCT 排队 **24** |
-| 当前节 | **M-DASH-UX F-A**（编辑态接线真出图 · SQL+Dataset）**首轮必做** |
-| G2 选题 | 每轮从 §M-DASH-UX **必做** `[ ]` 取 3–5 项；首轮 F-A；禁止可选行 / M-PRODUCT F-F / AI |
+| companion | M-DASH-UX **必做 0** + **可选 2**；M-PRODUCT F-F **18** |
+| 当前节 | **毕业最小可交付**（编辑态接线 + 撤销 + 编辑筛选 + 书面 E2E） |
+| G2 选题 | **禁止**默认从 F-F 取题；可选 companion 仅人工点名 |
 
-**说明**：PRD 合同 **129** 项全勾「已实现」；当前差距是 **编辑态接线**（`WidgetEditPreview` 挡住 `ChartRenderer`），见 `plan.md` §M-DASH-UX。
+**说明**：PRD 合同 **129** 项全勾「已实现」；M-DASH-UX 必做 companion 已于 2026-07-09 收官（见 `plan.md` §M-DASH-UX + `plans/2026-07-09-graduation-e2e-pass.md`）。剩余差距为 **可选 companion 2 项** + **M-PRODUCT F-F 18 项**（非默认 gate）。
 
-**M-DASH-UX 子批（与 plan 对齐）**：
+**M-DASH-UX 子批（收官状态）**：
 
-| 子批 | 主题 | 代表 PRD ID | 备注 |
-|------|------|-------------|------|
-| F-A | 编辑态接线真出图 | VIZ-002 · QUERY-005 · QUERY-009 · META-004 · VIZ-008 | 首轮 · 接线非造能力 |
-| F-B | 检视器数据/样式 | VIZ-005 · VIZ-004 | 嵌入已有 ChartConfigPanel |
-| F-C | 撤销 + 稳定性 | DASH-002 | 稳定性已勾；对齐=可选 |
-| F-D | 编辑页筛选/联动 | DASH-004 | 筛选必做；联动=可选 |
+| 子批 | 主题 | 必做 | 可选 | 状态 |
+|------|------|------|------|------|
+| F-A | 编辑态接线真出图 | 5/5 | — | **已勾** |
+| F-B | 检视器数据/样式 | 2/2 | — | **已勾** |
+| F-C | 撤销 + 稳定性 | 2/2 | 1 可选 | **必做已勾** |
+| F-D | 编辑页筛选/联动 | 1/1 | 1 可选 | **必做已勾** |
 
 ---
 
@@ -238,6 +238,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.114 | 2026-07-09 | 毕业收官：M-DASH-UX 必做全勾 + M-PRODUCT F-D 书面 E2E；执行范围更新；剩余 F-F 18 + 可选 2 |
 | 1.2.113 | 2026-07-09 | 人工 plan 对账：§M-DASH-UX 对齐代码（F-A 加 QUERY-005、接线优先；F-C 稳定性勾选；F-C/F-D 拆必做/可选；F-F gate）；执行范围对齐 plan v2.8.0 |
 | 1.2.112 | 2026-07-09 | 人工 plan 干预：§M-DASH-UX 升为当前节（方案 A）；§M-PRODUCT 排队；执行范围/里程碑指针对齐 plan v2.7.0 |
 | 1.2.112 | 2026-07-09 | DS-007 产品收缩：移除 `/admin/connectors` 只读页与侧栏「连接器类型」；`数据连接` 直达 `/admin/datasources`；旧路由重定向；保留 `GET /types` + 新建向导 taxonomy；同步 `F03-DS` DS-007、`layout.md` |
