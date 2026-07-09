@@ -22,6 +22,21 @@ vi.mock("@/context/auth-context", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+vi.mock("echarts-for-react", () => ({
+  default: ({ option, onEvents }: { option?: { series?: unknown[] }; onEvents?: { click?: (p: { name?: string }) => void } }) => (
+    <div
+      data-testid="theme-geo-map"
+      role="img"
+      aria-label="GIS mock map"
+      onClick={() => onEvents?.click?.({ name: "广东" })}
+    >
+      mock-map:{String((option?.series as unknown[])?.length ?? 0)}
+    </div>
+  ),
+}));
+
+vi.mock("@/assets/geo/regions-simplified.json", () => ({ default: { type: "FeatureCollection", features: [] } }));
+
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
   return {
@@ -61,6 +76,19 @@ function defaultMock(path: string, init?: RequestInit) {
     return { planVersion: "theme-plan-v1", compareWindow: null, steps: [] };
   }
   if (path.includes("theme-analysis/query")) {
+    const body = init?.body ? JSON.parse(String(init.body)) : {};
+    if (body.dimensionId === "region" && body.filters?.region) {
+      return { columns: ["region", "cnt"], rows: [[body.filters.region, 5]] };
+    }
+    if (body.dimensionId === "region") {
+      return {
+        columns: ["region", "cnt"],
+        rows: [
+          ["北京", 12],
+          ["广东", 8],
+        ],
+      };
+    }
     return { columns: ["region", "cnt"], rows: [["east", 2]] };
   }
   return {};
@@ -128,7 +156,30 @@ describe("ThemeAnalysisPage smoke", () => {
       expect(screen.getByRole("button", { name: "区域" })).toBeInTheDocument();
     });
     await user.click(screen.getByRole("button", { name: "区域" }));
-    expect(await screen.findByText("east")).toBeInTheDocument();
+    expect(await screen.findByText("北京")).toBeInTheDocument();
+  });
+
+  it("geo map panel renders with region distribution data", async () => {
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path.includes("theme-analysis") && (!init?.method || init.method === "GET")) {
+        if (path.includes("chart-bindings")) {
+          return { bindings: [{ widgetId: "w1", dimensionId: "region" }], linkedWidgetCount: 1 };
+        }
+        return {
+          entityType: "equipment",
+          timeGranularity: "day",
+          refType: "dashboard",
+          refId: DASH_ID,
+          dimensions: [{ dimensionId: "region", label: "区域" }],
+        };
+      }
+      return defaultMock(path, init);
+    });
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("tab", { name: "分析" }));
+    expect(await screen.findByText("GIS 分布")).toBeInTheDocument();
+    expect(await screen.findByTestId("theme-geo-map")).toBeInTheDocument();
   });
 
   it("viewer sees read-only message on config tab", async () => {

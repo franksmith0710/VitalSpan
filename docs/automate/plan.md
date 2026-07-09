@@ -19,7 +19,7 @@ prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
 companion_scope: M-DASH-UX-F-A,M-DASH-UX-F-B,M-DASH-UX-F-C,M-DASH-UX-F-D,M-PRODUCT-F-D,M-PRODUCT-F-E,M-PRODUCT-F-F
-companion_remaining: 29
+companion_remaining: 25
 current_milestone: M-DASH-UX
 intervention: create-evolution-plan-dash-ux-align-code-2026-07-09
 scope_change: M-PRODUCT-queued-M-DASH-UX-active
@@ -892,10 +892,10 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 
 **目录/实体（F14-CAT · F07-DASH）**
 
-- [ ] CAT-002: IF-02 真实聚合查询链（非 probe）
-- [ ] CAT-003: 地域维度 RLS 联动 companion
-- [ ] DASH-005: 实体总览跨组件口径一致 companion
-- [ ] DASH-006: 主题分析 GIS 下钻 companion
+- [x] CAT-002: IF-02 真实聚合查询链（非 probe）（完成于 2026-07-09）
+- [x] CAT-003: 地域维度 RLS 联动 companion（完成于 2026-07-09）
+- [x] DASH-005: 实体总览跨组件口径一致 companion（完成于 2026-07-09）
+- [x] DASH-006: 主题分析 GIS 下钻 companion（完成于 2026-07-09）
 
 **视图与非功能（F09-VIEW · F15-NFR）**
 

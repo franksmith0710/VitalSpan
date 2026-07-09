@@ -46,6 +46,7 @@ export function useThemeAnalysis() {
   ]);
   const [draftGranularity, setDraftGranularity] = useState<string>("day");
   const [draftEntityType, setDraftEntityType] = useState<string>("equipment");
+  const [regionFilter, setRegionFilter] = useState<string | null>(null);
 
   const dashboardsQuery = useQuery({
     queryKey: queryKeys.dashboards.list(),
@@ -94,13 +95,29 @@ export function useThemeAnalysis() {
   });
 
   const drillQuery = useQuery({
-    queryKey: queryKeys.themes.drill(refType, refId, activeDimensionId),
+    queryKey: queryKeys.themes.drill(refType, refId, activeDimensionId, regionFilter),
     queryFn: () =>
       apiFetch<DrillResult>("/api/v1/dashboards/theme-analysis/query", {
         method: "POST",
-        body: JSON.stringify({ refType, refId, dimensionId: activeDimensionId }),
+        body: JSON.stringify({
+          refType,
+          refId,
+          dimensionId: activeDimensionId,
+          filters: regionFilter ? { region: regionFilter } : undefined,
+        }),
       }),
     enabled: Boolean(refId) && Boolean(configQuery.data) && Boolean(activeDimensionId),
+    retry: false,
+  });
+
+  const geoMapQuery = useQuery({
+    queryKey: ["themes", "geoMap", refType, refId],
+    queryFn: () =>
+      apiFetch<DrillResult>("/api/v1/dashboards/theme-analysis/query", {
+        method: "POST",
+        body: JSON.stringify({ refType, refId, dimensionId: "region" }),
+      }),
+    enabled: Boolean(refId) && Boolean(configQuery.data),
     retry: false,
   });
 
@@ -156,8 +173,11 @@ export function useThemeAnalysis() {
     chartBindingsQuery,
     executePlanQuery,
     drillQuery,
+    geoMapQuery,
     activeDimensionId,
     setActiveDimensionId,
+    regionFilter,
+    setRegionFilter,
     draftDimensions,
     draftGranularity,
     setDraftGranularity,

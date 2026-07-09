@@ -383,7 +383,7 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | GET | `/api/v1/entities/{entityType}/{entityId}` | CAT-01 实体生命周期查询 | IF-02 | 一期 PoC+ | CAT-001 | 规划 | `backend/app/governance/catalog/cat01.py` |
-| GET | `/api/v1/stats/aggregate` | CAT-02 统计分析聚合 | IF-02 | 一期 PoC+ | CAT-002 | 规划 | `backend/app/governance/catalog/cat02.py` |
+| GET | `/api/v1/stats/aggregate` | CAT-02 统计分析聚合（`templateKey` + `groupBy` IF-02 PoC） | IF-02 | 一期 PoC+ | CAT-002 | 已实现 | `backend/app/api/v1/stats.py` · `backend/app/governance/catalog/cat02/query.py` |
 | GET | `/api/v1/geo/distribution` | CAT-03 地域维度查询 | IF-02 | 一期 PoC+ | CAT-003 | 规划 | `backend/app/governance/catalog/cat03.py` |
 | GET | `/api/v1/timeseries` | CAT-04 时间序列分析 | IF-02 | 二期+ | CAT-004 | 规划 | `backend/app/governance/catalog/cat04.py` |
 | GET | `/api/v1/tickets/stats` | CAT-05 工单与受理统计 | IF-02 | 二期+ | CAT-005 | 规划 | `backend/app/governance/catalog/cat05.py` |

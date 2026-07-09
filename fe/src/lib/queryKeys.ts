@@ -46,8 +46,8 @@ export const queryKeys = {
     config: (refType: string, refId: string) => ["themes", "config", refType, refId] as const,
     chartBindings: (refType: string, refId: string) =>
       ["themes", "chartBindings", refType, refId] as const,
-    drill: (refType: string, refId: string, dimensionId: string) =>
-      ["themes", "drill", refType, refId, dimensionId] as const,
+    drill: (refType: string, refId: string, dimensionId: string, regionFilter?: string | null) =>
+      ["themes", "drill", refType, refId, dimensionId, regionFilter ?? ""] as const,
   },
   users: {
     all: ["users"] as const,

@@ -68,6 +68,7 @@ def execute_query(session: Session, user: UserContext, payload: ExecuteRequest) 
     rls_config = {
         "table_alias": payload.rls.table_alias,
         "org_column": payload.rls.org_column,
+        "region_column": payload.rls.region_column,
     }
     try:
         if mode == "sql":

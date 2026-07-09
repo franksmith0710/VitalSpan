@@ -193,4 +193,47 @@ describe("EntityOverviewPage DASH-005 completion", () => {
     await user.click(await screen.findByRole("button", { name: "下钻" }));
     expect(mockNavigate).toHaveBeenCalledWith("/admin/dashboards/d2");
   });
+
+  it("T-DASH-005-08: metricSource resolves widget metricKey value", async () => {
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === `/api/v1/dashboards/d1`) {
+        return {
+          id: "d1",
+          layoutJson: {
+            widgets: [
+              {
+                id: "w-kpi",
+                chartConfig: {
+                  chartType: "kpi",
+                  mode: "sql",
+                  dataSourceId: "00000000-0000-4000-8000-000000000010",
+                  sql: "SELECT 42 AS total_orders",
+                  metrics: [{ field: "total_orders" }],
+                },
+              },
+            ],
+          },
+        };
+      }
+      if (path === "/api/v1/query/execute" && init?.method === "POST") {
+        return { columns: ["total_orders"], rows: [[42]] };
+      }
+      if (path.includes("entity-overview")) {
+        return {
+          dashboardId: "d1",
+          entityTypeRef: "order",
+          statCards: [
+            { metricKey: "count", label: "实体数" },
+            { metricKey: "total_orders", label: "订单", metricSource: { widgetId: "w-kpi" } },
+          ],
+          filters: [],
+          drillTargets: [{ widgetId: "w1", targetDashboardId: "d2" }],
+        };
+      }
+      return defaultMockApi(path);
+    });
+    renderOverview();
+    expect(await screen.findByText("42")).toBeInTheDocument();
+    expect(await screen.findByText("1")).toBeInTheDocument();
+  });
 });

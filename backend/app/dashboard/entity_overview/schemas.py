@@ -5,10 +5,16 @@ import uuid
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class MetricSourceDef(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    widget_id: str = Field(alias="widgetId", min_length=1, max_length=64)
+
+
 class StatCardDef(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     metric_key: str = Field(alias="metricKey", min_length=1, max_length=64)
     label: str = Field(min_length=1, max_length=120)
+    metric_source: MetricSourceDef | None = Field(default=None, alias="metricSource")
 
 
 class FilterDef(BaseModel):

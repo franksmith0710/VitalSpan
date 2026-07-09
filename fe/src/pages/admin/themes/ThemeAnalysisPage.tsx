@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mapApiError } from "@/lib/apiError";
 import { useThemeAnalysis } from "./useThemeAnalysis";
+import { ThemeGeoMapPanel } from "./ThemeGeoMapPanel";
 
 const DIMENSION_OPTIONS = ["region", "status", "category"] as const;
 
@@ -69,8 +70,11 @@ export function ThemeAnalysisPage() {
     chartBindingsQuery,
     executePlanQuery,
     drillQuery,
+    geoMapQuery,
     activeDimensionId,
     setActiveDimensionId,
+    regionFilter,
+    setRegionFilter,
     draftDimensions,
     draftGranularity,
     setDraftGranularity,
@@ -237,6 +241,38 @@ export function ThemeAnalysisPage() {
                     <div className="mt-4">
                       <DrillTable columns={drillQuery.data.columns} rows={drillQuery.data.rows} />
                     </div>
+                  ) : null}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-theme-base">GIS 分布</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {geoMapQuery.isLoading ? (
+                    <Skeleton className="h-[280px] w-full" />
+                  ) : geoMapQuery.isError ? (
+                    <ErrorBanner
+                      message={mapApiError(geoMapQuery.error)}
+                      onRetry={() => void geoMapQuery.refetch()}
+                    />
+                  ) : geoMapQuery.data ? (
+                    <>
+                      <ThemeGeoMapPanel
+                        columns={geoMapQuery.data.columns}
+                        rows={geoMapQuery.data.rows}
+                        onProvinceClick={(name) => {
+                          setActiveDimensionId("region");
+                          setRegionFilter(name);
+                        }}
+                      />
+                      {regionFilter ? (
+                        <p className="mt-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                          已选省份：{regionFilter}（点击地图可切换下钻范围）
+                        </p>
+                      ) : null}
+                    </>
                   ) : null}
                 </CardContent>
               </Card>

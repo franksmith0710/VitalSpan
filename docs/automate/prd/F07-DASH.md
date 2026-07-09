@@ -65,9 +65,9 @@
   - [x] companion entityTypeRef/drill widget 校验 + perf probe（r66：非法 entityTypeRef/drill widget 422；viewer save 403；`probe_validate_overview_budget_ms`/`probe_get_overview_budget_ms` ≤50ms）
   - [x] 统计卡片+详情筛选+下钻（r231：`EntityOverviewPage` + `/admin/entities` 导航 + entity-types/physical-tables/entity-overview 数据链；`entities-overview.smoke.test.tsx`）
   - [x] 详情 Sheet + 空态引导 + 权限/下钻/Tab vitest（r232：`useEntityOverview` + `EntityDetailSheet` + 7 用例 smoke；页内 stat count 对齐 physical total）
-  - [ ] 跨组件口径一致（companion）
-- **代码锚点**：`backend/app/dashboard/entity_overview/` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/entities/EntityOverviewPage.tsx` · `fe/src/pages/admin/entities/useEntityOverview.ts` · `fe/src/pages/admin/entities/EntityDetailSheet.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DASH-R59-005-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-DASH-R66-005-01~06 · `fe/src/pages/admin/entities/entities-overview.smoke.test.tsx`
-- **演化建议**：r232 收官闭合 M8 实体总览交互与 META-005/006 消费链；跨组件口径联动与 Playwright E2E 留 companion
+  - [x] 跨组件口径一致（F-F companion：`metricSource.widgetId` 与 widget `metricKey` 对齐 · `useEntityStatMetrics.ts` · `test_ff_track_d_dash005.py` · `entities-overview.smoke.test.tsx` T-DASH-005-08）
+- **代码锚点**：`backend/app/dashboard/entity_overview/` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/entities/EntityOverviewPage.tsx` · `fe/src/pages/admin/entities/useEntityOverview.ts` · `fe/src/pages/admin/entities/useEntityStatMetrics.ts` · `fe/src/pages/admin/entities/EntityDetailSheet.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `tests/test_meta_cat_dash_conn_design_r59.py` T-DASH-R59-005-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-DASH-R66-005-01~06 · `tests/test_ff_track_d_dash005.py` · `fe/src/pages/admin/entities/entities-overview.smoke.test.tsx`
+- **演化建议**：r232 收官闭合 M8 实体总览交互与 META-005/006 消费链；跨组件 metricSource 口径联动已闭合；Playwright E2E 留 companion
 - **里程碑对齐**：M8 · 已完成 · 2026-07-06
 ### [DASH-006] 实体主题分析 FR-4.1
 
@@ -80,7 +80,7 @@
   - [x] chartViewBindings 联动（r57 companion：`PUT/GET /api/v1/dashboards/{id}/chart-bindings` widget/dimension/chartConfig 校验 + `_link_chart_views` ≤50ms）
   - [x] 同比环比计算链（r58 companion：`POST /api/v1/dashboards/theme-analysis/execute-plan` 四步链 + yoy/mom `compareWindow`；`probe_theme_execute_plan_budget_ms` ≤35ms）
   - [x] 维度钻取查询 + FE 配置/分析双 Tab（r233：`POST .../theme-analysis/query` + M8 physical table 解析；`ThemeAnalysisPage` + vitest smoke 4/4）
-  - [ ] GIS 分布与行政区划下钻（companion；geoBinding 仅 schema 校验 + execute-plan geo_check）
-- **代码锚点**：`backend/app/dashboard/theme/query.py` · `backend/app/dashboard/theme/execute.py` · `backend/app/api/v1/dashboards.py` · `fe/src/pages/admin/themes/ThemeAnalysisPage.tsx` · `fe/src/pages/admin/themes/useThemeAnalysis.ts` · `tests/test_dash_rpt_r58.py` T-DASH-R58-006-01~12 · `tests/test_m9_rpt_theme_r233.py` T-R233-DASH-006-01~06 · `fe/src/pages/admin/themes/theme-analysis.smoke.test.tsx`
-- **演化建议**：r233 闭合主题维度钻取 query 链路与 FE 配置/分析页；GIS 地图渲染与行政区划下钻留 companion
+  - [x] GIS 分布与行政区划下钻（F-F companion：`ThemeGeoMapPanel` + province click drill · `theme-analysis.smoke.test.tsx` geo map）
+- **代码锚点**：`backend/app/dashboard/theme/query.py` · `backend/app/dashboard/theme/execute.py` · `backend/app/api/v1/dashboards.py` · `fe/src/pages/admin/themes/ThemeAnalysisPage.tsx` · `fe/src/pages/admin/themes/ThemeGeoMapPanel.tsx` · `fe/src/pages/admin/themes/useThemeAnalysis.ts` · `tests/test_dash_rpt_r58.py` T-DASH-R58-006-01~12 · `tests/test_m9_rpt_theme_r233.py` T-R233-DASH-006-01~06 · `fe/src/pages/admin/themes/theme-analysis.smoke.test.tsx`
+- **演化建议**：r233 闭合主题维度钻取 query 链路与 FE 配置/分析页；GIS 地图渲染与行政区划下钻已闭合
 - **里程碑对齐**：M9 · 已完成 · 2026-07-06

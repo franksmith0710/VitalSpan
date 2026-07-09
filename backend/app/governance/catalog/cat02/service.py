@@ -86,6 +86,17 @@ def list_aggregate_templates(
     )
 
 
+def get_user_aggregate_scope_prefix(user_id: str) -> str:
+    return _USER_AGGREGATE_SCOPE.get(user_id, "AGG")
+
+
+def get_aggregate_template(aggregate_key: str) -> AggregateTemplateOut:
+    row = _store.get(aggregate_key)
+    if row is None:
+        raise Cat02Error(CAT02_NOT_FOUND, f"aggregateKey not found: {aggregate_key}", 404)
+    return AggregateTemplateOut.model_validate(row)
+
+
 def get_aggregate_attribution(aggregate_key: str) -> AggregateAttributionOut:
     row = _store.get(aggregate_key)
     if row is None:
