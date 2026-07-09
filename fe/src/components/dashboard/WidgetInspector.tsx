@@ -4,6 +4,7 @@ import { MousePointerClick } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { ChartConfigPanel } from "@/components/charts/ChartConfigPanel";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -271,6 +272,11 @@ export function WidgetInspector({
             />
           </TabsContent>
         </Tabs>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        <Label>图表样式与字段</Label>
+        <ChartConfigPanel config={cfg} columns={[]} onChange={onChange} />
       </div>
 
       {onDelete ? <WidgetInspectorDelete widgetTitle={widget.title} onDelete={onDelete} /> : null}

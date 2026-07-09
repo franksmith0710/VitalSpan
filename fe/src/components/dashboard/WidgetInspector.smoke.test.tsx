@@ -98,4 +98,40 @@ describe("WidgetInspector dataset select", () => {
     await user.click(screen.getByRole("button", { name: "删除" }));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
+
+  it("F-B: embeds ChartConfigPanel style/field controls in inspector", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasources") {
+        return { items: [{ id: "ds-1", name: "分析库", code: "a" }] };
+      }
+      if (path.includes("/api/v1/datasets")) return { items: [], total: 0 };
+      return {};
+    });
+
+    renderInspector();
+
+    expect(await screen.findByText("样式子类型")).toBeInTheDocument();
+    expect(screen.getByText("维度字段")).toBeInTheDocument();
+    expect(screen.getByText("度量字段")).toBeInTheDocument();
+  });
+
+  it("F-B: ChartConfigPanel edits flow through WidgetInspector onChange", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasources") {
+        return { items: [{ id: "ds-1", name: "分析库", code: "a" }] };
+      }
+      if (path.includes("/api/v1/datasets")) return { items: [], total: 0 };
+      return {};
+    });
+
+    const user = userEvent.setup();
+    const onChange = renderInspector();
+    await screen.findByText("样式子类型");
+    await user.click(screen.getByRole("button", { name: "添加筛选" }));
+
+    expect(onChange).toHaveBeenCalled();
+    const last = onChange.mock.calls.at(-1)?.[0];
+    expect(last.filters?.length).toBe(1);
+    expect(last.chartType).toBe(widget.chartConfig.chartType);
+  });
 });

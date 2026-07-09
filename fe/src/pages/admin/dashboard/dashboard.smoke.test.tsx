@@ -220,6 +220,24 @@ describe("dashboard admin smoke", () => {
     expect(screen.getByRole("button", { name: "删除组件" })).toBeInTheDocument();
   });
 
+  it("F-A: edit mode with ready config renders live ChartRenderer, not preview-only text", () => {
+    render(
+      <DashboardWidget widget={sampleWidgets[0]} mode="edit" onTitleChange={() => {}} />,
+    );
+    expect(screen.getByTestId("chart-mock")).toBeInTheDocument();
+    expect(screen.queryByText("保存布局后可在预览查看出图")).not.toBeInTheDocument();
+  });
+
+  it("F-A: edit mode with unready config still shows pending placeholder", () => {
+    const widgetNoDs = {
+      ...sampleWidgets[0],
+      chartConfig: { ...defaultChartConfig("table"), dataSourceId: "" },
+    };
+    render(<DashboardWidget widget={widgetNoDs} mode="edit" onTitleChange={() => {}} />);
+    expect(screen.queryByTestId("chart-mock")).not.toBeInTheDocument();
+    expect(screen.getByText("待配置")).toBeInTheDocument();
+  });
+
   it("T-DASH-R28-003-04: layoutUtils sortWidgets round-trip", () => {
     const shuffled = [sampleWidgets[2], sampleWidgets[0], sampleWidgets[1]];
     const sorted = sortWidgets(shuffled);
