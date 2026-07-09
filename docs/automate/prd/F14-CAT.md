@@ -27,9 +27,9 @@
   - [x] PoC API 可归属（r64 L1：`attributionLabel` + `tableRef` stub 登记 + list 含已创建项）
   - [x] companion aggregate scope ACL + perf probe（r66：`set_user_aggregate_scope` + `CAT02_FORBIDDEN` 403；duplicate dimensions/metrics 422；`probe_validate_aggregate_budget_ms`/`probe_list_aggregate_budget_ms` ≤50ms）
   - [x] M6 catalog probe handler + `GET /api/v1/gov/catalog/m6-probe/cat02` + ACL/perf 回归（`cat02/handler.py` · `test_cat_002_aggregate_m6.py` T-CAT-002-M6-01~04）
-  - [ ] IF-02 `GET /api/v1/stats/aggregate` 真实聚合查询链
-- **代码锚点**：`backend/app/governance/catalog/cat02/` · `backend/app/governance/catalog/cat02/handler.py` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-002-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-CAT-R66-002-01~06 · `tests/test_cat_002_aggregate_m6.py`
-- **演化建议**：M6 L1 已闭合 m6-probe handler + ACL/perf 回归；后续补 stats/aggregate 只读查询与数据源绑定
+  - [x] IF-02 `GET /api/v1/stats/aggregate` 真实聚合查询链（F-F companion：`templateKey` + `groupBy` PoC · `cat02/query.py` · `test_cat002_if02.py` T-CAT-002-IF02-01~05）
+- **代码锚点**：`backend/app/governance/catalog/cat02/` · `backend/app/governance/catalog/cat02/handler.py` · `backend/app/governance/catalog/cat02/query.py` · `backend/app/api/v1/stats.py` · `backend/app/api/v1/gov.py` · `tests/test_nfr_cat_r64.py` T-CAT-R64-002-01~06 · `tests/test_cat_dash_rpt_meta_r66.py` T-CAT-R66-002-01~06 · `tests/test_cat_002_aggregate_m6.py` · `tests/test_cat002_if02.py`
+- **演化建议**：M6 L1 已闭合 m6-probe handler + ACL/perf 回归；stats/aggregate PoC 已闭合；后续补数据源绑定与 fe 模板页
 - **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [CAT-003] CAT-03 地域维度查询类
 
@@ -41,9 +41,9 @@
   - [x] geo distribution 模板（r61 L1：`POST/GET/DELETE /api/v1/gov/geo-regions` + move + `CAT03_*` 错误域 + MAX_DEPTH=8 + code 冲突/环检测）
   - [x] companion region scope ACL + perf probe（r65：`set_user_region_scope` + `CAT03_FORBIDDEN` 403；viewer create 403；`probe_geo_list_budget_ms`/`probe_geo_move_budget_ms` ≤50ms）
   - [x] M6 catalog probe handler + `GET /api/v1/gov/catalog/m6-probe/cat03` + ACL/perf 回归（`cat03/handler.py` · `test_cat_003_region_m6.py` T-CAT-003-M6-01~04）
-  - [ ] M7 地域权限（无 RLS 注入与地域 ACL 联动）
-- **代码锚点**：`backend/app/governance/catalog/cat03/` · `backend/app/governance/catalog/cat03/handler.py` · `backend/app/api/v1/gov.py` · `tests/test_cat_rpt_meta_r65.py` T-CAT-R65-003-01~07 · `tests/test_cat_dash_viz_nfr_r61.py` T-CAT-R61-003-01~06 · `tests/test_cat_003_region_m6.py`
-- **演化建议**：M6 L1 已闭合 m6-probe handler + ACL/perf 回归；后续补 M7 地域权限 RLS 与 fe geo distribution 模板
+  - [x] M7 地域权限（F-F companion：`regionColumn` RLS 注入 · `query/rls/region_scope.py` · `test_cat003_region_rls.py` T-CAT-003-RLS-01~05）
+- **代码锚点**：`backend/app/governance/catalog/cat03/` · `backend/app/governance/catalog/cat03/handler.py` · `backend/app/query/rls/region_scope.py` · `backend/app/query/rls/guard.py` · `backend/app/api/v1/gov.py` · `tests/test_cat_rpt_meta_r65.py` T-CAT-R65-003-01~07 · `tests/test_cat_dash_viz_nfr_r61.py` T-CAT-R61-003-01~06 · `tests/test_cat_003_region_m6.py` · `tests/test_cat003_region_rls.py`
+- **演化建议**：M6 L1 已闭合 m6-probe handler + ACL/perf 回归；regionScope RLS 注入已闭合；后续补 fe geo distribution 模板
 - **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [CAT-004] CAT-04 时间序列分析类
 

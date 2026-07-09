@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/auth-context";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
+import { useEntityStatMetrics } from "./useEntityStatMetrics";
 
 export type EntityTypeOut = {
   typeCode: string;
@@ -22,7 +23,7 @@ export type PhysicalTableOut = {
 export type EntityOverviewOut = {
   dashboardId: string;
   entityTypeRef: string;
-  statCards: { metricKey: string; label: string }[];
+  statCards: { metricKey: string; label: string; metricSource?: { widgetId: string } | null }[];
   filters: unknown[];
   drillTargets: { widgetId: string; targetDashboardId?: string | null }[];
 };
@@ -88,6 +89,14 @@ export function useEntityOverview() {
 
   const activeEntityType = entityTypesQuery.data?.items.find((t) => t.typeCode === activeType) ?? null;
 
+  const statCards = overviewQuery.data?.statCards ?? [];
+
+  const { valuesByMetricKey, loading: statMetricsLoading } = useEntityStatMetrics(
+    dashboardId,
+    statCards,
+    canRead && Boolean(dashboardId),
+  );
+
   return {
     canRead,
     activeType,
@@ -105,6 +114,8 @@ export function useEntityOverview() {
     activeEntityType,
     entityTypes: entityTypesQuery.data?.items ?? [],
     physicalItems: physicalQuery.data?.items ?? [],
-    statCards: overviewQuery.data?.statCards ?? [],
+    statCards,
+    valuesByMetricKey,
+    statMetricsLoading,
   };
 }

@@ -21,6 +21,10 @@ def set_user_region_scope(user_id: str, region_code_prefix: str) -> None:
     _USER_REGION_SCOPE[user_id] = region_code_prefix
 
 
+def get_user_region_scope_prefix(user_id: str) -> str:
+    return _USER_REGION_SCOPE.get(user_id, "CN")
+
+
 def _assert_geo_write_access(user: UserContext, region_code: str) -> None:
     roles = set(user.roles)
     if roles.intersection({"admin", "analyst"}):

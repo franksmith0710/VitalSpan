@@ -37,3 +37,13 @@ class AggregateAttributionOut(BaseModel):
     metrics: list[str]
     aggregation_fn: str = Field(alias="aggregationFn")
     poc_ready: bool = Field(alias="pocReady")
+
+
+class AggregateQueryOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    template_key: str = Field(alias="templateKey")
+    group_by: str = Field(alias="groupBy")
+    dimensions: list[str]
+    metrics: list[str]
+    rows: list[dict[str, object]]
+    poc_ready: bool = Field(alias="pocReady")

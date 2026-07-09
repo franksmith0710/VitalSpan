@@ -48,6 +48,8 @@ export function EntityOverviewPage() {
     entityTypes,
     physicalItems,
     statCards,
+    valuesByMetricKey,
+    statMetricsLoading,
   } = useEntityOverview();
 
   const [detailOpen, setDetailOpen] = useState(false);
@@ -153,7 +155,11 @@ export function EntityOverviewPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-title-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">
-                  {card.metricKey === "count" ? (physicalQuery.data?.total ?? "—") : "—"}
+                  {card.metricKey === "count"
+                    ? (physicalQuery.data?.total ?? "—")
+                    : statMetricsLoading
+                      ? "…"
+                      : (valuesByMetricKey[card.metricKey] ?? "—")}
                 </p>
               </CardContent>
             </Card>
