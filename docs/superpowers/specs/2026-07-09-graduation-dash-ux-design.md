@@ -9,7 +9,7 @@
 | PRD 合同 129 项 | **已实现** | hub `feature_count: 129`；分片验收标准合同项已勾 |
 | plan §M-DASH-UX | **当前缺口** | 编辑体验 companion：9 必做 + 2 可选（稳定性已勾 1） |
 | plan §M-PRODUCT | **排队** | F-D E2E 4 + F-E docs 2；**F-F 18 项非默认 gate（毕业不含）** |
-| 代码证据 | 确认 | `DashboardWidget` 编辑态 `WidgetEditPreview` 挡住 `ChartRenderer`；`WidgetInspector` 未嵌 `ChartConfigPanel`；`loadFilters` 仅 `mode==="view"` |
+| 代码证据（2026-07-09 实扫） | **部分已落地** | F-A/F-B 已 merge（`abb2bd7`/`9808172`/`9543c5f`）：编辑态 `ChartRenderer` + `WidgetInspector` 嵌 `ChartConfigPanel`；**仍缺** F-C 撤销/重做、F-D 编辑页 `GlobalFilterBar`（`loadFilters` 仍 `mode==="view"` 早退） |
 
 **毕业定义（本轮）**：完成 M-DASH-UX 全部必做 + M-PRODUCT F-E 文档对账 + M-PRODUCT F-D 书面 E2E 记录（可 mock/脚本）。**不含** F-F 深度 companion、对齐/多选、组件联动、AI/SQLBot。
 
