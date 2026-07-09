@@ -725,11 +725,11 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 > **对标**：DataEase 拖入/配完即可看图。  
 > **实现要点**：改 `DashboardWidget` 编辑分支；配置就绪时渲染 `ChartRenderer`；未就绪保留待配置态；复用 `useChartExecute`（勿新建执行器）。
 
-- [ ] VIZ-002: 编辑态 widget **真出图**（去掉「仅预览才出图」路径；`mode=edit` 可渲染 ChartRenderer）
-- [ ] QUERY-005: 编辑态 **SQL/table 直连**执行出图（`useChartExecute` mode≠dataset）
-- [ ] QUERY-009: 编辑态 **Dataset** 执行路径稳定（失败/空态可读，不阻断画布）
-- [ ] META-004: 检视器绑定 Dataset/boundConfigId（或改 SQL）后 **即时刷新**画布
-- [ ] VIZ-008: 编辑态复用 ChartPanel **loading/错误/空数据**覆盖层（无白屏）
+- [x] VIZ-002: 编辑态 widget **真出图**（去掉「仅预览才出图」路径；`mode=edit` 可渲染 ChartRenderer）（完成于 2026-07-09）
+- [x] QUERY-005: 编辑态 **SQL/table 直连**执行出图（`useChartExecute` mode≠dataset）（完成于 2026-07-09）
+- [x] QUERY-009: 编辑态 **Dataset** 执行路径稳定（失败/空态可读，不阻断画布）（完成于 2026-07-09）
+- [x] META-004: 检视器绑定 Dataset/boundConfigId（或改 SQL）后 **即时刷新**画布（完成于 2026-07-09）
+- [x] VIZ-008: 编辑态复用 ChartPanel **loading/错误/空数据**覆盖层（无白屏）（完成于 2026-07-09）
 
 **验收信号**：编辑页对已配 SQL **或** Dataset 的表格/折线/柱至少一类可见真实数据；改配置后无需进预览即可刷新；未配置仍显示清晰待配置态。
 
@@ -740,8 +740,8 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 > **对标**：DE 数据/样式分 Tab。  
 > **实现要点**：`WidgetInspector` **嵌入已有** `ChartConfigPanel`（维度/指标/筛选/styleVariant）；勿重写协议。
 
-- [ ] VIZ-005: 检视器「数据」Tab（维度/指标/筛选；对接 ChartConfigPanel）
-- [ ] VIZ-004: 检视器「样式」Tab（styleVariant 生效；先覆盖 bar/line/pie 主变体即可）
+- [x] VIZ-005: 检视器「数据」Tab（维度/指标/筛选；对接 ChartConfigPanel）（完成于 2026-07-09）
+- [x] VIZ-004: 检视器「样式」Tab（styleVariant 生效；先覆盖 bar/line/pie 主变体即可）（完成于 2026-07-09）
 
 **验收信号**：选中组件可切换数据/样式；改 styleVariant 后编辑态可见差异。
 
@@ -754,7 +754,7 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 **必做**
 
 - [x] DASH-002: 编辑态稳定性（僵尸 404 空态、删除后离开、关 RGL isDroppable 防闪烁；vitest T-DASH-DELETE-01/02）（完成于 2026-07-09）
-- [ ] DASH-002: 布局级撤销 / 重做（拖拽缩放与增删组件）
+- [x] DASH-002: 布局级撤销 / 重做（拖拽缩放与增删组件）（完成于 2026-07-09）
 
 **可选（不阻塞收官 · G2 默认跳过）**
 
@@ -769,7 +769,7 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 
 **必做**
 
-- [ ] DASH-004: 编辑页挂载全局筛选条并可驱动 widget 刷新
+- [x] DASH-004: 编辑页挂载全局筛选条并可驱动 widget 刷新（完成于 2026-07-09）
 
 **可选（不阻塞收官 · G2 默认跳过）**
 
