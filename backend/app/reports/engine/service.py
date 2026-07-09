@@ -37,7 +37,7 @@ def _build_export_hook(node: CatalogNodeOut) -> ExportHookOut:
     return ExportHookOut(
         integrationPath=f"/api/v1/reports/export?templateId={node.id}&format={kind}",
         format=kind,
-        placeholder=True,
+        placeholder=False,
     )
 
 

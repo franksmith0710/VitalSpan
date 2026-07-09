@@ -10,7 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { mapApiError } from "@/lib/apiError";
 import { BatchImportPanel } from "./BatchImportPanel";
+import { ReportExportCard } from "./ReportExportCard";
 import { SchedulePanel } from "./SchedulePanel";
+import { TemplateBlockEditor } from "./TemplateBlockEditor";
 import {
   type CatalogNode,
   useCatalogExtension,
@@ -92,13 +94,14 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="basic">基本信息</TabsTrigger>
+            <TabsTrigger value="blocks">模板块</TabsTrigger>
             <TabsTrigger value="extension">扩展配置</TabsTrigger>
             <TabsTrigger value="preview">预览</TabsTrigger>
             <TabsTrigger value="schedule">调度</TabsTrigger>
             <TabsTrigger value="batch">批量导入</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="basic" className="mt-6">
+          <TabsContent value="basic" className="mt-6 space-y-6">
             <dl className="grid gap-4 rounded-xl border border-gray-200 p-5 dark:border-gray-800">
               <BasicInfoRow label="节点类型">报表模板</BasicInfoRow>
               <BasicInfoRow label="模板格式">
@@ -106,6 +109,20 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
               </BasicInfoRow>
               <BasicInfoRow label="模板键">{node.templateKey ?? "—"}</BasicInfoRow>
             </dl>
+            <ReportExportCard defaultTemplateId={node.id} />
+          </TabsContent>
+
+          <TabsContent value="blocks" className="mt-6">
+            {node.templateKey && node.templateKind ? (
+              <TemplateBlockEditor
+                templateKey={node.templateKey}
+                format={node.templateKind}
+                displayName={node.name}
+                readOnly={readOnly}
+              />
+            ) : (
+              <p className="text-theme-sm text-gray-500">请先为模板节点设置 templateKey。</p>
+            )}
           </TabsContent>
 
           <TabsContent value="extension" className="mt-6 space-y-4">

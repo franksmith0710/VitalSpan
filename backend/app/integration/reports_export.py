@@ -54,6 +54,19 @@ class ExportRecord:
 _EXPORT_STORE: dict[uuid.UUID, ExportRecord] = {}
 
 
+def _template_export_allowed(template_id: uuid.UUID) -> bool:
+    if template_id in SEED_TEMPLATE_IDS:
+        return True
+    from app.reports.catalog.errors import ReportCatalogError
+    from app.reports.catalog import service as catalog_service
+
+    try:
+        node = catalog_service.get_node(template_id)
+    except ReportCatalogError:
+        return False
+    return node.node_type == "template"
+
+
 def _assert_reports_export(actor: UserContext) -> None:
     if "admin" in actor.roles or "integration" in actor.roles:
         return
@@ -114,7 +127,7 @@ def create_export_request(
             422,
             fields=[{"field": "from", "message": "invalid range"}],
         )
-    if template_id not in SEED_TEMPLATE_IDS:
+    if not _template_export_allowed(template_id):
         raise IntegrationError(
             "REPORT_TEMPLATE_NOT_FOUND",
             "Template not found",

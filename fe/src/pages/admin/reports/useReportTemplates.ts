@@ -12,7 +12,23 @@ export type CatalogNode = {
   sortOrder: number;
 };
 
-export function useReportTemplates(parentId: string | null = null) {
+export type TemplateBlock = {
+  blockType: "sql" | "table" | "chart";
+  queryRef?: string;
+  tableRef?: string;
+  chartType?: "line" | "bar" | "pie";
+};
+
+export type TemplateDefinition = {
+  templateKey: string;
+  format: "word" | "excel" | "pdf";
+  displayName: string;
+  blocks: TemplateBlock[];
+  storageRef?: string;
+  exportHook?: { integrationPath: string; format: string; placeholder: boolean };
+};
+
+export function useReportTemplates(parentId: string | null = null, templateKey: string | null = null) {
   const qc = useQueryClient();
   const nodesQuery = useQuery({
     queryKey: queryKeys.reports.catalogNodes(parentId),
@@ -49,7 +65,23 @@ export function useReportTemplates(parentId: string | null = null) {
     onSuccess: (_d, v) => void qc.invalidateQueries({ queryKey: queryKeys.reports.extension(v.nodeId) }),
   });
 
-  return { nodesQuery, createNode, moveNode, saveExtension };
+  const templateQuery = useQuery({
+    queryKey: queryKeys.reports.template(templateKey ?? ""),
+    queryFn: () => apiFetch<TemplateDefinition>(`/api/v1/reports/templates/${templateKey}`),
+    enabled: Boolean(templateKey),
+    retry: false,
+  });
+
+  const saveTemplate = useMutation({
+    mutationFn: ({ templateKey: key, body }: { templateKey: string; body: Record<string, unknown> }) =>
+      apiFetch<TemplateDefinition>(`/api/v1/reports/templates/${key}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: (_d, v) => void qc.invalidateQueries({ queryKey: queryKeys.reports.template(v.templateKey) }),
+  });
+
+  return { nodesQuery, createNode, moveNode, saveExtension, templateQuery, saveTemplate };
 }
 
 export function useCatalogExtension(nodeId: string | null) {

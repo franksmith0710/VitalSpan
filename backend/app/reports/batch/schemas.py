@@ -44,3 +44,16 @@ class BatchCreateReportsOut(BaseModel):
     idempotent_replay: bool = Field(default=False, alias="idempotentReplay")
     failures: list[BatchFailureItem] = Field(default_factory=list)
     rolled_back_count: int = Field(default=0, alias="rolledBackCount")
+
+
+class BatchExportJobIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    node_ids: list[uuid.UUID] = Field(min_length=1, alias="nodeIds")
+    format: Literal["pdf", "word", "excel"] = "pdf"
+
+
+class BatchExportJobOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    job_id: uuid.UUID = Field(alias="jobId")
+    status: Literal["pending", "processing", "ready", "failed"]
+    download_url: str | None = Field(default=None, alias="downloadUrl")
