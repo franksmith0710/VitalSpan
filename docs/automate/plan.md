@@ -1,13 +1,13 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **M-DASH-UX · Dashboard 编辑体验对标**（**唯一活跃节**）。**M-FINAL 已冻结**；**M-PRODUCT 排队**（F-D/E/F 未勾项延后）。  
+> **当前节** = **M-DASH-UX · Dashboard 编辑体验对标**（**唯一活跃节**）。**M-FINAL 已冻结**；**M-PRODUCT 排队**（F-D/E 延后；**F-F 非默认 gate**）。  
 > **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL 已完成；**PRD 总数 129**（合同已实现）；companion 见 §M-DASH-UX + §M-PRODUCT。  
-> **完成定义**：`[x]` = PRD 分片「已实现」且验收标准全勾；`[ ]` = companion / 浏览器体验未达。  
+> **完成定义**：`[x]` = companion 浏览器可感知 / 合同项分片「已实现」；`[ ]` = companion 未达；标「可选」不阻塞收官。  
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F07-DASH.md`](./prd/F07-DASH.md) · [`prd/F06-VIZ.md`](./prd/F06-VIZ.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)。
 
 ```yaml
-version: 2.7.0
+version: 2.8.0
 last_updated: 2026-07-09
 archive_ref: docs/automate/plan.archive.md
 execute_scope: M-DASH-UX
@@ -19,22 +19,24 @@ prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
 companion_scope: M-DASH-UX-F-A,M-DASH-UX-F-B,M-DASH-UX-F-C,M-DASH-UX-F-D,M-PRODUCT-F-D,M-PRODUCT-F-E,M-PRODUCT-F-F
-companion_remaining: 37
+companion_remaining: 33
 current_milestone: M-DASH-UX
-intervention: create-evolution-plan-dash-ux-2026-07-09
+intervention: create-evolution-plan-dash-ux-align-code-2026-07-09
 scope_change: M-PRODUCT-queued-M-DASH-UX-active
-plan_review: 2026-07-09-de-dashboard-edit-gap
-prd_hub_ref: docs/automate/prd.md@v1.2.111
+plan_review: 2026-07-09-code-align-must-optional
+prd_hub_ref: docs/automate/prd.md@v1.2.113
 polish_checklist_ref: docs/automate/plans/2026-07-08-product-polish-checklist.md
 bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-flicker.md
+code_gap_note: edit-mode WidgetEditPreview blocks ChartRenderer; ChartConfigPanel unused in WidgetInspector
 ```
 
 ### 执行范围：M-FINAL 已冻结 · M-DASH-UX 当前节 · M-PRODUCT 排队（产品决策 2026-07-09 人工确认）
 
 > **决策（2026-07-07）**：将 **M-FE-4/5**、**M13**、**F-G** 合并为 **§M-FINAL**；**2026-07-08 收官**（129/129 PRD 合同勾完）。  
 > **决策（2026-07-08）**：追加 **§M-PRODUCT** 处理成品感、DataEase 数据源分类、IA 收敛与 companion 验收清扫。  
-> **决策（2026-07-09）**：G2 多次 SATURATED + 用户确认方案 A → 插入 **§M-DASH-UX** 为当前节，优先补齐 Dashboard **编辑态**对标 DataEase 的体验差距；**§M-PRODUCT** 标为 **queued**（F-D/E/F 不丢，延后）。  
-> **依据**：`goal.md` G1/G3；人工走查「编辑态真出图 / 数据·样式双轨 / 布局辅助 / 编辑器内联动」；`fe-dashboard-zombie-edit-flicker` case。
+> **决策（2026-07-09）**：方案 A → **§M-DASH-UX** 为当前节；**§M-PRODUCT** queued。  
+> **决策（2026-07-09 · 代码对齐）**：对照 `DashboardWidget`/`WidgetInspector`/`ChartConfigPanel`/`useChartExecute` 实扫 → **F-A 强调接线（非造能力）**；**F-C 稳定性已落地勾选**；**F-C/F-D 拆必做/可选**；**F-F 非默认 gate**。  
+> **依据**：`goal.md` G1/G3；代码证据：编辑态 `WidgetEditPreview` 挡住 `ChartRenderer`；`ChartConfigPanel` 未接入检视器；`GlobalFilterBar` 仅 view。
 
 | 范围 | 子批 | PRD 项 | 已实现 | 待完成 | 状态 |
 |------|------|--------|--------|--------|------|
@@ -42,24 +44,24 @@ bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-fli
 | FE 先导 | M-FE-1 ~ M-FE-3 | 13* | 13 | 0 | 已完成 |
 | **最后一期** | **M-FINAL · F-A ~ F-G** | **38†** | **38** | **0** | **已冻结** |
 | **成品收官** | **M-PRODUCT · F-A ~ F-F** | **companion** | **16‡** | **24** | **排队** |
-| **编辑体验** | **M-DASH-UX · F-A ~ F-D** | **companion** | **0** | **11** | **当前节** |
+| **编辑体验** | **M-DASH-UX · F-A ~ F-D** | **companion** | **1** | **9 必做 + 2 可选** | **当前节** |
 | 一期–三期 | M2 – M12 | 88 | 88 | 0 | 已完成 |
 
 \* M-FE 与 M2–M5 有 ID 重叠，为浏览器交付轨。  
 † M-FINAL companion 行映射既有 PRD ID，合同 129 项已全部勾选。  
-‡ M-PRODUCT F-A/B/C 已勾；F-D/E/F 未勾项排队。
+‡ M-PRODUCT F-A/B/C 已勾；F-D/E/F 未勾项排队（**F-F 非默认 gate**）。
 
 **推荐执行顺序（全局 · 当前）**：
 
 ```
-M-DASH-UX F-A（编辑态真出图）
-  → F-B（数据/样式双轨）
-  → F-C（布局辅助 + 稳定性）
-  → F-D（编辑器内筛选/联动）
-  →（收官后）恢复 M-PRODUCT F-D/E/F
+M-DASH-UX F-A（编辑态接线真出图 · SQL+Dataset）  ← 首轮必做
+  → F-B（检视器接入 ChartConfigPanel）
+  → F-C 必做（撤销）∥ F-C 已勾（稳定性）
+  → F-D 必做（编辑页全局筛选）；联动=可选
+  →（收官后）M-PRODUCT F-D 书面 E2E → F-E 文档；F-F 仅人工点名
 ```
 
-**G2 选题约束**：每轮从 **§M-DASH-UX 含 `[ ]` 的子批**取 **3–5 项**；**首轮建议 F-A 全量**（编辑态真出图，用户显性痛点）。**禁止**在 M-DASH-UX 未收官前从 M-PRODUCT F-F 选题。
+**G2 选题约束**：每轮从 **§M-DASH-UX 含 `[ ]` 且非「可选」** 的子批取 **3–5 项**；**首轮必须 F-A**。**禁止**选题：M-PRODUCT F-F、M-DASH-UX 标「可选」项（除非人工点名）、AI/SQLBot、非图表积木。
 
 **前三期完成信号**（不新增 PRD ID）：
 
@@ -694,107 +696,118 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 ## M-DASH-UX — Dashboard 编辑体验对标【当前节】
 
-> **人工干预（2026-07-09）**：`create-evolution-plan` · 方案 A 确认。  
-> **背景**：合同 129 已勾完且 G2 SATURATED；用户走查相对 DataEase，差距在 **编辑态真出图、检视器深度、布局辅助、编辑器内联动**（非连接器/IA）。  
-> **映射**：仅既有 PRD ID companion 深化，**不新增**需求事实；**不含** SQLBot/AI、非图表积木（文本/Tab/查询控件）本里程碑默认不做。  
-> **完成定义**：`[x]` = 浏览器编辑页可感知 + 对应分片验收/演化建议可回写。
+> **人工干预（2026-07-09）**：方案 A + **代码对齐修订（v2.8.0）**。  
+> **代码事实**：`ChartRenderer` / `useChartExecute` / `ChartConfigPanel` / `GlobalFilterBar` **已存在**；编辑页用 `WidgetEditPreview` **挡住真出图**，检视器未接 `ChartConfigPanel`，筛选条仅 `mode=view`。  
+> **策略**：**接线优先于造能力**；子批拆 **必做 / 可选**；稳定性已落地先勾选。  
+> **映射**：仅既有 PRD ID；**不含** SQLBot/AI、文本/Tab/查询控件（未立项）。  
+> **完成定义**：`[x]` = 浏览器编辑页可感知 + 分片可回写；可选行不阻塞收官。
 
-| 子批 | 主题 | PRD 映射 | 待完成 | 状态 |
-|------|------|----------|--------|------|
-| **F-A** | 编辑态真出图 | VIZ-002 · QUERY-009 · META-004 · VIZ-008 | 4 | **当前 · 首轮** |
-| **F-B** | 数据 / 样式双轨 | VIZ-005 · VIZ-004 | 2 | 依赖 F-A |
-| **F-C** | 布局辅助与稳定性 | DASH-002 | 3 | 依赖 F-A |
-| **F-D** | 筛选与联动进编辑器 | DASH-004 | 2 | 依赖 F-B |
+| 子批 | 主题 | 必做待办 | 可选 | 状态 |
+|------|------|----------|------|------|
+| **F-A** | 编辑态接线真出图 | 5 | 0 | **当前 · 首轮** |
+| **F-B** | 检视器数据/样式 | 2 | 0 | 依赖 F-A |
+| **F-C** | 撤销 + 稳定性 | 1 | 1 | 稳定性已勾 |
+| **F-D** | 编辑页筛选/联动 | 1 | 1 | 依赖 F-A |
 
 **推荐执行顺序**：
 
 ```
-F-A  编辑态真出图（占位 → 可预览数据）
-  → F-B  检视器「数据」「样式」双 Tab
-  → F-C  撤销/重做 · 对齐或吸附 · 闪烁/僵尸页回归门禁
-  → F-D  编辑页全局筛选 + 最小组件联动入口
+F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Dataset）
+  → F-B  WidgetInspector 嵌入 ChartConfigPanel（数据/样式 Tab）
+  → F-C  撤销/重做（必做）；对齐/多选=可选
+  → F-D  GlobalFilterBar 进编辑页（必做）；组件联动=可选
 ```
 
-**G2 选题约束**：每轮从 **§M-DASH-UX 含 `[ ]` 的子批**取 **3–5 项**；**首轮建议 F-A 全量**。
+**G2 选题约束**：每轮取 **3–5 项必做 `[ ]`**；**首轮 F-A 全量**。可选行默认跳过。
 
-### F-A — 编辑态真出图
+### F-A — 编辑态接线真出图【必做 · 首轮】
 
-> **对标**：DataEase 拖入即可看图；VitalSpan 编辑态不得长期停在「待配置」占位。
+> **对标**：DataEase 拖入/配完即可看图。  
+> **实现要点**：改 `DashboardWidget` 编辑分支；配置就绪时渲染 `ChartRenderer`；未就绪保留待配置态；复用 `useChartExecute`（勿新建执行器）。
 
-- [ ] VIZ-002: Dashboard **编辑态** widget 真出图（配置就绪后编辑页可渲染，非仅预览模式）
-- [ ] QUERY-009: 编辑态 Dataset 执行路径稳定（失败/空态可读，不阻断画布）
-- [ ] META-004: 编辑态绑定 Dataset/boundConfigId 后即时刷新出图
-- [ ] VIZ-008: 编辑态空数据/错误态覆盖层（无白屏、无持续闪烁）
+- [ ] VIZ-002: 编辑态 widget **真出图**（去掉「仅预览才出图」路径；`mode=edit` 可渲染 ChartRenderer）
+- [ ] QUERY-005: 编辑态 **SQL/table 直连**执行出图（`useChartExecute` mode≠dataset）
+- [ ] QUERY-009: 编辑态 **Dataset** 执行路径稳定（失败/空态可读，不阻断画布）
+- [ ] META-004: 检视器绑定 Dataset/boundConfigId（或改 SQL）后 **即时刷新**画布
+- [ ] VIZ-008: 编辑态复用 ChartPanel **loading/错误/空数据**覆盖层（无白屏）
 
-**验收信号**：编辑页对已配 SQL/Dataset 的表格/折线/柱至少一类可见真实数据；未配置仍显示清晰待配置态。
+**验收信号**：编辑页对已配 SQL **或** Dataset 的表格/折线/柱至少一类可见真实数据；改配置后无需进预览即可刷新；未配置仍显示清晰待配置态。
 
-### F-B — 右侧数据 / 样式双轨
+**代码锚点（现状）**：`DashboardWidget.tsx`（`WidgetEditPreview`）· `useChartExecute.ts` · `ChartRenderer.tsx` · `WidgetInspector.tsx` · `ChartPanel.tsx`
 
-> **对标**：DE 数据 / 样式分 Tab；复用已有 `ChartConfigPanel` / styleVariant，不另起协议。
+### F-B — 右侧数据 / 样式双轨【必做】
 
-- [ ] VIZ-005: `WidgetInspector`「数据」Tab（维度/指标/筛选；对接 ChartConfigPanel 能力）
-- [ ] VIZ-004: `WidgetInspector`「样式」Tab（styleVariant：堆叠/面积/环形等生效）
+> **对标**：DE 数据/样式分 Tab。  
+> **实现要点**：`WidgetInspector` **嵌入已有** `ChartConfigPanel`（维度/指标/筛选/styleVariant）；勿重写协议。
 
-**验收信号**：选中组件后可在右侧切换数据/样式；改 styleVariant 后编辑态或预览可见差异。
+- [ ] VIZ-005: 检视器「数据」Tab（维度/指标/筛选；对接 ChartConfigPanel）
+- [ ] VIZ-004: 检视器「样式」Tab（styleVariant 生效；先覆盖 bar/line/pie 主变体即可）
 
-### F-C — 布局辅助与稳定性
+**验收信号**：选中组件可切换数据/样式；改 styleVariant 后编辑态可见差异。
 
-> **对标**：DE 撤销与对齐辅助；并固化近期僵尸页/闪烁修复（CASE-2026-07-09-001）。
+**代码锚点（现状）**：`ChartConfigPanel.tsx`（已实现、未接入）· `WidgetInspector.tsx`（仅 Dataset/SQL）
 
-- [ ] DASH-002: 布局级撤销 / 重做（至少拖拽缩放与增删组件）
-- [ ] DASH-002: 多选或对齐辅助（吸附线 / 对齐，二选一先交付）
-- [ ] DASH-002: 编辑态稳定性回归（无僵尸 404 可编辑画布、无持续闪烁；vitest/Playwright 门禁）
+### F-C — 撤销与稳定性
 
-**验收信号**：误操作可撤销；新增组件不触发持续闪烁；删除看板后离开编辑页。
+> **对标**：DE 可纠错；僵尸页/闪烁已修（CASE-2026-07-09-001）。
+
+**必做**
+
+- [x] DASH-002: 编辑态稳定性（僵尸 404 空态、删除后离开、关 RGL isDroppable 防闪烁；vitest T-DASH-DELETE-01/02）（完成于 2026-07-09）
+- [ ] DASH-002: 布局级撤销 / 重做（拖拽缩放与增删组件）
+
+**可选（不阻塞收官 · G2 默认跳过）**
+
+- [ ] DASH-002: 多选或对齐辅助（吸附线 / 对齐）〔可选〕
+
+**验收信号（收官）**：误操作可撤销；稳定性回归保持绿。
 
 ### F-D — 筛选与联动进编辑器
 
-> **对标**：DE 编辑态可配全局筛选与组件联动；当前联动偏 view 模式。
+> **对标**：DE 编辑态可测筛选；联动为增强。  
+> **实现要点**：复用 view 模式 `GlobalFilterBar` + `buildWidgetFilterParams`；编辑页去掉 `mode!==view` 早退。
 
-- [ ] DASH-004: 编辑页可配置/预览全局筛选（不只 view 模式）
-- [ ] DASH-004: 组件联动规则最小配置入口（点选 → 过滤，DE 最小子集）
+**必做**
 
-**验收信号**：编辑页可改全局筛选并看到 widget 刷新；至少一种「源组件 → 目标组件」联动可配置并预览。
+- [ ] DASH-004: 编辑页挂载全局筛选条并可驱动 widget 刷新
 
-### M-DASH-UX 收官信号
+**可选（不阻塞收官 · G2 默认跳过）**
 
-| 验收 | 映射 |
-|------|------|
-| 编辑态所见即所得 | F-A · 配好即可在编辑页看图 |
-| 检视器双轨 | F-B · 数据 + 样式 |
-| 布局可纠错 | F-C · 撤销 + 稳定性门禁 |
-| 编辑器内联动 | F-D · 全局筛选 + 最小联动 |
-| 恢复排队节 | 收官后 G2 切回 **§M-PRODUCT** F-D/E/F |
+- [ ] DASH-004: 组件联动规则最小配置入口（点选→过滤）〔可选〕
 
-> **明确不含**：DataEase SQLBot / AI 问数；文本/图片/Tab/查询控件等非图表积木（若需要另开里程碑映射 DASH-003）。
+**验收信号（收官）**：编辑页改全局筛选后图表刷新。
+
+### M-DASH-UX 收官信号（G1 最小可交付）
+
+| 验收 | 映射 | 阻塞？ |
+|------|------|--------|
+| 编辑态所见即所得（SQL+Dataset） | F-A 全勾 | **是** |
+| 检视器数据+样式 | F-B 全勾 | **是** |
+| 可撤销 + 稳定性 | F-C 必做 | **是** |
+| 编辑页全局筛选 | F-D 必做 | **是** |
+| 对齐/多选、组件联动 | F-C/F-D 可选 | 否 |
+| 恢复排队节 | 收官后 → M-PRODUCT F-D 书面 E2E | 收官后 |
+
+> **明确不含**：SQLBot/AI；文本/图片/Tab/查询控件；F-F 大包 companion（见下节）。
 
 ---
 
 ## M-PRODUCT — 成品对标与体验收官【排队】
 
-> **人工干预（2026-07-08）**：`create-evolution-plan` · 用户反馈「功能乱、重复、距 DE/SS 远」；在 M-FINAL 合同勾完后追加 **体验与 companion 清扫**节。  
-> **状态（2026-07-09）**：**queued** — F-A/B/C 已勾；F-D/E/F 未勾项延后至 **M-DASH-UX 收官**后恢复为当前节。  
-> **实施细则**：`docs/automate/plans/2026-07-08-product-polish-checklist.md` · `docs/ui/layout.md` · DataEase 数据源五类对标（OLTP/OLAP/数仓库湖/文件/API）。  
-> **完成定义**：`[x]` = 浏览器可走通 + 对应 PRD 分片验收项可勾选；companion 远期项见 §F-F（按需裁剪）。
+> **人工干预（2026-07-08）**：成品感 / DE 数据源分类 / IA / companion 清扫。  
+> **状态（2026-07-09）**：**queued** — F-A/B/C 已勾；F-D/E 收官后恢复；**F-F = 非默认 gate（G2 禁止选题）**。  
+> **完成定义**：`[x]` = 浏览器可走通 + 分片可勾；F-F 仅合同点名才做。
 
-| 子批 | 主题 | PRD 映射 | 待完成 | 状态 |
-|------|------|----------|--------|------|
-| **F-A** | 壳层与主路径 FE | BOOT-002 · QUERY-009 · META-004 · API-003 · GOV-005 · DASH-002 · API-005 · CONN-023~024 | 0 | 已完成 |
-| **F-B** | DataEase 数据源分类 | DS-007 companion | 0 | 已完成 |
-| **F-C** | IA 主路径收敛 | BOOT-002 · VIZ-002 · DESIGN-004 | 0 | 已完成 |
-| **F-D** | Goal 验收 E2E | QUERY-009 · GOV-005 · GOV-007 · DATA-001 | 4 | **排队** |
-| **F-E** | 文档与契约对账 | DS-007 · API-007 · BOOT-006 | 2 | **排队** |
-| **F-F** | Companion 深度（可选） | META · RPT · CAT · DASH · VIEW · NFR | 18 | **排队** |
+| 子批 | 主题 | 待完成 | 状态 | G2 |
+|------|------|--------|------|-----|
+| F-A ~ F-C | 壳层 / 数据源分类 / IA | 0 | 已完成 | — |
+| **F-D** | Goal 验收 E2E | 4 | **排队 · 收官后优先** | 允许 |
+| **F-E** | 文档与契约对账 | 2 | **排队** | 允许 |
+| **F-F** | Companion 深度 | 18 | **非默认 gate** | **禁止** |
 
-**推荐执行顺序**（恢复为当前节后）：
+**恢复为当前节后顺序**：`F-D 书面 E2E → F-E 文档`；F-F 仅人工点名。
 
-```
-F-D  P4-SMOKE / DATA-SMOKE 浏览器 E2E 固化
-  ∥ F-E  prd/README 对账 · layout.md · API auth 文档债（arch-inspect）
-  → F-F  META/RPT/CAT companion（按交付合同裁剪）
-```
-
-**G2 选题约束（排队期）**：**禁止**选题；恢复后每轮从含 `[ ]` 子批取 3–5 项，建议先 F-D。
+**G2 选题约束（排队期）**：**禁止**选题；M-DASH-UX 收官前不得从 F-F 取题。
 
 ### F-A — 壳层与主路径 FE
 

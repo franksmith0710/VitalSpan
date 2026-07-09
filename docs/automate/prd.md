@@ -1,7 +1,7 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.112
+version: 1.2.113
 last_updated: 2026-07-09
 truth_source: true
 evolution_hub: true
@@ -200,29 +200,28 @@ domain_count: 16
 
 ## 执行范围（与 plan 对齐）
 
-> 更新：2026-07-08 · 来源 [`plan.md`](./plan.md) v2.6.0 · hub **v1.2.109**
+> 更新：2026-07-09 · 来源 [`plan.md`](./plan.md) v2.8.0 · hub **v1.2.113**
 
 | 字段 | 值 |
 |------|-----|
 | 已冻结 | **M-FINAL**（129/129 PRD 合同项） |
-| 当前执行 | **M-PRODUCT · 成品对标与体验收官**（companion 清扫） |
+| 当前执行 | **M-DASH-UX · Dashboard 编辑体验对标** |
+| 排队 | **M-PRODUCT**（F-D/E 收官后恢复；**F-F 非默认 gate**） |
 | PRD 合同 | **129** 已实现 · **0** 未实现 |
-| companion | 约 **70** 条验收 `[ ]`（META/RPT/CAT/NFR/CONN 远期等） |
-| 当前节 | **M-PRODUCT F-D**（Goal 验收 E2E）建议首轮 |
-| G2 选题 | 每轮从 plan §M-PRODUCT 含 `[ ]` 子批取 3–5 项 |
+| companion | M-DASH-UX **9 必做 + 2 可选**（稳定性已勾 1）+ M-PRODUCT 排队 **24** |
+| 当前节 | **M-DASH-UX F-A**（编辑态接线真出图 · SQL+Dataset）**首轮必做** |
+| G2 选题 | 每轮从 §M-DASH-UX **必做** `[ ]` 取 3–5 项；首轮 F-A；禁止可选行 / M-PRODUCT F-F / AI |
 
-**说明**：PRD 合同 **129** 项全勾「已实现」；差距在 **companion 验收**与 **浏览器主路径/E2E**，见 `plan.md` §M-PRODUCT 与 `docs/automate/plans/2026-07-08-product-polish-checklist.md`。
+**说明**：PRD 合同 **129** 项全勾「已实现」；当前差距是 **编辑态接线**（`WidgetEditPreview` 挡住 `ChartRenderer`），见 `plan.md` §M-DASH-UX。
 
-**M-PRODUCT 子批（与 plan 对齐）**：
+**M-DASH-UX 子批（与 plan 对齐）**：
 
-| 子批 | 主题 | 代表 PRD ID |
-|------|------|-------------|
-| F-A | 壳层与主路径 FE | BOOT-002 · QUERY-009 · META-004 · API-003 · GOV-005 · DASH-002 · API-005 |
-| F-B | DataEase 数据源分类 | DS-007 companion |
-| F-C | IA 主路径收敛 | BOOT-002 · VIZ-002 · DESIGN-004 |
-| F-D | Goal E2E | QUERY-009 · GOV-005 · GOV-007 · DATA-001 |
-| F-E | 文档与契约对账 | DS-007 · API-007 · BOOT-006 |
-| F-F | Companion 深度（可选） | META · RPT · CAT · DASH · VIEW · NFR |
+| 子批 | 主题 | 代表 PRD ID | 备注 |
+|------|------|-------------|------|
+| F-A | 编辑态接线真出图 | VIZ-002 · QUERY-005 · QUERY-009 · META-004 · VIZ-008 | 首轮 · 接线非造能力 |
+| F-B | 检视器数据/样式 | VIZ-005 · VIZ-004 | 嵌入已有 ChartConfigPanel |
+| F-C | 撤销 + 稳定性 | DASH-002 | 稳定性已勾；对齐=可选 |
+| F-D | 编辑页筛选/联动 | DASH-004 | 筛选必做；联动=可选 |
 
 ---
 
@@ -230,7 +229,8 @@ domain_count: 16
 
 - **归档**：[`plan.archive.md`](./plan.archive.md)（M1–M12 全量映射）
 - **已冻结**：[`plan.md`](./plan.md) §M-FINAL（129/129 合同）
-- **活跃**：[`plan.md`](./plan.md) §**M-PRODUCT**（人工维护，`create-evolution-plan` 2026-07-08）
+- **活跃**：[`plan.md`](./plan.md) §**M-DASH-UX**（人工维护，`create-evolution-plan` 2026-07-09 · v2.8.0 代码对齐）
+- **排队**：[`plan.md`](./plan.md) §M-PRODUCT（F-F 非默认 gate）
 
 ---
 
@@ -238,6 +238,8 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.113 | 2026-07-09 | 人工 plan 对账：§M-DASH-UX 对齐代码（F-A 加 QUERY-005、接线优先；F-C 稳定性勾选；F-C/F-D 拆必做/可选；F-F gate）；执行范围对齐 plan v2.8.0 |
+| 1.2.112 | 2026-07-09 | 人工 plan 干预：§M-DASH-UX 升为当前节（方案 A）；§M-PRODUCT 排队；执行范围/里程碑指针对齐 plan v2.7.0 |
 | 1.2.112 | 2026-07-09 | DS-007 产品收缩：移除 `/admin/connectors` 只读页与侧栏「连接器类型」；`数据连接` 直达 `/admin/datasources`；旧路由重定向；保留 `GET /types` + 新建向导 taxonomy；同步 `F03-DS` DS-007、`layout.md` |
 | 1.2.111 | 2026-07-08 | P5 重评 CONN-023/024、BOOT-002、VIZ-002、DESIGN-004（M-PRODUCT F-A/F-C companion IA）；pytest 2311/29 skipped + vitest 269/269 + check:design 220 files + build PASS；CONN-023 RestApiConnectionFields + CONN-024 FileSourceConnectionFields Tabs；BOOT-002/VIZ-002 iaTier/iaPriority 过滤 + DESIGN-004 治理分组 Badge；用户价值 88–92%→92–98%、完整度 96%→100%、交互 N/A→88–98%；总分 92.4–95.9→93.2–96.6（五 ID ≥90 STUCK 空；plan F-A CONN-023/024 + F-C 三行勾选） |
 | 1.2.110 | 2026-07-08 | P5 DS-007 重评（M-PRODUCT F-B displayGroup taxonomy companion）；pytest test_datasources_display_group_fb 8/8 + vitest ConnectorsPage+datasource-form 19/19 + check:design 212 files；displayGroup/categoryLabel API + ConnectorsPage Tabs + DatasourceFormPage 三步向导；用户价值 92%→94%、交互体验 94%→96%、架构健康 94%→92%（DatasourceFormPage 530 行超 fe-ui 软约束）；总分 93.8→94.1（≥90 STUCK 空；plan F-B 三行勾选） |
