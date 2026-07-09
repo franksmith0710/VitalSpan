@@ -4,8 +4,8 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.2.1
-last_updated: 2026-07-08
+version: 1.2.2
+last_updated: 2026-07-09
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
 layout_pattern_ref: references/layout-patterns/app-shell.md
@@ -103,7 +103,11 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   > **F-B taxonomy（DS-007）**：类型清单经 `GET /api/v1/datasources/types` 供新建向导消费；`/admin/datasources/new` Step 1 按 **关系型数据库 / OLAP / 数仓·湖仓 / 文件 / API / 更多** 大类选型（对标 DataEase）；编辑已有数据源跳过向导直达连接表单。旧 `/admin/connectors` 已移除，重定向至 `/admin/datasources`。
 │   ├── /ingestion/sync-jobs         # 数据接入
 │   ├── /metadata                    # 元数据（术语/主题/维度）
-│   └── /datasets                    # Dataset 语义建模（META-004）
+│   ├── /datasets                    # Dataset 语义建模（META-004）
+│   │
+│   > **实体与主题**（`nav-manifest.tsx` 嵌套于「数据」分组，非独立侧栏分组；二期 M7）：
+│   ├── /entities/overview           # 实体总览配置（二期）
+│   └── /themes/:dashboardId         # 主题分析（当前固定 `default`；二期）
 │
 ├── 分析                            # 建设 + 消费
 │   ├── /dashboards                  # Dashboard 列表 · table-list（全员可见授权项）
@@ -119,11 +123,6 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /reports/templates           # 模板目录 · tree-table（建设）
 │   ├── /reports/templates/:id       # 模板编辑
 │   └── /reports/schedules           # 调度（三期）
-│
-├── 主题与实体
-│   ├── /themes                      # 主题分析配置（二期）· hub-tabs
-│   ├── /themes/:id                  # 主题阅读态（消费，二期）
-│   └── /entities/overview           # 实体总览配置（二期）
 │
 ├── 我的
 │   ├── /account/profile             # 用户资料（个人中心首页）
@@ -151,16 +150,15 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA（analyst/viewer） |
 |------|--------|----------|--------|------|---------------------------|
-| 数据 | 数据连接、数据接入、语义建模（元数据/Dataset） | `datasource:*` / `metadata:*` / `dataset:*` 分项 | M1/M13 | admin | **隐藏** |
+| 数据 | 数据连接、数据接入、语义建模（元数据/Dataset）、**实体与主题**（实体总览/主题分析，嵌套子分组，非独立侧栏一级分组） | `datasource:*` / `metadata:*` / `dataset:*` / `theme:*` 分项 | M1/M7/M13 | admin | **隐藏** |
 | 分析 | Dashboard | — | M1 | admin/analyst/viewer | **可见**（主路径） |
 | 治理 | 图表类型目录（M11） | `governance:*` | M11 | admin | **隐藏**（工程向；建图在 Dashboard） |
 | 报表 | 报表（subItems: 预制报表/报表模板/报表调度） | `report:read/edit` | M1/M7/M11 | admin/analyst/viewer | **可见** |
-| 主题与实体 | 实体总览、主题分析 | `theme:*` | M7 | admin | **隐藏** |
 | 治理 | 接口目录（M1）、治理工单（M13）、发布流水线（M13）、查询服务（M13）、**查询设计器**（M13，标注「治理专用」） | `governance:*` | M1/M13 | admin | **隐藏** |
 | 我的 | 个人资料、偏好设置、安全设置 | — | — | admin/analyst/viewer | **可见**（头像菜单「个人中心」进入） |
 | 系统 | 角色/用户/组织/行级权限/审计日志/资源授权 | `system:*` | M1 | admin | **隐藏** |
 
-> **数据工程** = `数据` + `主题与实体` 分组；非 admin 默认侧栏不展示（`iaTier: engineering`）。
+> **数据工程** = `数据` 分组（含嵌套「实体与主题」子分组）；非 admin 默认侧栏不展示（`iaTier: engineering`）。
 > **图表类型目录**位于「治理」分组（admin 工程向）；实际建图在 Dashboard 编辑 `WidgetPalette`；组件面板底部可跳转完整类型说明。
 
 > **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生函数：`fe/src/lib/resolve-nav.ts`。
@@ -220,8 +218,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 分组 | admin | analyst | viewer |
 |------|-------|---------|--------|
-| 数据 | 可见 | 隐藏 | 隐藏 |
-| 主题与实体 | 可见 | 隐藏 | 隐藏 |
+| 数据（含嵌套「实体与主题」子分组） | 可见 | 隐藏 | 隐藏 |
 | 治理 | 可见 | 隐藏 | 隐藏 |
 | 分析（主路径：Dashboard） | 可见 | 可见 | 可见 |
 | 报表 | 可见 | 可见 | 可见 |
@@ -230,7 +227,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 脚注：
 
-- **数据工程** = `数据` + `主题与实体` 分组（`iaTier: engineering`）
+- **数据工程** = `数据` 分组（`iaTier: engineering`）；「实体与主题」为其内嵌子分组（`nav-manifest.tsx` 未独立为侧栏一级分组）
 - **图表类型目录**（`/admin/charts/types`）在「治理」分组；旧路径 `/admin/charts/explore` 重定向
 - **查询设计器**位于治理分组，侧栏 Badge「治理专用」；普通分析请使用 Dashboard
 
@@ -274,5 +271,6 @@ fe/src/
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.2 | 2026-07-09 | F-E DS-007 nav-manifest 对账：修正「实体与主题」为「数据」分组内嵌子分组（非独立侧栏一级分组，与 `nav-manifest.tsx` 一致）；修正主题路由为 `/admin/themes/:dashboardId`（原 `/themes`、`/themes/:id` 与实际路由 `themes/:dashboardId` 不符） |
 | 1.0.0 | 2026-07-03 | 初版：Admin/Portal/Embed 双端 IA（已废止） |
 | 1.1.0 | 2026-07-03 | 单应用 + Embed；合并消费路由；ADR 不做 `/portal/*` |
