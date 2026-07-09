@@ -5,8 +5,8 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.0
-last_updated: 2026-07-04
+version: 1.0.3
+last_updated: 2026-07-09
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -30,10 +30,10 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET | `/health` | 健康检查 | — | P0 | BOOT-001 | 已实现 | `backend/app/main.py` |
-| GET | `/docs` | Swagger UI | — | 一期 | API-007 | 规划 | FastAPI 内置 |
-| GET | `/redoc` | ReDoc | — | 一期 | API-007 | 规划 | FastAPI 内置 |
-| GET | `/openapi.json` | OpenAPI 规范（IF-01~04/06 tag 后处理；`x-api-version-policy`；r44 IF operationId 前缀） | IF-06 | 一期 | API-001, API-002, API-007 | 已实现 | `backend/app/openapi/extensions.py` · `backend/app/openapi/version_policy.py` |
+| GET | `/health` | 健康检查（`AuthMiddleware.PUBLIC_PATHS` 免鉴权） | — | P0 | BOOT-001 | 已实现 | `backend/app/main.py` |
+| GET | `/docs` | Swagger UI（`docs_url="/docs"`；`AuthMiddleware.PUBLIC_PATHS` 免鉴权，且 `path.startswith("/docs")` 覆盖子资源） | — | 一期 | API-007 | 已实现 | `backend/app/main.py` · `backend/app/auth/middleware.py` |
+| GET | `/redoc` | ReDoc（`redoc_url="/redoc"`；`AuthMiddleware.PUBLIC_PATHS` 免鉴权） | — | 一期 | API-007 | 已实现 | `backend/app/main.py` · `backend/app/auth/middleware.py` |
+| GET | `/openapi.json` | OpenAPI 规范（IF-01~04/06 tag 后处理；`x-api-version-policy`；r44 IF operationId 前缀；`AuthMiddleware.PUBLIC_PATHS` 免鉴权） | IF-06 | 一期 | API-001, API-002, API-007 | 已实现 | `backend/app/openapi/extensions.py` · `backend/app/openapi/version_policy.py` · `backend/app/auth/middleware.py` |
 
 ---
 
@@ -43,7 +43,7 @@ redoc: /redoc
 |------|------|------|-----|------|-----|------|----------|
 | GET | `/api/v1/me` | 当前用户资料（`id`/`username`/`displayName`/`email`/`roles`） | 内部 | P0 | BOOT-003 | 已实现 | `backend/app/api/v1/me.py` · `backend/app/auth/profile/` |
 | PATCH | `/api/v1/me` | 自服务更新 `displayName`/`email`（审计 `profile.update`） | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/me.py` |
-| POST | `/api/v1/auth/login` | 登录，返回 token | 内部 | 一期 | BOOT-003 | 已实现 | `backend/app/api/v1/auth.py` |
+| POST | `/api/v1/auth/login` | 登录，返回 token（`AuthMiddleware.PUBLIC_PATHS` 免鉴权，唯一业务路径公开项） | 内部 | 一期 | BOOT-003 | 已实现 | `backend/app/api/v1/auth.py` |
 | POST | `/api/v1/auth/change-password` | 自服务修改密码（`currentPassword`/`newPassword`；审计 `password.change`） | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/auth.py` |
 | POST | `/api/v1/auth/dev-switch` | 开发环境切换用户身份（`vitalspan_env=development`） | 内部 | 一期 | — | 已实现 | `backend/app/api/v1/auth.py` |
 | POST | `/api/v1/auth/logout` | 注销 | 内部 | 一期 | BOOT-003 | 规划 | `backend/app/api/v1/auth.py` |
@@ -482,5 +482,6 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.3 | 2026-07-09 | F-E API-007 对账：`/docs`/`/redoc` 状态 规划→已实现（`AuthMiddleware.PUBLIC_PATHS` 已豁免且 FastAPI `docs_url`/`redoc_url` 已启用）；补 `/health`/`/openapi.json`/`/api/v1/auth/login` 免鉴权注记 |
 | 1.0.2 | 2026-07-04 | M8/M12/M13 r44：IF-01~04 集成 API L1（services/integration_bus/reports/export/embed）；OpenAPI 版本策略 |
 | 1.0.1 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；§9 数据接入 API；移除 IF-05 范围外 |
