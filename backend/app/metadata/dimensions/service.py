@@ -127,6 +127,25 @@ def resolve_dimension_by_code(session: Session, code: str) -> DimensionDict:
     return dimension
 
 
+def ensure_legacy_probe_dimensions(session: Session) -> None:
+    """Idempotent seed for prefab/filters/theme companion legacy probe codes."""
+    from app.auth.deps import UserContext
+
+    labels = {"region": "区域", "status": "状态"}
+    actor = UserContext(id="probe-dim", username="probe", roles=["admin"])
+    for code in ("region", "status"):
+        try:
+            resolve_dimension_by_code(session, code)
+        except DimensionError as exc:
+            if exc.code != "META_DIM_NOT_FOUND":
+                raise
+            create_dimension(
+                session,
+                DimensionCreate(code=code, name=labels[code]),
+                actor,
+            )
+
+
 def update_dimension(
     session: Session, dimension_id: uuid.UUID, payload: DimensionUpdate, user: UserContext,
 ) -> DimensionDict:

@@ -48,6 +48,7 @@ def _validate_filter_bindings(filters: list) -> None:
 
     session = get_meta_session()
     try:
+        dimension_service.ensure_legacy_probe_dimensions(session)
         for f in filters:
             if not _DIMENSION_REF_RE.match(f.dimension_ref):
                 raise GlobalFilterError(
@@ -59,10 +60,11 @@ def _validate_filter_bindings(filters: list) -> None:
             try:
                 dimension_service.resolve_dimension_by_code(session, f.dimension_ref)
             except DimensionError as exc:
+                status = 422 if exc.code == "META_DIM_NOT_FOUND" else exc.status
                 raise GlobalFilterError(
                     DASH_FILTER_INVALID_DIMENSION_REF,
                     exc.message,
-                    exc.status,
+                    status,
                     [{"field": "dimensionRef", "message": f"unknown: {f.dimension_ref}"}],
                 ) from exc
     finally:

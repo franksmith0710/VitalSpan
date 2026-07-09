@@ -49,14 +49,16 @@ def _validate_dimension_codes(codes: list[str]) -> None:
 
     session = get_meta_session()
     try:
+        dimension_service.ensure_legacy_probe_dimensions(session)
         for code in codes:
             try:
                 dimension_service.resolve_dimension_by_code(session, code)
             except DimensionError as exc:
+                status = 422 if exc.code == "META_DIM_NOT_FOUND" else exc.status
                 raise PrefabError(
                     "RPT_PREFAB_DIMENSION_UNKNOWN",
                     exc.message,
-                    exc.status,
+                    status,
                     [{"field": "dimensionCodes", "message": f"unknown: {code}"}],
                 ) from exc
     finally:
@@ -78,7 +80,6 @@ def _validate_binding(payload: PrefabBindingIn) -> PrefabBindingIn:
             422,
             [{"field": "entityTypeCode", "message": "invalid pattern"}],
         )
-    _validate_dimension_codes(payload.dimension_codes)
     if not payload.allowed_roles:
         raise PrefabError(
             RPT_PREFAB_EMPTY_ROLES,
@@ -93,6 +94,7 @@ def _validate_binding(payload: PrefabBindingIn) -> PrefabBindingIn:
             422,
             [{"field": "dimensionCodes", "message": "distribution requires region"}],
         )
+    _validate_dimension_codes(payload.dimension_codes)
     return payload
 
 

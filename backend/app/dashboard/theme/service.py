@@ -64,14 +64,16 @@ def _resolve_dimensions(db: Session, config: EntityThemeConfig) -> None:
     from app.metadata.dimensions import service as dimension_service
     from app.metadata.dimensions.schemas import DimensionError
 
+    dimension_service.ensure_legacy_probe_dimensions(db)
     for dim in config.dimensions:
         try:
             resolved = dimension_service.resolve_dimension_by_code(db, dim.dimension_id)
         except DimensionError as exc:
+            status = 422 if exc.code == "META_DIM_NOT_FOUND" else exc.status
             raise ThemeAnalysisError(
                 "DASH_THEME_DIMENSION_UNKNOWN",
                 exc.message,
-                exc.status,
+                status,
             ) from exc
         dim.dimension_id = resolved.code
 

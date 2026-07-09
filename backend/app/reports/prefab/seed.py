@@ -26,7 +26,23 @@ _BUILTIN: list[dict] = [
 
 def seed_builtin_prefab_bindings(actor: UserContext | None = None) -> int:
     """幂等 upsert 内置 binding；返回写入条数。"""
+    from app.datasources.models import get_meta_session
+    from app.metadata.dimensions import service as dimension_service
+    from app.metadata.dimensions.schemas import DimensionCreate, DimensionError
+
     user = actor or UserContext(id="seed", username="seed", roles=["admin"])
+    session = get_meta_session()
+    try:
+        for code, name in (("region", "区域"), ("status", "状态")):
+            try:
+                dimension_service.create_dimension(
+                    session, DimensionCreate(code=code, name=name), user,
+                )
+            except DimensionError as exc:
+                if exc.code != "META_DIM_CODE_CONFLICT":
+                    raise
+    finally:
+        session.close()
     count = 0
     for raw in _BUILTIN:
         item = PrefabBindingIn.model_validate(raw)

@@ -39,6 +39,7 @@ def r231_sqlite_env():
     import app.dashboard.models  # noqa: F401
     import app.datasources.models  # noqa: F401
     import app.governance.catalog.models  # noqa: F401
+    import app.metadata.dimensions.models  # noqa: F401
     import app.query.config_store.models  # noqa: F401
     import app.query.models  # noqa: F401
 
