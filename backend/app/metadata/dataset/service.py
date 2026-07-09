@@ -170,3 +170,11 @@ def bind_query_config(dataset_id: str, config_id: uuid.UUID, user: UserContext) 
         session.close()
     _store[dataset_id]["boundConfigId"] = str(config_id)
     return _to_out(_store[dataset_id])
+
+
+def find_dataset_by_bound_config(config_id: uuid.UUID) -> DatasetItemOut | None:
+    cid = str(config_id)
+    for record in _store.values():
+        if record.get("boundConfigId") == cid:
+            return _to_out(record)
+    return None

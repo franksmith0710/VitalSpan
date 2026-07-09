@@ -76,3 +76,25 @@ class TermOut(BaseModel):
 class TermListResponse(BaseModel):
     items: list[TermOut]
     total: int
+
+
+class TermFieldMappingItem(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    table_fqn: str = Field(alias="tableFqn", min_length=3, max_length=128)
+    column_name: str = Field(alias="columnName", min_length=1, max_length=64)
+
+
+class TermFieldMappingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    id: uuid.UUID
+    table_fqn: str = Field(alias="tableFqn")
+    column_name: str = Field(alias="columnName")
+
+
+class TermFieldMappingListResponse(BaseModel):
+    items: list[TermFieldMappingOut]
+
+
+class TermFieldMappingsReplace(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    items: list[TermFieldMappingItem] = Field(default_factory=list, max_length=64)

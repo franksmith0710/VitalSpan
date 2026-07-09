@@ -875,12 +875,12 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 
 **语义层（F11-META）**
 
-- [ ] META-001: 术语字典与物理字段映射 companion
-- [ ] META-002: 业务主题树深层级拖拽导航 companion
-- [ ] META-003: 维度字典 M4/M5/M6 统一引用 companion
-- [ ] META-004: Dataset 对标 DE/SS 全量 + 计算字段引擎 companion
-- [ ] META-005: 实体总览 GOV catalog lineage companion
-- [ ] META-006: 实体 schema GOV 引用释放 companion
+- [x] META-001: 术语字典与物理字段映射 companion（完成于 2026-07-09）
+- [x] META-002: 业务主题树深层级拖拽导航 companion（完成于 2026-07-09）
+- [x] META-003: 维度字典 M4/M5/M6 统一引用 companion（完成于 2026-07-09）
+- [x] META-004: Dataset 对标 DE/SS 全量 + 计算字段引擎 companion（完成于 2026-07-09）
+- [x] META-005: 实体总览 GOV catalog lineage companion（完成于 2026-07-09）
+- [x] META-006: 实体 schema GOV 引用释放 companion（完成于 2026-07-09）
 
 **报表（F08-RPT）**
 

@@ -137,9 +137,36 @@ def _append_version_history(db: Session, entry_id: uuid.UUID, status: str) -> li
 def rollback_entry_skeleton(db: Session, entry_id: uuid.UUID) -> PublishActionOut:
     row = _get_row(db, entry_id)
     _append_version_history(db, entry_id, row.status)
+    if row.status == "published":
+        _release_publish_refs(entry_id)
     row.status = "draft"
     db.commit()
     db.refresh(row)
+    return PublishActionOut(id=row.id, status=row.status)
+
+
+def _release_publish_refs(entry_id: uuid.UUID) -> None:
+    from app.governance.openapi import service as openapi_service
+    from app.metadata.physical import gov_refs as physical_gov_refs
+
+    openapi_service.release_entity_refs_for_catalog(entry_id)
+    physical_gov_refs.release_catalog_refs_for_entry(str(entry_id))
+
+
+def unpublish_entry(
+    db: Session, entry_id: uuid.UUID, actor: UserContext | None = None
+) -> PublishActionOut:
+    if actor is not None:
+        assert_publish_action(db, actor, "approve", entry_id)
+    row = _get_row(db, entry_id)
+    if row.status != "published":
+        raise PublishError(GOV_PUBLISH_INVALID_TRANSITION, f"Cannot unpublish from {row.status}", 400)
+    _append_version_history(db, entry_id, row.status)
+    _release_publish_refs(entry_id)
+    row.status = "draft"
+    db.commit()
+    db.refresh(row)
+    emit_publish_notification(entry_id, "unpublished")
     return PublishActionOut(id=row.id, status=row.status)
 
 

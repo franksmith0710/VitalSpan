@@ -264,10 +264,12 @@ redoc: /redoc
 |------|------|------|-----|------|-----|------|----------|
 | GET/POST | `/api/v1/metadata/glossary` | 术语字典 CRUD/list；写操作 admin/analyst only（viewer/editor → 403 `META_TERM_FORBIDDEN`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/glossary/{term_id}` | 术语详情/更新/删除（写 ACL；非法 status → 422 `META_TERM_INVALID_STATUS`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/PUT | `/api/v1/metadata/glossary/{term_id}/field-mappings` | 术语↔物理字段映射 companion（F-F） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/themes` | 业务主题树 CRUD/list；写 ACL（403 `META_THEME_FORBIDDEN`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/themes/{node_id}` | 主题节点详情/更新/删除 | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | POST | `/api/v1/metadata/themes/{node_id}/move` | 主题节点移动（环检测；超深 → 422 `META_THEME_MAX_DEPTH`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/dimensions` | 维度字典 list/create；可选 `themeNodeId` FK；写 ACL（403 `META_DIM_FORBIDDEN`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET | `/api/v1/metadata/dimensions/resolve?code=` | 按 code 解析维度（prefab/filters/designer 统一引用） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/dimensions/{dimension_id}` | 维度详情/更新/删除（级联 values） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/dimensions/{dimension_id}/values` | 枚举值 list/批量注册（重复 value code → 409 `META_DIM_VALUE_CODE_CONFLICT`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/entity-types` | 实体类型 schema list/create（`META_ENTITY_TYPE_*`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
@@ -278,7 +280,8 @@ redoc: /redoc
 | POST | `/api/v1/metadata/physical-tables` | M8 META-005 直登物理表（`tableFqn` 唯一） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET | `/api/v1/metadata/physical-tables?fqn=` | M8 META-005 单条 physical 详情 | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | PUT | `/api/v1/metadata/physical-tables/{fqn}` | M8 META-005 更新 displayName/entityTypeCode | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
-| DELETE | `/api/v1/metadata/physical-tables/{fqn}` | M8 META-005 删除登记（204） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
+| DELETE | `/api/v1/metadata/physical-tables/{fqn}` | M8 META-005 删除登记（GOV 引用 → 409 `META_PHYSICAL_GOV_IN_USE`） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET | `/api/v1/metadata/physical-tables/{fqn}/lineage` | 物理表 lineage stub（catalogEntryIds） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET | `/api/v1/metadata/physical-tables?entityTypeCode=` | M8 META-005 按类型过滤物理表列表 | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | DELETE | `/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}` | 删除单条枚举值 | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/datasets` | Dataset list/create（内存 store L1；`META_DATASET_*`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
@@ -344,6 +347,8 @@ redoc: /redoc
 | POST | `/api/v1/gov/publish/entries/{entry_id}/submit` | draft→pending_publish | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/publish/entries/{entry_id}/approve` | pending_publish→published；响应含 `busRegisterStatus`/`busRegisterErrorCode`（r248） | IF-06 | 一期 | GOV-005/007 | 已实现（r248） | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/publish/entries/{entry_id}/reject` | pending_publish→draft | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/publish/entries/{entry_id}/unpublish` | published→draft；释放 entity/physical GOV 引用 | IF-06 | 四期 | META-006 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/publish/entries/{entry_id}/link-physical` | 登记 catalog→physicalTableFqn 引用（lineage） | IF-06 | 四期 | META-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/publish/entries/{entry_id}/status` | 发布状态 + allowedActions | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/publish/entries/{entry_id}/notifications` | 审批通知事件列表（内存 store） | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/gov/openapi-mappings` | 发布引擎 OpenAPI 映射 list/register（`GOV_OPENAPI_MAP_*`） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |

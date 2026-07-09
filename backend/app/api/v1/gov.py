@@ -36,6 +36,7 @@ from app.governance.publish.schemas import (
     PublishActionOut,
     PublishFromWorkflowIn,
     PublishFromWorkflowOut,
+    PublishLinkPhysicalIn,
     PublishNotificationListOut,
     PublishNotificationOut,
     PublishStatusOut,
@@ -408,6 +409,47 @@ def publish_reject(
         return publish_service.reject_entry(db, entry_id, actor)
     except PublishError as exc:
         return _publish_error_response(exc)
+    except GovAclError as exc:
+        return _gov_acl_error(exc)
+
+
+@router.post("/publish/entries/{entry_id}/unpublish", response_model=PublishActionOut)
+def publish_unpublish(
+    entry_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> PublishActionOut | JSONResponse:
+    try:
+        return publish_service.unpublish_entry(db, entry_id, actor)
+    except PublishError as exc:
+        return _publish_error_response(exc)
+    except GovAclError as exc:
+        return _gov_acl_error(exc)
+
+
+@router.post("/publish/entries/{entry_id}/link-physical", response_model=PublishActionOut)
+def publish_link_physical(
+    entry_id: uuid.UUID,
+    payload: PublishLinkPhysicalIn,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> PublishActionOut | JSONResponse:
+    from app.metadata.physical import gov_refs as physical_gov_refs
+    from app.metadata.physical import service as physical_service
+    from app.metadata.physical.errors import PhysicalTableError
+
+    try:
+        status = publish_service.get_publish_status(db, entry_id)
+        physical_service.get_physical_table(payload.table_fqn)
+        physical_gov_refs.register_catalog_ref(payload.table_fqn, str(entry_id))
+        return PublishActionOut(id=status.id, status=status.status)
+    except PublishError as exc:
+        return _publish_error_response(exc)
+    except PhysicalTableError as exc:
+        return JSONResponse(
+            status_code=exc.status,
+            content={"code": exc.code, "message": exc.message},
+        )
     except GovAclError as exc:
         return _gov_acl_error(exc)
 

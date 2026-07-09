@@ -67,6 +67,14 @@ class DimensionListResponse(BaseModel):
     total: int
 
 
+class DimensionResolveOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    id: uuid.UUID
+    code: str
+    name: str
+    status: str
+
+
 class DimensionValueItem(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     code: str

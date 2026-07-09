@@ -45,3 +45,8 @@ class PublishFromWorkflowOut(BaseModel):
     catalog_entry_id: uuid.UUID = Field(alias="catalogEntryId")
     publish_version: int = Field(alias="publishVersion")
     idempotent: bool = False
+
+
+class PublishLinkPhysicalIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    table_fqn: str = Field(alias="tableFqn", min_length=3, max_length=128)
