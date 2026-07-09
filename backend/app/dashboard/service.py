@@ -159,8 +159,21 @@ def update_layout(db: Session, dashboard_id: uuid.UUID, layout_json: dict[str, A
     row = db.scalar(_active(select(Dashboard).where(Dashboard.id == dashboard_id)))
     if row is None:
         raise DashboardError("DASH_NOT_FOUND", "Dashboard not found", 404)
+    from app.views.adapter import dashboard_layout_to_view
+    from app.views.schemas import ViewError
+    from app.views.validate import validate_dashboard_view
+
     try:
-        validated = validate_layout(layout_json)
+        view = validate_dashboard_view(
+            dashboard_layout_to_view(
+                dashboard_id=dashboard_id,
+                name=row.name,
+                layout_json=layout_json,
+            ),
+        )
+        validated = view.layout.model_dump(by_alias=True, mode="json")
+    except ViewError as exc:
+        raise DashboardError(exc.code, exc.message, exc.status) from exc
     except DashboardError:
         raise
     except ChartViewError as exc:

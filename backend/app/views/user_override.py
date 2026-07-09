@@ -21,7 +21,11 @@ def _widget_count(layout: dict[str, Any]) -> int:
     return len(layout.get("widgets") or [])
 
 
-def list_overrides(user_id: str) -> dict[str, Any]:
+def list_overrides(user_id: str, db: Session | None = None, role_codes: list[str] | None = None) -> dict[str, Any]:
+    if db is not None and role_codes is not None:
+        from app.views.onboarding import apply_first_login_inherit
+
+        apply_first_login_inherit(db, user_id, role_codes)
     return {"items": store.list_user_overrides(user_id)}
 
 
@@ -56,7 +60,7 @@ def create_override(db: Session, actor: UserContext, payload: dict[str, Any]) ->
     except DashboardError:
         raise ViewError("VIEW_OVERRIDE_DASHBOARD_NOT_FOUND", "Dashboard not found", 404) from None
 
-    bounds = resolve_defaults_for_roles(list(actor.roles))
+    bounds = resolve_defaults_for_roles(list(actor.roles), db)
     layout = payload.get("layout") or {}
     if _widget_count(layout) > int(bounds.get("maxWidgetCount", 24)):
         raise ViewError("VIEW_OVERRIDE_OUT_OF_BOUNDS", "Widget count exceeds role default", 422)
@@ -105,7 +109,7 @@ def _validate_override_payload(db: Session, actor: UserContext, payload: dict[st
         except DashboardError:
             raise ViewError("VIEW_OVERRIDE_DASHBOARD_NOT_FOUND", "Dashboard not found", 404) from None
 
-    bounds = resolve_defaults_for_roles(list(actor.roles))
+    bounds = resolve_defaults_for_roles(list(actor.roles), db)
     layout = payload.get("layout") or {}
     if _widget_count(layout) > int(bounds.get("maxWidgetCount", 24)):
         raise ViewError("VIEW_OVERRIDE_OUT_OF_BOUNDS", "Widget count exceeds role default", 422)

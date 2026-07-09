@@ -13,8 +13,8 @@
   - [x] companion ACL/probe 边界（r67：enterprise 越权 dashboardId 403、dashboardId 含空格 422；`probe_validate_first_screen_budget_ms`/`probe_first_screen_probe_budget_ms` ≤50ms）
   - [x] fe 首屏 P95 smoke（M5：`dashboard-first-screen.perf.smoke.test.tsx` 四类扩展 widget 首屏 P95 ≤3000ms + `test_nfr_001_first_screen_smoke.py`）
   - [x] M5 extended widget `fixtureProfile` on first-screen probe（M6 r219：`M5_EXTENDED_WIDGET_FIXTURE` map/heatmap/kpi/timeline + per-chartType render-spec mock）
-  - [ ] 并发压测报告（mock probe only；无 `tests/perf/nfr01_dashboard/` 真实 perf suite）
-- **代码锚点**：`backend/app/core/nfr/dashboard_first_screen.py` · `backend/app/api/v1/nfr.py` · `fe/src/pages/admin/dashboard/dashboard-first-screen.perf.smoke.test.tsx` · `tests/test_nfr_cat_r64.py` T-NFR-R64-001-01~06 · `tests/test_nfr_001_first_screen_smoke.py` · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-001-01~06
+  - [x] 并发压测报告（F-F companion：`tests/perf/nfr01_dashboard/` concurrent GET probe + `report.stub.md`；`tests/test_ff_track_e_view_nfr_e95d.py` T-NFR-E95D-001）
+- **代码锚点**：`backend/app/core/nfr/dashboard_first_screen.py` · `backend/app/api/v1/nfr.py` · `tests/perf/nfr01_dashboard/` · `fe/src/pages/admin/dashboard/dashboard-first-screen.perf.smoke.test.tsx` · `tests/test_nfr_cat_r64.py` T-NFR-R64-001-01~06 · `tests/test_nfr_001_first_screen_smoke.py` · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-001-01~06 · `tests/test_ff_track_e_view_nfr_e95d.py`
 - **演化建议**：M6 companion 已闭合 extended widget fixtureProfile 与 fe 首屏 P95 smoke；后续补真实首屏 perf suite 与并发压测报告
 - **里程碑对齐**：M6 · 已完成 · 2026-07-06
 ### [NFR-002] NFR-01 报表查询性能
@@ -27,8 +27,8 @@
   - [x] 报表查询 ≤ 10s（r61 L1：`POST validate` + `POST /api/v1/nfr/report-perf/probe` + mock elapsedMs=120 + budgetMs default 10000 + `REPORT_PERF_*` 错误域）
   - [x] companion ACL/probe 边界（r67：enterprise 越权 reportId 403、非法 sampleQueryId 422、simulateFailure 降级；`probe_validate_report_perf_budget_ms`/`probe_report_perf_probe_budget_ms` ≤50ms）
   - [x] M10 REPORT_QUERY_FIXTURE + CI smoke（r234：`REPORT_QUERY_FIXTURE` + `fixtureProfile` 出参；`test_nfr_002_report_query_smoke.py` 2/2；`report-templates.smoke.test.tsx` mock run P95 ≤3000ms）
-  - [ ] `tests/perf/nfr01_report/` 全量并发压测与抽样门禁（companion）
-- **代码锚点**：`backend/app/core/nfr/report_perf.py` · `tests/test_nfr_002_report_query_smoke.py` · `fe/src/pages/admin/reports/report-templates.smoke.test.tsx` · `tests/test_cat_dash_viz_nfr_r61.py` T-NFR-R61-002-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-002-01~06
+  - [x] `tests/perf/nfr01_report/` 全量并发压测与抽样门禁（F-F companion：`concurrent_probe.py` template run 探针；`tests/test_ff_track_e_view_nfr_e95d.py` T-NFR-E95D-002）
+- **代码锚点**：`backend/app/core/nfr/report_perf.py` · `tests/perf/nfr01_report/` · `tests/test_nfr_002_report_query_smoke.py` · `fe/src/pages/admin/reports/report-templates.smoke.test.tsx` · `tests/test_cat_dash_viz_nfr_r61.py` T-NFR-R61-002-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-NFR-R67-002-01~06 · `tests/test_ff_track_e_view_nfr_e95d.py`
 - **演化建议**：r234 闭合 REPORT_QUERY_FIXTURE、pytest smoke 与 FE P95 回归；全量并发压测 suite 留 companion
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [NFR-003] NFR-02 核心看板可用性

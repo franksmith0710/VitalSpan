@@ -9,7 +9,7 @@
 - **期次**：一期
 - **描述**：DashboardView 视图协议 FR-VIEW-1（SRS 追溯项）。
 - **验收标准**：
-  - [ ] 全 BI 页面基于 DashboardView
+  - [x] 全 BI 页面基于 DashboardView（F-F companion：`dashboardLayoutToView` 适配 + Dashboard PUT DashboardView 校验；`fe/src/lib/dashboardLayoutToView.ts` · `backend/app/views/adapter.py` · `docs/ui/layout.md`）
   - [x] DashboardView schema + `POST /api/v1/views/validate`（r30 L1）
   - [x] layout 与 DASH-001~003 互操作（委托 `dashboard.service.validate_layout`）
   - [x] validate 边界：空 widgets、colSpan/order 越界、chartRef 环检测（r31，`VIEW_LAYOUT_BOUNDS`/`VIEW_CHART_REF_CYCLE`）
@@ -18,7 +18,7 @@
   - [x] `VIEW_PROTOCOL_UNSUPPORTED` protocolVersion=2 守卫 + `GET /api/v1/views/schema`（M5 r219）
   - [x] Dashboard `PUT/GET layoutJson` 存储 round-trip（`test_view_m5_protocol.py` T-VIEW-001-05）
   - [ ] defaultViewId 持久化与角色默认视图（VIEW-002）
-- **代码锚点**：`backend/app/views/schemas.py` · `backend/app/views/protocol.py` · `backend/app/views/validate.py` · `backend/app/api/v1/views.py` · `tests/test_view_m5_protocol.py`
+- **代码锚点**：`backend/app/views/schemas.py` · `backend/app/views/protocol.py` · `backend/app/views/adapter.py` · `backend/app/views/validate.py` · `backend/app/api/v1/views.py` · `fe/src/lib/dashboardLayoutToView.ts` · `tests/test_view_m5_protocol.py` · `tests/test_ff_track_e_view_nfr_e95d.py`
 - **演化建议**：M5 FR-VIEW-1 已闭合扩展 widget 校验、protocolVersion 守卫与存储 round-trip；后续补全 BI 页面统一协议层与 defaultViewId 存储
 - **里程碑对齐**：M5 · 已完成 · 2026-07-06
 ### [VIEW-002] 角色默认模板 FR-VIEW-3
@@ -32,8 +32,8 @@
   - [x] companion bounds + perf probe（r63：`maxWidgetCount` [1,64] 域校验 `VIEW_DEFAULT_OUT_OF_BOUNDS`；`probe_resolve_defaults_budget_ms` ≤50ms；空 roles 默认 maxWidgetCount=24）
   - [x] companion inheritFromRoleId cycle + enterprise GET scope + put probe（r68：`VIEW_DEFAULT_ROLE_CYCLE` 422；`set_user_role_default_scope` enterprise GET 403；`probe_role_default_put_budget_ms` ≤50ms；r63 bounds 回归保留）
   - [x] M10 FE 默认报表模板绑定与登录落地（r234：`RoleListPage` `reportTemplateNodeId` Select；`defaultViewResolve.ts` Dashboard 优先后 fallback `/admin/reports/templates/{nodeId}`；vitest 优先级用例）
-  - [ ] 新用户 onboarding 自动继承全链（companion；内存 store）
-- **代码锚点**：`backend/app/views/role_template.py` · `fe/src/pages/admin/system/roles/RoleListPage.tsx` · `fe/src/lib/defaultViewResolve.ts` · `fe/src/lib/defaultViewResolve.test.ts` · `tests/test_rpt_view_cat_gov_r60.py` T-VIEW-R60-002-01~06 · `tests/test_m10_report_templates_r234.py` T-VIEW-R234-002-01~02
+  - [x] 新用户 onboarding 自动继承全链（F-F companion：`view_role_defaults` DB 持久化 + 首次 `GET /users/me/views` 继承角色默认；`tests/test_ff_track_e_view_nfr_e95d.py` T-VIEW-E95D-003）
+- **代码锚点**：`backend/app/views/role_template.py` · `backend/app/views/role_defaults_repo.py` · `backend/app/views/onboarding.py` · `backend/migrations/versions/0021_view_role_defaults.py` · `fe/src/pages/admin/system/roles/RoleListPage.tsx` · `fe/src/lib/defaultViewResolve.ts` · `fe/src/lib/defaultViewResolve.test.ts` · `tests/test_rpt_view_cat_gov_r60.py` T-VIEW-R60-002-01~06 · `tests/test_m10_report_templates_r234.py` T-VIEW-R234-002-01~02 · `tests/test_ff_track_e_view_nfr_e95d.py`
 - **演化建议**：r234 闭合角色默认报表模板 FE 绑定与登录 fallback 路径；新用户 onboarding 全链与 DB 持久化留 companion
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [VIEW-003] 用户视图覆盖 FR-VIEW-4

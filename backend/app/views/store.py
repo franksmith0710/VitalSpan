@@ -19,6 +19,10 @@ def clear_role_defaults() -> None:
     _role_defaults.clear()
 
 
+def clear_user_overrides() -> None:
+    _user_overrides.clear()
+
+
 def list_user_overrides(user_id: str) -> list[dict[str, Any]]:
     return list(_user_overrides.get(user_id, []))
 
