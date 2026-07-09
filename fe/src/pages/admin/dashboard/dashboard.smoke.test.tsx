@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +21,8 @@ import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { WidgetInspectorDelete } from "@/components/dashboard/widget-inspector-delete";
 import { gridLayoutToWidgets, normalizeWidgetLayout, widgetsToGridLayout } from "@/components/dashboard/gridLayoutAdapter";
+import { snapLayoutToGrid } from "@/components/dashboard/gridSnapUtils";
+import { LinkageRulesPanel } from "@/components/dashboard/LinkageRulesPanel";
 import {
   defaultChartConfig,
   moveWidget,
@@ -131,6 +133,14 @@ function renderListPage() {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+}
+
+function widgetSelectTargets() {
+  return screen.getAllByTestId("chart-mock").map((el) => {
+    const target = el.closest("[role='button']");
+    if (!target) throw new Error("widget select target not found");
+    return target;
+  });
 }
 
 describe("dashboard admin smoke", () => {
@@ -259,6 +269,106 @@ describe("dashboard admin smoke", () => {
     const layout = widgetsToGridLayout(sampleWidgets);
     const next = gridLayoutToWidgets(layout, sampleWidgets);
     expect(next.map((w) => w.id)).toEqual(["w1", "w2", "w3"]);
+  });
+
+  it("T-DASH-002-02: snapLayoutToGrid snaps width to 12-col grid", () => {
+    const layout = widgetsToGridLayout(sampleWidgets);
+    const shifted = layout.map((item, i) => (i === 0 ? { ...item, x: 2.4, w: 5.6 } : item));
+    const snapped = snapLayoutToGrid(shifted);
+    expect(snapped[0].x).toBe(2);
+    expect(snapped[0].w).toBe(6);
+  });
+
+  it("T-DASH-002-04: shift+click toggles multi-select on edit page", async () => {
+    mockDashboardLoad(sampleWidgets);
+    renderEditPage();
+    await screen.findByText("销售看板");
+    const targets = widgetSelectTargets();
+    fireEvent.click(targets[0]);
+    fireEvent.click(targets[1], { shiftKey: true });
+    expect(await screen.findByText("已选中 2 个组件")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "删除选中 (2)" })).toBeInTheDocument();
+  });
+
+  it("T-DASH-002-05: batch delete removes multi-selected widgets", async () => {
+    const user = userEvent.setup();
+    mockDashboardLoad(sampleWidgets);
+    renderEditPage();
+    await screen.findByText("销售看板");
+    const targets = widgetSelectTargets();
+    fireEvent.click(targets[0]);
+    fireEvent.click(targets[1], { shiftKey: true });
+    await user.click(screen.getByRole("button", { name: "删除选中 (2)" }));
+    await user.click(screen.getByRole("button", { name: "删除" }));
+    expect(await screen.findAllByLabelText("组件标题")).toHaveLength(1);
+  });
+
+  it("T-DASH-004-02: linkage rules panel saves via PUT global-filters", async () => {
+    const user = userEvent.setup();
+    let putBody: Record<string, unknown> | undefined;
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      if (path.includes("/global-filters") && init?.method === "PUT") {
+        putBody = JSON.parse(init.body as string);
+        return {
+          filters: putBody?.filters,
+          linkageRules: putBody?.linkageRules,
+          refreshMode: "eager",
+          affectedWidgetCount: 1,
+        };
+      }
+      if (path.includes("/global-filters")) {
+        return {
+          filters: [{ filterId: "f1", dimensionRef: "区域", defaultValue: "华东" }],
+          linkageRules: [],
+        };
+      }
+      if (path.includes("/dashboards/")) {
+        return { id: "d1", name: "销售看板", layoutJson: { version: 1, widgets: sampleWidgets, globalFilters: [] } };
+      }
+      return {};
+    });
+    render(
+      <LinkageRulesPanel
+        dashboardId="d1"
+        linkage={{
+          filters: [{ filterId: "f1", dimensionRef: "区域", defaultValue: "华东" }],
+          linkageRules: [],
+        }}
+        widgets={sampleWidgets}
+        onSaved={() => {}}
+      />,
+    );
+    await user.click(screen.getByLabelText("源筛选器"));
+    await user.click(await screen.findByRole("option", { name: "区域" }));
+    await user.type(screen.getByLabelText("参数键 parameterKey"), "region");
+    await user.click(screen.getByRole("checkbox", { name: "A" }));
+    await user.click(screen.getByRole("button", { name: "添加规则" }));
+    await user.click(screen.getByRole("button", { name: "保存联动" }));
+    expect(putBody?.linkageRules).toEqual([
+      { sourceFilterId: "f1", targetWidgetIds: ["w1"], parameterKey: "region" },
+    ]);
+  });
+
+  it("T-DASH-004-03: edit page renders linkage rules panel when filters exist", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      if (path.includes("/global-filters")) {
+        return {
+          filters: [{ filterId: "f1", dimensionRef: "区域", defaultValue: "华东" }],
+          linkageRules: [],
+        };
+      }
+      if (path.includes("/dashboards/")) {
+        return { id: "d1", name: "销售看板", layoutJson: { version: 1, widgets: sampleWidgets.slice(0, 1), globalFilters: [] } };
+      }
+      return {};
+    });
+    renderEditPage();
+    expect(await screen.findByText("组件联动规则")).toBeInTheDocument();
   });
 
   it("T-DASH-002-03: normalizeWidgetLayout unpacks overlapping widgets", () => {

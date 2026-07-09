@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import { Trash2 } from "lucide-react";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -24,7 +24,7 @@ type DashboardWidgetProps = {
   widget: LayoutWidget;
   mode: "edit" | "view";
   selected?: boolean;
-  onSelect?: () => void;
+  onSelect?: (event: MouseEvent) => void;
   onDelete?: (id: string) => void;
   onTitleChange: (id: string, title: string) => void;
   onChartConfigChange?: (id: string, config: ChartViewConfig) => void;
@@ -132,13 +132,20 @@ export function DashboardWidget({
       <div
         role={mode === "edit" ? "button" : undefined}
         tabIndex={mode === "edit" ? 0 : undefined}
-        onClick={mode === "edit" ? onSelect : undefined}
+        onClick={
+          mode === "edit"
+            ? (e) => {
+                e.stopPropagation();
+                onSelect?.(e);
+              }
+            : undefined
+        }
         onKeyDown={
           mode === "edit"
             ? (e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  onSelect?.();
+                  onSelect?.({ shiftKey: e.shiftKey } as MouseEvent);
                 }
               }
             : undefined

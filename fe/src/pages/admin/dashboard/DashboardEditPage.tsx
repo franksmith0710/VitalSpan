@@ -21,7 +21,9 @@ import {
 } from "@/components/dashboard/layoutUtils";
 import { placeNewWidget, normalizeWidgetLayout, placeWidgetAt } from "@/components/dashboard/gridLayoutAdapter";
 import { createLayoutWidget } from "@/components/dashboard/createLayoutWidget";
+import { LinkageRulesPanel } from "@/components/dashboard/LinkageRulesPanel";
 import { useLayoutHistory } from "@/hooks/useLayoutHistory";
+import { useWidgetSelection } from "@/hooks/useWidgetSelection";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
@@ -76,8 +78,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [missing, setMissing] = useState(false);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [linkage, setLinkage] = useState<Linkage | null>(null);
-  const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
+  const {
+    selectedIds,
+    primarySelectedId,
+    handleSelect,
+    clearSelection,
+    removeFromSelection,
+    pruneMissing,
+  } = useWidgetSelection();
   const [savedFingerprint, setSavedFingerprint] = useState<string | null>(null);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
 
   const leaveEditShell = useCallback(() => {
     // 先清脏标记，避免离开守卫/二次操作卡在僵尸编辑态
@@ -114,7 +124,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       const loaded = normalizeWidgetLayout(sortWidgets(data.layoutJson.widgets ?? []));
       resetWidgets(loaded);
       setSavedFingerprint(layoutFingerprint(loaded));
-      setSelectedWidgetId(null);
+      clearSelection();
     } catch (err) {
       if (isDashboardNotFound(err)) {
         setMissing(true);
@@ -127,7 +137,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     } finally {
       setLoading(false);
     }
-  }, [id, resetWidgets]);
+  }, [id, resetWidgets, clearSelection]);
 
   useEffect(() => {
     void load();
@@ -139,14 +149,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   useEffect(() => {
     if (mode !== "edit") return;
-    if (widgets.length === 0) {
-      setSelectedWidgetId(null);
-      return;
-    }
-    if (selectedWidgetId && !widgets.some((w) => w.id === selectedWidgetId)) {
-      setSelectedWidgetId(null);
-    }
-  }, [mode, widgets, selectedWidgetId]);
+    pruneMissing(widgets.map((w) => w.id));
+  }, [mode, widgets, pruneMissing]);
 
   const isDirty = useMemo(() => {
     if (missing || savedFingerprint === null) return false;
@@ -158,9 +162,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   });
 
   const selectedWidget = useMemo(
-    () => widgets.find((w) => w.id === selectedWidgetId) ?? null,
-    [widgets, selectedWidgetId],
+    () => widgets.find((w) => w.id === primarySelectedId) ?? null,
+    [widgets, primarySelectedId],
   );
+  const multiSelectCount = selectedIds.size;
 
   const executeKey = useMemo(() => JSON.stringify(filterValues), [filterValues]);
 
@@ -174,7 +179,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           ? { ...draft, gridX: 0, gridY: 0 }
           : placeNewWidget(widgets, draft);
     setWidgets((prev) => sortWidgets([...prev, placed]));
-    setSelectedWidgetId(placed.id);
+    handleSelect(placed.id, false);
   };
 
   const handleInsert = (type: ChartType) => {
@@ -187,7 +192,14 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const handleDeleteWidget = (widgetId: string) => {
     setWidgets((prev) => prev.filter((w) => w.id !== widgetId));
-    setSelectedWidgetId((current) => (current === widgetId ? null : current));
+    removeFromSelection([widgetId]);
+  };
+
+  const handleBatchDelete = () => {
+    const ids = [...selectedIds];
+    setWidgets((prev) => prev.filter((w) => !selectedIds.has(w.id)));
+    removeFromSelection(ids);
+    setBatchDeleteOpen(false);
   };
 
   const handleDeleteDashboard = async () => {
@@ -341,11 +353,31 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         />
       ) : null}
 
+      {mode === "edit" && id ? (
+        <LinkageRulesPanel
+          dashboardId={id}
+          linkage={linkage}
+          widgets={widgets}
+          onSaved={setLinkage}
+        />
+      ) : null}
+
       {mode === "edit" ? (
         <DashboardEditWorkspace
           widgetCount={widgets.length}
           canvasActions={
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {multiSelectCount >= 2 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="border-error-200 text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400"
+                  onClick={() => setBatchDeleteOpen(true)}
+                >
+                  删除选中 ({multiSelectCount})
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -393,10 +425,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   <DashboardWidget
                     widget={widget}
                     mode="edit"
-                    selected={widget.id === selectedWidgetId}
+                    selected={selectedIds.has(widget.id)}
                     filterParameters={filterParameters}
                     executeKey={executeKey}
-                    onSelect={() => setSelectedWidgetId(widget.id)}
+                    onSelect={(e) => handleSelect(widget.id, e.shiftKey)}
                     onDelete={handleDeleteWidget}
                     onTitleChange={(wid, title) =>
                       setWidgets((prev) => resizeWidget(prev, wid, { title }))
@@ -412,16 +444,27 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             />
           }
           inspector={
-            <WidgetInspector
-              embedded
-              widget={selectedWidget}
-              onChange={(chartConfig) => {
-                if (!selectedWidgetId) return;
-                setWidgets((prev) =>
-                  prev.map((w) => (w.id === selectedWidgetId ? { ...w, chartConfig } : w)),
-                );
-              }}
-            />
+            multiSelectCount >= 2 ? (
+              <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
+                <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                  已选中 {multiSelectCount} 个组件
+                </p>
+                <p className="mt-1 max-w-[220px] text-theme-xs text-gray-500 dark:text-gray-400">
+                  Shift+点击可增减多选；使用画布工具栏批量删除。
+                </p>
+              </div>
+            ) : (
+              <WidgetInspector
+                embedded
+                widget={selectedWidget}
+                onChange={(chartConfig) => {
+                  if (!primarySelectedId) return;
+                  setWidgets((prev) =>
+                    prev.map((w) => (w.id === primarySelectedId ? { ...w, chartConfig } : w)),
+                  );
+                }}
+              />
+            )
           }
         />
       ) : (
@@ -472,6 +515,22 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               >
                 {saving ? "保存中…" : "保存并离开"}
               </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : null}
+      {mode === "edit" ? (
+        <AlertDialog open={batchDeleteOpen} onOpenChange={setBatchDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>批量删除组件</AlertDialogTitle>
+              <AlertDialogDescription>
+                确定删除选中的 {multiSelectCount} 个组件？删除后需保存布局才会生效。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>取消</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBatchDelete}>删除</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
