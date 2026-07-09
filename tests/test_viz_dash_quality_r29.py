@@ -718,7 +718,7 @@ def test_layout_three_widgets_persisted(client, auth_headers):
 
 
 def test_layout_col_span_values(client, auth_headers):
-    """T-DASH-R29-003-05: colSpan 4/8/12 均合法。"""
+    """T-DASH-R29-003-05: colSpan 1–12 任意整列均合法。"""
     created = client.post(
         "/api/v1/dashboards",
         json={"name": "Spans", "slug": f"spans-{uuid.uuid4().hex[:8]}"},
@@ -726,7 +726,7 @@ def test_layout_col_span_values(client, auth_headers):
     )
     dash_id = created.json()["id"]
     widgets = []
-    for span in (4, 8, 12):
+    for span in (3, 5, 7, 12):
         wid = str(uuid.uuid4())
         widgets.append(
             {

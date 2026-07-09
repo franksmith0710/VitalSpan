@@ -20,7 +20,7 @@ export function AccountSidebarBack() {
         aria-label="返回工作台"
       >
         <span className="menu-item-icon-size menu-item-icon-inactive">
-          <ArrowLeft className="size-6" aria-hidden />
+          <ArrowLeft className="size-5" aria-hidden />
         </span>
         {showLabels ? <span className="menu-item-text">返回工作台</span> : null}
       </button>

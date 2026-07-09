@@ -1,0 +1,174 @@
+{
+  "task_id": "scan-20260709T092434-shard-doc-09",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "doc-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.doc",
+  "rule_set_summary": "### doc 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `doc.coverage` | 关键模块有文档覆盖 | P2 |",
+  "asset_batch": [
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m8-m12-m13-integration-api-companion-r45.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m8-m12-m13-integration-api-companion-r45.md",
+      "fingerprint": "f4336b2e80b051c9790b50e8b91d023d222a0affc6580d8c713d3ed65d5f9eac",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m8-m12-m13-integration-api-l1-r44.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m8-m12-m13-integration-api-l1-r44.md",
+      "fingerprint": "2f88b9af88a0b9bfdb55e8b591c763ce0bbcac79782aa46b9013d5702615d156",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m9-viz-advanced-charts-l1-r42.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m9-viz-advanced-charts-l1-r42.md",
+      "fingerprint": "f20c766f281c4807cb7ae0ebce702ce32be0af76e35c962d20684c82aabd0ec4",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m9-viz-companion-quality-r43.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m9-viz-companion-quality-r43.md",
+      "fingerprint": "f0bd2926bb6a62923928638ec09642e6fa48f112e3f405aa1425239186af9e19",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-meta-cat-dash-kingbase-design-r59.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-meta-cat-dash-kingbase-design-r59.md",
+      "fingerprint": "ccdb66d33c7e5df5318f6b3d13c0ed6e4f7d7d600530ed04d92b390371488857",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-nfr-gov-gbase-companion-quality-r51.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-nfr-gov-gbase-companion-quality-r51.md",
+      "fingerprint": "8f03f0501120e1b27e1bae0849fb29872369e2f8e9699a66636b65aaea8ec5d5",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-nfr-gov-gbase-l1-r46.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-nfr-gov-gbase-l1-r46.md",
+      "fingerprint": "f3b2c414d67e3a04dcdd3153abcb9377780647c043ac122f3a3a1de0272926b4",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-viz-view-design-cat-companion-quality-r63.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-viz-view-design-cat-companion-quality-r63.md",
+      "fingerprint": "5675644236caa40674e9d58622bb52fe66574540f0f03d2b89486c9dfd050e45",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-m-fe-1-auth-datasource-fe.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-m-fe-1-auth-datasource-fe.md",
+      "fingerprint": "8cd47cec2fbbd868274063f387d6f1c38ab3e99bb88666a7b5be922cd8b60cb5",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-m-fe-2-p1-smoke.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-m-fe-2-p1-smoke.md",
+      "fingerprint": "7b2dfd818e7c49e6ce8b20fdfa1f468408c2bbdb892fa8ffefda78e6c2bbe4e7",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-m-fe-3-system-admin-consumption.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-m-fe-3-system-admin-consumption.md",
+      "fingerprint": "d36326b19d132e1b80dcc641f81a2637f031361f7f5dba40041a109636202bac",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-m5-dash-view-nfr.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-m5-dash-view-nfr.md",
+      "fingerprint": "7d37cb8713161c45dcea8a0fd94a58fdfd239e49569ebf38022360d9fa340007",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-m6-integration-gov-cat-nfr.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-m6-integration-gov-cat-nfr.md",
+      "fingerprint": "a538cbcf4e055d5ba3e5b32bd40264c97cd215b213836136ca719b8c95104435",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-m7-conn-ext.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-m7-conn-ext.md",
+      "fingerprint": "b4b7fdf26fa0c21ad470f0fd09f1225c3e9674e100e51c7bd7867f3b55b0f0f7",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-m7-conn008-m8-entity-kickoff.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-m7-conn008-m8-entity-kickoff.md",
+      "fingerprint": "361022bc7f658095eb7d26eb4e27a3970b3f6d10638a9a1c3f2f787ac4c35426",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-m8-entity-metadata-completion.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-m8-entity-metadata-completion.md",
+      "fingerprint": "a6f307e112f2b345e2d1163da3ece994e535855b046652170e2e9e18326430ca",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-view-001-m6-companion.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-view-001-m6-companion.md",
+      "fingerprint": "1b70cacfd2df660c6bd50cb6b10e77c1b4c926cdb081f217d04e8c67cd48767f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-06-view-003-m3-conn.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-06-view-003-m3-conn.md",
+      "fingerprint": "4ffd4de5729be5bc609aedbe9472c7f7abf16e7b85e56baa52a79c987f840067",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-07-m11-conn-ext-batch1.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-07-m11-conn-ext-batch1.md",
+      "fingerprint": "182fdc00959134d9ceb86cf3879a7a98efeafee1f41a36f71500a2accb724aca",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-07-mfinal-fa-nav-manifest.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-07-mfinal-fa-nav-manifest.md",
+      "fingerprint": "85175875f2ff1bc7314f8f4edd24e61130aa639b0b01562d267b9bc7196cdcc7",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

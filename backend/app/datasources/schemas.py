@@ -4,7 +4,7 @@ import re
 import uuid
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.datasources.dialects.base import TestConnectionResult
 
@@ -127,7 +127,7 @@ class ConnectorTypeOut(BaseModel):
     display_group: str = Field(validation_alias="displayGroup", serialization_alias="displayGroup")
     category_label: str = Field(validation_alias="categoryLabel", serialization_alias="categoryLabel")
 
-    model_config = {"populate_by_name": True}
+    model_config = ConfigDict(populate_by_name=True, ser_json_by_alias=True)
 
 
 class ConnectorTypeListResponse(BaseModel):
@@ -156,7 +156,7 @@ class ColumnItemOut(BaseModel):
     data_type: str = Field(serialization_alias="dataType")
     nullable: bool
 
-    model_config = {"populate_by_name": True}
+    model_config = ConfigDict(populate_by_name=True, ser_json_by_alias=True)
 
 
 class ColumnListResponse(BaseModel):

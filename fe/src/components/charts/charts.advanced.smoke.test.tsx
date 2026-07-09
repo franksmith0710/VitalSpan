@@ -324,7 +324,11 @@ describe("Embed", () => {
   afterEach(() => cleanup());
 
   it("T-VIZ-R43-006-01: EmbedSharePanel 非法 origin not-a-url → 字段错误", async () => {
-    render(<EmbedSharePanel />);
+    render(
+      <MemoryRouter>
+        <EmbedSharePanel />
+      </MemoryRouter>,
+    );
     await userEvent.type(screen.getByLabelText(/来源|Origin/i), "not-a-url");
     await userEvent.click(screen.getByRole("button", { name: /添加/ }));
     expect(await screen.findByText(/无效|格式/)).toBeInTheDocument();
@@ -345,11 +349,15 @@ describe("Embed", () => {
 
   it("T-VIZ-R43-006-02: 合法配置 → iframe title 可访问", async () => {
     mockApiFetch.mockResolvedValueOnce({});
-    render(<EmbedSharePanel />);
+    render(
+      <MemoryRouter>
+        <EmbedSharePanel />
+      </MemoryRouter>,
+    );
     await userEvent.type(screen.getByLabelText("图表 ID"), "00000000-0000-4000-8000-000000000001");
     await userEvent.type(screen.getByLabelText(/来源|Origin/i), "https://a.com");
     await userEvent.click(screen.getByRole("button", { name: /添加/ }));
-    await userEvent.click(screen.getByRole("button", { name: /校验并生成嵌入链接/ }));
+    await userEvent.click(screen.getByRole("button", { name: /校验并生成链接/ }));
     expect(await screen.findByTitle("嵌入图表预览")).toBeInTheDocument();
   });
 });

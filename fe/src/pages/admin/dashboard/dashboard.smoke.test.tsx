@@ -15,9 +15,12 @@ vi.mock("@/context/auth-context", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+import { DASHBOARD_CHART_DND_TYPE, setChartTypeDragData } from "@/lib/dashboardDnd";
+import { ApiRequestError } from "@/lib/api";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
-import { gridLayoutToWidgets, widgetsToGridLayout } from "@/components/dashboard/gridLayoutAdapter";
+import { WidgetInspectorDelete } from "@/components/dashboard/widget-inspector-delete";
+import { gridLayoutToWidgets, normalizeWidgetLayout, widgetsToGridLayout } from "@/components/dashboard/gridLayoutAdapter";
 import {
   defaultChartConfig,
   moveWidget,
@@ -89,6 +92,7 @@ function renderEditPage(path = "/admin/dashboards/d1/edit") {
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
+          <Route path="/admin/dashboards" element={<div>看板列表页</div>} />
           <Route path="/admin/dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
           <Route path="/admin/dashboards/:id" element={<DashboardEditPage mode="view" />} />
         </Routes>
@@ -109,6 +113,17 @@ function mockDashboardLoad(widgets: LayoutWidget[]) {
   });
 }
 
+function renderListPage() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>
+        <DashboardListPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
 describe("dashboard admin smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
@@ -116,51 +131,93 @@ describe("dashboard admin smoke", () => {
   });
   afterEach(() => cleanup());
 
-  it("T-DASH-R28-002-01: empty grid shows guidance", () => {
+  it("T-DASH-R28-002-01: empty edit grid shows drop zone guidance", () => {
     render(
-      <DashboardGrid mode="edit" widgets={[]} onAddWidget={() => {}} renderWidget={() => null} />,
+      <DashboardGrid
+        mode="edit"
+        widgets={[]}
+        onInsertChart={() => {}}
+        onLayoutChange={() => {}}
+        renderWidget={() => null}
+      />,
     );
-    expect(screen.getByText("画布还是空的")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "添加表格组件" })).toBeInTheDocument();
+    expect(screen.getByText("画布是空的")).toBeInTheDocument();
+    expect(document.querySelector(".dashboard-grid-edit .layout")).toBeTruthy();
   });
 
   it("T-DASH-R28-003-02: palette inserts chart type", async () => {
     const user = userEvent.setup();
     const onInsert = vi.fn();
-    render(<WidgetPalette onInsert={onInsert} />);
+    render(
+      <MemoryRouter>
+        <WidgetPalette onInsert={onInsert} />
+      </MemoryRouter>,
+    );
     await user.click(screen.getByRole("button", { name: "折线图" }));
     expect(onInsert).toHaveBeenCalledWith("line");
   });
 
-  it("T-DASH-003-04: palette shows extended group", async () => {
+  it("T-DASH-003-04: palette groups catalog by category", async () => {
     const user = userEvent.setup();
     mockApiFetch.mockResolvedValueOnce([
       { type: "table", displayName: "表格", category: "basic", renderer: "table", styleVariants: ["default"], fieldRule: {} },
       { type: "heatmap", displayName: "热力图", category: "geo", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
     ]);
     const onInsert = vi.fn();
-    render(<WidgetPalette onInsert={onInsert} />);
-    expect(await screen.findByText("扩展组件")).toBeInTheDocument();
+    render(
+      <MemoryRouter>
+        <WidgetPalette onInsert={onInsert} />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("地理")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "热力图" }));
     expect(onInsert).toHaveBeenCalledWith("heatmap");
   });
 
-  it("T-DASH-R28-003-03: delete middle widget", async () => {
+  it("T-VIZ-PALETTE-03: palette fallback lists pie and gauge", async () => {
+    const user = userEvent.setup();
+    const onInsert = vi.fn();
+    render(
+      <MemoryRouter>
+        <WidgetPalette onInsert={onInsert} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("button", { name: "饼图" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "仪表盘" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "饼图" }));
+    expect(onInsert).toHaveBeenCalledWith("pie");
+  });
+
+  it("T-VIZ-FC-04: palette links to chart types catalog", () => {
+    render(
+      <MemoryRouter>
+        <WidgetPalette onInsert={vi.fn()} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("link", { name: /查看全部类型与字段规则/ })).toHaveAttribute(
+      "href",
+      "/admin/charts/types",
+    );
+  });
+
+  it("T-DASH-R28-003-03: delete widget from inspector only", async () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
     render(
-      <DashboardWidget
-        widget={sampleWidgets[1]}
-        mode="edit"
-        onDelete={onDelete}
-        onMove={() => {}}
-        onResize={() => {}}
-        onTitleChange={() => {}}
-      />,
+      <WidgetInspectorDelete widgetTitle={sampleWidgets[1].title} onDelete={onDelete} />,
     );
     await user.click(screen.getByRole("button", { name: "删除组件" }));
     await user.click(screen.getByRole("button", { name: "删除" }));
-    expect(onDelete).toHaveBeenCalledWith("w2");
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it("T-DASH-003-01: edit widget card has draggable title bar and header delete", () => {
+    const onDelete = vi.fn();
+    render(
+      <DashboardWidget widget={sampleWidgets[0]} mode="edit" onDelete={onDelete} onTitleChange={() => {}} />,
+    );
+    expect(document.querySelector(".dashboard-drag-handle")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "删除组件" })).toBeInTheDocument();
   });
 
   it("T-DASH-R28-003-04: layoutUtils sortWidgets round-trip", () => {
@@ -177,13 +234,20 @@ describe("dashboard admin smoke", () => {
     expect(next.map((w) => w.id)).toEqual(["w1", "w2", "w3"]);
   });
 
+  it("T-DASH-002-03: normalizeWidgetLayout unpacks overlapping widgets", () => {
+    const a = { ...sampleWidgets[0], gridX: 0, gridY: 0, colSpan: 12, rowSpan: 3 };
+    const b = { ...sampleWidgets[1], id: "w-overlap", gridX: 0, gridY: 0, colSpan: 12, rowSpan: 3, order: 1 };
+    const normalized = normalizeWidgetLayout([a, b]);
+    const layout = widgetsToGridLayout(normalized);
+    const collides = (x: number, y: number, w: number, h: number, ox: number, oy: number, ow: number, oh: number) =>
+      !(x + w <= ox || ox + ow <= x || y + h <= oy || oy + oh <= y);
+    expect(collides(layout[0].x, layout[0].y, layout[0].w, layout[0].h, layout[1].x, layout[1].y, layout[1].w, layout[1].h)).toBe(false);
+    expect(layout[1].y).toBeGreaterThanOrEqual(layout[0].y + layout[0].h);
+  });
+
   it("T-DASH-R28-002-02: list page empty state", async () => {
-    mockApiFetch.mockResolvedValueOnce({ items: [] });
-    render(
-      <MemoryRouter>
-        <DashboardListPage />
-      </MemoryRouter>,
-    );
+    mockApiFetch.mockResolvedValueOnce({ items: [], total: 0, limit: 50, offset: 0 });
+    renderListPage();
     expect(await screen.findByText("暂无 Dashboard")).toBeInTheDocument();
   });
 
@@ -194,12 +258,14 @@ describe("dashboard admin smoke", () => {
     expect(screen.getByLabelText("组件标题")).toHaveValue("A");
   });
 
-  it("T-DASH-R29-002-04: colSpan 6→12 updates grid class", () => {
-    const widget = { ...sampleWidgets[0], colSpan: 12 as const };
+  it("T-DASH-R29-002-04: colSpan 6→12 updates grid column span", () => {
+    const widget = { ...sampleWidgets[0], colSpan: 12 };
     const { container } = render(
       <DashboardGrid mode="view" widgets={[widget]} renderWidget={() => <div />} />,
     );
-    expect(container.querySelector(".xl\\:col-span-12")).toBeTruthy();
+    const cell = container.querySelector("[style*='grid-column']");
+    expect(cell).toBeTruthy();
+    expect((cell as HTMLElement).style.gridColumn).toBe("span 12");
   });
 
   it("T-DASH-R29-002-05: illegal layout save shows Chinese error banner", async () => {
@@ -219,6 +285,8 @@ describe("dashboard admin smoke", () => {
     });
     renderEditPage();
     await screen.findByText("X");
+    const titleInput = screen.getByLabelText("组件标题");
+    await user.type(titleInput, "!");
     await user.click(screen.getByRole("button", { name: "保存布局" }));
     expect(await screen.findByText("组件 ID 重复")).toBeInTheDocument();
   });
@@ -273,6 +341,8 @@ describe("dashboard admin smoke", () => {
       };
     });
     renderEditPage();
+    await screen.findByLabelText("组件标题");
+    await user.click(screen.getByText("待配置"));
     await screen.findByLabelText("数据源");
     await user.click(screen.getByLabelText("数据源"));
     await user.click(await screen.findByRole("option", { name: /分析库/ }));
@@ -285,18 +355,73 @@ describe("dashboard admin smoke", () => {
     expect(putBody?.layoutJson?.widgets?.[0]?.chartConfig?.sql).toBe("SELECT 2 AS id");
   });
 
-  it("T-DASH-R29-003-02: empty grid shows enhanced guidance", () => {
+  it("T-DASH-R29-003-02: empty edit grid shows drag hint", () => {
     render(
-      <DashboardGrid mode="edit" widgets={[]} onAddWidget={() => {}} renderWidget={() => null} />,
+      <DashboardGrid
+        mode="edit"
+        widgets={[]}
+        onInsertChart={() => {}}
+        onLayoutChange={() => {}}
+        renderWidget={() => null}
+      />,
     );
-    expect(screen.getByText("画布还是空的")).toBeInTheDocument();
-    expect(screen.getByText(/从左侧组件库/)).toBeInTheDocument();
+    expect(screen.getByText("画布是空的")).toBeInTheDocument();
+    expect(screen.getByText(/从左侧拖拽或点击图表类型/)).toBeInTheDocument();
+  });
+
+  it("T-DASH-004-01: palette row sets chart drag payload", () => {
+    const store = new Map<string, string>();
+    const dt = {
+      get types() {
+        return [...store.keys()];
+      },
+      setData(type: string, value: string) {
+        store.set(type, value);
+      },
+      getData(type: string) {
+        return store.get(type) ?? "";
+      },
+      effectAllowed: "",
+    } as unknown as DataTransfer;
+    setChartTypeDragData(dt, "table");
+    expect(dt.types).toContain(DASHBOARD_CHART_DND_TYPE);
+    expect(dt.getData(DASHBOARD_CHART_DND_TYPE)).toBe("table");
   });
 
   it("T-DASH-R29-003-05: delete middle widget reorders without error", () => {
     const remaining = sampleWidgets.filter((w) => w.id !== "w2");
     const sorted = sortWidgets(remaining);
     expect(sorted.map((w) => w.id)).toEqual(["w1", "w3"]);
+  });
+
+  it("T-DASH-DELETE-01: delete dashboard navigates to list (no zombie edit)", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === "/api/v1/datasources") return { items: [] };
+      if (init?.method === "DELETE") return undefined;
+      return {
+        id: "d1",
+        name: "待删看板",
+        layoutJson: { version: 1, widgets: sampleWidgets.slice(0, 1), globalFilters: [] },
+      };
+    });
+    renderEditPage();
+    expect(await screen.findByText("待删看板")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "删除看板" }));
+    await user.click(screen.getByRole("button", { name: "删除" }));
+    expect(await screen.findByText("看板列表页")).toBeInTheDocument();
+  });
+
+  it("T-DASH-DELETE-02: missing dashboard shows empty state instead of zombie canvas", async () => {
+    mockApiFetch.mockImplementation(async () => {
+      throw new ApiRequestError("Dashboard not found", "DASH_NOT_FOUND");
+    });
+    renderEditPage();
+    expect(await screen.findByText("看板不存在或已被删除")).toBeInTheDocument();
+    expect(screen.queryByText("画布")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "返回看板列表" })).toBeInTheDocument();
   });
 
   it("T-DASH-R29-001-05: list page renders paginated row count", async () => {
@@ -309,11 +434,7 @@ describe("dashboard admin smoke", () => {
       limit: 2,
       offset: 0,
     });
-    render(
-      <MemoryRouter>
-        <DashboardListPage />
-      </MemoryRouter>,
-    );
+    renderListPage();
     expect(await screen.findByText("A")).toBeInTheDocument();
     expect(screen.getByText("B")).toBeInTheDocument();
     expect(screen.queryByText("C")).not.toBeInTheDocument();

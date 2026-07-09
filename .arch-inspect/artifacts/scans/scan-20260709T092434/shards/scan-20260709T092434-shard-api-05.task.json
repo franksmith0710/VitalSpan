@@ -1,0 +1,589 @@
+{
+  "task_id": "scan-20260709T092434-shard-api-05",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "api-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.api",
+  "rule_set_summary": "### 项目约定\n- 业务响应码：200 / -1\n\n### 必检规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `api.auth` | 敏感接口缺少权限声明（auth 为空或 none） | P0 |\n| `api.status_code` | 业务响应码仅允许约定枚举 | P1 |\n| `api.doc_consistency` | 文档路径、方法、参数与实现一致 | P1 |\n| `api.zombie` | 文档与实现双向存在（无僵尸接口/实现） | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "api:GET:/api/v1/reports/catalog/nodes*",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "d6ccea33cf1612c084750e59e2f3b256971d39d49bce4c4b29a76606f0bd32b8",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/catalog/nodes*",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/catalog/nodes/{id}/extension",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "7ca851dcfb4a36c159384d225eca86a5617a780dfbb94da5c2856a69cbdf74a4",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/catalog/nodes/{id}/extension",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/catalog/nodes/{id}/extension/render-spec",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "a3642128ec82982ba853b8cbfe339fd8dbb19949be6d7679f16b80ecda5e0b4d",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/catalog/nodes/{id}/extension/render-spec",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/catalog/nodes/{id}/extension/revisions",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "6274e4b8e59885ac673b874f4c5fad285808b3680846169cc86d89904e945738",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/catalog/nodes/{id}/extension/revisions",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/export",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "b95ecf6043448fcfb7756a4d48dfcd0a03c026e14da0e0233b69e5ef8e90912d",
+      "change_type": "added",
+      "domain": "IF-03",
+      "method": "GET",
+      "api_path": "/api/v1/reports/export",
+      "related_paths": [
+        "backend/app/api/v1/reports/export.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/export/{exportId}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e66d15598ae9fdafc66850df64dc589f62b7000f8dfbe9b2c282fb6a114e27e0",
+      "change_type": "added",
+      "domain": "IF-03",
+      "method": "GET",
+      "api_path": "/api/v1/reports/export/{exportId}",
+      "related_paths": [
+        "backend/app/api/v1/reports/export.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/export/{exportId}/download",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "856e023a77f5924b5308ddf76f7b447b8bb936e20b6bf174a6a60dcc6f70cd0a",
+      "change_type": "added",
+      "domain": "IF-03",
+      "method": "GET",
+      "api_path": "/api/v1/reports/export/{exportId}/download",
+      "related_paths": [
+        "backend/app/api/v1/reports/export.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/prefab/bindings*",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "90541335713b993f068474ae2bde11b134db9c9bedd9060129aece82b4be113c",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/prefab/bindings*",
+      "related_paths": [
+        "backend/app/api/v1/reports/prefab.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/prefab/bindings/{binding_key}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "8ab6a70945c3479803fd27c89034f7831625dcc9b348ec46729989c82286d274",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/prefab/bindings/{binding_key}",
+      "related_paths": [
+        "backend/app/api/v1/reports/prefab.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/prefab/probe",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "58f4f52fc6af3ee637e9f979baf8211edd2050cbccc50a4663f9f7e80891d1ca",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/prefab/probe",
+      "related_paths": [
+        "backend/app/api/v1/reports/prefab.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/schedules",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e3359275548d42b1c3214e9da51548eae40118557399a7a93cf1d5d34e5d1fd0",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/schedules",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/schedules*",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "33781cc9fdf6ca53507539d331dca2ba47df2fc172b1c081f02f2b4910f48e74",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/schedules*",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/schedules/{id}/executions",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "3e480a911ab378895c2e6d1225be7f20bba4a6ffd3d009f0d84ceeb540574aa3",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/schedules/{id}/executions",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/schedules/executions/{executionId}/artifact",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "56b24b774c5e25f009a52a0bd99221f3bf4ad0326c0d06599147878fef1f6eae",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/schedules/executions/{executionId}/artifact",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/templates",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "cb650d186ee452be31ab64725d62d1fc3d6168e81e7c65d1dfacea595967f7ea",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/templates",
+      "related_paths": [
+        "backend/app/api/v1/reports/templates.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/reports/templates/{templateKey}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "26fbe290e9e2e2f9a6e20339aeb1054711fa7cc5fbf4389742a8e02bba474b79",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/reports/templates/{templateKey}",
+      "related_paths": [
+        "backend/app/api/v1/reports/templates.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/resource-grants",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "7124845eaaaeaeadc0effc7d65bfb636281392608b0b3c192b57af3870e3658b",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/resource-grants",
+      "related_paths": [
+        "backend/app/api/v1/resource_grants.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/rls/dimensions",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "efb6710b4c729ab4ed809fbf7319622f8a3e1c3f90fc52a8322dfe8c119fc4c3",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/rls/dimensions",
+      "related_paths": [
+        "backend/app/api/v1/rls.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/rls/groups",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "84146a44ccd6bc21461fd458b0067aef83f56d1d87d329d28affa70a2304fbb0",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/rls/groups",
+      "related_paths": [
+        "backend/app/api/v1/rls.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/rls/groups/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e2bea5ae0c60f2d07ef488a434fa24137df4998cb21fd2a5290212ac9bb63862",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/rls/groups/{id}",
+      "related_paths": [
+        "backend/app/api/v1/rls.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/rls/groups/{id}/values",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "d29b1ebb1b60d107a31b05300578c1654b092b1f0fdd4fcbaec5e1b67b789791",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/rls/groups/{id}/values",
+      "related_paths": [
+        "backend/app/api/v1/rls.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/roles",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "b77552bcc1f62da9fd1d8f74775f285f5b2f8cf1e9b876e8d373d4c5c5bb841c",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/roles",
+      "related_paths": [
+        "backend/app/api/v1/roles.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/roles/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "d21bdb3e2a2bd91a689eac1842078e9f4b1b880bf8269f407709516578de1829",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/roles/{id}",
+      "related_paths": [
+        "backend/app/api/v1/roles.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/roles/{id}/default-views",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e2127322bafda68ea3b873d38f4bf775a1b52a794b36aef511a7c372fcd272ab",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/roles/{id}/default-views",
+      "related_paths": [
+        "backend/app/api/v1/views.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/roles/{id}/effective-dimensions",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e2bcac65d04711cedc193ac22d15d98214ca44211e55674573a563660f981697",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/roles/{id}/effective-dimensions",
+      "related_paths": [
+        "backend/app/api/v1/roles.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/services",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "9e04c2b17d0bbf869389a7226fb8650d2cab0e46fabc4a9039f975ad7832f8b8",
+      "change_type": "added",
+      "domain": "IF-02",
+      "method": "GET",
+      "api_path": "/api/v1/services",
+      "related_paths": [
+        "backend/app/api/v1/services.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/services/{serviceId}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "b124877ba4b9fbf0db66d5fb52732d7e2479a0561c216cdb2c73f38980f16319",
+      "change_type": "added",
+      "domain": "IF-02",
+      "method": "GET",
+      "api_path": "/api/v1/services/{serviceId}",
+      "related_paths": [
+        "backend/app/api/v1/services.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/services/{serviceId}/openapi",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "68abfab16d23aef71672c87f75a96ce6b05728f82acadf74ef4c88c5b45b45a3",
+      "change_type": "added",
+      "domain": "IF-02",
+      "method": "GET",
+      "api_path": "/api/v1/services/{serviceId}/openapi",
+      "related_paths": [
+        "backend/app/api/v1/services.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/users",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "74f2f6c1de56d5f796a49c5792d44f034efe607ea0d5968d5a8ded9c2928ef52",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/users",
+      "related_paths": [
+        "backend/app/api/v1/users.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/users/{id}/org",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "a4683eed23ade6ff6b1b59d1c699d62fcc035015fc78f67a3cc304402c3f2b2c",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/users/{id}/org",
+      "related_paths": [
+        "backend/app/api/v1/users.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {
+    "api_status_codes": [
+      200,
+      -1
+    ]
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-13",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/oracle.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/oracle.py",
+      "fingerprint": "b743061d94cfad4cba2d7c358b8b041f0452b1202de744f072025cb8d0a74244",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/postgres.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/postgres.py",
+      "fingerprint": "28d1fd204b80204acff6e474dace9f95e6be0088a4796e13c2a05b9593fc80df",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/presto.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/presto.py",
+      "fingerprint": "7f2e51f269d7237fe728be87eda6b0e2a019204fa252dfb6c7417b43b8e8c219",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/redshift.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/redshift.py",
+      "fingerprint": "c5d620b7d25199350238e123e310cf09a40622da36f313efb0d71d8cf580f52a",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/relational_hints.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/relational_hints.py",
+      "fingerprint": "f322742241d2ef101e52673b6ae6d89123b83b7c435ebd0e68be9db1e4dfaf12",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/rest_api.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/rest_api.py",
+      "fingerprint": "6e20a6d373cfa813ae8cb829fdaea3e84b3a8cb89a94b54e42b447178b90fc28",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/sqlite.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/sqlite.py",
+      "fingerprint": "1c5fa6ebb0227fcbcd2101e8927eba525fb2e665b2ce6163e6dcfdbb1779d6f6",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/sqlserver.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/sqlserver.py",
+      "fingerprint": "4dd623384b11a88c1b8c828982343e40b068f86ff43774b26a7575fb85ef632a",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

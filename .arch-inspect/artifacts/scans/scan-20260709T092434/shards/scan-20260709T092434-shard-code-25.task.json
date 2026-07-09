@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-25",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/governance/workflow/errors.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/workflow/errors.py",
+      "fingerprint": "434db3a177451ba6071a13034a5b6144398c2b9a84c1df127402c7ac098e340b",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/workflow/node_roles.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/workflow/node_roles.py",
+      "fingerprint": "f37d42890b10f642a0414f1bda8cd06c22f43e08eab0e36f8d563a163a98ac46",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/workflow/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/workflow/schemas.py",
+      "fingerprint": "043dedc8a73a0b3d99d9ad26b3e9056962ecac689731015821002d86ec159c66",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/workflow/service.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/workflow/service.py",
+      "fingerprint": "33ba5a9d67dec1d5b76459024bd60bc1190e4ba55b41c9cf0ac7384fd5316c01",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/workflow/templates_store.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/workflow/templates_store.py",
+      "fingerprint": "bc0cba226f7d890307006da2fad0c37da915db1a96d8e68aac8817da08a57797",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/ingestion/__init__.py",
+      "asset_type": "code_module",
+      "path": "backend/app/ingestion/__init__.py",
+      "fingerprint": "fb4f232435f83ad10569606827ba8372153016a8b80f2edec91b49795b308600",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/ingestion/etl_rules.py",
+      "asset_type": "code_module",
+      "path": "backend/app/ingestion/etl_rules.py",
+      "fingerprint": "a643c210d8e5294ce3fcd614676092615114388bba6dffc3bd5d0f751aae04f9",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/ingestion/models.py",
+      "asset_type": "code_module",
+      "path": "backend/app/ingestion/models.py",
+      "fingerprint": "4ce9804392cf807b593e7f551265f742b7c4aadb24b49e06b1fc042328e8c581",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

@@ -139,13 +139,8 @@ describe("AppRoutes smoke", () => {
     setDesktopViewport();
     renderRoutes(["/admin"]);
 
-    // 数据连接 Collapsible.Trigger — click to reveal subItems
-    const dataConnTrigger = screen.getByRole("button", { name: "数据连接" });
-    fireEvent.click(dataConnTrigger);
-
-    const links = screen.getAllByRole("link", { name: "连接管理" });
-    expect(links.length).toBeGreaterThanOrEqual(1);
-    expect(links[0]).toHaveAttribute("href", "/admin/datasources");
+    const link = screen.getByRole("link", { name: "数据连接" });
+    expect(link).toHaveAttribute("href", "/admin/datasources");
   });
 
   it("shows 数据接入 nav link at /admin (T-FE-19)", () => {
@@ -269,11 +264,10 @@ describe("AppRoutes smoke", () => {
     expect(screen.getByRole("button", { name: /登录/ })).toBeInTheDocument();
   });
 
-  // T-RT-CONN-01: /admin/connectors 可达，渲染「连接器类型」heading — 已被 M-FE-1 用例覆盖
-  it("renders connectors route with mocked auth (M-FE-1)", async () => {
-    mockApiFetch.mockResolvedValueOnce({ items: [] });
+  it("redirects legacy /admin/connectors to datasources list", async () => {
+    mockApiFetch.mockResolvedValue({ items: [] });
     renderRoutes(["/admin/connectors"]);
-    expect(await screen.findByRole("heading", { name: "连接器类型" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "数据源" })).toBeInTheDocument();
   });
 
   it("T-RT-GRANTS-01: /admin/system/grants route renders 资源授权 heading", async () => {
@@ -294,15 +288,8 @@ describe("AppRoutes smoke", () => {
     setDesktopViewport();
     renderRoutes(["/admin"]);
 
-    // Open 数据连接 collapsible
-    const dataConnTrigger = screen.getByRole("button", { name: "数据连接" });
-    fireEvent.click(dataConnTrigger);
-
-    const connMgr = screen.getByRole("link", { name: "连接管理" });
-    expect(connMgr.getAttribute("href")).toBe("/admin/datasources");
-
-    const connType = screen.getByRole("link", { name: "连接器类型" });
-    expect(connType.getAttribute("href")).toBe("/admin/connectors");
+    const dataConn = screen.getByRole("link", { name: "数据连接" });
+    expect(dataConn.getAttribute("href")).toBe("/admin/datasources");
 
     const dashLinks = screen.getAllByRole("link", { name: "Dashboard" });
     expect(dashLinks[0].getAttribute("href")).toBe("/admin/dashboards");

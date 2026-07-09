@@ -116,13 +116,16 @@ export function DashboardSharePage() {
           );
         })}
       </div>
-      <Card className="mt-4">
-        <CardHeader>
+      <Card className="overflow-hidden rounded-2xl border-gray-200 shadow-theme-sm dark:border-gray-800">
+        <CardHeader className="border-b border-gray-200 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]">
           <CardTitle className="text-theme-base">高级嵌入配置</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+          <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+            配置来源白名单并生成带校验的 iframe 链接。
+          </p>
           <Button asChild variant="outline" size="sm">
-            <Link to="/embed/share">打开嵌入分享面板</Link>
+            <Link to="/embed/share">打开嵌入分享</Link>
           </Button>
         </CardContent>
       </Card>

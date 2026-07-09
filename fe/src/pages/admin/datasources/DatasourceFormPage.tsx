@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
@@ -9,14 +9,16 @@ import { mapApiError } from "@/lib/apiError";
 import {
   DISPLAY_GROUP_ORDER,
   groupTypesByDisplayGroup,
-  type ConnectorTypeItem,
+  normalizeConnectorTypes,
   type DisplayGroup,
+  type RawConnectorTypeItem,
 } from "@/lib/connector-taxonomy";
 import { queryKeys } from "@/lib/queryKeys";
-import { Link } from "react-router";
+import { cn } from "@/lib/utils";
 import { emptyForm, type FormState } from "./components/datasource-form-constants";
 import { applyTypePort, DatasourceConnectionForm } from "./components/DatasourceConnectionForm";
 import { DatasourceFormWizard } from "./components/DatasourceFormWizard";
+import { DatasourceWizardStepper } from "./components/DatasourceWizardStepper";
 import {
   buildFileSourcePayload,
   buildRestApiPayload,
@@ -25,7 +27,7 @@ import {
 } from "./components/datasource-form-types";
 
 type WizardStep = "category" | "type" | "form";
-type ConnectorTypeListResponse = { items: ConnectorTypeItem[] };
+type ConnectorTypeListResponse = { items: RawConnectorTypeItem[] };
 
 type DataSourceOut = {
   id: string;
@@ -60,9 +62,14 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     queryFn: () => apiFetch<ConnectorTypeListResponse>("/api/v1/datasources/types"),
   });
 
-  const groupedTypes = useMemo(
-    () => groupTypesByDisplayGroup(typesQuery.data?.items ?? []),
+  const connectorTypes = useMemo(
+    () => normalizeConnectorTypes(typesQuery.data?.items ?? []),
     [typesQuery.data?.items],
+  );
+
+  const groupedTypes = useMemo(
+    () => groupTypesByDisplayGroup(connectorTypes),
+    [connectorTypes],
   );
 
   const visibleGroups = useMemo(
@@ -186,7 +193,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
 
   const showForm = mode === "edit" || wizardStep === "form";
   const selectedTypeLabel =
-    typesQuery.data?.items.find((t) => t.type === form.type)?.displayName ?? form.type;
+    connectorTypes.find((t) => t.type === form.type)?.displayName ?? form.type;
 
   return (
     <AdminPageShell
@@ -199,39 +206,70 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       }
     >
       {mode === "create" ? (
-        <DatasourceFormWizard
-          wizardStep={wizardStep}
-          selectedGroup={selectedGroup}
-          visibleGroups={visibleGroups}
-          groupedTypes={groupedTypes}
-          onSelectGroup={(group) => {
-            setSelectedGroup(group);
-            setWizardStep("type");
-          }}
-          onBackToCategory={() => setWizardStep("category")}
-          onSelectType={(type, port) => {
-            setForm((prev) => ({ ...prev, type, port }));
-            setWizardStep("form");
-          }}
-        />
-      ) : null}
+        <div
+          className={cn(
+            "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm",
+            "dark:border-gray-800 dark:bg-white/[0.03]",
+          )}
+        >
+          <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+            <DatasourceWizardStepper current={wizardStep} />
+          </div>
+          <div className="p-6 lg:p-8">
+            {wizardStep !== "form" ? (
+              <DatasourceFormWizard
+                wizardStep={wizardStep}
+                selectedGroup={selectedGroup}
+                visibleGroups={visibleGroups}
+                groupedTypes={groupedTypes}
+                onSelectGroup={(group) => {
+                  setSelectedGroup(group);
+                  setWizardStep("type");
+                }}
+                onBackToCategory={() => setWizardStep("category")}
+                onSelectType={(type, port) => {
+                  setForm((prev) => ({ ...prev, type, port }));
+                  setWizardStep("form");
+                }}
+              />
+            ) : null}
 
-      {showForm ? (
-        <>
-          {mode === "create" && wizardStep === "form" ? (
-            <div className="mx-auto mb-4 flex max-w-2xl items-center justify-between text-theme-sm text-gray-500">
-              <span>选择类型 › 连接配置</span>
-              <button type="button" className="text-brand-600" onClick={() => setWizardStep("type")}>
-                更改类型
-              </button>
-            </div>
-          ) : null}
-
+            {showForm ? (
+              <DatasourceConnectionForm
+                mode={mode}
+                form={form}
+                selectedTypeLabel={selectedTypeLabel}
+                typeItems={connectorTypes}
+                error={error}
+                errorCode={errorCode}
+                isSaving={isSaving}
+                advancedOpen={advancedOpen}
+                codeInputRef={codeInputRef}
+                restApiCompanion={restApiCompanion}
+                fileCompanion={fileCompanion}
+                embedded
+                onChangeType={() => setWizardStep("type")}
+                onAdvancedOpenChange={setAdvancedOpen}
+                onClearError={clearError}
+                onFieldChange={setField}
+                onTypeChange={(v) => {
+                  clearError();
+                  setForm((prev) => ({ ...prev, type: v, port: applyTypePort(v, prev.port) }));
+                }}
+                onRestApiChange={setRestApiCompanion}
+                onFileChange={setFileCompanion}
+                onSubmit={() => void handleSave()}
+              />
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        showForm && (
           <DatasourceConnectionForm
             mode={mode}
             form={form}
             selectedTypeLabel={selectedTypeLabel}
-            typeItems={typesQuery.data?.items ?? []}
+            typeItems={connectorTypes}
             error={error}
             errorCode={errorCode}
             isSaving={isSaving}
@@ -250,8 +288,8 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
             onFileChange={setFileCompanion}
             onSubmit={() => void handleSave()}
           />
-        </>
-      ) : null}
+        )
+      )}
     </AdminPageShell>
   );
 }

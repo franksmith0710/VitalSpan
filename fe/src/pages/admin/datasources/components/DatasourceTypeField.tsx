@@ -13,7 +13,7 @@ import {
   showConnectorHint,
 } from "./datasource-form-constants";
 
-function TypeHint({ type }: { type: string }) {
+export function TypeHint({ type }: { type: string }) {
   if (!showConnectorHint(type)) return null;
   const id = type === "oceanbase" ? "oceanbase-hint" : type === "gaussdb" ? "gaussdb-hint" : "impala-hint";
   return (

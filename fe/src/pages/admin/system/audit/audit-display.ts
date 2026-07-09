@@ -1,0 +1,142 @@
+export type AuditEventRow = {
+  id: string;
+  actor_id: string;
+  actor_username: string | null;
+  target_type: string;
+  target_id: string;
+  action: string;
+  detail: string | null;
+  trace_id: string;
+  created_at: string;
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  "user.roles.replace": "替换用户角色",
+  "user.role.bind": "绑定用户角色",
+  "user.role.unbind": "解绑用户角色",
+  "user.org.assign": "分配组织",
+  "user.org.clear": "清除组织",
+  "profile.update": "更新个人资料",
+  "password.change": "修改密码",
+  "role.create": "创建角色",
+  "role.update": "更新角色",
+  "role.delete": "删除角色",
+  "role.dimension.replace": "替换角色维度",
+  "role.group.replace": "替换角色分组",
+  "group.create": "创建分组",
+  "group.update": "更新分组",
+  "group.delete": "删除分组",
+  "group.values.add": "添加分组值",
+  "group.values.replace": "替换分组值",
+  "group.values.remove": "移除分组值",
+  "dimension.create": "创建维度",
+  "dimension.update": "更新维度",
+  "dimension.delete": "删除维度",
+  "org.create": "创建组织",
+  "org.update": "更新组织",
+  "org.delete": "删除组织",
+};
+
+const TARGET_TYPE_LABELS: Record<string, string> = {
+  user: "用户",
+  role: "角色",
+  org: "组织",
+  group: "分组",
+  dimension: "维度",
+  profile: "个人资料",
+};
+
+const DETAIL_KEY_LABELS: Record<string, string> = {
+  role_ids: "角色",
+  code: "编码",
+  name: "名称",
+  org_id: "组织",
+  changes: "变更字段",
+};
+
+export function auditActionLabel(action: string): string {
+  return ACTION_LABELS[action] ?? action.replaceAll(".", " · ");
+}
+
+export function auditTargetTypeLabel(targetType: string): string {
+  return TARGET_TYPE_LABELS[targetType] ?? targetType;
+}
+
+export function shortId(value: string, length = 8): string {
+  const trimmed = value.trim();
+  if (trimmed.length <= length + 1) return trimmed;
+  return `${trimmed.slice(0, length)}…`;
+}
+
+function parseDetail(detail: string | null): unknown {
+  if (!detail?.trim()) return null;
+  try {
+    return JSON.parse(detail) as unknown;
+  } catch {
+    return detail;
+  }
+}
+
+function formatDetailValue(key: string, value: unknown): string {
+  if (value == null) return "—";
+  if (key === "role_ids" && Array.isArray(value)) {
+    return value.length ? `${value.length} 个角色` : "清空角色";
+  }
+  if (Array.isArray(value)) {
+    return value.length ? `${value.length} 项` : "空";
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+export function formatAuditSummary(event: AuditEventRow): string {
+  const parsed = parseDetail(event.detail);
+  if (parsed == null) return "无附加详情";
+
+  if (typeof parsed === "string") {
+    return parsed.length > 80 ? `${parsed.slice(0, 80)}…` : parsed;
+  }
+
+  if (typeof parsed === "object" && !Array.isArray(parsed)) {
+    const entries = Object.entries(parsed as Record<string, unknown>);
+    if (!entries.length) return "无附加详情";
+    return entries
+      .slice(0, 2)
+      .map(([key, value]) => {
+        const label = DETAIL_KEY_LABELS[key] ?? key;
+        return `${label}：${formatDetailValue(key, value)}`;
+      })
+      .join("；");
+  }
+
+  return String(parsed);
+}
+
+export function formatAuditDetailPretty(detail: string | null): string {
+  const parsed = parseDetail(detail);
+  if (parsed == null) return "—";
+  if (typeof parsed === "string") return parsed;
+  return JSON.stringify(parsed, null, 2);
+}
+
+export function formatAuditTimestamp(value: string): { date: string; time: string } {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return { date: value, time: "" };
+  }
+  return {
+    date: date.toLocaleDateString("zh-CN"),
+    time: date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+  };
+}
+
+export const AUDIT_TARGET_TYPE_OPTIONS = [
+  { value: "all", label: "全部目标" },
+  { value: "user", label: "用户" },
+  { value: "role", label: "角色" },
+  { value: "org", label: "组织" },
+  { value: "group", label: "分组" },
+  { value: "dimension", label: "维度" },
+] as const;

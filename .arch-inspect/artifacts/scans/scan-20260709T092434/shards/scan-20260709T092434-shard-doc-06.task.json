@@ -1,0 +1,174 @@
+{
+  "task_id": "scan-20260709T092434-shard-doc-06",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "doc-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.doc",
+  "rule_set_summary": "### doc 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `doc.coverage` | 关键模块有文档覆盖 | P2 |",
+  "asset_batch": [
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-m12-batch1.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-m12-batch1.md",
+      "fingerprint": "c72aba4e7adc2e0a11c5fc36f70d79b686d3e89eea3fa232e1ac1462d2e57ed2",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-fa.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-fa.md",
+      "fingerprint": "8766e28fd93ea5c68994e4ae5a67db415611c1bf2afcfe563b2fee293faddb97",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-fb.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-fb.md",
+      "fingerprint": "13c852ad4a2554e5ee3270d61e58193f47d16824c19f4d87bd57b982d1ebd601",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc.md",
+      "fingerprint": "b671b9412e3822cd914e9609e4cc35e64ff54adad1730d9ff8f5ba0c02ad8b85",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc2-fd-kickoff.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-fc2-fd-kickoff.md",
+      "fingerprint": "91141000fd21fce31a5ac2513d4c0cd98d7d1567aa49d2fbe3482ce0b0771fca",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-fd-meta.md",
+      "fingerprint": "ed58cd1b69522e41a6046b00517214a6206ab999db900fff88856e541a4ab5cc",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design-batch2.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design-batch2.md",
+      "fingerprint": "60b95a27a47d77321f11ab9f8b3f076afb0372b7b5d1c493526a4c8d14ca0193",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-design.md",
+      "fingerprint": "e9d46961f9f0669c06c724dc70d266d960c5eb379bd208f13140c29e59db123a",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch4.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-fe-gov-batch4.md",
+      "fingerprint": "6819543d718df58f12468f91f3701a20c3b6438011ff341f566d6d84f990f5e5",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-ff-fg-batch1.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-ff-fg-batch1.md",
+      "fingerprint": "7c763c3a0fc6c2cd35bed125dbf6f5226ab5a4b73d09d51ba060af0d1acf5c66",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-mfinal-fg-finish.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-mfinal-fg-finish.md",
+      "fingerprint": "5424cdbf2402c5446f7171ad5ff150beaf31d7c6e07640c282fb20d0c538d28e",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-07-round-target-saturated.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-07-round-target-saturated.md",
+      "fingerprint": "15579bbe8a957ee020f3c20abeae6a7aed94dac5063029f093ed0d193b1c6c27",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-08-round-target-mproduct-fb.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-08-round-target-mproduct-fb.md",
+      "fingerprint": "7f65c049e39c22031475f3521aceee3524810051aa2d37bb7ba572aafc0f3309",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-08-round-target-saturated.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-08-round-target-saturated.md",
+      "fingerprint": "6da6fd7d09903ffa3cdc85189f01c1d523dbd493d1cef86cde1cccdde8ca157b",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-08-round-target.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-08-round-target.md",
+      "fingerprint": "a37958405dfa3f2b74e18e63f86f9809cb35df5daa4e3baa93d8a3e89f2d1689",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/README.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/README.md",
+      "fingerprint": "d3d9bdcf2873ffc24c06eb3282fce2b3149783e8234e9ac802ecf54410b34239",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-03-boot-data-quality.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-03-boot-data-quality.md",
+      "fingerprint": "4c549ed897bdda4f6aabd02bc8d97d4808534cdc08e0b31fb45877320edb2633",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-03-m1-backend-bootstrap.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-03-m1-backend-bootstrap.md",
+      "fingerprint": "6db5da55d079548ed1215d7c39f348e6e6bebdb07a4f86f001533988bf10ffbe",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-03-m1-boot-quality-r15.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-03-m1-boot-quality-r15.md",
+      "fingerprint": "6bba86cda338c87e1b1f57a654372af9bb718a1b0dea5627bc2b18520adadce8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-03-m1-boot-quality-r9.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-03-m1-boot-quality-r9.md",
+      "fingerprint": "d9c6bf1a39e10ea4058cac49668bceb6a3de0a0385d7b15c00baef660d7c5d08",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

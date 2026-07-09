@@ -48,6 +48,21 @@ describe("RoleListPage smoke", () => {
     expect(await screen.findByText("暂无角色")).toBeInTheDocument();
   });
 
+  it("T-AUTH-001-03: search shows a single clear control", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path.startsWith("/api/v1/roles")) return { items: [], total: 0 };
+      if (path.startsWith("/api/v1/dashboards")) return { items: [] };
+      return {};
+    });
+    const user = userEvent.setup();
+    renderRoles();
+    const input = await screen.findByRole("searchbox", { name: "搜索角色" });
+    await user.type(input, "阿达");
+    expect(screen.getAllByRole("button", { name: "清除搜索" })).toHaveLength(1);
+    expect(input).toHaveAttribute("type", "text");
+  });
+
   it("T-AUTH-001-02: POST role refetches list", async () => {
     let listCall = 0;
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {

@@ -1,0 +1,174 @@
+{
+  "task_id": "scan-20260709T092434-shard-doc-02",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "doc-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.doc",
+  "rule_set_summary": "### doc 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `doc.coverage` | 关键模块有文档覆盖 | P2 |",
+  "asset_batch": [
+    {
+      "asset_id": "doc_asset:docs/automate/prd/F13-API.md",
+      "asset_type": "doc_asset",
+      "path": "docs/automate/prd/F13-API.md",
+      "fingerprint": "b834af1a2cfee0279f943a4dfd0a60f879462514e314e8ddc9e9a29282db8b4f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/automate/prd/F14-CAT.md",
+      "asset_type": "doc_asset",
+      "path": "docs/automate/prd/F14-CAT.md",
+      "fingerprint": "e104218ce472177d79fd6413d4e98d124442b6aea77f26917087b60c81dd73a7",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/automate/prd/F15-NFR.md",
+      "asset_type": "doc_asset",
+      "path": "docs/automate/prd/F15-NFR.md",
+      "fingerprint": "8e8965e8fa548599640f6c0b73952d393d907ab3cc590df1aa1d7b1b78bde122",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/automate/prd/F16-DATA.md",
+      "asset_type": "doc_asset",
+      "path": "docs/automate/prd/F16-DATA.md",
+      "fingerprint": "9f05eb7b92070720f0d0ceb369e0a9c1e1a79534360941dd280349e37a06c06f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/automate/prd/README.md",
+      "asset_type": "doc_asset",
+      "path": "docs/automate/prd/README.md",
+      "fingerprint": "6229d2c6744e346dd28799aa7f4ecf5868bb3dee54947248a1309e6306e62493",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/nfr/browser-compatibility.md",
+      "asset_type": "doc_asset",
+      "path": "docs/nfr/browser-compatibility.md",
+      "fingerprint": "bbb8d115e96ca39f46d15b864acf5a1868e479fd25814bcdad3467e791b802e1",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/nfr/dashboard-availability.md",
+      "asset_type": "doc_asset",
+      "path": "docs/nfr/dashboard-availability.md",
+      "fingerprint": "6c6747a42b1dce87b103be1d9c735416fbf16061849d540b3cab21a784ca1572",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/nfr/xinchuang-deployment.md",
+      "asset_type": "doc_asset",
+      "path": "docs/nfr/xinchuang-deployment.md",
+      "fingerprint": "256e3260438db2896a23e2fe26c672229f58fc5442c266f0a83dadadd69ac8a1",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/nfr/zero-de-ss-deployment.md",
+      "asset_type": "doc_asset",
+      "path": "docs/nfr/zero-de-ss-deployment.md",
+      "fingerprint": "23893b858e54c00630fa61552bff6f177ad5e3bd71d63ab429c7b59c31ae6d60",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/auth.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/auth.md",
+      "fingerprint": "0ff1f548e7dfc9b28db634943d894db7189a8a68c92a92f35f02e7060af3990c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/core.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/core.md",
+      "fingerprint": "c8878b5886d620522bb9dc652a61ab7059b69298efafd44c0b78663a7a66e49b",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/dashboard.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/dashboard.md",
+      "fingerprint": "a6c700aaa07a1cb4f5cad350f5ca7586ed7cdd88feb1bed6b9e443f9907f0f1d",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/datasources.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/datasources.md",
+      "fingerprint": "e8cf5be95763eb37e4ee5ac18aaf429cfebca42f617dfda63c0d45825b5830d2",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/designer.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/designer.md",
+      "fingerprint": "51ad3c35e161ec8368ab910b70f622776fec68db7849e664e992f36da3d179fb",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/governance.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/governance.md",
+      "fingerprint": "012cc14d0d125f7e5bc62d6e1239a71bbf04bb877c0c94d39fcd27985fece5a6",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/ingestion.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/ingestion.md",
+      "fingerprint": "ac3694b52de4e62c680b8ec7f913e30be16e15312efea2f7c4036eaa7eb5a574",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/integration.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/integration.md",
+      "fingerprint": "bb0a6e092f90b395936716d360ae75dce5d8c983d30136c170ce155ee86cbdcc",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/metadata.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/metadata.md",
+      "fingerprint": "acc83a529dcb968dc6a8bb0c7c124179d564b8b4ccaac2e9e4bb5a91cadb51bb",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/nfr.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/nfr.md",
+      "fingerprint": "4bb9d44dd4a77f886fd032cb8afd6532bff390fe489d473910163f4460918cd9",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/query.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/query.md",
+      "fingerprint": "1e3e2c49ef9a53e6c83e93e260bdaf49c283c1d1f7c70b4d430b005f8ecefea8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

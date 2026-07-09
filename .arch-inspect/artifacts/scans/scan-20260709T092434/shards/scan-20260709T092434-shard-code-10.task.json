@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-10",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/__init__.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/__init__.py",
+      "fingerprint": "4babe421f3cc775f42dbbeda2bd7718586759d891c39e0b8d5423ad58df38747",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/base.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/base.py",
+      "fingerprint": "5d1aad8e428b69fd3d34abe8edba9e75a63a04e3c17ddcced772e96621d4657b",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/clickhouse.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/clickhouse.py",
+      "fingerprint": "fdab8d4af67f14c440f2347b1ad4c3ff2e1195dd68a53982ecc46260f5e496c8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/csv_file.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/csv_file.py",
+      "fingerprint": "dd5cfb29afc4f7712161c90bbd5989a8e28c76b43623441bfc59748a5f81abc8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/db2.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/db2.py",
+      "fingerprint": "e592a678f6da55d2e2d17bfac98e68cab2e5b1cb224e86b8977ccf6393d58ede",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/dm.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/dm.py",
+      "fingerprint": "53ad2077b9ce3ebb1d609a13df37059baa9e9c6355ff2f9b6807ff0ded05fac4",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/doris.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/doris.py",
+      "fingerprint": "f5c12203ecf712748f3d100c7fb409ee1c6584cc1b0474194b7da2af10f2a158",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/elasticsearch.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/elasticsearch.py",
+      "fingerprint": "61ff88215e0ee57e507d21bd21edf58188bb7773634e9240b526d75533fc8008",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

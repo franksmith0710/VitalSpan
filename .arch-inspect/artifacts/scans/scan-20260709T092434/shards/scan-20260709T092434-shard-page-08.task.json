@@ -1,0 +1,118 @@
+{
+  "task_id": "scan-20260709T092434-shard-page-08",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "page-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.page",
+  "rule_set_summary": "### page 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `page.route_consistency` | 路由与页面文件一致 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/rls/RlsAdminPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/rls/RlsAdminPage.tsx",
+      "fingerprint": "dbcd08f8c6da21c0e466cd9e5746b21fdbfc16aa8c0e93d1b3783ad960d0b55c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/roles/roleErrors.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/roles/roleErrors.ts",
+      "fingerprint": "e03a2855ed7cb8efab35b8d81037f708dec3fb070c66132dd2117055c72be215",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/roles/roleFormSchema.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/roles/roleFormSchema.ts",
+      "fingerprint": "c88b3adaf630a21ba5b13f8a218a0cbdbaf28607c16080f5f315b9cd0d9e1f85",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/roles/RoleListPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/roles/RoleListPage.tsx",
+      "fingerprint": "55f2cdd2b8282cd23a59d3e1757b74311f130ab8ee473dead483b1b8c3595f27",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/roles/roles.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/roles/roles.smoke.test.tsx",
+      "fingerprint": "4f495318e1501f06e98f478fccab8ac89e08cf2bdcc6709ef3ffbf38e4e42538",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/users/userErrors.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/users/userErrors.ts",
+      "fingerprint": "5c35b27f59ab059dbec4dd5a4f1659b34ee9f2e322fe16eb29c1a68f63e94550",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/users/UserListPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/users/UserListPage.tsx",
+      "fingerprint": "eda6ecfcafc7dcfe49540d6048eb4959574c6453733a8250ee4040e235589d65",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/users/users.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/users/users.smoke.test.tsx",
+      "fingerprint": "42d0bc48196db18f5d3c8af3c4b62db0a6a1029dd01b88e2c5f0b527f3f99ff6",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/themes/theme-analysis.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/themes/theme-analysis.smoke.test.tsx",
+      "fingerprint": "4c37b4b1e695795ddb1bf6d85013de5f967023908a20e70fc40477094f5618da",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/themes/ThemeAnalysisPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/themes/ThemeAnalysisPage.tsx",
+      "fingerprint": "4dbb06e774f7c89623763db26636da85744bf197cdb7ef605bf1bd66712e0966",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/themes/useThemeAnalysis.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/themes/useThemeAnalysis.ts",
+      "fingerprint": "5e354892c68869b7aa82356409be4657aeb7c27d68befa6c4c0d70fc3f8c5d06",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/embed/EmbedSdkDemoPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/embed/EmbedSdkDemoPage.tsx",
+      "fingerprint": "022d8119d57a1d9bc6d92fb1cdfd88312bf0caa0854ff1cec5638b3f6b83c666",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/login/LoginPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/login/LoginPage.tsx",
+      "fingerprint": "0e99e760837a9be5681cd47415e3c15b19e633776bd732b996598c2d07d76b47",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

@@ -1,0 +1,134 @@
+{
+  "task_id": "scan-20260709T092434-shard-page-05",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "page-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.page",
+  "rule_set_summary": "### page 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `page.route_consistency` | 路由与页面文件一致 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/WorkflowInstancesPanel.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/WorkflowInstancesPanel.tsx",
+      "fingerprint": "54eaef7592a4112df1673fd1d56b85b8edfc79b60007f90a32bfc74730f76b21",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/components/sync-job-types.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/components/sync-job-types.ts",
+      "fingerprint": "1a3ae853e1380a19f1acfe8e2261fb23813a81840487d24b76c8614879ba334f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/components/SyncJobsEmptyState.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/components/SyncJobsEmptyState.tsx",
+      "fingerprint": "c0f7bd77478995fcbe103eb5b5bd02bd0dd13809376aed296c37af343d2baf95",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/components/SyncJobsMetrics.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/components/SyncJobsMetrics.tsx",
+      "fingerprint": "502105f60f878decfd6de9a7f03aaa09a69ba9138c055abd2f061ced7e2a1acf",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/components/SyncJobsTable.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/components/SyncJobsTable.tsx",
+      "fingerprint": "9b2a0eb38e8d4bddef63b4a764f271a74aa9fd4ac31b21f31fe7bda5997d1220",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/components/SyncJobsToolbar.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/components/SyncJobsToolbar.tsx",
+      "fingerprint": "bd55db5238e6c2f7700f4cbc4ef50ea7e07aa46e42435bdf82b939c9b582bbe9",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/EtlRulesPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/EtlRulesPage.tsx",
+      "fingerprint": "17c42cbfa5ef452a8530b0c4915b0455dd40f63da6304fd0c7ed58e25b624f25",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/ingestion.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/ingestion.smoke.test.tsx",
+      "fingerprint": "8bf59b0fc051ec3f5382249e1f5161c7dd3ca92421ccfea3058939ae4fadab1d",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/SyncJobFormPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/SyncJobFormPage.tsx",
+      "fingerprint": "36c106987fb755b05eedfff2b4f1634e448dfed30f273a986e769a4440d32097",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/SyncJobHistoryPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/SyncJobHistoryPage.tsx",
+      "fingerprint": "fee5a989a91817b3d5bc53a964962a36cf21ea4aa288ae9667583e67978ebf70",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/ingestion/SyncJobsPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/ingestion/SyncJobsPage.tsx",
+      "fingerprint": "f16b80178d791d47721f3deefc086f5d757ef7547d2805851d78052b99466cee",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/metadata/dimensions-panel.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/metadata/dimensions-panel.tsx",
+      "fingerprint": "f3a504a36a32205a89ded8965bf68cfcf630a19e6b6965522a7e4b418f588c46",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/metadata/glossary-panel.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/metadata/glossary-panel.tsx",
+      "fingerprint": "e31cf6332a7b01f4ccf521761eb663cd398c22cf44b6df4353bec0cb11773910",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/metadata/metadata-panels.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/metadata/metadata-panels.tsx",
+      "fingerprint": "a14b8e22383bbb327eedfc12350bfe1df2a825ecbbca85e459b49cf211beb6d4",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/metadata/metadata-shared.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/metadata/metadata-shared.tsx",
+      "fingerprint": "8ba87bf23655821e5b91de277f58a8297a9fdf1ced85475a8ce1d6e45bd339da",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

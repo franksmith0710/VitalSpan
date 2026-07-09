@@ -1,0 +1,589 @@
+{
+  "task_id": "scan-20260709T092434-shard-api-01",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "api-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.api",
+  "rule_set_summary": "### 项目约定\n- 业务响应码：200 / -1\n\n### 必检规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `api.auth` | 敏感接口缺少权限声明（auth 为空或 none） | P0 |\n| `api.status_code` | 业务响应码仅允许约定枚举 | P1 |\n| `api.doc_consistency` | 文档路径、方法、参数与实现一致 | P1 |\n| `api.zombie` | 文档与实现双向存在（无僵尸接口/实现） | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "api:DELETE:/api/v1/dashboards/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "6941f2cbddeb725021a588749217ed975a2d23b2d097b93cabc199185574c38b",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/dashboards/{id}",
+      "related_paths": [
+        "backend/app/api/v1/dashboards.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/datasets/{dataset_id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "ba3680de9098a52b4fe6783abc120e5b7e4be031b7c2bfd04b617404f2f08197",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/datasets/{dataset_id}",
+      "related_paths": [
+        "backend/app/api/v1/datasets.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/datasources/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "1ca6bdaa507b2e9b9aa0fe797388f3a0f16d44a399a6143aec204fd464c2ca1d",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "DELETE",
+      "api_path": "/api/v1/datasources/{id}",
+      "related_paths": [
+        "backend/app/api/v1/datasources.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/designer/workflow-link",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "8f1c31b3116ca53445333edaf54057703bf0763134d9c488803850e6e53aad89",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/designer/workflow-link",
+      "related_paths": [
+        "backend/app/api/v1/designer.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/gov/catalog/classification/nodes/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "ecad27643a323e82a8c52351c82cd092b34482920d6bd18cfd91491171280402",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "DELETE",
+      "api_path": "/api/v1/gov/catalog/classification/nodes/{id}",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/gov/catalog/entries/{entry_id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "9a2843d15c289bd384c944fad431376f45094024e424a0c8675b2122b424506e",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "DELETE",
+      "api_path": "/api/v1/gov/catalog/entries/{entry_id}",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/gov/catalog/geo-regions/nodes/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "738a23a38addda4936081e25f3f3420b482f6f16c72b2feaf4e9bd5548eb8f1a",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "DELETE",
+      "api_path": "/api/v1/gov/catalog/geo-regions/nodes/{id}",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/gov/workflow/templates",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "7ec89136324635a7d91f2c2c9bfa223c0645c1baadbb10c7362f540cd4a6c783",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "DELETE",
+      "api_path": "/api/v1/gov/workflow/templates",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/ingestion/sync-jobs/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "dc20b4e4f0f00d64c82427ba3e44f09783ff16e1c1442e3b1f594429b1a20005",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/ingestion/sync-jobs/{id}",
+      "related_paths": [
+        "backend/app/api/v1/ingestion/sync.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/metadata/dimensions/{dimension_id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "08f2f9d98cb901c66e7d868455646ee087c0c9ea92e4e9eb7c216a3a7d286366",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/metadata/dimensions/{dimension_id}",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "be399c659ec01de716fe158d4e783dd566be3e82cfb1c124a06493fb64eb6bea",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/metadata/entity-types/{typeCode}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "dc62eddb6a73afd06177f20f85f09416ee4f129935f5e6b29b7e7114477dcc46",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/metadata/entity-types/{typeCode}",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/metadata/glossary/{term_id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "7c86a3768984f48b7769a0503b686fd6c4a7ada171e8e15f35df5c05229f494f",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/metadata/glossary/{term_id}",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/metadata/physical-tables/{fqn}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "2728d406b33a35a8eab13bd2af77d9c57a68ba7b3261eb1b1ee3247030f1e97d",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/metadata/physical-tables/{fqn}",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/metadata/themes/{node_id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "66fdf5398fd0eb0b8b69753c82bf0165056e34dfc39836d1b68471f44e0c8b08",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/metadata/themes/{node_id}",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/query/bindings/{bindingId}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "819cf3369a1133200c895a987c5b5d8ce73724d19094ddfe65c8d647b254761b",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "DELETE",
+      "api_path": "/api/v1/query/bindings/{bindingId}",
+      "related_paths": [
+        "backend/app/api/v1/query.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/reports/catalog/nodes*",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "3b69b6c67109f62d7cfddccbb5c18493743805f0b575032811012371f8eba1fe",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/reports/catalog/nodes*",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/reports/catalog/nodes/{id}/extension",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "b391f149a591349b4938f0a3690e76c9dba6076c2cac24b113a05ea8ce07600c",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/reports/catalog/nodes/{id}/extension",
+      "related_paths": [
+        "backend/app/api/v1/reports/__init__.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/reports/templates/{templateKey}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "682678566c2efa9f4a532f9271cafca4d7cf9ba6961c64b0a2289219ee8c70f0",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/reports/templates/{templateKey}",
+      "related_paths": [
+        "backend/app/api/v1/reports/templates.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/resource-grants",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "8cb50a0655992b6c134b369bcbe399ba2fbc30e646bc22d8713703bb5749461d",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/resource-grants",
+      "related_paths": [
+        "backend/app/api/v1/resource_grants.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/rls/groups/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "663d3b8f9b2219437419856a571d22f3d079584e2f6734d5b905cc4f136edf81",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/rls/groups/{id}",
+      "related_paths": [
+        "backend/app/api/v1/rls.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/rls/groups/{id}/values",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "b780b209e5ecad15e41e5aa75f92af07c3d7b37f7e12b50228b822de69bcc4af",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/rls/groups/{id}/values",
+      "related_paths": [
+        "backend/app/api/v1/rls.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/roles/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "157608bbe2b1ecbfc86c90f0b169c2ab2016d5def73786d1aaa43378ce2fd803",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/roles/{id}",
+      "related_paths": [
+        "backend/app/api/v1/roles.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/users/{id}/org",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "609daeb2cd1fb064256c55b6779ae1beb5ac276377d21bb0af5cb46a4c677c54",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/users/{id}/org",
+      "related_paths": [
+        "backend/app/api/v1/users.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:DELETE:/api/v1/users/me/views/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "2305603738182e0eb7cbe38779c0fd0b55ec20f415bdeac6942b30c748a8324d",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "DELETE",
+      "api_path": "/api/v1/users/me/views/{id}",
+      "related_paths": [
+        "backend/app/api/v1/views.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/audit/events",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e44ed1546794aa34d6387190bdeba3c6b901e06a5310249b38a6add8ab90b146",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/audit/events",
+      "related_paths": [
+        "backend/app/api/v1/audit.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/charts/sdk/capabilities",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "844b49955b6536dc9e3f87ba677876c28251e470aadaf2dde7b8be8f4b14419f",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/charts/sdk/capabilities",
+      "related_paths": [
+        "backend/app/api/v1/charts.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/charts/types",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "4ce2faec03c62ed3e293a40d62a0a4ba7546b85b89692c5835e3161573ea4008",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/charts/types",
+      "related_paths": [
+        "backend/app/api/v1/charts.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（骨架）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/dashboards",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "eab080d010dfda1b3a724cc45f5c54711d1a5d7e11da053a5094a594c146e76e",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/dashboards",
+      "related_paths": [
+        "backend/app/api/v1/dashboards.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:GET:/api/v1/dashboards/{id}",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "3e60f364fde4514e8d3f5e9789ba986ff998ff7bf33841a6dafce19f0c320099",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "GET",
+      "api_path": "/api/v1/dashboards/{id}",
+      "related_paths": [
+        "backend/app/api/v1/dashboards.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {
+    "api_status_codes": [
+      200,
+      -1
+    ]
+  }
+}

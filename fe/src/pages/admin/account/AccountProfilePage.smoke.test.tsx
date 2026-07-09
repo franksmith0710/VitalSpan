@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountProfilePage } from "./AccountProfilePage";
 
@@ -13,7 +14,11 @@ vi.mock("@/context/auth-context", () => ({
 
 function wrap(ui: React.ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return <QueryClientProvider client={qc}>{ui}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>
+  );
 }
 
 describe("AccountProfilePage smoke", () => {
@@ -28,10 +33,14 @@ describe("AccountProfilePage smoke", () => {
   });
   afterEach(() => cleanup());
 
-  it("renders profile fields from /me", async () => {
+  it("renders profile hub from /me", async () => {
     render(wrap(<AccountProfilePage />));
-    expect(await screen.findByDisplayValue("Admin")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("admin@vitalspan.local")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("admin")).toBeDisabled();
+    expect(await screen.findByText("用户资料")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("账户信息")).toBeInTheDocument();
+    });
+    expect(screen.getByText("安全与偏好")).toBeInTheDocument();
+    expect(screen.getAllByText("admin@vitalspan.local").length).toBeGreaterThan(0);
+    expect(screen.getByText("登录账号", { selector: "dt" })).toBeInTheDocument();
   });
 });

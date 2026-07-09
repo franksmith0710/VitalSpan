@@ -1,24 +1,10 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  BarChart3,
-  CalendarClock,
-  Filter,
-  Gauge,
-  GitBranch,
-  Grid3x3,
-  LineChart,
-  Map,
-  MousePointerClick,
-  Network,
-  PieChart,
-  Table2,
-  TrendingUp,
-  type LucideIcon,
-} from "lucide-react";
+import { Link } from "react-router";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { WORKSPACE_HOME_PATH } from "@/lib/workspace";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -30,8 +16,15 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import {
+  CHART_CAPABILITY_LABELS,
+  CHART_CATEGORY_LABELS,
+  CHART_RENDERER_LABELS,
+  chartTypeIcon,
+} from "@/lib/chartTypeCatalogDisplay";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
+import { LayoutDashboard, MousePointerClick } from "lucide-react";
 
 export type ChartTypeCatalogEntry = {
   type: string;
@@ -49,42 +42,9 @@ export type ChartTypeCatalogEntry = {
   };
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  basic: "基础",
-  advanced: "高级",
-  geo: "地理",
-  indicator: "指标",
-  temporal: "时序",
-  flow: "流向",
-  relation: "关系",
-};
-
-const RENDERER_LABELS: Record<string, string> = {
-  table: "表格引擎",
-  echarts: "ECharts",
-  kpi: "KPI 卡",
-};
-
-const CAPABILITY_LABELS: Record<string, string> = {
-  style_variant: "样式变体",
-  field_config: "字段配置",
-  render_spec: "渲染规格",
-};
-
-const CHART_ICONS: Record<string, LucideIcon> = {
-  table: Table2,
-  line: LineChart,
-  bar: BarChart3,
-  pie: PieChart,
-  gauge: Gauge,
-  map: Map,
-  heatmap: Grid3x3,
-  kpi: TrendingUp,
-  timeline: CalendarClock,
-  sankey: GitBranch,
-  funnel: Filter,
-  graph: Network,
-};
+const CATEGORY_LABELS = CHART_CATEGORY_LABELS;
+const RENDERER_LABELS = CHART_RENDERER_LABELS;
+const CAPABILITY_LABELS = CHART_CAPABILITY_LABELS;
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -147,7 +107,7 @@ function CatalogSummary({
 }
 
 function ChartTypeDetail({ chart }: { chart: ChartTypeCatalogEntry }) {
-  const Icon = CHART_ICONS[chart.type] ?? LineChart;
+  const Icon = chartTypeIcon(chart.type);
   return (
     <div className="flex min-h-0 flex-col">
       <div className="shrink-0 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
@@ -262,9 +222,17 @@ export function ChartExplorePage() {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <AdminPageShell
-        title="图表探索"
-        description="浏览平台已注册的图表类型、渲染器与字段绑定规则（VIZ-003）。"
+        title="图表类型目录"
+        description="浏览平台已注册的图表类型、渲染器与字段绑定规则（VIZ-003）。此处为只读参考目录；实际建图请在 Dashboard 编辑态添加组件并配置数据源与 SQL。"
         layout="fill"
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link to={WORKSPACE_HOME_PATH}>
+              <LayoutDashboard className="size-4" aria-hidden />
+              去 Dashboard 建图
+            </Link>
+          </Button>
+        }
       >
         {isError ? (
           <div className="shrink-0">
@@ -329,7 +297,7 @@ export function ChartExplorePage() {
                   ))
                 : null}
               {filtered.map((chart) => {
-                const Icon = CHART_ICONS[chart.type] ?? LineChart;
+                const Icon = chartTypeIcon(chart.type);
                 const active = selected?.type === chart.type;
                 return (
                   <button
@@ -388,7 +356,8 @@ export function ChartExplorePage() {
                   选择图表类型
                 </h3>
                 <p className="mt-2 max-w-sm text-theme-sm text-gray-500 dark:text-gray-400">
-                  从左侧目录选择图表，查看字段规则、样式变体与支持能力。
+                  从左侧目录选择图表，查看字段规则、样式变体与支持能力。要创建可出图的组件，请前往
+                  Dashboard 编辑页。
                 </p>
               </div>
             )}

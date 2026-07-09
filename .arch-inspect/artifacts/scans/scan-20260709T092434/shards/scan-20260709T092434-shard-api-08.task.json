@@ -1,0 +1,589 @@
+{
+  "task_id": "scan-20260709T092434-shard-api-08",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "api-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.api",
+  "rule_set_summary": "### 项目约定\n- 业务响应码：200 / -1\n\n### 必检规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `api.auth` | 敏感接口缺少权限声明（auth 为空或 none） | P0 |\n| `api.status_code` | 业务响应码仅允许约定枚举 | P1 |\n| `api.doc_consistency` | 文档路径、方法、参数与实现一致 | P1 |\n| `api.zombie` | 文档与实现双向存在（无僵尸接口/实现） | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "api:POST:/api/v1/gov/query-design/preview-execute",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "4b37b181a0eb0c07ae813a911fc1a75b18684fad748cda8c9a6a6216ca415e92",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/gov/query-design/preview-execute",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/query-design/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "eff360a03bbd61a57ad91a4be45f069072f23aef59ced42d3b089e9a82f0296c",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/query-design/validate",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/workflow/instances",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "efed48bb1a6c6ba473ae50095c0f42d331d1f3b369a3f3b2aa5e7101f806c98c",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/workflow/instances",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/workflow/instances/{id}/confirm-design",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "a91a3b99171a76069f6635fe9dfb308658ff4e2794e0a49e54812e711e9682a7",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/workflow/instances/{id}/confirm-design",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/workflow/instances/{id}/transition",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e6095fb06ae59ba44e56b7c1022d618a9b515816665d08fcb25414ca20898fbb",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/workflow/instances/{id}/transition",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/workflow/templates",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "7591aceda61a1243f3fd46793a761ed0f2716ae51ed57141abfc9f9b937e9607",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/workflow/templates",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/workflow/templates/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "a3e5599fc1248ab4f56c42510e9fbac25df7a6d5df37cfcc2fb21f25a237166f",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/workflow/templates/validate",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/ingestion/sync-jobs",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "a3a0e08f362b140d6a38e2331541be2fb46f5baf1816e719867544f6b3b2eb52",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/ingestion/sync-jobs",
+      "related_paths": [
+        "backend/app/api/v1/ingestion/sync.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/ingestion/sync-jobs/{id}/run",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "60a494b4371d7d07a35a0ee9430df90f64e9fa7c181f2e05bfcd714cb96d4454",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/ingestion/sync-jobs/{id}/run",
+      "related_paths": [
+        "backend/app/ingestion/sync_executor.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/integration/bus/register",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "62ab30f9f9120b56f89c7d6ce0c9527ff76372ec99845c45cfea24b2832a84d5",
+      "change_type": "added",
+      "domain": "IF-01",
+      "method": "POST",
+      "api_path": "/api/v1/integration/bus/register",
+      "related_paths": [
+        "backend/app/api/v1/integration_bus.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/integration/bus/register/retry",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "27ea14762aa5f633eb418b4ab855d26c5ce090777d702d08d7edc8858ca3cef0",
+      "change_type": "added",
+      "domain": "IF-01",
+      "method": "POST",
+      "api_path": "/api/v1/integration/bus/register/retry",
+      "related_paths": [
+        "backend/app/api/v1/integration_bus.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（companion）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/metadata/dimensions",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "17df997c0c9334c766b690a2fa14288bb7cabef94f4a53917b2e4d2c2381a31f",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/metadata/dimensions",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/metadata/dimensions/{dimension_id}/values",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "2ae37b7088e87abb51a43d44f6f8d201251fad091d9f975d9a2ac66d922dc5d2",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/metadata/dimensions/{dimension_id}/values",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/metadata/entity-types",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "b476c8ffbf823e2ea47cd01ebb9423a980d5a0516952bfe08dfff3e1abb2792c",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/metadata/entity-types",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/metadata/entity-types/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "d53e1c49a1735812e126a1acda9841bbf743d205b2c6b85e677deb6825dccea0",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/metadata/entity-types/validate",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/metadata/glossary",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "8c188b79138cd35ae66d568e68018536428619794dac7b017d6a3774f29383df",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/metadata/glossary",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/metadata/physical-tables",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "15fde42ccb4e24eb34f1f84d1e11b69f4e83ad276907881a4892e71fc00c4e09",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/metadata/physical-tables",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/metadata/physical-tables/register-from-schema",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "05baabae2e22293afd5fdd58ed63105f8d02ad5a7831fc743ed6af277ede4653",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/metadata/physical-tables/register-from-schema",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/metadata/themes",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "375a80a931837ee55c62972d20f7dabe55717edf6f441fab7e7ef3925b3f697a",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/metadata/themes",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/metadata/themes/{node_id}/move",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "542677c7bcd961ea8ac980468b4ab6a2614a73c6a429bbff5e9b84d27378e316",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/metadata/themes/{node_id}/move",
+      "related_paths": [
+        "backend/app/api/v1/metadata.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/dashboard-first-screen/probe",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "9ae6aca223206653a3d506148a206b3d269f4dd84acecad9ac8fe1af29137f88",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/dashboard-first-screen/probe",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/dashboard-first-screen/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "fe85d3914537dd0ebb79845a637260e0ad0bcc6eefa47bab3b9c089bb0ba8f47",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/dashboard-first-screen/validate",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/dashboard-sla/probe",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "0ab1eba383fd7fa18ed8831f32fd798266adb78ac2353de55561153c70f6dad0",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/dashboard-sla/probe",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/dashboard-sla/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "95208690042c12e2a464cdf907d4ead8ba0a627d772ed1d4999bf64bd2d530ac",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/dashboard-sla/validate",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/https-audit/mask-probe",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "14b1cd38209b827ff03253b7deb9e60609266961a2ba3f3c33ba3953b663d8d2",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/https-audit/mask-probe",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/notifications",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "aaae7013fdc3ecf9a50c1c869c2ce6cfaec9d663cce11f41c42d709cde5b2499",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/notifications",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/push-probe",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "758ffaca1219586a127490999ff2c3f9209dee280fb085f9d1e3402fe752464d",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/push-probe",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/report-query-perf/probe",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "6b340e4d990e28dd9ad61dc589bd1632445333525d7045de7452fff685025e13",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/report-query-perf/probe",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/report-query-perf/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "3df6f6b77110c7694f4021697bdaba3009dac6c1e15d7581192a446f6dadfe2e",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/report-query-perf/validate",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/nfr/runtime-compliance/assert",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e263d11c7615ac48235bff11e21e1050c7697c90c5569769a0c80f7a1cfb32ae",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/nfr/runtime-compliance/assert",
+      "related_paths": [
+        "backend/app/api/v1/nfr.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {
+    "api_status_codes": [
+      200,
+      -1
+    ]
+  }
+}

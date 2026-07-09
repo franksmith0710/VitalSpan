@@ -4,7 +4,8 @@ export type LayoutWidget = {
   id: string;
   type: "chart";
   title: string;
-  colSpan: 4 | 6 | 8 | 12;
+  /** 12 列栅格占位（1–12），与 Superset/DataEase 一致 */
+  colSpan: number;
   rowSpan: number;
   order: number;
   /** react-grid-layout 列坐标（0–11），拖拽后持久化 */

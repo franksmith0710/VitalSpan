@@ -80,6 +80,26 @@ describe("DatasourceFormPage wizard smoke", () => {
     expect(screen.queryByLabelText("名称")).not.toBeInTheDocument();
   });
 
+  it("FB-3-01b: legacy API without displayGroup still shows multiple categories", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasources/types") {
+        return {
+          items: [
+            { type: "mysql", displayName: "MySQL", category: "relational", capabilities: ["sql"] },
+            { type: "starrocks", displayName: "StarRocks", category: "olap", capabilities: ["sql"] },
+            { type: "excel", displayName: "Excel", category: "file", capabilities: ["file"] },
+          ],
+        };
+      }
+      throw new Error(`unexpected path ${path}`);
+    });
+    renderForm();
+    await waitFor(() => expect(screen.getByRole("button", { name: /关系型数据库/ })).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: /OLAP/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /文件/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^更多/ })).not.toBeInTheDocument();
+  });
+
   it("FB-3-02: OLTP → MySQL → form fields visible", async () => {
     renderForm();
     await selectType("关系型数据库", "MySQL");
@@ -124,7 +144,7 @@ describe("DatasourceFormPage xinchuang smoke", () => {
     renderForm();
     await waitFor(() => expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/datasources/types"));
     await selectType("关系型数据库", "达梦 DM");
-    expect(screen.getByText("达梦 DM")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "填写连接信息" })).toBeInTheDocument();
   });
 
   it("T-CONN-R242-FE-02: selecting tidb sets port 4000", async () => {
@@ -210,7 +230,7 @@ describe("DatasourceFormPage redshift smoke", () => {
     renderForm();
     await waitFor(() => screen.getByRole("button", { name: /OLAP/ }));
     await selectType("OLAP", "AWS Redshift");
-    expect(screen.getByText("AWS Redshift")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "填写连接信息" })).toBeInTheDocument();
   });
 
   it("T-CONN-R250-FE-02: 选中 redshift 后 port 自动填充 5439", async () => {
@@ -339,7 +359,7 @@ describe("CONN-023 REST API companion", () => {
   it("T-CONN-023-FE-05: wizard API → REST API → form path", async () => {
     renderForm();
     await selectType("API", "REST API");
-    expect(screen.getByText(/选择类型/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "填写连接信息" })).toBeInTheDocument();
     expect(screen.getByLabelText("Base URL")).toBeInTheDocument();
   });
 });

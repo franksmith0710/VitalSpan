@@ -1,0 +1,134 @@
+{
+  "task_id": "scan-20260709T092434-shard-page-06",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "page-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.page",
+  "rule_set_summary": "### page 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `page.route_consistency` | 路由与页面文件一致 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "page_route:fe/src/pages/admin/metadata/MetadataHubPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/metadata/MetadataHubPage.tsx",
+      "fingerprint": "50730b37165f1300f49f585ad266ac95a696da72b7bfb4a44cf5710497e5386c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/metadata/themes-panel.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/metadata/themes-panel.tsx",
+      "fingerprint": "ddbb17f5bae4b372759988d261a95e363200cc52dce289c1821aff5c2927da66",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/BatchImportPanel.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/BatchImportPanel.smoke.test.tsx",
+      "fingerprint": "04fe80d82fd082d5000b3cacbd5b384142e9c0f82719f7278ca1bbf0987c85ef",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/components/BatchImportPanel.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/components/BatchImportPanel.tsx",
+      "fingerprint": "dab97e483c00749491f5f09cb5e3ed613a28f8e99d7e69ebc90713ec2352d185",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/components/CatalogTreeNode.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/components/CatalogTreeNode.tsx",
+      "fingerprint": "b07591e82ab74cf8b83ac17cdf04a3e211efd1e491cfadcaaa4d00690553a70e",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/components/PrefabReportsEmptyPreview.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/components/PrefabReportsEmptyPreview.tsx",
+      "fingerprint": "860e66bb83ff2c5fa67ae878d89b456f629b3f280236f2f8a09403bfcb7a69e2",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/components/ReportExportCard.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/components/ReportExportCard.tsx",
+      "fingerprint": "5d024ec2018af041bbd75a904ca7f9c06a0862f236c648515ab8b23a76b763cb",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/components/SchedulePanel.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/components/SchedulePanel.tsx",
+      "fingerprint": "bb1fce8e313902ee6339ff7e6061b1375c30be76a41c574c2811aa03709ed39a",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/components/TemplateDetailPanel.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/components/TemplateDetailPanel.tsx",
+      "fingerprint": "b879b362942049c125c2857a44e27e3f530e95e7ee283bb5b61851d0fcdd91fc",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/prefab-reports.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/prefab-reports.smoke.test.tsx",
+      "fingerprint": "0c4a5347709d888ee08db480d5c4207c2b935de08c2593eea855503bce93ac74",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/PrefabReportsPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/PrefabReportsPage.tsx",
+      "fingerprint": "a670fdfe7e1da2dbb7161d763e8a55299acedf2f726f62462c7f4c23b3322698",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/report-templates.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/report-templates.smoke.test.tsx",
+      "fingerprint": "5050cc2bdf7192716c609aa12b1bde776f5693af21c9a123b0a45874907da8a9",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/ReportSchedulesPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/ReportSchedulesPage.tsx",
+      "fingerprint": "1a4f2b2235880f3bd2145eb98e098f739d89d87d5af38b8756399c68aefcac26",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/ReportTemplatesPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/ReportTemplatesPage.tsx",
+      "fingerprint": "fc73d4a19f02b9e722ecd7618f4445f8c3ccda4f60d561012d717c793d4a9f78",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/SchedulePanel.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/SchedulePanel.smoke.test.tsx",
+      "fingerprint": "c478e1e47e661b29b07e2f4ed0ec0914ec607ed3aead39502f05be2fb159d0c4",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

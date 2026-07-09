@@ -1,0 +1,174 @@
+{
+  "task_id": "scan-20260709T092434-shard-doc-11",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "doc-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.doc",
+  "rule_set_summary": "### doc 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `doc.coverage` | 关键模块有文档覆盖 | P2 |",
+  "asset_batch": [
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m1-fe-ci-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m1-fe-ci-design.md",
+      "fingerprint": "b278b7695e6017f33d3f0ae82092c0493e0822239926a7cefc062ecc5c0807b7",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m1-plan-close-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m1-plan-close-design.md",
+      "fingerprint": "93cf1c2159af855c8642e1a188b11a830281ab869ef7937e2509dfd0b326fa8f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m1b-activate-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m1b-activate-design.md",
+      "fingerprint": "e198f2cc81c3bc44b895944a880768b3bec97ad5feb844f2145ab4e259852d6b",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m1b-close-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m1b-close-design.md",
+      "fingerprint": "7c80b8b269fd69e2dc703a5ee7a96e94a56b3c1dab87923bd8b2ce87c076990e",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m1b-data-quality-r10-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m1b-data-quality-r10-design.md",
+      "fingerprint": "fab9a815a165fe82705a7918f94fb3741b54f4eb178f84dad6aeaf781b20e8dc",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m1b-data-quality-r13-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m1b-data-quality-r13-design.md",
+      "fingerprint": "9395638eca68e318249e8c8bb5801fb9c9d01b8db1190e52590e372c51b31c7c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m1b-quality-r8-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m1b-quality-r8-design.md",
+      "fingerprint": "bf6d832f56801bdadd796fe86e8d3556e749d3d6b1560567614fe8adc1512138",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m2-auth-rbac-kickoff-r17-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m2-auth-rbac-kickoff-r17-design.md",
+      "fingerprint": "fefd7c68b5d485166902a9f7ef79a9959c303f2bdd4b3427362214953570d412",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m3-datasource-companion-r25-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m3-datasource-companion-r25-design.md",
+      "fingerprint": "038d0e3596687e35d422d0fade8ace0a6bf7cd3bd1edea7930477126efa60fc6",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m3-datasource-kickoff-r22-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m3-datasource-kickoff-r22-design.md",
+      "fingerprint": "733160ef64d98dfdd6c1e0bd0c9158eebb71f55e32f5779153189f50f93db189",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-03-m4-query-quality-r27-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-03-m4-query-quality-r27-design.md",
+      "fingerprint": "a86c9756f65fd8adbe525ab58b4fe2b2ca9421a044ff387b3641e7c3394ef9ed",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-04-cat-dash-rpt-meta-companion-quality-r66-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-04-cat-dash-rpt-meta-companion-quality-r66-design.md",
+      "fingerprint": "695299f888924f71b81307169fc2685ca666318c3baa896e3d44b95343bd1eec",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-04-cat-nfr-rpt-meta-l1-r62-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-04-cat-nfr-rpt-meta-l1-r62-design.md",
+      "fingerprint": "90743561b4698824b399ab40ef201f8bfd2f70d6febdccb0b636619b1738539e",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-04-dash-nfr-conn-rpt-companion-quality-r67-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-04-dash-nfr-conn-rpt-companion-quality-r67-design.md",
+      "fingerprint": "1ac983e4a12f3f2c0573de178003b4e8f5394603c119d1f8ef3fa210d2b43580",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-04-m11-conn-m13-gov-companion-quality-r35-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-04-m11-conn-m13-gov-companion-quality-r35-design.md",
+      "fingerprint": "bab82274d244fedb55c42dc46da50c190de826b5baf0901dc2f018bde5d96611",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41-design.md",
+      "fingerprint": "9a88ae663ae55b997d34fb61ea7251cb804953ae712305147d81f88af1b9f4bb",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40-design.md",
+      "fingerprint": "38b0b4e631cc228a6a84ed145455511340823604f601a0da17c69460ec015e54",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-companion-quality-r37-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-companion-quality-r37-design.md",
+      "fingerprint": "64a01a356abc59a5c3d6c2d67fdd84eb6de23920e16bb3402c0ba5849dbdb1a9",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-l1-r36-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-04-m11-relational-olap-connectors-l1-r36-design.md",
+      "fingerprint": "030d1154cdef12ac5b42c220eca383650fb2062216ed2dc02bb788e67f92c663",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/specs/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39-design.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/specs/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39-design.md",
+      "fingerprint": "de3e5b6b3ad3d3de23e55a035f1efa31b53414276fba8eb5bfcc577af9f4f491",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

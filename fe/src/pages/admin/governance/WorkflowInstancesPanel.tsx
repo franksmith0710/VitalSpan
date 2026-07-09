@@ -30,6 +30,18 @@ const STATUS_COLOR: Record<string, "primary" | "success" | "warning" | "light"> 
   published: "success",
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  draft: "草稿",
+  pending_approval: "待审批",
+  designing: "设计中",
+  pending_publish: "待发布",
+  published: "已发布",
+};
+
+type WorkflowInstancesPanelProps = {
+  embedded?: boolean;
+};
+
 function InstanceListItem({
   inst,
   selected,
@@ -44,17 +56,15 @@ function InstanceListItem({
       type="button"
       onClick={onSelect}
       className={cn(
-        "flex w-full flex-col gap-2 border-b border-gray-100 px-4 py-3.5 text-left transition-colors last:border-b-0",
+        "flex w-full flex-col gap-1.5 px-4 py-3 text-left transition-colors",
         "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20 focus-visible:ring-inset",
-        selected
-          ? "bg-brand-50/80 dark:bg-brand-500/10"
-          : "hover:bg-gray-50 dark:hover:bg-white/[0.03]",
+        selected ? "bg-brand-50 dark:bg-brand-500/10" : "hover:bg-gray-50 dark:hover:bg-white/[0.03]",
       )}
     >
-      <p className="truncate font-mono text-theme-xs text-gray-800 dark:text-white/90">{inst.id}</p>
+      <p className="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">{inst.id}</p>
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="light" color={STATUS_COLOR[inst.status] ?? "light"} size="sm">
-          {inst.status}
+          {STATUS_LABEL[inst.status] ?? inst.status}
         </Badge>
         <span className="truncate text-theme-xs text-gray-500 dark:text-gray-400">{inst.templateId}</span>
       </div>
@@ -62,7 +72,7 @@ function InstanceListItem({
   );
 }
 
-export function WorkflowInstancesPanel() {
+export function WorkflowInstancesPanel({ embedded = false }: WorkflowInstancesPanelProps) {
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -137,17 +147,24 @@ export function WorkflowInstancesPanel() {
   const detail = detailQuery.data;
   const snap = detail?.designSnapshot;
 
+  const shellClass = embedded
+    ? ""
+    : cn(
+        "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm",
+        "dark:border-gray-800 dark:bg-white/[0.03]",
+      );
+
   if (listQuery.isLoading) {
-    return <Skeleton className="h-[520px] w-full rounded-2xl" />;
+    return <Skeleton className={cn("h-[520px] w-full", !embedded && "rounded-2xl")} />;
   }
 
   if (!items.length) {
     return (
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className={cn(shellClass, "min-h-[420px]")}>
         <PanelEmptyState
           icon={<ClipboardList className="size-7" aria-hidden />}
           title="暂无工单实例"
-          description="请先在查询设计器提交申请，工单将在此列表中展示并推进审批发布。"
+          description="在查询设计器提交申请后，工单将在此展示并推进审批发布。"
           size="lg"
         />
       </div>
@@ -155,16 +172,16 @@ export function WorkflowInstancesPanel() {
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
-      <div className="grid min-h-[520px] lg:grid-cols-[minmax(280px,320px)_1fr]">
+    <div className={shellClass}>
+      <div className="grid min-h-[520px] lg:grid-cols-[minmax(260px,280px)_1fr]">
         <aside className="flex flex-col border-b border-gray-200 lg:border-r lg:border-b-0 dark:border-gray-800">
-          <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-            <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">实例列表</h2>
-            <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-              {items.length} 个工单实例
-            </p>
+          <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-3.5 dark:border-gray-800">
+            <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">实例</h2>
+            <Badge variant="light" color="light" size="sm">
+              {items.length}
+            </Badge>
           </div>
-          <ul className="max-h-[min(560px,calc(100vh-320px))] overflow-y-auto">
+          <ul className="max-h-[min(560px,calc(100vh-300px))] divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
             {items.map((inst) => (
               <li key={inst.id}>
                 <InstanceListItem
@@ -184,7 +201,7 @@ export function WorkflowInstancesPanel() {
             </div>
           ) : detail ? (
             <div className="flex min-h-0 flex-col">
-              <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+              <header className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
                     <h2 className="font-mono text-theme-sm font-semibold text-gray-900 dark:text-white">
@@ -192,7 +209,7 @@ export function WorkflowInstancesPanel() {
                     </h2>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <Badge variant="light" color={STATUS_COLOR[detail.status] ?? "light"} size="sm">
-                        {detail.status}
+                        {STATUS_LABEL[detail.status] ?? detail.status}
                       </Badge>
                       <span className="text-theme-xs text-gray-500 dark:text-gray-400">
                         模板 {detail.templateId}
@@ -241,24 +258,24 @@ export function WorkflowInstancesPanel() {
                     ) : null}
                   </div>
                 </div>
-              </div>
+              </header>
 
               <div className="space-y-5 p-6">
                 {snap ? (
-                  <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-5 dark:border-gray-800 dark:bg-white/[0.02]">
+                  <section>
                     <div className="mb-4 flex items-center gap-2">
                       <FileJson2 className="size-4 text-brand-500" aria-hidden />
                       <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                        配置快照（只读）
+                        设计快照
                       </h3>
                     </div>
-                    <div className="grid gap-4">
+                    <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
                       <div className="grid gap-2">
                         <Label htmlFor="wf-snap-conditions">条件</Label>
                         <Textarea
                           id="wf-snap-conditions"
                           readOnly
-                          className="min-h-[112px] font-mono text-theme-xs"
+                          className="min-h-[100px] font-mono text-theme-xs"
                           value={JSON.stringify(snap.conditions ?? {}, null, 2)}
                           aria-label="条件快照"
                         />
@@ -268,7 +285,7 @@ export function WorkflowInstancesPanel() {
                         <Textarea
                           id="wf-snap-rules"
                           readOnly
-                          className="min-h-[96px] font-mono text-theme-xs"
+                          className="min-h-[88px] font-mono text-theme-xs"
                           value={JSON.stringify(snap.computeRules ?? {}, null, 2)}
                           aria-label="规则快照"
                         />
@@ -278,18 +295,18 @@ export function WorkflowInstancesPanel() {
                         <Textarea
                           id="wf-snap-output"
                           readOnly
-                          className="min-h-[96px] font-mono text-theme-xs"
+                          className="min-h-[88px] font-mono text-theme-xs"
                           value={JSON.stringify(snap.outputFields ?? {}, null, 2)}
                           aria-label="输出快照"
                         />
                       </div>
                     </div>
-                  </div>
+                  </section>
                 ) : (
                   <PanelEmptyState
                     icon={<FileJson2 className="size-6" aria-hidden />}
                     title="暂无设计快照"
-                    description="该工单实例尚未附带设计器配置快照。"
+                    description="该工单尚未附带设计器配置快照。"
                     size="sm"
                     tone="neutral"
                     variant="framed"

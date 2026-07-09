@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-07",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/core/nfr/runtime_guard.py",
+      "asset_type": "code_module",
+      "path": "backend/app/core/nfr/runtime_guard.py",
+      "fingerprint": "9aec1498a5c254c8baabd564d845fee5ef765e63bd78c61384d565ac9324adde",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/core/nfr/xinchuang.py",
+      "asset_type": "code_module",
+      "path": "backend/app/core/nfr/xinchuang.py",
+      "fingerprint": "f2d08ce60ae84b1f7c8165040766f9048196730613499c029d1ad933122d2fe3",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/dashboard/__init__.py",
+      "asset_type": "code_module",
+      "path": "backend/app/dashboard/__init__.py",
+      "fingerprint": "c3ae58d3a6061d7fcdddb2675aeb4ddea9a5201bc1e05068f7a6ef6551d696c8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/dashboard/entity_overview/errors.py",
+      "asset_type": "code_module",
+      "path": "backend/app/dashboard/entity_overview/errors.py",
+      "fingerprint": "592e5e1c3739d8ef8f6d1c4e07c3d534dee675ecfeb492cb2a17eff1f905668f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/dashboard/entity_overview/probe.py",
+      "asset_type": "code_module",
+      "path": "backend/app/dashboard/entity_overview/probe.py",
+      "fingerprint": "4c014d3be4a93239e6777dc14811537affadc7b1b613cfed57f96c78a2255470",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/dashboard/entity_overview/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/dashboard/entity_overview/schemas.py",
+      "fingerprint": "b46f2a8463942bbeb070f7247fa0564d6e8861a9148a56a65b7f941803af5dde",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/dashboard/entity_overview/service.py",
+      "asset_type": "code_module",
+      "path": "backend/app/dashboard/entity_overview/service.py",
+      "fingerprint": "1defafa39dc6cf7decc9d090c74e4b980c03e63b2f13f8621249ee7d28b409a5",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/dashboard/global_filters/errors.py",
+      "asset_type": "code_module",
+      "path": "backend/app/dashboard/global_filters/errors.py",
+      "fingerprint": "40d43ad940619375f80a638d07690bc43376038018116c74430c3686005bf77c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

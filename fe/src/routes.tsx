@@ -11,12 +11,12 @@ import { SyncJobFormPage } from "@/pages/admin/ingestion/SyncJobFormPage";
 import { SyncJobHistoryPage } from "@/pages/admin/ingestion/SyncJobHistoryPage";
 import { EtlRulesPage } from "@/pages/admin/ingestion/EtlRulesPage";
 import { AccountProfilePage } from "@/pages/admin/account/AccountProfilePage";
-import { AccountSettingsPage } from "@/pages/admin/account/AccountSettingsPage";
+import { AccountPreferencesPage } from "@/pages/admin/account/AccountPreferencesPage";
+import { AccountSecurityPage } from "@/pages/admin/account/AccountSecurityPage";
 import { DashboardListPage } from "@/pages/admin/dashboard/DashboardListPage";
 import { DashboardEditPage } from "@/pages/admin/dashboard/DashboardEditPage";
 import { DashboardSharePage } from "@/pages/admin/dashboard/DashboardSharePage";
 import { LoginPage } from "@/pages/login/LoginPage";
-import { ConnectorsPage } from "@/pages/admin/connectors/ConnectorsPage";
 import { DatasourceListPage } from "@/pages/admin/datasources/DatasourceListPage";
 import { DatasourceFormPage } from "@/pages/admin/datasources/DatasourceFormPage";
 import { DatasourceDetailPage } from "@/pages/admin/datasources/DatasourceDetailPage";
@@ -39,8 +39,9 @@ import { MetadataHubPage } from "@/pages/admin/metadata/MetadataHubPage";
 import { DatasetListPage } from "@/pages/admin/datasets/DatasetListPage";
 import { DesignerPage } from "@/pages/admin/designer/DesignerPage";
 import { ChartExplorePage } from "@/pages/admin/charts/ChartExplorePage";
+import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { ReportSchedulesPage } from "@/pages/admin/reports/ReportSchedulesPage";
-import { ACCOUNT_SETTINGS_PATH } from "@/lib/workspace";
+import { ACCOUNT_PREFERENCES_PATH } from "@/lib/workspace";
 
 export function AppRoutes() {
   return (
@@ -54,14 +55,17 @@ export function AppRoutes() {
           <Route path="datasources/new" element={<RequirePlatformAdmin><DatasourceFormPage mode="create" /></RequirePlatformAdmin>} />
           <Route path="datasources/:id/edit" element={<RequirePlatformAdmin><DatasourceFormPage mode="edit" /></RequirePlatformAdmin>} />
           <Route path="datasources/:id" element={<RequirePlatformAdmin><DatasourceDetailPage /></RequirePlatformAdmin>} />
-          <Route path="connectors" element={<RequirePlatformAdmin><ConnectorsPage /></RequirePlatformAdmin>} />
+          <Route path="connectors" element={<Navigate to="/admin/datasources" replace />} />
           <Route path="ingestion/sync-jobs" element={<RequirePlatformAdmin><SyncJobsPage /></RequirePlatformAdmin>} />
           <Route path="ingestion/sync-jobs/new" element={<RequirePlatformAdmin><SyncJobFormPage /></RequirePlatformAdmin>} />
           <Route path="ingestion/sync-jobs/:id/edit" element={<RequirePlatformAdmin><SyncJobFormPage /></RequirePlatformAdmin>} />
           <Route path="ingestion/sync-jobs/:id/history" element={<RequirePlatformAdmin><SyncJobHistoryPage /></RequirePlatformAdmin>} />
           <Route path="ingestion/sync-jobs/:id/etl-rules" element={<RequirePlatformAdmin><EtlRulesPage /></RequirePlatformAdmin>} />
           <Route path="account/profile" element={<AccountProfilePage />} />
-          <Route path="account/settings" element={<AccountSettingsPage />} />
+          <Route path="account/preferences" element={<AccountPreferencesPage />} />
+          <Route path="account/security" element={<AccountSecurityPage />} />
+          <Route path="account/settings" element={<Navigate to={ACCOUNT_PREFERENCES_PATH} replace />} />
+          <Route path="account" element={<Navigate to="/admin/account/profile" replace />} />
           <Route path="dashboards" element={<DashboardListPage />} />
           <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
           <Route path="dashboards/:id/share" element={<DashboardSharePage />} />
@@ -71,7 +75,11 @@ export function AppRoutes() {
           <Route path="reports/templates" element={<ReportTemplatesPage />} />
           <Route path="reports/templates/:nodeId" element={<ReportTemplatesPage />} />
           <Route path="reports/schedules" element={<ReportSchedulesPage />} />
-          <Route path="charts/explore" element={<ChartExplorePage />} />
+          <Route path="charts/types" element={<ChartExplorePage />} />
+          <Route
+            path="charts/explore"
+            element={<Navigate to={CHART_TYPES_CATALOG_PATH} replace />}
+          />
           <Route path="designer" element={<DesignerPage />} />
           <Route path="governance/catalog" element={<RequirePlatformAdmin><GovernanceCatalogPage /></RequirePlatformAdmin>} />
           <Route path="governance/tickets" element={<RequirePlatformAdmin><GovernanceWorkflowPage /></RequirePlatformAdmin>} />
@@ -80,7 +88,7 @@ export function AppRoutes() {
           <Route path="metadata" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
           <Route path="metadata/glossary" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
           <Route path="datasets" element={<RequirePlatformAdmin><DatasetListPage /></RequirePlatformAdmin>} />
-          <Route path="me/views" element={<Navigate to={ACCOUNT_SETTINGS_PATH} replace />} />
+          <Route path="me/views" element={<Navigate to={ACCOUNT_PREFERENCES_PATH} replace />} />
           <Route path="themes/:dashboardId" element={<ThemeAnalysisPage />} />
           <Route path="system/roles" element={<RequirePlatformAdmin><RoleListPage /></RequirePlatformAdmin>} />
           <Route path="system/users" element={<RequirePlatformAdmin><UserListPage /></RequirePlatformAdmin>} />

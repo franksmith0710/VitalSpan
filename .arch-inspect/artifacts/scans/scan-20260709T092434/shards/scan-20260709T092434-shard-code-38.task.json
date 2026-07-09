@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-38",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/reports/scheduler/acl.py",
+      "asset_type": "code_module",
+      "path": "backend/app/reports/scheduler/acl.py",
+      "fingerprint": "5ab8d153b817045014f498826dab0760ee7b077362d2562e0de92d7e2543ae7c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/reports/scheduler/delivery.py",
+      "asset_type": "code_module",
+      "path": "backend/app/reports/scheduler/delivery.py",
+      "fingerprint": "db842f12d18f0f463ed782dbdc75f2b73a35c2a4cd870d5f4aca7e943c6c68df",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/reports/scheduler/errors.py",
+      "asset_type": "code_module",
+      "path": "backend/app/reports/scheduler/errors.py",
+      "fingerprint": "657a1b28b82f84ede56ac9dd249d6e8d793693affad2b208038d2d4a6224d073",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/reports/scheduler/executor.py",
+      "asset_type": "code_module",
+      "path": "backend/app/reports/scheduler/executor.py",
+      "fingerprint": "dcaacadfff8711fdbf4b37a8b5040230b123e44dda994f0d31fc72b162f98229",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/reports/scheduler/jobs.py",
+      "asset_type": "code_module",
+      "path": "backend/app/reports/scheduler/jobs.py",
+      "fingerprint": "11d1623bc10960f314c09bfede9ac20a407fc9b6bb864a80ba53f91d5625470d",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/reports/scheduler/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/reports/scheduler/schemas.py",
+      "fingerprint": "58f463506c3ed073e7a92b19d0a6abbb082b316912d762c9c5f0dda763f643d7",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/reports/scheduler/service.py",
+      "asset_type": "code_module",
+      "path": "backend/app/reports/scheduler/service.py",
+      "fingerprint": "3ddec4c57ace0574d4a44a7dfd53fa45ee8071af8c8d33df015f64694a8c155e",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/reports/templates/acl.py",
+      "asset_type": "code_module",
+      "path": "backend/app/reports/templates/acl.py",
+      "fingerprint": "72915adbfadf549c695801d3df2cb3923bcdb9e07aec40488977929de735bbce",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

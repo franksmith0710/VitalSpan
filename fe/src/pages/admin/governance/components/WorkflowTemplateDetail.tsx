@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Workflow } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -25,29 +25,33 @@ type WorkflowTemplateDetailProps = {
   template: WorkflowTemplate;
 };
 
-function NodePipeline({ nodes }: { nodes: WorkflowTemplate["nodes"] }) {
+function FlowStepper({ nodes }: { nodes: WorkflowTemplate["nodes"] }) {
+  if (!nodes.length) {
+    return (
+      <p className="text-theme-sm text-gray-500 dark:text-gray-400">该模板尚未配置流程节点。</p>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
-      <ol className="flex min-w-max items-stretch gap-3 pb-1">
+      <ol className="flex min-w-max items-start">
         {nodes.map((node, index) => (
-          <li key={node.id} className="flex items-stretch">
-            <div className="flex w-[148px] flex-col rounded-xl border border-gray-200 bg-white p-4 text-center shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-              <span className="mx-auto flex size-8 items-center justify-center rounded-full bg-brand-500 text-theme-xs font-semibold text-white">
+          <Fragment key={node.id}>
+            <li className="flex w-[120px] flex-col items-center text-center">
+              <span className="flex size-8 items-center justify-center rounded-full bg-brand-500 text-theme-xs font-semibold text-white shadow-theme-xs">
                 {index + 1}
               </span>
-              <p className="mt-3 text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+              <p className="mt-2.5 text-theme-sm font-medium text-gray-900 dark:text-white">
                 {nodeLabel(node.id)}
               </p>
-              <Badge variant="light" color="primary" size="sm" className="mt-2 self-center">
-                {roleLabel(node.role)}
-              </Badge>
-            </div>
+              <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{roleLabel(node.role)}</p>
+            </li>
             {index < nodes.length - 1 ? (
-              <div className="flex w-8 items-center justify-center" aria-hidden>
-                <div className="h-px w-full bg-gray-200 dark:bg-gray-700" />
-              </div>
+              <li className="flex h-8 min-w-[40px] flex-1 items-center px-1" aria-hidden>
+                <div className="h-px w-full bg-gradient-to-r from-brand-300/80 via-brand-200/60 to-brand-100/40 dark:from-brand-500/40 dark:via-brand-500/20 dark:to-transparent" />
+              </li>
             ) : null}
-          </li>
+          </Fragment>
         ))}
       </ol>
     </div>
@@ -66,75 +70,45 @@ function NodeRolesTable({
   const descByNode = new Map(descriptions.map((d) => [d.nodeId, d.description]));
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gray-50 hover:bg-gray-50 dark:bg-white/[0.02] dark:hover:bg-white/[0.02]">
-            <TableHead className="w-16">序号</TableHead>
-            <TableHead>节点</TableHead>
-            <TableHead>标识</TableHead>
-            <TableHead>负责角色</TableHead>
-            <TableHead>说明</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loading
-            ? Array.from({ length: 3 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell colSpan={5}>
-                    <Skeleton className="h-6 w-full" />
-                  </TableCell>
-                </TableRow>
-              ))
-            : null}
-          {!loading
-            ? nodes.map((node, index) => (
-                <TableRow key={node.id}>
-                  <TableCell className="text-gray-500 dark:text-gray-400">{index + 1}</TableCell>
-                  <TableCell className="font-medium text-gray-800 dark:text-white/90">
-                    {nodeLabel(node.id)}
-                  </TableCell>
-                  <TableCell className="font-mono text-theme-xs text-gray-600 dark:text-gray-300">
-                    {node.id}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="light" color="primary" size="sm">
-                      {roleLabel(node.role)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-gray-600 dark:text-gray-400">
-                    {descByNode.get(node.id) ?? "—"}
-                  </TableCell>
-                </TableRow>
-              ))
-            : null}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
-function DetailSection({
-  title,
-  description,
-  children,
-  className,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <section className={cn("rounded-xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]", className)}>
-      <div className="mb-4">
-        <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-        {description ? (
-          <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">{description}</p>
-        ) : null}
-      </div>
-      {children}
-    </section>
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="w-14">#</TableHead>
+          <TableHead>节点</TableHead>
+          <TableHead className="w-28">负责角色</TableHead>
+          <TableHead>说明</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {loading
+          ? Array.from({ length: Math.max(nodes.length, 3) }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell colSpan={4}>
+                  <Skeleton className="h-5 w-full" />
+                </TableCell>
+              </TableRow>
+            ))
+          : null}
+        {!loading
+          ? nodes.map((node, index) => (
+              <TableRow key={node.id}>
+                <TableCell className="text-gray-400">{index + 1}</TableCell>
+                <TableCell className="font-medium text-gray-800 dark:text-white/90">
+                  {nodeLabel(node.id)}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="light" color="primary" size="sm">
+                    {roleLabel(node.role)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-theme-sm text-gray-600 dark:text-gray-400">
+                  {descByNode.get(node.id) ?? "—"}
+                </TableCell>
+              </TableRow>
+            ))
+          : null}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -148,42 +122,61 @@ export function WorkflowTemplateDetail({ template }: WorkflowTemplateDetailProps
   });
 
   const isCustom = template.id.startsWith("custom_");
+  const roleCount = new Set(template.nodes.map((n) => n.role)).size;
 
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="shrink-0 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+      <header className="shrink-0 border-b border-gray-200 px-6 py-5 dark:border-gray-800">
         <div className="flex items-start gap-4">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
-            <Workflow className="size-6" aria-hidden />
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+            <Workflow className="size-5" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-theme-lg font-semibold text-gray-900 dark:text-white">
-                {template.name}
-              </h2>
+              <h2 className="text-theme-base font-semibold text-gray-900 dark:text-white">{template.name}</h2>
               <Badge variant="light" color={isCustom ? "primary" : "success"} size="sm">
-                {isCustom ? "自定义模板" : "内置模板"}
+                {isCustom ? "自定义" : "内置"}
               </Badge>
             </div>
-            <p className="mt-1 font-mono text-theme-xs text-gray-500 dark:text-gray-400">
-              {template.id}
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-theme-xs text-gray-500 dark:text-gray-400">
+              <span className="font-mono">{template.id}</span>
+              <span aria-hidden>·</span>
+              <span>{template.nodes.length} 个节点</span>
+              <span aria-hidden>·</span>
+              <span>{roleCount} 个角色</span>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
-        <DetailSection title="流程节点" description="从左到右为工单流转顺序，每个节点绑定负责角色。">
-          <NodePipeline nodes={template.nodes} />
-        </DetailSection>
+      <div className="min-h-0 flex-1 space-y-8 overflow-y-auto p-6">
+        <section>
+          <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">流转路径</h3>
+          <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+            从左到右为工单状态推进顺序。
+          </p>
+          <div className="mt-4 rounded-xl bg-gray-50/80 px-4 py-5 dark:bg-white/[0.02]">
+            <FlowStepper nodes={template.nodes} />
+          </div>
+        </section>
 
-        <DetailSection title="节点角色配置" description="各节点的职责说明，供审批与设计环节参考。">
-          <NodeRolesTable
-            nodes={template.nodes}
-            descriptions={rolesQuery.data ?? []}
-            loading={rolesQuery.isLoading}
-          />
-        </DetailSection>
+        <section>
+          <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">节点职责</h3>
+          <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+            各节点绑定的角色与说明，供审批与设计环节参考。
+          </p>
+          <div
+            className={cn(
+              "mt-4 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800",
+            )}
+          >
+            <NodeRolesTable
+              nodes={template.nodes}
+              descriptions={rolesQuery.data ?? []}
+              loading={rolesQuery.isLoading}
+            />
+          </div>
+        </section>
       </div>
     </div>
   );

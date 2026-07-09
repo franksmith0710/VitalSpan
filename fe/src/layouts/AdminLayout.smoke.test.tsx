@@ -127,6 +127,21 @@ describe("AdminLayout smoke", () => {
     expect(main.className).toContain("max-w-(--breakpoint-2xl)");
   });
 
+  it("dashboard edit route uses fill-height main (no page scroll flicker)", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboards/:id/edit" element={<div>edit canvas</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    expect(main.className).toContain("overflow-hidden");
+    expect(main.className).not.toContain("overflow-y-auto");
+  });
+
   it("shows mobile backdrop when menu opens at 375px (T-FE-20)", () => {
     setMobileViewport(375);
     render(
@@ -274,7 +289,7 @@ describe("AdminLayout smoke", () => {
     await user.click(userMenu);
     expect(screen.queryByRole("menuitem", { name: "返回工作台" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("menuitem", { name: "个人资料" }));
+    await user.click(screen.getByRole("menuitem", { name: "个人中心" }));
     expect(screen.getByText("profile page")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "账号导航" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "管理端导航" })).not.toBeInTheDocument();
@@ -301,7 +316,7 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
 
-    const reportTrigger = screen.getByRole("button", { name: "报表" });
+    const reportTrigger = screen.getByRole("button", { name: "报表中心" });
     expect(reportTrigger).toBeInTheDocument();
 
     await user.click(reportTrigger);
@@ -311,9 +326,8 @@ describe("AdminLayout smoke", () => {
     expect(screen.getByRole("link", { name: "报表调度" })).toBeInTheDocument();
   });
 
-  it("admin sidebar has 数据连接 collapsible with 连接管理 and 连接器类型 (T-FE-SMFA-02)", async () => {
+  it("admin sidebar 数据连接 links to datasources (T-FE-SMFA-02)", () => {
     setDesktopViewport(1400);
-    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -324,14 +338,9 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
 
-    const dataConnTrigger = screen.getByRole("button", { name: "数据连接" });
-    await user.click(dataConnTrigger);
-
-    const connMgrLink = screen.getByRole("link", { name: "连接管理" });
-    expect(connMgrLink).toHaveAttribute("href", "/admin/datasources");
-
-    const connTypeLink = screen.getByRole("link", { name: "连接器类型" });
-    expect(connTypeLink).toHaveAttribute("href", "/admin/connectors");
+    const dataConnLink = screen.getByRole("link", { name: "数据连接" });
+    expect(dataConnLink).toHaveAttribute("href", "/admin/datasources");
+    expect(screen.queryByRole("link", { name: "连接器类型" })).not.toBeInTheDocument();
   });
 
   it("admin sidebar has no 预览 badge after M13 GA (T-FE-SMFA-03)", () => {
@@ -375,8 +384,9 @@ describe("AdminLayout smoke", () => {
     expect(screen.getByRole("heading", { name: "分析" })).toBeInTheDocument();
   });
 
-  it("T-FE-SMFB-01: admin sidebar 系统 group has 资源授权 link", () => {
+  it("T-FE-SMFB-01: admin sidebar 系统 group has 资源授权 link", async () => {
     setDesktopViewport(1400);
+    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -386,6 +396,7 @@ describe("AdminLayout smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
+    await user.click(screen.getByRole("button", { name: "权限与安全" }));
     const link = screen.getByRole("link", { name: "资源授权" });
     expect(link).toHaveAttribute("href", "/admin/system/grants");
   });
@@ -423,7 +434,7 @@ describe("AdminLayout smoke", () => {
         </Routes>
       </MemoryRouter>,
     );
-    await user.click(screen.getByRole("button", { name: "报表" }));
+    await user.click(screen.getByRole("button", { name: "报表中心" }));
     expect(screen.getByRole("link", { name: "预制报表" })).toBeInTheDocument();
   });
 

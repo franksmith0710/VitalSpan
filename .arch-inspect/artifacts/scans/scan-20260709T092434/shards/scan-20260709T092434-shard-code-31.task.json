@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-31",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/query/config_store/access.py",
+      "asset_type": "code_module",
+      "path": "backend/app/query/config_store/access.py",
+      "fingerprint": "602abff9784af46a355205c21b574e60fc05716d292cfec1c0040cf62c1c9bc0",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/query/config_store/models.py",
+      "asset_type": "code_module",
+      "path": "backend/app/query/config_store/models.py",
+      "fingerprint": "57286c48a6a73ab614cd874208aaa1f10345e7f0c9595399d8f4a6cac87a79ea",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/query/config_store/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/query/config_store/schemas.py",
+      "fingerprint": "6b2264d59b7718c0a60c968f1a617921d7c0ff788317ffbc875aa028175604bd",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/query/config_store/service.py",
+      "asset_type": "code_module",
+      "path": "backend/app/query/config_store/service.py",
+      "fingerprint": "266cd54a2e16e5e7e9b5e51a5c06b703f0753a2558a20adb0dceaff474e6de42",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/query/dataset/execute_config.py",
+      "asset_type": "code_module",
+      "path": "backend/app/query/dataset/execute_config.py",
+      "fingerprint": "8a9198ca989e4cbb1d5e8f2017eeb19e217e6e94f084784922cdd5ba0f0f1356",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/query/dataset/executor.py",
+      "asset_type": "code_module",
+      "path": "backend/app/query/dataset/executor.py",
+      "fingerprint": "d11596ecdf5e67be8c0306b8b0854648f7f636e0f3cd3e224913410ff4cd9a35",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/query/dataset/guard.py",
+      "asset_type": "code_module",
+      "path": "backend/app/query/dataset/guard.py",
+      "fingerprint": "7964ca270cb50782750a0c7b85a7adfac6cb14184ac271f3ae978c8c30c43e43",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/query/dataset/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/query/dataset/schemas.py",
+      "fingerprint": "bc60cc686684a9e3f3293786c0813d4c5d9c01d16b5e47a2863148acd0b77f61",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

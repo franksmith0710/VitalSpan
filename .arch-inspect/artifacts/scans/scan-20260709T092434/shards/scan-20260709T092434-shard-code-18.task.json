@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-18",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/governance/bus/probe.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/bus/probe.py",
+      "fingerprint": "4cc567025919cc404d03f62d4eed390c10e573c01d56eed639c2bb28a7f89110",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/__init__.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/__init__.py",
+      "fingerprint": "d32b16769ebfe72d85594aa30623a54635ce197683703fb18a3cad564176db46",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/appendix_e.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/appendix_e.py",
+      "fingerprint": "43aefc1da793cc34948418b52d3ae95e93cb9a69a90aaf93b411dcd37f7a2be8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/cat01/errors.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/cat01/errors.py",
+      "fingerprint": "bff3ae548c68df3e1245949b1313e9e748d27829f0ff2a5a3ea1cd6e47eecd3b",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/cat01/handler.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/cat01/handler.py",
+      "fingerprint": "2fe65079b2adab31655cc729881ac39073efa345208484b8cb3f82a226818f66",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/cat01/probe.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/cat01/probe.py",
+      "fingerprint": "378ce73ba61e74b4cccf556778196b07b14ad7b288946e4b637ef5e4a418841d",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/cat01/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/cat01/schemas.py",
+      "fingerprint": "5255d2726d0fe4640cbcefc926fa48c8716a47f9d471578902fd7d544228b946",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/cat01/service.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/cat01/service.py",
+      "fingerprint": "ff965383c764467844c75414ca76ac7b71544e1c3f6f4bb77be5d453bedca42c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

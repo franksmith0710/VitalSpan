@@ -1,0 +1,134 @@
+{
+  "task_id": "scan-20260709T092434-shard-page-07",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "page-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.page",
+  "rule_set_summary": "### page 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `page.route_consistency` | 路由与页面文件一致 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/usePrefabReports.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/usePrefabReports.ts",
+      "fingerprint": "19072841bd0ea06b5fcf7da9e0bdddfd2229ad54968d4b89414bf47ed3e73da3",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/reports/useReportTemplates.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/reports/useReportTemplates.ts",
+      "fingerprint": "bd80c269fb6be1b0ceea5ce8e757b72885a670e7fd0c05d1ee58d452bfc5ecd6",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/services/QueryServicesPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/services/QueryServicesPage.tsx",
+      "fingerprint": "815fd003ea77121d41c0034091e7b9617e0b2222bf3bbdbb57787fe3ed51d3b0",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/audit/audit-display.test.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/audit/audit-display.test.ts",
+      "fingerprint": "8ea7934747dad7821fc7408ff6ba7ade1434a1046e249e4ae07e075c6ce95627",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/audit/audit-display.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/audit/audit-display.ts",
+      "fingerprint": "3aeea2d3081a884653a8c09240e5c13caaf61e87ad28126278040460b216d290",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/audit/audit.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/audit/audit.smoke.test.tsx",
+      "fingerprint": "8843d210b1813112949b8bd078677aa3f091070c08671a998ccebc9fe9c4a14d",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/audit/AuditDetailSheet.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/audit/AuditDetailSheet.tsx",
+      "fingerprint": "0f813f42cae5aad3c58a581a326567da5563a5772cdb94e219d28ef187db80d6",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/audit/AuditLogPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/audit/AuditLogPage.tsx",
+      "fingerprint": "87dfec68635049fdef0118a798797cb82e43fa037d601aed91115a6ee6671f97",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/grants/grantErrors.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/grants/grantErrors.ts",
+      "fingerprint": "d6400069ce613ba1ddb316480c4c7565fdeb39c15b4cc982311eae80ea61dafd",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/grants/grantFormSchema.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/grants/grantFormSchema.ts",
+      "fingerprint": "296b74fd5b8c8a3adee682f12834b5ca9833fcd9285366d2b1fc6323b7ed014f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/grants/grants.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/grants/grants.smoke.test.tsx",
+      "fingerprint": "a6e731f8ce1e6d7ae2fb50ee3231413b0e93c2a51b075de261d8a91c027c76f7",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/grants/GrantsDialogs.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/grants/GrantsDialogs.tsx",
+      "fingerprint": "31a9a00dae84c57091c40700c00843d526378294c63c117afcc401c09d1234db",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/grants/GrantsPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/grants/GrantsPage.tsx",
+      "fingerprint": "1ff5567c488fccf055ef4f1f877dca0030ec7f0925fcb017c75e4bf3a059e8f1",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/grants/useGrantsPage.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/grants/useGrantsPage.ts",
+      "fingerprint": "0b36161e64dbce1c3dd12568490c07d35405bb805e08bf650f76f710f5a93f99",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/system/orgs/OrgTreePage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/system/orgs/OrgTreePage.tsx",
+      "fingerprint": "0653504139ba43ca01632b508535869532adc91b54c52d7cdc1a2ef084b7b769",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

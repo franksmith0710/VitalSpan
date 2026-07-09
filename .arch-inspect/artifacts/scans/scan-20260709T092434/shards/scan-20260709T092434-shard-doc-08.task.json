@@ -1,0 +1,174 @@
+{
+  "task_id": "scan-20260709T092434-shard-doc-08",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "doc-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.doc",
+  "rule_set_summary": "### doc 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `doc.coverage` | 关键模块有文档覆盖 | P2 |",
+  "asset_batch": [
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-03-m5-viz-dash-r28.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-03-m5-viz-dash-r28.md",
+      "fingerprint": "de030450d69865fb85577201a05b85e53ea0ac83d879d7de566921980d5e4ec6",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-cat-dash-rpt-meta-companion-quality-r66.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-cat-dash-rpt-meta-companion-quality-r66.md",
+      "fingerprint": "8c36f8c6d55c635162efebf3ea556c4a86aeafb6a7d7960696ace32158dec406",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-cat-nfr-rpt-meta-l1-r62.md",
+      "fingerprint": "da26f39c318ff205f8a8a473f383e1b362db55d697c3363147084a9fa0c50a22",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-cat-rpt-meta-companion-quality-r65.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-cat-rpt-meta-companion-quality-r65.md",
+      "fingerprint": "b76448559497575f1c4805ef86f7c3fed3782fced149d3b2ab33779db8d899d9",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-dash-nfr-conn-rpt-companion-quality-r67.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-dash-nfr-conn-rpt-companion-quality-r67.md",
+      "fingerprint": "cf5ec369f10ab2d72e00db3485e47d29cdce51d5f8828a0efe6552aa55408e05",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-dash-rpt-companion-quality-r58.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-dash-rpt-companion-quality-r58.md",
+      "fingerprint": "2606c8337e658e3f273f098269af823551012d71b2e1ad083db671a8f1ebc79e",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m10-m12-rpt-gov-meta-oceanbase-companion-quality-r55.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m10-m12-rpt-gov-meta-oceanbase-companion-quality-r55.md",
+      "fingerprint": "4e4be2ef7189f814af7bf57078df286b5f23c4aca36186495fcfb675b35a1c18",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m11-conn-m13-gov-companion-quality-r35.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m11-conn-m13-gov-companion-quality-r35.md",
+      "fingerprint": "22b1940091f3a7ca279332cc4c0695922fdac506843001711419ece505cc117c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-companion-r41.md",
+      "fingerprint": "25f6cc16a12a884347d222bd46ec99a354385b8c19d4c20d21c1886a42bffa43",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m11-embedded-timeseries-doc-conn-l1-r40.md",
+      "fingerprint": "63d5400dc46f857307aa96951a915420127e92b50e16a58df1f1bab5df8aceb7",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m11-meta-m12-companion-quality-r33.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m11-meta-m12-companion-quality-r33.md",
+      "fingerprint": "61a09ee6f157fac1e5d7a2e91146dab523733806bbf57c81a6723e30806ee6cb",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-companion-quality-r37.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-companion-quality-r37.md",
+      "fingerprint": "99aae4c074f05bded48f9a6ab0ad500a36202c1f5393c8392f5f2c25d770b9bc",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-l1-r36.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m11-relational-olap-connectors-l1-r36.md",
+      "fingerprint": "02d1c255cbc641260890fff400b160b5b0ed46b50f22a32c9a753a20440403e9",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-companion-quality-r39.md",
+      "fingerprint": "8f377596ea6fec918ec7a219f673697fc4d271340be324d91f9a5fcff4332b88",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-l1-r38.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m12-query-m11-meta-conn-l1-r38.md",
+      "fingerprint": "c4162088a9dd300a4563ec575a33c9027453ca02ca35e1d1e8cbd77897031676",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-companion-quality-r52.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-companion-quality-r52.md",
+      "fingerprint": "b1ee848f90d0d54957e37d68a73a0d1ee399d3fd3bdaba1898f0ea11afc97a22",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-l1-r49.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m13-design-opensearch-gov-query-l1-r49.md",
+      "fingerprint": "d64deedd135306deb6e5549a0e3aff1f6b36fbc3498c85dd4fd3725aabdd7829",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m5-view-m6-companion-quality-r31.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m5-view-m6-companion-quality-r31.md",
+      "fingerprint": "566c54b696700b6cacde3cedf83c5a15002f52dc00a8bd9c0df2c3e20ac39180",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m5-view-m6-companion-r30.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m5-view-m6-companion-r30.md",
+      "fingerprint": "2a4d753ddcb8132790a5c6307228264249cd006fb487b62a24e3b3b360ba2c64",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/plans/2026-07-04-m5-viz-dash-quality-r29.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/plans/2026-07-04-m5-viz-dash-quality-r29.md",
+      "fingerprint": "4770ab9030275656cabd14ffd2f3a4ef2f77aa1e9ddee4e0bc6fa199a0abecb8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

@@ -1,8 +1,8 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.111
-last_updated: 2026-07-08
+version: 1.2.112
+last_updated: 2026-07-09
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
@@ -238,6 +238,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.112 | 2026-07-09 | DS-007 产品收缩：移除 `/admin/connectors` 只读页与侧栏「连接器类型」；`数据连接` 直达 `/admin/datasources`；旧路由重定向；保留 `GET /types` + 新建向导 taxonomy；同步 `F03-DS` DS-007、`layout.md` |
 | 1.2.111 | 2026-07-08 | P5 重评 CONN-023/024、BOOT-002、VIZ-002、DESIGN-004（M-PRODUCT F-A/F-C companion IA）；pytest 2311/29 skipped + vitest 269/269 + check:design 220 files + build PASS；CONN-023 RestApiConnectionFields + CONN-024 FileSourceConnectionFields Tabs；BOOT-002/VIZ-002 iaTier/iaPriority 过滤 + DESIGN-004 治理分组 Badge；用户价值 88–92%→92–98%、完整度 96%→100%、交互 N/A→88–98%；总分 92.4–95.9→93.2–96.6（五 ID ≥90 STUCK 空；plan F-A CONN-023/024 + F-C 三行勾选） |
 | 1.2.110 | 2026-07-08 | P5 DS-007 重评（M-PRODUCT F-B displayGroup taxonomy companion）；pytest test_datasources_display_group_fb 8/8 + vitest ConnectorsPage+datasource-form 19/19 + check:design 212 files；displayGroup/categoryLabel API + ConnectorsPage Tabs + DatasourceFormPage 三步向导；用户价值 92%→94%、交互体验 94%→96%、架构健康 94%→92%（DatasourceFormPage 530 行超 fe-ui 软约束）；总分 93.8→94.1（≥90 STUCK 空；plan F-B 三行勾选） |
 | 1.2.109 | 2026-07-08 | 人工 PRD 同步（M-PRODUCT · plan v2.6.0）：hub 执行范围/里程碑节对齐 M-PRODUCT；`prd/README` 129 合同 + companion 语义；分片 F01/F03/F05/F07/F10/F11/F13 补记 2026-07-08 成品清扫 companion 验收（BOOT-002 壳层、QUERY-009 Dashboard Dataset、DS-007 语义建模 nav、DASH-002 分享、API-003/005 Admin FE、GOV-005 发布链）；锚点 `admin-nav`→`nav-manifest` |

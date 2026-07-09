@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  ACCOUNT_PREFERENCES_PATH,
   ACCOUNT_PROFILE_PATH,
+  ACCOUNT_SECURITY_PATH,
   ACCOUNT_SETTINGS_PATH,
   isAccountManagementPath,
   isWorkspacePath,
@@ -18,6 +20,8 @@ describe("workspace", () => {
 
   it("recognizes account management paths", () => {
     expect(isAccountManagementPath(ACCOUNT_PROFILE_PATH)).toBe(true);
+    expect(isAccountManagementPath(ACCOUNT_PREFERENCES_PATH)).toBe(true);
+    expect(isAccountManagementPath(ACCOUNT_SECURITY_PATH)).toBe(true);
     expect(isAccountManagementPath(ACCOUNT_SETTINGS_PATH)).toBe(true);
     expect(isAccountManagementPath("/admin")).toBe(false);
   });

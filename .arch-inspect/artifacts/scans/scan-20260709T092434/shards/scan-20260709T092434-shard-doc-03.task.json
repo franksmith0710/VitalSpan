@@ -1,0 +1,174 @@
+{
+  "task_id": "scan-20260709T092434-shard-doc-03",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "doc-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.doc",
+  "rule_set_summary": "### doc 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `doc.coverage` | 关键模块有文档覆盖 | P2 |",
+  "asset_batch": [
+    {
+      "asset_id": "doc_asset:docs/services/README.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/README.md",
+      "fingerprint": "227405f588d608d40f5fbeb0f6edcd37aa110fc7765a8f5087b3a38aecd5597f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/reports.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/reports.md",
+      "fingerprint": "0f6c40b56fce558c1ace48aaeba3db69deb8f18ae19e23ce74e36483832651f0",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/views.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/views.md",
+      "fingerprint": "d3ad27e9bce93a31f82969e7a2531d55581cd4986349df04f5df6b4c541b0781",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/services/viz.md",
+      "asset_type": "doc_asset",
+      "path": "docs/services/viz.md",
+      "fingerprint": "b04c9d8e09b97894bcdd76e528127a0c38304d934f753ce79a65d5690d1235d5",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/srs/附录D-报表规格清单.md",
+      "asset_type": "doc_asset",
+      "path": "docs/srs/附录D-报表规格清单.md",
+      "fingerprint": "6cb8c21a78f2a577c5c64aedf7117799dc1d4c9202ebeb5cbc53dcdbf3aca207",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/srs/附录E-7类查询接口清单.md",
+      "asset_type": "doc_asset",
+      "path": "docs/srs/附录E-7类查询接口清单.md",
+      "fingerprint": "090f70d117982a5e78753bb4fb42ac6c74340ae95f203b5ccf408ff1a2aa0ef0",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/srs/附录F-实施追溯矩阵.md",
+      "asset_type": "doc_asset",
+      "path": "docs/srs/附录F-实施追溯矩阵.md",
+      "fingerprint": "7eb844b110f7b276bfbce3555a0fcbe9e550218d932f82724e8b6cd090149bee",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/srs/附录S-参考场景户户通.md",
+      "asset_type": "doc_asset",
+      "path": "docs/srs/附录S-参考场景户户通.md",
+      "fingerprint": "021d4597d65ade04336b592ba0aed2e3737f89d76ec07d041dc65bc4a3d1f194",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/srs/全生命周期系统需求规格说明书.md",
+      "asset_type": "doc_asset",
+      "path": "docs/srs/全生命周期系统需求规格说明书.md",
+      "fingerprint": "a10eb69c8d7ccbbfc7ba9ef142e0d302b745237fb598bd492c10a849a02a2c70",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/srs/README.md",
+      "asset_type": "doc_asset",
+      "path": "docs/srs/README.md",
+      "fingerprint": "49af7ac5d90404a47f2942583a185b9dcbe2bf089b756e38f351b844feb9865a",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-m1-backend-bootstrap-verification.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-m1-backend-bootstrap-verification.md",
+      "fingerprint": "68aa75deb1dc6df33067de6fc6e8f1da76ab64122ad0e4b3f11a95c1bec0a52c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-m1-doc-writeback.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-m1-doc-writeback.md",
+      "fingerprint": "ad9827c22751aab55f442767103b796fc9cc27a550a5a8a27d99abd92d50fcfd",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-m1-fe-ci.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-m1-fe-ci.md",
+      "fingerprint": "36958cb41846db2f465fa5015a9fda54a1cb27947f25058c176fc1788d1306ab",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-m1-plan-close.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-m1-plan-close.md",
+      "fingerprint": "fdf2801c250d47f53e31d48754ea6a51232b7bb3c1766953596953d04e93057a",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-m1b-activate.md",
+      "fingerprint": "fde0199e4fb46a679f0a99abd429b1b5f57d7e9780932ded399646153171c425",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-m1b-close.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-m1b-close.md",
+      "fingerprint": "a0ca4745e736ac8683ff02df8c55b8f4824a78fbe84872a45be7bbf245db2bc0",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r10.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r10.md",
+      "fingerprint": "b05e1e4da754dbbeece1a956b30f55d91440a80c27a14517c09724fce74e0e86",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r11.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r11.md",
+      "fingerprint": "a98a5d1425b59f41be5b7c07c53de58d8337cdaa1cca6a55ac7088ef9fae0c7f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r13.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r13.md",
+      "fingerprint": "4ec8f33f60e696db1d111eeece765adcf58972c24ed6b818d49100244c7737d0",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r15.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r15.md",
+      "fingerprint": "0c566df73dd7102e8b9ad2c13651b9ec3671195595e28846033d43b0d744e0ec",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

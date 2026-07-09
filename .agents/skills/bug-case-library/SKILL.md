@@ -78,6 +78,7 @@ cases/<域>-<简短主题>.md
 | CASE-2026-06-12-001 | [auth-legacy-admin-password.md](./cases/auth-legacy-admin-password.md) | login, invalid credentials, admin, seed, admin-change-me, 激活后登录 |
 | CASE-2026-06-12-002 | [fe-api-null-items-list.md](./cases/fe-api-null-items-list.md) | items null, length, ChatEndpointsPage, 白屏, 空列表 |
 | CASE-2026-06-17-001 | [user-last-super-admin-demote-race.md](./cases/user-last-super-admin-demote-race.md) | user, super_admin, demote, race, atomic update |
+| CASE-2026-07-09-001 | [fe-dashboard-zombie-edit-flicker.md](./cases/fe-dashboard-zombie-edit-flicker.md) | dashboard, 404, zombie edit, RGL isDroppable, 闪烁, 无法保存 |
 
 ## 维护规则
 

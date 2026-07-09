@@ -14,7 +14,7 @@ class LayoutWidget(BaseModel):
     id: uuid.UUID
     type: Literal["chart"] = "chart"
     title: str = Field(min_length=1, max_length=120)
-    col_span: Literal[4, 6, 8, 12] = Field(alias="colSpan")
+    col_span: int = Field(default=6, ge=1, le=12, alias="colSpan")
     row_span: int = Field(default=1, ge=1, le=8, alias="rowSpan")
     order: int = Field(default=0, ge=0)
     chart_config: ChartViewConfig | None = Field(default=None, alias="chartConfig")

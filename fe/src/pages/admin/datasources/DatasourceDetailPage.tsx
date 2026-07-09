@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Database, Pencil, PlugZap } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ function DetailSkeleton() {
 
 export function DatasourceDetailPage() {
   const { id = "" } = useParams();
+  const queryClient = useQueryClient();
   const [testResult, setTestResult] = useState<TestConnectionResult | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
@@ -58,6 +59,9 @@ export function DatasourceDetailPage() {
     onSuccess: (result) => {
       setTestResult(result);
       setTestError(null);
+      if (result.ok) {
+        void queryClient.invalidateQueries({ queryKey: ["datasources", id] });
+      }
     },
     onError: (err) => {
       setTestResult(null);

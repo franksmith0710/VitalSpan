@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-23",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/models.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/models.py",
+      "fingerprint": "9f11ee2781449ca1651fbac77241f25494723b287f2f10d333cf8d47575df0dd",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/probe.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/probe.py",
+      "fingerprint": "08578f7e8258d06d95eb4aa6ec5fe72f2a13e652a725787784442d28672e9a97",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/schemas.py",
+      "fingerprint": "dea40136751d95f799ab8912263db7a0907abda81c9af1cc73880b243e1e22ca",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/catalog/service.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/catalog/service.py",
+      "fingerprint": "af9dd0effc79cad344d8d1db5c4111d9266154b81f18fbdbd89330f661349244",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/openapi/errors.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/openapi/errors.py",
+      "fingerprint": "092d142f6b7b9d55e1d4b68e76ddf4b8b9cca26a860e12470f6e0b079c86f3fd",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/openapi/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/openapi/schemas.py",
+      "fingerprint": "5346a2eb229e16be1809abee3e8f1fe4878b23289e76b7f3b0822fdfc9f5a28e",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/openapi/service.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/openapi/service.py",
+      "fingerprint": "1c2f422ec8054039d2a6d548ba7abd4ae524e34e5c1c62747e10bd1b2dc688c9",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/governance/publish/__init__.py",
+      "asset_type": "code_module",
+      "path": "backend/app/governance/publish/__init__.py",
+      "fingerprint": "7e828ef3cf9075a0be05f1426bfe02617bf06df51425315c2cee8ec3eca06aef",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

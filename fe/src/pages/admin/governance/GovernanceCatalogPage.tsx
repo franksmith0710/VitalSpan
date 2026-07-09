@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { GitBranch } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  DataTable,
+  ListPageBody,
+  ListPagePagination,
+  ListPageSection,
+  ListPageToolbar,
+  PageErrorBanner,
+} from "@/components/layout/list-page-kit";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -11,10 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import { useListPagination } from "@/lib/list-pagination";
 
 type CatalogCategory = { code: string; name: string; description?: string | null; kind: string };
 type CatalogEntry = {
@@ -27,19 +35,9 @@ type CatalogEntry = {
   createdAt: string;
 };
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
-
 export function GovernanceCatalogPage() {
   const [category, setCategory] = useState<string>("__all__");
+  const pagination = useListPagination(20, [category]);
 
   const categoriesQuery = useQuery({
     queryKey: queryKeys.gov.categories,
@@ -49,11 +47,14 @@ export function GovernanceCatalogPage() {
   const entriesQuery = useQuery({
     queryKey: queryKeys.gov.entries({
       category: category === "__all__" ? undefined : category,
-      limit: 100,
-      offset: 0,
+      limit: pagination.pageSize,
+      offset: pagination.offset,
     }),
     queryFn: () => {
-      const q = new URLSearchParams({ limit: "100", offset: "0" });
+      const q = new URLSearchParams({
+        limit: String(pagination.pageSize),
+        offset: String(pagination.offset),
+      });
       if (category !== "__all__") q.set("category", category);
       return apiFetch<{ items: CatalogEntry[]; total: number }>(
         `/api/v1/gov/catalog/entries?${q}`,
@@ -63,87 +64,89 @@ export function GovernanceCatalogPage() {
 
   const categories = categoriesQuery.data?.items ?? [];
   const entries = entriesQuery.data?.items ?? [];
+  const total = entriesQuery.data?.total ?? 0;
 
   return (
     <AdminPageShell
       title="接口分类目录"
       description="治理域 catalog 条目登记与七分法分类浏览（GOV-001）。"
     >
-      {entriesQuery.isError ? (
-        <ErrorBanner message={mapApiError(entriesQuery.error)} onRetry={() => void entriesQuery.refetch()} />
-      ) : null}
+      <ListPageSection>
+        {entriesQuery.isError ? (
+          <ListPageBody>
+            <PageErrorBanner
+              message={mapApiError(entriesQuery.error)}
+              onRetry={() => void entriesQuery.refetch()}
+            />
+          </ListPageBody>
+        ) : null}
 
-      <div className="grid gap-2 sm:max-w-xs">
-        <Label>分类筛选</Label>
-        <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">全部分类</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c.code} value={c.code}>
-                {c.code} · {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+        <ListPageToolbar
+          filters={
+            <div className="grid w-full gap-1.5 sm:max-w-xs">
+              <Label className="text-theme-xs text-gray-500">分类筛选</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">全部分类</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.code} · {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          }
+        />
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-        <table className="min-w-[900px] w-full text-left text-theme-sm">
-          <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-            <tr>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">名称</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">方法</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">路径</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">分类</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">状态</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entriesQuery.isLoading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={5} className="px-4 py-3">
-                      <Skeleton className="h-6 w-full" />
-                    </td>
-                  </tr>
-                ))
-              : null}
-            {entries.length === 0 && !entriesQuery.isLoading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
-                  暂无 catalog 条目
-                </td>
-              </tr>
-            ) : null}
-            {entries.map((e) => (
-              <tr key={e.id} className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{e.name}</td>
-                <td className="px-4 py-3">
-                  <Badge variant="light" color="primary" size="sm">
-                    {e.httpMethod}
+        <ListPageBody>
+          <DataTable
+            loading={entriesQuery.isLoading}
+            empty={entries.length === 0}
+            emptyState={{
+              icon: <GitBranch className="size-7" aria-hidden />,
+              title: "暂无 catalog 条目",
+              description: "发布流水线批准后，接口条目将在此按分类展示。",
+            }}
+            headers={["名称", "方法", "路径", "分类", "状态"]}
+            rows={entries.map((e) => [
+              <span key="n" className="font-medium text-gray-900 dark:text-white/90">
+                {e.name}
+              </span>,
+              <Badge key="m" variant="light" color="primary" size="sm">
+                {e.httpMethod}
+              </Badge>,
+              <code
+                key="p"
+                className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300"
+              >
+                {e.path}
+              </code>,
+              <div key="c" className="flex flex-wrap gap-1">
+                {e.categoryCodes.map((c) => (
+                  <Badge key={c} variant="light" color="light" size="sm">
+                    {c}
                   </Badge>
-                </td>
-                <td className="px-4 py-3 font-mono text-theme-xs text-gray-600 dark:text-gray-400">
-                  {e.path}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {e.categoryCodes.map((c) => (
-                      <Badge key={c} variant="light" color="light" size="sm">
-                        {c}
-                      </Badge>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{e.status}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                ))}
+              </div>,
+              e.status,
+            ])}
+          />
+        </ListPageBody>
+
+        {!entriesQuery.isLoading && total > 0 ? (
+          <ListPagePagination
+            current={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+            showSizeChanger
+            onChange={pagination.onPageChange}
+          />
+        ) : null}
+      </ListPageSection>
     </AdminPageShell>
   );
 }

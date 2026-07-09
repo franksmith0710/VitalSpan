@@ -24,7 +24,7 @@ export function AdminPageShell({
       className={cn(
         layout === "fill"
           ? "flex min-h-0 flex-1 flex-col gap-6 overflow-hidden"
-          : "grid gap-6",
+          : "grid shrink-0 gap-6",
         className,
       )}
     >

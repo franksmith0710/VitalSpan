@@ -1,8 +1,16 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  DataTable,
+  ListPageBody,
+  ListPagePagination,
+  ListPageSection,
+  PageErrorBanner,
+  RowActions,
+} from "@/components/layout/list-page-kit";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -23,11 +31,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import { useListPagination } from "@/lib/list-pagination";
 
 type DatasetItem = {
   datasetId: string;
@@ -37,17 +45,6 @@ type DatasetItem = {
   allowedRoles: string[];
   boundConfigId?: string | null;
 };
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
 
 export function DatasetListPage() {
   const qc = useQueryClient();
@@ -60,11 +57,16 @@ export function DatasetListPage() {
   const [tableNames, setTableNames] = useState("");
   const [computedJson, setComputedJson] = useState("[]");
 
+  const pagination = useListPagination(20);
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: queryKeys.datasets.list({ limit: 100, offset: 0 }),
+    queryKey: queryKeys.datasets.list({
+      limit: pagination.pageSize,
+      offset: pagination.offset,
+    }),
     queryFn: () =>
       apiFetch<{ items: DatasetItem[]; total: number }>(
-        "/api/v1/datasets?limit=100&offset=0",
+        `/api/v1/datasets?limit=${pagination.pageSize}&offset=${pagination.offset}`,
       ),
   });
 
@@ -131,71 +133,76 @@ export function DatasetListPage() {
   };
 
   const items = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <AdminPageShell
       title="Dataset"
       description="语义层数据集管理：表关联、计算字段与授权角色（META-004）。"
       actions={
-        <Button type="button" variant="primary" onClick={() => setCreateOpen(true)}>
+        <Button type="button" variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="size-4" aria-hidden />
           新建 Dataset
         </Button>
       }
     >
-      {isError ? <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
+      <ListPageSection>
+        {isError ? (
+          <ListPageBody>
+            <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+          </ListPageBody>
+        ) : null}
+        <ListPageBody>
+          <DataTable
+            loading={isLoading}
+            empty={items.length === 0}
+            lastColumnAlign="right"
+            emptyState={{
+              icon: <Layers className="size-7" aria-hidden />,
+              title: "暂无 Dataset",
+              description: "创建语义层数据集，配置表关联与计算字段。",
+              action: (
+                <Button type="button" variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
+                  <Plus className="size-4" aria-hidden />
+                  新建 Dataset
+                </Button>
+              ),
+            }}
+            headers={["显示名", "ID", "绑定配置", "表数量", "操作"]}
+            rows={items.map((d) => [
+              <span key="n" className="font-medium text-gray-900 dark:text-white/90">
+                {d.displayName}
+              </span>,
+              <code
+                key="id"
+                className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300"
+              >
+                {d.datasetId}
+              </code>,
+              d.boundConfigId ? `${d.boundConfigId.slice(0, 8)}…` : "—",
+              d.tables.length,
+              <RowActions key="a">
+                <IconButton variant="ghost" size="sm" aria-label={`编辑 ${d.displayName}`} onClick={() => openEdit(d)}>
+                  <Pencil className="size-4" />
+                </IconButton>
+                <IconButton variant="ghost" size="sm" aria-label={`删除 ${d.displayName}`} onClick={() => setDeleteTarget(d)}>
+                  <Trash2 className="size-4" />
+                </IconButton>
+              </RowActions>,
+            ])}
+          />
+        </ListPageBody>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-        <table className="min-w-[720px] w-full text-left text-theme-sm">
-          <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-            <tr>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">显示名</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">ID</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">绑定配置</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">表数量</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={5} className="px-4 py-3">
-                      <Skeleton className="h-6 w-full" />
-                    </td>
-                  </tr>
-                ))
-              : null}
-            {items.length === 0 && !isLoading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
-                  暂无 Dataset
-                </td>
-              </tr>
-            ) : null}
-            {items.map((d) => (
-              <tr key={d.datasetId} className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{d.displayName}</td>
-                <td className="px-4 py-3 font-mono text-theme-xs">{d.datasetId}</td>
-                <td className="px-4 py-3 font-mono text-theme-xs">
-                  {d.boundConfigId ? `${d.boundConfigId.slice(0, 8)}…` : "—"}
-                </td>
-                <td className="px-4 py-3">{d.tables.length}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" size="sm" aria-label="编辑 Dataset" onClick={() => openEdit(d)}>
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button type="button" variant="outline" size="sm" aria-label="删除 Dataset" onClick={() => setDeleteTarget(d)}>
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        {!isLoading && total > 0 ? (
+          <ListPagePagination
+            current={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+            showSizeChanger
+            onChange={pagination.onPageChange}
+          />
+        ) : null}
+      </ListPageSection>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-lg">

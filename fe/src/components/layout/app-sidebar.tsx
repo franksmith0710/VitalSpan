@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useLocation } from "react-router";
-import { ChevronDown, MoreHorizontal } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/context/sidebar-context";
@@ -48,6 +48,14 @@ function NavBadge({
   variant: "new" | "pro" | "preview" | "governance";
   active?: boolean;
 }) {
+  if (variant === "governance") {
+    return (
+      <span className="ml-auto shrink-0 rounded-md bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+        {label}
+      </span>
+    );
+  }
+
   let base: string;
   let state: string;
 
@@ -61,9 +69,6 @@ function NavBadge({
     state = active
       ? "menu-dropdown-badge-preview-active"
       : "menu-dropdown-badge-preview-inactive";
-  } else if (variant === "governance") {
-    base = "menu-dropdown-badge";
-    state = "bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400";
   } else {
     base = "menu-dropdown-badge";
     state = active
@@ -71,7 +76,7 @@ function NavBadge({
       : "menu-dropdown-badge-inactive";
   }
 
-  return <span className={cn("ml-auto", state, base)}>{label}</span>;
+  return <span className={cn("ml-auto shrink-0", state, base)}>{label}</span>;
 }
 
 function SidebarNavItem({
@@ -82,7 +87,8 @@ function SidebarNavItem({
   showLabels: boolean;
 }) {
   const location = useLocation();
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
   const hasActiveChild =
     item.subItems?.some((sub) => isActive(sub.path)) ?? false;
   const [open, setOpen] = React.useState(hasActiveChild);
@@ -99,9 +105,7 @@ function SidebarNavItem({
         <Collapsible.Trigger
           className={cn(
             "group menu-item w-full cursor-pointer",
-            open || hasActiveChild
-              ? "menu-item-active"
-              : "menu-item-inactive",
+            open || hasActiveChild ? "menu-item-active" : "menu-item-inactive",
             !showLabels && "xl:justify-center",
           )}
         >
@@ -116,28 +120,29 @@ function SidebarNavItem({
             {item.icon}
           </span>
           {showLabels && <span className="menu-item-text">{item.name}</span>}
-          {item.new && showLabels && (
+          {item.new && showLabels ? (
             <NavBadge label="new" variant="new" active={open} />
-          )}
-          {item.preview && showLabels && (
+          ) : null}
+          {item.preview && showLabels ? (
             <NavBadge
               label="预览"
               variant="preview"
               active={open || hasActiveChild}
             />
-          )}
-          {showLabels && (
+          ) : null}
+          {showLabels ? (
             <ChevronDown
               className={cn(
-                "ml-auto size-5 transition-transform duration-200",
-                open && "rotate-180 text-brand-500",
+                "ml-auto size-4 shrink-0 text-gray-400 transition-transform duration-200",
+                open && "rotate-180 text-brand-500 dark:text-brand-400",
               )}
+              aria-hidden
             />
-          )}
+          ) : null}
         </Collapsible.Trigger>
-        {showLabels && (
+        {showLabels ? (
           <Collapsible.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-            <ul className="mt-2 ml-9 space-y-1">
+            <ul className="relative mt-1 ml-[22px] space-y-0.5 border-l border-gray-200 pl-3 dark:border-gray-800">
               {item.subItems.map((subItem) => {
                 const active = isActive(subItem.path);
                 return (
@@ -152,14 +157,14 @@ function SidebarNavItem({
                           : "menu-dropdown-item-inactive",
                       )}
                     >
-                      {subItem.name}
-                      <span className="ml-auto flex items-center gap-1">
-                        {subItem.new && (
+                      <span className="truncate">{subItem.name}</span>
+                      <span className="ml-auto flex shrink-0 items-center gap-1">
+                        {subItem.new ? (
                           <NavBadge label="new" variant="new" active={active} />
-                        )}
-                        {subItem.pro && (
+                        ) : null}
+                        {subItem.pro ? (
                           <NavBadge label="pro" variant="pro" active={active} />
-                        )}
+                        ) : null}
                       </span>
                     </Link>
                   </li>
@@ -167,7 +172,7 @@ function SidebarNavItem({
               })}
             </ul>
           </Collapsible.Content>
-        )}
+        ) : null}
       </Collapsible.Root>
     );
   }
@@ -182,7 +187,11 @@ function SidebarNavItem({
     <Link
       to={item.path}
       target={item.target}
-      title={item.badgeLabel ? "面向数据治理闭环；普通分析请使用 Dashboard。" : undefined}
+      title={
+        item.badgeLabel
+          ? "面向数据治理闭环；普通分析请使用 Dashboard。"
+          : undefined
+      }
       className={cn(
         "group menu-item",
         active ? "menu-item-active" : "menu-item-inactive",
@@ -197,14 +206,48 @@ function SidebarNavItem({
       >
         {item.icon}
       </span>
-      {showLabels && <span className="menu-item-text">{item.name}</span>}
+      {showLabels ? <span className="menu-item-text">{item.name}</span> : null}
       {item.badgeLabel && showLabels ? (
         <NavBadge label={item.badgeLabel} variant="governance" active={active} />
       ) : null}
-      {item.preview && showLabels && (
+      {item.preview && showLabels ? (
         <NavBadge label="预览" variant="preview" active={active} />
-      )}
+      ) : null}
     </Link>
+  );
+}
+
+function SidebarSection({
+  section,
+  showLabels,
+  showDivider,
+}: {
+  section: NavSection;
+  showLabels: boolean;
+  showDivider?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "menu-group",
+        showDivider && "border-t border-gray-100 pt-5 dark:border-white/[0.06]",
+      )}
+    >
+      {showLabels ? (
+        <h2 className="menu-group-title">{section.title}</h2>
+      ) : (
+        <div className="mb-2 flex justify-center px-3" aria-hidden>
+          <span className="block h-px w-6 bg-gray-200 dark:bg-gray-800" />
+        </div>
+      )}
+      <ul className="flex flex-col gap-0.5">
+        {section.items.map((item) => (
+          <li key={item.name}>
+            <SidebarNavItem item={item} showLabels={showLabels} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -240,8 +283,8 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-gray-200 bg-white px-5 text-gray-900 transition-all duration-300 ease-in-out xl:translate-x-0 dark:border-gray-800 dark:bg-gray-900",
-        isWide ? "w-[290px]" : "w-[90px]",
+        "fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-gray-200 bg-white text-gray-900 transition-all duration-300 ease-in-out xl:translate-x-0 dark:border-gray-800 dark:bg-gray-900",
+        isWide ? "w-[290px] px-5" : "w-[90px] px-3",
         isMobileOpen ? "translate-x-0" : "-translate-x-full",
         className,
       )}
@@ -250,38 +293,23 @@ export function AppSidebar({
     >
       <div
         className={cn(
-          "flex shrink-0 py-6",
+          "flex shrink-0 border-b border-gray-100 py-5 dark:border-white/[0.06]",
           !showLabels ? "xl:justify-center" : "justify-start",
         )}
       >
         {showLabels ? logo : (collapsedLogo ?? logo)}
       </div>
 
-      <div className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto pb-6 duration-300 ease-linear">
-        <nav className="flex flex-col" aria-label={navAriaLabel}>
+      <div className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto py-4 duration-300 ease-linear">
+        <nav className="flex flex-1 flex-col" aria-label={navAriaLabel}>
           {leading}
-          {sections.map((section) => (
-            <div key={section.title} className="menu-group">
-              <h2
-                className={cn(
-                  "menu-group-title",
-                  !showLabels ? "xl:justify-center xl:px-0" : "justify-start",
-                )}
-              >
-                {showLabels ? (
-                  section.title
-                ) : (
-                  <MoreHorizontal className="size-6" aria-hidden />
-                )}
-              </h2>
-              <ul className="flex flex-col gap-0.5">
-                {section.items.map((item) => (
-                  <li key={item.name}>
-                    <SidebarNavItem item={item} showLabels={showLabels} />
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {sections.map((section, index) => (
+            <SidebarSection
+              key={section.title}
+              section={section}
+              showLabels={showLabels}
+              showDivider={index > 0}
+            />
           ))}
         </nav>
         {showLabels && widget ? widget : null}

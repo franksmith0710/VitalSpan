@@ -97,11 +97,10 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │
 ├── 数据                            # 建设权限（RBAC）
 │   ├── /datasources                 # 数据源列表 · crud-flow
-│   ├── /datasources/new             # 新建 · form-flow
+│   ├── /datasources/new             # 新建 · form-flow（含类型选型向导）
 │   ├── /datasources/:id             # 详情/连通性/schema · detail-page
-│   ├── /connectors                  # 已注册类型只读（DS-007）
 │
-│   > **F-B taxonomy（DS-007）**：`/admin/connectors` 按 **关系型数据库 / OLAP / 数仓·湖仓 / 文件 / API / 更多** 六类 Tab 展示（对标 DataEase）。`/admin/datasources/new` 新建向导 Step 1 大类选择与上述 `categoryLabel` 一致；编辑已有数据源跳过向导直达连接表单。
+│   > **F-B taxonomy（DS-007）**：类型清单经 `GET /api/v1/datasources/types` 供新建向导消费；`/admin/datasources/new` Step 1 按 **关系型数据库 / OLAP / 数仓·湖仓 / 文件 / API / 更多** 大类选型（对标 DataEase）；编辑已有数据源跳过向导直达连接表单。旧 `/admin/connectors` 已移除，重定向至 `/admin/datasources`。
 │   ├── /ingestion/sync-jobs         # 数据接入
 │   ├── /metadata                    # 元数据（术语/主题/维度）
 │   └── /datasets                    # Dataset 语义建模（META-004）
@@ -112,7 +111,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
 │   ├── /dashboards/:id/preview      # 构建器 preview
 │   ├── /dashboards/:id/share        # 分享/嵌入 · bi-share-embed（有 edit 权）
-│   ├── /charts/explore              # 即席图表（三期）· bi-chart-builder（高级入口，默认仅 admin 侧栏）
+│   ├── /charts/types                # 图表类型目录（VIZ-003 只读注册表；/charts/explore 重定向）
 │
 ├── 报表
 │   ├── /reports                     # 授权报表列表（消费）
@@ -127,7 +126,10 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   └── /entities/overview           # 实体总览配置（二期）
 │
 ├── 我的
-│   └── /account/settings            # 账号设置（个人资料与密码在子路由）
+│   ├── /account/profile             # 用户资料（个人中心首页）
+│   ├── /account/preferences         # 偏好设置（默认看板 / 个人视图）
+│   └── /account/security            # 安全设置（修改密码）
+│   # /account/settings 重定向至 preferences（兼容旧链接）
 │
 ├── 治理
 │   ├── /governance/catalog
@@ -149,17 +151,17 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA（analyst/viewer） |
 |------|--------|----------|--------|------|---------------------------|
-| 数据 | 数据连接（连接管理/连接器类型）、数据接入、语义建模（元数据/Dataset） | `datasource:*` / `metadata:*` / `dataset:*` 分项 | M1/M13 | admin | **隐藏** |
-| 分析 | Dashboard | —（角色驱动） | M1 | admin/analyst/viewer | **可见**（主路径） |
-| 分析 | 图表探索（M11） | `dashboard:edit` | M11 | admin（侧栏）；analyst/viewer 经 Dashboard `WidgetPalette` 建图 | **隐藏**（高级入口） |
+| 数据 | 数据连接、数据接入、语义建模（元数据/Dataset） | `datasource:*` / `metadata:*` / `dataset:*` 分项 | M1/M13 | admin | **隐藏** |
+| 分析 | Dashboard | — | M1 | admin/analyst/viewer | **可见**（主路径） |
+| 治理 | 图表类型目录（M11） | `governance:*` | M11 | admin | **隐藏**（工程向；建图在 Dashboard） |
 | 报表 | 报表（subItems: 预制报表/报表模板/报表调度） | `report:read/edit` | M1/M7/M11 | admin/analyst/viewer | **可见** |
 | 主题与实体 | 实体总览、主题分析 | `theme:*` | M7 | admin | **隐藏** |
 | 治理 | 接口目录（M1）、治理工单（M13）、发布流水线（M13）、查询服务（M13）、**查询设计器**（M13，标注「治理专用」） | `governance:*` | M1/M13 | admin | **隐藏** |
-| 我的 | 账号设置 | — | — | admin/analyst/viewer | **可见** |
+| 我的 | 个人资料、偏好设置、安全设置 | — | — | admin/analyst/viewer | **可见**（头像菜单「个人中心」进入） |
 | 系统 | 角色/用户/组织/行级权限/审计日志/资源授权 | `system:*` | M1 | admin | **隐藏** |
 
 > **数据工程** = `数据` + `主题与实体` 分组；非 admin 默认侧栏不展示（`iaTier: engineering`）。
-> **图表探索**为高级入口（M11），默认仅 admin 侧栏展示；analyst/viewer 经 Dashboard 编辑 `WidgetPalette` 完成建图。
+> **图表类型目录**位于「治理」分组（admin 工程向）；实际建图在 Dashboard 编辑 `WidgetPalette`；组件面板底部可跳转完整类型说明。
 
 > **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生函数：`fe/src/lib/resolve-nav.ts`。
 > 三档角色（admin / analyst / viewer）侧栏由 `resolveNavGroups(user)` 从 manifest 派生，不再维护三份平行 nav 文件。
@@ -204,7 +206,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 |--------|----------------------|
 | M1–M6 一期 | 数据、Dashboard（edit + view）、系统/权限、连接器 |
 | M7–M10 二期 | 报表模板、报表调度、主题、实体；角色默认视图（FR-VIEW-3） |
-| M11–M12 三期 | 图表探索、报表调度、我的视图（FR-VIEW-4）、Embed SDK |
+| M11–M12 三期 | 图表类型目录、报表调度、我的视图（FR-VIEW-4）、Embed SDK |
 | M13 四期 | 数据组内语义建模、治理工单/发布、设计器、已发布查询服务入口（可选） |
 
 未到期能力：**侧栏不展示**或标「即将推出」；禁止死链。
@@ -229,7 +231,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 脚注：
 
 - **数据工程** = `数据` + `主题与实体` 分组（`iaTier: engineering`）
-- **图表探索**（`iaPriority: advanced`）默认仅 admin 侧栏；路由 `/admin/charts/explore` 保留
+- **图表类型目录**（`/admin/charts/types`）在「治理」分组；旧路径 `/admin/charts/explore` 重定向
 - **查询设计器**位于治理分组，侧栏 Badge「治理专用」；普通分析请使用 Dashboard
 
 ---

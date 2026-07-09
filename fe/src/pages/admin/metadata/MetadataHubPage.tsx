@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { BookOpen, FolderTree, Layers3 } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ListPageSection } from "@/components/layout/list-page-kit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DimensionsPanel,
@@ -16,39 +16,45 @@ export function MetadataHubPage() {
   return (
     <AdminPageShell
       title="语义层元数据"
-      description="术语字典、业务主题树与维度字典（META-001~003）。"
+      description="维护术语字典、业务主题树与维度字典，为 Dataset 与报表提供统一语义口径（META-001~003）。"
     >
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="glossary">术语字典</TabsTrigger>
-          <TabsTrigger value="themes">业务主题</TabsTrigger>
-          <TabsTrigger value="dimensions">维度字典</TabsTrigger>
-        </TabsList>
+      <ListPageSection>
+        <Tabs value={tab} onValueChange={setTab}>
+          <div className="border-b border-gray-100 px-5 pt-4 dark:border-white/[0.06]">
+            <TabsList variant="enclosed" className="w-full sm:w-auto">
+              <TabsTrigger value="glossary" variant="enclosed">
+                术语字典
+              </TabsTrigger>
+              <TabsTrigger value="themes" variant="enclosed">
+                业务主题
+              </TabsTrigger>
+              <TabsTrigger value="dimensions" variant="enclosed">
+                维度字典
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <TabsContent value="glossary" className="mt-6 space-y-4">
-          <div className="grid gap-2 sm:max-w-xs">
-            <Label htmlFor="glossary-prefix">编码前缀</Label>
-            <Input
-              id="glossary-prefix"
-              value={prefix}
-              onChange={(e) => setPrefix(e.target.value)}
+          <TabsContent value="glossary" className="mt-0">
+            <GlossaryPanel
+              prefix={prefix}
+              onPrefixChange={setPrefix}
+              emptyIcon={<BookOpen className="size-7" aria-hidden />}
             />
-          </div>
-          <GlossaryPanel prefix={prefix} />
-        </TabsContent>
+          </TabsContent>
 
-        <TabsContent value="themes" className="mt-6 space-y-4">
-          <ThemesPanel />
-        </TabsContent>
+          <TabsContent value="themes" className="mt-0">
+            <ThemesPanel emptyIcon={<FolderTree className="size-7" aria-hidden />} />
+          </TabsContent>
 
-        <TabsContent value="dimensions" className="mt-6 space-y-4">
-          <div className="grid gap-2 sm:max-w-xs">
-            <Label htmlFor="dim-prefix">编码前缀</Label>
-            <Input id="dim-prefix" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
-          </div>
-          <DimensionsPanel prefix={prefix} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="dimensions" className="mt-0">
+            <DimensionsPanel
+              prefix={prefix}
+              onPrefixChange={setPrefix}
+              emptyIcon={<Layers3 className="size-7" aria-hidden />}
+            />
+          </TabsContent>
+        </Tabs>
+      </ListPageSection>
     </AdminPageShell>
   );
 }

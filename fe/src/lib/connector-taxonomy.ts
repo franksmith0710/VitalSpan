@@ -37,6 +37,63 @@ export type ConnectorTypeItem = {
   categoryLabel: string;
 };
 
+/** API 原始项（兼容 camelCase / snake_case；缺 displayGroup 时由 category 推导） */
+export type RawConnectorTypeItem = {
+  type: string;
+  displayName?: string;
+  display_name?: string;
+  category: string;
+  capabilities?: string[];
+  displayGroup?: string;
+  display_group?: string;
+  categoryLabel?: string;
+  category_label?: string;
+};
+
+const CATEGORY_TO_DISPLAY_GROUP: Record<string, DisplayGroup> = {
+  relational: "oltp",
+  olap: "olap",
+  lake: "warehouse",
+  file: "file",
+  api: "api",
+  timeseries: "extension",
+  search: "extension",
+  document: "extension",
+  embedded: "extension",
+};
+
+const DISPLAY_GROUP_SET = new Set<string>(DISPLAY_GROUP_ORDER);
+
+export function resolveDisplayGroupFromCategory(
+  category: string,
+  rawGroup?: string | null,
+): DisplayGroup {
+  if (rawGroup && DISPLAY_GROUP_SET.has(rawGroup)) {
+    return rawGroup as DisplayGroup;
+  }
+  return CATEGORY_TO_DISPLAY_GROUP[category] ?? "extension";
+}
+
+export function normalizeConnectorTypeItem(raw: RawConnectorTypeItem): ConnectorTypeItem {
+  const displayGroup = resolveDisplayGroupFromCategory(
+    raw.category,
+    raw.displayGroup ?? raw.display_group,
+  );
+  return {
+    type: raw.type,
+    displayName: raw.displayName ?? raw.display_name ?? raw.type,
+    category: raw.category,
+    capabilities: raw.capabilities ?? [],
+    displayGroup,
+    categoryLabel:
+      raw.categoryLabel ?? raw.category_label ?? DISPLAY_GROUP_META[displayGroup].label,
+  };
+}
+
+export function normalizeConnectorTypes(items: RawConnectorTypeItem[]): ConnectorTypeItem[] {
+  return items.map(normalizeConnectorTypeItem);
+}
+
 const TYPE_ICON: Partial<Record<string, LucideIcon>> = {
   mysql: Database,
   postgresql: Database,

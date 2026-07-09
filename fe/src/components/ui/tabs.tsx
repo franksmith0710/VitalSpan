@@ -46,10 +46,10 @@ TabsList.displayName = TabsPrimitive.List.displayName;
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> & VariantProps<typeof tabsTriggerVariants>
->(({ className, ...props }, ref) => (
+>(({ className, variant = "line", size = "md", ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
-    className={cn(tabsTriggerVariants({ variant: "line", size: "md" }), className)}
+    className={cn(tabsTriggerVariants({ variant, size }), className)}
     {...props}
   />
 ));

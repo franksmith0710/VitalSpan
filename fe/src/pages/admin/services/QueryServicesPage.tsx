@@ -1,14 +1,22 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Play } from "lucide-react";
+import { Play, Server } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  DataTable,
+  ListPageBody,
+  ListPagePagination,
+  ListPageSection,
+  PageErrorBanner,
+  RowActions,
+} from "@/components/layout/list-page-kit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import { useListPagination } from "@/lib/list-pagination";
 
 type QueryService = {
   id: string;
@@ -19,23 +27,18 @@ type QueryService = {
   version: string;
 };
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
-
 export function QueryServicesPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const pagination = useListPagination(20);
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: queryKeys.services.list(),
+    queryKey: queryKeys.services.list({
+      limit: pagination.pageSize,
+      offset: pagination.offset,
+    }),
     queryFn: () =>
-      apiFetch<{ items: QueryService[]; total: number }>("/api/v1/services?limit=100&offset=0"),
+      apiFetch<{ items: QueryService[]; total: number }>(
+        `/api/v1/services?limit=${pagination.pageSize}&offset=${pagination.offset}`,
+      ),
   });
 
   const executeMutation = useMutation({
@@ -51,70 +54,77 @@ export function QueryServicesPage() {
   });
 
   const items = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   return (
     <AdminPageShell
       title="查询服务"
       description="浏览已发布的治理查询服务，并试执行验证（IF-02）。"
     >
-      {isError ? <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
-
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-        <table className="min-w-[720px] w-full text-left text-theme-sm">
-          <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-            <tr>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">服务</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">接口</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">状态</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i}>
-                    <td colSpan={4} className="px-4 py-3">
-                      <Skeleton className="h-6 w-full" />
-                    </td>
-                  </tr>
-                ))
-              : null}
-            {items.map((svc) => (
-              <tr key={svc.id} className="border-b border-gray-100 dark:border-gray-800">
-                <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{svc.name}</td>
-                <td className="px-4 py-3 font-mono text-theme-xs text-gray-600 dark:text-gray-400">
-                  {svc.httpMethod} {svc.path}
-                </td>
-                <td className="px-4 py-3">
-                  <Badge variant="light" color={svc.status === "published" ? "success" : "light"} size="sm">
-                    {svc.status}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={executeMutation.isPending && activeId === svc.id}
-                    onClick={() => {
-                      setActiveId(svc.id);
-                      executeMutation.mutate(svc.id);
-                    }}
-                  >
-                    <Play className="size-4" aria-hidden />
-                    试执行
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!isLoading && items.length === 0 ? (
-          <p className="px-4 py-8 text-center text-theme-sm text-gray-500 dark:text-gray-400">
-            暂无已发布查询服务。请先在发布流水线中批准 catalog 条目。
-          </p>
+      <ListPageSection>
+        {isError ? (
+          <ListPageBody>
+            <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+          </ListPageBody>
         ) : null}
-      </div>
+        <ListPageBody>
+          <DataTable
+            loading={isLoading}
+            empty={items.length === 0}
+            lastColumnAlign="right"
+            emptyState={{
+              icon: <Server className="size-7" aria-hidden />,
+              title: "暂无已发布查询服务",
+              description: "请先在发布流水线中批准 catalog 条目，再在此试执行验证。",
+            }}
+            headers={["服务", "接口", "状态", "操作"]}
+            rows={items.map((svc) => [
+              <span key="n" className="font-medium text-gray-900 dark:text-white/90">
+                {svc.name}
+              </span>,
+              <code
+                key="p"
+                className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300"
+              >
+                {svc.httpMethod} {svc.path}
+              </code>,
+              <Badge
+                key="s"
+                variant="light"
+                color={svc.status === "published" ? "success" : "light"}
+                size="sm"
+              >
+                {svc.status}
+              </Badge>,
+              <RowActions key="a">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={executeMutation.isPending && activeId === svc.id}
+                  onClick={() => {
+                    setActiveId(svc.id);
+                    executeMutation.mutate(svc.id);
+                  }}
+                >
+                  <Play className="size-4" aria-hidden />
+                  试执行
+                </Button>
+              </RowActions>,
+            ])}
+          />
+        </ListPageBody>
+
+        {!isLoading && total > 0 ? (
+          <ListPagePagination
+            current={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+            showSizeChanger
+            onChange={pagination.onPageChange}
+          />
+        ) : null}
+      </ListPageSection>
     </AdminPageShell>
   );
 }

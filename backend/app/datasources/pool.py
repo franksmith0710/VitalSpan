@@ -61,6 +61,7 @@ class DataSourcePoolManager:
                 self._entries[data_source_id] = entry
             entry.pool_size = pool_size
         conn = None
+        pool_broken = False
         try:
             try:
                 conn = entry.queue.get_nowait()
@@ -68,15 +69,24 @@ class DataSourcePoolManager:
                 conn = connector.open_connection(**connect_kwargs)
                 entry.connect_count += 1
             yield conn
+        except Exception:
+            pool_broken = True
+            raise
         finally:
             if conn is not None:
-                try:
-                    entry.queue.put_nowait(conn)
-                except queue.Full:
+                if pool_broken:
                     try:
                         conn.close()
                     except Exception:
                         pass
+                else:
+                    try:
+                        entry.queue.put_nowait(conn)
+                    except queue.Full:
+                        try:
+                            conn.close()
+                        except Exception:
+                            pass
 
 
 pool_manager = DataSourcePoolManager()

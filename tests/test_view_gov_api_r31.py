@@ -47,9 +47,9 @@ def test_view_empty_widgets_allowed_r31():
 
 
 def test_view_colspan_bounds_r31():
-    """T-VIEW-R31-001-02: colSpan=5 → VIEW_LAYOUT_BOUNDS + detail.fields 含 colSpan。"""
+    """T-VIEW-R31-001-02: colSpan=13 → VIEW_LAYOUT_BOUNDS + detail.fields 含 colSpan。"""
     layout = _valid_layout()
-    layout["widgets"][0]["colSpan"] = 5
+    layout["widgets"][0]["colSpan"] = 13
     with pytest.raises(ViewError) as exc:
         validate_dashboard_view({"name": "Bounds", "layout": layout})
     assert exc.value.code == "VIEW_LAYOUT_BOUNDS"
@@ -137,7 +137,7 @@ def db_session():
 def test_views_validate_api_bounds_body_r31(client):
     """T-VIEW-R31-001-04: POST /views/validate colSpan 越界 → 422 code + detail.fields。"""
     layout = _valid_layout()
-    layout["widgets"][0]["colSpan"] = 5
+    layout["widgets"][0]["colSpan"] = 13
     resp = client.post("/api/v1/views/validate", headers=AUTH, json={"name": "Bad", "layout": layout})
     assert resp.status_code == 422
     body = resp.json()

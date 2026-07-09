@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-12",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/kingbase/connector.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/kingbase/connector.py",
+      "fingerprint": "cca63c958a07e57220540eea5e30b6654d541a539672526a5295a29e122e7fda",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/kingbase/params.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/kingbase/params.py",
+      "fingerprint": "b6418f9fa61c1be49b7900af9d49f5ff81f09f9012f362de1cb5a94b44720b40",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/kingbase/probe.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/kingbase/probe.py",
+      "fingerprint": "02f192e3c31de82e3f502b9e80f248c4a8a462f1c08f899d08e12690057d2699",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/mariadb.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/mariadb.py",
+      "fingerprint": "dcd2fc5c19f6a39d6804fac94fb5dbd8446e9e3bdaa4434a3e17b55e8a673265",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/mongodb.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/mongodb.py",
+      "fingerprint": "bb5d19835c536a71195e8b0541c3f53242bb39af029f66e65df730f3ab3b2f3d",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/mysql.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/mysql.py",
+      "fingerprint": "71de78c131287397fe78bb4f817720e803994ac834615ecab7bee8b4ab25dc46",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/oceanbase.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/oceanbase.py",
+      "fingerprint": "7480fc1a29a1cb932077e1291ac396e7f2b5d419f489947eedc591cce865ab70",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/datasources/dialects/opensearch.py",
+      "asset_type": "code_module",
+      "path": "backend/app/datasources/dialects/opensearch.py",
+      "fingerprint": "edc0bdbbcf7c3136bf98bdfcc300cc24f230c9738d99644e1deeba330bb6256a",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

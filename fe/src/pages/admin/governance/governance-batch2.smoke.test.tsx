@@ -87,7 +87,7 @@ describe("Governance batch2 smoke", () => {
     wrap(<GovernanceWorkflowPage />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole("tab", { name: "工单实例" }));
-    expect(await screen.findByText("designing")).toBeInTheDocument();
+    expect(await screen.findByText("设计中")).toBeInTheDocument();
   });
 
   it("T-GOV-R246-FE-02: snapshot panels read-only", async () => {

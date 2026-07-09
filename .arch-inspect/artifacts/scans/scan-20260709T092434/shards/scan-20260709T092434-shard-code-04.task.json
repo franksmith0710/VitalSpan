@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-04",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/auth/rls/predicate.py",
+      "asset_type": "code_module",
+      "path": "backend/app/auth/rls/predicate.py",
+      "fingerprint": "98327f21907837abea8d730e7c6e9f60ac0ee32d4eda6aef769faa6616402a60",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/auth/roles/__init__.py",
+      "asset_type": "code_module",
+      "path": "backend/app/auth/roles/__init__.py",
+      "fingerprint": "15f9206d4aafaf69e6865a5de49e4275fa7c2990d654b4f6295c18bcd6a5c5b5",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/auth/roles/service.py",
+      "asset_type": "code_module",
+      "path": "backend/app/auth/roles/service.py",
+      "fingerprint": "b4a910bc5e47d3db533110a6153eab56b5cfd510eaa2831f3925fa4e3e7f2576",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/auth/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/auth/schemas.py",
+      "fingerprint": "81f893d62775b290b7ead5f263424457ba48c4565f3c2bf8a57791f23cab1f0f",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/auth/users/__init__.py",
+      "asset_type": "code_module",
+      "path": "backend/app/auth/users/__init__.py",
+      "fingerprint": "64fc2c505938d0134797b2405fec36eb3b527ef080e2cade3e79db99e95056af",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/auth/users/service.py",
+      "asset_type": "code_module",
+      "path": "backend/app/auth/users/service.py",
+      "fingerprint": "f9b9a8c88193bb9b8634b1fa3df1c7635c628998c7480071df418dd8a33e1af3",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/core/__init__.py",
+      "asset_type": "code_module",
+      "path": "backend/app/core/__init__.py",
+      "fingerprint": "ba4e31791c8477ef0c89258d0f157c89eb570cb45d87bb83278cb4647e0650d8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/core/config.py",
+      "asset_type": "code_module",
+      "path": "backend/app/core/config.py",
+      "fingerprint": "0cc9523deb0f996f0fbbc4d41ec58c5cd80878f00078841a0c4cf78a39a8f5ca",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

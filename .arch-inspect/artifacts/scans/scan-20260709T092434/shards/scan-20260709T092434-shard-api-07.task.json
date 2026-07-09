@@ -1,0 +1,589 @@
+{
+  "task_id": "scan-20260709T092434-shard-api-07",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "api-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.api",
+  "rule_set_summary": "### 项目约定\n- 业务响应码：200 / -1\n\n### 必检规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `api.auth` | 敏感接口缺少权限声明（auth 为空或 none） | P0 |\n| `api.status_code` | 业务响应码仅允许约定枚举 | P1 |\n| `api.doc_consistency` | 文档路径、方法、参数与实现一致 | P1 |\n| `api.zombie` | 文档与实现双向存在（无僵尸接口/实现） | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "api:POST:/api/v1/designer/output-fields/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "f67287fa6c79285565eaaa0b3d176d7e3b98ac2369775ba1abff60dbff27dacd",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/designer/output-fields/validate",
+      "related_paths": [
+        "backend/app/api/v1/designer.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/designer/preview/translate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "588873e6cb8b1f0d37c900018c7081ccef2edd3c719f9b25ebae2062fa52b1c0",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/designer/preview/translate",
+      "related_paths": [
+        "backend/app/api/v1/designer.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/designer/sql-mode/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "0c790495d2eec949112ae3ae5c5ec2e75abbfad2818935285dcce2113e94a7fa",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/designer/sql-mode/validate",
+      "related_paths": [
+        "backend/app/api/v1/designer.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/designer/submit-workflow",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "1ec3dd972e9f6e8222de6e708058d933e5d570ef835a8ad0a303e331003b2159",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/designer/submit-workflow",
+      "related_paths": [
+        "backend/app/api/v1/designer.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/designer/workflow-link",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "26126c39484549b9b3c9c5183ff0ca6b3583f0945bf535114c9457701e1abc49",
+      "change_type": "added",
+      "domain": "内部",
+      "method": "POST",
+      "api_path": "/api/v1/designer/workflow-link",
+      "related_paths": [
+        "backend/app/api/v1/designer.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/embed/token",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "7101e721678acb254ae7d3f315efd4e2e0ffe2a95d3194165369c0e4c79ab957",
+      "change_type": "added",
+      "domain": "IF-04",
+      "method": "POST",
+      "api_path": "/api/v1/embed/token",
+      "related_paths": [
+        "backend/app/api/v1/embed.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（骨架）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/bus/auto-register",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "441bd385ca4b55060bebad287334996095f9837a1a122a22a11914d79dff57ac",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/bus/auto-register",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/bus/auto-register/retry",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "9bc8049189a1b9f64e0b404ed4026db2c9b4fc56e77b4c12a0bcd5a22736a645",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/bus/auto-register/retry",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/bus/register",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "2e3d6b79d71bdf8227ec88a1ccb81f4b5bbe32fe3e277120613f3686c2a32145",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/bus/register",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/aggregate-templates",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "f58b0446f30aabf39cd29f2be031ea7553b8b2e5a374107ced55827041d27e8a",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/aggregate-templates",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/aggregate-templates/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "f35a086f24fd8a9b8f9bb00a3f605d2e2a6a086c020a57e6228e85fafb325337",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/aggregate-templates/validate",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/classification/nodes",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "534ab9eccf5f302d50eac79cb31c5a6f4e3ce7bb4e08819aaf7c4ce47c32f1fa",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/classification/nodes",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/classification/nodes/{id}/move",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "d543fc7869dcd84e6e3a9ba14924dfb6d7fa1d2514bd0e838394090474d828f4",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/classification/nodes/{id}/move",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/entries",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "a5235c5703ca208e1204874e031c1efc5dc8297f07187ecddc40189496919f9b",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/entries",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/geo-regions/nodes",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "54eaea21cab57252a5d75cd03a6033d32e7042dfbbe686ee3a9e08caf060feb0",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/geo-regions/nodes",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/geo-regions/nodes/{id}/move",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "93f1e280146783f3cb8f7639b839163fb504291d1edc67f91e3e5ac181279d29",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/geo-regions/nodes/{id}/move",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/lifecycle-templates",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e3a83acbf1a9adfa780c2d70cfba50c5586f650991da2d92ea42a597f54182ad",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/lifecycle-templates",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/lifecycle-templates/{templateKey}/stages/move",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "18009464304113495e7776e2bbc10eed7338fa747efb85459ab2b25102b76725",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/lifecycle-templates/{templateKey}/stages/move",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/lifecycle-templates/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "ba8ab85f083c31d7e46dda158607d5ff0eac3b3ae9465d60b6d8889c7d2401b9",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/lifecycle-templates/validate",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/production-stats",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "a4cf58a821ec4083e35e0b2db1e40e32661226edf24086231339c93d0a8c1601",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/production-stats",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/production-stats/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "c4cb4905e4645ac230a31bdccb788c8e30e60bc1792a3dc3ba45c8907d45b4a4",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/production-stats/validate",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/tickets/items",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "54fe97658c5dfb2db9e949ffb111ea14b8e767dc918ea5a285bd8d7c38056187",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/tickets/items",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/catalog/tickets/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "180ee93df53fd4585aeaa0859923872d6c387eeae2619bf4c56690fbf00b178e",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/catalog/tickets/validate",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/openapi-mappings",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "bcd3aabca5dcaef84e8c32aeceeebf80def7638052a5844c3730a250564b2738",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/openapi-mappings",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/openapi-mappings/{id}/deactivate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "1d6f66c0458e3efedce99101919964047d2c9ef52e2a9d60abd20a08dd1ebfe8",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/openapi-mappings/{id}/deactivate",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/openapi-mappings/validate",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "5b8837bd64eba59b49f5dfe72bf667582c7a4b00158fa5a8cb01e872c3dfeffb",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/openapi-mappings/validate",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/publish/entries/{entry_id}/approve",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "8aad3e609a1d823c49b1863abf8cb6c7bf37255dfefcf567151dec9d2d4d5e0c",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/publish/entries/{entry_id}/approve",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现（r248）",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/publish/entries/{entry_id}/reject",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "e80f868cca623a796f6d08b29d97ef4f451b3f4bdc325c9e3650ba2668c46a29",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/publish/entries/{entry_id}/reject",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/publish/entries/{entry_id}/submit",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "5fd2f793ddee289404052d0d07a198b64d1139ce07509291631edaafa7efcc3d",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/publish/entries/{entry_id}/submit",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    },
+    {
+      "asset_id": "api:POST:/api/v1/gov/publish/from-workflow",
+      "asset_type": "api",
+      "path": "docs/api/README.md",
+      "fingerprint": "2b42753e15c87be15854bc96aff44a6eb924c4036a6e63074ad52ecd703a1cd3",
+      "change_type": "added",
+      "domain": "IF-06",
+      "method": "POST",
+      "api_path": "/api/v1/gov/publish/from-workflow",
+      "related_paths": [
+        "backend/app/api/v1/gov.py"
+      ],
+      "meta": {
+        "auth": "Bearer",
+        "status_codes": [],
+        "doc_status": "已实现",
+        "collector": "readme_table"
+      }
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {
+    "api_status_codes": [
+      200,
+      -1
+    ]
+  }
+}

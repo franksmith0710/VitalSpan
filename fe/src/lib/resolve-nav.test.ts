@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { OPTIONAL_ROLE_CAPABILITY_MAP } from "./capabilities";
 import { resolveNavGroups, resolveSidebarSections, ACTIVE_MILESTONES } from "./resolve-nav";
-import { ACCOUNT_PROFILE_PATH } from "./workspace";
+import {
+  ACCOUNT_PREFERENCES_PATH,
+  ACCOUNT_PROFILE_PATH,
+  ACCOUNT_SECURITY_PATH,
+  ACCOUNT_SETTINGS_PATH,
+  isAccountManagementPath,
+} from "./workspace";
 import { sessionUserFromAuth } from "./session";
 
 describe("resolveNavGroups", () => {
@@ -31,17 +37,20 @@ describe("resolveNavGroups", () => {
     const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
     expect(allItemNames).not.toContain("数据源");
     const reportSection = groups.find((g) => g.title === "报表");
-    expect(reportSection?.items.map((i) => i.name)).toContain("报表");
+    expect(reportSection?.items.map((i) => i.name)).toContain("报表中心");
   });
 
   it("T-NAV-MF-01: viewer does not see M13 items", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("viewer", ["viewer"]));
     const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
+    const allSubNames = groups.flatMap((g) =>
+      g.items.flatMap((i) => i.subItems?.map((s) => s.name) ?? []),
+    );
     expect(allItemNames).not.toContain("查询设计器");
-    expect(allItemNames).not.toContain("治理工单");
-    expect(allItemNames).not.toContain("发布流水线");
-    expect(allItemNames).not.toContain("元数据");
-    expect(allItemNames).not.toContain("Dataset");
+    expect(allSubNames).not.toContain("治理工单");
+    expect(allSubNames).not.toContain("发布流水线");
+    expect(allSubNames).not.toContain("元数据");
+    expect(allSubNames).not.toContain("Dataset");
   });
 
   it("T-NAV-MF-02: analyst does not see 查询设计器 in default IA", () => {
@@ -56,9 +65,9 @@ describe("resolveNavGroups", () => {
     const designer = allItems.find((i) => i.name === "查询设计器");
     expect(designer).toBeDefined();
     expect(designer?.preview).toBeFalsy();
-    const ticket = allItems.find((i) => i.name === "治理工单");
-    expect(ticket).toBeDefined();
-    expect(ticket?.preview).toBeFalsy();
+    const governanceFlow = allItems.find((i) => i.name === "治理流程");
+    expect(governanceFlow?.subItems?.some((s) => s.name === "治理工单")).toBe(true);
+    expect(governanceFlow?.preview).toBeFalsy();
   });
 
   it("T-NAV-MF-04: capabilities override filters M7/M11/M13 for admin", () => {
@@ -68,10 +77,10 @@ describe("resolveNavGroups", () => {
     const allItems = groups.flatMap((g) => g.items);
     const designer = allItems.find((i) => i.name === "查询设计器");
     expect(designer?.preview).toBe(true);
-    const entity = allItems.find((i) => i.name === "实体总览");
-    expect(entity?.preview).toBe(true);
+    const entityTheme = allItems.find((i) => i.name === "实体与主题");
+    expect(entityTheme?.preview).toBe(true);
     const reportSection = groups.find((g) => g.title === "报表");
-    const reportParent = reportSection?.items.find((i) => i.name === "报表");
+    const reportParent = reportSection?.items.find((i) => i.name === "报表中心");
     expect(reportParent?.subItems?.map((s) => s.name)).toContain("预制报表");
   });
 
@@ -81,7 +90,7 @@ describe("resolveNavGroups", () => {
     });
     const reportSection = groups.find((g) => g.title === "报表");
     expect(reportSection).toBeDefined();
-    const reportParent = reportSection?.items.find((i) => i.name === "报表");
+    const reportParent = reportSection?.items.find((i) => i.name === "报表中心");
     expect(reportParent).toBeDefined();
     const subNames = reportParent?.subItems?.map((s) => s.name) ?? [];
     expect(subNames).toContain("预制报表");
@@ -89,29 +98,31 @@ describe("resolveNavGroups", () => {
     expect(subNames).not.toContain("报表调度");
   });
 
-  it("T-NAV-MF-06: admin 数据 section has 连接与语义建模子项", () => {
+  it("T-NAV-MF-06: admin 数据 section has 数据连接与语义建模", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const dataSection = groups.find((g) => g.title === "数据");
     expect(dataSection).toBeDefined();
     const dataConn = dataSection?.items.find((i) => i.name === "数据连接");
     expect(dataConn).toBeDefined();
-    const connSubs = dataConn?.subItems?.map((s) => s.name) ?? [];
-    expect(connSubs).toContain("连接管理");
-    expect(connSubs).toContain("连接器类型");
+    expect(dataConn?.path).toBe("/admin/datasources");
+    expect(dataConn?.subItems ?? []).toHaveLength(0);
     const semantic = dataSection?.items.find((i) => i.name === "语义建模");
     expect(semantic).toBeDefined();
     const semanticSubs = semantic?.subItems?.map((s) => s.name) ?? [];
     expect(semanticSubs).toContain("元数据");
     expect(semanticSubs).toContain("Dataset");
+    const entityTheme = dataSection?.items.find((i) => i.name === "实体与主题");
+    expect(entityTheme?.subItems?.map((s) => s.name)).toEqual(["实体总览", "主题分析"]);
     expect(groups.some((g) => g.title === "语义层")).toBe(false);
+    expect(groups.some((g) => g.title === "主题与实体")).toBe(false);
   });
 
-  it("T-NAV-CAP-01: admin sees 系统 section with 资源授权 item", () => {
+  it("T-NAV-CAP-01: admin sees 系统 section with 资源授权 subItem", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const system = groups.find((g) => g.title === "系统");
     expect(system).toBeDefined();
-    const names = system?.items.map((i) => i.name) ?? [];
-    expect(names).toContain("资源授权");
+    const security = system?.items.find((i) => i.name === "权限与安全");
+    expect(security?.subItems?.map((s) => s.name)).toContain("资源授权");
   });
 
   it("T-NAV-CAP-02: viewer does not see 系统 section", () => {
@@ -164,22 +175,30 @@ describe("resolveNavGroups", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const titles = groups.map((g) => g.title);
     expect(titles).toContain("数据");
-    expect(titles).toContain("主题与实体");
     expect(titles).toContain("治理");
+    const data = groups.find((g) => g.title === "数据");
+    expect(data?.items.some((i) => i.name === "实体与主题")).toBe(true);
   });
 
-  it("T-VIZ-FC-01: analyst viewer nav excludes 图表探索", () => {
+  it("T-VIZ-FC-01: analyst viewer nav excludes 图表类型目录", () => {
     for (const role of ["analyst", "viewer"] as const) {
       const groups = resolveNavGroups(sessionUserFromAuth(role, [role]));
       const names = groups.flatMap((g) => g.items.map((i) => i.name));
+      expect(names).not.toContain("图表类型目录");
       expect(names).not.toContain("图表探索");
     }
   });
 
-  it("T-VIZ-FC-02: admin nav includes 图表探索", () => {
+  it("T-VIZ-FC-02: admin analysis group is dashboard-only", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
+    const analysis = groups.find((g) => g.title === "分析");
+    expect(analysis?.items.map((i) => i.name)).toEqual(["Dashboard"]);
+  });
+
+  it("T-VIZ-FC-03: admin governance includes 图表类型目录", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const names = groups.flatMap((g) => g.items.map((i) => i.name));
-    expect(names).toContain("图表探索");
+    expect(names).toContain("图表类型目录");
   });
 
   it("T-DESIGN-FC-01: admin governance group has 查询设计器 with badge", () => {
@@ -213,8 +232,13 @@ describe("resolveSidebarSections", () => {
     const admin = sessionUserFromAuth("admin", ["admin"]);
     const sections = resolveSidebarSections(admin, ACCOUNT_PROFILE_PATH);
     expect(sections).toHaveLength(1);
-    expect(sections[0]?.title).toBe("账号");
-    expect(sections[0]?.items.map((i) => i.name)).toEqual(["个人资料", "账号设置"]);
+    expect(sections[0]?.title).toBe("个人中心");
+    expect(sections[0]?.items.map((i) => i.name)).toEqual([
+      "个人资料",
+      "偏好设置",
+      "安全设置",
+    ]);
+    expect(isAccountManagementPath(ACCOUNT_SECURITY_PATH)).toBe(true);
   });
 
   it("uses workspace nav elsewhere", () => {

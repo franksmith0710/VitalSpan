@@ -1,0 +1,78 @@
+{
+  "task_id": "scan-20260709T092434-shard-code-40",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "code-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.code",
+  "rule_set_summary": "### code 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `code.layer_purity` | 分层依赖方向正确 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "code_module:backend/app/views/role_template.py",
+      "asset_type": "code_module",
+      "path": "backend/app/views/role_template.py",
+      "fingerprint": "ba1a77c267368138b3caf6f2af72a28f49ec894d67c5655f7c7f76fbf1cf811d",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/views/schemas.py",
+      "asset_type": "code_module",
+      "path": "backend/app/views/schemas.py",
+      "fingerprint": "bf56b01e2d08edba4d3a2986df9af11d8b6b114502753a938e6a2bb251a13727",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/views/store.py",
+      "asset_type": "code_module",
+      "path": "backend/app/views/store.py",
+      "fingerprint": "db6d21c50b4ab36403a92eebd53e97faf43426fcdef4ab2cd0601bf431318fd0",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/views/user_override.py",
+      "asset_type": "code_module",
+      "path": "backend/app/views/user_override.py",
+      "fingerprint": "dc9cb36486e2514e3f2c588806e124661cea2efbb79e51376f8d378952854558",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/views/validate.py",
+      "asset_type": "code_module",
+      "path": "backend/app/views/validate.py",
+      "fingerprint": "f57b08d36bc2cf33b57484ea877c28adcfb4d8ab24e5c8f35105b42016fdd5cc",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/viz/__init__.py",
+      "asset_type": "code_module",
+      "path": "backend/app/viz/__init__.py",
+      "fingerprint": "b4d734157f6371784eb67900b6c7264690784eef35efbc80964cd47f8e1e6ea8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/viz/builtin.py",
+      "asset_type": "code_module",
+      "path": "backend/app/viz/builtin.py",
+      "fingerprint": "09e6f4353736dd9a44afa0b5558be4289d5776745ca6ade86a0f1cddb482a91a",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "code_module:backend/app/viz/embed.py",
+      "asset_type": "code_module",
+      "path": "backend/app/viz/embed.py",
+      "fingerprint": "bb68bf54e6ae3b40daadede17c8d0c4964345982819a0ed22a9ec3eb76e2d727",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

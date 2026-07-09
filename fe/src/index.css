@@ -64,11 +64,11 @@
 }
 
 @utility menu-item {
-  @apply relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium;
+  @apply relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-theme-sm font-medium transition-colors;
 }
 
 @utility menu-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/12 dark:text-brand-400;
+  @apply bg-brand-50 text-brand-500 before:absolute before:top-1/2 before:left-0 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r-full before:bg-brand-500 dark:bg-brand-500/12 dark:text-brand-400 dark:before:bg-brand-400;
 }
 
 @utility menu-item-inactive {
@@ -76,7 +76,7 @@
 }
 
 @utility menu-item-icon-size {
-  @apply flex size-6 shrink-0 items-center justify-center;
+  @apply flex size-6 shrink-0 items-center justify-center [&_svg]:size-5;
 }
 
 @utility menu-item-icon-active {
@@ -92,23 +92,23 @@
 }
 
 @utility menu-group {
-  @apply mb-6 last:mb-0;
+  @apply mb-5 last:mb-0;
 }
 
 @utility menu-group-title {
-  @apply mb-2 flex px-3 text-theme-xs font-medium leading-5 text-gray-400;
+  @apply mb-2 flex px-3 text-[11px] font-semibold tracking-wider text-gray-400 uppercase;
 }
 
 @utility menu-dropdown-item {
-  @apply block rounded-lg px-3 py-2 text-theme-sm;
+  @apply relative flex items-center rounded-lg px-3 py-1.5 text-theme-sm transition-colors;
 }
 
 @utility menu-dropdown-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/12 dark:text-brand-400;
+  @apply font-medium text-brand-500 before:absolute before:top-1/2 before:-left-3 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-brand-500 dark:text-brand-400 dark:before:bg-brand-400;
 }
 
 @utility menu-dropdown-item-inactive {
-  @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+  @apply text-gray-600 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200;
 }
 
 @utility menu-dropdown-badge {
@@ -170,6 +170,8 @@ body,
   background-color: rgb(249 250 251);
   background-image: radial-gradient(rgb(228 231 236 / 0.9) 1px, transparent 1px);
   background-size: 16px 16px;
+  /* 预留滚动条宽度，避免内容增高时宽度抖动 → WidthProvider 死循环闪烁 */
+  scrollbar-gutter: stable;
 }
 
 .dark .dashboard-canvas-surface {
@@ -177,80 +179,77 @@ body,
   background-image: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
 }
 
+.dashboard-canvas-drop-active .react-grid-layout {
+  outline: 2px dashed rgb(70 95 255 / 35%);
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+.dashboard-grid-edit .dashboard-grid-empty {
+  min-height: 480px;
+}
+
 .dashboard-grid-edit .react-grid-item {
-  transition: box-shadow 0.15s ease;
+  transition: none !important;
+}
+
+.dashboard-grid-edit .react-grid-item.cssTransforms {
+  transition: none !important;
+}
+
+.dashboard-grid-edit .dashboard-drag-handle {
+  touch-action: none;
+  user-select: none;
 }
 
 .dashboard-grid-edit .react-grid-item.react-draggable-dragging {
   z-index: 20;
 }
 
+/* 缩放手柄：仅选中组件显示，中性灰角标（对齐 Superset 编辑态） */
 .dashboard-grid-edit .react-grid-item > .react-resizable-handle {
   position: absolute;
   z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dashboard-grid-edit .react-grid-item:hover > .react-resizable-handle,
+.dashboard-grid-edit .react-grid-item.dashboard-widget-selected > .react-resizable-handle,
+.dashboard-grid-edit .react-grid-item:has(.dashboard-widget-selected) > .react-resizable-handle {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .dashboard-grid-edit .react-grid-item > .react-resizable-handle::after {
   content: "";
   position: absolute;
-  border-radius: 2px;
-  background: rgb(70 95 255 / 0.55);
+  border-radius: 1px;
+  background: rgb(107 114 128 / 0.85);
 }
 
 .dashboard-grid-edit .react-grid-item > .react-resizable-handle-se {
-  right: 6px;
-  bottom: 6px;
-  width: 14px;
-  height: 14px;
+  right: 4px;
+  bottom: 4px;
+  width: 12px;
+  height: 12px;
   cursor: se-resize;
 }
 
 .dashboard-grid-edit .react-grid-item > .react-resizable-handle-se::after {
   right: 0;
   bottom: 0;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid rgb(70 95 255);
-  border-bottom: 2px solid rgb(70 95 255);
-  background: transparent;
-  border-radius: 0 0 3px 0;
-}
-
-.dashboard-grid-edit .react-grid-item > .react-resizable-handle-e {
-  right: 2px;
-  top: 25%;
-  height: 50%;
   width: 8px;
-  cursor: e-resize;
-}
-
-.dashboard-grid-edit .react-grid-item > .react-resizable-handle-e::after {
-  right: 2px;
-  top: 50%;
-  width: 3px;
-  height: 24px;
-  transform: translateY(-50%);
-}
-
-.dashboard-grid-edit .react-grid-item > .react-resizable-handle-s {
-  bottom: 2px;
-  left: 25%;
-  width: 50%;
   height: 8px;
-  cursor: s-resize;
-}
-
-.dashboard-grid-edit .react-grid-item > .react-resizable-handle-s::after {
-  bottom: 2px;
-  left: 50%;
-  width: 24px;
-  height: 3px;
-  transform: translateX(-50%);
+  border-right: 2px solid rgb(107 114 128 / 0.9);
+  border-bottom: 2px solid rgb(107 114 128 / 0.9);
+  background: transparent;
+  border-radius: 0 0 2px 0;
 }
 
 .dashboard-grid-edit .react-grid-placeholder {
   border-radius: 1rem;
-  border: 1px dashed rgb(70 95 255 / 45%);
-  background: rgb(70 95 255 / 10%) !important;
+  border: 1px dashed rgb(156 163 175 / 70%);
+  background: rgb(156 163 175 / 12%) !important;
   opacity: 1 !important;
 }

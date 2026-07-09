@@ -1,9 +1,15 @@
 import { useMemo, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { Link } from "react-router";
+import { Copy, Link2, X } from "lucide-react";
+import { toast } from "sonner";
+import { EmbedToolCard, EmbedToolShell } from "@/components/embed/embed-tool-shell";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { apiFetch } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const ORIGIN_RE = /^https?:\/\/[a-zA-Z0-9.-]+(:\d+)?$/;
 
@@ -33,6 +39,10 @@ export function EmbedSharePanel() {
       setAllowedOrigins((prev) => [...prev, trimmed]);
     }
     setOriginInput("");
+  };
+
+  const removeOrigin = (origin: string) => {
+    setAllowedOrigins((prev) => prev.filter((o) => o !== origin));
   };
 
   const validateAndGenerate = async () => {
@@ -67,75 +77,138 @@ export function EmbedSharePanel() {
     }
   };
 
+  const copyEmbedUrl = async () => {
+    if (!embedUrl) return;
+    await navigator.clipboard.writeText(embedUrl);
+    toast.success("已复制嵌入链接");
+  };
+
   const iframeSrc = useMemo(() => embedUrl, [embedUrl]);
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 p-6">
-      <h1 className="text-theme-xl font-semibold text-gray-800 dark:text-white/90">嵌入分享</h1>
-      <div className="space-y-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-        <div>
-          <Label htmlFor="chart-id">图表 ID</Label>
-          <Input
-            id="chart-id"
-            className="mt-1"
-            value={chartId}
-            onChange={(e) => setChartId(e.target.value)}
-            placeholder="00000000-0000-4000-8000-000000000001"
-          />
-        </div>
-        <div>
-          <Label htmlFor="origin-input">来源 Origin</Label>
-          <div className="mt-1 flex gap-2">
+    <EmbedToolShell
+      title="嵌入分享"
+      description="配置图表 ID 与允许嵌入的来源域名，生成可在外部站点 iframe 引用的链接。"
+      backHref="/admin/dashboards"
+      backLabel="取消"
+    >
+      <EmbedToolCard
+        title="嵌入配置"
+        description="未配置来源时，仅允许本地开发域名访问。"
+      >
+        <div className="space-y-5">
+          <div className="grid gap-2">
+            <Label htmlFor="chart-id">图表 ID</Label>
             <Input
-              id="origin-input"
-              value={originInput}
-              onChange={(e) => setOriginInput(e.target.value)}
-              placeholder="https://example.com"
-              fieldState={originError ? "error" : "default"}
+              id="chart-id"
+              className="h-11"
+              value={chartId}
+              onChange={(e) => setChartId(e.target.value)}
+              placeholder="00000000-0000-4000-8000-000000000001"
             />
-            <Button type="button" variant="outline" onClick={addOrigin}>
-              添加
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="origin-input">允许的来源 Origin</Label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                id="origin-input"
+                className="h-11"
+                value={originInput}
+                onChange={(e) => setOriginInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addOrigin();
+                  }
+                }}
+                placeholder="https://example.com"
+                fieldState={originError ? "error" : "default"}
+              />
+              <Button type="button" variant="outline" className="h-11 shrink-0 sm:px-6" onClick={addOrigin}>
+                添加
+              </Button>
+            </div>
+            {originError ? (
+              <p className="text-theme-xs text-error-600 dark:text-error-400">{originError}</p>
+            ) : (
+              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+                仅允许列出的域名通过 iframe 加载图表；留空则使用默认开发域名。
+              </p>
+            )}
+          </div>
+
+          {allowedOrigins.length > 0 ? (
+            <ul className="flex flex-wrap gap-2" aria-label="已添加的来源">
+              {allowedOrigins.map((o) => (
+                <li key={o}>
+                  <Badge
+                    variant="light"
+                    color="primary"
+                    size="sm"
+                    className="gap-1 pr-1 font-mono text-theme-xs"
+                  >
+                    <span className="max-w-[200px] truncate" title={o}>
+                      {o}
+                    </span>
+                    <button
+                      type="button"
+                      className={cn(
+                        "rounded p-0.5 text-brand-500 hover:bg-brand-100 dark:hover:bg-brand-500/20",
+                        "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
+                      )}
+                      aria-label={`移除 ${o}`}
+                      onClick={() => removeOrigin(o)}
+                    >
+                      <X className="size-3" aria-hidden />
+                    </button>
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {alertError ? (
+            <Alert severity="error">
+              <AlertDescription>{alertError}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 pt-5 dark:border-gray-800">
+            <Button type="button" variant="outline" asChild>
+              <Link to="/admin/dashboards">取消</Link>
+            </Button>
+            <Button type="button" variant="primary" onClick={() => void validateAndGenerate()}>
+              校验并生成链接
             </Button>
           </div>
-          {originError ? <p className="mt-1 text-theme-sm text-error-600">{originError}</p> : null}
         </div>
-        {allowedOrigins.length ? (
-          <div className="flex flex-wrap gap-2">
-            {allowedOrigins.map((o) => (
-              <Badge
-                key={o}
-                variant="surface"
-                color="primary"
-                title={o}
-                className="max-w-full truncate"
-              >
-                {o}
-              </Badge>
-            ))}
+      </EmbedToolCard>
+
+      {embedUrl ? (
+        <EmbedToolCard title="嵌入链接" description="复制链接或在下方的预览中检查展示效果。">
+          <div className="space-y-4">
+            <div className="flex items-start gap-2 rounded-xl border border-gray-200 bg-gray-50/80 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+              <Link2 className="mt-0.5 size-4 shrink-0 text-brand-500" aria-hidden />
+              <p className="min-w-0 flex-1 break-all font-mono text-theme-xs text-gray-700 dark:text-gray-300">
+                {embedUrl}
+              </p>
+              <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => void copyEmbedUrl()}>
+                <Copy className="size-4" aria-hidden />
+                复制
+              </Button>
+            </div>
+            {iframeSrc ? (
+              <iframe
+                src={iframeSrc}
+                title="嵌入图表预览"
+                sandbox="allow-scripts"
+                className="h-[300px] w-full rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+              />
+            ) : null}
           </div>
-        ) : null}
-        {alertError ? (
-          <div role="alert" className="text-theme-sm text-error-600">
-            {alertError}
-          </div>
-        ) : null}
-        <Button type="button" variant="primary" onClick={validateAndGenerate}>
-          校验并生成嵌入链接
-        </Button>
-        {embedUrl ? (
-          <p className="truncate text-theme-sm text-gray-600" title={embedUrl}>
-            {embedUrl}
-          </p>
-        ) : null}
-      </div>
-      {iframeSrc ? (
-        <iframe
-          src={iframeSrc}
-          title="嵌入图表预览"
-          sandbox="allow-scripts"
-          className="h-[280px] w-full rounded-lg border border-gray-200 dark:border-gray-800"
-        />
+        </EmbedToolCard>
       ) : null}
-    </div>
+    </EmbedToolShell>
   );
 }

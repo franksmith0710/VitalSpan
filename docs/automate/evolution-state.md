@@ -6,15 +6,8 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | P5_DOCS_READY |
-| round_target | docs/superpowers/evolution/2026-07-08-round-target.md |
-| design | docs/superpowers/specs/2026-07-08-mproduct-fa-fc-design.md |
-| plan | docs/superpowers/plans/2026-07-08-mproduct-fa-fc-companion-ia.md |
-| branch | feat/mproduct-fa-fc-companion-ia |
-| base_branch | dev-auto |
-| prd_ids | CONN-023, CONN-024, BOOT-002, VIZ-002, DESIGN-004 |
-| pr_number | 247 |
-| last_verified_command | ruff exit 0; pytest 2311 passed/29 skipped exit 0; vitest 38 files 269 passed exit 0; check:design 220 files exit 0; pnpm build exit 0 |
+| phase | DONE |
+| last_verified_command | vitest chartTypeCatalogDisplay.test.ts + dashboard.smoke.test.tsx 21/21 |
 | last_verified_exit_code | 0 |
 | last_ui_verified_command | ui_design_skill=b-design-system-tailadmin-radix; design_drift_checks=pnpm run check:design PASS; build=pnpm build exit 0; screenshots=未运行（headless vitest mock） |
 | deployed_automate_rev | bf60b94ec4f4 |
@@ -23,15 +16,15 @@
 
 ## 当前需求契约
 
-- request: 跑完 product-polish-checklist（P0+P1，跳过 P2 companion）
-- type: existing-plan
-- goal: 产品化收尾：壳层去 M1 占位、M13 GA、Dashboard Dataset 路径、治理/报表/分享 FE 补齐
-- scope_include: P0-1~P0-5, P1-1~P1-6 per checklist
-- scope_exclude: P2 companion 深度
-- acceptance: vitest shell+dashboard+charts 通过
+- request: Dashboard WidgetPalette 补齐全部 12 种注册图表类型，与 ChartExplorePage 共用 catalog 展示工具
+- type: small-change
+- goal: 编辑页左侧面板按 catalog category 动态分组展示全部类型；饼图/仪表盘/桑基/漏斗/关系图可一键插入
+- scope_include: chartTypeCatalogDisplay.ts、WidgetPalette、widgetIcons、ChartExplorePage、dashboard.smoke、components/README、F06-VIZ.md
+- scope_exclude: 非图表布局组件（筛选器/文本/Tab）；后端 registry 变更
+- acceptance: vitest chartTypeCatalogDisplay + dashboard.smoke 21/21；PRD/components README 同步
 - risk_level: low
 - autonomy_policy: auto_accept_low_risk
-- assumptions: D1 Dataset 默认/D2 登录落 dashboards/D3 去预览/D4 我的→账号设置
+- assumptions: lucide `Map` 图标须别名 MapIcon 避免遮蔽全局 Map 构造器
 
 ## 待办池
 

@@ -1,3 +1,5 @@
+import type { DisplayGroup } from "@/lib/connector-taxonomy";
+
 export type FormState = {
   name: string;
   code: string;
@@ -69,3 +71,53 @@ export const CONNECTOR_HINT_TEXT: Record<string, string> = {
   gaussdb: "GaussDB 兼容 PostgreSQL 协议，默认端口 5432",
   impala: "兼容 Hive 协议；默认 LDAP/无认证由后端处理",
 };
+
+/** 向导「选择连接器」步骤的一行说明；避免重复展示 type id */
+export const CONNECTOR_PICKER_SUBTITLES: Record<string, string> = {
+  mysql: "开源关系型数据库",
+  mariadb: "MySQL 兼容开源数据库",
+  postgresql: "开源对象关系型数据库",
+  oracle: "企业级商用关系型数据库",
+  sqlserver: "微软 SQL Server",
+  sqlite: "轻量嵌入式数据库",
+  dm: "国产达梦关系型数据库",
+  kingbase: "国产 KingbaseES 数据库",
+  gbase: "国产南大通用 GBase",
+  oceanbase: "分布式 HTAP，MySQL 兼容协议",
+  tidb: "分布式 NewSQL，MySQL 兼容",
+  gaussdb: "华为 GaussDB，PostgreSQL 兼容",
+  db2: "IBM 企业级关系型数据库",
+  clickhouse: "列式 OLAP 分析数据库",
+  starrocks: "极速全场景 MPP 数据库",
+  doris: "Apache MPP 分析型数据库",
+  redshift: "AWS 云数据仓库",
+  hive: "Hadoop 数据仓库，HiveServer2",
+  impala: "MPP SQL 查询，Hive 兼容",
+  trino: "分布式 SQL，联邦多数据源查询",
+  presto: "分布式 SQL 查询引擎",
+  mongodb: "文档型 NoSQL 数据库",
+  elasticsearch: "分布式搜索与分析引擎",
+  opensearch: "开源搜索与分析套件",
+  influxdb: "时序数据库",
+  tdengine: "国产时序数据库",
+  timescaledb: "基于 PostgreSQL 的时序扩展",
+  excel: "Excel 工作簿文件",
+  csv: "逗号分隔文本文件",
+  rest_api: "HTTP REST 接口数据源",
+};
+
+export function connectorPickerSubtitle(type: string, displayGroup: DisplayGroup): string {
+  if (CONNECTOR_PICKER_SUBTITLES[type]) return CONNECTOR_PICKER_SUBTITLES[type];
+  if (CONNECTOR_HINT_TEXT[type]) return CONNECTOR_HINT_TEXT[type];
+  const port = CONNECTOR_FIELD_HINTS[type]?.port;
+  const groupLine = {
+    oltp: "关系型 OLTP 数据库",
+    olap: "分析型 OLAP 引擎",
+    warehouse: "湖仓联邦 SQL 查询",
+    file: "本地或远程文件数据源",
+    api: "HTTP 接口数据源",
+    extension: "扩展型数据源",
+  }[displayGroup];
+  if (port && port !== "1") return `${groupLine} · 默认端口 ${port}`;
+  return groupLine;
+}

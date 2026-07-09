@@ -1,35 +1,12 @@
 import {
-  BarChart3,
-  CalendarClock,
-  Grid3x3,
-  LineChart,
-  Map,
-  Table2,
-  TrendingUp,
-  type LucideIcon,
-} from "lucide-react";
-import type { ChartType } from "@/lib/chartViewConfig";
+  chartTypeIcon as widgetChartIcon,
+  CHART_TYPE_ICONS as WIDGET_CHART_ICONS,
+  FALLBACK_CATALOG_ITEMS,
+} from "@/lib/chartTypeCatalogDisplay";
 
-export const WIDGET_CHART_ICONS: Partial<Record<ChartType, LucideIcon>> = {
-  table: Table2,
-  line: LineChart,
-  bar: BarChart3,
-  map: Map,
-  heatmap: Grid3x3,
-  kpi: TrendingUp,
-  timeline: CalendarClock,
-};
+export { widgetChartIcon, WIDGET_CHART_ICONS, FALLBACK_CATALOG_ITEMS };
 
-export function widgetChartIcon(type: string): LucideIcon {
-  return WIDGET_CHART_ICONS[type as ChartType] ?? LineChart;
-}
-
-export const WIDGET_CHART_LABELS: Record<string, string> = {
-  table: "表格",
-  line: "折线图",
-  bar: "柱状图",
-  map: "地图",
-  heatmap: "热力图",
-  kpi: "KPI 指标",
-  timeline: "时间轴",
-};
+/** @deprecated 优先使用 catalog displayName；仅作无 catalog 时的兜底 */
+export const WIDGET_CHART_LABELS: Record<string, string> = Object.fromEntries(
+  FALLBACK_CATALOG_ITEMS.map((item) => [item.type, item.displayName]),
+);

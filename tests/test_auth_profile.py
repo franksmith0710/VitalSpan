@@ -43,20 +43,32 @@ def test_me_includes_profile_fields(profile_client: TestClient):
 
 def test_patch_me_updates_profile(profile_client: TestClient):
     headers = _login_headers(profile_client)
+    original = profile_client.get("/api/v1/me", headers=headers).json()
+    restore_payload = {
+        "displayName": original.get("displayName") or original["username"],
+        "email": original.get("email"),
+    }
     suffix = uuid.uuid4().hex[:8]
     email = f"admin-{suffix}@example.com"
-    response = profile_client.patch(
-        "/api/v1/me",
-        headers=headers,
-        json={"displayName": f"Admin {suffix}", "email": email},
-    )
-    assert response.status_code == 200
-    body = response.json()
-    assert body["displayName"] == f"Admin {suffix}"
-    assert body["email"] == email
+    try:
+        response = profile_client.patch(
+            "/api/v1/me",
+            headers=headers,
+            json={"displayName": f"Admin {suffix}", "email": email},
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["displayName"] == f"Admin {suffix}"
+        assert body["email"] == email
 
-    me = profile_client.get("/api/v1/me", headers=headers)
-    assert me.json()["email"] == email
+        me = profile_client.get("/api/v1/me", headers=headers)
+        assert me.json()["email"] == email
+    finally:
+        profile_client.patch(
+            "/api/v1/me",
+            headers=headers,
+            json=restore_payload,
+        )
 
 
 def test_patch_me_invalid_email_returns_422(profile_client: TestClient):

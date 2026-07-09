@@ -10,7 +10,7 @@ export type AppHeaderVariant = "default" | "transparent" | "elevated-on-scroll";
 
 export type AppHeaderProps = {
   logo?: React.ReactNode;
-  /** 顶栏中部或右侧扩展区（如面包屑）；默认不渲染搜索框 */
+  /** 顶栏中部或右侧扩展区；默认不渲染 */
   leading?: React.ReactNode;
   actions?: React.ReactNode;
   variant?: AppHeaderVariant;
@@ -82,11 +82,7 @@ export function AppHeader({
           </button>
 
           {logo ? (
-            <Link
-              to="/"
-              className="shrink-0 xl:hidden"
-              aria-label="返回首页"
-            >
+            <Link to="/" className="shrink-0 xl:hidden" aria-label="返回首页">
               {logo}
             </Link>
           ) : null}

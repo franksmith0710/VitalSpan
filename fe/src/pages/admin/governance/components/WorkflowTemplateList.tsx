@@ -1,7 +1,7 @@
-import { Workflow } from "lucide-react";
+import { ChevronRight, Workflow } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { type WorkflowTemplate } from "./workflow-labels";
+import { nodeLabel, type WorkflowTemplate } from "./workflow-labels";
 
 type WorkflowTemplateListProps = {
   templates: WorkflowTemplate[];
@@ -15,33 +15,34 @@ export function WorkflowTemplateList({
   onSelect,
 }: WorkflowTemplateListProps) {
   return (
-    <ScrollArea className="h-full max-h-[min(560px,calc(100vh-320px))]">
-      <div className="space-y-1 p-2">
+    <ScrollArea className="h-full max-h-[min(560px,calc(100vh-300px))]">
+      <div className="space-y-0.5 p-2">
         {templates.map((tpl) => {
           const selected = tpl.id === selectedId;
+          const firstNode = tpl.nodes[0]?.id;
           return (
             <button
               key={tpl.id}
               type="button"
               onClick={() => onSelect(tpl.id)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors",
+                "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
                 "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
                 selected
-                  ? "bg-brand-50 ring-1 ring-brand-200 dark:bg-brand-500/10 dark:ring-brand-500/30"
+                  ? "bg-brand-50 dark:bg-brand-500/10"
                   : "hover:bg-gray-50 dark:hover:bg-white/[0.03]",
               )}
             >
-              <div
+              <span
                 className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-xl",
+                  "flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors",
                   selected
-                    ? "bg-brand-500 text-white shadow-theme-xs"
-                    : "bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400",
+                    ? "bg-brand-500 text-white"
+                    : "bg-gray-100 text-gray-500 group-hover:bg-brand-100 group-hover:text-brand-600 dark:bg-white/5 dark:text-gray-400",
                 )}
               >
                 <Workflow className="size-4" aria-hidden />
-              </div>
+              </span>
               <div className="min-w-0 flex-1">
                 <p
                   className={cn(
@@ -51,13 +52,19 @@ export function WorkflowTemplateList({
                 >
                   {tpl.name}
                 </p>
-                <p className="mt-0.5 truncate font-mono text-theme-xs text-gray-500 dark:text-gray-400">
-                  {tpl.id}
+                <p className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400">
+                  {tpl.nodes.length} 个节点
+                  {firstNode ? ` · 起始于${nodeLabel(firstNode)}` : ""}
                 </p>
               </div>
-              <span className="shrink-0 rounded-md bg-white px-2 py-0.5 text-theme-xs text-gray-500 ring-1 ring-gray-200 dark:bg-white/5 dark:text-gray-400 dark:ring-gray-800">
-                {tpl.nodes.length} 节点
-              </span>
+              <ChevronRight
+                className={cn(
+                  "size-4 shrink-0 text-gray-300 transition-transform",
+                  selected && "text-brand-400",
+                  "group-hover:translate-x-0.5",
+                )}
+                aria-hidden
+              />
             </button>
           );
         })}

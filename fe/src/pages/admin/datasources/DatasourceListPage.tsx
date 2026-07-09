@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Database, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  DataTable,
+  ListPageBody,
+  ListPagePagination,
+  ListPageSection,
+  ListPageToolbar,
+  PageErrorBanner,
+  RowActions,
+} from "@/components/layout/list-page-kit";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,11 +23,27 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button, IconButton } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+import { SearchField } from "@/components/ui/search-field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import {
+  connectorTypeIcon,
+  normalizeConnectorTypes,
+  type ConnectorTypeItem,
+  type DisplayGroup,
+  type RawConnectorTypeItem,
+} from "@/lib/connector-taxonomy";
 import { queryKeys } from "@/lib/queryKeys";
+import { useListPagination } from "@/lib/list-pagination";
+import { cn } from "@/lib/utils";
 
 type DataSourceOut = {
   id: string;
@@ -28,6 +53,7 @@ type DataSourceOut = {
   host: string;
   port: number;
   database: string;
+  description?: string | null;
 };
 
 type DataSourceListResponse = {
@@ -35,13 +61,48 @@ type DataSourceListResponse = {
   total: number;
 };
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
+type ConnectorTypeListResponse = {
+  items: RawConnectorTypeItem[];
+};
+
+const ALL_TYPES = "all";
+
+function formatConnectionEndpoint(row: DataSourceOut): { primary: string; secondary?: string } {
+  const endpoint =
+    row.port && row.port !== 1 ? `${row.host}:${row.port}` : row.host || "—";
+  const secondary = row.database?.trim() || undefined;
+  return { primary: endpoint, secondary };
+}
+
+function DatasourceTypeCell({
+  type,
+  meta,
+}: {
+  type: string;
+  meta?: ConnectorTypeItem;
+}) {
+  const group: DisplayGroup = meta?.displayGroup ?? "extension";
+  const Icon = connectorTypeIcon(type, group);
+  const label = meta?.displayName ?? type;
+
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
+    <div className="flex min-w-[140px] items-center gap-2.5">
+      <span
+        className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400"
+        aria-hidden
+      >
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate font-medium text-gray-800 dark:text-white/90">{label}</p>
+        {meta?.categoryLabel ? (
+          <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">
+            {meta.categoryLabel}
+          </p>
+        ) : (
+          <p className="font-mono text-theme-xs text-gray-500 dark:text-gray-400">{type}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -50,6 +111,7 @@ export function DatasourceListPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
+  const [typeFilter, setTypeFilter] = useState(ALL_TYPES);
   const [deleteTarget, setDeleteTarget] = useState<DataSourceOut | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -58,16 +120,43 @@ export function DatasourceListPage() {
     return () => window.clearTimeout(timer);
   }, [search]);
 
+  const pagination = useListPagination(20, [debouncedQ, typeFilter]);
+
   const listParams = useMemo(
-    () => (debouncedQ ? { q: debouncedQ } : undefined),
-    [debouncedQ],
+    () => ({
+      q: debouncedQ || undefined,
+      type: typeFilter === ALL_TYPES ? undefined : typeFilter,
+      limit: pagination.pageSize,
+      offset: pagination.offset,
+    }),
+    [debouncedQ, typeFilter, pagination.pageSize, pagination.offset],
+  );
+
+  const typesQuery = useQuery({
+    queryKey: queryKeys.connectorTypes,
+    queryFn: () => apiFetch<ConnectorTypeListResponse>("/api/v1/datasources/types"),
+    staleTime: 60_000,
+  });
+
+  const connectorTypes = useMemo(
+    () => normalizeConnectorTypes(typesQuery.data?.items ?? []),
+    [typesQuery.data?.items],
+  );
+
+  const typeById = useMemo(
+    () => new Map(connectorTypes.map((item) => [item.type, item])),
+    [connectorTypes],
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: queryKeys.datasources.list(listParams),
     queryFn: () => {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({
+        limit: String(listParams.limit),
+        offset: String(listParams.offset),
+      });
       if (debouncedQ) params.set("q", debouncedQ);
+      if (typeFilter !== ALL_TYPES) params.set("type", typeFilter);
       const qs = params.toString();
       return apiFetch<DataSourceListResponse>(
         `/api/v1/datasources${qs ? `?${qs}` : ""}`,
@@ -86,110 +175,187 @@ export function DatasourceListPage() {
     onError: (err) => setDeleteError(mapApiError(err)),
   });
 
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const hasFilters = Boolean(debouncedQ || typeFilter !== ALL_TYPES);
+  const isEmpty = !isLoading && items.length === 0;
+
   return (
     <AdminPageShell
       title="数据源"
-      description="管理外部数据库连接，供查询与 Dashboard 使用。"
+      description="配置与管理数据库、文件及 API 连接，供图表与看板直接查询使用。"
       actions={
-        <Button asChild variant="primary">
-          <Link to="/admin/datasources/new">新建数据源</Link>
+        <Button asChild variant="primary" size="sm">
+          <Link to="/admin/datasources/new">
+            <Plus className="size-4" aria-hidden />
+            新建数据源
+          </Link>
         </Button>
       }
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Input
-          className="max-w-md"
-          placeholder="搜索名称或标识…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="搜索数据源"
-        />
-      </div>
-
-      {isError ? (
-        <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
-      ) : null}
       {deleteError ? (
-        <ErrorBanner message={deleteError} onRetry={() => setDeleteError(null)} />
+        <PageErrorBanner message={deleteError} onRetry={() => setDeleteError(null)} />
       ) : null}
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-        <table className="min-w-[720px] w-full text-left text-theme-sm">
-          <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-            <tr>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">名称</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">标识</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">类型</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">主机</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400 text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-3" colSpan={5}>
-                      <Skeleton className="h-6 w-full" />
-                    </td>
-                  </tr>
-                ))
-              : null}
-            {!isLoading && data?.items.length === 0 ? (
-              <tr>
-                <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={5}>
-                  暂无数据源
-                </td>
-              </tr>
-            ) : null}
-            {!isLoading
-              ? data?.items.map((row) => (
-                  <tr key={row.id} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">
-                      {row.name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{row.code}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{row.type}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {row.host}:{row.port}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <IconButton asChild variant="ghost" size="sm" aria-label="查看">
-                          <Link to={`/admin/datasources/${row.id}`}>
-                            <Eye className="size-4" />
-                          </Link>
-                        </IconButton>
-                        <IconButton asChild variant="ghost" size="sm" aria-label="编辑">
-                          <Link to={`/admin/datasources/${row.id}/edit`}>
-                            <Pencil className="size-4" />
-                          </Link>
-                        </IconButton>
-                        <IconButton
-                          variant="ghost"
-                          size="sm"
-                          aria-label="删除"
-                          onClick={() => {
-                            setDeleteError(null);
-                            setDeleteTarget(row);
-                          }}
+      <ListPageSection>
+        <ListPageToolbar
+          filters={
+            <>
+              <div className="grid w-full gap-2 sm:max-w-xs">
+                <Label className="sr-only">搜索数据源</Label>
+                <SearchField
+                  value={search}
+                  onChange={setSearch}
+                  placeholder="搜索名称或标识…"
+                  aria-label="搜索数据源"
+                />
+              </div>
+              <div className="grid w-full gap-2 sm:w-[168px]">
+                <Label htmlFor="datasource-type-filter" className="sr-only">
+                  连接器类型
+                </Label>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger
+                    id="datasource-type-filter"
+                    className="h-11"
+                    aria-label="按连接器类型筛选"
+                  >
+                    <SelectValue placeholder="全部类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_TYPES}>全部类型</SelectItem>
+                    {connectorTypes.map((item) => (
+                      <SelectItem key={item.type} value={item.type}>
+                        {item.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          }
+          actions={
+            !isLoading && data && hasFilters ? (
+              <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+                筛选结果 {items.length} 条
+              </p>
+            ) : null
+          }
+        />
+
+        <ListPageBody className={cn(isEmpty && !isLoading ? "p-0" : undefined)}>
+          {isError ? (
+            <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+          ) : (
+            <DataTable
+              loading={isLoading}
+              empty={isEmpty}
+              lastColumnAlign="right"
+              loadingRows={5}
+              headers={["数据源", "连接器", "连接信息", "操作"]}
+              emptyState={{
+                icon: <Database className="size-7" aria-hidden />,
+                title: hasFilters ? "未找到匹配的数据源" : "暂无数据源",
+                description: hasFilters
+                  ? "尝试调整搜索关键词或连接器类型筛选。"
+                  : "添加第一个外部连接，即可在图表与看板中直接查询数据。",
+                action: hasFilters ? undefined : (
+                  <Button asChild variant="primary" size="sm">
+                    <Link to="/admin/datasources/new">
+                      <Plus className="size-4" aria-hidden />
+                      新建数据源
+                    </Link>
+                  </Button>
+                ),
+              }}
+              rows={items.map((row) => {
+                const meta = typeById.get(row.type);
+                const endpoint = formatConnectionEndpoint(row);
+
+                return [
+                  <div key={`${row.id}-name`} className="min-w-[180px]">
+                    <Link
+                      to={`/admin/datasources/${row.id}`}
+                      className="group inline-block max-w-full"
+                    >
+                      <span className="font-medium text-gray-900 transition-colors group-hover:text-brand-500 dark:text-white/90">
+                        {row.name}
+                      </span>
+                    </Link>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <code className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                        {row.code}
+                      </code>
+                      {row.description?.trim() ? (
+                        <span
+                          className="max-w-[220px] truncate text-theme-xs text-gray-500 dark:text-gray-400"
+                          title={row.description.trim()}
                         >
-                          <Trash2 className="size-4" />
-                        </IconButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              : null}
-          </tbody>
-        </table>
-      </div>
+                          {row.description.trim()}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>,
+                  <DatasourceTypeCell key={`${row.id}-type`} type={row.type} meta={meta} />,
+                  <div key={`${row.id}-conn`} className="min-w-[160px]">
+                    <p className="font-mono text-theme-sm text-gray-800 dark:text-white/90">
+                      {endpoint.primary}
+                    </p>
+                    {endpoint.secondary ? (
+                      <p
+                        className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400"
+                        title={endpoint.secondary}
+                      >
+                        {endpoint.secondary}
+                      </p>
+                    ) : null}
+                  </div>,
+                  <RowActions key={`${row.id}-actions`}>
+                    <IconButton asChild variant="ghost" size="sm" aria-label={`查看 ${row.name}`}>
+                      <Link to={`/admin/datasources/${row.id}`}>
+                        <Eye className="size-4" />
+                      </Link>
+                    </IconButton>
+                    <IconButton asChild variant="ghost" size="sm" aria-label={`编辑 ${row.name}`}>
+                      <Link to={`/admin/datasources/${row.id}/edit`}>
+                        <Pencil className="size-4" />
+                      </Link>
+                    </IconButton>
+                    <IconButton
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`删除 ${row.name}`}
+                      onClick={() => {
+                        setDeleteError(null);
+                        setDeleteTarget(row);
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </IconButton>
+                  </RowActions>,
+                ];
+              })}
+            />
+          )}
+        </ListPageBody>
+
+        {!isLoading && total > 0 ? (
+          <ListPagePagination
+            current={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+            showSizeChanger
+            onChange={pagination.onPageChange}
+          />
+        ) : null}
+      </ListPageSection>
 
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>确认删除数据源？</AlertDialogTitle>
             <AlertDialogDescription>
-              将删除「{deleteTarget?.name}」。若数据源仍被引用，删除将失败。
+              将删除「{deleteTarget?.name}」。若数据源仍被图表或看板引用，删除将失败。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

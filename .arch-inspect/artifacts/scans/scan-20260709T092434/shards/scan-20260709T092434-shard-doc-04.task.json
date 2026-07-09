@@ -1,0 +1,174 @@
+{
+  "task_id": "scan-20260709T092434-shard-doc-04",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "doc-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.doc",
+  "rule_set_summary": "### doc 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `doc.coverage` | 关键模块有文档覆盖 | P2 |",
+  "asset_batch": [
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r17.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r17.md",
+      "fingerprint": "9abe79fc557320f5f79794790fd3942a565b14b22acb5e1cd13c63e4743ed202",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r2.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r2.md",
+      "fingerprint": "21aa602e770836c0d8ada4ed55c6a6b2522cb901a6bd5d3ce293847b9cf85d28",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r22.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r22.md",
+      "fingerprint": "e9eb2517c0f1b8465ac1ab9a0a10e18650f531dc0e36c53991f8cf8543f3ad47",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r25.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r25.md",
+      "fingerprint": "fd3072b162491c059ed584a3250fcc71f435bdc2b4a7ede78bfa9c3e154e4b60",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r27.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r27.md",
+      "fingerprint": "e8c2ca024acb3cc08aa563d3200b6f6484136b68a3942ee67ef4d4bc138151b5",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r8.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r8.md",
+      "fingerprint": "df53ca12c1b157e8c843d83092ab03e872254887fceb6e805f2184d3c7d12dd3",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target-r9.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target-r9.md",
+      "fingerprint": "62389b54ae0273048a685b84b2cf4150accd8eb63c674b9289484267f6529b6b",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-03-round-target.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-03-round-target.md",
+      "fingerprint": "70b121c626adade3971bc47c157ab5630a0425a0c10ba768a4a831c29d291ba2",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r31.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r31.md",
+      "fingerprint": "045b5309141584dc2f7ed3b2aed7a661bfa270195b4b8812399c908ba602f001",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r33.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r33.md",
+      "fingerprint": "9364de1e69eacebf95b78eaf5c7b9337a6bde7b84c040fe49e6562f4cd1a849c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r35.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r35.md",
+      "fingerprint": "fd97692b89bc5cf4e98d14081e75a102f28dab91fbb93490782dec00344868cb",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r36.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r36.md",
+      "fingerprint": "52e8947272137363c0eb77720e5732f76003976d3e424205147a9a6eb0f66bec",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r37.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r37.md",
+      "fingerprint": "ca61d4e03e01efb1c0d5f512de4eeb59c76cc9323e6640f8e351f27e82691726",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r39.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r39.md",
+      "fingerprint": "494669d96454c9869324c7a86c1407847a3e2e34e03569963051c2ebdaa9fb13",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r40.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r40.md",
+      "fingerprint": "54d1a6c0099ab5ce6dd3bab2c714d7f18937ae1b6af7e5ba9c41893ea8200c59",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r41.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r41.md",
+      "fingerprint": "125f7466afa04eb0c6bc351f085eabb75de5c351813cea30923208fce706ccfb",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r42.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r42.md",
+      "fingerprint": "3f6d9326745811e01e73bb6b3fd83c07dcb9023dbf1f1ba5ee3e927aeebd2812",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r43.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r43.md",
+      "fingerprint": "66d597db2f394b80a632b7b1b749ec5a52818b12cde3d41f3c3de217690d5422",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r44.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r44.md",
+      "fingerprint": "4a085ee352e20cfee472eed90b5e0f5bafaa27aa166eb5858af473fd810d5c51",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "doc_asset:docs/superpowers/evolution/2026-07-04-round-target-r45.md",
+      "asset_type": "doc_asset",
+      "path": "docs/superpowers/evolution/2026-07-04-round-target-r45.md",
+      "fingerprint": "574047bc7b32333c1c2ed9747ed5f6ff5eb4943f0a0668b6a71e995cdebe5937",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

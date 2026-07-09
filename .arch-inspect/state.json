@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "currentPhase": "inspect",
+  "phaseStatus": "in_progress",
+  "scanMode": "full",
+  "orchestrationMode": "guided",
+  "currentScanId": "scan-20260709T092434",
+  "baselineRef": ".arch-inspect/baseline/snapshot.json",
+  "blockers": [],
+  "artifacts": {
+    "currentScanDir": ".arch-inspect/artifacts/scans/scan-20260709T092434",
+    "lastReport": {
+      "path": null,
+      "healthScore": null
+    }
+  },
+  "stats": {
+    "shardsTotal": 74,
+    "shardsCompleted": 0,
+    "shardsFailed": 0
+  }
+}

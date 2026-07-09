@@ -139,9 +139,9 @@ def test_view_001_04d_protocol_version_2_rejected():
     assert any(f.get("field") == "protocolVersion" for f in exc.value.fields)
 
 
-def test_view_001_04e_extended_widget_colspan_3_rejected():
+def test_view_001_04e_extended_widget_colspan_out_of_bounds_rejected():
     w = _m5_layout_widget("map", ["region"], ["value"])
-    w["colSpan"] = 3
+    w["colSpan"] = 13
     doc = _view_doc([w])
     with pytest.raises(ViewError) as exc:
         validate_dashboard_view(doc)

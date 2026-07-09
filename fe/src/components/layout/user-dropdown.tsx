@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router";
-import { ArrowLeft, ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { ArrowLeft, ChevronDown, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,10 +16,7 @@ import {
   primaryRoleLabel,
   sessionUserFromMe,
 } from "@/lib/session";
-import {
-  ACCOUNT_PROFILE_PATH,
-  ACCOUNT_SETTINGS_PATH,
-} from "@/lib/workspace";
+import { ACCOUNT_CENTER_PATH } from "@/lib/workspace";
 import { DevUserSwitcher } from "@/components/layout/dev-user-switcher";
 import { cn } from "@/lib/utils";
 
@@ -87,7 +84,7 @@ export function UserDropdown({ className }: { className?: string }) {
         </div>
 
         <DevUserSwitcher
-          currentUsername={user.name}
+          currentUsername={authUser?.username ?? user.name}
           onSwitched={() => setOpen(false)}
         />
 
@@ -110,7 +107,7 @@ export function UserDropdown({ className }: { className?: string }) {
           <li>
             <DropdownMenuItem asChild>
               <Link
-                to={ACCOUNT_PROFILE_PATH}
+                to={ACCOUNT_CENTER_PATH}
                 className="gap-3 px-3 py-2 font-medium text-gray-700 dark:text-gray-400"
                 onClick={() => {
                   beginAccountManagement();
@@ -118,22 +115,7 @@ export function UserDropdown({ className }: { className?: string }) {
                 }}
               >
                 <User className="size-5" aria-hidden />
-                个人资料
-              </Link>
-            </DropdownMenuItem>
-          </li>
-          <li>
-            <DropdownMenuItem asChild>
-              <Link
-                to={ACCOUNT_SETTINGS_PATH}
-                className="gap-3 px-3 py-2 font-medium text-gray-700 dark:text-gray-400"
-                onClick={() => {
-                  beginAccountManagement();
-                  setOpen(false);
-                }}
-              >
-                <Settings className="size-5" aria-hidden />
-                账号设置
+                个人中心
               </Link>
             </DropdownMenuItem>
           </li>

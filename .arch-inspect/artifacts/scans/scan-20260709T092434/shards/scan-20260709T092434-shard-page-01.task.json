@@ -1,0 +1,134 @@
+{
+  "task_id": "scan-20260709T092434-shard-page-01",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "page-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.page",
+  "rule_set_summary": "### page 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `page.route_consistency` | 路由与页面文件一致 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/account-types.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/account-types.ts",
+      "fingerprint": "e35e1ed1ce463bd1eb359febe05d6f97bd162a007f4e735ed923ce19dd68d1bd",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/AccountPreferencesPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/AccountPreferencesPage.tsx",
+      "fingerprint": "d9ad1167cdcbe9d10ed3ae4bfff6fce3c06ed06d63daa1783a92b14e43b65495",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/AccountProfilePage.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/AccountProfilePage.smoke.test.tsx",
+      "fingerprint": "5ad74881699387ba22f6c14a8ee39b09794b7f349d91a9175e62dd4b78883e08",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/AccountProfilePage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/AccountProfilePage.tsx",
+      "fingerprint": "1604ad173319c549861311100738bfa7f7a087fa1a963d058b611297008e74c2",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/AccountSecurityPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/AccountSecurityPage.tsx",
+      "fingerprint": "05e9ca054d6a57f19902129b6d1032ba89aa2fbe15d8a56bed325104412631c8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/components/AccountInfoCard.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/components/AccountInfoCard.tsx",
+      "fingerprint": "9bd2938b3a3f0ba349eea060aab1d1ba4f9cbb99d3d6a3ebff13766998f1d981",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/components/AccountProfileHero.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/components/AccountProfileHero.tsx",
+      "fingerprint": "85090acd13c2f621bb602c343a7db37f5b37cf818164862239f1c8354d6016c3",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/components/AccountSecurityLinks.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/components/AccountSecurityLinks.tsx",
+      "fingerprint": "c084cfed93bffc3bf757b9dd6ac7b54959c7203acc7586146b5d0bc069625331",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/components/ChangePasswordSection.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/components/ChangePasswordSection.smoke.test.tsx",
+      "fingerprint": "10272566964e45a1c4e656553ca5b7f4ec7efcc6fc7d71c7ba11defd0a8931ff",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/components/ChangePasswordSection.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/components/ChangePasswordSection.tsx",
+      "fingerprint": "07ffce4884c6ccec39e0d083dead4c3f868c0719f7760b41e6e2d8e75dfd17c8",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/components/ProfileEditDialog.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/components/ProfileEditDialog.tsx",
+      "fingerprint": "c2a8b6bb1ea3a00563636590a36ec60d14f6a1d35f8074d6e2b73956343495cf",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/components/UserViewsSection.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/components/UserViewsSection.tsx",
+      "fingerprint": "00c86e1185c74b7a8cda693096489afa93a04e05283cc4096c42cd814f2f7d25",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/account/UserViewsSection.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/account/UserViewsSection.smoke.test.tsx",
+      "fingerprint": "d64e6b53c42b1a4154b46ce7ab0b921b8c2abd1b68ad124ad95456ecf520ee53",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/AdminHome.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/AdminHome.smoke.test.tsx",
+      "fingerprint": "96c48bb6ad63b301883f1928451832b6f0080318b2b36476aecfb8ed98cd8e5c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/AdminHomePage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/AdminHomePage.tsx",
+      "fingerprint": "01d46894ef8a123ed7ce05b2cd3ec2f92fe2ddb133ee7ab15d86bf248f755c0b",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

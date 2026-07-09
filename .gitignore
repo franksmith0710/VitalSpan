@@ -9,6 +9,3 @@ fe/dist/
 .pytest_cache/
 *.egg-info/
 .ruff_cache/
-
-# arch-inspect 试跑产物（Skill 在独立仓；仅本地扫描时生成）
-.arch-inspect/

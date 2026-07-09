@@ -14,6 +14,7 @@ import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
 import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
 import { isAccountManagementPath } from "@/lib/workspace";
+import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { useAuth } from "@/context/auth-context";
 
 function AdminLayoutContent() {
@@ -28,7 +29,9 @@ function AdminLayoutContent() {
     () => resolveSidebarSections(sessionUser, location.pathname),
     [sessionUser, location.pathname],
   );
-  const isFillHeightRoute = Boolean(useMatch("/admin/charts/explore"));
+  const isChartTypesFill = Boolean(useMatch(CHART_TYPES_CATALOG_PATH));
+  const isDashboardEditFill = Boolean(useMatch("/admin/dashboards/:id/edit"));
+  const isFillHeightRoute = isChartTypesFill || isDashboardEditFill;
 
   return (
     <div className="flex h-dvh max-h-dvh min-h-0 overflow-hidden">
@@ -59,8 +62,10 @@ function AdminLayoutContent() {
         />
         <main
           className={cn(
-            "mx-auto flex min-h-0 w-full max-w-(--breakpoint-2xl) flex-1 flex-col p-4 pb-20 md:p-6 md:pb-24 [&>*]:min-h-0",
-            isFillHeightRoute ? "overflow-hidden" : "overflow-y-auto",
+            "mx-auto flex min-h-0 w-full max-w-(--breakpoint-2xl) flex-1 flex-col p-4 pb-20 md:p-6 md:pb-24",
+            isFillHeightRoute
+              ? "overflow-hidden [&>*]:min-h-0 [&>*]:flex-1"
+              : "overflow-y-auto [&>*]:shrink-0",
           )}
         >
           <Outlet />

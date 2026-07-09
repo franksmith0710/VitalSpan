@@ -1,0 +1,134 @@
+{
+  "task_id": "scan-20260709T092434-shard-page-04",
+  "scan_id": "scan-20260709T092434",
+  "inspector_type": "page-inspector",
+  "scan_mode": "full",
+  "scan_rule_set": "config.rules.page",
+  "rule_set_summary": "### page 维规则\n| rule_id | 说明 | 默认级别 |\n|---------|------|----------|\n| `page.route_consistency` | 路由与页面文件一致 | P1 |",
+  "asset_batch": [
+    {
+      "asset_id": "page_route:fe/src/pages/admin/designer/DesignerPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/designer/DesignerPage.tsx",
+      "fingerprint": "f49e93e4d8ef18b8200c8608f90f761823689f9ea7ab99e48e2c56c305423edd",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/designer/useDesignerWorkspace.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/designer/useDesignerWorkspace.ts",
+      "fingerprint": "5044ffab15f0fc22d89a2c7846bcacc0f4cc917375b92a61658c50038969707e",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/entities/entities-overview.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/entities/entities-overview.smoke.test.tsx",
+      "fingerprint": "a45a6ddfcd1ea6f970305c3dae25070a224ba6171b99b0dae07260e1ae574c3d",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/entities/EntityDetailSheet.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/entities/EntityDetailSheet.tsx",
+      "fingerprint": "a7c0a16d909f109e2435349df4e0c211579b0c2519ae4d40dec04f445a29098c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/entities/EntityOverviewPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/entities/EntityOverviewPage.tsx",
+      "fingerprint": "df19e74f18b86018651fc0c3e7f436989d643c77277c41d181b1ea8ded5ffecc",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/entities/useEntityOverview.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/entities/useEntityOverview.ts",
+      "fingerprint": "627277b1f3d3ef7ac0ba3b7e9eec7022cfa726acf5365d1b76747752f49d715c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/components/CreateWorkflowTemplateDialog.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/components/CreateWorkflowTemplateDialog.tsx",
+      "fingerprint": "caf63e0d60a386bf96c0729c1ea54d55554ffca47a599346b440088b1e659095",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/components/workflow-labels.ts",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/components/workflow-labels.ts",
+      "fingerprint": "2eb80548f58bffa5c598f619d658d4e35a6d45758cccf30b2cb9d7c1fadf9f24",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/components/WorkflowEmptyState.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/components/WorkflowEmptyState.tsx",
+      "fingerprint": "519b0ccc20eb5bc05ea3e3a92c18c45c13a11f974ce426bedfb6a1b8ade64b7c",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/components/WorkflowTemplateDetail.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/components/WorkflowTemplateDetail.tsx",
+      "fingerprint": "c2ec210da8e8038cc9f010cc51ada9d1e4bdd9e1fb49146fb199870542a90870",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/components/WorkflowTemplateList.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/components/WorkflowTemplateList.tsx",
+      "fingerprint": "5d36ee56514643567d5e31c1fd8ef14767b273a54f3cdee60057cd24718ee145",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/governance-batch2.smoke.test.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/governance-batch2.smoke.test.tsx",
+      "fingerprint": "c500b3f79e2d4b5092abdd7b8b3a518396427e92816eb006f15130f3d2072346",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/GovernanceCatalogPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/GovernanceCatalogPage.tsx",
+      "fingerprint": "97e272c5b8151ed155c37df42287e5fe51b4e8b5ec8eba56c0a6afa4b984e195",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/GovernancePublishPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/GovernancePublishPage.tsx",
+      "fingerprint": "69d27369ec137113650a13d49d441bcb670f32451c2d5c451757a9889ee283cc",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    },
+    {
+      "asset_id": "page_route:fe/src/pages/admin/governance/GovernanceWorkflowPage.tsx",
+      "asset_type": "page_route",
+      "path": "fe/src/pages/admin/governance/GovernanceWorkflowPage.tsx",
+      "fingerprint": "8f57e380fd81f5563a01c6661bc78370cba82d09a44b2d0f78022bf45b1aa9d4",
+      "rules_version": "1.1-readme-table",
+      "change_type": "added"
+    }
+  ],
+  "baseline_old_meta": {
+    "known_issues_for_batch": []
+  },
+  "project_conventions": {}
+}

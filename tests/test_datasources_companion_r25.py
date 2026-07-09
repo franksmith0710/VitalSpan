@@ -172,6 +172,28 @@ def test_evict_pool_closes_and_decrements():
     conn.close.assert_called()
 
 
+def test_pool_discards_connection_on_use_error():
+    """T-DS-PL05: yield 期间异常时不将连接放回池。"""
+    import pytest
+
+    mgr = DataSourcePoolManager()
+    ds_id = uuid.uuid4()
+    connector = MagicMock()
+    conn = MagicMock()
+    connector.open_connection.return_value = conn
+    kwargs = {"host": "h", "port": 1, "database": "d", "username": "u", "password": "p"}
+    with pytest.raises(RuntimeError, match="boom"):
+        with mgr.pooled_connection(ds_id, connector=connector, connect_kwargs=kwargs):
+            raise RuntimeError("boom")
+    conn.close.assert_called_once()
+    fresh = MagicMock(name="fresh")
+    connector.open_connection.return_value = fresh
+    with mgr.pooled_connection(ds_id, connector=connector, connect_kwargs=kwargs) as c2:
+        pass
+    assert connector.open_connection.call_count == 2
+    assert c2 is fresh
+
+
 def test_pool_concurrent_smoke():
     """T-DS-PL04: 4 线程同一 id 无异常。"""
     mgr = DataSourcePoolManager()

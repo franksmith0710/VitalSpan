@@ -25,9 +25,10 @@
   - [x] 表格+折线+柱状可渲染
   - [x] 绑定 QUERY-005 出数
   - [x] Dashboard edit/view widget FE 出数（`WidgetSqlPanel` + `DashboardWidget`）
-  - [x] 「图表探索」`iaPriority=advanced` 对非 admin 侧栏隐藏（T-VIZ-FC-01~02）；路由 `/admin/charts/explore` 保留
-  - [x] `layout.md` §3/§6 同步图表探索高级入口定位
-- **代码锚点**：`fe/src/components/charts/` · `fe/src/components/dashboard/WidgetSqlPanel.tsx` · `fe/src/components/dashboard/DashboardWidget.tsx` · `fe/src/lib/chart-theme.ts` · `fe/src/pages/admin/dashboard/dashboard.smoke.test.tsx` · `fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.test.ts` T-VIZ-FC-01~02 · `docs/ui/layout.md`
+  - [x] 「图表类型目录」自「分析」移至「治理」；分析分组仅保留 Dashboard（T-VIZ-FC-02~03）；`/admin/charts/types` 为主路由，`/charts/explore` 重定向
+  - [x] Dashboard `WidgetPalette` 按 catalog 分类展示全部 12 种注册类型（含饼图/仪表盘/桑基/漏斗/关系图）；底部链至类型目录（T-VIZ-FC-04）
+  - [x] `layout.md` §3/§6 同步图表类型目录定位
+- **代码锚点**：`fe/src/components/charts/` · `fe/src/lib/chartTypeCatalogDisplay.ts` · `fe/src/components/dashboard/WidgetPalette.tsx` · `fe/src/components/dashboard/WidgetSqlPanel.tsx` · `fe/src/components/dashboard/DashboardWidget.tsx` · `fe/src/lib/chart-theme.ts` · `fe/src/pages/admin/dashboard/dashboard.smoke.test.tsx` · `fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.test.ts` T-VIZ-FC-01~02 · `docs/ui/layout.md`
 - **演化建议**：饼图/地图与配置 UI（VIZ-005）；Apex 主题与大数据虚拟化；Playwright E2E 真实查询出数
 ### [VIZ-003] 图表类型插件注册
 

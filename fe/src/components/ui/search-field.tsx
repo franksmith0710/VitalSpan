@@ -34,7 +34,9 @@ export function SearchField({
         aria-hidden
       />
       <Input
-        type="search"
+        type="text"
+        role="searchbox"
+        enterKeyHint="search"
         className={cn("h-11 pl-9", value ? "pr-10" : "pr-4", inputClassName)}
         placeholder={placeholder}
         value={value}

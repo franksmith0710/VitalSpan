@@ -1,16 +1,17 @@
+import { ArrowLeft } from "lucide-react";
 import { ConnectorCategoryCard } from "@/components/datasources/ConnectorCategoryCard";
+import { Button } from "@/components/ui/button";
 import {
   connectorTypeIcon,
   DISPLAY_GROUP_META,
   type ConnectorTypeItem,
   type DisplayGroup,
 } from "@/lib/connector-taxonomy";
-import { CONNECTOR_FIELD_HINTS } from "./datasource-form-constants";
-
-type WizardStep = "category" | "type" | "form";
+import { CONNECTOR_FIELD_HINTS, connectorPickerSubtitle } from "./datasource-form-constants";
+import type { DatasourceWizardStep } from "./DatasourceWizardStepper";
 
 type Props = {
-  wizardStep: WizardStep;
+  wizardStep: DatasourceWizardStep;
   selectedGroup: DisplayGroup | null;
   visibleGroups: DisplayGroup[];
   groupedTypes: Map<DisplayGroup, ConnectorTypeItem[]>;
@@ -30,41 +31,64 @@ export function DatasourceFormWizard({
 }: Props) {
   if (wizardStep === "category") {
     return (
-      <div className="mx-auto grid max-w-3xl w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {visibleGroups.map((group) => {
-          const items = groupedTypes.get(group) ?? [];
-          const meta = DISPLAY_GROUP_META[group];
-          const Icon = connectorTypeIcon(items[0]?.type ?? group, group);
-          return (
-            <ConnectorCategoryCard
-              key={group}
-              label={items[0]?.categoryLabel ?? meta.label}
-              description={meta.description}
-              count={items.length}
-              icon={Icon}
-              onSelect={() => onSelectGroup(group)}
-            />
-          );
-        })}
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-theme-base font-semibold text-gray-900 dark:text-white">选择数据源大类</h2>
+          <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
+            按引擎类型分组，先选大类再选具体连接器。
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {visibleGroups.map((group) => {
+            const items = groupedTypes.get(group) ?? [];
+            const meta = DISPLAY_GROUP_META[group];
+            const Icon = connectorTypeIcon(items[0]?.type ?? group, group);
+            return (
+              <ConnectorCategoryCard
+                key={group}
+                variant="category"
+                label={items[0]?.categoryLabel ?? meta.label}
+                description={meta.description}
+                count={items.length}
+                icon={Icon}
+                onSelect={() => onSelectGroup(group)}
+              />
+            );
+          })}
+        </div>
       </div>
     );
   }
 
   if (wizardStep === "type" && selectedGroup) {
+    const groupMeta = DISPLAY_GROUP_META[selectedGroup];
+    const groupLabel =
+      groupedTypes.get(selectedGroup)?.[0]?.categoryLabel ?? groupMeta.label;
+
     return (
-      <div className="mx-auto max-w-3xl w-full space-y-4">
-        <button type="button" className="text-theme-sm text-brand-600" onClick={onBackToCategory}>
-          ← 返回选择大类
-        </button>
-        <div className="grid gap-3 sm:grid-cols-2">
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-theme-base font-semibold text-gray-900 dark:text-white">
+              选择 {groupLabel} 连接器
+            </h2>
+            <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">{groupMeta.description}</p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={onBackToCategory}>
+            <ArrowLeft className="size-4" aria-hidden />
+            返回大类
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(groupedTypes.get(selectedGroup) ?? []).map((t) => {
             const Icon = connectorTypeIcon(t.type, t.displayGroup);
             return (
               <ConnectorCategoryCard
                 key={t.type}
+                variant="type"
                 label={t.displayName}
-                description={t.type}
-                count={0}
+                subtitle={connectorPickerSubtitle(t.type, t.displayGroup)}
+                typeId={t.type}
                 icon={Icon}
                 onSelect={() => {
                   const hints = CONNECTOR_FIELD_HINTS[t.type];

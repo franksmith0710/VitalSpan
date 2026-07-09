@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -87,5 +88,39 @@ describe("datasource detail schema browser", () => {
     });
     renderDetail();
     expect(await screen.findByText(/无法连接数据源/)).toBeInTheDocument();
+  });
+
+  it("T-DS-004-03: successful test connection refetches schemas", async () => {
+    let schemaCalls = 0;
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path.endsWith("/schemas")) {
+        schemaCalls += 1;
+        if (schemaCalls === 1) {
+          throw Object.assign(new Error("fail"), { code: "METADATA_CONNECTION_FAILED" });
+        }
+        return { items: [{ name: "sample_db" }] };
+      }
+      if (path.endsWith("/test") && init?.method === "POST") {
+        return { ok: true, latencyMs: 12, message: "Connection successful" };
+      }
+      if (path.includes("/tables")) return { items: [{ name: "orders", type: "table" }] };
+      if (path.includes("/columns")) return { items: [{ name: "id", dataType: "integer", nullable: false }] };
+      return {
+        id: "ds-1",
+        name: "样例 MySQL",
+        code: "demo-mysql",
+        type: "mysql",
+        host: "127.0.0.1",
+        port: 3307,
+        database: "sample_db",
+        username: "sample",
+      };
+    });
+    const user = userEvent.setup();
+    renderDetail();
+    expect(await screen.findByText(/无法连接数据源/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "测试连接" }));
+    await waitFor(() => expect(schemaCalls).toBeGreaterThanOrEqual(2));
+    expect(await screen.findByText("orders")).toBeInTheDocument();
   });
 });
