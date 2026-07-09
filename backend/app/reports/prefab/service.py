@@ -18,7 +18,6 @@ from app.reports.prefab.schemas import (
 )
 
 _ENTITY_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
-_KNOWN_DIMENSIONS = frozenset({"region", "status"})
 _store: dict[str, dict] = {}
 _USER_PREFAB_SCOPE: dict[str, str] = {}
 
@@ -43,6 +42,27 @@ def _assert_write_access(user: UserContext) -> None:
         raise PrefabError("RPT_PREFAB_FORBIDDEN", "viewer cannot upsert prefab bindings", 403)
 
 
+def _validate_dimension_codes(codes: list[str]) -> None:
+    from app.datasources.models import get_meta_session
+    from app.metadata.dimensions import service as dimension_service
+    from app.metadata.dimensions.schemas import DimensionError
+
+    session = get_meta_session()
+    try:
+        for code in codes:
+            try:
+                dimension_service.resolve_dimension_by_code(session, code)
+            except DimensionError as exc:
+                raise PrefabError(
+                    "RPT_PREFAB_DIMENSION_UNKNOWN",
+                    exc.message,
+                    exc.status,
+                    [{"field": "dimensionCodes", "message": f"unknown: {code}"}],
+                ) from exc
+    finally:
+        session.close()
+
+
 def _validate_binding(payload: PrefabBindingIn) -> PrefabBindingIn:
     if len(payload.dimension_codes) != len(set(payload.dimension_codes)):
         raise PrefabError(
@@ -58,14 +78,7 @@ def _validate_binding(payload: PrefabBindingIn) -> PrefabBindingIn:
             422,
             [{"field": "entityTypeCode", "message": "invalid pattern"}],
         )
-    unknown = [c for c in payload.dimension_codes if c not in _KNOWN_DIMENSIONS]
-    if unknown:
-        raise PrefabError(
-            "RPT_PREFAB_DIMENSION_UNKNOWN",
-            f"Unknown dimension codes: {unknown[0]}",
-            422,
-            [{"field": "dimensionCodes", "message": f"unknown: {unknown[0]}"}],
-        )
+    _validate_dimension_codes(payload.dimension_codes)
     if not payload.allowed_roles:
         raise PrefabError(
             RPT_PREFAB_EMPTY_ROLES,

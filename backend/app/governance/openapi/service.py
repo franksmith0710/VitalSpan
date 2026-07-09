@@ -213,4 +213,18 @@ def deactivate_mapping(mapping_id: uuid.UUID) -> OpenApiMappingOut:
             409,
         )
     record["active"] = False
+    entity_ref = record.get("entityTypeRef")
+    if entity_ref:
+        entity_service.decrement_reference(entity_ref)
     return get_mapping(mapping_id)
+
+
+def release_entity_refs_for_catalog(catalog_entry_id: uuid.UUID) -> None:
+    cid = str(catalog_entry_id)
+    for mapping_id, record in list(_store.items()):
+        if record.get("catalogEntryId") != cid or not record.get("active"):
+            continue
+        record["active"] = False
+        entity_ref = record.get("entityTypeRef")
+        if entity_ref:
+            entity_service.decrement_reference(entity_ref)

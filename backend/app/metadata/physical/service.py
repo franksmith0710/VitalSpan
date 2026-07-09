@@ -9,6 +9,7 @@ from app.auth.deps import UserContext
 from app.metadata.physical.errors import (
     META_PHYSICAL_DS_TABLE_CONFLICT,
     META_PHYSICAL_FORBIDDEN,
+    META_PHYSICAL_GOV_IN_USE,
     META_PHYSICAL_INVALID_COLUMN,
     PhysicalTableError,
 )
@@ -24,6 +25,7 @@ from app.metadata.physical.schemas import (
     PhysicalTableUpdateIn,
     PhysicalTableValidateOut,
 )
+from app.metadata.physical import gov_refs as physical_gov_refs
 
 _FQN_RE = re.compile(r"^[a-z][a-z0-9_]{0,62}\.[a-z][a-z0-9_]{1,63}$")
 _COLUMN_NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
@@ -98,6 +100,12 @@ def get_physical_table(fqn: str) -> PhysicalTableOut:
     if fqn not in _store:
         raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
     return PhysicalTableOut.model_validate(_store[fqn])
+
+
+def get_physical_lineage(fqn: str) -> dict:
+    if fqn not in _store:
+        raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+    return physical_gov_refs.lineage_stub(fqn)
 
 
 def bind_entity_type_code(fqn: str, type_code: str) -> None:
@@ -232,6 +240,12 @@ def delete_physical_table(fqn: str, user: UserContext) -> None:
     _assert_physical_write_access(user)
     if fqn not in _store:
         raise PhysicalTableError("META_PHYSICAL_NOT_FOUND", f"tableFqn not found: {fqn}", 404)
+    if physical_gov_refs.catalog_ref_count(fqn) > 0:
+        raise PhysicalTableError(
+            META_PHYSICAL_GOV_IN_USE,
+            "Physical table referenced by GOV catalog entries",
+            409,
+        )
     record = _store[fqn]
     type_code = record.get("entityTypeCode")
     if type_code:

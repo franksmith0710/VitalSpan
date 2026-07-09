@@ -113,6 +113,20 @@ def get_dimension(session: Session, dimension_id: uuid.UUID) -> DimensionDict:
     return dimension
 
 
+def resolve_dimension_by_code(session: Session, code: str) -> DimensionDict:
+    if not code.strip():
+        raise DimensionError(
+            "META_DIM_INVALID_CODE",
+            "Dimension code must not be blank",
+            422,
+            fields=[{"field": "code", "message": "must not be blank"}],
+        )
+    dimension = session.scalar(select(DimensionDict).where(DimensionDict.code == code.strip()))
+    if dimension is None:
+        raise DimensionError("META_DIM_NOT_FOUND", f"Dimension not found: {code}", 404)
+    return dimension
+
+
 def update_dimension(
     session: Session, dimension_id: uuid.UUID, payload: DimensionUpdate, user: UserContext,
 ) -> DimensionDict:

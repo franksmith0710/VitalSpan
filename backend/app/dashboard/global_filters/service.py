@@ -42,14 +42,31 @@ def _assert_enterprise_scope(actor: UserContext, dashboard_id: uuid.UUID) -> Non
 
 
 def _validate_filter_bindings(filters: list) -> None:
-    for f in filters:
-        if not _DIMENSION_REF_RE.match(f.dimension_ref):
-            raise GlobalFilterError(
-                DASH_FILTER_INVALID_DIMENSION_REF,
-                "Invalid dimensionRef",
-                422,
-                [{"field": "dimensionRef", "message": "invalid pattern"}],
-            )
+    from app.datasources.models import get_meta_session
+    from app.metadata.dimensions import service as dimension_service
+    from app.metadata.dimensions.schemas import DimensionError
+
+    session = get_meta_session()
+    try:
+        for f in filters:
+            if not _DIMENSION_REF_RE.match(f.dimension_ref):
+                raise GlobalFilterError(
+                    DASH_FILTER_INVALID_DIMENSION_REF,
+                    "Invalid dimensionRef",
+                    422,
+                    [{"field": "dimensionRef", "message": "invalid pattern"}],
+                )
+            try:
+                dimension_service.resolve_dimension_by_code(session, f.dimension_ref)
+            except DimensionError as exc:
+                raise GlobalFilterError(
+                    DASH_FILTER_INVALID_DIMENSION_REF,
+                    exc.message,
+                    exc.status,
+                    [{"field": "dimensionRef", "message": f"unknown: {f.dimension_ref}"}],
+                ) from exc
+    finally:
+        session.close()
 
 
 def _validate_linkage_rules(rules: list) -> None:
