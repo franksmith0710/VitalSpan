@@ -55,6 +55,7 @@
   - [x] companion dataset write ACL + duplicate table guard + perf probe（r66：viewer create 403 `META_DATASET_FORBIDDEN`；duplicate table 409；`probe_validate_dataset_budget_ms`/`probe_list_datasets_budget_ms` ≤50ms）
   - [x] PUT/DELETE + bind-query-config + QUERY 四步集成测（r244：`PUT/DELETE /api/v1/datasets/{id}`；`POST bind-query-config`；create→bind→execute 链；`DatasetListPage` 编辑/删除；T-META-R244-004-01~08）
   - [x] Dashboard 组件绑定 Dataset/boundConfigId 出图（M-PRODUCT F-A companion；`WidgetInspector` + `useChartExecute` dataset 路径）
+  - [x] **M-DASH-UX F-A**：检视器改 Dataset/SQL 后编辑态画布即时刷新（`onChange`→`chartConfig`→`ChartRenderer` `executeKey`；Wave1 2026-07-09）
   - [ ] Dataset 对标 DE/SS 全量能力（companion）
   - [ ] 计算字段执行与指标引擎（companion）
 - **代码锚点**：`backend/app/metadata/dataset/` · `backend/app/api/v1/datasets.py` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/charts/useChartExecute.ts` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-004-01~08

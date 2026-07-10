@@ -24,10 +24,10 @@ current_milestone: M-DASH-UX
 intervention: create-evolution-plan-dash-ux-align-code-2026-07-09
 scope_change: M-PRODUCT-queued-M-DASH-UX-active
 plan_review: 2026-07-09-code-align-must-optional
-prd_hub_ref: docs/automate/prd.md@v1.2.113
+prd_hub_ref: docs/automate/prd.md@v1.2.114
 polish_checklist_ref: docs/automate/plans/2026-07-08-product-polish-checklist.md
 bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-flicker.md
-code_gap_note: edit-mode WidgetEditPreview blocks ChartRenderer; ChartConfigPanel unused in WidgetInspector
+code_gap_note: Wave1 merged—edit ChartRenderer+Inspector ChartConfigPanel landed; pending F-C undo + F-D edit GlobalFilterBar
 ```
 
 ### 执行范围：M-FINAL 已冻结 · M-DASH-UX 当前节 · M-PRODUCT 排队（产品决策 2026-07-09 人工确认）

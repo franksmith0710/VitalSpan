@@ -96,6 +96,7 @@
   - [x] IF-01~04 tag 分组 + `operationId` 前缀（r44）
   - [x] `x-api-version-policy` / `x-breaking-change-policy` 扩展（r44）
   - [x] 破坏性变更升 v2 文档（`inject_v2_documentation_paths` + `x-supported-versions` v1/v2，r45 companion）
-- **代码锚点**：`backend/app/openapi/version_policy.py` · `backend/app/openapi/extensions.py`
-- **演化建议**：r45 v2 文档面 + schema stability + IF export example（T-API-R45-007-01~05）；后续可补真实 v2 运行时路由与变更日志自动化
-- **里程碑对齐**：
+  - [x] **M-PRODUCT F-E**：`docs/api/README.md` 鉴权公开路径与 `AuthMiddleware.PUBLIC_PATHS` 对账（`/health` · `/docs` · `/redoc` · `/openapi.json` · login；2026-07-09）
+- **代码锚点**：`backend/app/openapi/version_policy.py` · `backend/app/openapi/extensions.py` · `backend/app/auth/middleware.py` · `backend/app/main.py` · `docs/api/README.md`
+- **演化建议**：r45 v2 文档面 + schema stability + IF export example（T-API-R45-007-01~05）；arch-inspect `api.auth` P0 复检
+- **里程碑对齐**：M-PRODUCT · F-E · 文档对账 · 2026-07-09

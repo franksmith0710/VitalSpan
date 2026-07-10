@@ -61,7 +61,8 @@
 - **验收标准**：
   - [x] 组件绑定 dataSourceId+SQL/表
   - [x] 不经 Dataset
-- **代码锚点**：`backend/app/query/binding_service.py` · `backend/app/query/models.py`
+  - [x] **M-DASH-UX F-A**：编辑态 SQL/table 直连 `useChartExecute` 出图（`DashboardWidget` mode=edit · Wave1 2026-07-09）
+- **代码锚点**：`backend/app/query/binding_service.py` · `backend/app/query/models.py` · `fe/src/components/dashboard/DashboardWidget.tsx` · `fe/src/components/charts/useChartExecute.ts`
 - **演化建议**：r27 加固 chartId 唯一冲突检测、并发 PATCH 与软删后不可见；预览 API 与设计器 UI 待 M5+
 - **里程碑对齐**：
 ### [QUERY-006] RLS 注入执行链
@@ -116,6 +117,7 @@
   - [x] Dataset execute-plan 四步链贯通（r57 companion：`POST /api/v1/query/dataset/execute-plan` planVersion=dataset-plan-v1；非真实 SQL 执行；Admin 可视化配置器留远期）
   - [x] `dataSourceId` + `configId` 存储→翻译→执行端到端（r243 `POST /api/v1/query/dataset/execute` + `execute_config.py`；mock 执行链；`test_mfinal_fd_r243` T-QUERY-R243-009-01~05）
   - [x] Dashboard `WidgetInspector` dataset 模式 + `useChartExecute` → `POST /api/v1/query/dataset/execute`（M-PRODUCT F-A；`chartViewConfig.ts` mode=dataset）
+  - [x] **M-DASH-UX F-A**：编辑态 Dataset 执行路径失败/空态可读、不阻断画布（`ChartRenderer` + `ChartPanel` 覆盖层；Wave1 2026-07-09）
 - **代码锚点**：`backend/app/query/dataset/guard.py` · `backend/app/query/dataset/executor.py` · `backend/app/query/dataset/execute_config.py` · `backend/app/query/dataset/schemas.py` · `backend/app/api/v1/query.py` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartViewConfig.ts` · `tests/test_dash_rpt_query_nfr_r53.py` T-QUERY-R53-009-01~07 · `tests/test_dash_rpt_query_nfr_r57.py` T-QUERY-R57-009-01~07 · `tests/test_mfinal_fd_r243.py` T-QUERY-R243-009-01~05
-- **演化建议**：真实 Dataset SQL 执行（非 mock）留 companion；M-PRODUCT F-D P4-SMOKE 浏览器 E2E 固化
+- **演化建议**：真实 Dataset SQL 执行（非 mock）留 companion；M-PRODUCT F-D P4-SMOKE 浏览器 E2E 固化；plan §M-DASH-UX F-A 行待 Wave2 后回勾
 - **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard FE · 2026-07-08

@@ -19,12 +19,15 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
-- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT F-A · 分享页 · 2026-07-08
+- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT F-A · 分享页 · 2026-07-08；**M-DASH-UX · F-C 稳定性 · 2026-07-09**
 - **描述**：Dashboard 容器与布局引擎（SRS 追溯项）。
 - **验收标准**：
   - [x] 空 Dashboard 可创建展示
   - [x] 网格布局可拖拽（react-grid-layout + edit/view 切换）
   - [x] `/admin/dashboards/:id/share` 分享页 + 编辑页分享入口（`DashboardSharePage` · `DashboardEditPage`）
+  - [x] **M-DASH-UX F-C**：编辑态稳定性（僵尸 404 空态、删除后离开、关 RGL `isDroppable` 防闪烁；`T-DASH-DELETE-01/02` · CASE-2026-07-09-001）
+  - [ ] **M-DASH-UX F-C**：布局级撤销/重做（拖拽缩放与增删组件；companion 必做）
+  - [ ] 多选或对齐辅助（吸附线/对齐；companion 可选）
 - **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/pages/admin/dashboard/DashboardSharePage.tsx` · `fe/src/components/dashboard/` · `fe/src/components/dashboard/gridLayoutAdapter.ts` · `fe/src/components/dashboard/DashboardGrid.tsx`
 - **演化建议**：r29 resizeWidget/标题编辑 + 增强空态引导（T-DASH-R29-002）；Playwright E2E 编辑拖拽持久化验收
 ### [DASH-003] Dashboard 组件库
@@ -50,8 +53,10 @@
   - [x] companion validate/get perf probe + ACL 边界（r67：非法 dimensionRef/重复 parameterKey 422；enterprise 越权 GET 403、viewer save 403；`probe_validate_linkage_budget_ms`/`probe_get_linkage_budget_ms` ≤50ms）
   - [x] 筛选器驱动组件刷新（M-FE-3：`GlobalFilterBar` + `dashboardFilterUtils` + `useChartExecute` 参数注入；`dashboard-view.smoke.test.tsx` T-DASH-004-01）
   - [x] BE widget execute 合并 linkage（r231：`sql_parameters.py` + `execute.py` + `_load_linkage_payload`；GET linkage 严格 owner/admin ACL；viewer execute 200；`test_meta_dash_m8_r231.py` T-DASH-R231-004-03~07 + `test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-04）
+  - [ ] **M-DASH-UX F-D**：编辑页挂载 `GlobalFilterBar` 并可驱动 widget 刷新（companion 必做；当前仅 view 模式）
+  - [ ] 组件联动规则最小配置入口（点选→过滤；companion 可选）
 - **代码锚点**：`backend/app/dashboard/global_filters/` · `backend/app/query/sql_parameters.py` · `backend/app/api/v1/dashboards.py` · `fe/src/components/dashboard/GlobalFilterBar.tsx` · `fe/src/components/dashboard/dashboardFilterUtils.ts` · `tests/test_meta_dash_m8_r231.py` T-DASH-R231-004-03~07 · `tests/test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-01~07 · `fe/src/pages/admin/dashboard/dashboard-view.smoke.test.tsx`
-- **演化建议**：M8 r231 闭合 BE execute linkage 与 §7.4.1 ACL 回归；跨 widget 口径联动与 Playwright E2E 留 companion
+- **演化建议**：M8 r231 闭合 BE execute linkage 与 §7.4.1 ACL 回归；**M-DASH-UX F-D** 编辑页全局筛选接线；跨 widget 口径联动与 Playwright E2E 留 companion
 - **里程碑对齐**：M8 · 已完成 · 2026-07-06
 ### [DASH-005] 实体总览页 FR-6.2
 

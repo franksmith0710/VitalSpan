@@ -96,8 +96,9 @@
   - [x] `/admin/connectors` 重定向至 `/admin/datasources`（兼容旧书签）
   - [x] manifest「数据」含「语义建模」subItems：元数据 / Dataset（`resolve-nav.test.ts` T-NAV-MF-06）
   - [x] `displayGroup` 五类中文分组 + DatasourceFormPage 大类卡片选型（对标 DataEase）
-- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/registry.py` · `backend/app/datasources/taxonomy.py` · `fe/src/lib/connector-taxonomy.ts` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `tests/test_datasources_display_group_fb.py` FB-1~FB-3
-- **演化建议**：拆分 `DatasourceFormPage.tsx` 向导子组件（fe-ui 体量）；类型文档外链（可选）；F-E `layout.md` §3 分类文案同步
+  - [x] **M-PRODUCT F-E**：`docs/ui/layout.md` §3 IA 树/侧栏分组与 `nav-manifest.tsx` 同步（实体与主题嵌套于「数据」分组；`/admin/themes/:dashboardId`；2026-07-09）
+- **代码锚点**：`backend/app/api/v1/datasources.py` · `backend/app/datasources/registry.py` · `backend/app/datasources/taxonomy.py` · `fe/src/lib/connector-taxonomy.ts` · `fe/src/pages/admin/datasources/DatasourceFormPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx` · `docs/ui/layout.md` · `tests/test_datasources_display_group_fb.py` FB-1~FB-3
+- **演化建议**：拆分 `DatasourceFormPage.tsx` 向导子组件（fe-ui 体量）；类型文档外链（可选）
 ### [DS-008] 数据源授权与 M7 集成
 
 - **状态**：已实现（L1 companion r25）

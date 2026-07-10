@@ -19,8 +19,8 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
-- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT · F-C · 已完成 · 2026-07-08
-- **描述**：最小图表集 M4-MIN（SRS 追溯项）；M-FE-2 补齐 Dashboard widget SQL 配置与 view 模式出数；M-PRODUCT F-C 图表探索降为高级入口（非 admin 侧栏隐藏）。
+- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT · F-C · 已完成 · 2026-07-08；**M-DASH-UX · F-A · Wave1 · 2026-07-09**
+- **描述**：最小图表集 M4-MIN（SRS 追溯项）；M-FE-2 补齐 Dashboard widget SQL 配置与 view 模式出数；M-PRODUCT F-C 图表探索降为高级入口（非 admin 侧栏隐藏）；**M-DASH-UX F-A** 编辑态配置就绪时复用 `ChartRenderer` 真出图（去掉「仅预览才出图」路径）。
 - **验收标准**：
   - [x] 表格+折线+柱状可渲染
   - [x] 绑定 QUERY-005 出数
@@ -28,8 +28,9 @@
   - [x] 「图表类型目录」自「分析」移至「治理」；分析分组仅保留 Dashboard（T-VIZ-FC-02~03）；`/admin/charts/types` 为主路由，`/charts/explore` 重定向
   - [x] Dashboard `WidgetPalette` 按 catalog 分类展示全部 12 种注册类型（含饼图/仪表盘/桑基/漏斗/关系图）；底部链至类型目录（T-VIZ-FC-04）
   - [x] `layout.md` §3/§6 同步图表类型目录定位
+  - [x] **M-DASH-UX F-A**：`mode=edit` 且 config 就绪时渲染 `ChartRenderer`（含 `filterParameters`/`executeKey`；未就绪保留待配置占位；`dashboard.smoke` F-A）
 - **代码锚点**：`fe/src/components/charts/` · `fe/src/lib/chartTypeCatalogDisplay.ts` · `fe/src/components/dashboard/WidgetPalette.tsx` · `fe/src/components/dashboard/WidgetSqlPanel.tsx` · `fe/src/components/dashboard/DashboardWidget.tsx` · `fe/src/lib/chart-theme.ts` · `fe/src/pages/admin/dashboard/dashboard.smoke.test.tsx` · `fe/src/config/nav-manifest.tsx` · `fe/src/lib/resolve-nav.test.ts` T-VIZ-FC-01~02 · `docs/ui/layout.md`
-- **演化建议**：饼图/地图与配置 UI（VIZ-005）；Apex 主题与大数据虚拟化；Playwright E2E 真实查询出数
+- **演化建议**：饼图/地图与配置 UI（VIZ-005）；Apex 主题与大数据虚拟化；Playwright E2E 真实查询出数；plan §M-DASH-UX F-A 行待 Wave2 后回勾
 ### [VIZ-003] 图表类型插件注册
 
 - **状态**：已实现
@@ -51,7 +52,9 @@
 - **验收标准**：
   - [x] 堆叠/分组/面积/环形等（`bar`: stacked/grouped/horizontal；`line`: area/smooth；`pie`: donut）
   - [x] styleVariant 生效（后端校验 + 前端 `renderFromSpec`/`ChartConfigPanel` 变体渲染）
-- **代码锚点**：`backend/app/viz/specs.py` · `backend/app/viz/builtin.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/adapters/renderFromSpec.ts`
+  - [x] **M-DASH-UX F-B**：`WidgetInspector` 嵌入 `ChartConfigPanel` 可改 styleVariant/筛选（Wave1；`columns=[]` 时维度/度量下拉禁用）
+  - [ ] 检视器内维度/度量列驱动选择（需 schema/`columns` 接线；companion）
+- **代码锚点**：`backend/app/viz/specs.py` · `backend/app/viz/builtin.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/adapters/renderFromSpec.ts` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/dashboard/WidgetInspector.smoke.test.tsx`
 - **演化建议**：styleVariant 与 dashboard 主题全局联动；更多高级类型变体；r250 补 `buildBarOption`/`buildPieOption` 显式构建函数（T-VIZ-R250-004-01~02：stacked→stack非空、donut→radius数组）
 - **里程碑对齐**：
 ### [VIZ-005] 维度指标筛选配置 UI
@@ -64,7 +67,8 @@
   - [x] 维度/指标/筛选器可配置（`ChartConfigPanel` 多字段动态增删 + operator/value 筛选器 + 后端 FieldRule 校验链）
   - [x] native mode 图表执行链（r236：`useChartExecute` mode=native + `ChartRenderer` rerun）
   - [x] 时间范围选择（r237：`TimeRangeConfig` + `ChartTimeRangeRef` FE/BE 校验 + `buildTimeRangeParameters` sql 注入）
-- **代码锚点**：`backend/app/viz/specs.py`（FieldRule）· `backend/app/schemas/chart_view.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/TimeRangeConfig.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartViewConfig.ts` · `tests/test_m11_batch3_r237.py` T-VIZ-R237-005-01~02
+  - [x] **M-DASH-UX F-B**：检视器内嵌 `ChartConfigPanel` 筛选/时间范围 onChange 合并回 `chartConfig`（Wave1；`WidgetInspector.smoke` F-B）
+- **代码锚点**：`backend/app/viz/specs.py`（FieldRule）· `backend/app/schemas/chart_view.py` · `fe/src/components/charts/ChartConfigPanel.tsx` · `fe/src/components/charts/TimeRangeConfig.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartViewConfig.ts` · `fe/src/components/dashboard/WidgetInspector.tsx` · `tests/test_m11_batch3_r237.py` T-VIZ-R237-005-01~02
 - **演化建议**：Playwright E2E 真实出数；native mode timeRange 执行链扩展
 - **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [VIZ-006] iframe 嵌入门户
@@ -101,6 +105,7 @@
 - **验收标准**：
   - [x] 统一 ChartConfig→渲染器映射（`build_render_spec` + `renderFromSpec` ECharts option 构造）
   - [x] 主题与 Tailwind 协调（`echarts-theme.ts` + `createBarChartOptions` Token 对齐）
+  - [x] **M-DASH-UX F-A**：编辑态复用 `ChartRenderer`/`ChartPanel` loading·错误·空数据覆盖层（非白屏；`DashboardWidget` mode=edit）
 - **代码锚点**：`backend/app/viz/render.py` · `backend/app/api/v1/charts.py`（POST /charts/render-spec）· `fe/src/components/charts/adapters/renderFromSpec.ts` · `fe/src/components/charts/adapters/AdvancedEchartsChart.tsx` · `fe/src/lib/echarts-theme.ts`
 - **演化建议**：AntV 适配器分支；大数据量虚拟化与性能 profiling；r250 补 rows=[] 空数据防护 + `AdvancedEchartsChart` 空态覆盖层（T-VIZ-R250-008-01~02：空数据不抛错、主路径 bar type 回归）
 - **里程碑对齐**：
