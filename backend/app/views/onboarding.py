@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
-from app.dashboard.service import get_dashboard
+from app.dashboard.service import DashboardError, get_dashboard
 from app.views import store
 from app.views.role_template import resolve_inherited_defaults
 from app.views.validate import validate_dashboard_view
@@ -24,7 +24,12 @@ def apply_first_login_inherit(
     dash_id = defaults.get("dashboardId")
     if not dash_id:
         return None
-    dashboard = get_dashboard(db, uuid.UUID(str(dash_id)))
+    try:
+        dashboard = get_dashboard(db, uuid.UUID(str(dash_id)))
+    except DashboardError as exc:
+        if exc.code == "DASH_NOT_FOUND":
+            return None
+        raise
     layout = dashboard.layout_json
     payload = {
         "name": "默认",

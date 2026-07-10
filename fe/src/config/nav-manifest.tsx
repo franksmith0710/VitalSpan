@@ -5,7 +5,6 @@ import {
   Building2,
   Database,
   FileBarChart,
-  GitBranch,
   LayoutDashboard,
   Layers,
   PieChart,
@@ -13,7 +12,6 @@ import {
   Server,
   Shield,
   SlidersHorizontal,
-  Users,
   Workflow,
 } from "lucide-react";
 import type { SessionRole } from "@/lib/session";

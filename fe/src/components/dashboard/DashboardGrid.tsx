@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import type { ChartType } from "@/lib/chartViewConfig";
 import {
   DEFAULT_WIDGET_COLSPAN,
-  DEFAULT_WIDGET_ROWSPAN,
   isChartTypeDragEvent,
   readChartTypeFromDragEvent,
 } from "@/lib/dashboardDnd";
@@ -149,7 +148,7 @@ export function DashboardGrid({
   const handleDrop = useCallback(
     (e: DragEvent) => {
       if (!onInsertChart) return;
-      const chartType = readChartTypeFromDragEvent(e);
+      const chartType = readChartTypeFromDragEvent(e.nativeEvent);
       if (!chartType) return;
       e.preventDefault();
       e.stopPropagation();

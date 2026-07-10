@@ -17,7 +17,6 @@ import {
   resizeWidget,
   sortWidgets,
   type DashboardLayout,
-  type LayoutWidget,
 } from "@/components/dashboard/layoutUtils";
 import { placeNewWidget, normalizeWidgetLayout, placeWidgetAt } from "@/components/dashboard/gridLayoutAdapter";
 import { createLayoutWidget } from "@/components/dashboard/createLayoutWidget";

@@ -76,8 +76,18 @@ def _normalize_widget_orders(widgets: list) -> list:
 
 
 def validate_layout(layout: dict[str, Any]) -> dict[str, Any]:
+    from pydantic import ValidationError
+
     from app.views.validate import validate_layout_dict
 
+    try:
+        parsed = DashboardLayout.model_validate(layout)
+        _validate_layout_business(parsed)
+    except ValidationError as exc:
+        from app.schemas.chart_view import _map_validation_error
+
+        chart_exc = _map_validation_error(exc)
+        raise DashboardError("DASH_INVALID_LAYOUT", chart_exc.message, 422) from exc
     return validate_layout_dict(layout)
 
 
@@ -162,8 +172,11 @@ def update_layout(db: Session, dashboard_id: uuid.UUID, layout_json: dict[str, A
     from app.views.adapter import dashboard_layout_to_view
     from app.views.schemas import ViewError
     from app.views.validate import validate_dashboard_view
+    from pydantic import ValidationError
 
     try:
+        parsed = DashboardLayout.model_validate(layout_json)
+        _validate_layout_business(parsed)
         view = validate_dashboard_view(
             dashboard_layout_to_view(
                 dashboard_id=dashboard_id,
@@ -173,7 +186,22 @@ def update_layout(db: Session, dashboard_id: uuid.UUID, layout_json: dict[str, A
         )
         validated = view.layout.model_dump(by_alias=True, mode="json")
     except ViewError as exc:
-        raise DashboardError(exc.code, exc.message, exc.status) from exc
+        code = exc.code
+        if code in {"CHART_INVALID_TYPE", "VIEW_INVALID_LAYOUT"}:
+            code = "DASH_INVALID_LAYOUT"
+        raise DashboardError(code, exc.message, exc.status) from exc
+    except ValidationError as exc:
+        fields = [
+            {"field": ".".join(str(p) for p in err.get("loc", ())), "message": str(err.get("msg", ""))}
+            for err in exc.errors()
+        ]
+        bounds_tokens = ("colSpan", "rowSpan", "col_span", "row_span")
+        if any(any(t in f["field"] for t in bounds_tokens) for f in fields):
+            raise DashboardError("VIEW_LAYOUT_BOUNDS", "Layout bounds violation", 422) from exc
+        from app.schemas.chart_view import _map_validation_error
+
+        chart_exc = _map_validation_error(exc)
+        raise DashboardError("DASH_INVALID_LAYOUT", chart_exc.message, 422) from exc
     except DashboardError:
         raise
     except ChartViewError as exc:

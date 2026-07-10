@@ -131,9 +131,9 @@ def ensure_legacy_probe_dimensions(session: Session) -> None:
     """Idempotent seed for prefab/filters/theme companion legacy probe codes."""
     from app.auth.deps import UserContext
 
-    labels = {"region": "区域", "status": "状态"}
+    labels = {"region": "区域", "status": "状态", "dim_sales": "销售额"}
     actor = UserContext(id="probe-dim", username="probe", roles=["admin"])
-    for code in ("region", "status"):
+    for code in ("region", "status", "dim_sales"):
         try:
             resolve_dimension_by_code(session, code)
         except DimensionError as exc:

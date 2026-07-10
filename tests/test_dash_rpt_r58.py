@@ -37,6 +37,7 @@ def r58_sqlite_env():
     import app.governance.catalog.models  # noqa: F401
     import app.query.config_store.models  # noqa: F401
     import app.query.models  # noqa: F401
+    import app.metadata.dimensions.models  # noqa: F401
 
     get_meta_engine.cache_clear()
     auth_engine.cache_clear()
@@ -44,6 +45,11 @@ def r58_sqlite_env():
     Base.metadata.create_all(engine)
     AuthBase.metadata.create_all(engine)
     QueryBase.metadata.create_all(engine)
+    from sqlalchemy.orm import Session
+    from app.metadata.dimensions.service import ensure_legacy_probe_dimensions
+
+    with Session(engine) as session:
+        ensure_legacy_probe_dimensions(session)
     yield
     if previous_db is None:
         os.environ.pop("DATABASE_URL", None)

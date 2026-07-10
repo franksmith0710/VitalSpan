@@ -31,7 +31,7 @@ bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-fli
 code_gap_note: none — plan companion lines all checked
 ```
 
-### 执行范围：M-FINAL 已冻结 · M-DASH-UX 当前节 · M-PRODUCT 排队（产品决策 2026-07-09 人工确认）
+### 执行范围：M-FINAL 已冻结 · M-DASH-UX + M-PRODUCT 全量 companion 收官（2026-07-09）
 
 > **决策（2026-07-07）**：将 **M-FE-4/5**、**M13**、**F-G** 合并为 **§M-FINAL**；**2026-07-08 收官**（129/129 PRD 合同勾完）。  
 > **决策（2026-07-08）**：追加 **§M-PRODUCT** 处理成品感、DataEase 数据源分类、IA 收敛与 companion 验收清扫。  
@@ -695,7 +695,7 @@ AUTH-001 → AUTH-003 → VIEW-003 → DASH-004
 
 ---
 
-## M-DASH-UX — Dashboard 编辑体验对标【当前节】
+## M-DASH-UX — Dashboard 编辑体验对标【已完成】
 
 > **人工干预（2026-07-09）**：方案 A + **代码对齐修订（v2.8.0）**。  
 > **代码事实**：`ChartRenderer` / `useChartExecute` / `ChartConfigPanel` / `GlobalFilterBar` **已存在**；编辑页用 `WidgetEditPreview` **挡住真出图**，检视器未接 `ChartConfigPanel`，筛选条仅 `mode=view`。  
