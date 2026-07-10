@@ -66,7 +66,8 @@ def mock_execute_schedule(
         executionId=execution_id,
         scheduleId=schedule_id,
         status="mock_succeeded",
-        artifactRef=f"mock://reports/{schedule_id}/{execution_id}",
+        # test:// only via X-Rpt-Execute-Mock — never customer-default mock://
+        artifactRef=f"test://reports/{schedule_id}/{execution_id}",
         idempotencyKey=idempotency_key,
         executedAt=datetime.now(UTC).isoformat(),
     )
@@ -109,8 +110,12 @@ def semi_real_execute_schedule(
         error_message = "delivery failed"
     elif delivery["status"] == "delivered":
         status = "semi_real_succeeded"
+    elif delivery["status"] == "unconfigured":
+        status = "semi_real_failed"
+        error_message = delivery.get("error") or "SMTP delivery not configured"
     else:
         status = "semi_real_delivery_degraded"
+        error_message = delivery.get("error")
     out = ScheduleExecuteOut(
         executionId=execution_id,
         scheduleId=schedule_id,

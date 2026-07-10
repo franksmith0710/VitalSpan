@@ -325,15 +325,22 @@ def execute_schedule(
     user: Annotated[UserContext, Depends(get_current_user)],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
     delivery_mock: Annotated[str | None, Header(alias="X-Rpt-Delivery-Mock")] = None,
-    semi_real: Annotated[str | None, Header(alias="X-Rpt-Semi-Real")] = None,
+    _semi_real: Annotated[str | None, Header(alias="X-Rpt-Semi-Real")] = None,
+    execute_mock: Annotated[str | None, Header(alias="X-Rpt-Execute-Mock")] = None,
 ):
+    """Customer default uses semi-real + honest delivery (unconfigured without SMTP).
+
+    Engineering probes only: ``X-Rpt-Execute-Mock: 1`` → legacy mock_succeeded.
+    Test-only delivery: ``X-Rpt-Delivery-Mock: success|fail|retry``.
+    """
     try:
         key = idempotency_key or ""
-        if semi_real == "1" or delivery_mock is not None:
-            return scheduler_executor.semi_real_execute_schedule(
-                schedule_id, key, user, delivery_mock
-            )
-        return scheduler_executor.mock_execute_schedule(schedule_id, key, user)
+        if execute_mock == "1":
+            return scheduler_executor.mock_execute_schedule(schedule_id, key, user)
+        # Default + X-Rpt-Semi-Real: honest path (no silent mock delivered)
+        return scheduler_executor.semi_real_execute_schedule(
+            schedule_id, key, user, delivery_mock
+        )
     except ScheduleError as exc:
         return _schedule_error(exc)
 

@@ -118,8 +118,8 @@ def test_rpt001_export_chain_catalog_template(client: TestClient):
     assert len(dl.content) > 0
 
 
-def test_rpt001_pdf_export_mock_bytes(client: TestClient):
-    """RPT-001: pdf mock bytes through export chain."""
+def test_rpt001_pdf_export_bytes(client: TestClient):
+    """RPT-001: real PDF bytes through export chain (no mock://)."""
     key = "pdf_tpl"
     client.put(
         f"/api/v1/reports/templates/{key}",
@@ -144,8 +144,10 @@ def test_rpt001_pdf_export_mock_bytes(client: TestClient):
     export = client.get(f"/api/v1/reports/export?templateId={nid}&format=pdf", headers=AUTH)
     assert export.status_code == 200
     assert export.json()["downloadUrl"]
+    assert "mock://" not in (export.json().get("downloadUrl") or "")
     dl = client.get(export.json()["downloadUrl"], headers=AUTH)
     assert dl.content.startswith(b"%PDF")
+    assert b"mock" not in dl.content.lower()
 
 
 def test_rpt002_prefab_binding_put(client: TestClient):
@@ -191,10 +193,19 @@ def test_rpt003_template_blocks_reorder(client: TestClient):
     assert blocks[1]["queryRef"] == "SELECT b FROM facts"
 
 
-def test_rpt005_delivery_mock_mode(client: TestClient):
-    """RPT-005: default mock delivery mode."""
+def test_rpt005_delivery_unconfigured_without_header(client: TestClient):
+    """RPT-005: default mock mode without header → unconfigured (not silent delivered)."""
     settings = get_settings()
-    result = deliver_artifact("mock://x", ["email"], None, settings)
+    result = deliver_artifact("semi://x", ["email"], None, settings)
+    assert result["deliveryMode"] == "unconfigured"
+    assert result["status"] == "unconfigured"
+    assert result["deliverySteps"][0]["status"] == "unconfigured"
+
+
+def test_rpt005_delivery_mock_mode_requires_header(client: TestClient):
+    """RPT-005: explicit X-Rpt-Delivery-Mock success → mock delivered."""
+    settings = get_settings()
+    result = deliver_artifact("semi://x", ["email"], "success", settings)
     assert result["deliveryMode"] == "mock"
     assert result["status"] == "delivered"
 

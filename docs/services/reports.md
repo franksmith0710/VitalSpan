@@ -19,7 +19,7 @@
 | In | Out |
 |----|-----|
 | `reports/catalog/` 模板树内存 registry + 循环/深度守卫 + M7 ACL | 通用查询引擎（→ `query`） |
-| `reports/scheduler/` 调度实例 FSM + cron 五段校验 + mock 执行器 | APScheduler 生产执行器（远期） |
+| `reports/scheduler/` 调度实例 FSM + cron 五段校验 + semi-real 执行（未配 SMTP 诚实失败） | APScheduler 生产执行器（远期） |
 | `reports/extension/` 模板节点扩展配置（metrics/filters CRUD） | 真实 PDF/Word 渲染、fe 展现 |
 | `reports/batch/` 批量创建模板节点 + 幂等守卫 | 打印排版 UI（前端 `/admin/reports/*`） |
 | `reports/engine/` render run L1（`POST /reports/templates/{id}/run`） | 导出引擎异步任务（远期） |
@@ -37,7 +37,7 @@
 | `catalog/service.py` | 树 CRUD/move；`MAX_CATALOG_DEPTH=8`；mutating 接入 ACL | RPT-004 | companion 已实现（r57） |
 | `catalog/acl.py` | M7 目录 ACL + `_NODE_OWNERS` 内存 owner 登记 | RPT-004 | companion 已实现（r57） |
 | `scheduler/service.py` | 调度 FSM + cron 字段范围校验 | RPT-005 | companion 已实现（r57） |
-| `scheduler/executor.py` | `mock_execute_schedule` + Idempotency-Key 幂等 log | RPT-005 | companion 已实现（r57） |
+| `scheduler/executor.py` | 默认 `semi_real_execute_schedule`；`X-Rpt-Execute-Mock:1` 才走 `mock_execute_schedule`（probe） | RPT-005 | companion 已实现（r57+诚实化） |
 | `extension/service.py` | 模板节点扩展配置 CRUD（metrics/filters/revision） | RPT-006 | L1 已实现 r54 |
 | `batch/service.py` | 批量创建模板 + Idempotency-Key 守卫 | RPT-007 | L1 已实现 r54 |
 | `engine/service.py` | validate + `run_template`（M3-LITE：`dataSourceId` 驱动 `engine/execute`；无 ds placeholder 回归 r60） | RPT-001 | M3-LITE 已实现 r233 |
@@ -68,7 +68,8 @@
 
 - **DASH-006**：`dashboard/theme/execute.py` — `build_theme_execute_plan` 四步（config_load → bindings_resolve → granularity_window → geo_check）；yoy/mom `compareWindow`；`dashboard/theme/acl.py` — `assert_theme_action`（viewer 禁写 `DASH_THEME_FORBIDDEN`）
 - **RPT-004**：`extension/compare.py` — `build_compare_slots`；`POST .../extension/compare-preview`；render-spec `compareMetrics` + `compareVersion=1.0`；`extension/acl.py` — `RPT_EXT_FORBIDDEN`
-- **RPT-005**：`scheduler/delivery.py` — `dispatch_artifact` mock 投递（fail/retry）；`semi_real_execute_schedule`（`X-Rpt-Semi-Real: 1`；`semi_real_succeeded`/`semi_real_delivery_degraded`）；`revisionSnapshot`；`probe_semi_real_execute_budget_ms` ≤35ms；保留 `mock_execute_schedule` 供 r57 兼容
+- **RPT-005**：`scheduler/delivery.py` — `dispatch_artifact`；未配 SMTP / `rpt_delivery_mode=mock` 且无 `X-Rpt-Delivery-Mock` → `unconfigured`（禁止静默 delivered）；显式 header 才 mock；`semi_real_execute_schedule` 默认客户路径；`X-Rpt-Execute-Mock: 1` 保留 probe `mock_execute_schedule`（`test://` 产物，非 `mock://`）
+- **RPT-001/003**：模板 `storageRef` 使用 `storage://templates/...`（禁止 `mock://`）；导出生成最小合法 PDF/OOXML
 - **RPT-007**：`catalog/acl.assert_artifact_access` + `register_artifact_owner`；`GET .../executions/{id}/artifact`（`RPT_ARTIFACT_FORBIDDEN`）
 - **RPT-006/007**：batch 带 `compareMode` extension → render-spec 联动；`timed_batch_create_budget_ms` <200ms 回归
 

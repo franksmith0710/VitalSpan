@@ -17,7 +17,7 @@ _store: dict[str, dict] = {}
 
 
 def _default_storage_ref(key: str, fmt: str) -> str:
-    return f"mock://templates/{key}.{fmt}"
+    return f"storage://templates/{key}.{fmt}"
 
 
 def build_export_hook(template_key: str, fmt: str, *, node_id: str | None = None) -> ExportHookOut:

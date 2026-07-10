@@ -515,20 +515,22 @@ def test_rpt004_r53_depth_regression(client: TestClient):
 
 
 def test_rpt005_execute_mock_succeeded(client: TestClient):
-    """T-RPT-R57-005-01: scheduled + Idempotency-Key → 200 mock_succeeded。"""
+    """T-RPT-R57-005-01: X-Rpt-Execute-Mock:1 → 200 mock_succeeded (probe-only)."""
     sid = _scheduled_fixture(client)
     resp = client.post(
         f"/api/v1/reports/schedules/{sid}/execute",
-        headers={**AUTH, "Idempotency-Key": "key-r57-01"},
+        headers={**AUTH, "Idempotency-Key": "key-r57-01", "X-Rpt-Execute-Mock": "1"},
     )
     assert resp.status_code == 200
-    assert resp.json()["status"] == "mock_succeeded"
+    body = resp.json()
+    assert body["status"] == "mock_succeeded"
+    assert body["artifactRef"].startswith("test://reports/")
 
 
 def test_rpt005_idempotency_replay(client: TestClient):
     """T-RPT-R57-005-02: 相同 Idempotency-Key 重放返回相同 executionId。"""
     sid = _scheduled_fixture(client)
-    headers = {**AUTH, "Idempotency-Key": "key-r57-idem"}
+    headers = {**AUTH, "Idempotency-Key": "key-r57-idem", "X-Rpt-Execute-Mock": "1"}
     first = client.post(f"/api/v1/reports/schedules/{sid}/execute", headers=headers).json()
     second = client.post(f"/api/v1/reports/schedules/{sid}/execute", headers=headers).json()
     assert first["executionId"] == second["executionId"]
@@ -692,7 +694,7 @@ def test_r57_link_catalog_schedule_execute(client: TestClient):
     sid = _scheduled_fixture(client)
     resp = client.post(
         f"/api/v1/reports/schedules/{sid}/execute",
-        headers={**AUTH, "Idempotency-Key": "link-chain-key"},
+        headers={**AUTH, "Idempotency-Key": "link-chain-key", "X-Rpt-Execute-Mock": "1"},
     )
     assert resp.status_code == 200
 
