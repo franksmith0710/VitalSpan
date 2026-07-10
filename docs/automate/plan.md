@@ -19,17 +19,17 @@ prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
 companion_scope: M-DEPTH
-companion_remaining: 12
+companion_remaining: 2
 current_milestone: M-DEPTH
-intervention: m-depth-de-ss-full-stack-2026-07-10
+intervention: m-depth-four-track-merge-2026-07-10
 scope_change: graduation-to-depth-companion
-plan_review: 2026-07-10-create-evolution-plan
+plan_review: 2026-07-10-phase-m-merge
 prd_hub_ref: docs/automate/prd.md@v1.2.117
 polish_checklist_ref: docs/automate/plans/2026-07-08-product-polish-checklist.md
 e2e_pass_ref: docs/automate/plans/2026-07-09-graduation-e2e-pass.md
-depth_plan_ref: docs/automate/plans/2026-07-10-fe-de-ss-ia-optimization.md
+depth_plan_ref: docs/automate/plans/2026-07-10-customer-delivery-graduation.md
 bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-flicker.md
-code_gap_note: Dataset memory L1; filter widget chart-only; RLS/audit FE gap — see M-DEPTH
+code_gap_note: F-C 余 RPT-005 历史 UI + API-003 试跑增强；主路径诚实 FAKE-01~06 已处置
 ```
 
 ### 执行范围：M-FINAL 已冻结 · M-DEPTH 深度 companion（2026-07-10）
@@ -954,12 +954,12 @@ F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
 ### F-A — Dataset 打穿【必做 · 首轮】
 
 > **对标**：DataEase 数据集可视化建模；生产可用（重启不丢）。  
-> **代码事实**：`datasets.py` 内存 store L1；`DatasetListPage` 表名 textarea + `computedJson`。
+> **状态（2026-07-10）**：T1 已合入 `dev-auto`（`cf877f62`）。
 
-- [ ] META-004: Dataset ORM 持久化（替内存 store；重启不丢；Alembic 迁移）
-- [ ] QUERY-009: Dataset 真实 execute（替 execute-plan mock；出真实 rows）
-- [ ] META-004: Dataset 可视化编辑器（SchemaBrowser 选表/字段；无裸 JSON）
-- [ ] META-004: 计算字段行编辑（name+expression；替 computedJson textarea）
+- [x] META-004: Dataset ORM 持久化（替内存 store；重启不丢；Alembic 迁移）（完成于 2026-07-10）
+- [x] QUERY-009: Dataset 真实 execute（替 execute-plan mock；出真实 rows）（完成于 2026-07-10）
+- [x] META-004: Dataset 可视化编辑器（SchemaBrowser 选表/字段；无裸 JSON）（完成于 2026-07-10）
+- [x] META-004: 计算字段行编辑（name+expression；替 computedJson textarea）（完成于 2026-07-10）
 
 **验收信号**：建 Dataset → 重启仍在 → QuickCreate 可选 → Dashboard 出图；无手写 JSON。
 
@@ -968,12 +968,12 @@ F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
 ### F-B — 仪表板筛选器组件【必做】
 
 > **对标**：DE/SS 仪表板 filter 组件 + 原生筛选控件。  
-> **代码事实**：`layoutUtils.ts` widget 仅 `type:"chart"`；`GlobalFilterBar` 仅 `<Input>`。
+> **状态（2026-07-10）**：T2 已合入（`e24182e0`）。
 
-- [ ] DASH-002: layout widget 类型扩展 `filter`（兼容旧 layout round-trip）
-- [ ] DASH-004: 筛选器 widget UI（下拉/日期/文本）+ Palette 可拖入
-- [ ] DASH-004: GlobalFilterBar 控件升级（下拉/日期/多选；替纯 Input）
-- [ ] DASH-004: 筛选值驱动关联 chart execute 刷新
+- [x] DASH-002: layout widget 类型扩展 `filter`（兼容旧 layout round-trip）（完成于 2026-07-10）
+- [x] DASH-004: 筛选器 widget UI（下拉/日期/文本）+ Palette 可拖入（完成于 2026-07-10）
+- [x] DASH-004: GlobalFilterBar 控件升级（下拉/日期/多选；替纯 Input）（完成于 2026-07-10）
+- [x] DASH-004: 筛选值驱动关联 chart execute 刷新（完成于 2026-07-10）
 
 **验收信号**：拖入筛选器 → 配置字段/控件 → 改值后关联图表重查；旧看板 layout 仍可加载。
 
@@ -982,16 +982,23 @@ F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
 ### F-C — 后端能力前端消费【必做】
 
 > **对标**：把已实现 API 变成管理员可操作的 UI（消费落差）。  
-> **代码事实**：`/rls/groups*` `/audit/events` `/schedules/.../executions` `/services*` 后端已实现。
+> **状态（2026-07-10）**：T4 已合入 AUTH-006/008 + H1；RPT-005 历史 UI / API-003 增强仍待。
 
-- [ ] AUTH-006: RLS 维度分组配置 UI（接 `/rls/groups*` + 角色绑定）
-- [ ] AUTH-008: 审计事件浏览页（接 `/audit/events` 时间窗）
+- [x] AUTH-006: RLS 维度分组配置 UI（接 `/rls/groups*` + 角色绑定）（完成于 2026-07-10）
+- [x] AUTH-008: 审计事件浏览页（接 `/audit/events` 时间窗）（完成于 2026-07-10）
 - [ ] RPT-005: 调度执行历史 / 重试 UI（接 executions + retry）
 - [ ] API-003: 已发布查询服务目录消费增强（试跑 / OpenAPI 可见）
 
-**验收信号**：admin 可在浏览器完成分组绑定、查审计、看调度历史并重试、试跑已发布服务。
+**验收信号**：admin 可在浏览器完成分组绑定、查审计；调度历史/服务试跑仍待。
 
-**代码锚点**：`backend/app/api/v1/rls.py` · `audit.py` · `reports/` · `services.py` · 对应 Admin 页
+**代码锚点**：`backend/app/api/v1/rls.py` · `audit.py` · `fe/src/pages/admin/system/rls/` · `audit/`
+
+### F-E — 报表诚实化【必做】
+
+> **状态（2026-07-10）**：T3 已合入（`189a431a`）。
+
+- [x] RPT-001: 导出/模板存储去 `mock://`（真字节或显式失败）（完成于 2026-07-10）
+- [x] RPT-005: 未配 SMTP 不得静默 delivered；mock 仅显式 header（完成于 2026-07-10）
 
 ### F-D — 可选（不阻塞收官 · G2 默认跳过）
 
@@ -1003,9 +1010,11 @@ F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
 
 | 验收 | 映射 | 阻塞？ |
 |------|------|--------|
-| Dataset 生产可用 + 可视化编辑 | F-A 全勾 | **是** |
-| 筛选器组件 + 控件升级 | F-B 全勾 | **是** |
-| RLS/审计/调度/服务 FE 消费 | F-C 全勾 | **是** |
+| Dataset 生产可用 + 可视化编辑 | F-A 全勾 | **是 · 已勾** |
+| 筛选器组件 + 控件升级 | F-B 全勾 | **是 · 已勾** |
+| RLS/审计 FE | F-C AUTH-006/008 | **是 · 已勾** |
+| 报表诚实化 | F-E 全勾 | **是 · 已勾** |
+| 调度历史 / 服务试跑增强 | F-C 余 2 项 | 否（不挡主路径诚实） |
 | 公开分享 / IA 精简 / 设计器 ADR | F-D 可选 | 否 |
 
 > **明确不含**：SQLBot/AI；完整 SQL Lab；文本/图片/Tab 积木（未立项）；NFR probe 扩面。

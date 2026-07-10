@@ -7,28 +7,28 @@
 | 字段 | 值 |
 |------|----|
 | phase | DONE |
-| request | DE/SS 对标：Dashboard UX 减法（nav/capability）+ 加厚（快速创建 + Inspector columns） |
-| type | small-change |
-| autonomy_policy | auto_accept_low_risk |
-| risk_level | low |
-| plan | docs/automate/plans/2026-07-10-dash-ux-subtract-thicken-closeout.md |
-| last_verified_command | vitest closeout 39/39; tsc -b --noEmit exit 0 |
+| request | 客户主路径可交付毕业：四轨 worktree 并行（Dataset/筛选/报表诚实/RLS+H1） |
+| type | feature |
+| autonomy_policy | unattended |
+| risk_level | medium |
+| plan | docs/automate/plans/2026-07-10-customer-delivery-graduation.md |
+| last_verified_command | pytest honesty+t1+t2 8/8; vitest 35/35; merge T4→T1→T2→T3 |
 | last_verified_exit_code | 0 |
-| verification_summary | closeout Task 1-5 完成：chartExecuteProbe 抽取、快速创建预填字段、三类回归测试、nav/README/layout 同步 |
-| repair_rounds | 1 |
+| verification_summary | Phase M 本地合并完成；FAKE-01~06 主路径已处置；F-C 余 2 项（调度历史 UI、服务试跑）不挡主路径 |
+| repair_rounds | 0 |
 | status | DONE |
 
 ## 当前需求契约
 
-- request: 检查 DE/SS 减法+加厚是否完成；未完成则制定修复计划
-- type: verify-only → plan-fix
-- goal: P0 nav/capability 收敛 + P0 Dashboard 主路径加厚可演示、可测、可提交
-- scope_include: fe routes/nav/WidgetInspector/DashboardQuickCreateDialog/useInspectorColumns; docs/ui/layout.md; fe/src/components/README.md
-- scope_exclude: 并发重构计划 S-PRE/P01+; SQL Lab; admin 侧栏折叠 UI
-- acceptance: closeout plan Task 1-5 全绿 + evolution-state DONE
-- risk_level: low
-- autonomy_policy: auto_accept_low_risk
-- assumptions: 沿用现有 capability 映射；快速创建失败时允许空 dimensions
+- request: 客户主路径零假（A）+ A1 不含真实总线 + H1 治理默认隐藏；四轨并行无人值守
+- type: feature
+- goal: 可交付成熟度 ≥8.0；FAKE-01~06 处置；无 PR 本地合并
+- scope_include: Dataset ORM/execute/编辑器；filter widget；报表去 mock；RLS/审计 UI；gov nav H1
+- scope_exclude: 真实总线；SQL Lab；AI；创建 GitHub PR
+- acceptance: 四轨提交 + PhaseM 合并 + honesty gate 绿
+- risk_level: medium
+- autonomy_policy: unattended
+- assumptions: subagent 继承当前会话模型；不切换其他模型
 
 ## 待办池
 
