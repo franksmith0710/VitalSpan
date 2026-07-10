@@ -1,5 +1,15 @@
+import type { FilterControlType, FilterOption, FilterWidgetConfig, LayoutWidget } from "./layoutUtils";
+
+export type LinkageFilter = {
+  filterId: string;
+  dimensionRef: string;
+  defaultValue?: string | null;
+  controlType?: FilterControlType;
+  options?: FilterOption[];
+};
+
 type Linkage = {
-  filters: { filterId: string; dimensionRef: string; defaultValue?: string | null }[];
+  filters: LinkageFilter[];
   linkageRules: { sourceFilterId: string; targetWidgetIds: string[]; parameterKey: string }[];
   refreshMode?: "eager" | "lazy";
 };
@@ -29,6 +39,53 @@ export function buildWidgetFilterParams(
     if (value !== undefined && value !== "") out[rule.parameterKey] = value;
   }
   return out;
+}
+
+/** 将画布筛选器组件合并进联动规则：默认绑定全部图表 widget */
+export function mergeLayoutFilterLinkage(widgets: LayoutWidget[], linkage: Linkage | null): Linkage {
+  const chartIds = widgets.filter((w) => w.type !== "filter").map((w) => w.id);
+  const filterWidgets = widgets.filter(
+    (w): w is LayoutWidget & { filterConfig: FilterWidgetConfig } =>
+      w.type === "filter" && Boolean(w.filterConfig),
+  );
+
+  const base: Linkage = linkage ?? { filters: [], linkageRules: [], refreshMode: "eager" };
+  const filters = [...base.filters];
+  const linkageRules = [...base.linkageRules];
+  const knownFilterIds = new Set(filters.map((f) => f.filterId));
+  const knownRuleKeys = new Set(linkageRules.map((r) => `${r.sourceFilterId}:${r.parameterKey}`));
+
+  for (const fw of filterWidgets) {
+    const cfg = fw.filterConfig;
+    if (!knownFilterIds.has(cfg.filterId)) {
+      filters.push({
+        filterId: cfg.filterId,
+        dimensionRef: cfg.dimensionRef,
+        defaultValue: cfg.defaultValue,
+        controlType: cfg.controlType,
+        options: cfg.options,
+      });
+      knownFilterIds.add(cfg.filterId);
+    }
+    const parameterKey = cfg.parameterKey?.trim() || cfg.dimensionRef || "value";
+    const ruleKey = `${cfg.filterId}:${parameterKey}`;
+    if (!knownRuleKeys.has(ruleKey) && chartIds.length > 0) {
+      linkageRules.push({
+        sourceFilterId: cfg.filterId,
+        targetWidgetIds: [...chartIds],
+        parameterKey,
+      });
+      knownRuleKeys.add(ruleKey);
+    }
+  }
+
+  return { ...base, filters, linkageRules };
+}
+
+export function resolveFilterControlType(filter: LinkageFilter): FilterControlType {
+  if (filter.controlType) return filter.controlType;
+  if (filter.options && filter.options.length > 0) return "select";
+  return "text";
 }
 
 export type { Linkage };

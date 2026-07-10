@@ -1,14 +1,15 @@
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { DragEvent, ReactNode } from "react";
+import type { DragEvent } from "react";
 import { ReactGridLayout } from "react-grid-layout/legacy";
 import type { Layout } from "react-grid-layout/legacy";
 import "react-grid-layout/css/styles.css";
 import { cn } from "@/lib/utils";
-import type { ChartType } from "@/lib/chartViewConfig";
 import {
   DEFAULT_WIDGET_COLSPAN,
-  isChartTypeDragEvent,
-  readChartTypeFromDragEvent,
+  isPaletteDragEvent,
+  readPaletteDragPayload,
+  type PaletteDragPayload,
 } from "@/lib/dashboardDnd";
 import { DashboardCanvasEmpty } from "./DashboardCanvasEmpty";
 import type { LayoutWidget } from "./layoutUtils";
@@ -28,7 +29,7 @@ type DashboardGridProps = {
   mode: DashboardGridMode;
   widgets: LayoutWidget[];
   renderWidget: (widget: LayoutWidget) => ReactNode;
-  onInsertChart?: (type: ChartType, at: { gridX: number; gridY: number }) => void;
+  onInsertChart?: (type: PaletteDragPayload, at: { gridX: number; gridY: number }) => void;
   onLayoutChange?: (widgets: LayoutWidget[]) => void;
   className?: string;
 };
@@ -127,19 +128,19 @@ export function DashboardGrid({
   );
 
   const handleDragEnter = useCallback((e: DragEvent) => {
-    if (!isChartTypeDragEvent(e)) return;
+    if (!isPaletteDragEvent(e)) return;
     e.preventDefault();
     setDragActive(true);
   }, []);
 
   const handleDragOver = useCallback((e: DragEvent) => {
-    if (!isChartTypeDragEvent(e)) return;
+    if (!isPaletteDragEvent(e)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
   }, []);
 
   const handleDragLeave = useCallback((e: DragEvent) => {
-    if (!isChartTypeDragEvent(e)) return;
+    if (!isPaletteDragEvent(e)) return;
     const related = e.relatedTarget;
     if (related instanceof Node && e.currentTarget.contains(related)) return;
     setDragActive(false);
@@ -148,14 +149,14 @@ export function DashboardGrid({
   const handleDrop = useCallback(
     (e: DragEvent) => {
       if (!onInsertChart) return;
-      const chartType = readChartTypeFromDragEvent(e.nativeEvent);
-      if (!chartType) return;
+      const payload = readPaletteDragPayload(e.nativeEvent);
+      if (!payload) return;
       e.preventDefault();
       e.stopPropagation();
       setDragActive(false);
       const rect = e.currentTarget.getBoundingClientRect();
       const at = pointerToGridCell(e.clientX, e.clientY, rect, width);
-      onInsertChart(chartType, at);
+      onInsertChart(payload, at);
     },
     [onInsertChart, width],
   );

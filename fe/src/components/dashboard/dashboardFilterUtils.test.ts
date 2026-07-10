@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildWidgetFilterParams, injectSqlParameters } from "./dashboardFilterUtils";
+import {
+  buildWidgetFilterParams,
+  injectSqlParameters,
+  mergeLayoutFilterLinkage,
+  resolveFilterControlType,
+} from "./dashboardFilterUtils";
+import { defaultChartConfig, defaultFilterConfig, type LayoutWidget } from "./layoutUtils";
 
 describe("dashboardFilterUtils", () => {
   it("injectSqlParameters replaces placeholders", () => {
@@ -21,6 +27,38 @@ describe("dashboardFilterUtils", () => {
       },
       { f1: "east" },
     );
+    expect(params).toEqual({ region: "east" });
+  });
+
+  it("resolveFilterControlType falls back to select when options exist", () => {
+    expect(resolveFilterControlType({ filterId: "f", dimensionRef: "d", options: [{ label: "A", value: "a" }] })).toBe(
+      "select",
+    );
+    expect(resolveFilterControlType({ filterId: "f", dimensionRef: "d" })).toBe("text");
+  });
+
+  it("mergeLayoutFilterLinkage auto-links filter widgets to charts", () => {
+    const chart: LayoutWidget = {
+      id: "c1",
+      type: "chart",
+      title: "图",
+      colSpan: 6,
+      rowSpan: 3,
+      order: 0,
+      chartConfig: { ...defaultChartConfig("bar"), chartId: "c1", dataSourceId: "ds", mode: "sql", sql: "select '{{region}}'" },
+    };
+    const filter: LayoutWidget = {
+      id: "fw1",
+      type: "filter",
+      title: "筛选",
+      colSpan: 4,
+      rowSpan: 2,
+      order: 1,
+      filterConfig: { ...defaultFilterConfig("fw1"), parameterKey: "region", controlType: "select" },
+    };
+    const merged = mergeLayoutFilterLinkage([chart, filter], null);
+    expect(merged.filters.some((f) => f.filterId === "fw1")).toBe(true);
+    const params = buildWidgetFilterParams("c1", merged, { fw1: "east" });
     expect(params).toEqual({ region: "east" });
   });
 });

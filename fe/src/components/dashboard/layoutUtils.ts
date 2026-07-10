@@ -1,8 +1,24 @@
 import type { ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
 
+export type FilterControlType = "text" | "select" | "date" | "multiselect";
+
+export type FilterOption = {
+  label: string;
+  value: string;
+};
+
+export type FilterWidgetConfig = {
+  filterId: string;
+  dimensionRef: string;
+  controlType: FilterControlType;
+  defaultValue?: string | null;
+  options?: FilterOption[];
+  parameterKey?: string;
+};
+
 export type LayoutWidget = {
   id: string;
-  type: "chart";
+  type: "chart" | "filter";
   title: string;
   /** 12 列栅格占位（1–12），与 Superset/DataEase 一致 */
   colSpan: number;
@@ -12,7 +28,10 @@ export type LayoutWidget = {
   gridX?: number;
   /** react-grid-layout 行坐标 */
   gridY?: number;
-  chartConfig: ChartViewConfig;
+  /** 图表组件必填；筛选器可缺省 */
+  chartConfig?: ChartViewConfig;
+  /** 筛选器组件配置 */
+  filterConfig?: FilterWidgetConfig;
 };
 
 export type DashboardLayout = {
@@ -20,6 +39,49 @@ export type DashboardLayout = {
   widgets: LayoutWidget[];
   globalFilters: unknown[];
 };
+
+export function defaultFilterConfig(filterId: string): FilterWidgetConfig {
+  return {
+    filterId,
+    dimensionRef: "region",
+    controlType: "text",
+    defaultValue: "",
+    options: [],
+    parameterKey: "region",
+  };
+}
+
+/** 旧 layout 缺 type / 非法 type → chart；保证 filter 有 filterConfig */
+export function coerceLayoutWidget(raw: Partial<LayoutWidget> & { id: string }): LayoutWidget {
+  const type: LayoutWidget["type"] = raw.type === "filter" ? "filter" : "chart";
+  const base = {
+    id: raw.id,
+    title: raw.title?.trim() || (type === "filter" ? "筛选器" : "图表"),
+    colSpan: raw.colSpan ?? 6,
+    rowSpan: raw.rowSpan ?? 1,
+    order: raw.order ?? 0,
+    gridX: raw.gridX,
+    gridY: raw.gridY,
+  };
+  if (type === "filter") {
+    return {
+      ...base,
+      type: "filter",
+      filterConfig: raw.filterConfig ?? defaultFilterConfig(raw.id),
+      chartConfig: raw.chartConfig,
+    };
+  }
+  return {
+    ...base,
+    type: "chart",
+    chartConfig: raw.chartConfig ?? defaultChartConfig("bar"),
+    filterConfig: raw.filterConfig,
+  };
+}
+
+export function coerceLayoutWidgets(widgets: Array<Partial<LayoutWidget> & { id: string }>): LayoutWidget[] {
+  return widgets.map(coerceLayoutWidget);
+}
 
 export function sortWidgets(widgets: LayoutWidget[]): LayoutWidget[] {
   return [...widgets].sort((a, b) => a.order - b.order);
@@ -47,10 +109,23 @@ export function resizeWidget(
 }
 
 export function normalizeWidgetIds(widgets: LayoutWidget[]): LayoutWidget[] {
-  return widgets.map((w) => ({
-    ...w,
-    chartConfig: { ...w.chartConfig, chartId: w.id },
-  }));
+  return widgets.map((w) => {
+    if (w.type === "filter" || !w.chartConfig) return w;
+    return {
+      ...w,
+      chartConfig: { ...w.chartConfig, chartId: w.id },
+    };
+  });
+}
+
+export function isChartWidget(widget: LayoutWidget): widget is LayoutWidget & { chartConfig: ChartViewConfig } {
+  return widget.type !== "filter" && Boolean(widget.chartConfig);
+}
+
+export function isFilterWidget(
+  widget: LayoutWidget,
+): widget is LayoutWidget & { type: "filter"; filterConfig: FilterWidgetConfig } {
+  return widget.type === "filter" && Boolean(widget.filterConfig);
 }
 
 export function defaultChartConfig(type: ChartType): ChartViewConfig {

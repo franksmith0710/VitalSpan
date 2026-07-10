@@ -2,24 +2,29 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
-import type { ChartType } from "@/lib/chartViewConfig";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import {
   buildWidgetFilterParams,
+  mergeLayoutFilterLinkage,
   type Linkage,
 } from "@/components/dashboard/dashboardFilterUtils";
 import { layoutFingerprint } from "@/components/dashboard/layoutHistory";
 import {
+  coerceLayoutWidgets,
   normalizeWidgetIds,
   resizeWidget,
   sortWidgets,
   type DashboardLayout,
+  type FilterWidgetConfig,
 } from "@/components/dashboard/layoutUtils";
 import { placeNewWidget, normalizeWidgetLayout, placeWidgetAt } from "@/components/dashboard/gridLayoutAdapter";
-import { createLayoutWidget } from "@/components/dashboard/createLayoutWidget";
+import {
+  createPaletteWidget,
+  type PaletteInsertType,
+} from "@/components/dashboard/createLayoutWidget";
 import { LinkageRulesPanel } from "@/components/dashboard/LinkageRulesPanel";
 import { useLayoutHistory } from "@/hooks/useLayoutHistory";
 import { useWidgetSelection } from "@/hooks/useWidgetSelection";
@@ -27,6 +32,7 @@ import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
 import { WidgetInspector } from "@/components/dashboard/WidgetInspector";
+import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -120,10 +126,25 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       const data = await apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`);
       setMissing(false);
       setName(data.name);
-      const loaded = normalizeWidgetLayout(sortWidgets(data.layoutJson.widgets ?? []));
+      const loaded = normalizeWidgetLayout(
+        sortWidgets(coerceLayoutWidgets(data.layoutJson.widgets ?? [])),
+      );
       resetWidgets(loaded);
       setSavedFingerprint(layoutFingerprint(loaded));
       clearSelection();
+      // Seed filter values from canvas filter widgets
+      setFilterValues((prev) => {
+        const next = { ...prev };
+        for (const w of loaded) {
+          if (w.type === "filter" && w.filterConfig) {
+            const fid = w.filterConfig.filterId;
+            if (next[fid] === undefined && w.filterConfig.defaultValue) {
+              next[fid] = w.filterConfig.defaultValue;
+            }
+          }
+        }
+        return next;
+      });
     } catch (err) {
       if (isDashboardNotFound(err)) {
         setMissing(true);
@@ -168,9 +189,14 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const executeKey = useMemo(() => JSON.stringify(filterValues), [filterValues]);
 
-  const appendWidget = (type: ChartType, at?: { gridX: number; gridY: number }) => {
+  const effectiveLinkage = useMemo(
+    () => mergeLayoutFilterLinkage(widgets, linkage),
+    [widgets, linkage],
+  );
+
+  const appendWidget = (type: PaletteInsertType, at?: { gridX: number; gridY: number }) => {
     if (missing) return;
-    const draft = createLayoutWidget(type, widgets, at);
+    const draft = createPaletteWidget(type, widgets, at);
     const placed =
       at != null
         ? placeWidgetAt(widgets, draft, at.gridX, at.gridY)
@@ -179,14 +205,24 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           : placeNewWidget(widgets, draft);
     setWidgets((prev) => sortWidgets([...prev, placed]));
     handleSelect(placed.id, false);
+    if (placed.type === "filter" && placed.filterConfig) {
+      setFilterValues((prev) => ({
+        ...prev,
+        [placed.filterConfig!.filterId]: placed.filterConfig!.defaultValue ?? "",
+      }));
+    }
   };
 
-  const handleInsert = (type: ChartType) => {
+  const handleInsert = (type: PaletteInsertType) => {
     appendWidget(type);
   };
 
-  const handleDropInsert = (type: ChartType, at: { gridX: number; gridY: number }) => {
+  const handleDropInsert = (type: PaletteInsertType, at: { gridX: number; gridY: number }) => {
     appendWidget(type, at);
+  };
+
+  const handleFilterValueChange = (filterId: string, value: string) => {
+    setFilterValues((prev) => ({ ...prev, [filterId]: value }));
   };
 
   const handleDeleteWidget = (widgetId: string) => {
@@ -346,9 +382,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         <GlobalFilterBar
           dashboardId={id}
           values={filterValues}
-          onChange={(filterId, value) =>
-            setFilterValues((prev) => ({ ...prev, [filterId]: value }))
-          }
+          onChange={handleFilterValueChange}
         />
       ) : null}
 
@@ -417,9 +451,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               onInsertChart={handleDropInsert}
               onLayoutChange={(next) => setWidgets(sortWidgets(next))}
               renderWidget={(widget) => {
-                const filterParameters = linkage
-                  ? buildWidgetFilterParams(widget.id, linkage, filterValues)
-                  : undefined;
+                const filterParameters =
+                  widget.type !== "filter"
+                    ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
+                    : undefined;
                 return (
                   <DashboardWidget
                     widget={widget}
@@ -427,6 +462,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     selected={selectedIds.has(widget.id)}
                     filterParameters={filterParameters}
                     executeKey={executeKey}
+                    filterValue={
+                      widget.filterConfig
+                        ? filterValues[widget.filterConfig.filterId]
+                        : undefined
+                    }
+                    onFilterValueChange={handleFilterValueChange}
                     onSelect={(e) => handleSelect(widget.id, e.shiftKey)}
                     onDelete={handleDeleteWidget}
                     onTitleChange={(wid, title) =>
@@ -452,6 +493,19 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   Shift+点击可增减多选；使用画布工具栏批量删除。
                 </p>
               </div>
+            ) : selectedWidget?.type === "filter" && selectedWidget.filterConfig ? (
+              <FilterWidgetInspector
+                embedded
+                widget={
+                  selectedWidget as typeof selectedWidget & { filterConfig: FilterWidgetConfig }
+                }
+                onChange={(filterConfig) => {
+                  if (!primarySelectedId) return;
+                  setWidgets((prev) =>
+                    prev.map((w) => (w.id === primarySelectedId ? { ...w, filterConfig } : w)),
+                  );
+                }}
+              />
             ) : (
               <WidgetInspector
                 embedded
@@ -472,15 +526,22 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             mode="view"
             widgets={widgets}
             renderWidget={(widget) => {
-              const filterParameters = linkage
-                ? buildWidgetFilterParams(widget.id, linkage, filterValues)
-                : undefined;
+              const filterParameters =
+                widget.type !== "filter"
+                  ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
+                  : undefined;
               return (
                 <DashboardWidget
                   widget={widget}
                   mode="view"
                   filterParameters={filterParameters}
                   executeKey={executeKey}
+                  filterValue={
+                    widget.filterConfig
+                      ? filterValues[widget.filterConfig.filterId]
+                      : undefined
+                  }
+                  onFilterValueChange={handleFilterValueChange}
                   onTitleChange={() => {}}
                 />
               );
