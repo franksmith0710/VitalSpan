@@ -18,15 +18,6 @@ prd_total: 129
 prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
-<<<<<<< HEAD
-companion_scope: M-DASH-UX-F-A,M-DASH-UX-F-B,M-DASH-UX-F-C,M-DASH-UX-F-D,M-PRODUCT-F-D,M-PRODUCT-F-E,M-PRODUCT-F-F
-companion_remaining: 33
-current_milestone: M-DASH-UX
-intervention: create-evolution-plan-dash-ux-align-code-2026-07-09
-scope_change: M-PRODUCT-queued-M-DASH-UX-active
-plan_review: 2026-07-09-code-align-must-optional
-prd_hub_ref: docs/automate/prd.md@v1.2.114
-=======
 companion_scope: M-DASH-UX,M-PRODUCT
 companion_remaining: 0
 current_milestone: GRADUATION-COMPLETE
@@ -34,15 +25,10 @@ intervention: ff-companion-full-2026-07-09
 scope_change: F-F-unlocked-full-companion-sweep
 plan_review: 2026-07-09-ff-five-track-merge
 prd_hub_ref: docs/automate/prd.md@v1.2.115
->>>>>>> 259f9d7bb3a34279dd02fa6bde1a2be0a213b5f8
 polish_checklist_ref: docs/automate/plans/2026-07-08-product-polish-checklist.md
 e2e_pass_ref: docs/automate/plans/2026-07-09-graduation-e2e-pass.md
 bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-flicker.md
-<<<<<<< HEAD
-code_gap_note: Wave1 merged—edit ChartRenderer+Inspector ChartConfigPanel landed; pending F-C undo + F-D edit GlobalFilterBar
-=======
 code_gap_note: none — plan companion lines all checked
->>>>>>> 259f9d7bb3a34279dd02fa6bde1a2be0a213b5f8
 ```
 
 ### 执行范围：M-FINAL 已冻结 · M-DASH-UX + M-PRODUCT 全量 companion 收官（2026-07-09）
