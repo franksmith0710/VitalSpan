@@ -30,6 +30,7 @@ import {
   MetaDataTable,
   RowActions,
 } from "./metadata-shared";
+import { TermFieldMappingButton } from "./term-field-mapping-dialog";
 
 type Term = { id: string; code: string; name: string; definition?: string | null; status: string };
 
@@ -165,6 +166,7 @@ export function GlossaryPanel({
               </code>,
               statusBadge(t.status),
               <RowActions key="a">
+                <TermFieldMappingButton termId={t.id} termName={t.name} />
                 <IconButton
                   variant="ghost"
                   size="sm"

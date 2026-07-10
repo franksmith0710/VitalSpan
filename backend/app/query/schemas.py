@@ -21,6 +21,7 @@ class RlsOptions(BaseModel):
     enabled: bool = True
     table_alias: str = Field(default="t", alias="tableAlias")
     org_column: str = Field(default="org_node_id", alias="orgColumn")
+    region_column: str | None = Field(default=None, alias="regionColumn")
 
 
 class ExecuteRequest(BaseModel):

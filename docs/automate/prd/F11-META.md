@@ -12,7 +12,7 @@
   - [x] 业务术语 CRUD（r32 L1：`GlossaryTerm` + `POST/GET/PUT/DELETE /api/v1/metadata/glossary`）
   - [x] 写 ACL + 空名拦截 + 引用中删除 409 + list perf probe（r244：`metadata/_acl.py` viewer POST/PUT 403；`probe_list_terms_budget_ms` ≤50ms；`test_mfinal_fd_meta_r244.py` T-META-R244-001-01~06）
   - [x] Admin 术语面板 CRUD（r244：`fe/src/pages/admin/metadata/glossary-panel.tsx` + `MetadataHubPage`）
-  - [ ] 与物理字段映射（companion）
+  - [x] 与物理字段映射（companion F-F：`PUT/GET /glossary/{id}/field-mappings` + `term-field-mapping-dialog.tsx`；`test_meta_ff_companion_r251.py` T-META-FF-001）
 - **代码锚点**：`backend/app/metadata/glossary/` · `backend/app/metadata/_acl.py` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/metadata/glossary-panel.tsx` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-001-01~06
 - **演化建议**：r244 收官 F-D plan 术语字典（写 ACL + probe + Admin UI）；物理字段映射留 companion
 - **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
@@ -25,7 +25,7 @@
 - **验收标准**：
   - [x] 主题→对象→属性树（r32 L1：`ThemeNode` 多级 parent + `term_id` 关联）
   - [x] 可导航 Admin 主题面板 + 写 ACL + 环检测/子节点删除守卫（r244：`themes-panel.tsx`；viewer POST 403；move cycle 422；delete children 409；`probe_list_themes_budget_ms` ≤50ms；T-META-R244-002-01~07）
-  - [ ] 深层级树形拖拽导航（companion）
+  - [x] 深层级树形拖拽导航（companion F-F：`theme-tree.tsx` 递归树 + move sortOrder；T-META-FF-002）
 - **代码锚点**：`backend/app/metadata/themes/` · `backend/app/api/v1/metadata.py` · `fe/src/pages/admin/metadata/themes-panel.tsx` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-002-01~07
 - **演化建议**：r244 收官 F-D plan 主题树（Admin 列表/表单 + 写 ACL + probe）；深层级树形 UX 留 companion
 - **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
@@ -39,7 +39,7 @@
   - [x] 维度 code/枚举值可配置（migration 0016 + 8 REST 路由 CRUD/values；`META_DIM_*` 冲突与校验，r38 L1）
   - [x] values 注册校验链（空 code/非法 pattern/重复 batch/空 label + list 分页 limit 500，r39）
   - [x] 主题 FK + 写 ACL + Admin 维度面板（r244：migration 0019 `theme_node_id` FK；`dimensions-panel.tsx`；viewer POST 403；`probe_list_dimensions_budget_ms` ≤50ms；T-META-R244-003-01~07）
-  - [ ] M4/M5/M6 统一引用（companion）
+  - [x] M4/M5/M6 统一引用（companion F-F：`GET /dimensions/resolve?code=` + prefab/global-filters/theme 校验链；T-META-FF-003）
 - **代码锚点**：`backend/app/metadata/dimensions/` · `backend/migrations/versions/0019_dimension_theme_node.py` · `backend/app/api/v1/metadata_dimensions.py` · `fe/src/pages/admin/metadata/dimensions-panel.tsx` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-003-01~07
 - **演化建议**：r244 收官 F-D plan 维度注册（theme FK + Admin UI + 写 ACL）；M4/M5/M6 统一引用留 companion
 - **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
@@ -57,7 +57,7 @@
   - [x] Dashboard 组件绑定 Dataset/boundConfigId 出图（M-PRODUCT F-A companion；`WidgetInspector` + `useChartExecute` dataset 路径）
   - [x] **M-DASH-UX F-A**：检视器改 Dataset/SQL 后编辑态画布即时刷新（`onChange`→`chartConfig`→`ChartRenderer` `executeKey`；Wave1 2026-07-09）
   - [ ] Dataset 对标 DE/SS 全量能力（companion）
-  - [ ] 计算字段执行与指标引擎（companion）
+  - [x] 计算字段执行与指标引擎（companion F-F：`computed_sql.py` 白名单表达式注入 SELECT；`execute_config.py` bound dataset 链；T-META-FF-004）
 - **代码锚点**：`backend/app/metadata/dataset/` · `backend/app/api/v1/datasets.py` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/charts/useChartExecute.ts` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-004-01~08
 - **演化建议**：M-PRODUCT F-A 已闭合 Dashboard Dataset 出图 FE；DE/SS 全量对标与指标执行链留 F-F companion
 - **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard 绑定 · 2026-07-08
@@ -72,7 +72,7 @@
   - [x] companion register ACL + perf probe（r65：viewer register 403 `META_PHYSICAL_FORBIDDEN`；column name pattern `META_PHYSICAL_INVALID_COLUMN` 422；`probe_physical_validate_budget_ms`/`probe_physical_list_budget_ms` ≤50ms）
   - [x] register-from-schema 编排（r231：`POST /api/v1/metadata/physical-tables/register-from-schema` + `datasources.metadata.list_columns` + entityTypeCode 过滤 GET；`test_meta_dash_m8_r231.py` T-META-R231-005-01~04）
   - [x] PUT/DELETE CRUD + dataSourceId+schema+table 复合唯一（r232：`PUT/DELETE /api/v1/metadata/physical-tables/{fqn}` + `_ds_table_index` 409 `META_PHYSICAL_DS_TABLE_CONFLICT` + viewer 403；`test_meta_dash_m8_r232.py` T-META-R232-005-01~05）
-  - [ ] GOV catalog 引用释放与 lineage 全链路（companion）
+  - [x] GOV catalog 引用释放与 lineage 全链路（companion F-F：`META_PHYSICAL_GOV_IN_USE` + `GET …/lineage` stub + `link-physical`；T-META-FF-005）
 - **代码锚点**：`backend/app/metadata/physical/` · `backend/app/api/v1/metadata.py` · `tests/test_meta_dash_m8_r232.py` T-META-R232-005-01~05 · `tests/test_meta_dash_m8_r231.py` T-META-R231-005-01~04 · `tests/test_cat_rpt_meta_r65.py` T-META-R65-005-01~05 · `tests/test_cat_nfr_rpt_meta_r62.py` T-META-R62-005-01~06
 - **演化建议**：r232 收官闭合 M8 plan 物理表 CRUD 与复合唯一；GOV 引用释放与 lineage 联动留 companion
 - **里程碑对齐**：M8 · 已完成 · 2026-07-06
@@ -88,7 +88,7 @@
   - [x] schema 校验链 + 只读 query bindings（r55 companion：POST validate + GET query-bindings）
   - [x] physicalTableFqn 映射主链（r231：类型配置 physicalTableFqn + unknown 422 + 冲突 409 + create 回写 physical；`test_meta_dash_m8_r231.py` T-META-R231-006-01~04）
   - [x] 引用计数生命周期对称（r232：登记→删 physical→删 type 链 + in_use 409 `META_ENTITY_TYPE_IN_USE` + PUT 改绑 entityTypeCode；`test_meta_dash_m8_r232.py` T-META-R232-006-01~04）
-  - [ ] GOV 引用释放（companion）
+  - [x] GOV 引用释放（companion F-F：`unpublish` + openapi mapping deactivate 递减 `_ref_counts`；T-META-FF-006）
 - **代码锚点**：`backend/app/metadata/entity/` · `backend/app/api/v1/metadata.py` · `tests/test_meta_dash_m8_r232.py` T-META-R232-006-01~04 · `tests/test_meta_dash_m8_r231.py` T-META-R231-006-01~04 · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-META-01~07 · `tests/test_rpt_gov_meta_conn_r55.py` T-META-R55-01~08
 - **演化建议**：r232 收官闭合 physical 删/改绑与 `_ref_counts` 对称；GOV 引用释放留 companion
 - **里程碑对齐**：M8 · 已完成 · 2026-07-06

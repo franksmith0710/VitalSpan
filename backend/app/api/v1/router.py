@@ -26,6 +26,7 @@ from app.api.v1.reports.export import router as reports_export_router
 from app.api.v1.reports import router as reports_router
 from app.api.v1.datasets import router as datasets_router
 from app.api.v1.embed import router as embed_router
+from app.api.v1.stats import router as stats_router
 
 api_v1_router = APIRouter()
 api_v1_router.include_router(me_router)
@@ -56,3 +57,4 @@ api_v1_router.include_router(integration_bus_router)
 api_v1_router.include_router(reports_export_router)
 api_v1_router.include_router(reports_router)
 api_v1_router.include_router(embed_router)
+api_v1_router.include_router(stats_router)

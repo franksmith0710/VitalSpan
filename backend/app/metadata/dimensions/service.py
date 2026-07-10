@@ -113,6 +113,39 @@ def get_dimension(session: Session, dimension_id: uuid.UUID) -> DimensionDict:
     return dimension
 
 
+def resolve_dimension_by_code(session: Session, code: str) -> DimensionDict:
+    if not code.strip():
+        raise DimensionError(
+            "META_DIM_INVALID_CODE",
+            "Dimension code must not be blank",
+            422,
+            fields=[{"field": "code", "message": "must not be blank"}],
+        )
+    dimension = session.scalar(select(DimensionDict).where(DimensionDict.code == code.strip()))
+    if dimension is None:
+        raise DimensionError("META_DIM_NOT_FOUND", f"Dimension not found: {code}", 404)
+    return dimension
+
+
+def ensure_legacy_probe_dimensions(session: Session) -> None:
+    """Idempotent seed for prefab/filters/theme companion legacy probe codes."""
+    from app.auth.deps import UserContext
+
+    labels = {"region": "区域", "status": "状态", "dim_sales": "销售额"}
+    actor = UserContext(id="probe-dim", username="probe", roles=["admin"])
+    for code in ("region", "status", "dim_sales"):
+        try:
+            resolve_dimension_by_code(session, code)
+        except DimensionError as exc:
+            if exc.code != "META_DIM_NOT_FOUND":
+                raise
+            create_dimension(
+                session,
+                DimensionCreate(code=code, name=labels[code]),
+                actor,
+            )
+
+
 def update_dimension(
     session: Session, dimension_id: uuid.UUID, payload: DimensionUpdate, user: UserContext,
 ) -> DimensionDict:

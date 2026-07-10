@@ -11,12 +11,18 @@ from app.auth.deps import UserContext, get_current_user
 from app.datasources.models import get_meta_session
 from app.metadata.glossary import service as glossary_service
 from app.metadata.glossary.schemas import GlossaryError, TermCreate, TermListResponse, TermOut, TermUpdate
+from app.metadata.glossary.schemas import (
+    TermFieldMappingListResponse,
+    TermFieldMappingOut,
+    TermFieldMappingsReplace,
+)
 from app.metadata.dimensions import service as dimension_service
 from app.metadata.dimensions.schemas import (
     DimensionCreate,
     DimensionError,
     DimensionListResponse,
     DimensionOut,
+    DimensionResolveOut,
     DimensionUpdate,
     DimensionValueListResponse,
     DimensionValueOut,
@@ -233,6 +239,41 @@ def delete_glossary_term(
         return _glossary_error(exc)
 
 
+@router.get("/glossary/{term_id}/field-mappings", response_model=TermFieldMappingListResponse)
+def list_term_field_mappings(
+    term_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> TermFieldMappingListResponse | JSONResponse:
+    from app.metadata.glossary import field_mappings as term_field_mappings
+
+    try:
+        items = term_field_mappings.list_field_mappings(db, term_id)
+    except GlossaryError as exc:
+        return _glossary_error(exc)
+    return TermFieldMappingListResponse(
+        items=[TermFieldMappingOut.model_validate(i) for i in items],
+    )
+
+
+@router.put("/glossary/{term_id}/field-mappings", response_model=TermFieldMappingListResponse)
+def replace_term_field_mappings(
+    term_id: uuid.UUID,
+    payload: TermFieldMappingsReplace,
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> TermFieldMappingListResponse | JSONResponse:
+    from app.metadata.glossary import field_mappings as term_field_mappings
+
+    try:
+        items = term_field_mappings.replace_field_mappings(db, term_id, payload.items, actor)
+    except GlossaryError as exc:
+        return _glossary_error(exc)
+    return TermFieldMappingListResponse(
+        items=[TermFieldMappingOut.model_validate(i) for i in items],
+    )
+
+
 @router.get("/themes", response_model=ThemeListResponse)
 def list_theme_nodes(
     _: Annotated[UserContext, Depends(get_current_user)],
@@ -310,6 +351,19 @@ def move_theme_node(
     except ThemeError as exc:
         return _theme_error(exc)
     return ThemeOut.model_validate(node)
+
+
+@router.get("/dimensions/resolve", response_model=DimensionResolveOut)
+def resolve_dimension(
+    _: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    code: str = Query(min_length=1, max_length=64),
+) -> DimensionResolveOut | JSONResponse:
+    try:
+        dimension = dimension_service.resolve_dimension_by_code(db, code)
+    except DimensionError as exc:
+        return _dimension_error(exc)
+    return DimensionResolveOut.model_validate(dimension)
 
 
 @router.get("/dimensions", response_model=DimensionListResponse)
@@ -509,5 +563,16 @@ def physical_tables_delete(
     try:
         physical_service.delete_physical_table(fqn, actor)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except PhysicalTableError as exc:
+        return _physical_error(exc)
+
+
+@router.get("/physical-tables/{fqn}/lineage", response_model=None)
+def physical_tables_lineage(
+    fqn: str,
+    _: Annotated[UserContext, Depends(get_current_user)],
+):
+    try:
+        return physical_service.get_physical_lineage(fqn)
     except PhysicalTableError as exc:
         return _physical_error(exc)

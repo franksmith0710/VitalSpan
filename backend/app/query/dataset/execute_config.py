@@ -60,6 +60,15 @@ def execute_dataset_from_config(
     translated = translate_from_config_record(record)
     parameters = _merge_parameters(translated.parameters, req.parameters)
 
+    sql = translated.sql
+    from app.metadata.dataset import service as dataset_service
+    from app.metadata.dataset.computed_sql import augment_select_sql
+
+    bound = dataset_service.find_dataset_by_bound_config(req.config_id)
+    if bound is not None and bound.computed_fields:
+        allowed = set(payload.columns) | {t.name for t in bound.tables}
+        sql = augment_select_sql(sql, bound.computed_fields, allowed)
+
     settings = get_settings()
     limit = min(req.limit or settings.query_default_limit, settings.query_default_limit)
     apply_rls = req.rls.enabled
@@ -71,7 +80,7 @@ def execute_dataset_from_config(
         session,
         user,
         req.data_source_id,
-        translated.sql,
+        sql,
         limit=limit,
         offset=req.offset,
         rls_config=rls_config,

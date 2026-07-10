@@ -68,9 +68,10 @@ def _views_db() -> Session:
 def read_role_default_views(
     role_id: str,
     actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_views_db)],
 ):
     try:
-        return get_defaults(role_id, actor)
+        return get_defaults(role_id, actor, db)
     except ViewError as exc:
         return _error_response(exc)
 
@@ -108,8 +109,11 @@ def get_my_view(view_id: str, actor: Annotated[UserContext, Depends(get_current_
 
 
 @user_views_router.get("/me/views", response_model=None)
-def list_my_views(actor: Annotated[UserContext, Depends(get_current_user)]):
-    return list_overrides(actor.id)
+def list_my_views(
+    actor: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_views_db)],
+):
+    return list_overrides(actor.id, db, list(actor.roles))
 
 
 @user_views_router.post("/me/views", status_code=status.HTTP_201_CREATED, response_model=None)

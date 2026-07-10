@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext
 from app.auth.rls.hooks import prepare_query_rls
 from app.auth.rls.predicate import RlsConfigError, validate_column_name
+from app.query.rls.region_scope import build_region_scope_fragment, resolve_region_scope_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,17 @@ def apply_rls_to_sql(
     except Exception:
         logger.warning("RLS predicate generation failed; degrading to 1=0", exc_info=True)
         fragment = "1=0"
+
+    region_column = cfg.get("region_column")
+    if region_column:
+        region_fragment = build_region_scope_fragment(
+            resolve_region_scope_prefix(user),
+            column=str(region_column),
+            alias=table_alias,
+        )
+        if region_fragment:
+            fragment = f"({fragment}) AND ({region_fragment})"
+
     return merge_where_clause(sql, fragment)
 
 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Graduation SDD Progress Ledger
 
 > Controller recovery map. Do not re-dispatch completed tasks.
@@ -32,3 +33,13 @@
 | 7 layout docs | B | done | 4d2af5c,b6859f1 | Wave1 |
 | 8 E2E written | B | pending | | Wave2 |
 | 9 merge hub | ctrl | done | 9543c5f | Wave1 merged to dev-auto |
+=======
+# ff-companion-full — progress ledger
+base_branch: dev-auto
+
+Wave 1-3: 5 tracks merged (a-dash, b-meta, c-rpt, d-cat, e-view-nfr)
+plan.md: 0 companion remaining
+prd hub: v1.2.115
+migration fix: 0022_view_role_defaults chains after 0021_term_physical_mappings
+test fix: perf import path in test_ff_track_e_view_nfr_e95d.py
+>>>>>>> 259f9d7bb3a34279dd02fa6bde1a2be0a213b5f8

@@ -8,6 +8,7 @@ export type PrefabBinding = {
   analysisType: string;
   entityTypeCode: string;
   dimensionCodes: string[];
+  allowedRoles?: string[];
 };
 
 export type PrefabRunResult = {
@@ -40,5 +41,14 @@ export function usePrefabReports() {
       }),
   });
 
-  return { bindingsQuery, runMutation };
+  const upsertBinding = useMutation({
+    mutationFn: ({ bindingKey, body }: { bindingKey: string; body: Record<string, unknown> }) =>
+      apiFetch<PrefabBinding>(`/api/v1/reports/prefab/bindings/${bindingKey}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => void bindingsQuery.refetch(),
+  });
+
+  return { bindingsQuery, runMutation, upsertBinding };
 }

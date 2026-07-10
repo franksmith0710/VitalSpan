@@ -9,6 +9,7 @@ import { mapApiError } from "@/lib/apiError";
 import { ApiRequestError } from "@/lib/api";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { PrefabReportsEmptyPreview } from "./components/PrefabReportsEmptyPreview";
+import { PrefabBindingForm } from "./components/PrefabBindingForm";
 import { ReportExportCard } from "./components/ReportExportCard";
 import { usePrefabReports } from "./usePrefabReports";
 
@@ -135,6 +136,8 @@ export function PrefabReportsPage() {
             )}
           </CardContent>
         </Card>
+
+        <PrefabBindingForm binding={bindings[0] ?? null} />
 
         <ReportExportCard />
 

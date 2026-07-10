@@ -10,6 +10,8 @@ from app.dashboard import service as dash_service
 from app.dashboard.entity_overview.errors import (
     DASH_OVERVIEW_INVALID_DRILL_WIDGET,
     DASH_OVERVIEW_INVALID_ENTITY_TYPE,
+    DASH_OVERVIEW_INVALID_METRIC_SOURCE,
+    DASH_OVERVIEW_METRIC_KEY_MISMATCH,
     EntityOverviewError,
 )
 from app.dashboard.entity_overview.schemas import EntityOverviewItem, EntityOverviewOut
@@ -61,6 +63,11 @@ def _validate_item(session: Session, item: EntityOverviewItem) -> EntityOverview
         for w in (dashboard.layout_json or {}).get("widgets", [])
         if isinstance(w, dict) and w.get("id") is not None
     }
+    widget_map = {
+        str(w.get("id")): w
+        for w in (dashboard.layout_json or {}).get("widgets", [])
+        if isinstance(w, dict) and w.get("id") is not None
+    }
     if widget_ids:
         for drill in item.drill_targets:
             if drill.widget_id not in widget_ids:
@@ -70,6 +77,32 @@ def _validate_item(session: Session, item: EntityOverviewItem) -> EntityOverview
                     422,
                     fields=[{"field": "drillTargets.widgetId", "message": drill.widget_id}],
                 )
+    for card in item.stat_cards:
+        if card.metric_source is None:
+            continue
+        widget = widget_map.get(card.metric_source.widget_id)
+        if widget is None:
+            raise EntityOverviewError(
+                DASH_OVERVIEW_INVALID_METRIC_SOURCE,
+                f"metricSource widget not in layout: {card.metric_source.widget_id}",
+                422,
+                fields=[{"field": "statCards.metricSource.widgetId", "message": card.metric_source.widget_id}],
+            )
+        if card.metric_key == "count":
+            continue
+        chart = widget.get("chartConfig") or {}
+        metric_fields = {
+            str(m.get("field"))
+            for m in chart.get("metrics") or []
+            if isinstance(m, dict) and m.get("field")
+        }
+        if card.metric_key not in metric_fields:
+            raise EntityOverviewError(
+                DASH_OVERVIEW_METRIC_KEY_MISMATCH,
+                f"metricKey {card.metric_key} not found in widget metrics",
+                422,
+                fields=[{"field": "statCards.metricKey", "message": card.metric_key}],
+            )
     return item
 
 

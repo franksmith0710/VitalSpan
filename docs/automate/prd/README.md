@@ -1,8 +1,14 @@
 # PRD 分片索引
 
+<<<<<<< HEAD
 > **16 域 · 129 项**（合同 **129** 已实现 · companion 验收见 plan §M-DASH-UX + §M-PRODUCT）· hub **v1.2.114**  
 > 来源 SRS V3.7 + 附录 E/F + FR-DATA/FR-ETL（F16）+ M-FINAL 连接器扩展（CONN-023~027）  
 > Hub 索引：[`../prd.md`](../prd.md) · 执行范围：[`../plan.md`](../plan.md)（**M-DASH-UX 编辑体验对标** · M-PRODUCT F-E 已完成）
+=======
+> **16 域 · 129 项**（合同 **129** 已实现 · plan companion **0** 待办）· hub **v1.2.115**  
+> 来源 SRS V3.7 + 附录 E/F + FR-DATA/FR-ETL（F16）+ M-FINAL 连接器扩展（CONN-023~027）  
+> Hub 索引：[`../prd.md`](../prd.md) · 执行范围：[`../plan.md`](../plan.md)（**整体毕业**）
+>>>>>>> 259f9d7bb3a34279dd02fa6bde1a2be0a213b5f8
 
 | 分片 | ID 域 | 模块 | 期次 | 项数 |
 |------|-------|------|------|------|

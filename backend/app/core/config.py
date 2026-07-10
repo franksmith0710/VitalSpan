@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     dashboard_availability_mode: Literal["strict", "permissive"] = "permissive"
     xinchuang_deploy_mode: Literal["strict", "permissive", "conditional"] = "permissive"
     vitalspan_dev_admin_password: str = "changeme"
+    rpt_delivery_mode: Literal["mock", "smtp"] = "mock"
+    rpt_smtp_host: str = "localhost"
+    rpt_smtp_port: int = 1025
+    rpt_smtp_user: str | None = None
+    rpt_smtp_password: str | None = None
+    rpt_smtp_from: str = "reports@vitalspan.local"
 
     @field_validator("push_wecom_webhook", "push_dingtalk_webhook", mode="before")
     @classmethod

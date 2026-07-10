@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import { OPTIONAL_ROLE_CAPABILITY_MAP } from "./capabilities";
 import { resolveNavGroups, resolveSidebarSections, ACTIVE_MILESTONES } from "./resolve-nav";
 import {
-  ACCOUNT_PREFERENCES_PATH,
   ACCOUNT_PROFILE_PATH,
   ACCOUNT_SECURITY_PATH,
-  ACCOUNT_SETTINGS_PATH,
   isAccountManagementPath,
 } from "./workspace";
 import { sessionUserFromAuth } from "./session";

@@ -246,6 +246,9 @@ redoc: /redoc
 | GET | `/api/v1/reports/catalog/nodes/{id}/extension/render-spec` | 扩展配置渲染规格（`renderVersion=1.0`；`compareMetrics`/`compareVersion`） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/catalog/nodes/{id}/extension/revisions` | 扩展配置修订历史（changeNote 审计） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/batch` | 批量创建模板节点（Idempotency-Key；`RPT_BATCH_*`） | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST | `/api/v1/reports/batch/export` | 异步批量导出任务提交（202 pending） | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/jobs/{id}` | 批量导出任务轮询（pending→processing→ready） | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/jobs/{id}/download` | 批量导出产物下载 | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表（M3-LITE：`dataSourceId`+extension → 真实 sections；无 ds → placeholder 回归 r60） | 内部 | 二期 | RPT-001 | M3-LITE 已实现 | `backend/app/api/v1/reports/engine.py` |
 | GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
@@ -264,10 +267,12 @@ redoc: /redoc
 |------|------|------|-----|------|-----|------|----------|
 | GET/POST | `/api/v1/metadata/glossary` | 术语字典 CRUD/list；写操作 admin/analyst only（viewer/editor → 403 `META_TERM_FORBIDDEN`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/glossary/{term_id}` | 术语详情/更新/删除（写 ACL；非法 status → 422 `META_TERM_INVALID_STATUS`） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET/PUT | `/api/v1/metadata/glossary/{term_id}/field-mappings` | 术语↔物理字段映射 companion（F-F） | 内部 | 四期 | META-001 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/themes` | 业务主题树 CRUD/list；写 ACL（403 `META_THEME_FORBIDDEN`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/themes/{node_id}` | 主题节点详情/更新/删除 | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | POST | `/api/v1/metadata/themes/{node_id}/move` | 主题节点移动（环检测；超深 → 422 `META_THEME_MAX_DEPTH`） | 内部 | 四期 | META-002 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/dimensions` | 维度字典 list/create；可选 `themeNodeId` FK；写 ACL（403 `META_DIM_FORBIDDEN`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET | `/api/v1/metadata/dimensions/resolve?code=` | 按 code 解析维度（prefab/filters/designer 统一引用） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/PUT/DELETE | `/api/v1/metadata/dimensions/{dimension_id}` | 维度详情/更新/删除（级联 values） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/dimensions/{dimension_id}/values` | 枚举值 list/批量注册（重复 value code → 409 `META_DIM_VALUE_CODE_CONFLICT`） | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/metadata/entity-types` | 实体类型 schema list/create（`META_ENTITY_TYPE_*`） | 内部 | 二期 | META-006 | 已实现 | `backend/app/api/v1/metadata.py` |
@@ -278,7 +283,8 @@ redoc: /redoc
 | POST | `/api/v1/metadata/physical-tables` | M8 META-005 直登物理表（`tableFqn` 唯一） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET | `/api/v1/metadata/physical-tables?fqn=` | M8 META-005 单条 physical 详情 | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | PUT | `/api/v1/metadata/physical-tables/{fqn}` | M8 META-005 更新 displayName/entityTypeCode | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
-| DELETE | `/api/v1/metadata/physical-tables/{fqn}` | M8 META-005 删除登记（204） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
+| DELETE | `/api/v1/metadata/physical-tables/{fqn}` | M8 META-005 删除登记（GOV 引用 → 409 `META_PHYSICAL_GOV_IN_USE`） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
+| GET | `/api/v1/metadata/physical-tables/{fqn}/lineage` | 物理表 lineage stub（catalogEntryIds） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET | `/api/v1/metadata/physical-tables?entityTypeCode=` | M8 META-005 按类型过滤物理表列表 | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | DELETE | `/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}` | 删除单条枚举值 | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET/POST | `/api/v1/datasets` | Dataset list/create（内存 store L1；`META_DATASET_*`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
@@ -344,6 +350,8 @@ redoc: /redoc
 | POST | `/api/v1/gov/publish/entries/{entry_id}/submit` | draft→pending_publish | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/publish/entries/{entry_id}/approve` | pending_publish→published；响应含 `busRegisterStatus`/`busRegisterErrorCode`（r248） | IF-06 | 一期 | GOV-005/007 | 已实现（r248） | `backend/app/api/v1/gov.py` |
 | POST | `/api/v1/gov/publish/entries/{entry_id}/reject` | pending_publish→draft | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/publish/entries/{entry_id}/unpublish` | published→draft；释放 entity/physical GOV 引用 | IF-06 | 四期 | META-006 | 已实现 | `backend/app/api/v1/gov.py` |
+| POST | `/api/v1/gov/publish/entries/{entry_id}/link-physical` | 登记 catalog→physicalTableFqn 引用（lineage） | IF-06 | 四期 | META-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/publish/entries/{entry_id}/status` | 发布状态 + allowedActions | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET | `/api/v1/gov/publish/entries/{entry_id}/notifications` | 审批通知事件列表（内存 store） | IF-06 | 一期 | GOV-005 | 已实现 | `backend/app/api/v1/gov.py` |
 | GET/POST | `/api/v1/gov/openapi-mappings` | 发布引擎 OpenAPI 映射 list/register（`GOV_OPENAPI_MAP_*`） | IF-06 | 四期 | GOV-006 | 已实现 | `backend/app/api/v1/gov.py` |
@@ -383,7 +391,7 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | GET | `/api/v1/entities/{entityType}/{entityId}` | CAT-01 实体生命周期查询 | IF-02 | 一期 PoC+ | CAT-001 | 规划 | `backend/app/governance/catalog/cat01.py` |
-| GET | `/api/v1/stats/aggregate` | CAT-02 统计分析聚合 | IF-02 | 一期 PoC+ | CAT-002 | 规划 | `backend/app/governance/catalog/cat02.py` |
+| GET | `/api/v1/stats/aggregate` | CAT-02 统计分析聚合（`templateKey` + `groupBy` IF-02 PoC） | IF-02 | 一期 PoC+ | CAT-002 | 已实现 | `backend/app/api/v1/stats.py` · `backend/app/governance/catalog/cat02/query.py` |
 | GET | `/api/v1/geo/distribution` | CAT-03 地域维度查询 | IF-02 | 一期 PoC+ | CAT-003 | 规划 | `backend/app/governance/catalog/cat03.py` |
 | GET | `/api/v1/timeseries` | CAT-04 时间序列分析 | IF-02 | 二期+ | CAT-004 | 规划 | `backend/app/governance/catalog/cat04.py` |
 | GET | `/api/v1/tickets/stats` | CAT-05 工单与受理统计 | IF-02 | 二期+ | CAT-005 | 规划 | `backend/app/governance/catalog/cat05.py` |

@@ -60,6 +60,24 @@ def probe_link_chart_views_budget_ms(db: Session, config: EntityThemeConfig) -> 
     return (time.perf_counter() - start) * 1000.0
 
 
+def _resolve_dimensions(db: Session, config: EntityThemeConfig) -> None:
+    from app.metadata.dimensions import service as dimension_service
+    from app.metadata.dimensions.schemas import DimensionError
+
+    dimension_service.ensure_legacy_probe_dimensions(db)
+    for dim in config.dimensions:
+        try:
+            resolved = dimension_service.resolve_dimension_by_code(db, dim.dimension_id)
+        except DimensionError as exc:
+            status = 422 if exc.code == "META_DIM_NOT_FOUND" else exc.status
+            raise ThemeAnalysisError(
+                "DASH_THEME_DIMENSION_UNKNOWN",
+                exc.message,
+                status,
+            ) from exc
+        dim.dimension_id = resolved.code
+
+
 def _map_validation(exc: ValidationError) -> ThemeAnalysisError:
     for err in exc.errors():
         loc = ".".join(str(x) for x in err["loc"])
@@ -72,13 +90,15 @@ def _map_validation(exc: ValidationError) -> ThemeAnalysisError:
     return ThemeAnalysisError("DASH_THEME_INVALID", "Invalid theme config", 422)
 
 
-def validate_theme_config(payload: dict) -> EntityThemeConfig:
+def validate_theme_config(payload: dict, db: Session | None = None) -> EntityThemeConfig:
     try:
         config = EntityThemeConfig.model_validate(payload)
     except ValidationError as exc:
         raise _map_validation(exc) from exc
     if not config.dimensions:
         raise ThemeAnalysisError("DASH_THEME_EMPTY_DIMENSIONS", "At least one dimension required", 422)
+    if db is not None:
+        _resolve_dimensions(db, config)
     if config.geo_binding is not None:
         if not config.geo_binding.lat_field or not config.geo_binding.lng_field:
             raise ThemeAnalysisError("DASH_THEME_INVALID_GEO", "geoBinding requires latField and lngField", 422)
@@ -97,7 +117,7 @@ def _assert_ref_exists(db: Session, config: EntityThemeConfig) -> None:
 
 def save_theme_config(db: Session, payload: dict, actor: UserContext) -> EntityThemeConfig:
     assert_theme_action(actor, "write")
-    config = validate_theme_config(payload)
+    config = validate_theme_config(payload, db)
     _assert_ref_exists(db, config)
     _link_chart_views(db, config)
     owner_id: uuid.UUID | None = None
@@ -121,7 +141,7 @@ def save_theme_config(db: Session, payload: dict, actor: UserContext) -> EntityT
 
 def get_theme_config(db: Session, ref_type: str, ref_id: uuid.UUID) -> EntityThemeConfig:
     record = config_store.get_config_by_ref(db, "entity_theme", ref_type, ref_id)
-    return validate_theme_config(record.payload)
+    return validate_theme_config(record.payload, db)
 
 
 def resolve_chart_bindings_for_execute(db: Session, ref_type: str, ref_id: uuid.UUID) -> list[dict]:

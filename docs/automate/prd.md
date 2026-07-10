@@ -1,7 +1,11 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
+<<<<<<< HEAD
 version: 1.2.114
+=======
+version: 1.2.115
+>>>>>>> 259f9d7bb3a34279dd02fa6bde1a2be0a213b5f8
 last_updated: 2026-07-09
 truth_source: true
 evolution_hub: true
@@ -200,11 +204,16 @@ domain_count: 16
 
 ## 执行范围（与 plan 对齐）
 
+<<<<<<< HEAD
 > 更新：2026-07-09 · 来源 [`plan.md`](./plan.md) v2.8.0 · hub **v1.2.114**
+=======
+> 更新：2026-07-09 · 来源 [`plan.md`](./plan.md) v2.9.0 · hub **v1.2.115**
+>>>>>>> 259f9d7bb3a34279dd02fa6bde1a2be0a213b5f8
 
 | 字段 | 值 |
 |------|-----|
 | 已冻结 | **M-FINAL**（129/129 PRD 合同项） |
+<<<<<<< HEAD
 | 当前执行 | **M-DASH-UX · Dashboard 编辑体验对标** |
 | 排队 | **M-PRODUCT**（F-D 书面 E2E 待办；**F-F 非默认 gate**） |
 | PRD 合同 | **129** 已实现 · **0** 未实现 |
@@ -213,9 +222,20 @@ domain_count: 16
 | G2 选题 | 每轮从 §M-DASH-UX **必做** `[ ]` 取 3–5 项；禁止可选行 / M-PRODUCT F-F / AI |
 
 **说明**：PRD 合同 **129** 项分片状态仍为「已实现」；当前差距是 **companion 体验**（见 `plan.md` §M-DASH-UX）。**2026-07-09 Wave1** 已合并 `dev-auto`：编辑态 `ChartRenderer` 真出图 + `WidgetInspector`←`ChartConfigPanel`；**M-PRODUCT F-E** 文档对账（`docs/api` · `layout.md`）已在 plan 勾选。
+=======
+| 当前执行 | **全量 companion 收官** — M-DASH-UX + M-PRODUCT F-A~F 已勾 |
+| 排队 | — |
+| PRD 合同 | **129** 已实现 · **0** 未实现 |
+| companion（plan） | **0** 待办（`plan.md` 无 `[ ]`） |
+| 当前节 | **项目整体毕业** |
+| G2 选题 | 饱和；PRD 分片远期 `[ ]` 仅文档参考，非 plan gate |
 
-**M-DASH-UX 子批（与 plan 对齐）**：
+**说明**：`plan.md` 全部 companion 行已于 2026-07-09 勾选完成（含 M-DASH-UX 可选 2 项 + M-PRODUCT F-F 18 项）。PRD 分片内仍有部分远期 companion `[ ]`（如 GOV 真实总线、NFR 生产 SLA），不计入 plan 收官。
+>>>>>>> 259f9d7bb3a34279dd02fa6bde1a2be0a213b5f8
 
+**M-DASH-UX + M-PRODUCT 收官状态**：
+
+<<<<<<< HEAD
 | 子批 | 主题 | 代表 PRD ID | plan 状态 | PRD companion |
 |------|------|-------------|-----------|---------------|
 | F-A | 编辑态接线真出图 | VIZ-002 · QUERY-005 · QUERY-009 · META-004 · VIZ-008 | `[ ]` 待回勾 | Wave1 代码已落地 · 分片已补验收行 |
@@ -230,6 +250,12 @@ domain_count: 16
 | F-E | 文档与契约对账 | **已完成**（API-007 · DS-007 layout · 2026-07-09） |
 | F-D | Goal 书面 E2E | **4 行待办** |
 | F-F | Companion 深度 | 非默认 gate |
+=======
+| 里程碑 | 状态 |
+|--------|------|
+| M-DASH-UX F-A~D 必做 + 可选 | **全勾** |
+| M-PRODUCT F-A~F | **全勾** |
+>>>>>>> 259f9d7bb3a34279dd02fa6bde1a2be0a213b5f8
 
 ---
 
@@ -246,7 +272,12 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+<<<<<<< HEAD
 | 1.2.114 | 2026-07-09 | plan v2.8.0 对账：Wave1 合并后补 M-DASH-UX F-A/F-B companion 验收行（F06/F05/F11/F07）；M-PRODUCT F-E 文档对账记入 F13/F03；hub 执行范围改 F-C/F-D 当前节 |
+=======
+| 1.2.115 | 2026-07-09 | F-F 全量 companion 收官：plan 20 项全勾；五轨 worktree merge；hub 执行范围→整体毕业 |
+| 1.2.114 | 2026-07-09 | 毕业收官：M-DASH-UX 必做全勾 + M-PRODUCT F-D 书面 E2E；执行范围更新；剩余 F-F 18 + 可选 2 |
+>>>>>>> 259f9d7bb3a34279dd02fa6bde1a2be0a213b5f8
 | 1.2.113 | 2026-07-09 | 人工 plan 对账：§M-DASH-UX 对齐代码（F-A 加 QUERY-005、接线优先；F-C 稳定性勾选；F-C/F-D 拆必做/可选；F-F gate）；执行范围对齐 plan v2.8.0 |
 | 1.2.112 | 2026-07-09 | 人工 plan 干预：§M-DASH-UX 升为当前节（方案 A）；§M-PRODUCT 排队；执行范围/里程碑指针对齐 plan v2.7.0 |
 | 1.2.112 | 2026-07-09 | DS-007 产品收缩：移除 `/admin/connectors` 只读页与侧栏「连接器类型」；`数据连接` 直达 `/admin/datasources`；旧路由重定向；保留 `GET /types` + 新建向导 taxonomy；同步 `F03-DS` DS-007、`layout.md` |

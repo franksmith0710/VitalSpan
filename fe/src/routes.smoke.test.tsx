@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
@@ -26,9 +26,13 @@ vi.mock("@/lib/auth-token", () => ({
 const mockApiFetch = vi.fn();
 const mockResolveDefaultDashboardPath = vi.fn(async (_roleCodes: string[]) => "/admin/dashboards");
 
-vi.mock("@/lib/api", () => ({
-  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+  };
+});
 
 vi.mock("@/lib/defaultViewResolve", () => ({
   resolveDefaultDashboardPath: (roleCodes: string[]) =>
@@ -125,7 +129,7 @@ describe("AppRoutes smoke", () => {
   it("redirects /admin home to default dashboards list (T-FE-04)", async () => {
     mockApiFetch.mockResolvedValueOnce({ items: [] });
     renderRoutes(["/admin"]);
-    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "数据看板" })).toBeInTheDocument();
     expect(mockResolveDefaultDashboardPath).toHaveBeenCalledWith(["admin"]);
   });
 
@@ -156,7 +160,7 @@ describe("AppRoutes smoke", () => {
     renderRoutes(["/admin"]);
     const main = screen.getAllByRole("main")[0];
     expect(
-      await within(main).findByRole("heading", { level: 1, name: "Dashboard" }),
+      await within(main).findByRole("heading", { level: 1, name: "数据看板" }),
     ).toBeInTheDocument();
   });
 
@@ -249,7 +253,7 @@ describe("AppRoutes smoke", () => {
   it("renders dashboards list route (T-DASH-R28-002-04)", async () => {
     mockApiFetch.mockResolvedValueOnce({ items: [] });
     renderRoutes(["/admin/dashboards"]);
-    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "数据看板" })).toBeInTheDocument();
   });
 
   it("renders login page with submit button (M-FE-1)", () => {

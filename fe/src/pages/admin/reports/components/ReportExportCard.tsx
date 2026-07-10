@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,17 @@ type ExportOut = {
   downloadUrl?: string | null;
 };
 
-export function ReportExportCard() {
-  const [templateId, setTemplateId] = useState("00000000-0000-4000-8000-0000000000a1");
+export function ReportExportCard({ defaultTemplateId }: { defaultTemplateId?: string }) {
+  const [templateId, setTemplateId] = useState(defaultTemplateId ?? "00000000-0000-4000-8000-0000000000a1");
   const [format, setFormat] = useState("pdf");
   const [exportId, setExportId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (defaultTemplateId) setTemplateId(defaultTemplateId);
+  }, [defaultTemplateId]);
 
   const requestExport = async () => {
     setLoading(true);

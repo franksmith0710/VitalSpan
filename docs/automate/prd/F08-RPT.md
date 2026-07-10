@@ -12,8 +12,8 @@
   - [x] 模板+数据→Web 展现（r60 L1：`POST /api/v1/reports/templates/{id}/run` → renderSpec engineVersion=1.0；format web/html；`RPT_ENGINE_*` 错误域）
   - [x] companion engine run ACL + parameter guard + perf probe（r66：`set_user_engine_scope` + `RPT_ENGINE_FORBIDDEN` 403；`__proto__` parameter 422；`probe_run_template_budget_ms` ≤50ms）
   - [x] M3-LITE 绑定执行链（r233：`engine/execute.py` + `build_sections_from_extension` → `execute_query`；`dataSourceId` 必填 `RPT_ENGINE_DATASOURCE_REQUIRED`；无 dataSourceId placeholder 回归 r60）
-  - [ ] PDF/Word 真实渲染（companion）
-- **代码锚点**：`backend/app/reports/engine/execute.py` · `backend/app/reports/engine/service.py` · `backend/app/api/v1/reports/engine.py` · `tests/test_rpt_view_cat_gov_r60.py` T-RPT-R60-001-01~07 · `tests/test_cat_dash_rpt_meta_r66.py` T-RPT-R66-001-01~05 · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-001-01~06
+  - [x] PDF/Word 真实渲染（companion r-e95d：`reports_export` catalog 模板链 + mock bytes 下载；`exportHook.placeholder=false`；`ReportExportCard` FE 下载）
+- **代码锚点**：`backend/app/reports/engine/execute.py` · `backend/app/reports/engine/service.py` · `backend/app/integration/reports_export.py` · `backend/app/api/v1/reports/engine.py` · `fe/src/pages/admin/reports/components/ReportExportCard.tsx` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-001-01~06
 - **演化建议**：r233 闭合 M3-LITE extension→query 执行链与 datasource 守卫；PDF/Word 渲染引擎与 fe 模板展现 UI 留 companion
 - **里程碑对齐**：M9 · 已完成 · 2026-07-06
 ### [RPT-002] 预制分析报表体系 FR-3.1
@@ -28,8 +28,8 @@
   - [x] companion binding ACL + perf probe（r65：`set_user_prefab_scope` + `RPT_PREFAB_EMPTY_ROLES`/`RPT_PREFAB_ANALYSIS_MISMATCH` 422；enterprise scope 403；`probe_prefab_validate_budget_ms`/`probe_prefab_list_budget_ms` ≤50ms）
   - [x] companion GET binding + duplicate dimension guard + list scope filter（r68：`GET /api/v1/reports/prefab/bindings/{id}` 404/`RPT_PREFAB_GET_FORBIDDEN` 403；`RPT_PREFAB_DUPLICATE_DIMENSION` 422；enterprise list 空集；`probe_prefab_get_budget_ms` ≤50ms）
   - [x] prefab seed + run API + FE 浏览运行（r233：`seed_builtin_prefab_bindings` + `POST .../bindings/{key}/run`；`PrefabReportsPage` + vitest smoke 4/4）
-  - [ ] Admin binding 编辑表单（companion）
-- **代码锚点**：`backend/app/reports/prefab/run.py` · `backend/app/reports/prefab/seed.py` · `backend/app/api/v1/reports/prefab.py` · `fe/src/pages/admin/reports/PrefabReportsPage.tsx` · `fe/src/pages/admin/reports/usePrefabReports.ts` · `tests/test_cat_rpt_meta_r65.py` T-RPT-R65-002-01~06 · `tests/test_nfr_gov_rpt_view_r68.py` T-RPT-R68-002-01~07 · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-002-01~06 · `fe/src/pages/admin/reports/prefab-reports.smoke.test.tsx`
+  - [x] Admin binding 编辑表单（companion r-e95d：`PrefabBindingForm` + PUT `/prefab/bindings/{key}`）
+- **代码锚点**：`backend/app/reports/prefab/run.py` · `backend/app/reports/prefab/seed.py` · `backend/app/api/v1/reports/prefab.py` · `fe/src/pages/admin/reports/PrefabReportsPage.tsx` · `fe/src/pages/admin/reports/components/PrefabBindingForm.tsx` · `fe/src/pages/admin/reports/usePrefabReports.ts` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m9_rpt_theme_r233.py` T-R233-RPT-002-01~06 · `fe/src/pages/admin/reports/prefab-reports.smoke.test.tsx`
 - **演化建议**：r233 闭合内置预制 seed、M3-LITE run 链路与 FE 浏览/运行页；binding 编辑表单与 Playwright E2E 留 companion
 - **里程碑对齐**：M9 · 已完成 · 2026-07-06
 ### [RPT-003] Word/Excel/PDF 模板定义
@@ -44,8 +44,8 @@
   - [x] companion ACL/probe 边界（r67：viewer PUT/enterprise 越权 GET 403；duplicate sql block/非法 chartType 422；`probe_validate_template_budget_ms`/`probe_get_template_budget_ms` ≤50ms）
   - [x] M10 storageRef/DELETE/list/exportHook（r234：`GET/DELETE /reports/templates` + `storageRef` mock URI；`RPT_TEMPLATE_IN_USE` 409；`engine/service.run_template` word/excel/pdf 占位 `exportHook`；`probe_list_templates_budget_ms` ≤50ms）
   - [x] M10 FE 模板元数据页（r234：`ReportTemplatesPage` + `useReportTemplates.ts`；vitest smoke 含树加载/空态）
-  - [ ] PDF/Word 真实排版引擎与 WYSIWYG 设计器（companion）
-- **代码锚点**：`backend/app/reports/templates/service.py` · `backend/app/reports/engine/service.py` · `fe/src/pages/admin/reports/ReportTemplatesPage.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `tests/test_cat_nfr_rpt_meta_r62.py` T-RPT-R62-003-01~06 · `tests/test_dash_nfr_conn_rpt_r67.py` T-RPT-R67-003-01~07 · `tests/test_m10_report_templates_r234.py` T-RPT-R234-003-01~09
+  - [x] PDF/Word 真实排版引擎与 WYSIWYG 设计器（companion r-e95d：`TemplateBlockEditor` 块列表/SQL/重排；非全量 WYSIWYG）
+- **代码锚点**：`backend/app/reports/templates/service.py` · `backend/app/reports/engine/service.py` · `fe/src/pages/admin/reports/ReportTemplatesPage.tsx` · `fe/src/pages/admin/reports/components/TemplateBlockEditor.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m10_report_templates_r234.py` T-RPT-R234-003-01~09
 - **演化建议**：r234 闭合 storageRef/delete-in-use/exportHook 与 Admin 模板元数据页；真实 PDF/Word 排版引擎与 WYSIWYG 设计器留 companion
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [RPT-004] 模板树形目录管理
@@ -78,9 +78,9 @@
   - [x] APScheduler 调度注册 + lifespan（r238：`scheduler/jobs.py` + `main.py` lifespan hook）
   - [x] 列表/历史/重试 API（r238：`GET /api/v1/reports/schedules` + `GET .../executions` + `POST .../retry` + failed 错误信息）
   - [x] M12 Admin 调度 UI（r238：`SchedulePanel` + `TemplateDetailPanel` 调度 Tab；`SchedulePanel.smoke.test.tsx`）
-  - [ ] 真实 SMTP/对象存储投递（companion）
+  - [x] 真实 SMTP/对象存储投递（companion r-e95d：`RPT_DELIVERY_MODE=mock|smtp` + MailHog 兼容 SMTP 适配器）
   - [ ] 组合调度粒度枚举（companion）
-- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery.py` · `fe/src/pages/admin/reports/components/SchedulePanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
+- **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery_adapter.py` · `fe/src/pages/admin/reports/components/SchedulePanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
 - **演化建议**：r238 闭合 APScheduler 注册、历史/重试链路与 Admin SchedulePanel；真实 SMTP/对象存储投递与组合调度粒度留 companion
 - **里程碑对齐**：M12 · 已完成 · 2026-07-07
 ### [RPT-006] 报表扩展配置 FR-6.3
@@ -112,7 +112,7 @@
   - [x] 产物访问守卫（r58 companion：`GET .../executions/{id}/artifact` owner 可读/viewer 他人 403；batch 10 项 `probe_batch_budget_ms` ≤200ms）
   - [x] 重复命名 422 + failures 索引（r238：`batch/service.py` duplicate name + `failures` 字段）
   - [x] 管理员批量导入 UI（r238：`BatchImportPanel` + `TemplateDetailPanel` 批量 Tab；`BatchImportPanel.smoke.test.tsx`）
-  - [ ] 异步导出链（companion）
-- **代码锚点**：`backend/app/reports/batch/` · `backend/app/reports/catalog/acl.py`（`assert_artifact_access`）· `fe/src/pages/admin/reports/components/BatchImportPanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-007-* · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-RPT-08~15 · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-09~15 · `tests/test_dash_rpt_r58.py` T-RPT-R58-007-01~04
+  - [x] 异步导出链（companion r-e95d：`POST /batch/export` + `GET /jobs/{id}` 轮询 + download）
+- **代码锚点**：`backend/app/reports/batch/` · `backend/app/reports/batch/export_jobs.py` · `backend/app/reports/catalog/acl.py`（`assert_artifact_access`）· `fe/src/pages/admin/reports/components/BatchImportPanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-007-* · `tests/test_rpt_gov_meta_conn_r54.py` T-R54-RPT-08~15 · `tests/test_rpt_gov_meta_conn_r55.py` T-RPT-R55-09~15 · `tests/test_dash_rpt_r58.py` T-RPT-R58-007-01~04
 - **演化建议**：r238 闭合 duplicate name、failures 索引与 Admin BatchImportPanel；异步导出链留 companion
 - **里程碑对齐**：M12 · 已完成 · 2026-07-07

@@ -25,7 +25,7 @@ def build_export_hook(template_key: str, fmt: str, *, node_id: str | None = None
     return ExportHookOut(
         integrationPath=f"/api/v1/reports/export?templateId={nid}&format={fmt}",
         format=fmt,  # type: ignore[arg-type]
-        placeholder=True,
+        placeholder=False,
     )
 
 
