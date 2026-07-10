@@ -149,11 +149,11 @@ redoc: /redoc
 | DELETE | `/api/v1/query/bindings/{bindingId}` | 删除绑定 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/dataset/routing` | Dataset 第三路径路由文档（sql/native/dataset） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/dataset/validate` | Dataset 路径 ACL/readonly 守卫（`QUERY_DATASET_*`/`QUERY_PATH_AMBIGUOUS`） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
-| POST | `/api/v1/query/dataset/execute-plan` | Dataset execute-plan 四步链 companion（`dataset-plan-v1`；非真实 SQL execute） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/dataset/execute-plan` | Dataset execute-plan 四步链（内部/companion；`dataset-plan-v1`；**非**客户主路径） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | GET/PUT | `/api/v1/query/configs` | 配置元模型存取（`configType`/`schemaVersion`/`refType`/`refId`；可选 `expectedRevision` 乐观锁；revision upsert；payload >256KB → 413 `CONFIG_PAYLOAD_TOO_LARGE`；revision 冲突 → 409 `CONFIG_VERSION_CONFLICT`） | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | GET | `/api/v1/query/configs/{config_id}` | 按 id 读取配置记录 | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | POST | `/api/v1/query/configs/{config_id}/translate` | 已存 `dataset_query` 配置翻译为参数化 SQL | 内部 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query_configs.py` |
-| POST | `/api/v1/query/dataset/execute` | `dataSourceId` + `configId` 存储→翻译→执行 | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/dataset/execute` | **客户主路径**：`dataSourceId` + `configId` 存储→翻译→真实 rows（含 bound Dataset 计算字段） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/designer/fields` | 设计器字段注册表 + glossary + dataset 字段 | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/preview/translate` | 三块配置合并 SQL 预览（含规则注释） | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/submit-workflow` | 快照 + 工单实例 + 自动 submit | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
@@ -287,7 +287,7 @@ redoc: /redoc
 | GET | `/api/v1/metadata/physical-tables/{fqn}/lineage` | 物理表 lineage stub（catalogEntryIds） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET | `/api/v1/metadata/physical-tables?entityTypeCode=` | M8 META-005 按类型过滤物理表列表 | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | DELETE | `/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}` | 删除单条枚举值 | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
-| GET/POST | `/api/v1/datasets` | Dataset list/create（内存 store L1；`META_DATASET_*`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
+| GET/POST | `/api/v1/datasets` | Dataset list/create（ORM `datasets` 表；`META_DATASET_*`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | GET | `/api/v1/datasets/{dataset_id}` | Dataset 详情（含 `boundConfigId`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | PUT | `/api/v1/datasets/{dataset_id}` | Dataset 全量更新（写 ACL；403 `META_DATASET_FORBIDDEN`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | DELETE | `/api/v1/datasets/{dataset_id}` | Dataset 删除（204） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
