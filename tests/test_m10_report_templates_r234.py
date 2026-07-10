@@ -79,7 +79,7 @@ def test_rpt003_01_put_get_list_storage_ref(client: TestClient):
     got = client.get("/api/v1/reports/templates/sales_summary", headers=AUTH)
     assert got.status_code == 200
     body = got.json()
-    assert body["storageRef"] == "mock://templates/sales_summary.word"
+    assert body["storageRef"] == "storage://templates/sales_summary.word"
     assert body["exportHook"]["integrationPath"].startswith("/api/v1/reports/export")
     listed = client.get("/api/v1/reports/templates?prefix=sales", headers=AUTH)
     assert listed.status_code == 200
@@ -162,11 +162,11 @@ def test_rpt003_07_custom_storage_ref(client: TestClient):
     body = {
         **_TEMPLATE_BODY,
         "templateKey": "custom_ref",
-        "storageRef": "mock://templates/custom_ref.word",
+        "storageRef": "storage://templates/custom_ref.word",
     }
     resp = client.put("/api/v1/reports/templates/custom_ref", headers=AUTH, json=body)
     assert resp.status_code == 200
-    assert resp.json()["storageRef"] == "mock://templates/custom_ref.word"
+    assert resp.json()["storageRef"] == "storage://templates/custom_ref.word"
 
 
 def test_rpt004_01_duplicate_template_key_422(client: TestClient):

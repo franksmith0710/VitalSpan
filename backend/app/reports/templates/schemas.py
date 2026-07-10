@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 TemplateFormat = Literal["word", "excel", "pdf"]
 BlockType = Literal["sql", "table", "chart"]
 ChartType = Literal["line", "bar", "pie"]
-_STORAGE_REF_RE = r"^mock://templates/[a-z0-9_-]+\.(word|excel|pdf)$"
+_STORAGE_REF_RE = r"^storage://templates/[a-z0-9_-]+\.(word|excel|pdf)$"
 
 
 class TemplateBlock(BaseModel):

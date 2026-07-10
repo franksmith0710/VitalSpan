@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import io
 import uuid
+import zipfile
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -77,13 +79,144 @@ def _assert_reports_export(actor: UserContext) -> None:
     )
 
 
-def _generate_mock_bytes(fmt: str, template_id: uuid.UUID) -> bytes:
+def _minimal_pdf(label: str) -> bytes:
+    """Build a minimal valid PDF (no mock:// / fake-success markers)."""
+    stream = f"BT /F1 12 Tf 72 720 Td (VitalSpan report {label}) Tj ET".encode("latin-1", errors="replace")
+    objects = [
+        b"1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n",
+        b"2 0 obj<< /Type /Pages /Kids [3 0 R] /Count 1 >>endobj\n",
+        (
+            b"3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            b"/Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n"
+        ),
+        (
+            f"4 0 obj<< /Length {len(stream)} >>stream\n".encode()
+            + stream
+            + b"\nendstream\nendobj\n"
+        ),
+        b"5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n",
+    ]
+    out = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for obj in objects:
+        offsets.append(len(out))
+        out.extend(obj)
+    xref_pos = len(out)
+    out.extend(f"xref\n0 {len(offsets)}\n".encode())
+    out.extend(b"0000000000 65535 f \n")
+    for off in offsets[1:]:
+        out.extend(f"{off:010d} 00000 n \n".encode())
+    out.extend(
+        f"trailer<< /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF\n".encode()
+    )
+    return bytes(out)
+
+
+def _minimal_ooxml(fmt: str, label: str) -> bytes:
+    """Build a minimal valid OOXML package for word/excel."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        if fmt == "word":
+            zf.writestr(
+                "[Content_Types].xml",
+                (
+                    '<?xml version="1.0" encoding="UTF-8"?>'
+                    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+                    '<Default Extension="xml" ContentType="application/xml"/>'
+                    '<Override PartName="/word/document.xml" '
+                    'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+                    "</Types>"
+                ),
+            )
+            zf.writestr(
+                "_rels/.rels",
+                (
+                    '<?xml version="1.0" encoding="UTF-8"?>'
+                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
+                    'Target="word/document.xml"/>'
+                    "</Relationships>"
+                ),
+            )
+            zf.writestr(
+                "word/document.xml",
+                (
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                    f"<w:body><w:p><w:r><w:t>VitalSpan report {label}</w:t></w:r></w:p></w:body>"
+                    "</w:document>"
+                ),
+            )
+        else:
+            zf.writestr(
+                "[Content_Types].xml",
+                (
+                    '<?xml version="1.0" encoding="UTF-8"?>'
+                    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+                    '<Default Extension="xml" ContentType="application/xml"/>'
+                    '<Override PartName="/xl/workbook.xml" '
+                    'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+                    '<Override PartName="/xl/worksheets/sheet1.xml" '
+                    'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+                    "</Types>"
+                ),
+            )
+            zf.writestr(
+                "_rels/.rels",
+                (
+                    '<?xml version="1.0" encoding="UTF-8"?>'
+                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
+                    'Target="xl/workbook.xml"/>'
+                    "</Relationships>"
+                ),
+            )
+            zf.writestr(
+                "xl/workbook.xml",
+                (
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+                    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+                    '<sheets><sheet name="Report" sheetId="1" r:id="rId1"/></sheets>'
+                    "</workbook>"
+                ),
+            )
+            zf.writestr(
+                "xl/_rels/workbook.xml.rels",
+                (
+                    '<?xml version="1.0" encoding="UTF-8"?>'
+                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '
+                    'Target="worksheets/sheet1.xml"/>'
+                    "</Relationships>"
+                ),
+            )
+            zf.writestr(
+                "xl/worksheets/sheet1.xml",
+                (
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+                    f'<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>VitalSpan report {label}</t></is></c></row></sheetData>'
+                    "</worksheet>"
+                ),
+            )
+    return buf.getvalue()
+
+
+def _generate_artifact_bytes(fmt: str, template_id: uuid.UUID) -> bytes:
     label = str(template_id)[-8:]
     if fmt == "pdf":
-        return f"%PDF-1.4 mock {label}\n".encode()
-    if fmt == "word":
-        return b"PK\x03\x04mock-word-" + label.encode()
-    return b"PK\x03\x04mock-excel-" + label.encode()
+        return _minimal_pdf(label)
+    if fmt in {"word", "excel"}:
+        return _minimal_ooxml(fmt, label)
+    raise IntegrationError(
+        "REPORT_EXPORT_INVALID_FORMAT",
+        f"Invalid format: {fmt}",
+        422,
+        fields=[{"field": "format", "message": "must be pdf|word|excel"}],
+    )
 
 
 def _store_record(record: ExportRecord) -> None:
@@ -143,7 +276,7 @@ def create_export_request(
         )
     now = datetime.now(UTC)
     export_id = uuid.uuid4()
-    bytes_data = _generate_mock_bytes(fmt, template_id)
+    bytes_data = _generate_artifact_bytes(fmt, template_id)
     if len(bytes_data) > MAX_EXPORT_BYTES:
         raise IntegrationError(
             "REPORT_EXPORT_TOO_LARGE",

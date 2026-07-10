@@ -182,7 +182,7 @@ def _schedule_and_execute(
     node_id: str,
     *,
     idempotency_key: str | None = None,
-    delivery_mock: str | None = None,
+    delivery_mock: str | None = "success",
 ) -> dict:
     sched = client.post(
         "/api/v1/reports/schedules",
@@ -201,7 +201,7 @@ def _schedule_and_execute(
         "Idempotency-Key": idempotency_key or f"r58-{uuid.uuid4().hex}",
         "X-Rpt-Semi-Real": "1",
     }
-    if delivery_mock:
+    if delivery_mock is not None:
         headers["X-Rpt-Delivery-Mock"] = delivery_mock
     resp = client.post(f"/api/v1/reports/schedules/{sid}/execute", headers=headers)
     assert resp.status_code == 200, resp.text
@@ -541,11 +541,21 @@ def test_rpt_r58_extension_editor_put_allowed(client):
 
 
 def test_rpt_r58_semi_real_execute_succeeded(client):
-    """D58-005-01: scheduled + Idempotency-Key → semi_real_succeeded + deliverySteps。"""
+    """D58-005-01: explicit X-Rpt-Delivery-Mock:success → semi_real_succeeded."""
     node_id = _create_template_node(client)
-    body = _schedule_and_execute(client, node_id)
+    body = _schedule_and_execute(client, node_id, delivery_mock="success")
     assert body["status"] == "semi_real_succeeded"
     assert len(body.get("deliverySteps", [])) >= 1
+
+
+def test_rpt_r58_semi_real_delivery_unconfigured_without_header(client):
+    """D58-005-01b: no delivery mock header + mock mode → semi_real_failed/unconfigured."""
+    node_id = _create_template_node(client)
+    body = _schedule_and_execute(client, node_id, delivery_mock=None)
+    assert body["status"] == "semi_real_failed"
+    assert body.get("errorMessage")
+    steps = body.get("deliverySteps", [])
+    assert steps and steps[0].get("status") == "unconfigured"
 
 
 def test_rpt_r58_semi_real_delivery_fail(client):
