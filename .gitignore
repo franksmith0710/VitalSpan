@@ -10,3 +10,4 @@ fe/dist/
 *.egg-info/
 .ruff_cache/
 .worktrees/
+.arch-inspect/

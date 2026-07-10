@@ -32,7 +32,7 @@ export function useInspectorColumns(cfg: ChartViewConfig) {
 
     void fetchChartExecuteResult(cfg)
       .then((data) => {
-        if (!cancelled) setColumns(data.columns);
+        if (!cancelled) setColumns(Array.isArray(data.columns) ? data.columns : []);
       })
       .catch(() => {
         if (!cancelled) setColumns([]);

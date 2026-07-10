@@ -59,7 +59,7 @@ export function WidgetInspectorDataSection({
   };
 
   return (
-    <div className="mt-4 grid gap-4">
+    <div className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor={`ds-${widgetId}`}>数据源</Label>
         <Select
@@ -103,7 +103,7 @@ export function WidgetInspectorDataSection({
           <TabsTrigger value="dataset">Dataset</TabsTrigger>
           <TabsTrigger value="sql">高级 SQL</TabsTrigger>
         </TabsList>
-        <TabsContent value="dataset" className="mt-4 grid gap-3">
+        <TabsContent value="dataset" className="mt-3 grid gap-3">
           <div className="grid gap-2">
             <Label htmlFor={`dataset-${widgetId}`}>Dataset</Label>
             <Select
@@ -171,13 +171,13 @@ export function WidgetInspectorDataSection({
             </p>
           ) : null}
         </TabsContent>
-        <TabsContent value="sql" className="mt-4 grid gap-2">
+        <TabsContent value="sql" className="mt-3 grid gap-2">
           <Label htmlFor={`sql-${widgetId}`}>SQL</Label>
           <textarea
             id={`sql-${widgetId}`}
             value={cfg.sql ?? ""}
             onChange={(e) => onChange({ ...cfg, mode: "sql", sql: e.target.value })}
-            rows={8}
+            rows={6}
             placeholder="SELECT ..."
             className={cn(
               "w-full resize-y rounded-lg border border-gray-300 bg-transparent px-3 py-2 font-mono text-theme-sm text-gray-800",

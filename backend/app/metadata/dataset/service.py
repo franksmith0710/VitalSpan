@@ -94,6 +94,27 @@ def _assert_dataset_write_access(user: UserContext, dataset_id: str) -> None:
             raise DatasetError(META_DATASET_FORBIDDEN, "enterprise user out of dataset scope", 403)
 
 
+def _assert_dataset_read_access(user: UserContext, row: DatasetRecord) -> None:
+    roles = set(user.roles)
+    if "admin" in roles:
+        return
+    if "enterprise" in roles:
+        prefix = _USER_DATASET_SCOPE.get(user.id, "ds-")
+        if not row.dataset_id.startswith(prefix):
+            raise DatasetError(META_DATASET_FORBIDDEN, "enterprise user out of dataset scope", 403)
+    allowed = set(row.allowed_roles or [])
+    if allowed and not roles.intersection(allowed):
+        raise DatasetError(META_DATASET_FORBIDDEN, "role not allowed for dataset", 403)
+
+
+def _can_read_dataset(user: UserContext, row: DatasetRecord) -> bool:
+    try:
+        _assert_dataset_read_access(user, row)
+        return True
+    except DatasetError:
+        return False
+
+
 def _validate_body(payload: DatasetItemIn) -> None:
     if not payload.tables:
         raise DatasetError(
@@ -151,15 +172,16 @@ def list_datasets(
 ) -> DatasetListResponse:
     def _op(session: Session) -> DatasetListResponse:
         stmt = select(DatasetRecord).order_by(DatasetRecord.dataset_id)
-        count_stmt = select(func.count()).select_from(DatasetRecord)
         if user is not None and "enterprise" in set(user.roles) and "admin" not in set(user.roles):
             prefix = _USER_DATASET_SCOPE.get(user.id, "ds-")
             stmt = stmt.where(DatasetRecord.dataset_id.startswith(prefix))
-            count_stmt = count_stmt.where(DatasetRecord.dataset_id.startswith(prefix))
-        total = session.scalar(count_stmt) or 0
         capped = min(max(limit, 1), 500)
-        rows = list(session.scalars(stmt.limit(capped).offset(max(offset, 0))))
-        return DatasetListResponse(items=[_row_to_out(r) for r in rows], total=total)
+        rows = list(session.scalars(stmt))
+        if user is not None and "admin" not in set(user.roles):
+            rows = [r for r in rows if _can_read_dataset(user, r)]
+        total = len(rows)
+        page = rows[max(offset, 0) : max(offset, 0) + capped]
+        return DatasetListResponse(items=[_row_to_out(r) for r in page], total=total)
 
     session = get_meta_session()
     try:
@@ -168,12 +190,14 @@ def list_datasets(
         session.close()
 
 
-def get_dataset(dataset_id: str) -> DatasetItemOut:
+def get_dataset(dataset_id: str, user: UserContext | None = None) -> DatasetItemOut:
     session = get_meta_session()
     try:
         row = session.get(DatasetRecord, dataset_id)
         if row is None:
             raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
+        if user is not None:
+            _assert_dataset_read_access(user, row)
         return _row_to_out(row)
     finally:
         session.close()

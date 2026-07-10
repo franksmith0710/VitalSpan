@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.auth.deps import UserContext
 from app.dashboard.models import Dashboard
 from app.dashboard.schemas import (
     DashboardCreate,
@@ -28,6 +29,18 @@ class DashboardError(Exception):
         self.message = message
         self.status = status
         super().__init__(message)
+
+
+def assert_dashboard_access(actor: UserContext, created_by: uuid.UUID | None) -> None:
+    """Minimal ownership ACL: admin bypass; otherwise actor must own the dashboard."""
+    if "admin" in actor.roles:
+        return
+    try:
+        actor_uuid = uuid.UUID(actor.id)
+    except ValueError as exc:
+        raise DashboardError("DASH_FORBIDDEN", "Access denied", 403) from exc
+    if created_by is None or created_by != actor_uuid:
+        raise DashboardError("DASH_FORBIDDEN", "Access denied", 403)
 
 
 def _slugify(name: str) -> str:
@@ -94,11 +107,24 @@ def validate_layout(layout: dict[str, Any]) -> dict[str, Any]:
     return validate_layout_dict(layout)
 
 
-def list_dashboards(db: Session, *, limit: int = 50, offset: int = 0) -> DashboardListResponse:
-    total = db.scalar(select(func.count()).select_from(Dashboard).where(Dashboard.deleted_at.is_(None))) or 0
-    rows = db.scalars(
-        _active(select(Dashboard).order_by(Dashboard.updated_at.desc()).limit(limit).offset(offset)),
-    ).all()
+def list_dashboards(
+    db: Session,
+    *,
+    limit: int = 50,
+    offset: int = 0,
+    actor: UserContext | None = None,
+) -> DashboardListResponse:
+    base = select(Dashboard).where(Dashboard.deleted_at.is_(None))
+    count_base = select(func.count()).select_from(Dashboard).where(Dashboard.deleted_at.is_(None))
+    if actor is not None and "admin" not in actor.roles:
+        try:
+            actor_uuid = uuid.UUID(actor.id)
+        except ValueError:
+            return DashboardListResponse(items=[], total=0, limit=limit, offset=offset)
+        base = base.where(Dashboard.created_by == actor_uuid)
+        count_base = count_base.where(Dashboard.created_by == actor_uuid)
+    total = db.scalar(count_base) or 0
+    rows = db.scalars(base.order_by(Dashboard.updated_at.desc()).limit(limit).offset(offset)).all()
     return DashboardListResponse(
         items=[_to_out(row) for row in rows],
         total=total,

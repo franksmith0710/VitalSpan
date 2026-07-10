@@ -111,7 +111,7 @@ export function DatasetTablePicker({
   return (
     <div className="grid gap-3">
       <div className="grid gap-2">
-        <Label>浏览数据源（SchemaBrowser）</Label>
+        <Label htmlFor="dataset-datasource">数据源</Label>
         {dsQuery.isLoading ? (
           <Skeleton className="h-11 w-full" />
         ) : items.length === 0 ? (
@@ -120,7 +120,7 @@ export function DatasetTablePicker({
           <Skeleton className="h-11 w-full" />
         ) : (
           <Select value={dataSourceId} onValueChange={setDataSourceId}>
-            <SelectTrigger aria-label="选择数据源">
+            <SelectTrigger id="dataset-datasource" aria-label="选择数据源">
               <SelectValue placeholder="选择数据源以浏览表" />
             </SelectTrigger>
             <SelectContent>
@@ -134,8 +134,8 @@ export function DatasetTablePicker({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-theme-xs text-gray-500 dark:text-gray-400">已选表</span>
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-gray-200 bg-gray-50/60 px-3 py-2.5 dark:border-gray-800 dark:bg-white/[0.02]">
+        <span className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">已选表</span>
         {tables.length === 0 ? (
           <span className="text-theme-xs text-gray-400">尚未选择</span>
         ) : (

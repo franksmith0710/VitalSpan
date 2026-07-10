@@ -20,6 +20,8 @@ type Props = {
   config: ChartViewConfig;
   columns: string[];
   onChange: (next: ChartViewConfig) => void;
+  /** 嵌入 Dashboard 右栏（~300px）时使用单列紧凑布局 */
+  compact?: boolean;
 };
 
 const FILTER_OPS = [
@@ -63,7 +65,7 @@ function FieldSelect({
   );
 }
 
-export function ChartConfigPanel({ config, columns, onChange }: Props) {
+export function ChartConfigPanel({ config, columns, onChange, compact = false }: Props) {
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -132,7 +134,7 @@ export function ChartConfigPanel({ config, columns, onChange }: Props) {
       if (err.code === "CHART_INVALID_STYLE_VARIANT") {
         setError(msg);
       } else if (err.fields?.length) {
-        setFieldError(err.fields.map((f) => f.message).join("；"));
+        setFieldError(err.fields.map((f) => mapChartConfigError("", f.message)).join("；"));
       } else {
         setError(msg);
       }
@@ -141,40 +143,57 @@ export function ChartConfigPanel({ config, columns, onChange }: Props) {
     }
   };
 
-  const dimCount = Math.max(rule?.minDimensions ?? 1, config.dimensions?.length ?? 0);
-  const metCount = Math.max(rule?.minMetrics ?? 1, config.metrics?.length ?? 0);
+  const dimCount = columnsDisabled
+    ? config.dimensions?.length ?? 0
+    : Math.max(rule?.minDimensions ?? 1, config.dimensions?.length ?? 0);
+  const metCount = columnsDisabled
+    ? config.metrics?.length ?? 0
+    : Math.max(rule?.minMetrics ?? 1, config.metrics?.length ?? 0);
+
+  const fieldGridClass = compact ? "grid gap-2" : "grid gap-2 sm:grid-cols-2";
+  const filterGridClass = compact
+    ? "grid gap-2 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
+    : "grid gap-2 rounded-lg border border-gray-200 p-3 dark:border-gray-800 sm:grid-cols-3";
 
   return (
-    <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-      <div className="space-y-4">
-        {columnsDisabled ? (
-          <p className="text-theme-sm text-gray-500">请先执行查询或选择数据源</p>
+    <div
+      className={
+        compact ? "space-y-4" : "rounded-xl border border-gray-200 p-4 dark:border-gray-800"
+      }
+    >
+      <div className={compact ? "space-y-4" : "space-y-4"}>
+        {columnsDisabled && !compact ? (
+          <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50/80 px-3 py-2.5 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400">
+            绑定数据源并执行查询后，可配置维度、指标与筛选。
+          </p>
         ) : null}
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>维度字段</Label>
             {rule && (config.dimensions?.length ?? 0) < (rule.maxDimensions ?? 8) ? (
-              <Button type="button" variant="ghost" size="sm" onClick={addDimension}>
-                <Plus className="mr-1 size-4" />
-                添加维度
+              <Button type="button" variant="ghost" size="xs" onClick={addDimension} aria-label="添加维度">
+                <Plus className="size-3.5" aria-hidden />
+                添加
               </Button>
             ) : null}
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {Array.from({ length: dimCount }, (_, idx) => (
-              <FieldSelect
-                key={`dim-${idx}`}
-                value={config.dimensions?.[idx]?.field ?? ""}
-                columns={columns}
-                placeholder="选择维度"
-                onChange={(v) => updateDim(idx, v)}
-                disabled={columnsDisabled}
-              />
-            ))}
-          </div>
+          {dimCount > 0 ? (
+            <div className={fieldGridClass}>
+              {Array.from({ length: dimCount }, (_, idx) => (
+                <FieldSelect
+                  key={`dim-${idx}`}
+                  value={config.dimensions?.[idx]?.field ?? ""}
+                  columns={columns}
+                  placeholder="选择维度"
+                  onChange={(v) => updateDim(idx, v)}
+                  disabled={columnsDisabled}
+                />
+              ))}
+            </div>
+          ) : null}
           {spec?.fieldRule?.note ? (
-            <p className="text-theme-xs text-gray-500">{spec.fieldRule.note}</p>
+            <p className="text-theme-xs text-gray-500 dark:text-gray-400">{spec.fieldRule.note}</p>
           ) : null}
         </div>
 
@@ -182,39 +201,38 @@ export function ChartConfigPanel({ config, columns, onChange }: Props) {
           <div className="flex items-center justify-between">
             <Label>度量字段</Label>
             {rule && (config.metrics?.length ?? 0) < (rule.maxMetrics ?? 8) ? (
-              <Button type="button" variant="ghost" size="sm" onClick={addMetric}>
-                <Plus className="mr-1 size-4" />
-                添加指标
+              <Button type="button" variant="ghost" size="xs" onClick={addMetric} aria-label="添加指标">
+                <Plus className="size-3.5" aria-hidden />
+                添加
               </Button>
             ) : null}
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {Array.from({ length: metCount }, (_, idx) => (
-              <FieldSelect
-                key={`met-${idx}`}
-                value={config.metrics?.[idx]?.field ?? ""}
-                columns={columns}
-                placeholder="选择度量"
-                onChange={(v) => updateMetric(idx, v)}
-                disabled={columnsDisabled}
-              />
-            ))}
-          </div>
+          {metCount > 0 ? (
+            <div className={fieldGridClass}>
+              {Array.from({ length: metCount }, (_, idx) => (
+                <FieldSelect
+                  key={`met-${idx}`}
+                  value={config.metrics?.[idx]?.field ?? ""}
+                  columns={columns}
+                  placeholder="选择度量"
+                  onChange={(v) => updateMetric(idx, v)}
+                  disabled={columnsDisabled}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>筛选条件</Label>
-            <Button type="button" variant="ghost" size="sm" onClick={addFilter}>
-              <Plus className="mr-1 size-4" />
-              添加筛选
+            <Button type="button" variant="ghost" size="xs" onClick={addFilter} aria-label="添加筛选">
+              <Plus className="size-3.5" aria-hidden />
+              添加
             </Button>
           </div>
           {(config.filters ?? []).map((f, i) => (
-            <div
-              key={`filter-${i}`}
-              className="grid gap-2 rounded-lg border border-gray-200 p-3 dark:border-gray-800 sm:grid-cols-3"
-            >
+            <div key={`filter-${i}`} className={filterGridClass}>
               <FieldSelect
                 value={f.field}
                 columns={columns}
@@ -293,8 +311,9 @@ export function ChartConfigPanel({ config, columns, onChange }: Props) {
         ) : null}
         <Button
           type="button"
-          variant="primary"
-          className="h-11 rounded-lg"
+          variant={compact ? "outline" : "primary"}
+          size={compact ? "sm" : "md"}
+          className={compact ? "w-full" : "h-11 rounded-lg"}
           onClick={validate}
           disabled={validating}
         >

@@ -1,0 +1,86 @@
+{
+  "version": "1.0",
+  "projectName": "VitalSpan",
+  "paths": {
+    "apiDocs": "docs/api",
+    "domainDocs": "docs/services",
+    "sourceRoot": "backend/app",
+    "pages": "fe/src/pages",
+    "routes": "fe/src/routes.tsx"
+  },
+  "collectors": {
+    "api": {
+      "format": "readme_table",
+      "readmeTable": {
+        "file": "docs/api/README.md",
+        "skipStatuses": ["规划", "范围外"],
+        "matchImplementedSubstring": true
+      }
+    }
+  },
+  "include": ["backend/**", "fe/**", "docs/**"],
+  "exclude": ["**/node_modules/**", "**/.venv/**", "**/dist/**", "**/__pycache__/**"],
+  "scan": {
+    "shardSize": 30,
+    "shardSizeByType": {
+      "api": 30,
+      "domain_doc": 20,
+      "entity": 20,
+      "code_module": 8,
+      "page_route": 15,
+      "doc_asset": 20
+    },
+    "maxConcurrency": { "full": 8, "incremental": 6 },
+    "incremental": { "maxChangedFiles": 200 },
+    "scoringMode": "weighted",
+    "dimensions": ["api", "business", "code", "page", "doc"],
+    "subagentTimeoutMs": 180000,
+    "maxRelatedPathsPerAsset": 3
+  },
+  "gate": {
+    "blockOn": ["P0", "P1"],
+    "minHealthScore": 75,
+    "requireEvidenceFor": ["P0", "P1"],
+    "dimensionWeights": {
+      "business": 0.2,
+      "api": 0.2,
+      "code": 0.2,
+      "page": 0.2,
+      "doc": 0.2
+    }
+  },
+  "fingerprintRulesVersion": "1.1-readme-table",
+  "orchestrationMode": "guided",
+  "rules": {
+    "api": {
+      "status_codes": [200, -1],
+      "rules": [
+        { "rule_id": "api.auth", "severity": "P0", "summary": "敏感接口缺少权限声明（auth 为空或 none）" },
+        { "rule_id": "api.status_code", "severity": "P1", "summary": "业务响应码仅允许约定枚举" },
+        { "rule_id": "api.doc_consistency", "severity": "P1", "summary": "文档路径、方法、参数与实现一致" },
+        { "rule_id": "api.zombie", "severity": "P1", "summary": "文档与实现双向存在（无僵尸接口/实现）" }
+      ]
+    },
+    "business": {
+      "rules": [
+        { "rule_id": "domain.boundary", "severity": "P1", "summary": "无跨领域实体引用" },
+        { "rule_id": "domain.entity_consistency", "severity": "P1", "summary": "实体字段与代码 Model 一致" }
+      ]
+    },
+    "code": {
+      "rules": [
+        { "rule_id": "code.layer_purity", "severity": "P1", "summary": "分层依赖方向正确" }
+      ]
+    },
+    "page": {
+      "rules": [
+        { "rule_id": "page.route_consistency", "severity": "P1", "summary": "路由与页面文件一致" }
+      ]
+    },
+    "doc": {
+      "rules": [
+        { "rule_id": "doc.coverage", "severity": "P2", "summary": "关键模块有文档覆盖" }
+      ]
+    }
+  }
+}

@@ -267,7 +267,7 @@ def list_dashboards(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ):
-    return dash_service.list_dashboards(db, limit=limit, offset=offset)
+    return dash_service.list_dashboards(db, limit=limit, offset=offset, actor=user)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -287,11 +287,13 @@ def create_dashboard(
 @router.get("/{dashboard_id}")
 def get_dashboard(
     dashboard_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
-        return dash_service.get_dashboard(db, dashboard_id)
+        out = dash_service.get_dashboard(db, dashboard_id)
+        dash_service.assert_dashboard_access(user, out.created_by)
+        return out
     except dash_service.DashboardError as exc:
         return _error_response(exc)
 
@@ -300,10 +302,12 @@ def get_dashboard(
 def update_dashboard(
     dashboard_id: uuid.UUID,
     payload: DashboardUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
+        existing = dash_service.get_dashboard(db, dashboard_id)
+        dash_service.assert_dashboard_access(user, existing.created_by)
         return dash_service.update_dashboard(db, dashboard_id, payload)
     except dash_service.DashboardError as exc:
         return _error_response(exc)
@@ -312,10 +316,12 @@ def update_dashboard(
 @router.delete("/{dashboard_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_dashboard(
     dashboard_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
+        existing = dash_service.get_dashboard(db, dashboard_id)
+        dash_service.assert_dashboard_access(user, existing.created_by)
         dash_service.delete_dashboard(db, dashboard_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except dash_service.DashboardError as exc:
@@ -326,10 +332,12 @@ def delete_dashboard(
 def update_layout(
     dashboard_id: uuid.UUID,
     payload: DashboardLayoutUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
+        existing = dash_service.get_dashboard(db, dashboard_id)
+        dash_service.assert_dashboard_access(user, existing.created_by)
         return dash_service.update_layout(db, dashboard_id, payload.layout_json)
     except dash_service.DashboardError as exc:
         return _error_response(exc)

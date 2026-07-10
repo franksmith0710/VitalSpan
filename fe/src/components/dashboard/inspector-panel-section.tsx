@@ -1,0 +1,36 @@
+import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
+
+/** Dashboard 编辑区右栏分段标题（窄栏 ~300px） */
+export function InspectorPanelSection({
+  title,
+  description,
+  action,
+  children,
+  className,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={cn("space-y-3", className)}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+            {title}
+          </h3>
+          {description ? (
+            <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}

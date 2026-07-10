@@ -1,6 +1,7 @@
 import type { Layout, LayoutItem } from "react-grid-layout/legacy";
 import type { LayoutWidget } from "./layoutUtils";
 import { sortWidgets } from "./layoutUtils";
+import { GRID_COLS, findFirstFreeSlot, layoutItemsCollide } from "./gridSnapUtils";
 
 /** 行高（px）；较小步进便于纵向微调，对齐 Superset 类 BI 画布 */
 export const GRID_ROW_HEIGHT = 48;
@@ -15,15 +16,11 @@ function clampRowSpan(h: number): number {
   return Math.min(MAX_CHART_ROWS, Math.max(MIN_CHART_ROWS, Math.round(h)));
 }
 
-function itemBox(item: Pick<LayoutItem, "x" | "y" | "w" | "h">) {
-  return item;
-}
-
 function itemsCollide(
   a: Pick<LayoutItem, "x" | "y" | "w" | "h">,
   b: Pick<LayoutItem, "x" | "y" | "w" | "h">,
 ): boolean {
-  return !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
+  return layoutItemsCollide(a, b);
 }
 
 function layoutHasOverlap(layout: LayoutItem[]): boolean {
@@ -124,19 +121,18 @@ export function normalizeWidgetLayout(widgets: LayoutWidget[]): LayoutWidget[] {
   return gridLayoutToWidgets(widgetsToGridLayout(widgets), widgets);
 }
 
-/** 为新组件计算画布底部空位 */
+/** 为新组件计算第一个可用空位（同行优先，对标 DataEase 流式排布） */
 export function placeNewWidget(widgets: LayoutWidget[], widget: LayoutWidget): LayoutWidget {
+  const w = clampColSpan(widget.colSpan);
+  const h = clampRowSpan(widget.rowSpan);
   const layout = widgetsToGridLayout(widgets);
-  let maxY = 0;
-  for (const item of layout) {
-    maxY = Math.max(maxY, item.y + item.h);
-  }
+  const { x, y } = findFirstFreeSlot(layout, w, h);
   return {
     ...widget,
-    colSpan: clampColSpan(widget.colSpan),
-    rowSpan: clampRowSpan(widget.rowSpan),
-    gridX: 0,
-    gridY: maxY,
+    colSpan: w,
+    rowSpan: h,
+    gridX: x,
+    gridY: y,
   };
 }
 
@@ -150,21 +146,9 @@ export function placeWidgetAt(
   const w = clampColSpan(widget.colSpan);
   const h = clampRowSpan(widget.rowSpan);
   const layout = widgetsToGridLayout(widgets);
-  let x = Math.min(12 - w, Math.max(0, Math.round(preferredX)));
-  let y = Math.max(0, Math.round(preferredY));
-
-  const collidesAt = (tx: number, ty: number) =>
-    layout.some((item) => itemsCollide(itemBox({ x: tx, y: ty, w, h }), item));
-
-  let tries = 0;
-  while (collidesAt(x, y) && tries < 120) {
-    y += 1;
-    tries += 1;
-  }
-
-  if (collidesAt(x, y)) {
-    return placeNewWidget(widgets, widget);
-  }
+  const prefX = Math.min(GRID_COLS - w, Math.max(0, Math.round(preferredX)));
+  const prefY = Math.max(0, Math.round(preferredY));
+  const { x, y } = findFirstFreeSlot(layout, w, h, { x: prefX, y: prefY });
 
   return {
     ...widget,

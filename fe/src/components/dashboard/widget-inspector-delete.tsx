@@ -15,14 +15,19 @@ import { Button } from "@/components/ui/button";
 type WidgetInspectorDeleteProps = {
   widgetTitle: string;
   onDelete: () => void;
+  embedded?: boolean;
 };
 
-export function WidgetInspectorDelete({ widgetTitle, onDelete }: WidgetInspectorDeleteProps) {
+export function WidgetInspectorDelete({
+  widgetTitle,
+  onDelete,
+  embedded = false,
+}: WidgetInspectorDeleteProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
     <>
-      <div className="mt-6 border-t border-gray-100 pt-4 dark:border-white/[0.06]">
+      <div className={embedded ? undefined : "mt-6 border-t border-gray-100 pt-4 dark:border-white/[0.06]"}>
         <Button
           type="button"
           variant="outline"

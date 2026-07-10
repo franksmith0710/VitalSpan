@@ -16,6 +16,10 @@ vi.mock("@/context/auth-context", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
+vi.mock("@/lib/gov-nav", () => ({
+  isGovNavEnabledFromEnv: () => true,
+}));
+
 import { AdminLayout } from "./AdminLayout";
 
 describe("AdminLayout smoke", () => {
@@ -326,8 +330,9 @@ describe("AdminLayout smoke", () => {
     expect(screen.getByRole("link", { name: "报表调度" })).toBeInTheDocument();
   });
 
-  it("admin sidebar 数据连接 links to datasources (T-FE-SMFA-02)", () => {
+  it("T-FE-SMFA-05: hover expands collapsed nav group without click", async () => {
     setDesktopViewport(1400);
+    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -338,8 +343,31 @@ describe("AdminLayout smoke", () => {
       </MemoryRouter>,
     );
 
-    const dataConnLink = screen.getByRole("link", { name: "数据连接" });
-    expect(dataConnLink).toHaveAttribute("href", "/admin/datasources");
+    const reportTrigger = screen.getByRole("button", { name: "报表中心" });
+    expect(screen.queryByRole("link", { name: "预制报表" })).not.toBeInTheDocument();
+
+    await user.hover(reportTrigger);
+    expect(await screen.findByRole("link", { name: "预制报表" })).toBeInTheDocument();
+  });
+
+  it("admin sidebar 数据连接 links to datasources (T-FE-SMFA-02)", async () => {
+    setDesktopViewport(1400);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/admin"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<div>home</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.hover(screen.getByRole("button", { name: "数据连接" }));
+    expect(await screen.findByRole("link", { name: "连接管理" })).toHaveAttribute(
+      "href",
+      "/admin/datasources",
+    );
     expect(screen.queryByRole("link", { name: "连接器类型" })).not.toBeInTheDocument();
   });
 

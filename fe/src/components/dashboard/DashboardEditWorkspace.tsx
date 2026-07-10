@@ -87,7 +87,7 @@ export function DashboardEditWorkspace({
         {canvas}
       </WorkspacePanel>
 
-      <WorkspacePanel title="数据配置" hint="选中组件后配置 Dataset 或 SQL" bodyClassName="p-4">
+      <WorkspacePanel title="数据配置" hint="选中组件后分步配置" bodyClassName="flex min-h-0 flex-col p-0">
         {inspector}
       </WorkspacePanel>
     </div>

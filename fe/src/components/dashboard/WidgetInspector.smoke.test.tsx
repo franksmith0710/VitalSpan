@@ -184,7 +184,7 @@ describe("WidgetInspector dataset select", () => {
       );
     });
     await waitFor(() => {
-      expect(screen.queryByText("请先执行查询或选择数据源")).not.toBeInTheDocument();
+      expect(screen.queryByText("绑定数据源并执行查询后，可配置维度、指标与筛选。")).not.toBeInTheDocument();
     });
   });
 });

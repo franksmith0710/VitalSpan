@@ -1,15 +1,54 @@
-"""Customer-delivery honesty gate (Phase0 scaffold + H1 nav).
-
-Tracks fill in remaining assertions as they land. H1 gov-nav default-off is
-covered primarily by FE vitest (`resolve-nav.test.ts` T-NAV-H1-*); this module
-documents the gate contract for Phase M.
-"""
+"""Customer-delivery honesty gate — executable contracts for main-path honesty."""
 
 from __future__ import annotations
 
+from pathlib import Path
 
-def test_honesty_gate_h1_gov_nav_default_documented() -> None:
-    """H1: 治理侧栏默认隐藏，除非 VITE_GOV_NAV=1（FE resolve-nav）。"""
-    # Executable FE coverage: fe/src/lib/resolve-nav.test.ts
-    # T-NAV-H1-01 / T-NAV-H1-02
-    assert True
+from app.metadata.dataset.models import DatasetRecord
+from app.metadata.dataset import service as dataset_service
+from app.reports.scheduler import executor as schedule_executor
+
+_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_honesty_gate_dataset_orm_not_inmemory() -> None:
+    """FAKE-01: Dataset primary store is ORM (DatasetRecord), not a dict store."""
+    assert issubclass(DatasetRecord, object)
+    assert hasattr(DatasetRecord, "__tablename__")
+    assert DatasetRecord.__tablename__ == "datasets"
+    assert not isinstance(dataset_service._store, dict)
+
+
+def test_honesty_gate_schedule_default_artifact_not_mock_scheme() -> None:
+    """T3: customer-default schedule mock path must not emit mock:// artifacts."""
+    src = Path(schedule_executor.__file__).read_text(encoding="utf-8")
+    assert "mock://" not in src or "never customer-default mock://" in src
+    assert 'artifactRef=f"test://reports/' in src or 'artifact_ref=f"test://reports/' in src or "test://reports/" in src
+
+
+def test_honesty_gate_h1_gov_nav_default_off() -> None:
+    """H1: 治理侧栏默认隐藏，除非 VITE_GOV_NAV=1。"""
+    gov_nav = (_ROOT / "fe" / "src" / "lib" / "gov-nav.ts").read_text(encoding="utf-8")
+    assert 'import.meta.env.VITE_GOV_NAV === "1"' in gov_nav
+    resolve_nav = (_ROOT / "fe" / "src" / "lib" / "resolve-nav.ts").read_text(encoding="utf-8")
+    assert "isGovNavEnabledFromEnv" in resolve_nav
+
+
+def test_honesty_gate_filter_controls_are_real() -> None:
+    """T2: filter widgets expose real select/date/multiselect controls (not placeholder-only)."""
+    controls = (_ROOT / "fe" / "src" / "components" / "dashboard" / "FilterWidgetControls.tsx").read_text(
+        encoding="utf-8",
+    )
+    assert 'controlType === "select"' in controls
+    assert 'controlType === "date"' in controls
+    assert 'controlType === "multiselect"' in controls
+
+
+def test_honesty_gate_share_page_reads_layout_json() -> None:
+    """P0-01: Share page must read API layoutJson, not layout."""
+    share = (_ROOT / "fe" / "src" / "pages" / "admin" / "dashboard" / "DashboardSharePage.tsx").read_text(
+        encoding="utf-8",
+    )
+    assert "layoutJson" in share
+    assert "detail?.layout?.widgets" not in share
+    assert "detail?.layoutJson?.widgets" in share

@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DragEvent } from "react";
-import { ReactGridLayout } from "react-grid-layout/legacy";
 import type { Layout } from "react-grid-layout/legacy";
-import "react-grid-layout/css/styles.css";
 import { cn } from "@/lib/utils";
 import {
   DEFAULT_WIDGET_COLSPAN,
@@ -12,17 +10,18 @@ import {
   type PaletteDragPayload,
 } from "@/lib/dashboardDnd";
 import { DashboardCanvasEmpty } from "./DashboardCanvasEmpty";
+import {
+  DASHBOARD_GRID_COLS,
+  DASHBOARD_GRID_MARGIN,
+  DASHBOARD_GRID_ROW_HEIGHT,
+  DashboardRglCanvas,
+} from "./dashboardGridRgl";
 import type { LayoutWidget } from "./layoutUtils";
 import { sortWidgets } from "./layoutUtils";
-import {
-  GRID_ROW_HEIGHT,
-  gridLayoutToWidgets,
-  widgetsToGridLayout,
-} from "./gridLayoutAdapter";
-import { GRID_COLS, snapLayoutToGrid } from "./gridSnapUtils";
+import { gridLayoutToWidgets, widgetsToGridLayout } from "./gridLayoutAdapter";
+import { normalizeGridLayout } from "./gridSnapUtils";
 
 const EMPTY_CANVAS_MIN_HEIGHT = 480;
-const GRID_MARGIN: [number, number] = [12, 12];
 export type DashboardGridMode = "edit" | "view";
 
 type DashboardGridProps = {
@@ -34,60 +33,30 @@ type DashboardGridProps = {
   className?: string;
 };
 
-function viewColSpan(widget: LayoutWidget): number {
-  return Math.min(12, Math.max(1, Math.round(widget.colSpan)));
-}
-
 function layoutKey(items: Layout): string {
   return items.map((item) => `${item.i}:${item.x}:${item.y}:${item.w}:${item.h}`).join("|");
 }
 
-/** 指针坐标 → 12 列栅格落点（不依赖 RGL isDroppable，避免占位节点闪烁） */
+/** 指针坐标 → 12 列栅格落点 */
 function pointerToGridCell(
   clientX: number,
   clientY: number,
   container: DOMRect,
-  width: number,
 ): { gridX: number; gridY: number } {
-  const colWidth = (width - GRID_MARGIN[0] * (GRID_COLS + 1)) / GRID_COLS;
-  const localX = clientX - container.left - GRID_MARGIN[0];
-  const localY = clientY - container.top - GRID_MARGIN[1];
+  const width = container.width;
+  const colWidth = (width - DASHBOARD_GRID_MARGIN[0] * (DASHBOARD_GRID_COLS + 1)) / DASHBOARD_GRID_COLS;
+  const localX = clientX - container.left - DASHBOARD_GRID_MARGIN[0];
+  const localY = clientY - container.top - DASHBOARD_GRID_MARGIN[1];
   const gridX = Math.max(
     0,
-    Math.min(GRID_COLS - DEFAULT_WIDGET_COLSPAN, Math.floor(localX / (colWidth + GRID_MARGIN[0]))),
+    Math.min(
+      DASHBOARD_GRID_COLS - DEFAULT_WIDGET_COLSPAN,
+      Math.floor(localX / (colWidth + DASHBOARD_GRID_MARGIN[0])),
+    ),
   );
-  const rowStride = GRID_ROW_HEIGHT + GRID_MARGIN[1];
+  const rowStride = DASHBOARD_GRID_ROW_HEIGHT + DASHBOARD_GRID_MARGIN[1];
   const gridY = Math.max(0, Math.floor(localY / rowStride));
   return { gridX, gridY };
-}
-
-function useStableGridWidth() {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [width, setWidth] = useState(800);
-  const lastWidthRef = useRef(800);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-
-    const apply = (next: number) => {
-      const rounded = Math.round(next);
-      const safe = rounded > 0 ? rounded : 800;
-      if (Math.abs(safe - lastWidthRef.current) <= 1) return;
-      lastWidthRef.current = safe;
-      setWidth(safe);
-    };
-
-    apply(node.getBoundingClientRect().width);
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) apply(entry.contentRect.width);
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, width };
 }
 
 export function DashboardGrid({
@@ -107,7 +76,8 @@ export function DashboardGrid({
   const layoutKeyRef = useRef(derivedLayoutKey);
   const [dragActive, setDragActive] = useState(false);
   const [snapGuidesVisible, setSnapGuidesVisible] = useState(false);
-  const { ref: widthRef, width } = useStableGridWidth();
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const viewLayout = useMemo(() => normalizeGridLayout(derivedLayout), [derivedLayout]);
   sortedRef.current = sorted;
 
   useEffect(() => {
@@ -119,7 +89,7 @@ export function DashboardGrid({
   const persistLayout = useCallback(
     (next: Layout, snap = false) => {
       if (!onLayoutChange || next.length !== sortedRef.current.length) return;
-      const resolved = snap ? snapLayoutToGrid(next) : next;
+      const resolved = snap ? normalizeGridLayout(next) : next;
       layoutKeyRef.current = layoutKey(resolved);
       setLayout(resolved);
       onLayoutChange(gridLayoutToWidgets(resolved, sortedRef.current));
@@ -155,17 +125,23 @@ export function DashboardGrid({
       e.stopPropagation();
       setDragActive(false);
       const rect = e.currentTarget.getBoundingClientRect();
-      const at = pointerToGridCell(e.clientX, e.clientY, rect, width);
+      const at = pointerToGridCell(e.clientX, e.clientY, rect);
       onInsertChart(payload, at);
     },
-    [onInsertChart, width],
+    [onInsertChart],
   );
+
+  const gridChildren = sorted.map((widget) => (
+    <div key={widget.id} className="h-full min-w-0">
+      {renderWidget(widget)}
+    </div>
+  ));
 
   if (mode === "edit" && onLayoutChange) {
     const isEmpty = sorted.length === 0;
     return (
       <div
-        ref={widthRef}
+        ref={canvasRef}
         className={cn(
           "dashboard-grid-edit relative h-full min-h-[420px] w-full",
           dragActive && "dashboard-canvas-drop-active",
@@ -179,30 +155,16 @@ export function DashboardGrid({
         {isEmpty ? <DashboardCanvasEmpty dragActive={dragActive} /> : null}
         {snapGuidesVisible ? (
           <div className="dashboard-grid-snap-guides" aria-hidden>
-            {Array.from({ length: GRID_COLS }, (_, i) => (
+            {Array.from({ length: DASHBOARD_GRID_COLS }, (_, i) => (
               <div key={i} />
             ))}
           </div>
         ) : null}
-        <ReactGridLayout
+        <DashboardRglCanvas
           className={cn("layout", isEmpty && "dashboard-grid-empty")}
-          width={width}
-          layout={layout}
-          cols={GRID_COLS}
-          rowHeight={GRID_ROW_HEIGHT}
-          margin={GRID_MARGIN}
-          containerPadding={[0, 0]}
-          compactType={null}
-          preventCollision={false}
-          autoSize
-          isDraggable
-          isResizable
-          isDroppable={false}
-          resizeHandles={["se"]}
-          draggableHandle=".dashboard-drag-handle"
-          draggableCancel=".dashboard-no-drag"
-          useCSSTransforms={false}
           style={isEmpty ? { minHeight: EMPTY_CANVAS_MIN_HEIGHT } : undefined}
+          layout={layout}
+          editable
           onDragStart={() => {
             interactingRef.current = true;
             setSnapGuidesVisible(true);
@@ -226,12 +188,8 @@ export function DashboardGrid({
             setLayout(next);
           }}
         >
-          {sorted.map((widget) => (
-            <div key={widget.id} className="h-full min-w-0">
-              {renderWidget(widget)}
-            </div>
-          ))}
-        </ReactGridLayout>
+          {gridChildren}
+        </DashboardRglCanvas>
       </div>
     );
   }
@@ -253,19 +211,10 @@ export function DashboardGrid({
   }
 
   return (
-    <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-12", className)}>
-      {sorted.map((widget) => (
-        <div
-          key={widget.id}
-          className="min-w-0 overflow-hidden"
-          style={{
-            gridColumn: `span ${viewColSpan(widget)}`,
-            minHeight: widget.rowSpan > 1 ? `${widget.rowSpan * 120}px` : undefined,
-          }}
-        >
-          {renderWidget(widget)}
-        </div>
-      ))}
+    <div ref={canvasRef} className={cn("dashboard-grid-view relative w-full", className)}>
+      <DashboardRglCanvas className="layout" layout={viewLayout} editable={false}>
+        {gridChildren}
+      </DashboardRglCanvas>
     </div>
   );
 }

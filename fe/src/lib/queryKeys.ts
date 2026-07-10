@@ -87,7 +87,9 @@ export const queryKeys = {
     dimensions: (params?: { codePrefix?: string }) => ["metadata", "dimensions", params] as const,
   },
   datasets: {
+    all: ["datasets"] as const,
     list: (params?: { limit?: number; offset?: number }) => ["datasets", "list", params] as const,
+    detail: (id: string) => ["datasets", "detail", id] as const,
   },
   services: {
     list: (params?: { limit?: number; offset?: number }) => ["services", "list", params] as const,

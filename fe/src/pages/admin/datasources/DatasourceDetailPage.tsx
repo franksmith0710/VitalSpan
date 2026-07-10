@@ -125,7 +125,13 @@ export function DatasourceDetailPage() {
         </div>
       }
       actions={
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/datasources">
+              <ArrowLeft className="size-4" aria-hidden />
+              返回列表
+            </Link>
+          </Button>
           <Button
             variant="primary"
             size="sm"

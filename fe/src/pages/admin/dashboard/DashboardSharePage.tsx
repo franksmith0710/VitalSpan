@@ -13,7 +13,7 @@ import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 type DashboardDetail = {
   id: string;
   name: string;
-  layout: { widgets: LayoutWidget[] };
+  layoutJson: { widgets: LayoutWidget[] };
 };
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
@@ -62,7 +62,7 @@ export function DashboardSharePage() {
     toast.success("已复制链接");
   };
 
-  const widgets = detail?.layout?.widgets ?? [];
+  const widgets = detail?.layoutJson?.widgets ?? [];
 
   return (
     <AdminPageShell

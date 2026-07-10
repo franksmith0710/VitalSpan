@@ -50,10 +50,10 @@ def create_dataset(
 @router.get("/{dataset_id}", response_model=DatasetItemOut)
 def get_dataset(
     dataset_id: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(get_current_user)],
 ) -> DatasetItemOut | JSONResponse:
     try:
-        return dataset_service.get_dataset(dataset_id)
+        return dataset_service.get_dataset(dataset_id, actor)
     except DatasetError as exc:
         return _dataset_error(exc)
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
@@ -25,15 +25,18 @@ import { Button, IconButton } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useListPagination } from "@/lib/list-pagination";
-import { DatasetEditorDialog } from "./DatasetEditorDialog";
-import type { DatasetEditorValues, DatasetItem } from "./types";
+
+type DatasetItem = {
+  datasetId: string;
+  displayName: string;
+  tables: Array<{ name: string }>;
+  boundConfigId?: string | null;
+};
 
 export function DatasetListPage() {
   const qc = useQueryClient();
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editing, setEditing] = useState<DatasetItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DatasetItem | null>(null);
   const pagination = useListPagination(20);
 
@@ -48,40 +51,12 @@ export function DatasetListPage() {
       ),
   });
 
-  const invalidate = () => void qc.invalidateQueries({ queryKey: ["datasets"] });
-
-  const createMutation = useMutation({
-    mutationFn: (body: DatasetEditorValues) =>
-      apiFetch("/api/v1/datasets", { method: "POST", body: JSON.stringify(body) }),
-    onSuccess: () => {
-      toast.success("Dataset 已创建");
-      setCreateOpen(false);
-      invalidate();
-    },
-    onError: (err) => toast.error(mapApiError(err)),
-  });
-
-  const editMutation = useMutation({
-    mutationFn: async (body: DatasetEditorValues) => {
-      await apiFetch(`/api/v1/datasets/${body.datasetId}`, {
-        method: "PUT",
-        body: JSON.stringify(body),
-      });
-    },
-    onSuccess: () => {
-      toast.success("Dataset 已更新");
-      setEditOpen(false);
-      invalidate();
-    },
-    onError: (err) => toast.error(mapApiError(err)),
-  });
-
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiFetch(`/api/v1/datasets/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Dataset 已删除");
       setDeleteTarget(null);
-      invalidate();
+      void qc.invalidateQueries({ queryKey: ["datasets"] });
     },
     onError: (err) => toast.error(mapApiError(err)),
   });
@@ -89,16 +64,20 @@ export function DatasetListPage() {
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
 
+  const createButton = (
+    <Button asChild variant="primary" size="sm">
+      <Link to="/admin/datasets/new">
+        <Plus className="size-4" aria-hidden />
+        新建 Dataset
+      </Link>
+    </Button>
+  );
+
   return (
     <AdminPageShell
       title="Dataset"
       description="语义层数据集管理：表关联、计算字段与授权角色（META-004）。"
-      actions={
-        <Button type="button" variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4" aria-hidden />
-          新建 Dataset
-        </Button>
-      }
+      actions={createButton}
     >
       <ListPageSection>
         {isError ? (
@@ -115,12 +94,7 @@ export function DatasetListPage() {
               icon: <Layers className="size-7" aria-hidden />,
               title: "暂无 Dataset",
               description: "创建语义层数据集，配置表关联与计算字段。",
-              action: (
-                <Button type="button" variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
-                  <Plus className="size-4" aria-hidden />
-                  新建 Dataset
-                </Button>
-              ),
+              action: createButton,
             }}
             headers={["显示名", "ID", "绑定配置", "表数量", "操作"]}
             rows={items.map((d) => [
@@ -136,16 +110,10 @@ export function DatasetListPage() {
               d.boundConfigId ? `${d.boundConfigId.slice(0, 8)}…` : "—",
               d.tables.length,
               <RowActions key="a">
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  aria-label={`编辑 ${d.displayName}`}
-                  onClick={() => {
-                    setEditing(d);
-                    setEditOpen(true);
-                  }}
-                >
-                  <Pencil className="size-4" />
+                <IconButton asChild variant="ghost" size="sm" aria-label={`编辑 ${d.displayName}`}>
+                  <Link to={`/admin/datasets/${d.datasetId}/edit`}>
+                    <Pencil className="size-4" />
+                  </Link>
                 </IconButton>
                 <IconButton
                   variant="ghost"
@@ -170,22 +138,6 @@ export function DatasetListPage() {
           />
         ) : null}
       </ListPageSection>
-
-      <DatasetEditorDialog
-        open={createOpen}
-        mode="create"
-        pending={createMutation.isPending}
-        onOpenChange={setCreateOpen}
-        onSubmit={(v) => createMutation.mutate(v)}
-      />
-      <DatasetEditorDialog
-        open={editOpen}
-        mode="edit"
-        initial={editing}
-        pending={editMutation.isPending}
-        onOpenChange={setEditOpen}
-        onSubmit={(v) => editMutation.mutate(v)}
-      />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>

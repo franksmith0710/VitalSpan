@@ -81,6 +81,56 @@ function NavBadge({
   return <span className={cn("ml-auto shrink-0", state, base)}>{label}</span>;
 }
 
+function useCollapsibleOpen(hasActiveChild: boolean, defaultOpen = false) {
+  const [open, setOpen] = React.useState(defaultOpen || hasActiveChild);
+  const isHoveringRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (hasActiveChild) {
+      setOpen(true);
+    }
+  }, [hasActiveChild]);
+
+  const hoverZoneProps = {
+    onMouseEnter: () => {
+      isHoveringRef.current = true;
+      setOpen(true);
+    },
+    onMouseLeave: () => {
+      isHoveringRef.current = false;
+      if (!hasActiveChild) {
+        setOpen(false);
+      }
+    },
+  };
+
+  const toggleFromClick = () => {
+    if (!isHoveringRef.current) {
+      setOpen((prev) => !prev);
+    }
+  };
+
+  const toggleFromKeyboard = () => {
+    setOpen((prev) => !prev);
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (!next && isHoveringRef.current) {
+      return;
+    }
+    setOpen(next);
+  };
+
+  return {
+    open,
+    setOpen,
+    handleOpenChange,
+    hoverZoneProps,
+    toggleFromClick,
+    toggleFromKeyboard,
+  };
+}
+
 function SidebarNavItem({
   item,
   showLabels,
@@ -93,23 +143,29 @@ function SidebarNavItem({
     location.pathname === path || location.pathname.startsWith(`${path}/`);
   const hasActiveChild =
     item.subItems?.some((sub) => isActive(sub.path)) ?? false;
-  const [open, setOpen] = React.useState(hasActiveChild);
-
-  React.useEffect(() => {
-    if (hasActiveChild) {
-      setOpen(true);
-    }
-  }, [hasActiveChild]);
+  const { open, handleOpenChange, hoverZoneProps, toggleFromClick, toggleFromKeyboard } =
+    useCollapsibleOpen(hasActiveChild);
 
   if (item.subItems?.length) {
     return (
-      <Collapsible.Root open={open} onOpenChange={setOpen}>
+      <Collapsible.Root open={open} onOpenChange={handleOpenChange}>
+        <div {...hoverZoneProps}>
         <Collapsible.Trigger
           className={cn(
             "group menu-item w-full cursor-pointer",
             open || hasActiveChild ? "menu-item-active" : "menu-item-inactive",
             !showLabels && "xl:justify-center",
           )}
+          onClick={(event) => {
+            event.preventDefault();
+            toggleFromClick();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              toggleFromKeyboard();
+            }
+          }}
         >
           <span
             className={cn(
@@ -175,6 +231,7 @@ function SidebarNavItem({
             </ul>
           </Collapsible.Content>
         ) : null}
+        </div>
       </Collapsible.Root>
     );
   }
@@ -238,13 +295,8 @@ function SidebarSection({
         location.pathname === sub.path || location.pathname.startsWith(`${sub.path}/`),
     );
   });
-  const [open, setOpen] = React.useState(
-    section.defaultCollapsed ? hasActiveItem : true,
-  );
-
-  React.useEffect(() => {
-    if (hasActiveItem) setOpen(true);
-  }, [hasActiveItem]);
+  const { open, handleOpenChange, hoverZoneProps, toggleFromClick, toggleFromKeyboard } =
+    useCollapsibleOpen(hasActiveItem, section.defaultCollapsed ? false : true);
 
   const body = (
     <ul className="flex flex-col gap-0.5">
@@ -283,11 +335,22 @@ function SidebarSection({
         showDivider && "border-t border-gray-100 pt-5 dark:border-white/[0.06]",
       )}
     >
-      <Collapsible.Root open={open} onOpenChange={setOpen}>
+      <Collapsible.Root open={open} onOpenChange={handleOpenChange}>
+        <div {...hoverZoneProps}>
         {showLabels ? (
           <Collapsible.Trigger
             className="menu-group-title flex w-full cursor-pointer items-center justify-between gap-2 text-left hover:text-gray-800 dark:hover:text-white/90"
             aria-expanded={open}
+            onClick={(event) => {
+              event.preventDefault();
+              toggleFromClick();
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                toggleFromKeyboard();
+              }
+            }}
           >
             <span>{section.title}</span>
             <ChevronDown
@@ -306,6 +369,7 @@ function SidebarSection({
         <Collapsible.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
           {body}
         </Collapsible.Content>
+        </div>
       </Collapsible.Root>
     </div>
   );

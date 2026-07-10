@@ -1,0 +1,17 @@
+{
+  "terminalAllowlist": [
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/inspect-scheduler.mjs",
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/merge-results.mjs",
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/finalize-report.mjs",
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/run-collect.mjs",
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/shard-manifest.mjs",
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/run-pipeline.mjs",
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/validate-report.mjs",
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/run-post-gate.mjs",
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/update-baseline.mjs",
+    "node C:/Users/30381/Desktop/arch-inspect/.cursor/skills/arch-inspect/scripts/format-rule-set.mjs"
+  ],
+  "autoRun": {
+    "allow_instructions": "arch-inspect 全量/增量巡检：仅自动批准上述 node 脚本（读写 .arch-inspect/ 与 arch-inspect.config.json）。禁止自动 git push / rm -rf / 改业务源码。"
+  }
+}

@@ -6,7 +6,6 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { ChartConfigPanel } from "@/components/charts/ChartConfigPanel";
 import { useInspectorColumns } from "@/hooks/useInspectorColumns";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { LayoutWidget } from "./layoutUtils";
 import { defaultChartConfig } from "./layoutUtils";
@@ -56,6 +55,17 @@ function InspectorEmpty({ embedded }: { embedded?: boolean }) {
   );
 }
 
+function readinessBadge(
+  dataMode: "dataset" | "sql",
+  datasetReady: boolean,
+  dsMissing: boolean,
+) {
+  if (dataMode === "dataset") {
+    return datasetReady ? ("Dataset 就绪" as const) : ("Dataset 未就绪" as const);
+  }
+  return dsMissing ? ("未选数据源" as const) : ("SQL 模式" as const);
+}
+
 export function WidgetInspector({
   widget,
   onChange,
@@ -99,78 +109,86 @@ export function WidgetInspector({
   const datasetsEmpty = !datasetsLoading && !datasetsError && datasetItems.length === 0;
   const datasourcesEmpty = !dsLoading && datasourceItems.length === 0;
   const selectedDataset = datasetItems.find((d) => d.datasetId === cfg.datasetId);
+  const statusLabel = readinessBadge(dataMode, datasetReady, dsMissing);
+  const statusColor =
+    statusLabel === "Dataset 就绪" || statusLabel === "SQL 模式" ? "success" : "error";
 
   const body = (
-    <>
-      <div className="flex items-start gap-3 border-b border-gray-100 pb-4 dark:border-white/[0.06]">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
-          <Icon className="size-5" aria-hidden />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-            {widget.title}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Badge variant="light" color="light" size="sm">
-              {typeLabel}
-            </Badge>
-            <Badge
-              variant="light"
-              color={datasetReady || (dataMode === "sql" && !dsMissing) ? "success" : "error"}
-              size="sm"
-            >
-              {dataMode === "dataset"
-                ? datasetReady
-                  ? "Dataset 就绪"
-                  : "Dataset 未就绪"
-                : dsMissing
-                  ? "未选数据源"
-                  : "SQL 模式"}
-            </Badge>
+    <div className={cn("flex min-h-0 flex-1 flex-col", embedded && "h-full")}>
+      <div className="shrink-0 border-b border-gray-100 px-4 py-3 dark:border-white/[0.06]">
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
+            <Icon className="size-4" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+              {widget.title}
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <Badge variant="light" color="light" size="sm">
+                {typeLabel}
+              </Badge>
+              <Badge variant="light" color={statusColor} size="sm">
+                {statusLabel}
+              </Badge>
+            </div>
           </div>
         </div>
       </div>
 
-      <WidgetInspectorDataSection
-        widgetId={widget.id}
-        cfg={cfg}
-        dataMode={dataMode}
-        dsLoading={dsLoading}
-        datasetsLoading={datasetsLoading}
-        datasetsError={datasetsError}
-        datasourceItems={datasourceItems}
-        datasetItems={datasetItems}
-        datasetsEmpty={datasetsEmpty}
-        datasourcesEmpty={datasourcesEmpty}
-        selectedDataset={selectedDataset}
-        onChange={onChange}
-      />
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div className="space-y-5">
+          <WidgetInspectorDataSection
+            widgetId={widget.id}
+            cfg={cfg}
+            dataMode={dataMode}
+            dsLoading={dsLoading}
+            datasetsLoading={datasetsLoading}
+            datasetsError={datasetsError}
+            datasourceItems={datasourceItems}
+            datasetItems={datasetItems}
+            datasetsEmpty={datasetsEmpty}
+            datasourcesEmpty={datasourcesEmpty}
+            selectedDataset={selectedDataset}
+            onChange={onChange}
+          />
 
-      <div className="mt-4 grid gap-2">
-        <Label>图表样式与字段</Label>
-        {columnsReady && columnsLoading ? (
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">正在加载字段…</p>
-        ) : null}
-        {columnsReady && !columnsLoading && columns.length === 0 ? (
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-            未获取到字段，请确认 Dataset 已绑定配置或 SQL 可执行。
-          </p>
-        ) : null}
-        <ChartConfigPanel config={cfg} columns={columns} onChange={onChange} />
+          <div
+            role="separator"
+            className="border-t border-gray-100 dark:border-white/[0.06]"
+            aria-hidden
+          />
+
+          <div className="space-y-3">
+            {columnsReady && columnsLoading ? (
+              <p className="text-theme-xs text-gray-500 dark:text-gray-400">正在加载字段…</p>
+            ) : null}
+            {columnsReady && !columnsLoading && columns.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50/80 px-3 py-2 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400">
+                配置数据源并执行查询后，可设置维度、指标与筛选。
+              </p>
+            ) : null}
+            <ChartConfigPanel config={cfg} columns={columns} onChange={onChange} compact />
+          </div>
+        </div>
       </div>
 
-      {onDelete ? <WidgetInspectorDelete widgetTitle={widget.title} onDelete={onDelete} /> : null}
-    </>
+      {onDelete ? (
+        <div className="shrink-0 border-t border-gray-100 px-4 py-3 dark:border-white/[0.06]">
+          <WidgetInspectorDelete widgetTitle={widget.title} onDelete={onDelete} embedded />
+        </div>
+      ) : null}
+    </div>
   );
 
   if (embedded) {
-    return <div className={cn("w-full", className)}>{body}</div>;
+    return <div className={cn("flex h-full min-h-0 w-full flex-col", className)}>{body}</div>;
   }
 
   return (
     <aside
       className={cn(
-        "w-full shrink-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] xl:w-[300px]",
+        "w-full shrink-0 rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03] xl:w-[300px]",
         className,
       )}
     >

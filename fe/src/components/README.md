@@ -43,7 +43,8 @@
 | EmbedLayout | `../layouts/EmbedLayout.tsx` | Embed chromeless 布局 |
 | DashboardListCard | `dashboard/DashboardListCard.tsx` | 看板列表卡片（预览缩略图 + 操作） |
 | DashboardPreviewThumb | `dashboard/DashboardPreviewThumb.tsx` | 看板布局迷你预览 |
-| DashboardGrid | `dashboard/DashboardGrid.tsx` | 12 列栅格容器（edit: react-grid-layout 拖拽缩放） |
+| DashboardGrid | `dashboard/DashboardGrid.tsx` | 看板画布；引擎 **react-grid-layout**（`dashboardGridRgl.tsx` + WidthProvider 自适应宽度） |
+| dashboardGridRgl | `dashboard/dashboardGridRgl.tsx` | RGL 封装：12 列拖拽/缩放/垂直紧凑（DASH-002） |
 | DashboardEditWorkspace | `dashboard/DashboardEditWorkspace.tsx` | Dashboard 编辑三栏（图表组件 / 画布 / 数据配置） |
 | chartTypeCatalogDisplay | `lib/chartTypeCatalogDisplay.ts` | 图表类型 catalog 分组/图标/分类文案（Palette + 类型目录共用） |
 | WidgetPalette | `dashboard/WidgetPalette.tsx` | 按 catalog 分类插入全部注册图表类型（DASH-003 / VIZ-003） |

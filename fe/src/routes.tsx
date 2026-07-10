@@ -38,6 +38,7 @@ import { withGovernanceHonesty } from "@/pages/admin/governance/GovernanceHonest
 import { QueryServicesPage } from "@/pages/admin/services/QueryServicesPage";
 import { MetadataHubPage } from "@/pages/admin/metadata/MetadataHubPage";
 import { DatasetListPage } from "@/pages/admin/datasets/DatasetListPage";
+import { DatasetFormPage } from "@/pages/admin/datasets/DatasetFormPage";
 import { DesignerPage } from "@/pages/admin/designer/DesignerPage";
 import { ChartExplorePage } from "@/pages/admin/charts/ChartExplorePage";
 import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
@@ -89,6 +90,8 @@ export function AppRoutes() {
           <Route path="metadata" element={<RequireCapabilityName capability="metadata:*"><MetadataHubPage /></RequireCapabilityName>} />
           <Route path="metadata/glossary" element={<RequireCapabilityName capability="metadata:*"><MetadataHubPage /></RequireCapabilityName>} />
           <Route path="datasets" element={<RequireCapabilityName capability="dataset:*"><DatasetListPage /></RequireCapabilityName>} />
+          <Route path="datasets/new" element={<RequireCapabilityName capability="dataset:*"><DatasetFormPage mode="create" /></RequireCapabilityName>} />
+          <Route path="datasets/:id/edit" element={<RequireCapabilityName capability="dataset:*"><DatasetFormPage mode="edit" /></RequireCapabilityName>} />
           <Route path="me/views" element={<Navigate to={ACCOUNT_PREFERENCES_PATH} replace />} />
           <Route path="themes/:dashboardId" element={<RequireCapabilityName capability="theme:*"><ThemeAnalysisPage /></RequireCapabilityName>} />
           <Route path="system/roles" element={<RequireCapabilityName capability="system:*"><RoleListPage /></RequireCapabilityName>} />

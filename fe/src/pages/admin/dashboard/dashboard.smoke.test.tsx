@@ -271,11 +271,11 @@ describe("dashboard admin smoke", () => {
     expect(next.map((w) => w.id)).toEqual(["w1", "w2", "w3"]);
   });
 
-  it("T-DASH-002-02: snapLayoutToGrid snaps width to 12-col grid", () => {
+  it("T-DASH-002-02: snapLayoutToGrid snaps width and x to 12-col slots", () => {
     const layout = widgetsToGridLayout(sampleWidgets);
-    const shifted = layout.map((item, i) => (i === 0 ? { ...item, x: 2.4, w: 5.6 } : item));
+    const shifted = layout.map((item, i) => (i === 0 ? { ...item, x: 4.2, w: 5.6 } : item));
     const snapped = snapLayoutToGrid(shifted);
-    expect(snapped[0].x).toBe(2);
+    expect(snapped[0].x).toBe(6);
     expect(snapped[0].w).toBe(6);
   });
 
@@ -395,14 +395,13 @@ describe("dashboard admin smoke", () => {
     expect(screen.getByLabelText("组件标题")).toHaveValue("A");
   });
 
-  it("T-DASH-R29-002-04: colSpan 6→12 updates grid column span", () => {
-    const widget = { ...sampleWidgets[0], colSpan: 12 };
+  it("T-DASH-R29-002-04: view mode uses react-grid-layout for positioned widgets", () => {
+    const widget = { ...sampleWidgets[0], colSpan: 12, gridX: 0, gridY: 0 };
     const { container } = render(
-      <DashboardGrid mode="view" widgets={[widget]} renderWidget={() => <div />} />,
+      <DashboardGrid mode="view" widgets={[widget]} renderWidget={() => <div data-testid="w" />} />,
     );
-    const cell = container.querySelector("[style*='grid-column']");
-    expect(cell).toBeTruthy();
-    expect((cell as HTMLElement).style.gridColumn).toBe("span 12");
+    expect(container.querySelector(".dashboard-grid-view .react-grid-item")).toBeTruthy();
+    expect(screen.getByTestId("w")).toBeInTheDocument();
   });
 
   it("T-DASH-R29-002-05: illegal layout save shows Chinese error banner", async () => {

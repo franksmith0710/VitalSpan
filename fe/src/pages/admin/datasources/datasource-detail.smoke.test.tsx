@@ -62,6 +62,10 @@ describe("datasource detail schema browser", () => {
       };
     });
     renderDetail();
+    expect(await screen.findByRole("link", { name: "返回列表" })).toHaveAttribute(
+      "href",
+      "/admin/datasources",
+    );
     expect(await screen.findByText("元数据浏览")).toBeInTheDocument();
     await waitFor(() =>
       expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/datasources/ds-1/tables?schema=public"),
