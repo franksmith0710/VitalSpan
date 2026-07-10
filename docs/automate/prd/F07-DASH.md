@@ -11,23 +11,26 @@
 - **验收标准**：
   - [x] 布局+组件列表+全局筛选器
   - [x] 可序列化保存
-- **代码锚点**：`backend/app/dashboard/models.py` · `backend/app/dashboard/service.py` · `backend/migrations/versions/0013_dashboards.py`
+  - [x] **M-DEPTH F-0**：看板列表快速创建向导（`DashboardQuickCreateDialog`：数据源 + Dataset + 首图；字段预填 `suggestChartFields`；2026-07-10）
+- **代码锚点**：`backend/app/dashboard/models.py` · `backend/app/dashboard/service.py` · `backend/migrations/versions/0013_dashboards.py` · `fe/src/components/dashboard/DashboardQuickCreateDialog.tsx` · `fe/src/pages/admin/dashboard/DashboardListPage.tsx`
 - **演化建议**：r29 layout 业务校验 DASH_DUPLICATE_WIDGET/DASH_MISSING_CHART_CONFIG 等独立 code（T-DASH-R29-001）；后续可补版本历史与并发乐观锁
-- **里程碑对齐**：
+- **里程碑对齐**：M-DEPTH F-0 · 快速创建 · 2026-07-10
 ### [DASH-002] Dashboard 容器与布局引擎
 
-- **状态**：已实现
+- **状态**：已实现（**M-DEPTH F-B 深度 companion 进行中**）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
-- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT F-A · 分享页 · 2026-07-08
-- **描述**：Dashboard 容器与布局引擎（SRS 追溯项）。
+- **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT F-A · 分享页 · 2026-07-08；**M-DEPTH F-B · 当前节 · 2026-07-10**
+- **描述**：Dashboard 容器与布局引擎（SRS 追溯项）。当前 widget 以 chart 为主；M-DEPTH 扩展 filter 组件类型。
 - **验收标准**：
   - [x] 空 Dashboard 可创建展示
   - [x] 网格布局可拖拽（react-grid-layout + edit/view 切换）
   - [x] 编辑态多选与 12 列吸附（Shift+点击多选、批量删除、`gridSnapUtils` 拖拽吸附；`dashboard.smoke.test.tsx` T-DASH-002-02/04/05）
   - [x] `/admin/dashboards/:id/share` 分享页 + 编辑页分享入口（`DashboardSharePage` · `DashboardEditPage`）
-- **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/pages/admin/dashboard/DashboardSharePage.tsx` · `fe/src/components/dashboard/` · `fe/src/components/dashboard/gridLayoutAdapter.ts` · `fe/src/components/dashboard/gridSnapUtils.ts` · `fe/src/components/dashboard/DashboardGrid.tsx` · `fe/src/hooks/useWidgetSelection.ts`
-- **演化建议**：r29 resizeWidget/标题编辑 + 增强空态引导（T-DASH-R29-002）；Playwright E2E 编辑拖拽持久化验收
+  - [x] **M-DASH-UX F-C**：编辑态稳定性 + 布局级撤销/重做（2026-07-09）
+  - [ ] **M-DEPTH F-B**：layout widget 类型扩展 `filter`（兼容旧 layout round-trip；后端 schema + FE `layoutUtils`）
+- **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/pages/admin/dashboard/DashboardSharePage.tsx` · `fe/src/components/dashboard/` · `fe/src/components/dashboard/layoutUtils.ts` · `fe/src/components/dashboard/gridLayoutAdapter.ts` · `fe/src/components/dashboard/gridSnapUtils.ts` · `fe/src/components/dashboard/DashboardGrid.tsx` · `backend/app/dashboard/schemas.py` · `fe/src/hooks/useWidgetSelection.ts`
+- **演化建议**：M-DEPTH F-B 闭合 filter widget 类型；Playwright E2E 编辑拖拽持久化验收
 ### [DASH-003] Dashboard 组件库
 
 - **状态**：已实现（M5 DASH-003）
@@ -42,19 +45,23 @@
 - **里程碑对齐**：M5 · 已完成 · 2026-07-06
 ### [DASH-004] 全局筛选器联动
 
-- **状态**：已实现（M-FE-3 FE + M8 r231 BE execute）
+- **状态**：已实现（M-FE-3 FE + M8 r231 BE execute；**M-DEPTH F-B 深度 companion 进行中**）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：二期
-- **描述**：全局筛选器联动（SRS 追溯项）。
+- **描述**：全局筛选器联动（SRS 追溯项）。当前 `GlobalFilterBar` 为纯文本 Input；M-DEPTH 升级控件并支持画布内 filter widget。
 - **验收标准**：
   - [x] 联动规则可配置（r61 L1：`POST validate` + `PUT/GET /api/v1/dashboards/{id}/global-filters` + config_store `global_filter_linkage` + `DASH_FILTER_*` + widget 存在性校验 + viewer ACL）
   - [x] companion validate/get perf probe + ACL 边界（r67：非法 dimensionRef/重复 parameterKey 422；enterprise 越权 GET 403、viewer save 403；`probe_validate_linkage_budget_ms`/`probe_get_linkage_budget_ms` ≤50ms）
   - [x] 筛选器驱动组件刷新（M-FE-3：`GlobalFilterBar` + `dashboardFilterUtils` + `useChartExecute` 参数注入；`dashboard-view.smoke.test.tsx` T-DASH-004-01）
   - [x] 编辑页联动规则配置 UI（`LinkageRulesPanel` + PUT global-filters；`dashboard.smoke.test.tsx` T-DASH-004-02/03）
   - [x] BE widget execute 合并 linkage（r231：`sql_parameters.py` + `execute.py` + `_load_linkage_payload`；GET linkage 严格 owner/admin ACL；viewer execute 200；`test_meta_dash_m8_r231.py` T-DASH-R231-004-03~07 + `test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-04）
+  - [x] **M-DASH-UX F-D**：编辑页挂载全局筛选条并可驱动 widget 刷新（2026-07-09）
+  - [ ] **M-DEPTH F-B**：筛选器 widget UI（下拉/日期/文本）+ Palette 可拖入
+  - [ ] **M-DEPTH F-B**：GlobalFilterBar 控件升级（下拉/日期/多选；替纯 Input）
+  - [ ] **M-DEPTH F-B**：筛选值驱动关联 chart execute 刷新（与 filter widget / 全局条统一参数注入）
 - **代码锚点**：`backend/app/dashboard/global_filters/` · `backend/app/query/sql_parameters.py` · `backend/app/api/v1/dashboards.py` · `fe/src/components/dashboard/GlobalFilterBar.tsx` · `fe/src/components/dashboard/LinkageRulesPanel.tsx` · `fe/src/components/dashboard/dashboardFilterUtils.ts` · `tests/test_meta_dash_m8_r231.py` T-DASH-R231-004-03~07 · `tests/test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-01~07 · `fe/src/pages/admin/dashboard/dashboard-view.smoke.test.tsx` · `fe/src/pages/admin/dashboard/dashboard.smoke.test.tsx`
-- **演化建议**：M8 r231 闭合 BE execute linkage 与 §7.4.1 ACL 回归；跨 widget 口径联动与 Playwright E2E 留 companion
-- **里程碑对齐**：M8 · 已完成 · 2026-07-06
+- **演化建议**：M-DEPTH F-B 闭合控件与 filter widget；跨 widget 口径联动与 Playwright E2E 留远期
+- **里程碑对齐**：M8 · 已完成 · 2026-07-06；**M-DEPTH F-B · 当前节 · 2026-07-10**
 ### [DASH-005] 实体总览页 FR-6.2
 
 - **状态**：已实现（M8 r232 收官）

@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router";
 import { RequireAuth } from "@/components/auth/require-auth";
-import { RequirePlatformAdmin } from "@/components/auth/require-capability";
+import { RequireCapabilityName } from "@/components/auth/require-capability";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { EmbedLayout } from "@/layouts/EmbedLayout";
 import { EmbedChartPage } from "@/embed/EmbedChartPage";
@@ -51,16 +51,16 @@ export function AppRoutes() {
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
           <Route index element={<AdminHomePage />} />
-          <Route path="datasources" element={<RequirePlatformAdmin><DatasourceListPage /></RequirePlatformAdmin>} />
-          <Route path="datasources/new" element={<RequirePlatformAdmin><DatasourceFormPage mode="create" /></RequirePlatformAdmin>} />
-          <Route path="datasources/:id/edit" element={<RequirePlatformAdmin><DatasourceFormPage mode="edit" /></RequirePlatformAdmin>} />
-          <Route path="datasources/:id" element={<RequirePlatformAdmin><DatasourceDetailPage /></RequirePlatformAdmin>} />
+          <Route path="datasources" element={<RequireCapabilityName capability="datasource:*"><DatasourceListPage /></RequireCapabilityName>} />
+          <Route path="datasources/new" element={<RequireCapabilityName capability="datasource:*"><DatasourceFormPage mode="create" /></RequireCapabilityName>} />
+          <Route path="datasources/:id/edit" element={<RequireCapabilityName capability="datasource:*"><DatasourceFormPage mode="edit" /></RequireCapabilityName>} />
+          <Route path="datasources/:id" element={<RequireCapabilityName capability="datasource:*"><DatasourceDetailPage /></RequireCapabilityName>} />
           <Route path="connectors" element={<Navigate to="/admin/datasources" replace />} />
-          <Route path="ingestion/sync-jobs" element={<RequirePlatformAdmin><SyncJobsPage /></RequirePlatformAdmin>} />
-          <Route path="ingestion/sync-jobs/new" element={<RequirePlatformAdmin><SyncJobFormPage /></RequirePlatformAdmin>} />
-          <Route path="ingestion/sync-jobs/:id/edit" element={<RequirePlatformAdmin><SyncJobFormPage /></RequirePlatformAdmin>} />
-          <Route path="ingestion/sync-jobs/:id/history" element={<RequirePlatformAdmin><SyncJobHistoryPage /></RequirePlatformAdmin>} />
-          <Route path="ingestion/sync-jobs/:id/etl-rules" element={<RequirePlatformAdmin><EtlRulesPage /></RequirePlatformAdmin>} />
+          <Route path="ingestion/sync-jobs" element={<RequireCapabilityName capability="datasource:*"><SyncJobsPage /></RequireCapabilityName>} />
+          <Route path="ingestion/sync-jobs/new" element={<RequireCapabilityName capability="datasource:*"><SyncJobFormPage /></RequireCapabilityName>} />
+          <Route path="ingestion/sync-jobs/:id/edit" element={<RequireCapabilityName capability="datasource:*"><SyncJobFormPage /></RequireCapabilityName>} />
+          <Route path="ingestion/sync-jobs/:id/history" element={<RequireCapabilityName capability="datasource:*"><SyncJobHistoryPage /></RequireCapabilityName>} />
+          <Route path="ingestion/sync-jobs/:id/etl-rules" element={<RequireCapabilityName capability="datasource:*"><EtlRulesPage /></RequireCapabilityName>} />
           <Route path="account/profile" element={<AccountProfilePage />} />
           <Route path="account/preferences" element={<AccountPreferencesPage />} />
           <Route path="account/security" element={<AccountSecurityPage />} />
@@ -70,37 +70,37 @@ export function AppRoutes() {
           <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
           <Route path="dashboards/:id/share" element={<DashboardSharePage />} />
           <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
-          <Route path="entities/overview" element={<EntityOverviewPage />} />
-          <Route path="reports" element={<PrefabReportsPage />} />
-          <Route path="reports/templates" element={<ReportTemplatesPage />} />
-          <Route path="reports/templates/:nodeId" element={<ReportTemplatesPage />} />
-          <Route path="reports/schedules" element={<ReportSchedulesPage />} />
-          <Route path="charts/types" element={<ChartExplorePage />} />
+          <Route path="entities/overview" element={<RequireCapabilityName capability="theme:*"><EntityOverviewPage /></RequireCapabilityName>} />
+          <Route path="reports" element={<RequireCapabilityName capability="report:read"><PrefabReportsPage /></RequireCapabilityName>} />
+          <Route path="reports/templates" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
+          <Route path="reports/templates/:nodeId" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
+          <Route path="reports/schedules" element={<RequireCapabilityName capability="report:manage"><ReportSchedulesPage /></RequireCapabilityName>} />
+          <Route path="charts/types" element={<RequireCapabilityName capability="governance:*"><ChartExplorePage /></RequireCapabilityName>} />
           <Route
             path="charts/explore"
             element={<Navigate to={CHART_TYPES_CATALOG_PATH} replace />}
           />
-          <Route path="designer" element={<DesignerPage />} />
-          <Route path="governance/catalog" element={<RequirePlatformAdmin><GovernanceCatalogPage /></RequirePlatformAdmin>} />
-          <Route path="governance/tickets" element={<RequirePlatformAdmin><GovernanceWorkflowPage /></RequirePlatformAdmin>} />
-          <Route path="governance/publish" element={<RequirePlatformAdmin><GovernancePublishPage /></RequirePlatformAdmin>} />
-          <Route path="services" element={<RequirePlatformAdmin><QueryServicesPage /></RequirePlatformAdmin>} />
-          <Route path="metadata" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
-          <Route path="metadata/glossary" element={<RequirePlatformAdmin><MetadataHubPage /></RequirePlatformAdmin>} />
-          <Route path="datasets" element={<RequirePlatformAdmin><DatasetListPage /></RequirePlatformAdmin>} />
+          <Route path="designer" element={<RequireCapabilityName capability="governance:*"><DesignerPage /></RequireCapabilityName>} />
+          <Route path="governance/catalog" element={<RequireCapabilityName capability="governance:*"><GovernanceCatalogPage /></RequireCapabilityName>} />
+          <Route path="governance/tickets" element={<RequireCapabilityName capability="governance:*"><GovernanceWorkflowPage /></RequireCapabilityName>} />
+          <Route path="governance/publish" element={<RequireCapabilityName capability="governance:*"><GovernancePublishPage /></RequireCapabilityName>} />
+          <Route path="services" element={<RequireCapabilityName capability="governance:*"><QueryServicesPage /></RequireCapabilityName>} />
+          <Route path="metadata" element={<RequireCapabilityName capability="metadata:*"><MetadataHubPage /></RequireCapabilityName>} />
+          <Route path="metadata/glossary" element={<RequireCapabilityName capability="metadata:*"><MetadataHubPage /></RequireCapabilityName>} />
+          <Route path="datasets" element={<RequireCapabilityName capability="dataset:*"><DatasetListPage /></RequireCapabilityName>} />
           <Route path="me/views" element={<Navigate to={ACCOUNT_PREFERENCES_PATH} replace />} />
-          <Route path="themes/:dashboardId" element={<ThemeAnalysisPage />} />
-          <Route path="system/roles" element={<RequirePlatformAdmin><RoleListPage /></RequirePlatformAdmin>} />
-          <Route path="system/users" element={<RequirePlatformAdmin><UserListPage /></RequirePlatformAdmin>} />
-          <Route path="system/orgs" element={<RequirePlatformAdmin><OrgTreePage /></RequirePlatformAdmin>} />
-          <Route path="system/rls" element={<RequirePlatformAdmin><RlsAdminPage /></RequirePlatformAdmin>} />
-          <Route path="system/audit" element={<RequirePlatformAdmin><AuditLogPage /></RequirePlatformAdmin>} />
+          <Route path="themes/:dashboardId" element={<RequireCapabilityName capability="theme:*"><ThemeAnalysisPage /></RequireCapabilityName>} />
+          <Route path="system/roles" element={<RequireCapabilityName capability="system:*"><RoleListPage /></RequireCapabilityName>} />
+          <Route path="system/users" element={<RequireCapabilityName capability="system:*"><UserListPage /></RequireCapabilityName>} />
+          <Route path="system/orgs" element={<RequireCapabilityName capability="system:*"><OrgTreePage /></RequireCapabilityName>} />
+          <Route path="system/rls" element={<RequireCapabilityName capability="system:*"><RlsAdminPage /></RequireCapabilityName>} />
+          <Route path="system/audit" element={<RequireCapabilityName capability="system:*"><AuditLogPage /></RequireCapabilityName>} />
           <Route
             path="system/grants"
             element={
-              <RequirePlatformAdmin>
+              <RequireCapabilityName capability="system:*">
                 <GrantsPage />
-              </RequirePlatformAdmin>
+              </RequireCapabilityName>
             }
           />
         </Route>
@@ -108,7 +108,9 @@ export function AppRoutes() {
       <Route path="/embed" element={<EmbedLayout />}>
         <Route path="chart/:chartId" element={<EmbedChartPage />} />
         <Route path="share" element={<EmbedSharePanel />} />
-        <Route path="sdk-demo" element={<EmbedSdkDemoPage />} />
+        {import.meta.env.DEV ? (
+          <Route path="sdk-demo" element={<EmbedSdkDemoPage />} />
+        ) : null}
       </Route>
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>

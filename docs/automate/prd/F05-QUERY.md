@@ -107,17 +107,18 @@
 - **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
 ### [QUERY-009] Dataset 查询路径
 
-- **状态**：已实现
+- **状态**：已实现（**M-DEPTH F-A 深度 companion 进行中**）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
-- **描述**：Dataset 查询路径（SRS 追溯项）。
+- **描述**：Dataset 查询路径（SRS 追溯项）。L1 含 validate/routing/execute-plan（非真实 SQL）与 execute 链；M-DEPTH 要求真实 rows 出数。
 - **验收标准**：
   - [x] datasetId 查询可走通（r53 L1：`POST /api/v1/query/dataset/validate` + `GET /api/v1/query/dataset/routing` 三路径 sql/native/dataset 边界说明）
   - [x] 仅授权 Dataset（analyst role ACL + `QUERY_DATASET_FORBIDDEN`/`QUERY_DATASET_NOT_READONLY`/`QUERY_PATH_AMBIGUOUS` 守卫）
-  - [x] Dataset execute-plan 四步链贯通（r57 companion：`POST /api/v1/query/dataset/execute-plan` planVersion=dataset-plan-v1；非真实 SQL 执行；Admin 可视化配置器留远期）
-  - [x] `dataSourceId` + `configId` 存储→翻译→执行端到端（r243 `POST /api/v1/query/dataset/execute` + `execute_config.py`；mock 执行链；`test_mfinal_fd_r243` T-QUERY-R243-009-01~05）
+  - [x] Dataset execute-plan 四步链贯通（r57 companion：`POST /api/v1/query/dataset/execute-plan` planVersion=dataset-plan-v1；非真实 SQL 执行）
+  - [x] `dataSourceId` + `configId` 存储→翻译→执行端到端（r243 `POST /api/v1/query/dataset/execute` + `execute_config.py`；`test_mfinal_fd_r243` T-QUERY-R243-009-01~05）
   - [x] Dashboard `WidgetInspector` dataset 模式 + `useChartExecute` → `POST /api/v1/query/dataset/execute`（M-PRODUCT F-A；`chartViewConfig.ts` mode=dataset）
   - [x] **M-DASH-UX F-A**：编辑态 Dataset 执行路径失败/空态可读、不阻断画布（`ChartRenderer` + `ChartPanel` 覆盖层；Wave1 2026-07-09）
-- **代码锚点**：`backend/app/query/dataset/guard.py` · `backend/app/query/dataset/executor.py` · `backend/app/query/dataset/execute_config.py` · `backend/app/query/dataset/schemas.py` · `backend/app/api/v1/query.py` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartViewConfig.ts` · `tests/test_dash_rpt_query_nfr_r53.py` T-QUERY-R53-009-01~07 · `tests/test_dash_rpt_query_nfr_r57.py` T-QUERY-R57-009-01~07 · `tests/test_mfinal_fd_r243.py` T-QUERY-R243-009-01~05
-- **演化建议**：真实 Dataset SQL 执行（非 mock）留 companion；M-PRODUCT F-D P4-SMOKE 浏览器 E2E 固化；plan §M-DASH-UX F-A 行待 Wave2 后回勾
-- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard FE · 2026-07-08
+  - [ ] **M-DEPTH F-A**：Dataset 真实 execute（替 execute-plan mock 路径为生产主路径；出真实 rows；重启后 bound Dataset 仍可出图）
+- **代码锚点**：`backend/app/query/dataset/guard.py` · `backend/app/query/dataset/executor.py` · `backend/app/query/dataset/execute_config.py` · `backend/app/query/dataset/schemas.py` · `backend/app/api/v1/query.py` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/charts/useChartExecute.ts` · `fe/src/lib/chartExecuteProbe.ts` · `fe/src/lib/chartViewConfig.ts` · `tests/test_dash_rpt_query_nfr_r53.py` T-QUERY-R53-009-01~07 · `tests/test_dash_rpt_query_nfr_r57.py` T-QUERY-R57-009-01~07 · `tests/test_mfinal_fd_r243.py` T-QUERY-R243-009-01~05
+- **演化建议**：M-DEPTH F-A 闭合真实 SQL execute；execute-plan 保留为文档/探针，不再作为出图主路径
+- **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard FE · 2026-07-08；**M-DEPTH F-A · 当前节 · 2026-07-10**

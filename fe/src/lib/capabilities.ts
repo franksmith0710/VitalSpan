@@ -12,7 +12,8 @@ const BUILTIN_ROLE_CAPABILITIES: Record<SessionRole, readonly string[]> = {
     "metadata:*",
     "dataset:*",
   ],
-  analyst: ["dashboard:edit", "report:*", "theme:*"],
+  /** analyst 仅消费报表；模板/调度需 report:manage（admin 的 report:* 覆盖） */
+  analyst: ["dashboard:edit", "report:read", "theme:*"],
   viewer: ["dashboard:read", "report:read"],
 };
 

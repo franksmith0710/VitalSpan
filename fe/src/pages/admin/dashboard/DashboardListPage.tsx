@@ -9,6 +9,7 @@ import {
   DashboardListEmptyIcon,
   type DashboardListItem,
 } from "@/components/dashboard/DashboardListCard";
+import { DashboardQuickCreateDialog } from "@/components/dashboard/DashboardQuickCreateDialog";
 import {
   DataTable,
   ListPageBody,
@@ -106,6 +107,7 @@ export function DashboardListPage() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [deleteTarget, setDeleteTarget] = useState<DashboardListItem | null>(null);
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const pagination = useListPagination(12);
 
   const listQuery = useQuery({
@@ -152,7 +154,7 @@ export function DashboardListPage() {
       variant="primary"
       size="sm"
       disabled={createMutation.isPending}
-      onClick={() => createMutation.mutate()}
+      onClick={() => setQuickCreateOpen(true)}
     >
       <Plus className="size-4" />
       新建看板
@@ -334,6 +336,15 @@ export function DashboardListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {canEdit ? (
+        <DashboardQuickCreateDialog
+          open={quickCreateOpen}
+          onOpenChange={setQuickCreateOpen}
+          onBlankCreate={() => createMutation.mutate()}
+          blankPending={createMutation.isPending}
+        />
+      ) : null}
     </AdminPageShell>
   );
 }

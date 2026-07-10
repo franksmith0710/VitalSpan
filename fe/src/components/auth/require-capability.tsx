@@ -3,6 +3,7 @@ import { Navigate } from "react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
+import { hasCapability } from "@/lib/capabilities";
 import { sessionUserFromMe, type SessionUser } from "@/lib/session";
 import { WORKSPACE_HOME_PATH } from "@/lib/workspace";
 
@@ -50,6 +51,28 @@ export function RequirePlatformAdmin({ children }: { children: ReactNode }) {
     <RequireCapability
       check={(u) => u.roles.includes("admin")}
       fallbackTo={WORKSPACE_HOME_PATH}
+    >
+      {children}
+    </RequireCapability>
+  );
+}
+
+type RequireCapabilityNameProps = {
+  capability: string;
+  children: ReactNode;
+  fallbackTo?: string;
+};
+
+/** 与侧栏 `resolveNavGroups` capability 字段对齐的路由守卫 */
+export function RequireCapabilityName({
+  capability,
+  children,
+  fallbackTo = WORKSPACE_HOME_PATH,
+}: RequireCapabilityNameProps) {
+  return (
+    <RequireCapability
+      check={(u) => hasCapability(u, capability)}
+      fallbackTo={fallbackTo}
     >
       {children}
     </RequireCapability>

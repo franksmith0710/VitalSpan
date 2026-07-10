@@ -27,6 +27,8 @@ export type NavItem = {
 export type NavSection = {
   title: string;
   items: NavItem[];
+  /** 侧栏分组默认折叠（工程/系统） */
+  defaultCollapsed?: boolean;
 };
 
 export type AppSidebarProps = {
@@ -226,6 +228,54 @@ function SidebarSection({
   showLabels: boolean;
   showDivider?: boolean;
 }) {
+  const location = useLocation();
+  const hasActiveItem = section.items.some((item) => {
+    if (item.path && (location.pathname === item.path || location.pathname.startsWith(`${item.path}/`))) {
+      return true;
+    }
+    return item.subItems?.some(
+      (sub) =>
+        location.pathname === sub.path || location.pathname.startsWith(`${sub.path}/`),
+    );
+  });
+  const [open, setOpen] = React.useState(
+    section.defaultCollapsed ? hasActiveItem : true,
+  );
+
+  React.useEffect(() => {
+    if (hasActiveItem) setOpen(true);
+  }, [hasActiveItem]);
+
+  const body = (
+    <ul className="flex flex-col gap-0.5">
+      {section.items.map((item) => (
+        <li key={item.name}>
+          <SidebarNavItem item={item} showLabels={showLabels} />
+        </li>
+      ))}
+    </ul>
+  );
+
+  if (!section.defaultCollapsed) {
+    return (
+      <div
+        className={cn(
+          "menu-group",
+          showDivider && "border-t border-gray-100 pt-5 dark:border-white/[0.06]",
+        )}
+      >
+        {showLabels ? (
+          <h2 className="menu-group-title">{section.title}</h2>
+        ) : (
+          <div className="mb-2 flex justify-center px-3" aria-hidden>
+            <span className="block h-px w-6 bg-gray-200 dark:bg-gray-800" />
+          </div>
+        )}
+        {body}
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -233,20 +283,30 @@ function SidebarSection({
         showDivider && "border-t border-gray-100 pt-5 dark:border-white/[0.06]",
       )}
     >
-      {showLabels ? (
-        <h2 className="menu-group-title">{section.title}</h2>
-      ) : (
-        <div className="mb-2 flex justify-center px-3" aria-hidden>
-          <span className="block h-px w-6 bg-gray-200 dark:bg-gray-800" />
-        </div>
-      )}
-      <ul className="flex flex-col gap-0.5">
-        {section.items.map((item) => (
-          <li key={item.name}>
-            <SidebarNavItem item={item} showLabels={showLabels} />
-          </li>
-        ))}
-      </ul>
+      <Collapsible.Root open={open} onOpenChange={setOpen}>
+        {showLabels ? (
+          <Collapsible.Trigger
+            className="menu-group-title flex w-full cursor-pointer items-center justify-between gap-2 text-left hover:text-gray-800 dark:hover:text-white/90"
+            aria-expanded={open}
+          >
+            <span>{section.title}</span>
+            <ChevronDown
+              className={cn(
+                "size-3.5 shrink-0 text-gray-400 transition-transform duration-200",
+                open && "rotate-180",
+              )}
+              aria-hidden
+            />
+          </Collapsible.Trigger>
+        ) : (
+          <div className="mb-2 flex justify-center px-3" aria-hidden>
+            <span className="block h-px w-6 bg-gray-200 dark:bg-gray-800" />
+          </div>
+        )}
+        <Collapsible.Content className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+          {body}
+        </Collapsible.Content>
+      </Collapsible.Root>
     </div>
   );
 }

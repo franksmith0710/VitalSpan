@@ -100,7 +100,13 @@ export function resolveNavGroups(
       const navItem = filterItemForRole(item, section, user, userCaps, activeMilestones);
       if (navItem) items.push(navItem);
     }
-    if (items.length > 0) result.push({ title: section.title, items });
+    if (items.length > 0) {
+      result.push({
+        title: section.title,
+        items,
+        ...(section.defaultCollapsed ? { defaultCollapsed: true } : {}),
+      });
+    }
   }
   return result;
 }

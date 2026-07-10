@@ -139,18 +139,22 @@ describe("AppRoutes smoke", () => {
     expect(screen.getAllByRole("main").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders datasource nav link pointing to /admin/datasources (T-FE-08)", () => {
+  it("renders datasource nav link pointing to /admin/datasources (T-FE-08)", async () => {
     setDesktopViewport();
+    const user = userEvent.setup();
     renderRoutes(["/admin"]);
 
-    const link = screen.getByRole("link", { name: "数据连接" });
+    await user.click(screen.getByRole("button", { name: /数据连接/ }));
+    const link = screen.getByRole("link", { name: "连接管理" });
     expect(link).toHaveAttribute("href", "/admin/datasources");
   });
 
-  it("shows 数据接入 nav link at /admin (T-FE-19)", () => {
+  it("shows 同步任务 nav link under 数据连接 (T-FE-19)", async () => {
     setDesktopViewport();
+    const user = userEvent.setup();
     renderRoutes(["/admin"]);
-    const link = screen.getByRole("link", { name: "数据接入" });
+    await user.click(screen.getByRole("button", { name: /数据连接/ }));
+    const link = screen.getByRole("link", { name: "同步任务" });
     expect(link).toHaveAttribute("href", "/admin/ingestion/sync-jobs");
   });
 
@@ -288,17 +292,17 @@ describe("AppRoutes smoke", () => {
     ).toBeInTheDocument();
   });
 
-  it("M1 nav links have valid non-empty hrefs (T-RT-DL-01)", () => {
+  it("M1 nav links have valid non-empty hrefs (T-RT-DL-01)", async () => {
     setDesktopViewport();
-    renderRoutes(["/admin"]);
+    mockApiFetch.mockResolvedValue({ items: [] });
+    renderRoutes(["/admin/datasources"]);
 
-    const dataConn = screen.getByRole("link", { name: "数据连接" });
+    const dataConn = await screen.findByRole("link", { name: "连接管理" });
     expect(dataConn.getAttribute("href")).toBe("/admin/datasources");
 
     const dashLinks = screen.getAllByRole("link", { name: "Dashboard" });
     expect(dashLinks[0].getAttribute("href")).toBe("/admin/dashboards");
 
-    // Verify no link in nav points to "#" or is empty
     const allNavLinks = screen
       .getByRole("navigation", { name: "管理端导航" })
       .querySelectorAll("a[href]");

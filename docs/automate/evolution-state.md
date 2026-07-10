@@ -7,24 +7,28 @@
 | 字段 | 值 |
 |------|----|
 | phase | DONE |
-| last_verified_command | vitest chartTypeCatalogDisplay.test.ts + dashboard.smoke.test.tsx 21/21 |
+| request | DE/SS 对标：Dashboard UX 减法（nav/capability）+ 加厚（快速创建 + Inspector columns） |
+| type | small-change |
+| autonomy_policy | auto_accept_low_risk |
+| risk_level | low |
+| plan | docs/automate/plans/2026-07-10-dash-ux-subtract-thicken-closeout.md |
+| last_verified_command | vitest closeout 39/39; tsc -b --noEmit exit 0 |
 | last_verified_exit_code | 0 |
-| last_ui_verified_command | ui_design_skill=b-design-system-tailadmin-radix; design_drift_checks=pnpm run check:design PASS; build=pnpm build exit 0; screenshots=未运行（headless vitest mock） |
-| deployed_automate_rev | bf60b94ec4f4 |
-| skill_rule_index_generated_at | 2026-07-08T16:35:00Z |
-| skill_rule_index_source_count | 26 |
+| verification_summary | closeout Task 1-5 完成：chartExecuteProbe 抽取、快速创建预填字段、三类回归测试、nav/README/layout 同步 |
+| repair_rounds | 1 |
+| status | DONE |
 
 ## 当前需求契约
 
-- request: Dashboard WidgetPalette 补齐全部 12 种注册图表类型，与 ChartExplorePage 共用 catalog 展示工具
-- type: small-change
-- goal: 编辑页左侧面板按 catalog category 动态分组展示全部类型；饼图/仪表盘/桑基/漏斗/关系图可一键插入
-- scope_include: chartTypeCatalogDisplay.ts、WidgetPalette、widgetIcons、ChartExplorePage、dashboard.smoke、components/README、F06-VIZ.md
-- scope_exclude: 非图表布局组件（筛选器/文本/Tab）；后端 registry 变更
-- acceptance: vitest chartTypeCatalogDisplay + dashboard.smoke 21/21；PRD/components README 同步
+- request: 检查 DE/SS 减法+加厚是否完成；未完成则制定修复计划
+- type: verify-only → plan-fix
+- goal: P0 nav/capability 收敛 + P0 Dashboard 主路径加厚可演示、可测、可提交
+- scope_include: fe routes/nav/WidgetInspector/DashboardQuickCreateDialog/useInspectorColumns; docs/ui/layout.md; fe/src/components/README.md
+- scope_exclude: 并发重构计划 S-PRE/P01+; SQL Lab; admin 侧栏折叠 UI
+- acceptance: closeout plan Task 1-5 全绿 + evolution-state DONE
 - risk_level: low
 - autonomy_policy: auto_accept_low_risk
-- assumptions: lucide `Map` 图标须别名 MapIcon 避免遮蔽全局 Map 构造器
+- assumptions: 沿用现有 capability 映射；快速创建失败时允许空 dimensions
 
 ## 待办池
 

@@ -26,7 +26,7 @@
 | ThemeToggleButton | `layout/theme-toggle.tsx` | 深浅色切换 |
 | UserDropdown | `layout/user-dropdown.tsx` | 顶栏用户菜单（资料/设置/开发态切换用户/退出） |
 | DevUserSwitcher | `layout/dev-user-switcher.tsx` | 用户菜单内开发态 RBAC 用户切换 |
-| RequireCapability | `auth/require-capability.tsx` | 路由级 RBAC 守卫（与侧栏 `resolveNavGroups` 对齐） |
+| RequireCapability | `auth/require-capability.tsx` | 路由级 RBAC 守卫（`RequireCapabilityName` 与侧栏 `resolveNavGroups` 对齐） |
 | VitalSpanLogo | `layout/vitalspan-logo.tsx` | 侧栏品牌标（展开/折叠） |
 | AdminPageShell | `layout/admin-page-shell.tsx` | PageHeader：标题 + 描述 + 操作区 + `gap-6` 主内容栅格 |
 | ListPageSection / DataTable | `layout/list-page-kit.tsx` | 列表/Hub 页卡片容器、工具栏、表格、分页与空态 |
@@ -52,4 +52,8 @@
 | dashboardFilterUtils | `dashboard/dashboardFilterUtils.ts` | linkage 解析与 SQL `{{key}}` 占位符注入 |
 | EntityOverviewPage | `../pages/admin/entities/EntityOverviewPage.tsx` | M8 DASH-005 Admin 实体总览（类型 Tab + 物理表 + 下钻） |
 | SchemaBrowser | `datasources/SchemaBrowser.tsx` | 数据源详情三级 metadata 树 |
-| WidgetInspector | `dashboard/WidgetInspector.tsx` | Dashboard 编辑右侧组件配置面板（数据源 / SQL） |
+| WidgetInspector | `dashboard/WidgetInspector.tsx` | Dashboard 编辑右侧组件配置面板（数据源 / Dataset / SQL + 字段） |
+| WidgetInspectorDataSection | `dashboard/WidgetInspectorDataSection.tsx` | Inspector 数据源与 Dataset/SQL 绑定区 |
+| useInspectorColumns | `../hooks/useInspectorColumns.ts` | Inspector 字段探测（复用 `chartExecuteProbe`） |
+| chartExecuteProbe | `../lib/chartExecuteProbe.ts` | 图表 query execute 共享探测与字段建议 |
+| DashboardQuickCreateDialog | `dashboard/DashboardQuickCreateDialog.tsx` | 看板列表快速创建向导（数据源 + Dataset + 首图） |

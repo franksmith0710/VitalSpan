@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -133,5 +133,58 @@ describe("WidgetInspector dataset select", () => {
     const last = onChange.mock.calls.at(-1)?.[0];
     expect(last.filters?.length).toBe(1);
     expect(last.chartType).toBe(widget.chartConfig.chartType);
+  });
+
+  it("loads execute columns when dataset config is ready", async () => {
+    const readyWidget: LayoutWidget = {
+      ...widget,
+      chartConfig: {
+        ...widget.chartConfig,
+        mode: "dataset",
+        dataSourceId: "ds-1",
+        datasetId: "orders_ds",
+        configId: "cfg-11111111-1111-4111-8111-111111111111",
+      },
+    };
+
+    mockApiFetch.mockImplementation(async (path: string, init?: RequestInit) => {
+      if (path === "/api/v1/datasources") {
+        return { items: [{ id: "ds-1", name: "分析库", code: "a" }] };
+      }
+      if (path.includes("/api/v1/datasets")) {
+        return {
+          items: [
+            {
+              datasetId: "orders_ds",
+              displayName: "订单",
+              boundConfigId: "cfg-11111111-1111-4111-8111-111111111111",
+            },
+          ],
+        };
+      }
+      if (path === "/api/v1/query/dataset/execute" && init?.method === "POST") {
+        return { columns: ["region", "amount"], rows: [] };
+      }
+      return {};
+    });
+
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter>
+          <WidgetInspector widget={readyWidget} onChange={vi.fn()} embedded />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(mockApiFetch).toHaveBeenCalledWith(
+        "/api/v1/query/dataset/execute",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("请先执行查询或选择数据源")).not.toBeInTheDocument();
+    });
   });
 });

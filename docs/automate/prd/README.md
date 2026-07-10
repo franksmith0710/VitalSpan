@@ -1,8 +1,8 @@
 # PRD 分片索引
 
-> **16 域 · 129 项**（合同 **129** 已实现 · plan companion **0** 待办）· hub **v1.2.115**  
+> **16 域 · 129 项**（合同 **129** 已实现 · plan companion **12** 必做待办）· hub **v1.2.117**  
 > 来源 SRS V3.7 + 附录 E/F + FR-DATA/FR-ETL（F16）+ M-FINAL 连接器扩展（CONN-023~027）  
-> Hub 索引：[`../prd.md`](../prd.md) · 执行范围：[`../plan.md`](../plan.md)（**整体毕业**）
+> Hub 索引：[`../prd.md`](../prd.md) · 执行范围：[`../plan.md`](../plan.md)（**§M-DEPTH 当前节**）
 
 | 分片 | ID 域 | 模块 | 期次 | 项数 |
 |------|-------|------|------|------|
@@ -23,5 +23,6 @@
 | [F15-NFR.md](./F15-NFR.md) | NFR-001 ~ NFR-008 | NFR | 一～四期 | 8 |
 | [F16-DATA.md](./F16-DATA.md) | DATA-001 ~ DATA-005 · ETL-001 | M1B 接入 | P0+ | 6 |
 
-**状态语义**：分片「**状态：已实现**」= PRD 合同交付；验收标准内 `[ ]` = **companion 远期**（不计入 129 合同计数）。  
-**收官说明**：CONN-023~027 为 M-FINAL · F-G，**已实现**（r249~r250）；成品清扫见 plan §M-PRODUCT · F-A~F-F。
+**状态语义**：分片「**状态：已实现**」= PRD 合同交付；验收标准内 `[ ]` = **companion 远期/深度**（不计入 129 合同计数）。  
+**当前 companion**：plan §**M-DEPTH**（F-A Dataset / F-B 筛选器 / F-C 消费落差；F-D 可选）。细则见 [`../plans/2026-07-10-fe-de-ss-ia-optimization.md`](../plans/2026-07-10-fe-de-ss-ia-optimization.md)。  
+**收官说明**：CONN-023~027 为 M-FINAL · F-G，**已实现**（r249~r250）；M-PRODUCT / M-DASH-UX 已收官。

@@ -30,7 +30,7 @@
 - **里程碑对齐**：
 ### [API-003] IF-02 查询服务 API
 
-- **状态**：已实现
+- **状态**：已实现（**M-DEPTH F-C 深度 companion 进行中**）
 - **goal_ref**：goal.md §2.5（G5）
 - **期次**：四期
 - **描述**：IF-02 查询服务 API（SRS 追溯项）。
@@ -40,9 +40,10 @@
   - [x] 配置生成的标准查询接口（publish 路由 + `;requires=` 参数校验 + Idempotency-Key，r45 companion）
   - [x] 版本 v1 前缀（`/api/v1/services`）
   - [x] `/admin/services` 查询服务 Admin 列表页（M-PRODUCT F-A；`QueryServicesPage` · manifest 治理分组）
+  - [ ] **M-DEPTH F-C**：已发布服务目录消费增强（试跑入口 + OpenAPI 片段可见；失败态可读）
 - **代码锚点**：`backend/app/api/v1/services.py` · `backend/app/integration/query_services.py` · `fe/src/pages/admin/services/QueryServicesPage.tsx` · `fe/src/routes.tsx` · `fe/src/config/nav-manifest.tsx`
-- **演化建议**：M-PRODUCT F-D 浏览器 E2E 发布→服务试跑；后续可补真实查询执行链路与 OpenAPI per-service fragment 自动发布
-- **里程碑对齐**：M-PRODUCT F-A · 服务页 FE · 2026-07-08
+- **演化建议**：M-DEPTH F-C 加深试跑/OpenAPI 消费；真实查询执行链路可继续加固
+- **里程碑对齐**：M-PRODUCT F-A · 服务页 FE · 2026-07-08；**M-DEPTH F-C · 当前节 · 2026-07-10**
 ### [API-004] IF-01 总线注册适配
 
 - **状态**：已实现
@@ -73,18 +74,19 @@
 - **里程碑对齐**：
 ### [API-006] IF-04 门户嵌入 API
 
-- **状态**：已实现
+- **状态**：已实现（骨架；**M-DEPTH F-D 可选 companion**）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
-- **描述**：IF-04 门户嵌入 API（SRS 追溯项）。
+- **描述**：IF-04 门户嵌入 API（SRS 追溯项）。token/sdk-params 已实现；公开/匿名分享链接为可选加深。
 - **验收标准**：
   - [x] POST `/api/v1/embed/token` embed token 签发（r44 L1）
   - [x] GET `/api/v1/embed/sdk-params` SDK 初始化参数解析（r44）
   - [x] Origin 守卫 + 角色拒绝 smoke（r44）
   - [x] token 过期与非法 origin 拦截（`expiresAt` + `EMBED_ORIGIN_DENIED`，r45 companion）
+  - [ ] **M-DEPTH F-D〔可选〕**：公开/匿名分享链接落地（需安全确认：origin 白名单 + token 校验；匿名看板路由）
 - **代码锚点**：`backend/app/api/v1/embed.py` · `backend/app/integration/embed_token.py`
-- **演化建议**：r45 embed 过期/origin 边界（T-API-R45-006-01~04）；后续可补 JWT 轮换与前端 Embed SDK 联动
-- **里程碑对齐**：
+- **演化建议**：F-D 可选；JWT 轮换与前端 Embed SDK 联动
+- **里程碑对齐**：r45 · 已完成；**M-DEPTH F-D 可选 · 2026-07-10**
 ### [API-007] OpenAPI 规范与版本策略
 
 - **状态**：已实现

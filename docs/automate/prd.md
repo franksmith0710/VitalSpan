@@ -1,8 +1,8 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.115
-last_updated: 2026-07-09
+version: 1.2.117
+last_updated: 2026-07-10
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
@@ -200,26 +200,27 @@ domain_count: 16
 
 ## 执行范围（与 plan 对齐）
 
-> 更新：2026-07-09 · 来源 [`plan.md`](./plan.md) v2.9.0 · hub **v1.2.115**
+> 更新：2026-07-10 · 来源 [`plan.md`](./plan.md) v3.0.0 · hub **v1.2.117**
 
 | 字段 | 值 |
 |------|-----|
 | 已冻结 | **M-FINAL**（129/129 PRD 合同项） |
-| 当前执行 | **全量 companion 收官** — M-DASH-UX + M-PRODUCT F-A~F 已勾 |
-| 排队 | — |
+| 当前执行 | **§M-DEPTH** — DE/SS 深度打穿（F-A Dataset → F-B 筛选器 → F-C 消费落差） |
+| 排队 | F-D 可选（公开分享 / IA 精简 / 设计器 ADR） |
 | PRD 合同 | **129** 已实现 · **0** 未实现 |
-| companion（plan） | **0** 待办（`plan.md` 无 `[ ]`） |
-| 当前节 | **项目整体毕业** |
-| G2 选题 | 饱和；PRD 分片远期 `[ ]` 仅文档参考，非 plan gate |
+| companion（plan） | **12** 必做待办（F-A/B/C）；F-0 已勾 3 项；F-D 可选 3 项不计 gate |
+| 当前节 | **M-DEPTH** |
+| G2 选题 | 每轮 3–5 项；首轮必须 F-A；禁止 F-D / AI/SQLBot / SQL Lab |
 
-**说明**：`plan.md` 全部 companion 行已于 2026-07-09 勾选完成（含 M-DASH-UX 可选 2 项 + M-PRODUCT F-F 18 项）。PRD 分片内仍有部分远期 companion `[ ]`（如 GOV 真实总线、NFR 生产 SLA），不计入 plan 收官。
+**说明**：M-DASH-UX + M-PRODUCT 已于 2026-07-09 收官。2026-07-10 人工干预插入 §M-DEPTH（毕业后 SATURATED → 深度 companion），不扩合同 PRD 面。细则见 [`plans/2026-07-10-fe-de-ss-ia-optimization.md`](./plans/2026-07-10-fe-de-ss-ia-optimization.md)。
 
-**M-DASH-UX + M-PRODUCT 收官状态**：
+**里程碑状态**：
 
 | 里程碑 | 状态 |
 |--------|------|
-| M-DASH-UX F-A~D 必做 + 可选 | **全勾** |
-| M-PRODUCT F-A~F | **全勾** |
+| M-DASH-UX F-A~D | **已收官** |
+| M-PRODUCT F-A~F | **已收官** |
+| **M-DEPTH F-A~C** | **当前节**（12 必做待办） |
 
 ---
 
@@ -227,7 +228,8 @@ domain_count: 16
 
 - **归档**：[`plan.archive.md`](./plan.archive.md)（M1–M12 全量映射）
 - **已冻结**：[`plan.md`](./plan.md) §M-FINAL（129/129 合同）
-- **已收官**：[`plan.md`](./plan.md) §**M-DASH-UX** + §**M-PRODUCT**（整体毕业 · v2.9.0 · 2026-07-09）
+- **已收官**：[`plan.md`](./plan.md) §**M-DASH-UX** + §**M-PRODUCT**
+- **当前节**：[`plan.md`](./plan.md) §**M-DEPTH**（v3.0.0 · 2026-07-10）
 
 ---
 
@@ -235,6 +237,8 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.117 | 2026-07-10 | PRD 分片同步 §M-DEPTH：META-004/QUERY-009/DASH-002·004/AUTH-006·008/RPT-005/API-003 补深度 companion `[ ]`；BOOT-002/DASH-001 勾 F-0；API-006/DESIGN-001/BOOT-002 标 F-D 可选；`prd/README` 对齐 |
+| 1.2.116 | 2026-07-10 | 人工 plan 干预：插入 §M-DEPTH（Dataset 打穿 / 筛选器 / 消费落差）；执行范围对齐 plan v3.0.0；G2 解除饱和 |
 | 1.2.115 | 2026-07-09 | F-F 全量 companion 收官：plan 20 项全勾；五轨 worktree merge；hub 执行范围→整体毕业 |
 | 1.2.114 | 2026-07-09 | 毕业收官：M-DASH-UX 必做全勾 + M-PRODUCT F-D 书面 E2E；执行范围更新；剩余 F-F 18 + 可选 2 |
 | 1.2.113 | 2026-07-09 | 人工 plan 对账：§M-DASH-UX 对齐代码（F-A 加 QUERY-005、接线优先；F-C 稳定性勾选；F-C/F-D 拆必做/可选；F-F gate）；执行范围对齐 plan v2.8.0 |

@@ -20,8 +20,8 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.1（G1）
 - **期次**：P0
-- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07；M-PRODUCT F-A · 壳层清扫 · 2026-07-08；M-PRODUCT · F-C · 已完成 · 2026-07-08
-- **描述**：React 管理端壳层（SRS 追溯项）；M-FE-1 补齐 TanStack Query 与统一 API 客户端；M-FINAL F-A 建立 nav-manifest 单一真理源、resolveNavGroups 角色派生与里程碑可见性矩阵；M-FINAL F-B 能力驱动侧栏过滤（`capabilities.ts` + manifest `capability` 字段）；M-PRODUCT F-A 登录默认 Dashboard、M13 去预览、「我的」与「语义建模」IA 收拢。
+- **里程碑对齐**：M-FINAL · 已完成 · 2026-07-07；M-PRODUCT F-A · 壳层清扫 · 2026-07-08；M-PRODUCT · F-C · 已完成 · 2026-07-08；**M-DEPTH F-0 · IA 减法 · 2026-07-10**
+- **描述**：React 管理端壳层（SRS 追溯项）；M-FE-1 补齐 TanStack Query 与统一 API 客户端；M-FINAL F-A 建立 nav-manifest 单一真理源、resolveNavGroups 角色派生与里程碑可见性矩阵；M-FINAL F-B 能力驱动侧栏过滤（`capabilities.ts` + manifest `capability` 字段）；M-PRODUCT F-A 登录默认 Dashboard、M13 去预览、「我的」与「语义建模」IA 收拢；M-DEPTH F-0 侧栏降噪与 capability 路由守卫对齐。
 - **验收标准**：
   - [x] `fe/` 可构建且 `/admin` 路由壳层可访问
   - [x] shadcn/ui + Tailwind v4 主题加载
@@ -44,8 +44,11 @@
   - [x] manifest「数据」含「语义建模」subItems：元数据 / Dataset（`resolve-nav.test.ts` T-NAV-MF-06）
   - [x] `resolveNavGroups` 对 analyst/viewer 默认隐藏 `iaTier=engineering` 分组（T-NAV-FC-01~04）
   - [x] `layout.md` §3/§6 同步默认 IA 矩阵（数据工程/治理默认隐藏）
-- **代码锚点**：`fe/src/config/nav-manifest.tsx` · `fe/src/lib/capabilities.ts` · `fe/src/lib/resolve-nav.ts` · `fe/src/lib/resolve-nav.test.ts` · `fe/src/layouts/AdminLayout.tsx` · `fe/src/layouts/AdminLayout.smoke.test.tsx` · `fe/src/pages/admin/AdminHomePage.tsx` · `fe/src/lib/defaultViewResolve.ts` · `fe/src/routes.tsx` · `fe/src/routes.smoke.test.tsx` · `fe/src/lib/api.ts` · `fe/src/lib/queryKeys.ts` · `fe/src/lib/apiError.ts` · `fe/scripts/check-design.mjs` · `docs/ui/layout.md`
-- **演化建议**：Playwright E2E 登录落点与业务页 Query 缓存策略调优；F-D P4-SMOKE 浏览器固化
+  - [x] **M-DEPTH F-0**：侧栏删「图表类型目录/实体与主题/独立数据接入」；数据连接嵌套同步任务；路由深链保留（2026-07-10）
+  - [x] **M-DEPTH F-0**：`RequireCapabilityName` 与侧栏 capability 对齐；analyst 报表仅 `report:read`；`/embed/sdk-demo` 仅 DEV（2026-07-10）
+  - [ ] **M-DEPTH F-D〔可选〕**：ChartExplore → Palette Drawer；删 AdminHome 空跳转
+- **代码锚点**：`fe/src/config/nav-manifest.tsx` · `fe/src/lib/capabilities.ts` · `fe/src/lib/resolve-nav.ts` · `fe/src/lib/resolve-nav.test.ts` · `fe/src/components/auth/require-capability.tsx` · `fe/src/layouts/AdminLayout.tsx` · `fe/src/layouts/AdminLayout.smoke.test.tsx` · `fe/src/pages/admin/AdminHomePage.tsx` · `fe/src/lib/defaultViewResolve.ts` · `fe/src/routes.tsx` · `fe/src/routes.smoke.test.tsx` · `fe/src/lib/api.ts` · `fe/src/lib/queryKeys.ts` · `fe/src/lib/apiError.ts` · `fe/scripts/check-design.mjs` · `docs/ui/layout.md`
+- **演化建议**：F-D 可选精简；Playwright E2E 登录落点与业务页 Query 缓存策略调优
 
 ### [BOOT-003] 鉴权中间件骨架
 

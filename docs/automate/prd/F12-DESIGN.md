@@ -4,17 +4,18 @@
 
 ### [DESIGN-001] 拖拽查询条件配置
 
-- **状态**：已实现
+- **状态**：已实现（**M-DEPTH F-D 可选 · 设计器收敛 ADR**）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
-- **描述**：拖拽查询条件配置（SRS 追溯项）。
+- **描述**：拖拽查询条件配置（SRS 追溯项）。与 `/gov/query-design`（GOV-004）存在职责重叠；可选 ADR 收敛内核。
 - **验收标准**：
   - [x] 条件/过滤可拖拽（r245 FE：`ConditionsPanel` HTML5 DnD 重排 + 键盘上下移；`designer.smoke` T-DESIGN-R245-FE-01~02）
   - [x] 实时预览（r245：`POST /api/v1/designer/preview/translate` + `DesignerPage` 预览区；probe ≤50ms T-DESIGN-R245-001-06）
   - [x] 条件配置校验与持久化（r32 L1 + r245 `GET /fields` 注册表；T-DESIGN-R245-001-03~08）
+  - [ ] **M-DEPTH F-D〔可选〕**：designer / gov query-design 内核收敛 ADR（先评审，不急改代码）
 - **代码锚点**：`backend/app/designer/` · `backend/app/designer/preview.py` · `backend/app/api/v1/designer.py` · `fe/src/pages/admin/designer/designer-panels.tsx` · `fe/src/pages/admin/designer/useDesignerWorkspace.ts` · `tests/test_mfinal_fe_design_r245.py` T-DESIGN-R245-001-01~08
-- **演化建议**：F-E 批次 1 已闭合条件面板与预览链；远期可补侧栏字段拖入与 explore 元数据联动
-- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07
+- **演化建议**：F-D 可选 ADR；远期可补侧栏字段拖入与 explore 元数据联动
+- **里程碑对齐**：M-FINAL · F-E · 已完成 · 2026-07-07；**M-DEPTH F-D 可选 · 2026-07-10**
 ### [DESIGN-002] 运算规则维护
 
 - **状态**：已实现

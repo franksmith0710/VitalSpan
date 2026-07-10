@@ -4,8 +4,8 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.2.3
-last_updated: 2026-07-09
+version: 1.3.0
+last_updated: 2026-07-10
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
 layout_pattern_ref: references/layout-patterns/app-shell.md
@@ -96,33 +96,29 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 ├── /                                # 运营总览（可选）或按角色重定向至默认 Dashboard
 │
 ├── 数据                            # 建设权限（RBAC）
-│   ├── /datasources                 # 数据源列表 · crud-flow
+│   ├── /datasources                 # 连接管理 · crud-flow
 │   ├── /datasources/new             # 新建 · form-flow（含类型选型向导）
 │   ├── /datasources/:id             # 详情/连通性/schema · detail-page
-│
-│   > **F-B taxonomy（DS-007）**：类型清单经 `GET /api/v1/datasources/types` 供新建向导消费；`/admin/datasources/new` Step 1 按 **关系型数据库 / OLAP / 数仓·湖仓 / 文件 / API / 更多** 大类选型（对标 DataEase）；编辑已有数据源跳过向导直达连接表单。旧 `/admin/connectors` 已移除，重定向至 `/admin/datasources`。
-│   ├── /ingestion/sync-jobs         # 数据接入
-│   ├── /metadata                    # 元数据（术语/主题/维度）
-│   ├── /datasets                    # Dataset 语义建模（META-004）
+│   ├── /ingestion/sync-jobs         # 同步任务（侧栏挂在「数据连接」下，非一级项）
+│   ├── /metadata                    # 元数据（语义建模子项；非独立一级）
+│   ├── /datasets                    # Dataset（语义建模默认子项）
 │   │
-│   > **实体与主题**（`nav-manifest.tsx` 嵌套于「数据」分组，非独立侧栏分组；二期 M7）：
-│   ├── /entities/overview           # 实体总览配置（二期）
-│   └── /themes/:dashboardId         # 主题分析（当前固定 `default`；二期）
+│   > **实体与主题**（`/entities/overview`、`/themes/:id`）**已移出侧栏**；路由与能力保留，深链可达。
 │
-├── 分析                            # 建设 + 消费
+├── 分析                            # 建设 + 消费（默认展开）
 │   ├── /dashboards                  # Dashboard 列表 · table-list（全员可见授权项）
 │   ├── /dashboards/:id              # 查看 view · bi-dashboard-builder（只读）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
-│   ├── /dashboards/:id/preview      # 构建器 preview
+│   ├── /dashboards/:id/preview      # （规划）构建器 preview；当前以 `/dashboards/:id` view 模式替代
 │   ├── /dashboards/:id/share        # 分享/嵌入 · bi-share-embed（有 edit 权）
-│   ├── /charts/types                # 图表类型目录（VIZ-003 只读注册表；/charts/explore 重定向）
+│   ├── /charts/types                # 图表类型目录（**已移出侧栏**；仅 Palette「查看全部类型」深链）
 │
 ├── 报表
-│   ├── /reports                     # 授权报表列表（消费）
+│   ├── /reports                     # 授权报表列表（消费；analyst/viewer 侧栏仅此项）
 │   ├── /reports/:id                 # 报表查看
-│   ├── /reports/templates           # 模板目录 · tree-table（建设）
+│   ├── /reports/templates           # 模板目录（admin · `report:manage`）
 │   ├── /reports/templates/:id       # 模板编辑
-│   └── /reports/schedules           # 调度（三期）
+│   └── /reports/schedules           # 调度（admin · `report:manage`）
 │
 ├── 我的
 │   ├── /account/profile             # 用户资料（个人中心首页）
@@ -148,22 +144,18 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 ### 侧栏导航分组（RBAC 可见）
 
-| 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA（analyst/viewer） |
-|------|--------|----------|--------|------|---------------------------|
-| 数据 | 数据连接、数据接入、语义建模（元数据/Dataset）、**实体与主题**（实体总览/主题分析，嵌套子分组，非独立侧栏一级分组） | `datasource:*` / `metadata:*` / `dataset:*` / `theme:*` 分项 | M1/M7/M13 | admin | **隐藏** |
-| 分析 | Dashboard | — | M1 | admin/analyst/viewer | **可见**（主路径） |
-| 治理 | 图表类型目录（M11） | `governance:*` | M11 | admin | **隐藏**（工程向；建图在 Dashboard） |
-| 报表 | 报表（subItems: 预制报表/报表模板/报表调度） | `report:read/edit` | M1/M7/M11 | admin/analyst/viewer | **可见** |
-| 治理 | 接口目录（M1）、治理工单（M13）、发布流水线（M13）、查询服务（M13）、**查询设计器**（M13，标注「治理专用」） | `governance:*` | M1/M13 | admin | **隐藏** |
-| 我的 | 个人资料、偏好设置、安全设置 | — | — | admin/analyst/viewer | **可见**（头像菜单「个人中心」进入） |
-| 系统 | 角色/用户/组织/行级权限/审计日志/资源授权 | `system:*` | M1 | admin | **隐藏** |
+| 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA |
+|------|--------|----------|--------|------|---------|
+| 分析 | Dashboard | — | M1 | admin/analyst/viewer | **展开**（主路径） |
+| 报表 | 报表中心（analyst/viewer 仅「预制报表」；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
+| 数据 | 数据连接（连接管理/同步任务）、语义建模（Dataset/元数据） | `datasource:*` / `dataset:*` / `metadata:*` | M1/M13 | admin | **展开** |
+| 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **展开** |
+| 系统 | 权限与安全 / 组织 / 审计 | `system:*` | M1 | admin | **展开** |
+| 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |
 
-> **数据工程** = `数据` 分组（含嵌套「实体与主题」子分组）；非 admin 默认侧栏不展示（`iaTier: engineering`）。
-> **图表类型目录**位于「治理」分组（admin 工程向）；实际建图在 Dashboard 编辑 `WidgetPalette`；组件面板底部可跳转完整类型说明。
-
-> **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生函数：`fe/src/lib/resolve-nav.ts`。
-> 三档角色（admin / analyst / viewer）侧栏由 `resolveNavGroups(user)` 从 manifest 派生，不再维护三份平行 nav 文件。
-
+> **已移出侧栏（路由保留）**：图表类型目录、实体总览、主题分析、独立「数据接入」一级项。  
+> **生产不注册**：`/embed/sdk-demo` 仅 `import.meta.env.DEV`。  
+> **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生：`fe/src/lib/resolve-nav.ts`。
 ---
 
 ## 4. 嵌入 IA（`/embed/*`）

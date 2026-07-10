@@ -66,7 +66,7 @@
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07
 ### [RPT-005] 报表调度 FR-3.2
 
-- **状态**：已实现（M12 r238）
+- **状态**：已实现（M12 r238；**M-DEPTH F-C 深度 companion 进行中**）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
 - **描述**：报表调度 FR-3.2（SRS 追溯项）。
@@ -79,10 +79,11 @@
   - [x] 列表/历史/重试 API（r238：`GET /api/v1/reports/schedules` + `GET .../executions` + `POST .../retry` + failed 错误信息）
   - [x] M12 Admin 调度 UI（r238：`SchedulePanel` + `TemplateDetailPanel` 调度 Tab；`SchedulePanel.smoke.test.tsx`）
   - [x] 真实 SMTP/对象存储投递（companion r-e95d：`RPT_DELIVERY_MODE=mock|smtp` + MailHog 兼容 SMTP 适配器）
+  - [ ] **M-DEPTH F-C**：调度执行历史 / 重试 UI 增强（接 `GET .../executions` + `POST .../retry`；失败可读、可重试）
   - [ ] 组合调度粒度枚举（companion）
 - **代码锚点**：`backend/app/reports/scheduler/service.py` · `backend/app/reports/scheduler/jobs.py` · `backend/app/reports/scheduler/executor.py` · `backend/app/reports/scheduler/delivery_adapter.py` · `fe/src/pages/admin/reports/components/SchedulePanel.tsx` · `backend/app/api/v1/reports/__init__.py` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m12_batch1_r238.py` T-RPT-R238-005-* · `tests/test_dash_rpt_query_nfr_r53.py` T-RPT-R53-005-01~08 · `tests/test_dash_rpt_query_nfr_r57.py` T-RPT-R57-005-01~07 · `tests/test_dash_rpt_r58.py` T-RPT-R58-005-01~07
-- **演化建议**：r238 闭合 APScheduler 注册、历史/重试链路与 Admin SchedulePanel；真实 SMTP/对象存储投递与组合调度粒度留 companion
-- **里程碑对齐**：M12 · 已完成 · 2026-07-07
+- **演化建议**：M-DEPTH F-C 加深 SchedulePanel 历史/重试；组合调度粒度留远期
+- **里程碑对齐**：M12 · 已完成 · 2026-07-07；**M-DEPTH F-C · 当前节 · 2026-07-10**
 ### [RPT-006] 报表扩展配置 FR-6.3
 
 - **状态**：已实现（M10 r234）

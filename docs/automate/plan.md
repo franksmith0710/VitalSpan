@@ -1,43 +1,44 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **项目整体毕业**（plan companion 全勾）。**M-FINAL 已冻结**；**M-PRODUCT + M-DASH-UX 已收官**。  
-> **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL 已完成；**PRD 总数 129**（合同已实现）；companion 见 §M-DASH-UX + §M-PRODUCT。  
+> **当前节** = **§M-DEPTH**（DE/SS 深度打穿）。**M-FINAL 已冻结**；**M-PRODUCT + M-DASH-UX 已收官**。  
+> **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL + M-PRODUCT + M-DASH-UX 已完成；**PRD 总数 129**（合同已实现）；当前 companion 见 §M-DEPTH。  
 > **完成定义**：`[x]` = companion 浏览器可感知 / 合同项分片「已实现」；`[ ]` = companion 未达；标「可选」不阻塞收官。  
-> **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F07-DASH.md`](./prd/F07-DASH.md) · [`prd/F06-VIZ.md`](./prd/F06-VIZ.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)。
+> **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F07-DASH.md`](./prd/F07-DASH.md) · [`prd/F11-META.md`](./prd/F11-META.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)；全栈审视见 [`plans/2026-07-10-fe-de-ss-ia-optimization.md`](./plans/2026-07-10-fe-de-ss-ia-optimization.md)。
 
 ```yaml
-version: 2.9.0
-last_updated: 2026-07-09
+version: 3.0.0
+last_updated: 2026-07-10
 archive_ref: docs/automate/plan.archive.md
-execute_scope: GRADUATION-COMPLETE
+execute_scope: M-DEPTH
 frozen_milestone: M-FINAL
 queued_milestone: none
-roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX
+roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX+M-DEPTH
 prd_total: 129
 prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
-companion_scope: M-DASH-UX,M-PRODUCT
-companion_remaining: 0
-current_milestone: GRADUATION-COMPLETE
-intervention: ff-companion-full-2026-07-09
-scope_change: F-F-unlocked-full-companion-sweep
-plan_review: 2026-07-09-ff-five-track-merge
-prd_hub_ref: docs/automate/prd.md@v1.2.115
+companion_scope: M-DEPTH
+companion_remaining: 12
+current_milestone: M-DEPTH
+intervention: m-depth-de-ss-full-stack-2026-07-10
+scope_change: graduation-to-depth-companion
+plan_review: 2026-07-10-create-evolution-plan
+prd_hub_ref: docs/automate/prd.md@v1.2.117
 polish_checklist_ref: docs/automate/plans/2026-07-08-product-polish-checklist.md
 e2e_pass_ref: docs/automate/plans/2026-07-09-graduation-e2e-pass.md
+depth_plan_ref: docs/automate/plans/2026-07-10-fe-de-ss-ia-optimization.md
 bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-flicker.md
-code_gap_note: none — plan companion lines all checked
+code_gap_note: Dataset memory L1; filter widget chart-only; RLS/audit FE gap — see M-DEPTH
 ```
 
-### 执行范围：M-FINAL 已冻结 · M-DASH-UX + M-PRODUCT 全量 companion 收官（2026-07-09）
+### 执行范围：M-FINAL 已冻结 · M-DEPTH 深度 companion（2026-07-10）
 
 > **决策（2026-07-07）**：将 **M-FE-4/5**、**M13**、**F-G** 合并为 **§M-FINAL**；**2026-07-08 收官**（129/129 PRD 合同勾完）。  
 > **决策（2026-07-08）**：追加 **§M-PRODUCT** 处理成品感、DataEase 数据源分类、IA 收敛与 companion 验收清扫。  
-> **决策（2026-07-09）**：方案 A → **§M-DASH-UX** 为当前节；**§M-PRODUCT** queued。  
-> **决策（2026-07-09 · 代码对齐）**：对照 `DashboardWidget`/`WidgetInspector`/`ChartConfigPanel`/`useChartExecute` 实扫 → **F-A 强调接线（非造能力）**；**F-C 稳定性已落地勾选**；**F-C/F-D 拆必做/可选**；**F-F 非默认 gate**。  
-> **依据**：`goal.md` G1/G3；代码证据：编辑态 `WidgetEditPreview` 挡住 `ChartRenderer`；`ChartConfigPanel` 未接入检视器；`GlobalFilterBar` 仅 view。
+> **决策（2026-07-09）**：方案 A → **§M-DASH-UX** 为当前节；**§M-PRODUCT** queued → 同日全勾收官。  
+> **决策（2026-07-10）**：毕业后全栈 DE/SS 审视（SATURATED）→ 插入 **§M-DEPTH** 为当前节；不扩 PRD 合同面，对已实现 ID 做持久化/可视化/控件/消费落差 companion。  
+> **依据**：`goal.md` G1/G3/G5；代码证据：Dataset 内存 store L1；widget 仅 `type:"chart"`；`GlobalFilterBar` 纯 Input；`/rls/groups` `/audit/events` 后端已有、FE 未消费。
 
 | 范围 | 子批 | PRD 项 | 已实现 | 待完成 | 状态 |
 |------|------|--------|--------|--------|------|
@@ -46,24 +47,24 @@ code_gap_note: none — plan companion lines all checked
 | **最后一期** | **M-FINAL · F-A ~ F-G** | **38†** | **38** | **0** | **已冻结** |
 | **成品收官** | **M-PRODUCT · F-A ~ F-F** | **companion** | **38‡** | **0** | **已完成** |
 | **编辑体验** | **M-DASH-UX · F-A ~ F-D** | **companion** | **12** | **0** | **已完成** |
+| **深度打穿** | **M-DEPTH · F-A ~ F-C** | **companion** | **3§** | **12** | **当前节** |
 | 一期–三期 | M2 – M12 | 88 | 88 | 0 | 已完成 |
 
 \* M-FE 与 M2–M5 有 ID 重叠，为浏览器交付轨。  
 † M-FINAL companion 行映射既有 PRD ID，合同 129 项已全部勾选。  
-‡ M-PRODUCT F-A~F 全勾（2026-07-09 五轨 worktree merge）。
+‡ M-PRODUCT F-A~F 全勾（2026-07-09 五轨 worktree merge）。  
+§ M-DEPTH F-0（IA 减法）已勾；必做 F-A/B/C 共 12 项待办；F-D 可选不计 gate。
 
 **推荐执行顺序（全局 · 当前）**：
 
 ```
-M-DASH-UX F-A（编辑态接线真出图 · SQL+Dataset）  ← 首轮必做
-  → F-B（检视器接入 ChartConfigPanel）
-  → F-C 必做（撤销）∥ F-C 已勾（稳定性）
-  → F-D 必做（编辑页全局筛选）；联动=可选
-  → M-PRODUCT F-D 书面 E2E 已记录（2026-07-09）；F-F 仅人工点名
+M-DEPTH F-A（Dataset 持久化 + 真实 execute + 可视化编辑）  ← 首轮必做
+  → F-B（仪表板筛选器组件 + GlobalFilterBar 控件升级）
+  → F-C（RLS/审计/调度历史/服务目录 FE 消费）∥ 可与 F-B 并行
+  → F-D 可选（公开分享 / IA 精简 / 设计器收敛 ADR）仅人工点名
 ```
 
-**G2 选题约束**：每轮从 **§M-DASH-UX 含 `[ ]` 且非「可选」** 的子批取 **3–5 项**；**首轮必须 F-A**。**禁止**选题：M-PRODUCT F-F、M-DASH-UX 标「可选」项（除非人工点名）、AI/SQLBot、非图表积木。
-
+**G2 选题约束**：每轮从 **§M-DEPTH 含 `[ ]` 且非「可选」** 的子批取 **3–5 项**；**首轮必须 F-A**。**禁止**选题：F-D 可选项（除非人工点名）、AI/SQLBot、完整 SQL Lab、NFR probe 扩面、fork DE/SS。
 **前三期完成信号**（不新增 PRD ID）：
 
 | 验收 | 映射 |
@@ -911,3 +912,100 @@ F-A  DashboardWidget 编辑分支 → ChartRenderer + useChartExecute（SQL + Da
 | 全量对标 DE/SS | F-F 按合同裁剪（非默认 gate） |
 
 > **明确不含**：DataEase SQLBot / AI 问数；Superset Semantic Layer 插件体系（见 M-FINAL「对标校准」）。
+
+---
+
+## M-DEPTH — DE/SS 深度打穿（全栈）【当前节】
+
+> **人工干预（2026-07-10）**：毕业后全栈审视 → [`plans/2026-07-10-fe-de-ss-ia-optimization.md`](./plans/2026-07-10-fe-de-ss-ia-optimization.md) v3。  
+> **策略**：不扩 PRD 合同面；对已实现 ID 做 **持久化 / 可视化 / 控件 / 消费落差** companion。  
+> **禁止**：AI/SQLBot、完整 SQL Lab、fork DE/SS、NFR probe 扩面。  
+> **完成定义**：`[x]` = 浏览器可感知 + 分片可回写；可选行不阻塞收官。
+
+| 子批 | 主题 | 必做 | 可选 | 状态 |
+|------|------|------|------|------|
+| F-0 | IA 减法（已落地） | 0 | 0 | **已完成** |
+| **F-A** | Dataset 打穿 | 4 | 0 | **当前 · 首轮** |
+| F-B | 仪表板筛选器 | 4 | 0 | 依赖 F-A |
+| F-C | 后端能力前端消费 | 4 | 0 | 可与 B 并行 |
+| F-D | 分享 / 精简 / 去重 | 0 | 3 | 可选 |
+
+**推荐执行顺序**：
+
+```
+F-A  Dataset ORM + 真实 execute + 可视化编辑器 + 计算字段行编辑
+  → F-B  widget filter 类型 + FilterWidget + GlobalFilterBar 升级 + 驱动 execute
+  → F-C  RLS 分组 UI ∥ 审计页 ∥ 调度历史 ∥ 服务目录增强
+  → F-D  可选（人工点名）
+```
+
+**G2 选题约束**：每轮取 **3–5 项必做 `[ ]`**；**首轮 F-A 全量**。可选行默认跳过。
+
+### F-0 — IA 减法【已完成 · 2026-07-10】
+
+> **对标**：DE/SS 主路径降噪；工程页深链保留、侧栏不暴露。
+
+- [x] BOOT-002: 侧栏删「图表类型目录/实体与主题/独立数据接入」；数据连接嵌套同步任务（完成于 2026-07-10）
+- [x] BOOT-002: `RequireCapabilityName` 与侧栏 capability 对齐；`/embed/sdk-demo` 仅 DEV（完成于 2026-07-10）
+- [x] DASH-001: `DashboardQuickCreateDialog` + Inspector 真实 columns（`chartExecuteProbe`）（完成于 2026-07-10）
+
+**验收信号**：`resolve-nav` / `routes.smoke` / QuickCreate smoke 绿；`layout.md` IA 叙事已同步。
+
+### F-A — Dataset 打穿【必做 · 首轮】
+
+> **对标**：DataEase 数据集可视化建模；生产可用（重启不丢）。  
+> **代码事实**：`datasets.py` 内存 store L1；`DatasetListPage` 表名 textarea + `computedJson`。
+
+- [ ] META-004: Dataset ORM 持久化（替内存 store；重启不丢；Alembic 迁移）
+- [ ] QUERY-009: Dataset 真实 execute（替 execute-plan mock；出真实 rows）
+- [ ] META-004: Dataset 可视化编辑器（SchemaBrowser 选表/字段；无裸 JSON）
+- [ ] META-004: 计算字段行编辑（name+expression；替 computedJson textarea）
+
+**验收信号**：建 Dataset → 重启仍在 → QuickCreate 可选 → Dashboard 出图；无手写 JSON。
+
+**代码锚点**：`backend/app/api/v1/datasets.py` · `backend/app/metadata/dataset/` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `SchemaBrowser`
+
+### F-B — 仪表板筛选器组件【必做】
+
+> **对标**：DE/SS 仪表板 filter 组件 + 原生筛选控件。  
+> **代码事实**：`layoutUtils.ts` widget 仅 `type:"chart"`；`GlobalFilterBar` 仅 `<Input>`。
+
+- [ ] DASH-002: layout widget 类型扩展 `filter`（兼容旧 layout round-trip）
+- [ ] DASH-004: 筛选器 widget UI（下拉/日期/文本）+ Palette 可拖入
+- [ ] DASH-004: GlobalFilterBar 控件升级（下拉/日期/多选；替纯 Input）
+- [ ] DASH-004: 筛选值驱动关联 chart execute 刷新
+
+**验收信号**：拖入筛选器 → 配置字段/控件 → 改值后关联图表重查；旧看板 layout 仍可加载。
+
+**代码锚点**：`layoutUtils.ts` · `GlobalFilterBar.tsx` · `dashboard/schemas.py` · `dashboardFilterUtils` · `useChartExecute`
+
+### F-C — 后端能力前端消费【必做】
+
+> **对标**：把已实现 API 变成管理员可操作的 UI（消费落差）。  
+> **代码事实**：`/rls/groups*` `/audit/events` `/schedules/.../executions` `/services*` 后端已实现。
+
+- [ ] AUTH-006: RLS 维度分组配置 UI（接 `/rls/groups*` + 角色绑定）
+- [ ] AUTH-008: 审计事件浏览页（接 `/audit/events` 时间窗）
+- [ ] RPT-005: 调度执行历史 / 重试 UI（接 executions + retry）
+- [ ] API-003: 已发布查询服务目录消费增强（试跑 / OpenAPI 可见）
+
+**验收信号**：admin 可在浏览器完成分组绑定、查审计、看调度历史并重试、试跑已发布服务。
+
+**代码锚点**：`backend/app/api/v1/rls.py` · `audit.py` · `reports/` · `services.py` · 对应 Admin 页
+
+### F-D — 可选（不阻塞收官 · G2 默认跳过）
+
+- [ ] API-006: 公开/匿名分享链接落地〔可选 · 需安全确认〕
+- [ ] BOOT-002: ChartExplore → Palette Drawer；删 AdminHome 空跳转〔可选〕
+- [ ] DESIGN-001: designer / gov query-design 内核收敛 ADR〔可选 · 先评审〕
+
+### M-DEPTH 收官信号
+
+| 验收 | 映射 | 阻塞？ |
+|------|------|--------|
+| Dataset 生产可用 + 可视化编辑 | F-A 全勾 | **是** |
+| 筛选器组件 + 控件升级 | F-B 全勾 | **是** |
+| RLS/审计/调度/服务 FE 消费 | F-C 全勾 | **是** |
+| 公开分享 / IA 精简 / 设计器 ADR | F-D 可选 | 否 |
+
+> **明确不含**：SQLBot/AI；完整 SQL Lab；文本/图片/Tab 积木（未立项）；NFR probe 扩面。

@@ -1,17 +1,14 @@
 import type React from "react";
 import {
-  ArrowLeftRight,
-  Boxes,
-  Building2,
   Database,
   FileBarChart,
   LayoutDashboard,
   Layers,
-  PieChart,
   ScrollText,
   Server,
   Shield,
   SlidersHorizontal,
+  Building2,
   Workflow,
 } from "lucide-react";
 import type { SessionRole } from "@/lib/session";
@@ -44,6 +41,8 @@ type NavManifestSection = {
   roles: SessionRole[];
   capability?: string;
   iaTier?: IaTier;
+  /** admin 侧栏默认折叠（工程/系统分组） */
+  defaultCollapsed?: boolean;
 };
 
 export const NAV_MANIFEST: NavManifestSection[] = [
@@ -55,16 +54,22 @@ export const NAV_MANIFEST: NavManifestSection[] = [
       {
         name: "数据连接",
         icon: <Database className="size-5" aria-hidden />,
-        path: "/admin/datasources",
         milestone: "M1",
         capability: "datasource:*",
-      },
-      {
-        name: "数据接入",
-        icon: <ArrowLeftRight className="size-5" aria-hidden />,
-        path: "/admin/ingestion/sync-jobs",
-        milestone: "M1",
-        capability: "datasource:*",
+        subItems: [
+          {
+            name: "连接管理",
+            path: "/admin/datasources",
+            milestone: "M1",
+            capability: "datasource:*",
+          },
+          {
+            name: "同步任务",
+            path: "/admin/ingestion/sync-jobs",
+            milestone: "M1",
+            capability: "datasource:*",
+          },
+        ],
       },
       {
         name: "语义建模",
@@ -72,27 +77,17 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         milestone: "M13",
         subItems: [
           {
-            name: "元数据",
-            path: "/admin/metadata",
-            milestone: "M13",
-            capability: "metadata:*",
-          },
-          {
             name: "Dataset",
             path: "/admin/datasets",
             milestone: "M13",
             capability: "dataset:*",
           },
-        ],
-      },
-      {
-        name: "实体与主题",
-        icon: <Boxes className="size-5" aria-hidden />,
-        milestone: "M7",
-        capability: "theme:*",
-        subItems: [
-          { name: "实体总览", path: "/admin/entities/overview", milestone: "M7" },
-          { name: "主题分析", path: "/admin/themes/default", milestone: "M7" },
+          {
+            name: "元数据",
+            path: "/admin/metadata",
+            milestone: "M13",
+            capability: "metadata:*",
+          },
         ],
       },
     ],
@@ -122,13 +117,13 @@ export const NAV_MANIFEST: NavManifestSection[] = [
             name: "报表模板",
             path: "/admin/reports/templates",
             milestone: "M7",
-            capability: "report:*",
+            capability: "report:manage",
           },
           {
             name: "报表调度",
             path: "/admin/reports/schedules",
             milestone: "M11",
-            capability: "report:*",
+            capability: "report:manage",
           },
         ],
       },
@@ -154,13 +149,6 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         icon: <Server className="size-5" aria-hidden />,
         path: "/admin/services",
         milestone: "M13",
-        capability: "governance:*",
-      },
-      {
-        name: "图表类型目录",
-        icon: <PieChart className="size-5" aria-hidden />,
-        path: "/admin/charts/types",
-        milestone: "M11",
         capability: "governance:*",
       },
       {
