@@ -28,6 +28,7 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
 }
 
 function chartIdFromWidget(widget: LayoutWidget): string | null {
+  if (widget.type === "filter" || !widget.chartConfig) return null;
   const cfg = widget.chartConfig as ChartViewConfig;
   return cfg.chartId ?? widget.id;
 }

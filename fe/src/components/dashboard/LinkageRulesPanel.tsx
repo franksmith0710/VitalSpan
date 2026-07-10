@@ -193,7 +193,9 @@ export function LinkageRulesPanel({ dashboardId, linkage, widgets, onSaved }: Li
         <fieldset className="space-y-2">
           <legend className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">目标组件</legend>
           <div className="flex flex-wrap gap-3">
-            {widgets.map((w) => (
+            {widgets
+              .filter((w) => w.type !== "filter")
+              .map((w) => (
               <label key={w.id} className="flex cursor-pointer items-center gap-2 text-theme-xs text-gray-700 dark:text-gray-300">
                 <Checkbox
                   checked={draft.targetWidgetIds.includes(w.id)}

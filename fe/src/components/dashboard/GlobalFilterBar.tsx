@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { apiFetch, ApiRequestError } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
-import type { Linkage } from "./dashboardFilterUtils";
+import { resolveFilterControlType, type Linkage } from "./dashboardFilterUtils";
+import { FilterControl } from "./FilterWidgetControls";
 
 type GlobalFilterBarProps = {
   dashboardId: string;
@@ -32,17 +31,20 @@ export function GlobalFilterBar({ dashboardId, values, onChange }: GlobalFilterB
 
   return (
     <div className="flex flex-wrap gap-4 border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-      {data.filters.map((filter) => (
-        <div key={filter.filterId} className="min-w-[140px] flex-1 space-y-1.5 sm:max-w-xs">
-          <Label htmlFor={`gf-${filter.filterId}`}>{filter.dimensionRef}</Label>
-          <Input
+      {data.filters.map((filter) => {
+        const controlType = resolveFilterControlType(filter);
+        return (
+          <FilterControl
+            key={filter.filterId}
             id={`gf-${filter.filterId}`}
-            className="h-10"
+            label={filter.dimensionRef}
+            controlType={controlType}
             value={values[filter.filterId] ?? filter.defaultValue ?? ""}
-            onChange={(e) => onChange(filter.filterId, e.target.value)}
+            options={filter.options}
+            onChange={(next) => onChange(filter.filterId, next)}
           />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

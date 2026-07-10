@@ -66,6 +66,9 @@ def _validate_layout_business(parsed: DashboardLayout) -> None:
             cfg = widget.chart_config
             if cfg.chart_id is not None and str(cfg.chart_id) != wid:
                 raise DashboardError("DASH_CHART_ID_MISMATCH", "chartId 与组件 ID 不一致", 422)
+        elif widget.type == "filter":
+            if widget.filter_config is None:
+                raise DashboardError("DASH_MISSING_FILTER_CONFIG", "筛选器组件缺少 filterConfig", 422)
 
 
 def _normalize_widget_orders(widgets: list) -> list:

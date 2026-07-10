@@ -8,7 +8,13 @@ function cloneSnapshot(widgets: LayoutWidget[]): LayoutWidget[] {
   return sortWidgets(
     widgets.map((w) => ({
       ...w,
-      chartConfig: { ...w.chartConfig },
+      chartConfig: w.chartConfig ? { ...w.chartConfig } : undefined,
+      filterConfig: w.filterConfig
+        ? {
+            ...w.filterConfig,
+            options: w.filterConfig.options?.map((o) => ({ ...o })),
+          }
+        : undefined,
     })),
   );
 }

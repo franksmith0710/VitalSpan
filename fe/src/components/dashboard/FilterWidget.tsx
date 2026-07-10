@@ -1,7 +1,5 @@
-import { useState, type MouseEvent } from "react";
-import { Trash2 } from "lucide-react";
-import { ChartRenderer } from "@/components/charts/ChartRenderer";
-import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { useState } from "react";
+import { Filter as FilterIcon, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,86 +11,35 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { IconButton } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { FilterWidget } from "./FilterWidget";
+import { FilterControl } from "./FilterWidgetControls";
 import type { FilterWidgetConfig, LayoutWidget } from "./layoutUtils";
-import { isWidgetConfigReady } from "./createLayoutWidget";
-import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 
-type DashboardWidgetProps = {
-  widget: LayoutWidget;
+type FilterWidgetProps = {
+  widget: LayoutWidget & { filterConfig: FilterWidgetConfig };
   mode: "edit" | "view";
   selected?: boolean;
-  onSelect?: (event: MouseEvent) => void;
+  value: string;
+  onValueChange: (filterId: string, value: string) => void;
+  onSelect?: () => void;
   onDelete?: (id: string) => void;
-  onTitleChange: (id: string, title: string) => void;
-  onChartConfigChange?: (id: string, config: ChartViewConfig) => void;
-  filterParameters?: Record<string, string>;
-  executeKey?: string;
-  filterValue?: string;
-  onFilterValueChange?: (filterId: string, value: string) => void;
+  onTitleChange?: (id: string, title: string) => void;
 };
 
-function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
-  const chartType = widget.chartConfig?.chartType ?? "bar";
-  const Icon = widgetChartIcon(chartType);
-  const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
-
-  return (
-    <div className="flex h-full min-h-[64px] flex-col items-center justify-center gap-2 px-3 py-3">
-      <span className="flex size-8 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400">
-        <Icon className="size-4" aria-hidden />
-      </span>
-      <div className="flex flex-wrap items-center justify-center gap-1.5">
-        <Badge variant="light" color="light" size="sm">
-          {typeLabel}
-        </Badge>
-        <Badge variant="light" color="warning" size="sm">
-          待配置
-        </Badge>
-      </div>
-      <p className="text-center text-theme-xs text-gray-500 dark:text-gray-400">
-        在右侧配置数据源与查询
-      </p>
-    </div>
-  );
-}
-
-export function DashboardWidget({
+export function FilterWidget({
   widget,
   mode,
   selected = false,
+  value,
+  onValueChange,
   onSelect,
   onDelete,
   onTitleChange,
-  filterParameters,
-  executeKey,
-  filterValue,
-  onFilterValueChange,
-}: DashboardWidgetProps) {
+}: FilterWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
-
-  if (widget.type === "filter" && widget.filterConfig) {
-    return (
-      <FilterWidget
-        widget={widget as LayoutWidget & { filterConfig: FilterWidgetConfig }}
-        mode={mode}
-        selected={selected}
-        value={filterValue ?? widget.filterConfig.defaultValue ?? ""}
-        onValueChange={(filterId, value) => onFilterValueChange?.(filterId, value)}
-        onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
-        onTitleChange={onTitleChange}
-        onDelete={onDelete}
-      />
-    );
-  }
-
-  const chartType = widget.chartConfig?.chartType ?? "bar";
-  const Icon = widgetChartIcon(chartType);
-  const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
-  const configReady = isWidgetConfigReady(widget.chartConfig);
+  const cfg = widget.filterConfig;
+  const controlId = `fw-${widget.id}`;
 
   return (
     <div
@@ -112,18 +59,15 @@ export function DashboardWidget({
           )}
         >
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5 dark:text-gray-400">
-            <Icon className="size-3.5" aria-hidden />
+            <FilterIcon className="size-3.5" aria-hidden />
           </span>
           <Input
             value={widget.title}
-            onChange={(e) => onTitleChange(widget.id, e.target.value)}
+            onChange={(e) => onTitleChange?.(widget.id, e.target.value)}
             onPointerDown={(e) => e.stopPropagation()}
             className="dashboard-no-drag h-7 min-w-0 flex-1 border-transparent bg-transparent px-1 text-theme-sm font-medium shadow-none focus-visible:border-gray-300 dark:focus-visible:border-gray-700"
-            aria-label="组件标题"
+            aria-label="筛选器标题"
           />
-          <span className="dashboard-no-drag hidden shrink-0 text-theme-xs tabular-nums text-gray-400 sm:inline">
-            {widget.colSpan}×{widget.rowSpan}
-          </span>
           {onDelete ? (
             <IconButton
               type="button"
@@ -143,12 +87,12 @@ export function DashboardWidget({
       ) : (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
-            <Icon className="size-3.5" aria-hidden />
+            <FilterIcon className="size-3.5" aria-hidden />
           </span>
           <h4 className="min-w-0 flex-1 truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">
             {widget.title}
           </h4>
-          <span className="shrink-0 text-theme-xs text-gray-400">{typeLabel}</span>
+          <span className="shrink-0 text-theme-xs text-gray-400">筛选器</span>
         </div>
       )}
 
@@ -159,7 +103,7 @@ export function DashboardWidget({
           mode === "edit"
             ? (e) => {
                 e.stopPropagation();
-                onSelect?.(e);
+                onSelect?.();
               }
             : undefined
         }
@@ -168,28 +112,26 @@ export function DashboardWidget({
             ? (e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  onSelect?.({ shiftKey: e.shiftKey } as MouseEvent);
+                  onSelect?.();
                 }
               }
             : undefined
         }
         className={cn(
-          "min-h-0 flex-1",
+          "dashboard-no-drag flex min-h-0 flex-1 items-start p-3",
           mode === "edit" && "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
         )}
+        onPointerDown={(e) => e.stopPropagation()}
       >
-        {mode === "edit" && !configReady ? (
-          <WidgetPendingPreview widget={widget} />
-        ) : widget.chartConfig ? (
-          <div className="h-full p-2">
-            <ChartRenderer
-              config={widget.chartConfig}
-              title={widget.title}
-              filterParameters={filterParameters}
-              executeKey={executeKey}
-            />
-          </div>
-        ) : null}
+        <FilterControl
+          id={controlId}
+          label={cfg.dimensionRef || widget.title}
+          controlType={cfg.controlType}
+          value={value}
+          options={cfg.options}
+          onChange={(next) => onValueChange(cfg.filterId, next)}
+          className="w-full max-w-none sm:max-w-none"
+        />
       </div>
 
       {onDelete ? (
