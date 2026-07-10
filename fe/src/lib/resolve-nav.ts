@@ -1,6 +1,7 @@
 import { NAV_MANIFEST } from "@/config/nav-manifest";
 import { ACCOUNT_NAV_SECTIONS } from "@/config/account-nav";
 import { matchesCapability, resolveUserCapabilities } from "@/lib/capabilities";
+import { isGovNavEnabledFromEnv } from "@/lib/gov-nav";
 import { isAccountManagementPath } from "@/lib/workspace";
 import type { NavSection, NavItem, NavSubItem } from "@/components/layout/app-sidebar";
 import type { SessionUser, SessionRole } from "@/lib/session";
@@ -10,6 +11,8 @@ export const ACTIVE_MILESTONES = new Set(["M1", "M7", "M11", "M13"]);
 export type ResolveNavOptions = {
   activeMilestones?: Set<string>;
   userCapabilities?: Set<string>;
+  /** H1 覆盖：测试或运行时显式开关；默认读 `VITE_GOV_NAV` */
+  govNavEnabled?: boolean;
 };
 
 function isAdmin(user: SessionUser): boolean {
@@ -83,9 +86,12 @@ export function resolveNavGroups(
 ): NavSection[] {
   const activeMilestones = options?.activeMilestones ?? ACTIVE_MILESTONES;
   const userCaps = options?.userCapabilities ?? resolveUserCapabilities(user.roles);
+  const govNavEnabled = options?.govNavEnabled ?? isGovNavEnabledFromEnv();
   const result: NavSection[] = [];
 
   for (const section of NAV_MANIFEST) {
+    if (section.requiresGovNav && !govNavEnabled) continue;
+
     const sectionCap = section.capability;
     if (sectionCap) {
       if (!matchesCapability(userCaps, sectionCap)) continue;

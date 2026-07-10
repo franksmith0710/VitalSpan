@@ -4,7 +4,7 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.3.0
+version: 1.3.1
 last_updated: 2026-07-10
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
@@ -126,19 +126,19 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   └── /account/security            # 安全设置（修改密码）
 │   # /account/settings 重定向至 preferences（兼容旧链接）
 │
-├── 治理
-│   ├── /governance/catalog
+├── 治理                            # H1：默认隐藏；仅 `VITE_GOV_NAV=1` 时侧栏可见
+│   ├── /governance/catalog         # 深链可达；页顶诚实横幅（未对接真实总线）
 │   ├── /governance/tickets
 │   ├── /governance/publish
 │   ├── /services                    # 已发布查询服务（IF-02）
 │   └── /designer                    # 查询设计器（四期）· 治理专用 Badge
 │
 └── 系统
-    ├── /system/roles                # AUTH · crud-flow
+    ├── /system/roles                # AUTH · crud-flow（含维度分组绑定入口见 RLS）
     ├── /system/users                # AUTH
     ├── /system/orgs                 # AUTH
-    ├── /system/rls                  # 行级权限 · form-composition
-    ├── /system/audit                # 审计日志 · table-list
+    ├── /system/rls                  # 行级权限：维度/分组 CRUD + 角色绑定 · form-composition
+    ├── /system/audit                # 审计日志（含时间窗筛选）· table-list
     └── /system/grants               # 资源授权 · table-list + dialog form
 ```
 
@@ -149,10 +149,11 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分析 | Dashboard | — | M1 | admin/analyst/viewer | **展开**（主路径） |
 | 报表 | 报表中心（analyst/viewer 仅「预制报表」；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
 | 数据 | 数据连接（连接管理/同步任务）、语义建模（Dataset/元数据） | `datasource:*` / `dataset:*` / `metadata:*` | M1/M13 | admin | **展开** |
-| 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **展开** |
+| 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 默认隐藏**（`VITE_GOV_NAV=1` 才显示） |
 | 系统 | 权限与安全 / 组织 / 审计 | `system:*` | M1 | admin | **展开** |
 | 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |
 
+> **H1（客户交付）**：`fe/src/lib/gov-nav.ts` + `nav-manifest.requiresGovNav`；默认不展示「治理」，避免 InMemory 总线冒充。深链仍可达，路由壳层展示「未对接真实总线 / 差异化能力」横幅。  
 > **已移出侧栏（路由保留）**：图表类型目录、实体总览、主题分析、独立「数据接入」一级项。  
 > **生产不注册**：`/embed/sdk-demo` 仅 `import.meta.env.DEV`。  
 > **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生：`fe/src/lib/resolve-nav.ts`。
@@ -214,7 +215,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分组 | admin | analyst | viewer |
 |------|-------|---------|--------|
 | 数据（含嵌套「实体与主题」子分组） | 可见 | 隐藏 | 隐藏 |
-| 治理 | 可见 | 隐藏 | 隐藏 |
+| 治理 | **默认隐藏**（`VITE_GOV_NAV=1` 可见） | 隐藏 | 隐藏 |
 | 分析（主路径：Dashboard） | 可见 | 可见 | 可见 |
 | 报表 | 可见 | 可见 | 可见 |
 | 我的 | 可见 | 可见 | 可见 |
@@ -266,6 +267,7 @@ fe/src/
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.3.1 | 2026-07-10 | H1：治理侧栏默认隐藏（`VITE_GOV_NAV`）；深链诚实横幅；RLS/审计 Admin 说明 |
 | 1.2.3 | 2026-07-09 | F-F VIEW-001 companion：`dashboardLayoutToView` 适配层与 Dashboard PUT 校验说明 |
 | 1.0.0 | 2026-07-03 | 初版：Admin/Portal/Embed 双端 IA（已废止） |
 | 1.1.0 | 2026-07-03 | 单应用 + Embed；合并消费路由；ADR 不做 `/portal/*` |

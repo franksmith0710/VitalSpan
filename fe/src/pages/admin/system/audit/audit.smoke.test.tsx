@@ -36,6 +36,13 @@ describe("AuditLogPage smoke", () => {
     mockApiFetch.mockReset();
   });
 
+  it("exposes time range filters", async () => {
+    mockApiFetch.mockResolvedValue({ items: [], total: 0 });
+    renderAuditPage();
+    expect(await screen.findByLabelText("筛选起始时间")).toBeInTheDocument();
+    expect(screen.getByLabelText("筛选结束时间")).toBeInTheDocument();
+  });
+
   it("renders readable audit rows", async () => {
     mockApiFetch.mockResolvedValue({
       items: [

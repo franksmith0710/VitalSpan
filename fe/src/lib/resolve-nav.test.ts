@@ -58,7 +58,9 @@ describe("resolveNavGroups", () => {
   });
 
   it("T-NAV-MF-03: admin sees M13 items without preview badge", () => {
-    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]), {
+      govNavEnabled: true,
+    });
     const allItems = groups.flatMap((g) => g.items);
     const designer = allItems.find((i) => i.name === "查询设计器");
     expect(designer).toBeDefined();
@@ -71,6 +73,7 @@ describe("resolveNavGroups", () => {
   it("T-NAV-MF-04: capabilities override filters M7/M11/M13 for admin", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]), {
       activeMilestones: new Set(["M1"]),
+      govNavEnabled: true,
     });
     const allItems = groups.flatMap((g) => g.items);
     const designer = allItems.find((i) => i.name === "查询设计器");
@@ -167,16 +170,28 @@ describe("resolveNavGroups", () => {
     expect(titles).not.toContain("治理");
   });
 
-  it("T-NAV-FC-03: admin still sees engineering sections (expanded)", () => {
+  it("T-NAV-FC-03: admin sees engineering 数据; 治理 hidden by default (H1)", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const titles = groups.map((g) => g.title);
     expect(titles).toContain("数据");
-    expect(titles).toContain("治理");
+    expect(titles).not.toContain("治理");
     const data = groups.find((g) => g.title === "数据");
     expect(data?.defaultCollapsed).toBeFalsy();
     expect(data?.items.some((i) => i.name === "实体与主题")).toBe(false);
-    expect(groups.find((g) => g.title === "治理")?.defaultCollapsed).toBeFalsy();
     expect(groups.find((g) => g.title === "系统")?.defaultCollapsed).toBeFalsy();
+  });
+
+  it("T-NAV-H1-01: resolveNavGroups without gov flag omits 治理", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
+    expect(groups.some((g) => g.title === "治理")).toBe(false);
+  });
+
+  it("T-NAV-H1-02: govNavEnabled true shows 治理 for admin", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]), {
+      govNavEnabled: true,
+    });
+    expect(groups.some((g) => g.title === "治理")).toBe(true);
+    expect(groups.find((g) => g.title === "治理")?.defaultCollapsed).toBeFalsy();
   });
 
   it("T-VIZ-FC-01: analyst viewer nav excludes 图表类型目录", () => {
@@ -207,8 +222,10 @@ describe("resolveNavGroups", () => {
     expect(center?.subItems?.map((s) => s.name)).toEqual(["预制报表"]);
   });
 
-  it("T-DESIGN-FC-01: admin governance group has 查询设计器 with badge", () => {
-    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
+  it("T-DESIGN-FC-01: admin governance group has 查询设计器 with badge when gov nav on", () => {
+    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]), {
+      govNavEnabled: true,
+    });
     const gov = groups.find((g) => g.title === "治理");
     const designer = gov?.items.find((i) => i.name === "查询设计器");
     expect(designer).toBeDefined();

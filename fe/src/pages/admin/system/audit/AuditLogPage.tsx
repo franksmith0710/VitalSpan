@@ -13,6 +13,7 @@ import {
 } from "@/components/layout/list-page-kit";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import {
@@ -40,7 +41,14 @@ import {
 export function AuditLogPage() {
   const [action, setAction] = useState("");
   const [targetType, setTargetType] = useState<string>("all");
-  const [debounced, setDebounced] = useState({ action: "", targetType: "" });
+  const [createdAfter, setCreatedAfter] = useState("");
+  const [createdBefore, setCreatedBefore] = useState("");
+  const [debounced, setDebounced] = useState({
+    action: "",
+    targetType: "",
+    createdAfter: "",
+    createdBefore: "",
+  });
   const [selected, setSelected] = useState<AuditEventRow | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -50,13 +58,20 @@ export function AuditLogPage() {
         setDebounced({
           action: action.trim(),
           targetType: targetType === "all" ? "" : targetType,
+          createdAfter: createdAfter.trim(),
+          createdBefore: createdBefore.trim(),
         }),
       300,
     );
     return () => window.clearTimeout(t);
-  }, [action, targetType]);
+  }, [action, targetType, createdAfter, createdBefore]);
 
-  const pagination = useListPagination(20, [debounced.action, debounced.targetType]);
+  const pagination = useListPagination(20, [
+    debounced.action,
+    debounced.targetType,
+    debounced.createdAfter,
+    debounced.createdBefore,
+  ]);
 
   const params = useMemo(() => {
     const p: Record<string, string> = {
@@ -65,6 +80,12 @@ export function AuditLogPage() {
     };
     if (debounced.action) p.action = debounced.action;
     if (debounced.targetType) p.target_type = debounced.targetType;
+    if (debounced.createdAfter) {
+      p.created_after = new Date(debounced.createdAfter).toISOString();
+    }
+    if (debounced.createdBefore) {
+      p.created_before = new Date(debounced.createdBefore).toISOString();
+    }
     return p;
   }, [debounced, pagination.pageSize, pagination.offset]);
 
@@ -125,10 +146,41 @@ export function AuditLogPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="grid w-full gap-1 sm:w-[200px]">
+                <Label htmlFor="audit-created-after" className="text-theme-xs text-gray-500">
+                  起始时间
+                </Label>
+                <Input
+                  id="audit-created-after"
+                  type="datetime-local"
+                  className="h-11"
+                  value={createdAfter}
+                  onChange={(e) => setCreatedAfter(e.target.value)}
+                  aria-label="筛选起始时间"
+                />
+              </div>
+              <div className="grid w-full gap-1 sm:w-[200px]">
+                <Label htmlFor="audit-created-before" className="text-theme-xs text-gray-500">
+                  结束时间
+                </Label>
+                <Input
+                  id="audit-created-before"
+                  type="datetime-local"
+                  className="h-11"
+                  value={createdBefore}
+                  onChange={(e) => setCreatedBefore(e.target.value)}
+                  aria-label="筛选结束时间"
+                />
+              </div>
             </>
           }
           actions={
-            !isLoading && data && (debounced.action || debounced.targetType) ? (
+            !isLoading &&
+            data &&
+            (debounced.action ||
+              debounced.targetType ||
+              debounced.createdAfter ||
+              debounced.createdBefore) ? (
               <p className="text-theme-sm text-gray-500 dark:text-gray-400">
                 筛选结果 {items.length} 条
               </p>

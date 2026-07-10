@@ -43,6 +43,11 @@ type NavManifestSection = {
   iaTier?: IaTier;
   /** admin 侧栏默认折叠（工程/系统分组） */
   defaultCollapsed?: boolean;
+  /**
+   * H1：仅当 `VITE_GOV_NAV=1`（或 resolveNav 传入 govNavEnabled）时显示。
+   * 默认隐藏，避免治理/总线 InMemory 冒充客户主路径能力。
+   */
+  requiresGovNav?: boolean;
 };
 
 export const NAV_MANIFEST: NavManifestSection[] = [
@@ -134,6 +139,7 @@ export const NAV_MANIFEST: NavManifestSection[] = [
     roles: ["admin"],
     iaTier: "engineering",
     capability: "governance:*",
+    requiresGovNav: true,
     items: [
       {
         name: "治理流程",

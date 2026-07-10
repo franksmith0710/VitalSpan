@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -23,26 +33,12 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
-
-type DimensionTypeOut = {
-  id: string;
-  code: string;
-  name: string;
-  value_type: string;
-  org_dimension: boolean;
-  description: string | null;
-};
-
-type DimensionGroupOut = {
-  id: string;
-  dimension_type_id: string;
-  code: string;
-  name: string;
-  parent_id: string | null;
-};
+import { RlsRoleBindingPanel } from "./RlsRoleBindingPanel";
+import type { DimensionGroupOut, DimensionTypeOut } from "./rls-types";
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -66,6 +62,11 @@ export function RlsAdminPage() {
   const [groupCode, setGroupCode] = useState("");
   const [groupName, setGroupName] = useState("");
   const [filterDimId, setFilterDimId] = useState<string>("__all__");
+  const [editGroup, setEditGroup] = useState<DimensionGroupOut | null>(null);
+  const [editName, setEditName] = useState("");
+  const [deleteGroup, setDeleteGroup] = useState<DimensionGroupOut | null>(null);
+  const [valuesGroup, setValuesGroup] = useState<DimensionGroupOut | null>(null);
+  const [valuesText, setValuesText] = useState("");
 
   const dimensionsQuery = useQuery({
     queryKey: queryKeys.rls.dimensions({ limit: 200, offset: 0 }),
@@ -84,8 +85,21 @@ export function RlsAdminPage() {
         `/api/v1/rls/groups?${q}`,
       );
     },
-    enabled: tab === "groups",
+    enabled: tab === "groups" || tab === "bindings",
   });
+
+  const valuesQuery = useQuery({
+    queryKey: ["rls", "group-values", valuesGroup?.id],
+    queryFn: () =>
+      apiFetch<{ items: string[] }>(`/api/v1/rls/groups/${valuesGroup!.id}/values`),
+    enabled: Boolean(valuesGroup?.id),
+  });
+
+  useEffect(() => {
+    if (valuesGroup && valuesQuery.data?.items) {
+      setValuesText(valuesQuery.data.items.join("\n"));
+    }
+  }, [valuesGroup, valuesQuery.data]);
 
   const createDim = useMutation({
     mutationFn: (body: { code: string; name: string; value_type: string }) =>
@@ -113,13 +127,58 @@ export function RlsAdminPage() {
     onError: (err) => toast.error(mapApiError(err)),
   });
 
+  const updateGroup = useMutation({
+    mutationFn: (body: { id: string; name: string }) =>
+      apiFetch(`/api/v1/rls/groups/${body.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ name: body.name }),
+      }),
+    onSuccess: async () => {
+      toast.success("分组已更新");
+      setEditGroup(null);
+      await qc.invalidateQueries({ queryKey: ["rls", "groups"] });
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
+  const removeGroup = useMutation({
+    mutationFn: (id: string) => apiFetch(`/api/v1/rls/groups/${id}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      toast.success("分组已删除");
+      setDeleteGroup(null);
+      await qc.invalidateQueries({ queryKey: ["rls", "groups"] });
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
+  const replaceValues = useMutation({
+    mutationFn: (body: { id: string; values: string[] }) =>
+      apiFetch(`/api/v1/rls/groups/${body.id}/values`, {
+        method: "PUT",
+        body: JSON.stringify({ values: body.values }),
+      }),
+    onSuccess: async () => {
+      toast.success("分组成员值已更新");
+      setValuesGroup(null);
+      setValuesText("");
+      await qc.invalidateQueries({ queryKey: ["rls", "group-values"] });
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
+  const openValues = (g: DimensionGroupOut) => {
+    setValuesText("");
+    setValuesGroup(g);
+  };
+
   const dimensions = dimensionsQuery.data?.items ?? [];
   const groups = groupsQuery.data?.items ?? [];
+  const dimNameById = Object.fromEntries(dimensions.map((d) => [d.id, d.name]));
 
   return (
     <AdminPageShell
       title="行级权限"
-      description="配置 RLS 维度类型与分组，并在角色管理中绑定生效维度。"
+      description="配置 RLS 维度类型与分组，管理分组成员值，并为角色绑定维度分组。"
     >
       {dimensionsQuery.isError ? (
         <ErrorBanner
@@ -132,6 +191,7 @@ export function RlsAdminPage() {
         <TabsList>
           <TabsTrigger value="dimensions">维度类型</TabsTrigger>
           <TabsTrigger value="groups">维度分组</TabsTrigger>
+          <TabsTrigger value="bindings">角色绑定</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dimensions" className="mt-6 space-y-4">
@@ -206,19 +266,22 @@ export function RlsAdminPage() {
             </Button>
           </div>
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-            <table className="min-w-[640px] w-full text-left text-theme-sm">
+            <table className="min-w-[720px] w-full text-left text-theme-sm">
               <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <tr>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">名称</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">编码</th>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">维度类型 ID</th>
+                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">维度类型</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
+                    操作
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {groupsQuery.isLoading
                   ? Array.from({ length: 4 }).map((_, i) => (
                       <tr key={i}>
-                        <td colSpan={3} className="px-4 py-3">
+                        <td colSpan={4} className="px-4 py-3">
                           <Skeleton className="h-6 w-full" />
                         </td>
                       </tr>
@@ -226,7 +289,7 @@ export function RlsAdminPage() {
                   : null}
                 {groups.length === 0 && !groupsQuery.isLoading ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={4} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                       暂无分组
                     </td>
                   </tr>
@@ -235,12 +298,55 @@ export function RlsAdminPage() {
                   <tr key={g.id} className="border-b border-gray-100 dark:border-gray-800">
                     <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{g.name}</td>
                     <td className="px-4 py-3 font-mono text-theme-xs">{g.code}</td>
-                    <td className="px-4 py-3 font-mono text-theme-xs">{g.dimension_type_id.slice(0, 8)}…</td>
+                    <td className="px-4 py-3">
+                      {dimNameById[g.dimension_type_id] ?? (
+                        <span className="font-mono text-theme-xs">
+                          {g.dimension_type_id.slice(0, 8)}…
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openValues(g)}
+                        >
+                          成员值
+                        </Button>
+                        <IconButton
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label="编辑分组"
+                          onClick={() => {
+                            setEditGroup(g);
+                            setEditName(g.name);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </IconButton>
+                        <IconButton
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label="删除分组"
+                          onClick={() => setDeleteGroup(g)}
+                        >
+                          <Trash2 className="size-4" />
+                        </IconButton>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </TabsContent>
+
+        <TabsContent value="bindings" className="mt-6">
+          <RlsRoleBindingPanel groups={groups} groupsLoading={groupsQuery.isLoading} />
         </TabsContent>
       </Tabs>
 
@@ -332,6 +438,133 @@ export function RlsAdminPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={Boolean(editGroup)}
+        onOpenChange={(open) => {
+          if (!open) setEditGroup(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>编辑分组</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label htmlFor="edit-grp-name">名称</Label>
+            <Input
+              id="edit-grp-name"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditGroup(null)}>
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={!editGroup || !editName.trim() || updateGroup.isPending}
+              onClick={() =>
+                editGroup && updateGroup.mutate({ id: editGroup.id, name: editName.trim() })
+              }
+            >
+              保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(valuesGroup)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setValuesGroup(null);
+            setValuesText("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>分组成员值 — {valuesGroup?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label htmlFor="grp-values">每行一个值（保存为全量替换）</Label>
+            {valuesQuery.isLoading ? <Skeleton className="h-24 w-full" /> : null}
+            <Textarea
+              id="grp-values"
+              rows={8}
+              value={valuesText}
+              onChange={(e) => setValuesText(e.target.value)}
+              placeholder={"华东\n华北"}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setValuesGroup(null);
+                setValuesText("");
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={!valuesGroup || replaceValues.isPending}
+              onClick={() => {
+                if (!valuesGroup) return;
+                const values = valuesText
+                  .split(/\r?\n/)
+                  .map((v) => v.trim())
+                  .filter(Boolean);
+                if (values.length === 0) {
+                  toast.error("至少填写一个成员值");
+                  return;
+                }
+                replaceValues.mutate({ id: valuesGroup.id, values });
+              }}
+            >
+              保存成员值
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(deleteGroup)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteGroup(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除维度分组？</AlertDialogTitle>
+            <AlertDialogDescription>
+              将删除「{deleteGroup?.name}」及其成员值；若仍被角色绑定可能失败。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button type="button" variant="outline">
+                取消
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                type="button"
+                variant="primary"
+                disabled={removeGroup.isPending}
+                onClick={() => deleteGroup && removeGroup.mutate(deleteGroup.id)}
+              >
+                删除
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminPageShell>
   );
 }

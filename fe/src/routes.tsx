@@ -34,6 +34,7 @@ import { GrantsPage } from "@/pages/admin/system/grants/GrantsPage";
 import { GovernanceCatalogPage } from "@/pages/admin/governance/GovernanceCatalogPage";
 import { GovernanceWorkflowPage } from "@/pages/admin/governance/GovernanceWorkflowPage";
 import { GovernancePublishPage } from "@/pages/admin/governance/GovernancePublishPage";
+import { withGovernanceHonesty } from "@/pages/admin/governance/GovernanceHonestyBanner";
 import { QueryServicesPage } from "@/pages/admin/services/QueryServicesPage";
 import { MetadataHubPage } from "@/pages/admin/metadata/MetadataHubPage";
 import { DatasetListPage } from "@/pages/admin/datasets/DatasetListPage";
@@ -75,16 +76,16 @@ export function AppRoutes() {
           <Route path="reports/templates" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/templates/:nodeId" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/schedules" element={<RequireCapabilityName capability="report:manage"><ReportSchedulesPage /></RequireCapabilityName>} />
-          <Route path="charts/types" element={<RequireCapabilityName capability="governance:*"><ChartExplorePage /></RequireCapabilityName>} />
+          <Route path="charts/types" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<ChartExplorePage />)}</RequireCapabilityName>} />
           <Route
             path="charts/explore"
             element={<Navigate to={CHART_TYPES_CATALOG_PATH} replace />}
           />
-          <Route path="designer" element={<RequireCapabilityName capability="governance:*"><DesignerPage /></RequireCapabilityName>} />
-          <Route path="governance/catalog" element={<RequireCapabilityName capability="governance:*"><GovernanceCatalogPage /></RequireCapabilityName>} />
-          <Route path="governance/tickets" element={<RequireCapabilityName capability="governance:*"><GovernanceWorkflowPage /></RequireCapabilityName>} />
-          <Route path="governance/publish" element={<RequireCapabilityName capability="governance:*"><GovernancePublishPage /></RequireCapabilityName>} />
-          <Route path="services" element={<RequireCapabilityName capability="governance:*"><QueryServicesPage /></RequireCapabilityName>} />
+          <Route path="designer" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<DesignerPage />)}</RequireCapabilityName>} />
+          <Route path="governance/catalog" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<GovernanceCatalogPage />)}</RequireCapabilityName>} />
+          <Route path="governance/tickets" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<GovernanceWorkflowPage />)}</RequireCapabilityName>} />
+          <Route path="governance/publish" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<GovernancePublishPage />)}</RequireCapabilityName>} />
+          <Route path="services" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<QueryServicesPage />)}</RequireCapabilityName>} />
           <Route path="metadata" element={<RequireCapabilityName capability="metadata:*"><MetadataHubPage /></RequireCapabilityName>} />
           <Route path="metadata/glossary" element={<RequireCapabilityName capability="metadata:*"><MetadataHubPage /></RequireCapabilityName>} />
           <Route path="datasets" element={<RequireCapabilityName capability="dataset:*"><DatasetListPage /></RequireCapabilityName>} />
