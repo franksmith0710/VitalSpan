@@ -5,12 +5,17 @@ import time
 import uuid
 from dataclasses import dataclass
 
+from sqlalchemy import delete, func, select
+from sqlalchemy.orm import Session
+
 from app.auth.deps import UserContext
+from app.datasources.models import get_meta_session
 from app.metadata.dataset.errors import (
     META_DATASET_DUPLICATE_TABLE,
     META_DATASET_FORBIDDEN,
     DatasetError,
 )
+from app.metadata.dataset.models import DatasetRecord
 from app.metadata.dataset.schemas import (
     DatasetItemIn,
     DatasetItemOut,
@@ -20,7 +25,6 @@ from app.metadata.dataset.schemas import (
 
 META_DATASET_CONFIG_TYPE_INVALID = "META_DATASET_CONFIG_TYPE_INVALID"
 
-_store: dict[str, dict] = {}
 _FIELD_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 _USER_DATASET_SCOPE: dict[str, str] = {}
 probe_dataset_budget_ms_limit = 50
@@ -32,12 +36,50 @@ class DatasetProbeResult:
     ok: bool
 
 
+class _StoreCompat:
+    """Test helper: `.clear()` wipes ORM rows (replaces former in-memory dict)."""
+
+    def clear(self) -> None:
+        session = get_meta_session()
+        try:
+            session.execute(delete(DatasetRecord))
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+
+_store = _StoreCompat()
+
+
 def set_user_dataset_scope(user_id: str, id_prefix: str) -> None:
     _USER_DATASET_SCOPE[user_id] = id_prefix
 
 
-def _to_out(record: dict) -> DatasetItemOut:
-    return DatasetItemOut.model_validate(record)
+def _with_session(fn):
+    session = get_meta_session()
+    try:
+        result = fn(session)
+        session.commit()
+        return result
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def _row_to_out(row: DatasetRecord) -> DatasetItemOut:
+    return DatasetItemOut.model_validate({
+        "datasetId": row.dataset_id,
+        "displayName": row.display_name,
+        "tables": row.tables or [],
+        "computedFields": row.computed_fields or [],
+        "allowedRoles": list(row.allowed_roles or []),
+        "boundConfigId": row.bound_config_id,
+    })
 
 
 def _assert_dataset_write_access(user: UserContext, dataset_id: str) -> None:
@@ -73,34 +115,68 @@ def _validate_body(payload: DatasetItemIn) -> None:
             )
 
 
+def _dump_tables(payload: DatasetItemIn) -> list[dict]:
+    return [t.model_dump(by_alias=True) for t in payload.tables]
+
+
+def _dump_computed(payload: DatasetItemIn) -> list[dict]:
+    return [c.model_dump(by_alias=True) for c in payload.computed_fields]
+
+
 def create_dataset(payload: DatasetItemIn, user: UserContext) -> DatasetItemOut:
     _assert_dataset_write_access(user, payload.dataset_id)
     _validate_body(payload)
-    if payload.dataset_id in _store:
-        raise DatasetError("META_DATASET_CONFLICT", "Dataset already exists", 409)
-    record = payload.model_dump(by_alias=True)
-    record["boundConfigId"] = None
-    _store[payload.dataset_id] = record
-    return _to_out(record)
+
+    def _op(session: Session) -> DatasetItemOut:
+        existing = session.get(DatasetRecord, payload.dataset_id)
+        if existing is not None:
+            raise DatasetError("META_DATASET_CONFLICT", "Dataset already exists", 409)
+        row = DatasetRecord(
+            dataset_id=payload.dataset_id,
+            display_name=payload.display_name,
+            tables=_dump_tables(payload),
+            computed_fields=_dump_computed(payload),
+            allowed_roles=list(payload.allowed_roles),
+            bound_config_id=None,
+        )
+        session.add(row)
+        session.flush()
+        return _row_to_out(row)
+
+    return _with_session(_op)
 
 
 def list_datasets(
     limit: int = 50, offset: int = 0, user: UserContext | None = None,
 ) -> DatasetListResponse:
-    items = sorted(_store.values(), key=lambda r: r["datasetId"])
-    if user is not None and "enterprise" in set(user.roles) and "admin" not in set(user.roles):
-        prefix = _USER_DATASET_SCOPE.get(user.id, "ds-")
-        items = [r for r in items if str(r.get("datasetId", "")).startswith(prefix)]
-    capped = min(max(limit, 1), 500)
-    sliced = items[max(offset, 0) : max(offset, 0) + capped]
-    return DatasetListResponse(items=[_to_out(r) for r in sliced], total=len(items))
+    def _op(session: Session) -> DatasetListResponse:
+        stmt = select(DatasetRecord).order_by(DatasetRecord.dataset_id)
+        count_stmt = select(func.count()).select_from(DatasetRecord)
+        if user is not None and "enterprise" in set(user.roles) and "admin" not in set(user.roles):
+            prefix = _USER_DATASET_SCOPE.get(user.id, "ds-")
+            stmt = stmt.where(DatasetRecord.dataset_id.startswith(prefix))
+            count_stmt = count_stmt.where(DatasetRecord.dataset_id.startswith(prefix))
+        total = session.scalar(count_stmt) or 0
+        capped = min(max(limit, 1), 500)
+        rows = list(session.scalars(stmt.limit(capped).offset(max(offset, 0))))
+        return DatasetListResponse(items=[_row_to_out(r) for r in rows], total=total)
+
+    session = get_meta_session()
+    try:
+        return _op(session)
+    finally:
+        session.close()
 
 
 def get_dataset(dataset_id: str) -> DatasetItemOut:
-    record = _store.get(dataset_id)
-    if record is None:
-        raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
-    return _to_out(record)
+    session = get_meta_session()
+    try:
+        row = session.get(DatasetRecord, dataset_id)
+        if row is None:
+            raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
+        return _row_to_out(row)
+    finally:
+        session.close()
 
 
 def validate_dataset_draft(payload: DatasetItemIn) -> DatasetValidateOut:
@@ -134,47 +210,62 @@ def probe_list_datasets_budget_ms() -> DatasetProbeResult:
 
 def update_dataset(dataset_id: str, payload: DatasetItemIn, user: UserContext) -> DatasetItemOut:
     _assert_dataset_write_access(user, dataset_id)
-    if dataset_id not in _store:
-        raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
     if payload.dataset_id != dataset_id:
         raise DatasetError("META_DATASET_ID_MISMATCH", "datasetId mismatch", 422)
     _validate_body(payload)
-    record = payload.model_dump(by_alias=True)
-    record["boundConfigId"] = _store[dataset_id].get("boundConfigId")
-    _store[dataset_id] = record
-    return _to_out(record)
+
+    def _op(session: Session) -> DatasetItemOut:
+        row = session.get(DatasetRecord, dataset_id)
+        if row is None:
+            raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
+        row.display_name = payload.display_name
+        row.tables = _dump_tables(payload)
+        row.computed_fields = _dump_computed(payload)
+        row.allowed_roles = list(payload.allowed_roles)
+        session.flush()
+        return _row_to_out(row)
+
+    return _with_session(_op)
 
 
 def delete_dataset(dataset_id: str, user: UserContext) -> None:
     _assert_dataset_write_access(user, dataset_id)
-    if dataset_id not in _store:
-        raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
-    del _store[dataset_id]
+
+    def _op(session: Session) -> None:
+        row = session.get(DatasetRecord, dataset_id)
+        if row is None:
+            raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
+        session.delete(row)
+
+    _with_session(_op)
 
 
 def bind_query_config(dataset_id: str, config_id: uuid.UUID, user: UserContext) -> DatasetItemOut:
     _assert_dataset_write_access(user, dataset_id)
-    if dataset_id not in _store:
-        raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
-    from app.datasources.models import get_meta_session
     from app.query.config_store.service import get_config_by_id
 
-    session = get_meta_session()
-    try:
+    def _op(session: Session) -> DatasetItemOut:
+        row = session.get(DatasetRecord, dataset_id)
+        if row is None:
+            raise DatasetError("META_DATASET_NOT_FOUND", "Dataset not found", 404)
         record = get_config_by_id(session, config_id)
         if record.config_type != "dataset_query":
             raise DatasetError(
                 META_DATASET_CONFIG_TYPE_INVALID, "config must be dataset_query", 422,
             )
-    finally:
-        session.close()
-    _store[dataset_id]["boundConfigId"] = str(config_id)
-    return _to_out(_store[dataset_id])
+        row.bound_config_id = config_id
+        session.flush()
+        return _row_to_out(row)
+
+    return _with_session(_op)
 
 
 def find_dataset_by_bound_config(config_id: uuid.UUID) -> DatasetItemOut | None:
-    cid = str(config_id)
-    for record in _store.values():
-        if record.get("boundConfigId") == cid:
-            return _to_out(record)
-    return None
+    session = get_meta_session()
+    try:
+        row = session.scalar(
+            select(DatasetRecord).where(DatasetRecord.bound_config_id == config_id).limit(1),
+        )
+        return _row_to_out(row) if row is not None else None
+    finally:
+        session.close()

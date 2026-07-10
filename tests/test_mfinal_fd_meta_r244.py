@@ -32,6 +32,7 @@ def r244_sqlite_env():
     import app.metadata.glossary.models  # noqa: F401
     import app.metadata.themes.models  # noqa: F401
     import app.metadata.dimensions.models  # noqa: F401
+    import app.metadata.dataset.models  # noqa: F401
     import app.query.config_store.models  # noqa: F401
     import app.query.models  # noqa: F401
 
