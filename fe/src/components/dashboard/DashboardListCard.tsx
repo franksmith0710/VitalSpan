@@ -1,6 +1,10 @@
 import { Link } from "react-router";
 import { Eye, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
-import { DashboardPreviewThumb } from "@/components/dashboard/DashboardPreviewThumb";
+import {
+  DashboardPreviewThumb,
+  dashboardPreviewAspectRatio,
+} from "@/components/dashboard/DashboardPreviewThumb";
+import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
 import {
@@ -16,7 +20,7 @@ export type DashboardListItem = {
   name: string;
   slug: string;
   description?: string | null;
-  layoutJson?: { widgets?: Array<{ colSpan?: number; order?: number }> };
+  layoutJson?: DashboardLayout;
   updatedAt: string;
 };
 
@@ -57,8 +61,11 @@ export function DashboardListCard({
         className,
       )}
     >
-      <div className="relative aspect-[16/10] overflow-hidden border-b border-gray-100 dark:border-white/[0.06]">
-        <DashboardPreviewThumb layoutJson={dashboard.layoutJson} className="h-full" />
+      <div
+        className="relative overflow-hidden border-b border-gray-100 dark:border-white/[0.06]"
+        style={{ aspectRatio: dashboardPreviewAspectRatio(dashboard.layoutJson) }}
+      >
+        <DashboardPreviewThumb layoutJson={dashboard.layoutJson} className="h-full" embedded />
         <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gray-900/55 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button asChild variant="primary" size="sm">
             <Link to={primaryPath}>{canEdit ? "编辑" : "查看"}</Link>

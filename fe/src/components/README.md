@@ -42,9 +42,12 @@
 | EmbedToolShell | `embed/embed-tool-shell.tsx` | 嵌入工具页统一壳层（标题 + 取消 + 卡片） |
 | EmbedLayout | `../layouts/EmbedLayout.tsx` | Embed chromeless 布局 |
 | DashboardListCard | `dashboard/DashboardListCard.tsx` | 看板列表卡片（预览缩略图 + 操作） |
-| DashboardPreviewThumb | `dashboard/DashboardPreviewThumb.tsx` | 看板布局迷你预览 |
-| DashboardGrid | `dashboard/DashboardGrid.tsx` | 看板画布；引擎 **react-grid-layout**（`dashboardGridRgl.tsx` + WidthProvider 自适应宽度） |
-| dashboardGridRgl | `dashboard/dashboardGridRgl.tsx` | RGL 封装：12 列拖拽/缩放/垂直紧凑（DASH-002） |
+| DashboardPreviewThumb | `dashboard/DashboardPreviewThumb.tsx` | 看板布局迷你预览；v1 按栅格 span、v2 按像素矩形比例渲染，不做版本降级 |
+| DashboardLayoutPreview | `dashboard/DashboardLayoutPreview.tsx` | v1/v2 只读预览分发：v1 → DashboardGrid，v2 → PixelCanvas |
+| DashboardGrid | `dashboard/DashboardGrid.tsx` | v1 栅格画布；引擎 **react-grid-layout**（`dashboardGridRgl.tsx` + WidthProvider 自适应宽度），仅历史兼容/紧急回退 |
+| dashboardGridRgl | `dashboard/dashboardGridRgl.tsx` | v1 RGL 封装：12 列拖拽/缩放/垂直紧凑（DASH-002） |
+| PixelCanvas / PixelShape | `dashboard/pixelCanvas/` | v2 公共像素画布边界：规范坐标、Pointer Capture 拖移/八向缩放、只读渲染、像素历史与 widget 工厂；不负责页面数据加载、保存或 Inspector |
+| dashboard-edit（内部） | `dashboard/dashboard-edit/` | Dashboard 编辑页内部编排边界：在 v1/v2 画布间分发并适配 widget 内容；仅供 `DashboardEditPage` 使用，不作为跨页面公共组件 API |
 | DashboardEditWorkspace | `dashboard/DashboardEditWorkspace.tsx` | Dashboard 编辑三栏（图表组件 / 画布 / 数据配置） |
 | chartTypeCatalogDisplay | `lib/chartTypeCatalogDisplay.ts` | 图表类型 catalog 分组/图标/分类文案（Palette + 类型目录共用） |
 | WidgetPalette | `dashboard/WidgetPalette.tsx` | 按 catalog 分类插入全部注册图表类型（DASH-003 / VIZ-003） |
@@ -52,6 +55,8 @@
 | ChartPickerPopover | `dashboard/ChartPickerPopover.tsx` | DE 分区图表选择器（410px 网格） |
 | QueryComponentPicker | `dashboard/QueryComponentPicker.tsx` | 查询组件控件类型选择（text/select/date/multiselect） |
 | TextWidget / MediaWidget / TabsWidget | `dashboard/TextWidget.tsx` 等 | 扩展 layout widget 渲染 |
+| RichTextEditor / RichTextFloatingToolbar / RichTextToolbar | `dashboard/RichTextEditor.tsx` · `RichTextFloatingToolbar.tsx` | Tiptap 3 富文本画布内联编辑（独立浮动工具栏） |
+| richTextHtml | `dashboard/richTextHtml.ts` | 旧格式转 HTML、白名单净化与空值判断 |
 | ReuseWidgetDialog | `dashboard/ReuseWidgetDialog.tsx` | 跨看板复用组件（克隆 ID） |
 | DashboardStyleDialog | `dashboard/DashboardStyleDialog.tsx` | 仪表板样式（间距/背景） |
 | DashboardWidget | `dashboard/DashboardWidget.tsx` | 单组件卡片 + 删除/排序 |

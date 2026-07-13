@@ -5,20 +5,22 @@
 | 模块路径 | `backend/app/dashboard/` |
 | PRD | [F07-DASH](../automate/prd/F07-DASH.md) · DASH-001 ~ DASH-006 |
 | 里程碑 | M5 |
-| 状态 | **L1 已实现**（r28：ORM/迁移/CRUD/layout API + Admin FE 栅格） |
+| 状态 | **已实现**（v1 栅格 + v2 像素布局；真实浏览器 Pointer QA 待执行） |
 
 ## 职责
 
 - Dashboard 定义持久化（名称、slug、布局 JSON、图表组件引用）
 - 布局保存时校验内嵌 `chartConfig`（`ChartViewConfig`）
-- 列表/CRUD/layout API（L1）
+- Dashboard 列表、生命周期与布局持久化用例
+- v1 栅格 / v2 像素布局的版本校验、边界校验与确定性迁移
 
 ## 边界
 
 | In | Out |
 |----|-----|
-| Dashboard 领域模型、`DashboardService`、layout JSON 契约 | 单图表查询执行（→ `query`） |
+| Dashboard 领域模型、`DashboardService`、layout JSON 领域契约 | 单图表查询执行（→ `query`） |
 | layout 内 `chartConfig` 校验（→ `schemas/chart_view`） | 图表类型插件、全局筛选 SQL 注入（远期） |
+| v1→v2 纯迁移与双版本持久化完整性 | 浏览器 Pointer 事件编排（→ `fe/components/dashboard/pixelCanvas`） |
 | | 发布/草稿版本、分享范围（远期 companion） |
 | | GIS 地图生产集成（DASH-006 companion） |
 
@@ -66,29 +68,19 @@
 |------|------|-----|------|
 | `Dashboard` ORM | `dashboards` 表 | DASH-001 | 已实现 |
 | `DashboardService` | CRUD + `validate_layout` + `update_layout` | DASH-001~003 | 已实现 |
-| `DashboardLayout` | `version`/`widgets`/`globalFilters` JSON | DASH-002 | 已实现 |
+| `DashboardLayout` | v1 栅格 / v2 像素判别契约；保留 `widgets`/`globalFilters` 公共语义 | DASH-002 | 已实现 |
+| `migrate_v1_to_v2` | 12 列栅格到 1440px 规范画布的纯迁移 | DASH-002 | 已实现 |
 | `dashboard/theme/` | 实体主题分析 config（`entity_theme` via config_store）+ chart_view 联动 + execute-plan + drill query + ACL | DASH-006 | M3-LITE 已实现（r233） |
 | `dashboard/global_filters/` | 全局筛选联动 validate/save/get + widget 绑定 + ACL/probe | DASH-004 | companion 已实现 r67 |
 | `dashboard/entity_overview/` | 实体总览 item validate/save/get + publish 探测 | DASH-005 | L1 已实现 r59 |
 | `DashboardViewConfig` | 视图协议 | DASH-004 | 待建 |
 
-## Layout JSON（L1）
+## Layout 领域契约
 
-```json
-{
-  "version": 1,
-  "widgets": [{
-    "id": "<uuid>",
-    "type": "chart",
-    "title": "…",
-    "colSpan": 6,
-    "rowSpan": 1,
-    "order": 0,
-    "chartConfig": { "chartType": "table", "dataSourceId": "…", "mode": "sql", "sql": "…" }
-  }],
-  "globalFilters": []
-}
-```
+- **v1 栅格**：组件几何由 `colSpan/rowSpan/gridX/gridY` 表达；保留用于历史数据与紧急回退。
+- **v2 像素**：规范画布宽 1440px，组件几何由 `x/y/width/height` 表达；矩形必须完整位于画布内。
+- 两个版本共享组件标识、类型、内容配置、顺序、全局筛选和样式语义；禁止在同一版本中混用另一版几何字段。
+- DashboardView 外层协议可承载任一布局版本，不改变或降级布局几何。
 
 ## 关联 API
 

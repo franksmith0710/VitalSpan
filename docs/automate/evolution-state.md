@@ -6,7 +6,7 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | A5_EXECUTE_PHASE_B |
+| phase | A7_VERIFY |
 | request | Dashboard 画布拖拽/缩放最后一次修复；无效则换像素画布 |
 | type | bug |
 | autonomy_policy | auto_accept_low_risk |
@@ -14,10 +14,10 @@
 | plan | docs/automate/plans/2026-07-13-dashboard-canvas-drag-last-attempt.md |
 | plan_review | docs/automate/plans/2026-07-13-dashboard-canvas-drag-last-attempt.plan-review.md |
 | plan_review_state | PASS |
-| last_verified_command | vitest gridSnapUtils+dashboard.smoke 44/44; pytest test_dashboard_layout_grid_xy + test_viz_dash_l1_r28 31/31 |
-| verification_summary | Phase A 人工判定 FAIL；已启动像素画布 Phase B |
+| last_verified_command | vitest dashboard/*+admin/dashboard/* 158/158; share smoke 2/2; pytest pixel_layout+grid_xy+view_m5 32/32; ruff dashboard OK |
+| verification_summary | Phase B 代码与自动化验证完成；待用户真实浏览器 Pointer QA（契约 Q2=A）后 Close |
 | repair_rounds | 0 |
-| status | RUNNING |
+| status | WAITING_USER_QA |
 | last_verified_exit_code | 0 |
 | started_at | 2026-07-13T15:20:00+08:00 |
 | phase_a_gate | FAIL |
@@ -44,7 +44,7 @@
 ## 待办池
 
 - **toolbar-full Wave 1–6**（2026-07-13）：DE 工具栏完整对标 · DASH-007-01~07 ✅ · plan `2026-07-13-dashboard-de-toolbar-full.md`
-- **canvas Phase B**：像素画布 · plan `2026-07-13-dashboard-canvas-drag-last-attempt.md` · 并行进行中
+- **canvas Phase B**：像素画布 · plan `2026-07-13-dashboard-canvas-drag-last-attempt.md` · **代码完成，待 Pointer QA**
 
 ## 模块地图
 

@@ -24,7 +24,7 @@
 | [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 部分（L1 · r59 CONN-018 kingbase） |
 | [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | 部分（L1） |
 | [designer.md](./designer.md) | `app/designer/` | F12-DESIGN | M2（四期） | 部分（L1 · r59 DESIGN-004 workflow-link） |
-| [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | 部分（r29 layout · r59 DASH-005 · r61 DASH-004 global_filters） |
+| [dashboard.md](./dashboard.md) | `app/dashboard/` | F07-DASH | M5 | **已实现**（v1 栅格 + v2 像素布局；Pointer QA 待执行） |
 | [reports.md](./reports.md) | `app/reports/` | F08-RPT | M6/M10/M12 | L1 kickoff (r60) |
 | [views.md](./views.md) | `app/views/` | F09-VIEW | FR-VIEW | L1 kickoff (r60) |
 | [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 已实现 |

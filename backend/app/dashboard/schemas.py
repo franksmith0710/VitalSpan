@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_valid
 from app.schemas.chart_view import ChartViewConfigLayout
 
 FilterControlType = Literal["text", "select", "date", "multiselect"]
-TextVariant = Literal["markdown", "plain"]
+TextVariant = Literal["markdown", "plain", "html"]
 MediaFit = Literal["contain", "cover", "fill"]
 WidgetType = Literal["chart", "filter", "text", "media", "tabs"]
 CANVAS_WIDTH = 1440
@@ -231,7 +231,7 @@ class DashboardUpdate(BaseModel):
 
 class DashboardLayoutUpdate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    layout_json: dict[str, Any] = Field(alias="layoutJson")
+    layout_json: DashboardLayout = Field(alias="layoutJson")
 
 
 class DashboardOut(BaseModel):
@@ -240,7 +240,7 @@ class DashboardOut(BaseModel):
     name: str
     slug: str
     description: str | None = None
-    layout_json: dict[str, Any] = Field(alias="layoutJson")
+    layout_json: DashboardLayout = Field(alias="layoutJson")
     created_by: uuid.UUID | None = Field(default=None, alias="createdBy")
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")

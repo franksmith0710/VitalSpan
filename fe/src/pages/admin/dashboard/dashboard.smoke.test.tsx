@@ -1,7 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router";
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useNavigate,
+} from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/context/auth-context", () => ({
@@ -112,6 +117,18 @@ function renderEditPage(path = "/admin/dashboards/d1/edit") {
   );
 }
 
+function DashboardRouteWithSwitch() {
+  const navigate = useNavigate();
+  return (
+    <>
+      <button type="button" onClick={() => navigate("/admin/dashboards/d2/edit")}>
+        切换看板
+      </button>
+      <DashboardEditPage mode="edit" />
+    </>
+  );
+}
+
 function mockDashboardLoad(widgets: LayoutWidget[]) {
   mockApiFetch.mockImplementation(async (...args: unknown[]) => {
     const path = String(args[0] ?? "");
@@ -137,14 +154,6 @@ function renderListPage() {
   );
 }
 
-function widgetSelectTargets() {
-  return screen.getAllByTestId("chart-mock").map((el) => {
-    const target = el.closest("[role='button']");
-    if (!target) throw new Error("widget select target not found");
-    return target;
-  });
-}
-
 function clickWidgetByTitle(title: string, options?: { shiftKey?: boolean }) {
   const mocks = screen.getAllByTestId("chart-mock");
   const el = mocks.find((m) => m.textContent === title);
@@ -163,8 +172,12 @@ describe("dashboard admin smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
     resetChartTypeCatalogCache();
+    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "false");
   });
-  afterEach(() => cleanup());
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllEnvs();
+  });
 
   it("T-DASH-R28-002-01: empty edit grid shows drop zone guidance", () => {
     render(
@@ -329,7 +342,7 @@ describe("dashboard admin smoke", () => {
   it("T-DASH-PALETTE-06: createPaletteWidget builds text widget config", () => {
     const widget = createPaletteWidget("text", []);
     expect(widget.type).toBe("text");
-    expect(widget.textConfig?.variant).toBe("plain");
+    expect(widget.textConfig?.variant).toBe("html");
   });
 
   it("T-VIZ-FC-04: palette links to chart types catalog", () => {
@@ -813,6 +826,28 @@ describe("dashboard admin smoke", () => {
     expect(screen.queryByText("C")).not.toBeInTheDocument();
   });
 
+  it("T-DASH-RICH-01: inline text commit marks layout dirty and is saved", async () => {
+    const user = userEvent.setup();
+    mockDashboardLoad([
+      {
+        id: "text-1",
+        type: "text",
+        title: "说明",
+        colSpan: 6,
+        rowSpan: 2,
+        order: 0,
+        textConfig: { content: "<p>旧内容</p>", variant: "html" },
+      },
+    ]);
+    renderEditPage();
+    const content = await screen.findByTestId("text-widget-content");
+    await user.dblClick(content);
+    await screen.findByRole("textbox", { name: "富文本内容" });
+    await user.keyboard("新增");
+    await user.keyboard("{Control>}{Enter}{/Control}");
+    expect(screen.getByRole("button", { name: "保存布局" })).toBeEnabled();
+  });
+
   it("F-C: step back restores previous widget layout after adding widget", async () => {
     const user = userEvent.setup();
     mockDashboardLoad(sampleWidgets.slice(0, 1));
@@ -860,5 +895,290 @@ describe("dashboard admin smoke", () => {
     expect(screen.queryByLabelText("区域")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /筛选联动（高级）/ }));
     expect(await screen.findByText("筛选联动")).toBeInTheDocument();
+  });
+
+  it("B3: pixel on + v1 migrates in memory and first save writes complete v2 layout", async () => {
+    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
+    const user = userEvent.setup();
+    let layoutPut: { layoutJson?: { version?: number; canvas?: unknown; widgets?: unknown[] } } | undefined;
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
+      if (path.includes("/layout") && init?.method === "PUT") {
+        layoutPut = JSON.parse(init.body as string);
+        return {};
+      }
+      return {
+        id: "d1",
+        name: "像素迁移",
+        layoutJson: {
+          version: 1,
+          widgets: sampleWidgets.slice(0, 1),
+          globalFilters: [{ id: "region" }],
+        },
+      };
+    });
+
+    renderEditPage();
+    expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
+    const title = await screen.findByLabelText("组件标题");
+    await user.type(title, "!");
+    await user.click(screen.getByRole("button", { name: "保存布局" }));
+
+    await waitFor(() => expect(layoutPut?.layoutJson?.version).toBe(2));
+    expect(layoutPut?.layoutJson?.canvas).toEqual({ width: 1440, height: 900 });
+    expect((layoutPut?.layoutJson as { globalFilters?: unknown[] })?.globalFilters).toEqual([
+      { id: "region" },
+    ]);
+    expect(layoutPut?.layoutJson?.widgets?.[0]).toEqual(
+      expect.objectContaining({ x: 0, y: 0, width: 720, height: 76 }),
+    );
+  });
+
+  it("B3: pixel off + v2 is read-only and never offers save", async () => {
+    const pixelWidget = {
+      ...sampleWidgets[0],
+      x: 120,
+      y: 80,
+      width: 480,
+      height: 320,
+    };
+    const {
+      colSpan: _colSpan,
+      rowSpan: _rowSpan,
+      gridX: _gridX,
+      gridY: _gridY,
+      ...v2Widget
+    } = pixelWidget;
+    let writes = 0;
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const filters = mockGlobalFiltersPath(String(args[0] ?? ""));
+      const init = args[1] as RequestInit | undefined;
+      if (init?.method === "PUT" || init?.method === "DELETE") writes += 1;
+      if (filters) return filters;
+      return {
+        id: "d1",
+        name: "只读像素",
+        layoutJson: {
+          version: 2,
+          canvas: { width: 1440, height: 900 },
+          widgets: [v2Widget],
+          globalFilters: [],
+        },
+      };
+    });
+
+    renderEditPage();
+    expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
+    expect(screen.getByText(/像素布局只读/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "保存布局" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("pixel-edit-bar-w1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("palette-toolbar-toggle")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("toolbar-open-reuse")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("toolbar-more-toggle")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "删除看板" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "删除组件" })).not.toBeInTheDocument();
+    expect(writes).toBe(0);
+  });
+
+  it("B3: pixel off + v1 keeps the editable RGL quadrant", async () => {
+    mockDashboardLoad(sampleWidgets.slice(0, 1));
+    const { container } = renderEditPage();
+    await screen.findByLabelText("组件标题");
+    expect(container.querySelector(".dashboard-grid-edit .react-grid-layout")).toBeTruthy();
+    expect(screen.getByTestId("palette-toolbar-toggle")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "删除看板" })).toBeInTheDocument();
+  });
+
+  it("B3: ignores a stale dashboard response after the route id changes", async () => {
+    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
+    let resolveFirst!: (detail: unknown) => void;
+    const first = new Promise((resolve) => {
+      resolveFirst = resolve;
+    });
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path.includes("/global-filters")) return EMPTY_LINKAGE;
+      if (path === "/api/v1/dashboards/d1") return first;
+      if (path === "/api/v1/dashboards/d2") {
+        return {
+          id: "d2",
+          name: "第二个看板",
+          layoutJson: { version: 1, widgets: [], globalFilters: [] },
+        };
+      }
+      return {};
+    });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>
+          <Routes>
+            <Route path="/admin/dashboards/:id/edit" element={<DashboardRouteWithSwitch />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await waitFor(() =>
+      expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/dashboards/d1"),
+    );
+    await user.click(screen.getByRole("button", { name: "切换看板" }));
+    expect(await screen.findByDisplayValue("第二个看板")).toBeInTheDocument();
+    resolveFirst({
+      id: "d1",
+      name: "过期看板",
+      layoutJson: { version: 1, widgets: sampleWidgets, globalFilters: [] },
+    });
+    await waitFor(() =>
+      expect(screen.getByDisplayValue("第二个看板")).toBeInTheDocument(),
+    );
+    expect(screen.queryByDisplayValue("过期看板")).not.toBeInTheDocument();
+  });
+
+  it("B3: pixel on + v2 edits and saves without changing pixel geometry", async () => {
+    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
+    const user = userEvent.setup();
+    const { colSpan: _colSpan, rowSpan: _rowSpan, ...base } = sampleWidgets[0];
+    let saved: { layoutJson?: { version?: number; widgets?: Array<Record<string, unknown>> } } | undefined;
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
+      if (path.includes("/layout") && init?.method === "PUT") {
+        saved = JSON.parse(init.body as string);
+        return {};
+      }
+      return {
+        id: "d1",
+        name: "原生像素",
+        layoutJson: {
+          version: 2,
+          canvas: { width: 1440, height: 900 },
+          widgets: [{ ...base, x: 123, y: 87, width: 480, height: 320 }],
+          globalFilters: [],
+        },
+      };
+    });
+
+    renderEditPage();
+    const title = await screen.findByLabelText("组件标题");
+    await user.type(title, "!");
+    await user.click(screen.getByRole("button", { name: "保存布局" }));
+
+    await waitFor(() => expect(saved?.layoutJson?.version).toBe(2));
+    expect(saved?.layoutJson?.widgets?.[0]).toEqual(
+      expect.objectContaining({ x: 123, y: 87, width: 480, height: 320 }),
+    );
+    expect(saved?.layoutJson?.widgets?.[0]).not.toHaveProperty("colSpan");
+  });
+
+  it("B3: v2 save preserves overlapping widget array order, order and geometry", async () => {
+    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
+    const user = userEvent.setup();
+    const { colSpan: _colSpan, rowSpan: _rowSpan, ...base } = sampleWidgets[0];
+    let saved: { layoutJson?: { widgets?: Array<Record<string, unknown>> } } | undefined;
+    const overlapping = [
+      { ...base, id: "top", title: "Top", order: 9, x: 100, y: 100, width: 480, height: 320 },
+      { ...base, id: "bottom", title: "Bottom", order: 2, x: 100, y: 100, width: 480, height: 320 },
+    ];
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
+      if (path.includes("/layout") && init?.method === "PUT") {
+        saved = JSON.parse(init.body as string);
+        return {};
+      }
+      return {
+        id: "d1",
+        name: "重叠像素",
+        layoutJson: {
+          version: 2,
+          canvas: { width: 1440, height: 900 },
+          widgets: overlapping,
+          globalFilters: [],
+        },
+      };
+    });
+    renderEditPage();
+    const titles = await screen.findAllByLabelText("组件标题");
+    await user.type(titles[0], "!");
+    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await waitFor(() => expect(saved).toBeDefined());
+    expect(saved?.layoutJson?.widgets?.map((widget) => widget.id)).toEqual(["top", "bottom"]);
+    expect(saved?.layoutJson?.widgets?.map((widget) => widget.order)).toEqual([9, 2]);
+    expect(saved?.layoutJson?.widgets?.map(({ x, y, width, height }) => ({ x, y, width, height })))
+      .toEqual(overlapping.map(({ x, y, width, height }) => ({ x, y, width, height })));
+  });
+
+  it("B3: pixel edit page exposes DE chrome and marks widget content non-draggable", async () => {
+    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
+    mockDashboardLoad(sampleWidgets.slice(0, 1));
+    renderEditPage();
+    const content = await screen.findByTestId("chart-mock");
+    expect(content.closest("[data-pixel-no-drag]")).toBeTruthy();
+    fireEvent.pointerDown(content);
+    expect(await screen.findByTestId("pixel-edit-bar-w1")).toBeInTheDocument();
+    expect(screen.getByLabelText("拖动组件")).toBeInTheDocument();
+    expect(screen.getByLabelText("调整组件大小：右下")).toBeInTheDocument();
+  });
+
+  it("B3: inserts a new v2 widget inside the scrolled visible viewport", async () => {
+    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
+    const user = userEvent.setup();
+    mockDashboardLoad([]);
+    renderEditPage();
+    const host = await screen.findByTestId("pixel-canvas-host");
+    Object.defineProperties(host, {
+      clientWidth: { configurable: true, value: 800 },
+      clientHeight: { configurable: true, value: 500 },
+      scrollLeft: { configurable: true, writable: true, value: 272 },
+      scrollTop: { configurable: true, writable: true, value: 100 },
+    });
+    fireEvent.scroll(host);
+    await insertLineChartFromToolbar(user);
+
+    const shape = document.querySelector<HTMLElement>("[data-testid^='pixel-shape-']");
+    expect(shape).toHaveStyle({ left: "360px", top: "190px" });
+  });
+
+  it("B3: deletes a v2 widget without converting the layout", async () => {
+    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
+    const user = userEvent.setup();
+    mockDashboardLoad(sampleWidgets.slice(0, 1));
+    renderEditPage();
+    await screen.findByTestId("pixel-shape-w1");
+    await user.click(screen.getByRole("button", { name: "删除组件" }));
+    await user.click(screen.getByRole("button", { name: "删除" }));
+    expect(screen.queryByTestId("pixel-shape-w1")).not.toBeInTheDocument();
+    expect(screen.getByTestId("pixel-canvas-host")).toBeInTheDocument();
+  });
+
+  it("B3: preview chooses the read-only pixel engine for v2", async () => {
+    const { colSpan: _colSpan, rowSpan: _rowSpan, ...base } = sampleWidgets[0];
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const filters = mockGlobalFiltersPath(String(args[0] ?? ""));
+      if (filters) return filters;
+      return {
+        id: "d1",
+        name: "像素预览",
+        layoutJson: {
+          version: 2,
+          canvas: { width: 1440, height: 900 },
+          widgets: [{ ...base, x: 0, y: 0, width: 720, height: 320 }],
+          globalFilters: [],
+        },
+      };
+    });
+
+    renderEditPage("/admin/dashboards/d1");
+    expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
+    expect(screen.queryByTestId("pixel-edit-bar-w1")).not.toBeInTheDocument();
+    expect(document.querySelector(".dashboard-grid-view")).toBeNull();
   });
 });

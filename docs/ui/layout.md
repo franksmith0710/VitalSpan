@@ -181,6 +181,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 **DashboardView 适配（VIEW-001 companion）**：Dashboard 存储形态为 `layoutJson`（widgets + globalFilters）；消费/校验时经 `dashboardLayoutToView()`（`fe/src/lib/dashboardLayoutToView.ts` · 后端 `views/adapter.py`）映射为 FR-VIEW-1 `DashboardView` 文档（含 `protocolVersion: 1` 与 `dashboardId`）。`PUT /api/v1/dashboards/{id}/layout` 在持久化前执行 DashboardView 校验，与 `POST /api/v1/views/validate` 同域错误码。
 
+| 富文本正文 | 单击选中；双击进入内联编辑；点击外部或 Ctrl+Enter 提交；Esc 取消 |
+
 | `/admin/reports` | `table-list` + 运行结果区 | RPT-002 |
 | `/admin/reports/templates` | `master-detail` 树 + 扩展配置 Tabs | RPT-004/006 |
 | `/admin/reports/templates/:nodeId` | 同上（深链选中节点） | RPT-004/006 |

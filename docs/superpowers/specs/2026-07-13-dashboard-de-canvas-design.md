@@ -1,16 +1,18 @@
 # Dashboard 画布对标 DataEase 设计方案
 
 日期：2026-07-13  
-状态：**待评审**（2026-07-13 交互审查：暂不换库，先修 P0）  
+状态：**像素画布已实现**（代码与自动化验证完成；最终真实浏览器 Pointer QA 尚未执行）
 关联：DASH-002 · `docs/bugs/BUG-1_dashboard-chart-clipped_2026-07-13.md` · `fe/src/components/dashboard/`
 
 ---
 
-## 0. 交互审查结论（2026-07-13）
+## 0. 决策记录（2026-07-13）
 
 **用户反馈**：「只能看，拖拉拽和调大小完全不能用。」
 
-**审查结论：暂不建议换库**；当前问题以 **实现缺陷 + UX 缺口** 为主，不是 react-grid-layout 选型错误。
+### 0.1 Phase A 初始结论（历史）
+
+初始审查结论为“暂不换库”，先修复 **实现缺陷 + UX 缺口**：
 
 | 问题 | 证据（L1） | 严重度 | 处置 |
 |------|-----------|--------|------|
@@ -19,11 +21,20 @@
 | 只能拖标题栏 `.dashboard-drag-handle` | `dashboardGridRgl.tsx` `draggableHandle` | P1 UX | 待加提示或允许边框拖 |
 | 测试绿但无真实指针 E2E | vitest 仅单测/ smoke mock | P2 | 补 Playwright 拖放用例 |
 
-**换库决策**：在 P0 修复并人工验证通过前，**否决**迁移 gridstack / 像素画布；若验证后仍失败，再评估 snapgrid 或 gridstack（见 §4）。
+### 0.2 Phase A FAIL → Phase B
+
+Phase A 已完成 v1 坐标持久化、RGL 交互时序与手柄可用性修补，但真实交互门控结果为 **FAIL**。据此停止继续叠加 RGL 补丁，执行受控计划 Phase B：
+
+- 后端 `DashboardLayout` 升级为 v1/v2 双版本；v2 使用 1440px 规范画布与 `x/y/width/height`。
+- 前端自研 `PixelCanvas` + `PixelShape`，用 Pointer Capture 驱动拖移与八向缩放；允许重叠，`order` 决定层级。
+- 默认启用像素画布；v1 编辑时内存迁移并首次保存为 v2。显式关闭开关时，v1 才回退 RGL；v2 仅只读且禁止保存。
+- 预览、分享、缩略图与 DashboardView 外层协议按 `layout.version` 消费，v2 不转换回 `colSpan` 持久化。
+
+**验收边界**：当前“已实现”仅指代码与自动化验证完成，不代表用户验收通过。最终真实浏览器 Pointer QA 仍须按受控计划清单执行。
 
 ---
 
-## 1. 调研结论：无「DE 级看板画布」开箱成品
+## 1. Phase A 历史调研：无「DE 级看板画布」开箱成品
 
 ### 1.1 不存在的产品形态
 
@@ -54,7 +65,7 @@
 
 ---
 
-## 2. 目标与非目标
+## 2. Phase A 历史目标与非目标
 
 ### 2.1 目标（分阶段）
 
@@ -74,7 +85,7 @@
 
 ---
 
-## 3. 推荐方案：RGL + MarkLine 叠加层（P1）
+## 3. Phase A 历史推荐：RGL + MarkLine 叠加层
 
 ### 3.1 架构
 
@@ -137,7 +148,7 @@ DashboardEditWorkspace
 
 ---
 
-## 4. 备选方案对比
+## 4. Phase A 历史备选方案对比
 
 | 方案 | 描述 | 工期 | DE 相似度 | 风险 |
 |------|------|------|-----------|------|
@@ -148,7 +159,7 @@ DashboardEditWorkspace
 
 ---
 
-## 5. P2：更「无极」的缩放（可选）
+## 5. Phase A 历史 P2：更「无极」的缩放
 
 在保留 12 列 API 前提下：
 
@@ -159,11 +170,9 @@ DashboardEditWorkspace
 
 ---
 
-## 6. P3：像素布局契约（远期）
+## 6. Phase B：像素布局契约（已实现）
 
-仅当 P1/P2 仍无法满足时启动。
-
-### 6.1 layoutJson v2 草案
+### 6.1 layoutJson v2
 
 ```json
 {
@@ -172,41 +181,43 @@ DashboardEditWorkspace
   "widgets": [{
     "id": "…",
     "x": 120, "y": 80, "width": 480, "height": 320,
-    "zIndex": 1
+    "order": 1
   }]
 }
 ```
 
-- 后端 `LayoutWidget` 扩展可选字段；`version=1` 只读兼容
-- 迁移脚本：`gridX/colSpan/rowSpan` → 像素（按画布宽度比例）
-- 编辑器：**react-moveable** 为主交互引擎
+- 后端统一入口按版本禁止字段混用；v1 使用栅格字段，v2 使用像素字段。
+- 迁移纯函数：`gridX/colSpan/rowSpan` → 1440px 规范坐标；画布高度自动容纳最底部组件。
+- 编辑器：自研 React Pointer Events / Pointer Capture 交互，不新增第三方画布运行时。
+- `pixelCanvas/` 只负责 v2 几何、交互与历史；`dashboard-edit/` 只负责编辑页编排和 widget 内容适配。
 
 ---
 
-## 7. 验收标准（P1）
+## 7. Phase B 验收状态
 
 | ID | 标准 |
 |----|------|
-| DE-CANVAS-01 | 拖拽 widget 时显示对齐参考线（≥ 邻组件边或画布中线） |
-| DE-CANVAS-02 | 松手后 widget 吸附到参考线（阈值可配置，默认 1 栅格） |
-| DE-CANVAS-03 | 多选 ≥2 组件可使用对齐/分布工具栏 |
-| DE-CANVAS-04 | 八向缩放手柄可见（已实现，回归） |
-| DE-CANVAS-05 | 保存布局后刷新位置/尺寸不变（GRID-05 回归） |
-| DE-CANVAS-06 | 图表在 widget 内无裁切（BUG-1 关闭） |
-| DE-CANVAS-07 | vitest + pytest 布局相关用例全绿 |
+| DE-CANVAS-01 | v2 像素坐标与画布 bounds 后端往返 | 自动化已覆盖 |
+| DE-CANVAS-02 | Pointer Capture 拖移、八向缩放、cancel/lost capture 收口 | 单元测试已覆盖；真实浏览器 QA 待执行 |
+| DE-CANVAS-03 | 编辑态 shape outer / edit-bar / inner；预览态无编辑 chrome | 组件测试已覆盖 |
+| DE-CANVAS-04 | v1 迁移 v2；v2 保存不得出现 `colSpan` | 自动化已覆盖 |
+| DE-CANVAS-05 | 预览、分享、缩略图、View 协议保留 v2 几何 | 自动化已覆盖 |
+| DE-CANVAS-06 | 保存刷新后位置/尺寸不变 | API 往返已覆盖；真实浏览器 QA 待执行 |
 
 ---
 
-## 8. 决策建议
+## 8. 最终决策
 
-1. **不更换** react-grid-layout（与 Superset 同路线，团队已集成）
-2. **不采用** 零 star 的「成品画布」库
-3. **P1 立即做**：自绘 `DashboardMarkLineOverlay` + 多选对齐栏 + BUG-1 验证
-4. **P3 暂缓**：除非产品明确要求像素级自由画布
+1. 不引入 DataEase、gridstack、react-moveable 等新运行时；采用自研轻量像素交互层。
+2. v2 为默认编辑路径；v1 RGL 只保留紧急回滚。
+3. 不实施 mark-line、多选对齐等无关 UI 扩展；先完成 BUG-2 的拖移/缩放/持久化闭环。
+4. 最终关闭 BUG-2 前必须完成真实浏览器 Pointer QA。
 
 ---
 
-## 9. 待用户确认
+## 9. 待执行门控
 
-- [ ] 批准 **P1（RGL + 自绘 mark-line）** 进入 `plan.md` / 实施
-- [ ] 或指定直接立项 **P3 像素画布**（周期与迁移需单独排期）
+- [x] Phase A 门控 FAIL，批准执行 Phase B 像素画布
+- [x] B1–B3 代码实施并通过 task review
+- [ ] 真实浏览器 Pointer QA：拖移、八向缩放、保存、刷新位置保持
+- [ ] QA 通过后再将 BUG-2 标记 closed / 用户验收通过

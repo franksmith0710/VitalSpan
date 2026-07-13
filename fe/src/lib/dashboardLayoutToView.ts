@@ -7,7 +7,10 @@ export type DashboardViewDocument = {
   layout: DashboardLayout;
 };
 
-/** Adapt dashboard PUT/GET payload to FR-VIEW-1 DashboardView document. */
+/**
+ * Adapt dashboard storage to the FR-VIEW-1 envelope.
+ * The envelope version is independent from layout.version; preserve v1/v2 layout geometry verbatim.
+ */
 export function dashboardLayoutToView(params: {
   dashboardId: string;
   name: string;

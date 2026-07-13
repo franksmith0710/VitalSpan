@@ -4,7 +4,11 @@ export {
   PixelCanvas,
   visibleCanvasViewport,
 } from "./PixelCanvas";
-export { createPixelPaletteWidget } from "./createPixelWidget";
+export {
+  createPixelPaletteWidget,
+  clonePixelLayoutWidget,
+  placeClonedPixelWidget,
+} from "./createPixelWidget";
 export {
   applyPixelInteraction,
   RESIZE_DIRECTIONS,

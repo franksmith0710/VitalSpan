@@ -22,11 +22,12 @@ type PixelCanvasProps = {
   onSelect?: (widgetId: string, additive: boolean) => void;
   onClearSelection?: () => void;
   onLayoutChange?: (layout: DashboardLayoutV2) => void;
+  onViewportChange?: (viewport: PixelRect) => void;
   onMore?: (widgetId: string) => void;
   className?: string;
 };
 
-export const PIXEL_CANVAS_GUTTER = 48;
+export const PIXEL_CANVAS_GUTTER = 72;
 
 export function canvasScaleForHost(
   hostWidth: number,
@@ -65,6 +66,7 @@ export function PixelCanvas({
   onSelect,
   onClearSelection,
   onLayoutChange,
+  onViewportChange,
   onMore,
   className,
 }: PixelCanvasProps) {
@@ -75,13 +77,15 @@ export function PixelCanvas({
     const host = hostRef.current;
     if (!host) return;
     const update = () => {
-      setScale(canvasScaleForHost(host.clientWidth, layout.canvas.width));
+      const nextScale = canvasScaleForHost(host.clientWidth, layout.canvas.width);
+      setScale(nextScale);
+      onViewportChange?.(visibleCanvasViewport(host, nextScale, layout.canvas));
     };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(host);
     return () => observer.disconnect();
-  }, [layout.canvas.width]);
+  }, [layout.canvas, onViewportChange]);
 
   const updateWidget = useCallback(
     (nextWidget: PixelLayoutWidget) => {
@@ -106,6 +110,9 @@ export function PixelCanvas({
       )}
       data-testid="pixel-canvas-host"
       data-pixel-canvas-scale={scale}
+      onScroll={(event) => {
+        onViewportChange?.(visibleCanvasViewport(event.currentTarget, scale, layout.canvas));
+      }}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) onClearSelection?.();
       }}

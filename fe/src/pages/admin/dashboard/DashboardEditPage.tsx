@@ -1,24 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Pencil, Redo2, Undo2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
-import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
-import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import {
-  buildWidgetFilterParams,
   mergeLayoutFilterLinkage,
   type Linkage,
 } from "@/components/dashboard/dashboardFilterUtils";
-import { layoutFingerprint } from "@/components/dashboard/layoutHistory";
 import {
   appendWidgetToTabPane,
   coerceLayoutWidgets,
-  normalizeWidgetIds,
-  resizeWidget,
   sortWidgets,
   type DashboardLayout,
   type DashboardStyleConfig,
@@ -28,6 +22,18 @@ import {
   type TabsWidgetConfig,
   type TextWidgetConfig,
 } from "@/components/dashboard/layoutUtils";
+import {
+  buildDashboardLayoutForSave,
+  isPixelCanvasEnabled,
+  pixelWidgetToLayoutWidget,
+  prepareDashboardLayout,
+} from "@/components/dashboard/dashboardCanvasMode";
+import {
+  createPixelPaletteWidget,
+  placeClonedPixelWidget,
+  type PixelRect,
+} from "@/components/dashboard/pixelCanvas";
+import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
 import {
   normalizeWidgetLayout,
   placeNewWidget,
@@ -48,8 +54,7 @@ import { MediaWidgetInspector } from "@/components/dashboard/MediaWidgetInspecto
 import { TabsWidgetInspector } from "@/components/dashboard/TabsWidgetInspector";
 import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
 import { DashboardStyleDialog } from "@/components/dashboard/DashboardStyleDialog";
-import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
-import { useLayoutHistory } from "@/hooks/useLayoutHistory";
+import { useDashboardCanvasState } from "@/hooks/useDashboardCanvasState";
 import { useWidgetSelection } from "@/hooks/useWidgetSelection";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { Button } from "@/components/ui/button";
@@ -127,8 +132,23 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const { widgets, setWidgets, resetWidgets, undo, redo, canUndo, canRedo } = useLayoutHistory({
+  const pixelEnabled = isPixelCanvasEnabled(import.meta.env.VITE_DASHBOARD_PIXEL_CANVAS);
+  const {
+    editor,
+    canSave,
+    layout,
+    widgets,
+    setWidgets,
+    resetLayout,
+    setPixelLayout,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useDashboardCanvasState({
     keyboardEnabled: mode === "edit",
+    pixelEnabled,
+    editable: mode === "edit",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -156,53 +176,59 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [reuseOpen, setReuseOpen] = useState(false);
   const [styleOpen, setStyleOpen] = useState(false);
   const [linkagePanelOpen, setLinkagePanelOpen] = useState(false);
+  const [pixelViewport, setPixelViewport] = useState<PixelRect>();
+  const loadGenerationRef = useRef(0);
 
   const leaveEditShell = useCallback(() => {
     // 先清脏标记，避免离开守卫/二次操作卡在僵尸编辑态
     setMissing(true);
-    resetWidgets([]);
+    resetLayout({ version: 1, widgets: [], globalFilters: [] });
     setSavedFingerprint(null);
     setSavedName("");
     setDeleteDashboardOpen(false);
     navigate("/admin/dashboards", { replace: true });
-  }, [navigate, resetWidgets]);
-
-  const loadFilters = useCallback(async () => {
-    if (!id) return;
-    try {
-      const data = await apiFetch<Linkage>(`/api/v1/dashboards/${id}/global-filters`);
-      setLinkage(data);
-      const initial: Record<string, string> = {};
-      for (const f of data.filters ?? []) {
-        if (f.defaultValue) initial[f.filterId] = f.defaultValue;
-      }
-      setFilterValues(initial);
-    } catch {
-      setLinkage(null);
-    }
-  }, [id]);
+  }, [navigate, resetLayout]);
 
   const load = useCallback(async () => {
     if (!id) return;
+    const generation = ++loadGenerationRef.current;
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`);
+      const [data, loadedLinkage] = await Promise.all([
+        apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`),
+        apiFetch<Linkage>(`/api/v1/dashboards/${id}/global-filters`).catch(() => null),
+      ]);
+      if (generation !== loadGenerationRef.current) return;
       setMissing(false);
       setName(data.name);
       setSavedName(data.name);
-      const loaded = normalizeWidgetLayout(
-        sortWidgets(coerceLayoutWidgets(data.layoutJson.widgets ?? [])),
+      const source =
+        data.layoutJson.version === 1
+          ? {
+              ...data.layoutJson,
+              widgets: normalizeWidgetLayout(
+                sortWidgets(coerceLayoutWidgets(data.layoutJson.widgets ?? [])),
+              ),
+            }
+          : data.layoutJson;
+      const prepared = prepareDashboardLayout(
+        source,
+        mode === "edit" ? pixelEnabled : false,
       );
-      resetWidgets(loaded);
-      setStyleConfig(data.layoutJson.styleConfig ?? {});
-      setSavedStyleConfig(data.layoutJson.styleConfig ?? {});
-      setSavedFingerprint(layoutFingerprint(loaded));
+      resetLayout(source);
+      setStyleConfig(source.styleConfig ?? {});
+      setSavedStyleConfig(source.styleConfig ?? {});
+      setSavedFingerprint(JSON.stringify(prepared.layout));
+      setLinkage(loadedLinkage);
+      setPixelViewport(undefined);
       clearSelection();
-      // Seed filter values from canvas filter widgets
-      setFilterValues((prev) => {
-        const next = { ...prev };
-        for (const w of loaded) {
+      setFilterValues(() => {
+        const next: Record<string, string> = {};
+        for (const filter of loadedLinkage?.filters ?? []) {
+          if (filter.defaultValue) next[filter.filterId] = filter.defaultValue;
+        }
+        for (const w of prepared.layout.widgets) {
           if (w.type === "filter" && w.filterConfig) {
             const fid = w.filterConfig.filterId;
             if (next[fid] === undefined && w.filterConfig.defaultValue) {
@@ -213,26 +239,23 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         return next;
       });
     } catch (err) {
+      if (generation !== loadGenerationRef.current) return;
       if (isDashboardNotFound(err)) {
         setMissing(true);
-        resetWidgets([]);
-        setSavedFingerprint(layoutFingerprint([]));
+        resetLayout({ version: 1, widgets: [], globalFilters: [] });
+        setSavedFingerprint(JSON.stringify({ version: 1, widgets: [], globalFilters: [] }));
         setError(mapApiError(err));
       } else {
         setError(mapApiError(err));
       }
     } finally {
-      setLoading(false);
+      if (generation === loadGenerationRef.current) setLoading(false);
     }
-  }, [id, resetWidgets, clearSelection]);
+  }, [id, resetLayout, clearSelection, mode, pixelEnabled]);
 
   useEffect(() => {
     void load();
   }, [load]);
-
-  useEffect(() => {
-    void loadFilters();
-  }, [loadFilters]);
 
   useEffect(() => {
     if (mode !== "edit") return;
@@ -242,8 +265,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const isDirty = useMemo(() => {
     if (missing || savedFingerprint === null) return false;
     const styleDirty = JSON.stringify(styleConfig) !== JSON.stringify(savedStyleConfig);
-    return layoutFingerprint(widgets) !== savedFingerprint || name.trim() !== savedName || styleDirty;
-  }, [missing, savedFingerprint, widgets, name, savedName, styleConfig, savedStyleConfig]);
+    return JSON.stringify(layout) !== savedFingerprint || name.trim() !== savedName || styleDirty;
+  }, [missing, savedFingerprint, layout, name, savedName, styleConfig, savedStyleConfig]);
 
   const filterWidgetCount = useMemo(
     () => widgets.filter((w) => w.type === "filter").length,
@@ -251,7 +274,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   );
 
   const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
-    enabled: mode === "edit" && isDirty && !missing,
+    enabled: mode === "edit" && canSave && isDirty && !missing,
   });
 
   const selectedWidget = useMemo(
@@ -260,19 +283,51 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   );
   const multiSelectCount = selectedIds.size;
 
-  const executeKey = useMemo(() => JSON.stringify(filterValues), [filterValues]);
-
   const effectiveLinkage = useMemo(
     () => mergeLayoutFilterLinkage(widgets, linkage),
     [widgets, linkage],
   );
 
   const appendWidget = (type: PaletteInsertType, at?: GridInsertAt) => {
-    if (missing) return;
+    if (missing || !canSave) return;
     const tabsHost =
       selectedWidget?.type === "tabs" && selectedWidget.tabsConfig && type !== "tabs"
         ? selectedWidget
         : null;
+    if (layout.version === 2) {
+      let draft = createPixelPaletteWidget(
+        type,
+        layout.widgets,
+        layout.canvas,
+        pixelViewport,
+      );
+      if (tabsHost?.tabsConfig) {
+        draft = {
+          ...draft,
+          parentTabsId: tabsHost.id,
+          tabPaneId: tabsHost.tabsConfig.activePaneId,
+        };
+        const withDraft = [...widgets, pixelWidgetToLayoutWidget(draft)];
+        setWidgets(
+          appendWidgetToTabPane(
+            withDraft,
+            tabsHost.id,
+            tabsHost.tabsConfig.activePaneId,
+            draft.id,
+          ),
+        );
+      } else {
+        setPixelLayout({ ...layout, widgets: [...layout.widgets, draft] });
+      }
+      handleSelect(draft.id, false);
+      if (draft.type === "filter" && draft.filterConfig) {
+        setFilterValues((previous) => ({
+          ...previous,
+          [draft.filterConfig!.filterId]: draft.filterConfig!.defaultValue ?? "",
+        }));
+      }
+      return;
+    }
     let draft = createPaletteWidget(type, widgets, at);
     if (tabsHost?.tabsConfig) {
       draft = {
@@ -319,8 +374,23 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     }
   };
 
-  const appendClonedWidget = (widget: LayoutWidget) => {
-    if (missing) return;
+  const appendClonedWidget = (widget: LayoutWidget, sourcePixel?: PixelLayoutWidget) => {
+    if (missing || !canSave) return;
+    if (layout.version === 2) {
+      const draft = placeClonedPixelWidget(
+        widget,
+        layout.widgets,
+        layout.canvas,
+        pixelViewport,
+        sourcePixel,
+      );
+      setPixelLayout({
+        ...layout,
+        widgets: [...layout.widgets, draft],
+      });
+      handleSelect(draft.id, false);
+      return;
+    }
     const placed = placeNewWidget(widgets, widget);
     setWidgets((prev) => sortWidgets([...prev, placed]));
     handleSelect(placed.id, false);
@@ -335,15 +405,18 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   };
 
   const handleFilterValueChange = (filterId: string, value: string) => {
+    if (mode === "edit" && !canSave) return;
     setFilterValues((prev) => ({ ...prev, [filterId]: value }));
   };
 
   const handleDeleteWidget = (widgetId: string) => {
+    if (!canSave) return;
     setWidgets((prev) => prev.filter((w) => w.id !== widgetId));
     removeFromSelection([widgetId]);
   };
 
   const handleBatchDelete = () => {
+    if (!canSave) return;
     const ids = [...selectedIds];
     setWidgets((prev) => prev.filter((w) => !selectedIds.has(w.id)));
     removeFromSelection(ids);
@@ -351,6 +424,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   };
 
   const handleDeleteDashboard = async () => {
+    if (!canSave) return;
     if (!id || missing) {
       leaveEditShell();
       return;
@@ -373,11 +447,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   };
 
   const handleSave = async (): Promise<boolean> => {
-    if (!id || missing) return false;
+    if (!id || missing || !canSave) return false;
     setSaving(true);
     setError(null);
     try {
-      const normalized = normalizeWidgetIds(normalizeWidgetLayout(sortWidgets(widgets)));
+      const normalizedLayout = buildDashboardLayoutForSave(layout, styleConfig);
+      const normalized =
+        normalizedLayout.version === 1
+          ? normalizedLayout.widgets
+          : normalizedLayout.widgets.map(pixelWidgetToLayoutWidget);
       const trimmedName = name.trim() || "未命名看板";
 
       if (trimmedName !== savedName) {
@@ -392,12 +470,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       await apiFetch(`/api/v1/dashboards/${id}/layout`, {
         method: "PUT",
         body: JSON.stringify({
-          layoutJson: {
-            version: 1,
-            widgets: normalized,
-            globalFilters: [],
-            styleConfig: styleConfig.widgetGap || styleConfig.canvasBackground ? styleConfig : undefined,
-          },
+          layoutJson: normalizedLayout,
         }),
       });
 
@@ -418,9 +491,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         setLinkage(savedLinkage);
       }
 
-      resetWidgets(normalized);
+      resetLayout(normalizedLayout);
       setSavedStyleConfig(styleConfig);
-      setSavedFingerprint(layoutFingerprint(normalized));
+      setSavedFingerprint(JSON.stringify(normalizedLayout));
       return true;
     } catch (err) {
       if (isDashboardNotFound(err)) {
@@ -460,7 +533,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           <Link to={`/admin/dashboards/${id}/share`}>分享</Link>
         </Button>
       ) : null}
-      {mode === "edit" ? (
+      {mode === "edit" && canSave ? (
         <Button
           type="button"
           variant="outline"
@@ -504,7 +577,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   }
 
   const pageTitle =
-    mode === "edit" && !missing ? (
+    mode === "edit" && !missing && canSave ? (
       <DashboardNameField value={name} onChange={setName} />
     ) : (
       name || "Dashboard"
@@ -516,7 +589,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       title={pageTitle}
       description={
         mode === "edit"
-          ? isDirty
+          ? !canSave
+            ? "像素布局只读 · 当前回退开关禁止修改与保存"
+            : isDirty
             ? "有未保存的更改 · 保存后生效"
             : "点击标题可重命名 · 拖入组件、右侧配置属性、保存布局"
           : "预览模式 · 筛选器变更会刷新关联图表"
@@ -541,7 +616,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         />
       ) : null}
 
-      {mode === "edit" ? (
+      {mode === "edit" && canSave ? (
         <>
         <DashboardEditWorkspace
           widgetCount={widgets.length}
@@ -583,7 +658,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 <Redo2 aria-hidden />
                 下一步
               </Button>
-              <span className="hidden text-theme-xs text-gray-400 sm:inline">12 列</span>
+              <span className="hidden text-theme-xs text-gray-400 sm:inline">
+                {layout.version === 2 ? "1440px 画布" : "12 列"}
+              </span>
               <Button
                 type="button"
                 variant="primary"
@@ -603,96 +680,28 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             setLinkagePanelOpen(true);
           }}
           canvas={
-            <div
-              className="h-full min-h-0"
-              style={
-                styleConfig.canvasBackground
-                  ? { background: styleConfig.canvasBackground }
-                  : undefined
-              }
-            >
-            <DashboardGrid
+            <DashboardEditCanvas
               mode="edit"
+              editor={editor}
+              layout={layout}
               widgets={widgets}
               selectedIds={selectedIds}
-              onClearSelection={clearSelection}
-              onInsertChart={handleDropInsert}
-              onLayoutChange={(next) => setWidgets(sortWidgets(next))}
-              renderWidget={(widget, grid) => {
-                const filterParameters =
-                  widget.type === "chart"
-                    ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
-                    : undefined;
-                const renderNested = (child: LayoutWidget) => {
-                  const childFilterParams =
-                    child.type === "chart"
-                      ? buildWidgetFilterParams(child.id, effectiveLinkage, filterValues)
-                      : undefined;
-                  return (
-                    <DashboardWidget
-                      widget={child}
-                      mode="edit"
-                      selected={selectedIds.has(child.id)}
-                      filterParameters={childFilterParams}
-                      executeKey={executeKey}
-                      filterValue={
-                        child.filterConfig
-                          ? filterValues[child.filterConfig.filterId]
-                          : undefined
-                      }
-                      onFilterValueChange={handleFilterValueChange}
-                      onSelect={(e) => handleSelect(child.id, e.shiftKey)}
-                      onDelete={handleDeleteWidget}
-                      onTitleChange={(wid, title) =>
-                        setWidgets((prev) => resizeWidget(prev, wid, { title }))
-                      }
-                      onChartConfigChange={(wid, chartConfig) =>
-                        setWidgets((prev) =>
-                          prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
-                        )
-                      }
-                    />
-                  );
-                };
-                return (
-                  <DashboardWidget
-                    widget={widget}
-                    mode="edit"
-                    selected={selectedIds.has(widget.id)}
-                    gridSize={grid}
-                    allWidgets={widgets}
-                    renderNestedWidget={renderNested}
-                    filterParameters={filterParameters}
-                    executeKey={executeKey}
-                    filterValue={
-                      widget.filterConfig
-                        ? filterValues[widget.filterConfig.filterId]
-                        : undefined
-                    }
-                    onFilterValueChange={handleFilterValueChange}
-                    onSelect={(e) => {
-                      setLinkagePanelOpen(false);
-                      handleSelect(widget.id, e.shiftKey);
-                    }}
-                    onDelete={handleDeleteWidget}
-                    onTitleChange={(wid, title) =>
-                      setWidgets((prev) => resizeWidget(prev, wid, { title }))
-                    }
-                    onChartConfigChange={(wid, chartConfig) =>
-                      setWidgets((prev) =>
-                        prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
-                      )
-                    }
-                    onTabsConfigChange={(wid, tabsConfig) =>
-                      setWidgets((prev) =>
-                        prev.map((w) => (w.id === wid ? { ...w, tabsConfig } : w)),
-                      )
-                    }
-                  />
-                );
+              linkage={effectiveLinkage}
+              filterValues={filterValues}
+              canvasBackground={styleConfig.canvasBackground}
+              setWidgets={setWidgets}
+              setPixelLayout={setPixelLayout}
+              onSelect={(widgetId, additive) => {
+                setLinkagePanelOpen(false);
+                handleSelect(widgetId, additive);
               }}
+              onNestedSelect={handleSelect}
+              onClearSelection={clearSelection}
+              onDeleteWidget={handleDeleteWidget}
+              onFilterValueChange={handleFilterValueChange}
+              onDropInsert={handleDropInsert}
+              onViewportChange={setPixelViewport}
             />
-            </div>
           }
           chartRail={
             multiSelectCount >= 2 ? (
@@ -727,12 +736,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 widget={
                   selectedWidget as typeof selectedWidget & { textConfig: TextWidgetConfig }
                 }
-                onChange={(textConfig) => {
-                  if (!primarySelectedId) return;
-                  setWidgets((prev) =>
-                    prev.map((w) => (w.id === primarySelectedId ? { ...w, textConfig } : w)),
-                  );
-                }}
               />
             ) : selectedWidget?.type === "media" && selectedWidget.mediaConfig ? (
               <MediaWidgetInspector
@@ -791,6 +794,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           onOpenChange={setReuseOpen}
           currentDashboardId={id}
           widgets={widgets}
+          targetPixelWidgets={layout.version === 2 ? layout.widgets : undefined}
           onInsertCloned={appendClonedWidget}
         />
         <DashboardStyleDialog
@@ -801,55 +805,26 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         />
         </>
       ) : (
-        <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
-          <DashboardGrid
-            mode="view"
-            widgets={widgets}
-            renderWidget={(widget, grid) => {
-              const filterParameters =
-                widget.type === "chart"
-                  ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
-                  : undefined;
-              const renderNested = (child: LayoutWidget) => (
-                <DashboardWidget
-                  widget={child}
-                  mode="view"
-                  filterParameters={
-                    child.type === "chart"
-                      ? buildWidgetFilterParams(child.id, effectiveLinkage, filterValues)
-                      : undefined
-                  }
-                  executeKey={executeKey}
-                  filterValue={
-                    child.filterConfig ? filterValues[child.filterConfig.filterId] : undefined
-                  }
-                  onFilterValueChange={handleFilterValueChange}
-                  onTitleChange={() => {}}
-                />
-              );
-              return (
-                <DashboardWidget
-                  widget={widget}
-                  mode="view"
-                  gridSize={grid}
-                  allWidgets={widgets}
-                  renderNestedWidget={renderNested}
-                  filterParameters={filterParameters}
-                  executeKey={executeKey}
-                  filterValue={
-                    widget.filterConfig
-                      ? filterValues[widget.filterConfig.filterId]
-                      : undefined
-                  }
-                  onFilterValueChange={handleFilterValueChange}
-                  onTitleChange={() => {}}
-                />
-              );
-            }}
-          />
-        </div>
+        <DashboardEditCanvas
+          mode={mode}
+          editor={editor}
+          layout={layout}
+          widgets={widgets}
+          selectedIds={selectedIds}
+          linkage={effectiveLinkage}
+          filterValues={filterValues}
+          setWidgets={setWidgets}
+          setPixelLayout={setPixelLayout}
+          onSelect={handleSelect}
+          onNestedSelect={handleSelect}
+          onClearSelection={clearSelection}
+          onDeleteWidget={handleDeleteWidget}
+          onFilterValueChange={handleFilterValueChange}
+          onDropInsert={handleDropInsert}
+          onViewportChange={setPixelViewport}
+        />
       )}
-      {mode === "edit" ? (
+      {mode === "edit" && canSave ? (
         <AlertDialog open={leaveDialogOpen} onOpenChange={(open) => !open && cancelLeave()}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -879,7 +854,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           </AlertDialogContent>
         </AlertDialog>
       ) : null}
-      {mode === "edit" ? (
+      {mode === "edit" && canSave ? (
         <AlertDialog open={batchDeleteOpen} onOpenChange={setBatchDeleteOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -895,7 +870,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           </AlertDialogContent>
         </AlertDialog>
       ) : null}
-      {mode === "edit" ? (
+      {mode === "edit" && canSave ? (
         <AlertDialog open={deleteDashboardOpen} onOpenChange={setDeleteDashboardOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>

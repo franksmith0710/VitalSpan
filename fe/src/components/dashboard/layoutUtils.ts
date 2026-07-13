@@ -36,7 +36,7 @@ export type FilterWidgetConfig = {
   parameterKey?: string;
 };
 
-export type TextVariant = "markdown" | "plain";
+export type TextVariant = "markdown" | "plain" | "html";
 
 export type TextWidgetConfig = {
   content: string;
@@ -71,7 +71,7 @@ export type DashboardStyleConfig = {
 export type WidgetType = "chart" | "filter" | "text" | "media" | "tabs";
 
 export function defaultTextConfig(): TextWidgetConfig {
-  return { content: "在此输入说明文字…", variant: "plain" };
+  return { content: "", variant: "html" };
 }
 
 export function defaultMediaConfig(): MediaWidgetConfig {

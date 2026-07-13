@@ -23,6 +23,10 @@ vi.mock("@/lib/api", async (importOriginal) => {
   };
 });
 
+vi.mock("@/components/charts/ChartRenderer", () => ({
+  ChartRenderer: ({ title }: { title?: string }) => <div data-testid="chart-mock">{title}</div>,
+}));
+
 import { DashboardSharePage } from "./DashboardSharePage";
 
 afterEach(() => {
@@ -71,9 +75,53 @@ describe("DashboardSharePage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("销售额")).toBeInTheDocument();
+      expect(screen.getAllByText("销售额").length).toBeGreaterThanOrEqual(2);
     });
     expect(screen.getByText(/\/embed\/chart\/w1/)).toBeInTheDocument();
     expect(screen.queryByText("该看板暂无组件，请先添加图表。")).not.toBeInTheDocument();
+    expect(document.querySelector(".dashboard-grid-view")).toBeTruthy();
+  });
+
+  it("B3: renders a v2 layout with the read-only pixel engine", async () => {
+    mockApiFetch.mockResolvedValue({
+      id: "d2",
+      name: "像素分享",
+      layoutJson: {
+        version: 2,
+        canvas: { width: 1440, height: 900 },
+        widgets: [
+          {
+            id: "w2",
+            type: "chart",
+            title: "像素图表",
+            order: 5,
+            x: 120,
+            y: 80,
+            width: 480,
+            height: 320,
+            chartConfig: {
+              chartType: "bar",
+              chartId: "w2",
+              dataSourceId: "00000000-0000-4000-8000-000000000010",
+              mode: "sql",
+              sql: "SELECT 1",
+            },
+          },
+        ],
+        globalFilters: [],
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards/d2/share"]}>
+        <Routes>
+          <Route path="/admin/dashboards/:id/share" element={<DashboardSharePage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
+    expect(screen.queryByTestId("pixel-edit-bar-w2")).not.toBeInTheDocument();
+    expect(screen.getByText(/\/embed\/chart\/w2/)).toBeInTheDocument();
   });
 });

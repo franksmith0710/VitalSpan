@@ -8,12 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
+import type {
+  DashboardLayout,
+  DashboardWidgetBase,
+} from "@/components/dashboard/layoutUtils";
+import { DashboardLayoutPreview } from "@/components/dashboard/DashboardLayoutPreview";
 
 type DashboardDetail = {
   id: string;
   name: string;
-  layoutJson: { widgets: LayoutWidget[] };
+  layoutJson: DashboardLayout;
 };
 
 function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
@@ -27,7 +31,7 @@ function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => voi
   );
 }
 
-function chartIdFromWidget(widget: LayoutWidget): string | null {
+function chartIdFromWidget(widget: DashboardWidgetBase): string | null {
   if (widget.type === "filter" || !widget.chartConfig) return null;
   const cfg = widget.chartConfig as ChartViewConfig;
   return cfg.chartId ?? widget.id;
@@ -78,6 +82,16 @@ export function DashboardSharePage() {
       {loading ? <Skeleton className="h-40 w-full" /> : null}
       {!loading && widgets.length === 0 ? (
         <p className="text-theme-sm text-gray-500 dark:text-gray-400">该看板暂无组件，请先添加图表。</p>
+      ) : null}
+      {!loading && detail && widgets.length > 0 ? (
+        <Card className="overflow-hidden rounded-2xl border-gray-200 shadow-theme-sm dark:border-gray-800">
+          <CardHeader className="border-b border-gray-200 dark:border-gray-800">
+            <CardTitle className="text-theme-base">布局预览</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <DashboardLayoutPreview layout={detail.layoutJson} />
+          </CardContent>
+        </Card>
       ) : null}
       <div className="grid gap-4">
         {widgets.map((widget) => {

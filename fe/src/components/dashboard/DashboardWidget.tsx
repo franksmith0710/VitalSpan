@@ -16,6 +16,7 @@ import { IconButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { FilterWidget } from "./FilterWidget";
 import { TextWidget } from "./TextWidget";
 import { MediaWidget } from "./MediaWidget";
@@ -33,6 +34,7 @@ import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 type DashboardWidgetProps = {
   widget: LayoutWidget;
   mode: "edit" | "view";
+  shell?: DashboardWidgetShell;
   selected?: boolean;
   /** 编辑态栅格实时尺寸（拖/缩放中） */
   gridSize?: { w: number; h: number };
@@ -47,6 +49,7 @@ type DashboardWidgetProps = {
   allWidgets?: LayoutWidget[];
   renderNestedWidget?: (widget: LayoutWidget) => ReactNode;
   onTabsConfigChange?: (id: string, tabsConfig: TabsWidgetConfig) => void;
+  onTextConfigChange?: (id: string, config: TextWidgetConfig) => void;
 };
 
 function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
@@ -77,6 +80,7 @@ function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
 export function DashboardWidget({
   widget,
   mode,
+  shell = "grid",
   selected = false,
   gridSize,
   onSelect,
@@ -89,6 +93,7 @@ export function DashboardWidget({
   allWidgets,
   renderNestedWidget,
   onTabsConfigChange,
+  onTextConfigChange,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -112,10 +117,12 @@ export function DashboardWidget({
       <TextWidget
         widget={widget as LayoutWidget & { textConfig: TextWidgetConfig }}
         mode={mode}
+        shell={shell}
         selected={selected}
         onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
         onTitleChange={onTitleChange}
         onDelete={onDelete}
+        onTextConfigChange={onTextConfigChange}
       />
     );
   }

@@ -1,54 +1,75 @@
+import { useRef, useState } from "react";
 import { GripVertical, Trash2, Type } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import type { DashboardWidgetShell } from "./dashboardCanvasMode";
+import { RichTextEditor } from "./RichTextEditor";
 import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
+import { isRichTextEmpty, textConfigToHtml } from "./richTextHtml";
 
 type TextWidgetProps = {
   widget: LayoutWidget & { textConfig: TextWidgetConfig };
   mode: "edit" | "view";
+  shell?: DashboardWidgetShell;
   selected?: boolean;
   onSelect?: () => void;
   onDelete?: (id: string) => void;
   onTitleChange?: (id: string, title: string) => void;
+  onTextConfigChange?: (id: string, config: TextWidgetConfig) => void;
 };
-
-function renderContent(content: string, variant: TextWidgetConfig["variant"]) {
-  if (variant === "markdown") {
-    return (
-      <div className="prose prose-sm max-w-none dark:prose-invert">
-        {content.split("\n").map((line, i) => (
-          <p key={i} className="mb-1 last:mb-0">
-            {line || "\u00a0"}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return <p className="whitespace-pre-wrap text-theme-sm text-gray-700 dark:text-gray-300">{content}</p>;
-}
 
 export function TextWidget({
   widget,
   mode,
+  shell = "grid",
   selected = false,
   onSelect,
   onDelete,
   onTitleChange,
+  onTextConfigChange,
 }: TextWidgetProps) {
-  const cfg = widget.textConfig;
+  const [isEditing, setIsEditing] = useState(false);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const html = textConfigToHtml(widget.textConfig);
+  const inShapeShell = shell === "shape";
+
+  const beginEditing = () => {
+    if (mode !== "edit") return;
+    onSelect?.();
+    setIsEditing(true);
+  };
+
+  const commit = (nextHtml: string) => {
+    onTextConfigChange?.(widget.id, {
+      content: isRichTextEmpty(nextHtml) ? "" : nextHtml,
+      variant: "html",
+    });
+    setIsEditing(false);
+  };
+
+  const cancel = () => {
+    setIsEditing(false);
+  };
+
+  const showGridChrome = !inShapeShell;
 
   return (
     <div
+      ref={widgetRef}
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white shadow-theme-xs dark:bg-white/[0.03]",
-        selected && "dashboard-widget-selected",
-        selected
-          ? "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40"
-          : "border-gray-200 dark:border-gray-800",
+        "flex h-full min-h-0 flex-col",
+        showGridChrome && "overflow-hidden rounded-xl border bg-white shadow-theme-xs dark:bg-white/[0.03]",
+        showGridChrome && isEditing && "ring-2 ring-brand-500/50 border-brand-400 dark:border-brand-500/60",
+        showGridChrome && !isEditing && selected && "dashboard-widget-selected",
+        showGridChrome &&
+          !isEditing &&
+          selected &&
+          "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40",
+        showGridChrome && !isEditing && !selected && "border-gray-200 dark:border-gray-800",
       )}
     >
-      {mode === "edit" ? (
+      {showGridChrome && mode === "edit" && !isEditing ? (
         <div
           className={cn(
             "dashboard-drag-handle flex shrink-0 cursor-grab items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 active:cursor-grabbing dark:border-gray-800 dark:bg-white/[0.04]",
@@ -84,18 +105,65 @@ export function TextWidget({
             </IconButton>
           ) : null}
         </div>
+      ) : showGridChrome && mode === "view" ? (
+        <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
+            <Type className="size-3.5" aria-hidden />
+          </span>
+          <h4 className="min-w-0 flex-1 truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+            {widget.title}
+          </h4>
+        </div>
       ) : null}
 
       <div
-        role={mode === "edit" ? "button" : undefined}
-        tabIndex={mode === "edit" ? 0 : undefined}
-        onClick={mode === "edit" ? () => onSelect?.() : undefined}
+        data-testid="text-widget-content"
+        role={mode === "edit" && !isEditing ? "button" : undefined}
+        tabIndex={mode === "edit" && !isEditing ? 0 : undefined}
+        onClick={
+          mode === "edit" && !isEditing
+            ? (event) => {
+                event.stopPropagation();
+                onSelect?.();
+              }
+            : undefined
+        }
+        onDoubleClick={(event) => {
+          event.stopPropagation();
+          beginEditing();
+        }}
         className={cn(
-          "dashboard-no-drag min-h-0 flex-1 overflow-auto p-3",
-          mode === "edit" && "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
+          "dashboard-no-drag min-h-0 flex-1 overflow-auto",
+          mode === "edit" && !isEditing && "cursor-pointer",
+          !inShapeShell && mode === "edit" && !isEditing && "hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
         )}
       >
-        {renderContent(cfg.content, cfg.variant)}
+        {isEditing ? (
+          <RichTextEditor
+            anchorRef={widgetRef}
+            initialHtml={html}
+            inset={inShapeShell ? "none" : "comfortable"}
+            onCommit={commit}
+            onCancel={cancel}
+          />
+        ) : isRichTextEmpty(html) ? (
+          <p
+            className={cn(
+              "flex h-full items-center justify-center text-gray-400",
+              inShapeShell ? "text-theme-sm" : "p-3 text-theme-sm",
+            )}
+          >
+            双击编辑文字
+          </p>
+        ) : (
+          <div
+            className={cn(
+              "rich-main-class text-gray-700 dark:text-gray-300",
+              !inShapeShell && "p-4",
+            )}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        )}
       </div>
     </div>
   );

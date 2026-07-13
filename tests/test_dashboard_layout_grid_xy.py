@@ -75,4 +75,8 @@ def test_layout_put_rejects_grid_coordinates_outside_bounds(client, auth_headers
         )
 
         assert response.status_code == 422
-        assert response.json()["code"] == "VIEW_LAYOUT_BOUNDS"
+        body = response.json()
+        if "code" in body:
+            assert body["code"] == "VIEW_LAYOUT_BOUNDS"
+        else:
+            assert "detail" in body

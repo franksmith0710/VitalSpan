@@ -1,14 +1,6 @@
 import { LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type PreviewWidget = {
-  colSpan?: number;
-  order?: number;
-};
-
-type PreviewLayout = {
-  widgets?: PreviewWidget[];
-};
+import type { DashboardLayout, DashboardLayoutV2 } from "./layoutUtils";
 
 const PREVIEW_COLORS = [
   "bg-brand-100 dark:bg-brand-500/20",
@@ -19,18 +11,26 @@ const PREVIEW_COLORS = [
   "bg-gray-100 dark:bg-white/[0.06]",
 ];
 
+/** 列表缩略图容器纵横比：v2 跟随 canvas，v1 保持 16:10。 */
+export function dashboardPreviewAspectRatio(layoutJson?: DashboardLayout): string {
+  if (layoutJson?.version === 2) {
+    const { width, height } = layoutJson.canvas;
+    return `${width} / ${height}`;
+  }
+  return "16 / 10";
+}
+
 export function DashboardPreviewThumb({
   layoutJson,
   className,
+  embedded = false,
 }: {
-  layoutJson?: PreviewLayout;
+  layoutJson?: DashboardLayout;
   className?: string;
+  /** 列表卡片等外层已设 aspect-ratio 时为 true */
+  embedded?: boolean;
 }) {
-  const widgets = [...(layoutJson?.widgets ?? [])].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0),
-  );
-
-  if (widgets.length === 0) {
+  if (!layoutJson || layoutJson.widgets.length === 0) {
     return (
       <div
         className={cn(
@@ -43,6 +43,47 @@ export function DashboardPreviewThumb({
     );
   }
 
+  if (layoutJson.version === 2) {
+    const canvasLayout = layoutJson as DashboardLayoutV2;
+    const widgets = [...canvasLayout.widgets].sort(
+      (a, b) => a.order - b.order,
+    );
+    return (
+      <div
+        data-testid="dashboard-preview-thumb"
+        className={cn(
+          "relative h-full overflow-hidden bg-gray-50 p-3 dark:bg-gray-900/60",
+          className,
+        )}
+        style={
+          embedded ? undefined : { aspectRatio: dashboardPreviewAspectRatio(canvasLayout) }
+        }
+      >
+        <div className="relative h-full w-full">
+          {widgets.slice(0, 8).map((widget, index) => (
+            <div
+              key={widget.id}
+              data-testid={`dashboard-preview-widget-${widget.id}`}
+              className={cn(
+                "absolute rounded-sm",
+                PREVIEW_COLORS[index % PREVIEW_COLORS.length],
+              )}
+              style={{
+                left: `${(widget.x / canvasLayout.canvas.width) * 100}%`,
+                top: `${(widget.y / canvasLayout.canvas.height) * 100}%`,
+                width: `${(widget.width / canvasLayout.canvas.width) * 100}%`,
+                height: `${(widget.height / canvasLayout.canvas.height) * 100}%`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const widgets = [...layoutJson.widgets].sort(
+    (a, b) => a.order - b.order,
+  );
   return (
     <div
       className={cn(
@@ -52,7 +93,8 @@ export function DashboardPreviewThumb({
     >
       {widgets.slice(0, 8).map((widget, index) => (
         <div
-          key={index}
+          key={widget.id}
+          data-testid={`dashboard-preview-widget-${widget.id}`}
           className={cn(
             "h-5 rounded-sm",
             PREVIEW_COLORS[index % PREVIEW_COLORS.length],

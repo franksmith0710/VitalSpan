@@ -19,8 +19,15 @@ import {
 } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
-import { coerceLayoutWidgets, type LayoutWidget } from "./layoutUtils";
+import { pixelWidgetToLayoutWidget } from "./dashboardCanvasMode";
+import {
+  coerceLayoutWidgets,
+  type DashboardLayout,
+  type LayoutWidget,
+  type PixelLayoutWidget,
+} from "./layoutUtils";
 import { cloneLayoutWidget } from "./cloneLayoutWidget";
+import { clonePixelLayoutWidget } from "./pixelCanvas/createPixelWidget";
 
 type DashboardListItem = { id: string; name: string };
 
@@ -29,7 +36,8 @@ type ReuseWidgetDialogProps = {
   onOpenChange: (open: boolean) => void;
   currentDashboardId?: string;
   widgets: LayoutWidget[];
-  onInsertCloned: (widget: LayoutWidget) => void;
+  targetPixelWidgets?: PixelLayoutWidget[];
+  onInsertCloned: (widget: LayoutWidget, sourcePixel?: PixelLayoutWidget) => void;
 };
 
 export function ReuseWidgetDialog({
@@ -37,6 +45,7 @@ export function ReuseWidgetDialog({
   onOpenChange,
   currentDashboardId,
   widgets,
+  targetPixelWidgets,
   onInsertCloned,
 }: ReuseWidgetDialogProps) {
   const [dashboardId, setDashboardId] = useState<string>("");
@@ -52,23 +61,36 @@ export function ReuseWidgetDialog({
   const { data: sourceDashboard, isFetching } = useQuery({
     queryKey: ["dashboards", "detail", dashboardId],
     queryFn: () =>
-      apiFetch<{ layoutJson: { widgets?: LayoutWidget[] } }>(`/api/v1/dashboards/${dashboardId}`),
+      apiFetch<{ layoutJson: DashboardLayout }>(`/api/v1/dashboards/${dashboardId}`),
     enabled: open && Boolean(dashboardId),
   });
 
-  const sourceWidgets = sourceDashboard?.layoutJson?.widgets
-    ? coerceLayoutWidgets(sourceDashboard.layoutJson.widgets as Array<LayoutWidget & { id: string }>)
-    : [];
+  const sourceLayout = sourceDashboard?.layoutJson;
+  const sourceWidgets = !sourceLayout
+    ? []
+    : sourceLayout.version === 1
+      ? coerceLayoutWidgets(sourceLayout.widgets)
+      : sourceLayout.widgets.map(pixelWidgetToLayoutWidget);
 
   const reusable = sourceWidgets.filter(
     (w) => !w.parentTabsId && w.type !== "tabs",
   );
 
   const handleConfirm = () => {
-    const source = sourceWidgets.find((w) => w.id === widgetId);
-    if (!source) return;
-    const cloned = cloneLayoutWidget(source, widgets);
-    onInsertCloned(cloned);
+    if (sourceLayout?.version === 2) {
+      const sourcePixel = sourceLayout.widgets.find((w) => w.id === widgetId);
+      if (!sourcePixel) return;
+      const clonedPixel = clonePixelLayoutWidget(
+        sourcePixel,
+        targetPixelWidgets ?? [],
+      );
+      onInsertCloned(pixelWidgetToLayoutWidget(clonedPixel), clonedPixel);
+    } else {
+      const source = sourceWidgets.find((w) => w.id === widgetId);
+      if (!source) return;
+      const cloned = cloneLayoutWidget(source, widgets);
+      onInsertCloned(cloned);
+    }
     onOpenChange(false);
     setDashboardId("");
     setWidgetId("");

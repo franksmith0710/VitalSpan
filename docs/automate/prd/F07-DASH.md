@@ -17,20 +17,22 @@
 - **里程碑对齐**：M-DEPTH F-0 · 快速创建 · 2026-07-10
 ### [DASH-002] Dashboard 容器与布局引擎
 
-- **状态**：已实现（**M-DEPTH F-B 深度 companion 进行中**）
+- **状态**：已实现（v2 像素画布代码完成；最终真实浏览器 Pointer QA 待执行）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：一期
 - **里程碑对齐**：M-FE-2 · 已完成 · 2026-07-06；M-PRODUCT F-A · 分享页 · 2026-07-08；**M-DEPTH F-B · 当前节 · 2026-07-10**
-- **描述**：Dashboard 容器与布局引擎（SRS 追溯项）。当前 widget 以 chart 为主；M-DEPTH 扩展 filter 组件类型。
+- **描述**：Dashboard 容器与布局引擎（SRS 追溯项）。布局统一支持 v1 栅格与 v2 像素契约；默认编辑路径将 v1 内存迁移为 v2，v1 RGL 仅作紧急回退。
 - **验收标准**：
   - [x] 空 Dashboard 可创建展示
   - [x] 网格布局可拖拽（react-grid-layout + edit/view 切换）
   - [x] 编辑态多选与 12 列吸附（Shift+点击多选、批量删除、`gridSnapUtils` 拖拽吸附；`dashboard.smoke.test.tsx` T-DASH-002-02/04/05）
   - [x] `/admin/dashboards/:id/share` 分享页 + 编辑页分享入口（`DashboardSharePage` · `DashboardEditPage`）
   - [x] **M-DASH-UX F-C**：编辑态稳定性 + 布局级撤销/重做（2026-07-09）
+  - [x] BUG-2 Phase B：`layout.version=2` 像素契约、v1→v2 迁移、Pointer Capture 拖移/八向缩放、编辑/预览/分享/缩略图/View 双版本消费；v2 禁止降级写回 v1
+  - [ ] BUG-2 最终真实浏览器 Pointer QA：拖移、八向缩放、保存并刷新后位置/尺寸保持（代码完成不等于用户验收通过）
   - [ ] **M-DEPTH F-B**：layout widget 类型扩展 `filter`（兼容旧 layout round-trip；后端 schema + FE `layoutUtils`）
-- **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/pages/admin/dashboard/DashboardSharePage.tsx` · `fe/src/components/dashboard/` · `fe/src/components/dashboard/layoutUtils.ts` · `fe/src/components/dashboard/gridLayoutAdapter.ts` · `fe/src/components/dashboard/gridSnapUtils.ts` · `fe/src/components/dashboard/DashboardGrid.tsx` · `backend/app/dashboard/schemas.py` · `fe/src/hooks/useWidgetSelection.ts`
-- **演化建议**：M-DEPTH F-B 闭合 filter widget 类型；Playwright E2E 编辑拖拽持久化验收
+- **代码锚点**：`fe/src/pages/admin/dashboard/` · `fe/src/pages/admin/dashboard/DashboardSharePage.tsx` · `fe/src/components/dashboard/pixelCanvas/` · `fe/src/components/dashboard/dashboard-edit/` · `fe/src/components/dashboard/DashboardLayoutPreview.tsx` · `fe/src/components/dashboard/DashboardPreviewThumb.tsx` · `fe/src/components/dashboard/dashboardCanvasMode.ts` · `fe/src/hooks/useDashboardCanvasState.ts` · `backend/app/dashboard/schemas.py` · `backend/app/dashboard/layout_migration.py`
+- **演化建议**：先完成 BUG-2 真实 Pointer QA；再补 Playwright 指针回归。M-DEPTH F-B 闭合 filter widget 类型。
 ### [DASH-003] Dashboard 组件库
 
 - **状态**：已实现（M5 DASH-003）
@@ -105,6 +107,9 @@
   - [x] DASH-007-01：图表 DE 分区选择器（`ChartPickerPopover` + `chartPaletteTaxonomy` · 410px 网格）
   - [x] DASH-007-02：查询组件类型选择（text/select/date/multiselect）插入 filter widget
   - [x] DASH-007-03：富文本 widget（`type: text` + `textConfig`）
+  - [x] DASH-007-03A：富文本 Widget 使用 Tiptap 3；画布双击内联编辑
+  - [x] DASH-007-03B：HTML 白名单净化；旧 plain/markdown 可读并在编辑提交后升级
+  - [x] DASH-007-03C：点击外部/Ctrl+Enter 提交，Esc 取消；编辑时不触发画布拖拽
   - [x] DASH-007-04：媒体 widget（`type: media` + `mediaConfig`）
   - [x] DASH-007-05：Tab 容器 widget
   - [x] DASH-007-06：跨看板复用组件

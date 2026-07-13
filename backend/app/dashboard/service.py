@@ -59,7 +59,7 @@ def _to_out(row: Dashboard) -> DashboardOut:
         name=row.name,
         slug=row.slug,
         description=row.description,
-        layout_json=row.layout_json,
+        layout_json=DashboardLayout.model_validate(row.layout_json),
         created_by=row.created_by,
         created_at=row.created_at,
         updated_at=row.updated_at,
@@ -203,15 +203,25 @@ def delete_dashboard(db: Session, dashboard_id: uuid.UUID) -> None:
     db.commit()
 
 
-def update_layout(db: Session, dashboard_id: uuid.UUID, layout_json: dict[str, Any]) -> DashboardOut:
+def update_layout(
+    db: Session,
+    dashboard_id: uuid.UUID,
+    layout_json: dict[str, Any] | DashboardLayout,
+) -> DashboardOut:
     row = db.scalar(_active(select(Dashboard).where(Dashboard.id == dashboard_id)))
     if row is None:
         raise DashboardError("DASH_NOT_FOUND", "Dashboard not found", 404)
     from app.views.validate import validate_layout_dict
     from pydantic import ValidationError
 
+    payload = (
+        layout_json.model_dump(by_alias=True, mode="json")
+        if isinstance(layout_json, DashboardLayout)
+        else layout_json
+    )
+
     try:
-        validated = validate_layout_dict(layout_json)
+        validated = validate_layout_dict(payload)
     except ValidationError as exc:
         fields = [
             {"field": ".".join(str(p) for p in err.get("loc", ())), "message": str(err.get("msg", ""))}

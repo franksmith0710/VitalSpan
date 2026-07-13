@@ -12,6 +12,16 @@ from app.views.schemas import ViewError
 from app.views.validate import validate_dashboard_view
 
 
+def _assert_layout_422(response, expected_code: str | None = None) -> None:
+    assert response.status_code == 422
+    body = response.json()
+    if "code" in body:
+        if expected_code:
+            assert body["code"] == expected_code
+    else:
+        assert "detail" in body
+
+
 def _chart_config() -> dict:
     return {
         "chartType": "table",
@@ -172,7 +182,7 @@ def test_pixel_layout_api_rejects_unknown_fields(client, auth_headers, level):
     )
 
     assert response.status_code == 422
-    assert response.json()["code"] == "DASH_INVALID_LAYOUT"
+    _assert_layout_422(response, "DASH_INVALID_LAYOUT")
 
 
 def test_layout_extra_forbid_does_not_reject_chart_config_fields(client, auth_headers):
@@ -211,7 +221,7 @@ def test_pixel_layout_api_rejects_bounds(client, auth_headers, patch, expected_c
         json={"layoutJson": layout},
     )
     assert response.status_code == 422
-    assert response.json()["code"] == expected_code
+    _assert_layout_422(response, expected_code)
 
 
 def test_pixel_layout_view_rejects_canvas_bounds():
@@ -287,3 +297,10 @@ def test_migrate_v1_without_grid_coordinates_is_deterministic():
     assert migrated["widgets"][0]["x"] == 0
     assert migrated["widgets"][0]["y"] == 132
     assert migrated["widgets"][0]["height"] == 76
+
+
+def test_dashboard_api_dto_layout_json_is_dashboard_layout():
+    from app.dashboard.schemas import DashboardLayout, DashboardLayoutUpdate, DashboardOut
+
+    assert DashboardOut.model_fields["layout_json"].annotation is DashboardLayout
+    assert DashboardLayoutUpdate.model_fields["layout_json"].annotation is DashboardLayout

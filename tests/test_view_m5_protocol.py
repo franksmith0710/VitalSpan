@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
 from app.main import app as fastapi_app
+from app.views.adapter import dashboard_layout_to_view
 from app.views.protocol import VIEW_PROTOCOL_VERSION, round_trip_view_document
 from app.views.schemas import ViewError
 from app.views.validate import validate_dashboard_view
@@ -98,6 +99,32 @@ def test_view_001_02_round_trip_equivalent():
     out = round_trip_view_document(doc)
     again = round_trip_view_document(out)
     assert again["layout"]["widgets"][0]["chartConfig"]["chartType"] == "heatmap"
+
+
+def test_view_001_02b_adapter_preserves_v2_pixel_geometry():
+    widget = _m5_layout_widget("kpi", [], ["total"])
+    widget.pop("colSpan")
+    widget.pop("rowSpan")
+    widget.update({"x": 120, "y": 80, "width": 480, "height": 320})
+    layout = {
+        "version": 2,
+        "canvas": {"width": 1440, "height": 900},
+        "widgets": [widget],
+        "globalFilters": [],
+    }
+
+    doc = dashboard_layout_to_view(
+        dashboard_id=uuid.uuid4(),
+        name="Pixel view",
+        layout_json=layout,
+    )
+    out = round_trip_view_document(doc)
+
+    assert out["protocolVersion"] == VIEW_PROTOCOL_VERSION
+    assert out["layout"]["version"] == 2
+    assert out["layout"]["widgets"][0]["x"] == 120
+    assert out["layout"]["widgets"][0]["width"] == 480
+    assert "colSpan" not in out["layout"]["widgets"][0]
 
 
 def test_view_001_03_unknown_chart_type_rejected():

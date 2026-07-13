@@ -5,8 +5,8 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.3
-last_updated: 2026-07-09
+version: 1.0.4
+last_updated: 2026-07-13
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -492,6 +492,7 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.4 | 2026-07-13 | Dashboard `layoutJson` 请求/响应 DTO 改为 `DashboardLayout`（v1 栅格 + v2 像素）；OpenAPI 可见 `version`/`canvas`/像素字段 |
 | 1.0.3 | 2026-07-09 | F-E API-007 对账：`/docs`/`/redoc` 状态 规划→已实现（`AuthMiddleware.PUBLIC_PATHS` 已豁免且 FastAPI `docs_url`/`redoc_url` 已启用）；补 `/health`/`/openapi.json`/`/api/v1/auth/login` 免鉴权注记 |
 | 1.0.2 | 2026-07-04 | M8/M12/M13 r44：IF-01~04 集成 API L1（services/integration_bus/reports/export/embed）；OpenAPI 版本策略 |
 | 1.0.1 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；§9 数据接入 API；移除 IF-05 范围外 |

@@ -57,6 +57,56 @@ HTMLElement.prototype.releasePointerCapture = function (pointerId: number) {
 };
 Element.prototype.scrollIntoView = () => {};
 
+const stubRect = () => ({
+  bottom: 0,
+  height: 0,
+  left: 0,
+  right: 0,
+  top: 0,
+  width: 0,
+  x: 0,
+  y: 0,
+  toJSON: () => ({}),
+});
+
+const stubClientRects = () => {
+  const rect = stubRect();
+  return {
+    length: 1,
+    0: rect,
+    item: (index: number) => (index === 0 ? rect : null),
+    [Symbol.iterator]: function* () {
+      yield rect;
+    },
+  } as DOMRectList;
+};
+
+for (const prototype of [Range.prototype, Element.prototype] as Array<
+  { getClientRects?: () => DOMRectList; getBoundingClientRect?: () => DOMRect }
+>) {
+  if (!prototype.getClientRects) {
+    prototype.getClientRects = stubClientRects;
+  }
+  if (!prototype.getBoundingClientRect) {
+    prototype.getBoundingClientRect = stubRect;
+  }
+}
+
+const textPrototype = Text.prototype as Text & {
+  getClientRects?: () => DOMRectList;
+  getBoundingClientRect?: () => DOMRect;
+};
+if (!textPrototype.getClientRects) {
+  textPrototype.getClientRects = stubClientRects;
+}
+if (!textPrototype.getBoundingClientRect) {
+  textPrototype.getBoundingClientRect = stubRect;
+}
+
+if (!document.elementFromPoint) {
+  document.elementFromPoint = () => document.body;
+}
+
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({

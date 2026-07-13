@@ -4,7 +4,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | 🔧 fixing |
+| 状态 | 🧪 代码修复完成，待真实浏览器 Pointer QA |
 | 优先级 | P0 |
 | 发现日期 | 2026-07-13 |
 | 影响范围 | Dashboard 编辑画布（DASH-002） |
@@ -15,10 +15,11 @@
 
 | # | 根因 | 状态 | 说明 |
 |---|------|------|------|
-| 1 | 交互中每帧 `compactLayoutVertical` 与 RGL 受控 layout 打架 | ✅ 已修代码 | `applyLiveLayout` 仅 `setLayout`；待人工验证 |
-| 2 | 后端 `LayoutWidget` **无** `gridX`/`gridY`，保存 `model_dump` 剥离坐标 | ✅ 已修代码 | schema + 往返测；待人工验证 |
-| 3 | 仅 `.dashboard-drag-handle` 可拖 + 手柄默认不可点 | ✅ 已修代码 | 选中常显手柄 + 标题栏 aria/title；待人工验证 |
-| 4 | 无真实指针 E2E，回归靠人工 | 🔲 门控中 | 契约 Q2=A |
+| 1 | 交互中每帧 `compactLayoutVertical` 与 RGL 受控 layout 打架 | ✅ Phase A 已修 | `applyLiveLayout` 仅 `setLayout`；该路径现仅作 v1 紧急回退 |
+| 2 | 后端 `LayoutWidget` **无** `gridX`/`gridY`，保存 `model_dump` 剥离坐标 | ✅ Phase A 已修 | schema + 往返测试已保留 v1 坐标 |
+| 3 | 仅 `.dashboard-drag-handle` 可拖 + 手柄默认不可点 | ✅ Phase A 已修 | 选中常显手柄 + 标题栏 aria/title |
+| 4 | RGL 修补路径未通过 Phase A 真实交互门控 | ✅ 已决策 | 不继续叠加补丁，切换 Phase B 自研像素画布 |
+| 5 | 无自动化真实浏览器 Pointer E2E | 🔲 待验证 | 单元/集成测试不等同于真实 Pointer QA |
 
 ---
 
@@ -56,7 +57,7 @@ const applyLiveLayout = useCallback((next: Layout) => {
 
 ---
 
-## 根因 2：保存剥离 grid 坐标 🔲 待修复
+## 根因 2：保存剥离 grid 坐标 ✅ 已修复
 
 **代码证据（L1）**：
 
@@ -76,9 +77,11 @@ const applyLiveLayout = useCallback((next: Layout) => {
 
 **影响量化**：只要走保存/重载路径，**100%** 丢失显式坐标（除非仅靠 order 流式排列碰巧一致）。
 
+**修复**：后端 v1 schema 已贯通 `gridX`/`gridY`，PUT/GET 往返与 bounds 测试覆盖坐标保留。
+
 ---
 
-## 根因 3：拖放/缩放入口过窄 🔲 待修复
+## 根因 3：拖放/缩放入口过窄 ✅ Phase A 已修复
 
 **代码证据（L1）**：
 
@@ -87,15 +90,23 @@ const applyLiveLayout = useCallback((next: Layout) => {
 
 ---
 
+## Phase A 失败 → Phase B 决策
+
+- Phase A 已完成 v1 坐标持久化、RGL 交互时序和手柄可用性修补，但真实交互门控结果为 **FAIL**；这说明继续在 RGL 受控交互链上叠加局部补丁不能满足本缺陷的产品验收目标。
+- 决策切换到 Phase B：`layout.version=2` 像素契约 + 自研 `PixelCanvas` / `PixelShape` Pointer Capture 交互。v1 可在内存迁移为 v2；v2 预览、分享、列表缩略图与 View 协议均保留像素几何。
+- `VITE_DASHBOARD_PIXEL_CANVAS` 默认开启；仅显式 `"false"` 回退。回退关闭时，v2 只读且禁止保存，绝不降级写回 v1。
+- 当前结论仅为**代码实现与自动化验证完成**。最终真实浏览器 Pointer QA 尚未执行，因此本 BUG 不标记“用户验收通过”或 closed。
+
+---
+
 ## 改进优先级汇总
 
 | 优先级 | 动作 | 对应根因 |
 |--------|------|----------|
-| P0 | 后端 schema 贯通 `gridX`/`gridY`（及 FE 断言保存往返） | #2 |
-| P0 | 人工验证根因 #1 修复是否足够「能拖」 | #1 |
-| P1 | 选中常显手柄；标题栏拖拽提示；必要时边框可拖 | #3 |
-| P2 | Playwright 指针拖放 | #4 |
-| 门控失败 | 按契约切 **像素画布**（见 headless plan Phase B） | 产品路径 |
+| 已完成 | 后端 schema 贯通 v1 `gridX`/`gridY`，并补保存往返 | #2 |
+| 已完成 | Phase A 门控失败后切换 **像素画布**（见 headless plan Phase B） | #1、#3、#4 |
+| P0 待验收 | 在真实浏览器按 Pointer 清单验证拖移、八向缩放、保存刷新 | #4、#5 |
+| P2 | 补 Playwright 真实指针拖放回归 | #5 |
 
 ---
 
@@ -105,3 +116,4 @@ const applyLiveLayout = useCallback((next: Layout) => {
 |------|------|------|------|
 | R0 | 2026-07-13 | 交互中停 compact + 手柄样式 | 待人工验证 |
 | R1 | 2026-07-13 | A1 gridX/Y + rowSpan≤24；A2 往返测；A3 UX | 自动化绿；待 PhaseA 人工门控 |
+| R2 | 2026-07-13 | Phase A 门控 FAIL 后实施 v2 契约、像素画布、编辑/预览/分享/消费面双版本接线 | 代码实现完成；真实浏览器 Pointer QA 待执行 |

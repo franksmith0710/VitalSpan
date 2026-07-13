@@ -323,3 +323,18 @@ body,
 .dashboard-rgl-width-host {
   min-height: 1px;
 }
+
+/* Dashboard 富文本：相对行高，避免大字号被固定 line-height 裁切 */
+.rich-main-class {
+  font-size: 32px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.rich-main-class p {
+  margin: 0;
+}
+
+.rich-main-class [style*="font-size"] {
+  line-height: 1.4;
+}

@@ -1,11 +1,17 @@
-"""T2: filter widget layout schema round-trip + global filter controlType."""
-
 from __future__ import annotations
 
 import uuid
 
+import pytest
+from pydantic import ValidationError
+
 from app.dashboard.global_filters.schemas import FilterBinding
-from app.dashboard.schemas import DashboardLayout, FilterWidgetConfig, LayoutWidget
+from app.dashboard.schemas import (
+    DashboardLayout,
+    FilterWidgetConfig,
+    LayoutWidget,
+    TextWidgetConfig,
+)
 
 
 def test_layout_widget_defaults_missing_type_to_chart():
@@ -135,3 +141,37 @@ def test_tabs_widget_round_trip():
         }
     )
     assert cfg.control_type == "date"
+
+
+def test_text_widget_html_round_trip():
+    wid = uuid.uuid4()
+    layout = DashboardLayout.model_validate(
+        {
+            "version": 1,
+            "widgets": [
+                {
+                    "id": str(wid),
+                    "type": "text",
+                    "title": "说明",
+                    "colSpan": 6,
+                    "rowSpan": 2,
+                    "order": 0,
+                    "textConfig": {
+                        "content": "<p><strong>重要</strong></p>",
+                        "variant": "html",
+                    },
+                }
+            ],
+            "globalFilters": [],
+        }
+    )
+    dumped = layout.model_dump(by_alias=True, mode="json")
+    assert dumped["widgets"][0]["textConfig"]["variant"] == "html"
+    assert DashboardLayout.model_validate(dumped).widgets[0].text_config.content == (
+        "<p><strong>重要</strong></p>"
+    )
+
+
+def test_text_widget_rejects_unknown_variant():
+    with pytest.raises(ValidationError):
+        TextWidgetConfig.model_validate({"content": "x", "variant": "wysiwyg"})
