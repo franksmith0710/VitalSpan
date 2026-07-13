@@ -181,6 +181,8 @@ domain_count: 16
 |------|------------|----------|
 | F01-BOOT.md | BOOT-001 ~ BOOT-006 | `prd/F01-BOOT.md` |
 | F02-AUTH.md | AUTH-001 ~ AUTH-008 | `prd/F02-AUTH.md` |
+
+> **非计数实现纠错（2026-07-13）**：`AUTH-003` 仅指用户角色绑定，**不包含**账户资料自服务（`PATCH /api/v1/me`）与修改密码（`POST /api/v1/auth/change-password`）。上述能力无独立 SRS/PRD 功能 ID；实现与缺陷修复追溯见 [BUG-001](../bugs/BUG-001_account-password-security_2026-07-13.md)、[`plans/2026-07-08-account-self-service.md`](./plans/2026-07-08-account-self-service.md) 与 [`F02-AUTH.md`](./prd/F02-AUTH.md) 边界说明。`feature_count: 129` 不变。
 | F03-DS.md | DS-001 ~ DS-008 | `prd/F03-DS.md` |
 | F04-CONN.md | CONN-001 ~ CONN-027 | `prd/F04-CONN.md` |
 | F05-QUERY.md | QUERY-001 ~ QUERY-009 | `prd/F05-QUERY.md` |
@@ -237,6 +239,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.118 | 2026-07-13 | 非计数文档纠错：明确 AUTH-003 不含账户自服务 profile/change-password；追溯 BUG-001 + Account Self-Service plan；`feature_count`/评分/F02 ID 范围不变 |
 | 1.2.117 | 2026-07-10 | PRD 分片同步 §M-DEPTH：META-004/QUERY-009/DASH-002·004/AUTH-006·008/RPT-005/API-003 补深度 companion `[ ]`；BOOT-002/DASH-001 勾 F-0；API-006/DESIGN-001/BOOT-002 标 F-D 可选；`prd/README` 对齐 |
 | 1.2.116 | 2026-07-10 | 人工 plan 干预：插入 §M-DEPTH（Dataset 打穿 / 筛选器 / 消费落差）；执行范围对齐 plan v3.0.0；G2 解除饱和 |
 | 1.2.115 | 2026-07-09 | F-F 全量 companion 收官：plan 20 项全勾；五轨 worktree merge；hub 执行范围→整体毕业 |

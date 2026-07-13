@@ -15,3 +15,20 @@ export function Label({
     />
   );
 }
+
+export function RequiredLabel({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<typeof Label>) {
+  return (
+    <Label className={className} {...props}>
+      {children}
+      <span aria-hidden="true" className="text-error-500">
+        {" "}
+        *
+      </span>
+      <span className="sr-only">（必填）</span>
+    </Label>
+  );
+}

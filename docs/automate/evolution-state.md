@@ -41,6 +41,10 @@
   - Phase B 碰撞允许重叠 zIndex=order
   - 已有 compact 回滚待与 A3 一并验证
 
+## 已合并并行修复（2026-07-13）
+
+- **BUG-001 / fix/account-password-security**：已合并进 `dev-auto`；修改密码 401 会话语义、表单 UX、测试与文档纠错完成（见 `docs/bugs/BUG-001_*`）。
+
 ## 待办池
 
 - **toolbar-full Wave 1–6**（2026-07-13）：DE 工具栏完整对标 · DASH-007-01~07 ✅ · plan `2026-07-13-dashboard-de-toolbar-full.md`

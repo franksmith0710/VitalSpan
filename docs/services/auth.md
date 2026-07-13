@@ -4,6 +4,7 @@
 |------|-----|
 | 模块路径 | `backend/app/auth/` |
 | PRD | [F02-AUTH](../automate/prd/F02-AUTH.md) · AUTH-001 ~ AUTH-008；M1 骨架 [BOOT-003](../automate/prd/F01-BOOT.md) |
+| 实现追溯 | [BUG-001](../bugs/BUG-001_account-password-security_2026-07-13.md) · [Account Self-Service plan](../automate/plans/2026-07-08-account-self-service.md)（profile/change-password，无独立 PRD ID） |
 | 里程碑 | M7（完整 RBAC）；M1 横切鉴权骨架 |
 | 状态 | **已实现** |
 
@@ -17,6 +18,7 @@
 - RLS L1：`resolve_user_org_node_ids`、`build_org_rls_fragment`、`prepare_query_rls`、`get_query_rls_fragment`（供 `query/rls/guard.py` 消费）
 - 绑定操作审计 L1：`auth_audit_events` + `audit/service.py`（AUTH-003 用户绑定子集）
 - 全平台 auth 域写操作审计 L1：`audit/write_hooks.py` + admin 守卫查询（AUTH-008）
+- 账户资料与凭证自服务（非 AUTH-003）：`auth/profile/` 提供 `GET/PATCH /api/v1/me` 与 `change_password`；见实现追溯
 
 ## 边界
 
@@ -27,6 +29,7 @@
 | L1 资源可见性守卫（域 + deps） | 全方言 SQL 改写、M3 数据源实查 RLS |
 | 维度分组 CRUD、角色维度/分组绑定、有效维度集 | 登录/数据源等非 auth 域审计（AUTH-008 后续扩展） |
 | auth 域写路径审计挂钩与 admin 分页查询 | HTTP middleware 全自动拦截 |
+| 账户资料读取/更新、自服务改密 | 忘记密码/MFA/改密后会话撤销（→ 非目标） |
 
 ## 依赖
 
@@ -44,6 +47,7 @@
 | `PUBLIC_PATHS` | `/health`、`/docs`、`/redoc`、`/openapi.json` 豁免 | BOOT-003 | M1 骨架 |
 | `get_current_user` | `auth/deps.py`；handler 依赖注入 | BOOT-003 | M1 骨架 |
 | `GET /api/v1/me` | `api/v1/me.py`；`get_current_user` 注入 `UserContext` | BOOT-003 | M1 骨架 |
+| `profile/service.py` | 资料更新与 `change_password` 域逻辑 | 实现追溯 | 已实现 |
 | `UserContext` | 占位用户上下文 | BOOT-003 | M1 骨架 |
 | `Bearer dev` | 仅 `VITALSPAN_ENV=development` 接受 | BOOT-003 | M1 占位 |
 | `audit/service.py` | 审计写入与分页查询 L1 | AUTH-003, AUTH-008 | 已实现 |

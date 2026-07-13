@@ -5,7 +5,7 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.4
+version: 1.0.5
 last_updated: 2026-07-13
 api_prefix: /api/v1
 openapi_docs: /docs
@@ -42,9 +42,9 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | GET | `/api/v1/me` | 当前用户资料（`id`/`username`/`displayName`/`email`/`roles`） | 内部 | P0 | BOOT-003 | 已实现 | `backend/app/api/v1/me.py` · `backend/app/auth/profile/` |
-| PATCH | `/api/v1/me` | 自服务更新 `displayName`/`email`（审计 `profile.update`） | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/me.py` |
+| PATCH | `/api/v1/me` | 自服务更新 `displayName`/`email`（审计 `profile.update`）；实现追溯：BUG-001 · Account Self-Service plan | 内部 | 一期 | — | 已实现 | `backend/app/api/v1/me.py` |
 | POST | `/api/v1/auth/login` | 登录，返回 token（`AuthMiddleware.PUBLIC_PATHS` 免鉴权，唯一业务路径公开项） | 内部 | 一期 | BOOT-003 | 已实现 | `backend/app/api/v1/auth.py` |
-| POST | `/api/v1/auth/change-password` | 自服务修改密码（`currentPassword`/`newPassword`；审计 `password.change`） | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/auth.py` |
+| POST | `/api/v1/auth/change-password` | 自服务修改密码（`currentPassword`/`newPassword`；204 成功；401 可为鉴权 `UNAUTHORIZED` 或业务码 `AUTH_INVALID_CURRENT_PASSWORD`，客户端按 `code` 区分；422 为 schema/长度/`AUTH_PASSWORD_UNCHANGED`；审计 `password.change`）；实现追溯：BUG-001 · Account Self-Service plan | 内部 | 一期 | — | 已实现 | `backend/app/api/v1/auth.py` · `backend/app/auth/profile/service.py` |
 | POST | `/api/v1/auth/dev-switch` | 开发环境切换用户身份（`vitalspan_env=development`） | 内部 | 一期 | — | 已实现 | `backend/app/api/v1/auth.py` |
 | POST | `/api/v1/auth/logout` | 注销 | 内部 | 一期 | BOOT-003 | 规划 | `backend/app/api/v1/auth.py` |
 | GET | `/api/v1/auth/me` | 当前用户与角色；二期正式路径，M1 占位见 `GET /api/v1/me` | 内部 | 一期 | AUTH-003 | 规划 | `backend/app/api/v1/auth.py` |
@@ -492,7 +492,8 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
-| 1.0.4 | 2026-07-13 | Dashboard `layoutJson` 请求/响应 DTO 改为 `DashboardLayout`（v1 栅格 + v2 像素）；OpenAPI 可见 `version`/`canvas`/像素字段 |
+| 1.0.5 | 2026-07-13 | Dashboard `layoutJson` 请求/响应 DTO 改为 `DashboardLayout`（v1 栅格 + v2 像素）；OpenAPI 可见 `version`/`canvas`/像素字段 |
+| 1.0.4 | 2026-07-13 | BUG-001 文档纠错：`PATCH /api/v1/me` 与 `POST /api/v1/auth/change-password` PRD 列改为 `—`；说明列引用 BUG-001 + Account Self-Service plan；change-password 补充 204/401 业务码与 422 边界 |
 | 1.0.3 | 2026-07-09 | F-E API-007 对账：`/docs`/`/redoc` 状态 规划→已实现（`AuthMiddleware.PUBLIC_PATHS` 已豁免且 FastAPI `docs_url`/`redoc_url` 已启用）；补 `/health`/`/openapi.json`/`/api/v1/auth/login` 免鉴权注记 |
 | 1.0.2 | 2026-07-04 | M8/M12/M13 r44：IF-01~04 集成 API L1（services/integration_bus/reports/export/embed）；OpenAPI 版本策略 |
 | 1.0.1 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；§9 数据接入 API；移除 IF-05 范围外 |

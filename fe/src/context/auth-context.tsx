@@ -66,8 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    registerUnauthorizedHandler(logout);
+    const unregisterUnauthorizedHandler = registerUnauthorizedHandler(logout);
     void refresh();
+    return unregisterUnauthorizedHandler;
   }, [logout, refresh]);
 
   const value = useMemo(

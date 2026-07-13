@@ -2,6 +2,19 @@
 
 > 模块：M7 · 8 维评分见 [`../prd.md`](../prd.md)
 
+## 账户自服务实现追溯（非新增功能项）
+
+SRS 与 AUTH-001～008 **未**定义独立「账户资料 / 修改密码」功能 ID。下列能力已在代码与测试中实现，**不属于** [AUTH-003](#auth-003-用户角色绑定)（用户角色绑定）：
+
+| 能力 | 追溯 |
+|------|------|
+| 资料读取 / 更新 | [`backend/app/auth/profile/`](../../../backend/app/auth/profile/) · `GET/PATCH /api/v1/me` · [`plans/2026-07-08-account-self-service.md`](../plans/2026-07-08-account-self-service.md) |
+| 修改密码 | `profile/service.py::change_password` · `POST /api/v1/auth/change-password` · [`BUG-001`](../../bugs/BUG-001_account-password-security_2026-07-13.md) |
+| 前端 | `fe/src/pages/admin/account/` · `ChangePasswordSection` · `ChangePasswordSection.smoke.test.tsx` · `ChangePasswordSession.integration.test.tsx` |
+| 后端测试 | `tests/test_auth_profile.py` |
+
+API 登记见 [`docs/api/README.md`](../../api/README.md) §认证（PRD 列 `—`）。
+
 ### [AUTH-001] RoleRegistry 角色注册
 
 - **状态**：已实现（M-FE-3 FE companion）
