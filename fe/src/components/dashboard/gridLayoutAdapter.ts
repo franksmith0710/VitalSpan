@@ -3,10 +3,25 @@ import type { LayoutWidget } from "./layoutUtils";
 import { sortWidgets } from "./layoutUtils";
 import { GRID_COLS, findFirstFreeSlot, layoutItemsCollide } from "./gridSnapUtils";
 
-/** 行高（px）；较小步进便于纵向微调，对齐 Superset 类 BI 画布 */
-export const GRID_ROW_HEIGHT = 48;
+/** 行高（px）；较小步进便于纵向无极微调 */
+export const GRID_ROW_HEIGHT = 32;
+export const GRID_MARGIN_Y = 12;
 const MIN_CHART_ROWS = 2;
-const MAX_CHART_ROWS = 8;
+/** Must stay aligned with backend LayoutWidget.rowSpan <= 24. */
+export const MAX_CHART_ROWS = 24;
+
+/** 栅格行数 → 像素高度（含行间距） */
+export function gridSpanToPixelHeight(rowSpan: number): number {
+  const rows = Math.max(1, Math.round(rowSpan));
+  return rows * GRID_ROW_HEIGHT + (rows - 1) * GRID_MARGIN_Y;
+}
+
+/** widget 标题栏 + 内边距占用（px） */
+export const WIDGET_BODY_CHROME_PX = 60;
+
+export function estimateWidgetBodyHeight(rowSpan: number): number {
+  return Math.max(48, gridSpanToPixelHeight(rowSpan) - WIDGET_BODY_CHROME_PX);
+}
 
 function clampColSpan(w: number): number {
   return Math.min(12, Math.max(1, Math.round(w)));
@@ -133,6 +148,19 @@ export function placeNewWidget(widgets: LayoutWidget[], widget: LayoutWidget): L
     rowSpan: h,
     gridX: x,
     gridY: y,
+  };
+}
+
+export function placeWidgetExact(
+  widget: LayoutWidget,
+  at: { gridX: number; gridY: number; colSpan: number; rowSpan: number },
+): LayoutWidget {
+  return {
+    ...widget,
+    gridX: Math.max(0, Math.round(at.gridX)),
+    gridY: Math.max(0, Math.round(at.gridY)),
+    colSpan: clampColSpan(at.colSpan),
+    rowSpan: clampRowSpan(at.rowSpan),
   };
 }
 

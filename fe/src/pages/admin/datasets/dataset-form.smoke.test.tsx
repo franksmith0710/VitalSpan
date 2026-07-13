@@ -125,6 +125,7 @@ describe("Dataset form pages", () => {
 
     expect(await screen.findByRole("heading", { name: "编辑 Dataset" })).toBeInTheDocument();
     expect(await screen.findByDisplayValue("amt2")).toBeInTheDocument();
-    expect(await screen.findByText("public.orders")).toBeInTheDocument();
+    expect(screen.getAllByText("public.orders").length).toBeGreaterThan(0);
+    expect(screen.getByText("绑定查询配置")).toBeInTheDocument();
   });
 });

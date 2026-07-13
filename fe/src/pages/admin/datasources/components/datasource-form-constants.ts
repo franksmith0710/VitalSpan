@@ -106,18 +106,28 @@ export const CONNECTOR_PICKER_SUBTITLES: Record<string, string> = {
   rest_api: "HTTP REST 接口数据源",
 };
 
-export function connectorPickerSubtitle(type: string, displayGroup: DisplayGroup): string {
-  if (CONNECTOR_PICKER_SUBTITLES[type]) return CONNECTOR_PICKER_SUBTITLES[type];
-  if (CONNECTOR_HINT_TEXT[type]) return CONNECTOR_HINT_TEXT[type];
-  const port = CONNECTOR_FIELD_HINTS[type]?.port;
-  const groupLine = {
-    oltp: "关系型 OLTP 数据库",
-    olap: "分析型 OLAP 引擎",
-    warehouse: "湖仓联邦 SQL 查询",
-    file: "本地或远程文件数据源",
-    api: "HTTP 接口数据源",
-    extension: "扩展型数据源",
-  }[displayGroup];
-  if (port && port !== "1") return `${groupLine} · 默认端口 ${port}`;
-  return groupLine;
+export function connectorPickerSubtitle(
+  type: string,
+  displayGroup: DisplayGroup,
+  queryCapable?: boolean,
+): string {
+  const base = (() => {
+    if (CONNECTOR_PICKER_SUBTITLES[type]) return CONNECTOR_PICKER_SUBTITLES[type];
+    if (CONNECTOR_HINT_TEXT[type]) return CONNECTOR_HINT_TEXT[type];
+    const port = CONNECTOR_FIELD_HINTS[type]?.port;
+    const groupLine = {
+      oltp: "关系型 OLTP 数据库",
+      olap: "分析型 OLAP 引擎",
+      warehouse: "湖仓联邦 SQL 查询",
+      file: "本地或远程文件数据源",
+      api: "HTTP 接口数据源",
+      extension: "扩展型数据源",
+    }[displayGroup];
+    if (port && port !== "1") return `${groupLine} · 默认端口 ${port}`;
+    return groupLine;
+  })();
+  if (queryCapable === false) {
+    return `${base} · 仅连接与 Schema（图表查询待支持）`;
+  }
+  return base;
 }

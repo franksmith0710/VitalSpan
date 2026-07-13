@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -30,6 +30,8 @@ import {
   type LayoutWidget,
 } from "@/components/dashboard/layoutUtils";
 import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
+import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
+import { createPaletteWidget } from "@/components/dashboard/createLayoutWidget";
 import { resetChartTypeCatalogCache } from "@/lib/chartRegistry";
 import { DashboardEditPage } from "./DashboardEditPage";
 import { DashboardListPage } from "./DashboardListPage";
@@ -143,6 +145,20 @@ function widgetSelectTargets() {
   });
 }
 
+function clickWidgetByTitle(title: string, options?: { shiftKey?: boolean }) {
+  const mocks = screen.getAllByTestId("chart-mock");
+  const el = mocks.find((m) => m.textContent === title);
+  if (!el) throw new Error(`chart mock ${title} not found`);
+  const target = el.closest("[role='button']");
+  if (!target) throw new Error("widget select target not found");
+  fireEvent.click(target, options);
+}
+
+async function insertLineChartFromToolbar(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByTestId("palette-toolbar-toggle"));
+  await user.click(await screen.findByRole("button", { name: "折线图" }));
+}
+
 describe("dashboard admin smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
@@ -207,6 +223,115 @@ describe("dashboard admin smoke", () => {
     expect(onInsert).toHaveBeenCalledWith("pie");
   });
 
+  it("T-DASH-PALETTE-01: chart toolbar opens DE-style categorized picker", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <DashboardEditWorkspace
+          onPaletteInsert={() => {}}
+          canvas={<div data-testid="canvas-area">canvas</div>}
+          chartRail={<div>rail</div>}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("图表")).toBeInTheDocument();
+    expect(screen.queryByTestId("palette-dropdown-menu")).not.toBeInTheDocument();
+    await user.click(screen.getByTestId("palette-toolbar-toggle"));
+    expect(await screen.findByTestId("palette-dropdown-menu")).toBeInTheDocument();
+    expect(screen.getByTestId("chart-picker-popover")).toBeInTheDocument();
+    expect(screen.getByText("线/面图")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "折线图" })).toBeInTheDocument();
+  });
+
+  it("T-DASH-PALETTE-02: query filter picker inserts filter with control type", async () => {
+    const user = userEvent.setup();
+    const onInsert = vi.fn();
+    render(
+      <MemoryRouter>
+        <DashboardEditWorkspace
+          onPaletteInsert={onInsert}
+          canvas={<div>canvas</div>}
+          chartRail={<div>rail</div>}
+        />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByTestId("toolbar-query-toggle"));
+    expect(await screen.findByTestId("query-component-picker")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "下拉" }));
+    expect(onInsert).toHaveBeenCalledWith({ type: "filter", controlType: "select" });
+  });
+
+  it("T-DASH-PALETTE-02b: createPaletteWidget respects filter controlType", () => {
+    const widget = createPaletteWidget({ type: "filter", controlType: "date" }, []);
+    expect(widget.type).toBe("filter");
+    expect(widget.filterConfig?.controlType).toBe("date");
+  });
+
+  it("T-DASH-PALETTE-03: workspace has canvas edit toolbar without docked palette", () => {
+    render(
+      <MemoryRouter>
+        <DashboardEditWorkspace
+          onPaletteInsert={() => {}}
+          canvas={<div data-testid="canvas-area">canvas</div>}
+          chartRail={<div>rail</div>}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByTestId("canvas-edit-toolbar")).toBeInTheDocument();
+    expect(screen.queryByTestId("palette-panel")).not.toBeInTheDocument();
+    expect(screen.getByTestId("canvas-area")).toBeInTheDocument();
+  });
+
+  it("T-DASH-PALETTE-04: toolbar inserts text and media widgets", async () => {
+    const user = userEvent.setup();
+    const onInsert = vi.fn();
+    render(
+      <MemoryRouter>
+        <DashboardEditWorkspace
+          onPaletteInsert={onInsert}
+          canvas={<div>canvas</div>}
+          chartRail={<div>rail</div>}
+        />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByTestId("toolbar-insert-text"));
+    expect(onInsert).toHaveBeenCalledWith("text");
+    await user.click(screen.getByTestId("toolbar-insert-media"));
+    expect(onInsert).toHaveBeenCalledWith("media");
+    await user.click(screen.getByTestId("toolbar-insert-tabs"));
+    expect(onInsert).toHaveBeenCalledWith("tabs");
+  });
+
+  it("T-DASH-PALETTE-05: more menu opens style and linkage actions", async () => {
+    const user = userEvent.setup();
+    const onStyle = vi.fn();
+    const onLinkage = vi.fn();
+    render(
+      <MemoryRouter>
+        <DashboardEditWorkspace
+          onPaletteInsert={() => {}}
+          onOpenDashboardStyle={onStyle}
+          onOpenLinkage={onLinkage}
+          canvas={<div>canvas</div>}
+          chartRail={<div>rail</div>}
+        />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByTestId("toolbar-more-toggle"));
+    expect(await screen.findByTestId("toolbar-more-menu")).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: "仪表板样式" }));
+    expect(onStyle).toHaveBeenCalled();
+    await user.click(screen.getByTestId("toolbar-more-toggle"));
+    await user.click(screen.getByRole("menuitem", { name: "外部参数" }));
+    expect(onLinkage).toHaveBeenCalled();
+  });
+
+  it("T-DASH-PALETTE-06: createPaletteWidget builds text widget config", () => {
+    const widget = createPaletteWidget("text", []);
+    expect(widget.type).toBe("text");
+    expect(widget.textConfig?.variant).toBe("plain");
+  });
+
   it("T-VIZ-FC-04: palette links to chart types catalog", () => {
     render(
       <MemoryRouter>
@@ -235,7 +360,7 @@ describe("dashboard admin smoke", () => {
     render(
       <DashboardWidget widget={sampleWidgets[0]} mode="edit" onDelete={onDelete} onTitleChange={() => {}} />,
     );
-    expect(document.querySelector(".dashboard-drag-handle")).toBeTruthy();
+    expect(screen.getByLabelText("拖动以移动组件")).toHaveClass("dashboard-drag-handle");
     expect(screen.getByRole("button", { name: "删除组件" })).toBeInTheDocument();
   });
 
@@ -282,23 +407,26 @@ describe("dashboard admin smoke", () => {
   it("T-DASH-002-04: shift+click toggles multi-select on edit page", async () => {
     mockDashboardLoad(sampleWidgets);
     renderEditPage();
-    await screen.findByText("销售看板");
-    const targets = widgetSelectTargets();
-    fireEvent.click(targets[0]);
-    fireEvent.click(targets[1], { shiftKey: true });
-    expect(await screen.findByText("已选中 2 个组件")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "删除选中 (2)" })).toBeInTheDocument();
+    await screen.findByDisplayValue("销售看板");
+    clickWidgetByTitle("A");
+    clickWidgetByTitle("B", { shiftKey: true });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("canvas-multi-select-hint")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /删除选中 \(2\)/ })).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
   });
 
   it("T-DASH-002-05: batch delete removes multi-selected widgets", async () => {
     const user = userEvent.setup();
     mockDashboardLoad(sampleWidgets);
     renderEditPage();
-    await screen.findByText("销售看板");
-    const targets = widgetSelectTargets();
-    fireEvent.click(targets[0]);
-    fireEvent.click(targets[1], { shiftKey: true });
-    await user.click(screen.getByRole("button", { name: "删除选中 (2)" }));
+    await screen.findByDisplayValue("销售看板");
+    clickWidgetByTitle("A");
+    clickWidgetByTitle("B", { shiftKey: true });
+    await user.click(await screen.findByRole("button", { name: /删除选中 \(2\)/ }));
     await user.click(screen.getByRole("button", { name: "删除" }));
     expect(await screen.findAllByLabelText("组件标题")).toHaveLength(1);
   });
@@ -352,7 +480,8 @@ describe("dashboard admin smoke", () => {
     ]);
   });
 
-  it("T-DASH-004-03: edit page renders linkage rules panel when filters exist", async () => {
+  it("T-DASH-004-03: edit page shows linkage in context inspector when filters exist", async () => {
+    const user = userEvent.setup();
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
@@ -368,7 +497,9 @@ describe("dashboard admin smoke", () => {
       return {};
     });
     renderEditPage();
-    expect(await screen.findByText("组件联动规则")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("销售看板")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /筛选联动（高级）/ }));
+    expect(await screen.findByText("筛选联动")).toBeInTheDocument();
   });
 
   it("T-DASH-002-03: normalizeWidgetLayout unpacks overlapping widgets", () => {
@@ -391,8 +522,65 @@ describe("dashboard admin smoke", () => {
   it("T-DASH-R28-002-03: edit page loads layout", async () => {
     mockDashboardLoad(sampleWidgets.slice(0, 1));
     renderEditPage();
-    expect(await screen.findByText("销售看板")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("销售看板")).toBeInTheDocument();
     expect(screen.getByLabelText("组件标题")).toHaveValue("A");
+  });
+
+  it("T-DASH-DE-DRAFT-01: save layout succeeds with unconfigured chart widgets", async () => {
+    const user = userEvent.setup();
+    const draftWidget: LayoutWidget = {
+      id: "w-draft",
+      type: "chart",
+      title: "表格",
+      colSpan: 6,
+      rowSpan: 2,
+      order: 0,
+      chartConfig: {
+        chartType: "table",
+        chartId: "w-draft",
+        mode: "dataset",
+        dataSourceId: "",
+        dimensions: [],
+        metrics: [],
+      },
+    };
+    let layoutPut = 0;
+    let globalFiltersPut = 0;
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
+      if (path.includes("/layout") && init?.method === "PUT") {
+        layoutPut += 1;
+        return {};
+      }
+      if (path.includes("/global-filters") && init?.method === "PUT") {
+        globalFiltersPut += 1;
+        throw Object.assign(new Error("At least one filter is required"), {
+          code: "DASH_FILTER_EMPTY_FILTERS",
+        });
+      }
+      if (path.includes("/dashboards/")) {
+        return {
+          id: "d1",
+          name: "草稿看板",
+          layoutJson: { version: 1, widgets: [draftWidget], globalFilters: [] },
+        };
+      }
+      return {};
+    });
+    renderEditPage();
+    await screen.findByDisplayValue("草稿看板");
+    await insertLineChartFromToolbar(user);
+    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await waitFor(() => {
+      expect(layoutPut).toBeGreaterThanOrEqual(1);
+    });
+    expect(globalFiltersPut).toBe(0);
+    expect(screen.queryByText(/Invalid chart config/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/At least one filter is required/i)).not.toBeInTheDocument();
   });
 
   it("T-DASH-R29-002-04: view mode uses react-grid-layout for positioned widgets", () => {
@@ -412,8 +600,11 @@ describe("dashboard admin smoke", () => {
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
       const filters = mockGlobalFiltersPath(path);
       if (filters) return filters;
-      if (init?.method === "PUT") {
+      if (path.includes("/layout") && init?.method === "PUT") {
         throw Object.assign(new Error("组件 ID 重复"), { code: "DASH_DUPLICATE_WIDGET" });
+      }
+      if (path.includes("/global-filters") && init?.method === "PUT") {
+        return { filters: [], linkageRules: [], refreshMode: "eager" };
       }
       return {
         id: "d1",
@@ -422,7 +613,7 @@ describe("dashboard admin smoke", () => {
       };
     });
     renderEditPage();
-    await screen.findByText("X");
+    await screen.findByDisplayValue("X");
     const titleInput = screen.getByLabelText("组件标题");
     await user.type(titleInput, "!");
     await user.click(screen.getByRole("button", { name: "保存布局" }));
@@ -457,6 +648,43 @@ describe("dashboard admin smoke", () => {
     expect(putBody?.layoutJson?.widgets?.[0]?.title).toBe("新标题");
   });
 
+  it("T-DASH-002-06: saving a legacy flow layout serializes grid coordinates", async () => {
+    const user = userEvent.setup();
+    let layoutPut: { layoutJson?: { widgets?: Array<{ gridX?: number; gridY?: number }> } } | undefined;
+    const legacyWidgets = sampleWidgets.slice(0, 2).map(({ gridX: _gridX, gridY: _gridY, ...widget }) => widget);
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
+      if (path.includes("/layout") && init?.method === "PUT") {
+        layoutPut = JSON.parse(init.body as string);
+        return {};
+      }
+      if (path.includes("/dashboards/")) {
+        return {
+          id: "d1",
+          name: "兼容布局",
+          layoutJson: { version: 1, widgets: legacyWidgets, globalFilters: [] },
+        };
+      }
+      return {};
+    });
+    renderEditPage();
+    const titles = await screen.findAllByLabelText("组件标题");
+    expect(titles.length).toBeGreaterThanOrEqual(2);
+    await user.type(titles[0], "!");
+    await user.click(screen.getByRole("button", { name: "保存布局" }));
+
+    await waitFor(() => {
+      expect(layoutPut?.layoutJson?.widgets).toEqual([
+        expect.objectContaining({ gridX: 0, gridY: 0 }),
+        expect.objectContaining({ gridX: 6, gridY: 0 }),
+      ]);
+    });
+  });
+
   it("T-VIZ-002-01: save layout includes edited dataSourceId and sql", async () => {
     const user = userEvent.setup();
     let putBody: {
@@ -485,6 +713,7 @@ describe("dashboard admin smoke", () => {
     renderEditPage();
     await screen.findByLabelText("组件标题");
     await user.click(screen.getByText("待配置"));
+    await user.click(await screen.findByRole("tab", { name: "高级" }));
     await screen.findByLabelText("数据源");
     await user.click(screen.getByLabelText("数据源"));
     await user.click(await screen.findByRole("option", { name: /分析库/ }));
@@ -552,7 +781,7 @@ describe("dashboard admin smoke", () => {
       };
     });
     renderEditPage();
-    expect(await screen.findByText("待删看板")).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("待删看板")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "删除看板" }));
     await user.click(screen.getByRole("button", { name: "删除" }));
     expect(await screen.findByText("看板列表页")).toBeInTheDocument();
@@ -584,19 +813,33 @@ describe("dashboard admin smoke", () => {
     expect(screen.queryByText("C")).not.toBeInTheDocument();
   });
 
-  it("F-C: undo restores previous widget layout after adding widget", async () => {
+  it("F-C: step back restores previous widget layout after adding widget", async () => {
     const user = userEvent.setup();
     mockDashboardLoad(sampleWidgets.slice(0, 1));
     renderEditPage();
     await screen.findByLabelText("组件标题");
     expect(screen.getAllByLabelText("组件标题")).toHaveLength(1);
-    await user.click(screen.getByRole("button", { name: "折线图" }));
+    await insertLineChartFromToolbar(user);
     expect(await screen.findAllByLabelText("组件标题")).toHaveLength(2);
-    await user.click(screen.getByRole("button", { name: "撤销" }));
+    await user.click(screen.getByRole("button", { name: "上一步" }));
     expect(screen.getAllByLabelText("组件标题")).toHaveLength(1);
   });
 
-  it("F-D: edit mode loads global filters and renders filter bar", async () => {
+  it("F-C-02: step forward reapplies layout after step back", async () => {
+    const user = userEvent.setup();
+    mockDashboardLoad(sampleWidgets.slice(0, 1));
+    renderEditPage();
+    await screen.findByLabelText("组件标题");
+    await insertLineChartFromToolbar(user);
+    expect(await screen.findAllByLabelText("组件标题")).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: "上一步" }));
+    expect(screen.getAllByLabelText("组件标题")).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "下一步" }));
+    expect(screen.getAllByLabelText("组件标题")).toHaveLength(2);
+  });
+
+  it("F-D: edit mode loads global filters for linkage (preview shows filter bar)", async () => {
+    const user = userEvent.setup();
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
@@ -612,7 +855,10 @@ describe("dashboard admin smoke", () => {
       return {};
     });
     renderEditPage();
-    expect(await screen.findByLabelText("区域")).toBeInTheDocument();
+    await screen.findByDisplayValue("销售看板");
     expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/dashboards/d1/global-filters");
+    expect(screen.queryByLabelText("区域")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /筛选联动（高级）/ }));
+    expect(await screen.findByText("筛选联动")).toBeInTheDocument();
   });
 });

@@ -56,7 +56,7 @@
   - [x] 编辑页联动规则配置 UI（`LinkageRulesPanel` + PUT global-filters；`dashboard.smoke.test.tsx` T-DASH-004-02/03）
   - [x] BE widget execute 合并 linkage（r231：`sql_parameters.py` + `execute.py` + `_load_linkage_payload`；GET linkage 严格 owner/admin ACL；viewer execute 200；`test_meta_dash_m8_r231.py` T-DASH-R231-004-03~07 + `test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-04）
   - [x] **M-DASH-UX F-D**：编辑页挂载全局筛选条并可驱动 widget 刷新（2026-07-09）
-  - [ ] **M-DEPTH F-B**：筛选器 widget UI（下拉/日期/文本）+ Palette 可拖入
+  - [ ] **M-DEPTH F-B**：筛选器 widget UI（下拉/日期/文本）+ Palette 可拖入（**工具栏查询组件类型选择** DASH-007-02 · 2026-07-13）
   - [ ] **M-DEPTH F-B**：GlobalFilterBar 控件升级（下拉/日期/多选；替纯 Input）
   - [ ] **M-DEPTH F-B**：筛选值驱动关联 chart execute 刷新（与 filter widget / 全局条统一参数注入）
 - **代码锚点**：`backend/app/dashboard/global_filters/` · `backend/app/query/sql_parameters.py` · `backend/app/api/v1/dashboards.py` · `fe/src/components/dashboard/GlobalFilterBar.tsx` · `fe/src/components/dashboard/LinkageRulesPanel.tsx` · `fe/src/components/dashboard/dashboardFilterUtils.ts` · `tests/test_meta_dash_m8_r231.py` T-DASH-R231-004-03~07 · `tests/test_cat_dash_viz_nfr_r61.py` T-DASH-R61-004-01~07 · `fe/src/pages/admin/dashboard/dashboard-view.smoke.test.tsx` · `fe/src/pages/admin/dashboard/dashboard.smoke.test.tsx`
@@ -93,3 +93,21 @@
 - **代码锚点**：`backend/app/dashboard/theme/query.py` · `backend/app/dashboard/theme/execute.py` · `backend/app/api/v1/dashboards.py` · `fe/src/pages/admin/themes/ThemeAnalysisPage.tsx` · `fe/src/pages/admin/themes/ThemeGeoMapPanel.tsx` · `fe/src/pages/admin/themes/useThemeAnalysis.ts` · `tests/test_dash_rpt_r58.py` T-DASH-R58-006-01~12 · `tests/test_m9_rpt_theme_r233.py` T-R233-DASH-006-01~06 · `fe/src/pages/admin/themes/theme-analysis.smoke.test.tsx`
 - **演化建议**：r233 闭合主题维度钻取 query 链路与 FE 配置/分析页；GIS 地图渲染与行政区划下钻已闭合
 - **里程碑对齐**：M9 · 已完成 · 2026-07-06
+
+### [DASH-007] DE 编辑工具栏与扩展 Widget
+
+- **状态**：已实现（Wave 1–6 · 2026-07-13）
+- **goal_ref**：goal.md §2.3（G3）
+- **期次**：M-DEPTH companion
+- **里程碑对齐**：plan `2026-07-13-dashboard-de-toolbar-full.md`
+- **描述**：看板编辑页 `CanvasEditToolbar` 对标 DataEase `middle-area`；消除 disabled 占位，扩展 layout widget 类型（text/media/tabs）与复用流程。
+- **验收标准**：
+  - [x] DASH-007-01：图表 DE 分区选择器（`ChartPickerPopover` + `chartPaletteTaxonomy` · 410px 网格）
+  - [x] DASH-007-02：查询组件类型选择（text/select/date/multiselect）插入 filter widget
+  - [x] DASH-007-03：富文本 widget（`type: text` + `textConfig`）
+  - [x] DASH-007-04：媒体 widget（`type: media` + `mediaConfig`）
+  - [x] DASH-007-05：Tab 容器 widget
+  - [x] DASH-007-06：跨看板复用组件
+  - [x] DASH-007-07：「更多」菜单 ≥2 项可用（样式/外部参数等）
+- **代码锚点**：`fe/src/components/dashboard/CanvasEditToolbar.tsx` · `ChartPickerPopover.tsx` · `createLayoutWidget.ts` · `backend/app/dashboard/schemas.py` · `docs/automate/plans/2026-07-13-dashboard-de-toolbar-full.md`
+- **演化建议**：Wave 1–6 已交付；Tab 子组件嵌套与媒体上传后端留 companion

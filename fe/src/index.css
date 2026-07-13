@@ -193,6 +193,13 @@ body,
   transition: none !important;
 }
 
+.dashboard-grid-edit .react-grid-item > .grid-widget-cell {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
 .dashboard-grid-edit .react-grid-item.cssTransforms {
   transition: none !important;
 }
@@ -200,51 +207,110 @@ body,
 .dashboard-grid-edit .dashboard-drag-handle {
   touch-action: none;
   user-select: none;
+  cursor: grab;
+}
+
+.dashboard-grid-edit .react-grid-item.react-draggable-dragging .dashboard-drag-handle {
+  cursor: grabbing;
 }
 
 .dashboard-grid-edit .react-grid-item.react-draggable-dragging {
   z-index: 20;
 }
 
-/* 缩放手柄：仅选中组件显示，中性灰角标（对齐 Superset 编辑态） */
+/* 缩放手柄：八向 shape-point；扩大命中区便于操作 */
 .dashboard-grid-edit .react-grid-item > .react-resizable-handle {
   position: absolute;
-  z-index: 10;
+  z-index: 30;
   opacity: 0;
   pointer-events: none;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  margin-top: -6px;
+  border-radius: 2px;
+  background: rgb(255 255 255);
+  border: 1px solid rgb(70 95 255 / 0.85);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.6);
 }
 
 .dashboard-grid-edit .react-grid-item:hover > .react-resizable-handle,
-.dashboard-grid-edit .react-grid-item.dashboard-widget-selected > .react-resizable-handle,
-.dashboard-grid-edit .react-grid-item:has(.dashboard-widget-selected) > .react-resizable-handle {
+.dashboard-grid-edit .react-grid-item:has(> .grid-widget-cell.grid-widget-selected) > .react-resizable-handle,
+.dashboard-grid-edit .react-grid-item:has(> .grid-widget-cell > .dashboard-widget-selected) > .react-resizable-handle,
+.dashboard-grid-edit .react-grid-item.react-resizable-resizing > .react-resizable-handle {
   opacity: 1;
   pointer-events: auto;
 }
 
-.dashboard-grid-edit .react-grid-item > .react-resizable-handle::after {
-  content: "";
-  position: absolute;
-  border-radius: 1px;
-  background: rgb(107 114 128 / 0.85);
-}
-
 .dashboard-grid-edit .react-grid-item > .react-resizable-handle-se {
-  right: 4px;
-  bottom: 4px;
-  width: 12px;
-  height: 12px;
+  right: 2px;
+  bottom: 2px;
+  left: auto;
+  top: auto;
+  margin: 0;
   cursor: se-resize;
 }
 
-.dashboard-grid-edit .react-grid-item > .react-resizable-handle-se::after {
-  right: 0;
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-sw {
+  left: 2px;
+  bottom: 2px;
+  top: auto;
+  margin: 0;
+  cursor: sw-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-ne {
+  right: 2px;
+  top: 2px;
+  left: auto;
+  margin: 0;
+  cursor: ne-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-nw {
+  left: 2px;
+  top: 2px;
+  margin: 0;
+  cursor: nw-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-n {
+  top: 0;
+  left: 50%;
+  right: auto;
+  margin-left: -6px;
+  margin-top: 0;
+  cursor: n-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-s {
   bottom: 0;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid rgb(107 114 128 / 0.9);
-  border-bottom: 2px solid rgb(107 114 128 / 0.9);
-  background: transparent;
-  border-radius: 0 0 2px 0;
+  left: 50%;
+  top: auto;
+  margin-left: -6px;
+  margin-top: 0;
+  cursor: s-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-e {
+  right: 0;
+  top: 50%;
+  left: auto;
+  margin: 0;
+  margin-top: -6px;
+  cursor: e-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-w {
+  left: 0;
+  top: 50%;
+  margin: 0;
+  margin-top: -6px;
+  cursor: w-resize;
+}
+
+.dashboard-grid-edit .react-grid-item > .react-resizable-handle-se::after {
+  content: none;
 }
 
 .dashboard-grid-edit .react-grid-placeholder {
@@ -254,17 +320,6 @@ body,
   opacity: 1 !important;
 }
 
-.dashboard-grid-snap-guides {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 12px;
-  padding: 0;
-  pointer-events: none;
-}
-
-.dashboard-grid-snap-guides > div {
-  border-left: 1px dashed rgb(70 95 255 / 18%);
+.dashboard-rgl-width-host {
+  min-height: 1px;
 }

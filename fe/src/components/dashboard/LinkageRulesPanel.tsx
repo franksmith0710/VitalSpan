@@ -21,8 +21,13 @@ type LinkageRule = Linkage["linkageRules"][number];
 type LinkageRulesPanelProps = {
   dashboardId: string;
   linkage: Linkage | null;
+  /** 合并画布筛选器后的有效联动（编辑态优先展示） */
+  effectiveLinkage?: Linkage | null;
   widgets: LayoutWidget[];
-  onSaved: (linkage: Linkage) => void;
+  /** 草稿模式：规则变更即时回调，不显示单独保存按钮 */
+  draftMode?: boolean;
+  onSaved?: (linkage: Linkage) => void;
+  onLinkageChange?: (linkage: Linkage) => void;
 };
 
 const EMPTY_RULE = {
@@ -31,17 +36,41 @@ const EMPTY_RULE = {
   parameterKey: "",
 };
 
-export function LinkageRulesPanel({ dashboardId, linkage, widgets, onSaved }: LinkageRulesPanelProps) {
+export function LinkageRulesPanel({
+  dashboardId,
+  linkage,
+  effectiveLinkage,
+  widgets,
+  draftMode = false,
+  onSaved,
+  onLinkageChange,
+}: LinkageRulesPanelProps) {
   const [rules, setRules] = useState<LinkageRule[]>([]);
   const [draft, setDraft] = useState(EMPTY_RULE);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setRules(linkage?.linkageRules ?? []);
-  }, [linkage]);
+  const resolvedLinkage = effectiveLinkage ?? linkage;
+  const filters = resolvedLinkage?.filters ?? [];
 
-  const filters = linkage?.filters ?? [];
+  useEffect(() => {
+    setRules(resolvedLinkage?.linkageRules ?? []);
+  }, [resolvedLinkage]);
+
+  const emitLinkage = (nextRules: LinkageRule[]) => {
+    const payload: Linkage = {
+      filters: resolvedLinkage?.filters ?? [],
+      linkageRules: nextRules,
+      refreshMode: resolvedLinkage?.refreshMode ?? linkage?.refreshMode ?? "eager",
+    };
+    onLinkageChange?.(payload);
+    return payload;
+  };
+
+  const handleRulesUpdate = (nextRules: LinkageRule[]) => {
+    setRules(nextRules);
+    if (draftMode) emitLinkage(nextRules);
+  };
   const canAdd =
     draft.sourceFilterId &&
     draft.parameterKey.trim() &&
@@ -49,8 +78,8 @@ export function LinkageRulesPanel({ dashboardId, linkage, widgets, onSaved }: Li
 
   const handleAddRule = () => {
     if (!canAdd) return;
-    setRules((prev) => [
-      ...prev,
+    handleRulesUpdate([
+      ...rules,
       {
         sourceFilterId: draft.sourceFilterId,
         targetWidgetIds: [...draft.targetWidgetIds],
@@ -62,7 +91,7 @@ export function LinkageRulesPanel({ dashboardId, linkage, widgets, onSaved }: Li
   };
 
   const handleRemoveRule = (index: number) => {
-    setRules((prev) => prev.filter((_, i) => i !== index));
+    handleRulesUpdate(rules.filter((_, i) => i !== index));
   };
 
   const toggleTarget = (widgetId: string, checked: boolean) => {
@@ -78,17 +107,12 @@ export function LinkageRulesPanel({ dashboardId, linkage, widgets, onSaved }: Li
     setSaving(true);
     setError(null);
     try {
-      const payload = {
-        dashboardId,
-        filters: linkage?.filters ?? [],
-        linkageRules: rules,
-        refreshMode: linkage?.refreshMode ?? "eager",
-      };
+      const payload = emitLinkage(rules);
       const saved = await apiFetch<Linkage & { affectedWidgetCount?: number }>(
         `/api/v1/dashboards/${dashboardId}/global-filters`,
-        { method: "PUT", body: JSON.stringify(payload) },
+        { method: "PUT", body: JSON.stringify({ dashboardId, ...payload }) },
       );
-      onSaved({
+      onSaved?.({
         filters: saved.filters ?? payload.filters,
         linkageRules: saved.linkageRules ?? rules,
         refreshMode: saved.refreshMode ?? payload.refreshMode,
@@ -102,8 +126,8 @@ export function LinkageRulesPanel({ dashboardId, linkage, widgets, onSaved }: Li
 
   if (!filters.length) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 px-4 py-3 text-theme-xs text-gray-500 dark:border-gray-700 dark:bg-white/[0.02] dark:text-gray-400">
-        暂无全局筛选器，请先在后台配置 filters 后再添加联动规则。
+      <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/60 px-3 py-2.5 text-theme-xs text-gray-500 dark:border-gray-700 dark:bg-white/[0.02] dark:text-gray-400">
+        从左侧拖入「筛选器」到画布，配置维度与参数名后即可驱动图表刷新。
       </div>
     );
   }
@@ -111,10 +135,12 @@ export function LinkageRulesPanel({ dashboardId, linkage, widgets, onSaved }: Li
   return (
     <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">组件联动规则</h3>
-        <Button type="button" variant="primary" size="sm" disabled={saving} onClick={() => void handleSave()}>
-          {saving ? "保存中…" : "保存联动"}
-        </Button>
+        <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">筛选联动</h3>
+        {!draftMode ? (
+          <Button type="button" variant="primary" size="sm" disabled={saving} onClick={() => void handleSave()}>
+            {saving ? "保存中…" : "保存联动"}
+          </Button>
+        ) : null}
       </div>
       <p className="text-theme-xs text-gray-500 dark:text-gray-400">
         筛选器值通过 parameterKey 注入目标组件 SQL 的 {`{{key}}`} 占位符。

@@ -103,7 +103,7 @@ export function createBarChartOptions(
   overrides?: ApexOptions,
 ): ApexOptions {
   return getBaseChartOptions({
-    chart: { type: "bar", height: 180 },
+    chart: { type: "bar" },
     plotOptions: barChartPlotOptions,
     xaxis: { categories },
     ...overrides,
@@ -115,7 +115,7 @@ export function createLineChartOptions(
   overrides?: ApexOptions,
 ): ApexOptions {
   return getBaseChartOptions({
-    chart: { type: "line", height: 180 },
+    chart: { type: "line" },
     stroke: lineChartStrokeOptions,
     xaxis: { categories },
     ...overrides,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Filter as FilterIcon, Trash2 } from "lucide-react";
+import { Filter as FilterIcon, GripVertical, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +57,14 @@ export function FilterWidget({
             "dashboard-drag-handle flex shrink-0 cursor-grab items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 active:cursor-grabbing dark:border-gray-800 dark:bg-white/[0.04]",
             selected && "bg-gray-100/90 dark:bg-white/[0.06]",
           )}
+          role="group"
+          aria-label="拖动以移动组件"
+          title="拖动以移动组件"
         >
+          <GripVertical
+            className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600"
+            aria-hidden
+          />
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5 dark:text-gray-400">
             <FilterIcon className="size-3.5" aria-hidden />
           </span>

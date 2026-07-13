@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from app.datasources.dialects.base import DialectConnector
 from app.datasources.taxonomy import label_for_display_group, resolve_display_group
+from app.query.capabilities import is_query_capable, resolve_query_mode_for_connector
 
 
 class ConnectorNotFoundError(KeyError):
@@ -88,6 +89,8 @@ def export_type_catalog() -> list[dict]:
     result: list[dict] = []
     for item in registry.list_types():
         group = resolve_display_group(item.category)
+        query_capable = is_query_capable(item.type)
+        query_mode = resolve_query_mode_for_connector(item.type)
         result.append(
             {
                 "type": item.type,
@@ -96,6 +99,8 @@ def export_type_catalog() -> list[dict]:
                 "capabilities": list(item.capabilities),
                 "displayGroup": group,
                 "categoryLabel": label_for_display_group(group),
+                "queryCapable": query_capable,
+                "queryMode": query_mode,
             }
         )
     return result

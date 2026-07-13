@@ -26,9 +26,10 @@
 | 已缓解 | 仍开 |
 |--------|------|
 | Dataset 内存 → ORM（T1） | 报表/实体/物理表/调度等仍 InMemory |
-| 筛选器假控件（T2） | Dashboard CRUD 无所有权 ACL |
-| 报表静默 mock（T3） | honesty gate 仍是 `assert True` 空壳 |
-| 治理默认隐藏（T4） | EmbedChartPage stub；SharePage layout 字段 bug |
+| 筛选器假控件（T2） | Dashboard CRUD 无所有权 ACL（R0 已补最小读 ACL） |
+| 报表静默 mock（T3） | honesty gate 空壳（R0 已实装） |
+| 治理默认隐藏（T4） | EmbedChartPage stub；SharePage layout（R0 已修） |
+| **连接器 30 型已注册** | **仅 6 型查询主路径可用**；24 型「连接侧 only」见 §8 |
 
 ---
 
@@ -110,6 +111,55 @@
 | P1-TEST-01 | SharePage / LoginPage / viewer 深链 edit 无回归 |
 | P1-TEST-02 | honesty gate 空壳（同 P0-07） |
 | P1-TEST-03 | 大量测试 `._store.clear()` 绑定 InMemory 实现 |
+
+### 2.6 连接器查询能力缺口（CONN-QUERY）
+
+> **判据**（2026-07-13 实扫 `export_type_catalog()` + `get_sql_dialect` + `_SUPPORTED_NATIVE_TYPES`）：  
+> - **可用**：`connectivity_test` + `schema_browser` + **查询执行**（SQL 或 Native）  
+> - **不可用（本清单）**：能注册/测通/浏览 Schema，但看板 `POST /api/v1/query/execute` 主路径失败  
+> - **代码锚点**：`backend/app/query/dialects/__init__.py`（mysql/postgresql/clickhouse/**sqlite/sqlserver/oracle** Phase2）· `query/native/executor.py`（native + csv/excel/rest_api Phase1）· `datasources/__init__.py`（30 型注册）
+
+#### 2.6.1 已可用（22）— 对照基线
+
+| type | 显示名 | 模式 | 默认依赖 | 备注 |
+|------|--------|------|----------|------|
+| `mysql` | MySQL | SQL | ✅ | 开箱即查 |
+| `postgresql` | PostgreSQL | SQL | ✅ | 开箱即查；平台元库 |
+| `mariadb` / `tidb` / `starrocks` / `doris` / `oceanbase` / `gbase` | MySQL 协议系 | SQL | 见左 | ✅ R1.5-A → mysql dialect |
+| `kingbase` / `gaussdb` / `redshift` / `timescaledb` | PostgreSQL 协议系 | SQL | 见左 | ✅ R1.5-B → postgresql dialect |
+| `elasticsearch` | Elasticsearch | Native | ✅ | 开箱即查 |
+| `clickhouse` | ClickHouse | SQL | `connectors-ext` | 需 `clickhouse-connect` |
+| `mongodb` | MongoDB | Native | `connectors-ext` | 需 `pymongo` |
+| `opensearch` | OpenSearch | Native | `connectors-ext` | 需 `opensearch-py` |
+| `csv` | CSV | Native | 标准库 | ✅ Phase1 接线 native execute |
+| `excel` | Excel | Native | `openpyxl`（ext） | ✅ Phase1 接线 native execute |
+| `rest_api` | REST API | Native | 无 | ✅ Phase1 接线 native execute |
+| `sqlite` | SQLite | SQL | 标准库 | ✅ Phase2 独立 SqlDialect |
+| `sqlserver` | SQL Server | SQL | `pymssql`（ext） | ✅ Phase2 独立 SqlDialect |
+| `oracle` | Oracle | SQL | `oracledb`（ext） | ✅ Phase2 独立 SqlDialect |
+
+#### 2.6.2 不可用 — 半可用（连接侧 only，8）
+
+> CONN-Q-01~09、CONN-Q-19、CONN-Q-22~24、**CONN-Q-10~12** 已闭合，移出本表。
+
+| ID | type | 显示名 | 模式 | 驱动 | 根因 | 修复轨 |
+|----|------|--------|------|------|------|--------|
+| CONN-Q-13 | `dm` | 达梦 DM | SQL | `dmPython`（ext） | 无 SQL 方言 | R1.5-D / Phase3 |
+| CONN-Q-14 | `db2` | IBM Db2 | SQL | `ibm_db`（未进 ext） | 无方言 + 驱动常缺 | R1.5-D |
+| CONN-Q-15 | `hive` | Apache Hive | SQL | `pyhive`（ext） | 无 SQL 方言 | R1.5-D / Phase3 |
+| CONN-Q-16 | `impala` | Apache Impala | SQL | `pyhive`（ext） | 无 SQL 方言 | R1.5-D / Phase3 |
+| CONN-Q-17 | `trino` | Trino | SQL | `trino`（ext） | 无 SQL 方言 | R1.5-D / Phase3 |
+| CONN-Q-18 | `presto` | Presto | SQL | 同 trino | 无 SQL 方言 | R1.5-D / Phase3 |
+| CONN-Q-20 | `influxdb` | InfluxDB | Native | `influxdb-client`（ext） | native execute 未实现 | R1.5-E |
+| CONN-Q-21 | `tdengine` | TDengine | Native | `taospy`（ext） | 同上 | R1.5-E |
+
+#### 2.6.3 产品诚实（与 CONN-QUERY 联动）
+
+| ID | 项 | 说明 |
+|----|-----|------|
+| CONN-Q-UI-01 | 类型目录未区分「可查询」 | `/admin/connectors` 与 types API 应标 `queryCapable: true/false` | ✅ R1.5-C |
+| CONN-Q-UI-02 | 建数据源未拦截不可用类型 | 选 CONN-Q-* 类型后仍可走图表 SQL → 运行时才 422 | ✅ R1.5-C 选型副标题标注「仅连接」 |
+| CONN-Q-DOC-01 | PRD CONN-* 勾选「已实现」≠ 查询可用 | `F04-CONN.md` / `F05-QUERY.md` 需 companion 区分 connect vs execute |
 
 ---
 
@@ -202,6 +252,20 @@ datasets/bindings/glossary 无 soft-delete；bound_config_id 无 FK；query_conf
 2. 删除或改标「规划」僵尸行；zombie workflow-link 修正  
 3. probe 路由加 `x-internal` 或迁 `/api/v1/internal/*`（不进产品 OpenAPI 主面）  
 
+### Wave R1.5 — 连接器查询对齐（2–4 日，可并行 R1）
+
+> 消化 §2.6 **CONN-Q-01 ~ CONN-Q-24**；优先「别名映射」低成本项。
+
+| 轨 | 范围 | 条目 | 验收 |
+|----|------|------|------|
+| R1.5-A | MySQL 协议系别名 | CONN-Q-01~06 | ✅ `mariadb`/`tidb`/`starrocks`/`doris`/`oceanbase`/`gbase` → mysql dialect |
+| R1.5-B | PostgreSQL 协议系别名 | CONN-Q-07~09、CONN-Q-19 | ✅ `kingbase`/`gaussdb`/`redshift`/`timescaledb` → postgresql dialect |
+| R1.5-C | 产品诚实 | CONN-Q-UI-01~02、CONN-Q-DOC-01 | ✅ types API `queryCapable`/`queryMode`；FE 选型副标题标注「仅连接」 |
+| R1.5-D | 独立 SQL 方言（排期） | CONN-Q-10~18 | ✅ sqlite/sqlserver/oracle Phase2；dm/db2/hive/impala/trino/presto 待 Phase3 |
+| R1.5-E | Native 补齐（排期） | CONN-Q-20~24 | ✅ csv/excel/rest_api Phase1 接线；influx/tdengine 仍待实现 |
+
+**R1.5-A/B 实现要点**：`query/dialects/__init__.py` 增加 `CONNECTOR_SQL_DIALECT_ALIASES`；`executor`/`translator`/`table.py` 解析前映射；`timescaledb` 改 `category` 为 relational 或强制 sql 路由。
+
 ### Wave R2 — 持久化收口（1–2 周，多 worktree）
 
 | 轨 | 内容 |
@@ -248,10 +312,13 @@ datasets/bindings/glossary 无 soft-delete；bound_config_id 无 FK；query_conf
 
 ## 7. 建议下一步
 
-1. **立即**：Wave R0（SharePage + SQL 注入 + honesty gate 实装）  
+1. ~~**立即**：Wave R0~~ ✅ 2026-07-10  
 2. **并行**：Wave R1 文档对账脚本（快速消掉 arch-inspect 门禁大宗）  
-3. **排期**：R2 持久化（否则「可交付」仍被报表/实体重启丢失打回）  
+3. **并行/紧随**：Wave **R1.5** 连接器查询对齐（CONN-Q-01~09 别名映射 + UI 诚实标注）  
+4. **排期**：R2 持久化（否则「可交付」仍被报表/实体重启丢失打回）  
+5. **排期**：R1.5-D/E 独立方言与 Native（CONN-Q-10~24）
 
 完整 FE 编号清单：见 agent [FE explore](37752d25-4344-400e-b639-bdecab9058d6) 输出。  
 完整 BE 编号清单：见 agent [BE explore](2b9c7905-b397-43ef-9d76-f1570a0fdd86) 输出。  
-arch-inspect 全量：`.arch-inspect/artifacts/scans/scan-20260710T071909/report.md` + `problems-merged.json`。
+arch-inspect 全量：`.arch-inspect/artifacts/scans/scan-20260710T071909/report.md` + `problems-merged.json`。  
+连接器查询缺口：**§2.6 CONN-Q-01 ~ CONN-Q-24**（本文件维护）。

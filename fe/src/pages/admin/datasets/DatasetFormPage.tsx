@@ -9,6 +9,7 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
+import { DatasetBindPanel } from "./components/DatasetBindPanel";
 import { DatasetEditorForm } from "./DatasetEditorForm";
 import type { DatasetEditorValues, DatasetItem } from "./types";
 
@@ -130,6 +131,14 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
           onSubmit={() => void handleSave()}
           isSaving={isSaving}
         />
+        {mode === "edit" && id ? (
+          <DatasetBindPanel
+            datasetId={values.datasetId}
+            tables={values.tables}
+            boundConfigId={detailQuery.data?.boundConfigId}
+            onBound={() => void detailQuery.refetch()}
+          />
+        ) : null}
       </div>
     </AdminPageShell>
   );

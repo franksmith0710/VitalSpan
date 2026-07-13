@@ -1,5 +1,5 @@
-import { useState, type MouseEvent } from "react";
-import { Trash2 } from "lucide-react";
+import { useState, type MouseEvent, type ReactNode } from "react";
+import { GripVertical, Trash2 } from "lucide-react";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
@@ -17,7 +17,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { FilterWidget } from "./FilterWidget";
-import type { FilterWidgetConfig, LayoutWidget } from "./layoutUtils";
+import { TextWidget } from "./TextWidget";
+import { MediaWidget } from "./MediaWidget";
+import { TabsWidget } from "./TabsWidget";
+import type {
+  FilterWidgetConfig,
+  LayoutWidget,
+  MediaWidgetConfig,
+  TabsWidgetConfig,
+  TextWidgetConfig,
+} from "./layoutUtils";
 import { isWidgetConfigReady } from "./createLayoutWidget";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 
@@ -25,6 +34,8 @@ type DashboardWidgetProps = {
   widget: LayoutWidget;
   mode: "edit" | "view";
   selected?: boolean;
+  /** 编辑态栅格实时尺寸（拖/缩放中） */
+  gridSize?: { w: number; h: number };
   onSelect?: (event: MouseEvent) => void;
   onDelete?: (id: string) => void;
   onTitleChange: (id: string, title: string) => void;
@@ -33,6 +44,9 @@ type DashboardWidgetProps = {
   executeKey?: string;
   filterValue?: string;
   onFilterValueChange?: (filterId: string, value: string) => void;
+  allWidgets?: LayoutWidget[];
+  renderNestedWidget?: (widget: LayoutWidget) => ReactNode;
+  onTabsConfigChange?: (id: string, tabsConfig: TabsWidgetConfig) => void;
 };
 
 function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
@@ -64,6 +78,7 @@ export function DashboardWidget({
   widget,
   mode,
   selected = false,
+  gridSize,
   onSelect,
   onDelete,
   onTitleChange,
@@ -71,6 +86,9 @@ export function DashboardWidget({
   executeKey,
   filterValue,
   onFilterValueChange,
+  allWidgets,
+  renderNestedWidget,
+  onTabsConfigChange,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -89,10 +107,58 @@ export function DashboardWidget({
     );
   }
 
+  if (widget.type === "text" && widget.textConfig) {
+    return (
+      <TextWidget
+        widget={widget as LayoutWidget & { textConfig: TextWidgetConfig }}
+        mode={mode}
+        selected={selected}
+        onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
+        onTitleChange={onTitleChange}
+        onDelete={onDelete}
+      />
+    );
+  }
+
+  if (widget.type === "media" && widget.mediaConfig) {
+    return (
+      <MediaWidget
+        widget={widget as LayoutWidget & { mediaConfig: MediaWidgetConfig }}
+        mode={mode}
+        selected={selected}
+        onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
+        onTitleChange={onTitleChange}
+        onDelete={onDelete}
+      />
+    );
+  }
+
+  if (widget.type === "tabs" && widget.tabsConfig) {
+    return (
+      <TabsWidget
+        widget={widget as LayoutWidget & { tabsConfig: TabsWidgetConfig }}
+        allWidgets={allWidgets ?? []}
+        mode={mode}
+        selected={selected}
+        onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
+        onTitleChange={onTitleChange}
+        onDelete={onDelete}
+        onTabsConfigChange={(cfg) => onTabsConfigChange?.(widget.id, cfg)}
+        renderChild={(child) => renderNestedWidget?.(child) ?? null}
+      />
+    );
+  }
+
+  if (widget.type !== "chart") {
+    return null;
+  }
+
   const chartType = widget.chartConfig?.chartType ?? "bar";
   const Icon = widgetChartIcon(chartType);
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
   const configReady = isWidgetConfigReady(widget.chartConfig);
+  const sizeW = gridSize?.w ?? widget.colSpan;
+  const sizeH = gridSize?.h ?? widget.rowSpan;
 
   return (
     <div
@@ -110,7 +176,14 @@ export function DashboardWidget({
             "dashboard-drag-handle flex shrink-0 cursor-grab items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 active:cursor-grabbing dark:border-gray-800 dark:bg-white/[0.04]",
             selected && "bg-gray-100/90 dark:bg-white/[0.06]",
           )}
+          role="group"
+          aria-label="拖动以移动组件"
+          title="拖动以移动组件"
         >
+          <GripVertical
+            className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600"
+            aria-hidden
+          />
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5 dark:text-gray-400">
             <Icon className="size-3.5" aria-hidden />
           </span>
@@ -122,7 +195,7 @@ export function DashboardWidget({
             aria-label="组件标题"
           />
           <span className="dashboard-no-drag hidden shrink-0 text-theme-xs tabular-nums text-gray-400 sm:inline">
-            {widget.colSpan}×{widget.rowSpan}
+            {sizeW}×{sizeH}
           </span>
           {onDelete ? (
             <IconButton
@@ -174,15 +247,17 @@ export function DashboardWidget({
             : undefined
         }
         className={cn(
-          "min-h-0 flex-1",
+          "dashboard-no-drag flex min-h-0 flex-1 flex-col",
           mode === "edit" && "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
         )}
       >
         {mode === "edit" && !configReady ? (
           <WidgetPendingPreview widget={widget} />
         ) : widget.chartConfig ? (
-          <div className="h-full p-2">
+          <div className="flex min-h-0 flex-1 flex-col p-2">
             <ChartRenderer
+              embedded
+              gridSpan={gridSize}
               config={widget.chartConfig}
               title={widget.title}
               filterParameters={filterParameters}

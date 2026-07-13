@@ -14,9 +14,19 @@ type Props = {
   columns: string[];
   ariaLabel: string;
   isDark?: boolean;
+  height?: number;
+  width?: number;
 };
 
-export function AdvancedEchartsChart({ spec, rows, columns, ariaLabel, isDark = false }: Props) {
+export function AdvancedEchartsChart({
+  spec,
+  rows,
+  columns,
+  ariaLabel,
+  isDark = false,
+  height = 180,
+  width,
+}: Props) {
   const { rows: capped, truncated } = useMemo(
     () => capRows(rows, ADVANCED_CHART_ROW_CAP),
     [rows],
@@ -33,7 +43,7 @@ export function AdvancedEchartsChart({ spec, rows, columns, ariaLabel, isDark = 
       (option as { series?: unknown[] }).series!.length === 0);
 
   return (
-    <div className="min-h-[180px] w-full" aria-label={ariaLabel}>
+    <div className="h-full min-h-[120px] w-full" aria-label={ariaLabel}>
       {truncated ? (
         <p role="status" className="mb-2 text-theme-xs text-warning-600 dark:text-warning-400">
           数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条
@@ -51,7 +61,7 @@ export function AdvancedEchartsChart({ spec, rows, columns, ariaLabel, isDark = 
         <ReactECharts
           option={option}
           theme={theme}
-          style={{ height: 180, width: "100%" }}
+          style={{ height, width: width ?? "100%" }}
           opts={{ renderer: "canvas" }}
           data-testid="echarts-chart"
         />

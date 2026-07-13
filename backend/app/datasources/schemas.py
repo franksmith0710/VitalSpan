@@ -126,6 +126,8 @@ class ConnectorTypeOut(BaseModel):
     capabilities: list[str]
     display_group: str = Field(validation_alias="displayGroup", serialization_alias="displayGroup")
     category_label: str = Field(validation_alias="categoryLabel", serialization_alias="categoryLabel")
+    query_capable: bool = Field(validation_alias="queryCapable", serialization_alias="queryCapable")
+    query_mode: str | None = Field(default=None, validation_alias="queryMode", serialization_alias="queryMode")
 
     model_config = ConfigDict(populate_by_name=True, ser_json_by_alias=True)
 

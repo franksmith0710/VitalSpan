@@ -62,6 +62,7 @@ describe("WidgetInspector dataset select", () => {
     const user = userEvent.setup();
     renderInspector();
 
+    await user.click(await screen.findByRole("tab", { name: "高级" }));
     const trigger = await screen.findByRole("combobox", { name: /dataset/i });
     expect(await screen.findByText(/当前没有可用的 Dataset/)).toBeInTheDocument();
     await user.click(trigger);
@@ -99,20 +100,25 @@ describe("WidgetInspector dataset select", () => {
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it("F-B: embeds ChartConfigPanel style/field controls in inspector", async () => {
+  it("F-B: embeds ChartConfigPanel style/field controls in inspector tabs", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path === "/api/v1/datasources") {
         return { items: [{ id: "ds-1", name: "分析库", code: "a" }] };
       }
       if (path.includes("/api/v1/datasets")) return { items: [], total: 0 };
+      if (path === "/api/v1/charts/types") {
+        return [{ type: "line", displayName: "折线图", category: "basic", renderer: "echarts", styleVariants: ["default"], fieldRule: {} }];
+      }
       return {};
     });
 
     renderInspector();
 
-    expect(await screen.findByText("样式子类型")).toBeInTheDocument();
-    expect(screen.getByText("维度字段")).toBeInTheDocument();
-    expect(screen.getByText("度量字段")).toBeInTheDocument();
+    expect(await screen.findByText("类别轴 / 维度")).toBeInTheDocument();
+    expect(screen.getByText("值轴 / 指标")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "更新图表数据" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "样式" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "高级" })).toBeInTheDocument();
   });
 
   it("F-B: ChartConfigPanel edits flow through WidgetInspector onChange", async () => {
@@ -121,12 +127,13 @@ describe("WidgetInspector dataset select", () => {
         return { items: [{ id: "ds-1", name: "分析库", code: "a" }] };
       }
       if (path.includes("/api/v1/datasets")) return { items: [], total: 0 };
+      if (path === "/api/v1/charts/types") return [];
       return {};
     });
 
     const user = userEvent.setup();
     const onChange = renderInspector();
-    await screen.findByText("样式子类型");
+    await screen.findByText("类别轴 / 维度");
     await user.click(screen.getByRole("button", { name: "添加筛选" }));
 
     expect(onChange).toHaveBeenCalled();
@@ -184,7 +191,49 @@ describe("WidgetInspector dataset select", () => {
       );
     });
     await waitFor(() => {
-      expect(screen.queryByText("绑定数据源并执行查询后，可配置维度、指标与筛选。")).not.toBeInTheDocument();
+      expect(screen.queryByText(/在「高级」中绑定 Dataset 或 SQL 后/)).not.toBeInTheDocument();
+    });
+  });
+
+  it("auto-fills dataSourceId when selecting bound dataset", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasources") {
+        return { items: [{ id: "ds-1", name: "分析库", code: "a" }] };
+      }
+      if (path.includes("/api/v1/datasets")) {
+        return {
+          items: [
+            {
+              datasetId: "orders_ds",
+              displayName: "订单",
+              boundConfigId: "cfg-11111111-1111-4111-8111-111111111111",
+            },
+          ],
+        };
+      }
+      if (path === "/api/v1/query/configs/cfg-11111111-1111-4111-8111-111111111111") {
+        return {
+          id: "cfg-11111111-1111-4111-8111-111111111111",
+          configType: "dataset_query",
+          payload: { dataSourceId: "ds-1" },
+        };
+      }
+      return {};
+    });
+
+    const user = userEvent.setup();
+    const onChange = renderInspector();
+    await user.click(await screen.findByRole("tab", { name: "高级" }));
+    const trigger = await screen.findByRole("combobox", { name: /dataset/i });
+    await user.click(trigger);
+    await user.click(screen.getByRole("option", { name: "订单" }));
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalled();
+      const last = onChange.mock.calls.at(-1)?.[0];
+      expect(last.datasetId).toBe("orders_ds");
+      expect(last.configId).toBe("cfg-11111111-1111-4111-8111-111111111111");
+      expect(last.dataSourceId).toBe("ds-1");
     });
   });
 });

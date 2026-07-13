@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { FilterControlType, FilterWidgetConfig, LayoutWidget } from "./layoutUtils";
+import { FILTER_CONTROL_META, FILTER_CONTROL_TYPES } from "./layoutUtils";
 
 type FilterWidgetInspectorProps = {
   widget: LayoutWidget & { filterConfig: FilterWidgetConfig };
@@ -15,12 +16,10 @@ type FilterWidgetInspectorProps = {
   embedded?: boolean;
 };
 
-const CONTROL_OPTIONS: { value: FilterControlType; label: string }[] = [
-  { value: "text", label: "文本" },
-  { value: "select", label: "下拉" },
-  { value: "date", label: "日期" },
-  { value: "multiselect", label: "多选" },
-];
+const CONTROL_OPTIONS = FILTER_CONTROL_TYPES.map((value) => ({
+  value,
+  label: FILTER_CONTROL_META[value].label,
+}));
 
 export function FilterWidgetInspector({ widget, onChange, embedded = false }: FilterWidgetInspectorProps) {
   const cfg = widget.filterConfig;

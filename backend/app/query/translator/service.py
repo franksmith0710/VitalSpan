@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.core.config import get_settings
 from app.designer.schemas import DESIGNER_FIELD_REGISTRY
 from app.query.dialects import UnsupportedDialectError, get_sql_dialect
+from app.query.capabilities import resolve_sql_dialect_type
 from app.query.rls.guard import validate_identifier
 from app.query.translator.schemas import (
     ALLOWED_LOGIC,
@@ -20,7 +21,7 @@ def _param_name(index: int) -> str:
 
 
 def _placeholder(connector_type: str, name: str, value_type: str) -> str:
-    if connector_type == "clickhouse":
+    if resolve_sql_dialect_type(connector_type) == "clickhouse":
         ch_type = "Int64" if value_type == "number" else "String"
         return f"{{{name}:{ch_type}}}"
     return f"%({name})s"

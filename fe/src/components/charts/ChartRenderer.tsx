@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { apiFetch } from "@/lib/api";
@@ -9,17 +9,24 @@ import {
 } from "@/lib/chartViewConfig";
 import { createBarChartOptions, createLineChartOptions } from "@/lib/chart-theme";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AdvancedEchartsChart } from "./adapters/AdvancedEchartsChart";
 import { KpiCard } from "./adapters/KpiCard";
 import type { RenderSpec } from "./adapters/renderFromSpec";
 import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
 import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
+import { useElementSize } from "@/hooks/useElementSize";
+import { estimateWidgetBodyHeight } from "@/components/dashboard/gridLayoutAdapter";
 
 type ChartRendererProps = {
   config: ChartViewConfig;
   title?: string;
   mode?: "preview" | "config";
+  /** 看板 widget 内嵌：填满容器、无重复 Panel 边框 */
+  embedded?: boolean;
+  /** 栅格行高（编辑态缩放时传入，用于首帧高度估算） */
+  gridSpan?: { w: number; h: number };
   filterParameters?: Record<string, string>;
   executeKey?: string;
 };
@@ -35,9 +42,25 @@ export function ChartRenderer({
   config,
   title = "图表",
   mode = "preview",
+  embedded = false,
+  gridSpan,
   filterParameters,
   executeKey,
 }: ChartRendererProps) {
+  const { ref: bodyRef, size: bodySize } = useElementSize<HTMLDivElement>(embedded);
+  const chartSize = useMemo(() => {
+    if (!embedded) {
+      return { width: bodySize.width || undefined, height: Math.max(180, bodySize.height || 180) };
+    }
+    const height =
+      bodySize.height > 0
+        ? bodySize.height
+        : gridSpan?.h
+          ? estimateWidgetBodyHeight(gridSpan.h)
+          : 120;
+    const width = bodySize.width > 0 ? bodySize.width : undefined;
+    return { width, height };
+  }, [embedded, bodySize.width, bodySize.height, gridSpan?.h]);
   const { columns, rows, loading, error, slowHint, rerun } = useChartExecute(config, {
     filterParameters,
     executeKey,
@@ -90,6 +113,8 @@ export function ChartRenderer({
           rows={rows as unknown[][]}
           columns={columns}
           ariaLabel={title}
+          height={chartSize.height}
+          width={chartSize.width}
         />
       );
     }
@@ -106,8 +131,8 @@ export function ChartRenderer({
       const totalPages = Math.ceil(rows.length / PAGE_SIZE);
 
       return (
-        <>
-          <div className="overflow-x-auto">
+        <div className={embedded ? "flex h-full min-h-0 flex-col" : undefined}>
+          <div className={embedded ? "min-h-0 flex-1 overflow-auto" : "overflow-x-auto"}>
             <table className="w-full min-w-[320px] text-left text-theme-sm">
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
@@ -138,7 +163,7 @@ export function ChartRenderer({
             </table>
           </div>
           {rows.length > PAGE_SIZE ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex shrink-0 flex-wrap items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -162,7 +187,7 @@ export function ChartRenderer({
               </Button>
             </div>
           ) : null}
-        </>
+        </div>
       );
     }
 
@@ -185,26 +210,90 @@ export function ChartRenderer({
       data: rows.map((r) => Number(r[columns.indexOf(field)] ?? 0)),
     }));
     let options: ApexOptions;
+    const compactEmbedded = embedded && chartSize.height < 160;
+    const apexChart: ApexOptions["chart"] = {
+      height: chartSize.height,
+      ...(localConfig.chartType === "bar" && localConfig.styleVariant === "stacked"
+        ? { stacked: true }
+        : {}),
+    };
+    const apexOverrides: ApexOptions = {
+      chart: apexChart,
+      legend: compactEmbedded ? { show: false } : undefined,
+      xaxis: {
+        labels: {
+          rotate: compactEmbedded && categories.length > 4 ? -35 : 0,
+          hideOverlappingLabels: true,
+          trim: true,
+        },
+      },
+    };
     if (localConfig.chartType === "line") {
-      options = createLineChartOptions(categories);
+      options = createLineChartOptions(categories, apexOverrides);
     } else {
-      const barOverrides: ApexOptions | undefined =
-        localConfig.styleVariant === "stacked"
-          ? { chart: { stacked: true } }
-          : undefined;
-      options = createBarChartOptions(categories, barOverrides);
+      options = createBarChartOptions(categories, apexOverrides);
     }
     return (
-      <div>
+      <div className="h-full min-h-0 w-full overflow-hidden">
         <Chart
+          key={`${chartSize.width ?? "auto"}x${chartSize.height}`}
           options={options}
           series={series}
           type={localConfig.chartType === "line" ? "line" : "bar"}
-          height={180}
+          height={chartSize.height}
+          width={chartSize.width}
         />
       </div>
     );
   };
+
+  const body = !loading && !error && !empty ? (
+    <div
+      ref={embedded ? bodyRef : undefined}
+      className={
+        mode === "config"
+          ? "grid gap-4 lg:grid-cols-2"
+          : embedded
+            ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+            : ""
+      }
+    >
+      {mode === "config" ? (
+        <ChartConfigPanel
+          config={localConfig}
+          columns={columns}
+          onChange={setLocalConfig}
+        />
+      ) : null}
+      <div className={embedded ? "min-h-0 flex-1 overflow-hidden" : undefined}>
+        {renderBody()}
+      </div>
+    </div>
+  ) : null;
+
+  if (embedded) {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        {loading ? (
+          <Skeleton className="min-h-[120px] w-full flex-1 rounded-lg" aria-busy="true" aria-label="图表加载中" />
+        ) : error ? (
+          <div
+            role="alert"
+            className="flex min-h-[120px] flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-error-500/40 bg-error-50/80 p-3 dark:bg-error-500/10"
+          >
+            <p className="text-theme-xs text-error-700 dark:text-error-400">{error}</p>
+            <Button type="button" variant="outline" size="sm" onClick={rerun}>
+              重试
+            </Button>
+          </div>
+        ) : empty ? (
+          <p className="flex flex-1 items-center justify-center text-theme-xs text-gray-500">暂无数据</p>
+        ) : (
+          body
+        )}
+      </div>
+    );
+  }
 
   return (
     <ChartPanel
@@ -215,18 +304,7 @@ export function ChartRenderer({
       slowHint={slowHint}
       onRetry={rerun}
     >
-      {!loading && !error && !empty ? (
-        <div className={mode === "config" ? "grid gap-4 lg:grid-cols-2" : ""}>
-          {mode === "config" ? (
-            <ChartConfigPanel
-              config={localConfig}
-              columns={columns}
-              onChange={setLocalConfig}
-            />
-          ) : null}
-          <div>{renderBody()}</div>
-        </div>
-      ) : null}
+      {body}
     </ChartPanel>
   );
 }

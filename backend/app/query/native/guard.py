@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 
 from app.datasources.registry import export_type_catalog
+from app.query.capabilities import resolve_query_mode_for_connector
 from app.query.native.schemas import (
     NativeQuerySpec,
     NativeValidateOut,
@@ -34,6 +35,9 @@ def _catalog_by_type() -> dict[str, str]:
 
 
 def resolve_query_mode(connector_type: str) -> str:
+    explicit = resolve_query_mode_for_connector(connector_type)
+    if explicit is not None:
+        return explicit
     category = _catalog_by_type().get(connector_type)
     if category is None:
         raise QueryError("QUERY_NATIVE_UNSUPPORTED_CONNECTOR", f"Unknown connector: {connector_type}", 422)
@@ -42,7 +46,7 @@ def resolve_query_mode(connector_type: str) -> str:
 
 def list_routing_modes() -> RoutingModesOut:
     modes = [
-        RoutingModeItem(connectorType=item["type"], mode=("native" if item["category"] in NATIVE_CATEGORIES else "sql"))
+        RoutingModeItem(connectorType=item["type"], mode=resolve_query_mode(item["type"]))
         for item in export_type_catalog()
     ]
     return RoutingModesOut(modes=sorted(modes, key=lambda m: m.connector_type))

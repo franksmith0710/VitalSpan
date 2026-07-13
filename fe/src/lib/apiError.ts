@@ -9,7 +9,18 @@ const CODE_MESSAGES: Record<string, string> = {
   DATASOURCE_CODE_CONFLICT: "数据源标识已存在，请更换为唯一标识",
   DATASOURCE_NAME_CONFLICT: "数据源名称已存在，请更换名称",
   DATASOURCE_TEST_INFLIGHT: "已有测试进行中，请稍候",
-  VALIDATION_ERROR: "请检查表单填写是否正确",
+  DASH_INVALID_LAYOUT: "看板布局校验失败，请检查组件配置",
+  VIEW_LAYOUT_BOUNDS: "布局位置或尺寸超出 12 列画布范围，请调整后重试",
+  DASH_FILTER_EMPTY_FILTERS: "请至少配置一个全局筛选器后再保存联动",
+  META_DATASET_CONFLICT: "Dataset ID 已存在，请更换标识",
+  META_DATASET_NOT_FOUND: "Dataset 不存在或已被删除",
+  META_DATASET_EMPTY_TABLES: "请至少添加一张数据表",
+  META_DATASET_DUPLICATE_TABLE: "数据表名称重复",
+  META_DATASET_INVALID_FIELD: "计算字段填写不正确",
+  META_DATASET_INVALID_EXPRESSION: "计算字段表达式无效",
+  META_DATASET_CONFIG_TYPE_INVALID: "只能绑定 dataset_query 类型的查询配置",
+  META_DATASET_FORBIDDEN: "没有权限操作此 Dataset",
+  META_DATASET_ID_MISMATCH: "Dataset ID 与路径不一致",
 };
 
 export function isDashboardNotFound(err: unknown): boolean {

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { placeNewWidget, widgetsToGridLayout } from "@/components/dashboard/gridLayoutAdapter";
+import {
+  gridLayoutToWidgets,
+  placeNewWidget,
+  widgetsToGridLayout,
+} from "@/components/dashboard/gridLayoutAdapter";
 import { defaultChartConfig, type LayoutWidget } from "@/components/dashboard/layoutUtils";
 import {
   compactLayoutVertical,
@@ -28,6 +32,12 @@ describe("gridSnapUtils", () => {
     const snapped = snapLayoutToGrid([{ i: "a", x: 4, y: 0, w: 6, h: 3 }]);
     expect(snapped[0].x).toBe(6);
     expect(snapped[0].w).toBe(6);
+  });
+
+  it("T-DASH-GRID-06: normalizeGridLayout keeps arbitrary column widths", () => {
+    const normalized = normalizeGridLayout([{ i: "a", x: 1, y: 0, w: 5, h: 4 }]);
+    expect(normalized[0].w).toBe(5);
+    expect(normalized[0].x).toBe(1);
   });
 });
 
@@ -66,5 +76,38 @@ describe("placeNewWidget flow", () => {
     ]);
     const normalized = normalizeGridLayout(layout);
     expect(normalized[1].y).toBeLessThan(8);
+  });
+
+  it("T-DASH-GRID-07: toGrid → toWidgets → toGrid preserves positioned coordinates", () => {
+    const widgets = [
+      { ...base, id: "w1", gridX: 6, gridY: 4, order: 0 },
+      { ...base, id: "w2", gridX: 0, gridY: 9, order: 1 },
+    ];
+
+    const initialGrid = widgetsToGridLayout(widgets);
+    const roundTripped = gridLayoutToWidgets(initialGrid, widgets);
+    const finalGrid = widgetsToGridLayout(roundTripped);
+
+    expect(finalGrid.map(({ i, x, y }) => ({ i, x, y }))).toEqual(
+      initialGrid.map(({ i, x, y }) => ({ i, x, y })),
+    );
+    expect(roundTripped).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "w1", gridX: 6, gridY: 4 }),
+        expect.objectContaining({ id: "w2", gridX: 0, gridY: 9 }),
+      ]),
+    );
+  });
+
+  it("T-DASH-GRID-08: missing coordinates retain flow-layout fallback", () => {
+    const layout = widgetsToGridLayout([
+      { ...base, id: "w1", gridX: 6, gridY: 4, order: 0 },
+      { ...base, id: "w2", gridX: undefined, gridY: undefined, order: 1 },
+    ]);
+
+    expect(layout.map(({ i, x, y }) => ({ i, x, y }))).toEqual([
+      { i: "w1", x: 0, y: 0 },
+      { i: "w2", x: 6, y: 0 },
+    ]);
   });
 });

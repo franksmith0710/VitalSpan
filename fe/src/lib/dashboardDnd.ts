@@ -46,6 +46,16 @@ export function isChartTypeDragEvent(event: React.DragEvent): boolean {
   return event.dataTransfer.types.includes(DASHBOARD_CHART_DND_TYPE);
 }
 
+export const FILTER_WIDGET_COLSPAN = 4;
+export const FILTER_WIDGET_ROWSPAN = 2;
+
+export function paletteDropSize(payload: PaletteDragPayload): { w: number; h: number } {
+  if (payload === "filter") {
+    return { w: FILTER_WIDGET_COLSPAN, h: FILTER_WIDGET_ROWSPAN };
+  }
+  return { w: DEFAULT_WIDGET_COLSPAN, h: DEFAULT_WIDGET_ROWSPAN };
+}
+
 export function isPaletteDragEvent(event: React.DragEvent): boolean {
   const types = event.dataTransfer.types;
   return types.includes(DASHBOARD_CHART_DND_TYPE) || types.includes(DASHBOARD_FILTER_DND_TYPE);

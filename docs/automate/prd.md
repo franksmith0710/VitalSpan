@@ -1,14 +1,14 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.117
-last_updated: 2026-07-10
+version: 1.2.118
+last_updated: 2026-07-13
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
 features_ref: docs/automate/prd/
 scoring_ref: .cursor/automate/skills/prd-scoring/SKILL.md
-feature_count: 129
+feature_count: 130
 domain_count: 16
 ```
 

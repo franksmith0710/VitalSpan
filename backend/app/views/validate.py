@@ -49,8 +49,22 @@ def _map_validation_error(exc: ValidationError) -> ViewError:
         {"field": ".".join(str(p) for p in err.get("loc", ())), "message": str(err.get("msg", ""))}
         for err in exc.errors()
     ]
-    bounds_tokens = ("colSpan", "rowSpan", "widgets")
-    if any(any(t in f["field"] for t in bounds_tokens) for f in fields):
+    bounds_fields = (
+        "colSpan", "rowSpan", "gridX", "gridY", "col_span", "row_span",
+        "grid_x", "grid_y", "x", "y", "width", "height", "canvas", "widgets",
+    )
+    cross_bound_messages = (
+        "gridX + colSpan",
+        "x + width",
+        "y + height",
+        "canvas width",
+        "canvas height",
+    )
+    if any(
+        any(f["field"] == token or f["field"].endswith(f".{token}") for token in bounds_fields)
+        or any(token in f["message"] for token in cross_bound_messages)
+        for f in fields
+    ):
         return ViewError("VIEW_LAYOUT_BOUNDS", "Layout bounds violation", 422, fields)
     return ViewError("VIEW_INVALID_LAYOUT", "Invalid dashboard view", 422, fields)
 
@@ -99,19 +113,10 @@ def _check_default_view_id(view_id: uuid.UUID | None, default_view_id: uuid.UUID
 
 def validate_layout_dict(layout: dict[str, Any]) -> dict[str, Any]:
     from app.dashboard.service import _normalize_widget_orders, _validate_layout_business
-    from app.schemas.chart_view import ChartViewError, validate_chart_view_config
 
     parsed = DashboardLayout.model_validate(layout)
     _validate_layout_business(parsed)
     parsed.widgets = _normalize_widget_orders(list(parsed.widgets))
-    for widget in parsed.widgets:
-        if widget.type == "chart" and widget.chart_config is not None:
-            try:
-                validate_chart_view_config(
-                    widget.chart_config.model_dump(by_alias=True, mode="json"),
-                )
-            except ChartViewError as exc:
-                raise ViewError(exc.code, exc.message, exc.status, exc.fields) from exc
     return parsed.model_dump(by_alias=True, mode="json")
 
 
@@ -133,6 +138,13 @@ def validate_dashboard_view(data: dict[str, Any]) -> DashboardView:
     _check_chart_ref_cycle(raw_widgets_list)
 
     try:
+        from app.schemas.chart_view import validate_chart_view_config
+
+        for widget in view.layout.widgets:
+            if widget.type == "chart" and widget.chart_config is not None:
+                validate_chart_view_config(
+                    widget.chart_config.model_dump(by_alias=True, mode="json")
+                )
         normalized_layout = validate_layout_dict(view.layout.model_dump(by_alias=True, mode="json"))
     except ChartViewError as exc:
         raise ViewError(exc.code, exc.message, exc.status, exc.fields) from exc

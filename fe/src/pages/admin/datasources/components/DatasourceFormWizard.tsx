@@ -87,7 +87,7 @@ export function DatasourceFormWizard({
                 key={t.type}
                 variant="type"
                 label={t.displayName}
-                subtitle={connectorPickerSubtitle(t.type, t.displayGroup)}
+                subtitle={connectorPickerSubtitle(t.type, t.displayGroup, t.queryCapable)}
                 typeId={t.type}
                 icon={Icon}
                 onSelect={() => {

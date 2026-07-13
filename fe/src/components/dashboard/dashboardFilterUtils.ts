@@ -43,7 +43,7 @@ export function buildWidgetFilterParams(
 
 /** 将画布筛选器组件合并进联动规则：默认绑定全部图表 widget */
 export function mergeLayoutFilterLinkage(widgets: LayoutWidget[], linkage: Linkage | null): Linkage {
-  const chartIds = widgets.filter((w) => w.type !== "filter").map((w) => w.id);
+  const chartIds = widgets.filter((w) => w.type === "chart").map((w) => w.id);
   const filterWidgets = widgets.filter(
     (w): w is LayoutWidget & { filterConfig: FilterWidgetConfig } =>
       w.type === "filter" && Boolean(w.filterConfig),

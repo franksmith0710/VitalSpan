@@ -20,8 +20,12 @@ type Props = {
   config: ChartViewConfig;
   columns: string[];
   onChange: (next: ChartViewConfig) => void;
-  /** 嵌入 Dashboard 右栏（~300px）时使用单列紧凑布局 */
+  /** 嵌入 Dashboard 右栏（~400px）时使用单列紧凑布局 */
   compact?: boolean;
+  /** 仅渲染数据区、样式区、筛选区或全部（Inspector Tab 拆分） */
+  section?: "data" | "style" | "filters" | "all";
+  dimensionLabel?: string;
+  metricLabel?: string;
 };
 
 const FILTER_OPS = [
@@ -65,7 +69,15 @@ function FieldSelect({
   );
 }
 
-export function ChartConfigPanel({ config, columns, onChange, compact = false }: Props) {
+export function ChartConfigPanel({
+  config,
+  columns,
+  onChange,
+  compact = false,
+  section = "all",
+  dimensionLabel = "维度字段",
+  metricLabel = "度量字段",
+}: Props) {
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -155,6 +167,12 @@ export function ChartConfigPanel({ config, columns, onChange, compact = false }:
     ? "grid gap-2 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
     : "grid gap-2 rounded-lg border border-gray-200 p-3 dark:border-gray-800 sm:grid-cols-3";
 
+  const showData = section === "all" || section === "data";
+  const showFilters = section === "all" || section === "data" || section === "filters";
+  const showStyle = section === "all" || section === "style";
+  const showFieldSlots = section === "all" || section === "data";
+  const primaryActionLabel = compact ? "更新图表" : "校验配置";
+
   return (
     <div
       className={
@@ -162,129 +180,138 @@ export function ChartConfigPanel({ config, columns, onChange, compact = false }:
       }
     >
       <div className={compact ? "space-y-4" : "space-y-4"}>
-        {columnsDisabled && !compact ? (
+        {columnsDisabled && !compact && showData ? (
           <p className="rounded-lg border border-dashed border-gray-200 bg-gray-50/80 px-3 py-2.5 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-400">
             绑定数据源并执行查询后，可配置维度、指标与筛选。
           </p>
         ) : null}
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>维度字段</Label>
-            {rule && (config.dimensions?.length ?? 0) < (rule.maxDimensions ?? 8) ? (
-              <Button type="button" variant="ghost" size="xs" onClick={addDimension} aria-label="添加维度">
-                <Plus className="size-3.5" aria-hidden />
-                添加
-              </Button>
-            ) : null}
-          </div>
-          {dimCount > 0 ? (
-            <div className={fieldGridClass}>
-              {Array.from({ length: dimCount }, (_, idx) => (
-                <FieldSelect
-                  key={`dim-${idx}`}
-                  value={config.dimensions?.[idx]?.field ?? ""}
-                  columns={columns}
-                  placeholder="选择维度"
-                  onChange={(v) => updateDim(idx, v)}
-                  disabled={columnsDisabled}
-                />
-              ))}
-            </div>
-          ) : null}
-          {spec?.fieldRule?.note ? (
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">{spec.fieldRule.note}</p>
-          ) : null}
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>度量字段</Label>
-            {rule && (config.metrics?.length ?? 0) < (rule.maxMetrics ?? 8) ? (
-              <Button type="button" variant="ghost" size="xs" onClick={addMetric} aria-label="添加指标">
-                <Plus className="size-3.5" aria-hidden />
-                添加
-              </Button>
-            ) : null}
-          </div>
-          {metCount > 0 ? (
-            <div className={fieldGridClass}>
-              {Array.from({ length: metCount }, (_, idx) => (
-                <FieldSelect
-                  key={`met-${idx}`}
-                  value={config.metrics?.[idx]?.field ?? ""}
-                  columns={columns}
-                  placeholder="选择度量"
-                  onChange={(v) => updateMetric(idx, v)}
-                  disabled={columnsDisabled}
-                />
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>筛选条件</Label>
-            <Button type="button" variant="ghost" size="xs" onClick={addFilter} aria-label="添加筛选">
-              <Plus className="size-3.5" aria-hidden />
-              添加
-            </Button>
-          </div>
-          {(config.filters ?? []).map((f, i) => (
-            <div key={`filter-${i}`} className={filterGridClass}>
-              <FieldSelect
-                value={f.field}
-                columns={columns}
-                placeholder="字段"
-                onChange={(v) => updateFilter(i, { field: v })}
-                disabled={columnsDisabled}
-                aria-label={`筛选字段 ${i + 1}`}
-              />
-              <Select
-                value={f.operator ?? "eq"}
-                onValueChange={(v) => updateFilter(i, { operator: v as ChartFilterRef["operator"] })}
-              >
-                <SelectTrigger className="h-11 rounded-lg">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FILTER_OPS.map((op) => (
-                    <SelectItem key={op.value} value={op.value}>
-                      {op.label}
-                    </SelectItem>
+        {showFieldSlots && dimensionLabel ? (
+          <>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>{dimensionLabel}</Label>
+                {rule && (config.dimensions?.length ?? 0) < (rule.maxDimensions ?? 8) ? (
+                  <Button type="button" variant="ghost" size="xs" onClick={addDimension} aria-label="添加维度">
+                    <Plus className="size-3.5" aria-hidden />
+                    添加
+                  </Button>
+                ) : null}
+              </div>
+              {dimCount > 0 ? (
+                <div className={fieldGridClass}>
+                  {Array.from({ length: dimCount }, (_, idx) => (
+                    <FieldSelect
+                      key={`dim-${idx}`}
+                      value={config.dimensions?.[idx]?.field ?? ""}
+                      columns={columns}
+                      placeholder="选择维度"
+                      onChange={(v) => updateDim(idx, v)}
+                      disabled={columnsDisabled}
+                    />
                   ))}
-                </SelectContent>
-              </Select>
-              <div className="flex gap-2">
-                <Input
-                  className="h-11 rounded-lg"
-                  value={String(f.value ?? "")}
-                  onChange={(e) => updateFilter(i, { value: e.target.value })}
-                  aria-label={`筛选值 ${i + 1}`}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0"
-                  onClick={() => removeFilter(i)}
-                  aria-label={`删除筛选条件 ${i + 1}`}
-                >
-                  <Trash2 className="size-4" />
+                </div>
+              ) : null}
+              {spec?.fieldRule?.note ? (
+                <p className="text-theme-xs text-gray-500 dark:text-gray-400">{spec.fieldRule.note}</p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>{metricLabel}</Label>
+                {rule && (config.metrics?.length ?? 0) < (rule.maxMetrics ?? 8) ? (
+                  <Button type="button" variant="ghost" size="xs" onClick={addMetric} aria-label="添加指标">
+                    <Plus className="size-3.5" aria-hidden />
+                    添加
+                  </Button>
+                ) : null}
+              </div>
+              {metCount > 0 ? (
+                <div className={fieldGridClass}>
+                  {Array.from({ length: metCount }, (_, idx) => (
+                    <FieldSelect
+                      key={`met-${idx}`}
+                      value={config.metrics?.[idx]?.field ?? ""}
+                      columns={columns}
+                      placeholder="选择度量"
+                      onChange={(v) => updateMetric(idx, v)}
+                      disabled={columnsDisabled}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </>
+        ) : null}
+
+        {showFilters ? (
+          <>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>过滤器</Label>
+                <Button type="button" variant="ghost" size="xs" onClick={addFilter} aria-label="添加筛选">
+                  <Plus className="size-3.5" aria-hidden />
+                  添加
                 </Button>
               </div>
+              {(config.filters ?? []).map((f, i) => (
+                <div key={`filter-${i}`} className={filterGridClass}>
+                  <FieldSelect
+                    value={f.field}
+                    columns={columns}
+                    placeholder="字段"
+                    onChange={(v) => updateFilter(i, { field: v })}
+                    disabled={columnsDisabled}
+                    aria-label={`筛选字段 ${i + 1}`}
+                  />
+                  <Select
+                    value={f.operator ?? "eq"}
+                    onValueChange={(v) => updateFilter(i, { operator: v as ChartFilterRef["operator"] })}
+                  >
+                    <SelectTrigger className="h-11 rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FILTER_OPS.map((op) => (
+                        <SelectItem key={op.value} value={op.value}>
+                          {op.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-2">
+                    <Input
+                      className="h-11 rounded-lg"
+                      value={String(f.value ?? "")}
+                      onChange={(e) => updateFilter(i, { value: e.target.value })}
+                      aria-label={`筛选值 ${i + 1}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={() => removeFilter(i)}
+                      aria-label={`删除筛选条件 ${i + 1}`}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <TimeRangeConfig
-          value={config.timeRange}
-          columns={columns}
-          disabled={columnsDisabled}
-          onChange={(timeRange) => onChange({ ...config, timeRange })}
-        />
+            <TimeRangeConfig
+              value={config.timeRange}
+              columns={columns}
+              disabled={columnsDisabled}
+              onChange={(timeRange) => onChange({ ...config, timeRange })}
+            />
+          </>
+        ) : null}
 
+        {showStyle ? (
         <div>
           <Label>样式子类型</Label>
           <Select
@@ -303,12 +330,14 @@ export function ChartConfigPanel({ config, columns, onChange, compact = false }:
             </SelectContent>
           </Select>
         </div>
+        ) : null}
         {fieldError ? <p className="text-theme-sm text-error-600">{fieldError}</p> : null}
         {error ? (
           <div role="alert" className="rounded-lg border border-error-500 bg-error-50 p-3 text-theme-sm text-error-700 dark:bg-error-500/15 dark:text-error-400">
             {error}
           </div>
         ) : null}
+        {showData && section !== "filters" ? (
         <Button
           type="button"
           variant={compact ? "outline" : "primary"}
@@ -317,8 +346,9 @@ export function ChartConfigPanel({ config, columns, onChange, compact = false }:
           onClick={validate}
           disabled={validating}
         >
-          {validating ? "校验中…" : "校验配置"}
+          {validating ? "更新中…" : primaryActionLabel}
         </Button>
+        ) : null}
       </div>
     </div>
   );

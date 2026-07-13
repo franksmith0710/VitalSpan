@@ -44,6 +44,18 @@ function snapX(x: number, w: number): number {
   return Math.min(maxX, Math.max(0, Math.round(x)));
 }
 
+function softSnapItem(item: LayoutItem): LayoutItem {
+  const w = Math.min(GRID_COLS, Math.max(1, Math.round(item.w)));
+  const maxX = GRID_COLS - w;
+  return {
+    ...item,
+    x: Math.min(maxX, Math.max(0, Math.round(item.x))),
+    y: Math.max(0, Math.round(item.y)),
+    w,
+    h: Math.max(1, Math.round(item.h)),
+  };
+}
+
 function snapItem(item: LayoutItem): LayoutItem {
   const w = snapWidth(item.w);
   const x = snapX(item.x, w);
@@ -110,12 +122,17 @@ export function findFirstFreeSlot(
   return { x: xCandidates[0] ?? 0, y: maxY };
 }
 
-/** 吸附列宽 + 垂直紧凑 */
+/** 吸附列宽 + 垂直紧凑（默认：仅取整，不强制 4/6/8/12 档位） */
 export function normalizeGridLayout(layout: Layout): Layout {
-  return compactLayoutVertical(snapLayoutToGrid(layout));
+  return compactLayoutVertical(layout.map(softSnapItem));
 }
 
-/** Snap drag/resize results to the 12-column grid on stop. */
+/** 强吸附到 4/6/8/12 列宽（测试 / 兼容旧行为） */
 export function snapLayoutToGrid(layout: Layout): Layout {
   return layout.map(snapItem);
+}
+
+/** @deprecated use normalizeGridLayout — kept for imports */
+export function softSnapLayoutToGrid(layout: Layout): Layout {
+  return layout.map(softSnapItem);
 }

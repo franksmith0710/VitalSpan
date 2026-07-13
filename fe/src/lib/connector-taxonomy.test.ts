@@ -44,4 +44,26 @@ describe("connector-taxonomy normalize", () => {
     expect(grouped.get("file")).toHaveLength(1);
     expect(grouped.get("extension")).toHaveLength(0);
   });
+
+  it("R1.5: queryCapable and queryMode from API", () => {
+    const capable = normalizeConnectorTypeItem({
+      type: "mariadb",
+      displayName: "MariaDB",
+      category: "relational",
+      queryCapable: true,
+      queryMode: "sql",
+    });
+    expect(capable.queryCapable).toBe(true);
+    expect(capable.queryMode).toBe("sql");
+
+    const connOnly = normalizeConnectorTypeItem({
+      type: "hive",
+      displayName: "Hive",
+      category: "lake",
+      queryCapable: false,
+      queryMode: null,
+    });
+    expect(connOnly.queryCapable).toBe(false);
+    expect(connOnly.queryMode).toBe(null);
+  });
 });

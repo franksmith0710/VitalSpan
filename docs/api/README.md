@@ -1,7 +1,7 @@
 # HTTP 路由索引
 
 > **定位**：VitalSpan 对外/对内 HTTP 路由登记簿；与 [arch.md](../arch.md) §5 同步。
-> **维护**：新增或修改路由时在本文件补一行；实现后把「状态」改为 `已实现` 并填代码锚点。
+> **维护**：新增或修改路由时在本文件补一行；实现后把「状态」改为 `已实现` 并填代码锚点。（arch-inspect Case 2.1 验收 touch）
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
@@ -149,11 +149,11 @@ redoc: /redoc
 | DELETE | `/api/v1/query/bindings/{bindingId}` | 删除绑定 | IF-06 | 一期 | QUERY-005 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/query/dataset/routing` | Dataset 第三路径路由文档（sql/native/dataset） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | POST | `/api/v1/query/dataset/validate` | Dataset 路径 ACL/readonly 守卫（`QUERY_DATASET_*`/`QUERY_PATH_AMBIGUOUS`） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
-| POST | `/api/v1/query/dataset/execute-plan` | Dataset execute-plan 四步链（内部/companion；`dataset-plan-v1`；**非**客户主路径） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/dataset/execute-plan` | Dataset execute-plan 四步链 companion（`dataset-plan-v1`；非真实 SQL execute） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | GET/PUT | `/api/v1/query/configs` | 配置元模型存取（`configType`/`schemaVersion`/`refType`/`refId`；可选 `expectedRevision` 乐观锁；revision upsert；payload >256KB → 413 `CONFIG_PAYLOAD_TOO_LARGE`；revision 冲突 → 409 `CONFIG_VERSION_CONFLICT`） | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | GET | `/api/v1/query/configs/{config_id}` | 按 id 读取配置记录 | 内部 | 一期 | QUERY-007 | 已实现 | `backend/app/api/v1/query_configs.py` |
 | POST | `/api/v1/query/configs/{config_id}/translate` | 已存 `dataset_query` 配置翻译为参数化 SQL | 内部 | 一期 | QUERY-008 | 已实现 | `backend/app/api/v1/query_configs.py` |
-| POST | `/api/v1/query/dataset/execute` | **客户主路径**：`dataSourceId` + `configId` 存储→翻译→真实 rows（含 bound Dataset 计算字段） | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
+| POST | `/api/v1/query/dataset/execute` | `dataSourceId` + `configId` 存储→翻译→执行 | IF-06 | 一期 | QUERY-009 | 已实现 | `backend/app/api/v1/query.py` |
 | GET | `/api/v1/designer/fields` | 设计器字段注册表 + glossary + dataset 字段 | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/preview/translate` | 三块配置合并 SQL 预览（含规则注释） | 内部 | 四期 | DESIGN-001 | 已实现 | `backend/app/api/v1/designer.py` |
 | POST | `/api/v1/designer/submit-workflow` | 快照 + 工单实例 + 自动 submit | 内部 | 四期 | DESIGN-004 | 已实现 | `backend/app/api/v1/designer.py` |
@@ -194,7 +194,7 @@ redoc: /redoc
 |------|------|------|-----|------|-----|------|----------|
 | GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET/PUT/DELETE | `/api/v1/dashboards/{id}` | Dashboard CRUD | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
-| PUT | `/api/v1/dashboards/{id}/layout` | 布局与组件列表；422 码：`DASH_DUPLICATE_WIDGET` / `DASH_MISSING_CHART_CONFIG` / `DASH_CHART_ID_MISMATCH` | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| PUT | `/api/v1/dashboards/{id}/layout` | 双版本布局：v1 `colSpan/rowSpan/gridX/gridY`；v2 `canvas(1440×≥900)` + `x/y/width/height`；禁止跨版本字段混用；422 码：`VIEW_LAYOUT_BOUNDS` / `DASH_INVALID_LAYOUT` / `DASH_DUPLICATE_WIDGET` / `DASH_MISSING_CHART_CONFIG` / `DASH_CHART_ID_MISMATCH` | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/theme-analysis/execute-plan` | 主题分析 execute-plan 四步链（`theme-plan-v1`；yoy/mom compareWindow） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/theme-analysis/validate` | 实体主题分析 config 校验（`DASH_THEME_*`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/theme-analysis` | 实体主题分析 config 持久化/读取（`config_type=entity_theme`） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |
@@ -213,6 +213,8 @@ redoc: /redoc
 | 模型 | 字段 | 值 | 说明 |
 |------|------|-----|------|
 | DashboardView | `protocolVersion` | `1` | FR-VIEW-1 视图文档版本（M5 VIEW-001） |
+| DashboardLayout | `version` | `1 \| 2` | v1 网格布局与 v2 像素布局统一入口；两版均保留 `widgets`、`globalFilters` 和组件公共字段 |
+| DashboardLayout v2 | `canvas` | `{width: 1440, height: int >= 900}` | 持久化规范坐标空间；每个组件矩形必须完整位于 canvas 内 |
 
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
@@ -239,7 +241,7 @@ redoc: /redoc
 | GET | `/api/v1/reports/schedules` | 调度列表（可选 `catalogNodeId`） | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/{id}/executions` | 调度执行历史 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/{executionId}/retry` | 失败/降级执行重试 | 内部 | 三期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
-| POST | `/api/v1/reports/schedules/{id}/execute` | 调度执行：默认 semi-real + 诚实投递（未配 SMTP → `unconfigured`/`semi_real_failed`，禁止静默 `delivered`）；`X-Rpt-Execute-Mock: 1` 仅工程 probe；`X-Rpt-Delivery-Mock: success\|fail\|retry` 测试投递；Idempotency-Key；`deliverySteps` | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| POST | `/api/v1/reports/schedules/{id}/execute` | 调度 semi-real 执行器（`X-Rpt-Semi-Real: 1`；mock 兼容默认；Idempotency-Key；`deliverySteps`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/executions/{executionId}/artifact` | 执行产物元数据（`RPT_ARTIFACT_FORBIDDEN` ACL） | 内部 | 一期 | RPT-005, RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET/PUT/DELETE | `/api/v1/reports/catalog/nodes/{id}/extension` | 模板节点扩展配置 CRUD（metrics/filters/compareMode；`RPT_EXT_*` ACL） | 内部 | 二期 | RPT-006 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/catalog/nodes/{id}/extension/compare-preview` | 同比环比预览槽位（yoy/mom slots） | 内部 | 二期 | RPT-004 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
@@ -250,7 +252,7 @@ redoc: /redoc
 | GET | `/api/v1/reports/jobs/{id}` | 批量导出任务轮询（pending→processing→ready） | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/jobs/{id}/download` | 批量导出产物下载 | 内部 | 三期 | RPT-007 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/templates/{id}/run` | 手工执行报表（M3-LITE：`dataSourceId`+extension → 真实 sections；无 ds → placeholder 回归 r60） | 内部 | 二期 | RPT-001 | M3-LITE 已实现 | `backend/app/api/v1/reports/engine.py` |
-| GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；生成最小合法 PDF/OOXML，无 `mock://`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
+| GET | `/api/v1/reports/export` | 按模板/时间同步导出（`templateId`+`format`；seed 模板 `status=ready` + `downloadUrl`；502/413 边界；429 `REPORT_EXPORT_RATE_LIMITED`；`X-RateLimit-*` 头） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}` | 导出任务状态（未知 → 404 `REPORT_EXPORT_NOT_FOUND`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET | `/api/v1/reports/export/{exportId}/download` | 导出文件下载（`Content-Disposition: attachment`） | IF-03 | 三期 | API-005 | 已实现（companion） | `backend/app/api/v1/reports/export.py` |
 | GET/PUT | `/api/v1/reports/prefab/bindings*` | 预制报表绑定 list/upsert（`RPT_PREFAB_*`） | 内部 | 二期 | RPT-002 | 已实现 | `backend/app/api/v1/reports/prefab.py` |
@@ -287,7 +289,7 @@ redoc: /redoc
 | GET | `/api/v1/metadata/physical-tables/{fqn}/lineage` | 物理表 lineage stub（catalogEntryIds） | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | GET | `/api/v1/metadata/physical-tables?entityTypeCode=` | M8 META-005 按类型过滤物理表列表 | 内部 | 二期 | META-005 | 已实现 | `backend/app/api/v1/metadata.py` |
 | DELETE | `/api/v1/metadata/dimensions/{dimension_id}/values/{value_id}` | 删除单条枚举值 | 内部 | 四期 | META-003 | 已实现 | `backend/app/api/v1/metadata.py` |
-| GET/POST | `/api/v1/datasets` | Dataset list/create（ORM `datasets` 表；`META_DATASET_*`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
+| GET/POST | `/api/v1/datasets` | Dataset list/create（内存 store L1；`META_DATASET_*`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | GET | `/api/v1/datasets/{dataset_id}` | Dataset 详情（含 `boundConfigId`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | PUT | `/api/v1/datasets/{dataset_id}` | Dataset 全量更新（写 ACL；403 `META_DATASET_FORBIDDEN`） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |
 | DELETE | `/api/v1/datasets/{dataset_id}` | Dataset 删除（204） | 内部 | 四期 | META-004 | 已实现 | `backend/app/api/v1/datasets.py` |

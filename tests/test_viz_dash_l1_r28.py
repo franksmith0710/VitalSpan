@@ -258,6 +258,38 @@ def test_chart_view_bar_valid():
     assert cfg.chart_type == "bar"
 
 
+def test_chart_view_dataset_mode_valid():
+    """T-VIZ-R28-001-09b: dataset 模式含 configId + dimensions/metrics 通过。"""
+    cfg = validate_chart_view_config(
+        {
+            "chartType": "bar",
+            "dataSourceId": str(uuid.uuid4()),
+            "mode": "dataset",
+            "configId": str(uuid.uuid4()),
+            "datasetId": "test1",
+            "dimensions": [{"field": "region"}],
+            "metrics": [{"field": "amount"}],
+        }
+    )
+    assert cfg.mode == "dataset"
+    assert cfg.dataset_id == "test1"
+
+
+def test_chart_view_dataset_missing_config_id():
+    """T-VIZ-R28-001-09c: dataset 模式缺 configId → CHART_MISSING_CONFIG_ID。"""
+    with pytest.raises(ChartViewError) as exc:
+        validate_chart_view_config(
+            {
+                "chartType": "bar",
+                "dataSourceId": str(uuid.uuid4()),
+                "mode": "dataset",
+                "dimensions": [{"field": "x"}],
+                "metrics": [{"field": "y"}],
+            }
+        )
+    assert exc.value.code == "CHART_MISSING_CONFIG_ID"
+
+
 def test_chart_view_binding_only():
     """T-VIZ-R28-001-10: 仅 bindingId 无 inline 字段通过。"""
     cfg = validate_chart_view_config(
@@ -278,6 +310,48 @@ def test_list_dashboards_api(client, auth_headers):
     body = resp.json()
     assert "items" in body
     assert body["total"] >= 1
+
+
+def test_dashboard_layout_draft_widget_without_datasource(client, auth_headers):
+    """T-DASH-DE-DRAFT-01: 未配数据源的草稿 widget 可保存 layout（对标 DE 草稿）。"""
+    create = client.post(
+        "/api/v1/dashboards",
+        json={"name": "草稿看板", "slug": f"draft-{uuid.uuid4().hex[:8]}"},
+        headers=auth_headers,
+    )
+    assert create.status_code == 201
+    dash_id = create.json()["id"]
+    wid = str(uuid.uuid4())
+    layout = {
+        "version": 1,
+        "widgets": [{
+            "id": wid,
+            "type": "chart",
+            "title": "表格",
+            "colSpan": 6,
+            "rowSpan": 2,
+            "order": 0,
+            "chartConfig": {
+                "chartType": "table",
+                "chartId": wid,
+                "dataSourceId": "",
+                "mode": "dataset",
+                "dimensions": [],
+                "metrics": [],
+            },
+        }],
+        "globalFilters": [],
+    }
+    put_layout = client.put(
+        f"/api/v1/dashboards/{dash_id}/layout",
+        json={"layoutJson": layout},
+        headers=auth_headers,
+    )
+    assert put_layout.status_code == 200
+    got = client.get(f"/api/v1/dashboards/{dash_id}", headers=auth_headers)
+    saved = got.json()["layoutJson"]["widgets"][0]["chartConfig"]
+    assert saved["chartType"] == "table"
+    assert saved.get("dataSourceId") in (None, "")
 
 
 def test_dashboard_duplicate_slug_api(client, auth_headers):

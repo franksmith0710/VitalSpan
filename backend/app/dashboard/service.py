@@ -82,6 +82,15 @@ def _validate_layout_business(parsed: DashboardLayout) -> None:
         elif widget.type == "filter":
             if widget.filter_config is None:
                 raise DashboardError("DASH_MISSING_FILTER_CONFIG", "筛选器组件缺少 filterConfig", 422)
+        elif widget.type == "text":
+            if widget.text_config is None:
+                raise DashboardError("DASH_MISSING_TEXT_CONFIG", "富文本组件缺少 textConfig", 422)
+        elif widget.type == "media":
+            if widget.media_config is None:
+                raise DashboardError("DASH_MISSING_MEDIA_CONFIG", "媒体组件缺少 mediaConfig", 422)
+        elif widget.type == "tabs":
+            if widget.tabs_config is None:
+                raise DashboardError("DASH_MISSING_TABS_CONFIG", "Tab 组件缺少 tabsConfig", 422)
 
 
 def _normalize_widget_orders(widgets: list) -> list:
@@ -198,34 +207,32 @@ def update_layout(db: Session, dashboard_id: uuid.UUID, layout_json: dict[str, A
     row = db.scalar(_active(select(Dashboard).where(Dashboard.id == dashboard_id)))
     if row is None:
         raise DashboardError("DASH_NOT_FOUND", "Dashboard not found", 404)
-    from app.views.adapter import dashboard_layout_to_view
-    from app.views.schemas import ViewError
-    from app.views.validate import validate_dashboard_view
+    from app.views.validate import validate_layout_dict
     from pydantic import ValidationError
 
     try:
-        parsed = DashboardLayout.model_validate(layout_json)
-        _validate_layout_business(parsed)
-        view = validate_dashboard_view(
-            dashboard_layout_to_view(
-                dashboard_id=dashboard_id,
-                name=row.name,
-                layout_json=layout_json,
-            ),
-        )
-        validated = view.layout.model_dump(by_alias=True, mode="json")
-    except ViewError as exc:
-        code = exc.code
-        if code in {"CHART_INVALID_TYPE", "VIEW_INVALID_LAYOUT"}:
-            code = "DASH_INVALID_LAYOUT"
-        raise DashboardError(code, exc.message, exc.status) from exc
+        validated = validate_layout_dict(layout_json)
     except ValidationError as exc:
         fields = [
             {"field": ".".join(str(p) for p in err.get("loc", ())), "message": str(err.get("msg", ""))}
             for err in exc.errors()
         ]
-        bounds_tokens = ("colSpan", "rowSpan", "col_span", "row_span")
-        if any(any(t in f["field"] for t in bounds_tokens) for f in fields):
+        bounds_fields = (
+            "colSpan", "rowSpan", "gridX", "gridY", "col_span", "row_span",
+            "grid_x", "grid_y", "x", "y", "width", "height", "canvas",
+        )
+        cross_bound_messages = (
+            "gridX + colSpan",
+            "x + width",
+            "y + height",
+            "canvas width",
+            "canvas height",
+        )
+        if any(
+            any(f["field"] == token or f["field"].endswith(f".{token}") for token in bounds_fields)
+            or any(token in f["message"] for token in cross_bound_messages)
+            for f in fields
+        ):
             raise DashboardError("VIEW_LAYOUT_BOUNDS", "Layout bounds violation", 422) from exc
         from app.schemas.chart_view import _map_validation_error
 

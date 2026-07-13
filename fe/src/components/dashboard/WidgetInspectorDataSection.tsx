@@ -34,6 +34,7 @@ type WidgetInspectorDataSectionProps = {
   datasourcesEmpty: boolean;
   selectedDataset?: DatasetListItem;
   onChange: (chartConfig: ChartViewConfig) => void;
+  onDatasetSelect?: (datasetId: string) => void | Promise<void>;
 };
 
 export function WidgetInspectorDataSection({
@@ -49,6 +50,7 @@ export function WidgetInspectorDataSection({
   datasourcesEmpty,
   selectedDataset,
   onChange,
+  onDatasetSelect,
 }: WidgetInspectorDataSectionProps) {
   const setMode = (mode: "dataset" | "sql") => {
     if (mode === "sql") {
@@ -110,6 +112,10 @@ export function WidgetInspectorDataSection({
               value={cfg.datasetId || undefined}
               onValueChange={(datasetId) => {
                 if (datasetId === EMPTY_DATASET_VALUE) return;
+                if (onDatasetSelect) {
+                  void onDatasetSelect(datasetId);
+                  return;
+                }
                 const ds = datasetItems.find((d) => d.datasetId === datasetId);
                 onChange({
                   ...cfg,

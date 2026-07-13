@@ -1,6 +1,26 @@
 import type { ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
+import type { LayoutWidget } from "./dashboardLayoutContracts";
+
+export type {
+  DashboardCanvas,
+  DashboardLayout,
+  DashboardLayoutV1,
+  DashboardLayoutV2,
+  DashboardWidgetBase,
+  LayoutWidget,
+  PixelLayoutWidget,
+} from "./dashboardLayoutContracts";
 
 export type FilterControlType = "text" | "select" | "date" | "multiselect";
+
+export const FILTER_CONTROL_META: Record<FilterControlType, { label: string }> = {
+  text: { label: "文本" },
+  select: { label: "下拉" },
+  date: { label: "日期" },
+  multiselect: { label: "多选" },
+};
+
+export const FILTER_CONTROL_TYPES = Object.keys(FILTER_CONTROL_META) as FilterControlType[];
 
 export type FilterOption = {
   label: string;
@@ -16,29 +36,60 @@ export type FilterWidgetConfig = {
   parameterKey?: string;
 };
 
-export type LayoutWidget = {
-  id: string;
-  type: "chart" | "filter";
-  title: string;
-  /** 12 列栅格占位（1–12），与 Superset/DataEase 一致 */
-  colSpan: number;
-  rowSpan: number;
-  order: number;
-  /** react-grid-layout 列坐标（0–11），拖拽后持久化 */
-  gridX?: number;
-  /** react-grid-layout 行坐标 */
-  gridY?: number;
-  /** 图表组件必填；筛选器可缺省 */
-  chartConfig?: ChartViewConfig;
-  /** 筛选器组件配置 */
-  filterConfig?: FilterWidgetConfig;
+export type TextVariant = "markdown" | "plain";
+
+export type TextWidgetConfig = {
+  content: string;
+  variant: TextVariant;
 };
 
-export type DashboardLayout = {
-  version: 1;
-  widgets: LayoutWidget[];
-  globalFilters: unknown[];
+export type MediaFit = "contain" | "cover" | "fill";
+
+export type MediaWidgetConfig = {
+  url: string;
+  alt: string;
+  fit: MediaFit;
 };
+
+export type TabPaneConfig = {
+  id: string;
+  title: string;
+  childWidgetIds: string[];
+};
+
+export type TabsWidgetConfig = {
+  tabsId: string;
+  panes: TabPaneConfig[];
+  activePaneId: string;
+};
+
+export type DashboardStyleConfig = {
+  widgetGap?: number;
+  canvasBackground?: string;
+};
+
+export type WidgetType = "chart" | "filter" | "text" | "media" | "tabs";
+
+export function defaultTextConfig(): TextWidgetConfig {
+  return { content: "在此输入说明文字…", variant: "plain" };
+}
+
+export function defaultMediaConfig(): MediaWidgetConfig {
+  return { url: "", alt: "", fit: "contain" };
+}
+
+export function defaultTabsConfig(tabsId: string): TabsWidgetConfig {
+  const paneA = crypto.randomUUID();
+  const paneB = crypto.randomUUID();
+  return {
+    tabsId,
+    panes: [
+      { id: paneA, title: "Tab 1", childWidgetIds: [] },
+      { id: paneB, title: "Tab 2", childWidgetIds: [] },
+    ],
+    activePaneId: paneA,
+  };
+}
 
 export function defaultFilterConfig(filterId: string): FilterWidgetConfig {
   return {
@@ -51,32 +102,97 @@ export function defaultFilterConfig(filterId: string): FilterWidgetConfig {
   };
 }
 
-/** 旧 layout 缺 type / 非法 type → chart；保证 filter 有 filterConfig */
+/** 旧 layout 缺 type / 非法 type → chart；按 type 补齐 config */
 export function coerceLayoutWidget(raw: Partial<LayoutWidget> & { id: string }): LayoutWidget {
-  const type: LayoutWidget["type"] = raw.type === "filter" ? "filter" : "chart";
+  const type: WidgetType =
+    raw.type === "filter" ||
+    raw.type === "text" ||
+    raw.type === "media" ||
+    raw.type === "tabs"
+      ? raw.type
+      : "chart";
+  const defaultTitle =
+    type === "filter"
+      ? "筛选器"
+      : type === "text"
+        ? "富文本"
+        : type === "media"
+          ? "媒体"
+          : type === "tabs"
+            ? "Tab"
+            : "图表";
   const base = {
     id: raw.id,
-    title: raw.title?.trim() || (type === "filter" ? "筛选器" : "图表"),
+    title: raw.title?.trim() || defaultTitle,
     colSpan: raw.colSpan ?? 6,
-    rowSpan: raw.rowSpan ?? 1,
+    rowSpan: raw.rowSpan ?? (type === "text" ? 2 : type === "media" ? 3 : 1),
     order: raw.order ?? 0,
     gridX: raw.gridX,
     gridY: raw.gridY,
+    parentTabsId: raw.parentTabsId,
+    tabPaneId: raw.tabPaneId,
   };
   if (type === "filter") {
     return {
       ...base,
       type: "filter",
       filterConfig: raw.filterConfig ?? defaultFilterConfig(raw.id),
-      chartConfig: raw.chartConfig,
+    };
+  }
+  if (type === "text") {
+    return {
+      ...base,
+      type: "text",
+      textConfig: raw.textConfig ?? defaultTextConfig(),
+    };
+  }
+  if (type === "media") {
+    return {
+      ...base,
+      type: "media",
+      mediaConfig: raw.mediaConfig ?? defaultMediaConfig(),
+    };
+  }
+  if (type === "tabs") {
+    return {
+      ...base,
+      type: "tabs",
+      tabsConfig: raw.tabsConfig ?? defaultTabsConfig(raw.id),
     };
   }
   return {
     ...base,
     type: "chart",
     chartConfig: raw.chartConfig ?? defaultChartConfig("bar"),
-    filterConfig: raw.filterConfig,
   };
+}
+
+export function getTopLevelWidgets(widgets: LayoutWidget[]): LayoutWidget[] {
+  return widgets.filter((w) => !w.parentTabsId);
+}
+
+export function getTabChildWidgets(widgets: LayoutWidget[], tabsWidgetId: string, paneId: string): LayoutWidget[] {
+  const tabs = widgets.find((w) => w.id === tabsWidgetId && w.type === "tabs" && w.tabsConfig);
+  if (!tabs?.tabsConfig) return [];
+  const pane = tabs.tabsConfig.panes.find((p) => p.id === paneId);
+  if (!pane) return [];
+  const idSet = new Set(pane.childWidgetIds);
+  return widgets.filter((w) => idSet.has(w.id));
+}
+
+export function appendWidgetToTabPane(
+  widgets: LayoutWidget[],
+  tabsWidgetId: string,
+  paneId: string,
+  childId: string,
+): LayoutWidget[] {
+  return widgets.map((w) => {
+    if (w.id !== tabsWidgetId || w.type !== "tabs" || !w.tabsConfig) return w;
+    const panes = w.tabsConfig.panes.map((pane) =>
+      pane.id === paneId ? { ...pane, childWidgetIds: [...pane.childWidgetIds, childId] } : pane,
+    );
+    return { ...w, tabsConfig: { ...w.tabsConfig, panes } };
+  });
 }
 
 export function coerceLayoutWidgets(widgets: Array<Partial<LayoutWidget> & { id: string }>): LayoutWidget[] {
@@ -110,7 +226,7 @@ export function resizeWidget(
 
 export function normalizeWidgetIds(widgets: LayoutWidget[]): LayoutWidget[] {
   return widgets.map((w) => {
-    if (w.type === "filter" || !w.chartConfig) return w;
+    if (w.type !== "chart" || !w.chartConfig) return w;
     return {
       ...w,
       chartConfig: { ...w.chartConfig, chartId: w.id },
@@ -119,7 +235,7 @@ export function normalizeWidgetIds(widgets: LayoutWidget[]): LayoutWidget[] {
 }
 
 export function isChartWidget(widget: LayoutWidget): widget is LayoutWidget & { chartConfig: ChartViewConfig } {
-  return widget.type !== "filter" && Boolean(widget.chartConfig);
+  return widget.type === "chart" && Boolean(widget.chartConfig);
 }
 
 export function isFilterWidget(

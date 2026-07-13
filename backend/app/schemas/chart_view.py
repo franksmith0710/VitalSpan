@@ -41,6 +41,19 @@ class ChartFilterRef(BaseModel):
 
 ChartTimeRangePreset = Literal["last_7d", "last_30d", "last_90d", "mtd", "ytd"]
 
+_EMPTY_UUID_KEYS = ("dataSourceId", "bindingId", "chartId", "configId")
+
+
+def coerce_chart_config_ids(data: Any) -> Any:
+    """FE 草稿常传 \"\"；layout 持久化时视为未配置。"""
+    if not isinstance(data, dict):
+        return data
+    out = dict(data)
+    for key in _EMPTY_UUID_KEYS:
+        if out.get(key) == "":
+            out[key] = None
+    return out
+
 
 class ChartTimeRangeRef(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -75,16 +88,23 @@ class ChartViewConfig(BaseModel):
     data_source_id: uuid.UUID | None = Field(default=None, alias="dataSourceId")
     binding_id: uuid.UUID | None = Field(default=None, alias="bindingId")
     chart_id: uuid.UUID | None = Field(default=None, alias="chartId")
-    mode: Literal["sql", "table", "native"] | None = None
+    mode: Literal["sql", "table", "native", "dataset"] | None = None
     sql: str | None = None
     schema_name: str | None = Field(default=None, alias="schema")
     table_name: str | None = Field(default=None, alias="table")
+    config_id: uuid.UUID | None = Field(default=None, alias="configId")
+    dataset_id: str | None = Field(default=None, alias="datasetId", max_length=64)
     native_body: dict[str, Any] | None = Field(default=None, alias="nativeBody")
     index: str | None = None
     dimensions: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     metrics: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     filters: list[ChartFilterRef] = Field(default_factory=list, max_length=16)
     time_range: ChartTimeRangeRef | None = Field(default=None, alias="timeRange")
+
+    @model_validator(mode="before")
+    @classmethod
+    def coerce_optional_ids(cls, data: Any) -> Any:
+        return coerce_chart_config_ids(data)
 
     @model_validator(mode="after")
     def validate_l1_rules(self) -> ChartViewConfig:
@@ -124,7 +144,10 @@ class ChartViewConfig(BaseModel):
                     raise ValueError(f"CHART_SQL_NOT_READONLY:{exc.message}") from exc
             if self.mode == "table" and (not self.schema_name or not self.table_name):
                 raise ValueError("CHART_MISSING_TABLE:schema and table are required for table mode")
-            if self.mode is None:
+            if self.mode == "dataset":
+                if self.config_id is None:
+                    raise ValueError("CHART_MISSING_CONFIG_ID:configId is required for dataset mode")
+            elif self.mode is None:
                 raise ValueError("CHART_MISSING_MODE:mode is required when bindingId is absent")
 
         if self.binding_id is not None:
@@ -152,6 +175,57 @@ class ChartViewConfig(BaseModel):
                 f"metrics, got {met_n}.{note}"
             )
         return self
+
+
+class ChartViewConfigLayout(BaseModel):
+    """看板 layout 持久化用：允许未绑定数据源的草稿 widget（对标 DE 草稿保存）。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+    chart_type: str = Field(alias="chartType")
+    style_variant: str = Field(default="default", alias="styleVariant")
+    data_source_id: uuid.UUID | None = Field(default=None, alias="dataSourceId")
+    binding_id: uuid.UUID | None = Field(default=None, alias="bindingId")
+    chart_id: uuid.UUID | None = Field(default=None, alias="chartId")
+    mode: Literal["sql", "table", "native", "dataset"] | None = None
+    sql: str | None = None
+    schema_name: str | None = Field(default=None, alias="schema")
+    table_name: str | None = Field(default=None, alias="table")
+    config_id: uuid.UUID | None = Field(default=None, alias="configId")
+    dataset_id: str | None = Field(default=None, alias="datasetId", max_length=64)
+    native_body: dict[str, Any] | None = Field(default=None, alias="nativeBody")
+    index: str | None = None
+    dimensions: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
+    metrics: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
+    filters: list[ChartFilterRef] = Field(default_factory=list, max_length=16)
+    time_range: ChartTimeRangeRef | None = Field(default=None, alias="timeRange")
+
+    @model_validator(mode="before")
+    @classmethod
+    def coerce_optional_ids(cls, data: Any) -> Any:
+        return coerce_chart_config_ids(data)
+
+    @model_validator(mode="after")
+    def validate_layout_shell(self) -> ChartViewConfigLayout:
+        from app.viz.registry import ChartTypeNotRegistered, get_spec
+
+        try:
+            spec = get_spec(self.chart_type)
+        except ChartTypeNotRegistered as exc:
+            raise ValueError("CHART_INVALID_TYPE:Unsupported chartType") from exc
+
+        if self.style_variant not in spec.style_variants:
+            raise ValueError(
+                "CHART_INVALID_STYLE_VARIANT:"
+                f"styleVariant '{self.style_variant}' is not valid for {self.chart_type}"
+            )
+        return self
+
+
+def validate_chart_view_config_layout(data: dict[str, Any]) -> ChartViewConfigLayout:
+    try:
+        return ChartViewConfigLayout.model_validate(data)
+    except ValidationError as exc:
+        raise _map_validation_error(exc) from exc
 
 
 def _loc_to_field(loc: tuple[object, ...]) -> str:
@@ -184,6 +258,7 @@ _CODE_FIELD_HINTS: dict[str, list[str]] = {
     "CHART_MISSING_SQL": ["sql"],
     "CHART_MISSING_TABLE": ["schema", "table"],
     "CHART_MISSING_MODE": ["mode"],
+    "CHART_MISSING_CONFIG_ID": ["configId"],
     "CHART_MISSING_NATIVE_BODY": ["nativeBody"],
     "CHART_INVALID_STYLE_VARIANT": ["styleVariant"],
     "CHART_FIELD_REQUIREMENT": ["dimensions", "metrics"],

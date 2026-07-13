@@ -6,33 +6,45 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | DONE |
-| request | 客户主路径可交付毕业：四轨 worktree 并行（Dataset/筛选/报表诚实/RLS+H1） |
-| type | feature |
-| autonomy_policy | unattended |
+| phase | A5_EXECUTE_PHASE_B |
+| request | Dashboard 画布拖拽/缩放最后一次修复；无效则换像素画布 |
+| type | bug |
+| autonomy_policy | auto_accept_low_risk |
 | risk_level | medium |
-| plan | docs/automate/plans/2026-07-10-customer-delivery-graduation.md |
-| last_verified_command | pytest honesty+t1+t2 8/8; vitest 35/35; merge T4→T1→T2→T3 |
-| last_verified_exit_code | 0 |
-| verification_summary | Phase M 本地合并完成；FAKE-01~06 主路径已处置；F-C 余 2 项（调度历史 UI、服务试跑）不挡主路径 |
+| plan | docs/automate/plans/2026-07-13-dashboard-canvas-drag-last-attempt.md |
+| plan_review | docs/automate/plans/2026-07-13-dashboard-canvas-drag-last-attempt.plan-review.md |
+| plan_review_state | PASS |
+| last_verified_command | vitest gridSnapUtils+dashboard.smoke 44/44; pytest test_dashboard_layout_grid_xy + test_viz_dash_l1_r28 31/31 |
+| verification_summary | Phase A 人工判定 FAIL；已启动像素画布 Phase B |
 | repair_rounds | 0 |
-| status | DONE |
+| status | RUNNING |
+| last_verified_exit_code | 0 |
+| started_at | 2026-07-13T15:20:00+08:00 |
+| phase_a_gate | FAIL |
+| user_design_signal | 2026-07-13：对照 DE shape-outer/edit-bar/shape-inner，要求设计可一比一复刻 |
+| phase_b_scope | pixel layout v2 + DE shape outer/edit bar/inner + eight handles |
 
 ## 当前需求契约
 
-- request: 客户主路径零假（A）+ A1 不含真实总线 + H1 治理默认隐藏；四轨并行无人值守
-- type: feature
-- goal: 可交付成熟度 ≥8.0；FAKE-01~06 处置；无 PR 本地合并
-- scope_include: Dataset ORM/execute/编辑器；filter widget；报表去 mock；RLS/审计 UI；gov nav H1
-- scope_exclude: 真实总线；SQL Lab；AI；创建 GitHub PR
-- acceptance: 四轨提交 + PhaseM 合并 + honesty gate 绿
+- request: Dashboard 画布拖拽/缩放最后一次修复；无效则换像素画布
+- type: bug
+- goal: 像素画布中稳定拖移/八向缩放 widget，保存刷新后位置尺寸保持，并一比一复刻 DE 的 shape-outer/edit-bar/shape-inner 编辑心智
+- scope_include: pixelCanvas、layout v2、v1 兼容迁移、DE shape 编辑壳、保存契约与文档
+- scope_exclude: Phase A 不做 mark-line；不做 gridstack/moveable；生产强制写回迁移需 NEEDS_APPROVAL；Phase B 不做推挤避让
+- acceptance: 像素拖移/八向缩放/保存刷新保持；选中态含 shape outer、左侧 edit bar、shape inner 与八向控制点；预览态无编辑 chrome
 - risk_level: medium
-- autonomy_policy: unattended
-- assumptions: subagent 继承当前会话模型；不切换其他模型
+- autonomy_policy: auto_accept_low_risk
+- assumptions:
+  - Q1=A Q2=A Q3=C
+  - 用户选择 A：PhaseA=FAIL，执行像素画布并一比一复刻 DE shape chrome
+  - BUG-2 根因 #2（保存剥离坐标）为 L1
+  - Phase B 碰撞允许重叠 zIndex=order
+  - 已有 compact 回滚待与 A3 一并验证
 
 ## 待办池
 
-<!-- bounded-explorer 追加未消化候选；P5/G0 合并后勾选已完成项。 -->
+- **toolbar-full Wave 1–6**（2026-07-13）：DE 工具栏完整对标 · DASH-007-01~07 ✅ · plan `2026-07-13-dashboard-de-toolbar-full.md`
+- **canvas Phase B**：像素画布 · plan `2026-07-13-dashboard-canvas-drag-last-attempt.md` · 并行进行中
 
 ## 模块地图
 

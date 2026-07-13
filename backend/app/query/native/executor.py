@@ -12,12 +12,13 @@ from app.datasources.models import DataSource
 from app.datasources.pool import pool_manager
 from app.datasources.registry import ConnectorNotFoundError, registry
 from app.datasources.service import _resolve_connection_options
+from app.query.capabilities import NATIVE_OFFSET_TYPES, NATIVE_QUERY_CAPABLE
 from app.query.executor import QueryResult, _serialize_cell
 from app.query.native.guard import resolve_query_mode, validate_native_spec
 from app.query.native.schemas import NativeQuerySpec
 from app.query.schemas import QueryError
 
-_SUPPORTED_NATIVE_TYPES = frozenset({"mongodb", "elasticsearch", "opensearch"})
+_SUPPORTED_NATIVE_TYPES = NATIVE_QUERY_CAPABLE
 
 
 class NativeQueryExecutor:
@@ -66,14 +67,15 @@ class NativeQueryExecutor:
                 connect_kwargs=kwargs,
                 pool_size=pool_size,
             ) as conn:
-                if row.type == "mongodb":
-                    columns, rows, truncated = connector.execute_native_query(
-                        conn, body=body, limit=limit, offset=offset, database=row.database,
-                    )
-                else:
-                    columns, rows, truncated = connector.execute_native_query(
-                        conn, body=body, index=index, limit=limit,
-                    )
+                columns, rows, truncated = self._run_native_query(
+                    connector,
+                    row,
+                    conn,
+                    body=body,
+                    index=index,
+                    limit=limit,
+                    offset=offset,
+                )
         except QueryError:
             raise
         except Exception as exc:
@@ -113,3 +115,26 @@ class NativeQueryExecutor:
             "ssl_mode": opts.ssl_mode,
         }
         return connector, kwargs, opts.pool_size
+
+    @staticmethod
+    def _run_native_query(
+        connector,
+        row: DataSource,
+        conn,
+        *,
+        body: dict,
+        index: str | None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[str], list[list], bool]:
+        if row.type == "mongodb":
+            return connector.execute_native_query(
+                conn, body=body, limit=limit, offset=offset, database=row.database,
+            )
+        if row.type in NATIVE_OFFSET_TYPES:
+            return connector.execute_native_query(
+                conn, body=body, limit=limit, offset=offset,
+            )
+        return connector.execute_native_query(
+            conn, body=body, index=index, limit=limit,
+        )

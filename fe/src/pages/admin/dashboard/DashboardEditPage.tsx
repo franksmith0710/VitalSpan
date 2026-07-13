@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { Pencil, Redo2, Undo2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
+import { cn } from "@/lib/utils";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { DashboardGrid } from "@/components/dashboard/DashboardGrid";
 import { DashboardWidget } from "@/components/dashboard/DashboardWidget";
@@ -13,27 +15,45 @@ import {
 } from "@/components/dashboard/dashboardFilterUtils";
 import { layoutFingerprint } from "@/components/dashboard/layoutHistory";
 import {
+  appendWidgetToTabPane,
   coerceLayoutWidgets,
   normalizeWidgetIds,
   resizeWidget,
   sortWidgets,
   type DashboardLayout,
+  type DashboardStyleConfig,
   type FilterWidgetConfig,
+  type LayoutWidget,
+  type MediaWidgetConfig,
+  type TabsWidgetConfig,
+  type TextWidgetConfig,
 } from "@/components/dashboard/layoutUtils";
-import { placeNewWidget, normalizeWidgetLayout, placeWidgetAt } from "@/components/dashboard/gridLayoutAdapter";
+import {
+  normalizeWidgetLayout,
+  placeNewWidget,
+  placeWidgetAt,
+  placeWidgetExact,
+} from "@/components/dashboard/gridLayoutAdapter";
+import type { GridInsertAt } from "@/components/dashboard/DashboardGrid";
 import {
   createPaletteWidget,
   type PaletteInsertType,
 } from "@/components/dashboard/createLayoutWidget";
-import { LinkageRulesPanel } from "@/components/dashboard/LinkageRulesPanel";
+import { DashboardContextInspector } from "@/components/dashboard/DashboardContextInspector";
+import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
+import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
+import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
+import { TextWidgetInspector } from "@/components/dashboard/TextWidgetInspector";
+import { MediaWidgetInspector } from "@/components/dashboard/MediaWidgetInspector";
+import { TabsWidgetInspector } from "@/components/dashboard/TabsWidgetInspector";
+import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
+import { DashboardStyleDialog } from "@/components/dashboard/DashboardStyleDialog";
+import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
 import { useLayoutHistory } from "@/hooks/useLayoutHistory";
 import { useWidgetSelection } from "@/hooks/useWidgetSelection";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
-import { WidgetPalette } from "@/components/dashboard/WidgetPalette";
-import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
-import { WidgetInspector } from "@/components/dashboard/WidgetInspector";
-import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -45,6 +65,42 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+function DashboardNameField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "group -ml-2 flex max-w-md items-center gap-2 rounded-lg border border-dashed border-transparent px-2",
+        "transition-colors hover:border-gray-300 hover:bg-gray-50/80",
+        "focus-within:border-brand-300 focus-within:bg-white focus-within:ring-3 focus-within:ring-brand-500/10",
+        "dark:hover:border-gray-600 dark:hover:bg-white/[0.03] dark:focus-within:border-brand-500/40 dark:focus-within:bg-gray-900",
+      )}
+      data-testid="dashboard-name-field"
+    >
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="未命名看板"
+        aria-label="看板名称"
+        title="点击编辑看板名称"
+        className="h-9 min-w-[10rem] flex-1 border-0 bg-transparent px-0 text-title-sm font-semibold shadow-none focus-visible:ring-0"
+      />
+      <span
+        className="flex shrink-0 items-center gap-1 text-theme-xs text-gray-400 opacity-70 transition-opacity group-hover:opacity-100 group-focus-within:text-brand-500 group-focus-within:opacity-100 dark:text-gray-500"
+        aria-hidden
+      >
+        <Pencil className="size-3.5" />
+        <span className="hidden sm:inline">点击编辑</span>
+      </span>
+    </div>
+  );
+}
 
 type DashboardDetail = {
   id: string;
@@ -91,14 +147,22 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     removeFromSelection,
     pruneMissing,
   } = useWidgetSelection();
+  const [savedName, setSavedName] = useState("");
   const [savedFingerprint, setSavedFingerprint] = useState<string | null>(null);
+
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [styleConfig, setStyleConfig] = useState<DashboardStyleConfig>({});
+  const [savedStyleConfig, setSavedStyleConfig] = useState<DashboardStyleConfig>({});
+  const [reuseOpen, setReuseOpen] = useState(false);
+  const [styleOpen, setStyleOpen] = useState(false);
+  const [linkagePanelOpen, setLinkagePanelOpen] = useState(false);
 
   const leaveEditShell = useCallback(() => {
     // 先清脏标记，避免离开守卫/二次操作卡在僵尸编辑态
     setMissing(true);
     resetWidgets([]);
     setSavedFingerprint(null);
+    setSavedName("");
     setDeleteDashboardOpen(false);
     navigate("/admin/dashboards", { replace: true });
   }, [navigate, resetWidgets]);
@@ -126,10 +190,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       const data = await apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`);
       setMissing(false);
       setName(data.name);
+      setSavedName(data.name);
       const loaded = normalizeWidgetLayout(
         sortWidgets(coerceLayoutWidgets(data.layoutJson.widgets ?? [])),
       );
       resetWidgets(loaded);
+      setStyleConfig(data.layoutJson.styleConfig ?? {});
+      setSavedStyleConfig(data.layoutJson.styleConfig ?? {});
       setSavedFingerprint(layoutFingerprint(loaded));
       clearSelection();
       // Seed filter values from canvas filter widgets
@@ -174,8 +241,14 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const isDirty = useMemo(() => {
     if (missing || savedFingerprint === null) return false;
-    return layoutFingerprint(widgets) !== savedFingerprint;
-  }, [missing, savedFingerprint, widgets]);
+    const styleDirty = JSON.stringify(styleConfig) !== JSON.stringify(savedStyleConfig);
+    return layoutFingerprint(widgets) !== savedFingerprint || name.trim() !== savedName || styleDirty;
+  }, [missing, savedFingerprint, widgets, name, savedName, styleConfig, savedStyleConfig]);
+
+  const filterWidgetCount = useMemo(
+    () => widgets.filter((w) => w.type === "filter").length,
+    [widgets],
+  );
 
   const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
     enabled: mode === "edit" && isDirty && !missing,
@@ -194,30 +267,70 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     [widgets, linkage],
   );
 
-  const appendWidget = (type: PaletteInsertType, at?: { gridX: number; gridY: number }) => {
+  const appendWidget = (type: PaletteInsertType, at?: GridInsertAt) => {
     if (missing) return;
-    const draft = createPaletteWidget(type, widgets, at);
-    const placed =
-      at != null
-        ? placeWidgetAt(widgets, draft, at.gridX, at.gridY)
-        : widgets.length === 0
-          ? { ...draft, gridX: 0, gridY: 0 }
-          : placeNewWidget(widgets, draft);
-    setWidgets((prev) => sortWidgets([...prev, placed]));
-    handleSelect(placed.id, false);
-    if (placed.type === "filter" && placed.filterConfig) {
+    const tabsHost =
+      selectedWidget?.type === "tabs" && selectedWidget.tabsConfig && type !== "tabs"
+        ? selectedWidget
+        : null;
+    let draft = createPaletteWidget(type, widgets, at);
+    if (tabsHost?.tabsConfig) {
+      draft = {
+        ...draft,
+        parentTabsId: tabsHost.id,
+        tabPaneId: tabsHost.tabsConfig.activePaneId,
+        colSpan: 12,
+        rowSpan: 2,
+      };
+    }
+    let next: LayoutWidget[];
+    if (tabsHost?.tabsConfig && draft.parentTabsId) {
+      next = sortWidgets([...widgets, draft]);
+      next = appendWidgetToTabPane(
+        next,
+        tabsHost.id,
+        tabsHost.tabsConfig.activePaneId,
+        draft.id,
+      );
+    } else {
+      const placed =
+        at?.exact === true
+          ? placeWidgetExact(draft, {
+              gridX: at.gridX,
+              gridY: at.gridY,
+              colSpan: at.colSpan,
+              rowSpan: at.rowSpan,
+            })
+          : at != null
+            ? placeWidgetAt(widgets, draft, at.gridX, at.gridY)
+            : widgets.length === 0
+              ? { ...draft, gridX: 0, gridY: 0 }
+              : placeNewWidget(widgets, draft);
+      next = sortWidgets([...widgets, placed]);
+      draft = placed;
+    }
+    setWidgets(next);
+    handleSelect(draft.id, false);
+    if (draft.type === "filter" && draft.filterConfig) {
       setFilterValues((prev) => ({
         ...prev,
-        [placed.filterConfig!.filterId]: placed.filterConfig!.defaultValue ?? "",
+        [draft.filterConfig!.filterId]: draft.filterConfig!.defaultValue ?? "",
       }));
     }
+  };
+
+  const appendClonedWidget = (widget: LayoutWidget) => {
+    if (missing) return;
+    const placed = placeNewWidget(widgets, widget);
+    setWidgets((prev) => sortWidgets([...prev, placed]));
+    handleSelect(placed.id, false);
   };
 
   const handleInsert = (type: PaletteInsertType) => {
     appendWidget(type);
   };
 
-  const handleDropInsert = (type: PaletteInsertType, at: { gridX: number; gridY: number }) => {
+  const handleDropInsert = (type: PaletteInsertType, at: GridInsertAt) => {
     appendWidget(type, at);
   };
 
@@ -265,13 +378,48 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setError(null);
     try {
       const normalized = normalizeWidgetIds(normalizeWidgetLayout(sortWidgets(widgets)));
+      const trimmedName = name.trim() || "未命名看板";
+
+      if (trimmedName !== savedName) {
+        await apiFetch(`/api/v1/dashboards/${id}`, {
+          method: "PUT",
+          body: JSON.stringify({ name: trimmedName }),
+        });
+        setName(trimmedName);
+        setSavedName(trimmedName);
+      }
+
       await apiFetch(`/api/v1/dashboards/${id}/layout`, {
         method: "PUT",
         body: JSON.stringify({
-          layoutJson: { version: 1, widgets: normalized, globalFilters: [] },
+          layoutJson: {
+            version: 1,
+            widgets: normalized,
+            globalFilters: [],
+            styleConfig: styleConfig.widgetGap || styleConfig.canvasBackground ? styleConfig : undefined,
+          },
         }),
       });
+
+      const mergedLinkage = mergeLayoutFilterLinkage(normalized, linkage);
+      if (mergedLinkage.filters.length > 0) {
+        const savedLinkage = await apiFetch<Linkage>(
+          `/api/v1/dashboards/${id}/global-filters`,
+          {
+            method: "PUT",
+            body: JSON.stringify({
+              dashboardId: id,
+              filters: mergedLinkage.filters,
+              linkageRules: mergedLinkage.linkageRules,
+              refreshMode: mergedLinkage.refreshMode ?? "eager",
+            }),
+          },
+        );
+        setLinkage(savedLinkage);
+      }
+
       resetWidgets(normalized);
+      setSavedStyleConfig(styleConfig);
       setSavedFingerprint(layoutFingerprint(normalized));
       return true;
     } catch (err) {
@@ -355,16 +503,23 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     );
   }
 
+  const pageTitle =
+    mode === "edit" && !missing ? (
+      <DashboardNameField value={name} onChange={setName} />
+    ) : (
+      name || "Dashboard"
+    );
+
   return (
     <AdminPageShell
       layout={mode === "edit" ? "fill" : "default"}
-      title={name || "Dashboard"}
+      title={pageTitle}
       description={
         mode === "edit"
           ? isDirty
-            ? "有未保存的更改 · 左侧拖拽/点击添加 · 保存后才会写入看板"
-            : "左侧拖拽或点击添加组件 · 保存后写入看板"
-          : "预览模式，查看图表与全局筛选效果。"
+            ? "有未保存的更改 · 保存后生效"
+            : "点击标题可重命名 · 拖入组件、右侧配置属性、保存布局"
+          : "预览模式 · 筛选器变更会刷新关联图表"
       }
       actions={headerActions}
     >
@@ -378,7 +533,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         />
       ) : null}
 
-      {id ? (
+      {id && mode !== "edit" ? (
         <GlobalFilterBar
           dashboardId={id}
           values={filterValues}
@@ -386,18 +541,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         />
       ) : null}
 
-      {mode === "edit" && id ? (
-        <LinkageRulesPanel
-          dashboardId={id}
-          linkage={linkage}
-          widgets={widgets}
-          onSaved={setLinkage}
-        />
-      ) : null}
-
       {mode === "edit" ? (
+        <>
         <DashboardEditWorkspace
           widgetCount={widgets.length}
+          multiSelectCount={multiSelectCount}
           canvasActions={
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               {multiSelectCount >= 2 ? (
@@ -417,9 +565,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 size="sm"
                 disabled={!canUndo}
                 onClick={undo}
-                title="撤销 (Ctrl+Z)"
+                title="回退到上一步编辑 (Ctrl+Z)"
+                aria-label="上一步"
               >
-                撤销
+                <Undo2 aria-hidden />
+                上一步
               </Button>
               <Button
                 type="button"
@@ -427,9 +577,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 size="sm"
                 disabled={!canRedo}
                 onClick={redo}
-                title="重做 (Ctrl+Shift+Z)"
+                title="前进到下一步编辑 (Ctrl+Shift+Z 或 Ctrl+Y)"
+                aria-label="下一步"
               >
-                重做
+                <Redo2 aria-hidden />
+                下一步
               </Button>
               <span className="hidden text-theme-xs text-gray-400 sm:inline">12 列</span>
               <Button
@@ -443,23 +595,73 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               </Button>
             </div>
           }
-          palette={<WidgetPalette embedded onInsert={handleInsert} />}
+          onPaletteInsert={handleInsert}
+          onOpenReuse={() => setReuseOpen(true)}
+          onOpenDashboardStyle={() => setStyleOpen(true)}
+          onOpenLinkage={() => {
+            clearSelection();
+            setLinkagePanelOpen(true);
+          }}
           canvas={
+            <div
+              className="h-full min-h-0"
+              style={
+                styleConfig.canvasBackground
+                  ? { background: styleConfig.canvasBackground }
+                  : undefined
+              }
+            >
             <DashboardGrid
               mode="edit"
               widgets={widgets}
+              selectedIds={selectedIds}
+              onClearSelection={clearSelection}
               onInsertChart={handleDropInsert}
               onLayoutChange={(next) => setWidgets(sortWidgets(next))}
-              renderWidget={(widget) => {
+              renderWidget={(widget, grid) => {
                 const filterParameters =
-                  widget.type !== "filter"
+                  widget.type === "chart"
                     ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
                     : undefined;
+                const renderNested = (child: LayoutWidget) => {
+                  const childFilterParams =
+                    child.type === "chart"
+                      ? buildWidgetFilterParams(child.id, effectiveLinkage, filterValues)
+                      : undefined;
+                  return (
+                    <DashboardWidget
+                      widget={child}
+                      mode="edit"
+                      selected={selectedIds.has(child.id)}
+                      filterParameters={childFilterParams}
+                      executeKey={executeKey}
+                      filterValue={
+                        child.filterConfig
+                          ? filterValues[child.filterConfig.filterId]
+                          : undefined
+                      }
+                      onFilterValueChange={handleFilterValueChange}
+                      onSelect={(e) => handleSelect(child.id, e.shiftKey)}
+                      onDelete={handleDeleteWidget}
+                      onTitleChange={(wid, title) =>
+                        setWidgets((prev) => resizeWidget(prev, wid, { title }))
+                      }
+                      onChartConfigChange={(wid, chartConfig) =>
+                        setWidgets((prev) =>
+                          prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
+                        )
+                      }
+                    />
+                  );
+                };
                 return (
                   <DashboardWidget
                     widget={widget}
                     mode="edit"
                     selected={selectedIds.has(widget.id)}
+                    gridSize={grid}
+                    allWidgets={widgets}
+                    renderNestedWidget={renderNested}
                     filterParameters={filterParameters}
                     executeKey={executeKey}
                     filterValue={
@@ -468,7 +670,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                         : undefined
                     }
                     onFilterValueChange={handleFilterValueChange}
-                    onSelect={(e) => handleSelect(widget.id, e.shiftKey)}
+                    onSelect={(e) => {
+                      setLinkagePanelOpen(false);
+                      handleSelect(widget.id, e.shiftKey);
+                    }}
                     onDelete={handleDeleteWidget}
                     onTitleChange={(wid, title) =>
                       setWidgets((prev) => resizeWidget(prev, wid, { title }))
@@ -478,21 +683,31 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                         prev.map((w) => (w.id === wid ? { ...w, chartConfig } : w)),
                       )
                     }
+                    onTabsConfigChange={(wid, tabsConfig) =>
+                      setWidgets((prev) =>
+                        prev.map((w) => (w.id === wid ? { ...w, tabsConfig } : w)),
+                      )
+                    }
                   />
                 );
               }}
             />
+            </div>
           }
-          inspector={
+          chartRail={
             multiSelectCount >= 2 ? (
-              <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
-                <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                  已选中 {multiSelectCount} 个组件
-                </p>
-                <p className="mt-1 max-w-[220px] text-theme-xs text-gray-500 dark:text-gray-400">
-                  Shift+点击可增减多选；使用画布工具栏批量删除。
-                </p>
-              </div>
+              <ChartEditRailEmpty
+                message={
+                  <>
+                    <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                      已选中 {multiSelectCount} 个组件
+                    </p>
+                    <p className="mt-1 max-w-[240px] text-theme-xs text-gray-500 dark:text-gray-400">
+                      Shift+点击可增减多选；使用画布工具栏批量删除。
+                    </p>
+                  </>
+                }
+              />
             ) : selectedWidget?.type === "filter" && selectedWidget.filterConfig ? (
               <FilterWidgetInspector
                 embedded
@@ -506,10 +721,49 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   );
                 }}
               />
-            ) : (
-              <WidgetInspector
+            ) : selectedWidget?.type === "text" && selectedWidget.textConfig ? (
+              <TextWidgetInspector
                 embedded
+                widget={
+                  selectedWidget as typeof selectedWidget & { textConfig: TextWidgetConfig }
+                }
+                onChange={(textConfig) => {
+                  if (!primarySelectedId) return;
+                  setWidgets((prev) =>
+                    prev.map((w) => (w.id === primarySelectedId ? { ...w, textConfig } : w)),
+                  );
+                }}
+              />
+            ) : selectedWidget?.type === "media" && selectedWidget.mediaConfig ? (
+              <MediaWidgetInspector
+                embedded
+                widget={
+                  selectedWidget as typeof selectedWidget & { mediaConfig: MediaWidgetConfig }
+                }
+                onChange={(mediaConfig) => {
+                  if (!primarySelectedId) return;
+                  setWidgets((prev) =>
+                    prev.map((w) => (w.id === primarySelectedId ? { ...w, mediaConfig } : w)),
+                  );
+                }}
+              />
+            ) : selectedWidget?.type === "tabs" && selectedWidget.tabsConfig ? (
+              <TabsWidgetInspector
+                embedded
+                widget={
+                  selectedWidget as typeof selectedWidget & { tabsConfig: TabsWidgetConfig }
+                }
+                onChange={(tabsConfig) => {
+                  if (!primarySelectedId) return;
+                  setWidgets((prev) =>
+                    prev.map((w) => (w.id === primarySelectedId ? { ...w, tabsConfig } : w)),
+                  );
+                }}
+              />
+            ) : selectedWidget?.type === "chart" ? (
+              <ChartEditRail
                 widget={selectedWidget}
+                onDelete={() => handleDeleteWidget(primarySelectedId!)}
                 onChange={(chartConfig) => {
                   if (!primarySelectedId) return;
                   setWidgets((prev) =>
@@ -517,23 +771,69 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   );
                 }}
               />
-            )
+            ) : id ? (
+              <DashboardContextInspector
+                embedded
+                dashboardId={id}
+                widgetCount={widgets.length}
+                filterWidgetCount={filterWidgetCount}
+                widgets={widgets}
+                linkage={linkage}
+                effectiveLinkage={effectiveLinkage}
+                onLinkageChange={setLinkage}
+                linkageDefaultOpen={linkagePanelOpen}
+              />
+            ) : null
           }
         />
+        <ReuseWidgetDialog
+          open={reuseOpen}
+          onOpenChange={setReuseOpen}
+          currentDashboardId={id}
+          widgets={widgets}
+          onInsertCloned={appendClonedWidget}
+        />
+        <DashboardStyleDialog
+          open={styleOpen}
+          onOpenChange={setStyleOpen}
+          value={styleConfig}
+          onApply={setStyleConfig}
+        />
+        </>
       ) : (
         <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
           <DashboardGrid
             mode="view"
             widgets={widgets}
-            renderWidget={(widget) => {
+            renderWidget={(widget, grid) => {
               const filterParameters =
-                widget.type !== "filter"
+                widget.type === "chart"
                   ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
                   : undefined;
+              const renderNested = (child: LayoutWidget) => (
+                <DashboardWidget
+                  widget={child}
+                  mode="view"
+                  filterParameters={
+                    child.type === "chart"
+                      ? buildWidgetFilterParams(child.id, effectiveLinkage, filterValues)
+                      : undefined
+                  }
+                  executeKey={executeKey}
+                  filterValue={
+                    child.filterConfig ? filterValues[child.filterConfig.filterId] : undefined
+                  }
+                  onFilterValueChange={handleFilterValueChange}
+                  onTitleChange={() => {}}
+                />
+              );
               return (
                 <DashboardWidget
                   widget={widget}
                   mode="view"
+                  gridSize={grid}
+                  allWidgets={widgets}
+                  renderNestedWidget={renderNested}
                   filterParameters={filterParameters}
                   executeKey={executeKey}
                   filterValue={

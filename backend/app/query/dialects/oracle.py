@@ -1,0 +1,31 @@
+from __future__ import annotations
+
+from app.query.rls.guard import validate_identifier
+
+
+class OracleDialect:
+    connector_type = "oracle"
+
+    def quote_identifier(self, name: str) -> str:
+        validate_identifier(name)
+        return f'"{name}"'
+
+    def qualify_table(self, schema: str, table: str) -> str:
+        return f"{self.quote_identifier(schema)}.{self.quote_identifier(table)}"
+
+    def _paginate(self, sql: str, *, limit: int, offset: int) -> str:
+        return (
+            f"{sql} ORDER BY 1 "
+            f"OFFSET {int(offset)} ROWS FETCH NEXT {int(limit)} ROWS ONLY"
+        )
+
+    def wrap_limit(self, sql: str, *, limit: int, offset: int = 0) -> str:
+        normalized = sql.strip().rstrip(";")
+        inner = f"SELECT * FROM ({normalized}) _vs"
+        return self._paginate(inner, limit=limit, offset=offset)
+
+    def build_table_select(
+        self, schema: str, table: str, *, limit: int, offset: int = 0,
+    ) -> str:
+        qualified = self.qualify_table(schema, table)
+        return self._paginate(f"SELECT * FROM {qualified}", limit=limit, offset=offset)
