@@ -436,11 +436,14 @@ def test_execute_forbidden_hidden_datasource_r31(client, auth_headers):
         json={"role_ids": [role["id"]]},
         headers=auth_headers,
     )
+    # Task 4 起中间件从 DB 解析身份，auth_headers 恒为 root（直通 RLS）。以真实非
+    # root 的 dev 用户 JWT 调用，才能触发 hidden 数据源的 RESOURCE_FORBIDDEN。
+    dev_headers = jwt_auth_headers(user_id=dev_id, username="dev")
     try:
         resp = client.post(
             "/api/v1/query/execute",
             json={"dataSourceId": str(hidden.id), "mode": "sql", "sql": "SELECT 1"},
-            headers=auth_headers,
+            headers=dev_headers,
         )
         assert resp.status_code == 403
         assert resp.json()["code"] == "RESOURCE_FORBIDDEN"

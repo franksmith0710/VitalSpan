@@ -276,6 +276,25 @@ def _restore_dev_admin(client, auth_headers):
     _set_dev_roles(client, auth_headers, [])
 
 
+def _dev_headers(client, auth_headers):
+    """真实非 root dev 用户的 JWT headers。
+
+    Task 4 起 AuthMiddleware 从 DB 解析身份并移除 username=dev 回退，auth_headers
+    恒解析为 seed 的 root 管理员（root 直通 ACL/RLS）。ACL 受限行为须以仅绑定
+    viewer 角色的非 root dev 用户身份验证。
+    """
+    from app.auth.models import AuthUser
+
+    dev = _dev_user(client, auth_headers)
+    session = get_meta_session()
+    try:
+        row = session.get(AuthUser, uuid.UUID(dev["id"]))
+        token_version = row.token_version if row is not None else 1
+    finally:
+        session.close()
+    return jwt_auth_headers(user_id=dev["id"], username="dev", token_version=token_version)
+
+
 def _create_ds():
     session = get_meta_session()
     try:
@@ -342,7 +361,7 @@ def test_acl_viewer_only_granted(client, auth_headers):
         headers=auth_headers,
     )
     _set_dev_roles(client, auth_headers, [role["id"]])
-    resp = client.get("/api/v1/datasources", headers=auth_headers)
+    resp = client.get("/api/v1/datasources", headers=_dev_headers(client, auth_headers))
     assert resp.status_code == 200
     ids = {item["id"] for item in resp.json()["items"]}
     assert ids == {str(granted.id)}
@@ -365,7 +384,7 @@ def test_acl_viewer_forbidden_detail(client, auth_headers):
         headers=auth_headers,
     )
     _set_dev_roles(client, auth_headers, [role["id"]])
-    resp = client.get(f"/api/v1/datasources/{hidden.id}", headers=auth_headers)
+    resp = client.get(f"/api/v1/datasources/{hidden.id}", headers=_dev_headers(client, auth_headers))
     assert resp.status_code == 403
     assert resp.json()["code"] == "RESOURCE_FORBIDDEN"
     _restore_dev_admin(client, auth_headers)
@@ -388,7 +407,7 @@ def test_acl_viewer_forbidden_test(mock_test, client, auth_headers):
         headers=auth_headers,
     )
     _set_dev_roles(client, auth_headers, [role["id"]])
-    resp = client.post(f"/api/v1/datasources/{hidden.id}/test", headers=auth_headers)
+    resp = client.post(f"/api/v1/datasources/{hidden.id}/test", headers=_dev_headers(client, auth_headers))
     assert resp.status_code == 403
     assert resp.json()["code"] == "RESOURCE_FORBIDDEN"
     mock_test.assert_not_called()
@@ -410,9 +429,10 @@ def test_acl_revoke_grant_forbidden(client, auth_headers):
         headers=auth_headers,
     ).json()
     _set_dev_roles(client, auth_headers, [role["id"]])
-    assert client.get(f"/api/v1/datasources/{ds.id}", headers=auth_headers).status_code == 200
+    dev_headers = _dev_headers(client, auth_headers)
+    assert client.get(f"/api/v1/datasources/{ds.id}", headers=dev_headers).status_code == 200
     client.delete(f"/api/v1/resource-grants/{grant['id']}", headers=auth_headers)
-    resp = client.get(f"/api/v1/datasources/{ds.id}", headers=auth_headers)
+    resp = client.get(f"/api/v1/datasources/{ds.id}", headers=dev_headers)
     assert resp.status_code == 403
     assert resp.json()["code"] == "RESOURCE_FORBIDDEN"
     _restore_dev_admin(client, auth_headers)
@@ -476,7 +496,7 @@ def test_metadata_forbidden_403(mock_list, mock_pool, client, auth_headers):
         headers=auth_headers,
     ).json()
     _set_dev_roles(client, auth_headers, [role["id"]])
-    resp = client.get(f"/api/v1/datasources/{hidden.id}/schemas", headers=auth_headers)
+    resp = client.get(f"/api/v1/datasources/{hidden.id}/schemas", headers=_dev_headers(client, auth_headers))
     assert resp.status_code == 403
     assert resp.json()["code"] == "RESOURCE_FORBIDDEN"
     mock_list.assert_not_called()

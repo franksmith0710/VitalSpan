@@ -171,9 +171,23 @@ def query_seed(client, auth_headers):
 
 @pytest.fixture
 def viewer_headers(client, auth_headers, query_seed):
+    """以真实非 root 的 dev 用户身份访问（Task 4 移除 username=dev 中间件回退后，
+    auth_headers 恒为 seed 的 root 管理员，root 直通 RLS）。签发 dev 用户 JWT，
+    使其以仅绑定 viewer 角色的非 root 身份触发 RLS 可见性判定。"""
+    from jwt_auth import jwt_auth_headers
+
+    from app.auth.models import AuthUser
+
     _restore_dev_admin(client, auth_headers)
+    dev = _dev_user(client, auth_headers)
     _set_dev_roles(client, auth_headers, [query_seed["viewer_role_id"]])
-    yield auth_headers
+    session = get_meta_session()
+    try:
+        row = session.get(AuthUser, uuid.UUID(dev["id"]))
+        token_version = row.token_version if row is not None else 1
+    finally:
+        session.close()
+    yield jwt_auth_headers(user_id=dev["id"], username="dev", token_version=token_version)
     _restore_dev_admin(client, auth_headers)
 
 

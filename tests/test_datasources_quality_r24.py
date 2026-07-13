@@ -409,8 +409,17 @@ def test_list_query_count_bounded(client, auth_headers, monkeypatch):
 
     monkeypatch.setattr(sqlalchemy.orm.Session, "scalar", counting_scalar)
     monkeypatch.setattr(sqlalchemy.orm.Session, "scalars", counting_scalars)
+    # AuthMiddleware（Task 4）每请求解析身份会产生固定笔数的 scalar/scalars 读。
+    # 本用例约束的是 list 路径自身的查询数，故先用一次「仅经中间件鉴权、路由体
+    # 近乎零查询」的控制请求（GET /api/v1/me 前的 401 反例不触发解析，此处用
+    # 一个不存在资源的 404 明细请求：中间件解析 + 单次 get）测得鉴权基线，再相减。
+    calls["n"] = 0
+    client.get(f"/api/v1/datasources/{uuid.uuid4()}", headers=auth_headers)
+    auth_baseline = calls["n"]
+    calls["n"] = 0
     client.get("/api/v1/datasources?limit=2", headers=auth_headers)
-    assert calls["n"] <= 3
+    list_path_calls = calls["n"] - auth_baseline
+    assert list_path_calls <= 3
 
 
 def test_responses_exclude_encrypted_password(client, auth_headers):

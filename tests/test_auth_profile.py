@@ -52,7 +52,11 @@ def _seed_profile_user(
     Base.metadata.create_all(engine)
     hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     with Session(engine) as session:
-        admin_role = AuthRole(code="admin", name="管理员", is_active=True)
+        # Task 4 起 AuthMiddleware 依赖 has_enabled_root_user（要求 is_root 角色）作为
+        # 部署门禁；隔离 DB 的 admin 角色须标记为真实 root，否则所有受保护请求 503。
+        admin_role = AuthRole(
+            code="admin", name="管理员", is_active=True, is_system=True, is_root=True
+        )
         session.add(admin_role)
         session.flush()
         session.add(
