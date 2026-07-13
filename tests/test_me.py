@@ -132,6 +132,25 @@ def test_me_concurrent_requests_stable(client, admin_auth_headers, monkeypatch):
             is_root=is_root,
         )
 
+    # 中间件在 Task 4 起于 DB 内解析身份。共享内存 sqlite 并非并发写安全，
+    # 5 线程并发直连会触发 OperationalError→503（甚至原生崩溃）。本用例语义是
+    # 校验并发下上下文解析一致，故 mock 中间件 DB 访问层，使其确定性地脱离 DB。
+    class _FakeSession:
+        def close(self) -> None:
+            return None
+
+    class _FakeUser:
+        id = admin_id
+        token_version = 1
+        is_active = True
+        locked_until = None
+
+    monkeypatch.setattr("app.auth.middleware.get_meta_session", lambda: _FakeSession())
+    monkeypatch.setattr("app.auth.middleware._lookup_user", lambda *_a, **_k: _FakeUser())
+    monkeypatch.setattr(
+        "app.auth.middleware.resolve_user_permissions", lambda *_a, **_k: (set(), True)
+    )
+    monkeypatch.setattr("app.auth.middleware.has_enabled_root_user", lambda *_a, **_k: True)
     monkeypatch.setattr(
         "app.auth.middleware.user_service.resolve_role_codes_for_user",
         lambda _session, _user_id: ["admin"],

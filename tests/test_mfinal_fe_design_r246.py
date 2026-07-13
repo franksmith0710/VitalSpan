@@ -6,6 +6,7 @@ import uuid
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.main import app as fastapi_app
@@ -13,6 +14,53 @@ from jwt_auth import jwt_auth_headers
 
 _R246_SQLITE_URL = "sqlite+pysqlite:///file:mfinal_fe_r246?mode=memory&cache=shared&uri=true"
 REF_ID = "00000000-0000-4000-8000-000000000002"
+
+# Task 4 起 AuthMiddleware 从 DB 解析身份（无 admin 回退），隔离 DB 必须存在真实
+# root 管理员，否则 admin_headers 会触发 503/403。admin 复用 conftest 的
+# _ADMIN_USER_ID（UUID 全 0…1，username="admin"），与 conftest 幂等 reseed 收敛。
+_ADMIN_UID = "00000000-0000-0000-0000-000000000001"
+_VIEWER_UID = "00000000-0000-4000-8000-000000000098"
+
+
+def _seed_root_admin(engine) -> None:
+    """幂等 seed root admin + 无权限 viewer；与 conftest reseed 不冲突。"""
+    from app.auth.models import AuthRole, AuthUser, AuthUserRole
+
+    with Session(engine) as session:
+        admin_role = session.query(AuthRole).filter(AuthRole.code == "admin").first()
+        if admin_role is None:
+            admin_role = AuthRole(
+                code="admin", name="管理员", is_active=True, is_system=True, is_root=True
+            )
+            session.add(admin_role)
+            session.flush()
+        if session.get(AuthUser, uuid.UUID(_ADMIN_UID)) is None:
+            admin_user = AuthUser(
+                id=uuid.UUID(_ADMIN_UID),
+                username="admin",
+                display_name="Admin",
+                is_active=True,
+                token_version=1,
+            )
+            session.add(admin_user)
+            session.flush()
+            session.add(AuthUserRole(user_id=admin_user.id, role_id=admin_role.id))
+
+        if session.query(AuthRole).filter(AuthRole.code == "viewer").first() is None:
+            viewer_role = AuthRole(code="viewer", name="查看者", is_active=True)
+            session.add(viewer_role)
+            session.flush()
+            viewer_user = AuthUser(
+                id=uuid.UUID(_VIEWER_UID),
+                username="viewer",
+                display_name="Viewer",
+                is_active=True,
+                token_version=1,
+            )
+            session.add(viewer_user)
+            session.flush()
+            session.add(AuthUserRole(user_id=viewer_user.id, role_id=viewer_role.id))
+        session.commit()
 
 VALID_CONDITIONS = {
     "schemaVersion": "1.0",
@@ -74,6 +122,7 @@ def r246_sqlite_env():
     Base.metadata.create_all(engine)
     AuthBase.metadata.create_all(engine)
     QueryBase.metadata.create_all(engine)
+    _seed_root_admin(engine)
     yield
     if previous is None:
         os.environ.pop("DATABASE_URL", None)
@@ -92,12 +141,12 @@ def client() -> TestClient:
 
 @pytest.fixture
 def admin_headers() -> dict[str, str]:
-    return jwt_auth_headers(user_id="00000000-0000-4000-8000-000000000099")
+    return jwt_auth_headers(user_id=_ADMIN_UID)
 
 
 @pytest.fixture
 def viewer_headers() -> dict[str, str]:
-    return jwt_auth_headers(user_id="00000000-0000-4000-8000-000000000098")
+    return jwt_auth_headers(user_id=_VIEWER_UID, username="viewer")
 
 
 def _seed_designer_blocks(client: TestClient, headers: dict[str, str], ref_id: str = REF_ID) -> None:

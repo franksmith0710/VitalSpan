@@ -330,24 +330,51 @@ def test_user_replace_roles(client, auth_headers):
 
 
 def test_me_roles_from_db_dev_user(client, auth_headers):
-    """T-AUTH-U06: dev 用户绑定 viewer 后 GET /me roles 含 viewer。"""
-    from sqlalchemy import delete, select
+    """T-AUTH-U06: 当前登录用户绑定 viewer 后 GET /me roles 含 viewer。
 
-    from app.auth.models import AuthUser, AuthUserRole, get_meta_session
+    Task 4 身份模型：auth_headers 解析为 DB 中真实 seed 的 root 管理员，不再有
+    username=dev 中间件回退。故直接为当前登录用户追加 viewer 绑定，验证 /me
+    角色聚合来自 DB（而非硬编码或回退身份）。
+    """
+    import uuid as _uuid
 
-    role = client.post("/api/v1/roles", json={"code": "viewer", "name": "Viewer"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
-    client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
+    from sqlalchemy import delete
+
+    from app.auth.models import AuthUserRole, get_meta_session
+
+    me_before = client.get("/api/v1/me", headers=auth_headers)
+    assert me_before.status_code == 200
+    current_user_id = me_before.json()["id"]
+
+    role_resp = client.post(
+        "/api/v1/roles", json={"code": "viewer", "name": "Viewer"}, headers=auth_headers
+    )
+    if role_resp.status_code == 201:
+        role = role_resp.json()
+    else:
+        role = client.get(
+            "/api/v1/roles?code_prefix=viewer&limit=1", headers=auth_headers
+        ).json()["items"][0]
+
+    bind = client.post(
+        f"/api/v1/users/{current_user_id}/roles/{role['id']}", headers=auth_headers
+    )
+    assert bind.status_code in (200, 201, 204, 409)
+
     me = client.get("/api/v1/me", headers=auth_headers)
     assert me.status_code == 200
     assert "viewer" in me.json()["roles"]
+
+    # cleanup：移除本用例追加的 viewer 绑定，避免污染共享内存 DB（保留 root 用户本身）
     session = get_meta_session()
     try:
-        dev = session.scalar(select(AuthUser).where(AuthUser.username == "dev"))
-        if dev is not None:
-            session.execute(delete(AuthUserRole).where(AuthUserRole.user_id == dev.id))
-            session.execute(delete(AuthUser).where(AuthUser.id == dev.id))
-            session.commit()
+        session.execute(
+            delete(AuthUserRole).where(
+                AuthUserRole.user_id == _uuid.UUID(current_user_id),
+                AuthUserRole.role_id == _uuid.UUID(role["id"]),
+            )
+        )
+        session.commit()
     finally:
         session.close()
 
@@ -756,33 +783,37 @@ def test_bind_invalid_user_404(client, auth_headers):
 
 
 def test_me_after_unbind(client, auth_headers):
-    """T-AUTH-U09: 绑定 a+b → 解绑 a → /me 仅含 b。"""
+    """T-AUTH-U09: 当前登录用户绑定 a+b → 解绑 a → /me 含 b 不含 a。
+
+    Task 4 身份模型：auth_headers 解析为真实 seed 用户，直接对当前用户增删绑定。
+    """
+    from sqlalchemy import delete
+
+    from app.auth.models import AuthUserRole
+
     ra = client.post("/api/v1/roles", json={"code": "me_a", "name": "A"}, headers=auth_headers).json()
     rb = client.post("/api/v1/roles", json={"code": "me_b", "name": "B"}, headers=auth_headers).json()
-    admin_resp = client.post("/api/v1/roles", json={"code": "admin", "name": "Admin"}, headers=auth_headers)
-    if admin_resp.status_code == 201:
-        admin_role = admin_resp.json()
-    else:
-        admin_role = client.get("/api/v1/roles?code_prefix=admin&limit=1", headers=auth_headers).json()["items"][0]
-    user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
-    session = get_meta_session()
-    try:
-        users_service.bind_role(
-            session,
-            uuid_mod.UUID(user["id"]),
-            uuid_mod.UUID(admin_role["id"]),
-            **_ADMIN_CTX,
-        )
-    finally:
-        session.close()
-    client.post(f"/api/v1/users/{user['id']}/roles/{ra['id']}", headers=auth_headers)
-    client.post(f"/api/v1/users/{user['id']}/roles/{rb['id']}", headers=auth_headers)
-    client.delete(f"/api/v1/users/{user['id']}/roles/{ra['id']}", headers=auth_headers)
+    current_user_id = client.get("/api/v1/me", headers=auth_headers).json()["id"]
+    client.post(f"/api/v1/users/{current_user_id}/roles/{ra['id']}", headers=auth_headers)
+    client.post(f"/api/v1/users/{current_user_id}/roles/{rb['id']}", headers=auth_headers)
+    client.delete(f"/api/v1/users/{current_user_id}/roles/{ra['id']}", headers=auth_headers)
     me = client.get("/api/v1/me", headers=auth_headers)
     assert me.status_code == 200
     roles = me.json()["roles"]
     assert "me_b" in roles
     assert "me_a" not in roles
+    # cleanup：移除本用例追加的 me_b 绑定，避免污染共享内存 DB
+    session = get_meta_session()
+    try:
+        session.execute(
+            delete(AuthUserRole).where(
+                AuthUserRole.user_id == uuid_mod.UUID(current_user_id),
+                AuthUserRole.role_id == uuid_mod.UUID(rb["id"]),
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
 
 
 def test_me_roles_sorted(client, auth_headers):
@@ -1681,11 +1712,22 @@ def test_audit_r19_bind_regression_au09(client, auth_headers):
 
 
 def test_audit_filter_actor_id_au10(client, auth_headers):
-    """T-AUTH-AU10: actor_id 过滤。"""
+    """T-AUTH-AU10: actor_id 过滤。
+
+    Task 4 身份模型：actor_id 为当前登录用户（真实 UUID），不再是硬编码 "dev"。
+    从实际写入的角色审计事件取 actor_id，验证按其过滤生效。
+    """
     client.post("/api/v1/roles", json={"code": "au_act", "name": "A"}, headers=auth_headers)
-    audit = client.get("/api/v1/audit/events?actor_id=dev", headers=auth_headers).json()
+    recent = client.get(
+        "/api/v1/audit/events?target_type=role&limit=1", headers=auth_headers
+    ).json()
+    assert recent["total"] >= 1
+    actor_id = recent["items"][0]["actor_id"]
+    audit = client.get(
+        f"/api/v1/audit/events?actor_id={actor_id}", headers=auth_headers
+    ).json()
     assert audit["total"] >= 1
-    assert all(i["actor_id"] == "dev" for i in audit["items"])
+    assert all(i["actor_id"] == actor_id for i in audit["items"])
 
 
 def test_rls_multi_dimension_and_combination_rls09(client, auth_headers):
