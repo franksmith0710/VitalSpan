@@ -1,7 +1,9 @@
 import json
 import uuid as uuid_mod
+from datetime import datetime, timedelta, timezone
 
 import pytest
+from fastapi import Depends
 from sqlalchemy import select
 
 from app.auth.models import (
@@ -15,6 +17,33 @@ from app.auth.models import (
     get_meta_engine,
     get_meta_session,
 )
+
+# --------------------------------------------------------------------------- #
+# Task 4: 在共享 app 上注册最小受保护路由，驱动统一权限依赖的 HTTP 级鉴权矩阵。
+# --------------------------------------------------------------------------- #
+_REQUIRE_READ_PATH = "/api/v1/_test/require-user-read"
+_REQUIRE_ANY_PATH = "/api/v1/_test/require-any"
+
+
+def _register_test_routes() -> None:
+    from app.auth.deps import require_any_permission, require_permission
+    from app.main import app
+
+    if any(getattr(route, "path", None) == _REQUIRE_READ_PATH for route in app.routes):
+        return
+
+    @app.get(_REQUIRE_READ_PATH)
+    async def _require_user_read(_user=Depends(require_permission("system:user.read"))):
+        return {"ok": True}
+
+    @app.get(_REQUIRE_ANY_PATH)
+    async def _require_any(
+        _user=Depends(require_any_permission("system:user.read", "system:role.read")),
+    ):
+        return {"ok": True}
+
+
+_register_test_routes()
 
 
 def test_permission_models_have_required_constraints():
@@ -448,3 +477,183 @@ def test_count_enabled_root_users_excludes_disabled_and_excluded():
         assert u2.id is not None
     finally:
         session.close()
+
+
+# --------------------------------------------------------------------------- #
+# Task 4: UserContext、Middleware 与统一权限依赖的鉴权矩阵
+# --------------------------------------------------------------------------- #
+
+_ADMIN_INFO = {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "username": "admin",
+    "token_version": 1,
+}
+
+
+def _make_user_with_permissions(session, codes, *, is_active=True, locked=False):
+    from app.auth.permissions import replace_role_permissions
+
+    role = _make_role(session)
+    if codes:
+        replace_role_permissions(
+            session, role.id, list(codes), expected_version=0, audit=_audit_ctx()
+        )
+    user = _make_user(session, is_active=is_active, role_ids=[role.id])
+    if locked:
+        user.locked_until = datetime.now(timezone.utc) + timedelta(hours=1)
+        session.commit()
+        session.refresh(user)
+    return {"id": str(user.id), "username": user.username, "token_version": user.token_version}
+
+
+def _bearer(user_info, *, token_version=None):
+    from app.auth.jwt import create_access_token
+
+    version = user_info["token_version"] if token_version is None else token_version
+    token = create_access_token(user_info["id"], user_info["username"], token_version=version)
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_matrix_anonymous_returns_401(client):
+    """T-AUTHZ-01: 匿名访问受保护路由 → 401 UNAUTHORIZED。"""
+    response = client.get(_REQUIRE_READ_PATH)
+    assert response.status_code == 401
+    assert response.json()["code"] == "UNAUTHORIZED"
+
+
+def test_matrix_authenticated_without_permission_returns_403(client):
+    """T-AUTHZ-02: 已登录但无功能权限 → 403 顶层 PERMISSION_DENIED。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, [])
+    finally:
+        session.close()
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(info))
+    assert response.status_code == 403
+    body = response.json()
+    assert body["code"] == "PERMISSION_DENIED"
+    assert body["detail"] is None
+    assert "system:user.read" in body["message"]
+
+
+def test_matrix_exact_permission_success(client):
+    """T-AUTHZ-03: 命中精确权限 → 200。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:user.read"])
+    finally:
+        session.close()
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(info))
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
+def test_matrix_root_success(client):
+    """T-AUTHZ-04: root 用户直通 → 200。"""
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(_ADMIN_INFO))
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+
+def test_matrix_wildcard_and_root_dependency_unit():
+    """T-AUTHZ-05: require_permission/any 对 domain:* 通配与 root 的单元行为。"""
+    import asyncio
+
+    from app.auth.deps import (
+        PermissionDeniedError,
+        UserContext,
+        require_any_permission,
+        require_permission,
+    )
+
+    dep = require_permission("system:user.manage")
+    wildcard = UserContext(
+        id="1", username="w", roles=[], permissions={"system:*"}, is_root=False
+    )
+    assert asyncio.run(dep(user=wildcard)).id == "1"
+
+    root_ctx = UserContext(id="2", username="r", roles=[], permissions=set(), is_root=True)
+    assert asyncio.run(dep(user=root_ctx)).id == "2"
+
+    no_perm = UserContext(id="3", username="n", roles=[], permissions=set(), is_root=False)
+    with pytest.raises(PermissionDeniedError):
+        asyncio.run(dep(user=no_perm))
+
+    any_dep = require_any_permission("system:user.read", "system:role.read")
+    partial = UserContext(
+        id="4", username="p", roles=[], permissions={"system:role.read"}, is_root=False
+    )
+    assert asyncio.run(any_dep(user=partial)).id == "4"
+    with pytest.raises(PermissionDeniedError):
+        asyncio.run(any_dep(user=no_perm))
+
+
+def test_matrix_disabled_user_returns_403(client):
+    """T-AUTHZ-06: 禁用用户即便角色带权限，也因即时失效 → 403。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:user.read"], is_active=False)
+    finally:
+        session.close()
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(info))
+    assert response.status_code == 403
+    assert response.json()["code"] == "PERMISSION_DENIED"
+
+
+def test_matrix_locked_user_returns_403(client):
+    """T-AUTHZ-07: 锁定未到期用户 → 权限清空 → 403。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:user.read"], locked=True)
+    finally:
+        session.close()
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(info))
+    assert response.status_code == 403
+    assert response.json()["code"] == "PERMISSION_DENIED"
+
+
+def test_matrix_token_version_mismatch_returns_401(client):
+    """T-AUTHZ-08: JWT tokenVersion 与 DB 不一致 → 401 TOKEN_REVOKED。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:user.read"])
+    finally:
+        session.close()
+
+    ok = client.get(_REQUIRE_READ_PATH, headers=_bearer(info, token_version=1))
+    assert ok.status_code == 200
+
+    bump = _new_session()
+    try:
+        user = bump.get(AuthUser, uuid_mod.UUID(info["id"]))
+        user.token_version = 2
+        bump.commit()
+    finally:
+        bump.close()
+
+    revoked = client.get(_REQUIRE_READ_PATH, headers=_bearer(info, token_version=1))
+    assert revoked.status_code == 401
+    assert revoked.json()["code"] == "TOKEN_REVOKED"
+
+
+def test_matrix_db_error_returns_503(client, monkeypatch):
+    """T-AUTHZ-09: 权限解析抛 DB 异常 → fail-closed 503 AUTH_CONTEXT_UNAVAILABLE。"""
+    from sqlalchemy.exc import OperationalError
+
+    def _boom(*_args, **_kwargs):
+        raise OperationalError("stmt", {}, Exception("db down"))
+
+    monkeypatch.setattr("app.auth.middleware.resolve_user_permissions", _boom)
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(_ADMIN_INFO))
+    assert response.status_code == 503
+    assert response.json()["code"] == "AUTH_CONTEXT_UNAVAILABLE"
+
+
+def test_matrix_no_root_initialized_returns_503(client, monkeypatch):
+    """T-AUTHZ-10: 无启用 root（bootstrap 未完成）→ 受保护 503；公开路径不受影响。"""
+    monkeypatch.setattr("app.auth.middleware.has_enabled_root_user", lambda _session: False)
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(_ADMIN_INFO))
+    assert response.status_code == 503
+    assert response.json()["code"] == "AUTH_ROOT_NOT_INITIALIZED"
+
+    assert client.get("/health").status_code == 200

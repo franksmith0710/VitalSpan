@@ -15,6 +15,8 @@ class MeProfileOut(BaseModel):
     display_name: str = Field(serialization_alias="displayName")
     email: str
     roles: list[str]
+    permissions: list[str] = Field(default_factory=list)
+    is_root: bool = Field(default=False, serialization_alias="isRoot")
 
 
 class MeProfileUpdate(BaseModel):

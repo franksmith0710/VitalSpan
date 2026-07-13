@@ -38,29 +38,50 @@ def _clear_meta_engine_caches() -> None:
 
 
 def _seed_ci_admin_user() -> None:
+    """幂等 seed：唯一 admin root 角色 + 启用 admin 用户 + 绑定（部署门禁前置）。"""
     from app.auth.models import AuthRole, AuthUser, AuthUserRole, Base, get_meta_engine
 
     engine = get_meta_engine()
     Base.metadata.create_all(engine)
-    password = os.environ.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme")
-    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
     with Session(engine) as session:
         admin_role = session.query(AuthRole).filter(AuthRole.code == "admin").first()
         if admin_role is None:
-            admin_role = AuthRole(code="admin", name="管理员", is_active=True)
+            admin_role = AuthRole(
+                code="admin",
+                name="管理员",
+                is_active=True,
+                is_system=True,
+                is_root=True,
+            )
             session.add(admin_role)
             session.flush()
+        else:
+            admin_role.is_active = True
+            admin_role.is_system = True
+            admin_role.is_root = True
 
-        if session.get(AuthUser, _ADMIN_USER_ID) is None:
-            session.add(
-                AuthUser(
-                    id=_ADMIN_USER_ID,
-                    username="admin",
-                    display_name="Admin",
-                    email="admin@vitalspan.local",
-                    password_hash=hashed,
-                )
+        admin_user = session.get(AuthUser, _ADMIN_USER_ID)
+        if admin_user is None:
+            password = os.environ.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme")
+            hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+            admin_user = AuthUser(
+                id=_ADMIN_USER_ID,
+                username="admin",
+                display_name="Admin",
+                email="admin@vitalspan.local",
+                password_hash=hashed,
+                is_active=True,
+                token_version=1,
             )
+            session.add(admin_user)
+            session.flush()
+        else:
+            admin_user.is_active = True
+
+        binding = session.get(
+            AuthUserRole, {"user_id": _ADMIN_USER_ID, "role_id": admin_role.id}
+        )
+        if binding is None:
             session.add(AuthUserRole(user_id=_ADMIN_USER_ID, role_id=admin_role.id))
 
         session.commit()
@@ -114,6 +135,51 @@ def admin_auth_headers() -> dict[str, str]:
 
 
 @pytest.fixture
+def authenticated_no_permission_user() -> dict[str, object]:
+    """已登录但零功能权限的真实用户（绑定一个无权限的启用角色）。Task 7 越权矩阵复用。"""
+    import uuid as _uuid
+
+    from app.auth.models import AuthRole, AuthUser, AuthUserRole, Base, get_meta_engine
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    suffix = _uuid.uuid4().hex[:10]
+    with Session(engine) as session:
+        role = AuthRole(code=f"noperm_{suffix}", name="无权限角色", is_active=True)
+        session.add(role)
+        session.flush()
+        user = AuthUser(
+            username=f"noperm_{suffix}",
+            display_name="No Permission",
+            is_active=True,
+            token_version=1,
+        )
+        session.add(user)
+        session.flush()
+        session.add(AuthUserRole(user_id=user.id, role_id=role.id))
+        session.commit()
+        return {
+            "id": str(user.id),
+            "username": user.username,
+            "role_id": str(role.id),
+            "token_version": user.token_version,
+        }
+
+
+@pytest.fixture
+def authenticated_no_permission_headers(
+    authenticated_no_permission_user: dict[str, object],
+) -> dict[str, str]:
+    from jwt_auth import jwt_auth_headers
+
+    return jwt_auth_headers(
+        user_id=str(authenticated_no_permission_user["id"]),
+        username=str(authenticated_no_permission_user["username"]),
+        token_version=int(authenticated_no_permission_user["token_version"]),
+    )
+
+
+@pytest.fixture
 def unauthorized_headers() -> dict[str, str]:
     return {"Authorization": "Bearer invalid"}
 
@@ -154,10 +220,18 @@ def _port_open(host: str, port: int, timeout: float = 1.0) -> bool:
         return False
 
 
+def _meta_postgres_available() -> bool:
+    """平台元库是否走 postgres。设 VITALSPAN_TEST_FORCE_SQLITE 可强制 sqlite（CI 平价，
+    便于本地开着 postgres 时按 CI 方式跑 meta 相关测试）。"""
+    if os.environ.get("VITALSPAN_TEST_FORCE_SQLITE"):
+        return False
+    return _port_open("127.0.0.1", 5432)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def ci_meta_sqlite_when_no_postgres():
     """CI and local runs without compose postgres: in-memory sqlite + demo admin seed."""
-    if _port_open("127.0.0.1", 5432):
+    if _meta_postgres_available():
         yield
         return
 
@@ -174,20 +248,15 @@ def ci_meta_sqlite_when_no_postgres():
 
 
 def _ensure_ci_admin_user_present() -> None:
-    from app.auth.models import AuthUser, Base, get_meta_engine
-
-    engine = get_meta_engine()
-    Base.metadata.create_all(engine)
-    with Session(engine) as session:
-        if session.get(AuthUser, _ADMIN_USER_ID) is not None:
-            return
+    # 部署门禁：每个测试都需要至少一个启用 root 用户存在。权限/根不变量测试
+    # 会在用例内删除 root 绑定，故这里每次幂等重建 admin root 角色、用户与绑定。
     _seed_ci_admin_user()
 
 
 @pytest.fixture(autouse=True)
 def _reapply_sqlite_meta_when_no_postgres():
     """Other test modules may restore postgres DATABASE_URL on teardown."""
-    if _port_open("127.0.0.1", 5432):
+    if _meta_postgres_available():
         yield
         return
     if not os.environ.get("DATABASE_URL", "").startswith("sqlite"):

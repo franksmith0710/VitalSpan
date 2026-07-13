@@ -101,6 +101,11 @@ def _find_enabled_root_user(session: Session) -> AuthUser | None:
     return session.scalar(stmt)
 
 
+def has_enabled_root_user(session: Session) -> bool:
+    """是否存在至少一个「启用用户 × 启用 root 角色」绑定（部署门禁判据）。"""
+    return _find_enabled_root_user(session) is not None
+
+
 def assert_root_admin_survives(
     session: Session,
     *,

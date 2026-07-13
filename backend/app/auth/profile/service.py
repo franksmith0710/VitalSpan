@@ -43,7 +43,14 @@ def _email(user: AuthUser) -> str:
     return (user.email or _default_email(user.username)).strip()
 
 
-def build_me_profile(session: Session, user_id: uuid.UUID, roles: list[str]) -> MeProfileOut:
+def build_me_profile(
+    session: Session,
+    user_id: uuid.UUID,
+    roles: list[str],
+    *,
+    permissions: list[str] | None = None,
+    is_root: bool = False,
+) -> MeProfileOut:
     try:
         user = user_service.get_user(session, user_id)
     except UserError as exc:
@@ -54,6 +61,8 @@ def build_me_profile(session: Session, user_id: uuid.UUID, roles: list[str]) -> 
         display_name=_display_name(user),
         email=_email(user),
         roles=roles,
+        permissions=sorted(permissions or []),
+        is_root=is_root,
     )
 
 
@@ -64,6 +73,8 @@ def update_me_profile(
     roles: list[str],
     actor_username: str,
     payload: MeProfileUpdate,
+    permissions: list[str] | None = None,
+    is_root: bool = False,
 ) -> MeProfileOut:
     user = user_service.get_user(session, user_id)
     changes: dict[str, str] = {}
@@ -88,7 +99,7 @@ def update_me_profile(
     )
     session.commit()
     session.refresh(user)
-    return build_me_profile(session, user_id, roles)
+    return build_me_profile(session, user_id, roles, permissions=permissions, is_root=is_root)
 
 
 def change_password(

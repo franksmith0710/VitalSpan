@@ -36,7 +36,13 @@ def read_me(
 ) -> MeProfileOut | JSONResponse:
     try:
         user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
-        return profile_service.build_me_profile(db, user_id, current_user.roles)
+        return profile_service.build_me_profile(
+            db,
+            user_id,
+            current_user.roles,
+            permissions=sorted(current_user.permissions),
+            is_root=current_user.is_root,
+        )
     except profile_service.ProfileError as exc:
         return _profile_error_response(exc)
 
@@ -55,6 +61,8 @@ def update_me(
             roles=current_user.roles,
             actor_username=current_user.username,
             payload=payload,
+            permissions=sorted(current_user.permissions),
+            is_root=current_user.is_root,
         )
     except profile_service.ProfileError as exc:
         return _profile_error_response(exc)

@@ -29,6 +29,16 @@ def test_me_with_jwt_returns_200(client, admin_auth_headers):
     assert body["id"] != "dev"
 
 
+def test_me_returns_permissions_and_is_root_camelcase(client, admin_auth_headers):
+    """T-ME-19: /me 返回 permissions 与 isRoot（camelCase），admin 为 root。"""
+    response = client.get("/api/v1/me", headers=admin_auth_headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["isRoot"] is True
+    assert isinstance(body["permissions"], list)
+    assert "is_root" not in body
+
+
 def test_me_invalid_bearer_returns_401(client, unauthorized_headers):
     """T-ME-03: Authorization: Bearer invalid → 401 + 标准 error body。"""
     response = client.get("/api/v1/me", headers=unauthorized_headers)
@@ -111,13 +121,15 @@ def test_me_concurrent_requests_stable(client, admin_auth_headers, monkeypatch):
 
     admin_id = UUID("00000000-0000-0000-0000-000000000001")
 
-    def fake_build_me_profile(_db, user_id, roles):
+    def fake_build_me_profile(_db, user_id, roles, *, permissions=None, is_root=False):
         return MeProfileOut(
             id=str(user_id),
             username="admin",
             display_name="Admin",
             email="admin@vitalspan.local",
             roles=roles,
+            permissions=sorted(permissions or []),
+            is_root=is_root,
         )
 
     monkeypatch.setattr(

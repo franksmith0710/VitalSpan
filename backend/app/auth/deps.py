@@ -1,10 +1,12 @@
 import uuid
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import HTTPException, Request
-from pydantic import BaseModel
+from fastapi import Depends, HTTPException, Request
+from pydantic import BaseModel, Field
 
 from app.auth.models import get_meta_session
+from app.auth.permissions import permission_matches
 from app.auth.resources.service import VisibilityError, ensure_resource_visible
 from app.auth.users import service as user_service
 
@@ -13,6 +15,45 @@ class UserContext(BaseModel):
     id: str
     username: str
     roles: list[str]
+    permissions: set[str] = Field(default_factory=set)
+    is_root: bool = False
+
+
+class PermissionDeniedError(Exception):
+    """功能权限不足；由统一 handler 转为顶层 PERMISSION_DENIED 响应。"""
+
+    def __init__(self, permission: str) -> None:
+        self.permission = permission
+        super().__init__(permission)
+
+
+def require_permission(permission: str):
+    """依赖工厂：要求当前用户命中指定功能权限（root 直通）。"""
+
+    async def dependency(
+        user: Annotated[UserContext, Depends(get_current_user)],
+    ) -> UserContext:
+        if not permission_matches(set(user.permissions), permission, user.is_root):
+            raise PermissionDeniedError(permission)
+        return user
+
+    return dependency
+
+
+def require_any_permission(*permissions: str):
+    """依赖工厂：命中任一功能权限即放行（root 直通）。"""
+
+    async def dependency(
+        user: Annotated[UserContext, Depends(get_current_user)],
+    ) -> UserContext:
+        granted = set(user.permissions)
+        if user.is_root or any(
+            permission_matches(granted, permission, user.is_root) for permission in permissions
+        ):
+            return user
+        raise PermissionDeniedError(" | ".join(permissions))
+
+    return dependency
 
 
 async def get_current_user(request: Request) -> UserContext:

@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1 import api_v1_router
+from app.auth.deps import PermissionDeniedError
 from app.auth.middleware import AuthMiddleware
 from app.core.config import get_settings
 from app.core.logging import configure_logging
@@ -49,6 +51,18 @@ app.add_middleware(
 app.add_middleware(TraceIdMiddleware)
 app.add_middleware(AuthMiddleware)
 app.add_middleware(HttpsAuditGuardMiddleware)
+
+
+@app.exception_handler(PermissionDeniedError)
+async def _permission_denied_handler(_request: Request, exc: PermissionDeniedError) -> JSONResponse:
+    return JSONResponse(
+        status_code=403,
+        content={
+            "code": "PERMISSION_DENIED",
+            "message": f"Missing required permission: {exc.permission}",
+            "detail": None,
+        },
+    )
 
 
 @app.get("/health")
