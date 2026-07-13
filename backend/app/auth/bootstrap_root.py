@@ -38,17 +38,6 @@ class RootAdminRequiredError(Exception):
         super().__init__(message)
 
 
-class RootRoleImmutableError(Exception):
-    """root 角色不可删除/禁用/改 code。"""
-
-    code = "AUTH_ROOT_ROLE_IMMUTABLE"
-    status = 409
-
-    def __init__(self, message: str = "Root role is immutable") -> None:
-        self.message = message
-        super().__init__(message)
-
-
 class BootstrapError(Exception):
     def __init__(self, code: str, message: str) -> None:
         self.code = code
@@ -94,6 +83,22 @@ def count_enabled_root_users(
     if excluding_role_id is not None:
         stmt = stmt.where(AuthRole.id != excluding_role_id)
     return int(session.scalar(stmt) or 0)
+
+
+def _find_enabled_root_user(session: Session) -> AuthUser | None:
+    """返回任一「启用用户 × 启用 root 角色」绑定对应的用户，不存在则 None。"""
+    stmt = (
+        select(AuthUser)
+        .join(AuthUserRole, AuthUserRole.user_id == AuthUser.id)
+        .join(AuthRole, AuthRole.id == AuthUserRole.role_id)
+        .where(
+            AuthUser.is_active.is_(True),
+            AuthRole.is_root.is_(True),
+            AuthRole.is_active.is_(True),
+        )
+        .limit(1)
+    )
+    return session.scalar(stmt)
 
 
 def assert_root_admin_survives(
@@ -153,55 +158,68 @@ def bootstrap_root(
     password: str | None,
     allow_existing: bool = False,
 ) -> AuthUser:
-    """幂等创建 root 管理员用户并绑定 root 角色。密码缺失即拒绝（fail closed）。"""
+    """幂等创建 root 管理员用户并绑定 root 角色。密码缺失即拒绝（fail closed）。
+
+    前置短路：仅在当前不存在启用 root 用户时才读取环境变量并施加变更。已存在启用
+    root 用户时（含并发下另一进程已完成引导）幂等成功退出——不创建用户、不改密码。
+    """
+    # 前置短路：已有启用 root 用户则视为「已初始化」，直接返回，不读密码、不改状态。
+    existing_root = _find_enabled_root_user(session)
+    if existing_root is not None:
+        return existing_root
+
     if not password:
         raise BootstrapError(
             "AUTH_BOOTSTRAP_PASSWORD_REQUIRED",
             "bootstrap admin password is required (VITALSPAN_BOOTSTRAP_ADMIN_PASSWORD)",
         )
 
-    role = ensure_root_role(session)
-    existing = session.scalar(select(AuthUser).where(AuthUser.username == username))
-    if existing is not None and not allow_existing:
-        raise BootstrapError(
-            "AUTH_BOOTSTRAP_USER_EXISTS",
-            f"user {username!r} already exists; set VITALSPAN_BOOTSTRAP_ALLOW_EXISTING=true to reuse",
-        )
-
-    if existing is None:
-        user = AuthUser(
-            username=username,
-            display_name="Root Admin",
-            password_hash=_hash_password(password),
-            is_active=True,
-        )
-        session.add(user)
-        session.flush()
-    else:
-        user = existing
-        user.is_active = True
-        user.password_hash = _hash_password(password)
-        session.flush()
-
-    binding = session.get(AuthUserRole, {"user_id": user.id, "role_id": role.id})
-    if binding is None:
-        session.add(AuthUserRole(user_id=user.id, role_id=role.id))
-
-    record_event(
-        session,
-        actor_id="bootstrap",
-        actor_username="bootstrap",
-        target_type="user",
-        target_id=user.id,
-        action="user.bootstrap_root",
-        detail={"username": username, "role_id": str(role.id)},
-        trace_id="bootstrap",
-    )
     try:
+        role = ensure_root_role(session)
+        existing = session.scalar(select(AuthUser).where(AuthUser.username == username))
+        if existing is not None and not allow_existing:
+            raise BootstrapError(
+                "AUTH_BOOTSTRAP_USER_EXISTS",
+                f"user {username!r} already exists; set VITALSPAN_BOOTSTRAP_ALLOW_EXISTING=true to reuse",
+            )
+
+        if existing is None:
+            user = AuthUser(
+                username=username,
+                display_name="Root Admin",
+                password_hash=_hash_password(password),
+                is_active=True,
+            )
+            session.add(user)
+            session.flush()
+        else:
+            user = existing
+            user.is_active = True
+            user.password_hash = _hash_password(password)
+            session.flush()
+
+        binding = session.get(AuthUserRole, {"user_id": user.id, "role_id": role.id})
+        if binding is None:
+            session.add(AuthUserRole(user_id=user.id, role_id=role.id))
+
+        record_event(
+            session,
+            actor_id="bootstrap",
+            actor_username="bootstrap",
+            target_type="user",
+            target_id=user.id,
+            action="user.bootstrap_root",
+            detail={"username": username, "role_id": str(role.id)},
+            trace_id="bootstrap",
+        )
         session.commit()
     except IntegrityError as exc:
+        # 并发写冲突（flush 或 commit 触发）：另一进程可能已完成引导。回滚后重判：
+        # 已出现启用 root 则幂等成功；allow_existing 且同名用户已在则复用；否则收敛为冲突错误。
         session.rollback()
-        # 并发下另一进程已完成引导；allow_existing 时视为成功收敛。
+        refreshed_root = _find_enabled_root_user(session)
+        if refreshed_root is not None:
+            return refreshed_root
         if allow_existing:
             refreshed = session.scalar(select(AuthUser).where(AuthUser.username == username))
             if refreshed is not None:

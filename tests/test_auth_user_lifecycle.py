@@ -242,11 +242,13 @@ def test_concurrent_remove_last_root_binding_yields_conflict():
 
 
 def test_bootstrap_root_fails_closed_without_password():
-    """T-LIFE-09: 未提供密码 → BootstrapError（fail closed）。"""
+    """T-LIFE-09: 无启用 root 且未提供密码 → BootstrapError（fail closed）。"""
     from app.auth.bootstrap_root import BootstrapError, bootstrap_root
 
     session = _new_session()
     try:
+        # 归零 root 状态，确保命中「不存在启用 root → 读密码」分支而非幂等短路。
+        _reset_root_state(session)
         with pytest.raises(BootstrapError) as exc:
             bootstrap_root(session, username="root_x", password=None, allow_existing=False)
         assert exc.value.code == "AUTH_BOOTSTRAP_PASSWORD_REQUIRED"
@@ -297,5 +299,71 @@ def test_bootstrap_root_rejects_existing_unless_allowed():
         )
         root = session.scalar(select(AuthRole).where(AuthRole.code == "admin"))
         assert session.get(AuthUserRole, {"user_id": user.id, "role_id": root.id}) is not None
+    finally:
+        session.close()
+
+
+def test_bootstrap_root_idempotent_when_enabled_root_exists():
+    """T-LIFE-12: 已存在启用 root 时，重复引导幂等成功且不读密码 / 不改状态。"""
+    from app.auth.bootstrap_root import bootstrap_root
+
+    session = _new_session()
+    try:
+        _reset_root_state(session)
+        username = f"root_{uuid_mod.uuid4().hex[:8]}"
+        created = bootstrap_root(
+            session, username=username, password="s3cret-pass", allow_existing=False
+        )
+        original_hash = created.password_hash
+
+        # 前置短路：即便 password=None 也幂等成功返回既有 root，不抛错、不改密码。
+        again = bootstrap_root(
+            session, username="someone_else", password=None, allow_existing=False
+        )
+        assert again.is_active is True
+        session.refresh(created)
+        assert created.password_hash == original_hash
+        # 未创建 someone_else 用户。
+        assert session.scalar(
+            select(AuthUser).where(AuthUser.username == "someone_else")
+        ) is None
+    finally:
+        session.close()
+
+
+def test_bootstrap_root_converges_when_concurrent_bootstrap_won(monkeypatch):
+    """T-LIFE-13: flush 冲突后若已出现启用 root，视为已初始化幂等成功（含 allow_existing=False）。"""
+    from sqlalchemy.exc import IntegrityError
+
+    from app.auth import bootstrap_root as boot_mod
+    from app.auth.bootstrap_root import bootstrap_root
+
+    session = _new_session()
+    try:
+        _reset_root_state(session)
+        root = session.scalar(select(AuthRole).where(AuthRole.code == "admin"))
+        winner = _make_user(session, role_ids=[root.id])
+
+        # 入口短路时尚无 root（本进程视角），写冲突回滚后另一进程的 root 才可见。
+        calls = {"n": 0}
+
+        def _find_stub(sess):
+            calls["n"] += 1
+            return None if calls["n"] == 1 else winner
+
+        def _ensure_boom(sess):
+            raise IntegrityError("concurrent insert", None, Exception("dup"))
+
+        monkeypatch.setattr(boot_mod, "_find_enabled_root_user", _find_stub)
+        monkeypatch.setattr(boot_mod, "ensure_root_role", _ensure_boom)
+
+        result = bootstrap_root(
+            session,
+            username=f"root_{uuid_mod.uuid4().hex[:8]}",
+            password="pw12345",
+            allow_existing=False,
+        )
+        assert result.id == winner.id
+        assert calls["n"] == 2
     finally:
         session.close()
