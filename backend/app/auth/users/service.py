@@ -7,6 +7,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.audit import service as audit_service
+from app.auth.bootstrap_root import (
+    RootAdminRequiredError,
+    assert_root_admin_survives,
+)
 from app.auth.models import AuthOrgNode, AuthRole, AuthUser, AuthUserRole
 from app.auth.schemas import UserCreate
 
@@ -22,6 +26,30 @@ class UserError(Exception):
 def assert_binding_admin(actor_roles: list[str]) -> None:
     if "admin" not in actor_roles:
         raise UserError("BINDING_FORBIDDEN", "Binding changes require admin role", 403)
+
+
+def _user_has_enabled_root_binding(session: Session, user_id: uuid.UUID) -> bool:
+    count = session.scalar(
+        select(func.count())
+        .select_from(AuthUserRole)
+        .join(AuthRole, AuthRole.id == AuthUserRole.role_id)
+        .where(
+            AuthUserRole.user_id == user_id,
+            AuthRole.is_root.is_(True),
+            AuthRole.is_active.is_(True),
+        )
+    )
+    return bool(count)
+
+
+def _guard_root_admin(session: Session) -> None:
+    """在 commit 前校验根管理员不变量，违反时回滚并转为 UserError(409)。"""
+    session.flush()
+    try:
+        assert_root_admin_survives(session)
+    except RootAdminRequiredError as exc:
+        session.rollback()
+        raise UserError(exc.code, exc.message, exc.status) from exc
 
 
 def _audit_user_event(
@@ -149,6 +177,8 @@ def unbind_role(
     if binding is None:
         raise UserError("BINDING_NOT_FOUND", "User-role binding not found", 404)
     session.delete(binding)
+    if role is not None and role.is_root:
+        _guard_root_admin(session)
     _audit_user_event(
         session,
         actor_id=actor_id,
@@ -182,9 +212,12 @@ def replace_user_roles(
         role = session.get(AuthRole, role_id)
         assert role is not None
         assert_role_active(role)
+    had_root = _user_has_enabled_root_binding(session, user_id)
     session.query(AuthUserRole).filter(AuthUserRole.user_id == user_id).delete()
     for role_id in role_ids:
         session.add(AuthUserRole(user_id=user_id, role_id=role_id))
+    if had_root:
+        _guard_root_admin(session)
     _audit_user_event(
         session,
         actor_id=actor_id,
@@ -234,6 +267,37 @@ def bind_roles_batch(
         )
     session.commit()
     return list_user_roles(session, user_id)
+
+
+def set_user_active(
+    session: Session,
+    user_id: uuid.UUID,
+    is_active: bool,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    actor_roles: list[str],
+    trace_id: str,
+) -> AuthUser:
+    """启用/禁用用户；禁用最后一个启用 root 用户时抛 AUTH_ROOT_ADMIN_REQUIRED。"""
+    assert_binding_admin(actor_roles)
+    user = get_user(session, user_id)
+    guard_needed = not is_active and _user_has_enabled_root_binding(session, user_id)
+    user.is_active = is_active
+    if guard_needed:
+        _guard_root_admin(session)
+    _audit_user_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_id=user_id,
+        action="user.activate" if is_active else "user.deactivate",
+        detail={"is_active": is_active},
+        trace_id=trace_id,
+    )
+    session.commit()
+    session.refresh(user)
+    return user
 
 
 def resolve_role_codes_for_user(session: Session, user_id: uuid.UUID) -> list[str]:

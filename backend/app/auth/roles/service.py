@@ -88,6 +88,10 @@ def update_role(
     trace_id: str,
 ) -> AuthRole:
     role = get_role(session, role_id)
+    if role.is_root and payload.is_active is False:
+        raise RoleError(
+            "AUTH_ROOT_ROLE_IMMUTABLE", "Root role cannot be disabled", 409
+        )
     role.name = payload.name
     role.description = payload.description
     if payload.is_active is not None:
@@ -116,6 +120,10 @@ def delete_role(
     trace_id: str,
 ) -> None:
     role = get_role(session, role_id)
+    if role.is_root:
+        raise RoleError(
+            "AUTH_ROOT_ROLE_IMMUTABLE", "Root role cannot be deleted", 409
+        )
     user_refs = session.scalar(
         select(AuthUserRole).where(AuthUserRole.role_id == role_id).limit(1)
     )

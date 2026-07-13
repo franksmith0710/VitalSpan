@@ -255,7 +255,7 @@ def test_revision_directory_single_head_chain():
         module = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[module.revision] = module.down_revision
 
-    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0023", "0024"}
+    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0023", "0024", "0025"}
     assert len(revisions) == len(set(revisions.keys()))
     assert revisions["0001"] is None
     assert revisions["0002"] == "0001"
@@ -281,10 +281,11 @@ def test_revision_directory_single_head_chain():
     assert revisions["0022"] == "0021"
     assert revisions["0023"] == "0022"
     assert revisions["0024"] == "0023"
+    assert revisions["0025"] == "0024"
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0024"]
+    assert heads == ["0025"]
 
 
 def test_migrations_online_path_connects_and_runs(monkeypatch):
@@ -516,7 +517,7 @@ def test_alembic_heads_single_head():
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
-    assert "0024" in result.stdout
+    assert "0025" in result.stdout
 
 
 def test_migrations_online_uses_null_pool(monkeypatch):
@@ -635,7 +636,7 @@ def test_revision_chain_no_orphans_head_0003():
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0024"]
+    assert heads == ["0025"]
 
 
 def test_revision_chain_head_is_0013():
@@ -649,7 +650,7 @@ def test_revision_chain_head_is_0013():
         revisions[module.revision] = module.down_revision
 
     heads = [rev for rev, down in revisions.items() if not any(d == rev for d in revisions.values())]
-    assert heads == ["0024"]
+    assert heads == ["0025"]
 
     mod = importlib.import_module("migrations.versions.0013_dashboards")
     assert mod.down_revision == "0012"
@@ -695,7 +696,7 @@ def test_revision_chain_head_0012_down_revision():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0024" in heads
+    assert "0025" in heads
     assert revisions["0012"] == "0011"
 
 
@@ -724,7 +725,7 @@ def test_revision_chain_head_0012_down_revision_t_mig38():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0024" in heads
+    assert "0025" in heads
     assert revisions["0012"] == "0011"
 
 
@@ -752,7 +753,7 @@ def test_revision_chain_head_0012_down_revision_t_mig40():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0024" in heads
+    assert "0025" in heads
     assert revisions["0012"] == "0011"
 
 
@@ -766,7 +767,7 @@ def test_revision_chain_head_0013_down_revision_t_mig41():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0024"]
+    assert heads == ["0025"]
     assert revisions["0013"] == "0012"
 
 
@@ -841,7 +842,7 @@ def test_revision_chain_head_0014_down_revision_t_mig43():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0024"]
+    assert heads == ["0025"]
     assert revisions["0014"] == "0013"
 
 
@@ -853,7 +854,7 @@ def test_revision_chain_head_0015_down_revision_t_mig45():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0024"]
+    assert heads == ["0025"]
     assert revisions["0015"] == "0014"
 
 
@@ -865,7 +866,7 @@ def test_revision_chain_head_0016_down_revision_t_mig46():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0024"]
+    assert heads == ["0025"]
     assert revisions["0016"] == "0015"
     assert revisions["0017"] == "0016"
     assert revisions["0018"] == "0017"
@@ -904,3 +905,106 @@ def test_alembic_upgrade_head_sql_contains_auth_permissions():
     assert result.returncode == 0, result.stderr
     assert "auth_permissions" in result.stdout
     assert "auth_role_permissions" in result.stdout
+
+
+# --------------------------------------------------------------------------- #
+# Task 3: 0025 权限目录回填 + root 管理员不变量
+# --------------------------------------------------------------------------- #
+
+_MOD_0025 = "migrations.versions.0025_auth_permission_backfill"
+
+
+def _capture_0025_upgrade_sql() -> list[str]:
+    """以 mock op 捕获 0025.upgrade() 发出的全部 SQL 语句。"""
+    module = importlib.import_module(_MOD_0025)
+    mock_op = MagicMock()
+    with patch.object(module, "op", mock_op):
+        module.upgrade()
+    return [call.args[0] for call in mock_op.execute.call_args_list]
+
+
+def test_revision_0025_chain():
+    """T-MIG-48: 0025 revision 链 down_revision==0024。"""
+    module = importlib.import_module(_MOD_0025)
+    assert module.revision == "0025"
+    assert module.down_revision == "0024"
+
+
+def test_revision_0025_upgrade_idempotent_on_conflict():
+    """T-MIG-49: 0025 全部插入语句含 ON CONFLICT，且重复执行输出一致（幂等无副作用）。"""
+    first = _capture_0025_upgrade_sql()
+    second = _capture_0025_upgrade_sql()
+    assert first == second
+    inserts = [s for s in first if s.upper().startswith("INSERT")]
+    assert inserts, "expected INSERT statements in 0025 upgrade"
+    for statement in inserts:
+        assert "ON CONFLICT" in statement, statement
+
+
+def test_revision_0025_marks_admin_root_and_system():
+    """T-MIG-50: 0025 将 admin 标记 is_root/is_system，按 code upsert。"""
+    statements = _capture_0025_upgrade_sql()
+    admin_stmts = [s for s in statements if "auth_roles" in s and "'admin'" in s]
+    assert len(admin_stmts) == 1
+    stmt = admin_stmts[0]
+    assert "is_root" in stmt and "is_system" in stmt
+    assert "ON CONFLICT (code) DO UPDATE" in stmt
+
+
+def test_revision_0025_maps_preset_roles_per_global_constraints():
+    """T-MIG-51: analyst/viewer/editor/owner 按 Global Constraints 映射权限。"""
+    statements = _capture_0025_upgrade_sql()
+
+    def _codes_for(role_code: str) -> str | None:
+        for s in statements:
+            if f"r.code = '{role_code}'" in s:
+                return s
+        return None
+
+    analyst = _codes_for("analyst")
+    assert analyst is not None
+    for code in ("dashboard:read", "dashboard:edit", "report:read", "theme:read", "theme:manage"):
+        assert f"'{code}'" in analyst
+
+    viewer = _codes_for("viewer")
+    assert viewer is not None
+    assert "'dashboard:read'" in viewer and "'report:read'" in viewer
+    assert "'dashboard:edit'" not in viewer
+
+    for role_code in ("editor", "owner"):
+        stmt = _codes_for(role_code)
+        assert stmt is not None
+        assert "'report:read'" in stmt and "'report:manage'" in stmt
+
+
+def test_revision_0025_does_not_grant_custom_roles():
+    """T-MIG-52: 仅预置角色被映射；自定义角色不扩权。"""
+    statements = _capture_0025_upgrade_sql()
+    mapped_roles = {
+        s.split("r.code = '", 1)[1].split("'", 1)[0]
+        for s in statements
+        if "r.code = '" in s
+    }
+    assert mapped_roles == {"analyst", "viewer", "editor", "owner"}
+
+
+def test_revision_0025_never_assigns_users():
+    """T-MIG-53: 空库/无 admin 绑定/admin 禁用三态下，回填绝不写 auth_user_roles。"""
+    statements = _capture_0025_upgrade_sql()
+    assert all("auth_user_roles" not in s for s in statements)
+
+
+def test_alembic_upgrade_head_sql_contains_permission_backfill():
+    """T-MIG-54: upgrade head --sql 含权限目录回填与 admin root 标记（ON CONFLICT）。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=backend_dir,
+        env=_migration_subprocess_env(),
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "ON CONFLICT" in result.stdout
+    assert "dashboard:read" in result.stdout

@@ -382,3 +382,69 @@ def test_permission_id_for_code_is_deterministic():
     twice = permission_id_for_code("system:user.read")
     assert once == twice
     assert once == uuid_mod.uuid5(PERMISSION_NAMESPACE_UUID, "system:user.read")
+
+
+# --------------------------------------------------------------------------- #
+# Task 3: 根管理员不变量（assert_root_admin_survives）
+# --------------------------------------------------------------------------- #
+
+
+def _reset_root_state(session):
+    """将 root 状态归零：确保唯一 admin root 角色存在且无任何 root 绑定。"""
+    from app.auth.bootstrap_root import ensure_root_role
+
+    role = ensure_root_role(session)
+    session.query(AuthUserRole).filter(AuthUserRole.role_id == role.id).delete()
+    session.commit()
+    return role
+
+
+def test_assert_root_admin_survives_passes_with_enabled_root():
+    """T-PERM-21: 存在启用 root 用户时不变量通过。"""
+    from app.auth.bootstrap_root import assert_root_admin_survives
+
+    session = _new_session()
+    try:
+        root = _reset_root_state(session)
+        _make_user(session, role_ids=[root.id])
+        assert_root_admin_survives(session)
+    finally:
+        session.close()
+
+
+def test_assert_root_admin_survives_raises_when_none():
+    """T-PERM-22: 无任何启用 root 绑定 → RootAdminRequiredError(409)。"""
+    from app.auth.bootstrap_root import (
+        RootAdminRequiredError,
+        assert_root_admin_survives,
+    )
+
+    session = _new_session()
+    try:
+        _reset_root_state(session)
+        with pytest.raises(RootAdminRequiredError) as exc:
+            assert_root_admin_survives(session)
+        assert exc.value.code == "AUTH_ROOT_ADMIN_REQUIRED"
+        assert exc.value.status == 409
+    finally:
+        session.close()
+
+
+def test_count_enabled_root_users_excludes_disabled_and_excluded():
+    """T-PERM-23: 统计仅计启用用户；excluding_user_id 排除指定用户。"""
+    from app.auth.bootstrap_root import count_enabled_root_users
+
+    session = _new_session()
+    try:
+        root = _reset_root_state(session)
+        u1 = _make_user(session, role_ids=[root.id])
+        u2 = _make_user(session, role_ids=[root.id])
+        _make_user(session, is_active=False, role_ids=[root.id])
+        assert count_enabled_root_users(session) == 2
+        assert count_enabled_root_users(session, excluding_user_id=u1.id) == 1
+        assert count_enabled_root_users(
+            session, excluding_role_id=root.id
+        ) == 0
+        assert u2.id is not None
+    finally:
+        session.close()

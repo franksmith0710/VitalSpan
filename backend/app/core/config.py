@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     dashboard_availability_mode: Literal["strict", "permissive"] = "permissive"
     xinchuang_deploy_mode: Literal["strict", "permissive", "conditional"] = "permissive"
     vitalspan_dev_admin_password: str = "changeme"
+    vitalspan_bootstrap_admin_username: str = "admin"
+    vitalspan_bootstrap_admin_password: str | None = None
+    vitalspan_bootstrap_allow_existing: bool = False
     rpt_delivery_mode: Literal["mock", "smtp"] = "mock"
     rpt_smtp_host: str = "localhost"
     rpt_smtp_port: int = 1025
@@ -40,6 +43,15 @@ class Settings(BaseSettings):
     @field_validator("push_wecom_webhook", "push_dingtalk_webhook", mode="before")
     @classmethod
     def normalize_optional_webhook(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @field_validator("vitalspan_bootstrap_admin_password", mode="before")
+    @classmethod
+    def normalize_bootstrap_password(cls, value: Any) -> str | None:
         if value is None:
             return None
         if isinstance(value, str) and not value.strip():
