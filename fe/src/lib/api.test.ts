@@ -1,0 +1,212 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  ApiRequestError,
+  apiFetch,
+  registerUnauthorizedHandler,
+  resetUnauthorizedHandler,
+} from "@/lib/api";
+import { getAuthToken, setAuthToken } from "@/lib/auth-token";
+
+const TOKEN = "existing-token";
+
+function mockResponse(body: BodyInit | null, status: number): void {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(body, {
+        status,
+        headers: { "Content-Type": "application/json" },
+      }),
+    ),
+  );
+}
+
+function mockJson(body: unknown, status: number): void {
+  mockResponse(JSON.stringify(body), status);
+}
+
+async function expectApiError(request: Promise<unknown>): Promise<ApiRequestError> {
+  try {
+    await request;
+  } catch (error) {
+    expect(error).toBeInstanceOf(ApiRequestError);
+    return error as ApiRequestError;
+  }
+  throw new Error("Expected apiFetch to reject");
+}
+
+afterEach(() => {
+  resetUnauthorizedHandler();
+  localStorage.clear();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+describe("apiFetch 401 classification", () => {
+  it("fails closed by default and reports an expired session", async () => {
+    setAuthToken(TOKEN);
+    const onUnauthorized = vi.fn();
+    registerUnauthorizedHandler(onUnauthorized);
+    mockJson({ message: "业务错误", code: "SOME_BUSINESS_CODE" }, 401);
+
+    const error = await expectApiError(apiFetch("/api/v1/example"));
+
+    expect(getAuthToken()).toBeNull();
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(error).toMatchObject({
+      message: "登录已过期，请重新登录",
+      code: "UNAUTHORIZED",
+    });
+  });
+
+  it("preserves the session for an exact allowlisted string code", async () => {
+    setAuthToken(TOKEN);
+    const onUnauthorized = vi.fn();
+    registerUnauthorizedHandler(onUnauthorized);
+    const fields = [{ field: "current_password", message: "当前密码错误" }];
+    mockJson(
+      {
+        message: "当前密码不正确",
+        code: "AUTH_INVALID_CURRENT_PASSWORD",
+        detail: { fields },
+      },
+      401,
+    );
+
+    const error = await expectApiError(
+      apiFetch("/api/v1/auth/change-password", {
+        preserveSessionOn401Codes: ["AUTH_INVALID_CURRENT_PASSWORD"],
+      }),
+    );
+
+    expect(getAuthToken()).toBe(TOKEN);
+    expect(onUnauthorized).not.toHaveBeenCalled();
+    expect(error).toMatchObject({
+      message: "当前密码不正确",
+      code: "AUTH_INVALID_CURRENT_PASSWORD",
+      fields,
+    });
+  });
+
+  it("fails closed when the returned code is not allowlisted", async () => {
+    setAuthToken(TOKEN);
+    const onUnauthorized = vi.fn();
+    registerUnauthorizedHandler(onUnauthorized);
+    mockJson({ message: "令牌已失效", code: "AUTH_TOKEN_INVALID" }, 401);
+
+    const error = await expectApiError(
+      apiFetch("/api/v1/auth/change-password", {
+        preserveSessionOn401Codes: ["AUTH_INVALID_CURRENT_PASSWORD"],
+      }),
+    );
+
+    expect(getAuthToken()).toBeNull();
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(error.code).toBe("UNAUTHORIZED");
+  });
+
+  it.each([
+    ["empty body", ""],
+    ["invalid JSON", "{"],
+  ])("fails closed for a 401 with %s", async (_caseName, body) => {
+    setAuthToken(TOKEN);
+    const onUnauthorized = vi.fn();
+    registerUnauthorizedHandler(onUnauthorized);
+    mockResponse(body, 401);
+
+    const error = await expectApiError(
+      apiFetch("/api/v1/auth/change-password", {
+        preserveSessionOn401Codes: ["AUTH_INVALID_CURRENT_PASSWORD"],
+      }),
+    );
+
+    expect(getAuthToken()).toBeNull();
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(error.code).toBe("UNAUTHORIZED");
+  });
+
+  it.each([
+    ["numeric code", { message: "错误", code: 42 }],
+    ["array code", { message: "错误", code: ["AUTH_INVALID_CURRENT_PASSWORD"] }],
+    ["object code", { message: "错误", code: { value: "AUTH_INVALID_CURRENT_PASSWORD" } }],
+    ["missing code", { message: "错误" }],
+    ["missing message", { code: "AUTH_INVALID_CURRENT_PASSWORD" }],
+  ])("fails closed for a 401 with %s", async (_caseName, body) => {
+    setAuthToken(TOKEN);
+    const onUnauthorized = vi.fn();
+    registerUnauthorizedHandler(onUnauthorized);
+    mockJson(body, 401);
+
+    const error = await expectApiError(
+      apiFetch("/api/v1/auth/change-password", {
+        preserveSessionOn401Codes: ["AUTH_INVALID_CURRENT_PASSWORD"],
+      }),
+    );
+
+    expect(getAuthToken()).toBeNull();
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    expect(error.code).toBe("UNAUTHORIZED");
+  });
+
+  it("keeps the existing error body behavior for non-401 responses", async () => {
+    setAuthToken(TOKEN);
+    const onUnauthorized = vi.fn();
+    registerUnauthorizedHandler(onUnauthorized);
+    const fields = [{ field: "name", message: "名称无效" }];
+    mockJson(
+      { message: "请求校验失败", code: "VALIDATION_ERROR", detail: { fields } },
+      422,
+    );
+
+    const error = await expectApiError(apiFetch("/api/v1/example"));
+
+    expect(getAuthToken()).toBe(TOKEN);
+    expect(onUnauthorized).not.toHaveBeenCalled();
+    expect(error).toMatchObject({
+      message: "请求校验失败",
+      code: "VALIDATION_ERROR",
+      fields,
+    });
+  });
+
+  it("does not let an older unsubscribe remove a newer handler", async () => {
+    const olderHandler = vi.fn();
+    const newerHandler = vi.fn();
+    const unsubscribeOlder = registerUnauthorizedHandler(olderHandler);
+    registerUnauthorizedHandler(newerHandler);
+    unsubscribeOlder();
+    mockJson({}, 401);
+
+    await expectApiError(apiFetch("/api/v1/example"));
+
+    expect(olderHandler).not.toHaveBeenCalled();
+    expect(newerHandler).toHaveBeenCalledTimes(1);
+  });
+
+  it("reset removes every previously registered handler without disabling token clearing", async () => {
+    setAuthToken(TOKEN);
+    const staleHandler = vi.fn();
+    registerUnauthorizedHandler(staleHandler);
+    resetUnauthorizedHandler();
+    mockJson({}, 401);
+
+    const error = await expectApiError(apiFetch("/api/v1/example"));
+
+    expect(getAuthToken()).toBeNull();
+    expect(staleHandler).not.toHaveBeenCalled();
+    expect(error.code).toBe("UNAUTHORIZED");
+  });
+
+  it("does not pass apiFetch-only options to native fetch", async () => {
+    mockJson({ ok: true }, 200);
+
+    await apiFetch("/api/v1/example", {
+      method: "POST",
+      preserveSessionOn401Codes: ["AUTH_INVALID_CURRENT_PASSWORD"],
+    });
+
+    const fetchOptions = vi.mocked(fetch).mock.calls[0]?.[1];
+    expect(fetchOptions).toMatchObject({ method: "POST" });
+    expect(fetchOptions).not.toHaveProperty("preserveSessionOn401Codes");
+  });
+});
