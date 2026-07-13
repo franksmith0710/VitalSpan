@@ -255,7 +255,7 @@ def test_revision_directory_single_head_chain():
         module = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[module.revision] = module.down_revision
 
-    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018", "0019", "0020", "0021", "0022"}
+    assert set(revisions.keys()) == {"0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018", "0019", "0020", "0021", "0022", "0023", "0024"}
     assert len(revisions) == len(set(revisions.keys()))
     assert revisions["0001"] is None
     assert revisions["0002"] == "0001"
@@ -279,10 +279,12 @@ def test_revision_directory_single_head_chain():
     assert revisions["0020"] == "0019"
     assert revisions["0021"] == "0020"
     assert revisions["0022"] == "0021"
+    assert revisions["0023"] == "0022"
+    assert revisions["0024"] == "0023"
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0022"]
+    assert heads == ["0024"]
 
 
 def test_migrations_online_path_connects_and_runs(monkeypatch):
@@ -514,7 +516,7 @@ def test_alembic_heads_single_head():
         timeout=60,
     )
     assert result.returncode == 0, result.stderr
-    assert "0022" in result.stdout
+    assert "0024" in result.stdout
 
 
 def test_migrations_online_uses_null_pool(monkeypatch):
@@ -633,7 +635,7 @@ def test_revision_chain_no_orphans_head_0003():
 
     referred_down = {d for d in revisions.values() if d}
     heads = [rev for rev in revisions if rev not in referred_down]
-    assert heads == ["0022"]
+    assert heads == ["0024"]
 
 
 def test_revision_chain_head_is_0013():
@@ -647,7 +649,7 @@ def test_revision_chain_head_is_0013():
         revisions[module.revision] = module.down_revision
 
     heads = [rev for rev, down in revisions.items() if not any(d == rev for d in revisions.values())]
-    assert heads == ["0022"]
+    assert heads == ["0024"]
 
     mod = importlib.import_module("migrations.versions.0013_dashboards")
     assert mod.down_revision == "0012"
@@ -693,7 +695,7 @@ def test_revision_chain_head_0012_down_revision():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0022" in heads
+    assert "0024" in heads
     assert revisions["0012"] == "0011"
 
 
@@ -722,7 +724,7 @@ def test_revision_chain_head_0012_down_revision_t_mig38():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0022" in heads
+    assert "0024" in heads
     assert revisions["0012"] == "0011"
 
 
@@ -750,7 +752,7 @@ def test_revision_chain_head_0012_down_revision_t_mig40():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert "0022" in heads
+    assert "0024" in heads
     assert revisions["0012"] == "0011"
 
 
@@ -764,7 +766,7 @@ def test_revision_chain_head_0013_down_revision_t_mig41():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0022"]
+    assert heads == ["0024"]
     assert revisions["0013"] == "0012"
 
 
@@ -839,7 +841,7 @@ def test_revision_chain_head_0014_down_revision_t_mig43():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0022"]
+    assert heads == ["0024"]
     assert revisions["0014"] == "0013"
 
 
@@ -851,7 +853,7 @@ def test_revision_chain_head_0015_down_revision_t_mig45():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0022"]
+    assert heads == ["0024"]
     assert revisions["0015"] == "0014"
 
 
@@ -863,7 +865,7 @@ def test_revision_chain_head_0016_down_revision_t_mig46():
         mod = importlib.import_module(f"migrations.versions.{path.stem}")
         revisions[mod.revision] = mod.down_revision
     heads = [rev for rev in revisions if rev not in revisions.values()]
-    assert heads == ["0022"]
+    assert heads == ["0024"]
     assert revisions["0016"] == "0015"
     assert revisions["0017"] == "0016"
     assert revisions["0018"] == "0017"
@@ -886,3 +888,19 @@ def test_alembic_upgrade_head_sql_contains_catalog_tables_t_mig44():
     assert result.returncode == 0
     assert "catalog_categories" in result.stdout
     assert "bus_registrations" in result.stdout
+
+
+def test_alembic_upgrade_head_sql_contains_auth_permissions():
+    """T-MIG-47: upgrade head --sql 含 auth_permissions 与 auth_role_permissions（0024）。"""
+    backend_dir = Path(__file__).resolve().parents[1] / "backend"
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head", "--sql"],
+        cwd=backend_dir,
+        env=_migration_subprocess_env(),
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "auth_permissions" in result.stdout
+    assert "auth_role_permissions" in result.stdout

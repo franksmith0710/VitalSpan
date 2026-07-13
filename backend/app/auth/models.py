@@ -6,6 +6,7 @@ from functools import lru_cache
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Integer,
@@ -27,16 +28,54 @@ class Base(DeclarativeBase):
 
 class AuthRole(Base):
     __tablename__ = "auth_roles"
+    __table_args__ = (
+        CheckConstraint("NOT is_root OR code = 'admin'", name="ck_auth_roles_root_code"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_system: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default=func.false()
+    )
+    is_root: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False, server_default=func.false()
+    )
+    permission_version: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False, server_default="0"
+    )
+    rls_version: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False, server_default="0"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class AuthPermission(Base):
+    __tablename__ = "auth_permissions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    domain: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuthRolePermission(Base):
+    __tablename__ = "auth_role_permissions"
+
+    role_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_roles.id", ondelete="CASCADE"), primary_key=True
+    )
+    permission_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_permissions.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class AuthOrgNode(Base):
@@ -63,7 +102,25 @@ class AuthUser(Base):
     org_node_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("auth_org_nodes.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False, server_default=func.true()
+    )
+    failed_login_count: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False, server_default="0"
+    )
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    password_changed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    token_version: Mapped[int] = mapped_column(
+        Integer, default=1, nullable=False, server_default="1"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class AuthUserRole(Base):
