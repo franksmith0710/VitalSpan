@@ -47,7 +47,7 @@ def require_any_permission(*permissions: str):
         user: Annotated[UserContext, Depends(get_current_user)],
     ) -> UserContext:
         granted = set(user.permissions)
-        if user.is_root or any(
+        if any(
             permission_matches(granted, permission, user.is_root) for permission in permissions
         ):
             return user
