@@ -4,7 +4,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | ✅ 已修复（fixed） |
+| 状态 | ✅ 已修复（fixed）· 浏览器验收完成 |
 | 优先级 | P0 |
 | 发现日期 | 2026-07-13 |
 | 修复分支 | `fix/account-password-security` |
@@ -36,7 +36,9 @@
 - `cd fe && pnpm exec vitest run src/lib/api.test.ts src/pages/admin/account/components/changePasswordForm.test.ts src/pages/admin/account/components/ChangePasswordSection.smoke.test.tsx src/pages/admin/account/components/ChangePasswordSession.integration.test.tsx`
 - `cd backend && python -m pytest ../tests/test_auth_profile.py -q`
 
-**IA 评估**：`docs/ui/layout.md` 路由已登记 `/admin/account/security`，本轮未改导航，无需同步。
+**浏览器验收（2026-07-13）**：`docs/bugs/artifacts/BUG-001/` 共 9 张截图（6 基线 + 3 交互态）。Playwright 断言：错误当前密码后 URL 仍为 `/admin/account/security`；loading 按钮显示「保存中…」；显隐后 `#current-password` 为 `type=text`。
+
+**本地环境配置**：复制主工作区 `backend/.env` + `fe/.env`（注释 `VITE_API_BASE_URL` 以走 Vite proxy）；PostgreSQL 5432 已运行；admin 密码与 `.env` 对齐。
 
 ---
 

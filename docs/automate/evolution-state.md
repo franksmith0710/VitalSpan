@@ -6,17 +6,17 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | A2_CONTRACT |
+| phase | DONE |
 | request | 完整修复账户修改密码功能：布局、字段交互、错误不登出、测试与文档纠错 |
 | type | bug |
 | autonomy_policy | auto_accept_low_risk |
 | risk_level | medium |
-| plan | pending |
-| last_verified_command | pending baseline |
-| last_verified_exit_code | pending |
-| verification_summary | 独立 worktree 已创建；待基线验证、根因评估与 Headless Plan |
-| repair_rounds | 0 |
-| status | RUNNING |
+| plan | docs/automate/plans/2026-07-13-account-password-security-fix.md (PASS) |
+| last_verified_command | fe: npm exec vitest (32/32 account+api); backend: pytest test_auth_profile.py (28 with test_me) |
+| last_verified_exit_code | 0 (scope); check:design/build/backend-full 有分支基线外失败 |
+| verification_summary | Task 1–8 完成；专项测试全绿；9 张浏览器截图已归档至 docs/bugs/artifacts/BUG-001/ |
+| repair_rounds | 1 |
+| status | DONE |
 | started_at | 2026-07-13T16:20:00+08:00 |
 
 ## 当前需求契约
