@@ -86,6 +86,39 @@ def _seed_ci_admin_user() -> None:
 
         session.commit()
 
+
+def _ensure_admin_role_binding() -> None:
+    """确保用户名为 admin 的启用用户绑定到启用的 admin(root) 角色。
+
+    兼容两种后端：postgres（迁移 seed 的 admin 用户 id 与 _ADMIN_USER_ID 不同，
+    且 rbac/生命周期用例会删除 root 绑定）与 sqlite（id 即 _ADMIN_USER_ID）。
+    以用户名而非固定 id 定位，避免向已存在的 admin 用户名再插入冲突。
+    """
+    from app.auth.models import AuthRole, AuthUser, AuthUserRole, Base, get_meta_engine
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        admin_user = session.query(AuthUser).filter(AuthUser.username == "admin").first()
+        if admin_user is None:
+            return
+        admin_role = session.query(AuthRole).filter(AuthRole.code == "admin").first()
+        if admin_role is None:
+            admin_role = AuthRole(
+                code="admin", name="管理员", is_active=True, is_system=True, is_root=True
+            )
+            session.add(admin_role)
+            session.flush()
+        else:
+            admin_role.is_active = True
+            admin_role.is_root = True
+        binding = session.get(
+            AuthUserRole, {"user_id": admin_user.id, "role_id": admin_role.id}
+        )
+        if binding is None:
+            session.add(AuthUserRole(user_id=admin_user.id, role_id=admin_role.id))
+        session.commit()
+
 # Fixture contract (BOOT-006):
 # - client: TestClient(app) for all backend HTTP tests
 # - auth_headers: JWT Bearer for protected routes (login or signed fallback)
@@ -113,6 +146,10 @@ def auth_headers() -> dict[str, str]:
 @pytest.fixture
 def admin_auth_headers() -> dict[str, str]:
     """JWT as admin user for /me and login contract tests."""
+    # 部署门禁与 RBAC 用例会清空 root 绑定；登录前先幂等修复 admin 角色绑定，
+    # 确保 /me 返回的 roles 含 "admin"（postgres 迁移 seed 的 admin id 与
+    # _ADMIN_USER_ID 不同，须按用户名修复）。
+    _ensure_admin_role_binding()
     try:
         from fastapi.testclient import TestClient
 

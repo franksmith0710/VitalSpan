@@ -325,6 +325,57 @@ def test_change_password_unchanged_returns_422(profile_ctx: ProfileCtx) -> None:
     assert _password_change_audit_total() == before
 
 
+def test_admin_reset_password_http_no_store_and_revokes_target_jwt(
+    profile_ctx: ProfileCtx,
+) -> None:
+    """Task 6: 管理员重置密码 HTTP —— 响应 Cache-Control no-store，且目标旧 JWT 失效为 TOKEN_REVOKED。"""
+    client = profile_ctx["client"]
+    admin_headers = profile_ctx["headers"]  # profile 用户为 root，具备 password.reset 权限
+
+    target_username = f"reset-target-{uuid.uuid4().hex[:10]}"
+    target_password = f"Init-Pass-{uuid.uuid4().hex[:10]}!"
+    created = client.post(
+        "/api/v1/users",
+        headers=admin_headers,
+        json={"username": target_username, "initialPassword": target_password, "roleIds": []},
+    )
+    assert created.status_code == 201, created.text
+    target_id = created.json()["id"]
+
+    target_login = client.post(
+        "/api/v1/auth/login",
+        json={"username": target_username, "password": target_password},
+    )
+    assert target_login.status_code == 200, target_login.text
+    target_headers = {"Authorization": f"Bearer {target_login.json()['accessToken']}"}
+    assert client.get("/api/v1/me", headers=target_headers).status_code == 200
+
+    reset = client.post(
+        f"/api/v1/users/{target_id}/reset-password",
+        headers=admin_headers,
+    )
+    assert reset.status_code == 200, reset.text
+    assert reset.headers.get("Cache-Control") == "no-store"
+    body = reset.json()
+    assert body["temporaryPassword"]
+    assert body["temporaryPassword"] != target_password
+
+    revoked = client.get("/api/v1/me", headers=target_headers)
+    assert revoked.status_code == 401
+    assert revoked.json()["code"] == "TOKEN_REVOKED"
+
+
+def test_create_user_http_password_policy_returns_422(profile_ctx: ProfileCtx) -> None:
+    """Task 6: 初始密码短于策略下限（8）时创建用户 → 422 AUTH_PASSWORD_POLICY。"""
+    response = profile_ctx["client"].post(
+        "/api/v1/users",
+        headers=profile_ctx["headers"],
+        json={"username": f"short-pw-{uuid.uuid4().hex[:8]}", "initialPassword": "short", "roleIds": []},
+    )
+    assert response.status_code == 422, response.text
+    assert response.json()["code"] == "AUTH_PASSWORD_POLICY"
+
+
 def test_change_password_audit_failure_rolls_back_credentials(
     profile_ctx: ProfileCtx,
     monkeypatch: pytest.MonkeyPatch,

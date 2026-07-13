@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, get_current_user, require_permission
 from app.auth.models import get_meta_session
+from app.auth.password.service import PasswordPolicyError
 from app.auth.schemas import (
     ResetPasswordOut,
     UserCreate,
@@ -93,6 +94,11 @@ def create_user(
 ) -> UserOut | JSONResponse:
     try:
         user = user_service.create_user(db, payload, **_audit_context(actor))
+    except PasswordPolicyError as exc:
+        return JSONResponse(
+            status_code=exc.status,
+            content={"code": exc.code, "message": exc.message, "detail": None},
+        )
     except user_service.UserError as exc:
         return _user_error_response(exc)
     return UserOut.model_validate(user)
