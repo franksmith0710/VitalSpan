@@ -46,6 +46,17 @@ class RoleListResponse(BaseModel):
     total: int
 
 
+class RolePermissionsOut(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, from_attributes=True
+    )
+
+    role_id: uuid.UUID = Field(alias="roleId")
+    permission_codes: list[str] = Field(alias="permissionCodes")
+    version: int
+    all_permissions: bool = Field(alias="allPermissions")
+
+
 class OrgCreate(BaseModel):
     name: str = Field(min_length=1, max_length=128)
     parent_id: uuid.UUID | None = None
