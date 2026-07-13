@@ -7,7 +7,9 @@ export function AccountSecurityPage() {
       title="安全设置"
       description="管理登录密码与账户安全偏好。"
     >
-      <ChangePasswordSection />
+      <div className="w-full max-w-5xl">
+        <ChangePasswordSection />
+      </div>
     </AdminPageShell>
   );
 }

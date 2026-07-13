@@ -2,6 +2,8 @@ import { ApiRequestError } from "@/lib/api";
 
 const CODE_MESSAGES: Record<string, string> = {
   AUTH_INVALID_CREDENTIALS: "用户名或密码错误",
+  AUTH_INVALID_CURRENT_PASSWORD: "当前密码不正确",
+  AUTH_PASSWORD_UNCHANGED: "新密码不能与当前密码相同",
   UNAUTHORIZED: "登录已过期，请重新登录",
   DASH_NOT_FOUND: "看板不存在或已被删除",
   DATASOURCE_IN_USE: "数据源正在被引用，无法删除",

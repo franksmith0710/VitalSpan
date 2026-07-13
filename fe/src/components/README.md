@@ -7,7 +7,7 @@
 | Button | `ui/button.tsx` | 主/次操作；尺寸 `xs` h-8 · `sm` h-9 · `md` h-10（默认）· `lg` h-11 · IconButton 默认 `sm` |
 | Input | `ui/input.tsx` | 表单输入（skill 模板） |
 | SearchField | `ui/search-field.tsx` | 列表页搜索框（图标 + 清除） |
-| Label | `ui/label.tsx` | 表单标签 |
+| Label | `ui/label.tsx` | 表单标签；`RequiredLabel` 必填标签（星号 + 屏幕阅读器“必填”） |
 | Badge | `ui/badge.tsx` | 状态标签 |
 | Breadcrumb | `ui/breadcrumb.tsx` | 页面面包屑 |
 | Card | `ui/card.tsx` | 区块卡片（ComponentCard） |
