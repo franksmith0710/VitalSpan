@@ -61,6 +61,31 @@ def resolve_user_permissions(session: Session, user_id: uuid.UUID) -> tuple[set[
     return set(codes), False
 
 
+def get_role_permissions(session: Session, role_id: uuid.UUID) -> RolePermissionsOut:
+    """读取角色权限绑定：root 角色返回 allPermissions=True 且空 codes。"""
+    role = session.get(AuthRole, role_id)
+    if role is None:
+        raise PermissionServiceError("ROLE_NOT_FOUND", "Role not found", 404)
+    if role.is_root:
+        return RolePermissionsOut(
+            role_id=role_id,
+            permission_codes=[],
+            version=role.permission_version,
+            all_permissions=True,
+        )
+    codes = session.scalars(
+        select(AuthPermission.code)
+        .join(AuthRolePermission, AuthRolePermission.permission_id == AuthPermission.id)
+        .where(AuthRolePermission.role_id == role_id)
+    ).all()
+    return RolePermissionsOut(
+        role_id=role_id,
+        permission_codes=sorted(codes),
+        version=role.permission_version,
+        all_permissions=False,
+    )
+
+
 def _ensure_permission_row(session: Session, code: str) -> uuid.UUID:
     """按目录定义确定性 upsert 权限行，返回 permission_id。"""
     pid = permission_id_for_code(code)

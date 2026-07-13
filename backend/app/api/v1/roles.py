@@ -8,8 +8,14 @@ from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.auth.audit.write_hooks import audit_kwargs
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, get_current_user, require_permission
 from app.auth.models import get_meta_session
+from app.auth.permissions import (
+    AuditWriteContext,
+    PermissionServiceError,
+    get_role_permissions,
+    replace_role_permissions,
+)
 from app.auth.roles import service as role_service
 from app.auth.rls.bindings import service as binding_service
 from app.auth.schemas import (
@@ -19,6 +25,8 @@ from app.auth.schemas import (
     RoleDimensionValuesReplace,
     RoleListResponse,
     RoleOut,
+    RolePermissionsOut,
+    RolePermissionsReplace,
     RoleUpdate,
 )
 from app.auth.users.service import UserError
@@ -42,6 +50,13 @@ def _role_error_response(exc: role_service.RoleError) -> JSONResponse:
 
 
 def _binding_error_response(exc: binding_service.BindingError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
+def _permission_error_response(exc: PermissionServiceError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": None},
@@ -170,6 +185,42 @@ def replace_role_dimension_groups(
     except binding_service.BindingError as exc:
         return _binding_error_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{role_id}/permissions", response_model=RolePermissionsOut)
+def get_role_permission_bindings(
+    role_id: uuid.UUID,
+    _: Annotated[UserContext, Depends(require_permission("system:role.read"))],
+    db: Annotated[Session, Depends(_db)],
+) -> RolePermissionsOut | JSONResponse:
+    try:
+        return get_role_permissions(db, role_id)
+    except PermissionServiceError as exc:
+        return _permission_error_response(exc)
+
+
+@router.put("/{role_id}/permissions", response_model=RolePermissionsOut)
+def replace_role_permission_bindings(
+    role_id: uuid.UUID,
+    payload: RolePermissionsReplace,
+    actor: Annotated[UserContext, Depends(require_permission("system:role.manage"))],
+    db: Annotated[Session, Depends(_db)],
+) -> RolePermissionsOut | JSONResponse:
+    ctx = audit_kwargs(actor.id, actor.username)
+    try:
+        return replace_role_permissions(
+            db,
+            role_id,
+            payload.permission_codes,
+            payload.expected_version,
+            audit=AuditWriteContext(
+                actor_id=ctx["actor_id"],
+                actor_username=ctx["actor_username"],
+                trace_id=ctx["trace_id"],
+            ),
+        )
+    except PermissionServiceError as exc:
+        return _permission_error_response(exc)
 
 
 @router.get("/{role_id}/effective-dimensions", response_model=EffectiveDimensionsResponse)

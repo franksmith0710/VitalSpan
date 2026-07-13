@@ -32,18 +32,46 @@ class RoleUpdate(BaseModel):
 
 
 class RoleOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        populate_by_name=True, serialize_by_alias=True, from_attributes=True
+    )
 
     id: uuid.UUID
     code: str
     name: str
     description: str | None
-    is_active: bool
+    is_active: bool = Field(alias="isActive")
+    is_root: bool = Field(alias="isRoot")
+    is_system: bool = Field(alias="isSystem")
+    permission_version: int = Field(alias="permissionVersion")
 
 
 class RoleListResponse(BaseModel):
     items: list[RoleOut]
     total: int
+
+
+class PermissionOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True, from_attributes=True)
+
+    id: uuid.UUID
+    code: str
+    name: str
+    domain: str
+    description: str | None = None
+
+
+class PermissionListOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+    items: list[PermissionOut]
+
+
+class RolePermissionsReplace(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+    permission_codes: list[str] = Field(alias="permissionCodes")
+    expected_version: int = Field(alias="expectedVersion", ge=0)
 
 
 class RolePermissionsOut(BaseModel):

@@ -657,3 +657,212 @@ def test_matrix_no_root_initialized_returns_503(client, monkeypatch):
     assert response.json()["code"] == "AUTH_ROOT_NOT_INITIALIZED"
 
     assert client.get("/health").status_code == 200
+
+
+# --------------------------------------------------------------------------- #
+# Task 5: 权限目录与角色权限 API（HTTP 契约与鉴权矩阵）
+# --------------------------------------------------------------------------- #
+_PERMISSIONS_PATH = "/api/v1/permissions"
+
+
+def _make_target_role(session, *, permission_version=0):
+    """构造一个受操作的普通目标角色，返回其 UUID 字符串。"""
+    role = _make_role(session, permission_version=permission_version)
+    return str(role.id)
+
+
+def test_api_permissions_catalog_requires_role_read(client):
+    """T-PERM-API-01: 无 system:role.read 读取权限目录 → 403 PERMISSION_DENIED。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, [])
+    finally:
+        session.close()
+    resp = client.get(_PERMISSIONS_PATH, headers=_bearer(info))
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "PERMISSION_DENIED"
+
+
+def test_api_permissions_catalog_returns_full_set_camelcase(client):
+    """T-PERM-API-02: system:role.read 读取目录 → 200，含全集且仅 camelCase 字段。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:role.read"])
+    finally:
+        session.close()
+    resp = client.get(_PERMISSIONS_PATH, headers=_bearer(info))
+    assert resp.status_code == 200
+    body = resp.json()
+    codes = {item["code"] for item in body["items"]}
+    assert {"system:role.read", "system:role.manage", "dashboard:read"} <= codes
+    # 目录不含通配编码
+    assert not any(c.endswith(":*") for c in codes)
+    sample = body["items"][0]
+    assert {"id", "code", "name", "domain", "description"} <= set(sample.keys())
+
+
+def test_api_role_permissions_get_requires_role_read(client):
+    """T-PERM-API-03: 无 system:role.read 读取角色绑定 → 403。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, [])
+        target_id = _make_target_role(session)
+    finally:
+        session.close()
+    resp = client.get(f"/api/v1/roles/{target_id}/permissions", headers=_bearer(info))
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "PERMISSION_DENIED"
+
+
+def test_api_role_permissions_get_returns_codes_and_version(client):
+    """T-PERM-API-04: 读取普通角色绑定 → allPermissions=false + version + codes。"""
+    from app.auth.permissions import replace_role_permissions
+
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:role.read"])
+        target = _make_role(session)
+        target_id = str(target.id)
+        replace_role_permissions(
+            session, target.id, ["dashboard:read"], expected_version=0, audit=_audit_ctx()
+        )
+    finally:
+        session.close()
+    resp = client.get(f"/api/v1/roles/{target_id}/permissions", headers=_bearer(info))
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["roleId"] == target_id
+    assert body["allPermissions"] is False
+    assert body["version"] == 1
+    assert body["permissionCodes"] == ["dashboard:read"]
+
+
+def test_api_role_permissions_get_root_all_permissions(client):
+    """T-PERM-API-05: root 角色绑定 → allPermissions=true，codes 为空。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:role.read"])
+        root = _make_role(session, is_root=True)
+        root_id = str(root.id)
+    finally:
+        session.close()
+    resp = client.get(f"/api/v1/roles/{root_id}/permissions", headers=_bearer(info))
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["allPermissions"] is True
+    assert body["permissionCodes"] == []
+
+
+def test_api_role_permissions_put_requires_role_manage(client):
+    """T-PERM-API-06: 仅有 role.read 无 role.manage → PUT 403。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:role.read"])
+        target_id = _make_target_role(session)
+    finally:
+        session.close()
+    resp = client.put(
+        f"/api/v1/roles/{target_id}/permissions",
+        headers=_bearer(info),
+        json={"permissionCodes": ["dashboard:read"], "expectedVersion": 0},
+    )
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "PERMISSION_DENIED"
+
+
+def test_api_role_permissions_put_replaces_and_bumps_version(client):
+    """T-PERM-API-07: system:role.manage 替换成功 → version+1，仅 camelCase。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:role.manage"])
+        target_id = _make_target_role(session)
+    finally:
+        session.close()
+    resp = client.put(
+        f"/api/v1/roles/{target_id}/permissions",
+        headers=_bearer(info),
+        json={"permissionCodes": ["dashboard:read", "report:read"], "expectedVersion": 0},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["version"] == 1
+    assert body["allPermissions"] is False
+    assert set(body["permissionCodes"]) == {"dashboard:read", "report:read"}
+    assert "roleId" in body and "role_id" not in body
+
+
+def test_api_role_permissions_put_requires_expected_version(client):
+    """T-PERM-API-08: 缺少 expectedVersion → 422 校验失败。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:role.manage"])
+        target_id = _make_target_role(session)
+    finally:
+        session.close()
+    resp = client.put(
+        f"/api/v1/roles/{target_id}/permissions",
+        headers=_bearer(info),
+        json={"permissionCodes": ["dashboard:read"]},
+    )
+    assert resp.status_code == 422
+
+
+def test_api_role_permissions_put_version_conflict_409(client):
+    """T-PERM-API-09: expectedVersion 与实际不符 → 409 ROLE_PERMISSION_VERSION_CONFLICT。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:role.manage"])
+        target_id = _make_target_role(session, permission_version=3)
+    finally:
+        session.close()
+    resp = client.put(
+        f"/api/v1/roles/{target_id}/permissions",
+        headers=_bearer(info),
+        json={"permissionCodes": ["dashboard:read"], "expectedVersion": 0},
+    )
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "ROLE_PERMISSION_VERSION_CONFLICT"
+
+
+def test_api_role_permissions_put_root_forbidden(client):
+    """T-PERM-API-10: root 角色 PUT → 409 AUTH_ROOT_ROLE_IMMUTABLE。"""
+    session = _new_session()
+    try:
+        info = _make_user_with_permissions(session, ["system:role.manage"])
+        root = _make_role(session, is_root=True)
+        root_id = str(root.id)
+    finally:
+        session.close()
+    resp = client.put(
+        f"/api/v1/roles/{root_id}/permissions",
+        headers=_bearer(info),
+        json={"permissionCodes": ["dashboard:read"], "expectedVersion": 0},
+    )
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "AUTH_ROOT_ROLE_IMMUTABLE"
+
+
+def test_api_role_permissions_replace_schema_accepts_both_casings():
+    """T-PERM-API-11: RolePermissionsReplace 支持 snake_case/camelCase 构造，输出 camelCase。"""
+    from app.auth.schemas import RolePermissionsReplace
+
+    by_alias = RolePermissionsReplace(permissionCodes=["dashboard:read"], expectedVersion=2)
+    by_name = RolePermissionsReplace(permission_codes=["dashboard:read"], expected_version=2)
+    assert by_alias.permission_codes == by_name.permission_codes == ["dashboard:read"]
+    assert by_alias.expected_version == by_name.expected_version == 2
+    dumped = by_alias.model_dump()
+    assert dumped == {"permissionCodes": ["dashboard:read"], "expectedVersion": 2}
+
+
+def test_api_role_out_exposes_security_fields_camelcase(client):
+    """T-PERM-API-12: GET /api/v1/roles 的 RoleOut 输出 isRoot/isSystem/permissionVersion。"""
+    resp = client.get("/api/v1/roles", headers=_bearer(_ADMIN_INFO))
+    assert resp.status_code == 200
+    items = resp.json()["items"]
+    assert items, "expected at least the seeded admin role"
+    sample = items[0]
+    assert {"isRoot", "isSystem", "permissionVersion"} <= set(sample.keys())
+    admin = next((r for r in items if r["code"] == "admin"), None)
+    assert admin is not None
+    assert admin["isRoot"] is True
+    assert admin["isSystem"] is True
