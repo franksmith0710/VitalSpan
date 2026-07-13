@@ -6,29 +6,33 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | DONE |
-| request | 客户主路径可交付毕业：四轨 worktree 并行（Dataset/筛选/报表诚实/RLS+H1） |
-| type | feature |
-| autonomy_policy | unattended |
+| phase | A2_CONTRACT |
+| request | 完整修复账户修改密码功能：布局、字段交互、错误不登出、测试与文档纠错 |
+| type | bug |
+| autonomy_policy | auto_accept_low_risk |
 | risk_level | medium |
-| plan | docs/automate/plans/2026-07-10-customer-delivery-graduation.md |
-| last_verified_command | pytest honesty+t1+t2 8/8; vitest 35/35; merge T4→T1→T2→T3 |
-| last_verified_exit_code | 0 |
-| verification_summary | Phase M 本地合并完成；FAKE-01~06 主路径已处置；F-C 余 2 项（调度历史 UI、服务试跑）不挡主路径 |
+| plan | pending |
+| last_verified_command | pending baseline |
+| last_verified_exit_code | pending |
+| verification_summary | 独立 worktree 已创建；待基线验证、根因评估与 Headless Plan |
 | repair_rounds | 0 |
-| status | DONE |
+| status | RUNNING |
+| started_at | 2026-07-13T16:20:00+08:00 |
 
 ## 当前需求契约
 
-- request: 客户主路径零假（A）+ A1 不含真实总线 + H1 治理默认隐藏；四轨并行无人值守
-- type: feature
-- goal: 可交付成熟度 ≥8.0；FAKE-01~06 处置；无 PR 本地合并
-- scope_include: Dataset ORM/execute/编辑器；filter widget；报表去 mock；RLS/审计 UI；gov nav H1
-- scope_exclude: 真实总线；SQL Lab；AI；创建 GitHub PR
-- acceptance: 四轨提交 + PhaseM 合并 + honesty gate 绿
+- request: 对照已确认问题完整修复账户修改密码功能
+- type: bug
+- goal: 修改密码页面达到 B Design System 视觉与交互要求；错误当前密码不得清除有效登录态；成功修改、失败反馈与审计链可验证
+- scope_include: ChangePasswordSection 布局与字段交互、鉴权错误分类、前后端测试、API/PRD 文档纠错、desktop/tablet/mobile light/dark 浏览器验收
+- scope_exclude: 密码找回、MFA、全局会话撤销、生产发布、自动合并主分支
+- acceptance: 前端交互测试与构建/design gate 通过；后端修改密码专项测试通过；错误当前密码保留会话；三视口 light/dark 无空白/裁切/错位；plan-verify 通过
 - risk_level: medium
-- autonomy_policy: unattended
-- assumptions: subagent 继承当前会话模型；不切换其他模型
+- autonomy_policy: auto_accept_low_risk
+- assumptions:
+  - 保留主工作区 Dashboard A5 任务，本需求在 fix/account-password-security worktree 独立执行
+  - 使用现有 React/TanStack Query、FastAPI、B Design System 与项目测试框架
+  - 低风险技术偏差自动接受并记录；不执行生产发布或自动合并
 
 ## 待办池
 
