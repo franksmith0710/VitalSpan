@@ -1,10 +1,13 @@
 import threading
 import uuid as uuid_mod
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy import select
 
+from app.auth.login import service as login_service
 from app.auth.models import (
+    AuthAuditEvent,
     AuthRole,
     AuthUser,
     AuthUserRole,
@@ -286,7 +289,13 @@ def test_bootstrap_root_rejects_existing_unless_allowed():
     try:
         _reset_root_state(session)
         username = f"root_{uuid_mod.uuid4().hex[:8]}"
-        user_service.create_user(session, UserCreate(username=username))
+        user_service.create_user(
+            session,
+            UserCreate(username=username, initialPassword="init-pass-123", roleIds=[]),
+            actor_id="dev",
+            actor_username="dev",
+            trace_id="test-lifecycle",
+        )
 
         with pytest.raises(BootstrapError) as exc:
             bootstrap_root(
@@ -365,5 +374,264 @@ def test_bootstrap_root_converges_when_concurrent_bootstrap_won(monkeypatch):
         )
         assert result.id == winner.id
         assert calls["n"] == 2
+    finally:
+        session.close()
+
+
+# --------------------------------------------------------------------------- #
+# Task 6: 密码服务
+# --------------------------------------------------------------------------- #
+
+
+def test_password_policy_rejects_out_of_range_lengths():
+    """T-PW-01: 密码策略校验长度 8-128；越界抛 PasswordPolicyError。"""
+    from app.auth.password.service import PasswordPolicyError, validate_password_policy
+
+    validate_password_policy("a" * 8)
+    validate_password_policy("a" * 128)
+    with pytest.raises(PasswordPolicyError):
+        validate_password_policy("a" * 7)
+    with pytest.raises(PasswordPolicyError):
+        validate_password_policy("a" * 129)
+
+
+def test_hash_and_verify_password_roundtrip():
+    """T-PW-02: hash/verify 往返；错误密码不通过。"""
+    from app.auth.password.service import hash_password, verify_password
+
+    hashed = hash_password("s3cret-pass")
+    assert hashed and hashed != "s3cret-pass"
+    assert verify_password("s3cret-pass", hashed)
+    assert not verify_password("wrong-pass", hashed)
+    assert not verify_password("anything", "")
+
+
+def test_generate_temporary_password_meets_policy_and_length():
+    """T-PW-03: 临时密码长度取配置值，且满足策略。"""
+    from app.auth.password.service import (
+        generate_temporary_password,
+        validate_password_policy,
+    )
+    from app.core.config import get_settings
+
+    expected_length = get_settings().auth_temporary_password_length
+    generated = {generate_temporary_password() for _ in range(5)}
+    assert len(generated) == 5  # 随机、不重复
+    for pw in generated:
+        assert len(pw) == expected_length
+        validate_password_policy(pw)
+
+
+# --------------------------------------------------------------------------- #
+# Task 6: 用户创建 / 解锁 / 重置密码
+# --------------------------------------------------------------------------- #
+
+
+def test_create_user_requires_initial_password_and_saves_hash():
+    """T-USER-01: 创建用户保存 bcrypt hash，不落明文。"""
+    from app.auth.password.service import verify_password
+
+    session = _new_session()
+    try:
+        payload = UserCreate(
+            username=f"u_{uuid_mod.uuid4().hex[:10]}",
+            initialPassword="init-pass-123",
+            roleIds=[],
+        )
+        user = user_service.create_user(
+            session,
+            payload,
+            actor_id="dev",
+            actor_username="dev",
+            trace_id="t",
+        )
+        session.refresh(user)
+        assert user.password_hash
+        assert user.password_hash != "init-pass-123"
+        assert verify_password("init-pass-123", user.password_hash)
+
+        event = session.scalar(
+            select(AuthAuditEvent)
+            .where(
+                AuthAuditEvent.action == "user.create",
+                AuthAuditEvent.target_id == user.id,
+            )
+        )
+        assert event is not None
+        assert "init-pass-123" not in (event.detail or "")
+    finally:
+        session.close()
+
+
+def test_unlock_user_clears_lock_and_failed_count():
+    """T-USER-02: 解锁清零 failed_login_count 与 locked_until，并写审计。"""
+    session = _new_session()
+    try:
+        user = _make_user(session)
+        user.failed_login_count = 5
+        user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+        session.commit()
+        result = user_service.unlock_user(
+            session, user.id, actor_id="dev", actor_username="dev", trace_id="t"
+        )
+        assert result.failed_login_count == 0
+        assert result.locked_until is None
+        event = session.scalar(
+            select(AuthAuditEvent).where(
+                AuthAuditEvent.action == "user.unlock",
+                AuthAuditEvent.target_id == user.id,
+            )
+        )
+        assert event is not None
+    finally:
+        session.close()
+
+
+def test_reset_password_rotates_hash_bumps_version_and_hides_plaintext():
+    """T-USER-03: 重置生成临时密码、旧密码失效、token_version+1、审计无明文。"""
+    from app.auth.password.service import hash_password, verify_password
+
+    session = _new_session()
+    try:
+        user = _make_user(session)
+        user.password_hash = hash_password("old-pass-1234")
+        session.commit()
+        old_version = user.token_version
+
+        temporary, changed_at = user_service.reset_password(
+            session, user.id, actor_id="dev", actor_username="dev", trace_id="t"
+        )
+        session.refresh(user)
+
+        assert not verify_password("old-pass-1234", user.password_hash)
+        assert verify_password(temporary, user.password_hash)
+        assert user.token_version == old_version + 1
+        assert user.password_changed_at is not None
+        assert changed_at is not None
+
+        event = session.scalar(
+            select(AuthAuditEvent)
+            .where(
+                AuthAuditEvent.action == "user.password.reset",
+                AuthAuditEvent.target_id == user.id,
+            )
+            .order_by(AuthAuditEvent.created_at.desc())
+        )
+        assert event is not None
+        detail = event.detail or ""
+        assert temporary not in detail
+        assert user.password_hash not in detail
+    finally:
+        session.close()
+
+
+def test_reset_password_on_last_root_user_is_allowed():
+    """T-USER-04: 重置最后一个 root 用户密码不触发根管理员保护（不改绑定/启用）。"""
+    session = _new_session()
+    try:
+        root = _reset_root_state(session)
+        user = _make_user(session, role_ids=[root.id])
+        temporary, _ = user_service.reset_password(
+            session, user.id, actor_id="dev", actor_username="dev", trace_id="t"
+        )
+        assert temporary
+        session.refresh(user)
+        assert user.is_active is True
+    finally:
+        session.close()
+
+
+# --------------------------------------------------------------------------- #
+# Task 6: 登录锁定策略（服务级）
+# --------------------------------------------------------------------------- #
+
+
+def _seed_login_user(session, password: str, **kwargs):
+    from app.auth.password.service import hash_password
+
+    user = _make_user(session, **kwargs)
+    user.password_hash = hash_password(password)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def test_consecutive_failures_lock_user_and_audit():
+    """T-LOCK-01: 连续失败达到阈值 → locked_until 设定并写 user.lock 审计。"""
+    from app.core.config import get_settings
+
+    session = _new_session()
+    try:
+        user = _seed_login_user(session, "correct-pass-1")
+        max_failed = get_settings().auth_max_failed_logins
+        for _ in range(max_failed):
+            with pytest.raises(login_service.LoginError) as exc:
+                login_service.authenticate(session, user.username, "wrong-pass")
+            assert exc.value.code == "AUTH_INVALID_CREDENTIALS"
+        session.refresh(user)
+        assert user.failed_login_count == max_failed
+        assert user.locked_until is not None
+
+        event = session.scalar(
+            select(AuthAuditEvent).where(
+                AuthAuditEvent.action == "user.lock",
+                AuthAuditEvent.target_id == user.id,
+            )
+        )
+        assert event is not None
+
+        # 锁定期间即便密码正确也拒绝，且不再累加计数
+        with pytest.raises(login_service.LoginError) as locked_exc:
+            login_service.authenticate(session, user.username, "correct-pass-1")
+        assert locked_exc.value.status == 403
+        assert locked_exc.value.code == "AUTH_USER_LOCKED"
+        session.refresh(user)
+        assert user.failed_login_count == max_failed
+    finally:
+        session.close()
+
+
+def test_successful_login_resets_failed_count():
+    """T-LOCK-02: 成功登录清零连续失败计数。"""
+    session = _new_session()
+    try:
+        user = _seed_login_user(session, "correct-pass-2")
+        user.failed_login_count = 3
+        session.commit()
+        result = login_service.authenticate(session, user.username, "correct-pass-2")
+        session.refresh(result)
+        assert result.failed_login_count == 0
+        assert result.locked_until is None
+    finally:
+        session.close()
+
+
+def test_login_rejects_disabled_user_403():
+    """T-LOCK-03: 禁用用户登录 → 403 AUTH_USER_DISABLED。"""
+    session = _new_session()
+    try:
+        user = _seed_login_user(session, "correct-pass-3", is_active=False)
+        with pytest.raises(login_service.LoginError) as exc:
+            login_service.authenticate(session, user.username, "correct-pass-3")
+        assert exc.value.status == 403
+        assert exc.value.code == "AUTH_USER_DISABLED"
+    finally:
+        session.close()
+
+
+def test_login_after_expired_lock_recounts_from_one():
+    """T-LOCK-04: 锁定到期后首次失败从 1 重新计数。"""
+    session = _new_session()
+    try:
+        user = _seed_login_user(session, "correct-pass-4")
+        user.failed_login_count = 5
+        user.locked_until = datetime.now(timezone.utc) - timedelta(minutes=1)
+        session.commit()
+        with pytest.raises(login_service.LoginError) as exc:
+            login_service.authenticate(session, user.username, "wrong-pass")
+        assert exc.value.code == "AUTH_INVALID_CREDENTIALS"
+        session.refresh(user)
+        assert user.failed_login_count == 1
+        assert user.locked_until is None
     finally:
         session.close()

@@ -122,7 +122,7 @@ def _create_ds(name: str = "Query DS", code: str | None = None):
 
 
 def _dev_user(client, auth_headers):
-    created = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers)
+    created = client.post("/api/v1/users", json={"username": "dev", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers)
     if created.status_code == 201:
         return created.json()
     from app.auth.models import AuthUser

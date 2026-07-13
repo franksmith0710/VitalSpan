@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -12,7 +13,12 @@ from app.auth.bootstrap_root import (
     assert_root_admin_survives,
 )
 from app.auth.models import AuthOrgNode, AuthRole, AuthUser, AuthUserRole
-from app.auth.schemas import UserCreate
+from app.auth.password.service import (
+    generate_temporary_password,
+    hash_password,
+    validate_password_policy,
+)
+from app.auth.schemas import UserCreate, UserUpdate
 
 
 class UserError(Exception):
@@ -74,16 +80,167 @@ def _audit_user_event(
     )
 
 
-def create_user(session: Session, payload: UserCreate) -> AuthUser:
-    user = AuthUser(username=payload.username)
+def _resolve_active_roles(session: Session, role_ids: list[uuid.UUID]) -> list[AuthRole]:
+    from app.auth.roles.service import assert_role_active
+
+    roles: list[AuthRole] = []
+    for role_id in role_ids:
+        role = session.get(AuthRole, role_id)
+        if role is None:
+            raise UserError("ROLE_NOT_FOUND", "Role not found", 404)
+        assert_role_active(role)
+        roles.append(role)
+    return roles
+
+
+def create_user(
+    session: Session,
+    payload: UserCreate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthUser:
+    """创建用户：保存初始密码 hash、可选组织与角色绑定，同事务写审计。"""
+    validate_password_policy(payload.initial_password)
+    if payload.org_id is not None and session.get(AuthOrgNode, payload.org_id) is None:
+        raise UserError("ORG_NOT_FOUND", "Org node not found", 404)
+    roles = _resolve_active_roles(session, payload.role_ids)
+
+    user = AuthUser(
+        username=payload.username,
+        display_name=payload.display_name,
+        email=payload.email,
+        org_node_id=payload.org_id,
+        password_hash=hash_password(payload.initial_password),
+    )
     session.add(user)
     try:
-        session.commit()
+        session.flush()
     except IntegrityError as exc:
         session.rollback()
         raise UserError("USERNAME_CONFLICT", "Username already exists", 409) from exc
+    for role in roles:
+        session.add(AuthUserRole(user_id=user.id, role_id=role.id))
+    _audit_user_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_id=user.id,
+        action="user.create",
+        detail={"username": user.username, "role_ids": [str(r.id) for r in roles]},
+        trace_id=trace_id,
+    )
+    session.commit()
     session.refresh(user)
     return user
+
+
+def update_user(
+    session: Session,
+    user_id: uuid.UUID,
+    payload: UserUpdate,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthUser:
+    """更新用户资料/组织/角色；替换角色时保护根管理员不变量。"""
+    user = get_user(session, user_id)
+    changes: dict[str, object] = {}
+    if payload.display_name is not None:
+        user.display_name = payload.display_name.strip()
+        changes["displayName"] = user.display_name
+    if payload.email is not None:
+        user.email = payload.email
+        changes["email"] = user.email
+    if payload.org_id is not None:
+        if session.get(AuthOrgNode, payload.org_id) is None:
+            raise UserError("ORG_NOT_FOUND", "Org node not found", 404)
+        user.org_node_id = payload.org_id
+        changes["orgId"] = str(payload.org_id)
+
+    if payload.role_ids is not None:
+        roles = _resolve_active_roles(session, payload.role_ids)
+        had_root = _user_has_enabled_root_binding(session, user_id)
+        session.query(AuthUserRole).filter(AuthUserRole.user_id == user_id).delete()
+        for role in roles:
+            session.add(AuthUserRole(user_id=user_id, role_id=role.id))
+        if had_root:
+            _guard_root_admin(session)
+        changes["roleIds"] = [str(r.id) for r in roles]
+
+    if not changes:
+        raise UserError("USER_NO_CHANGES", "No user fields to update", 422)
+    _audit_user_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_id=user_id,
+        action="user.update",
+        detail=changes,
+        trace_id=trace_id,
+    )
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def unlock_user(
+    session: Session,
+    user_id: uuid.UUID,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> AuthUser:
+    """解锁用户：清零连续失败计数与锁定时间。"""
+    user = get_user(session, user_id)
+    user.failed_login_count = 0
+    user.locked_until = None
+    _audit_user_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_id=user_id,
+        action="user.unlock",
+        detail=None,
+        trace_id=trace_id,
+    )
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+def reset_password(
+    session: Session,
+    user_id: uuid.UUID,
+    *,
+    actor_id: str,
+    actor_username: str | None,
+    trace_id: str,
+) -> tuple[str, datetime]:
+    """管理员重置密码：生成临时密码、递增 token_version、审计不含明文。
+
+    返回一次性明文临时密码与 ``password_changed_at``；明文只在返回值中出现。
+    """
+    user = get_user(session, user_id)
+    temporary = generate_temporary_password()
+    user.password_hash = hash_password(temporary)
+    user.password_changed_at = datetime.now(timezone.utc)
+    user.token_version = user.token_version + 1
+    _audit_user_event(
+        session,
+        actor_id=actor_id,
+        actor_username=actor_username,
+        target_id=user_id,
+        action="user.password.reset",
+        detail={"tokenVersion": user.token_version},
+        trace_id=trace_id,
+    )
+    session.commit()
+    session.refresh(user)
+    return temporary, user.password_changed_at
 
 
 def get_user(session: Session, user_id: uuid.UUID) -> AuthUser:

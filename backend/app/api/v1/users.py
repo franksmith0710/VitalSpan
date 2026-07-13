@@ -8,12 +8,26 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, get_current_user, require_permission
 from app.auth.models import get_meta_session
-from app.auth.schemas import UserCreate, UserListResponse, UserOrgAssign, UserOrgResponse, UserOut, UserRoleOut, UserRolesReplace, UserRolesResponse
+from app.auth.schemas import (
+    ResetPasswordOut,
+    UserCreate,
+    UserListResponse,
+    UserOrgAssign,
+    UserOrgResponse,
+    UserOut,
+    UserRoleOut,
+    UserRolesReplace,
+    UserRolesResponse,
+    UserUpdate,
+)
 from app.auth.users import service as user_service
 from app.auth.roles import service as role_service
 from app.core.logging import trace_id_var
+
+PERM_USER_MANAGE = "system:user.manage"
+PERM_USER_PASSWORD_RESET = "system:user.password.reset"
 
 router = APIRouter(prefix="/users", tags=["auth"])
 
@@ -50,6 +64,15 @@ def _binding_context(actor: UserContext) -> dict[str, str | list[str] | None]:
     }
 
 
+def _audit_context(actor: UserContext) -> dict[str, str | None]:
+    trace = trace_id_var.get() or uuid_mod.uuid4().hex
+    return {
+        "actor_id": actor.id,
+        "actor_username": actor.username,
+        "trace_id": trace,
+    }
+
+
 @router.get("", response_model=UserListResponse)
 def list_users(
     _: Annotated[UserContext, Depends(get_current_user)],
@@ -65,14 +88,90 @@ def list_users(
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(
     payload: UserCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> UserOut | JSONResponse:
     try:
-        user = user_service.create_user(db, payload)
+        user = user_service.create_user(db, payload, **_audit_context(actor))
     except user_service.UserError as exc:
         return _user_error_response(exc)
     return UserOut.model_validate(user)
+
+
+@router.patch("/{user_id}", response_model=UserOut)
+def update_user(
+    user_id: uuid.UUID,
+    payload: UserUpdate,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> UserOut | JSONResponse:
+    try:
+        user = user_service.update_user(db, user_id, payload, **_audit_context(actor))
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    except role_service.RoleError as exc:
+        return _role_error_response(exc)
+    return UserOut.model_validate(user)
+
+
+@router.post("/{user_id}/disable", response_model=UserOut)
+def disable_user(
+    user_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> UserOut | JSONResponse:
+    ctx = _binding_context(actor)
+    try:
+        user = user_service.set_user_active(db, user_id, False, **ctx)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return UserOut.model_validate(user)
+
+
+@router.post("/{user_id}/enable", response_model=UserOut)
+def enable_user(
+    user_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> UserOut | JSONResponse:
+    ctx = _binding_context(actor)
+    try:
+        user = user_service.set_user_active(db, user_id, True, **ctx)
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return UserOut.model_validate(user)
+
+
+@router.post("/{user_id}/unlock", response_model=UserOut)
+def unlock_user(
+    user_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
+    db: Annotated[Session, Depends(_db)],
+) -> UserOut | JSONResponse:
+    try:
+        user = user_service.unlock_user(db, user_id, **_audit_context(actor))
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return UserOut.model_validate(user)
+
+
+@router.post("/{user_id}/reset-password", response_model=ResetPasswordOut)
+def reset_user_password(
+    user_id: uuid.UUID,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_PASSWORD_RESET))],
+    db: Annotated[Session, Depends(_db)],
+) -> Response | JSONResponse:
+    try:
+        temporary, changed_at = user_service.reset_password(
+            db, user_id, **_audit_context(actor)
+        )
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    body = ResetPasswordOut(temporary_password=temporary, password_changed_at=changed_at)
+    return JSONResponse(
+        content=body.model_dump(mode="json", by_alias=True),
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @router.get("/{user_id}/roles", response_model=UserRolesResponse)

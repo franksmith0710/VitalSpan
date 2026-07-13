@@ -60,9 +60,11 @@ redoc: /redoc
 | GET | `/api/v1/permissions` | 权限目录全集（`PermissionListOut`；`system:role.read`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/permissions.py` |
 | GET | `/api/v1/roles/{id}/permissions` | 角色权限绑定（`RolePermissionsOut`；root 返回 `allPermissions=true`；`system:role.read`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
 | PUT | `/api/v1/roles/{id}/permissions` | 角色权限全量替换（`expectedVersion` 乐观锁；冲突 409 `ROLE_PERMISSION_VERSION_CONFLICT`；root 禁改 409 `AUTH_ROOT_ROLE_IMMUTABLE`；`system:role.manage`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
-| GET/POST | `/api/v1/users` | 用户列表/创建 | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
-| GET/PUT | `/api/v1/users/{id}` | 用户详情/更新 | 内部 | 一期 | AUTH-003 | 规划 | `backend/app/api/v1/users.py` |
-| PUT | `/api/v1/users/{id}/roles` | 用户角色绑定 | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| GET/POST | `/api/v1/users` | 用户列表/创建（POST body `{username, displayName?, email?, orgId?, roleIds, initialPassword}`；保存 bcrypt hash，不返回密码；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| PATCH | `/api/v1/users/{id}` | 用户信息/角色更新（`{displayName?, email?, orgId?, roleIds?}`；根管理员保护；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| POST | `/api/v1/users/{id}/disable` · `/enable` · `/unlock` | 用户启停/解锁（解锁清零失败计数与 `lockedUntil`；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| POST | `/api/v1/users/{id}/reset-password` | 管理员重置密码（返回 `{temporaryPassword, passwordChangedAt}`；`Cache-Control: no-store`；`token_version+1`；审计无明文；`system:user.password.reset`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| PUT | `/api/v1/users/{id}/roles` | 用户角色绑定（deprecated，等价 PATCH `roleIds`；`system:user.manage`） | 内部 | 一期 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | PUT/GET/DELETE | `/api/v1/users/{id}/org` | 用户组织归属 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/users.py` |
 | GET/POST | `/api/v1/orgs` | 组织树节点 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
 | GET/POST/DELETE | `/api/v1/resource-grants` | AUTH-004 资源授权 CRUD | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |

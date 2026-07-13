@@ -85,3 +85,37 @@ def test_dev_switch_user_not_found(client, admin_auth_headers):
 def test_login_public_without_auth(client):
     response = client.post("/api/v1/auth/login", json={"username": "x", "password": "y"})
     assert response.status_code == 401
+
+
+def test_login_jwt_carries_user_token_version(client):
+    """Task 6: 登录发放的 JWT 必须携带用户当前 tokenVersion。"""
+    import uuid
+
+    from app.auth.jwt import decode_access_token
+    from app.auth.models import AuthUser, Base, get_meta_engine, get_meta_session
+    from app.auth.password.service import hash_password
+
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    username = f"lv_{uuid.uuid4().hex[:8]}"
+    session = get_meta_session()
+    try:
+        session.add(
+            AuthUser(
+                username=username,
+                password_hash=hash_password("pw-known-1234"),
+                is_active=True,
+                token_version=4,
+            )
+        )
+        session.commit()
+    finally:
+        session.close()
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"username": username, "password": "pw-known-1234"},
+    )
+    assert response.status_code == 200
+    claims = decode_access_token(response.json()["accessToken"])
+    assert claims["tokenVersion"] == 4

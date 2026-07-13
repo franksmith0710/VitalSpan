@@ -278,7 +278,7 @@ def test_org_list_fields(client, auth_headers):
 def test_user_bind_roles_roundtrip(client, auth_headers):
     """T-AUTH-U01: 创建用户 + 绑定角色。"""
     role = client.post("/api/v1/roles", json={"code": "bind_r1", "name": "R1"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "u_bind_1"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "u_bind_1", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     bind = client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     assert bind.status_code == 200
     roles = client.get(f"/api/v1/users/{user['id']}/roles", headers=auth_headers).json()["items"]
@@ -288,7 +288,7 @@ def test_user_bind_roles_roundtrip(client, auth_headers):
 def test_user_bind_idempotent(client, auth_headers):
     """T-AUTH-U02: 重复 POST bind → 200；仅一行。"""
     role = client.post("/api/v1/roles", json={"code": "bind_r2", "name": "R2"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "u_bind_2"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "u_bind_2", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     url = f"/api/v1/users/{user['id']}/roles/{role['id']}"
     assert client.post(url, headers=auth_headers).status_code == 200
     assert client.post(url, headers=auth_headers).status_code == 200
@@ -299,7 +299,7 @@ def test_user_bind_invalid_role_404(client, auth_headers):
     """T-AUTH-U03: 非法 roleId → 404。"""
     import uuid
 
-    user = client.post("/api/v1/users", json={"username": "u_bind_3"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "u_bind_3", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     resp = client.post(f"/api/v1/users/{user['id']}/roles/{uuid.uuid4()}", headers=auth_headers)
     assert resp.status_code == 404
 
@@ -308,7 +308,7 @@ def test_user_unbind_not_found_404(client, auth_headers):
     """T-AUTH-U04: 解绑不存在 → 404 BINDING_NOT_FOUND。"""
     import uuid
 
-    user = client.post("/api/v1/users", json={"username": "u_bind_4"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "u_bind_4", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     resp = client.delete(f"/api/v1/users/{user['id']}/roles/{uuid.uuid4()}", headers=auth_headers)
     assert resp.status_code == 404
     assert resp.json()["code"] == "BINDING_NOT_FOUND"
@@ -318,7 +318,7 @@ def test_user_replace_roles(client, auth_headers):
     """T-AUTH-U05: PUT 全量替换 role_ids。"""
     r1 = client.post("/api/v1/roles", json={"code": "rep_r1", "name": "A"}, headers=auth_headers).json()
     r2 = client.post("/api/v1/roles", json={"code": "rep_r2", "name": "B"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "u_rep"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "u_rep", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{r1['id']}", headers=auth_headers)
     client.put(
         f"/api/v1/users/{user['id']}/roles",
@@ -606,7 +606,7 @@ from app.auth.users import service as users_service
 def test_user_org_bind_roundtrip(client, auth_headers):
     """T-AUTH-OU01: 建 org + user → assign → get_user_org 一致。"""
     org = client.post("/api/v1/orgs", json={"name": "Dept"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "ou_user"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_user", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
         users_service.assign_user_org(
@@ -622,7 +622,7 @@ def test_user_org_bind_roundtrip(client, auth_headers):
 def test_user_org_idempotent(client, auth_headers):
     """T-AUTH-OU02: 重复 assign 同 org 仍成功。"""
     org = client.post("/api/v1/orgs", json={"name": "Dept2"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "ou_idem"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_idem", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
         uid, oid = uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"])
@@ -635,7 +635,7 @@ def test_user_org_idempotent(client, auth_headers):
 
 def test_user_org_invalid_org_404(client, auth_headers):
     """T-AUTH-OU03: assign 随机 org UUID → 404 ORG_NOT_FOUND。"""
-    user = client.post("/api/v1/users", json={"username": "ou_bad"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_bad", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
         with pytest.raises(users_service.UserError) as exc:
@@ -649,7 +649,7 @@ def test_user_org_invalid_org_404(client, auth_headers):
 def test_user_org_clear(client, auth_headers):
     """T-AUTH-OU04: clear 后 get → None。"""
     org = client.post("/api/v1/orgs", json={"name": "Clr"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "ou_clr"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "ou_clr", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
         uid, oid = uuid_mod.UUID(user["id"]), uuid_mod.UUID(org["id"])
@@ -663,7 +663,7 @@ def test_user_org_clear(client, auth_headers):
 def test_delete_org_with_users_409(client, auth_headers):
     """T-AUTH-O07: 用户绑定叶子 org → delete → 409 ORG_HAS_USERS。"""
     org = client.post("/api/v1/orgs", json={"name": "Leaf"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "leaf_u"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "leaf_u", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
         users_service.assign_user_org(
@@ -701,7 +701,7 @@ def test_org_orphan_parent_still_404(client, auth_headers):
 def test_user_org_http_roundtrip(client, auth_headers):
     """T-AUTH-O10: PUT/GET/DELETE user-org HTTP 状态码与 body 一致。"""
     org = client.post("/api/v1/orgs", json={"name": "HttpOrg"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "http_ou"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "http_ou", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     put = client.put(
         f"/api/v1/users/{user['id']}/org",
         json={"org_node_id": org["id"]},
@@ -755,7 +755,7 @@ def test_bind_roles_batch(client, auth_headers):
     """T-AUTH-U07: 批量绑定两角色 → GET roles 含 2 codes。"""
     r1 = client.post("/api/v1/roles", json={"code": "batch_a", "name": "A"}, headers=auth_headers).json()
     r2 = client.post("/api/v1/roles", json={"code": "batch_b", "name": "B"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "batch_u"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "batch_u", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
         roles = users_service.bind_roles_batch(
@@ -820,7 +820,7 @@ def test_me_roles_sorted(client, auth_headers):
     """T-AUTH-U10: 多角色 me roles 按 code 字典序。"""
     r1 = client.post("/api/v1/roles", json={"code": "z_role", "name": "Z"}, headers=auth_headers).json()
     r2 = client.post("/api/v1/roles", json={"code": "a_role", "name": "A"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "dev", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     admin_resp = client.post("/api/v1/roles", json={"code": "admin", "name": "Admin"}, headers=auth_headers)
     if admin_resp.status_code == 201:
         admin_id = admin_resp.json()["id"]
@@ -843,7 +843,7 @@ def test_me_roles_sorted(client, auth_headers):
 def test_role_delete_with_user_binding_409(client, auth_headers):
     """T-AUTH-R07: bind user → DELETE role → 409 ROLE_IN_USE。"""
     role = client.post("/api/v1/roles", json={"code": "in_use", "name": "IU"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "iu_user"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "iu_user", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     resp = client.delete(f"/api/v1/roles/{role['id']}", headers=auth_headers)
     assert resp.status_code == 409
@@ -868,7 +868,7 @@ def test_role_list_limit(client, auth_headers):
 def test_audit_bind_role_writes_event(client, auth_headers):
     """T-AUTH-A01: bind_role 写审计。"""
     role = client.post("/api/v1/roles", json={"code": "aud_r", "name": "A"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "aud_u"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_u", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     assert client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers).status_code == 200
     audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
     assert audit["total"] >= 1
@@ -882,7 +882,7 @@ def test_audit_bind_role_writes_event(client, auth_headers):
 def test_audit_unbind_writes_event(client, auth_headers):
     """T-AUTH-A02: unbind 留痕。"""
     role = client.post("/api/v1/roles", json={"code": "aud_u2", "name": "A"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "aud_u2"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_u2", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     assert client.delete(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers).status_code == 204
     audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
@@ -893,7 +893,7 @@ def test_audit_replace_roles_writes_event(client, auth_headers):
     """T-AUTH-A03: replace_roles 留痕且 detail 含 role_ids。"""
     r1 = client.post("/api/v1/roles", json={"code": "aud_rp1", "name": "1"}, headers=auth_headers).json()
     r2 = client.post("/api/v1/roles", json={"code": "aud_rp2", "name": "2"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "aud_rp"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_rp", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.put(
         f"/api/v1/users/{user['id']}/roles",
         json={"role_ids": [r1["id"], r2["id"]]},
@@ -910,7 +910,7 @@ def test_audit_replace_roles_writes_event(client, auth_headers):
 def test_audit_org_assign_and_clear(client, auth_headers):
     """T-AUTH-A04: assign_org / clear_org 对应 action。"""
     org = client.post("/api/v1/orgs", json={"name": "AudOrg"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "aud_org"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_org", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.put(f"/api/v1/users/{user['id']}/org", json={"org_node_id": org["id"]}, headers=auth_headers)
     client.delete(f"/api/v1/users/{user['id']}/org", headers=auth_headers)
     audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
@@ -922,7 +922,7 @@ def test_audit_org_assign_and_clear(client, auth_headers):
 def test_audit_idempotent_bind_no_duplicate(client, auth_headers):
     """T-AUTH-A05: 幂等 bind 不增加审计条数。"""
     role = client.post("/api/v1/roles", json={"code": "aud_idem", "name": "I"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "aud_idem"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_idem", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     before = client.get(
         f"/api/v1/audit/events?target_id={user['id']}&action=user.role.bind",
@@ -949,7 +949,7 @@ def test_audit_invalid_user_no_row(client, auth_headers):
 def test_audit_concurrent_bind_at_most_one(client, auth_headers):
     """T-AUTH-A07: 连续两次 bind 同一对 → 审计至多 1 条 bind。"""
     role = client.post("/api/v1/roles", json={"code": "aud_con", "name": "C"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "aud_con"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_con", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     total = client.get(
@@ -959,25 +959,35 @@ def test_audit_concurrent_bind_at_most_one(client, auth_headers):
     assert total == 1
 
 
-def test_binding_forbidden_non_admin(client, operator_client, auth_headers):
+def test_binding_forbidden_non_admin(client, auth_headers):
     """T-AUTH-A08: 非 admin operator → 403 BINDING_FORBIDDEN；无审计。"""
     role = client.post("/api/v1/roles", json={"code": "aud_op", "name": "O"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "aud_op"}, headers=auth_headers).json()
-    resp = operator_client.post(
-        f"/api/v1/users/{user['id']}/roles/{role['id']}",
-        headers=jwt_auth_headers(),
-    )
+    user = client.post("/api/v1/users", json={"username": "aud_op", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
+
+    async def _operator():
+        return UserContext(id="op-1", username="operator", roles=["operator"])
+
+    app.dependency_overrides[get_current_user] = _operator
+    try:
+        resp = client.post(
+            f"/api/v1/users/{user['id']}/roles/{role['id']}",
+            headers=jwt_auth_headers(),
+        )
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
     assert resp.status_code == 403
     assert resp.json()["code"] == "BINDING_FORBIDDEN"
-    app.dependency_overrides.pop(get_current_user, None)
-    audit = client.get(f"/api/v1/audit/events?target_id={user['id']}", headers=auth_headers).json()
+    audit = client.get(
+        f"/api/v1/audit/events?target_id={user['id']}&action=user.role.bind",
+        headers=auth_headers,
+    ).json()
     assert audit["total"] == 0
 
 
 def test_audit_pagination_limit_offset(client, auth_headers):
     """T-AUTH-A09: 审计分页 limit/offset/total。"""
     role = client.post("/api/v1/roles", json={"code": "aud_pg", "name": "P"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "aud_pg"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "aud_pg", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     for i in range(3):
         r = client.post(
             "/api/v1/roles",
@@ -1064,7 +1074,7 @@ def test_role_code_format_boundary(client, auth_headers):
 def test_role_delete_bound_regression(client, auth_headers):
     """T-AUTH-R14: 删除已绑定角色 → 409 ROLE_IN_USE（回归 R07）。"""
     role = client.post("/api/v1/roles", json={"code": "bound_r19", "name": "B"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "bound_u19"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "bound_u19", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     resp = client.delete(f"/api/v1/roles/{role['id']}", headers=auth_headers)
     assert resp.status_code == 409
@@ -1405,7 +1415,7 @@ def test_rls_no_binding_returns_false_predicate_rls03(client, auth_headers):
     from app.auth.models import get_meta_session
     from app.auth.rls.predicate import build_org_rls_fragment, resolve_user_org_node_ids
 
-    user = client.post("/api/v1/users", json={"username": "rls_u3"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u3", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
         allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
@@ -1432,7 +1442,7 @@ def test_rls_subtree_expansion_rls01_rls02(client, auth_headers):
         headers=auth_headers,
     ).json()
     role = client.post("/api/v1/roles", json={"code": "rls_r01", "name": "R"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "rls_u01"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u01", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     client.put(
         f"/api/v1/roles/{role['id']}/dimension-values",
@@ -1455,7 +1465,7 @@ def test_rls_fragment_in_clause_rls04(client, auth_headers):
 
     org, dim = _ensure_org_dim(client, auth_headers)
     role = client.post("/api/v1/roles", json={"code": "rls_r04", "name": "R"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "rls_u04"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u04", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     client.put(
         f"/api/v1/roles/{role['id']}/dimension-values",
@@ -1495,7 +1505,7 @@ def test_rls_union_direct_and_group_rls05(client, auth_headers):
         headers=auth_headers,
     )
     role = client.post("/api/v1/roles", json={"code": "rls_r05", "name": "R"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "rls_u05"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u05", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     client.put(
         f"/api/v1/roles/{role['id']}/dimension-values",
@@ -1538,7 +1548,7 @@ def test_rls_unauthorized_row_hidden_rls06(client, auth_headers):
         headers=auth_headers,
     ).json()
     role = client.post("/api/v1/roles", json={"code": "rls_r06", "name": "R"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "rls_u06"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u06", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     client.put(
         f"/api/v1/roles/{role['id']}/dimension-values",
@@ -1568,7 +1578,7 @@ def test_rls_empty_allowed_hides_all_rls07(client, auth_headers):
     from app.auth.rls.predicate import resolve_user_org_node_ids
 
     org = client.post("/api/v1/orgs", json={"name": "RLS O7"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "rls_u07"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u07", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     session = get_meta_session()
     try:
         allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
@@ -1587,7 +1597,7 @@ def test_rls_query_hook_rls08(client, auth_headers):
 
     org, dim = _ensure_org_dim(client, auth_headers)
     role = client.post("/api/v1/roles", json={"code": "rls_r08", "name": "R"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "rls_u08"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u08", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     client.put(
         f"/api/v1/roles/{role['id']}/dimension-values",
@@ -1702,7 +1712,7 @@ def test_audit_filter_target_type_au08(client, auth_headers):
 def test_audit_r19_bind_regression_au09(client, auth_headers):
     """T-AUTH-AU09: user.role.bind 仍写入；r19 绑定审计行为保持。"""
     role = client.post("/api/v1/roles", json={"code": "au_r19", "name": "R"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "au_r19_u"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "au_r19_u", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     assert client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers).status_code == 200
     audit = client.get(
         f"/api/v1/audit/events?target_id={user['id']}&action=user.role.bind",
@@ -1741,7 +1751,7 @@ def test_rls_multi_dimension_and_combination_rls09(client, auth_headers):
         headers=auth_headers,
     ).json()
     role = client.post("/api/v1/roles", json={"code": "rls_r09", "name": "R"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "rls_u09"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u09", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     client.put(
         f"/api/v1/roles/{role['id']}/dimension-values",
@@ -1778,7 +1788,7 @@ def test_rls_invalid_column_raises_config_error_rls10(client, auth_headers):
     from app.auth.rls.hooks import prepare_query_rls
     from app.auth.rls.predicate import RlsConfigError
 
-    user = client.post("/api/v1/users", json={"username": "rls_u10"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u10", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     dim = client.post(
         "/api/v1/rls/dimensions",
         json={"code": "rls_d10", "name": "D", "value_type": "string"},
@@ -1801,7 +1811,7 @@ def test_rls_empty_string_dimension_returns_false_predicate_rls11(client, auth_h
     """T-AUTH-RLS11: string 维度空有效集 → 1=0。"""
     from app.auth.rls.hooks import prepare_query_rls
 
-    user = client.post("/api/v1/users", json={"username": "rls_u11"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u11", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     dim = client.post(
         "/api/v1/rls/dimensions",
         json={"code": "rls_d11", "name": "D", "value_type": "string"},
@@ -1826,7 +1836,7 @@ def test_apply_rls_to_sql_merge_where_rls12(client, auth_headers):
 
     org, dim = _ensure_org_dim(client, auth_headers)
     role = client.post("/api/v1/roles", json={"code": "rls_r12", "name": "R"}, headers=auth_headers).json()
-    user = client.post("/api/v1/users", json={"username": "rls_u12"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u12", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     client.put(
         f"/api/v1/roles/{role['id']}/dimension-values",
@@ -1853,7 +1863,7 @@ def test_rls_hook_internal_error_degrades_to_empty_rls13(monkeypatch, client, au
     import app.auth.rls.hooks as hooks_mod
     from app.query.rls.guard import apply_rls_to_sql
 
-    user = client.post("/api/v1/users", json={"username": "rls_u13"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "rls_u13", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
 
     def _boom(*_a, **_k):
         raise RuntimeError("rls internal")
@@ -2074,7 +2084,7 @@ def test_bind_user_to_disabled_role_409_r10(client, auth_headers):
         json={"name": "R", "description": None, "is_active": False},
         headers=auth_headers,
     )
-    user = client.post("/api/v1/users", json={"username": "r10_u"}, headers=auth_headers).json()
+    user = client.post("/api/v1/users", json={"username": "r10_u", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     resp = client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
     assert resp.status_code == 409
     assert resp.json()["code"] == "ROLE_DISABLED"
@@ -2098,7 +2108,7 @@ def test_role_list_offset_total_r11(client, auth_headers):
 def test_inactive_role_excluded_from_me_r12(client, auth_headers):
     """T-AUTH-R12: 停用角色不出现在 resolve_user_roles / GET /me。"""
     role = client.post("/api/v1/roles", json={"code": "r12_dis", "name": "R"}, headers=auth_headers).json()
-    dev_user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers).json()
+    dev_user = client.post("/api/v1/users", json={"username": "dev", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{dev_user['id']}/roles/{role['id']}", headers=auth_headers)
     client.put(
         f"/api/v1/roles/{role['id']}",
@@ -2112,8 +2122,8 @@ def test_inactive_role_excluded_from_me_r12(client, auth_headers):
 
 
 def test_list_users_paginated(client, auth_headers):
-    client.post("/api/v1/users", json={"username": "u_list_a"}, headers=auth_headers)
-    client.post("/api/v1/users", json={"username": "u_list_b"}, headers=auth_headers)
+    client.post("/api/v1/users", json={"username": "u_list_a", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers)
+    client.post("/api/v1/users", json={"username": "u_list_b", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers)
     resp = client.get("/api/v1/users?limit=10&offset=0", headers=auth_headers)
     assert resp.status_code == 200
     body = resp.json()

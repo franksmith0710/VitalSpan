@@ -110,14 +110,43 @@ class OrgListResponse(BaseModel):
 
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     username: str = Field(min_length=1, max_length=128)
+    display_name: str | None = Field(default=None, alias="displayName", max_length=128)
+    email: str | None = Field(default=None, max_length=255)
+    org_id: uuid.UUID | None = Field(default=None, alias="orgId")
+    role_ids: list[uuid.UUID] = Field(default_factory=list, alias="roleIds")
+    initial_password: str = Field(alias="initialPassword", min_length=1, max_length=128)
+
+
+class UserUpdate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    display_name: str | None = Field(default=None, alias="displayName", max_length=128)
+    email: str | None = Field(default=None, max_length=255)
+    org_id: uuid.UUID | None = Field(default=None, alias="orgId")
+    role_ids: list[uuid.UUID] | None = Field(default=None, alias="roleIds")
 
 
 class UserOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, serialize_by_alias=True)
 
     id: uuid.UUID
     username: str
+    display_name: str | None = Field(default=None, serialization_alias="displayName")
+    email: str | None = None
+    is_active: bool = Field(default=True, serialization_alias="isActive")
+    failed_login_count: int = Field(default=0, serialization_alias="failedLoginCount")
+    locked_until: datetime | None = Field(default=None, serialization_alias="lockedUntil")
+    org_node_id: uuid.UUID | None = Field(default=None, serialization_alias="orgId")
+
+
+class ResetPasswordOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+    temporary_password: str = Field(serialization_alias="temporaryPassword")
+    password_changed_at: datetime = Field(serialization_alias="passwordChangedAt")
 
 
 class UserListResponse(BaseModel):

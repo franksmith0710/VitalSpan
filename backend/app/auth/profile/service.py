@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
-import bcrypt
 from sqlalchemy.orm import Session
 
 from app.auth.audit import service as audit_service
 from app.auth.models import AuthUser
+from app.auth.password.service import (
+    hash_password,
+    validate_password_policy,
+    verify_password,
+)
 from app.auth.profile.schemas import MeProfileOut, MeProfileUpdate
 from app.auth.users import service as user_service
 from app.auth.users.service import UserError
@@ -113,11 +118,14 @@ def change_password(
     user = user_service.get_user(session, user_id)
     if not user.password_hash:
         raise ProfileError("AUTH_PASSWORD_NOT_SET", "Password is not configured for this account", 422)
-    if not bcrypt.checkpw(current_password.encode(), user.password_hash.encode()):
+    if not verify_password(current_password, user.password_hash):
         raise ProfileError("AUTH_INVALID_CURRENT_PASSWORD", "当前密码不正确", 401)
     if current_password == new_password:
         raise ProfileError("AUTH_PASSWORD_UNCHANGED", "新密码不能与当前密码相同", 422)
-    user.password_hash = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
+    validate_password_policy(new_password)
+    user.password_hash = hash_password(new_password)
+    user.password_changed_at = datetime.now(timezone.utc)
+    user.token_version = user.token_version + 1
     trace_id = trace_id_var.get() or uuid.uuid4().hex
     audit_service.record_event(
         session,

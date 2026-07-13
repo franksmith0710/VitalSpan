@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     vitalspan_bootstrap_admin_username: str = "admin"
     vitalspan_bootstrap_admin_password: str | None = None
     vitalspan_bootstrap_allow_existing: bool = False
+    auth_max_failed_logins: int = 5
+    auth_lock_minutes: int = 15
+    auth_temporary_password_length: int = 20
     rpt_delivery_mode: Literal["mock", "smtp"] = "mock"
     rpt_smtp_host: str = "localhost"
     rpt_smtp_port: int = 1025
@@ -56,6 +59,27 @@ class Settings(BaseSettings):
             return None
         if isinstance(value, str) and not value.strip():
             return None
+        return value
+
+    @field_validator("auth_max_failed_logins")
+    @classmethod
+    def validate_auth_max_failed_logins(cls, value: int) -> int:
+        if not 3 <= value <= 20:
+            raise ValueError("AUTH_MAX_FAILED_LOGINS 须在 3..20 之间")
+        return value
+
+    @field_validator("auth_lock_minutes")
+    @classmethod
+    def validate_auth_lock_minutes(cls, value: int) -> int:
+        if not 1 <= value <= 1440:
+            raise ValueError("AUTH_LOCK_MINUTES 须在 1..1440 之间")
+        return value
+
+    @field_validator("auth_temporary_password_length")
+    @classmethod
+    def validate_auth_temporary_password_length(cls, value: int) -> int:
+        if not 16 <= value <= 64:
+            raise ValueError("AUTH_TEMPORARY_PASSWORD_LENGTH 须在 16..64 之间")
         return value
 
     @field_validator("analytics_database_url", mode="before")

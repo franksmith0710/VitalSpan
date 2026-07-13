@@ -244,6 +244,28 @@ def test_change_password_success_audit_and_relogin(profile_ctx: ProfileCtx) -> N
     assert good_login.status_code == 200
 
 
+def test_change_password_bumps_token_version_and_revokes_old_jwt(
+    profile_ctx: ProfileCtx,
+) -> None:
+    """Task 6: 主动改密递增 token_version，旧 JWT 因版本不匹配返回 401 TOKEN_REVOKED。"""
+    client = profile_ctx["client"]
+    headers = profile_ctx["headers"]
+    new_password = f"Rotated-{uuid.uuid4().hex[:12]}!"
+
+    assert client.get("/api/v1/me", headers=headers).status_code == 200
+
+    response = client.post(
+        "/api/v1/auth/change-password",
+        headers=headers,
+        json={"currentPassword": profile_ctx["password"], "newPassword": new_password},
+    )
+    assert response.status_code == 204
+
+    me = client.get("/api/v1/me", headers=headers)
+    assert me.status_code == 401
+    assert me.json()["code"] == "TOKEN_REVOKED"
+
+
 def test_change_password_wrong_current_keeps_session_and_skips_audit(
     profile_ctx: ProfileCtx,
 ) -> None:

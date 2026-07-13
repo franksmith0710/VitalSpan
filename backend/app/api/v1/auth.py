@@ -54,7 +54,9 @@ def login(payload: LoginRequest, db: Annotated[Session, Depends(_db)]) -> LoginR
             status_code=exc.status,
             content={"code": exc.code, "message": exc.message, "detail": None},
         )
-    token = create_access_token(str(user.id), user.username)
+    token = create_access_token(
+        str(user.id), user.username, token_version=user.token_version
+    )
     return LoginResponse(
         access_token=token,
         expires_in=DEFAULT_EXPIRES_MINUTES * 60,
@@ -111,7 +113,9 @@ def dev_switch(
             status_code=404,
             content={"code": "USER_NOT_FOUND", "message": "用户不存在", "detail": None},
         )
-    token = create_access_token(str(user.id), user.username)
+    token = create_access_token(
+        str(user.id), user.username, token_version=user.token_version
+    )
     return LoginResponse(
         access_token=token,
         expires_in=DEFAULT_EXPIRES_MINUTES * 60,

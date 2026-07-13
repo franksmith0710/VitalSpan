@@ -421,7 +421,7 @@ def test_execute_forbidden_hidden_datasource_r31(client, auth_headers):
         json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(visible.id)},
         headers=auth_headers,
     )
-    dev_user = client.post("/api/v1/users", json={"username": "dev"}, headers=auth_headers)
+    dev_user = client.post("/api/v1/users", json={"username": "dev", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers)
     if dev_user.status_code != 201:
         session = get_meta_session()
         try:
