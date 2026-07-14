@@ -77,7 +77,7 @@ type ChartAdvancedPanelProps = {
   onOpenLinkage?: () => void;
 };
 
-/** DataEase chart-edit「高级」Tab */
+/** DataEase chart-edit「高级」Tab：功能设置 / 辅助线 / 条件样式 / 联动 / 跳转 */
 export function ChartAdvancedPanel({ onOpenLinkage }: ChartAdvancedPanelProps) {
   return (
     <WidgetAdvancedAccordion

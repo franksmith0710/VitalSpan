@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { RichTextEditor } from "./RichTextEditor";
 import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
-import { isRichTextEmpty, textConfigToHtml } from "./richTextHtml";
+import { dwCaption } from "./dashboardWidgetTypography";
 
 type TextWidgetProps = {
   widget: LayoutWidget & { textConfig: TextWidgetConfig };
@@ -150,7 +150,7 @@ export function TextWidget({
           <p
             className={cn(
               "flex h-full items-center justify-center text-gray-400",
-              inShapeShell ? "text-theme-sm" : "p-3 text-theme-sm",
+              inShapeShell ? dwCaption : "p-3 text-theme-sm",
             )}
           >
             双击编辑文字

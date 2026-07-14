@@ -20,17 +20,10 @@ function ChartDatasetRail() {
   const {
     widget,
     cfg,
-    onChange,
-    dataMode,
-    dsLoading,
     datasetsLoading,
     datasetsError,
-    datasourceItems,
     datasetItems,
     datasetsEmpty,
-    datasourcesEmpty,
-    selectedDataset,
-    datasetReady,
     handleDatasetSelect,
     columns,
     columnsLoading,
@@ -42,8 +35,6 @@ function ChartDatasetRail() {
   return (
     <DatasetPickerPanel
       widgetId={widget.id}
-      variant="chart"
-      dataMode={dataMode}
       datasetId={cfg.datasetId}
       datasetsLoading={datasetsLoading}
       datasetsError={datasetsError}
@@ -52,16 +43,9 @@ function ChartDatasetRail() {
       columns={columns}
       columnsLoading={columnsLoading}
       columnsReady={columnsReady}
-      hasBoundConfig={Boolean(selectedDataset?.boundConfigId)}
-      hasSyncedConfig={datasetReady}
       onDatasetSelect={handleDatasetSelect}
       onFieldClick={(field) => assignField(field)}
       onRefreshFields={refreshColumns}
-      chartConfig={cfg}
-      onChartConfigChange={onChange}
-      dsLoading={dsLoading}
-      datasourceItems={datasourceItems}
-      datasourcesEmpty={datasourcesEmpty}
     />
   );
 }

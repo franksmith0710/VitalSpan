@@ -162,7 +162,7 @@ export function DashboardGrid({
       <div
         key={widget.id}
         className={cn(
-          "grid-widget-cell h-full min-w-0",
+          "grid-widget-cell dashboard-widget-surface h-full min-w-0",
           selectedIds?.has(widget.id) && "grid-widget-selected",
         )}
       >

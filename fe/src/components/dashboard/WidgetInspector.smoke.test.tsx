@@ -117,7 +117,9 @@ describe("WidgetInspector dataset select", () => {
     expect(screen.getByRole("button", { name: "更新图表数据" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "样式" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "高级" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "字段" })).toBeInTheDocument();
+    expect(screen.getByText("字段")).toBeInTheDocument();
+    expect(screen.getByText("维度")).toBeInTheDocument();
+    expect(screen.getByText("指标")).toBeInTheDocument();
   });
 
   it("F-B: ChartConfigPanel edits flow through WidgetInspector onChange", async () => {

@@ -189,7 +189,6 @@ export function TextEditRail({
       right={
         <DatasetPickerPanel
           widgetId={widget.id}
-          variant="text"
           datasetId={textConfig.datasetId}
           datasetsLoading={dataset.datasetsLoading}
           datasetsError={dataset.datasetsError}

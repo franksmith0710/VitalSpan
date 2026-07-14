@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { apiFetch } from "@/lib/api";
@@ -18,6 +18,12 @@ import { ChartPanel } from "./ChartPanel";
 import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
 import { useElementSize } from "@/hooks/useElementSize";
 import { estimateWidgetBodyHeight } from "@/components/dashboard/gridLayoutAdapter";
+import {
+  dwState,
+  dwStateError,
+  dwStateWarning,
+} from "@/components/dashboard/dashboardWidgetTypography";
+import { cn } from "@/lib/utils";
 
 type ChartRendererProps = {
   config: ChartViewConfig;
@@ -36,6 +42,19 @@ type ChartRendererProps = {
 };
 
 const PAGE_SIZE = 50;
+
+function embeddedStateMessage(className: string, children: ReactNode) {
+  return (
+    <p
+      className={cn(
+        "flex min-h-[4rem] flex-1 items-center justify-center px-4 text-center",
+        className,
+      )}
+    >
+      {children}
+    </p>
+  );
+}
 
 function pickColumns(columns: string[], fields: string[]): string[] {
   if (!fields.length) return columns;
@@ -141,7 +160,9 @@ export function ChartRenderer({
 
     if (isAdvancedEchartsType(localConfig.chartType)) {
       if (!renderSpec) {
-        return <p className="text-theme-sm text-gray-500">渲染配置加载中…</p>;
+        return embedded
+          ? embeddedStateMessage(dwState, "渲染配置加载中…")
+          : <p className="text-theme-sm text-gray-500">渲染配置加载中…</p>;
       }
       return (
         <AdvancedEchartsChart
@@ -228,17 +249,19 @@ export function ChartRenderer({
     }
 
     if (rows.length > CHART_EXECUTE_LIMIT) {
-      return (
-        <p className="text-theme-sm text-warning-600 dark:text-warning-400">
-          结果超过 {CHART_EXECUTE_LIMIT} 行，请缩小查询范围
-        </p>
-      );
+      const message = `结果超过 ${CHART_EXECUTE_LIMIT} 行，请缩小查询范围`;
+      return embedded
+        ? embeddedStateMessage(dwStateWarning, message)
+        : <p className="text-theme-sm text-warning-600 dark:text-warning-400">{message}</p>;
     }
 
     const dim = localConfig.dimensions?.[0]?.field;
     const metricFields = localConfig.metrics?.map((m) => m.field) ?? [];
     if (!dim || !metricFields.length || !columns.includes(dim)) {
-      return <p className="text-theme-sm text-gray-500">列不存在，请检查维度与指标配置</p>;
+      const message = "列不存在，请检查维度与指标配置";
+      return embedded
+        ? embeddedStateMessage(dwState, message)
+        : <p className="text-theme-sm text-gray-500">{message}</p>;
     }
     const categories = rows.map((r) => String(r[columns.indexOf(dim)] ?? ""));
     const series = metricFields.map((field) => ({
@@ -325,13 +348,13 @@ export function ChartRenderer({
             role="alert"
             className="flex min-h-[120px] flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-error-500/40 bg-error-50/80 p-3 dark:bg-error-500/10"
           >
-            <p className="text-theme-xs text-error-700 dark:text-error-400">{error}</p>
+            <p className={cn("text-center", dwStateError)}>{error}</p>
             <Button type="button" variant="outline" size="sm" onClick={rerun}>
               重试
             </Button>
           </div>
         ) : empty ? (
-          <p className="flex flex-1 items-center justify-center text-theme-xs text-gray-500">暂无数据</p>
+          embeddedStateMessage(dwState, "暂无数据")
         ) : (
           body
         )}

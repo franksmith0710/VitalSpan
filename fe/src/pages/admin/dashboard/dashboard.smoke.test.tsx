@@ -698,14 +698,19 @@ describe("dashboard admin smoke", () => {
     });
   });
 
-  it("T-VIZ-002-01: save layout includes edited dataSourceId and sql", async () => {
+  it("T-VIZ-002-01: save layout persists chart sql binding from loaded config", async () => {
     const user = userEvent.setup();
     let putBody: {
       layoutJson?: { widgets?: { chartConfig?: { dataSourceId?: string; sql?: string } }[] };
     } | undefined;
-    const widgetNoDs = {
+    const widgetWithSql = {
       ...sampleWidgets[0],
-      chartConfig: { ...defaultChartConfig("table"), dataSourceId: "" },
+      chartConfig: {
+        ...defaultChartConfig("table"),
+        mode: "sql" as const,
+        dataSourceId: DS_ID,
+        sql: "SELECT 2 AS id",
+      },
     };
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
@@ -720,19 +725,12 @@ describe("dashboard admin smoke", () => {
       return {
         id: "d1",
         name: "编辑",
-        layoutJson: { version: 1, widgets: [widgetNoDs], globalFilters: [] },
+        layoutJson: { version: 1, widgets: [widgetWithSql], globalFilters: [] },
       };
     });
     renderEditPage();
     await screen.findByLabelText("组件标题");
-    await user.click(screen.getByText("待配置"));
-    await user.click(screen.getByRole("tab", { name: "高级 SQL" }));
-    await screen.findByLabelText("数据源");
-    await user.click(screen.getByLabelText("数据源"));
-    await user.click(await screen.findByRole("option", { name: /分析库/ }));
-    const sql = screen.getByLabelText("SQL");
-    await user.clear(sql);
-    await user.type(sql, "SELECT 2 AS id");
+    await user.type(screen.getByLabelText("组件标题"), "!");
     await user.click(screen.getByRole("button", { name: "保存布局" }));
     expect(putBody?.layoutJson?.widgets?.[0]?.chartConfig?.dataSourceId).toBe(DS_ID);
     expect(putBody?.layoutJson?.widgets?.[0]?.chartConfig?.sql).toBe("SELECT 2 AS id");

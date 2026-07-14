@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { CollapsedRailTab, RailFoldHeader } from "./RailFoldTab";
 
@@ -10,8 +10,14 @@ type WidgetEditRailLayoutProps = {
   className?: string;
 };
 
-const CONFIG_WIDTH = "w-[min(248px,50%)] min-w-[200px]";
-const FIELD_BANK_WIDTH = "min-w-[180px] flex-1";
+const RAIL_COLUMN_WIDTH = "w-[248px]";
+
+const WidgetEditRailRightCollapseContext = createContext<(() => void) | undefined>(undefined);
+
+/** 数据集列顶栏「收起」回调（由 `WidgetEditRailLayout` 注入） */
+export function useWidgetEditRailRightCollapse() {
+  return useContext(WidgetEditRailRightCollapseContext);
+}
 
 function ExpandedRailPanel({
   label,
@@ -19,12 +25,14 @@ function ExpandedRailPanel({
   bordered,
   onCollapse,
   children,
+  hideFoldHeader,
 }: {
   label: string;
   widthClass: string;
   bordered?: boolean;
   onCollapse: () => void;
   children: ReactNode;
+  hideFoldHeader?: boolean;
 }) {
   return (
     <div
@@ -34,7 +42,7 @@ function ExpandedRailPanel({
         bordered && "border-l border-gray-200 dark:border-gray-800",
       )}
     >
-      <RailFoldHeader label={label} onCollapse={onCollapse} />
+      {hideFoldHeader ? null : <RailFoldHeader label={label} onCollapse={onCollapse} />}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
@@ -51,11 +59,11 @@ export function WidgetEditRailLayout({
   const [rightOpen, setRightOpen] = useState(true);
 
   return (
-    <div className={cn("flex h-full min-h-0 w-full max-w-full", className)}>
+    <div className={cn("flex h-full min-h-0 w-auto max-w-full shrink-0", className)}>
       {leftOpen ? (
         <ExpandedRailPanel
           label={leftLabel}
-          widthClass={CONFIG_WIDTH}
+          widthClass={RAIL_COLUMN_WIDTH}
           onCollapse={() => setLeftOpen(false)}
         >
           {left}
@@ -66,11 +74,14 @@ export function WidgetEditRailLayout({
       {rightOpen ? (
         <ExpandedRailPanel
           label={rightLabel}
-          widthClass={FIELD_BANK_WIDTH}
+          widthClass={RAIL_COLUMN_WIDTH}
           bordered
+          hideFoldHeader
           onCollapse={() => setRightOpen(false)}
         >
-          {right}
+          <WidgetEditRailRightCollapseContext.Provider value={() => setRightOpen(false)}>
+            {right}
+          </WidgetEditRailRightCollapseContext.Provider>
         </ExpandedRailPanel>
       ) : (
         <CollapsedRailTab label={rightLabel} onExpand={() => setRightOpen(true)} />

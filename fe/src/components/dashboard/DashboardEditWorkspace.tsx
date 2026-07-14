@@ -94,8 +94,7 @@ export function DashboardEditWorkspace({
   return (
     <div
       className={cn(
-        "grid min-h-0 flex-1 gap-1.5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-stretch",
-        !chartRailOpen && "lg:grid-cols-[minmax(0,1fr)_auto]",
+        "grid min-h-0 flex-1 gap-1.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch",
         className,
       )}
     >
@@ -125,7 +124,7 @@ export function DashboardEditWorkspace({
       </CanvasShell>
 
       {chartRailOpen ? (
-        <div className="flex min-h-0 w-full min-w-[280px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]">
+        <div className="flex min-h-0 w-auto max-w-[min(100%,496px)] shrink-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]">
           {showRailFoldHeader && onChartRailOpenChange ? (
             <RailFoldHeader
               label={chartRailLabel}

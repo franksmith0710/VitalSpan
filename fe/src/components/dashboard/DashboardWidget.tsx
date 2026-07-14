@@ -31,6 +31,7 @@ import type {
 } from "./layoutUtils";
 import { mergeTitleStyle, mergeWidgetShellStyle, resolveQueryLimit } from "./dashboardStyleConfig";
 import { isWidgetConfigReady } from "./createLayoutWidget";
+import { PIXEL_DRAG_RAIL_HEIGHT_PX, dwCaption } from "./dashboardWidgetTypography";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 
 type DashboardWidgetProps = {
@@ -75,7 +76,7 @@ function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
           待配置
         </Badge>
       </div>
-      <p className="text-center text-theme-xs text-gray-500 dark:text-gray-400">
+      <p className={cn("text-center", dwCaption)}>
         在右侧配置数据源与查询
       </p>
     </div>
@@ -180,7 +181,7 @@ export function DashboardWidget({
     inShapeShell && pixelSize
       ? `${Math.round(pixelSize.width)}×${Math.round(pixelSize.height)}`
       : `${sizeW}×${sizeH}`;
-  const shapeContentChromePx = mode === "edit" && selected ? 28 : 0;
+  const shapeContentChromePx = mode === "edit" && selected ? PIXEL_DRAG_RAIL_HEIGHT_PX : 0;
   const shellStyle = mergeWidgetShellStyle(dashboardStyle?.widgetStyle);
   const titleStyle = mergeTitleStyle(dashboardStyle?.titleStyle);
   const queryLimit = resolveQueryLimit(dashboardStyle ?? {});

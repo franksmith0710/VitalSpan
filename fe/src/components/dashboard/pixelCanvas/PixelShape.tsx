@@ -239,13 +239,13 @@ export function PixelShape({
       {mode === "edit" && selected ? (
         <div
           data-testid={`pixel-drag-rail-${widget.id}`}
-          className="pixel-shape-drag-rail absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab touch-none select-none items-center gap-1 border-b border-brand-200/80 bg-brand-50/95 px-2 text-theme-xs font-medium text-brand-700 active:cursor-grabbing dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-300"
+          className="pixel-shape-drag-rail absolute inset-x-0 top-0 z-20 flex cursor-grab touch-none select-none items-center gap-1.5 border-b border-brand-200/80 bg-brand-50/95 px-2.5 font-medium text-brand-700 active:cursor-grabbing dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-300"
           onPointerDown={(event) => startInteraction(event, "move")}
           onKeyDown={(event) => handleKeyboardInteraction(event, "move")}
           role="group"
           aria-label="拖动组件"
         >
-          <GripVertical className="size-3.5 shrink-0 opacity-70" aria-hidden />
+          <GripVertical className="size-4 shrink-0 opacity-70" aria-hidden />
           <span className="min-w-0 flex-1 truncate">{widget.title}</span>
           {onMore ? (
             <IconButton
@@ -265,8 +265,8 @@ export function PixelShape({
       <PixelShapeInteractionProvider value={startInteraction}>
         <div
           className={cn(
-            "pixel-shape-inner h-full min-h-0 overflow-hidden bg-white dark:bg-gray-900",
-            mode === "edit" && selected && "pt-7",
+            "pixel-shape-inner dashboard-widget-surface h-full min-h-0 overflow-hidden bg-white dark:bg-gray-900",
+            mode === "edit" && selected && "pt-10",
           )}
           data-pixel-no-drag
           onPointerDown={(event) => {
