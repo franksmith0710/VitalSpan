@@ -280,7 +280,7 @@ def semi_auto_register_probe(
 @router.post("/bus/auto-register/retry", response_model=None)
 def auto_register_retry(
     payload: AutoRegisterIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -298,7 +298,7 @@ def gov_acl_matrix(actor: Annotated[UserContext, Depends(require_permission(PERM
 @router.post("/bus/auto-register", response_model=None)
 def auto_register_bus(
     payload: AutoRegisterIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> AutoRegisterOut | JSONResponse:
     try:
@@ -310,7 +310,7 @@ def auto_register_bus(
 
 @router.get("/bus/auto-register/probe", response_model=None)
 def auto_register_probe(
-    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> JSONResponse:
     from app.governance.bus.probe import probe_auto_register_budget_ms
@@ -444,7 +444,7 @@ def publish_link_physical(
 @router.get("/publish/entries/{entry_id}/status", response_model=PublishStatusOut)
 def publish_status(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishStatusOut | JSONResponse:
     try:
@@ -480,7 +480,7 @@ def publish_from_workflow_route(
 @router.get("/publish/entries/{entry_id}/notifications", response_model=PublishNotificationListOut)
 def publish_notifications(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishNotificationListOut | JSONResponse:
     try:
@@ -613,7 +613,7 @@ def validate_openapi_mapping(
 @router.post("/openapi-mappings/{mapping_id}/deactivate", response_model=None)
 def deactivate_openapi_mapping(
     mapping_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return openapi_service.deactivate_mapping(mapping_id)
@@ -772,7 +772,7 @@ def get_approved_design(
 @router.post("/workflow/instances/{instance_id}/confirm-design", response_model=WorkflowInstanceOut)
 def confirm_design(
     instance_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> WorkflowInstanceOut | JSONResponse:
     try:
@@ -814,7 +814,7 @@ def create_classification_node(
 def move_classification_node(
     node_id: uuid.UUID,
     payload: ClassificationNodeMove,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> ClassificationNodeOut | JSONResponse:
     try:
         return classification_service.move_node(node_id, payload, actor)
@@ -941,7 +941,7 @@ def create_geo_region_node(
 def move_geo_region_node(
     region_id: uuid.UUID,
     payload: GeoRegionMove,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> GeoRegionOut | JSONResponse:
     try:
         return cat03_service.move_geo_node(region_id, payload, actor)
@@ -980,7 +980,7 @@ def production_stats_validate(
 @router.post("/catalog/production-stats", response_model=ProductionStatsItemOut, status_code=status.HTTP_201_CREATED)
 def production_stats_create(
     payload: ProductionStatsItemIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> ProductionStatsItemOut | JSONResponse:
     try:
         return cat06_service.create_production_stats(payload, actor)
@@ -1047,7 +1047,7 @@ def lifecycle_templates_validate(
 @router.post("/catalog/lifecycle-templates", response_model=LifecycleTemplateOut, status_code=status.HTTP_201_CREATED)
 def lifecycle_templates_create(
     payload: LifecycleTemplateIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> LifecycleTemplateOut | JSONResponse:
     try:
         return cat01_service.create_lifecycle_template(payload, actor)
@@ -1089,7 +1089,7 @@ def lifecycle_templates_list(
 def lifecycle_templates_stage_move(
     template_key: str,
     payload: LifecycleStageMove,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> LifecycleTemplateOut | JSONResponse:
     try:
         return cat01_service.move_lifecycle_stage(template_key, payload, actor)
@@ -1116,7 +1116,7 @@ def aggregate_templates_validate(
 @router.post("/catalog/aggregate-templates", response_model=AggregateTemplateOut, status_code=status.HTTP_201_CREATED)
 def aggregate_templates_create(
     payload: AggregateTemplateIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> AggregateTemplateOut | JSONResponse:
     try:
         return cat02_service.create_aggregate_template(payload, actor)

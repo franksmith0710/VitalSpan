@@ -263,7 +263,7 @@ def list_term_field_mappings(
 def replace_term_field_mappings(
     term_id: uuid.UUID,
     payload: TermFieldMappingsReplace,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> TermFieldMappingListResponse | JSONResponse:
     from app.metadata.glossary import field_mappings as term_field_mappings
@@ -346,7 +346,7 @@ def delete_theme_node(
 def move_theme_node(
     node_id: uuid.UUID,
     payload: ThemeMove,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> ThemeOut | JSONResponse:
     try:
@@ -460,7 +460,7 @@ def list_dimension_values(
 def register_dimension_values(
     dimension_id: uuid.UUID,
     payload: DimensionValuesRegister,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionValueListResponse | JSONResponse:
     try:
@@ -515,7 +515,7 @@ def physical_tables_get(
 )
 def physical_tables_register_from_schema(
     payload: PhysicalTableRegisterFromSchemaIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -527,7 +527,7 @@ def physical_tables_register_from_schema(
 @router.post("/physical-tables", response_model=PhysicalTableOut, status_code=status.HTTP_201_CREATED)
 def physical_tables_register(
     payload: PhysicalTableRegisterIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> PhysicalTableOut | JSONResponse:
     try:
         return physical_service.register_physical_table(payload, actor)
@@ -550,7 +550,7 @@ def physical_tables_validate(
 def physical_tables_update(
     fqn: str,
     payload: PhysicalTableUpdateIn,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return physical_service.update_physical_table(fqn, payload, actor)
@@ -561,7 +561,7 @@ def physical_tables_update(
 @router.delete("/physical-tables/{fqn}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def physical_tables_delete(
     fqn: str,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         physical_service.delete_physical_table(fqn, actor)
