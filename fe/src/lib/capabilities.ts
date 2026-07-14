@@ -34,12 +34,30 @@ export function resolveUserCapabilities(roles: string[]): Set<string> {
   return caps;
 }
 
+/** 合并内置角色能力与后端精确权限码（AUTHZ 矩阵）；root 视为全通配 */
+export function resolveEffectiveCapabilities(user: SessionUser): Set<string> {
+  if (user.isRoot) {
+    return new Set(["*"]);
+  }
+  const caps = resolveUserCapabilities(user.roles);
+  for (const permission of user.permissions ?? []) {
+    caps.add(permission);
+  }
+  return caps;
+}
+
 export function matchesCapability(userCaps: Set<string>, required: string): boolean {
+  if (userCaps.has("*")) return true;
   if (userCaps.has(required)) return true;
   const colon = required.indexOf(":");
   if (colon === -1) return false;
   const prefix = required.slice(0, colon);
   if (userCaps.has(`${prefix}:*`)) return true;
+  if (required.endsWith(":read")) {
+    const manage = `${prefix}:manage`;
+    const edit = `${prefix}:edit`;
+    if (userCaps.has(manage) || userCaps.has(edit)) return true;
+  }
   if (!required.endsWith(":*")) return false;
   for (const cap of userCaps) {
     if (cap === required) return true;
@@ -49,5 +67,5 @@ export function matchesCapability(userCaps: Set<string>, required: string): bool
 }
 
 export function hasCapability(user: SessionUser, required: string): boolean {
-  return matchesCapability(resolveUserCapabilities(user.roles), required);
+  return matchesCapability(resolveEffectiveCapabilities(user), required);
 }

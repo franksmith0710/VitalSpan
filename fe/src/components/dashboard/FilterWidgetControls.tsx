@@ -1,4 +1,4 @@
-import { Checkbox } from "@/components/ui/checkbox";
+import type { CSSProperties } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,6 +20,7 @@ export type FilterControlProps = {
   onChange: (value: string) => void;
   className?: string;
   disabled?: boolean;
+  inputStyle?: CSSProperties;
 };
 
 function splitMulti(value: string): string[] {
@@ -40,6 +41,7 @@ export function FilterControl({
   onChange,
   className,
   disabled,
+  inputStyle,
 }: FilterControlProps) {
   const emptyHint = options.length === 0;
 
@@ -50,7 +52,7 @@ export function FilterControl({
         {emptyHint ? (
           <>
             <Select disabled value="">
-              <SelectTrigger id={id} className="h-10" aria-label={label}>
+              <SelectTrigger id={id} className="h-10" style={inputStyle} aria-label={label}>
                 <SelectValue placeholder="暂无选项" />
               </SelectTrigger>
             </Select>
@@ -58,7 +60,7 @@ export function FilterControl({
           </>
         ) : (
           <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
-            <SelectTrigger id={id} className="h-10" aria-label={label}>
+            <SelectTrigger id={id} className="h-10" style={inputStyle} aria-label={label}>
               <SelectValue placeholder="请选择" />
             </SelectTrigger>
             <SelectContent>
@@ -82,6 +84,7 @@ export function FilterControl({
           id={id}
           type="date"
           className="h-10"
+          style={inputStyle}
           value={value}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
@@ -136,6 +139,7 @@ export function FilterControl({
       <Input
         id={id}
         className="h-10"
+        style={inputStyle}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}

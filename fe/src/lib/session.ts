@@ -9,6 +9,8 @@ export type SessionUser = {
   name: string;
   email: string;
   roles: SessionRole[];
+  permissions?: string[];
+  isRoot?: boolean;
 };
 
 export function sessionUserFromAuth(
@@ -28,11 +30,17 @@ export function sessionUserFromMe(user: {
   displayName?: string;
   email?: string;
   roles: SessionRole[];
+  permissions?: string[];
+  isRoot?: boolean;
 }): SessionUser {
-  return sessionUserFromAuth(user.username, user.roles, {
-    displayName: user.displayName,
-    email: user.email,
-  });
+  return {
+    ...sessionUserFromAuth(user.username, user.roles, {
+      displayName: user.displayName,
+      email: user.email,
+    }),
+    permissions: user.permissions,
+    isRoot: user.isRoot,
+  };
 }
 
 export function canManagePlatform(user: SessionUser): boolean {

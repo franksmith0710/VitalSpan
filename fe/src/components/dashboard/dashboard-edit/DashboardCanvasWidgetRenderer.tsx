@@ -1,9 +1,12 @@
-import type { DashboardWidgetShell } from "./dashboardCanvasMode";
+import { DashboardWidget } from "../DashboardWidget";
+import {
+  pixelWidgetToLayoutWidget,
+  type DashboardWidgetShell,
+} from "../dashboardCanvasMode";
 import {
   buildWidgetFilterParams,
   type Linkage,
 } from "../dashboardFilterUtils";
-import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
 import {
   resizeWidget,
   type LayoutWidget,
@@ -56,6 +59,10 @@ export function DashboardCanvasWidgetRenderer({
   shell = "grid",
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
+  const pixelSize =
+    "width" in sourceWidget
+      ? { width: sourceWidget.width, height: sourceWidget.height }
+      : undefined;
   const executeKey = JSON.stringify(filterValues);
   const updateWidget = (widgetId: string, patch: Partial<LayoutWidget>) => {
     setWidgets((previous) =>
@@ -89,6 +96,7 @@ export function DashboardCanvasWidgetRenderer({
       shell={shell}
       selected={selectedIds.has(widget.id)}
       gridSize={gridSize}
+      pixelSize={pixelSize}
       allWidgets={nested ? undefined : widgets}
       renderNestedWidget={renderNested}
       filterParameters={

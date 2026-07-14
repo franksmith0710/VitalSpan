@@ -15,7 +15,8 @@ import {
   DashboardRglCanvas,
   PALETTE_DROP_ITEM_ID,
 } from "./dashboardGridRgl";
-import type { LayoutWidget } from "./layoutUtils";
+import type { DashboardStyleConfig } from "./layoutUtils";
+import { resolveWidgetGap } from "./dashboardStyleConfig";
 import { getTopLevelWidgets, sortWidgets } from "./layoutUtils";
 import { gridLayoutToWidgets, widgetsToGridLayout } from "./gridLayoutAdapter";
 import { normalizeGridLayout } from "./gridSnapUtils";
@@ -42,6 +43,7 @@ type DashboardGridProps = {
   selectedIds?: Set<string>;
   onClearSelection?: () => void;
   className?: string;
+  styleConfig?: DashboardStyleConfig;
 };
 
 function layoutKey(items: Layout): string {
@@ -69,7 +71,10 @@ export function DashboardGrid({
   selectedIds,
   onClearSelection,
   className,
+  styleConfig,
 }: DashboardGridProps) {
+  const gap = resolveWidgetGap(styleConfig ?? {});
+  const gridMargin: [number, number] = [gap, gap];
   const sorted = sortWidgets(widgets);
   const topLevel = useMemo(() => getTopLevelWidgets(sorted), [sorted]);
   const derivedLayout = useMemo(() => widgetsToGridLayout(topLevel), [topLevel]);
@@ -189,6 +194,7 @@ export function DashboardGrid({
           style={isEmpty ? { minHeight: EMPTY_CANVAS_MIN_HEIGHT } : undefined}
           layout={layout}
           editable
+          margin={gridMargin}
           isDroppable={Boolean(onInsertChart)}
           droppingItem={droppingItem}
           onDropDragOver={handleDropDragOver}
@@ -230,7 +236,7 @@ export function DashboardGrid({
 
   return (
     <div className={cn("dashboard-grid-view relative w-full", className)}>
-      <DashboardRglCanvas className="layout" layout={viewLayout} editable={false}>
+      <DashboardRglCanvas className="layout" layout={viewLayout} editable={false} margin={gridMargin}>
         {gridChildren}
       </DashboardRglCanvas>
     </div>

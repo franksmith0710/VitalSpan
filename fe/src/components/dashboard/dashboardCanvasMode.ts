@@ -109,8 +109,10 @@ export function mergeLayoutWidgetIntoPixel(
   };
 }
 
+import { styleConfigHasPersistedFields } from "./dashboardStyleConfig";
+
 function persistedStyle(styleConfig: DashboardStyleConfig): DashboardStyleConfig | undefined {
-  return styleConfig.widgetGap || styleConfig.canvasBackground ? styleConfig : undefined;
+  return styleConfigHasPersistedFields(styleConfig) ? styleConfig : undefined;
 }
 
 /** v1 可规范化栅格；v2 只补公共 ID，严格保留数组顺序、order 与像素几何。 */

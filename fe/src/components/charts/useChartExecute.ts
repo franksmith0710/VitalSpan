@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiRequestError } from "@/lib/api";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
+  chartExecuteRequestKey,
   fetchChartExecuteResult,
 } from "@/lib/chartExecuteProbe";
 
@@ -39,20 +40,29 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
   const [error, setError] = useState<string | null>(null);
   const [slowHint, setSlowHint] = useState(false);
 
+  const configRef = useRef(config);
+  const filterRef = useRef(filterParameters);
+  configRef.current = config;
+  filterRef.current = filterParameters;
+
+  const requestKey = chartExecuteRequestKey(config, filterParameters);
+
   const run = useCallback(async () => {
+    const activeConfig = configRef.current;
+    const activeFilters = filterRef.current;
     setLoading(true);
     setError(null);
     setSlowHint(false);
     const started = Date.now();
     try {
-      if (config.mode === "dataset" && (!config.dataSourceId || !config.configId)) {
+      if (activeConfig.mode === "dataset" && (!activeConfig.dataSourceId || !activeConfig.configId)) {
         setError("请选择数据源与已绑定配置的 Dataset");
         setColumns([]);
         setRows([]);
         return;
       }
 
-      const data = await fetchChartExecuteResult(config, { filterParameters });
+      const data = await fetchChartExecuteResult(activeConfig, { filterParameters: activeFilters });
       setColumns(data.columns);
       setRows(data.rows);
       setSlowHint(Date.now() - started > SLOW_THRESHOLD_MS);
@@ -71,11 +81,11 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     } finally {
       setLoading(false);
     }
-  }, [config, filterParameters]);
+  }, []);
 
   useEffect(() => {
     void run();
-  }, [run, executeKey]);
+  }, [requestKey, executeKey, run]);
 
   return { columns, rows, loading, error, slowHint, rerun: run };
 }

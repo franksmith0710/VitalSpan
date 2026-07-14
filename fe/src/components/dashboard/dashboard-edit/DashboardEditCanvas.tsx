@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import { DashboardGrid, type GridInsertAt } from "../DashboardGrid";
 import { DashboardLayoutPreview } from "../DashboardLayoutPreview";
 import type { Linkage } from "../dashboardFilterUtils";
@@ -8,9 +7,13 @@ import {
   sortWidgets,
   type DashboardLayout,
   type DashboardLayoutV2,
+  type DashboardStyleConfig,
   type LayoutWidget,
 } from "../layoutUtils";
+import { resolvePixelGutter } from "../dashboardStyleConfig";
+import { DashboardStyleSurface } from "../DashboardStyleSurface";
 import type { PaletteInsertType } from "../createLayoutWidget";
+import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import {
   DashboardCanvasWidgetRenderer,
   type DashboardWidgetsSetter,
@@ -24,7 +27,7 @@ type DashboardEditCanvasProps = {
   selectedIds: Set<string>;
   linkage: Linkage;
   filterValues: Record<string, string>;
-  canvasBackground?: string;
+  styleConfig?: DashboardStyleConfig;
   setWidgets: DashboardWidgetsSetter;
   setPixelLayout: (layout: DashboardLayoutV2) => void;
   onSelect: (widgetId: string, additive: boolean) => void;
@@ -33,6 +36,7 @@ type DashboardEditCanvasProps = {
   onDeleteWidget: (widgetId: string) => void;
   onFilterValueChange: (filterId: string, value: string) => void;
   onDropInsert: (type: PaletteInsertType, at: GridInsertAt) => void;
+  onPaletteDrop?: (type: PaletteDragPayload, point: { x: number; y: number }) => void;
   onViewportChange: (viewport: PixelRect) => void;
 };
 
@@ -44,7 +48,7 @@ export function DashboardEditCanvas({
   selectedIds,
   linkage,
   filterValues,
-  canvasBackground,
+  styleConfig = {},
   setWidgets,
   setPixelLayout,
   onSelect,
@@ -53,6 +57,7 @@ export function DashboardEditCanvas({
   onDeleteWidget,
   onFilterValueChange,
   onDropInsert,
+  onPaletteDrop,
   onViewportChange,
 }: DashboardEditCanvasProps) {
   if (mode === "view" || editor === "pixel-readonly") {
@@ -62,21 +67,13 @@ export function DashboardEditCanvas({
           layout={layout}
           linkage={linkage}
           filterValues={filterValues}
-          onFilterValueChange={
-            mode === "view" ? onFilterValueChange : undefined
-          }
+          onFilterValueChange={mode === "view" ? onFilterValueChange : undefined}
         />
       </div>
     );
   }
 
-  const style: CSSProperties | undefined = canvasBackground
-    ? { background: canvasBackground }
-    : undefined;
-  const renderWidget = (
-    widget: LayoutWidget,
-    gridSize?: { w: number; h: number },
-  ) => (
+  const renderWidget = (widget: LayoutWidget, gridSize?: { w: number; h: number }) => (
     <DashboardCanvasWidgetRenderer
       widget={widget}
       mode="edit"
@@ -90,20 +87,24 @@ export function DashboardEditCanvas({
       onNestedSelect={onNestedSelect}
       onDelete={onDeleteWidget}
       setWidgets={setWidgets}
+      dashboardStyle={styleConfig}
     />
   );
 
   return (
-    <div className="h-full min-h-0" style={style}>
+    <DashboardStyleSurface styleConfig={styleConfig} className="h-full min-h-0">
       {layout.version === 2 ? (
         <PixelCanvas
           mode="edit"
           layout={layout}
+          scaleMode={styleConfig.scaleMode}
+          pixelGutter={resolvePixelGutter(styleConfig)}
           selectedIds={selectedIds}
           onSelect={onSelect}
           onClearSelection={onClearSelection}
           onLayoutChange={setPixelLayout}
           onViewportChange={onViewportChange}
+          onPaletteDrop={onPaletteDrop}
           renderWidget={(widget) => (
             <DashboardCanvasWidgetRenderer
               widget={widget}
@@ -118,6 +119,7 @@ export function DashboardEditCanvas({
               onNestedSelect={onNestedSelect}
               onDelete={onDeleteWidget}
               setWidgets={setWidgets}
+              dashboardStyle={styleConfig}
             />
           )}
         />
@@ -125,6 +127,7 @@ export function DashboardEditCanvas({
         <DashboardGrid
           mode="edit"
           widgets={widgets}
+          styleConfig={styleConfig}
           selectedIds={selectedIds}
           onClearSelection={onClearSelection}
           onInsertChart={onDropInsert}
@@ -132,6 +135,6 @@ export function DashboardEditCanvas({
           renderWidget={renderWidget}
         />
       )}
-    </div>
+    </DashboardStyleSurface>
   );
 }

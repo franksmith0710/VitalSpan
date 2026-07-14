@@ -3,9 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
 import { PIXEL_CANVAS_GUTTER, PixelCanvas } from "./PixelCanvas";
 import {
-  createPixelPaletteWidget,
+  insertClonedPixelWidget,
+  insertPixelPaletteWidget,
   placeClonedPixelWidget,
 } from "./createPixelWidget";
+import { layoutsOverlap } from "./collisionLayout";
 import { usePixelLayoutHistory } from "./usePixelLayoutHistory";
 
 const widget: PixelLayoutWidget = {
@@ -168,7 +170,7 @@ describe("PixelCanvas", () => {
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
-    expect(screen.getByTestId("pixel-edit-bar-w1")).toBeInTheDocument();
+    expect(screen.getByTestId("pixel-drag-rail-w1")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^调整组件大小：/ })).toHaveLength(8);
     unmount();
 
@@ -180,45 +182,36 @@ describe("PixelCanvas", () => {
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
-    expect(screen.queryByTestId("pixel-edit-bar-w1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("pixel-drag-rail-w1")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^调整组件大小：/ })).not.toBeInTheDocument();
     expect(screen.getByTestId("pixel-shape-w1")).not.toHaveClass("pixel-shape-selected");
   });
 
   it.each([1, 0.5, 0.25])(
-    "keeps the complete edit chrome inside the host at scale %s",
+    "keeps resize handles inside the host at scale %s",
     (expectedScale) => {
+    const hostWidth = 1440 * expectedScale;
+    const hostHeight = 320 * expectedScale;
     render(
       <PixelCanvas
         mode="edit"
-        layout={{ ...layout, widgets: [{ ...widget, x: 0 }] }}
+        layout={{ ...layout, widgets: [{ ...widget, x: 0 }], canvas: { width: 1440, height: 320 } }}
         selectedIds={new Set(["w1"])}
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
     const host = screen.getByTestId("pixel-canvas-host");
-    Object.defineProperty(host, "clientWidth", {
-      configurable: true,
-      value: PIXEL_CANVAS_GUTTER + 1440 * expectedScale,
+    Object.defineProperties(host, {
+      clientWidth: { configurable: true, value: hostWidth },
+      clientHeight: { configurable: true, value: hostHeight },
     });
     act(triggerResizeObservers);
 
     expect(host).toHaveAttribute("data-pixel-canvas-scale", String(expectedScale));
-    const stage = screen.getByTestId("pixel-canvas-stage");
-    expect(stage).toHaveStyle({
-      left: `${PIXEL_CANVAS_GUTTER}px`,
+    expect(screen.getByTestId("pixel-canvas-stage")).toHaveStyle({
+      left: "0px",
       transform: `scale(${expectedScale})`,
     });
-    expect(screen.getByTestId("pixel-shape-w1")).toHaveStyle({ left: "0px" });
-    expect(screen.getByTestId("pixel-shape-w1").style.transform).toBe("");
-    const editBar = screen.getByTestId("pixel-edit-bar-w1");
-    const visualWidth = Number.parseFloat(editBar.style.width);
-    const preTransformRight =
-      PIXEL_CANVAS_GUTTER +
-      (Number.parseFloat(editBar.style.left) + visualWidth) * expectedScale;
-    const completeVisualLeft = preTransformRight - visualWidth;
-    expect(visualWidth).toBe(32);
-    expect(completeVisualLeft).toBeGreaterThanOrEqual(0);
     const handle = screen.getByTestId("pixel-resize-se");
     const visual = screen.getByTestId("pixel-resize-visual-se");
     expect(Number.parseFloat(handle.style.width) * expectedScale).toBe(20);
@@ -238,9 +231,9 @@ describe("PixelCanvas", () => {
     );
     const host = screen.getByTestId("pixel-canvas-host");
     Object.defineProperties(host, {
-      clientWidth: { configurable: true, value: PIXEL_CANVAS_GUTTER + 720 },
+      clientWidth: { configurable: true, value: 720 },
       clientHeight: { configurable: true, value: 300 },
-      scrollLeft: { configurable: true, writable: true, value: PIXEL_CANVAS_GUTTER + 200 },
+      scrollLeft: { configurable: true, writable: true, value: 200 },
       scrollTop: { configurable: true, writable: true, value: 100 },
     });
     act(triggerResizeObservers);
@@ -250,7 +243,7 @@ describe("PixelCanvas", () => {
       x: 400,
       y: 200,
       width: 1040,
-      height: 600,
+      height: 120,
     });
   });
 
@@ -270,18 +263,23 @@ describe("PixelCanvas", () => {
 });
 
 describe("v2 widget creation and history", () => {
-  it("creates chart and filter widgets inside the visible canonical viewport", () => {
-    const viewport = { x: 400, y: 300, width: 600, height: 400 };
-    const chart = createPixelPaletteWidget("bar", [], layout.canvas, viewport);
-    const filter = createPixelPaletteWidget(
+  it("creates chart and filter widgets in seamless open slots", () => {
+    const chartLayout = insertPixelPaletteWidget("bar", {
+      version: 2,
+      canvas: layout.canvas,
+      widgets: [],
+      globalFilters: [],
+    });
+    const chart = chartLayout.widgets[0]!;
+    const filterLayout = insertPixelPaletteWidget(
       { type: "filter", controlType: "date" },
-      [chart],
-      layout.canvas,
-      viewport,
+      chartLayout,
     );
+    const filter = filterLayout.widgets.find((item) => item.type === "filter")!;
 
-    expect(chart).toMatchObject({ type: "chart", x: 460, y: 340, width: 480, height: 320 });
-    expect(filter).toMatchObject({ type: "filter", x: 520, y: 420, width: 360, height: 160 });
+    expect(chart).toMatchObject({ type: "chart", x: 0, y: 0, width: 480, height: 300 });
+    expect(filter).toMatchObject({ type: "filter", x: 480, y: 0, width: 320, height: 140 });
+    expect(layoutsOverlap(filterLayout, 0)).toBe(false);
   });
 
   it("places a reused v1 widget in v2 without losing cloned content identity", () => {
@@ -305,10 +303,10 @@ describe("v2 widget creation and history", () => {
       title: "复用说明",
       order: 8,
       textConfig: { content: "复用内容" },
-      x: 460,
-      y: 340,
+      x: 400,
+      y: 0,
       width: 480,
-      height: 320,
+      height: 180,
     });
     expect(placed).not.toHaveProperty("colSpan");
   });

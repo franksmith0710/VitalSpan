@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { fetchChartExecuteResult, isChartExecuteReady } from "@/lib/chartExecuteProbe";
 
@@ -19,6 +19,11 @@ export function useInspectorColumns(cfg: ChartViewConfig) {
   const cacheKey = useMemo(() => columnsCacheKey(cfg), [cfg]);
   const [columns, setColumns] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  const refreshColumns = useCallback(() => {
+    setRefreshTick((t) => t + 1);
+  }, []);
 
   useEffect(() => {
     if (!ready) {
@@ -44,7 +49,7 @@ export function useInspectorColumns(cfg: ChartViewConfig) {
     return () => {
       cancelled = true;
     };
-  }, [ready, cacheKey]);
+  }, [ready, cacheKey, refreshTick, cfg]);
 
-  return { columns, loading, ready };
+  return { columns, loading, ready, refreshColumns };
 }

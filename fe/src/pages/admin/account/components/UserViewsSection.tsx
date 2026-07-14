@@ -1,7 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LayoutDashboard, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  BatchDeleteDialog,
+  ListBatchDeleteBar,
+  ListHeaderCheckbox,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { runBatchDelete } from "@/lib/runBatchDelete";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,6 +68,8 @@ export function UserViewsSection() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("默认");
   const [dashboardId, setDashboardId] = useState("");
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   const listQuery = useQuery({
     queryKey: ["users", "me", "views"],
@@ -124,6 +134,23 @@ export function UserViewsSection() {
   };
 
   const items = (listQuery.data?.items ?? []).slice(0, 20);
+  const rowIds = useMemo(() => items.map((row) => row.id), [items]);
+  const selection = useListRowSelection(rowIds);
+
+  const handleBatchDelete = async () => {
+    const ids = [...selection.selectedIds];
+    if (ids.length === 0) return;
+    setBatchDeleting(true);
+    const { ok, failed } = await runBatchDelete(ids, (id) =>
+      apiFetch(`/api/v1/users/me/views/${id}`, { method: "DELETE" }),
+    );
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    selection.clear();
+    invalidate();
+    if (failed === 0) toast.success(`已删除 ${ok} 个个人视图`);
+    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败`);
+  };
 
   if (listQuery.isError) {
     return (
@@ -188,10 +215,26 @@ export function UserViewsSection() {
             尚未配置个人默认视图，将使用角色默认
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>名称</TableHead>
+          <>
+            <ListBatchDeleteBar
+              selectedCount={selection.selectedCount}
+              entityLabel="个视图"
+              onClear={selection.clear}
+              onDelete={() => setBatchDeleteOpen(true)}
+              className="mb-3"
+            />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <ListHeaderCheckbox
+                      checked={selection.allSelected}
+                      indeterminate={selection.someSelected}
+                      disabled={items.length === 0}
+                      onCheckedChange={() => selection.toggleAll()}
+                    />
+                  </TableHead>
+                  <TableHead>名称</TableHead>
                 <TableHead>Dashboard ID</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
@@ -199,6 +242,13 @@ export function UserViewsSection() {
             <TableBody>
               {items.map((row) => (
                 <TableRow key={row.id}>
+                  <TableCell>
+                    <ListRowCheckbox
+                      checked={selection.isSelected(row.id)}
+                      onCheckedChange={() => selection.toggle(row.id)}
+                      ariaLabel={`选择视图 ${row.name}`}
+                    />
+                  </TableCell>
                   <TableCell>{row.name}</TableCell>
                   <TableCell className="font-mono text-theme-xs">{row.dashboardId}</TableCell>
                   <TableCell className="text-right">
@@ -241,8 +291,19 @@ export function UserViewsSection() {
               ))}
             </TableBody>
           </Table>
+          </>
         )}
       </CardContent>
+
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        count={selection.selectedCount}
+        title="批量删除个人视图"
+        description="删除后将回落到角色默认 Dashboard。"
+        pending={batchDeleting}
+        onConfirm={() => void handleBatchDelete()}
+      />
     </Card>
   );
 }

@@ -18,6 +18,8 @@ export type AuthUser = {
   displayName: string;
   email: string;
   roles: SessionRole[];
+  permissions?: string[];
+  isRoot?: boolean;
 };
 
 type AuthContextValue = {
@@ -49,13 +51,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(true);
     try {
-      const me = await apiFetch<AuthUser>("/api/v1/me");
+      const me = await apiFetch<{
+        id: string;
+        username: string;
+        displayName?: string;
+        email?: string;
+        roles: string[];
+        permissions?: string[];
+        isRoot?: boolean;
+      }>("/api/v1/me");
       setUser({
         id: me.id,
         username: me.username,
         displayName: me.displayName ?? me.username,
         email: me.email ?? `${me.username}@vitalspan.local`,
         roles: me.roles as SessionRole[],
+        permissions: me.permissions ?? [],
+        isRoot: me.isRoot ?? false,
       });
     } catch {
       clearAuthToken();

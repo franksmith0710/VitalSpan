@@ -24,6 +24,10 @@ type Props = {
   compact?: boolean;
   /** 仅渲染数据区、样式区、筛选区或全部（Inspector Tab 拆分） */
   section?: "data" | "style" | "filters" | "all";
+  /** 筛选区不渲染时间范围（已下沉高级 Tab） */
+  omitTimeRange?: boolean;
+  /** 添加筛选按钮文案（DE：过滤） */
+  addFilterLabel?: string;
   dimensionLabel?: string;
   metricLabel?: string;
 };
@@ -75,6 +79,8 @@ export function ChartConfigPanel({
   onChange,
   compact = false,
   section = "all",
+  omitTimeRange = false,
+  addFilterLabel = "添加",
   dimensionLabel = "维度字段",
   metricLabel = "度量字段",
 }: Props) {
@@ -252,7 +258,7 @@ export function ChartConfigPanel({
                 <Label>过滤器</Label>
                 <Button type="button" variant="ghost" size="xs" onClick={addFilter} aria-label="添加筛选">
                   <Plus className="size-3.5" aria-hidden />
-                  添加
+                  {addFilterLabel}
                 </Button>
               </div>
               {(config.filters ?? []).map((f, i) => (
@@ -302,12 +308,14 @@ export function ChartConfigPanel({
               ))}
             </div>
 
-            <TimeRangeConfig
-              value={config.timeRange}
-              columns={columns}
-              disabled={columnsDisabled}
-              onChange={(timeRange) => onChange({ ...config, timeRange })}
-            />
+            {!omitTimeRange ? (
+              <TimeRangeConfig
+                value={config.timeRange}
+                columns={columns}
+                disabled={columnsDisabled}
+                onChange={(timeRange) => onChange({ ...config, timeRange })}
+              />
+            ) : null}
           </>
         ) : null}
 

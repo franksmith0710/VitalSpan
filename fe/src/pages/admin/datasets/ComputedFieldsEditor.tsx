@@ -1,8 +1,14 @@
 import { Plus, Trash2 } from "lucide-react";
+import {
+  ListBatchDeleteBar,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
 import type { DatasetComputedField } from "./types";
 
 export function ComputedFieldsEditor({
@@ -24,9 +30,24 @@ export function ComputedFieldsEditor({
     onChange([...fields, { name: "", expression: "" }]);
   };
 
+  const rowIds = useMemo(() => fields.map((_, index) => String(index)), [fields]);
+  const selection = useListRowSelection(rowIds);
+
+  const removeSelected = () => {
+    const indices = new Set([...selection.selectedIds].map(Number));
+    onChange(fields.filter((_, i) => !indices.has(i)));
+    selection.clear();
+  };
+
   return (
     <div className="grid gap-3">
-      <div className="flex items-center justify-end">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <ListBatchDeleteBar
+          selectedCount={selection.selectedCount}
+          entityLabel="个字段"
+          onClear={selection.clear}
+          onDelete={removeSelected}
+        />
         <Button type="button" variant="outline" size="sm" onClick={add}>
           <Plus className="size-4" aria-hidden />
           添加计算字段
@@ -47,9 +68,15 @@ export function ComputedFieldsEditor({
               key={`cf-${index}`}
               className={cn(
                 "grid gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]",
-                "sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] sm:items-end",
+                "sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.4fr)_auto] sm:items-end",
               )}
             >
+              <ListRowCheckbox
+                checked={selection.isSelected(String(index))}
+                onCheckedChange={() => selection.toggle(String(index))}
+                ariaLabel={`选择计算字段 ${field.name || index + 1}`}
+                className="sm:mb-0.5 sm:justify-self-start"
+              />
               <div className="grid gap-2">
                 <Label htmlFor={`cf-name-${index}`} className="text-theme-xs text-gray-500">
                   字段名

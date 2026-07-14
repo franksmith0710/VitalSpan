@@ -27,6 +27,10 @@ type ChartRendererProps = {
   embedded?: boolean;
   /** 栅格行高（编辑态缩放时传入，用于首帧高度估算） */
   gridSpan?: { w: number; h: number };
+  /** 像素画布逻辑尺寸（缩放/拖拽时比 DOM 测量更稳定） */
+  pixelSize?: { width: number; height: number };
+  /** shape 壳层顶部拖动手柄等占用高度 */
+  contentChromePx?: number;
   filterParameters?: Record<string, string>;
   executeKey?: string;
 };
@@ -38,12 +42,43 @@ function pickColumns(columns: string[], fields: string[]): string[] {
   return fields.filter((f) => columns.includes(f));
 }
 
+function parseMetricValue(raw: unknown): number {
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  if (typeof raw === "string") {
+    const parsed = Number.parseFloat(raw.replace(/,/g, ""));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function resolveEmbeddedChartSize(
+  bodySize: { width: number; height: number },
+  pixelSize: { width: number; height: number } | undefined,
+  contentChromePx: number,
+  gridSpan: { w: number; h: number } | undefined,
+): { width: number; height: number } {
+  const measuredHeight = bodySize.height > 0 ? bodySize.height : 0;
+  const pixelHeight = pixelSize
+    ? Math.max(48, pixelSize.height - contentChromePx)
+    : 0;
+  const fallbackHeight = gridSpan?.h ? estimateWidgetBodyHeight(gridSpan.h) : 120;
+  const height = Math.max(64, measuredHeight || pixelHeight || fallbackHeight);
+
+  const measuredWidth = bodySize.width > 0 ? bodySize.width : 0;
+  const pixelWidth = pixelSize?.width ?? 0;
+  const width = Math.max(80, measuredWidth || pixelWidth || 240);
+
+  return { width, height };
+}
+
 export function ChartRenderer({
   config,
   title = "图表",
   mode = "preview",
   embedded = false,
   gridSpan,
+  pixelSize,
+  contentChromePx = 0,
   filterParameters,
   executeKey,
 }: ChartRendererProps) {
@@ -52,15 +87,16 @@ export function ChartRenderer({
     if (!embedded) {
       return { width: bodySize.width || undefined, height: Math.max(180, bodySize.height || 180) };
     }
-    const height =
-      bodySize.height > 0
-        ? bodySize.height
-        : gridSpan?.h
-          ? estimateWidgetBodyHeight(gridSpan.h)
-          : 120;
-    const width = bodySize.width > 0 ? bodySize.width : undefined;
-    return { width, height };
-  }, [embedded, bodySize.width, bodySize.height, gridSpan?.h]);
+    return resolveEmbeddedChartSize(bodySize, pixelSize, contentChromePx, gridSpan);
+  }, [
+    embedded,
+    bodySize.width,
+    bodySize.height,
+    pixelSize?.width,
+    pixelSize?.height,
+    contentChromePx,
+    gridSpan?.h,
+  ]);
   const { columns, rows, loading, error, slowHint, rerun } = useChartExecute(config, {
     filterParameters,
     executeKey,
@@ -207,12 +243,16 @@ export function ChartRenderer({
     const categories = rows.map((r) => String(r[columns.indexOf(dim)] ?? ""));
     const series = metricFields.map((field) => ({
       name: field,
-      data: rows.map((r) => Number(r[columns.indexOf(field)] ?? 0)),
+      data: rows.map((r) => parseMetricValue(r[columns.indexOf(field)])),
     }));
     let options: ApexOptions;
     const compactEmbedded = embedded && chartSize.height < 160;
+    const apexSizeKey = `${Math.round(chartSize.width)}x${Math.round(chartSize.height)}`;
     const apexChart: ApexOptions["chart"] = {
       height: chartSize.height,
+      redrawOnParentResize: true,
+      redrawOnWindowResize: true,
+      animations: embedded ? { enabled: false } : undefined,
       ...(localConfig.chartType === "bar" && localConfig.styleVariant === "stacked"
         ? { stacked: true }
         : {}),
@@ -220,7 +260,9 @@ export function ChartRenderer({
     const apexOverrides: ApexOptions = {
       chart: apexChart,
       legend: compactEmbedded ? { show: false } : undefined,
+      markers: compactEmbedded ? { size: 3, strokeWidth: 0 } : undefined,
       xaxis: {
+        categories,
         labels: {
           rotate: compactEmbedded && categories.length > 4 ? -35 : 0,
           hideOverlappingLabels: true,
@@ -234,9 +276,12 @@ export function ChartRenderer({
       options = createBarChartOptions(categories, apexOverrides);
     }
     return (
-      <div className="h-full min-h-0 w-full overflow-hidden">
+      <div
+        ref={embedded ? bodyRef : undefined}
+        className="h-full min-h-0 w-full overflow-hidden"
+      >
         <Chart
-          key={`${chartSize.width ?? "auto"}x${chartSize.height}`}
+          key={`${localConfig.chartType}-${apexSizeKey}-${series[0]?.data.length ?? 0}`}
           options={options}
           series={series}
           type={localConfig.chartType === "line" ? "line" : "bar"}
@@ -249,7 +294,6 @@ export function ChartRenderer({
 
   const body = !loading && !error && !empty ? (
     <div
-      ref={embedded ? bodyRef : undefined}
       className={
         mode === "config"
           ? "grid gap-4 lg:grid-cols-2"

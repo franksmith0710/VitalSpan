@@ -1,17 +1,27 @@
 import {
   useCallback,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
+  type DragEvent,
   type ReactNode,
 } from "react";
 import { cn } from "@/lib/utils";
+import {
+  isPaletteDragEvent,
+  readPaletteDragPayload,
+  type PaletteDragPayload,
+} from "@/lib/dashboardDnd";
 import type {
   DashboardCanvas,
   DashboardLayoutV2,
   PixelLayoutWidget,
 } from "../layoutUtils";
+import type { ScaleMode } from "../dashboardStyleConfig";
+import { resolvePixelCollisions } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
+import { clientPointToCanvas, scaledCanvasMetrics } from "./geometry";
 import { PixelShape } from "./PixelShape";
 
 type PixelCanvasProps = {
@@ -23,11 +33,16 @@ type PixelCanvasProps = {
   onClearSelection?: () => void;
   onLayoutChange?: (layout: DashboardLayoutV2) => void;
   onViewportChange?: (viewport: PixelRect) => void;
+  onPaletteDrop?: (type: PaletteDragPayload, point: { x: number; y: number }) => void;
   onMore?: (widgetId: string) => void;
   className?: string;
+  scaleMode?: ScaleMode;
+  pixelGutter?: number;
 };
 
-export const PIXEL_CANVAS_GUTTER = 72;
+export const PIXEL_CANVAS_GUTTER = 0;
+
+export const PIXEL_CANVAS_MIN_HEIGHT = 320;
 
 export function canvasScaleForHost(
   hostWidth: number,
@@ -38,6 +53,21 @@ export function canvasScaleForHost(
   return (hostWidth - gutter) / canvasWidth;
 }
 
+export function fitCanvasHeightToContent(
+  layout: DashboardLayoutV2,
+  minHeight = PIXEL_CANVAS_MIN_HEIGHT,
+): DashboardLayoutV2 {
+  const lowest = layout.widgets.reduce((max, widget) => Math.max(max, widget.y + widget.height), 0);
+  const height = Math.max(minHeight, lowest);
+  if (height === layout.canvas.height) return layout;
+  return {
+    ...layout,
+    canvas: {
+      ...layout.canvas,
+      height,
+    },
+  };
+}
 export function visibleCanvasViewport(
   host: Pick<HTMLElement, "scrollLeft" | "scrollTop" | "clientWidth" | "clientHeight">,
   scale: number,
@@ -67,85 +97,184 @@ export function PixelCanvas({
   onClearSelection,
   onLayoutChange,
   onViewportChange,
+  onPaletteDrop,
   onMore,
   className,
+  scaleMode = "canvas",
+  pixelGutter = PIXEL_CANVAS_GUTTER,
 }: PixelCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const [contentSize, setContentSize] = useState({ width: 0, height: 0 });
+  const [previewLayout, setPreviewLayout] = useState<DashboardLayoutV2 | null>(null);
+  const [paletteDragOver, setPaletteDragOver] = useState(false);
+  const activeLayout = previewLayout ?? layout;
+  const viewCanvasHeight = useMemo(() => {
+    const lowest = activeLayout.widgets.reduce(
+      (max, widget) => Math.max(max, widget.y + widget.height),
+      0,
+    );
+    return Math.max(PIXEL_CANVAS_MIN_HEIGHT, lowest);
+  }, [activeLayout.widgets]);
+  const viewCanvas = useMemo(
+    () => ({ width: activeLayout.canvas.width, height: viewCanvasHeight }),
+    [activeLayout.canvas.width, viewCanvasHeight],
+  );
 
   useLayoutEffect(() => {
     const host = hostRef.current;
     if (!host) return;
+    const parent = host.parentElement;
+    const measureEl =
+      parent && parent.clientWidth > 0 && parent.clientHeight > 0 ? parent : host;
     const update = () => {
-      const nextScale = canvasScaleForHost(host.clientWidth, layout.canvas.width);
-      setScale(nextScale);
-      onViewportChange?.(visibleCanvasViewport(host, nextScale, layout.canvas));
+      const metrics = scaledCanvasMetrics(
+        measureEl.clientWidth,
+        measureEl.clientHeight,
+        viewCanvas.width,
+        viewCanvas.height,
+        pixelGutter,
+        scaleMode,
+      );
+      setScale((previous) =>
+        Math.abs(previous - metrics.scale) < 0.0001 ? previous : metrics.scale,
+      );
+      setContentSize((previous) =>
+        Math.abs(previous.width - metrics.contentWidth) < 1 &&
+        Math.abs(previous.height - metrics.contentHeight) < 1
+          ? previous
+          : { width: metrics.contentWidth, height: metrics.contentHeight },
+      );
+      onViewportChange?.(visibleCanvasViewport(host, metrics.scale, viewCanvas));
     };
     update();
     const observer = new ResizeObserver(update);
-    observer.observe(host);
+    observer.observe(measureEl);
     return () => observer.disconnect();
-  }, [layout.canvas, onViewportChange]);
+  }, [onViewportChange, viewCanvas, scaleMode, pixelGutter]);
 
-  const updateWidget = useCallback(
-    (nextWidget: PixelLayoutWidget) => {
+  const resolveActive = useCallback(
+    (widget: PixelLayoutWidget) =>
+      resolvePixelCollisions(layout, widget.id, {
+        x: widget.x,
+        y: widget.y,
+        width: widget.width,
+        height: widget.height,
+      }),
+    [layout],
+  );
+
+  const handlePreview = useCallback(
+    (widget: PixelLayoutWidget) => {
       if (!onLayoutChange) return;
-      onLayoutChange({
-        ...layout,
-        widgets: layout.widgets.map((widget) =>
-          widget.id === nextWidget.id ? nextWidget : widget,
-        ),
-      });
+      setPreviewLayout(resolveActive(widget));
     },
-    [layout, onLayoutChange],
+    [onLayoutChange, resolveActive],
+  );
+
+  const handleCommit = useCallback(
+    (widget: PixelLayoutWidget) => {
+      if (!onLayoutChange) return;
+      setPreviewLayout(null);
+      onLayoutChange(resolveActive(widget));
+    },
+    [onLayoutChange, resolveActive],
+  );
+
+  const handleCancel = useCallback(() => {
+    setPreviewLayout(null);
+  }, []);
+
+  const handleDragOver = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      if (!onPaletteDrop || !isPaletteDragEvent(event)) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      setPaletteDragOver(true);
+    },
+    [onPaletteDrop],
+  );
+
+  const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+    setPaletteDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      if (!onPaletteDrop) return;
+      event.preventDefault();
+      setPaletteDragOver(false);
+      const payload = readPaletteDragPayload(event.nativeEvent);
+      const host = hostRef.current;
+      if (!payload || !host) return;
+      const point = clientPointToCanvas(host, event.clientX, event.clientY, scale, pixelGutter);
+      onPaletteDrop(payload, point);
+    },
+    [onPaletteDrop, scale],
   );
 
   return (
     <div
       ref={hostRef}
       className={cn(
-        "pixel-canvas-host relative w-full overflow-auto",
-        mode === "edit" && "min-h-[420px]",
+        "pixel-canvas-host relative h-full min-h-0 w-full overflow-x-hidden overflow-y-auto",
+        paletteDragOver && "dashboard-canvas-drop-active",
         className,
       )}
       data-testid="pixel-canvas-host"
       data-pixel-canvas-scale={scale}
       onScroll={(event) => {
-        onViewportChange?.(visibleCanvasViewport(event.currentTarget, scale, layout.canvas));
+        onViewportChange?.(visibleCanvasViewport(event.currentTarget, scale, viewCanvas));
       }}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) onClearSelection?.();
       }}
-      style={{ height: layout.canvas.height * scale }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       <div
-        data-testid="pixel-canvas-stage"
-        className="pixel-canvas-stage absolute top-0 origin-top-left"
-        style={{
-          left: PIXEL_CANVAS_GUTTER,
-          width: layout.canvas.width,
-          height: layout.canvas.height,
-          transform: `scale(${scale})`,
-        }}
-        onPointerDown={(event) => {
-          if (event.target === event.currentTarget) onClearSelection?.();
-        }}
+        data-testid="pixel-canvas-content"
+        className="relative"
+        style={{ width: contentSize.width, height: contentSize.height }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
-        {layout.widgets.map((widget) => (
-          <PixelShape
-            key={widget.id}
-            widget={widget}
-            canvas={layout.canvas}
-            scale={scale}
-            mode={mode}
-            selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
-            onSelect={onSelect}
-            onChange={updateWidget}
-            onMore={onMore}
-          >
-            {renderWidget(widget)}
-          </PixelShape>
-        ))}
+        <div
+          data-testid="pixel-canvas-stage"
+          className="pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
+          style={{
+            left: pixelGutter,
+            width: viewCanvas.width,
+            height: viewCanvas.height,
+            transform: `scale(${scale})`,
+          }}
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) onClearSelection?.();
+          }}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          {activeLayout.widgets.map((widget) => (
+            <PixelShape
+              key={widget.id}
+              widget={widget}
+              canvas={viewCanvas}
+              scale={scale}
+              mode={mode}
+              selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
+              onSelect={onSelect}
+              onPreview={handlePreview}
+              onCommit={handleCommit}
+              onCancel={handleCancel}
+              onMore={onMore}
+            >
+              {renderWidget(widget)}
+            </PixelShape>
+          ))}
+        </div>
       </div>
     </div>
   );

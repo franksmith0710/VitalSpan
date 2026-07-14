@@ -41,6 +41,9 @@ export type TextVariant = "markdown" | "plain" | "html";
 export type TextWidgetConfig = {
   content: string;
   variant: TextVariant;
+  datasetId?: string;
+  dimensionField?: string;
+  metricField?: string;
 };
 
 export type MediaFit = "contain" | "cover" | "fill";
@@ -63,10 +66,24 @@ export type TabsWidgetConfig = {
   activePaneId: string;
 };
 
-export type DashboardStyleConfig = {
-  widgetGap?: number;
-  canvasBackground?: string;
-};
+export type {
+  DashboardStyleConfig,
+  GapPreset,
+  ScaleMode,
+  WidgetStyleConfig,
+  TitleStyleConfig,
+  FilterChromeStyleConfig,
+  FilterControlStyleConfig,
+  NumberFormatConfig,
+} from "./dashboardStyleConfig";
+export {
+  GAP_PRESET_PX,
+  resolveWidgetGap,
+  resolvePixelGutter,
+  resolveQueryLimit,
+  styleConfigHasPersistedFields,
+  CANVAS_BG_SWATCHES,
+} from "./dashboardStyleConfig";
 
 export type WidgetType = "chart" | "filter" | "text" | "media" | "tabs";
 

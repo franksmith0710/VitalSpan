@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  ListBatchDeleteBar,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +34,8 @@ function emptyBlock(): TemplateBlock {
 export function TemplateBlockEditor({ templateKey, format, displayName, readOnly = false }: Props) {
   const { templateQuery, saveTemplate } = useReportTemplates(null, templateKey);
   const [blocks, setBlocks] = useState<TemplateBlock[]>([]);
+  const rowIds = useMemo(() => blocks.map((_, index) => String(index)), [blocks]);
+  const selection = useListRowSelection(rowIds);
 
   useEffect(() => {
     if (templateQuery.data?.blocks) setBlocks(templateQuery.data.blocks);
@@ -65,6 +72,17 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
     persist(blocks.filter((_, i) => i !== index));
   };
 
+  const removeSelected = () => {
+    const indices = new Set([...selection.selectedIds].map(Number));
+    const next = blocks.filter((_, i) => !indices.has(i));
+    if (next.length === 0) {
+      toast.error("至少保留一个块");
+      return;
+    }
+    persist(next);
+    selection.clear();
+  };
+
   const addBlock = () => persist([...blocks, emptyBlock()]);
 
   const handleSave = () => persist(blocks);
@@ -90,9 +108,24 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
 
   return (
     <div className="space-y-4">
+      {!readOnly ? (
+        <ListBatchDeleteBar
+          selectedCount={selection.selectedCount}
+          entityLabel="个块"
+          onClear={selection.clear}
+          onDelete={removeSelected}
+        />
+      ) : null}
       {blocks.map((block, index) => (
         <div key={`${block.blockType}-${index}`} className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
           <div className="mb-3 flex flex-wrap items-center gap-2">
+            {!readOnly ? (
+              <ListRowCheckbox
+                checked={selection.isSelected(String(index))}
+                onCheckedChange={() => selection.toggle(String(index))}
+                ariaLabel={`选择模板块 ${index + 1}`}
+              />
+            ) : null}
             <Select
               value={block.blockType}
               onValueChange={(v) =>

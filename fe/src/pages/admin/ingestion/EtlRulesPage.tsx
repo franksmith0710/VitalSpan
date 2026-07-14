@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { Plus, Trash2 } from "lucide-react";
+import {
+  ListBatchDeleteBar,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { apiFetch } from "@/lib/api";
 import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +49,16 @@ export function EtlRulesPage() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [fieldErrors, setFieldErrors] = useState(false);
+
+  const rowIds = useMemo(() => rules.map((_, index) => String(index)), [rules]);
+  const selection = useListRowSelection(rowIds);
+
+  const removeSelectedRules = () => {
+    const indices = new Set([...selection.selectedIds].map(Number));
+    setRules((prev) => prev.filter((_, i) => !indices.has(i)));
+    selection.clear();
+    setSaved(false);
+  };
 
   const loadRules = useCallback(async () => {
     if (!id) return;
@@ -156,6 +171,13 @@ export function EtlRulesPage() {
         </div>
       ) : null}
 
+      <ListBatchDeleteBar
+        selectedCount={selection.selectedCount}
+        entityLabel="条规则"
+        onClear={selection.clear}
+        onDelete={removeSelectedRules}
+      />
+
       <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
         {rules.map((rule, index) => (
           <div
@@ -163,6 +185,11 @@ export function EtlRulesPage() {
             className="space-y-3 rounded-lg border border-gray-100 p-4 dark:border-gray-800"
           >
             <div className="flex items-center justify-between gap-3">
+              <ListRowCheckbox
+                checked={selection.isSelected(String(index))}
+                onCheckedChange={() => selection.toggle(String(index))}
+                ariaLabel={`选择规则 ${index + 1}`}
+              />
               <div className="flex-1 space-y-2">
                 <Label>规则类型</Label>
                 <Select value={rule.type} onValueChange={(v) => changeRuleType(index, v)}>

@@ -61,7 +61,7 @@ def create_role(
         session.commit()
     except IntegrityError as exc:
         session.rollback()
-        raise RoleError("ROLE_CODE_CONFLICT", "Role code already exists", 409) from exc
+        raise RoleError("ROLE_CODE_CONFLICT", "角色编码已存在", 409) from exc
     session.refresh(role)
     return role
 
@@ -69,13 +69,13 @@ def create_role(
 def get_role(session: Session, role_id: uuid.UUID) -> AuthRole:
     role = session.get(AuthRole, role_id)
     if role is None:
-        raise RoleError("ROLE_NOT_FOUND", "Role not found", 404)
+        raise RoleError("ROLE_NOT_FOUND", "角色不存在", 404)
     return role
 
 
 def assert_role_active(role: AuthRole) -> None:
     if not role.is_active:
-        raise RoleError("ROLE_DISABLED", "Role is disabled", 409)
+        raise RoleError("ROLE_DISABLED", "角色已停用", 409)
 
 
 def update_role(
@@ -90,7 +90,7 @@ def update_role(
     role = get_role(session, role_id)
     if role.is_root and payload.is_active is False:
         raise RoleError(
-            "AUTH_ROOT_ROLE_IMMUTABLE", "Root role cannot be disabled", 409
+            "AUTH_ROOT_ROLE_IMMUTABLE", "根角色不可停用", 409
         )
     role.name = payload.name
     role.description = payload.description
@@ -122,7 +122,7 @@ def delete_role(
     role = get_role(session, role_id)
     if role.is_root:
         raise RoleError(
-            "AUTH_ROOT_ROLE_IMMUTABLE", "Root role cannot be deleted", 409
+            "AUTH_ROOT_ROLE_IMMUTABLE", "根角色不可删除", 409
         )
     user_refs = session.scalar(
         select(AuthUserRole).where(AuthUserRole.role_id == role_id).limit(1)
@@ -131,7 +131,7 @@ def delete_role(
         select(AuthResourceGrant).where(AuthResourceGrant.role_id == role_id).limit(1)
     )
     if user_refs or grant_refs:
-        raise RoleError("ROLE_IN_USE", "Role is referenced by bindings or grants", 409)
+        raise RoleError("ROLE_IN_USE", "角色仍被用户绑定或资源授权引用，无法删除", 409)
     role_code = role.code
     role_uuid = role.id
     session.delete(role)

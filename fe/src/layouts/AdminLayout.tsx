@@ -23,7 +23,7 @@ function AdminLayoutContent() {
   const { user: authUser } = useAuth();
   const sessionUser = authUser
     ? sessionUserFromMe(authUser)
-    : sessionUserFromMe({ username: "用户", roles: ["viewer"] });
+    : sessionUserFromMe({ username: "用户", roles: ["viewer"], permissions: [], isRoot: false });
   const isAccountArea = isAccountManagementPath(location.pathname);
   const navSections = useMemo(
     () => resolveSidebarSections(sessionUser, location.pathname),
@@ -62,10 +62,10 @@ function AdminLayoutContent() {
         />
         <main
           className={cn(
-            "mx-auto flex min-h-0 w-full max-w-(--breakpoint-2xl) flex-1 flex-col p-4 pb-20 md:p-6 md:pb-24",
+            "mx-auto flex min-h-0 w-full max-w-(--breakpoint-2xl) flex-1 flex-col",
             isFillHeightRoute
-              ? "overflow-hidden [&>*]:min-h-0 [&>*]:flex-1"
-              : "overflow-y-auto [&>*]:shrink-0",
+              ? "overflow-hidden p-2 md:p-3 [&>*]:min-h-0 [&>*]:flex-1"
+              : "overflow-y-auto p-4 pb-20 md:p-6 md:pb-24 [&>*]:shrink-0",
           )}
         >
           <Outlet />

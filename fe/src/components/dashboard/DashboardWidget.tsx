@@ -27,7 +27,9 @@ import type {
   MediaWidgetConfig,
   TabsWidgetConfig,
   TextWidgetConfig,
+  DashboardStyleConfig,
 } from "./layoutUtils";
+import { mergeTitleStyle, mergeWidgetShellStyle, resolveQueryLimit } from "./dashboardStyleConfig";
 import { isWidgetConfigReady } from "./createLayoutWidget";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 
@@ -38,6 +40,8 @@ type DashboardWidgetProps = {
   selected?: boolean;
   /** 编辑态栅格实时尺寸（拖/缩放中） */
   gridSize?: { w: number; h: number };
+  /** 像素画布逻辑尺寸（shape 壳层下图表尺寸估算） */
+  pixelSize?: { width: number; height: number };
   onSelect?: (event: MouseEvent) => void;
   onDelete?: (id: string) => void;
   onTitleChange: (id: string, title: string) => void;
@@ -50,6 +54,7 @@ type DashboardWidgetProps = {
   renderNestedWidget?: (widget: LayoutWidget) => ReactNode;
   onTabsConfigChange?: (id: string, tabsConfig: TabsWidgetConfig) => void;
   onTextConfigChange?: (id: string, config: TextWidgetConfig) => void;
+  dashboardStyle?: DashboardStyleConfig;
 };
 
 function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
@@ -83,6 +88,7 @@ export function DashboardWidget({
   shell = "grid",
   selected = false,
   gridSize,
+  pixelSize,
   onSelect,
   onDelete,
   onTitleChange,
@@ -94,6 +100,7 @@ export function DashboardWidget({
   renderNestedWidget,
   onTabsConfigChange,
   onTextConfigChange,
+  dashboardStyle,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -102,12 +109,14 @@ export function DashboardWidget({
       <FilterWidget
         widget={widget as LayoutWidget & { filterConfig: FilterWidgetConfig }}
         mode={mode}
+        shell={shell}
         selected={selected}
         value={filterValue ?? widget.filterConfig.defaultValue ?? ""}
         onValueChange={(filterId, value) => onFilterValueChange?.(filterId, value)}
         onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
         onTitleChange={onTitleChange}
         onDelete={onDelete}
+        dashboardStyle={dashboardStyle}
       />
     );
   }
@@ -164,8 +173,95 @@ export function DashboardWidget({
   const Icon = widgetChartIcon(chartType);
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
   const configReady = isWidgetConfigReady(widget.chartConfig);
+  const inShapeShell = shell === "shape";
   const sizeW = gridSize?.w ?? widget.colSpan;
   const sizeH = gridSize?.h ?? widget.rowSpan;
+  const sizeLabel =
+    inShapeShell && pixelSize
+      ? `${Math.round(pixelSize.width)}×${Math.round(pixelSize.height)}`
+      : `${sizeW}×${sizeH}`;
+  const shapeContentChromePx = mode === "edit" && selected ? 28 : 0;
+  const shellStyle = mergeWidgetShellStyle(dashboardStyle?.widgetStyle);
+  const titleStyle = mergeTitleStyle(dashboardStyle?.titleStyle);
+  const queryLimit = resolveQueryLimit(dashboardStyle ?? {});
+
+  const chartBody =
+    mode === "edit" && !configReady ? (
+      <WidgetPendingPreview widget={widget} />
+    ) : widget.chartConfig ? (
+      <ChartRenderer
+        embedded
+        gridSpan={gridSize}
+        pixelSize={pixelSize}
+        contentChromePx={inShapeShell ? shapeContentChromePx : 0}
+        config={widget.chartConfig}
+        title={widget.title}
+        filterParameters={filterParameters}
+        executeKey={executeKey}
+        queryLimit={queryLimit}
+        paletteId={dashboardStyle?.paletteId}
+        paletteColors={dashboardStyle?.paletteColors}
+        numberFormat={dashboardStyle?.numberFormat}
+      />
+    ) : null;
+
+  if (inShapeShell) {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <div
+          role={mode === "edit" ? "button" : undefined}
+          tabIndex={mode === "edit" ? 0 : undefined}
+          onClick={
+            mode === "edit"
+              ? (e) => {
+                  e.stopPropagation();
+                  onSelect?.(e);
+                }
+              : undefined
+          }
+          onKeyDown={
+            mode === "edit"
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelect?.({ shiftKey: e.shiftKey } as MouseEvent);
+                  }
+                }
+              : undefined
+          }
+          className={cn(
+            "dashboard-no-drag flex min-h-0 flex-1 flex-col",
+            mode === "edit" && "cursor-pointer",
+          )}
+        >
+          {chartBody}
+        </div>
+        {onDelete ? (
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>删除组件</AlertDialogTitle>
+                <AlertDialogDescription>
+                  确定删除「{widget.title}」？删除后需保存布局才会生效。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    onDelete(widget.id);
+                    setConfirmOpen(false);
+                  }}
+                >
+                  删除
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -175,7 +271,9 @@ export function DashboardWidget({
         selected
           ? "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40"
           : "border-gray-200 dark:border-gray-800",
+        shellStyle.className,
       )}
+      style={shellStyle.style}
     >
       {mode === "edit" ? (
         <div
@@ -199,10 +297,11 @@ export function DashboardWidget({
             onChange={(e) => onTitleChange(widget.id, e.target.value)}
             onPointerDown={(e) => e.stopPropagation()}
             className="dashboard-no-drag h-7 min-w-0 flex-1 border-transparent bg-transparent px-1 text-theme-sm font-medium shadow-none focus-visible:border-gray-300 dark:focus-visible:border-gray-700"
+            style={titleStyle}
             aria-label="组件标题"
           />
           <span className="dashboard-no-drag hidden shrink-0 text-theme-xs tabular-nums text-gray-400 sm:inline">
-            {sizeW}×{sizeH}
+            {sizeLabel}
           </span>
           {onDelete ? (
             <IconButton
@@ -225,7 +324,10 @@ export function DashboardWidget({
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
             <Icon className="size-3.5" aria-hidden />
           </span>
-          <h4 className="min-w-0 flex-1 truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+          <h4
+            className="min-w-0 flex-1 truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90"
+            style={titleStyle}
+          >
             {widget.title}
           </h4>
           <span className="shrink-0 text-theme-xs text-gray-400">{typeLabel}</span>
@@ -258,19 +360,8 @@ export function DashboardWidget({
           mode === "edit" && "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
         )}
       >
-        {mode === "edit" && !configReady ? (
-          <WidgetPendingPreview widget={widget} />
-        ) : widget.chartConfig ? (
-          <div className="flex min-h-0 flex-1 flex-col p-2">
-            <ChartRenderer
-              embedded
-              gridSpan={gridSize}
-              config={widget.chartConfig}
-              title={widget.title}
-              filterParameters={filterParameters}
-              executeKey={executeKey}
-            />
-          </div>
+        {chartBody ? (
+          <div className="flex min-h-0 flex-1 flex-col p-2">{chartBody}</div>
         ) : null}
       </div>
 

@@ -1,7 +1,14 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import {
+  BatchDeleteDialog,
+  ListBatchDeleteBar,
+  ListHeaderCheckbox,
+} from "@/components/layout/list-batch-delete";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { runBatchDelete } from "@/lib/runBatchDelete";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +49,8 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
   const [name, setName] = useState("");
   const [termId, setTermId] = useState(NONE);
   const [deleteTarget, setDeleteTarget] = useState<ThemeNode | null>(null);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   const allNodes = useQuery({
     queryKey: queryKeys.metadataHub.themes("all"),
@@ -90,6 +99,26 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
 
   const items = allNodes.data?.items ?? [];
   const isEmpty = !allNodes.isLoading && items.length === 0;
+  const leafIds = useMemo(() => {
+    const parentIds = new Set(items.map((n) => n.parentId).filter(Boolean));
+    return items.filter((n) => !items.some((c) => c.parentId === n.id)).map((n) => n.id);
+  }, [items]);
+  const selection = useListRowSelection(leafIds);
+
+  const handleBatchDelete = async () => {
+    const ids = [...selection.selectedIds];
+    if (ids.length === 0) return;
+    setBatchDeleting(true);
+    const { ok, failed } = await runBatchDelete(ids, (id) =>
+      apiFetch(`/api/v1/metadata/themes/${id}`, { method: "DELETE" }),
+    );
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    selection.clear();
+    inv();
+    if (failed === 0) toast.success(`已删除 ${ok} 个主题节点`);
+    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败（仅叶节点可删）`);
+  };
 
   return (
     <>
@@ -125,9 +154,30 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
         ) : allNodes.isLoading ? (
           <Skeleton className="h-40 w-full" />
         ) : (
-          <ThemeTree
-            nodes={items}
-            onCreateChild={(parentId) => {
+          <>
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+              <ListHeaderCheckbox
+                checked={selection.allSelected}
+                indeterminate={selection.someSelected}
+                disabled={leafIds.length === 0}
+                onCheckedChange={() => selection.toggleAll()}
+              />
+              <span className="text-theme-xs text-gray-500 dark:text-gray-400">
+                仅叶节点可勾选删除
+              </span>
+              <ListBatchDeleteBar
+                selectedCount={selection.selectedCount}
+                entityLabel="个节点"
+                onClear={selection.clear}
+                onDelete={() => setBatchDeleteOpen(true)}
+                className="flex-1"
+              />
+            </div>
+            <ThemeTree
+              nodes={items}
+              selectedIds={selection.selectedIds}
+              onToggleSelect={selection.toggle}
+              onCreateChild={(parentId) => {
               setParentForCreate(parentId);
               setName("");
               setTermId(NONE);
@@ -135,6 +185,7 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
             }}
             onDelete={setDeleteTarget}
           />
+          </>
         )}
       </ListPageBody>
 
@@ -197,6 +248,16 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        count={selection.selectedCount}
+        title="批量删除主题节点"
+        description="仅叶节点可删除；含子节点的项将跳过或失败。"
+        pending={batchDeleting}
+        onConfirm={() => void handleBatchDelete()}
+      />
     </>
   );
 }

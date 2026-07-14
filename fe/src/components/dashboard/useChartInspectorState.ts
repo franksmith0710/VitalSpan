@@ -43,7 +43,7 @@ export type ChartInspectorState = ReturnType<typeof useChartInspectorState>;
 
 export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: ChartViewConfig) => void) {
   const cfg = widget.chartConfig ?? defaultChartConfig("table");
-  const { columns, loading: columnsLoading, ready: columnsReady } = useInspectorColumns(cfg);
+  const { columns, loading: columnsLoading, ready: columnsReady, refreshColumns } = useInspectorColumns(cfg);
   const bindingSyncRef = useRef<string | null>(null);
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[]>([]);
   const [activeSlot, setActiveSlot] = useState<SlotTarget | null>(null);
@@ -185,6 +185,7 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
     columns,
     columnsLoading,
     columnsReady,
+    refreshColumns,
     catalog: chartTypeOptions,
     dataMode,
     dsLoading,

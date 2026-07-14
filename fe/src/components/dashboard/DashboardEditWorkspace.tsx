@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { CanvasEditToolbar } from "@/components/dashboard/CanvasEditToolbar";
 import type { PaletteInsertType } from "@/components/dashboard/createLayoutWidget";
+import { CollapsedRailTab, RailFoldHeader } from "@/components/dashboard/RailFoldTab";
 import { cn } from "@/lib/utils";
 
 function CanvasShell({
@@ -8,15 +9,24 @@ function CanvasShell({
   leading,
   actions,
   children,
+  className,
+  canvasEngine = "grid",
 }: {
   hint?: ReactNode;
   leading?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
+  className?: string;
+  canvasEngine?: "grid" | "pixel";
 }) {
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-2 py-1.5 dark:border-white/[0.06]">
+    <section
+      className={cn(
+        "flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
+        className,
+      )}
+    >
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-2 py-1 dark:border-white/[0.06]">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
           {leading}
           <p
@@ -32,7 +42,14 @@ function CanvasShell({
         </div>
         {actions}
       </div>
-      <div className="dashboard-canvas-surface min-h-0 flex-1 overflow-hidden p-2">{children}</div>
+      <div
+        className={cn(
+          "dashboard-canvas-surface min-h-0 flex-1 overflow-hidden",
+          canvasEngine === "pixel" ? "p-0" : "p-1",
+        )}
+      >
+        {children}
+      </div>
     </section>
   );
 }
@@ -43,11 +60,17 @@ export type DashboardEditWorkspaceProps = {
   onOpenDashboardStyle?: () => void;
   onOpenLinkage?: () => void;
   canvas: ReactNode;
-  /** 右侧图表编辑轨（配置 + 字段库，~400px） */
   chartRail: ReactNode;
   widgetCount?: number;
   multiSelectCount?: number;
+  canvasEngine?: "grid" | "pixel";
   canvasActions?: ReactNode;
+  /** 右侧配置轨展开（未选中时建议 false，画布占满） */
+  chartRailOpen?: boolean;
+  onChartRailOpenChange?: (open: boolean) => void;
+  chartRailLabel?: string;
+  /** 未选中看板上下文时显示外层「收回」顶栏 */
+  showRailFoldHeader?: boolean;
   className?: string;
 };
 
@@ -60,17 +83,24 @@ export function DashboardEditWorkspace({
   chartRail,
   widgetCount = 0,
   multiSelectCount = 0,
+  canvasEngine = "grid",
   canvasActions,
+  chartRailOpen = true,
+  onChartRailOpenChange,
+  chartRailLabel = "仪表板配置",
+  showRailFoldHeader = true,
   className,
 }: DashboardEditWorkspaceProps) {
   return (
     <div
       className={cn(
-        "grid min-h-0 flex-1 gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(360px,428px)] lg:items-stretch",
+        "grid min-h-0 flex-1 gap-1.5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-stretch",
+        !chartRailOpen && "lg:grid-cols-[minmax(0,1fr)_auto]",
         className,
       )}
     >
       <CanvasShell
+        className="min-h-0 min-w-0"
         leading={
           <CanvasEditToolbar
             onInsert={onPaletteInsert}
@@ -83,17 +113,33 @@ export function DashboardEditWorkspace({
           multiSelectCount >= 2
             ? `已选中 ${multiSelectCount} 个组件`
             : widgetCount > 0
-              ? `${widgetCount} 个组件 · 拖标题栏移动`
+              ? canvasEngine === "pixel"
+                ? `${widgetCount} 个组件 · 选中后拖顶部手柄移动`
+                : `${widgetCount} 个组件 · 拖标题栏移动`
               : "拖拽组件到画布"
         }
         actions={canvasActions}
+        canvasEngine={canvasEngine}
       >
         {canvas}
       </CanvasShell>
 
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]">
-        {chartRail}
-      </div>
+      {chartRailOpen ? (
+        <div className="flex min-h-0 w-full min-w-[280px] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]">
+          {showRailFoldHeader && onChartRailOpenChange ? (
+            <RailFoldHeader
+              label={chartRailLabel}
+              onCollapse={() => onChartRailOpenChange(false)}
+            />
+          ) : null}
+          <div className="min-h-0 flex-1 overflow-hidden">{chartRail}</div>
+        </div>
+      ) : (
+        <CollapsedRailTab
+          label={chartRailLabel}
+          onExpand={() => onChartRailOpenChange?.(true)}
+        />
+      )}
     </div>
   );
 }

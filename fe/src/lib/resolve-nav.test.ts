@@ -129,6 +129,29 @@ describe("resolveNavGroups", () => {
     expect(groups.some((g) => g.title === "系统")).toBe(false);
   });
 
+  it("T-NAV-AUTHZ-01: permission-only user with dashboard:read sees 分析", () => {
+    const groups = resolveNavGroups({
+      ...sessionUserFromAuth("perm_user", []),
+      permissions: ["dashboard:read", "report:read"],
+    });
+    const titles = groups.map((g) => g.title);
+    expect(titles).toContain("分析");
+    expect(titles).toContain("报表");
+    expect(groups.find((g) => g.title === "分析")?.items.map((i) => i.name)).toContain(
+      "Dashboard",
+    );
+  });
+
+  it("T-NAV-AUTHZ-02: root user with empty roles still sees admin nav", () => {
+    const groups = resolveNavGroups({
+      ...sessionUserFromAuth("root", []),
+      permissions: [],
+      isRoot: true,
+    });
+    expect(groups.some((g) => g.title === "系统")).toBe(true);
+    expect(groups.some((g) => g.title === "数据")).toBe(true);
+  });
+
   it("T-NAV-CAP-03: custom role with report:* sees 报表 only", () => {
     OPTIONAL_ROLE_CAPABILITY_MAP.reports_editor = ["report:*"];
     try {

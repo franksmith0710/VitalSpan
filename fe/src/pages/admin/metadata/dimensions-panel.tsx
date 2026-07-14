@@ -1,7 +1,15 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  BatchDeleteDialog,
+  ListBatchDeleteBar,
+  ListHeaderCheckbox,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { runBatchDelete } from "@/lib/runBatchDelete";
 import { IconButton } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -61,6 +69,8 @@ export function DimensionsPanel({
   const [themeNodeId, setThemeNodeId] = useState(NONE);
   const [valuesText, setValuesText] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Dimension | null>(null);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   const query = useQuery({
     queryKey: queryKeys.metadataHub.dimensions({ codePrefix: prefix || undefined }),
@@ -144,6 +154,23 @@ export function DimensionsPanel({
   });
 
   const items = query.data?.items ?? [];
+  const rowIds = useMemo(() => items.map((d) => d.id), [items]);
+  const selection = useListRowSelection(rowIds);
+
+  const handleBatchDelete = async () => {
+    const ids = [...selection.selectedIds];
+    if (ids.length === 0) return;
+    setBatchDeleting(true);
+    const { ok, failed } = await runBatchDelete(ids, (id) =>
+      apiFetch(`/api/v1/metadata/dimensions/${id}`, { method: "DELETE" }),
+    );
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    selection.clear();
+    inv();
+    if (failed === 0) toast.success(`已删除 ${ok} 个维度`);
+    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败`);
+  };
 
   return (
     <>
@@ -164,6 +191,14 @@ export function DimensionsPanel({
           </Button>
         }
       />
+      <ListPageBody className="border-b border-gray-100 py-3 dark:border-white/[0.06]">
+        <ListBatchDeleteBar
+          selectedCount={selection.selectedCount}
+          entityLabel="个维度"
+          onClear={selection.clear}
+          onDelete={() => setBatchDeleteOpen(true)}
+        />
+      </ListPageBody>
       <ListPageBody>
         {query.error ? (
           <ErrorBanner message={mapApiError(query.error)} onRetry={() => void query.refetch()} />
@@ -183,8 +218,27 @@ export function DimensionsPanel({
                 </Button>
               ),
             }}
-            headers={["名称", "编码", "主题", "状态", "操作"]}
+            headers={[
+              <ListHeaderCheckbox
+                key="select-all"
+                checked={selection.allSelected}
+                indeterminate={selection.someSelected}
+                disabled={items.length === 0}
+                onCheckedChange={() => selection.toggleAll()}
+              />,
+              "名称",
+              "编码",
+              "主题",
+              "状态",
+              "操作",
+            ]}
             rows={items.map((d) => [
+              <ListRowCheckbox
+                key={`${d.id}-select`}
+                checked={selection.isSelected(d.id)}
+                onCheckedChange={() => selection.toggle(d.id)}
+                ariaLabel={`选择维度 ${d.name}`}
+              />,
               <span key="n" className="font-medium text-gray-900 dark:text-white/90">
                 {d.name}
               </span>,
@@ -319,6 +373,15 @@ export function DimensionsPanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        count={selection.selectedCount}
+        title="批量删除维度"
+        pending={batchDeleting}
+        onConfirm={() => void handleBatchDelete()}
+      />
     </>
   );
 }

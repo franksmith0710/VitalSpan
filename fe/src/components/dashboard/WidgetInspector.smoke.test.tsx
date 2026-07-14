@@ -62,14 +62,10 @@ describe("WidgetInspector dataset select", () => {
     const user = userEvent.setup();
     renderInspector();
 
-    await user.click(await screen.findByRole("tab", { name: "高级" }));
-    const trigger = await screen.findByRole("combobox", { name: /dataset/i });
-    expect(await screen.findByText(/当前没有可用的 Dataset/)).toBeInTheDocument();
+    const trigger = await screen.findByRole("button", { name: "选择数据集" });
     await user.click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("option", { name: "暂无 Dataset" })).toBeInTheDocument();
-    await user.keyboard("{Escape}");
-    expect(screen.getByRole("link", { name: "Dataset 管理" })).toHaveAttribute(
+    expect(await screen.findByText("暂无数据集")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "新建数据集" })).toHaveAttribute(
       "href",
       "/admin/datasets",
     );
@@ -115,10 +111,13 @@ describe("WidgetInspector dataset select", () => {
     renderInspector();
 
     expect(await screen.findByText("类别轴 / 维度")).toBeInTheDocument();
+    expect(screen.getByText("子类别 / 维度")).toBeInTheDocument();
     expect(screen.getByText("值轴 / 指标")).toBeInTheDocument();
+    expect(screen.getByText("钻取 / 维度")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "更新图表数据" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "样式" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "高级" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "字段" })).toBeInTheDocument();
   });
 
   it("F-B: ChartConfigPanel edits flow through WidgetInspector onChange", async () => {
@@ -223,10 +222,9 @@ describe("WidgetInspector dataset select", () => {
 
     const user = userEvent.setup();
     const onChange = renderInspector();
-    await user.click(await screen.findByRole("tab", { name: "高级" }));
-    const trigger = await screen.findByRole("combobox", { name: /dataset/i });
+    const trigger = await screen.findByRole("button", { name: "选择数据集" });
     await user.click(trigger);
-    await user.click(screen.getByRole("option", { name: "订单" }));
+    await user.click(screen.getByRole("menuitem", { name: "订单" }));
 
     await waitFor(() => {
       expect(onChange).toHaveBeenCalled();

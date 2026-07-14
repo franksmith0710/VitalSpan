@@ -1,6 +1,6 @@
 import { NAV_MANIFEST } from "@/config/nav-manifest";
 import { ACCOUNT_NAV_SECTIONS } from "@/config/account-nav";
-import { matchesCapability, resolveUserCapabilities } from "@/lib/capabilities";
+import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 import { isGovNavEnabledFromEnv } from "@/lib/gov-nav";
 import { isAccountManagementPath } from "@/lib/workspace";
 import type { NavSection, NavItem, NavSubItem } from "@/components/layout/app-sidebar";
@@ -16,7 +16,27 @@ export type ResolveNavOptions = {
 };
 
 function isAdmin(user: SessionUser): boolean {
-  return user.roles.includes("admin");
+  return Boolean(user.isRoot) || user.roles.includes("admin");
+}
+
+function inferNavCapability(item: ManifestItem, section: ManifestSection): string | undefined {
+  const explicit = item.capability ?? section.capability;
+  if (explicit) return explicit;
+  if (item.path?.startsWith("/admin/dashboards")) return "dashboard:read";
+  if (item.path?.startsWith("/admin/reports")) return "report:read";
+  return undefined;
+}
+
+function canAccessByRoleOrCapability(
+  user: SessionUser,
+  roles: SessionRole[],
+  capability: string | undefined,
+  userCaps: Set<string>,
+): boolean {
+  if (isAdmin(user)) return true;
+  if (capability && matchesCapability(userCaps, capability)) return true;
+  if (hasRole(user, roles)) return true;
+  return false;
 }
 
 function hasRole(user: SessionUser, roles: SessionRole[]): boolean {
@@ -50,12 +70,13 @@ function filterItemForRole(
 
   const sectionCap = section.capability;
   const requiredCap = item.capability ?? sectionCap;
+  const implicitCap = requiredCap ?? inferNavCapability(item, section);
 
-  if (requiredCap) {
-    if (!matchesCapability(userCaps, requiredCap)) return null;
-  } else {
+  if (implicitCap) {
+    if (!matchesCapability(userCaps, implicitCap)) return null;
+  } else if (!item.subItems?.length) {
     const effectiveRoles = (item.roles as SessionRole[] | undefined) ?? section.roles;
-    if (!hasRole(user, effectiveRoles)) return null;
+    if (!canAccessByRoleOrCapability(user, effectiveRoles, undefined, userCaps)) return null;
   }
 
   const isInactive = Boolean(item.milestone && !activeMilestones.has(item.milestone));
@@ -85,7 +106,7 @@ export function resolveNavGroups(
   options?: ResolveNavOptions,
 ): NavSection[] {
   const activeMilestones = options?.activeMilestones ?? ACTIVE_MILESTONES;
-  const userCaps = options?.userCapabilities ?? resolveUserCapabilities(user.roles);
+  const userCaps = options?.userCapabilities ?? resolveEffectiveCapabilities(user);
   const govNavEnabled = options?.govNavEnabled ?? isGovNavEnabledFromEnv();
   const result: NavSection[] = [];
 
@@ -95,8 +116,18 @@ export function resolveNavGroups(
     const sectionCap = section.capability;
     if (sectionCap) {
       if (!matchesCapability(userCaps, sectionCap)) continue;
-    } else if (!hasRole(user, section.roles)) {
-      continue;
+    } else if (!canAccessByRoleOrCapability(user, section.roles, undefined, userCaps)) {
+      const sectionAllowed = section.items.some((item) => {
+        if (item.subItems?.length) {
+          return item.subItems.some((sub) => {
+            const subCap = sub.capability ?? section.capability ?? inferNavCapability(item, section);
+            return subCap ? matchesCapability(userCaps, subCap) : false;
+          });
+        }
+        const itemCap = inferNavCapability(item, section);
+        return itemCap ? matchesCapability(userCaps, itemCap) : false;
+      });
+      if (!sectionAllowed) continue;
     }
 
     if (!isAdmin(user) && section.iaTier === "engineering") continue;

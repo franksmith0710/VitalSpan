@@ -7,7 +7,13 @@ import {
 } from "@/components/dashboard/dashboardCanvasMode";
 import {
   usePixelLayoutHistory,
+  pixelLayoutFingerprint,
 } from "@/components/dashboard/pixelCanvas";
+import { packPixelLayoutSeamless } from "@/components/dashboard/pixelCanvas/collisionLayout";
+import {
+  fitCanvasHeightToContent,
+  PIXEL_CANVAS_MIN_HEIGHT,
+} from "@/components/dashboard/pixelCanvas/PixelCanvas";
 import {
   type DashboardLayout,
   type DashboardLayoutV2,
@@ -18,7 +24,7 @@ import { useLayoutHistory } from "@/hooks/useLayoutHistory";
 
 const EMPTY_PIXEL_LAYOUT: DashboardLayoutV2 = {
   version: 2,
-  canvas: { width: 1440, height: 900 },
+  canvas: { width: 1440, height: PIXEL_CANVAS_MIN_HEIGHT },
   widgets: [],
   globalFilters: [],
 };
@@ -92,7 +98,18 @@ export function useDashboardCanvasState({
           styleConfig: prepared.layout.styleConfig,
         });
       } else {
-        pixel.resetLayout(prepared.layout);
+        const loaded = prepared.layout;
+        pixel.resetLayout(loaded);
+        if (editable && loaded.version === 2) {
+          try {
+            const normalized = packPixelLayoutSeamless(loaded);
+            if (pixelLayoutFingerprint(normalized) !== pixelLayoutFingerprint(loaded)) {
+              pixel.setLayout(normalized);
+            }
+          } catch {
+            // Keep the loaded layout if normalization fails; editing still works via collision resolve.
+          }
+        }
       }
     },
     [editable, legacy.resetWidgets, pixel.resetLayout, pixelEnabled],
@@ -124,7 +141,7 @@ export function useDashboardCanvasState({
   const setPixelLayout = useCallback(
     (next: DashboardLayoutV2) => {
       if (editor !== "pixel") return;
-      pixel.setLayout(next);
+      pixel.setLayout(fitCanvasHeightToContent(next));
     },
     [editor, pixel.setLayout],
   );

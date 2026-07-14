@@ -41,6 +41,9 @@ class TextWidgetConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     content: str = Field(default="", max_length=8000)
     variant: TextVariant = "plain"
+    dataset_id: str | None = Field(default=None, alias="datasetId", max_length=64)
+    dimension_field: str | None = Field(default=None, alias="dimensionField", max_length=128)
+    metric_field: str | None = Field(default=None, alias="metricField", max_length=128)
 
 
 class MediaWidgetConfig(BaseModel):
@@ -64,10 +67,82 @@ class TabsWidgetConfig(BaseModel):
     active_pane_id: str = Field(alias="activePaneId", min_length=1, max_length=64)
 
 
+class WidgetStyleConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    background: str | None = Field(default=None, max_length=32)
+    opacity: float | None = Field(default=None, ge=0, le=1)
+    border_radius: int | None = Field(default=None, alias="borderRadius", ge=0, le=48)
+    border_color: str | None = Field(default=None, alias="borderColor", max_length=32)
+    border_width: int | None = Field(default=None, alias="borderWidth", ge=0, le=8)
+    border_style: Literal["solid", "dashed", "dotted"] | None = Field(
+        default=None, alias="borderStyle"
+    )
+
+
+class TitleStyleConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    font_size: int | None = Field(default=None, alias="fontSize", ge=8, le=48)
+    color: str | None = Field(default=None, max_length=32)
+    font_weight: int | None = Field(default=None, alias="fontWeight", ge=100, le=900)
+    align: Literal["left", "center", "right"] | None = None
+    letter_spacing: float | None = Field(default=None, alias="letterSpacing", ge=-2, le=8)
+
+
+class FilterChromeStyleConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    title_position: Literal["top", "left"] | None = Field(default=None, alias="titlePosition")
+    title_color: str | None = Field(default=None, alias="titleColor", max_length=32)
+
+
+class FilterControlStyleConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    border_radius: int | None = Field(default=None, alias="borderRadius", ge=0, le=24)
+    height: int | None = Field(default=None, ge=24, le=56)
+
+
+class NumberFormatConfig(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    decimals: int | None = Field(default=None, ge=0, le=8)
+    type: Literal["number", "percent", "currency"] | None = None
+    unit: str | None = Field(default=None, max_length=16)
+
+
 class DashboardStyleConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     widget_gap: int | None = Field(default=None, ge=0, le=48, alias="widgetGap")
-    canvas_background: str | None = Field(default=None, alias="canvasBackground", max_length=32)
+    canvas_background: str | None = Field(default=None, alias="canvasBackground", max_length=64)
+    color_scheme: Literal["light", "dark"] | None = Field(default=None, alias="colorScheme")
+    theme_accent: str | None = Field(default=None, alias="themeAccent", max_length=32)
+    font_family: str | None = Field(default=None, alias="fontFamily", max_length=64)
+    gap_preset: Literal["none", "sm", "md", "lg", "custom"] | None = Field(
+        default=None, alias="gapPreset"
+    )
+    pixel_gutter: int | None = Field(default=None, alias="pixelGutter", ge=0, le=12)
+    scale_mode: Literal["canvas", "component"] | None = Field(default=None, alias="scaleMode")
+    canvas_background_image: str | None = Field(
+        default=None, alias="canvasBackgroundImage", max_length=2048
+    )
+    refresh_interval_sec: int | None = Field(
+        default=None, alias="refreshIntervalSec", ge=5, le=3600
+    )
+    default_query_limit: int | None = Field(
+        default=None, alias="defaultQueryLimit", ge=1, le=10000
+    )
+    widget_style: WidgetStyleConfig | None = Field(default=None, alias="widgetStyle")
+    palette_id: str | None = Field(default=None, alias="paletteId", max_length=32)
+    palette_colors: list[str] | None = Field(default=None, alias="paletteColors", max_length=12)
+    title_style: TitleStyleConfig | None = Field(default=None, alias="titleStyle")
+    filter_chrome_style: FilterChromeStyleConfig | None = Field(
+        default=None, alias="filterChromeStyle"
+    )
+    filter_control_style: FilterControlStyleConfig | None = Field(
+        default=None, alias="filterControlStyle"
+    )
+    number_format: NumberFormatConfig | None = Field(default=None, alias="numberFormat")
+    action_icon_color: str | None = Field(default=None, alias="actionIconColor", max_length=32)
+    drill_level_colors: list[str] | None = Field(
+        default=None, alias="drillLevelColors", max_length=8
+    )
 
 
 class LayoutWidget(BaseModel):

@@ -4,6 +4,7 @@ import { type DragEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { IconButton } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
+import { ListRowCheckbox } from "@/components/layout/list-batch-delete";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
@@ -46,10 +47,14 @@ export function ThemeTree({
   nodes,
   onCreateChild,
   onDelete,
+  selectedIds,
+  onToggleSelect,
 }: {
   nodes: ThemeNode[];
   onCreateChild: (parentId: string) => void;
   onDelete: (node: ThemeNode) => void;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }) {
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
@@ -109,6 +114,7 @@ export function ThemeTree({
       {visible.map((node) => {
         const hasChildren = node.children.length > 0;
         const isExpanded = expanded.has(node.id);
+        const isLeaf = !hasChildren;
         return (
           <li
             key={node.id}
@@ -119,6 +125,15 @@ export function ThemeTree({
             className="flex items-center gap-2 py-2.5"
             style={{ paddingLeft: 8 + node.depth * 20 }}
           >
+            {isLeaf && onToggleSelect ? (
+              <ListRowCheckbox
+                checked={selectedIds?.has(node.id) ?? false}
+                onCheckedChange={() => onToggleSelect(node.id)}
+                ariaLabel={`选择主题节点 ${node.name}`}
+              />
+            ) : (
+              <span className="size-4 shrink-0" aria-hidden />
+            )}
             <GripVertical className="size-4 shrink-0 cursor-grab text-gray-400" aria-hidden />
             {hasChildren ? (
               <button

@@ -61,6 +61,15 @@ export function DashboardSharePage() {
     void load();
   }, [load]);
 
+  const refreshSec = detail?.layoutJson?.styleConfig?.refreshIntervalSec;
+  useEffect(() => {
+    if (!refreshSec || refreshSec < 5) return;
+    const timer = window.setInterval(() => {
+      void load();
+    }, refreshSec * 1000);
+    return () => window.clearInterval(timer);
+  }, [load, refreshSec]);
+
   const copyUrl = (url: string) => {
     void navigator.clipboard.writeText(url);
     toast.success("已复制链接");

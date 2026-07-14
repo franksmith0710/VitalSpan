@@ -116,3 +116,18 @@
   - [x] DASH-007-07：「更多」菜单 ≥2 项可用（样式/外部参数等）
 - **代码锚点**：`fe/src/components/dashboard/CanvasEditToolbar.tsx` · `ChartPickerPopover.tsx` · `createLayoutWidget.ts` · `backend/app/dashboard/schemas.py` · `docs/automate/plans/2026-07-13-dashboard-de-toolbar-full.md`
 - **演化建议**：Wave 1–6 已交付；Tab 子组件嵌套与媒体上传后端留 companion
+
+### [DASH-008] 仪表板配置栏（对标 DataEase §5）
+
+- **状态**：已实现（Phase 0–5 · 2026-07-13）
+- **goal_ref**：goal.md §2.3（G3）
+- **期次**：M-DEPTH companion
+- **描述**：编辑页点击画布空白展示「仪表板配置」右栏；`layoutJson.styleConfig` 全链路消费（编辑/预览/分享）。
+- **验收标准**：
+  - [x] DASH-008-01：浅/深色主题 + View/Share 一致
+  - [x] DASH-008-02：间隙预设、像素 gutter、`scaleMode`、刷新频率、`defaultQueryLimit`
+  - [x] DASH-008-03：背景色板 + URL 背景图 + 清除
+  - [x] DASH-008-04~09：图表样式/配色/标题/查询组件/数字格式/高级样式全局配置
+  - [x] DASH-008-10：筛选联动分组常显
+- **代码锚点**：`fe/src/components/dashboard/DashboardContextInspector.tsx` · `dashboardConfigPanels.tsx` · `dashboardStyleConfig.ts` · `DashboardStyleSurface.tsx` · `backend/app/dashboard/schemas.py` · `docs/automate/plans/2026-07-13-dashboard-config-inspector-de-full.md`
+- **演化建议**：背景图上传 API、组件级样式覆盖 Tab、批量样式操作留 companion

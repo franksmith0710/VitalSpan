@@ -179,6 +179,12 @@ body,
   background-image: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
 }
 
+/* v2 像素画布滚动容器：预留滚动条槽位，避免 ResizeObserver ↔ 滚动条死循环 */
+.pixel-canvas-host {
+  scrollbar-gutter: stable;
+  overflow-x: hidden;
+}
+
 .dashboard-canvas-drop-active .react-grid-layout {
   outline: 2px dashed rgb(70 95 255 / 35%);
   outline-offset: 2px;

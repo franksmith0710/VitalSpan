@@ -726,11 +726,10 @@ describe("dashboard admin smoke", () => {
     renderEditPage();
     await screen.findByLabelText("组件标题");
     await user.click(screen.getByText("待配置"));
-    await user.click(await screen.findByRole("tab", { name: "高级" }));
+    await user.click(screen.getByRole("tab", { name: "高级 SQL" }));
     await screen.findByLabelText("数据源");
     await user.click(screen.getByLabelText("数据源"));
     await user.click(await screen.findByRole("option", { name: /分析库/ }));
-    await user.click(screen.getByRole("tab", { name: "高级 SQL" }));
     const sql = screen.getByLabelText("SQL");
     await user.clear(sql);
     await user.type(sql, "SELECT 2 AS id");
@@ -1076,7 +1075,7 @@ describe("dashboard admin smoke", () => {
     expect(saved?.layoutJson?.widgets?.[0]).not.toHaveProperty("colSpan");
   });
 
-  it("B3: v2 save preserves overlapping widget array order, order and geometry", async () => {
+  it("B3: v2 save preserves widget array order and order while normalizing overlaps", async () => {
     vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
     const user = userEvent.setup();
     const { colSpan: _colSpan, rowSpan: _rowSpan, ...base } = sampleWidgets[0];
@@ -1113,7 +1112,10 @@ describe("dashboard admin smoke", () => {
     expect(saved?.layoutJson?.widgets?.map((widget) => widget.id)).toEqual(["top", "bottom"]);
     expect(saved?.layoutJson?.widgets?.map((widget) => widget.order)).toEqual([9, 2]);
     expect(saved?.layoutJson?.widgets?.map(({ x, y, width, height }) => ({ x, y, width, height })))
-      .toEqual(overlapping.map(({ x, y, width, height }) => ({ x, y, width, height })));
+      .toEqual([
+        { x: 100, y: 432, width: 480, height: 320 },
+        { x: 100, y: 100, width: 480, height: 320 },
+      ]);
   });
 
   it("B3: pixel edit page exposes DE chrome and marks widget content non-draggable", async () => {

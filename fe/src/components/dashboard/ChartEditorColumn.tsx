@@ -12,41 +12,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { ChartAdvancedPanel } from "./ChartAdvancedPanel";
+import { ChartDataOptions } from "./ChartDataOptions";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
 import { ChartDataSlots } from "./ChartDataSlots";
 import { useChartInspector } from "./ChartInspectorContext";
-import { DatasetReadinessChecklist } from "./DatasetReadinessChecklist";
-import { WidgetInspectorDataSection } from "./WidgetInspectorDataSection";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
 
 type ChartEditorColumnProps = {
   onDelete?: () => void;
+  onOpenLinkage?: () => void;
   className?: string;
 };
 
-export function ChartEditorColumn({ onDelete, className }: ChartEditorColumnProps) {
-  const {
-    widget,
-    cfg,
-    onChange,
-    catalog,
-    dataMode,
-    dsLoading,
-    datasetsLoading,
-    datasetsError,
-    datasourceItems,
-    datasetItems,
-    datasetsEmpty,
-    datasourcesEmpty,
-    selectedDataset,
-    datasetReady,
-    handleDatasetSelect,
-    columns,
-  } = useChartInspector();
+export function ChartEditorColumn({ onDelete, onOpenLinkage, className }: ChartEditorColumnProps) {
+  const { widget, cfg, onChange, catalog, columns } = useChartInspector();
 
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
+
+  const typeLabel =
+    catalog.find((item) => item.type === cfg.chartType)?.displayName ?? cfg.chartType;
 
   const validate = async () => {
     setError(null);
@@ -97,16 +84,21 @@ export function ChartEditorColumn({ onDelete, className }: ChartEditorColumnProp
     <div className={cn("flex h-full min-h-0 flex-col bg-white dark:bg-gray-900", className)}>
       <div className="shrink-0 border-b border-gray-200 px-3 py-2.5 dark:border-gray-800">
         <p className="truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-          {widget.title}
+          {typeLabel}
         </p>
+        {widget.title && widget.title !== typeLabel ? (
+          <p className="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400">
+            {widget.title}
+          </p>
+        ) : null}
       </div>
 
       <ChartInspectorTabs
         className="min-h-0 flex-1"
         dataFooter={dataFooter}
         data={
-          <div className="space-y-4">
-            <div className="grid gap-2">
+          <div className="space-y-3">
+            <div className="grid gap-1.5">
               <Label htmlFor={`chart-type-${widget.id}`} className="text-theme-xs text-gray-500">
                 切换图表
               </Label>
@@ -118,7 +110,7 @@ export function ChartEditorColumn({ onDelete, className }: ChartEditorColumnProp
               >
                 <SelectTrigger
                   id={`chart-type-${widget.id}`}
-                  className="h-10"
+                  className="h-9"
                   aria-label="切换图表"
                 >
                   <SelectValue placeholder="选择图表类型" />
@@ -139,7 +131,10 @@ export function ChartEditorColumn({ onDelete, className }: ChartEditorColumnProp
               onChange={onChange}
               compact
               section="filters"
+              omitTimeRange
+              addFilterLabel="过滤"
             />
+            <ChartDataOptions />
           </div>
         }
         style={
@@ -151,33 +146,7 @@ export function ChartEditorColumn({ onDelete, className }: ChartEditorColumnProp
             section="style"
           />
         }
-        advanced={
-          <div className="space-y-4">
-            <WidgetInspectorDataSection
-              widgetId={widget.id}
-              cfg={cfg}
-              dataMode={dataMode}
-              dsLoading={dsLoading}
-              datasetsLoading={datasetsLoading}
-              datasetsError={datasetsError}
-              datasourceItems={datasourceItems}
-              datasetItems={datasetItems}
-              datasetsEmpty={datasetsEmpty}
-              datasourcesEmpty={datasourcesEmpty}
-              selectedDataset={selectedDataset}
-              onChange={onChange}
-              onDatasetSelect={handleDatasetSelect}
-            />
-            <DatasetReadinessChecklist
-              dataMode={dataMode}
-              hasDataSource={Boolean(cfg.dataSourceId)}
-              hasDataset={Boolean(cfg.datasetId)}
-              hasBoundConfig={Boolean(selectedDataset?.boundConfigId)}
-              hasSyncedConfig={datasetReady}
-              columnsLoaded={columns.length > 0}
-            />
-          </div>
-        }
+        advanced={<ChartAdvancedPanel onOpenLinkage={onOpenLinkage} />}
       />
 
       {onDelete ? (

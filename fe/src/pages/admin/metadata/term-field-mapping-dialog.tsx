@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link2, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  ListBatchDeleteBar,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { IconButton } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -25,6 +30,15 @@ export function TermFieldMappingDialog({
 }) {
   const qc = useQueryClient();
   const [rows, setRows] = useState<Mapping[]>([]);
+  const rowIds = useMemo(() => rows.map((_, index) => String(index)), [rows]);
+  const selection = useListRowSelection(rowIds);
+
+  const removeSelected = () => {
+    const indices = new Set([...selection.selectedIds].map(Number));
+    const next = rows.filter((_, i) => !indices.has(i));
+    setRows(next.length > 0 ? next : [{ tableFqn: "", columnName: "" }]);
+    selection.clear();
+  };
 
   useQuery({
     queryKey: ["metadata", "glossary", termId, "field-mappings"],
@@ -62,9 +76,21 @@ export function TermFieldMappingDialog({
         <DialogHeader>
           <DialogTitle>物理字段映射 — {termName}</DialogTitle>
         </DialogHeader>
+        <ListBatchDeleteBar
+          selectedCount={selection.selectedCount}
+          entityLabel="条映射"
+          onClear={selection.clear}
+          onDelete={removeSelected}
+          className="mb-2"
+        />
         <div className="grid gap-3">
           {rows.map((row, idx) => (
-            <div key={idx} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <div key={idx} className="grid gap-2 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-end">
+              <ListRowCheckbox
+                checked={selection.isSelected(String(idx))}
+                onCheckedChange={() => selection.toggle(String(idx))}
+                ariaLabel={`选择映射行 ${idx + 1}`}
+              />
               <div className="grid gap-1">
                 <Label htmlFor={`fqn-${idx}`}>表 FQN</Label>
                 <Input

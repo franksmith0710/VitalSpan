@@ -9,6 +9,7 @@ import {
   Settings2,
   Trash2,
 } from "lucide-react";
+import { ListHeaderCheckbox, ListRowCheckbox } from "@/components/layout/list-batch-delete";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,14 +20,40 @@ type SyncJobsTableProps = {
   runningId: string | null;
   onRun: (job: SyncJobSummary) => void;
   onDelete: (job: SyncJobSummary) => void;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  onToggleSelectAll?: () => void;
+  allSelected?: boolean;
+  someSelected?: boolean;
 };
 
-export function SyncJobsTable({ jobs, runningId, onRun, onDelete }: SyncJobsTableProps) {
+export function SyncJobsTable({
+  jobs,
+  runningId,
+  onRun,
+  onDelete,
+  selectedIds,
+  onToggleSelect,
+  onToggleSelectAll,
+  allSelected = false,
+  someSelected = false,
+}: SyncJobsTableProps) {
+  const showSelection = Boolean(onToggleSelect);
   return (
     <div className="overflow-x-auto">
       <table className="min-w-[800px] w-full text-left text-theme-sm">
         <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
           <tr>
+            {showSelection ? (
+              <th className="w-10 px-4 py-3">
+                <ListHeaderCheckbox
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  disabled={jobs.length === 0}
+                  onCheckedChange={() => onToggleSelectAll?.()}
+                />
+              </th>
+            ) : null}
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">任务</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">源类型</th>
             <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">目标表</th>
@@ -41,6 +68,15 @@ export function SyncJobsTable({ jobs, runningId, onRun, onDelete }: SyncJobsTabl
               key={job.id}
               className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]"
             >
+              {showSelection ? (
+                <td className="px-4 py-3">
+                  <ListRowCheckbox
+                    checked={selectedIds?.has(job.id) ?? false}
+                    onCheckedChange={() => onToggleSelect?.(job.id)}
+                    ariaLabel={`选择任务 ${job.name}`}
+                  />
+                </td>
+              ) : null}
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">

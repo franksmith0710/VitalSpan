@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyPixelInteraction,
   RESIZE_CURSORS,
+  scaledCanvasMetrics,
   screenDeltaToCanvas,
   type PixelRect,
 } from "./geometry";
@@ -31,7 +32,41 @@ describe("pixel canvas geometry", () => {
     ).toEqual(expected);
   });
 
-  it("allows overlapping rectangles and clamps only to canvas bounds", () => {
+  it("computes scaled content metrics for a narrow host", () => {
+    expect(scaledCanvasMetrics(645, 420, 1440, 900, 0)).toEqual({
+      scale: 645 / 1440,
+      contentWidth: 645,
+      contentHeight: 420,
+    });
+  });
+
+  it("extends dot-grid background to host height without upscaling widgets", () => {
+    const metrics = scaledCanvasMetrics(740, 699, 1440, 320, 0);
+    expect(metrics.scale).toBeCloseTo(740 / 1440, 5);
+    expect(metrics.contentHeight).toBe(699);
+    expect(metrics.contentWidth).toBe(740);
+  });
+
+  it("uses width-fit scale and ceil height when content exceeds the viewport", () => {
+    const metrics = scaledCanvasMetrics(800, 600, 1440, 2000, 0);
+    expect(metrics.scale).toBeCloseTo(800 / 1440, 5);
+    expect(metrics.contentWidth).toBe(800);
+    expect(metrics.contentHeight).toBe(Math.ceil((2000 * 800) / 1440));
+  });
+
+  it("allows vertical growth when bottom growth is enabled", () => {
+    expect(
+      applyPixelInteraction(
+        { x: 61, y: 6, width: 1379, height: 894 },
+        { x: 100, y: 100 },
+        "move",
+        { width: 1440, height: 900 },
+        { allowBottomGrowth: true },
+      ),
+    ).toEqual({ x: 61, y: 106, width: 1379, height: 894 });
+  });
+
+  it("clamps movement to canvas bounds by default", () => {
     expect(
       applyPixelInteraction(rect, { x: 1400, y: 900 }, "move", {
         width: 1440,

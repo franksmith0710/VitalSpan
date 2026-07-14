@@ -20,6 +20,7 @@ import {
   type PixelRect,
   type ResizeDirection,
 } from "./geometry";
+import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
 
 type ActiveInteraction = {
   pointerId: number;
@@ -36,7 +37,9 @@ type PixelShapeProps = {
   selected: boolean;
   children: ReactNode;
   onSelect?: (widgetId: string, additive: boolean) => void;
-  onChange?: (widget: PixelLayoutWidget) => void;
+  onPreview?: (widget: PixelLayoutWidget) => void;
+  onCommit?: (widget: PixelLayoutWidget) => void;
+  onCancel?: (widgetId: string) => void;
   onMore?: (widgetId: string) => void;
 };
 
@@ -73,6 +76,24 @@ function keyboardDelta(event: KeyboardEvent): { x: number; y: number } | null {
   return null;
 }
 
+function boundaryHint(
+  start: PixelRect,
+  delta: PixelRect,
+  next: PixelRect,
+  kind: PixelInteractionKind,
+): string | null {
+  if (kind === "move") {
+    if (delta.x > 0 && next.x < start.x + delta.x) return "已到画布右边界";
+    if (delta.x < 0 && next.x > start.x + delta.x) return "已到画布左边界";
+    if (delta.y < 0 && next.y > start.y + delta.y) return "已到画布顶部";
+    return null;
+  }
+  if (kind.includes("e") && next.width < start.width + delta.width) return "已到画布右边界";
+  if (kind.includes("w") && next.x > start.x + delta.x) return "已到画布左边界";
+  if (kind.includes("n") && next.y > start.y + delta.y) return "已到画布顶部";
+  return null;
+}
+
 export function PixelShape({
   widget,
   canvas,
@@ -81,13 +102,16 @@ export function PixelShape({
   selected,
   children,
   onSelect,
-  onChange,
+  onPreview,
+  onCommit,
+  onCancel,
   onMore,
 }: PixelShapeProps) {
   const outerRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<ActiveInteraction | null>(null);
   const displayRef = useRef(widgetRect(widget));
   const [display, setDisplay] = useState(displayRef.current);
+  const [hint, setHint] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeRef.current) return;
@@ -108,12 +132,19 @@ export function PixelShape({
       x: event.clientX - active.startClient.x,
       y: event.clientY - active.startClient.y,
     };
-    return applyPixelInteraction(
-      active.startRect,
-      screenDeltaToCanvas(screenDelta, scale),
-      active.kind,
-      canvas,
+    const delta = screenDeltaToCanvas(screenDelta, scale);
+    const next = applyPixelInteraction(active.startRect, delta, active.kind, canvas, {
+      allowBottomGrowth: true,
+    });
+    setHint(
+      boundaryHint(
+        active.startRect,
+        { x: delta.x, y: delta.y, width: next.width - active.startRect.width, height: next.height - active.startRect.height },
+        next,
+        active.kind,
+      ),
     );
+    return next;
   };
 
   const startInteraction = (
@@ -124,6 +155,7 @@ export function PixelShape({
     event.preventDefault();
     event.stopPropagation();
     onSelect?.(widget.id, event.shiftKey);
+    setHint(null);
     activeRef.current = {
       pointerId: event.pointerId,
       kind,
@@ -146,11 +178,13 @@ export function PixelShape({
         : (rectForEvent(event) ?? displayRef.current)
       : widgetRect(widget);
     activeRef.current = null;
+    setHint(null);
     setDisplayRect(finalRect);
     if (outerRef.current?.hasPointerCapture(event.pointerId)) {
       outerRef.current.releasePointerCapture(event.pointerId);
     }
-    if (commit) onChange?.(withRect(widget, finalRect));
+    if (commit) onCommit?.(withRect(widget, finalRect));
+    else onCancel?.(widget.id);
   };
 
   const handleKeyboardInteraction = (
@@ -162,9 +196,11 @@ export function PixelShape({
     event.preventDefault();
     event.stopPropagation();
     onSelect?.(widget.id, event.shiftKey);
-    const next = applyPixelInteraction(displayRef.current, delta, kind, canvas);
+    const next = applyPixelInteraction(displayRef.current, delta, kind, canvas, {
+      allowBottomGrowth: true,
+    });
     setDisplayRect(next);
-    onChange?.(withRect(widget, next));
+    onCommit?.(withRect(widget, next));
   };
 
   return (
@@ -172,7 +208,7 @@ export function PixelShape({
       ref={outerRef}
       data-testid={`pixel-shape-${widget.id}`}
       className={cn(
-        "pixel-shape-outer absolute border",
+        "pixel-shape-outer absolute border touch-none select-none",
         mode === "edit" && selected
           ? "pixel-shape-selected border-brand-500"
           : "border-transparent",
@@ -186,57 +222,63 @@ export function PixelShape({
       }}
       onPointerMove={(event) => {
         const next = rectForEvent(event);
-        if (next) setDisplayRect(next);
+        if (next) {
+          setDisplayRect(next);
+          onPreview?.(withRect(widget, next));
+        }
       }}
       onPointerUp={(event) => finish(event, true)}
       onPointerCancel={(event) => finish(event, false)}
       onLostPointerCapture={(event) => finish(event, true, true)}
     >
-      <div
-        className="pixel-shape-inner h-full min-h-0 overflow-hidden bg-white p-3 dark:bg-gray-900"
-        data-pixel-no-drag
-        onPointerDown={(event) => {
-          if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
-        }}
-      >
-        {children}
-      </div>
-
+      {hint ? (
+        <p className="sr-only" role="status" data-testid="pixel-boundary-hint">
+          {hint}
+        </p>
+      ) : null}
       {mode === "edit" && selected ? (
-        <>
-          <div
-            data-testid={`pixel-edit-bar-${widget.id}`}
-            className="pixel-shape-edit-bar absolute top-1/2 flex flex-col items-center rounded-lg border border-gray-200 bg-white py-1 shadow-theme-sm dark:border-gray-700 dark:bg-gray-900"
-            style={{
-              left: -40 / scale,
-              width: 32,
-              transform: `translateY(-50%) scale(${1 / scale})`,
-              transformOrigin: "right center",
-            }}
-          >
+        <div
+          data-testid={`pixel-drag-rail-${widget.id}`}
+          className="pixel-shape-drag-rail absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab touch-none select-none items-center gap-1 border-b border-brand-200/80 bg-brand-50/95 px-2 text-theme-xs font-medium text-brand-700 active:cursor-grabbing dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-300"
+          onPointerDown={(event) => startInteraction(event, "move")}
+          onKeyDown={(event) => handleKeyboardInteraction(event, "move")}
+          role="group"
+          aria-label="拖动组件"
+        >
+          <GripVertical className="size-3.5 shrink-0 opacity-70" aria-hidden />
+          <span className="min-w-0 flex-1 truncate">{widget.title}</span>
+          {onMore ? (
             <IconButton
               type="button"
               variant="ghost"
               size="sm"
-              className="size-7 cursor-grab text-gray-500 active:cursor-grabbing dark:text-gray-400"
-              aria-label="拖动组件"
-              onPointerDown={(event) => startInteraction(event, "move")}
-              onKeyDown={(event) => handleKeyboardInteraction(event, "move")}
-            >
-              <GripVertical className="size-4" aria-hidden />
-            </IconButton>
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="size-7 text-gray-500 dark:text-gray-400"
+              className="size-6 shrink-0 text-brand-700 dark:text-brand-300"
               aria-label="更多操作"
-              onClick={() => onMore?.(widget.id)}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={() => onMore(widget.id)}
             >
-              <MoreHorizontal className="size-4" aria-hidden />
+              <MoreHorizontal className="size-3.5" aria-hidden />
             </IconButton>
-          </div>
-          {RESIZE_DIRECTIONS.map((direction) => (
+          ) : null}
+        </div>
+      ) : null}
+      <PixelShapeInteractionProvider value={startInteraction}>
+        <div
+          className={cn(
+            "pixel-shape-inner h-full min-h-0 overflow-hidden bg-white dark:bg-gray-900",
+            mode === "edit" && selected && "pt-7",
+          )}
+          data-pixel-no-drag
+          onPointerDown={(event) => {
+            if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
+          }}
+        >
+          {children}
+        </div>
+      </PixelShapeInteractionProvider>
+
+      {mode === "edit" && selected
+        ? RESIZE_DIRECTIONS.map((direction) => (
             <IconButton
               key={direction}
               type="button"
@@ -244,7 +286,7 @@ export function PixelShape({
               size="sm"
               data-testid={`pixel-resize-${direction}`}
               className={cn(
-                "absolute z-10 flex items-center justify-center rounded-none p-0",
+                "absolute z-30 flex touch-none select-none items-center justify-center rounded-none p-0",
                 HANDLE_POSITION[direction],
               )}
               style={{
@@ -262,9 +304,8 @@ export function PixelShape({
                 style={{ width: 12 / scale, height: 12 / scale }}
               />
             </IconButton>
-          ))}
-        </>
-      ) : null}
+          ))
+        : null}
     </div>
   );
 }

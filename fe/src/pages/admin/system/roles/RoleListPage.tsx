@@ -2,7 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  BatchDeleteDialog,
+  ListBatchDeleteBar,
+  ListHeaderCheckbox,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { runBatchDelete } from "@/lib/runBatchDelete";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,6 +95,8 @@ export function RoleListPage() {
   const [form, setForm] = useState<RoleCreateValues | RoleEditValues>(EMPTY_CREATE);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<RoleOut | null>(null);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -118,6 +128,9 @@ export function RoleListPage() {
     if (statusFilter === "inactive") return items.filter((row) => !row.isActive);
     return items;
   }, [data?.items, statusFilter]);
+
+  const rowIds = useMemo(() => filteredItems.map((row) => row.id), [filteredItems]);
+  const selection = useListRowSelection(rowIds);
 
   const { data: dashboards } = useQuery({
     queryKey: queryKeys.dashboards.list(),
@@ -237,6 +250,21 @@ export function RoleListPage() {
     onError: (err) => setActionError(mapRoleError(err)),
   });
 
+  const handleBatchDelete = async () => {
+    const ids = [...selection.selectedIds];
+    if (ids.length === 0) return;
+    setBatchDeleting(true);
+    const { ok, failed } = await runBatchDelete(ids, (id) =>
+      apiFetch(`/api/v1/roles/${id}`, { method: "DELETE" }),
+    );
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    selection.clear();
+    await queryClient.invalidateQueries({ queryKey: queryKeys.roles.all });
+    if (failed === 0) toast.success(`已删除 ${ok} 个角色`);
+    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败`);
+  };
+
   return (
     <AdminPageShell
       title="角色管理"
@@ -286,10 +314,25 @@ export function RoleListPage() {
         <ErrorBanner message={actionError} onRetry={() => setActionError(null)} />
       ) : null}
 
+      <ListBatchDeleteBar
+        selectedCount={selection.selectedCount}
+        entityLabel="个角色"
+        onClear={selection.clear}
+        onDelete={() => setBatchDeleteOpen(true)}
+      />
+
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
         <table className="min-w-[720px] w-full text-left text-theme-sm">
           <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
             <tr>
+              <th className="w-10 px-4 py-3">
+                <ListHeaderCheckbox
+                  checked={selection.allSelected}
+                  indeterminate={selection.someSelected}
+                  disabled={filteredItems.length === 0}
+                  onCheckedChange={() => selection.toggleAll()}
+                />
+              </th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">编码</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">显示名</th>
               <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">描述</th>
@@ -303,7 +346,7 @@ export function RoleListPage() {
             {isLoading
               ? Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-3" colSpan={5}>
+                    <td className="px-4 py-3" colSpan={6}>
                       <Skeleton className="h-6 w-full" />
                     </td>
                   </tr>
@@ -311,14 +354,14 @@ export function RoleListPage() {
               : null}
             {!isLoading && data && data.items.length > 0 && filteredItems.length === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={5}>
+                <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={6}>
                   当前筛选条件下暂无角色
                 </td>
               </tr>
             ) : null}
             {!isLoading && data?.items.length === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={5}>
+                <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={6}>
                   {debouncedPrefix ? (
                     <>未找到编码以「{debouncedPrefix}」开头的角色</>
                   ) : (
@@ -340,6 +383,13 @@ export function RoleListPage() {
                     key={row.id}
                     className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]"
                   >
+                    <td className="px-4 py-3">
+                      <ListRowCheckbox
+                        checked={selection.isSelected(row.id)}
+                        onCheckedChange={() => selection.toggle(row.id)}
+                        ariaLabel={`选择角色 ${row.name}`}
+                      />
+                    </td>
                     <td className="px-4 py-3 font-mono text-gray-800 dark:text-white/90">
                       {row.code}
                     </td>
@@ -524,6 +574,15 @@ export function RoleListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        count={selection.selectedCount}
+        title="批量删除角色"
+        pending={batchDeleting}
+        onConfirm={() => void handleBatchDelete()}
+      />
     </AdminPageShell>
   );
 }

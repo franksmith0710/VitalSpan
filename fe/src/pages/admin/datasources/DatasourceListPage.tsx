@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Database, Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  BatchDeleteDialog,
+  ListBatchDeleteBar,
+  ListHeaderCheckbox,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
@@ -43,6 +50,8 @@ import {
 } from "@/lib/connector-taxonomy";
 import { queryKeys } from "@/lib/queryKeys";
 import { useListPagination } from "@/lib/list-pagination";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { runBatchDelete } from "@/lib/runBatchDelete";
 import { cn } from "@/lib/utils";
 
 type DataSourceOut = {
@@ -114,6 +123,8 @@ export function DatasourceListPage() {
   const [typeFilter, setTypeFilter] = useState(ALL_TYPES);
   const [deleteTarget, setDeleteTarget] = useState<DataSourceOut | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQ(search.trim()), 300);
@@ -177,8 +188,25 @@ export function DatasourceListPage() {
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
+  const rowIds = useMemo(() => items.map((item) => item.id), [items]);
+  const selection = useListRowSelection(rowIds);
   const hasFilters = Boolean(debouncedQ || typeFilter !== ALL_TYPES);
   const isEmpty = !isLoading && items.length === 0;
+
+  const handleBatchDelete = async () => {
+    const ids = [...selection.selectedIds];
+    if (ids.length === 0) return;
+    setBatchDeleting(true);
+    const { ok, failed } = await runBatchDelete(ids, (id) =>
+      apiFetch(`/api/v1/datasources/${id}`, { method: "DELETE" }),
+    );
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    selection.clear();
+    await queryClient.invalidateQueries({ queryKey: queryKeys.datasources.all });
+    if (failed === 0) toast.success(`已删除 ${ok} 个数据源`);
+    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败（可能仍被引用）`);
+  };
 
   return (
     <AdminPageShell
@@ -243,6 +271,15 @@ export function DatasourceListPage() {
           }
         />
 
+        <ListPageBody className="border-b border-gray-100 py-3 dark:border-white/[0.06]">
+          <ListBatchDeleteBar
+            selectedCount={selection.selectedCount}
+            entityLabel="个数据源"
+            onClear={selection.clear}
+            onDelete={() => setBatchDeleteOpen(true)}
+          />
+        </ListPageBody>
+
         <ListPageBody className={cn(isEmpty && !isLoading ? "p-0" : undefined)}>
           {isError ? (
             <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
@@ -252,7 +289,19 @@ export function DatasourceListPage() {
               empty={isEmpty}
               lastColumnAlign="right"
               loadingRows={5}
-              headers={["数据源", "连接器", "连接信息", "操作"]}
+              headers={[
+                <ListHeaderCheckbox
+                  key="select-all"
+                  checked={selection.allSelected}
+                  indeterminate={selection.someSelected}
+                  disabled={items.length === 0}
+                  onCheckedChange={() => selection.toggleAll()}
+                />,
+                "数据源",
+                "连接器",
+                "连接信息",
+                "操作",
+              ]}
               emptyState={{
                 icon: <Database className="size-7" aria-hidden />,
                 title: hasFilters ? "未找到匹配的数据源" : "暂无数据源",
@@ -273,6 +322,12 @@ export function DatasourceListPage() {
                 const endpoint = formatConnectionEndpoint(row);
 
                 return [
+                  <ListRowCheckbox
+                    key={`${row.id}-select`}
+                    checked={selection.isSelected(row.id)}
+                    onCheckedChange={() => selection.toggle(row.id)}
+                    ariaLabel={`选择数据源 ${row.name}`}
+                  />,
                   <div key={`${row.id}-name`} className="min-w-[180px]">
                     <Link
                       to={`/admin/datasources/${row.id}`}
@@ -369,6 +424,16 @@ export function DatasourceListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        count={selection.selectedCount}
+        title="批量删除数据源"
+        description={`确定删除选中的 ${selection.selectedCount} 个数据源？若仍被图表或看板引用，部分项可能删除失败。`}
+        pending={batchDeleting}
+        onConfirm={() => void handleBatchDelete()}
+      />
     </AdminPageShell>
   );
 }

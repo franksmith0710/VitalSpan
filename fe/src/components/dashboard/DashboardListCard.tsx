@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { ListRowCheckbox } from "@/components/layout/list-batch-delete";
 
 export type DashboardListItem = {
   id: string;
@@ -42,11 +43,15 @@ export function DashboardListCard({
   dashboard,
   canEdit,
   onDelete,
+  selected,
+  onToggleSelect,
   className,
 }: {
   dashboard: DashboardListItem;
   canEdit: boolean;
   onDelete?: () => void;
+  selected?: boolean;
+  onToggleSelect?: () => void;
   className?: string;
 }) {
   const widgetCount = dashboard.layoutJson?.widgets?.length ?? 0;
@@ -65,6 +70,15 @@ export function DashboardListCard({
         className="relative overflow-hidden border-b border-gray-100 dark:border-white/[0.06]"
         style={{ aspectRatio: dashboardPreviewAspectRatio(dashboard.layoutJson) }}
       >
+        {onToggleSelect ? (
+          <div className="absolute left-2 top-2 z-10 rounded-md bg-white/90 p-0.5 shadow-sm dark:bg-gray-900/90">
+            <ListRowCheckbox
+              checked={Boolean(selected)}
+              onCheckedChange={() => onToggleSelect()}
+              ariaLabel={`选择看板 ${dashboard.name}`}
+            />
+          </div>
+        ) : null}
         <DashboardPreviewThumb layoutJson={dashboard.layoutJson} className="h-full" embedded />
         <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gray-900/55 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button asChild variant="primary" size="sm">

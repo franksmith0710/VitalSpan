@@ -71,3 +71,32 @@ export function DatasetReadinessChecklist({
     </div>
   );
 }
+
+/** 右侧数据集栏内的轻量提示（绑定 Dataset 后展示就绪步骤） */
+export function DatasetBindingAlerts({
+  dataMode,
+  hasDataset,
+  hasBoundConfig,
+  hasSyncedConfig,
+  columnsLoaded,
+  className,
+}: {
+  dataMode: "dataset" | "sql";
+  hasDataset: boolean;
+  hasBoundConfig: boolean;
+  hasSyncedConfig: boolean;
+  columnsLoaded: boolean;
+  className?: string;
+}) {
+  return (
+    <DatasetReadinessChecklist
+      dataMode={dataMode}
+      hasDataSource
+      hasDataset={hasDataset}
+      hasBoundConfig={hasBoundConfig}
+      hasSyncedConfig={hasSyncedConfig}
+      columnsLoaded={columnsLoaded}
+      className={className}
+    />
+  );
+}

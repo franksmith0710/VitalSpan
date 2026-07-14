@@ -12,6 +12,7 @@ export const CHART_EXECUTE_LIMIT = 100;
 
 export type ChartExecuteProbeOptions = {
   filterParameters?: Record<string, string>;
+  limit?: number;
 };
 
 export function buildFilterParameters(filters: ChartFilterRef[]): Record<string, string> {
@@ -80,11 +81,33 @@ export function isChartExecuteReady(config: ChartViewConfig): boolean {
   return Boolean(config.sql?.trim() || config.table);
 }
 
+/** 仅序列化会影响 execute 请求的字段，用于稳定 effect 依赖 */
+export function chartExecuteRequestKey(
+  config: ChartViewConfig,
+  filterParameters?: Record<string, string>,
+): string {
+  return JSON.stringify({
+    mode: config.mode,
+    dataSourceId: config.dataSourceId,
+    configId: config.configId,
+    datasetId: config.datasetId,
+    sql: config.sql,
+    table: config.table,
+    schema: config.schema,
+    bindingId: config.bindingId,
+    nativeBody: config.nativeBody,
+    index: config.index,
+    filters: config.filters,
+    timeRange: config.timeRange,
+    filterParameters: filterParameters ?? {},
+  });
+}
+
 export async function fetchChartExecuteResult(
   config: ChartViewConfig,
   options: ChartExecuteProbeOptions = {},
 ): Promise<ChartExecuteResult> {
-  const { filterParameters } = options;
+  const { filterParameters, limit = CHART_EXECUTE_LIMIT } = options;
 
   if (config.mode === "dataset") {
     if (!config.dataSourceId || !config.configId) {
@@ -95,7 +118,7 @@ export async function fetchChartExecuteResult(
       body: JSON.stringify({
         dataSourceId: config.dataSourceId,
         configId: config.configId,
-        limit: CHART_EXECUTE_LIMIT,
+        limit,
         rls: { enabled: false },
       }),
     });
@@ -124,7 +147,7 @@ export async function fetchChartExecuteResult(
           mode: "native",
           nativeBody: config.nativeBody,
           index: config.index,
-          limit: CHART_EXECUTE_LIMIT,
+          limit,
           rls: { enabled: false },
         }
       : {
@@ -133,7 +156,7 @@ export async function fetchChartExecuteResult(
           sql,
           schema: config.schema,
           table: config.table,
-          limit: CHART_EXECUTE_LIMIT,
+          limit,
           rls: { enabled: false },
         };
 

@@ -30,6 +30,7 @@
 | VitalSpanLogo | `layout/vitalspan-logo.tsx` | 侧栏品牌标（展开/折叠） |
 | AdminPageShell | `layout/admin-page-shell.tsx` | PageHeader：标题 + 描述 + 操作区 + `gap-6` 主内容栅格 |
 | ListPageSection / DataTable | `layout/list-page-kit.tsx` | 列表/Hub 页卡片容器、工具栏、表格、分页与空态 |
+| ListBatchDeleteBar / BatchDeleteDialog | `layout/list-batch-delete.tsx` | 列表多选勾选列 + 批量删除工具条与确认框；配合 `hooks/useListRowSelection.ts` · `lib/runBatchDelete.ts` |
 | PaginationBar | `ui/pagination-bar.tsx` | 列表底部分页（上一页/下一页/每页条数） |
 | AdminLayout | `../layouts/AdminLayout.tsx` | `/admin/*` 布局入口 |
 | ChartPanel | `charts/ChartPanel.tsx` | 图表壳：loading/empty/error |

@@ -1,8 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  BatchDeleteDialog,
+  ListBatchDeleteBar,
+  ListHeaderCheckbox,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { runBatchDelete } from "@/lib/runBatchDelete";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,6 +73,8 @@ export function RlsAdminPage() {
   const [editGroup, setEditGroup] = useState<DimensionGroupOut | null>(null);
   const [editName, setEditName] = useState("");
   const [deleteGroup, setDeleteGroup] = useState<DimensionGroupOut | null>(null);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
   const [valuesGroup, setValuesGroup] = useState<DimensionGroupOut | null>(null);
   const [valuesText, setValuesText] = useState("");
 
@@ -174,6 +184,23 @@ export function RlsAdminPage() {
   const dimensions = dimensionsQuery.data?.items ?? [];
   const groups = groupsQuery.data?.items ?? [];
   const dimNameById = Object.fromEntries(dimensions.map((d) => [d.id, d.name]));
+  const groupRowIds = useMemo(() => groups.map((g) => g.id), [groups]);
+  const groupSelection = useListRowSelection(groupRowIds);
+
+  const handleBatchDeleteGroups = async () => {
+    const ids = [...groupSelection.selectedIds];
+    if (ids.length === 0) return;
+    setBatchDeleting(true);
+    const { ok, failed } = await runBatchDelete(ids, (id) =>
+      apiFetch(`/api/v1/rls/groups/${id}`, { method: "DELETE" }),
+    );
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    groupSelection.clear();
+    await qc.invalidateQueries({ queryKey: ["rls", "groups"] });
+    if (failed === 0) toast.success(`已删除 ${ok} 个维度分组`);
+    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败`);
+  };
 
   return (
     <AdminPageShell
@@ -265,10 +292,24 @@ export function RlsAdminPage() {
               新建分组
             </Button>
           </div>
+          <ListBatchDeleteBar
+            selectedCount={groupSelection.selectedCount}
+            entityLabel="个分组"
+            onClear={groupSelection.clear}
+            onDelete={() => setBatchDeleteOpen(true)}
+          />
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
             <table className="min-w-[720px] w-full text-left text-theme-sm">
               <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <tr>
+                  <th className="w-10 px-4 py-3">
+                    <ListHeaderCheckbox
+                      checked={groupSelection.allSelected}
+                      indeterminate={groupSelection.someSelected}
+                      disabled={groups.length === 0}
+                      onCheckedChange={() => groupSelection.toggleAll()}
+                    />
+                  </th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">名称</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">编码</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">维度类型</th>
@@ -281,7 +322,7 @@ export function RlsAdminPage() {
                 {groupsQuery.isLoading
                   ? Array.from({ length: 4 }).map((_, i) => (
                       <tr key={i}>
-                        <td colSpan={4} className="px-4 py-3">
+                        <td colSpan={5} className="px-4 py-3">
                           <Skeleton className="h-6 w-full" />
                         </td>
                       </tr>
@@ -289,13 +330,20 @@ export function RlsAdminPage() {
                   : null}
                 {groups.length === 0 && !groupsQuery.isLoading ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={5} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                       暂无分组
                     </td>
                   </tr>
                 ) : null}
                 {groups.map((g) => (
                   <tr key={g.id} className="border-b border-gray-100 dark:border-gray-800">
+                    <td className="px-4 py-3">
+                      <ListRowCheckbox
+                        checked={groupSelection.isSelected(g.id)}
+                        onCheckedChange={() => groupSelection.toggle(g.id)}
+                        ariaLabel={`选择分组 ${g.name}`}
+                      />
+                    </td>
                     <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{g.name}</td>
                     <td className="px-4 py-3 font-mono text-theme-xs">{g.code}</td>
                     <td className="px-4 py-3">
@@ -565,6 +613,16 @@ export function RlsAdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        count={groupSelection.selectedCount}
+        title="批量删除维度分组"
+        description="将删除选中的维度分组及其成员值；若仍被角色绑定可能部分失败。"
+        pending={batchDeleting}
+        onConfirm={() => void handleBatchDeleteGroups()}
+      />
     </AdminPageShell>
   );
 }

@@ -14,32 +14,44 @@ import { IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { FilterControl } from "./FilterWidgetControls";
-import type { FilterWidgetConfig, LayoutWidget } from "./layoutUtils";
+import type { DashboardWidgetShell } from "./dashboardCanvasMode";
+import type { FilterWidgetConfig, LayoutWidget, DashboardStyleConfig } from "./layoutUtils";
+import { mergeTitleStyle, mergeWidgetShellStyle } from "./dashboardStyleConfig";
 
 type FilterWidgetProps = {
   widget: LayoutWidget & { filterConfig: FilterWidgetConfig };
   mode: "edit" | "view";
+  shell?: DashboardWidgetShell;
   selected?: boolean;
   value: string;
   onValueChange: (filterId: string, value: string) => void;
   onSelect?: () => void;
   onDelete?: (id: string) => void;
   onTitleChange?: (id: string, title: string) => void;
+  dashboardStyle?: DashboardStyleConfig;
 };
 
 export function FilterWidget({
   widget,
   mode,
+  shell: _shell = "grid",
   selected = false,
   value,
   onValueChange,
   onSelect,
   onDelete,
   onTitleChange,
+  dashboardStyle,
 }: FilterWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const cfg = widget.filterConfig;
   const controlId = `fw-${widget.id}`;
+  const shellStyle = mergeWidgetShellStyle(dashboardStyle?.widgetStyle);
+  const titleStyle = mergeTitleStyle(dashboardStyle?.titleStyle, {
+    color: dashboardStyle?.filterChromeStyle?.titleColor,
+  });
+  const controlHeight = dashboardStyle?.filterControlStyle?.height;
+  const controlRadius = dashboardStyle?.filterControlStyle?.borderRadius;
 
   return (
     <div
@@ -49,7 +61,9 @@ export function FilterWidget({
         selected
           ? "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40"
           : "border-gray-200 dark:border-gray-800",
+        shellStyle.className,
       )}
+      style={shellStyle.style}
     >
       {mode === "edit" ? (
         <div
@@ -73,6 +87,7 @@ export function FilterWidget({
             onChange={(e) => onTitleChange?.(widget.id, e.target.value)}
             onPointerDown={(e) => e.stopPropagation()}
             className="dashboard-no-drag h-7 min-w-0 flex-1 border-transparent bg-transparent px-1 text-theme-sm font-medium shadow-none focus-visible:border-gray-300 dark:focus-visible:border-gray-700"
+            style={titleStyle}
             aria-label="筛选器标题"
           />
           {onDelete ? (
@@ -96,7 +111,10 @@ export function FilterWidget({
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
             <FilterIcon className="size-3.5" aria-hidden />
           </span>
-          <h4 className="min-w-0 flex-1 truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+          <h4
+            className="min-w-0 flex-1 truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90"
+            style={titleStyle}
+          >
             {widget.title}
           </h4>
           <span className="shrink-0 text-theme-xs text-gray-400">筛选器</span>
@@ -138,6 +156,10 @@ export function FilterWidget({
           options={cfg.options}
           onChange={(next) => onValueChange(cfg.filterId, next)}
           className="w-full max-w-none sm:max-w-none"
+          inputStyle={{
+            height: controlHeight ? `${controlHeight}px` : undefined,
+            borderRadius: controlRadius ? `${controlRadius}px` : undefined,
+          }}
         />
       </div>
 

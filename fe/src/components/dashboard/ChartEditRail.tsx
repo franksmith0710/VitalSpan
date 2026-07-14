@@ -2,33 +2,96 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import type { LayoutWidget } from "./layoutUtils";
-import { ChartInspectorProvider } from "./ChartInspectorContext";
+import { ChartInspectorProvider, useChartInspector } from "./ChartInspectorContext";
 import { ChartEditorColumn } from "./ChartEditorColumn";
-import { DatasetFieldBank, FieldBankPlaceholder } from "./DatasetFieldBank";
+import { DatasetPickerPanel } from "./DatasetPickerPanel";
+import { FieldBankPlaceholder } from "./DatasetFieldBank";
+import { WidgetEditRailLayout } from "./WidgetEditRailLayout";
 
 type ChartEditRailProps = {
   widget: LayoutWidget;
   onChange: (chartConfig: ChartViewConfig) => void;
   onDelete?: () => void;
+  onOpenLinkage?: () => void;
   className?: string;
 };
 
-/** DataEase chart-edit：配置列 + 字段库双列 */
-export function ChartEditRail({ widget, onChange, onDelete, className }: ChartEditRailProps) {
+function ChartDatasetRail() {
+  const {
+    widget,
+    cfg,
+    onChange,
+    dataMode,
+    dsLoading,
+    datasetsLoading,
+    datasetsError,
+    datasourceItems,
+    datasetItems,
+    datasetsEmpty,
+    datasourcesEmpty,
+    selectedDataset,
+    datasetReady,
+    handleDatasetSelect,
+    columns,
+    columnsLoading,
+    columnsReady,
+    assignField,
+    refreshColumns,
+  } = useChartInspector();
+
+  return (
+    <DatasetPickerPanel
+      widgetId={widget.id}
+      variant="chart"
+      dataMode={dataMode}
+      datasetId={cfg.datasetId}
+      datasetsLoading={datasetsLoading}
+      datasetsError={datasetsError}
+      datasetsEmpty={datasetsEmpty}
+      datasetItems={datasetItems}
+      columns={columns}
+      columnsLoading={columnsLoading}
+      columnsReady={columnsReady}
+      hasBoundConfig={Boolean(selectedDataset?.boundConfigId)}
+      hasSyncedConfig={datasetReady}
+      onDatasetSelect={handleDatasetSelect}
+      onFieldClick={(field) => assignField(field)}
+      onRefreshFields={refreshColumns}
+      chartConfig={cfg}
+      onChartConfigChange={onChange}
+      dsLoading={dsLoading}
+      datasourceItems={datasourceItems}
+      datasourcesEmpty={datasourcesEmpty}
+    />
+  );
+}
+
+/** DataEase chart-edit：左侧配置列 + 右侧数据集/字段（均可折叠） */
+export function ChartEditRail({
+  widget,
+  onChange,
+  onDelete,
+  onOpenLinkage,
+  className,
+}: ChartEditRailProps) {
+  const cfg = widget.chartConfig;
+  const title = widget.title || "图表";
+
   return (
     <ChartInspectorProvider widget={widget} onChange={onChange}>
-      <div
-        className={cn(
-          "grid h-full min-h-0 grid-cols-[minmax(220px,1fr)_minmax(140px,168px)]",
-          className,
-        )}
-      >
-        <ChartEditorColumn
-          onDelete={onDelete}
-          className="border-r border-gray-200 dark:border-gray-800"
-        />
-        <DatasetFieldBank />
-      </div>
+      <WidgetEditRailLayout
+        className={className}
+        leftLabel={title}
+        rightLabel="数据集"
+        left={
+          <ChartEditorColumn
+            onDelete={onDelete}
+            onOpenLinkage={onOpenLinkage}
+            className="border-r border-gray-200 dark:border-gray-800"
+          />
+        }
+        right={cfg ? <ChartDatasetRail /> : <FieldBankPlaceholder />}
+      />
     </ChartInspectorProvider>
   );
 }

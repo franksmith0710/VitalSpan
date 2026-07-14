@@ -6,39 +6,74 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | A7_VERIFY |
+| phase | DONE |
+| request | DASH-008 仪表板配置右栏全量 Phase 0–5 |
+| type | feature |
+| autonomy_policy | auto_accept_low_risk |
+| risk_level | low |
+| plan | docs/automate/plans/2026-07-13-dashboard-config-phase1-execute.md |
+| plan_master | docs/automate/plans/2026-07-13-dashboard-config-inspector-de-full.md |
+| plan_review_state | PASS |
+| status | DONE |
+| last_verified_command | vitest DashboardContextInspector+geometry+PixelCanvas; pytest test_dash_m5_widgets |
+| last_verified_exit_code | 0 |
+| verification_summary | DASH-008 全 Phase 实现：styleConfig 扩展、配置栏 UI、画布/组件消费链、Share 刷新 |
+| repair_rounds | 1 |
+| started_at | 2026-07-13T19:05:00+08:00 |
+
+## 当前需求契约
+
+- request: 实现看板编辑页「仪表板配置」右栏 Phase 1（主题/整体/背景/联动常显）
+- type: feature
+- goal: 对标 DataEase §5.1–5.3；styleConfig 全链路可保存；右栏可验收非占位
+- scope_include: DashboardContextInspector、DashboardStyleConfig FE/BE、PixelCanvas scaleMode、DashboardGrid gap、View/Share 主题与背景、DASH-008 PRD Phase 1
+- scope_exclude: 图表样式/配色/标题/查询组件样式/数字格式/高级样式、背景图上传、刷新频率、占位分组移除
+- acceptance: vitest 列计划通过 + 4 条手工门控 + pytest style round-trip
+- risk_level: low
+- autonomy_policy: auto_accept_low_risk
+- assumptions:
+  - 用户通过 /dev-autopilot 委托制定可执行计划
+  - 母计划 `dashboard-config-inspector-de-full.md` 为功能全集索引
+  - Phase 1 优先于画布 BUG-2 剩余 QA（并行不阻塞）
+  - grill-me 隐含：验收 = 测试通过 + plan-verify Phase 1 清单
+
+## 上一轮（归档）
+
+| 字段 | 值 |
+|------|----|
+| phase | A5_FIX_PHASE_B_POINTER |
 | request | Dashboard 画布拖拽/缩放最后一次修复；无效则换像素画布 |
 | type | bug |
 | autonomy_policy | auto_accept_low_risk |
 | risk_level | medium |
-| plan | docs/automate/plans/2026-07-13-dashboard-canvas-drag-last-attempt.md |
+| plan | docs/superpowers/plans/2026-07-13-dashboard-pixel-canvas-pointer-fix.md |
 | plan_review | docs/automate/plans/2026-07-13-dashboard-canvas-drag-last-attempt.plan-review.md |
 | plan_review_state | PASS |
-| last_verified_command | vitest dashboard/*+admin/dashboard/* 158/158; share smoke 2/2; pytest pixel_layout+grid_xy+view_m5 32/32; ruff dashboard OK |
-| verification_summary | Phase B 代码与自动化验证完成；待用户真实浏览器 Pointer QA（契约 Q2=A）后 Close |
-| repair_rounds | 0 |
-| status | WAITING_USER_QA |
+| last_verified_command | 真实浏览器运行时取证：host 645×420 / style 358.125；stage 573×358.125；selected shape 1379×894 / canvas 1440×900 |
+| verification_summary | Phase B 人工 QA FAIL；确认尺寸/Pointer 问题；用户批准以级联推挤替代允许重叠 |
+| repair_rounds | 1 |
+| status | PLANNED_FIX |
 | last_verified_exit_code | 0 |
 | started_at | 2026-07-13T15:20:00+08:00 |
 | phase_a_gate | FAIL |
 | user_design_signal | 2026-07-13：对照 DE shape-outer/edit-bar/shape-inner，要求设计可一比一复刻 |
-| phase_b_scope | pixel layout v2 + DE shape outer/edit bar/inner + eight handles |
+| phase_b_scope | pixel layout v2 + DE shape chrome + Pointer 修复 + 顶层级联推挤 + canvas 高度自增长 |
 
 ## 当前需求契约
 
 - request: Dashboard 画布拖拽/缩放最后一次修复；无效则换像素画布
 - type: bug
-- goal: 像素画布中稳定拖移/八向缩放 widget，保存刷新后位置尺寸保持，并一比一复刻 DE 的 shape-outer/edit-bar/shape-inner 编辑心智
-- scope_include: pixelCanvas、layout v2、v1 兼容迁移、DE shape 编辑壳、保存契约与文档
-- scope_exclude: Phase A 不做 mark-line；不做 gridstack/moveable；生产强制写回迁移需 NEEDS_APPROVAL；Phase B 不做推挤避让
-- acceptance: 像素拖移/八向缩放/保存刷新保持；选中态含 shape outer、左侧 edit bar、shape inner 与八向控制点；预览态无编辑 chrome
+- goal: 像素画布中稳定拖移/八向缩放 widget，顶层组件无重叠且碰撞自动推挤，保存刷新后位置尺寸保持，并一比一复刻 DE 编辑心智
+- scope_include: pixelCanvas、layout v2、v1 兼容迁移、DE shape 编辑壳、滚动视口/内容尺寸分离、级联推挤、canvas 高度自增长、保存契约与文档
+- scope_exclude: Phase A 不做 mark-line；不做 gridstack/moveable；生产强制写回迁移需 NEEDS_APPROVAL；不做多选对齐/分布
+- acceptance: 像素拖移/八向缩放/保存刷新保持；碰撞实时向下级联推挤且顶层零重叠；越底自动增高；一次 undo 恢复整次级联；预览态无编辑 chrome
 - risk_level: medium
 - autonomy_policy: auto_accept_low_risk
 - assumptions:
   - Q1=A Q2=A Q3=C
   - 用户选择 A：PhaseA=FAIL，执行像素画布并一比一复刻 DE shape chrome
   - BUG-2 根因 #2（保存剥离坐标）为 L1
-  - Phase B 碰撞允许重叠 zIndex=order
+  - 原“Phase B 允许重叠”决策已被用户否决；采用活动组件优先、稳定向下级联推挤
   - 已有 compact 回滚待与 A3 一并验证
 
 ## 已合并并行修复（2026-07-13）
@@ -47,8 +82,10 @@
 
 ## 待办池
 
+- **DASH-008 Phase 1**（2026-07-13）：仪表板配置栏 · plan `2026-07-13-dashboard-config-phase1-execute.md` · review **PASS** · 待 A5 执行
+- **DASH-008 母计划**（2026-07-13）：全量 39 子项 · `2026-07-13-dashboard-config-inspector-de-full.md`
 - **toolbar-full Wave 1–6**（2026-07-13）：DE 工具栏完整对标 · DASH-007-01~07 ✅ · plan `2026-07-13-dashboard-de-toolbar-full.md`
-- **canvas Phase B**：像素画布 · plan `2026-07-13-dashboard-canvas-drag-last-attempt.md` · **代码完成，待 Pointer QA**
+- **canvas Phase B**：像素画布 · 修复计划 `docs/superpowers/plans/2026-07-13-dashboard-pixel-canvas-pointer-fix.md` · **Pointer QA FAIL，待修**
 
 ## 模块地图
 

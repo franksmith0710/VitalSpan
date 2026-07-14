@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import {
+  BatchDeleteDialog,
+  ListBatchDeleteBar,
+} from "@/components/layout/list-batch-delete";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { runBatchDelete } from "@/lib/runBatchDelete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
   AlertDialog,
@@ -61,6 +68,8 @@ export function SyncJobsPage() {
   const [runTarget, setRunTarget] = useState<SyncJobSummary | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SyncJobSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   const loadJobs = useCallback(async () => {
     setLoading(true);
@@ -101,6 +110,9 @@ export function SyncJobsPage() {
     );
   }, [jobs, search, statusFilter]);
 
+  const rowIds = useMemo(() => filteredJobs.map((job) => job.id), [filteredJobs]);
+  const selection = useListRowSelection(rowIds);
+
   const resultLabel = useMemo(() => {
     const hasFilter = Boolean(search.trim()) || statusFilter !== "all";
     return hasFilter ? `显示 ${filteredJobs.length} 个` : `共 ${jobs.length} 个任务`;
@@ -130,6 +142,21 @@ export function SyncJobsPage() {
     } finally {
       setDeleting(false);
     }
+  };
+
+  const handleBatchDelete = async () => {
+    const ids = [...selection.selectedIds];
+    if (ids.length === 0) return;
+    setBatchDeleting(true);
+    const { ok, failed } = await runBatchDelete(ids, (id) =>
+      apiFetch(`/api/v1/ingestion/sync-jobs/${id}`, { method: "DELETE" }),
+    );
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    selection.clear();
+    await loadJobs();
+    if (failed === 0) toast.success(`已删除 ${ok} 个同步任务`);
+    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败`);
   };
 
   return (
@@ -173,6 +200,14 @@ export function SyncJobsPage() {
               onStatusFilterChange={setStatusFilter}
               resultLabel={resultLabel}
             />
+            <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+              <ListBatchDeleteBar
+                selectedCount={selection.selectedCount}
+                entityLabel="个任务"
+                onClear={selection.clear}
+                onDelete={() => setBatchDeleteOpen(true)}
+              />
+            </div>
             {filteredJobs.length === 0 ? (
               <div className="px-6 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">
                 {search.trim()
@@ -185,6 +220,11 @@ export function SyncJobsPage() {
                 runningId={runningId}
                 onRun={setRunTarget}
                 onDelete={setDeleteTarget}
+                selectedIds={selection.selectedIds}
+                onToggleSelect={selection.toggle}
+                onToggleSelectAll={selection.toggleAll}
+                allSelected={selection.allSelected}
+                someSelected={selection.someSelected}
               />
             )}
           </div>
@@ -251,6 +291,15 @@ export function SyncJobsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BatchDeleteDialog
+        open={batchDeleteOpen}
+        onOpenChange={setBatchDeleteOpen}
+        count={selection.selectedCount}
+        title="批量删除同步任务"
+        pending={batchDeleting}
+        onConfirm={() => void handleBatchDelete()}
+      />
     </AdminPageShell>
   );
 }

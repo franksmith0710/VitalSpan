@@ -2,6 +2,13 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
 import { Eye, LayoutGrid, LayoutList, Pencil, Plus, Share2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  BatchDeleteDialog,
+  ListBatchDeleteBar,
+  ListHeaderCheckbox,
+  ListRowCheckbox,
+} from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
   DashboardListCard,
@@ -34,6 +41,8 @@ import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { useListPagination } from "@/lib/list-pagination";
 import { canEditDashboards, sessionUserFromMe } from "@/lib/session";
+import { useListRowSelection } from "@/hooks/useListRowSelection";
+import { runBatchDelete } from "@/lib/runBatchDelete";
 import { useAuth } from "@/context/auth-context";
 
 type DashboardListResponse = {
@@ -107,6 +116,8 @@ export function DashboardListPage() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [deleteTarget, setDeleteTarget] = useState<DashboardListItem | null>(null);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchDeleting, setBatchDeleting] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const pagination = useListPagination(12);
 
@@ -147,6 +158,23 @@ export function DashboardListPage() {
   const items = listQuery.data?.items ?? [];
   const total = listQuery.data?.total ?? items.length;
   const sortedItems = useMemo(() => sortByRecent(items), [items]);
+  const rowIds = useMemo(() => sortedItems.map((item) => item.id), [sortedItems]);
+  const selection = useListRowSelection(rowIds);
+
+  const handleBatchDelete = async () => {
+    const ids = [...selection.selectedIds];
+    if (ids.length === 0) return;
+    setBatchDeleting(true);
+    const { ok, failed } = await runBatchDelete(ids, (id) =>
+      apiFetch(`/api/v1/dashboards/${id}`, { method: "DELETE" }),
+    );
+    setBatchDeleting(false);
+    setBatchDeleteOpen(false);
+    selection.clear();
+    await queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
+    if (failed === 0) toast.success(`已删除 ${ok} 个看板`);
+    else toast.warning(`已删除 ${ok} 个，${failed} 个删除失败`);
+  };
 
   const createButton = canEdit ? (
     <Button
@@ -177,6 +205,16 @@ export function DashboardListPage() {
       }
     >
       <ListPageSection>
+        {canEdit ? (
+          <ListPageBody className="border-b border-gray-100 py-3 dark:border-white/[0.06]">
+            <ListBatchDeleteBar
+              selectedCount={selection.selectedCount}
+              entityLabel="个看板"
+              onClear={selection.clear}
+              onDelete={() => setBatchDeleteOpen(true)}
+            />
+          </ListPageBody>
+        ) : null}
         {listQuery.isError ? (
           <ListPageBody>
             <PageErrorBanner
@@ -215,6 +253,10 @@ export function DashboardListPage() {
                       key={dashboard.id}
                       dashboard={dashboard}
                       canEdit={canEdit}
+                      selected={selection.isSelected(dashboard.id)}
+                      onToggleSelect={
+                        canEdit ? () => selection.toggle(dashboard.id) : undefined
+                      }
                       onDelete={canEdit ? () => setDeleteTarget(dashboard) : undefined}
                     />
                   ))}
@@ -231,7 +273,23 @@ export function DashboardListPage() {
           <DataTable
             loading={listQuery.isLoading}
             empty={!listQuery.isLoading && sortedItems.length === 0}
-            headers={["名称", "组件数", "更新时间", "操作"]}
+            headers={[
+              canEdit ? (
+                <ListHeaderCheckbox
+                  key="select-all"
+                  checked={selection.allSelected}
+                  indeterminate={selection.someSelected}
+                  disabled={sortedItems.length === 0}
+                  onCheckedChange={() => selection.toggleAll()}
+                />
+              ) : (
+                ""
+              ),
+              "名称",
+              "组件数",
+              "更新时间",
+              "操作",
+            ]}
             lastColumnAlign="right"
             emptyState={{
               icon: <DashboardListEmptyIcon />,
@@ -245,6 +303,16 @@ export function DashboardListPage() {
               const editPath = `/admin/dashboards/${row.id}/edit`;
 
               return [
+                canEdit ? (
+                  <ListRowCheckbox
+                    key={`${row.id}-select`}
+                    checked={selection.isSelected(row.id)}
+                    onCheckedChange={() => selection.toggle(row.id)}
+                    ariaLabel={`选择看板 ${row.name}`}
+                  />
+                ) : (
+                  ""
+                ),
                 <div key={`${row.id}-name`} className="min-w-0">
                   <Link
                     to={canEdit ? editPath : viewPath}
@@ -336,6 +404,18 @@ export function DashboardListPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {canEdit ? (
+        <BatchDeleteDialog
+          open={batchDeleteOpen}
+          onOpenChange={setBatchDeleteOpen}
+          count={selection.selectedCount}
+          title="批量删除看板"
+          description={`确定删除选中的 ${selection.selectedCount} 个看板？删除后无法恢复。`}
+          pending={batchDeleting}
+          onConfirm={() => void handleBatchDelete()}
+        />
+      ) : null}
 
       {canEdit ? (
         <DashboardQuickCreateDialog
