@@ -103,6 +103,23 @@ export function getBaseChartOptions(overrides?: ApexOptions): ApexOptions {
   ) as ApexOptions;
 }
 
+const apexDarkLabelStyle = { colors: "#98a2b3", fontSize: "12px" } as const; // @design-token-ok
+const apexDarkGridColor = "#344054"; // @design-token-ok
+
+/** 看板暗色主题下图表坐标轴/图例/tooltip 配色（与 echarts-theme 对齐） */
+export function getApexThemeOverrides(isDark: boolean): ApexOptions {
+  if (!isDark) return {};
+  return {
+    theme: { mode: "dark" },
+    chart: { foreColor: apexDarkLabelStyle.colors, background: "transparent" },
+    grid: { borderColor: apexDarkGridColor },
+    xaxis: { labels: { style: apexDarkLabelStyle } },
+    yaxis: { labels: { style: apexDarkLabelStyle } },
+    legend: { labels: { colors: "#d0d5dd" } }, // @design-token-ok
+    tooltip: { theme: "dark" },
+  };
+}
+
 export const barChartPlotOptions: NonNullable<ApexOptions["plotOptions"]> = {
   bar: {
     horizontal: false,

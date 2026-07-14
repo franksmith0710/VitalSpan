@@ -25,6 +25,11 @@ export function DashboardStyleSurface({
   if (styleConfig?.themeAccent) {
     (scopeStyle as Record<string, string>)["--dashboard-accent"] = styleConfig.themeAccent;
   }
+  if (styleConfig?.actionIconColor) {
+    (scopeStyle as Record<string, string>)["--dashboard-action-icon"] = styleConfig.actionIconColor;
+  } else if (styleConfig?.themeAccent) {
+    (scopeStyle as Record<string, string>)["--dashboard-action-icon"] = styleConfig.themeAccent;
+  }
 
   return (
     <div

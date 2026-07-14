@@ -71,7 +71,10 @@
 | EntityOverviewPage | `../pages/admin/entities/EntityOverviewPage.tsx` | M8 DASH-005 Admin 实体总览（类型 Tab + 物理表 + 下钻） |
 | SchemaBrowser | `datasources/SchemaBrowser.tsx` | 数据源详情三级 metadata 树 |
 | WidgetInspector | `dashboard/WidgetInspector.tsx` | 图表编辑双列：配置区 + 字段库（DE chart-edit 布局） |
-| ChartEditorColumn | `dashboard/ChartEditorColumn.tsx` | 图表配置列：Tab + 槽位 + 底栏「更新图表数据」 |
+| ChartEditorColumn | `dashboard/ChartEditorColumn.tsx` | 图表配置列：数据/样式/高级 Tab |
+| ChartStylePanel | `dashboard/ChartStylePanel.tsx` | DE 样式 Tab（配色/标题/图例/标签/背景/边框） |
+| DashboardContextInspector | `dashboard/DashboardContextInspector.tsx` | 无选中时看板级配置轨 |
+| chartDeStyle / chartValueFormat | `lib/chartDeStyle.ts` · `lib/chartValueFormat.ts` | 组件级 DE 样式与数值格式契约 |
 | DatasetFieldBank | `dashboard/DatasetFieldBank.tsx` | 数据集字段库（拖放/点击填入槽位） |
 | ChartFieldSlot | `dashboard/ChartFieldSlot.tsx` | 单字段槽位（虚线框 + 拖放） |
 | ChartDataSlots | `dashboard/ChartDataSlots.tsx` | 类别轴/值轴等语义槽位组 |
@@ -79,3 +82,19 @@
 | useInspectorColumns | `../hooks/useInspectorColumns.ts` | Inspector 字段探测（复用 `chartExecuteProbe`） |
 | chartExecuteProbe | `../lib/chartExecuteProbe.ts` | 图表 query execute 共享探测与字段建议 |
 | DashboardQuickCreateDialog | `dashboard/DashboardQuickCreateDialog.tsx` | 看板列表快速创建向导（数据源 + Dataset + 首图） |
+
+## 看板样式配置优先级（右栏 ↔ 画布）
+
+```
+看板 styleConfig（theme / widgetStyle / titleStyle / paletteId / numberFormat）
+  └─ 组件 widget.title / filterConfig / …
+       └─ 图表 nativeBody.deStyle / deDisplay / deFeatures（覆盖同类看板默认）
+```
+
+| 冲突项 | 规则 |
+|--------|------|
+| 配色 | `deStyle.paletteId` > 看板 `paletteId` |
+| 标题样式 | `deStyle.title` > 看板 `titleStyle`；显示开关仅 `deStyle.title.show` |
+| 查询条数 | `deDisplay.resultLimit` > 看板 `defaultQueryLimit` |
+| 数值格式 | `deStyle.label` 格式 > 看板 `numberFormat`（柱/线 tooltip/标签、表格数值列） |
+| 刷新 | 组件 `deDisplay.refreshMode` 轮询单图；看板 `refreshIntervalSec` 仅分享页整页 reload |

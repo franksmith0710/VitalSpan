@@ -94,7 +94,11 @@ class ChartViewConfig(BaseModel):
     table_name: str | None = Field(default=None, alias="table")
     config_id: uuid.UUID | None = Field(default=None, alias="configId")
     dataset_id: str | None = Field(default=None, alias="datasetId", max_length=64)
-    native_body: dict[str, Any] | None = Field(default=None, alias="nativeBody")
+    native_body: dict[str, Any] | None = Field(
+        default=None,
+        alias="nativeBody",
+        description="扩展载荷：deStyle（标题/备注/图例等）、deDisplay（刷新/行数）、deTableStyle（明细表）",
+    )
     index: str | None = None
     dimensions: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     metrics: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
@@ -192,7 +196,11 @@ class ChartViewConfigLayout(BaseModel):
     table_name: str | None = Field(default=None, alias="table")
     config_id: uuid.UUID | None = Field(default=None, alias="configId")
     dataset_id: str | None = Field(default=None, alias="datasetId", max_length=64)
-    native_body: dict[str, Any] | None = Field(default=None, alias="nativeBody")
+    native_body: dict[str, Any] | None = Field(
+        default=None,
+        alias="nativeBody",
+        description="扩展载荷：deStyle（标题/备注/图例等）、deDisplay（刷新/行数）、deTableStyle（明细表）",
+    )
     index: str | None = None
     dimensions: list[ChartFieldRef] = Field(default_factory=list, max_length=8)
     metrics: list[ChartFieldRef] = Field(default_factory=list, max_length=8)

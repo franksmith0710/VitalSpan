@@ -11,6 +11,7 @@ import { WidgetEditRailLayout } from "./WidgetEditRailLayout";
 type ChartEditRailProps = {
   widget: LayoutWidget;
   onChange: (chartConfig: ChartViewConfig) => void;
+  onTitleChange?: (title: string) => void;
   onDelete?: () => void;
   onOpenLinkage?: () => void;
   onDataRefresh?: () => void;
@@ -55,6 +56,7 @@ function ChartDatasetRail() {
 export function ChartEditRail({
   widget,
   onChange,
+  onTitleChange,
   onDelete,
   onOpenLinkage,
   onDataRefresh,
@@ -64,7 +66,7 @@ export function ChartEditRail({
   const title = widget.title || "图表";
 
   return (
-    <ChartInspectorProvider widget={widget} onChange={onChange}>
+    <ChartInspectorProvider widget={widget} onChange={onChange} onTitleChange={onTitleChange}>
       <WidgetEditRailLayout
         className={className}
         leftLabel={title}

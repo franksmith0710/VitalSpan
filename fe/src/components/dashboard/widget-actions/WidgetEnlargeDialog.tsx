@@ -111,6 +111,7 @@ export function WidgetEnlargeDialog({
             paletteId={styleConfig?.paletteId}
             paletteColors={styleConfig?.paletteColors}
             numberFormat={styleConfig?.numberFormat}
+            colorScheme={styleConfig?.colorScheme ?? "light"}
           />
         </div>
       </WidgetDialogShell>

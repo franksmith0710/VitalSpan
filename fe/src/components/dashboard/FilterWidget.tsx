@@ -11,9 +11,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { IconButton } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { FilterControl } from "./FilterWidgetControls";
+import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import type { FilterWidgetConfig, LayoutWidget, DashboardStyleConfig } from "./layoutUtils";
 import { mergeTitleStyle, mergeWidgetShellStyle } from "./dashboardStyleConfig";
@@ -34,7 +34,7 @@ type FilterWidgetProps = {
 export function FilterWidget({
   widget,
   mode,
-  shell: _shell = "grid",
+  shell = "grid",
   selected = false,
   value,
   onValueChange,
@@ -52,43 +52,47 @@ export function FilterWidget({
   });
   const controlHeight = dashboardStyle?.filterControlStyle?.height;
   const controlRadius = dashboardStyle?.filterControlStyle?.borderRadius;
+  const labelPosition = dashboardStyle?.filterChromeStyle?.titlePosition ?? "top";
+  const inShapeShell = shell === "shape";
+  const showGridChrome = !inShapeShell;
 
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white shadow-theme-xs transition-[border-color,box-shadow] dark:bg-white/[0.03]",
-        selected && "dashboard-widget-selected",
-        selected
-          ? "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40"
-          : "border-gray-200 dark:border-gray-800",
-        shellStyle.className,
+        "flex h-full min-h-0 flex-col",
+        showGridChrome && "overflow-hidden rounded-xl border bg-white shadow-theme-xs transition-[border-color,box-shadow] dark:bg-white/[0.03]",
+        showGridChrome && selected && "dashboard-widget-selected",
+        showGridChrome &&
+          selected &&
+          "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40",
+        showGridChrome && !selected && "border-gray-200 dark:border-gray-800",
+        showGridChrome && shellStyle.className,
       )}
-      style={shellStyle.style}
+      style={showGridChrome ? shellStyle.style : undefined}
     >
-      {mode === "edit" ? (
-        <div
-          className={cn(
-            "dashboard-drag-handle flex shrink-0 cursor-grab items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 active:cursor-grabbing dark:border-gray-800 dark:bg-white/[0.04]",
-            selected && "bg-gray-100/90 dark:bg-white/[0.06]",
-          )}
-          role="group"
-          aria-label="拖动以移动组件"
-          title="拖动以移动组件"
-        >
-          <GripVertical
-            className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600"
-            aria-hidden
-          />
+      {showGridChrome && mode === "edit" ? (
+        <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
+          <div
+            className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"
+            role="group"
+            aria-label="拖动以移动组件"
+            title="拖动以移动组件"
+          >
+            <GripVertical
+              className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600"
+              aria-hidden
+            />
+          </div>
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5 dark:text-gray-400">
             <FilterIcon className="size-3.5" aria-hidden />
           </span>
-          <Input
+          <WidgetInlineTitle
             value={widget.title}
-            onChange={(e) => onTitleChange?.(widget.id, e.target.value)}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="dashboard-no-drag h-7 min-w-0 flex-1 border-transparent bg-transparent px-1 text-theme-sm font-medium shadow-none focus-visible:border-gray-300 dark:focus-visible:border-gray-700"
-            style={titleStyle}
-            aria-label="筛选器标题"
+            editable={Boolean(onTitleChange)}
+            onChange={onTitleChange ? (next) => onTitleChange(widget.id, next) : undefined}
+            titleStyle={titleStyle}
+            ariaLabel="筛选器标题"
+            testId={`widget-inline-title-${widget.id}`}
           />
           {onDelete ? (
             <IconButton
@@ -106,7 +110,7 @@ export function FilterWidget({
             </IconButton>
           ) : null}
         </div>
-      ) : (
+      ) : showGridChrome && mode === "view" ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
             <FilterIcon className="size-3.5" aria-hidden />
@@ -119,7 +123,7 @@ export function FilterWidget({
           </h4>
           <span className="shrink-0 text-theme-xs text-gray-400">筛选器</span>
         </div>
-      )}
+      ) : null}
 
       <div
         role={mode === "edit" ? "button" : undefined}
@@ -160,6 +164,7 @@ export function FilterWidget({
             height: controlHeight ? `${controlHeight}px` : undefined,
             borderRadius: controlRadius ? `${controlRadius}px` : undefined,
           }}
+          labelPosition={labelPosition}
         />
       </div>
 

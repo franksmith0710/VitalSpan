@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { DashboardGrid } from "./DashboardGrid";
 import { DashboardWidget } from "./DashboardWidget";
 import {
@@ -6,8 +7,13 @@ import {
 } from "./dashboardFilterUtils";
 import { pixelWidgetToLayoutWidget, type DashboardWidgetShell } from "./dashboardCanvasMode";
 import { PixelCanvas } from "./pixelCanvas";
-import type { ScaleMode } from "./dashboardStyleConfig";
-import { resolvePixelGutter, resolveArtboardStyle } from "./dashboardStyleConfig";
+import {
+  pickWidgetDashboardStyle,
+  resolveArtboardStyle,
+  resolvePixelGutter,
+  widgetDashboardStyleFingerprint,
+  type ScaleMode,
+} from "./dashboardStyleConfig";
 import { DashboardStyleSurface } from "./DashboardStyleSurface";
 import type {
   DashboardLayout,
@@ -35,6 +41,10 @@ export function DashboardLayoutPreview({
   className,
 }: DashboardLayoutPreviewProps) {
   const styleConfig = layout.styleConfig ?? {};
+  const widgetDashboardStyle = useMemo(
+    () => pickWidgetDashboardStyle(styleConfig),
+    [widgetDashboardStyleFingerprint(styleConfig)],
+  );
   const widgets =
     layout.version === 1
       ? layout.widgets
@@ -73,7 +83,7 @@ export function DashboardLayoutPreview({
         }
         onFilterValueChange={onFilterValueChange}
         onTitleChange={() => {}}
-        dashboardStyle={styleConfig}
+        dashboardStyle={widgetDashboardStyle}
       />
     );
   };

@@ -12,6 +12,7 @@ type DashboardConfigSectionProps = {
   children?: ReactNode;
   defaultOpen?: boolean;
   disabled?: boolean;
+  compact?: boolean;
   action?: ReactNode;
   placeholder?: string;
   "data-testid"?: string;
@@ -23,6 +24,7 @@ export function DashboardConfigSection({
   children,
   defaultOpen = false,
   disabled = false,
+  compact = false,
   action,
   placeholder,
   "data-testid": testId,
@@ -42,7 +44,8 @@ export function DashboardConfigSection({
       <div className={cn("flex w-full items-stretch", headerBarClass)}>
         <CollapsibleTrigger
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left text-theme-xs font-medium text-gray-700 transition-colors",
+            "flex min-w-0 flex-1 items-center gap-1.5 text-left font-medium text-gray-700 transition-colors",
+            compact ? "px-2.5 py-1.5 text-[11px]" : "gap-2 px-3 py-2.5 text-theme-xs",
             "hover:bg-gray-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30",
             "dark:text-gray-300 dark:hover:bg-white/[0.05]",
             disabled && "cursor-default hover:bg-transparent dark:hover:bg-transparent",
@@ -50,7 +53,8 @@ export function DashboardConfigSection({
         >
           <ChevronRight
             className={cn(
-              "size-3.5 shrink-0 text-gray-400 transition-transform",
+              "shrink-0 text-gray-400 transition-transform",
+              compact ? "size-3" : "size-3.5",
               !disabled && "group-data-[state=open]:rotate-90",
             )}
             aria-hidden
@@ -64,7 +68,12 @@ export function DashboardConfigSection({
         ) : null}
       </div>
       {!disabled && children ? (
-        <CollapsibleContent className="bg-white px-3 py-3 dark:bg-transparent">
+        <CollapsibleContent
+          className={cn(
+            "bg-white dark:bg-transparent",
+            compact ? "px-2.5 py-2" : "px-3 py-3",
+          )}
+        >
           {children}
         </CollapsibleContent>
       ) : null}

@@ -1,0 +1,184 @@
+import type { CSSProperties } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { IconButton } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import { formatTableCellValue } from "@/lib/chartValueFormat";
+import { DEFAULT_TABLE_PAGE_SIZE } from "@/lib/chartDeTableStyle";
+
+type EmbeddedChartTableProps = {
+  columns: string[];
+  displayCols: string[];
+  rows: unknown[][];
+  page: number;
+  onPageChange: (page: number) => void;
+  panel?: boolean;
+  tableStyle?: ChartDeTableStyle;
+  valueFormat?: NumberFormatConfig;
+};
+
+function scrollbarStyle(color?: string): CSSProperties | undefined {
+  if (!color) return undefined;
+  return {
+    scrollbarColor: `${color} transparent`,
+  };
+}
+
+/**
+ * 看板内嵌表格：对标 DataEase 明细表样式与分页
+ */
+export function EmbeddedChartTable({
+  columns,
+  displayCols,
+  rows,
+  page,
+  onPageChange,
+  panel = false,
+  tableStyle = {},
+  valueFormat,
+}: EmbeddedChartTableProps) {
+  const pageSize = tableStyle.pageSize ?? DEFAULT_TABLE_PAGE_SIZE;
+  const paginationMode = tableStyle.paginationMode ?? "page";
+  const paginationVariant = tableStyle.paginationVariant ?? "compact";
+  const wordWrap = tableStyle.wordWrap ?? false;
+  const rowHover = tableStyle.rowHover !== false;
+  const opacity = tableStyle.opacity != null ? tableStyle.opacity / 100 : 1;
+  const borderColor = tableStyle.borderColor;
+
+  const usePagination = paginationMode === "page" && rows.length > pageSize;
+  const pageRows = usePagination
+    ? rows.slice((page - 1) * pageSize, page * pageSize)
+    : rows;
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const colPct = displayCols.length > 0 ? `${100 / displayCols.length}%` : "100%";
+  const cellClass = cn(
+    "px-2 py-1 text-theme-xs",
+    wordWrap ? "whitespace-normal break-words" : "truncate",
+  );
+
+  return (
+    <div
+      className={cn("flex min-h-0 w-full min-w-0 flex-col", panel ? undefined : "h-full")}
+      style={{
+        opacity,
+        ...(borderColor ? { border: `1px solid ${borderColor}`, borderRadius: 4 } : null),
+      }}
+    >
+      <div
+        className={cn(
+          "dashboard-scroll min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain",
+          panel && "overflow-x-only",
+        )}
+        style={scrollbarStyle(tableStyle.scrollbarColor)}
+      >
+        <table
+          className={cn(
+            "w-full table-fixed text-left",
+            tableStyle.columnWidthMode === "fixed" ? "min-w-full" : "min-w-0",
+            panel ? "min-w-[320px]" : "w-full",
+          )}
+        >
+          <colgroup>
+            {displayCols.map((c) => (
+              <col key={c} style={{ width: colPct }} />
+            ))}
+          </colgroup>
+          <thead className="sticky top-0 z-[1] bg-gray-50 dark:bg-gray-900">
+            <tr>
+              {displayCols.map((c) => (
+                <th
+                  key={c}
+                  title={c}
+                  className={cn(cellClass, "font-medium text-gray-500")}
+                >
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {pageRows.map((row, i) => (
+              <tr
+                key={i}
+                className={cn(
+                  "border-t border-gray-100 dark:border-gray-800",
+                  rowHover && "hover:bg-gray-50/80 dark:hover:bg-white/[0.04]",
+                )}
+              >
+                {displayCols.map((c) => {
+                  const idx = columns.indexOf(c);
+                  const raw = idx >= 0 ? row[idx] : "";
+                  const text = formatTableCellValue(raw, valueFormat);
+                  return (
+                    <td key={c} title={text} className={cn(cellClass, "text-gray-700 dark:text-gray-300")}>
+                      {text}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {usePagination ? (
+        paginationVariant === "compact" ? (
+          <div className="flex shrink-0 items-center justify-between gap-1 border-t border-gray-100 px-1.5 py-1 dark:border-gray-800">
+            <IconButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="size-7"
+              disabled={page <= 1}
+              aria-label="上一页"
+              onClick={() => onPageChange(page - 1)}
+            >
+              <ChevronLeft className="size-3.5" />
+            </IconButton>
+            <span className="text-[10px] tabular-nums text-gray-500">
+              {page}/{totalPages} · {pageSize}条/页
+            </span>
+            <IconButton
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="size-7"
+              disabled={page >= totalPages}
+              aria-label="下一页"
+              onClick={() => onPageChange(page + 1)}
+            >
+              <ChevronRight className="size-3.5" />
+            </IconButton>
+          </div>
+        ) : (
+          <div className="mt-1 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-gray-100 px-1 py-1 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-[11px]"
+              disabled={page <= 1}
+              onClick={() => onPageChange(page - 1)}
+            >
+              上一页
+            </Button>
+            <span className="text-[11px] text-gray-500">
+              第 {page}/{totalPages} 页，共 {rows.length} 条
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-[11px]"
+              disabled={page >= totalPages}
+              onClick={() => onPageChange(page + 1)}
+            >
+              下一页
+            </Button>
+          </div>
+        )
+      ) : null}
+    </div>
+  );
+}

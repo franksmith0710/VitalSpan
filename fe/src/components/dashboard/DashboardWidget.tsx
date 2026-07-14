@@ -1,4 +1,4 @@
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { GripVertical, Trash2 } from "lucide-react";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { IconButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { FilterWidget } from "./FilterWidget";
@@ -29,11 +28,34 @@ import type {
   TextWidgetConfig,
   DashboardStyleConfig,
 } from "./layoutUtils";
-import { mergeTitleStyle, mergeWidgetShellStyle, resolveQueryLimit } from "./dashboardStyleConfig";
+import { mergeTitleStyle, mergeWidgetShellStyle } from "./dashboardStyleConfig";
+import { parseDeRefreshIntervalSec, readChartDeDisplay, resolveChartQueryLimit } from "@/lib/chartDeDisplay";
+import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible } from "@/lib/chartDeStyle";
 import { isWidgetConfigReady } from "./createLayoutWidget";
-import { pixelDragRailHeightPx, dwCaption } from "./dashboardWidgetTypography";
+import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption } from "./dashboardWidgetTypography";
 import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
+import { WidgetInlineTitle } from "./WidgetInlineTitle";
+
+function useWidgetAutoRefreshExecuteKey(
+  chartConfig: ChartViewConfig | undefined,
+  baseKey: string | undefined,
+): string | undefined {
+  const refreshSec = useMemo(() => {
+    if (!chartConfig) return null;
+    return parseDeRefreshIntervalSec(readChartDeDisplay(chartConfig).refreshMode);
+  }, [chartConfig]);
+
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!refreshSec || refreshSec < 5) return undefined;
+    const timer = window.setInterval(() => setTick((n) => n + 1), refreshSec * 1000);
+    return () => window.clearInterval(timer);
+  }, [refreshSec]);
+
+  if (tick === 0) return baseKey;
+  return `${baseKey ?? "chart"}:refresh:${tick}`;
+}
 
 type DashboardWidgetProps = {
   widget: LayoutWidget;
@@ -109,6 +131,8 @@ export function DashboardWidget({
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const canvasScale = usePixelCanvasScale();
+  const chartCfg = widget.type === "chart" ? widget.chartConfig : undefined;
+  const widgetExecuteKey = useWidgetAutoRefreshExecuteKey(chartCfg, executeKey);
 
   if (widget.type === "filter" && widget.filterConfig) {
     return (
@@ -147,6 +171,7 @@ export function DashboardWidget({
       <MediaWidget
         widget={widget as LayoutWidget & { mediaConfig: MediaWidgetConfig }}
         mode={mode}
+        shell={shell}
         selected={selected}
         onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
         onTitleChange={onTitleChange}
@@ -187,12 +212,22 @@ export function DashboardWidget({
       ? `${Math.round(pixelSize.width)}×${Math.round(pixelSize.height)}`
       : `${sizeW}×${sizeH}`;
   const shapeContentChromePx =
-    mode === "edit" && selected && inShapeShell
+    inShapeShell && mode === "edit" && selected
       ? pixelDragRailHeightPx(canvasScale)
-      : 0;
+      : inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig)
+        ? pixelViewTitleHeightPx(canvasScale)
+        : 0;
   const shellStyle = mergeWidgetShellStyle(dashboardStyle?.widgetStyle);
-  const titleStyle = mergeTitleStyle(dashboardStyle?.titleStyle);
-  const queryLimit = resolveQueryLimit(dashboardStyle ?? {});
+  const chartTitleVisible =
+    inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig);
+  const titleStyle =
+    widget.chartConfig
+      ? mergeChartTitleStyle(dashboardStyle?.titleStyle, widget.chartConfig)
+      : mergeTitleStyle(dashboardStyle?.titleStyle);
+  const queryLimit = widget.chartConfig
+    ? resolveChartQueryLimit(widget.chartConfig, dashboardStyle ?? {})
+    : 100;
+  const chartRemark = widget.chartConfig ? readChartRemark(widget.chartConfig) : { show: false, text: "" };
 
   const chartBody =
     mode === "edit" && !configReady ? (
@@ -206,11 +241,12 @@ export function DashboardWidget({
         config={widget.chartConfig}
         title={widget.title}
         filterParameters={filterParameters}
-        executeKey={executeKey}
+        executeKey={widgetExecuteKey}
         queryLimit={queryLimit}
         paletteId={dashboardStyle?.paletteId}
         paletteColors={dashboardStyle?.paletteColors}
         numberFormat={dashboardStyle?.numberFormat}
+        colorScheme={dashboardStyle?.colorScheme ?? "light"}
         suspendLiveResize={suspendLiveResize}
       />
     ) : null;
@@ -286,29 +322,27 @@ export function DashboardWidget({
       style={shellStyle.style}
     >
       {mode === "edit" ? (
-        <div
-          className={cn(
-            "dashboard-drag-handle flex shrink-0 cursor-grab items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 active:cursor-grabbing dark:border-gray-800 dark:bg-white/[0.04]",
-            selected && "bg-gray-100/90 dark:bg-white/[0.06]",
-          )}
-          role="group"
-          aria-label="拖动以移动组件"
-          title="拖动以移动组件"
-        >
-          <GripVertical
-            className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600"
-            aria-hidden
-          />
+        <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
+          <div
+            className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"
+            role="group"
+            aria-label="拖动以移动组件"
+            title="拖动以移动组件"
+          >
+            <GripVertical
+              className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600"
+              aria-hidden
+            />
+          </div>
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5 dark:text-gray-400">
             <Icon className="size-3.5" aria-hidden />
           </span>
-          <Input
+          <WidgetInlineTitle
             value={widget.title}
-            onChange={(e) => onTitleChange(widget.id, e.target.value)}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="dashboard-no-drag h-7 min-w-0 flex-1 border-transparent bg-transparent px-1 text-theme-sm font-medium shadow-none focus-visible:border-gray-300 dark:focus-visible:border-gray-700"
-            style={titleStyle}
-            aria-label="组件标题"
+            editable
+            onChange={(next) => onTitleChange(widget.id, next)}
+            titleStyle={titleStyle}
+            testId={`widget-inline-title-${widget.id}`}
           />
           <span className="dashboard-no-drag hidden shrink-0 text-theme-xs tabular-nums text-gray-400 sm:inline">
             {sizeLabel}
@@ -329,7 +363,7 @@ export function DashboardWidget({
             </IconButton>
           ) : null}
         </div>
-      ) : (
+      ) : readChartTitleVisible(widget.chartConfig) ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
             <Icon className="size-3.5" aria-hidden />
@@ -342,7 +376,15 @@ export function DashboardWidget({
           </h4>
           <span className="shrink-0 text-theme-xs text-gray-400">{typeLabel}</span>
         </div>
-      )}
+      ) : null}
+      {chartRemark.show ? (
+        <p
+          className="shrink-0 border-b border-gray-100 px-3 py-1.5 text-[11px] leading-snug text-gray-500 dark:border-gray-800 dark:text-gray-400"
+          data-testid={`grid-chart-remark-${widget.id}`}
+        >
+          {chartRemark.text}
+        </p>
+      ) : null}
 
       <div
         role={mode === "edit" ? "button" : undefined}

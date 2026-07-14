@@ -2,14 +2,17 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type PointerEvent,
   type ReactNode,
 } from "react";
-import { GripVertical } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle, resolveWidgetShellStyle } from "@/lib/chartDeStyle";
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
+import type { DashboardStyleConfig } from "../dashboardStyleConfig";
+import { mergeTitleStyle } from "../dashboardStyleConfig";
 import {
   applyPixelInteraction,
   RESIZE_CURSORS,
@@ -23,7 +26,9 @@ import {
 } from "./geometry";
 import { computeMarkLineSnap, markLineThreshold, type MarkLineGuide } from "./pixelMarkLine";
 import { PixelShapeActionRail, type PixelWidgetActions } from "./PixelShapeActionRail";
+import { WidgetShapeChrome } from "./WidgetShapeChrome";
 import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
+import { PixelShapePlayerProvider } from "./pixelShapePlayerContext";
 import { isResizeInteraction } from "./pixelShapePlayer";
 import { dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
@@ -47,12 +52,12 @@ type PixelShapeProps = {
   onPreview?: (widget: PixelLayoutWidget) => void;
   onCommit?: (widget: PixelLayoutWidget) => void;
   onCancel?: (widgetId: string) => void;
-  onInteractionChange?: (widgetId: string | null) => void;
   onMarkGuidesChange?: (guides: MarkLineGuide[] | null) => void;
   viewport?: PixelRect;
   snapTargets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   otherWidgets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   widgetActions?: PixelWidgetActions;
+  styleConfig?: DashboardStyleConfig;
 };
 
 const HANDLE_POSITION: Record<ResizeDirection, string> = {
@@ -106,6 +111,28 @@ function boundaryHint(
   return null;
 }
 
+function resolveShapeTitleState(
+  widget: PixelLayoutWidget,
+  styleConfig?: DashboardStyleConfig,
+): {
+  showTitle: boolean;
+  titleStyle: CSSProperties;
+  remark: { show: boolean; text: string };
+} {
+  if (widget.type === "chart") {
+    return {
+      showTitle: readChartTitleVisible(widget.chartConfig),
+      titleStyle: mergeChartTitleStyle(styleConfig?.titleStyle, widget.chartConfig),
+      remark: readChartRemark(widget.chartConfig),
+    };
+  }
+  return {
+    showTitle: true,
+    titleStyle: mergeTitleStyle(styleConfig?.titleStyle),
+    remark: { show: false, text: "" },
+  };
+}
+
 export function PixelShape({
   widget,
   canvas,
@@ -117,26 +144,49 @@ export function PixelShape({
   onPreview,
   onCommit,
   onCancel,
-  onInteractionChange,
   onMarkGuidesChange,
   viewport,
   snapTargets,
   otherWidgets,
   widgetActions,
+  styleConfig,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
+  const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig);
+  const onTitleChange = widgetActions?.onTitleChange;
+  const shell =
+    widget.type === "chart" && widget.chartConfig
+      ? resolveChartContentShellStyle(styleConfig?.widgetStyle, widget.chartConfig)
+      : { outer: resolveWidgetShellStyle(styleConfig?.widgetStyle), inner: {} as CSSProperties };
   const activeRef = useRef<ActiveInteraction | null>(null);
+  const outerRef = useRef<HTMLDivElement>(null);
   const displayRef = useRef(widgetRect(widget));
   const markGuideFrameRef = useRef<number | null>(null);
+  const moveFrameRef = useRef<number | null>(null);
+  const pendingMoveRef = useRef<{
+    rect: PixelRect;
+    event: PointerEvent;
+    active: ActiveInteraction;
+  } | null>(null);
   const [display, setDisplay] = useState(displayRef.current);
   const [hint, setHint] = useState<string | null>(null);
   const [isPlayer, setIsPlayer] = useState(false);
+
+  const syncOuterStyle = (next: PixelRect) => {
+    const el = outerRef.current;
+    if (!el) return;
+    el.style.left = `${next.x}px`;
+    el.style.top = `${next.y}px`;
+    el.style.width = `${next.width}px`;
+    el.style.height = `${next.height}px`;
+  };
 
   useEffect(() => {
     if (activeRef.current) return;
     const next = widgetRect(widget);
     displayRef.current = next;
     setDisplay(next);
+    syncOuterStyle(next);
   }, [widget]);
 
   useEffect(
@@ -144,13 +194,19 @@ export function PixelShape({
       if (markGuideFrameRef.current !== null) {
         cancelAnimationFrame(markGuideFrameRef.current);
       }
+      if (moveFrameRef.current !== null) {
+        cancelAnimationFrame(moveFrameRef.current);
+      }
     },
     [],
   );
 
-  const applyDisplay = (next: PixelRect) => {
+  const applyDisplay = (next: PixelRect, commitReact = false) => {
     displayRef.current = next;
-    setDisplay(next);
+    syncOuterStyle(next);
+    if (commitReact || !activeRef.current) {
+      setDisplay(next);
+    }
     if (activeRef.current) {
       dispatchPixelShapeLiveResize();
     }
@@ -209,6 +265,19 @@ export function PixelShape({
     }).rect;
   };
 
+  const flushPointerFrame = () => {
+    moveFrameRef.current = null;
+    const pending = pendingMoveRef.current;
+    if (!pending) return;
+    pendingMoveRef.current = null;
+    const { rect: next, event, active } = pending;
+    applyDisplay(next);
+    scheduleMarkGuides(next, event, active);
+    if (active.kind === "move") {
+      onPreview?.(withRect(widget, next));
+    }
+  };
+
   const handlePointerMove = (event: PointerEvent) => {
     const active = activeRef.current;
     if (!active || active.pointerId !== event.pointerId) return;
@@ -217,25 +286,27 @@ export function PixelShape({
       if (isResizeInteraction(active.kind)) return;
     }
     const next = rectForPointer(event, active);
-    applyDisplay(next);
-    scheduleMarkGuides(next, event, active);
-    if (active.kind === "move") {
-      onPreview?.(withRect(widget, next));
-    }
+    pendingMoveRef.current = { rect: next, event, active };
+    if (moveFrameRef.current !== null) return;
+    moveFrameRef.current = requestAnimationFrame(flushPointerFrame);
   };
 
   const finish = (event: PointerEvent, commit: boolean) => {
     const active = activeRef.current;
     if (!active || active.pointerId !== event.pointerId) return;
+    if (moveFrameRef.current !== null) {
+      cancelAnimationFrame(moveFrameRef.current);
+      moveFrameRef.current = null;
+    }
+    pendingMoveRef.current = null;
     const finalRect = commit
       ? rectForPointer(event, active)
       : widgetRect(widget);
     activeRef.current = null;
     setIsPlayer(false);
-    onInteractionChange?.(null);
     setHint(null);
     onMarkGuidesChange?.(null);
-    applyDisplay(finalRect);
+    applyDisplay(finalRect, true);
     if (commit) onCommit?.(withRect(widget, finalRect));
     else onCancel?.(widget.id);
   };
@@ -258,7 +329,6 @@ export function PixelShape({
       skipFirstMove: true,
     };
     setIsPlayer(true);
-    onInteractionChange?.(widget.id);
     bindDocumentDrag(pointerId, {
       onMove: handlePointerMove,
       onEnd: (endEvent, commit) => finish(endEvent, commit),
@@ -277,26 +347,33 @@ export function PixelShape({
     const next = applyPixelInteraction(displayRef.current, delta, kind, canvas, {
       allowBottomGrowth: true,
     });
-    applyDisplay(next);
+    applyDisplay(next, true);
     onCommit?.(withRect(widget, next));
   };
 
+  const liveRect = isPlayer ? displayRef.current : display;
+
   return (
     <div
+      ref={outerRef}
+      id={`shape-id-${widget.id}`}
       data-testid={`pixel-shape-${widget.id}`}
+      data-component-id={widget.id}
       data-pixel-is-player={isPlayer ? "" : undefined}
       className={cn(
-        "pixel-shape-outer absolute border touch-none select-none",
+        "shape pixel-shape-outer absolute flex touch-none select-none flex-col border p-[5px]",
         mode === "edit" && selected
-          ? "pixel-shape-selected z-[1] border-brand-500"
+          ? "pixel-shape-selected z-[1]"
           : "border-gray-200/90 dark:border-gray-700/80",
+        shell.outer.className,
       )}
       style={{
-        left: display.x,
-        top: display.y,
-        width: display.width,
-        height: display.height,
+        left: liveRect.x,
+        top: liveRect.y,
+        width: liveRect.width,
+        height: liveRect.height,
         zIndex: pixelShapeZIndex(widget.order, mode === "edit" && selected),
+        ...shell.outer.style,
       }}
     >
       {hint ? (
@@ -304,19 +381,18 @@ export function PixelShape({
           {hint}
         </p>
       ) : null}
-      {mode === "edit" && selected ? (
-        <div
-          data-testid={`pixel-drag-rail-${widget.id}`}
-          className="pixel-shape-drag-rail absolute inset-x-0 top-0 z-20 flex cursor-grab touch-none select-none items-center gap-1.5 border-b border-brand-200/80 bg-brand-50/95 px-2.5 font-medium text-brand-700 active:cursor-grabbing dark:border-brand-500/30 dark:bg-brand-500/15 dark:text-brand-300"
-          onPointerDown={(event) => startInteraction(event, "move")}
-          onKeyDown={(event) => handleKeyboardInteraction(event, "move")}
-          role="group"
-          aria-label="拖动组件"
-        >
-          <GripVertical className="size-4 shrink-0 opacity-70" aria-hidden />
-          <span className="min-w-0 flex-1 truncate">{widget.title}</span>
-        </div>
-      ) : null}
+      <WidgetShapeChrome
+        title={widget.title}
+        titleStyle={titleStyle}
+        showTitle={showTitle}
+        remark={remark}
+        mode={mode}
+        selected={Boolean(mode === "edit" && selected)}
+        widgetId={widget.id}
+        onTitleChange={onTitleChange}
+        onDragPointerDown={(event) => startInteraction(event, "move")}
+        onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
+      />
       {mode === "edit" && selected && widgetActions && viewport ? (
         <PixelShapeActionRail
           widget={widget}
@@ -327,18 +403,18 @@ export function PixelShape({
         />
       ) : null}
       <PixelShapeInteractionProvider value={startInteraction}>
-        <div
-          className={cn(
-            "pixel-shape-inner dashboard-widget-surface h-full min-h-0 overflow-hidden bg-white dark:bg-gray-900",
-            mode === "edit" && selected && "pixel-shape-inner--with-rail",
-          )}
-          data-pixel-no-drag
-          onPointerDown={(event) => {
-            if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
-          }}
-        >
-          {children}
-        </div>
+        <PixelShapePlayerProvider playing={isPlayer}>
+          <div
+            className="pixel-shape-inner dashboard-widget-surface relative min-h-0 flex-1 overflow-hidden"
+            style={shell.inner}
+            data-pixel-no-drag
+            onPointerDown={(event) => {
+              if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
+            }}
+          >
+            {children}
+          </div>
+        </PixelShapePlayerProvider>
       </PixelShapeInteractionProvider>
 
       {mode === "edit" && selected

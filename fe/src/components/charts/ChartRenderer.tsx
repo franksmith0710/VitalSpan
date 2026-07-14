@@ -9,17 +9,29 @@ import {
   isKpiType,
   type ChartViewConfig,
 } from "@/lib/chartViewConfig";
-import { createBarChartOptions, createLineChartOptions, resolveChartColors } from "@/lib/chart-theme";
+import {
+  createBarChartOptions,
+  createLineChartOptions,
+  getApexThemeOverrides,
+  resolveChartColors,
+} from "@/lib/chart-theme";
+import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
+import { readChartDeStyle, readChartShowLabel, readChartDataZoom } from "@/lib/chartDeStyle";
+import { apexValueFormatter, resolveChartValueFormat } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdvancedEchartsChart } from "./adapters/AdvancedEchartsChart";
+import { EmbeddedChartTable } from "./adapters/EmbeddedChartTable";
 import { KpiCard } from "./adapters/KpiCard";
 import type { RenderSpec } from "./adapters/renderFromSpec";
 import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
 import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
+import { readChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { useElementSize } from "@/hooks/useElementSize";
+import { useDashboardColorScheme } from "@/hooks/useDashboardColorScheme";
+import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
 import { estimateWidgetBodyHeight } from "@/components/dashboard/gridLayoutAdapter";
 import {
   dwState,
@@ -46,11 +58,11 @@ type ChartRendererProps = {
   paletteId?: string;
   paletteColors?: string[];
   numberFormat?: NumberFormatConfig;
+  /** 看板 colorScheme；图表主题与 Admin 壳层解耦 */
+  colorScheme?: ColorScheme;
   /** DataEase isPlayer：交互中冻结 React 尺寸上报，由 DOM 百分比 + 图表 rAF resize 跟手 */
   suspendLiveResize?: boolean;
 };
-
-const PAGE_SIZE = 50;
 
 function embeddedChartSurface(children: ReactNode) {
   return (
@@ -100,12 +112,17 @@ export const ChartRenderer = memo(function ChartRenderer({
   paletteId,
   paletteColors,
   numberFormat,
-  suspendLiveResize = false,
+  colorScheme = "light",
+  suspendLiveResize: suspendLiveResizeProp = false,
 }: ChartRendererProps) {
+  const isShapePlaying = usePixelShapePlayer();
+  const suspendLiveResize = suspendLiveResizeProp || isShapePlaying;
   const { ref: bodyRef, size: bodySize } = useElementSize<HTMLDivElement>({
     enabled: embedded,
     paused: suspendLiveResize,
   });
+  const resolvedScheme = useDashboardColorScheme(bodyRef, colorScheme);
+  const isDark = resolvedScheme === "dark";
   const fillHeight = useMemo(() => {
     if (!embedded) return Math.max(180, bodySize.height || 180);
     return embeddedBodyHeight(bodySize, pixelSize, contentChromePx, gridSpan);
@@ -158,9 +175,20 @@ export const ChartRenderer = memo(function ChartRenderer({
     () => (!loading && !error ? buildChartRenderModel(localConfig, columns, rows) : null),
     [localConfig, columns, rows, loading, error],
   );
+  const deStyle = useMemo(() => readChartDeStyle(localConfig), [localConfig]);
   const chartColors = useMemo(
-    () => resolveChartColors(paletteId, paletteColors),
-    [paletteId, paletteColors],
+    () =>
+      deStyle.paletteId
+        ? resolveChartColors(deStyle.paletteId)
+        : resolveChartColors(paletteId, paletteColors),
+    [deStyle.paletteId, paletteId, paletteColors],
+  );
+  const showChartLegend = deStyle.legend?.show !== false;
+  const showDataLabels = readChartShowLabel(localConfig);
+  const dataZoomEnabled = readChartDataZoom(localConfig);
+  const valueFormat = useMemo(
+    () => resolveChartValueFormat(deStyle.label, numberFormat),
+    [deStyle.label, numberFormat],
   );
 
   const renderBody = () => {
@@ -191,9 +219,15 @@ export const ChartRenderer = memo(function ChartRenderer({
           rows={rows as unknown[][]}
           columns={columns}
           ariaLabel={title}
+          isDark={isDark}
           fill={embedded}
           height={embedded ? undefined : chartSize.height}
           width={embedded ? undefined : chartSize.width}
+          deStyle={deStyle}
+          dataZoom={dataZoomEnabled}
+          chartColors={chartColors}
+          showLabel={showDataLabels}
+          valueFormat={valueFormat}
         />,
       );
     }
@@ -216,9 +250,15 @@ export const ChartRenderer = memo(function ChartRenderer({
           rows={rows as unknown[][]}
           columns={columns}
           ariaLabel={title}
+          isDark={isDark}
           fill={embedded}
           height={embedded ? undefined : chartSize.height}
           width={embedded ? undefined : chartSize.width}
+          deStyle={deStyle}
+          dataZoom={dataZoomEnabled}
+          chartColors={chartColors}
+          showLabel={showDataLabels}
+          valueFormat={valueFormat}
         />,
       );
     }
@@ -235,74 +275,18 @@ export const ChartRenderer = memo(function ChartRenderer({
           : <p className="text-theme-sm text-gray-500">{renderModel.message}</p>;
       }
       const cols = renderModel.kind === "table" ? renderModel.displayCols : columns;
-      const pageRows =
-        rows.length > PAGE_SIZE ? rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : rows;
-      const totalPages = Math.ceil(rows.length / PAGE_SIZE);
+      const tableStyle = readChartDeTableStyle(localConfig);
 
       return wrapEmbedded(
-        <div className={embedded ? "flex h-full min-h-0 w-full flex-col" : undefined}>
-          <div
-            className={
-              embedded
-                ? "dashboard-scroll min-h-0 flex-1 overflow-auto overscroll-contain"
-                : "dashboard-scroll overflow-x-only"
-            }
-          >
-            <table className="w-full min-w-[320px] text-left text-theme-sm">
-              <thead className="sticky top-0 z-[1] bg-gray-50 dark:bg-gray-900">
-                <tr>
-                  {cols.map((c) => (
-                    <th key={c} className="px-3 py-2 text-theme-xs font-medium text-gray-500">
-                      {c}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {pageRows.map((row, i) => (
-                  <tr
-                    key={i}
-                    className="border-t border-gray-100 hover:bg-gray-50/50 dark:border-gray-800"
-                  >
-                    {cols.map((c) => {
-                      const idx = columns.indexOf(c);
-                      return (
-                        <td key={c} className="px-3 py-2 text-gray-700 dark:text-gray-300">
-                          {idx >= 0 ? String(row[idx] ?? "") : ""}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {rows.length > PAGE_SIZE ? (
-            <div className="mt-3 flex shrink-0 flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                上一页
-              </Button>
-              <span className="text-theme-xs text-gray-500">
-                第 {page}/{totalPages} 页，共 {rows.length} 条
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                下一页
-              </Button>
-            </div>
-          ) : null}
-        </div>,
+        <EmbeddedChartTable
+          columns={columns}
+          displayCols={cols}
+          rows={rows as unknown[][]}
+          page={page}
+          onPageChange={setPage}
+          tableStyle={tableStyle}
+          valueFormat={valueFormat}
+        />,
       );
     }
 
@@ -340,16 +324,48 @@ export const ChartRenderer = memo(function ChartRenderer({
       ...(chartType === "bar" && localConfig.styleVariant === "stacked"
         ? { stacked: true }
         : {}),
+      ...(dataZoomEnabled
+        ? {
+            zoom: { enabled: true, type: "x", autoScaleYaxis: true },
+            toolbar: { show: true, tools: { download: false, selection: false } },
+          }
+        : {}),
     };
+    const apexTheme = getApexThemeOverrides(isDark);
     const apexOverrides: ApexOptions = {
+      ...apexTheme,
       colors: chartColors,
-      chart: apexChart,
+      chart: { ...(apexTheme.chart ?? {}), ...apexChart },
+      legend: {
+        show: showChartLegend && !compactEmbedded,
+        position: deStyle.legend?.position ?? "bottom",
+        fontSize: deStyle.legend?.fontSize ? `${deStyle.legend.fontSize}px` : "12px",
+        ...(apexTheme.legend ?? {}),
+      },
+      dataLabels: {
+        enabled: showDataLabels && !compactEmbedded,
+        formatter: apexValueFormatter(valueFormat),
+        style: {
+          fontSize: deStyle.label?.fontSize ? `${deStyle.label.fontSize}px` : "12px",
+        },
+      },
+      tooltip: {
+        ...(apexTheme.tooltip ?? {}),
+        y: { formatter: apexValueFormatter(valueFormat) },
+      },
+      yaxis: {
+        labels: {
+          ...(apexTheme.yaxis as { labels?: ApexOptions["yaxis"] } | undefined)?.labels,
+          formatter: apexValueFormatter(valueFormat),
+        },
+      },
       ...(compactEmbedded
         ? { legend: { show: false }, markers: { size: 3, strokeWidth: 0 } }
         : {}),
       xaxis: {
         categories,
         labels: {
+          ...(apexTheme.xaxis?.labels ?? {}),
           rotate: compactEmbedded && categories.length > 4 ? -35 : 0,
           hideOverlappingLabels: true,
           trim: true,
@@ -364,7 +380,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     return wrapEmbedded(
       <div className={embedded ? "h-full min-h-0 w-full overflow-hidden" : "h-full min-h-0 w-full min-w-0 overflow-hidden"}>
         <Chart
-          key={`${chartType}-${series.map((s) => s.name).join(",")}-${series[0]?.data.length ?? 0}-${embedded ? "embedded" : "panel"}`}
+          key={`${chartType}-${isDark ? "dark" : "light"}-${series.map((s) => s.name).join(",")}-${series[0]?.data.length ?? 0}-${embedded ? "embedded" : "panel"}`}
           options={options}
           series={series}
           type={chartType}

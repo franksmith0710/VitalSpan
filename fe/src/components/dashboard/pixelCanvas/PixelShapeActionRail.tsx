@@ -34,6 +34,7 @@ export type PixelWidgetActions = {
   onDelete?: (widgetId: string) => void;
   onEnlarge?: (widgetId: string) => void;
   onViewData?: (widgetId: string) => void;
+  onTitleChange?: (widgetId: string, title: string) => void;
 };
 
 type PixelShapeActionRailProps = {

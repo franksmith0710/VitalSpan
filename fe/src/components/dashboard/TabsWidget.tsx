@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { GripVertical, PanelsTopLeft, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
 import { getTabChildWidgets } from "./layoutUtils";
 
@@ -48,24 +48,23 @@ export function TabsWidget({
       )}
     >
       {mode === "edit" ? (
-        <div
-          className={cn(
-            "dashboard-drag-handle flex shrink-0 cursor-grab items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 active:cursor-grabbing dark:border-gray-800 dark:bg-white/[0.04]",
-            selected && "bg-gray-100/90 dark:bg-white/[0.06]",
-          )}
-          role="group"
-          aria-label="拖动以移动组件"
-        >
-          <GripVertical className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden />
+        <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
+          <div
+            className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"
+            role="group"
+            aria-label="拖动以移动组件"
+          >
+            <GripVertical className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden />
+          </div>
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5">
             <PanelsTopLeft className="size-3.5" aria-hidden />
           </span>
-          <Input
+          <WidgetInlineTitle
             value={widget.title}
-            onChange={(e) => onTitleChange?.(widget.id, e.target.value)}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="dashboard-no-drag h-7 min-w-0 flex-1 border-transparent bg-transparent px-1 text-theme-sm font-medium shadow-none"
-            aria-label="Tab 标题"
+            editable={Boolean(onTitleChange)}
+            onChange={onTitleChange ? (next) => onTitleChange(widget.id, next) : undefined}
+            ariaLabel="Tab 标题"
+            testId={`widget-inline-title-${widget.id}`}
           />
           {onDelete ? (
             <IconButton

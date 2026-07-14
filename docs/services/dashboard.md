@@ -91,3 +91,4 @@
 - Alembic `0013_dashboards`：`dashboards` 表
 - API：`backend/app/api/v1/dashboards.py`
 - FE：`fe/src/pages/admin/dashboard/`、`fe/src/components/dashboard/`
+- **组件标题（DASH-008-06）**：`LayoutWidget.title` 布局持久化；图表样式扩展 `chartConfig.nativeBody.deStyle.title|remark`（FE `chartDeStyle.ts` · 顶栏 `WidgetShapeChrome`）；设计见 `docs/superpowers/specs/2026-07-14-dashboard-widget-title-chrome-de.md`

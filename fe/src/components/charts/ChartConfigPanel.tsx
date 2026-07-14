@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TimeRangeConfig } from "@/components/charts/TimeRangeConfig";
+import { cn } from "@/lib/utils";
 
 type Props = {
   config: ChartViewConfig;
@@ -48,6 +49,7 @@ function FieldSelect({
   placeholder,
   onChange,
   disabled,
+  compact,
   "aria-label": ariaLabel,
 }: {
   value: string;
@@ -55,11 +57,15 @@ function FieldSelect({
   placeholder: string;
   onChange: (v: string) => void;
   disabled?: boolean;
+  compact?: boolean;
   "aria-label"?: string;
 }) {
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger className="h-11 rounded-lg" aria-label={ariaLabel}>
+      <SelectTrigger
+        className={cn("rounded-lg", compact ? "h-9 text-theme-xs" : "h-11")}
+        aria-label={ariaLabel}
+      >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
@@ -269,13 +275,16 @@ export function ChartConfigPanel({
                     placeholder="字段"
                     onChange={(v) => updateFilter(i, { field: v })}
                     disabled={columnsDisabled}
+                    compact={compact}
                     aria-label={`筛选字段 ${i + 1}`}
                   />
                   <Select
                     value={f.operator ?? "eq"}
                     onValueChange={(v) => updateFilter(i, { operator: v as ChartFilterRef["operator"] })}
                   >
-                    <SelectTrigger className="h-11 rounded-lg">
+                    <SelectTrigger
+                      className={cn("rounded-lg", compact ? "h-9 text-theme-xs" : "h-11")}
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -288,7 +297,7 @@ export function ChartConfigPanel({
                   </Select>
                   <div className="flex gap-2">
                     <Input
-                      className="h-11 rounded-lg"
+                      className={cn("rounded-lg", compact ? "h-9 text-theme-xs" : "h-11")}
                       value={String(f.value ?? "")}
                       onChange={(e) => updateFilter(i, { value: e.target.value })}
                       aria-label={`筛选值 ${i + 1}`}

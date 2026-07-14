@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { DashboardGrid, type GridInsertAt } from "../DashboardGrid";
 import { DashboardLayoutPreview } from "../DashboardLayoutPreview";
 import type { Linkage } from "../dashboardFilterUtils";
@@ -11,7 +12,12 @@ import {
   type DashboardStyleConfig,
   type LayoutWidget,
 } from "../layoutUtils";
-import { resolvePixelGutter, resolveArtboardStyle } from "../dashboardStyleConfig";
+import {
+  pickWidgetDashboardStyle,
+  resolveArtboardStyle,
+  resolvePixelGutter,
+  widgetDashboardStyleFingerprint,
+} from "../dashboardStyleConfig";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
 import type { PaletteInsertType } from "../createLayoutWidget";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
@@ -65,6 +71,11 @@ export function DashboardEditCanvas({
   onViewportChange,
   widgetActions,
 }: DashboardEditCanvasProps) {
+  const widgetDashboardStyle = useMemo(
+    () => pickWidgetDashboardStyle(styleConfig),
+    [widgetDashboardStyleFingerprint(styleConfig)],
+  );
+
   if (mode === "view" || editor === "pixel-readonly") {
     return (
       <DashboardLayoutPreview
@@ -93,7 +104,7 @@ export function DashboardEditCanvas({
       onNestedSelect={onNestedSelect}
       onDelete={onDeleteWidget}
       setWidgets={setWidgets}
-      dashboardStyle={styleConfig}
+      dashboardStyle={widgetDashboardStyle}
       chartRefreshKeys={chartRefreshKeys}
     />
   );
@@ -128,7 +139,7 @@ export function DashboardEditCanvas({
               onNestedSelect={onNestedSelect}
               onDelete={onDeleteWidget}
               setWidgets={setWidgets}
-              dashboardStyle={styleConfig}
+              dashboardStyle={widgetDashboardStyle}
               chartRefreshKeys={chartRefreshKeys}
             />
           )}

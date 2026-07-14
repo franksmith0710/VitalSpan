@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
-import { PIXEL_CANVAS_GUTTER, PixelCanvas } from "./PixelCanvas";
+import { PIXEL_CANVAS_GUTTER, PixelCanvas, PIXEL_PREVIEW_THROTTLE_MS } from "./PixelCanvas";
 import {
   insertClonedPixelWidget,
   insertPixelPaletteWidget,
@@ -38,6 +38,15 @@ function triggerResizeObservers() {
   ).__triggerResizeObservers();
 }
 
+async function flushPixelPointerFrames() {
+  await act(async () => {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) =>
+      setTimeout(resolve, PIXEL_PREVIEW_THROTTLE_MS + 8),
+    );
+  });
+}
+
 function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
   render(
     <PixelCanvas
@@ -52,7 +61,7 @@ function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
 }
 
 describe("PixelCanvas", () => {
-  it("previews cascade push-down on neighbors while dragging", () => {
+  it("previews cascade push-down on neighbors while dragging", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",
       type: "chart",
@@ -91,6 +100,7 @@ describe("PixelCanvas", () => {
       clientX: 0,
       clientY: 120,
     });
+    await flushPixelPointerFrames();
 
     expect(blockerShape).toHaveStyle({ top: "400px" });
     fireEvent.pointerUp(shape, { pointerId: 3, clientX: 0, clientY: 120 });
@@ -207,7 +217,9 @@ describe("PixelCanvas", () => {
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
-    expect(screen.getByTestId("pixel-drag-rail-w1")).toBeInTheDocument();
+    expect(screen.getByTestId("canvas-mark-line")).toBeInTheDocument();
+    expect(document.getElementById("editor-canvas-main")).toBeTruthy();
+    expect(document.getElementById("shape-id-w1")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: /^调整组件大小：/ })).toHaveLength(8);
     unmount();
 
@@ -219,7 +231,7 @@ describe("PixelCanvas", () => {
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
-    expect(screen.queryByTestId("pixel-drag-rail-w1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("canvas-mark-line")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^调整组件大小：/ })).not.toBeInTheDocument();
     expect(screen.getByTestId("pixel-shape-w1")).not.toHaveClass("pixel-shape-selected");
   });

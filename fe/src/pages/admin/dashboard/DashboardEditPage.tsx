@@ -15,6 +15,7 @@ import {
 import {
   appendWidgetToTabPane,
   coerceLayoutWidgets,
+  resizeWidget,
   sortWidgets,
   type DashboardLayout,
   type DashboardStyleConfig,
@@ -485,8 +486,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       onDelete: handleDeleteWidget,
       onEnlarge: openWidgetEnlargeDialog,
       onViewData: openWidgetViewDataDialog,
+      onTitleChange: (widgetId, title) => {
+        setWidgets((prev) => resizeWidget(prev, widgetId, { title }));
+      },
     }),
-    [handleCopyWidget, handleDeleteWidget, openWidgetEnlargeDialog, openWidgetViewDataDialog],
+    [handleCopyWidget, handleDeleteWidget, openWidgetEnlargeDialog, openWidgetViewDataDialog, setWidgets],
   );
 
   const handleBatchDelete = () => {
@@ -908,6 +912,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   clearSelection();
                   setLinkagePanelOpen(true);
                   setChartRailOpen(true);
+                }}
+                onTitleChange={(title) => {
+                  if (!primarySelectedId) return;
+                  setWidgets((prev) => resizeWidget(prev, primarySelectedId, { title }));
                 }}
                 onChange={(chartConfig) => {
                   if (!primarySelectedId) return;

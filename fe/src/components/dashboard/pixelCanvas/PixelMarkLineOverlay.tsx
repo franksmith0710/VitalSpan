@@ -8,13 +8,15 @@ type PixelMarkLineOverlayProps = {
   canvas: PixelCanvasBounds;
 };
 
+/**
+ * 对标 DE `#canvas-mark-line`：编辑态常驻对齐线层，拖拽时绘制参考线。
+ */
 export function PixelMarkLineOverlay({ guides, canvas }: PixelMarkLineOverlayProps) {
-  if (guides.length === 0) return null;
-
   return (
     <svg
-      data-testid="pixel-mark-line-overlay"
-      className="pixel-mark-line-overlay pointer-events-none absolute inset-0 z-[1000]"
+      id="canvas-mark-line"
+      data-testid="canvas-mark-line"
+      className="mark-line pixel-mark-line-overlay pointer-events-none absolute inset-0 z-[1000]"
       viewBox={`0 0 ${canvas.width} ${canvas.height}`}
       aria-hidden
     >

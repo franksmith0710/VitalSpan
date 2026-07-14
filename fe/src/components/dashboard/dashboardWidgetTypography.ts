@@ -1,10 +1,18 @@
 /** 像素画布缩放后，屏幕上目标可读高度（px），对齐 text-theme-sm 行高密度 */
 export const PIXEL_SCREEN_RAIL_HEIGHT_PX = 32;
 
+/** 预览态 shape 壳层标题栏屏幕高度（px） */
+export const PIXEL_SCREEN_TITLE_HEIGHT_PX = 36;
+
 /** 像素画布拖动手柄逻辑高度（随 scale 反比放大，保证缩放后屏幕高度稳定） */
 export function pixelDragRailHeightPx(canvasScale: number): number {
   const scale = canvasScale > 0 ? canvasScale : 1;
   return Math.ceil(PIXEL_SCREEN_RAIL_HEIGHT_PX / scale);
+}
+
+export function pixelViewTitleHeightPx(canvasScale: number): number {
+  const scale = canvasScale > 0 ? canvasScale : 1;
+  return Math.ceil(PIXEL_SCREEN_TITLE_HEIGHT_PX / scale);
 }
 
 /** 画布内组件状态/空态文案 */

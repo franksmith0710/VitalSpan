@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type EChartsReact from "echarts-for-react";
+import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
 import { getEchartsTheme } from "@/lib/echarts-theme";
+import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+import type { ChartDeStyle } from "@/lib/chartDeStyle";
 import { cn } from "@/lib/utils";
 import { usePixelShapeLiveResize } from "@/hooks/usePixelShapeLiveResize";
 import {
@@ -23,6 +26,11 @@ type Props = {
   width?: number;
   /** @deprecated 保留兼容 */
   resizeDebounceMs?: number;
+  deStyle?: ChartDeStyle;
+  dataZoom?: boolean;
+  chartColors?: string[];
+  showLabel?: boolean;
+  valueFormat?: NumberFormatConfig;
 };
 
 export function AdvancedEchartsChart({
@@ -34,6 +42,11 @@ export function AdvancedEchartsChart({
   fill = false,
   height = 180,
   width,
+  deStyle,
+  dataZoom = false,
+  chartColors,
+  showLabel = false,
+  valueFormat,
 }: Props) {
   const chartRef = useRef<EChartsReact | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -43,10 +56,17 @@ export function AdvancedEchartsChart({
     () => capRows(rows, ADVANCED_CHART_ROW_CAP),
     [rows],
   );
-  const option = useMemo(
-    () => buildEchartsOption(spec, capped, columns),
-    [spec, capped, columns],
-  );
+  const option = useMemo(() => {
+    let built = buildEchartsOption(spec, capped, columns);
+    built = applyDeStyleToEchartsOption(built, deStyle ?? {}, dataZoom, {
+      showLabel,
+      valueFormat,
+    });
+    if (chartColors?.length) {
+      built = { ...built, color: chartColors };
+    }
+    return built;
+  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat]);
   const theme = useMemo(() => getEchartsTheme(isDark), [isDark]);
 
   const isEmpty =
@@ -74,7 +94,7 @@ export function AdvancedEchartsChart({
 
     const hosts = new Set<HTMLElement>([el]);
     if (fill) {
-      const shapeOuter = el.closest(".pixel-shape-outer");
+      const shapeOuter = el.closest(".shape, .pixel-shape-outer");
       const shapeInner = el.closest(".pixel-shape-inner");
       if (shapeOuter instanceof HTMLElement) hosts.add(shapeOuter);
       if (shapeInner instanceof HTMLElement) hosts.add(shapeInner);
@@ -120,6 +140,7 @@ export function AdvancedEchartsChart({
       ) : (
         <div className={cn(fill && "min-h-0 flex-1")}>
           <ReactECharts
+            key={isDark ? "dark" : "light"}
             ref={chartRef}
             option={option}
             theme={theme}

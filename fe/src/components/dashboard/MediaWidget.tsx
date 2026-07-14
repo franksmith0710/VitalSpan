@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { GripVertical, ImageIcon, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import type { DashboardWidgetShell } from "./dashboardCanvasMode";
+import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { LayoutWidget, MediaWidgetConfig } from "./layoutUtils";
 
 type MediaWidgetProps = {
   widget: LayoutWidget & { mediaConfig: MediaWidgetConfig };
   mode: "edit" | "view";
+  shell?: DashboardWidgetShell;
   selected?: boolean;
   onSelect?: () => void;
   onDelete?: (id: string) => void;
@@ -17,6 +19,7 @@ type MediaWidgetProps = {
 export function MediaWidget({
   widget,
   mode,
+  shell = "grid",
   selected = false,
   onSelect,
   onDelete,
@@ -25,36 +28,39 @@ export function MediaWidget({
   const cfg = widget.mediaConfig;
   const [broken, setBroken] = useState(false);
   const showImage = cfg.url.trim() && !broken;
+  const inShapeShell = shell === "shape";
+  const showGridChrome = !inShapeShell;
 
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white shadow-theme-xs dark:bg-white/[0.03]",
-        selected && "dashboard-widget-selected",
-        selected
-          ? "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40"
-          : "border-gray-200 dark:border-gray-800",
+        "flex h-full min-h-0 flex-col",
+        showGridChrome && "overflow-hidden rounded-xl border bg-white shadow-theme-xs dark:bg-white/[0.03]",
+        showGridChrome && selected && "dashboard-widget-selected",
+        showGridChrome &&
+          selected &&
+          "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40",
+        showGridChrome && !selected && "border-gray-200 dark:border-gray-800",
       )}
     >
-      {mode === "edit" ? (
-        <div
-          className={cn(
-            "dashboard-drag-handle flex shrink-0 cursor-grab items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 active:cursor-grabbing dark:border-gray-800 dark:bg-white/[0.04]",
-            selected && "bg-gray-100/90 dark:bg-white/[0.06]",
-          )}
-          role="group"
-          aria-label="拖动以移动组件"
-        >
-          <GripVertical className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden />
+      {showGridChrome && mode === "edit" ? (
+        <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
+          <div
+            className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"
+            role="group"
+            aria-label="拖动以移动组件"
+          >
+            <GripVertical className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden />
+          </div>
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5">
             <ImageIcon className="size-3.5" aria-hidden />
           </span>
-          <Input
+          <WidgetInlineTitle
             value={widget.title}
-            onChange={(e) => onTitleChange?.(widget.id, e.target.value)}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="dashboard-no-drag h-7 min-w-0 flex-1 border-transparent bg-transparent px-1 text-theme-sm font-medium shadow-none"
-            aria-label="媒体标题"
+            editable={Boolean(onTitleChange)}
+            onChange={onTitleChange ? (next) => onTitleChange(widget.id, next) : undefined}
+            ariaLabel="媒体标题"
+            testId={`widget-inline-title-${widget.id}`}
           />
           {onDelete ? (
             <IconButton

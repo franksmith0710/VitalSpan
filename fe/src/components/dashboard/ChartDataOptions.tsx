@@ -6,13 +6,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import {
+  patchChartDeDisplay,
+  readChartDeDisplay,
+} from "@/lib/chartDeDisplay";
+import { INSPECTOR_CTRL, INSPECTOR_SELECT } from "./inspectorCompact";
 import { useChartInspector } from "./ChartInspectorContext";
-
-type DeDisplayOptions = {
-  refreshMode?: string;
-  resultLimit?: string;
-};
 
 const REFRESH_OPTIONS = [
   { value: "off", label: "关闭" },
@@ -30,31 +29,10 @@ const RESULT_LIMIT_OPTIONS = [
   { value: "10000", label: "10000" },
 ] as const;
 
-function readDisplayOptions(cfg: ChartViewConfig): DeDisplayOptions {
-  const raw = cfg.nativeBody?.deDisplay;
-  if (!raw || typeof raw !== "object") return { refreshMode: "off", resultLimit: "all" };
-  const d = raw as DeDisplayOptions;
-  return {
-    refreshMode: d.refreshMode ?? "off",
-    resultLimit: d.resultLimit ?? "all",
-  };
-}
-
-function patchDisplayOptions(cfg: ChartViewConfig, patch: Partial<DeDisplayOptions>): ChartViewConfig {
-  const prev = readDisplayOptions(cfg);
-  return {
-    ...cfg,
-    nativeBody: {
-      ...cfg.nativeBody,
-      deDisplay: { ...prev, ...patch },
-    },
-  };
-}
-
 /** DataEase 数据 Tab：刷新频率 + 结果展示 */
 export function ChartDataOptions() {
   const { cfg, onChange } = useChartInspector();
-  const display = readDisplayOptions(cfg);
+  const display = readChartDeDisplay(cfg);
 
   return (
     <div className="space-y-3 border-t border-gray-100 pt-3 dark:border-white/[0.06]">
@@ -62,9 +40,9 @@ export function ChartDataOptions() {
         <Label className="text-theme-xs text-gray-500">刷新频率</Label>
         <Select
           value={display.refreshMode ?? "off"}
-          onValueChange={(value) => onChange(patchDisplayOptions(cfg, { refreshMode: value }))}
+          onValueChange={(value) => onChange(patchChartDeDisplay(cfg, { refreshMode: value }))}
         >
-          <SelectTrigger className="h-9 text-theme-xs" aria-label="刷新频率">
+          <SelectTrigger className={INSPECTOR_SELECT} aria-label="刷新频率">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -75,15 +53,17 @@ export function ChartDataOptions() {
             ))}
           </SelectContent>
         </Select>
-        <p className="text-[11px] text-gray-400 dark:text-gray-500">编辑页不生效，公共链接预览时启用</p>
+        <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
+          编辑页与预览页均按本组件设置轮询；整页刷新请在看板「整体配置 → 刷新频率」设置（仅分享页）
+        </p>
       </div>
       <div className="grid gap-1.5">
         <Label className="text-theme-xs text-gray-500">结果展示</Label>
         <Select
           value={display.resultLimit ?? "all"}
-          onValueChange={(value) => onChange(patchDisplayOptions(cfg, { resultLimit: value }))}
+          onValueChange={(value) => onChange(patchChartDeDisplay(cfg, { resultLimit: value }))}
         >
-          <SelectTrigger className="h-9 text-theme-xs" aria-label="结果展示">
+          <SelectTrigger className={INSPECTOR_SELECT} aria-label="结果展示">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -94,6 +74,9 @@ export function ChartDataOptions() {
             ))}
           </SelectContent>
         </Select>
+        <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
+          覆盖看板默认行数上限，立即作用于本组件查询
+        </p>
       </div>
     </div>
   );

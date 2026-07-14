@@ -22,6 +22,8 @@ export type FilterControlProps = {
   className?: string;
   disabled?: boolean;
   inputStyle?: CSSProperties;
+  /** 查询组件标题相对控件的位置（看板级 filterChromeStyle.titlePosition） */
+  labelPosition?: "top" | "left";
 };
 
 function splitMulti(value: string): string[] {
@@ -43,13 +45,21 @@ export function FilterControl({
   className,
   disabled,
   inputStyle,
+  labelPosition = "top",
 }: FilterControlProps) {
   const emptyHint = options.length === 0;
+  const labelRowClass =
+    labelPosition === "left"
+      ? "flex min-w-0 flex-1 flex-row items-center gap-2"
+      : "min-w-[140px] flex-1 space-y-1.5 sm:max-w-xs";
 
   if (controlType === "select") {
     return (
-      <div className={cn("min-w-[140px] flex-1 space-y-1.5 sm:max-w-xs", className)}>
-        <Label htmlFor={id}>{label}</Label>
+      <div className={cn(labelRowClass, className)}>
+        <Label htmlFor={id} className={labelPosition === "left" ? "shrink-0" : undefined}>
+          {label}
+        </Label>
+        <div className={labelPosition === "left" ? "min-w-0 flex-1" : undefined}>
         {emptyHint ? (
           <>
             <Select disabled value="">
@@ -73,14 +83,17 @@ export function FilterControl({
             </SelectContent>
           </Select>
         )}
+        </div>
       </div>
     );
   }
 
   if (controlType === "date") {
     return (
-      <div className={cn("min-w-[140px] flex-1 space-y-1.5 sm:max-w-xs", className)}>
-        <Label htmlFor={id}>{label}</Label>
+      <div className={cn(labelRowClass, className)}>
+        <Label htmlFor={id} className={labelPosition === "left" ? "shrink-0" : undefined}>
+          {label}
+        </Label>
         <Input
           id={id}
           type="date"
@@ -97,8 +110,11 @@ export function FilterControl({
   if (controlType === "multiselect") {
     const selected = new Set(splitMulti(value));
     return (
-      <div className={cn("min-w-[160px] flex-1 space-y-1.5 sm:max-w-sm", className)}>
-        <Label>{label}</Label>
+      <div className={cn(labelRowClass, className)}>
+        <Label className={labelPosition === "left" ? "shrink-0 self-start pt-2" : undefined}>
+          {label}
+        </Label>
+        <div className={labelPosition === "left" ? "min-w-0 flex-1" : undefined}>
         {emptyHint ? (
           <p className="text-theme-xs text-gray-400">暂无枚举选项</p>
         ) : (
@@ -130,13 +146,16 @@ export function FilterControl({
             })}
           </div>
         )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={cn("min-w-[140px] flex-1 space-y-1.5 sm:max-w-xs", className)}>
-      <Label htmlFor={id}>{label}</Label>
+    <div className={cn(labelRowClass, className)}>
+      <Label htmlFor={id} className={labelPosition === "left" ? "shrink-0" : undefined}>
+        {label}
+      </Label>
       <Input
         id={id}
         className="h-10"

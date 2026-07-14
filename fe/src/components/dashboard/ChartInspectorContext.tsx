@@ -13,6 +13,7 @@ export type SlotTarget =
 type ChartInspectorContextValue = ChartInspectorState & {
   widget: LayoutWidget;
   onChange: (chartConfig: ChartViewConfig) => void;
+  onTitleChange?: (title: string) => void;
 };
 
 const ChartInspectorContext = createContext<ChartInspectorContextValue | null>(null);
@@ -26,10 +27,16 @@ export function useChartInspector(): ChartInspectorContextValue {
 type ChartInspectorProviderProps = {
   widget: LayoutWidget;
   onChange: (chartConfig: ChartViewConfig) => void;
+  onTitleChange?: (title: string) => void;
   children: ReactNode;
 };
 
-export function ChartInspectorProvider({ widget, onChange, children }: ChartInspectorProviderProps) {
+export function ChartInspectorProvider({
+  widget,
+  onChange,
+  onTitleChange,
+  children,
+}: ChartInspectorProviderProps) {
   const state = useChartInspectorState(widget, onChange);
   return (
     <ChartInspectorContext.Provider
@@ -37,6 +44,7 @@ export function ChartInspectorProvider({ widget, onChange, children }: ChartInsp
         ...state,
         widget,
         onChange,
+        onTitleChange,
       }}
     >
       {children}

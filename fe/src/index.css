@@ -440,6 +440,21 @@ html.dark {
   padding-top: calc(var(--dw-screen-rail-height) / var(--pixel-canvas-scale));
 }
 
+.dashboard-theme-scope .pixel-canvas-host .pixel-shape-outer.pixel-shape-selected {
+  border-color: var(--dashboard-accent, var(--color-brand-500));
+}
+
+.dashboard-theme-scope .pixel-canvas-host [data-testid^="pixel-shape-actions"] :where(button) {
+  color: var(--dashboard-action-icon, var(--color-gray-500));
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .apexcharts-canvas,
+.dashboard-theme-scope.dark .apexcharts-canvas,
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .apexcharts-svg,
+.dashboard-theme-scope.dark .apexcharts-svg {
+  background: transparent !important;
+}
+
 /* DataEase isPlayer：外框 DOM 实时改尺寸，子树 100% 填满 */
 .pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .pixel-shape-inner {
   width: 100%;

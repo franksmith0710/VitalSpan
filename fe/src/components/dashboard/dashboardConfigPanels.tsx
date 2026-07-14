@@ -134,7 +134,9 @@ export function DashboardStyleSections({
               保存
             </Button>
           ) : (
-            <span className="px-1 text-theme-xs font-normal text-gray-400">保存布局后生效</span>
+            <span className="px-1 text-theme-xs font-normal text-gray-400">
+              样式已实时预览，保存后发布生效
+            </span>
           )
         }
       >
@@ -167,6 +169,7 @@ export function DashboardStyleSections({
               swatches={THEME_ACCENT_SWATCHES}
               onChange={(color) => patchStyle({ themeAccent: color })}
             />
+            <p className="text-[10px] text-gray-400">作用于选中框、操作轨图标等看板内强调元素</p>
             <div className="space-y-1.5">
               <Label className="text-theme-xs text-gray-600 dark:text-gray-400">全局字体</Label>
               <Select
@@ -286,7 +289,7 @@ export function DashboardStyleSections({
               min={5}
               max={3600}
               className="h-9"
-              placeholder="仅分享页生效"
+              placeholder="仅分享页整页刷新"
               value={styleConfig.refreshIntervalSec ?? ""}
               onChange={(e) =>
                 patchStyle({
@@ -294,6 +297,9 @@ export function DashboardStyleSections({
                 })
               }
             />
+            <p className="text-[10px] text-gray-400">
+              整页 reload；单图刷新请在图表「数据 → 刷新频率」按组件设置
+            </p>
           </div>
 
           <div className="space-y-1.5">
@@ -337,11 +343,12 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
       <DashboardConfigSection title="图表样式">
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">背景色</Label>
-            <Input
-              className="h-9"
+            <ColorField
+              compact
+              allowClear
+              label="背景色"
               value={ws.background ?? ""}
-              onChange={(e) => patchWidgetStyle({ background: e.target.value || undefined })}
+              onChange={(color) => patchWidgetStyle({ background: color })}
             />
           </div>
           <div className="space-y-1">
@@ -358,11 +365,12 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">边框色</Label>
-            <Input
-              className="h-9"
+            <ColorField
+              compact
+              allowClear
+              label="边框色"
               value={ws.borderColor ?? ""}
-              onChange={(e) => patchWidgetStyle({ borderColor: e.target.value || undefined })}
+              onChange={(color) => patchWidgetStyle({ borderColor: color })}
             />
           </div>
           <div className="space-y-1">
@@ -425,11 +433,12 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">颜色</Label>
-            <Input
-              className="h-9"
+            <ColorField
+              compact
+              allowClear
+              label="颜色"
               value={ts.color ?? ""}
-              onChange={(e) => patchTitleStyle({ color: e.target.value || undefined })}
+              onChange={(color) => patchTitleStyle({ color })}
             />
           </div>
         </div>
@@ -455,6 +464,17 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
             </Select>
           </div>
           <div className="space-y-1">
+            <ColorField
+              compact
+              allowClear
+              label="标题颜色"
+              value={fc.titleColor ?? ""}
+              onChange={(color) =>
+                patchStyle({ filterChromeStyle: { ...fc, titleColor: color } })
+              }
+            />
+          </div>
+          <div className="space-y-1">
             <Label className="text-theme-xs text-gray-500">控件高度</Label>
             <Input
               type="number"
@@ -467,6 +487,24 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
                   filterControlStyle: {
                     ...fctrl,
                     height: e.target.value ? Number(e.target.value) : undefined,
+                  },
+                })
+              }
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-theme-xs text-gray-500">控件圆角</Label>
+            <Input
+              type="number"
+              min={0}
+              max={24}
+              className="h-9"
+              value={fctrl.borderRadius ?? ""}
+              onChange={(e) =>
+                patchStyle({
+                  filterControlStyle: {
+                    ...fctrl,
+                    borderRadius: e.target.value ? Number(e.target.value) : undefined,
                   },
                 })
               }
@@ -574,17 +612,19 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
           >
             示例{formatMetricValue(20_000_000, nf)}
           </p>
+          <p className="text-[10px] text-gray-400">柱/线图数据标签与 tooltip；未单独设置时继承看板数字格式</p>
         </div>
       </DashboardConfigSection>
 
       <DashboardConfigSection title="高级样式设置">
         <div className="space-y-2">
           <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">联动/钻取图标色</Label>
-            <Input
-              className="h-9"
+            <ColorField
+              compact
+              allowClear
+              label="联动/钻取图标色"
               value={styleConfig.actionIconColor ?? ""}
-              onChange={(e) => patchStyle({ actionIconColor: e.target.value || undefined })}
+              onChange={(color) => patchStyle({ actionIconColor: color })}
             />
           </div>
         </div>

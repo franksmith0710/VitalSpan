@@ -28,12 +28,10 @@ import { clientPointToCanvas, resolvePixelCanvasMeasureElement, resolveScaleDesi
 import { PixelShape } from "./PixelShape";
 import type { PixelWidgetActions } from "./PixelShapeActionRail";
 import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
+import { markLineGuidesEqual } from "./markLineGuidesEqual";
 import type { MarkLineGuide } from "./pixelMarkLine";
+import { PixelWidgetSlot } from "./PixelWidgetSlot";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
-import {
-  PixelCanvasInteractionProvider,
-  type PixelCanvasInteraction,
-} from "./PixelCanvasInteractionContext";
 
 type PixelCanvasProps = {
   mode: "edit" | "view";
@@ -125,7 +123,6 @@ export function PixelCanvas({
   const [stageLeft, setStageLeft] = useState(0);
   const [centerContent, setCenterContent] = useState(false);
   const [previewLayout, setPreviewLayout] = useState<DashboardLayoutV2 | null>(null);
-  const [interaction, setInteraction] = useState<PixelCanvasInteraction>(null);
   const previewThrottleRef = useRef(0);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPreviewRef = useRef<PixelLayoutWidget | null>(null);
@@ -237,8 +234,11 @@ export function PixelCanvas({
     [],
   );
 
-  const handleInteractionChange = useCallback((widgetId: string | null) => {
-    setInteraction(widgetId ? { widgetId } : null);
+  const handleMarkGuidesChange = useCallback((guides: MarkLineGuide[] | null) => {
+    const next = guides ?? [];
+    setMarkGuides((previous) =>
+      markLineGuidesEqual(previous, next) ? previous : next,
+    );
   }, []);
 
   const handleCommit = useCallback(
@@ -250,7 +250,6 @@ export function PixelCanvas({
       }
       pendingPreviewRef.current = null;
       setPreviewLayout(null);
-      setInteraction(null);
       onLayoutChange(resolveActive(widget));
     },
     [onLayoutChange, resolveActive],
@@ -263,7 +262,6 @@ export function PixelCanvas({
     }
     pendingPreviewRef.current = null;
     setPreviewLayout(null);
-    setInteraction(null);
   }, []);
 
   const handleDragOver = useCallback(
@@ -338,10 +336,10 @@ export function PixelCanvas({
         onDrop={handleDrop}
       >
         <PixelCanvasScaleProvider scale={scale}>
-        <PixelCanvasInteractionProvider interaction={interaction}>
         <div
+          id="editor-canvas-main"
           data-testid="pixel-canvas-stage"
-          className="pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
+          className="editor-canvas-main pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
           style={{
             left: stageLeft,
             width: viewCanvas.width,
@@ -375,20 +373,19 @@ export function PixelCanvas({
                 onPreview={mode === "edit" ? handlePreview : undefined}
                 onCommit={handleCommit}
                 onCancel={handleCancel}
-                onInteractionChange={mode === "edit" ? handleInteractionChange : undefined}
                 onMarkGuidesChange={
-                  mode === "edit" ? (guides) => setMarkGuides(guides ?? []) : undefined
+                  mode === "edit" ? handleMarkGuidesChange : undefined
                 }
                 snapTargets={layout.widgets.filter((item) => item.id !== widget.id)}
                 viewport={visibleViewport}
                 otherWidgets={activeLayout.widgets.filter((item) => item.id !== widget.id)}
                 widgetActions={widgetActions}
+                styleConfig={styleConfig}
               >
-                {renderWidget(widget)}
+                <PixelWidgetSlot widget={widget} renderWidget={renderWidget} />
               </PixelShape>
             ))}
           </div>
-        </PixelCanvasInteractionProvider>
         </PixelCanvasScaleProvider>
       </div>
     </div>

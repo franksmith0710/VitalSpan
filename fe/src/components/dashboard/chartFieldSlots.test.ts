@@ -21,4 +21,16 @@ describe("chartFieldSlots", () => {
       "钻取 / 维度",
     ]);
   });
+
+  it("T-INSP-DE-04: sankey requires source and target dimension slots", () => {
+    expect(chartDataSlotBlueprint("sankey").map((s) => s.label)).toEqual([
+      "起始 / 维度",
+      "终点 / 维度",
+      "边权 / 指标",
+    ]);
+  });
+
+  it("T-INSP-DE-05: heatmap requires x and y dimensions", () => {
+    expect(chartDataSlotBlueprint("heatmap").map((s) => s.label)).toContain("纵轴 / 维度");
+  });
 });

@@ -31,7 +31,6 @@ function patchDeFeatures(cfg: ChartViewConfig, patch: Partial<ChartDeFeatures>):
 
 function ChartFeatureSettings() {
   const { cfg, onChange, columns } = useChartInspector();
-  const features = readDeFeatures(cfg);
   const columnsDisabled = columns.length === 0;
 
   return (
@@ -42,20 +41,9 @@ function ChartFeatureSettings() {
           <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">折线/柱图底部缩放条</p>
         </div>
         <Switch
-          checked={features.dataZoom ?? false}
+          checked={readDeFeatures(cfg).dataZoom ?? false}
           onCheckedChange={(checked) => onChange(patchDeFeatures(cfg, { dataZoom: checked }))}
           aria-label="缩略轴"
-        />
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <Label className="text-theme-xs text-gray-700 dark:text-gray-300">显示数据标签</Label>
-          <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">在图形上展示数值</p>
-        </div>
-        <Switch
-          checked={features.showLabel ?? false}
-          onCheckedChange={(checked) => onChange(patchDeFeatures(cfg, { showLabel: checked }))}
-          aria-label="显示数据标签"
         />
       </div>
       <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-3 dark:border-gray-800 dark:bg-white/[0.03]">

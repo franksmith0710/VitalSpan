@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,8 @@ function isValidBackgroundImageUrl(url: string): boolean {
   return /^https?:\/\/.+/i.test(trimmed) || trimmed.startsWith("data:image/");
 }
 
+const URL_COMMIT_MS = 300;
+
 type DashboardCanvasBackgroundPanelProps = {
   styleConfig: DashboardStyleConfig;
   patchStyle: PatchFn;
@@ -34,7 +36,32 @@ export function DashboardCanvasBackgroundPanel({
   );
   const decorId = resolveCanvasDecorPresetId(styleConfig);
   const imageUrl = styleConfig.canvasBackgroundImage ?? "";
-  const imageInvalid = imageUrl.trim().length > 0 && !isValidBackgroundImageUrl(imageUrl);
+  const [localImageUrl, setLocalImageUrl] = useState(imageUrl);
+  const previewUrl = localImageUrl.trim();
+  const imageInvalid =
+    previewUrl.length > 0 && !isValidBackgroundImageUrl(previewUrl);
+  const urlCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setLocalImageUrl(imageUrl);
+  }, [imageUrl]);
+
+  const commitImageUrl = (next: string) => {
+    const trimmed = next.trim();
+    patchStyle({ canvasBackgroundImage: trimmed || undefined });
+  };
+
+  const scheduleImageUrlCommit = (next: string) => {
+    if (urlCommitTimerRef.current) clearTimeout(urlCommitTimerRef.current);
+    urlCommitTimerRef.current = setTimeout(() => commitImageUrl(next), URL_COMMIT_MS);
+  };
+
+  useEffect(
+    () => () => {
+      if (urlCommitTimerRef.current) clearTimeout(urlCommitTimerRef.current);
+    },
+    [],
+  );
 
   return (
     <div className="space-y-4">
@@ -113,11 +140,19 @@ export function DashboardCanvasBackgroundPanel({
             </p>
             <Input
               className="h-9"
-              value={imageUrl}
+              value={localImageUrl}
               placeholder="https://example.com/background.jpg"
               onChange={(e) => {
-                const next = e.target.value.trim();
-                patchStyle({ canvasBackgroundImage: next || undefined });
+                const next = e.target.value;
+                setLocalImageUrl(next);
+                scheduleImageUrlCommit(next);
+              }}
+              onBlur={() => {
+                if (urlCommitTimerRef.current) {
+                  clearTimeout(urlCommitTimerRef.current);
+                  urlCommitTimerRef.current = null;
+                }
+                commitImageUrl(localImageUrl);
               }}
             />
             {imageInvalid ? (
@@ -125,11 +160,11 @@ export function DashboardCanvasBackgroundPanel({
                 请输入有效的图片链接（需以 https:// 或 http:// 开头）
               </p>
             ) : null}
-            {isValidBackgroundImageUrl(imageUrl) ? (
+            {isValidBackgroundImageUrl(previewUrl) ? (
               <div
                 className="h-16 overflow-hidden rounded-md border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
                 style={{
-                  backgroundImage: `url(${imageUrl})`,
+                  backgroundImage: `url(${previewUrl})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }}

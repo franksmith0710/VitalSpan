@@ -1,5 +1,6 @@
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
+import { chartMinFieldCounts } from "@/components/dashboard/chartFieldSlots";
 
 export type ChartConfigPhase = {
   bindingReady: boolean;
@@ -15,6 +16,18 @@ export function normalizeChartFieldRefs(refs: ChartFieldRef[] | undefined): Char
   return activeFieldRefs(refs);
 }
 
+function hasRequiredFields(
+  refs: ChartFieldRef[] | undefined,
+  minCount: number,
+): boolean {
+  if (minCount <= 0) return true;
+  const list = refs ?? [];
+  for (let i = 0; i < minCount; i += 1) {
+    if (!list[i]?.field?.trim()) return false;
+  }
+  return true;
+}
+
 export function resolveChartConfigPhase(config: ChartViewConfig | undefined): ChartConfigPhase {
   const queryReady = config ? isChartExecuteReady(config) : false;
   const dimFields = activeFieldRefs(config?.dimensions);
@@ -22,13 +35,16 @@ export function resolveChartConfigPhase(config: ChartViewConfig | undefined): Ch
   const chartType = config?.chartType ?? "table";
 
   let renderReady = false;
-  if (queryReady) {
+  if (queryReady && config) {
     if (chartType === "table") {
       renderReady = dimFields.length > 0 || metricFields.length > 0;
     } else if (chartType === "kpi") {
       renderReady = metricFields.length > 0;
     } else {
-      renderReady = dimFields.length > 0 && metricFields.length > 0;
+      const { minDimensions, minMetrics } = chartMinFieldCounts(chartType);
+      renderReady =
+        hasRequiredFields(config.dimensions, minDimensions) &&
+        hasRequiredFields(config.metrics, minMetrics);
     }
   }
 

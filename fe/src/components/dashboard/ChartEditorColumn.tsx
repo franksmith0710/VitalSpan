@@ -13,9 +13,12 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { ChartAdvancedPanel } from "./ChartAdvancedPanel";
+import { ChartStylePanel } from "./ChartStylePanel";
 import { ChartDataOptions } from "./ChartDataOptions";
+import { INSPECTOR_CTRL } from "./inspectorCompact";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
 import { ChartDataSlots } from "./ChartDataSlots";
+import { ensureChartSlotCapacity } from "./chartFieldSlots";
 import { useChartInspector } from "./ChartInspectorContext";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
 
@@ -68,7 +71,7 @@ export function ChartEditorColumn({
   };
 
   const dataFooter = (
-    <div className="shrink-0 space-y-2 border-t border-gray-200 bg-white px-3 py-3 dark:border-gray-800 dark:bg-gray-900">
+    <div className="shrink-0 space-y-1.5 border-t border-gray-200 bg-white px-2.5 py-2 dark:border-gray-800 dark:bg-gray-900">
       {fieldError ? <p className="text-theme-xs text-error-600">{fieldError}</p> : null}
       {error ? (
         <div
@@ -78,25 +81,27 @@ export function ChartEditorColumn({
           {error}
         </div>
       ) : refreshOk ? (
-        <p className="text-theme-xs text-success-600 dark:text-success-400">图表数据已更新</p>
+        <p className="text-theme-xs text-success-600 dark:text-success-400">配置校验通过，字段已同步</p>
       ) : null}
       <Button
         type="button"
         variant="primary"
         size="sm"
-        className="h-10 w-full rounded-lg"
+        className="h-8 w-full rounded-md text-[11px] font-medium"
         onClick={() => void validate()}
         disabled={validating}
+        title="校验配置并同步字段列；图表数据会随槽位变更自动刷新"
       >
-        {validating ? "更新中…" : "更新图表数据"}
+        {validating ? "校验中…" : "校验配置并刷新字段"}
       </Button>
+      <p className="text-[10px] leading-snug text-gray-400">数据随维度/指标变更自动查询，无需重复点击</p>
     </div>
   );
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col bg-white dark:bg-gray-900", className)}>
-      <div className="shrink-0 border-b border-gray-200 px-3 py-2.5 dark:border-gray-800">
-        <p className="truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+      <div className="shrink-0 border-b border-gray-200 px-2.5 py-2 dark:border-gray-800">
+        <p className="truncate text-theme-xs font-semibold text-gray-800 dark:text-white/90">
           {typeLabel}
         </p>
         {widget.title && widget.title !== typeLabel ? (
@@ -118,12 +123,17 @@ export function ChartEditorColumn({
               <Select
                 value={cfg.chartType}
                 onValueChange={(chartType) =>
-                  onChange({ ...cfg, chartType: chartType as typeof cfg.chartType })
+                  onChange(
+                    ensureChartSlotCapacity({
+                      ...cfg,
+                      chartType: chartType as typeof cfg.chartType,
+                    }),
+                  )
                 }
               >
                 <SelectTrigger
                   id={`chart-type-${widget.id}`}
-                  className="h-9"
+                  className={INSPECTOR_CTRL}
                   aria-label="切换图表"
                 >
                   <SelectValue placeholder="选择图表类型" />
@@ -150,15 +160,7 @@ export function ChartEditorColumn({
             <ChartDataOptions />
           </div>
         }
-        style={
-          <ChartConfigPanel
-            config={cfg}
-            columns={columns}
-            onChange={onChange}
-            compact
-            section="style"
-          />
-        }
+        style={<ChartStylePanel />}
         advanced={<ChartAdvancedPanel onOpenLinkage={onOpenLinkage} />}
       />
 

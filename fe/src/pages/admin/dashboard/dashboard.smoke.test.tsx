@@ -168,6 +168,18 @@ async function insertLineChartFromToolbar(user: ReturnType<typeof userEvent.setu
   await user.click(await screen.findByRole("button", { name: "折线图" }));
 }
 
+async function beginWidgetTitleEdit(
+  user: ReturnType<typeof userEvent.setup>,
+  widgetId = "w1",
+) {
+  const titleEl =
+    screen.queryByTestId(`pixel-shape-title-${widgetId}`) ??
+    screen.queryByTestId(`widget-inline-title-${widgetId}`);
+  if (!titleEl) throw new Error(`title target for ${widgetId} not found`);
+  await user.click(titleEl);
+  return screen.getByLabelText("组件标题");
+}
+
 describe("dashboard admin smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
@@ -441,7 +453,7 @@ describe("dashboard admin smoke", () => {
     clickWidgetByTitle("B", { shiftKey: true });
     await user.click(await screen.findByRole("button", { name: /删除选中 \(2\)/ }));
     await user.click(screen.getByRole("button", { name: "删除" }));
-    expect(await screen.findAllByLabelText("组件标题")).toHaveLength(1);
+    expect(await screen.findAllByTestId("chart-mock")).toHaveLength(1);
   });
 
   it("T-DASH-004-02: linkage rules panel saves via PUT global-filters", async () => {
@@ -533,10 +545,13 @@ describe("dashboard admin smoke", () => {
   });
 
   it("T-DASH-R28-002-03: edit page loads layout", async () => {
+    const user = userEvent.setup();
     mockDashboardLoad(sampleWidgets.slice(0, 1));
     renderEditPage();
     expect(await screen.findByDisplayValue("销售看板")).toBeInTheDocument();
-    expect(screen.getByLabelText("组件标题")).toHaveValue("A");
+    expect(await screen.findByTestId("widget-inline-title-w1")).toHaveTextContent("A");
+    const titleInput = await beginWidgetTitleEdit(user);
+    expect(titleInput).toHaveValue("A");
   });
 
   it("T-DASH-DE-DRAFT-01: save layout succeeds with unconfigured chart widgets", async () => {
@@ -627,7 +642,7 @@ describe("dashboard admin smoke", () => {
     });
     renderEditPage();
     await screen.findByDisplayValue("X");
-    const titleInput = screen.getByLabelText("组件标题");
+    const titleInput = await beginWidgetTitleEdit(user);
     await user.type(titleInput, "!");
     await user.click(screen.getByRole("button", { name: "保存" }));
     expect(await screen.findByText("组件 ID 重复")).toBeInTheDocument();
@@ -653,8 +668,7 @@ describe("dashboard admin smoke", () => {
       };
     });
     renderEditPage();
-    await screen.findByLabelText("组件标题");
-    const titleInput = screen.getByLabelText("组件标题");
+    const titleInput = await beginWidgetTitleEdit(user);
     await user.clear(titleInput);
     await user.type(titleInput, "新标题");
     await user.click(screen.getByRole("button", { name: "保存" }));
@@ -685,9 +699,9 @@ describe("dashboard admin smoke", () => {
       return {};
     });
     renderEditPage();
-    const titles = await screen.findAllByLabelText("组件标题");
-    expect(titles.length).toBeGreaterThanOrEqual(2);
-    await user.type(titles[0], "!");
+    await screen.findByTestId("widget-inline-title-w1");
+    const titleInput = await beginWidgetTitleEdit(user, "w1");
+    await user.type(titleInput, "!");
     await user.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() => {
@@ -729,8 +743,8 @@ describe("dashboard admin smoke", () => {
       };
     });
     renderEditPage();
-    await screen.findByLabelText("组件标题");
-    await user.type(screen.getByLabelText("组件标题"), "!");
+    const titleInput = await beginWidgetTitleEdit(user);
+    await user.type(titleInput, "!");
     await user.click(screen.getByRole("button", { name: "保存" }));
     expect(putBody?.layoutJson?.widgets?.[0]?.chartConfig?.dataSourceId).toBe(DS_ID);
     expect(putBody?.layoutJson?.widgets?.[0]?.chartConfig?.sql).toBe("SELECT 2 AS id");
@@ -849,25 +863,25 @@ describe("dashboard admin smoke", () => {
     const user = userEvent.setup();
     mockDashboardLoad(sampleWidgets.slice(0, 1));
     renderEditPage();
-    await screen.findByLabelText("组件标题");
-    expect(screen.getAllByLabelText("组件标题")).toHaveLength(1);
+    await screen.findByTestId("widget-inline-title-w1");
+    expect(screen.getAllByTestId("chart-mock")).toHaveLength(1);
     await insertLineChartFromToolbar(user);
-    expect(await screen.findAllByLabelText("组件标题")).toHaveLength(2);
+    expect(await screen.findAllByTestId("chart-mock")).toHaveLength(2);
     await user.click(screen.getByRole("button", { name: "上一步" }));
-    expect(screen.getAllByLabelText("组件标题")).toHaveLength(1);
+    expect(screen.getAllByTestId("chart-mock")).toHaveLength(1);
   });
 
   it("F-C-02: step forward reapplies layout after step back", async () => {
     const user = userEvent.setup();
     mockDashboardLoad(sampleWidgets.slice(0, 1));
     renderEditPage();
-    await screen.findByLabelText("组件标题");
+    await screen.findByTestId("widget-inline-title-w1");
     await insertLineChartFromToolbar(user);
-    expect(await screen.findAllByLabelText("组件标题")).toHaveLength(2);
+    expect(await screen.findAllByTestId("chart-mock")).toHaveLength(2);
     await user.click(screen.getByRole("button", { name: "上一步" }));
-    expect(screen.getAllByLabelText("组件标题")).toHaveLength(1);
+    expect(screen.getAllByTestId("chart-mock")).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: "下一步" }));
-    expect(screen.getAllByLabelText("组件标题")).toHaveLength(2);
+    expect(screen.getAllByTestId("chart-mock")).toHaveLength(2);
   });
 
   it("F-D: edit mode loads global filters for linkage (preview shows filter bar)", async () => {
@@ -920,7 +934,7 @@ describe("dashboard admin smoke", () => {
 
     renderEditPage();
     expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
-    const title = await screen.findByLabelText("组件标题");
+    const title = await beginWidgetTitleEdit(user, "w1");
     await user.type(title, "!");
     await user.click(screen.getByRole("button", { name: "保存" }));
 
@@ -983,7 +997,7 @@ describe("dashboard admin smoke", () => {
   it("B3: pixel off + v1 keeps the editable RGL quadrant", async () => {
     mockDashboardLoad(sampleWidgets.slice(0, 1));
     const { container } = renderEditPage();
-    await screen.findByLabelText("组件标题");
+    await screen.findByTestId("widget-inline-title-w1");
     expect(container.querySelector(".dashboard-grid-edit .react-grid-layout")).toBeTruthy();
     expect(screen.getByTestId("palette-toolbar-toggle")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "删除看板" })).toBeInTheDocument();
@@ -1062,7 +1076,7 @@ describe("dashboard admin smoke", () => {
     });
 
     renderEditPage();
-    const title = await screen.findByLabelText("组件标题");
+    const title = await beginWidgetTitleEdit(user, "w1");
     await user.type(title, "!");
     await user.click(screen.getByRole("button", { name: "保存" }));
 
@@ -1103,8 +1117,8 @@ describe("dashboard admin smoke", () => {
       };
     });
     renderEditPage();
-    const titles = await screen.findAllByLabelText("组件标题");
-    await user.type(titles[0], "!");
+    const title = await beginWidgetTitleEdit(user, "top");
+    await user.type(title, "!");
     await user.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(saved).toBeDefined());
     expect(saved?.layoutJson?.widgets?.map((widget) => widget.id)).toEqual(["top", "bottom"]);

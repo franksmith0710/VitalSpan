@@ -6,7 +6,9 @@ import {
   canvasChromeUsesDotGrid,
   formatMetricValue,
   hasUserCanvasBackground,
+  pickWidgetDashboardStyle,
   resolveArtboardStyle,
+  widgetDashboardStyleFingerprint,
 } from "./dashboardStyleConfig";
 
 describe("dashboardStyleConfig theme vs background", () => {
@@ -61,6 +63,28 @@ describe("dashboardStyleConfig theme vs background", () => {
     expect(formatMetricValue(20_000_000, { type: "auto" })).toBe("20,000,000");
     expect(formatMetricValue(20_000_000, { type: "auto", thousandSeparator: false })).toBe(
       "20000000",
+    );
+  });
+
+  it("pickWidgetDashboardStyle omits canvas-only fields", () => {
+    const widgetStyle = pickWidgetDashboardStyle({
+      colorScheme: "dark",
+      canvasBackground: "#ff0000",
+      canvasBackgroundImage: "https://example.com/bg.png",
+      widgetGap: 12,
+      pixelGutter: 8,
+      themeAccent: "#465fff",
+      actionIconColor: "#111111",
+      paletteId: "tech",
+      titleStyle: { fontSize: 14 },
+    });
+    expect(widgetStyle).toEqual({
+      colorScheme: "dark",
+      paletteId: "tech",
+      titleStyle: { fontSize: 14 },
+    });
+    expect(widgetDashboardStyleFingerprint({ colorScheme: "dark", canvasBackground: "#a" })).toBe(
+      widgetDashboardStyleFingerprint({ colorScheme: "dark", canvasBackground: "#b" }),
     );
   });
 });

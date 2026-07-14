@@ -2,34 +2,49 @@
 
 > 自我演化单一状态账本。Automations 可读写；人工可审计。不要另建并行运行态文件。
 
+## 排队下一轮（看板画布 UX · 未启动）
+
+| 字段 | 值 |
+|------|----|
+| phase | QUEUED |
+| request | 看板画布拖缩放 + 表格/图表视觉 DE 对标完善 |
+| type | feature + bugfix |
+| plan | docs/automate/plans/2026-07-14-dashboard-canvas-ux-de-complete.md |
+| goal | isPlayer 全类型跟手；EmbeddedChartTable 设计系统化；BUG-2 Pointer QA |
+| autonomy_policy | auto_accept_low_risk |
+| risk_level | medium |
+| blockers | 等待权限核心 A5 完结或用户指定并行 |
+
 ## 当前轮次
 
 | 字段 | 值 |
 |------|----|
-| phase | A5_EXECUTE |
-| request | 权限与安全生产可用核心版（续跑 Task 7–13） |
+| phase | DONE |
+| request | 看板右栏配置 ↔ 画布真实映射（对标 DataEase） |
 | type | existing-plan |
-| autonomy_policy | auto_accept_low_risk |
-| risk_level | medium |
-| plan | docs/superpowers/plans/2026-07-13-permission-security-production-core.md |
-| plan_review_state | WARN（Task 10 笔误实施时修正） |
-| status | RUNNING |
-| started_at | 2026-07-14T14:23:00+08:00 |
-| last_verified_command | admin root 绑定修复 + bootstrap_root repair |
+| plan | docs/automate/plans/2026-07-14-dashboard-config-rail-canvas-mapping-audit.md |
+| status | DONE |
+| last_verified_command | vitest rail-mapping 9 files |
 | last_verified_exit_code | 0 |
-| verification_summary | admin 用户未绑 root 角色已修复；Task 7 执行中 |
+| verification_summary | Phase0–3 全量完成；26 vitest 绿 |
 | repair_rounds | 0 |
 
 ## 当前需求契约
 
-- request: 按预定计划继续执行权限核心（plan-execute 续跑）
-- type: existing-plan
-- goal: 完成 Task 7–13，后端权限收口 + 前端真理源 + 文档/E2E
-- scope_include: backend auth/api、fe permission-codes、docs/api、tests auth 矩阵
-- scope_exclude: LDAP/OIDC/MFA、dashboard 并行 WIP（不提交无关改动）
-- acceptance: 各 Task 验证命令绿 + 最终 plan-verify
-- risk_level: medium
+- request: 右栏配置项与画布可验证映射
+- type: audit + phased fix
+- goal: Phase0–2 完成
+- acceptance: vitest 绿
 - autonomy_policy: auto_accept_low_risk
+
+## 上一轮（归档 · 权限核心 · 暂停）
+
+| 字段 | 值 |
+|------|----|
+| phase | A5_EXECUTE |
+| request | 权限核心续跑 Task 7–13 |
+| plan | docs/superpowers/plans/2026-07-13-permission-security-production-core.md |
+| status | PAUSED |
 
 ## 上一轮（归档 · 壳层/看板主题隔离）
 

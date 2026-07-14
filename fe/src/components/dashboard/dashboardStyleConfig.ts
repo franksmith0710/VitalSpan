@@ -213,6 +213,31 @@ export function hasUserCanvasBackground(config: DashboardStyleConfig): boolean {
 /** @deprecated use hasUserCanvasBackground */
 export const hasCustomCanvasBackground = hasUserCanvasBackground;
 
+/** 组件树实际消费的看板样式子集（不含画布壳层 / CSS 变量类字段） */
+export function pickWidgetDashboardStyle(
+  config: DashboardStyleConfig,
+): DashboardStyleConfig {
+  return {
+    colorScheme: config.colorScheme,
+    defaultQueryLimit: config.defaultQueryLimit,
+    paletteId: config.paletteId,
+    paletteColors: config.paletteColors
+      ? [...config.paletteColors]
+      : undefined,
+    widgetStyle: config.widgetStyle,
+    titleStyle: config.titleStyle,
+    filterChromeStyle: config.filterChromeStyle,
+    filterControlStyle: config.filterControlStyle,
+    numberFormat: config.numberFormat,
+  };
+}
+
+export function widgetDashboardStyleFingerprint(
+  config: DashboardStyleConfig,
+): string {
+  return JSON.stringify(pickWidgetDashboardStyle(config));
+}
+
 export function canvasChromeUsesDotGrid(config: DashboardStyleConfig): boolean {
   return !hasUserCanvasBackground(config);
 }
