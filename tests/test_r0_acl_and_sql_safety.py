@@ -105,7 +105,10 @@ def other_id() -> str:
 
 def test_dashboard_get_forbidden_for_non_owner(client, owner_id, other_id):
     fastapi_app.dependency_overrides[get_current_user] = lambda: UserContext(
-        id=owner_id, username="owner", roles=["analyst"],
+        id=owner_id,
+        username="owner",
+        roles=["analyst"],
+        permissions={"dashboard:read", "dashboard:edit"},
     )
     created = client.post(
         "/api/v1/dashboards",
@@ -116,7 +119,10 @@ def test_dashboard_get_forbidden_for_non_owner(client, owner_id, other_id):
     dash_id = created.json()["id"]
 
     fastapi_app.dependency_overrides[get_current_user] = lambda: UserContext(
-        id=other_id, username="other", roles=["analyst"],
+        id=other_id,
+        username="other",
+        roles=["analyst"],
+        permissions={"dashboard:read"},
     )
     resp = client.get(f"/api/v1/dashboards/{dash_id}", headers=AUTH)
     assert resp.status_code == 403
@@ -126,7 +132,10 @@ def test_dashboard_get_forbidden_for_non_owner(client, owner_id, other_id):
 
 def test_dashboard_owner_can_get(client, owner_id):
     fastapi_app.dependency_overrides[get_current_user] = lambda: UserContext(
-        id=owner_id, username="owner", roles=["analyst"],
+        id=owner_id,
+        username="owner",
+        roles=["analyst"],
+        permissions={"dashboard:read", "dashboard:edit"},
     )
     created = client.post(
         "/api/v1/dashboards",
@@ -144,7 +153,10 @@ def test_dashboard_owner_can_get(client, owner_id):
 def test_dataset_get_enforces_allowed_roles(client):
     admin_id = str(uuid.uuid4())
     fastapi_app.dependency_overrides[get_current_user] = lambda: UserContext(
-        id=admin_id, username="admin", roles=["admin"],
+        id=admin_id,
+        username="admin",
+        roles=["admin"],
+        is_root=True,
     )
     ds_id = f"ds-r0-{uuid.uuid4().hex[:8]}"
     created = client.post(
@@ -160,14 +172,20 @@ def test_dataset_get_enforces_allowed_roles(client):
     assert created.status_code == 201, created.text
 
     fastapi_app.dependency_overrides[get_current_user] = lambda: UserContext(
-        id=str(uuid.uuid4()), username="viewer", roles=["viewer"],
+        id=str(uuid.uuid4()),
+        username="viewer",
+        roles=["viewer"],
+        permissions={"dataset:read"},
     )
     forbidden = client.get(f"/api/v1/datasets/{ds_id}", headers=AUTH)
     assert forbidden.status_code == 403
     assert forbidden.json()["code"] == "META_DATASET_FORBIDDEN"
 
     fastapi_app.dependency_overrides[get_current_user] = lambda: UserContext(
-        id=str(uuid.uuid4()), username="analyst", roles=["analyst"],
+        id=str(uuid.uuid4()),
+        username="analyst",
+        roles=["analyst"],
+        permissions={"dataset:read"},
     )
     ok = client.get(f"/api/v1/datasets/{ds_id}", headers=AUTH)
     assert ok.status_code == 200

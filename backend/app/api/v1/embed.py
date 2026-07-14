@@ -5,7 +5,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, Query, status
 from fastapi.responses import JSONResponse
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "dashboard:read"
 from app.integration import embed_token as et
 from app.integration.errors import IntegrationError
 
@@ -23,7 +25,7 @@ def _err(exc: IntegrationError) -> JSONResponse:
 @router.post("/token", status_code=status.HTTP_201_CREATED, response_model=et.EmbedTokenOut)
 def post_embed_token(
     payload: et.EmbedTokenIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     origin: Annotated[str | None, Header(alias="Origin")] = None,
 ):
     try:
@@ -34,7 +36,7 @@ def post_embed_token(
 
 @router.get("/sdk-params")
 def get_embed_sdk_params(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     token: str = Query(),
     origin: Annotated[str | None, Header(alias="Origin")] = None,
 ):

@@ -15,7 +15,6 @@ from app.auth.models import (
 )
 from app.auth.roles.service import get_role
 from app.auth.rls.groups.service import validate_dimension_value
-from app.auth.users.service import assert_binding_admin
 
 
 class BindingError(Exception):
@@ -76,7 +75,6 @@ def replace_role_dimension_values(
     actor_username: str | None,
     trace_id: str,
 ) -> None:
-    assert_binding_admin(actor_roles)
     role = get_role(session, role_id)
     from app.auth.roles.service import assert_role_active
 
@@ -119,7 +117,6 @@ def replace_role_dimension_groups(
     actor_username: str | None,
     trace_id: str,
 ) -> None:
-    assert_binding_admin(actor_roles)
     role = get_role(session, role_id)
     from app.auth.roles.service import assert_role_active
 

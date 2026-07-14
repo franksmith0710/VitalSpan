@@ -28,6 +28,20 @@ _CTX = {
 _AUDIT_CTX = {"actor_id": "dev", "actor_username": "dev", "trace_id": "test-lifecycle"}
 
 
+@pytest.fixture(autouse=True)
+def _restore_admin_binding_after_lifecycle_test():
+    """生命周期用例会 _reset_root_state 清空 root 绑定；跑在 dev Postgres 上时必须复原 admin。"""
+    yield
+    from app.auth.bootstrap_root import ensure_admin_username_root_binding
+    from app.auth.models import get_meta_session
+
+    session = get_meta_session()
+    try:
+        ensure_admin_username_root_binding(session, username="admin")
+    finally:
+        session.close()
+
+
 def _new_session():
     engine = get_meta_engine()
     Base.metadata.create_all(engine)

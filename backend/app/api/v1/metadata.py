@@ -7,7 +7,10 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, get_current_user, require_permission
+
+PERM_READ = "metadata:read"
+PERM_MANAGE = "metadata:manage"
 from app.datasources.models import get_meta_session
 from app.metadata.glossary import service as glossary_service
 from app.metadata.glossary.schemas import GlossaryError, TermCreate, TermListResponse, TermOut, TermUpdate
@@ -101,7 +104,7 @@ def _entity_type_error(exc: EntityTypeError) -> JSONResponse:
 
 @router.get("/entity-types", response_model=EntityTypeListOut)
 def list_entity_types(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> EntityTypeListOut:
     return EntityTypeListOut(items=entity_service.list_entity_types())
 
@@ -109,7 +112,7 @@ def list_entity_types(
 @router.post("/entity-types", status_code=status.HTTP_201_CREATED, response_model=None)
 def create_entity_type(
     payload: EntityTypeCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return entity_service.create_entity_type(payload)
@@ -120,7 +123,7 @@ def create_entity_type(
 @router.post("/entity-types/validate", response_model=EntityTypeValidateOut)
 def validate_entity_type(
     payload: EntityTypeCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return entity_service.validate_entity_type_draft(payload)
@@ -131,7 +134,7 @@ def validate_entity_type(
 @router.get("/entity-types/{type_code}/query-bindings", response_model=EntityQueryBindingsOut)
 def get_entity_query_bindings(
     type_code: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return entity_service.get_query_bindings(type_code)
@@ -142,7 +145,7 @@ def get_entity_query_bindings(
 @router.get("/entity-types/{type_code}", response_model=None)
 def get_entity_type(
     type_code: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return entity_service.get_entity_type(type_code)
@@ -154,7 +157,7 @@ def get_entity_type(
 def update_entity_type(
     type_code: str,
     payload: EntityTypeUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return entity_service.update_entity_type(type_code, payload)
@@ -165,7 +168,7 @@ def update_entity_type(
 @router.delete("/entity-types/{type_code}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_entity_type(
     type_code: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         entity_service.delete_entity_type(type_code)
@@ -176,7 +179,7 @@ def delete_entity_type(
 
 @router.get("/glossary", response_model=TermListResponse)
 def list_glossary_terms(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     code_prefix: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
@@ -189,7 +192,7 @@ def list_glossary_terms(
 @router.post("/glossary", response_model=TermOut, status_code=status.HTTP_201_CREATED)
 def create_glossary_term(
     payload: TermCreate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> TermOut | JSONResponse:
     try:
@@ -202,7 +205,7 @@ def create_glossary_term(
 @router.get("/glossary/{term_id}", response_model=TermOut)
 def get_glossary_term(
     term_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> TermOut | JSONResponse:
     try:
@@ -216,7 +219,7 @@ def get_glossary_term(
 def update_glossary_term(
     term_id: uuid.UUID,
     payload: TermUpdate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> TermOut | JSONResponse:
     try:
@@ -229,7 +232,7 @@ def update_glossary_term(
 @router.delete("/glossary/{term_id}", response_model=None)
 def delete_glossary_term(
     term_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
@@ -242,7 +245,7 @@ def delete_glossary_term(
 @router.get("/glossary/{term_id}/field-mappings", response_model=TermFieldMappingListResponse)
 def list_term_field_mappings(
     term_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> TermFieldMappingListResponse | JSONResponse:
     from app.metadata.glossary import field_mappings as term_field_mappings
@@ -260,7 +263,7 @@ def list_term_field_mappings(
 def replace_term_field_mappings(
     term_id: uuid.UUID,
     payload: TermFieldMappingsReplace,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> TermFieldMappingListResponse | JSONResponse:
     from app.metadata.glossary import field_mappings as term_field_mappings
@@ -276,7 +279,7 @@ def replace_term_field_mappings(
 
 @router.get("/themes", response_model=ThemeListResponse)
 def list_theme_nodes(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     parent_id: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
@@ -289,7 +292,7 @@ def list_theme_nodes(
 @router.post("/themes", response_model=ThemeOut, status_code=status.HTTP_201_CREATED)
 def create_theme_node(
     payload: ThemeCreate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> ThemeOut | JSONResponse:
     try:
@@ -302,7 +305,7 @@ def create_theme_node(
 @router.get("/themes/{node_id}", response_model=ThemeOut)
 def get_theme_node(
     node_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> ThemeOut | JSONResponse:
     try:
@@ -316,7 +319,7 @@ def get_theme_node(
 def update_theme_node(
     node_id: uuid.UUID,
     payload: ThemeUpdate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> ThemeOut | JSONResponse:
     try:
@@ -329,7 +332,7 @@ def update_theme_node(
 @router.delete("/themes/{node_id}", response_model=None)
 def delete_theme_node(
     node_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
@@ -343,7 +346,7 @@ def delete_theme_node(
 def move_theme_node(
     node_id: uuid.UUID,
     payload: ThemeMove,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> ThemeOut | JSONResponse:
     try:
@@ -355,7 +358,7 @@ def move_theme_node(
 
 @router.get("/dimensions/resolve", response_model=DimensionResolveOut)
 def resolve_dimension(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     code: str = Query(min_length=1, max_length=64),
 ) -> DimensionResolveOut | JSONResponse:
@@ -368,7 +371,7 @@ def resolve_dimension(
 
 @router.get("/dimensions", response_model=DimensionListResponse)
 def list_dimensions(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     code_prefix: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
@@ -381,7 +384,7 @@ def list_dimensions(
 @router.post("/dimensions", response_model=DimensionOut, status_code=status.HTTP_201_CREATED)
 def create_dimension(
     payload: DimensionCreate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionOut | JSONResponse:
     try:
@@ -394,7 +397,7 @@ def create_dimension(
 @router.get("/dimensions/{dimension_id}", response_model=DimensionOut)
 def get_dimension(
     dimension_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionOut | JSONResponse:
     try:
@@ -408,7 +411,7 @@ def get_dimension(
 def update_dimension(
     dimension_id: uuid.UUID,
     payload: DimensionUpdate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionOut | JSONResponse:
     try:
@@ -421,7 +424,7 @@ def update_dimension(
 @router.delete("/dimensions/{dimension_id}", response_model=None)
 def delete_dimension(
     dimension_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
@@ -434,7 +437,7 @@ def delete_dimension(
 @router.get("/dimensions/{dimension_id}/values", response_model=DimensionValueListResponse)
 def list_dimension_values(
     dimension_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -457,7 +460,7 @@ def list_dimension_values(
 def register_dimension_values(
     dimension_id: uuid.UUID,
     payload: DimensionValuesRegister,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> DimensionValueListResponse | JSONResponse:
     try:
@@ -474,7 +477,7 @@ def register_dimension_values(
 def delete_dimension_value(
     dimension_id: uuid.UUID,
     value_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
@@ -495,7 +498,7 @@ def physical_tables_get(
     entity_type_code: str | None = Query(default=None, alias="entityTypeCode"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    _: Annotated[UserContext, Depends(get_current_user)] = None,
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))] = None,
 ):
     if fqn is not None:
         try:
@@ -512,7 +515,7 @@ def physical_tables_get(
 )
 def physical_tables_register_from_schema(
     payload: PhysicalTableRegisterFromSchemaIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -524,7 +527,7 @@ def physical_tables_register_from_schema(
 @router.post("/physical-tables", response_model=PhysicalTableOut, status_code=status.HTTP_201_CREATED)
 def physical_tables_register(
     payload: PhysicalTableRegisterIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> PhysicalTableOut | JSONResponse:
     try:
         return physical_service.register_physical_table(payload, actor)
@@ -535,7 +538,7 @@ def physical_tables_register(
 @router.post("/physical-tables/validate", response_model=PhysicalTableValidateOut)
 def physical_tables_validate(
     payload: PhysicalTableRegisterIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> PhysicalTableValidateOut | JSONResponse:
     try:
         return physical_service.validate_physical_table(payload)
@@ -547,7 +550,7 @@ def physical_tables_validate(
 def physical_tables_update(
     fqn: str,
     payload: PhysicalTableUpdateIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return physical_service.update_physical_table(fqn, payload, actor)
@@ -558,7 +561,7 @@ def physical_tables_update(
 @router.delete("/physical-tables/{fqn}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def physical_tables_delete(
     fqn: str,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         physical_service.delete_physical_table(fqn, actor)
@@ -570,7 +573,7 @@ def physical_tables_delete(
 @router.get("/physical-tables/{fqn}/lineage", response_model=None)
 def physical_tables_lineage(
     fqn: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return physical_service.get_physical_lineage(fqn)

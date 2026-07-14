@@ -3,11 +3,14 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Header, Query, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "governance:read"
+PERM_MANAGE = "governance:manage"
 from app.datasources.models import get_meta_session
 from app.integration.errors import IntegrationError
 from app.integration import query_services as svc
@@ -37,7 +40,7 @@ def _err(exc: IntegrationError) -> JSONResponse:
 
 @router.get("", response_model=svc.QueryServiceListResponse)
 def list_services(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     category: str | None = None,
     limit: int = Query(50, ge=1, le=100),
@@ -52,7 +55,7 @@ def list_services(
 @router.get("/{service_id}", response_model=svc.QueryServiceOut)
 def get_service(
     service_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -64,7 +67,7 @@ def get_service(
 @router.get("/{service_id}/openapi")
 def get_service_openapi(
     service_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -78,7 +81,7 @@ def get_service_openapi(
 def execute_service(
     service_id: uuid.UUID,
     payload: svc.QueryServiceExecuteIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
@@ -97,7 +100,7 @@ def execute_service(
 @router.post("/{service_id}/publish")
 def publish_service_route(
     service_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:

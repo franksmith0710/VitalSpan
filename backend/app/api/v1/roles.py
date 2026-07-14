@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.auth.audit.write_hooks import audit_kwargs
-from app.auth.deps import UserContext, get_current_user, require_permission
+from app.auth.deps import UserContext, require_permission
 from app.auth.models import get_meta_session
 from app.auth.permissions import (
     AuditWriteContext,
@@ -65,7 +65,7 @@ def _permission_error_response(exc: PermissionServiceError) -> JSONResponse:
 
 @router.get("", response_model=RoleListResponse)
 def list_roles(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission("system:role.read"))],
     db: Annotated[Session, Depends(_db)],
     code_prefix: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
@@ -78,7 +78,7 @@ def list_roles(
 @router.post("", response_model=RoleOut, status_code=status.HTTP_201_CREATED)
 def create_role(
     payload: RoleCreate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission("system:role.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> RoleOut | JSONResponse:
     try:
@@ -91,7 +91,7 @@ def create_role(
 @router.get("/{role_id}", response_model=RoleOut)
 def get_role(
     role_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission("system:role.read"))],
     db: Annotated[Session, Depends(_db)],
 ) -> RoleOut | JSONResponse:
     try:
@@ -105,7 +105,7 @@ def get_role(
 def update_role(
     role_id: uuid.UUID,
     payload: RoleUpdate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission("system:role.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> RoleOut | JSONResponse:
     try:
@@ -120,7 +120,7 @@ def update_role(
 @router.delete("/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_role(
     role_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission("system:role.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:
@@ -134,7 +134,7 @@ def delete_role(
 def replace_role_dimension_values(
     role_id: uuid.UUID,
     payload: RoleDimensionValuesReplace,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission("system:rls.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     ctx = audit_kwargs(actor.id, actor.username)
@@ -163,7 +163,7 @@ def replace_role_dimension_values(
 def replace_role_dimension_groups(
     role_id: uuid.UUID,
     payload: RoleDimensionGroupsReplace,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission("system:rls.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     ctx = audit_kwargs(actor.id, actor.username)
@@ -227,7 +227,7 @@ def replace_role_permission_bindings(
 def get_effective_dimensions(
     role_id: uuid.UUID,
     dimension_type_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission("system:rls.read"))],
     db: Annotated[Session, Depends(_db)],
 ) -> EffectiveDimensionsResponse | JSONResponse:
     try:

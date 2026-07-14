@@ -8,7 +8,11 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_DS_READ = "datasource:read"
+PERM_DATASET_READ = "dataset:read"
+PERM_DATASET_MANAGE = "dataset:manage"
 from app.auth.resources.service import VisibilityError
 from app.datasources.models import get_meta_session
 from app.query import binding_service
@@ -92,7 +96,7 @@ def _parse_user_id(user: UserContext) -> uuid.UUID | None:
 )
 def translate_query(
     payload: TranslateRequest,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_DS_READ))],
 ) -> TranslateResponse | JSONResponse:
     try:
         return translator_service.translate_config_to_sql(payload)
@@ -111,7 +115,7 @@ def translate_query(
 )
 def execute_query(
     payload: ExecuteRequest,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_DS_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> ExecuteResponse | JSONResponse:
     try:
@@ -122,7 +126,7 @@ def execute_query(
 
 @router.get("/bindings", response_model=BindingListResponse)
 def list_bindings(
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_READ))],
     db: Annotated[Session, Depends(_db)],
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -141,7 +145,7 @@ def list_bindings(
 @router.post("/bindings", response_model=BindingOut, status_code=status.HTTP_201_CREATED)
 def create_binding(
     payload: BindingCreate,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> BindingOut | JSONResponse:
     try:
@@ -157,7 +161,7 @@ def create_binding(
 @router.get("/bindings/{binding_id}", response_model=BindingOut)
 def get_binding(
     binding_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> BindingOut | JSONResponse:
     try:
@@ -170,7 +174,7 @@ def get_binding(
 def update_binding(
     binding_id: uuid.UUID,
     payload: BindingUpdate,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> BindingOut | JSONResponse:
     try:
@@ -184,7 +188,7 @@ def update_binding(
 @router.delete("/bindings/{binding_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_binding(
     binding_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:
@@ -196,7 +200,7 @@ def delete_binding(
 
 @router.get("/routing/modes", response_model=RoutingModesOut)
 def get_routing_modes(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_DATASET_READ))],
 ) -> RoutingModesOut:
     return list_routing_modes()
 
@@ -204,7 +208,7 @@ def get_routing_modes(
 @router.post("/native/validate", response_model=NativeValidateOut)
 def validate_native_query(
     payload: NativeQuerySpec,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_DS_READ))],
 ) -> NativeValidateOut | JSONResponse:
     try:
         return validate_native_spec(payload)
@@ -215,7 +219,7 @@ def validate_native_query(
 @router.post("/readonly-guard", response_model=ReadonlyGuardOut)
 def readonly_route_guard(
     payload: ReadonlyGuardIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_DS_READ))],
 ) -> ReadonlyGuardOut | JSONResponse:
     try:
         return assert_readonly_route_guard(payload)
@@ -225,7 +229,7 @@ def readonly_route_guard(
 
 @router.get("/dataset/routing", response_model=DatasetRoutingOut)
 def get_dataset_routing(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_DATASET_READ))],
 ) -> DatasetRoutingOut:
     return dataset_routing_doc()
 
@@ -233,7 +237,7 @@ def get_dataset_routing(
 @router.post("/dataset/validate", response_model=None)
 def validate_dataset_query(
     payload: dict,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_READ))],
 ):
     try:
         return validate_dataset_spec(payload, user.roles)
@@ -244,7 +248,7 @@ def validate_dataset_query(
 @router.post("/dataset/execute-plan", response_model=DatasetExecutePlanOut)
 def post_dataset_execute_plan(
     payload: dict,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_READ))],
 ):
     try:
         return build_dataset_execute_plan(payload, user.roles)
@@ -259,7 +263,7 @@ def post_dataset_execute_plan(
 )
 def execute_dataset_config(
     payload: DatasetExecuteRequest,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> DatasetExecuteResponse | JSONResponse:
     try:

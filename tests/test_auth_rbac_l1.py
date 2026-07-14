@@ -97,6 +97,10 @@ def client() -> TestClient:
 
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
+    """RBAC 模块使用独立 sqlite 并在用例间清空 auth 表；每次请求前幂等 seed root admin。"""
+    import conftest as _conftest
+
+    _conftest._seed_ci_admin_user()
     return jwt_auth_headers()
 
 
@@ -960,7 +964,7 @@ def test_audit_concurrent_bind_at_most_one(client, auth_headers):
 
 
 def test_binding_forbidden_non_admin(client, auth_headers):
-    """T-AUTH-A08: 非 admin operator → 403 BINDING_FORBIDDEN；无审计。"""
+    """T-AUTH-A08: 无功能权限 operator → 403 PERMISSION_DENIED；无审计。"""
     role = client.post("/api/v1/roles", json={"code": "aud_op", "name": "O"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "aud_op", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
 
@@ -976,7 +980,7 @@ def test_binding_forbidden_non_admin(client, auth_headers):
     finally:
         app.dependency_overrides.pop(get_current_user, None)
     assert resp.status_code == 403
-    assert resp.json()["code"] == "BINDING_FORBIDDEN"
+    assert resp.json()["code"] == "PERMISSION_DENIED"
     audit = client.get(
         f"/api/v1/audit/events?target_id={user['id']}&action=user.role.bind",
         headers=auth_headers,
@@ -1372,7 +1376,7 @@ def test_role_dimension_invalid_role_gp10(client, auth_headers):
 
 
 def test_group_binding_forbidden_non_admin_gp11(client, auth_headers):
-    """T-AUTH-GP11: 非 admin 写分组 → 403 BINDING_FORBIDDEN。"""
+    """T-AUTH-GP11: 无功能权限写分组 → 403 PERMISSION_DENIED。"""
     _, dim = _ensure_org_dim(client, auth_headers)
 
     async def _operator():
@@ -1388,7 +1392,7 @@ def test_group_binding_forbidden_non_admin_gp11(client, auth_headers):
     finally:
         app.dependency_overrides.pop(get_current_user, None)
     assert resp.status_code == 403
-    assert resp.json()["code"] == "BINDING_FORBIDDEN"
+    assert resp.json()["code"] == "PERMISSION_DENIED"
 
 
 def test_group_delete_in_use_gp12(client, auth_headers):
@@ -1695,10 +1699,10 @@ def test_audit_role_dimension_replace_au06(client, auth_headers):
 
 
 def test_audit_forbidden_non_admin_au07(client, operator_client, auth_headers):
-    """T-AUTH-AU07: 非 admin 查询审计 → 403 AUDIT_FORBIDDEN。"""
+    """T-AUTH-AU07: 无功能权限查询审计 → 403 PERMISSION_DENIED。"""
     resp = operator_client.get("/api/v1/audit/events", headers=jwt_auth_headers())
     assert resp.status_code == 403
-    assert resp.json()["code"] == "AUDIT_FORBIDDEN"
+    assert resp.json()["code"] == "PERMISSION_DENIED"
 
 
 def test_audit_filter_target_type_au08(client, auth_headers):
@@ -2048,14 +2052,14 @@ def test_audit_bulk_query_pagination_perf_au13(client, auth_headers):
 
 
 def test_dimension_create_non_admin_forbidden_d13(operator_client, auth_headers):
-    """T-AUTH-D13: 非 admin POST /rls/dimensions → 403 DIMENSION_FORBIDDEN。"""
+    """T-AUTH-D13: 无功能权限 POST /rls/dimensions → 403 PERMISSION_DENIED。"""
     resp = operator_client.post(
         "/api/v1/rls/dimensions",
         json={"code": "d13_op", "name": "X", "value_type": "string"},
         headers=auth_headers,
     )
     assert resp.status_code == 403
-    assert resp.json()["code"] == "DIMENSION_FORBIDDEN"
+    assert resp.json()["code"] == "PERMISSION_DENIED"
 
 
 def test_dimension_delete_role_direct_ref_d14(client, auth_headers):

@@ -19,11 +19,6 @@ class AuditError(Exception):
         super().__init__(message)
 
 
-def assert_audit_admin(actor_roles: list[str]) -> None:
-    if "admin" not in actor_roles:
-        raise AuditError("AUDIT_FORBIDDEN", "Audit query requires admin role", 403)
-
-
 def record_event(
     session: Session,
     *,

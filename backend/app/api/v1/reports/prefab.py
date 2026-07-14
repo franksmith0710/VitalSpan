@@ -7,7 +7,10 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "report:read"
+PERM_MANAGE = "report:manage"
 from app.datasources.models import get_meta_session
 from app.reports.prefab.errors import PrefabError
 from app.reports.prefab.run import run_prefab_binding
@@ -38,7 +41,7 @@ def _prefab_error(exc: PrefabError) -> JSONResponse:
 
 
 @router.get("/probe")
-def prefab_probe(_: Annotated[UserContext, Depends(get_current_user)]) -> dict:
+def prefab_probe(_: Annotated[UserContext, Depends(require_permission(PERM_READ))]) -> dict:
     from app.reports.prefab.probe import (
         probe_list_prefab_bindings_budget_ms,
         probe_validate_prefab_budget_ms,
@@ -54,14 +57,14 @@ def prefab_probe(_: Annotated[UserContext, Depends(get_current_user)]) -> dict:
 
 
 @router.get("/bindings", response_model=PrefabBindingListResponse)
-def list_bindings(actor: Annotated[UserContext, Depends(get_current_user)]) -> PrefabBindingListResponse:
+def list_bindings(actor: Annotated[UserContext, Depends(require_permission(PERM_READ))]) -> PrefabBindingListResponse:
     return prefab_service.list_prefab_bindings(actor)
 
 
 @router.get("/bindings/{binding_key}", response_model=PrefabBindingOut)
 def get_binding(
     binding_key: str,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> PrefabBindingOut | JSONResponse:
     try:
         return prefab_service.get_prefab_binding(binding_key, actor)
@@ -72,7 +75,7 @@ def get_binding(
 @router.post("/bindings/validate", response_model=PrefabBindingValidateOut)
 def validate_binding(
     payload: PrefabBindingIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> PrefabBindingValidateOut | JSONResponse:
     try:
         return prefab_service.validate_prefab_binding(payload)
@@ -84,7 +87,7 @@ def validate_binding(
 def upsert_binding(
     binding_key: str,
     payload: PrefabBindingIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> PrefabBindingOut | JSONResponse:
     try:
         return prefab_service.upsert_prefab_binding(binding_key, payload, actor)
@@ -96,7 +99,7 @@ def upsert_binding(
 def run_binding(
     binding_key: str,
     payload: PrefabRunIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> PrefabRunOut | JSONResponse:
     try:

@@ -7,7 +7,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import JSONResponse
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "report:read"
+PERM_MANAGE = "report:manage"
 from app.integration import reports_export as rex
 from app.integration.errors import IntegrationError
 
@@ -32,7 +35,7 @@ def _err(exc: IntegrationError) -> JSONResponse:
 @router.get("/export", response_model=rex.ReportExportOut)
 def get_report_export(
     response: Response,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     template_id: str = Query(alias="templateId"),
     format: str = Query(alias="format"),
     from_ts: datetime | None = Query(default=None, alias="from"),
@@ -56,7 +59,7 @@ def get_report_export(
 @router.get("/export/{export_id}", response_model=rex.ReportExportOut)
 def get_export_status_route(
     export_id: _uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return rex.get_export_status(export_id)
@@ -67,7 +70,7 @@ def get_export_status_route(
 @router.get("/export/{export_id}/download")
 def download_export(
     export_id: _uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         data, content_type, filename = rex.get_export_file(export_id)

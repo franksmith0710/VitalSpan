@@ -6,7 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, Query, status
 from fastapi.responses import JSONResponse, Response
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "report:read"
+PERM_MANAGE = "report:manage"
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.catalog.schemas import CatalogNodeCreate, CatalogNodeMove, CatalogNodeOut, CatalogNodeUpdate
 from app.reports.catalog import service as catalog_service
@@ -60,7 +63,7 @@ def _batch_error(exc: ReportBatchError) -> JSONResponse:
 
 
 @router.get("/catalog/nodes/{node_id}/extension", response_model=None)
-def get_node_extension(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get_current_user)]):
+def get_node_extension(node_id: uuid.UUID, _: Annotated[UserContext, Depends(require_permission(PERM_READ))]):
     try:
         return extension_service.get_extension(node_id)
     except ReportExtensionError as exc:
@@ -71,7 +74,7 @@ def get_node_extension(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get
 def upsert_node_extension(
     node_id: uuid.UUID,
     payload: ExtensionConfigUpsert,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return extension_service.upsert(node_id, payload, user)
@@ -82,7 +85,7 @@ def upsert_node_extension(
 @router.delete("/catalog/nodes/{node_id}/extension", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_node_extension(
     node_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         extension_service.delete_extension(node_id, user)
@@ -95,7 +98,7 @@ def delete_node_extension(
 def extension_compare_preview(
     node_id: uuid.UUID,
     payload: dict,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return extension_service.compare_preview(
@@ -106,7 +109,7 @@ def extension_compare_preview(
 
 
 @router.get("/catalog/nodes/{node_id}/extension/render-spec", response_model=None)
-def get_extension_render_spec(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get_current_user)]):
+def get_extension_render_spec(node_id: uuid.UUID, _: Annotated[UserContext, Depends(require_permission(PERM_READ))]):
     try:
         return extension_service.get_render_spec(node_id)
     except ReportExtensionError as exc:
@@ -114,7 +117,7 @@ def get_extension_render_spec(node_id: uuid.UUID, _: Annotated[UserContext, Depe
 
 
 @router.get("/catalog/nodes/{node_id}/extension/revisions", response_model=ExtensionRevisionListOut)
-def list_extension_revisions(node_id: uuid.UUID, _: Annotated[UserContext, Depends(get_current_user)]):
+def list_extension_revisions(node_id: uuid.UUID, _: Annotated[UserContext, Depends(require_permission(PERM_READ))]):
     try:
         items = extension_service.list_revision_history(node_id)
         return ExtensionRevisionListOut(
@@ -127,7 +130,7 @@ def list_extension_revisions(node_id: uuid.UUID, _: Annotated[UserContext, Depen
 @router.post("/batch", status_code=status.HTTP_201_CREATED, response_model=None)
 def batch_create_reports(
     payload: BatchCreateReportsIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
@@ -139,7 +142,7 @@ def batch_create_reports(
 @router.post("/batch/export", status_code=status.HTTP_202_ACCEPTED, response_model=None)
 def submit_batch_export_job(
     payload: BatchExportJobIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return batch_export_jobs.submit_batch_export(payload, actor)
@@ -150,7 +153,7 @@ def submit_batch_export_job(
 @router.get("/jobs/{job_id}", response_model=None)
 def get_batch_export_job(
     job_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return batch_export_jobs.get_batch_export_job(job_id, actor)
@@ -161,7 +164,7 @@ def get_batch_export_job(
 @router.get("/jobs/{job_id}/download", response_model=None)
 def download_batch_export_job(
     job_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         data, content_type, filename = batch_export_jobs.get_batch_export_download(job_id, actor)
@@ -176,7 +179,7 @@ def download_batch_export_job(
 
 @router.get("/catalog/nodes", response_model=list[CatalogNodeOut])
 def list_catalog_nodes(
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     parent_id: uuid.UUID | None = Query(default=None, alias="parentId"),
 ):
     return catalog_service.list_nodes(parent_id, user)
@@ -185,7 +188,7 @@ def list_catalog_nodes(
 @router.post("/catalog/nodes", status_code=status.HTTP_201_CREATED, response_model=None)
 def create_catalog_node(
     payload: CatalogNodeCreate,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return catalog_service.create_node(payload, user)
@@ -196,7 +199,7 @@ def create_catalog_node(
 @router.get("/catalog/nodes/{node_id}", response_model=None)
 def get_catalog_node(
     node_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return catalog_service.get_node(node_id)
@@ -208,7 +211,7 @@ def get_catalog_node(
 def update_catalog_node(
     node_id: uuid.UUID,
     payload: CatalogNodeUpdate,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return catalog_service.update_node(node_id, payload, user)
@@ -219,7 +222,7 @@ def update_catalog_node(
 @router.delete("/catalog/nodes/{node_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_catalog_node(
     node_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         catalog_service.delete_node(node_id, user)
@@ -232,7 +235,7 @@ def delete_catalog_node(
 def move_catalog_node(
     node_id: uuid.UUID,
     payload: CatalogNodeMove,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return catalog_service.move_node(node_id, payload, user)
@@ -243,7 +246,7 @@ def move_catalog_node(
 @router.post("/schedules", status_code=status.HTTP_201_CREATED, response_model=None)
 def create_schedule(
     payload: ScheduleCreate,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return scheduler_service.create_schedule(payload, user)
@@ -256,7 +259,7 @@ def create_schedule(
 @router.get("/schedules/{schedule_id}", response_model=None)
 def get_schedule(
     schedule_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return scheduler_service.get_schedule(schedule_id)
@@ -268,7 +271,7 @@ def get_schedule(
 def transition_schedule(
     schedule_id: uuid.UUID,
     payload: ScheduleTransitionIn,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return scheduler_service.transition_schedule(schedule_id, payload.action, user)
@@ -278,7 +281,7 @@ def transition_schedule(
 
 @router.get("/schedules", response_model=None)
 def list_schedules(
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     catalog_node_id: uuid.UUID | None = Query(default=None, alias="catalogNodeId"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
@@ -294,7 +297,7 @@ def list_schedules(
 @router.get("/schedules/{schedule_id}/executions", response_model=None)
 def list_schedule_executions(
     schedule_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):
@@ -310,7 +313,7 @@ def list_schedule_executions(
 @router.post("/schedules/executions/{execution_id}/retry", response_model=None)
 def retry_schedule_execution(
     execution_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ):
     try:
@@ -322,7 +325,7 @@ def retry_schedule_execution(
 @router.post("/schedules/{schedule_id}/execute", response_model=None)
 def execute_schedule(
     schedule_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
     delivery_mock: Annotated[str | None, Header(alias="X-Rpt-Delivery-Mock")] = None,
     _semi_real: Annotated[str | None, Header(alias="X-Rpt-Semi-Real")] = None,
@@ -348,7 +351,7 @@ def execute_schedule(
 @router.get("/schedules/executions/{execution_id}/artifact", response_model=None)
 def get_execution_artifact(
     execution_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     from app.reports.catalog.acl import assert_artifact_access
 

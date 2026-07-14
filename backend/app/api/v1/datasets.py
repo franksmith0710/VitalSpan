@@ -5,7 +5,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "dataset:read"
+PERM_MANAGE = "dataset:manage"
 from app.metadata.dataset.errors import DatasetError
 from app.metadata.dataset.schemas import (
     DatasetBindConfigIn,
@@ -29,7 +32,7 @@ def _dataset_error(exc: DatasetError) -> JSONResponse:
 
 @router.get("", response_model=DatasetListResponse)
 def list_datasets(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> DatasetListResponse:
@@ -39,7 +42,7 @@ def list_datasets(
 @router.post("", response_model=DatasetItemOut, status_code=status.HTTP_201_CREATED)
 def create_dataset(
     payload: DatasetItemIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> DatasetItemOut | JSONResponse:
     try:
         return dataset_service.create_dataset(payload, actor)
@@ -50,7 +53,7 @@ def create_dataset(
 @router.get("/{dataset_id}", response_model=DatasetItemOut)
 def get_dataset(
     dataset_id: str,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> DatasetItemOut | JSONResponse:
     try:
         return dataset_service.get_dataset(dataset_id, actor)
@@ -61,7 +64,7 @@ def get_dataset(
 @router.post("/validate", response_model=DatasetValidateOut)
 def validate_dataset(
     payload: DatasetItemIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> DatasetValidateOut | JSONResponse:
     try:
         return dataset_service.validate_dataset_draft(payload)
@@ -73,7 +76,7 @@ def validate_dataset(
 def update_dataset(
     dataset_id: str,
     payload: DatasetItemIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> DatasetItemOut | JSONResponse:
     try:
         return dataset_service.update_dataset(dataset_id, payload, actor)
@@ -84,7 +87,7 @@ def update_dataset(
 @router.delete("/{dataset_id}", response_model=None)
 def delete_dataset(
     dataset_id: str,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> Response | JSONResponse:
     try:
         dataset_service.delete_dataset(dataset_id, actor)
@@ -97,7 +100,7 @@ def delete_dataset(
 def bind_query_config(
     dataset_id: str,
     payload: DatasetBindConfigIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> DatasetItemOut | JSONResponse:
     try:
         return dataset_service.bind_query_config(dataset_id, payload.config_id, actor)

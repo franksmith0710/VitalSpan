@@ -29,11 +29,6 @@ class UserError(Exception):
         super().__init__(message)
 
 
-def assert_binding_admin(actor_roles: list[str]) -> None:
-    if "admin" not in actor_roles:
-        raise UserError("BINDING_FORBIDDEN", "Binding changes require admin role", 403)
-
-
 def _user_has_enabled_root_binding(session: Session, user_id: uuid.UUID) -> bool:
     count = session.scalar(
         select(func.count())
@@ -294,7 +289,6 @@ def bind_role(
     actor_roles: list[str],
     trace_id: str,
 ) -> None:
-    assert_binding_admin(actor_roles)
     get_user(session, user_id)
     role = session.get(AuthRole, role_id)
     if role is None:
@@ -327,7 +321,6 @@ def unbind_role(
     actor_roles: list[str],
     trace_id: str,
 ) -> None:
-    assert_binding_admin(actor_roles)
     get_user(session, user_id)
     role = session.get(AuthRole, role_id)
     binding = session.get(AuthUserRole, {"user_id": user_id, "role_id": role_id})
@@ -358,7 +351,6 @@ def replace_user_roles(
     actor_roles: list[str],
     trace_id: str,
 ) -> list[AuthRole]:
-    assert_binding_admin(actor_roles)
     get_user(session, user_id)
     for role_id in role_ids:
         if session.get(AuthRole, role_id) is None:
@@ -398,7 +390,6 @@ def bind_roles_batch(
     actor_roles: list[str],
     trace_id: str,
 ) -> list[AuthRole]:
-    assert_binding_admin(actor_roles)
     get_user(session, user_id)
     new_role_ids: list[uuid.UUID] = []
     for role_id in role_ids:
@@ -437,7 +428,6 @@ def set_user_active(
     trace_id: str,
 ) -> AuthUser:
     """启用/禁用用户；禁用最后一个启用 root 用户时抛 AUTH_ROOT_ADMIN_REQUIRED。"""
-    assert_binding_admin(actor_roles)
     user = get_user(session, user_id)
     guard_needed = not is_active and _user_has_enabled_root_binding(session, user_id)
     user.is_active = is_active
@@ -481,7 +471,6 @@ def assign_user_org(
     actor_roles: list[str],
     trace_id: str,
 ) -> AuthUser:
-    assert_binding_admin(actor_roles)
     user = get_user(session, user_id)
     if session.get(AuthOrgNode, org_node_id) is None:
         raise UserError("ORG_NOT_FOUND", "Org node not found", 404)
@@ -516,7 +505,6 @@ def clear_user_org(
     actor_roles: list[str],
     trace_id: str,
 ) -> None:
-    assert_binding_admin(actor_roles)
     user = get_user(session, user_id)
     if user.org_node_id is None:
         return

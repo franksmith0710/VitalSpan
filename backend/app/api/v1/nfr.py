@@ -7,7 +7,9 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, get_current_user, require_permission
+
+PERM_MANAGE = "governance:manage"
 from app.core.config import get_settings
 from app.core.nfr.browser_matrix import probe_browser_support
 from app.core.nfr.errors import NFR_RUNTIME_VIOLATION, XINCHUANG_NON_COMPLIANT
@@ -355,7 +357,7 @@ def get_browser_matrix(
 @router.post("/notifications", status_code=201, response_model=None)
 def create_notification_route(
     payload: NotificationCreateIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     from app.core.nfr.notifications import create_notification
 
@@ -383,7 +385,7 @@ def get_notification_route(
 @router.post("/push-probe", response_model=PushProbeResponse)
 def post_push_probe(
     payload: PushProbeIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> PushProbeResponse:
     result = dispatch_push_mock({"text": payload.message})
     return PushProbeResponse(
@@ -443,7 +445,7 @@ def get_runtime_compliance(
 
 @router.post("/runtime-compliance/assert", response_model=None)
 def post_runtime_compliance_assert(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ):
     try:
         return _runtime_response(assert_runtime_compliant())
@@ -494,7 +496,7 @@ def _report_perf_error(exc: ReportPerfError) -> JSONResponse:
 @router.post("/report-query-perf/probe", response_model=ReportPerfProbeOut)
 def report_query_perf_probe(
     payload: ReportPerfProbeIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> ReportPerfProbeOut | JSONResponse:
     try:
         return probe_report_perf(payload, actor)
@@ -505,7 +507,7 @@ def report_query_perf_probe(
 @router.post("/report-query-perf/validate", response_model=ReportPerfValidateOut)
 def report_query_perf_validate(
     payload: ReportPerfProbeIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> ReportPerfValidateOut | JSONResponse:
     try:
         return validate_report_perf_config(payload, actor)
@@ -521,7 +523,7 @@ def _dashboard_sla_error(exc: DashboardSlaError) -> JSONResponse:
 @router.post("/dashboard-sla/validate", response_model=DashboardSlaValidateOut)
 def dashboard_sla_validate(
     payload: DashboardSlaProbeIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> DashboardSlaValidateOut | JSONResponse:
     try:
         return validate_dashboard_sla(payload, actor)
@@ -532,7 +534,7 @@ def dashboard_sla_validate(
 @router.post("/dashboard-sla/probe", response_model=DashboardSlaProbeOut)
 def dashboard_sla_probe(
     payload: DashboardSlaProbeIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> DashboardSlaProbeOut | JSONResponse:
     try:
         return probe_dashboard_sla(payload, actor)
@@ -559,7 +561,7 @@ def _dashboard_first_screen_error(exc: DashboardFirstScreenError) -> JSONRespons
 @router.post("/dashboard-first-screen/validate", response_model=DashboardFirstScreenValidateOut)
 def dashboard_first_screen_validate(
     payload: DashboardFirstScreenProbeIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> DashboardFirstScreenValidateOut | JSONResponse:
     try:
         return validate_dashboard_first_screen(payload, actor)
@@ -570,7 +572,7 @@ def dashboard_first_screen_validate(
 @router.post("/dashboard-first-screen/probe", response_model=DashboardFirstScreenProbeOut)
 def dashboard_first_screen_probe(
     payload: DashboardFirstScreenProbeIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> DashboardFirstScreenProbeOut | JSONResponse:
     try:
         return probe_dashboard_first_screen(payload, actor)
@@ -593,7 +595,7 @@ def https_audit_status(
 @router.post("/https-audit/mask-probe", response_model=HttpsAuditMaskProbeOut)
 def https_audit_mask_probe(
     payload: HttpsAuditMaskProbeIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> HttpsAuditMaskProbeOut | JSONResponse:
     try:
         return probe_https_mask(payload, actor)

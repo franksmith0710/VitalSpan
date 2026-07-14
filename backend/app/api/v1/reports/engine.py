@@ -6,7 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "report:read"
+PERM_MANAGE = "report:manage"
 from app.reports.engine.errors import ReportEngineError
 from app.reports.engine.schemas import RenderRunIn, RenderRunOut
 from app.reports.engine import service as engine_service
@@ -26,7 +29,7 @@ def _engine_error(exc: ReportEngineError) -> JSONResponse:
 def run_report_template(
     template_id: uuid.UUID,
     payload: RenderRunIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> RenderRunOut | JSONResponse:
     try:
         return engine_service.run_template(template_id, payload, actor)

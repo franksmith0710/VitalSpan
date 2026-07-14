@@ -8,7 +8,12 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "dashboard:read"
+PERM_EDIT = "dashboard:edit"
+PERM_THEME_READ = "theme:read"
+PERM_THEME_MANAGE = "theme:manage"
 from app.dashboard import service as dash_service
 from app.dashboard.schemas import DashboardCreate, DashboardLayoutUpdate, DashboardUpdate
 from app.dashboard.theme.errors import ThemeAnalysisError
@@ -69,7 +74,7 @@ def _filter_error(exc: GlobalFilterError) -> JSONResponse:
 @router.post("/global-filters/validate", response_model=GlobalFilterLinkageItem)
 def validate_global_filters(
     payload: GlobalFilterLinkageItem,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> GlobalFilterLinkageItem | JSONResponse:
     try:
@@ -82,7 +87,7 @@ def validate_global_filters(
 def save_global_filters(
     dashboard_id: uuid.UUID,
     payload: GlobalFilterLinkageItem,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ) -> GlobalFilterLinkageOut | JSONResponse:
     if payload.dashboard_id != dashboard_id:
@@ -99,7 +104,7 @@ def save_global_filters(
 @router.get("/{dashboard_id}/global-filters", response_model=GlobalFilterLinkageOut)
 def get_global_filters(
     dashboard_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> GlobalFilterLinkageOut | JSONResponse:
     try:
@@ -113,7 +118,7 @@ def execute_dashboard_widget(
     dashboard_id: uuid.UUID,
     widget_id: str,
     payload: WidgetExecuteIn,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     from app.dashboard.global_filters.execute import execute_widget_with_filters
@@ -133,7 +138,7 @@ def execute_dashboard_widget(
 @router.post("/entity-overview/validate", response_model=EntityOverviewItem)
 def validate_entity_overview(
     payload: EntityOverviewItem,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> EntityOverviewItem | JSONResponse:
     try:
@@ -146,7 +151,7 @@ def validate_entity_overview(
 def save_entity_overview(
     dashboard_id: uuid.UUID,
     payload: EntityOverviewItem,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ) -> EntityOverviewOut | JSONResponse:
     if payload.dashboard_id != dashboard_id:
@@ -160,7 +165,7 @@ def save_entity_overview(
 @router.get("/{dashboard_id}/entity-overview", response_model=EntityOverviewOut)
 def get_entity_overview(
     dashboard_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> EntityOverviewOut | JSONResponse:
     try:
@@ -172,7 +177,7 @@ def get_entity_overview(
 @router.post("/theme-analysis/execute-plan", response_model=None)
 def execute_theme_plan(
     payload: dict,
-    _: Annotated[UserContext, Depends(get_current_user)] = None,
+    _: Annotated[UserContext, Depends(require_permission(PERM_THEME_READ))] = None,
     db: Annotated[Session, Depends(_db)] = None,
 ):
     from app.dashboard.theme.execute import build_theme_execute_plan
@@ -188,7 +193,7 @@ def execute_theme_plan(
 @router.post("/theme-analysis/validate", response_model=None)
 def validate_theme_analysis(
     payload: dict,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_THEME_MANAGE))],
 ):
     try:
         return theme_service.validate_theme_config(payload)
@@ -199,7 +204,7 @@ def validate_theme_analysis(
 @router.put("/theme-analysis", response_model=None)
 def save_theme_analysis(
     payload: dict,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_THEME_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -212,7 +217,7 @@ def save_theme_analysis(
 def get_theme_analysis(
     ref_type: str = Query(default="dashboard", alias="refType"),
     ref_id: uuid.UUID = Query(alias="refId"),
-    user: Annotated[UserContext, Depends(get_current_user)] = None,
+    user: Annotated[UserContext, Depends(require_permission(PERM_THEME_READ))] = None,
     db: Annotated[Session, Depends(_db)] = None,
 ):
     from app.dashboard.theme.acl import assert_theme_action
@@ -228,7 +233,7 @@ def get_theme_analysis(
 def get_theme_chart_bindings(
     ref_type: str = Query(default="dashboard", alias="refType"),
     ref_id: uuid.UUID = Query(alias="refId"),
-    _: Annotated[UserContext, Depends(get_current_user)] = None,
+    _: Annotated[UserContext, Depends(require_permission(PERM_THEME_READ))] = None,
     db: Annotated[Session, Depends(_db)] = None,
 ):
     try:
@@ -245,7 +250,7 @@ def get_theme_chart_bindings(
 @router.post("/theme-analysis/query", response_model=None)
 def theme_analysis_query(
     payload: dict,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_THEME_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     from app.dashboard.theme.query import execute_theme_drill
@@ -262,7 +267,7 @@ def theme_analysis_query(
 
 @router.get("")
 def list_dashboards(
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -273,7 +278,7 @@ def list_dashboards(
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_dashboard(
     payload: DashboardCreate,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -287,7 +292,7 @@ def create_dashboard(
 @router.get("/{dashboard_id}")
 def get_dashboard(
     dashboard_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -302,7 +307,7 @@ def get_dashboard(
 def update_dashboard(
     dashboard_id: uuid.UUID,
     payload: DashboardUpdate,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -316,7 +321,7 @@ def update_dashboard(
 @router.delete("/{dashboard_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_dashboard(
     dashboard_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -332,7 +337,7 @@ def delete_dashboard(
 def update_layout(
     dashboard_id: uuid.UUID,
     payload: DashboardLayoutUpdate,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:

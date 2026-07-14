@@ -483,11 +483,14 @@ def test_count_enabled_root_users_excludes_disabled_and_excluded():
 # Task 4: UserContext、Middleware 与统一权限依赖的鉴权矩阵
 # --------------------------------------------------------------------------- #
 
-_ADMIN_INFO = {
-    "id": "00000000-0000-0000-0000-000000000001",
-    "username": "admin",
-    "token_version": 1,
-}
+def _admin_info() -> dict:
+    from jwt_auth import resolve_admin_user_id
+
+    return {
+        "id": resolve_admin_user_id(),
+        "username": "admin",
+        "token_version": 1,
+    }
 
 
 def _make_user_with_permissions(session, codes, *, is_active=True, locked=False):
@@ -550,7 +553,7 @@ def test_matrix_exact_permission_success(client):
 
 def test_matrix_root_success(client):
     """T-AUTHZ-04: root 用户直通 → 200。"""
-    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(_ADMIN_INFO))
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(_admin_info()))
     assert response.status_code == 200
     assert response.json() == {"ok": True}
 
@@ -644,7 +647,7 @@ def test_matrix_db_error_returns_503(client, monkeypatch):
         raise OperationalError("stmt", {}, Exception("db down"))
 
     monkeypatch.setattr("app.auth.middleware.resolve_user_permissions", _boom)
-    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(_ADMIN_INFO))
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(_admin_info()))
     assert response.status_code == 503
     assert response.json()["code"] == "AUTH_CONTEXT_UNAVAILABLE"
 
@@ -652,7 +655,7 @@ def test_matrix_db_error_returns_503(client, monkeypatch):
 def test_matrix_no_root_initialized_returns_503(client, monkeypatch):
     """T-AUTHZ-10: 无启用 root（bootstrap 未完成）→ 受保护 503；公开路径不受影响。"""
     monkeypatch.setattr("app.auth.middleware.has_enabled_root_user", lambda _session: False)
-    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(_ADMIN_INFO))
+    response = client.get(_REQUIRE_READ_PATH, headers=_bearer(_admin_info()))
     assert response.status_code == 503
     assert response.json()["code"] == "AUTH_ROOT_NOT_INITIALIZED"
 
@@ -856,7 +859,7 @@ def test_api_role_permissions_replace_schema_accepts_both_casings():
 
 def test_api_role_out_exposes_security_fields_camelcase(client):
     """T-PERM-API-12: GET /api/v1/roles 的 RoleOut 输出 isRoot/isSystem/permissionVersion。"""
-    resp = client.get("/api/v1/roles", headers=_bearer(_ADMIN_INFO))
+    resp = client.get("/api/v1/roles", headers=_bearer(_admin_info()))
     assert resp.status_code == 200
     items = resp.json()["items"]
     assert items, "expected at least the seeded admin role"
@@ -866,3 +869,36 @@ def test_api_role_out_exposes_security_fields_camelcase(client):
     assert admin is not None
     assert admin["isRoot"] is True
     assert admin["isSystem"] is True
+
+
+# --------------------------------------------------------------------------- #
+# Task 7: 敏感系统 API 全面权限收口（参数化越权矩阵）
+# --------------------------------------------------------------------------- #
+# 已登录但零功能权限的真实用户访问敏感写/读端点时，必须命中 require_permission
+# 依赖并返回顶层 PERMISSION_DENIED（403），而非旧的角色硬编码错误码。
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [
+        ("POST", "/api/v1/roles"),
+        ("POST", "/api/v1/users"),
+        ("POST", "/api/v1/orgs"),
+        ("POST", "/api/v1/resource-grants"),
+        ("POST", "/api/v1/rls/dimensions"),
+        ("POST", "/api/v1/rls/groups"),
+        ("GET", "/api/v1/audit/events"),
+        ("POST", "/api/v1/datasources"),
+        ("POST", "/api/v1/query/bindings"),
+        ("PUT", "/api/v1/query/configs"),
+        ("POST", "/api/v1/reports/catalog/nodes"),
+        ("POST", "/api/v1/datasets"),
+    ],
+)
+def test_sensitive_api_requires_permission(
+    client, authenticated_no_permission_headers, method, path
+):
+    """T-PERM-API-13: 无功能权限访问敏感 API → 403 PERMISSION_DENIED。"""
+    response = client.request(
+        method, path, headers=authenticated_no_permission_headers, json={}
+    )
+    assert response.status_code == 403, response.text
+    assert response.json()["code"] == "PERMISSION_DENIED"

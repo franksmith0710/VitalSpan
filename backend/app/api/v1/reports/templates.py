@@ -5,7 +5,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Response, status
 from fastapi.responses import JSONResponse
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "report:read"
+PERM_MANAGE = "report:manage"
 from app.reports.templates.errors import TemplateDefError
 from app.reports.templates.schemas import (
     TemplateDefinitionIn,
@@ -26,7 +29,7 @@ def _template_error(exc: TemplateDefError) -> JSONResponse:
 @router.post("/validate", response_model=TemplateValidateOut)
 def validate_template(
     payload: TemplateDefinitionIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> TemplateValidateOut | JSONResponse:
     try:
         return template_service.validate_template_definition(payload)
@@ -36,7 +39,7 @@ def validate_template(
 
 @router.get("", response_model=TemplateListOut)
 def list_templates(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     prefix: str | None = Query(default=None, max_length=64),
 ) -> TemplateListOut | JSONResponse:
     try:
@@ -48,7 +51,7 @@ def list_templates(
 @router.delete("/{template_key}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_template(
     template_key: str,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> Response | JSONResponse:
     try:
         template_service.delete_template_definition(template_key, actor)
@@ -61,7 +64,7 @@ def delete_template(
 def upsert_template(
     template_key: str,
     payload: TemplateDefinitionIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> TemplateDefinitionOut | JSONResponse:
     try:
         return template_service.upsert_template_definition(template_key, payload, actor)
@@ -72,7 +75,7 @@ def upsert_template(
 @router.get("/{template_key}", response_model=TemplateDefinitionOut)
 def get_template(
     template_key: str,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> TemplateDefinitionOut | JSONResponse:
     try:
         return template_service.get_template_definition(template_key, actor)

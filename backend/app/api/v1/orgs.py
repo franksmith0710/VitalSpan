@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.auth.audit.write_hooks import audit_kwargs
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
 from app.auth.models import get_meta_session
 from app.auth.org import service as org_service
 from app.auth.schemas import OrgCreate, OrgListResponse, OrgOut, OrgUpdate
@@ -33,7 +33,7 @@ def _org_error_response(exc: org_service.OrgError) -> JSONResponse:
 
 @router.get("", response_model=OrgListResponse)
 def list_orgs(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission("system:org.read"))],
     db: Annotated[Session, Depends(_db)],
 ) -> OrgListResponse:
     items = [OrgOut.model_validate(n) for n in org_service.list_org_nodes(db)]
@@ -43,7 +43,7 @@ def list_orgs(
 @router.post("", response_model=OrgOut, status_code=status.HTTP_201_CREATED)
 def create_org(
     payload: OrgCreate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission("system:org.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> OrgOut | JSONResponse:
     try:
@@ -56,7 +56,7 @@ def create_org(
 @router.get("/{org_id}", response_model=OrgOut)
 def get_org(
     org_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission("system:org.read"))],
     db: Annotated[Session, Depends(_db)],
 ) -> OrgOut | JSONResponse:
     try:
@@ -70,7 +70,7 @@ def get_org(
 def update_org(
     org_id: uuid.UUID,
     payload: OrgUpdate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission("system:org.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> OrgOut | JSONResponse:
     try:
@@ -85,7 +85,7 @@ def update_org(
 @router.delete("/{org_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_org(
     org_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission("system:org.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:

@@ -8,7 +8,10 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "ingestion:read"
+PERM_MANAGE = "ingestion:manage"
 from app.core.config import get_settings
 from app.ingestion.models import (
     EtlRuleSet,
@@ -132,7 +135,7 @@ def _apply_source(
 
 @router.get("/sync-jobs", response_model=SyncJobListResponse)
 def list_sync_jobs(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> SyncJobListResponse:
     jobs = db.scalars(select(SyncJob).order_by(SyncJob.created_at.desc())).all()
@@ -154,7 +157,7 @@ def list_sync_jobs(
 @router.post("/sync-jobs", response_model=SyncJobDetail, status_code=status.HTTP_201_CREATED)
 def create_sync_job(
     payload: SyncJobCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> SyncJobDetail:
     job = SyncJob(
@@ -186,7 +189,7 @@ def create_sync_job(
 @router.get("/sync-jobs/{job_id}", response_model=SyncJobDetail)
 def get_sync_job(
     job_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> SyncJobDetail:
     job = db.get(SyncJob, job_id)
@@ -211,7 +214,7 @@ def get_sync_job(
 def update_sync_job(
     job_id: uuid.UUID,
     payload: SyncJobUpdate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> SyncJobDetail:
     job = db.get(SyncJob, job_id)
@@ -243,7 +246,7 @@ def update_sync_job(
 @router.delete("/sync-jobs/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_sync_job(
     job_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> None:
     job = db.get(SyncJob, job_id)
@@ -259,7 +262,7 @@ def delete_sync_job(
 @router.get("/sync-jobs/{job_id}/etl-rules", response_model=EtlRulesResponse)
 def get_etl_rules(
     job_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> EtlRulesResponse:
     rules = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
@@ -275,7 +278,7 @@ def get_etl_rules(
 def put_etl_rules(
     job_id: uuid.UUID,
     payload: EtlRulesPayload,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> EtlRulesResponse:
     rules = db.scalar(select(EtlRuleSet).where(EtlRuleSet.job_id == job_id))
@@ -294,7 +297,7 @@ def trigger_run(
     job_id: uuid.UUID,
     request: Request,
     background_tasks: BackgroundTasks,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> RunAccepted:
     if not get_settings().analytics_database_url:
@@ -338,7 +341,7 @@ def trigger_run(
 @router.get("/sync-jobs/{job_id}/runs", response_model=SyncRunListResponse)
 def list_runs(
     job_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     limit: int = 20,
 ) -> SyncRunListResponse:

@@ -263,6 +263,14 @@ def _dev_user(client, auth_headers):
         session.close()
 
 
+def _grant_role_permissions(client, auth_headers, role_id: str, codes: list[str]) -> None:
+    client.put(
+        f"/api/v1/roles/{role_id}/permissions",
+        headers=auth_headers,
+        json={"permissionCodes": codes, "expectedVersion": 0},
+    )
+
+
 def _set_dev_roles(client, auth_headers, role_ids: list[str]):
     dev_user = _dev_user(client, auth_headers)
     client.put(
@@ -360,6 +368,7 @@ def test_acl_viewer_only_granted(client, auth_headers):
         json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(granted.id)},
         headers=auth_headers,
     )
+    _grant_role_permissions(client, auth_headers, role["id"], ["datasource:read"])
     _set_dev_roles(client, auth_headers, [role["id"]])
     resp = client.get("/api/v1/datasources", headers=_dev_headers(client, auth_headers))
     assert resp.status_code == 200
@@ -383,6 +392,7 @@ def test_acl_viewer_forbidden_detail(client, auth_headers):
         json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(granted.id)},
         headers=auth_headers,
     )
+    _grant_role_permissions(client, auth_headers, role["id"], ["datasource:read"])
     _set_dev_roles(client, auth_headers, [role["id"]])
     resp = client.get(f"/api/v1/datasources/{hidden.id}", headers=_dev_headers(client, auth_headers))
     assert resp.status_code == 403
@@ -406,6 +416,7 @@ def test_acl_viewer_forbidden_test(mock_test, client, auth_headers):
         json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(granted.id)},
         headers=auth_headers,
     )
+    _grant_role_permissions(client, auth_headers, role["id"], ["datasource:manage"])
     _set_dev_roles(client, auth_headers, [role["id"]])
     resp = client.post(f"/api/v1/datasources/{hidden.id}/test", headers=_dev_headers(client, auth_headers))
     assert resp.status_code == 403
@@ -428,6 +439,7 @@ def test_acl_revoke_grant_forbidden(client, auth_headers):
         json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(ds.id)},
         headers=auth_headers,
     ).json()
+    _grant_role_permissions(client, auth_headers, role["id"], ["datasource:read"])
     _set_dev_roles(client, auth_headers, [role["id"]])
     dev_headers = _dev_headers(client, auth_headers)
     assert client.get(f"/api/v1/datasources/{ds.id}", headers=dev_headers).status_code == 200
@@ -495,6 +507,7 @@ def test_metadata_forbidden_403(mock_list, mock_pool, client, auth_headers):
         json={"code": f"acl_md_{uuid.uuid4().hex[:6]}", "name": "Viewer"},
         headers=auth_headers,
     ).json()
+    _grant_role_permissions(client, auth_headers, role["id"], ["datasource:read"])
     _set_dev_roles(client, auth_headers, [role["id"]])
     resp = client.get(f"/api/v1/datasources/{hidden.id}/schemas", headers=_dev_headers(client, auth_headers))
     assert resp.status_code == 403

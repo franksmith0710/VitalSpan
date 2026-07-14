@@ -62,6 +62,8 @@ def _seed_ci_admin_user() -> None:
 
         admin_user = session.get(AuthUser, _ADMIN_USER_ID)
         if admin_user is None:
+            admin_user = session.query(AuthUser).filter(AuthUser.username == "admin").first()
+        if admin_user is None:
             password = os.environ.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme")
             hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
             admin_user = AuthUser(
@@ -79,10 +81,10 @@ def _seed_ci_admin_user() -> None:
             admin_user.is_active = True
 
         binding = session.get(
-            AuthUserRole, {"user_id": _ADMIN_USER_ID, "role_id": admin_role.id}
+            AuthUserRole, {"user_id": admin_user.id, "role_id": admin_role.id}
         )
         if binding is None:
-            session.add(AuthUserRole(user_id=_ADMIN_USER_ID, role_id=admin_role.id))
+            session.add(AuthUserRole(user_id=admin_user.id, role_id=admin_role.id))
 
         session.commit()
 
@@ -138,6 +140,7 @@ def client() -> TestClient:
 @pytest.fixture
 def auth_headers() -> dict[str, str]:
     """JWT as dev user (replaces legacy Bearer dev)."""
+    _ensure_admin_role_binding()
     from jwt_auth import jwt_auth_headers
 
     return jwt_auth_headers()
@@ -291,9 +294,25 @@ def _ensure_ci_admin_user_present() -> None:
 
 
 @pytest.fixture(autouse=True)
+def _refresh_jwt_auth_module_constant():
+    """刷新 jwt_auth.AUTH，兼容独立 sqlite 模块在 import 时捕获的过期 token。"""
+    import jwt_auth as ja
+
+    if os.environ.get("DATABASE_URL", "").startswith("sqlite"):
+        _seed_ci_admin_user()
+    elif _meta_postgres_available():
+        _ensure_admin_role_binding()
+    else:
+        _seed_ci_admin_user()
+    ja.AUTH.clear()
+    ja.AUTH.update(ja.jwt_auth_headers())
+
+
+@pytest.fixture(autouse=True)
 def _reapply_sqlite_meta_when_no_postgres():
     """Other test modules may restore postgres DATABASE_URL on teardown."""
     if _meta_postgres_available():
+        _ensure_admin_role_binding()
         yield
         return
     if not os.environ.get("DATABASE_URL", "").startswith("sqlite"):

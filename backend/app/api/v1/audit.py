@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.auth.audit import service as audit_service
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
 from app.auth.models import get_meta_session
 from app.auth.schemas import AuditEventOut, AuditListResponse
 
@@ -24,16 +24,9 @@ def _db() -> Session:
         session.close()
 
 
-def _audit_error_response(exc: audit_service.AuditError) -> JSONResponse:
-    return JSONResponse(
-        status_code=exc.status,
-        content={"code": exc.code, "message": exc.message, "detail": None},
-    )
-
-
 @router.get("/events", response_model=AuditListResponse)
 def list_audit_events(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    _actor: Annotated[UserContext, Depends(require_permission("system:audit.read"))],
     db: Annotated[Session, Depends(_db)],
     target_id: uuid.UUID | None = None,
     action: str | None = None,
@@ -54,10 +47,6 @@ def list_audit_events(
                     "detail": None,
                 },
             )
-    try:
-        audit_service.assert_audit_admin(actor.roles)
-    except audit_service.AuditError as exc:
-        return _audit_error_response(exc)
     items, total = audit_service.list_events(
         db,
         target_id=target_id,

@@ -8,7 +8,10 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "dataset:read"
+PERM_MANAGE = "dataset:manage"
 from app.datasources.models import get_meta_session
 from app.query.config_store import service as config_service
 from app.query.config_store.access import assert_config_readable
@@ -53,7 +56,7 @@ def _translate_error(exc: TranslateError) -> JSONResponse:
 @router.put("", response_model=ConfigOut)
 def upsert_query_config(
     payload: ConfigUpsert,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> ConfigOut | JSONResponse:
     try:
@@ -79,7 +82,7 @@ def upsert_query_config(
 
 @router.get("", response_model=ConfigListResponse)
 def list_query_configs(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     config_type: str | None = None,
     ref_type: str | None = None,
@@ -103,7 +106,7 @@ def list_query_configs(
 @router.get("/{config_id}", response_model=ConfigOut)
 def get_query_config(
     config_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> ConfigOut | JSONResponse:
     try:
@@ -117,7 +120,7 @@ def get_query_config(
 @router.post("/{config_id}/translate", response_model=TranslateResponse)
 def translate_query_config(
     config_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> TranslateResponse | JSONResponse:
     try:

@@ -11,12 +11,30 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
 
 def jwt_auth_headers(
     *,
-    user_id: str = DEFAULT_USER_ID,
+    user_id: str | None = None,
     username: str = "admin",
     token_version: int = DEFAULT_TOKEN_VERSION,
 ) -> dict[str, str]:
-    token = create_access_token(user_id, username, token_version=token_version)
+    resolved_id = user_id if user_id is not None else resolve_admin_user_id()
+    token = create_access_token(resolved_id, username, token_version=token_version)
     return {"Authorization": f"Bearer {token}"}
+
+
+def resolve_admin_user_id() -> str:
+    """对齐 DB 中 admin 用户 id（postgres 迁移 seed 与 sqlite 固定 seed 兼容）。"""
+    import uuid as _uuid
+
+    from app.auth.models import AuthUser, Base, get_meta_engine
+    from sqlalchemy.orm import Session
+
+    fixed = str(_uuid.UUID("00000000-0000-0000-0000-000000000001"))
+    engine = get_meta_engine()
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        user = session.get(AuthUser, _uuid.UUID(fixed))
+        if user is None:
+            user = session.query(AuthUser).filter(AuthUser.username == "admin").first()
+        return str(user.id) if user is not None else fixed
 
 
 AUTH = jwt_auth_headers()

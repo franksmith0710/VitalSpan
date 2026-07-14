@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
 from app.auth.models import get_meta_session
 from app.auth.resources import service as grant_service
 from app.auth.schemas import ResourceGrantCreate, ResourceGrantListResponse, ResourceGrantOut
@@ -32,7 +32,7 @@ def _grant_error_response(exc: grant_service.GrantError) -> JSONResponse:
 
 @router.get("", response_model=ResourceGrantListResponse)
 def list_resource_grants(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission("system:grant.read"))],
     db: Annotated[Session, Depends(_db)],
     role_id: uuid.UUID | None = Query(default=None),
     resource_type: str | None = Query(default=None),
@@ -47,7 +47,7 @@ def list_resource_grants(
 @router.post("", response_model=ResourceGrantOut, status_code=status.HTTP_201_CREATED)
 def create_resource_grant(
     payload: ResourceGrantCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission("system:grant.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> ResourceGrantOut | JSONResponse:
     try:
@@ -60,7 +60,7 @@ def create_resource_grant(
 @router.delete("/{grant_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_resource_grant(
     grant_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission("system:grant.manage"))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:

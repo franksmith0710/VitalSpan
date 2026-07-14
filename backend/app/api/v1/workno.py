@@ -6,7 +6,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "governance:read"
 from app.governance.catalog.cat07.errors import Cat07Error
 from app.governance.catalog.cat07 import service as cat07_service
 
@@ -23,7 +25,7 @@ def _cat07_error(exc: Cat07Error) -> JSONResponse:
 
 @router.get("/behavior", response_model=None)
 def get_workno_behavior(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     workno: str | None = Query(default=None),
     from_date: date | None = Query(default=None, alias="fromDate"),
     to_date: date | None = Query(default=None, alias="toDate"),

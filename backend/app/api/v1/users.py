@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user, require_permission
+from app.auth.deps import UserContext, require_permission
 from app.auth.models import get_meta_session
 from app.auth.password.service import PasswordPolicyError
 from app.auth.schemas import (
@@ -27,6 +27,7 @@ from app.auth.users import service as user_service
 from app.auth.roles import service as role_service
 from app.core.logging import trace_id_var
 
+PERM_USER_READ = "system:user.read"
 PERM_USER_MANAGE = "system:user.manage"
 PERM_USER_PASSWORD_RESET = "system:user.password.reset"
 
@@ -76,7 +77,7 @@ def _audit_context(actor: UserContext) -> dict[str, str | None]:
 
 @router.get("", response_model=UserListResponse)
 def list_users(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_USER_READ))],
     db: Annotated[Session, Depends(_db)],
     q: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
@@ -183,7 +184,7 @@ def reset_user_password(
 @router.get("/{user_id}/roles", response_model=UserRolesResponse)
 def list_user_roles(
     user_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_USER_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> UserRolesResponse | JSONResponse:
     try:
@@ -198,7 +199,7 @@ def list_user_roles(
 def replace_user_roles(
     user_id: uuid.UUID,
     payload: UserRolesReplace,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> UserRolesResponse | JSONResponse:
     ctx = _binding_context(actor)
@@ -216,7 +217,7 @@ def replace_user_roles(
 def bind_user_role(
     user_id: uuid.UUID,
     role_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> JSONResponse | dict[str, str]:
     ctx = _binding_context(actor)
@@ -233,7 +234,7 @@ def bind_user_role(
 def unbind_user_role(
     user_id: uuid.UUID,
     role_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     ctx = _binding_context(actor)
@@ -248,7 +249,7 @@ def unbind_user_role(
 def assign_user_org(
     user_id: uuid.UUID,
     payload: UserOrgAssign,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> UserOrgResponse | JSONResponse:
     ctx = _binding_context(actor)
@@ -264,7 +265,7 @@ def assign_user_org(
 @router.get("/{user_id}/org", response_model=UserOrgResponse)
 def get_user_org(
     user_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_USER_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> UserOrgResponse | JSONResponse:
     try:
@@ -282,7 +283,7 @@ def get_user_org(
 @router.delete("/{user_id}/org", status_code=status.HTTP_204_NO_CONTENT)
 def clear_user_org_route(
     user_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     ctx = _binding_context(actor)

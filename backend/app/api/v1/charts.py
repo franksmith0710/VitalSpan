@@ -5,7 +5,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "dashboard:read"
+PERM_EDIT = "dashboard:edit"
 from app.schemas.chart_view import ChartViewConfig, ChartViewError, validate_chart_view_config
 from app.viz.embed import ChartEmbedConfig, ChartEmbedError, validate_chart_embed_config
 from app.viz.sdk_portal.errors import SdkPortalError
@@ -33,7 +36,7 @@ def _error_response(exc: ChartViewError) -> JSONResponse:
 
 @router.get("/types")
 def list_chart_types(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> list[dict]:
     return export_chart_type_catalog()
 
@@ -41,7 +44,7 @@ def list_chart_types(
 @router.post("/validate", response_model=ChartViewConfig)
 def validate_chart(
     payload: dict,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> ChartViewConfig | JSONResponse:
     try:
         return validate_chart_view_config(payload)
@@ -52,7 +55,7 @@ def validate_chart(
 @router.post("/render-spec", response_model=None)
 def render_spec_chart(
     payload: dict,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> dict | JSONResponse:
     try:
         cfg = validate_chart_view_config(payload)
@@ -77,7 +80,7 @@ def _sdk_error(exc: SdkPortalError) -> JSONResponse:
 @router.post("/sdk/validate", response_model=SdkPortalValidateOut)
 def validate_sdk_portal(
     payload: SdkPortalInitIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> SdkPortalValidateOut | JSONResponse:
     try:
         return sdk_portal_service.validate_sdk_init(payload)
@@ -88,7 +91,7 @@ def validate_sdk_portal(
 @router.post("/sdk/lifecycle", response_model=None)
 def sdk_lifecycle(
     payload: SdkLifecycleIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> SdkLifecycleOut | JSONResponse:
     try:
         return sdk_portal_service.lifecycle_manifest(payload, actor)
@@ -98,7 +101,7 @@ def sdk_lifecycle(
 
 @router.get("/sdk/capabilities", response_model=SdkCapabilitiesOut)
 def sdk_capabilities(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> SdkCapabilitiesOut:
     return sdk_portal_service.list_capabilities()
 
@@ -106,7 +109,7 @@ def sdk_capabilities(
 @router.post("/embed/validate", response_model=None)
 def validate_embed(
     payload: dict,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> ChartEmbedConfig | JSONResponse:
     try:
         return validate_chart_embed_config(payload)

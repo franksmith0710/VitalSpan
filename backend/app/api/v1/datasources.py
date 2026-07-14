@@ -8,7 +8,10 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "datasource:read"
+PERM_MANAGE = "datasource:manage"
 from app.auth.resources.service import VisibilityError
 from app.datasources.models import get_meta_session
 from app.datasources.metadata import service as metadata_service
@@ -57,7 +60,7 @@ def _visibility_response(exc: VisibilityError) -> JSONResponse:
 
 @router.get("", response_model=DataSourceListResponse)
 def list_data_sources(
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -94,7 +97,7 @@ def list_data_sources(
 )
 def create_data_source(
     payload: DataSourceCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
@@ -105,7 +108,7 @@ def create_data_source(
 
 @router.get("/types", response_model=ConnectorTypeListResponse)
 def list_connector_types(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> ConnectorTypeListResponse:
     items = [ConnectorTypeOut.model_validate(item) for item in export_type_catalog()]
     return ConnectorTypeListResponse(items=items)
@@ -114,7 +117,7 @@ def list_connector_types(
 @router.get("/{data_source_id}", response_model=DataSourceOut)
 def get_data_source(
     data_source_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
@@ -129,7 +132,7 @@ def get_data_source(
 def update_data_source(
     data_source_id: uuid.UUID,
     payload: DataSourceUpdate,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
@@ -144,7 +147,7 @@ def update_data_source(
 def patch_data_source(
     data_source_id: uuid.UUID,
     payload: DataSourcePatch,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
@@ -158,7 +161,7 @@ def patch_data_source(
 @router.delete("/{data_source_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_data_source(
     data_source_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:
@@ -173,7 +176,7 @@ def delete_data_source(
 @router.post("/test", response_model=TestConnectionOut)
 async def test_connection_draft(
     request: Request,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> TestConnectionOut | JSONResponse:
     body = await request.json()
     if body.get("type") == "kingbase":
@@ -206,7 +209,7 @@ async def test_connection_draft(
 @router.post("/{data_source_id}/test", response_model=TestConnectionOut)
 def test_connection_saved(
     data_source_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> TestConnectionOut | JSONResponse:
     try:
@@ -220,7 +223,7 @@ def test_connection_saved(
 @router.get("/{data_source_id}/schemas", response_model=SchemaListResponse)
 def get_schemas(
     data_source_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> SchemaListResponse | JSONResponse:
     try:
@@ -234,7 +237,7 @@ def get_schemas(
 @router.get("/{data_source_id}/tables", response_model=TableListResponse)
 def get_tables(
     data_source_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     schema: str = "",
 ) -> TableListResponse | JSONResponse:
@@ -249,7 +252,7 @@ def get_tables(
 @router.get("/{data_source_id}/columns", response_model=ColumnListResponse)
 def get_columns(
     data_source_id: uuid.UUID,
-    user: Annotated[UserContext, Depends(get_current_user)],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     schema: str = "",
     table: str = "",

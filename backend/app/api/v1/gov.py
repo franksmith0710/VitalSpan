@@ -8,7 +8,10 @@ from fastapi.responses import JSONResponse
 from starlette.responses import Response
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "governance:read"
+PERM_MANAGE = "governance:manage"
 from app.datasources.models import get_meta_session
 from app.governance.catalog import service as catalog_service
 from app.governance.catalog.schemas import (
@@ -145,7 +148,7 @@ def _catalog_error_response(exc: catalog_service.CatalogError) -> JSONResponse:
 
 @router.get("/catalog/categories", response_model=CategoryListResponse)
 def list_catalog_categories(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> CategoryListResponse | JSONResponse:
     return catalog_service.list_categories(db)
@@ -153,7 +156,7 @@ def list_catalog_categories(
 
 @router.get("/catalog/appendix-e", response_model=None)
 def read_appendix_e_taxonomy(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> AppendixETaxonomyOut | JSONResponse:
     try:
         return catalog_service.get_appendix_e_taxonomy_for_actor(actor)
@@ -163,7 +166,7 @@ def read_appendix_e_taxonomy(
 
 @router.get("/catalog/entries", response_model=CatalogListResponse)
 def list_catalog_entries(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     category: str | None = None,
     limit: int = Query(50, ge=1, le=100),
@@ -178,7 +181,7 @@ def list_catalog_entries(
 @router.post("/catalog/entries", status_code=201, response_model=CatalogEntryOut)
 def create_catalog_entry(
     payload: CatalogEntryCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> CatalogEntryOut | JSONResponse:
     try:
@@ -190,7 +193,7 @@ def create_catalog_entry(
 @router.get("/catalog/entries/{entry_id}", response_model=CatalogEntryOut)
 def get_catalog_entry(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> CatalogEntryOut | JSONResponse:
     try:
@@ -202,7 +205,7 @@ def get_catalog_entry(
 @router.delete("/catalog/entries/{entry_id}", response_model=None)
 def delete_catalog_entry(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> Response | JSONResponse:
     try:
@@ -215,7 +218,7 @@ def delete_catalog_entry(
 @router.post("/bus/register", response_model=BusRegisterOut)
 def register_bus(
     payload: BusRegisterIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> BusRegisterOut | JSONResponse:
     try:
@@ -235,7 +238,7 @@ def register_bus(
 @router.get("/bus/register/fsm", response_model=None)
 def get_bus_register_fsm(
     catalog_entry_id: Annotated[uuid.UUID, Query(alias="catalogEntryId")],
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> JSONResponse:
     from sqlalchemy import select
@@ -263,16 +266,10 @@ def get_bus_register_fsm(
 
 @router.get("/bus/register/probe", response_model=None)
 def semi_auto_register_probe(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> JSONResponse:
     from app.governance.bus.probe import probe_semi_auto_register_budget_ms
-
-    if "admin" not in actor.roles:
-        return JSONResponse(
-            status_code=403,
-            content={"code": "BUS_REGISTER_FORBIDDEN", "message": "probe requires admin", "detail": None},
-        )
     result = probe_semi_auto_register_budget_ms(db, actor)
     return JSONResponse(
         status_code=200,
@@ -283,7 +280,7 @@ def semi_auto_register_probe(
 @router.post("/bus/auto-register/retry", response_model=None)
 def auto_register_retry(
     payload: AutoRegisterIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -294,19 +291,14 @@ def auto_register_retry(
 
 
 @router.get("/acl/matrix")
-def gov_acl_matrix(actor: Annotated[UserContext, Depends(get_current_user)]):
-    if "admin" not in actor.roles:
-        return JSONResponse(
-            status_code=403,
-            content={"code": "GOV_ACL_FORBIDDEN", "message": "admin only", "detail": None},
-        )
+def gov_acl_matrix(actor: Annotated[UserContext, Depends(require_permission(PERM_READ))]):
     return describe_gov_permission_matrix()
 
 
 @router.post("/bus/auto-register", response_model=None)
 def auto_register_bus(
     payload: AutoRegisterIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> AutoRegisterOut | JSONResponse:
     try:
@@ -318,7 +310,7 @@ def auto_register_bus(
 
 @router.get("/bus/auto-register/probe", response_model=None)
 def auto_register_probe(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> JSONResponse:
     from app.governance.bus.probe import probe_auto_register_budget_ms
@@ -374,7 +366,7 @@ def _gov_acl_error(exc: GovAclError) -> JSONResponse:
 @router.post("/publish/entries/{entry_id}/submit", response_model=PublishActionOut)
 def publish_submit(
     entry_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishActionOut | JSONResponse:
     try:
@@ -388,7 +380,7 @@ def publish_submit(
 @router.post("/publish/entries/{entry_id}/approve", response_model=PublishActionOut)
 def publish_approve(
     entry_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishActionOut | JSONResponse:
     try:
@@ -402,7 +394,7 @@ def publish_approve(
 @router.post("/publish/entries/{entry_id}/reject", response_model=PublishActionOut)
 def publish_reject(
     entry_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishActionOut | JSONResponse:
     try:
@@ -416,7 +408,7 @@ def publish_reject(
 @router.post("/publish/entries/{entry_id}/unpublish", response_model=PublishActionOut)
 def publish_unpublish(
     entry_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishActionOut | JSONResponse:
     try:
@@ -431,7 +423,7 @@ def publish_unpublish(
 def publish_link_physical(
     entry_id: uuid.UUID,
     payload: PublishLinkPhysicalIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishActionOut | JSONResponse:
     from app.metadata.physical import gov_refs as physical_gov_refs
@@ -457,7 +449,7 @@ def publish_link_physical(
 @router.get("/publish/entries/{entry_id}/status", response_model=PublishStatusOut)
 def publish_status(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishStatusOut | JSONResponse:
     try:
@@ -469,7 +461,7 @@ def publish_status(
 @router.get("/publish/entries/{entry_id}/openapi")
 def get_publish_openapi(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -481,7 +473,7 @@ def get_publish_openapi(
 @router.post("/publish/from-workflow", response_model=PublishFromWorkflowOut)
 def publish_from_workflow_route(
     payload: PublishFromWorkflowIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishFromWorkflowOut | JSONResponse:
     try:
@@ -493,7 +485,7 @@ def publish_from_workflow_route(
 @router.get("/publish/entries/{entry_id}/notifications", response_model=PublishNotificationListOut)
 def publish_notifications(
     entry_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> PublishNotificationListOut | JSONResponse:
     try:
@@ -520,7 +512,7 @@ def publish_notifications(
 @router.post("/query-design/validate", response_model=VisualQueryDesignOut)
 def validate_query_design(
     payload: VisualQueryDesignIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> VisualQueryDesignOut | JSONResponse:
     try:
@@ -532,7 +524,7 @@ def validate_query_design(
 @router.put("/query-design", response_model=VisualQueryDesignOut)
 def save_query_design(
     payload: VisualQueryDesignIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> VisualQueryDesignOut | JSONResponse:
     try:
@@ -544,7 +536,7 @@ def save_query_design(
 @router.get("/query-design", response_model=VisualQueryDesignOut)
 def get_query_design(
     ref_id: Annotated[uuid.UUID, Query(alias="refId")],
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> VisualQueryDesignOut | JSONResponse:
     try:
@@ -556,7 +548,7 @@ def get_query_design(
 @router.post("/query-design/preview-execute", response_model=PreviewExecuteOut)
 def preview_execute_query_design(
     payload: PreviewExecuteIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> PreviewExecuteOut | JSONResponse:
     try:
@@ -583,7 +575,7 @@ def _openapi_mapping_error(exc: OpenApiMappingError) -> JSONResponse:
 
 @router.get("/openapi-mappings", response_model=OpenApiMappingListOut)
 def list_openapi_mappings(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     catalog_entry_id: uuid.UUID | None = Query(default=None, alias="catalogEntryId"),
 ) -> OpenApiMappingListOut:
     return openapi_service.list_mappings(catalog_entry_id)
@@ -592,7 +584,7 @@ def list_openapi_mappings(
 @router.get("/openapi-mappings/{mapping_id}", response_model=None)
 def get_openapi_mapping(
     mapping_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return openapi_service.get_mapping(mapping_id)
@@ -603,7 +595,7 @@ def get_openapi_mapping(
 @router.post("/openapi-mappings", status_code=status.HTTP_201_CREATED, response_model=None)
 def register_openapi_mapping(
     payload: OpenApiMappingCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -615,7 +607,7 @@ def register_openapi_mapping(
 @router.post("/openapi-mappings/validate", response_model=OpenApiMappingValidateOut)
 def validate_openapi_mapping(
     payload: OpenApiMappingCreate,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return openapi_service.validate_mapping(payload)
@@ -626,7 +618,7 @@ def validate_openapi_mapping(
 @router.post("/openapi-mappings/{mapping_id}/deactivate", response_model=None)
 def deactivate_openapi_mapping(
     mapping_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
         return openapi_service.deactivate_mapping(mapping_id)
@@ -636,7 +628,7 @@ def deactivate_openapi_mapping(
 
 @router.get("/workflow/templates", response_model=WorkflowTemplateListOut)
 def list_workflow_templates(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> WorkflowTemplateListOut:
     return WorkflowTemplateListOut(items=workflow_service.list_templates(db))
@@ -645,7 +637,7 @@ def list_workflow_templates(
 @router.get("/workflow/templates/{template_id}/node-roles", response_model=WorkflowNodeRolesOut)
 def get_workflow_node_roles(
     template_id: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> WorkflowNodeRolesOut | JSONResponse:
     try:
@@ -663,7 +655,7 @@ def get_workflow_node_roles(
 @router.post("/workflow/templates/validate", response_model=WorkflowTemplateOut)
 def validate_workflow_template(
     payload: WorkflowTemplateValidateIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> WorkflowTemplateOut | JSONResponse:
     try:
         return workflow_service.validate_template(payload)
@@ -674,7 +666,7 @@ def validate_workflow_template(
 @router.post("/workflow/templates", status_code=201, response_model=WorkflowTemplateOut)
 def create_workflow_template(
     payload: WorkflowTemplateCreateIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> WorkflowTemplateOut | JSONResponse:
     try:
@@ -687,7 +679,7 @@ def create_workflow_template(
 def update_workflow_template(
     template_id: str,
     payload: WorkflowTemplateUpdateIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> WorkflowTemplateOut | JSONResponse:
     try:
@@ -699,7 +691,7 @@ def update_workflow_template(
 @router.delete("/workflow/templates/{template_id}")
 def delete_workflow_template(
     template_id: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -712,7 +704,7 @@ def delete_workflow_template(
 @router.post("/workflow/instances", status_code=201, response_model=WorkflowInstanceOut)
 def create_workflow_instance(
     payload: WorkflowInstanceCreateIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> WorkflowInstanceOut | JSONResponse:
     try:
@@ -723,7 +715,7 @@ def create_workflow_instance(
 
 @router.get("/workflow/instances", response_model=WorkflowInstanceListOut)
 def list_workflow_instances(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -735,7 +727,7 @@ def list_workflow_instances(
 @router.get("/workflow/instances/{instance_id}", response_model=WorkflowInstanceOut)
 def get_workflow_instance(
     instance_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     include_design_snapshot: bool = Query(default=False, alias="includeDesignSnapshot"),
 ) -> WorkflowInstanceOut | JSONResponse:
@@ -758,7 +750,7 @@ def get_workflow_instance(
 def transition_workflow_instance(
     instance_id: uuid.UUID,
     payload: WorkflowTransitionIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> WorkflowInstanceOut | JSONResponse:
     try:
@@ -773,7 +765,7 @@ def transition_workflow_instance(
 @router.get("/workflow/instances/{instance_id}/approved-design", response_model=VisualQueryDesignOut)
 def get_approved_design(
     instance_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> VisualQueryDesignOut | JSONResponse:
     try:
@@ -785,7 +777,7 @@ def get_approved_design(
 @router.post("/workflow/instances/{instance_id}/confirm-design", response_model=WorkflowInstanceOut)
 def confirm_design(
     instance_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> WorkflowInstanceOut | JSONResponse:
     try:
@@ -804,7 +796,7 @@ def _classification_error(exc: ClassificationError) -> JSONResponse:
 
 @router.get("/catalog/classification/nodes", response_model=ClassificationNodeListResponse)
 def list_classification_nodes(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     parent_id: uuid.UUID | None = Query(default=None, alias="parentId"),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -815,7 +807,7 @@ def list_classification_nodes(
 @router.post("/catalog/classification/nodes", response_model=ClassificationNodeOut, status_code=status.HTTP_201_CREATED)
 def create_classification_node(
     payload: ClassificationNodeCreate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> ClassificationNodeOut | JSONResponse:
     try:
         return classification_service.create_node(payload, actor)
@@ -827,7 +819,7 @@ def create_classification_node(
 def move_classification_node(
     node_id: uuid.UUID,
     payload: ClassificationNodeMove,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> ClassificationNodeOut | JSONResponse:
     try:
         return classification_service.move_node(node_id, payload, actor)
@@ -838,7 +830,7 @@ def move_classification_node(
 @router.delete("/catalog/classification/nodes/{node_id}", response_model=None)
 def delete_classification_node(
     node_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> Response | JSONResponse:
     try:
         classification_service.delete_node(node_id, actor)
@@ -849,7 +841,7 @@ def delete_classification_node(
 
 @router.get("/catalog/classification/m11-probe", response_model=None)
 def cat04_m11_probe(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> JSONResponse:
     from app.governance.catalog.cat04.handler import run_cat04_catalog_probe
 
@@ -865,7 +857,7 @@ def _cat05_error(exc: Cat05Error) -> JSONResponse:
 @router.post("/catalog/tickets/validate", response_model=TicketStatsValidateOut)
 def validate_ticket_stats_item(
     payload: TicketStatsItemIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> TicketStatsValidateOut | JSONResponse:
     try:
         return cat05_service.validate_ticket_item(payload)
@@ -876,7 +868,7 @@ def validate_ticket_stats_item(
 @router.post("/catalog/tickets/items", response_model=TicketStatsItemOut, status_code=status.HTTP_201_CREATED)
 def create_ticket_stats_item(
     payload: TicketStatsItemIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> TicketStatsItemOut | JSONResponse:
     try:
         return cat05_service.create_ticket_item(payload, actor)
@@ -886,7 +878,7 @@ def create_ticket_stats_item(
 
 @router.get("/catalog/tickets/items", response_model=TicketStatsListResponse)
 def list_ticket_stats_items(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> TicketStatsListResponse:
@@ -896,7 +888,7 @@ def list_ticket_stats_items(
 @router.get("/catalog/tickets/items/{key}/stats", response_model=TicketStatsProbeOut)
 def probe_ticket_stats(
     key: str,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> TicketStatsProbeOut | JSONResponse:
     try:
         return cat05_service.get_ticket_stats(key, actor)
@@ -906,7 +898,7 @@ def probe_ticket_stats(
 
 @router.get("/catalog/tickets/m11-probe", response_model=None)
 def cat05_m11_probe(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> JSONResponse:
     from app.governance.catalog.cat05.handler import run_cat05_catalog_probe
 
@@ -921,7 +913,7 @@ def _cat03_error(exc: Cat03Error) -> JSONResponse:
 
 @router.get("/catalog/geo-regions/m6-probe", response_model=None)
 def cat03_m6_probe(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> JSONResponse:
     from app.governance.catalog.cat03.handler import run_cat03_catalog_probe
 
@@ -931,7 +923,7 @@ def cat03_m6_probe(
 
 @router.get("/catalog/geo-regions/nodes", response_model=GeoRegionListResponse)
 def list_geo_region_nodes(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     parent_id: uuid.UUID | None = Query(default=None, alias="parentId"),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -942,7 +934,7 @@ def list_geo_region_nodes(
 @router.post("/catalog/geo-regions/nodes", response_model=GeoRegionOut, status_code=status.HTTP_201_CREATED)
 def create_geo_region_node(
     payload: GeoRegionCreate,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> GeoRegionOut | JSONResponse:
     try:
         return cat03_service.create_geo_node(payload, actor)
@@ -954,7 +946,7 @@ def create_geo_region_node(
 def move_geo_region_node(
     region_id: uuid.UUID,
     payload: GeoRegionMove,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> GeoRegionOut | JSONResponse:
     try:
         return cat03_service.move_geo_node(region_id, payload, actor)
@@ -965,7 +957,7 @@ def move_geo_region_node(
 @router.delete("/catalog/geo-regions/nodes/{region_id}", response_model=None)
 def delete_geo_region_node(
     region_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
 ) -> Response | JSONResponse:
     try:
         cat03_service.delete_geo_node(region_id, actor)
@@ -982,7 +974,7 @@ def _cat06_error(exc: Cat06Error) -> JSONResponse:
 @router.post("/catalog/production-stats/validate", response_model=ProductionStatsValidateOut)
 def production_stats_validate(
     payload: ProductionStatsItemIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> ProductionStatsValidateOut | JSONResponse:
     try:
         return cat06_service.validate_production_stats(payload)
@@ -993,7 +985,7 @@ def production_stats_validate(
 @router.post("/catalog/production-stats", response_model=ProductionStatsItemOut, status_code=status.HTTP_201_CREATED)
 def production_stats_create(
     payload: ProductionStatsItemIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> ProductionStatsItemOut | JSONResponse:
     try:
         return cat06_service.create_production_stats(payload, actor)
@@ -1003,7 +995,7 @@ def production_stats_create(
 
 @router.get("/catalog/production-stats", response_model=ProductionStatsListResponse)
 def production_stats_list(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> ProductionStatsListResponse:
@@ -1013,7 +1005,7 @@ def production_stats_list(
 @router.get("/catalog/production-stats/{stats_key}/stats", response_model=ProductionStatsProbeOut)
 def production_stats_probe(
     stats_key: str,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> ProductionStatsProbeOut | JSONResponse:
     try:
         return cat06_service.get_production_stats(stats_key, actor)
@@ -1023,7 +1015,7 @@ def production_stats_probe(
 
 @router.get("/catalog/production-stats/m11-probe", response_model=None)
 def cat06_m11_probe(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> JSONResponse:
     from app.governance.catalog.cat06.handler import run_cat06_catalog_probe
 
@@ -1033,7 +1025,7 @@ def cat06_m11_probe(
 
 @router.get("/catalog/workno-behavior/m12-probe", response_model=None)
 def cat07_m12_probe(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> JSONResponse:
     from app.governance.catalog.cat07.handler import run_cat07_catalog_probe
 
@@ -1049,7 +1041,7 @@ def _cat01_error(exc: Cat01Error) -> JSONResponse:
 @router.post("/catalog/lifecycle-templates/validate", response_model=LifecycleTemplateValidateOut)
 def lifecycle_templates_validate(
     payload: LifecycleTemplateIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> LifecycleTemplateValidateOut | JSONResponse:
     try:
         return cat01_service.validate_lifecycle_template(payload)
@@ -1060,7 +1052,7 @@ def lifecycle_templates_validate(
 @router.post("/catalog/lifecycle-templates", response_model=LifecycleTemplateOut, status_code=status.HTTP_201_CREATED)
 def lifecycle_templates_create(
     payload: LifecycleTemplateIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> LifecycleTemplateOut | JSONResponse:
     try:
         return cat01_service.create_lifecycle_template(payload, actor)
@@ -1070,7 +1062,7 @@ def lifecycle_templates_create(
 
 @router.get("/catalog/lifecycle-templates/m6-probe", response_model=None)
 def cat01_m6_probe(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> JSONResponse:
     from app.governance.catalog.cat01.handler import run_cat01_catalog_probe
 
@@ -1081,7 +1073,7 @@ def cat01_m6_probe(
 @router.get("/catalog/lifecycle-templates/{template_key}", response_model=LifecycleTemplateOut)
 def lifecycle_templates_get(
     template_key: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> LifecycleTemplateOut | JSONResponse:
     try:
         return cat01_service.get_lifecycle_template(template_key)
@@ -1093,7 +1085,7 @@ def lifecycle_templates_get(
 def lifecycle_templates_list(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    actor: Annotated[UserContext, Depends(get_current_user)] = None,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))] = None,
 ) -> LifecycleTemplateListResponse:
     return cat01_service.list_lifecycle_templates(limit, offset, actor)
 
@@ -1102,7 +1094,7 @@ def lifecycle_templates_list(
 def lifecycle_templates_stage_move(
     template_key: str,
     payload: LifecycleStageMove,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> LifecycleTemplateOut | JSONResponse:
     try:
         return cat01_service.move_lifecycle_stage(template_key, payload, actor)
@@ -1118,7 +1110,7 @@ def _cat02_error(exc: Cat02Error) -> JSONResponse:
 @router.post("/catalog/aggregate-templates/validate", response_model=AggregateTemplateValidateOut)
 def aggregate_templates_validate(
     payload: AggregateTemplateIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> AggregateTemplateValidateOut | JSONResponse:
     try:
         return cat02_service.validate_aggregate_template(payload)
@@ -1129,7 +1121,7 @@ def aggregate_templates_validate(
 @router.post("/catalog/aggregate-templates", response_model=AggregateTemplateOut, status_code=status.HTTP_201_CREATED)
 def aggregate_templates_create(
     payload: AggregateTemplateIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> AggregateTemplateOut | JSONResponse:
     try:
         return cat02_service.create_aggregate_template(payload, actor)
@@ -1141,14 +1133,14 @@ def aggregate_templates_create(
 def aggregate_templates_list(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    actor: Annotated[UserContext, Depends(get_current_user)] = None,
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))] = None,
 ) -> AggregateTemplateListResponse:
     return cat02_service.list_aggregate_templates(limit, offset, actor)
 
 
 @router.get("/catalog/aggregate-templates/m6-probe", response_model=None)
 def cat02_m6_probe(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> JSONResponse:
     from app.governance.catalog.cat02.handler import run_cat02_catalog_probe
 
@@ -1159,7 +1151,7 @@ def cat02_m6_probe(
 @router.get("/catalog/aggregate-templates/{aggregate_key}/attribution", response_model=AggregateAttributionOut)
 def aggregate_templates_attribution(
     aggregate_key: str,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> AggregateAttributionOut | JSONResponse:
     try:
         return cat02_service.get_aggregate_attribution(aggregate_key)

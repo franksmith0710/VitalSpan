@@ -8,7 +8,10 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_READ = "dashboard:read"
+PERM_EDIT = "dashboard:edit"
 from app.datasources.models import get_meta_session
 from app.designer import snapshot as snapshot_service
 from app.designer import service as designer_service
@@ -71,7 +74,7 @@ class DesignModeIn(BaseModel):
 @router.post("/conditions/validate", response_model=QueryConditionsConfig)
 def validate_conditions(
     payload: QueryConditionsConfig,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> QueryConditionsConfig | JSONResponse:
     try:
         return designer_service.validate_conditions_config(payload)
@@ -82,7 +85,7 @@ def validate_conditions(
 @router.put("/conditions", response_model=QueryConditionsConfig)
 def save_conditions(
     payload: QueryConditionsConfig,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ) -> QueryConditionsConfig | JSONResponse:
     try:
@@ -118,7 +121,7 @@ def save_conditions(
 
 @router.get("/conditions", response_model=QueryConditionsConfig)
 def get_conditions(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     ref_type: str = "design_draft",
     ref_id: uuid.UUID | None = Query(default=None, alias="ref_id"),
@@ -152,7 +155,7 @@ def get_conditions(
 @router.post("/sql-mode/validate", response_model=SqlModeSpec)
 def validate_sql_mode(
     payload: SqlModeSpec,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> SqlModeSpec | JSONResponse:
     try:
         return sql_mode_service.validate_sql_mode(payload)
@@ -162,7 +165,7 @@ def validate_sql_mode(
 
 @router.get("/sql-mode/capabilities")
 def get_sql_mode_capabilities(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ) -> dict:
     return sql_mode_service.sql_mode_capabilities()
 
@@ -170,7 +173,7 @@ def get_sql_mode_capabilities(
 @router.put("/sql-mode", response_model=SqlModeSpec)
 def save_sql_mode(
     payload: SqlModeSpec,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ) -> SqlModeSpec | JSONResponse:
     try:
@@ -184,7 +187,7 @@ def save_sql_mode(
 
 @router.get("/sql-mode", response_model=SqlModeSpec)
 def get_sql_mode(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     ref_type: str = "design_draft",
     ref_id: uuid.UUID | None = Query(default=None, alias="ref_id"),
@@ -207,7 +210,7 @@ def get_sql_mode(
 @router.post("/output-fields/validate", response_model=OutputFieldsConfig)
 def validate_output_fields(
     payload: OutputFieldsConfig,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     dataset_id: uuid.UUID | None = Query(default=None, alias="datasetId"),
 ) -> OutputFieldsConfig | JSONResponse:
@@ -220,7 +223,7 @@ def validate_output_fields(
 @router.put("/output-fields", response_model=OutputFieldsConfig)
 def save_output_fields(
     payload: OutputFieldsConfig,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
     dataset_id: uuid.UUID | None = Query(default=None, alias="datasetId"),
 ) -> OutputFieldsConfig | JSONResponse:
@@ -236,7 +239,7 @@ def save_output_fields(
 
 @router.get("/output-fields", response_model=OutputFieldsConfig)
 def get_output_fields(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     ref_type: str = "design_draft",
     ref_id: uuid.UUID | None = Query(default=None, alias="ref_id"),
@@ -259,7 +262,7 @@ def get_output_fields(
 @router.put("/compute-rules", response_model=ComputeRulesConfig)
 def save_compute_rules(
     payload: ComputeRulesConfig,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ) -> ComputeRulesConfig | JSONResponse:
     try:
@@ -271,7 +274,7 @@ def save_compute_rules(
 
 @router.get("/compute-rules", response_model=ComputeRulesConfig)
 def get_compute_rules(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     ref_type: str = "design_draft",
     ref_id: uuid.UUID | None = None,
@@ -303,7 +306,7 @@ def get_compute_rules(
 @router.post("/workflow-link/validate", response_model=DesignerWorkflowLinkValidateOut)
 def validate_workflow_link(
     body: dict,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> DesignerWorkflowLinkValidateOut | JSONResponse:
     if not body.get("designerItemId"):
@@ -321,7 +324,7 @@ def validate_workflow_link(
 @router.put("/workflow-link", response_model=DesignerWorkflowLinkOut)
 def save_workflow_link(
     payload: DesignerWorkflowLinkIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ) -> DesignerWorkflowLinkOut | JSONResponse:
     try:
@@ -332,7 +335,7 @@ def save_workflow_link(
 
 @router.get("/workflow-link", response_model=DesignerWorkflowLinkOut)
 def get_workflow_link(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     designer_item_id: uuid.UUID | None = Query(default=None, alias="designerItemId"),
     workflow_instance_id: uuid.UUID | None = Query(default=None, alias="workflowInstanceId"),
@@ -355,7 +358,7 @@ def get_workflow_link(
 
 @router.delete("/workflow-link", status_code=204)
 def delete_workflow_link_route(
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
     designer_item_id: uuid.UUID = Query(alias="designerItemId"),
 ):
@@ -369,7 +372,7 @@ def delete_workflow_link_route(
 @router.get("/snapshots/{snapshot_id}")
 def get_designer_snapshot(
     snapshot_id: uuid.UUID,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -380,7 +383,7 @@ def get_designer_snapshot(
 
 @router.get("/design-mode")
 def get_design_mode_route(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     ref_id: uuid.UUID = Query(alias="refId"),
     ref_type: str = Query(default="design_draft", alias="refType"),
@@ -391,7 +394,7 @@ def get_design_mode_route(
 @router.put("/design-mode")
 def put_design_mode_route(
     payload: DesignModeIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
@@ -404,7 +407,7 @@ def put_design_mode_route(
 
 @router.get("/fields", response_model=FieldRegistryOut)
 def get_designer_fields(
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     dataset_id: uuid.UUID | None = Query(default=None, alias="datasetId"),
 ) -> FieldRegistryOut:
@@ -414,7 +417,7 @@ def get_designer_fields(
 @router.post("/preview/translate", response_model=None)
 def preview_translate(
     payload: PreviewTranslateIn,
-    _: Annotated[UserContext, Depends(get_current_user)],
+    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> dict | JSONResponse:
     try:
@@ -426,7 +429,7 @@ def preview_translate(
 @router.post("/submit-workflow", status_code=201, response_model=DesignerSubmitWorkflowOut)
 def submit_designer_workflow(
     payload: DesignerSubmitWorkflowIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
 ) -> DesignerSubmitWorkflowOut | JSONResponse:
     try:

@@ -8,7 +8,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, get_current_user
+from app.auth.deps import UserContext, require_permission
+
+PERM_MANAGE = "governance:manage"
 from app.datasources.models import get_meta_session
 from app.governance.catalog.schemas import BusRegisterOut
 from app.integration import bus_register
@@ -52,7 +54,7 @@ def _err(exc: IntegrationError) -> JSONResponse:
 @router.post("/register", response_model=BusRegisterOut)
 def register_integration_bus(
     payload: IntegrationBusRegisterIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ):
     max_attempts = 3
@@ -74,7 +76,7 @@ def register_integration_bus(
 @router.post("/register/retry", response_model=BusRegisterOut)
 def retry_integration_bus(
     payload: IntegrationBusRetryIn,
-    actor: Annotated[UserContext, Depends(get_current_user)],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ):
     try:
