@@ -110,7 +110,7 @@ export function TabsWidget({
             </button>
           ))}
         </div>
-        <div className="min-h-0 flex-1 space-y-2 overflow-auto p-2">
+        <div className="dashboard-scroll min-h-0 flex-1 space-y-2 overflow-auto p-2">
           {children.length === 0 ? (
             <p className="py-6 text-center text-theme-xs text-gray-400">
               {mode === "edit" ? "选中此 Tab 后从工具栏插入组件" : "此页签暂无内容"}

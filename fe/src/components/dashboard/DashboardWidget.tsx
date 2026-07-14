@@ -57,7 +57,7 @@ type DashboardWidgetProps = {
   onTabsConfigChange?: (id: string, tabsConfig: TabsWidgetConfig) => void;
   onTextConfigChange?: (id: string, config: TextWidgetConfig) => void;
   dashboardStyle?: DashboardStyleConfig;
-  /** 像素画布拖拽/缩放中冻结图表重绘 */
+  /** DataEase isPlayer：交互中暂停 React 尺寸 props，由 DOM 百分比跟手 */
   suspendLiveResize?: boolean;
 };
 

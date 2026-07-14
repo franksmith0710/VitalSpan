@@ -132,7 +132,7 @@ export function RichTextEditor({
         <EditorContent
           editor={editor}
           className={cn(
-            "min-h-0 flex-1 overflow-auto [&_.ProseMirror]:min-h-[3rem]",
+            "dashboard-scroll min-h-0 flex-1 overflow-auto [&_.ProseMirror]:min-h-[3rem]",
             inset === "comfortable" && "p-4",
           )}
         />

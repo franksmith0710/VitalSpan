@@ -56,8 +56,8 @@ export const PIXEL_CANVAS_GUTTER = 0;
 
 export const PIXEL_CANVAS_MIN_HEIGHT = 320;
 
-/** 邻组件推挤预览节流，避免拖拽时每帧重绘全部图表 */
-export const PIXEL_PREVIEW_THROTTLE_MS = 150;
+/** 邻组件推挤预览节流（对标 DE onDragging/onResizing 10ms debounce） */
+export const PIXEL_PREVIEW_THROTTLE_MS = 16;
 
 export function canvasScaleForHost(
   hostWidth: number,
@@ -309,7 +309,7 @@ export function PixelCanvas({
     <div
       ref={hostRef}
       className={cn(
-        "pixel-canvas-host relative h-full min-h-0 w-full overflow-x-hidden overflow-y-auto",
+        "pixel-canvas-host dashboard-scroll relative h-full min-h-0 w-full overflow-x-hidden overflow-y-auto",
         centerContent && "flex flex-col items-center",
         paletteDragOver && "dashboard-canvas-drop-active",
         className,

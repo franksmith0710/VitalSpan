@@ -7,6 +7,7 @@ import {
   resolveShapeActionRailPlacement,
   resolveShapeActionRailSide,
   resolveScaleDesignHeight,
+  snapScaledContentWidth,
   scaledCanvasMetrics,
   screenDeltaToCanvas,
   type PixelRect,
@@ -72,14 +73,23 @@ describe("pixel canvas geometry", () => {
     expect(metrics.stageLeft).toBe(0);
   });
 
+  it("snaps component width when within sub-pixel gap of the host", () => {
+    const available = 766;
+    const scale = available / 1440;
+    const metrics = scaledCanvasMetrics(available, 700, 1440, 900, 900, 0, "component");
+    expect(metrics.scale).toBeCloseTo(scale, 5);
+    expect(metrics.contentWidth).toBe(available);
+    expect(metrics.centerContent).toBe(false);
+  });
+
   it("uses design canvas height for component scale even when content is taller", () => {
     expect(resolveScaleDesignHeight(2000)).toBe(900);
     const metrics = scaledCanvasMetrics(1189, 836, 1440, 900, 2000, 0, "component");
     const scale = Math.min(1189 / 1440, 836 / 900);
     expect(metrics.scale).toBeCloseTo(scale, 5);
-    expect(metrics.contentWidth).toBe(Math.ceil(1440 * scale));
+    expect(metrics.contentWidth).toBe(Math.min(Math.ceil(1440 * scale), 1189));
     expect(metrics.contentHeight).toBe(Math.ceil(2000 * scale));
-    expect(metrics.centerContent).toBe(true);
+    expect(metrics.centerContent).toBe(metrics.contentWidth < 1188.5);
   });
 
   it("allows vertical growth when bottom growth is enabled", () => {
@@ -134,6 +144,21 @@ describe("pixel canvas geometry", () => {
         height: 900,
       }),
     ).toEqual({ x: 280, y: 200, width: 120, height: 80 });
+  });
+
+  it("prefers pixel-canvas-host as the measure element when present", () => {
+    const surface = document.createElement("div");
+    surface.className = "dashboard-canvas-surface";
+    Object.defineProperty(surface, "clientWidth", { value: 766 });
+    Object.defineProperty(surface, "clientHeight", { value: 540 });
+
+    const host = document.createElement("div");
+    host.className = "pixel-canvas-host";
+    Object.defineProperty(host, "clientWidth", { value: 751 });
+    Object.defineProperty(host, "clientHeight", { value: 540 });
+    surface.appendChild(host);
+
+    expect(resolvePixelCanvasMeasureElement(host)).toBe(host);
   });
 
   it("prefers dashboard-canvas-surface as the stable measure element", () => {

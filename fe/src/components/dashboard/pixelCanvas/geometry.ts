@@ -81,6 +81,23 @@ export function resolveScaleDesignHeight(canvasHeight: number): number {
   return Math.max(SCALE_HEIGHT_FLOOR, Math.min(canvasHeight, CANVAS_SCALE_DESIGN_HEIGHT));
 }
 
+/** 吸收亚像素缝；canvas 模式贴满可用宽，component 模式在误差内贴满 */
+export function snapScaledContentWidth(
+  scaledWidth: number,
+  availableWidth: number,
+  scaleMode: "canvas" | "component",
+): number {
+  const safeAvailable = Math.max(0, availableWidth);
+  if (scaleMode === "canvas") {
+    return Math.round(safeAvailable);
+  }
+  const gap = safeAvailable - scaledWidth;
+  if (gap >= 0 && gap < 2) {
+    return Math.round(safeAvailable);
+  }
+  return Math.min(Math.ceil(scaledWidth), Math.round(safeAvailable));
+}
+
 export function scaledCanvasMetrics(
   hostWidth: number,
   hostHeight: number,
@@ -100,14 +117,15 @@ export function scaledCanvasMetrics(
   const scale = scaleMode === "component" ? Math.min(scaleX, scaleY) : scaleX;
   const scaledWidth = safeCanvasWidth * scale;
   const scaledContentHeight = safeContentHeight * scale;
+  const contentWidth = snapScaledContentWidth(scaledWidth, availableWidth, scaleMode);
 
   if (scaleMode === "component") {
     return {
       scale,
-      contentWidth: Math.ceil(scaledWidth),
+      contentWidth,
       contentHeight: Math.ceil(scaledContentHeight),
       stageLeft: 0,
-      centerContent: true,
+      centerContent: contentWidth < availableWidth - 0.5,
     };
   }
 
@@ -115,7 +133,7 @@ export function scaledCanvasMetrics(
     scaledContentHeight <= availableHeight + 0.5 ? availableHeight : Math.ceil(scaledContentHeight);
   return {
     scale,
-    contentWidth: gutter + availableWidth,
+    contentWidth: gutter + contentWidth,
     contentHeight,
     stageLeft: gutter,
     centerContent: false,
@@ -123,6 +141,13 @@ export function scaledCanvasMetrics(
 }
 
 export function resolvePixelCanvasMeasureElement(host: HTMLElement): HTMLElement {
+  let pixelHost: HTMLElement | null = host;
+  while (pixelHost) {
+    if (pixelHost.classList.contains("pixel-canvas-host")) {
+      return pixelHost;
+    }
+    pixelHost = pixelHost.parentElement;
+  }
   let node: HTMLElement | null = host.parentElement;
   while (node) {
     if (node.classList.contains("dashboard-canvas-surface")) {

@@ -46,17 +46,25 @@ type ChartRendererProps = {
   paletteId?: string;
   paletteColors?: string[];
   numberFormat?: NumberFormatConfig;
-  /** 像素画布拖拽/缩放中：内容随 CSS 跟手，松手后再对齐图表 */
+  /** DataEase isPlayer：交互中冻结 React 尺寸上报，由 DOM 百分比 + 图表 rAF resize 跟手 */
   suspendLiveResize?: boolean;
 };
 
 const PAGE_SIZE = 50;
 
+function embeddedChartSurface(children: ReactNode) {
+  return (
+    <div className="absolute inset-0 min-h-0 overflow-hidden">
+      {children}
+    </div>
+  );
+}
+
 function embeddedStateMessage(className: string, children: ReactNode) {
   return (
     <p
       className={cn(
-        "flex min-h-[4rem] flex-1 items-center justify-center px-4 text-center",
+        "flex h-full min-h-0 items-center justify-center px-4 text-center",
         className,
       )}
     >
@@ -91,6 +99,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   queryLimit,
   paletteId,
   paletteColors,
+  numberFormat,
   suspendLiveResize = false,
 }: ChartRendererProps) {
   const { ref: bodyRef, size: bodySize } = useElementSize<HTMLDivElement>({
@@ -99,11 +108,9 @@ export const ChartRenderer = memo(function ChartRenderer({
   });
   const fillHeight = useMemo(() => {
     if (!embedded) return Math.max(180, bodySize.height || 180);
-    if (suspendLiveResize) return bodySize.height || 120;
     return embeddedBodyHeight(bodySize, pixelSize, contentChromePx, gridSpan);
   }, [
     embedded,
-    suspendLiveResize,
     bodySize.height,
     pixelSize?.width,
     pixelSize?.height,
@@ -111,7 +118,9 @@ export const ChartRenderer = memo(function ChartRenderer({
     gridSpan?.h,
   ]);
   const chartSize = useMemo(() => {
-    if (embedded) return { width: undefined as number | undefined, height: fillHeight };
+    if (embedded) {
+      return { width: undefined as number | undefined, height: undefined as number | undefined };
+    }
     return { width: bodySize.width || undefined, height: fillHeight };
   }, [embedded, bodySize.width, fillHeight]);
   const { columns, rows, loading, error, slowHint, rerun } = useChartExecute(config, {
@@ -155,24 +164,28 @@ export const ChartRenderer = memo(function ChartRenderer({
   );
 
   const renderBody = () => {
+    const wrapEmbedded = (node: ReactNode) =>
+      embedded ? embeddedChartSurface(node) : node;
+
     if (isKpiType(localConfig.chartType)) {
-      return (
+      return wrapEmbedded(
         <KpiCard
           title={title}
           metrics={localConfig.metrics ?? []}
           columns={columns}
           rows={rows as unknown[][]}
-        />
+          numberFormat={numberFormat}
+        />,
       );
     }
 
     if (isAdvancedEchartsType(localConfig.chartType)) {
       if (!renderSpec) {
         return embedded
-          ? embeddedStateMessage(dwState, "渲染配置加载中…")
+          ? embeddedChartSurface(embeddedStateMessage(dwState, "渲染配置加载中…"))
           : <p className="text-theme-sm text-gray-500">渲染配置加载中…</p>;
       }
-      return (
+      return wrapEmbedded(
         <AdvancedEchartsChart
           spec={renderSpec}
           rows={rows as unknown[][]}
@@ -181,24 +194,23 @@ export const ChartRenderer = memo(function ChartRenderer({
           fill={embedded}
           height={embedded ? undefined : chartSize.height}
           width={embedded ? undefined : chartSize.width}
-          freezeResize={suspendLiveResize}
-        />
+        />,
       );
     }
 
     if (localConfig.chartType === "pie") {
       if (!renderModel || renderModel.kind === "empty") {
         return embedded
-          ? embeddedStateMessage(dwState, "暂无数据")
+          ? embeddedChartSurface(embeddedStateMessage(dwState, "暂无数据"))
           : <p className="text-theme-sm text-gray-500">暂无数据</p>;
       }
       if (renderModel.kind === "error") {
         return embedded
-          ? embeddedStateMessage(dwState, renderModel.message)
+          ? embeddedChartSurface(embeddedStateMessage(dwState, renderModel.message))
           : <p className="text-theme-sm text-gray-500">{renderModel.message}</p>;
       }
       const spec = chartConfigToRenderSpec(localConfig);
-      return (
+      return wrapEmbedded(
         <AdvancedEchartsChart
           spec={spec}
           rows={rows as unknown[][]}
@@ -207,8 +219,7 @@ export const ChartRenderer = memo(function ChartRenderer({
           fill={embedded}
           height={embedded ? undefined : chartSize.height}
           width={embedded ? undefined : chartSize.width}
-          freezeResize={suspendLiveResize}
-        />
+        />,
       );
     }
 
@@ -228,13 +239,13 @@ export const ChartRenderer = memo(function ChartRenderer({
         rows.length > PAGE_SIZE ? rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : rows;
       const totalPages = Math.ceil(rows.length / PAGE_SIZE);
 
-      return (
+      return wrapEmbedded(
         <div className={embedded ? "flex h-full min-h-0 w-full flex-col" : undefined}>
           <div
             className={
               embedded
-                ? "min-h-0 flex-1 overflow-auto overscroll-contain"
-                : "overflow-x-only"
+                ? "dashboard-scroll min-h-0 flex-1 overflow-auto overscroll-contain"
+                : "dashboard-scroll overflow-x-only"
             }
           >
             <table className="w-full min-w-[320px] text-left text-theme-sm">
@@ -291,7 +302,7 @@ export const ChartRenderer = memo(function ChartRenderer({
               </Button>
             </div>
           ) : null}
-        </div>
+        </div>,
       );
     }
 
@@ -323,7 +334,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     const compactEmbedded = embedded && fillHeight < 160;
     const apexChart: ApexOptions["chart"] = {
       ...(embedded ? {} : { height: chartSize.height }),
-      redrawOnParentResize: embedded ? !suspendLiveResize : true,
+      redrawOnParentResize: embedded,
       redrawOnWindowResize: !embedded,
       animations: embedded ? { enabled: false } : undefined,
       ...(chartType === "bar" && localConfig.styleVariant === "stacked"
@@ -350,8 +361,8 @@ export const ChartRenderer = memo(function ChartRenderer({
     } else {
       options = createBarChartOptions(categories, apexOverrides);
     }
-    return (
-      <div className={embedded ? "absolute inset-0 overflow-hidden" : "h-full min-h-0 w-full min-w-0 overflow-hidden"}>
+    return wrapEmbedded(
+      <div className={embedded ? "h-full min-h-0 w-full overflow-hidden" : "h-full min-h-0 w-full min-w-0 overflow-hidden"}>
         <Chart
           key={`${chartType}-${series.map((s) => s.name).join(",")}-${series[0]?.data.length ?? 0}-${embedded ? "embedded" : "panel"}`}
           options={options}
@@ -360,7 +371,7 @@ export const ChartRenderer = memo(function ChartRenderer({
           height={embedded ? "100%" : chartSize.height}
           width={embedded ? "100%" : chartSize.width}
         />
-      </div>
+      </div>,
     );
   };
 

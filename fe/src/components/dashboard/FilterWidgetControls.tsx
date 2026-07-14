@@ -105,7 +105,7 @@ export function FilterControl({
           <div
             role="group"
             aria-label={label}
-            className="max-h-36 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-900"
+            className="dashboard-scroll max-h-36 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-900"
           >
             {options.map((opt) => {
               const checked = selected.has(opt.value);

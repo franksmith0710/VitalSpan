@@ -194,6 +194,136 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: rgb(71 84 103);
 }
 
+/* 看板主题滚动条：跟 data-dashboard-color-scheme，不跟 Admin html.dark */
+.dashboard-theme-scope[data-dashboard-color-scheme="light"] {
+  --dashboard-scroll-thumb: rgb(208 213 221);
+  --dashboard-scroll-thumb-hover: rgb(152 162 179);
+  --dashboard-scroll-track: rgb(249 250 251);
+  color-scheme: light;
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"],
+.dashboard-theme-scope.dark {
+  --dashboard-scroll-thumb: rgb(71 84 103);
+  --dashboard-scroll-thumb-hover: rgb(98 112 132);
+  --dashboard-scroll-track: rgb(29 41 57);
+  color-scheme: dark;
+}
+
+/** 看板组件内滚动条（表格、文本、画布 host 等） */
+@utility dashboard-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--dashboard-scroll-thumb) var(--dashboard-scroll-track);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--dashboard-scroll-track);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: var(--dashboard-scroll-thumb);
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: var(--dashboard-scroll-thumb-hover);
+  }
+}
+
+.dashboard-theme-scope :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .dashboard-scroll,
+  .pixel-canvas-host
+) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--dashboard-scroll-thumb) var(--dashboard-scroll-track);
+}
+
+.dashboard-theme-scope :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .dashboard-scroll,
+  .pixel-canvas-host
+)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dashboard-theme-scope :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .dashboard-scroll,
+  .pixel-canvas-host
+)::-webkit-scrollbar-track {
+  background: var(--dashboard-scroll-track);
+}
+
+.dashboard-theme-scope :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .dashboard-scroll,
+  .pixel-canvas-host
+)::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: var(--dashboard-scroll-thumb);
+}
+
+.dashboard-theme-scope :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .dashboard-scroll,
+  .pixel-canvas-host
+):hover::-webkit-scrollbar-thumb {
+  background-color: var(--dashboard-scroll-thumb-hover);
+}
+
+/* 看板浅色时压住 html.dark 对 custom-scrollbar 的覆盖 */
+html.dark .dashboard-theme-scope[data-dashboard-color-scheme="light"] .custom-scrollbar {
+  scrollbar-color: rgb(228 231 236) transparent;
+}
+
+html.dark .dashboard-theme-scope[data-dashboard-color-scheme="light"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(228 231 236);
+}
+
+html.dark .dashboard-theme-scope[data-dashboard-color-scheme="light"] .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgb(208 213 221);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .custom-scrollbar,
+.dashboard-theme-scope.dark .custom-scrollbar {
+  scrollbar-color: rgb(52 64 84) transparent;
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb,
+.dashboard-theme-scope.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(52 64 84);
+}
+
+.dashboard-theme-scope [data-radix-scroll-area-thumb] {
+  background-color: var(--dashboard-scroll-thumb) !important;
+}
+
 /** 仅横向滚动；避免 overflow-x:auto 连带 overflow-y:auto 与页面主滚动条重叠 */
 @utility overflow-x-only {
   overflow-x: auto;
@@ -223,8 +353,13 @@ html.dark {
   background-color: rgb(249 250 251);
   background-image: radial-gradient(rgb(228 231 236 / 0.9) 1px, transparent 1px);
   background-size: 16px 16px;
-  /* 预留滚动条宽度，避免内容增高时宽度抖动 → WidthProvider 死循环闪烁 */
+  /* 栅格 RGL：预留滚动条宽度，避免 WidthProvider 宽度抖动 */
   scrollbar-gutter: stable;
+}
+
+/* 像素画布：滚动在 pixel-canvas-host，surface 不预留 stable 槽（否则右侧常有点阵窄条） */
+.dashboard-canvas-surface:has(.pixel-canvas-host) {
+  scrollbar-gutter: auto;
 }
 
 .dashboard-canvas-surface[data-dashboard-color-scheme="dark"] {
@@ -260,7 +395,6 @@ html.dark {
   --dw-screen-caption: 0.75rem;
   --dw-screen-rail-text: 0.875rem;
   --dw-screen-rail-height: 2rem;
-  scrollbar-gutter: stable;
   overflow-x: hidden;
 }
 
@@ -306,9 +440,15 @@ html.dark {
   padding-top: calc(var(--dw-screen-rail-height) / var(--pixel-canvas-scale));
 }
 
-.pixel-canvas-host .pixel-shape-inner--live-resize {
-  contain: layout paint;
-  overflow: hidden;
+/* DataEase isPlayer：外框 DOM 实时改尺寸，子树 100% 填满 */
+.pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .pixel-shape-inner {
+  width: 100%;
+  height: 100%;
+}
+
+.pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .pixel-shape-inner > * {
+  height: 100%;
+  min-height: 0;
 }
 
 .pixel-canvas-host .widget-pending-preview-icon {

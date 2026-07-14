@@ -14,6 +14,7 @@ describe("DashboardStyleSurface", () => {
     const surface = screen.getByTestId("child").parentElement;
     expect(surface).toHaveAttribute("data-canvas-user-bg", "true");
     expect(surface).toHaveAttribute("data-dashboard-color-scheme", "light");
+    expect(surface).toHaveStyle({ colorScheme: "light" });
     expect(surface).not.toHaveStyle({ background: "#f1c40f" });
   });
 
@@ -28,6 +29,7 @@ describe("DashboardStyleSurface", () => {
     const surface = screen.getByTestId("child").parentElement;
     expect(surface).toHaveClass("dark");
     expect(surface).toHaveAttribute("data-dashboard-color-scheme", "dark");
+    expect(surface).toHaveStyle({ colorScheme: "dark" });
     expect(surface).not.toHaveStyle({ background: "#f1c40f" });
   });
 

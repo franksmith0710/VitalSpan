@@ -179,7 +179,7 @@ export function DashboardGrid({
     return (
       <div
         className={cn(
-          "dashboard-grid-edit relative min-h-[420px] w-full flex-1 overflow-y-auto",
+          "dashboard-scroll dashboard-grid-edit relative min-h-[420px] w-full flex-1 overflow-y-auto",
           paletteDragOver && "dashboard-canvas-drop-active",
           className,
         )}

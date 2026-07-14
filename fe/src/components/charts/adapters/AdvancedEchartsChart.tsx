@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type EChartsReact from "echarts-for-react";
 import { getEchartsTheme } from "@/lib/echarts-theme";
 import { cn } from "@/lib/utils";
+import { usePixelShapeLiveResize } from "@/hooks/usePixelShapeLiveResize";
 import {
   ADVANCED_CHART_ROW_CAP,
   buildEchartsOption,
@@ -20,10 +21,8 @@ type Props = {
   fill?: boolean;
   height?: number;
   width?: number;
-  /** @deprecated 使用 freezeResize */
+  /** @deprecated 保留兼容 */
   resizeDebounceMs?: number;
-  /** 拖拽缩放中冻结 echarts.resize，松手后对齐 */
-  freezeResize?: boolean;
 };
 
 export function AdvancedEchartsChart({
@@ -35,12 +34,10 @@ export function AdvancedEchartsChart({
   fill = false,
   height = 180,
   width,
-  freezeResize = false,
 }: Props) {
   const chartRef = useRef<EChartsReact | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const frozenRef = useRef(freezeResize);
-  frozenRef.current = freezeResize;
+  const resizeFrameRef = useRef<number | null>(null);
 
   const { rows: capped, truncated } = useMemo(
     () => capRows(rows, ADVANCED_CHART_ROW_CAP),
@@ -57,29 +54,51 @@ export function AdvancedEchartsChart({
     (Array.isArray((option as { series?: unknown[] }).series) &&
       (option as { series?: unknown[] }).series!.length === 0);
 
-  const resizeChart = () => {
+  const resizeChart = useCallback(() => {
     chartRef.current?.getEchartsInstance()?.resize();
-  };
+  }, []);
+
+  const scheduleResize = useCallback(() => {
+    if (resizeFrameRef.current !== null) return;
+    resizeFrameRef.current = requestAnimationFrame(() => {
+      resizeFrameRef.current = null;
+      resizeChart();
+    });
+  }, [resizeChart]);
+
+  usePixelShapeLiveResize(fill, scheduleResize);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el || isEmpty) return;
 
-    const observer = new ResizeObserver(() => {
-      if (!frozenRef.current) resizeChart();
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [isEmpty]);
+    const hosts = new Set<HTMLElement>([el]);
+    if (fill) {
+      const shapeOuter = el.closest(".pixel-shape-outer");
+      const shapeInner = el.closest(".pixel-shape-inner");
+      if (shapeOuter instanceof HTMLElement) hosts.add(shapeOuter);
+      if (shapeInner instanceof HTMLElement) hosts.add(shapeInner);
+    }
 
-  useEffect(() => {
-    if (!freezeResize) resizeChart();
-  }, [freezeResize]);
+    const observer = new ResizeObserver(() => scheduleResize());
+    for (const host of hosts) observer.observe(host);
+    scheduleResize();
+    return () => {
+      observer.disconnect();
+      if (resizeFrameRef.current !== null) {
+        cancelAnimationFrame(resizeFrameRef.current);
+        resizeFrameRef.current = null;
+      }
+    };
+  }, [fill, isEmpty, scheduleResize]);
 
   return (
     <div
       ref={containerRef}
-      className={cn("w-full", fill ? "flex h-full min-h-0 flex-col" : "min-h-[120px]")}
+      className={cn(
+        "w-full",
+        fill ? "absolute inset-0 flex min-h-0 flex-col" : "min-h-[120px]",
+      )}
       aria-label={ariaLabel}
     >
       {truncated ? (
@@ -99,17 +118,23 @@ export function AdvancedEchartsChart({
           暂无数据
         </div>
       ) : (
-        <ReactECharts
-          ref={chartRef}
-          option={option}
-          theme={theme}
-          style={fill ? { height: "100%", width: "100%", minHeight: 0 } : { height, width: width ?? "100%" }}
-          opts={{ renderer: "canvas" }}
-          notMerge
-          lazyUpdate
-          autoResize={false}
-          data-testid="echarts-chart"
-        />
+        <div className={cn(fill && "min-h-0 flex-1")}>
+          <ReactECharts
+            ref={chartRef}
+            option={option}
+            theme={theme}
+            style={
+              fill
+                ? { height: "100%", width: "100%", minHeight: 0 }
+                : { height, width: width ?? "100%" }
+            }
+            opts={{ renderer: "canvas" }}
+            notMerge
+            lazyUpdate
+            autoResize={fill}
+            data-testid="echarts-chart"
+          />
+        </div>
       )}
     </div>
   );

@@ -119,29 +119,26 @@ describe("PixelCanvas", () => {
     expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 200, y: 130 });
   });
 
-  it("keeps pointer capture through an out-of-bounds move and releases once", () => {
+  it("clamps move to canvas bounds on document pointerup", () => {
     const onChange = renderCanvas("edit");
     const drag = screen.getByLabelText("拖动组件");
-    const shape = screen.getByTestId("pixel-shape-w1");
     fireEvent.pointerDown(drag, {
       pointerId: 11,
       clientX: 100,
       clientY: 100,
       button: 0,
     });
-    expect(shape.hasPointerCapture(11)).toBe(true);
-    fireEvent.pointerMove(shape, {
+    fireEvent.pointerMove(document, {
       pointerId: 11,
       clientX: -500,
       clientY: -500,
     });
-    fireEvent.pointerUp(shape, {
+    fireEvent.pointerUp(document, {
       pointerId: 11,
       clientX: -500,
       clientY: -500,
     });
 
-    expect(shape.hasPointerCapture(11)).toBe(false);
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 0, y: 0 });
   });
@@ -154,17 +151,17 @@ describe("PixelCanvas", () => {
       clientY: 0,
       button: 0,
     });
-    fireEvent.pointerMove(screen.getByTestId("pixel-shape-w1"), {
+    fireEvent.pointerMove(document, {
       pointerId: 8,
       clientX: 100,
       clientY: 100,
     });
-    fireEvent.pointerCancel(screen.getByTestId("pixel-shape-w1"), { pointerId: 8 });
+    fireEvent.pointerCancel(document, { pointerId: 8 });
 
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("commits the last live rectangle when pointer capture is lost", () => {
+  it("commits the last live rectangle on document pointerup", () => {
     const onChange = renderCanvas("edit");
     fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
       pointerId: 10,
@@ -172,19 +169,15 @@ describe("PixelCanvas", () => {
       clientY: 10,
       button: 0,
     });
-    const shape = screen.getByTestId("pixel-shape-w1");
-    fireEvent.pointerMove(shape, {
+    fireEvent.pointerMove(document, {
       pointerId: 10,
       clientX: 60,
       clientY: 40,
     });
-    shape.releasePointerCapture(10);
+    fireEvent.pointerUp(document, { pointerId: 10, clientX: 60, clientY: 40 });
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 150, y: 110 });
-    expect(shape.hasPointerCapture(10)).toBe(false);
-    shape.releasePointerCapture(10);
-    expect(onChange).toHaveBeenCalledTimes(1);
   });
 
   it("does not start dragging from widget content", () => {

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { DashboardWidget } from "../DashboardWidget";
 import {
   pixelWidgetToLayoutWidget,
@@ -47,7 +48,7 @@ function asLayoutWidget(
     : widget;
 }
 
-export function DashboardCanvasWidgetRenderer({
+export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidgetRenderer({
   widget: sourceWidget,
   mode,
   gridSize,
@@ -152,4 +153,4 @@ export function DashboardCanvasWidgetRenderer({
     />
     </WidgetErrorBoundary>
   );
-}
+});

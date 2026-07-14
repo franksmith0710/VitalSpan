@@ -20,7 +20,7 @@ export function DashboardStyleSurface({
 }: DashboardStyleSurfaceProps) {
   const scheme = styleConfig?.colorScheme ?? "light";
   const userCanvasBackground = styleConfig ? hasUserCanvasBackground(styleConfig) : false;
-  const scopeStyle: CSSProperties = {};
+  const scopeStyle: CSSProperties = { colorScheme: scheme };
   if (styleConfig?.fontFamily) scopeStyle.fontFamily = styleConfig.fontFamily;
   if (styleConfig?.themeAccent) {
     (scopeStyle as Record<string, string>)["--dashboard-accent"] = styleConfig.themeAccent;
@@ -31,7 +31,7 @@ export function DashboardStyleSurface({
       className={cn("dashboard-theme-scope min-h-0 w-full", scheme === "dark" && "dark", className)}
       data-dashboard-color-scheme={scheme}
       data-canvas-user-bg={userCanvasBackground ? "true" : undefined}
-      style={Object.keys(scopeStyle).length > 0 ? scopeStyle : undefined}
+      style={scopeStyle}
     >
       {children}
     </div>

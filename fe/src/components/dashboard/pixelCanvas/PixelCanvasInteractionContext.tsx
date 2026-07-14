@@ -24,7 +24,7 @@ export function usePixelCanvasInteraction(): PixelCanvasInteraction {
   return useContext(PixelCanvasInteractionContext);
 }
 
-/** 当前组件是否正在被拖拽/缩放（内容区跟随 DOM，避免逐帧重算图表） */
+/** 当前组件是否处于 DataEase isPlayer 交互（DOM 直改尺寸，不触发 React 布局 props） */
 export function usePixelWidgetInteracting(widgetId: string): boolean {
   const interaction = usePixelCanvasInteraction();
   return interaction?.widgetId === widgetId;

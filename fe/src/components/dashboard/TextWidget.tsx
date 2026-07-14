@@ -134,7 +134,7 @@ export function TextWidget({
           beginEditing();
         }}
         className={cn(
-          "dashboard-no-drag min-h-0 flex-1 overflow-auto",
+          "dashboard-no-drag dashboard-scroll min-h-0 flex-1 overflow-auto",
           mode === "edit" && !isEditing && "cursor-pointer",
           !inShapeShell && mode === "edit" && !isEditing && "hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
         )}

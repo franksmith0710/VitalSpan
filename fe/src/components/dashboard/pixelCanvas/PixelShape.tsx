@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
@@ -23,19 +22,18 @@ import {
   type ResizeDirection,
 } from "./geometry";
 import { computeMarkLineSnap, markLineThreshold, type MarkLineGuide } from "./pixelMarkLine";
-import {
-  applyContentLiveScale,
-  isResizeInteraction,
-  resetContentLiveScale,
-} from "./pixelShapeLiveResize";
 import { PixelShapeActionRail, type PixelWidgetActions } from "./PixelShapeActionRail";
 import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
+import { isResizeInteraction } from "./pixelShapePlayer";
+import { dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
+import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
 
 type ActiveInteraction = {
   pointerId: number;
   kind: PixelInteractionKind;
   startClient: { x: number; y: number };
   startRect: PixelRect;
+  skipFirstMove: boolean;
 };
 
 type PixelShapeProps = {
@@ -52,7 +50,6 @@ type PixelShapeProps = {
   onInteractionChange?: (widgetId: string | null) => void;
   onMarkGuidesChange?: (guides: MarkLineGuide[] | null) => void;
   viewport?: PixelRect;
-  /** 已提交 layout 中的邻组件，供 mark-line 吸附锚点（不随 preview 推挤跳动） */
   snapTargets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   otherWidgets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   widgetActions?: PixelWidgetActions;
@@ -80,14 +77,6 @@ function widgetRect(widget: PixelLayoutWidget): PixelRect {
 
 function withRect(widget: PixelLayoutWidget, rect: PixelRect): PixelLayoutWidget {
   return { ...widget, ...rect };
-}
-
-function paintRectToDom(el: HTMLDivElement, rect: PixelRect, zIndex: number) {
-  el.style.left = `${rect.x}px`;
-  el.style.top = `${rect.y}px`;
-  el.style.width = `${rect.width}px`;
-  el.style.height = `${rect.height}px`;
-  el.style.zIndex = String(zIndex);
 }
 
 function keyboardDelta(event: KeyboardEvent): { x: number; y: number } | null {
@@ -135,14 +124,13 @@ export function PixelShape({
   otherWidgets,
   widgetActions,
 }: PixelShapeProps) {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const contentBaseRef = useRef<PixelRect | null>(null);
+  const bindDocumentDrag = usePixelShapeDocumentDrag();
   const activeRef = useRef<ActiveInteraction | null>(null);
   const displayRef = useRef(widgetRect(widget));
+  const markGuideFrameRef = useRef<number | null>(null);
   const [display, setDisplay] = useState(displayRef.current);
   const [hint, setHint] = useState<string | null>(null);
-  const [isLiveResizing, setIsLiveResizing] = useState(false);
+  const [isPlayer, setIsPlayer] = useState(false);
 
   useEffect(() => {
     if (activeRef.current) return;
@@ -151,58 +139,105 @@ export function PixelShape({
     setDisplay(next);
   }, [widget]);
 
-  const setDisplayRect = (next: PixelRect, syncReact = true) => {
+  useEffect(
+    () => () => {
+      if (markGuideFrameRef.current !== null) {
+        cancelAnimationFrame(markGuideFrameRef.current);
+      }
+    },
+    [],
+  );
+
+  const applyDisplay = (next: PixelRect) => {
     displayRef.current = next;
-    if (outerRef.current) {
-      paintRectToDom(
-        outerRef.current,
-        next,
-        pixelShapeZIndex(widget.order, mode === "edit" && selected),
-      );
+    setDisplay(next);
+    if (activeRef.current) {
+      dispatchPixelShapeLiveResize();
     }
-    if (syncReact) setDisplay(next);
   };
 
-  useLayoutEffect(() => {
-    if (!activeRef.current || !outerRef.current) return;
-    paintRectToDom(
-      outerRef.current,
-      displayRef.current,
-      pixelShapeZIndex(widget.order, mode === "edit" && selected),
-    );
-  });
+  const scheduleMarkGuides = (
+    next: PixelRect,
+    event: PointerEvent,
+    active: ActiveInteraction,
+  ) => {
+    if (!onMarkGuidesChange) return;
+    if (markGuideFrameRef.current !== null) return;
+    markGuideFrameRef.current = requestAnimationFrame(() => {
+      markGuideFrameRef.current = null;
+      const markTargets = snapTargets ?? otherWidgets ?? [];
+      const snapped = computeMarkLineSnap(next, markTargets, {
+        threshold: markLineThreshold(scale),
+        dragDir: {
+          isRightward: event.clientX >= active.startClient.x,
+          isDownward: event.clientY >= active.startClient.y,
+        },
+        canvas,
+      });
+      onMarkGuidesChange(snapped.guides.length > 0 ? snapped.guides : null);
+    });
+  };
 
-  const rectForEvent = (event: PointerEvent<HTMLDivElement>): PixelRect | null => {
-    const active = activeRef.current;
-    if (!active || active.pointerId !== event.pointerId) return null;
+  const rectForPointer = (
+    event: PointerEvent,
+    active: ActiveInteraction,
+  ): PixelRect => {
     const screenDelta = {
       x: event.clientX - active.startClient.x,
       y: event.clientY - active.startClient.y,
     };
     const delta = screenDeltaToCanvas(screenDelta, scale);
-    const next = applyPixelInteraction(active.startRect, delta, active.kind, canvas, {
+    const raw = applyPixelInteraction(active.startRect, delta, active.kind, canvas, {
       allowBottomGrowth: true,
     });
-    setHint(
-      boundaryHint(
-        active.startRect,
-        { x: delta.x, y: delta.y, width: next.width - active.startRect.width, height: next.height - active.startRect.height },
-        next,
-        active.kind,
-      ),
+    const nextHint = boundaryHint(
+      active.startRect,
+      { x: delta.x, y: delta.y, width: raw.width - active.startRect.width, height: raw.height - active.startRect.height },
+      raw,
+      active.kind,
     );
-    if (!onMarkGuidesChange) return next;
+    setHint((previous) => (previous === nextHint ? previous : nextHint));
+    if (!onMarkGuidesChange) return raw;
     const markTargets = snapTargets ?? otherWidgets ?? [];
-    const snapped = computeMarkLineSnap(next, markTargets, {
+    return computeMarkLineSnap(raw, markTargets, {
       threshold: markLineThreshold(scale),
       dragDir: {
         isRightward: event.clientX >= active.startClient.x,
         isDownward: event.clientY >= active.startClient.y,
       },
       canvas,
-    });
-    onMarkGuidesChange(snapped.guides.length > 0 ? snapped.guides : null);
-    return snapped.rect;
+    }).rect;
+  };
+
+  const handlePointerMove = (event: PointerEvent) => {
+    const active = activeRef.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    if (active.skipFirstMove) {
+      active.skipFirstMove = false;
+      if (isResizeInteraction(active.kind)) return;
+    }
+    const next = rectForPointer(event, active);
+    applyDisplay(next);
+    scheduleMarkGuides(next, event, active);
+    if (active.kind === "move") {
+      onPreview?.(withRect(widget, next));
+    }
+  };
+
+  const finish = (event: PointerEvent, commit: boolean) => {
+    const active = activeRef.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    const finalRect = commit
+      ? rectForPointer(event, active)
+      : widgetRect(widget);
+    activeRef.current = null;
+    setIsPlayer(false);
+    onInteractionChange?.(null);
+    setHint(null);
+    onMarkGuidesChange?.(null);
+    applyDisplay(finalRect);
+    if (commit) onCommit?.(withRect(widget, finalRect));
+    else onCancel?.(widget.id);
   };
 
   const startInteraction = (
@@ -214,53 +249,20 @@ export function PixelShape({
     event.stopPropagation();
     onSelect?.(widget.id, event.shiftKey);
     setHint(null);
+    const pointerId = event.pointerId;
     activeRef.current = {
-      pointerId: event.pointerId,
+      pointerId,
       kind,
       startClient: { x: event.clientX, y: event.clientY },
       startRect: displayRef.current,
+      skipFirstMove: true,
     };
-    if (isResizeInteraction(kind) && innerRef.current) {
-      contentBaseRef.current = {
-        x: 0,
-        y: 0,
-        width: innerRef.current.offsetWidth || displayRef.current.width,
-        height: innerRef.current.offsetHeight || displayRef.current.height,
-      };
-      setIsLiveResizing(true);
-    } else {
-      contentBaseRef.current = null;
-      setIsLiveResizing(false);
-    }
+    setIsPlayer(true);
     onInteractionChange?.(widget.id);
-    outerRef.current?.setPointerCapture(event.pointerId);
-  };
-
-  const finish = (
-    event: PointerEvent<HTMLDivElement>,
-    commit: boolean,
-    useCurrentRect = false,
-  ) => {
-    const active = activeRef.current;
-    if (!active || active.pointerId !== event.pointerId) return;
-    const finalRect = commit
-      ? useCurrentRect
-        ? displayRef.current
-        : (rectForEvent(event) ?? displayRef.current)
-      : widgetRect(widget);
-    activeRef.current = null;
-    contentBaseRef.current = null;
-    resetContentLiveScale(innerRef.current);
-    setIsLiveResizing(false);
-    onInteractionChange?.(null);
-    setHint(null);
-    onMarkGuidesChange?.(null);
-    setDisplayRect(finalRect);
-    if (outerRef.current?.hasPointerCapture(event.pointerId)) {
-      outerRef.current.releasePointerCapture(event.pointerId);
-    }
-    if (commit) onCommit?.(withRect(widget, finalRect));
-    else onCancel?.(widget.id);
+    bindDocumentDrag(pointerId, {
+      onMove: handlePointerMove,
+      onEnd: (endEvent, commit) => finish(endEvent, commit),
+    });
   };
 
   const handleKeyboardInteraction = (
@@ -275,14 +277,14 @@ export function PixelShape({
     const next = applyPixelInteraction(displayRef.current, delta, kind, canvas, {
       allowBottomGrowth: true,
     });
-    setDisplayRect(next);
+    applyDisplay(next);
     onCommit?.(withRect(widget, next));
   };
 
   return (
     <div
-      ref={outerRef}
       data-testid={`pixel-shape-${widget.id}`}
+      data-pixel-is-player={isPlayer ? "" : undefined}
       className={cn(
         "pixel-shape-outer absolute border touch-none select-none",
         mode === "edit" && selected
@@ -296,32 +298,6 @@ export function PixelShape({
         height: display.height,
         zIndex: pixelShapeZIndex(widget.order, mode === "edit" && selected),
       }}
-      onPointerMove={(event) => {
-        const active = activeRef.current;
-        const next = rectForEvent(event);
-        if (!next || !active) return;
-        displayRef.current = next;
-        if (outerRef.current) {
-          paintRectToDom(
-            outerRef.current,
-            next,
-            pixelShapeZIndex(widget.order, mode === "edit" && selected),
-          );
-        }
-        if (
-          isResizeInteraction(active.kind) &&
-          innerRef.current &&
-          contentBaseRef.current
-        ) {
-          applyContentLiveScale(innerRef.current, contentBaseRef.current, next);
-        }
-        if (active.kind === "move") {
-          onPreview?.(withRect(widget, next));
-        }
-      }}
-      onPointerUp={(event) => finish(event, true)}
-      onPointerCancel={(event) => finish(event, false)}
-      onLostPointerCapture={(event) => finish(event, true, true)}
     >
       {hint ? (
         <p className="sr-only" role="status" data-testid="pixel-boundary-hint">
@@ -352,11 +328,9 @@ export function PixelShape({
       ) : null}
       <PixelShapeInteractionProvider value={startInteraction}>
         <div
-          ref={innerRef}
           className={cn(
             "pixel-shape-inner dashboard-widget-surface h-full min-h-0 overflow-hidden bg-white dark:bg-gray-900",
             mode === "edit" && selected && "pixel-shape-inner--with-rail",
-            isLiveResizing && "pixel-shape-inner--live-resize",
           )}
           data-pixel-no-drag
           onPointerDown={(event) => {
