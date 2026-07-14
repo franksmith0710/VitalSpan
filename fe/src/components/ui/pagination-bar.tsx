@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { LIST_PAGE_SIZE_OPTIONS } from "@/lib/list-pagination";
 import {
   Pagination,
   PaginationContent,
@@ -39,7 +40,7 @@ export function PaginationBar({
   pageSize,
   total,
   showSizeChanger = false,
-  pageSizeOptions = [10, 20, 50, 100],
+  pageSizeOptions = [...LIST_PAGE_SIZE_OPTIONS],
   onChange,
   className,
 }: PaginationBarProps) {

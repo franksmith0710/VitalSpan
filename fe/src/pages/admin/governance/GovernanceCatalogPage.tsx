@@ -7,6 +7,7 @@ import {
   ListPageBody,
   ListPagePagination,
   ListPageSection,
+  ListPageTableFrame,
   ListPageToolbar,
   PageErrorBanner,
 } from "@/components/layout/list-page-kit";
@@ -68,6 +69,7 @@ export function GovernanceCatalogPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="接口分类目录"
       description="治理域 catalog 条目登记与七分法分类浏览（GOV-001）。"
     >
@@ -102,7 +104,7 @@ export function GovernanceCatalogPage() {
           }
         />
 
-        <ListPageBody>
+        <ListPageTableFrame>
           <DataTable
             loading={entriesQuery.isLoading}
             empty={entries.length === 0}
@@ -135,7 +137,7 @@ export function GovernanceCatalogPage() {
               e.status,
             ])}
           />
-        </ListPageBody>
+        </ListPageTableFrame>
 
         {!entriesQuery.isLoading && total > 0 ? (
           <ListPagePagination

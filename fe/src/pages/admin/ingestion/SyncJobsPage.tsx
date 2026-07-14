@@ -9,6 +9,7 @@ import {
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import { ListPagePagination, ListPageSection } from "@/components/layout/list-page-kit";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,20 +31,8 @@ import {
   type SyncJobStatusFilter,
 } from "./components/SyncJobsToolbar";
 import { type SyncJobListResponse, type SyncJobSummary } from "./components/sync-job-types";
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div
-      role="alert"
-      className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15"
-    >
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { sliceListPage, useListPagination } from "@/lib/list-pagination";
 
 function filterByStatus(jobs: SyncJobSummary[], statusFilter: SyncJobStatusFilter) {
   switch (statusFilter) {
@@ -70,6 +59,7 @@ export function SyncJobsPage() {
   const [deleting, setDeleting] = useState(false);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
+  const pagination = useListPagination(undefined, [search, statusFilter]);
 
   const loadJobs = useCallback(async () => {
     setLoading(true);
@@ -110,7 +100,12 @@ export function SyncJobsPage() {
     );
   }, [jobs, search, statusFilter]);
 
-  const rowIds = useMemo(() => filteredJobs.map((job) => job.id), [filteredJobs]);
+  const pagedJobs = useMemo(
+    () => sliceListPage(filteredJobs, pagination.offset, pagination.pageSize),
+    [filteredJobs, pagination.offset, pagination.pageSize],
+  );
+
+  const rowIds = useMemo(() => pagedJobs.map((job) => job.id), [pagedJobs]);
   const selection = useListRowSelection(rowIds);
 
   const resultLabel = useMemo(() => {
@@ -161,6 +156,7 @@ export function SyncJobsPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="同步任务"
       description="管理源库到托管分析库的全量同步任务，配置定时计划与清洗规则。"
       actions={
@@ -172,10 +168,14 @@ export function SyncJobsPage() {
         </Button>
       }
     >
-      {error ? <ErrorBanner message={error} onRetry={() => void loadJobs()} /> : null}
+      {error ? (
+        <div className="shrink-0">
+          <PageErrorBanner message={error} onRetry={() => void loadJobs()} />
+        </div>
+      ) : null}
 
       {loading ? (
-        <div className="space-y-4">
+        <div className="shrink-0 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-[88px] rounded-xl" />
@@ -190,9 +190,11 @@ export function SyncJobsPage() {
       ) : jobs.length === 0 ? (
         <SyncJobsEmptyState />
       ) : (
-        <>
-          <SyncJobsMetrics stats={stats} />
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+          <div className="shrink-0">
+            <SyncJobsMetrics stats={stats} />
+          </div>
+          <ListPageSection>
             <SyncJobsToolbar
               search={search}
               onSearchChange={setSearch}
@@ -200,7 +202,7 @@ export function SyncJobsPage() {
               onStatusFilterChange={setStatusFilter}
               resultLabel={resultLabel}
             />
-            <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+            <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
               <ListBatchDeleteBar
                 selectedCount={selection.selectedCount}
                 entityLabel="个任务"
@@ -215,20 +217,31 @@ export function SyncJobsPage() {
                   : "当前筛选条件下暂无任务"}
               </div>
             ) : (
-              <SyncJobsTable
-                jobs={filteredJobs}
-                runningId={runningId}
-                onRun={setRunTarget}
-                onDelete={setDeleteTarget}
-                selectedIds={selection.selectedIds}
-                onToggleSelect={selection.toggle}
-                onToggleSelectAll={selection.toggleAll}
-                allSelected={selection.allSelected}
-                someSelected={selection.someSelected}
-              />
+              <>
+                <div className="min-h-0 flex-1 overflow-hidden">
+                  <SyncJobsTable
+                    jobs={pagedJobs}
+                    runningId={runningId}
+                    onRun={setRunTarget}
+                    onDelete={setDeleteTarget}
+                    selectedIds={selection.selectedIds}
+                    onToggleSelect={selection.toggle}
+                    onToggleSelectAll={selection.toggleAll}
+                    allSelected={selection.allSelected}
+                    someSelected={selection.someSelected}
+                  />
+                </div>
+                <ListPagePagination
+                  current={pagination.page}
+                  pageSize={pagination.pageSize}
+                  total={filteredJobs.length}
+                  showSizeChanger
+                  onChange={pagination.onPageChange}
+                />
+              </>
             )}
-          </div>
-        </>
+          </ListPageSection>
+        </div>
       )}
 
       <AlertDialog

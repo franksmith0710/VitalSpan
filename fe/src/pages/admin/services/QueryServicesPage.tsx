@@ -8,6 +8,7 @@ import {
   ListPageBody,
   ListPagePagination,
   ListPageSection,
+  ListPageTableFrame,
   PageErrorBanner,
   RowActions,
 } from "@/components/layout/list-page-kit";
@@ -58,6 +59,7 @@ export function QueryServicesPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="查询服务"
       description="浏览已发布的治理查询服务，并试执行验证（IF-02）。"
     >
@@ -67,7 +69,7 @@ export function QueryServicesPage() {
             <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
           </ListPageBody>
         ) : null}
-        <ListPageBody>
+        <ListPageTableFrame>
           <DataTable
             loading={isLoading}
             empty={items.length === 0}
@@ -113,7 +115,7 @@ export function QueryServicesPage() {
               </RowActions>,
             ])}
           />
-        </ListPageBody>
+        </ListPageTableFrame>
 
         {!isLoading && total > 0 ? (
           <ListPagePagination

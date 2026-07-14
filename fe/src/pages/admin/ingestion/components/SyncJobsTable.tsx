@@ -40,7 +40,7 @@ export function SyncJobsTable({
 }: SyncJobsTableProps) {
   const showSelection = Boolean(onToggleSelect);
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-only">
       <table className="min-w-[800px] w-full text-left text-theme-sm">
         <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
           <tr>

@@ -5,6 +5,7 @@ import { apiFetch } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 type SyncRunItem = {
   id: string;
@@ -71,15 +72,7 @@ export function SyncJobHistoryPage() {
       </div>
 
       {error ? (
-        <div
-          role="alert"
-          className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15"
-        >
-          <p className="text-theme-sm text-error-700 dark:text-error-400">{error}</p>
-          <Button type="button" variant="outline" size="sm" onClick={() => void loadRuns()}>
-            重试
-          </Button>
-        </div>
+        <PageErrorBanner message={error} onRetry={() => void loadRuns()} />
       ) : null}
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
@@ -94,7 +87,7 @@ export function SyncJobHistoryPage() {
             暂无运行记录
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-only">
             <table className="w-full min-w-[720px] text-left text-theme-sm">
               <thead className="border-b border-gray-200 text-gray-500 dark:border-gray-800 dark:text-gray-400">
                 <tr>

@@ -16,17 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
 import { EntityDetailSheet } from "./EntityDetailSheet";
 import { useEntityOverview } from "./useEntityOverview";
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 export function EntityOverviewPage() {
   const navigate = useNavigate();
@@ -72,7 +62,7 @@ export function EntityOverviewPage() {
       description="按实体类型浏览登记物理表并下钻至 Dashboard。"
     >
       {entityTypesQuery.isError ? (
-        <ErrorBanner message={mapApiError(entityTypesQuery.error)} onRetry={() => void entityTypesQuery.refetch()} />
+        <PageErrorBanner message={mapApiError(entityTypesQuery.error)} onRetry={() => void entityTypesQuery.refetch()} />
       ) : null}
 
       {entityTypesQuery.isLoading ? (
@@ -135,7 +125,7 @@ export function EntityOverviewPage() {
       </div>
 
       {overviewQuery.isError ? (
-        <ErrorBanner message={mapApiError(overviewQuery.error)} onRetry={() => void overviewQuery.refetch()} />
+        <PageErrorBanner message={mapApiError(overviewQuery.error)} onRetry={() => void overviewQuery.refetch()} />
       ) : null}
 
       {overviewQuery.isLoading && dashboardId ? (
@@ -168,7 +158,7 @@ export function EntityOverviewPage() {
       ) : null}
 
       {physicalQuery.isError ? (
-        <ErrorBanner message={mapApiError(physicalQuery.error)} onRetry={() => void physicalQuery.refetch()} />
+        <PageErrorBanner message={mapApiError(physicalQuery.error)} onRetry={() => void physicalQuery.refetch()} />
       ) : null}
 
       <Card>
@@ -190,7 +180,7 @@ export function EntityOverviewPage() {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-only">
               <table className="min-w-[640px] w-full text-left text-theme-sm" aria-label="登记物理表">
                 <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                   <tr>

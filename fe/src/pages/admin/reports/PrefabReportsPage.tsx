@@ -12,21 +12,11 @@ import { PrefabReportsEmptyPreview } from "./components/PrefabReportsEmptyPrevie
 import { PrefabBindingForm } from "./components/PrefabBindingForm";
 import { ReportExportCard } from "./components/ReportExportCard";
 import { usePrefabReports } from "./usePrefabReports";
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 function ResultTable({ columns, rows }: { columns: string[]; rows: unknown[][] }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-only">
       <table className="w-full min-w-[320px] text-theme-sm">
         <thead>
           <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -86,7 +76,7 @@ export function PrefabReportsPage() {
     <AdminPageShell title="预制分析报表" description="浏览并运行系统预置的分析报表。">
       <div className="flex flex-col gap-6">
         {bindingsQuery.isError ? (
-          <ErrorBanner
+          <PageErrorBanner
             message={mapApiError(bindingsQuery.error)}
             onRetry={() => void bindingsQuery.refetch()}
           />
@@ -155,7 +145,7 @@ export function PrefabReportsPage() {
         ) : null}
 
         {runMutation.isError && !runForbidden ? (
-          <ErrorBanner message={mapApiError(runMutation.error)} onRetry={() => runMutation.reset()} />
+          <PageErrorBanner message={mapApiError(runMutation.error)} onRetry={() => runMutation.reset()} />
         ) : null}
 
         {runMutation.isPending ? (

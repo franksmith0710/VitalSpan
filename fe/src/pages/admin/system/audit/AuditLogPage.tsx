@@ -7,6 +7,7 @@ import {
   ListPageBody,
   ListPagePagination,
   ListPageSection,
+  ListPageTableFrame,
   ListPageToolbar,
   PageErrorBanner,
   RowActions,
@@ -107,14 +108,17 @@ export function AuditLogPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="审计日志"
       description="记录平台内的账号、角色、组织等敏感操作，便于安全审计与问题追溯。"
     >
-      {isError ? (
-        <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
-      ) : null}
-
       <ListPageSection>
+        {isError ? (
+          <ListPageBody className="border-b py-3">
+            <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+          </ListPageBody>
+        ) : null}
+
         <ListPageToolbar
           filters={
             <>
@@ -188,7 +192,7 @@ export function AuditLogPage() {
           }
         />
 
-        <ListPageBody className="p-0">
+        <ListPageTableFrame className="px-0">
           <DataTable
             loading={isLoading}
             empty={!isLoading && items.length === 0}
@@ -247,7 +251,7 @@ export function AuditLogPage() {
               ];
             })}
           />
-        </ListPageBody>
+        </ListPageTableFrame>
 
         {!isLoading && total > 0 ? (
           <ListPagePagination

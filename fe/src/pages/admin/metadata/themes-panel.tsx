@@ -35,8 +35,9 @@ import {
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
-import { ErrorBanner, ListPageBody, ListPageToolbar } from "./metadata-shared";
+import { ListPageBody, ListPageToolbar } from "./metadata-shared";
 import { ThemeTree, type ThemeNode } from "./theme-tree";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 type Term = { id: string; name: string };
 
@@ -137,7 +138,7 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
       />
       <ListPageBody>
         {allNodes.error ? (
-          <ErrorBanner message={mapApiError(allNodes.error)} onRetry={() => void allNodes.refetch()} />
+          <PageErrorBanner message={mapApiError(allNodes.error)} onRetry={() => void allNodes.refetch()} />
         ) : isEmpty ? (
           <ListGhostEmptyState
             icon={emptyIcon}

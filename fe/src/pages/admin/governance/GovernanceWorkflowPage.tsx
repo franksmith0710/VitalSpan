@@ -15,20 +15,7 @@ import { WorkflowTemplateDetail } from "./components/WorkflowTemplateDetail";
 import { WorkflowTemplateList } from "./components/WorkflowTemplateList";
 import { CreateWorkflowTemplateDialog } from "./components/CreateWorkflowTemplateDialog";
 import { WorkflowInstancesPanel } from "./WorkflowInstancesPanel";
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div
-      role="alert"
-      className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15"
-    >
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 const SHELL_CLASS = cn(
   "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm",
@@ -65,7 +52,7 @@ export function GovernanceWorkflowPage() {
       description="管理流程模板与工单实例，回看设计快照并推进审批发布。"
       actions={<CreateWorkflowTemplateDialog onCreated={setSelectedId} />}
     >
-      {isError ? <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
+      {isError ? <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
 
       <Tabs defaultValue="templates" className="w-full">
         <div className={SHELL_CLASS}>

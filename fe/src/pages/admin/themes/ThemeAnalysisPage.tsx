@@ -16,23 +16,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mapApiError } from "@/lib/apiError";
 import { useThemeAnalysis } from "./useThemeAnalysis";
 import { ThemeGeoMapPanel } from "./ThemeGeoMapPanel";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 const DIMENSION_OPTIONS = ["region", "status", "category"] as const;
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
-
 function DrillTable({ columns, rows }: { columns: string[]; rows: unknown[][] }) {
   return (
-    <div className="min-h-[240px] overflow-x-auto">
+    <div className="min-h-[240px] overflow-x-only">
       <table className="w-full min-w-[320px] text-theme-sm">
         <thead>
           <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -232,7 +222,7 @@ export function ThemeAnalysisPage() {
                     <Skeleton className="mt-4 h-[240px] w-full" />
                   ) : drillQuery.isError ? (
                     <div className="mt-4">
-                      <ErrorBanner
+                      <PageErrorBanner
                         message={mapApiError(drillQuery.error)}
                         onRetry={() => void drillQuery.refetch()}
                       />
@@ -253,7 +243,7 @@ export function ThemeAnalysisPage() {
                   {geoMapQuery.isLoading ? (
                     <Skeleton className="h-[280px] w-full" />
                   ) : geoMapQuery.isError ? (
-                    <ErrorBanner
+                    <PageErrorBanner
                       message={mapApiError(geoMapQuery.error)}
                       onRetry={() => void geoMapQuery.refetch()}
                     />

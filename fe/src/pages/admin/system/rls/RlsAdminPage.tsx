@@ -47,17 +47,7 @@ import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { RlsRoleBindingPanel } from "./RlsRoleBindingPanel";
 import type { DimensionGroupOut, DimensionTypeOut } from "./rls-types";
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 export function RlsAdminPage() {
   const qc = useQueryClient();
@@ -208,7 +198,7 @@ export function RlsAdminPage() {
       description="配置 RLS 维度类型与分组，管理分组成员值，并为角色绑定维度分组。"
     >
       {dimensionsQuery.isError ? (
-        <ErrorBanner
+        <PageErrorBanner
           message={mapApiError(dimensionsQuery.error)}
           onRetry={() => void dimensionsQuery.refetch()}
         />
@@ -228,7 +218,7 @@ export function RlsAdminPage() {
               新建维度
             </Button>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="overflow-x-only rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
             <table className="min-w-[640px] w-full text-left text-theme-sm">
               <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <tr>
@@ -298,7 +288,7 @@ export function RlsAdminPage() {
             onClear={groupSelection.clear}
             onDelete={() => setBatchDeleteOpen(true)}
           />
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="overflow-x-only rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
             <table className="min-w-[720px] w-full text-left text-theme-sm">
               <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <tr>

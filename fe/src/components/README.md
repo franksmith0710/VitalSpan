@@ -61,6 +61,9 @@
 | ReuseWidgetDialog | `dashboard/ReuseWidgetDialog.tsx` | 跨看板复用组件（克隆 ID） |
 | DashboardStyleDialog | `dashboard/DashboardStyleDialog.tsx` | 仪表板样式（间距/背景） |
 | DashboardWidget | `dashboard/DashboardWidget.tsx` | 单组件卡片 + 删除/排序 |
+| WidgetErrorBoundary | `dashboard/WidgetErrorBoundary.tsx` | widget 级渲染异常隔离（重试/删除，不拖垮整页） |
+| chartConfigState | `../lib/chartConfigState.ts` | 图表 binding/query/render 阶段判定与字段 reconcile |
+| buildChartRenderModel | `../lib/buildChartRenderModel.ts` | 图表列映射校验与 Apex/pie 渲染模型 |
 | GlobalFilterBar | `dashboard/GlobalFilterBar.tsx` | Dashboard view 顶栏全局筛选器 |
 | dashboardFilterUtils | `dashboard/dashboardFilterUtils.ts` | linkage 解析与 SQL `{{key}}` 占位符注入 |
 | EntityOverviewPage | `../pages/admin/entities/EntityOverviewPage.tsx` | M8 DASH-005 Admin 实体总览（类型 Tab + 物理表 + 下钻） |

@@ -119,6 +119,7 @@ export async function fetchChartExecuteResult(
         dataSourceId: config.dataSourceId,
         configId: config.configId,
         limit,
+        parameters: filterParameters ?? {},
         rls: { enabled: false },
       }),
     });

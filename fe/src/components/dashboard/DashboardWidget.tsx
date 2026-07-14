@@ -31,7 +31,8 @@ import type {
 } from "./layoutUtils";
 import { mergeTitleStyle, mergeWidgetShellStyle, resolveQueryLimit } from "./dashboardStyleConfig";
 import { isWidgetConfigReady } from "./createLayoutWidget";
-import { PIXEL_DRAG_RAIL_HEIGHT_PX, dwCaption } from "./dashboardWidgetTypography";
+import { pixelDragRailHeightPx, dwCaption } from "./dashboardWidgetTypography";
+import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 
 type DashboardWidgetProps = {
@@ -64,8 +65,8 @@ function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
 
   return (
-    <div className="flex h-full min-h-[64px] flex-col items-center justify-center gap-2 px-3 py-3">
-      <span className="flex size-8 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400">
+    <div className="widget-pending-preview flex h-full min-h-[64px] flex-col items-center justify-center gap-2 px-3 py-3">
+      <span className="widget-pending-preview-icon flex items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400">
         <Icon className="size-4" aria-hidden />
       </span>
       <div className="flex flex-wrap items-center justify-center gap-1.5">
@@ -104,6 +105,7 @@ export function DashboardWidget({
   dashboardStyle,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const canvasScale = usePixelCanvasScale();
 
   if (widget.type === "filter" && widget.filterConfig) {
     return (
@@ -181,7 +183,10 @@ export function DashboardWidget({
     inShapeShell && pixelSize
       ? `${Math.round(pixelSize.width)}×${Math.round(pixelSize.height)}`
       : `${sizeW}×${sizeH}`;
-  const shapeContentChromePx = mode === "edit" && selected ? PIXEL_DRAG_RAIL_HEIGHT_PX : 0;
+  const shapeContentChromePx =
+    mode === "edit" && selected && inShapeShell
+      ? pixelDragRailHeightPx(canvasScale)
+      : 0;
   const shellStyle = mergeWidgetShellStyle(dashboardStyle?.widgetStyle);
   const titleStyle = mergeTitleStyle(dashboardStyle?.titleStyle);
   const queryLimit = resolveQueryLimit(dashboardStyle ?? {});

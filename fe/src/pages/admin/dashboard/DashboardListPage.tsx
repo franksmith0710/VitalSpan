@@ -22,6 +22,7 @@ import {
   ListPageBody,
   ListPagePagination,
   ListPageSection,
+  ListPageTableFrame,
   PageErrorBanner,
   RowActions,
 } from "@/components/layout/list-page-kit";
@@ -119,7 +120,7 @@ export function DashboardListPage() {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
-  const pagination = useListPagination(12);
+  const pagination = useListPagination();
 
   const listQuery = useQuery({
     queryKey: queryKeys.dashboards.list({
@@ -191,6 +192,7 @@ export function DashboardListPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="数据看板"
       description={
         canEdit
@@ -225,7 +227,7 @@ export function DashboardListPage() {
         ) : null}
 
         {viewMode === "grid" ? (
-          <ListPageBody>
+          <ListPageTableFrame>
             {listQuery.isLoading ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {Array.from({ length: 8 }).map((_, index) => (
@@ -268,8 +270,9 @@ export function DashboardListPage() {
                 </p>
               </>
             )}
-          </ListPageBody>
+          </ListPageTableFrame>
         ) : (
+          <ListPageTableFrame>
           <DataTable
             loading={listQuery.isLoading}
             empty={!listQuery.isLoading && sortedItems.length === 0}
@@ -358,6 +361,7 @@ export function DashboardListPage() {
               ];
             })}
           />
+          </ListPageTableFrame>
         )}
 
         {!listQuery.isLoading && total > 0 ? (
@@ -366,7 +370,6 @@ export function DashboardListPage() {
             pageSize={pagination.pageSize}
             total={total}
             showSizeChanger
-            pageSizeOptions={[12, 24, 48]}
             onChange={pagination.onPageChange}
           />
         ) : null}

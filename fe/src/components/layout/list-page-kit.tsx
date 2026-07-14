@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { PaginationBar, type PaginationBarProps } from "@/components/ui/pagination-bar";
-import { Button } from "@/components/ui/button";
 import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -13,25 +12,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 
-export function PageErrorBanner({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
-  return (
-    <div
-      role="alert"
-      className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15"
-    >
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
+export { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 export function ListPageSection({
   children,
@@ -43,12 +24,24 @@ export function ListPageSection({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]",
+        "flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]",
         className,
       )}
     >
       {children}
     </section>
+  );
+}
+
+export function ListPageTableFrame({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-h-0 flex-1 overflow-hidden px-5", className)}>{children}</div>
   );
 }
 
@@ -64,7 +57,7 @@ export function ListPageToolbar({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 border-b border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.06]",
+        "flex shrink-0 flex-col gap-3 border-b border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.06]",
         className,
       )}
     >
@@ -81,7 +74,7 @@ export function ListPageBody({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={cn("p-5", className)}>{children}</div>;
+  return <div className={cn("shrink-0 p-5", className)}>{children}</div>;
 }
 
 export function ListPageFooter({
@@ -94,7 +87,7 @@ export function ListPageFooter({
   return (
     <div
       className={cn(
-        "border-t border-gray-100 px-5 py-4 dark:border-white/[0.06]",
+        "shrink-0 border-t border-gray-100 px-5 py-4 dark:border-white/[0.06]",
         className,
       )}
     >
@@ -152,7 +145,7 @@ export function DataTable({
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-only">
       <Table size="comfortable" wrapperClassName="min-w-[640px] border-0 shadow-none">
       <TableHeader className="bg-gray-50/80 dark:bg-white/[0.02]">
         <TableRow className="hover:bg-transparent">

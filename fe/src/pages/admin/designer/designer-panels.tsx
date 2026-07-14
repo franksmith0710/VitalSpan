@@ -283,7 +283,7 @@ export function ComputeRulesPanel({ rules, onChange, fieldOptions }: ComputeRule
           variant="framed"
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+        <div className="overflow-x-only rounded-xl border border-gray-200 dark:border-gray-800">
           <table className="min-w-[720px] w-full text-left text-theme-sm">
             <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
               <tr>

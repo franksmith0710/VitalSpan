@@ -20,17 +20,7 @@ import { CatalogTreeNode } from "./components/CatalogTreeNode";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { TemplateDetailPanel } from "./components/TemplateDetailPanel";
 import { useReportTemplates } from "./useReportTemplates";
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 export function ReportTemplatesPage() {
   const { nodeId } = useParams();
@@ -121,7 +111,7 @@ export function ReportTemplatesPage() {
       actions={nodes.length > 0 ? createActions : null}
     >
       {nodesQuery.isError ? (
-        <ErrorBanner message={mapApiError(nodesQuery.error)} onRetry={() => void nodesQuery.refetch()} />
+        <PageErrorBanner message={mapApiError(nodesQuery.error)} onRetry={() => void nodesQuery.refetch()} />
       ) : null}
 
       <div className="mb-4 lg:hidden">

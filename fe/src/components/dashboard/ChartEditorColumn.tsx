@@ -22,15 +22,22 @@ import { WidgetInspectorDelete } from "./widget-inspector-delete";
 type ChartEditorColumnProps = {
   onDelete?: () => void;
   onOpenLinkage?: () => void;
+  onDataRefresh?: () => void;
   className?: string;
 };
 
-export function ChartEditorColumn({ onDelete, onOpenLinkage, className }: ChartEditorColumnProps) {
-  const { widget, cfg, onChange, catalog, columns } = useChartInspector();
+export function ChartEditorColumn({
+  onDelete,
+  onOpenLinkage,
+  onDataRefresh,
+  className,
+}: ChartEditorColumnProps) {
+  const { widget, cfg, onChange, catalog, columns, refreshColumns } = useChartInspector();
 
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
+  const [refreshOk, setRefreshOk] = useState(false);
 
   const typeLabel =
     catalog.find((item) => item.type === cfg.chartType)?.displayName ?? cfg.chartType;
@@ -38,9 +45,13 @@ export function ChartEditorColumn({ onDelete, onOpenLinkage, className }: ChartE
   const validate = async () => {
     setError(null);
     setFieldError(null);
+    setRefreshOk(false);
     setValidating(true);
     try {
       await apiFetch("/api/v1/charts/validate", { method: "POST", body: JSON.stringify(cfg) });
+      refreshColumns();
+      onDataRefresh?.();
+      setRefreshOk(true);
     } catch (e) {
       const err = e as ApiRequestError;
       const msg = mapChartConfigError(err.code ?? "", err.message);
@@ -66,6 +77,8 @@ export function ChartEditorColumn({ onDelete, onOpenLinkage, className }: ChartE
         >
           {error}
         </div>
+      ) : refreshOk ? (
+        <p className="text-theme-xs text-success-600 dark:text-success-400">图表数据已更新</p>
       ) : null}
       <Button
         type="button"

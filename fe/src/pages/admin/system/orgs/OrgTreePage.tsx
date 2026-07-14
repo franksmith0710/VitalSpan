@@ -25,6 +25,7 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 type OrgOut = {
   id: string;
@@ -33,17 +34,6 @@ type OrgOut = {
   path: string;
   level: number;
 };
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
 
 function OrgRows({ items, parentId, depth }: { items: OrgOut[]; parentId: string | null; depth: number }) {
   const children = items.filter((o) => o.parent_id === parentId);
@@ -108,7 +98,7 @@ export function OrgTreePage() {
         </Button>
       }
     >
-      {isError ? <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
+      {isError ? <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
 
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
         {isLoading ? (

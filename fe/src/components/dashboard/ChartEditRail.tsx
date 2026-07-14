@@ -13,6 +13,7 @@ type ChartEditRailProps = {
   onChange: (chartConfig: ChartViewConfig) => void;
   onDelete?: () => void;
   onOpenLinkage?: () => void;
+  onDataRefresh?: () => void;
   className?: string;
 };
 
@@ -56,6 +57,7 @@ export function ChartEditRail({
   onChange,
   onDelete,
   onOpenLinkage,
+  onDataRefresh,
   className,
 }: ChartEditRailProps) {
   const cfg = widget.chartConfig;
@@ -71,6 +73,7 @@ export function ChartEditRail({
           <ChartEditorColumn
             onDelete={onDelete}
             onOpenLinkage={onOpenLinkage}
+            onDataRefresh={onDataRefresh}
             className="border-r border-gray-200 dark:border-gray-800"
           />
         }

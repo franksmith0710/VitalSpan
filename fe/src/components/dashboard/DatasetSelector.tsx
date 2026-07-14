@@ -93,7 +93,7 @@ export function DatasetSelector({
         <DropdownMenuContent
           align="start"
           sideOffset={6}
-          className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-[220px] p-0"
+          className="w-[var(--radix-dropdown-menu-trigger-width)] max-w-[calc(100vw-2rem)] p-0"
           onCloseAutoFocus={(event) => event.preventDefault()}
         >
           <div
@@ -153,7 +153,7 @@ export function DatasetSelector({
                     <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
                       <Box className="size-4" aria-hidden />
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-theme-sm">
+                    <span className="min-w-0 flex-1 truncate text-theme-xs">
                       {item.displayName}
                       {!item.boundConfigId ? (
                         <span className="text-theme-xs text-gray-400">（未绑定）</span>

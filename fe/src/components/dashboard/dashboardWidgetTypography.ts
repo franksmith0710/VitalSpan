@@ -1,7 +1,13 @@
-/** 像素画布拖动手柄逻辑高度（与 PixelShape / ChartRenderer contentChromePx 对齐） */
-export const PIXEL_DRAG_RAIL_HEIGHT_PX = 40;
+/** 像素画布缩放后，屏幕上目标可读高度（px），对齐 text-theme-sm 行高密度 */
+export const PIXEL_SCREEN_RAIL_HEIGHT_PX = 32;
 
-/** 画布内组件状态/空态文案（显式 class，配合 .dashboard-widget-surface） */
+/** 像素画布拖动手柄逻辑高度（随 scale 反比放大，保证缩放后屏幕高度稳定） */
+export function pixelDragRailHeightPx(canvasScale: number): number {
+  const scale = canvasScale > 0 ? canvasScale : 1;
+  return Math.ceil(PIXEL_SCREEN_RAIL_HEIGHT_PX / scale);
+}
+
+/** 画布内组件状态/空态文案 */
 export const dwState =
   "text-base leading-snug text-gray-500 dark:text-gray-400";
 export const dwStateWarning =
@@ -14,3 +20,6 @@ export const dwTitle =
 export const dwCaption =
   "text-sm leading-snug text-gray-500 dark:text-gray-400";
 export const dwMeta = "text-sm tabular-nums text-gray-400";
+
+/** @deprecated 使用 pixelDragRailHeightPx(canvasScale) */
+export const PIXEL_DRAG_RAIL_HEIGHT_PX = 40;

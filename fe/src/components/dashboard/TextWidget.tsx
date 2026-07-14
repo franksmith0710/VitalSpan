@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { RichTextEditor } from "./RichTextEditor";
+import { isRichTextEmpty, textConfigToHtml } from "./richTextHtml";
 import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
 import { dwCaption } from "./dashboardWidgetTypography";
 

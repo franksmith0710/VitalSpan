@@ -12,6 +12,7 @@ import type {
   DashboardLayout,
   DashboardWidgetBase,
 } from "@/components/dashboard/layoutUtils";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { DashboardLayoutPreview } from "@/components/dashboard/DashboardLayoutPreview";
 
 type DashboardDetail = {
@@ -19,17 +20,6 @@ type DashboardDetail = {
   name: string;
   layoutJson: DashboardLayout;
 };
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
 
 function chartIdFromWidget(widget: DashboardWidgetBase): string | null {
   if (widget.type === "filter" || !widget.chartConfig) return null;
@@ -87,7 +77,7 @@ export function DashboardSharePage() {
         </Button>
       }
     >
-      {error ? <ErrorBanner message={error} onRetry={() => void load()} /> : null}
+      {error ? <PageErrorBanner message={error} onRetry={() => void load()} /> : null}
       {loading ? <Skeleton className="h-40 w-full" /> : null}
       {!loading && widgets.length === 0 ? (
         <p className="text-theme-sm text-gray-500 dark:text-gray-400">该看板暂无组件，请先添加图表。</p>

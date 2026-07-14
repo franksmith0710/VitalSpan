@@ -33,7 +33,7 @@ function FlowStepper({ nodes }: { nodes: WorkflowTemplate["nodes"] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-only">
       <ol className="flex min-w-max items-start">
         {nodes.map((node, index) => (
           <Fragment key={node.id}>

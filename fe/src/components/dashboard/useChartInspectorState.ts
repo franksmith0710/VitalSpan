@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
+import { reconcileChartFields } from "@/lib/chartConfigState";
+import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import { resolveDatasetChartBinding } from "@/lib/datasetChartBinding";
 import { queryKeys } from "@/lib/queryKeys";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -71,7 +73,7 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
   const datasourceItems = dsData?.items ?? [];
   const dataMode = resolveDataMode(cfg);
   const selectedDataset = datasetItems.find((d) => d.datasetId === cfg.datasetId);
-  const datasetReady = Boolean(cfg.configId && cfg.dataSourceId);
+  const datasetReady = isChartExecuteReady(cfg);
   const datasetsEmpty = !datasetsLoading && !datasetsError && datasetItems.length === 0;
   const datasourcesEmpty = !dsLoading && datasourceItems.length === 0;
   const typeLabel = WIDGET_CHART_LABELS[cfg.chartType] ?? cfg.chartType;
@@ -148,6 +150,18 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
       cancelled = true;
     };
   }, [dataMode, cfg, datasetItems, datasetsLoading, onChange]);
+
+  const columnsKey = columns.join("|");
+  useEffect(() => {
+    if (!columns.length) return;
+    const reconciled = reconcileChartFields(cfg, columns);
+    const same =
+      JSON.stringify(cfg.dimensions) === JSON.stringify(reconciled.dimensions) &&
+      JSON.stringify(cfg.metrics) === JSON.stringify(reconciled.metrics);
+    if (!same) onChange(reconciled);
+    // 仅在列集合变化时剔除无效字段，避免拖入字段时被立即清掉
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnsKey]);
 
   const assignField = useCallback(
     (fieldName: string, target?: SlotTarget) => {

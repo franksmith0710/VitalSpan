@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { CanvasEditToolbar } from "@/components/dashboard/CanvasEditToolbar";
 import type { PaletteInsertType } from "@/components/dashboard/createLayoutWidget";
 import { CollapsedRailTab, RailFoldHeader } from "@/components/dashboard/RailFoldTab";
+import { DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
 import { cn } from "@/lib/utils";
 
 function CanvasShell({
@@ -124,7 +125,12 @@ export function DashboardEditWorkspace({
       </CanvasShell>
 
       {chartRailOpen ? (
-        <div className="flex min-h-0 w-auto max-w-[min(100%,496px)] shrink-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]">
+        <div
+          className={cn(
+            "flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
+            DASHBOARD_EDIT_RAIL_SHELL_CLASS,
+          )}
+        >
           {showRailFoldHeader && onChartRailOpenChange ? (
             <RailFoldHeader
               label={chartRailLabel}

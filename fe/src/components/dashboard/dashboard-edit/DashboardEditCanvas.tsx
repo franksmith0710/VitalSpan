@@ -28,6 +28,7 @@ type DashboardEditCanvasProps = {
   linkage: Linkage;
   filterValues: Record<string, string>;
   styleConfig?: DashboardStyleConfig;
+  chartRefreshKeys?: Record<string, number>;
   setWidgets: DashboardWidgetsSetter;
   setPixelLayout: (layout: DashboardLayoutV2) => void;
   onSelect: (widgetId: string, additive: boolean) => void;
@@ -49,6 +50,7 @@ export function DashboardEditCanvas({
   linkage,
   filterValues,
   styleConfig = {},
+  chartRefreshKeys,
   setWidgets,
   setPixelLayout,
   onSelect,
@@ -88,6 +90,7 @@ export function DashboardEditCanvas({
       onDelete={onDeleteWidget}
       setWidgets={setWidgets}
       dashboardStyle={styleConfig}
+      chartRefreshKeys={chartRefreshKeys}
     />
   );
 
@@ -120,6 +123,7 @@ export function DashboardEditCanvas({
               onDelete={onDeleteWidget}
               setWidgets={setWidgets}
               dashboardStyle={styleConfig}
+              chartRefreshKeys={chartRefreshKeys}
             />
           )}
         />

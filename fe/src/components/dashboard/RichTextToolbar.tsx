@@ -149,7 +149,7 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
       )}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <div className="flex items-center gap-1 overflow-x-auto">
+      <div className="flex items-center gap-1 overflow-x-only">
         <ToolbarIcon
           label="撤销"
           disabled={!editor.can().chain().focus().undo().run()}

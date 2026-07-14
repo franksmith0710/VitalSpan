@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 type ScheduleRow = {
   id: string;
@@ -44,17 +45,6 @@ type HistoryRow = {
   errorMessage?: string | null;
   parentExecutionId?: string | null;
 };
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
 
 const ACTION_LABELS: Record<string, string> = {
   schedule: "激活调度",
@@ -164,7 +154,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
 
   if (listQuery.isError) {
     return (
-      <ErrorBanner message={mapApiError(listQuery.error)} onRetry={() => void listQuery.refetch()} />
+      <PageErrorBanner message={mapApiError(listQuery.error)} onRetry={() => void listQuery.refetch()} />
     );
   }
 
@@ -269,7 +259,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
         <CardHeader>
           <CardTitle className="text-title-sm">执行历史</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-x-only">
           {historyQuery.isLoading ? <Skeleton className="h-32 w-full" /> : null}
           {history.length === 0 && !historyQuery.isLoading ? (
             <p className="py-6 text-center text-theme-sm text-gray-500">暂无执行记录</p>

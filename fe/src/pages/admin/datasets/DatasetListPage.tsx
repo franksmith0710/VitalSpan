@@ -14,6 +14,7 @@ import {
   ListPageBody,
   ListPagePagination,
   ListPageSection,
+  ListPageTableFrame,
   PageErrorBanner,
   RowActions,
 } from "@/components/layout/list-page-kit";
@@ -102,6 +103,7 @@ export function DatasetListPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="Dataset"
       description="语义层数据集管理：表关联、计算字段与授权角色（META-004）。"
       actions={createButton}
@@ -120,7 +122,7 @@ export function DatasetListPage() {
             <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
           </ListPageBody>
         ) : null}
-        <ListPageBody>
+        <ListPageTableFrame>
           <DataTable
             loading={isLoading}
             empty={items.length === 0}
@@ -180,7 +182,7 @@ export function DatasetListPage() {
               </RowActions>,
             ])}
           />
-        </ListPageBody>
+        </ListPageTableFrame>
 
         {!isLoading && total > 0 ? (
           <ListPagePagination

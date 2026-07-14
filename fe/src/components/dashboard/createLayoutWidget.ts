@@ -1,4 +1,5 @@
 import type { ChartType } from "@/lib/chartViewConfig";
+import { isWidgetConfigReady } from "@/lib/chartConfigState";
 import {
   DEFAULT_WIDGET_COLSPAN,
   DEFAULT_WIDGET_ROWSPAN,
@@ -150,10 +151,4 @@ export function createPaletteWidget(
   return createLayoutWidget(type as ChartType, widgets, at);
 }
 
-export function isWidgetConfigReady(chartConfig: LayoutWidget["chartConfig"]): boolean {
-  if (!chartConfig?.dataSourceId) return false;
-  if (chartConfig.mode === "dataset") {
-    return Boolean(chartConfig.configId || chartConfig.datasetId);
-  }
-  return Boolean(chartConfig.sql?.trim());
-}
+export { isWidgetConfigReady } from "@/lib/chartConfigState";

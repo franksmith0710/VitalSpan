@@ -15,6 +15,7 @@ import {
   ListPageBody,
   ListPagePagination,
   ListPageSection,
+  ListPageTableFrame,
   ListPageToolbar,
   PageErrorBanner,
   RowActions,
@@ -210,6 +211,7 @@ export function DatasourceListPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="数据源"
       description="配置与管理数据库、文件及 API 连接，供图表与看板直接查询使用。"
       actions={
@@ -221,11 +223,13 @@ export function DatasourceListPage() {
         </Button>
       }
     >
-      {deleteError ? (
-        <PageErrorBanner message={deleteError} onRetry={() => setDeleteError(null)} />
-      ) : null}
-
       <ListPageSection>
+        {deleteError ? (
+          <ListPageBody className="border-b py-3">
+            <PageErrorBanner message={deleteError} onRetry={() => setDeleteError(null)} />
+          </ListPageBody>
+        ) : null}
+
         <ListPageToolbar
           filters={
             <>
@@ -280,9 +284,11 @@ export function DatasourceListPage() {
           />
         </ListPageBody>
 
-        <ListPageBody className={cn(isEmpty && !isLoading ? "p-0" : undefined)}>
+        <ListPageTableFrame className={cn(isEmpty && !isLoading ? "px-0" : undefined)}>
           {isError ? (
-            <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+            <div className="px-5 pb-5">
+              <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+            </div>
           ) : (
             <DataTable
               loading={isLoading}
@@ -392,7 +398,7 @@ export function DatasourceListPage() {
               })}
             />
           )}
-        </ListPageBody>
+        </ListPageTableFrame>
 
         {!isLoading && total > 0 ? (
           <ListPagePagination

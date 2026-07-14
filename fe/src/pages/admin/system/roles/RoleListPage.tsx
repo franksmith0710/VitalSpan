@@ -9,6 +9,12 @@ import {
   ListRowCheckbox,
 } from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  ListPagePagination,
+  ListPageSection,
+  ListPageTableFrame,
+  ListPageToolbar,
+} from "@/components/layout/list-page-kit";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import {
@@ -48,6 +54,8 @@ import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { cn } from "@/lib/utils";
 import { mapRoleError } from "./roleErrors";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { useListPagination } from "@/lib/list-pagination";
 import {
   roleCreateSchema,
   roleEditSchema,
@@ -65,17 +73,6 @@ type RoleOut = {
 
 type DashboardSummary = { id: string; name: string };
 type CatalogTemplateNode = { id: string; name: string; nodeType: string };
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
 
 const EMPTY_CREATE: RoleCreateValues = {
   code: "",
@@ -104,23 +101,30 @@ export function RoleListPage() {
     return () => window.clearTimeout(timer);
   }, [search]);
 
+  const pagination = useListPagination(undefined, [debouncedPrefix, statusFilter]);
+
   const listParams = useMemo(
     () => ({
-      limit: 50,
-      offset: 0,
+      limit: pagination.pageSize,
+      offset: pagination.offset,
       ...(debouncedPrefix ? { codePrefix: debouncedPrefix } : {}),
     }),
-    [debouncedPrefix],
+    [debouncedPrefix, pagination.pageSize, pagination.offset],
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: queryKeys.roles.list(listParams),
     queryFn: () => {
-      const params = new URLSearchParams({ limit: "50", offset: "0" });
+      const params = new URLSearchParams({
+        limit: String(pagination.pageSize),
+        offset: String(pagination.offset),
+      });
       if (debouncedPrefix) params.set("code_prefix", debouncedPrefix);
       return apiFetch<{ items: RoleOut[]; total: number }>(`/api/v1/roles?${params}`);
     },
   });
+
+  const total = data?.total ?? 0;
 
   const filteredItems = useMemo(() => {
     const items = data?.items ?? [];
@@ -267,6 +271,7 @@ export function RoleListPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="角色管理"
       description="创建与管理角色，可配置默认 Dashboard 与报表模板。"
       actions={
@@ -275,167 +280,197 @@ export function RoleListPage() {
         </Button>
       }
     >
-      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-          <SearchField
-            className="w-full sm:max-w-md"
-            value={search}
-            onChange={setSearch}
-            placeholder="按编码前缀搜索…"
-            aria-label="搜索角色"
-          />
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")}
-          >
-            <SelectTrigger className="h-11 w-full sm:w-[140px]" aria-label="筛选角色状态">
-              <SelectValue placeholder="状态" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部状态</SelectItem>
-              <SelectItem value="active">仅启用</SelectItem>
-              <SelectItem value="inactive">仅停用</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {!isLoading && data ? (
-          <p className="shrink-0 text-theme-sm text-gray-500 dark:text-gray-400">
-            {debouncedPrefix || statusFilter !== "all"
-              ? `显示 ${filteredItems.length} 个`
-              : `共 ${data.total} 个角色`}
-          </p>
+      <ListPageSection>
+        <ListPageToolbar
+          filters={
+            <>
+              <SearchField
+                className="w-full sm:max-w-md"
+                value={search}
+                onChange={setSearch}
+                placeholder="按编码前缀搜索…"
+                aria-label="搜索角色"
+              />
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value as "all" | "active" | "inactive")}
+              >
+                <SelectTrigger className="h-11 w-full sm:w-[140px]" aria-label="筛选角色状态">
+                  <SelectValue placeholder="状态" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="active">仅启用</SelectItem>
+                  <SelectItem value="inactive">仅停用</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          }
+          actions={
+            !isLoading && data ? (
+              <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+                {debouncedPrefix || statusFilter !== "all"
+                  ? `显示 ${filteredItems.length} 个`
+                  : `共 ${data.total} 个角色`}
+              </p>
+            ) : null
+          }
+        />
+
+        {isError ? (
+          <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+            <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+          </div>
         ) : null}
-      </div>
+        {actionError ? (
+          <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+            <PageErrorBanner message={actionError} onRetry={() => setActionError(null)} />
+          </div>
+        ) : null}
 
-      {isError ? (
-        <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
-      ) : null}
-      {actionError ? (
-        <ErrorBanner message={actionError} onRetry={() => setActionError(null)} />
-      ) : null}
+        <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+          <ListBatchDeleteBar
+            selectedCount={selection.selectedCount}
+            entityLabel="个角色"
+            onClear={selection.clear}
+            onDelete={() => setBatchDeleteOpen(true)}
+          />
+        </div>
 
-      <ListBatchDeleteBar
-        selectedCount={selection.selectedCount}
-        entityLabel="个角色"
-        onClear={selection.clear}
-        onDelete={() => setBatchDeleteOpen(true)}
-      />
-
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-        <table className="min-w-[720px] w-full text-left text-theme-sm">
-          <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-            <tr>
-              <th className="w-10 px-4 py-3">
-                <ListHeaderCheckbox
-                  checked={selection.allSelected}
-                  indeterminate={selection.someSelected}
-                  disabled={filteredItems.length === 0}
-                  onCheckedChange={() => selection.toggleAll()}
-                />
-              </th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">编码</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">显示名</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">描述</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">状态</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
-                操作
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-3" colSpan={6}>
-                      <Skeleton className="h-6 w-full" />
+        <ListPageTableFrame>
+          <div className="overflow-x-only">
+            <table className="min-w-[720px] w-full text-left text-theme-sm">
+              <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
+                <tr>
+                  <th className="w-10 px-4 py-3">
+                    <ListHeaderCheckbox
+                      checked={selection.allSelected}
+                      indeterminate={selection.someSelected}
+                      disabled={filteredItems.length === 0}
+                      onCheckedChange={() => selection.toggleAll()}
+                    />
+                  </th>
+                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">编码</th>
+                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">显示名</th>
+                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">描述</th>
+                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">状态</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
+                    操作
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
+                        <td className="px-4 py-3" colSpan={6}>
+                          <Skeleton className="h-6 w-full" />
+                        </td>
+                      </tr>
+                    ))
+                  : null}
+                {!isLoading && data && data.items.length > 0 && filteredItems.length === 0 ? (
+                  <tr>
+                    <td
+                      className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                      colSpan={6}
+                    >
+                      当前筛选条件下暂无角色
                     </td>
                   </tr>
-                ))
-              : null}
-            {!isLoading && data && data.items.length > 0 && filteredItems.length === 0 ? (
-              <tr>
-                <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={6}>
-                  当前筛选条件下暂无角色
-                </td>
-              </tr>
-            ) : null}
-            {!isLoading && data?.items.length === 0 ? (
-              <tr>
-                <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={6}>
-                  {debouncedPrefix ? (
-                    <>未找到编码以「{debouncedPrefix}」开头的角色</>
-                  ) : (
-                    <>
-                      暂无角色
-                      <div className="mt-3">
-                        <Button type="button" variant="primary" size="sm" onClick={openCreate}>
-                          新建角色
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ) : null}
-            {!isLoading
-              ? filteredItems.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]"
-                  >
-                    <td className="px-4 py-3">
-                      <ListRowCheckbox
-                        checked={selection.isSelected(row.id)}
-                        onCheckedChange={() => selection.toggle(row.id)}
-                        ariaLabel={`选择角色 ${row.name}`}
-                      />
-                    </td>
-                    <td className="px-4 py-3 font-mono text-gray-800 dark:text-white/90">
-                      {row.code}
-                    </td>
-                    <td className="px-4 py-3">{row.name}</td>
-                    <td className="max-w-xs truncate px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {row.description ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="light" color={row.isActive ? "success" : "light"}>
-                        {row.isActive ? "启用" : "停用"}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <IconButton
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          aria-label="编辑"
-                          onClick={() => void openEdit(row)}
-                        >
-                          <Pencil className="size-4" />
-                        </IconButton>
-                        <IconButton
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            "text-gray-500 hover:text-error-600 dark:text-gray-400 dark:hover:text-error-400",
-                          )}
-                          aria-label="删除"
-                          onClick={() => {
-                            setActionError(null);
-                            setDeleteTarget(row);
-                          }}
-                        >
-                          <Trash2 className="size-4" />
-                        </IconButton>
-                      </div>
+                ) : null}
+                {!isLoading && data?.items.length === 0 ? (
+                  <tr>
+                    <td
+                      className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                      colSpan={6}
+                    >
+                      {debouncedPrefix ? (
+                        <>未找到编码以「{debouncedPrefix}」开头的角色</>
+                      ) : (
+                        <>
+                          暂无角色
+                          <div className="mt-3">
+                            <Button type="button" variant="primary" size="sm" onClick={openCreate}>
+                              新建角色
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </td>
                   </tr>
-                ))
-              : null}
-          </tbody>
-        </table>
-      </div>
+                ) : null}
+                {!isLoading
+                  ? filteredItems.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]"
+                      >
+                        <td className="px-4 py-3">
+                          <ListRowCheckbox
+                            checked={selection.isSelected(row.id)}
+                            onCheckedChange={() => selection.toggle(row.id)}
+                            ariaLabel={`选择角色 ${row.name}`}
+                          />
+                        </td>
+                        <td className="px-4 py-3 font-mono text-gray-800 dark:text-white/90">
+                          {row.code}
+                        </td>
+                        <td className="px-4 py-3">{row.name}</td>
+                        <td className="max-w-xs truncate px-4 py-3 text-gray-600 dark:text-gray-400">
+                          {row.description ?? "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="light" color={row.isActive ? "success" : "light"}>
+                            {row.isActive ? "启用" : "停用"}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-0.5">
+                            <IconButton
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              aria-label="编辑"
+                              onClick={() => void openEdit(row)}
+                            >
+                              <Pencil className="size-4" />
+                            </IconButton>
+                            <IconButton
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className={cn(
+                                "text-gray-500 hover:text-error-600 dark:text-gray-400 dark:hover:text-error-400",
+                              )}
+                              aria-label="删除"
+                              onClick={() => {
+                                setActionError(null);
+                                setDeleteTarget(row);
+                              }}
+                            >
+                              <Trash2 className="size-4" />
+                            </IconButton>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  : null}
+              </tbody>
+            </table>
+          </div>
+        </ListPageTableFrame>
+
+        {!isLoading && total > 0 ? (
+          <ListPagePagination
+            current={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+            showSizeChanger
+            onChange={pagination.onPageChange}
+          />
+        ) : null}
+      </ListPageSection>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">

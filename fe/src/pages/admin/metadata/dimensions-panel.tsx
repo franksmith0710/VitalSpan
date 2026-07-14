@@ -39,12 +39,12 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import {
-  ErrorBanner,
   ListPageBody,
   ListPageToolbar,
   MetaDataTable,
   RowActions,
 } from "./metadata-shared";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 type Dimension = { id: string; code: string; name: string; status: string; themeNodeId?: string | null };
 type ThemeNode = { id: string; name: string };
@@ -201,7 +201,7 @@ export function DimensionsPanel({
       </ListPageBody>
       <ListPageBody>
         {query.error ? (
-          <ErrorBanner message={mapApiError(query.error)} onRetry={() => void query.refetch()} />
+          <PageErrorBanner message={mapApiError(query.error)} onRetry={() => void query.refetch()} />
         ) : (
           <MetaDataTable
             loading={query.isLoading}

@@ -6,6 +6,7 @@ import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import {
   mergeLayoutFilterLinkage,
   type Linkage,
@@ -85,17 +86,6 @@ type DashboardEditPageProps = {
   mode: "edit" | "view";
 };
 
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
-
 export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -145,6 +135,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [styleOpen, setStyleOpen] = useState(false);
   const [linkagePanelOpen, setLinkagePanelOpen] = useState(false);
   const [chartRailOpen, setChartRailOpen] = useState(true);
+  const [chartRefreshKeys, setChartRefreshKeys] = useState<Record<string, number>>({});
   const [pixelViewport, setPixelViewport] = useState<PixelRect>();
   const loadGenerationRef = useRef(0);
   const hydratedRef = useRef(false);
@@ -407,6 +398,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setFilterValues((prev) => ({ ...prev, [filterId]: value }));
   };
 
+  const handleChartDataRefresh = useCallback((widgetId: string) => {
+    setChartRefreshKeys((prev) => ({ ...prev, [widgetId]: (prev[widgetId] ?? 0) + 1 }));
+  }, []);
+
   const handleDeleteWidget = (widgetId: string) => {
     if (!canSave) return;
     setWidgets((prev) => prev.filter((w) => w.id !== widgetId));
@@ -600,7 +595,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       actions={headerActions}
     >
       {error ? (
-        <ErrorBanner
+        <PageErrorBanner
           message={error}
           onRetry={() => {
             if (error.includes("数据源")) setError(null);
@@ -698,6 +693,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               linkage={effectiveLinkage}
               filterValues={filterValues}
               styleConfig={styleConfig}
+              chartRefreshKeys={chartRefreshKeys}
               setWidgets={setWidgets}
               setPixelLayout={setPixelLayout}
               onSelect={(widgetId, additive) => {
@@ -801,6 +797,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               <ChartEditRail
                 widget={selectedWidget}
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
+                onDataRefresh={() => primarySelectedId && handleChartDataRefresh(primarySelectedId)}
                 onOpenLinkage={() => {
                   clearSelection();
                   setLinkagePanelOpen(true);

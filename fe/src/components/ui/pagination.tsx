@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { LIST_PAGE_SIZE_OPTIONS } from "@/lib/list-pagination";
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -97,7 +98,7 @@ export type PaginationSizeChangerProps = {
 
 export function PaginationSizeChanger({
   pageSize,
-  pageSizeOptions = [10, 20, 50, 100],
+  pageSizeOptions = [...LIST_PAGE_SIZE_OPTIONS],
   onPageSizeChange,
   className,
 }: PaginationSizeChangerProps) {

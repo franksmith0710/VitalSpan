@@ -28,17 +28,7 @@ import { apiFetch } from "@/lib/api";
 import type { ResourceType } from "./grantFormSchema";
 import { GrantsDialogs, RESOURCE_TYPE_LABELS } from "./GrantsDialogs";
 import { useGrantsPage } from "./useGrantsPage";
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 export function GrantsPage() {
   const page = useGrantsPage();
@@ -113,10 +103,10 @@ export function GrantsPage() {
       </div>
 
       {isError ? (
-        <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+        <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
       ) : null}
       {page.actionError ? (
-        <ErrorBanner message={page.actionError} onRetry={() => page.setActionError(null)} />
+        <PageErrorBanner message={page.actionError} onRetry={() => page.setActionError(null)} />
       ) : null}
 
       <ListBatchDeleteBar
@@ -127,7 +117,7 @@ export function GrantsPage() {
       />
 
       <Card className="overflow-hidden shadow-theme-xs">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-only">
           <table className="min-w-[720px] w-full text-left text-theme-sm" aria-label="资源授权列表">
             <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
               <tr>

@@ -15,6 +15,7 @@ import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
 import { isAccountManagementPath } from "@/lib/workspace";
 import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
+import { isAdminListFillRoute } from "@/lib/admin-layout-routes";
 import { useAuth } from "@/context/auth-context";
 
 function AdminLayoutContent() {
@@ -31,7 +32,8 @@ function AdminLayoutContent() {
   );
   const isChartTypesFill = Boolean(useMatch(CHART_TYPES_CATALOG_PATH));
   const isDashboardEditFill = Boolean(useMatch("/admin/dashboards/:id/edit"));
-  const isFillHeightRoute = isChartTypesFill || isDashboardEditFill;
+  const isListFillRoute = isAdminListFillRoute(location.pathname);
+  const isFillHeightRoute = isChartTypesFill || isDashboardEditFill || isListFillRoute;
 
   return (
     <div className="flex h-dvh max-h-dvh min-h-0 overflow-hidden">

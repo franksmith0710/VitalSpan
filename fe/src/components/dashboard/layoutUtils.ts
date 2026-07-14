@@ -269,42 +269,18 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
   if (type === "table") {
     return { chartType: "table", ...base, dimensions: [], metrics: [] };
   }
-  if (type === "map") {
-    return {
-      chartType: "map",
-      ...base,
-      dimensions: [{ field: "region" }],
-      metrics: [{ field: "value" }],
-    };
-  }
-  if (type === "heatmap") {
-    return {
-      chartType: "heatmap",
-      ...base,
-      dimensions: [{ field: "x" }, { field: "y" }],
-      metrics: [{ field: "v" }],
-    };
-  }
   if (type === "kpi") {
     return {
       chartType: "kpi",
       ...base,
       dimensions: [],
-      metrics: [{ field: "total" }, { field: "rate" }],
-    };
-  }
-  if (type === "timeline") {
-    return {
-      chartType: "timeline",
-      ...base,
-      dimensions: [{ field: "t" }],
-      metrics: [{ field: "v" }],
+      metrics: [],
     };
   }
   return {
     chartType: type,
     ...base,
-    dimensions: [{ field: "x" }],
-    metrics: [{ field: "y" }],
+    dimensions: [],
+    metrics: [],
   };
 }

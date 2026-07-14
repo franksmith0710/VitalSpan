@@ -266,7 +266,7 @@ export function PixelShape({
         <div
           className={cn(
             "pixel-shape-inner dashboard-widget-surface h-full min-h-0 overflow-hidden bg-white dark:bg-gray-900",
-            mode === "edit" && selected && "pt-10",
+            mode === "edit" && selected && "pixel-shape-inner--with-rail",
           )}
           data-pixel-no-drag
           onPointerDown={(event) => {

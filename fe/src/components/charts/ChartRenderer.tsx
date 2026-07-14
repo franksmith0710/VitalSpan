@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { apiFetch } from "@/lib/api";
+import { chartConfigToRenderSpec } from "@/lib/chartConfigState";
+import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import {
   isAdvancedEchartsType,
   isKpiType,
   type ChartViewConfig,
 } from "@/lib/chartViewConfig";
-import { createBarChartOptions, createLineChartOptions } from "@/lib/chart-theme";
+import { createBarChartOptions, createLineChartOptions, resolveChartColors } from "@/lib/chart-theme";
+import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdvancedEchartsChart } from "./adapters/AdvancedEchartsChart";
@@ -39,6 +42,10 @@ type ChartRendererProps = {
   contentChromePx?: number;
   filterParameters?: Record<string, string>;
   executeKey?: string;
+  queryLimit?: number;
+  paletteId?: string;
+  paletteColors?: string[];
+  numberFormat?: NumberFormatConfig;
 };
 
 const PAGE_SIZE = 50;
@@ -54,20 +61,6 @@ function embeddedStateMessage(className: string, children: ReactNode) {
       {children}
     </p>
   );
-}
-
-function pickColumns(columns: string[], fields: string[]): string[] {
-  if (!fields.length) return columns;
-  return fields.filter((f) => columns.includes(f));
-}
-
-function parseMetricValue(raw: unknown): number {
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string") {
-    const parsed = Number.parseFloat(raw.replace(/,/g, ""));
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return 0;
 }
 
 function resolveEmbeddedChartSize(
@@ -100,6 +93,9 @@ export function ChartRenderer({
   contentChromePx = 0,
   filterParameters,
   executeKey,
+  queryLimit,
+  paletteId,
+  paletteColors,
 }: ChartRendererProps) {
   const { ref: bodyRef, size: bodySize } = useElementSize<HTMLDivElement>(embedded);
   const chartSize = useMemo(() => {
@@ -119,6 +115,7 @@ export function ChartRenderer({
   const { columns, rows, loading, error, slowHint, rerun } = useChartExecute(config, {
     filterParameters,
     executeKey,
+    limit: queryLimit,
   });
   const [page, setPage] = useState(1);
   const [renderSpec, setRenderSpec] = useState<RenderSpec | null>(null);
@@ -145,6 +142,15 @@ export function ChartRenderer({
       .then(setRenderSpec)
       .catch(() => setRenderSpec(null));
   }, [localConfig, loading, error]);
+
+  const renderModel = useMemo(
+    () => (!loading && !error ? buildChartRenderModel(localConfig, columns, rows) : null),
+    [localConfig, columns, rows, loading, error],
+  );
+  const chartColors = useMemo(
+    () => resolveChartColors(paletteId, paletteColors),
+    [paletteId, paletteColors],
+  );
 
   const renderBody = () => {
     if (isKpiType(localConfig.chartType)) {
@@ -176,20 +182,49 @@ export function ChartRenderer({
       );
     }
 
+    if (localConfig.chartType === "pie") {
+      if (!renderModel || renderModel.kind === "empty") {
+        return embedded
+          ? embeddedStateMessage(dwState, "暂无数据")
+          : <p className="text-theme-sm text-gray-500">暂无数据</p>;
+      }
+      if (renderModel.kind === "error") {
+        return embedded
+          ? embeddedStateMessage(dwState, renderModel.message)
+          : <p className="text-theme-sm text-gray-500">{renderModel.message}</p>;
+      }
+      const spec = chartConfigToRenderSpec(localConfig);
+      return (
+        <AdvancedEchartsChart
+          spec={spec}
+          rows={rows as unknown[][]}
+          columns={columns}
+          ariaLabel={title}
+          height={chartSize.height}
+          width={chartSize.width}
+        />
+      );
+    }
+
     if (localConfig.chartType === "table") {
-      const fields = [
-        ...(localConfig.dimensions?.map((d) => d.field) ?? []),
-        ...(localConfig.metrics?.map((m) => m.field) ?? []),
-      ];
-      const displayCols = pickColumns(columns, fields);
-      const cols = displayCols.length ? displayCols : columns;
+      if (!renderModel || renderModel.kind === "empty") {
+        return embedded
+          ? embeddedStateMessage(dwState, "暂无数据")
+          : <p className="text-theme-sm text-gray-500">暂无数据</p>;
+      }
+      if (renderModel.kind === "error") {
+        return embedded
+          ? embeddedStateMessage(dwState, renderModel.message)
+          : <p className="text-theme-sm text-gray-500">{renderModel.message}</p>;
+      }
+      const cols = renderModel.kind === "table" ? renderModel.displayCols : columns;
       const pageRows =
         rows.length > PAGE_SIZE ? rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : rows;
       const totalPages = Math.ceil(rows.length / PAGE_SIZE);
 
       return (
         <div className={embedded ? "flex h-full min-h-0 flex-col" : undefined}>
-          <div className={embedded ? "min-h-0 flex-1 overflow-auto" : "overflow-x-auto"}>
+          <div className={embedded ? "min-h-0 flex-1 overflow-auto" : "overflow-x-only"}>
             <table className="w-full min-w-[320px] text-left text-theme-sm">
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
@@ -255,35 +290,40 @@ export function ChartRenderer({
         : <p className="text-theme-sm text-warning-600 dark:text-warning-400">{message}</p>;
     }
 
-    const dim = localConfig.dimensions?.[0]?.field;
-    const metricFields = localConfig.metrics?.map((m) => m.field) ?? [];
-    if (!dim || !metricFields.length || !columns.includes(dim)) {
-      const message = "列不存在，请检查维度与指标配置";
+    if (!renderModel || renderModel.kind === "empty") {
       return embedded
-        ? embeddedStateMessage(dwState, message)
-        : <p className="text-theme-sm text-gray-500">{message}</p>;
+        ? embeddedStateMessage(dwState, "暂无数据")
+        : <p className="text-theme-sm text-gray-500">暂无数据</p>;
     }
-    const categories = rows.map((r) => String(r[columns.indexOf(dim)] ?? ""));
-    const series = metricFields.map((field) => ({
-      name: field,
-      data: rows.map((r) => parseMetricValue(r[columns.indexOf(field)])),
-    }));
+    if (renderModel.kind === "error") {
+      return embedded
+        ? embeddedStateMessage(dwState, renderModel.message)
+        : <p className="text-theme-sm text-gray-500">{renderModel.message}</p>;
+    }
+    if (renderModel.kind !== "apex") {
+      return embedded
+        ? embeddedStateMessage(dwState, "暂不支持的图表类型")
+        : <p className="text-theme-sm text-gray-500">暂不支持的图表类型</p>;
+    }
+
+    const { categories, series, chartType } = renderModel;
     let options: ApexOptions;
     const compactEmbedded = embedded && chartSize.height < 160;
-    const apexSizeKey = `${Math.round(chartSize.width)}x${Math.round(chartSize.height)}`;
     const apexChart: ApexOptions["chart"] = {
       height: chartSize.height,
       redrawOnParentResize: true,
       redrawOnWindowResize: true,
       animations: embedded ? { enabled: false } : undefined,
-      ...(localConfig.chartType === "bar" && localConfig.styleVariant === "stacked"
+      ...(chartType === "bar" && localConfig.styleVariant === "stacked"
         ? { stacked: true }
         : {}),
     };
     const apexOverrides: ApexOptions = {
+      colors: chartColors,
       chart: apexChart,
-      legend: compactEmbedded ? { show: false } : undefined,
-      markers: compactEmbedded ? { size: 3, strokeWidth: 0 } : undefined,
+      ...(compactEmbedded
+        ? { legend: { show: false }, markers: { size: 3, strokeWidth: 0 } }
+        : {}),
       xaxis: {
         categories,
         labels: {
@@ -293,7 +333,7 @@ export function ChartRenderer({
         },
       },
     };
-    if (localConfig.chartType === "line") {
+    if (chartType === "line") {
       options = createLineChartOptions(categories, apexOverrides);
     } else {
       options = createBarChartOptions(categories, apexOverrides);
@@ -304,10 +344,10 @@ export function ChartRenderer({
         className="h-full min-h-0 w-full overflow-hidden"
       >
         <Chart
-          key={`${localConfig.chartType}-${apexSizeKey}-${series[0]?.data.length ?? 0}`}
+          key={`${chartType}-${series.map((s) => s.name).join(",")}-${series[0]?.data.length ?? 0}`}
           options={options}
           series={series}
-          type={localConfig.chartType === "line" ? "line" : "bar"}
+          type={chartType}
           height={chartSize.height}
           width={chartSize.width}
         />

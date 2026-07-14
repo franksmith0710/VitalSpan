@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 type ViewRow = {
   id: string;
@@ -51,17 +52,6 @@ type ViewRow = {
   dashboardId: string;
   layout?: Record<string, unknown>;
 };
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
 
 export function UserViewsSection() {
   const qc = useQueryClient();
@@ -154,7 +144,7 @@ export function UserViewsSection() {
 
   if (listQuery.isError) {
     return (
-      <ErrorBanner message={mapApiError(listQuery.error)} onRetry={() => void listQuery.refetch()} />
+      <PageErrorBanner message={mapApiError(listQuery.error)} onRetry={() => void listQuery.refetch()} />
     );
   }
 

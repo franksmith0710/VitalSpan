@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  ListPagePagination,
+  ListPageSection,
+  ListPageTableFrame,
+  ListPageToolbar,
+} from "@/components/layout/list-page-kit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,20 +33,11 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
 import { mapUserError } from "./userErrors";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { useListPagination } from "@/lib/list-pagination";
 
 type UserOut = { id: string; username: string };
 type RoleOut = { id: string; code: string; name: string; isActive?: boolean };
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
 
 function UserRoleBadges({ userId }: { userId: string }) {
   const { data } = useQuery({
@@ -76,19 +73,30 @@ export function UserListPage() {
     return () => window.clearTimeout(timer);
   }, [search]);
 
+  const pagination = useListPagination(undefined, [debouncedQ]);
+
   const listParams = useMemo(
-    () => ({ limit: 50, offset: 0, ...(debouncedQ ? { q: debouncedQ } : {}) }),
-    [debouncedQ],
+    () => ({
+      limit: pagination.pageSize,
+      offset: pagination.offset,
+      ...(debouncedQ ? { q: debouncedQ } : {}),
+    }),
+    [debouncedQ, pagination.pageSize, pagination.offset],
   );
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: queryKeys.users.list(listParams),
     queryFn: () => {
-      const params = new URLSearchParams({ limit: "50", offset: "0" });
+      const params = new URLSearchParams({
+        limit: String(pagination.pageSize),
+        offset: String(pagination.offset),
+      });
       if (debouncedQ) params.set("q", debouncedQ);
       return apiFetch<{ items: UserOut[]; total: number }>(`/api/v1/users?${params}`);
     },
   });
+
+  const total = data?.total ?? 0;
 
   const { data: allRoles } = useQuery({
     queryKey: queryKeys.roles.list({ limit: 500, offset: 0 }),
@@ -156,6 +164,7 @@ export function UserListPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="用户管理"
       description="查看用户并分配角色。"
       actions={
@@ -164,74 +173,101 @@ export function UserListPage() {
         </Button>
       }
     >
-      <Input
-        className="max-w-md"
-        placeholder="搜索用户名…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        aria-label="搜索用户"
-      />
+      <ListPageSection>
+        <ListPageToolbar
+          filters={
+            <Input
+              className="max-w-md"
+              placeholder="搜索用户名…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="搜索用户"
+            />
+          }
+        />
 
-      {isError ? (
-        <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
-      ) : null}
-      {actionError ? (
-        <ErrorBanner message={actionError} onRetry={() => setActionError(null)} />
-      ) : null}
+        {isError ? (
+          <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+            <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
+          </div>
+        ) : null}
+        {actionError ? (
+          <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
+            <PageErrorBanner message={actionError} onRetry={() => setActionError(null)} />
+          </div>
+        ) : null}
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-        <table className="min-w-[640px] w-full text-left text-theme-sm">
-          <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-            <tr>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">用户名</th>
-              <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">已绑定角色</th>
-              <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
-                操作
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-3" colSpan={3}>
-                      <Skeleton className="h-6 w-full" />
+        <ListPageTableFrame>
+          <div className="overflow-x-only">
+            <table className="min-w-[640px] w-full text-left text-theme-sm">
+              <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
+                <tr>
+                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">用户名</th>
+                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+                    已绑定角色
+                  </th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
+                    操作
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
+                        <td className="px-4 py-3" colSpan={3}>
+                          <Skeleton className="h-6 w-full" />
+                        </td>
+                      </tr>
+                    ))
+                  : null}
+                {!isLoading && data?.items.length === 0 ? (
+                  <tr>
+                    <td
+                      className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
+                      colSpan={3}
+                    >
+                      暂无用户
                     </td>
                   </tr>
-                ))
-              : null}
-            {!isLoading && data?.items.length === 0 ? (
-              <tr>
-                <td className="px-4 py-8 text-center text-gray-500 dark:text-gray-400" colSpan={3}>
-                  暂无用户
-                </td>
-              </tr>
-            ) : null}
-            {!isLoading
-              ? data?.items.map((row) => (
-                  <tr key={row.id} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">
-                      {row.username}
-                    </td>
-                    <td className="px-4 py-3">
-                      <UserRoleBadges userId={row.id} />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openSheet(row)}
-                      >
-                        管理角色
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              : null}
-          </tbody>
-        </table>
-      </div>
+                ) : null}
+                {!isLoading
+                  ? data?.items.map((row) => (
+                      <tr key={row.id} className="border-b border-gray-100 dark:border-gray-800">
+                        <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">
+                          {row.username}
+                        </td>
+                        <td className="px-4 py-3">
+                          <UserRoleBadges userId={row.id} />
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openSheet(row)}
+                          >
+                            管理角色
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  : null}
+              </tbody>
+            </table>
+          </div>
+        </ListPageTableFrame>
+
+        {!isLoading && total > 0 ? (
+          <ListPagePagination
+            current={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+            showSizeChanger
+            onChange={pagination.onPageChange}
+          />
+        ) : null}
+      </ListPageSection>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">

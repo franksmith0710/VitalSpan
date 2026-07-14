@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type DragEvent,
   type ReactNode,
 } from "react";
@@ -23,6 +24,7 @@ import { resolvePixelCollisions } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
 import { clientPointToCanvas, scaledCanvasMetrics } from "./geometry";
 import { PixelShape } from "./PixelShape";
+import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
 
 type PixelCanvasProps = {
   mode: "edit" | "view";
@@ -224,6 +226,7 @@ export function PixelCanvas({
       )}
       data-testid="pixel-canvas-host"
       data-pixel-canvas-scale={scale}
+      style={{ "--pixel-canvas-scale": scale } as CSSProperties}
       onScroll={(event) => {
         onViewportChange?.(visibleCanvasViewport(event.currentTarget, scale, viewCanvas));
       }}
@@ -242,39 +245,41 @@ export function PixelCanvas({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div
-          data-testid="pixel-canvas-stage"
-          className="pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
-          style={{
-            left: pixelGutter,
-            width: viewCanvas.width,
-            height: viewCanvas.height,
-            transform: `scale(${scale})`,
-          }}
-          onPointerDown={(event) => {
-            if (event.target === event.currentTarget) onClearSelection?.();
-          }}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        >
-          {activeLayout.widgets.map((widget) => (
-            <PixelShape
-              key={widget.id}
-              widget={widget}
-              canvas={viewCanvas}
-              scale={scale}
-              mode={mode}
-              selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
-              onSelect={onSelect}
-              onPreview={handlePreview}
-              onCommit={handleCommit}
-              onCancel={handleCancel}
-              onMore={onMore}
-            >
-              {renderWidget(widget)}
-            </PixelShape>
-          ))}
-        </div>
+        <PixelCanvasScaleProvider scale={scale}>
+          <div
+            data-testid="pixel-canvas-stage"
+            className="pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
+            style={{
+              left: pixelGutter,
+              width: viewCanvas.width,
+              height: viewCanvas.height,
+              transform: `scale(${scale})`,
+            }}
+            onPointerDown={(event) => {
+              if (event.target === event.currentTarget) onClearSelection?.();
+            }}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            {activeLayout.widgets.map((widget) => (
+              <PixelShape
+                key={widget.id}
+                widget={widget}
+                canvas={viewCanvas}
+                scale={scale}
+                mode={mode}
+                selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
+                onSelect={onSelect}
+                onPreview={handlePreview}
+                onCommit={handleCommit}
+                onCancel={handleCancel}
+                onMore={onMore}
+              >
+                {renderWidget(widget)}
+              </PixelShape>
+            ))}
+          </div>
+        </PixelCanvasScaleProvider>
       </div>
     </div>
   );

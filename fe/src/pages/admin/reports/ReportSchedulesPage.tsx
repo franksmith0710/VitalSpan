@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { queryKeys } from "@/lib/queryKeys";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 type ReportSchedule = {
   id: string;
@@ -14,17 +15,6 @@ type ReportSchedule = {
   status: string;
   cronExpression?: string | null;
 };
-
-function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-error-500 bg-error-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-error-500/30 dark:bg-error-500/15">
-      <p className="text-theme-sm text-error-700 dark:text-error-400">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        重试
-      </Button>
-    </div>
-  );
-}
 
 export function ReportSchedulesPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -40,9 +30,9 @@ export function ReportSchedulesPage() {
       title="报表调度"
       description="查看报表模板调度任务与执行状态（RPT-005）。"
     >
-      {isError ? <ErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
+      {isError ? <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} /> : null}
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="overflow-x-only rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
         <table className="min-w-[720px] w-full text-left text-theme-sm">
           <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
             <tr>

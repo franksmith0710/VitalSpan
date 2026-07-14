@@ -9,9 +9,11 @@ import {
 } from "../dashboardFilterUtils";
 import {
   resizeWidget,
+  type DashboardStyleConfig,
   type LayoutWidget,
   type PixelLayoutWidget,
 } from "../layoutUtils";
+import { WidgetErrorBoundary } from "../WidgetErrorBoundary";
 
 export type DashboardWidgetsSetter = (
   update: LayoutWidget[] | ((previous: LayoutWidget[]) => LayoutWidget[]),
@@ -32,6 +34,8 @@ type DashboardCanvasWidgetRendererProps = {
   setWidgets: DashboardWidgetsSetter;
   nested?: boolean;
   shell?: DashboardWidgetShell;
+  dashboardStyle?: DashboardStyleConfig;
+  chartRefreshKeys?: Record<string, number>;
 };
 
 function asLayoutWidget(
@@ -57,13 +61,18 @@ export function DashboardCanvasWidgetRenderer({
   setWidgets,
   nested = false,
   shell = "grid",
+  dashboardStyle,
+  chartRefreshKeys,
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
   const pixelSize =
     "width" in sourceWidget
       ? { width: sourceWidget.width, height: sourceWidget.height }
       : undefined;
-  const executeKey = JSON.stringify(filterValues);
+  const executeKey = JSON.stringify({
+    filters: filterValues,
+    refresh: chartRefreshKeys?.[widget.id] ?? 0,
+  });
   const updateWidget = (widgetId: string, patch: Partial<LayoutWidget>) => {
     setWidgets((previous) =>
       previous.map((item) =>
@@ -86,11 +95,17 @@ export function DashboardCanvasWidgetRenderer({
       setWidgets={setWidgets}
       nested
       shell={shell}
+      dashboardStyle={dashboardStyle}
+      chartRefreshKeys={chartRefreshKeys}
     />
   );
 
   return (
-    <DashboardWidget
+    <WidgetErrorBoundary
+      widgetTitle={widget.title}
+      onDelete={mode === "edit" ? () => onDelete(widget.id) : undefined}
+    >
+      <DashboardWidget
       widget={widget}
       mode={mode}
       shell={shell}
@@ -130,6 +145,8 @@ export function DashboardCanvasWidgetRenderer({
       onTextConfigChange={(widgetId, textConfig) =>
         updateWidget(widgetId, { textConfig })
       }
+      dashboardStyle={dashboardStyle}
     />
+    </WidgetErrorBoundary>
   );
 }

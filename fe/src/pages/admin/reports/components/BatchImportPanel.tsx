@@ -109,7 +109,7 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
         ) : null}
 
         {preview.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-only rounded-lg border border-gray-200 dark:border-gray-800">
             <Table>
               <TableHeader>
                 <TableRow>

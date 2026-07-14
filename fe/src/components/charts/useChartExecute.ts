@@ -17,6 +17,7 @@ const SLOW_THRESHOLD_MS = 3000;
 type ChartExecuteOptions = {
   filterParameters?: Record<string, string>;
   executeKey?: string;
+  limit?: number;
 };
 
 export function mapChartQueryError(code: string | undefined, message: string): string {
@@ -33,7 +34,7 @@ export function mapChartQueryError(code: string | undefined, message: string): s
 }
 
 export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOptions = {}) {
-  const { filterParameters, executeKey } = options;
+  const { filterParameters, executeKey, limit } = options;
   const [columns, setColumns] = useState<string[]>([]);
   const [rows, setRows] = useState<(string | number | boolean | null)[][]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,8 +43,10 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
 
   const configRef = useRef(config);
   const filterRef = useRef(filterParameters);
+  const limitRef = useRef(limit);
   configRef.current = config;
   filterRef.current = filterParameters;
+  limitRef.current = limit;
 
   const requestKey = chartExecuteRequestKey(config, filterParameters);
 
@@ -62,7 +65,10 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
         return;
       }
 
-      const data = await fetchChartExecuteResult(activeConfig, { filterParameters: activeFilters });
+      const data = await fetchChartExecuteResult(activeConfig, {
+        filterParameters: activeFilters,
+        limit: limitRef.current,
+      });
       setColumns(data.columns);
       setRows(data.rows);
       setSlowHint(Date.now() - started > SLOW_THRESHOLD_MS);

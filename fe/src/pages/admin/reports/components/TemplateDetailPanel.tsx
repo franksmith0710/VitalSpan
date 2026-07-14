@@ -92,7 +92,7 @@ export function TemplateDetailPanel({ node, readOnly }: { node: CatalogNode; rea
 
       <div className="flex-1 p-6 pt-4">
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsList className="w-full justify-start overflow-x-only">
             <TabsTrigger value="basic">基本信息</TabsTrigger>
             <TabsTrigger value="blocks">模板块</TabsTrigger>
             <TabsTrigger value="extension">扩展配置</TabsTrigger>

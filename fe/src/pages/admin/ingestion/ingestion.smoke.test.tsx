@@ -566,7 +566,7 @@ describe("ingestion admin smoke", () => {
       </MemoryRouter>,
     );
     await screen.findByText("加载历史失败");
-    const errorBanner = container.querySelector(".border-error-500");
+    const errorBanner = document.body.querySelector(".border-error-500");
     expect(errorBanner).toBeTruthy();
     const errorText = errorBanner?.querySelector("p");
     expect(errorText?.className).toMatch(/text-error-700|text-error-400/);
