@@ -19,6 +19,7 @@
 | DropdownMenu | `ui/dropdown-menu.tsx` | 下拉菜单（Radix） |
 | Avatar | `ui/avatar.tsx` | 用户头像 |
 | AlertDialog | `ui/alert-dialog.tsx` | 破坏性操作确认 |
+| RouteErrorBoundary / AppErrorBoundary | `ui/route-error-boundary.tsx` | 路由/应用级渲染异常隔离，防止整页 `#root` 空白 |
 | FormContext | `ui/form-context.tsx` | Input 皮肤上下文 |
 | AppSidebar | `layout/app-sidebar.tsx` | Admin 侧栏 290px；分组分隔、激活指示条 |
 | AppHeader | `layout/app-header.tsx` | sticky 顶栏 72px：侧栏切换 + 可选 `leading` + `actions` |

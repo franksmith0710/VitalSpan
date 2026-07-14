@@ -38,6 +38,8 @@ import {
   type PixelRect,
 } from "@/components/dashboard/pixelCanvas";
 import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
+import { cloneLayoutWidget } from "@/components/dashboard/cloneLayoutWidget";
+import type { PixelWidgetActions } from "@/components/dashboard/pixelCanvas/PixelShapeActionRail";
 import {
   normalizeWidgetLayout,
   placeNewWidget,
@@ -408,6 +410,52 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     removeFromSelection([widgetId]);
   };
 
+  const handleCopyWidget = useCallback(
+    (widgetId: string) => {
+      if (!canSave) return;
+      const source = widgets.find((w) => w.id === widgetId);
+      if (!source) return;
+      const sourcePixel =
+        layout.version === 2 ? layout.widgets.find((w) => w.id === widgetId) : undefined;
+      appendClonedWidget(cloneLayoutWidget(source, widgets), sourcePixel);
+    },
+    [canSave, widgets, layout, appendClonedWidget],
+  );
+
+  const handleEnlargeWidget = useCallback(
+    (widgetId: string) => {
+      if (!canSave || layout.version !== 2) return;
+      const target = layout.widgets.find((w) => w.id === widgetId);
+      if (!target) return;
+      setPixelLayout({
+        ...layout,
+        widgets: layout.widgets.map((w) =>
+          w.id === widgetId
+            ? {
+                ...w,
+                width: Math.min(layout.canvas.width - w.x, Math.round(w.width * 1.25)),
+                height: Math.round(w.height * 1.25),
+              }
+            : w,
+        ),
+      });
+    },
+    [canSave, layout, setPixelLayout],
+  );
+
+  const pixelWidgetActions = useMemo<PixelWidgetActions>(
+    () => ({
+      onCopy: handleCopyWidget,
+      onDelete: handleDeleteWidget,
+      onEnlarge: handleEnlargeWidget,
+      onViewData: (widgetId) => {
+        const target = widgets.find((item) => item.id === widgetId);
+        if (target?.type === "chart") handleChartDataRefresh(widgetId);
+      },
+    }),
+    [handleCopyWidget, handleDeleteWidget, handleEnlargeWidget, handleChartDataRefresh, widgets],
+  );
+
   const handleBatchDelete = () => {
     if (!canSave) return;
     const ids = [...selectedIds];
@@ -580,7 +628,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   return (
     <AdminPageShell
-      layout={mode === "edit" ? "fill" : "default"}
+      layout="fill"
       title={pageTitle}
       titleUnwrapped={titleUnwrapped}
       description={
@@ -719,6 +767,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               onDropInsert={handleDropInsert}
               onPaletteDrop={handlePaletteDrop}
               onViewportChange={setPixelViewport}
+              widgetActions={layout.version === 2 && canSave ? pixelWidgetActions : undefined}
             />
           }
           chartRail={

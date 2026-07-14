@@ -6,7 +6,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
-import { GripVertical, MoreHorizontal } from "lucide-react";
+import { GripVertical } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
@@ -21,6 +21,7 @@ import {
   type ResizeDirection,
 } from "./geometry";
 import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
+import { PixelShapeActionRail, type PixelWidgetActions } from "./PixelShapeActionRail";
 
 type ActiveInteraction = {
   pointerId: number;
@@ -40,7 +41,8 @@ type PixelShapeProps = {
   onPreview?: (widget: PixelLayoutWidget) => void;
   onCommit?: (widget: PixelLayoutWidget) => void;
   onCancel?: (widgetId: string) => void;
-  onMore?: (widgetId: string) => void;
+  viewport?: PixelRect;
+  widgetActions?: PixelWidgetActions;
 };
 
 const HANDLE_POSITION: Record<ResizeDirection, string> = {
@@ -105,7 +107,8 @@ export function PixelShape({
   onPreview,
   onCommit,
   onCancel,
-  onMore,
+  viewport,
+  widgetActions,
 }: PixelShapeProps) {
   const outerRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<ActiveInteraction | null>(null);
@@ -247,20 +250,15 @@ export function PixelShape({
         >
           <GripVertical className="size-4 shrink-0 opacity-70" aria-hidden />
           <span className="min-w-0 flex-1 truncate">{widget.title}</span>
-          {onMore ? (
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="size-6 shrink-0 text-brand-700 dark:text-brand-300"
-              aria-label="更多操作"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={() => onMore(widget.id)}
-            >
-              <MoreHorizontal className="size-3.5" aria-hidden />
-            </IconButton>
-          ) : null}
         </div>
+      ) : null}
+      {mode === "edit" && selected && widgetActions && viewport ? (
+        <PixelShapeActionRail
+          widget={widget}
+          scale={scale}
+          viewport={viewport}
+          actions={widgetActions}
+        />
       ) : null}
       <PixelShapeInteractionProvider value={startInteraction}>
         <div

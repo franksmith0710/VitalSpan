@@ -3,6 +3,7 @@ import { DashboardLayoutPreview } from "../DashboardLayoutPreview";
 import type { Linkage } from "../dashboardFilterUtils";
 import type { DashboardCanvasEditor } from "../dashboardCanvasMode";
 import { PixelCanvas, type PixelRect } from "../pixelCanvas";
+import type { PixelWidgetActions } from "../pixelCanvas/PixelShapeActionRail";
 import {
   sortWidgets,
   type DashboardLayout,
@@ -39,6 +40,7 @@ type DashboardEditCanvasProps = {
   onDropInsert: (type: PaletteInsertType, at: GridInsertAt) => void;
   onPaletteDrop?: (type: PaletteDragPayload, point: { x: number; y: number }) => void;
   onViewportChange: (viewport: PixelRect) => void;
+  widgetActions?: PixelWidgetActions;
 };
 
 export function DashboardEditCanvas({
@@ -61,17 +63,23 @@ export function DashboardEditCanvas({
   onDropInsert,
   onPaletteDrop,
   onViewportChange,
+  widgetActions,
 }: DashboardEditCanvasProps) {
   if (mode === "view" || editor === "pixel-readonly") {
     return (
-      <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
-        <DashboardLayoutPreview
-          layout={layout}
-          linkage={linkage}
-          filterValues={filterValues}
-          onFilterValueChange={mode === "view" ? onFilterValueChange : undefined}
-        />
-      </div>
+      <DashboardStyleSurface styleConfig={styleConfig} className="flex min-h-0 flex-1 flex-col">
+        <div className="dashboard-canvas-surface min-h-0 flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/60 p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
+          <DashboardLayoutPreview
+            layout={layout}
+            linkage={linkage}
+            filterValues={filterValues}
+            onFilterValueChange={mode === "view" ? onFilterValueChange : undefined}
+            scaleMode={styleConfig.scaleMode}
+            pixelGutter={resolvePixelGutter(styleConfig)}
+            className="h-full min-h-0"
+          />
+        </div>
+      </DashboardStyleSurface>
     );
   }
 
@@ -108,6 +116,7 @@ export function DashboardEditCanvas({
           onLayoutChange={setPixelLayout}
           onViewportChange={onViewportChange}
           onPaletteDrop={onPaletteDrop}
+          widgetActions={widgetActions}
           renderWidget={(widget) => (
             <DashboardCanvasWidgetRenderer
               widget={widget}

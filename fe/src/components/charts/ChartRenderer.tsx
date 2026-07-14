@@ -63,24 +63,15 @@ function embeddedStateMessage(className: string, children: ReactNode) {
   );
 }
 
-function resolveEmbeddedChartSize(
+function embeddedBodyHeight(
   bodySize: { width: number; height: number },
   pixelSize: { width: number; height: number } | undefined,
   contentChromePx: number,
   gridSpan: { w: number; h: number } | undefined,
-): { width: number; height: number } {
-  const measuredHeight = bodySize.height > 0 ? bodySize.height : 0;
-  const pixelHeight = pixelSize
-    ? Math.max(48, pixelSize.height - contentChromePx)
-    : 0;
+): number {
+  const pixelHeight = pixelSize ? Math.max(48, pixelSize.height - contentChromePx) : 0;
   const fallbackHeight = gridSpan?.h ? estimateWidgetBodyHeight(gridSpan.h) : 120;
-  const height = Math.max(64, measuredHeight || pixelHeight || fallbackHeight);
-
-  const measuredWidth = bodySize.width > 0 ? bodySize.width : 0;
-  const pixelWidth = pixelSize?.width ?? 0;
-  const width = Math.max(80, measuredWidth || pixelWidth || 240);
-
-  return { width, height };
+  return Math.max(64, bodySize.height, pixelHeight, fallbackHeight);
 }
 
 export function ChartRenderer({
@@ -98,20 +89,21 @@ export function ChartRenderer({
   paletteColors,
 }: ChartRendererProps) {
   const { ref: bodyRef, size: bodySize } = useElementSize<HTMLDivElement>(embedded);
-  const chartSize = useMemo(() => {
-    if (!embedded) {
-      return { width: bodySize.width || undefined, height: Math.max(180, bodySize.height || 180) };
-    }
-    return resolveEmbeddedChartSize(bodySize, pixelSize, contentChromePx, gridSpan);
+  const fillHeight = useMemo(() => {
+    if (!embedded) return Math.max(180, bodySize.height || 180);
+    return embeddedBodyHeight(bodySize, pixelSize, contentChromePx, gridSpan);
   }, [
     embedded,
-    bodySize.width,
     bodySize.height,
     pixelSize?.width,
     pixelSize?.height,
     contentChromePx,
     gridSpan?.h,
   ]);
+  const chartSize = useMemo(() => {
+    if (embedded) return { width: undefined as number | undefined, height: fillHeight };
+    return { width: bodySize.width || undefined, height: fillHeight };
+  }, [embedded, bodySize.width, fillHeight]);
   const { columns, rows, loading, error, slowHint, rerun } = useChartExecute(config, {
     filterParameters,
     executeKey,
@@ -176,8 +168,9 @@ export function ChartRenderer({
           rows={rows as unknown[][]}
           columns={columns}
           ariaLabel={title}
-          height={chartSize.height}
-          width={chartSize.width}
+          fill={embedded}
+          height={embedded ? undefined : chartSize.height}
+          width={embedded ? undefined : chartSize.width}
         />
       );
     }
@@ -200,8 +193,9 @@ export function ChartRenderer({
           rows={rows as unknown[][]}
           columns={columns}
           ariaLabel={title}
-          height={chartSize.height}
-          width={chartSize.width}
+          fill={embedded}
+          height={embedded ? undefined : chartSize.height}
+          width={embedded ? undefined : chartSize.width}
         />
       );
     }
@@ -308,9 +302,9 @@ export function ChartRenderer({
 
     const { categories, series, chartType } = renderModel;
     let options: ApexOptions;
-    const compactEmbedded = embedded && chartSize.height < 160;
+    const compactEmbedded = embedded && fillHeight < 160;
     const apexChart: ApexOptions["chart"] = {
-      height: chartSize.height,
+      ...(embedded ? {} : { height: chartSize.height }),
       redrawOnParentResize: true,
       redrawOnWindowResize: true,
       animations: embedded ? { enabled: false } : undefined,
@@ -339,17 +333,14 @@ export function ChartRenderer({
       options = createBarChartOptions(categories, apexOverrides);
     }
     return (
-      <div
-        ref={embedded ? bodyRef : undefined}
-        className="h-full min-h-0 w-full overflow-hidden"
-      >
+      <div className="h-full min-h-0 w-full min-w-0 overflow-hidden">
         <Chart
-          key={`${chartType}-${series.map((s) => s.name).join(",")}-${series[0]?.data.length ?? 0}`}
+          key={`${chartType}-${series.map((s) => s.name).join(",")}-${series[0]?.data.length ?? 0}-${embedded ? `${bodySize.width}x${bodySize.height}` : "panel"}`}
           options={options}
           series={series}
           type={chartType}
-          height={chartSize.height}
-          width={chartSize.width}
+          height={embedded ? "100%" : chartSize.height}
+          width={embedded ? "100%" : chartSize.width}
         />
       </div>
     );
@@ -372,7 +363,7 @@ export function ChartRenderer({
           onChange={setLocalConfig}
         />
       ) : null}
-      <div className={embedded ? "min-h-0 flex-1 overflow-hidden" : undefined}>
+      <div className={embedded ? "min-h-0 flex-1 overflow-hidden h-full w-full" : undefined}>
         {renderBody()}
       </div>
     </div>
@@ -380,7 +371,7 @@ export function ChartRenderer({
 
   if (embedded) {
     return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div ref={bodyRef} className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden">
         {loading ? (
           <Skeleton className="min-h-[120px] w-full flex-1 rounded-lg" aria-busy="true" aria-label="图表加载中" />
         ) : error ? (

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import { getEchartsTheme } from "@/lib/echarts-theme";
+import { cn } from "@/lib/utils";
 import {
   ADVANCED_CHART_ROW_CAP,
   buildEchartsOption,
@@ -14,6 +15,8 @@ type Props = {
   columns: string[];
   ariaLabel: string;
   isDark?: boolean;
+  /** 填满父容器（看板 widget 内嵌） */
+  fill?: boolean;
   height?: number;
   width?: number;
 };
@@ -24,6 +27,7 @@ export function AdvancedEchartsChart({
   columns,
   ariaLabel,
   isDark = false,
+  fill = false,
   height = 180,
   width,
 }: Props) {
@@ -43,15 +47,21 @@ export function AdvancedEchartsChart({
       (option as { series?: unknown[] }).series!.length === 0);
 
   return (
-    <div className="h-full min-h-[120px] w-full" aria-label={ariaLabel}>
+    <div
+      className={cn("w-full", fill ? "flex h-full min-h-0 flex-col" : "min-h-[120px]")}
+      aria-label={ariaLabel}
+    >
       {truncated ? (
-        <p role="status" className="mb-2 text-theme-xs text-warning-600 dark:text-warning-400">
+        <p role="status" className="mb-2 shrink-0 text-theme-xs text-warning-600 dark:text-warning-400">
           数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条
         </p>
       ) : null}
       {isEmpty ? (
         <div
-          className="flex min-h-[180px] items-center justify-center text-theme-xs text-gray-400 dark:text-gray-500"
+          className={cn(
+            "flex items-center justify-center text-theme-xs text-gray-400 dark:text-gray-500",
+            fill ? "min-h-0 flex-1" : "min-h-[180px]",
+          )}
           role="status"
           aria-label="暂无数据"
         >
@@ -61,7 +71,7 @@ export function AdvancedEchartsChart({
         <ReactECharts
           option={option}
           theme={theme}
-          style={{ height, width: width ?? "100%" }}
+          style={fill ? { height: "100%", width: "100%", minHeight: 0 } : { height, width: width ?? "100%" }}
           opts={{ renderer: "canvas" }}
           data-testid="echarts-chart"
         />

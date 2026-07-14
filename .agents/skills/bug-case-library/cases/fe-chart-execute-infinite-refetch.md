@@ -36,6 +36,36 @@ Hook 中不要把「每次 render 新建的对象」直接放进 effect 依赖�
 
 ---
 
+# FE 预览页像素画布无限放大（ResizeObserver 正反馈）
+
+## 症状
+
+- 看板**预览**（`/admin/dashboards/:id`）画布区域宽度/高度持续膨胀（可达数万 px）
+- 表格等宽内容渲染后画布越撑越大，无法稳定阅读
+
+## 根因
+
+1. 预览路由未纳入 `isFillHeightRoute`，`main` 使用 `overflow-y-auto` + `[&>*]:shrink-0`，页面随内容无限增高
+2. 预览 `DashboardEditCanvas` 缺少 `dashboard-canvas-surface overflow-hidden` 稳定壳层
+3. `PixelCanvas` 的 `ResizeObserver` 量到**随内容撑大的父节点**（如 `rounded-2xl` 包裹层）→ `scale = parentWidth / 1440` 随 parent 增大而增大 → 正反馈
+
+## 修复
+
+1. `AdminLayout`：`/admin/dashboards/:id` 预览路由同样走 fill 高度布局
+2. `DashboardEditPage`：预览/编辑均 `layout="fill"`
+3. 预览画布外包 `dashboard-canvas-surface min-h-0 overflow-hidden`
+4. `resolvePixelCanvasMeasureElement()` 向上查找 `dashboard-canvas-surface` 或 `overflow:hidden` 祖先作为测量基准
+
+## 锚点
+
+- `fe/src/layouts/AdminLayout.tsx`
+- `fe/src/components/dashboard/dashboard-edit/DashboardEditCanvas.tsx`
+- `fe/src/components/dashboard/pixelCanvas/geometry.ts` — `resolvePixelCanvasMeasureElement`
+- `fe/src/components/dashboard/pixelCanvas/PixelCanvas.tsx`
+- 回归：`fe/src/components/dashboard/pixelCanvas/geometry.test.ts`
+
+---
+
 # FE 像素画布滚动条频闪（ResizeObserver ↔ scrollbar 死循环）
 
 ## 症状

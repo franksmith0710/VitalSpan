@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -116,9 +117,9 @@ export function FilterControl({
                   <Checkbox
                     checked={checked}
                     disabled={disabled}
-                    onCheckedChange={(next) => {
+                    onCheckedChange={(next: boolean | "indeterminate") => {
                       const set = new Set(selected);
-                      if (next) set.add(opt.value);
+                      if (next === true) set.add(opt.value);
                       else set.delete(opt.value);
                       onChange(joinMulti([...set]));
                     }}

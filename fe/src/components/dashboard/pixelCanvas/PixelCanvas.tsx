@@ -22,8 +22,9 @@ import type {
 import type { ScaleMode } from "../dashboardStyleConfig";
 import { resolvePixelCollisions } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
-import { clientPointToCanvas, scaledCanvasMetrics } from "./geometry";
+import { clientPointToCanvas, resolvePixelCanvasMeasureElement, scaledCanvasMetrics } from "./geometry";
 import { PixelShape } from "./PixelShape";
+import type { PixelWidgetActions } from "./PixelShapeActionRail";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
 
 type PixelCanvasProps = {
@@ -36,7 +37,7 @@ type PixelCanvasProps = {
   onLayoutChange?: (layout: DashboardLayoutV2) => void;
   onViewportChange?: (viewport: PixelRect) => void;
   onPaletteDrop?: (type: PaletteDragPayload, point: { x: number; y: number }) => void;
-  onMore?: (widgetId: string) => void;
+  widgetActions?: PixelWidgetActions;
   className?: string;
   scaleMode?: ScaleMode;
   pixelGutter?: number;
@@ -100,7 +101,7 @@ export function PixelCanvas({
   onLayoutChange,
   onViewportChange,
   onPaletteDrop,
-  onMore,
+  widgetActions,
   className,
   scaleMode = "canvas",
   pixelGutter = PIXEL_CANVAS_GUTTER,
@@ -110,6 +111,12 @@ export function PixelCanvas({
   const [contentSize, setContentSize] = useState({ width: 0, height: 0 });
   const [previewLayout, setPreviewLayout] = useState<DashboardLayoutV2 | null>(null);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
+  const [visibleViewport, setVisibleViewport] = useState<PixelRect>({
+    x: 0,
+    y: 0,
+    width: layout.canvas.width,
+    height: layout.canvas.height,
+  });
   const activeLayout = previewLayout ?? layout;
   const viewCanvasHeight = useMemo(() => {
     const lowest = activeLayout.widgets.reduce(
@@ -126,9 +133,7 @@ export function PixelCanvas({
   useLayoutEffect(() => {
     const host = hostRef.current;
     if (!host) return;
-    const parent = host.parentElement;
-    const measureEl =
-      parent && parent.clientWidth > 0 && parent.clientHeight > 0 ? parent : host;
+    const measureEl = resolvePixelCanvasMeasureElement(host);
     const update = () => {
       const metrics = scaledCanvasMetrics(
         measureEl.clientWidth,
@@ -148,6 +153,7 @@ export function PixelCanvas({
           : { width: metrics.contentWidth, height: metrics.contentHeight },
       );
       onViewportChange?.(visibleCanvasViewport(host, metrics.scale, viewCanvas));
+      setVisibleViewport(visibleCanvasViewport(host, metrics.scale, viewCanvas));
     };
     update();
     const observer = new ResizeObserver(update);
@@ -228,7 +234,9 @@ export function PixelCanvas({
       data-pixel-canvas-scale={scale}
       style={{ "--pixel-canvas-scale": scale } as CSSProperties}
       onScroll={(event) => {
-        onViewportChange?.(visibleCanvasViewport(event.currentTarget, scale, viewCanvas));
+        const next = visibleCanvasViewport(event.currentTarget, scale, viewCanvas);
+        onViewportChange?.(next);
+        setVisibleViewport(next);
       }}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) onClearSelection?.();
@@ -273,7 +281,8 @@ export function PixelCanvas({
                 onPreview={handlePreview}
                 onCommit={handleCommit}
                 onCancel={handleCancel}
-                onMore={onMore}
+                viewport={visibleViewport}
+                widgetActions={widgetActions}
               >
                 {renderWidget(widget)}
               </PixelShape>

@@ -96,6 +96,50 @@ export function scaledCanvasMetrics(
   };
 }
 
+export function resolvePixelCanvasMeasureElement(host: HTMLElement): HTMLElement {
+  let node: HTMLElement | null = host.parentElement;
+  while (node) {
+    if (node.classList.contains("dashboard-canvas-surface")) {
+      return node;
+    }
+    const style = getComputedStyle(node);
+    if (
+      style.overflow === "hidden" ||
+      style.overflowX === "hidden" ||
+      style.overflowY === "hidden"
+    ) {
+      if (node.clientWidth > 0 && node.clientHeight > 0) return node;
+    }
+    node = node.parentElement;
+  }
+  return host;
+}
+
+/** 侧栏工具条屏幕宽度（px），用于左右翻转判定 */
+export const SHAPE_ACTION_RAIL_SCREEN_WIDTH = 32;
+export const SHAPE_ACTION_RAIL_SCREEN_GAP = 8;
+export const SHAPE_ACTION_MENU_SCREEN_WIDTH = 168;
+
+/** 根据组件在可视区域内的位置，决定 DE 风格操作条在左侧或右侧 */
+export function resolveShapeActionRailSide(
+  widget: Pick<PixelRect, "x" | "width">,
+  viewport: Pick<PixelRect, "x" | "width">,
+  scale: number,
+): "left" | "right" {
+  const safeScale = scale > 0 ? scale : 1;
+  const railCanvas = (SHAPE_ACTION_RAIL_SCREEN_WIDTH + SHAPE_ACTION_RAIL_SCREEN_GAP) / safeScale;
+  const menuCanvas = SHAPE_ACTION_MENU_SCREEN_WIDTH / safeScale;
+  const rightEdge = widget.x + widget.width;
+  const viewportRight = viewport.x + viewport.width;
+
+  if (rightEdge + railCanvas + menuCanvas <= viewportRight + 0.5) return "right";
+  if (widget.x - railCanvas - menuCanvas >= viewport.x - 0.5) return "left";
+
+  const spaceRight = viewportRight - rightEdge;
+  const spaceLeft = widget.x - viewport.x;
+  return spaceRight >= spaceLeft ? "right" : "left";
+}
+
 export function clientPointToCanvas(
   host: Pick<HTMLElement, "getBoundingClientRect" | "scrollLeft" | "scrollTop">,
   clientX: number,

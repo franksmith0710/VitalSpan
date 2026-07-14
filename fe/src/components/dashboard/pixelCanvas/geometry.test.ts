@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   applyPixelInteraction,
   RESIZE_CURSORS,
+  resolvePixelCanvasMeasureElement,
+  resolveShapeActionRailSide,
   scaledCanvasMetrics,
   screenDeltaToCanvas,
   type PixelRect,
@@ -106,5 +108,34 @@ describe("pixel canvas geometry", () => {
         height: 900,
       }),
     ).toEqual({ x: 280, y: 200, width: 120, height: 80 });
+  });
+
+  it("prefers dashboard-canvas-surface as the stable measure element", () => {
+    const surface = document.createElement("div");
+    surface.className = "dashboard-canvas-surface";
+    Object.defineProperty(surface, "clientWidth", { value: 960 });
+    Object.defineProperty(surface, "clientHeight", { value: 540 });
+
+    const growing = document.createElement("div");
+    Object.defineProperty(growing, "clientWidth", { value: 23098 });
+    Object.defineProperty(growing, "clientHeight", { value: 19561 });
+    surface.appendChild(growing);
+
+    const host = document.createElement("div");
+    growing.appendChild(host);
+
+    expect(resolvePixelCanvasMeasureElement(host)).toBe(surface);
+  });
+
+  it("places action rail on the right when space allows", () => {
+    expect(
+      resolveShapeActionRailSide({ x: 100, width: 300 }, { x: 0, width: 1440 }, 1),
+    ).toBe("right");
+  });
+
+  it("flips action rail to the left near the right viewport edge", () => {
+    expect(
+      resolveShapeActionRailSide({ x: 1200, width: 300 }, { x: 0, width: 1440 }, 1),
+    ).toBe("left");
   });
 });

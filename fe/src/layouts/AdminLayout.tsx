@@ -17,6 +17,7 @@ import { isAccountManagementPath } from "@/lib/workspace";
 import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { isAdminListFillRoute } from "@/lib/admin-layout-routes";
 import { useAuth } from "@/context/auth-context";
+import { RouteErrorBoundary } from "@/components/ui/route-error-boundary";
 
 function AdminLayoutContent() {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -31,7 +32,9 @@ function AdminLayoutContent() {
     [sessionUser, location.pathname],
   );
   const isChartTypesFill = Boolean(useMatch(CHART_TYPES_CATALOG_PATH));
-  const isDashboardEditFill = Boolean(useMatch("/admin/dashboards/:id/edit"));
+  const isDashboardEditFill = Boolean(
+    useMatch("/admin/dashboards/:id/edit") || useMatch("/admin/dashboards/:id"),
+  );
   const isListFillRoute = isAdminListFillRoute(location.pathname);
   const isFillHeightRoute = isChartTypesFill || isDashboardEditFill || isListFillRoute;
 
@@ -70,7 +73,9 @@ function AdminLayoutContent() {
               : "overflow-y-auto p-4 pb-20 md:p-6 md:pb-24 [&>*]:shrink-0",
           )}
         >
-          <Outlet />
+          <RouteErrorBoundary>
+            <Outlet />
+          </RouteErrorBoundary>
         </main>
       </div>
     </div>

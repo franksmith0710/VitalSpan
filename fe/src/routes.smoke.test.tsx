@@ -312,4 +312,18 @@ describe("AppRoutes smoke", () => {
       expect(href).not.toBe("");
     }
   });
+
+  it("T-NAV-01: dashboards and datasources routes both keep admin shell mounted", async () => {
+    setDesktopViewport();
+    mockApiFetch.mockResolvedValue({ items: [] });
+
+    renderRoutes(["/admin/dashboards"]);
+    expect(await screen.findByRole("heading", { name: "数据看板" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "管理端导航" })).toBeInTheDocument();
+
+    cleanup();
+    renderRoutes(["/admin/datasources"]);
+    expect(await screen.findByRole("heading", { name: "数据源" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "管理端导航" })).toBeInTheDocument();
+  });
 });

@@ -6,6 +6,8 @@ import {
 } from "./dashboardFilterUtils";
 import { pixelWidgetToLayoutWidget, type DashboardWidgetShell } from "./dashboardCanvasMode";
 import { PixelCanvas } from "./pixelCanvas";
+import type { ScaleMode } from "./dashboardStyleConfig";
+import { resolvePixelGutter } from "./dashboardStyleConfig";
 import type {
   DashboardLayout,
   LayoutWidget,
@@ -17,6 +19,8 @@ type DashboardLayoutPreviewProps = {
   linkage?: Linkage | null;
   filterValues?: Record<string, string>;
   onFilterValueChange?: (filterId: string, value: string) => void;
+  scaleMode?: ScaleMode;
+  pixelGutter?: number;
   className?: string;
 };
 
@@ -25,6 +29,8 @@ export function DashboardLayoutPreview({
   linkage = null,
   filterValues = {},
   onFilterValueChange,
+  scaleMode,
+  pixelGutter,
   className,
 }: DashboardLayoutPreviewProps) {
   const widgets =
@@ -74,6 +80,8 @@ export function DashboardLayoutPreview({
       <PixelCanvas
         mode="view"
         layout={layout}
+        scaleMode={scaleMode}
+        pixelGutter={pixelGutter ?? resolvePixelGutter({})}
         className={className}
         renderWidget={(widget: PixelLayoutWidget) =>
           renderWidget(pixelWidgetToLayoutWidget(widget), undefined, "shape")
