@@ -144,11 +144,8 @@ export function DashboardListCard({
                     </Link>
                   </DropdownMenuItem>
                   {onDelete ? (
-                    <DropdownMenuItem
-                      className="gap-2 text-error-600 focus:text-error-600 dark:text-error-400"
-                      onClick={onDelete}
-                    >
-                      <Trash2 className="size-4" />
+                    <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                      <Trash2 className="size-4" aria-hidden />
                       删除
                     </DropdownMenuItem>
                   ) : null}

@@ -791,7 +791,7 @@ describe("dashboard admin smoke", () => {
       };
     });
     renderEditPage();
-    expect(await screen.findByDisplayValue("待删看板")).toBeInTheDocument();
+    expect(await screen.findByText("待删看板")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "删除看板" }));
     await user.click(screen.getByRole("button", { name: "删除" }));
     expect(await screen.findByText("看板列表页")).toBeInTheDocument();

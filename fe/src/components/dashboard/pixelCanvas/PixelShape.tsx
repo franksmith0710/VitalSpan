@@ -21,6 +21,7 @@ import {
   type PixelRect,
   type ResizeDirection,
 } from "./geometry";
+import { computeMarkLineSnap, markLineThreshold, type MarkLineGuide } from "./pixelMarkLine";
 import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
 import { PixelShapeActionRail, type PixelWidgetActions } from "./PixelShapeActionRail";
 
@@ -42,7 +43,10 @@ type PixelShapeProps = {
   onPreview?: (widget: PixelLayoutWidget) => void;
   onCommit?: (widget: PixelLayoutWidget) => void;
   onCancel?: (widgetId: string) => void;
+  onMarkGuidesChange?: (guides: MarkLineGuide[] | null) => void;
   viewport?: PixelRect;
+  /** 已提交 layout 中的邻组件，供 mark-line 吸附锚点（不随 preview 推挤跳动） */
+  snapTargets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   otherWidgets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   widgetActions?: PixelWidgetActions;
 };
@@ -109,7 +113,9 @@ export function PixelShape({
   onPreview,
   onCommit,
   onCancel,
+  onMarkGuidesChange,
   viewport,
+  snapTargets,
   otherWidgets,
   widgetActions,
 }: PixelShapeProps) {
@@ -150,7 +156,18 @@ export function PixelShape({
         active.kind,
       ),
     );
-    return next;
+    if (!onMarkGuidesChange) return next;
+    const markTargets = snapTargets ?? otherWidgets ?? [];
+    const snapped = computeMarkLineSnap(next, markTargets, {
+      threshold: markLineThreshold(scale),
+      dragDir: {
+        isRightward: event.clientX >= active.startClient.x,
+        isDownward: event.clientY >= active.startClient.y,
+      },
+      canvas,
+    });
+    onMarkGuidesChange(snapped.guides.length > 0 ? snapped.guides : null);
+    return snapped.rect;
   };
 
   const startInteraction = (
@@ -185,6 +202,7 @@ export function PixelShape({
       : widgetRect(widget);
     activeRef.current = null;
     setHint(null);
+    onMarkGuidesChange?.(null);
     setDisplayRect(finalRect);
     if (outerRef.current?.hasPointerCapture(event.pointerId)) {
       outerRef.current.releasePointerCapture(event.pointerId);
@@ -228,10 +246,9 @@ export function PixelShape({
       }}
       onPointerMove={(event) => {
         const next = rectForEvent(event);
-        if (next) {
-          setDisplayRect(next);
-          onPreview?.(withRect(widget, next));
-        }
+        if (!next) return;
+        setDisplayRect(next);
+        onPreview?.(withRect(widget, next));
       }}
       onPointerUp={(event) => finish(event, true)}
       onPointerCancel={(event) => finish(event, false)}

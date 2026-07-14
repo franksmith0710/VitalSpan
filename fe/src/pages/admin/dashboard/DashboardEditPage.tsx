@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { Redo2, Undo2 } from "lucide-react";
+import { ChevronLeft, Redo2, Trash2, Undo2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ import {
 } from "@/components/dashboard/layoutUtils";
 import {
   buildDashboardLayoutForSave,
+  dashboardPersistFingerprint,
   isPixelCanvasEnabled,
   mergeLayoutWidgetIntoPixel,
   pixelWidgetToLayoutWidget,
@@ -61,7 +62,6 @@ import { TextEditRail } from "@/components/dashboard/TextEditRail";
 import { MediaWidgetInspector } from "@/components/dashboard/MediaWidgetInspector";
 import { TabsWidgetInspector } from "@/components/dashboard/TabsWidgetInspector";
 import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
-import { DashboardStyleDialog } from "@/components/dashboard/DashboardStyleDialog";
 import { WidgetEnlargeDialog } from "@/components/dashboard/widget-actions/WidgetEnlargeDialog";
 import { WidgetViewDataDialog } from "@/components/dashboard/widget-actions/WidgetViewDataDialog";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -69,7 +69,7 @@ import { DashboardInlineTitle } from "@/components/dashboard/DashboardInlineTitl
 import { useDashboardCanvasState } from "@/hooks/useDashboardCanvasState";
 import { useWidgetSelection } from "@/hooks/useWidgetSelection";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -136,9 +136,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [styleConfig, setStyleConfig] = useState<DashboardStyleConfig>({});
-  const [savedStyleConfig, setSavedStyleConfig] = useState<DashboardStyleConfig>({});
   const [reuseOpen, setReuseOpen] = useState(false);
-  const [styleOpen, setStyleOpen] = useState(false);
   const [linkagePanelOpen, setLinkagePanelOpen] = useState(false);
   const [chartRailOpen, setChartRailOpen] = useState(true);
   const [chartRefreshKeys, setChartRefreshKeys] = useState<Record<string, number>>({});
@@ -194,8 +192,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       );
       resetLayout(source);
       setStyleConfig(source.styleConfig ?? {});
-      setSavedStyleConfig(source.styleConfig ?? {});
-      setSavedFingerprint(JSON.stringify(prepared.layout));
+      setSavedFingerprint(
+        dashboardPersistFingerprint(
+          prepared.layout,
+          source.styleConfig ?? {},
+          mode === "edit" ? pixelEnabled : false,
+        ),
+      );
       setLinkage(loadedLinkage);
       setPixelViewport(undefined);
       clearSelection();
@@ -242,9 +245,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const isDirty = useMemo(() => {
     if (missing || savedFingerprint === null) return false;
-    const styleDirty = JSON.stringify(styleConfig) !== JSON.stringify(savedStyleConfig);
-    return JSON.stringify(layout) !== savedFingerprint || name.trim() !== savedName || styleDirty;
-  }, [missing, savedFingerprint, layout, name, savedName, styleConfig, savedStyleConfig]);
+    return (
+      dashboardPersistFingerprint(layout, styleConfig, pixelEnabled) !== savedFingerprint ||
+      name.trim() !== savedName
+    );
+  }, [missing, savedFingerprint, layout, styleConfig, pixelEnabled, name, savedName]);
 
   isDirtyRef.current = isDirty;
 
@@ -561,8 +566,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       }
 
       resetLayout(normalizedLayout);
-      setSavedStyleConfig(styleConfig);
-      setSavedFingerprint(JSON.stringify(normalizedLayout));
+      setSavedFingerprint(
+        dashboardPersistFingerprint(normalizedLayout, styleConfig, pixelEnabled),
+      );
       return true;
     } catch (err) {
       if (isDashboardNotFound(err)) {
@@ -584,46 +590,63 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const headerActions = (
     <div className="flex flex-wrap items-center gap-2">
-      <Button asChild variant="outline" size="sm">
-        <Link to="/admin/dashboards">返回列表</Link>
+      <Button asChild variant="ghost" size="sm">
+        <Link to="/admin/dashboards">
+          <ChevronLeft className="size-4" aria-hidden />
+          <span className="hidden sm:inline">返回</span>
+        </Link>
       </Button>
-      {!missing && mode === "edit" ? (
-        <Button asChild variant="outline" size="sm">
-          <Link to={`/admin/dashboards/${id}`}>预览</Link>
-        </Button>
+
+      {!missing ? (
+        <>
+          <span
+            className="hidden h-5 w-px shrink-0 bg-gray-200 dark:bg-gray-700 sm:block"
+            aria-hidden
+          />
+          {mode === "edit" ? (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link to={`/admin/dashboards/${id}`}>预览</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to={`/admin/dashboards/${id}/share`}>分享</Link>
+              </Button>
+            </>
+          ) : (
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/admin/dashboards/${id}/edit`}>编辑布局</Link>
+            </Button>
+          )}
+        </>
       ) : null}
-      {!missing && mode !== "edit" ? (
-        <Button asChild variant="outline" size="sm">
-          <Link to={`/admin/dashboards/${id}/edit`}>编辑布局</Link>
-        </Button>
-      ) : null}
-      {!missing && mode === "edit" ? (
-        <Button asChild variant="outline" size="sm">
-          <Link to={`/admin/dashboards/${id}/share`}>分享</Link>
-        </Button>
-      ) : null}
-      {mode === "edit" && canSave ? (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="border-error-200 text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400"
-          disabled={deleting}
-          onClick={() => (missing ? leaveEditShell() : setDeleteDashboardOpen(true))}
-        >
-          {missing ? "返回列表" : "删除看板"}
-        </Button>
-      ) : null}
+
       {mode === "edit" && canSave && !missing ? (
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          disabled={saving || !isDirty}
-          onClick={() => void handleSave()}
-        >
-          {saving ? "保存中…" : isDirty ? "保存" : "已保存"}
-        </Button>
+        <>
+          <span
+            className="hidden h-5 w-px shrink-0 bg-gray-200 dark:bg-gray-700 sm:block"
+            aria-hidden
+          />
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={saving || !isDirty}
+            onClick={() => void handleSave()}
+          >
+            {saving ? "保存中…" : "保存"}
+          </Button>
+          <IconButton
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-label="删除看板"
+            disabled={deleting}
+            className="border-error-200 text-error-600 hover:border-error-300 hover:bg-error-50 hover:text-error-700 dark:border-error-500/30 dark:text-error-400 dark:hover:border-error-500/50 dark:hover:bg-error-500/10"
+            onClick={() => setDeleteDashboardOpen(true)}
+          >
+            <Trash2 className="size-4" aria-hidden />
+          </IconButton>
+        </>
       ) : null}
     </div>
   );
@@ -676,7 +699,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             ? "像素布局只读 · 当前回退开关禁止修改与保存"
             : isDirty
               ? "有未保存的更改 · 保存后生效"
-              : "点击标题或铅笔图标可重命名 · 拖入组件、右侧配置属性后点击右上角保存"
+              : "已保存 · 点击标题可重命名"
           : "预览模式 · 筛选器变更会刷新关联图表"
       }
       actions={headerActions}
@@ -684,6 +707,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       {error ? (
         <PageErrorBanner
           message={error}
+          onDismiss={() => setError(null)}
           onRetry={() => {
             if (error.includes("数据源")) setError(null);
             else void load({ force: true });
@@ -708,9 +732,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           chartRailOpen={chartRailOpen}
           onChartRailOpenChange={setChartRailOpen}
           chartRailLabel="仪表板配置"
-          showRailFoldHeader={
-            multiSelectCount >= 2 || linkagePanelOpen || !primarySelectedId
-          }
+          showRailFoldHeader={!primarySelectedId && multiSelectCount < 2}
           canvasActions={
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               {multiSelectCount >= 2 ? (
@@ -755,7 +777,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           }
           onPaletteInsert={handleInsert}
           onOpenReuse={() => setReuseOpen(true)}
-          onOpenDashboardStyle={() => setStyleOpen(true)}
+          onOpenDashboardStyle={() => {
+            clearSelection();
+            setLinkagePanelOpen(false);
+            setChartRailOpen(true);
+          }}
           onOpenLinkage={() => {
             clearSelection();
             setLinkagePanelOpen(true);
@@ -902,6 +928,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 linkageDefaultOpen={linkagePanelOpen}
                 styleConfig={styleConfig}
                 onStyleChange={setStyleConfig}
+                onSave={() => void handleSave()}
                 isPixelLayout={layout.version === 2}
               />
             ) : null
@@ -914,12 +941,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           widgets={widgets}
           targetPixelWidgets={layout.version === 2 ? layout.widgets : undefined}
           onInsertCloned={appendClonedWidget}
-        />
-        <DashboardStyleDialog
-          open={styleOpen}
-          onOpenChange={setStyleOpen}
-          value={styleConfig}
-          onApply={setStyleConfig}
         />
         {widgetActionDialog?.type === "view-data" &&
           widgetActionTarget &&

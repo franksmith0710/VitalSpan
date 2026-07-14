@@ -110,6 +110,8 @@ export function mergeLayoutWidgetIntoPixel(
 }
 
 import { styleConfigHasPersistedFields } from "./dashboardStyleConfig";
+import { packPixelLayoutSeamless } from "./pixelCanvas/collisionLayout";
+import { pixelLayoutFingerprint } from "./pixelCanvas/usePixelLayoutHistory";
 
 function persistedStyle(styleConfig: DashboardStyleConfig): DashboardStyleConfig | undefined {
   return styleConfigHasPersistedFields(styleConfig) ? styleConfig : undefined;
@@ -139,4 +141,24 @@ export function buildDashboardLayoutForSave(
     ),
     styleConfig: persistedStyle(styleConfig),
   };
+}
+
+/** 与保存 + resetLayout 后内存态一致的指纹，避免 isDirty 与 savedFingerprint 算法不一致 */
+export function dashboardPersistFingerprint(
+  layout: DashboardLayout,
+  styleConfig: DashboardStyleConfig,
+  pixelEnabled: boolean,
+): string {
+  let canonical = buildDashboardLayoutForSave(layout, styleConfig);
+  if (canonical.version === 2 && pixelEnabled) {
+    try {
+      const packed = packPixelLayoutSeamless(canonical);
+      if (pixelLayoutFingerprint(packed) !== pixelLayoutFingerprint(canonical)) {
+        canonical = packed;
+      }
+    } catch {
+      // 与 resetLayout 一致：pack 失败则保留 canonical
+    }
+  }
+  return JSON.stringify(canonical);
 }

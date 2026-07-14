@@ -52,6 +52,50 @@ function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
 }
 
 describe("PixelCanvas", () => {
+  it("previews cascade push-down on neighbors while dragging", () => {
+    const blocker: PixelLayoutWidget = {
+      id: "w2",
+      type: "chart",
+      title: "下方",
+      order: 2,
+      x: 100,
+      y: 300,
+      width: 300,
+      height: 200,
+    };
+    const stackedLayout: DashboardLayoutV2 = {
+      ...layout,
+      widgets: [widget, blocker],
+    };
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={stackedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={vi.fn()}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const shape = screen.getByTestId("pixel-shape-w1");
+    const blockerShape = screen.getByTestId("pixel-shape-w2");
+    expect(blockerShape).toHaveStyle({ top: "300px" });
+
+    fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
+      pointerId: 3,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(shape, {
+      pointerId: 3,
+      clientX: 0,
+      clientY: 120,
+    });
+
+    expect(blockerShape).toHaveStyle({ top: "400px" });
+    fireEvent.pointerUp(shape, { pointerId: 3, clientX: 0, clientY: 120 });
+  });
+
   it("commits canonical drag coordinates on pointer up", () => {
     const onChange = renderCanvas("edit");
     fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {

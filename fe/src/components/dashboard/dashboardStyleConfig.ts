@@ -10,7 +10,7 @@ export const GAP_PRESET_PX = {
 export type GapPreset = keyof typeof GAP_PRESET_PX | "custom";
 export type ScaleMode = "canvas" | "component";
 export type ColorScheme = "light" | "dark";
-export type NumberFormatType = "number" | "percent" | "currency";
+export type NumberFormatType = "auto" | "number" | "percent" | "currency";
 
 export type WidgetStyleConfig = {
   background?: string;
@@ -43,6 +43,8 @@ export type NumberFormatConfig = {
   decimals?: number;
   type?: NumberFormatType;
   unit?: string;
+  /** 默认 true；对标 DE 千分符 */
+  thousandSeparator?: boolean;
 };
 
 export type DashboardStyleConfig = {
@@ -77,6 +79,9 @@ export const CANVAS_BG_SWATCHES = [
   "#1e293b",
 ] as const;
 
+export const CANVAS_BG_LIGHT_DEFAULT = "#ffffff";
+export const CANVAS_BG_DARK_DEFAULT = "#0f172a";
+
 export const DEFAULT_WIDGET_GAP = 8;
 export const DEFAULT_PIXEL_GUTTER = 0;
 export const DEFAULT_SCALE_MODE: ScaleMode = "canvas";
@@ -110,15 +115,43 @@ export function styleConfigHasPersistedFields(config: DashboardStyleConfig): boo
   });
 }
 
-export function canvasSurfaceStyle(config: DashboardStyleConfig): CSSProperties {
+export function hasUserCanvasBackground(config: DashboardStyleConfig): boolean {
+  return Boolean(config.canvasBackground?.trim() || config.canvasBackgroundImage?.trim());
+}
+
+/** @deprecated use hasUserCanvasBackground */
+export const hasCustomCanvasBackground = hasUserCanvasBackground;
+
+export function canvasChromeUsesDotGrid(config: DashboardStyleConfig): boolean {
+  return !hasUserCanvasBackground(config);
+}
+
+/** §5.3 用户显式设置的仪表板背景（与主题无关） */
+export function canvasBackgroundStyle(config: DashboardStyleConfig): CSSProperties {
   const style: CSSProperties = {};
-  if (config.canvasBackground) style.background = config.canvasBackground;
-  if (config.canvasBackgroundImage) {
-    style.backgroundImage = `url(${config.canvasBackgroundImage})`;
+  const customBackground = config.canvasBackground?.trim();
+  if (customBackground) style.background = customBackground;
+  const backgroundImage = config.canvasBackgroundImage?.trim();
+  if (backgroundImage) {
+    style.backgroundImage = `url(${backgroundImage})`;
     style.backgroundSize = "cover";
     style.backgroundPosition = "center";
   }
   return style;
+}
+
+/** 画板可见底色：用户背景优先，否则随主题默认 */
+export function resolveArtboardStyle(config: DashboardStyleConfig): CSSProperties {
+  const userBackground = canvasBackgroundStyle(config);
+  if (Object.keys(userBackground).length > 0) return userBackground;
+  return {
+    background: config.colorScheme === "dark" ? CANVAS_BG_DARK_DEFAULT : CANVAS_BG_LIGHT_DEFAULT,
+  };
+}
+
+/** @deprecated use resolveArtboardStyle on artboard layer; theme surface must not set background */
+export function canvasSurfaceStyle(config: DashboardStyleConfig): CSSProperties {
+  return resolveArtboardStyle(config);
 }
 
 export function mergeTitleStyle(
@@ -158,7 +191,8 @@ export function formatMetricValue(
   const n = Number(raw);
   if (Number.isNaN(n) || String(raw).trim() === "") return String(raw);
   const decimals = format?.decimals ?? 0;
-  const type = format?.type ?? "number";
+  const type = format?.type ?? "auto";
+  const useGrouping = format?.thousandSeparator !== false;
   let text: string;
   if (type === "percent") {
     text = `${(n * 100).toFixed(decimals)}%`;
@@ -168,11 +202,13 @@ export function formatMetricValue(
       currency: "CNY",
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
+      useGrouping,
     });
   } else {
     text = n.toLocaleString("zh-CN", {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
+      useGrouping,
     });
   }
   if (format?.unit) return `${text}${format.unit}`;

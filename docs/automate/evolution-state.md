@@ -7,6 +7,42 @@
 | 字段 | 值 |
 |------|----|
 | phase | DONE |
+| request | 仪表板配置右栏 DE 对标完善（风格/背景分离 + 分组 UI） |
+| type | feature |
+| autonomy_policy | auto_accept_low_risk |
+| risk_level | low |
+| plan | docs/automate/plans/2026-07-14-dashboard-theme-background-de-v2.md |
+| plan_review_state | PASS |
+| status | DONE |
+| started_at | 2026-07-14T14:09:00+08:00 |
+| last_verified_command | vitest DashboardContextInspector+dashboardStyleConfig+DashboardStyleSurface |
+| last_verified_exit_code | 0 |
+| verification_summary | 右栏 DE 分组顺序与保存按钮独立；主题/背景 UI 与运行时分离；废弃旧样式弹窗改走右栏；11 项 vitest 绿 |
+
+## 当前需求契约
+
+- request: 右栏仪表板配置对标 DataEase（风格/背景/图表样式等分组 + 保存）
+- type: feature
+- goal: 分组顺序与 DE 一致；主题与背景互不影响；保存入口在「仪表板风格」标题栏
+- scope_include: DashboardContextInspector、dashboardConfigPanels、DashboardConfigSection、DashboardEditPage 入口
+- scope_exclude: 背景图上传 API、数量单位自动换算算法
+- acceptance: vitest 11 绿；手工：设背景+切主题互不影响；工具栏「仪表板样式」打开右栏
+
+## 上一轮（归档 · Mark Line 初版）
+
+| 字段 | 值 |
+|------|----|
+| phase | A5_EXECUTE |
+| request | 像素画布对齐参考线（Mark Line）对标 DataEase |
+| type | feature |
+| plan | docs/automate/plans/2026-07-14-dashboard-pixel-mark-line-de.md |
+| status | DONE（线效果 OK；preview 管线待本轮回修） |
+
+## 更早一轮（归档 · DASH-008）
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
 | request | DASH-008 仪表板配置右栏全量 Phase 0–5 |
 | type | feature |
 | autonomy_policy | auto_accept_low_risk |
@@ -21,7 +57,7 @@
 | repair_rounds | 1 |
 | started_at | 2026-07-13T19:05:00+08:00 |
 
-## 当前需求契约
+## 当前需求契约（归档 · DASH-008）
 
 - request: 实现看板编辑页「仪表板配置」右栏 Phase 1（主题/整体/背景/联动常显）
 - type: feature

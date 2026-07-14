@@ -19,12 +19,15 @@ import type {
   DashboardLayoutV2,
   PixelLayoutWidget,
 } from "../layoutUtils";
-import type { ScaleMode } from "../dashboardStyleConfig";
+import type { ScaleMode, DashboardStyleConfig } from "../dashboardStyleConfig";
+import { resolveArtboardStyle } from "../dashboardStyleConfig";
 import { resolvePixelCollisions } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
 import { clientPointToCanvas, resolvePixelCanvasMeasureElement, scaledCanvasMetrics } from "./geometry";
 import { PixelShape } from "./PixelShape";
 import type { PixelWidgetActions } from "./PixelShapeActionRail";
+import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
+import type { MarkLineGuide } from "./pixelMarkLine";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
 
 type PixelCanvasProps = {
@@ -41,6 +44,7 @@ type PixelCanvasProps = {
   className?: string;
   scaleMode?: ScaleMode;
   pixelGutter?: number;
+  styleConfig?: DashboardStyleConfig;
 };
 
 export const PIXEL_CANVAS_GUTTER = 0;
@@ -105,12 +109,14 @@ export function PixelCanvas({
   className,
   scaleMode = "canvas",
   pixelGutter = PIXEL_CANVAS_GUTTER,
+  styleConfig = {},
 }: PixelCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [contentSize, setContentSize] = useState({ width: 0, height: 0 });
   const [previewLayout, setPreviewLayout] = useState<DashboardLayoutV2 | null>(null);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
+  const [markGuides, setMarkGuides] = useState<MarkLineGuide[]>([]);
   const [visibleViewport, setVisibleViewport] = useState<PixelRect>({
     x: 0,
     y: 0,
@@ -271,9 +277,13 @@ export function PixelCanvas({
         >
           <div
             data-testid="pixel-canvas-artboard"
-            className="pointer-events-none absolute inset-0 z-0 bg-white shadow-theme-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700"
+            className="pointer-events-none absolute inset-0 z-0 shadow-theme-sm ring-1 ring-gray-200 dark:ring-gray-700"
+            style={resolveArtboardStyle(styleConfig)}
             aria-hidden
           />
+          {mode === "edit" ? (
+            <PixelMarkLineOverlay guides={markGuides} canvas={viewCanvas} />
+          ) : null}
           {activeLayout.widgets.map((widget) => (
               <PixelShape
                 key={widget.id}
@@ -283,9 +293,13 @@ export function PixelCanvas({
                 mode={mode}
                 selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
                 onSelect={onSelect}
-                onPreview={handlePreview}
+                onPreview={mode === "edit" ? handlePreview : undefined}
                 onCommit={handleCommit}
                 onCancel={handleCancel}
+                onMarkGuidesChange={
+                  mode === "edit" ? (guides) => setMarkGuides(guides ?? []) : undefined
+                }
+                snapTargets={layout.widgets.filter((item) => item.id !== widget.id)}
                 viewport={visibleViewport}
                 otherWidgets={activeLayout.widgets.filter((item) => item.id !== widget.id)}
                 widgetActions={widgetActions}

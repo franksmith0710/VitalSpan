@@ -11,7 +11,7 @@ import {
   type DashboardStyleConfig,
   type LayoutWidget,
 } from "../layoutUtils";
-import { resolvePixelGutter } from "../dashboardStyleConfig";
+import { resolvePixelGutter, resolveArtboardStyle } from "../dashboardStyleConfig";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
 import type { PaletteInsertType } from "../createLayoutWidget";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
@@ -108,6 +108,7 @@ export function DashboardEditCanvas({
         <PixelCanvas
           mode="edit"
           layout={layout}
+          styleConfig={styleConfig}
           scaleMode={styleConfig.scaleMode}
           pixelGutter={resolvePixelGutter(styleConfig)}
           selectedIds={selectedIds}
@@ -137,16 +138,25 @@ export function DashboardEditCanvas({
           )}
         />
       ) : (
-        <DashboardGrid
-          mode="edit"
-          widgets={widgets}
-          styleConfig={styleConfig}
-          selectedIds={selectedIds}
-          onClearSelection={onClearSelection}
-          onInsertChart={onDropInsert}
-          onLayoutChange={(next) => setWidgets(sortWidgets(next))}
-          renderWidget={renderWidget}
-        />
+        <div className="relative h-full min-h-0">
+          <div
+            data-testid="dashboard-canvas-backdrop"
+            className="pointer-events-none absolute inset-0 z-0"
+            style={resolveArtboardStyle(styleConfig)}
+            aria-hidden
+          />
+          <DashboardGrid
+            mode="edit"
+            widgets={widgets}
+            styleConfig={styleConfig}
+            selectedIds={selectedIds}
+            onClearSelection={onClearSelection}
+            onInsertChart={onDropInsert}
+            onLayoutChange={(next) => setWidgets(sortWidgets(next))}
+            renderWidget={renderWidget}
+            className="relative z-[1] h-full min-h-0"
+          />
+        </div>
       )}
     </DashboardStyleSurface>
   );

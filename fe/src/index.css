@@ -185,6 +185,11 @@ body,
   background-image: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
 }
 
+.dashboard-canvas-surface:has([data-canvas-user-bg="true"]) {
+  background-color: transparent;
+  background-image: none;
+}
+
 /* 栅格画布：无 transform scale，固定放大一级 */
 .dashboard-grid-edit .dashboard-widget-surface {
   font-size: 1rem;
@@ -262,6 +267,12 @@ body,
 .pixel-canvas-host .widget-pending-preview-icon :where(svg) {
   width: calc(1rem / var(--pixel-canvas-scale));
   height: calc(1rem / var(--pixel-canvas-scale));
+}
+
+.pixel-canvas-mark-line {
+  stroke: var(--color-mark-line, #59c7f9);
+  stroke-width: 1;
+  pointer-events: none;
 }
 
 .dashboard-canvas-drop-active .react-grid-layout {

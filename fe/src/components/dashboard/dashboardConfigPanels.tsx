@@ -15,11 +15,13 @@ import { LinkageRulesPanel } from "./LinkageRulesPanel";
 import {
   CANVAS_BG_SWATCHES,
   GAP_PRESET_PX,
+  formatMetricValue,
   type DashboardStyleConfig,
   type GapPreset,
 } from "./dashboardStyleConfig";
 import type { LayoutWidget } from "./layoutUtils";
 import { CHART_PALETTE_PRESETS } from "@/lib/chart-theme";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -95,9 +97,15 @@ type StyleSectionProps = {
   styleConfig: DashboardStyleConfig;
   patchStyle: PatchFn;
   isPixelLayout: boolean;
+  onSave?: () => void | Promise<void>;
 };
 
-export function DashboardStyleSections({ styleConfig, patchStyle, isPixelLayout }: StyleSectionProps) {
+export function DashboardStyleSections({
+  styleConfig,
+  patchStyle,
+  isPixelLayout,
+  onSave,
+}: StyleSectionProps) {
   const colorScheme = styleConfig.colorScheme ?? "light";
   const gapPreset = styleConfig.gapPreset ?? (styleConfig.widgetGap != null ? "custom" : "md");
   const scaleMode = styleConfig.scaleMode ?? "canvas";
@@ -108,7 +116,24 @@ export function DashboardStyleSections({ styleConfig, patchStyle, isPixelLayout 
       <DashboardConfigSection
         title="仪表板风格"
         defaultOpen
-        action={<span className="text-theme-xs font-normal text-brand-500">保存布局后生效</span>}
+        data-testid="dashboard-theme-section"
+        action={
+          onSave ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-theme-xs font-normal text-brand-500 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
+              aria-label="保存"
+              data-testid="dashboard-style-save"
+              onClick={() => void onSave()}
+            >
+              保存
+            </Button>
+          ) : (
+            <span className="px-1 text-theme-xs font-normal text-gray-400">保存布局后生效</span>
+          )
+        }
       >
         <div className="flex gap-2">
           <ThemePreviewCard
@@ -226,8 +251,11 @@ export function DashboardStyleSections({ styleConfig, patchStyle, isPixelLayout 
         </div>
       </DashboardConfigSection>
 
-      <DashboardConfigSection title="仪表板背景">
+      <DashboardConfigSection title="仪表板背景" data-testid="dashboard-canvas-background">
         <div className="space-y-3">
+          <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+            仅设置画布底色与背景图，与上方「仪表板风格」主题互不影响。
+          </p>
           <div className="flex flex-wrap gap-2">
             {CANVAS_BG_SWATCHES.map((color) => (
               <button
@@ -433,47 +461,105 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
         </div>
       </DashboardConfigSection>
 
-      <DashboardConfigSection title="数字内容格式">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">小数位</Label>
-            <Input
-              type="number"
-              min={0}
-              max={8}
-              className="h-9"
-              value={nf.decimals ?? ""}
-              onChange={(e) =>
-                patchNumberFormat({ decimals: e.target.value ? Number(e.target.value) : undefined })
-              }
-            />
+      <DashboardConfigSection title="数字内容格式" data-testid="dashboard-number-format">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-theme-xs text-gray-500">格式类型</Label>
+              <Select
+                value={nf.type ?? "auto"}
+                onValueChange={(v) =>
+                  patchNumberFormat({ type: v as "auto" | "number" | "percent" | "currency" })
+                }
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">自动</SelectItem>
+                  <SelectItem value="number">数值</SelectItem>
+                  <SelectItem value="percent">百分比</SelectItem>
+                  <SelectItem value="currency">货币</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-theme-xs text-gray-500">单位语言</Label>
+              <Select value="zh" disabled>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="zh">中文</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-theme-xs text-gray-500">小数位</Label>
+              <Input
+                type="number"
+                min={0}
+                max={8}
+                className="h-9"
+                value={nf.decimals ?? ""}
+                onChange={(e) =>
+                  patchNumberFormat({ decimals: e.target.value ? Number(e.target.value) : undefined })
+                }
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-theme-xs text-gray-500">数量单位</Label>
+              <Select
+                value={
+                  !nf.unit
+                    ? "none"
+                    : nf.unit === "千" || nf.unit === "万" || nf.unit === "亿"
+                      ? nf.unit
+                      : "custom"
+                }
+                onValueChange={(v) => {
+                  if (v === "none") patchNumberFormat({ unit: undefined });
+                  else if (v === "千" || v === "万" || v === "亿") patchNumberFormat({ unit: v });
+                  else patchNumberFormat({ unit: nf.unit ?? "" });
+                }}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">无</SelectItem>
+                  <SelectItem value="千">千</SelectItem>
+                  <SelectItem value="万">万</SelectItem>
+                  <SelectItem value="亿">亿</SelectItem>
+                  <SelectItem value="custom">自定义后缀</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">格式</Label>
-            <Select
-              value={nf.type ?? "number"}
-              onValueChange={(v) =>
-                patchNumberFormat({ type: v as "number" | "percent" | "currency" })
-              }
-            >
-              <SelectTrigger className="h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="number">数值</SelectItem>
-                <SelectItem value="percent">百分比</SelectItem>
-                <SelectItem value="currency">货币</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="col-span-2 space-y-1">
             <Label className="text-theme-xs text-gray-500">单位后缀</Label>
             <Input
               className="h-9"
+              placeholder="如：元、次"
               value={nf.unit ?? ""}
               onChange={(e) => patchNumberFormat({ unit: e.target.value || undefined })}
             />
           </div>
+          <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-400">
+            <Checkbox
+              checked={nf.thousandSeparator !== false}
+              onCheckedChange={(checked) =>
+                patchNumberFormat({ thousandSeparator: checked === true })
+              }
+            />
+            千分符
+          </label>
+          <p
+            className="rounded-md bg-gray-50 px-2.5 py-2 text-theme-xs text-gray-600 dark:bg-white/[0.04] dark:text-gray-400"
+            data-testid="dashboard-number-format-preview"
+          >
+            示例{formatMetricValue(20_000_000, nf)}
+          </p>
         </div>
       </DashboardConfigSection>
 
