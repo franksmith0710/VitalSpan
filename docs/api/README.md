@@ -5,8 +5,8 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.5
-last_updated: 2026-07-13
+version: 1.0.6
+last_updated: 2026-07-14
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -73,9 +73,11 @@ redoc: /redoc
 | GET/POST | `/api/v1/rls/groups` | 维度分组列表/创建 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
 | GET/PUT/DELETE | `/api/v1/rls/groups/{id}` | 分组详情/更新/删除 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
 | GET/POST/PUT/DELETE | `/api/v1/rls/groups/{id}/values` | 分组成员值列表/添加/全量替换/删除 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
-| PUT | `/api/v1/roles/{id}/dimension-values` | 角色直绑维度值全量替换 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
-| PUT | `/api/v1/roles/{id}/dimension-groups` | 角色分组绑定全量替换 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
-| GET | `/api/v1/roles/{id}/effective-dimensions` | 角色有效维度集 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
+| GET | `/api/v1/roles/{id}/dimension-values` | 角色直绑维度值（`?dimensionTypeId=`；`RoleDimensionValuesOut` 含 `version`） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
+| PUT | `/api/v1/roles/{id}/dimension-values` | 角色直绑维度值全量替换（`expectedVersion` 乐观锁；`confirmEmpty`；成功 **200** + `RoleDimensionValuesOut`；冲突 409 `RLS_BINDING_VERSION_CONFLICT`；空绑定 422 `RLS_EMPTY_CONFIRM_REQUIRED`） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
+| GET | `/api/v1/roles/{id}/dimension-groups` | 角色分组绑定（`RoleDimensionGroupsOut` 含 `groupIds`/`version`） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
+| PUT | `/api/v1/roles/{id}/dimension-groups` | 角色分组绑定全量替换（`expectedVersion`/`confirmEmpty`；成功 **200** + `RoleDimensionGroupsOut`；冲突/空绑定同上） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
+| GET | `/api/v1/roles/{id}/effective-dimensions` | 角色有效维度集（**deprecated**；只读派生端点，供 RLS 引擎/查询；管理 UI 改用 GET dimension-values/groups） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
 
 > **Admin 权限工作流（FE 下轮）**：`GET /roles` → `GET /rls/dimensions` → `GET /rls/groups` → `PUT /roles/{id}/dimension-groups` → `GET /audit/events`
 

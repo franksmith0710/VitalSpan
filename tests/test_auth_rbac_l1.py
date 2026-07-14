@@ -1226,6 +1226,35 @@ def _ensure_org_dim(client, auth_headers):
     return org, dim
 
 
+def _put_dimension_values(client, auth_headers, role_id, dim_id, values, *, version=0, confirm_empty=False):
+    resp = client.put(
+        f"/api/v1/roles/{role_id}/dimension-values",
+        json={
+            "dimensionTypeId": dim_id,
+            "values": values,
+            "expectedVersion": version,
+            "confirmEmpty": confirm_empty,
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    return resp.json()
+
+
+def _put_dimension_groups(client, auth_headers, role_id, group_ids, *, version=0, confirm_empty=False):
+    resp = client.put(
+        f"/api/v1/roles/{role_id}/dimension-groups",
+        json={
+            "groupIds": group_ids,
+            "expectedVersion": version,
+            "confirmEmpty": confirm_empty,
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    return resp.json()
+
+
 def test_group_create_root_gp01(client, auth_headers):
     """T-AUTH-GP01: POST 创建根分组。"""
     _, dim = _ensure_org_dim(client, auth_headers)
@@ -1308,12 +1337,9 @@ def test_role_dimension_values_gp07(client, auth_headers):
     """T-AUTH-GP07: 角色直绑维度值。"""
     org, dim = _ensure_org_dim(client, auth_headers)
     role = client.post("/api/v1/roles", json={"code": "gp_r7", "name": "R"}, headers=auth_headers).json()
-    resp = client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
-        headers=auth_headers,
-    )
-    assert resp.status_code == 204
+    body = _put_dimension_values(client, auth_headers, role["id"], dim["id"], [org["id"]])
+    assert body["values"] == [org["id"]]
+    assert body["version"] == 1
     eff = client.get(
         f"/api/v1/roles/{role['id']}/effective-dimensions?dimension_type_id={dim['id']}",
         headers=auth_headers,
@@ -1335,11 +1361,9 @@ def test_role_dimension_groups_effective_gp08(client, auth_headers):
         headers=auth_headers,
     )
     role = client.post("/api/v1/roles", json={"code": "gp_r8", "name": "R"}, headers=auth_headers).json()
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-groups",
-        json={"group_ids": [group["id"]]},
-        headers=auth_headers,
-    )
+    body = _put_dimension_groups(client, auth_headers, role["id"], [group["id"]])
+    assert body["groupIds"] == [group["id"]]
+    assert body["version"] == 1
     eff = client.get(
         f"/api/v1/roles/{role['id']}/effective-dimensions?dimension_type_id={dim['id']}",
         headers=auth_headers,
@@ -1368,7 +1392,12 @@ def test_role_dimension_invalid_role_gp10(client, auth_headers):
     fake_role = str(uuid_mod.uuid4())
     resp = client.put(
         f"/api/v1/roles/{fake_role}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": []},
+        json={
+            "dimensionTypeId": dim["id"],
+            "values": [],
+            "expectedVersion": 0,
+            "confirmEmpty": True,
+        },
         headers=auth_headers,
     )
     assert resp.status_code == 404
@@ -1404,11 +1433,7 @@ def test_group_delete_in_use_gp12(client, auth_headers):
         headers=auth_headers,
     ).json()
     role = client.post("/api/v1/roles", json={"code": "gp_r12", "name": "R"}, headers=auth_headers).json()
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-groups",
-        json={"group_ids": [group["id"]]},
-        headers=auth_headers,
-    )
+    _put_dimension_groups(client, auth_headers, role["id"], [group["id"]])
     resp = client.delete(f"/api/v1/rls/groups/{group['id']}", headers=auth_headers)
     assert resp.status_code == 409
     assert resp.json()["code"] == "GROUP_IN_USE"
@@ -1448,11 +1473,7 @@ def test_rls_subtree_expansion_rls01_rls02(client, auth_headers):
     role = client.post("/api/v1/roles", json={"code": "rls_r01", "name": "R"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "rls_u01", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": [parent["id"]]},
-        headers=auth_headers,
-    )
+    _put_dimension_values(client, auth_headers, role["id"], dim["id"], [parent["id"]])
     session = get_meta_session()
     try:
         allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
@@ -1471,11 +1492,7 @@ def test_rls_fragment_in_clause_rls04(client, auth_headers):
     role = client.post("/api/v1/roles", json={"code": "rls_r04", "name": "R"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "rls_u04", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
-        headers=auth_headers,
-    )
+    _put_dimension_values(client, auth_headers, role["id"], dim["id"], [org["id"]])
     session = get_meta_session()
     try:
         allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
@@ -1511,16 +1528,8 @@ def test_rls_union_direct_and_group_rls05(client, auth_headers):
     role = client.post("/api/v1/roles", json={"code": "rls_r05", "name": "R"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "rls_u05", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": [org1["id"]]},
-        headers=auth_headers,
-    )
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-groups",
-        json={"group_ids": [group["id"]]},
-        headers=auth_headers,
-    )
+    v1 = _put_dimension_values(client, auth_headers, role["id"], dim["id"], [org1["id"]])["version"]
+    _put_dimension_groups(client, auth_headers, role["id"], [group["id"]], version=v1)
     session = get_meta_session()
     try:
         allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
@@ -1554,11 +1563,7 @@ def test_rls_unauthorized_row_hidden_rls06(client, auth_headers):
     role = client.post("/api/v1/roles", json={"code": "rls_r06", "name": "R"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "rls_u06", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": [parent["id"]]},
-        headers=auth_headers,
-    )
+    _put_dimension_values(client, auth_headers, role["id"], dim["id"], [parent["id"]])
     session = get_meta_session()
     try:
         allowed = resolve_user_org_node_ids(session, uuid_mod.UUID(user["id"]))
@@ -1603,11 +1608,7 @@ def test_rls_query_hook_rls08(client, auth_headers):
     role = client.post("/api/v1/roles", json={"code": "rls_r08", "name": "R"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "rls_u08", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
-        headers=auth_headers,
-    )
+    _put_dimension_values(client, auth_headers, role["id"], dim["id"], [org["id"]])
     session = get_meta_session()
     try:
         ctx = UserContext(id=user["id"], username=user["username"], roles=["rls_r08"])
@@ -1686,11 +1687,7 @@ def test_audit_role_dimension_replace_au06(client, auth_headers):
     """T-AUTH-AU06: 角色维度替换 → role.dimension.replace。"""
     org, dim = _ensure_org_dim(client, auth_headers)
     role = client.post("/api/v1/roles", json={"code": "au_rd", "name": "R"}, headers=auth_headers).json()
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
-        headers=auth_headers,
-    )
+    _put_dimension_values(client, auth_headers, role["id"], dim["id"], [org["id"]])
     audit = client.get(
         f"/api/v1/audit/events?target_id={role['id']}&action=role.dimension.replace",
         headers=auth_headers,
@@ -1757,16 +1754,8 @@ def test_rls_multi_dimension_and_combination_rls09(client, auth_headers):
     role = client.post("/api/v1/roles", json={"code": "rls_r09", "name": "R"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "rls_u09", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": org_dim["id"], "values": [org["id"]]},
-        headers=auth_headers,
-    )
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": str_dim["id"], "values": ["east"]},
-        headers=auth_headers,
-    )
+    v1 = _put_dimension_values(client, auth_headers, role["id"], org_dim["id"], [org["id"]])["version"]
+    _put_dimension_values(client, auth_headers, role["id"], str_dim["id"], ["east"], version=v1)
     session = get_meta_session()
     try:
         ctx = UserContext(id=user["id"], username=user["username"], roles=["viewer"])
@@ -1842,11 +1831,7 @@ def test_apply_rls_to_sql_merge_where_rls12(client, auth_headers):
     role = client.post("/api/v1/roles", json={"code": "rls_r12", "name": "R"}, headers=auth_headers).json()
     user = client.post("/api/v1/users", json={"username": "rls_u12", "initialPassword": "Init-Pass-1234567"}, headers=auth_headers).json()
     client.post(f"/api/v1/users/{user['id']}/roles/{role['id']}", headers=auth_headers)
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": [org["id"]]},
-        headers=auth_headers,
-    )
+    _put_dimension_values(client, auth_headers, role["id"], dim["id"], [org["id"]])
     session = get_meta_session()
     try:
         ctx = UserContext(id=user["id"], username=user["username"], roles=["viewer"])
@@ -1889,7 +1874,7 @@ def test_group_list_negative_offset_422_gp13(client, auth_headers):
 
 
 def test_replace_role_groups_dedupe_idempotent_gp14(client, auth_headers):
-    """T-AUTH-GP14: 重复 group_ids → 204；有效集正确。"""
+    """T-AUTH-GP14: 重复 groupIds → 200；no-op 不递增 version；有效集正确。"""
     _, org_dim = _ensure_org_dim(client, auth_headers)
     group = client.post(
         "/api/v1/rls/groups",
@@ -1897,19 +1882,15 @@ def test_replace_role_groups_dedupe_idempotent_gp14(client, auth_headers):
         headers=auth_headers,
     ).json()
     role = client.post("/api/v1/roles", json={"code": "gp_r14", "name": "R"}, headers=auth_headers).json()
-    body = {"group_ids": [group["id"], group["id"]]}
-    r1 = client.put(
-        f"/api/v1/roles/{role['id']}/dimension-groups",
-        json=body,
-        headers=auth_headers,
+    r1 = _put_dimension_groups(
+        client, auth_headers, role["id"], [group["id"], group["id"]]
     )
-    assert r1.status_code == 204
-    r2 = client.put(
-        f"/api/v1/roles/{role['id']}/dimension-groups",
-        json=body,
-        headers=auth_headers,
+    assert r1["groupIds"] == [group["id"]]
+    assert r1["version"] == 1
+    r2 = _put_dimension_groups(
+        client, auth_headers, role["id"], [group["id"], group["id"]], version=r1["version"]
     )
-    assert r2.status_code == 204
+    assert r2["version"] == 1
     eff = client.get(
         f"/api/v1/roles/{role['id']}/effective-dimensions?dimension_type_id={org_dim['id']}",
         headers=auth_headers,
@@ -1937,7 +1918,11 @@ def test_bind_groups_to_disabled_role_409_gp15(client, auth_headers):
     )
     resp = client.put(
         f"/api/v1/roles/{role['id']}/dimension-groups",
-        json={"group_ids": [group["id"]]},
+        json={
+            "groupIds": [group["id"]],
+            "expectedVersion": 0,
+            "confirmEmpty": False,
+        },
         headers=auth_headers,
     )
     assert resp.status_code == 409
@@ -2070,11 +2055,7 @@ def test_dimension_delete_role_direct_ref_d14(client, auth_headers):
         headers=auth_headers,
     ).json()
     role = client.post("/api/v1/roles", json={"code": "d14_role", "name": "R"}, headers=auth_headers).json()
-    client.put(
-        f"/api/v1/roles/{role['id']}/dimension-values",
-        json={"dimension_type_id": dim["id"], "values": ["v1"]},
-        headers=auth_headers,
-    )
+    _put_dimension_values(client, auth_headers, role["id"], dim["id"], ["v1"])
     resp = client.delete(f"/api/v1/rls/dimensions/{dim['id']}", headers=auth_headers)
     assert resp.status_code == 409
     assert resp.json()["code"] == "DIMENSION_IN_USE"
