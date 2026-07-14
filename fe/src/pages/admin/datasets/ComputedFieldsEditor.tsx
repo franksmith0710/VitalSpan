@@ -1,7 +1,8 @@
 import { Plus, Trash2 } from "lucide-react";
 import {
-  ListBatchDeleteBar,
+  ListPageBatchActions,
   ListRowCheckbox,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { Button, IconButton } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export function ComputedFieldsEditor({
 
   const rowIds = useMemo(() => fields.map((_, index) => String(index)), [fields]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
 
   const removeSelected = () => {
     const indices = new Set([...selection.selectedIds].map(Number));
@@ -42,11 +44,14 @@ export function ComputedFieldsEditor({
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <ListBatchDeleteBar
+        <ListPageBatchActions
+          batchMode={batch.batchMode}
+          onToggleBatchMode={batch.toggleBatchMode}
           selectedCount={selection.selectedCount}
           entityLabel="个字段"
           onClear={selection.clear}
           onDelete={removeSelected}
+          className="mr-auto"
         />
         <Button type="button" variant="outline" size="sm" onClick={add}>
           <Plus className="size-4" aria-hidden />
@@ -68,15 +73,19 @@ export function ComputedFieldsEditor({
               key={`cf-${index}`}
               className={cn(
                 "grid gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-white/[0.02]",
-                "sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.4fr)_auto] sm:items-end",
+                batch.batchMode
+                  ? "sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.4fr)_auto] sm:items-end"
+                  : "sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] sm:items-end",
               )}
             >
-              <ListRowCheckbox
-                checked={selection.isSelected(String(index))}
-                onCheckedChange={() => selection.toggle(String(index))}
-                ariaLabel={`选择计算字段 ${field.name || index + 1}`}
-                className="sm:mb-0.5 sm:justify-self-start"
-              />
+              {batch.batchMode ? (
+                <ListRowCheckbox
+                  checked={selection.isSelected(String(index))}
+                  onCheckedChange={() => selection.toggle(String(index))}
+                  ariaLabel={`选择计算字段 ${field.name || index + 1}`}
+                  className="sm:mb-0.5 sm:justify-self-start"
+                />
+              ) : null}
               <div className="grid gap-2">
                 <Label htmlFor={`cf-name-${index}`} className="text-theme-xs text-gray-500">
                   字段名

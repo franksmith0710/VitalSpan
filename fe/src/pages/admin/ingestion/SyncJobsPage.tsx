@@ -4,7 +4,8 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
+  ListPageBatchActions,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
@@ -107,6 +108,7 @@ export function SyncJobsPage() {
 
   const rowIds = useMemo(() => pagedJobs.map((job) => job.id), [pagedJobs]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
 
   const resultLabel = useMemo(() => {
     const hasFilter = Boolean(search.trim()) || statusFilter !== "all";
@@ -201,15 +203,17 @@ export function SyncJobsPage() {
               statusFilter={statusFilter}
               onStatusFilterChange={setStatusFilter}
               resultLabel={resultLabel}
+              trailing={
+                <ListPageBatchActions
+                  batchMode={batch.batchMode}
+                  onToggleBatchMode={batch.toggleBatchMode}
+                  selectedCount={selection.selectedCount}
+                  entityLabel="个任务"
+                  onClear={selection.clear}
+                  onDelete={() => setBatchDeleteOpen(true)}
+                />
+              }
             />
-            <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
-              <ListBatchDeleteBar
-                selectedCount={selection.selectedCount}
-                entityLabel="个任务"
-                onClear={selection.clear}
-                onDelete={() => setBatchDeleteOpen(true)}
-              />
-            </div>
             {filteredJobs.length === 0 ? (
               <div className="px-6 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">
                 {search.trim()
@@ -225,8 +229,8 @@ export function SyncJobsPage() {
                     onRun={setRunTarget}
                     onDelete={setDeleteTarget}
                     selectedIds={selection.selectedIds}
-                    onToggleSelect={selection.toggle}
-                    onToggleSelectAll={selection.toggleAll}
+                    onToggleSelect={batch.batchMode ? selection.toggle : undefined}
+                    onToggleSelectAll={batch.batchMode ? selection.toggleAll : undefined}
                     allSelected={selection.allSelected}
                     someSelected={selection.someSelected}
                   />

@@ -6,6 +6,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SearchField } from "@/components/ui/search-field";
+import type { ReactNode } from "react";
 
 export type SyncJobStatusFilter = "all" | "enabled" | "disabled" | "scheduled";
 
@@ -15,6 +16,7 @@ type SyncJobsToolbarProps = {
   statusFilter: SyncJobStatusFilter;
   onStatusFilterChange: (value: SyncJobStatusFilter) => void;
   resultLabel: string;
+  trailing?: ReactNode;
 };
 
 export function SyncJobsToolbar({
@@ -23,6 +25,7 @@ export function SyncJobsToolbar({
   statusFilter,
   onStatusFilterChange,
   resultLabel,
+  trailing,
 }: SyncJobsToolbarProps) {
   return (
     <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
@@ -49,7 +52,10 @@ export function SyncJobsToolbar({
           </SelectContent>
         </Select>
       </div>
-      <p className="shrink-0 text-theme-sm text-gray-500 dark:text-gray-400">{resultLabel}</p>
+      <div className="flex shrink-0 flex-wrap items-center gap-3">
+        {trailing}
+        <p className="text-theme-sm text-gray-500 dark:text-gray-400">{resultLabel}</p>
+      </div>
     </div>
   );
 }

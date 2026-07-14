@@ -254,22 +254,27 @@ export function PixelCanvas({
         onDrop={handleDrop}
       >
         <PixelCanvasScaleProvider scale={scale}>
+        <div
+          data-testid="pixel-canvas-stage"
+          className="pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
+          style={{
+            left: pixelGutter,
+            width: viewCanvas.width,
+            height: viewCanvas.height,
+            transform: `scale(${scale})`,
+          }}
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) onClearSelection?.();
+          }}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
           <div
-            data-testid="pixel-canvas-stage"
-            className="pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
-            style={{
-              left: pixelGutter,
-              width: viewCanvas.width,
-              height: viewCanvas.height,
-              transform: `scale(${scale})`,
-            }}
-            onPointerDown={(event) => {
-              if (event.target === event.currentTarget) onClearSelection?.();
-            }}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            {activeLayout.widgets.map((widget) => (
+            data-testid="pixel-canvas-artboard"
+            className="pointer-events-none absolute inset-0 z-0 bg-white shadow-theme-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700"
+            aria-hidden
+          />
+          {activeLayout.widgets.map((widget) => (
               <PixelShape
                 key={widget.id}
                 widget={widget}

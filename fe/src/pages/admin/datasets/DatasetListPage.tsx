@@ -4,9 +4,10 @@ import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
+  ListPageBatchActions,
   ListHeaderCheckbox,
   ListRowCheckbox,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
@@ -15,6 +16,7 @@ import {
   ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
+  ListPageToolbar,
   PageErrorBanner,
   RowActions,
 } from "@/components/layout/list-page-kit";
@@ -76,6 +78,7 @@ export function DatasetListPage() {
   const total = data?.total ?? 0;
   const rowIds = useMemo(() => items.map((item) => item.datasetId), [items]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
 
   const handleBatchDelete = async () => {
     const ids = [...selection.selectedIds];
@@ -109,14 +112,18 @@ export function DatasetListPage() {
       actions={createButton}
     >
       <ListPageSection>
-        <ListPageBody className="border-b border-gray-100 py-3 dark:border-white/[0.06]">
-          <ListBatchDeleteBar
-            selectedCount={selection.selectedCount}
-            entityLabel="个 Dataset"
-            onClear={selection.clear}
-            onDelete={() => setBatchDeleteOpen(true)}
-          />
-        </ListPageBody>
+        <ListPageToolbar
+          actions={
+            <ListPageBatchActions
+              batchMode={batch.batchMode}
+              onToggleBatchMode={batch.toggleBatchMode}
+              selectedCount={selection.selectedCount}
+              entityLabel="个 Dataset"
+              onClear={selection.clear}
+              onDelete={() => setBatchDeleteOpen(true)}
+            />
+          }
+        />
         {isError ? (
           <ListPageBody>
             <PageErrorBanner message={mapApiError(error)} onRetry={() => void refetch()} />
@@ -134,13 +141,17 @@ export function DatasetListPage() {
               action: createButton,
             }}
             headers={[
-              <ListHeaderCheckbox
-                key="select-all"
-                checked={selection.allSelected}
-                indeterminate={selection.someSelected}
-                disabled={items.length === 0}
-                onCheckedChange={() => selection.toggleAll()}
-              />,
+              ...(batch.batchMode
+                ? [
+                    <ListHeaderCheckbox
+                      key="select-all"
+                      checked={selection.allSelected}
+                      indeterminate={selection.someSelected}
+                      disabled={items.length === 0}
+                      onCheckedChange={() => selection.toggleAll()}
+                    />,
+                  ]
+                : []),
               "显示名",
               "ID",
               "绑定配置",
@@ -148,12 +159,16 @@ export function DatasetListPage() {
               "操作",
             ]}
             rows={items.map((d) => [
-              <ListRowCheckbox
-                key={`${d.datasetId}-select`}
-                checked={selection.isSelected(d.datasetId)}
-                onCheckedChange={() => selection.toggle(d.datasetId)}
-                ariaLabel={`选择 Dataset ${d.displayName}`}
-              />,
+              ...(batch.batchMode
+                ? [
+                    <ListRowCheckbox
+                      key={`${d.datasetId}-select`}
+                      checked={selection.isSelected(d.datasetId)}
+                      onCheckedChange={() => selection.toggle(d.datasetId)}
+                      ariaLabel={`选择 Dataset ${d.displayName}`}
+                    />,
+                  ]
+                : []),
               <span key="n" className="font-medium text-gray-900 dark:text-white/90">
                 {d.displayName}
               </span>,

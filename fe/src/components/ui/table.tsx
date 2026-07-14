@@ -165,7 +165,8 @@ const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
       <th
         ref={ref}
         className={cn(
-          "text-left align-middle text-theme-xs font-medium text-gray-500 dark:text-gray-400 [&:has([role=checkbox])]:pr-0",
+          "text-left align-middle text-theme-xs font-medium text-gray-500 dark:text-gray-400",
+          "[&:has([role=checkbox])]:w-10 [&:has([role=checkbox])]:max-w-10 [&:has([role=checkbox])]:px-2 [&:has([role=checkbox])]:py-2 [&:has([role=checkbox])]:pr-0",
           tableHeadCellVariants({ size, sticky: stickyHeader }),
           className,
         )}
@@ -192,7 +193,7 @@ const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
           tableCellVariants({ size }),
           variant === "bordered" &&
             "border-r border-gray-100 last:border-r-0 dark:border-white/[0.05]",
-          "[&:has([role=checkbox])]:pr-0",
+          "[&:has([role=checkbox])]:w-10 [&:has([role=checkbox])]:max-w-10 [&:has([role=checkbox])]:px-2 [&:has([role=checkbox])]:py-2 [&:has([role=checkbox])]:pr-0",
           className,
         )}
         {...props}

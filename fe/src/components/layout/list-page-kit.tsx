@@ -41,7 +41,9 @@ export function ListPageTableFrame({
   className?: string;
 }) {
   return (
-    <div className={cn("min-h-0 flex-1 overflow-hidden px-5", className)}>{children}</div>
+    <div className={cn("min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-5 py-5", className)}>
+      {children}
+    </div>
   );
 }
 

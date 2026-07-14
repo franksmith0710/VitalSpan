@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  ListBatchDeleteBar,
+  ListPageBatchActions,
   ListRowCheckbox,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
   const [blocks, setBlocks] = useState<TemplateBlock[]>([]);
   const rowIds = useMemo(() => blocks.map((_, index) => String(index)), [blocks]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
 
   useEffect(() => {
     if (templateQuery.data?.blocks) setBlocks(templateQuery.data.blocks);
@@ -109,7 +111,9 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
   return (
     <div className="space-y-4">
       {!readOnly ? (
-        <ListBatchDeleteBar
+        <ListPageBatchActions
+          batchMode={batch.batchMode}
+          onToggleBatchMode={batch.toggleBatchMode}
           selectedCount={selection.selectedCount}
           entityLabel="个块"
           onClear={selection.clear}
@@ -119,7 +123,7 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
       {blocks.map((block, index) => (
         <div key={`${block.blockType}-${index}`} className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            {!readOnly ? (
+            {!readOnly && batch.batchMode ? (
               <ListRowCheckbox
                 checked={selection.isSelected(String(index))}
                 onCheckedChange={() => selection.toggle(String(index))}

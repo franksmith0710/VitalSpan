@@ -614,6 +614,17 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           {missing ? "返回列表" : "删除看板"}
         </Button>
       ) : null}
+      {mode === "edit" && canSave && !missing ? (
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          disabled={saving || !isDirty}
+          onClick={() => void handleSave()}
+        >
+          {saving ? "保存中…" : isDirty ? "保存" : "已保存"}
+        </Button>
+      ) : null}
     </div>
   );
 
@@ -665,7 +676,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             ? "像素布局只读 · 当前回退开关禁止修改与保存"
             : isDirty
               ? "有未保存的更改 · 保存后生效"
-              : "点击标题或铅笔图标可重命名 · 拖入组件、右侧配置属性后保存布局"
+              : "点击标题或铅笔图标可重命名 · 拖入组件、右侧配置属性后点击右上角保存"
           : "预览模式 · 筛选器变更会刷新关联图表"
       }
       actions={headerActions}
@@ -740,15 +751,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               <span className="hidden text-theme-xs text-gray-400 sm:inline">
                 {layout.version === 2 ? "1440px 画布" : "12 列"}
               </span>
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                disabled={saving || !isDirty}
-                onClick={() => void handleSave()}
-              >
-                {saving ? "保存中…" : isDirty ? "保存布局" : "已保存"}
-              </Button>
             </div>
           }
           onPaletteInsert={handleInsert}

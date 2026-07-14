@@ -11,7 +11,10 @@ const PREVIEW_COLORS = [
   "bg-gray-100 dark:bg-white/[0.06]",
 ];
 
-/** 列表缩略图容器纵横比：v2 跟随 canvas，v1 保持 16:10。 */
+/** 列表卡片预览区固定比例（与 Skeleton 一致，避免 canvas 动态高度牵动整行） */
+export const DASHBOARD_LIST_CARD_ASPECT_RATIO = "16 / 10";
+
+/** 独立缩略图容器纵横比：v2 跟随 canvas，v1 保持 16:10。列表卡片请用 DASHBOARD_LIST_CARD_ASPECT_RATIO。 */
 export function dashboardPreviewAspectRatio(layoutJson?: DashboardLayout): string {
   if (layoutJson?.version === 2) {
     const { width, height } = layoutJson.canvas;

@@ -4,9 +4,12 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
   ListHeaderCheckbox,
+  ListPageBatchActions,
   ListRowCheckbox,
+  listTableSelectCellClass,
+  listTableSelectHeadClass,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
@@ -176,6 +179,8 @@ export function RlsAdminPage() {
   const dimNameById = Object.fromEntries(dimensions.map((d) => [d.id, d.name]));
   const groupRowIds = useMemo(() => groups.map((g) => g.id), [groups]);
   const groupSelection = useListRowSelection(groupRowIds);
+  const groupBatch = useListBatchMode(groupSelection.clear);
+  const groupTableColSpan = groupBatch.batchMode ? 5 : 4;
 
   const handleBatchDeleteGroups = async () => {
     const ids = [...groupSelection.selectedIds];
@@ -277,29 +282,35 @@ export function RlsAdminPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="button" variant="primary" size="sm" onClick={() => setGroupOpen(true)}>
-              <Plus className="size-4" aria-hidden />
-              新建分组
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <ListPageBatchActions
+                batchMode={groupBatch.batchMode}
+                onToggleBatchMode={groupBatch.toggleBatchMode}
+                selectedCount={groupSelection.selectedCount}
+                entityLabel="个分组"
+                onClear={groupSelection.clear}
+                onDelete={() => setBatchDeleteOpen(true)}
+              />
+              <Button type="button" variant="primary" size="sm" onClick={() => setGroupOpen(true)}>
+                <Plus className="size-4" aria-hidden />
+                新建分组
+              </Button>
+            </div>
           </div>
-          <ListBatchDeleteBar
-            selectedCount={groupSelection.selectedCount}
-            entityLabel="个分组"
-            onClear={groupSelection.clear}
-            onDelete={() => setBatchDeleteOpen(true)}
-          />
           <div className="overflow-x-only rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
             <table className="min-w-[720px] w-full text-left text-theme-sm">
               <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <tr>
-                  <th className="w-10 px-4 py-3">
-                    <ListHeaderCheckbox
-                      checked={groupSelection.allSelected}
-                      indeterminate={groupSelection.someSelected}
-                      disabled={groups.length === 0}
-                      onCheckedChange={() => groupSelection.toggleAll()}
-                    />
-                  </th>
+                  {groupBatch.batchMode ? (
+                    <th className={listTableSelectHeadClass}>
+                      <ListHeaderCheckbox
+                        checked={groupSelection.allSelected}
+                        indeterminate={groupSelection.someSelected}
+                        disabled={groups.length === 0}
+                        onCheckedChange={() => groupSelection.toggleAll()}
+                      />
+                    </th>
+                  ) : null}
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">名称</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">编码</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">维度类型</th>
@@ -312,7 +323,7 @@ export function RlsAdminPage() {
                 {groupsQuery.isLoading
                   ? Array.from({ length: 4 }).map((_, i) => (
                       <tr key={i}>
-                        <td colSpan={5} className="px-4 py-3">
+                        <td colSpan={groupTableColSpan} className="px-4 py-3">
                           <Skeleton className="h-6 w-full" />
                         </td>
                       </tr>
@@ -320,20 +331,22 @@ export function RlsAdminPage() {
                   : null}
                 {groups.length === 0 && !groupsQuery.isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                    <td colSpan={groupTableColSpan} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                       暂无分组
                     </td>
                   </tr>
                 ) : null}
                 {groups.map((g) => (
                   <tr key={g.id} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-3">
-                      <ListRowCheckbox
-                        checked={groupSelection.isSelected(g.id)}
-                        onCheckedChange={() => groupSelection.toggle(g.id)}
-                        ariaLabel={`选择分组 ${g.name}`}
-                      />
-                    </td>
+                    {groupBatch.batchMode ? (
+                      <td className={listTableSelectCellClass}>
+                        <ListRowCheckbox
+                          checked={groupSelection.isSelected(g.id)}
+                          onCheckedChange={() => groupSelection.toggle(g.id)}
+                          ariaLabel={`选择分组 ${g.name}`}
+                        />
+                      </td>
+                    ) : null}
                     <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{g.name}</td>
                     <td className="px-4 py-3 font-mono text-theme-xs">{g.code}</td>
                     <td className="px-4 py-3">

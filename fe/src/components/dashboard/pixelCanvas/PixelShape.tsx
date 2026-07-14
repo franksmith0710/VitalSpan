@@ -216,8 +216,8 @@ export function PixelShape({
       className={cn(
         "pixel-shape-outer absolute border touch-none select-none",
         mode === "edit" && selected
-          ? "pixel-shape-selected border-brand-500"
-          : "border-transparent",
+          ? "pixel-shape-selected z-[1] border-brand-500"
+          : "border-gray-200/90 dark:border-gray-700/80",
       )}
       style={{
         left: display.x,

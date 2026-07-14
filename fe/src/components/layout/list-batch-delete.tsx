@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useCallback, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,86 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+
+/** 原生 table 选择列（非 shadcn Table） */
+export const listTableSelectHeadClass =
+  "w-10 max-w-10 px-2 py-2 text-center font-medium text-gray-600 dark:text-gray-400";
+export const listTableSelectCellClass = "w-10 max-w-10 px-2 py-2";
+
+export function useListBatchMode(onExit?: () => void) {
+  const [batchMode, setBatchMode] = useState(false);
+
+  const enterBatchMode = useCallback(() => setBatchMode(true), []);
+
+  const exitBatchMode = useCallback(() => {
+    setBatchMode(false);
+    onExit?.();
+  }, [onExit]);
+
+  const toggleBatchMode = useCallback(() => {
+    setBatchMode((prev) => {
+      if (prev) onExit?.();
+      return !prev;
+    });
+  }, [onExit]);
+
+  return { batchMode, setBatchMode, enterBatchMode, exitBatchMode, toggleBatchMode };
+}
+
+export function ListBatchModeButton({
+  active,
+  onToggle,
+  className,
+}: {
+  active: boolean;
+  onToggle: () => void;
+  className?: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant={active ? "primary" : "outline"}
+      size="sm"
+      className={className}
+      onClick={onToggle}
+    >
+      {active ? "完成" : "批量操作"}
+    </Button>
+  );
+}
+
+export function ListPageBatchActions({
+  batchMode,
+  onToggleBatchMode,
+  selectedCount,
+  entityLabel = "项",
+  onClear,
+  onDelete,
+  className,
+}: {
+  batchMode: boolean;
+  onToggleBatchMode: () => void;
+  selectedCount: number;
+  entityLabel?: string;
+  onClear: () => void;
+  onDelete: () => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-wrap items-center gap-3", className)}>
+      <ListBatchModeButton active={batchMode} onToggle={onToggleBatchMode} />
+      {batchMode ? (
+        <ListBatchDeleteBar
+          selectedCount={selectedCount}
+          entityLabel={entityLabel}
+          onClear={onClear}
+          onDelete={onDelete}
+          className="min-w-0 flex-1"
+        />
+      ) : null}
+    </div>
+  );
+}
 
 export function ListRowCheckbox({
   checked,
@@ -29,7 +110,7 @@ export function ListRowCheckbox({
       checked={checked}
       onCheckedChange={(value) => onCheckedChange(value === true)}
       aria-label={ariaLabel}
-      className={cn("shrink-0", className)}
+      className={cn("size-4 shrink-0", className)}
       onClick={(event) => event.stopPropagation()}
     />
   );
@@ -52,6 +133,7 @@ export function ListHeaderCheckbox({
       disabled={disabled}
       onCheckedChange={(value) => onCheckedChange(value === true)}
       aria-label="全选当前页"
+      className="size-4"
     />
   );
 }

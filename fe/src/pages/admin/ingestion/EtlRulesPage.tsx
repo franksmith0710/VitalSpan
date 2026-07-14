@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { Plus, Trash2 } from "lucide-react";
 import {
-  ListBatchDeleteBar,
+  ListPageBatchActions,
   ListRowCheckbox,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { apiFetch } from "@/lib/api";
@@ -52,6 +53,7 @@ export function EtlRulesPage() {
 
   const rowIds = useMemo(() => rules.map((_, index) => String(index)), [rules]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
 
   const removeSelectedRules = () => {
     const indices = new Set([...selection.selectedIds].map(Number));
@@ -171,7 +173,9 @@ export function EtlRulesPage() {
         </div>
       ) : null}
 
-      <ListBatchDeleteBar
+      <ListPageBatchActions
+        batchMode={batch.batchMode}
+        onToggleBatchMode={batch.toggleBatchMode}
         selectedCount={selection.selectedCount}
         entityLabel="条规则"
         onClear={selection.clear}
@@ -185,11 +189,13 @@ export function EtlRulesPage() {
             className="space-y-3 rounded-lg border border-gray-100 p-4 dark:border-gray-800"
           >
             <div className="flex items-center justify-between gap-3">
-              <ListRowCheckbox
-                checked={selection.isSelected(String(index))}
-                onCheckedChange={() => selection.toggle(String(index))}
-                ariaLabel={`选择规则 ${index + 1}`}
-              />
+              {batch.batchMode ? (
+                <ListRowCheckbox
+                  checked={selection.isSelected(String(index))}
+                  onCheckedChange={() => selection.toggle(String(index))}
+                  ariaLabel={`选择规则 ${index + 1}`}
+                />
+              ) : null}
               <div className="flex-1 space-y-2">
                 <Label>规则类型</Label>
                 <Select value={rule.type} onValueChange={(v) => changeRuleType(index, v)}>

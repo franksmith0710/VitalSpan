@@ -3,8 +3,9 @@ import { Link2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  ListBatchDeleteBar,
+  ListPageBatchActions,
   ListRowCheckbox,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { IconButton } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export function TermFieldMappingDialog({
   const [rows, setRows] = useState<Mapping[]>([]);
   const rowIds = useMemo(() => rows.map((_, index) => String(index)), [rows]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
 
   const removeSelected = () => {
     const indices = new Set([...selection.selectedIds].map(Number));
@@ -76,7 +78,9 @@ export function TermFieldMappingDialog({
         <DialogHeader>
           <DialogTitle>物理字段映射 — {termName}</DialogTitle>
         </DialogHeader>
-        <ListBatchDeleteBar
+        <ListPageBatchActions
+          batchMode={batch.batchMode}
+          onToggleBatchMode={batch.toggleBatchMode}
           selectedCount={selection.selectedCount}
           entityLabel="条映射"
           onClear={selection.clear}
@@ -85,12 +89,21 @@ export function TermFieldMappingDialog({
         />
         <div className="grid gap-3">
           {rows.map((row, idx) => (
-            <div key={idx} className="grid gap-2 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-end">
-              <ListRowCheckbox
-                checked={selection.isSelected(String(idx))}
-                onCheckedChange={() => selection.toggle(String(idx))}
-                ariaLabel={`选择映射行 ${idx + 1}`}
-              />
+            <div
+              key={idx}
+              className={
+                batch.batchMode
+                  ? "grid gap-2 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-end"
+                  : "grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+              }
+            >
+              {batch.batchMode ? (
+                <ListRowCheckbox
+                  checked={selection.isSelected(String(idx))}
+                  onCheckedChange={() => selection.toggle(String(idx))}
+                  ariaLabel={`选择映射行 ${idx + 1}`}
+                />
+              ) : null}
               <div className="grid gap-1">
                 <Label htmlFor={`fqn-${idx}`}>表 FQN</Label>
                 <Input

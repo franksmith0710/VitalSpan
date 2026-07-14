@@ -4,9 +4,12 @@ import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
+  ListPageBatchActions,
   ListHeaderCheckbox,
   ListRowCheckbox,
+  listTableSelectCellClass,
+  listTableSelectHeadClass,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
@@ -135,6 +138,8 @@ export function RoleListPage() {
 
   const rowIds = useMemo(() => filteredItems.map((row) => row.id), [filteredItems]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
+  const tableColSpan = batch.batchMode ? 6 : 5;
 
   const { data: dashboards } = useQuery({
     queryKey: queryKeys.dashboards.list(),
@@ -307,13 +312,23 @@ export function RoleListPage() {
             </>
           }
           actions={
-            !isLoading && data ? (
-              <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-                {debouncedPrefix || statusFilter !== "all"
-                  ? `显示 ${filteredItems.length} 个`
-                  : `共 ${data.total} 个角色`}
-              </p>
-            ) : null
+            <div className="flex flex-wrap items-center gap-3">
+              <ListPageBatchActions
+                batchMode={batch.batchMode}
+                onToggleBatchMode={batch.toggleBatchMode}
+                selectedCount={selection.selectedCount}
+                entityLabel="个角色"
+                onClear={selection.clear}
+                onDelete={() => setBatchDeleteOpen(true)}
+              />
+              {!isLoading && data ? (
+                <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+                  {debouncedPrefix || statusFilter !== "all"
+                    ? `显示 ${filteredItems.length} 个`
+                    : `共 ${data.total} 个角色`}
+                </p>
+              ) : null}
+            </div>
           }
         />
 
@@ -328,28 +343,21 @@ export function RoleListPage() {
           </div>
         ) : null}
 
-        <div className="shrink-0 border-b border-gray-100 px-5 py-3 dark:border-white/[0.06]">
-          <ListBatchDeleteBar
-            selectedCount={selection.selectedCount}
-            entityLabel="个角色"
-            onClear={selection.clear}
-            onDelete={() => setBatchDeleteOpen(true)}
-          />
-        </div>
-
         <ListPageTableFrame>
           <div className="overflow-x-only">
             <table className="min-w-[720px] w-full text-left text-theme-sm">
               <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
                 <tr>
-                  <th className="w-10 px-4 py-3">
-                    <ListHeaderCheckbox
-                      checked={selection.allSelected}
-                      indeterminate={selection.someSelected}
-                      disabled={filteredItems.length === 0}
-                      onCheckedChange={() => selection.toggleAll()}
-                    />
-                  </th>
+                  {batch.batchMode ? (
+                    <th className={listTableSelectHeadClass}>
+                      <ListHeaderCheckbox
+                        checked={selection.allSelected}
+                        indeterminate={selection.someSelected}
+                        disabled={filteredItems.length === 0}
+                        onCheckedChange={() => selection.toggleAll()}
+                      />
+                    </th>
+                  ) : null}
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">编码</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">显示名</th>
                   <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">描述</th>
@@ -363,7 +371,7 @@ export function RoleListPage() {
                 {isLoading
                   ? Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                        <td className="px-4 py-3" colSpan={6}>
+                        <td className="px-4 py-3" colSpan={tableColSpan}>
                           <Skeleton className="h-6 w-full" />
                         </td>
                       </tr>
@@ -373,7 +381,7 @@ export function RoleListPage() {
                   <tr>
                     <td
                       className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                      colSpan={6}
+                      colSpan={tableColSpan}
                     >
                       当前筛选条件下暂无角色
                     </td>
@@ -383,7 +391,7 @@ export function RoleListPage() {
                   <tr>
                     <td
                       className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
-                      colSpan={6}
+                      colSpan={tableColSpan}
                     >
                       {debouncedPrefix ? (
                         <>未找到编码以「{debouncedPrefix}」开头的角色</>
@@ -406,13 +414,15 @@ export function RoleListPage() {
                         key={row.id}
                         className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]"
                       >
-                        <td className="px-4 py-3">
-                          <ListRowCheckbox
-                            checked={selection.isSelected(row.id)}
-                            onCheckedChange={() => selection.toggle(row.id)}
-                            ariaLabel={`选择角色 ${row.name}`}
-                          />
-                        </td>
+                        {batch.batchMode ? (
+                          <td className={listTableSelectCellClass}>
+                            <ListRowCheckbox
+                              checked={selection.isSelected(row.id)}
+                              onCheckedChange={() => selection.toggle(row.id)}
+                              ariaLabel={`选择角色 ${row.name}`}
+                            />
+                          </td>
+                        ) : null}
                         <td className="px-4 py-3 font-mono text-gray-800 dark:text-white/90">
                           {row.code}
                         </td>

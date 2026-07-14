@@ -9,7 +9,7 @@ import {
   Settings2,
   Trash2,
 } from "lucide-react";
-import { ListHeaderCheckbox, ListRowCheckbox } from "@/components/layout/list-batch-delete";
+import { ListHeaderCheckbox, ListRowCheckbox, listTableSelectCellClass, listTableSelectHeadClass } from "@/components/layout/list-batch-delete";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -45,7 +45,7 @@ export function SyncJobsTable({
         <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
           <tr>
             {showSelection ? (
-              <th className="w-10 px-4 py-3">
+              <th className={listTableSelectHeadClass}>
                 <ListHeaderCheckbox
                   checked={allSelected}
                   indeterminate={someSelected}
@@ -69,7 +69,7 @@ export function SyncJobsTable({
               className="border-b border-gray-100 transition-colors last:border-0 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]"
             >
               {showSelection ? (
-                <td className="px-4 py-3">
+                <td className={listTableSelectCellClass}>
                   <ListRowCheckbox
                     checked={selectedIds?.has(job.id) ?? false}
                     onCheckedChange={() => onToggleSelect?.(job.id)}

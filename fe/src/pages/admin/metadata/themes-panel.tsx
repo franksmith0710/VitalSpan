@@ -4,8 +4,9 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
   ListHeaderCheckbox,
+  ListPageBatchActions,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
@@ -105,6 +106,7 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
     return items.filter((n) => !items.some((c) => c.parentId === n.id)).map((n) => n.id);
   }, [items]);
   const selection = useListRowSelection(leafIds);
+  const batch = useListBatchMode(selection.clear);
 
   const handleBatchDelete = async () => {
     const ids = [...selection.selectedIds];
@@ -130,10 +132,20 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
           </p>
         }
         actions={
-          <Button type="button" variant="primary" size="sm" onClick={openCreateRoot}>
-            <Plus className="size-4" aria-hidden />
-            新建根节点
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <ListPageBatchActions
+              batchMode={batch.batchMode}
+              onToggleBatchMode={batch.toggleBatchMode}
+              selectedCount={selection.selectedCount}
+              entityLabel="个节点"
+              onClear={selection.clear}
+              onDelete={() => setBatchDeleteOpen(true)}
+            />
+            <Button type="button" variant="primary" size="sm" onClick={openCreateRoot}>
+              <Plus className="size-4" aria-hidden />
+              新建根节点
+            </Button>
+          </div>
         }
       />
       <ListPageBody>
@@ -156,28 +168,23 @@ export function ThemesPanel({ emptyIcon }: { emptyIcon: ReactNode }) {
           <Skeleton className="h-40 w-full" />
         ) : (
           <>
-            <div className="mb-3 flex flex-wrap items-center gap-3">
-              <ListHeaderCheckbox
-                checked={selection.allSelected}
-                indeterminate={selection.someSelected}
-                disabled={leafIds.length === 0}
-                onCheckedChange={() => selection.toggleAll()}
-              />
-              <span className="text-theme-xs text-gray-500 dark:text-gray-400">
-                仅叶节点可勾选删除
-              </span>
-              <ListBatchDeleteBar
-                selectedCount={selection.selectedCount}
-                entityLabel="个节点"
-                onClear={selection.clear}
-                onDelete={() => setBatchDeleteOpen(true)}
-                className="flex-1"
-              />
-            </div>
+            {batch.batchMode ? (
+              <div className="mb-3 flex flex-wrap items-center gap-3">
+                <ListHeaderCheckbox
+                  checked={selection.allSelected}
+                  indeterminate={selection.someSelected}
+                  disabled={leafIds.length === 0}
+                  onCheckedChange={() => selection.toggleAll()}
+                />
+                <span className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  仅叶节点可勾选删除
+                </span>
+              </div>
+            ) : null}
             <ThemeTree
               nodes={items}
               selectedIds={selection.selectedIds}
-              onToggleSelect={selection.toggle}
+              onToggleSelect={batch.batchMode ? selection.toggle : undefined}
               onCreateChild={(parentId) => {
               setParentForCreate(parentId);
               setName("");

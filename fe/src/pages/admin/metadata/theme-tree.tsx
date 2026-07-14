@@ -131,9 +131,7 @@ export function ThemeTree({
                 onCheckedChange={() => onToggleSelect(node.id)}
                 ariaLabel={`选择主题节点 ${node.name}`}
               />
-            ) : (
-              <span className="size-4 shrink-0" aria-hidden />
-            )}
+            ) : null}
             <GripVertical className="size-4 shrink-0 cursor-grab text-gray-400" aria-hidden />
             {hasChildren ? (
               <button

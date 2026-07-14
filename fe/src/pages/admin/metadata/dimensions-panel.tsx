@@ -4,9 +4,10 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
   ListHeaderCheckbox,
+  ListPageBatchActions,
   ListRowCheckbox,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
@@ -156,6 +157,7 @@ export function DimensionsPanel({
   const items = query.data?.items ?? [];
   const rowIds = useMemo(() => items.map((d) => d.id), [items]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
 
   const handleBatchDelete = async () => {
     const ids = [...selection.selectedIds];
@@ -185,20 +187,22 @@ export function DimensionsPanel({
           />
         }
         actions={
-          <Button type="button" variant="primary" size="sm" onClick={openCreate}>
-            <Plus className="size-4" aria-hidden />
-            新建维度
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <ListPageBatchActions
+              batchMode={batch.batchMode}
+              onToggleBatchMode={batch.toggleBatchMode}
+              selectedCount={selection.selectedCount}
+              entityLabel="个维度"
+              onClear={selection.clear}
+              onDelete={() => setBatchDeleteOpen(true)}
+            />
+            <Button type="button" variant="primary" size="sm" onClick={openCreate}>
+              <Plus className="size-4" aria-hidden />
+              新建维度
+            </Button>
+          </div>
         }
       />
-      <ListPageBody className="border-b border-gray-100 py-3 dark:border-white/[0.06]">
-        <ListBatchDeleteBar
-          selectedCount={selection.selectedCount}
-          entityLabel="个维度"
-          onClear={selection.clear}
-          onDelete={() => setBatchDeleteOpen(true)}
-        />
-      </ListPageBody>
       <ListPageBody>
         {query.error ? (
           <PageErrorBanner message={mapApiError(query.error)} onRetry={() => void query.refetch()} />
@@ -219,13 +223,17 @@ export function DimensionsPanel({
               ),
             }}
             headers={[
-              <ListHeaderCheckbox
-                key="select-all"
-                checked={selection.allSelected}
-                indeterminate={selection.someSelected}
-                disabled={items.length === 0}
-                onCheckedChange={() => selection.toggleAll()}
-              />,
+              ...(batch.batchMode
+                ? [
+                    <ListHeaderCheckbox
+                      key="select-all"
+                      checked={selection.allSelected}
+                      indeterminate={selection.someSelected}
+                      disabled={items.length === 0}
+                      onCheckedChange={() => selection.toggleAll()}
+                    />,
+                  ]
+                : []),
               "名称",
               "编码",
               "主题",
@@ -233,12 +241,16 @@ export function DimensionsPanel({
               "操作",
             ]}
             rows={items.map((d) => [
-              <ListRowCheckbox
-                key={`${d.id}-select`}
-                checked={selection.isSelected(d.id)}
-                onCheckedChange={() => selection.toggle(d.id)}
-                ariaLabel={`选择维度 ${d.name}`}
-              />,
+              ...(batch.batchMode
+                ? [
+                    <ListRowCheckbox
+                      key={`${d.id}-select`}
+                      checked={selection.isSelected(d.id)}
+                      onCheckedChange={() => selection.toggle(d.id)}
+                      ariaLabel={`选择维度 ${d.name}`}
+                    />,
+                  ]
+                : []),
               <span key="n" className="font-medium text-gray-900 dark:text-white/90">
                 {d.name}
               </span>,

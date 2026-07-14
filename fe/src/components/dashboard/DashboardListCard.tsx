@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { Eye, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
 import {
   DashboardPreviewThumb,
-  dashboardPreviewAspectRatio,
+  DASHBOARD_LIST_CARD_ASPECT_RATIO,
 } from "@/components/dashboard/DashboardPreviewThumb";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +68,7 @@ export function DashboardListCard({
     >
       <div
         className="relative overflow-hidden border-b border-gray-100 dark:border-white/[0.06]"
-        style={{ aspectRatio: dashboardPreviewAspectRatio(dashboard.layoutJson) }}
+        style={{ aspectRatio: DASHBOARD_LIST_CARD_ASPECT_RATIO }}
       >
         {onToggleSelect ? (
           <div className="absolute left-2 top-2 z-10 rounded-md bg-white/90 p-0.5 shadow-sm dark:bg-gray-900/90">

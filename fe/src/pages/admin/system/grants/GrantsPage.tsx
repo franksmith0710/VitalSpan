@@ -3,9 +3,12 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
   ListHeaderCheckbox,
+  ListPageBatchActions,
   ListRowCheckbox,
+  listTableSelectCellClass,
+  listTableSelectHeadClass,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
@@ -40,6 +43,8 @@ export function GrantsPage() {
     [page.filteredItems],
   );
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
+  const tableColSpan = batch.batchMode ? 5 : 4;
 
   const handleBatchDelete = async () => {
     const ids = [...selection.selectedIds];
@@ -66,8 +71,9 @@ export function GrantsPage() {
         </Button>
       }
     >
-      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 sm:flex-row sm:items-center">
-        <SearchField
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchField
           className="w-full sm:max-w-md"
           value={page.search}
           onChange={page.setSearch}
@@ -100,6 +106,15 @@ export function GrantsPage() {
             ))}
           </SelectContent>
         </Select>
+        </div>
+        <ListPageBatchActions
+          batchMode={batch.batchMode}
+          onToggleBatchMode={batch.toggleBatchMode}
+          selectedCount={selection.selectedCount}
+          entityLabel="条授权"
+          onClear={selection.clear}
+          onDelete={() => setBatchDeleteOpen(true)}
+        />
       </div>
 
       {isError ? (
@@ -109,26 +124,21 @@ export function GrantsPage() {
         <PageErrorBanner message={page.actionError} onRetry={() => page.setActionError(null)} />
       ) : null}
 
-      <ListBatchDeleteBar
-        selectedCount={selection.selectedCount}
-        entityLabel="条授权"
-        onClear={selection.clear}
-        onDelete={() => setBatchDeleteOpen(true)}
-      />
-
       <Card className="overflow-hidden shadow-theme-xs">
         <div className="overflow-x-only">
           <table className="min-w-[720px] w-full text-left text-theme-sm" aria-label="资源授权列表">
             <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
               <tr>
-                <th className="w-10 px-4 py-3">
-                  <ListHeaderCheckbox
-                    checked={selection.allSelected}
-                    indeterminate={selection.someSelected}
-                    disabled={page.filteredItems.length === 0}
-                    onCheckedChange={() => selection.toggleAll()}
-                  />
-                </th>
+                {batch.batchMode ? (
+                  <th className={listTableSelectHeadClass}>
+                    <ListHeaderCheckbox
+                      checked={selection.allSelected}
+                      indeterminate={selection.someSelected}
+                      disabled={page.filteredItems.length === 0}
+                      onCheckedChange={() => selection.toggleAll()}
+                    />
+                  </th>
+                ) : null}
                 <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">角色名称</th>
                 <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">资源类型</th>
                 <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">资源 ID</th>
@@ -141,7 +151,7 @@ export function GrantsPage() {
               {isLoading
                 ? Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                      <td className="px-4 py-3" colSpan={5}>
+                      <td className="px-4 py-3" colSpan={tableColSpan}>
                         <Skeleton className="h-6 w-full" />
                       </td>
                     </tr>
@@ -149,7 +159,7 @@ export function GrantsPage() {
                 : null}
               {!isLoading && page.filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-0">
+                  <td colSpan={tableColSpan} className="p-0">
                     <PanelEmptyState
                       icon={<Shield className="size-10" aria-hidden />}
                       title="暂无资源授权"
@@ -166,13 +176,15 @@ export function GrantsPage() {
                       key={row.id}
                       className="border-b border-gray-100 last:border-0 hover:bg-gray-50/80 dark:border-gray-800 dark:hover:bg-white/[0.02]"
                     >
-                      <td className="px-4 py-3">
-                        <ListRowCheckbox
-                          checked={selection.isSelected(row.id)}
-                          onCheckedChange={() => selection.toggle(row.id)}
-                          ariaLabel={`选择授权 ${row.resourceId}`}
-                        />
-                      </td>
+                      {batch.batchMode ? (
+                        <td className={listTableSelectCellClass}>
+                          <ListRowCheckbox
+                            checked={selection.isSelected(row.id)}
+                            onCheckedChange={() => selection.toggle(row.id)}
+                            ariaLabel={`选择授权 ${row.resourceId}`}
+                          />
+                        </td>
+                      ) : null}
                       <td className="px-4 py-3">
                         {page.roleNameById.get(row.roleId) ?? row.roleId}
                       </td>

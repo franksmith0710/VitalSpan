@@ -587,7 +587,7 @@ describe("dashboard admin smoke", () => {
     renderEditPage();
     await screen.findByDisplayValue("草稿看板");
     await insertLineChartFromToolbar(user);
-    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => {
       expect(layoutPut).toBeGreaterThanOrEqual(1);
     });
@@ -629,7 +629,7 @@ describe("dashboard admin smoke", () => {
     await screen.findByDisplayValue("X");
     const titleInput = screen.getByLabelText("组件标题");
     await user.type(titleInput, "!");
-    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
     expect(await screen.findByText("组件 ID 重复")).toBeInTheDocument();
   });
 
@@ -657,7 +657,7 @@ describe("dashboard admin smoke", () => {
     const titleInput = screen.getByLabelText("组件标题");
     await user.clear(titleInput);
     await user.type(titleInput, "新标题");
-    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
     expect(putBody?.layoutJson?.widgets?.[0]?.title).toBe("新标题");
   });
 
@@ -688,7 +688,7 @@ describe("dashboard admin smoke", () => {
     const titles = await screen.findAllByLabelText("组件标题");
     expect(titles.length).toBeGreaterThanOrEqual(2);
     await user.type(titles[0], "!");
-    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() => {
       expect(layoutPut?.layoutJson?.widgets).toEqual([
@@ -731,7 +731,7 @@ describe("dashboard admin smoke", () => {
     renderEditPage();
     await screen.findByLabelText("组件标题");
     await user.type(screen.getByLabelText("组件标题"), "!");
-    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
     expect(putBody?.layoutJson?.widgets?.[0]?.chartConfig?.dataSourceId).toBe(DS_ID);
     expect(putBody?.layoutJson?.widgets?.[0]?.chartConfig?.sql).toBe("SELECT 2 AS id");
   });
@@ -842,7 +842,7 @@ describe("dashboard admin smoke", () => {
     await screen.findByRole("textbox", { name: "富文本内容" });
     await user.keyboard("新增");
     await user.keyboard("{Control>}{Enter}{/Control}");
-    expect(screen.getByRole("button", { name: "保存布局" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
   });
 
   it("F-C: step back restores previous widget layout after adding widget", async () => {
@@ -922,7 +922,7 @@ describe("dashboard admin smoke", () => {
     expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
     const title = await screen.findByLabelText("组件标题");
     await user.type(title, "!");
-    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() => expect(layoutPut?.layoutJson?.version).toBe(2));
     expect(layoutPut?.layoutJson?.canvas).toEqual({ width: 1440, height: 900 });
@@ -970,7 +970,7 @@ describe("dashboard admin smoke", () => {
     renderEditPage();
     expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
     expect(screen.getByText(/像素布局只读/)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "保存布局" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "保存" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("pixel-edit-bar-w1")).not.toBeInTheDocument();
     expect(screen.queryByTestId("palette-toolbar-toggle")).not.toBeInTheDocument();
     expect(screen.queryByTestId("toolbar-open-reuse")).not.toBeInTheDocument();
@@ -1064,7 +1064,7 @@ describe("dashboard admin smoke", () => {
     renderEditPage();
     const title = await screen.findByLabelText("组件标题");
     await user.type(title, "!");
-    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
 
     await waitFor(() => expect(saved?.layoutJson?.version).toBe(2));
     expect(saved?.layoutJson?.widgets?.[0]).toEqual(
@@ -1105,7 +1105,7 @@ describe("dashboard admin smoke", () => {
     renderEditPage();
     const titles = await screen.findAllByLabelText("组件标题");
     await user.type(titles[0], "!");
-    await user.click(screen.getByRole("button", { name: "保存布局" }));
+    await user.click(screen.getByRole("button", { name: "保存" }));
     await waitFor(() => expect(saved).toBeDefined());
     expect(saved?.layoutJson?.widgets?.map((widget) => widget.id)).toEqual(["top", "bottom"]);
     expect(saved?.layoutJson?.widgets?.map((widget) => widget.order)).toEqual([9, 2]);

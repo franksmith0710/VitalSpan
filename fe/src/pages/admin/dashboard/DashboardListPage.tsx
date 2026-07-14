@@ -5,9 +5,10 @@ import { Eye, LayoutGrid, LayoutList, Pencil, Plus, Share2, Trash2 } from "lucid
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
+  ListPageBatchActions,
   ListHeaderCheckbox,
   ListRowCheckbox,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
@@ -23,6 +24,7 @@ import {
   ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
+  ListPageToolbar,
   PageErrorBanner,
   RowActions,
 } from "@/components/layout/list-page-kit";
@@ -161,6 +163,7 @@ export function DashboardListPage() {
   const sortedItems = useMemo(() => sortByRecent(items), [items]);
   const rowIds = useMemo(() => sortedItems.map((item) => item.id), [sortedItems]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
 
   const handleBatchDelete = async () => {
     const ids = [...selection.selectedIds];
@@ -208,14 +211,18 @@ export function DashboardListPage() {
     >
       <ListPageSection>
         {canEdit ? (
-          <ListPageBody className="border-b border-gray-100 py-3 dark:border-white/[0.06]">
-            <ListBatchDeleteBar
-              selectedCount={selection.selectedCount}
-              entityLabel="个看板"
-              onClear={selection.clear}
-              onDelete={() => setBatchDeleteOpen(true)}
-            />
-          </ListPageBody>
+          <ListPageToolbar
+            actions={
+              <ListPageBatchActions
+                batchMode={batch.batchMode}
+                onToggleBatchMode={batch.toggleBatchMode}
+                selectedCount={selection.selectedCount}
+                entityLabel="个看板"
+                onClear={selection.clear}
+                onDelete={() => setBatchDeleteOpen(true)}
+              />
+            }
+          />
         ) : null}
         {listQuery.isError ? (
           <ListPageBody>
@@ -229,7 +236,7 @@ export function DashboardListPage() {
         {viewMode === "grid" ? (
           <ListPageTableFrame>
             {listQuery.isLoading ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {Array.from({ length: 8 }).map((_, index) => (
                   <DashboardListCardSkeleton key={index} />
                 ))}
@@ -249,7 +256,7 @@ export function DashboardListPage() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {sortedItems.map((dashboard) => (
                     <DashboardListCard
                       key={dashboard.id}
@@ -257,7 +264,9 @@ export function DashboardListPage() {
                       canEdit={canEdit}
                       selected={selection.isSelected(dashboard.id)}
                       onToggleSelect={
-                        canEdit ? () => selection.toggle(dashboard.id) : undefined
+                        canEdit && batch.batchMode
+                          ? () => selection.toggle(dashboard.id)
+                          : undefined
                       }
                       onDelete={canEdit ? () => setDeleteTarget(dashboard) : undefined}
                     />
@@ -277,17 +286,17 @@ export function DashboardListPage() {
             loading={listQuery.isLoading}
             empty={!listQuery.isLoading && sortedItems.length === 0}
             headers={[
-              canEdit ? (
-                <ListHeaderCheckbox
-                  key="select-all"
-                  checked={selection.allSelected}
-                  indeterminate={selection.someSelected}
-                  disabled={sortedItems.length === 0}
-                  onCheckedChange={() => selection.toggleAll()}
-                />
-              ) : (
-                ""
-              ),
+              ...(canEdit && batch.batchMode
+                ? [
+                    <ListHeaderCheckbox
+                      key="select-all"
+                      checked={selection.allSelected}
+                      indeterminate={selection.someSelected}
+                      disabled={sortedItems.length === 0}
+                      onCheckedChange={() => selection.toggleAll()}
+                    />,
+                  ]
+                : []),
               "名称",
               "组件数",
               "更新时间",
@@ -306,16 +315,16 @@ export function DashboardListPage() {
               const editPath = `/admin/dashboards/${row.id}/edit`;
 
               return [
-                canEdit ? (
-                  <ListRowCheckbox
-                    key={`${row.id}-select`}
-                    checked={selection.isSelected(row.id)}
-                    onCheckedChange={() => selection.toggle(row.id)}
-                    ariaLabel={`选择看板 ${row.name}`}
-                  />
-                ) : (
-                  ""
-                ),
+                ...(canEdit && batch.batchMode
+                  ? [
+                      <ListRowCheckbox
+                        key={`${row.id}-select`}
+                        checked={selection.isSelected(row.id)}
+                        onCheckedChange={() => selection.toggle(row.id)}
+                        ariaLabel={`选择看板 ${row.name}`}
+                      />,
+                    ]
+                  : []),
                 <div key={`${row.id}-name`} className="min-w-0">
                   <Link
                     to={canEdit ? editPath : viewPath}

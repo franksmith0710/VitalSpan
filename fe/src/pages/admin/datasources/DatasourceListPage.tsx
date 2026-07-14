@@ -4,9 +4,10 @@ import { Database, Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
+  ListPageBatchActions,
   ListHeaderCheckbox,
   ListRowCheckbox,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
@@ -191,6 +192,7 @@ export function DatasourceListPage() {
   const total = data?.total ?? 0;
   const rowIds = useMemo(() => items.map((item) => item.id), [items]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
   const hasFilters = Boolean(debouncedQ || typeFilter !== ALL_TYPES);
   const isEmpty = !isLoading && items.length === 0;
 
@@ -267,22 +269,23 @@ export function DatasourceListPage() {
             </>
           }
           actions={
-            !isLoading && data && hasFilters ? (
-              <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-                筛选结果 {items.length} 条
-              </p>
-            ) : null
+            <div className="flex flex-wrap items-center gap-3">
+              <ListPageBatchActions
+                batchMode={batch.batchMode}
+                onToggleBatchMode={batch.toggleBatchMode}
+                selectedCount={selection.selectedCount}
+                entityLabel="个数据源"
+                onClear={selection.clear}
+                onDelete={() => setBatchDeleteOpen(true)}
+              />
+              {!isLoading && data && hasFilters ? (
+                <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+                  筛选结果 {items.length} 条
+                </p>
+              ) : null}
+            </div>
           }
         />
-
-        <ListPageBody className="border-b border-gray-100 py-3 dark:border-white/[0.06]">
-          <ListBatchDeleteBar
-            selectedCount={selection.selectedCount}
-            entityLabel="个数据源"
-            onClear={selection.clear}
-            onDelete={() => setBatchDeleteOpen(true)}
-          />
-        </ListPageBody>
 
         <ListPageTableFrame className={cn(isEmpty && !isLoading ? "px-0" : undefined)}>
           {isError ? (
@@ -296,13 +299,17 @@ export function DatasourceListPage() {
               lastColumnAlign="right"
               loadingRows={5}
               headers={[
-                <ListHeaderCheckbox
-                  key="select-all"
-                  checked={selection.allSelected}
-                  indeterminate={selection.someSelected}
-                  disabled={items.length === 0}
-                  onCheckedChange={() => selection.toggleAll()}
-                />,
+                ...(batch.batchMode
+                  ? [
+                      <ListHeaderCheckbox
+                        key="select-all"
+                        checked={selection.allSelected}
+                        indeterminate={selection.someSelected}
+                        disabled={items.length === 0}
+                        onCheckedChange={() => selection.toggleAll()}
+                      />,
+                    ]
+                  : []),
                 "数据源",
                 "连接器",
                 "连接信息",
@@ -328,12 +335,16 @@ export function DatasourceListPage() {
                 const endpoint = formatConnectionEndpoint(row);
 
                 return [
-                  <ListRowCheckbox
-                    key={`${row.id}-select`}
-                    checked={selection.isSelected(row.id)}
-                    onCheckedChange={() => selection.toggle(row.id)}
-                    ariaLabel={`选择数据源 ${row.name}`}
-                  />,
+                  ...(batch.batchMode
+                    ? [
+                        <ListRowCheckbox
+                          key={`${row.id}-select`}
+                          checked={selection.isSelected(row.id)}
+                          onCheckedChange={() => selection.toggle(row.id)}
+                          ariaLabel={`选择数据源 ${row.name}`}
+                        />,
+                      ]
+                    : []),
                   <div key={`${row.id}-name`} className="min-w-[180px]">
                     <Link
                       to={`/admin/datasources/${row.id}`}

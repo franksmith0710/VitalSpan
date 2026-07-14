@@ -4,9 +4,10 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
-  ListBatchDeleteBar,
   ListHeaderCheckbox,
+  ListPageBatchActions,
   ListRowCheckbox,
+  useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
@@ -126,6 +127,7 @@ export function UserViewsSection() {
   const items = (listQuery.data?.items ?? []).slice(0, 20);
   const rowIds = useMemo(() => items.map((row) => row.id), [items]);
   const selection = useListRowSelection(rowIds);
+  const batch = useListBatchMode(selection.clear);
 
   const handleBatchDelete = async () => {
     const ids = [...selection.selectedIds];
@@ -206,7 +208,9 @@ export function UserViewsSection() {
           </p>
         ) : (
           <>
-            <ListBatchDeleteBar
+            <ListPageBatchActions
+              batchMode={batch.batchMode}
+              onToggleBatchMode={batch.toggleBatchMode}
               selectedCount={selection.selectedCount}
               entityLabel="个视图"
               onClear={selection.clear}
@@ -216,14 +220,16 @@ export function UserViewsSection() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-10">
-                    <ListHeaderCheckbox
-                      checked={selection.allSelected}
-                      indeterminate={selection.someSelected}
-                      disabled={items.length === 0}
-                      onCheckedChange={() => selection.toggleAll()}
-                    />
-                  </TableHead>
+                  {batch.batchMode ? (
+                    <TableHead className="w-10">
+                      <ListHeaderCheckbox
+                        checked={selection.allSelected}
+                        indeterminate={selection.someSelected}
+                        disabled={items.length === 0}
+                        onCheckedChange={() => selection.toggleAll()}
+                      />
+                    </TableHead>
+                  ) : null}
                   <TableHead>名称</TableHead>
                 <TableHead>Dashboard ID</TableHead>
                 <TableHead className="text-right">操作</TableHead>
@@ -232,13 +238,15 @@ export function UserViewsSection() {
             <TableBody>
               {items.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>
-                    <ListRowCheckbox
-                      checked={selection.isSelected(row.id)}
-                      onCheckedChange={() => selection.toggle(row.id)}
-                      ariaLabel={`选择视图 ${row.name}`}
-                    />
-                  </TableCell>
+                  {batch.batchMode ? (
+                    <TableCell>
+                      <ListRowCheckbox
+                        checked={selection.isSelected(row.id)}
+                        onCheckedChange={() => selection.toggle(row.id)}
+                        ariaLabel={`选择视图 ${row.name}`}
+                      />
+                    </TableCell>
+                  ) : null}
                   <TableCell>{row.name}</TableCell>
                   <TableCell className="font-mono text-theme-xs">{row.dashboardId}</TableCell>
                   <TableCell className="text-right">
