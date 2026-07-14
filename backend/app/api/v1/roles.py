@@ -21,7 +21,9 @@ from app.auth.rls.bindings import service as binding_service
 from app.auth.schemas import (
     EffectiveDimensionsResponse,
     RoleCreate,
+    RoleDimensionGroupsOut,
     RoleDimensionGroupsReplace,
+    RoleDimensionValuesOut,
     RoleDimensionValuesReplace,
     RoleListResponse,
     RoleOut,
@@ -130,49 +132,33 @@ def delete_role(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.put("/{role_id}/dimension-values", response_model=None)
-def replace_role_dimension_values(
+@router.get("/{role_id}/dimension-groups", response_model=RoleDimensionGroupsOut)
+def get_role_dimension_groups(
     role_id: uuid.UUID,
-    payload: RoleDimensionValuesReplace,
-    actor: Annotated[UserContext, Depends(require_permission("system:rls.manage"))],
+    _: Annotated[UserContext, Depends(require_permission("system:rls.read"))],
     db: Annotated[Session, Depends(_db)],
-) -> Response | JSONResponse:
-    ctx = audit_kwargs(actor.id, actor.username)
+) -> RoleDimensionGroupsOut | JSONResponse:
     try:
-        binding_service.replace_role_dimension_values(
-            db,
-            role_id,
-            payload.dimension_type_id,
-            payload.values,
-            actor_roles=actor.roles,
-            **ctx,
-        )
-    except UserError as exc:
-        return JSONResponse(
-            status_code=exc.status,
-            content={"code": exc.code, "message": exc.message, "detail": None},
-        )
+        return binding_service.get_role_dimension_groups(db, role_id)
     except role_service.RoleError as exc:
         return _role_error_response(exc)
-    except binding_service.BindingError as exc:
-        return _binding_error_response(exc)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.put("/{role_id}/dimension-groups", response_model=None)
+@router.put("/{role_id}/dimension-groups", response_model=RoleDimensionGroupsOut)
 def replace_role_dimension_groups(
     role_id: uuid.UUID,
     payload: RoleDimensionGroupsReplace,
     actor: Annotated[UserContext, Depends(require_permission("system:rls.manage"))],
     db: Annotated[Session, Depends(_db)],
-) -> Response | JSONResponse:
+) -> RoleDimensionGroupsOut | JSONResponse:
     ctx = audit_kwargs(actor.id, actor.username)
     try:
-        binding_service.replace_role_dimension_groups(
+        return binding_service.replace_role_dimension_groups(
             db,
             role_id,
             payload.group_ids,
-            actor_roles=actor.roles,
+            expected_version=payload.expected_version,
+            confirm_empty=payload.confirm_empty,
             **ctx,
         )
     except UserError as exc:
@@ -184,7 +170,50 @@ def replace_role_dimension_groups(
         return _role_error_response(exc)
     except binding_service.BindingError as exc:
         return _binding_error_response(exc)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{role_id}/dimension-values", response_model=RoleDimensionValuesOut)
+def get_role_dimension_values(
+    role_id: uuid.UUID,
+    dimension_type_id: Annotated[uuid.UUID, Query(alias="dimensionTypeId")],
+    _: Annotated[UserContext, Depends(require_permission("system:rls.read"))],
+    db: Annotated[Session, Depends(_db)],
+) -> RoleDimensionValuesOut | JSONResponse:
+    try:
+        return binding_service.get_role_dimension_values(db, role_id, dimension_type_id)
+    except role_service.RoleError as exc:
+        return _role_error_response(exc)
+    except binding_service.BindingError as exc:
+        return _binding_error_response(exc)
+
+
+@router.put("/{role_id}/dimension-values", response_model=RoleDimensionValuesOut)
+def replace_role_dimension_values(
+    role_id: uuid.UUID,
+    payload: RoleDimensionValuesReplace,
+    actor: Annotated[UserContext, Depends(require_permission("system:rls.manage"))],
+    db: Annotated[Session, Depends(_db)],
+) -> RoleDimensionValuesOut | JSONResponse:
+    ctx = audit_kwargs(actor.id, actor.username)
+    try:
+        return binding_service.replace_role_dimension_values(
+            db,
+            role_id,
+            payload.dimension_type_id,
+            payload.values,
+            expected_version=payload.expected_version,
+            confirm_empty=payload.confirm_empty,
+            **ctx,
+        )
+    except UserError as exc:
+        return JSONResponse(
+            status_code=exc.status,
+            content={"code": exc.code, "message": exc.message, "detail": None},
+        )
+    except role_service.RoleError as exc:
+        return _role_error_response(exc)
+    except binding_service.BindingError as exc:
+        return _binding_error_response(exc)
 
 
 @router.get("/{role_id}/permissions", response_model=RolePermissionsOut)

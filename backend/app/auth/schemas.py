@@ -297,13 +297,38 @@ class DimensionGroupValuesResponse(BaseModel):
     items: list[str]
 
 
-class RoleDimensionValuesReplace(BaseModel):
-    dimension_type_id: uuid.UUID
+class RoleDimensionGroupsOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+    role_id: uuid.UUID = Field(alias="roleId")
+    group_ids: list[uuid.UUID] = Field(alias="groupIds")
+    version: int
+
+
+class RoleDimensionValuesOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+    role_id: uuid.UUID = Field(alias="roleId")
+    dimension_type_id: uuid.UUID = Field(alias="dimensionTypeId")
     values: list[str]
+    version: int
+
+
+class RoleDimensionValuesReplace(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+    dimension_type_id: uuid.UUID = Field(alias="dimensionTypeId")
+    values: list[str]
+    expected_version: int = Field(alias="expectedVersion", ge=0)
+    confirm_empty: bool = Field(alias="confirmEmpty", default=False)
 
 
 class RoleDimensionGroupsReplace(BaseModel):
-    group_ids: list[uuid.UUID]
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+    group_ids: list[uuid.UUID] = Field(alias="groupIds")
+    expected_version: int = Field(alias="expectedVersion", ge=0)
+    confirm_empty: bool = Field(alias="confirmEmpty", default=False)
 
 
 class EffectiveDimensionsResponse(BaseModel):

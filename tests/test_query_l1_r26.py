@@ -150,6 +150,14 @@ def _restore_dev_admin(client, auth_headers):
     _set_dev_roles(client, auth_headers, [])
 
 
+def _grant_role_permissions(client, auth_headers, role_id: str, codes: list[str]) -> None:
+    client.put(
+        f"/api/v1/roles/{role_id}/permissions",
+        json={"permissionCodes": codes, "expectedVersion": 0},
+        headers=auth_headers,
+    )
+
+
 def _setup_viewer_acl(client, auth_headers):
     """Return (visible_ds, hidden_ds, viewer_role_id)."""
     _restore_dev_admin(client, auth_headers)
@@ -165,6 +173,7 @@ def _setup_viewer_acl(client, auth_headers):
         json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(visible.id)},
         headers=auth_headers,
     )
+    _grant_role_permissions(client, auth_headers, role["id"], ["datasource:read", "dataset:read"])
     _set_dev_roles(client, auth_headers, [role["id"]])
     return visible, hidden, role["id"]
 
@@ -184,6 +193,7 @@ def query_seed(client, auth_headers):
         json={"role_id": role["id"], "resource_type": "datasource", "resource_id": str(visible.id)},
         headers=auth_headers,
     )
+    _grant_role_permissions(client, auth_headers, role["id"], ["datasource:read", "dataset:read"])
     seed = {
         "ds_id": visible.id,
         "hidden_ds_id": hidden.id,
