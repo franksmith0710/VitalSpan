@@ -89,7 +89,7 @@ export function ListPageFooter({
   return (
     <div
       className={cn(
-        "shrink-0 border-t border-gray-100 px-5 py-4 dark:border-white/[0.06]",
+        "shrink-0 border-t border-gray-100 bg-gray-50/80 px-5 py-3 dark:border-white/[0.06] dark:bg-white/[0.02]",
         className,
       )}
     >

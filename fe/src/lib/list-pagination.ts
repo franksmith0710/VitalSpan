@@ -53,3 +53,35 @@ export function useListPagination(
 export function sliceListPage<T>(items: T[], offset: number, pageSize: number): T[] {
   return items.slice(offset, offset + pageSize);
 }
+
+export type PaginationRange = {
+  current: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  start: number;
+  end: number;
+};
+
+/** 计算当前页展示区间（1-based，含端点） */
+export function getPaginationRange(
+  current: number,
+  pageSize: number,
+  total: number,
+): PaginationRange {
+  const totalPages = Math.max(1, Math.ceil(Math.max(total, 0) / pageSize));
+  const safeCurrent = Math.min(Math.max(1, current), totalPages);
+  if (total <= 0) {
+    return {
+      current: safeCurrent,
+      pageSize,
+      total: 0,
+      totalPages: 1,
+      start: 0,
+      end: 0,
+    };
+  }
+  const start = (safeCurrent - 1) * pageSize + 1;
+  const end = Math.min(safeCurrent * pageSize, total);
+  return { current: safeCurrent, pageSize, total, totalPages, start, end };
+}

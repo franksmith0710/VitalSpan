@@ -340,6 +340,42 @@ def test_bootstrap_root_idempotent_when_enabled_root_exists():
         session.close()
 
 
+def test_ensure_admin_username_root_binding_repairs_orphan_admin():
+    """T-LIFE-14: 其他 root 用户存在时 bootstrap 短路，仍须补绑 username=admin。"""
+    from app.auth.bootstrap_root import ensure_admin_username_root_binding
+    from app.auth.permissions import resolve_user_permissions
+
+    session = _new_session()
+    try:
+        _reset_root_state(session)
+        root = session.scalar(select(AuthRole).where(AuthRole.code == "admin"))
+        assert root is not None
+        root.is_root = True
+        root.is_active = True
+        session.flush()
+
+        decoy = _make_user(session, role_ids=[root.id])
+        admin_user = session.scalar(select(AuthUser).where(AuthUser.username == "admin"))
+        if admin_user is None:
+            admin_user = AuthUser(username="admin", is_active=True)
+            session.add(admin_user)
+            session.commit()
+            session.refresh(admin_user)
+
+        _, decoy_is_root = resolve_user_permissions(session, decoy.id)
+        assert decoy_is_root is True
+        _, admin_is_root_before = resolve_user_permissions(session, admin_user.id)
+        assert admin_is_root_before is False
+
+        assert ensure_admin_username_root_binding(session, username="admin") is True
+        assert ensure_admin_username_root_binding(session, username="admin") is False
+
+        _, admin_is_root_after = resolve_user_permissions(session, admin_user.id)
+        assert admin_is_root_after is True
+    finally:
+        session.close()
+
+
 def test_bootstrap_root_converges_when_concurrent_bootstrap_won(monkeypatch):
     """T-LIFE-13: flush 冲突后若已出现启用 root，视为已初始化幂等成功（含 allow_existing=False）。"""
     from sqlalchemy.exc import IntegrityError

@@ -156,6 +156,32 @@ def ensure_root_role(session: Session) -> AuthRole:
     return role
 
 
+def ensure_admin_username_root_binding(
+    session: Session,
+    *,
+    username: str = "admin",
+) -> bool:
+    """幂等修复：用户存在且启用、但未绑定 root admin 角色时补绑。
+
+    0025 迁移只标记 admin 角色 ``is_root``，不写 ``auth_user_roles``。若库中已有
+    其他启用 root 用户（常见于测试残留），``bootstrap_root`` 会短路，仍须靠本函数
+    把 ``username=admin`` 绑回 root，否则登录 admin 无权限。
+
+    Returns:
+        True 若本次新建了绑定；False 若无需修复或用户不存在。
+    """
+    user = session.scalar(select(AuthUser).where(AuthUser.username == username))
+    if user is None or not user.is_active:
+        return False
+    role = ensure_root_role(session)
+    binding = session.get(AuthUserRole, {"user_id": user.id, "role_id": role.id})
+    if binding is None:
+        session.add(AuthUserRole(user_id=user.id, role_id=role.id))
+        session.commit()
+        return True
+    return False
+
+
 def bootstrap_root(
     session: Session,
     *,
@@ -244,19 +270,35 @@ def main(argv: list[str] | None = None) -> int:
     settings = get_settings()
     session = get_meta_session()
     try:
-        user = bootstrap_root(
-            session,
-            username=settings.vitalspan_bootstrap_admin_username,
-            password=settings.vitalspan_bootstrap_admin_password,
-            allow_existing=settings.vitalspan_bootstrap_allow_existing,
+        repaired = ensure_admin_username_root_binding(
+            session, username=settings.vitalspan_bootstrap_admin_username
         )
-    except BootstrapError as exc:
-        print(f"[bootstrap-root] failed: {exc.code}: {exc.message}", file=sys.stderr)
-        return 1
+        if repaired:
+            user = session.scalar(
+                select(AuthUser).where(
+                    AuthUser.username == settings.vitalspan_bootstrap_admin_username
+                )
+            )
+            print(
+                f"[bootstrap-root] repaired: {user.username} ({user.id}) "
+                "bound to root admin role"
+            )
+            return 0
+
+        try:
+            user = bootstrap_root(
+                session,
+                username=settings.vitalspan_bootstrap_admin_username,
+                password=settings.vitalspan_bootstrap_admin_password,
+                allow_existing=settings.vitalspan_bootstrap_allow_existing,
+            )
+        except BootstrapError as exc:
+            print(f"[bootstrap-root] failed: {exc.code}: {exc.message}", file=sys.stderr)
+            return 1
+        print(f"[bootstrap-root] ok: root admin {user.username} ({user.id})")
+        return 0
     finally:
         session.close()
-    print(f"[bootstrap-root] ok: root admin {user.username} ({user.id})")
-    return 0
 
 
 if __name__ == "__main__":

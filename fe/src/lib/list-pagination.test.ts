@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { renderHook, act } from "@testing-library/react";
-import { useListPagination } from "./list-pagination";
+import { getPaginationRange, useListPagination } from "./list-pagination";
+
+describe("getPaginationRange", () => {
+  it("returns inclusive range for partial last page", () => {
+    expect(getPaginationRange(1, 20, 15)).toEqual({
+      current: 1,
+      pageSize: 20,
+      total: 15,
+      totalPages: 1,
+      start: 1,
+      end: 15,
+    });
+  });
+});
 
 describe("useListPagination", () => {
   it("computes offset from page and pageSize", () => {

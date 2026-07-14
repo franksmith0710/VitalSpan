@@ -6,27 +6,40 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | DONE |
-| request | 仪表板配置右栏 DE 对标完善（风格/背景分离 + 分组 UI） |
-| type | feature |
+| phase | A5_EXECUTE |
+| request | 权限与安全生产可用核心版（续跑 Task 7–13） |
+| type | existing-plan |
 | autonomy_policy | auto_accept_low_risk |
-| risk_level | low |
-| plan | docs/automate/plans/2026-07-14-dashboard-theme-background-de-v2.md |
-| plan_review_state | PASS |
-| status | DONE |
-| started_at | 2026-07-14T14:09:00+08:00 |
-| last_verified_command | vitest DashboardContextInspector+dashboardStyleConfig+DashboardStyleSurface |
+| risk_level | medium |
+| plan | docs/superpowers/plans/2026-07-13-permission-security-production-core.md |
+| plan_review_state | WARN（Task 10 笔误实施时修正） |
+| status | RUNNING |
+| started_at | 2026-07-14T14:23:00+08:00 |
+| last_verified_command | admin root 绑定修复 + bootstrap_root repair |
 | last_verified_exit_code | 0 |
-| verification_summary | 右栏 DE 分组顺序与保存按钮独立；主题/背景 UI 与运行时分离；废弃旧样式弹窗改走右栏；11 项 vitest 绿 |
+| verification_summary | admin 用户未绑 root 角色已修复；Task 7 执行中 |
+| repair_rounds | 0 |
 
 ## 当前需求契约
 
-- request: 右栏仪表板配置对标 DataEase（风格/背景/图表样式等分组 + 保存）
-- type: feature
-- goal: 分组顺序与 DE 一致；主题与背景互不影响；保存入口在「仪表板风格」标题栏
-- scope_include: DashboardContextInspector、dashboardConfigPanels、DashboardConfigSection、DashboardEditPage 入口
-- scope_exclude: 背景图上传 API、数量单位自动换算算法
-- acceptance: vitest 11 绿；手工：设背景+切主题互不影响；工具栏「仪表板样式」打开右栏
+- request: 按预定计划继续执行权限核心（plan-execute 续跑）
+- type: existing-plan
+- goal: 完成 Task 7–13，后端权限收口 + 前端真理源 + 文档/E2E
+- scope_include: backend auth/api、fe permission-codes、docs/api、tests auth 矩阵
+- scope_exclude: LDAP/OIDC/MFA、dashboard 并行 WIP（不提交无关改动）
+- acceptance: 各 Task 验证命令绿 + 最终 plan-verify
+- risk_level: medium
+- autonomy_policy: auto_accept_low_risk
+
+## 上一轮（归档 · 仪表板主题背景）
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
+| request | 仪表板配置右栏 DE 对标完善（风格/背景分离 + 分组 UI） |
+| plan | docs/automate/plans/2026-07-14-dashboard-theme-background-de-v2.md |
+| status | DONE |
+| last_verified_exit_code | 0 |
 
 ## 上一轮（归档 · Mark Line 初版）
 

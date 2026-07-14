@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { LIST_PAGE_SIZE_OPTIONS } from "@/lib/list-pagination";
+import { getPaginationRange, LIST_PAGE_SIZE_OPTIONS } from "@/lib/list-pagination";
 import {
   Pagination,
   PaginationContent,
@@ -9,6 +9,7 @@ import {
   PaginationNext,
   PaginationPrevious,
   PaginationSizeChanger,
+  PaginationSummary,
 } from "@/components/ui/pagination";
 
 export type PaginationBarProps = {
@@ -44,8 +45,9 @@ export function PaginationBar({
   onChange,
   className,
 }: PaginationBarProps) {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const safeCurrent = Math.min(Math.max(1, current), totalPages);
+  const range = getPaginationRange(current, pageSize, total);
+  const { totalPages, start, end } = range;
+  const safeCurrent = range.current;
   const pageItems = buildPageNumbers(safeCurrent, totalPages);
 
   const emit = (page: number, size = pageSize) => {
@@ -55,53 +57,59 @@ export function PaginationBar({
   if (total <= 0) return null;
 
   return (
-    <div className={cn("flex w-full flex-wrap items-center justify-between gap-4", className)}>
-      <div className="flex flex-wrap items-center gap-4">
+    <div
+      className={cn(
+        "flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+        className,
+      )}
+    >
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
         {showSizeChanger ? (
-          <>
-            <PaginationSizeChanger
-              pageSize={pageSize}
-              pageSizeOptions={pageSizeOptions}
-              onPageSizeChange={(size) => onChange(1, size)}
-            />
-            <span className="text-theme-sm text-gray-500 dark:text-gray-400">共 {total} 条</span>
-          </>
-        ) : (
-          <span className="text-theme-sm text-gray-500 dark:text-gray-400">共 {total} 条</span>
-        )}
+          <PaginationSizeChanger
+            pageSize={pageSize}
+            pageSizeOptions={pageSizeOptions}
+            onPageSizeChange={(size) => onChange(1, size)}
+          />
+        ) : null}
+        <PaginationSummary
+          start={start}
+          end={end}
+          total={total}
+          current={safeCurrent}
+          totalPages={totalPages}
+        />
       </div>
-      {totalPages > 1 ? (
-        <Pagination className="mx-0 w-auto justify-end">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious disabled={safeCurrent <= 1} onClick={() => emit(safeCurrent - 1)} />
-            </PaginationItem>
-            {pageItems.map((item, idx) =>
-              item === "ellipsis" ? (
-                <PaginationItem key={`e-${idx}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={item}>
-                  <PaginationLink
-                    isActive={item === safeCurrent}
-                    onClick={() => emit(item)}
-                    aria-label={`第 ${item} 页`}
-                  >
-                    {item}
-                  </PaginationLink>
-                </PaginationItem>
-              ),
-            )}
-            <PaginationItem>
-              <PaginationNext
-                disabled={safeCurrent >= totalPages}
-                onClick={() => emit(safeCurrent + 1)}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      ) : null}
+
+      <Pagination className="mx-0 w-auto shrink-0 justify-end">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious disabled={safeCurrent <= 1} onClick={() => emit(safeCurrent - 1)} />
+          </PaginationItem>
+          {pageItems.map((item, idx) =>
+            item === "ellipsis" ? (
+              <PaginationItem key={`e-${idx}`}>
+                <PaginationEllipsis />
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={item}>
+                <PaginationLink
+                  isActive={item === safeCurrent}
+                  onClick={() => emit(item)}
+                  aria-label={`第 ${item} 页`}
+                >
+                  {item}
+                </PaginationLink>
+              </PaginationItem>
+            ),
+          )}
+          <PaginationItem>
+            <PaginationNext
+              disabled={safeCurrent >= totalPages}
+              onClick={() => emit(safeCurrent + 1)}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 }
