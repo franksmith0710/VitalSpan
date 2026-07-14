@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext, require_permission
+from app.auth.permissions import permission_matches
 
 PERM_READ = "dataset:read"
 PERM_MANAGE = "dataset:manage"
@@ -98,7 +99,7 @@ def list_query_configs(
         limit,
         offset,
         actor_id=_owner_uuid(actor),
-        is_admin="admin" in actor.roles,
+        is_admin=permission_matches(set(actor.permissions), PERM_MANAGE, actor.is_root),
     )
     return ConfigListResponse(items=[ConfigOut.model_validate(r) for r in items], total=total)
 

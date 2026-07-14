@@ -310,16 +310,11 @@ def auto_register_bus(
 
 @router.get("/bus/auto-register/probe", response_model=None)
 def auto_register_probe(
-    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_MANAGE))],
     db: Annotated[Session, Depends(_db)],
 ) -> JSONResponse:
     from app.governance.bus.probe import probe_auto_register_budget_ms
 
-    if "viewer" in actor.roles and actor.roles == ["viewer"]:
-        return JSONResponse(
-            status_code=403,
-            content={"code": "GOV_AUTO_BUS_FORBIDDEN", "message": "viewer forbidden", "detail": None},
-        )
     entry = catalog_service.create_entry(
         db,
         CatalogEntryCreate(
