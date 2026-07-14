@@ -13,12 +13,15 @@ import { DashboardConfigSection } from "./DashboardConfigSection";
 import type { Linkage } from "./dashboardFilterUtils";
 import { LinkageRulesPanel } from "./LinkageRulesPanel";
 import {
-  CANVAS_BG_SWATCHES,
+  DASHBOARD_FONT_OPTIONS,
   GAP_PRESET_PX,
+  THEME_ACCENT_SWATCHES,
   formatMetricValue,
   type DashboardStyleConfig,
   type GapPreset,
 } from "./dashboardStyleConfig";
+import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
+import { ColorField } from "@/components/ui/color-field";
 import type { LayoutWidget } from "./layoutUtils";
 import { CHART_PALETTE_PRESETS } from "@/lib/chart-theme";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -109,7 +112,7 @@ export function DashboardStyleSections({
   const colorScheme = styleConfig.colorScheme ?? "light";
   const gapPreset = styleConfig.gapPreset ?? (styleConfig.widgetGap != null ? "custom" : "md");
   const scaleMode = styleConfig.scaleMode ?? "canvas";
-  const canvasBackground = styleConfig.canvasBackground ?? "";
+  const ws = styleConfig.widgetStyle ?? {};
 
   return (
     <>
@@ -135,6 +138,9 @@ export function DashboardStyleSections({
           )
         }
       >
+        <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+          仅影响看板内容与发布后展示，与顶栏深浅色按钮无关。
+        </p>
         <div className="flex gap-2">
           <ThemePreviewCard
             label="浅色主题"
@@ -152,7 +158,60 @@ export function DashboardStyleSections({
       </DashboardConfigSection>
 
       <DashboardConfigSection title="整体配置" data-testid="dashboard-overall-config">
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
+            <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">整体风格</p>
+            <ColorField
+              label="主题强调色"
+              value={styleConfig.themeAccent ?? ""}
+              swatches={THEME_ACCENT_SWATCHES}
+              onChange={(color) => patchStyle({ themeAccent: color })}
+            />
+            <div className="space-y-1.5">
+              <Label className="text-theme-xs text-gray-600 dark:text-gray-400">全局字体</Label>
+              <Select
+                value={styleConfig.fontFamily || "__default__"}
+                onValueChange={(value) =>
+                  patchStyle({ fontFamily: value === "__default__" ? undefined : value })
+                }
+              >
+                <SelectTrigger className="h-9 w-full">
+                  <SelectValue placeholder="系统默认" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DASHBOARD_FONT_OPTIONS.map((opt) => (
+                    <SelectItem
+                      key={opt.label}
+                      value={opt.value ? opt.value : "__default__"}
+                    >
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-theme-xs text-gray-600 dark:text-gray-400">组件默认圆角 (px)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={48}
+                className="h-9"
+                placeholder="跟随主题"
+                value={ws.borderRadius ?? ""}
+                onChange={(e) =>
+                  patchStyle({
+                    widgetStyle: {
+                      ...ws,
+                      borderRadius: e.target.value ? Number(e.target.value) : undefined,
+                    },
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
           <div className="space-y-1.5">
             <Label className="text-theme-xs text-gray-600 dark:text-gray-400">组件间隙</Label>
             <Select
@@ -248,57 +307,12 @@ export function DashboardStyleSections({
               onChange={(e) => patchStyle({ defaultQueryLimit: Number(e.target.value) || 100 })}
             />
           </div>
+          </div>
         </div>
       </DashboardConfigSection>
 
       <DashboardConfigSection title="仪表板背景" data-testid="dashboard-canvas-background">
-        <div className="space-y-3">
-          <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-            仅设置画布底色与背景图，与上方「仪表板风格」主题互不影响。
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {CANVAS_BG_SWATCHES.map((color) => (
-              <button
-                key={color}
-                type="button"
-                aria-label={`背景色 ${color}`}
-                className={cn(
-                  "size-7 rounded-md border",
-                  canvasBackground === color
-                    ? "ring-2 ring-brand-500 ring-offset-1"
-                    : "border-gray-200 dark:border-gray-700",
-                )}
-                style={{ background: color }}
-                onClick={() => patchStyle({ canvasBackground: color })}
-              />
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-theme-xs"
-              onClick={() => patchStyle({ canvasBackground: undefined, canvasBackgroundImage: undefined })}
-            >
-              清除
-            </Button>
-          </div>
-          <Input
-            className="h-9"
-            value={canvasBackground}
-            placeholder="#f8fafc 或留空"
-            onChange={(e) =>
-              patchStyle({ canvasBackground: e.target.value.trim() || undefined })
-            }
-          />
-          <Input
-            className="h-9"
-            value={styleConfig.canvasBackgroundImage ?? ""}
-            placeholder="背景图 URL（可选）"
-            onChange={(e) =>
-              patchStyle({ canvasBackgroundImage: e.target.value.trim() || undefined })
-            }
-          />
-        </div>
+        <DashboardCanvasBackgroundPanel styleConfig={styleConfig} patchStyle={patchStyle} />
       </DashboardConfigSection>
     </>
   );

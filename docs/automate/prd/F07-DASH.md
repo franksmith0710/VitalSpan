@@ -124,7 +124,7 @@
 - **期次**：M-DEPTH companion
 - **描述**：编辑页点击画布空白展示「仪表板配置」右栏；`layoutJson.styleConfig` 全链路消费（编辑/预览/分享）。
 - **验收标准**：
-  - [x] DASH-008-01：浅/深色主题 + View/Share 一致
+  - [x] DASH-008-01：浅/深色主题 + View/Share 一致（与 Admin 壳层顶栏主题独立）
   - [x] DASH-008-02：间隙预设、像素 gutter、`scaleMode`、刷新频率、`defaultQueryLimit`
   - [x] DASH-008-03：背景色板 + URL 背景图 + 清除
   - [x] DASH-008-04~09：图表样式/配色/标题/查询组件/数字格式/高级样式全局配置

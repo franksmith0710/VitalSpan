@@ -1,6 +1,8 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -17,10 +19,31 @@ from app.openapi.extensions import customize_openapi
 
 settings = get_settings()
 configure_logging(settings)
+logger = logging.getLogger(__name__)
+
+
+def _warm_meta_database() -> None:
+    """预热元数据库连接池；开发环境顺带修复 admin 孤儿绑定。"""
+    from app.auth.bootstrap_root import ensure_admin_username_root_binding
+    from app.auth.models import get_meta_session
+
+    session = get_meta_session()
+    try:
+        session.execute(text("SELECT 1"))
+        if settings.vitalspan_env == "development":
+            ensure_admin_username_root_binding(
+                session,
+                username=settings.vitalspan_bootstrap_admin_username,
+            )
+    except Exception:
+        logger.warning("meta_db_warmup_failed", exc_info=True)
+    finally:
+        session.close()
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    _warm_meta_database()
     scheduler = get_scheduler()
     refresh_all_jobs()
     scheduler.start()

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { apiFetch } from "@/lib/api";
@@ -46,6 +46,8 @@ type ChartRendererProps = {
   paletteId?: string;
   paletteColors?: string[];
   numberFormat?: NumberFormatConfig;
+  /** 像素画布拖拽/缩放中：内容随 CSS 跟手，松手后再对齐图表 */
+  suspendLiveResize?: boolean;
 };
 
 const PAGE_SIZE = 50;
@@ -69,12 +71,14 @@ function embeddedBodyHeight(
   contentChromePx: number,
   gridSpan: { w: number; h: number } | undefined,
 ): number {
-  const pixelHeight = pixelSize ? Math.max(48, pixelSize.height - contentChromePx) : 0;
+  const measured = bodySize.height > 0 ? bodySize.height : 0;
+  const pixelHeight =
+    measured <= 0 && pixelSize ? Math.max(48, pixelSize.height - contentChromePx) : 0;
   const fallbackHeight = gridSpan?.h ? estimateWidgetBodyHeight(gridSpan.h) : 120;
-  return Math.max(64, bodySize.height, pixelHeight, fallbackHeight);
+  return Math.max(64, measured || pixelHeight || fallbackHeight);
 }
 
-export function ChartRenderer({
+export const ChartRenderer = memo(function ChartRenderer({
   config,
   title = "图表",
   mode = "preview",
@@ -87,13 +91,19 @@ export function ChartRenderer({
   queryLimit,
   paletteId,
   paletteColors,
+  suspendLiveResize = false,
 }: ChartRendererProps) {
-  const { ref: bodyRef, size: bodySize } = useElementSize<HTMLDivElement>(embedded);
+  const { ref: bodyRef, size: bodySize } = useElementSize<HTMLDivElement>({
+    enabled: embedded,
+    paused: suspendLiveResize,
+  });
   const fillHeight = useMemo(() => {
     if (!embedded) return Math.max(180, bodySize.height || 180);
+    if (suspendLiveResize) return bodySize.height || 120;
     return embeddedBodyHeight(bodySize, pixelSize, contentChromePx, gridSpan);
   }, [
     embedded,
+    suspendLiveResize,
     bodySize.height,
     pixelSize?.width,
     pixelSize?.height,
@@ -171,6 +181,7 @@ export function ChartRenderer({
           fill={embedded}
           height={embedded ? undefined : chartSize.height}
           width={embedded ? undefined : chartSize.width}
+          freezeResize={suspendLiveResize}
         />
       );
     }
@@ -196,6 +207,7 @@ export function ChartRenderer({
           fill={embedded}
           height={embedded ? undefined : chartSize.height}
           width={embedded ? undefined : chartSize.width}
+          freezeResize={suspendLiveResize}
         />
       );
     }
@@ -217,10 +229,16 @@ export function ChartRenderer({
       const totalPages = Math.ceil(rows.length / PAGE_SIZE);
 
       return (
-        <div className={embedded ? "flex h-full min-h-0 flex-col" : undefined}>
-          <div className={embedded ? "min-h-0 flex-1 overflow-auto" : "overflow-x-only"}>
+        <div className={embedded ? "flex h-full min-h-0 w-full flex-col" : undefined}>
+          <div
+            className={
+              embedded
+                ? "min-h-0 flex-1 overflow-auto overscroll-contain"
+                : "overflow-x-only"
+            }
+          >
             <table className="w-full min-w-[320px] text-left text-theme-sm">
-              <thead className="bg-gray-50 dark:bg-gray-900">
+              <thead className="sticky top-0 z-[1] bg-gray-50 dark:bg-gray-900">
                 <tr>
                   {cols.map((c) => (
                     <th key={c} className="px-3 py-2 text-theme-xs font-medium text-gray-500">
@@ -305,8 +323,8 @@ export function ChartRenderer({
     const compactEmbedded = embedded && fillHeight < 160;
     const apexChart: ApexOptions["chart"] = {
       ...(embedded ? {} : { height: chartSize.height }),
-      redrawOnParentResize: true,
-      redrawOnWindowResize: true,
+      redrawOnParentResize: embedded ? !suspendLiveResize : true,
+      redrawOnWindowResize: !embedded,
       animations: embedded ? { enabled: false } : undefined,
       ...(chartType === "bar" && localConfig.styleVariant === "stacked"
         ? { stacked: true }
@@ -333,9 +351,9 @@ export function ChartRenderer({
       options = createBarChartOptions(categories, apexOverrides);
     }
     return (
-      <div className="h-full min-h-0 w-full min-w-0 overflow-hidden">
+      <div className={embedded ? "absolute inset-0 overflow-hidden" : "h-full min-h-0 w-full min-w-0 overflow-hidden"}>
         <Chart
-          key={`${chartType}-${series.map((s) => s.name).join(",")}-${series[0]?.data.length ?? 0}-${embedded ? `${bodySize.width}x${bodySize.height}` : "panel"}`}
+          key={`${chartType}-${series.map((s) => s.name).join(",")}-${series[0]?.data.length ?? 0}-${embedded ? "embedded" : "panel"}`}
           options={options}
           series={series}
           type={chartType}
@@ -352,7 +370,7 @@ export function ChartRenderer({
         mode === "config"
           ? "grid gap-4 lg:grid-cols-2"
           : embedded
-            ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+            ? "relative h-full min-h-0 w-full overflow-hidden"
             : ""
       }
     >
@@ -363,7 +381,7 @@ export function ChartRenderer({
           onChange={setLocalConfig}
         />
       ) : null}
-      <div className={embedded ? "min-h-0 flex-1 overflow-hidden h-full w-full" : undefined}>
+      <div className={embedded ? "absolute inset-0 overflow-hidden" : undefined}>
         {renderBody()}
       </div>
     </div>
@@ -371,13 +389,13 @@ export function ChartRenderer({
 
   if (embedded) {
     return (
-      <div ref={bodyRef} className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden">
+      <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
         {loading ? (
-          <Skeleton className="min-h-[120px] w-full flex-1 rounded-lg" aria-busy="true" aria-label="图表加载中" />
+          <Skeleton className="absolute inset-0 rounded-lg" aria-busy="true" aria-label="图表加载中" />
         ) : error ? (
           <div
             role="alert"
-            className="flex min-h-[120px] flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-error-500/40 bg-error-50/80 p-3 dark:bg-error-500/10"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg border border-error-500/40 bg-error-50/80 p-3 dark:bg-error-500/10"
           >
             <p className={cn("text-center", dwStateError)}>{error}</p>
             <Button type="button" variant="outline" size="sm" onClick={rerun}>
@@ -385,7 +403,9 @@ export function ChartRenderer({
             </Button>
           </div>
         ) : empty ? (
-          embeddedStateMessage(dwState, "暂无数据")
+          <div className="absolute inset-0 flex items-center justify-center">
+            {embeddedStateMessage(dwState, "暂无数据")}
+          </div>
         ) : (
           body
         )}
@@ -405,4 +425,4 @@ export function ChartRenderer({
       {body}
     </ChartPanel>
   );
-}
+});

@@ -56,6 +56,30 @@ const API_BASE =
   import.meta.env.VITE_API_BASE_URL ??
   (import.meta.env.DEV ? "" : "http://localhost:8000");
 
+export const API_FETCH_TIMEOUT_MS = 30_000;
+
+export async function fetchWithTimeout(
+  input: string,
+  init: RequestInit & { timeoutMs?: number } = {},
+): Promise<Response> {
+  const { timeoutMs = API_FETCH_TIMEOUT_MS, ...rest } = init;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...rest, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiRequestError(
+        "请求超时，请确认后端服务（uvicorn）与数据库已启动",
+        "REQUEST_TIMEOUT",
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -90,7 +114,7 @@ export async function apiFetch<T>(
   init: ApiFetchOptions = {},
 ): Promise<T> {
   const { preserveSessionOn401Codes, ...fetchInit } = init;
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetchWithTimeout(`${API_BASE}${path}`, {
     ...fetchInit,
     headers: {
       "Content-Type": "application/json",

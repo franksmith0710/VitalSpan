@@ -65,34 +65,60 @@ export type ScaledCanvasMetrics = {
   scale: number;
   contentWidth: number;
   contentHeight: number;
+  /** Stage `left` inside pixel-canvas-content */
+  stageLeft: number;
+  /** Center content block when letterboxed (component scale mode) */
+  centerContent: boolean;
 };
+
+/** DE 画板规范高度；缩放比例按设计尺寸而非内容撑开后的高度 */
+export const CANVAS_SCALE_DESIGN_HEIGHT = 900;
+
+const SCALE_HEIGHT_FLOOR = 320;
+
+/** 对标 DE `canvasStyleData.height`：碰撞撑高后的 canvas.height 不参与缩放分母 */
+export function resolveScaleDesignHeight(canvasHeight: number): number {
+  return Math.max(SCALE_HEIGHT_FLOOR, Math.min(canvasHeight, CANVAS_SCALE_DESIGN_HEIGHT));
+}
 
 export function scaledCanvasMetrics(
   hostWidth: number,
   hostHeight: number,
   canvasWidth: number,
-  canvasHeight: number,
+  designCanvasHeight: number,
+  contentCanvasHeight: number,
   gutter = 0,
   scaleMode: "canvas" | "component" = "canvas",
 ): ScaledCanvasMetrics {
   const availableWidth = Math.max(0, hostWidth - gutter);
   const availableHeight = Math.max(0, hostHeight);
   const safeCanvasWidth = canvasWidth > 0 ? canvasWidth : 1;
-  const safeCanvasHeight = canvasHeight > 0 ? canvasHeight : 1;
+  const safeDesignHeight = designCanvasHeight > 0 ? designCanvasHeight : 1;
+  const safeContentHeight = Math.max(contentCanvasHeight, safeDesignHeight);
   const scaleX = availableWidth / safeCanvasWidth;
-  const scaleY = availableHeight / safeCanvasHeight;
+  const scaleY = availableHeight / safeDesignHeight;
   const scale = scaleMode === "component" ? Math.min(scaleX, scaleY) : scaleX;
-  const scaledHeight = safeCanvasHeight * scale;
+  const scaledWidth = safeCanvasWidth * scale;
+  const scaledContentHeight = safeContentHeight * scale;
+
+  if (scaleMode === "component") {
+    return {
+      scale,
+      contentWidth: Math.ceil(scaledWidth),
+      contentHeight: Math.ceil(scaledContentHeight),
+      stageLeft: 0,
+      centerContent: true,
+    };
+  }
+
   const contentHeight =
-    scaleMode === "component"
-      ? Math.ceil(scaledHeight)
-      : scaledHeight <= availableHeight + 0.5
-        ? availableHeight
-        : Math.ceil(scaledHeight);
+    scaledContentHeight <= availableHeight + 0.5 ? availableHeight : Math.ceil(scaledContentHeight);
   return {
     scale,
     contentWidth: gutter + availableWidth,
     contentHeight,
+    stageLeft: gutter,
+    centerContent: false,
   };
 }
 

@@ -14,6 +14,7 @@ import {
   type PixelLayoutWidget,
 } from "../layoutUtils";
 import { WidgetErrorBoundary } from "../WidgetErrorBoundary";
+import { usePixelWidgetInteracting } from "../pixelCanvas/PixelCanvasInteractionContext";
 
 export type DashboardWidgetsSetter = (
   update: LayoutWidget[] | ((previous: LayoutWidget[]) => LayoutWidget[]),
@@ -65,8 +66,9 @@ export function DashboardCanvasWidgetRenderer({
   chartRefreshKeys,
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
+  const isInteracting = usePixelWidgetInteracting(widget.id);
   const pixelSize =
-    "width" in sourceWidget
+    "width" in sourceWidget && !isInteracting
       ? { width: sourceWidget.width, height: sourceWidget.height }
       : undefined;
   const executeKey = JSON.stringify({
@@ -146,6 +148,7 @@ export function DashboardCanvasWidgetRenderer({
         updateWidget(widgetId, { textConfig })
       }
       dashboardStyle={dashboardStyle}
+      suspendLiveResize={isInteracting}
     />
     </WidgetErrorBoundary>
   );

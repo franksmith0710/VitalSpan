@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -23,12 +24,16 @@ import type { ScaleMode, DashboardStyleConfig } from "../dashboardStyleConfig";
 import { resolveArtboardStyle } from "../dashboardStyleConfig";
 import { resolvePixelCollisions } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
-import { clientPointToCanvas, resolvePixelCanvasMeasureElement, scaledCanvasMetrics } from "./geometry";
+import { clientPointToCanvas, resolvePixelCanvasMeasureElement, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
 import { PixelShape } from "./PixelShape";
 import type { PixelWidgetActions } from "./PixelShapeActionRail";
 import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
 import type { MarkLineGuide } from "./pixelMarkLine";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
+import {
+  PixelCanvasInteractionProvider,
+  type PixelCanvasInteraction,
+} from "./PixelCanvasInteractionContext";
 
 type PixelCanvasProps = {
   mode: "edit" | "view";
@@ -50,6 +55,9 @@ type PixelCanvasProps = {
 export const PIXEL_CANVAS_GUTTER = 0;
 
 export const PIXEL_CANVAS_MIN_HEIGHT = 320;
+
+/** 邻组件推挤预览节流，避免拖拽时每帧重绘全部图表 */
+export const PIXEL_PREVIEW_THROTTLE_MS = 150;
 
 export function canvasScaleForHost(
   hostWidth: number,
@@ -114,7 +122,13 @@ export function PixelCanvas({
   const hostRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [contentSize, setContentSize] = useState({ width: 0, height: 0 });
+  const [stageLeft, setStageLeft] = useState(0);
+  const [centerContent, setCenterContent] = useState(false);
   const [previewLayout, setPreviewLayout] = useState<DashboardLayoutV2 | null>(null);
+  const [interaction, setInteraction] = useState<PixelCanvasInteraction>(null);
+  const previewThrottleRef = useRef(0);
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingPreviewRef = useRef<PixelLayoutWidget | null>(null);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [markGuides, setMarkGuides] = useState<MarkLineGuide[]>([]);
   const [visibleViewport, setVisibleViewport] = useState<PixelRect>({
@@ -135,6 +149,10 @@ export function PixelCanvas({
     () => ({ width: activeLayout.canvas.width, height: viewCanvasHeight }),
     [activeLayout.canvas.width, viewCanvasHeight],
   );
+  const designCanvasHeight = useMemo(
+    () => resolveScaleDesignHeight(activeLayout.canvas.height),
+    [activeLayout.canvas.height],
+  );
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -145,12 +163,17 @@ export function PixelCanvas({
         measureEl.clientWidth,
         measureEl.clientHeight,
         viewCanvas.width,
+        designCanvasHeight,
         viewCanvas.height,
         pixelGutter,
         scaleMode,
       );
       setScale((previous) =>
         Math.abs(previous - metrics.scale) < 0.0001 ? previous : metrics.scale,
+      );
+      setStageLeft((previous) => (previous === metrics.stageLeft ? previous : metrics.stageLeft));
+      setCenterContent((previous) =>
+        previous === metrics.centerContent ? previous : metrics.centerContent,
       );
       setContentSize((previous) =>
         Math.abs(previous.width - metrics.contentWidth) < 1 &&
@@ -165,7 +188,7 @@ export function PixelCanvas({
     const observer = new ResizeObserver(update);
     observer.observe(measureEl);
     return () => observer.disconnect();
-  }, [onViewportChange, viewCanvas, scaleMode, pixelGutter]);
+  }, [onViewportChange, viewCanvas, designCanvasHeight, scaleMode, pixelGutter]);
 
   const resolveActive = useCallback(
     (widget: PixelLayoutWidget) =>
@@ -178,25 +201,69 @@ export function PixelCanvas({
     [layout],
   );
 
-  const handlePreview = useCallback(
+  const flushPreview = useCallback(
     (widget: PixelLayoutWidget) => {
       if (!onLayoutChange) return;
+      previewThrottleRef.current = Date.now();
+      pendingPreviewRef.current = null;
       setPreviewLayout(resolveActive(widget));
     },
     [onLayoutChange, resolveActive],
   );
 
+  const handlePreview = useCallback(
+    (widget: PixelLayoutWidget) => {
+      if (!onLayoutChange) return;
+      const elapsed = Date.now() - previewThrottleRef.current;
+      if (elapsed >= PIXEL_PREVIEW_THROTTLE_MS) {
+        flushPreview(widget);
+        return;
+      }
+      pendingPreviewRef.current = widget;
+      if (previewTimerRef.current) return;
+      previewTimerRef.current = setTimeout(() => {
+        previewTimerRef.current = null;
+        const pending = pendingPreviewRef.current;
+        if (pending) flushPreview(pending);
+      }, PIXEL_PREVIEW_THROTTLE_MS - elapsed);
+    },
+    [onLayoutChange, flushPreview],
+  );
+
+  useEffect(
+    () => () => {
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    },
+    [],
+  );
+
+  const handleInteractionChange = useCallback((widgetId: string | null) => {
+    setInteraction(widgetId ? { widgetId } : null);
+  }, []);
+
   const handleCommit = useCallback(
     (widget: PixelLayoutWidget) => {
       if (!onLayoutChange) return;
+      if (previewTimerRef.current) {
+        clearTimeout(previewTimerRef.current);
+        previewTimerRef.current = null;
+      }
+      pendingPreviewRef.current = null;
       setPreviewLayout(null);
+      setInteraction(null);
       onLayoutChange(resolveActive(widget));
     },
     [onLayoutChange, resolveActive],
   );
 
   const handleCancel = useCallback(() => {
+    if (previewTimerRef.current) {
+      clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = null;
+    }
+    pendingPreviewRef.current = null;
     setPreviewLayout(null);
+    setInteraction(null);
   }, []);
 
   const handleDragOver = useCallback(
@@ -222,10 +289,20 @@ export function PixelCanvas({
       const payload = readPaletteDragPayload(event.nativeEvent);
       const host = hostRef.current;
       if (!payload || !host) return;
-      const point = clientPointToCanvas(host, event.clientX, event.clientY, scale, pixelGutter);
+      const horizontalGutter =
+        centerContent && contentSize.width > 0
+          ? Math.max(0, (host.clientWidth - contentSize.width) / 2)
+          : pixelGutter;
+      const point = clientPointToCanvas(
+        host,
+        event.clientX,
+        event.clientY,
+        scale,
+        horizontalGutter,
+      );
       onPaletteDrop(payload, point);
     },
-    [onPaletteDrop, scale],
+    [onPaletteDrop, scale, pixelGutter, centerContent, contentSize.width],
   );
 
   return (
@@ -233,6 +310,7 @@ export function PixelCanvas({
       ref={hostRef}
       className={cn(
         "pixel-canvas-host relative h-full min-h-0 w-full overflow-x-hidden overflow-y-auto",
+        centerContent && "flex flex-col items-center",
         paletteDragOver && "dashboard-canvas-drop-active",
         className,
       )}
@@ -253,18 +331,19 @@ export function PixelCanvas({
     >
       <div
         data-testid="pixel-canvas-content"
-        className="relative"
+        className="relative shrink-0"
         style={{ width: contentSize.width, height: contentSize.height }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         <PixelCanvasScaleProvider scale={scale}>
+        <PixelCanvasInteractionProvider interaction={interaction}>
         <div
           data-testid="pixel-canvas-stage"
           className="pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
           style={{
-            left: pixelGutter,
+            left: stageLeft,
             width: viewCanvas.width,
             height: viewCanvas.height,
             transform: `scale(${scale})`,
@@ -296,6 +375,7 @@ export function PixelCanvas({
                 onPreview={mode === "edit" ? handlePreview : undefined}
                 onCommit={handleCommit}
                 onCancel={handleCancel}
+                onInteractionChange={mode === "edit" ? handleInteractionChange : undefined}
                 onMarkGuidesChange={
                   mode === "edit" ? (guides) => setMarkGuides(guides ?? []) : undefined
                 }
@@ -308,6 +388,7 @@ export function PixelCanvas({
               </PixelShape>
             ))}
           </div>
+        </PixelCanvasInteractionProvider>
         </PixelCanvasScaleProvider>
       </div>
     </div>

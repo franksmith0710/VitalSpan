@@ -79,6 +79,97 @@ export const CANVAS_BG_SWATCHES = [
   "#1e293b",
 ] as const;
 
+export const CANVAS_BG_RECOMMENDED = [
+  { color: "#ffffff", label: "纯白" },
+  { color: "#f8fafc", label: "雪色" },
+  { color: "#f1f5f9", label: "雾灰" },
+  { color: "#e2e8f0", label: "银灰" },
+  { color: "#fef3c7", label: "暖米" },
+  { color: "#ecfdf5", label: "薄荷" },
+  { color: "#eff6ff", label: "浅蓝" },
+  { color: "#fce7f3", label: "浅粉" },
+  { color: "#0f172a", label: "墨蓝" },
+  { color: "#1e293b", label: "深蓝" },
+  { color: "#171717", label: "炭黑" },
+] as const;
+
+export const THEME_ACCENT_SWATCHES = [
+  { color: "#465fff", label: "品牌蓝" },
+  { color: "#0ba5ec", label: "天青" },
+  { color: "#12b76a", label: "翠绿" },
+  { color: "#f79009", label: "琥珀" },
+  { color: "#ee46bc", label: "品红" },
+  { color: "#6172f3", label: "靛紫" },
+] as const;
+
+export const DASHBOARD_FONT_OPTIONS = [
+  { value: "", label: "系统默认" },
+  { value: "Outfit, system-ui, sans-serif", label: "Outfit" },
+  { value: '"Noto Sans SC", system-ui, sans-serif', label: "思源黑体" },
+  { value: "Georgia, serif", label: "衬线" },
+] as const;
+
+const CANVAS_GRID_SVG = encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path fill="none" stroke="%23cbd5e1" stroke-width="0.5" d="M24 0H0v24"/></svg>',
+);
+const CANVAS_DOTS_SVG = encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="1" cy="1" r="1" fill="%23cbd5e1"/></svg>',
+);
+
+export type CanvasDecorPreset = {
+  id: string;
+  label: string;
+  image?: string;
+  canvasBackground?: string;
+  previewStyle: CSSProperties;
+};
+
+export const CANVAS_BG_DECOR_PRESETS: CanvasDecorPreset[] = [
+  {
+    id: "none",
+    label: "无装饰",
+    previewStyle: { background: "linear-gradient(135deg, #f8fafc 50%, #e2e8f0 50%)" },
+  },
+  {
+    id: "dots",
+    label: "点阵",
+    image: `data:image/svg+xml,${CANVAS_DOTS_SVG}`,
+    previewStyle: {
+      backgroundColor: "#f8fafc",
+      backgroundImage: `url("data:image/svg+xml,${CANVAS_DOTS_SVG}")`,
+    },
+  },
+  {
+    id: "grid",
+    label: "细网格",
+    image: `data:image/svg+xml,${CANVAS_GRID_SVG}`,
+    previewStyle: {
+      backgroundColor: "#ffffff",
+      backgroundImage: `url("data:image/svg+xml,${CANVAS_GRID_SVG}")`,
+    },
+  },
+  {
+    id: "gradient-soft",
+    label: "柔和渐变",
+    image: undefined,
+    canvasBackground: "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
+    previewStyle: {
+      background: "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
+    },
+  },
+];
+
+export function resolveCanvasDecorPresetId(config: DashboardStyleConfig): string {
+  const image = config.canvasBackgroundImage?.trim();
+  if (!image) {
+    const bg = config.canvasBackground?.trim();
+    if (bg?.startsWith("linear-gradient")) return "gradient-soft";
+    return "none";
+  }
+  const preset = CANVAS_BG_DECOR_PRESETS.find((item) => item.image === image);
+  return preset?.id ?? "custom";
+}
+
 export const CANVAS_BG_LIGHT_DEFAULT = "#ffffff";
 export const CANVAS_BG_DARK_DEFAULT = "#0f172a";
 

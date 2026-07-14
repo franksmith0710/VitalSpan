@@ -57,6 +57,8 @@ type DashboardWidgetProps = {
   onTabsConfigChange?: (id: string, tabsConfig: TabsWidgetConfig) => void;
   onTextConfigChange?: (id: string, config: TextWidgetConfig) => void;
   dashboardStyle?: DashboardStyleConfig;
+  /** 像素画布拖拽/缩放中冻结图表重绘 */
+  suspendLiveResize?: boolean;
 };
 
 function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
@@ -103,6 +105,7 @@ export function DashboardWidget({
   onTabsConfigChange,
   onTextConfigChange,
   dashboardStyle,
+  suspendLiveResize = false,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const canvasScale = usePixelCanvasScale();
@@ -208,6 +211,7 @@ export function DashboardWidget({
         paletteId={dashboardStyle?.paletteId}
         paletteColors={dashboardStyle?.paletteColors}
         numberFormat={dashboardStyle?.numberFormat}
+        suspendLiveResize={suspendLiveResize}
       />
     ) : null;
 

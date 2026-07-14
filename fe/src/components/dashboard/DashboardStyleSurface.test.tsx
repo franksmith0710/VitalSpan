@@ -30,4 +30,29 @@ describe("DashboardStyleSurface", () => {
     expect(surface).toHaveAttribute("data-dashboard-color-scheme", "dark");
     expect(surface).not.toHaveStyle({ background: "#f1c40f" });
   });
+
+  it("keeps light dashboard scope without dark class when html is dark", () => {
+    document.documentElement.classList.add("dark");
+    render(
+      <DashboardStyleSurface styleConfig={{ colorScheme: "light" }}>
+        <span data-testid="probe" className="bg-white dark:bg-gray-900" />
+      </DashboardStyleSurface>,
+    );
+    const scope = screen.getByTestId("probe").parentElement;
+    expect(scope).toHaveClass("dashboard-theme-scope");
+    expect(scope).not.toHaveClass("dark");
+    expect(scope).toHaveAttribute("data-dashboard-color-scheme", "light");
+    document.documentElement.classList.remove("dark");
+  });
+
+  it("applies dark class on scope when colorScheme is dark with html light", () => {
+    render(
+      <DashboardStyleSurface styleConfig={{ colorScheme: "dark" }}>
+        <span data-testid="probe" />
+      </DashboardStyleSurface>,
+    );
+    const scope = screen.getByTestId("probe").parentElement;
+    expect(scope).toHaveClass("dark");
+    expect(scope).toHaveAttribute("data-dashboard-color-scheme", "dark");
+  });
 });

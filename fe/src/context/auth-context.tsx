@@ -27,7 +27,7 @@ type AuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
   logout: () => void;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<AuthUser | null>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -43,11 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     navigate("/login", { replace: true });
   }, [navigate]);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (): Promise<AuthUser | null> => {
     if (!getAuthToken()) {
       setUser(null);
       setIsLoading(false);
-      return;
+      return null;
     }
     setIsLoading(true);
     try {
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         permissions?: string[];
         isRoot?: boolean;
       }>("/api/v1/me");
-      setUser({
+      const next: AuthUser = {
         id: me.id,
         username: me.username,
         displayName: me.displayName ?? me.username,
@@ -68,10 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         roles: me.roles as SessionRole[],
         permissions: me.permissions ?? [],
         isRoot: me.isRoot ?? false,
-      });
+      };
+      setUser(next);
+      return next;
     } catch {
       clearAuthToken();
       setUser(null);
+      return null;
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { DashboardStyleConfig } from "./layoutUtils";
 import { hasUserCanvasBackground } from "./dashboardStyleConfig";
 
@@ -20,12 +20,18 @@ export function DashboardStyleSurface({
 }: DashboardStyleSurfaceProps) {
   const scheme = styleConfig?.colorScheme ?? "light";
   const userCanvasBackground = styleConfig ? hasUserCanvasBackground(styleConfig) : false;
+  const scopeStyle: CSSProperties = {};
+  if (styleConfig?.fontFamily) scopeStyle.fontFamily = styleConfig.fontFamily;
+  if (styleConfig?.themeAccent) {
+    (scopeStyle as Record<string, string>)["--dashboard-accent"] = styleConfig.themeAccent;
+  }
 
   return (
     <div
       className={cn("dashboard-theme-scope min-h-0 w-full", scheme === "dark" && "dark", className)}
       data-dashboard-color-scheme={scheme}
       data-canvas-user-bg={userCanvasBackground ? "true" : undefined}
+      style={Object.keys(scopeStyle).length > 0 ? scopeStyle : undefined}
     >
       {children}
     </div>

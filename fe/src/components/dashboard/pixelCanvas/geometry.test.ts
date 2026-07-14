@@ -6,6 +6,7 @@ import {
   pixelShapeZIndex,
   resolveShapeActionRailPlacement,
   resolveShapeActionRailSide,
+  resolveScaleDesignHeight,
   scaledCanvasMetrics,
   screenDeltaToCanvas,
   type PixelRect,
@@ -37,25 +38,48 @@ describe("pixel canvas geometry", () => {
   });
 
   it("computes scaled content metrics for a narrow host", () => {
-    expect(scaledCanvasMetrics(645, 420, 1440, 900, 0)).toEqual({
+    expect(scaledCanvasMetrics(645, 420, 1440, 900, 900, 0)).toEqual({
       scale: 645 / 1440,
       contentWidth: 645,
       contentHeight: 420,
+      stageLeft: 0,
+      centerContent: false,
     });
   });
 
   it("extends dot-grid background to host height without upscaling widgets", () => {
-    const metrics = scaledCanvasMetrics(740, 699, 1440, 320, 0);
+    const metrics = scaledCanvasMetrics(740, 699, 1440, 320, 320, 0);
     expect(metrics.scale).toBeCloseTo(740 / 1440, 5);
     expect(metrics.contentHeight).toBe(699);
     expect(metrics.contentWidth).toBe(740);
+    expect(metrics.centerContent).toBe(false);
   });
 
   it("uses width-fit scale and ceil height when content exceeds the viewport", () => {
-    const metrics = scaledCanvasMetrics(800, 600, 1440, 2000, 0);
+    const metrics = scaledCanvasMetrics(800, 600, 1440, 2000, 2000, 0);
     expect(metrics.scale).toBeCloseTo(800 / 1440, 5);
     expect(metrics.contentWidth).toBe(800);
     expect(metrics.contentHeight).toBe(Math.ceil((2000 * 800) / 1440));
+    expect(metrics.centerContent).toBe(false);
+  });
+
+  it("letterboxes component scale without leaving a wide empty content strip", () => {
+    const metrics = scaledCanvasMetrics(1189, 400, 1440, 900, 900, 0, "component");
+    expect(metrics.scale).toBeCloseTo(400 / 900, 5);
+    expect(metrics.contentWidth).toBe(Math.ceil((1440 * 400) / 900));
+    expect(metrics.contentHeight).toBe(Math.ceil(400));
+    expect(metrics.centerContent).toBe(true);
+    expect(metrics.stageLeft).toBe(0);
+  });
+
+  it("uses design canvas height for component scale even when content is taller", () => {
+    expect(resolveScaleDesignHeight(2000)).toBe(900);
+    const metrics = scaledCanvasMetrics(1189, 836, 1440, 900, 2000, 0, "component");
+    const scale = Math.min(1189 / 1440, 836 / 900);
+    expect(metrics.scale).toBeCloseTo(scale, 5);
+    expect(metrics.contentWidth).toBe(Math.ceil(1440 * scale));
+    expect(metrics.contentHeight).toBe(Math.ceil(2000 * scale));
+    expect(metrics.centerContent).toBe(true);
   });
 
   it("allows vertical growth when bottom growth is enabled", () => {

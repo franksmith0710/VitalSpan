@@ -31,6 +31,19 @@
 - risk_level: medium
 - autonomy_policy: auto_accept_low_risk
 
+## 上一轮（归档 · 壳层/看板主题隔离）
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
+| request | Admin 壳层主题与看板 colorScheme 独立（防渗透） |
+| type | bugfix |
+| plan | docs/automate/plans/2026-07-14-dashboard-shell-theme-isolation.md |
+| status | DONE |
+| last_verified_command | vitest DashboardStyleSurface+DashboardEditWorkspace+AdminLayout.smoke+DashboardContextInspector+theme-context |
+| last_verified_exit_code | 0 |
+| verification_summary | 双作用域 dark 变体；admin-shell.dark；点阵 data-dashboard-color-scheme；35 vitest 绿（dashboard.smoke 慢测未阻塞） |
+
 ## 上一轮（归档 · 仪表板主题背景）
 
 | 字段 | 值 |

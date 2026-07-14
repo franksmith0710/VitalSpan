@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (
+  &:is(.dark *):not(:is(.dashboard-theme-scope[data-dashboard-color-scheme="light"] *)),
+  &:is(.dashboard-theme-scope.dark *)
+);
 
 @theme {
   --font-outfit: Outfit, sans-serif;
@@ -155,6 +158,42 @@
   }
 }
 
+/** TailAdmin 细滚动条：壳层主题切换时保持统一视觉，不用系统原生滚动条 */
+@utility custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(228 231 236) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: rgb(228 231 236);
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: rgb(208 213 221);
+  }
+}
+
+html.dark .custom-scrollbar {
+  scrollbar-color: rgb(52 64 84) transparent;
+}
+
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgb(52 64 84);
+}
+
+html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: rgb(71 84 103);
+}
+
 /** 仅横向滚动；避免 overflow-x:auto 连带 overflow-y:auto 与页面主滚动条重叠 */
 @utility overflow-x-only {
   overflow-x: auto;
@@ -171,6 +210,14 @@ body,
   height: 100%;
 }
 
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 /* Dashboard 编辑画布：点阵底 + 拖拽缩放把手 */
 .dashboard-canvas-surface {
   background-color: rgb(249 250 251);
@@ -180,7 +227,7 @@ body,
   scrollbar-gutter: stable;
 }
 
-.dark .dashboard-canvas-surface {
+.dashboard-canvas-surface[data-dashboard-color-scheme="dark"] {
   background-color: rgb(255 255 255 / 0.02);
   background-image: radial-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px);
 }
@@ -257,6 +304,11 @@ body,
 
 .pixel-canvas-host .pixel-shape-inner--with-rail {
   padding-top: calc(var(--dw-screen-rail-height) / var(--pixel-canvas-scale));
+}
+
+.pixel-canvas-host .pixel-shape-inner--live-resize {
+  contain: layout paint;
+  overflow: hidden;
 }
 
 .pixel-canvas-host .widget-pending-preview-icon {

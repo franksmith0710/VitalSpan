@@ -70,7 +70,7 @@ function AdminLayoutContent() {
             "mx-auto flex min-h-0 w-full max-w-(--breakpoint-2xl) flex-1 flex-col",
             isFillHeightRoute
               ? "overflow-hidden p-2 md:p-3 [&>*]:min-h-0 [&>*]:flex-1"
-              : "overflow-y-auto p-4 pb-20 md:p-6 md:pb-24 [&>*]:shrink-0",
+              : "custom-scrollbar overflow-y-auto p-4 pb-20 md:p-6 md:pb-24 [&>*]:shrink-0",
           )}
         >
           <RouteErrorBoundary>

@@ -4,6 +4,8 @@ import { ApiRequestError } from "@/lib/api";
 const CODE_MESSAGES: Record<string, string> = {
   // 鉴权 / 会话
   AUTH_INVALID_CREDENTIALS: "用户名或密码错误",
+  REQUEST_TIMEOUT: "请求超时，请确认后端服务与数据库已启动",
+  AUTH_CONTEXT_UNAVAILABLE: "登录失败，无法获取用户信息",
   AUTH_INVALID_CURRENT_PASSWORD: "当前密码不正确",
   AUTH_PASSWORD_UNCHANGED: "新密码不能与当前密码相同",
   AUTH_PASSWORD_NOT_SET: "该账号未配置密码",
@@ -230,8 +232,13 @@ export function mapApiError(err: unknown): string {
       return localizeApiMessage(err.message);
     }
   }
-  if (err instanceof Error && err.message && !/failed to fetch/i.test(err.message)) {
-    return localizeApiMessage(err.message);
+  if (err instanceof Error) {
+    if (/failed to fetch|networkerror|load failed/i.test(err.message)) {
+      return "无法连接服务器，请确认后端已启动（uvicorn :8000）且数据库可访问";
+    }
+    if (err.message && !/failed to fetch/i.test(err.message)) {
+      return localizeApiMessage(err.message);
+    }
   }
   return GENERIC_FAILURE;
 }

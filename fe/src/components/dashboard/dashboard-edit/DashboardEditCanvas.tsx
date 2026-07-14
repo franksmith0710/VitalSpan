@@ -67,19 +67,15 @@ export function DashboardEditCanvas({
 }: DashboardEditCanvasProps) {
   if (mode === "view" || editor === "pixel-readonly") {
     return (
-      <DashboardStyleSurface styleConfig={styleConfig} className="flex min-h-0 flex-1 flex-col">
-        <div className="dashboard-canvas-surface min-h-0 flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/60 p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
-          <DashboardLayoutPreview
-            layout={layout}
-            linkage={linkage}
-            filterValues={filterValues}
-            onFilterValueChange={mode === "view" ? onFilterValueChange : undefined}
-            scaleMode={styleConfig.scaleMode}
-            pixelGutter={resolvePixelGutter(styleConfig)}
-            className="h-full min-h-0"
-          />
-        </div>
-      </DashboardStyleSurface>
+      <DashboardLayoutPreview
+        layout={layout}
+        linkage={linkage}
+        filterValues={filterValues}
+        onFilterValueChange={mode === "view" ? onFilterValueChange : undefined}
+        scaleMode={styleConfig.scaleMode}
+        pixelGutter={resolvePixelGutter(styleConfig)}
+        className="h-full min-h-0 w-full"
+      />
     );
   }
 

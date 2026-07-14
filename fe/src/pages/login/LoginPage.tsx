@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/auth-context";
-import { ApiRequestError, apiFetch } from "@/lib/api";
+import { ApiRequestError, fetchWithTimeout } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { setAuthToken } from "@/lib/auth-token";
 import { resolveDefaultDashboardPath } from "@/lib/defaultViewResolve";
@@ -40,21 +40,28 @@ export function LoginPage() {
       const API_BASE =
         import.meta.env.VITE_API_BASE_URL ??
         (import.meta.env.DEV ? "" : "http://localhost:8000");
-      const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+      const response = await fetchWithTimeout(`${API_BASE}/api/v1/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
       const body = (await response.json().catch(() => ({}))) as LoginResponse & {
+        access_token?: string;
         code?: string;
         message?: string;
       };
       if (!response.ok) {
         throw new ApiRequestError(body.message ?? "用户名或密码错误", body.code);
       }
-      setAuthToken(body.accessToken);
-      await refresh();
-      const me = await apiFetch<{ roles: string[] }>("/api/v1/me");
+      const accessToken = body.accessToken ?? body.access_token;
+      if (!accessToken) {
+        throw new ApiRequestError("登录响应无效，缺少 accessToken", "AUTH_CONTEXT_UNAVAILABLE");
+      }
+      setAuthToken(accessToken);
+      const me = await refresh();
+      if (!me) {
+        throw new ApiRequestError("登录失败，无法获取用户信息", "AUTH_CONTEXT_UNAVAILABLE");
+      }
       const resolved = await resolveDefaultDashboardPath(me.roles ?? []);
       navigate(resolved ?? from, { replace: true });
     } catch (err) {

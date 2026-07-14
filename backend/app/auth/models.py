@@ -245,11 +245,22 @@ class AuthDimensionTypeRef(Base):
     ref_source: Mapped[str] = mapped_column(String(32), nullable=False, server_default="group")
 
 
+def _meta_connect_args(url: str) -> dict:
+    if url.startswith("sqlite"):
+        return {"check_same_thread": False}
+    if url.startswith(("postgresql://", "postgresql+psycopg://")):
+        return {"connect_timeout": 5}
+    return {}
+
+
 @lru_cache
 def get_meta_engine():
     url = get_settings().database_url
-    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return create_engine(url, pool_pre_ping=True, connect_args=connect_args)
+    return create_engine(
+        url,
+        pool_pre_ping=True,
+        connect_args=_meta_connect_args(url),
+    )
 
 
 def get_meta_session():

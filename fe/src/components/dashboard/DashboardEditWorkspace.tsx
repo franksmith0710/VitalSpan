@@ -3,6 +3,7 @@ import { CanvasEditToolbar } from "@/components/dashboard/CanvasEditToolbar";
 import type { PaletteInsertType } from "@/components/dashboard/createLayoutWidget";
 import { CollapsedRailTab, RailFoldHeader } from "@/components/dashboard/RailFoldTab";
 import { DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
+import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import { cn } from "@/lib/utils";
 
 function CanvasShell({
@@ -12,6 +13,7 @@ function CanvasShell({
   children,
   className,
   canvasEngine = "grid",
+  canvasColorScheme = "light",
 }: {
   hint?: ReactNode;
   leading?: ReactNode;
@@ -19,6 +21,7 @@ function CanvasShell({
   children: ReactNode;
   className?: string;
   canvasEngine?: "grid" | "pixel";
+  canvasColorScheme?: ColorScheme;
 }) {
   return (
     <section
@@ -48,6 +51,7 @@ function CanvasShell({
           "dashboard-canvas-surface min-h-0 flex-1 overflow-hidden",
           canvasEngine === "pixel" ? "p-0" : "p-1",
         )}
+        data-dashboard-color-scheme={canvasColorScheme}
       >
         {children}
       </div>
@@ -72,6 +76,8 @@ export type DashboardEditWorkspaceProps = {
   chartRailLabel?: string;
   /** 未选中看板上下文时显示外层「收回」顶栏 */
   showRailFoldHeader?: boolean;
+  /** 编辑点阵 chrome 随看板 colorScheme，不随 Admin 壳层主题 */
+  canvasColorScheme?: ColorScheme;
   className?: string;
 };
 
@@ -90,6 +96,7 @@ export function DashboardEditWorkspace({
   onChartRailOpenChange,
   chartRailLabel = "仪表板配置",
   showRailFoldHeader = true,
+  canvasColorScheme = "light",
   className,
 }: DashboardEditWorkspaceProps) {
   return (
@@ -120,6 +127,7 @@ export function DashboardEditWorkspace({
         }
         actions={canvasActions}
         canvasEngine={canvasEngine}
+        canvasColorScheme={canvasColorScheme}
       >
         {canvas}
       </CanvasShell>

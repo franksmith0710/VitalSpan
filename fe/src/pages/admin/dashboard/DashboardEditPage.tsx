@@ -729,6 +729,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           widgetCount={widgets.length}
           multiSelectCount={multiSelectCount}
           canvasEngine={editor === "pixel" ? "pixel" : "grid"}
+          canvasColorScheme={styleConfig.colorScheme ?? "light"}
           chartRailOpen={chartRailOpen}
           onChartRailOpenChange={setChartRailOpen}
           chartRailLabel="仪表板配置"
