@@ -32,9 +32,9 @@ function AdminLayoutContent() {
     [sessionUser, location.pathname],
   );
   const isChartTypesFill = Boolean(useMatch(CHART_TYPES_CATALOG_PATH));
-  const isDashboardEditFill = Boolean(
-    useMatch("/admin/dashboards/:id/edit") || useMatch("/admin/dashboards/:id"),
-  );
+  const dashboardEditMatch = useMatch("/admin/dashboards/:id/edit");
+  const dashboardDetailMatch = useMatch("/admin/dashboards/:id");
+  const isDashboardEditFill = Boolean(dashboardEditMatch || dashboardDetailMatch);
   const isListFillRoute = isAdminListFillRoute(location.pathname);
   const isFillHeightRoute = isChartTypesFill || isDashboardEditFill || isListFillRoute;
 

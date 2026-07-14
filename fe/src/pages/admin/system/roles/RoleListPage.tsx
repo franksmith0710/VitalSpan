@@ -473,11 +473,12 @@ export function RoleListPage() {
       </ListPageSection>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-lg">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[min(90dvh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+          <DialogHeader className="shrink-0 border-b border-gray-100 px-6 py-5 dark:border-white/[0.06]">
             <DialogTitle>{editing ? "编辑角色" : "新建角色"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            <div className="grid gap-4">
             {!editing ? (
               <div className="grid gap-2">
                 <Label htmlFor="role-code">角色编码</Label>
@@ -573,8 +574,9 @@ export function RoleListPage() {
                 </SelectContent>
               </Select>
             </div>
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0 px-6 py-4">
             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
               取消
             </Button>

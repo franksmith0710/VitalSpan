@@ -3,6 +3,8 @@ import {
   applyPixelInteraction,
   RESIZE_CURSORS,
   resolvePixelCanvasMeasureElement,
+  pixelShapeZIndex,
+  resolveShapeActionRailPlacement,
   resolveShapeActionRailSide,
   scaledCanvasMetrics,
   screenDeltaToCanvas,
@@ -128,14 +130,33 @@ describe("pixel canvas geometry", () => {
   });
 
   it("places action rail on the right when space allows", () => {
-    expect(
-      resolveShapeActionRailSide({ x: 100, width: 300 }, { x: 0, width: 1440 }, 1),
-    ).toBe("right");
+    const widget = { x: 100, y: 0, width: 300, height: 200 };
+    expect(resolveShapeActionRailPlacement(widget, { x: 0, width: 1440 }, 1)).toBe("right");
+    expect(resolveShapeActionRailSide(widget, { x: 0, width: 1440 }, 1)).toBe("right");
   });
 
   it("flips action rail to the left near the right viewport edge", () => {
+    const widget = { x: 1200, y: 0, width: 300, height: 200 };
+    expect(resolveShapeActionRailPlacement(widget, { x: 0, width: 1440 }, 1)).toBe("left");
+    expect(resolveShapeActionRailSide(widget, { x: 0, width: 1440 }, 1)).toBe("left");
+  });
+
+  it("uses overlay when both sides collide with neighbors", () => {
+    const widget = { x: 400, y: 0, width: 300, height: 200 };
+    const leftNeighbor = { x: 100, y: 0, width: 320, height: 200 };
+    const rightNeighbor = { x: 680, y: 0, width: 300, height: 200 };
     expect(
-      resolveShapeActionRailSide({ x: 1200, width: 300 }, { x: 0, width: 1440 }, 1),
-    ).toBe("left");
+      resolveShapeActionRailPlacement(
+        widget,
+        { x: 0, width: 1440 },
+        1,
+        [leftNeighbor, rightNeighbor],
+      ),
+    ).toBe("overlay");
+  });
+
+  it("elevates selected widget z-index above normal order", () => {
+    expect(pixelShapeZIndex(3, false)).toBe(3);
+    expect(pixelShapeZIndex(3, true)).toBeGreaterThan(pixelShapeZIndex(99, false));
   });
 });

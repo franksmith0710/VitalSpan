@@ -282,6 +282,7 @@ export function PixelCanvas({
                 onCommit={handleCommit}
                 onCancel={handleCancel}
                 viewport={visibleViewport}
+                otherWidgets={activeLayout.widgets.filter((item) => item.id !== widget.id)}
                 widgetActions={widgetActions}
               >
                 {renderWidget(widget)}

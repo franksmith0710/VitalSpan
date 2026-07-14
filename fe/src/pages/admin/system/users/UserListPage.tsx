@@ -270,11 +270,12 @@ export function UserListPage() {
       </ListPageSection>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
+          <DialogHeader className="border-b border-gray-100 px-6 py-5 dark:border-white/[0.06]">
             <DialogTitle>创建用户</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-2 py-2">
+          <div className="px-6 py-5">
+            <div className="grid gap-2">
             <Label htmlFor="new-username">用户名</Label>
             <Input
               id="new-username"
@@ -284,8 +285,9 @@ export function UserListPage() {
             {createError ? (
               <p className="text-theme-xs text-error-600">{createError}</p>
             ) : null}
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="px-6 py-4">
             <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
               取消
             </Button>

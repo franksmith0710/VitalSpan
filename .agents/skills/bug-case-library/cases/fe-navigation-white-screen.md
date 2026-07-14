@@ -19,13 +19,14 @@
 - `RouteErrorBoundary`：包裹 `AdminLayout` / `EmbedLayout` 的 `<Outlet />`，pathname 变化自动 reset
 - `AppErrorBoundary`：包裹 `AppRoutes`，捕获 Provider 级崩溃
 - `FilterWidgetControls.tsx`：补 `Checkbox` import
+- **`AdminLayout.tsx`**：`useMatch(a) || useMatch(b)` 短路导致第二次 `useMatch` 有时不执行 → 路由切换触发 Hooks 数量变化；改为分别调用再合并布尔结果
 
 ## 锚点
 
 - `fe/src/components/ui/route-error-boundary.tsx`
-- `fe/src/layouts/AdminLayout.tsx`
+- `fe/src/layouts/AdminLayout.tsx`（`dashboardEditMatch` / `dashboardDetailMatch`）
 - `fe/src/App.tsx`
-- 回归：`route-error-boundary.test.tsx`、`routes.smoke.test.tsx` T-NAV-01
+- 回归：`route-error-boundary.test.tsx`、`routes.smoke.test.tsx` T-NAV-01、`AdminLayout.smoke.test.tsx` T-NAV-02
 
 ## 预防
 

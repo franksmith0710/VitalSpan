@@ -1,10 +1,10 @@
 import {
-  BarChart3,
   ChevronRight,
   Copy,
   Eye,
   Maximize2,
   MoreVertical,
+  Table2,
   Trash2,
 } from "lucide-react";
 import type { PointerEvent } from "react";
@@ -22,9 +22,11 @@ import {
 import { cn } from "@/lib/utils";
 import type { PixelLayoutWidget } from "../layoutUtils";
 import {
-  resolveShapeActionRailSide,
+  resolveShapeActionRailPlacement,
   SHAPE_ACTION_RAIL_SCREEN_GAP,
   SHAPE_ACTION_RAIL_SCREEN_WIDTH,
+  type PixelRect,
+  type ShapeActionRailPlacement,
 } from "./geometry";
 
 export type PixelWidgetActions = {
@@ -38,21 +40,36 @@ type PixelShapeActionRailProps = {
   widget: PixelLayoutWidget;
   scale: number;
   viewport: { x: number; width: number };
+  otherWidgets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   actions: PixelWidgetActions;
 };
+
+function railPositionStyle(
+  placement: ShapeActionRailPlacement,
+  gapPx: number,
+): Record<string, string | number> {
+  if (placement === "overlay") {
+    return { left: 0, top: 0 };
+  }
+  if (placement === "right") {
+    return { left: `calc(100% + ${gapPx}px)` };
+  }
+  return { right: `calc(100% + ${gapPx}px)` };
+}
 
 export function PixelShapeActionRail({
   widget,
   scale,
   viewport,
+  otherWidgets = [],
   actions,
 }: PixelShapeActionRailProps) {
   const safeScale = scale > 0 ? scale : 1;
-  const side = resolveShapeActionRailSide(widget, viewport, safeScale);
+  const placement = resolveShapeActionRailPlacement(widget, viewport, safeScale, otherWidgets);
   const railPx = SHAPE_ACTION_RAIL_SCREEN_WIDTH / safeScale;
   const gapPx = SHAPE_ACTION_RAIL_SCREEN_GAP / safeScale;
   const isChart = widget.type === "chart";
-  const menuSide = side === "right" ? "left" : "right";
+  const menuSide = placement === "right" ? "left" : "right";
 
   const stopPointer = (event: PointerEvent) => {
     event.stopPropagation();
@@ -61,13 +78,14 @@ export function PixelShapeActionRail({
   return (
     <div
       data-testid={`pixel-shape-actions-${widget.id}`}
-      data-side={side}
-      className="absolute top-0 z-40 flex touch-none select-none"
+      data-placement={placement}
+      className={cn(
+        "absolute z-40 flex touch-none select-none",
+        placement === "overlay" ? "z-50" : "top-0",
+      )}
       style={{
         width: railPx,
-        ...(side === "right"
-          ? { left: `calc(100% + ${gapPx}px)` }
-          : { right: `calc(100% + ${gapPx}px)` }),
+        ...railPositionStyle(placement, gapPx),
       }}
       onPointerDown={stopPointer}
     >
@@ -76,13 +94,16 @@ export function PixelShapeActionRail({
           type="button"
           variant="ghost"
           size="sm"
-          className="size-full min-h-0 rounded-none p-0 text-white hover:bg-brand-600 hover:text-white dark:hover:bg-brand-400"
+          className={cn(
+            "size-full min-h-0 rounded-none p-0 text-white hover:bg-brand-600 hover:text-white dark:hover:bg-brand-400",
+            !isChart && "opacity-40",
+          )}
           style={{ width: railPx, height: railPx }}
-          aria-label="放大"
-          disabled={!actions.onEnlarge}
-          onClick={() => actions.onEnlarge?.(widget.id)}
+          aria-label="查看数据"
+          disabled={!isChart || !actions.onViewData}
+          onClick={() => actions.onViewData?.(widget.id)}
         >
-          <Maximize2 style={{ width: 14 / safeScale, height: 14 / safeScale }} aria-hidden />
+          <Table2 style={{ width: 14 / safeScale, height: 14 / safeScale }} aria-hidden />
         </IconButton>
         <IconButton
           type="button"
@@ -93,10 +114,11 @@ export function PixelShapeActionRail({
             !isChart && "opacity-40",
           )}
           style={{ width: railPx, height: railPx }}
-          aria-label="编辑图表"
-          disabled={!isChart}
+          aria-label="放大"
+          disabled={!isChart || !actions.onEnlarge}
+          onClick={() => actions.onEnlarge?.(widget.id)}
         >
-          <BarChart3 style={{ width: 14 / safeScale, height: 14 / safeScale }} aria-hidden />
+          <Maximize2 style={{ width: 14 / safeScale, height: 14 / safeScale }} aria-hidden />
         </IconButton>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
@@ -120,7 +142,7 @@ export function PixelShapeActionRail({
               复制
             </DropdownMenuItem>
             <DropdownMenuItem
-              disabled={!actions.onEnlarge}
+              disabled={!isChart || !actions.onEnlarge}
               onSelect={() => actions.onEnlarge?.(widget.id)}
             >
               <Maximize2 className="size-3.5" aria-hidden />

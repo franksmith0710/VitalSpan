@@ -119,25 +119,92 @@ export function resolvePixelCanvasMeasureElement(host: HTMLElement): HTMLElement
 export const SHAPE_ACTION_RAIL_SCREEN_WIDTH = 32;
 export const SHAPE_ACTION_RAIL_SCREEN_GAP = 8;
 export const SHAPE_ACTION_MENU_SCREEN_WIDTH = 168;
+export const SHAPE_ACTION_RAIL_BUTTON_COUNT = 3;
 
-/** 根据组件在可视区域内的位置，决定 DE 风格操作条在左侧或右侧 */
-export function resolveShapeActionRailSide(
-  widget: Pick<PixelRect, "x" | "width">,
+/** 选中 shape 抬升 z-index，使外伸操作条不被邻组件遮盖 */
+export const PIXEL_SHAPE_SELECTED_Z_BOOST = 1_000_000;
+
+export function pixelShapeZIndex(order: number, selected: boolean): number {
+  return selected ? PIXEL_SHAPE_SELECTED_Z_BOOST + order : order;
+}
+
+export type ShapeActionRailPlacement = "left" | "right" | "overlay";
+
+function shapeActionRailRect(
+  widget: Pick<PixelRect, "x" | "y" | "width" | "height">,
+  side: "left" | "right",
+  scale: number,
+): PixelRect {
+  const safeScale = scale > 0 ? scale : 1;
+  const railPx = SHAPE_ACTION_RAIL_SCREEN_WIDTH / safeScale;
+  const gapPx = SHAPE_ACTION_RAIL_SCREEN_GAP / safeScale;
+  const height = railPx * SHAPE_ACTION_RAIL_BUTTON_COUNT;
+  if (side === "right") {
+    return {
+      x: widget.x + widget.width + gapPx,
+      y: widget.y,
+      width: railPx,
+      height,
+    };
+  }
+  return {
+    x: widget.x - gapPx - railPx,
+    y: widget.y,
+    width: railPx,
+    height,
+  };
+}
+
+function pixelRectsOverlap(a: PixelRect, b: PixelRect): boolean {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
+/** 根据视口空间与邻组件碰撞，决定操作条在左/右或叠放在组件之上 */
+export function resolveShapeActionRailPlacement(
+  widget: Pick<PixelRect, "x" | "y" | "width" | "height">,
   viewport: Pick<PixelRect, "x" | "width">,
   scale: number,
-): "left" | "right" {
+  others: Array<Pick<PixelRect, "x" | "y" | "width" | "height">> = [],
+): ShapeActionRailPlacement {
   const safeScale = scale > 0 ? scale : 1;
   const railCanvas = (SHAPE_ACTION_RAIL_SCREEN_WIDTH + SHAPE_ACTION_RAIL_SCREEN_GAP) / safeScale;
   const menuCanvas = SHAPE_ACTION_MENU_SCREEN_WIDTH / safeScale;
   const rightEdge = widget.x + widget.width;
   const viewportRight = viewport.x + viewport.width;
 
-  if (rightEdge + railCanvas + menuCanvas <= viewportRight + 0.5) return "right";
-  if (widget.x - railCanvas - menuCanvas >= viewport.x - 0.5) return "left";
+  const fitsViewport = (side: "left" | "right") => {
+    if (side === "right") return rightEdge + railCanvas + menuCanvas <= viewportRight + 0.5;
+    return widget.x - railCanvas - menuCanvas >= viewport.x - 0.5;
+  };
+
+  const collides = (side: "left" | "right") =>
+    others.some((other) => pixelRectsOverlap(shapeActionRailRect(widget, side, scale), other));
+
+  if (fitsViewport("right") && !collides("right")) return "right";
+  if (fitsViewport("left") && !collides("left")) return "left";
 
   const spaceRight = viewportRight - rightEdge;
   const spaceLeft = widget.x - viewport.x;
-  return spaceRight >= spaceLeft ? "right" : "left";
+  const fallback = spaceRight >= spaceLeft ? "right" : "left";
+  if (fitsViewport(fallback) && !collides(fallback)) return fallback;
+
+  return "overlay";
+}
+
+/** @deprecated 使用 resolveShapeActionRailPlacement */
+export function resolveShapeActionRailSide(
+  widget: Pick<PixelRect, "x" | "y" | "width" | "height">,
+  viewport: Pick<PixelRect, "x" | "width">,
+  scale: number,
+  others: Array<Pick<PixelRect, "x" | "y" | "width" | "height">> = [],
+): "left" | "right" {
+  const placement = resolveShapeActionRailPlacement(widget, viewport, scale, others);
+  return placement === "overlay" ? "left" : placement;
 }
 
 export function clientPointToCanvas(

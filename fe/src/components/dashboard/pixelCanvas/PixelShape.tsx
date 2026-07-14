@@ -17,6 +17,7 @@ import {
   RESIZE_LABELS,
   screenDeltaToCanvas,
   type PixelInteractionKind,
+  pixelShapeZIndex,
   type PixelRect,
   type ResizeDirection,
 } from "./geometry";
@@ -42,6 +43,7 @@ type PixelShapeProps = {
   onCommit?: (widget: PixelLayoutWidget) => void;
   onCancel?: (widgetId: string) => void;
   viewport?: PixelRect;
+  otherWidgets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   widgetActions?: PixelWidgetActions;
 };
 
@@ -108,6 +110,7 @@ export function PixelShape({
   onCommit,
   onCancel,
   viewport,
+  otherWidgets,
   widgetActions,
 }: PixelShapeProps) {
   const outerRef = useRef<HTMLDivElement>(null);
@@ -221,7 +224,7 @@ export function PixelShape({
         top: display.y,
         width: display.width,
         height: display.height,
-        zIndex: widget.order,
+        zIndex: pixelShapeZIndex(widget.order, mode === "edit" && selected),
       }}
       onPointerMove={(event) => {
         const next = rectForEvent(event);
@@ -257,6 +260,7 @@ export function PixelShape({
           widget={widget}
           scale={scale}
           viewport={viewport}
+          otherWidgets={otherWidgets}
           actions={widgetActions}
         />
       ) : null}

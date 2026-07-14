@@ -8,6 +8,7 @@ import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import {
+  buildWidgetFilterParams,
   mergeLayoutFilterLinkage,
   type Linkage,
 } from "@/components/dashboard/dashboardFilterUtils";
@@ -61,6 +62,9 @@ import { MediaWidgetInspector } from "@/components/dashboard/MediaWidgetInspecto
 import { TabsWidgetInspector } from "@/components/dashboard/TabsWidgetInspector";
 import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
 import { DashboardStyleDialog } from "@/components/dashboard/DashboardStyleDialog";
+import { WidgetEnlargeDialog } from "@/components/dashboard/widget-actions/WidgetEnlargeDialog";
+import { WidgetViewDataDialog } from "@/components/dashboard/widget-actions/WidgetViewDataDialog";
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { DashboardInlineTitle } from "@/components/dashboard/DashboardInlineTitle";
 import { useDashboardCanvasState } from "@/hooks/useDashboardCanvasState";
 import { useWidgetSelection } from "@/hooks/useWidgetSelection";
@@ -139,6 +143,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [chartRailOpen, setChartRailOpen] = useState(true);
   const [chartRefreshKeys, setChartRefreshKeys] = useState<Record<string, number>>({});
   const [pixelViewport, setPixelViewport] = useState<PixelRect>();
+  const [widgetActionDialog, setWidgetActionDialog] = useState<{
+    type: "view-data" | "enlarge";
+    widgetId: string;
+  } | null>(null);
   const loadGenerationRef = useRef(0);
   const hydratedRef = useRef(false);
   const isDirtyRef = useRef(false);
@@ -259,6 +267,38 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     () => mergeLayoutFilterLinkage(widgets, linkage),
     [widgets, linkage],
   );
+
+  const widgetActionTarget = useMemo(
+    () =>
+      widgetActionDialog
+        ? (widgets.find((item) => item.id === widgetActionDialog.widgetId) ?? null)
+        : null,
+    [widgetActionDialog, widgets],
+  );
+
+  const widgetActionChartConfig = useMemo((): ChartViewConfig | null => {
+    if (!widgetActionTarget || widgetActionTarget.type !== "chart" || !widgetActionTarget.chartConfig) {
+      return null;
+    }
+    return { ...widgetActionTarget.chartConfig, chartId: widgetActionTarget.id };
+  }, [widgetActionTarget]);
+
+  const widgetActionFilterParams = useMemo(() => {
+    if (!widgetActionTarget || widgetActionTarget.type !== "chart") return undefined;
+    return buildWidgetFilterParams(widgetActionTarget.id, effectiveLinkage, filterValues);
+  }, [widgetActionTarget, effectiveLinkage, filterValues]);
+
+  const widgetActionExecuteKey = useMemo(() => {
+    if (!widgetActionTarget) return undefined;
+    return JSON.stringify({
+      filters: filterValues,
+      refresh: chartRefreshKeys[widgetActionTarget.id] ?? 0,
+    });
+  }, [widgetActionTarget, filterValues, chartRefreshKeys]);
+
+  const closeWidgetActionDialog = useCallback((open: boolean) => {
+    if (!open) setWidgetActionDialog(null);
+  }, []);
 
   const appendWidget = (type: PaletteInsertType, at?: GridInsertAt) => {
     if (missing || !canSave) return;
@@ -422,38 +462,26 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     [canSave, widgets, layout, appendClonedWidget],
   );
 
-  const handleEnlargeWidget = useCallback(
-    (widgetId: string) => {
-      if (!canSave || layout.version !== 2) return;
-      const target = layout.widgets.find((w) => w.id === widgetId);
-      if (!target) return;
-      setPixelLayout({
-        ...layout,
-        widgets: layout.widgets.map((w) =>
-          w.id === widgetId
-            ? {
-                ...w,
-                width: Math.min(layout.canvas.width - w.x, Math.round(w.width * 1.25)),
-                height: Math.round(w.height * 1.25),
-              }
-            : w,
-        ),
-      });
-    },
-    [canSave, layout, setPixelLayout],
-  );
+  const openWidgetViewDataDialog = useCallback((widgetId: string) => {
+    const target = widgets.find((item) => item.id === widgetId);
+    if (target?.type !== "chart") return;
+    setWidgetActionDialog({ type: "view-data", widgetId });
+  }, [widgets]);
+
+  const openWidgetEnlargeDialog = useCallback((widgetId: string) => {
+    const target = widgets.find((item) => item.id === widgetId);
+    if (target?.type !== "chart") return;
+    setWidgetActionDialog({ type: "enlarge", widgetId });
+  }, [widgets]);
 
   const pixelWidgetActions = useMemo<PixelWidgetActions>(
     () => ({
       onCopy: handleCopyWidget,
       onDelete: handleDeleteWidget,
-      onEnlarge: handleEnlargeWidget,
-      onViewData: (widgetId) => {
-        const target = widgets.find((item) => item.id === widgetId);
-        if (target?.type === "chart") handleChartDataRefresh(widgetId);
-      },
+      onEnlarge: openWidgetEnlargeDialog,
+      onViewData: openWidgetViewDataDialog,
     }),
-    [handleCopyWidget, handleDeleteWidget, handleEnlargeWidget, handleChartDataRefresh, widgets],
+    [handleCopyWidget, handleDeleteWidget, openWidgetEnlargeDialog, openWidgetViewDataDialog],
   );
 
   const handleBatchDelete = () => {
@@ -891,6 +919,31 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           value={styleConfig}
           onApply={setStyleConfig}
         />
+        {widgetActionDialog?.type === "view-data" &&
+          widgetActionTarget &&
+          widgetActionChartConfig && (
+            <WidgetViewDataDialog
+              open
+              onOpenChange={closeWidgetActionDialog}
+              title={widgetActionTarget.title}
+              chartConfig={widgetActionChartConfig}
+              filterParameters={widgetActionFilterParams}
+              executeKey={widgetActionExecuteKey}
+            />
+          )}
+        {widgetActionDialog?.type === "enlarge" &&
+          widgetActionTarget &&
+          widgetActionChartConfig && (
+            <WidgetEnlargeDialog
+              open
+              onOpenChange={closeWidgetActionDialog}
+              title={widgetActionTarget.title}
+              chartConfig={widgetActionChartConfig}
+              filterParameters={widgetActionFilterParams}
+              executeKey={widgetActionExecuteKey}
+              styleConfig={styleConfig}
+            />
+          )}
         </>
       ) : (
         <DashboardEditCanvas

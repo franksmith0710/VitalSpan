@@ -146,6 +146,31 @@ describe("AdminLayout smoke", () => {
     expect(main.className).not.toContain("overflow-y-auto");
   });
 
+  it("T-NAV-02: dashboard edit → list keeps AdminLayout mounted (useMatch hooks stable)", async () => {
+    setDesktopViewport(1400);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboards/:id/edit" element={<div>edit canvas</div>} />
+            <Route path="dashboards" element={<div>dashboard list</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const main = screen.getAllByRole("main")[0];
+    expect(main.className).toContain("overflow-hidden");
+    expect(screen.getByText("edit canvas")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("link", { name: "Dashboard" }));
+
+    expect(await screen.findByText("dashboard list")).toBeInTheDocument();
+    expect(screen.queryByText("edit canvas")).not.toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "管理端导航" })).toBeInTheDocument();
+  });
+
   it("shows mobile backdrop when menu opens at 375px (T-FE-20)", () => {
     setMobileViewport(375);
     render(
