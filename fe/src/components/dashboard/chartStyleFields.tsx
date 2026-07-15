@@ -1,4 +1,3 @@
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -7,6 +6,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ColorField } from "@/components/ui/color-field";
+import { ImageSourceField } from "./imageSourceField";
 import type { SpacingMode, WidgetStyleConfig } from "./dashboardStyleConfig";
 import {
   INSPECTOR_CTRL,
@@ -68,12 +68,11 @@ export function ChartBackgroundStyleFields({ value, onChange }: ChartBackgroundS
           onChange={(background) => onChange({ background: background || undefined })}
         />
       </InspectorFieldRow>
-      <InspectorFieldRow label="背景图片 URL">
-        <Input
-          className={INSPECTOR_CTRL}
-          placeholder="https://…"
+      <InspectorFieldRow label="背景图片">
+        <ImageSourceField
+          inputClassName={INSPECTOR_CTRL}
           value={ws.backgroundImage ?? ""}
-          onChange={(e) => onChange({ backgroundImage: e.target.value || undefined })}
+          onChange={(backgroundImage) => onChange({ backgroundImage })}
         />
       </InspectorFieldRow>
       <InspectorSliderField

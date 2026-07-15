@@ -32,7 +32,7 @@ import {
   DeAttrToggleSection,
   DeSegmentGroup,
 } from "./dashboardInspectorUi";
-import { DeAttrSliderField, DeProgressSlider } from "./deAttrSlider";
+import { DeAttrSliderField, DeAttrSubSliderRow } from "./deAttrSlider";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -86,26 +86,21 @@ function GapControls({
             onChange={(v) => onPresetChange(v as Exclude<GapPreset, "custom"> | "custom")}
           />
           {preset === "custom" ? (
-            <div className="mt-2 space-y-2" data-testid="dashboard-gap-custom-controls">
-              <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
-                <span>自定义</span>
-                <span className="tabular-nums">{customPx}px</span>
-              </div>
-              <DeProgressSlider
+            <div className="mt-2" data-testid="dashboard-gap-custom-controls">
+              <DeAttrSubSliderRow
+                label="自定义"
                 min={0}
                 max={customMax}
                 step={1}
+                unit="px"
                 value={Math.max(0, customPx)}
                 ariaLabel="自定义间隙滑块"
-                ariaValuetext={`${Math.max(0, customPx)}px`}
+                description={`对标 DataEase：每侧 padding 为设定值，相邻间距约为 2 倍；像素自定义 0–${customMax}px，栅格 0–48px。`}
                 onPreview={(next) => {
                   if (next != null) onCustomPx(next);
                 }}
                 onChange={onCustomPx}
               />
-              <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">
-                对标 DataEase：每侧 padding 为设定值，相邻间距约为 2 倍；像素自定义 0–{customMax}px，栅格 0–48px。
-              </p>
             </div>
           ) : null}
         </DeAttrSubField>
@@ -190,18 +185,15 @@ function RefreshField({
         </SelectContent>
       </Select>
       {preset === "custom" ? (
-        <div className="mt-2 space-y-1" data-testid="dashboard-refresh-custom-slider">
-          <div className="flex items-center justify-between gap-2 text-[11px] text-gray-500 dark:text-gray-400">
-            <span>自定义间隔</span>
-            <span className="tabular-nums">{customMin}分钟</span>
-          </div>
-          <DeProgressSlider
+        <div className="mt-2" data-testid="dashboard-refresh-custom-slider">
+          <DeAttrSubSliderRow
+            label="自定义间隔"
             min={1}
             max={120}
             step={1}
+            unit="分钟"
             value={customMin}
             ariaLabel="自定义刷新间隔"
-            ariaValuetext={`${customMin}分钟`}
             onChange={(min) => onChange(min > 0 ? min * 60 : undefined)}
           />
         </div>

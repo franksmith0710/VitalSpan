@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { dwStateError } from "./dashboardWidgetTypography";
+import { dwCaption } from "./dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
 
 type WidgetErrorBoundaryProps = {
@@ -14,6 +14,13 @@ type WidgetErrorBoundaryProps = {
 type WidgetErrorBoundaryState = {
   error: Error | null;
 };
+
+function formatWidgetErrorMessage(message: string): string {
+  const trimmed = message.trim();
+  if (!trimmed) return "未知错误";
+  if (trimmed.length <= 120) return trimmed;
+  return `${trimmed.slice(0, 117)}…`;
+}
 
 export class WidgetErrorBoundary extends Component<
   WidgetErrorBoundaryProps,
@@ -39,22 +46,56 @@ export class WidgetErrorBoundary extends Component<
     if (!error) return this.props.children;
 
     const label = this.props.widgetTitle ? `「${this.props.widgetTitle}」` : "该组件";
+    const detail = formatWidgetErrorMessage(error.message || "未知错误");
+
     return (
       <div
         role="alert"
-        className="flex min-h-[120px] flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-error-500/40 bg-error-50/80 p-4 dark:bg-error-500/10"
+        data-testid="widget-error-boundary"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-lg",
+          "border border-error-200/80 bg-error-50/70 px-3 py-3 text-center",
+          "dark:border-error-500/25 dark:bg-error-500/[0.08]",
+        )}
       >
-        <AlertTriangle className="size-5 text-error-500" aria-hidden />
-        <p className={cn("text-center text-theme-sm", dwStateError)}>
-          {label}渲染失败：{error.message || "未知错误"}
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={this.handleRetry}>
+        <div className="flex size-8 items-center justify-center rounded-full bg-error-100 dark:bg-error-500/15">
+          <AlertTriangle className="size-4 text-error-500" aria-hidden />
+        </div>
+        <div className="min-w-0 space-y-1">
+          <p className="text-theme-xs font-medium text-gray-800 dark:text-white/90">
+            {label}无法渲染
+          </p>
+          <p
+            className={cn(
+              "mx-auto max-w-full break-words text-[11px] leading-snug",
+              dwCaption,
+            )}
+            title={error.message || undefined}
+          >
+            {detail}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1 px-2.5 text-theme-xs"
+            onClick={this.handleRetry}
+          >
+            <RotateCcw className="size-3.5" aria-hidden />
             重试
           </Button>
           {this.props.onDelete ? (
-            <Button type="button" variant="ghost" size="sm" onClick={this.props.onDelete}>
-              删除组件
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2.5 text-theme-xs text-gray-600 hover:text-error-600 dark:text-gray-300 dark:hover:text-error-400"
+              onClick={this.props.onDelete}
+            >
+              <Trash2 className="size-3.5" aria-hidden />
+              删除
             </Button>
           ) : null}
         </div>

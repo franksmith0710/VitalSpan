@@ -269,6 +269,8 @@ export function DashboardWidget({
         contentChromePx={inShapeShell ? shapeContentChromePx : 0}
         config={widget.chartConfig}
         title={widget.title}
+        widgetId={widget.id}
+        drillEnabled={mode === "view"}
         filterParameters={filterParameters}
         executeKey={widgetExecuteKey}
         queryLimit={queryLimit}

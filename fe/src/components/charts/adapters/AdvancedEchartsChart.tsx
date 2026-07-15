@@ -35,6 +35,8 @@ type Props = {
   valueFormat?: NumberFormatConfig;
   /** 地图占位态提示文案（对标 DataEase 图案地图） */
   mapPlaceholderHint?: string;
+  /** 图表元素点击下钻（预览/查看态） */
+  onDrillClick?: (name: string) => void;
 };
 
 export function AdvancedEchartsChart({
@@ -52,6 +54,7 @@ export function AdvancedEchartsChart({
   showLabel = false,
   valueFormat,
   mapPlaceholderHint,
+  onDrillClick,
 }: Props) {
   const chartRef = useRef<EChartsReact | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -120,6 +123,16 @@ export function AdvancedEchartsChart({
       ? `有 ${geoMatchStats.total - geoMatchStats.matched} 条无法匹配地图区域`
       : null;
 
+  const chartEvents = useMemo(() => {
+    if (!onDrillClick) return undefined;
+    return {
+      click: (params: { name?: string | number }) => {
+        if (params?.name == null || params.name === "") return;
+        onDrillClick(String(params.name));
+      },
+    };
+  }, [onDrillClick]);
+
   return (
     <div
       ref={containerRef}
@@ -166,6 +179,7 @@ export function AdvancedEchartsChart({
             notMerge
             lazyUpdate
             autoResize={fill}
+            onEvents={chartEvents}
             data-testid="echarts-chart"
           />
           {placeholderHint ? (

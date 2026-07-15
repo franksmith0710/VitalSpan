@@ -20,12 +20,42 @@ import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
 import { DashboardConfigSlider } from "./deAttrSlider";
 import { ColorField } from "@/components/ui/color-field";
 import type { LayoutWidget } from "./layoutUtils";
-import { ChartPalettePicker } from "./ChartPalettePicker";
+import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DEFAULT_DRILL_LEVEL_COLORS } from "./dashboardChromeConfig";
+import { DEFAULT_DRILL_LEVEL_COLORS, resolveDrillLevelColors } from "./dashboardChromeConfig";
 import type { ColorScheme, SpacingMode } from "./dashboardStyleConfig";
 import { SpacingModeToggle } from "./inspectorSpacing";
 import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
+import { ImageSourceField } from "./imageSourceField";
+
+function DrillLevelPreview({ colors }: { colors: string[] }) {
+  const labels = ["华东", "浙江", "杭州"];
+  return (
+    <div
+      className="chart-drill-chrome chart-drill-chrome--preview"
+      data-testid="drill-level-preview"
+      aria-hidden
+    >
+      <nav className="chart-drill-chrome__trail">
+        <span className="chart-drill-crumb" data-level={0}>
+          全部
+        </span>
+        {labels.map((label, index) => (
+          <span key={label} className="chart-drill-chrome__group">
+            <span className="chart-drill-chrome__sep">/</span>
+            <span
+              className="chart-drill-crumb"
+              data-level={index + 1}
+              style={colors[index] ? { color: colors[index] } : undefined}
+            >
+              {label}
+            </span>
+          </span>
+        ))}
+      </nav>
+    </div>
+  );
+}
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -117,12 +147,11 @@ export function DashboardWidgetStyleSections({
             />
           </div>
           <div className="space-y-1 col-span-2">
-            <Label className="text-theme-xs text-gray-500">背景图片 URL</Label>
-            <Input
-              className="h-9"
-              placeholder="https://…"
+            <Label className="text-theme-xs text-gray-500">背景图片</Label>
+            <ImageSourceField
+              inputClassName="h-9"
               value={ws.backgroundImage ?? ""}
-              onChange={(e) => patchWidgetStyle({ backgroundImage: e.target.value || undefined })}
+              onChange={(backgroundImage) => patchWidgetStyle({ backgroundImage })}
             />
           </div>
           <div className="space-y-1">
@@ -234,9 +263,9 @@ export function DashboardWidgetStyleSections({
       </DashboardConfigSection>
 
       <DashboardConfigSection title="图表配色">
-        <ChartPalettePicker
-          value={styleConfig.paletteId ?? "default"}
-          onChange={(paletteId, colors) =>
+        <ChartPaletteConfigFields
+          paletteId={styleConfig.paletteId}
+          onPaletteChange={(paletteId, colors) =>
             patchStyle({
               paletteId: paletteId ?? "default",
               paletteColors: [...colors],
@@ -449,6 +478,10 @@ export function DashboardWidgetStyleSections({
                 />
               ))}
             </div>
+            <DrillLevelPreview colors={resolveDrillLevelColors(styleConfig)} />
+            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
+              预览/分享态点击图表维度可下钻，面包屑可返回或重置。
+            </p>
           </div>
         </div>
       </DashboardConfigSection>

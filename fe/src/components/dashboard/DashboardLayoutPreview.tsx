@@ -18,6 +18,7 @@ import { resolveDashboardGapRuntimeFromLayout, resolveEffectiveDashboardStyle } 
 import { DashboardStyleSurface } from "./DashboardStyleSurface";
 import { DashboardWidgetsProvider } from "./DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "./dashboardWidgetExecuteKey";
+import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import type {
   DashboardLayout,
   LayoutWidget,
@@ -105,6 +106,7 @@ export function DashboardLayoutPreview({
 
     return (
       <DashboardWidgetsProvider widgets={widgets}>
+      <ChartDrillProvider>
       <DashboardStyleSurface
         styleConfig={styleConfig}
         componentGapPx={resolveDashboardGapRuntimeFromLayout(layout, styleConfigOverride).shellPaddingPx}
@@ -122,12 +124,14 @@ export function DashboardLayoutPreview({
           widgetContentRevision={widgetContentRevision}
         />
       </DashboardStyleSurface>
+      </ChartDrillProvider>
       </DashboardWidgetsProvider>
     );
   }
 
   return (
     <DashboardWidgetsProvider widgets={widgets}>
+    <ChartDrillProvider>
     <DashboardStyleSurface
       styleConfig={styleConfig}
       componentGapPx={resolveDashboardGapRuntimeFromLayout(layout, styleConfigOverride).shellPaddingPx}
@@ -149,6 +153,7 @@ export function DashboardLayoutPreview({
         />
       </div>
     </DashboardStyleSurface>
+    </ChartDrillProvider>
     </DashboardWidgetsProvider>
   );
 }

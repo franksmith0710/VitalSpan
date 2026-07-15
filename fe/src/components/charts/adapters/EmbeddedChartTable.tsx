@@ -19,6 +19,8 @@ type EmbeddedChartTableProps = {
   panel?: boolean;
   tableStyle?: ChartDeTableStyle;
   valueFormat?: NumberFormatConfig;
+  drillField?: string;
+  onDrillCellClick?: (field: string, value: string) => void;
 };
 
 function scrollbarStyle(color?: string): CSSProperties | undefined {
@@ -42,6 +44,8 @@ export function EmbeddedChartTable({
   panel = false,
   tableStyle = {},
   valueFormat,
+  drillField,
+  onDrillCellClick,
 }: EmbeddedChartTableProps) {
   const pageSize = tableStyle.pageSize ?? DEFAULT_TABLE_PAGE_SIZE;
   const paginationMode = tableStyle.paginationMode ?? "page";
@@ -134,8 +138,25 @@ export function EmbeddedChartTable({
                   const idx = columns.indexOf(c);
                   const raw = idx >= 0 ? row[idx] : "";
                   const text = formatTableCellValue(raw, valueFormat);
+                  const drillable = drillField === c && onDrillCellClick && text !== "";
                   return (
-                    <td key={c} title={text} className={cn(cellClass, "text-[var(--dashboard-table-body-fg,#344054)]")}>
+                    <td
+                      key={c}
+                      title={text}
+                      className={cn(
+                        cellClass,
+                        "text-[var(--dashboard-table-body-fg,#344054)]",
+                        drillable && "cursor-pointer text-[var(--dashboard-drill-level-0,#465fff)] hover:underline",
+                      )}
+                      onClick={
+                        drillable
+                          ? (event) => {
+                              event.stopPropagation();
+                              onDrillCellClick(c, String(raw ?? ""));
+                            }
+                          : undefined
+                      }
+                    >
                       {text}
                     </td>
                   );

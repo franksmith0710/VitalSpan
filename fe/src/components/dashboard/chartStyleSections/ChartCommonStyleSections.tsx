@@ -16,7 +16,7 @@ import { ChartDeSliderField } from "../deAttrSlider";
 import { DeAttrToggleRow } from "../dashboardInspectorUi";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 import { INSPECTOR_SELECT } from "../inspectorCompact";
-import { ChartPalettePicker } from "../ChartPalettePicker";
+import { ChartPaletteConfigFields } from "../chartPaletteConfigFields";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
   patchChartDeStyle,
@@ -42,30 +42,21 @@ export function ChartPaletteStyleSection() {
 
   return (
     <DashboardConfigSection title="配色方案" defaultOpen compact>
-      <ChartPalettePicker
+      <ChartPaletteConfigFields
+        dense
         showInherit
-        value={deStyle.paletteId}
-        onChange={(paletteId) =>
+        className="-mt-0.5"
+        paletteId={deStyle.paletteId}
+        paletteOpacity={deStyle.paletteOpacity}
+        onPaletteChange={(paletteId) =>
           onChange(
             patchChartDeStyle(cfg, {
               paletteId,
+              ...(paletteId === undefined ? { paletteOpacity: undefined } : {}),
             }),
           )
         }
-        className="-mt-0.5"
-      />
-      <ChartDeSliderField
-        className="pt-1"
-        label="配色不透明度 %"
-        value={
-          deStyle.paletteOpacity != null ? Math.round(deStyle.paletteOpacity * 100) : undefined
-        }
-        fallback={100}
-        min={0}
-        max={100}
-        step={1}
-        unit="%"
-        onChange={(opacity) =>
+        onOpacityChange={(opacity) =>
           onChange(patchChartDeStyle(cfg, { paletteOpacity: opacity / 100 }))
         }
       />

@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { DeAttrField, DeAttrForm, DE_INPUT } from "./dashboardInspectorUi";
+import { DeAttrField, DeAttrForm } from "./dashboardInspectorUi";
 import { ColorField } from "@/components/ui/color-field";
+import { ImageSourceField } from "./imageSourceField";
+import { isImageSourceValue } from "./imageSourceUtils";
 import {
   CANVAS_BG_RECOMMENDED,
   CANVAS_TILE_DECOR_PRESETS,
@@ -14,14 +15,6 @@ import {
 } from "./dashboardStyleConfig";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
-
-function isValidBackgroundImageUrl(url: string): boolean {
-  const trimmed = url.trim();
-  if (!trimmed) return false;
-  return /^https?:\/\/.+/i.test(trimmed) || trimmed.startsWith("data:image/");
-}
-
-const URL_COMMIT_MS = 300;
 
 type DashboardCanvasBackgroundPanelProps = {
   styleConfig: DashboardStyleConfig;
@@ -47,8 +40,7 @@ export function DashboardCanvasBackgroundPanel({
   const [localImageUrl, setLocalImageUrl] = useState(imageUrl);
   const previewUrl = localImageUrl.trim();
   const imageInvalid =
-    previewUrl.length > 0 && !isValidBackgroundImageUrl(previewUrl);
-  const urlCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    previewUrl.length > 0 && !isImageSourceValue(previewUrl);
 
   useEffect(() => {
     setLocalImageUrl(imageUrl);
@@ -62,18 +54,6 @@ export function DashboardCanvasBackgroundPanel({
       canvasDecorPresetId: trimmed ? "custom" : undefined,
     });
   };
-
-  const scheduleImageUrlCommit = (next: string) => {
-    if (urlCommitTimerRef.current) clearTimeout(urlCommitTimerRef.current);
-    urlCommitTimerRef.current = setTimeout(() => commitImageUrl(next), URL_COMMIT_MS);
-  };
-
-  useEffect(
-    () => () => {
-      if (urlCommitTimerRef.current) clearTimeout(urlCommitTimerRef.current);
-    },
-    [],
-  );
 
   return (
     <DeAttrForm>
@@ -143,39 +123,19 @@ export function DashboardCanvasBackgroundPanel({
           </button>
           {showAdvancedUrl ? (
             <div className="space-y-2">
-              <Input
-                className={DE_INPUT}
+              <ImageSourceField
+                showPreview
                 value={localImageUrl}
-                placeholder="https://example.com/background.jpg"
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setLocalImageUrl(next);
-                  scheduleImageUrlCommit(next);
-                }}
-                onBlur={() => {
-                  if (urlCommitTimerRef.current) {
-                    clearTimeout(urlCommitTimerRef.current);
-                    urlCommitTimerRef.current = null;
-                  }
-                  commitImageUrl(localImageUrl);
+                onChange={(next) => {
+                  const value = next ?? "";
+                  setLocalImageUrl(value);
+                  commitImageUrl(value);
                 }}
               />
               {imageInvalid ? (
                 <p className="text-theme-xs text-error-600 dark:text-error-400" role="alert">
-                  请输入有效的图片链接（需以 https:// 或 http:// 开头）
+                  请输入有效的图片链接，或选择本地图片文件
                 </p>
-              ) : null}
-              {isValidBackgroundImageUrl(previewUrl) ? (
-                <div
-                  className="h-16 overflow-hidden rounded-md border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
-                  style={{
-                    backgroundImage: `url(${previewUrl})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                  role="img"
-                  aria-label="背景图预览"
-                />
               ) : null}
             </div>
           ) : null}

@@ -111,6 +111,7 @@ function TitleAdvancedPopover({
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={6} className="z-99999 w-60 space-y-3 p-3">
         <DashboardConfigSlider
+          compact
           label="字间距"
           value={value.letterSpacing}
           fallback={0}
@@ -155,7 +156,7 @@ export function DeTitleStyleToolbar({
         <SelectTrigger className={FONT_SIZE_TRIGGER} aria-label="字号">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent className="z-99999 max-h-56 min-w-[4rem]">
+        <SelectContent className="z-99999 max-h-56 min-w-[5.5rem]">
           {sizes.map((size) => (
             <SelectItem key={size} value={String(size)} className="text-sm">
               {size}

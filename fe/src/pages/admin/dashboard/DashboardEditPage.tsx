@@ -1078,6 +1078,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             <WidgetEnlargeDialog
               open
               onOpenChange={closeWidgetActionDialog}
+              widgetId={widgetActionTarget.id}
               title={widgetActionTarget.title}
               chartConfig={widgetActionChartConfig}
               filterParameters={widgetActionFilterParams}

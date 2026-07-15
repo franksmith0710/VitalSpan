@@ -22,8 +22,9 @@ describe("WidgetErrorBoundary", () => {
     );
 
     expect(screen.getByTestId("root-surrogate")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("无法渲染");
     expect(screen.getByRole("alert")).toHaveTextContent("测试图表");
-    fireEvent.click(screen.getByRole("button", { name: "删除组件" }));
+    fireEvent.click(screen.getByRole("button", { name: "删除" }));
     expect(onDelete).toHaveBeenCalledTimes(1);
 
     consoleError.mockRestore();

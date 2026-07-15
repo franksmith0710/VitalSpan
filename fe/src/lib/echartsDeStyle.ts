@@ -64,9 +64,9 @@ export function resolveEchartsChromeInsets(
   context?: EchartsLayoutContext,
 ): ChromeInsets {
   const legendPos = deStyle.legend?.position ?? "bottom";
+  const compact = Boolean(context?.embedded);
   const showLegend =
     deStyle.legend?.show === true && !chartHasMapSeries(option) && !compact;
-  const compact = Boolean(context?.embedded);
   const hasPie = chartHasPieSeries(option);
 
   let gridTop = GRID_PAD + 4;

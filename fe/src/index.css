@@ -547,6 +547,105 @@ html.dark {
   color: var(--dashboard-action-icon-hover, var(--color-gray-200));
 }
 
+.chart-drill-chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 1.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--dashboard-table-border, #e4e7ec);
+  background: color-mix(in srgb, var(--dashboard-widget-surface, #fff) 92%, transparent);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.chart-drill-chrome--preview {
+  position: relative;
+  inset: auto;
+}
+
+.chart-drill-chrome__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  flex-shrink: 0;
+}
+
+.chart-drill-chrome__icon-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  min-width: 1.5rem;
+  color: var(--dashboard-action-icon, var(--color-gray-500));
+}
+
+.chart-drill-chrome__icon-btn:hover {
+  color: var(--dashboard-action-icon-hover, var(--color-gray-800));
+}
+
+.chart-drill-chrome__trail {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.125rem;
+  font-size: var(--text-theme-xs, 0.75rem);
+  line-height: 1.25rem;
+}
+
+.chart-drill-chrome__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.chart-drill-chrome__sep {
+  color: var(--color-gray-400);
+  user-select: none;
+}
+
+.chart-drill-crumb {
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-gray-500);
+}
+
+.chart-drill-crumb[data-level="0"] {
+  color: var(--color-gray-600);
+}
+
+.chart-drill-crumb[data-level="1"] {
+  color: var(--dashboard-drill-level-0, #465fff);
+}
+
+.chart-drill-crumb[data-level="2"] {
+  color: var(--dashboard-drill-level-1, #0ba5ec);
+}
+
+.chart-drill-crumb[data-level="3"] {
+  color: var(--dashboard-drill-level-2, #12b76a);
+}
+
+.chart-drill-crumb:hover {
+  text-decoration: underline;
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .chart-drill-chrome {
+  border-color: var(--color-gray-700);
+  background: color-mix(in srgb, var(--dashboard-widget-surface, #111827) 88%, transparent);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .chart-drill-crumb[data-level="0"] {
+  color: var(--color-gray-300);
+}
+
 .dashboard-theme-scope[data-canvas-user-bg="true"] .pixel-canvas-host {
   background-color: transparent;
 }

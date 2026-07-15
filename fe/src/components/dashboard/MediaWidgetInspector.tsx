@@ -1,5 +1,6 @@
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ImageSourceField } from "./imageSourceField";
 import {
   Select,
   SelectContent,
@@ -22,12 +23,11 @@ export function MediaWidgetInspector({ widget, onChange, embedded = false }: Med
   const body = (
     <div className="space-y-4 p-4">
       <div className="space-y-1.5">
-        <Label htmlFor={`mw-url-${widget.id}`}>图片 URL</Label>
-        <Input
-          id={`mw-url-${widget.id}`}
+        <Label htmlFor={`mw-url-${widget.id}`}>图片</Label>
+        <ImageSourceField
           value={cfg.url}
-          onChange={(e) => patch({ url: e.target.value })}
-          placeholder="https://…"
+          onChange={(url) => patch({ url: url ?? "" })}
+          showPreview
         />
       </div>
       <div className="space-y-1.5">

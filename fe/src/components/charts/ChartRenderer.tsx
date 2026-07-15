@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { resolveChartConfigPhase } from "@/lib/chartConfigState";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
@@ -15,6 +15,13 @@ import { resolveChartValueFormat } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { resolveRenderSpec } from "@/lib/resolveRenderSpec";
 import { chartRenderSpecKey } from "@/lib/chartRenderSpecKey";
+import {
+  applyChartDrillPipeline,
+  drillStackToFilterParameters,
+  getClickDrillField,
+  resolveDrillRenderSpec,
+  supportsChartDrillInteraction,
+} from "@/lib/chartDrill";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdvancedEchartsChart } from "./adapters/AdvancedEchartsChart";
@@ -41,6 +48,8 @@ import {
   embeddedErrorMessage,
   embeddedStateMessage,
 } from "./chartRendererEmbedded";
+import { ChartDrillChrome } from "./ChartDrillChrome";
+import { drillStackRevision, useChartDrill } from "./ChartDrillContext";
 
 type ChartRendererProps = {
   config: ChartViewConfig;
@@ -59,6 +68,8 @@ type ChartRendererProps = {
   colorScheme?: ColorScheme;
   showLoadingHint?: boolean;
   suspendLiveResize?: boolean;
+  widgetId?: string;
+  drillEnabled?: boolean;
 };
 
 export const ChartRenderer = memo(function ChartRenderer({
@@ -78,7 +89,22 @@ export const ChartRenderer = memo(function ChartRenderer({
   colorScheme = "light",
   showLoadingHint = true,
   suspendLiveResize: suspendLiveResizeProp = false,
+  widgetId,
+  drillEnabled = false,
 }: ChartRendererProps) {
+  const drill = useChartDrill(drillEnabled ? widgetId : undefined);
+  const drillInteraction = drillEnabled && Boolean(widgetId) && supportsChartDrillInteraction(config);
+  const mergedFilterParameters = useMemo(
+    () => ({
+      ...filterParameters,
+      ...drillStackToFilterParameters(drill.stack),
+    }),
+    [filterParameters, drill.stack],
+  );
+  const drillRevision = drillStackRevision(drill.stack);
+  const resolvedExecuteKey = drillRevision
+    ? `${executeKey ?? "chart"}:drill:${drillRevision}`
+    : executeKey;
   const isShapePlaying = usePixelShapePlayer();
   const isGridPlaying = useDashboardGridPlayer();
   const suspendLiveResize = suspendLiveResizeProp || isShapePlaying || isGridPlaying;
@@ -106,8 +132,8 @@ export const ChartRenderer = memo(function ChartRenderer({
     return { width: bodySize.width || undefined, height: fillHeight };
   }, [embedded, bodySize.width, fillHeight]);
   const { columns, rows, loading, error, slowHint, rerun } = useChartExecute(config, {
-    filterParameters,
-    executeKey,
+    filterParameters: mergedFilterParameters,
+    executeKey: resolvedExecuteKey,
     limit: queryLimit,
   });
   const [page, setPage] = useState(1);
@@ -122,15 +148,46 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   useEffect(() => {
     setPage(1);
-  }, [config]);
+  }, [config, drillRevision]);
+
+  const drillPipeline = useMemo(() => {
+    if (!drillInteraction && !drill.stack.length) {
+      return {
+        rows: rows as unknown[][],
+        columns,
+        displayField: undefined as string | undefined,
+      };
+    }
+    return applyChartDrillPipeline(config, columns, rows as unknown[][], drill.stack);
+  }, [drillInteraction, drill.stack, config, columns, rows]);
+
+  const displayRows = drillPipeline.rows;
+  const displayColumns = drillPipeline.columns;
+  const displayField = drillPipeline.displayField;
+
+  const handleDrillClick = useCallback(
+    (value: string, label?: string) => {
+      if (!drillInteraction) return;
+      const field = getClickDrillField(config, drill.stack);
+      if (!field || !value) return;
+      drill.push({ field, value, label: label ?? value });
+    },
+    [config, drill, drillInteraction],
+  );
 
   const renderModel = useMemo(
-    () => (!loading && !error ? buildChartRenderModel(localConfig, columns, rows) : null),
-    [localConfig, columns, rows, loading, error],
+    () =>
+      !loading && !error
+        ? buildChartRenderModel(localConfig, displayColumns, displayRows as (string | number | boolean | null)[][])
+        : null,
+    [localConfig, displayColumns, displayRows, loading, error],
   );
   const renderSpec = useMemo(
-    () => resolveRenderSpec(specConfig),
-    [chartRenderSpecKey(specConfig)],
+    () =>
+      drillInteraction || drill.stack.length
+        ? resolveDrillRenderSpec(specConfig, displayField)
+        : resolveRenderSpec(specConfig),
+    [chartRenderSpecKey(specConfig), displayField, drillInteraction, drill.stack.length],
   );
   const deStyle = useMemo(() => readChartDeStyle(localConfig), [localConfig]);
   const chartColors = useMemo(
@@ -166,8 +223,8 @@ export const ChartRenderer = memo(function ChartRenderer({
   const echartsChart = (spec = renderSpec) => (
     <AdvancedEchartsChart
       spec={spec}
-      rows={rows as unknown[][]}
-      columns={columns}
+      rows={displayRows}
+      columns={displayColumns}
       ariaLabel={title}
       isDark={isDark}
       fill={embedded}
@@ -179,6 +236,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       showLabel={showDataLabels}
       valueFormat={valueFormat}
       mapPlaceholderHint={mapPlaceholderHint}
+      onDrillClick={drillInteraction ? handleDrillClick : undefined}
     />
   );
 
@@ -191,8 +249,8 @@ export const ChartRenderer = memo(function ChartRenderer({
         <KpiCard
           title={title}
           metrics={localConfig.metrics ?? []}
-          columns={columns}
-          rows={rows as unknown[][]}
+          columns={displayColumns}
+          rows={displayRows}
           numberFormat={numberFormat}
         />,
       );
@@ -202,7 +260,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       const chartType = localConfig.chartType;
       if (
         (chartType === "line" || chartType === "bar") &&
-        rows.length > CHART_EXECUTE_LIMIT
+        displayRows.length > CHART_EXECUTE_LIMIT
       ) {
         const message = `结果超过 ${CHART_EXECUTE_LIMIT} 行，请缩小查询范围`;
         return embedded
@@ -241,13 +299,17 @@ export const ChartRenderer = memo(function ChartRenderer({
 
       return wrapEmbedded(
         <EmbeddedChartTable
-          columns={columns}
+          columns={displayColumns}
           displayCols={cols}
-          rows={rows as unknown[][]}
+          rows={displayRows}
           page={page}
           onPageChange={setPage}
           tableStyle={tableStyle}
           valueFormat={valueFormat}
+          drillField={drillInteraction ? getClickDrillField(config, drill.stack) : undefined}
+          onDrillCellClick={
+            drillInteraction ? (_field, value) => handleDrillClick(value) : undefined
+          }
         />,
       );
     }
@@ -278,6 +340,15 @@ export const ChartRenderer = memo(function ChartRenderer({
         className={embedded ? "absolute inset-0 overflow-hidden" : undefined}
         style={deStyle.paletteOpacity != null ? { opacity: deStyle.paletteOpacity } : undefined}
       >
+        {embedded && drill.stack.length > 0 ? (
+          <ChartDrillChrome
+            className="absolute inset-x-2 top-2 z-[2]"
+            stack={drill.stack}
+            onBack={drill.pop}
+            onReset={drill.reset}
+            onNavigate={drill.navigateTo}
+          />
+        ) : null}
         {renderBody()}
       </div>
     </div>

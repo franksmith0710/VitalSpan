@@ -14,6 +14,7 @@ import {
 import type { DashboardStyleConfig } from "@/components/dashboard/layoutUtils";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { fitPreviewSize, WidgetDialogShell } from "./WidgetDialogShell";
+import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 
 const RESOLUTION_PRESETS = [
   { id: "1280x720", label: "1280 × 720", width: 1280, height: 720 },
@@ -27,6 +28,7 @@ const ENLARGE_PREVIEW_BOUNDS = { maxWidth: 1280, maxHeight: 720 };
 type WidgetEnlargeDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  widgetId: string;
   title: string;
   chartConfig: ChartViewConfig;
   filterParameters?: Record<string, string>;
@@ -37,6 +39,7 @@ type WidgetEnlargeDialogProps = {
 export function WidgetEnlargeDialog({
   open,
   onOpenChange,
+  widgetId,
   title,
   chartConfig,
   filterParameters,
@@ -101,18 +104,22 @@ export function WidgetEnlargeDialog({
           style={{ width: previewSize.width, height: previewSize.height }}
           data-testid="widget-enlarge-preview"
         >
-          <ChartRenderer
-            embedded
-            config={chartConfig}
-            title={title}
-            filterParameters={filterParameters}
-            executeKey={executeKey}
-            pixelSize={previewSize}
-            paletteId={styleConfig?.paletteId}
-            paletteColors={styleConfig?.paletteColors}
-            numberFormat={styleConfig?.numberFormat}
-            colorScheme={styleConfig?.colorScheme ?? "light"}
-          />
+          <ChartDrillProvider>
+            <ChartRenderer
+              embedded
+              config={chartConfig}
+              title={title}
+              widgetId={widgetId}
+              drillEnabled
+              filterParameters={filterParameters}
+              executeKey={executeKey}
+              pixelSize={previewSize}
+              paletteId={styleConfig?.paletteId}
+              paletteColors={styleConfig?.paletteColors}
+              numberFormat={styleConfig?.numberFormat}
+              colorScheme={styleConfig?.colorScheme ?? "light"}
+            />
+          </ChartDrillProvider>
         </div>
       </WidgetDialogShell>
     </Dialog>

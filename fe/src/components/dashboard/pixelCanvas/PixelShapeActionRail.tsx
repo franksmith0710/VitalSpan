@@ -62,9 +62,7 @@ function railButtonClass(scheme: ColorScheme): string {
     "size-full min-h-0 rounded-none p-0",
     "focus-visible:ring-inset focus-visible:ring-brand-500/25",
     "disabled:pointer-events-none disabled:opacity-35",
-    scheme === "dark"
-      ? "text-gray-400 hover:bg-white/5 hover:text-gray-100"
-      : "text-gray-500 hover:bg-gray-50 hover:text-gray-800",
+    scheme === "dark" ? "hover:bg-white/5" : "hover:bg-gray-50",
   );
 }
 
