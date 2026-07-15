@@ -39,7 +39,7 @@ describe("ChartEditRail", () => {
     mockApiFetch.mockReset();
   });
 
-  it("mounts inspector tabs without ChartInspectorProvider error", async () => {
+  it("mounts inspector tabs with built-in ChartInspectorProvider", async () => {
     mockApiFetch.mockImplementation(async (path: string) => {
       if (path.includes("/datasets")) return { items: [] };
       if (path.includes("/datasources")) return { items: [] };
@@ -61,5 +61,6 @@ describe("ChartEditRail", () => {
     expect(await screen.findByRole("tab", { name: "数据" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "样式" })).toBeInTheDocument();
     expect(screen.getByText("数据集")).toBeInTheDocument();
+    expect(screen.queryByText(/useChartInspector must be used/)).not.toBeInTheDocument();
   });
 });

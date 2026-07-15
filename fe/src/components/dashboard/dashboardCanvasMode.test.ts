@@ -8,6 +8,7 @@ import {
   prepareDashboardLayout,
 } from "./dashboardCanvasMode";
 import { packPixelLayoutSeamless } from "./pixelCanvas/collisionLayout";
+import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
 
 const v1: DashboardLayoutV1 = {
   version: 1,
@@ -152,6 +153,20 @@ describe("dashboard canvas mode", () => {
     }
     const fingerprint = dashboardPersistFingerprint(sparse, style, true);
     expect(fingerprint).toBe(JSON.stringify(saved));
+  });
+
+  it("buildDashboardLayoutForSave persists themeVariants for DE dual-theme round-trip", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [],
+      globalFilters: [],
+    };
+    const style = bootstrapDashboardStyleConfig({ colorScheme: "dark" });
+    const saved = buildDashboardLayoutForSave(layout, style);
+    expect(saved.styleConfig?.themeVariants?.light?.canvasBackground).toBe("#ffffff");
+    expect(saved.styleConfig?.themeVariants?.dark?.canvasBackground).toBe("#0f172a");
+    expect(saved.styleConfig?.colorScheme).toBe("dark");
   });
 
   it("pack 会改变非紧凑布局（说明 hydrate 不可默认 pack）", () => {

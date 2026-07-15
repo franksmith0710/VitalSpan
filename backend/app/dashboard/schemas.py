@@ -100,6 +100,41 @@ class FilterControlStyleConfig(BaseModel):
     height: int | None = Field(default=None, ge=24, le=56)
 
 
+class ThemeVariantWidgetStyle(BaseModel):
+    """DE §5.3 / 组件壳：随浅/深分别记忆的字段子集。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+    background: str | None = Field(default=None, max_length=32)
+    border_color: str | None = Field(default=None, alias="borderColor", max_length=32)
+    opacity: float | None = Field(default=None, ge=0, le=1)
+
+
+class ThemeVariantTitleStyle(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    color: str | None = Field(default=None, max_length=32)
+
+
+class ThemeVariantFields(BaseModel):
+    """DE 双主题：浅色/深色各自保存的画布与组件视觉（对标 themeVariants）。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+    canvas_background: str | None = Field(default=None, alias="canvasBackground", max_length=64)
+    canvas_background_image: str | None = Field(
+        default=None, alias="canvasBackgroundImage", max_length=2048
+    )
+    widget_style: ThemeVariantWidgetStyle | None = Field(default=None, alias="widgetStyle")
+    title_style: ThemeVariantTitleStyle | None = Field(default=None, alias="titleStyle")
+    filter_chrome_style: FilterChromeStyleConfig | None = Field(
+        default=None, alias="filterChromeStyle"
+    )
+
+
+class DashboardThemeVariants(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    light: ThemeVariantFields | None = None
+    dark: ThemeVariantFields | None = None
+
+
 class NumberFormatConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     decimals: int | None = Field(default=None, ge=0, le=8)
@@ -143,6 +178,7 @@ class DashboardStyleConfig(BaseModel):
     drill_level_colors: list[str] | None = Field(
         default=None, alias="drillLevelColors", max_length=8
     )
+    theme_variants: DashboardThemeVariants | None = Field(default=None, alias="themeVariants")
 
 
 class LayoutWidget(BaseModel):

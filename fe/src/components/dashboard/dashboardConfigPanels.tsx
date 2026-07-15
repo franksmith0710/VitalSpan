@@ -17,12 +17,10 @@ import {
   GAP_PRESET_PX,
   inferPixelGapPreset,
   PIXEL_GAP_PRESET_PX,
-  THEME_ACCENT_SWATCHES,
   formatMetricValue,
   type DashboardStyleConfig,
   type GapPreset,
 } from "./dashboardStyleConfig";
-import { deriveAccentChartPalette } from "./dashboardAccentScope";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
 import { ColorField } from "@/components/ui/color-field";
 import { DebouncedNumberInput } from "@/components/ui/debounced-number-input";
@@ -325,31 +323,11 @@ export function DashboardStyleSections({
           <span className="mx-1 font-medium text-gray-700 dark:text-gray-300">
             {colorScheme === "dark" ? "深色" : "浅色"}
           </span>
-          主题下的布局与行为；画布底色/强调色等随主题分别记忆，切换上方卡片即可对照。
+          主题下的布局与行为；切换上方卡片可分别记忆各主题的底色与组件样式。
         </p>
         <div className="space-y-4">
           <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
             <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">当前主题视觉</p>
-            <ColorField
-              label="主题强调色"
-              value={styleConfig.themeAccent ?? ""}
-              swatches={THEME_ACCENT_SWATCHES}
-              swatchesDefaultOpen
-              onChange={(color) => {
-                if (!color) {
-                  patchStyle({ themeAccent: undefined });
-                  return;
-                }
-                patchStyle({
-                  themeAccent: color,
-                  paletteColors: deriveAccentChartPalette(color),
-                  paletteId: undefined,
-                });
-              }}
-            />
-            <p className="text-[10px] text-gray-400">
-              同步调整选中框、操作图标与图表主色系；与上方浅/深主题卡片独立记忆
-            </p>
             <div className="space-y-1.5">
               <Label className="text-theme-xs text-gray-600 dark:text-gray-400">全局字体</Label>
               <Select

@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { DashboardThemeVariants } from "./dashboardThemeVariants";
+import { getDashboardThemeTokens } from "./dashboardThemeTokens";
 
 export const GAP_PRESET_PX = {
   none: 0,
@@ -138,15 +139,6 @@ export const CANVAS_BG_RECOMMENDED = [
   { color: "#171717", label: "炭黑" },
 ] as const;
 
-export const THEME_ACCENT_SWATCHES = [
-  { color: "#465fff", label: "品牌蓝" },
-  { color: "#0ba5ec", label: "天青" },
-  { color: "#12b76a", label: "翠绿" },
-  { color: "#f79009", label: "琥珀" },
-  { color: "#ee46bc", label: "品红" },
-  { color: "#6172f3", label: "靛紫" },
-] as const;
-
 export const DASHBOARD_FONT_OPTIONS = [
   { value: "", label: "系统默认" },
   { value: "Outfit, system-ui, sans-serif", label: "Outfit" },
@@ -248,6 +240,32 @@ export const DARK_WIDGET_SHELL_VALUES = new Set([
   "#1d2939",
   "#475569",
 ]);
+
+export function isThemeDefaultCanvasColor(
+  bg: string | undefined,
+  scheme: ColorScheme,
+): boolean {
+  if (!bg?.trim()) return true;
+  const normalized = bg.trim().toLowerCase();
+  const base = getDashboardThemeTokens(scheme).canvas.toLowerCase();
+  if (normalized === base) return true;
+  return scheme === "dark"
+    ? DARK_THEME_CANVAS_VALUES.has(normalized)
+    : LIGHT_THEME_CANVAS_VALUES.has(normalized);
+}
+
+export function isThemeDefaultShellBackground(
+  bg: string | undefined,
+  scheme: ColorScheme,
+): boolean {
+  if (!bg?.trim()) return true;
+  const normalized = bg.trim().toLowerCase();
+  const base = getDashboardThemeTokens(scheme).widgetShell.toLowerCase();
+  if (normalized === base) return true;
+  return scheme === "dark"
+    ? DARK_WIDGET_SHELL_VALUES.has(normalized)
+    : LIGHT_WIDGET_SHELL_VALUES.has(normalized);
+}
 
 function parseHexRgb(hex: string): [number, number, number] | null {
   const normalized = hex.trim().toLowerCase();
@@ -549,7 +567,7 @@ export function canvasBackgroundStyle(config: DashboardStyleConfig): CSSProperti
   return style;
 }
 
-/** 画板可见底色：用户背景优先，否则随主题默认；与 colorScheme 冲突的浅色默认底会纠正 */
+/** 画板可见底色：用户背景优先，否则随主题（含强调色）默认 */
 export function resolveArtboardStyle(config: DashboardStyleConfig): CSSProperties {
   const scheme = config.colorScheme ?? "light";
   const coerced = effectiveCanvasBackground(config);
@@ -566,7 +584,8 @@ export function resolveArtboardStyle(config: DashboardStyleConfig): CSSPropertie
   const userBackground = canvasBackgroundStyle(working);
   if (Object.keys(userBackground).length > 0) return userBackground;
   return {
-    background: scheme === "dark" ? CANVAS_BG_DARK_DEFAULT : CANVAS_BG_LIGHT_DEFAULT,
+    backgroundColor:
+      effectiveCanvasBackground(config) ?? getDashboardThemeTokens(scheme).canvas,
   };
 }
 
@@ -624,8 +643,15 @@ export function mergeWidgetShellStyle(
   colorScheme: ColorScheme = "light",
 ): { className: string; style: CSSProperties } {
   const style: CSSProperties = {};
-  const background = coerceWidgetSurfaceBackground(global?.background, colorScheme);
-  if (background) style.background = background;
+  const coerced = coerceWidgetSurfaceBackground(global?.background, colorScheme);
+
+  if (isThemeDefaultShellBackground(global?.background, colorScheme)) {
+    style.backgroundColor = "var(--dashboard-widget-surface)";
+  } else if (coerced) {
+    style.background = coerced;
+  } else {
+    style.backgroundColor = "var(--dashboard-widget-surface)";
+  }
   if (global?.backgroundImage) {
     style.backgroundImage = `url(${global.backgroundImage})`;
     style.backgroundSize = "cover";
@@ -641,7 +667,7 @@ export function mergeWidgetShellStyle(
   if (radius) style.borderRadius = radius;
   if (global?.borderColor || global?.borderWidth) {
     style.borderStyle = global.borderStyle ?? "solid";
-    style.borderColor = global.borderColor ?? "var(--color-gray-200)";
+    style.borderColor = global.borderColor ?? "var(--dashboard-widget-border, var(--color-gray-200))";
     style.borderWidth = global.borderWidth ?? 1;
   }
   return { className: "", style };

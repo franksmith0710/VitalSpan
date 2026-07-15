@@ -20,14 +20,26 @@
 | 字段 | 值 |
 |------|----|
 | phase | DONE |
-| request | 像素画布缩放时不与邻组件交互 — 根因剖析 + 修复 |
+| request | 点击图表白屏 useChartInspector — 根因剖析 + 架构修复 |
 | type | bug |
+| bug_doc | docs/bugs/BUG-8_chart-inspector-provider-boundary_2026-07-15.md |
+| status | DONE |
+| last_verified_command | vitest ChartEditRail.smoke+dashboard.smoke selecting pixel chart; tsc --noEmit |
+| last_verified_exit_code | 0 |
+| verification_summary | Provider 提升至 DashboardEditPage；Rail API 拆分；集成测试绿 |
+| repair_rounds | 0 |
+
+## 上一轮（归档 · resize 碰撞）
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
+| request | 像素画布缩放时不与邻组件交互 |
 | plan | docs/automate/plans/2026-07-15-pixel-resize-collision-preview.md |
 | bug_doc | docs/bugs/BUG-7_dashboard-resize-no-collision_2026-07-15.md |
 | status | DONE |
 | last_verified_command | vitest PixelCanvas.test+collisionLayout.test; tsc --noEmit |
-| last_verified_exit_code | 0 |
-| verification_summary | resize 接入 onPreview；34 vitest 绿；tsc 绿；待手测 §6 |
+| verification_summary | resize 接入 onPreview；34 vitest 绿 |
 | repair_rounds | 0 |
 
 ## 当前需求契约

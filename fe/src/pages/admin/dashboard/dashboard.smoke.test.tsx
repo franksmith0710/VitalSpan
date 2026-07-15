@@ -134,12 +134,19 @@ function mockDashboardLoad(widgets: LayoutWidget[]) {
     const path = String(args[0] ?? "");
     if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
     if (path.includes("/api/v1/datasets")) return { items: [] };
+    if (path.includes("/charts/types")) {
+      return [
+        { type: "table", displayName: "表格", styleVariants: ["default"], fieldRule: {} },
+        { type: "line", displayName: "折线图", styleVariants: ["default"], fieldRule: {} },
+        { type: "funnel", displayName: "漏斗图", styleVariants: ["default"], fieldRule: {} },
+      ];
+    }
     const filters = mockGlobalFiltersPath(path);
     if (filters) return filters;
     if (path.includes("/dashboards/")) {
       return { id: "d1", name: "销售看板", layoutJson: { version: 1, widgets, globalFilters: [] } };
     }
-    return {};
+    return { columns: [], rows: [] };
   });
 }
 
@@ -1159,6 +1166,43 @@ describe("dashboard admin smoke", () => {
 
     const shape = document.querySelector<HTMLElement>("[data-testid^='pixel-shape-']");
     expect(shape).toHaveStyle({ left: "360px", top: "190px" });
+  });
+
+  it("B3: selecting a pixel chart opens chart rail without ChartInspector crash", async () => {
+    vi.stubEnv("VITE_DASHBOARD_PIXEL_CANVAS", "true");
+    const { colSpan: _colSpan, rowSpan: _rowSpan, ...base } = sampleWidgets[1];
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
+      if (path.includes("/api/v1/datasets")) return { items: [] };
+      if (path.includes("/charts/types")) {
+        return [{ type: "line", displayName: "折线图", styleVariants: ["default"], fieldRule: {} }];
+      }
+      const filters = mockGlobalFiltersPath(path);
+      if (filters) return filters;
+      if (path.includes("/dashboards/")) {
+        return {
+          id: "d1",
+          name: "销售看板",
+          layoutJson: {
+            version: 2,
+            canvas: { width: 1440, height: 900 },
+            widgets: [{ ...base, x: 100, y: 80, width: 480, height: 320 }],
+            globalFilters: [],
+          },
+        };
+      }
+      return { columns: [], rows: [] };
+    });
+    renderEditPage();
+    const shape = await screen.findByTestId("pixel-shape-w2");
+    const inner = shape.querySelector("[data-pixel-no-drag]");
+    expect(inner).toBeTruthy();
+    fireEvent.pointerDown(inner!, { button: 0 });
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: "数据" })).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/useChartInspector must be used/)).not.toBeInTheDocument();
   });
 
   it("B3: deletes a v2 widget without converting the layout", async () => {

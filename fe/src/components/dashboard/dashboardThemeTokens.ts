@@ -1,7 +1,10 @@
 import type { ColorScheme } from "./dashboardStyleConfig";
-import { CANVAS_BG_DARK_DEFAULT, CANVAS_BG_LIGHT_DEFAULT, WIDGET_SHELL_DARK_DEFAULT } from "./dashboardStyleConfig";
 
-/** 仪表板明/暗两套固定视觉令牌（切换主题时强制同步；调色板/强调色等可自定义） */
+const CANVAS_BG_LIGHT = "#ffffff";
+const CANVAS_BG_DARK = "#0f172a";
+const WIDGET_SHELL_DARK = "#1e293b";
+
+/** 仪表板明/暗两套固定视觉令牌（切换主题时强制同步） */
 export type DashboardThemeTokens = {
   canvas: string;
   widgetShell: string;
@@ -23,7 +26,7 @@ export type DashboardThemeTokens = {
 };
 
 const LIGHT: DashboardThemeTokens = {
-  canvas: CANVAS_BG_LIGHT_DEFAULT,
+  canvas: CANVAS_BG_LIGHT,
   widgetShell: "#ffffff",
   widgetBorder: "#e4e7ec",
   title: "#1d2939",
@@ -43,8 +46,8 @@ const LIGHT: DashboardThemeTokens = {
 };
 
 const DARK: DashboardThemeTokens = {
-  canvas: CANVAS_BG_DARK_DEFAULT,
-  widgetShell: WIDGET_SHELL_DARK_DEFAULT,
+  canvas: CANVAS_BG_DARK,
+  widgetShell: WIDGET_SHELL_DARK,
   widgetBorder: "#344054",
   title: "#f2f4f7",
   filterTitle: "#98a2b3",
@@ -78,6 +81,7 @@ export function themeTokensToScopeVars(tokens: DashboardThemeTokens): Record<str
   return {
     "--dashboard-artboard-bg": tokens.canvas,
     "--dashboard-widget-surface": tokens.widgetShell,
+    "--dashboard-widget-border": tokens.widgetBorder,
     "--dashboard-text-primary": tokens.textPrimary,
     "--dashboard-text-muted": tokens.textMuted,
     "--dashboard-title-color": tokens.title,
@@ -89,5 +93,7 @@ export function themeTokensToScopeVars(tokens: DashboardThemeTokens): Record<str
     "--dashboard-table-body-fg": tokens.tableBodyFg,
     "--dashboard-table-border": tokens.tableBorder,
     "--dashboard-state-text": tokens.stateText,
+    "--dashboard-dialog-bg": tokens.dialogBg,
+    "--dashboard-dialog-fg": tokens.dialogFg,
   };
 }

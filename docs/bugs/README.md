@@ -4,6 +4,7 @@
 
 | ID | 文档 | 状态 | 优先级 | 摘要 |
 |----|------|------|--------|------|
+| BUG-8 | [BUG-8_chart-inspector-provider-boundary_2026-07-15.md](./BUG-8_chart-inspector-provider-boundary_2026-07-15.md) | qa_pending | P0 | 点击图表白屏；Provider 提升至编辑页 |
 | BUG-7 | [BUG-7_dashboard-resize-no-collision_2026-07-15.md](./BUG-7_dashboard-resize-no-collision_2026-07-15.md) | qa_pending | P0 | resize 不走 onPreview；R1 已接入碰撞 preview |
 | BUG-6 | [BUG-6_dashboard-layout-roundtrip-drift_2026-07-15.md](./BUG-6_dashboard-layout-roundtrip-drift_2026-07-15.md) | fixed | P0 | 保存/重载后像素布局漂移；移除 hydrate auto-pack |
 | BUG-001 | [BUG-001_account-password-security_2026-07-13.md](./BUG-001_account-password-security_2026-07-13.md) | fixed | P0 | 修改密码误登出、布局与字段交互；已合并 fix/account-password-security |

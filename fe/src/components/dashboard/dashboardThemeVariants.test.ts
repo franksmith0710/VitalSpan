@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  bootstrapDashboardStyleConfig,
   defaultThemeVariant,
+  hydrateDashboardStyleConfig,
   initializeDualThemePresets,
   normalizeStyleConfigForColorScheme,
   switchDashboardColorScheme,
   switchDashboardThemeBundle,
   syncChartWidgetsForColorScheme,
 } from "./dashboardThemeVariants";
-import { CANVAS_BG_DARK_DEFAULT } from "./dashboardStyleConfig";
+import { CANVAS_BG_DARK_DEFAULT, CANVAS_BG_LIGHT_DEFAULT } from "./dashboardStyleConfig";
 
 describe("dashboardThemeVariants", () => {
   it("switching to dark applies default dark canvas when no variant saved", () => {
@@ -35,6 +37,62 @@ describe("dashboardThemeVariants", () => {
     expect(next.themeVariants?.dark?.canvasBackground).toBe(
       defaultThemeVariant("dark").canvasBackground,
     );
+  });
+
+  it("hydrateDashboardStyleConfig seeds missing dual variants on empty config", () => {
+    const next = hydrateDashboardStyleConfig({});
+    expect(next.themeVariants?.light?.canvasBackground).toBe(CANVAS_BG_LIGHT_DEFAULT);
+    expect(next.themeVariants?.dark?.canvasBackground).toBe(CANVAS_BG_DARK_DEFAULT);
+    expect(next.themeVariants?.dark?.widgetStyle?.background).toBe("#1e293b");
+  });
+
+  it("bootstrap promotes legacy root fields to active variant only", () => {
+    const next = bootstrapDashboardStyleConfig({
+      colorScheme: "dark",
+      canvasBackground: "#0f172a",
+      widgetStyle: { background: "#1e293b" },
+    });
+    expect(next.themeVariants?.dark?.canvasBackground).toBe(CANVAS_BG_DARK_DEFAULT);
+    expect(next.themeVariants?.light?.canvasBackground).toBe(CANVAS_BG_LIGHT_DEFAULT);
+    expect(next.canvasBackground).toBe(CANVAS_BG_DARK_DEFAULT);
+  });
+
+  it("bootstrap is idempotent once variants are seeded", () => {
+    const once = bootstrapDashboardStyleConfig({ colorScheme: "light" });
+    const twice = bootstrapDashboardStyleConfig(once);
+    expect(twice).toEqual(once);
+  });
+
+  it("hydrateDashboardStyleConfig normalizes active dark root and keeps light variant", () => {
+    const next = hydrateDashboardStyleConfig({
+      colorScheme: "dark",
+      canvasBackground: "#eff6ff",
+      widgetStyle: { background: "#ffffff" },
+    });
+    expect(next.canvasBackground).toBe(CANVAS_BG_DARK_DEFAULT);
+    expect(next.widgetStyle?.background).toBe("#1e293b");
+    expect(next.themeVariants?.light?.canvasBackground).toBe(CANVAS_BG_LIGHT_DEFAULT);
+    expect(next.themeVariants?.dark?.canvasBackground).toBe(CANVAS_BG_DARK_DEFAULT);
+  });
+
+  it("hydrateDashboardStyleConfig resets deprecated themeAccent to standard presets", () => {
+    const next = hydrateDashboardStyleConfig({
+      colorScheme: "dark",
+      themeAccent: "#f79009",
+      canvasBackground: "#172033",
+      widgetStyle: { background: "#243047" },
+    });
+    expect(next.themeAccent).toBeUndefined();
+    expect(next.themeVariants?.light).toEqual(defaultThemeVariant("light"));
+    expect(next.themeVariants?.dark?.canvasBackground).toBe(CANVAS_BG_DARK_DEFAULT);
+    expect(next.themeVariants?.dark?.widgetStyle?.background).toBe("#1e293b");
+  });
+
+  it("switching themes after hydrate applies standard inactive preset", () => {
+    const hydrated = hydrateDashboardStyleConfig({ colorScheme: "dark" });
+    const light = switchDashboardColorScheme(hydrated, "light");
+    expect(light.canvasBackground).toBe(CANVAS_BG_LIGHT_DEFAULT);
+    expect(light.widgetStyle?.background).toBe("#ffffff");
   });
 
   it("normalize preserves custom title color on same scheme reload", () => {

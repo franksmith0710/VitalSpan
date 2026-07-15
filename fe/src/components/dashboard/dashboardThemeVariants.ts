@@ -40,7 +40,6 @@ export function defaultThemeVariant(scheme: ColorScheme): ThemeVariantFields {
     return {
       canvasBackground: tokens.canvas,
       canvasBackgroundImage: undefined,
-      themeAccent: "#7090ff",
       widgetStyle: {
         background: tokens.widgetShell,
         borderColor: tokens.widgetBorder,
@@ -53,7 +52,6 @@ export function defaultThemeVariant(scheme: ColorScheme): ThemeVariantFields {
   return {
     canvasBackground: tokens.canvas,
     canvasBackgroundImage: undefined,
-    themeAccent: "#465fff",
     widgetStyle: {
       background: tokens.widgetShell,
       borderColor: tokens.widgetBorder,
@@ -146,8 +144,106 @@ function sanitizeThemeVariant(
         widgetStyle: { ...variant.widgetStyle, ...defaults.widgetStyle },
       };
     }
+    return variant;
+  }
+  const bg = variant.canvasBackground?.trim();
+  if (bg && isDarkCanvasColor(bg)) {
+    return {
+      ...defaults,
+      ...variant,
+      canvasBackground: defaults.canvasBackground,
+      canvasBackgroundImage: undefined,
+    };
+  }
+  const wbg = variant.widgetStyle?.background?.trim();
+  if (wbg && isDarkWidgetShellColor(wbg)) {
+    return {
+      ...variant,
+      widgetStyle: { ...variant.widgetStyle, ...defaults.widgetStyle },
+    };
   }
   return variant;
+}
+
+function hasDeprecatedThemeAccent(config: DashboardStyleConfig): boolean {
+  if (config.themeAccent?.trim()) return true;
+  return Boolean(
+    config.themeVariants?.light?.themeAccent?.trim() ||
+      config.themeVariants?.dark?.themeAccent?.trim(),
+  );
+}
+
+/** 补齐/纠正单套浅/深 variant，保证切换时有完整标准快照 */
+function ensureThemeVariant(
+  variant: ThemeVariantFields | undefined,
+  scheme: ColorScheme,
+  forceDefaults = false,
+): ThemeVariantFields {
+  const defaults = defaultThemeVariant(scheme);
+  if (forceDefaults) return defaults;
+  const defined = variant
+    ? (Object.fromEntries(
+        Object.entries(variant).filter(([, value]) => value !== undefined),
+      ) as ThemeVariantFields)
+    : {};
+  return sanitizeThemeVariant({ ...defaults, ...defined }, scheme);
+}
+
+function hasPersistedThemeVariants(config: DashboardStyleConfig): boolean {
+  return Boolean(config.themeVariants?.light || config.themeVariants?.dark);
+}
+
+/**
+ * DE §5.1 bootstrap：补齐双主题快照，根字段投影为当前 colorScheme。
+ * load / save 唯一入口（别名 hydrateDashboardStyleConfig）。
+ */
+export function bootstrapDashboardStyleConfig(
+  config: DashboardStyleConfig,
+): DashboardStyleConfig {
+  const scheme = config.colorScheme ?? "light";
+  const stripAccent = hasDeprecatedThemeAccent(config);
+  let working: DashboardStyleConfig = stripAccent
+    ? { ...config, themeAccent: undefined }
+    : config;
+
+  if (stripAccent) {
+    working = mergeThemeVariantIntoConfig(working, defaultThemeVariant(scheme));
+  }
+
+  let light = ensureThemeVariant(working.themeVariants?.light, "light", stripAccent);
+  let dark = ensureThemeVariant(working.themeVariants?.dark, "dark", stripAccent);
+
+  if (!hasPersistedThemeVariants(working)) {
+    const legacyActive = ensureThemeVariant(extractThemeVariant(working), scheme);
+    if (scheme === "light") {
+      light = legacyActive;
+    } else {
+      dark = legacyActive;
+    }
+  }
+
+  const variants: DashboardThemeVariants = { light, dark };
+  const activeVariant = ensureThemeVariant(variants[scheme], scheme);
+  const merged = mergeThemeVariantIntoConfig(
+    { ...working, themeVariants: variants, colorScheme: scheme },
+    activeVariant,
+  );
+
+  const normalized = normalizeStyleConfigForColorScheme(merged);
+  const syncedActive = ensureThemeVariant(extractThemeVariant(normalized), scheme);
+
+  return {
+    ...normalized,
+    themeVariants: {
+      light: scheme === "light" ? syncedActive : light,
+      dark: scheme === "dark" ? syncedActive : dark,
+    },
+  };
+}
+
+/** @deprecated 使用 bootstrapDashboardStyleConfig */
+export function hydrateDashboardStyleConfig(config: DashboardStyleConfig): DashboardStyleConfig {
+  return bootstrapDashboardStyleConfig(config);
 }
 
 /** 固定主题令牌：仅在未自定义或与另一主题冲突时写入默认字色 */
@@ -284,12 +380,9 @@ export function switchDashboardColorScheme(
 
   const variants: DashboardThemeVariants = {
     ...config.themeVariants,
-    [prevScheme]: extractThemeVariant(config),
+    [prevScheme]: extractThemeVariant(normalizeStyleConfigForColorScheme(config)),
   };
-  const loaded = sanitizeThemeVariant(
-    variants[nextScheme] ?? defaultThemeVariant(nextScheme),
-    nextScheme,
-  );
+  const loaded = ensureThemeVariant(variants[nextScheme], nextScheme);
   const merged = mergeThemeVariantIntoConfig(
     { ...config, colorScheme: nextScheme, themeVariants: variants },
     loaded,
@@ -364,14 +457,5 @@ export function resetActiveThemePreset(config: DashboardStyleConfig): DashboardS
 }
 
 export function initializeDualThemePresets(config: DashboardStyleConfig): DashboardStyleConfig {
-  const light = defaultThemeVariant("light");
-  const dark = defaultThemeVariant("dark");
-  const scheme = config.colorScheme ?? "light";
-  const active = scheme === "dark" ? dark : light;
-  const merged = mergeThemeVariantIntoConfig(config, active);
-  return {
-    ...merged,
-    colorScheme: scheme,
-    themeVariants: { light, dark },
-  };
+  return bootstrapDashboardStyleConfig(config);
 }

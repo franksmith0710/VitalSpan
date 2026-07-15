@@ -174,7 +174,10 @@ export function PixelShape({
           styleConfig?.colorScheme ?? "light",
         )
       : {
-          outer: resolveWidgetShellStyle(styleConfig?.widgetStyle, styleConfig?.colorScheme ?? "light"),
+          outer: resolveWidgetShellStyle(
+            styleConfig?.widgetStyle,
+            styleConfig?.colorScheme ?? "light",
+          ),
           inner: {} as CSSProperties,
         };
   const activeRef = useRef<ActiveInteraction | null>(null);
@@ -436,8 +439,9 @@ export function PixelShape({
               ...shell.inner,
               background:
                 shell.inner.background ??
+                shell.outer.style.backgroundColor ??
                 shell.outer.style.background ??
-                (styleConfig?.colorScheme === "dark" ? "#1e293b" : undefined),
+                "var(--dashboard-widget-surface)",
             }}
             data-pixel-no-drag
             onPointerDown={(event) => {

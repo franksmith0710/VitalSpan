@@ -1,7 +1,7 @@
 import { ChartFieldSlot } from "./ChartFieldSlot";
 import { chartDataSlotBlueprint } from "./chartFieldSlots";
-import { useChartInspector } from "./ChartInspectorContext";
-import type { SlotTarget } from "./ChartInspectorContext";
+import { useChartInspector } from "./chartInspectorContext";
+import type { SlotTarget } from "./chartInspectorTypes";
 
 function isActiveSlot(a: SlotTarget | null, b: SlotTarget): boolean {
   return a?.kind === b.kind && a?.index === b.index;

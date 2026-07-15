@@ -11,7 +11,7 @@ import { useInspectorColumns } from "@/hooks/useInspectorColumns";
 import type { LayoutWidget } from "./layoutUtils";
 import { defaultChartConfig } from "./layoutUtils";
 import { WIDGET_CHART_LABELS } from "./widgetIcons";
-import type { SlotTarget } from "./ChartInspectorContext";
+import type { SlotTarget } from "./chartInspectorTypes";
 
 type DataSourceListItem = { id: string; name: string; code: string };
 type DatasetListItem = {

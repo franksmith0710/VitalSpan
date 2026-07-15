@@ -80,6 +80,7 @@ cases/<域>-<简短主题>.md
 | CASE-2026-06-17-001 | [user-last-super-admin-demote-race.md](./cases/user-last-super-admin-demote-race.md) | user, super_admin, demote, race, atomic update |
 | CASE-2026-07-09-001 | [fe-dashboard-zombie-edit-flicker.md](./cases/fe-dashboard-zombie-edit-flicker.md) | dashboard, 404, zombie edit, RGL isDroppable, 闪烁, 无法保存 |
 | CASE-2026-07-13-001 | [auth-password-401-session-semantics.md](./cases/auth-password-401-session-semantics.md) | change-password, 401, apiFetch, logout, preserveSessionOn401Codes, AUTH_INVALID_CURRENT_PASSWORD |
+| CASE-2026-07-15-001 | [fe-dashboard-theme-variant-hydration.md](./cases/fe-dashboard-theme-variant-hydration.md) | dashboard, themeVariants, hydrate, 浅/深主题, 仪表板风格, styleConfig |
 
 ## 维护规则
 

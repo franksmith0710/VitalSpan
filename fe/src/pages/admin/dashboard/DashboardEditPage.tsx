@@ -43,7 +43,7 @@ import {
   type PixelRect,
 } from "@/components/dashboard/pixelCanvas";
 import {
-  normalizeStyleConfigForColorScheme,
+  bootstrapDashboardStyleConfig,
   syncChartWidgetsForColorScheme,
 } from "@/components/dashboard/dashboardThemeVariants";
 import { cloneLayoutWidget } from "@/components/dashboard/cloneLayoutWidget";
@@ -238,19 +238,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         mode === "edit" ? pixelEnabled : false,
       );
       resetLayout(prepared.layout);
-      const normalizedStyle = normalizeStyleConfigForColorScheme(source.styleConfig ?? {});
+      const normalizedStyle = prepared.layout.styleConfig ?? bootstrapDashboardStyleConfig({});
       setStyleConfig(normalizedStyle);
       styleConfigRef.current = normalizedStyle;
       const baseWidgets =
         prepared.layout.version === 1
           ? prepared.layout.widgets
           : prepared.layout.widgets.map(pixelWidgetToLayoutWidget);
-      setWidgets(
-        syncChartWidgetsForColorScheme(
-          baseWidgets,
-          normalizedStyle.colorScheme ?? "light",
-        ),
-      );
+      const scheme = normalizedStyle.colorScheme ?? "light";
+      setWidgets(syncChartWidgetsForColorScheme(baseWidgets, scheme));
       setSavedFingerprint(
         dashboardPersistFingerprint(
           prepared.layout,
@@ -836,42 +832,40 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           chartRailLabel="仪表板配置"
           showRailFoldHeader={!primarySelectedId && multiSelectCount < 2}
           canvasActions={
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-1">
               {multiSelectCount >= 2 ? (
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
+                  size="xs"
                   className="border-error-200 text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400"
                   onClick={() => setBatchDeleteOpen(true)}
                 >
                   删除选中 ({multiSelectCount})
                 </Button>
               ) : null}
-              <Button
+              <IconButton
                 type="button"
-                variant="outline"
-                size="sm"
+                variant="ghost"
+                size="xs"
                 disabled={!canUndo}
                 onClick={undo}
                 title="回退到上一步编辑 (Ctrl+Z)"
                 aria-label="上一步"
               >
                 <Undo2 aria-hidden />
-                上一步
-              </Button>
-              <Button
+              </IconButton>
+              <IconButton
                 type="button"
-                variant="outline"
-                size="sm"
+                variant="ghost"
+                size="xs"
                 disabled={!canRedo}
                 onClick={redo}
                 title="前进到下一步编辑 (Ctrl+Shift+Z 或 Ctrl+Y)"
                 aria-label="下一步"
               >
                 <Redo2 aria-hidden />
-                下一步
-              </Button>
+              </IconButton>
               <span className="hidden text-theme-xs text-gray-400 sm:inline">
                 {layout.version === 2 ? "1440px 画布" : "12 列"}
               </span>
@@ -1004,13 +998,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               <ChartEditRail
                 key={primarySelectedId ?? selectedWidget.id}
                 widget={selectedWidget}
-                onDelete={() => handleDeleteWidget(primarySelectedId!)}
-                onDataRefresh={() => primarySelectedId && handleChartDataRefresh(primarySelectedId)}
-                onOpenLinkage={() => {
-                  clearSelection();
-                  setLinkagePanelOpen(true);
-                  setChartRailOpen(true);
-                }}
                 onTitleChange={(title) => {
                   if (!primarySelectedId) return;
                   setWidgets((prev) => resizeWidget(prev, primarySelectedId, { title }));
@@ -1020,6 +1007,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   setWidgets((prev) =>
                     prev.map((w) => (w.id === primarySelectedId ? { ...w, chartConfig } : w)),
                   );
+                }}
+                onDelete={() => handleDeleteWidget(primarySelectedId!)}
+                onDataRefresh={() => primarySelectedId && handleChartDataRefresh(primarySelectedId)}
+                onOpenLinkage={() => {
+                  clearSelection();
+                  setLinkagePanelOpen(true);
+                  setChartRailOpen(true);
                 }}
               />
             ) : id ? (

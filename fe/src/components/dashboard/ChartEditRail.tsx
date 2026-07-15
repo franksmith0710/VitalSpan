@@ -2,31 +2,32 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import type { LayoutWidget } from "./layoutUtils";
-import { ChartInspectorProvider, useChartInspector } from "./ChartInspectorContext";
+import { ChartInspectorProvider } from "./ChartInspectorProvider";
+import { useChartInspector } from "./chartInspectorContext";
 import { ChartEditorColumn } from "./ChartEditorColumn";
 import { DatasetPickerPanel } from "./DatasetPickerPanel";
 import { FieldBankPlaceholder } from "./DatasetFieldBank";
 import { WidgetEditRailLayout } from "./WidgetEditRailLayout";
 
-type ChartEditRailProps = {
-  widget: LayoutWidget;
-  onChange: (chartConfig: ChartViewConfig) => void;
-  onTitleChange?: (title: string) => void;
+type ChartEditRailChromeProps = {
   onDelete?: () => void;
   onOpenLinkage?: () => void;
   onDataRefresh?: () => void;
   className?: string;
 };
 
-type ChartEditRailBodyProps = Omit<ChartEditRailProps, "widget" | "onChange" | "onTitleChange">;
+export type ChartEditRailProps = ChartEditRailChromeProps & {
+  widget: LayoutWidget;
+  onChange: (chartConfig: ChartViewConfig) => void;
+  onTitleChange?: (title: string) => void;
+};
 
-/** 必须在 ChartInspectorProvider 内渲染 */
-function ChartEditRailBody({
+function ChartEditRailInner({
   onDelete,
   onOpenLinkage,
   onDataRefresh,
   className,
-}: ChartEditRailBodyProps) {
+}: ChartEditRailChromeProps) {
   const {
     widget,
     cfg,
@@ -82,19 +83,22 @@ function ChartEditRailBody({
   );
 }
 
-/** DataEase chart-edit：左侧配置列 + 右侧数据集/字段（均可折叠） */
+/** 图表右栏（自带 ChartInspectorProvider，单入口避免漏包 Context）。 */
 export function ChartEditRail({
   widget,
   onChange,
   onTitleChange,
-  ...bodyProps
+  ...chromeProps
 }: ChartEditRailProps) {
   return (
     <ChartInspectorProvider widget={widget} onChange={onChange} onTitleChange={onTitleChange}>
-      <ChartEditRailBody {...bodyProps} />
+      <ChartEditRailInner {...chromeProps} />
     </ChartInspectorProvider>
   );
 }
+
+/** @deprecated 使用 `ChartEditRail`（已内置 Provider） */
+export const ChartEditRailWithProvider = ChartEditRail;
 
 export function ChartEditRailEmpty({ message, className }: { message: ReactNode; className?: string }) {
   return (

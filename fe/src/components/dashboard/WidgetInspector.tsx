@@ -2,7 +2,7 @@ import { MousePointerClick } from "lucide-react";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { cn } from "@/lib/utils";
 import type { LayoutWidget } from "./layoutUtils";
-import { ChartEditRail } from "./ChartEditRail";
+import { ChartEditRailWithProvider } from "./ChartEditRail";
 
 type WidgetInspectorProps = {
   widget: LayoutWidget | null;
@@ -49,7 +49,7 @@ export function WidgetInspector({
 
   return (
     <div className={cn("h-full min-h-0 w-full", className)}>
-      <ChartEditRail widget={widget} onChange={onChange} onDelete={onDelete} />
+      <ChartEditRailWithProvider widget={widget} onChange={onChange} onDelete={onDelete} />
     </div>
   );
 }

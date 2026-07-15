@@ -11,6 +11,9 @@ import {
   sortWidgets,
 } from "./layoutUtils";
 import { normalizeWidgetLayout } from "./gridLayoutAdapter";
+import { styleConfigHasPersistedFields } from "./dashboardStyleConfig";
+import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
+import { fitCanvasHeightToContent } from "./pixelCanvas/PixelCanvas";
 
 const CANVAS_WIDTH = 1440 as const;
 const MIN_CANVAS_HEIGHT = 900;
@@ -53,7 +56,9 @@ export function migrateDashboardLayoutV1(layout: DashboardLayoutV1): DashboardLa
     canvas: { width: CANVAS_WIDTH, height },
     widgets,
     globalFilters: structuredClone(layout.globalFilters),
-    styleConfig: layout.styleConfig ? { ...layout.styleConfig } : undefined,
+    styleConfig: layout.styleConfig
+      ? bootstrapDashboardStyleConfig(layout.styleConfig)
+      : undefined,
   };
 }
 
@@ -61,17 +66,23 @@ export function prepareDashboardLayout(
   layout: DashboardLayout,
   pixelEnabled: boolean,
 ): PreparedDashboardLayout {
-  if (layout.version === 2) {
+  const withStyle = layoutWithHydratedStyle(layout);
+  if (withStyle.version === 2) {
     return {
       editor: pixelEnabled ? "pixel" : "pixel-readonly",
       canSave: pixelEnabled,
-      layout,
+      layout: withStyle,
     };
   }
   if (pixelEnabled) {
-    return { editor: "pixel", canSave: true, layout: migrateDashboardLayoutV1(layout) };
+    return { editor: "pixel", canSave: true, layout: migrateDashboardLayoutV1(withStyle) };
   }
-  return { editor: "grid", canSave: true, layout };
+  return { editor: "grid", canSave: true, layout: withStyle };
+}
+
+function layoutWithHydratedStyle(layout: DashboardLayout): DashboardLayout {
+  if (!layout.styleConfig) return layout;
+  return { ...layout, styleConfig: bootstrapDashboardStyleConfig(layout.styleConfig) };
 }
 
 /** DashboardWidget 仍消费栅格 shape；此适配只提供内容渲染所需的显式兼容字段。 */
@@ -109,9 +120,6 @@ export function mergeLayoutWidgetIntoPixel(
   };
 }
 
-import { styleConfigHasPersistedFields } from "./dashboardStyleConfig";
-import { fitCanvasHeightToContent } from "./pixelCanvas/PixelCanvas";
-
 const V1_LAYOUT_GEOMETRY_KEYS = ["colSpan", "rowSpan", "gridX", "gridY"] as const;
 
 /** v2 持久化禁止携带栅格几何字段，否则后端 422 */
@@ -124,7 +132,8 @@ function stripV1LayoutGeometry<T extends Record<string, unknown>>(widget: T): T 
 }
 
 function persistedStyle(styleConfig: DashboardStyleConfig): DashboardStyleConfig | undefined {
-  return styleConfigHasPersistedFields(styleConfig) ? styleConfig : undefined;
+  const hydrated = bootstrapDashboardStyleConfig(styleConfig);
+  return styleConfigHasPersistedFields(hydrated) ? hydrated : undefined;
 }
 
 /** v1 可规范化栅格；v2 只补公共 ID，严格保留数组顺序、order 与像素几何。 */

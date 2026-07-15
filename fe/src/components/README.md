@@ -73,6 +73,8 @@
 | EntityOverviewPage | `../pages/admin/entities/EntityOverviewPage.tsx` | M8 DASH-005 Admin 实体总览（类型 Tab + 物理表 + 下钻） |
 | SchemaBrowser | `datasources/SchemaBrowser.tsx` | 数据源详情三级 metadata 树 |
 | WidgetInspector | `dashboard/WidgetInspector.tsx` | 图表编辑双列：配置区 + 字段库（DE chart-edit 布局） |
+| ChartEditRail | `dashboard/ChartEditRail.tsx` | 图表右栏内容；**须**在 `ChartInspectorProvider` 内（编辑页由 `DashboardEditPage` 提供） |
+| ChartEditRailWithProvider | `dashboard/ChartEditRail.tsx` | 自带 Provider 的便捷包装（复用对话框/单测） |
 | ChartEditorColumn | `dashboard/ChartEditorColumn.tsx` | 图表配置列：数据/样式/高级 Tab |
 | ChartStylePanel | `dashboard/ChartStylePanel.tsx` | DE 样式 Tab（配色/标题/图例/标签/背景/边框） |
 | DashboardContextInspector | `dashboard/DashboardContextInspector.tsx` | 无选中时看板级配置轨 |

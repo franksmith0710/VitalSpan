@@ -69,10 +69,10 @@ describe("dashboardStyleConfig theme vs background", () => {
 
   it("resolveArtboardStyle uses theme default only when user background is unset", () => {
     expect(resolveArtboardStyle({ colorScheme: "dark" })).toEqual({
-      background: CANVAS_BG_DARK_DEFAULT,
+      backgroundColor: CANVAS_BG_DARK_DEFAULT,
     });
     expect(resolveArtboardStyle({ colorScheme: "light" })).toEqual({
-      background: CANVAS_BG_LIGHT_DEFAULT,
+      backgroundColor: CANVAS_BG_LIGHT_DEFAULT,
     });
   });
 

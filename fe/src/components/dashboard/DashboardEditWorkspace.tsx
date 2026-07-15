@@ -33,16 +33,18 @@ function CanvasShell({
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-2 py-1 dark:border-white/[0.06]">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
           {leading}
-          <p
-            className="hidden min-w-0 flex-1 truncate text-theme-xs text-gray-500 sm:block dark:text-gray-400"
-            data-testid={
-              typeof hint === "string" && hint.includes("已选中")
-                ? "canvas-multi-select-hint"
-                : undefined
-            }
-          >
-            {hint}
-          </p>
+          {hint ? (
+            <p
+              className="hidden min-w-0 flex-1 truncate text-theme-xs text-gray-500 sm:block dark:text-gray-400"
+              data-testid={
+                typeof hint === "string" && hint.includes("已选中")
+                  ? "canvas-multi-select-hint"
+                  : undefined
+              }
+            >
+              {hint}
+            </p>
+          ) : null}
         </div>
         {actions}
       </div>
@@ -119,11 +121,9 @@ export function DashboardEditWorkspace({
         hint={
           multiSelectCount >= 2
             ? `已选中 ${multiSelectCount} 个组件`
-            : widgetCount > 0
-              ? canvasEngine === "pixel"
-                ? `${widgetCount} 个组件 · 选中后拖顶部手柄移动`
-                : `${widgetCount} 个组件 · 拖标题栏移动`
-              : "拖拽组件到画布"
+            : widgetCount === 0
+              ? "拖拽组件到画布"
+              : undefined
         }
         actions={canvasActions}
         canvasEngine={canvasEngine}
