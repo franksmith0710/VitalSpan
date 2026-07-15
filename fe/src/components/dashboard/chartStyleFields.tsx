@@ -14,6 +14,7 @@ import {
   INSPECTOR_SELECT,
   InspectorFieldRow,
 } from "./inspectorCompact";
+import { InspectorSliderField } from "./deAttrSlider";
 
 type ChartBackgroundStyleFieldsProps = {
   value: WidgetStyleConfig;
@@ -49,20 +50,16 @@ export function ChartBackgroundStyleFields({ value, onChange }: ChartBackgroundS
   const ws = value;
   return (
     <div className={INSPECTOR_SECTION_GAP}>
-      <InspectorFieldRow label="不透明度">
-        <Input
-          type="number"
-          min={0}
-          max={1}
-          step={0.05}
-          className={INSPECTOR_CTRL}
-          placeholder="1"
-          value={ws.opacity ?? ""}
-          onChange={(e) =>
-            onChange({ opacity: e.target.value ? Number(e.target.value) : undefined })
-          }
-        />
-      </InspectorFieldRow>
+      <InspectorSliderField
+        label="不透明度"
+        value={ws.opacity != null ? Math.round(ws.opacity * 100) : undefined}
+        fallback={100}
+        min={0}
+        max={100}
+        step={1}
+        unit="%"
+        onChange={(opacity) => onChange({ opacity: opacity / 100 })}
+      />
       <InspectorFieldRow label="背景色">
         <ColorField
           compact
@@ -79,19 +76,16 @@ export function ChartBackgroundStyleFields({ value, onChange }: ChartBackgroundS
           onChange={(e) => onChange({ backgroundImage: e.target.value || undefined })}
         />
       </InspectorFieldRow>
-      <InspectorFieldRow label="背景模糊 (px)">
-        <Input
-          type="number"
-          min={0}
-          max={48}
-          className={INSPECTOR_CTRL}
-          value={ws.backdropBlur ?? ""}
-          placeholder="0"
-          onChange={(e) =>
-            onChange({ backdropBlur: e.target.value ? Number(e.target.value) : undefined })
-          }
-        />
-      </InspectorFieldRow>
+      <InspectorSliderField
+        label="背景模糊"
+        value={ws.backdropBlur}
+        fallback={0}
+        min={0}
+        max={48}
+        step={1}
+        unit="px"
+        onChange={(backdropBlur) => onChange({ backdropBlur })}
+      />
 
       <SpacingModeSelect
         label="内边距模式"
@@ -99,19 +93,16 @@ export function ChartBackgroundStyleFields({ value, onChange }: ChartBackgroundS
         onChange={(paddingMode) => onChange({ paddingMode })}
       />
       {(ws.paddingMode ?? "unified") === "unified" ? (
-        <InspectorFieldRow label="内边距 (px)">
-          <Input
-            type="number"
-            min={0}
-            max={64}
-            className={INSPECTOR_CTRL}
-            value={ws.padding ?? ""}
-            placeholder="8"
-            onChange={(e) =>
-              onChange({ padding: e.target.value ? Number(e.target.value) : undefined })
-            }
-          />
-        </InspectorFieldRow>
+        <InspectorSliderField
+          label="内边距"
+          value={ws.padding}
+          fallback={8}
+          min={0}
+          max={64}
+          step={1}
+          unit="px"
+          onChange={(padding) => onChange({ padding })}
+        />
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {(
@@ -122,18 +113,17 @@ export function ChartBackgroundStyleFields({ value, onChange }: ChartBackgroundS
               ["paddingLeft", "左"],
             ] as const
           ).map(([key, label]) => (
-            <InspectorFieldRow key={key} label={label}>
-              <Input
-                type="number"
-                min={0}
-                max={64}
-                className={INSPECTOR_CTRL}
-                value={ws[key] ?? ""}
-                onChange={(e) =>
-                  onChange({ [key]: e.target.value ? Number(e.target.value) : undefined })
-                }
-              />
-            </InspectorFieldRow>
+            <InspectorSliderField
+              key={key}
+              label={label}
+              value={ws[key]}
+              fallback={8}
+              min={0}
+              max={64}
+              step={1}
+              unit="px"
+              onChange={(next) => onChange({ [key]: next })}
+            />
           ))}
         </div>
       )}
@@ -144,19 +134,16 @@ export function ChartBackgroundStyleFields({ value, onChange }: ChartBackgroundS
         onChange={(radiusMode) => onChange({ radiusMode })}
       />
       {(ws.radiusMode ?? "unified") === "unified" ? (
-        <InspectorFieldRow label="圆角 (px)">
-          <Input
-            type="number"
-            min={0}
-            max={48}
-            className={INSPECTOR_CTRL}
-            value={ws.borderRadius ?? ""}
-            placeholder="8"
-            onChange={(e) =>
-              onChange({ borderRadius: e.target.value ? Number(e.target.value) : undefined })
-            }
-          />
-        </InspectorFieldRow>
+        <InspectorSliderField
+          label="圆角"
+          value={ws.borderRadius}
+          fallback={8}
+          min={0}
+          max={48}
+          step={1}
+          unit="px"
+          onChange={(borderRadius) => onChange({ borderRadius })}
+        />
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {(
@@ -167,18 +154,17 @@ export function ChartBackgroundStyleFields({ value, onChange }: ChartBackgroundS
               ["borderRadiusBottomRight", "右下"],
             ] as const
           ).map(([key, label]) => (
-            <InspectorFieldRow key={key} label={label}>
-              <Input
-                type="number"
-                min={0}
-                max={48}
-                className={INSPECTOR_CTRL}
-                value={ws[key] ?? ""}
-                onChange={(e) =>
-                  onChange({ [key]: e.target.value ? Number(e.target.value) : undefined })
-                }
-              />
-            </InspectorFieldRow>
+            <InspectorSliderField
+              key={key}
+              label={label}
+              value={ws[key]}
+              fallback={8}
+              min={0}
+              max={48}
+              step={1}
+              unit="px"
+              onChange={(next) => onChange({ [key]: next })}
+            />
           ))}
         </div>
       )}

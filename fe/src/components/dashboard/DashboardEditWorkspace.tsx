@@ -14,6 +14,7 @@ function CanvasShell({
   className,
   canvasEngine = "grid",
   canvasColorScheme = "light",
+  onBlankPointerDown,
 }: {
   hint?: ReactNode;
   leading?: ReactNode;
@@ -22,6 +23,7 @@ function CanvasShell({
   className?: string;
   canvasEngine?: "grid" | "pixel";
   canvasColorScheme?: ColorScheme;
+  onBlankPointerDown?: () => void;
 }) {
   return (
     <section
@@ -30,7 +32,12 @@ function CanvasShell({
         className,
       )}
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-2 py-1 dark:border-white/[0.06]">
+      <div
+        className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-2 py-1 dark:border-white/[0.06]"
+        onPointerDown={(event) => {
+          if (event.target === event.currentTarget) onBlankPointerDown?.();
+        }}
+      >
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
           {leading}
           {hint ? (
@@ -80,6 +87,8 @@ export type DashboardEditWorkspaceProps = {
   showRailFoldHeader?: boolean;
   /** 编辑点阵 chrome 随看板 colorScheme，不随 Admin 壳层主题 */
   canvasColorScheme?: ColorScheme;
+  /** 点击画布区顶栏空白时切回仪表板配置 */
+  onActivateDashboardContext?: () => void;
   className?: string;
 };
 
@@ -99,6 +108,7 @@ export function DashboardEditWorkspace({
   chartRailLabel = "仪表板配置",
   showRailFoldHeader = true,
   canvasColorScheme = "light",
+  onActivateDashboardContext,
   className,
 }: DashboardEditWorkspaceProps) {
   return (
@@ -128,6 +138,7 @@ export function DashboardEditWorkspace({
         actions={canvasActions}
         canvasEngine={canvasEngine}
         canvasColorScheme={canvasColorScheme}
+        onBlankPointerDown={onActivateDashboardContext}
       >
         {canvas}
       </CanvasShell>

@@ -7,6 +7,7 @@ import {
   useState,
   type CSSProperties,
   type DragEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import { cn } from "@/lib/utils";
@@ -391,6 +392,13 @@ export function PixelCanvas({
     setPaletteDragOver(false);
   }, []);
 
+  const handleBlankPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.target === event.currentTarget) onClearSelection?.();
+    },
+    [onClearSelection],
+  );
+
   const handleDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       if (!onPaletteDrop) return;
@@ -430,9 +438,7 @@ export function PixelCanvas({
       onScroll={(event) => {
         publishViewport(visibleCanvasViewport(event.currentTarget, scale, viewCanvas));
       }}
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClearSelection?.();
-      }}
+      onPointerDown={handleBlankPointerDown}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -442,6 +448,7 @@ export function PixelCanvas({
         data-testid="pixel-canvas-content"
         className="relative shrink-0"
         style={{ width: contentSize.width, height: contentSize.height }}
+        onPointerDown={handleBlankPointerDown}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -458,9 +465,7 @@ export function PixelCanvas({
             height: viewCanvas.height,
             transform: `scale(${scale})`,
           }}
-          onPointerDown={(event) => {
-            if (event.target === event.currentTarget) onClearSelection?.();
-          }}
+          onPointerDown={handleBlankPointerDown}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
         >

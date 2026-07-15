@@ -11,6 +11,8 @@ export type AdminPageShellProps = {
   layout?: "default" | "fill" | "list";
   /** title 已自带 h1 等标题语义时设为 true，避免嵌套标题 */
   titleUnwrapped?: boolean;
+  /** 点击页头空白（非按钮/链接）时的回调，例如看板编辑切回仪表板配置 */
+  onHeaderBlankPointerDown?: () => void;
 };
 
 export function AdminPageShell({
@@ -21,6 +23,7 @@ export function AdminPageShell({
   className,
   layout = "default",
   titleUnwrapped = false,
+  onHeaderBlankPointerDown,
 }: AdminPageShellProps) {
   const isFillLayout = layout === "fill" || layout === "list";
 
@@ -38,8 +41,16 @@ export function AdminPageShell({
           "flex shrink-0 flex-col sm:flex-row sm:items-start sm:justify-between",
           isFillLayout ? "gap-2" : "gap-3",
         )}
+        onPointerDown={(event) => {
+          if (event.target === event.currentTarget) onHeaderBlankPointerDown?.();
+        }}
       >
-        <div className="grid min-w-0 gap-1.5">
+        <div
+          className="grid min-w-0 gap-1.5"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) onHeaderBlankPointerDown?.();
+          }}
+        >
           {titleUnwrapped ? (
             title
           ) : (

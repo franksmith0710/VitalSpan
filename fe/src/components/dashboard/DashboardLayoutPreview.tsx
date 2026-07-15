@@ -11,9 +11,10 @@ import {
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
   widgetDashboardStyleFingerprint,
+  type DashboardStyleConfig,
   type ScaleMode,
 } from "./dashboardStyleConfig";
-import { resolveComponentGapRuntime } from "./componentGapRuntime";
+import { resolveDashboardGapRuntimeFromLayout, resolveEffectiveDashboardStyle } from "./stylePipeline";
 import { DashboardStyleSurface } from "./DashboardStyleSurface";
 import { DashboardWidgetsProvider } from "./DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "./dashboardWidgetExecuteKey";
@@ -25,6 +26,8 @@ import type {
 
 type DashboardLayoutPreviewProps = {
   layout: DashboardLayout;
+  /** 编辑态实时样式；缺省回退 layout.styleConfig（经 bootstrap 归一化） */
+  styleConfig?: DashboardStyleConfig;
   linkage?: Linkage | null;
   filterValues?: Record<string, string>;
   onFilterValueChange?: (filterId: string, value: string) => void;
@@ -34,13 +37,17 @@ type DashboardLayoutPreviewProps = {
 
 export function DashboardLayoutPreview({
   layout,
+  styleConfig: styleConfigOverride,
   linkage = null,
   filterValues = {},
   onFilterValueChange,
   scaleMode,
   className,
 }: DashboardLayoutPreviewProps) {
-  const styleConfig = layout.styleConfig ?? {};
+  const styleConfig = useMemo(
+    () => resolveEffectiveDashboardStyle(layout, styleConfigOverride),
+    [layout, styleConfigOverride],
+  );
   const widgetDashboardStyle = useMemo(
     () => pickWidgetDashboardStyle(styleConfig),
     [widgetDashboardStyleFingerprint(styleConfig)],
@@ -100,7 +107,7 @@ export function DashboardLayoutPreview({
       <DashboardWidgetsProvider widgets={widgets}>
       <DashboardStyleSurface
         styleConfig={styleConfig}
-        componentGapPx={resolveComponentGapRuntime(styleConfig, "pixel").shellPaddingPx}
+        componentGapPx={resolveDashboardGapRuntimeFromLayout(layout, styleConfigOverride).shellPaddingPx}
         className={className}
       >
         <PixelCanvas
@@ -123,7 +130,7 @@ export function DashboardLayoutPreview({
     <DashboardWidgetsProvider widgets={widgets}>
     <DashboardStyleSurface
       styleConfig={styleConfig}
-      componentGapPx={resolveComponentGapRuntime(styleConfig, "grid").shellPaddingPx}
+      componentGapPx={resolveDashboardGapRuntimeFromLayout(layout, styleConfigOverride).shellPaddingPx}
       className={className}
     >
       <div className="relative h-full min-h-0">

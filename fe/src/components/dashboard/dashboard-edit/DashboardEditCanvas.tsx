@@ -19,7 +19,7 @@ import {
   resolveArtboardStyle,
   widgetDashboardStyleFingerprint,
 } from "../dashboardStyleConfig";
-import { resolveComponentGapRuntime } from "../componentGapRuntime";
+import { resolveDashboardGapRuntimeFromLayout, resolveEffectiveDashboardStyle } from "../stylePipeline";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
 import { DashboardWidgetsProvider } from "../DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "../dashboardWidgetExecuteKey";
@@ -76,11 +76,15 @@ export function DashboardEditCanvas({
   onViewportChange,
   widgetActions,
 }: DashboardEditCanvasProps) {
-  const widgetDashboardStyle = useMemo(
-    () => pickWidgetDashboardStyle(styleConfig),
-    [widgetDashboardStyleFingerprint(styleConfig)],
+  const effectiveStyle = useMemo(
+    () => resolveEffectiveDashboardStyle(layout, styleConfig),
+    [layout, styleConfig],
   );
-  const styleRevision = widgetDashboardStyleFingerprint(styleConfig);
+  const widgetDashboardStyle = useMemo(
+    () => pickWidgetDashboardStyle(effectiveStyle),
+    [widgetDashboardStyleFingerprint(effectiveStyle)],
+  );
+  const styleRevision = widgetDashboardStyleFingerprint(effectiveStyle);
 
   const renderCanvasWidget = useCallback(
     (
@@ -141,10 +145,11 @@ export function DashboardEditCanvas({
     return (
       <DashboardLayoutPreview
         layout={layout}
+        styleConfig={effectiveStyle}
         linkage={linkage}
         filterValues={filterValues}
         onFilterValueChange={mode === "view" ? onFilterValueChange : undefined}
-        scaleMode={styleConfig.scaleMode}
+        scaleMode={effectiveStyle.scaleMode}
         className="h-full min-h-0 w-full"
       />
     );
@@ -153,12 +158,9 @@ export function DashboardEditCanvas({
   return (
     <DashboardWidgetsProvider widgets={widgets}>
       <DashboardStyleSurface
-        styleConfig={styleConfig}
+        styleConfig={effectiveStyle}
         componentGapPx={
-          resolveComponentGapRuntime(
-            styleConfig,
-            layout.version === 2 ? "pixel" : "grid",
-          ).shellPaddingPx
+          resolveDashboardGapRuntimeFromLayout(layout, styleConfig).shellPaddingPx
         }
         className="h-full min-h-0"
       >
@@ -166,8 +168,8 @@ export function DashboardEditCanvas({
           <PixelCanvas
             mode="edit"
             layout={layout}
-            styleConfig={styleConfig}
-            scaleMode={styleConfig.scaleMode}
+            styleConfig={effectiveStyle}
+            scaleMode={effectiveStyle.scaleMode}
             selectedIds={selectedIds}
             onSelect={onSelect}
             onClearSelection={onClearSelection}
@@ -183,13 +185,13 @@ export function DashboardEditCanvas({
             <div
               data-testid="dashboard-canvas-backdrop"
               className="pointer-events-none absolute inset-0 z-0"
-              style={resolveArtboardStyle(styleConfig)}
+              style={resolveArtboardStyle(effectiveStyle)}
               aria-hidden
             />
             <DashboardGrid
               mode="edit"
               widgets={widgets}
-              styleConfig={styleConfig}
+              styleConfig={effectiveStyle}
               selectedIds={selectedIds}
               onClearSelection={onClearSelection}
               onInsertChart={onDropInsert}

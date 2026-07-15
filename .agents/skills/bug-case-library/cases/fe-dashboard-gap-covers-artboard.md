@@ -29,12 +29,14 @@
 - `DashboardStyleDialog` 改用 `buildDashboardGapPatch`
 - 后端 `DashboardStyleConfig` gap validator 与持久化 layout
 
+## 修复（2026-07-15 保存/预览 WYSIWYG）
+
+- 预览侧栏：`DashboardLayoutPreview` 接受 `styleConfig` 覆盖，并 `bootstrapDashboardStyleConfig` 归一化；编辑预览传入页面实时样式，不再读 stale 的 `layout.styleConfig`。
+- 编辑态：`applyStyleConfig` / 保存后 `setStyleConfig` 均走 bootstrap，保证所见即所存。
+- `resolvePixelGutter`：legacy 仅 `widgetGap` 时在运行时也推断 pixel 通道，与 normalize 一致。
+
 ## 锚点
 
-- `fe/src/index.css`
-- `fe/src/components/dashboard/gapPolicy.ts`
-- `fe/src/components/dashboard/componentGapRuntime.ts`
-- `backend/app/dashboard/gap_policy.py`
-- `fe/src/components/dashboard/dashboardCanvasMode.ts`
-- `fe/src/pages/admin/dashboard/DashboardEditPage.tsx`
-- 回归：`dashboardGapConfig.test.ts`、`PixelShape.gap.test.tsx`
+- `fe/src/components/dashboard/DashboardLayoutPreview.tsx`
+- `fe/src/pages/admin/dashboard/DashboardEditPage.tsx` — `applyStyleConfig`
+- 回归：`DashboardLayoutPreview.test.tsx`、`dashboardGapConfig.test.ts`

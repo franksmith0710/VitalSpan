@@ -82,14 +82,25 @@ export function chartInspectorCapabilities(
     };
   }
 
-  if (chartType === "pie" || isExtendedEchartsType(chartType)) {
+  if (chartType === "pie") {
     return {
       ...base,
       legend: true,
-      label: false,
-      dataZoom: chartType !== "pie",
-      styleVariant: chartType === "bar",
+      label: true,
+      dataZoom: false,
+      styleVariant: true,
       labelFormat: false,
+    };
+  }
+
+  if (isExtendedEchartsType(chartType)) {
+    return {
+      ...base,
+      legend: chartType !== "heatmap",
+      label: chartType === "map",
+      dataZoom: chartType === "timeline",
+      styleVariant: false,
+      labelFormat: chartType === "map",
     };
   }
 

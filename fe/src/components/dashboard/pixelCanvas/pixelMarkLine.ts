@@ -55,7 +55,10 @@ type ActiveEdge = "left" | "right" | "top" | "bottom" | "centerX" | "centerY";
 
 type SnapCandidate = {
   line: MarkLineId;
+  /** 吸附写入布局的外框坐标 */
   position: number;
+  /** 参考线绘制坐标（有间隙时为视觉边或间隙中线） */
+  guidePosition: number;
   axis: "x" | "y";
   activeEdge: ActiveEdge;
   distance: number;
@@ -70,6 +73,29 @@ function rectBounds(rect: PixelRect): RectBounds {
     centerX: rect.x + rect.width / 2,
     centerY: rect.y + rect.height / 2,
   };
+}
+
+/** DE curGap：内层可视区域（对称 padding） */
+function visualBounds(rect: PixelRect, gap: number): RectBounds {
+  if (gap <= 0) return rectBounds(rect);
+  const outer = rectBounds(rect);
+  const left = outer.left + gap;
+  const top = outer.top + gap;
+  const right = outer.right - gap;
+  const bottom = outer.bottom - gap;
+  if (right <= left || bottom <= top) return outer;
+  return {
+    left,
+    top,
+    right,
+    bottom,
+    centerX: outer.centerX,
+    centerY: outer.centerY,
+  };
+}
+
+function gapMidline(before: number, after: number): number {
+  return (before + after) / 2;
 }
 
 function axisDistance(a: number, b: number): number {
@@ -100,10 +126,12 @@ function pushCandidate(
   axis: "x" | "y",
   activeEdge: ActiveEdge,
   current: RectBounds,
+  guidePosition = position,
 ) {
   candidates.push({
     line,
     position,
+    guidePosition,
     axis,
     activeEdge,
     distance: axisDistance(activeCoord(activeEdge, current), position),
@@ -112,70 +140,132 @@ function pushCandidate(
 
 function collectFlushCandidates(
   active: PixelRect,
-  target: RectBounds,
+  other: PixelRect,
   threshold: number,
+  gap: number,
   candidates: SnapCandidate[],
 ) {
-  const current = rectBounds(active);
+  const currentOuter = rectBounds(active);
+  const targetOuter = rectBounds(other);
+  const current = gap > 0 ? visualBounds(active, gap) : currentOuter;
+  const target = gap > 0 ? visualBounds(other, gap) : targetOuter;
 
   if (axisDistance(current.top, target.top) <= threshold) {
-    pushCandidate(candidates, "xt", target.top, "y", "top", current);
+    pushCandidate(candidates, "xt", targetOuter.top, "y", "top", currentOuter, target.top);
   }
   if (axisDistance(current.bottom, target.top) <= threshold) {
-    pushCandidate(candidates, "xt", target.top, "y", "bottom", current);
+    pushCandidate(candidates, "xt", targetOuter.top, "y", "bottom", currentOuter, target.top);
   }
   if (axisDistance(current.centerY, target.centerY) <= threshold) {
-    pushCandidate(candidates, "xc", target.centerY, "y", "centerY", current);
+    pushCandidate(
+      candidates,
+      "xc",
+      targetOuter.centerY,
+      "y",
+      "centerY",
+      currentOuter,
+      target.centerY,
+    );
   }
   if (axisDistance(current.top, target.bottom) <= threshold) {
-    pushCandidate(candidates, "xb", target.bottom, "y", "top", current);
+    pushCandidate(candidates, "xb", targetOuter.bottom, "y", "top", currentOuter, target.bottom);
   }
   if (axisDistance(current.bottom, target.bottom) <= threshold) {
-    pushCandidate(candidates, "xb", target.bottom, "y", "bottom", current);
+    pushCandidate(
+      candidates,
+      "xb",
+      targetOuter.bottom,
+      "y",
+      "bottom",
+      currentOuter,
+      target.bottom,
+    );
   }
 
   if (axisDistance(current.left, target.left) <= threshold) {
-    pushCandidate(candidates, "yl", target.left, "x", "left", current);
+    pushCandidate(candidates, "yl", targetOuter.left, "x", "left", currentOuter, target.left);
   }
   if (axisDistance(current.right, target.left) <= threshold) {
-    pushCandidate(candidates, "yl", target.left, "x", "right", current);
+    pushCandidate(candidates, "yl", targetOuter.left, "x", "right", currentOuter, target.left);
   }
   if (axisDistance(current.centerX, target.centerX) <= threshold) {
-    pushCandidate(candidates, "yc", target.centerX, "x", "centerX", current);
+    pushCandidate(
+      candidates,
+      "yc",
+      targetOuter.centerX,
+      "x",
+      "centerX",
+      currentOuter,
+      target.centerX,
+    );
   }
   if (axisDistance(current.left, target.right) <= threshold) {
-    pushCandidate(candidates, "yr", target.right, "x", "left", current);
+    pushCandidate(candidates, "yr", targetOuter.right, "x", "left", currentOuter, target.right);
   }
   if (axisDistance(current.right, target.right) <= threshold) {
-    pushCandidate(candidates, "yr", target.right, "x", "right", current);
+    pushCandidate(candidates, "yr", targetOuter.right, "x", "right", currentOuter, target.right);
   }
 }
 
-function collectGapChannelCandidates(
+/** 邻接外框贴齐时，参考线落在两组件间隙中线（DE curGap 外框相切） */
+function collectGapAdjacencyCandidates(
   active: PixelRect,
-  target: RectBounds,
+  other: PixelRect,
   gap: number,
   threshold: number,
   candidates: SnapCandidate[],
 ) {
   if (gap <= 0) return;
   const current = rectBounds(active);
-  const channelRight = target.right + gap;
-  const channelLeft = target.left - gap;
-  const channelBottom = target.bottom + gap;
-  const channelTop = target.top - gap;
+  const target = rectBounds(other);
 
-  if (axisDistance(current.left, channelRight) <= threshold) {
-    pushCandidate(candidates, "yl", channelRight, "x", "left", current);
+  if (axisDistance(current.left, target.right) <= threshold) {
+    const junction = target.right;
+    pushCandidate(
+      candidates,
+      "yl",
+      junction,
+      "x",
+      "left",
+      current,
+      gapMidline(target.right - gap, junction + gap),
+    );
   }
-  if (axisDistance(current.right, channelLeft) <= threshold) {
-    pushCandidate(candidates, "yl", channelLeft, "x", "right", current);
+  if (axisDistance(current.right, target.left) <= threshold) {
+    const junction = target.left;
+    pushCandidate(
+      candidates,
+      "yr",
+      junction,
+      "x",
+      "right",
+      current,
+      gapMidline(junction - gap, target.left + gap),
+    );
   }
-  if (axisDistance(current.top, channelBottom) <= threshold) {
-    pushCandidate(candidates, "xt", channelBottom, "y", "top", current);
+  if (axisDistance(current.top, target.bottom) <= threshold) {
+    const junction = target.bottom;
+    pushCandidate(
+      candidates,
+      "xt",
+      junction,
+      "y",
+      "top",
+      current,
+      gapMidline(target.bottom - gap, junction + gap),
+    );
   }
-  if (axisDistance(current.bottom, channelTop) <= threshold) {
-    pushCandidate(candidates, "xt", channelTop, "y", "bottom", current);
+  if (axisDistance(current.bottom, target.top) <= threshold) {
+    const junction = target.top;
+    pushCandidate(
+      candidates,
+      "xb",
+      junction,
+      "y",
+      "bottom",
+      current,
+      gapMidline(junction - gap, target.top + gap),
+    );
   }
 }
 
@@ -185,10 +275,9 @@ function collectCandidates(
   threshold: number,
   gap: number,
 ): SnapCandidate[] {
-  const target = rectBounds(other);
   const candidates: SnapCandidate[] = [];
-  collectFlushCandidates(active, target, threshold, candidates);
-  collectGapChannelCandidates(active, target, gap, threshold, candidates);
+  collectFlushCandidates(active, other, threshold, gap, candidates);
+  collectGapAdjacencyCandidates(active, other, gap, threshold, candidates);
   return candidates;
 }
 
@@ -390,8 +479,8 @@ export function computeMarkLineSnap(
   };
 
   const rawGuides: MarkLineGuide[] = [];
-  if (ySnap) rawGuides.push({ id: ySnap.line, position: ySnap.position });
-  if (xSnap) rawGuides.push({ id: xSnap.line, position: xSnap.position });
+  if (ySnap) rawGuides.push({ id: ySnap.line, position: ySnap.guidePosition });
+  if (xSnap) rawGuides.push({ id: xSnap.line, position: xSnap.guidePosition });
 
   return {
     rect: snapped,

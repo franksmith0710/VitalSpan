@@ -19,6 +19,21 @@
 
 | 字段 | 值 |
 |------|----|
+| phase | A5_EXECUTE (Phase 1 DONE) |
+| request | 看板保存/重开/预览 WYSIWYG — 布局与间隙漂移 |
+| type | bugfix |
+| plan | docs/automate/plans/2026-07-15-dashboard-wysiwyg-style-pipeline.md |
+| bug_doc | docs/bugs/BUG-10_dashboard-save-reload-layout-drift_2026-07-15.md |
+| status | Phase 1 已合入；Phase 2 缩放单源待执行 |
+| last_verified_command | vitest stylePipeline+gap+preview; tsc --noEmit |
+| last_verified_exit_code | 0 |
+| verification_summary | StylePipeline facade、load 单写、preview live style、legacy gap 推断 |
+| repair_rounds | 1 |
+
+## 上一轮（归档 · 间隙全面加固）
+
+| 字段 | 值 |
+|------|----|
 | phase | DONE |
 | request | 仪表板组件间隙全面修复（审计 P0/P1） |
 | type | bugfix |

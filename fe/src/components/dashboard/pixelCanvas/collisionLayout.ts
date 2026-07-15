@@ -105,6 +105,87 @@ function pushDown(
   return true;
 }
 
+function horizontalOverlap(a: PixelRect, b: PixelRect, gap = 0): boolean {
+  return a.x < b.x + b.width + gap && a.x + a.width + gap > b.x;
+}
+
+function isBelowVacatedFootprint(rect: PixelRect, vacated: PixelRect, gap: number): boolean {
+  if (!horizontalOverlap(rect, vacated, gap)) return false;
+  return rect.y >= vacated.y + vacated.height + gap;
+}
+
+function widgetsSharingColumn(
+  widgets: PixelLayoutWidget[],
+  column: PixelRect,
+  positions: Map<string, PixelRect>,
+  gap: number,
+  excludeId: string,
+): PixelLayoutWidget[] {
+  return widgets.filter((widget) => {
+    if (widget.id === excludeId) return false;
+    const rect = positions.get(widget.id);
+    return rect ? horizontalOverlap(rect, column, gap) : false;
+  });
+}
+
+function liftVacatedColumn(
+  widgets: PixelLayoutWidget[],
+  positions: Map<string, PixelRect>,
+  vacated: PixelRect,
+  activeId: string,
+  gap: number,
+): void {
+  const column = widgets.filter((widget) => {
+    if (widget.id === activeId) return false;
+    const rect = positions.get(widget.id);
+    return rect ? isBelowVacatedFootprint(rect, vacated, gap) : false;
+  });
+  const limit = column.length + 1;
+  for (let step = 0; step < limit; step += 1) {
+    if (!globalVerticalCompact(column, positions, gap)) break;
+  }
+}
+
+/** 对标 DE moveItemUp：同列组件可上浮的最高 y */
+function maxUpwardTop(
+  rect: PixelRect,
+  positions: Map<string, PixelRect>,
+  excludeId: string,
+  gap: number,
+): number {
+  let top = 0;
+  for (const [id, other] of positions) {
+    if (id === excludeId) continue;
+    if (!horizontalOverlap(rect, other, gap)) continue;
+    if (other.y + other.height + gap <= rect.y) {
+      top = Math.max(top, other.y + other.height + gap);
+    }
+  }
+  return top;
+}
+
+/** 全局垂直紧凑：按 y 顺序将各组件上浮填缝（DE 矩阵重力） */
+function globalVerticalCompact(
+  widgets: PixelLayoutWidget[],
+  positions: Map<string, PixelRect>,
+  gap: number,
+  excludeIds?: ReadonlySet<string>,
+): boolean {
+  let changed = false;
+  const sorted = [...widgets].sort(compareWidgets);
+  for (const widget of sorted) {
+    if (excludeIds?.has(widget.id)) continue;
+    const rect = positions.get(widget.id);
+    if (!rect) continue;
+    const nextY = Math.round(maxUpwardTop(rect, positions, widget.id, gap));
+    if (nextY < rect.y) {
+      positions.set(widget.id, { ...rect, y: nextY });
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 function cascadeFromBlocker(
   widgets: PixelLayoutWidget[],
   positions: Map<string, PixelRect>,
@@ -146,13 +227,43 @@ export function resolvePixelCollisions(
 ): DashboardLayoutV2 {
   const resolved = { ...DEFAULT_OPTIONS, ...options };
   const positions = new Map(layout.widgets.map((widget) => [widget.id, widgetRect(widget)]));
-  positions.set(activeId, {
+  const roundedActive = {
     x: Math.round(activeRect.x),
     y: Math.round(activeRect.y),
     width: Math.round(activeRect.width),
     height: Math.round(activeRect.height),
-  });
-  cascadeFromBlocker(layout.widgets, positions, activeId, activeId, resolved);
+  };
+
+  const allowReflow = resolved.minOverlap <= 0;
+
+  // DE movePlayer：同列旧占位下方的组件先上浮填缝（预览轻触容差时跳过，避免误抬升）
+  const oldRect = positions.get(activeId);
+  if (oldRect && allowReflow) {
+    positions.delete(activeId);
+    liftVacatedColumn(layout.widgets, positions, oldRect, activeId, resolved.gap);
+  }
+
+  positions.set(activeId, roundedActive);
+
+  const settleLimit = layout.widgets.length + 1;
+  const keepActiveY = new Set([activeId]);
+  const activeColumn = widgetsSharingColumn(
+    layout.widgets,
+    roundedActive,
+    positions,
+    resolved.gap,
+    activeId,
+  );
+  for (let step = 0; step < settleLimit; step += 1) {
+    cascadeFromBlocker(layout.widgets, positions, activeId, activeId, resolved);
+    if (
+      !allowReflow ||
+      !globalVerticalCompact(activeColumn, positions, resolved.gap, keepActiveY)
+    ) {
+      break;
+    }
+  }
+
   return applyPositions(layout, positions, resolved);
 }
 

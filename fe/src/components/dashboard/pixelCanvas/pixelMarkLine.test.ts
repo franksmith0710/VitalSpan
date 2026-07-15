@@ -64,7 +64,7 @@ describe("pixelMarkLine", () => {
     expect(result.guides).toEqual([{ id: "xt", position: 100 }]);
   });
 
-  it("snaps with gap channel between outer boxes", () => {
+  it("snaps with gap adjacency on outer junction and shows gap midline", () => {
     const active: PixelRect = { x: 303, y: 50, width: 200, height: 120 };
     const other: PixelRect = { x: 0, y: 80, width: 300, height: 120 };
 
@@ -74,8 +74,22 @@ describe("pixelMarkLine", () => {
       gap: 5,
     });
 
-    expect(result.rect.x).toBe(305);
-    expect(result.guides).toContainEqual({ id: "yl", position: 305 });
+    expect(result.rect.x).toBe(300);
+    expect(result.guides).toContainEqual({ id: "yl", position: 300 });
+  });
+
+  it("aligns visual edges and draws guide on inset line when gap > 0", () => {
+    const active: PixelRect = { x: 100, y: 102, width: 200, height: 120 };
+    const other: PixelRect = { x: 400, y: 100, width: 200, height: 80 };
+
+    const result = computeMarkLineSnap(active, [other], {
+      threshold: 3,
+      dragDir: dragLeftUp,
+      gap: 8,
+    });
+
+    expect(result.rect.y).toBe(100);
+    expect(result.guides).toEqual([{ id: "xt", position: 108 }]);
   });
 
   it("prefers one horizontal and one vertical guide by drag direction", () => {

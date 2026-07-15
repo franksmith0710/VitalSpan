@@ -1,4 +1,3 @@
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -8,7 +7,8 @@ import {
 } from "@/components/ui/select";
 import { ColorField } from "@/components/ui/color-field";
 import { DashboardConfigSection } from "./DashboardConfigSection";
-import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "./chartInspectorDeFields";
+import { ChartDeAttrField, ChartDeSegmentField } from "./chartInspectorDeFields";
+import { ChartDeSliderField } from "./deAttrSlider";
 import { DeAttrToggleRow } from "./dashboardInspectorUi";
 import { INSPECTOR_SELECT } from "./inspectorCompact";
 import { useChartInspector } from "./ChartInspectorContext";
@@ -43,23 +43,16 @@ export function ChartTableStylePanel() {
   return (
     <DashboardConfigSection title="基础样式" defaultOpen compact data-testid="table-style-basic">
       <div className="pb-1">
-        <ChartDeAttrField label="不透明度 %">
-          <Input
-            type="number"
-            min={0}
-            max={100}
-            className={CHART_DE_INPUT}
-            placeholder="100"
-            value={tableStyle.opacity ?? ""}
-            onChange={(e) =>
-              patch({
-                opacity: e.target.value
-                  ? Math.min(100, Math.max(0, Number(e.target.value)))
-                  : undefined,
-              })
-            }
-          />
-        </ChartDeAttrField>
+        <ChartDeSliderField
+          label="不透明度 %"
+          value={tableStyle.opacity}
+          fallback={100}
+          min={0}
+          max={100}
+          step={1}
+          unit="%"
+          onChange={(opacity) => patch({ opacity })}
+        />
 
         <ChartDeAttrField label="边框颜色">
           <ColorField
@@ -143,27 +136,21 @@ export function ChartTableStylePanel() {
 
         {columnWidthMode === "custom" && displayCols.length > 0 ? (
           <ChartDeAttrField label="列宽比例 %">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {displayCols.map((col) => (
-                <div key={col} className="flex items-center gap-1.5">
-                  <span
-                    className="w-16 shrink-0 truncate text-[10px] text-gray-500 dark:text-gray-400"
-                    title={col}
-                  >
-                    {col}
-                  </span>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={100}
-                    className={CHART_DE_INPUT}
-                    placeholder="—"
-                    value={tableStyle.columnWidths?.[col] ?? ""}
-                    onChange={(e) =>
-                      patchColumnWidth(col, e.target.value ? Number(e.target.value) : 0)
-                    }
-                  />
-                </div>
+                <ChartDeSliderField
+                  key={col}
+                  className="border-b-0 py-0 last:border-b-0"
+                  label={col}
+                  value={tableStyle.columnWidths?.[col]}
+                  fallback={Math.floor(100 / displayCols.length)}
+                  min={1}
+                  max={100}
+                  step={1}
+                  unit="%"
+                  ariaLabel={`${col} 列宽`}
+                  onChange={(pct) => patchColumnWidth(col, pct)}
+                />
               ))}
             </div>
           </ChartDeAttrField>

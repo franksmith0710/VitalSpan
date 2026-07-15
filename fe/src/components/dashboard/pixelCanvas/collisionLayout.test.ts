@@ -88,6 +88,27 @@ describe("collisionLayout", () => {
     expect(layoutsOverlap(resolved, 0)).toBe(false);
   });
 
+  it("lifts widgets below when the active widget moves away (DE vacate + compact)", () => {
+    const layout = baseLayout([
+      widget("a", 100, 100, 300, 200, 1),
+      widget("b", 120, 320, 300, 200, 2),
+    ]);
+    const resolved = resolvePixelCollisions(layout, "a", { x: 100, y: 500, width: 300, height: 200 });
+    expect(resolved.widgets.find((item) => item.id === "b")).toMatchObject({ y: 0 });
+    expect(resolved.widgets.find((item) => item.id === "a")).toMatchObject({ y: 500 });
+    expect(layoutsOverlap(resolved, 0)).toBe(false);
+  });
+
+  it("does not lift widgets in non-overlapping columns", () => {
+    const layout = baseLayout([
+      widget("a", 100, 100, 300, 200, 1),
+      widget("b", 600, 400, 300, 200, 2),
+    ]);
+    const resolved = resolvePixelCollisions(layout, "a", { x: 100, y: 500, width: 300, height: 200 });
+    expect(resolved.widgets.find((item) => item.id === "b")).toMatchObject({ y: 400 });
+    expect(layoutsOverlap(resolved, 0)).toBe(false);
+  });
+
   it("cascades A -> B -> C in stable order", () => {
     const layout = baseLayout([
       widget("a", 100, 100, 300, 200, 1),
@@ -96,7 +117,8 @@ describe("collisionLayout", () => {
     ]);
     const resolved = resolvePixelCollisions(layout, "a", { x: 100, y: 300, width: 300, height: 200 });
     expect(resolved.widgets.find((item) => item.id === "b")).toMatchObject({ y: 500 });
-    expect(resolved.widgets.find((item) => item.id === "c")).toMatchObject({ y: 700 });
+    expect(resolved.widgets.find((item) => item.id === "a")).toMatchObject({ y: 300 });
+    expect(resolved.widgets.find((item) => item.id === "c")).toMatchObject({ y: 0 });
     expect(layoutsOverlap(resolved, 0)).toBe(false);
   });
 

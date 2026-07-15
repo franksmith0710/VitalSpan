@@ -96,6 +96,23 @@ describe("dashboard gap custom mode", () => {
     });
   });
 
+  it("resolvePixelGutter infers pixel channel from legacy widgetGap before persist", async () => {
+    const { resolvePixelGutter } = await import("./gapPolicy");
+    expect(resolvePixelGutter({ widgetGap: 8 })).toBe(5);
+  });
+
+  it("bootstrap aligns runtime pixel gap with save normalization", async () => {
+    const { bootstrapDashboardStyleConfig } = await import("./dashboardThemeVariants");
+    const { resolveComponentGapRuntime } = await import("./componentGapRuntime");
+    const bootstrapped = bootstrapDashboardStyleConfig({ widgetGap: 8 });
+    const saved = buildDashboardLayoutForSave(
+      { version: 2, canvas: { width: 1440, height: 900 }, widgets: [] },
+      bootstrapped,
+    );
+    expect(resolveComponentGapRuntime(bootstrapped, "pixel").shellPaddingPx).toBe(5);
+    expect(resolveComponentGapRuntime(saved.styleConfig ?? {}, "pixel").shellPaddingPx).toBe(5);
+  });
+
   it("buildDashboardLayoutForSave normalizes legacy widgetGap on styleConfig", () => {
     const saved = buildDashboardLayoutForSave(
       { version: 2, canvas: { width: 1440, height: 900 }, widgets: [] },

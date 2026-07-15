@@ -102,7 +102,7 @@ describe("PixelCanvas", () => {
     });
     await flushPixelPointerFrames();
 
-    expect(blockerShape).toHaveStyle({ top: "400px" });
+    expect(blockerShape).toHaveStyle({ top: "0px" });
     fireEvent.pointerUp(shape, { pointerId: 3, clientX: 0, clientY: 120 });
   });
 
@@ -256,6 +256,40 @@ describe("PixelCanvas", () => {
     fireEvent.pointerUp(screen.getByTestId("pixel-shape-w1"), { pointerId: 9 });
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("clears selection when clicking blank canvas content outside the stage", () => {
+    const onClearSelection = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={layout}
+        selectedIds={new Set(["w1"])}
+        onClearSelection={onClearSelection}
+        onLayoutChange={vi.fn()}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+
+    fireEvent.pointerDown(screen.getByTestId("pixel-canvas-content"));
+    expect(onClearSelection).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears selection when clicking blank host padding", () => {
+    const onClearSelection = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={layout}
+        selectedIds={new Set(["w1"])}
+        onClearSelection={onClearSelection}
+        onLayoutChange={vi.fn()}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+
+    fireEvent.pointerDown(screen.getByTestId("pixel-canvas-host"));
+    expect(onClearSelection).toHaveBeenCalledTimes(1);
   });
 
   it("shows DE edit chrome only in edit mode", () => {

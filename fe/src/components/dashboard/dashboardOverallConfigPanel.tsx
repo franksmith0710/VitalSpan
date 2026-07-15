@@ -31,6 +31,7 @@ import {
   DeAttrToggleSection,
   DeSegmentGroup,
 } from "./dashboardInspectorUi";
+import { DeProgressSlider } from "./deAttrSlider";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -87,15 +88,14 @@ function GapControls({
                 <span>自定义</span>
                 <span className="tabular-nums">{customPx}px</span>
               </div>
-              <input
-                type="range"
+              <DeProgressSlider
                 min={0}
                 max={customMax}
                 step={1}
                 value={Math.max(0, customPx)}
-                aria-label="自定义间隙滑块"
-                className="h-1.5 w-full cursor-pointer accent-brand-500"
-                onChange={(e) => onCustomPx(Number(e.target.value))}
+                ariaLabel="自定义间隙滑块"
+                ariaValuetext={`${Math.max(0, customPx)}px`}
+                onChange={onCustomPx}
               />
               <Input
                 type="number"

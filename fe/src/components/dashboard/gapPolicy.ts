@@ -101,6 +101,13 @@ export function resolvePixelGutter(config: GapConfigInput): number {
   if (config.pixelGutter != null) {
     return Math.min(10, Math.max(0, config.pixelGutter));
   }
+  if (config.widgetGap != null && config.widgetGap > 0) {
+    const inferred = inferWidgetGapPreset(config.widgetGap);
+    if (inferred !== "custom" && inferred in PIXEL_GAP_PRESET_PX) {
+      return PIXEL_GAP_PRESET_PX[inferred as keyof typeof PIXEL_GAP_PRESET_PX];
+    }
+    return Math.min(10, config.widgetGap);
+  }
   return DEFAULT_PIXEL_GUTTER;
 }
 

@@ -60,17 +60,35 @@ describe("ChartStylePanel", () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByRole("button", { name: "基础样式" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "基础样式" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "标题" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "图例" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "背景" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "边框" })).toBeInTheDocument();
 
-    await user.click(screen.getByLabelText("样式子类型"));
-    await user.click(screen.getByRole("option", { name: "stacked" }));
+    await user.click(await screen.findByRole("button", { name: "堆叠" }));
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ styleVariant: "stacked" }),
     );
+  });
+
+  it("table shows only table-specific sections", () => {
+    const tableWidget: LayoutWidget = {
+      ...widget,
+      chartConfig: { ...widget.chartConfig!, chartType: "table" },
+    };
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ChartInspectorProvider widget={tableWidget} onChange={vi.fn()}>
+          <ChartStylePanel />
+        </ChartInspectorProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "基础样式" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "图例" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "备注" })).not.toBeInTheDocument();
   });
 });

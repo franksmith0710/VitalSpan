@@ -29,8 +29,6 @@ import {
   type TextWidgetConfig,
 } from "@/components/dashboard/layoutUtils";
 import {
-  buildDashboardLayoutForSave,
-  dashboardPersistFingerprint,
   isPixelCanvasEnabled,
   mergeLayoutWidgetIntoPixel,
   pixelWidgetToLayoutWidget,
@@ -43,9 +41,11 @@ import {
   type PixelRect,
 } from "@/components/dashboard/pixelCanvas";
 import {
-  bootstrapDashboardStyleConfig,
-  syncChartWidgetsForColorScheme,
-} from "@/components/dashboard/dashboardThemeVariants";
+  hydrateDashboardStyle,
+  persistDashboardFingerprint,
+  persistDashboardLayout,
+  syncPixelLayoutChartStyles,
+} from "@/components/dashboard/stylePipeline";
 import { cloneLayoutWidget } from "@/components/dashboard/cloneLayoutWidget";
 import type { PixelWidgetActions } from "@/components/dashboard/pixelCanvas/PixelShapeActionRail";
 import {
@@ -179,7 +179,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const applyStyleConfig = useCallback((value: SetStateAction<DashboardStyleConfig>) => {
     setStyleConfig((prev) => {
-      const next = typeof value === "function" ? value(prev) : value;
+      const raw = typeof value === "function" ? value(prev) : value;
+      const next = hydrateDashboardStyle(raw);
       styleConfigRef.current = next;
       return next;
     });
@@ -240,20 +241,28 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         source,
         mode === "edit" ? pixelEnabled : false,
       );
-      resetLayout(prepared.layout);
-      const normalizedStyle = prepared.layout.styleConfig ?? bootstrapDashboardStyleConfig({});
-      setStyleConfig(normalizedStyle);
-      styleConfigRef.current = normalizedStyle;
+      const hydratedStyle = hydrateDashboardStyle(prepared.layout.styleConfig);
+      let layoutForEditor: typeof prepared.layout = {
+        ...prepared.layout,
+        styleConfig: hydratedStyle,
+      };
+      if (layoutForEditor.version === 2) {
+        layoutForEditor = syncPixelLayoutChartStyles(
+          layoutForEditor,
+          hydratedStyle.colorScheme ?? "light",
+        );
+      }
+      resetLayout(layoutForEditor);
+      setStyleConfig(hydratedStyle);
+      styleConfigRef.current = hydratedStyle;
       const baseWidgets =
-        prepared.layout.version === 1
-          ? prepared.layout.widgets
-          : prepared.layout.widgets.map(pixelWidgetToLayoutWidget);
-      const scheme = normalizedStyle.colorScheme ?? "light";
-      setWidgets(syncChartWidgetsForColorScheme(baseWidgets, scheme));
+        layoutForEditor.version === 1
+          ? layoutForEditor.widgets
+          : layoutForEditor.widgets.map(pixelWidgetToLayoutWidget);
       setSavedFingerprint(
-        dashboardPersistFingerprint(
-          prepared.layout,
-          normalizedStyle,
+        persistDashboardFingerprint(
+          layoutForEditor,
+          hydratedStyle,
           mode === "edit" ? pixelEnabled : false,
         ),
       );
@@ -306,7 +315,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const isDirty = useMemo(() => {
     if (missing || savedFingerprint === null) return false;
     return (
-      dashboardPersistFingerprint(layout, styleConfig, pixelEnabled) !== savedFingerprint ||
+      persistDashboardFingerprint(layout, styleConfig, pixelEnabled) !== savedFingerprint ||
       name.trim() !== savedName ||
       (savedLinkageSnapshot !== null &&
         linkageSnapshot(widgets, linkage) !== savedLinkageSnapshot)
@@ -340,6 +349,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     [widgets, primarySelectedId],
   );
   const multiSelectCount = selectedIds.size;
+
+  const openDashboardContext = useCallback(() => {
+    clearSelection();
+    setLinkagePanelOpen(false);
+    setChartRailOpen(true);
+  }, [clearSelection]);
 
   const effectiveLinkage = useMemo(
     () => mergeLayoutFilterLinkage(widgets, linkage),
@@ -611,7 +626,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setSaving(true);
     setError(null);
     try {
-      const normalizedLayout = buildDashboardLayoutForSave(currentLayout, currentStyle);
+      const normalizedLayout = persistDashboardLayout(currentLayout, currentStyle);
       const normalized =
         normalizedLayout.version === 1
           ? normalizedLayout.widgets
@@ -635,12 +650,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       });
 
       resetLayout(normalizedLayout);
-      const savedStyle =
-        normalizedLayout.styleConfig ?? bootstrapDashboardStyleConfig({});
+      const savedStyle = hydrateDashboardStyle(normalizedLayout.styleConfig);
       setStyleConfig(savedStyle);
       styleConfigRef.current = savedStyle;
       setSavedFingerprint(
-        dashboardPersistFingerprint(normalizedLayout, savedStyle, pixelEnabled),
+        persistDashboardFingerprint(normalizedLayout, savedStyle, pixelEnabled),
       );
 
       const mergedLinkage = sanitizeLinkageForSave(
@@ -797,6 +811,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       layout="fill"
       title={pageTitle}
       titleUnwrapped={titleUnwrapped}
+      onHeaderBlankPointerDown={
+        mode === "edit" && canSave ? openDashboardContext : undefined
+      }
       description={
         mode === "edit"
           ? !canSave
@@ -880,16 +897,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           }
           onPaletteInsert={handleInsert}
           onOpenReuse={() => setReuseOpen(true)}
-          onOpenDashboardStyle={() => {
-            clearSelection();
-            setLinkagePanelOpen(false);
-            setChartRailOpen(true);
-          }}
+          onOpenDashboardStyle={openDashboardContext}
           onOpenLinkage={() => {
-            clearSelection();
+            openDashboardContext();
             setLinkagePanelOpen(true);
-            setChartRailOpen(true);
           }}
+          onActivateDashboardContext={openDashboardContext}
           canvas={
             <DashboardEditCanvas
               mode="edit"
@@ -917,10 +930,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 setChartRailOpen(true);
                 handleSelect(widgetId, additive);
               }}
-              onClearSelection={() => {
-                clearSelection();
-                setLinkagePanelOpen(false);
-              }}
+              onClearSelection={openDashboardContext}
               onDeleteWidget={handleDeleteWidget}
               onFilterValueChange={handleFilterValueChange}
               onDropInsert={handleDropInsert}
