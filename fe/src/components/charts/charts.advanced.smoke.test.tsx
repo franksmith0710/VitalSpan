@@ -93,7 +93,7 @@ import { getEchartsTheme } from "@/lib/echarts-theme";
 
 describe("echarts-theme", () => {
   it("T-VIZ-R43-003-03: echarts-theme 暗色 label 色非空", () => {
-    const theme = getEchartsTheme(true);
+    const theme = getEchartsTheme("dark");
     const textStyle = theme.textStyle as { color?: string };
     expect(textStyle?.color).toBeTruthy();
     expect(textStyle?.color).not.toBe("#ffffff"); // @design-token-ok test assertion
@@ -265,8 +265,13 @@ describe("ChartConfigPanel", () => {
 });
 
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
+import { clearChartRenderSpecCacheForTests } from "@/components/charts/useChartRenderSpec";
 
 describe("ChartRenderer advanced", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    clearChartRenderSpecCacheForTests();
+  });
   afterEach(() => cleanup());
 
   it("T-VIZ-R43-008-03: funnel mock render-spec → data-testid=echarts-chart", async () => {
@@ -363,6 +368,10 @@ describe("Embed", () => {
 });
 
 describe("ChartRenderer extended", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    clearChartRenderSpecCacheForTests();
+  });
   afterEach(() => cleanup());
 
   it("T-VIZ-R43-004-01: sankey 2 维+1 度量 → echarts 容器", async () => {

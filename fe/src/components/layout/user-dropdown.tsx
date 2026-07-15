@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router";
-import { ArrowLeft, ChevronDown, LogOut, User } from "lucide-react";
+import { ArrowLeft, ChevronDown, LogOut, Settings, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,9 +15,9 @@ import { useAuth } from "@/context/auth-context";
 import {
   primaryRoleLabel,
   sessionUserFromMe,
+  canManagePlatform,
 } from "@/lib/session";
-import { ACCOUNT_CENTER_PATH } from "@/lib/workspace";
-import { DevUserSwitcher } from "@/components/layout/dev-user-switcher";
+import { ACCOUNT_CENTER_PATH, SYSTEM_ADMIN_HOME_PATH } from "@/lib/workspace";
 import { cn } from "@/lib/utils";
 
 export function UserDropdown({ className }: { className?: string }) {
@@ -27,8 +27,9 @@ export function UserDropdown({ className }: { className?: string }) {
     : sessionUserFromMe({ username: "用户", displayName: "用户", email: "user@vitalspan.local", roles: ["viewer"] });
   const label = user.name;
   const roleLabel = primaryRoleLabel(user.roles);
-  const { canReturnToWorkspace, returnToWorkspace, beginAccountManagement } =
+  const { canReturnToWorkspace, returnToWorkspace, beginAccountManagement, beginSystemAdmin } =
     useWorkspace();
+  const canOpenSystemAdmin = canManagePlatform(user);
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -83,11 +84,6 @@ export function UserDropdown({ className }: { className?: string }) {
           </div>
         </div>
 
-        <DevUserSwitcher
-          currentUsername={authUser?.username ?? user.name}
-          onSwitched={() => setOpen(false)}
-        />
-
         <ul className="flex flex-col gap-1 border-b border-gray-200 pt-4 pb-3 dark:border-gray-800">
           {canReturnToWorkspace ? (
             <li>
@@ -119,6 +115,24 @@ export function UserDropdown({ className }: { className?: string }) {
               </Link>
             </DropdownMenuItem>
           </li>
+
+          {canOpenSystemAdmin ? (
+            <li>
+              <DropdownMenuItem asChild>
+                <Link
+                  to={SYSTEM_ADMIN_HOME_PATH}
+                  className="gap-3 px-3 py-2 font-medium text-gray-700 dark:text-gray-400"
+                  onClick={() => {
+                    beginSystemAdmin();
+                    setOpen(false);
+                  }}
+                >
+                  <Settings className="size-5" aria-hidden />
+                  后台管理
+                </Link>
+              </DropdownMenuItem>
+            </li>
+          ) : null}
         </ul>
 
         <DropdownMenuSeparator className="my-0" />

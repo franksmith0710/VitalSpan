@@ -19,13 +19,52 @@ describe("dashboardStyleConfig theme vs background", () => {
     });
   });
 
-  it("resolveArtboardStyle prefers user background over theme", () => {
+  it("resolveArtboardStyle prefers user background over theme when scheme matches", () => {
     expect(
       resolveArtboardStyle({
-        colorScheme: "dark",
+        colorScheme: "light",
         canvasBackground: "#f1c40f",
       }),
     ).toEqual({ background: "#f1c40f" });
+    expect(
+      resolveArtboardStyle({
+        colorScheme: "dark",
+        canvasBackground: "#0f172a",
+      }),
+    ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
+  });
+
+  it("resolveArtboardStyle coerces gradient canvas when colorScheme is dark", () => {
+    expect(
+      resolveArtboardStyle({
+        colorScheme: "dark",
+        canvasBackground: "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
+      }),
+    ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
+  });
+
+  it("resolveArtboardStyle coerces medium-light canvas when colorScheme is dark", () => {
+    expect(
+      resolveArtboardStyle({
+        colorScheme: "dark",
+        canvasBackground: "#57617a",
+      }),
+    ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
+  });
+
+  it("resolveArtboardStyle coerces light canvas when colorScheme is dark", () => {
+    expect(
+      resolveArtboardStyle({
+        colorScheme: "dark",
+        canvasBackground: "#ffffff",
+      }),
+    ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
+    expect(
+      resolveArtboardStyle({
+        colorScheme: "dark",
+        canvasBackground: "#eff6ff",
+      }),
+    ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
   });
 
   it("resolveArtboardStyle uses theme default only when user background is unset", () => {
@@ -44,7 +83,7 @@ describe("dashboardStyleConfig theme vs background", () => {
         canvasBackgroundImage: "https://example.com/bg.png",
       }),
     ).toEqual({
-      background: "#ffffff",
+      backgroundColor: "#ffffff",
       backgroundImage: "url(https://example.com/bg.png)",
       backgroundSize: "cover",
       backgroundPosition: "center",

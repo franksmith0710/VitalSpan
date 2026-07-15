@@ -9,9 +9,9 @@ import {
 import { sessionUserFromAuth } from "./session";
 
 describe("resolveNavGroups", () => {
-  it("returns full admin nav for admin", () => {
+  it("returns full admin nav for admin (系统已移出主侧栏)", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
-    expect(groups.some((g) => g.title === "系统")).toBe(true);
+    expect(groups.some((g) => g.title === "系统")).toBe(false);
     expect(groups.some((g) => g.title === "数据")).toBe(true);
   });
 
@@ -116,9 +116,12 @@ describe("resolveNavGroups", () => {
     expect(groups.some((g) => g.title === "主题与实体")).toBe(false);
   });
 
-  it("T-NAV-CAP-01: admin sees 系统 section with 资源授权 subItem", () => {
-    const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
-    const system = groups.find((g) => g.title === "系统");
+  it("T-NAV-CAP-01: admin system admin nav has 资源授权 subItem", () => {
+    const sections = resolveSidebarSections(
+      sessionUserFromAuth("admin", ["admin"]),
+      "/admin/system/roles",
+    );
+    const system = sections.find((g) => g.title === "后台管理");
     expect(system).toBeDefined();
     const security = system?.items.find((i) => i.name === "权限与安全");
     expect(security?.subItems?.map((s) => s.name)).toContain("资源授权");
@@ -142,13 +145,13 @@ describe("resolveNavGroups", () => {
     );
   });
 
-  it("T-NAV-AUTHZ-02: root user with empty roles still sees admin nav", () => {
+  it("T-NAV-AUTHZ-02: root user with empty roles still sees admin nav without 系统", () => {
     const groups = resolveNavGroups({
       ...sessionUserFromAuth("root", []),
       permissions: [],
       isRoot: true,
     });
-    expect(groups.some((g) => g.title === "系统")).toBe(true);
+    expect(groups.some((g) => g.title === "系统")).toBe(false);
     expect(groups.some((g) => g.title === "数据")).toBe(true);
   });
 
@@ -198,10 +201,10 @@ describe("resolveNavGroups", () => {
     const titles = groups.map((g) => g.title);
     expect(titles).toContain("数据");
     expect(titles).not.toContain("治理");
+    expect(titles).not.toContain("系统");
     const data = groups.find((g) => g.title === "数据");
     expect(data?.defaultCollapsed).toBeFalsy();
     expect(data?.items.some((i) => i.name === "实体与主题")).toBe(false);
-    expect(groups.find((g) => g.title === "系统")?.defaultCollapsed).toBeFalsy();
   });
 
   it("T-NAV-H1-01: resolveNavGroups without gov flag omits 治理", () => {
@@ -291,6 +294,19 @@ describe("resolveSidebarSections", () => {
     const admin = sessionUserFromAuth("admin", ["admin"]);
     const sections = resolveSidebarSections(admin, "/admin/dashboards");
     expect(sections.some((g) => g.title === "数据")).toBe(true);
+    expect(sections.some((g) => g.title === "系统")).toBe(false);
+  });
+
+  it("uses system admin nav on /admin/system/* paths", () => {
+    const admin = sessionUserFromAuth("admin", ["admin"]);
+    const sections = resolveSidebarSections(admin, "/admin/system/users");
+    expect(sections).toHaveLength(1);
+    expect(sections[0]?.title).toBe("后台管理");
+    expect(sections[0]?.items.map((i) => i.name)).toEqual([
+      "权限与安全",
+      "组织架构",
+      "审计日志",
+    ]);
   });
 });
 

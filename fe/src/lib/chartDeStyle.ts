@@ -5,8 +5,10 @@ import type {
   NumberFormatConfig,
   TitleStyleConfig,
   WidgetStyleConfig,
+  ColorScheme,
 } from "@/components/dashboard/dashboardStyleConfig";
-import { mergeTitleStyle, mergeWidgetShellStyle } from "@/components/dashboard/dashboardStyleConfig";
+import { mergeTitleStyle, mergeWidgetShellStyle, coerceWidgetSurfaceBackground } from "@/components/dashboard/dashboardStyleConfig";
+import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "@/components/dashboard/dashboardThemeTokens";
 
 export type ChartLegendStyle = {
   show?: boolean;
@@ -36,6 +38,7 @@ export type ChartRemarkStyle = {
 
 export type ChartDeStyle = {
   paletteId?: string;
+  paletteOpacity?: number;
   title?: TitleStyleConfig & { show?: boolean };
   legend?: ChartLegendStyle;
   label?: ChartLabelStyle;
@@ -59,9 +62,15 @@ export function readChartTitleVisible(cfg: ChartViewConfig | undefined): boolean
 export function mergeChartTitleStyle(
   global: DashboardStyleConfig["titleStyle"] | undefined,
   cfg: ChartViewConfig | undefined,
+  colorScheme: ColorScheme = "light",
 ): CSSProperties {
   const override = cfg ? readChartDeStyle(cfg).title : undefined;
-  return mergeTitleStyle(global, override);
+  const tokens = getDashboardThemeTokens(colorScheme);
+  const mergedOverride =
+    override?.color && isOppositeThemeTitleColor(override.color, colorScheme)
+      ? { ...override, color: tokens.title }
+      : override;
+  return mergeTitleStyle(global, mergedOverride ?? { color: tokens.title });
 }
 
 export function patchChartDeStyle(
@@ -113,12 +122,15 @@ export function readChartDataZoom(cfg: ChartViewConfig): boolean {
 export function resolveChartContentShellStyle(
   globalWidgetStyle: DashboardStyleConfig["widgetStyle"] | undefined,
   cfg: ChartViewConfig | undefined,
+  colorScheme: ColorScheme = "light",
 ): { outer: ReturnType<typeof mergeWidgetShellStyle>; inner: CSSProperties } {
-  const outer = mergeWidgetShellStyle(globalWidgetStyle);
+  const outer = mergeWidgetShellStyle(globalWidgetStyle, colorScheme);
   if (!cfg) return { outer, inner: {} };
   const de = readChartDeStyle(cfg);
   const inner: CSSProperties = {};
-  if (de.background?.background) inner.background = de.background.background;
+  if (de.background?.background) {
+    inner.background = coerceWidgetSurfaceBackground(de.background.background, colorScheme);
+  }
   if (de.background?.opacity != null) inner.opacity = de.background.opacity;
   if (de.background?.padding != null) inner.padding = `${de.background.padding}px`;
   if (de.background?.borderRadius != null) inner.borderRadius = `${de.background.borderRadius}px`;
@@ -132,8 +144,9 @@ export function resolveChartContentShellStyle(
 
 export function resolveWidgetShellStyle(
   globalWidgetStyle: DashboardStyleConfig["widgetStyle"] | undefined,
+  colorScheme: ColorScheme = "light",
 ): ReturnType<typeof mergeWidgetShellStyle> {
-  return mergeWidgetShellStyle(globalWidgetStyle);
+  return mergeWidgetShellStyle(globalWidgetStyle, colorScheme);
 }
 
 export function patchChartShowLabel(cfg: ChartViewConfig, show: boolean): ChartViewConfig {

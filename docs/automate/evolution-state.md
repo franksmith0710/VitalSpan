@@ -20,6 +20,29 @@
 | 字段 | 值 |
 |------|----|
 | phase | DONE |
+| request | DataEase 看板右栏全量对标（DE Parity） |
+| type | feature |
+| plan | docs/automate/plans/2026-07-14-dashboard-config-de-parity.md |
+| status | DONE |
+| last_verified_command | vitest dashboardChromeConfig+styleConfig+canvasBackground+ContextInspector; tsc --noEmit |
+| last_verified_exit_code | 0 |
+| verification_summary | DE 右栏缺失项 UI+接线；24 vitest 绿；tsc 绿 |
+| repair_rounds | 0 |
+
+## 当前需求契约
+
+- request: 对照 DE 右栏逐项完善，功能都要有
+- type: feature
+- goal: chrome/dialog/spacing/钻取色 + 画布消费
+- scope_include: dashboard 右栏 + 像素画布 + ChartRenderer + 弹窗
+- acceptance: plan §3 命令通过
+- autonomy_policy: auto_accept_low_risk
+
+## 上一轮（归档 · 右栏映射审计）
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
 | request | 看板右栏配置 ↔ 画布真实映射（对标 DataEase） |
 | type | existing-plan |
 | plan | docs/automate/plans/2026-07-14-dashboard-config-rail-canvas-mapping-audit.md |
@@ -28,14 +51,6 @@
 | last_verified_exit_code | 0 |
 | verification_summary | Phase0–3 全量完成；26 vitest 绿 |
 | repair_rounds | 0 |
-
-## 当前需求契约
-
-- request: 右栏配置项与画布可验证映射
-- type: audit + phased fix
-- goal: Phase0–2 完成
-- acceptance: vitest 绿
-- autonomy_policy: auto_accept_low_risk
 
 ## 上一轮（归档 · 权限核心 · 暂停）
 

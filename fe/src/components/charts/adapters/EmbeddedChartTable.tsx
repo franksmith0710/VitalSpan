@@ -75,7 +75,7 @@ export function EmbeddedChartTable({
       >
         <table
           className={cn(
-            "w-full table-fixed text-left",
+            "dashboard-chart-table w-full table-fixed text-left",
             tableStyle.columnWidthMode === "fixed" ? "min-w-full" : "min-w-0",
             panel ? "min-w-[320px]" : "w-full",
           )}
@@ -85,13 +85,13 @@ export function EmbeddedChartTable({
               <col key={c} style={{ width: colPct }} />
             ))}
           </colgroup>
-          <thead className="sticky top-0 z-[1] bg-gray-50 dark:bg-gray-900">
+          <thead className="sticky top-0 z-[1] bg-[var(--dashboard-table-header-bg,#f9fafb)]">
             <tr>
               {displayCols.map((c) => (
                 <th
                   key={c}
                   title={c}
-                  className={cn(cellClass, "font-medium text-gray-500")}
+                  className={cn(cellClass, "font-medium text-[var(--dashboard-table-header-fg,#667085)]")}
                 >
                   {c}
                 </th>
@@ -103,8 +103,8 @@ export function EmbeddedChartTable({
               <tr
                 key={i}
                 className={cn(
-                  "border-t border-gray-100 dark:border-gray-800",
-                  rowHover && "hover:bg-gray-50/80 dark:hover:bg-white/[0.04]",
+                  "border-t border-[var(--dashboard-table-border,#f2f4f7)]",
+                  rowHover && "hover:bg-black/[0.03] dark:hover:bg-white/[0.04]",
                 )}
               >
                 {displayCols.map((c) => {
@@ -112,7 +112,7 @@ export function EmbeddedChartTable({
                   const raw = idx >= 0 ? row[idx] : "";
                   const text = formatTableCellValue(raw, valueFormat);
                   return (
-                    <td key={c} title={text} className={cn(cellClass, "text-gray-700 dark:text-gray-300")}>
+                    <td key={c} title={text} className={cn(cellClass, "text-[var(--dashboard-table-body-fg,#344054)]")}>
                       {text}
                     </td>
                   );
@@ -124,7 +124,7 @@ export function EmbeddedChartTable({
       </div>
       {usePagination ? (
         paginationVariant === "compact" ? (
-          <div className="flex shrink-0 items-center justify-between gap-1 border-t border-gray-100 px-1.5 py-1 dark:border-gray-800">
+          <div className="flex shrink-0 items-center justify-between gap-1 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-1.5 py-1">
             <IconButton
               type="button"
               variant="ghost"
@@ -136,7 +136,7 @@ export function EmbeddedChartTable({
             >
               <ChevronLeft className="size-3.5" />
             </IconButton>
-            <span className="text-[10px] tabular-nums text-gray-500">
+            <span className="text-[10px] tabular-nums text-[var(--dashboard-text-muted,#667085)]">
               {page}/{totalPages} · {pageSize}条/页
             </span>
             <IconButton
@@ -152,7 +152,7 @@ export function EmbeddedChartTable({
             </IconButton>
           </div>
         ) : (
-          <div className="mt-1 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-gray-100 px-1 py-1 dark:border-gray-800">
+          <div className="mt-1 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-1 py-1">
             <Button
               type="button"
               variant="outline"
@@ -163,7 +163,7 @@ export function EmbeddedChartTable({
             >
               上一页
             </Button>
-            <span className="text-[11px] text-gray-500">
+            <span className="text-[11px] text-[var(--dashboard-text-muted,#667085)]">
               第 {page}/{totalPages} 页，共 {rows.length} 条
             </span>
             <Button

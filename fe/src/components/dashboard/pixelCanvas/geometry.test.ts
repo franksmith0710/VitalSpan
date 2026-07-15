@@ -4,6 +4,8 @@ import {
   RESIZE_CURSORS,
   resolvePixelCanvasMeasureElement,
   pixelShapeZIndex,
+  PIXEL_MARK_LINE_Z_INDEX,
+  PIXEL_SHAPE_SELECTED_Z_BOOST,
   resolveShapeActionRailPlacement,
   resolveShapeActionRailSide,
   resolveScaleDesignHeight,
@@ -207,5 +209,12 @@ describe("pixel canvas geometry", () => {
   it("elevates selected widget z-index above normal order", () => {
     expect(pixelShapeZIndex(3, false)).toBe(3);
     expect(pixelShapeZIndex(3, true)).toBeGreaterThan(pixelShapeZIndex(99, false));
+  });
+
+  it("keeps mark-line overlay above selected shapes", () => {
+    expect(PIXEL_MARK_LINE_Z_INDEX).toBeGreaterThan(
+      pixelShapeZIndex(999_999, true),
+    );
+    expect(PIXEL_MARK_LINE_Z_INDEX).toBeGreaterThan(PIXEL_SHAPE_SELECTED_Z_BOOST);
   });
 });

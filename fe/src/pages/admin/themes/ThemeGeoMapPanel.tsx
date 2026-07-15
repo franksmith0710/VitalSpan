@@ -44,7 +44,7 @@ export function ThemeGeoMapPanel({
     <div className="min-h-[280px] w-full" aria-label={ariaLabel}>
       <ReactECharts
         option={option}
-        theme={getEchartsTheme(false)}
+        theme={getEchartsTheme("light")}
         style={{ height: 280, width: "100%" }}
         opts={{ renderer: "canvas" }}
         data-testid="theme-geo-map"

@@ -4,6 +4,7 @@ import type { PixelLayoutWidget } from "../layoutUtils";
 type PixelWidgetSlotProps = {
   widget: PixelLayoutWidget;
   renderWidget: (widget: PixelLayoutWidget) => ReactNode;
+  contentRevision: string;
 };
 
 /** 位置 (x,y) 变化不触发子树重渲染，减轻拖拽/推挤预览时图表重绘 */
@@ -27,4 +28,6 @@ export const PixelWidgetSlot = memo(function PixelWidgetSlot({
   renderWidget,
 }: PixelWidgetSlotProps) {
   return <>{renderWidget(widget)}</>;
-}, (prev, next) => widgetBodyEqual(prev.widget, next.widget));
+}, (prev, next) =>
+  prev.contentRevision === next.contentRevision &&
+  widgetBodyEqual(prev.widget, next.widget));

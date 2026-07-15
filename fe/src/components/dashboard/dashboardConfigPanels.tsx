@@ -22,9 +22,15 @@ import {
 } from "./dashboardStyleConfig";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
 import { ColorField } from "@/components/ui/color-field";
+import { DebouncedNumberInput } from "@/components/ui/debounced-number-input";
 import type { LayoutWidget } from "./layoutUtils";
 import { CHART_PALETTE_PRESETS } from "@/lib/chart-theme";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DEFAULT_DRILL_LEVEL_COLORS,
+  resolveDashboardChrome,
+} from "./dashboardChromeConfig";
+import type { DashboardChromeConfig, ColorScheme, SpacingMode } from "./dashboardStyleConfig";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -70,6 +76,61 @@ function ThemePreviewCard({ label, selected, variant, onSelect }: ThemeCardProps
   );
 }
 
+function ChromeToggleRow({
+  label,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-2 text-theme-xs text-gray-600 dark:text-gray-400">
+      <span>{label}</span>
+      <Checkbox checked={checked} onCheckedChange={(v) => onCheckedChange(v === true)} />
+    </label>
+  );
+}
+
+function SpacingModeToggle({
+  label,
+  mode,
+  onChange,
+}: {
+  label: string;
+  mode: SpacingMode;
+  onChange: (mode: SpacingMode) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-theme-xs text-gray-500">{label}</Label>
+      <div className="flex gap-2">
+        {(
+          [
+            { value: "unified", label: "统一值" },
+            { value: "individual", label: "分边" },
+          ] as const
+        ).map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            className={cn(
+              "flex-1 rounded-md border px-2 py-1.5 text-theme-xs",
+              mode === item.value
+                ? "border-brand-500 bg-brand-50/60 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
+                : "border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400",
+            )}
+            onClick={() => onChange(item.value)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ScaleModeOption({
   label,
   selected,
@@ -101,6 +162,7 @@ type StyleSectionProps = {
   patchStyle: PatchFn;
   isPixelLayout: boolean;
   onSave?: () => void | Promise<void>;
+  onSwitchColorScheme?: (scheme: ColorScheme) => void;
 };
 
 export function DashboardStyleSections({
@@ -108,11 +170,15 @@ export function DashboardStyleSections({
   patchStyle,
   isPixelLayout,
   onSave,
+  onSwitchColorScheme,
 }: StyleSectionProps) {
   const colorScheme = styleConfig.colorScheme ?? "light";
   const gapPreset = styleConfig.gapPreset ?? (styleConfig.widgetGap != null ? "custom" : "md");
   const scaleMode = styleConfig.scaleMode ?? "canvas";
   const ws = styleConfig.widgetStyle ?? {};
+  const chrome = resolveDashboardChrome(styleConfig);
+  const patchChrome = (patch: Partial<DashboardChromeConfig>) =>
+    patchStyle({ chrome: { ...styleConfig.chrome, ...patch } });
 
   return (
     <>
@@ -141,28 +207,35 @@ export function DashboardStyleSections({
         }
       >
         <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-          仅影响看板内容与发布后展示，与顶栏深浅色按钮无关。
+          点击切换浅色或深色，画布与组件整套配色即时生效（与顶栏深浅色无关）。
         </p>
         <div className="flex gap-2">
           <ThemePreviewCard
             label="浅色主题"
             variant="light"
             selected={colorScheme === "light"}
-            onSelect={() => patchStyle({ colorScheme: "light" })}
+            onSelect={() => onSwitchColorScheme?.("light") ?? patchStyle({ colorScheme: "light" })}
           />
           <ThemePreviewCard
             label="深色主题"
             variant="dark"
             selected={colorScheme === "dark"}
-            onSelect={() => patchStyle({ colorScheme: "dark" })}
+            onSelect={() => onSwitchColorScheme?.("dark") ?? patchStyle({ colorScheme: "dark" })}
           />
         </div>
       </DashboardConfigSection>
 
       <DashboardConfigSection title="整体配置" data-testid="dashboard-overall-config">
+        <p className="mb-3 text-theme-xs text-gray-500 dark:text-gray-400">
+          正在编辑
+          <span className="mx-1 font-medium text-gray-700 dark:text-gray-300">
+            {colorScheme === "dark" ? "深色" : "浅色"}
+          </span>
+          主题下的布局与行为；画布底色/强调色等随主题分别记忆，切换上方卡片即可对照。
+        </p>
         <div className="space-y-4">
           <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
-            <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">整体风格</p>
+            <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">当前主题视觉</p>
             <ColorField
               label="主题强调色"
               value={styleConfig.themeAccent ?? ""}
@@ -240,13 +313,12 @@ export function DashboardStyleSections({
               </SelectContent>
             </Select>
             {gapPreset === "custom" ? (
-              <Input
-                type="number"
+              <DebouncedNumberInput
                 min={0}
                 max={48}
                 className="h-9"
                 value={styleConfig.widgetGap ?? 8}
-                onChange={(e) => patchStyle({ widgetGap: Number(e.target.value) || 0 })}
+                onCommit={(value) => patchStyle({ widgetGap: value })}
               />
             ) : null}
             <p className="text-theme-xs text-gray-400 dark:text-gray-500">栅格模式下生效</p>
@@ -255,13 +327,12 @@ export function DashboardStyleSections({
           {isPixelLayout ? (
             <div className="space-y-1.5">
               <Label className="text-theme-xs text-gray-600 dark:text-gray-400">像素间隙 (0–12)</Label>
-              <Input
-                type="number"
+              <DebouncedNumberInput
                 min={0}
                 max={12}
                 className="h-9"
                 value={styleConfig.pixelGutter ?? 0}
-                onChange={(e) => patchStyle({ pixelGutter: Number(e.target.value) || 0 })}
+                onCommit={(value) => patchStyle({ pixelGutter: value })}
               />
             </div>
           ) : null}
@@ -304,13 +375,37 @@ export function DashboardStyleSections({
 
           <div className="space-y-1.5">
             <Label className="text-theme-xs text-gray-600 dark:text-gray-400">结果展示数量</Label>
-            <Input
-              type="number"
+            <DebouncedNumberInput
               min={1}
               max={10000}
               className="h-9"
               value={styleConfig.defaultQueryLimit ?? 100}
-              onChange={(e) => patchStyle({ defaultQueryLimit: Number(e.target.value) || 100 })}
+              onCommit={(value) => patchStyle({ defaultQueryLimit: value || 100 })}
+            />
+            <p className="text-[10px] text-gray-400">对标 DE「图表结果」；单图可在数据 Tab 覆盖</p>
+          </div>
+
+          <div className="space-y-2 rounded-lg border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
+            <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">显示与交互</p>
+            <ChromeToggleRow
+              label="图表加载提示"
+              checked={chrome.showChartLoadingHint}
+              onCheckedChange={(checked) => patchChrome({ showChartLoadingHint: checked })}
+            />
+            <ChromeToggleRow
+              label="悬浮操作按钮（放大/导出等）"
+              checked={chrome.showFloatingActions}
+              onCheckedChange={(checked) => patchChrome({ showFloatingActions: checked })}
+            />
+            <ChromeToggleRow
+              label="组件标题栏操作按钮"
+              checked={chrome.showChartActionButtons}
+              onCheckedChange={(checked) => patchChrome({ showChartActionButtons: checked })}
+            />
+            <ChromeToggleRow
+              label="编辑态辅助对齐网格"
+              checked={chrome.showAuxiliaryGrid}
+              onCheckedChange={(checked) => patchChrome({ showAuxiliaryGrid: checked })}
             />
           </div>
           </div>
@@ -341,6 +436,7 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
   return (
     <>
       <DashboardConfigSection title="图表样式">
+        <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <ColorField
@@ -352,16 +448,25 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">圆角 (px)</Label>
+            <Label className="text-theme-xs text-gray-500">背景模糊 (px)</Label>
             <Input
               type="number"
               min={0}
               max={48}
               className="h-9"
-              value={ws.borderRadius ?? ""}
+              value={ws.backdropBlur ?? ""}
               onChange={(e) =>
-                patchWidgetStyle({ borderRadius: e.target.value ? Number(e.target.value) : undefined })
+                patchWidgetStyle({ backdropBlur: e.target.value ? Number(e.target.value) : undefined })
               }
+            />
+          </div>
+          <div className="space-y-1 col-span-2">
+            <Label className="text-theme-xs text-gray-500">背景图片 URL</Label>
+            <Input
+              className="h-9"
+              placeholder="https://…"
+              value={ws.backgroundImage ?? ""}
+              onChange={(e) => patchWidgetStyle({ backgroundImage: e.target.value || undefined })}
             />
           </div>
           <div className="space-y-1">
@@ -387,6 +492,94 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
               }
             />
           </div>
+        </div>
+
+        <SpacingModeToggle
+          label="内边距模式"
+          mode={ws.paddingMode ?? "unified"}
+          onChange={(paddingMode) => patchWidgetStyle({ paddingMode })}
+        />
+        {(ws.paddingMode ?? "unified") === "unified" ? (
+          <div className="space-y-1">
+            <Label className="text-theme-xs text-gray-500">内边距 (px)</Label>
+            <Input
+              type="number"
+              min={0}
+              max={64}
+              className="h-9"
+              value={ws.padding ?? ""}
+              onChange={(e) =>
+                patchWidgetStyle({ padding: e.target.value ? Number(e.target.value) : undefined })
+              }
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {(["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] as const).map((key) => (
+              <div key={key} className="space-y-1">
+                <Label className="text-theme-xs text-gray-500">
+                  {key === "paddingTop" ? "上" : key === "paddingRight" ? "右" : key === "paddingBottom" ? "下" : "左"}
+                </Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={64}
+                  className="h-9"
+                  value={ws[key] ?? ""}
+                  onChange={(e) =>
+                    patchWidgetStyle({ [key]: e.target.value ? Number(e.target.value) : undefined })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <SpacingModeToggle
+          label="圆角模式"
+          mode={ws.radiusMode ?? "unified"}
+          onChange={(radiusMode) => patchWidgetStyle({ radiusMode })}
+        />
+        {(ws.radiusMode ?? "unified") === "unified" ? (
+          <div className="space-y-1">
+            <Label className="text-theme-xs text-gray-500">圆角 (px)</Label>
+            <Input
+              type="number"
+              min={0}
+              max={48}
+              className="h-9"
+              value={ws.borderRadius ?? ""}
+              onChange={(e) =>
+                patchWidgetStyle({ borderRadius: e.target.value ? Number(e.target.value) : undefined })
+              }
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                ["borderRadiusTopLeft", "左上"],
+                ["borderRadiusTopRight", "右上"],
+                ["borderRadiusBottomLeft", "左下"],
+                ["borderRadiusBottomRight", "右下"],
+              ] as const
+            ).map(([key, label]) => (
+              <div key={key} className="space-y-1">
+                <Label className="text-theme-xs text-gray-500">{label}</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={48}
+                  className="h-9"
+                  value={ws[key] ?? ""}
+                  onChange={(e) =>
+                    patchWidgetStyle({ [key]: e.target.value ? Number(e.target.value) : undefined })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        )}
         </div>
       </DashboardConfigSection>
 
@@ -617,7 +810,7 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
       </DashboardConfigSection>
 
       <DashboardConfigSection title="高级样式设置">
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="space-y-1">
             <ColorField
               compact
@@ -626,6 +819,25 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
               value={styleConfig.actionIconColor ?? ""}
               onChange={(color) => patchStyle({ actionIconColor: color })}
             />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-theme-xs text-gray-500">钻取层级展示颜色</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {DEFAULT_DRILL_LEVEL_COLORS.map((fallback, index) => (
+                <ColorField
+                  key={index}
+                  compact
+                  allowClear
+                  label={`L${index + 1}`}
+                  value={styleConfig.drillLevelColors?.[index] ?? fallback}
+                  onChange={(color) => {
+                    const next = [...(styleConfig.drillLevelColors ?? DEFAULT_DRILL_LEVEL_COLORS)];
+                    next[index] = color;
+                    patchStyle({ drillLevelColors: next.filter(Boolean) });
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </DashboardConfigSection>

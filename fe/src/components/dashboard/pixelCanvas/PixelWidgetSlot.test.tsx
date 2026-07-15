@@ -20,15 +20,32 @@ describe("PixelWidgetSlot", () => {
       <span data-testid="slot-body">{widget.title}</span>
     ));
     const { rerender } = render(
-      <PixelWidgetSlot widget={base} renderWidget={renderWidget} />,
+      <PixelWidgetSlot widget={base} renderWidget={renderWidget} contentRevision="r1" />,
     );
     expect(renderWidget).toHaveBeenCalledTimes(1);
 
     rerender(
-      <PixelWidgetSlot widget={{ ...base, x: 40, y: 80 }} renderWidget={renderWidget} />,
+      <PixelWidgetSlot
+        widget={{ ...base, x: 40, y: 80 }}
+        renderWidget={renderWidget}
+        contentRevision="r1"
+      />,
     );
     expect(renderWidget).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("slot-body")).toHaveTextContent("销量");
+  });
+
+  it("re-renders when contentRevision changes", () => {
+    const renderWidget = vi.fn((widget: PixelLayoutWidget) => (
+      <span>{widget.width}</span>
+    ));
+    const { rerender } = render(
+      <PixelWidgetSlot widget={base} renderWidget={renderWidget} contentRevision="r1" />,
+    );
+    rerender(
+      <PixelWidgetSlot widget={base} renderWidget={renderWidget} contentRevision="r2" />,
+    );
+    expect(renderWidget).toHaveBeenCalledTimes(2);
   });
 
   it("re-renders when width or height changes", () => {
@@ -36,10 +53,14 @@ describe("PixelWidgetSlot", () => {
       <span>{widget.width}</span>
     ));
     const { rerender } = render(
-      <PixelWidgetSlot widget={base} renderWidget={renderWidget} />,
+      <PixelWidgetSlot widget={base} renderWidget={renderWidget} contentRevision="r1" />,
     );
     rerender(
-      <PixelWidgetSlot widget={{ ...base, width: 360 }} renderWidget={renderWidget} />,
+      <PixelWidgetSlot
+        widget={{ ...base, width: 360 }}
+        renderWidget={renderWidget}
+        contentRevision="r1"
+      />,
     );
     expect(renderWidget).toHaveBeenCalledTimes(2);
   });

@@ -120,11 +120,19 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /reports/templates/:id       # 模板编辑
 │   └── /reports/schedules           # 调度（admin · `report:manage`）
 │
-├── 我的
+├── 我的                            # 用户菜单进入（脱离主侧栏 IA）
 │   ├── /account/profile             # 用户资料（个人中心首页）
 │   ├── /account/preferences         # 偏好设置（默认看板 / 个人视图）
 │   └── /account/security            # 安全设置（修改密码）
 │   # /account/settings 重定向至 preferences（兼容旧链接）
+│
+├── 后台管理                        # 用户菜单进入（admin · `system:*`）
+│   ├── /system/roles                # AUTH · crud-flow（含维度分组绑定入口见 RLS）
+│   ├── /system/users                # AUTH
+│   ├── /system/orgs                 # AUTH
+│   ├── /system/rls                  # 行级权限：维度/分组 CRUD + 角色绑定 · form-composition
+│   ├── /system/audit                # 审计日志（含时间窗筛选）· table-list
+│   └── /system/grants               # 资源授权 · table-list + dialog form
 │
 ├── 治理                            # H1：默认隐藏；仅 `VITE_GOV_NAV=1` 时侧栏可见
 │   ├── /governance/catalog         # 深链可达；页顶诚实横幅（未对接真实总线）
@@ -132,14 +140,6 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /governance/publish
 │   ├── /services                    # 已发布查询服务（IF-02）
 │   └── /designer                    # 查询设计器（四期）· 治理专用 Badge
-│
-└── 系统
-    ├── /system/roles                # AUTH · crud-flow（含维度分组绑定入口见 RLS）
-    ├── /system/users                # AUTH
-    ├── /system/orgs                 # AUTH
-    ├── /system/rls                  # 行级权限：维度/分组 CRUD + 角色绑定 · form-composition
-    ├── /system/audit                # 审计日志（含时间窗筛选）· table-list
-    └── /system/grants               # 资源授权 · table-list + dialog form
 ```
 
 ### 侧栏导航分组（RBAC 可见）
@@ -150,13 +150,13 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 报表 | 报表中心（analyst/viewer 仅「预制报表」；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
 | 数据 | 数据连接（连接管理/同步任务）、语义建模（Dataset/元数据） | `datasource:*` / `dataset:*` / `metadata:*` | M1/M13 | admin | **展开** |
 | 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 默认隐藏**（`VITE_GOV_NAV=1` 才显示） |
-| 系统 | 权限与安全 / 组织 / 审计 | `system:*` | M1 | admin | **展开** |
 | 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |
+| 后台管理 | 权限与安全 / 组织 / 审计 | `system:*` | M1 | admin | 头像菜单进入 |
 
 > **H1（客户交付）**：`fe/src/lib/gov-nav.ts` + `nav-manifest.requiresGovNav`；默认不展示「治理」，避免 InMemory 总线冒充。深链仍可达，路由壳层展示「未对接真实总线 / 差异化能力」横幅。  
 > **已移出侧栏（路由保留）**：图表类型目录、实体总览、主题分析、独立「数据接入」一级项。  
 > **生产不注册**：`/embed/sdk-demo` 仅 `import.meta.env.DEV`。  
-> **nav 单一真理源**：`fe/src/config/nav-manifest.tsx`；派生：`fe/src/lib/resolve-nav.ts`。
+> **nav 单一真理源**：主 IA `fe/src/config/nav-manifest.tsx`；个人中心 `account-nav.tsx`、后台管理 `system-admin-nav.tsx`；派生：`fe/src/lib/resolve-nav.ts`。
 ---
 
 ## 4. 嵌入 IA（`/embed/*`）

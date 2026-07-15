@@ -46,7 +46,10 @@ export function FilterWidget({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const cfg = widget.filterConfig;
   const controlId = `fw-${widget.id}`;
-  const shellStyle = mergeWidgetShellStyle(dashboardStyle?.widgetStyle);
+  const shellStyle = mergeWidgetShellStyle(
+    dashboardStyle?.widgetStyle,
+    dashboardStyle?.colorScheme ?? "light",
+  );
   const titleStyle = mergeTitleStyle(dashboardStyle?.titleStyle, {
     color: dashboardStyle?.filterChromeStyle?.titleColor,
   });

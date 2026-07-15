@@ -23,9 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 def _warm_meta_database() -> None:
-    """预热元数据库连接池；开发环境顺带修复 admin 孤儿绑定。"""
+    """预热元数据库连接池；开发环境顺带修复 admin 孤儿绑定与样例源凭证。"""
     from app.auth.bootstrap_root import ensure_admin_username_root_binding
     from app.auth.models import get_meta_session
+    from app.datasources.dev_credential_repair import repair_dev_datasource_credentials
 
     session = get_meta_session()
     try:
@@ -35,6 +36,7 @@ def _warm_meta_database() -> None:
                 session,
                 username=settings.vitalspan_bootstrap_admin_username,
             )
+            repair_dev_datasource_credentials(session)
     except Exception:
         logger.warning("meta_db_warmup_failed", exc_info=True)
     finally:

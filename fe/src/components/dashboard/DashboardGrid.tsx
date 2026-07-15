@@ -20,6 +20,7 @@ import { resolveWidgetGap } from "./dashboardStyleConfig";
 import { getTopLevelWidgets, sortWidgets } from "./layoutUtils";
 import { gridLayoutToWidgets, widgetsToGridLayout } from "./gridLayoutAdapter";
 import { normalizeGridLayout } from "./gridSnapUtils";
+import { DashboardGridPlayerProvider } from "./dashboardGridPlayerContext";
 
 const EMPTY_CANVAS_MIN_HEIGHT = 480;
 
@@ -86,6 +87,7 @@ export function DashboardGrid({
   const topLevelRef = useRef(topLevel);
   const layoutKeyRef = useRef(derivedLayoutKey);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
+  const [gridPlaying, setGridPlaying] = useState(false);
   const viewLayout = useMemo(() => normalizeGridLayout(derivedLayout), [derivedLayout]);
   sortedRef.current = sorted;
   topLevelRef.current = topLevel;
@@ -122,6 +124,7 @@ export function DashboardGrid({
   const finishInteraction = useCallback((next: Layout, snap = false) => {
     persistLayout(next, snap);
     interactingRef.current = false;
+    setGridPlaying(false);
   }, [persistLayout]);
 
   const handleDropDragOver = useCallback((e: React.DragEvent) => {
@@ -189,6 +192,7 @@ export function DashboardGrid({
         }}
       >
         {isEmpty ? <DashboardCanvasEmpty dragActive={paletteDragOver} /> : null}
+        <DashboardGridPlayerProvider playing={gridPlaying}>
         <DashboardRglCanvas
           className={cn("layout", isEmpty && "dashboard-grid-empty")}
           style={isEmpty ? { minHeight: EMPTY_CANVAS_MIN_HEIGHT } : undefined}
@@ -201,10 +205,12 @@ export function DashboardGrid({
           onDrop={handleDrop}
           onDragStart={() => {
             interactingRef.current = true;
+            setGridPlaying(true);
           }}
           onDragStop={(nextLayout) => finishInteraction(nextLayout, true)}
           onResizeStart={() => {
             interactingRef.current = true;
+            setGridPlaying(true);
           }}
           onResizeStop={(nextLayout) => finishInteraction(nextLayout, true)}
           onLayoutChange={(next) => {
@@ -214,6 +220,7 @@ export function DashboardGrid({
         >
           {gridChildren}
         </DashboardRglCanvas>
+        </DashboardGridPlayerProvider>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useCallback, useMemo, type ReactNode } from "react";
 import { DashboardWidget } from "../DashboardWidget";
 import {
   pixelWidgetToLayoutWidget,
@@ -8,6 +8,10 @@ import {
   buildWidgetFilterParams,
   type Linkage,
 } from "../dashboardFilterUtils";
+import { useDashboardWidgets } from "../DashboardWidgetsContext";
+import {
+  buildWidgetExecuteKey,
+} from "../dashboardWidgetExecuteKey";
 import {
   resizeWidget,
   type DashboardStyleConfig,
@@ -15,18 +19,24 @@ import {
   type PixelLayoutWidget,
 } from "../layoutUtils";
 import { WidgetErrorBoundary } from "../WidgetErrorBoundary";
+import { useDashboardGridPlayer } from "../dashboardGridPlayerContext";
 import { usePixelShapePlayer } from "../pixelCanvas/pixelShapePlayerContext";
 
 export type DashboardWidgetsSetter = (
   update: LayoutWidget[] | ((previous: LayoutWidget[]) => LayoutWidget[]),
 ) => void;
 
+export type RenderDashboardCanvasWidgetOptions = {
+  shell?: DashboardWidgetShell;
+  gridSize?: { w: number; h: number };
+  nested?: boolean;
+};
+
 type DashboardCanvasWidgetRendererProps = {
   widget: LayoutWidget | PixelLayoutWidget;
   mode: "edit" | "view";
+  selected: boolean;
   gridSize?: { w: number; h: number };
-  widgets: LayoutWidget[];
-  selectedIds: ReadonlySet<string>;
   linkage: Linkage;
   filterValues: Record<string, string>;
   onFilterValueChange: (filterId: string, value: string) => void;
@@ -37,7 +47,12 @@ type DashboardCanvasWidgetRendererProps = {
   nested?: boolean;
   shell?: DashboardWidgetShell;
   dashboardStyle?: DashboardStyleConfig;
+  styleRevision?: string;
   chartRefreshKeys?: Record<string, number>;
+  renderChild?: (
+    widget: LayoutWidget,
+    options?: RenderDashboardCanvasWidgetOptions,
+  ) => ReactNode;
 };
 
 function asLayoutWidget(
@@ -48,12 +63,46 @@ function asLayoutWidget(
     : widget;
 }
 
+function widgetContentEqual(
+  prev: LayoutWidget | PixelLayoutWidget,
+  next: LayoutWidget | PixelLayoutWidget,
+): boolean {
+  const a = asLayoutWidget(prev);
+  const b = asLayoutWidget(next);
+  if (a.id !== b.id || a.type !== b.type || a.title !== b.title) return false;
+  if (a.chartConfig !== b.chartConfig) return false;
+  if (a.textConfig !== b.textConfig) return false;
+  if (a.tabsConfig !== b.tabsConfig) return false;
+  if (a.filterConfig !== b.filterConfig) return false;
+  if (a.mediaConfig !== b.mediaConfig) return false;
+  if ("width" in prev && "width" in next) {
+    if (prev.width !== next.width || prev.height !== next.height) return false;
+  }
+  return true;
+}
+
+function rendererPropsEqual(
+  prev: DashboardCanvasWidgetRendererProps,
+  next: DashboardCanvasWidgetRendererProps,
+): boolean {
+  if (prev.mode !== next.mode || prev.shell !== next.shell || prev.nested !== next.nested) {
+    return false;
+  }
+  if (prev.selected !== next.selected) return false;
+  if (prev.styleRevision !== next.styleRevision) return false;
+  if (prev.dashboardStyle !== next.dashboardStyle) return false;
+  if (!widgetContentEqual(prev.widget, next.widget)) return false;
+  if (prev.gridSize?.w !== next.gridSize?.w || prev.gridSize?.h !== next.gridSize?.h) {
+    return false;
+  }
+  return true;
+}
+
 export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidgetRenderer({
   widget: sourceWidget,
   mode,
+  selected,
   gridSize,
-  widgets,
-  selectedIds,
   linkage,
   filterValues,
   onFilterValueChange,
@@ -64,43 +113,78 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   nested = false,
   shell = "grid",
   dashboardStyle,
+  styleRevision: _styleRevision,
   chartRefreshKeys,
+  renderChild,
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
-  const isPlaying = usePixelShapePlayer();
+  const allWidgets = useDashboardWidgets();
+  const isShapePlaying = usePixelShapePlayer();
+  const isGridPlaying = useDashboardGridPlayer();
   const pixelSize =
-    "width" in sourceWidget && !isPlaying
+    "width" in sourceWidget && !isShapePlaying
       ? { width: sourceWidget.width, height: sourceWidget.height }
       : undefined;
-  const executeKey = JSON.stringify({
-    filters: filterValues,
-    refresh: chartRefreshKeys?.[widget.id] ?? 0,
-  });
-  const updateWidget = (widgetId: string, patch: Partial<LayoutWidget>) => {
-    setWidgets((previous) =>
-      previous.map((item) =>
-        item.id === widgetId ? { ...item, ...patch } : item,
-      ),
-    );
-  };
-  const renderNested = (child: LayoutWidget) => (
-    <DashboardCanvasWidgetRenderer
-      widget={child}
-      mode={mode}
-      widgets={widgets}
-      selectedIds={selectedIds}
-      linkage={linkage}
-      filterValues={filterValues}
-      onFilterValueChange={onFilterValueChange}
-      onSelect={onNestedSelect}
-      onNestedSelect={onNestedSelect}
-      onDelete={onDelete}
-      setWidgets={setWidgets}
-      nested
-      shell={shell}
-      dashboardStyle={dashboardStyle}
-      chartRefreshKeys={chartRefreshKeys}
-    />
+  const filterParameters = useMemo(
+    () =>
+      widget.type === "chart"
+        ? buildWidgetFilterParams(widget.id, linkage, filterValues)
+        : undefined,
+    [widget.id, widget.type, linkage, filterValues],
+  );
+  const executeKey = useMemo(
+    () => buildWidgetExecuteKey(filterParameters, chartRefreshKeys?.[widget.id] ?? 0),
+    [filterParameters, chartRefreshKeys, widget.id],
+  );
+
+  const updateWidget = useCallback(
+    (widgetId: string, patch: Partial<LayoutWidget>) => {
+      setWidgets((previous) =>
+        previous.map((item) =>
+          item.id === widgetId ? { ...item, ...patch } : item,
+        ),
+      );
+    },
+    [setWidgets],
+  );
+
+  const handleSelect = useCallback(
+    (event: { shiftKey: boolean }) => onSelect(widget.id, event.shiftKey),
+    [onSelect, widget.id],
+  );
+
+  const handleTitleChange = useCallback(
+    (widgetId: string, title: string) => {
+      setWidgets((previous) => resizeWidget(previous, widgetId, { title }));
+    },
+    [setWidgets],
+  );
+
+  const handleChartConfigChange = useCallback(
+    (widgetId: string, chartConfig: LayoutWidget["chartConfig"]) => {
+      updateWidget(widgetId, { chartConfig });
+    },
+    [updateWidget],
+  );
+
+  const handleTabsConfigChange = useCallback(
+    (widgetId: string, tabsConfig: NonNullable<LayoutWidget["tabsConfig"]>) => {
+      updateWidget(widgetId, { tabsConfig });
+    },
+    [updateWidget],
+  );
+
+  const handleTextConfigChange = useCallback(
+    (widgetId: string, textConfig: NonNullable<LayoutWidget["textConfig"]>) => {
+      updateWidget(widgetId, { textConfig });
+    },
+    [updateWidget],
+  );
+
+  const renderNested = useCallback(
+    (child: LayoutWidget) =>
+      renderChild?.(child, { nested: true, shell }) ?? null,
+    [renderChild, shell],
   );
 
   return (
@@ -109,48 +193,31 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
       onDelete={mode === "edit" ? () => onDelete(widget.id) : undefined}
     >
       <DashboardWidget
-      widget={widget}
-      mode={mode}
-      shell={shell}
-      selected={selectedIds.has(widget.id)}
-      gridSize={gridSize}
-      pixelSize={pixelSize}
-      allWidgets={nested ? undefined : widgets}
-      renderNestedWidget={renderNested}
-      filterParameters={
-        widget.type === "chart"
-          ? buildWidgetFilterParams(widget.id, linkage, filterValues)
-          : undefined
-      }
-      executeKey={executeKey}
-      filterValue={
-        widget.filterConfig
-          ? filterValues[widget.filterConfig.filterId]
-          : undefined
-      }
-      onFilterValueChange={onFilterValueChange}
-      onSelect={(event) => onSelect(widget.id, event.shiftKey)}
-      onDelete={mode === "edit" ? onDelete : undefined}
-      onTitleChange={(widgetId, title) =>
-        setWidgets((previous) =>
-          resizeWidget(previous, widgetId, { title }),
-        )
-      }
-      onChartConfigChange={(widgetId, chartConfig) =>
-        updateWidget(widgetId, { chartConfig })
-      }
-      onTabsConfigChange={
-        nested
-          ? undefined
-          : (widgetId, tabsConfig) =>
-              updateWidget(widgetId, { tabsConfig })
-      }
-      onTextConfigChange={(widgetId, textConfig) =>
-        updateWidget(widgetId, { textConfig })
-      }
-      dashboardStyle={dashboardStyle}
-      suspendLiveResize={isPlaying}
-    />
+        widget={widget}
+        mode={mode}
+        shell={shell}
+        selected={selected}
+        gridSize={gridSize}
+        pixelSize={pixelSize}
+        allWidgets={widget.type === "tabs" ? allWidgets : undefined}
+        renderNestedWidget={nested ? undefined : renderNested}
+        filterParameters={filterParameters}
+        executeKey={executeKey}
+        filterValue={
+          widget.filterConfig
+            ? filterValues[widget.filterConfig.filterId]
+            : undefined
+        }
+        onFilterValueChange={onFilterValueChange}
+        onSelect={handleSelect}
+        onDelete={mode === "edit" ? onDelete : undefined}
+        onTitleChange={handleTitleChange}
+        onChartConfigChange={handleChartConfigChange}
+        onTabsConfigChange={nested ? undefined : handleTabsConfigChange}
+        onTextConfigChange={handleTextConfigChange}
+        dashboardStyle={dashboardStyle}
+        suspendLiveResize={isShapePlaying || isGridPlaying}
+      />
     </WidgetErrorBoundary>
   );
-});
+}, rendererPropsEqual);

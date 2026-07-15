@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
-  isAccountManagementPath,
+  isDetachedFromWorkspacePath,
   isWorkspacePath,
   resolveWorkspaceReturnPath,
   WORKSPACE_HOME_PATH,
@@ -12,6 +12,7 @@ export type WorkspaceContextType = {
   returnToWorkspace: () => void;
   canReturnToWorkspace: boolean;
   beginAccountManagement: () => void;
+  beginSystemAdmin: () => void;
 };
 
 const WorkspaceContext = React.createContext<WorkspaceContextType | undefined>(
@@ -31,7 +32,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [returnPath, setReturnPath] = React.useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     if (isWorkspacePath(window.location.pathname)) return null;
-    if (isAccountManagementPath(window.location.pathname)) {
+    if (isDetachedFromWorkspacePath(window.location.pathname)) {
       return readStoredReturnPath() ?? WORKSPACE_HOME_PATH;
     }
     return readStoredReturnPath();
@@ -42,7 +43,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(WORKSPACE_RETURN_PATH_KEY, path);
   }, []);
 
-  const beginAccountManagement = React.useCallback(() => {
+  const rememberWorkspaceReturnPath = React.useCallback(() => {
     const current = location.pathname;
     if (isWorkspacePath(current)) {
       persistReturnPath(current);
@@ -51,11 +52,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     persistReturnPath(returnPath ?? readStoredReturnPath() ?? WORKSPACE_HOME_PATH);
   }, [location.pathname, persistReturnPath, returnPath]);
 
+  const beginAccountManagement = rememberWorkspaceReturnPath;
+  const beginSystemAdmin = rememberWorkspaceReturnPath;
+
   React.useEffect(() => {
     const previousPath = previousPathRef.current;
     const currentPath = location.pathname;
 
-    if (isWorkspacePath(previousPath) && isAccountManagementPath(currentPath)) {
+    if (isWorkspacePath(previousPath) && isDetachedFromWorkspacePath(currentPath)) {
       persistReturnPath(previousPath);
     }
 
@@ -74,15 +78,16 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     navigate(target);
   }, [navigate, returnPath]);
 
-  const canReturnToWorkspace = isAccountManagementPath(location.pathname);
+  const canReturnToWorkspace = isDetachedFromWorkspacePath(location.pathname);
 
   const value = React.useMemo<WorkspaceContextType>(
     () => ({
       returnToWorkspace,
       canReturnToWorkspace,
       beginAccountManagement,
+      beginSystemAdmin,
     }),
-    [beginAccountManagement, canReturnToWorkspace, returnToWorkspace],
+    [beginAccountManagement, beginSystemAdmin, canReturnToWorkspace, returnToWorkspace],
   );
 
   return (

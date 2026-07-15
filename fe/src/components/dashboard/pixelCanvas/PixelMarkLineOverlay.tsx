@@ -1,4 +1,4 @@
-import type { PixelCanvasBounds } from "./geometry";
+import { PIXEL_MARK_LINE_Z_INDEX, type PixelCanvasBounds } from "./geometry";
 import type { MarkLineGuide } from "./pixelMarkLine";
 
 const HORIZONTAL_LINES = new Set<MarkLineGuide["id"]>(["xt", "xc", "xb"]);
@@ -16,7 +16,8 @@ export function PixelMarkLineOverlay({ guides, canvas }: PixelMarkLineOverlayPro
     <svg
       id="canvas-mark-line"
       data-testid="canvas-mark-line"
-      className="mark-line pixel-mark-line-overlay pointer-events-none absolute inset-0 z-[1000]"
+      className="mark-line pixel-mark-line-overlay pointer-events-none absolute inset-0"
+      style={{ zIndex: PIXEL_MARK_LINE_Z_INDEX }}
       viewBox={`0 0 ${canvas.width} ${canvas.height}`}
       aria-hidden
     >

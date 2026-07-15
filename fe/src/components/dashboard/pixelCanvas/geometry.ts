@@ -175,6 +175,9 @@ export const SHAPE_ACTION_RAIL_BUTTON_COUNT = 3;
 /** 选中 shape 抬升 z-index，使外伸操作条不被邻组件遮盖 */
 export const PIXEL_SHAPE_SELECTED_Z_BOOST = 1_000_000;
 
+/** 对齐参考线须盖过选中 shape，否则拖动时蓝线被活动组件遮住 */
+export const PIXEL_MARK_LINE_Z_INDEX = PIXEL_SHAPE_SELECTED_Z_BOOST + 1_000_000;
+
 export function pixelShapeZIndex(order: number, selected: boolean): number {
   return selected ? PIXEL_SHAPE_SELECTED_Z_BOOST + order : order;
 }

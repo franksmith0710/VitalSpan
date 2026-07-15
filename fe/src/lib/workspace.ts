@@ -10,12 +10,25 @@ export const ACCOUNT_SETTINGS_PATH = "/admin/account/settings";
 /** 个人中心入口（与 profile 同路径） */
 export const ACCOUNT_CENTER_PATH = ACCOUNT_PROFILE_PATH;
 
-/** 登录后离开工作台进入后台管理区时，用于恢复导航的快照 key */
+/** 后台管理默认入口（用户菜单进入） */
+export const SYSTEM_ADMIN_HOME_PATH = "/admin/system/roles";
+
+/** 登录后离开工作台进入独立管理区时，用于恢复导航的快照 key */
 export const WORKSPACE_RETURN_PATH_KEY = "workspace:returnPath";
 
-/** 用户菜单内的账号管理页（仅从此处进入时展示「返回工作台」） */
+/** 用户菜单内的账号管理页 */
 export function isAccountManagementPath(pathname: string): boolean {
   return pathname.startsWith("/admin/account/");
+}
+
+/** 后台管理区（权限、组织、审计等） */
+export function isSystemAdminPath(pathname: string): boolean {
+  return pathname.startsWith("/admin/system/");
+}
+
+/** 脱离工作台主 IA 的壳层（个人中心 / 后台管理） */
+export function isDetachedFromWorkspacePath(pathname: string): boolean {
+  return isAccountManagementPath(pathname) || isSystemAdminPath(pathname);
 }
 
 /** 工作台路由：Dashboard 列表与查看态 */

@@ -61,13 +61,14 @@ export function AdvancedEchartsChart({
     built = applyDeStyleToEchartsOption(built, deStyle ?? {}, dataZoom, {
       showLabel,
       valueFormat,
+      layout: { embedded: fill },
     });
     if (chartColors?.length) {
       built = { ...built, color: chartColors };
     }
     return built;
   }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat]);
-  const theme = useMemo(() => getEchartsTheme(isDark), [isDark]);
+  const theme = useMemo(() => getEchartsTheme(isDark ? "dark" : "light"), [isDark]);
 
   const isEmpty =
     !option ||

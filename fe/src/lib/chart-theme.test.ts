@@ -12,10 +12,12 @@ describe("chart-theme stroke", () => {
     expect(options.stroke?.colors).toEqual(["transparent"]);
   });
 
-  it("dark apex overrides use dark tooltip and axis colors", () => {
-    const dark = getApexThemeOverrides(true);
+  it("apex overrides follow dashboard colorScheme tokens", () => {
+    const dark = getApexThemeOverrides("dark");
+    const light = getApexThemeOverrides("light");
     expect(dark.tooltip?.theme).toBe("dark");
     expect(dark.chart?.foreColor).toBe("#98a2b3");
-    expect(getApexThemeOverrides(false)).toEqual({});
+    expect(light.tooltip?.theme).toBe("light");
+    expect(light.chart?.foreColor).toBe("#667085");
   });
 });

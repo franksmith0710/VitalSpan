@@ -7,7 +7,7 @@ import {
   Table2,
   Trash2,
 } from "lucide-react";
-import type { PointerEvent } from "react";
+import type { PointerEvent, ReactNode } from "react";
 import { IconButton } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -45,6 +45,21 @@ type PixelShapeActionRailProps = {
   actions: PixelWidgetActions;
 };
 
+const RAIL_SHELL_CLASS = cn(
+  "flex w-full flex-col overflow-hidden rounded-lg",
+  "border border-gray-200 bg-white shadow-theme-md",
+  "divide-y divide-gray-100",
+  "dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800",
+);
+
+const RAIL_BUTTON_CLASS = cn(
+  "size-full min-h-0 rounded-none p-0",
+  "text-gray-500 hover:bg-gray-50 hover:text-gray-800",
+  "dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-100",
+  "focus-visible:ring-inset focus-visible:ring-brand-500/25",
+  "disabled:pointer-events-none disabled:opacity-35",
+);
+
 function railPositionStyle(
   placement: ShapeActionRailPlacement,
   gapPx: number,
@@ -58,6 +73,41 @@ function railPositionStyle(
   return { right: `calc(100% + ${gapPx}px)` };
 }
 
+function RailIconButton({
+  label,
+  disabled,
+  dimmed,
+  sizePx,
+  iconSizePx,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  dimmed?: boolean;
+  sizePx: number;
+  iconSizePx: number;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <IconButton
+      type="button"
+      variant="ghost"
+      size="sm"
+      className={cn(RAIL_BUTTON_CLASS, dimmed && "opacity-40")}
+      style={{ width: sizePx, height: sizePx }}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <span style={{ width: iconSizePx, height: iconSizePx }} className="inline-flex shrink-0">
+        {children}
+      </span>
+    </IconButton>
+  );
+}
+
 export function PixelShapeActionRail({
   widget,
   scale,
@@ -69,6 +119,7 @@ export function PixelShapeActionRail({
   const placement = resolveShapeActionRailPlacement(widget, viewport, safeScale, otherWidgets);
   const railPx = SHAPE_ACTION_RAIL_SCREEN_WIDTH / safeScale;
   const gapPx = SHAPE_ACTION_RAIL_SCREEN_GAP / safeScale;
+  const iconPx = 14 / safeScale;
   const isChart = widget.type === "chart";
   const menuSide = placement === "right" ? "left" : "right";
 
@@ -90,49 +141,32 @@ export function PixelShapeActionRail({
       }}
       onPointerDown={stopPointer}
     >
-      <div className="flex w-full flex-col overflow-hidden rounded-md bg-brand-500 shadow-theme-sm">
-        <IconButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "size-full min-h-0 rounded-none p-0 text-white hover:bg-brand-600 hover:text-white dark:hover:bg-brand-400",
-            !isChart && "opacity-40",
-          )}
-          style={{ width: railPx, height: railPx }}
-          aria-label="查看数据"
+      <div className={RAIL_SHELL_CLASS}>
+        <RailIconButton
+          label="查看数据"
+          dimmed={!isChart}
           disabled={!isChart || !actions.onViewData}
+          sizePx={railPx}
+          iconSizePx={iconPx}
           onClick={() => actions.onViewData?.(widget.id)}
         >
-          <Table2 style={{ width: 14 / safeScale, height: 14 / safeScale }} aria-hidden />
-        </IconButton>
-        <IconButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "size-full min-h-0 rounded-none border-t border-brand-400/50 p-0 text-white hover:bg-brand-600 hover:text-white dark:hover:bg-brand-400",
-            !isChart && "opacity-40",
-          )}
-          style={{ width: railPx, height: railPx }}
-          aria-label="放大"
+          <Table2 className="size-full" aria-hidden />
+        </RailIconButton>
+        <RailIconButton
+          label="放大"
+          dimmed={!isChart}
           disabled={!isChart || !actions.onEnlarge}
+          sizePx={railPx}
+          iconSizePx={iconPx}
           onClick={() => actions.onEnlarge?.(widget.id)}
         >
-          <Maximize2 style={{ width: 14 / safeScale, height: 14 / safeScale }} aria-hidden />
-        </IconButton>
+          <Maximize2 className="size-full" aria-hidden />
+        </RailIconButton>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="size-full min-h-0 rounded-none border-t border-brand-400/50 p-0 text-white hover:bg-brand-600 hover:text-white dark:hover:bg-brand-400"
-              style={{ width: railPx, height: railPx }}
-              aria-label="更多操作"
-            >
-              <MoreVertical style={{ width: 14 / safeScale, height: 14 / safeScale }} aria-hidden />
-            </IconButton>
+            <RailIconButton label="更多操作" sizePx={railPx} iconSizePx={iconPx}>
+              <MoreVertical className="size-full" aria-hidden />
+            </RailIconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent side={menuSide} align="start" sideOffset={6} className="min-w-[10.5rem]">
             <DropdownMenuItem

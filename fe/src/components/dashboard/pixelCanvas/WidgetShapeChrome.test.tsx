@@ -69,4 +69,23 @@ describe("WidgetShapeChrome", () => {
     );
     expect(screen.getByTestId("pixel-shape-remark-w3")).toHaveTextContent("单位：万元");
   });
+
+  it("T-TITLE-DE-05: title bar selects when not selected", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(
+      <WidgetShapeChrome
+        title="销售趋势"
+        titleStyle={{}}
+        showTitle
+        mode="edit"
+        selected={false}
+        widgetId="w4"
+        onTitleChange={vi.fn()}
+        onSelectPointerDown={onSelect}
+      />,
+    );
+    await user.pointer({ keys: "[MouseLeft>]", target: screen.getByTestId("pixel-shape-title-w4") });
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
 });

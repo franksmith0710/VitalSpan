@@ -29,6 +29,7 @@ import type {
   DashboardStyleConfig,
 } from "./layoutUtils";
 import { mergeTitleStyle, mergeWidgetShellStyle } from "./dashboardStyleConfig";
+import { resolveDashboardChrome } from "./dashboardChromeConfig";
 import { parseDeRefreshIntervalSec, readChartDeDisplay, resolveChartQueryLimit } from "@/lib/chartDeDisplay";
 import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible } from "@/lib/chartDeStyle";
 import { isWidgetConfigReady } from "./createLayoutWidget";
@@ -217,12 +218,20 @@ export function DashboardWidget({
       : inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig)
         ? pixelViewTitleHeightPx(canvasScale)
         : 0;
-  const shellStyle = mergeWidgetShellStyle(dashboardStyle?.widgetStyle);
+  const shellStyle = mergeWidgetShellStyle(
+    dashboardStyle?.widgetStyle,
+    dashboardStyle?.colorScheme ?? "light",
+  );
+  const chrome = resolveDashboardChrome(dashboardStyle);
   const chartTitleVisible =
     inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig);
   const titleStyle =
     widget.chartConfig
-      ? mergeChartTitleStyle(dashboardStyle?.titleStyle, widget.chartConfig)
+      ? mergeChartTitleStyle(
+          dashboardStyle?.titleStyle,
+          widget.chartConfig,
+          dashboardStyle?.colorScheme ?? "light",
+        )
       : mergeTitleStyle(dashboardStyle?.titleStyle);
   const queryLimit = widget.chartConfig
     ? resolveChartQueryLimit(widget.chartConfig, dashboardStyle ?? {})
@@ -247,6 +256,7 @@ export function DashboardWidget({
         paletteColors={dashboardStyle?.paletteColors}
         numberFormat={dashboardStyle?.numberFormat}
         colorScheme={dashboardStyle?.colorScheme ?? "light"}
+        showLoadingHint={chrome.showChartLoadingHint}
         suspendLiveResize={suspendLiveResize}
       />
     ) : null;
@@ -321,7 +331,7 @@ export function DashboardWidget({
       )}
       style={shellStyle.style}
     >
-      {mode === "edit" ? (
+      {mode === "edit" && chrome.showChartActionButtons ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
           <div
             className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"

@@ -43,7 +43,10 @@ describe("DashboardContextInspector", () => {
 
     await user.click(screen.getByRole("button", { name: /深色主题/ }));
     expect(onStyleChange).toHaveBeenCalledWith(
-      expect.objectContaining({ colorScheme: "dark" }),
+      expect.objectContaining({
+        colorScheme: "dark",
+        canvasBackground: expect.any(String),
+      }),
     );
   });
 

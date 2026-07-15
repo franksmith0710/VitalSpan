@@ -26,7 +26,7 @@
 | Backdrop | `layout/backdrop.tsx` | 移动端侧栏遮罩 |
 | ThemeToggleButton | `layout/theme-toggle.tsx` | 深浅色切换 |
 | UserDropdown | `layout/user-dropdown.tsx` | 顶栏用户菜单（资料/设置/开发态切换用户/退出） |
-| DevUserSwitcher | `layout/dev-user-switcher.tsx` | 用户菜单内开发态 RBAC 用户切换 |
+| DevUserSwitcher | `layout/dev-user-switcher.tsx` | 开发态 RBAC 用户切换（已从用户菜单移除，组件保留供 dev 复用） |
 | RequireCapability | `auth/require-capability.tsx` | 路由级 RBAC 守卫（`RequireCapabilityName` 与侧栏 `resolveNavGroups` 对齐） |
 | VitalSpanLogo | `layout/vitalspan-logo.tsx` | 侧栏品牌标（展开/折叠） |
 | AdminPageShell | `layout/admin-page-shell.tsx` | PageHeader：标题 + 描述 + 操作区 + `gap-6` 主内容栅格 |

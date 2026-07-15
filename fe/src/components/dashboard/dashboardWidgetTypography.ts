@@ -17,17 +17,17 @@ export function pixelViewTitleHeightPx(canvasScale: number): number {
 
 /** 画布内组件状态/空态文案 */
 export const dwState =
-  "text-base leading-snug text-gray-500 dark:text-gray-400";
+  "text-base leading-snug text-[var(--dashboard-state-text,#667085)]";
 export const dwStateWarning =
   "text-base leading-snug text-warning-600 dark:text-warning-400";
 export const dwStateError =
   "text-base leading-snug text-error-700 dark:text-error-400";
 
 export const dwTitle =
-  "text-base font-semibold leading-snug text-gray-800 dark:text-white/90";
+  "text-base font-semibold leading-snug text-[var(--dashboard-title-color,#1d2939)]";
 export const dwCaption =
-  "text-sm leading-snug text-gray-500 dark:text-gray-400";
-export const dwMeta = "text-sm tabular-nums text-gray-400";
+  "text-sm leading-snug text-[var(--dashboard-text-muted,#667085)]";
+export const dwMeta = "text-sm tabular-nums text-[var(--dashboard-text-muted,#667085)]";
 
 /** @deprecated 使用 pixelDragRailHeightPx(canvasScale) */
 export const PIXEL_DRAG_RAIL_HEIGHT_PX = 40;

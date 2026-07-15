@@ -1,8 +1,12 @@
 import { NAV_MANIFEST } from "@/config/nav-manifest";
 import { ACCOUNT_NAV_SECTIONS } from "@/config/account-nav";
+import { SYSTEM_ADMIN_NAV_SECTIONS } from "@/config/system-admin-nav";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
 import { isGovNavEnabledFromEnv } from "@/lib/gov-nav";
-import { isAccountManagementPath } from "@/lib/workspace";
+import {
+  isAccountManagementPath,
+  isSystemAdminPath,
+} from "@/lib/workspace";
 import type { NavSection, NavItem, NavSubItem } from "@/components/layout/app-sidebar";
 import type { SessionUser, SessionRole } from "@/lib/session";
 
@@ -155,6 +159,13 @@ export function resolveSidebarSections(
 ): NavSection[] {
   if (isAccountManagementPath(pathname)) {
     return ACCOUNT_NAV_SECTIONS;
+  }
+  if (isSystemAdminPath(pathname)) {
+    const userCaps = options?.userCapabilities ?? resolveEffectiveCapabilities(user);
+    if (!matchesCapability(userCaps, "system:*")) {
+      return [];
+    }
+    return SYSTEM_ADMIN_NAV_SECTIONS;
   }
   return resolveNavGroups(user, options);
 }

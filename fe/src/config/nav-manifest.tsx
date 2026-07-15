@@ -4,11 +4,8 @@ import {
   FileBarChart,
   LayoutDashboard,
   Layers,
-  ScrollText,
   Server,
-  Shield,
   SlidersHorizontal,
-  Building2,
   Workflow,
 } from "lucide-react";
 import type { SessionRole } from "@/lib/session";
@@ -164,40 +161,6 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         milestone: "M13",
         capability: "governance:*",
         badgeLabel: "治理专用",
-      },
-    ],
-  },
-  {
-    title: "系统",
-    roles: ["admin"],
-    capability: "system:*",
-    items: [
-      {
-        name: "权限与安全",
-        icon: <Shield className="size-5" aria-hidden />,
-        subItems: [
-          { name: "角色管理", path: "/admin/system/roles", milestone: "M1" },
-          { name: "用户管理", path: "/admin/system/users", milestone: "M1" },
-          {
-            name: "资源授权",
-            path: "/admin/system/grants",
-            milestone: "M1",
-            capability: "system:*",
-          },
-          { name: "行级权限", path: "/admin/system/rls", milestone: "M1" },
-        ],
-      },
-      {
-        name: "组织架构",
-        icon: <Building2 className="size-5" aria-hidden />,
-        path: "/admin/system/orgs",
-        milestone: "M1",
-      },
-      {
-        name: "审计日志",
-        icon: <ScrollText className="size-5" aria-hidden />,
-        path: "/admin/system/audit",
-        milestone: "M1",
       },
     ],
   },

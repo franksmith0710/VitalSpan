@@ -27,6 +27,7 @@ export function WidgetDialogShell({
         contentClassName,
       )}
       data-testid={testId}
+      data-dashboard-dialog=""
     >
       <div className="flex shrink-0 items-center gap-4 border-b border-gray-100 px-5 py-3.5 pr-14 dark:border-gray-800">
         <DialogTitle className="min-w-0 flex-1 truncate text-base font-semibold">{title}</DialogTitle>

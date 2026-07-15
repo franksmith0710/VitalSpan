@@ -437,21 +437,37 @@ describe("AdminLayout smoke", () => {
     expect(screen.getByRole("heading", { name: "分析" })).toBeInTheDocument();
   });
 
-  it("T-FE-SMFB-01: admin sidebar 系统 group has 资源授权 link", async () => {
+  it("T-FE-SMFB-01: system admin sidebar has 资源授权 link", async () => {
     setDesktopViewport(1400);
     const user = userEvent.setup();
     render(
-      <MemoryRouter initialEntries={["/admin"]}>
+      <MemoryRouter initialEntries={["/admin/system/roles"]}>
         <Routes>
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<div>home</div>} />
+            <Route path="system/roles" element={<div>roles</div>} />
           </Route>
         </Routes>
       </MemoryRouter>,
     );
+    expect(screen.getByRole("heading", { name: "后台管理" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "权限与安全" }));
     const link = screen.getByRole("link", { name: "资源授权" });
     expect(link).toHaveAttribute("href", "/admin/system/grants");
+  });
+
+  it("T-FE-SMFB-01b: main workspace sidebar has no 系统 heading", () => {
+    setDesktopViewport(1400);
+    render(
+      <MemoryRouter initialEntries={["/admin/dashboards"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboards" element={<div>dashboards</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole("heading", { name: "系统" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "后台管理" })).not.toBeInTheDocument();
   });
 
   it("T-FE-SMFB-02: viewer sidebar has no 资源授权 text", () => {

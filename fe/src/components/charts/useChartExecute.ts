@@ -28,6 +28,8 @@ export function mapChartQueryError(code: string | undefined, message: string): s
       return "SQL 语法错误，请检查配置";
     case "QUERY_TABLE_NOT_FOUND":
       return "表不存在";
+    case "CREDENTIAL_DECRYPT_FAILED":
+      return "数据源凭证无法解密，请重启后端或在「数据连接」中重新保存密码";
     default:
       return message || "操作失败，请稍后重试";
   }

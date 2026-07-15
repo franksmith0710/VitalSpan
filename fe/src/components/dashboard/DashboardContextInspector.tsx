@@ -6,6 +6,10 @@ import {
   DashboardWidgetStyleSections,
 } from "./dashboardConfigPanels";
 import type { DashboardStyleConfig, LayoutWidget } from "./layoutUtils";
+import {
+  patchDashboardStyle,
+  switchDashboardThemeBundle,
+} from "./dashboardThemeVariants";
 
 type DashboardContextInspectorProps = {
   dashboardId: string;
@@ -17,6 +21,7 @@ type DashboardContextInspectorProps = {
   onLinkageChange: (linkage: Linkage) => void;
   styleConfig: DashboardStyleConfig;
   onStyleChange: (value: DashboardStyleConfig) => void;
+  onWidgetsChange?: (widgets: LayoutWidget[]) => void;
   onSave?: () => void | Promise<void>;
   embedded?: boolean;
   linkageDefaultOpen?: boolean;
@@ -34,13 +39,14 @@ export function DashboardContextInspector({
   onLinkageChange,
   styleConfig,
   onStyleChange,
+  onWidgetsChange,
   onSave,
   embedded = false,
   linkageDefaultOpen = false,
   isPixelLayout = false,
 }: DashboardContextInspectorProps) {
   const patchStyle = (patch: Partial<DashboardStyleConfig>) => {
-    onStyleChange({ ...styleConfig, ...patch });
+    onStyleChange(patchDashboardStyle(styleConfig, patch));
   };
 
   return (
@@ -63,6 +69,11 @@ export function DashboardContextInspector({
           patchStyle={patchStyle}
           isPixelLayout={isPixelLayout}
           onSave={onSave}
+          onSwitchColorScheme={(scheme) => {
+            const bundle = switchDashboardThemeBundle(styleConfig, widgets, scheme);
+            onStyleChange(bundle.styleConfig);
+            onWidgetsChange?.(bundle.widgets);
+          }}
         />
         <DashboardWidgetStyleSections
           styleConfig={styleConfig}

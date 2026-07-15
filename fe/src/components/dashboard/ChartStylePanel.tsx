@@ -124,6 +124,28 @@ export function ChartStylePanel() {
                 </SelectContent>
               </Select>
             </InspectorFieldRow>
+            <InspectorFieldRow label="配色不透明度 (%)">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                className={INSPECTOR_CTRL}
+                placeholder="100"
+                value={
+                  deStyle.paletteOpacity != null ? Math.round(deStyle.paletteOpacity * 100) : ""
+                }
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  onChange(
+                    patchChartDeStyle(cfg, {
+                      paletteOpacity: raw
+                        ? Math.min(1, Math.max(0, Number(raw) / 100))
+                        : undefined,
+                    }),
+                  );
+                }}
+              />
+            </InspectorFieldRow>
           </DashboardConfigSection>
         </>
       ) : null}

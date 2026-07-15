@@ -13,6 +13,7 @@ import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveCh
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
 import type { DashboardStyleConfig } from "../dashboardStyleConfig";
 import { mergeTitleStyle } from "../dashboardStyleConfig";
+import { resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
   applyPixelInteraction,
   RESIZE_CURSORS,
@@ -25,6 +26,7 @@ import {
   type ResizeDirection,
 } from "./geometry";
 import { computeMarkLineSnap, markLineThreshold, type MarkLineGuide } from "./pixelMarkLine";
+import type { PixelShapePreviewSync } from "./pixelShapePreviewRegistry";
 import { PixelShapeActionRail, type PixelWidgetActions } from "./PixelShapeActionRail";
 import { WidgetShapeChrome } from "./WidgetShapeChrome";
 import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
@@ -53,11 +55,14 @@ type PixelShapeProps = {
   onCommit?: (widget: PixelLayoutWidget) => void;
   onCancel?: (widgetId: string) => void;
   onMarkGuidesChange?: (guides: MarkLineGuide[] | null) => void;
+  /** 与画布壳层 `chrome.showAuxiliaryGrid` 同步；关闭时不吸附、不画线 */
+  markLinesEnabled?: boolean;
   viewport?: PixelRect;
   snapTargets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   otherWidgets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   widgetActions?: PixelWidgetActions;
   styleConfig?: DashboardStyleConfig;
+  registerPreviewSync?: (widgetId: string, sync: PixelShapePreviewSync) => () => void;
 };
 
 const HANDLE_POSITION: Record<ResizeDirection, string> = {
@@ -122,7 +127,11 @@ function resolveShapeTitleState(
   if (widget.type === "chart") {
     return {
       showTitle: readChartTitleVisible(widget.chartConfig),
-      titleStyle: mergeChartTitleStyle(styleConfig?.titleStyle, widget.chartConfig),
+      titleStyle: mergeChartTitleStyle(
+        styleConfig?.titleStyle,
+        widget.chartConfig,
+        styleConfig?.colorScheme ?? "light",
+      ),
       remark: readChartRemark(widget.chartConfig),
     };
   }
@@ -145,19 +154,29 @@ export function PixelShape({
   onCommit,
   onCancel,
   onMarkGuidesChange,
+  markLinesEnabled = true,
   viewport,
   snapTargets,
   otherWidgets,
   widgetActions,
   styleConfig,
+  registerPreviewSync,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
   const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig);
   const onTitleChange = widgetActions?.onTitleChange;
+  const chrome = resolveDashboardChrome(styleConfig);
   const shell =
     widget.type === "chart" && widget.chartConfig
-      ? resolveChartContentShellStyle(styleConfig?.widgetStyle, widget.chartConfig)
-      : { outer: resolveWidgetShellStyle(styleConfig?.widgetStyle), inner: {} as CSSProperties };
+      ? resolveChartContentShellStyle(
+          styleConfig?.widgetStyle,
+          widget.chartConfig,
+          styleConfig?.colorScheme ?? "light",
+        )
+      : {
+          outer: resolveWidgetShellStyle(styleConfig?.widgetStyle, styleConfig?.colorScheme ?? "light"),
+          inner: {} as CSSProperties,
+        };
   const activeRef = useRef<ActiveInteraction | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const displayRef = useRef(widgetRect(widget));
@@ -180,6 +199,14 @@ export function PixelShape({
     el.style.width = `${next.width}px`;
     el.style.height = `${next.height}px`;
   };
+
+  useEffect(() => {
+    if (!registerPreviewSync) return;
+    return registerPreviewSync(widget.id, (rect) => {
+      displayRef.current = rect;
+      syncOuterStyle(rect);
+    });
+  }, [widget.id, registerPreviewSync]);
 
   useEffect(() => {
     if (activeRef.current) return;
@@ -217,7 +244,7 @@ export function PixelShape({
     event: PointerEvent,
     active: ActiveInteraction,
   ) => {
-    if (!onMarkGuidesChange) return;
+    if (!onMarkGuidesChange || !markLinesEnabled) return;
     if (markGuideFrameRef.current !== null) return;
     markGuideFrameRef.current = requestAnimationFrame(() => {
       markGuideFrameRef.current = null;
@@ -253,7 +280,7 @@ export function PixelShape({
       active.kind,
     );
     setHint((previous) => (previous === nextHint ? previous : nextHint));
-    if (!onMarkGuidesChange) return raw;
+    if (!onMarkGuidesChange || !markLinesEnabled) return raw;
     const markTargets = snapTargets ?? otherWidgets ?? [];
     return computeMarkLineSnap(raw, markTargets, {
       threshold: markLineThreshold(scale),
@@ -390,10 +417,11 @@ export function PixelShape({
         selected={Boolean(mode === "edit" && selected)}
         widgetId={widget.id}
         onTitleChange={onTitleChange}
+        onSelectPointerDown={(event) => onSelect?.(widget.id, event.shiftKey)}
         onDragPointerDown={(event) => startInteraction(event, "move")}
         onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
       />
-      {mode === "edit" && selected && widgetActions && viewport ? (
+      {mode === "edit" && selected && widgetActions && viewport && chrome.showFloatingActions ? (
         <PixelShapeActionRail
           widget={widget}
           scale={scale}
@@ -406,7 +434,13 @@ export function PixelShape({
         <PixelShapePlayerProvider playing={isPlayer}>
           <div
             className="pixel-shape-inner dashboard-widget-surface relative min-h-0 flex-1 overflow-hidden"
-            style={shell.inner}
+            style={{
+              ...shell.inner,
+              background:
+                shell.inner.background ??
+                shell.outer.style.background ??
+                (styleConfig?.colorScheme === "dark" ? "#1e293b" : undefined),
+            }}
             data-pixel-no-drag
             onPointerDown={(event) => {
               if (mode === "edit") onSelect?.(widget.id, event.shiftKey);

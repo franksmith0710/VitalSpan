@@ -11,6 +11,7 @@ export type WidgetShapeChromeProps = {
   selected: boolean;
   widgetId: string;
   onTitleChange?: (widgetId: string, title: string) => void;
+  onSelectPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
   onDragPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
   onDragKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
 };
@@ -27,6 +28,7 @@ export function WidgetShapeChrome({
   selected,
   widgetId,
   onTitleChange,
+  onSelectPointerDown,
   onDragPointerDown,
   onDragKeyDown,
 }: WidgetShapeChromeProps) {
@@ -40,8 +42,18 @@ export function WidgetShapeChrome({
 
   const isEdit = mode === "edit";
   const canDrag = isEdit && selected && Boolean(onDragPointerDown);
-  const canEditTitle = isEdit && Boolean(onTitleChange);
+  const canEditTitle = isEdit && selected && Boolean(onTitleChange);
   const showRemark = Boolean(remark?.show && remark.text);
+
+  const handleChromePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (canDrag) {
+      onDragPointerDown?.(event);
+      return;
+    }
+    if (isEdit) {
+      onSelectPointerDown?.(event);
+    }
+  };
 
   return (
     <>
@@ -51,7 +63,7 @@ export function WidgetShapeChrome({
           "shape-title shrink-0",
           canDrag && "cursor-grab active:cursor-grabbing",
         )}
-        onPointerDown={canDrag ? onDragPointerDown : undefined}
+        onPointerDown={isEdit ? handleChromePointerDown : undefined}
         onKeyDown={canDrag ? onDragKeyDown : undefined}
         role={canDrag ? "group" : undefined}
         aria-label={canDrag ? "拖动组件" : undefined}
@@ -67,7 +79,7 @@ export function WidgetShapeChrome({
       </div>
       {showRemark ? (
         <p
-          className="shape-remark shrink-0 text-[11px] leading-snug text-gray-500 dark:text-gray-400"
+          className="shape-remark shrink-0 text-[11px] leading-snug text-[var(--dashboard-text-muted,#667085)]"
           data-testid={`pixel-shape-remark-${widgetId}`}
         >
           {remark!.text}

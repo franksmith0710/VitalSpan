@@ -1,7 +1,9 @@
 import { cn } from "@/lib/utils";
 import type { CSSProperties, ReactNode } from "react";
 import type { DashboardStyleConfig } from "./layoutUtils";
-import { hasUserCanvasBackground } from "./dashboardStyleConfig";
+import { hasUserCanvasBackground, effectiveCanvasBackground, effectiveWidgetShellBackground } from "./dashboardStyleConfig";
+import { getDashboardThemeTokens, themeTokensToScopeVars } from "./dashboardThemeTokens";
+import { resolveDialogScopeStyle } from "./dashboardChromeConfig";
 
 type DashboardStyleSurfaceProps = {
   styleConfig?: DashboardStyleConfig;
@@ -19,6 +21,7 @@ export function DashboardStyleSurface({
   children,
 }: DashboardStyleSurfaceProps) {
   const scheme = styleConfig?.colorScheme ?? "light";
+  const tokens = getDashboardThemeTokens(scheme);
   const userCanvasBackground = styleConfig ? hasUserCanvasBackground(styleConfig) : false;
   const scopeStyle: CSSProperties = { colorScheme: scheme };
   if (styleConfig?.fontFamily) scopeStyle.fontFamily = styleConfig.fontFamily;
@@ -30,6 +33,12 @@ export function DashboardStyleSurface({
   } else if (styleConfig?.themeAccent) {
     (scopeStyle as Record<string, string>)["--dashboard-action-icon"] = styleConfig.themeAccent;
   }
+  Object.assign(scopeStyle, resolveDialogScopeStyle(styleConfig));
+  const artboardBg =
+    effectiveCanvasBackground(styleConfig) ?? tokens.canvas;
+  const widgetSurfaceBg =
+    effectiveWidgetShellBackground(styleConfig) ?? tokens.widgetShell;
+  Object.assign(scopeStyle, themeTokensToScopeVars({ ...tokens, canvas: artboardBg, widgetShell: widgetSurfaceBg }));
 
   return (
     <div

@@ -448,11 +448,101 @@ html.dark {
   color: var(--dashboard-action-icon, var(--color-gray-500));
 }
 
+.dashboard-theme-scope .pixel-canvas-host [data-testid^="pixel-shape-actions"] :where(button:hover:not(:disabled)) {
+  color: var(--dashboard-action-icon-hover, var(--color-gray-800));
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"]
+  .pixel-canvas-host
+  [data-testid^="pixel-shape-actions"]
+  :where(button:hover:not(:disabled)) {
+  color: var(--dashboard-action-icon-hover, var(--color-gray-200));
+}
+
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] .apexcharts-canvas,
 .dashboard-theme-scope.dark .apexcharts-canvas,
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] .apexcharts-svg,
 .dashboard-theme-scope.dark .apexcharts-svg {
   background: transparent !important;
+}
+
+.dashboard-theme-scope [data-testid="pixel-canvas-artboard"] {
+  background-color: var(--dashboard-artboard-bg, #f8fafc) !important;
+}
+
+.dashboard-theme-scope .pixel-canvas-host {
+  background-color: var(--dashboard-artboard-bg, #f8fafc);
+}
+
+.dashboard-theme-scope .dashboard-chart-table tbody tr {
+  background-color: transparent;
+  color: var(--dashboard-table-body-fg, #344054);
+}
+
+.dashboard-theme-scope .dashboard-chart-table thead {
+  background-color: var(--dashboard-table-header-bg, #f9fafb);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] [data-testid="pixel-canvas-artboard"] {
+  background-color: var(--dashboard-artboard-bg, #0f172a) !important;
+  background-image: none !important;
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .pixel-canvas-host,
+.dashboard-theme-scope.dark .pixel-canvas-host {
+  background-color: var(--dashboard-artboard-bg, #0f172a);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .dashboard-chart-table tbody tr,
+.dashboard-theme-scope.dark .dashboard-chart-table tbody tr {
+  background-color: transparent;
+  color: var(--dashboard-table-body-fg, #d0d5dd);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .dashboard-chart-table thead,
+.dashboard-theme-scope.dark .dashboard-chart-table thead {
+  background-color: var(--dashboard-table-header-bg, #0f172a);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .widget-pending-preview-icon,
+.dashboard-theme-scope.dark .widget-pending-preview-icon {
+  background-color: rgb(255 255 255 / 0.06);
+  color: var(--color-gray-400);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .widget-pending-preview [class*="rounded-full"],
+.dashboard-theme-scope.dark .widget-pending-preview [class*="rounded-full"] {
+  background-color: rgb(255 255 255 / 0.08) !important;
+  color: var(--color-gray-300) !important;
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+.dashboard-theme-scope.dark input:not([type="checkbox"]):not([type="radio"]),
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] button[role="combobox"],
+.dashboard-theme-scope.dark button[role="combobox"] {
+  background-color: #0f172a;
+  border-color: #344054;
+  color: #e2e8f0;
+}
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .pixel-shape-inner.dashboard-widget-surface,
+.dashboard-theme-scope.dark .pixel-shape-inner.dashboard-widget-surface {
+  background-color: var(--dashboard-widget-surface, #1e293b);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .pixel-shape-outer,
+.dashboard-theme-scope.dark .pixel-shape-outer {
+  background-color: var(--dashboard-widget-surface, #1e293b);
+}
+
+.dashboard-theme-scope [data-dashboard-dialog] {
+  background: var(--dashboard-dialog-bg, var(--color-white));
+  color: var(--dashboard-dialog-fg, inherit);
+}
+
+.dashboard-theme-scope.dark [data-dashboard-dialog],
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] [data-dashboard-dialog] {
+  background: var(--dashboard-dialog-bg, var(--color-gray-900));
+  color: var(--dashboard-dialog-fg, var(--color-gray-100));
 }
 
 /* DataEase isPlayer：外框 DOM 实时改尺寸，子树 100% 填满 */

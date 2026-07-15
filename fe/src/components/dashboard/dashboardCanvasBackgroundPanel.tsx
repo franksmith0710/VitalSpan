@@ -6,6 +6,8 @@ import { ColorField } from "@/components/ui/color-field";
 import {
   CANVAS_BG_DECOR_PRESETS,
   CANVAS_BG_RECOMMENDED,
+  decorPresetPreviewStyle,
+  patchDecorPresetStyle,
   resolveCanvasDecorPresetId,
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
@@ -35,6 +37,7 @@ export function DashboardCanvasBackgroundPanel({
       resolveCanvasDecorPresetId(styleConfig) === "custom",
   );
   const decorId = resolveCanvasDecorPresetId(styleConfig);
+  const colorScheme = styleConfig.colorScheme ?? "light";
   const imageUrl = styleConfig.canvasBackgroundImage ?? "";
   const [localImageUrl, setLocalImageUrl] = useState(imageUrl);
   const previewUrl = localImageUrl.trim();
@@ -66,7 +69,7 @@ export function DashboardCanvasBackgroundPanel({
   return (
     <div className="space-y-4">
       <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-        设置画布底色与装饰纹理，与上方「仪表板风格」深浅色主题互不影响。
+        设置画布底色与装饰纹理；随当前深浅主题分别保存（在「仪表板风格」切换主题可对照）。
       </p>
 
       <ColorField
@@ -93,29 +96,13 @@ export function DashboardCanvasBackgroundPanel({
                 )}
                 aria-pressed={selected}
                 onClick={() => {
-                  if (preset.id === "none") {
-                    patchStyle({ canvasBackgroundImage: undefined });
-                    setShowAdvancedUrl(false);
-                    return;
-                  }
-                  if (preset.id === "gradient-soft") {
-                    patchStyle({
-                      canvasBackgroundImage: undefined,
-                      canvasBackground: preset.canvasBackground,
-                    });
-                    setShowAdvancedUrl(false);
-                    return;
-                  }
-                  patchStyle({
-                    canvasBackgroundImage: preset.image,
-                    canvasBackground: styleConfig.canvasBackground,
-                  });
+                  patchStyle(patchDecorPresetStyle(preset.id, styleConfig));
                   setShowAdvancedUrl(false);
                 }}
               >
                 <span
                   className="size-8 shrink-0 rounded-md border border-gray-200/80 dark:border-gray-700"
-                  style={preset.previewStyle}
+                  style={decorPresetPreviewStyle(preset.id, colorScheme)}
                   aria-hidden
                 />
                 <span className="text-theme-xs text-gray-700 dark:text-gray-300">{preset.label}</span>
@@ -174,6 +161,24 @@ export function DashboardCanvasBackgroundPanel({
             ) : null}
           </div>
         ) : null}
+      </div>
+
+      <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
+        <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">弹框样式</p>
+        <ColorField
+          label="弹框背景色"
+          value={styleConfig.dialogStyle?.background ?? ""}
+          onChange={(color) =>
+            patchStyle({ dialogStyle: { ...styleConfig.dialogStyle, background: color } })
+          }
+        />
+        <ColorField
+          label="弹框字体色"
+          value={styleConfig.dialogStyle?.fontColor ?? ""}
+          onChange={(color) =>
+            patchStyle({ dialogStyle: { ...styleConfig.dialogStyle, fontColor: color } })
+          }
+        />
       </div>
     </div>
   );

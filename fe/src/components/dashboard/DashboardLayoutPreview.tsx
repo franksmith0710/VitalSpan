@@ -15,6 +15,8 @@ import {
   type ScaleMode,
 } from "./dashboardStyleConfig";
 import { DashboardStyleSurface } from "./DashboardStyleSurface";
+import { DashboardWidgetsProvider } from "./DashboardWidgetsContext";
+import { widgetFilterExecuteRevision } from "./dashboardWidgetExecuteKey";
 import type {
   DashboardLayout,
   LayoutWidget,
@@ -49,7 +51,7 @@ export function DashboardLayoutPreview({
     layout.version === 1
       ? layout.widgets
       : layout.widgets.map(pixelWidgetToLayoutWidget);
-  const executeKey = JSON.stringify(filterValues);
+  const styleRevision = widgetDashboardStyleFingerprint(styleConfig);
   const effectiveLinkage: Linkage = linkage ?? {
     filters: [],
     linkageRules: [],
@@ -68,14 +70,18 @@ export function DashboardLayoutPreview({
         mode="view"
         shell={shell}
         gridSize={grid}
-        allWidgets={widgets}
+        allWidgets={widget.type === "tabs" ? widgets : undefined}
         renderNestedWidget={renderNested}
         filterParameters={
           widget.type === "chart"
             ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
             : undefined
         }
-        executeKey={executeKey}
+        executeKey={widgetFilterExecuteRevision(
+          widget.id,
+          effectiveLinkage,
+          filterValues,
+        )}
         filterValue={
           widget.filterConfig
             ? filterValues[widget.filterConfig.filterId]
@@ -89,7 +95,11 @@ export function DashboardLayoutPreview({
   };
 
   if (layout.version === 2) {
+    const widgetContentRevision = (widget: PixelLayoutWidget) =>
+      `${styleRevision}:${widgetFilterExecuteRevision(widget.id, effectiveLinkage, filterValues)}`;
+
     return (
+      <DashboardWidgetsProvider widgets={widgets}>
       <DashboardStyleSurface styleConfig={styleConfig} className={className}>
         <PixelCanvas
           mode="view"
@@ -101,12 +111,15 @@ export function DashboardLayoutPreview({
           renderWidget={(widget: PixelLayoutWidget) =>
             renderWidget(pixelWidgetToLayoutWidget(widget), undefined, "shape")
           }
+          widgetContentRevision={widgetContentRevision}
         />
       </DashboardStyleSurface>
+      </DashboardWidgetsProvider>
     );
   }
 
   return (
+    <DashboardWidgetsProvider widgets={widgets}>
     <DashboardStyleSurface styleConfig={styleConfig} className={className}>
       <div className="relative h-full min-h-0">
         <div
@@ -124,5 +137,6 @@ export function DashboardLayoutPreview({
         />
       </div>
     </DashboardStyleSurface>
+    </DashboardWidgetsProvider>
   );
 }

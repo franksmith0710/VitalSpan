@@ -1,7 +1,6 @@
 import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
-import { apiFetch } from "@/lib/api";
 import { chartConfigToRenderSpec } from "@/lib/chartConfigState";
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import {
@@ -24,13 +23,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AdvancedEchartsChart } from "./adapters/AdvancedEchartsChart";
 import { EmbeddedChartTable } from "./adapters/EmbeddedChartTable";
 import { KpiCard } from "./adapters/KpiCard";
-import type { RenderSpec } from "./adapters/renderFromSpec";
 import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
 import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
+import { useChartRenderSpec } from "./useChartRenderSpec";
 import { readChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useDashboardColorScheme } from "@/hooks/useDashboardColorScheme";
+import { useDashboardGridPlayer } from "@/components/dashboard/dashboardGridPlayerContext";
 import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
 import { estimateWidgetBodyHeight } from "@/components/dashboard/gridLayoutAdapter";
 import {
@@ -60,6 +60,8 @@ type ChartRendererProps = {
   numberFormat?: NumberFormatConfig;
   /** 看板 colorScheme；图表主题与 Admin 壳层解耦 */
   colorScheme?: ColorScheme;
+  /** 看板级：是否显示加载骨架 */
+  showLoadingHint?: boolean;
   /** DataEase isPlayer：交互中冻结 React 尺寸上报，由 DOM 百分比 + 图表 rAF resize 跟手 */
   suspendLiveResize?: boolean;
 };
@@ -113,10 +115,12 @@ export const ChartRenderer = memo(function ChartRenderer({
   paletteColors,
   numberFormat,
   colorScheme = "light",
+  showLoadingHint = true,
   suspendLiveResize: suspendLiveResizeProp = false,
 }: ChartRendererProps) {
   const isShapePlaying = usePixelShapePlayer();
-  const suspendLiveResize = suspendLiveResizeProp || isShapePlaying;
+  const isGridPlaying = useDashboardGridPlayer();
+  const suspendLiveResize = suspendLiveResizeProp || isShapePlaying || isGridPlaying;
   const { ref: bodyRef, size: bodySize } = useElementSize<HTMLDivElement>({
     enabled: embedded,
     paused: suspendLiveResize,
@@ -146,9 +150,14 @@ export const ChartRenderer = memo(function ChartRenderer({
     limit: queryLimit,
   });
   const [page, setPage] = useState(1);
-  const [renderSpec, setRenderSpec] = useState<RenderSpec | null>(null);
   const [localConfig, setLocalConfig] = useState(config);
-  const empty = !loading && !error && rows.length === 0;
+  const specConfig = mode === "config" ? localConfig : config;
+  const renderSpec = useChartRenderSpec(specConfig, {
+    paused: suspendLiveResize,
+    loading,
+    error,
+  });
+  const empty = !loading && !error && (rows?.length ?? 0) === 0;
 
   useEffect(() => {
     setLocalConfig(config);
@@ -157,19 +166,6 @@ export const ChartRenderer = memo(function ChartRenderer({
   useEffect(() => {
     setPage(1);
   }, [config]);
-
-  useEffect(() => {
-    if (isKpiType(localConfig.chartType) || !isAdvancedEchartsType(localConfig.chartType) || loading || error) {
-      setRenderSpec(null);
-      return;
-    }
-    apiFetch<RenderSpec>("/api/v1/charts/render-spec", {
-      method: "POST",
-      body: JSON.stringify(localConfig),
-    })
-      .then(setRenderSpec)
-      .catch(() => setRenderSpec(null));
-  }, [localConfig, loading, error]);
 
   const renderModel = useMemo(
     () => (!loading && !error ? buildChartRenderModel(localConfig, columns, rows) : null),
@@ -327,20 +323,47 @@ export const ChartRenderer = memo(function ChartRenderer({
       ...(dataZoomEnabled
         ? {
             zoom: { enabled: true, type: "x", autoScaleYaxis: true },
-            toolbar: { show: true, tools: { download: false, selection: false } },
+            toolbar: {
+              show: !compactEmbedded,
+              tools: { download: false, selection: false },
+            },
           }
         : {}),
     };
-    const apexTheme = getApexThemeOverrides(isDark);
+    const apexTheme = getApexThemeOverrides(resolvedScheme);
     const apexOverrides: ApexOptions = {
       ...apexTheme,
       colors: chartColors,
-      chart: { ...(apexTheme.chart ?? {}), ...apexChart },
+      chart: {
+        ...(apexTheme.chart ?? {}),
+        ...apexChart,
+        offsetY:
+          embedded && showChartLegend && (deStyle.legend?.position ?? "bottom") === "bottom"
+            ? -6
+            : undefined,
+      },
       legend: {
         show: showChartLegend && !compactEmbedded,
         position: deStyle.legend?.position ?? "bottom",
         fontSize: deStyle.legend?.fontSize ? `${deStyle.legend.fontSize}px` : "12px",
+        offsetY: embedded && showChartLegend ? 2 : 0,
+        itemMargin: { horizontal: 8, vertical: 2 },
         ...(apexTheme.legend ?? {}),
+      },
+      grid: {
+        ...(apexTheme.grid ?? {}),
+        padding: {
+          bottom:
+            embedded && showChartLegend && (deStyle.legend?.position ?? "bottom") === "bottom"
+              ? dataZoomEnabled
+                ? 28
+                : 12
+              : dataZoomEnabled
+                ? 16
+                : 4,
+          left: 4,
+          right: 4,
+        },
       },
       dataLabels: {
         enabled: showDataLabels && !compactEmbedded,
@@ -408,7 +431,10 @@ export const ChartRenderer = memo(function ChartRenderer({
           onChange={setLocalConfig}
         />
       ) : null}
-      <div className={embedded ? "absolute inset-0 overflow-hidden" : undefined}>
+      <div
+        className={embedded ? "absolute inset-0 overflow-hidden" : undefined}
+        style={deStyle.paletteOpacity != null ? { opacity: deStyle.paletteOpacity } : undefined}
+      >
         {renderBody()}
       </div>
     </div>
@@ -418,11 +444,18 @@ export const ChartRenderer = memo(function ChartRenderer({
     return (
       <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
         {loading ? (
-          <Skeleton className="absolute inset-0 rounded-lg" aria-busy="true" aria-label="图表加载中" />
+          showLoadingHint ? (
+            <Skeleton className="absolute inset-0 rounded-lg" aria-busy="true" aria-label="图表加载中" />
+          ) : null
         ) : error ? (
           <div
             role="alert"
-            className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg border border-error-500/40 bg-error-50/80 p-3 dark:bg-error-500/10"
+            className={cn(
+              "absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-lg border p-3",
+              isDark
+                ? "border-error-500/30 bg-error-950/40"
+                : "border-error-500/40 bg-error-50/80",
+            )}
           >
             <p className={cn("text-center", dwStateError)}>{error}</p>
             <Button type="button" variant="outline" size="sm" onClick={rerun}>

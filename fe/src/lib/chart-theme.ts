@@ -1,5 +1,6 @@
 import type { ApexOptions } from "apexcharts";
-
+import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
+import { getDashboardThemeTokens } from "@/components/dashboard/dashboardThemeTokens";
 import { deepMergeOptions } from "./merge-options";
 
 export const chartPalette = {
@@ -103,20 +104,20 @@ export function getBaseChartOptions(overrides?: ApexOptions): ApexOptions {
   ) as ApexOptions;
 }
 
-const apexDarkLabelStyle = { colors: "#98a2b3", fontSize: "12px" } as const; // @design-token-ok
-const apexDarkGridColor = "#344054"; // @design-token-ok
 
-/** 看板暗色主题下图表坐标轴/图例/tooltip 配色（与 echarts-theme 对齐） */
-export function getApexThemeOverrides(isDark: boolean): ApexOptions {
-  if (!isDark) return {};
+/** 看板图表坐标轴/图例/tooltip：随 colorScheme 固定两套配色 */
+export function getApexThemeOverrides(scheme: ColorScheme): ApexOptions {
+  const tokens = getDashboardThemeTokens(scheme);
+  const isDark = scheme === "dark";
+  const labelStyle = { colors: tokens.chartAxis, fontSize: "12px" } as const;
   return {
-    theme: { mode: "dark" },
-    chart: { foreColor: apexDarkLabelStyle.colors, background: "transparent" },
-    grid: { borderColor: apexDarkGridColor },
-    xaxis: { labels: { style: apexDarkLabelStyle } },
-    yaxis: { labels: { style: apexDarkLabelStyle } },
-    legend: { labels: { colors: "#d0d5dd" } }, // @design-token-ok
-    tooltip: { theme: "dark" },
+    theme: { mode: isDark ? "dark" : "light" },
+    chart: { foreColor: tokens.chartAxis, background: "transparent" },
+    grid: { borderColor: tokens.chartGrid },
+    xaxis: { labels: { style: labelStyle } },
+    yaxis: { labels: { style: labelStyle } },
+    legend: { labels: { colors: tokens.chartLegend } },
+    tooltip: { theme: isDark ? "dark" : "light" },
   };
 }
 

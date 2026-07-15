@@ -21,8 +21,13 @@ import type {
   PixelLayoutWidget,
 } from "../layoutUtils";
 import type { ScaleMode, DashboardStyleConfig } from "../dashboardStyleConfig";
-import { resolveArtboardStyle } from "../dashboardStyleConfig";
-import { resolvePixelCollisions } from "./collisionLayout";
+import {
+  pickWidgetDashboardStyle,
+  resolveArtboardStyle,
+  widgetDashboardStyleFingerprint,
+} from "../dashboardStyleConfig";
+import { auxiliaryGridOverlayStyle, resolveDashboardChrome } from "../dashboardChromeConfig";
+import { resolvePixelCollisions, widgetRect } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
 import { clientPointToCanvas, resolvePixelCanvasMeasureElement, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
 import { PixelShape } from "./PixelShape";
@@ -31,6 +36,7 @@ import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
 import { markLineGuidesEqual } from "./markLineGuidesEqual";
 import type { MarkLineGuide } from "./pixelMarkLine";
 import { PixelWidgetSlot } from "./PixelWidgetSlot";
+import { createPixelShapePreviewRegistry } from "./pixelShapePreviewRegistry";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
 
 type PixelCanvasProps = {
@@ -48,14 +54,15 @@ type PixelCanvasProps = {
   scaleMode?: ScaleMode;
   pixelGutter?: number;
   styleConfig?: DashboardStyleConfig;
+  widgetContentRevision?: (widget: PixelLayoutWidget) => string;
 };
 
 export const PIXEL_CANVAS_GUTTER = 0;
 
 export const PIXEL_CANVAS_MIN_HEIGHT = 320;
 
-/** 邻组件推挤预览节流（对标 DE onDragging/onResizing 10ms debounce） */
-export const PIXEL_PREVIEW_THROTTLE_MS = 16;
+/** 邻组件推挤预览节流；位置经 DOM 直改，不再 setPreviewLayout */
+export const PIXEL_PREVIEW_THROTTLE_MS = 32;
 
 export function canvasScaleForHost(
   hostWidth: number,
@@ -116,13 +123,16 @@ export function PixelCanvas({
   scaleMode = "canvas",
   pixelGutter = PIXEL_CANVAS_GUTTER,
   styleConfig = {},
+  widgetContentRevision,
 }: PixelCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const previewRegistryRef = useRef(createPixelShapePreviewRegistry());
   const [scale, setScale] = useState(1);
   const [contentSize, setContentSize] = useState({ width: 0, height: 0 });
   const [stageLeft, setStageLeft] = useState(0);
   const [centerContent, setCenterContent] = useState(false);
-  const [previewLayout, setPreviewLayout] = useState<DashboardLayoutV2 | null>(null);
   const previewThrottleRef = useRef(0);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPreviewRef = useRef<PixelLayoutWidget | null>(null);
@@ -134,7 +144,14 @@ export function PixelCanvas({
     width: layout.canvas.width,
     height: layout.canvas.height,
   });
-  const activeLayout = previewLayout ?? layout;
+  const activeLayout = layout;
+  const widgetChromeStyle = useMemo(
+    () => pickWidgetDashboardStyle(styleConfig),
+    [widgetDashboardStyleFingerprint(styleConfig)],
+  );
+  const chrome = resolveDashboardChrome(styleConfig);
+  const showAuxGrid =
+    mode === "edit" && chrome.showAuxiliaryGrid && !styleConfig.canvasBackground?.trim();
   const viewCanvasHeight = useMemo(() => {
     const lowest = activeLayout.widgets.reduce(
       (max, widget) => Math.max(max, widget.y + widget.height),
@@ -187,6 +204,51 @@ export function PixelCanvas({
     return () => observer.disconnect();
   }, [onViewportChange, viewCanvas, designCanvasHeight, scaleMode, pixelGutter]);
 
+  const registerPreviewSync = useCallback(
+    (widgetId: string, sync: (rect: PixelRect) => void) =>
+      previewRegistryRef.current.register(widgetId, sync),
+    [],
+  );
+
+  const clearPreviewChrome = useCallback(() => {
+    stageRef.current?.style.removeProperty("height");
+    contentRef.current?.style.removeProperty("width");
+    contentRef.current?.style.removeProperty("height");
+    previewRegistryRef.current.reset(
+      layout.widgets.map((widget) => ({ id: widget.id, ...widgetRect(widget) })),
+    );
+  }, [layout.widgets]);
+
+  const syncPreviewStageMetrics = useCallback(
+    (nextLayout: DashboardLayoutV2) => {
+      const host = hostRef.current;
+      const stage = stageRef.current;
+      const content = contentRef.current;
+      if (!host || !stage) return;
+      const lowest = nextLayout.widgets.reduce(
+        (max, widget) => Math.max(max, widget.y + widget.height),
+        0,
+      );
+      const viewHeight = Math.max(PIXEL_CANVAS_MIN_HEIGHT, lowest);
+      const measureEl = resolvePixelCanvasMeasureElement(host);
+      const metrics = scaledCanvasMetrics(
+        measureEl.clientWidth,
+        measureEl.clientHeight,
+        layout.canvas.width,
+        resolveScaleDesignHeight(nextLayout.canvas.height),
+        viewHeight,
+        pixelGutter,
+        scaleMode,
+      );
+      stage.style.height = `${viewHeight}px`;
+      if (content) {
+        content.style.width = `${metrics.contentWidth}px`;
+        content.style.height = `${metrics.contentHeight}px`;
+      }
+    },
+    [layout.canvas.width, pixelGutter, scaleMode],
+  );
+
   const resolveActive = useCallback(
     (widget: PixelLayoutWidget) =>
       resolvePixelCollisions(layout, widget.id, {
@@ -203,9 +265,14 @@ export function PixelCanvas({
       if (!onLayoutChange) return;
       previewThrottleRef.current = Date.now();
       pendingPreviewRef.current = null;
-      setPreviewLayout(resolveActive(widget));
+      const nextLayout = resolveActive(widget);
+      const positions = new Map(
+        nextLayout.widgets.map((item) => [item.id, widgetRect(item)] as const),
+      );
+      previewRegistryRef.current.applyAll(positions);
+      syncPreviewStageMetrics(nextLayout);
     },
-    [onLayoutChange, resolveActive],
+    [onLayoutChange, resolveActive, syncPreviewStageMetrics],
   );
 
   const handlePreview = useCallback(
@@ -249,10 +316,10 @@ export function PixelCanvas({
         previewTimerRef.current = null;
       }
       pendingPreviewRef.current = null;
-      setPreviewLayout(null);
+      clearPreviewChrome();
       onLayoutChange(resolveActive(widget));
     },
-    [onLayoutChange, resolveActive],
+    [onLayoutChange, resolveActive, clearPreviewChrome],
   );
 
   const handleCancel = useCallback(() => {
@@ -261,8 +328,8 @@ export function PixelCanvas({
       previewTimerRef.current = null;
     }
     pendingPreviewRef.current = null;
-    setPreviewLayout(null);
-  }, []);
+    clearPreviewChrome();
+  }, [clearPreviewChrome]);
 
   const handleDragOver = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
@@ -328,6 +395,7 @@ export function PixelCanvas({
       onDrop={handleDrop}
     >
       <div
+        ref={contentRef}
         data-testid="pixel-canvas-content"
         className="relative shrink-0"
         style={{ width: contentSize.width, height: contentSize.height }}
@@ -337,6 +405,7 @@ export function PixelCanvas({
       >
         <PixelCanvasScaleProvider scale={scale}>
         <div
+          ref={stageRef}
           id="editor-canvas-main"
           data-testid="pixel-canvas-stage"
           className="editor-canvas-main pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
@@ -358,8 +427,13 @@ export function PixelCanvas({
             style={resolveArtboardStyle(styleConfig)}
             aria-hidden
           />
-          {mode === "edit" ? (
-            <PixelMarkLineOverlay guides={markGuides} canvas={viewCanvas} />
+          {showAuxGrid ? (
+            <div
+              data-testid="pixel-canvas-aux-grid"
+              className="pointer-events-none absolute inset-0 z-[1]"
+              style={auxiliaryGridOverlayStyle(styleConfig.colorScheme ?? "light")}
+              aria-hidden
+            />
           ) : null}
           {activeLayout.widgets.map((widget) => (
               <PixelShape
@@ -376,15 +450,24 @@ export function PixelCanvas({
                 onMarkGuidesChange={
                   mode === "edit" ? handleMarkGuidesChange : undefined
                 }
+                markLinesEnabled={chrome.showAuxiliaryGrid}
                 snapTargets={layout.widgets.filter((item) => item.id !== widget.id)}
                 viewport={visibleViewport}
-                otherWidgets={activeLayout.widgets.filter((item) => item.id !== widget.id)}
+                otherWidgets={layout.widgets.filter((item) => item.id !== widget.id)}
                 widgetActions={widgetActions}
-                styleConfig={styleConfig}
+                styleConfig={widgetChromeStyle}
+                registerPreviewSync={mode === "edit" ? registerPreviewSync : undefined}
               >
-                <PixelWidgetSlot widget={widget} renderWidget={renderWidget} />
+                <PixelWidgetSlot
+                  widget={widget}
+                  renderWidget={renderWidget}
+                  contentRevision={widgetContentRevision?.(widget) ?? widget.id}
+                />
               </PixelShape>
             ))}
+          {mode === "edit" && chrome.showAuxiliaryGrid ? (
+            <PixelMarkLineOverlay guides={markGuides} canvas={viewCanvas} />
+          ) : null}
           </div>
         </PixelCanvasScaleProvider>
       </div>

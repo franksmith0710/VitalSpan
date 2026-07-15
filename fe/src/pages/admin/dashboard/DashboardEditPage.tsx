@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ChevronLeft, Redo2, Trash2, Undo2 } from "lucide-react";
+import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,10 @@ import {
   insertPixelPaletteWidgetAt,
   type PixelRect,
 } from "@/components/dashboard/pixelCanvas";
-import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
+import {
+  normalizeStyleConfigForColorScheme,
+  syncChartWidgetsForColorScheme,
+} from "@/components/dashboard/dashboardThemeVariants";
 import { cloneLayoutWidget } from "@/components/dashboard/cloneLayoutWidget";
 import type { PixelWidgetActions } from "@/components/dashboard/pixelCanvas/PixelShapeActionRail";
 import {
@@ -57,6 +61,7 @@ import {
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import { DashboardContextInspector } from "@/components/dashboard/DashboardContextInspector";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
+import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
 import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
@@ -92,6 +97,10 @@ type DashboardDetail = {
 type DashboardEditPageProps = {
   mode: "edit" | "view";
 };
+
+function linkageSnapshot(widgets: LayoutWidget[], linkage: Linkage | null): string {
+  return JSON.stringify(mergeLayoutFilterLinkage(widgets, linkage));
+}
 
 export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const { id } = useParams<{ id: string }>();
@@ -134,7 +143,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   } = useWidgetSelection();
   const [savedName, setSavedName] = useState("");
   const [savedFingerprint, setSavedFingerprint] = useState<string | null>(null);
-
+  const [savedLinkageSnapshot, setSavedLinkageSnapshot] = useState<string | null>(null);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [styleConfig, setStyleConfig] = useState<DashboardStyleConfig>({});
   const [reuseOpen, setReuseOpen] = useState(false);
@@ -146,6 +155,40 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     type: "view-data" | "enlarge";
     widgetId: string;
   } | null>(null);
+
+  const layoutRef = useRef(layout);
+  const styleConfigRef = useRef(styleConfig);
+  const nameRef = useRef(name);
+  const linkageRef = useRef(linkage);
+  layoutRef.current = layout;
+  styleConfigRef.current = styleConfig;
+  nameRef.current = name;
+  linkageRef.current = linkage;
+
+  const applyName = useCallback((value: SetStateAction<string>) => {
+    setName((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      nameRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const applyStyleConfig = useCallback((value: SetStateAction<DashboardStyleConfig>) => {
+    setStyleConfig((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      styleConfigRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const applyLinkage = useCallback((value: SetStateAction<Linkage | null>) => {
+    setLinkage((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+      linkageRef.current = next;
+      return next;
+    });
+  }, []);
+
   const loadGenerationRef = useRef(0);
   const hydratedRef = useRef(false);
   const isDirtyRef = useRef(false);
@@ -156,6 +199,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     resetLayout({ version: 1, widgets: [], globalFilters: [] });
     setSavedFingerprint(null);
     setSavedName("");
+    setSavedLinkageSnapshot(null);
     setDeleteDashboardOpen(false);
     navigate("/admin/dashboards", { replace: true });
   }, [navigate, resetLayout]);
@@ -177,6 +221,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       }
       setMissing(false);
       setName(data.name);
+      nameRef.current = data.name;
       setSavedName(data.name);
       const source =
         data.layoutJson.version === 1
@@ -192,15 +237,29 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         mode === "edit" ? pixelEnabled : false,
       );
       resetLayout(source);
-      setStyleConfig(source.styleConfig ?? {});
+      const normalizedStyle = normalizeStyleConfigForColorScheme(source.styleConfig ?? {});
+      setStyleConfig(normalizedStyle);
+      styleConfigRef.current = normalizedStyle;
+      const baseWidgets =
+        prepared.layout.version === 1
+          ? prepared.layout.widgets
+          : prepared.layout.widgets.map(pixelWidgetToLayoutWidget);
+      setWidgets(
+        syncChartWidgetsForColorScheme(
+          baseWidgets,
+          normalizedStyle.colorScheme ?? "light",
+        ),
+      );
       setSavedFingerprint(
         dashboardPersistFingerprint(
           prepared.layout,
-          source.styleConfig ?? {},
+          normalizedStyle,
           mode === "edit" ? pixelEnabled : false,
         ),
       );
+      setSavedLinkageSnapshot(linkageSnapshot(baseWidgets, loadedLinkage));
       setLinkage(loadedLinkage);
+      linkageRef.current = loadedLinkage;
       setPixelViewport(undefined);
       clearSelection();
       hydratedRef.current = true;
@@ -248,9 +307,22 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     if (missing || savedFingerprint === null) return false;
     return (
       dashboardPersistFingerprint(layout, styleConfig, pixelEnabled) !== savedFingerprint ||
-      name.trim() !== savedName
+      name.trim() !== savedName ||
+      (savedLinkageSnapshot !== null &&
+        linkageSnapshot(widgets, linkage) !== savedLinkageSnapshot)
     );
-  }, [missing, savedFingerprint, layout, styleConfig, pixelEnabled, name, savedName]);
+  }, [
+    missing,
+    savedFingerprint,
+    savedLinkageSnapshot,
+    layout,
+    styleConfig,
+    pixelEnabled,
+    name,
+    savedName,
+    widgets,
+    linkage,
+  ]);
 
   isDirtyRef.current = isDirty;
 
@@ -525,23 +597,33 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   };
 
   const handleSave = async (): Promise<boolean> => {
-    if (!id || missing || !canSave) return false;
+    if (!id || missing || !canSave || saving) return false;
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && active !== document.body) {
+      active.blur();
+    }
+
+    const currentLayout = layoutRef.current;
+    const currentStyle = styleConfigRef.current;
+    const currentName = nameRef.current;
+    const currentLinkage = linkageRef.current;
+
     setSaving(true);
     setError(null);
     try {
-      const normalizedLayout = buildDashboardLayoutForSave(layout, styleConfig);
+      const normalizedLayout = buildDashboardLayoutForSave(currentLayout, currentStyle);
       const normalized =
         normalizedLayout.version === 1
           ? normalizedLayout.widgets
           : normalizedLayout.widgets.map(pixelWidgetToLayoutWidget);
-      const trimmedName = name.trim() || "未命名看板";
+      const trimmedName = currentName.trim() || "未命名看板";
 
       if (trimmedName !== savedName) {
         await apiFetch(`/api/v1/dashboards/${id}`, {
           method: "PUT",
           body: JSON.stringify({ name: trimmedName }),
         });
-        setName(trimmedName);
+        applyName(trimmedName);
         setSavedName(trimmedName);
       }
 
@@ -552,9 +634,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         }),
       });
 
-      const mergedLinkage = mergeLayoutFilterLinkage(normalized, linkage);
+      const mergedLinkage = mergeLayoutFilterLinkage(normalized, currentLinkage);
+      let nextLinkage = currentLinkage;
       if (mergedLinkage.filters.length > 0) {
-        const savedLinkage = await apiFetch<Linkage>(
+        nextLinkage = await apiFetch<Linkage>(
           `/api/v1/dashboards/${id}/global-filters`,
           {
             method: "PUT",
@@ -566,13 +649,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             }),
           },
         );
-        setLinkage(savedLinkage);
+        applyLinkage(nextLinkage);
       }
 
       resetLayout(normalizedLayout);
       setSavedFingerprint(
-        dashboardPersistFingerprint(normalizedLayout, styleConfig, pixelEnabled),
+        dashboardPersistFingerprint(normalizedLayout, currentStyle, pixelEnabled),
       );
+      setSavedLinkageSnapshot(linkageSnapshot(normalized, nextLinkage));
+      toast.success("看板已保存");
       return true;
     } catch (err) {
       if (isDashboardNotFound(err)) {
@@ -581,6 +666,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         return false;
       }
       setError(mapApiError(err));
+      toast.error(mapApiError(err));
       return false;
     } finally {
       setSaving(false);
@@ -685,7 +771,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const pageTitle =
     mode === "edit" && !missing && canSave ? (
-      <DashboardInlineTitle value={name} onChange={setName} />
+      <DashboardInlineTitle value={name} onChange={applyName} />
     ) : (
       name || "Dashboard"
     );
@@ -933,10 +1019,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 widgets={widgets}
                 linkage={linkage}
                 effectiveLinkage={effectiveLinkage}
-                onLinkageChange={setLinkage}
+                onLinkageChange={applyLinkage}
                 linkageDefaultOpen={linkagePanelOpen}
                 styleConfig={styleConfig}
-                onStyleChange={setStyleConfig}
+                onStyleChange={applyStyleConfig}
+                onWidgetsChange={setWidgets}
                 onSave={() => void handleSave()}
                 isPixelLayout={layout.version === 2}
               />

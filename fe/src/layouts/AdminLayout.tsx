@@ -13,7 +13,7 @@ import { UserDropdown } from "@/components/layout/user-dropdown";
 import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
 import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
-import { isAccountManagementPath } from "@/lib/workspace";
+import { isDetachedFromWorkspacePath } from "@/lib/workspace";
 import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { isAdminListFillRoute } from "@/lib/admin-layout-routes";
 import { useAuth } from "@/context/auth-context";
@@ -26,7 +26,7 @@ function AdminLayoutContent() {
   const sessionUser = authUser
     ? sessionUserFromMe(authUser)
     : sessionUserFromMe({ username: "用户", roles: ["viewer"], permissions: [], isRoot: false });
-  const isAccountArea = isAccountManagementPath(location.pathname);
+  const isDetachedArea = isDetachedFromWorkspacePath(location.pathname);
   const navSections = useMemo(
     () => resolveSidebarSections(sessionUser, location.pathname),
     [sessionUser, location.pathname],
@@ -44,8 +44,14 @@ function AdminLayoutContent() {
         sections={navSections}
         logo={<VitalSpanLogo />}
         collapsedLogo={<VitalSpanLogo variant="icon" />}
-        leading={isAccountArea ? <AccountSidebarBack /> : undefined}
-        navAriaLabel={isAccountArea ? "账号导航" : "管理端导航"}
+        leading={isDetachedArea ? <AccountSidebarBack /> : undefined}
+        navAriaLabel={
+          isDetachedArea
+            ? location.pathname.startsWith("/admin/account/")
+              ? "账号导航"
+              : "后台管理导航"
+            : "管理端导航"
+        }
       />
       <Backdrop />
       <div
