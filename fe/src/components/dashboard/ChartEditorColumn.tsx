@@ -24,14 +24,12 @@ import { WidgetInspectorDelete } from "./widget-inspector-delete";
 
 type ChartEditorColumnProps = {
   onDelete?: () => void;
-  onOpenLinkage?: () => void;
   onDataRefresh?: () => void;
   className?: string;
 };
 
 export function ChartEditorColumn({
   onDelete,
-  onOpenLinkage,
   onDataRefresh,
   className,
 }: ChartEditorColumnProps) {
@@ -147,7 +145,7 @@ export function ChartEditorColumn({
           </div>
         }
         style={<ChartStylePanel />}
-        advanced={<ChartAdvancedPanel onOpenLinkage={onOpenLinkage} />}
+        advanced={<ChartAdvancedPanel />}
       />
 
       {onDelete ? (

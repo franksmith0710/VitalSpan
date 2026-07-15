@@ -11,7 +11,6 @@ import { WidgetEditRailLayout } from "./WidgetEditRailLayout";
 
 type ChartEditRailChromeProps = {
   onDelete?: () => void;
-  onOpenLinkage?: () => void;
   onDataRefresh?: () => void;
   className?: string;
 };
@@ -24,7 +23,6 @@ export type ChartEditRailProps = ChartEditRailChromeProps & {
 
 function ChartEditRailInner({
   onDelete,
-  onOpenLinkage,
   onDataRefresh,
   className,
 }: ChartEditRailChromeProps) {
@@ -59,7 +57,6 @@ function ChartEditRailInner({
       left={
         <ChartEditorColumn
           onDelete={onDelete}
-          onOpenLinkage={onOpenLinkage}
           onDataRefresh={onDataRefresh}
           className="border-r border-gray-200 dark:border-gray-800"
         />

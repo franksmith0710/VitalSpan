@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ChartDeSliderField, DeAttrSliderField, DeProgressSlider } from "./deAttrSlider";
+import { ChartDeSliderField, DashboardConfigGridSlider, DashboardConfigSlider, DeAttrSliderField, DeProgressSlider, DE_SLIDER_WIDTH_NARROW, DE_SLIDER_WIDTH_WIDE } from "./deAttrSlider";
 
 afterEach(cleanup);
 
@@ -22,6 +22,8 @@ describe("ChartDeSliderField", () => {
     expect(screen.getByText("80%")).toBeInTheDocument();
     const slider = screen.getByRole("slider", { name: "不透明度 %" });
     expect(slider).toHaveValue("80");
+    expect(screen.getByTestId("de-progress-slider")).toHaveClass(DE_SLIDER_WIDTH_NARROW);
+    expect(screen.getByTestId("de-progress-slider")).not.toHaveClass("w-full");
 
     fireEvent.change(slider, { target: { value: "40" } });
     expect(onChange).toHaveBeenCalledWith(40);
@@ -82,6 +84,63 @@ describe("ChartDeSliderField", () => {
 
     expect(screen.getByText("18px")).toBeInTheDocument();
     expect(screen.getByRole("slider", { name: "字号" })).toHaveValue("18");
+  });
+});
+
+describe("DashboardConfigSlider", () => {
+  it("uses inline label row with fixed-width track", () => {
+    render(
+      <DashboardConfigSlider
+        label="背景模糊"
+        value={12}
+        min={0}
+        max={48}
+        unit="px"
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("背景模糊")).toBeInTheDocument();
+    expect(screen.getByText("12px")).toBeInTheDocument();
+    expect(screen.getByTestId("de-progress-slider")).toHaveClass(DE_SLIDER_WIDTH_WIDE);
+    expect(screen.getByTestId("de-progress-slider")).not.toHaveClass("w-full");
+  });
+
+  it("uses narrow track in compact popover density", () => {
+    render(
+      <DashboardConfigSlider
+        compact
+        label="字间距"
+        value={2}
+        min={0}
+        max={8}
+        unit="px"
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("de-progress-slider")).toHaveClass(DE_SLIDER_WIDTH_NARROW);
+  });
+});
+
+describe("DashboardConfigGridSlider", () => {
+  it("uses stacked layout in 2-col cells to avoid label overlap", () => {
+    render(
+      <div className="w-[180px]">
+        <DashboardConfigGridSlider
+          label="左上"
+          value={8}
+          min={0}
+          max={64}
+          unit="px"
+          onChange={vi.fn()}
+        />
+      </div>,
+    );
+
+    expect(screen.getByText("左上")).toBeInTheDocument();
+    expect(screen.getByText("8px")).toBeInTheDocument();
+    expect(screen.getByTestId("de-progress-slider")).toHaveClass("w-full");
   });
 });
 

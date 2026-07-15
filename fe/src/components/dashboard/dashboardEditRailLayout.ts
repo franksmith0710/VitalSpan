@@ -5,8 +5,8 @@ export const DASHBOARD_EDIT_RAIL_COLUMN_CLASS = "w-[216px]";
 export const DASHBOARD_EDIT_RAIL_SHELL_CLASS =
   "w-[432px] max-w-[min(100%,432px)] shrink-0";
 
-/** 432px 看板配置轨：轻量贴边留白，内容全宽利用 */
+/** 432px 看板配置轨：轻量贴边留白，内容全宽利用；隐藏滚动条避免与画布滚动条并排 */
 export const DASHBOARD_CONFIG_RAIL_SCROLL_CLASS =
-  "dashboard-config-rail min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-1";
+  "dashboard-config-rail no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-1";
 
 export const DASHBOARD_CONFIG_RAIL_CONTENT_CLASS = "w-full";

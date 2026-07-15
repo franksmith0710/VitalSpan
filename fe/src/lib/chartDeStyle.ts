@@ -9,14 +9,12 @@ import type {
 } from "@/components/dashboard/dashboardStyleConfig";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import {
-  coerceWidgetSurfaceBackground,
   mergeTitleStyle,
   mergeWidgetShellStyle,
-  resolveBoxPadding,
-  resolveBoxRadius,
 } from "@/components/dashboard/dashboardStyleConfig";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "@/components/dashboard/dashboardThemeTokens";
-import { applyBackgroundOpacityOnly, type WidgetBackgroundPresentation } from "@/lib/widgetSurfaceBackground";
+import type { WidgetBackgroundPresentation } from "@/lib/widgetSurfaceBackground";
+import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
 
 export type ChartLegendStyle = {
   show?: boolean;
@@ -299,24 +297,7 @@ export function widgetStyleToContentCss(
   bg: WidgetStyleConfig | undefined,
   colorScheme: ColorScheme = "light",
 ): WidgetBackgroundPresentation {
-  if (!bg) return { surface: {}, backgroundLayer: null };
-  const style: CSSProperties = {};
-  const coerced = coerceWidgetSurfaceBackground(bg.background, colorScheme);
-  if (coerced) style.background = coerced;
-  if (bg.backgroundImage) {
-    style.backgroundImage = `url(${bg.backgroundImage})`;
-    style.backgroundSize = "cover";
-    style.backgroundPosition = "center";
-  }
-  if (bg.opacity != null) style.opacity = bg.opacity;
-  if (bg.backdropBlur != null && bg.backdropBlur > 0) {
-    style.backdropFilter = `blur(${bg.backdropBlur}px)`;
-  }
-  const padding = resolveBoxPadding(bg);
-  if (padding) style.padding = padding;
-  const radius = resolveBoxRadius(bg);
-  if (radius) style.borderRadius = radius;
-  return applyBackgroundOpacityOnly(style);
+  return buildWidgetBackgroundPresentation(bg, colorScheme, { respectBackgroundShow: true });
 }
 
 /** 看板 widgetStyle 外壳 + 图表 deStyle 内区（背景/内边距/边框） */
@@ -344,6 +325,7 @@ export function resolveChartContentShellStyle(
     outer,
     inner,
     innerBackgroundLayer: innerPresentation.backgroundLayer,
+    innerFrameLayer: innerPresentation.frameLayer,
   };
 }
 
@@ -352,6 +334,7 @@ export function mergeShapeInnerPresentation(shell: {
   outer: ReturnType<typeof mergeWidgetShellStyle>;
   inner: CSSProperties;
   innerBackgroundLayer: CSSProperties | null;
+  innerFrameLayer?: CSSProperties | null;
 }): { style: CSSProperties; backgroundLayers: Array<CSSProperties | null> } {
   const merged: CSSProperties = { ...shell.outer.style, ...shell.inner };
   const hasBackground = Boolean(
@@ -362,7 +345,12 @@ export function mergeShapeInnerPresentation(shell: {
   }
   return {
     style: merged,
-    backgroundLayers: [shell.outer.backgroundLayer, shell.innerBackgroundLayer],
+    backgroundLayers: [
+      shell.outer.backgroundLayer,
+      shell.outer.frameLayer ?? null,
+      shell.innerBackgroundLayer,
+      shell.innerFrameLayer ?? null,
+    ],
   };
 }
 

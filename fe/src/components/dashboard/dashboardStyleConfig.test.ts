@@ -120,7 +120,7 @@ describe("dashboardStyleConfig theme vs background", () => {
       }),
     ).toEqual({
       backgroundColor: "#ffffff",
-      backgroundImage: "url(https://example.com/bg.png)",
+      backgroundImage: 'url("https://example.com/bg.png")',
       backgroundSize: "cover",
       backgroundPosition: "center",
     });

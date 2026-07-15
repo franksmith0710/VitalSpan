@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { applyBackgroundOpacityOnly } from "@/lib/widgetSurfaceBackground";
+import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
 import type { DashboardThemeVariants } from "./dashboardThemeVariants";
 import { getDashboardThemeTokens } from "./dashboardThemeTokens";
 import { componentGapShellStyle } from "./componentGapRuntime";
@@ -43,6 +43,14 @@ export type SpacingMode = "unified" | "individual";
 export type WidgetStyleConfig = {
   background?: string;
   backgroundImage?: string;
+  /** DE 背景区总开关 */
+  backgroundShow?: boolean;
+  /** 图片 | 装饰边框 */
+  backgroundMode?: "image" | "frame";
+  /** 装饰边框预设 frame-1 … frame-9 */
+  framePresetId?: string;
+  /** 装饰边框着色 */
+  frameColor?: string;
   opacity?: number;
   backdropBlur?: number;
   borderRadius?: number;
@@ -60,7 +68,15 @@ export type WidgetStyleConfig = {
   borderColor?: string;
   borderWidth?: number;
   borderStyle?: "solid" | "dashed" | "dotted";
+  /** 默认 true；false 时不绘制组件外框 */
+  borderEnabled?: boolean;
 };
+
+export const WIDGET_BORDER_STYLES = [
+  { value: "solid", label: "实线" },
+  { value: "dashed", label: "虚线" },
+  { value: "dotted", label: "点线" },
+] as const;
 
 export type DialogStyleConfig = {
   background?: string;
@@ -251,30 +267,32 @@ export function resolveDashboardRefreshPreset(sec?: number): string {
   return hit?.value ?? "custom";
 }
 
-const CANVAS_GRID_SVG = encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path fill="none" stroke="%23cbd5e1" stroke-width="0.5" d="M24 0H0v24"/></svg>',
-);
-const CANVAS_DOTS_SVG = encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="1" cy="1" r="1" fill="%23cbd5e1"/></svg>',
-);
-const CANVAS_GRID_SVG_DARK = encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path fill="none" stroke="%2394a3b8" stroke-width="0.5" d="M24 0H0v24"/></svg>',
-);
-const CANVAS_DOTS_SVG_DARK = encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="1" cy="1" r="1.25" fill="%2394a3b8"/></svg>',
-);
-const CANVAS_CROSS_SVG = encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M0 10h20M10 0v20" fill="none" stroke="%23e2e8f0" stroke-width="0.5"/></svg>',
-);
-const CANVAS_CROSS_SVG_DARK = encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M0 10h20M10 0v20" fill="none" stroke="%23475569" stroke-width="0.5"/></svg>',
-);
-const CANVAS_DIAGONAL_SVG = encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><path d="M-1 1l2-2M0 10L10 0M9 11l2-2" fill="none" stroke="%23cbd5e1" stroke-width="0.75"/></svg>',
-);
-const CANVAS_DIAGONAL_SVG_DARK = encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><path d="M-1 1l2-2M0 10L10 0M9 11l2-2" fill="none" stroke="%2394a3b8" stroke-width="0.75"/></svg>',
-);
+import {
+  decorTileBackgroundLayers,
+  decorTileDataUrl,
+  decorTileSize,
+  isDecorPresetId,
+  type DecorPresetId,
+} from "./canvasDecorPatterns";
+
+function tileDecorPresetEntry(
+  id: DecorPresetId,
+  label: string,
+  underlay: string,
+): CanvasDecorPreset {
+  const image = decorTileDataUrl(id, "light", "canvas");
+  const tileSize = decorTileSize(id, "canvas");
+  return {
+    id,
+    label,
+    image,
+    tileSize,
+    previewStyle: {
+      backgroundColor: underlay,
+      ...decorTileBackgroundLayers(id, "light", "canvas"),
+    },
+  };
+}
 
 const DECOR_GRADIENT_BY_SCHEME: Record<string, { light: string; dark: string }> = {
   "gradient-soft": {
@@ -313,54 +331,10 @@ export const CANVAS_BG_DECOR_PRESETS: CanvasDecorPreset[] = [
     label: "无装饰",
     previewStyle: { backgroundColor: "#ffffff" },
   },
-  {
-    id: "dots",
-    label: "点阵",
-    image: `data:image/svg+xml,${CANVAS_DOTS_SVG}`,
-    tileSize: { width: 16, height: 16 },
-    previewStyle: {
-      backgroundColor: "#f8fafc",
-      backgroundImage: `url("data:image/svg+xml,${CANVAS_DOTS_SVG}")`,
-      backgroundSize: "16px 16px",
-      backgroundRepeat: "repeat",
-    },
-  },
-  {
-    id: "grid",
-    label: "细网格",
-    image: `data:image/svg+xml,${CANVAS_GRID_SVG}`,
-    tileSize: { width: 24, height: 24 },
-    previewStyle: {
-      backgroundColor: "#ffffff",
-      backgroundImage: `url("data:image/svg+xml,${CANVAS_GRID_SVG}")`,
-      backgroundSize: "24px 24px",
-      backgroundRepeat: "repeat",
-    },
-  },
-  {
-    id: "cross",
-    label: "十字线",
-    image: `data:image/svg+xml,${CANVAS_CROSS_SVG}`,
-    tileSize: { width: 20, height: 20 },
-    previewStyle: {
-      backgroundColor: "#f8fafc",
-      backgroundImage: `url("data:image/svg+xml,${CANVAS_CROSS_SVG}")`,
-      backgroundSize: "20px 20px",
-      backgroundRepeat: "repeat",
-    },
-  },
-  {
-    id: "diagonal",
-    label: "斜纹",
-    image: `data:image/svg+xml,${CANVAS_DIAGONAL_SVG}`,
-    tileSize: { width: 10, height: 10 },
-    previewStyle: {
-      backgroundColor: "#ffffff",
-      backgroundImage: `url("data:image/svg+xml,${CANVAS_DIAGONAL_SVG}")`,
-      backgroundSize: "10px 10px",
-      backgroundRepeat: "repeat",
-    },
-  },
+  tileDecorPresetEntry("dots", "点阵", "#f8fafc"),
+  tileDecorPresetEntry("grid", "细网格", "#ffffff"),
+  tileDecorPresetEntry("cross", "十字线", "#f8fafc"),
+  tileDecorPresetEntry("diagonal", "斜纹", "#ffffff"),
 ];
 
 /** 面板可选：仅平铺纹理，不改画布底色（渐变请用「画布底色」） */
@@ -517,6 +491,20 @@ export function effectiveWidgetShellBackground(
   return coerceWidgetSurfaceBackground(config.widgetStyle?.background, config.colorScheme ?? "light");
 }
 
+/** 用于图表/表格主题推断的组件实底色（hex / gradient 字符串） */
+export function resolveWidgetShellPaintColor(
+  config: DashboardStyleConfig | undefined,
+): string | undefined {
+  if (!config) return undefined;
+  const scheme = config.colorScheme ?? "light";
+  const tokens = getDashboardThemeTokens(scheme);
+  const custom = config.widgetStyle?.background?.trim();
+  if (custom && !isThemeDefaultShellBackground(custom, scheme)) {
+    return coerceWidgetSurfaceBackground(custom, scheme) ?? tokens.widgetShell;
+  }
+  return effectiveWidgetShellBackground(config) ?? tokens.widgetShell;
+}
+
 function isLegacyDecorGradient(bg: string | undefined): boolean {
   const trimmed = bg?.trim();
   if (!trimmed) return false;
@@ -581,15 +569,8 @@ export function defaultSolidArtboardColor(scheme: ColorScheme = "light"): string
 }
 
 function decorTileImageForScheme(presetId: string, scheme: ColorScheme): string | undefined {
-  const preset = CANVAS_BG_DECOR_PRESETS.find((item) => item.id === presetId);
-  if (!preset?.image) return undefined;
-  if (scheme === "dark") {
-    if (presetId === "dots") return `data:image/svg+xml,${CANVAS_DOTS_SVG_DARK}`;
-    if (presetId === "grid") return `data:image/svg+xml,${CANVAS_GRID_SVG_DARK}`;
-    if (presetId === "cross") return `data:image/svg+xml,${CANVAS_CROSS_SVG_DARK}`;
-    if (presetId === "diagonal") return `data:image/svg+xml,${CANVAS_DIAGONAL_SVG_DARK}`;
-  }
-  return preset.image;
+  if (!isDecorPresetId(presetId)) return undefined;
+  return decorTileDataUrl(presetId, scheme, "canvas");
 }
 
 /** 面板 / 画布统一：装饰预设 → styleConfig 补丁（仅平铺纹理，不覆盖用户底色） */
@@ -637,17 +618,12 @@ export function decorPresetThumbStyle(
   if (presetId === "none") {
     return { backgroundColor: fill };
   }
-  const preset = CANVAS_BG_DECOR_PRESETS.find((item) => item.id === presetId);
-  if (!preset?.tileSize) {
+  if (presetId === "none" || !isDecorPresetId(presetId)) {
     return { backgroundColor: fill };
   }
-  const tileUrl = decorTileImageForScheme(presetId, scheme) ?? preset.image;
-  const { width, height } = preset.tileSize;
   return {
     backgroundColor: fill,
-    backgroundImage: `url(${tileUrl})`,
-    backgroundSize: `${width}px ${height}px`,
-    backgroundRepeat: "repeat",
+    ...decorTileBackgroundLayers(presetId, scheme, "thumb"),
   };
 }
 
@@ -675,17 +651,11 @@ function resolveDecorImageStyle(
   const preset = presetId
     ? CANVAS_BG_DECOR_PRESETS.find((item) => item.id === presetId)
     : CANVAS_BG_DECOR_PRESETS.find((item) => item.image === image);
-  if (preset?.tileSize) {
-    const tileUrl = decorTileImageForScheme(preset.id, scheme) ?? image;
-    const { width, height } = preset.tileSize;
-    return {
-      backgroundImage: `url(${tileUrl})`,
-      backgroundSize: `${width}px ${height}px`,
-      backgroundRepeat: "repeat",
-    };
+  if (preset?.tileSize && isDecorPresetId(preset.id)) {
+    return decorTileBackgroundLayers(preset.id, scheme, "canvas");
   }
   return {
-    backgroundImage: `url(${image})`,
+    backgroundImage: `url("${image}")`,
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
@@ -864,37 +834,31 @@ export function resolveBoxRadius(global: WidgetStyleConfig | undefined): string 
 export function mergeWidgetShellStyle(
   global: WidgetStyleConfig | undefined,
   colorScheme: ColorScheme = "light",
-): { className: string; style: CSSProperties; backgroundLayer: CSSProperties | null } {
-  const style: CSSProperties = {};
-  const coerced = coerceWidgetSurfaceBackground(global?.background, colorScheme);
-
-  if (isThemeDefaultShellBackground(global?.background, colorScheme)) {
-    style.backgroundColor = "var(--dashboard-widget-surface)";
-  } else if (coerced) {
-    style.background = coerced;
-  } else {
-    style.backgroundColor = "var(--dashboard-widget-surface)";
+): {
+  className: string;
+  style: CSSProperties;
+  backgroundLayer: CSSProperties | null;
+  frameLayer: CSSProperties | null;
+} {
+  const presentation = buildWidgetBackgroundPresentation(global, colorScheme, {
+    respectBackgroundShow: true,
+    applyThemeDefaultSurface: true,
+  });
+  const style: CSSProperties = { ...presentation.surface };
+  const borderEnabled = global?.borderEnabled !== false;
+  const borderWidth = global?.borderWidth ?? 1;
+  if (borderEnabled && borderWidth > 0) {
+    style.borderStyle = global?.borderStyle ?? "solid";
+    style.borderWidth = borderWidth;
+    style.borderColor =
+      global?.borderColor ?? "var(--dashboard-widget-border, var(--color-gray-200))";
   }
-  if (global?.backgroundImage) {
-    style.backgroundImage = `url(${global.backgroundImage})`;
-    style.backgroundSize = "cover";
-    style.backgroundPosition = "center";
-  }
-  if (global?.opacity != null) style.opacity = global.opacity;
-  if (global?.backdropBlur != null && global.backdropBlur > 0) {
-    style.backdropFilter = `blur(${global.backdropBlur}px)`;
-  }
-  const padding = resolveBoxPadding(global);
-  if (padding) style.padding = padding;
-  const radius = resolveBoxRadius(global);
-  if (radius) style.borderRadius = radius;
-  if (global?.borderColor || global?.borderWidth) {
-    style.borderStyle = global.borderStyle ?? "solid";
-    style.borderColor = global.borderColor ?? "var(--dashboard-widget-border, var(--color-gray-200))";
-    style.borderWidth = global.borderWidth ?? 1;
-  }
-  const presentation = applyBackgroundOpacityOnly(style);
-  return { className: "", style: presentation.surface, backgroundLayer: presentation.backgroundLayer };
+  return {
+    className: "",
+    style,
+    backgroundLayer: presentation.backgroundLayer,
+    frameLayer: presentation.frameLayer,
+  };
 }
 
 export function formatMetricValue(

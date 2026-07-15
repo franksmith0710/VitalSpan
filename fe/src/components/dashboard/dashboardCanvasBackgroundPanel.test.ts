@@ -82,7 +82,7 @@ describe("canvasBackgroundStyle decor tiles", () => {
       canvasBackgroundStyle({ canvasBackgroundImage: dots?.image, colorScheme: "light" }),
     ).toEqual({
       backgroundColor: "#f8fafc",
-      backgroundImage: `url(${dots?.image})`,
+      backgroundImage: expect.stringMatching(/^url\("data:image\/svg\+xml,/),
       backgroundSize: "16px 16px",
       backgroundRepeat: "repeat",
     });

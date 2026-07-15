@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/button";
 import { dwTableCell, dwTableMeta } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
+import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
@@ -18,12 +19,20 @@ type EmbeddedChartTableProps = {
   onPageChange: (page: number) => void;
   panel?: boolean;
   tableStyle?: ChartDeTableStyle;
+  themeVars?: Record<string, string>;
+  surfaceScheme?: ColorScheme;
   valueFormat?: NumberFormatConfig;
   drillField?: string;
   onDrillCellClick?: (field: string, value: string) => void;
 };
 
-function scrollbarStyle(color?: string): CSSProperties | undefined {
+function scrollbarStyle(
+  color: string | undefined,
+  themeVars?: Record<string, string>,
+): CSSProperties | undefined {
+  if (themeVars && Object.keys(themeVars).length > 0) {
+    return themeVars as CSSProperties;
+  }
   if (!color) return undefined;
   return {
     ["--dashboard-scroll-thumb" as string]: color,
@@ -43,6 +52,8 @@ export function EmbeddedChartTable({
   onPageChange,
   panel = false,
   tableStyle = {},
+  themeVars,
+  surfaceScheme = "light",
   valueFormat,
   drillField,
   onDrillCellClick,
@@ -81,11 +92,15 @@ export function EmbeddedChartTable({
     dwTableCell,
     wordWrap ? "whitespace-normal break-words" : "truncate",
   );
+  const rowHoverClass =
+    surfaceScheme === "dark" ? "hover:bg-white/[0.04]" : "hover:bg-black/[0.03]";
+  const mergedThemeStyle = (themeVars ?? {}) as CSSProperties;
 
   return (
     <div
       className={cn("flex min-h-0 w-full min-w-0 flex-col", panel ? undefined : "h-full")}
       style={{
+        ...mergedThemeStyle,
         ...(panelBackground ? { backgroundColor: panelBackground } : null),
         ...(borderColor ? { border: `1px solid ${borderColor}`, borderRadius: 4 } : null),
       }}
@@ -95,7 +110,7 @@ export function EmbeddedChartTable({
           "dashboard-scroll min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain",
           panel && "overflow-x-only",
         )}
-        style={scrollbarStyle(tableStyle.scrollbarColor)}
+        style={scrollbarStyle(tableStyle.scrollbarColor, themeVars)}
       >
         <table
           className={cn(
@@ -131,7 +146,7 @@ export function EmbeddedChartTable({
                 key={i}
                 className={cn(
                   "border-t border-[var(--dashboard-table-border,#f2f4f7)]",
-                  rowHover && "hover:bg-black/[0.03] dark:hover:bg-white/[0.04]",
+                  rowHover && rowHoverClass,
                 )}
               >
                 {displayCols.map((c) => {

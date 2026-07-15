@@ -187,9 +187,39 @@ describe("mergeShapeInnerPresentation", () => {
       outer,
       inner: surface,
       innerBackgroundLayer: null,
+      innerFrameLayer: null,
     });
     expect(merged.style.padding).toBe("12px");
     expect(merged.style.borderRadius).toBe("8px");
     expect(merged.style.background).toBe("#f5f5f5");
+  });
+
+  it("applies global border color onto shape-inner", () => {
+    const outer = mergeWidgetShellStyle({ borderColor: "#ff0000" }, "light");
+    const merged = mergeShapeInnerPresentation({
+      outer,
+      inner: {},
+      innerBackgroundLayer: null,
+      innerFrameLayer: null,
+    });
+    expect(merged.style.borderColor).toBe("#ff0000");
+    expect(merged.style.borderWidth).toBe(1);
+    expect(merged.style.borderStyle).toBe("solid");
+  });
+
+  it("includes decorative frame overlay in background layers", () => {
+    const { frameLayer } = widgetStyleToContentCss({
+      backgroundShow: true,
+      backgroundMode: "frame",
+      framePresetId: "frame-1",
+    });
+    const merged = mergeShapeInnerPresentation({
+      outer: mergeWidgetShellStyle(undefined, "light"),
+      inner: {},
+      innerBackgroundLayer: null,
+      innerFrameLayer: frameLayer,
+    });
+    expect(merged.backgroundLayers).toHaveLength(4);
+    expect(merged.backgroundLayers[3]?.borderImageSource).toContain("data:image/svg+xml");
   });
 });

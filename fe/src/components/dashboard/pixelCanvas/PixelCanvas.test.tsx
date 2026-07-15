@@ -176,7 +176,7 @@ describe("PixelCanvas", () => {
     });
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 200, y: 130 });
+    expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 200, y: 140 });
   });
 
   it("clamps move to canvas bounds on document pointerup", () => {
@@ -237,7 +237,7 @@ describe("PixelCanvas", () => {
     fireEvent.pointerUp(document, { pointerId: 10, clientX: 60, clientY: 40 });
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 150, y: 110 });
+    expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 160, y: 120 });
   });
 
   it("does not start dragging from widget content", () => {

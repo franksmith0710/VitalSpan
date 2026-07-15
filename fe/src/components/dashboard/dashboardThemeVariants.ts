@@ -25,7 +25,10 @@ export type ThemeVariantFields = {
   canvasBackgroundCustom?: boolean;
   canvasDecorPresetId?: string;
   themeAccent?: string;
-  widgetStyle?: Pick<WidgetStyleConfig, "background" | "borderColor" | "opacity">;
+  widgetStyle?: Pick<
+    WidgetStyleConfig,
+    "background" | "borderColor" | "borderWidth" | "borderStyle" | "borderEnabled" | "opacity"
+  >;
   titleStyle?: Pick<TitleStyleConfig, "color">;
   dialogStyle?: DialogStyleConfig;
   filterChromeStyle?: Pick<FilterChromeStyleConfig, "titleColor">;
@@ -85,6 +88,9 @@ export function extractThemeVariant(config: DashboardStyleConfig): ThemeVariantF
       ? {
           background: ws.background,
           borderColor: ws.borderColor,
+          borderWidth: ws.borderWidth,
+          borderStyle: ws.borderStyle,
+          borderEnabled: ws.borderEnabled,
           opacity: ws.opacity,
         }
       : undefined,

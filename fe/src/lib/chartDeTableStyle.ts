@@ -7,6 +7,18 @@ export type TableColumnWidthMode = "auto" | "fixed" | "custom";
 export type ChartDeTableStyle = {
   /** 0–100，组件整体不透明度 */
   opacity?: number;
+  /** 表头背景（对标 DE 表格配色） */
+  headerBg?: string;
+  /** 表头文字色 */
+  headerFg?: string;
+  /** 单元格背景 */
+  bodyBg?: string;
+  /** 单元格文字色 */
+  bodyFg?: string;
+  /** 汇总行背景 */
+  summaryBg?: string;
+  /** 汇总行文字色 */
+  summaryFg?: string;
   scrollbarColor?: string;
   borderColor?: string;
   paginationMode?: TablePaginationMode;

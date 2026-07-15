@@ -51,7 +51,7 @@ type ChartPalettePickerProps = {
 
 type PaletteRow =
   | ChartPalettePreset
-  | { id: "__inherit__"; label: string; hint: string; colors: readonly [] };
+  | { id: "__inherit__"; label: string; colors: readonly [] };
 
 function isSelected(
   presetId: string,
@@ -102,7 +102,6 @@ function InspectorPaletteList({
       {rows.map((row) => {
         const selected = isSelected(row.id, value, showInherit);
         const inherit = row.id === "__inherit__";
-        const optionLabel = inherit ? `${row.label}，${row.hint}` : row.label;
 
         return (
           <button
@@ -110,8 +109,7 @@ function InspectorPaletteList({
             type="button"
             role="option"
             aria-selected={selected}
-            aria-label={optionLabel}
-            title={row.hint}
+            aria-label={row.label}
             className={cn(
               "flex w-full items-center gap-2.5 p-2",
               paletteOptionClass(selected),
@@ -133,11 +131,6 @@ function InspectorPaletteList({
               <span className={cn("block truncate text-theme-xs leading-snug", paletteLabelClass(selected))}>
                 {row.label}
               </span>
-              {inherit ? (
-                <span className="mt-0.5 block truncate text-[10px] leading-tight text-gray-400 dark:text-gray-500">
-                  {row.hint}
-                </span>
-              ) : null}
             </div>
             {selected ? <Check className="size-3.5 shrink-0 text-brand-500" aria-hidden /> : null}
           </button>
@@ -167,7 +160,6 @@ function PaletteCardGrid({
       {rows.map((row) => {
         const selected = isSelected(row.id, value, showInherit);
         const inherit = row.id === "__inherit__";
-        const optionLabel = inherit ? `${row.label}，${row.hint}` : row.label;
 
         return (
           <button
@@ -175,8 +167,7 @@ function PaletteCardGrid({
             type="button"
             role="option"
             aria-selected={selected}
-            aria-label={optionLabel}
-            title={row.hint}
+            aria-label={row.label}
             className={cn(
               "flex min-w-0 flex-col gap-1.5 p-2",
               inherit && "col-span-full",
@@ -217,7 +208,6 @@ export function ChartPalettePicker({
         {
           id: "__inherit__",
           label: inheritLabel,
-          hint: "继承仪表板全局配色",
           colors: [],
         },
         ...CHART_PALETTE_CATALOG,

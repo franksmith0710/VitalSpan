@@ -72,7 +72,6 @@ export type DashboardEditWorkspaceProps = {
   onPaletteInsert: (type: PaletteInsertType) => void;
   onOpenReuse?: () => void;
   onOpenDashboardStyle?: () => void;
-  onOpenLinkage?: () => void;
   canvas: ReactNode;
   chartRail: ReactNode;
   widgetCount?: number;
@@ -96,7 +95,6 @@ export function DashboardEditWorkspace({
   onPaletteInsert,
   onOpenReuse,
   onOpenDashboardStyle,
-  onOpenLinkage,
   canvas,
   chartRail,
   widgetCount = 0,
@@ -125,7 +123,6 @@ export function DashboardEditWorkspace({
             onInsert={onPaletteInsert}
             onOpenReuse={onOpenReuse}
             onOpenDashboardStyle={onOpenDashboardStyle}
-            onOpenLinkage={onOpenLinkage}
           />
         }
         hint={

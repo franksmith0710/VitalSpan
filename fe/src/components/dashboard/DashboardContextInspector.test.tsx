@@ -3,8 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DashboardContextInspector } from "./DashboardContextInspector";
 
-const linkage = { filters: [], linkageRules: [], refreshMode: "eager" as const };
-
 afterEach(() => {
   cleanup();
 });
@@ -16,13 +14,8 @@ describe("DashboardContextInspector", () => {
 
     render(
       <DashboardContextInspector
-        dashboardId="d1"
         widgetCount={2}
-        filterWidgetCount={0}
         widgets={[]}
-        linkage={linkage}
-        effectiveLinkage={linkage}
-        onLinkageChange={vi.fn()}
         styleConfig={{ gapPreset: "md", colorScheme: "light" }}
         onStyleChange={onStyleChange}
         embedded
@@ -35,10 +28,8 @@ describe("DashboardContextInspector", () => {
     expect(screen.getByText("仪表板风格")).toBeInTheDocument();
     expect(screen.getByTestId("dashboard-overall-config")).toBeInTheDocument();
     expect(screen.getByText("整体配置")).toBeInTheDocument();
-    expect(screen.getByText("筛选联动")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /筛选联动/ }));
-    expect(screen.getByText(/暂无筛选器/)).toBeInTheDocument();
+    expect(screen.queryByText("筛选联动")).not.toBeInTheDocument();
+    expect(screen.queryByText("高级样式设置")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "深色主题" }));
     expect(onStyleChange).toHaveBeenCalledWith(
@@ -54,13 +45,8 @@ describe("DashboardContextInspector", () => {
     const onStyleChange = vi.fn();
     render(
       <DashboardContextInspector
-        dashboardId="d1"
         widgetCount={1}
-        filterWidgetCount={0}
         widgets={[]}
-        linkage={linkage}
-        effectiveLinkage={linkage}
-        onLinkageChange={vi.fn()}
         styleConfig={{ scaleMode: "canvas" }}
         onStyleChange={onStyleChange}
         embedded
@@ -80,13 +66,8 @@ describe("DashboardContextInspector", () => {
 
     render(
       <DashboardContextInspector
-        dashboardId="d1"
         widgetCount={1}
-        filterWidgetCount={0}
         widgets={[]}
-        linkage={linkage}
-        effectiveLinkage={linkage}
-        onLinkageChange={vi.fn()}
         styleConfig={{ gapPreset: "md", pixelGutter: 5, colorScheme: "light" }}
         onStyleChange={onStyleChange}
         embedded
@@ -105,13 +86,8 @@ describe("DashboardContextInspector", () => {
     onStyleChange.mockClear();
     render(
       <DashboardContextInspector
-        dashboardId="d2"
         widgetCount={1}
-        filterWidgetCount={0}
         widgets={[]}
-        linkage={linkage}
-        effectiveLinkage={linkage}
-        onLinkageChange={vi.fn()}
         styleConfig={{ gapPreset: "custom", pixelGutter: 3, colorScheme: "light" }}
         onStyleChange={onStyleChange}
         embedded
@@ -153,13 +129,8 @@ describe("DashboardContextInspector", () => {
     const user = userEvent.setup();
     render(
       <DashboardContextInspector
-        dashboardId="d1"
         widgetCount={1}
-        filterWidgetCount={0}
         widgets={[]}
-        linkage={linkage}
-        effectiveLinkage={linkage}
-        onLinkageChange={vi.fn()}
         styleConfig={{ numberFormat: { type: "auto", thousandSeparator: true } }}
         onStyleChange={vi.fn()}
         embedded

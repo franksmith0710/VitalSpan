@@ -1,4 +1,6 @@
 import type { PixelCanvasBounds, PixelInteractionKind, PixelRect } from "./geometry";
+import type { ShapeEdgeInset } from "./shapeVisualInset";
+import { ZERO_SHAPE_INSET } from "./shapeVisualInset";
 
 export type MarkLineId = "xt" | "xc" | "xb" | "yl" | "yc" | "yr";
 
@@ -36,6 +38,8 @@ export type MarkLineSnapOptions = {
   canvas?: PixelCanvasBounds;
   /** shape 外层 padding（画布逻辑 px），对标 DE curGap */
   gap?: number;
+  /** 组件 shell 边框+内边距内缩（无间隙时对齐线跟视觉边） */
+  chromeInset?: ShapeEdgeInset;
   /** move / 八向 resize；决定吸附落在哪条边上 */
   interactionKind?: PixelInteractionKind;
   /** resize 时固定对边的锚点矩形 */
@@ -75,23 +79,39 @@ function rectBounds(rect: PixelRect): RectBounds {
   };
 }
 
-/** DE curGap：内层可视区域（对称 padding） */
-function visualBounds(rect: PixelRect, gap: number): RectBounds {
-  if (gap <= 0) return rectBounds(rect);
+/** curGap + 组件 shell 内缩后的可视区域 */
+function visualBounds(rect: PixelRect, gap: number, inset: ShapeEdgeInset): RectBounds {
   const outer = rectBounds(rect);
-  const left = outer.left + gap;
-  const top = outer.top + gap;
-  const right = outer.right - gap;
-  const bottom = outer.bottom - gap;
+  const left = outer.left + gap + inset.left;
+  const top = outer.top + gap + inset.top;
+  const right = outer.right - gap - inset.right;
+  const bottom = outer.bottom - gap - inset.bottom;
   if (right <= left || bottom <= top) return outer;
   return {
     left,
     top,
     right,
     bottom,
-    centerX: outer.centerX,
-    centerY: outer.centerY,
+    centerX: (left + right) / 2,
+    centerY: (top + bottom) / 2,
   };
+}
+
+function outerCoordForVisual(
+  visual: number,
+  edge: "left" | "top",
+  gap: number,
+  inset: ShapeEdgeInset,
+): number {
+  return edge === "left" ? visual - gap - inset.left : visual - gap - inset.top;
+}
+
+function outerBottomForVisualBottom(visualBottom: number, gap: number, inset: ShapeEdgeInset): number {
+  return visualBottom + gap + inset.bottom;
+}
+
+function outerRightForVisualRight(visualRight: number, gap: number, inset: ShapeEdgeInset): number {
+  return visualRight + gap + inset.right;
 }
 
 function gapMidline(before: number, after: number): number {
@@ -102,30 +122,13 @@ function axisDistance(a: number, b: number): number {
   return Math.abs(a - b);
 }
 
-function activeCoord(edge: ActiveEdge, bounds: RectBounds): number {
-  switch (edge) {
-    case "left":
-      return bounds.left;
-    case "right":
-      return bounds.right;
-    case "top":
-      return bounds.top;
-    case "bottom":
-      return bounds.bottom;
-    case "centerX":
-      return bounds.centerX;
-    case "centerY":
-      return bounds.centerY;
-  }
-}
-
 function pushCandidate(
   candidates: SnapCandidate[],
   line: MarkLineId,
   position: number,
   axis: "x" | "y",
   activeEdge: ActiveEdge,
-  current: RectBounds,
+  distance: number,
   guidePosition = position,
 ) {
   candidates.push({
@@ -134,7 +137,7 @@ function pushCandidate(
     guidePosition,
     axis,
     activeEdge,
-    distance: axisDistance(activeCoord(activeEdge, current), position),
+    distance,
   });
 }
 
@@ -143,67 +146,122 @@ function collectFlushCandidates(
   other: PixelRect,
   threshold: number,
   gap: number,
+  chromeInset: ShapeEdgeInset,
   candidates: SnapCandidate[],
 ) {
-  const currentOuter = rectBounds(active);
-  const targetOuter = rectBounds(other);
-  const current = gap > 0 ? visualBounds(active, gap) : currentOuter;
-  const target = gap > 0 ? visualBounds(other, gap) : targetOuter;
+  const current = visualBounds(active, gap, chromeInset);
+  const target = visualBounds(other, gap, chromeInset);
 
   if (axisDistance(current.top, target.top) <= threshold) {
-    pushCandidate(candidates, "xt", targetOuter.top, "y", "top", currentOuter, target.top);
+    pushCandidate(
+      candidates,
+      "xt",
+      outerCoordForVisual(target.top, "top", gap, chromeInset),
+      "y",
+      "top",
+      axisDistance(current.top, target.top),
+      target.top,
+    );
   }
   if (axisDistance(current.bottom, target.top) <= threshold) {
-    pushCandidate(candidates, "xt", targetOuter.top, "y", "bottom", currentOuter, target.top);
+    pushCandidate(
+      candidates,
+      "xt",
+      target.top + gap + chromeInset.bottom,
+      "y",
+      "bottom",
+      axisDistance(current.bottom, target.top),
+      target.top,
+    );
   }
   if (axisDistance(current.centerY, target.centerY) <= threshold) {
     pushCandidate(
       candidates,
       "xc",
-      targetOuter.centerY,
+      target.centerY,
       "y",
       "centerY",
-      currentOuter,
+      axisDistance(current.centerY, target.centerY),
       target.centerY,
     );
   }
   if (axisDistance(current.top, target.bottom) <= threshold) {
-    pushCandidate(candidates, "xb", targetOuter.bottom, "y", "top", currentOuter, target.bottom);
+    pushCandidate(
+      candidates,
+      "xb",
+      outerCoordForVisual(target.bottom, "top", gap, chromeInset),
+      "y",
+      "top",
+      axisDistance(current.top, target.bottom),
+      target.bottom,
+    );
   }
   if (axisDistance(current.bottom, target.bottom) <= threshold) {
     pushCandidate(
       candidates,
       "xb",
-      targetOuter.bottom,
+      outerBottomForVisualBottom(target.bottom, gap, chromeInset),
       "y",
       "bottom",
-      currentOuter,
+      axisDistance(current.bottom, target.bottom),
       target.bottom,
     );
   }
 
   if (axisDistance(current.left, target.left) <= threshold) {
-    pushCandidate(candidates, "yl", targetOuter.left, "x", "left", currentOuter, target.left);
+    pushCandidate(
+      candidates,
+      "yl",
+      outerCoordForVisual(target.left, "left", gap, chromeInset),
+      "x",
+      "left",
+      axisDistance(current.left, target.left),
+      target.left,
+    );
   }
   if (axisDistance(current.right, target.left) <= threshold) {
-    pushCandidate(candidates, "yl", targetOuter.left, "x", "right", currentOuter, target.left);
+    pushCandidate(
+      candidates,
+      "yl",
+      outerRightForVisualRight(target.left, gap, chromeInset),
+      "x",
+      "right",
+      axisDistance(current.right, target.left),
+      target.left,
+    );
   }
   if (axisDistance(current.centerX, target.centerX) <= threshold) {
     pushCandidate(
       candidates,
       "yc",
-      targetOuter.centerX,
+      target.centerX,
       "x",
       "centerX",
-      currentOuter,
+      axisDistance(current.centerX, target.centerX),
       target.centerX,
     );
   }
   if (axisDistance(current.left, target.right) <= threshold) {
-    pushCandidate(candidates, "yr", targetOuter.right, "x", "left", currentOuter, target.right);
+    pushCandidate(
+      candidates,
+      "yr",
+      outerCoordForVisual(target.right, "left", gap, chromeInset),
+      "x",
+      "left",
+      axisDistance(current.left, target.right),
+      target.right,
+    );
   }
   if (axisDistance(current.right, target.right) <= threshold) {
-    pushCandidate(candidates, "yr", targetOuter.right, "x", "right", currentOuter, target.right);
+    pushCandidate(
+      candidates,
+      "yr",
+      outerRightForVisualRight(target.right, gap, chromeInset),
+      "x",
+      "right",
+      axisDistance(current.right, target.right),
+      target.right,
+    );
   }
 }
 
@@ -227,7 +285,7 @@ function collectGapAdjacencyCandidates(
       junction,
       "x",
       "left",
-      current,
+      axisDistance(current.left, target.right),
       gapMidline(target.right - gap, junction + gap),
     );
   }
@@ -239,7 +297,7 @@ function collectGapAdjacencyCandidates(
       junction,
       "x",
       "right",
-      current,
+      axisDistance(current.right, target.left),
       gapMidline(junction - gap, target.left + gap),
     );
   }
@@ -251,7 +309,7 @@ function collectGapAdjacencyCandidates(
       junction,
       "y",
       "top",
-      current,
+      axisDistance(current.top, target.bottom),
       gapMidline(target.bottom - gap, junction + gap),
     );
   }
@@ -263,7 +321,7 @@ function collectGapAdjacencyCandidates(
       junction,
       "y",
       "bottom",
-      current,
+      axisDistance(current.bottom, target.top),
       gapMidline(junction - gap, target.top + gap),
     );
   }
@@ -274,9 +332,10 @@ function collectCandidates(
   other: PixelRect,
   threshold: number,
   gap: number,
+  chromeInset: ShapeEdgeInset,
 ): SnapCandidate[] {
   const candidates: SnapCandidate[] = [];
-  collectFlushCandidates(active, other, threshold, gap, candidates);
+  collectFlushCandidates(active, other, threshold, gap, chromeInset, candidates);
   collectGapAdjacencyCandidates(active, other, gap, threshold, candidates);
   return candidates;
 }
@@ -437,6 +496,7 @@ export function computeMarkLineSnap(
   options: MarkLineSnapOptions,
 ): { rect: PixelRect; guides: MarkLineGuide[] } {
   const gap = Math.max(0, options.gap ?? 0);
+  const chromeInset = options.chromeInset ?? ZERO_SHAPE_INSET;
   const kind = options.interactionKind ?? "move";
   const anchor = options.anchorRect ?? active;
   const targets = [...others];
@@ -450,7 +510,7 @@ export function computeMarkLineSnap(
   }
 
   const candidates = targets.flatMap((other) =>
-    collectCandidates(active, other, options.threshold, gap),
+    collectCandidates(active, other, options.threshold, gap, chromeInset),
   );
   const ySnap = pickBestSnapCandidate(
     candidates,

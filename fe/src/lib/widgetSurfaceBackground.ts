@@ -44,6 +44,8 @@ export function needsWidgetBackgroundLayer(style: CSSProperties): boolean {
 export type WidgetBackgroundPresentation = {
   surface: CSSProperties;
   backgroundLayer: CSSProperties | null;
+  /** 装饰边框 overlay（避免 border-image 被圆角/overflow 裁切） */
+  frameLayer: CSSProperties | null;
 };
 
 /**
@@ -58,7 +60,7 @@ export function applyBackgroundOpacityOnly(
   delete surface.opacity;
 
   if (opacity == null || opacity >= 1) {
-    return { surface, backgroundLayer: null };
+    return { surface, backgroundLayer: null, frameLayer: null };
   }
 
   if (needsWidgetBackgroundLayer(style)) {
@@ -80,6 +82,7 @@ export function applyBackgroundOpacityOnly(
         backdropFilter: style.backdropFilter,
         borderRadius: style.borderRadius,
       },
+      frameLayer: null,
     };
   }
 
@@ -92,5 +95,5 @@ export function applyBackgroundOpacityOnly(
   delete surface.backgroundColor;
   surface.backgroundColor = withBackgroundAlpha(base, opacity);
 
-  return { surface, backgroundLayer: null };
+  return { surface, backgroundLayer: null, frameLayer: null };
 }

@@ -30,7 +30,7 @@ import {
   widgetDashboardStyleFingerprint,
 } from "../dashboardStyleConfig";
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
-import { auxiliaryGridOverlayStyle, resolveDashboardChrome } from "../dashboardChromeConfig";
+import { mergeAuxiliaryGridIntoSurface, resolveDashboardChrome } from "../dashboardChromeConfig";
 import { resolvePixelCollisions, widgetRect } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
 import { clientPointToCanvas, resolvePixelCanvasMeasureElement, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
@@ -169,17 +169,23 @@ export function PixelCanvas({
     () => pickWidgetDashboardStyle(styleConfig),
     [widgetDashboardStyleFingerprint(styleConfig)],
   );
-  const artboardStyle = useMemo(
-    () => resolveArtboardStyle(styleConfig),
-    [canvasArtboardStyleFingerprint(styleConfig)],
-  );
-  const userArtboardBg = hasUserCanvasBackground(styleConfig);
   const chrome = resolveDashboardChrome(styleConfig);
   const gapRuntime = useMemo(
     () => resolveComponentGapRuntime(styleConfig, "pixel"),
     [styleConfig],
   );
   const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
+  const scheme = styleConfig.colorScheme ?? "light";
+  const artboardStyle = useMemo(
+    () =>
+      mergeAuxiliaryGridIntoSurface(
+        resolveArtboardStyle(styleConfig),
+        scheme,
+        showAuxGrid,
+      ),
+    [canvasArtboardStyleFingerprint(styleConfig), scheme, showAuxGrid],
+  );
+  const userArtboardBg = hasUserCanvasBackground(styleConfig);
   const viewCanvasHeight = useMemo(() => {
     const lowest = activeLayout.widgets.reduce(
       (max, widget) => Math.max(max, widget.y + widget.height),
@@ -479,19 +485,14 @@ export function PixelCanvas({
           onDrop={handleDrop}
         >
           <div
-            data-testid="pixel-canvas-artboard"
-            className="pointer-events-none absolute inset-0 z-0 shadow-theme-sm ring-1 ring-gray-200 dark:ring-gray-700"
+            data-testid={showAuxGrid ? "pixel-canvas-aux-grid" : "pixel-canvas-artboard"}
+            className={cn(
+              "pointer-events-none absolute inset-0 z-0 shadow-theme-sm ring-1 ring-gray-200 dark:ring-gray-700",
+              showAuxGrid && "dashboard-edit-aux-grid",
+            )}
             style={artboardStyle}
             aria-hidden
           />
-          {showAuxGrid ? (
-            <div
-              data-testid="pixel-canvas-aux-grid"
-              className="pointer-events-none absolute inset-0 z-[1]"
-              style={auxiliaryGridOverlayStyle(styleConfig.colorScheme ?? "light")}
-              aria-hidden
-            />
-          ) : null}
           {activeLayout.widgets.map((widget) => (
               <PixelShape
                 key={widget.id}

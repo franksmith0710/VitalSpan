@@ -32,6 +32,28 @@ describe("EmbeddedChartTable", () => {
     expect(screen.getByTitle("线下门店")).toHaveClass("truncate");
   });
 
+  it("applies custom table theme variables", () => {
+    const { container } = render(
+      <EmbeddedChartTable
+        columns={["a"]}
+        displayCols={["a"]}
+        rows={[[1]]}
+        page={1}
+        onPageChange={() => {}}
+        themeVars={{
+          "--dashboard-table-header-bg": "#eef2ff",
+          "--dashboard-table-header-fg": "#312e81",
+          "--dashboard-scroll-track": "rgb(249 250 251)",
+        }}
+        surfaceScheme="light"
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.getPropertyValue("--dashboard-table-header-bg")).toBe("#eef2ff");
+    const thead = container.querySelector("thead");
+    expect(thead).toHaveClass("bg-[var(--dashboard-table-header-bg,#f9fafb)]");
+  });
+
   it("applies opacity, border and scrollbar theme variables", () => {
     const { container } = render(
       <EmbeddedChartTable

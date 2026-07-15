@@ -8,13 +8,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DashboardConfigSection } from "./DashboardConfigSection";
-import type { Linkage } from "./dashboardFilterUtils";
-import { LinkageRulesPanel } from "./LinkageRulesPanel";
 import {
   formatMetricValue,
   SURFACE_COLOR_RECOMMENDED,
   TEXT_COLOR_RECOMMENDED,
   WIDGET_BORDER_RECOMMENDED,
+  WIDGET_BORDER_STYLES,
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
@@ -22,43 +21,15 @@ import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
 import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
 import { DashboardConfigGridSlider, DashboardConfigSlider } from "./deAttrSlider";
 import { ColorField } from "@/components/ui/color-field";
-import type { LayoutWidget } from "./layoutUtils";
-import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
+import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DEFAULT_DRILL_LEVEL_COLORS, resolveDrillLevelColors } from "./dashboardChromeConfig";
-import type { ColorScheme, SpacingMode } from "./dashboardStyleConfig";
+import type { ColorScheme } from "./dashboardStyleConfig";
 import { SpacingModeToggle } from "./inspectorSpacing";
 import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
-import { ImageSourceField } from "./imageSourceField";
-
-function DrillLevelPreview({ colors }: { colors: string[] }) {
-  const labels = ["华东", "浙江", "杭州"];
-  return (
-    <div
-      className="chart-drill-chrome chart-drill-chrome--preview"
-      data-testid="drill-level-preview"
-      aria-hidden
-    >
-      <nav className="chart-drill-chrome__trail">
-        <span className="chart-drill-crumb" data-level={0}>
-          全部
-        </span>
-        {labels.map((label, index) => (
-          <span key={label} className="chart-drill-chrome__group">
-            <span className="chart-drill-chrome__sep">/</span>
-            <span
-              className="chart-drill-crumb"
-              data-level={index + 1}
-              style={colors[index] ? { color: colors[index] } : undefined}
-            >
-              {label}
-            </span>
-          </span>
-        ))}
-      </nav>
-    </div>
-  );
-}
+import { DeAttrField, DeAttrToggleRow } from "./dashboardInspectorUi";
+import { ChartBackgroundDeModeFields } from "./chartStyleFields";
+import { ChartDeSegmentField } from "./chartInspectorDeFields";
+import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -125,8 +96,25 @@ export function DashboardWidgetStyleSections({
 
   return (
     <>
-      <DashboardConfigSection title="图表样式">
+      <DashboardConfigSection title="图表样式" defaultOpen>
         <div className="space-y-3">
+        <DeAttrField label="背景" compact>
+          <div className="space-y-2">
+            <div className="flex items-center justify-end">
+              <Switch
+                checked={ws.backgroundShow !== false}
+                onCheckedChange={(show) => patchWidgetStyle({ backgroundShow: show })}
+                aria-label="背景"
+                className="scale-90"
+              />
+            </div>
+            <ChartBackgroundDeModeFields
+              value={ws}
+              onChange={patchWidgetStyle}
+              disabled={ws.backgroundShow === false}
+            />
+          </div>
+        </DeAttrField>
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <ColorField
@@ -138,7 +126,7 @@ export function DashboardWidgetStyleSections({
               onChange={(color) => patchWidgetStyle({ background: color })}
             />
           </div>
-          <div className="space-y-1 col-span-2">
+          <div className="col-span-2 min-w-0">
             <DashboardConfigSlider
               label="背景模糊"
               value={ws.backdropBlur}
@@ -150,25 +138,48 @@ export function DashboardWidgetStyleSections({
               onChange={(backdropBlur) => patchWidgetStyle({ backdropBlur })}
             />
           </div>
-          <div className="space-y-1 col-span-2">
-            <Label className="text-theme-xs text-gray-500">背景图片</Label>
-            <ImageSourceField
-              inputClassName="h-9"
-              value={ws.backgroundImage ?? ""}
-              onChange={(backgroundImage) => patchWidgetStyle({ backgroundImage })}
+          <div className="col-span-2 space-y-2 border-t border-gray-100 pt-2 dark:border-white/[0.06]">
+            <Label className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">边框</Label>
+            <DeAttrToggleRow
+              label="显示边框"
+              checked={ws.borderEnabled !== false}
+              onCheckedChange={(show) => patchWidgetStyle({ borderEnabled: show })}
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <ColorField
+                  compact
+                  allowClear
+                  label="边框色"
+                  swatches={WIDGET_BORDER_RECOMMENDED}
+                  value={ws.borderColor ?? ""}
+                  onChange={(color) => patchWidgetStyle({ borderColor: color })}
+                />
+              </div>
+              <div className="min-w-0">
+                <DashboardConfigGridSlider
+                  label="线宽"
+                  value={ws.borderWidth}
+                  fallback={1}
+                  min={0}
+                  max={8}
+                  step={1}
+                  unit="px"
+                  onChange={(borderWidth) => patchWidgetStyle({ borderWidth })}
+                />
+              </div>
+            </div>
+            <ChartDeSegmentField
+              label="样式"
+              value={ws.borderStyle ?? "solid"}
+              columns={3}
+              options={WIDGET_BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
+              onChange={(style) =>
+                patchWidgetStyle({ borderStyle: style as "solid" | "dashed" | "dotted" })
+              }
             />
           </div>
-          <div className="space-y-1">
-            <ColorField
-              compact
-              allowClear
-              label="边框色"
-              swatches={WIDGET_BORDER_RECOMMENDED}
-              value={ws.borderColor ?? ""}
-              onChange={(color) => patchWidgetStyle({ borderColor: color })}
-            />
-          </div>
-          <div className="space-y-1 col-span-2">
+          <div className="col-span-2 min-w-0">
             <DashboardConfigSlider
               label="透明度"
               value={ws.opacity != null ? Math.round(ws.opacity * 100) : undefined}
@@ -199,7 +210,7 @@ export function DashboardWidgetStyleSections({
             onChange={(padding) => patchWidgetStyle({ padding })}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 [&>*]:min-w-0">
             {(["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] as const).map((key) => (
               <DashboardConfigGridSlider
                 key={key}
@@ -241,7 +252,7 @@ export function DashboardWidgetStyleSections({
             onChange={(borderRadius) => patchWidgetStyle({ borderRadius })}
           />
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 [&>*]:min-w-0">
             {(
               [
                 ["borderRadiusTopLeft", "左上"],
@@ -314,7 +325,7 @@ export function DashboardWidgetStyleSections({
               }
             />
           </div>
-          <div className="space-y-1 col-span-2">
+          <div className="col-span-2">
             <DashboardConfigSlider
               label="控件高度"
               value={fctrl.height}
@@ -333,7 +344,7 @@ export function DashboardWidgetStyleSections({
               }
             />
           </div>
-          <div className="space-y-1 col-span-2">
+          <div className="col-span-2">
             <DashboardConfigSlider
               label="控件圆角"
               value={fctrl.borderRadius}
@@ -388,7 +399,7 @@ export function DashboardWidgetStyleSections({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1 col-span-2">
+            <div className="col-span-2">
               <DashboardConfigSlider
                 label="小数位"
                 value={nf.decimals}
@@ -454,88 +465,6 @@ export function DashboardWidgetStyleSections({
           </p>
         </div>
       </DashboardConfigSection>
-
-      <DashboardConfigSection title="高级样式设置">
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <ColorField
-              compact
-              allowClear
-              label="联动/钻取图标色"
-              swatches={WIDGET_BORDER_RECOMMENDED}
-              value={styleConfig.actionIconColor ?? ""}
-              onChange={(color) => patchStyle({ actionIconColor: color })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-theme-xs text-gray-500">钻取层级展示颜色</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {DEFAULT_DRILL_LEVEL_COLORS.map((fallback, index) => (
-                <ColorField
-                  key={index}
-                  compact
-                  allowClear
-                  label={`L${index + 1}`}
-                  swatches={TEXT_COLOR_RECOMMENDED}
-                  value={styleConfig.drillLevelColors?.[index] ?? fallback}
-                  onChange={(color) => {
-                    const next = [...(styleConfig.drillLevelColors ?? DEFAULT_DRILL_LEVEL_COLORS)];
-                    next[index] = color;
-                    patchStyle({ drillLevelColors: next.filter(Boolean) });
-                  }}
-                />
-              ))}
-            </div>
-            <DrillLevelPreview colors={resolveDrillLevelColors(styleConfig)} />
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              预览/分享态点击图表维度可下钻，面包屑可返回或重置。
-            </p>
-          </div>
-        </div>
-      </DashboardConfigSection>
     </>
-  );
-}
-
-type LinkageSectionProps = {
-  dashboardId: string;
-  filterWidgetCount: number;
-  widgets: LayoutWidget[];
-  linkage: Linkage | null;
-  effectiveLinkage: Linkage;
-  onLinkageChange: (linkage: Linkage) => void;
-  linkageDefaultOpen?: boolean;
-};
-
-export function DashboardLinkageSection({
-  dashboardId,
-  filterWidgetCount,
-  widgets,
-  linkage,
-  effectiveLinkage,
-  onLinkageChange,
-  linkageDefaultOpen,
-}: LinkageSectionProps) {
-  return (
-    <DashboardConfigSection
-      title="筛选联动"
-      defaultOpen={filterWidgetCount > 0 || linkageDefaultOpen}
-      data-testid="dashboard-linkage-section"
-    >
-      {effectiveLinkage.filters.length === 0 ? (
-        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-          暂无筛选器。从左侧拖入筛选组件后，可在此配置联动规则。
-        </p>
-      ) : (
-        <LinkageRulesPanel
-          dashboardId={dashboardId}
-          linkage={linkage}
-          effectiveLinkage={effectiveLinkage}
-          widgets={widgets}
-          draftMode
-          onLinkageChange={onLinkageChange}
-        />
-      )}
-    </DashboardConfigSection>
   );
 }

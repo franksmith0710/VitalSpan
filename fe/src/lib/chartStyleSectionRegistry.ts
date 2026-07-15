@@ -4,6 +4,7 @@ import { isKpiType, isLineOrBarType } from "@/lib/chartViewConfig";
 /** 样式 Tab 折叠块 ID（按图表类型组合，对标 DataEase attr-style） */
 export type ChartStyleSectionId =
   | "tableBasic"
+  | "tableColor"
   | "variantBasic"
   | "palette"
   | "geo"
@@ -11,8 +12,7 @@ export type ChartStyleSectionId =
   | "remark"
   | "legend"
   | "label"
-  | "background"
-  | "border";
+  | "background";
 
 export const STYLE_VARIANT_LABELS: Record<string, string> = {
   default: "默认",
@@ -26,62 +26,57 @@ export const STYLE_VARIANT_LABELS: Record<string, string> = {
 
 const TABLE_SECTIONS: ChartStyleSectionId[] = [
   "tableBasic",
+  "tableColor",
   "title",
   "background",
-  "border",
 ];
 
 const LINE_BAR_SECTIONS: ChartStyleSectionId[] = [
   "variantBasic",
+  "background",
   "palette",
   "title",
   "remark",
   "legend",
   "label",
-  "background",
-  "border",
 ];
 
 const PIE_SECTIONS: ChartStyleSectionId[] = [
   "variantBasic",
+  "background",
   "palette",
   "title",
   "remark",
   "legend",
   "label",
-  "background",
-  "border",
 ];
 
 const GEO_MAP_SECTIONS: ChartStyleSectionId[] = [
+  "background",
   "palette",
   "geo",
   "title",
   "remark",
-  "background",
-  "border",
 ];
 
 const GEO_HEATMAP_SECTIONS: ChartStyleSectionId[] = [
+  "background",
   "palette",
   "geo",
   "title",
-  "background",
-  "border",
 ];
 
-const KPI_SECTIONS: ChartStyleSectionId[] = ["palette", "title", "label", "background", "border"];
+const KPI_SECTIONS: ChartStyleSectionId[] = ["background", "palette", "title", "label"];
 
 const FLOW_RELATION_SECTIONS: ChartStyleSectionId[] = [
+  "background",
   "palette",
   "title",
   "remark",
   "legend",
-  "background",
-  "border",
 ];
 
-const MINIMAL_SECTIONS: ChartStyleSectionId[] = ["palette", "title", "background", "border"];
+const MINIMAL_SECTIONS: ChartStyleSectionId[] = ["background", "palette", "title"];
 
 /** 返回当前图表类型应展示的样式折叠块（顺序对标 DataEase） */
 export function chartStyleSectionsForType(chartType: ChartType): ChartStyleSectionId[] {

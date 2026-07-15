@@ -27,6 +27,8 @@ import {
   type ResizeDirection,
 } from "./geometry";
 import { computeMarkLineSnap, markLineThreshold, type MarkLineGuide } from "./pixelMarkLine";
+import { resolveWidgetChromeInset } from "./shapeVisualInset";
+import { snapRectToAuxiliaryGrid } from "./auxiliaryGridSnap";
 import type { PixelShapePreviewSync } from "./pixelShapePreviewRegistry";
 import { PixelShapeActionRail, type PixelWidgetActions } from "./PixelShapeActionRail";
 import { WidgetShapeChrome } from "./WidgetShapeChrome";
@@ -57,7 +59,7 @@ type PixelShapeProps = {
   onCommit?: (widget: PixelLayoutWidget) => void;
   onCancel?: (widgetId: string) => void;
   onMarkGuidesChange?: (guides: MarkLineGuide[] | null) => void;
-  /** 编辑态对齐吸附与参考线；与辅助网格开关无关 */
+  /** 编辑辅助网格：对齐参考线 + 20px 网格吸附 */
   markLinesEnabled?: boolean;
   viewport?: PixelRect;
   snapTargets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
@@ -178,6 +180,7 @@ export function PixelShape({
   const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig, mode);
   const onTitleChange = widgetActions?.onTitleChange;
   const chrome = resolveDashboardChrome(styleConfig);
+  const chromeInset = resolveWidgetChromeInset(styleConfig?.widgetStyle);
   const shell =
     widget.type === "chart" && widget.chartConfig
       ? resolveChartContentShellStyle(
@@ -192,6 +195,7 @@ export function PixelShape({
           ),
           inner: {} as CSSProperties,
           innerBackgroundLayer: null,
+          innerFrameLayer: null,
         };
   const innerPresentation = mergeShapeInnerPresentation(shell);
   const activeRef = useRef<ActiveInteraction | null>(null);
@@ -270,10 +274,12 @@ export function PixelShape({
       },
       canvas,
       gap: shapeGapPx,
+      chromeInset,
       interactionKind: active.kind,
       anchorRect: active.startRect,
     });
-    return { rect: snapped.rect, guides: snapped.guides };
+    const gridSnapped = snapRectToAuxiliaryGrid(snapped.rect, active.kind);
+    return { rect: gridSnapped, guides: snapped.guides };
   };
 
   const rectForPointer = (
@@ -403,6 +409,7 @@ export function PixelShape({
         height: liveRect.height,
         zIndex: pixelShapeZIndex(widget.order, selectedInEdit),
         boxSizing: "border-box",
+        ["--dashboard-shape-gap" as string]: `${Math.max(0, shapeGapPx)}px`,
       }}
     >
       {hint ? (

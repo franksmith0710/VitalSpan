@@ -7,7 +7,6 @@ import {
   MoreHorizontal,
   PanelsTopLeft,
   Palette,
-  SlidersHorizontal,
   Type,
 } from "lucide-react";
 import {
@@ -25,7 +24,6 @@ type CanvasEditToolbarProps = {
   onInsert: (type: PaletteInsertType) => void;
   onOpenReuse?: () => void;
   onOpenDashboardStyle?: () => void;
-  onOpenLinkage?: () => void;
 };
 
 const ToolbarNavButton = forwardRef<
@@ -70,7 +68,6 @@ export function CanvasEditToolbar({
   onInsert,
   onOpenReuse,
   onOpenDashboardStyle,
-  onOpenLinkage,
 }: CanvasEditToolbarProps) {
   const [chartOpen, setChartOpen] = useState(false);
   const [queryOpen, setQueryOpen] = useState(false);
@@ -168,15 +165,6 @@ export function CanvasEditToolbar({
           >
             <Palette className="size-4" aria-hidden />
             仪表板样式
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => {
-              onOpenLinkage?.();
-              setMoreOpen(false);
-            }}
-          >
-            <SlidersHorizontal className="size-4" aria-hidden />
-            外部参数
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 import { DeAttrField, DeAttrForm } from "./dashboardInspectorUi";
 import { ColorField } from "@/components/ui/color-field";
 import { ImageSourceField } from "./imageSourceField";
@@ -27,10 +28,9 @@ export function DashboardCanvasBackgroundPanel({
   styleConfig,
   patchStyle,
 }: DashboardCanvasBackgroundPanelProps) {
-  const [showAdvancedUrl, setShowAdvancedUrl] = useState(
-    () =>
-      Boolean(styleConfig.canvasBackgroundImage?.trim()) &&
-      resolveCanvasDecorPresetId(styleConfig) === "custom",
+  const hasCustomImage = Boolean(styleConfig.canvasBackgroundImage?.trim());
+  const [customImageEnabled, setCustomImageEnabled] = useState(
+    () => hasCustomImage || resolveCanvasDecorPresetId(styleConfig) === "custom",
   );
   const decorId = resolveCanvasDecorPresetIdForPanel(styleConfig);
   const colorScheme = styleConfig.colorScheme ?? "light";
@@ -41,11 +41,11 @@ export function DashboardCanvasBackgroundPanel({
   const imageUrl = styleConfig.canvasBackgroundImage ?? "";
   const [localImageUrl, setLocalImageUrl] = useState(imageUrl);
   const previewUrl = localImageUrl.trim();
-  const imageInvalid =
-    previewUrl.length > 0 && !isImageSourceValue(previewUrl);
+  const imageInvalid = previewUrl.length > 0 && !isImageSourceValue(previewUrl);
 
   useEffect(() => {
     setLocalImageUrl(imageUrl);
+    if (imageUrl.trim()) setCustomImageEnabled(true);
   }, [imageUrl]);
 
   const commitImageUrl = (next: string) => {
@@ -55,6 +55,14 @@ export function DashboardCanvasBackgroundPanel({
       canvasBackgroundCustom: Boolean(trimmed),
       canvasDecorPresetId: trimmed ? "custom" : undefined,
     });
+  };
+
+  const handleCustomImageToggle = (enabled: boolean) => {
+    setCustomImageEnabled(enabled);
+    if (!enabled) {
+      setLocalImageUrl("");
+      commitImageUrl("");
+    }
   };
 
   return (
@@ -97,11 +105,11 @@ export function DashboardCanvasBackgroundPanel({
                 aria-pressed={selected}
                 onClick={() => {
                   patchStyle(patchDecorPresetStyle(preset.id, styleConfig));
-                  setShowAdvancedUrl(false);
+                  setCustomImageEnabled(false);
                 }}
               >
                 <span
-                  className="size-5 shrink-0 rounded-[4px] border border-gray-200/80 dark:border-gray-600"
+                  className="size-6 shrink-0 rounded-[4px] border border-gray-200/80 dark:border-gray-600"
                   style={decorPresetThumbStyle(preset.id, colorScheme, underlay)}
                   aria-hidden
                 />
@@ -114,18 +122,20 @@ export function DashboardCanvasBackgroundPanel({
         </div>
       </DeAttrField>
 
-      <DeAttrField label="自定义背景图">
-        <div className="space-y-2">
-          <button
-            type="button"
-            className="text-theme-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
-            onClick={() => setShowAdvancedUrl((open) => !open)}
-          >
-            {showAdvancedUrl ? "收起自定义图片" : "使用自定义背景图…"}
-          </button>
-          {showAdvancedUrl ? (
-            <div className="space-y-2">
+      <DeAttrField label="自定义背景图" compact>
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-theme-xs text-gray-500 dark:text-gray-400">启用自定义图片</span>
+            <Switch
+              checked={customImageEnabled}
+              onCheckedChange={handleCustomImageToggle}
+              aria-label="启用自定义背景图"
+            />
+          </div>
+          {customImageEnabled ? (
+            <>
               <ImageSourceField
+                variant="rail"
                 showPreview
                 value={localImageUrl}
                 onChange={(next) => {
@@ -139,7 +149,7 @@ export function DashboardCanvasBackgroundPanel({
                   请输入有效的图片链接，或选择本地图片文件
                 </p>
               ) : null}
-            </div>
+            </>
           ) : null}
         </div>
       </DeAttrField>

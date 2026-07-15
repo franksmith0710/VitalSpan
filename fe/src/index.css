@@ -194,26 +194,28 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: rgb(71 84 103);
 }
 
-/* 看板主题滚动条：跟 data-dashboard-color-scheme，不跟 Admin html.dark */
+/* 看板主题滚动条：跟 data-dashboard-color-scheme，不跟 Admin html.dark（DE 白色半透明） */
+.dashboard-theme-scope[data-dashboard-color-scheme="light"],
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"],
+.dashboard-theme-scope.dark {
+  --dashboard-scroll-thumb: rgb(255 255 255 / 0.35);
+  --dashboard-scroll-thumb-hover: rgb(255 255 255 / 0.55);
+  --dashboard-scroll-track: transparent;
+}
+
 .dashboard-theme-scope[data-dashboard-color-scheme="light"] {
-  --dashboard-scroll-thumb: rgb(208 213 221);
-  --dashboard-scroll-thumb-hover: rgb(152 162 179);
-  --dashboard-scroll-track: rgb(249 250 251);
   color-scheme: light;
 }
 
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"],
 .dashboard-theme-scope.dark {
-  --dashboard-scroll-thumb: rgb(71 84 103);
-  --dashboard-scroll-thumb-hover: rgb(98 112 132);
-  --dashboard-scroll-track: rgb(29 41 57);
   color-scheme: dark;
 }
 
 /** 看板组件内滚动条（表格、文本、画布 host 等） */
 @utility dashboard-scroll {
   scrollbar-width: thin;
-  scrollbar-color: var(--dashboard-scroll-thumb) var(--dashboard-scroll-track);
+  scrollbar-color: var(--dashboard-scroll-thumb) transparent;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -221,7 +223,7 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   }
 
   &::-webkit-scrollbar-track {
-    background: var(--dashboard-scroll-track);
+    background: transparent;
   }
 
   &::-webkit-scrollbar-thumb {
@@ -244,7 +246,7 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .pixel-canvas-host
 ) {
   scrollbar-width: thin;
-  scrollbar-color: var(--dashboard-scroll-thumb) var(--dashboard-scroll-track);
+  scrollbar-color: var(--dashboard-scroll-thumb) transparent;
 }
 
 .dashboard-theme-scope :where(
@@ -269,7 +271,7 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .dashboard-scroll,
   .pixel-canvas-host
 )::-webkit-scrollbar-track {
-  background: var(--dashboard-scroll-track);
+  background: transparent;
 }
 
 .dashboard-theme-scope :where(
@@ -297,31 +299,30 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: var(--dashboard-scroll-thumb-hover);
 }
 
-/* 看板浅色时压住 html.dark 对 custom-scrollbar 的覆盖 */
-html.dark .dashboard-theme-scope[data-dashboard-color-scheme="light"] .custom-scrollbar {
-  scrollbar-color: rgb(228 231 236) transparent;
+/* 看板内 custom-scrollbar 与 dashboard-scroll 令牌对齐 */
+.dashboard-theme-scope .custom-scrollbar {
+  scrollbar-color: var(--dashboard-scroll-thumb) transparent;
 }
 
-html.dark .dashboard-theme-scope[data-dashboard-color-scheme="light"] .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgb(228 231 236);
+.dashboard-theme-scope .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-html.dark .dashboard-theme-scope[data-dashboard-color-scheme="light"] .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: rgb(208 213 221);
+.dashboard-theme-scope .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--dashboard-scroll-thumb);
 }
 
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .custom-scrollbar,
-.dashboard-theme-scope.dark .custom-scrollbar {
-  scrollbar-color: rgb(52 64 84) transparent;
-}
-
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb,
-.dashboard-theme-scope.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgb(52 64 84);
+.dashboard-theme-scope .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: var(--dashboard-scroll-thumb-hover);
 }
 
 .dashboard-theme-scope [data-radix-scroll-area-thumb] {
-  background-color: var(--dashboard-scroll-thumb) !important;
+  background-color: rgb(255 255 255) !important;
+  opacity: 0.35;
+}
+
+.dashboard-theme-scope [data-radix-scroll-area-thumb]:hover {
+  opacity: 0.55;
 }
 
 /** 仅横向滚动；避免 overflow-x:auto 连带 overflow-y:auto 与页面主滚动条重叠 */
@@ -527,22 +528,10 @@ html.dark {
   padding-top: calc(var(--dw-screen-rail-height) / var(--pixel-canvas-scale));
 }
 
-/* shape-inner：默认描边 + 圆角裁剪（对标 DE；勿在 body 上再叠直角框） */
-.pixel-canvas-host .pixel-shape-inner.dashboard-widget-surface {
-  border-width: 1px;
-  border-style: solid;
-  border-color: rgb(229 231 235 / 0.9);
-}
-
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"]
-  .pixel-canvas-host
-  .pixel-shape-inner.dashboard-widget-surface,
-.dashboard-theme-scope.dark .pixel-canvas-host .pixel-shape-inner.dashboard-widget-surface {
-  border-color: rgb(55 65 81 / 0.8);
-}
+/* shape-inner：边框由 mergeWidgetShellStyle 内联样式驱动，避免覆盖用户配置 */
 
 .dashboard-theme-scope .pixel-canvas-host .pixel-shape-inner.pixel-shape-selected {
-  border-color: var(--dashboard-accent, var(--color-brand-500));
+  box-shadow: inset 0 0 0 1px var(--dashboard-accent, var(--color-brand-500));
 }
 
 /* DataEase curGap：shape 外层 padding 过渡（拖拽/缩放时关闭以免跟手迟滞） */
@@ -700,7 +689,7 @@ html.dark {
 }
 
 .dashboard-theme-scope .dashboard-chart-table tbody tr {
-  background-color: transparent;
+  background-color: var(--dashboard-table-body-bg, transparent);
   color: var(--dashboard-table-body-fg, #344054);
 }
 

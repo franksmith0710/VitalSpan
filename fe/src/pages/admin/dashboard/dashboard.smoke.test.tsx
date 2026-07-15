@@ -117,6 +117,12 @@ function renderEditPage(path = "/admin/dashboards/d1/edit") {
   );
 }
 
+async function waitForEditPageName(name = "销售看板") {
+  const field = await screen.findByTestId("dashboard-name-field");
+  expect(field).toHaveTextContent(name);
+  return field;
+}
+
 function DashboardRouteWithSwitch() {
   const navigate = useNavigate();
   return (
@@ -334,16 +340,14 @@ describe("dashboard admin smoke", () => {
     expect(onInsert).toHaveBeenCalledWith("tabs");
   });
 
-  it("T-DASH-PALETTE-05: more menu opens style and linkage actions", async () => {
+  it("T-DASH-PALETTE-05: more menu opens dashboard style action", async () => {
     const user = userEvent.setup();
     const onStyle = vi.fn();
-    const onLinkage = vi.fn();
     render(
       <MemoryRouter>
         <DashboardEditWorkspace
           onPaletteInsert={() => {}}
           onOpenDashboardStyle={onStyle}
-          onOpenLinkage={onLinkage}
           canvas={<div>canvas</div>}
           chartRail={<div>rail</div>}
         />
@@ -353,9 +357,6 @@ describe("dashboard admin smoke", () => {
     expect(await screen.findByTestId("toolbar-more-menu")).toBeInTheDocument();
     await user.click(screen.getByRole("menuitem", { name: "仪表板样式" }));
     expect(onStyle).toHaveBeenCalled();
-    await user.click(screen.getByTestId("toolbar-more-toggle"));
-    await user.click(screen.getByRole("menuitem", { name: "外部参数" }));
-    expect(onLinkage).toHaveBeenCalled();
   });
 
   it("T-DASH-PALETTE-06: createPaletteWidget builds text widget config", () => {
@@ -439,7 +440,7 @@ describe("dashboard admin smoke", () => {
   it("T-DASH-002-04: shift+click toggles multi-select on edit page", async () => {
     mockDashboardLoad(sampleWidgets);
     renderEditPage();
-    await screen.findByDisplayValue("销售看板");
+    await waitForEditPageName();
     clickWidgetByTitle("A");
     clickWidgetByTitle("B", { shiftKey: true });
     await waitFor(
@@ -455,7 +456,7 @@ describe("dashboard admin smoke", () => {
     const user = userEvent.setup();
     mockDashboardLoad(sampleWidgets);
     renderEditPage();
-    await screen.findByDisplayValue("销售看板");
+    await waitForEditPageName();
     clickWidgetByTitle("A");
     clickWidgetByTitle("B", { shiftKey: true });
     await user.click(await screen.findByRole("button", { name: /删除选中 \(2\)/ }));
@@ -512,8 +513,7 @@ describe("dashboard admin smoke", () => {
     ]);
   });
 
-  it("T-DASH-004-03: edit page shows linkage in context inspector when filters exist", async () => {
-    const user = userEvent.setup();
+  it("T-DASH-004-03: edit page loads global-filters without linkage inspector section", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
@@ -529,9 +529,8 @@ describe("dashboard admin smoke", () => {
       return {};
     });
     renderEditPage();
-    expect(await screen.findByDisplayValue("销售看板")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /筛选联动（高级）/ }));
-    expect(await screen.findByText("筛选联动")).toBeInTheDocument();
+    expect(await screen.findByTestId("dashboard-name-field")).toHaveTextContent("销售看板");
+    expect(screen.queryByText("筛选联动")).not.toBeInTheDocument();
   });
 
   it("T-DASH-002-03: normalizeWidgetLayout unpacks overlapping widgets", () => {
@@ -555,7 +554,7 @@ describe("dashboard admin smoke", () => {
     const user = userEvent.setup();
     mockDashboardLoad(sampleWidgets.slice(0, 1));
     renderEditPage();
-    expect(await screen.findByDisplayValue("销售看板")).toBeInTheDocument();
+    expect(await screen.findByTestId("dashboard-name-field")).toHaveTextContent("销售看板");
     expect(await screen.findByTestId("widget-inline-title-w1")).toHaveTextContent("A");
     const titleInput = await beginWidgetTitleEdit(user);
     expect(titleInput).toHaveValue("A");
@@ -891,8 +890,7 @@ describe("dashboard admin smoke", () => {
     expect(screen.getAllByTestId("chart-mock")).toHaveLength(2);
   });
 
-  it("F-D: edit mode loads global filters for linkage (preview shows filter bar)", async () => {
-    const user = userEvent.setup();
+  it("F-D: edit mode loads global filters without linkage inspector UI", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
@@ -908,11 +906,10 @@ describe("dashboard admin smoke", () => {
       return {};
     });
     renderEditPage();
-    await screen.findByDisplayValue("销售看板");
+    await waitForEditPageName();
     expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/dashboards/d1/global-filters");
     expect(screen.queryByLabelText("区域")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /筛选联动（高级）/ }));
-    expect(await screen.findByText("筛选联动")).toBeInTheDocument();
+    expect(screen.queryByText("筛选联动")).not.toBeInTheDocument();
   });
 
   it("B3: pixel on + v1 migrates in memory and first save writes complete v2 layout", async () => {

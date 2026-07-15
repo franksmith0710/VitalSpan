@@ -1,5 +1,4 @@
 import { TimeRangeConfig } from "@/components/charts/TimeRangeConfig";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -61,12 +60,10 @@ function ChartFeatureSettings() {
   );
 }
 
-type ChartAdvancedPanelProps = {
-  onOpenLinkage?: () => void;
-};
+type ChartAdvancedPanelProps = Record<string, never>;
 
-/** DataEase chart-edit「高级」Tab：功能设置 / 辅助线 / 条件样式 / 联动 / 跳转 */
-export function ChartAdvancedPanel({ onOpenLinkage }: ChartAdvancedPanelProps) {
+/** DataEase chart-edit「高级」Tab：功能设置 / 辅助线 / 条件样式 / 跳转 */
+export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
   return (
     <WidgetAdvancedAccordion
       sections={[
@@ -87,20 +84,6 @@ export function ChartAdvancedPanel({ onOpenLinkage }: ChartAdvancedPanelProps) {
           title: "条件样式",
           disabled: true,
           content: <p className="leading-relaxed">条件样式将在后续版本提供。</p>,
-        },
-        {
-          id: "linkage",
-          title: "联动设置",
-          content: (
-            <div className="space-y-2">
-              <p className="leading-relaxed">配置本图作为筛选源或联动目标。</p>
-              {onOpenLinkage ? (
-                <Button type="button" variant="outline" size="sm" className="h-9" onClick={onOpenLinkage}>
-                  打开筛选联动
-                </Button>
-              ) : null}
-            </div>
-          ),
         },
         {
           id: "jump",

@@ -1,0 +1,80 @@
+import type { CSSProperties } from "react";
+import type { ColorScheme, WidgetStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
+import {
+  coerceWidgetSurfaceBackground,
+  isThemeDefaultShellBackground,
+  resolveBoxPadding,
+  resolveBoxRadius,
+} from "@/components/dashboard/dashboardStyleConfig";
+import { resolveChartFrameOverlayLayer } from "@/lib/chartFrameBorderPresets";
+import {
+  applyBackgroundOpacityOnly,
+  type WidgetBackgroundPresentation,
+} from "@/lib/widgetSurfaceBackground";
+
+/** 组件/全局 widgetStyle → 背景色、底图、装饰边框图层（对标 DE 背景区） */
+export function buildWidgetBackgroundPresentation(
+  bg: WidgetStyleConfig | undefined,
+  colorScheme: ColorScheme = "light",
+  options?: { respectBackgroundShow?: boolean; applyThemeDefaultSurface?: boolean },
+): WidgetBackgroundPresentation {
+  if (!bg) return { surface: {}, backgroundLayer: null, frameLayer: null };
+
+  const respectShow = options?.respectBackgroundShow !== false;
+  const showBackground = !respectShow || bg.backgroundShow !== false;
+  const style: CSSProperties = {};
+  const radius = resolveBoxRadius(bg);
+  let frameLayer: CSSProperties | null = null;
+  let imageLayer: CSSProperties | null = null;
+
+  const coerced = coerceWidgetSurfaceBackground(bg.background, colorScheme);
+  const useThemeDefault =
+    options?.applyThemeDefaultSurface === true &&
+    isThemeDefaultShellBackground(bg.background, colorScheme);
+
+  if (useThemeDefault) {
+    style.backgroundColor = "var(--dashboard-widget-surface)";
+  } else if (coerced) {
+    style.background = coerced;
+  } else {
+    style.backgroundColor = "var(--dashboard-widget-surface)";
+  }
+
+  if (showBackground) {
+    const mode = bg.backgroundMode ?? (bg.framePresetId ? "frame" : "image");
+    if (mode === "frame") {
+      frameLayer = resolveChartFrameOverlayLayer(bg.framePresetId, bg.frameColor, radius);
+    } else if (bg.backgroundImage) {
+      imageLayer = {
+        backgroundImage: `url(${bg.backgroundImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        borderRadius: radius,
+      };
+    }
+    if (bg.opacity != null) style.opacity = bg.opacity;
+    if (bg.backdropBlur != null && bg.backdropBlur > 0) {
+      style.backdropFilter = `blur(${bg.backdropBlur}px)`;
+    }
+  }
+
+  const padding = resolveBoxPadding(bg);
+  if (padding) style.padding = padding;
+  if (radius) style.borderRadius = radius;
+
+  const presentation = applyBackgroundOpacityOnly(style);
+  if (imageLayer) {
+    if (presentation.backgroundLayer) {
+      presentation.backgroundLayer = { ...presentation.backgroundLayer, ...imageLayer };
+    } else if (bg.opacity != null && bg.opacity < 1) {
+      presentation.backgroundLayer = { opacity: bg.opacity, ...imageLayer };
+    } else {
+      presentation.backgroundLayer = imageLayer;
+    }
+  }
+  if (frameLayer && bg.opacity != null && bg.opacity < 1) {
+    frameLayer = { ...frameLayer, opacity: bg.opacity };
+  }
+  presentation.frameLayer = frameLayer;
+  return presentation;
+}

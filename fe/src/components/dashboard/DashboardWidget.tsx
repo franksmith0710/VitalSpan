@@ -29,9 +29,10 @@ import type {
   TextWidgetConfig,
   DashboardStyleConfig,
 } from "./layoutUtils";
-import { mergeTitleStyle, mergeWidgetShellStyle } from "./dashboardStyleConfig";
+import { mergeTitleStyle, mergeWidgetShellStyle, resolveWidgetShellPaintColor } from "./dashboardStyleConfig";
 import { resolveDashboardChrome } from "./dashboardChromeConfig";
 import { parseDeRefreshIntervalSec, readChartDeDisplay, resolveChartQueryLimit } from "@/lib/chartDeDisplay";
+import { resolveEffectiveChartScheme } from "@/lib/chartSurfaceTheme";
 import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible } from "@/lib/chartDeStyle";
 import { isWidgetConfigReady } from "./createLayoutWidget";
 import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption, dwHint } from "./dashboardWidgetTypography";
@@ -85,15 +86,24 @@ type DashboardWidgetProps = {
   suspendLiveResize?: boolean;
 };
 
-function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
+function WidgetPendingPreview({
+  widget,
+  dashboardStyle,
+}: {
+  widget: LayoutWidget;
+  dashboardStyle?: DashboardStyleConfig;
+}) {
   const chartType = widget.chartConfig?.chartType ?? "bar";
   const Icon = widgetChartIcon(chartType);
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
+  const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
+  const mapIsDark =
+    resolveEffectiveChartScheme(dashboardStyle?.colorScheme ?? "light", shellColor) === "dark";
 
   if (chartType === "map") {
     return (
       <div className="relative flex h-full min-h-[64px] flex-col overflow-hidden">
-        <GeoMapPlaceholderChart fill hint="" />
+        <GeoMapPlaceholderChart fill hint="" isDark={mapIsDark} />
         <p className={cn("dw-hint pointer-events-none absolute inset-x-0 bottom-8 text-center")}>
           请配置数据源与查询
         </p>
@@ -260,7 +270,7 @@ export function DashboardWidget({
 
   const chartBody =
     mode === "edit" && !configReady ? (
-      <WidgetPendingPreview widget={widget} />
+      <WidgetPendingPreview widget={widget} dashboardStyle={dashboardStyle} />
     ) : widget.chartConfig ? (
       <ChartRenderer
         embedded
@@ -278,6 +288,7 @@ export function DashboardWidget({
         paletteColors={dashboardStyle?.paletteColors}
         numberFormat={dashboardStyle?.numberFormat}
         colorScheme={dashboardStyle?.colorScheme ?? "light"}
+        widgetShellColor={resolveWidgetShellPaintColor(dashboardStyle)}
         showLoadingHint={chrome.showChartLoadingHint}
         suspendLiveResize={suspendLiveResize}
       />

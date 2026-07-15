@@ -18,7 +18,7 @@ import {
 } from "./dashboardGridRgl";
 import type { DashboardStyleConfig } from "./layoutUtils";
 import { resolveWidgetGap } from "./dashboardStyleConfig";
-import { auxiliaryGridOverlayStyle, resolveDashboardChrome } from "./dashboardChromeConfig";
+import { mergeAuxiliaryGridIntoSurface, resolveDashboardChrome } from "./dashboardChromeConfig";
 import { getTopLevelWidgets, sortWidgets } from "./layoutUtils";
 import { gridLayoutToWidgets, widgetsToGridLayout } from "./gridLayoutAdapter";
 import { normalizeGridLayout } from "./gridSnapUtils";
@@ -184,26 +184,25 @@ export function DashboardGrid({
 
   if (mode === "edit" && onLayoutChange) {
     const isEmpty = topLevel.length === 0;
+    const scheme = styleConfig?.colorScheme ?? "light";
+    const editSurfaceStyle = showAuxGrid
+      ? mergeAuxiliaryGridIntoSurface({}, scheme, true)
+      : undefined;
     return (
       <div
         className={cn(
           "dashboard-scroll dashboard-grid-edit relative min-h-[420px] w-full flex-1 overflow-y-auto",
           paletteDragOver && "dashboard-canvas-drop-active",
+          showAuxGrid && "dashboard-edit-aux-grid",
           className,
         )}
+        style={editSurfaceStyle}
+        data-testid={showAuxGrid ? "dashboard-grid-aux-grid" : undefined}
         onMouseDown={(e) => {
           if (e.target !== e.currentTarget) return;
           onClearSelection?.();
         }}
       >
-        {showAuxGrid ? (
-          <div
-            data-testid="dashboard-grid-aux-grid"
-            className="pointer-events-none absolute inset-0 z-0"
-            style={auxiliaryGridOverlayStyle(styleConfig?.colorScheme ?? "light")}
-            aria-hidden
-          />
-        ) : null}
         {isEmpty ? <DashboardCanvasEmpty dragActive={paletteDragOver} /> : null}
         <DashboardGridPlayerProvider playing={gridPlaying}>
         <DashboardRglCanvas

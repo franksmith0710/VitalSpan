@@ -31,6 +31,10 @@ import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
 import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
 import { readChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import {
+  resolveEffectiveChartScheme,
+  resolveTableThemeVars,
+} from "@/lib/chartSurfaceTheme";
 import { useElementSize } from "@/hooks/useElementSize";
 import { useDashboardColorScheme } from "@/hooks/useDashboardColorScheme";
 import { useDashboardGridPlayer } from "@/components/dashboard/dashboardGridPlayerContext";
@@ -66,6 +70,8 @@ type ChartRendererProps = {
   paletteColors?: string[];
   numberFormat?: NumberFormatConfig;
   colorScheme?: ColorScheme;
+  /** 组件实底色，用于表格/地图跟随组件外观而非仅 colorScheme */
+  widgetShellColor?: string;
   showLoadingHint?: boolean;
   suspendLiveResize?: boolean;
   widgetId?: string;
@@ -87,6 +93,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   paletteColors,
   numberFormat,
   colorScheme = "light",
+  widgetShellColor,
   showLoadingHint = true,
   suspendLiveResize: suspendLiveResizeProp = false,
   widgetId,
@@ -113,7 +120,8 @@ export const ChartRenderer = memo(function ChartRenderer({
     paused: suspendLiveResize,
   });
   const resolvedScheme = useDashboardColorScheme(bodyRef, colorScheme);
-  const isDark = resolvedScheme === "dark";
+  const surfaceScheme = resolveEffectiveChartScheme(resolvedScheme, widgetShellColor);
+  const isDark = surfaceScheme === "dark";
   const fillHeight = useMemo(() => {
     if (!embedded) return Math.max(180, bodySize.height || 180);
     return embeddedBodyHeight(bodySize, pixelSize, contentChromePx, gridSpan);
@@ -296,6 +304,10 @@ export const ChartRenderer = memo(function ChartRenderer({
       }
       const cols = renderModel.kind === "table" ? renderModel.displayCols : columns;
       const tableStyle = readChartDeTableStyle(localConfig);
+      const tableThemeVars = resolveTableThemeVars(tableStyle, {
+        colorScheme: resolvedScheme,
+        widgetShellBg: widgetShellColor,
+      });
 
       return wrapEmbedded(
         <EmbeddedChartTable
@@ -305,6 +317,8 @@ export const ChartRenderer = memo(function ChartRenderer({
           page={page}
           onPageChange={setPage}
           tableStyle={tableStyle}
+          themeVars={tableThemeVars}
+          surfaceScheme={surfaceScheme}
           valueFormat={valueFormat}
           drillField={drillInteraction ? getClickDrillField(config, drill.stack) : undefined}
           onDrillCellClick={

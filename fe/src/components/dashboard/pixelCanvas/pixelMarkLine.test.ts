@@ -78,6 +78,22 @@ describe("pixelMarkLine", () => {
     expect(result.guides).toContainEqual({ id: "yl", position: 300 });
   });
 
+  it("snaps adjacent visuals flush when gap is zero with chrome inset", () => {
+    const active: PixelRect = { x: 292, y: 50, width: 200, height: 120 };
+    const other: PixelRect = { x: 0, y: 80, width: 300, height: 120 };
+    const inset = { top: 0, right: 0, bottom: 0, left: 8 };
+
+    const result = computeMarkLineSnap(active, [other], {
+      threshold: 3,
+      dragDir: dragRightDown,
+      gap: 0,
+      chromeInset: inset,
+    });
+
+    expect(result.rect.x).toBe(292);
+    expect(result.guides).toContainEqual({ id: "yr", position: 300 });
+  });
+
   it("aligns visual edges and draws guide on inset line when gap > 0", () => {
     const active: PixelRect = { x: 100, y: 102, width: 200, height: 120 };
     const other: PixelRect = { x: 400, y: 100, width: 200, height: 80 };

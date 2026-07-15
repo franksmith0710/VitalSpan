@@ -143,8 +143,8 @@ type DeSliderInlineRowProps = {
   unit?: string;
   ariaLabel?: string;
   density?: "wide" | "narrow";
-  /** field：DeAttr 表单标签；muted：grid 内次级标签 */
-  labelTone?: "field" | "muted";
+  /** field：DeAttr 表单标签；muted：grid 内次级标签；compact：2 列栅格短标签 */
+  labelTone?: "field" | "muted" | "compact";
   className?: string;
   onChange: (value: number) => void;
 };
@@ -168,21 +168,29 @@ function DeSliderInlineRow({
   const shown = preview ?? clamped;
   const display = unit ? `${shown}${unit}` : String(shown);
   const sliderWidth = density === "narrow" ? DE_SLIDER_WIDTH_NARROW : DE_SLIDER_WIDTH_WIDE;
+  const gridCols =
+    labelTone === "field"
+      ? "grid-cols-[4.75rem_minmax(0,10.5rem)_2.5rem]"
+      : labelTone === "compact"
+        ? "grid-cols-[1.75rem_minmax(0,1fr)_2.5rem]"
+        : "grid-cols-[minmax(0,1fr)_minmax(0,10.5rem)_2.5rem]";
 
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
+    <div className={cn("grid min-w-0 items-center gap-x-2.5", gridCols, className)}>
       <span
         className={cn(
-          "shrink-0 text-theme-xs",
+          "min-w-0 truncate text-theme-xs",
           labelTone === "field"
-            ? "w-[4.75rem] font-medium text-gray-700 dark:text-gray-300"
-            : "min-w-0 flex-1 text-gray-500 dark:text-gray-400",
+            ? "font-medium text-gray-700 dark:text-gray-300"
+            : labelTone === "compact"
+              ? "text-center text-gray-500 dark:text-gray-400"
+              : "text-gray-500 dark:text-gray-400",
         )}
       >
         {label}
       </span>
       <DeProgressSlider
-        className={cn(sliderWidth, "shrink-0")}
+        className={cn(sliderWidth, "min-w-0 max-w-full justify-self-start")}
         value={clamped}
         min={min}
         max={max}
@@ -192,9 +200,51 @@ function DeSliderInlineRow({
         onPreview={setPreview}
         onChange={onChange}
       />
-      <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+      <span className="min-w-0 truncate text-right text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
         {display}
       </span>
+    </div>
+  );
+}
+
+type DeSliderStackedRowProps = Omit<DeSliderInlineRowProps, "labelTone" | "density" | "className"> & {
+  className?: string;
+};
+
+/** 窄列双行：顶行标签+数值，底行滑块（2 列 grid 单元格防重叠） */
+function DeSliderStackedRow({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  unit = "",
+  ariaLabel,
+  className,
+  onChange,
+}: DeSliderStackedRowProps) {
+  const clamped = clampValue(value, min, max);
+  const [preview, setPreview] = useState<number | null>(null);
+  const shown = preview ?? clamped;
+  const display = unit ? `${shown}${unit}` : String(shown);
+
+  return (
+    <div className={cn("min-w-0 space-y-1", className)}>
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <span className="min-w-0 truncate text-theme-xs text-gray-500 dark:text-gray-400">{label}</span>
+        <span className="shrink-0 text-[11px] tabular-nums text-gray-500 dark:text-gray-400">{display}</span>
+      </div>
+      <DeProgressSlider
+        className="w-full min-w-0"
+        value={clamped}
+        min={min}
+        max={max}
+        step={step}
+        ariaLabel={ariaLabel ?? label}
+        ariaValuetext={display}
+        onPreview={setPreview}
+        onChange={onChange}
+      />
     </div>
   );
 }
@@ -293,7 +343,7 @@ export function ChartDeSliderField({
         </span>
       </div>
       <DeProgressSlider
-        className="w-full"
+        className={DE_SLIDER_WIDTH_NARROW}
         value={clamped}
         min={min}
         max={max}
@@ -311,7 +361,7 @@ export type InspectorSliderFieldProps = Omit<ChartDeSliderFieldProps, "className
   hint?: string;
 };
 
-/** 与 InspectorFieldRow 同密度，滑块替代 number 输入 */
+/** 与 InspectorFieldRow 同密度，滑块替代 number 输入（图表右栏 216px：窄轨道单行） */
 export function InspectorSliderField({
   label,
   hint,
@@ -319,7 +369,13 @@ export function InspectorSliderField({
 }: InspectorSliderFieldProps) {
   return (
     <div className="grid gap-1">
-      <ChartDeSliderField label={label} className="border-b-0 py-0" {...slider} />
+      <DeAttrSliderField
+        label={label}
+        className="border-b-0 py-0"
+        density="narrow"
+        compact
+        {...slider}
+      />
       {hint ? (
         <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">{hint}</p>
       ) : null}
@@ -338,6 +394,8 @@ export type DeAttrSliderFieldProps = {
   step?: number;
   unit?: string;
   compact?: boolean;
+  density?: "wide" | "narrow";
+  labelTone?: DeSliderInlineRowProps["labelTone"];
   ariaLabel?: string;
   className?: string;
   onChange: (value: number) => void;
@@ -354,6 +412,8 @@ export function DeAttrSliderField({
   step = 1,
   unit = "",
   compact,
+  density = "wide",
+  labelTone = "field",
   ariaLabel,
   className,
   onChange,
@@ -374,8 +434,8 @@ export function DeAttrSliderField({
         step={step}
         unit={unit}
         ariaLabel={ariaLabel}
-        density="wide"
-        labelTone="field"
+        density={density}
+        labelTone={labelTone}
         onChange={onChange}
       />
       {hint ? (
@@ -390,7 +450,7 @@ export type DashboardConfigSliderProps = Omit<DeAttrSliderFieldProps, "hint" | "
   compact?: boolean;
 };
 
-/** 看板配置手风琴内 grid 区块：标签 + 滑块 + 数值（单行） */
+/** 看板配置栏滑块：单行标签 + 固定宽度轨道（对标 DE attr-style，禁止通栏大长线） */
 export function DashboardConfigSlider({
   label,
   value,
@@ -405,23 +465,24 @@ export function DashboardConfigSlider({
   onChange,
 }: DashboardConfigSliderProps) {
   return (
-    <DeSliderInlineRow
-      className={className}
+    <DeAttrSliderField
       label={label}
-      value={value ?? fallback}
+      value={value}
+      fallback={fallback}
       min={min}
       max={max}
       step={step}
       unit={unit}
       ariaLabel={ariaLabel}
       density={compact ? "narrow" : "wide"}
-      labelTone="muted"
+      className={cn("border-b-0", compact ? "py-0" : undefined, className)}
+      compact={compact}
       onChange={onChange}
     />
   );
 }
 
-/** 2 列 grid 单元：顶行标签+数值、底行通栏滑块，避免窄列横向挤叠 */
+/** 2 列 grid 单元：双行布局，避免窄列内标签/滑块/数值挤叠 */
 export function DashboardConfigGridSlider({
   label,
   value,
@@ -435,18 +496,18 @@ export function DashboardConfigGridSlider({
   onChange,
 }: Omit<DashboardConfigSliderProps, "compact">) {
   return (
-    <ChartDeSliderField
-      label={label}
-      value={value}
-      fallback={fallback}
-      min={min}
-      max={max}
-      step={step}
-      unit={unit}
-      ariaLabel={ariaLabel}
-      className={cn("min-w-0 border-b-0 py-0", className)}
-      onChange={onChange}
-    />
+    <div className={cn("min-w-0 py-1", className)}>
+      <DeSliderStackedRow
+        label={label}
+        value={value ?? fallback}
+        min={min}
+        max={max}
+        step={step}
+        unit={unit}
+        ariaLabel={ariaLabel}
+        onChange={onChange}
+      />
+    </div>
   );
 }
 
@@ -486,12 +547,10 @@ export function DeAttrSubSliderRow({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-2.5">
-        <span className="w-[4.75rem] shrink-0 text-[11px] text-gray-500 dark:text-gray-400">
-          {label}
-        </span>
+      <div className="grid min-w-0 grid-cols-[4.75rem_minmax(0,10.5rem)_2.5rem] items-center gap-x-2.5">
+        <span className="min-w-0 truncate text-[11px] text-gray-500 dark:text-gray-400">{label}</span>
         <DeProgressSlider
-          className={cn(DE_SLIDER_WIDTH_WIDE, "shrink-0")}
+          className={cn(DE_SLIDER_WIDTH_WIDE, "min-w-0 max-w-full justify-self-start")}
           value={clamped}
           min={min}
           max={max}
@@ -501,7 +560,7 @@ export function DeAttrSubSliderRow({
           onPreview={handlePreview}
           onChange={onChange}
         />
-        <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+        <span className="min-w-0 truncate text-right text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
           {display}
         </span>
       </div>

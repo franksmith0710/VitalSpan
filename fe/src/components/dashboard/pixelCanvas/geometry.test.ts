@@ -207,8 +207,12 @@ describe("pixel canvas geometry", () => {
   });
 
   it("elevates selected widget z-index above normal order", () => {
-    expect(pixelShapeZIndex(3, false)).toBe(3);
+    expect(pixelShapeZIndex(3, false)).toBe(13);
     expect(pixelShapeZIndex(3, true)).toBeGreaterThan(pixelShapeZIndex(99, false));
+  });
+
+  it("keeps auxiliary grid below unselected shapes", () => {
+    expect(pixelShapeZIndex(0, false)).toBeGreaterThan(1);
   });
 
   it("keeps mark-line overlay above selected shapes", () => {

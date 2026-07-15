@@ -7,10 +7,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { ColorField } from "@/components/ui/color-field";
 import {
   TEXT_COLOR_RECOMMENDED,
-  WIDGET_BORDER_RECOMMENDED,
 } from "@/components/dashboard/dashboardStyleConfig";
 import { formatMetricValue } from "../dashboardStyleConfig";
 import { DashboardConfigSection } from "../DashboardConfigSection";
@@ -33,12 +33,6 @@ import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import {
   LEGEND_POSITION_SEGMENT_OPTIONS,
 } from "../inspectorSegmentIcons";
-
-const BORDER_STYLES = [
-  { value: "solid", label: "实线" },
-  { value: "dashed", label: "虚线" },
-  { value: "dotted", label: "点线" },
-] as const;
 
 export function ChartPaletteStyleSection() {
   const { cfg, onChange } = useChartInspector();
@@ -251,73 +245,35 @@ export function ChartLabelStyleSection() {
 export function ChartBackgroundStyleSection() {
   const { cfg, onChange } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
+  const showBackground = deStyle.background?.backgroundShow !== false;
   const patchBackground = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
     onChange(patchChartDeStyleNested(cfg, "background", patch));
-
-  return (
-    <DashboardConfigSection title="背景" defaultOpen={false} compact>
-      <ChartBackgroundStyleFields
-        value={deStyle.background ?? {}}
-        onChange={(patch) => patchBackground(patch)}
-      />
-    </DashboardConfigSection>
-  );
-}
-
-export function ChartBorderStyleSection() {
-  const { cfg, onChange } = useChartInspector();
-  const deStyle = readChartDeStyle(cfg);
   const patchBorder = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
     onChange(patchChartDeStyleNested(cfg, "border", patch));
 
   return (
-    <DashboardConfigSection title="边框" defaultOpen={false} compact>
-      <div className="pb-1">
-        <DeAttrToggleRow
-          label="显示边框"
-          checked={deStyle.border?.show ?? false}
-          onCheckedChange={(show) => patchBorder({ show })}
+    <DashboardConfigSection
+      title="背景"
+      defaultOpen
+      compact
+      action={
+        <Switch
+          checked={showBackground}
+          onCheckedChange={(show) => patchBackground({ backgroundShow: show })}
+          onClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+          aria-label="背景"
+          className="scale-90"
         />
-        <ChartDeAttrField label="颜色">
-          <ColorField
-            compact
-            swatches={WIDGET_BORDER_RECOMMENDED}
-            value={deStyle.border?.color ?? ""}
-            onChange={(color) => patchBorder({ color: color || undefined })}
-          />
-        </ChartDeAttrField>
-        <div className="grid grid-cols-2 gap-2 border-b border-gray-100 py-2 dark:border-white/[0.06]">
-          <ChartDeSliderField
-            label="线宽"
-            className="border-b-0 py-0"
-            value={deStyle.border?.width}
-            fallback={1}
-            min={0}
-            max={8}
-            step={1}
-            unit="px"
-            onChange={(width) => patchBorder({ width })}
-          />
-          <ChartDeSliderField
-            label="圆角"
-            className="border-b-0 py-0"
-            value={deStyle.border?.radius}
-            fallback={0}
-            min={0}
-            max={32}
-            step={1}
-            unit="px"
-            onChange={(radius) => patchBorder({ radius })}
-          />
-        </div>
-        <ChartDeSegmentField
-          label="样式"
-          value={deStyle.border?.style ?? "solid"}
-          columns={3}
-          options={BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
-          onChange={(style) => patchBorder({ style: style as "solid" | "dashed" | "dotted" })}
-        />
-      </div>
+      }
+    >
+      <ChartBackgroundStyleFields
+        value={deStyle.background ?? {}}
+        border={deStyle.border}
+        onChange={(patch) => patchBackground(patch)}
+        onBorderChange={(patch) => patchBorder(patch)}
+        showHeaderToggle={false}
+      />
     </DashboardConfigSection>
   );
 }

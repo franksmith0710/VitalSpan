@@ -1,12 +1,12 @@
 import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
 import { ChartTableStylePanel } from "../ChartTableStylePanel";
+import { ChartTableColorPanel } from "../ChartTableColorPanel";
 import { ChartGeoStylePanel } from "../ChartGeoStylePanel";
 import { useChartInspector } from "../ChartInspectorContext";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
 import { ChartVariantBasicSection } from "./ChartVariantBasicSection";
 import {
   ChartBackgroundStyleSection,
-  ChartBorderStyleSection,
   ChartLabelStyleSection,
   ChartLegendStyleSection,
   ChartPaletteStyleSection,
@@ -25,6 +25,8 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
   switch (sectionId) {
     case "tableBasic":
       return <ChartTableStylePanel />;
+    case "tableColor":
+      return <ChartTableColorPanel />;
     case "variantBasic":
       return <ChartVariantBasicSection />;
     case "palette":
@@ -48,8 +50,6 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
       return <ChartLabelStyleSection />;
     case "background":
       return <ChartBackgroundStyleSection />;
-    case "border":
-      return <ChartBorderStyleSection />;
     default:
       return null;
   }

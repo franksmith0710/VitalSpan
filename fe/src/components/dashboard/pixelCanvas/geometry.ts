@@ -173,6 +173,12 @@ export const SHAPE_ACTION_RAIL_SCREEN_GAP = 8;
 export const SHAPE_ACTION_MENU_SCREEN_WIDTH = 168;
 export const SHAPE_ACTION_RAIL_BUTTON_COUNT = 3;
 
+/** 辅助网格叠层（须低于所有组件 shape） */
+export const PIXEL_AUX_GRID_Z_INDEX = 1;
+
+/** 未选中 shape 起始 z-index，保证始终在辅助网格之上 */
+export const PIXEL_SHAPE_BASE_Z_INDEX = 10;
+
 /** 选中 shape 抬升 z-index，使外伸操作条不被邻组件遮盖 */
 export const PIXEL_SHAPE_SELECTED_Z_BOOST = 1_000_000;
 
@@ -180,7 +186,9 @@ export const PIXEL_SHAPE_SELECTED_Z_BOOST = 1_000_000;
 export const PIXEL_MARK_LINE_Z_INDEX = PIXEL_SHAPE_SELECTED_Z_BOOST + 1_000_000;
 
 export function pixelShapeZIndex(order: number, selected: boolean): number {
-  return selected ? PIXEL_SHAPE_SELECTED_Z_BOOST + order : order;
+  return selected
+    ? PIXEL_SHAPE_SELECTED_Z_BOOST + order
+    : PIXEL_SHAPE_BASE_Z_INDEX + order;
 }
 
 export type ShapeActionRailPlacement = "left" | "right";

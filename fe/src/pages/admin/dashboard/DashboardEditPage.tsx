@@ -148,7 +148,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [styleConfig, setStyleConfig] = useState<DashboardStyleConfig>({});
   const [reuseOpen, setReuseOpen] = useState(false);
-  const [linkagePanelOpen, setLinkagePanelOpen] = useState(false);
   const [chartRailOpen, setChartRailOpen] = useState(true);
   const [chartRefreshKeys, setChartRefreshKeys] = useState<Record<string, number>>({});
   const pixelViewportRef = useRef<PixelRect | undefined>(undefined);
@@ -335,11 +334,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   isDirtyRef.current = isDirty;
 
-  const filterWidgetCount = useMemo(
-    () => widgets.filter((w) => w.type === "filter").length,
-    [widgets],
-  );
-
   const { leaveDialogOpen, confirmLeave, cancelLeave } = useUnsavedLeaveGuard({
     enabled: mode === "edit" && canSave && isDirty && !missing,
   });
@@ -352,7 +346,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const openDashboardContext = useCallback(() => {
     clearSelection();
-    setLinkagePanelOpen(false);
     setChartRailOpen(true);
   }, [clearSelection]);
 
@@ -898,10 +891,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           onPaletteInsert={handleInsert}
           onOpenReuse={() => setReuseOpen(true)}
           onOpenDashboardStyle={openDashboardContext}
-          onOpenLinkage={() => {
-            openDashboardContext();
-            setLinkagePanelOpen(true);
-          }}
           onActivateDashboardContext={openDashboardContext}
           canvas={
             <DashboardEditCanvas
@@ -917,7 +906,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               setWidgets={setWidgets}
               setPixelLayout={setPixelLayout}
               onSelect={(widgetId, additive) => {
-                setLinkagePanelOpen(false);
                 if (
                   widgets.find((w) => w.id === widgetId && w.type === "chart")
                 ) {
@@ -926,7 +914,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 handleSelect(widgetId, additive);
               }}
               onNestedSelect={(widgetId, additive) => {
-                setLinkagePanelOpen(false);
                 setChartRailOpen(true);
                 handleSelect(widgetId, additive);
               }}
@@ -1027,23 +1014,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 }}
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
                 onDataRefresh={() => primarySelectedId && handleChartDataRefresh(primarySelectedId)}
-                onOpenLinkage={() => {
-                  clearSelection();
-                  setLinkagePanelOpen(true);
-                  setChartRailOpen(true);
-                }}
               />
             ) : id ? (
               <DashboardContextInspector
                 embedded
-                dashboardId={id}
                 widgetCount={widgets.length}
-                filterWidgetCount={filterWidgetCount}
                 widgets={widgets}
-                linkage={linkage}
-                effectiveLinkage={effectiveLinkage}
-                onLinkageChange={applyLinkage}
-                linkageDefaultOpen={linkagePanelOpen}
                 styleConfig={styleConfig}
                 onStyleChange={applyStyleConfig}
                 onWidgetsChange={setWidgets}

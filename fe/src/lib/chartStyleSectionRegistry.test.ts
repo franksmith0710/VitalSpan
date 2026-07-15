@@ -5,22 +5,21 @@ describe("chartStyleSectionsForType", () => {
   it("table omits legend and remark", () => {
     expect(chartStyleSectionsForType("table")).toEqual([
       "tableBasic",
+      "tableColor",
       "title",
       "background",
-      "border",
     ]);
   });
 
   it("bar includes variant, palette, legend and label", () => {
     expect(chartStyleSectionsForType("bar")).toEqual([
       "variantBasic",
+      "background",
       "palette",
       "title",
       "remark",
       "legend",
       "label",
-      "background",
-      "border",
     ]);
   });
 
@@ -38,11 +37,10 @@ describe("chartStyleSectionsForType", () => {
 
   it("kpi uses label section for metric format", () => {
     expect(chartStyleSectionsForType("kpi")).toEqual([
+      "background",
       "palette",
       "title",
       "label",
-      "background",
-      "border",
     ]);
   });
 });
