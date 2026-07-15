@@ -123,12 +123,28 @@ describe("DashboardContextInspector", () => {
     const slider = screen.getByRole("slider", { name: "自定义间隙滑块" });
     expect(slider).toHaveValue("3");
 
-    await user.click(slider);
+    fireEvent.pointerDown(slider);
     fireEvent.change(slider, { target: { value: "7" } });
-    expect(onStyleChange).toHaveBeenCalledWith(
+    expect(onStyleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         gapPreset: "custom",
         pixelGutter: 7,
+      }),
+    );
+
+    fireEvent.change(slider, { target: { value: "12" } });
+    expect(onStyleChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        gapPreset: "custom",
+        pixelGutter: 12,
+      }),
+    );
+
+    fireEvent.pointerUp(slider);
+    expect(onStyleChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        gapPreset: "custom",
+        pixelGutter: 12,
       }),
     );
   });

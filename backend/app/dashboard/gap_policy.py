@@ -10,6 +10,7 @@ GAP_PRESET_GRID_PX: dict[str, int] = {"none": 0, "sm": 4, "md": 8, "lg": 16}
 GAP_PRESET_PIXEL_PX: dict[str, int] = {"none": 0, "sm": 2, "md": 5, "lg": 10}
 DEFAULT_CUSTOM_GRID_GAP = 6
 DEFAULT_CUSTOM_PIXEL_GAP = 3
+PIXEL_GAP_CUSTOM_MAX = 24
 
 
 def _infer_widget_gap_preset(gap: int) -> GapPresetName:
@@ -52,7 +53,7 @@ def normalize_gap_config(
 
     if gap_preset == "custom":
         wg = max(0, widget_gap if widget_gap is not None else DEFAULT_CUSTOM_GRID_GAP)
-        pg = min(10, max(0, pixel_gutter if pixel_gutter is not None else DEFAULT_CUSTOM_PIXEL_GAP))
+        pg = min(PIXEL_GAP_CUSTOM_MAX, max(0, pixel_gutter if pixel_gutter is not None else DEFAULT_CUSTOM_PIXEL_GAP))
         return "custom", wg, pg
 
     wg_val = widget_gap or 0
@@ -68,7 +69,7 @@ def normalize_gap_config(
         if inferred != "custom":
             preset, wg, pg = _preset_fields(inferred)
             return preset, wg, pg
-        return "custom", wg_val, min(10, wg_val)
+        return "custom", wg_val, min(PIXEL_GAP_CUSTOM_MAX, wg_val)
 
     if has_pixel and not has_widget:
         inferred = _infer_pixel_gap_preset(pg_val)
@@ -83,4 +84,4 @@ def normalize_gap_config(
         preset, wg, pg = _preset_fields(grid_inferred)
         return preset, wg, pg
 
-    return "custom", wg_val, min(10, pg_val)
+    return "custom", wg_val, min(PIXEL_GAP_CUSTOM_MAX, pg_val)

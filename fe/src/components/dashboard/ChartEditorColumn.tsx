@@ -42,9 +42,6 @@ export function ChartEditorColumn({
   const [validating, setValidating] = useState(false);
   const [refreshOk, setRefreshOk] = useState(false);
 
-  const typeLabel =
-    catalog.find((item) => item.type === cfg.chartType)?.displayName ?? cfg.chartType;
-
   const validate = async () => {
     setError(null);
     setFieldError(null);
@@ -100,17 +97,6 @@ export function ChartEditorColumn({
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col bg-white dark:bg-gray-900", className)}>
-      <div className="shrink-0 border-b border-gray-200 px-2.5 py-2 dark:border-gray-800">
-        <p className="truncate text-theme-xs font-semibold text-gray-800 dark:text-white/90">
-          {typeLabel}
-        </p>
-        {widget.title && widget.title !== typeLabel ? (
-          <p className="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400">
-            {widget.title}
-          </p>
-        ) : null}
-      </div>
-
       <ChartInspectorTabs
         className="min-h-0 flex-1"
         dataFooter={dataFooter}

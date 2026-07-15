@@ -95,6 +95,9 @@ function GapControls({
                 value={Math.max(0, customPx)}
                 ariaLabel="自定义间隙滑块"
                 ariaValuetext={`${Math.max(0, customPx)}px`}
+                onPreview={(next) => {
+                  if (next != null) onCustomPx(next);
+                }}
                 onChange={onCustomPx}
               />
               <Input
@@ -110,7 +113,7 @@ function GapControls({
                 }}
               />
               <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">
-                对标 DataEase：每侧 padding 为设定值，相邻组件间距约为 2 倍；栅格与像素预设标尺不同。
+                对标 DataEase：每侧 padding 为设定值，相邻间距约为 2 倍；像素自定义 0–{customMax}px，栅格 0–48px。
               </p>
             </div>
           ) : null}

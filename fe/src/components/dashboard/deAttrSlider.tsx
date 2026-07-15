@@ -1,8 +1,13 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 function sliderPercent(value: number, min: number, max: number): number {
   if (max <= min) return 0;
   return ((value - min) / (max - min)) * 100;
+}
+
+function clampValue(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 export type DeProgressSliderProps = {
@@ -14,11 +19,13 @@ export type DeProgressSliderProps = {
   ariaValuetext?: string;
   className?: string;
   onChange: (value: number) => void;
+  /** 拖拽过程中每帧预览（用于标签即时刷新，不触发重渲染链） */
+  onPreview?: (value: number | null) => void;
 };
 
 /**
  * DataEase el-slider--small 对标：4px 轨道 + 左侧品牌色进度 + 圆形滑块（24px 命中区）
- * 透明 range 叠在上方负责拖拽/键盘，视觉层独立绘制填充进度。
+ * 拖拽时仅更新本地 draft；松手后一次性提交，避免拖动卡顿。
  */
 export function DeProgressSlider({
   value,
@@ -29,24 +36,70 @@ export function DeProgressSlider({
   ariaValuetext,
   className,
   onChange,
+  onPreview,
 }: DeProgressSliderProps) {
-  const clamped = Math.min(max, Math.max(min, value));
-  const percent = sliderPercent(clamped, min, max);
-  const valueText = ariaValuetext ?? String(clamped);
+  const clamped = clampValue(value, min, max);
+  const [draft, setDraft] = useState<number | null>(null);
+  const draggingRef = useRef(false);
+  const startValueRef = useRef(clamped);
+  const draftRef = useRef<number | null>(null);
+  const onChangeRef = useRef(onChange);
+  const onPreviewRef = useRef(onPreview);
+
+  onChangeRef.current = onChange;
+  onPreviewRef.current = onPreview;
+
+  const shown = draft ?? clamped;
+  const percent = sliderPercent(shown, min, max);
+  const valueText = ariaValuetext ?? String(shown);
+
+  useEffect(() => {
+    if (!draggingRef.current) {
+      setDraft(null);
+      draftRef.current = null;
+    }
+  }, [clamped]);
+
+  const beginDrag = useCallback(() => {
+    draggingRef.current = true;
+    startValueRef.current = draftRef.current ?? clamped;
+  }, [clamped]);
+
+  const endDrag = useCallback(() => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    const final = draftRef.current ?? startValueRef.current;
+    draftRef.current = null;
+    setDraft(null);
+    onPreviewRef.current?.(null);
+    if (final !== startValueRef.current) {
+      onChangeRef.current(final);
+    }
+  }, []);
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = Number(e.target.value);
+    draftRef.current = next;
+    setDraft(next);
+    onPreviewRef.current?.(next);
+    if (!draggingRef.current) {
+      onChangeRef.current(next);
+    }
+  };
 
   return (
-    <div className={cn("relative h-6 w-full", className)} data-testid="de-progress-slider">
+    <div className={cn("relative h-6 w-full touch-none", className)} data-testid="de-progress-slider">
       <div
         className="pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-gray-200 dark:bg-white/10"
         aria-hidden
       >
         <div
-          className="h-full rounded-full bg-brand-500 transition-[width] duration-75 ease-out dark:bg-brand-400"
-          style={{ width: `${percent}%` }}
+          className="h-full w-full origin-left rounded-full bg-brand-500 will-change-transform dark:bg-brand-400"
+          style={{ transform: `scaleX(${percent / 100})` }}
         />
       </div>
       <div
-        className="pointer-events-none absolute top-1/2 z-[1] size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-brand-500 bg-white shadow-theme-xs transition-[left] duration-75 ease-out dark:border-brand-400 dark:bg-gray-900"
+        className="pointer-events-none absolute top-1/2 z-[1] size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-brand-500 bg-white shadow-theme-xs will-change-[left] dark:border-brand-400 dark:bg-gray-900"
         style={{ left: `${percent}%` }}
         aria-hidden
       />
@@ -55,14 +108,20 @@ export function DeProgressSlider({
         min={min}
         max={max}
         step={step}
-        value={clamped}
+        value={shown}
         aria-label={ariaLabel}
         aria-valuemin={min}
         aria-valuemax={max}
-        aria-valuenow={clamped}
+        aria-valuenow={shown}
         aria-valuetext={valueText}
         className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0"
-        onChange={(e) => onChange(Number(e.target.value))}
+        onPointerDown={beginDrag}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onBlur={() => {
+          if (draggingRef.current) endDrag();
+        }}
+        onChange={handleInput}
       />
     </div>
   );
@@ -90,8 +149,10 @@ export function DeAttrSlider({
   className,
   onChange,
 }: DeAttrSliderProps) {
-  const clamped = Math.min(max, Math.max(min, value));
-  const display = unit ? `${clamped}${unit}` : String(clamped);
+  const clamped = clampValue(value, min, max);
+  const [preview, setPreview] = useState<number | null>(null);
+  const shown = preview ?? clamped;
+  const display = unit ? `${shown}${unit}` : String(shown);
 
   return (
     <div className={cn("space-y-1", className)}>
@@ -110,6 +171,7 @@ export function DeAttrSlider({
         step={step}
         ariaLabel={ariaLabel}
         ariaValuetext={display}
+        onPreview={setPreview}
         onChange={onChange}
       />
     </div>
@@ -144,8 +206,10 @@ export function ChartDeSliderField({
   onChange,
 }: ChartDeSliderFieldProps) {
   const resolved = value ?? fallback;
-  const clamped = Math.min(max, Math.max(min, resolved));
-  const display = unit ? `${clamped}${unit}` : String(clamped);
+  const clamped = clampValue(resolved, min, max);
+  const [preview, setPreview] = useState<number | null>(null);
+  const shown = preview ?? clamped;
+  const display = unit ? `${shown}${unit}` : String(shown);
 
   return (
     <div
@@ -167,6 +231,7 @@ export function ChartDeSliderField({
         step={step}
         ariaLabel={ariaLabel ?? label}
         ariaValuetext={display}
+        onPreview={setPreview}
         onChange={onChange}
       />
     </div>

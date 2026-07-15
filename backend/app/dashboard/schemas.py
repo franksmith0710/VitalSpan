@@ -154,7 +154,7 @@ class DashboardStyleConfig(BaseModel):
     gap_preset: Literal["none", "sm", "md", "lg", "custom"] | None = Field(
         default=None, alias="gapPreset"
     )
-    pixel_gutter: int | None = Field(default=None, alias="pixelGutter", ge=0, le=10)
+    pixel_gutter: int | None = Field(default=None, alias="pixelGutter", ge=0, le=24)
     scale_mode: Literal["canvas", "component"] | None = Field(default=None, alias="scaleMode")
     canvas_background_image: str | None = Field(
         default=None, alias="canvasBackgroundImage", max_length=2048

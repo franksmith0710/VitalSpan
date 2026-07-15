@@ -31,6 +31,7 @@ describe("WidgetEditRailLayout", () => {
     );
 
     expect(screen.getByText("配置")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "基础折线图" })).toBeInTheDocument();
     expect(screen.getByTestId("dataset-main")).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText("收起基础折线图"));

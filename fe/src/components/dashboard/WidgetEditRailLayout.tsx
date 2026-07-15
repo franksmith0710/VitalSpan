@@ -6,6 +6,7 @@ type WidgetEditRailLayoutProps = {
   left: ReactNode;
   right: ReactNode;
   leftLabel: string;
+  leftSubtitle?: string;
   rightLabel?: string;
   className?: string;
 };
@@ -21,6 +22,7 @@ export function useWidgetEditRailRightCollapse() {
 
 function ExpandedRailPanel({
   label,
+  subtitle,
   widthClass,
   bordered,
   onCollapse,
@@ -28,6 +30,7 @@ function ExpandedRailPanel({
   hideFoldHeader,
 }: {
   label: string;
+  subtitle?: string;
   widthClass: string;
   bordered?: boolean;
   onCollapse: () => void;
@@ -42,7 +45,9 @@ function ExpandedRailPanel({
         bordered && "border-l border-gray-200 dark:border-gray-800",
       )}
     >
-      {hideFoldHeader ? null : <RailFoldHeader label={label} onCollapse={onCollapse} />}
+      {hideFoldHeader ? null : (
+        <RailFoldHeader label={label} subtitle={subtitle} onCollapse={onCollapse} />
+      )}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
     </div>
   );
@@ -52,6 +57,7 @@ export function WidgetEditRailLayout({
   left,
   right,
   leftLabel,
+  leftSubtitle,
   rightLabel = "数据集",
   className,
 }: WidgetEditRailLayoutProps) {
@@ -63,6 +69,7 @@ export function WidgetEditRailLayout({
       {leftOpen ? (
         <ExpandedRailPanel
           label={leftLabel}
+          subtitle={leftSubtitle}
           widthClass={RAIL_COLUMN_WIDTH}
           onCollapse={() => setLeftOpen(false)}
         >

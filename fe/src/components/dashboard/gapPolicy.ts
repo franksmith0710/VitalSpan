@@ -10,13 +10,17 @@ export const GAP_PRESET_PX = {
   lg: 16,
 } as const;
 
-/** 像素画布间隙上限 10px（对标 DE gapSize 0–10） */
+/** 像素画布间隙上限（预设 lg=10；自定义滑块可至 PIXEL_GAP_CUSTOM_MAX） */
 export const PIXEL_GAP_PRESET_PX = {
   none: 0,
   sm: 2,
   md: 5,
   lg: 10,
 } as const;
+
+/** 像素画布自定义间隙滑块上限（超出 DataEase 0–10，满足大屏留白需求） */
+export const PIXEL_GAP_CUSTOM_MAX = 24;
+export const GRID_GAP_CUSTOM_MAX = 48;
 
 export type GapPreset = keyof typeof GAP_PRESET_PX | "custom";
 
@@ -96,17 +100,17 @@ export function resolvePixelGutter(config: GapConfigInput): number {
     return PIXEL_GAP_PRESET_PX[preset as keyof typeof PIXEL_GAP_PRESET_PX];
   }
   if (config.gapPreset === "custom") {
-    return Math.min(10, Math.max(0, config.pixelGutter ?? DEFAULT_CUSTOM_PIXEL_GAP));
+    return Math.min(PIXEL_GAP_CUSTOM_MAX, Math.max(0, config.pixelGutter ?? DEFAULT_CUSTOM_PIXEL_GAP));
   }
   if (config.pixelGutter != null) {
-    return Math.min(10, Math.max(0, config.pixelGutter));
+    return Math.min(PIXEL_GAP_CUSTOM_MAX, Math.max(0, config.pixelGutter));
   }
   if (config.widgetGap != null && config.widgetGap > 0) {
     const inferred = inferWidgetGapPreset(config.widgetGap);
     if (inferred !== "custom" && inferred in PIXEL_GAP_PRESET_PX) {
       return PIXEL_GAP_PRESET_PX[inferred as keyof typeof PIXEL_GAP_PRESET_PX];
     }
-    return Math.min(10, config.widgetGap);
+    return Math.min(PIXEL_GAP_CUSTOM_MAX, config.widgetGap);
   }
   return DEFAULT_PIXEL_GUTTER;
 }
@@ -132,7 +136,10 @@ export function normalizeDashboardGapConfig<T extends GapConfigInput>(config: T)
       ...config,
       gapPreset: "custom",
       widgetGap: Math.max(0, config.widgetGap ?? DEFAULT_CUSTOM_GRID_GAP),
-      pixelGutter: Math.min(10, Math.max(0, config.pixelGutter ?? DEFAULT_CUSTOM_PIXEL_GAP)),
+      pixelGutter: Math.min(
+        PIXEL_GAP_CUSTOM_MAX,
+        Math.max(0, config.pixelGutter ?? DEFAULT_CUSTOM_PIXEL_GAP),
+      ),
     };
   }
 
@@ -154,7 +161,7 @@ export function normalizeDashboardGapConfig<T extends GapConfigInput>(config: T)
       ...config,
       gapPreset: "custom",
       widgetGap,
-      pixelGutter: Math.min(10, widgetGap),
+      pixelGutter: Math.min(PIXEL_GAP_CUSTOM_MAX, widgetGap),
     };
   }
 
@@ -181,7 +188,7 @@ export function normalizeDashboardGapConfig<T extends GapConfigInput>(config: T)
     ...config,
     gapPreset: "custom",
     widgetGap,
-    pixelGutter: Math.min(10, pixelGutter),
+    pixelGutter: Math.min(PIXEL_GAP_CUSTOM_MAX, pixelGutter),
   };
 }
 
@@ -192,7 +199,7 @@ export function resolveDashboardGapUiState(
   options: { pixel?: boolean } = {},
 ): DashboardGapUiState {
   const pixel = options.pixel === true;
-  const customMax = pixel ? 10 : 48;
+  const customMax = pixel ? PIXEL_GAP_CUSTOM_MAX : GRID_GAP_CUSTOM_MAX;
   const presetMap = pixel ? PIXEL_GAP_PRESET_PX : GAP_PRESET_PX;
 
   if (config.gapPreset === "none") {
@@ -260,7 +267,7 @@ export function buildDashboardGapPatch(
     return gapPresetFields(action.preset);
   }
 
-  const px = Math.max(0, Math.min(pixel ? 10 : 48, action.px));
+  const px = Math.max(0, Math.min(pixel ? PIXEL_GAP_CUSTOM_MAX : GRID_GAP_CUSTOM_MAX, action.px));
   if (px <= 0) return gapPresetFields("none");
 
   return pixel
@@ -272,7 +279,7 @@ export function buildDashboardGapPatch(
     : {
         gapPreset: "custom",
         widgetGap: px,
-        pixelGutter: config.pixelGutter ?? Math.min(10, px),
+        pixelGutter: config.pixelGutter ?? Math.min(PIXEL_GAP_CUSTOM_MAX, px),
       };
 }
 

@@ -39,8 +39,32 @@ describe("ChartDeSliderField", () => {
       />,
     );
 
-    const fill = container.querySelector("[aria-hidden].overflow-hidden > div");
-    expect(fill).toHaveStyle({ width: "50%" });
+    const fill = container.querySelector(".origin-left");
+    expect(fill).toHaveStyle({ transform: "scaleX(0.5)" });
+  });
+
+  it("commits once on pointer up after drag", () => {
+    const onChange = vi.fn();
+    render(
+      <DeProgressSlider
+        value={10}
+        min={0}
+        max={100}
+        step={1}
+        ariaLabel="测试"
+        onChange={onChange}
+      />,
+    );
+
+    const slider = screen.getByRole("slider", { name: "测试" });
+    fireEvent.pointerDown(slider);
+    fireEvent.change(slider, { target: { value: "20" } });
+    fireEvent.change(slider, { target: { value: "30" } });
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(slider);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(30);
   });
 
   it("uses fallback when value is undefined", () => {

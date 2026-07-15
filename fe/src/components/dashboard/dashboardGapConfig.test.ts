@@ -39,6 +39,14 @@ describe("dashboard gap custom mode", () => {
     expect(resolveDashboardComponentGap(patch, { pixel: true })).toBe(7);
   });
 
+  it("pixel custom slider allows up to PIXEL_GAP_CUSTOM_MAX", async () => {
+    const { PIXEL_GAP_CUSTOM_MAX } = await import("./gapPolicy");
+    expect(PIXEL_GAP_CUSTOM_MAX).toBe(24);
+    const patch = buildDashboardGapPatch({}, { type: "customPx", px: 20 }, { pixel: true });
+    expect(patch.pixelGutter).toBe(20);
+    expect(resolveDashboardGapUiState({ ...patch }, { pixel: true }).customMax).toBe(24);
+  });
+
   it("custom px zero clears gap via none preset", () => {
     expect(buildDashboardGapPatch({}, { type: "customPx", px: 0 }, { pixel: true })).toEqual({
       gapPreset: "none",

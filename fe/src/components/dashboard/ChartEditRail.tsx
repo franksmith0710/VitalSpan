@@ -31,6 +31,7 @@ function ChartEditRailInner({
   const {
     widget,
     cfg,
+    catalog,
     datasetsLoading,
     datasetsError,
     datasetItems,
@@ -43,13 +44,17 @@ function ChartEditRailInner({
     refreshColumns,
   } = useChartInspector();
 
-  const title = widget.title || "图表";
+  const typeLabel =
+    catalog.find((item) => item.type === cfg.chartType)?.displayName ?? cfg.chartType;
+  const leftSubtitle =
+    widget.title && widget.title !== typeLabel ? widget.title : undefined;
   const hasChartConfig = Boolean(widget.chartConfig);
 
   return (
     <WidgetEditRailLayout
       className={className}
-      leftLabel={title}
+      leftLabel={typeLabel}
+      leftSubtitle={leftSubtitle}
       rightLabel="数据集"
       left={
         <ChartEditorColumn

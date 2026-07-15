@@ -43,28 +43,40 @@ export function RailFoldHeader({
   label,
   onCollapse,
   className,
+  subtitle,
 }: {
   label: string;
   onCollapse: () => void;
   className?: string;
+  subtitle?: string;
 }) {
   return (
     <div
       className={cn(
-        "flex h-9 shrink-0 items-center justify-end border-b border-gray-100 px-1 dark:border-gray-800",
+        "shrink-0 border-b border-gray-200 px-3 py-2.5 dark:border-gray-800",
         className,
       )}
     >
-      <IconButton
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="size-7 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/5 dark:hover:text-gray-300"
-        aria-label={`收起${label}`}
-        onClick={onCollapse}
-      >
-        <RailFoldIcon />
-      </IconButton>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-theme-xs font-semibold text-gray-800 dark:text-white/90">
+            {label}
+          </h3>
+          {subtitle ? (
+            <p className="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400">{subtitle}</p>
+          ) : null}
+        </div>
+        <IconButton
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="size-7 shrink-0 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/5 dark:hover:text-gray-300"
+          aria-label={`收起${label}`}
+          onClick={onCollapse}
+        >
+          <RailFoldIcon />
+        </IconButton>
+      </div>
     </div>
   );
 }
