@@ -54,13 +54,13 @@ const pixelLayout = {
 };
 
 describe("stylePipeline", () => {
-  it("hydrate legacy widgetGap matches pixel runtime before and after persist", () => {
+  it("hydrate legacy widgetGap keeps pixel shell at none before and after persist", () => {
     const live = hydrateDashboardStyle({ widgetGap: 8, colorScheme: "dark" });
-    expect(resolveComponentGapRuntime(live, "pixel").shellPaddingPx).toBe(5);
+    expect(resolveComponentGapRuntime(live, "pixel").shellPaddingPx).toBe(0);
 
     const { saved } = dashboardLayoutPersistRoundtrip(pixelLayout, live, true);
     const reloaded = hydrateDashboardStyle(saved.styleConfig);
-    expect(resolveComponentGapRuntime(reloaded, "pixel").shellPaddingPx).toBe(5);
+    expect(resolveComponentGapRuntime(reloaded, "pixel").shellPaddingPx).toBe(0);
   });
 
   it("resolveEffective prefers liveStyle over stale layout.styleConfig", () => {

@@ -66,6 +66,18 @@ describe("mergeWidgetShellStyle spacing", () => {
     expect(style.borderWidth).toBeUndefined();
   });
 
+  it("does not render decorative frame overlay on global widget shell", () => {
+    const { frameLayer } = mergeWidgetShellStyle(
+      {
+        backgroundMode: "frame",
+        framePresetId: "frame-7",
+        frameColor: "#3370ff",
+      },
+      "light",
+    );
+    expect(frameLayer).toBeNull();
+  });
+
   it("applies default border when widgetStyle is empty", () => {
     const { style } = mergeWidgetShellStyle(undefined, "light");
     expect(style.borderWidth).toBe(1);

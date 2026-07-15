@@ -14,7 +14,11 @@ import {
   type DashboardStyleConfig,
   type ScaleMode,
 } from "./dashboardStyleConfig";
-import { resolveDashboardGapRuntimeFromLayout, resolveEffectiveDashboardStyle } from "./stylePipeline";
+import {
+  preparePixelLayoutForDisplay,
+  resolveDashboardGapRuntimeFromLayout,
+  resolveEffectiveDashboardStyle,
+} from "./stylePipeline";
 import { DashboardStyleSurface } from "./DashboardStyleSurface";
 import { DashboardWidgetsProvider } from "./DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "./dashboardWidgetExecuteKey";
@@ -49,14 +53,21 @@ export function DashboardLayoutPreview({
     () => resolveEffectiveDashboardStyle(layout, styleConfigOverride),
     [layout, styleConfigOverride],
   );
+  const displayLayout = useMemo(
+    () =>
+      layout.version === 2
+        ? preparePixelLayoutForDisplay(layout, styleConfig)
+        : layout,
+    [layout, styleConfig],
+  );
   const widgetDashboardStyle = useMemo(
     () => pickWidgetDashboardStyle(styleConfig),
     [widgetDashboardStyleFingerprint(styleConfig)],
   );
   const widgets =
-    layout.version === 1
-      ? layout.widgets
-      : layout.widgets.map(pixelWidgetToLayoutWidget);
+    displayLayout.version === 1
+      ? displayLayout.widgets
+      : displayLayout.widgets.map(pixelWidgetToLayoutWidget);
   const styleRevision = widgetDashboardStyleFingerprint(styleConfig);
   const effectiveLinkage: Linkage = linkage ?? {
     filters: [],
@@ -100,7 +111,7 @@ export function DashboardLayoutPreview({
     );
   };
 
-  if (layout.version === 2) {
+  if (displayLayout.version === 2) {
     const widgetContentRevision = (widget: PixelLayoutWidget) =>
       `${styleRevision}:${widgetFilterExecuteRevision(widget.id, effectiveLinkage, filterValues)}`;
 
@@ -109,12 +120,12 @@ export function DashboardLayoutPreview({
       <ChartDrillProvider>
       <DashboardStyleSurface
         styleConfig={styleConfig}
-        componentGapPx={resolveDashboardGapRuntimeFromLayout(layout, styleConfigOverride).shellPaddingPx}
+        componentGapPx={resolveDashboardGapRuntimeFromLayout(displayLayout, styleConfigOverride).shellPaddingPx}
         className={className}
       >
         <PixelCanvas
           mode="view"
-          layout={layout}
+          layout={displayLayout}
           styleConfig={styleConfig}
           scaleMode={scaleMode ?? styleConfig.scaleMode}
           className="h-full min-h-0"

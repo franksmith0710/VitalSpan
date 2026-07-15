@@ -1,9 +1,11 @@
+import type { GapConfigInput } from "../gapPolicy";
+import { resolvePixelGutter } from "../gapPolicy";
 import type { DashboardLayoutV2, PixelLayoutWidget } from "../layoutUtils";
-import { measurePixelLayoutOuterGaps } from "../gapRuntimeProbe";
+import { hasPositiveOuterGaps, measurePixelLayoutOuterGaps } from "../gapRuntimeProbe";
 
-const CROSS_AXIS_OVERLAP_MIN = 8;
-const NEIGHBOR_GAP_EPS = 1.5;
-const MAX_PASSES = 48;
+const CROSS_AXIS_OVERLAP_MIN = 1;
+const NEIGHBOR_GAP_EPS = 0.5;
+const MAX_PASSES = 64;
 
 export type GapCompactionResult = {
   layout: DashboardLayoutV2;
@@ -85,15 +87,10 @@ function compactVerticalPass(
 }
 
 /**
- * shell gap 变小时压实外框正缝（DE：坐标为外框，padding 独立）。
- * 不处理重叠块；仅将可分离正缝收敛到 targetOuterGap（none→0）。
+ * 将外框正缝压实至相切（gapPreset=none 或加载/保存时调用）。
  */
-export function compactPixelLayoutForGapChange(
-  layout: DashboardLayoutV2,
-  prevShellGap: number,
-  nextShellGap: number,
-): GapCompactionResult {
-  if (nextShellGap >= prevShellGap || layout.widgets.length < 2) {
+export function compactPixelLayoutOuterRects(layout: DashboardLayoutV2): GapCompactionResult {
+  if (layout.widgets.length < 2) {
     return { layout, compacted: false, closedGaps: 0 };
   }
 
@@ -124,6 +121,35 @@ export function compactPixelLayoutForGapChange(
   };
 }
 
+/**
+ * shell gap 变小时压实外框正缝（DE：坐标为外框，padding 独立）。
+ * 不处理重叠块；仅将可分离正缝收敛到 targetOuterGap（none→0）。
+ */
+export function compactPixelLayoutForGapChange(
+  layout: DashboardLayoutV2,
+  prevShellGap: number,
+  nextShellGap: number,
+): GapCompactionResult {
+  if (nextShellGap >= prevShellGap) {
+    return { layout, compacted: false, closedGaps: 0 };
+  }
+  return compactPixelLayoutOuterRects(layout);
+}
+
 export function shouldCompactForGapChange(prevShellGap: number, nextShellGap: number): boolean {
   return nextShellGap < prevShellGap;
+}
+
+/** gapPreset=none 时：加载/保存/已是零间隙仍存外框缝则压实 */
+export function compactPixelLayoutWhenZeroGap(
+  layout: DashboardLayoutV2,
+  gapConfig: GapConfigInput,
+): GapCompactionResult {
+  if (resolvePixelGutter(gapConfig) > 0 || layout.widgets.length < 2) {
+    return { layout, compacted: false, closedGaps: 0 };
+  }
+  if (!hasPositiveOuterGaps(layout.widgets)) {
+    return { layout, compacted: false, closedGaps: 0 };
+  }
+  return compactPixelLayoutOuterRects(layout);
 }

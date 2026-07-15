@@ -30,7 +30,8 @@ import {
   widgetDashboardStyleFingerprint,
 } from "../dashboardStyleConfig";
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
-import { mergeAuxiliaryGridIntoSurface, resolveDashboardChrome } from "../dashboardChromeConfig";
+import { compactPixelLayoutWhenZeroGap } from "./gapCompaction";
+import { mergeAuxiliaryGridIntoSurface, resolveDashboardChrome, auxiliaryGridPatternStyle } from "../dashboardChromeConfig";
 import { resolvePixelCollisions, widgetRect } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
 import { clientPointToCanvas, resolvePixelCanvasMeasureElement, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
@@ -164,7 +165,6 @@ export function PixelCanvas({
     },
     [onViewportChange],
   );
-  const activeLayout = layout;
   const widgetChromeStyle = useMemo(
     () => pickWidgetDashboardStyle(styleConfig),
     [widgetDashboardStyleFingerprint(styleConfig)],
@@ -174,16 +174,19 @@ export function PixelCanvas({
     () => resolveComponentGapRuntime(styleConfig, "pixel"),
     [styleConfig],
   );
+  const activeLayout = useMemo(() => {
+    if (gapRuntime.shellPaddingPx > 0) return layout;
+    return compactPixelLayoutWhenZeroGap(layout, styleConfig).layout;
+  }, [layout, styleConfig, gapRuntime.shellPaddingPx]);
   const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
   const scheme = styleConfig.colorScheme ?? "light";
   const artboardStyle = useMemo(
-    () =>
-      mergeAuxiliaryGridIntoSurface(
-        resolveArtboardStyle(styleConfig),
-        scheme,
-        showAuxGrid,
-      ),
-    [canvasArtboardStyleFingerprint(styleConfig), scheme, showAuxGrid],
+    () => resolveArtboardStyle(styleConfig),
+    [canvasArtboardStyleFingerprint(styleConfig)],
+  );
+  const auxGridStyle = useMemo(
+    () => auxiliaryGridPatternStyle(scheme),
+    [scheme],
   );
   const userArtboardBg = hasUserCanvasBackground(styleConfig);
   const viewCanvasHeight = useMemo(() => {
@@ -485,14 +488,19 @@ export function PixelCanvas({
           onDrop={handleDrop}
         >
           <div
-            data-testid={showAuxGrid ? "pixel-canvas-aux-grid" : "pixel-canvas-artboard"}
-            className={cn(
-              "pointer-events-none absolute inset-0 z-0 shadow-theme-sm ring-1 ring-gray-200 dark:ring-gray-700",
-              showAuxGrid && "dashboard-edit-aux-grid",
-            )}
+            data-testid="pixel-canvas-artboard"
+            className="pointer-events-none absolute inset-0 z-0 shadow-theme-sm ring-1 ring-gray-200 dark:ring-gray-700"
             style={artboardStyle}
             aria-hidden
           />
+          {showAuxGrid ? (
+            <div
+              data-testid="pixel-canvas-aux-grid"
+              className="dashboard-edit-aux-grid pointer-events-none absolute inset-0 z-[1]"
+              style={auxGridStyle}
+              aria-hidden
+            />
+          ) : null}
           {activeLayout.widgets.map((widget) => (
               <PixelShape
                 key={widget.id}

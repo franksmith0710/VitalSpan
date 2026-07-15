@@ -1,16 +1,8 @@
 from __future__ import annotations
 
-_ORACLE_TYPE_MAP = {
-    "NUMBER": "decimal",
-    "VARCHAR2": "string",
-    "DATE": "datetime",
-}
+from app.datasources.type_normalize import normalize_column_type
 
-_SQLSERVER_TYPE_MAP = {
-    "nvarchar": "string",
-    "datetime2": "datetime",
-    "bit": "boolean",
-}
+__all__ = ["quote_identifier", "build_limit_clause", "normalize_column_type"]
 
 
 def quote_identifier(dialect: str, name: str) -> str:
@@ -27,10 +19,3 @@ def build_limit_clause(dialect: str, limit: int, offset: int) -> str:
     return f"OFFSET {offset} ROWS FETCH NEXT {limit} ROWS ONLY"
 
 
-def normalize_column_type(dialect: str, raw: str) -> str:
-    key = raw.strip()
-    if dialect == "oracle":
-        return _ORACLE_TYPE_MAP.get(key.upper(), key.lower())
-    if dialect == "sqlserver":
-        return _SQLSERVER_TYPE_MAP.get(key.lower(), key.lower())
-    raise ValueError(f"unsupported dialect for normalize_column_type: {dialect}")

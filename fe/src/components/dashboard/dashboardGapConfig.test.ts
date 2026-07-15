@@ -96,17 +96,17 @@ describe("dashboard gap custom mode", () => {
     });
   });
 
-  it("legacy widgetGap-only infers md preset with both channels", () => {
+  it("legacy widgetGap-only keeps pixel shell at none (grid field does not imply pixel gutter)", () => {
     expect(normalizeDashboardGapConfig({ widgetGap: 8 })).toEqual({
-      gapPreset: "md",
+      gapPreset: "none",
       widgetGap: 8,
-      pixelGutter: 5,
+      pixelGutter: 0,
     });
   });
 
-  it("resolvePixelGutter infers pixel channel from legacy widgetGap before persist", async () => {
+  it("resolvePixelGutter does not infer from legacy widgetGap", async () => {
     const { resolvePixelGutter } = await import("./gapPolicy");
-    expect(resolvePixelGutter({ widgetGap: 8 })).toBe(5);
+    expect(resolvePixelGutter({ widgetGap: 8 })).toBe(0);
   });
 
   it("bootstrap aligns runtime pixel gap with save normalization", async () => {
@@ -117,17 +117,17 @@ describe("dashboard gap custom mode", () => {
       { version: 2, canvas: { width: 1440, height: 900 }, widgets: [] },
       bootstrapped,
     );
-    expect(resolveComponentGapRuntime(bootstrapped, "pixel").shellPaddingPx).toBe(5);
-    expect(resolveComponentGapRuntime(saved.styleConfig ?? {}, "pixel").shellPaddingPx).toBe(5);
+    expect(resolveComponentGapRuntime(bootstrapped, "pixel").shellPaddingPx).toBe(0);
+    expect(resolveComponentGapRuntime(saved.styleConfig ?? {}, "pixel").shellPaddingPx).toBe(0);
   });
 
-  it("buildDashboardLayoutForSave normalizes legacy widgetGap on styleConfig", () => {
+  it("buildDashboardLayoutForSave normalizes legacy widgetGap without pixel gutter", () => {
     const saved = buildDashboardLayoutForSave(
       { version: 2, canvas: { width: 1440, height: 900 }, widgets: [] },
       { widgetGap: 8 },
     );
-    expect(saved.styleConfig?.gapPreset).toBe("md");
-    expect(saved.styleConfig?.widgetGap).toBe(8);
-    expect(saved.styleConfig?.pixelGutter).toBe(5);
+    expect(saved.styleConfig?.gapPreset).toBe("none");
+    expect(saved.styleConfig?.widgetGap).toBe(0);
+    expect(saved.styleConfig?.pixelGutter).toBe(0);
   });
 });

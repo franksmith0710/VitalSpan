@@ -19,16 +19,35 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | A6_GATE |
-| request | 看板「无间隙」仍见画板色条 — 根因剖析与压实方案 |
-| type | bugfix |
-| plan | docs/automate/plans/2026-07-15-dashboard-gap-zero-compaction.md |
-| bug_doc | docs/bugs/BUG-11_dashboard-gap-zero-still-visible_2026-07-15.md |
-| status | R1_DONE |
-| last_verified_command | vitest gap*+stylePipeline+pixelMarkLine; pytest test_dashboard_gap_style_config; tsc --noEmit |
+| phase | DONE |
+| request | 自研 ETL/类型归一化迁 pandas |
+| type | feature |
+| plan | docs/automate/plans/2026-07-15-ingestion-pandas-pipeline.md |
+| goal | etl_rules DataFrame 管道 + type_normalize 集中映射 |
+| scope_include | ingestion/etl_rules, datasources/type_normalize, ES/OS/Mongo/relational_hints, pyproject.toml |
+| acceptance | pytest test_etl_rules + test_type_normalize + ETL sync 子集 |
+| autonomy_policy | auto_accept_low_risk |
+| risk_level | low |
+| status | DONE |
+| last_verified_command | pytest test_etl_rules.py test_type_normalize.py test_sync_executor.py -k etl |
 | last_verified_exit_code | 0 |
-| verification_summary | gapCompaction 压实外框缝；切 none 自动收紧；none persist roundtrip shellPaddingPx=0 |
+| verification_summary | pandas 依赖；apply_rules DataFrame 实现；type_normalize 统一 BI/pandas dtype 映射 |
 | repair_rounds | 0 |
+
+## 上一轮（归档 · 看板无间隙 R2）
+
+| 字段 | 值 |
+|------|----|
+| phase | A4_PLAN |
+| request | 看板「无间隙」仍见画板色条 — R2 根治方案 |
+| type | bugfix |
+| plan | docs/automate/plans/2026-07-15-dashboard-gap-zero-complete.md |
+| bug_doc | docs/bugs/BUG-11_dashboard-gap-zero-still-visible_2026-07-15.md |
+| status | R2-1_DONE |
+| last_verified_command | vitest gap*+stylePipeline+dashboardCanvasMode; tsc --noEmit |
+| last_verified_exit_code | pending |
+| verification_summary | R2 根因剖析完成；单路径压实接入 load/preview/persist；analyzeDashboardGapLayout |
+| repair_rounds | 1 |
 
 ## 上一轮（归档 · shape-inner DE 对齐）
 

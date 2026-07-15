@@ -7,6 +7,7 @@ from typing import Any
 from app.core.config import get_settings
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import MONGODB_DRIVER_MISSING, map_mongodb_error
+from app.datasources.type_normalize import normalize_bson_type_name
 from app.query.native.guard import guard_native_injection
 from app.query.schemas import QueryError
 
@@ -14,15 +15,6 @@ _FORBIDDEN_MONGO_BODY_KEYS = frozenset({"$where", "mapReduce", "$out", "$merge"}
 
 MONGODB_MAX_FIELDS = 500
 _SYSTEM_DBS = frozenset({"admin", "local", "config"})
-_BSON_TYPE_MAP = {
-    "str": "string",
-    "int": "number",
-    "float": "number",
-    "bool": "boolean",
-    "datetime": "datetime",
-    "dict": "json",
-    "list": "json",
-}
 
 
 def _import_pymongo():
@@ -59,7 +51,7 @@ def _get_client(**kwargs: Any) -> Any:
 
 
 def _normalize_bson_type(value: Any) -> str:
-    return _BSON_TYPE_MAP.get(type(value).__name__, "unknown")
+    return normalize_bson_type_name(type(value).__name__)
 
 
 def _serialize_mongo_cell(value: Any) -> Any:

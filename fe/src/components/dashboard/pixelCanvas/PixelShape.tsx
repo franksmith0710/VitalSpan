@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
 import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle, mergeShapeInnerPresentation, resolveWidgetShellStyle } from "@/lib/chartDeStyle";
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
 import type { DashboardStyleConfig } from "../dashboardStyleConfig";
-import { mergeTitleStyle, resolveWidgetShellPaintColor } from "../dashboardStyleConfig";
-import { resolveEffectiveChartScheme } from "@/lib/chartSurfaceTheme";
+import { mergeTitleStyle } from "../dashboardStyleConfig";
+import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { shapeTitlePresentationStyle } from "../dashboardWidgetTypography";
 import { resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
@@ -131,10 +131,7 @@ function resolveShapeTitleState(
   remark: { show: boolean; text: string };
 } {
   const chrome = resolveDashboardChrome(styleConfig);
-  const effectiveScheme = resolveEffectiveChartScheme(
-    styleConfig?.colorScheme ?? "light",
-    styleConfig ? resolveWidgetShellPaintColor(styleConfig) : undefined,
-  );
+  const effectiveScheme = resolveWidgetEffectiveScheme(styleConfig);
   if (widget.type === "chart") {
     const chartTitleVisible = readChartTitleVisible(
       widget.chartConfig,
@@ -185,18 +182,19 @@ export function PixelShape({
   const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig, mode);
   const onTitleChange = widgetActions?.onTitleChange;
   const chrome = resolveDashboardChrome(styleConfig);
+  const effectiveScheme = resolveWidgetEffectiveScheme(styleConfig);
   const chromeInset = resolveWidgetChromeInset(styleConfig?.widgetStyle);
   const shell =
     widget.type === "chart" && widget.chartConfig
       ? resolveChartContentShellStyle(
           styleConfig?.widgetStyle,
           widget.chartConfig,
-          styleConfig?.colorScheme ?? "light",
+          effectiveScheme,
         )
       : {
           outer: resolveWidgetShellStyle(
             styleConfig?.widgetStyle,
-            styleConfig?.colorScheme ?? "light",
+            effectiveScheme,
           ),
           inner: {} as CSSProperties,
           innerBackgroundLayer: null,

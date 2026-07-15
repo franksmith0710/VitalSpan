@@ -1,3 +1,7 @@
+import type { GapConfigInput } from "./gapPolicy";
+import { resolvePixelGutter, resolveWidgetGap } from "./gapPolicy";
+import type { CanvasGapMode } from "./componentGapRuntime";
+import type { PixelLayoutWidget } from "./layoutUtils";
 import type { PixelLayoutWidget } from "./layoutUtils";
 
 export type OuterRectGap = {
@@ -8,7 +12,7 @@ export type OuterRectGap = {
   gapPx: number;
 };
 
-const CROSS_AXIS_OVERLAP_MIN = 8;
+const CROSS_AXIS_OVERLAP_MIN = 1;
 
 function crossOverlap(
   a: Pick<PixelLayoutWidget, "x" | "y" | "width" | "height">,
@@ -69,4 +73,33 @@ export function hasPositiveOuterGaps(
 /** 外框相切时两侧 shell padding 之和 ≈ 视觉缝宽 */
 export function estimateVisualGapPx(outerGapPx: number, shellPaddingPx: number): number {
   return Math.max(0, outerGapPx) + shellPaddingPx * 2;
+}
+
+export type GapLayoutAnalysis = {
+  shellPaddingPx: number;
+  outerGaps: OuterRectGap[];
+  hasConfigGap: boolean;
+  hasCoordinateGaps: boolean;
+  maxOuterGapPx: number;
+  estimatedMaxVisualGapPx: number;
+};
+
+/** 诊断：区分「配置间隙」与「外框坐标缝」 */
+export function analyzeDashboardGapLayout(
+  widgets: Pick<PixelLayoutWidget, "id" | "x" | "y" | "width" | "height">[],
+  gapConfig: GapConfigInput,
+  mode: CanvasGapMode = "pixel",
+): GapLayoutAnalysis {
+  const shellPaddingPx =
+    mode === "pixel" ? resolvePixelGutter(gapConfig) : resolveWidgetGap(gapConfig);
+  const outerGaps = measurePixelLayoutOuterGaps(widgets);
+  const maxOuterGapPx = outerGaps.reduce((max, gap) => Math.max(max, gap.gapPx), 0);
+  return {
+    shellPaddingPx,
+    outerGaps,
+    hasConfigGap: shellPaddingPx > 0,
+    hasCoordinateGaps: hasPositiveOuterGaps(widgets),
+    maxOuterGapPx,
+    estimatedMaxVisualGapPx: estimateVisualGapPx(maxOuterGapPx, shellPaddingPx),
+  };
 }

@@ -13,34 +13,18 @@ from app.datasources.dialects.errors import (
     OPENSEARCH_INVALID_HOST,
     map_opensearch_error,
 )
+from app.datasources.type_normalize import normalize_search_type
 from app.query.native.guard import guard_native_injection
 from app.query.schemas import QueryError
 
 probe_opensearch_metadata_budget_ms = 100
 OPENSEARCH_MAX_MAPPING_FIELDS = 500
 
-_OS_TYPE_MAP = {
-    "keyword": "string",
-    "text": "string",
-    "long": "number",
-    "integer": "number",
-    "double": "number",
-    "float": "number",
-    "date": "datetime",
-    "boolean": "boolean",
-    "object": "json",
-    "nested": "json",
-}
-
 
 @dataclass(frozen=True)
 class OpensearchProbeResult:
     elapsed_ms: float
     ok: bool
-
-
-def _normalize_os_type(os_type: str) -> str:
-    return _OS_TYPE_MAP.get(os_type, "unknown")
 
 
 def probe_readonly_search(connection: Any, *, index: str) -> bool:
@@ -140,7 +124,7 @@ class OpensearchConnector:
         columns = [
             ColumnInfo(
                 name=name,
-                data_type=_normalize_os_type(str(meta.get("type", "object"))),
+                data_type=normalize_search_type(str(meta.get("type", "object"))),
                 nullable=True,
             )
             for name, meta in sorted(props.items())

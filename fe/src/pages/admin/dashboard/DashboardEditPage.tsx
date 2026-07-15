@@ -47,7 +47,11 @@ import {
   syncPixelLayoutChartStyles,
 } from "@/components/dashboard/stylePipeline";
 import { resolvePixelGutter } from "@/components/dashboard/dashboardStyleConfig";
-import { compactPixelLayoutForGapChange } from "@/components/dashboard/pixelCanvas/gapCompaction";
+import {
+  compactPixelLayoutForGapChange,
+  compactPixelLayoutOuterRects,
+} from "@/components/dashboard/pixelCanvas/gapCompaction";
+import { hasPositiveOuterGaps } from "@/components/dashboard/gapRuntimeProbe";
 import { cloneLayoutWidget } from "@/components/dashboard/cloneLayoutWidget";
 import type { PixelWidgetActions } from "@/components/dashboard/pixelCanvas/PixelShapeActionRail";
 import {
@@ -189,11 +193,19 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     if (currentLayout.version === 2 && currentLayout.widgets.length > 0) {
       const prevGap = resolvePixelGutter(prev);
       const nextGap = resolvePixelGutter(next);
-      if (nextGap < prevGap) {
-        const result = compactPixelLayoutForGapChange(currentLayout, prevGap, nextGap);
+      const shouldCompact =
+        nextGap < prevGap ||
+        (nextGap === 0 && hasPositiveOuterGaps(currentLayout.widgets));
+      if (shouldCompact) {
+        const result =
+          nextGap === 0
+            ? compactPixelLayoutOuterRects(currentLayout)
+            : compactPixelLayoutForGapChange(currentLayout, prevGap, nextGap);
         if (result.compacted) {
           setPixelLayout(result.layout);
-          toast.message("已收紧相邻组件，消除多余画板缝");
+          toast.message("已收紧相邻组件外框，消除画板缝");
+        } else if (nextGap === 0 && prevGap > 0) {
+          toast.message("已关闭组件间隙");
         }
       }
     }

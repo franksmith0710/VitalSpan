@@ -32,7 +32,7 @@ import type {
 import { mergeTitleStyle, mergeWidgetShellStyle, resolveWidgetShellPaintColor } from "./dashboardStyleConfig";
 import { resolveDashboardChrome } from "./dashboardChromeConfig";
 import { parseDeRefreshIntervalSec, readChartDeDisplay, resolveChartQueryLimit } from "@/lib/chartDeDisplay";
-import { resolveEffectiveChartScheme } from "@/lib/chartSurfaceTheme";
+import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible } from "@/lib/chartDeStyle";
 import { isWidgetConfigReady } from "./createLayoutWidget";
 import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption, dwHint } from "./dashboardWidgetTypography";
@@ -97,10 +97,7 @@ function WidgetPendingPreview({
   const Icon = widgetChartIcon(chartType);
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
   const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
-  const effectiveScheme = resolveEffectiveChartScheme(
-    dashboardStyle?.colorScheme ?? "light",
-    shellColor,
-  );
+  const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
   const mapIsDark = effectiveScheme === "dark";
 
   if (chartType === "map") {
@@ -256,10 +253,7 @@ export function DashboardWidget({
     dashboardStyle?.colorScheme ?? "light",
   );
   const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
-  const effectiveScheme = resolveEffectiveChartScheme(
-    dashboardStyle?.colorScheme ?? "light",
-    shellColor,
-  );
+  const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
   const chrome = resolveDashboardChrome(dashboardStyle);
   const chartTitleVisible =
     inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle);

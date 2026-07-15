@@ -2,12 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   resolveEffectiveChartScheme,
   resolveTableThemeVars,
+  resolveWidgetEffectiveScheme,
 } from "./chartSurfaceTheme";
 
 describe("chartSurfaceTheme", () => {
   it("T-TABLE-THEME-01: light widget shell overrides dark dashboard scheme", () => {
     expect(resolveEffectiveChartScheme("dark", "#93c5fd")).toBe("light");
     expect(resolveEffectiveChartScheme("dark", "#1e293b")).toBe("dark");
+    expect(
+      resolveWidgetEffectiveScheme({
+        colorScheme: "dark",
+        widgetStyle: { background: "#93c5fd", backgroundCustom: true },
+      }),
+    ).toBe("light");
   });
 
   it("T-TABLE-THEME-02: resolveTableThemeVars prefers explicit colors", () => {

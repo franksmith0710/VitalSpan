@@ -18,11 +18,11 @@ def test_gap_preset_md_syncs_pixel_gutter() -> None:
     assert cfg.pixel_gutter == 5
 
 
-def test_legacy_widget_gap_only_infers_md() -> None:
+def test_legacy_widget_gap_only_keeps_pixel_shell_none() -> None:
     cfg = DashboardStyleConfig.model_validate({"widgetGap": 8})
-    assert cfg.gap_preset == "md"
+    assert cfg.gap_preset == "none"
     assert cfg.widget_gap == 8
-    assert cfg.pixel_gutter == 5
+    assert cfg.pixel_gutter == 0
 
 
 def test_legacy_widget_gap_only_coerced_to_none_when_zero() -> None:

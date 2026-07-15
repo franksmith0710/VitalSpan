@@ -15,6 +15,7 @@ import { normalizeDashboardGapConfig } from "./gapPolicy";
 import { styleConfigHasPersistedFields } from "./dashboardStyleConfig";
 import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
 import { fitCanvasHeightToContent } from "./pixelCanvas/PixelCanvas";
+import { compactPixelLayoutWhenZeroGap } from "./pixelCanvas/gapCompaction";
 
 const CANVAS_WIDTH = 1440 as const;
 const MIN_CANVAS_HEIGHT = 900;
@@ -63,20 +64,33 @@ export function migrateDashboardLayoutV1(layout: DashboardLayoutV1): DashboardLa
   };
 }
 
+function preparePixelLayoutGeometry(layout: DashboardLayoutV2): DashboardLayoutV2 {
+  const gapConfig = normalizeDashboardGapConfig(
+    bootstrapDashboardStyleConfig(layout.styleConfig ?? {}),
+  );
+  return compactPixelLayoutWhenZeroGap(layout, gapConfig).layout;
+}
+
 export function prepareDashboardLayout(
   layout: DashboardLayout,
   pixelEnabled: boolean,
 ): PreparedDashboardLayout {
   const withStyle = layoutWithHydratedStyle(layout);
   if (withStyle.version === 2) {
+    const displayLayout = preparePixelLayoutGeometry(withStyle);
     return {
       editor: pixelEnabled ? "pixel" : "pixel-readonly",
       canSave: pixelEnabled,
-      layout: withStyle,
+      layout: displayLayout,
     };
   }
   if (pixelEnabled) {
-    return { editor: "pixel", canSave: true, layout: migrateDashboardLayoutV1(withStyle) };
+    const migrated = migrateDashboardLayoutV1(withStyle);
+    return {
+      editor: "pixel",
+      canSave: true,
+      layout: preparePixelLayoutGeometry(migrated),
+    };
   }
   return { editor: "grid", canSave: true, layout: withStyle };
 }

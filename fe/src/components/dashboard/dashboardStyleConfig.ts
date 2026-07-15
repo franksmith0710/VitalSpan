@@ -45,8 +45,8 @@ export type WidgetStyleConfig = {
   backgroundImage?: string;
   /** DE 背景区总开关 */
   backgroundShow?: boolean;
-  /** 图片 | 装饰边框 */
-  backgroundMode?: "image" | "frame";
+  /** 图片 | 装饰边框（单图）| 线框（看板全局） */
+  backgroundMode?: "image" | "frame" | "border";
   /** 装饰边框预设 frame-1 … frame-9 */
   framePresetId?: string;
   /** 装饰边框着色 */
@@ -843,6 +843,7 @@ export function mergeWidgetShellStyle(
   const presentation = buildWidgetBackgroundPresentation(global, colorScheme, {
     respectBackgroundShow: true,
     applyThemeDefaultSurface: true,
+    allowDecorativeFrame: false,
   });
   const style: CSSProperties = { ...presentation.surface };
   const borderEnabled = global?.borderEnabled !== false;

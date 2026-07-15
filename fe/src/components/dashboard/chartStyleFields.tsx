@@ -33,27 +33,99 @@ const BG_MODE_OPTIONS = [
   { value: "frame", label: "边框" },
 ] as const;
 
+const BG_MODE_LINE_BORDER_OPTIONS = [
+  { value: "image", label: "图片" },
+  { value: "border", label: "边框" },
+] as const;
+
 type BackgroundPatch = Partial<WidgetStyleConfig>;
 
-/** DataEase 背景区核心：图片 / 装饰边框（对标 attr-style 背景折叠块内容） */
+type ChartBackgroundDeModeFieldsProps = {
+  value: WidgetStyleConfig;
+  onChange: (patch: BackgroundPatch) => void;
+  disabled?: boolean;
+  /** chart：装饰边框 SVG；dashboard：CSS 线框 */
+  borderTab?: "decorative" | "line";
+};
+
+function WidgetStyleLineBorderControls({
+  value,
+  onChange,
+}: {
+  value: WidgetStyleConfig;
+  onChange: (patch: BackgroundPatch) => void;
+}) {
+  const lineOn = value.borderEnabled !== false;
+
+  return (
+    <div className="space-y-2">
+      <DeAttrToggleRowCompact
+        label="显示边框"
+        checked={lineOn}
+        onCheckedChange={(show) => onChange({ borderEnabled: show, backgroundShow: true })}
+      />
+      {lineOn ? (
+        <div className="space-y-2">
+          <InspectorFieldRow label="边框色">
+            <ColorField
+              compact
+              allowClear
+              swatches={WIDGET_BORDER_RECOMMENDED}
+              value={value.borderColor ?? ""}
+              onChange={(color) => onChange({ borderColor: color || undefined })}
+            />
+          </InspectorFieldRow>
+          <InspectorSliderField
+            label="线宽"
+            value={value.borderWidth}
+            fallback={1}
+            min={0}
+            max={8}
+            step={1}
+            unit="px"
+            onChange={(borderWidth) => onChange({ borderWidth })}
+          />
+          <ChartDeSegmentField
+            label="样式"
+            value={value.borderStyle ?? "solid"}
+            columns={3}
+            options={LINE_BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
+            onChange={(style) =>
+              onChange({ borderStyle: style as WidgetStyleConfig["borderStyle"] })
+            }
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** DataEase 背景区核心：图片 / 边框（装饰 SVG 或 CSS 线框） */
 export function ChartBackgroundDeModeFields({
   value,
   onChange,
   disabled = false,
-}: {
-  value: WidgetStyleConfig;
-  onChange: (patch: BackgroundPatch) => void;
-  disabled?: boolean;
-}) {
-  const mode = value.backgroundMode ?? (value.framePresetId ? "frame" : "image");
+  borderTab = "decorative",
+}: ChartBackgroundDeModeFieldsProps) {
+  const useLineBorder = borderTab === "line";
+  const rawMode = value.backgroundMode ?? (value.framePresetId ? "frame" : "image");
+  const mode = useLineBorder
+    ? rawMode === "border" || rawMode === "frame"
+      ? "border"
+      : "image"
+    : rawMode === "border"
+      ? "image"
+      : rawMode;
 
   if (disabled) {
     return (
       <p className="py-1 text-[11px] text-gray-400 dark:text-gray-500">
-        开启背景后可设置图片或装饰边框
+        {useLineBorder ? "开启背景后可设置图片或边框" : "开启背景后可设置图片或装饰边框"}
       </p>
     );
   }
+
+  const segmentOptions = useLineBorder ? BG_MODE_LINE_BORDER_OPTIONS : BG_MODE_OPTIONS;
 
   return (
     <div className="space-y-2">
@@ -61,14 +133,24 @@ export function ChartBackgroundDeModeFields({
         sizing="fit"
         value={mode}
         columns={2}
-        options={BG_MODE_OPTIONS}
-        onChange={(next) =>
+        options={segmentOptions}
+        onChange={(next) => {
+          if (useLineBorder) {
+            onChange({
+              backgroundMode: next as "image" | "border",
+              backgroundShow: true,
+              ...(next === "border"
+                ? { framePresetId: undefined, frameColor: undefined }
+                : {}),
+            });
+            return;
+          }
           onChange({
             backgroundMode: next as "image" | "frame",
             backgroundShow: true,
             ...(next === "frame" && !value.framePresetId ? { framePresetId: "frame-1" } : {}),
-          })
-        }
+          });
+        }}
       />
       {mode === "image" ? (
         <ImageSourceField
@@ -79,6 +161,8 @@ export function ChartBackgroundDeModeFields({
             onChange({ backgroundImage, backgroundShow: true, backgroundMode: "image" })
           }
         />
+      ) : useLineBorder ? (
+        <WidgetStyleLineBorderControls value={value} onChange={onChange} />
       ) : (
         <div className="flex min-w-0 items-center gap-2 overflow-hidden">
           <ColorField
@@ -110,6 +194,53 @@ export function ChartBackgroundDeModeFields({
         </div>
       )}
     </div>
+  );
+}
+
+/** 看板全局 · 背景区「更多」：底色 / 模糊 / 透明度 */
+export function WidgetStyleBackgroundExtrasFields({
+  value,
+  onChange,
+  disabled = false,
+}: {
+  value: WidgetStyleConfig;
+  onChange: (patch: BackgroundPatch) => void;
+  disabled?: boolean;
+}) {
+  if (disabled) return null;
+
+  return (
+    <DeAttrSubField label="更多">
+      <InspectorFieldRow label="背景色">
+        <ColorField
+          compact
+          allowClear
+          swatches={SURFACE_COLOR_RECOMMENDED}
+          value={value.background ?? ""}
+          onChange={(background) => onChange({ background: background || undefined })}
+        />
+      </InspectorFieldRow>
+      <InspectorSliderField
+        label="背景模糊"
+        value={value.backdropBlur}
+        fallback={0}
+        min={0}
+        max={48}
+        step={1}
+        unit="px"
+        onChange={(backdropBlur) => onChange({ backdropBlur })}
+      />
+      <InspectorSliderField
+        label="不透明度"
+        value={value.opacity != null ? Math.round(value.opacity * 100) : undefined}
+        fallback={100}
+        min={0}
+        max={100}
+        step={1}
+        unit="%"
+        onChange={(opacity) => onChange({ opacity: opacity / 100 })}
+      />
+    </DeAttrSubField>
   );
 }
 

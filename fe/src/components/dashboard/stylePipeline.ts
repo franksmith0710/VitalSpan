@@ -19,6 +19,7 @@ import {
   bootstrapDashboardStyleConfig,
   syncChartWidgetsForColorScheme,
 } from "./dashboardThemeVariants";
+import { compactPixelLayoutWhenZeroGap } from "./pixelCanvas/gapCompaction";
 
 /** load / save / patch 后统一 hydrate（含 gap normalize + theme bundle） */
 export function hydrateDashboardStyle(
@@ -48,7 +49,21 @@ export function persistDashboardLayout(
   layout: DashboardLayout,
   liveStyle: DashboardStyleConfig,
 ): DashboardLayout {
-  return buildDashboardLayoutForSave(layout, hydrateDashboardStyle(liveStyle));
+  const style = hydrateDashboardStyle(liveStyle);
+  let layoutForSave = layout;
+  if (layout.version === 2) {
+    layoutForSave = compactPixelLayoutWhenZeroGap(layout, style).layout;
+  }
+  return buildDashboardLayoutForSave(layoutForSave, style);
+}
+
+/** 加载/预览前：无间隙时压实外框坐标缝（编辑/只读/分享单路径） */
+export function preparePixelLayoutForDisplay(
+  layout: DashboardLayoutV2,
+  style?: DashboardStyleConfig | null,
+): DashboardLayoutV2 {
+  const gapConfig = hydrateDashboardStyle(style ?? layout.styleConfig);
+  return compactPixelLayoutWhenZeroGap(layout, gapConfig).layout;
 }
 
 export function persistDashboardFingerprint(

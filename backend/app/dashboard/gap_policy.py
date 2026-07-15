@@ -65,11 +65,8 @@ def normalize_gap_config(
         return "none", 0, 0
 
     if has_widget and not has_pixel:
-        inferred = _infer_widget_gap_preset(wg_val)
-        if inferred != "custom":
-            preset, wg, pg = _preset_fields(inferred)
-            return preset, wg, pg
-        return "custom", wg_val, min(PIXEL_GAP_CUSTOM_MAX, wg_val)
+        # widgetGap 为栅格遗留；像素 shell 默认无间隙
+        return "none", wg_val, 0
 
     if has_pixel and not has_widget:
         inferred = _infer_pixel_gap_preset(pg_val)

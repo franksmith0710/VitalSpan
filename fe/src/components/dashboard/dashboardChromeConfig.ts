@@ -50,9 +50,9 @@ export function resolveDialogScopeStyle(
 
 /** 编辑态辅助网格（步长与像素画布吸附一致） */
 export function auxiliaryGridPatternStyle(scheme: "light" | "dark" = "light"): CSSProperties {
-  const stroke = scheme === "dark" ? "%2394a3b8" : "%23647485";
+  const stroke = scheme === "dark" ? "%23cbd5e1" : "%23475569";
   const svg = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${AUXILIARY_GRID_CELL_PX}" height="${AUXILIARY_GRID_CELL_PX}"><path fill="none" stroke="${stroke}" stroke-width="1.25" d="M${AUXILIARY_GRID_CELL_PX} 0H0v${AUXILIARY_GRID_CELL_PX}"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${AUXILIARY_GRID_CELL_PX}" height="${AUXILIARY_GRID_CELL_PX}"><path fill="none" stroke="${stroke}" stroke-width="1.5" d="M${AUXILIARY_GRID_CELL_PX} 0H0v${AUXILIARY_GRID_CELL_PX}"/></svg>`,
   );
   return {
     backgroundImage: `url("data:image/svg+xml,${svg}")`,

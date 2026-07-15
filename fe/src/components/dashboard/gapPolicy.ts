@@ -105,13 +105,6 @@ export function resolvePixelGutter(config: GapConfigInput): number {
   if (config.pixelGutter != null) {
     return Math.min(PIXEL_GAP_CUSTOM_MAX, Math.max(0, config.pixelGutter));
   }
-  if (config.widgetGap != null && config.widgetGap > 0) {
-    const inferred = inferWidgetGapPreset(config.widgetGap);
-    if (inferred !== "custom" && inferred in PIXEL_GAP_PRESET_PX) {
-      return PIXEL_GAP_PRESET_PX[inferred as keyof typeof PIXEL_GAP_PRESET_PX];
-    }
-    return Math.min(PIXEL_GAP_CUSTOM_MAX, config.widgetGap);
-  }
   return DEFAULT_PIXEL_GUTTER;
 }
 
@@ -153,16 +146,8 @@ export function normalizeDashboardGapConfig<T extends GapConfigInput>(config: T)
   }
 
   if (hasWidget && !hasPixel) {
-    const inferred = inferWidgetGapPreset(widgetGap);
-    if (inferred !== "custom") {
-      return { ...config, ...gapPresetFields(inferred) };
-    }
-    return {
-      ...config,
-      gapPreset: "custom",
-      widgetGap,
-      pixelGutter: Math.min(PIXEL_GAP_CUSTOM_MAX, widgetGap),
-    };
+    // widgetGap 为栅格 v1 遗留；像素 shell 不随其推断 md/5px（避免「莫名」绿条）
+    return { ...config, gapPreset: "none", widgetGap, pixelGutter: 0 };
   }
 
   if (hasPixel && !hasWidget) {

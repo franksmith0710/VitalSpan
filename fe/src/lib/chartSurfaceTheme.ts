@@ -1,5 +1,8 @@
-import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
-import { isDarkWidgetShellColor } from "@/components/dashboard/dashboardStyleConfig";
+import type { ColorScheme, DashboardStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
+import {
+  isDarkWidgetShellColor,
+  resolveWidgetShellPaintColor,
+} from "@/components/dashboard/dashboardStyleConfig";
 import { getDashboardThemeTokens } from "@/components/dashboard/dashboardThemeTokens";
 import type { ChartDeTableStyle } from "./chartDeTableStyle";
 import { DASHBOARD_SCROLL_CSS_VARS } from "./dashboardScrollTokens";
@@ -15,6 +18,16 @@ export function resolveEffectiveChartScheme(
   const paint = widgetShellBg?.trim();
   if (!paint || paint.startsWith("var(")) return colorScheme;
   return isDarkWidgetShellColor(paint) ? "dark" : "light";
+}
+
+/** 看板 styleConfig → 组件内图表/标题有效主题（统一入口，避免局部漏定义 effectiveScheme） */
+export function resolveWidgetEffectiveScheme(
+  styleConfig: DashboardStyleConfig | undefined,
+): ColorScheme {
+  return resolveEffectiveChartScheme(
+    styleConfig?.colorScheme ?? "light",
+    styleConfig ? resolveWidgetShellPaintColor(styleConfig) : undefined,
+  );
 }
 
 /** 明细表主题 CSS 变量：组件配色 > 有效主题令牌 */

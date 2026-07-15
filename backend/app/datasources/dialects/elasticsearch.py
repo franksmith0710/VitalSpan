@@ -7,6 +7,7 @@ from elasticsearch import Elasticsearch
 
 from app.core.config import get_settings
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
+from app.datasources.type_normalize import normalize_search_type
 from app.query.native.guard import guard_native_injection
 from app.query.schemas import QueryError
 
@@ -16,23 +17,6 @@ ES_AUTH_FAILED = "ES_AUTH_FAILED"
 ES_TIMEOUT = "ES_TIMEOUT"
 ES_UNKNOWN = "ES_UNKNOWN"
 ES_MAX_MAPPING_FIELDS = 500
-
-_ES_TYPE_MAP = {
-    "keyword": "string",
-    "text": "string",
-    "long": "number",
-    "integer": "number",
-    "double": "number",
-    "float": "number",
-    "date": "datetime",
-    "boolean": "boolean",
-    "object": "json",
-    "nested": "json",
-}
-
-
-def _normalize_es_type(es_type: str) -> str:
-    return _ES_TYPE_MAP.get(es_type, "unknown")
 
 
 def probe_readonly_search(connection: Any, *, index: str) -> bool:
@@ -133,7 +117,7 @@ class ElasticsearchConnector:
         columns = [
             ColumnInfo(
                 name=name,
-                data_type=_normalize_es_type(str(meta.get("type", "object"))),
+                data_type=normalize_search_type(str(meta.get("type", "object"))),
                 nullable=True,
             )
             for name, meta in sorted(props.items())

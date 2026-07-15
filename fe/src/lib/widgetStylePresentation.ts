@@ -16,7 +16,12 @@ import {
 export function buildWidgetBackgroundPresentation(
   bg: WidgetStyleConfig | undefined,
   colorScheme: ColorScheme = "light",
-  options?: { respectBackgroundShow?: boolean; applyThemeDefaultSurface?: boolean },
+  options?: {
+    respectBackgroundShow?: boolean;
+    applyThemeDefaultSurface?: boolean;
+    /** 看板全局 widgetStyle 为 false；单图 deStyle.background 为 true */
+    allowDecorativeFrame?: boolean;
+  },
 ): WidgetBackgroundPresentation {
   if (!bg) return { surface: {}, backgroundLayer: null, frameLayer: null };
 
@@ -42,9 +47,10 @@ export function buildWidgetBackgroundPresentation(
 
   if (showBackground) {
     const mode = bg.backgroundMode ?? (bg.framePresetId ? "frame" : "image");
-    if (mode === "frame") {
+    const allowFrame = options?.allowDecorativeFrame !== false;
+    if (allowFrame && mode === "frame" && bg.framePresetId) {
       frameLayer = resolveChartFrameOverlayLayer(bg.framePresetId, bg.frameColor, radius);
-    } else if (bg.backgroundImage) {
+    } else if (mode !== "border" && bg.backgroundImage) {
       imageLayer = {
         backgroundImage: `url(${bg.backgroundImage})`,
         backgroundSize: "cover",

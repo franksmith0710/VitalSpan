@@ -10,10 +10,7 @@ import {
 import { DashboardConfigSection } from "./DashboardConfigSection";
 import {
   formatMetricValue,
-  SURFACE_COLOR_RECOMMENDED,
   TEXT_COLOR_RECOMMENDED,
-  WIDGET_BORDER_RECOMMENDED,
-  WIDGET_BORDER_STYLES,
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
@@ -26,9 +23,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { ColorScheme } from "./dashboardStyleConfig";
 import { SpacingModeToggle } from "./inspectorSpacing";
 import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
-import { DeAttrField, DeAttrToggleRow } from "./dashboardInspectorUi";
-import { ChartBackgroundDeModeFields } from "./chartStyleFields";
-import { ChartDeSegmentField } from "./chartInspectorDeFields";
+import { DeAttrField } from "./dashboardInspectorUi";
+import {
+  ChartBackgroundDeModeFields,
+  WidgetStyleBackgroundExtrasFields,
+} from "./chartStyleFields";
 import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
@@ -87,8 +86,14 @@ export function DashboardWidgetStyleSections({
   const fc = styleConfig.filterChromeStyle ?? {};
   const fctrl = styleConfig.filterControlStyle ?? {};
 
-  const patchWidgetStyle = (patch: Partial<typeof ws>) =>
-    patchStyle({ widgetStyle: { ...ws, ...patch } });
+  const patchWidgetStyle = (patch: Partial<typeof ws>) => {
+    const next = { ...ws, ...patch };
+    if (next.backgroundMode === "border" || next.backgroundMode === "image") {
+      next.framePresetId = undefined;
+      next.frameColor = undefined;
+    }
+    patchStyle({ widgetStyle: next });
+  };
   const patchTitleStyle = (patch: Partial<typeof ts>) =>
     patchStyle({ titleStyle: { ...ts, ...patch } });
   const patchNumberFormat = (patch: Partial<typeof nf>) =>
@@ -112,86 +117,15 @@ export function DashboardWidgetStyleSections({
               value={ws}
               onChange={patchWidgetStyle}
               disabled={ws.backgroundShow === false}
+              borderTab="line"
+            />
+            <WidgetStyleBackgroundExtrasFields
+              value={ws}
+              onChange={patchWidgetStyle}
+              disabled={ws.backgroundShow === false}
             />
           </div>
         </DeAttrField>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <ColorField
-              compact
-              allowClear
-              label="背景色"
-              swatches={SURFACE_COLOR_RECOMMENDED}
-              value={ws.background ?? ""}
-              onChange={(color) => patchWidgetStyle({ background: color })}
-            />
-          </div>
-          <div className="col-span-2 min-w-0">
-            <DashboardConfigSlider
-              label="背景模糊"
-              value={ws.backdropBlur}
-              fallback={0}
-              min={0}
-              max={48}
-              step={1}
-              unit="px"
-              onChange={(backdropBlur) => patchWidgetStyle({ backdropBlur })}
-            />
-          </div>
-          <div className="col-span-2 space-y-2 border-t border-gray-100 pt-2 dark:border-white/[0.06]">
-            <Label className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">边框</Label>
-            <DeAttrToggleRow
-              label="显示边框"
-              checked={ws.borderEnabled !== false}
-              onCheckedChange={(show) => patchWidgetStyle({ borderEnabled: show })}
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <ColorField
-                  compact
-                  allowClear
-                  label="边框色"
-                  swatches={WIDGET_BORDER_RECOMMENDED}
-                  value={ws.borderColor ?? ""}
-                  onChange={(color) => patchWidgetStyle({ borderColor: color })}
-                />
-              </div>
-              <div className="min-w-0">
-                <DashboardConfigGridSlider
-                  label="线宽"
-                  value={ws.borderWidth}
-                  fallback={1}
-                  min={0}
-                  max={8}
-                  step={1}
-                  unit="px"
-                  onChange={(borderWidth) => patchWidgetStyle({ borderWidth })}
-                />
-              </div>
-            </div>
-            <ChartDeSegmentField
-              label="样式"
-              value={ws.borderStyle ?? "solid"}
-              columns={3}
-              options={WIDGET_BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
-              onChange={(style) =>
-                patchWidgetStyle({ borderStyle: style as "solid" | "dashed" | "dotted" })
-              }
-            />
-          </div>
-          <div className="col-span-2 min-w-0">
-            <DashboardConfigSlider
-              label="透明度"
-              value={ws.opacity != null ? Math.round(ws.opacity * 100) : undefined}
-              fallback={100}
-              min={0}
-              max={100}
-              step={1}
-              unit="%"
-              onChange={(opacity) => patchWidgetStyle({ opacity: opacity / 100 })}
-            />
-          </div>
-        </div>
 
         <SpacingModeToggle
           label="内边距模式"

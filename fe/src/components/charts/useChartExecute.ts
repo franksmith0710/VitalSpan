@@ -79,9 +79,20 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
         setError(err.message);
       } else if (err instanceof Error && err.message.includes("Dataset")) {
         setError(err.message);
+      } else if (err instanceof ApiRequestError) {
+        setError(mapChartQueryError(err.code, err.message));
+      } else if (
+        err instanceof Error &&
+        /failed to fetch|networkerror|load failed/i.test(err.message)
+      ) {
+        setError("无法连接后端服务，请确认 uvicorn（:8000）已启动并通过前端 dev 代理访问");
       } else {
-        const apiErr = err as ApiRequestError;
-        setError(mapChartQueryError(apiErr.code, apiErr.message));
+        setError(
+          mapChartQueryError(
+            undefined,
+            err instanceof Error ? err.message : "操作失败，请稍后重试",
+          ),
+        );
       }
       setColumns([]);
       setRows([]);
