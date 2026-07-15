@@ -1,5 +1,6 @@
 import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import { cn } from "@/lib/utils";
+import { dwShapeTitle } from "../dashboardWidgetTypography";
 import { WidgetInlineTitle } from "../WidgetInlineTitle";
 
 export type WidgetShapeChromeProps = {
@@ -74,12 +75,13 @@ export function WidgetShapeChrome({
           editable={canEditTitle}
           onChange={canEditTitle ? (next) => onTitleChange?.(widgetId, next) : undefined}
           titleStyle={titleStyle}
+          className={dwShapeTitle}
           testId={`pixel-shape-title-${widgetId}`}
         />
       </div>
       {showRemark ? (
         <p
-          className="shape-remark shrink-0 text-[11px] leading-snug text-[var(--dashboard-text-muted,#667085)]"
+          className="shape-remark dw-hint shrink-0 text-[var(--dashboard-text-muted,#667085)]"
           data-testid={`pixel-shape-remark-${widgetId}`}
         >
           {remark!.text}

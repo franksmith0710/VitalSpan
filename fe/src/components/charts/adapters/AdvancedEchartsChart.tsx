@@ -6,6 +6,7 @@ import { applyEchartsColorSchemeTokens, getEchartsTheme } from "@/lib/echarts-th
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { readChartDeStyle, readChartGeoStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
 import { analyzeGeoMapMatch, buildGeoMapPlaceholderEchartsOption, isGeoMapPlaceholderOption } from "@/lib/geoMapChart";
+import { dwHint } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import {
@@ -107,7 +108,7 @@ export function AdvancedEchartsChart({
 
   useEmbeddedChartLiveResize(fill && !isEmpty, containerRef, resizeChart);
 
-  const placeholderHint = isMapPlaceholder ? mapPlaceholderHint : null;
+  const placeholderHint = isMapPlaceholder && !fill ? mapPlaceholderHint : null;
 
   const geoMatchWarning =
     !fill &&
@@ -126,20 +127,20 @@ export function AdvancedEchartsChart({
       )}
       aria-label={ariaLabel}
     >
-      {truncated ? (
-        <p role="status" className="mb-2 shrink-0 text-theme-xs text-warning-600 dark:text-warning-400">
+      {truncated && !fill ? (
+        <p role="status" className="mb-2 shrink-0 text-theme-sm text-warning-600 dark:text-warning-400">
           数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条
         </p>
       ) : null}
-      {geoMatchWarning ? (
-        <p role="status" className="mb-2 shrink-0 text-theme-xs text-warning-600 dark:text-warning-400">
+      {geoMatchWarning && !fill ? (
+        <p role="status" className="mb-2 shrink-0 text-theme-sm text-warning-600 dark:text-warning-400">
           {geoMatchWarning}
         </p>
       ) : null}
       {isEmpty ? (
         <div
           className={cn(
-            "flex items-center justify-center text-theme-xs text-gray-400 dark:text-gray-500",
+            "flex items-center justify-center text-theme-sm text-gray-400 dark:text-gray-500",
             fill ? "min-h-0 flex-1" : "min-h-[180px]",
           )}
           role="status"
@@ -167,7 +168,9 @@ export function AdvancedEchartsChart({
           />
           {placeholderHint ? (
             <p
-              className="pointer-events-none absolute inset-x-0 bottom-[10%] text-center text-[11px] leading-snug text-gray-500 dark:text-gray-400"
+              className={cn(
+                "dw-hint pointer-events-none absolute inset-x-0 bottom-[10%] text-center",
+              )}
               role="status"
             >
               {placeholderHint}

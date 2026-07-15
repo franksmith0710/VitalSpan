@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import type { PixelLayoutWidget } from "../layoutUtils";
 import {
   resolveShapeActionRailPlacement,
+  SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH,
   SHAPE_ACTION_RAIL_SCREEN_GAP,
   SHAPE_ACTION_RAIL_SCREEN_WIDTH,
   type PixelRect,
@@ -61,7 +62,7 @@ const RAIL_BUTTON_CLASS = cn(
 );
 
 const RAIL_TIP_CLASS = cn(
-  "pointer-events-none absolute top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium",
+  "dw-rail-tip pointer-events-none absolute top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-md px-2.5 py-1 font-medium",
   "border border-gray-200 bg-white text-gray-700 shadow-theme-sm",
   "opacity-0 transition-opacity duration-150",
   "group-hover/rail-item:opacity-100 group-focus-within/rail-item:opacity-100",
@@ -183,7 +184,7 @@ export function PixelShapeActionRail({
   const placement = resolveShapeActionRailPlacement(widget, viewport, safeScale, otherWidgets);
   const railPx = SHAPE_ACTION_RAIL_SCREEN_WIDTH / safeScale;
   const gapPx = SHAPE_ACTION_RAIL_SCREEN_GAP / safeScale;
-  const iconPx = 14 / safeScale;
+  const iconPx = SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH / safeScale;
   const isChart = widget.type === "chart";
   const menuSide = placement === "right" ? "left" : "right";
   const tipClassName = railTipPositionClass(placement);

@@ -11,11 +11,10 @@ import {
   DASHBOARD_FONT_OPTIONS,
   DASHBOARD_QUERY_LIMIT_PRESETS,
   DASHBOARD_REFRESH_PRESETS,
-  GAP_PRESET_PX,
-  inferPixelGapPreset,
-  PIXEL_GAP_PRESET_PX,
+  buildDashboardGapPatch,
   dashboardFontSelectValue,
   resolveDashboardFontOptionValue,
+  resolveDashboardGapUiState,
   resolveDashboardQueryLimitPreset,
   resolveDashboardRefreshPreset,
   type DashboardStyleConfig,
@@ -83,13 +82,34 @@ function GapControls({
             onChange={(v) => onPresetChange(v as Exclude<GapPreset, "custom"> | "custom")}
           />
           {preset === "custom" ? (
-            <DebouncedNumberInput
-              min={0}
-              max={customMax}
-              className={`${DE_INPUT} mt-2`}
-              value={customPx}
-              onCommit={onCustomPx}
-            />
+            <div className="mt-2 space-y-2" data-testid="dashboard-gap-custom-controls">
+              <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
+                <span>自定义</span>
+                <span className="tabular-nums">{customPx}px</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={customMax}
+                step={1}
+                value={customPx}
+                aria-label="自定义间隙滑块"
+                className="h-1.5 w-full cursor-pointer accent-brand-500"
+                onChange={(e) => onCustomPx(Number(e.target.value))}
+              />
+              <Input
+                type="number"
+                min={0}
+                max={customMax}
+                className={DE_INPUT}
+                aria-label="自定义间隙像素"
+                value={customPx}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  if (!Number.isNaN(next)) onCustomPx(Math.min(customMax, Math.max(0, next)));
+                }}
+              />
+            </div>
           ) : null}
         </DeAttrSubField>
       ) : null}
@@ -235,7 +255,7 @@ export function DashboardOverallConfigPanel({
   patchStyle,
   isPixelLayout,
 }: Props) {
-  const gapPreset = styleConfig.gapPreset ?? (styleConfig.widgetGap != null ? "custom" : "md");
+  const gapUi = resolveDashboardGapUiState(styleConfig, { pixel: isPixelLayout });
   const scaleMode = styleConfig.scaleMode ?? "canvas";
   const ws = styleConfig.widgetStyle ?? {};
   const chrome = resolveDashboardChrome(styleConfig);
@@ -268,47 +288,21 @@ export function DashboardOverallConfigPanel({
         />
       </DeAttrField>
 
-      {isPixelLayout ? (
-        <GapControls
-          hasGap={(styleConfig.pixelGutter ?? 0) > 0}
-          preset={inferPixelGapPreset(styleConfig.pixelGutter ?? 0)}
-          customPx={styleConfig.pixelGutter ?? 0}
-          customMax={12}
-          onHasGapChange={(hasGap) =>
-            patchStyle({ pixelGutter: hasGap ? PIXEL_GAP_PRESET_PX.md : 0 })
-          }
-          onPresetChange={(preset) => {
-            if (preset === "custom") {
-              patchStyle({ pixelGutter: styleConfig.pixelGutter ?? 8 });
-              return;
-            }
-            patchStyle({ pixelGutter: PIXEL_GAP_PRESET_PX[preset] });
-          }}
-          onCustomPx={(value) => patchStyle({ pixelGutter: value })}
-        />
-      ) : (
-        <GapControls
-          hasGap={gapPreset !== "none" && (styleConfig.widgetGap ?? 8) > 0}
-          preset={gapPreset}
-          customPx={styleConfig.widgetGap ?? 8}
-          customMax={48}
-          onHasGapChange={(hasGap) =>
-            patchStyle(
-              hasGap
-                ? { gapPreset: "md", widgetGap: GAP_PRESET_PX.md }
-                : { gapPreset: "none", widgetGap: 0 },
-            )
-          }
-          onPresetChange={(preset) => {
-            if (preset === "custom") {
-              patchStyle({ gapPreset: "custom", widgetGap: styleConfig.widgetGap ?? 8 });
-              return;
-            }
-            patchStyle({ gapPreset: preset, widgetGap: GAP_PRESET_PX[preset] });
-          }}
-          onCustomPx={(value) => patchStyle({ gapPreset: "custom", widgetGap: value })}
-        />
-      )}
+      <GapControls
+        hasGap={gapUi.hasGap}
+        preset={gapUi.preset}
+        customPx={gapUi.customPx}
+        customMax={gapUi.customMax}
+        onHasGapChange={(hasGap) =>
+          patchStyle(buildDashboardGapPatch(styleConfig, { type: "toggle", hasGap }, { pixel: isPixelLayout }))
+        }
+        onPresetChange={(preset) =>
+          patchStyle(buildDashboardGapPatch(styleConfig, { type: "preset", preset }, { pixel: isPixelLayout }))
+        }
+        onCustomPx={(px) =>
+          patchStyle(buildDashboardGapPatch(styleConfig, { type: "customPx", px }, { pixel: isPixelLayout }))
+        }
+      />
 
       <DeAttrField label="缩放模式">
         <DeSegmentGroup

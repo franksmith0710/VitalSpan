@@ -173,12 +173,16 @@ describe("dashboard component gap", () => {
     expect(resolveWidgetGap({ gapPreset: "custom", widgetGap: 10 })).toBe(10);
   });
 
-  it("resolveDashboardShapeGapPadding matches DataEase curGap (full px per side)", async () => {
-    const { resolveDashboardShapeGapPadding, resolvePixelGutter } = await import(
-      "./dashboardStyleConfig"
-    );
-    expect(resolveDashboardShapeGapPadding(8)).toBe(8);
-    expect(resolveDashboardShapeGapPadding(0)).toBe(0);
-    expect(resolvePixelGutter({ pixelGutter: 16 })).toBe(12);
+  it("resolveDashboardComponentGap and shape gap CSS var", async () => {
+    const {
+      resolveDashboardComponentGap,
+      resolvePixelGutter,
+      dashboardShapeGapStyle,
+      DASHBOARD_SHAPE_GAP_VAR,
+    } = await import("./dashboardStyleConfig");
+    expect(resolveDashboardComponentGap({ pixelGutter: 8 }, { pixel: true })).toBe(8);
+    expect(resolveDashboardComponentGap({ gapPreset: "md" })).toBe(8);
+    expect(dashboardShapeGapStyle(5)).toEqual({ [DASHBOARD_SHAPE_GAP_VAR]: "5px" });
+    expect(resolvePixelGutter({ pixelGutter: 16 })).toBe(10);
   });
 });

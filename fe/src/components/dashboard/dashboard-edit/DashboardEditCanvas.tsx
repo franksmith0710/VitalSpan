@@ -17,6 +17,7 @@ import {
 import {
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
+  resolveDashboardComponentGap,
   resolvePixelGutter,
   widgetDashboardStyleFingerprint,
 } from "../dashboardStyleConfig";
@@ -153,7 +154,15 @@ export function DashboardEditCanvas({
 
   return (
     <DashboardWidgetsProvider widgets={widgets}>
-      <DashboardStyleSurface styleConfig={styleConfig} className="h-full min-h-0">
+      <DashboardStyleSurface
+        styleConfig={styleConfig}
+        componentGapPx={
+          layout.version === 2
+            ? resolveDashboardComponentGap(styleConfig, { pixel: true })
+            : resolveDashboardComponentGap(styleConfig)
+        }
+        className="h-full min-h-0"
+      >
         {layout.version === 2 ? (
           <PixelCanvas
             mode="edit"

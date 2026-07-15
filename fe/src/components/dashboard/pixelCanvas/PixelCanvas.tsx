@@ -491,7 +491,6 @@ export function PixelCanvas({
                 otherWidgets={layout.widgets.filter((item) => item.id !== widget.id)}
                 widgetActions={widgetActions}
                 styleConfig={widgetChromeStyle}
-                componentGap={pixelGutter}
                 registerPreviewSync={mode === "edit" ? registerPreviewSync : undefined}
               >
                 <PixelWidgetSlot

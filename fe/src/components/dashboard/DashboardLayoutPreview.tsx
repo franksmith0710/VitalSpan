@@ -10,6 +10,7 @@ import { PixelCanvas } from "./pixelCanvas";
 import {
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
+  resolveDashboardComponentGap,
   resolvePixelGutter,
   widgetDashboardStyleFingerprint,
   type ScaleMode,
@@ -100,7 +101,11 @@ export function DashboardLayoutPreview({
 
     return (
       <DashboardWidgetsProvider widgets={widgets}>
-      <DashboardStyleSurface styleConfig={styleConfig} className={className}>
+      <DashboardStyleSurface
+        styleConfig={styleConfig}
+        componentGapPx={resolveDashboardComponentGap(styleConfig, { pixel: true })}
+        className={className}
+      >
         <PixelCanvas
           mode="view"
           layout={layout}
@@ -120,7 +125,11 @@ export function DashboardLayoutPreview({
 
   return (
     <DashboardWidgetsProvider widgets={widgets}>
-    <DashboardStyleSurface styleConfig={styleConfig} className={className}>
+    <DashboardStyleSurface
+      styleConfig={styleConfig}
+      componentGapPx={resolveDashboardComponentGap(styleConfig)}
+      className={className}
+    >
       <div className="relative h-full min-h-0">
         <div
           data-testid="dashboard-canvas-backdrop"

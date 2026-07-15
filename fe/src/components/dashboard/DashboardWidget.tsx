@@ -34,7 +34,7 @@ import { resolveDashboardChrome } from "./dashboardChromeConfig";
 import { parseDeRefreshIntervalSec, readChartDeDisplay, resolveChartQueryLimit } from "@/lib/chartDeDisplay";
 import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible } from "@/lib/chartDeStyle";
 import { isWidgetConfigReady } from "./createLayoutWidget";
-import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption } from "./dashboardWidgetTypography";
+import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption, dwHint } from "./dashboardWidgetTypography";
 import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
@@ -94,7 +94,7 @@ function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
     return (
       <div className="relative flex h-full min-h-[64px] flex-col overflow-hidden">
         <GeoMapPlaceholderChart fill hint="" />
-        <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-[11px] text-gray-500 dark:text-gray-400">
+        <p className={cn("dw-hint pointer-events-none absolute inset-x-0 bottom-8 text-center")}>
           请配置数据源与查询
         </p>
         <div className="pointer-events-none absolute inset-x-0 bottom-1 flex flex-wrap items-center justify-center gap-1.5 px-2">
@@ -404,12 +404,14 @@ export function DashboardWidget({
           >
             {widget.title}
           </h4>
-          <span className="shrink-0 text-theme-xs text-gray-400">{typeLabel}</span>
+          <span className="shrink-0 text-theme-sm text-gray-400">{typeLabel}</span>
         </div>
       ) : null}
       {chartRemark.show ? (
         <p
-          className="shrink-0 border-b border-gray-100 px-3 py-1.5 text-[11px] leading-snug text-gray-500 dark:border-gray-800 dark:text-gray-400"
+          className={cn(
+            "dw-hint shrink-0 border-b border-gray-100 px-3 py-1.5 text-gray-500 dark:border-gray-800 dark:text-gray-400",
+          )}
           data-testid={`grid-chart-remark-${widget.id}`}
         >
           {chartRemark.text}

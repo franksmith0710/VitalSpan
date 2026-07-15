@@ -64,7 +64,8 @@ export function resolveEchartsChromeInsets(
   context?: EchartsLayoutContext,
 ): ChromeInsets {
   const legendPos = deStyle.legend?.position ?? "bottom";
-  const showLegend = deStyle.legend?.show !== false && !chartHasMapSeries(option);
+  const showLegend =
+    deStyle.legend?.show === true && !chartHasMapSeries(option) && !compact;
   const compact = Boolean(context?.embedded);
   const hasPie = chartHasPieSeries(option);
 
@@ -224,6 +225,33 @@ export function applyDeStyleToEchartsOption(
       bottom: insets.gridBottom,
       containLabel: true,
     };
+    if (insets.compact) {
+      const compactAxis = (axis: unknown) => {
+        if (!axis || typeof axis !== "object") return axis;
+        const prev = axis as Record<string, unknown>;
+        const prevLabel =
+          prev.axisLabel && typeof prev.axisLabel === "object" ? prev.axisLabel : {};
+        return {
+          ...prev,
+          axisLabel: {
+            ...prevLabel,
+            fontSize: 10,
+            hideOverlap: true,
+            interval: 0,
+          },
+        };
+      };
+      if (Array.isArray(next.xAxis)) {
+        next.xAxis = next.xAxis.map(compactAxis);
+      } else if (next.xAxis) {
+        next.xAxis = compactAxis(next.xAxis);
+      }
+      if (Array.isArray(next.yAxis)) {
+        next.yAxis = next.yAxis.map(compactAxis);
+      } else if (next.yAxis) {
+        next.yAxis = compactAxis(next.yAxis);
+      }
+    }
   }
 
   next = applyPieInset(next, insets);

@@ -17,7 +17,7 @@ import {
   PALETTE_DROP_ITEM_ID,
 } from "./dashboardGridRgl";
 import type { DashboardStyleConfig } from "./layoutUtils";
-import { resolveDashboardShapeGapPadding, resolveWidgetGap } from "./dashboardStyleConfig";
+import { resolveWidgetGap } from "./dashboardStyleConfig";
 import { getTopLevelWidgets, sortWidgets } from "./layoutUtils";
 import { gridLayoutToWidgets, widgetsToGridLayout } from "./gridLayoutAdapter";
 import { normalizeGridLayout } from "./gridSnapUtils";
@@ -162,21 +162,14 @@ export function DashboardGrid({
 
   const gridChildren = topLevel.map((widget) => {
     const gridItem = layoutById.get(widget.id);
-    const cellGap = resolveDashboardShapeGapPadding(gap);
     return (
       <div
         key={widget.id}
         className={cn(
-          "grid-widget-cell h-full min-w-0",
-          cellGap === 0 && "dashboard-widget-surface",
+          "grid-widget-cell dashboard-shape-gap-shell h-full min-w-0",
+          gap === 0 && "dashboard-widget-surface",
           selectedIds?.has(widget.id) && "grid-widget-selected",
         )}
-        style={
-          cellGap > 0
-            ? { padding: cellGap, boxSizing: "border-box" }
-            : undefined
-        }
-        data-component-gap={cellGap > 0 ? gap : undefined}
       >
         {renderWidget(
           widget,

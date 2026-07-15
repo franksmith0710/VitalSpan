@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { DashboardStyleSurface } from "../DashboardStyleSurface";
 import { PixelShape } from "./PixelShape";
 
 const widget = {
@@ -16,47 +17,36 @@ const widget = {
 
 const canvas = { width: 1920, height: 1080 };
 
+function renderShape(gapPx: number) {
+  return render(
+    <DashboardStyleSurface componentGapPx={gapPx}>
+      <PixelShape widget={widget} canvas={canvas} scale={1} mode="view" selected={false}>
+        <span>body</span>
+      </PixelShape>
+    </DashboardStyleSurface>,
+  );
+}
+
 afterEach(() => {
   cleanup();
 });
 
 describe("PixelShape component gap", () => {
-  it("applies inset padding from componentGap", () => {
-    render(
-      <PixelShape
-        widget={widget}
-        canvas={canvas}
-        scale={1}
-        mode="view"
-        selected={false}
-        componentGap={8}
-      >
-        <span>body</span>
-      </PixelShape>,
-    );
+  it("uses DE curGap CSS variable on gap shell", () => {
+    const { container } = renderShape(8);
 
-    const shape = screen.getByTestId("pixel-shape-w1");
-    expect(shape).toHaveAttribute("data-component-gap", "8");
-    expect(shape).toHaveStyle({ padding: "8px" });
+    const scope = container.querySelector(".dashboard-theme-scope");
+    expect(scope).toHaveStyle({ "--dashboard-shape-gap": "8px" });
+
+    const outer = screen.getByTestId("pixel-shape-w1");
+    expect(outer).toHaveClass("dashboard-shape-gap-shell");
     expect(screen.getByTestId("pixel-shape-body-w1")).toBeInTheDocument();
   });
 
-  it("removes padding when componentGap is zero", () => {
-    render(
-      <PixelShape
-        widget={widget}
-        canvas={canvas}
-        scale={1}
-        mode="view"
-        selected={false}
-        componentGap={0}
-      >
-        <span>body</span>
-      </PixelShape>,
-    );
+  it("animates gap shell with zero gap", () => {
+    renderShape(0);
 
-    const shape = screen.getByTestId("pixel-shape-w1");
-    expect(shape).not.toHaveAttribute("data-component-gap", "8");
-    expect(screen.queryByTestId("pixel-shape-body-w1")).not.toBeInTheDocument();
+    const scope = screen.getByTestId("pixel-shape-w1").closest(".dashboard-theme-scope");
+    expect(scope).toHaveStyle({ "--dashboard-shape-gap": "0px" });
   });
 });

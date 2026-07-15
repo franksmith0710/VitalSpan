@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/button";
+import { dwTableCell, dwTableMeta } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
@@ -54,7 +55,7 @@ export function EmbeddedChartTable({
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const colPct = displayCols.length > 0 ? `${100 / displayCols.length}%` : "100%";
   const cellClass = cn(
-    "px-2 py-1 text-theme-xs",
+    dwTableCell,
     wordWrap ? "whitespace-normal break-words" : "truncate",
   );
 
@@ -124,53 +125,53 @@ export function EmbeddedChartTable({
       </div>
       {usePagination ? (
         paginationVariant === "compact" ? (
-          <div className="flex shrink-0 items-center justify-between gap-1 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-1.5 py-1">
+          <div className="flex shrink-0 items-center justify-between gap-1 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-2 py-1.5">
             <IconButton
               type="button"
               variant="ghost"
               size="sm"
-              className="size-7"
+              className="size-8"
               disabled={page <= 1}
               aria-label="上一页"
               onClick={() => onPageChange(page - 1)}
             >
-              <ChevronLeft className="size-3.5" />
+              <ChevronLeft className="size-4" />
             </IconButton>
-            <span className="text-[10px] tabular-nums text-[var(--dashboard-text-muted,#667085)]">
+            <span className={dwTableMeta}>
               {page}/{totalPages} · {pageSize}条/页
             </span>
             <IconButton
               type="button"
               variant="ghost"
               size="sm"
-              className="size-7"
+              className="size-8"
               disabled={page >= totalPages}
               aria-label="下一页"
               onClick={() => onPageChange(page + 1)}
             >
-              <ChevronRight className="size-3.5" />
+              <ChevronRight className="size-4" />
             </IconButton>
           </div>
         ) : (
-          <div className="mt-1 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-1 py-1">
+          <div className="mt-1 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-2 py-1.5">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 px-2 text-[11px]"
+              className="h-8 px-2.5 text-theme-sm"
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
             >
               上一页
             </Button>
-            <span className="text-[11px] text-[var(--dashboard-text-muted,#667085)]">
+            <span className={dwTableMeta}>
               第 {page}/{totalPages} 页，共 {rows.length} 条
             </span>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 px-2 text-[11px]"
+              className="h-8 px-2.5 text-theme-sm"
               disabled={page >= totalPages}
               onClick={() => onPageChange(page + 1)}
             >

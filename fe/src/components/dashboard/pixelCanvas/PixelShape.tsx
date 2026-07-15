@@ -13,6 +13,7 @@ import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveCh
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
 import type { DashboardStyleConfig } from "../dashboardStyleConfig";
 import { mergeTitleStyle } from "../dashboardStyleConfig";
+import { shapeTitlePresentationStyle } from "../dashboardWidgetTypography";
 import { resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
   applyPixelInteraction,
@@ -380,56 +381,7 @@ export function PixelShape({
   };
 
   const liveRect = isPlayer ? displayRef.current : display;
-  const shapeGap = resolveDashboardShapeGapPadding(componentGap);
-  const hasShapeGap = shapeGap > 0;
-
-  const shapeBody = (
-    <>
-      <WidgetShapeChrome
-        title={widget.title}
-        titleStyle={titleStyle}
-        showTitle={showTitle}
-        remark={remark}
-        mode={mode}
-        selected={Boolean(mode === "edit" && selected)}
-        widgetId={widget.id}
-        onTitleChange={onTitleChange}
-        onSelectPointerDown={(event) => onSelect?.(widget.id, event.shiftKey)}
-        onDragPointerDown={(event) => startInteraction(event, "move")}
-        onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
-      />
-      {mode === "edit" && selected && widgetActions && viewport && chrome.showFloatingActions ? (
-        <PixelShapeActionRail
-          widget={widget}
-          scale={scale}
-          viewport={viewport}
-          otherWidgets={otherWidgets}
-          actions={widgetActions}
-        />
-      ) : null}
-      <PixelShapeInteractionProvider value={startInteraction}>
-        <PixelShapePlayerProvider playing={isPlayer}>
-          <div
-            className="pixel-shape-inner dashboard-widget-surface relative min-h-0 flex-1 overflow-hidden"
-            style={{
-              ...shell.inner,
-              background:
-                shell.inner.background ??
-                shell.outer.style.backgroundColor ??
-                shell.outer.style.background ??
-                "var(--dashboard-widget-surface)",
-            }}
-            data-pixel-no-drag
-            onPointerDown={(event) => {
-              if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
-            }}
-          >
-            {children}
-          </div>
-        </PixelShapePlayerProvider>
-      </PixelShapeInteractionProvider>
-    </>
-  );
+  const selectedInEdit = Boolean(mode === "edit" && selected);
 
   return (
     <div
@@ -438,27 +390,17 @@ export function PixelShape({
       data-testid={`pixel-shape-${widget.id}`}
       data-component-id={widget.id}
       data-pixel-is-player={isPlayer ? "" : undefined}
-      data-component-gap={componentGap}
       className={cn(
-        "shape pixel-shape-outer absolute flex touch-none select-none flex-col",
-        hasShapeGap
-          ? "border-0 bg-transparent"
-          : cn(
-              "border",
-              mode === "edit" && selected
-                ? "pixel-shape-selected z-[1] overflow-visible"
-                : "border-gray-200/90 dark:border-gray-700/80",
-              shell.outer.className,
-            ),
+        "shape pixel-shape-outer dashboard-shape-gap-shell absolute flex touch-none select-none flex-col border-0 bg-transparent",
+        selectedInEdit && "z-[1]",
       )}
       style={{
         left: liveRect.x,
         top: liveRect.y,
         width: liveRect.width,
         height: liveRect.height,
-        zIndex: pixelShapeZIndex(widget.order, mode === "edit" && selected),
+        zIndex: pixelShapeZIndex(widget.order, selectedInEdit),
         boxSizing: "border-box",
-        ...(hasShapeGap ? { padding: shapeGap } : shell.outer.style),
       }}
     >
       {hint ? (
@@ -466,20 +408,59 @@ export function PixelShape({
           {hint}
         </p>
       ) : null}
-      {hasShapeGap ? (
-        <div
-          data-testid={`pixel-shape-body-${widget.id}`}
-          className={cn(
-            "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-gray-200/90 dark:border-gray-700/80",
-            shell.outer.className,
-          )}
-          style={shell.outer.style}
-        >
-          {shapeBody}
-        </div>
-      ) : (
-        shapeBody
-      )}
+      <div
+        data-testid={`pixel-shape-body-${widget.id}`}
+        className={cn(
+          "pixel-shape-body flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-gray-200/90 dark:border-gray-700/80",
+          selectedInEdit && "pixel-shape-selected overflow-visible",
+          shell.outer.className,
+        )}
+        style={shell.outer.style}
+      >
+        <WidgetShapeChrome
+          title={widget.title}
+          titleStyle={shapeTitlePresentationStyle(titleStyle)}
+          showTitle={showTitle}
+          remark={remark}
+          mode={mode}
+          selected={selectedInEdit}
+          widgetId={widget.id}
+          onTitleChange={onTitleChange}
+          onSelectPointerDown={(event) => onSelect?.(widget.id, event.shiftKey)}
+          onDragPointerDown={(event) => startInteraction(event, "move")}
+          onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
+        />
+        {mode === "edit" && selected && widgetActions && viewport && chrome.showFloatingActions ? (
+          <PixelShapeActionRail
+            widget={widget}
+            scale={scale}
+            viewport={viewport}
+            otherWidgets={otherWidgets}
+            actions={widgetActions}
+          />
+        ) : null}
+        <PixelShapeInteractionProvider value={startInteraction}>
+          <PixelShapePlayerProvider playing={isPlayer}>
+            <div
+              className="pixel-shape-inner dashboard-widget-surface relative min-h-0 flex-1 overflow-hidden"
+              style={{
+                ...shell.inner,
+                background:
+                  shell.inner.background ??
+                  shell.outer.style.backgroundColor ??
+                  shell.outer.style.background ??
+                  "var(--dashboard-widget-surface)",
+              }}
+              data-pixel-no-drag
+              onPointerDown={(event) => {
+                if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
+              }}
+            >
+              {children}
+            </div>
+          </PixelShapePlayerProvider>
+        </PixelShapeInteractionProvider>
+      </div>
 
       {mode === "edit" && selected
         ? RESIZE_DIRECTIONS.map((direction) => (

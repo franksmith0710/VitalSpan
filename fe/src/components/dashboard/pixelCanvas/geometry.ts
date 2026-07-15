@@ -167,7 +167,8 @@ export function resolvePixelCanvasMeasureElement(host: HTMLElement): HTMLElement
 }
 
 /** 侧栏工具条屏幕宽度（px），用于左右翻转判定 */
-export const SHAPE_ACTION_RAIL_SCREEN_WIDTH = 32;
+export const SHAPE_ACTION_RAIL_SCREEN_WIDTH = 36;
+export const SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH = 18;
 export const SHAPE_ACTION_RAIL_SCREEN_GAP = 8;
 export const SHAPE_ACTION_MENU_SCREEN_WIDTH = 168;
 export const SHAPE_ACTION_RAIL_BUTTON_COUNT = 3;

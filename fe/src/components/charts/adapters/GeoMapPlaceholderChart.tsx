@@ -5,6 +5,7 @@ import {
   buildGeoMapPlaceholderEchartsOption,
   DEFAULT_GEO_MAP_PLACEHOLDER_HINT,
 } from "@/lib/geoMapChart";
+import { dwHint } from "@/components/dashboard/dashboardWidgetTypography";
 import { getEchartsTheme } from "@/lib/echarts-theme";
 import { cn } from "@/lib/utils";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
@@ -68,7 +69,7 @@ export function GeoMapPlaceholderChart({
       />
       {hint ? (
         <p
-          className="pointer-events-none absolute inset-x-0 bottom-[10%] text-center text-[11px] leading-snug text-gray-500 dark:text-gray-400"
+          className={cn("dw-hint pointer-events-none absolute inset-x-0 bottom-[10%] text-center")}
           role="status"
         >
           {hint}

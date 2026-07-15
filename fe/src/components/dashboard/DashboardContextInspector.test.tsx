@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DashboardContextInspector } from "./DashboardContextInspector";
@@ -71,6 +71,65 @@ describe("DashboardContextInspector", () => {
     await user.click(screen.getByRole("button", { name: "组件比例" }));
     expect(onStyleChange).toHaveBeenCalledWith(
       expect.objectContaining({ scaleMode: "component" }),
+    );
+  });
+
+  it("shows custom gap controls and emits gapPreset custom for pixel layout", async () => {
+    const user = userEvent.setup();
+    const onStyleChange = vi.fn();
+
+    render(
+      <DashboardContextInspector
+        dashboardId="d1"
+        widgetCount={1}
+        filterWidgetCount={0}
+        widgets={[]}
+        linkage={linkage}
+        effectiveLinkage={linkage}
+        onLinkageChange={vi.fn()}
+        styleConfig={{ gapPreset: "md", pixelGutter: 5, colorScheme: "light" }}
+        onStyleChange={onStyleChange}
+        embedded
+        isPixelLayout
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "自定义" }));
+    expect(onStyleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        gapPreset: "custom",
+        pixelGutter: 3,
+      }),
+    );
+
+    onStyleChange.mockClear();
+    render(
+      <DashboardContextInspector
+        dashboardId="d2"
+        widgetCount={1}
+        filterWidgetCount={0}
+        widgets={[]}
+        linkage={linkage}
+        effectiveLinkage={linkage}
+        onLinkageChange={vi.fn()}
+        styleConfig={{ gapPreset: "custom", pixelGutter: 3, colorScheme: "light" }}
+        onStyleChange={onStyleChange}
+        embedded
+        isPixelLayout
+      />,
+    );
+
+    expect(screen.getByTestId("dashboard-gap-custom-controls")).toBeInTheDocument();
+    const slider = screen.getByRole("slider", { name: "自定义间隙滑块" });
+    expect(slider).toHaveValue("3");
+
+    await user.click(slider);
+    fireEvent.change(slider, { target: { value: "7" } });
+    expect(onStyleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        gapPreset: "custom",
+        pixelGutter: 7,
+      }),
     );
   });
 

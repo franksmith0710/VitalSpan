@@ -568,6 +568,10 @@ export function resolveWidgetGap(config: DashboardStyleConfig): number {
 }
 
 export function resolvePixelGutter(config: DashboardStyleConfig): number {
+  const preset = config.gapPreset;
+  if (preset && preset !== "custom" && preset in PIXEL_GAP_PRESET_PX) {
+    return PIXEL_GAP_PRESET_PX[preset as keyof typeof PIXEL_GAP_PRESET_PX];
+  }
   const gutter = config.pixelGutter ?? DEFAULT_PIXEL_GUTTER;
   return Math.min(10, Math.max(0, gutter));
 }
@@ -585,12 +589,128 @@ export function dashboardShapeGapStyle(gapPx: number): CSSProperties {
   return { [DASHBOARD_SHAPE_GAP_VAR]: `${Math.max(0, gapPx)}px` } as CSSProperties;
 }
 
+export function inferWidgetGapPreset(gap: number): GapPreset {
+  if (gap <= 0) return "none";
+  for (const [key, px] of Object.entries(GAP_PRESET_PX)) {
+    if (key !== "none" && px === gap) return key as GapPreset;
+  }
+  return "custom";
+}
+
 export function inferPixelGapPreset(gutter: number): GapPreset {
   if (gutter <= 0) return "none";
   for (const [key, px] of Object.entries(PIXEL_GAP_PRESET_PX)) {
     if (key !== "none" && px === gutter) return key as GapPreset;
   }
   return "custom";
+}
+
+export type DashboardGapUiState = {
+  hasGap: boolean;
+  preset: GapPreset;
+  customPx: number;
+  customMax: number;
+};
+
+export function resolveDashboardGapUiState(
+  config: DashboardStyleConfig,
+  options: { pixel?: boolean } = {},
+): DashboardGapUiState {
+  const pixel = options.pixel === true;
+  const customMax = pixel ? 10 : 48;
+  const presetMap = pixel ? PIXEL_GAP_PRESET_PX : GAP_PRESET_PX;
+
+  if (config.gapPreset === "none") {
+    return { hasGap: false, preset: "none", customPx: pixel ? config.pixelGutter ?? 0 : config.widgetGap ?? 0, customMax };
+  }
+
+  if (config.gapPreset === "custom") {
+    const customPx = pixel
+      ? Math.min(customMax, Math.max(0, config.pixelGutter ?? DEFAULT_CUSTOM_PIXEL_GAP))
+      : Math.min(customMax, Math.max(0, config.widgetGap ?? DEFAULT_CUSTOM_GRID_GAP));
+    return { hasGap: customPx > 0, preset: "custom", customPx, customMax };
+  }
+
+  if (config.gapPreset && config.gapPreset in presetMap) {
+    const px = presetMap[config.gapPreset as keyof typeof presetMap];
+    return { hasGap: px > 0, preset: config.gapPreset, customPx: px, customMax };
+  }
+
+  const gapPx = pixel ? resolvePixelGutter(config) : resolveWidgetGap(config);
+  const inferred = pixel ? inferPixelGapPreset(gapPx) : inferWidgetGapPreset(gapPx);
+  return {
+    hasGap: gapPx > 0,
+    preset: inferred,
+    customPx: pixel ? (config.pixelGutter ?? gapPx) : (config.widgetGap ?? gapPx),
+    customMax,
+  };
+}
+
+/** 进入「自定义」时的默认像素（避开小/中/大 preset，便于 UI 保持 custom 选中） */
+export const DEFAULT_CUSTOM_PIXEL_GAP = 3;
+export const DEFAULT_CUSTOM_GRID_GAP = 6;
+
+function isPresetGapPx(px: number, pixel: boolean): boolean {
+  const map = pixel ? PIXEL_GAP_PRESET_PX : GAP_PRESET_PX;
+  return Object.entries(map).some(([key, value]) => key !== "none" && value === px);
+}
+
+function defaultCustomGapPx(config: DashboardStyleConfig, pixel: boolean): number {
+  const current = pixel ? config.pixelGutter ?? 0 : config.widgetGap ?? 0;
+  const fallback = pixel ? DEFAULT_CUSTOM_PIXEL_GAP : DEFAULT_CUSTOM_GRID_GAP;
+  if (current > 0 && !isPresetGapPx(current, pixel)) return current;
+  return fallback;
+}
+
+export function buildDashboardGapPatch(
+  config: DashboardStyleConfig,
+  action:
+    | { type: "toggle"; hasGap: boolean }
+    | { type: "preset"; preset: Exclude<GapPreset, "custom"> | "custom" }
+    | { type: "customPx"; px: number },
+  options: { pixel?: boolean } = {},
+): Partial<DashboardStyleConfig> {
+  const pixel = options.pixel === true;
+  const presetMap = pixel ? PIXEL_GAP_PRESET_PX : GAP_PRESET_PX;
+
+  if (action.type === "toggle") {
+    if (!action.hasGap) {
+      return pixel
+        ? { gapPreset: "none", pixelGutter: 0 }
+        : { gapPreset: "none", widgetGap: 0 };
+    }
+    return pixel
+      ? { gapPreset: "md", pixelGutter: presetMap.md }
+      : { gapPreset: "md", widgetGap: GAP_PRESET_PX.md };
+  }
+
+  if (action.type === "preset") {
+    if (action.preset === "custom") {
+      const px = defaultCustomGapPx(config, pixel);
+      return pixel
+        ? { gapPreset: "custom", pixelGutter: px }
+        : { gapPreset: "custom", widgetGap: px };
+    }
+    const px = presetMap[action.preset as keyof typeof presetMap];
+    return pixel
+      ? { gapPreset: action.preset, pixelGutter: px }
+      : { gapPreset: action.preset, widgetGap: GAP_PRESET_PX[action.preset as keyof typeof GAP_PRESET_PX] };
+  }
+
+  const px = Math.max(0, Math.min(pixel ? 10 : 48, action.px));
+  if (pixel) {
+    const matched = inferPixelGapPreset(px);
+    if (matched !== "custom" && matched !== "none") {
+      return { gapPreset: matched, pixelGutter: PIXEL_GAP_PRESET_PX[matched as keyof typeof PIXEL_GAP_PRESET_PX] };
+    }
+    return { gapPreset: px > 0 ? "custom" : "none", pixelGutter: px };
+  }
+
+  const matched = inferWidgetGapPreset(px);
+  if (matched !== "custom" && matched !== "none") {
+    return { gapPreset: matched, widgetGap: GAP_PRESET_PX[matched as keyof typeof GAP_PRESET_PX] };
+  }
+  return { gapPreset: px > 0 ? "custom" : "none", widgetGap: px };
 }
 
 export function resolveQueryLimit(config: DashboardStyleConfig): number {

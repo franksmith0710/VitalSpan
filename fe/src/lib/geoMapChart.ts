@@ -308,7 +308,7 @@ export function buildGeoMapEchartsOption(input: GeoMapRowsInput): Record<string,
         layoutSize: "92%",
         label: { show: showLabel, fontSize: 11 },
         emphasis: {
-          label: { show: true },
+          label: { show: showLabel },
           itemStyle: { areaColor: chartPalette.brand },
         },
         itemStyle: {

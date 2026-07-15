@@ -25,8 +25,8 @@ export function KpiCard({ title, metrics, columns, rows, numberFormat }: KpiCard
           const value = idx >= 0 ? row[idx] : undefined;
           return (
             <div key={m.field} className="min-h-[72px] rounded-lg border border-gray-100 p-3 dark:border-gray-800">
-              <p className="line-clamp-2 text-theme-xs text-gray-500">{m.label ?? m.field}</p>
-              <p className="text-title-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">
+              <p className="line-clamp-2 text-theme-sm text-gray-500">{m.label ?? m.field}</p>
+              <p className="text-theme-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">
                 {formatMetricValue(value, numberFormat)}
               </p>
             </div>
