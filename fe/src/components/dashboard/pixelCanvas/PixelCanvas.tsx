@@ -26,6 +26,7 @@ import {
   resolveArtboardStyle,
   widgetDashboardStyleFingerprint,
 } from "../dashboardStyleConfig";
+import { resolveComponentGapRuntime } from "../componentGapRuntime";
 import { auxiliaryGridOverlayStyle, resolveDashboardChrome } from "../dashboardChromeConfig";
 import { resolvePixelCollisions, widgetRect } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
@@ -53,7 +54,6 @@ type PixelCanvasProps = {
   widgetActions?: PixelWidgetActions;
   className?: string;
   scaleMode?: ScaleMode;
-  pixelGutter?: number;
   styleConfig?: DashboardStyleConfig;
   widgetContentRevision?: (widget: PixelLayoutWidget) => string;
 };
@@ -122,7 +122,6 @@ export function PixelCanvas({
   widgetActions,
   className,
   scaleMode = "canvas",
-  pixelGutter = PIXEL_CANVAS_GUTTER,
   styleConfig = {},
   widgetContentRevision,
 }: PixelCanvasProps) {
@@ -168,6 +167,10 @@ export function PixelCanvas({
     [widgetDashboardStyleFingerprint(styleConfig)],
   );
   const chrome = resolveDashboardChrome(styleConfig);
+  const gapRuntime = useMemo(
+    () => resolveComponentGapRuntime(styleConfig, "pixel"),
+    [styleConfig],
+  );
   const showAuxGrid =
     mode === "edit" && chrome.showAuxiliaryGrid && !styleConfig.canvasBackground?.trim();
   const viewCanvasHeight = useMemo(() => {
@@ -286,15 +289,20 @@ export function PixelCanvas({
     [layout.canvas.width, scaleMode],
   );
 
-  const resolveActive = useCallback(
+  const resolveActiveAt = useCallback(
     (widget: PixelLayoutWidget) =>
-      resolvePixelCollisions(layout, widget.id, {
-        x: widget.x,
-        y: widget.y,
-        width: widget.width,
-        height: widget.height,
-      }),
-    [layout],
+      resolvePixelCollisions(
+        layout,
+        widget.id,
+        {
+          x: widget.x,
+          y: widget.y,
+          width: widget.width,
+          height: widget.height,
+        },
+        { gap: gapRuntime.collisionGapPx },
+      ),
+    [layout, gapRuntime.collisionGapPx],
   );
 
   const flushPreview = useCallback(
@@ -302,14 +310,14 @@ export function PixelCanvas({
       if (!onLayoutChange) return;
       previewThrottleRef.current = Date.now();
       pendingPreviewRef.current = null;
-      const nextLayout = resolveActive(widget);
+      const nextLayout = resolveActiveAt(widget);
       const positions = new Map(
         nextLayout.widgets.map((item) => [item.id, widgetRect(item)] as const),
       );
       previewRegistryRef.current.applyAll(positions);
       syncPreviewStageMetrics(nextLayout);
     },
-    [onLayoutChange, resolveActive, syncPreviewStageMetrics],
+    [onLayoutChange, resolveActiveAt, syncPreviewStageMetrics],
   );
 
   const handlePreview = useCallback(
@@ -354,9 +362,9 @@ export function PixelCanvas({
       }
       pendingPreviewRef.current = null;
       clearPreviewChrome();
-      onLayoutChange(resolveActive(widget));
+      onLayoutChange(resolveActiveAt(widget));
     },
-    [onLayoutChange, resolveActive, clearPreviewChrome],
+    [onLayoutChange, resolveActiveAt, clearPreviewChrome],
   );
 
   const handleCancel = useCallback(() => {
@@ -476,6 +484,7 @@ export function PixelCanvas({
                 widget={widget}
                 canvas={viewCanvas}
                 scale={scale}
+                shapeGapPx={gapRuntime.snapGapPx}
                 mode={mode}
                 selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
                 onSelect={onSelect}
@@ -485,7 +494,7 @@ export function PixelCanvas({
                 onMarkGuidesChange={
                   mode === "edit" ? handleMarkGuidesChange : undefined
                 }
-                markLinesEnabled={chrome.showAuxiliaryGrid}
+                markLinesEnabled={mode === "edit"}
                 snapTargets={layout.widgets.filter((item) => item.id !== widget.id)}
                 viewport={visibleViewport}
                 otherWidgets={layout.widgets.filter((item) => item.id !== widget.id)}
@@ -500,7 +509,7 @@ export function PixelCanvas({
                 />
               </PixelShape>
             ))}
-          {mode === "edit" && chrome.showAuxiliaryGrid ? (
+          {mode === "edit" ? (
             <PixelMarkLineOverlay guides={markGuides} canvas={viewCanvas} />
           ) : null}
           </div>

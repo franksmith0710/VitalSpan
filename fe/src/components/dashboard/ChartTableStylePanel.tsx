@@ -8,152 +8,173 @@ import {
 } from "@/components/ui/select";
 import { ColorField } from "@/components/ui/color-field";
 import { DashboardConfigSection } from "./DashboardConfigSection";
-import {
-  INSPECTOR_CTRL,
-  INSPECTOR_SECTION_GAP,
-  INSPECTOR_SELECT,
-  InspectorFieldRow,
-  InspectorSwitchRow,
-} from "./inspectorCompact";
+import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "./chartInspectorDeFields";
+import { DeAttrToggleRow } from "./dashboardInspectorUi";
+import { INSPECTOR_SELECT } from "./inspectorCompact";
 import { useChartInspector } from "./ChartInspectorContext";
-import { patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import {
+  patchChartDeTableStyle,
+  readChartDeTableStyle,
+  DEFAULT_TABLE_PAGE_SIZE,
+} from "@/lib/chartDeTableStyle";
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100] as const;
 
-/** DataEase 明细表样式：分页 / 列宽 / 滚动条 / 行交互 */
+/** DataEase 明细表 · 样式 Tab「基础样式」折叠（单块，字段顺序对齐 DE） */
 export function ChartTableStylePanel() {
-  const { cfg, onChange } = useChartInspector();
+  const { cfg, onChange, columns } = useChartInspector();
   const tableStyle = readChartDeTableStyle(cfg);
+  const paginationMode = tableStyle.paginationMode ?? "page";
+  const columnWidthMode = tableStyle.columnWidthMode ?? "auto";
 
   const patch = (next: Parameters<typeof patchChartDeTableStyle>[1]) =>
     onChange(patchChartDeTableStyle(cfg, next));
 
+  const displayCols =
+    columns.length > 0
+      ? columns
+      : (cfg.dimensions ?? []).map((d) => d.field).filter(Boolean);
+
+  const patchColumnWidth = (col: string, pct: number) => {
+    const prev = tableStyle.columnWidths ?? {};
+    patch({ columnWidths: { ...prev, [col]: Math.min(100, Math.max(1, pct)) } });
+  };
+
   return (
-    <>
-      <DashboardConfigSection title="基础样式" defaultOpen compact>
-        <div className={INSPECTOR_SECTION_GAP}>
-          <InspectorFieldRow label="不透明度 %">
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              className={INSPECTOR_CTRL}
-              value={tableStyle.opacity ?? ""}
-              placeholder="100"
-              onChange={(e) =>
-                patch({
-                  opacity: e.target.value ? Math.min(100, Math.max(0, Number(e.target.value))) : undefined,
-                })
-              }
-            />
-          </InspectorFieldRow>
-          <InspectorFieldRow label="边框颜色">
-            <ColorField
-              compact
-              value={tableStyle.borderColor ?? ""}
-              onChange={(borderColor) => patch({ borderColor: borderColor || undefined })}
-            />
-          </InspectorFieldRow>
-          <InspectorFieldRow label="滚动条颜色">
-            <ColorField
-              compact
-              value={tableStyle.scrollbarColor ?? ""}
-              onChange={(scrollbarColor) => patch({ scrollbarColor: scrollbarColor || undefined })}
-            />
-          </InspectorFieldRow>
-        </div>
-      </DashboardConfigSection>
-
-      <DashboardConfigSection title="分页" defaultOpen compact>
-        <div className={INSPECTOR_SECTION_GAP}>
-          <InspectorFieldRow label="分页模式">
-            <Select
-              value={tableStyle.paginationMode ?? "page"}
-              onValueChange={(value) =>
-                patch({ paginationMode: value as "page" | "scroll" })
-              }
-            >
-              <SelectTrigger className={INSPECTOR_SELECT} aria-label="分页模式">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="page">翻页</SelectItem>
-                <SelectItem value="scroll">滚动（不分页）</SelectItem>
-              </SelectContent>
-            </Select>
-          </InspectorFieldRow>
-          {(tableStyle.paginationMode ?? "page") === "page" ? (
-            <>
-              <InspectorFieldRow label="分页器风格">
-                <Select
-                  value={tableStyle.paginationVariant ?? "compact"}
-                  onValueChange={(value) =>
-                    patch({ paginationVariant: value as "compact" | "normal" })
-                  }
-                >
-                  <SelectTrigger className={INSPECTOR_SELECT} aria-label="分页器风格">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="compact">精简</SelectItem>
-                    <SelectItem value="normal">常规</SelectItem>
-                  </SelectContent>
-                </Select>
-              </InspectorFieldRow>
-              <InspectorFieldRow label="每页条数">
-                <Select
-                  value={String(tableStyle.pageSize ?? 50)}
-                  onValueChange={(value) =>
-                    patch({ pageSize: Number(value) as 20 | 50 | 100 })
-                  }
-                >
-                  <SelectTrigger className={INSPECTOR_SELECT} aria-label="每页条数">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAGE_SIZE_OPTIONS.map((n) => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n} 条/页
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </InspectorFieldRow>
-            </>
-          ) : null}
-        </div>
-      </DashboardConfigSection>
-
-      <DashboardConfigSection title="表格" defaultOpen compact>
-        <div className={INSPECTOR_SECTION_GAP}>
-          <InspectorFieldRow label="列宽调整">
-            <Select
-              value={tableStyle.columnWidthMode ?? "auto"}
-              onValueChange={(value) =>
-                patch({ columnWidthMode: value as "auto" | "fixed" })
-              }
-            >
-              <SelectTrigger className={INSPECTOR_SELECT} aria-label="列宽调整">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">自适应（等分）</SelectItem>
-                <SelectItem value="fixed">固定列宽</SelectItem>
-              </SelectContent>
-            </Select>
-          </InspectorFieldRow>
-          <InspectorSwitchRow
-            label="自动换行"
-            checked={tableStyle.wordWrap ?? false}
-            onCheckedChange={(wordWrap) => patch({ wordWrap })}
+    <DashboardConfigSection title="基础样式" defaultOpen compact data-testid="table-style-basic">
+      <div className="pb-1">
+        <ChartDeAttrField label="不透明度 %">
+          <Input
+            type="number"
+            min={0}
+            max={100}
+            className={CHART_DE_INPUT}
+            placeholder="100"
+            value={tableStyle.opacity ?? ""}
+            onChange={(e) =>
+              patch({
+                opacity: e.target.value
+                  ? Math.min(100, Math.max(0, Number(e.target.value)))
+                  : undefined,
+              })
+            }
           />
-          <InspectorSwitchRow
-            label="行悬浮高亮"
-            checked={tableStyle.rowHover !== false}
-            onCheckedChange={(rowHover) => patch({ rowHover })}
+        </ChartDeAttrField>
+
+        <ChartDeAttrField label="边框颜色">
+          <ColorField
+            compact
+            allowClear
+            value={tableStyle.borderColor ?? ""}
+            onChange={(borderColor) => patch({ borderColor: borderColor || undefined })}
           />
-        </div>
-      </DashboardConfigSection>
-    </>
+        </ChartDeAttrField>
+
+        <ChartDeAttrField label="滚动条颜色">
+          <ColorField
+            compact
+            allowClear
+            value={tableStyle.scrollbarColor ?? ""}
+            onChange={(scrollbarColor) => patch({ scrollbarColor: scrollbarColor || undefined })}
+          />
+        </ChartDeAttrField>
+
+        <ChartDeSegmentField
+          label="分页模式"
+          value={paginationMode}
+          columns={2}
+          options={[
+            { value: "page", label: "翻页" },
+            { value: "scroll", label: "下拉" },
+          ]}
+          onChange={(value) => patch({ paginationMode: value as "page" | "scroll" })}
+        />
+
+        {paginationMode === "page" ? (
+          <>
+            <ChartDeSegmentField
+              label="分页器风格"
+              value={tableStyle.paginationVariant ?? "compact"}
+              columns={2}
+              options={[
+                { value: "compact", label: "精简" },
+                { value: "normal", label: "常规" },
+              ]}
+              onChange={(value) =>
+                patch({ paginationVariant: value as "compact" | "normal" })
+              }
+            />
+
+            <ChartDeAttrField label="分页">
+              <Select
+                value={String(tableStyle.pageSize ?? DEFAULT_TABLE_PAGE_SIZE)}
+                onValueChange={(value) =>
+                  patch({ pageSize: Number(value) as 20 | 50 | 100 })
+                }
+              >
+                <SelectTrigger className={INSPECTOR_SELECT} aria-label="每页条数">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}条/页
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </ChartDeAttrField>
+          </>
+        ) : null}
+
+        <ChartDeSegmentField
+          label="列宽调整"
+          value={columnWidthMode}
+          columns={3}
+          options={[
+            { value: "auto", label: "自适应" },
+            { value: "fixed", label: "固定列宽" },
+            { value: "custom", label: "自定义" },
+          ]}
+          onChange={(value) =>
+            patch({ columnWidthMode: value as "auto" | "fixed" | "custom" })
+          }
+        />
+
+        {columnWidthMode === "custom" && displayCols.length > 0 ? (
+          <ChartDeAttrField label="列宽比例 %">
+            <div className="space-y-1.5">
+              {displayCols.map((col) => (
+                <div key={col} className="flex items-center gap-1.5">
+                  <span
+                    className="w-16 shrink-0 truncate text-[10px] text-gray-500 dark:text-gray-400"
+                    title={col}
+                  >
+                    {col}
+                  </span>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    className={CHART_DE_INPUT}
+                    placeholder="—"
+                    value={tableStyle.columnWidths?.[col] ?? ""}
+                    onChange={(e) =>
+                      patchColumnWidth(col, e.target.value ? Number(e.target.value) : 0)
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </ChartDeAttrField>
+        ) : null}
+
+        <DeAttrToggleRow
+          label="显示鼠标悬浮样式"
+          checked={tableStyle.rowHover !== false}
+          onCheckedChange={(rowHover) => patch({ rowHover })}
+        />
+      </div>
+    </DashboardConfigSection>
   );
 }

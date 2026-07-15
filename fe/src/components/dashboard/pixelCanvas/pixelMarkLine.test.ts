@@ -50,6 +50,34 @@ describe("pixelMarkLine", () => {
     expect(result.guides).toEqual([]);
   });
 
+  it("prefers the closest snap candidate within threshold", () => {
+    const active: PixelRect = { x: 98, y: 100, width: 200, height: 120 };
+    const near: PixelRect = { x: 400, y: 100, width: 200, height: 80 };
+    const far: PixelRect = { x: 700, y: 104, width: 200, height: 80 };
+
+    const result = computeMarkLineSnap(active, [far, near], {
+      threshold: 8,
+      dragDir: dragLeftUp,
+    });
+
+    expect(result.rect.y).toBe(100);
+    expect(result.guides).toEqual([{ id: "xt", position: 100 }]);
+  });
+
+  it("snaps with gap channel between outer boxes", () => {
+    const active: PixelRect = { x: 303, y: 50, width: 200, height: 120 };
+    const other: PixelRect = { x: 0, y: 80, width: 300, height: 120 };
+
+    const result = computeMarkLineSnap(active, [other], {
+      threshold: 3,
+      dragDir: dragRightDown,
+      gap: 5,
+    });
+
+    expect(result.rect.x).toBe(305);
+    expect(result.guides).toContainEqual({ id: "yl", position: 305 });
+  });
+
   it("prefers one horizontal and one vertical guide by drag direction", () => {
     const guides = chooseVisibleMarkLines(
       [
@@ -97,8 +125,54 @@ describe("pixelMarkLine", () => {
     expect(result.guides).toEqual([{ id: "yr", position: 1440 }]);
   });
 
-  it("converts screen threshold to canvas units by scale", () => {
-    expect(markLineThreshold(0.5)).toBe(6);
-    expect(markLineThreshold(2)).toBe(1.5);
+  it("snaps bottom edge while resizing south", () => {
+    const active: PixelRect = { x: 100, y: 100, width: 200, height: 198 };
+    const other: PixelRect = { x: 400, y: 100, width: 200, height: 200 };
+
+    const result = computeMarkLineSnap(active, [other], {
+      threshold: 3,
+      dragDir: { isRightward: false, isDownward: true },
+      interactionKind: "s",
+      anchorRect: { x: 100, y: 100, width: 200, height: 120 },
+    });
+
+    expect(result.rect.height).toBe(200);
+    expect(result.guides).toContainEqual({ id: "xb", position: 300 });
+  });
+
+  it("snaps right edge while resizing east", () => {
+    const active: PixelRect = { x: 100, y: 100, width: 298, height: 120 };
+    const other: PixelRect = { x: 400, y: 100, width: 200, height: 120 };
+
+    const result = computeMarkLineSnap(active, [other], {
+      threshold: 3,
+      dragDir: { isRightward: true, isDownward: false },
+      interactionKind: "e",
+      anchorRect: { x: 100, y: 100, width: 200, height: 120 },
+    });
+
+    expect(result.rect.width).toBe(300);
+    expect(result.guides).toContainEqual({ id: "yl", position: 400 });
+  });
+
+  it("ignores left-edge snap while resizing east only", () => {
+    const active: PixelRect = { x: 98, y: 100, width: 200, height: 120 };
+    const other: PixelRect = { x: 500, y: 100, width: 200, height: 120 };
+
+    const result = computeMarkLineSnap(active, [other], {
+      threshold: 3,
+      dragDir: { isRightward: true, isDownward: false },
+      interactionKind: "e",
+      anchorRect: { x: 100, y: 100, width: 200, height: 120 },
+    });
+
+    expect(result.rect.x).toBe(98);
+    expect(result.guides).toEqual([]);
+  });
+
+  it("uses DE canvas threshold with screen floor at small scale", () => {
+    expect(markLineThreshold(1)).toBe(8);
+    expect(markLineThreshold(0.5)).toBe(16);
+    expect(markLineThreshold(4)).toBe(3);
   });
 });

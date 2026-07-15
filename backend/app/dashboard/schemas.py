@@ -6,6 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
+from app.dashboard.gap_policy import normalize_gap_config
 from app.schemas.chart_view import ChartViewConfigLayout
 
 FilterControlType = Literal["text", "select", "date", "multiselect"]
@@ -153,7 +154,7 @@ class DashboardStyleConfig(BaseModel):
     gap_preset: Literal["none", "sm", "md", "lg", "custom"] | None = Field(
         default=None, alias="gapPreset"
     )
-    pixel_gutter: int | None = Field(default=None, alias="pixelGutter", ge=0, le=12)
+    pixel_gutter: int | None = Field(default=None, alias="pixelGutter", ge=0, le=10)
     scale_mode: Literal["canvas", "component"] | None = Field(default=None, alias="scaleMode")
     canvas_background_image: str | None = Field(
         default=None, alias="canvasBackgroundImage", max_length=2048
@@ -181,6 +182,18 @@ class DashboardStyleConfig(BaseModel):
         default=None, alias="drillLevelColors", max_length=8
     )
     theme_variants: DashboardThemeVariants | None = Field(default=None, alias="themeVariants")
+
+    @model_validator(mode="after")
+    def normalize_gap_fields(self) -> DashboardStyleConfig:
+        preset, widget_gap, pixel_gutter = normalize_gap_config(
+            gap_preset=self.gap_preset,
+            widget_gap=self.widget_gap,
+            pixel_gutter=self.pixel_gutter,
+        )
+        self.gap_preset = preset
+        self.widget_gap = widget_gap
+        self.pixel_gutter = pixel_gutter
+        return self
 
 
 class LayoutWidget(BaseModel):

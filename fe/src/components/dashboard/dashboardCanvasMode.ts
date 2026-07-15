@@ -11,6 +11,7 @@ import {
   sortWidgets,
 } from "./layoutUtils";
 import { normalizeWidgetLayout } from "./gridLayoutAdapter";
+import { normalizeDashboardGapConfig } from "./gapPolicy";
 import { styleConfigHasPersistedFields } from "./dashboardStyleConfig";
 import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
 import { fitCanvasHeightToContent } from "./pixelCanvas/PixelCanvas";
@@ -132,7 +133,9 @@ function stripV1LayoutGeometry<T extends Record<string, unknown>>(widget: T): T 
 }
 
 function persistedStyle(styleConfig: DashboardStyleConfig): DashboardStyleConfig | undefined {
-  const hydrated = bootstrapDashboardStyleConfig(styleConfig);
+  const hydrated = normalizeDashboardGapConfig(
+    bootstrapDashboardStyleConfig(styleConfig),
+  );
   return styleConfigHasPersistedFields(hydrated) ? hydrated : undefined;
 }
 

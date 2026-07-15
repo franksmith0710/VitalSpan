@@ -53,7 +53,16 @@ export function EmbeddedChartTable({
     ? rows.slice((page - 1) * pageSize, page * pageSize)
     : rows;
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
-  const colPct = displayCols.length > 0 ? `${100 / displayCols.length}%` : "100%";
+  const equalPct = displayCols.length > 0 ? 100 / displayCols.length : 100;
+
+  const resolveColWidth = (col: string): string => {
+    if (tableStyle.columnWidthMode === "custom") {
+      const custom = tableStyle.columnWidths?.[col];
+      if (custom != null && custom > 0) return `${custom}%`;
+      return `${equalPct}%`;
+    }
+    return `${equalPct}%`;
+  };
   const cellClass = cn(
     dwTableCell,
     wordWrap ? "whitespace-normal break-words" : "truncate",
@@ -83,7 +92,7 @@ export function EmbeddedChartTable({
         >
           <colgroup>
             {displayCols.map((c) => (
-              <col key={c} style={{ width: colPct }} />
+              <col key={c} style={{ width: resolveColWidth(c) }} />
             ))}
           </colgroup>
           <thead className="sticky top-0 z-[1] bg-[var(--dashboard-table-header-bg,#f9fafb)]">

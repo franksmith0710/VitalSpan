@@ -14,6 +14,7 @@ import { formatMetricValue } from "./dashboardStyleConfig";
 import { DashboardConfigSection } from "./DashboardConfigSection";
 import { ChartTableStylePanel } from "./ChartTableStylePanel";
 import { ChartGeoStylePanel } from "./ChartGeoStylePanel";
+import { ChartBackgroundStyleFields } from "./chartStyleFields";
 import { useChartInspector } from "./ChartInspectorContext";
 import {
   INSPECTOR_CTRL,
@@ -77,7 +78,7 @@ export function ChartStylePanel() {
     onChange(patchChartDeStyleNested(cfg, "remark", patch));
 
   return (
-    <div className="-mx-3 -mt-3 flex flex-col">
+    <div className="flex flex-col">
       {isTable ? <ChartTableStylePanel /> : null}
 
       {!isTable ? (
@@ -214,6 +215,11 @@ export function ChartStylePanel() {
               </SelectContent>
             </Select>
           </InspectorFieldRow>
+          <InspectorSwitchRow
+            label="字体阴影"
+            checked={deStyle.title?.shadow ?? false}
+            onCheckedChange={(shadow) => patchTitle({ shadow })}
+          />
         </div>
       </DashboardConfigSection>
 
@@ -345,102 +351,76 @@ export function ChartStylePanel() {
         </>
       ) : null}
 
-      {!isTable ? (
-        <DashboardConfigSection title="背景" defaultOpen={false} compact>
-          <div className={INSPECTOR_SECTION_GAP}>
-            <InspectorFieldRow label="背景色">
-              <ColorField
-                compact
-                value={deStyle.background?.background ?? ""}
-                onChange={(background) => patchBackground({ background: background || undefined })}
-              />
-            </InspectorFieldRow>
-            <div className="grid grid-cols-2 gap-2">
-              <InspectorFieldRow label="内边距">
-                <Input
-                  type="number"
-                  min={0}
-                  max={48}
-                  className={INSPECTOR_CTRL}
-                  value={deStyle.background?.padding ?? ""}
-                  placeholder="8"
-                  onChange={(e) =>
-                    patchBackground({ padding: e.target.value ? Number(e.target.value) : undefined })
-                  }
-                />
-              </InspectorFieldRow>
-              <InspectorFieldRow label="圆角">
-                <Input
-                  type="number"
-                  min={0}
-                  max={32}
-                  className={INSPECTOR_CTRL}
-                  value={deStyle.background?.borderRadius ?? ""}
-                  placeholder="8"
-                  onChange={(e) =>
-                    patchBackground({
-                      borderRadius: e.target.value ? Number(e.target.value) : undefined,
-                    })
-                  }
-                />
-              </InspectorFieldRow>
-            </div>
-          </div>
-        </DashboardConfigSection>
-      ) : null}
+      <DashboardConfigSection title="背景" defaultOpen compact>
+        <ChartBackgroundStyleFields
+          value={deStyle.background ?? {}}
+          onChange={(patch) => patchBackground(patch)}
+        />
+      </DashboardConfigSection>
 
-      {!isTable ? (
-        <DashboardConfigSection title="边框" defaultOpen={false} compact>
-          <div className={INSPECTOR_SECTION_GAP}>
-            <InspectorSwitchRow
-              label="显示边框"
-              checked={deStyle.border?.show ?? false}
-              onCheckedChange={(show) => patchBorder({ show })}
+      <DashboardConfigSection title="边框" defaultOpen={false} compact>
+        <div className={INSPECTOR_SECTION_GAP}>
+          <InspectorSwitchRow
+            label="显示边框"
+            checked={deStyle.border?.show ?? false}
+            onCheckedChange={(show) => patchBorder({ show })}
+          />
+          <InspectorFieldRow label="颜色">
+            <ColorField
+              compact
+              value={deStyle.border?.color ?? ""}
+              onChange={(color) => patchBorder({ color: color || undefined })}
             />
-            <InspectorFieldRow label="颜色">
-              <ColorField
-                compact
-                value={deStyle.border?.color ?? ""}
-                onChange={(color) => patchBorder({ color: color || undefined })}
+          </InspectorFieldRow>
+          <div className="grid grid-cols-2 gap-2">
+            <InspectorFieldRow label="线宽">
+              <Input
+                type="number"
+                min={0}
+                max={8}
+                className={INSPECTOR_CTRL}
+                value={deStyle.border?.width ?? ""}
+                placeholder="1"
+                onChange={(e) =>
+                  patchBorder({ width: e.target.value ? Number(e.target.value) : undefined })
+                }
               />
             </InspectorFieldRow>
-            <div className="grid grid-cols-2 gap-2">
-              <InspectorFieldRow label="线宽">
-                <Input
-                  type="number"
-                  min={0}
-                  max={8}
-                  className={INSPECTOR_CTRL}
-                  value={deStyle.border?.width ?? ""}
-                  placeholder="1"
-                  onChange={(e) =>
-                    patchBorder({ width: e.target.value ? Number(e.target.value) : undefined })
-                  }
-                />
-              </InspectorFieldRow>
-              <InspectorFieldRow label="样式">
-                <Select
-                  value={deStyle.border?.style ?? "solid"}
-                  onValueChange={(style) =>
-                    patchBorder({ style: style as "solid" | "dashed" | "dotted" })
-                  }
-                >
-                  <SelectTrigger className={INSPECTOR_SELECT}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BORDER_STYLES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </InspectorFieldRow>
-            </div>
+            <InspectorFieldRow label="圆角">
+              <Input
+                type="number"
+                min={0}
+                max={32}
+                className={INSPECTOR_CTRL}
+                value={deStyle.border?.radius ?? ""}
+                placeholder="0"
+                onChange={(e) =>
+                  patchBorder({ radius: e.target.value ? Number(e.target.value) : undefined })
+                }
+              />
+            </InspectorFieldRow>
           </div>
-        </DashboardConfigSection>
-      ) : null}
+          <InspectorFieldRow label="样式">
+            <Select
+              value={deStyle.border?.style ?? "solid"}
+              onValueChange={(style) =>
+                patchBorder({ style: style as "solid" | "dashed" | "dotted" })
+              }
+            >
+              <SelectTrigger className={INSPECTOR_SELECT}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BORDER_STYLES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </InspectorFieldRow>
+        </div>
+      </DashboardConfigSection>
     </div>
   );
 }

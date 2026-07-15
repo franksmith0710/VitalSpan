@@ -25,32 +25,9 @@ import { CHART_PALETTE_PRESETS } from "@/lib/chartPalette";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DEFAULT_DRILL_LEVEL_COLORS } from "./dashboardChromeConfig";
 import type { ColorScheme, SpacingMode } from "./dashboardStyleConfig";
+import { SpacingModeToggle } from "./inspectorSpacing";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
-
-function SpacingModeToggle({
-  label,
-  mode,
-  onChange,
-}: {
-  label: string;
-  mode: SpacingMode;
-  onChange: (mode: SpacingMode) => void;
-}) {
-  return (
-    <DeAttrField label={label} compact>
-      <DeSegmentGroup
-        value={mode}
-        columns={2}
-        options={[
-          { value: "unified", label: "统一值" },
-          { value: "individual", label: "分边" },
-        ]}
-        onChange={(v) => onChange(v as SpacingMode)}
-      />
-    </DeAttrField>
-  );
-}
 
 type StyleSectionProps = {
   styleConfig: DashboardStyleConfig;

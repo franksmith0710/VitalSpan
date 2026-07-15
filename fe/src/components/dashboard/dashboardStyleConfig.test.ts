@@ -180,6 +180,7 @@ describe("dashboard component gap", () => {
       dashboardShapeGapStyle,
       DASHBOARD_SHAPE_GAP_VAR,
     } = await import("./dashboardStyleConfig");
+    expect(resolveDashboardComponentGap({})).toBe(0);
     expect(resolveDashboardComponentGap({ pixelGutter: 8 }, { pixel: true })).toBe(8);
     expect(resolveDashboardComponentGap({ gapPreset: "md" })).toBe(8);
     expect(dashboardShapeGapStyle(5)).toEqual({ [DASHBOARD_SHAPE_GAP_VAR]: "5px" });

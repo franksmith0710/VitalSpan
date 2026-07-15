@@ -7,7 +7,13 @@ import type {
   WidgetStyleConfig,
   ColorScheme,
 } from "@/components/dashboard/dashboardStyleConfig";
-import { mergeTitleStyle, mergeWidgetShellStyle, coerceWidgetSurfaceBackground } from "@/components/dashboard/dashboardStyleConfig";
+import {
+  coerceWidgetSurfaceBackground,
+  mergeTitleStyle,
+  mergeWidgetShellStyle,
+  resolveBoxPadding,
+  resolveBoxRadius,
+} from "@/components/dashboard/dashboardStyleConfig";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "@/components/dashboard/dashboardThemeTokens";
 
 export type ChartLegendStyle = {
@@ -48,7 +54,7 @@ export type ChartDeStyle = {
   title?: TitleStyleConfig & { show?: boolean };
   legend?: ChartLegendStyle;
   label?: ChartLabelStyle;
-  background?: WidgetStyleConfig & { padding?: number };
+  background?: WidgetStyleConfig;
   border?: ChartBorderStyle;
   remark?: ChartRemarkStyle;
   geo?: ChartGeoStyle;
@@ -129,6 +135,31 @@ export function readChartDataZoom(cfg: ChartViewConfig): boolean {
   return false;
 }
 
+/** 组件内容区内背景/内边距/圆角（对标 DE 样式 Tab · 背景） */
+export function widgetStyleToContentCss(
+  bg: WidgetStyleConfig | undefined,
+  colorScheme: ColorScheme = "light",
+): CSSProperties {
+  if (!bg) return {};
+  const style: CSSProperties = {};
+  const coerced = coerceWidgetSurfaceBackground(bg.background, colorScheme);
+  if (coerced) style.background = coerced;
+  if (bg.backgroundImage) {
+    style.backgroundImage = `url(${bg.backgroundImage})`;
+    style.backgroundSize = "cover";
+    style.backgroundPosition = "center";
+  }
+  if (bg.opacity != null) style.opacity = bg.opacity;
+  if (bg.backdropBlur != null && bg.backdropBlur > 0) {
+    style.backdropFilter = `blur(${bg.backdropBlur}px)`;
+  }
+  const padding = resolveBoxPadding(bg);
+  if (padding) style.padding = padding;
+  const radius = resolveBoxRadius(bg);
+  if (radius) style.borderRadius = radius;
+  return style;
+}
+
 /** 看板 widgetStyle 外壳 + 图表 deStyle 内区（背景/内边距/边框） */
 export function resolveChartContentShellStyle(
   globalWidgetStyle: DashboardStyleConfig["widgetStyle"] | undefined,
@@ -138,17 +169,12 @@ export function resolveChartContentShellStyle(
   const outer = mergeWidgetShellStyle(globalWidgetStyle, colorScheme);
   if (!cfg) return { outer, inner: {} };
   const de = readChartDeStyle(cfg);
-  const inner: CSSProperties = {};
-  if (de.background?.background) {
-    inner.background = coerceWidgetSurfaceBackground(de.background.background, colorScheme);
-  }
-  if (de.background?.opacity != null) inner.opacity = de.background.opacity;
-  if (de.background?.padding != null) inner.padding = `${de.background.padding}px`;
-  if (de.background?.borderRadius != null) inner.borderRadius = `${de.background.borderRadius}px`;
+  const inner = widgetStyleToContentCss(de.background, colorScheme);
   if (de.border?.show) {
     inner.borderStyle = de.border.style ?? "solid";
-    inner.borderColor = de.border.color ?? "var(--color-gray-200)";
+    inner.borderColor = de.border.color ?? "var(--dashboard-widget-border, var(--color-gray-200))";
     inner.borderWidth = de.border.width ?? 1;
+    if (de.border.radius != null) inner.borderRadius = `${de.border.radius}px`;
   }
   return { outer, inner };
 }

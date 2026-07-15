@@ -635,8 +635,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       });
 
       resetLayout(normalizedLayout);
+      const savedStyle =
+        normalizedLayout.styleConfig ?? bootstrapDashboardStyleConfig({});
+      setStyleConfig(savedStyle);
+      styleConfigRef.current = savedStyle;
       setSavedFingerprint(
-        dashboardPersistFingerprint(normalizedLayout, currentStyle, pixelEnabled),
+        dashboardPersistFingerprint(normalizedLayout, savedStyle, pixelEnabled),
       );
 
       const mergedLinkage = sanitizeLinkageForSave(

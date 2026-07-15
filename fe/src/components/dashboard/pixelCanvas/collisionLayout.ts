@@ -5,7 +5,17 @@ export type CollisionLayoutOptions = {
   gap?: number;
   minCanvasHeight?: number;
   bottomPadding?: number;
+  /** 两轴重叠深度均需超过该值才算碰撞（拖拽预览抑制轻触即挤压） */
+  minOverlap?: number;
 };
+
+/** 拖拽预览时，屏幕上两轴均需穿透该深度才触发邻组件下推（px） */
+export const COLLISION_PREVIEW_SCREEN_TOLERANCE_PX = 12;
+
+export function collisionPreviewOverlapTolerance(scale: number): number {
+  const safeScale = scale > 0 ? scale : 1;
+  return COLLISION_PREVIEW_SCREEN_TOLERANCE_PX / safeScale;
+}
 
 const PACK_SCAN_STEP = 8;
 
@@ -13,19 +23,28 @@ const DEFAULT_OPTIONS: Required<CollisionLayoutOptions> = {
   gap: 0,
   minCanvasHeight: 220,
   bottomPadding: 0,
+  minOverlap: 0,
 };
 
 export function widgetRect(widget: Pick<PixelLayoutWidget, "x" | "y" | "width" | "height">): PixelRect {
   return { x: widget.x, y: widget.y, width: widget.width, height: widget.height };
 }
 
-export function rectsOverlap(a: PixelRect, b: PixelRect, gap = 0): boolean {
-  return (
+export function rectsOverlap(
+  a: PixelRect,
+  b: PixelRect,
+  gap = 0,
+  minOverlap = 0,
+): boolean {
+  const touches =
     a.x < b.x + b.width + gap &&
     a.x + a.width + gap > b.x &&
     a.y < b.y + b.height + gap &&
-    a.y + a.height + gap > b.y
-  );
+    a.y + a.height + gap > b.y;
+  if (!touches || minOverlap <= 0) return touches;
+  const overlapX = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
+  const overlapY = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
+  return overlapX > minOverlap && overlapY > minOverlap;
 }
 
 function stableWidgetKey(widget: PixelLayoutWidget): [number, number, number, string] {
@@ -74,11 +93,12 @@ function pushDown(
   positions: Map<string, PixelRect>,
   moverId: string,
   blockerId: string,
-  gap: number,
+  options: Required<CollisionLayoutOptions>,
 ): boolean {
   const blocker = positions.get(blockerId)!;
   const mover = positions.get(moverId)!;
-  if (!rectsOverlap(blocker, mover, gap)) return false;
+  if (!rectsOverlap(blocker, mover, options.gap, options.minOverlap)) return false;
+  const gap = options.gap;
   const nextY = blocker.y + blocker.height + gap;
   if (mover.y >= nextY) return false;
   positions.set(moverId, { ...mover, y: Math.round(nextY) });
@@ -104,7 +124,7 @@ function cascadeFromBlocker(
     for (const candidate of sorted) {
       if (candidate.id === currentBlocker) continue;
       if (candidate.id === activeId) continue;
-      if (pushDown(positions, candidate.id, currentBlocker, options.gap)) {
+      if (pushDown(positions, candidate.id, currentBlocker, options)) {
         if (!queued.has(candidate.id)) {
           queue.push(candidate.id);
           queued.add(candidate.id);

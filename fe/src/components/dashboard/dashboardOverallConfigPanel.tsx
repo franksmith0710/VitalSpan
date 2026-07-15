@@ -92,7 +92,7 @@ function GapControls({
                 min={0}
                 max={customMax}
                 step={1}
-                value={customPx}
+                value={Math.max(0, customPx)}
                 aria-label="自定义间隙滑块"
                 className="h-1.5 w-full cursor-pointer accent-brand-500"
                 onChange={(e) => onCustomPx(Number(e.target.value))}
@@ -103,12 +103,15 @@ function GapControls({
                 max={customMax}
                 className={DE_INPUT}
                 aria-label="自定义间隙像素"
-                value={customPx}
+                value={Math.max(0, customPx)}
                 onChange={(e) => {
                   const next = Number(e.target.value);
                   if (!Number.isNaN(next)) onCustomPx(Math.min(customMax, Math.max(0, next)));
                 }}
               />
+              <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+                对标 DataEase：每侧 padding 为设定值，相邻组件间距约为 2 倍；栅格与像素预设标尺不同。
+              </p>
             </div>
           ) : null}
         </DeAttrSubField>

@@ -468,7 +468,7 @@ html.dark {
     calc(0.25rem / var(--pixel-canvas-scale));
 }
 
-.pixel-canvas-host .pixel-shape-body .shape-title :where([data-testid^="pixel-shape-title"]) {
+.pixel-canvas-host .pixel-shape-body .shape-title :where(.widget-inline-title) {
   font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-scale));
   line-height: calc(1.375rem / var(--pixel-canvas-scale));
 }
@@ -547,12 +547,17 @@ html.dark {
   color: var(--dashboard-action-icon-hover, var(--color-gray-200));
 }
 
-.dashboard-theme-scope [data-testid="pixel-canvas-artboard"] {
+.dashboard-theme-scope:not([data-canvas-user-bg="true"]) [data-testid="pixel-canvas-artboard"] {
   background-color: var(--dashboard-artboard-bg, #f8fafc) !important;
 }
 
 .dashboard-theme-scope .pixel-canvas-host {
   background-color: var(--dashboard-artboard-bg, #f8fafc);
+}
+
+/* DE curGap：padding 区透明，仅内层 body 绘制组件底 */
+.dashboard-theme-scope .dashboard-shape-gap-shell {
+  background-color: transparent !important;
 }
 
 .dashboard-theme-scope .dashboard-chart-table tbody tr {
@@ -564,7 +569,8 @@ html.dark {
   background-color: var(--dashboard-table-header-bg, #f9fafb);
 }
 
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"] [data-testid="pixel-canvas-artboard"] {
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"]:not([data-canvas-user-bg="true"])
+  [data-testid="pixel-canvas-artboard"] {
   background-color: var(--dashboard-artboard-bg, #0f172a) !important;
   background-image: none !important;
 }
@@ -610,11 +616,6 @@ html.dark {
   background-color: var(--dashboard-widget-surface, #1e293b);
 }
 
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .pixel-shape-outer,
-.dashboard-theme-scope.dark .pixel-shape-outer {
-  background-color: var(--dashboard-widget-surface, #1e293b);
-}
-
 .dashboard-theme-scope [data-dashboard-dialog] {
   background: var(--dashboard-dialog-bg, var(--color-white));
   color: var(--dashboard-dialog-fg, inherit);
@@ -650,6 +651,7 @@ html.dark {
 .pixel-canvas-mark-line {
   stroke: var(--color-mark-line, #59c7f9);
   stroke-width: 1;
+  vector-effect: non-scaling-stroke;
   pointer-events: none;
 }
 

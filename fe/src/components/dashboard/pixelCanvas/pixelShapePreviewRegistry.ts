@@ -17,6 +17,9 @@ export function createPixelShapePreviewRegistry() {
         syncById.get(widgetId)?.(rect);
       }
     },
+    applyOne(widgetId: string, rect: PixelRect) {
+      syncById.get(widgetId)?.(rect);
+    },
     reset(widgets: Array<{ id: string } & PixelRect>) {
       for (const widget of widgets) {
         const { id, x, y, width, height } = widget;

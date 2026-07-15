@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { buildDashboardGapPatch } from "./dashboardStyleConfig";
 import type { DashboardStyleConfig } from "./layoutUtils";
 
 type DashboardStyleDialogProps = {
@@ -19,18 +20,19 @@ type DashboardStyleDialogProps = {
   onApply: (value: DashboardStyleConfig) => void;
 };
 
+/** @deprecated 使用 DashboardOverallConfigPanel；保留兼容时写入完整 gapPreset 双通道 */
 export function DashboardStyleDialog({
   open,
   onOpenChange,
   value,
   onApply,
 }: DashboardStyleDialogProps) {
-  const [gap, setGap] = useState(value.widgetGap ?? 8);
+  const [gap, setGap] = useState(value.widgetGap ?? 0);
   const [bg, setBg] = useState(value.canvasBackground ?? "");
 
   useEffect(() => {
     if (open) {
-      setGap(value.widgetGap ?? 8);
+      setGap(value.widgetGap ?? 0);
       setBg(value.canvasBackground ?? "");
     }
   }, [open, value.widgetGap, value.canvasBackground]);
@@ -71,7 +73,11 @@ export function DashboardStyleDialog({
           <Button
             type="button"
             onClick={() => {
-              onApply({ widgetGap: gap, canvasBackground: bg || undefined });
+              onApply({
+                ...value,
+                ...buildDashboardGapPatch(value, { type: "customPx", px: gap }, { pixel: false }),
+                canvasBackground: bg || undefined,
+              });
               onOpenChange(false);
             }}
           >

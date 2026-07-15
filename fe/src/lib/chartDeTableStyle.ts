@@ -2,7 +2,7 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 export type TablePaginationMode = "page" | "scroll";
 export type TablePaginationVariant = "compact" | "normal";
-export type TableColumnWidthMode = "auto" | "fixed";
+export type TableColumnWidthMode = "auto" | "fixed" | "custom";
 
 export type ChartDeTableStyle = {
   /** 0–100，组件整体不透明度 */
@@ -13,11 +13,13 @@ export type ChartDeTableStyle = {
   pageSize?: 20 | 50 | 100;
   paginationVariant?: TablePaginationVariant;
   columnWidthMode?: TableColumnWidthMode;
+  /** 自定义列宽：列名 → 百分比 */
+  columnWidths?: Record<string, number>;
   wordWrap?: boolean;
   rowHover?: boolean;
 };
 
-export const DEFAULT_TABLE_PAGE_SIZE = 50;
+export const DEFAULT_TABLE_PAGE_SIZE = 20;
 
 export function readChartDeTableStyle(cfg: ChartViewConfig): ChartDeTableStyle {
   const raw = cfg.nativeBody?.deTableStyle;

@@ -12,6 +12,13 @@ type WidgetInlineTitleProps = {
   className?: string;
 };
 
+/** 编辑/只读共用排版壳，避免点击后字号与行高跳动 */
+const titleShellClass = (className?: string) =>
+  cn(
+    "widget-inline-title min-w-0 flex-1 px-1 text-theme-sm font-semibold leading-snug",
+    className,
+  );
+
 /**
  * DataEase 式组件标题：默认纯文字；点击后进入内联编辑。
  */
@@ -38,10 +45,7 @@ export function WidgetInlineTitle({
   if (!editable || !onChange) {
     return (
       <span
-        className={cn(
-          "min-w-0 flex-1 truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90",
-          className,
-        )}
+        className={cn(titleShellClass(className), "truncate")}
         style={titleStyle}
         data-testid={testId}
       >
@@ -55,8 +59,8 @@ export function WidgetInlineTitle({
       <Input
         ref={inputRef}
         value={value}
-        size="sm"
         inputSkin="borderless"
+        data-testid={testId}
         onChange={(e) => onChange(e.target.value)}
         onMouseDown={stopBubble}
         onClick={stopBubble}
@@ -70,8 +74,8 @@ export function WidgetInlineTitle({
           }
         }}
         className={cn(
-          "dashboard-no-drag h-7 min-w-0 flex-1 px-1 py-0 font-semibold text-gray-800 shadow-none focus-visible:ring-2 focus-visible:ring-brand-500/25 dark:text-white/90",
-          className,
+          titleShellClass(className),
+          "dashboard-no-drag !h-auto !min-h-0 w-full !py-0 shadow-none focus-visible:ring-2 focus-visible:ring-brand-500/25",
         )}
         style={titleStyle}
         aria-label={ariaLabel}
@@ -82,8 +86,8 @@ export function WidgetInlineTitle({
   return (
     <span
       className={cn(
-        "dashboard-no-drag min-w-0 flex-1 cursor-text truncate rounded px-1 text-theme-sm font-semibold text-gray-800 hover:bg-gray-100/80 dark:text-white/90 dark:hover:bg-white/5",
-        className,
+        titleShellClass(className),
+        "dashboard-no-drag cursor-text truncate rounded hover:bg-gray-100/80 dark:hover:bg-white/5",
       )}
       style={titleStyle}
       data-testid={testId}

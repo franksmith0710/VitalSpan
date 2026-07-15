@@ -10,11 +10,10 @@ import { PixelCanvas } from "./pixelCanvas";
 import {
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
-  resolveDashboardComponentGap,
-  resolvePixelGutter,
   widgetDashboardStyleFingerprint,
   type ScaleMode,
 } from "./dashboardStyleConfig";
+import { resolveComponentGapRuntime } from "./componentGapRuntime";
 import { DashboardStyleSurface } from "./DashboardStyleSurface";
 import { DashboardWidgetsProvider } from "./DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "./dashboardWidgetExecuteKey";
@@ -30,7 +29,6 @@ type DashboardLayoutPreviewProps = {
   filterValues?: Record<string, string>;
   onFilterValueChange?: (filterId: string, value: string) => void;
   scaleMode?: ScaleMode;
-  pixelGutter?: number;
   className?: string;
 };
 
@@ -40,7 +38,6 @@ export function DashboardLayoutPreview({
   filterValues = {},
   onFilterValueChange,
   scaleMode,
-  pixelGutter,
   className,
 }: DashboardLayoutPreviewProps) {
   const styleConfig = layout.styleConfig ?? {};
@@ -103,7 +100,7 @@ export function DashboardLayoutPreview({
       <DashboardWidgetsProvider widgets={widgets}>
       <DashboardStyleSurface
         styleConfig={styleConfig}
-        componentGapPx={resolveDashboardComponentGap(styleConfig, { pixel: true })}
+        componentGapPx={resolveComponentGapRuntime(styleConfig, "pixel").shellPaddingPx}
         className={className}
       >
         <PixelCanvas
@@ -111,7 +108,6 @@ export function DashboardLayoutPreview({
           layout={layout}
           styleConfig={styleConfig}
           scaleMode={scaleMode ?? styleConfig.scaleMode}
-          pixelGutter={pixelGutter ?? resolvePixelGutter(styleConfig)}
           className="h-full min-h-0"
           renderWidget={(widget: PixelLayoutWidget) =>
             renderWidget(pixelWidgetToLayoutWidget(widget), undefined, "shape")
@@ -127,7 +123,7 @@ export function DashboardLayoutPreview({
     <DashboardWidgetsProvider widgets={widgets}>
     <DashboardStyleSurface
       styleConfig={styleConfig}
-      componentGapPx={resolveDashboardComponentGap(styleConfig)}
+      componentGapPx={resolveComponentGapRuntime(styleConfig, "grid").shellPaddingPx}
       className={className}
     >
       <div className="relative h-full min-h-0">

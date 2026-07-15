@@ -75,7 +75,7 @@ export function DashboardGrid({
   className,
   styleConfig,
 }: DashboardGridProps) {
-  const gap = resolveWidgetGap(styleConfig ?? {});
+  const componentGapPx = resolveWidgetGap(styleConfig ?? {});
   const gridMargin: [number, number] = DASHBOARD_GRID_MARGIN;
   const sorted = sortWidgets(widgets);
   const topLevel = useMemo(() => getTopLevelWidgets(sorted), [sorted]);
@@ -167,7 +167,7 @@ export function DashboardGrid({
         key={widget.id}
         className={cn(
           "grid-widget-cell dashboard-shape-gap-shell h-full min-w-0",
-          gap === 0 && "dashboard-widget-surface",
+          componentGapPx === 0 && "dashboard-widget-surface",
           selectedIds?.has(widget.id) && "grid-widget-selected",
         )}
       >

@@ -49,4 +49,16 @@ describe("PixelShape component gap", () => {
     const scope = screen.getByTestId("pixel-shape-w1").closest(".dashboard-theme-scope");
     expect(scope).toHaveStyle({ "--dashboard-shape-gap": "0px" });
   });
+
+  it("keeps gap shell transparent so artboard shows through padding", () => {
+    const { container } = renderShape(8);
+    const outer = screen.getByTestId("pixel-shape-w1");
+    expect(outer).toHaveClass("dashboard-shape-gap-shell");
+    expect(outer.className).toContain("bg-transparent");
+
+    const scope = container.querySelector(".dashboard-theme-scope");
+    scope?.setAttribute("data-dashboard-color-scheme", "dark");
+    scope?.classList.add("dark");
+    expect(outer.className).toContain("bg-transparent");
+  });
 });

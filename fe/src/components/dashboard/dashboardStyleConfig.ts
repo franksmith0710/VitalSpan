@@ -1,23 +1,38 @@
 import type { CSSProperties } from "react";
 import type { DashboardThemeVariants } from "./dashboardThemeVariants";
 import { getDashboardThemeTokens } from "./dashboardThemeTokens";
+import { componentGapShellStyle } from "./componentGapRuntime";
+import type { GapPreset } from "./gapPolicy";
 
-export const GAP_PRESET_PX = {
-  none: 0,
-  sm: 4,
-  md: 8,
-  lg: 16,
-} as const;
+export type { GapPreset } from "./gapPolicy";
+export {
+  buildDashboardGapPatch,
+  DEFAULT_CUSTOM_GRID_GAP,
+  DEFAULT_CUSTOM_PIXEL_GAP,
+  DEFAULT_PIXEL_GUTTER,
+  DEFAULT_WIDGET_GAP,
+  DASHBOARD_SHAPE_GAP_VAR,
+  GAP_POLICY_PRESET_TABLE,
+  GAP_PRESET_PX,
+  inferPixelGapPreset,
+  inferWidgetGapPreset,
+  normalizeDashboardGapConfig,
+  normalizeDashboardGapForPersist,
+  PIXEL_GAP_PRESET_PX,
+  resolveDashboardComponentGap,
+  resolveDashboardGapUiState,
+  resolvePixelGutter,
+  resolveWidgetGap,
+  type DashboardGapUiState,
+  type GapPatchAction,
+} from "./gapPolicy";
+export {
+  componentGapShellStyle,
+  resolveComponentGapRuntime,
+  type CanvasGapMode,
+  type ComponentGapRuntime,
+} from "./componentGapRuntime";
 
-/** 像素画布间隙上限 10px（对标 DE gapSize 0–10） */
-export const PIXEL_GAP_PRESET_PX = {
-  none: 0,
-  sm: 2,
-  md: 5,
-  lg: 10,
-} as const;
-
-export type GapPreset = keyof typeof GAP_PRESET_PX | "custom";
 export type ScaleMode = "canvas" | "component";
 export type ColorScheme = "light" | "dark";
 export type NumberFormatType = "auto" | "number" | "percent" | "currency";
@@ -69,6 +84,8 @@ export type TitleStyleConfig = {
   fontWeight?: number;
   align?: "left" | "center" | "right";
   letterSpacing?: number;
+  /** 对标 DE：标题字体阴影 */
+  shadow?: boolean;
 };
 
 export type FilterChromeStyleConfig = {
@@ -552,165 +569,13 @@ function resolveDecorImageStyle(
   };
 }
 
-export const DEFAULT_WIDGET_GAP = 8;
-export const DEFAULT_PIXEL_GUTTER = 0;
 export const DEFAULT_SCALE_MODE: ScaleMode = "canvas";
 export const DEFAULT_QUERY_LIMIT = 100;
 export const MIN_QUERY_LIMIT = 1;
 export const MAX_QUERY_LIMIT = 10000;
 
-export function resolveWidgetGap(config: DashboardStyleConfig): number {
-  const preset = config.gapPreset;
-  if (preset && preset !== "custom" && preset in GAP_PRESET_PX) {
-    return GAP_PRESET_PX[preset as keyof typeof GAP_PRESET_PX];
-  }
-  return config.widgetGap ?? DEFAULT_WIDGET_GAP;
-}
-
-export function resolvePixelGutter(config: DashboardStyleConfig): number {
-  const preset = config.gapPreset;
-  if (preset && preset !== "custom" && preset in PIXEL_GAP_PRESET_PX) {
-    return PIXEL_GAP_PRESET_PX[preset as keyof typeof PIXEL_GAP_PRESET_PX];
-  }
-  const gutter = config.pixelGutter ?? DEFAULT_PIXEL_GUTTER;
-  return Math.min(10, Math.max(0, gutter));
-}
-
-export const DASHBOARD_SHAPE_GAP_VAR = "--dashboard-shape-gap";
-
-export function resolveDashboardComponentGap(
-  config: DashboardStyleConfig,
-  options: { pixel?: boolean } = {},
-): number {
-  return options.pixel ? resolvePixelGutter(config) : resolveWidgetGap(config);
-}
-
 export function dashboardShapeGapStyle(gapPx: number): CSSProperties {
-  return { [DASHBOARD_SHAPE_GAP_VAR]: `${Math.max(0, gapPx)}px` } as CSSProperties;
-}
-
-export function inferWidgetGapPreset(gap: number): GapPreset {
-  if (gap <= 0) return "none";
-  for (const [key, px] of Object.entries(GAP_PRESET_PX)) {
-    if (key !== "none" && px === gap) return key as GapPreset;
-  }
-  return "custom";
-}
-
-export function inferPixelGapPreset(gutter: number): GapPreset {
-  if (gutter <= 0) return "none";
-  for (const [key, px] of Object.entries(PIXEL_GAP_PRESET_PX)) {
-    if (key !== "none" && px === gutter) return key as GapPreset;
-  }
-  return "custom";
-}
-
-export type DashboardGapUiState = {
-  hasGap: boolean;
-  preset: GapPreset;
-  customPx: number;
-  customMax: number;
-};
-
-export function resolveDashboardGapUiState(
-  config: DashboardStyleConfig,
-  options: { pixel?: boolean } = {},
-): DashboardGapUiState {
-  const pixel = options.pixel === true;
-  const customMax = pixel ? 10 : 48;
-  const presetMap = pixel ? PIXEL_GAP_PRESET_PX : GAP_PRESET_PX;
-
-  if (config.gapPreset === "none") {
-    return { hasGap: false, preset: "none", customPx: pixel ? config.pixelGutter ?? 0 : config.widgetGap ?? 0, customMax };
-  }
-
-  if (config.gapPreset === "custom") {
-    const customPx = pixel
-      ? Math.min(customMax, Math.max(0, config.pixelGutter ?? DEFAULT_CUSTOM_PIXEL_GAP))
-      : Math.min(customMax, Math.max(0, config.widgetGap ?? DEFAULT_CUSTOM_GRID_GAP));
-    return { hasGap: customPx > 0, preset: "custom", customPx, customMax };
-  }
-
-  if (config.gapPreset && config.gapPreset in presetMap) {
-    const px = presetMap[config.gapPreset as keyof typeof presetMap];
-    return { hasGap: px > 0, preset: config.gapPreset, customPx: px, customMax };
-  }
-
-  const gapPx = pixel ? resolvePixelGutter(config) : resolveWidgetGap(config);
-  const inferred = pixel ? inferPixelGapPreset(gapPx) : inferWidgetGapPreset(gapPx);
-  return {
-    hasGap: gapPx > 0,
-    preset: inferred,
-    customPx: pixel ? (config.pixelGutter ?? gapPx) : (config.widgetGap ?? gapPx),
-    customMax,
-  };
-}
-
-/** 进入「自定义」时的默认像素（避开小/中/大 preset，便于 UI 保持 custom 选中） */
-export const DEFAULT_CUSTOM_PIXEL_GAP = 3;
-export const DEFAULT_CUSTOM_GRID_GAP = 6;
-
-function isPresetGapPx(px: number, pixel: boolean): boolean {
-  const map = pixel ? PIXEL_GAP_PRESET_PX : GAP_PRESET_PX;
-  return Object.entries(map).some(([key, value]) => key !== "none" && value === px);
-}
-
-function defaultCustomGapPx(config: DashboardStyleConfig, pixel: boolean): number {
-  const current = pixel ? config.pixelGutter ?? 0 : config.widgetGap ?? 0;
-  const fallback = pixel ? DEFAULT_CUSTOM_PIXEL_GAP : DEFAULT_CUSTOM_GRID_GAP;
-  if (current > 0 && !isPresetGapPx(current, pixel)) return current;
-  return fallback;
-}
-
-export function buildDashboardGapPatch(
-  config: DashboardStyleConfig,
-  action:
-    | { type: "toggle"; hasGap: boolean }
-    | { type: "preset"; preset: Exclude<GapPreset, "custom"> | "custom" }
-    | { type: "customPx"; px: number },
-  options: { pixel?: boolean } = {},
-): Partial<DashboardStyleConfig> {
-  const pixel = options.pixel === true;
-  const presetMap = pixel ? PIXEL_GAP_PRESET_PX : GAP_PRESET_PX;
-
-  if (action.type === "toggle") {
-    if (!action.hasGap) {
-      return pixel
-        ? { gapPreset: "none", pixelGutter: 0 }
-        : { gapPreset: "none", widgetGap: 0 };
-    }
-    return pixel
-      ? { gapPreset: "md", pixelGutter: presetMap.md }
-      : { gapPreset: "md", widgetGap: GAP_PRESET_PX.md };
-  }
-
-  if (action.type === "preset") {
-    if (action.preset === "custom") {
-      const px = defaultCustomGapPx(config, pixel);
-      return pixel
-        ? { gapPreset: "custom", pixelGutter: px }
-        : { gapPreset: "custom", widgetGap: px };
-    }
-    const px = presetMap[action.preset as keyof typeof presetMap];
-    return pixel
-      ? { gapPreset: action.preset, pixelGutter: px }
-      : { gapPreset: action.preset, widgetGap: GAP_PRESET_PX[action.preset as keyof typeof GAP_PRESET_PX] };
-  }
-
-  const px = Math.max(0, Math.min(pixel ? 10 : 48, action.px));
-  if (pixel) {
-    const matched = inferPixelGapPreset(px);
-    if (matched !== "custom" && matched !== "none") {
-      return { gapPreset: matched, pixelGutter: PIXEL_GAP_PRESET_PX[matched as keyof typeof PIXEL_GAP_PRESET_PX] };
-    }
-    return { gapPreset: px > 0 ? "custom" : "none", pixelGutter: px };
-  }
-
-  const matched = inferWidgetGapPreset(px);
-  if (matched !== "custom" && matched !== "none") {
-    return { gapPreset: matched, widgetGap: GAP_PRESET_PX[matched as keyof typeof GAP_PRESET_PX] };
-  }
-  return { gapPreset: px > 0 ? "custom" : "none", widgetGap: px };
+  return componentGapShellStyle(gapPx);
 }
 
 export function resolveQueryLimit(config: DashboardStyleConfig): number {
@@ -828,10 +693,11 @@ export function mergeTitleStyle(
   if (merged.fontWeight != null) style.fontWeight = merged.fontWeight;
   if (merged.align) style.textAlign = merged.align;
   if (merged.letterSpacing != null) style.letterSpacing = `${merged.letterSpacing}px`;
+  if (merged.shadow) style.textShadow = "0 1px 2px rgba(15, 23, 42, 0.28)";
   return style;
 }
 
-function resolveBoxPadding(global: WidgetStyleConfig | undefined): string | undefined {
+export function resolveBoxPadding(global: WidgetStyleConfig | undefined): string | undefined {
   if (!global) return undefined;
   const mode = global.paddingMode ?? "unified";
   if (mode === "individual") {
@@ -846,7 +712,7 @@ function resolveBoxPadding(global: WidgetStyleConfig | undefined): string | unde
   return undefined;
 }
 
-function resolveBoxRadius(global: WidgetStyleConfig | undefined): string | undefined {
+export function resolveBoxRadius(global: WidgetStyleConfig | undefined): string | undefined {
   if (!global) return undefined;
   const mode = global.radiusMode ?? "unified";
   if (mode === "individual") {

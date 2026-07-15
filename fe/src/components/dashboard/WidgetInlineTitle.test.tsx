@@ -15,6 +15,11 @@ describe("WidgetInlineTitle", () => {
     expect(screen.getByTestId("title-w1")).toHaveTextContent("销售趋势");
     expect(screen.queryByLabelText("组件标题")).not.toBeInTheDocument();
     await user.click(screen.getByTestId("title-w1"));
-    expect(screen.getByLabelText("组件标题")).toHaveValue("销售趋势");
+    const input = screen.getByLabelText("组件标题");
+    expect(input).toHaveValue("销售趋势");
+    expect(input).toHaveAttribute("data-testid", "title-w1");
+    expect(input).toHaveClass("widget-inline-title");
+    expect(input).toHaveClass("text-theme-sm");
+    expect(input).not.toHaveClass("h-7");
   });
 });

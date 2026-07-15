@@ -7,6 +7,7 @@ import type {
   WidgetStyleConfig,
 } from "./dashboardStyleConfig";
 import { CANVAS_BG_DARK_DEFAULT, CANVAS_BG_LIGHT_DEFAULT, isDarkCanvasColor, isDarkWidgetShellColor, isLightCanvasColor, resolveCanvasDecorPresetId, WIDGET_SHELL_DARK_DEFAULT } from "./dashboardStyleConfig";
+import { normalizeDashboardGapConfig } from "./gapPolicy";
 import type { LayoutWidget } from "./layoutUtils";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "./dashboardThemeTokens";
 import { patchChartDeStyleNested, readChartDeStyle } from "@/lib/chartDeStyle";
@@ -262,13 +263,13 @@ export function bootstrapDashboardStyleConfig(
   const normalized = normalizeStyleConfigForColorScheme(merged);
   const syncedActive = ensureThemeVariant(extractThemeVariant(normalized), scheme);
 
-  return {
+  return normalizeDashboardGapConfig({
     ...normalized,
     themeVariants: {
       light: scheme === "light" ? syncedActive : light,
       dark: scheme === "dark" ? syncedActive : dark,
     },
-  };
+  });
 }
 
 /** @deprecated 使用 bootstrapDashboardStyleConfig */

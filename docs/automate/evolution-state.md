@@ -20,6 +20,20 @@
 | 字段 | 值 |
 |------|----|
 | phase | DONE |
+| request | 仪表板组件间隙全面修复（审计 P0/P1） |
+| type | bugfix |
+| plan | docs/automate/plans/2026-07-15-dashboard-gap-hardening.md |
+| status | DONE |
+| last_verified_command | vitest gap tests + tsc --noEmit + pytest test_dashboard_gap_style_config |
+| last_verified_exit_code | 0 |
+| verification_summary | gap 归一化/load/save 对称、双通道、栅格透明 CSS、死 prop 清理、后端 validator |
+| repair_rounds | 0 |
+
+## 上一轮（归档 · 像素画布抖动）
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
 | request | 像素画布持续抖动 — 根因剖析 + R1 稳定化 |
 | type | bug |
 | bug_doc | docs/bugs/BUG-9_dashboard-pixel-canvas-jitter_2026-07-15.md |

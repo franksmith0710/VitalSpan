@@ -17,10 +17,9 @@ import {
 import {
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
-  resolveDashboardComponentGap,
-  resolvePixelGutter,
   widgetDashboardStyleFingerprint,
 } from "../dashboardStyleConfig";
+import { resolveComponentGapRuntime } from "../componentGapRuntime";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
 import { DashboardWidgetsProvider } from "../DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "../dashboardWidgetExecuteKey";
@@ -146,7 +145,6 @@ export function DashboardEditCanvas({
         filterValues={filterValues}
         onFilterValueChange={mode === "view" ? onFilterValueChange : undefined}
         scaleMode={styleConfig.scaleMode}
-        pixelGutter={resolvePixelGutter(styleConfig)}
         className="h-full min-h-0 w-full"
       />
     );
@@ -157,9 +155,10 @@ export function DashboardEditCanvas({
       <DashboardStyleSurface
         styleConfig={styleConfig}
         componentGapPx={
-          layout.version === 2
-            ? resolveDashboardComponentGap(styleConfig, { pixel: true })
-            : resolveDashboardComponentGap(styleConfig)
+          resolveComponentGapRuntime(
+            styleConfig,
+            layout.version === 2 ? "pixel" : "grid",
+          ).shellPaddingPx
         }
         className="h-full min-h-0"
       >
@@ -169,7 +168,6 @@ export function DashboardEditCanvas({
             layout={layout}
             styleConfig={styleConfig}
             scaleMode={styleConfig.scaleMode}
-            pixelGutter={resolvePixelGutter(styleConfig)}
             selectedIds={selectedIds}
             onSelect={onSelect}
             onClearSelection={onClearSelection}

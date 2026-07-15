@@ -3,7 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartStylePanel } from "./ChartStylePanel";
-import { ChartInspectorProvider } from "./ChartInspectorContext";
+import { ChartInspectorProvider } from "./ChartInspectorProvider";
 import type { LayoutWidget } from "./layoutUtils";
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -64,7 +64,8 @@ describe("ChartStylePanel", () => {
     expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "标题" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "图例" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "标签" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "背景" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "边框" })).toBeInTheDocument();
 
     await user.click(screen.getByLabelText("样式子类型"));
     await user.click(screen.getByRole("option", { name: "stacked" }));

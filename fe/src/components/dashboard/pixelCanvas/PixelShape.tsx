@@ -32,7 +32,6 @@ import { PixelShapeActionRail, type PixelWidgetActions } from "./PixelShapeActio
 import { WidgetShapeChrome } from "./WidgetShapeChrome";
 import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
 import { PixelShapePlayerProvider } from "./pixelShapePlayerContext";
-import { isResizeInteraction } from "./pixelShapePlayer";
 import { dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
 
@@ -48,6 +47,8 @@ type PixelShapeProps = {
   widget: PixelLayoutWidget;
   canvas: DashboardCanvas;
   scale: number;
+  /** 对标 DE curGap：shape 外层 padding（画布逻辑 px） */
+  shapeGapPx?: number;
   mode: "edit" | "view";
   selected: boolean;
   children: ReactNode;
@@ -56,7 +57,7 @@ type PixelShapeProps = {
   onCommit?: (widget: PixelLayoutWidget) => void;
   onCancel?: (widgetId: string) => void;
   onMarkGuidesChange?: (guides: MarkLineGuide[] | null) => void;
-  /** 与画布壳层 `chrome.showAuxiliaryGrid` 同步；关闭时不吸附、不画线 */
+  /** 编辑态对齐吸附与参考线；与辅助网格开关无关 */
   markLinesEnabled?: boolean;
   viewport?: PixelRect;
   snapTargets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
@@ -147,6 +148,7 @@ export function PixelShape({
   widget,
   canvas,
   scale,
+  shapeGapPx = 0,
   mode,
   selected,
   children,
@@ -184,10 +186,10 @@ export function PixelShape({
   const activeRef = useRef<ActiveInteraction | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const displayRef = useRef(widgetRect(widget));
-  const markGuideFrameRef = useRef<number | null>(null);
   const moveFrameRef = useRef<number | null>(null);
   const pendingMoveRef = useRef<{
     rect: PixelRect;
+    guides: MarkLineGuide[];
     event: PointerEvent;
     active: ActiveInteraction;
   } | null>(null);
@@ -222,9 +224,6 @@ export function PixelShape({
 
   useEffect(
     () => () => {
-      if (markGuideFrameRef.current !== null) {
-        cancelAnimationFrame(markGuideFrameRef.current);
-      }
       if (moveFrameRef.current !== null) {
         cancelAnimationFrame(moveFrameRef.current);
       }
@@ -243,32 +242,33 @@ export function PixelShape({
     }
   };
 
-  const scheduleMarkGuides = (
-    next: PixelRect,
+  const snapPointerRect = (
+    raw: PixelRect,
     event: PointerEvent,
     active: ActiveInteraction,
-  ) => {
-    if (!onMarkGuidesChange || !markLinesEnabled) return;
-    if (markGuideFrameRef.current !== null) return;
-    markGuideFrameRef.current = requestAnimationFrame(() => {
-      markGuideFrameRef.current = null;
-      const markTargets = snapTargets ?? otherWidgets ?? [];
-      const snapped = computeMarkLineSnap(next, markTargets, {
-        threshold: markLineThreshold(scale),
-        dragDir: {
-          isRightward: event.clientX >= active.startClient.x,
-          isDownward: event.clientY >= active.startClient.y,
-        },
-        canvas,
-      });
-      onMarkGuidesChange(snapped.guides.length > 0 ? snapped.guides : null);
+  ): { rect: PixelRect; guides: MarkLineGuide[] } => {
+    if (!onMarkGuidesChange || !markLinesEnabled) {
+      return { rect: raw, guides: [] };
+    }
+    const markTargets = snapTargets ?? otherWidgets ?? [];
+    const snapped = computeMarkLineSnap(raw, markTargets, {
+      threshold: markLineThreshold(scale),
+      dragDir: {
+        isRightward: event.clientX >= active.startClient.x,
+        isDownward: event.clientY >= active.startClient.y,
+      },
+      canvas,
+      gap: shapeGapPx,
+      interactionKind: active.kind,
+      anchorRect: active.startRect,
     });
+    return { rect: snapped.rect, guides: snapped.guides };
   };
 
   const rectForPointer = (
     event: PointerEvent,
     active: ActiveInteraction,
-  ): PixelRect => {
+  ): { rect: PixelRect; guides: MarkLineGuide[] } => {
     const screenDelta = {
       x: event.clientX - active.startClient.x,
       y: event.clientY - active.startClient.y,
@@ -284,16 +284,7 @@ export function PixelShape({
       active.kind,
     );
     setHint((previous) => (previous === nextHint ? previous : nextHint));
-    if (!onMarkGuidesChange || !markLinesEnabled) return raw;
-    const markTargets = snapTargets ?? otherWidgets ?? [];
-    return computeMarkLineSnap(raw, markTargets, {
-      threshold: markLineThreshold(scale),
-      dragDir: {
-        isRightward: event.clientX >= active.startClient.x,
-        isDownward: event.clientY >= active.startClient.y,
-      },
-      canvas,
-    }).rect;
+    return snapPointerRect(raw, event, active);
   };
 
   const flushPointerFrame = () => {
@@ -301,9 +292,9 @@ export function PixelShape({
     const pending = pendingMoveRef.current;
     if (!pending) return;
     pendingMoveRef.current = null;
-    const { rect: next, event, active } = pending;
+    const { rect: next, guides, event: _event, active: _active } = pending;
     applyDisplay(next);
-    scheduleMarkGuides(next, event, active);
+    onMarkGuidesChange?.(guides.length > 0 ? guides : null);
     onPreview?.(withRect(widget, next));
   };
 
@@ -312,10 +303,9 @@ export function PixelShape({
     if (!active || active.pointerId !== event.pointerId) return;
     if (active.skipFirstMove) {
       active.skipFirstMove = false;
-      if (isResizeInteraction(active.kind)) return;
     }
-    const next = rectForPointer(event, active);
-    pendingMoveRef.current = { rect: next, event, active };
+    const { rect: next, guides } = rectForPointer(event, active);
+    pendingMoveRef.current = { rect: next, guides, event, active };
     if (moveFrameRef.current !== null) return;
     moveFrameRef.current = requestAnimationFrame(flushPointerFrame);
   };
@@ -328,9 +318,10 @@ export function PixelShape({
       moveFrameRef.current = null;
     }
     pendingMoveRef.current = null;
-    const finalRect = commit
+    const finalSnap = commit
       ? rectForPointer(event, active)
-      : widgetRect(widget);
+      : { rect: widgetRect(widget), guides: [] as MarkLineGuide[] };
+    const finalRect = finalSnap.rect;
     activeRef.current = null;
     setIsPlayer(false);
     setHint(null);
