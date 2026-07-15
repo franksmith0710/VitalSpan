@@ -46,6 +46,8 @@ import {
   persistDashboardLayout,
   syncPixelLayoutChartStyles,
 } from "@/components/dashboard/stylePipeline";
+import { resolvePixelGutter } from "@/components/dashboard/dashboardStyleConfig";
+import { compactPixelLayoutForGapChange } from "@/components/dashboard/pixelCanvas/gapCompaction";
 import { cloneLayoutWidget } from "@/components/dashboard/cloneLayoutWidget";
 import type { PixelWidgetActions } from "@/components/dashboard/pixelCanvas/PixelShapeActionRail";
 import {
@@ -177,13 +179,25 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   }, []);
 
   const applyStyleConfig = useCallback((value: SetStateAction<DashboardStyleConfig>) => {
-    setStyleConfig((prev) => {
-      const raw = typeof value === "function" ? value(prev) : value;
-      const next = hydrateDashboardStyle(raw);
-      styleConfigRef.current = next;
-      return next;
-    });
-  }, []);
+    const prev = styleConfigRef.current;
+    const raw = typeof value === "function" ? value(prev) : value;
+    const next = hydrateDashboardStyle(raw);
+    styleConfigRef.current = next;
+    setStyleConfig(next);
+
+    const currentLayout = layoutRef.current;
+    if (currentLayout.version === 2 && currentLayout.widgets.length > 0) {
+      const prevGap = resolvePixelGutter(prev);
+      const nextGap = resolvePixelGutter(next);
+      if (nextGap < prevGap) {
+        const result = compactPixelLayoutForGapChange(currentLayout, prevGap, nextGap);
+        if (result.compacted) {
+          setPixelLayout(result.layout);
+          toast.message("已收紧相邻组件，消除多余画板缝");
+        }
+      }
+    }
+  }, [setPixelLayout]);
 
   const applyLinkage = useCallback((value: SetStateAction<Linkage | null>) => {
     setLinkage((prev) => {

@@ -21,6 +21,8 @@ type ColorFieldProps = {
   label?: string;
   allowClear?: boolean;
   compact?: boolean;
+  /** field：完整输入；swatch：仅色块按钮（配置栏与下拉并排） */
+  variant?: "field" | "swatch";
   className?: string;
   /** 取色器/输入框连续变更时防抖提交，减轻画布等大组件重渲染 */
   liveCommitMs?: number;
@@ -56,6 +58,7 @@ export function ColorField({
   label,
   allowClear = true,
   compact = false,
+  variant = "field",
   className,
   liveCommitMs = DEFAULT_LIVE_COMMIT_MS,
   swatchesDefaultOpen: _swatchesDefaultOpen = false,
@@ -124,7 +127,97 @@ export function ColorField({
 
   const displayHex = normalizeHexColor(localValue) ?? localValue;
   const pickerLabel = label ? `${label}取色器` : "取色器";
-  const chipSize = compact ? "sm" : "md";
+  const chipSize = compact || variant === "swatch" ? "sm" : "md";
+  const popoverAlign = variant === "swatch" ? "start" : compact ? "end" : "start";
+  const popoverSide = variant === "swatch" ? "bottom" : compact ? "left" : "bottom";
+
+  const popoverBody = (
+    <PopoverContent
+      align={popoverAlign}
+      side={popoverSide}
+      sideOffset={6}
+      collisionPadding={12}
+      className="w-[228px] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain p-2.5"
+    >
+      <ColorPickerPanel value={localValue} onChange={applyColor} />
+      {items.length > 0 ? (
+        <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
+          <p className="mb-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">推荐</p>
+          <div
+            className="grid grid-cols-6 gap-1"
+            role="listbox"
+            aria-label={label ? `${label}推荐色` : "推荐色"}
+          >
+            {items.map((item) => {
+              const selected =
+                normalizeHexColor(localValue) === normalizeHexColor(item.color);
+              return (
+                <button
+                  key={item.color}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  title={item.label}
+                  aria-label={item.label}
+                  className={cn(
+                    "flex size-7 items-center justify-center rounded-md transition-colors",
+                    "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
+                    "dark:hover:bg-white/5",
+                    selected &&
+                      "bg-brand-50/80 ring-1 ring-inset ring-brand-500/50 dark:bg-brand-500/10",
+                  )}
+                  onClick={() => applyColor(item.color)}
+                >
+                  <ColorSwatchChip color={item.color} size="sm" selected={selected} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+      {variant === "swatch" && allowClear && displayHex ? (
+        <button
+          type="button"
+          className="mt-2 w-full rounded-md border border-gray-200 px-2 py-1.5 text-[11px] text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+          onClick={() => {
+            setLocalValue("");
+            commitNow("");
+          }}
+        >
+          清除颜色
+        </button>
+      ) : null}
+    </PopoverContent>
+  );
+
+  if (variant === "swatch") {
+    return (
+      <div className={cn("shrink-0", className)}>
+        {label ? (
+          <Label className="sr-only text-theme-xs text-gray-600 dark:text-gray-400">{label}</Label>
+        ) : null}
+        <Popover open={open} onOpenChange={handleOpenChange}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={pickerLabel}
+              aria-expanded={open}
+              title={pickerLabel}
+              className={cn(
+                "flex size-9 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-theme-xs transition-colors",
+                "hover:border-gray-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
+                "dark:border-gray-700 dark:bg-white/[0.03] dark:hover:border-gray-600",
+                open && "border-brand-300 ring-2 ring-brand-500/20 dark:border-brand-500/50",
+              )}
+            >
+              <ColorSwatchChip color={displayHex || undefined} size={chipSize} />
+            </button>
+          </PopoverTrigger>
+          {popoverBody}
+        </Popover>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(compact ? "space-y-0" : "space-y-2", className)}>
@@ -199,50 +292,7 @@ export function ColorField({
             </button>
           ) : null}
         </div>
-        <PopoverContent
-          align={compact ? "end" : "start"}
-          side={compact ? "left" : "bottom"}
-          sideOffset={6}
-          collisionPadding={12}
-          className="w-[228px] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain p-2.5"
-        >
-          <ColorPickerPanel value={localValue} onChange={applyColor} />
-          {items.length > 0 ? (
-            <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
-              <p className="mb-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">推荐</p>
-              <div
-                className="grid grid-cols-6 gap-1"
-                role="listbox"
-                aria-label={label ? `${label}推荐色` : "推荐色"}
-              >
-                {items.map((item) => {
-                  const selected =
-                    normalizeHexColor(localValue) === normalizeHexColor(item.color);
-                  return (
-                    <button
-                      key={item.color}
-                      type="button"
-                      role="option"
-                      aria-selected={selected}
-                      title={item.label}
-                      aria-label={item.label}
-                      className={cn(
-                        "flex size-7 items-center justify-center rounded-md transition-colors",
-                        "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
-                        "dark:hover:bg-white/5",
-                        selected &&
-                          "bg-brand-50/80 ring-1 ring-inset ring-brand-500/50 dark:bg-brand-500/10",
-                      )}
-                      onClick={() => applyColor(item.color)}
-                    >
-                      <ColorSwatchChip color={item.color} size="sm" selected={selected} />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-        </PopoverContent>
+        {popoverBody}
       </Popover>
     </div>
   );

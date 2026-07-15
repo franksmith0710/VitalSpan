@@ -12,7 +12,8 @@ import { cn } from "@/lib/utils";
 import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle, mergeShapeInnerPresentation, resolveWidgetShellStyle } from "@/lib/chartDeStyle";
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
 import type { DashboardStyleConfig } from "../dashboardStyleConfig";
-import { mergeTitleStyle } from "../dashboardStyleConfig";
+import { mergeTitleStyle, resolveWidgetShellPaintColor } from "../dashboardStyleConfig";
+import { resolveEffectiveChartScheme } from "@/lib/chartSurfaceTheme";
 import { shapeTitlePresentationStyle } from "../dashboardWidgetTypography";
 import { resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
@@ -130,6 +131,10 @@ function resolveShapeTitleState(
   remark: { show: boolean; text: string };
 } {
   const chrome = resolveDashboardChrome(styleConfig);
+  const effectiveScheme = resolveEffectiveChartScheme(
+    styleConfig?.colorScheme ?? "light",
+    styleConfig ? resolveWidgetShellPaintColor(styleConfig) : undefined,
+  );
   if (widget.type === "chart") {
     const chartTitleVisible = readChartTitleVisible(
       widget.chartConfig,
@@ -142,7 +147,7 @@ function resolveShapeTitleState(
       titleStyle: mergeChartTitleStyle(
         styleConfig?.titleStyle,
         widget.chartConfig,
-        styleConfig?.colorScheme ?? "light",
+        effectiveScheme,
       ),
       remark: readChartRemark(widget.chartConfig),
     };
@@ -197,7 +202,7 @@ export function PixelShape({
           innerBackgroundLayer: null,
           innerFrameLayer: null,
         };
-  const innerPresentation = mergeShapeInnerPresentation(shell);
+  const { shell: innerShell, content: contentShell } = mergeShapeInnerPresentation(shell);
   const activeRef = useRef<ActiveInteraction | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const displayRef = useRef(widgetRect(widget));
@@ -438,16 +443,16 @@ export function PixelShape({
                 "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
                 selectedInEdit && "pixel-shape-selected",
               )}
-              style={innerPresentation.style}
+              style={innerShell.style}
               data-pixel-no-drag
               onPointerDown={(event) => {
                 if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
               }}
             >
-              {innerPresentation.backgroundLayers.map((layer, index) =>
+              {innerShell.backgroundLayers.map((layer, index) =>
                 layer ? (
                   <div
-                    key={index}
+                    key={`shell-bg-${index}`}
                     className="pointer-events-none absolute inset-0 z-0"
                     style={layer}
                     aria-hidden
@@ -467,8 +472,23 @@ export function PixelShape({
                 onDragPointerDown={(event) => startInteraction(event, "move")}
                 onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
               />
-              <div className="pixel-shape-content relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col">
-                {children}
+              <div
+                className="pixel-shape-content relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden"
+                style={contentShell.style}
+              >
+                {contentShell.backgroundLayers.map((layer, index) =>
+                  layer ? (
+                    <div
+                      key={`content-bg-${index}`}
+                      className="pointer-events-none absolute inset-0 z-0"
+                      style={layer}
+                      aria-hidden
+                    />
+                  ) : null,
+                )}
+                <div className="relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col">
+                  {children}
+                </div>
               </div>
             </div>
           </PixelShapePlayerProvider>

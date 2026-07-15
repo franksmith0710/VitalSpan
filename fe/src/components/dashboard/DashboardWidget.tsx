@@ -97,8 +97,11 @@ function WidgetPendingPreview({
   const Icon = widgetChartIcon(chartType);
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
   const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
-  const mapIsDark =
-    resolveEffectiveChartScheme(dashboardStyle?.colorScheme ?? "light", shellColor) === "dark";
+  const effectiveScheme = resolveEffectiveChartScheme(
+    dashboardStyle?.colorScheme ?? "light",
+    shellColor,
+  );
+  const mapIsDark = effectiveScheme === "dark";
 
   if (chartType === "map") {
     return (
@@ -252,6 +255,11 @@ export function DashboardWidget({
     dashboardStyle?.widgetStyle,
     dashboardStyle?.colorScheme ?? "light",
   );
+  const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
+  const effectiveScheme = resolveEffectiveChartScheme(
+    dashboardStyle?.colorScheme ?? "light",
+    shellColor,
+  );
   const chrome = resolveDashboardChrome(dashboardStyle);
   const chartTitleVisible =
     inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle);
@@ -260,7 +268,7 @@ export function DashboardWidget({
       ? mergeChartTitleStyle(
           dashboardStyle?.titleStyle,
           widget.chartConfig,
-          dashboardStyle?.colorScheme ?? "light",
+          effectiveScheme,
         )
       : mergeTitleStyle(dashboardStyle?.titleStyle);
   const queryLimit = widget.chartConfig
@@ -288,7 +296,7 @@ export function DashboardWidget({
         paletteColors={dashboardStyle?.paletteColors}
         numberFormat={dashboardStyle?.numberFormat}
         colorScheme={dashboardStyle?.colorScheme ?? "light"}
-        widgetShellColor={resolveWidgetShellPaintColor(dashboardStyle)}
+        widgetShellColor={shellColor}
         showLoadingHint={chrome.showChartLoadingHint}
         suspendLiveResize={suspendLiveResize}
       />

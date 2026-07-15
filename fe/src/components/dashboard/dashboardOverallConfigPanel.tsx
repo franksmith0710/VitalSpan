@@ -324,11 +324,6 @@ export function DashboardOverallConfigPanel({
           checked={chrome.showChartActionButtons}
           onCheckedChange={(checked) => patchChrome({ showChartActionButtons: checked })}
         />
-        <DeAttrToggleRow
-          label="编辑辅助网格"
-          checked={chrome.showAuxiliaryGrid}
-          onCheckedChange={(checked) => patchChrome({ showAuxiliaryGrid: checked })}
-        />
       </DeAttrToggleSection>
     </DeAttrForm>
   );

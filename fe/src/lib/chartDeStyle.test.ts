@@ -180,7 +180,7 @@ describe("dashboard widget style sync", () => {
 });
 
 describe("mergeShapeInnerPresentation", () => {
-  it("merges global widget shell and chart inner styles onto shape-inner", () => {
+  it("keeps global widget shell on shape-inner and chart inner on shape-content", () => {
     const outer = mergeWidgetShellStyle({ padding: 12, borderRadius: 8 }, "light");
     const { surface } = widgetStyleToContentCss({ background: "#f5f5f5" }, "light");
     const merged = mergeShapeInnerPresentation({
@@ -189,12 +189,13 @@ describe("mergeShapeInnerPresentation", () => {
       innerBackgroundLayer: null,
       innerFrameLayer: null,
     });
-    expect(merged.style.padding).toBe("12px");
-    expect(merged.style.borderRadius).toBe("8px");
-    expect(merged.style.background).toBe("#f5f5f5");
+    expect(merged.shell.style.padding).toBe("12px");
+    expect(merged.shell.style.borderRadius).toBe("8px");
+    expect(merged.shell.style.background).toBeUndefined();
+    expect(merged.content.style.background).toBe("#f5f5f5");
   });
 
-  it("applies global border color onto shape-inner", () => {
+  it("applies global border color onto shape-inner shell", () => {
     const outer = mergeWidgetShellStyle({ borderColor: "#ff0000" }, "light");
     const merged = mergeShapeInnerPresentation({
       outer,
@@ -202,12 +203,12 @@ describe("mergeShapeInnerPresentation", () => {
       innerBackgroundLayer: null,
       innerFrameLayer: null,
     });
-    expect(merged.style.borderColor).toBe("#ff0000");
-    expect(merged.style.borderWidth).toBe(1);
-    expect(merged.style.borderStyle).toBe("solid");
+    expect(merged.shell.style.borderColor).toBe("#ff0000");
+    expect(merged.shell.style.borderWidth).toBe(1);
+    expect(merged.shell.style.borderStyle).toBe("solid");
   });
 
-  it("includes decorative frame overlay in background layers", () => {
+  it("includes decorative frame overlay in content background layers", () => {
     const { frameLayer } = widgetStyleToContentCss({
       backgroundShow: true,
       backgroundMode: "frame",
@@ -219,7 +220,8 @@ describe("mergeShapeInnerPresentation", () => {
       innerBackgroundLayer: null,
       innerFrameLayer: frameLayer,
     });
-    expect(merged.backgroundLayers).toHaveLength(4);
-    expect(merged.backgroundLayers[3]?.borderImageSource).toContain("data:image/svg+xml");
+    expect(merged.shell.backgroundLayers).toHaveLength(2);
+    expect(merged.content.backgroundLayers).toHaveLength(2);
+    expect(merged.content.backgroundLayers[1]?.backgroundImage).toContain("data:image/svg+xml");
   });
 });

@@ -32,7 +32,7 @@ export function ChartFramePresetPicker({
         <button
           type="button"
           className={cn(
-            "flex h-9 w-full items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 text-left shadow-theme-xs",
+            "flex h-9 min-w-0 items-center gap-2 rounded-lg border border-gray-200 bg-white px-2 text-left shadow-theme-xs",
             "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
             "dark:border-gray-700 dark:bg-white/[0.03]",
             className,
@@ -40,7 +40,7 @@ export function ChartFramePresetPicker({
           aria-label="选择装饰边框"
         >
           <span
-            className="size-7 shrink-0 rounded-md"
+            className="size-8 shrink-0 rounded-md"
             style={chartFramePresetThumbStyle(selected, color)}
             aria-hidden
           />
@@ -50,7 +50,13 @@ export function ChartFramePresetPicker({
           <ChevronDown className="size-4 shrink-0 text-gray-400" aria-hidden />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[15.5rem] p-2" sideOffset={6}>
+      <PopoverContent
+        align="start"
+        side="bottom"
+        collisionPadding={12}
+        className="w-[min(15.5rem,calc(100vw-2rem))] p-2"
+        sideOffset={6}
+      >
         <div className="grid grid-cols-3 gap-1.5" role="listbox" aria-label="装饰边框">
           {CHART_FRAME_BORDER_PRESETS.map((preset) => {
             const active = preset.id === selected;
@@ -74,7 +80,7 @@ export function ChartFramePresetPicker({
                 }}
               >
                 <span
-                  className="h-10 w-full rounded-md"
+                  className="h-12 w-full rounded-md"
                   style={chartFramePresetThumbStyle(preset.id, color)}
                   aria-hidden
                 />

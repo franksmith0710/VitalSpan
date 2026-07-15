@@ -466,6 +466,7 @@ html.dark {
   align-items: center;
   min-height: calc(var(--dw-screen-title-height) / var(--pixel-canvas-scale));
   padding: 0 0 calc(0.25rem / var(--pixel-canvas-scale));
+  background: transparent;
 }
 
 .pixel-canvas-host .pixel-shape-inner .shape-title :where(.widget-inline-title:not([style*="font-size"])) {
@@ -731,17 +732,19 @@ html.dark {
   color: var(--color-gray-300) !important;
 }
 
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"] input:not([type="checkbox"]):not([type="radio"]),
-.dashboard-theme-scope.dark input:not([type="checkbox"]):not([type="radio"]),
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] input:not([type="checkbox"]):not([type="radio"]):not(.widget-inline-title),
+.dashboard-theme-scope.dark input:not([type="checkbox"]):not([type="radio"]):not(.widget-inline-title),
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] button[role="combobox"],
 .dashboard-theme-scope.dark button[role="combobox"] {
   background-color: #0f172a;
   border-color: #344054;
   color: #e2e8f0;
 }
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .pixel-shape-inner.dashboard-widget-surface,
-.dashboard-theme-scope.dark .pixel-shape-inner.dashboard-widget-surface {
-  background-color: var(--dashboard-widget-surface, #1e293b);
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .widget-inline-title,
+.dashboard-theme-scope.dark .widget-inline-title {
+  background-color: transparent !important;
+  border-color: transparent !important;
 }
 
 .dashboard-theme-scope [data-dashboard-dialog] {

@@ -19,6 +19,21 @@
 
 | 字段 | 值 |
 |------|----|
+| phase | A6_GATE |
+| request | 看板「无间隙」仍见画板色条 — 根因剖析与压实方案 |
+| type | bugfix |
+| plan | docs/automate/plans/2026-07-15-dashboard-gap-zero-compaction.md |
+| bug_doc | docs/bugs/BUG-11_dashboard-gap-zero-still-visible_2026-07-15.md |
+| status | R1_DONE |
+| last_verified_command | vitest gap*+stylePipeline+pixelMarkLine; pytest test_dashboard_gap_style_config; tsc --noEmit |
+| last_verified_exit_code | 0 |
+| verification_summary | gapCompaction 压实外框缝；切 none 自动收紧；none persist roundtrip shellPaddingPx=0 |
+| repair_rounds | 0 |
+
+## 上一轮（归档 · shape-inner DE 对齐）
+
+| 字段 | 值 |
+|------|----|
 | phase | DONE |
 | request | shape-inner DE 对齐：标题移入 inner，样式单容器 |
 | type | small-change |
@@ -26,7 +41,7 @@
 | status | DONE |
 | last_verified_command | vitest chartDeStyle+WidgetShapeChrome+PixelShape.gap; tsc --noEmit |
 | last_verified_exit_code | 0 |
-| verification_summary | WidgetShapeChrome 入 pixel-shape-inner；mergeShapeInnerPresentation 合并全局+deStyle；body 仅结构描边 |
+| verification_summary | WidgetShapeChrome 入 pixel-shape-inner；shell/content 背景分离；标题透明 |
 | repair_rounds | 0 |
 
 ## 上一轮（归档 · WYSIWYG 间隙）

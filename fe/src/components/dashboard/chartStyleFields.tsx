@@ -80,9 +80,11 @@ export function ChartBackgroundDeModeFields({
           }
         />
       ) : (
-        <div className="grid grid-cols-[2.25rem_minmax(0,1fr)] items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2 overflow-hidden">
           <ColorField
-            compact
+            variant="swatch"
+            label="边框色"
+            allowClear
             swatches={WIDGET_BORDER_RECOMMENDED}
             value={value.frameColor ?? ""}
             onChange={(color) =>
@@ -94,6 +96,7 @@ export function ChartBackgroundDeModeFields({
             }
           />
           <ChartFramePresetPicker
+            className="min-w-0 flex-1"
             value={value.framePresetId}
             color={value.frameColor}
             onChange={(presetId) =>

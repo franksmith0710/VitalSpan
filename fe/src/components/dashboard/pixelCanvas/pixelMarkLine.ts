@@ -265,7 +265,7 @@ function collectFlushCandidates(
   }
 }
 
-/** 邻接外框贴齐时，参考线落在两组件间隙中线（DE curGap 外框相切） */
+/** 邻接外框贴齐时，参考线落在两组件间隙中线（DE curGap 外框相切）；gap=0 时不启用 */
 function collectGapAdjacencyCandidates(
   active: PixelRect,
   other: PixelRect,

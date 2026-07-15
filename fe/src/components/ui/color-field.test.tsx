@@ -100,4 +100,19 @@ describe("ColorField", () => {
     expect(screen.getByRole("option", { name: "纯白" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "墨蓝" })).toBeInTheDocument();
   });
+
+  it("renders swatch variant without hex input", () => {
+    const onChange = vi.fn();
+    render(
+      <ColorField
+        variant="swatch"
+        value="#3370ff"
+        onChange={onChange}
+        label="边框色"
+        swatches={["#3370ff"]}
+      />,
+    );
+    expect(screen.queryByPlaceholderText("#ffffff")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("边框色取色器")).toBeInTheDocument();
+  });
 });

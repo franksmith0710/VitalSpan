@@ -82,6 +82,20 @@ describe("stylePipeline", () => {
     expect(saved.widgets[1]).toMatchObject({ x: 0, y: 300, width: 480, height: 260 });
   });
 
+  it("persist none gap roundtrip yields zero pixel shell padding", () => {
+    const style = hydrateDashboardStyle({
+      gapPreset: "none",
+      widgetGap: 0,
+      pixelGutter: 0,
+      colorScheme: "light",
+    });
+    const { saved } = dashboardLayoutPersistRoundtrip(pixelLayout, style, true);
+    const reloaded = hydrateDashboardStyle(saved.styleConfig);
+    expect(reloaded.gapPreset).toBe("none");
+    expect(resolveComponentGapRuntime(reloaded, "pixel").shellPaddingPx).toBe(0);
+    expect(resolveComponentGapRuntime(reloaded, "grid").shellPaddingPx).toBe(0);
+  });
+
   it("syncPixelLayoutChartStyles keeps pixel geometry", () => {
     const synced = syncPixelLayoutChartStyles(
       { ...pixelLayout, styleConfig: { colorScheme: "dark" } },

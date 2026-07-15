@@ -15,7 +15,7 @@ type WidgetInlineTitleProps = {
 /** 编辑/只读共用排版壳，避免点击后字号与行高跳动 */
 const titleShellClass = (className?: string) =>
   cn(
-    "widget-inline-title min-w-0 flex-1 px-1 text-theme-sm font-semibold leading-snug",
+    "widget-inline-title min-w-0 flex-1 bg-transparent px-1 text-theme-sm font-semibold leading-snug",
     className,
   );
 
@@ -75,7 +75,7 @@ export function WidgetInlineTitle({
         }}
         className={cn(
           titleShellClass(className),
-          "dashboard-no-drag !h-auto !min-h-0 w-full !py-0 shadow-none focus-visible:ring-2 focus-visible:ring-brand-500/25",
+          "dashboard-no-drag !h-auto !min-h-0 w-full !bg-transparent !py-0 shadow-none focus-visible:ring-2 focus-visible:ring-brand-500/25",
         )}
         style={titleStyle}
         aria-label={ariaLabel}

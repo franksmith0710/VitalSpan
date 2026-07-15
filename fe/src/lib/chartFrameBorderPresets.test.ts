@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildChartFrameBorderSvgUrl,
   CHART_FRAME_BORDER_PRESETS,
-  resolveChartFrameBorderStyle,
+  resolveChartFrameOverlayLayer,
 } from "./chartFrameBorderPresets";
 import { widgetStyleToContentCss } from "./chartDeStyle";
 
@@ -16,12 +16,13 @@ describe("chartFrameBorderPresets", () => {
     const url = buildChartFrameBorderSvgUrl("frame-2", "#ff0000");
     expect(url.startsWith("data:image/svg+xml,")).toBe(true);
     expect(decodeURIComponent(url)).toContain("#ff0000");
+    expect(decodeURIComponent(url)).toContain("<svg");
   });
 
-  it("resolves border-image inline styles", () => {
-    const style = resolveChartFrameBorderStyle("frame-1", "#3370ff");
-    expect(style.borderImageSource).toContain("data:image/svg+xml");
-    expect(style.borderWidth).toBe(12);
+  it("resolves stretch overlay styles", () => {
+    const style = resolveChartFrameOverlayLayer("frame-1", "#3370ff");
+    expect(style.backgroundImage).toContain("data:image/svg+xml");
+    expect(style.backgroundSize).toBe("100% 100%");
   });
 });
 
@@ -34,7 +35,7 @@ describe("widgetStyleToContentCss frame mode", () => {
       frameColor: "#3370ff",
     });
     expect(surface.borderImageSource).toBeUndefined();
-    expect(frameLayer?.borderImageSource).toContain("data:image/svg+xml");
+    expect(frameLayer?.backgroundImage).toContain("data:image/svg+xml");
     expect(surface.backgroundImage).toBeUndefined();
   });
 
