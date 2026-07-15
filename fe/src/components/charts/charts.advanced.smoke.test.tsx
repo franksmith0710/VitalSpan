@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { fetchChartTypeCatalog } from "@/lib/chartRegistry";
-import { createBarChartOptions } from "@/lib/chart-theme";
+import { buildBarOption } from "@/components/charts/adapters/renderFromSpec";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
@@ -265,25 +265,18 @@ describe("ChartConfigPanel", () => {
 });
 
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
-import { clearChartRenderSpecCacheForTests } from "@/components/charts/useChartRenderSpec";
 
 describe("ChartRenderer advanced", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
-    clearChartRenderSpecCacheForTests();
   });
   afterEach(() => cleanup());
 
   it("T-VIZ-R43-008-03: funnel mock render-spec → data-testid=echarts-chart", async () => {
-    mockApiFetch
-      .mockResolvedValueOnce({ columns: ["stage", "value"], rows: [["A", 10], ["B", 5]] })
-      .mockResolvedValueOnce({
-        engine: "echarts",
-        chartType: "funnel",
-        styleVariant: "default",
-        encoding: { dimensions: [{ field: "stage" }], metrics: [{ field: "value" }] },
-        source: {},
-      });
+    mockApiFetch.mockResolvedValueOnce({
+      columns: ["stage", "value"],
+      rows: [["A", 10], ["B", 5]],
+    });
     const cfg: ChartViewConfig = {
       chartType: "funnel",
       dataSourceId: "00000000-0000-4000-8000-000000000001",
@@ -298,15 +291,7 @@ describe("ChartRenderer advanced", () => {
 
   it("T-VIZ-R43-005-03: 501 行 → 警告 + 渲染不抛错", async () => {
     const rows = Array.from({ length: 501 }, (_, i) => [`S${i}`, i]);
-    mockApiFetch
-      .mockResolvedValueOnce({ columns: ["stage", "value"], rows })
-      .mockResolvedValueOnce({
-        engine: "echarts",
-        chartType: "funnel",
-        styleVariant: "default",
-        encoding: { dimensions: [{ field: "stage" }], metrics: [{ field: "value" }] },
-        source: {},
-      });
+    mockApiFetch.mockResolvedValueOnce({ columns: ["stage", "value"], rows });
     const cfg: ChartViewConfig = {
       chartType: "funnel",
       dataSourceId: "00000000-0000-4000-8000-000000000001",
@@ -370,26 +355,14 @@ describe("Embed", () => {
 describe("ChartRenderer extended", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
-    clearChartRenderSpecCacheForTests();
   });
   afterEach(() => cleanup());
 
   it("T-VIZ-R43-004-01: sankey 2 维+1 度量 → echarts 容器", async () => {
-    mockApiFetch
-      .mockResolvedValueOnce({
-        columns: ["src", "dst", "amt"],
-        rows: [["A", "B", 10]],
-      })
-      .mockResolvedValueOnce({
-        engine: "echarts",
-        chartType: "sankey",
-        styleVariant: "default",
-        encoding: {
-          dimensions: [{ field: "src" }, { field: "dst" }],
-          metrics: [{ field: "amt" }],
-        },
-        source: {},
-      });
+    mockApiFetch.mockResolvedValueOnce({
+      columns: ["src", "dst", "amt"],
+      rows: [["A", "B", 10]],
+    });
     const cfg: ChartViewConfig = {
       chartType: "sankey",
       dataSourceId: "00000000-0000-4000-8000-000000000001",
@@ -403,18 +376,10 @@ describe("ChartRenderer extended", () => {
   });
 
   it("T-VIZ-R43-005-01: funnel 3 阶段 mock → 漏斗 series 可见", async () => {
-    mockApiFetch
-      .mockResolvedValueOnce({
-        columns: ["stage", "value"],
-        rows: [["A", 100], ["B", 60], ["C", 30]],
-      })
-      .mockResolvedValueOnce({
-        engine: "echarts",
-        chartType: "funnel",
-        styleVariant: "default",
-        encoding: { dimensions: [{ field: "stage" }], metrics: [{ field: "value" }] },
-        source: {},
-      });
+    mockApiFetch.mockResolvedValueOnce({
+      columns: ["stage", "value"],
+      rows: [["A", 100], ["B", 60], ["C", 30]],
+    });
     const cfg: ChartViewConfig = {
       chartType: "funnel",
       dataSourceId: "00000000-0000-4000-8000-000000000001",
@@ -429,11 +394,22 @@ describe("ChartRenderer extended", () => {
 });
 
 describe("bar stacked options", () => {
-  it("T-VIZ-R43-004-03: bar stacked mock → Apex options 含 stacked", () => {
-    const opts = createBarChartOptions(["a", "b"], {
-      chart: { stacked: true },
-    });
-    expect(opts.chart?.stacked).toBe(true);
+  it("T-VIZ-R43-004-03: bar stacked mock → ECharts series stack", () => {
+    const opts = buildBarOption(
+      {
+        engine: "echarts",
+        chartType: "bar",
+        styleVariant: "stacked",
+        encoding: {
+          dimensions: [{ field: "x" }],
+          metrics: [{ field: "a" }, { field: "b" }],
+        },
+        source: {},
+      },
+      [["a", 1, 2]],
+      ["x", "a", "b"],
+    );
+    expect((opts.series as Array<{ stack?: string }>)[0].stack).toBe("total");
   });
 });
 

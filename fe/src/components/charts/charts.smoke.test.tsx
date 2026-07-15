@@ -5,8 +5,8 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
-vi.mock("react-apexcharts", () => ({
-  default: () => <div data-testid="apex-chart-container" />,
+vi.mock("echarts-for-react", () => ({
+  default: () => <div data-testid="echarts-chart" />,
 }));
 
 const tableConfig: ChartViewConfig = {
@@ -40,7 +40,7 @@ describe("ChartRenderer smoke", () => {
     expect(screen.getByRole("button", { name: "重试" })).toBeInTheDocument();
   });
 
-  it("T-VIZ-R28-002-05: line chart renders apex container", async () => {
+  it("T-VIZ-R28-002-05: line chart renders echarts container", async () => {
     mockApiFetch.mockResolvedValueOnce({ columns: ["x", "y"], rows: [[1, 2]] });
     const lineConfig: ChartViewConfig = {
       chartType: "line",
@@ -51,7 +51,7 @@ describe("ChartRenderer smoke", () => {
       metrics: [{ field: "y" }],
     };
     render(<ChartRenderer config={lineConfig} />);
-    expect(await screen.findByTestId("apex-chart-container")).toBeInTheDocument();
+    expect(await screen.findByTestId("echarts-chart")).toBeInTheDocument();
   });
 
   it("T-VIZ-R29-002-01: table 101 rows paginates to 50 visible", async () => {
@@ -60,8 +60,8 @@ describe("ChartRenderer smoke", () => {
     render(<ChartRenderer config={tableConfig} title="大表" />);
     expect(await screen.findByText("id")).toBeInTheDocument();
     expect(screen.getAllByRole("cell").length).toBeLessThanOrEqual(50);
-    expect(screen.getByText(/第 1\/3 页/)).toBeInTheDocument();
-    expect(screen.getByText(/共 101 条/)).toBeInTheDocument();
+    expect(screen.getByText(/1\/3/)).toBeInTheDocument();
+    expect(screen.getByText(/50条\/页/)).toBeInTheDocument();
   });
 
   it("T-VIZ-R29-002-02: QUERY_TIMEOUT shows Chinese timeout message", async () => {
@@ -72,7 +72,7 @@ describe("ChartRenderer smoke", () => {
     expect(screen.getByRole("button", { name: "重试" })).toBeInTheDocument();
   });
 
-  it("T-VIZ-R29-002-03: bar chart smoke renders apex container", async () => {
+  it("T-VIZ-R29-002-03: bar chart smoke renders echarts container", async () => {
     mockApiFetch.mockResolvedValueOnce({ columns: ["x", "y"], rows: [[1, 2]] });
     const barConfig: ChartViewConfig = {
       chartType: "bar",
@@ -83,6 +83,6 @@ describe("ChartRenderer smoke", () => {
       metrics: [{ field: "y" }],
     };
     render(<ChartRenderer config={barConfig} />);
-    expect(await screen.findByTestId("apex-chart-container")).toBeInTheDocument();
+    expect(await screen.findByTestId("echarts-chart")).toBeInTheDocument();
   });
 });

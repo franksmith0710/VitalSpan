@@ -22,10 +22,6 @@ vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
-vi.mock("react-apexcharts", () => ({
-  default: () => <div data-testid="apex-chart-container" />,
-}));
-
 import { defaultChartConfig, type LayoutWidget } from "@/components/dashboard/layoutUtils";
 import { DashboardEditPage } from "./DashboardEditPage";
 

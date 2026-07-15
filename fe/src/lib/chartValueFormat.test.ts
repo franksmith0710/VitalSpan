@@ -16,7 +16,7 @@ describe("chartValueFormat", () => {
     expect(fmt.decimals).toBe(2);
   });
 
-  it("formats apex-style values with thousand separator", () => {
+  it("formats chart values with thousand separator", () => {
     expect(formatChartValue(1234567, { type: "auto", thousandSeparator: true })).toBe("1,234,567");
   });
 

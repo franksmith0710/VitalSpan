@@ -1,4 +1,9 @@
-import { isAdvancedEchartsType, isKpiType, type ChartViewConfig } from "@/lib/chartViewConfig";
+import {
+  isExtendedEchartsType,
+  isKpiType,
+  isLineOrBarType,
+  type ChartViewConfig,
+} from "@/lib/chartViewConfig";
 
 export type ChartInspectorCapabilities = {
   legend: boolean;
@@ -10,8 +15,6 @@ export type ChartInspectorCapabilities = {
   border: boolean;
   remark: boolean;
 };
-
-const APEX_BASIC = new Set(["bar", "line"]);
 
 export function chartInspectorCapabilities(
   chartType: ChartViewConfig["chartType"],
@@ -46,7 +49,7 @@ export function chartInspectorCapabilities(
     };
   }
 
-  if (APEX_BASIC.has(chartType)) {
+  if (isLineOrBarType(chartType)) {
     return {
       ...base,
       legend: true,
@@ -57,7 +60,7 @@ export function chartInspectorCapabilities(
     };
   }
 
-  if (isAdvancedEchartsType(chartType) || chartType === "pie") {
+  if (chartType === "pie" || isExtendedEchartsType(chartType)) {
     return {
       ...base,
       legend: true,

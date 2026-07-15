@@ -46,6 +46,10 @@ const CODE_MESSAGES: Record<string, string> = {
   DASH_FILTER_NOT_FOUND: "未配置全局筛选联动",
   DASH_FILTER_DASHBOARD_NOT_FOUND: "关联的看板不存在",
   DASH_FILTER_DUPLICATE_ID: "筛选器 ID 重复",
+  DASH_FILTER_WIDGET_NOT_FOUND: "筛选联动引用了已删除的组件，请重新配置联动规则",
+  DASH_FILTER_UNKNOWN_SOURCE: "筛选联动引用了不存在的筛选器",
+  DASH_FILTER_INVALID_DIMENSION_REF: "筛选器维度引用无效",
+  DASH_FILTER_DUPLICATE_PARAMETER_KEY: "筛选联动参数键重复",
   DASH_OVERVIEW_FORBIDDEN: "无权访问实体总览",
   DASH_OVERVIEW_NOT_FOUND: "实体总览尚未配置",
   DASH_OVERVIEW_DASHBOARD_NOT_FOUND: "关联看板不存在",
@@ -227,7 +231,14 @@ export function isDashboardNotFound(err: unknown): boolean {
 
 export function mapApiError(err: unknown): string {
   if (err instanceof ApiRequestError) {
-    if (err.code && CODE_MESSAGES[err.code]) return CODE_MESSAGES[err.code];
+    if (err.code && CODE_MESSAGES[err.code]) {
+      const mapped = CODE_MESSAGES[err.code];
+      const fieldHint = err.fields?.[0]?.message?.trim();
+      if (fieldHint && !mapped.includes(fieldHint)) {
+        return `${mapped}（${localizeApiMessage(fieldHint)}）`;
+      }
+      return mapped;
+    }
     if (err.message && !err.message.includes("traceId")) {
       return localizeApiMessage(err.message);
     }

@@ -4,21 +4,8 @@ import { activeFieldRefs } from "@/lib/chartConfigState";
 export type ChartRenderModel =
   | { kind: "error"; message: string }
   | { kind: "empty" }
-  | {
-      kind: "table";
-      displayCols: string[];
-    }
-  | {
-      kind: "apex";
-      chartType: "line" | "bar";
-      categories: string[];
-      series: Array<{ name: string; data: number[] }>;
-    }
-  | {
-      kind: "pie";
-      dim: string;
-      metric: string;
-    };
+  | { kind: "table"; displayCols: string[] }
+  | { kind: "ready" };
 
 export function parseMetricValue(raw: unknown): number | null {
   if (typeof raw === "number" && Number.isFinite(raw)) return raw;
@@ -49,6 +36,18 @@ export function buildChartRenderModel(
     return { kind: "table", displayCols: displayCols.length ? displayCols : columns };
   }
 
+  if (config.chartType === "kpi") {
+    const metrics = activeFieldRefs(config.metrics);
+    if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
+    for (const metric of metrics) {
+      if (!columns.includes(metric.field)) {
+        return { kind: "error", message: `指标列「${metric.field}」不存在，请检查字段配置` };
+      }
+    }
+    if (rows.length === 0) return { kind: "empty" };
+    return { kind: "ready" };
+  }
+
   const dims = activeFieldRefs(config.dimensions);
   const metrics = activeFieldRefs(config.metrics);
   const dim = dims[0]?.field;
@@ -63,21 +62,5 @@ export function buildChartRenderModel(
     }
   }
   if (rows.length === 0) return { kind: "empty" };
-
-  if (config.chartType === "pie") {
-    return { kind: "pie", dim, metric: metrics[0].field };
-  }
-
-  const dimIdx = columns.indexOf(dim);
-  const categories = rows.map((r) => String(r[dimIdx] ?? ""));
-  const series = metrics.map((metric) => {
-    const idx = columns.indexOf(metric.field);
-    return {
-      name: metric.field,
-      data: rows.map((r) => parseMetricValue(r[idx]) ?? 0),
-    };
-  });
-
-  const chartType = config.chartType === "line" ? "line" : "bar";
-  return { kind: "apex", chartType, categories, series };
+  return { kind: "ready" };
 }

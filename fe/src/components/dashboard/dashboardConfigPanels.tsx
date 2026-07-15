@@ -24,7 +24,7 @@ import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel
 import { ColorField } from "@/components/ui/color-field";
 import { DebouncedNumberInput } from "@/components/ui/debounced-number-input";
 import type { LayoutWidget } from "./layoutUtils";
-import { CHART_PALETTE_PRESETS } from "@/lib/chart-theme";
+import { CHART_PALETTE_PRESETS } from "@/lib/chartPalette";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DEFAULT_DRILL_LEVEL_COLORS,

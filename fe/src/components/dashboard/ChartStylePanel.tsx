@@ -8,7 +8,8 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColorField } from "@/components/ui/color-field";
-import { CHART_PALETTE_PRESETS } from "@/lib/chart-theme";
+import { CHART_PALETTE_PRESETS } from "@/lib/chartPalette";
+import { fetchChartTypeCatalog, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
 import { formatMetricValue } from "./dashboardStyleConfig";
 import { DashboardConfigSection } from "./DashboardConfigSection";
 import { ChartTableStylePanel } from "./ChartTableStylePanel";

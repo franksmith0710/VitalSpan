@@ -459,13 +459,6 @@ html.dark {
   color: var(--dashboard-action-icon-hover, var(--color-gray-200));
 }
 
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .apexcharts-canvas,
-.dashboard-theme-scope.dark .apexcharts-canvas,
-.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .apexcharts-svg,
-.dashboard-theme-scope.dark .apexcharts-svg {
-  background: transparent !important;
-}
-
 .dashboard-theme-scope [data-testid="pixel-canvas-artboard"] {
   background-color: var(--dashboard-artboard-bg, #f8fafc) !important;
 }

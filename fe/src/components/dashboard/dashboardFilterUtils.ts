@@ -82,6 +82,20 @@ export function mergeLayoutFilterLinkage(widgets: LayoutWidget[], linkage: Linka
   return { ...base, filters, linkageRules };
 }
 
+/** 保存前剔除已删除 widget 的联动目标，避免 global-filters PUT 422 */
+export function sanitizeLinkageForSave(widgets: LayoutWidget[], linkage: Linkage): Linkage {
+  const widgetIds = new Set(widgets.map((w) => w.id));
+  const filterIds = new Set(linkage.filters.map((f) => f.filterId));
+  const linkageRules = linkage.linkageRules
+    .map((rule) => ({
+      ...rule,
+      targetWidgetIds: rule.targetWidgetIds.filter((id) => widgetIds.has(id)),
+    }))
+    .filter((rule) => filterIds.has(rule.sourceFilterId) && rule.targetWidgetIds.length > 0);
+
+  return { ...linkage, linkageRules };
+}
+
 export function resolveFilterControlType(filter: LinkageFilter): FilterControlType {
   if (filter.controlType) return filter.controlType;
   if (filter.options && filter.options.length > 0) return "select";

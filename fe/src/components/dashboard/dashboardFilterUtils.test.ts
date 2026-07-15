@@ -4,6 +4,7 @@ import {
   injectSqlParameters,
   mergeLayoutFilterLinkage,
   resolveFilterControlType,
+  sanitizeLinkageForSave,
 } from "./dashboardFilterUtils";
 import { defaultChartConfig, defaultFilterConfig, type LayoutWidget } from "./layoutUtils";
 
@@ -60,5 +61,28 @@ describe("dashboardFilterUtils", () => {
     expect(merged.filters.some((f) => f.filterId === "fw1")).toBe(true);
     const params = buildWidgetFilterParams("c1", merged, { fw1: "east" });
     expect(params).toEqual({ region: "east" });
+  });
+
+  it("sanitizeLinkageForSave drops stale widget targets", () => {
+    const chart: LayoutWidget = {
+      id: "c1",
+      type: "chart",
+      title: "图",
+      colSpan: 6,
+      rowSpan: 3,
+      order: 0,
+      chartConfig: { ...defaultChartConfig("bar"), chartId: "c1", dataSourceId: "ds", mode: "sql", sql: "select 1" },
+    };
+    const sanitized = sanitizeLinkageForSave([chart], {
+      filters: [{ filterId: "f1", dimensionRef: "区域" }],
+      linkageRules: [
+        { sourceFilterId: "f1", targetWidgetIds: ["c1", "deleted"], parameterKey: "region" },
+        { sourceFilterId: "missing", targetWidgetIds: ["c1"], parameterKey: "x" },
+      ],
+      refreshMode: "eager",
+    });
+    expect(sanitized.linkageRules).toEqual([
+      { sourceFilterId: "f1", targetWidgetIds: ["c1"], parameterKey: "region" },
+    ]);
   });
 });

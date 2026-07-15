@@ -238,6 +238,7 @@ export const DARK_WIDGET_SHELL_VALUES = new Set([
   CANVAS_BG_DARK_DEFAULT,
   "#171717",
   "#1d2939",
+  "#475569",
 ]);
 
 function parseHexRgb(hex: string): [number, number, number] | null {

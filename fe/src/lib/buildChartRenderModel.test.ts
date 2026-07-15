@@ -18,7 +18,7 @@ describe("buildChartRenderModel", () => {
     });
   });
 
-  it("builds apex series for valid bar config", () => {
+  it("returns ready for valid bar config", () => {
     const config = {
       ...defaultChartConfig("bar"),
       dimensions: [{ field: "sale_date" }],
@@ -28,21 +28,26 @@ describe("buildChartRenderModel", () => {
       ["2026-01-01", 100],
       ["2026-01-02", 200],
     ]);
-    expect(model).toEqual({
-      kind: "apex",
-      chartType: "bar",
-      categories: ["2026-01-01", "2026-01-02"],
-      series: [{ name: "amount", data: [100, 200] }],
-    });
+    expect(model).toEqual({ kind: "ready" });
   });
 
-  it("routes pie to pie kind when fields are valid", () => {
+  it("returns ready for valid pie config", () => {
     const config = {
       ...defaultChartConfig("pie"),
       dimensions: [{ field: "region" }],
       metrics: [{ field: "amount" }],
     };
     const model = buildChartRenderModel(config, ["region", "amount"], [["华东", 50]]);
-    expect(model).toEqual({ kind: "pie", dim: "region", metric: "amount" });
+    expect(model).toEqual({ kind: "ready" });
+  });
+
+  it("returns ready for funnel without misrouting to bar", () => {
+    const config = {
+      ...defaultChartConfig("funnel"),
+      dimensions: [{ field: "stage" }],
+      metrics: [{ field: "value" }],
+    };
+    const model = buildChartRenderModel(config, ["stage", "value"], [["A", 10]]);
+    expect(model).toEqual({ kind: "ready" });
   });
 });

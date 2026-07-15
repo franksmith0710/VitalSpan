@@ -73,15 +73,3 @@ export function reconcileChartFields(
   };
 }
 
-export function chartConfigToRenderSpec(config: ChartViewConfig) {
-  return {
-    engine: "echarts" as const,
-    chartType: config.chartType,
-    styleVariant: config.styleVariant ?? "default",
-    encoding: {
-      dimensions: activeFieldRefs(config.dimensions),
-      metrics: activeFieldRefs(config.metrics),
-    },
-    source: {},
-  };
-}

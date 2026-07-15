@@ -18,7 +18,15 @@ type ChartEditRailProps = {
   className?: string;
 };
 
-function ChartDatasetRail() {
+type ChartEditRailBodyProps = Omit<ChartEditRailProps, "widget" | "onChange" | "onTitleChange">;
+
+/** 必须在 ChartInspectorProvider 内渲染 */
+function ChartEditRailBody({
+  onDelete,
+  onOpenLinkage,
+  onDataRefresh,
+  className,
+}: ChartEditRailBodyProps) {
   const {
     widget,
     cfg,
@@ -34,20 +42,42 @@ function ChartDatasetRail() {
     refreshColumns,
   } = useChartInspector();
 
+  const title = widget.title || "图表";
+  const hasChartConfig = Boolean(widget.chartConfig);
+
   return (
-    <DatasetPickerPanel
-      widgetId={widget.id}
-      datasetId={cfg.datasetId}
-      datasetsLoading={datasetsLoading}
-      datasetsError={datasetsError}
-      datasetsEmpty={datasetsEmpty}
-      datasetItems={datasetItems}
-      columns={columns}
-      columnsLoading={columnsLoading}
-      columnsReady={columnsReady}
-      onDatasetSelect={handleDatasetSelect}
-      onFieldClick={(field) => assignField(field)}
-      onRefreshFields={refreshColumns}
+    <WidgetEditRailLayout
+      className={className}
+      leftLabel={title}
+      rightLabel="数据集"
+      left={
+        <ChartEditorColumn
+          onDelete={onDelete}
+          onOpenLinkage={onOpenLinkage}
+          onDataRefresh={onDataRefresh}
+          className="border-r border-gray-200 dark:border-gray-800"
+        />
+      }
+      right={
+        hasChartConfig ? (
+          <DatasetPickerPanel
+            widgetId={widget.id}
+            datasetId={cfg.datasetId}
+            datasetsLoading={datasetsLoading}
+            datasetsError={datasetsError}
+            datasetsEmpty={datasetsEmpty}
+            datasetItems={datasetItems}
+            columns={columns}
+            columnsLoading={columnsLoading}
+            columnsReady={columnsReady}
+            onDatasetSelect={handleDatasetSelect}
+            onFieldClick={(field) => assignField(field)}
+            onRefreshFields={refreshColumns}
+          />
+        ) : (
+          <FieldBankPlaceholder />
+        )
+      }
     />
   );
 }
@@ -57,30 +87,11 @@ export function ChartEditRail({
   widget,
   onChange,
   onTitleChange,
-  onDelete,
-  onOpenLinkage,
-  onDataRefresh,
-  className,
+  ...bodyProps
 }: ChartEditRailProps) {
-  const cfg = widget.chartConfig;
-  const title = widget.title || "图表";
-
   return (
     <ChartInspectorProvider widget={widget} onChange={onChange} onTitleChange={onTitleChange}>
-      <WidgetEditRailLayout
-        className={className}
-        leftLabel={title}
-        rightLabel="数据集"
-        left={
-          <ChartEditorColumn
-            onDelete={onDelete}
-            onOpenLinkage={onOpenLinkage}
-            onDataRefresh={onDataRefresh}
-            className="border-r border-gray-200 dark:border-gray-800"
-          />
-        }
-        right={cfg ? <ChartDatasetRail /> : <FieldBankPlaceholder />}
-      />
+      <ChartEditRailBody {...bodyProps} />
     </ChartInspectorProvider>
   );
 }

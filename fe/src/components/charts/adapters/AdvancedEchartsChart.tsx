@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type EChartsReact from "echarts-for-react";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
-import { getEchartsTheme } from "@/lib/echarts-theme";
+import { applyEchartsColorSchemeTokens, getEchartsTheme } from "@/lib/echarts-theme";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartDeStyle } from "@/lib/chartDeStyle";
 import { cn } from "@/lib/utils";
-import { usePixelShapeLiveResize } from "@/hooks/usePixelShapeLiveResize";
+import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import {
   ADVANCED_CHART_ROW_CAP,
   buildEchartsOption,
@@ -50,12 +50,12 @@ export function AdvancedEchartsChart({
 }: Props) {
   const chartRef = useRef<EChartsReact | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const resizeFrameRef = useRef<number | null>(null);
 
   const { rows: capped, truncated } = useMemo(
     () => capRows(rows, ADVANCED_CHART_ROW_CAP),
     [rows],
   );
+  const scheme = isDark ? "dark" : "light";
   const option = useMemo(() => {
     let built = buildEchartsOption(spec, capped, columns);
     built = applyDeStyleToEchartsOption(built, deStyle ?? {}, dataZoom, {
@@ -63,12 +63,13 @@ export function AdvancedEchartsChart({
       valueFormat,
       layout: { embedded: fill },
     });
+    built = applyEchartsColorSchemeTokens(built, scheme);
     if (chartColors?.length) {
       built = { ...built, color: chartColors };
     }
     return built;
-  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat]);
-  const theme = useMemo(() => getEchartsTheme(isDark ? "dark" : "light"), [isDark]);
+  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat, scheme]);
+  const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
 
   const isEmpty =
     !option ||
@@ -79,39 +80,7 @@ export function AdvancedEchartsChart({
     chartRef.current?.getEchartsInstance()?.resize();
   }, []);
 
-  const scheduleResize = useCallback(() => {
-    if (resizeFrameRef.current !== null) return;
-    resizeFrameRef.current = requestAnimationFrame(() => {
-      resizeFrameRef.current = null;
-      resizeChart();
-    });
-  }, [resizeChart]);
-
-  usePixelShapeLiveResize(fill, scheduleResize);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || isEmpty) return;
-
-    const hosts = new Set<HTMLElement>([el]);
-    if (fill) {
-      const shapeOuter = el.closest(".shape, .pixel-shape-outer");
-      const shapeInner = el.closest(".pixel-shape-inner");
-      if (shapeOuter instanceof HTMLElement) hosts.add(shapeOuter);
-      if (shapeInner instanceof HTMLElement) hosts.add(shapeInner);
-    }
-
-    const observer = new ResizeObserver(() => scheduleResize());
-    for (const host of hosts) observer.observe(host);
-    scheduleResize();
-    return () => {
-      observer.disconnect();
-      if (resizeFrameRef.current !== null) {
-        cancelAnimationFrame(resizeFrameRef.current);
-        resizeFrameRef.current = null;
-      }
-    };
-  }, [fill, isEmpty, scheduleResize]);
+  useEmbeddedChartLiveResize(fill && !isEmpty, containerRef, resizeChart);
 
   return (
     <div

@@ -63,19 +63,24 @@ export type ChartViewConfig = {
   timeRange?: ChartTimeRangeRef;
 };
 
-const BASIC_TYPES: ChartType[] = ["table", "line", "bar"];
 const KPI_TYPES: ChartType[] = ["kpi"];
-
-export function isBasicChartType(type: ChartType): boolean {
-  return BASIC_TYPES.includes(type);
-}
 
 export function isKpiType(type: ChartType): boolean {
   return KPI_TYPES.includes(type);
 }
 
-export function isAdvancedEchartsType(type: ChartType): boolean {
-  return !isBasicChartType(type) && !isKpiType(type) && type !== "pie";
+/** 走 ECharts 渲染的图表类型（非 table / kpi） */
+export function isEchartsChartType(type: ChartType): boolean {
+  return type !== "table" && !isKpiType(type);
+}
+
+export function isLineOrBarType(type: ChartType): boolean {
+  return type === "line" || type === "bar";
+}
+
+/** 漏斗/桑基/地图等扩展图 */
+export function isExtendedEchartsType(type: ChartType): boolean {
+  return isEchartsChartType(type) && type !== "line" && type !== "bar" && type !== "pie";
 }
 
 export function isChartViewConfig(value: unknown): value is ChartViewConfig {

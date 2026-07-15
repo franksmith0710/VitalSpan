@@ -31,6 +31,11 @@ const EMPTY_PIXEL_LAYOUT: DashboardLayoutV2 = {
 
 type WidgetUpdate = LayoutWidget[] | ((previous: LayoutWidget[]) => LayoutWidget[]);
 
+export type ResetLayoutOptions = {
+  /** 显式整理布局时才 repack；持久化 hydrate 默认保留用户坐标 */
+  repack?: boolean;
+};
+
 function newPixelWidget(widget: LayoutWidget, index: number): PixelLayoutWidget {
   const { colSpan, rowSpan, gridX, gridY, ...base } = widget;
   return {
@@ -82,7 +87,7 @@ export function useDashboardCanvasState({
   );
 
   const resetLayout = useCallback(
-    (source: DashboardLayout) => {
+    (source: DashboardLayout, options?: ResetLayoutOptions) => {
       const prepared = editable
         ? prepareDashboardLayout(source, pixelEnabled)
         : {
@@ -100,7 +105,7 @@ export function useDashboardCanvasState({
       } else {
         const loaded = prepared.layout;
         pixel.resetLayout(loaded);
-        if (editable && loaded.version === 2) {
+        if (editable && loaded.version === 2 && options?.repack) {
           try {
             const normalized = packPixelLayoutSeamless(loaded);
             if (pixelLayoutFingerprint(normalized) !== pixelLayoutFingerprint(loaded)) {

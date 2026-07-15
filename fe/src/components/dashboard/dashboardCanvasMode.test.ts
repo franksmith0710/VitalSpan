@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { DashboardLayoutV1, DashboardLayoutV2 } from "./layoutUtils";
 import {
+  buildDashboardLayoutForSave,
+  dashboardPersistFingerprint,
   isPixelCanvasEnabled,
   migrateDashboardLayoutV1,
   prepareDashboardLayout,
 } from "./dashboardCanvasMode";
+import { packPixelLayoutSeamless } from "./pixelCanvas/collisionLayout";
 
 const v1: DashboardLayoutV1 = {
   version: 1,
@@ -83,5 +86,93 @@ describe("dashboard canvas mode", () => {
       ],
     });
     expect(migrated.widgets[0]).not.toHaveProperty("colSpan");
+  });
+
+  it("buildDashboardLayoutForSave strips v1 geometry from v2 widgets", () => {
+    const mixed: DashboardLayoutV2 = {
+      ...v2,
+      widgets: [
+        {
+          ...v2.widgets[0]!,
+          colSpan: 6,
+          rowSpan: 2,
+          gridX: 1,
+          gridY: 2,
+        },
+      ],
+    };
+    const saved = buildDashboardLayoutForSave(mixed, { widgetGap: 8 });
+    expect(saved.version).toBe(2);
+    if (saved.version !== 2) return;
+    expect(saved.widgets[0]).not.toHaveProperty("colSpan");
+    expect(saved.widgets[0]).not.toHaveProperty("gridX");
+    expect(saved.widgets[0]).toMatchObject({ x: 120, y: 100, width: 480, height: 320 });
+  });
+
+  it("save 往返保持稀疏布局坐标（不隐式 pack）", () => {
+    const sparse: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        {
+          id: "a",
+          type: "chart",
+          title: "A",
+          order: 0,
+          x: 600,
+          y: 400,
+          width: 320,
+          height: 240,
+        },
+        {
+          id: "b",
+          type: "text",
+          title: "B",
+          order: 1,
+          x: 100,
+          y: 80,
+          width: 200,
+          height: 120,
+        },
+      ],
+      globalFilters: [],
+    };
+    const style = { widgetGap: 8 };
+    const saved = buildDashboardLayoutForSave(sparse, style);
+    expect(saved.version).toBe(2);
+    if (saved.version !== 2) return;
+    for (const widget of sparse.widgets) {
+      const persisted = saved.widgets.find((w) => w.id === widget.id)!;
+      expect(persisted).toMatchObject({
+        x: widget.x,
+        y: widget.y,
+        width: widget.width,
+        height: widget.height,
+      });
+    }
+    const fingerprint = dashboardPersistFingerprint(sparse, style, true);
+    expect(fingerprint).toBe(JSON.stringify(saved));
+  });
+
+  it("pack 会改变非紧凑布局（说明 hydrate 不可默认 pack）", () => {
+    const sparse: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        {
+          id: "a",
+          type: "chart",
+          title: "A",
+          order: 0,
+          x: 600,
+          y: 400,
+          width: 320,
+          height: 240,
+        },
+      ],
+      globalFilters: [],
+    };
+    const packed = packPixelLayoutSeamless(sparse);
+    expect(packed.widgets[0]).toMatchObject({ x: 0, y: 0 });
   });
 });

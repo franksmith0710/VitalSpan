@@ -11,6 +11,7 @@ import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import {
   buildWidgetFilterParams,
   mergeLayoutFilterLinkage,
+  sanitizeLinkageForSave,
   type Linkage,
 } from "@/components/dashboard/dashboardFilterUtils";
 import {
@@ -236,7 +237,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         source,
         mode === "edit" ? pixelEnabled : false,
       );
-      resetLayout(source);
+      resetLayout(prepared.layout);
       const normalizedStyle = normalizeStyleConfigForColorScheme(source.styleConfig ?? {});
       setStyleConfig(normalizedStyle);
       styleConfigRef.current = normalizedStyle;
@@ -634,38 +635,48 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         }),
       });
 
-      const mergedLinkage = mergeLayoutFilterLinkage(normalized, currentLinkage);
-      let nextLinkage = currentLinkage;
-      if (mergedLinkage.filters.length > 0) {
-        nextLinkage = await apiFetch<Linkage>(
-          `/api/v1/dashboards/${id}/global-filters`,
-          {
-            method: "PUT",
-            body: JSON.stringify({
-              dashboardId: id,
-              filters: mergedLinkage.filters,
-              linkageRules: mergedLinkage.linkageRules,
-              refreshMode: mergedLinkage.refreshMode ?? "eager",
-            }),
-          },
-        );
-        applyLinkage(nextLinkage);
-      }
-
       resetLayout(normalizedLayout);
       setSavedFingerprint(
         dashboardPersistFingerprint(normalizedLayout, currentStyle, pixelEnabled),
       );
+
+      const mergedLinkage = sanitizeLinkageForSave(
+        normalized,
+        mergeLayoutFilterLinkage(normalized, currentLinkage),
+      );
+      let nextLinkage = currentLinkage;
+      if (mergedLinkage.filters.length > 0) {
+        try {
+          nextLinkage = await apiFetch<Linkage>(
+            `/api/v1/dashboards/${id}/global-filters`,
+            {
+              method: "PUT",
+              body: JSON.stringify({
+                dashboardId: id,
+                filters: mergedLinkage.filters,
+                linkageRules: mergedLinkage.linkageRules,
+                refreshMode: mergedLinkage.refreshMode ?? "eager",
+              }),
+            },
+          );
+          applyLinkage(nextLinkage);
+        } catch (filterErr) {
+          toast.error(mapApiError(filterErr));
+          setSavedLinkageSnapshot(linkageSnapshot(normalized, currentLinkage));
+          toast.success("看板布局已保存");
+          return true;
+        }
+      }
+
       setSavedLinkageSnapshot(linkageSnapshot(normalized, nextLinkage));
       toast.success("看板已保存");
       return true;
     } catch (err) {
       if (isDashboardNotFound(err)) {
-        setError(mapApiError(err));
+        toast.error(mapApiError(err));
         leaveEditShell();
         return false;
       }
-      setError(mapApiError(err));
       toast.error(mapApiError(err));
       return false;
     } finally {
@@ -991,6 +1002,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               />
             ) : selectedWidget?.type === "chart" ? (
               <ChartEditRail
+                key={primarySelectedId ?? selectedWidget.id}
                 widget={selectedWidget}
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
                 onDataRefresh={() => primarySelectedId && handleChartDataRefresh(primarySelectedId)}

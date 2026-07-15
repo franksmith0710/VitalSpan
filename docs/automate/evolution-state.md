@@ -20,6 +20,33 @@
 | 字段 | 值 |
 |------|----|
 | phase | DONE |
+| request | 看板保存/重载后布局漂移 — 根因剖析 + 修复 |
+| type | bug |
+| plan | docs/automate/plans/2026-07-15-dashboard-layout-roundtrip-drift.md |
+| bug_doc | docs/bugs/BUG-6_dashboard-layout-roundtrip-drift_2026-07-15.md |
+| status | DONE |
+| last_verified_command | vitest dashboardCanvasMode+collisionLayout+filterUtils; tsc --noEmit |
+| last_verified_exit_code | 0 |
+| verification_summary | RC-1~3 已修复；25 vitest 绿；tsc 绿；待手测 §5 |
+| repair_rounds | 0 |
+
+## 当前需求契约
+
+- request: 保存完布局不应改变；退出重开应与最后一次保存一致
+- type: bug
+- goal: v2 像素画布 layout 持久化 WYSIWYG；save→reload 坐标 idempotent
+- scope_include: dashboardCanvasMode、useDashboardCanvasState、DashboardEditPage、相关 vitest
+- scope_exclude: 后端 schema；v1 栅格编辑器；整理布局 UI（P2 可选）
+- acceptance: plan §4 vitest 绿 + §5 手测 + BUG-6 RC-1/2/3 fixed
+- risk_level: low
+- autonomy_policy: strict_plan_match
+- assumptions: 沿用 buildDashboardLayoutForSave；pack 仅保留为显式操作
+
+## 上一轮（归档 · DE Parity）
+
+| 字段 | 值 |
+|------|-----|
+| phase | DONE |
 | request | DataEase 看板右栏全量对标（DE Parity） |
 | type | feature |
 | plan | docs/automate/plans/2026-07-14-dashboard-config-de-parity.md |
@@ -28,15 +55,6 @@
 | last_verified_exit_code | 0 |
 | verification_summary | DE 右栏缺失项 UI+接线；24 vitest 绿；tsc 绿 |
 | repair_rounds | 0 |
-
-## 当前需求契约
-
-- request: 对照 DE 右栏逐项完善，功能都要有
-- type: feature
-- goal: chrome/dialog/spacing/钻取色 + 画布消费
-- scope_include: dashboard 右栏 + 像素画布 + ChartRenderer + 弹窗
-- acceptance: plan §3 命令通过
-- autonomy_policy: auto_accept_low_risk
 
 ## 上一轮（归档 · 右栏映射审计）
 

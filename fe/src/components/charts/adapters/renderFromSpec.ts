@@ -185,6 +185,38 @@ export function buildBarOption(
   };
 }
 
+export function buildLineOption(
+  spec: RenderSpec,
+  rows: unknown[][],
+  columns: string[],
+): EChartsOption {
+  if (rows.length === 0) return { series: [], dataset: { source: [] } };
+  const dim = spec.encoding.dimensions[0]?.field ?? "";
+  const metrics = spec.encoding.metrics.map((m) => m.field);
+  const di = safeColIndex(columns, dim);
+  const xData = di !== null ? rows.map((r) => String(r[di] ?? "")) : [];
+  const series = metrics.map((metric) => {
+    const mi = safeColIndex(columns, metric);
+    const data = mi !== null ? rows.map((r) => Number(r[mi] ?? 0)) : [];
+    const base: Record<string, unknown> = {
+      type: "line",
+      name: metric,
+      data,
+      smooth: spec.styleVariant === "smooth",
+    };
+    if (spec.styleVariant === "stacked") {
+      base.stack = "total";
+    }
+    return base;
+  });
+  return {
+    tooltip: { trigger: "axis" },
+    xAxis: { type: "category", data: xData },
+    yAxis: { type: "value" },
+    series,
+  };
+}
+
 export function buildPieOption(
   spec: RenderSpec,
   rows: unknown[][],
@@ -213,6 +245,8 @@ export function buildEchartsOption(
   switch (spec.chartType) {
     case "bar":
       return buildBarOption(spec, capped, columns);
+    case "line":
+      return buildLineOption(spec, capped, columns);
     case "funnel":
       return buildFunnelOption(spec, capped, columns);
     case "sankey":

@@ -110,8 +110,18 @@ export function mergeLayoutWidgetIntoPixel(
 }
 
 import { styleConfigHasPersistedFields } from "./dashboardStyleConfig";
-import { packPixelLayoutSeamless } from "./pixelCanvas/collisionLayout";
-import { pixelLayoutFingerprint } from "./pixelCanvas/usePixelLayoutHistory";
+import { fitCanvasHeightToContent } from "./pixelCanvas/PixelCanvas";
+
+const V1_LAYOUT_GEOMETRY_KEYS = ["colSpan", "rowSpan", "gridX", "gridY"] as const;
+
+/** v2 持久化禁止携带栅格几何字段，否则后端 422 */
+function stripV1LayoutGeometry<T extends Record<string, unknown>>(widget: T): T {
+  const next = { ...widget };
+  for (const key of V1_LAYOUT_GEOMETRY_KEYS) {
+    delete next[key];
+  }
+  return next;
+}
 
 function persistedStyle(styleConfig: DashboardStyleConfig): DashboardStyleConfig | undefined {
   return styleConfigHasPersistedFields(styleConfig) ? styleConfig : undefined;
@@ -129,36 +139,27 @@ export function buildDashboardLayoutForSave(
       styleConfig: persistedStyle(styleConfig),
     };
   }
-  return {
+  return fitCanvasHeightToContent({
     ...layout,
-    widgets: layout.widgets.map((widget) =>
-      widget.type === "chart" && widget.chartConfig
-        ? {
-            ...widget,
-            chartConfig: { ...widget.chartConfig, chartId: widget.id },
-          }
-        : widget,
-    ),
+    widgets: layout.widgets.map((widget) => {
+      const withChartId =
+        widget.type === "chart" && widget.chartConfig
+          ? {
+              ...widget,
+              chartConfig: { ...widget.chartConfig, chartId: widget.id },
+            }
+          : widget;
+      return stripV1LayoutGeometry(withChartId as Record<string, unknown>) as typeof widget;
+    }),
     styleConfig: persistedStyle(styleConfig),
-  };
+  });
 }
 
-/** 与保存 + resetLayout 后内存态一致的指纹，避免 isDirty 与 savedFingerprint 算法不一致 */
+/** 与保存后内存态一致的指纹（不再 pack，保证 WYSIWYG 与 DB 一致） */
 export function dashboardPersistFingerprint(
   layout: DashboardLayout,
   styleConfig: DashboardStyleConfig,
-  pixelEnabled: boolean,
+  _pixelEnabled: boolean,
 ): string {
-  let canonical = buildDashboardLayoutForSave(layout, styleConfig);
-  if (canonical.version === 2 && pixelEnabled) {
-    try {
-      const packed = packPixelLayoutSeamless(canonical);
-      if (pixelLayoutFingerprint(packed) !== pixelLayoutFingerprint(canonical)) {
-        canonical = packed;
-      }
-    } catch {
-      // 与 resetLayout 一致：pack 失败则保留 canonical
-    }
-  }
-  return JSON.stringify(canonical);
+  return JSON.stringify(buildDashboardLayoutForSave(layout, styleConfig));
 }

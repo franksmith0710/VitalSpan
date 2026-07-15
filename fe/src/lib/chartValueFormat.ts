@@ -28,10 +28,6 @@ export function formatChartValue(
   return formatMetricValue(raw, format);
 }
 
-export function apexValueFormatter(format: NumberFormatConfig | undefined) {
-  return (val: number) => formatChartValue(val, format);
-}
-
 export function echartsTooltipValueFormatter(format: NumberFormatConfig | undefined) {
   return (params: unknown) => {
     if (params == null) return "";
