@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ChartDeSliderField, DeProgressSlider } from "./deAttrSlider";
+import { ChartDeSliderField, DeAttrSliderField, DeProgressSlider } from "./deAttrSlider";
 
 afterEach(cleanup);
 
@@ -82,5 +82,28 @@ describe("ChartDeSliderField", () => {
 
     expect(screen.getByText("18px")).toBeInTheDocument();
     expect(screen.getByRole("slider", { name: "字号" })).toHaveValue("18");
+  });
+});
+
+describe("DeAttrSliderField", () => {
+  it("renders DeAttrField layout with live value hint", () => {
+    const onChange = vi.fn();
+    render(
+      <DeAttrSliderField
+        label="组件圆角"
+        value={12}
+        min={0}
+        max={48}
+        unit="px"
+        onChange={onChange}
+      />,
+    );
+
+    expect(screen.getByText("组件圆角")).toBeInTheDocument();
+    expect(screen.getByText("12px")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("slider", { name: "组件圆角" }), {
+      target: { value: "20" },
+    });
+    expect(onChange).toHaveBeenCalledWith(20);
   });
 });

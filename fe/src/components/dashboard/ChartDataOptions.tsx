@@ -6,6 +6,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  CHART_RESULT_LIMIT_OPTIONS,
   patchChartDeDisplay,
   readChartDeDisplay,
 } from "@/lib/chartDeDisplay";
@@ -18,14 +19,6 @@ const REFRESH_OPTIONS = [
   { value: "1m", label: "1 分钟" },
   { value: "5m", label: "5 分钟" },
   { value: "15m", label: "15 分钟" },
-] as const;
-
-const RESULT_LIMIT_OPTIONS = [
-  { value: "all", label: "全部" },
-  { value: "100", label: "100" },
-  { value: "500", label: "500" },
-  { value: "1000", label: "1000" },
-  { value: "10000", label: "10000" },
 ] as const;
 
 /** DataEase 数据 Tab：刷新频率 + 结果展示 */
@@ -61,7 +54,7 @@ export function ChartDataOptions() {
             <SelectValue placeholder="请选择" />
           </SelectTrigger>
           <SelectContent>
-            {RESULT_LIMIT_OPTIONS.map((opt) => (
+            {CHART_RESULT_LIMIT_OPTIONS.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>

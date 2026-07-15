@@ -1,5 +1,6 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
+  DEFAULT_QUERY_LIMIT,
   MAX_QUERY_LIMIT,
   MIN_QUERY_LIMIT,
   resolveQueryLimit,
@@ -17,6 +18,33 @@ const REFRESH_SEC: Record<string, number> = {
   "5m": 300,
   "15m": 900,
 };
+
+/** DataEase 结果展示：组件级与看板默认共用选项 */
+export const CHART_RESULT_LIMIT_OPTIONS = [
+  { value: "all", label: "全部" },
+  { value: "100", label: "100" },
+  { value: "500", label: "500" },
+  { value: "1000", label: "1000" },
+  { value: "10000", label: "10000" },
+] as const;
+
+export type ChartResultLimitOption = (typeof CHART_RESULT_LIMIT_OPTIONS)[number]["value"];
+
+/** 看板 defaultQueryLimit → Select value（与组件 deDisplay.resultLimit 同语义） */
+export function dashboardQueryLimitSelectValue(limit?: number): ChartResultLimitOption | "100" {
+  const value = limit ?? DEFAULT_QUERY_LIMIT;
+  if (value >= MAX_QUERY_LIMIT) return "all";
+  const hit = CHART_RESULT_LIMIT_OPTIONS.find(
+    (opt) => opt.value !== "all" && Number(opt.value) === value,
+  );
+  return (hit?.value as ChartResultLimitOption | undefined) ?? "100";
+}
+
+/** Select value → 看板 defaultQueryLimit 持久化值 */
+export function selectValueToDashboardQueryLimit(value: string): number {
+  if (value === "all") return MAX_QUERY_LIMIT;
+  return parseDeResultLimit(value) ?? DEFAULT_QUERY_LIMIT;
+}
 
 export function readChartDeDisplay(cfg: ChartViewConfig): ChartDeDisplayOptions {
   const raw = cfg.nativeBody?.deDisplay;

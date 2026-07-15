@@ -61,7 +61,7 @@ describe("ChartStylePanel", () => {
     );
 
     expect(await screen.findByRole("button", { name: "基础样式" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
+    expect(screen.getByRole("listbox", { name: "配色方案" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "标题" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "图例" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "背景" })).toBeInTheDocument();

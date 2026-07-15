@@ -7,6 +7,7 @@ import type {
   WidgetStyleConfig,
   ColorScheme,
 } from "@/components/dashboard/dashboardStyleConfig";
+import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import {
   coerceWidgetSurfaceBackground,
   mergeTitleStyle,
@@ -48,6 +49,17 @@ export type ChartGeoStyle = {
   visualMap?: boolean;
 };
 
+/** 饼图/环形图样式（对标 DE attr-style · 基础样式） */
+export type ChartPieStyle = {
+  /** 环形内径，占容器短边百分比 */
+  innerRadiusPercent?: number;
+};
+
+export const DEFAULT_PIE_INNER_RADIUS_PERCENT = 40;
+export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 70;
+export const PIE_INNER_RADIUS_MIN = 0;
+export const PIE_INNER_RADIUS_MAX = 65;
+
 export type ChartDeStyle = {
   paletteId?: string;
   paletteOpacity?: number;
@@ -58,10 +70,15 @@ export type ChartDeStyle = {
   border?: ChartBorderStyle;
   remark?: ChartRemarkStyle;
   geo?: ChartGeoStyle;
+  pie?: ChartPieStyle;
 };
 
 export function readChartGeoStyle(deStyle: ChartDeStyle) {
   return deStyle.geo ?? {};
+}
+
+export function readChartPieStyle(deStyle: ChartDeStyle): ChartPieStyle {
+  return deStyle.pie ?? {};
 }
 
 export function readChartDeStyle(cfg: ChartViewConfig): ChartDeStyle {
@@ -87,7 +104,155 @@ export function mergeChartTitleStyle(
     override?.color && isOppositeThemeTitleColor(override.color, colorScheme)
       ? { ...override, color: tokens.title }
       : override;
-  return mergeTitleStyle(global, mergedOverride ?? { color: tokens.title });
+  return mergeTitleStyle(global, mergedOverride);
+}
+
+const CHART_TITLE_PRESENTATION_KEYS = [
+  "fontSize",
+  "color",
+  "fontWeight",
+  "align",
+  "letterSpacing",
+  "shadow",
+] as const satisfies ReadonlyArray<keyof TitleStyleConfig>;
+
+function chartTitleHasPresentationOverride(title: NonNullable<ChartDeStyle["title"]>): boolean {
+  return CHART_TITLE_PRESENTATION_KEYS.some((key) => title[key] != null);
+}
+
+/** 清除组件级标题外观 override，保留 show；看板「图表标题」修改后统一跟全局 */
+export function stripChartTitlePresentationOverrides(cfg: ChartViewConfig): ChartViewConfig {
+  const de = readChartDeStyle(cfg);
+  const title = de.title;
+  if (!title || !chartTitleHasPresentationOverride(title)) return cfg;
+
+  const nextTitle = title.show !== undefined ? { show: title.show } : undefined;
+  const nextDe: ChartDeStyle = { ...de };
+  if (nextTitle) nextDe.title = nextTitle;
+  else delete nextDe.title;
+
+  return {
+    ...cfg,
+    nativeBody: {
+      ...cfg.nativeBody,
+      deStyle: nextDe,
+    },
+  };
+}
+
+export function syncChartWidgetsForDashboardTitleStyle(
+  widgets: LayoutWidget[],
+): LayoutWidget[] {
+  return syncChartWidgetsForDashboardScopes(widgets, new Set(["title"]));
+}
+
+export type DashboardWidgetSyncScope =
+  | "title"
+  | "widgetAppearance"
+  | "palette"
+  | "numberFormat"
+  | "queryLimit";
+
+export function inferWidgetSyncScopes(
+  patch: Partial<DashboardStyleConfig>,
+): Set<DashboardWidgetSyncScope> {
+  const scopes = new Set<DashboardWidgetSyncScope>();
+  if (patch.titleStyle) scopes.add("title");
+  if (patch.widgetStyle) scopes.add("widgetAppearance");
+  if (patch.paletteId !== undefined || patch.paletteColors !== undefined) {
+    scopes.add("palette");
+  }
+  if (patch.numberFormat) scopes.add("numberFormat");
+  if (patch.defaultQueryLimit !== undefined) scopes.add("queryLimit");
+  return scopes;
+}
+
+export function syncChartWidgetsForDashboardScopes(
+  widgets: LayoutWidget[],
+  scopes: ReadonlySet<DashboardWidgetSyncScope>,
+): LayoutWidget[] {
+  if (scopes.size === 0) return widgets;
+
+  return widgets.map((widget) => {
+    if (widget.type !== "chart" || !widget.chartConfig) return widget;
+    let cfg = widget.chartConfig;
+
+    if (scopes.has("title")) cfg = stripChartTitlePresentationOverrides(cfg);
+    if (scopes.has("widgetAppearance")) cfg = stripChartWidgetAppearanceOverrides(cfg);
+    if (scopes.has("palette")) cfg = stripChartPaletteOverrides(cfg);
+    if (scopes.has("numberFormat")) cfg = stripChartLabelFormatOverrides(cfg);
+    if (scopes.has("queryLimit")) cfg = stripChartQueryLimitOverride(cfg);
+
+    return cfg === widget.chartConfig ? widget : { ...widget, chartConfig: cfg };
+  });
+}
+
+export function stripChartWidgetAppearanceOverrides(cfg: ChartViewConfig): ChartViewConfig {
+  const de = readChartDeStyle(cfg);
+  if (!de.background && !de.border) return cfg;
+  const nextDe: ChartDeStyle = { ...de };
+  delete nextDe.background;
+  delete nextDe.border;
+  return {
+    ...cfg,
+    nativeBody: {
+      ...cfg.nativeBody,
+      deStyle: nextDe,
+    },
+  };
+}
+
+export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfig {
+  const de = readChartDeStyle(cfg);
+  if (de.paletteId == null && de.paletteOpacity == null) return cfg;
+  const nextDe: ChartDeStyle = { ...de };
+  delete nextDe.paletteId;
+  delete nextDe.paletteOpacity;
+  return {
+    ...cfg,
+    nativeBody: {
+      ...cfg.nativeBody,
+      deStyle: nextDe,
+    },
+  };
+}
+
+export function stripChartLabelFormatOverrides(cfg: ChartViewConfig): ChartViewConfig {
+  const de = readChartDeStyle(cfg);
+  const label = de.label;
+  if (!label || (label.formatType == null && label.thousandSeparator === undefined)) {
+    return cfg;
+  }
+  const nextLabel: ChartLabelStyle = { ...label };
+  delete nextLabel.formatType;
+  delete nextLabel.thousandSeparator;
+  const hasLabel =
+    nextLabel.show !== undefined || nextLabel.fontSize !== undefined;
+  const nextDe: ChartDeStyle = { ...de };
+  if (hasLabel) nextDe.label = nextLabel;
+  else delete nextDe.label;
+  return {
+    ...cfg,
+    nativeBody: {
+      ...cfg.nativeBody,
+      deStyle: nextDe,
+    },
+  };
+}
+
+export function stripChartQueryLimitOverride(cfg: ChartViewConfig): ChartViewConfig {
+  const raw = cfg.nativeBody?.deDisplay;
+  if (!raw || typeof raw !== "object") return cfg;
+  const de = raw as { resultLimit?: string; refreshMode?: string };
+  if (!de.resultLimit) return cfg;
+  const { resultLimit: _removed, ...restDisplay } = de;
+  const nativeBody = { ...cfg.nativeBody };
+  if (Object.keys(restDisplay).length > 0) {
+    nativeBody.deDisplay = restDisplay;
+  } else {
+    delete nativeBody.deDisplay;
+  }
+  return { ...cfg, nativeBody };
 }
 
 export function patchChartDeStyle(

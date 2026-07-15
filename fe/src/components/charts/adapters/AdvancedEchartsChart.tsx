@@ -4,7 +4,7 @@ import type EChartsReact from "echarts-for-react";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
 import { applyEchartsColorSchemeTokens, getEchartsTheme } from "@/lib/echarts-theme";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartDeStyle, readChartGeoStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
+import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
 import { analyzeGeoMapMatch, buildGeoMapPlaceholderEchartsOption, isGeoMapPlaceholderOption } from "@/lib/geoMapChart";
 import { dwHint } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
@@ -70,9 +70,11 @@ export function AdvancedEchartsChart({
 
   const option = useMemo(() => {
     const geoStyle = readChartGeoStyle(deStyle ?? {});
+    const pieStyle = readChartPieStyle(deStyle ?? {});
     let built = buildEchartsOption(spec, capped, columns, {
       geo: geoStyle,
       showLabel,
+      pie: pieStyle,
     });
     if (spec.chartType === "map" && isGeoMapPlaceholderOption(built)) {
       built = buildGeoMapPlaceholderEchartsOption({

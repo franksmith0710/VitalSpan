@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { DeSegmentGroup } from "./dashboardInspectorUi";
+import { DeSegmentGroup, type DeSegmentOption } from "./dashboardInspectorUi";
 import { INSPECTOR_CTRL } from "./inspectorCompact";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +35,7 @@ export function ChartDeSegmentField({
 }: {
   label: string;
   value: string;
-  options: ReadonlyArray<{ value: string; label: string; disabled?: boolean }>;
+  options: ReadonlyArray<DeSegmentOption & { value: string }>;
   columns?: number;
   onChange: (value: string) => void;
 }) {

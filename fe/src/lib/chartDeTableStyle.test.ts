@@ -14,8 +14,8 @@ describe("chartDeTableStyle", () => {
     expect(readChartDeTableStyle(next)).toMatchObject({ pageSize: 20, wordWrap: true });
   });
 
-  it("T-TABLE-STYLE-02: resolveTablePageSize default 50", () => {
-    expect(resolveTablePageSize(cfg)).toBe(50);
+  it("T-TABLE-STYLE-02: resolveTablePageSize default 20", () => {
+    expect(resolveTablePageSize(cfg)).toBe(20);
     expect(resolveTablePageSize(patchChartDeTableStyle(cfg, { pageSize: 100 }))).toBe(100);
   });
 });

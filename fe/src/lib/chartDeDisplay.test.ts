@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
+  dashboardQueryLimitSelectValue,
   parseDeRefreshIntervalSec,
   parseDeResultLimit,
   patchChartDeDisplay,
   readChartDeDisplay,
   resolveChartQueryLimit,
+  selectValueToDashboardQueryLimit,
 } from "@/lib/chartDeDisplay";
 
 const baseCfg: ChartViewConfig = { chartType: "bar", dataSourceId: "ds-1" };
@@ -37,5 +39,13 @@ describe("chartDeDisplay", () => {
     expect(resolveChartQueryLimit(patchChartDeDisplay(baseCfg, { resultLimit: "all" }), {})).toBe(
       10000,
     );
+  });
+
+  it("T-DE-DISP-06: dashboard query limit select round-trip", () => {
+    expect(dashboardQueryLimitSelectValue(undefined)).toBe("100");
+    expect(dashboardQueryLimitSelectValue(10000)).toBe("all");
+    expect(dashboardQueryLimitSelectValue(500)).toBe("500");
+    expect(selectValueToDashboardQueryLimit("all")).toBe(10000);
+    expect(selectValueToDashboardQueryLimit("1000")).toBe(1000);
   });
 });

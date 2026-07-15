@@ -10,7 +10,12 @@ import { CANVAS_BG_DARK_DEFAULT, CANVAS_BG_LIGHT_DEFAULT, isDarkCanvasColor, isD
 import { normalizeDashboardGapConfig } from "./gapPolicy";
 import type { LayoutWidget } from "./layoutUtils";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "./dashboardThemeTokens";
-import { patchChartDeStyleNested, readChartDeStyle } from "@/lib/chartDeStyle";
+import {
+  inferWidgetSyncScopes,
+  patchChartDeStyleNested,
+  readChartDeStyle,
+  syncChartWidgetsForDashboardScopes,
+} from "@/lib/chartDeStyle";
 
 /** 随浅色/深色分别保存的视觉字段（结构类如圆角/间隙不在此列） */
 export type ThemeVariantFields = {
@@ -426,6 +431,33 @@ export function switchDashboardColorScheme(
         normalizeStyleConfigForColorScheme(merged),
       ),
     },
+  });
+}
+
+/** 看板配置变更：写 styleConfig 并清除图表组件级同类 override */
+export function applyDashboardStylePatch(
+  styleConfig: DashboardStyleConfig,
+  widgets: LayoutWidget[],
+  patch: Partial<DashboardStyleConfig>,
+): { styleConfig: DashboardStyleConfig; widgets: LayoutWidget[] } {
+  const scopes = inferWidgetSyncScopes(patch);
+  return {
+    styleConfig: patchDashboardStyle(styleConfig, patch),
+    widgets:
+      scopes.size > 0
+        ? syncChartWidgetsForDashboardScopes(widgets, scopes)
+        : widgets,
+  };
+}
+
+/** @deprecated 使用 applyDashboardStylePatch */
+export function applyDashboardTitleStylePatch(
+  styleConfig: DashboardStyleConfig,
+  widgets: LayoutWidget[],
+  patch: Partial<TitleStyleConfig>,
+): { styleConfig: DashboardStyleConfig; widgets: LayoutWidget[] } {
+  return applyDashboardStylePatch(styleConfig, widgets, {
+    titleStyle: { ...styleConfig.titleStyle, ...patch },
   });
 }
 

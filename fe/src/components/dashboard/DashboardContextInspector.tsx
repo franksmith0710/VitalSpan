@@ -1,13 +1,17 @@
 import { cn } from "@/lib/utils";
 import type { Linkage } from "./dashboardFilterUtils";
 import {
+  DASHBOARD_CONFIG_RAIL_CONTENT_CLASS,
+  DASHBOARD_CONFIG_RAIL_SCROLL_CLASS,
+} from "./dashboardEditRailLayout";
+import {
   DashboardLinkageSection,
   DashboardStyleSections,
   DashboardWidgetStyleSections,
 } from "./dashboardConfigPanels";
 import type { DashboardStyleConfig, LayoutWidget } from "./layoutUtils";
 import {
-  patchDashboardStyle,
+  applyDashboardStylePatch,
   switchDashboardThemeBundle,
 } from "./dashboardThemeVariants";
 
@@ -44,7 +48,9 @@ export function DashboardContextInspector({
   isPixelLayout = false,
 }: DashboardContextInspectorProps) {
   const patchStyle = (patch: Partial<DashboardStyleConfig>) => {
-    onStyleChange(patchDashboardStyle(styleConfig, patch));
+    const bundle = applyDashboardStylePatch(styleConfig, widgets, patch);
+    onStyleChange(bundle.styleConfig);
+    onWidgetsChange?.(bundle.widgets);
   };
 
   return (
@@ -54,14 +60,17 @@ export function DashboardContextInspector({
     >
       {!embedded ? (
         <div className="shrink-0 border-b border-gray-100 px-4 py-3 dark:border-white/[0.06]">
-          <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">仪表板配置</p>
-          <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-            {widgetCount > 0 ? `${widgetCount} 个组件` : "点击画布空白处编辑看板样式"}
-          </p>
+          <div className={DASHBOARD_CONFIG_RAIL_CONTENT_CLASS}>
+            <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">仪表板配置</p>
+            <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+              {widgetCount > 0 ? `${widgetCount} 个组件` : "点击画布空白处编辑看板样式"}
+            </p>
+          </div>
         </div>
       ) : null}
 
-      <div className="dashboard-config-rail min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div className={DASHBOARD_CONFIG_RAIL_SCROLL_CLASS}>
+        <div className={DASHBOARD_CONFIG_RAIL_CONTENT_CLASS}>
         <DashboardStyleSections
           styleConfig={styleConfig}
           patchStyle={patchStyle}
@@ -86,6 +95,7 @@ export function DashboardContextInspector({
           onLinkageChange={onLinkageChange}
           linkageDefaultOpen={linkageDefaultOpen}
         />
+        </div>
       </div>
     </div>
   );

@@ -2,6 +2,15 @@ import type { CSSProperties, ReactNode } from "react";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
+export type DeSegmentOption = {
+  value: string | boolean;
+  label: ReactNode;
+  /** 图标项必填；纯文案可省略 */
+  ariaLabel?: string;
+  disabled?: boolean;
+  style?: CSSProperties;
+};
+
 /** 看板配置栏（~432px）TailAdmin 密度 */
 export const DE_CTRL =
   "h-9 w-full rounded-lg border-gray-200 bg-white text-theme-xs shadow-theme-xs dark:border-gray-700 dark:bg-white/[0.03]";
@@ -70,43 +79,54 @@ export function DeSegmentGroup({
   onChange,
   columns,
   className,
+  sizing = "fill",
 }: {
   value: string | boolean;
-  options: ReadonlyArray<{
-    value: string | boolean;
-    label: string;
-    disabled?: boolean;
-    style?: CSSProperties;
-  }>;
+  options: ReadonlyArray<DeSegmentOption>;
   onChange: (value: string | boolean) => void;
   columns?: number;
   className?: string;
+  /** fill：撑满栏宽；fit：按文案收窄，适合 432px 看板配置 */
+  sizing?: "fill" | "fit";
 }) {
   const cols = columns ?? Math.min(options.length, 4);
+  const fitCell =
+    cols >= 4 ? "minmax(3.75rem, 5.25rem)" : "minmax(4.25rem, 6.25rem)";
 
   return (
     <div
       className={cn(
         "grid gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-white/[0.06]",
+        sizing === "fit" && "inline-grid w-fit max-w-full",
         className,
       )}
-      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      style={{
+        gridTemplateColumns:
+          sizing === "fit"
+            ? `repeat(${cols}, ${fitCell})`
+            : `repeat(${cols}, minmax(0, 1fr))`,
+      }}
       role="group"
     >
       {options.map((opt) => {
         const selected = value === opt.value;
+        const isTextLabel = typeof opt.label === "string";
+        const ariaLabel = opt.ariaLabel ?? (isTextLabel ? String(opt.label) : undefined);
         return (
           <button
             key={String(opt.value)}
             type="button"
             aria-pressed={selected}
+            aria-label={ariaLabel}
+            title={ariaLabel}
             disabled={opt.disabled}
             style={opt.style}
             onClick={() => {
               if (!opt.disabled) onChange(opt.value);
             }}
             className={cn(
-              "min-h-8 rounded-md px-2 py-1.5 text-center text-[11px] font-medium leading-tight transition-all",
+              "flex min-h-8 items-center justify-center rounded-md py-1.5 text-center text-[11px] font-medium leading-tight transition-all",
+              isTextLabel ? "px-2" : "px-1.5",
               "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 focus-visible:ring-offset-1",
               selected
                 ? "bg-white text-brand-600 shadow-theme-xs dark:bg-gray-900 dark:text-brand-300"
@@ -190,7 +210,7 @@ export function DeAttrRadioGroup({
   className,
 }: {
   value: string | boolean;
-  options: ReadonlyArray<{ value: string | boolean; label: string; disabled?: boolean }>;
+  options: ReadonlyArray<{ value: string | boolean; label: ReactNode; ariaLabel?: string; disabled?: boolean }>;
   onChange: (value: string | boolean) => void;
   className?: string;
 }) {

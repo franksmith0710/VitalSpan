@@ -17,6 +17,7 @@ export function SpacingModeToggle({
       <DeSegmentGroup
         value={mode}
         columns={2}
+        sizing="fit"
         options={[
           { value: "unified", label: "统一值" },
           { value: "individual", label: "分边" },

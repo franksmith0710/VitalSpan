@@ -6,23 +6,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DebouncedNumberInput } from "@/components/ui/debounced-number-input";
+import {
+  CHART_RESULT_LIMIT_OPTIONS,
+  dashboardQueryLimitSelectValue,
+  selectValueToDashboardQueryLimit,
+} from "@/lib/chartDeDisplay";
 import {
   DASHBOARD_FONT_OPTIONS,
-  DASHBOARD_QUERY_LIMIT_PRESETS,
   DASHBOARD_REFRESH_PRESETS,
   buildDashboardGapPatch,
   dashboardFontSelectValue,
   resolveDashboardFontOptionValue,
   resolveDashboardGapUiState,
-  resolveDashboardQueryLimitPreset,
   resolveDashboardRefreshPreset,
   type DashboardStyleConfig,
   type GapPreset,
 } from "./dashboardStyleConfig";
 import { resolveDashboardChrome, type DashboardChromeConfig } from "./dashboardChromeConfig";
 import {
-  DE_INPUT,
   DE_SELECT,
   DeAttrField,
   DeAttrForm,
@@ -31,7 +32,7 @@ import {
   DeAttrToggleSection,
   DeSegmentGroup,
 } from "./dashboardInspectorUi";
-import { DeProgressSlider } from "./deAttrSlider";
+import { DeAttrSliderField, DeProgressSlider } from "./deAttrSlider";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -63,6 +64,7 @@ function GapControls({
       <DeSegmentGroup
         value={hasGap}
         columns={2}
+        sizing="fit"
         options={[
           { value: true, label: "有间隙" },
           { value: false, label: "无间隙" },
@@ -74,6 +76,7 @@ function GapControls({
           <DeSegmentGroup
             value={preset}
             columns={4}
+            sizing="fit"
             options={[
               { value: "sm", label: "小" },
               { value: "md", label: "中" },
@@ -99,18 +102,6 @@ function GapControls({
                   if (next != null) onCustomPx(next);
                 }}
                 onChange={onCustomPx}
-              />
-              <Input
-                type="number"
-                min={0}
-                max={customMax}
-                className={DE_INPUT}
-                aria-label="自定义间隙像素"
-                value={Math.max(0, customPx)}
-                onChange={(e) => {
-                  const next = Number(e.target.value);
-                  if (!Number.isNaN(next)) onCustomPx(Math.min(customMax, Math.max(0, next)));
-                }}
               />
               <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">
                 对标 DataEase：每侧 padding 为设定值，相邻间距约为 2 倍；像素自定义 0–{customMax}px，栅格 0–48px。
@@ -173,7 +164,9 @@ function RefreshField({
 }) {
   const preset = resolveDashboardRefreshPreset(refreshIntervalSec);
   const customMin =
-    preset === "custom" && refreshIntervalSec ? Math.max(1, Math.round(refreshIntervalSec / 60)) : "";
+    preset === "custom" && refreshIntervalSec
+      ? Math.max(1, Math.round(refreshIntervalSec / 60))
+      : 5;
 
   return (
     <DeAttrField label="刷新频率" hint="分享页整体刷新">
@@ -197,18 +190,21 @@ function RefreshField({
         </SelectContent>
       </Select>
       {preset === "custom" ? (
-        <Input
-          type="number"
-          min={1}
-          max={1440}
-          className={`${DE_INPUT} mt-2`}
-          placeholder="自定义分钟数"
-          value={customMin}
-          onChange={(e) => {
-            const min = e.target.value ? Number(e.target.value) : 0;
-            onChange(min > 0 ? min * 60 : undefined);
-          }}
-        />
+        <div className="mt-2 space-y-1" data-testid="dashboard-refresh-custom-slider">
+          <div className="flex items-center justify-between gap-2 text-[11px] text-gray-500 dark:text-gray-400">
+            <span>自定义间隔</span>
+            <span className="tabular-nums">{customMin}分钟</span>
+          </div>
+          <DeProgressSlider
+            min={1}
+            max={120}
+            step={1}
+            value={customMin}
+            ariaLabel="自定义刷新间隔"
+            ariaValuetext={`${customMin}分钟`}
+            onChange={(min) => onChange(min > 0 ? min * 60 : undefined)}
+          />
+        </div>
       ) : null}
     </DeAttrField>
   );
@@ -221,37 +217,25 @@ function QueryLimitField({
   defaultQueryLimit?: number;
   onChange: (limit: number) => void;
 }) {
-  const preset = resolveDashboardQueryLimitPreset(defaultQueryLimit);
-  const limit = defaultQueryLimit ?? 100;
+  const selectValue = dashboardQueryLimitSelectValue(defaultQueryLimit);
 
   return (
-    <DeAttrField label="图表结果" hint="仪表板默认">
+    <DeAttrField label="结果展示" compact hint="看板默认">
       <Select
-        value={preset}
-        onValueChange={(next) => {
-          if (next !== "custom") onChange(Number(next));
-        }}
+        value={selectValue}
+        onValueChange={(next) => onChange(selectValueToDashboardQueryLimit(next))}
       >
-        <SelectTrigger className={DE_SELECT} aria-label="图表结果数量">
-          <SelectValue />
+        <SelectTrigger className={DE_SELECT} aria-label="结果展示">
+          <SelectValue placeholder="请选择" />
         </SelectTrigger>
         <SelectContent>
-          {DASHBOARD_QUERY_LIMIT_PRESETS.map((opt) => (
-            <SelectItem key={opt.label} value={opt.value}>
+          {CHART_RESULT_LIMIT_OPTIONS.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
               {opt.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      {preset === "custom" ? (
-        <DebouncedNumberInput
-          min={1}
-          max={10000}
-          className={`${DE_INPUT} mt-2`}
-          value={limit}
-          onCommit={(value) => onChange(value || 100)}
-        />
-      ) : null}
     </DeAttrField>
   );
 }
@@ -275,24 +259,23 @@ export function DashboardOverallConfigPanel({
         onChange={(fontFamily) => patchStyle({ fontFamily })}
       />
 
-      <DeAttrField label="组件圆角" hint="px">
-        <Input
-          type="number"
-          min={0}
-          max={48}
-          className={DE_INPUT}
-          placeholder="跟随主题"
-          value={ws.borderRadius ?? ""}
-          onChange={(e) =>
-            patchStyle({
-              widgetStyle: {
-                ...ws,
-                borderRadius: e.target.value ? Number(e.target.value) : undefined,
-              },
-            })
-          }
-        />
-      </DeAttrField>
+      <DeAttrSliderField
+        label="组件圆角"
+        value={ws.borderRadius}
+        fallback={8}
+        min={0}
+        max={48}
+        step={1}
+        unit="px"
+        onChange={(borderRadius) =>
+          patchStyle({
+            widgetStyle: {
+              ...ws,
+              borderRadius,
+            },
+          })
+        }
+      />
 
       <GapControls
         hasGap={gapUi.hasGap}
@@ -314,6 +297,7 @@ export function DashboardOverallConfigPanel({
         <DeSegmentGroup
           value={scaleMode}
           columns={2}
+          sizing="fit"
           options={[
             { value: "canvas", label: "画布比例" },
             { value: "component", label: "组件比例" },

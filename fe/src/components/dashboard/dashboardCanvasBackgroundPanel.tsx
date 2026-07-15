@@ -83,7 +83,7 @@ export function DashboardCanvasBackgroundPanel({
       </DeAttrField>
 
       <DeAttrField label="背景装饰">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid w-fit max-w-full grid-cols-[repeat(2,minmax(9.5rem,11rem))] gap-2">
           {CANVAS_BG_DECOR_PRESETS.map((preset) => {
             const selected = decorId === preset.id;
             return (

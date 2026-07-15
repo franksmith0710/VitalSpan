@@ -23,7 +23,9 @@ type EmbeddedChartTableProps = {
 function scrollbarStyle(color?: string): CSSProperties | undefined {
   if (!color) return undefined;
   return {
-    scrollbarColor: `${color} transparent`,
+    ["--dashboard-scroll-thumb" as string]: color,
+    ["--dashboard-scroll-thumb-hover" as string]: color,
+    scrollbarColor: `${color} var(--dashboard-scroll-track, transparent)`,
   };
 }
 
@@ -53,15 +55,18 @@ export function EmbeddedChartTable({
     ? rows.slice((page - 1) * pageSize, page * pageSize)
     : rows;
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const columnWidthMode = tableStyle.columnWidthMode ?? "auto";
+  const useFixedLayout = columnWidthMode === "fixed" || columnWidthMode === "custom";
   const equalPct = displayCols.length > 0 ? 100 / displayCols.length : 100;
 
-  const resolveColWidth = (col: string): string => {
-    if (tableStyle.columnWidthMode === "custom") {
+  const resolveColWidth = (col: string): string | undefined => {
+    if (columnWidthMode === "custom") {
       const custom = tableStyle.columnWidths?.[col];
       if (custom != null && custom > 0) return `${custom}%`;
       return `${equalPct}%`;
     }
-    return `${equalPct}%`;
+    if (columnWidthMode === "fixed") return `${equalPct}%`;
+    return undefined;
   };
   const cellClass = cn(
     dwTableCell,
@@ -85,16 +90,19 @@ export function EmbeddedChartTable({
       >
         <table
           className={cn(
-            "dashboard-chart-table w-full table-fixed text-left",
-            tableStyle.columnWidthMode === "fixed" ? "min-w-full" : "min-w-0",
+            "dashboard-chart-table w-full text-left",
+            useFixedLayout ? "table-fixed min-w-full" : "table-auto min-w-0",
             panel ? "min-w-[320px]" : "w-full",
           )}
         >
-          <colgroup>
-            {displayCols.map((c) => (
-              <col key={c} style={{ width: resolveColWidth(c) }} />
-            ))}
-          </colgroup>
+          {useFixedLayout ? (
+            <colgroup>
+              {displayCols.map((c) => {
+                const width = resolveColWidth(c);
+                return <col key={c} style={width ? { width } : undefined} />;
+              })}
+            </colgroup>
+          ) : null}
           <thead className="sticky top-0 z-[1] bg-[var(--dashboard-table-header-bg,#f9fafb)]">
             <tr>
               {displayCols.map((c) => (

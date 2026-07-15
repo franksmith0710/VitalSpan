@@ -24,6 +24,7 @@ type EChartsOption = Record<string, unknown>;
 export type BuildEchartsStyleContext = {
   geo?: GeoChartStyle;
   showLabel?: boolean;
+  pie?: { innerRadiusPercent?: number };
 };
 
 export const FALLBACK_CHART_TYPE = "table";
@@ -246,6 +247,7 @@ export function buildPieOption(
   spec: RenderSpec,
   rows: unknown[][],
   columns: string[],
+  style?: BuildEchartsStyleContext,
 ): EChartsOption {
   if (rows.length === 0) return { series: [], dataset: { source: [] } };
   const dim = spec.encoding.dimensions[0]?.field ?? "";
@@ -256,8 +258,11 @@ export function buildPieOption(
     name: di !== null ? String(r[di] ?? "") : "",
     value: mi !== null ? Number(r[mi] ?? 0) : 0,
   }));
+  const outer = "70%";
   const radius: string | string[] =
-    spec.styleVariant === "donut" ? ["40%", "70%"] : "70%";
+    spec.styleVariant === "donut"
+      ? [`${style?.pie?.innerRadiusPercent ?? 40}%`, outer]
+      : outer;
   return { series: [{ type: "pie", radius, data }] };
 }
 
@@ -288,7 +293,7 @@ export function buildEchartsOption(
     case "gauge":
       return buildGaugeOption(spec, capped, columns);
     case "pie":
-      return buildPieOption(spec, capped, columns);
+      return buildPieOption(spec, capped, columns, style);
     default:
       return { series: [], dataset: { source: [] } };
   }

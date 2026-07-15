@@ -97,8 +97,9 @@
 
 | 冲突项 | 规则 |
 |--------|------|
-| 配色 | `deStyle.paletteId` > 看板 `paletteId` |
-| 标题样式 | `deStyle.title` > 看板 `titleStyle`；显示开关仅 `deStyle.title.show` |
-| 查询条数 | `deDisplay.resultLimit` > 看板 `defaultQueryLimit` |
-| 数值格式 | `deStyle.label` 格式 > 看板 `numberFormat`（柱/线 tooltip/标签、表格数值列） |
+| 配色 | 看板 `paletteId` 为默认；改看板配置会清除 `deStyle.paletteId/paletteOpacity`；组件单独设置优先直至下次看板修改 |
+| 标题样式 | 看板 `titleStyle` 为默认；改看板配置会清除 `deStyle.title` 外观字段（保留 `show`） |
+| 组件外观 | 看板 `widgetStyle` 为外壳默认；改看板配置会清除 `deStyle.background/border` |
+| 查询条数 | 看板 `defaultQueryLimit` 为默认；改看板配置会清除 `deDisplay.resultLimit` |
+| 数值格式 | 看板 `numberFormat` 为默认；改看板配置会清除 `deStyle.label` 格式字段（保留标签字号/开关） |
 | 刷新 | 组件 `deDisplay.refreshMode` 轮询单图；看板 `refreshIntervalSec` 仅分享页整页 reload |

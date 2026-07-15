@@ -499,6 +499,21 @@ describe("VIZ-004 样式子类型 smoke", () => {
     expect(Array.isArray(radius)).toBe(true);
     expect((radius as unknown[]).length).toBe(2);
   });
+
+  it("T-VIZ-R250-004-03: buildEchartsOption pie donut innerRadiusPercent → 内径可配置", () => {
+    const spec: RenderSpec = {
+      engine: "echarts",
+      chartType: "pie",
+      styleVariant: "donut",
+      encoding: { dimensions: [{ field: "name" }], metrics: [{ field: "val" }] },
+      source: {},
+    };
+    const option = buildEchartsOption(spec, [["A", 10]], ["name", "val"], {
+      pie: { innerRadiusPercent: 52 },
+    });
+    const radius = (option.series as Array<{ radius?: string[] }>)[0].radius;
+    expect(radius).toEqual(["52%", "70%"]);
+  });
 });
 
 describe("VIZ-008 空数据 + 异常态", () => {

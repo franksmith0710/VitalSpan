@@ -216,26 +216,11 @@ export const DASHBOARD_REFRESH_PRESETS = [
   { value: "custom", label: "自定义" },
 ] as const;
 
-export const DASHBOARD_QUERY_LIMIT_PRESETS = [
-  { value: "100", label: "100" },
-  { value: "500", label: "500" },
-  { value: "1000", label: "1000" },
-  { value: "5000", label: "5000" },
-  { value: "10000", label: "10000" },
-  { value: "custom", label: "自定义" },
-] as const;
-
 export function resolveDashboardRefreshPreset(sec?: number): string {
   if (sec == null || sec <= 0) return "off";
   const hit = DASHBOARD_REFRESH_PRESETS.find(
     (p) => p.value !== "off" && p.value !== "custom" && Number(p.value) === sec,
   );
-  return hit?.value ?? "custom";
-}
-
-export function resolveDashboardQueryLimitPreset(limit?: number): string {
-  const value = limit ?? 100;
-  const hit = DASHBOARD_QUERY_LIMIT_PRESETS.find((p) => p.value !== "custom" && Number(p.value) === value);
   return hit?.value ?? "custom";
 }
 
@@ -615,6 +600,7 @@ export function pickWidgetDashboardStyle(
     filterChromeStyle: config.filterChromeStyle,
     filterControlStyle: config.filterControlStyle,
     numberFormat: config.numberFormat,
+    chrome: config.chrome,
   };
 }
 

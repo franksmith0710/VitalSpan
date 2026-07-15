@@ -468,7 +468,7 @@ html.dark {
     calc(0.25rem / var(--pixel-canvas-scale));
 }
 
-.pixel-canvas-host .pixel-shape-body .shape-title :where(.widget-inline-title) {
+.pixel-canvas-host .pixel-shape-body .shape-title :where(.widget-inline-title:not([style*="font-size"])) {
   font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-scale));
   line-height: calc(1.375rem / var(--pixel-canvas-scale));
 }
@@ -813,4 +813,31 @@ html.dark {
 
 .rich-main-class [style*="font-size"] {
   line-height: 1.4;
+}
+
+/* TailAdmin 风格取色器（react-colorful） */
+.vs-color-picker .react-colorful {
+  width: 100%;
+  gap: 12px;
+}
+
+.vs-color-picker .react-colorful__saturation {
+  border-radius: 10px;
+  border-bottom: none;
+  min-height: 140px;
+}
+
+.vs-color-picker .react-colorful__hue {
+  height: 10px;
+  border-radius: 999px;
+}
+
+.vs-color-picker .react-colorful__saturation-pointer,
+.vs-color-picker .react-colorful__hue-pointer {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 12%),
+    0 1px 4px rgb(0 0 0 / 18%);
 }

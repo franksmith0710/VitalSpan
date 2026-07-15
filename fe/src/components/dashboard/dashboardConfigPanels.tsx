@@ -1,4 +1,3 @@
-import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,14 +17,16 @@ import {
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
 import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
 import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
-import { DeAttrField, DeSegmentGroup } from "./dashboardInspectorUi";
+import { DashboardConfigSlider } from "./deAttrSlider";
 import { ColorField } from "@/components/ui/color-field";
 import type { LayoutWidget } from "./layoutUtils";
-import { CHART_PALETTE_PRESETS } from "@/lib/chartPalette";
+import { ChartPalettePicker } from "./ChartPalettePicker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DEFAULT_DRILL_LEVEL_COLORS } from "./dashboardChromeConfig";
-import type { ColorScheme, SpacingMode } from "./dashboardStyleConfig";
+import type { ColorScheme, SpacingMode, TitleStyleConfig } from "./dashboardStyleConfig";
 import { SpacingModeToggle } from "./inspectorSpacing";
+import { DeAttrField, DeAttrToggleRow, DeSegmentGroup } from "./dashboardInspectorUi";
+import { HORIZONTAL_ALIGN_SEGMENT_OPTIONS } from "./inspectorSegmentIcons";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -35,6 +36,9 @@ type StyleSectionProps = {
   isPixelLayout: boolean;
   onSwitchColorScheme?: (scheme: ColorScheme) => void;
 };
+
+const DASHBOARD_GLOBAL_SYNC_HINT =
+  "看板配置为全局默认：修改后会同步全部图表，并清除各组件同类单独设置。单组件可在选中后于右侧单独配置。";
 
 export function DashboardStyleSections({
   styleConfig,
@@ -73,7 +77,10 @@ export function DashboardStyleSections({
   );
 }
 
-export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleSectionProps) {
+export function DashboardWidgetStyleSections({
+  styleConfig,
+  patchStyle,
+}: StyleSectionProps) {
   const ws = styleConfig.widgetStyle ?? {};
   const ts = styleConfig.titleStyle ?? {};
   const nf = styleConfig.numberFormat ?? {};
@@ -89,6 +96,9 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
 
   return (
     <>
+      <p className="border-b border-gray-100 px-2.5 py-2 text-[10px] leading-snug text-gray-400 dark:border-white/[0.06] dark:text-gray-500">
+        {DASHBOARD_GLOBAL_SYNC_HINT}
+      </p>
       <DashboardConfigSection title="图表样式">
         <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
@@ -101,17 +111,16 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
               onChange={(color) => patchWidgetStyle({ background: color })}
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">背景模糊 (px)</Label>
-            <Input
-              type="number"
+          <div className="space-y-1 col-span-2">
+            <DashboardConfigSlider
+              label="背景模糊"
+              value={ws.backdropBlur}
+              fallback={0}
               min={0}
               max={48}
-              className="h-9"
-              value={ws.backdropBlur ?? ""}
-              onChange={(e) =>
-                patchWidgetStyle({ backdropBlur: e.target.value ? Number(e.target.value) : undefined })
-              }
+              step={1}
+              unit="px"
+              onChange={(backdropBlur) => patchWidgetStyle({ backdropBlur })}
             />
           </div>
           <div className="space-y-1 col-span-2">
@@ -132,18 +141,16 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
               onChange={(color) => patchWidgetStyle({ borderColor: color })}
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">透明度</Label>
-            <Input
-              type="number"
+          <div className="space-y-1 col-span-2">
+            <DashboardConfigSlider
+              label="透明度"
+              value={ws.opacity != null ? Math.round(ws.opacity * 100) : undefined}
+              fallback={100}
               min={0}
-              max={1}
-              step={0.1}
-              className="h-9"
-              value={ws.opacity ?? ""}
-              onChange={(e) =>
-                patchWidgetStyle({ opacity: e.target.value ? Number(e.target.value) : undefined })
-              }
+              max={100}
+              step={1}
+              unit="%"
+              onChange={(opacity) => patchWidgetStyle({ opacity: opacity / 100 })}
             />
           </div>
         </div>
@@ -154,37 +161,38 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
           onChange={(paddingMode) => patchWidgetStyle({ paddingMode })}
         />
         {(ws.paddingMode ?? "unified") === "unified" ? (
-          <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">内边距 (px)</Label>
-            <Input
-              type="number"
-              min={0}
-              max={64}
-              className="h-9"
-              value={ws.padding ?? ""}
-              onChange={(e) =>
-                patchWidgetStyle({ padding: e.target.value ? Number(e.target.value) : undefined })
-              }
-            />
-          </div>
+          <DashboardConfigSlider
+            label="内边距"
+            value={ws.padding}
+            fallback={8}
+            min={0}
+            max={64}
+            step={1}
+            unit="px"
+            onChange={(padding) => patchWidgetStyle({ padding })}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {(["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] as const).map((key) => (
-              <div key={key} className="space-y-1">
-                <Label className="text-theme-xs text-gray-500">
-                  {key === "paddingTop" ? "上" : key === "paddingRight" ? "右" : key === "paddingBottom" ? "下" : "左"}
-                </Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={64}
-                  className="h-9"
-                  value={ws[key] ?? ""}
-                  onChange={(e) =>
-                    patchWidgetStyle({ [key]: e.target.value ? Number(e.target.value) : undefined })
-                  }
-                />
-              </div>
+              <DashboardConfigSlider
+                key={key}
+                label={
+                  key === "paddingTop"
+                    ? "上"
+                    : key === "paddingRight"
+                      ? "右"
+                      : key === "paddingBottom"
+                        ? "下"
+                        : "左"
+                }
+                value={ws[key]}
+                fallback={8}
+                min={0}
+                max={64}
+                step={1}
+                unit="px"
+                onChange={(next) => patchWidgetStyle({ [key]: next })}
+              />
             ))}
           </div>
         )}
@@ -195,19 +203,16 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
           onChange={(radiusMode) => patchWidgetStyle({ radiusMode })}
         />
         {(ws.radiusMode ?? "unified") === "unified" ? (
-          <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">圆角 (px)</Label>
-            <Input
-              type="number"
-              min={0}
-              max={48}
-              className="h-9"
-              value={ws.borderRadius ?? ""}
-              onChange={(e) =>
-                patchWidgetStyle({ borderRadius: e.target.value ? Number(e.target.value) : undefined })
-              }
-            />
-          </div>
+          <DashboardConfigSlider
+            label="圆角"
+            value={ws.borderRadius}
+            fallback={8}
+            min={0}
+            max={48}
+            step={1}
+            unit="px"
+            onChange={(borderRadius) => patchWidgetStyle({ borderRadius })}
+          />
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {(
@@ -218,19 +223,17 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
                 ["borderRadiusBottomRight", "右下"],
               ] as const
             ).map(([key, label]) => (
-              <div key={key} className="space-y-1">
-                <Label className="text-theme-xs text-gray-500">{label}</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={48}
-                  className="h-9"
-                  value={ws[key] ?? ""}
-                  onChange={(e) =>
-                    patchWidgetStyle({ [key]: e.target.value ? Number(e.target.value) : undefined })
-                  }
-                />
-              </div>
+              <DashboardConfigSlider
+                key={key}
+                label={label}
+                value={ws[key]}
+                fallback={8}
+                min={0}
+                max={48}
+                step={1}
+                unit="px"
+                onChange={(next) => patchWidgetStyle({ [key]: next })}
+              />
             ))}
           </div>
         )}
@@ -238,56 +241,55 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
       </DashboardConfigSection>
 
       <DashboardConfigSection title="图表配色">
-        <div className="grid grid-cols-2 gap-2">
-          {Object.entries(CHART_PALETTE_PRESETS).map(([id, colors]) => (
-            <button
-              key={id}
-              type="button"
-              className={cn(
-                "rounded-lg border p-2 text-left",
-                styleConfig.paletteId === id || (!styleConfig.paletteId && id === "default")
-                  ? "border-brand-500"
-                  : "border-gray-200 dark:border-gray-700",
-              )}
-              onClick={() => patchStyle({ paletteId: id, paletteColors: [...colors] })}
-            >
-              <span className="text-theme-xs text-gray-600 dark:text-gray-400">
-                {id === "default" ? "默认" : id === "tech" ? "科技" : id === "business" ? "商务" : "暖色"}
-              </span>
-              <div className="mt-1 flex gap-1">
-                {colors.slice(0, 5).map((c) => (
-                  <span key={c} className="size-3 rounded-full" style={{ background: c }} />
-                ))}
-              </div>
-            </button>
-          ))}
-        </div>
+        <ChartPalettePicker
+          value={styleConfig.paletteId ?? "default"}
+          onChange={(paletteId, colors) =>
+            patchStyle({
+              paletteId: paletteId ?? "default",
+              paletteColors: [...colors],
+            })
+          }
+        />
       </DashboardConfigSection>
 
-      <DashboardConfigSection title="图表标题">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">字号</Label>
-            <Input
-              type="number"
-              min={10}
-              max={32}
-              className="h-9"
-              value={ts.fontSize ?? ""}
-              onChange={(e) =>
-                patchTitleStyle({ fontSize: e.target.value ? Number(e.target.value) : undefined })
+      <DashboardConfigSection title="图表标题" data-testid="dashboard-chart-title-style">
+        <div className="space-y-3">
+          <DashboardConfigSlider
+            label="字号"
+            value={ts.fontSize}
+            fallback={14}
+            min={10}
+            max={32}
+            step={1}
+            unit="px"
+            onChange={(fontSize) => patchTitleStyle({ fontSize })}
+          />
+          <ColorField
+            compact
+            allowClear
+            label="颜色"
+            value={ts.color ?? ""}
+            onChange={(color) => patchTitleStyle({ color: color || undefined })}
+          />
+          <DeAttrField label="对齐" compact className="border-b-0 py-0">
+            <DeSegmentGroup
+              value={ts.align ?? "left"}
+              columns={3}
+              sizing="fit"
+              options={HORIZONTAL_ALIGN_SEGMENT_OPTIONS.map((opt) => ({
+                value: opt.value,
+                label: opt.label,
+              }))}
+              onChange={(align) =>
+                patchTitleStyle({ align: align as TitleStyleConfig["align"] })
               }
             />
-          </div>
-          <div className="space-y-1">
-            <ColorField
-              compact
-              allowClear
-              label="颜色"
-              value={ts.color ?? ""}
-              onChange={(color) => patchTitleStyle({ color })}
-            />
-          </div>
+          </DeAttrField>
+          <DeAttrToggleRow
+            label="字体阴影"
+            checked={ts.shadow ?? false}
+            onCheckedChange={(shadow) => patchTitleStyle({ shadow })}
+          />
         </div>
       </DashboardConfigSection>
 
@@ -321,37 +323,39 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
               }
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">控件高度</Label>
-            <Input
-              type="number"
+          <div className="space-y-1 col-span-2">
+            <DashboardConfigSlider
+              label="控件高度"
+              value={fctrl.height}
+              fallback={32}
               min={28}
               max={48}
-              className="h-9"
-              value={fctrl.height ?? ""}
-              onChange={(e) =>
+              step={1}
+              unit="px"
+              onChange={(height) =>
                 patchStyle({
                   filterControlStyle: {
                     ...fctrl,
-                    height: e.target.value ? Number(e.target.value) : undefined,
+                    height,
                   },
                 })
               }
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-theme-xs text-gray-500">控件圆角</Label>
-            <Input
-              type="number"
+          <div className="space-y-1 col-span-2">
+            <DashboardConfigSlider
+              label="控件圆角"
+              value={fctrl.borderRadius}
+              fallback={6}
               min={0}
               max={24}
-              className="h-9"
-              value={fctrl.borderRadius ?? ""}
-              onChange={(e) =>
+              step={1}
+              unit="px"
+              onChange={(borderRadius) =>
                 patchStyle({
                   filterControlStyle: {
                     ...fctrl,
-                    borderRadius: e.target.value ? Number(e.target.value) : undefined,
+                    borderRadius,
                   },
                 })
               }
@@ -393,17 +397,15 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-theme-xs text-gray-500">小数位</Label>
-              <Input
-                type="number"
+            <div className="space-y-1 col-span-2">
+              <DashboardConfigSlider
+                label="小数位"
+                value={nf.decimals}
+                fallback={0}
                 min={0}
                 max={8}
-                className="h-9"
-                value={nf.decimals ?? ""}
-                onChange={(e) =>
-                  patchNumberFormat({ decimals: e.target.value ? Number(e.target.value) : undefined })
-                }
+                step={1}
+                onChange={(decimals) => patchNumberFormat({ decimals })}
               />
             </div>
             <div className="space-y-1">

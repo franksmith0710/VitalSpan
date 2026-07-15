@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { DeAttrField } from "./dashboardInspectorUi";
 
 function sliderPercent(value: number, min: number, max: number): number {
   if (max <= min) return 0;
@@ -254,6 +255,100 @@ export function InspectorSliderField({
       {hint ? (
         <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">{hint}</p>
       ) : null}
+    </div>
+  );
+}
+
+export type DeAttrSliderFieldProps = {
+  label: string;
+  /** 静态说明；未传时在标题行展示当前数值 */
+  hint?: string;
+  value: number | undefined;
+  fallback?: number;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+  compact?: boolean;
+  ariaLabel?: string;
+  className?: string;
+  onChange: (value: number) => void;
+};
+
+/** 432px 看板配置栏：DeAttrField + 数值滑块（对标 DE attr-style） */
+export function DeAttrSliderField({
+  label,
+  hint,
+  value,
+  fallback = 0,
+  min,
+  max,
+  step = 1,
+  unit = "",
+  compact,
+  ariaLabel,
+  className,
+  onChange,
+}: DeAttrSliderFieldProps) {
+  const clamped = clampValue(value ?? fallback, min, max);
+  const [preview, setPreview] = useState<number | null>(null);
+  const shown = preview ?? clamped;
+  const display = unit ? `${shown}${unit}` : String(shown);
+
+  return (
+    <DeAttrField label={label} hint={hint ?? display} compact={compact} className={className}>
+      <DeProgressSlider
+        value={clamped}
+        min={min}
+        max={max}
+        step={step}
+        ariaLabel={ariaLabel ?? label}
+        ariaValuetext={display}
+        onPreview={setPreview}
+        onChange={onChange}
+      />
+    </DeAttrField>
+  );
+}
+
+export type DashboardConfigSliderProps = Omit<DeAttrSliderFieldProps, "hint" | "compact">;
+
+/** 看板配置手风琴内 grid 区块：标签 + 数值 + 滑块 */
+export function DashboardConfigSlider({
+  label,
+  value,
+  fallback = 0,
+  min,
+  max,
+  step = 1,
+  unit = "",
+  ariaLabel,
+  className,
+  onChange,
+}: DashboardConfigSliderProps) {
+  const clamped = clampValue(value ?? fallback, min, max);
+  const [preview, setPreview] = useState<number | null>(null);
+  const shown = preview ?? clamped;
+  const display = unit ? `${shown}${unit}` : String(shown);
+
+  return (
+    <div className={cn("space-y-1", className)}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-theme-xs text-gray-500 dark:text-gray-400">{label}</span>
+        <span className="shrink-0 text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+          {display}
+        </span>
+      </div>
+      <DeProgressSlider
+        value={clamped}
+        min={min}
+        max={max}
+        step={step}
+        ariaLabel={ariaLabel ?? label}
+        ariaValuetext={display}
+        onPreview={setPreview}
+        onChange={onChange}
+      />
     </div>
   );
 }

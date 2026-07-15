@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
 import { fetchChartTypeCatalog, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
 import { styleVariantLabel } from "@/lib/chartStyleSectionRegistry";
+import {
+  DEFAULT_PIE_INNER_RADIUS_PERCENT,
+  patchChartDeStyleNested,
+  PIE_INNER_RADIUS_MAX,
+  PIE_INNER_RADIUS_MIN,
+  readChartDeStyle,
+  readChartPieStyle,
+} from "@/lib/chartDeStyle";
 import { DashboardConfigSection } from "../DashboardConfigSection";
 import { ChartDeSegmentField } from "../chartInspectorDeFields";
+import { ChartDeSliderField } from "../deAttrSlider";
 import { INSPECTOR_SELECT } from "../inspectorCompact";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
@@ -26,6 +35,8 @@ export function ChartVariantBasicSection() {
   const spec = (catalog.length ? catalog : localCatalog).find((c) => c.type === cfg.chartType);
   const variants = spec?.styleVariants ?? ["default"];
   const current = cfg.styleVariant ?? "default";
+  const pieStyle = readChartPieStyle(readChartDeStyle(cfg));
+  const isPieDonut = cfg.chartType === "pie" && current === "donut";
 
   if (variants.length <= 1) return null;
 
@@ -58,6 +69,20 @@ export function ChartVariantBasicSection() {
           </Select>
         </div>
       )}
+      {isPieDonut ? (
+        <ChartDeSliderField
+          label="内径 %"
+          value={pieStyle.innerRadiusPercent}
+          fallback={DEFAULT_PIE_INNER_RADIUS_PERCENT}
+          min={PIE_INNER_RADIUS_MIN}
+          max={PIE_INNER_RADIUS_MAX}
+          step={1}
+          unit="%"
+          onChange={(innerRadiusPercent) =>
+            onChange(patchChartDeStyleNested(cfg, "pie", { innerRadiusPercent }))
+          }
+        />
+      ) : null}
     </DashboardConfigSection>
   );
 }

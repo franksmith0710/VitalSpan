@@ -35,12 +35,35 @@ export const dwStateError =
 export const dwTitle =
   "text-theme-sm font-semibold leading-snug text-[var(--dashboard-title-color,#1d2939)] dark:text-white/90";
 
-/** 像素画布 shape 顶栏标题（字号由 CSS 变量补偿，勿内联 fontSize） */
+/** 像素画布 shape 顶栏标题（默认字号由 CSS 补偿；有配置时走 shapeTitlePresentationStyle） */
 export const dwShapeTitle = cn(dwTitle, "min-w-0 flex-1 truncate");
 
-export function shapeTitlePresentationStyle(style: CSSProperties): CSSProperties {
-  const { fontSize: _fs, lineHeight: _lh, letterSpacing: _ls, ...rest } = style;
-  return rest;
+function parseCssPx(value: string | number | undefined): number | null {
+  if (value == null) return null;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const matched = String(value).trim().match(/^([\d.]+)px$/);
+  return matched ? Number(matched[1]) : null;
+}
+
+/** 像素画布标题：保留 DE 配置字号/字距，并按 canvas scale 反比补偿屏幕观感 */
+export function shapeTitlePresentationStyle(
+  style: CSSProperties,
+  canvasScale = 1,
+): CSSProperties {
+  const scale = canvasScale > 0 ? canvasScale : 1;
+  const { fontSize, lineHeight, letterSpacing, ...rest } = style;
+  const out: CSSProperties = { ...rest };
+
+  const fontPx = parseCssPx(fontSize);
+  if (fontPx != null) {
+    out.fontSize = `${fontPx / scale}px`;
+    const linePx = parseCssPx(lineHeight);
+    out.lineHeight = linePx != null ? `${linePx / scale}px` : 1.25;
+  }
+  const letterPx = parseCssPx(letterSpacing);
+  if (letterPx != null) out.letterSpacing = `${letterPx / scale}px`;
+
+  return out;
 }
 export const dwCaption =
   "text-sm leading-snug text-[var(--dashboard-text-muted,#667085)]";

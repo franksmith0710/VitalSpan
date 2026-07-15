@@ -410,7 +410,7 @@ export function PixelShape({
       >
         <WidgetShapeChrome
           title={widget.title}
-          titleStyle={shapeTitlePresentationStyle(titleStyle)}
+          titleStyle={shapeTitlePresentationStyle(titleStyle, scale)}
           showTitle={showTitle}
           remark={remark}
           mode={mode}

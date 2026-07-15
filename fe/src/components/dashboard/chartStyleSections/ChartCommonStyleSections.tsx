@@ -8,14 +8,14 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColorField } from "@/components/ui/color-field";
-import { CHART_PALETTE_PRESETS } from "@/lib/chartPalette";
 import { formatMetricValue } from "../dashboardStyleConfig";
 import { DashboardConfigSection } from "../DashboardConfigSection";
 import { ChartBackgroundStyleFields } from "../chartStyleFields";
 import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "../chartInspectorDeFields";
 import { ChartDeSliderField } from "../deAttrSlider";
 import { DeAttrToggleRow } from "../dashboardInspectorUi";
-import { INSPECTOR_CTRL, INSPECTOR_SELECT } from "../inspectorCompact";
+import { INSPECTOR_SELECT } from "../inspectorCompact";
+import { ChartPalettePicker } from "../ChartPalettePicker";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
   patchChartDeStyle,
@@ -25,13 +25,10 @@ import {
   readChartShowLabel,
 } from "@/lib/chartDeStyle";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
-
-const LEGEND_POSITIONS = [
-  { value: "top", label: "上" },
-  { value: "bottom", label: "下" },
-  { value: "left", label: "左" },
-  { value: "right", label: "右" },
-] as const;
+import {
+  HORIZONTAL_ALIGN_SEGMENT_OPTIONS,
+  LEGEND_POSITION_SEGMENT_OPTIONS,
+} from "../inspectorSegmentIcons";
 
 const BORDER_STYLES = [
   { value: "solid", label: "实线" },
@@ -45,31 +42,20 @@ export function ChartPaletteStyleSection() {
 
   return (
     <DashboardConfigSection title="配色方案" defaultOpen compact>
-      <ChartDeAttrField label="图表配色">
-        <Select
-          value={deStyle.paletteId ?? "inherit"}
-          onValueChange={(paletteId) =>
-            onChange(
-              patchChartDeStyle(cfg, {
-                paletteId: paletteId === "inherit" ? undefined : paletteId,
-              }),
-            )
-          }
-        >
-          <SelectTrigger className={INSPECTOR_SELECT} aria-label="配色方案">
-            <SelectValue placeholder="跟随看板" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="inherit">跟随看板</SelectItem>
-            {Object.keys(CHART_PALETTE_PRESETS).map((id) => (
-              <SelectItem key={id} value={id}>
-                {id}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </ChartDeAttrField>
+      <ChartPalettePicker
+        showInherit
+        value={deStyle.paletteId}
+        onChange={(paletteId) =>
+          onChange(
+            patchChartDeStyle(cfg, {
+              paletteId,
+            }),
+          )
+        }
+        className="-mt-0.5"
+      />
       <ChartDeSliderField
+        className="pt-1"
         label="配色不透明度 %"
         value={
           deStyle.paletteOpacity != null ? Math.round(deStyle.paletteOpacity * 100) : undefined
@@ -133,11 +119,7 @@ export function ChartTitleStyleSection() {
           label="对齐"
           value={deStyle.title?.align ?? "left"}
           columns={3}
-          options={[
-            { value: "left", label: "左" },
-            { value: "center", label: "中" },
-            { value: "right", label: "右" },
-          ]}
+          options={HORIZONTAL_ALIGN_SEGMENT_OPTIONS}
           onChange={(align) => patchTitle({ align: align as "left" | "center" | "right" })}
         />
         <DeAttrToggleRow
@@ -205,7 +187,7 @@ export function ChartLegendStyleSection() {
           label="位置"
           value={deStyle.legend?.position ?? "bottom"}
           columns={2}
-          options={LEGEND_POSITIONS.map((p) => ({ value: p.value, label: p.label }))}
+          options={LEGEND_POSITION_SEGMENT_OPTIONS}
           onChange={(position) =>
             patchLegend({ position: position as "top" | "bottom" | "left" | "right" })
           }

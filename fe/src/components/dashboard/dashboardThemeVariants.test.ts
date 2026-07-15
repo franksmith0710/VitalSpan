@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyDashboardStylePatch,
+  applyDashboardTitleStylePatch,
   bootstrapDashboardStyleConfig,
   defaultThemeVariant,
   hydrateDashboardStyleConfig,
@@ -213,5 +215,69 @@ describe("dashboardThemeVariants", () => {
       bundle.widgets[0].type === "chart" &&
         bundle.widgets[0].chartConfig?.nativeBody?.deStyle?.background?.background,
     ).toBe("#1e293b");
+  });
+
+  it("applyDashboardTitleStylePatch updates global title and clears chart overrides", () => {
+    const bundle = applyDashboardTitleStylePatch(
+      { titleStyle: { fontSize: 14 } },
+      [
+        {
+          id: "w1",
+          type: "chart",
+          title: "柱图",
+          colSpan: 6,
+          rowSpan: 4,
+          chartConfig: {
+            chartType: "bar",
+            dataSourceId: "ds1",
+            nativeBody: {
+              deStyle: { title: { fontSize: 22, color: "#ff0000" } },
+            },
+          },
+        },
+      ],
+      { fontSize: 18, color: "#334455" },
+    );
+    expect(bundle.styleConfig.titleStyle).toEqual({ fontSize: 18, color: "#334455" });
+    expect(
+      bundle.widgets[0].type === "chart" &&
+        bundle.widgets[0].chartConfig?.nativeBody?.deStyle?.title,
+    ).toBeUndefined();
+  });
+
+  it("applyDashboardStylePatch clears widget appearance and palette overrides", () => {
+    const bundle = applyDashboardStylePatch(
+      { widgetStyle: { padding: 8 }, paletteId: "default" },
+      [
+        {
+          id: "w1",
+          type: "chart",
+          title: "柱图",
+          colSpan: 6,
+          rowSpan: 4,
+          chartConfig: {
+            chartType: "bar",
+            dataSourceId: "ds1",
+            nativeBody: {
+              deStyle: {
+                background: { padding: 4 },
+                paletteId: "ocean",
+                paletteOpacity: 0.8,
+              },
+            },
+          },
+        },
+      ],
+      { widgetStyle: { padding: 12 }, paletteId: "warm" },
+    );
+    expect(bundle.styleConfig.widgetStyle?.padding).toBe(12);
+    expect(bundle.styleConfig.paletteId).toBe("warm");
+    const de =
+      bundle.widgets[0].type === "chart"
+        ? bundle.widgets[0].chartConfig?.nativeBody?.deStyle
+        : undefined;
+    expect(de?.background).toBeUndefined();
+    expect(de?.paletteId).toBeUndefined();
+    expect(de?.paletteOpacity).toBeUndefined();
   });
 });
