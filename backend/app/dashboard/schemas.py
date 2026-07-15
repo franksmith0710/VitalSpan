@@ -122,6 +122,7 @@ class ThemeVariantFields(BaseModel):
     canvas_background_image: str | None = Field(
         default=None, alias="canvasBackgroundImage", max_length=2048
     )
+    canvas_background_custom: bool | None = Field(default=None, alias="canvasBackgroundCustom")
     widget_style: ThemeVariantWidgetStyle | None = Field(default=None, alias="widgetStyle")
     title_style: ThemeVariantTitleStyle | None = Field(default=None, alias="titleStyle")
     filter_chrome_style: FilterChromeStyleConfig | None = Field(
@@ -157,6 +158,7 @@ class DashboardStyleConfig(BaseModel):
     canvas_background_image: str | None = Field(
         default=None, alias="canvasBackgroundImage", max_length=2048
     )
+    canvas_background_custom: bool | None = Field(default=None, alias="canvasBackgroundCustom")
     refresh_interval_sec: int | None = Field(
         default=None, alias="refreshIntervalSec", ge=5, le=3600
     )

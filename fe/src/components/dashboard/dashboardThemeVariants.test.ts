@@ -5,6 +5,7 @@ import {
   hydrateDashboardStyleConfig,
   initializeDualThemePresets,
   normalizeStyleConfigForColorScheme,
+  resolveThemePresetForSwitch,
   switchDashboardColorScheme,
   switchDashboardThemeBundle,
   syncChartWidgetsForColorScheme,
@@ -20,13 +21,18 @@ describe("dashboardThemeVariants", () => {
     expect(next.themeVariants?.dark).toBeDefined();
   });
 
-  it("round-trips custom light accent through variant store", () => {
+  it("round-trips custom §5.3 canvas through variant store", () => {
     const customized = switchDashboardColorScheme(
-      { colorScheme: "light", themeAccent: "#ff0000" },
+      {
+        colorScheme: "light",
+        canvasBackground: "#f1c40f",
+        canvasBackgroundCustom: true,
+      },
       "dark",
     );
     const back = switchDashboardColorScheme(customized, "light");
-    expect(back.themeAccent).toBe("#ff0000");
+    expect(back.canvasBackground).toBe("#f1c40f");
+    expect(back.canvasBackgroundCustom).toBe(true);
   });
 
   it("initializeDualThemePresets seeds both schemes", () => {
@@ -93,6 +99,35 @@ describe("dashboardThemeVariants", () => {
     const light = switchDashboardColorScheme(hydrated, "light");
     expect(light.canvasBackground).toBe(CANVAS_BG_LIGHT_DEFAULT);
     expect(light.widgetStyle?.background).toBe("#ffffff");
+  });
+
+  it("legacy light blue canvas without custom flag resets on theme switch", () => {
+    const dark = bootstrapDashboardStyleConfig({ colorScheme: "dark" });
+    const polluted = {
+      ...dark,
+      themeVariants: {
+        ...dark.themeVariants,
+        light: {
+          canvasBackground: "#eff6ff",
+          widgetStyle: { background: "#ffffff" },
+        },
+      },
+    };
+    const light = switchDashboardColorScheme(polluted, "light");
+    expect(light.canvasBackground).toBe(CANVAS_BG_LIGHT_DEFAULT);
+    expect(light.canvasBackgroundCustom).toBeUndefined();
+  });
+
+  it("custom §5.3 canvas survives theme round-trip", () => {
+    const base = bootstrapDashboardStyleConfig({
+      colorScheme: "light",
+      canvasBackground: "#f1c40f",
+      canvasBackgroundCustom: true,
+    });
+    const dark = switchDashboardColorScheme(base, "dark");
+    const back = switchDashboardColorScheme(dark, "light");
+    expect(back.canvasBackground).toBe("#f1c40f");
+    expect(back.canvasBackgroundCustom).toBe(true);
   });
 
   it("normalize preserves custom title color on same scheme reload", () => {

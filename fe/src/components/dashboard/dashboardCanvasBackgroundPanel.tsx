@@ -51,7 +51,10 @@ export function DashboardCanvasBackgroundPanel({
 
   const commitImageUrl = (next: string) => {
     const trimmed = next.trim();
-    patchStyle({ canvasBackgroundImage: trimmed || undefined });
+    patchStyle({
+      canvasBackgroundImage: trimmed || undefined,
+      canvasBackgroundCustom: Boolean(trimmed),
+    });
   };
 
   const scheduleImageUrlCommit = (next: string) => {
@@ -76,7 +79,9 @@ export function DashboardCanvasBackgroundPanel({
         label="画布底色"
         value={styleConfig.canvasBackground ?? ""}
         swatches={CANVAS_BG_RECOMMENDED}
-        onChange={(color) => patchStyle({ canvasBackground: color })}
+        onChange={(color) =>
+          patchStyle({ canvasBackground: color, canvasBackgroundCustom: true })
+        }
       />
 
       <div className="space-y-2">

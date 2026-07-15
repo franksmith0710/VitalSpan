@@ -15,6 +15,8 @@ import { patchChartDeStyleNested, readChartDeStyle } from "@/lib/chartDeStyle";
 export type ThemeVariantFields = {
   canvasBackground?: string;
   canvasBackgroundImage?: string;
+  /** §5.3「仪表板背景」显式设置时为 true；§5.1 主题卡片不覆盖标准底色 */
+  canvasBackgroundCustom?: boolean;
   themeAccent?: string;
   widgetStyle?: Pick<WidgetStyleConfig, "background" | "borderColor" | "opacity">;
   titleStyle?: Pick<TitleStyleConfig, "color">;
@@ -27,6 +29,7 @@ export type DashboardThemeVariants = Partial<Record<ColorScheme, ThemeVariantFie
 const THEME_ROOT_KEYS = new Set([
   "canvasBackground",
   "canvasBackgroundImage",
+  "canvasBackgroundCustom",
   "themeAccent",
   "widgetStyle",
   "titleStyle",
@@ -67,6 +70,7 @@ export function extractThemeVariant(config: DashboardStyleConfig): ThemeVariantF
   return {
     canvasBackground: config.canvasBackground,
     canvasBackgroundImage: config.canvasBackgroundImage,
+    canvasBackgroundCustom: config.canvasBackgroundCustom,
     themeAccent: config.themeAccent,
     widgetStyle: ws
       ? {
@@ -91,6 +95,7 @@ function mergeThemeVariantIntoConfig(
     ...config,
     canvasBackground: variant.canvasBackground,
     canvasBackgroundImage: variant.canvasBackgroundImage,
+    canvasBackgroundCustom: variant.canvasBackgroundCustom,
     themeAccent: variant.themeAccent,
     widgetStyle: {
       ...config.widgetStyle,
@@ -186,7 +191,32 @@ function ensureThemeVariant(
         Object.entries(variant).filter(([, value]) => value !== undefined),
       ) as ThemeVariantFields)
     : {};
+  if (!defined.canvasBackgroundCustom) {
+    delete defined.canvasBackground;
+    delete defined.canvasBackgroundImage;
+    defined.canvasBackgroundCustom = undefined;
+  }
   return sanitizeThemeVariant({ ...defaults, ...defined }, scheme);
+}
+
+/** DE §5.1 主题卡片：套用标准预设，仅保留 §5.3 自定义背景 */
+export function resolveThemePresetForSwitch(
+  saved: ThemeVariantFields | undefined,
+  scheme: ColorScheme,
+): ThemeVariantFields {
+  const preset = defaultThemeVariant(scheme);
+  if (!saved?.canvasBackgroundCustom) {
+    return preset;
+  }
+  return ensureThemeVariant(
+    {
+      ...preset,
+      canvasBackground: saved.canvasBackground,
+      canvasBackgroundImage: saved.canvasBackgroundImage,
+      canvasBackgroundCustom: true,
+    },
+    scheme,
+  );
 }
 
 function hasPersistedThemeVariants(config: DashboardStyleConfig): boolean {
@@ -382,7 +412,7 @@ export function switchDashboardColorScheme(
     ...config.themeVariants,
     [prevScheme]: extractThemeVariant(normalizeStyleConfigForColorScheme(config)),
   };
-  const loaded = ensureThemeVariant(variants[nextScheme], nextScheme);
+  const loaded = resolveThemePresetForSwitch(variants[nextScheme], nextScheme);
   const merged = mergeThemeVariantIntoConfig(
     { ...config, colorScheme: nextScheme, themeVariants: variants },
     loaded,

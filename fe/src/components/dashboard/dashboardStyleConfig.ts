@@ -99,6 +99,8 @@ export type DashboardStyleConfig = {
   scaleMode?: ScaleMode;
   canvasBackground?: string;
   canvasBackgroundImage?: string;
+  /** §5.3「仪表板背景」显式设置；未设置时 §5.1 主题卡片使用标准底色 */
+  canvasBackgroundCustom?: boolean;
   refreshIntervalSec?: number;
   defaultQueryLimit?: number;
   widgetStyle?: WidgetStyleConfig;
@@ -339,8 +341,12 @@ export function coerceWidgetSurfaceBackground(
 /** colorScheme 与显式底色/组件底不一致时，以 colorScheme 为准（避免「挂了 dark 仍是白底」） */
 export function effectiveCanvasBackground(config: DashboardStyleConfig): string | undefined {
   const scheme = config.colorScheme ?? "light";
+  const hasImage = Boolean(config.canvasBackgroundImage?.trim());
+  const hasCustomSolid = Boolean(config.canvasBackgroundCustom && config.canvasBackground?.trim());
+  if (!hasImage && !hasCustomSolid) return undefined;
+
   const bg = config.canvasBackground?.trim();
-  if (config.canvasBackgroundImage?.trim()) {
+  if (hasImage) {
     if (scheme === "dark" && (!bg || !isDarkCanvasColor(bg))) {
       return CANVAS_BG_DARK_DEFAULT;
     }
@@ -377,7 +383,11 @@ export function resolveCanvasDecorPresetId(config: DashboardStyleConfig): string
 export function patchDecorNoneStyle(
   config: DashboardStyleConfig,
 ): Partial<DashboardStyleConfig> {
-  const patch: Partial<DashboardStyleConfig> = { canvasBackgroundImage: undefined };
+  const patch: Partial<DashboardStyleConfig> = {
+    canvasBackgroundImage: undefined,
+    canvasBackgroundCustom: false,
+    canvasBackground: undefined,
+  };
   const bg = config.canvasBackground?.trim();
   const gradientSoft = CANVAS_BG_DECOR_PRESETS.find((item) => item.id === "gradient-soft");
   if (bg && gradientSoft?.canvasBackground && bg === gradientSoft.canvasBackground) {
@@ -414,6 +424,7 @@ export function patchDecorPresetStyle(
     return {
       canvasBackgroundImage: undefined,
       canvasBackground: preset.canvasBackground,
+      canvasBackgroundCustom: true,
     };
   }
 
@@ -428,6 +439,7 @@ export function patchDecorPresetStyle(
   return {
     canvasBackgroundImage: preset.image,
     canvasBackground: keepSolid ? existing : defaultSolidArtboardColor(scheme),
+    canvasBackgroundCustom: true,
   };
 }
 
@@ -508,7 +520,8 @@ export function styleConfigHasPersistedFields(config: DashboardStyleConfig): boo
 }
 
 export function hasUserCanvasBackground(config: DashboardStyleConfig): boolean {
-  return Boolean(config.canvasBackground?.trim() || config.canvasBackgroundImage?.trim());
+  if (config.canvasBackgroundCustom) return true;
+  return Boolean(config.canvasBackgroundImage?.trim());
 }
 
 /** @deprecated use hasUserCanvasBackground */
@@ -547,22 +560,25 @@ export function canvasChromeUsesDotGrid(config: DashboardStyleConfig): boolean {
 export function canvasBackgroundStyle(config: DashboardStyleConfig): CSSProperties {
   const style: CSSProperties = {};
   const scheme = config.colorScheme ?? "light";
-  const customBackground = config.canvasBackground?.trim();
   const backgroundImage = config.canvasBackgroundImage?.trim();
+  const customSolid =
+    config.canvasBackgroundCustom && config.canvasBackground?.trim()
+      ? config.canvasBackground.trim()
+      : undefined;
 
   if (backgroundImage) {
-    if (customBackground?.startsWith("linear-gradient")) {
-      style.background = customBackground;
+    if (customSolid?.startsWith("linear-gradient")) {
+      style.background = customSolid;
     } else {
-      const fill = customBackground || defaultSolidArtboardColor(scheme);
+      const fill = customSolid || defaultSolidArtboardColor(scheme);
       style.backgroundColor = fill;
     }
     Object.assign(style, resolveDecorImageStyle(backgroundImage, scheme));
     return style;
   }
 
-  if (customBackground) {
-    style.background = customBackground;
+  if (customSolid) {
+    style.background = customSolid;
   }
   return style;
 }

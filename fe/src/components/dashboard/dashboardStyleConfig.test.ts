@@ -14,7 +14,10 @@ import {
 describe("dashboardStyleConfig theme vs background", () => {
   it("canvasBackgroundStyle only reflects explicit user background fields", () => {
     expect(canvasBackgroundStyle({ colorScheme: "dark" })).toEqual({});
-    expect(canvasBackgroundStyle({ canvasBackground: "#f1c40f" })).toEqual({
+    expect(canvasBackgroundStyle({ canvasBackground: "#f1c40f" })).toEqual({});
+    expect(
+      canvasBackgroundStyle({ canvasBackground: "#f1c40f", canvasBackgroundCustom: true }),
+    ).toEqual({
       background: "#f1c40f",
     });
   });
@@ -24,12 +27,14 @@ describe("dashboardStyleConfig theme vs background", () => {
       resolveArtboardStyle({
         colorScheme: "light",
         canvasBackground: "#f1c40f",
+        canvasBackgroundCustom: true,
       }),
     ).toEqual({ background: "#f1c40f" });
     expect(
       resolveArtboardStyle({
         colorScheme: "dark",
         canvasBackground: "#0f172a",
+        canvasBackgroundCustom: true,
       }),
     ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
   });
@@ -39,6 +44,7 @@ describe("dashboardStyleConfig theme vs background", () => {
       resolveArtboardStyle({
         colorScheme: "dark",
         canvasBackground: "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
+        canvasBackgroundCustom: true,
       }),
     ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
   });
@@ -48,6 +54,7 @@ describe("dashboardStyleConfig theme vs background", () => {
       resolveArtboardStyle({
         colorScheme: "dark",
         canvasBackground: "#57617a",
+        canvasBackgroundCustom: true,
       }),
     ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
   });
@@ -57,14 +64,25 @@ describe("dashboardStyleConfig theme vs background", () => {
       resolveArtboardStyle({
         colorScheme: "dark",
         canvasBackground: "#ffffff",
+        canvasBackgroundCustom: true,
       }),
     ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
     expect(
       resolveArtboardStyle({
         colorScheme: "dark",
         canvasBackground: "#eff6ff",
+        canvasBackgroundCustom: true,
       }),
     ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
+  });
+
+  it("resolveArtboardStyle ignores legacy canvas without custom flag", () => {
+    expect(
+      resolveArtboardStyle({
+        colorScheme: "light",
+        canvasBackground: "#eff6ff",
+      }),
+    ).toEqual({ backgroundColor: CANVAS_BG_LIGHT_DEFAULT });
   });
 
   it("resolveArtboardStyle uses theme default only when user background is unset", () => {
@@ -80,6 +98,7 @@ describe("dashboardStyleConfig theme vs background", () => {
     expect(
       canvasBackgroundStyle({
         canvasBackground: "#ffffff",
+        canvasBackgroundCustom: true,
         canvasBackgroundImage: "https://example.com/bg.png",
       }),
     ).toEqual({
@@ -91,11 +110,16 @@ describe("dashboardStyleConfig theme vs background", () => {
   });
 
   it("detects user canvas background for chrome suppression", () => {
-    expect(hasUserCanvasBackground({ canvasBackground: "#abc" })).toBe(true);
+    expect(
+      hasUserCanvasBackground({ canvasBackground: "#abc", canvasBackgroundCustom: true }),
+    ).toBe(true);
+    expect(hasUserCanvasBackground({ canvasBackground: "#abc" })).toBe(false);
     expect(hasUserCanvasBackground({ canvasBackgroundImage: " /a.png " })).toBe(true);
     expect(hasUserCanvasBackground({ colorScheme: "dark" })).toBe(false);
     expect(canvasChromeUsesDotGrid({ colorScheme: "dark" })).toBe(true);
-    expect(canvasChromeUsesDotGrid({ canvasBackground: "#abc" })).toBe(false);
+    expect(
+      canvasChromeUsesDotGrid({ canvasBackground: "#abc", canvasBackgroundCustom: true }),
+    ).toBe(false);
   });
 
   it("formats metrics with thousand separator by default", () => {
