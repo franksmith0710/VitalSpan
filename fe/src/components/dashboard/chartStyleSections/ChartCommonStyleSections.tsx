@@ -8,6 +8,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColorField } from "@/components/ui/color-field";
+import {
+  TEXT_COLOR_RECOMMENDED,
+  WIDGET_BORDER_RECOMMENDED,
+} from "@/components/dashboard/dashboardStyleConfig";
 import { formatMetricValue } from "../dashboardStyleConfig";
 import { DashboardConfigSection } from "../DashboardConfigSection";
 import { ChartBackgroundStyleFields } from "../chartStyleFields";
@@ -45,7 +49,7 @@ export function ChartPaletteStyleSection() {
       <ChartPaletteConfigFields
         dense
         showInherit
-        className="-mt-0.5"
+        className="pb-1"
         paletteId={deStyle.paletteId}
         paletteOpacity={deStyle.paletteOpacity}
         onPaletteChange={(paletteId) =>
@@ -96,6 +100,7 @@ export function ChartTitleStyleSection() {
         <ChartDeAttrField label="字体色">
           <ColorField
             compact
+            swatches={TEXT_COLOR_RECOMMENDED}
             value={deStyle.title?.color ?? ""}
             onChange={(color) => patchTitle({ color: color || undefined })}
           />
@@ -276,6 +281,7 @@ export function ChartBorderStyleSection() {
         <ChartDeAttrField label="颜色">
           <ColorField
             compact
+            swatches={WIDGET_BORDER_RECOMMENDED}
             value={deStyle.border?.color ?? ""}
             onChange={(color) => patchBorder({ color: color || undefined })}
           />

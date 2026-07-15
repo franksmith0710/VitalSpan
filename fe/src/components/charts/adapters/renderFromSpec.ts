@@ -1,5 +1,6 @@
 import type { ChartFieldRef } from "@/lib/chartViewConfig";
 import type { GeoChartStyle } from "@/lib/geoMapChart";
+import { DE_AREA_FILL_OPACITY } from "@/lib/echartsSeriesPresentation";
 import {
   buildGeoHeatmapEchartsOption,
   buildGeoMapEchartsOption,
@@ -166,7 +167,13 @@ function buildTimelineOption(spec: RenderSpec, rows: unknown[][], columns: strin
     tooltip: { trigger: "axis" },
     xAxis: { type: "category", data: points.map((p) => p[0]) },
     yAxis: { type: "value" },
-    series: [{ type: "line", data: points.map((p) => p[1]) }],
+    series: [
+      {
+        type: "line",
+        data: points.map((p) => p[1]),
+        ...applyLineStyleVariant(spec.styleVariant),
+      },
+    ],
   };
 }
 
@@ -211,6 +218,22 @@ export function buildBarOption(
   };
 }
 
+/** 折线子类型：default / area / smooth（与 backend viz builtin 对齐） */
+export function applyLineStyleVariant(styleVariant: string): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  if (styleVariant === "smooth") {
+    patch.smooth = true;
+  }
+  if (styleVariant === "area") {
+    patch.areaStyle = { opacity: DE_AREA_FILL_OPACITY };
+  }
+  if (styleVariant === "stacked") {
+    patch.stack = "total";
+    patch.areaStyle = { opacity: DE_AREA_FILL_OPACITY };
+  }
+  return patch;
+}
+
 export function buildLineOption(
   spec: RenderSpec,
   rows: unknown[][],
@@ -228,11 +251,8 @@ export function buildLineOption(
       type: "line",
       name: metric,
       data,
-      smooth: spec.styleVariant === "smooth",
+      ...applyLineStyleVariant(spec.styleVariant),
     };
-    if (spec.styleVariant === "stacked") {
-      base.stack = "total";
-    }
     return base;
   });
   return {

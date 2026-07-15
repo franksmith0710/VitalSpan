@@ -1,5 +1,5 @@
 import { ColorField } from "@/components/ui/color-field";
-import type { TitleStyleConfig } from "./dashboardStyleConfig";
+import { TEXT_COLOR_RECOMMENDED, type TitleStyleConfig } from "./dashboardStyleConfig";
 import { DeTitleStyleToolbar } from "./deTitleStyleToolbar";
 import { DeAttrField, DeAttrToggleRow } from "./dashboardInspectorUi";
 
@@ -26,6 +26,7 @@ export function DashboardChartTitleStylePanel({ titleStyle, onPatch }: Props) {
         <ColorField
           compact
           allowClear
+          swatches={TEXT_COLOR_RECOMMENDED}
           value={ts.color ?? ""}
           onChange={(color) => onPatch({ color: color || undefined })}
         />

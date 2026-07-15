@@ -164,6 +164,27 @@ export const CANVAS_BG_RECOMMENDED = [
   { color: "#171717", label: "炭黑" },
 ] as const;
 
+/** 组件/图表内容区背景推荐色 */
+export const SURFACE_COLOR_RECOMMENDED = CANVAS_BG_RECOMMENDED;
+
+export const WIDGET_BORDER_RECOMMENDED = [
+  { color: "#e4e7ec", label: "边线灰" },
+  { color: "#d0d5dd", label: "浅灰" },
+  { color: "#98a2b3", label: "中灰" },
+  { color: "#667085", label: "深灰" },
+  { color: "#344054", label: "墨灰" },
+  { color: "#465fff", label: "品牌" },
+] as const;
+
+export const TEXT_COLOR_RECOMMENDED = [
+  { color: "#101828", label: "主文" },
+  { color: "#344054", label: "正文" },
+  { color: "#667085", label: "次要" },
+  { color: "#98a2b3", label: "弱化" },
+  { color: "#f2f4f7", label: "浅字" },
+  { color: "#ffffff", label: "白字" },
+] as const;
+
 export const DASHBOARD_FONT_OPTIONS = [
   { value: "", label: "默认字体 / System" },
   {
@@ -460,17 +481,7 @@ export function coerceWidgetSurfaceBackground(
 ): string | undefined {
   const trimmed = value?.trim();
   if (!trimmed) return colorScheme === "dark" ? WIDGET_SHELL_DARK_DEFAULT : undefined;
-  const normalized = trimmed.toLowerCase();
-  if (colorScheme === "dark") {
-    if (!isDarkWidgetShellColor(trimmed)) return WIDGET_SHELL_DARK_DEFAULT;
-  }
-  if (
-    colorScheme === "light" &&
-    (isDarkWidgetShellColor(trimmed) || normalized === CANVAS_BG_DARK_DEFAULT)
-  ) {
-    return "#ffffff";
-  }
-  return value;
+  return trimmed;
 }
 
 /** colorScheme 与显式底色/组件底不一致时，以 colorScheme 为准（避免「挂了 dark 仍是白底」） */

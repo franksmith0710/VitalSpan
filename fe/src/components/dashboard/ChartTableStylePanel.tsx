@@ -6,6 +6,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ColorField } from "@/components/ui/color-field";
+import { WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import { DashboardConfigSection } from "./DashboardConfigSection";
 import { ChartDeAttrField, ChartDeSegmentField } from "./chartInspectorDeFields";
 import { ChartDeSliderField } from "./deAttrSlider";
@@ -58,6 +59,7 @@ export function ChartTableStylePanel() {
           <ColorField
             compact
             allowClear
+            swatches={WIDGET_BORDER_RECOMMENDED}
             value={tableStyle.borderColor ?? ""}
             onChange={(borderColor) => patch({ borderColor: borderColor || undefined })}
           />
@@ -67,6 +69,7 @@ export function ChartTableStylePanel() {
           <ColorField
             compact
             allowClear
+            swatches={WIDGET_BORDER_RECOMMENDED}
             value={tableStyle.scrollbarColor ?? ""}
             onChange={(scrollbarColor) => patch({ scrollbarColor: scrollbarColor || undefined })}
           />

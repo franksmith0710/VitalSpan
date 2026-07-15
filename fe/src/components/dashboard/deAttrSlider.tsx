@@ -421,6 +421,35 @@ export function DashboardConfigSlider({
   );
 }
 
+/** 2 列 grid 单元：顶行标签+数值、底行通栏滑块，避免窄列横向挤叠 */
+export function DashboardConfigGridSlider({
+  label,
+  value,
+  fallback = 0,
+  min,
+  max,
+  step = 1,
+  unit = "",
+  ariaLabel,
+  className,
+  onChange,
+}: Omit<DashboardConfigSliderProps, "compact">) {
+  return (
+    <ChartDeSliderField
+      label={label}
+      value={value}
+      fallback={fallback}
+      min={min}
+      max={max}
+      step={step}
+      unit={unit}
+      ariaLabel={ariaLabel}
+      className={cn("min-w-0 border-b-0 py-0", className)}
+      onChange={onChange}
+    />
+  );
+}
+
 /** 嵌套区块内带说明的滑块行（间隙/刷新自定义等） */
 export function DeAttrSubSliderRow({
   label,

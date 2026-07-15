@@ -338,7 +338,6 @@ export const ChartRenderer = memo(function ChartRenderer({
       ) : null}
       <div
         className={embedded ? "absolute inset-0 overflow-hidden" : undefined}
-        style={deStyle.paletteOpacity != null ? { opacity: deStyle.paletteOpacity } : undefined}
       >
         {embedded && drill.stack.length > 0 ? (
           <ChartDrillChrome

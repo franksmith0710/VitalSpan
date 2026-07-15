@@ -347,6 +347,25 @@ export function resolveChartContentShellStyle(
   };
 }
 
+/** 将全局 widgetStyle + 图表 deStyle 合并到 shape-inner（对标 DE 单容器） */
+export function mergeShapeInnerPresentation(shell: {
+  outer: ReturnType<typeof mergeWidgetShellStyle>;
+  inner: CSSProperties;
+  innerBackgroundLayer: CSSProperties | null;
+}): { style: CSSProperties; backgroundLayers: Array<CSSProperties | null> } {
+  const merged: CSSProperties = { ...shell.outer.style, ...shell.inner };
+  const hasBackground = Boolean(
+    merged.background || merged.backgroundColor || merged.backgroundImage,
+  );
+  if (!hasBackground) {
+    merged.backgroundColor = "var(--dashboard-widget-surface)";
+  }
+  return {
+    style: merged,
+    backgroundLayers: [shell.outer.backgroundLayer, shell.innerBackgroundLayer],
+  };
+}
+
 export function resolveWidgetShellStyle(
   globalWidgetStyle: DashboardStyleConfig["widgetStyle"] | undefined,
   colorScheme: ColorScheme = "light",

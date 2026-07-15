@@ -1,5 +1,6 @@
 import { ChartPalettePicker } from "./ChartPalettePicker";
 import { ChartDeSliderField } from "./deAttrSlider";
+import { cn } from "@/lib/utils";
 
 type ChartPaletteConfigFieldsProps = {
   paletteId?: string;
@@ -26,7 +27,7 @@ export function ChartPaletteConfigFields({
   const pickerValue = showInherit ? paletteId : paletteId ?? "default";
 
   return (
-    <div className={className}>
+    <div className={cn("space-y-2.5", className)}>
       <ChartPalettePicker
         showInherit={showInherit}
         dense={dense}
@@ -35,7 +36,6 @@ export function ChartPaletteConfigFields({
       />
       {onOpacityChange ? (
         <ChartDeSliderField
-          className={dense ? "pt-1" : "pt-1.5"}
           label="配色不透明度"
           value={
             paletteOpacity != null ? Math.round(paletteOpacity * 100) : undefined

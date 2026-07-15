@@ -8,8 +8,14 @@ export function normalizeHexColor(input: string): string | null {
   return null;
 }
 
+/** 取色面板用：无效/未输完 hex 时保留上一次合法值，避免 react-colorful 闪回 #ffffff */
+export function resolvePickerHex(hex: string, lastValidHex: string): string {
+  return normalizeHexColor(hex) ?? lastValidHex;
+}
+
+/** @deprecated 使用 resolvePickerHex */
 export function pickerHex(hex: string): string {
-  return normalizeHexColor(hex) ?? "#ffffff";
+  return resolvePickerHex(hex, "#ffffff");
 }
 
 export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {

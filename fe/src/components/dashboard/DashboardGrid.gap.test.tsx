@@ -54,3 +54,35 @@ describe("DashboardGrid component gap", () => {
     expect(cell?.className).toContain("dashboard-widget-surface");
   });
 });
+
+describe("DashboardGrid auxiliary grid", () => {
+  it("shows edit overlay when chrome.showAuxiliaryGrid is enabled", () => {
+    render(
+      <DashboardStyleSurface componentGapPx={0}>
+        <DashboardGrid
+          mode="edit"
+          widgets={[widget]}
+          styleConfig={{ chrome: { showAuxiliaryGrid: true } }}
+          onLayoutChange={() => {}}
+          renderWidget={() => <div>body</div>}
+        />
+      </DashboardStyleSurface>,
+    );
+    expect(screen.getByTestId("dashboard-grid-aux-grid")).toBeInTheDocument();
+  });
+
+  it("hides edit overlay when chrome.showAuxiliaryGrid is disabled", () => {
+    render(
+      <DashboardStyleSurface componentGapPx={0}>
+        <DashboardGrid
+          mode="edit"
+          widgets={[widget]}
+          styleConfig={{ chrome: { showAuxiliaryGrid: false } }}
+          onLayoutChange={() => {}}
+          renderWidget={() => <div>body</div>}
+        />
+      </DashboardStyleSurface>,
+    );
+    expect(screen.queryByTestId("dashboard-grid-aux-grid")).not.toBeInTheDocument();
+  });
+});

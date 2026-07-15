@@ -6,6 +6,8 @@ import { ImageSourceField } from "./imageSourceField";
 import { isImageSourceValue } from "./imageSourceUtils";
 import {
   CANVAS_BG_RECOMMENDED,
+  SURFACE_COLOR_RECOMMENDED,
+  TEXT_COLOR_RECOMMENDED,
   CANVAS_TILE_DECOR_PRESETS,
   decorPresetThumbStyle,
   patchDecorPresetStyle,
@@ -145,6 +147,7 @@ export function DashboardCanvasBackgroundPanel({
       <DeAttrField label="弹框背景">
         <ColorField
           compact
+          swatches={SURFACE_COLOR_RECOMMENDED}
           value={styleConfig.dialogStyle?.background ?? ""}
           onChange={(color) =>
             patchStyle({ dialogStyle: { ...styleConfig.dialogStyle, background: color } })
@@ -154,6 +157,7 @@ export function DashboardCanvasBackgroundPanel({
       <DeAttrField label="弹框字体">
         <ColorField
           compact
+          swatches={TEXT_COLOR_RECOMMENDED}
           value={styleConfig.dialogStyle?.fontColor ?? ""}
           onChange={(color) =>
             patchStyle({ dialogStyle: { ...styleConfig.dialogStyle, fontColor: color } })

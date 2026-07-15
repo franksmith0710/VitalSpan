@@ -20,7 +20,16 @@ describe("dashboardChromeConfig", () => {
       showFloatingActions: false,
       showChartLoadingHint: false,
       showChartActionButtons: true,
+      showAuxiliaryGrid: true,
     });
+  });
+
+  it("respects auxiliary grid opt-out", () => {
+    expect(
+      resolveDashboardChrome({
+        chrome: { showAuxiliaryGrid: false },
+      }).showAuxiliaryGrid,
+    ).toBe(false);
   });
 
   it("falls back drill level colors", () => {

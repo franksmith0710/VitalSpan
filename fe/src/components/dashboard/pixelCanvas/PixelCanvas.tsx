@@ -508,7 +508,7 @@ export function PixelCanvas({
                 onMarkGuidesChange={
                   mode === "edit" ? handleMarkGuidesChange : undefined
                 }
-                markLinesEnabled={mode === "edit"}
+                markLinesEnabled={showAuxGrid}
                 snapTargets={layout.widgets.filter((item) => item.id !== widget.id)}
                 viewport={visibleViewport}
                 otherWidgets={layout.widgets.filter((item) => item.id !== widget.id)}
@@ -523,7 +523,7 @@ export function PixelCanvas({
                 />
               </PixelShape>
             ))}
-          {mode === "edit" ? (
+          {mode === "edit" && showAuxGrid ? (
             <PixelMarkLineOverlay guides={markGuides} canvas={viewCanvas} />
           ) : null}
           </div>

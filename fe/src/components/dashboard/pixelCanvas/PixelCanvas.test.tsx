@@ -320,6 +320,32 @@ describe("PixelCanvas", () => {
     expect(screen.getByTestId("pixel-shape-w1")).not.toHaveClass("pixel-shape-selected");
   });
 
+  it("toggles auxiliary grid overlay and mark-line layer from chrome config", () => {
+    const { rerender } = render(
+      <PixelCanvas
+        mode="edit"
+        layout={layout}
+        styleConfig={{ chrome: { showAuxiliaryGrid: true } }}
+        selectedIds={new Set(["w1"])}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    expect(screen.getByTestId("pixel-canvas-aux-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("canvas-mark-line")).toBeInTheDocument();
+
+    rerender(
+      <PixelCanvas
+        mode="edit"
+        layout={layout}
+        styleConfig={{ chrome: { showAuxiliaryGrid: false } }}
+        selectedIds={new Set(["w1"])}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    expect(screen.queryByTestId("pixel-canvas-aux-grid")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("canvas-mark-line")).not.toBeInTheDocument();
+  });
+
   it.each([1, 0.5, 0.25])(
     "keeps resize handles inside the host at scale %s",
     async (expectedScale) => {

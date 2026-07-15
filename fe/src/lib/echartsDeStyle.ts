@@ -2,6 +2,7 @@ import type { EChartsOption } from "echarts";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartDeStyle } from "./chartDeStyle";
 import { echartsTooltipValueFormatter } from "./chartValueFormat";
+import { applyEchartsSeriesPresentation } from "./echartsSeriesPresentation";
 
 const GRID_PAD = 8;
 const LEGEND_ROW_HEIGHT = 24;
@@ -288,6 +289,11 @@ export function applyDeStyleToEchartsOption(
       return series;
     });
   }
+
+  next = applyEchartsSeriesPresentation(next, {
+    embedded: options?.layout?.embedded,
+    paletteOpacity: deStyle.paletteOpacity,
+  });
 
   return next;
 }

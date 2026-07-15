@@ -147,25 +147,11 @@ function sanitizeThemeVariant(
   const defaults = defaultThemeVariant(scheme);
   if (scheme === "dark") {
     if (variant.canvasBackgroundCustom) {
-      const wbg = variant.widgetStyle?.background?.trim();
-      if (!wbg || !isDarkWidgetShellColor(wbg)) {
-        return {
-          ...variant,
-          widgetStyle: { ...variant.widgetStyle, ...defaults.widgetStyle },
-        };
-      }
       return variant;
     }
     const bg = variant.canvasBackground?.trim();
     if (!bg || isLightCanvasColor(bg)) {
       return { ...defaults, ...variant, ...defaults, canvasBackgroundImage: undefined };
-    }
-    const wbg = variant.widgetStyle?.background?.trim();
-    if (!wbg || !isDarkWidgetShellColor(wbg)) {
-      return {
-        ...variant,
-        widgetStyle: { ...variant.widgetStyle, ...defaults.widgetStyle },
-      };
     }
     return variant;
   }
@@ -176,13 +162,6 @@ function sanitizeThemeVariant(
       ...variant,
       canvasBackground: defaults.canvasBackground,
       canvasBackgroundImage: undefined,
-    };
-  }
-  const wbg = variant.widgetStyle?.background?.trim();
-  if (wbg && isDarkWidgetShellColor(wbg)) {
-    return {
-      ...variant,
-      widgetStyle: { ...variant.widgetStyle, ...defaults.widgetStyle },
     };
   }
   return variant;
@@ -388,15 +367,17 @@ export function normalizeStyleConfigForColorScheme(
     patch.canvasDecorPresetId = undefined;
   }
 
-  const wbg = config.widgetStyle?.background?.trim();
-  if (scheme === "dark" && (!wbg || !isDarkWidgetShellColor(wbg))) {
+  const wbg = config.widgetStyle?.background?.trim()?.toLowerCase();
+  const legacyLightShell =
+    wbg === "#ffffff" || wbg === "#fff" || wbg === "white" || wbg === "rgb(255, 255, 255)";
+  if (scheme === "dark" && legacyLightShell) {
     patch.widgetStyle = {
       ...config.widgetStyle,
       background: defaults.widgetStyle?.background,
       borderColor: defaults.widgetStyle?.borderColor,
     };
   }
-  if (scheme === "light" && wbg && isDarkWidgetShellColor(wbg)) {
+  if (scheme === "light" && wbg === WIDGET_SHELL_DARK_DEFAULT) {
     patch.widgetStyle = {
       ...config.widgetStyle,
       background: defaults.widgetStyle?.background,

@@ -22,7 +22,7 @@ const SIZE_CLASS = {
   lg: "size-7",
 } as const;
 
-/** TailAdmin 风格色块：白边 + 细环，空值显示棋盘格 */
+/** TailAdmin 风格色块：棋盘格底 + 细环，浅色/透明在 Popover 白底上仍可见 */
 export function ColorSwatchChip({
   color,
   size = "md",
@@ -33,12 +33,20 @@ export function ColorSwatchChip({
     <span
       className={cn(
         SIZE_CLASS[size],
-        "shrink-0 rounded-[5px] border-2 border-white shadow-theme-xs ring-1 ring-gray-200 dark:border-gray-800 dark:ring-gray-600",
-        selected && "ring-2 ring-brand-500 ring-offset-1 ring-offset-white dark:ring-offset-gray-900",
+        "relative shrink-0 overflow-hidden rounded-[5px] shadow-theme-xs ring-1 ring-gray-300 dark:ring-gray-600",
+        selected &&
+          "ring-2 ring-brand-500 ring-offset-1 ring-offset-white dark:ring-offset-gray-900",
         className,
       )}
-      style={color ? { backgroundColor: color } : CHECKERBOARD_STYLE}
       aria-hidden
-    />
+    >
+      <span className="absolute inset-0" style={CHECKERBOARD_STYLE} />
+      {color ? (
+        <span
+          className="absolute inset-[2px] rounded-[3px] border border-black/[0.06] dark:border-white/10"
+          style={{ backgroundColor: color }}
+        />
+      ) : null}
+    </span>
   );
 }

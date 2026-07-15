@@ -12,12 +12,15 @@ import type { Linkage } from "./dashboardFilterUtils";
 import { LinkageRulesPanel } from "./LinkageRulesPanel";
 import {
   formatMetricValue,
+  SURFACE_COLOR_RECOMMENDED,
+  TEXT_COLOR_RECOMMENDED,
+  WIDGET_BORDER_RECOMMENDED,
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
 import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
 import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
-import { DashboardConfigSlider } from "./deAttrSlider";
+import { DashboardConfigGridSlider, DashboardConfigSlider } from "./deAttrSlider";
 import { ColorField } from "@/components/ui/color-field";
 import type { LayoutWidget } from "./layoutUtils";
 import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
@@ -130,6 +133,7 @@ export function DashboardWidgetStyleSections({
               compact
               allowClear
               label="背景色"
+              swatches={SURFACE_COLOR_RECOMMENDED}
               value={ws.background ?? ""}
               onChange={(color) => patchWidgetStyle({ background: color })}
             />
@@ -159,6 +163,7 @@ export function DashboardWidgetStyleSections({
               compact
               allowClear
               label="边框色"
+              swatches={WIDGET_BORDER_RECOMMENDED}
               value={ws.borderColor ?? ""}
               onChange={(color) => patchWidgetStyle({ borderColor: color })}
             />
@@ -196,7 +201,7 @@ export function DashboardWidgetStyleSections({
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {(["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] as const).map((key) => (
-              <DashboardConfigSlider
+              <DashboardConfigGridSlider
                 key={key}
                 label={
                   key === "paddingTop"
@@ -245,7 +250,7 @@ export function DashboardWidgetStyleSections({
                 ["borderRadiusBottomRight", "右下"],
               ] as const
             ).map(([key, label]) => (
-              <DashboardConfigSlider
+              <DashboardConfigGridSlider
                 key={key}
                 label={label}
                 value={ws[key]}
@@ -302,6 +307,7 @@ export function DashboardWidgetStyleSections({
               compact
               allowClear
               label="标题颜色"
+              swatches={TEXT_COLOR_RECOMMENDED}
               value={fc.titleColor ?? ""}
               onChange={(color) =>
                 patchStyle({ filterChromeStyle: { ...fc, titleColor: color } })
@@ -456,6 +462,7 @@ export function DashboardWidgetStyleSections({
               compact
               allowClear
               label="联动/钻取图标色"
+              swatches={WIDGET_BORDER_RECOMMENDED}
               value={styleConfig.actionIconColor ?? ""}
               onChange={(color) => patchStyle({ actionIconColor: color })}
             />
@@ -469,6 +476,7 @@ export function DashboardWidgetStyleSections({
                   compact
                   allowClear
                   label={`L${index + 1}`}
+                  swatches={TEXT_COLOR_RECOMMENDED}
                   value={styleConfig.drillLevelColors?.[index] ?? fallback}
                   onChange={(color) => {
                     const next = [...(styleConfig.drillLevelColors ?? DEFAULT_DRILL_LEVEL_COLORS)];

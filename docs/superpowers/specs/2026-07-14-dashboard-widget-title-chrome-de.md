@@ -69,11 +69,11 @@ v2 像素画布原先 **仅在选中时** 在 `PixelShape` 拖动手柄内显示
 
 ```text
 PixelShape (flex column)
-├── WidgetShapeChrome   ← 唯一标题层（常驻）
-│   ├── 标题（选中可编辑 / 未选中只读）
-│   └── 备注（deStyle.remark）
-└── pixel-shape-inner
-    └── DashboardWidget shell=shape（无重复标题栏）
+├── pixel-shape-body（结构描边 + 操作轨）
+└── pixel-shape-inner（DE shape-inner：统一 padding/背景/圆角）
+    ├── WidgetShapeChrome   ← 标题 + 备注
+    └── pixel-shape-content
+        └── DashboardWidget shell=shape（无重复标题栏）
 ```
 
 **子 Widget 约定**：`shell === "shape"` 时，Chart / Filter / Text / Media 等 **不再渲染自有 drag-handle 标题**，避免双层顶栏。

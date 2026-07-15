@@ -3,7 +3,7 @@ import { HexColorPicker } from "react-colorful";
 import { Pipette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ColorSwatchChip } from "@/components/ui/color-swatch-chip";
-import { hexToRgb, pickerHex, rgbToHex } from "@/components/ui/color-utils";
+import { hexToRgb, normalizeHexColor, resolvePickerHex, rgbToHex } from "@/components/ui/color-utils";
 
 type ColorPickerPanelProps = {
   value: string;
@@ -51,7 +51,10 @@ function RgbField({
 }
 
 export function ColorPickerPanel({ value, onChange, className }: ColorPickerPanelProps) {
-  const hex = pickerHex(value);
+  const lastValidHexRef = React.useRef("#ffffff");
+  const normalized = normalizeHexColor(value);
+  if (normalized) lastValidHexRef.current = normalized;
+  const hex = resolvePickerHex(value, lastValidHexRef.current);
   const rgb = hexToRgb(hex) ?? { r: 255, g: 255, b: 255 };
   const canEyeDrop = typeof window !== "undefined" && "EyeDropper" in window;
 

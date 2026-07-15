@@ -8,6 +8,7 @@ import {
 import { ColorField } from "@/components/ui/color-field";
 import { ImageSourceField } from "./imageSourceField";
 import type { SpacingMode, WidgetStyleConfig } from "./dashboardStyleConfig";
+import { SURFACE_COLOR_RECOMMENDED } from "./dashboardStyleConfig";
 import {
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
@@ -64,6 +65,7 @@ export function ChartBackgroundStyleFields({ value, onChange }: ChartBackgroundS
         <ColorField
           compact
           allowClear
+          swatches={SURFACE_COLOR_RECOMMENDED}
           value={ws.background ?? ""}
           onChange={(background) => onChange({ background: background || undefined })}
         />

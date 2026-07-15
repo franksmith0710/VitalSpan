@@ -19,6 +19,20 @@
 
 | 字段 | 值 |
 |------|----|
+| phase | DONE |
+| request | shape-inner DE 对齐：标题移入 inner，样式单容器 |
+| type | small-change |
+| plan | docs/automate/plans/2026-07-15-dashboard-shape-inner-de-align.md |
+| status | DONE |
+| last_verified_command | vitest chartDeStyle+WidgetShapeChrome+PixelShape.gap; tsc --noEmit |
+| last_verified_exit_code | 0 |
+| verification_summary | WidgetShapeChrome 入 pixel-shape-inner；mergeShapeInnerPresentation 合并全局+deStyle；body 仅结构描边 |
+| repair_rounds | 0 |
+
+## 上一轮（归档 · WYSIWYG 间隙）
+
+| 字段 | 值 |
+|------|----|
 | phase | A5_EXECUTE (Phase 1 DONE) |
 | request | 看板保存/重开/预览 WYSIWYG — 布局与间隙漂移 |
 | type | bugfix |

@@ -46,7 +46,7 @@ function normalizeSwatches(
 function resolveCommitValue(raw: string): string | undefined {
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
-  return normalizeHexColor(trimmed) ?? trimmed;
+  return normalizeHexColor(trimmed) ?? undefined;
 }
 
 export function ColorField({
@@ -69,9 +69,12 @@ export function ColorField({
 
   onChangeRef.current = onChange;
 
+  // 取色器打开或防抖未 flush 时，本地 draft 优先，避免父级回写导致拖拽跳色
   useEffect(() => {
+    if (open) return;
+    if (timerRef.current != null) return;
     setLocalValue(value);
-  }, [value]);
+  }, [value, open]);
 
   useEffect(
     () => () => {
@@ -113,7 +116,10 @@ export function ColorField({
 
   const applyColor = (next: string) => {
     setLocalValue(next);
-    scheduleCommit(next);
+    const resolved = resolveCommitValue(next);
+    if (resolved === undefined) return;
+    pendingRef.current = resolved;
+    flushCommit();
   };
 
   const displayHex = normalizeHexColor(localValue) ?? localValue;
@@ -159,7 +165,12 @@ export function ColorField({
             onChange={(event) => {
               const next = event.target.value;
               setLocalValue(next);
-              scheduleCommit(next);
+              const resolved = resolveCommitValue(next);
+              if (open) {
+                if (resolved !== undefined) commitNow(resolved);
+                return;
+              }
+              if (resolved !== undefined) scheduleCommit(resolved);
             }}
             onBlur={(event) => {
               const normalized = normalizeHexColor(event.target.value);
@@ -193,13 +204,17 @@ export function ColorField({
           side={compact ? "left" : "bottom"}
           sideOffset={6}
           collisionPadding={12}
-          className="w-[228px] p-2.5"
+          className="w-[228px] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain p-2.5"
         >
           <ColorPickerPanel value={localValue} onChange={applyColor} />
           {items.length > 0 ? (
             <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
               <p className="mb-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">推荐</p>
-              <div className="flex flex-wrap gap-1.5">
+              <div
+                className="grid grid-cols-6 gap-1"
+                role="listbox"
+                aria-label={label ? `${label}推荐色` : "推荐色"}
+              >
                 {items.map((item) => {
                   const selected =
                     normalizeHexColor(localValue) === normalizeHexColor(item.color);
@@ -207,10 +222,17 @@ export function ColorField({
                     <button
                       key={item.color}
                       type="button"
+                      role="option"
+                      aria-selected={selected}
                       title={item.label}
                       aria-label={item.label}
-                      aria-pressed={selected}
-                      className="rounded-md p-0.5 transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:hover:bg-white/5"
+                      className={cn(
+                        "flex size-7 items-center justify-center rounded-md transition-colors",
+                        "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
+                        "dark:hover:bg-white/5",
+                        selected &&
+                          "bg-brand-50/80 ring-1 ring-inset ring-brand-500/50 dark:bg-brand-500/10",
+                      )}
                       onClick={() => applyColor(item.color)}
                     >
                       <ColorSwatchChip color={item.color} size="sm" selected={selected} />

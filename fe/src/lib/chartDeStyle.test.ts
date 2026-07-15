@@ -12,8 +12,10 @@ import {
   stripChartWidgetAppearanceOverrides,
   syncChartWidgetsForDashboardScopes,
   syncChartWidgetsForDashboardTitleStyle,
+  mergeShapeInnerPresentation,
   widgetStyleToContentCss,
 } from "./chartDeStyle";
+import { mergeWidgetShellStyle } from "@/components/dashboard/dashboardStyleConfig";
 
 const baseCfg: ChartViewConfig = { chartType: "bar", dataSourceId: "ds-1" };
 
@@ -174,5 +176,20 @@ describe("dashboard widget style sync", () => {
     expect(stripChartPaletteOverrides(baseCfg)).toBe(baseCfg);
     expect(stripChartLabelFormatOverrides(baseCfg)).toBe(baseCfg);
     expect(stripChartQueryLimitOverride(baseCfg)).toBe(baseCfg);
+  });
+});
+
+describe("mergeShapeInnerPresentation", () => {
+  it("merges global widget shell and chart inner styles onto shape-inner", () => {
+    const outer = mergeWidgetShellStyle({ padding: 12, borderRadius: 8 }, "light");
+    const { surface } = widgetStyleToContentCss({ background: "#f5f5f5" }, "light");
+    const merged = mergeShapeInnerPresentation({
+      outer,
+      inner: surface,
+      innerBackgroundLayer: null,
+    });
+    expect(merged.style.padding).toBe("12px");
+    expect(merged.style.borderRadius).toBe("8px");
+    expect(merged.style.background).toBe("#f5f5f5");
   });
 });

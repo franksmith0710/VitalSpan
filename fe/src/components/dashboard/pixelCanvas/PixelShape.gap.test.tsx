@@ -1,5 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
 import { PixelShape } from "./PixelShape";
 
@@ -60,5 +60,49 @@ describe("PixelShape component gap", () => {
     scope?.setAttribute("data-dashboard-color-scheme", "dark");
     scope?.classList.add("dark");
     expect(outer.className).toContain("bg-transparent");
+  });
+});
+
+describe("PixelShape action rail", () => {
+  it("renders floating action rail when selected in edit mode", () => {
+    render(
+      <DashboardStyleSurface componentGapPx={0}>
+        <PixelShape
+          widget={widget}
+          canvas={canvas}
+          scale={1}
+          mode="edit"
+          selected
+          viewport={{ x: 0, y: 0, width: 1920, height: 1080 }}
+          widgetActions={{ onCopy: vi.fn(), onDelete: vi.fn() }}
+        >
+          <span>body</span>
+        </PixelShape>
+      </DashboardStyleSurface>,
+    );
+
+    expect(screen.getByTestId("pixel-shape-actions-w1")).toBeInTheDocument();
+    expect(screen.getByTestId("pixel-shape-body-w1")).toHaveClass("overflow-visible");
+  });
+
+  it("hides action rail when chrome.showFloatingActions is off", () => {
+    render(
+      <DashboardStyleSurface componentGapPx={0}>
+        <PixelShape
+          widget={widget}
+          canvas={canvas}
+          scale={1}
+          mode="edit"
+          selected
+          viewport={{ x: 0, y: 0, width: 1920, height: 1080 }}
+          widgetActions={{ onCopy: vi.fn() }}
+          styleConfig={{ chrome: { showFloatingActions: false } }}
+        >
+          <span>body</span>
+        </PixelShape>
+      </DashboardStyleSurface>,
+    );
+
+    expect(screen.queryByTestId("pixel-shape-actions-w1")).not.toBeInTheDocument();
   });
 });

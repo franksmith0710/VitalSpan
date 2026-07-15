@@ -18,6 +18,7 @@ import {
 } from "./dashboardGridRgl";
 import type { DashboardStyleConfig } from "./layoutUtils";
 import { resolveWidgetGap } from "./dashboardStyleConfig";
+import { auxiliaryGridOverlayStyle, resolveDashboardChrome } from "./dashboardChromeConfig";
 import { getTopLevelWidgets, sortWidgets } from "./layoutUtils";
 import { gridLayoutToWidgets, widgetsToGridLayout } from "./gridLayoutAdapter";
 import { normalizeGridLayout } from "./gridSnapUtils";
@@ -76,6 +77,8 @@ export function DashboardGrid({
   styleConfig,
 }: DashboardGridProps) {
   const componentGapPx = resolveWidgetGap(styleConfig ?? {});
+  const chrome = resolveDashboardChrome(styleConfig);
+  const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
   const gridMargin: [number, number] = DASHBOARD_GRID_MARGIN;
   const sorted = sortWidgets(widgets);
   const topLevel = useMemo(() => getTopLevelWidgets(sorted), [sorted]);
@@ -193,10 +196,18 @@ export function DashboardGrid({
           onClearSelection?.();
         }}
       >
+        {showAuxGrid ? (
+          <div
+            data-testid="dashboard-grid-aux-grid"
+            className="pointer-events-none absolute inset-0 z-0"
+            style={auxiliaryGridOverlayStyle(styleConfig?.colorScheme ?? "light")}
+            aria-hidden
+          />
+        ) : null}
         {isEmpty ? <DashboardCanvasEmpty dragActive={paletteDragOver} /> : null}
         <DashboardGridPlayerProvider playing={gridPlaying}>
         <DashboardRglCanvas
-          className={cn("layout", isEmpty && "dashboard-grid-empty")}
+          className={cn("layout relative z-[1]", isEmpty && "dashboard-grid-empty")}
           style={isEmpty ? { minHeight: EMPTY_CANVAS_MIN_HEIGHT } : undefined}
           layout={layout}
           editable

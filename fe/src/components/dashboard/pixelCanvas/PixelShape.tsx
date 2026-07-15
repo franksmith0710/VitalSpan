@@ -9,7 +9,7 @@ import {
 } from "react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle, resolveWidgetShellStyle } from "@/lib/chartDeStyle";
+import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle, mergeShapeInnerPresentation, resolveWidgetShellStyle } from "@/lib/chartDeStyle";
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
 import type { DashboardStyleConfig } from "../dashboardStyleConfig";
 import { mergeTitleStyle } from "../dashboardStyleConfig";
@@ -193,6 +193,7 @@ export function PixelShape({
           inner: {} as CSSProperties,
           innerBackgroundLayer: null,
         };
+  const innerPresentation = mergeShapeInnerPresentation(shell);
   const activeRef = useRef<ActiveInteraction | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const displayRef = useRef(widgetRect(widget));
@@ -411,33 +412,8 @@ export function PixelShape({
       ) : null}
       <div
         data-testid={`pixel-shape-body-${widget.id}`}
-        className={cn(
-          "pixel-shape-body relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-gray-200/90 dark:border-gray-700/80",
-          selectedInEdit && "pixel-shape-selected overflow-visible",
-          shell.outer.className,
-        )}
-        style={shell.outer.style}
+        className="pixel-shape-body relative flex min-h-0 min-w-0 flex-1 flex-col overflow-visible"
       >
-        {shell.outer.backgroundLayer ? (
-          <div
-            className="pointer-events-none absolute inset-0 z-0"
-            style={shell.outer.backgroundLayer}
-            aria-hidden
-          />
-        ) : null}
-        <WidgetShapeChrome
-          title={widget.title}
-          titleStyle={shapeTitlePresentationStyle(titleStyle, scale)}
-          showTitle={showTitle}
-          remark={remark}
-          mode={mode}
-          selected={selectedInEdit}
-          widgetId={widget.id}
-          onTitleChange={onTitleChange}
-          onSelectPointerDown={(event) => onSelect?.(widget.id, event.shiftKey)}
-          onDragPointerDown={(event) => startInteraction(event, "move")}
-          onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
-        />
         {mode === "edit" && selected && widgetActions && viewport && chrome.showFloatingActions ? (
           <PixelShapeActionRail
             widget={widget}
@@ -451,31 +427,40 @@ export function PixelShape({
         <PixelShapeInteractionProvider value={startInteraction}>
           <PixelShapePlayerProvider playing={isPlayer}>
             <div
-              className="pixel-shape-inner dashboard-widget-surface relative z-[1] min-h-0 flex-1 overflow-hidden"
-              style={{
-                ...shell.inner,
-                ...(!(shell.inner.background || shell.inner.backgroundColor)
-                  ? {
-                      background:
-                        shell.outer.style.backgroundColor ??
-                        shell.outer.style.background ??
-                        "var(--dashboard-widget-surface)",
-                    }
-                  : null),
-              }}
+              className={cn(
+                "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
+                selectedInEdit && "pixel-shape-selected",
+              )}
+              style={innerPresentation.style}
               data-pixel-no-drag
               onPointerDown={(event) => {
                 if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
               }}
             >
-              {shell.innerBackgroundLayer ? (
-                <div
-                  className="pointer-events-none absolute inset-0 z-0"
-                  style={shell.innerBackgroundLayer}
-                  aria-hidden
-                />
-              ) : null}
-              <div className="relative z-[1] min-h-0 h-full min-w-0 w-full">
+              {innerPresentation.backgroundLayers.map((layer, index) =>
+                layer ? (
+                  <div
+                    key={index}
+                    className="pointer-events-none absolute inset-0 z-0"
+                    style={layer}
+                    aria-hidden
+                  />
+                ) : null,
+              )}
+              <WidgetShapeChrome
+                title={widget.title}
+                titleStyle={shapeTitlePresentationStyle(titleStyle, scale)}
+                showTitle={showTitle}
+                remark={remark}
+                mode={mode}
+                selected={selectedInEdit}
+                widgetId={widget.id}
+                onTitleChange={onTitleChange}
+                onSelectPointerDown={(event) => onSelect?.(widget.id, event.shiftKey)}
+                onDragPointerDown={(event) => startInteraction(event, "move")}
+                onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
+              />
+              <div className="pixel-shape-content relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col">
                 {children}
               </div>
             </div>
