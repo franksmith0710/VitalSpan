@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { DeAttrField, DeAttrForm, DE_INPUT } from "./dashboardInspectorUi";
 import { ColorField } from "@/components/ui/color-field";
 import {
-  CANVAS_BG_DECOR_PRESETS,
   CANVAS_BG_RECOMMENDED,
-  decorPresetPreviewStyle,
+  CANVAS_TILE_DECOR_PRESETS,
+  decorPresetThumbStyle,
   patchDecorPresetStyle,
   resolveCanvasDecorPresetId,
+  resolveCanvasDecorPresetIdForPanel,
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
 
@@ -37,8 +37,12 @@ export function DashboardCanvasBackgroundPanel({
       Boolean(styleConfig.canvasBackgroundImage?.trim()) &&
       resolveCanvasDecorPresetId(styleConfig) === "custom",
   );
-  const decorId = resolveCanvasDecorPresetId(styleConfig);
+  const decorId = resolveCanvasDecorPresetIdForPanel(styleConfig);
   const colorScheme = styleConfig.colorScheme ?? "light";
+  const underlay =
+    styleConfig.canvasBackgroundCustom && styleConfig.canvasBackground?.trim()
+      ? styleConfig.canvasBackground.trim()
+      : undefined;
   const imageUrl = styleConfig.canvasBackgroundImage ?? "";
   const [localImageUrl, setLocalImageUrl] = useState(imageUrl);
   const previewUrl = localImageUrl.trim();
@@ -93,20 +97,20 @@ export function DashboardCanvasBackgroundPanel({
         />
       </DeAttrField>
 
-      <DeAttrField label="背景装饰">
-        <div className="grid grid-cols-2 gap-2">
-          {CANVAS_BG_DECOR_PRESETS.map((preset) => {
+      <DeAttrField label="背景装饰" hint="仅叠加纹理，不改底色">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="背景装饰">
+          {CANVAS_TILE_DECOR_PRESETS.map((preset) => {
             const selected = decorId === preset.id;
             return (
               <button
                 key={preset.id}
                 type="button"
                 className={cn(
-                  "flex flex-col gap-1.5 rounded-lg border p-2 text-left transition-all",
+                  "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2 transition-all",
                   "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30",
                   selected
                     ? "border-brand-500 bg-brand-50/60 shadow-theme-xs dark:border-brand-500 dark:bg-brand-500/10"
-                    : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-transparent",
+                    : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-transparent dark:hover:border-gray-600",
                 )}
                 aria-pressed={selected}
                 onClick={() => {
@@ -114,19 +118,14 @@ export function DashboardCanvasBackgroundPanel({
                   setShowAdvancedUrl(false);
                 }}
               >
-                <span className="flex items-center justify-between gap-1">
-                  <span className="truncate text-[11px] font-medium text-gray-700 dark:text-gray-300">
-                    {preset.label}
-                  </span>
-                  {selected ? (
-                    <Check className="size-3 shrink-0 text-brand-500" aria-hidden />
-                  ) : null}
-                </span>
                 <span
-                  className="h-9 w-full rounded-md border border-gray-200/80 dark:border-gray-700"
-                  style={decorPresetPreviewStyle(preset.id, colorScheme)}
+                  className="size-5 shrink-0 rounded-[4px] border border-gray-200/80 dark:border-gray-600"
+                  style={decorPresetThumbStyle(preset.id, colorScheme, underlay)}
                   aria-hidden
                 />
+                <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                  {preset.label}
+                </span>
               </button>
             );
           })}

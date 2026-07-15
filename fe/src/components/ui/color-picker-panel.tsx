@@ -2,6 +2,7 @@ import * as React from "react";
 import { HexColorPicker } from "react-colorful";
 import { Pipette } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ColorSwatchChip } from "@/components/ui/color-swatch-chip";
 import { hexToRgb, pickerHex, rgbToHex } from "@/components/ui/color-utils";
 
 type ColorPickerPanelProps = {
@@ -28,8 +29,8 @@ function RgbField({
   }, [value]);
 
   return (
-    <div className="flex h-7 min-w-0 items-stretch overflow-hidden rounded-md border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-      <span className="flex w-4 shrink-0 items-center justify-center bg-gray-50 text-[9px] font-semibold uppercase text-gray-400 dark:bg-white/5 dark:text-gray-500">
+    <div className="flex h-7 min-w-0 items-stretch overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-xs dark:border-gray-700 dark:bg-white/[0.03]">
+      <span className="flex w-5 shrink-0 items-center justify-center bg-gray-50 text-[9px] font-semibold uppercase text-gray-400 dark:bg-white/[0.04] dark:text-gray-500">
         {channel}
       </span>
       <input
@@ -84,7 +85,7 @@ export function ColorPickerPanel({ value, onChange, className }: ColorPickerPane
       <div className="mt-2 flex items-center gap-1.5">
         <button
           type="button"
-          className="flex size-7 shrink-0 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+          className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 shadow-theme-xs transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
           onClick={() => void pickFromScreen()}
           disabled={!canEyeDrop}
           title={canEyeDrop ? "从屏幕取色" : "当前浏览器不支持屏幕取色"}
@@ -92,11 +93,7 @@ export function ColorPickerPanel({ value, onChange, className }: ColorPickerPane
         >
           <Pipette className="size-3.5" aria-hidden />
         </button>
-        <span
-          className="size-7 shrink-0 rounded-full border-2 border-white shadow-theme-xs ring-1 ring-gray-200 dark:border-gray-800 dark:ring-gray-700"
-          style={{ backgroundColor: hex }}
-          aria-hidden
-        />
+        <ColorSwatchChip color={hex} size="lg" />
         <div className="grid min-w-0 flex-1 grid-cols-3 gap-1">
           <RgbField channel="r" value={rgb.r} onChange={handleRgbChange} />
           <RgbField channel="g" value={rgb.g} onChange={handleRgbChange} />

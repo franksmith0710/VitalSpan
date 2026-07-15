@@ -14,6 +14,7 @@ import { ChartBackgroundStyleFields } from "../chartStyleFields";
 import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "../chartInspectorDeFields";
 import { ChartDeSliderField } from "../deAttrSlider";
 import { DeAttrToggleRow } from "../dashboardInspectorUi";
+import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 import { INSPECTOR_SELECT } from "../inspectorCompact";
 import { ChartPalettePicker } from "../ChartPalettePicker";
 import { useChartInspector } from "../ChartInspectorContext";
@@ -26,7 +27,6 @@ import {
 } from "@/lib/chartDeStyle";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import {
-  HORIZONTAL_ALIGN_SEGMENT_OPTIONS,
   LEGEND_POSITION_SEGMENT_OPTIONS,
 } from "../inspectorSegmentIcons";
 
@@ -88,45 +88,27 @@ export function ChartTitleStyleSection() {
           onCheckedChange={(show) => patchTitle({ show })}
         />
         <ChartDeAttrField label="文本">
-          <Input
-            className={CHART_DE_INPUT}
-            value={widget.title}
-            onChange={(e) => onTitleChange?.(e.target.value)}
-            aria-label="标题文本"
+          <div className="space-y-2">
+            <Input
+              className={CHART_DE_INPUT}
+              value={widget.title}
+              onChange={(e) => onTitleChange?.(e.target.value)}
+              aria-label="标题文本"
+            />
+            <DeTitleStyleToolbar
+              value={deStyle.title ?? {}}
+              onChange={patchTitle}
+              defaultFontSize={18}
+            />
+          </div>
+        </ChartDeAttrField>
+        <ChartDeAttrField label="字体色">
+          <ColorField
+            compact
+            value={deStyle.title?.color ?? ""}
+            onChange={(color) => patchTitle({ color: color || undefined })}
           />
         </ChartDeAttrField>
-        <div className="grid grid-cols-2 gap-2 border-b border-gray-100 py-2 dark:border-white/[0.06]">
-          <ChartDeSliderField
-            label="字号"
-            className="border-b-0 py-0"
-            value={deStyle.title?.fontSize}
-            fallback={18}
-            min={10}
-            max={48}
-            step={1}
-            unit="px"
-            onChange={(fontSize) => patchTitle({ fontSize })}
-          />
-          <ChartDeAttrField label="颜色" className="border-b-0 py-0">
-            <ColorField
-              compact
-              value={deStyle.title?.color ?? ""}
-              onChange={(color) => patchTitle({ color: color || undefined })}
-            />
-          </ChartDeAttrField>
-        </div>
-        <ChartDeSegmentField
-          label="对齐"
-          value={deStyle.title?.align ?? "left"}
-          columns={3}
-          options={HORIZONTAL_ALIGN_SEGMENT_OPTIONS}
-          onChange={(align) => patchTitle({ align: align as "left" | "center" | "right" })}
-        />
-        <DeAttrToggleRow
-          label="字体阴影"
-          checked={deStyle.title?.shadow ?? false}
-          onCheckedChange={(shadow) => patchTitle({ shadow })}
-        />
       </div>
     </DashboardConfigSection>
   );

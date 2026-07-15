@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import { normalizeHexColor } from "@/components/ui/color-field";
 import {
   CANVAS_BG_DECOR_PRESETS,
+  CANVAS_TILE_DECOR_PRESETS,
   canvasBackgroundStyle,
   decorPresetPreviewStyle,
+  decorPresetThumbStyle,
   patchDecorNoneStyle,
   patchDecorPresetStyle,
   resolveArtboardStyle,
   resolveCanvasDecorPresetId,
+  resolveCanvasDecorPresetIdForPanel,
 } from "./dashboardStyleConfig";
 
 describe("normalizeHexColor", () => {
@@ -19,6 +22,31 @@ describe("normalizeHexColor", () => {
   it("rejects invalid input", () => {
     expect(normalizeHexColor("123")).toBeNull();
     expect(normalizeHexColor("red")).toBeNull();
+  });
+});
+
+describe("resolveCanvasDecorPresetIdForPanel", () => {
+  it("maps legacy gradient decor to none for panel selection", () => {
+    expect(
+      resolveCanvasDecorPresetIdForPanel({
+        canvasDecorPresetId: "gradient-radial",
+        canvasBackgroundCustom: true,
+        canvasBackground: "radial-gradient(ellipse 90% 70% at 50% -10%, #312e81 0%, #0f172a 55%, #020617 100%)",
+      }),
+    ).toBe("none");
+  });
+});
+
+describe("CANVAS_TILE_DECOR_PRESETS", () => {
+  it("excludes gradient presets from panel list", () => {
+    expect(CANVAS_TILE_DECOR_PRESETS.map((item) => item.id)).toEqual([
+      "none",
+      "dots",
+      "grid",
+      "cross",
+      "diagonal",
+    ]);
+    expect(CANVAS_TILE_DECOR_PRESETS).toHaveLength(5);
   });
 });
 
@@ -85,29 +113,49 @@ describe("canvasBackgroundStyle decor tiles", () => {
 });
 
 describe("patchDecorPresetStyle", () => {
-  it("applies default solid fill when picking dots without custom color", () => {
+  it("only sets tile image when picking dots without custom color", () => {
     expect(patchDecorPresetStyle("dots", { colorScheme: "dark" })).toEqual({
       canvasBackgroundImage: expect.stringContaining("data:image/svg+xml"),
-      canvasBackground: "#0f172a",
-      canvasBackgroundCustom: true,
       canvasDecorPresetId: "dots",
     });
   });
 
-  it("preview styles differ between none and gradient", () => {
+  it("preserves user solid underlay when applying tile decor", () => {
+    expect(
+      patchDecorPresetStyle("grid", {
+        colorScheme: "dark",
+        canvasBackground: "#7556b8",
+        canvasBackgroundCustom: true,
+      }),
+    ).toEqual({
+      canvasBackgroundImage: expect.stringContaining("data:image/svg+xml"),
+      canvasBackground: "#7556b8",
+      canvasBackgroundCustom: true,
+      canvasDecorPresetId: "grid",
+    });
+  });
+
+  it("thumb preview uses underlay and tile repeat", () => {
+    const thumb = decorPresetThumbStyle("dots", "dark", "#7556b8");
+    expect(thumb.backgroundColor).toBe("#7556b8");
+    expect(thumb.backgroundImage).toContain("url(");
+    expect(thumb.backgroundRepeat).toBe("repeat");
+  });
+
+  it("preview styles differ between none and dots", () => {
     const none = decorPresetPreviewStyle("none", "light");
-    const gradient = decorPresetPreviewStyle("gradient-soft", "light");
+    const dots = decorPresetPreviewStyle("dots", "light");
     expect(none.backgroundColor).toBe("#ffffff");
-    expect(gradient.background).toContain("linear-gradient");
+    expect(dots.backgroundImage).toContain("url(");
   });
 });
 
 describe("patchDecorNoneStyle", () => {
-  it("clears image and gradient-soft preset background", () => {
-    const gradient = CANVAS_BG_DECOR_PRESETS.find((item) => item.id === "gradient-soft");
+  it("clears image and legacy gradient-soft preset background", () => {
     expect(
       patchDecorNoneStyle({
-        canvasBackground: gradient?.canvasBackground,
+        canvasBackground:
+          "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
         canvasDecorPresetId: "gradient-soft",
         canvasBackgroundCustom: true,
       }),

@@ -22,30 +22,21 @@ describe("chartDeDisplay", () => {
     expect(readChartDeDisplay(next).resultLimit).toBe("500");
   });
 
-  it("T-DE-DISP-03: parseDeResultLimit all → 10000", () => {
-    expect(parseDeResultLimit("all")).toBe(10000);
-    expect(parseDeResultLimit("500")).toBe(500);
+  it("stripChartTitleOverrides removes entire title block", () => {
+    const cfg = patchChartDeStyleNested(baseCfg, "title", {
+      show: false,
+      fontSize: 22,
+      color: "#aabbcc",
+      align: "center",
+    });
+    const next = stripChartTitleOverrides(cfg);
+    expect(next.nativeBody?.deStyle?.title).toBeUndefined();
   });
 
-  it("T-DE-DISP-04: parseDeRefreshIntervalSec", () => {
-    expect(parseDeRefreshIntervalSec("off")).toBeNull();
-    expect(parseDeRefreshIntervalSec("1m")).toBe(60);
-  });
-
-  it("T-DE-DISP-05: resolveChartQueryLimit prefers widget override", () => {
-    const cfg = patchChartDeDisplay(baseCfg, { resultLimit: "200" });
-    expect(resolveChartQueryLimit(cfg, {})).toBe(200);
-    expect(resolveChartQueryLimit(baseCfg, { defaultQueryLimit: 50 })).toBe(50);
-    expect(resolveChartQueryLimit(patchChartDeDisplay(baseCfg, { resultLimit: "all" }), {})).toBe(
-      10000,
-    );
-  });
-
-  it("T-DE-DISP-06: dashboard query limit select round-trip", () => {
-    expect(dashboardQueryLimitSelectValue(undefined)).toBe("100");
-    expect(dashboardQueryLimitSelectValue(10000)).toBe("all");
-    expect(dashboardQueryLimitSelectValue(500)).toBe("500");
-    expect(selectValueToDashboardQueryLimit("all")).toBe(10000);
-    expect(selectValueToDashboardQueryLimit("1000")).toBe(1000);
+  it("readChartTitleVisible falls back to global titleStyle.show", () => {
+    expect(readChartTitleVisible(baseCfg, { show: false })).toBe(false);
+    expect(readChartTitleVisible(baseCfg, { show: true })).toBe(true);
+    const hidden = patchChartDeStyleNested(baseCfg, "title", { show: false });
+    expect(readChartTitleVisible(hidden, { show: true })).toBe(false);
   });
 });

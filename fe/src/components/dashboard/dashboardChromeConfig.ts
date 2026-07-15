@@ -45,7 +45,7 @@ export function resolveDialogScopeStyle(
   return style;
 }
 
-/** 编辑态辅助对齐网格（无用户自定义背景时显示） */
+/** 编辑态辅助对齐网格 */
 export function auxiliaryGridOverlayStyle(scheme: "light" | "dark" = "light"): CSSProperties {
   const stroke = scheme === "dark" ? "%2394a3b8" : "%23cbd5e1";
   const svg = encodeURIComponent(

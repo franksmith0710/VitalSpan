@@ -120,15 +120,23 @@ function boundaryHint(
 
 function resolveShapeTitleState(
   widget: PixelLayoutWidget,
-  styleConfig?: DashboardStyleConfig,
+  styleConfig: DashboardStyleConfig | undefined,
+  mode: "edit" | "view",
 ): {
   showTitle: boolean;
   titleStyle: CSSProperties;
   remark: { show: boolean; text: string };
 } {
+  const chrome = resolveDashboardChrome(styleConfig);
   if (widget.type === "chart") {
+    const chartTitleVisible = readChartTitleVisible(
+      widget.chartConfig,
+      styleConfig?.titleStyle,
+    );
+    const showTitle =
+      mode === "edit" ? chrome.showChartActionButtons : chartTitleVisible;
     return {
-      showTitle: readChartTitleVisible(widget.chartConfig, styleConfig?.titleStyle),
+      showTitle,
       titleStyle: mergeChartTitleStyle(
         styleConfig?.titleStyle,
         widget.chartConfig,
@@ -137,8 +145,9 @@ function resolveShapeTitleState(
       remark: readChartRemark(widget.chartConfig),
     };
   }
+  const showTitle = mode === "edit" ? chrome.showChartActionButtons : true;
   return {
-    showTitle: true,
+    showTitle,
     titleStyle: mergeTitleStyle(styleConfig?.titleStyle),
     remark: { show: false, text: "" },
   };

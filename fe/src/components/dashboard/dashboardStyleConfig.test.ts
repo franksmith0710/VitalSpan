@@ -40,41 +40,57 @@ describe("dashboardStyleConfig theme vs background", () => {
     ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
   });
 
-  it("resolveArtboardStyle coerces gradient canvas when colorScheme is dark", () => {
+  it("resolveArtboardStyle preserves user custom canvas on dark theme", () => {
+    expect(
+      resolveArtboardStyle({
+        colorScheme: "dark",
+        canvasBackground: "#7556b8",
+        canvasBackgroundCustom: true,
+      }),
+    ).toEqual({ background: "#7556b8" });
+    expect(
+      resolveArtboardStyle({
+        colorScheme: "dark",
+        canvasBackground: "radial-gradient(circle at 50% 0%, rgba(99,102,241,0.35) 0%, transparent 55%)",
+        canvasBackgroundCustom: true,
+        canvasDecorPresetId: "gradient-radial",
+      }),
+    ).toMatchObject({
+      background: expect.stringContaining("radial-gradient"),
+    });
+  });
+
+  it("resolveArtboardStyle coerces gradient canvas when colorScheme is dark without custom flag", () => {
     expect(
       resolveArtboardStyle({
         colorScheme: "dark",
         canvasBackground: "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
-        canvasBackgroundCustom: true,
       }),
-    ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
+    ).toEqual({ backgroundColor: CANVAS_BG_DARK_DEFAULT });
   });
 
-  it("resolveArtboardStyle coerces medium-light canvas when colorScheme is dark", () => {
+  it("resolveArtboardStyle coerces medium-light canvas when colorScheme is dark without custom flag", () => {
     expect(
       resolveArtboardStyle({
         colorScheme: "dark",
         canvasBackground: "#57617a",
-        canvasBackgroundCustom: true,
       }),
-    ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
+    ).toEqual({ backgroundColor: CANVAS_BG_DARK_DEFAULT });
   });
 
-  it("resolveArtboardStyle coerces light canvas when colorScheme is dark", () => {
+  it("resolveArtboardStyle coerces light canvas when colorScheme is dark without custom flag", () => {
     expect(
       resolveArtboardStyle({
         colorScheme: "dark",
         canvasBackground: "#ffffff",
-        canvasBackgroundCustom: true,
       }),
-    ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
+    ).toEqual({ backgroundColor: CANVAS_BG_DARK_DEFAULT });
     expect(
       resolveArtboardStyle({
         colorScheme: "dark",
         canvasBackground: "#eff6ff",
-        canvasBackgroundCustom: true,
       }),
-    ).toEqual({ background: CANVAS_BG_DARK_DEFAULT });
+    ).toEqual({ backgroundColor: CANVAS_BG_DARK_DEFAULT });
   });
 
   it("resolveArtboardStyle ignores legacy canvas without custom flag", () => {

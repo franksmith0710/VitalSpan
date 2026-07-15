@@ -157,19 +157,6 @@ function sanitizeThemeVariant(
       return variant;
     }
     const bg = variant.canvasBackground?.trim();
-    const hasCustomDecor = Boolean(
-      variant.canvasBackgroundCustom &&
-        (variant.canvasBackgroundImage?.trim() || variant.canvasDecorPresetId),
-    );
-    if (hasCustomDecor) {
-      const coercedBg =
-        !bg || isLightCanvasColor(bg) ? defaults.canvasBackground : bg;
-      return {
-        ...variant,
-        canvasBackground: coercedBg,
-        canvasBackgroundCustom: true,
-      };
-    }
     if (!bg || isLightCanvasColor(bg)) {
       return { ...defaults, ...variant, ...defaults, canvasBackgroundImage: undefined };
     }
@@ -183,7 +170,7 @@ function sanitizeThemeVariant(
     return variant;
   }
   const bg = variant.canvasBackground?.trim();
-  if (bg && isDarkCanvasColor(bg)) {
+  if (!variant.canvasBackgroundCustom && bg && isDarkCanvasColor(bg)) {
     return {
       ...defaults,
       ...variant,
@@ -223,9 +210,14 @@ function ensureThemeVariant(
       ) as ThemeVariantFields)
     : {};
   if (!defined.canvasBackgroundCustom) {
+    const decorOnly =
+      Boolean(defined.canvasBackgroundImage?.trim()) ||
+      (Boolean(defined.canvasDecorPresetId) && defined.canvasDecorPresetId !== "none");
     delete defined.canvasBackground;
-    delete defined.canvasBackgroundImage;
-    delete defined.canvasDecorPresetId;
+    if (!decorOnly) {
+      delete defined.canvasBackgroundImage;
+      delete defined.canvasDecorPresetId;
+    }
     defined.canvasBackgroundCustom = undefined;
   }
   return sanitizeThemeVariant({ ...defaults, ...defined }, scheme);
@@ -237,16 +229,21 @@ export function resolveThemePresetForSwitch(
   scheme: ColorScheme,
 ): ThemeVariantFields {
   const preset = defaultThemeVariant(scheme);
-  if (!saved?.canvasBackgroundCustom) {
+  const hasSavedCanvas =
+    saved?.canvasBackgroundCustom ||
+    Boolean(saved?.canvasBackgroundImage?.trim()) ||
+    Boolean(saved?.canvasDecorPresetId && saved.canvasDecorPresetId !== "none");
+  if (!hasSavedCanvas) {
     return preset;
   }
   return ensureThemeVariant(
     {
       ...preset,
-      canvasBackground: saved.canvasBackground,
-      canvasBackgroundImage: saved.canvasBackgroundImage,
-      canvasBackgroundCustom: true,
-      canvasDecorPresetId: saved.canvasDecorPresetId,
+      ...(saved?.canvasBackgroundCustom
+        ? { canvasBackground: saved.canvasBackground, canvasBackgroundCustom: true as const }
+        : {}),
+      canvasBackgroundImage: saved?.canvasBackgroundImage,
+      canvasDecorPresetId: saved?.canvasDecorPresetId,
     },
     scheme,
   );
@@ -277,11 +274,19 @@ export function bootstrapDashboardStyleConfig(
   let dark = ensureThemeVariant(working.themeVariants?.dark, "dark", stripAccent);
 
   const rootActive = extractThemeVariant(working);
-  if (rootActive.canvasBackgroundCustom) {
+  const hasRootCanvas =
+    rootActive.canvasBackgroundCustom ||
+    Boolean(rootActive.canvasBackgroundImage?.trim()) ||
+    Boolean(rootActive.canvasDecorPresetId && rootActive.canvasDecorPresetId !== "none");
+  if (hasRootCanvas) {
     const rootCanvasPatch: ThemeVariantFields = {
-      canvasBackground: rootActive.canvasBackground,
+      ...(rootActive.canvasBackgroundCustom
+        ? {
+            canvasBackground: rootActive.canvasBackground,
+            canvasBackgroundCustom: true as const,
+          }
+        : {}),
       canvasBackgroundImage: rootActive.canvasBackgroundImage,
-      canvasBackgroundCustom: true,
       canvasDecorPresetId: rootActive.canvasDecorPresetId,
     };
     if (scheme === "light") {

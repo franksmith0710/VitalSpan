@@ -4,10 +4,11 @@ import {
   inferWidgetSyncScopes,
   mergeChartTitleStyle,
   patchChartDeStyleNested,
+  readChartTitleVisible,
   stripChartLabelFormatOverrides,
   stripChartPaletteOverrides,
   stripChartQueryLimitOverride,
-  stripChartTitlePresentationOverrides,
+  stripChartTitleOverrides,
   stripChartWidgetAppearanceOverrides,
   syncChartWidgetsForDashboardScopes,
   syncChartWidgetsForDashboardTitleStyle,
@@ -64,16 +65,22 @@ describe("mergeChartTitleStyle", () => {
   });
 });
 
-describe("stripChartTitlePresentationOverrides", () => {
-  it("removes fontSize/color but keeps show", () => {
+describe("stripChartTitleOverrides", () => {
+  it("removes entire title block", () => {
     const cfg = patchChartDeStyleNested(baseCfg, "title", {
       show: false,
       fontSize: 22,
       color: "#aabbcc",
-      align: "center",
     });
-    const next = stripChartTitlePresentationOverrides(cfg);
-    expect(next.nativeBody?.deStyle?.title).toEqual({ show: false });
+    expect(stripChartTitleOverrides(cfg).nativeBody?.deStyle?.title).toBeUndefined();
+  });
+});
+
+describe("readChartTitleVisible", () => {
+  it("falls back to global titleStyle.show", () => {
+    expect(readChartTitleVisible(baseCfg, { show: false })).toBe(false);
+    const hidden = patchChartDeStyleNested(baseCfg, "title", { show: false });
+    expect(readChartTitleVisible(hidden, { show: true })).toBe(false);
   });
 });
 
@@ -160,7 +167,6 @@ describe("dashboard widget style sync", () => {
     expect(de?.paletteId).toBeUndefined();
     expect(de?.label).toEqual({ fontSize: 12 });
     expect(display).toBeUndefined();
-    expect(de?.title?.fontSize).toBe(20);
   });
 
   it("strip helpers are no-ops when override absent", () => {

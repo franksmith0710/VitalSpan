@@ -85,6 +85,7 @@ export type TitleStyleConfig = {
   fontSize?: number;
   color?: string;
   fontWeight?: number;
+  fontStyle?: "normal" | "italic";
   align?: "left" | "center" | "right";
   letterSpacing?: number;
   /** 对标 DE：标题字体阴影 */
@@ -339,31 +340,12 @@ export const CANVAS_BG_DECOR_PRESETS: CanvasDecorPreset[] = [
       backgroundRepeat: "repeat",
     },
   },
-  {
-    id: "gradient-soft",
-    label: "柔和渐变",
-    canvasBackground: DECOR_GRADIENT_BY_SCHEME["gradient-soft"].light,
-    previewStyle: {
-      background: DECOR_GRADIENT_BY_SCHEME["gradient-soft"].light,
-    },
-  },
-  {
-    id: "gradient-brand",
-    label: "品牌淡彩",
-    canvasBackground: DECOR_GRADIENT_BY_SCHEME["gradient-brand"].light,
-    previewStyle: {
-      background: DECOR_GRADIENT_BY_SCHEME["gradient-brand"].light,
-    },
-  },
-  {
-    id: "gradient-radial",
-    label: "径向光晕",
-    canvasBackground: DECOR_GRADIENT_BY_SCHEME["gradient-radial"].light,
-    previewStyle: {
-      background: DECOR_GRADIENT_BY_SCHEME["gradient-radial"].light,
-    },
-  },
 ];
+
+/** 面板可选：仅平铺纹理，不改画布底色（渐变请用「画布底色」） */
+export const CANVAS_TILE_DECOR_PRESETS = CANVAS_BG_DECOR_PRESETS.filter(
+  (preset) => preset.id === "none" || Boolean(preset.tileSize),
+);
 
 export const CANVAS_BG_LIGHT_DEFAULT = "#ffffff";
 export const CANVAS_BG_DARK_DEFAULT = "#0f172a";
@@ -524,6 +506,22 @@ export function effectiveWidgetShellBackground(
   return coerceWidgetSurfaceBackground(config.widgetStyle?.background, config.colorScheme ?? "light");
 }
 
+function isLegacyDecorGradient(bg: string | undefined): boolean {
+  const trimmed = bg?.trim();
+  if (!trimmed) return false;
+  for (const presetId of GRADIENT_DECOR_PRESET_IDS) {
+    if (trimmed === decorGradientForScheme(presetId, "light")) return true;
+    if (trimmed === decorGradientForScheme(presetId, "dark")) return true;
+  }
+  return false;
+}
+
+export function resolveCanvasDecorPresetIdForPanel(config: DashboardStyleConfig): string {
+  const id = resolveCanvasDecorPresetId(config);
+  if (GRADIENT_DECOR_PRESET_IDS.has(id) || id === "custom") return "none";
+  return id;
+}
+
 export function resolveCanvasDecorPresetId(config: DashboardStyleConfig): string {
   if (config.canvasDecorPresetId) return config.canvasDecorPresetId;
   const image = config.canvasBackgroundImage?.trim();
@@ -583,43 +581,66 @@ function decorTileImageForScheme(presetId: string, scheme: ColorScheme): string 
   return preset.image;
 }
 
-/** 面板 / 画布统一：装饰预设 → styleConfig 补丁 */
+/** 面板 / 画布统一：装饰预设 → styleConfig 补丁（仅平铺纹理，不覆盖用户底色） */
 export function patchDecorPresetStyle(
   presetId: string,
   config: DashboardStyleConfig,
 ): Partial<DashboardStyleConfig> {
   if (presetId === "none") return patchDecorNoneStyle(config);
+  if (GRADIENT_DECOR_PRESET_IDS.has(presetId)) return patchDecorNoneStyle(config);
 
   const preset = CANVAS_BG_DECOR_PRESETS.find((item) => item.id === presetId);
-  if (!preset) return {};
+  if (!preset?.tileSize) return {};
 
   const scheme = config.colorScheme ?? "light";
-
-  if (GRADIENT_DECOR_PRESET_IDS.has(presetId)) {
-    return {
-      canvasBackgroundImage: undefined,
-      canvasBackground: decorGradientForScheme(presetId, scheme) ?? preset.canvasBackground,
-      canvasBackgroundCustom: true,
-      canvasDecorPresetId: presetId,
-    };
-  }
-
-  const existing = config.canvasBackground?.trim();
+  const raw = config.canvasBackground?.trim();
+  const cleared = raw && isLegacyDecorGradient(raw) ? undefined : raw;
   const keepSolid =
-    Boolean(existing) &&
-    !existing!.startsWith("linear-gradient") &&
-    !existing!.startsWith("radial-gradient") &&
-    !GRADIENT_DECOR_PRESET_IDS.has(resolveCanvasDecorPresetId({ canvasBackground: existing }));
+    Boolean(cleared) &&
+    !cleared!.startsWith("linear-gradient") &&
+    !cleared!.startsWith("radial-gradient");
 
-  return {
+  const patch: Partial<DashboardStyleConfig> = {
     canvasBackgroundImage: decorTileImageForScheme(presetId, scheme) ?? preset.image,
-    canvasBackground: keepSolid ? existing : defaultSolidArtboardColor(scheme),
-    canvasBackgroundCustom: true,
     canvasDecorPresetId: presetId,
+  };
+  if (keepSolid && config.canvasBackgroundCustom) {
+    patch.canvasBackground = cleared;
+    patch.canvasBackgroundCustom = true;
+  } else if (raw && isLegacyDecorGradient(raw)) {
+    patch.canvasBackground = undefined;
+    patch.canvasBackgroundCustom = false;
+  }
+  return patch;
+}
+
+/** 配置面板缩略图：小尺寸纹理预览（与画布叠层逻辑一致） */
+export function decorPresetThumbStyle(
+  presetId: string,
+  scheme: ColorScheme = "light",
+  underlay?: string,
+): CSSProperties {
+  const fill =
+    underlay?.trim() ||
+    (scheme === "dark" ? CANVAS_BG_DARK_DEFAULT : "#f8fafc");
+  if (presetId === "none") {
+    return { backgroundColor: fill };
+  }
+  const preset = CANVAS_BG_DECOR_PRESETS.find((item) => item.id === presetId);
+  if (!preset?.tileSize) {
+    return { backgroundColor: fill };
+  }
+  const tileUrl = decorTileImageForScheme(presetId, scheme) ?? preset.image;
+  const { width, height } = preset.tileSize;
+  return {
+    backgroundColor: fill,
+    backgroundImage: `url(${tileUrl})`,
+    backgroundSize: `${width}px ${height}px`,
+    backgroundRepeat: "repeat",
   };
 }
 
-/** 配置面板缩略图：与画布 artboard 渲染一致 */
+/** @deprecated 使用 decorPresetThumbStyle */
 export function decorPresetPreviewStyle(
   presetId: string,
   scheme: ColorScheme = "light",
@@ -629,12 +650,7 @@ export function decorPresetPreviewStyle(
       backgroundColor: scheme === "dark" ? CANVAS_BG_DARK_DEFAULT : CANVAS_BG_LIGHT_DEFAULT,
     };
   }
-  const patched = patchDecorPresetStyle(presetId, { colorScheme: scheme });
-  return canvasBackgroundStyle({
-    colorScheme: scheme,
-    ...patched,
-    canvasBackgroundCustom: true,
-  });
+  return decorPresetThumbStyle(presetId, scheme);
 }
 
 function resolveDecorImageStyle(
@@ -688,7 +704,9 @@ export function styleConfigHasPersistedFields(config: DashboardStyleConfig): boo
 
 export function hasUserCanvasBackground(config: DashboardStyleConfig): boolean {
   if (config.canvasBackgroundCustom) return true;
-  return Boolean(config.canvasBackgroundImage?.trim());
+  if (config.canvasBackgroundImage?.trim()) return true;
+  const decorId = config.canvasDecorPresetId;
+  return Boolean(decorId && decorId !== "none");
 }
 
 /** @deprecated use hasUserCanvasBackground */
@@ -795,6 +813,7 @@ export function mergeTitleStyle(
   if (merged.fontSize != null) style.fontSize = `${merged.fontSize}px`;
   if (merged.color) style.color = merged.color;
   if (merged.fontWeight != null) style.fontWeight = merged.fontWeight;
+  if (merged.fontStyle) style.fontStyle = merged.fontStyle;
   if (merged.align) style.textAlign = merged.align;
   if (merged.letterSpacing != null) style.letterSpacing = `${merged.letterSpacing}px`;
   if (merged.shadow) style.textShadow = "0 1px 2px rgba(15, 23, 42, 0.28)";

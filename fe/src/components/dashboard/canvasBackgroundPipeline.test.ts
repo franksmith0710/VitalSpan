@@ -56,4 +56,14 @@ describe("canvas background edit pipeline", () => {
     expect(hasUserCanvasBackground(hydrated)).toBe(true);
     expect(resolveArtboardStyle(hydrated).backgroundImage).toContain("url(");
   });
+
+  it("dark theme custom purple survives hydrate", () => {
+    const base = bootstrapDashboardStyleConfig({ colorScheme: "dark" });
+    const { styleConfig: patched } = applyDashboardStylePatch(base, [], {
+      canvasBackground: "#7556b8",
+      canvasBackgroundCustom: true,
+    });
+    const hydrated = hydrateDashboardStyle(patched);
+    expect(resolveArtboardStyle(hydrated).background).toBe("#7556b8");
+  });
 });

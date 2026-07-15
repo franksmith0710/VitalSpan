@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ColorPickerPanel } from "@/components/ui/color-picker-panel";
+import { ColorSwatchChip } from "@/components/ui/color-swatch-chip";
 import { normalizeHexColor } from "@/components/ui/color-utils";
 
 export { normalizeHexColor } from "@/components/ui/color-utils";
@@ -28,6 +29,9 @@ type ColorFieldProps = {
 };
 
 const DEFAULT_LIVE_COMMIT_MS = 120;
+
+const FIELD_SHELL =
+  "flex w-full items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-1.5 shadow-theme-xs transition-[border-color,box-shadow] focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:focus-within:border-brand-500/40 dark:focus-within:ring-brand-500/15";
 
 function normalizeSwatches(
   swatches: readonly ColorSwatch[] | readonly string[],
@@ -114,8 +118,7 @@ export function ColorField({
 
   const displayHex = normalizeHexColor(localValue) ?? localValue;
   const pickerLabel = label ? `${label}取色器` : "取色器";
-  const controlHeight = compact ? "h-8" : "h-9";
-  const swatchWidth = compact ? "w-8" : "w-9";
+  const chipSize = compact ? "sm" : "md";
 
   return (
     <div className={cn(compact ? "space-y-0" : "space-y-2", className)}>
@@ -123,26 +126,32 @@ export function ColorField({
         <Label className="text-theme-xs text-gray-600 dark:text-gray-400">{label}</Label>
       ) : null}
       <Popover open={open} onOpenChange={handleOpenChange}>
-        <div
-          className={cn(
-            "flex w-full items-stretch overflow-hidden rounded-md border border-gray-200 bg-white shadow-theme-xs dark:border-gray-700 dark:bg-gray-900",
-            controlHeight,
-          )}
-        >
+        <div className={cn(FIELD_SHELL, compact ? "h-8" : "h-9")}>
           <PopoverTrigger asChild>
             <button
               type="button"
               aria-label={pickerLabel}
+              aria-expanded={open}
               title="打开取色器"
               className={cn(
-                "shrink-0 border-r border-gray-200 transition-opacity hover:opacity-90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30 dark:border-gray-700",
-                swatchWidth,
+                "flex shrink-0 items-center gap-1 rounded-md py-0.5 pl-0.5 pr-1 transition-colors",
+                "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30",
+                "dark:hover:bg-white/5",
+                open && "bg-gray-50 ring-1 ring-inset ring-brand-200 dark:bg-white/5 dark:ring-brand-500/30",
               )}
-              style={{ background: displayHex || "#ffffff" }}
-            />
+            >
+              <ColorSwatchChip color={displayHex || undefined} size={chipSize} />
+              <ChevronDown
+                className={cn(
+                  "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
+                  open && "rotate-180 text-brand-500 dark:text-brand-400",
+                )}
+                aria-hidden
+              />
+            </button>
           </PopoverTrigger>
           <input
-            className="min-w-0 flex-1 border-0 bg-transparent px-2 font-mono text-theme-xs text-gray-800 placeholder:text-gray-400 focus:outline-none dark:text-white/90 dark:placeholder:text-gray-500"
+            className="min-w-0 flex-1 border-0 bg-transparent px-0.5 font-mono text-[11px] uppercase tracking-wide text-gray-700 placeholder:normal-case placeholder:tracking-normal placeholder:text-gray-400 focus:outline-none dark:text-gray-200 dark:placeholder:text-gray-500"
             value={localValue}
             placeholder="#ffffff"
             spellCheck={false}
@@ -168,7 +177,7 @@ export function ColorField({
           {allowClear ? (
             <button
               type="button"
-              className="flex w-7 shrink-0 items-center justify-center text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30 dark:hover:bg-white/5 dark:hover:text-gray-200"
+              className="flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30 dark:hover:bg-white/5 dark:hover:text-gray-200"
               aria-label="清除颜色"
               onClick={() => {
                 setLocalValue("");
@@ -190,23 +199,24 @@ export function ColorField({
           {items.length > 0 ? (
             <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
               <p className="mb-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">推荐</p>
-              <div className="flex flex-wrap gap-1">
-                {items.map((item) => (
-                  <button
-                    key={item.color}
-                    type="button"
-                    title={item.label}
-                    aria-label={item.label}
-                    className={cn(
-                      "size-5 rounded border transition-transform hover:scale-105",
-                      normalizeHexColor(localValue) === normalizeHexColor(item.color)
-                        ? "ring-2 ring-brand-500 ring-offset-1 dark:ring-offset-gray-dark"
-                        : "border-gray-200 dark:border-gray-700",
-                    )}
-                    style={{ background: item.color }}
-                    onClick={() => applyColor(item.color)}
-                  />
-                ))}
+              <div className="flex flex-wrap gap-1.5">
+                {items.map((item) => {
+                  const selected =
+                    normalizeHexColor(localValue) === normalizeHexColor(item.color);
+                  return (
+                    <button
+                      key={item.color}
+                      type="button"
+                      title={item.label}
+                      aria-label={item.label}
+                      aria-pressed={selected}
+                      className="rounded-md p-0.5 transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:hover:bg-white/5"
+                      onClick={() => applyColor(item.color)}
+                    >
+                      <ColorSwatchChip color={item.color} size="sm" selected={selected} />
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : null}
