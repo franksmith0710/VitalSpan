@@ -300,9 +300,7 @@ export function PixelShape({
     const { rect: next, event, active } = pending;
     applyDisplay(next);
     scheduleMarkGuides(next, event, active);
-    if (active.kind === "move") {
-      onPreview?.(withRect(widget, next));
-    }
+    onPreview?.(withRect(widget, next));
   };
 
   const handlePointerMove = (event: PointerEvent) => {

@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { DashboardStyleConfig } from "./layoutUtils";
 import { hasUserCanvasBackground, effectiveCanvasBackground, effectiveWidgetShellBackground } from "./dashboardStyleConfig";
 import { getDashboardThemeTokens, themeTokensToScopeVars } from "./dashboardThemeTokens";
+import { themeAccentToScopeVars } from "./dashboardAccentScope";
 import { resolveDialogScopeStyle } from "./dashboardChromeConfig";
 
 type DashboardStyleSurfaceProps = {
@@ -26,12 +27,12 @@ export function DashboardStyleSurface({
   const scopeStyle: CSSProperties = { colorScheme: scheme };
   if (styleConfig?.fontFamily) scopeStyle.fontFamily = styleConfig.fontFamily;
   if (styleConfig?.themeAccent) {
-    (scopeStyle as Record<string, string>)["--dashboard-accent"] = styleConfig.themeAccent;
+    Object.assign(scopeStyle, themeAccentToScopeVars(styleConfig.themeAccent));
   }
   if (styleConfig?.actionIconColor) {
     (scopeStyle as Record<string, string>)["--dashboard-action-icon"] = styleConfig.actionIconColor;
-  } else if (styleConfig?.themeAccent) {
-    (scopeStyle as Record<string, string>)["--dashboard-action-icon"] = styleConfig.themeAccent;
+    (scopeStyle as Record<string, string>)["--dashboard-action-icon-hover"] =
+      styleConfig.actionIconColor;
   }
   Object.assign(scopeStyle, resolveDialogScopeStyle(styleConfig));
   const artboardBg =

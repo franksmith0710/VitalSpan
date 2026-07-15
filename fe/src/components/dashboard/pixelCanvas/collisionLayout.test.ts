@@ -52,6 +52,17 @@ describe("collisionLayout", () => {
     expect(layoutsOverlap(resolved, 0)).toBe(false);
   });
 
+  it("pushes a colliding widget down when the active widget grows taller", () => {
+    const layout = baseLayout([
+      widget("a", 100, 100, 300, 200, 1),
+      widget("b", 120, 300, 300, 200, 2),
+    ]);
+    const resolved = resolvePixelCollisions(layout, "a", { x: 100, y: 100, width: 300, height: 320 });
+    expect(resolved.widgets.find((item) => item.id === "a")).toMatchObject({ height: 320 });
+    expect(resolved.widgets.find((item) => item.id === "b")).toMatchObject({ y: 420 });
+    expect(layoutsOverlap(resolved, 0)).toBe(false);
+  });
+
   it("keeps the active widget and pushes a colliding widget down", () => {
     const layout = baseLayout([
       widget("a", 100, 100, 300, 200, 1),

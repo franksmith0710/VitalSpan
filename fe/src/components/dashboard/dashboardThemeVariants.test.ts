@@ -37,6 +37,14 @@ describe("dashboardThemeVariants", () => {
     );
   });
 
+  it("normalize preserves custom title color on same scheme reload", () => {
+    const next = normalizeStyleConfigForColorScheme({
+      colorScheme: "light",
+      titleStyle: { color: "#884422" },
+    });
+    expect(next.titleStyle?.color).toBe("#884422");
+  });
+
   it("normalize clears light gradient and decor when colorScheme is dark", () => {
     const next = normalizeStyleConfigForColorScheme({
       colorScheme: "dark",

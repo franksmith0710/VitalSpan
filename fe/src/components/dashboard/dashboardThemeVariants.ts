@@ -150,18 +150,45 @@ function sanitizeThemeVariant(
   return variant;
 }
 
-/** 固定主题令牌：标题/弹窗/筛选标题等整体字色随 colorScheme 同步 */
+/** 固定主题令牌：仅在未自定义或与另一主题冲突时写入默认字色 */
 function applyFixedThemeTypography(config: DashboardStyleConfig): DashboardStyleConfig {
   const scheme = config.colorScheme ?? "light";
   const tokens = getDashboardThemeTokens(scheme);
+  const titleColor = config.titleStyle?.color?.trim();
+  const filterTitle = config.filterChromeStyle?.titleColor?.trim();
+  const dialogBg = config.dialogStyle?.background?.trim();
+  const dialogFg = config.dialogStyle?.fontColor?.trim();
+
+  const nextTitle =
+    !titleColor || isOppositeThemeTitleColor(titleColor, scheme)
+      ? tokens.title
+      : titleColor;
+  const nextFilterTitle =
+    !filterTitle || isOppositeThemeTitleColor(filterTitle, scheme)
+      ? tokens.filterTitle
+      : filterTitle;
+
+  let nextDialogBg = dialogBg || tokens.dialogBg;
+  let nextDialogFg = dialogFg || tokens.dialogFg;
+  if (dialogBg) {
+    if (scheme === "dark" && isLightCanvasColor(dialogBg)) {
+      nextDialogBg = tokens.dialogBg;
+    } else if (scheme === "light" && isDarkCanvasColor(dialogBg)) {
+      nextDialogBg = tokens.dialogBg;
+    }
+  }
+  if (dialogFg && isOppositeThemeTitleColor(dialogFg, scheme)) {
+    nextDialogFg = tokens.dialogFg;
+  }
+
   return {
     ...config,
-    titleStyle: { ...config.titleStyle, color: tokens.title },
-    filterChromeStyle: { ...config.filterChromeStyle, titleColor: tokens.filterTitle },
+    titleStyle: { ...config.titleStyle, color: nextTitle },
+    filterChromeStyle: { ...config.filterChromeStyle, titleColor: nextFilterTitle },
     dialogStyle: {
       ...config.dialogStyle,
-      background: tokens.dialogBg,
-      fontColor: tokens.dialogFg,
+      background: nextDialogBg,
+      fontColor: nextDialogFg,
     },
   };
 }

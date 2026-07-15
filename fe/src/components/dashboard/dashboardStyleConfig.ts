@@ -8,6 +8,14 @@ export const GAP_PRESET_PX = {
   lg: 16,
 } as const;
 
+/** 像素画布间隙上限 12px */
+export const PIXEL_GAP_PRESET_PX = {
+  none: 0,
+  sm: 4,
+  md: 8,
+  lg: 12,
+} as const;
+
 export type GapPreset = keyof typeof GAP_PRESET_PX | "custom";
 export type ScaleMode = "canvas" | "component";
 export type ColorScheme = "light" | "dark";
@@ -458,6 +466,14 @@ export function resolveWidgetGap(config: DashboardStyleConfig): number {
 export function resolvePixelGutter(config: DashboardStyleConfig): number {
   const gutter = config.pixelGutter ?? DEFAULT_PIXEL_GUTTER;
   return Math.min(12, Math.max(0, gutter));
+}
+
+export function inferPixelGapPreset(gutter: number): GapPreset {
+  if (gutter <= 0) return "none";
+  for (const [key, px] of Object.entries(PIXEL_GAP_PRESET_PX)) {
+    if (key !== "none" && px === gutter) return key as GapPreset;
+  }
+  return "custom";
 }
 
 export function resolveQueryLimit(config: DashboardStyleConfig): number {

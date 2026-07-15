@@ -13,9 +13,36 @@
 | goal | isPlayer 全类型跟手；EmbeddedChartTable 设计系统化；BUG-2 Pointer QA |
 | autonomy_policy | auto_accept_low_risk |
 | risk_level | medium |
-| blockers | 等待权限核心 A5 完结或用户指定并行 |
+| blockers | 等待 BUG-7 resize 碰撞 preview 完结；C3 需勘误 |
 
 ## 当前轮次
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
+| request | 像素画布缩放时不与邻组件交互 — 根因剖析 + 修复 |
+| type | bug |
+| plan | docs/automate/plans/2026-07-15-pixel-resize-collision-preview.md |
+| bug_doc | docs/bugs/BUG-7_dashboard-resize-no-collision_2026-07-15.md |
+| status | DONE |
+| last_verified_command | vitest PixelCanvas.test+collisionLayout.test; tsc --noEmit |
+| last_verified_exit_code | 0 |
+| verification_summary | resize 接入 onPreview；34 vitest 绿；tsc 绿；待手测 §6 |
+| repair_rounds | 0 |
+
+## 当前需求契约
+
+- request: 调整组件大小时应与邻组件碰撞推挤，与拖拽行为一致
+- type: bug
+- goal: resize 手势中邻组件跟手让位；松手后 layout 无重叠；不回归图表 live resize
+- scope_include: PixelShape、PixelCanvas、PixelCanvas.test、BUG-7、evolution-state
+- scope_exclude: 横向 pushRight 碰撞；Playwright E2E；ChartInspector 架构债
+- acceptance: plan §6 vitest 绿 + tsc 绿 + 手工 QA 4 项
+- risk_level: low
+- autonomy_policy: auto_accept_low_risk
+- assumptions: 复用现有 handlePreview 节流与 previewRegistry；不新增 onLayoutChange 预览写盘
+
+## 上一轮（归档 · 布局漂移）
 
 | 字段 | 值 |
 |------|----|
@@ -29,18 +56,6 @@
 | last_verified_exit_code | 0 |
 | verification_summary | RC-1~3 已修复；25 vitest 绿；tsc 绿；待手测 §5 |
 | repair_rounds | 0 |
-
-## 当前需求契约
-
-- request: 保存完布局不应改变；退出重开应与最后一次保存一致
-- type: bug
-- goal: v2 像素画布 layout 持久化 WYSIWYG；save→reload 坐标 idempotent
-- scope_include: dashboardCanvasMode、useDashboardCanvasState、DashboardEditPage、相关 vitest
-- scope_exclude: 后端 schema；v1 栅格编辑器；整理布局 UI（P2 可选）
-- acceptance: plan §4 vitest 绿 + §5 手测 + BUG-6 RC-1/2/3 fixed
-- risk_level: low
-- autonomy_policy: strict_plan_match
-- assumptions: 沿用 buildDashboardLayoutForSave；pack 仅保留为显式操作
 
 ## 上一轮（归档 · DE Parity）
 

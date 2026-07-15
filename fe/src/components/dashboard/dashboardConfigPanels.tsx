@@ -15,11 +15,14 @@ import { LinkageRulesPanel } from "./LinkageRulesPanel";
 import {
   DASHBOARD_FONT_OPTIONS,
   GAP_PRESET_PX,
+  inferPixelGapPreset,
+  PIXEL_GAP_PRESET_PX,
   THEME_ACCENT_SWATCHES,
   formatMetricValue,
   type DashboardStyleConfig,
   type GapPreset,
 } from "./dashboardStyleConfig";
+import { deriveAccentChartPalette } from "./dashboardAccentScope";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
 import { ColorField } from "@/components/ui/color-field";
 import { DebouncedNumberInput } from "@/components/ui/debounced-number-input";
@@ -127,6 +130,97 @@ function SpacingModeToggle({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function GapPresetRadios({
+  hasGap,
+  preset,
+  customPx,
+  presetPxMap,
+  onHasGapChange,
+  onPresetChange,
+  onCustomPx,
+  gridHint,
+}: {
+  hasGap: boolean;
+  preset: GapPreset;
+  customPx: number;
+  presetPxMap: Record<Exclude<GapPreset, "custom">, number>;
+  onHasGapChange: (hasGap: boolean) => void;
+  onPresetChange: (preset: Exclude<GapPreset, "custom"> | "custom") => void;
+  onCustomPx: (px: number) => void;
+  gridHint?: string;
+}) {
+  const sizeOptions = (
+    [
+      ["sm", "小"],
+      ["md", "中"],
+      ["lg", "大"],
+      ["custom", "自定义"],
+    ] as const
+  ).map(([key, label]) => ({
+    key,
+    label: key === "custom" ? label : `${label} (${presetPxMap[key]}px)`,
+  }));
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-theme-xs text-gray-600 dark:text-gray-400">组件间隙</Label>
+      <div className="flex gap-2">
+        {(
+          [
+            { value: true, label: "有间隙" },
+            { value: false, label: "无间隙" },
+          ] as const
+        ).map((item) => (
+          <button
+            key={String(item.value)}
+            type="button"
+            className={cn(
+              "flex-1 rounded-md border px-2 py-1.5 text-theme-xs",
+              hasGap === item.value
+                ? "border-brand-500 bg-brand-50/60 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
+                : "border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400",
+            )}
+            onClick={() => onHasGapChange(item.value)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      {hasGap ? (
+        <div className="flex flex-wrap gap-2">
+          {sizeOptions.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={cn(
+                "rounded-md border px-2.5 py-1.5 text-theme-xs",
+                preset === item.key
+                  ? "border-brand-500 bg-brand-50/60 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
+                  : "border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400",
+              )}
+              onClick={() => onPresetChange(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {hasGap && preset === "custom" ? (
+        <DebouncedNumberInput
+          min={0}
+          max={48}
+          className="h-9"
+          value={customPx}
+          onCommit={onCustomPx}
+        />
+      ) : null}
+      {gridHint ? (
+        <p className="text-[10px] text-gray-400">{gridHint}</p>
+      ) : null}
     </div>
   );
 }
@@ -240,9 +334,22 @@ export function DashboardStyleSections({
               label="主题强调色"
               value={styleConfig.themeAccent ?? ""}
               swatches={THEME_ACCENT_SWATCHES}
-              onChange={(color) => patchStyle({ themeAccent: color })}
+              swatchesDefaultOpen
+              onChange={(color) => {
+                if (!color) {
+                  patchStyle({ themeAccent: undefined });
+                  return;
+                }
+                patchStyle({
+                  themeAccent: color,
+                  paletteColors: deriveAccentChartPalette(color),
+                  paletteId: undefined,
+                });
+              }}
             />
-            <p className="text-[10px] text-gray-400">作用于选中框、操作轨图标等看板内强调元素</p>
+            <p className="text-[10px] text-gray-400">
+              同步调整选中框、操作图标与图表主色系；与上方浅/深主题卡片独立记忆
+            </p>
             <div className="space-y-1.5">
               <Label className="text-theme-xs text-gray-600 dark:text-gray-400">全局字体</Label>
               <Select
@@ -288,54 +395,49 @@ export function DashboardStyleSections({
           </div>
 
           <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-theme-xs text-gray-600 dark:text-gray-400">组件间隙</Label>
-            <Select
-              value={gapPreset}
-              onValueChange={(value) => {
-                const preset = value as GapPreset;
+          {isPixelLayout ? (
+            <GapPresetRadios
+              hasGap={(styleConfig.pixelGutter ?? 0) > 0}
+              preset={inferPixelGapPreset(styleConfig.pixelGutter ?? 0)}
+              customPx={styleConfig.pixelGutter ?? 0}
+              presetPxMap={PIXEL_GAP_PRESET_PX}
+              onHasGapChange={(hasGap) =>
+                patchStyle({ pixelGutter: hasGap ? PIXEL_GAP_PRESET_PX.md : 0 })
+              }
+              onPresetChange={(preset) => {
+                if (preset === "custom") {
+                  patchStyle({ pixelGutter: styleConfig.pixelGutter ?? 8 });
+                  return;
+                }
+                patchStyle({ pixelGutter: PIXEL_GAP_PRESET_PX[preset] });
+              }}
+              onCustomPx={(value) => patchStyle({ pixelGutter: value })}
+              gridHint="像素画布：拖拽吸附与碰撞推挤时使用此间隙"
+            />
+          ) : (
+            <GapPresetRadios
+              hasGap={gapPreset !== "none" && (styleConfig.widgetGap ?? 8) > 0}
+              preset={gapPreset}
+              customPx={styleConfig.widgetGap ?? 8}
+              presetPxMap={GAP_PRESET_PX}
+              onHasGapChange={(hasGap) =>
+                patchStyle(
+                  hasGap
+                    ? { gapPreset: "md", widgetGap: GAP_PRESET_PX.md }
+                    : { gapPreset: "none", widgetGap: 0 },
+                )
+              }
+              onPresetChange={(preset) => {
                 if (preset === "custom") {
                   patchStyle({ gapPreset: "custom", widgetGap: styleConfig.widgetGap ?? 8 });
-                } else {
-                  patchStyle({ gapPreset: preset, widgetGap: GAP_PRESET_PX[preset] });
+                  return;
                 }
+                patchStyle({ gapPreset: preset, widgetGap: GAP_PRESET_PX[preset] });
               }}
-            >
-              <SelectTrigger className="h-9 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">无</SelectItem>
-                <SelectItem value="sm">小 (4px)</SelectItem>
-                <SelectItem value="md">中 (8px)</SelectItem>
-                <SelectItem value="lg">大 (16px)</SelectItem>
-                <SelectItem value="custom">自定义</SelectItem>
-              </SelectContent>
-            </Select>
-            {gapPreset === "custom" ? (
-              <DebouncedNumberInput
-                min={0}
-                max={48}
-                className="h-9"
-                value={styleConfig.widgetGap ?? 8}
-                onCommit={(value) => patchStyle({ widgetGap: value })}
-              />
-            ) : null}
-            <p className="text-theme-xs text-gray-400 dark:text-gray-500">栅格模式下生效</p>
-          </div>
-
-          {isPixelLayout ? (
-            <div className="space-y-1.5">
-              <Label className="text-theme-xs text-gray-600 dark:text-gray-400">像素间隙 (0–12)</Label>
-              <DebouncedNumberInput
-                min={0}
-                max={12}
-                className="h-9"
-                value={styleConfig.pixelGutter ?? 0}
-                onCommit={(value) => patchStyle({ pixelGutter: value })}
-              />
-            </div>
-          ) : null}
+              onCustomPx={(value) => patchStyle({ gapPreset: "custom", widgetGap: value })}
+              gridHint="栅格模式：组件卡片间距"
+            />
+          )}
 
           <div className="space-y-1.5">
             <Label className="text-theme-xs text-gray-600 dark:text-gray-400">缩放模式</Label>

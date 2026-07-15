@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Pipette, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,8 @@ type ColorFieldProps = {
   className?: string;
   /** 取色器/输入框连续变更时防抖提交，减轻画布等大组件重渲染 */
   liveCommitMs?: number;
+  /** 有推荐色板时默认展开 */
+  swatchesDefaultOpen?: boolean;
 };
 
 const DEFAULT_LIVE_COMMIT_MS = 120;
@@ -62,9 +65,11 @@ export function ColorField({
   compact = false,
   className,
   liveCommitMs = DEFAULT_LIVE_COMMIT_MS,
+  swatchesDefaultOpen = false,
 }: ColorFieldProps) {
   const items = normalizeSwatches(swatches);
   const [localValue, setLocalValue] = useState(value);
+  const [swatchesOpen, setSwatchesOpen] = useState(swatchesDefaultOpen || items.length > 0);
   const onChangeRef = useRef(onChange);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRef = useRef<string | undefined>(undefined);
@@ -118,15 +123,25 @@ export function ColorField({
       <div className="flex items-center gap-1.5">
         <label
           className={cn(
-            "relative shrink-0 cursor-pointer overflow-hidden rounded-md border border-gray-200 dark:border-gray-700",
+            "group/picker relative shrink-0 cursor-pointer overflow-hidden rounded-md border border-gray-200 shadow-sm transition-shadow hover:ring-2 hover:ring-brand-500/30 dark:border-gray-700",
             compact ? "size-8" : "size-9",
           )}
+          title="点击打开取色器"
         >
           <span
             className="absolute inset-0"
             style={{ background: displayHex || "#ffffff" }}
             aria-hidden
           />
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover/picker:bg-black/10">
+            <Pipette
+              className={cn(
+                "text-white drop-shadow-sm opacity-70 transition-opacity group-hover/picker:opacity-100",
+                compact ? "size-3.5" : "size-4",
+              )}
+              aria-hidden
+            />
+          </span>
           <input
             type="color"
             className="absolute inset-0 size-full cursor-pointer opacity-0"
@@ -180,30 +195,46 @@ export function ColorField({
           </Button>
         ) : null}
       </div>
+      {!compact ? (
+        <p className="text-[10px] text-gray-400">点击左侧色块或输入 Hex 值</p>
+      ) : null}
       {items.length > 0 && !compact ? (
         <div className="space-y-1.5">
-          <p className="text-theme-xs text-gray-500 dark:text-gray-400">推荐颜色</p>
-          <div className="flex flex-wrap gap-2">
-            {items.map((item) => (
-              <button
-                key={item.color}
-                type="button"
-                title={item.label}
-                aria-label={item.label}
-                className={cn(
-                  "size-7 rounded-md border transition-shadow",
-                  normalizeHexColor(localValue) === normalizeHexColor(item.color)
-                    ? "ring-2 ring-brand-500 ring-offset-1"
-                    : "border-gray-200 hover:scale-105 dark:border-gray-700",
-                )}
-                style={{ background: item.color }}
-                onClick={() => {
-                  setLocalValue(item.color);
-                  commitNow(item.color);
-                }}
-              />
-            ))}
-          </div>
+          <button
+            type="button"
+            className="flex w-full items-center gap-1 text-theme-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            aria-expanded={swatchesOpen}
+            onClick={() => setSwatchesOpen((open) => !open)}
+          >
+            <ChevronDown
+              className={cn("size-3.5 transition-transform", swatchesOpen && "rotate-180")}
+              aria-hidden
+            />
+            推荐颜色
+          </button>
+          {swatchesOpen ? (
+            <div className="flex flex-wrap gap-2">
+              {items.map((item) => (
+                <button
+                  key={item.color}
+                  type="button"
+                  title={item.label}
+                  aria-label={item.label}
+                  className={cn(
+                    "size-7 rounded-md border transition-shadow",
+                    normalizeHexColor(localValue) === normalizeHexColor(item.color)
+                      ? "ring-2 ring-brand-500 ring-offset-1"
+                      : "border-gray-200 hover:scale-105 dark:border-gray-700",
+                  )}
+                  style={{ background: item.color }}
+                  onClick={() => {
+                    setLocalValue(item.color);
+                    commitNow(item.color);
+                  }}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

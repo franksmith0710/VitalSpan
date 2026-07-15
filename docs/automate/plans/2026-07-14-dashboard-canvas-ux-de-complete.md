@@ -68,7 +68,7 @@ DE 参考：Shape.vue · CanvasCore.vue · ChartComponentS2.vue（S2 表格）
 PixelShape (isPlayer)
   ├─ DOM: style.width/height 每帧 setDisplay
   ├─ dispatch pixel-shape-live-resize
-  └─ resize 期间: 不 onPreview（move 才 preview）
+  └─ resize 期间: onPreview（与 move 对称，BUG-7 R1）
 
 WidgetContentHost (新，薄包装)
   ├─ h-full min-w-0 + dashboard-widget-surface
@@ -131,7 +131,7 @@ WidgetContentHost (新，薄包装)
 |------|------|------|
 | C1 | **DASH-002**：执行 BUG-2 Pointer QA 并回写 `F07-DASH.md` 勾选 | 手工 + 截图 |
 | C2 | **配置占位诚实化**：`DashboardConfigSection` 占位分组改「即将推出」+ 禁用，或隐藏无实现项（图表样式/配色/标题 等） | `dashboardConfigPanels.tsx` |
-| C3 | **预览管线**：move preview 节流保持 16ms；resize **禁止** `onPreview`（已做，单测锁定） | `PixelShape.tsx` · `PixelCanvas.test.tsx` |
+| C3 | **预览管线**：move/resize 均走 `onPreview`（32ms 节流）；~~resize 禁止 onPreview~~ **已勘误**（BUG-7 R1） | `PixelShape.tsx` · `PixelCanvas.test.tsx` |
 | C4 | **Mark line**：resize 时 mark guide rAF 节流（已做）；补单测「resize 不触发 previewLayout」 | `pixelMarkLine.test.ts` |
 
 ---

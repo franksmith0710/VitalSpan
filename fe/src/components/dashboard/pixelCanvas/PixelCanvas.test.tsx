@@ -106,6 +106,56 @@ describe("PixelCanvas", () => {
     fireEvent.pointerUp(shape, { pointerId: 3, clientX: 0, clientY: 120 });
   });
 
+  it("previews cascade push-down on neighbors while resizing", async () => {
+    const blocker: PixelLayoutWidget = {
+      id: "w2",
+      type: "chart",
+      title: "下方",
+      order: 2,
+      x: 100,
+      y: 300,
+      width: 300,
+      height: 200,
+    };
+    const stackedLayout: DashboardLayoutV2 = {
+      ...layout,
+      widgets: [widget, blocker],
+    };
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={stackedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const shape = screen.getByTestId("pixel-shape-w1");
+    const blockerShape = screen.getByTestId("pixel-shape-w2");
+    const handle = screen.getByLabelText("调整组件大小：右下");
+    expect(blockerShape).toHaveStyle({ top: "300px" });
+
+    fireEvent.pointerDown(handle, {
+      pointerId: 4,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(shape, { pointerId: 4, clientX: 0, clientY: 1 });
+    fireEvent.pointerMove(shape, { pointerId: 4, clientX: 0, clientY: 120 });
+    await flushPixelPointerFrames();
+
+    expect(blockerShape).toHaveStyle({ top: "400px" });
+    fireEvent.pointerUp(shape, { pointerId: 4, clientX: 0, clientY: 120 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(layoutsOverlap(onChange.mock.calls[0][0], 0)).toBe(false);
+    expect(onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w2")).toMatchObject({
+      y: 400,
+    });
+  });
+
   it("commits canonical drag coordinates on pointer up", () => {
     const onChange = renderCanvas("edit");
     fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
