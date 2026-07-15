@@ -23,6 +23,8 @@ import type {
 } from "../layoutUtils";
 import type { ScaleMode, DashboardStyleConfig } from "../dashboardStyleConfig";
 import {
+  canvasArtboardStyleFingerprint,
+  hasUserCanvasBackground,
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
   widgetDashboardStyleFingerprint,
@@ -167,13 +169,17 @@ export function PixelCanvas({
     () => pickWidgetDashboardStyle(styleConfig),
     [widgetDashboardStyleFingerprint(styleConfig)],
   );
+  const artboardStyle = useMemo(
+    () => resolveArtboardStyle(styleConfig),
+    [canvasArtboardStyleFingerprint(styleConfig)],
+  );
+  const userArtboardBg = hasUserCanvasBackground(styleConfig);
   const chrome = resolveDashboardChrome(styleConfig);
   const gapRuntime = useMemo(
     () => resolveComponentGapRuntime(styleConfig, "pixel"),
     [styleConfig],
   );
-  const showAuxGrid =
-    mode === "edit" && chrome.showAuxiliaryGrid && !styleConfig.canvasBackground?.trim();
+  const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
   const viewCanvasHeight = useMemo(() => {
     const lowest = activeLayout.widgets.reduce(
       (max, widget) => Math.max(max, widget.y + widget.height),
@@ -434,7 +440,10 @@ export function PixelCanvas({
       )}
       data-testid="pixel-canvas-host"
       data-pixel-canvas-scale={scale}
-      style={{ "--pixel-canvas-scale": scale } as CSSProperties}
+      style={{
+        ...(userArtboardBg ? artboardStyle : undefined),
+        "--pixel-canvas-scale": scale,
+      } as CSSProperties}
       onScroll={(event) => {
         publishViewport(visibleCanvasViewport(event.currentTarget, scale, viewCanvas));
       }}
@@ -472,7 +481,7 @@ export function PixelCanvas({
           <div
             data-testid="pixel-canvas-artboard"
             className="pointer-events-none absolute inset-0 z-0 shadow-theme-sm ring-1 ring-gray-200 dark:ring-gray-700"
-            style={resolveArtboardStyle(styleConfig)}
+            style={artboardStyle}
             aria-hidden
           />
           {showAuxGrid ? (

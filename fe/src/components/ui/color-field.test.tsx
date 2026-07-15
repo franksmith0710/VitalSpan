@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ColorField } from "./color-field";
 
@@ -28,21 +28,13 @@ describe("ColorField", () => {
     vi.useRealTimers();
   });
 
-  async function openPicker(label: string) {
-    fireEvent.click(screen.getByLabelText(`${label}取色器`));
-    return waitFor(() => {
-      expect(screen.getByLabelText("hex-color-picker")).toBeInTheDocument();
-    });
-  }
-
-  it("debounces color picker commits", async () => {
+  it("debounces hex input commits", () => {
     const onChange = vi.fn();
     render(<ColorField value="#ffffff" onChange={onChange} label="画布底色" />);
-    await openPicker("画布底色");
-    const picker = screen.getByLabelText("hex-color-picker");
+    const input = screen.getByPlaceholderText("#ffffff");
 
-    fireEvent.change(picker, { target: { value: "#111111" } });
-    fireEvent.change(picker, { target: { value: "#7e4a44" } });
+    fireEvent.change(input, { target: { value: "#111111" } });
+    fireEvent.change(input, { target: { value: "#7e4a44" } });
 
     expect(onChange).not.toHaveBeenCalled();
 
@@ -54,10 +46,10 @@ describe("ColorField", () => {
     expect(onChange).toHaveBeenCalledWith("#7e4a44");
   });
 
-  it("flushes pending color when popover closes", async () => {
+  it("flushes pending color when popover closes", () => {
     const onChange = vi.fn();
     render(<ColorField value="#ffffff" onChange={onChange} label="主题色" />);
-    await openPicker("主题色");
+    fireEvent.click(screen.getByLabelText("主题色取色器"));
     const picker = screen.getByLabelText("hex-color-picker");
 
     fireEvent.change(picker, { target: { value: "#465fff" } });

@@ -18,7 +18,7 @@ const baseCfg: ChartViewConfig = { chartType: "bar", dataSourceId: "ds-1" };
 
 describe("widgetStyleToContentCss", () => {
   it("applies individual padding and unified radius", () => {
-    const style = widgetStyleToContentCss({
+    const { surface } = widgetStyleToContentCss({
       background: "#ffffff",
       paddingMode: "individual",
       paddingTop: 4,
@@ -27,20 +27,22 @@ describe("widgetStyleToContentCss", () => {
       paddingLeft: 16,
       borderRadius: 6,
     });
-    expect(style.padding).toBe("4px 8px 12px 16px");
-    expect(style.borderRadius).toBe("6px");
-    expect(style.background).toBe("#ffffff");
+    expect(surface.padding).toBe("4px 8px 12px 16px");
+    expect(surface.borderRadius).toBe("6px");
+    expect(surface.background).toBe("#ffffff");
   });
 
-  it("applies backdrop blur and background image", () => {
-    const style = widgetStyleToContentCss({
+  it("applies backdrop blur and background-only opacity", () => {
+    const { surface, backgroundLayer } = widgetStyleToContentCss({
       backgroundImage: "https://example.com/bg.png",
       backdropBlur: 8,
       opacity: 0.9,
     });
-    expect(style.backgroundImage).toContain("example.com/bg.png");
-    expect(style.backdropFilter).toBe("blur(8px)");
-    expect(style.opacity).toBe(0.9);
+    expect(surface.opacity).toBeUndefined();
+    expect(surface.backdropFilter).toBeUndefined();
+    expect(backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
+    expect(backgroundLayer?.backdropFilter).toBe("blur(8px)");
+    expect(backgroundLayer?.opacity).toBe(0.9);
   });
 });
 

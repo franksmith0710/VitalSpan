@@ -48,7 +48,8 @@ describe("EmbeddedChartTable", () => {
       />,
     );
     const root = container.firstElementChild as HTMLElement;
-    expect(root).toHaveStyle({ opacity: "0.8", border: "1px solid rgb(255, 0, 0)" });
+    expect(root).toHaveStyle({ backgroundColor: expect.stringMatching(/rgba|color-mix/), border: "1px solid rgb(255, 0, 0)" });
+    expect(root.style.opacity).toBe("");
     const scroll = container.querySelector(".dashboard-scroll") as HTMLElement;
     expect(scroll.style.getPropertyValue("--dashboard-scroll-thumb")).toBe("#00ff00");
   });

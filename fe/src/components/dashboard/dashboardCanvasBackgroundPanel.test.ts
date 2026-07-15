@@ -6,6 +6,7 @@ import {
   decorPresetPreviewStyle,
   patchDecorNoneStyle,
   patchDecorPresetStyle,
+  resolveArtboardStyle,
   resolveCanvasDecorPresetId,
 } from "./dashboardStyleConfig";
 
@@ -26,6 +27,7 @@ describe("resolveCanvasDecorPresetId", () => {
     expect(
       resolveCanvasDecorPresetId({
         canvasBackground: "linear-gradient(160deg, #fff, #000)",
+        canvasBackgroundCustom: true,
       }),
     ).toBe("gradient-soft");
     expect(
@@ -63,9 +65,21 @@ describe("canvasBackgroundStyle decor tiles", () => {
     const style = canvasBackgroundStyle({
       canvasBackgroundImage: dots?.image,
       colorScheme: "dark",
+      canvasBackgroundCustom: true,
+      canvasBackground: "#0f172a",
     });
     expect(style.backgroundColor).toBe("#0f172a");
     expect(style.backgroundImage).toContain("94a3b8");
+    expect(style.backgroundSize).toBe("16px 16px");
+  });
+
+  it("resolveArtboardStyle keeps decor tiles on dark scheme", () => {
+    const patched = patchDecorPresetStyle("dots", { colorScheme: "dark" });
+    const style = resolveArtboardStyle({
+      colorScheme: "dark",
+      ...patched,
+    });
+    expect(style.backgroundImage).toContain("url(");
     expect(style.backgroundSize).toBe("16px 16px");
   });
 });
@@ -73,17 +87,18 @@ describe("canvasBackgroundStyle decor tiles", () => {
 describe("patchDecorPresetStyle", () => {
   it("applies default solid fill when picking dots without custom color", () => {
     expect(patchDecorPresetStyle("dots", { colorScheme: "dark" })).toEqual({
-      canvasBackgroundImage: CANVAS_BG_DECOR_PRESETS.find((item) => item.id === "dots")?.image,
+      canvasBackgroundImage: expect.stringContaining("data:image/svg+xml"),
       canvasBackground: "#0f172a",
+      canvasBackgroundCustom: true,
+      canvasDecorPresetId: "dots",
     });
   });
 
   it("preview styles differ between none and gradient", () => {
     const none = decorPresetPreviewStyle("none", "light");
     const gradient = decorPresetPreviewStyle("gradient-soft", "light");
-    expect(none.background ?? none.backgroundColor).not.toEqual(
-      gradient.background ?? gradient.backgroundColor,
-    );
+    expect(none.backgroundColor).toBe("#ffffff");
+    expect(gradient.background).toContain("linear-gradient");
   });
 });
 
@@ -93,10 +108,14 @@ describe("patchDecorNoneStyle", () => {
     expect(
       patchDecorNoneStyle({
         canvasBackground: gradient?.canvasBackground,
+        canvasDecorPresetId: "gradient-soft",
+        canvasBackgroundCustom: true,
       }),
     ).toEqual({
       canvasBackgroundImage: undefined,
+      canvasDecorPresetId: undefined,
       canvasBackground: undefined,
+      canvasBackgroundCustom: false,
     });
   });
 
@@ -104,8 +123,13 @@ describe("patchDecorNoneStyle", () => {
     expect(
       patchDecorNoneStyle({
         canvasBackground: "#57617a",
+        canvasBackgroundCustom: true,
         canvasBackgroundImage: CANVAS_BG_DECOR_PRESETS.find((item) => item.id === "dots")?.image,
+        canvasDecorPresetId: "dots",
       }),
-    ).toEqual({ canvasBackgroundImage: undefined });
+    ).toEqual({
+      canvasBackgroundImage: undefined,
+      canvasDecorPresetId: undefined,
+    });
   });
 });

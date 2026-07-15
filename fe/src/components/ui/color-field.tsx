@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Pipette } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ColorPickerPanel } from "@/components/ui/color-picker-panel";
 import { normalizeHexColor } from "@/components/ui/color-utils";
@@ -116,108 +114,104 @@ export function ColorField({
 
   const displayHex = normalizeHexColor(localValue) ?? localValue;
   const pickerLabel = label ? `${label}取色器` : "取色器";
+  const controlHeight = compact ? "h-8" : "h-9";
+  const swatchWidth = compact ? "w-8" : "w-9";
 
   return (
-    <div className={cn(compact ? "space-y-1.5" : "space-y-2", className)}>
+    <div className={cn(compact ? "space-y-0" : "space-y-2", className)}>
       {label ? (
         <Label className="text-theme-xs text-gray-600 dark:text-gray-400">{label}</Label>
       ) : null}
-      <div className="flex items-center gap-1.5">
-        <Popover open={open} onOpenChange={handleOpenChange}>
+      <Popover open={open} onOpenChange={handleOpenChange}>
+        <div
+          className={cn(
+            "flex w-full items-stretch overflow-hidden rounded-md border border-gray-200 bg-white shadow-theme-xs dark:border-gray-700 dark:bg-gray-900",
+            controlHeight,
+          )}
+        >
           <PopoverTrigger asChild>
             <button
               type="button"
               aria-label={pickerLabel}
-              title="点击打开取色器"
+              title="打开取色器"
               className={cn(
-                "group/picker relative shrink-0 overflow-hidden rounded-md border border-gray-200 shadow-theme-xs transition-shadow hover:ring-2 hover:ring-brand-500/30 focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/30 dark:border-gray-700",
-                compact ? "size-8" : "size-9",
+                "shrink-0 border-r border-gray-200 transition-opacity hover:opacity-90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30 dark:border-gray-700",
+                swatchWidth,
               )}
-            >
-              <span
-                className="absolute inset-0"
-                style={{ background: displayHex || "#ffffff" }}
-                aria-hidden
-              />
-              <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover/picker:bg-black/10">
-                <Pipette
-                  className={cn(
-                    "text-white drop-shadow-sm opacity-70 transition-opacity group-hover/picker:opacity-100",
-                    compact ? "size-3.5" : "size-4",
-                  )}
-                  aria-hidden
-                />
-              </span>
-            </button>
+              style={{ background: displayHex || "#ffffff" }}
+            />
           </PopoverTrigger>
-          <PopoverContent align="start" sideOffset={6} className="w-[260px] p-3">
-            <ColorPickerPanel value={localValue} onChange={applyColor} />
-            {items.length > 0 ? (
-              <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-800">
-                <p className="mb-2 text-theme-xs text-gray-500 dark:text-gray-400">推荐颜色</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {items.map((item) => (
-                    <button
-                      key={item.color}
-                      type="button"
-                      title={item.label}
-                      aria-label={item.label}
-                      className={cn(
-                        "size-6 rounded-md border transition-transform hover:scale-105",
-                        normalizeHexColor(localValue) === normalizeHexColor(item.color)
-                          ? "ring-2 ring-brand-500 ring-offset-1 dark:ring-offset-gray-dark"
-                          : "border-gray-200 dark:border-gray-700",
-                      )}
-                      style={{ background: item.color }}
-                      onClick={() => applyColor(item.color)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </PopoverContent>
-        </Popover>
-        <Input
-          className={cn("flex-1 font-mono text-theme-xs", compact ? "h-8" : "h-9")}
-          value={localValue}
-          placeholder="#ffffff"
-          spellCheck={false}
-          onChange={(event) => {
-            const next = event.target.value;
-            setLocalValue(next);
-            scheduleCommit(next);
-          }}
-          onBlur={(event) => {
-            const normalized = normalizeHexColor(event.target.value);
-            if (normalized) {
-              setLocalValue(normalized);
-              commitNow(normalized);
-              return;
-            }
-            if (!event.target.value.trim()) {
-              setLocalValue("");
-              commitNow("");
-            }
-          }}
-        />
-        {allowClear ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={cn("shrink-0 px-2 text-theme-xs", compact ? "h-8" : "h-9")}
-            onClick={() => {
-              setLocalValue("");
-              commitNow("");
+          <input
+            className="min-w-0 flex-1 border-0 bg-transparent px-2 font-mono text-theme-xs text-gray-800 placeholder:text-gray-400 focus:outline-none dark:text-white/90 dark:placeholder:text-gray-500"
+            value={localValue}
+            placeholder="#ffffff"
+            spellCheck={false}
+            aria-label={label ? `${label} Hex` : "颜色 Hex"}
+            onChange={(event) => {
+              const next = event.target.value;
+              setLocalValue(next);
+              scheduleCommit(next);
             }}
-          >
-            清除
-          </Button>
-        ) : null}
-      </div>
-      {!compact ? (
-        <p className="text-[10px] text-gray-400">点击左侧色块打开取色器，或直接输入 Hex</p>
-      ) : null}
+            onBlur={(event) => {
+              const normalized = normalizeHexColor(event.target.value);
+              if (normalized) {
+                setLocalValue(normalized);
+                commitNow(normalized);
+                return;
+              }
+              if (!event.target.value.trim()) {
+                setLocalValue("");
+                commitNow("");
+              }
+            }}
+          />
+          {allowClear ? (
+            <button
+              type="button"
+              className="flex w-7 shrink-0 items-center justify-center text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30 dark:hover:bg-white/5 dark:hover:text-gray-200"
+              aria-label="清除颜色"
+              onClick={() => {
+                setLocalValue("");
+                commitNow("");
+              }}
+            >
+              <X className="size-3.5" aria-hidden />
+            </button>
+          ) : null}
+        </div>
+        <PopoverContent
+          align={compact ? "end" : "start"}
+          side={compact ? "left" : "bottom"}
+          sideOffset={6}
+          collisionPadding={12}
+          className="w-[228px] p-2.5"
+        >
+          <ColorPickerPanel value={localValue} onChange={applyColor} />
+          {items.length > 0 ? (
+            <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
+              <p className="mb-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">推荐</p>
+              <div className="flex flex-wrap gap-1">
+                {items.map((item) => (
+                  <button
+                    key={item.color}
+                    type="button"
+                    title={item.label}
+                    aria-label={item.label}
+                    className={cn(
+                      "size-5 rounded border transition-transform hover:scale-105",
+                      normalizeHexColor(localValue) === normalizeHexColor(item.color)
+                        ? "ring-2 ring-brand-500 ring-offset-1 dark:ring-offset-gray-dark"
+                        : "border-gray-200 dark:border-gray-700",
+                    )}
+                    style={{ background: item.color }}
+                    onClick={() => applyColor(item.color)}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

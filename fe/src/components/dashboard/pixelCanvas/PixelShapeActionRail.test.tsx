@@ -74,4 +74,25 @@ describe("PixelShapeActionRail", () => {
 
     expect(onCopy).toHaveBeenCalledWith("w-map");
   });
+
+  it("tags more menu with dashboard dark theme for portaled chrome", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <PixelShapeActionRail
+        widget={chartWidget}
+        scale={1}
+        viewport={{ x: 0, width: 1440 }}
+        colorScheme="dark"
+        actions={{ onCopy: vi.fn() }}
+      />,
+    );
+
+    await user.click(screen.getByTestId("pixel-shape-action-more"));
+    const menu = await screen.findByRole("menu");
+
+    expect(menu).toHaveAttribute("data-dashboard-menu", "");
+    expect(menu).toHaveAttribute("data-dashboard-color-scheme", "dark");
+    expect(menu.className).toMatch(/bg-gray-900/);
+  });
 });

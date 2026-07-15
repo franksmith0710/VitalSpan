@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { applyBackgroundOpacityOnly } from "@/lib/widgetSurfaceBackground";
 import type { DashboardThemeVariants } from "./dashboardThemeVariants";
 import { getDashboardThemeTokens } from "./dashboardThemeTokens";
 import { componentGapShellStyle } from "./componentGapRuntime";
@@ -79,6 +80,8 @@ export type DashboardChromeConfig = {
 };
 
 export type TitleStyleConfig = {
+  /** 看板默认：未单独配置的图表是否显示标题 */
+  show?: boolean;
   fontSize?: number;
   color?: string;
   fontWeight?: number;
@@ -118,6 +121,8 @@ export type DashboardStyleConfig = {
   canvasBackgroundImage?: string;
   /** §5.3「仪表板背景」显式设置；未设置时 §5.1 主题卡片使用标准底色 */
   canvasBackgroundCustom?: boolean;
+  /** 背景装饰预设 id（点阵/网格/渐变等） */
+  canvasDecorPresetId?: string;
   refreshIntervalSec?: number;
   defaultQueryLimit?: number;
   widgetStyle?: WidgetStyleConfig;
@@ -236,6 +241,39 @@ const CANVAS_GRID_SVG_DARK = encodeURIComponent(
 const CANVAS_DOTS_SVG_DARK = encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="1" cy="1" r="1.25" fill="%2394a3b8"/></svg>',
 );
+const CANVAS_CROSS_SVG = encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M0 10h20M10 0v20" fill="none" stroke="%23e2e8f0" stroke-width="0.5"/></svg>',
+);
+const CANVAS_CROSS_SVG_DARK = encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M0 10h20M10 0v20" fill="none" stroke="%23475569" stroke-width="0.5"/></svg>',
+);
+const CANVAS_DIAGONAL_SVG = encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><path d="M-1 1l2-2M0 10L10 0M9 11l2-2" fill="none" stroke="%23cbd5e1" stroke-width="0.75"/></svg>',
+);
+const CANVAS_DIAGONAL_SVG_DARK = encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><path d="M-1 1l2-2M0 10L10 0M9 11l2-2" fill="none" stroke="%2394a3b8" stroke-width="0.75"/></svg>',
+);
+
+const DECOR_GRADIENT_BY_SCHEME: Record<string, { light: string; dark: string }> = {
+  "gradient-soft": {
+    light: "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
+    dark: "linear-gradient(160deg, #0f172a 0%, #1e293b 48%, #172554 100%)",
+  },
+  "gradient-brand": {
+    light: "linear-gradient(135deg, #eef2ff 0%, #f8fafc 52%, #ffffff 100%)",
+    dark: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #0f172a 100%)",
+  },
+  "gradient-radial": {
+    light: "radial-gradient(ellipse 90% 70% at 50% -10%, #e0e7ff 0%, #f8fafc 50%, #ffffff 100%)",
+    dark: "radial-gradient(ellipse 90% 70% at 50% -10%, #312e81 0%, #0f172a 55%, #020617 100%)",
+  },
+};
+
+export function decorGradientForScheme(presetId: string, scheme: ColorScheme = "light"): string | undefined {
+  return DECOR_GRADIENT_BY_SCHEME[presetId]?.[scheme];
+}
+
+const GRADIENT_DECOR_PRESET_IDS = new Set(Object.keys(DECOR_GRADIENT_BY_SCHEME));
 
 export type CanvasDecorPreset = {
   id: string;
@@ -251,7 +289,7 @@ export const CANVAS_BG_DECOR_PRESETS: CanvasDecorPreset[] = [
   {
     id: "none",
     label: "无装饰",
-    previewStyle: { background: "linear-gradient(135deg, #f8fafc 50%, #e2e8f0 50%)" },
+    previewStyle: { backgroundColor: "#ffffff" },
   },
   {
     id: "dots",
@@ -278,12 +316,51 @@ export const CANVAS_BG_DECOR_PRESETS: CanvasDecorPreset[] = [
     },
   },
   {
+    id: "cross",
+    label: "十字线",
+    image: `data:image/svg+xml,${CANVAS_CROSS_SVG}`,
+    tileSize: { width: 20, height: 20 },
+    previewStyle: {
+      backgroundColor: "#f8fafc",
+      backgroundImage: `url("data:image/svg+xml,${CANVAS_CROSS_SVG}")`,
+      backgroundSize: "20px 20px",
+      backgroundRepeat: "repeat",
+    },
+  },
+  {
+    id: "diagonal",
+    label: "斜纹",
+    image: `data:image/svg+xml,${CANVAS_DIAGONAL_SVG}`,
+    tileSize: { width: 10, height: 10 },
+    previewStyle: {
+      backgroundColor: "#ffffff",
+      backgroundImage: `url("data:image/svg+xml,${CANVAS_DIAGONAL_SVG}")`,
+      backgroundSize: "10px 10px",
+      backgroundRepeat: "repeat",
+    },
+  },
+  {
     id: "gradient-soft",
     label: "柔和渐变",
-    image: undefined,
-    canvasBackground: "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
+    canvasBackground: DECOR_GRADIENT_BY_SCHEME["gradient-soft"].light,
     previewStyle: {
-      background: "linear-gradient(160deg, #eff6ff 0%, #f8fafc 45%, #fef3c7 100%)",
+      background: DECOR_GRADIENT_BY_SCHEME["gradient-soft"].light,
+    },
+  },
+  {
+    id: "gradient-brand",
+    label: "品牌淡彩",
+    canvasBackground: DECOR_GRADIENT_BY_SCHEME["gradient-brand"].light,
+    previewStyle: {
+      background: DECOR_GRADIENT_BY_SCHEME["gradient-brand"].light,
+    },
+  },
+  {
+    id: "gradient-radial",
+    label: "径向光晕",
+    canvasBackground: DECOR_GRADIENT_BY_SCHEME["gradient-radial"].light,
+    previewStyle: {
+      background: DECOR_GRADIENT_BY_SCHEME["gradient-radial"].light,
     },
   },
 ];
@@ -422,6 +499,9 @@ export function effectiveCanvasBackground(config: DashboardStyleConfig): string 
   if (!hasImage && !hasCustomSolid) return undefined;
 
   const bg = config.canvasBackground?.trim();
+  if (config.canvasBackgroundCustom) {
+    return bg || undefined;
+  }
   if (hasImage) {
     if (scheme === "dark" && (!bg || !isDarkCanvasColor(bg))) {
       return CANVAS_BG_DARK_DEFAULT;
@@ -445,29 +525,44 @@ export function effectiveWidgetShellBackground(
 }
 
 export function resolveCanvasDecorPresetId(config: DashboardStyleConfig): string {
+  if (config.canvasDecorPresetId) return config.canvasDecorPresetId;
   const image = config.canvasBackgroundImage?.trim();
-  if (!image) {
-    const bg = config.canvasBackground?.trim();
-    if (bg?.startsWith("linear-gradient")) return "gradient-soft";
-    return "none";
+  if (image) {
+    const preset = CANVAS_BG_DECOR_PRESETS.find((item) => item.image === image);
+    if (preset) return preset.id;
+    return "custom";
   }
-  const preset = CANVAS_BG_DECOR_PRESETS.find((item) => item.image === image);
-  return preset?.id ?? "custom";
+  const bg = config.canvasBackground?.trim();
+  if (bg) {
+    for (const presetId of GRADIENT_DECOR_PRESET_IDS) {
+      const light = decorGradientForScheme(presetId, "light");
+      const dark = decorGradientForScheme(presetId, "dark");
+      if (bg === light || bg === dark) return presetId;
+    }
+    if (bg.startsWith("linear-gradient") || bg.startsWith("radial-gradient")) {
+      return "gradient-soft";
+    }
+  }
+  return "none";
 }
 
-/** 切换为「无装饰」：清除纹理；若底色为柔和渐变预设则一并还原 */
+/** 切换为「无装饰」：清除纹理；渐变预设底色一并还原，保留用户自定义纯色 */
 export function patchDecorNoneStyle(
   config: DashboardStyleConfig,
 ): Partial<DashboardStyleConfig> {
   const patch: Partial<DashboardStyleConfig> = {
     canvasBackgroundImage: undefined,
-    canvasBackgroundCustom: false,
-    canvasBackground: undefined,
+    canvasDecorPresetId: undefined,
   };
-  const bg = config.canvasBackground?.trim();
-  const gradientSoft = CANVAS_BG_DECOR_PRESETS.find((item) => item.id === "gradient-soft");
-  if (bg && gradientSoft?.canvasBackground && bg === gradientSoft.canvasBackground) {
-    patch.canvasBackground = undefined;
+  const presetId = config.canvasDecorPresetId ?? resolveCanvasDecorPresetId(config);
+  if (GRADIENT_DECOR_PRESET_IDS.has(presetId)) {
+    const scheme = config.colorScheme ?? "light";
+    const bg = config.canvasBackground?.trim();
+    const expected = decorGradientForScheme(presetId, scheme);
+    if (bg && expected && bg === expected) {
+      patch.canvasBackground = undefined;
+      patch.canvasBackgroundCustom = false;
+    }
   }
   return patch;
 }
@@ -482,6 +577,8 @@ function decorTileImageForScheme(presetId: string, scheme: ColorScheme): string 
   if (scheme === "dark") {
     if (presetId === "dots") return `data:image/svg+xml,${CANVAS_DOTS_SVG_DARK}`;
     if (presetId === "grid") return `data:image/svg+xml,${CANVAS_GRID_SVG_DARK}`;
+    if (presetId === "cross") return `data:image/svg+xml,${CANVAS_CROSS_SVG_DARK}`;
+    if (presetId === "diagonal") return `data:image/svg+xml,${CANVAS_DIAGONAL_SVG_DARK}`;
   }
   return preset.image;
 }
@@ -496,26 +593,29 @@ export function patchDecorPresetStyle(
   const preset = CANVAS_BG_DECOR_PRESETS.find((item) => item.id === presetId);
   if (!preset) return {};
 
-  if (presetId === "gradient-soft") {
+  const scheme = config.colorScheme ?? "light";
+
+  if (GRADIENT_DECOR_PRESET_IDS.has(presetId)) {
     return {
       canvasBackgroundImage: undefined,
-      canvasBackground: preset.canvasBackground,
+      canvasBackground: decorGradientForScheme(presetId, scheme) ?? preset.canvasBackground,
       canvasBackgroundCustom: true,
+      canvasDecorPresetId: presetId,
     };
   }
 
-  const scheme = config.colorScheme ?? "light";
   const existing = config.canvasBackground?.trim();
-  const gradientSoft = CANVAS_BG_DECOR_PRESETS.find((item) => item.id === "gradient-soft");
   const keepSolid =
     Boolean(existing) &&
     !existing!.startsWith("linear-gradient") &&
-    existing !== gradientSoft?.canvasBackground;
+    !existing!.startsWith("radial-gradient") &&
+    !GRADIENT_DECOR_PRESET_IDS.has(resolveCanvasDecorPresetId({ canvasBackground: existing }));
 
   return {
-    canvasBackgroundImage: preset.image,
+    canvasBackgroundImage: decorTileImageForScheme(presetId, scheme) ?? preset.image,
     canvasBackground: keepSolid ? existing : defaultSolidArtboardColor(scheme),
     canvasBackgroundCustom: true,
+    canvasDecorPresetId: presetId,
   };
 }
 
@@ -524,20 +624,30 @@ export function decorPresetPreviewStyle(
   presetId: string,
   scheme: ColorScheme = "light",
 ): CSSProperties {
+  if (presetId === "none") {
+    return {
+      backgroundColor: scheme === "dark" ? CANVAS_BG_DARK_DEFAULT : CANVAS_BG_LIGHT_DEFAULT,
+    };
+  }
+  const patched = patchDecorPresetStyle(presetId, { colorScheme: scheme });
   return canvasBackgroundStyle({
     colorScheme: scheme,
-    ...patchDecorPresetStyle(presetId, { colorScheme: scheme }),
+    ...patched,
+    canvasBackgroundCustom: true,
   });
 }
 
 function resolveDecorImageStyle(
   image: string,
   scheme: ColorScheme = "light",
+  presetId?: string,
 ): Pick<
   CSSProperties,
   "backgroundImage" | "backgroundSize" | "backgroundRepeat" | "backgroundPosition"
 > {
-  const preset = CANVAS_BG_DECOR_PRESETS.find((item) => item.image === image);
+  const preset = presetId
+    ? CANVAS_BG_DECOR_PRESETS.find((item) => item.id === presetId)
+    : CANVAS_BG_DECOR_PRESETS.find((item) => item.image === image);
   if (preset?.tileSize) {
     const tileUrl = decorTileImageForScheme(preset.id, scheme) ?? image;
     const { width, height } = preset.tileSize;
@@ -610,6 +720,17 @@ export function widgetDashboardStyleFingerprint(
   return JSON.stringify(pickWidgetDashboardStyle(config));
 }
 
+/** 画板底色/装饰变更指纹（PixelCanvas artboard 重绘） */
+export function canvasArtboardStyleFingerprint(config: DashboardStyleConfig): string {
+  return JSON.stringify({
+    scheme: config.colorScheme ?? "light",
+    bg: config.canvasBackground,
+    img: config.canvasBackgroundImage,
+    custom: config.canvasBackgroundCustom,
+    decor: config.canvasDecorPresetId,
+  });
+}
+
 export function canvasChromeUsesDotGrid(config: DashboardStyleConfig): boolean {
   return !hasUserCanvasBackground(config);
 }
@@ -631,7 +752,10 @@ export function canvasBackgroundStyle(config: DashboardStyleConfig): CSSProperti
       const fill = customSolid || defaultSolidArtboardColor(scheme);
       style.backgroundColor = fill;
     }
-    Object.assign(style, resolveDecorImageStyle(backgroundImage, scheme));
+    Object.assign(
+      style,
+      resolveDecorImageStyle(backgroundImage, scheme, config.canvasDecorPresetId),
+    );
     return style;
   }
 
@@ -645,16 +769,10 @@ export function canvasBackgroundStyle(config: DashboardStyleConfig): CSSProperti
 export function resolveArtboardStyle(config: DashboardStyleConfig): CSSProperties {
   const scheme = config.colorScheme ?? "light";
   const coerced = effectiveCanvasBackground(config);
-  let working: DashboardStyleConfig = {
+  const working: DashboardStyleConfig = {
     ...config,
     canvasBackground: coerced ?? config.canvasBackground,
   };
-  if (scheme === "dark" && working.canvasBackgroundImage?.trim()) {
-    const presetId = resolveCanvasDecorPresetId(working);
-    if (presetId !== "none" && presetId !== "custom") {
-      working = { ...working, canvasBackgroundImage: undefined };
-    }
-  }
   const userBackground = canvasBackgroundStyle(working);
   if (Object.keys(userBackground).length > 0) return userBackground;
   return {
@@ -716,7 +834,7 @@ export function resolveBoxRadius(global: WidgetStyleConfig | undefined): string 
 export function mergeWidgetShellStyle(
   global: WidgetStyleConfig | undefined,
   colorScheme: ColorScheme = "light",
-): { className: string; style: CSSProperties } {
+): { className: string; style: CSSProperties; backgroundLayer: CSSProperties | null } {
   const style: CSSProperties = {};
   const coerced = coerceWidgetSurfaceBackground(global?.background, colorScheme);
 
@@ -745,7 +863,8 @@ export function mergeWidgetShellStyle(
     style.borderColor = global.borderColor ?? "var(--dashboard-widget-border, var(--color-gray-200))";
     style.borderWidth = global.borderWidth ?? 1;
   }
-  return { className: "", style };
+  const presentation = applyBackgroundOpacityOnly(style);
+  return { className: "", style: presentation.surface, backgroundLayer: presentation.backgroundLayer };
 }
 
 export function formatMetricValue(

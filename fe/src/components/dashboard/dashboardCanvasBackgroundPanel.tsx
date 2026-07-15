@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { DeAttrField, DeAttrForm, DeSegmentGroup, DE_INPUT } from "./dashboardInspectorUi";
+import { DeAttrField, DeAttrForm, DE_INPUT } from "./dashboardInspectorUi";
 import { ColorField } from "@/components/ui/color-field";
 import {
   CANVAS_BG_DECOR_PRESETS,
@@ -54,6 +55,7 @@ export function DashboardCanvasBackgroundPanel({
     patchStyle({
       canvasBackgroundImage: trimmed || undefined,
       canvasBackgroundCustom: Boolean(trimmed),
+      canvasDecorPresetId: trimmed ? "custom" : undefined,
     });
   };
 
@@ -77,13 +79,22 @@ export function DashboardCanvasBackgroundPanel({
           value={styleConfig.canvasBackground ?? ""}
           swatches={CANVAS_BG_RECOMMENDED}
           onChange={(color) =>
-            patchStyle({ canvasBackground: color, canvasBackgroundCustom: true })
+            patchStyle({
+              canvasBackground: color,
+              canvasBackgroundCustom: Boolean(color),
+              ...(color
+                ? {}
+                : {
+                    canvasBackgroundImage: undefined,
+                    canvasDecorPresetId: undefined,
+                  }),
+            })
           }
         />
       </DeAttrField>
 
       <DeAttrField label="背景装饰">
-        <div className="grid w-fit max-w-full grid-cols-[repeat(2,minmax(9.5rem,11rem))] gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {CANVAS_BG_DECOR_PRESETS.map((preset) => {
             const selected = decorId === preset.id;
             return (
@@ -91,7 +102,8 @@ export function DashboardCanvasBackgroundPanel({
                 key={preset.id}
                 type="button"
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border p-2 text-left transition-all",
+                  "flex flex-col gap-1.5 rounded-lg border p-2 text-left transition-all",
+                  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30",
                   selected
                     ? "border-brand-500 bg-brand-50/60 shadow-theme-xs dark:border-brand-500 dark:bg-brand-500/10"
                     : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-transparent",
@@ -102,12 +114,19 @@ export function DashboardCanvasBackgroundPanel({
                   setShowAdvancedUrl(false);
                 }}
               >
+                <span className="flex items-center justify-between gap-1">
+                  <span className="truncate text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                    {preset.label}
+                  </span>
+                  {selected ? (
+                    <Check className="size-3 shrink-0 text-brand-500" aria-hidden />
+                  ) : null}
+                </span>
                 <span
-                  className="size-8 shrink-0 rounded-md border border-gray-200/80 dark:border-gray-700"
+                  className="h-9 w-full rounded-md border border-gray-200/80 dark:border-gray-700"
                   style={decorPresetPreviewStyle(preset.id, colorScheme)}
                   aria-hidden
                 />
-                <span className="text-theme-xs text-gray-700 dark:text-gray-300">{preset.label}</span>
               </button>
             );
           })}
@@ -116,51 +135,51 @@ export function DashboardCanvasBackgroundPanel({
 
       <DeAttrField label="自定义背景图">
         <div className="space-y-2">
-        <button
-          type="button"
-          className="text-theme-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
-          onClick={() => setShowAdvancedUrl((open) => !open)}
-        >
-          {showAdvancedUrl ? "收起自定义图片" : "使用自定义背景图…"}
-        </button>
-        {showAdvancedUrl ? (
-          <div className="space-y-2">
-            <Input
-              className={DE_INPUT}
-              value={localImageUrl}
-              placeholder="https://example.com/background.jpg"
-              onChange={(e) => {
-                const next = e.target.value;
-                setLocalImageUrl(next);
-                scheduleImageUrlCommit(next);
-              }}
-              onBlur={() => {
-                if (urlCommitTimerRef.current) {
-                  clearTimeout(urlCommitTimerRef.current);
-                  urlCommitTimerRef.current = null;
-                }
-                commitImageUrl(localImageUrl);
-              }}
-            />
-            {imageInvalid ? (
-              <p className="text-theme-xs text-error-600 dark:text-error-400" role="alert">
-                请输入有效的图片链接（需以 https:// 或 http:// 开头）
-              </p>
-            ) : null}
-            {isValidBackgroundImageUrl(previewUrl) ? (
-              <div
-                className="h-16 overflow-hidden rounded-md border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
-                style={{
-                  backgroundImage: `url(${previewUrl})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
+          <button
+            type="button"
+            className="text-theme-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
+            onClick={() => setShowAdvancedUrl((open) => !open)}
+          >
+            {showAdvancedUrl ? "收起自定义图片" : "使用自定义背景图…"}
+          </button>
+          {showAdvancedUrl ? (
+            <div className="space-y-2">
+              <Input
+                className={DE_INPUT}
+                value={localImageUrl}
+                placeholder="https://example.com/background.jpg"
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setLocalImageUrl(next);
+                  scheduleImageUrlCommit(next);
                 }}
-                role="img"
-                aria-label="背景图预览"
+                onBlur={() => {
+                  if (urlCommitTimerRef.current) {
+                    clearTimeout(urlCommitTimerRef.current);
+                    urlCommitTimerRef.current = null;
+                  }
+                  commitImageUrl(localImageUrl);
+                }}
               />
-            ) : null}
-          </div>
-        ) : null}
+              {imageInvalid ? (
+                <p className="text-theme-xs text-error-600 dark:text-error-400" role="alert">
+                  请输入有效的图片链接（需以 https:// 或 http:// 开头）
+                </p>
+              ) : null}
+              {isValidBackgroundImageUrl(previewUrl) ? (
+                <div
+                  className="h-16 overflow-hidden rounded-md border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+                  style={{
+                    backgroundImage: `url(${previewUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                  role="img"
+                  aria-label="背景图预览"
+                />
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </DeAttrField>
 

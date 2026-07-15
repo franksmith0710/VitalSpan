@@ -235,7 +235,7 @@ export function DashboardWidget({
   const shapeContentChromePx =
     inShapeShell && mode === "edit" && selected
       ? pixelDragRailHeightPx(canvasScale)
-      : inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig)
+      : inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle)
         ? pixelViewTitleHeightPx(canvasScale)
         : 0;
   const shellStyle = mergeWidgetShellStyle(
@@ -244,7 +244,7 @@ export function DashboardWidget({
   );
   const chrome = resolveDashboardChrome(dashboardStyle);
   const chartTitleVisible =
-    inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig);
+    inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle);
   const titleStyle =
     widget.chartConfig
       ? mergeChartTitleStyle(
@@ -393,7 +393,7 @@ export function DashboardWidget({
             </IconButton>
           ) : null}
         </div>
-      ) : readChartTitleVisible(widget.chartConfig) ? (
+      ) : readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle) ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400">
             <Icon className="size-3.5" aria-hidden />

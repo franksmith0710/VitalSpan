@@ -8,6 +8,7 @@ import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleCo
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
 import { DEFAULT_TABLE_PAGE_SIZE } from "@/lib/chartDeTableStyle";
+import { withBackgroundAlpha } from "@/lib/widgetSurfaceBackground";
 
 type EmbeddedChartTableProps = {
   columns: string[];
@@ -49,6 +50,10 @@ export function EmbeddedChartTable({
   const rowHover = tableStyle.rowHover !== false;
   const opacity = tableStyle.opacity != null ? tableStyle.opacity / 100 : 1;
   const borderColor = tableStyle.borderColor;
+  const panelBackground =
+    opacity < 1
+      ? withBackgroundAlpha("var(--dashboard-widget-surface)", opacity)
+      : undefined;
 
   const usePagination = paginationMode === "page" && rows.length > pageSize;
   const pageRows = usePagination
@@ -77,7 +82,7 @@ export function EmbeddedChartTable({
     <div
       className={cn("flex min-h-0 w-full min-w-0 flex-col", panel ? undefined : "h-full")}
       style={{
-        opacity,
+        ...(panelBackground ? { backgroundColor: panelBackground } : null),
         ...(borderColor ? { border: `1px solid ${borderColor}`, borderRadius: 4 } : null),
       }}
     >

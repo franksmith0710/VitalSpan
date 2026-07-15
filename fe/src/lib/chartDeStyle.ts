@@ -16,6 +16,7 @@ import {
   resolveBoxRadius,
 } from "@/components/dashboard/dashboardStyleConfig";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "@/components/dashboard/dashboardThemeTokens";
+import { applyBackgroundOpacityOnly, type WidgetBackgroundPresentation } from "@/lib/widgetSurfaceBackground";
 
 export type ChartLegendStyle = {
   show?: boolean;
@@ -87,10 +88,16 @@ export function readChartDeStyle(cfg: ChartViewConfig): ChartDeStyle {
   return raw as ChartDeStyle;
 }
 
-/** 默认显示；仅 deStyle.title.show === false 时隐藏 */
-export function readChartTitleVisible(cfg: ChartViewConfig | undefined): boolean {
-  if (!cfg) return true;
-  return readChartDeStyle(cfg).title?.show !== false;
+/** 默认显示；组件 deStyle.title.show > 看板 titleStyle.show */
+export function readChartTitleVisible(
+  cfg: ChartViewConfig | undefined,
+  globalTitleStyle?: Pick<TitleStyleConfig, "show">,
+): boolean {
+  if (cfg) {
+    const show = readChartDeStyle(cfg).title?.show;
+    if (show !== undefined) return show !== false;
+  }
+  return globalTitleStyle?.show !== false;
 }
 
 export function mergeChartTitleStyle(
@@ -107,30 +114,12 @@ export function mergeChartTitleStyle(
   return mergeTitleStyle(global, mergedOverride);
 }
 
-const CHART_TITLE_PRESENTATION_KEYS = [
-  "fontSize",
-  "color",
-  "fontWeight",
-  "align",
-  "letterSpacing",
-  "shadow",
-] as const satisfies ReadonlyArray<keyof TitleStyleConfig>;
-
-function chartTitleHasPresentationOverride(title: NonNullable<ChartDeStyle["title"]>): boolean {
-  return CHART_TITLE_PRESENTATION_KEYS.some((key) => title[key] != null);
-}
-
-/** 清除组件级标题外观 override，保留 show；看板「图表标题」修改后统一跟全局 */
-export function stripChartTitlePresentationOverrides(cfg: ChartViewConfig): ChartViewConfig {
+/** 看板「图表标题」修改后清除组件级 title override（含 show） */
+export function stripChartTitleOverrides(cfg: ChartViewConfig): ChartViewConfig {
   const de = readChartDeStyle(cfg);
-  const title = de.title;
-  if (!title || !chartTitleHasPresentationOverride(title)) return cfg;
-
-  const nextTitle = title.show !== undefined ? { show: title.show } : undefined;
+  if (!de.title) return cfg;
   const nextDe: ChartDeStyle = { ...de };
-  if (nextTitle) nextDe.title = nextTitle;
-  else delete nextDe.title;
-
+  delete nextDe.title;
   return {
     ...cfg,
     nativeBody: {
@@ -138,6 +127,11 @@ export function stripChartTitlePresentationOverrides(cfg: ChartViewConfig): Char
       deStyle: nextDe,
     },
   };
+}
+
+/** @deprecated 使用 stripChartTitleOverrides */
+export function stripChartTitlePresentationOverrides(cfg: ChartViewConfig): ChartViewConfig {
+  return stripChartTitleOverrides(cfg);
 }
 
 export function syncChartWidgetsForDashboardTitleStyle(
@@ -177,7 +171,7 @@ export function syncChartWidgetsForDashboardScopes(
     if (widget.type !== "chart" || !widget.chartConfig) return widget;
     let cfg = widget.chartConfig;
 
-    if (scopes.has("title")) cfg = stripChartTitlePresentationOverrides(cfg);
+    if (scopes.has("title")) cfg = stripChartTitleOverrides(cfg);
     if (scopes.has("widgetAppearance")) cfg = stripChartWidgetAppearanceOverrides(cfg);
     if (scopes.has("palette")) cfg = stripChartPaletteOverrides(cfg);
     if (scopes.has("numberFormat")) cfg = stripChartLabelFormatOverrides(cfg);
@@ -304,8 +298,8 @@ export function readChartDataZoom(cfg: ChartViewConfig): boolean {
 export function widgetStyleToContentCss(
   bg: WidgetStyleConfig | undefined,
   colorScheme: ColorScheme = "light",
-): CSSProperties {
-  if (!bg) return {};
+): WidgetBackgroundPresentation {
+  if (!bg) return { surface: {}, backgroundLayer: null };
   const style: CSSProperties = {};
   const coerced = coerceWidgetSurfaceBackground(bg.background, colorScheme);
   if (coerced) style.background = coerced;
@@ -322,7 +316,7 @@ export function widgetStyleToContentCss(
   if (padding) style.padding = padding;
   const radius = resolveBoxRadius(bg);
   if (radius) style.borderRadius = radius;
-  return style;
+  return applyBackgroundOpacityOnly(style);
 }
 
 /** 看板 widgetStyle 外壳 + 图表 deStyle 内区（背景/内边距/边框） */
@@ -330,18 +324,27 @@ export function resolveChartContentShellStyle(
   globalWidgetStyle: DashboardStyleConfig["widgetStyle"] | undefined,
   cfg: ChartViewConfig | undefined,
   colorScheme: ColorScheme = "light",
-): { outer: ReturnType<typeof mergeWidgetShellStyle>; inner: CSSProperties } {
+): {
+  outer: ReturnType<typeof mergeWidgetShellStyle>;
+  inner: CSSProperties;
+  innerBackgroundLayer: CSSProperties | null;
+} {
   const outer = mergeWidgetShellStyle(globalWidgetStyle, colorScheme);
-  if (!cfg) return { outer, inner: {} };
+  if (!cfg) return { outer, inner: {}, innerBackgroundLayer: null };
   const de = readChartDeStyle(cfg);
-  const inner = widgetStyleToContentCss(de.background, colorScheme);
+  const innerPresentation = widgetStyleToContentCss(de.background, colorScheme);
+  const inner = { ...innerPresentation.surface };
   if (de.border?.show) {
     inner.borderStyle = de.border.style ?? "solid";
     inner.borderColor = de.border.color ?? "var(--dashboard-widget-border, var(--color-gray-200))";
     inner.borderWidth = de.border.width ?? 1;
     if (de.border.radius != null) inner.borderRadius = `${de.border.radius}px`;
   }
-  return { outer, inner };
+  return {
+    outer,
+    inner,
+    innerBackgroundLayer: innerPresentation.backgroundLayer,
+  };
 }
 
 export function resolveWidgetShellStyle(

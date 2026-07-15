@@ -23,10 +23,9 @@ import type { LayoutWidget } from "./layoutUtils";
 import { ChartPalettePicker } from "./ChartPalettePicker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DEFAULT_DRILL_LEVEL_COLORS } from "./dashboardChromeConfig";
-import type { ColorScheme, SpacingMode, TitleStyleConfig } from "./dashboardStyleConfig";
+import type { ColorScheme, SpacingMode } from "./dashboardStyleConfig";
 import { SpacingModeToggle } from "./inspectorSpacing";
-import { DeAttrField, DeAttrToggleRow, DeSegmentGroup } from "./dashboardInspectorUi";
-import { HORIZONTAL_ALIGN_SEGMENT_OPTIONS } from "./inspectorSegmentIcons";
+import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -36,9 +35,6 @@ type StyleSectionProps = {
   isPixelLayout: boolean;
   onSwitchColorScheme?: (scheme: ColorScheme) => void;
 };
-
-const DASHBOARD_GLOBAL_SYNC_HINT =
-  "看板配置为全局默认：修改后会同步全部图表，并清除各组件同类单独设置。单组件可在选中后于右侧单独配置。";
 
 export function DashboardStyleSections({
   styleConfig,
@@ -96,9 +92,6 @@ export function DashboardWidgetStyleSections({
 
   return (
     <>
-      <p className="border-b border-gray-100 px-2.5 py-2 text-[10px] leading-snug text-gray-400 dark:border-white/[0.06] dark:text-gray-500">
-        {DASHBOARD_GLOBAL_SYNC_HINT}
-      </p>
       <DashboardConfigSection title="图表样式">
         <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
@@ -253,44 +246,7 @@ export function DashboardWidgetStyleSections({
       </DashboardConfigSection>
 
       <DashboardConfigSection title="图表标题" data-testid="dashboard-chart-title-style">
-        <div className="space-y-3">
-          <DashboardConfigSlider
-            label="字号"
-            value={ts.fontSize}
-            fallback={14}
-            min={10}
-            max={32}
-            step={1}
-            unit="px"
-            onChange={(fontSize) => patchTitleStyle({ fontSize })}
-          />
-          <ColorField
-            compact
-            allowClear
-            label="颜色"
-            value={ts.color ?? ""}
-            onChange={(color) => patchTitleStyle({ color: color || undefined })}
-          />
-          <DeAttrField label="对齐" compact className="border-b-0 py-0">
-            <DeSegmentGroup
-              value={ts.align ?? "left"}
-              columns={3}
-              sizing="fit"
-              options={HORIZONTAL_ALIGN_SEGMENT_OPTIONS.map((opt) => ({
-                value: opt.value,
-                label: opt.label,
-              }))}
-              onChange={(align) =>
-                patchTitleStyle({ align: align as TitleStyleConfig["align"] })
-              }
-            />
-          </DeAttrField>
-          <DeAttrToggleRow
-            label="字体阴影"
-            checked={ts.shadow ?? false}
-            onCheckedChange={(shadow) => patchTitleStyle({ shadow })}
-          />
-        </div>
+        <DashboardChartTitleStylePanel titleStyle={ts} onPatch={patchTitleStyle} />
       </DashboardConfigSection>
 
       <DashboardConfigSection title="查询组件">

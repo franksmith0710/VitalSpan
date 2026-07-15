@@ -1,5 +1,4 @@
 import {
-  ChevronRight,
   Copy,
   Eye,
   Maximize2,
@@ -9,6 +8,7 @@ import {
 } from "lucide-react";
 import { forwardRef, type ButtonHTMLAttributes, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 import { IconButton } from "@/components/ui/button";
+import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,30 +44,68 @@ type PixelShapeActionRailProps = {
   viewport: { x: number; width: number };
   otherWidgets?: Array<Pick<PixelRect, "x" | "y" | "width" | "height">>;
   actions: PixelWidgetActions;
+  colorScheme?: ColorScheme;
 };
 
-const RAIL_SHELL_CLASS = cn(
-  "flex w-full flex-col overflow-visible rounded-lg",
-  "border border-gray-200 bg-white shadow-theme-md",
-  "divide-y divide-gray-100",
-  "dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800",
-);
+function railShellClass(scheme: ColorScheme): string {
+  return cn(
+    "flex w-full flex-col overflow-visible rounded-lg shadow-theme-md",
+    "border divide-y",
+    scheme === "dark"
+      ? "border-gray-700 bg-gray-900 divide-gray-800"
+      : "border-gray-200 bg-white divide-gray-100",
+  );
+}
 
-const RAIL_BUTTON_CLASS = cn(
-  "size-full min-h-0 rounded-none p-0",
-  "text-gray-500 hover:bg-gray-50 hover:text-gray-800",
-  "dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-100",
-  "focus-visible:ring-inset focus-visible:ring-brand-500/25",
-  "disabled:pointer-events-none disabled:opacity-35",
-);
+function railButtonClass(scheme: ColorScheme): string {
+  return cn(
+    "size-full min-h-0 rounded-none p-0",
+    "focus-visible:ring-inset focus-visible:ring-brand-500/25",
+    "disabled:pointer-events-none disabled:opacity-35",
+    scheme === "dark"
+      ? "text-gray-400 hover:bg-white/5 hover:text-gray-100"
+      : "text-gray-500 hover:bg-gray-50 hover:text-gray-800",
+  );
+}
 
-const RAIL_TIP_CLASS = cn(
-  "dw-rail-tip pointer-events-none absolute top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-md px-2.5 py-1 font-medium",
-  "border border-gray-200 bg-white text-gray-700 shadow-theme-sm",
-  "opacity-0 transition-opacity duration-150",
-  "group-hover/rail-item:opacity-100 group-focus-within/rail-item:opacity-100",
-  "dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100",
-);
+function railTipClass(scheme: ColorScheme): string {
+  return cn(
+    "dw-rail-tip pointer-events-none absolute top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-md px-2.5 py-1 text-theme-xs font-medium shadow-theme-sm",
+    "border opacity-0 transition-opacity duration-150",
+    "group-hover/rail-item:opacity-100 group-focus-within/rail-item:opacity-100",
+    scheme === "dark"
+      ? "border-gray-700 bg-gray-900 text-gray-100"
+      : "border-gray-200 bg-white text-gray-700",
+  );
+}
+
+function menuChromeClass(scheme: ColorScheme): string {
+  return cn(
+    "z-[90] min-w-[10.5rem]",
+    scheme === "dark"
+      ? "border-gray-700 bg-gray-900 text-gray-300"
+      : "border-gray-200 bg-white text-gray-700",
+  );
+}
+
+function menuItemClass(scheme: ColorScheme, destructive = false): string | undefined {
+  if (destructive) {
+    return scheme === "dark"
+      ? "text-error-400 focus:bg-error-500/10 focus:text-error-300"
+      : "text-error-600 focus:text-error-600";
+  }
+  return scheme === "dark" ? "text-gray-300 focus:bg-white/5 focus:text-gray-200" : undefined;
+}
+
+function menuSubTriggerClass(scheme: ColorScheme): string | undefined {
+  return scheme === "dark"
+    ? "text-gray-300 focus:bg-white/5 data-[state=open]:bg-white/5"
+    : undefined;
+}
+
+function menuSeparatorClass(scheme: ColorScheme): string | undefined {
+  return scheme === "dark" ? "bg-gray-800" : undefined;
+}
 
 function railPositionStyle(
   placement: ShapeActionRailPlacement,
@@ -88,6 +126,7 @@ type RailIconButtonProps = {
   dimmed?: boolean;
   sizePx: number;
   iconSizePx: number;
+  buttonClassName: string;
   onAction?: () => void;
   children: ReactNode;
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">;
@@ -99,6 +138,7 @@ const RailIconButton = forwardRef<HTMLButtonElement, RailIconButtonProps>(functi
     dimmed,
     sizePx,
     iconSizePx,
+    buttonClassName,
     onAction,
     children,
     className,
@@ -120,7 +160,7 @@ const RailIconButton = forwardRef<HTMLButtonElement, RailIconButtonProps>(functi
       type="button"
       variant="ghost"
       size="sm"
-      className={cn(RAIL_BUTTON_CLASS, dimmed && "opacity-40", className)}
+      className={cn(buttonClassName, dimmed && "opacity-40", className)}
       style={{ width: sizePx, height: sizePx }}
       aria-label={label}
       title={label}
@@ -142,6 +182,8 @@ function RailActionItem({
   dimmed,
   sizePx,
   iconSizePx,
+  buttonClassName,
+  tipToneClass,
   onAction,
   children,
 }: {
@@ -151,6 +193,8 @@ function RailActionItem({
   dimmed?: boolean;
   sizePx: number;
   iconSizePx: number;
+  buttonClassName: string;
+  tipToneClass: string;
   onAction?: () => void;
   children: ReactNode;
 }) {
@@ -162,11 +206,12 @@ function RailActionItem({
         dimmed={dimmed}
         sizePx={sizePx}
         iconSizePx={iconSizePx}
+        buttonClassName={buttonClassName}
         onAction={onAction}
       >
         {children}
       </RailIconButton>
-      <span className={cn(RAIL_TIP_CLASS, tipClassName)} role="tooltip">
+      <span className={cn(tipToneClass, tipClassName)} role="tooltip">
         {label}
       </span>
     </div>
@@ -179,6 +224,7 @@ export function PixelShapeActionRail({
   viewport,
   otherWidgets = [],
   actions,
+  colorScheme = "light",
 }: PixelShapeActionRailProps) {
   const safeScale = scale > 0 ? scale : 1;
   const placement = resolveShapeActionRailPlacement(widget, viewport, safeScale, otherWidgets);
@@ -188,6 +234,9 @@ export function PixelShapeActionRail({
   const isChart = widget.type === "chart";
   const menuSide = placement === "right" ? "left" : "right";
   const tipClassName = railTipPositionClass(placement);
+  const shellClass = railShellClass(colorScheme);
+  const buttonClass = railButtonClass(colorScheme);
+  const tipToneClass = railTipClass(colorScheme);
 
   const stopPointer = (event: PointerEvent) => {
     event.stopPropagation();
@@ -197,6 +246,7 @@ export function PixelShapeActionRail({
     <div
       data-testid={`pixel-shape-actions-${widget.id}`}
       data-placement={placement}
+      data-dashboard-color-scheme={colorScheme}
       className="dashboard-no-drag pointer-events-auto absolute top-0 z-40 flex touch-none select-none overflow-visible"
       style={{
         width: railPx,
@@ -205,10 +255,12 @@ export function PixelShapeActionRail({
       data-pixel-no-drag
       onPointerDown={stopPointer}
     >
-      <div className={RAIL_SHELL_CLASS}>
+      <div className={shellClass}>
         <RailActionItem
           label="查看数据"
           tipClassName={tipClassName}
+          tipToneClass={tipToneClass}
+          buttonClassName={buttonClass}
           dimmed={!isChart}
           disabled={!isChart || !actions.onViewData}
           sizePx={railPx}
@@ -220,6 +272,8 @@ export function PixelShapeActionRail({
         <RailActionItem
           label="放大"
           tipClassName={tipClassName}
+          tipToneClass={tipToneClass}
+          buttonClassName={buttonClass}
           dimmed={!isChart}
           disabled={!isChart || !actions.onEnlarge}
           sizePx={railPx}
@@ -235,6 +289,7 @@ export function PixelShapeActionRail({
                 label="更多操作"
                 sizePx={railPx}
                 iconSizePx={iconPx}
+                buttonClassName={buttonClass}
                 data-testid="pixel-shape-action-more"
               >
                 <MoreVertical className="size-full" aria-hidden />
@@ -244,9 +299,12 @@ export function PixelShapeActionRail({
               side={menuSide}
               align="start"
               sideOffset={6}
-              className="z-[90] min-w-[10.5rem]"
+              className={menuChromeClass(colorScheme)}
+              data-dashboard-menu=""
+              data-dashboard-color-scheme={colorScheme}
             >
               <DropdownMenuItem
+                className={menuItemClass(colorScheme)}
                 disabled={!actions.onCopy}
                 onSelect={() => actions.onCopy?.(widget.id)}
               >
@@ -254,6 +312,7 @@ export function PixelShapeActionRail({
                 复制
               </DropdownMenuItem>
               <DropdownMenuItem
+                className={menuItemClass(colorScheme)}
                 disabled={!isChart || !actions.onEnlarge}
                 onSelect={() => actions.onEnlarge?.(widget.id)}
               >
@@ -261,6 +320,7 @@ export function PixelShapeActionRail({
                 放大
               </DropdownMenuItem>
               <DropdownMenuItem
+                className={menuItemClass(colorScheme)}
                 disabled={!isChart || !actions.onViewData}
                 onSelect={() => actions.onViewData?.(widget.id)}
               >
@@ -268,19 +328,28 @@ export function PixelShapeActionRail({
                 查看数据
               </DropdownMenuItem>
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger disabled>
+                <DropdownMenuSubTrigger className={menuSubTriggerClass(colorScheme)} disabled>
                   导出为
-                  <ChevronRight className="ml-auto size-3.5" aria-hidden />
                 </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem disabled>图片</DropdownMenuItem>
-                  <DropdownMenuItem disabled>PDF</DropdownMenuItem>
+                <DropdownMenuSubContent
+                  className={menuChromeClass(colorScheme)}
+                  data-dashboard-menu=""
+                  data-dashboard-color-scheme={colorScheme}
+                >
+                  <DropdownMenuItem className={menuItemClass(colorScheme)} disabled>
+                    图片
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className={menuItemClass(colorScheme)} disabled>
+                    PDF
+                  </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
-              <DropdownMenuItem disabled>隐藏</DropdownMenuItem>
-              <DropdownMenuSeparator />
+              <DropdownMenuItem className={menuItemClass(colorScheme)} disabled>
+                隐藏
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className={menuSeparatorClass(colorScheme)} />
               <DropdownMenuItem
-                className="text-error-600 focus:text-error-600 dark:text-error-400"
+                className={menuItemClass(colorScheme, true)}
                 disabled={!actions.onDelete}
                 onSelect={() => actions.onDelete?.(widget.id)}
               >
@@ -289,7 +358,7 @@ export function PixelShapeActionRail({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <span className={cn(RAIL_TIP_CLASS, tipClassName)} role="tooltip">
+          <span className={cn(tipToneClass, tipClassName)} role="tooltip">
             更多操作
           </span>
         </div>

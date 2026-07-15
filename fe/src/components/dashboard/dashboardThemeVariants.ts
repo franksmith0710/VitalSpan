@@ -6,7 +6,7 @@ import type {
   TitleStyleConfig,
   WidgetStyleConfig,
 } from "./dashboardStyleConfig";
-import { CANVAS_BG_DARK_DEFAULT, CANVAS_BG_LIGHT_DEFAULT, isDarkCanvasColor, isDarkWidgetShellColor, isLightCanvasColor, resolveCanvasDecorPresetId, WIDGET_SHELL_DARK_DEFAULT } from "./dashboardStyleConfig";
+import { CANVAS_BG_DARK_DEFAULT, CANVAS_BG_LIGHT_DEFAULT, isDarkCanvasColor, isDarkWidgetShellColor, isLightCanvasColor, WIDGET_SHELL_DARK_DEFAULT } from "./dashboardStyleConfig";
 import { normalizeDashboardGapConfig } from "./gapPolicy";
 import type { LayoutWidget } from "./layoutUtils";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "./dashboardThemeTokens";
@@ -23,6 +23,7 @@ export type ThemeVariantFields = {
   canvasBackgroundImage?: string;
   /** §5.3「仪表板背景」显式设置时为 true；§5.1 主题卡片不覆盖标准底色 */
   canvasBackgroundCustom?: boolean;
+  canvasDecorPresetId?: string;
   themeAccent?: string;
   widgetStyle?: Pick<WidgetStyleConfig, "background" | "borderColor" | "opacity">;
   titleStyle?: Pick<TitleStyleConfig, "color">;
@@ -36,6 +37,7 @@ const THEME_ROOT_KEYS = new Set([
   "canvasBackground",
   "canvasBackgroundImage",
   "canvasBackgroundCustom",
+  "canvasDecorPresetId",
   "themeAccent",
   "widgetStyle",
   "titleStyle",
@@ -77,6 +79,7 @@ export function extractThemeVariant(config: DashboardStyleConfig): ThemeVariantF
     canvasBackground: config.canvasBackground,
     canvasBackgroundImage: config.canvasBackgroundImage,
     canvasBackgroundCustom: config.canvasBackgroundCustom,
+    canvasDecorPresetId: config.canvasDecorPresetId,
     themeAccent: config.themeAccent,
     widgetStyle: ws
       ? {
@@ -102,6 +105,7 @@ function mergeThemeVariantIntoConfig(
     canvasBackground: variant.canvasBackground,
     canvasBackgroundImage: variant.canvasBackgroundImage,
     canvasBackgroundCustom: variant.canvasBackgroundCustom,
+    canvasDecorPresetId: variant.canvasDecorPresetId,
     themeAccent: variant.themeAccent,
     widgetStyle: {
       ...config.widgetStyle,
@@ -122,6 +126,7 @@ function mergeThemeVariantIntoConfig(
 }
 
 function canvasNeedsSchemeReset(config: DashboardStyleConfig, scheme: ColorScheme): boolean {
+  if (config.canvasBackgroundCustom) return false;
   const bg = config.canvasBackground?.trim();
   if (scheme === "dark") {
     if (!bg) return true;
@@ -131,10 +136,7 @@ function canvasNeedsSchemeReset(config: DashboardStyleConfig, scheme: ColorSchem
   return isDarkCanvasColor(bg);
 }
 
-function decorNeedsSchemeReset(config: DashboardStyleConfig, scheme: ColorScheme): boolean {
-  if (!config.canvasBackgroundImage?.trim()) return false;
-  const presetId = resolveCanvasDecorPresetId(config);
-  if (scheme === "dark") return presetId !== "none" && presetId !== "custom";
+function decorNeedsSchemeReset(_config: DashboardStyleConfig, _scheme: ColorScheme): boolean {
   return false;
 }
 
@@ -144,8 +146,31 @@ function sanitizeThemeVariant(
 ): ThemeVariantFields {
   const defaults = defaultThemeVariant(scheme);
   if (scheme === "dark") {
+    if (variant.canvasBackgroundCustom) {
+      const wbg = variant.widgetStyle?.background?.trim();
+      if (!wbg || !isDarkWidgetShellColor(wbg)) {
+        return {
+          ...variant,
+          widgetStyle: { ...variant.widgetStyle, ...defaults.widgetStyle },
+        };
+      }
+      return variant;
+    }
     const bg = variant.canvasBackground?.trim();
-    if (!bg || isLightCanvasColor(bg) || variant.canvasBackgroundImage) {
+    const hasCustomDecor = Boolean(
+      variant.canvasBackgroundCustom &&
+        (variant.canvasBackgroundImage?.trim() || variant.canvasDecorPresetId),
+    );
+    if (hasCustomDecor) {
+      const coercedBg =
+        !bg || isLightCanvasColor(bg) ? defaults.canvasBackground : bg;
+      return {
+        ...variant,
+        canvasBackground: coercedBg,
+        canvasBackgroundCustom: true,
+      };
+    }
+    if (!bg || isLightCanvasColor(bg)) {
       return { ...defaults, ...variant, ...defaults, canvasBackgroundImage: undefined };
     }
     const wbg = variant.widgetStyle?.background?.trim();
@@ -200,6 +225,7 @@ function ensureThemeVariant(
   if (!defined.canvasBackgroundCustom) {
     delete defined.canvasBackground;
     delete defined.canvasBackgroundImage;
+    delete defined.canvasDecorPresetId;
     defined.canvasBackgroundCustom = undefined;
   }
   return sanitizeThemeVariant({ ...defaults, ...defined }, scheme);
@@ -220,6 +246,7 @@ export function resolveThemePresetForSwitch(
       canvasBackground: saved.canvasBackground,
       canvasBackgroundImage: saved.canvasBackgroundImage,
       canvasBackgroundCustom: true,
+      canvasDecorPresetId: saved.canvasDecorPresetId,
     },
     scheme,
   );
@@ -248,6 +275,21 @@ export function bootstrapDashboardStyleConfig(
 
   let light = ensureThemeVariant(working.themeVariants?.light, "light", stripAccent);
   let dark = ensureThemeVariant(working.themeVariants?.dark, "dark", stripAccent);
+
+  const rootActive = extractThemeVariant(working);
+  if (rootActive.canvasBackgroundCustom) {
+    const rootCanvasPatch: ThemeVariantFields = {
+      canvasBackground: rootActive.canvasBackground,
+      canvasBackgroundImage: rootActive.canvasBackgroundImage,
+      canvasBackgroundCustom: true,
+      canvasDecorPresetId: rootActive.canvasDecorPresetId,
+    };
+    if (scheme === "light") {
+      light = ensureThemeVariant({ ...light, ...rootCanvasPatch }, "light", stripAccent);
+    } else {
+      dark = ensureThemeVariant({ ...dark, ...rootCanvasPatch }, "dark", stripAccent);
+    }
+  }
 
   if (!hasPersistedThemeVariants(working)) {
     const legacyActive = ensureThemeVariant(extractThemeVariant(working), scheme);
@@ -333,9 +375,12 @@ export function normalizeStyleConfigForColorScheme(
   const defaults = defaultThemeVariant(scheme);
   const patch: Partial<DashboardStyleConfig> = {};
 
-  if (canvasNeedsSchemeReset(config, scheme) || decorNeedsSchemeReset(config, scheme)) {
+  if (canvasNeedsSchemeReset(config, scheme)) {
     patch.canvasBackground = defaults.canvasBackground;
+  }
+  if (decorNeedsSchemeReset(config, scheme)) {
     patch.canvasBackgroundImage = undefined;
+    patch.canvasDecorPresetId = undefined;
   }
 
   const wbg = config.widgetStyle?.background?.trim();

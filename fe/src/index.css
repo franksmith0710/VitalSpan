@@ -547,6 +547,10 @@ html.dark {
   color: var(--dashboard-action-icon-hover, var(--color-gray-200));
 }
 
+.dashboard-theme-scope[data-canvas-user-bg="true"] .pixel-canvas-host {
+  background-color: transparent;
+}
+
 .dashboard-theme-scope:not([data-canvas-user-bg="true"]) [data-testid="pixel-canvas-artboard"] {
   background-color: var(--dashboard-artboard-bg, #f8fafc) !important;
 }
@@ -625,6 +629,17 @@ html.dark {
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] [data-dashboard-dialog] {
   background: var(--dashboard-dialog-bg, var(--color-gray-900));
   color: var(--dashboard-dialog-fg, var(--color-gray-100));
+}
+
+/* Portal 浮层菜单：跟 data-dashboard-color-scheme，不跟 Admin html.dark */
+[data-dashboard-menu][data-dashboard-color-scheme="dark"] {
+  background-color: var(--dashboard-dialog-bg, #1d2939) !important;
+  border-color: #344054 !important;
+  color: var(--dashboard-dialog-fg, #ececed) !important;
+}
+
+[data-dashboard-menu][data-dashboard-color-scheme="dark"] [role="separator"] {
+  background-color: #344054 !important;
 }
 
 /* DataEase isPlayer：外框 DOM 实时改尺寸，子树 100% 填满 */
@@ -818,26 +833,26 @@ html.dark {
 /* TailAdmin 风格取色器（react-colorful） */
 .vs-color-picker .react-colorful {
   width: 100%;
-  gap: 12px;
+  gap: 8px;
 }
 
 .vs-color-picker .react-colorful__saturation {
-  border-radius: 10px;
+  border-radius: 8px;
   border-bottom: none;
-  min-height: 140px;
+  min-height: 108px;
 }
 
 .vs-color-picker .react-colorful__hue {
-  height: 10px;
+  height: 8px;
   border-radius: 999px;
 }
 
 .vs-color-picker .react-colorful__saturation-pointer,
 .vs-color-picker .react-colorful__hue-pointer {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border: 2px solid #fff;
   box-shadow:
-    0 0 0 1px rgb(0 0 0 / 12%),
-    0 1px 4px rgb(0 0 0 / 18%);
+    0 0 0 1px rgb(0 0 0 / 10%),
+    0 1px 3px rgb(0 0 0 / 16%);
 }

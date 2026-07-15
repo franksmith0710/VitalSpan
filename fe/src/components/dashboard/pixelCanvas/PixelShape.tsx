@@ -128,7 +128,7 @@ function resolveShapeTitleState(
 } {
   if (widget.type === "chart") {
     return {
-      showTitle: readChartTitleVisible(widget.chartConfig),
+      showTitle: readChartTitleVisible(widget.chartConfig, styleConfig?.titleStyle),
       titleStyle: mergeChartTitleStyle(
         styleConfig?.titleStyle,
         widget.chartConfig,
@@ -166,7 +166,7 @@ export function PixelShape({
   registerPreviewSync,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
-  const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig);
+  const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig, mode);
   const onTitleChange = widgetActions?.onTitleChange;
   const chrome = resolveDashboardChrome(styleConfig);
   const shell =
@@ -182,6 +182,7 @@ export function PixelShape({
             styleConfig?.colorScheme ?? "light",
           ),
           inner: {} as CSSProperties,
+          innerBackgroundLayer: null,
         };
   const activeRef = useRef<ActiveInteraction | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
@@ -402,12 +403,19 @@ export function PixelShape({
       <div
         data-testid={`pixel-shape-body-${widget.id}`}
         className={cn(
-          "pixel-shape-body flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-gray-200/90 dark:border-gray-700/80",
+          "pixel-shape-body relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-gray-200/90 dark:border-gray-700/80",
           selectedInEdit && "pixel-shape-selected overflow-visible",
           shell.outer.className,
         )}
         style={shell.outer.style}
       >
+        {shell.outer.backgroundLayer ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-0"
+            style={shell.outer.backgroundLayer}
+            aria-hidden
+          />
+        ) : null}
         <WidgetShapeChrome
           title={widget.title}
           titleStyle={shapeTitlePresentationStyle(titleStyle, scale)}
@@ -428,26 +436,39 @@ export function PixelShape({
             viewport={viewport}
             otherWidgets={otherWidgets}
             actions={widgetActions}
+            colorScheme={styleConfig?.colorScheme ?? "light"}
           />
         ) : null}
         <PixelShapeInteractionProvider value={startInteraction}>
           <PixelShapePlayerProvider playing={isPlayer}>
             <div
-              className="pixel-shape-inner dashboard-widget-surface relative min-h-0 flex-1 overflow-hidden"
+              className="pixel-shape-inner dashboard-widget-surface relative z-[1] min-h-0 flex-1 overflow-hidden"
               style={{
                 ...shell.inner,
-                background:
-                  shell.inner.background ??
-                  shell.outer.style.backgroundColor ??
-                  shell.outer.style.background ??
-                  "var(--dashboard-widget-surface)",
+                ...(!(shell.inner.background || shell.inner.backgroundColor)
+                  ? {
+                      background:
+                        shell.outer.style.backgroundColor ??
+                        shell.outer.style.background ??
+                        "var(--dashboard-widget-surface)",
+                    }
+                  : null),
               }}
               data-pixel-no-drag
               onPointerDown={(event) => {
                 if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
               }}
             >
-              {children}
+              {shell.innerBackgroundLayer ? (
+                <div
+                  className="pointer-events-none absolute inset-0 z-0"
+                  style={shell.innerBackgroundLayer}
+                  aria-hidden
+                />
+              ) : null}
+              <div className="relative z-[1] min-h-0 h-full min-w-0 w-full">
+                {children}
+              </div>
             </div>
           </PixelShapePlayerProvider>
         </PixelShapeInteractionProvider>
