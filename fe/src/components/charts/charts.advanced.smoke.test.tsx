@@ -145,6 +145,25 @@ import { AdvancedEchartsChart } from "@/components/charts/adapters/AdvancedEchar
 
 describe("AdvancedEchartsChart", () => {
   it("T-VIZ-R43-003-01: map + 3 省 mock → echarts 容器", () => {
+    const option = buildEchartsOption(
+      {
+        engine: "echarts",
+        chartType: "map",
+        styleVariant: "default",
+        encoding: { dimensions: [{ field: "region" }], metrics: [{ field: "v" }] },
+        source: {},
+      },
+      [
+        ["北京市", 1],
+        ["上海", 2],
+        ["广东", 3],
+      ],
+      ["region", "v"],
+    );
+    const series = (option.series as Array<{ type: string; data: Array<{ name: string }> }>)[0];
+    expect(series.type).toBe("map");
+    expect(series.data[0].name).toBe("北京市");
+
     render(
       <AdvancedEchartsChart
         spec={{
@@ -498,15 +517,16 @@ describe("VIZ-008 空数据 + 异常态", () => {
     expect((option as { series?: unknown[] })?.series?.length).toBe(0);
   });
 
-  it("T-VIZ-R250-008-02: buildEchartsOption bar 正常数据 → series[0].type==='bar'（主路径回归）", () => {
+  it("T-VIZ-R250-008-03: buildEchartsOption map rows=[] → 中国轮廓占位", () => {
     const spec: RenderSpec = {
       engine: "echarts",
-      chartType: "bar",
+      chartType: "map",
       styleVariant: "default",
-      encoding: { dimensions: [{ field: "cat" }], metrics: [{ field: "val" }] },
+      encoding: { dimensions: [{ field: "region" }], metrics: [{ field: "val" }] },
       source: {},
     };
-    const option = buildEchartsOption(spec, [["X", 5]], ["cat", "val"]);
-    expect((option.series as Array<{ type: string }>)[0].type).toBe("bar");
+    const option = buildEchartsOption(spec, [], ["region", "val"]) as Record<string, unknown>;
+    expect(option.__vsGeoMapPlaceholder).toBe(true);
+    expect((option.series as Array<{ type: string }>)[0].type).toBe("map");
   });
 });

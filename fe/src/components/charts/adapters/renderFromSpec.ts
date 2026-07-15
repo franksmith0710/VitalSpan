@@ -1,6 +1,11 @@
 import type { ChartFieldRef } from "@/lib/chartViewConfig";
-import regionsGeo from "@/assets/geo/regions-simplified.json";
-import * as echarts from "echarts/core";
+import type { GeoChartStyle } from "@/lib/geoMapChart";
+import {
+  buildGeoHeatmapEchartsOption,
+  buildGeoMapEchartsOption,
+  buildGeoMapPlaceholderEchartsOption,
+  isNumericRegionIdDimension,
+} from "@/lib/geoMapChart";
 
 export const ADVANCED_CHART_ROW_CAP = 500;
 export const GRAPH_NODE_CAP = 200;
@@ -15,6 +20,11 @@ export type RenderSpec = {
 };
 
 type EChartsOption = Record<string, unknown>;
+
+export type BuildEchartsStyleContext = {
+  geo?: GeoChartStyle;
+  showLabel?: boolean;
+};
 
 export const FALLBACK_CHART_TYPE = "table";
 
@@ -98,35 +108,50 @@ function buildGraphOption(spec: RenderSpec, rows: unknown[][], columns: string[]
   };
 }
 
-function buildMapOption(spec: RenderSpec, rows: unknown[][], columns: string[]): EChartsOption {
+function buildMapOption(
+  spec: RenderSpec,
+  rows: unknown[][],
+  columns: string[],
+  style?: BuildEchartsStyleContext,
+): EChartsOption {
   const regionField = spec.encoding.dimensions[0]?.field ?? "";
   const metric = spec.encoding.metrics[0]?.field ?? "";
-  const ri = colIndex(columns, regionField);
-  const mi = colIndex(columns, metric);
-  echarts.registerMap("vs-regions", regionsGeo as never);
-  const data = rows.map((r) => ({ name: String(r[ri] ?? ""), value: Number(r[mi] ?? 0) }));
-  return { series: [{ type: "map", map: "vs-regions", data }] };
+  if (
+    !regionField ||
+    !metric ||
+    rows.length === 0 ||
+    isNumericRegionIdDimension(regionField, columns, rows)
+  ) {
+    return buildGeoMapPlaceholderEchartsOption({ geo: style?.geo });
+  }
+  return buildGeoMapEchartsOption({
+    rows,
+    columns,
+    regionField,
+    metricField: metric,
+    geo: style?.geo,
+    showLabel: style?.showLabel,
+  });
 }
 
-function buildHeatmapOption(spec: RenderSpec, rows: unknown[][], columns: string[]): EChartsOption {
-  if (rows.length === 0) return { series: [], dataset: { source: [] } };
+function buildHeatmapOption(
+  spec: RenderSpec,
+  rows: unknown[][],
+  columns: string[],
+  style?: BuildEchartsStyleContext,
+): EChartsOption {
   const xField = spec.encoding.dimensions[0]?.field ?? "";
   const yField = spec.encoding.dimensions[1]?.field ?? "";
   const metric = spec.encoding.metrics[0]?.field ?? "";
-  const xi = colIndex(columns, xField);
-  const yi = colIndex(columns, yField);
-  const mi = colIndex(columns, metric);
-  const xCats = [...new Set(rows.map((r) => String(r[xi] ?? "")))];
-  const yCats = [...new Set(rows.map((r) => String(r[yi] ?? "")))];
-  const data = rows.map((r) => [String(r[xi] ?? ""), String(r[yi] ?? ""), Number(r[mi] ?? 0)]);
-  return {
-    tooltip: { position: "top" },
-    grid: { containLabel: true },
-    xAxis: { type: "category", data: xCats },
-    yAxis: { type: "category", data: yCats },
-    visualMap: { min: 0, max: Math.max(...data.map((d) => Number(d[2])), 1), calculable: true },
-    series: [{ type: "heatmap", data }],
-  };
+  if (!xField || !yField || !metric) return { series: [] };
+  return buildGeoHeatmapEchartsOption({
+    rows,
+    columns,
+    xField,
+    yField,
+    metricField: metric,
+    geo: style?.geo,
+  });
 }
 
 function buildTimelineOption(spec: RenderSpec, rows: unknown[][], columns: string[]): EChartsOption {
@@ -240,6 +265,7 @@ export function buildEchartsOption(
   spec: RenderSpec,
   rows: unknown[][],
   columns: string[],
+  style?: BuildEchartsStyleContext,
 ): EChartsOption {
   const { rows: capped } = capRows(rows, ADVANCED_CHART_ROW_CAP);
   switch (spec.chartType) {
@@ -254,9 +280,9 @@ export function buildEchartsOption(
     case "graph":
       return buildGraphOption(spec, capped, columns);
     case "map":
-      return buildMapOption(spec, capped, columns);
+      return buildMapOption(spec, capped, columns, style);
     case "heatmap":
-      return buildHeatmapOption(spec, capped, columns);
+      return buildHeatmapOption(spec, capped, columns, style);
     case "timeline":
       return buildTimelineOption(spec, capped, columns);
     case "gauge":

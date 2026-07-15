@@ -1,4 +1,3 @@
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -10,11 +9,11 @@ import {
   patchChartDeDisplay,
   readChartDeDisplay,
 } from "@/lib/chartDeDisplay";
-import { INSPECTOR_CTRL, INSPECTOR_SELECT } from "./inspectorCompact";
 import { useChartInspector } from "./ChartInspectorContext";
+import { DE_SELECT, DeAttrField, DeAttrForm } from "./dashboardInspectorUi";
 
 const REFRESH_OPTIONS = [
-  { value: "off", label: "关闭" },
+  { value: "off", label: "请选择" },
   { value: "30s", label: "30 秒" },
   { value: "1m", label: "1 分钟" },
   { value: "5m", label: "5 分钟" },
@@ -35,15 +34,14 @@ export function ChartDataOptions() {
   const display = readChartDeDisplay(cfg);
 
   return (
-    <div className="space-y-3 border-t border-gray-100 pt-3 dark:border-white/[0.06]">
-      <div className="grid gap-1.5">
-        <Label className="text-theme-xs text-gray-500">刷新频率</Label>
+    <DeAttrForm className="border-t border-gray-100 pt-1 dark:border-white/[0.06]">
+      <DeAttrField label="刷新频率" compact hint="本组件轮询">
         <Select
           value={display.refreshMode ?? "off"}
           onValueChange={(value) => onChange(patchChartDeDisplay(cfg, { refreshMode: value }))}
         >
-          <SelectTrigger className={INSPECTOR_SELECT} aria-label="刷新频率">
-            <SelectValue />
+          <SelectTrigger className={DE_SELECT} aria-label="刷新频率">
+            <SelectValue placeholder="请选择" />
           </SelectTrigger>
           <SelectContent>
             {REFRESH_OPTIONS.map((opt) => (
@@ -53,18 +51,14 @@ export function ChartDataOptions() {
             ))}
           </SelectContent>
         </Select>
-        <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
-          编辑页与预览页均按本组件设置轮询；整页刷新请在看板「整体配置 → 刷新频率」设置（仅分享页）
-        </p>
-      </div>
-      <div className="grid gap-1.5">
-        <Label className="text-theme-xs text-gray-500">结果展示</Label>
+      </DeAttrField>
+      <DeAttrField label="结果展示" compact>
         <Select
           value={display.resultLimit ?? "all"}
           onValueChange={(value) => onChange(patchChartDeDisplay(cfg, { resultLimit: value }))}
         >
-          <SelectTrigger className={INSPECTOR_SELECT} aria-label="结果展示">
-            <SelectValue />
+          <SelectTrigger className={DE_SELECT} aria-label="结果展示">
+            <SelectValue placeholder="请选择" />
           </SelectTrigger>
           <SelectContent>
             {RESULT_LIMIT_OPTIONS.map((opt) => (
@@ -74,10 +68,7 @@ export function ChartDataOptions() {
             ))}
           </SelectContent>
         </Select>
-        <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
-          覆盖看板默认行数上限，立即作用于本组件查询
-        </p>
-      </div>
-    </div>
+      </DeAttrField>
+    </DeAttrForm>
   );
 }

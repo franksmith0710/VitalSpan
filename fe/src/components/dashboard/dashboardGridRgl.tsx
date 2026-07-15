@@ -15,7 +15,7 @@ import "react-grid-layout/css/styles.css";
 import { GRID_ROW_HEIGHT } from "./gridLayoutAdapter";
 import { GRID_COLS } from "./gridSnapUtils";
 
-export const DASHBOARD_GRID_MARGIN: [number, number] = [12, 12];
+export const DASHBOARD_GRID_MARGIN: [number, number] = [0, 0];
 export const DASHBOARD_GRID_ROW_HEIGHT = GRID_ROW_HEIGHT;
 export const DASHBOARD_GRID_COLS = GRID_COLS;
 
@@ -31,6 +31,7 @@ export type DashboardRglCanvasProps = {
   className?: string;
   style?: CSSProperties;
   children: ReactNode;
+  margin?: [number, number];
   droppingItem?: LayoutItem;
   isDroppable?: boolean;
   onLayoutChange?: (layout: Layout) => void;
@@ -50,6 +51,7 @@ export function DashboardRglCanvas({
   editable,
   className,
   style,
+  margin = DASHBOARD_GRID_MARGIN,
   children,
   droppingItem,
   isDroppable = false,
@@ -75,7 +77,7 @@ export function DashboardRglCanvas({
         layout={layout}
         cols={DASHBOARD_GRID_COLS}
         rowHeight={DASHBOARD_GRID_ROW_HEIGHT}
-        margin={DASHBOARD_GRID_MARGIN}
+        margin={margin}
         containerPadding={[0, 0]}
         compactType="vertical"
         preventCollision={false}

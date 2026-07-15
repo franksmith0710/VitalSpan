@@ -4,6 +4,7 @@ import type { DashboardStyleConfig } from "./layoutUtils";
 import {
   effectiveCanvasBackground,
   effectiveWidgetShellBackground,
+  dashboardShapeGapStyle,
   hasUserCanvasBackground,
 } from "./dashboardStyleConfig";
 import { getDashboardThemeTokens, themeTokensToScopeVars } from "./dashboardThemeTokens";
@@ -11,6 +12,8 @@ import { resolveDialogScopeStyle } from "./dashboardChromeConfig";
 
 type DashboardStyleSurfaceProps = {
   styleConfig?: DashboardStyleConfig;
+  /** DataEase curGap：组件 shape 外层 padding（px） */
+  componentGapPx?: number;
   className?: string;
   children: ReactNode;
 };
@@ -21,6 +24,7 @@ type DashboardStyleSurfaceProps = {
  */
 export function DashboardStyleSurface({
   styleConfig,
+  componentGapPx = 0,
   className,
   children,
 }: DashboardStyleSurfaceProps) {
@@ -49,12 +53,14 @@ export function DashboardStyleSurface({
       styleConfig.actionIconColor;
   }
   Object.assign(scopeStyle, resolveDialogScopeStyle(styleConfig));
+  Object.assign(scopeStyle, dashboardShapeGapStyle(componentGapPx));
 
   return (
     <div
       className={cn("dashboard-theme-scope min-h-0 w-full", scheme === "dark" && "dark", className)}
       data-dashboard-color-scheme={scheme}
       data-canvas-user-bg={userCanvasBackground ? "true" : undefined}
+      data-dashboard-gap-enabled={componentGapPx > 0 ? "true" : undefined}
       style={scopeStyle}
     >
       {children}

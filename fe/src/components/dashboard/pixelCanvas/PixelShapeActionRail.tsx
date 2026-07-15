@@ -7,7 +7,7 @@ import {
   Table2,
   Trash2,
 } from "lucide-react";
-import type { PointerEvent, ReactNode } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 import { IconButton } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -46,7 +46,7 @@ type PixelShapeActionRailProps = {
 };
 
 const RAIL_SHELL_CLASS = cn(
-  "flex w-full flex-col overflow-hidden rounded-lg",
+  "flex w-full flex-col overflow-visible rounded-lg",
   "border border-gray-200 bg-white shadow-theme-md",
   "divide-y divide-gray-100",
   "dark:border-gray-700 dark:bg-gray-900 dark:divide-gray-800",
@@ -60,51 +60,115 @@ const RAIL_BUTTON_CLASS = cn(
   "disabled:pointer-events-none disabled:opacity-35",
 );
 
+const RAIL_TIP_CLASS = cn(
+  "pointer-events-none absolute top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium",
+  "border border-gray-200 bg-white text-gray-700 shadow-theme-sm",
+  "opacity-0 transition-opacity duration-150",
+  "group-hover/rail-item:opacity-100 group-focus-within/rail-item:opacity-100",
+  "dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100",
+);
+
 function railPositionStyle(
   placement: ShapeActionRailPlacement,
   gapPx: number,
 ): Record<string, string | number> {
-  if (placement === "overlay") {
-    return { left: 0, top: 0 };
-  }
   if (placement === "right") {
     return { left: `calc(100% + ${gapPx}px)` };
   }
   return { right: `calc(100% + ${gapPx}px)` };
 }
 
-function RailIconButton({
-  label,
-  disabled,
-  dimmed,
-  sizePx,
-  iconSizePx,
-  onClick,
-  children,
-}: {
+function railTipPositionClass(placement: ShapeActionRailPlacement): string {
+  return placement === "right" ? "left-full ml-1.5" : "right-full mr-1.5";
+}
+
+type RailIconButtonProps = {
   label: string;
-  disabled?: boolean;
   dimmed?: boolean;
   sizePx: number;
   iconSizePx: number;
-  onClick?: () => void;
+  onAction?: () => void;
   children: ReactNode;
-}) {
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">;
+
+const RailIconButton = forwardRef<HTMLButtonElement, RailIconButtonProps>(function RailIconButton(
+  {
+    label,
+    disabled,
+    dimmed,
+    sizePx,
+    iconSizePx,
+    onAction,
+    children,
+    className,
+    onClick,
+    ...rest
+  },
+  ref,
+) {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event);
+    if (!onAction || event.defaultPrevented) return;
+    event.stopPropagation();
+    onAction();
+  };
+
   return (
     <IconButton
+      ref={ref}
       type="button"
       variant="ghost"
       size="sm"
-      className={cn(RAIL_BUTTON_CLASS, dimmed && "opacity-40")}
+      className={cn(RAIL_BUTTON_CLASS, dimmed && "opacity-40", className)}
       style={{ width: sizePx, height: sizePx }}
       aria-label={label}
+      title={label}
       disabled={disabled}
-      onClick={onClick}
+      {...rest}
+      onClick={handleClick}
     >
       <span style={{ width: iconSizePx, height: iconSizePx }} className="inline-flex shrink-0">
         {children}
       </span>
     </IconButton>
+  );
+});
+
+function RailActionItem({
+  label,
+  tipClassName,
+  disabled,
+  dimmed,
+  sizePx,
+  iconSizePx,
+  onAction,
+  children,
+}: {
+  label: string;
+  tipClassName: string;
+  disabled?: boolean;
+  dimmed?: boolean;
+  sizePx: number;
+  iconSizePx: number;
+  onAction?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="group/rail-item relative overflow-visible">
+      <RailIconButton
+        label={label}
+        disabled={disabled}
+        dimmed={dimmed}
+        sizePx={sizePx}
+        iconSizePx={iconSizePx}
+        onAction={onAction}
+      >
+        {children}
+      </RailIconButton>
+      <span className={cn(RAIL_TIP_CLASS, tipClassName)} role="tooltip">
+        {label}
+      </span>
+    </div>
   );
 }
 
@@ -122,6 +186,7 @@ export function PixelShapeActionRail({
   const iconPx = 14 / safeScale;
   const isChart = widget.type === "chart";
   const menuSide = placement === "right" ? "left" : "right";
+  const tipClassName = railTipPositionClass(placement);
 
   const stopPointer = (event: PointerEvent) => {
     event.stopPropagation();
@@ -131,87 +196,102 @@ export function PixelShapeActionRail({
     <div
       data-testid={`pixel-shape-actions-${widget.id}`}
       data-placement={placement}
-      className={cn(
-        "absolute z-40 flex touch-none select-none",
-        placement === "overlay" ? "z-50" : "top-0",
-      )}
+      className="dashboard-no-drag pointer-events-auto absolute top-0 z-40 flex touch-none select-none overflow-visible"
       style={{
         width: railPx,
         ...railPositionStyle(placement, gapPx),
       }}
+      data-pixel-no-drag
       onPointerDown={stopPointer}
     >
       <div className={RAIL_SHELL_CLASS}>
-        <RailIconButton
+        <RailActionItem
           label="查看数据"
+          tipClassName={tipClassName}
           dimmed={!isChart}
           disabled={!isChart || !actions.onViewData}
           sizePx={railPx}
           iconSizePx={iconPx}
-          onClick={() => actions.onViewData?.(widget.id)}
+          onAction={() => actions.onViewData?.(widget.id)}
         >
           <Table2 className="size-full" aria-hidden />
-        </RailIconButton>
-        <RailIconButton
+        </RailActionItem>
+        <RailActionItem
           label="放大"
+          tipClassName={tipClassName}
           dimmed={!isChart}
           disabled={!isChart || !actions.onEnlarge}
           sizePx={railPx}
           iconSizePx={iconPx}
-          onClick={() => actions.onEnlarge?.(widget.id)}
+          onAction={() => actions.onEnlarge?.(widget.id)}
         >
           <Maximize2 className="size-full" aria-hidden />
-        </RailIconButton>
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <RailIconButton label="更多操作" sizePx={railPx} iconSizePx={iconPx}>
-              <MoreVertical className="size-full" aria-hidden />
-            </RailIconButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side={menuSide} align="start" sideOffset={6} className="min-w-[10.5rem]">
-            <DropdownMenuItem
-              disabled={!actions.onCopy}
-              onSelect={() => actions.onCopy?.(widget.id)}
+        </RailActionItem>
+        <div className="group/rail-item relative overflow-visible">
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <RailIconButton
+                label="更多操作"
+                sizePx={railPx}
+                iconSizePx={iconPx}
+                data-testid="pixel-shape-action-more"
+              >
+                <MoreVertical className="size-full" aria-hidden />
+              </RailIconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side={menuSide}
+              align="start"
+              sideOffset={6}
+              className="z-[90] min-w-[10.5rem]"
             >
-              <Copy className="size-3.5" aria-hidden />
-              复制
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={!isChart || !actions.onEnlarge}
-              onSelect={() => actions.onEnlarge?.(widget.id)}
-            >
-              <Maximize2 className="size-3.5" aria-hidden />
-              放大
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={!isChart || !actions.onViewData}
-              onSelect={() => actions.onViewData?.(widget.id)}
-            >
-              <Eye className="size-3.5" aria-hidden />
-              查看数据
-            </DropdownMenuItem>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger disabled>
-                导出为
-                <ChevronRight className="ml-auto size-3.5" aria-hidden />
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem disabled>图片</DropdownMenuItem>
-                <DropdownMenuItem disabled>PDF</DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            <DropdownMenuItem disabled>隐藏</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-error-600 focus:text-error-600 dark:text-error-400"
-              disabled={!actions.onDelete}
-              onSelect={() => actions.onDelete?.(widget.id)}
-            >
-              <Trash2 className="size-3.5" aria-hidden />
-              删除
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem
+                disabled={!actions.onCopy}
+                onSelect={() => actions.onCopy?.(widget.id)}
+              >
+                <Copy className="size-3.5" aria-hidden />
+                复制
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!isChart || !actions.onEnlarge}
+                onSelect={() => actions.onEnlarge?.(widget.id)}
+              >
+                <Maximize2 className="size-3.5" aria-hidden />
+                放大
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!isChart || !actions.onViewData}
+                onSelect={() => actions.onViewData?.(widget.id)}
+              >
+                <Eye className="size-3.5" aria-hidden />
+                查看数据
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger disabled>
+                  导出为
+                  <ChevronRight className="ml-auto size-3.5" aria-hidden />
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem disabled>图片</DropdownMenuItem>
+                  <DropdownMenuItem disabled>PDF</DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuItem disabled>隐藏</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-error-600 focus:text-error-600 dark:text-error-400"
+                disabled={!actions.onDelete}
+                onSelect={() => actions.onDelete?.(widget.id)}
+              >
+                <Trash2 className="size-3.5" aria-hidden />
+                删除
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <span className={cn(RAIL_TIP_CLASS, tipClassName)} role="tooltip">
+            更多操作
+          </span>
+        </div>
       </div>
     </div>
   );

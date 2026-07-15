@@ -192,7 +192,7 @@ describe("pixel canvas geometry", () => {
     expect(resolveShapeActionRailSide(widget, { x: 0, width: 1440 }, 1)).toBe("left");
   });
 
-  it("uses overlay when both sides collide with neighbors", () => {
+  it("prefers external side over overlay when both sides collide with neighbors", () => {
     const widget = { x: 400, y: 0, width: 300, height: 200 };
     const leftNeighbor = { x: 100, y: 0, width: 320, height: 200 };
     const rightNeighbor = { x: 680, y: 0, width: 300, height: 200 };
@@ -203,7 +203,7 @@ describe("pixel canvas geometry", () => {
         1,
         [leftNeighbor, rightNeighbor],
       ),
-    ).toBe("overlay");
+    ).toBe("right");
   });
 
   it("elevates selected widget z-index above normal order", () => {

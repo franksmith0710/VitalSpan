@@ -36,6 +36,12 @@ export type ChartRemarkStyle = {
   text?: string;
 };
 
+export type ChartGeoStyle = {
+  roam?: boolean;
+  showRegionLabel?: boolean;
+  visualMap?: boolean;
+};
+
 export type ChartDeStyle = {
   paletteId?: string;
   paletteOpacity?: number;
@@ -45,7 +51,12 @@ export type ChartDeStyle = {
   background?: WidgetStyleConfig & { padding?: number };
   border?: ChartBorderStyle;
   remark?: ChartRemarkStyle;
+  geo?: ChartGeoStyle;
 };
+
+export function readChartGeoStyle(deStyle: ChartDeStyle) {
+  return deStyle.geo ?? {};
+}
 
 export function readChartDeStyle(cfg: ChartViewConfig): ChartDeStyle {
   const raw = cfg.nativeBody?.deStyle;

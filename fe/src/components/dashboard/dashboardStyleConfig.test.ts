@@ -8,6 +8,7 @@ import {
   hasUserCanvasBackground,
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
+  resolveDashboardFontOptionValue,
   widgetDashboardStyleFingerprint,
 } from "./dashboardStyleConfig";
 
@@ -149,5 +150,35 @@ describe("dashboardStyleConfig theme vs background", () => {
     expect(widgetDashboardStyleFingerprint({ colorScheme: "dark", canvasBackground: "#a" })).toBe(
       widgetDashboardStyleFingerprint({ colorScheme: "dark", canvasBackground: "#b" }),
     );
+  });
+});
+
+describe("resolveDashboardFontOptionValue", () => {
+  it("maps legacy niche fonts to current universal options", () => {
+    expect(resolveDashboardFontOptionValue(undefined)).toBe("");
+    expect(resolveDashboardFontOptionValue("Outfit, system-ui, sans-serif")).toBe(
+      '"Microsoft YaHei", "PingFang SC", sans-serif',
+    );
+    expect(resolveDashboardFontOptionValue('"Noto Sans SC", system-ui, sans-serif')).toBe(
+      '"Microsoft YaHei", "PingFang SC", sans-serif',
+    );
+  });
+});
+
+describe("dashboard component gap", () => {
+  it("resolveWidgetGap maps presets and none", async () => {
+    const { resolveWidgetGap, GAP_PRESET_PX } = await import("./dashboardStyleConfig");
+    expect(resolveWidgetGap({ gapPreset: "none" })).toBe(0);
+    expect(resolveWidgetGap({ gapPreset: "md" })).toBe(GAP_PRESET_PX.md);
+    expect(resolveWidgetGap({ gapPreset: "custom", widgetGap: 10 })).toBe(10);
+  });
+
+  it("resolveDashboardShapeGapPadding matches DataEase curGap (full px per side)", async () => {
+    const { resolveDashboardShapeGapPadding, resolvePixelGutter } = await import(
+      "./dashboardStyleConfig"
+    );
+    expect(resolveDashboardShapeGapPadding(8)).toBe(8);
+    expect(resolveDashboardShapeGapPadding(0)).toBe(0);
+    expect(resolvePixelGutter({ pixelGutter: 16 })).toBe(12);
   });
 });

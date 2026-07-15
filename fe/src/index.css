@@ -396,6 +396,7 @@ html.dark {
   --dw-screen-rail-text: 0.875rem;
   --dw-screen-rail-height: 2rem;
   overflow-x: hidden;
+  scrollbar-gutter: auto;
 }
 
 .pixel-canvas-host .dashboard-widget-surface {

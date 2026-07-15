@@ -20,13 +20,28 @@
 | 字段 | 值 |
 |------|----|
 | phase | DONE |
+| request | 像素画布持续抖动 — 根因剖析 + R1 稳定化 |
+| type | bug |
+| bug_doc | docs/bugs/BUG-9_dashboard-pixel-canvas-jitter_2026-07-15.md |
+| plan | docs/automate/plans/2026-07-15-pixel-canvas-jitter-fix.md |
+| status | DONE |
+| last_verified_command | vitest pixelCanvas (55) + tsc --noEmit |
+| last_verified_exit_code | 0 |
+| verification_summary | 视口 ref 化、RO rAF 合帧、contentHeight 迟滞；待手测 |
+| repair_rounds | 0 |
+
+## 上一轮（归档 · ChartInspector 白屏）
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
 | request | 点击图表白屏 useChartInspector — 根因剖析 + 架构修复 |
 | type | bug |
 | bug_doc | docs/bugs/BUG-8_chart-inspector-provider-boundary_2026-07-15.md |
 | status | DONE |
 | last_verified_command | vitest ChartEditRail.smoke+dashboard.smoke selecting pixel chart; tsc --noEmit |
 | last_verified_exit_code | 0 |
-| verification_summary | Provider 提升至 DashboardEditPage；Rail API 拆分；集成测试绿 |
+| verification_summary | ChartEditRail 内置 Provider；集成测试绿 |
 | repair_rounds | 0 |
 
 ## 上一轮（归档 · resize 碰撞）

@@ -18,8 +18,8 @@
 
 | In | Out |
 |----|-----|
-| 类型注册与 catalog、`style_variant`/`field_rule` 校验规则源 | 真实 ECharts/AntV 渲染 |
-| 引擎无关 render-spec 归一 | `fe/` 图表组件、iframe 嵌入页面 |
+| 类型注册与 catalog、`style_variant`/`field_rule` 校验规则源 | 真实 ECharts 渲染（`fe/`）；**不含**在线地图 |
+| 引擎无关 render-spec 归一 | 在线瓦片底图、境外地图、运行时外链 GeoJSON CDN |
 | embed origin 白名单/目标唯一性校验 | 图表出数（复用 `query` 链）、嵌入 token 签发与 CSP 响应头 |
 | `sdk_portal/` SDK init validate + lifecycle manifest（只读引用 `_ORIGIN_RE`） | npm JS SDK 发布、修改 `embed.py` 校验语义 |
 
@@ -58,6 +58,7 @@
 ## 实现笔记
 
 - r42 L1 kickoff：注册表驱动 `chart_view` 校验；注册 `pie` 后 r28/r30「非法 type」样例改用未注册 `radar`
+- **GEO-IRON-01**（ADR-12）：地图仅离线中国 GeoJSON；见 `.cursor/rules/geo-map-offline-china.mdc`
 - `schemas/chart_view` 校验查 registry 用函数内惰性 import，`app.viz` 包内为 submodule-only import，无循环依赖
 
 ### Companion r63（VIZ-007）

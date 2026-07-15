@@ -13,6 +13,7 @@ import { fetchChartTypeCatalog, type ChartTypeCatalogItem } from "@/lib/chartReg
 import { formatMetricValue } from "./dashboardStyleConfig";
 import { DashboardConfigSection } from "./DashboardConfigSection";
 import { ChartTableStylePanel } from "./ChartTableStylePanel";
+import { ChartGeoStylePanel } from "./ChartGeoStylePanel";
 import { useChartInspector } from "./ChartInspectorContext";
 import {
   INSPECTOR_CTRL,
@@ -59,6 +60,7 @@ export function ChartStylePanel() {
   const deStyle = readChartDeStyle(cfg);
   const showLabel = readChartShowLabel(cfg);
   const isTable = cfg.chartType === "table";
+  const isGeoChart = cfg.chartType === "map" || cfg.chartType === "heatmap";
   const caps = chartInspectorCapabilities(cfg.chartType);
 
   const patchTitle = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
@@ -148,6 +150,15 @@ export function ChartStylePanel() {
               />
             </InspectorFieldRow>
           </DashboardConfigSection>
+
+          {isGeoChart ? (
+            <ChartGeoStylePanel
+              cfg={cfg}
+              deStyle={deStyle}
+              chartType={cfg.chartType === "heatmap" ? "heatmap" : "map"}
+              onChange={onChange}
+            />
+          ) : null}
         </>
       ) : null}
 

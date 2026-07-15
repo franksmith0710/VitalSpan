@@ -35,7 +35,23 @@ vi.mock("echarts-for-react", () => ({
   ),
 }));
 
-vi.mock("@/assets/geo/regions-simplified.json", () => ({ default: { type: "FeatureCollection", features: [] } }));
+vi.mock("@/assets/geo/china-provinces.json", () => ({
+  default: {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: { name: "北京市", adcode: 110000, level: "province" },
+        geometry: { type: "Polygon", coordinates: [] },
+      },
+      {
+        type: "Feature",
+        properties: { name: "广东省", adcode: 440000, level: "province" },
+        geometry: { type: "Polygon", coordinates: [] },
+      },
+    ],
+  },
+}));
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();

@@ -380,35 +380,11 @@ export function PixelShape({
   };
 
   const liveRect = isPlayer ? displayRef.current : display;
+  const shapeGap = resolveDashboardShapeGapPadding(componentGap);
+  const hasShapeGap = shapeGap > 0;
 
-  return (
-    <div
-      ref={outerRef}
-      id={`shape-id-${widget.id}`}
-      data-testid={`pixel-shape-${widget.id}`}
-      data-component-id={widget.id}
-      data-pixel-is-player={isPlayer ? "" : undefined}
-      className={cn(
-        "shape pixel-shape-outer absolute flex touch-none select-none flex-col border p-[5px]",
-        mode === "edit" && selected
-          ? "pixel-shape-selected z-[1]"
-          : "border-gray-200/90 dark:border-gray-700/80",
-        shell.outer.className,
-      )}
-      style={{
-        left: liveRect.x,
-        top: liveRect.y,
-        width: liveRect.width,
-        height: liveRect.height,
-        zIndex: pixelShapeZIndex(widget.order, mode === "edit" && selected),
-        ...shell.outer.style,
-      }}
-    >
-      {hint ? (
-        <p className="sr-only" role="status" data-testid="pixel-boundary-hint">
-          {hint}
-        </p>
-      ) : null}
+  const shapeBody = (
+    <>
       <WidgetShapeChrome
         title={widget.title}
         titleStyle={titleStyle}
@@ -452,6 +428,58 @@ export function PixelShape({
           </div>
         </PixelShapePlayerProvider>
       </PixelShapeInteractionProvider>
+    </>
+  );
+
+  return (
+    <div
+      ref={outerRef}
+      id={`shape-id-${widget.id}`}
+      data-testid={`pixel-shape-${widget.id}`}
+      data-component-id={widget.id}
+      data-pixel-is-player={isPlayer ? "" : undefined}
+      data-component-gap={componentGap}
+      className={cn(
+        "shape pixel-shape-outer absolute flex touch-none select-none flex-col",
+        hasShapeGap
+          ? "border-0 bg-transparent"
+          : cn(
+              "border",
+              mode === "edit" && selected
+                ? "pixel-shape-selected z-[1] overflow-visible"
+                : "border-gray-200/90 dark:border-gray-700/80",
+              shell.outer.className,
+            ),
+      )}
+      style={{
+        left: liveRect.x,
+        top: liveRect.y,
+        width: liveRect.width,
+        height: liveRect.height,
+        zIndex: pixelShapeZIndex(widget.order, mode === "edit" && selected),
+        boxSizing: "border-box",
+        ...(hasShapeGap ? { padding: shapeGap } : shell.outer.style),
+      }}
+    >
+      {hint ? (
+        <p className="sr-only" role="status" data-testid="pixel-boundary-hint">
+          {hint}
+        </p>
+      ) : null}
+      {hasShapeGap ? (
+        <div
+          data-testid={`pixel-shape-body-${widget.id}`}
+          className={cn(
+            "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border border-gray-200/90 dark:border-gray-700/80",
+            shell.outer.className,
+          )}
+          style={shell.outer.style}
+        >
+          {shapeBody}
+        </div>
+      ) : (
+        shapeBody
+      )}
 
       {mode === "edit" && selected
         ? RESIZE_DIRECTIONS.map((direction) => (

@@ -41,7 +41,7 @@
   - [x] 折线/柱/饼/仪表/表格/地图最小集（registry 9 类型 + fe 高级渲染对接 render-spec）
   - [x] 新类型可插件注册（`ChartTypeRegistry.register` + `register_builtin_chart_types()` 幂等；`fetchChartTypeCatalog` 镜像）
 - **代码锚点**：`backend/app/viz/registry.py` · `backend/app/viz/builtin.py` · `backend/app/api/v1/charts.py`（GET /charts/types）· `fe/src/lib/chartRegistry.ts` · `fe/src/components/charts/adapters/renderFromSpec.ts`
-- **演化建议**：类型元数据（icon/预览缩略图）扩展；生产级地图瓦片 CDN 与完整地理编码；r250 补 `isKnownChartType` + `getFallbackChartType` → table fallback（T-VIZ-R250-003-01~02）
+- **演化建议**：类型元数据（icon/预览缩略图）扩展；**离线**中国省/市 GeoJSON 分级与地名映射（GEO-IRON-01，禁止在线瓦片）；r250 补 `isKnownChartType` + `getFallbackChartType` → table fallback（T-VIZ-R250-003-01~02）
 - **里程碑对齐**：
 ### [VIZ-004] 图表样式子类型
 

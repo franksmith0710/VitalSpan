@@ -37,6 +37,7 @@ alwaysApply: true
 - 不预置业务场景包；附录 S 仅文档参考
 - `goal.md` 仅经 `create-evolution-goal` 人工修订
 - 一至三期图表直连 `dataSourceId` + SQL/表，**不经 Dataset**（四期 M13）
+- **地图仅离线中国**（GEO-IRON-01）：见 @.cursor/rules/geo-map-offline-china.mdc
 
 ## 技能索引
 

@@ -1,5 +1,8 @@
 import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
+import { resolveChartConfigPhase } from "@/lib/chartConfigState";
+import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
+import { DEFAULT_GEO_MAP_PLACEHOLDER_HINT, isNumericRegionIdDimension, MAP_REGION_NAME_HINT } from "@/lib/geoMapChart";
 import {
   isEchartsChartType,
   isKpiType,
@@ -110,7 +113,8 @@ export const ChartRenderer = memo(function ChartRenderer({
   const [page, setPage] = useState(1);
   const [localConfig, setLocalConfig] = useState(config);
   const specConfig = mode === "config" ? localConfig : config;
-  const empty = !loading && !error && (rows?.length ?? 0) === 0;
+  const isMapChart = localConfig.chartType === "map";
+  const empty = !loading && !error && (rows?.length ?? 0) === 0 && !isMapChart;
 
   useEffect(() => {
     setLocalConfig(config);
@@ -143,6 +147,22 @@ export const ChartRenderer = memo(function ChartRenderer({
     [deStyle.label, numberFormat],
   );
 
+  const mapPlaceholderHint = useMemo(() => {
+    if (!isMapChart) return undefined;
+    if (!isChartExecuteReady(localConfig)) return "请配置数据源与 SQL";
+    const phase = resolveChartConfigPhase(localConfig);
+    if (!phase.renderReady) return DEFAULT_GEO_MAP_PLACEHOLDER_HINT;
+    const regionField = localConfig.dimensions?.[0]?.field ?? "";
+    if (regionField && isNumericRegionIdDimension(regionField, columns, rows as unknown[][])) {
+      return MAP_REGION_NAME_HINT;
+    }
+    if (renderModel?.kind === "error") {
+      return renderModel.message.split("。")[0] ?? renderModel.message;
+    }
+    if (!loading && !error && (rows?.length ?? 0) === 0) return "暂无数据";
+    return undefined;
+  }, [isMapChart, localConfig, loading, error, rows, columns, renderModel]);
+
   const echartsChart = (spec = renderSpec) => (
     <AdvancedEchartsChart
       spec={spec}
@@ -158,6 +178,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       chartColors={chartColors}
       showLabel={showDataLabels}
       valueFormat={valueFormat}
+      mapPlaceholderHint={mapPlaceholderHint}
     />
   );
 
@@ -187,6 +208,9 @@ export const ChartRenderer = memo(function ChartRenderer({
         return embedded
           ? embeddedStateMessage(dwStateWarning, message)
           : <p className="text-theme-sm text-warning-600 dark:text-warning-400">{message}</p>;
+      }
+      if (chartType === "map") {
+        return wrapEmbedded(echartsChart());
       }
       if (!renderModel || renderModel.kind === "empty") {
         return embedded
@@ -233,7 +257,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       : <p className="text-theme-sm text-gray-500">暂不支持的图表类型</p>;
   };
 
-  const body = !loading && !error && !empty ? (
+  const body = !loading && !error && (!empty || isMapChart) ? (
     <div
       className={
         mode === "config"
@@ -281,7 +305,7 @@ export const ChartRenderer = memo(function ChartRenderer({
               重试
             </Button>
           </div>
-        ) : empty ? (
+        ) : empty && !isMapChart ? (
           <div className="absolute inset-0 flex items-center justify-center">
             {embeddedEmptyMessage()}
           </div>
@@ -297,7 +321,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       title={title}
       loading={loading}
       error={error}
-      empty={empty}
+      empty={empty && !isMapChart}
       slowHint={slowHint}
       onRetry={rerun}
     >

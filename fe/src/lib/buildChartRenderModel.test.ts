@@ -41,6 +41,19 @@ describe("buildChartRenderModel", () => {
     expect(model).toEqual({ kind: "ready" });
   });
 
+  it("allows map with numeric region_id and relies on canvas hint", () => {
+    const config = {
+      ...defaultChartConfig("map"),
+      dimensions: [{ field: "region_id" }],
+      metrics: [{ field: "amount" }],
+    };
+    const model = buildChartRenderModel(config, ["region_id", "amount"], [
+      [5, 100],
+      [7, 80],
+    ]);
+    expect(model).toEqual({ kind: "ready" });
+  });
+
   it("returns ready for funnel without misrouting to bar", () => {
     const config = {
       ...defaultChartConfig("funnel"),

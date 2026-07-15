@@ -22,7 +22,6 @@ type DashboardContextInspectorProps = {
   styleConfig: DashboardStyleConfig;
   onStyleChange: (value: DashboardStyleConfig) => void;
   onWidgetsChange?: (widgets: LayoutWidget[]) => void;
-  onSave?: () => void | Promise<void>;
   embedded?: boolean;
   linkageDefaultOpen?: boolean;
   isPixelLayout?: boolean;
@@ -40,7 +39,6 @@ export function DashboardContextInspector({
   styleConfig,
   onStyleChange,
   onWidgetsChange,
-  onSave,
   embedded = false,
   linkageDefaultOpen = false,
   isPixelLayout = false,
@@ -68,7 +66,6 @@ export function DashboardContextInspector({
           styleConfig={styleConfig}
           patchStyle={patchStyle}
           isPixelLayout={isPixelLayout}
-          onSave={onSave}
           onSwitchColorScheme={(scheme) => {
             const bundle = switchDashboardThemeBundle(styleConfig, widgets, scheme);
             onStyleChange(bundle.styleConfig);

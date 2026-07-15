@@ -4,6 +4,7 @@
 
 | ID | 文档 | 状态 | 优先级 | 摘要 |
 |----|------|------|--------|------|
+| BUG-9 | [BUG-9_dashboard-pixel-canvas-jitter_2026-07-15.md](./BUG-9_dashboard-pixel-canvas-jitter_2026-07-15.md) | qa_pending | P0 | 画布持续抖动；R1 切断视口反馈环+RO 合帧 |
 | BUG-8 | [BUG-8_chart-inspector-provider-boundary_2026-07-15.md](./BUG-8_chart-inspector-provider-boundary_2026-07-15.md) | qa_pending | P0 | 点击图表白屏；Provider 提升至编辑页 |
 | BUG-7 | [BUG-7_dashboard-resize-no-collision_2026-07-15.md](./BUG-7_dashboard-resize-no-collision_2026-07-15.md) | qa_pending | P0 | resize 不走 onPreview；R1 已接入碰撞 preview |
 | BUG-6 | [BUG-6_dashboard-layout-roundtrip-drift_2026-07-15.md](./BUG-6_dashboard-layout-roundtrip-drift_2026-07-15.md) | fixed | P0 | 保存/重载后像素布局漂移；移除 hydrate auto-pack |

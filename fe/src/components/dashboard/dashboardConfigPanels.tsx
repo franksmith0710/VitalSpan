@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,86 +12,21 @@ import { DashboardConfigSection } from "./DashboardConfigSection";
 import type { Linkage } from "./dashboardFilterUtils";
 import { LinkageRulesPanel } from "./LinkageRulesPanel";
 import {
-  DASHBOARD_FONT_OPTIONS,
-  GAP_PRESET_PX,
-  inferPixelGapPreset,
-  PIXEL_GAP_PRESET_PX,
   formatMetricValue,
   type DashboardStyleConfig,
-  type GapPreset,
 } from "./dashboardStyleConfig";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
+import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
+import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
+import { DeAttrField, DeSegmentGroup } from "./dashboardInspectorUi";
 import { ColorField } from "@/components/ui/color-field";
-import { DebouncedNumberInput } from "@/components/ui/debounced-number-input";
 import type { LayoutWidget } from "./layoutUtils";
 import { CHART_PALETTE_PRESETS } from "@/lib/chartPalette";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DEFAULT_DRILL_LEVEL_COLORS,
-  resolveDashboardChrome,
-} from "./dashboardChromeConfig";
-import type { DashboardChromeConfig, ColorScheme, SpacingMode } from "./dashboardStyleConfig";
+import { DEFAULT_DRILL_LEVEL_COLORS } from "./dashboardChromeConfig";
+import type { ColorScheme, SpacingMode } from "./dashboardStyleConfig";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
-
-type ThemeCardProps = {
-  label: string;
-  selected: boolean;
-  variant: "light" | "dark";
-  onSelect: () => void;
-};
-
-function ThemePreviewCard({ label, selected, variant, onSelect }: ThemeCardProps) {
-  const isDark = variant === "dark";
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        "flex min-w-0 flex-1 flex-col gap-2 rounded-lg border p-2 text-left transition-colors",
-        "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/40",
-        selected
-          ? "border-brand-500 bg-brand-50/50 dark:border-brand-500 dark:bg-brand-500/10"
-          : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-white/[0.02]",
-      )}
-      aria-pressed={selected}
-    >
-      <div
-        className={cn(
-          "overflow-hidden rounded-md border p-1.5",
-          isDark ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-gray-50",
-        )}
-      >
-        <div className={cn("mb-1 h-1.5 w-8 rounded-full", isDark ? "bg-gray-600" : "bg-gray-300")} />
-        <div className="flex gap-1">
-          <div className={cn("h-8 flex-1 rounded-sm", isDark ? "bg-gray-800" : "bg-white")} />
-          <div className="flex flex-1 flex-col gap-0.5">
-            <div className={cn("h-3.5 flex-1 rounded-sm", isDark ? "bg-brand-400/70" : "bg-brand-400/80")} />
-            <div className={cn("h-3.5 flex-1 rounded-sm", isDark ? "bg-sky-400/60" : "bg-sky-400/70")} />
-          </div>
-        </div>
-      </div>
-      <span className="text-center text-theme-xs text-gray-600 dark:text-gray-400">{label}</span>
-    </button>
-  );
-}
-
-function ChromeToggleRow({
-  label,
-  checked,
-  onCheckedChange,
-}: {
-  label: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center justify-between gap-2 text-theme-xs text-gray-600 dark:text-gray-400">
-      <span>{label}</span>
-      <Checkbox checked={checked} onCheckedChange={(v) => onCheckedChange(v === true)} />
-    </label>
-  );
-}
 
 function SpacingModeToggle({
   label,
@@ -104,148 +38,17 @@ function SpacingModeToggle({
   onChange: (mode: SpacingMode) => void;
 }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-theme-xs text-gray-500">{label}</Label>
-      <div className="flex gap-2">
-        {(
-          [
-            { value: "unified", label: "统一值" },
-            { value: "individual", label: "分边" },
-          ] as const
-        ).map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            className={cn(
-              "flex-1 rounded-md border px-2 py-1.5 text-theme-xs",
-              mode === item.value
-                ? "border-brand-500 bg-brand-50/60 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
-                : "border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400",
-            )}
-            onClick={() => onChange(item.value)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function GapPresetRadios({
-  hasGap,
-  preset,
-  customPx,
-  presetPxMap,
-  onHasGapChange,
-  onPresetChange,
-  onCustomPx,
-  gridHint,
-}: {
-  hasGap: boolean;
-  preset: GapPreset;
-  customPx: number;
-  presetPxMap: Record<Exclude<GapPreset, "custom">, number>;
-  onHasGapChange: (hasGap: boolean) => void;
-  onPresetChange: (preset: Exclude<GapPreset, "custom"> | "custom") => void;
-  onCustomPx: (px: number) => void;
-  gridHint?: string;
-}) {
-  const sizeOptions = (
-    [
-      ["sm", "小"],
-      ["md", "中"],
-      ["lg", "大"],
-      ["custom", "自定义"],
-    ] as const
-  ).map(([key, label]) => ({
-    key,
-    label: key === "custom" ? label : `${label} (${presetPxMap[key]}px)`,
-  }));
-
-  return (
-    <div className="space-y-2">
-      <Label className="text-theme-xs text-gray-600 dark:text-gray-400">组件间隙</Label>
-      <div className="flex gap-2">
-        {(
-          [
-            { value: true, label: "有间隙" },
-            { value: false, label: "无间隙" },
-          ] as const
-        ).map((item) => (
-          <button
-            key={String(item.value)}
-            type="button"
-            className={cn(
-              "flex-1 rounded-md border px-2 py-1.5 text-theme-xs",
-              hasGap === item.value
-                ? "border-brand-500 bg-brand-50/60 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
-                : "border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400",
-            )}
-            onClick={() => onHasGapChange(item.value)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-      {hasGap ? (
-        <div className="flex flex-wrap gap-2">
-          {sizeOptions.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={cn(
-                "rounded-md border px-2.5 py-1.5 text-theme-xs",
-                preset === item.key
-                  ? "border-brand-500 bg-brand-50/60 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
-                  : "border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400",
-              )}
-              onClick={() => onPresetChange(item.key)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {hasGap && preset === "custom" ? (
-        <DebouncedNumberInput
-          min={0}
-          max={48}
-          className="h-9"
-          value={customPx}
-          onCommit={onCustomPx}
-        />
-      ) : null}
-      {gridHint ? (
-        <p className="text-[10px] text-gray-400">{gridHint}</p>
-      ) : null}
-    </div>
-  );
-}
-
-function ScaleModeOption({
-  label,
-  selected,
-  onSelect,
-}: {
-  label: string;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        "flex-1 rounded-md border px-2 py-1.5 text-theme-xs transition-colors",
-        selected
-          ? "border-brand-500 bg-brand-50/60 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
-          : "border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:text-gray-400",
-      )}
-      aria-pressed={selected}
-    >
-      {label}
-    </button>
+    <DeAttrField label={label} compact>
+      <DeSegmentGroup
+        value={mode}
+        columns={2}
+        options={[
+          { value: "unified", label: "统一值" },
+          { value: "individual", label: "分边" },
+        ]}
+        onChange={(v) => onChange(v as SpacingMode)}
+      />
+    </DeAttrField>
   );
 }
 
@@ -253,7 +56,6 @@ type StyleSectionProps = {
   styleConfig: DashboardStyleConfig;
   patchStyle: PatchFn;
   isPixelLayout: boolean;
-  onSave?: () => void | Promise<void>;
   onSwitchColorScheme?: (scheme: ColorScheme) => void;
 };
 
@@ -261,16 +63,9 @@ export function DashboardStyleSections({
   styleConfig,
   patchStyle,
   isPixelLayout,
-  onSave,
   onSwitchColorScheme,
 }: StyleSectionProps) {
   const colorScheme = styleConfig.colorScheme ?? "light";
-  const gapPreset = styleConfig.gapPreset ?? (styleConfig.widgetGap != null ? "custom" : "md");
-  const scaleMode = styleConfig.scaleMode ?? "canvas";
-  const ws = styleConfig.widgetStyle ?? {};
-  const chrome = resolveDashboardChrome(styleConfig);
-  const patchChrome = (patch: Partial<DashboardChromeConfig>) =>
-    patchStyle({ chrome: { ...styleConfig.chrome, ...patch } });
 
   return (
     <>
@@ -278,218 +73,20 @@ export function DashboardStyleSections({
         title="仪表板风格"
         defaultOpen
         data-testid="dashboard-theme-section"
-        action={
-          onSave ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-theme-xs font-normal text-brand-500 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-500/10"
-              aria-label="保存"
-              data-testid="dashboard-style-save"
-              onClick={() => void onSave()}
-            >
-              保存
-            </Button>
-          ) : (
-            <span className="px-1 text-theme-xs font-normal text-gray-400">
-              样式已实时预览，保存后发布生效
-            </span>
-          )
-        }
       >
-        <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-          点击切换浅色或深色，画布与组件整套配色即时生效（与顶栏深浅色无关）。
-        </p>
-        <div className="flex gap-2">
-          <ThemePreviewCard
-            label="浅色主题"
-            variant="light"
-            selected={colorScheme === "light"}
-            onSelect={() => onSwitchColorScheme?.("light") ?? patchStyle({ colorScheme: "light" })}
-          />
-          <ThemePreviewCard
-            label="深色主题"
-            variant="dark"
-            selected={colorScheme === "dark"}
-            onSelect={() => onSwitchColorScheme?.("dark") ?? patchStyle({ colorScheme: "dark" })}
-          />
-        </div>
+        <DashboardThemeStylePanel
+          colorScheme={colorScheme}
+          onSwitchColorScheme={onSwitchColorScheme}
+          onPatchColorScheme={(scheme) => patchStyle({ colorScheme: scheme })}
+        />
       </DashboardConfigSection>
 
-      <DashboardConfigSection title="整体配置" data-testid="dashboard-overall-config">
-        <p className="mb-3 text-theme-xs text-gray-500 dark:text-gray-400">
-          正在编辑
-          <span className="mx-1 font-medium text-gray-700 dark:text-gray-300">
-            {colorScheme === "dark" ? "深色" : "浅色"}
-          </span>
-          主题下的布局与行为；切换上方卡片可分别记忆各主题的底色与组件样式。
-        </p>
-        <div className="space-y-4">
-          <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
-            <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">当前主题视觉</p>
-            <div className="space-y-1.5">
-              <Label className="text-theme-xs text-gray-600 dark:text-gray-400">全局字体</Label>
-              <Select
-                value={styleConfig.fontFamily || "__default__"}
-                onValueChange={(value) =>
-                  patchStyle({ fontFamily: value === "__default__" ? undefined : value })
-                }
-              >
-                <SelectTrigger className="h-9 w-full">
-                  <SelectValue placeholder="系统默认" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DASHBOARD_FONT_OPTIONS.map((opt) => (
-                    <SelectItem
-                      key={opt.label}
-                      value={opt.value ? opt.value : "__default__"}
-                    >
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-theme-xs text-gray-600 dark:text-gray-400">组件默认圆角 (px)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={48}
-                className="h-9"
-                placeholder="跟随主题"
-                value={ws.borderRadius ?? ""}
-                onChange={(e) =>
-                  patchStyle({
-                    widgetStyle: {
-                      ...ws,
-                      borderRadius: e.target.value ? Number(e.target.value) : undefined,
-                    },
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-          {isPixelLayout ? (
-            <GapPresetRadios
-              hasGap={(styleConfig.pixelGutter ?? 0) > 0}
-              preset={inferPixelGapPreset(styleConfig.pixelGutter ?? 0)}
-              customPx={styleConfig.pixelGutter ?? 0}
-              presetPxMap={PIXEL_GAP_PRESET_PX}
-              onHasGapChange={(hasGap) =>
-                patchStyle({ pixelGutter: hasGap ? PIXEL_GAP_PRESET_PX.md : 0 })
-              }
-              onPresetChange={(preset) => {
-                if (preset === "custom") {
-                  patchStyle({ pixelGutter: styleConfig.pixelGutter ?? 8 });
-                  return;
-                }
-                patchStyle({ pixelGutter: PIXEL_GAP_PRESET_PX[preset] });
-              }}
-              onCustomPx={(value) => patchStyle({ pixelGutter: value })}
-              gridHint="像素画布：拖拽吸附与碰撞推挤时使用此间隙"
-            />
-          ) : (
-            <GapPresetRadios
-              hasGap={gapPreset !== "none" && (styleConfig.widgetGap ?? 8) > 0}
-              preset={gapPreset}
-              customPx={styleConfig.widgetGap ?? 8}
-              presetPxMap={GAP_PRESET_PX}
-              onHasGapChange={(hasGap) =>
-                patchStyle(
-                  hasGap
-                    ? { gapPreset: "md", widgetGap: GAP_PRESET_PX.md }
-                    : { gapPreset: "none", widgetGap: 0 },
-                )
-              }
-              onPresetChange={(preset) => {
-                if (preset === "custom") {
-                  patchStyle({ gapPreset: "custom", widgetGap: styleConfig.widgetGap ?? 8 });
-                  return;
-                }
-                patchStyle({ gapPreset: preset, widgetGap: GAP_PRESET_PX[preset] });
-              }}
-              onCustomPx={(value) => patchStyle({ gapPreset: "custom", widgetGap: value })}
-              gridHint="栅格模式：组件卡片间距"
-            />
-          )}
-
-          <div className="space-y-1.5">
-            <Label className="text-theme-xs text-gray-600 dark:text-gray-400">缩放模式</Label>
-            <div className="flex gap-2">
-              <ScaleModeOption
-                label="按画布比例"
-                selected={scaleMode === "canvas"}
-                onSelect={() => patchStyle({ scaleMode: "canvas" })}
-              />
-              <ScaleModeOption
-                label="按组件比例"
-                selected={scaleMode === "component"}
-                onSelect={() => patchStyle({ scaleMode: "component" })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-theme-xs text-gray-600 dark:text-gray-400">刷新频率 (秒)</Label>
-            <Input
-              type="number"
-              min={5}
-              max={3600}
-              className="h-9"
-              placeholder="仅分享页整页刷新"
-              value={styleConfig.refreshIntervalSec ?? ""}
-              onChange={(e) =>
-                patchStyle({
-                  refreshIntervalSec: e.target.value ? Number(e.target.value) : undefined,
-                })
-              }
-            />
-            <p className="text-[10px] text-gray-400">
-              整页 reload；单图刷新请在图表「数据 → 刷新频率」按组件设置
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-theme-xs text-gray-600 dark:text-gray-400">结果展示数量</Label>
-            <DebouncedNumberInput
-              min={1}
-              max={10000}
-              className="h-9"
-              value={styleConfig.defaultQueryLimit ?? 100}
-              onCommit={(value) => patchStyle({ defaultQueryLimit: value || 100 })}
-            />
-            <p className="text-[10px] text-gray-400">对标 DE「图表结果」；单图可在数据 Tab 覆盖</p>
-          </div>
-
-          <div className="space-y-2 rounded-lg border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
-            <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">显示与交互</p>
-            <ChromeToggleRow
-              label="图表加载提示"
-              checked={chrome.showChartLoadingHint}
-              onCheckedChange={(checked) => patchChrome({ showChartLoadingHint: checked })}
-            />
-            <ChromeToggleRow
-              label="悬浮操作按钮（放大/导出等）"
-              checked={chrome.showFloatingActions}
-              onCheckedChange={(checked) => patchChrome({ showFloatingActions: checked })}
-            />
-            <ChromeToggleRow
-              label="组件标题栏操作按钮"
-              checked={chrome.showChartActionButtons}
-              onCheckedChange={(checked) => patchChrome({ showChartActionButtons: checked })}
-            />
-            <ChromeToggleRow
-              label="编辑态辅助对齐网格"
-              checked={chrome.showAuxiliaryGrid}
-              onCheckedChange={(checked) => patchChrome({ showAuxiliaryGrid: checked })}
-            />
-          </div>
-          </div>
-        </div>
+      <DashboardConfigSection title="整体配置" defaultOpen data-testid="dashboard-overall-config">
+        <DashboardOverallConfigPanel
+          styleConfig={styleConfig}
+          patchStyle={patchStyle}
+          isPixelLayout={isPixelLayout}
+        />
       </DashboardConfigSection>
 
       <DashboardConfigSection title="仪表板背景" data-testid="dashboard-canvas-background">
@@ -885,7 +482,6 @@ export function DashboardWidgetStyleSections({ styleConfig, patchStyle }: StyleS
           >
             示例{formatMetricValue(20_000_000, nf)}
           </p>
-          <p className="text-[10px] text-gray-400">柱/线图数据标签与 tooltip；未单独设置时继承看板数字格式</p>
         </div>
       </DashboardConfigSection>
 

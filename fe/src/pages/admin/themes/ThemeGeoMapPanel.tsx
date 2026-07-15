@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
-import * as echarts from "echarts/core";
-import regionsGeo from "@/assets/geo/regions-simplified.json";
+import { buildGeoMapEchartsOption } from "@/lib/geoMapChart";
 import { getEchartsTheme } from "@/lib/echarts-theme";
 
 type ThemeGeoMapPanelProps = {
@@ -11,8 +10,12 @@ type ThemeGeoMapPanelProps = {
   onProvinceClick?: (provinceName: string) => void;
 };
 
-function colIndex(columns: string[], field: string): number {
-  return columns.indexOf(field);
+function resolveFieldIndex(columns: string[], candidates: string[], fallback: number): number {
+  for (const name of candidates) {
+    const idx = columns.indexOf(name);
+    if (idx >= 0) return idx;
+  }
+  return fallback;
 }
 
 export function ThemeGeoMapPanel({
@@ -22,22 +25,17 @@ export function ThemeGeoMapPanel({
   onProvinceClick,
 }: ThemeGeoMapPanelProps) {
   const option = useMemo(() => {
-    const regionIdx = colIndex(columns, "region") >= 0 ? colIndex(columns, "region") : 0;
-    const metricIdx =
-      colIndex(columns, "cnt") >= 0
-        ? colIndex(columns, "cnt")
-        : colIndex(columns, "value") >= 0
-          ? colIndex(columns, "value")
-          : 1;
-    echarts.registerMap("vs-regions", regionsGeo as never);
-    const data = rows.map((r) => ({
-      name: String(r[regionIdx] ?? ""),
-      value: Number(r[metricIdx] ?? 0),
-    }));
-    return {
-      tooltip: { trigger: "item" },
-      series: [{ type: "map", map: "vs-regions", roam: false, data }],
-    };
+    const regionIdx = resolveFieldIndex(columns, ["region", "province", "name"], 0);
+    const metricIdx = resolveFieldIndex(columns, ["cnt", "value", "count"], 1);
+    const regionField = columns[regionIdx] ?? columns[0] ?? "region";
+    const metricField = columns[metricIdx] ?? columns[1] ?? columns[0] ?? "value";
+    return buildGeoMapEchartsOption({
+      rows,
+      columns,
+      regionField,
+      metricField,
+      geo: { roam: false, visualMap: true, showRegionLabel: false },
+    });
   }, [columns, rows]);
 
   return (

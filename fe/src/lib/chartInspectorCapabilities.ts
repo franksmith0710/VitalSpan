@@ -60,6 +60,28 @@ export function chartInspectorCapabilities(
     };
   }
 
+  if (chartType === "map") {
+    return {
+      ...base,
+      legend: false,
+      label: true,
+      dataZoom: false,
+      styleVariant: false,
+      labelFormat: true,
+    };
+  }
+
+  if (chartType === "heatmap") {
+    return {
+      ...base,
+      legend: false,
+      label: false,
+      dataZoom: false,
+      styleVariant: false,
+      labelFormat: false,
+    };
+  }
+
   if (chartType === "pie" || isExtendedEchartsType(chartType)) {
     return {
       ...base,

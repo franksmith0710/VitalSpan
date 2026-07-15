@@ -70,8 +70,8 @@ export function DashboardConfigSection({
       {!disabled && children ? (
         <CollapsibleContent
           className={cn(
-            "bg-white dark:bg-transparent",
-            compact ? "px-2.5 py-2" : "px-3 py-3",
+            "bg-white px-3.5 py-1 dark:bg-transparent",
+            compact && "px-2.5 py-0.5",
           )}
         >
           {children}

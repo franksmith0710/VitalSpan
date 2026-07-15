@@ -1,0 +1,50 @@
+---
+description: 地图铁律——仅离线中国行政区 GeoJSON，禁止在线瓦片与境外底图
+alwaysApply: true
+---
+
+# 地图铁律（GEO-IRON-01）
+
+> 对标 DataEase/Superset 时**只借鉴离线区域地图**能力；**禁止**引入其在线地图（高德/天地图/腾讯/Mapbox/MapLibre 瓦片等）路径。
+
+## 必须遵守
+
+| 项 | 约定 |
+|----|------|
+| **范围** | **仅中华人民共和国**省级行政区（可扩展省→市下钻，仍须离线 GeoJSON） |
+| **底图** | **仅离线**：`fe/src/assets/geo/*.json` 或经平台 API 分发的 GeoJSON；`echarts.registerMap` |
+| **渲染** | ECharts `series.type=map` / 分类热力（非经纬度瓦片底图） |
+| **数据 join** | 维度为**省/市名称**或**国标 adcode**；禁止把业务 `region_id` 直接当地理维度 |
+| **依赖** | **零**在线地图 SDK、瓦片 CDN、地图 Key 环境变量 |
+
+## 明确禁止
+
+- 高德 / 天地图 / 腾讯 / Mapbox / MapLibre / OSM 等**在线瓦片底图**
+- AntV L7 / L7Plot **在线 Scene**（符号地图、流向地图等需 Key 的类型）
+- 运行时请求外部 geo CDN（含 `geo.datav.aliyun.com` 等）——资产须**打包进仓库**
+- 世界地图、境外行政区、地球村 `000.json` 等多国底图
+- PRD/计划中出现「生产级地图瓦片 CDN」「在线地图 Key」类需求（除非经 `goal.md` 人工推翻本铁律）
+
+## 允许（离线中国）
+
+- 全国 / 省级 / 市级 **GeoJSON** 内置或管理端上传（无外链拉取）
+- 地名归一化、`areaMapping` 式别名、自定义区域（如华东=多省合集）
+- 省→市下钻（换 `registerMap` 的 adcode 资产，仍离线）
+- **空态/未配置**：仍渲染中国省级轮廓占位（`buildGeoMapPlaceholderEchartsOption`），对标 DataEase 图案地图
+- CAT-003 `geo-regions` 作**目录与自定义区域**，不替代「离线边界文件」
+
+## 代码锚点
+
+- `fe/src/lib/geoMapChart.ts` · `fe/src/assets/geo/china-provinces.json`
+- `fe/src/components/charts/adapters/renderFromSpec.ts`（`map` / `heatmap`）
+- `fe/src/lib/buildChartRenderModel.ts`（`region_id` 校验）
+
+## 文档真理源
+
+- 架构：`docs/arch.md` **ADR-12**
+- PRD：`docs/automate/prd/F06-VIZ.md` VIZ-003
+- 域边界：`docs/services/viz.md`
+
+## Agent 纪律
+
+新增/修改地图相关代码前：若方案涉及在线瓦片、境外地图或地图 Key → **停止并拒绝**，改为离线 GeoJSON 方案。

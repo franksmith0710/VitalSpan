@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { GripVertical, Trash2 } from "lucide-react";
+import { GeoMapPlaceholderChart } from "@/components/charts/adapters/GeoMapPlaceholderChart";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
@@ -88,6 +89,25 @@ function WidgetPendingPreview({ widget }: { widget: LayoutWidget }) {
   const chartType = widget.chartConfig?.chartType ?? "bar";
   const Icon = widgetChartIcon(chartType);
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
+
+  if (chartType === "map") {
+    return (
+      <div className="relative flex h-full min-h-[64px] flex-col overflow-hidden">
+        <GeoMapPlaceholderChart fill hint="" />
+        <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-[11px] text-gray-500 dark:text-gray-400">
+          请配置数据源与查询
+        </p>
+        <div className="pointer-events-none absolute inset-x-0 bottom-1 flex flex-wrap items-center justify-center gap-1.5 px-2">
+          <Badge variant="light" color="light" size="sm">
+            {typeLabel}
+          </Badge>
+          <Badge variant="light" color="warning" size="sm">
+            待配置
+          </Badge>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="widget-pending-preview flex h-full min-h-[64px] flex-col items-center justify-center gap-2 px-3 py-3">

@@ -288,7 +288,7 @@ describe("PixelCanvas", () => {
 
   it.each([1, 0.5, 0.25])(
     "keeps resize handles inside the host at scale %s",
-    (expectedScale) => {
+    async (expectedScale) => {
     const hostWidth = 1440 * expectedScale;
     const hostHeight = 320 * expectedScale;
     render(
@@ -304,7 +304,10 @@ describe("PixelCanvas", () => {
       clientWidth: { configurable: true, value: hostWidth },
       clientHeight: { configurable: true, value: hostHeight },
     });
-    act(triggerResizeObservers);
+    await act(async () => {
+      triggerResizeObservers();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
 
     expect(host).toHaveAttribute("data-pixel-canvas-scale", String(expectedScale));
     expect(screen.getByTestId("pixel-canvas-stage")).toHaveStyle({
@@ -318,7 +321,7 @@ describe("PixelCanvas", () => {
     },
   );
 
-  it("reports the visible canonical viewport after resize and scroll", () => {
+  it("reports the visible canonical viewport after resize and scroll", async () => {
     const onViewportChange = vi.fn();
     render(
       <PixelCanvas
@@ -335,7 +338,10 @@ describe("PixelCanvas", () => {
       scrollLeft: { configurable: true, writable: true, value: 200 },
       scrollTop: { configurable: true, writable: true, value: 100 },
     });
-    act(triggerResizeObservers);
+    await act(async () => {
+      triggerResizeObservers();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
     fireEvent.scroll(host);
 
     expect(onViewportChange).toHaveBeenLastCalledWith({

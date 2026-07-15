@@ -5,7 +5,7 @@
 
 ```yaml
 version: 1.0.0
-last_updated: 2026-07-03
+last_updated: 2026-07-15
 status: bootstrap
 srs_ref: docs/srs/全生命周期系统需求规格说明书.md
 prd_ref: docs/automate/prd.md
@@ -68,7 +68,8 @@ flowchart TB
 | ADR-01 | 后端 **FastAPI** + OpenAPI 自动生成 | 与 FR-1.1 总线 OpenAPI 对齐；Python 生态适合 SQL/连接器 | 已定 |
 | ADR-02 | 前端 **React + shadcn/ui + Radix + Tailwind v4** | SRS 已定目标栈；单应用主壳层 + Embed | 已定 |
 | ADR-11 | 前端 **单应用 + RBAC 菜单**（非 `/portal` 双 URL） | 对标 DE/SS 权限模型；M1 兼容 `/admin/*`；见 `layout.md` ADR | 已定 |
-| ADR-03 | 图表 **ECharts**（主）/ **AntV L7**（GIS） | 与 UI 层解耦；对标 DE/SS 图表能力 | 已定 |
+| ADR-03 | 图表 **ECharts**（主）；GIS 见 **ADR-12** | 与 UI 层解耦；对标 DE/SS 图表能力 | 已定 |
+| ADR-12 | **地图仅离线中国 GeoJSON**（GEO-IRON-01） | 政企内网/合规；零瓦片 CDN、零地图 Key；禁止境外与在线底图 | 已定 |
 | ADR-04 | **ConnectorRegistry** 插件式数据源 | NFR-04：新增类型不改核心服务与查询执行器 | 已定 |
 | ADR-05 | 查询双路径：**SqlCapable** + **NativeQuery** | 关系型/OLAP 走 SQL；时序/文档/搜索走原生 DSL | 已定 |
 | ADR-06 | 凭证 **Fernet** 加密（可换 KMS） | NFR-03；API 不返回明文密码 | 已定 |
@@ -77,6 +78,13 @@ flowchart TB
 | ADR-09 | M6 报表 **JasperReports** 或等价 | 模板 Word/Excel/PDF；二期末前选型 | 待定 |
 | ADR-10 | 演化指导库 **`.automate` submodule** | SOP/skills/agents 与产品代码分离；`install.sh` 同步至 `.cursor/` | 已部署 |
 
+### ADR-12 · GEO-IRON-01（地图铁律）
+
+- **仅中国**：中华人民共和国省级行政区（可扩展省→市下钻，资产仍为离线 GeoJSON）
+- **仅离线**：`echarts.registerMap` + 仓库内或平台分发的 `.json`；**禁止**运行时拉取瓦片 CDN
+- **禁止**：高德/天地图/腾讯/Mapbox/MapLibre/OSM、AntV L7 在线 Scene、世界地图/境外行政区、地图 Key 配置项
+- **执行规则**：`.cursor/rules/geo-map-offline-china.mdc`（`alwaysApply: true`）
+
 ---
 
 ## 3. 技术栈
@@ -84,7 +92,7 @@ flowchart TB
 | 层次 | 技术 | 说明 |
 |------|------|------|
 | 前端 UI | React · shadcn/ui · Radix · Tailwind CSS v4 | 单应用主壳层（`/admin/*`） |
-| 前端图表 | ECharts · AntV L7 | 通用图表 · GIS/热力 |
+| 前端图表 | ECharts | 通用图表 + **离线中国地图**（见 ADR-12 / `.cursor/rules/geo-map-offline-china.mdc`） |
 | 后端 API | FastAPI · Pydantic v2 · Uvicorn | REST `/api/v1/*` |
 | 平台库 | SQLAlchemy 2 · Alembic | 元数据 ORM + 迁移 |
 | 连接层 | ConnectorRegistry · SQLAlchemy 连接池 | 按 `dataSourceId` 隔离 |

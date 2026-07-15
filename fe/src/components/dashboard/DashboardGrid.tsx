@@ -13,10 +13,11 @@ import {
 import { DashboardCanvasEmpty } from "./DashboardCanvasEmpty";
 import {
   DashboardRglCanvas,
+  DASHBOARD_GRID_MARGIN,
   PALETTE_DROP_ITEM_ID,
 } from "./dashboardGridRgl";
 import type { DashboardStyleConfig } from "./layoutUtils";
-import { resolveWidgetGap } from "./dashboardStyleConfig";
+import { resolveDashboardShapeGapPadding, resolveWidgetGap } from "./dashboardStyleConfig";
 import { getTopLevelWidgets, sortWidgets } from "./layoutUtils";
 import { gridLayoutToWidgets, widgetsToGridLayout } from "./gridLayoutAdapter";
 import { normalizeGridLayout } from "./gridSnapUtils";
@@ -75,7 +76,7 @@ export function DashboardGrid({
   styleConfig,
 }: DashboardGridProps) {
   const gap = resolveWidgetGap(styleConfig ?? {});
-  const gridMargin: [number, number] = [gap, gap];
+  const gridMargin: [number, number] = DASHBOARD_GRID_MARGIN;
   const sorted = sortWidgets(widgets);
   const topLevel = useMemo(() => getTopLevelWidgets(sorted), [sorted]);
   const derivedLayout = useMemo(() => widgetsToGridLayout(topLevel), [topLevel]);
@@ -161,13 +162,21 @@ export function DashboardGrid({
 
   const gridChildren = topLevel.map((widget) => {
     const gridItem = layoutById.get(widget.id);
+    const cellGap = resolveDashboardShapeGapPadding(gap);
     return (
       <div
         key={widget.id}
         className={cn(
-          "grid-widget-cell dashboard-widget-surface h-full min-w-0",
+          "grid-widget-cell h-full min-w-0",
+          cellGap === 0 && "dashboard-widget-surface",
           selectedIds?.has(widget.id) && "grid-widget-selected",
         )}
+        style={
+          cellGap > 0
+            ? { padding: cellGap, boxSizing: "border-box" }
+            : undefined
+        }
+        data-component-gap={cellGap > 0 ? gap : undefined}
       >
         {renderWidget(
           widget,

@@ -151,7 +151,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const [linkagePanelOpen, setLinkagePanelOpen] = useState(false);
   const [chartRailOpen, setChartRailOpen] = useState(true);
   const [chartRefreshKeys, setChartRefreshKeys] = useState<Record<string, number>>({});
-  const [pixelViewport, setPixelViewport] = useState<PixelRect>();
+  const pixelViewportRef = useRef<PixelRect | undefined>(undefined);
+  const handlePixelViewportChange = useCallback((viewport: PixelRect) => {
+    pixelViewportRef.current = viewport;
+  }, []);
   const [widgetActionDialog, setWidgetActionDialog] = useState<{
     type: "view-data" | "enlarge";
     widgetId: string;
@@ -257,7 +260,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       setSavedLinkageSnapshot(linkageSnapshot(baseWidgets, loadedLinkage));
       setLinkage(loadedLinkage);
       linkageRef.current = loadedLinkage;
-      setPixelViewport(undefined);
+      pixelViewportRef.current = undefined;
       clearSelection();
       hydratedRef.current = true;
       setFilterValues(() => {
@@ -382,7 +385,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         ? selectedWidget
         : null;
     if (layout.version === 2) {
-      const nextLayout = insertPixelPaletteWidget(type, layout, pixelViewport);
+      const nextLayout = insertPixelPaletteWidget(type, layout, pixelViewportRef.current);
       const draft = nextLayout.widgets.find(
         (item) => !layout.widgets.some((widget) => widget.id === item.id),
       );
@@ -473,7 +476,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const appendClonedWidget = (widget: LayoutWidget, sourcePixel?: PixelLayoutWidget) => {
     if (missing || !canSave) return;
     if (layout.version === 2) {
-      const nextLayout = insertClonedPixelWidget(widget, layout, pixelViewport, sourcePixel);
+      const nextLayout = insertClonedPixelWidget(widget, layout, pixelViewportRef.current, sourcePixel);
       const draft = nextLayout.widgets.find((item) => item.id === widget.id);
       if (!draft) return;
       setPixelLayout(nextLayout);
@@ -918,7 +921,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               onFilterValueChange={handleFilterValueChange}
               onDropInsert={handleDropInsert}
               onPaletteDrop={handlePaletteDrop}
-              onViewportChange={setPixelViewport}
+              onViewportChange={handlePixelViewportChange}
               widgetActions={layout.version === 2 && canSave ? pixelWidgetActions : undefined}
             />
           }
@@ -1030,7 +1033,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 styleConfig={styleConfig}
                 onStyleChange={applyStyleConfig}
                 onWidgetsChange={setWidgets}
-                onSave={() => void handleSave()}
                 isPixelLayout={layout.version === 2}
               />
             ) : null
@@ -1089,7 +1091,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           onFilterValueChange={handleFilterValueChange}
           onDropInsert={handleDropInsert}
           onPaletteDrop={handlePaletteDrop}
-          onViewportChange={setPixelViewport}
+          onViewportChange={handlePixelViewportChange}
         />
       )}
       {mode === "edit" && canSave ? (

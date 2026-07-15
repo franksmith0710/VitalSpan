@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DeAttrField, DeAttrForm, DeSegmentGroup, DE_INPUT } from "./dashboardInspectorUi";
 import { ColorField } from "@/components/ui/color-field";
 import {
   CANVAS_BG_DECOR_PRESETS,
@@ -70,22 +70,19 @@ export function DashboardCanvasBackgroundPanel({
   );
 
   return (
-    <div className="space-y-4">
-      <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-        设置画布底色与装饰纹理；随当前深浅主题分别保存（在「仪表板风格」切换主题可对照）。
-      </p>
+    <DeAttrForm>
+      <DeAttrField label="画布底色">
+        <ColorField
+          compact
+          value={styleConfig.canvasBackground ?? ""}
+          swatches={CANVAS_BG_RECOMMENDED}
+          onChange={(color) =>
+            patchStyle({ canvasBackground: color, canvasBackgroundCustom: true })
+          }
+        />
+      </DeAttrField>
 
-      <ColorField
-        label="画布底色"
-        value={styleConfig.canvasBackground ?? ""}
-        swatches={CANVAS_BG_RECOMMENDED}
-        onChange={(color) =>
-          patchStyle({ canvasBackground: color, canvasBackgroundCustom: true })
-        }
-      />
-
-      <div className="space-y-2">
-        <Label className="text-theme-xs text-gray-600 dark:text-gray-400">背景装饰</Label>
+      <DeAttrField label="背景装饰">
         <div className="grid grid-cols-2 gap-2">
           {CANVAS_BG_DECOR_PRESETS.map((preset) => {
             const selected = decorId === preset.id;
@@ -94,10 +91,10 @@ export function DashboardCanvasBackgroundPanel({
                 key={preset.id}
                 type="button"
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border p-2 text-left transition-colors",
+                  "flex items-center gap-2 rounded-lg border p-2 text-left transition-all",
                   selected
-                    ? "border-brand-500 bg-brand-50/50 dark:bg-brand-500/10"
-                    : "border-gray-200 hover:border-gray-300 dark:border-gray-700",
+                    ? "border-brand-500 bg-brand-50/60 shadow-theme-xs dark:border-brand-500 dark:bg-brand-500/10"
+                    : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-transparent",
                 )}
                 aria-pressed={selected}
                 onClick={() => {
@@ -115,9 +112,10 @@ export function DashboardCanvasBackgroundPanel({
             );
           })}
         </div>
-      </div>
+      </DeAttrField>
 
-      <div className="space-y-2 rounded-lg border border-dashed border-gray-200 p-3 dark:border-gray-700">
+      <DeAttrField label="自定义背景图">
+        <div className="space-y-2">
         <button
           type="button"
           className="text-theme-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
@@ -127,11 +125,8 @@ export function DashboardCanvasBackgroundPanel({
         </button>
         {showAdvancedUrl ? (
           <div className="space-y-2">
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              粘贴以 http(s) 开头的图片地址；上传文件需先放到对象存储或静态资源目录。
-            </p>
             <Input
-              className="h-9"
+              className={DE_INPUT}
               value={localImageUrl}
               placeholder="https://example.com/background.jpg"
               onChange={(e) => {
@@ -166,25 +161,27 @@ export function DashboardCanvasBackgroundPanel({
             ) : null}
           </div>
         ) : null}
-      </div>
+        </div>
+      </DeAttrField>
 
-      <div className="space-y-3 rounded-lg border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
-        <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">弹框样式</p>
+      <DeAttrField label="弹框背景">
         <ColorField
-          label="弹框背景色"
+          compact
           value={styleConfig.dialogStyle?.background ?? ""}
           onChange={(color) =>
             patchStyle({ dialogStyle: { ...styleConfig.dialogStyle, background: color } })
           }
         />
+      </DeAttrField>
+      <DeAttrField label="弹框字体">
         <ColorField
-          label="弹框字体色"
+          compact
           value={styleConfig.dialogStyle?.fontColor ?? ""}
           onChange={(color) =>
             patchStyle({ dialogStyle: { ...styleConfig.dialogStyle, fontColor: color } })
           }
         />
-      </div>
-    </div>
+      </DeAttrField>
+    </DeAttrForm>
   );
 }

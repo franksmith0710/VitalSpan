@@ -37,6 +37,7 @@ import { markLineGuidesEqual } from "./markLineGuidesEqual";
 import type { MarkLineGuide } from "./pixelMarkLine";
 import { PixelWidgetSlot } from "./PixelWidgetSlot";
 import { createPixelShapePreviewRegistry } from "./pixelShapePreviewRegistry";
+import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
 
 type PixelCanvasProps = {
@@ -129,6 +130,13 @@ export function PixelCanvas({
   const stageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const previewRegistryRef = useRef(createPixelShapePreviewRegistry());
+  const metricsFrameRef = useRef<number | null>(null);
+  const viewportRef = useRef<PixelRect>({
+    x: 0,
+    y: 0,
+    width: layout.canvas.width,
+    height: layout.canvas.height,
+  });
   const [scale, setScale] = useState(1);
   const [contentSize, setContentSize] = useState({ width: 0, height: 0 });
   const [stageLeft, setStageLeft] = useState(0);
@@ -138,12 +146,22 @@ export function PixelCanvas({
   const pendingPreviewRef = useRef<PixelLayoutWidget | null>(null);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [markGuides, setMarkGuides] = useState<MarkLineGuide[]>([]);
-  const [visibleViewport, setVisibleViewport] = useState<PixelRect>({
+  const [visibleViewport, setVisibleViewport] = useState<PixelRect>(() => ({
     x: 0,
     y: 0,
     width: layout.canvas.width,
     height: layout.canvas.height,
-  });
+  }));
+
+  const publishViewport = useCallback(
+    (next: PixelRect) => {
+      if (pixelRectsNearlyEqual(viewportRef.current, next)) return;
+      viewportRef.current = next;
+      setVisibleViewport(next);
+      onViewportChange?.(next);
+    },
+    [onViewportChange],
+  );
   const activeLayout = layout;
   const widgetChromeStyle = useMemo(
     () => pickWidgetDashboardStyle(styleConfig),
@@ -172,14 +190,15 @@ export function PixelCanvas({
     const host = hostRef.current;
     if (!host) return;
     const measureEl = resolvePixelCanvasMeasureElement(host);
-    const update = () => {
+
+    const applyMetrics = () => {
       const metrics = scaledCanvasMetrics(
         measureEl.clientWidth,
         measureEl.clientHeight,
         viewCanvas.width,
         designCanvasHeight,
         viewCanvas.height,
-        pixelGutter,
+        PIXEL_CANVAS_GUTTER,
         scaleMode,
       );
       setScale((previous) =>
@@ -189,20 +208,38 @@ export function PixelCanvas({
       setCenterContent((previous) =>
         previous === metrics.centerContent ? previous : metrics.centerContent,
       );
-      setContentSize((previous) =>
-        Math.abs(previous.width - metrics.contentWidth) < 1 &&
-        Math.abs(previous.height - metrics.contentHeight) < 1
-          ? previous
-          : { width: metrics.contentWidth, height: metrics.contentHeight },
-      );
-      onViewportChange?.(visibleCanvasViewport(host, metrics.scale, viewCanvas));
-      setVisibleViewport(visibleCanvasViewport(host, metrics.scale, viewCanvas));
+      setContentSize((previous) => {
+        const widthChanged = Math.abs(previous.width - metrics.contentWidth) >= 1;
+        const heightDelta = Math.abs(previous.height - metrics.contentHeight);
+        // 抑制滚动条出现/消失导致的 contentHeight 来回翻转（±1 列 scrollbar ≈ 8px）
+        const heightChanged =
+          previous.height === 0 ? true : heightDelta >= 12;
+        if (!widthChanged && !heightChanged) return previous;
+        return { width: metrics.contentWidth, height: metrics.contentHeight };
+      });
+      publishViewport(visibleCanvasViewport(host, metrics.scale, viewCanvas));
     };
-    update();
-    const observer = new ResizeObserver(update);
+
+    const scheduleMetrics = () => {
+      if (metricsFrameRef.current !== null) return;
+      metricsFrameRef.current = requestAnimationFrame(() => {
+        metricsFrameRef.current = null;
+        applyMetrics();
+      });
+    };
+
+    scheduleMetrics();
+    applyMetrics();
+    const observer = new ResizeObserver(scheduleMetrics);
     observer.observe(measureEl);
-    return () => observer.disconnect();
-  }, [onViewportChange, viewCanvas, designCanvasHeight, scaleMode, pixelGutter]);
+    return () => {
+      observer.disconnect();
+      if (metricsFrameRef.current !== null) {
+        cancelAnimationFrame(metricsFrameRef.current);
+        metricsFrameRef.current = null;
+      }
+    };
+  }, [publishViewport, viewCanvas, designCanvasHeight, scaleMode]);
 
   const registerPreviewSync = useCallback(
     (widgetId: string, sync: (rect: PixelRect) => void) =>
@@ -237,7 +274,7 @@ export function PixelCanvas({
         layout.canvas.width,
         resolveScaleDesignHeight(nextLayout.canvas.height),
         viewHeight,
-        pixelGutter,
+        PIXEL_CANVAS_GUTTER,
         scaleMode,
       );
       stage.style.height = `${viewHeight}px`;
@@ -246,7 +283,7 @@ export function PixelCanvas({
         content.style.height = `${metrics.contentHeight}px`;
       }
     },
-    [layout.canvas.width, pixelGutter, scaleMode],
+    [layout.canvas.width, scaleMode],
   );
 
   const resolveActive = useCallback(
@@ -357,7 +394,7 @@ export function PixelCanvas({
       const horizontalGutter =
         centerContent && contentSize.width > 0
           ? Math.max(0, (host.clientWidth - contentSize.width) / 2)
-          : pixelGutter;
+          : stageLeft;
       const point = clientPointToCanvas(
         host,
         event.clientX,
@@ -367,7 +404,7 @@ export function PixelCanvas({
       );
       onPaletteDrop(payload, point);
     },
-    [onPaletteDrop, scale, pixelGutter, centerContent, contentSize.width],
+    [onPaletteDrop, scale, stageLeft, centerContent, contentSize.width],
   );
 
   return (
@@ -383,9 +420,7 @@ export function PixelCanvas({
       data-pixel-canvas-scale={scale}
       style={{ "--pixel-canvas-scale": scale } as CSSProperties}
       onScroll={(event) => {
-        const next = visibleCanvasViewport(event.currentTarget, scale, viewCanvas);
-        onViewportChange?.(next);
-        setVisibleViewport(next);
+        publishViewport(visibleCanvasViewport(event.currentTarget, scale, viewCanvas));
       }}
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) onClearSelection?.();
@@ -456,6 +491,7 @@ export function PixelCanvas({
                 otherWidgets={layout.widgets.filter((item) => item.id !== widget.id)}
                 widgetActions={widgetActions}
                 styleConfig={widgetChromeStyle}
+                componentGap={pixelGutter}
                 registerPreviewSync={mode === "edit" ? registerPreviewSync : undefined}
               >
                 <PixelWidgetSlot

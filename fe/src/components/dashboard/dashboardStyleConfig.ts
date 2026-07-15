@@ -9,12 +9,12 @@ export const GAP_PRESET_PX = {
   lg: 16,
 } as const;
 
-/** 像素画布间隙上限 12px */
+/** 像素画布间隙上限 10px（对标 DE gapSize 0–10） */
 export const PIXEL_GAP_PRESET_PX = {
   none: 0,
-  sm: 4,
-  md: 8,
-  lg: 12,
+  sm: 2,
+  md: 5,
+  lg: 10,
 } as const;
 
 export type GapPreset = keyof typeof GAP_PRESET_PX | "custom";
@@ -142,11 +142,85 @@ export const CANVAS_BG_RECOMMENDED = [
 ] as const;
 
 export const DASHBOARD_FONT_OPTIONS = [
-  { value: "", label: "系统默认" },
-  { value: "Outfit, system-ui, sans-serif", label: "Outfit" },
-  { value: '"Noto Sans SC", system-ui, sans-serif', label: "思源黑体" },
-  { value: "Georgia, serif", label: "衬线" },
+  { value: "", label: "默认字体 / System" },
+  {
+    value: '"Microsoft YaHei", "PingFang SC", sans-serif',
+    label: "微软雅黑",
+  },
+  {
+    value: '"PingFang SC", "Microsoft YaHei", sans-serif',
+    label: "苹方",
+  },
+  { value: '"SimSun", "Songti SC", serif', label: "宋体" },
+  { value: 'Arial, "Helvetica Neue", sans-serif', label: "Arial" },
+  { value: "Helvetica, Arial, sans-serif", label: "Helvetica" },
+  { value: '"Times New Roman", Times, serif', label: "Times New Roman" },
+  { value: 'Georgia, "Times New Roman", serif', label: "Georgia" },
+  { value: "Roboto, Arial, sans-serif", label: "Roboto" },
+  { value: "Inter, system-ui, sans-serif", label: "Inter" },
+  { value: '"Segoe UI", Tahoma, sans-serif', label: "Segoe UI" },
+  { value: "Tahoma, Arial, sans-serif", label: "Tahoma" },
+  { value: "Verdana, Geneva, sans-serif", label: "Verdana" },
 ] as const;
+
+const LEGACY_DASHBOARD_FONT_MAP: Record<string, string> = {
+  "Outfit, system-ui, sans-serif": DASHBOARD_FONT_OPTIONS[1].value,
+  '"Noto Sans SC", system-ui, sans-serif': DASHBOARD_FONT_OPTIONS[1].value,
+  '"Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif':
+    DASHBOARD_FONT_OPTIONS[1].value,
+  'Arial, Helvetica, "Helvetica Neue", sans-serif': DASHBOARD_FONT_OPTIONS[5].value,
+  '"SimSun", "Songti SC", "STSong", Georgia, serif': DASHBOARD_FONT_OPTIONS[4].value,
+  "Georgia, serif": DASHBOARD_FONT_OPTIONS[8].value,
+};
+
+/** 将已存 fontFamily 映射到当前选项 value */
+export function resolveDashboardFontOptionValue(fontFamily?: string): string {
+  if (!fontFamily) return "";
+  const normalized = LEGACY_DASHBOARD_FONT_MAP[fontFamily] ?? fontFamily;
+  const match = DASHBOARD_FONT_OPTIONS.find((opt) => opt.value === normalized);
+  return match?.value ?? normalized;
+}
+
+export function dashboardFontSelectValue(fontFamily?: string): string {
+  const resolved = resolveDashboardFontOptionValue(fontFamily);
+  if (!resolved) return "__default__";
+  const known = DASHBOARD_FONT_OPTIONS.some((opt) => opt.value === resolved);
+  return known ? resolved : "__custom__";
+}
+
+export const DASHBOARD_REFRESH_PRESETS = [
+  { value: "off", label: "请选择" },
+  { value: "60", label: "1 分钟" },
+  { value: "300", label: "5 分钟" },
+  { value: "600", label: "10 分钟" },
+  { value: "900", label: "15 分钟" },
+  { value: "1800", label: "30 分钟" },
+  { value: "3600", label: "60 分钟" },
+  { value: "custom", label: "自定义" },
+] as const;
+
+export const DASHBOARD_QUERY_LIMIT_PRESETS = [
+  { value: "100", label: "100" },
+  { value: "500", label: "500" },
+  { value: "1000", label: "1000" },
+  { value: "5000", label: "5000" },
+  { value: "10000", label: "10000" },
+  { value: "custom", label: "自定义" },
+] as const;
+
+export function resolveDashboardRefreshPreset(sec?: number): string {
+  if (sec == null || sec <= 0) return "off";
+  const hit = DASHBOARD_REFRESH_PRESETS.find(
+    (p) => p.value !== "off" && p.value !== "custom" && Number(p.value) === sec,
+  );
+  return hit?.value ?? "custom";
+}
+
+export function resolveDashboardQueryLimitPreset(limit?: number): string {
+  const value = limit ?? 100;
+  const hit = DASHBOARD_QUERY_LIMIT_PRESETS.find((p) => p.value !== "custom" && Number(p.value) === value);
+  return hit?.value ?? "custom";
+}
 
 const CANVAS_GRID_SVG = encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path fill="none" stroke="%23cbd5e1" stroke-width="0.5" d="M24 0H0v24"/></svg>',
@@ -495,7 +569,20 @@ export function resolveWidgetGap(config: DashboardStyleConfig): number {
 
 export function resolvePixelGutter(config: DashboardStyleConfig): number {
   const gutter = config.pixelGutter ?? DEFAULT_PIXEL_GUTTER;
-  return Math.min(12, Math.max(0, gutter));
+  return Math.min(10, Math.max(0, gutter));
+}
+
+export const DASHBOARD_SHAPE_GAP_VAR = "--dashboard-shape-gap";
+
+export function resolveDashboardComponentGap(
+  config: DashboardStyleConfig,
+  options: { pixel?: boolean } = {},
+): number {
+  return options.pixel ? resolvePixelGutter(config) : resolveWidgetGap(config);
+}
+
+export function dashboardShapeGapStyle(gapPx: number): CSSProperties {
+  return { [DASHBOARD_SHAPE_GAP_VAR]: `${Math.max(0, gapPx)}px` } as CSSProperties;
 }
 
 export function inferPixelGapPreset(gutter: number): GapPreset {

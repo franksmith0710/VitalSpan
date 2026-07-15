@@ -44,6 +44,18 @@ function chartHasPieSeries(option: EChartsOption): boolean {
   );
 }
 
+function chartHasMapSeries(option: EChartsOption): boolean {
+  return (
+    Array.isArray(option.series) &&
+    option.series.some(
+      (series) =>
+        series &&
+        typeof series === "object" &&
+        (series as { type?: string }).type === "map",
+    )
+  );
+}
+
 /** 对标 DataEase：图例 / 缩略轴分层占位，避免底部彩色图例点压住绘图区 */
 export function resolveEchartsChromeInsets(
   deStyle: ChartDeStyle,
@@ -52,7 +64,7 @@ export function resolveEchartsChromeInsets(
   context?: EchartsLayoutContext,
 ): ChromeInsets {
   const legendPos = deStyle.legend?.position ?? "bottom";
-  const showLegend = deStyle.legend?.show !== false;
+  const showLegend = deStyle.legend?.show !== false && !chartHasMapSeries(option);
   const compact = Boolean(context?.embedded);
   const hasPie = chartHasPieSeries(option);
 

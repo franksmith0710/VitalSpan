@@ -4,7 +4,8 @@ import type EChartsReact from "echarts-for-react";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
 import { applyEchartsColorSchemeTokens, getEchartsTheme } from "@/lib/echarts-theme";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import type { ChartDeStyle } from "@/lib/chartDeStyle";
+import { readChartDeStyle, readChartGeoStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
+import { analyzeGeoMapMatch, buildGeoMapPlaceholderEchartsOption, isGeoMapPlaceholderOption } from "@/lib/geoMapChart";
 import { cn } from "@/lib/utils";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import {
@@ -31,6 +32,8 @@ type Props = {
   chartColors?: string[];
   showLabel?: boolean;
   valueFormat?: NumberFormatConfig;
+  /** 地图占位态提示文案（对标 DataEase 图案地图） */
+  mapPlaceholderHint?: string;
 };
 
 export function AdvancedEchartsChart({
@@ -47,6 +50,7 @@ export function AdvancedEchartsChart({
   chartColors,
   showLabel = false,
   valueFormat,
+  mapPlaceholderHint,
 }: Props) {
   const chartRef = useRef<EChartsReact | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -56,8 +60,25 @@ export function AdvancedEchartsChart({
     [rows],
   );
   const scheme = isDark ? "dark" : "light";
+  const geoMatchStats = useMemo(() => {
+    if (spec.chartType !== "map") return null;
+    const regionField = spec.encoding.dimensions[0]?.field;
+    if (!regionField) return null;
+    return analyzeGeoMapMatch(capped, columns, regionField);
+  }, [spec, capped, columns]);
+
   const option = useMemo(() => {
-    let built = buildEchartsOption(spec, capped, columns);
+    const geoStyle = readChartGeoStyle(deStyle ?? {});
+    let built = buildEchartsOption(spec, capped, columns, {
+      geo: geoStyle,
+      showLabel,
+    });
+    if (spec.chartType === "map" && isGeoMapPlaceholderOption(built)) {
+      built = buildGeoMapPlaceholderEchartsOption({
+        geo: geoStyle,
+        isDark: scheme === "dark",
+      });
+    }
     built = applyDeStyleToEchartsOption(built, deStyle ?? {}, dataZoom, {
       showLabel,
       valueFormat,
@@ -71,16 +92,30 @@ export function AdvancedEchartsChart({
   }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat, scheme]);
   const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
 
+  const isMapPlaceholder =
+    spec.chartType === "map" && isGeoMapPlaceholderOption(option as Record<string, unknown>);
+
   const isEmpty =
-    !option ||
-    (Array.isArray((option as { series?: unknown[] }).series) &&
-      (option as { series?: unknown[] }).series!.length === 0);
+    !isMapPlaceholder &&
+    (!option ||
+      (Array.isArray((option as { series?: unknown[] }).series) &&
+        (option as { series?: unknown[] }).series!.length === 0));
 
   const resizeChart = useCallback(() => {
     chartRef.current?.getEchartsInstance()?.resize();
   }, []);
 
   useEmbeddedChartLiveResize(fill && !isEmpty, containerRef, resizeChart);
+
+  const placeholderHint = isMapPlaceholder ? mapPlaceholderHint : null;
+
+  const geoMatchWarning =
+    !fill &&
+    geoMatchStats &&
+    geoMatchStats.total > 0 &&
+    geoMatchStats.matched < geoMatchStats.total
+      ? `有 ${geoMatchStats.total - geoMatchStats.matched} 条无法匹配地图区域`
+      : null;
 
   return (
     <div
@@ -96,6 +131,11 @@ export function AdvancedEchartsChart({
           数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条
         </p>
       ) : null}
+      {geoMatchWarning ? (
+        <p role="status" className="mb-2 shrink-0 text-theme-xs text-warning-600 dark:text-warning-400">
+          {geoMatchWarning}
+        </p>
+      ) : null}
       {isEmpty ? (
         <div
           className={cn(
@@ -108,7 +148,7 @@ export function AdvancedEchartsChart({
           暂无数据
         </div>
       ) : (
-        <div className={cn(fill && "min-h-0 flex-1")}>
+        <div className={cn(fill && "relative min-h-0 flex-1")}>
           <ReactECharts
             key={isDark ? "dark" : "light"}
             ref={chartRef}
@@ -125,6 +165,14 @@ export function AdvancedEchartsChart({
             autoResize={fill}
             data-testid="echarts-chart"
           />
+          {placeholderHint ? (
+            <p
+              className="pointer-events-none absolute inset-x-0 bottom-[10%] text-center text-[11px] leading-snug text-gray-500 dark:text-gray-400"
+              role="status"
+            >
+              {placeholderHint}
+            </p>
+          ) : null}
         </div>
       )}
     </div>

@@ -32,25 +32,55 @@ function mockExecute(rows: unknown[][], columns: string[]) {
   });
 }
 
-const cases: Array<{ type: ChartViewConfig["chartType"]; label: string; rows: unknown[][]; cols: string[] }> = [
-  { type: "map", label: "地图", rows: [["北京", 100]], cols: ["region", "value"] },
-  { type: "heatmap", label: "热力", rows: [["A", "1", 10]], cols: ["x", "y", "v"] },
-  { type: "kpi", label: "KPI", rows: [[1280, 12.5]], cols: ["total", "rate"] },
-  { type: "timeline", label: "时间轴", rows: [["2026-01-01", 1]], cols: ["t", "v"] },
+const cases: Array<{
+  type: ChartViewConfig["chartType"];
+  label: string;
+  rows: unknown[][];
+  cols: string[];
+  dimensions: ChartViewConfig["dimensions"];
+}> = [
+  {
+    type: "map",
+    label: "地图",
+    rows: [["北京", 100]],
+    cols: ["region", "value"],
+    dimensions: [{ field: "region" }],
+  },
+  {
+    type: "heatmap",
+    label: "热力",
+    rows: [["A", "Y1", 10]],
+    cols: ["x", "y", "v"],
+    dimensions: [{ field: "x" }, { field: "y" }],
+  },
+  {
+    type: "kpi",
+    label: "KPI",
+    rows: [[1280, 12.5]],
+    cols: ["total", "rate"],
+    dimensions: [],
+  },
+  {
+    type: "timeline",
+    label: "时间轴",
+    rows: [["2026-01-01", 1]],
+    cols: ["t", "v"],
+    dimensions: [{ field: "t" }],
+  },
 ];
 
 describe("DASH-003 chart render smoke", () => {
   beforeEach(() => mockApiFetch.mockReset());
   afterEach(() => cleanup());
 
-  it.each(cases)("renders $type container", async ({ type, label, rows, cols }) => {
+  it.each(cases)("renders $type container", async ({ type, label, rows, cols, dimensions }) => {
     mockExecute(rows, cols);
     const config: ChartViewConfig = {
       chartType: type,
       mode: "sql",
       dataSourceId: DS,
       sql: "SELECT 1",
-      dimensions: type === "kpi" ? [] : [{ field: cols[0] }],
+      dimensions: type === "kpi" ? [] : dimensions,
       metrics: type === "kpi"
         ? [{ field: "total" }, { field: "rate" }]
         : [{ field: cols[cols.length - 1] }],
