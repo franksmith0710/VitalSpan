@@ -16,6 +16,8 @@ import {
 } from "@/components/dashboard/dashboardFilterUtils";
 import {
   appendWidgetToTabPane,
+  insertPixelWidgetIntoTab,
+  resolvePixelTabsHost,
   coerceLayoutWidgets,
   resizeWidget,
   sortWidgets,
@@ -30,7 +32,6 @@ import {
 } from "@/components/dashboard/layoutUtils";
 import {
   isPixelCanvasEnabled,
-  mergeLayoutWidgetIntoPixel,
   pixelWidgetToLayoutWidget,
   prepareDashboardLayout,
 } from "@/components/dashboard/dashboardCanvasMode";
@@ -68,6 +69,7 @@ import {
   type PaletteInsertType,
 } from "@/components/dashboard/createLayoutWidget";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
+import { readTabsWidgetIdFromDropEvent } from "@/lib/tabsDropTarget";
 import { DashboardContextInspector } from "@/components/dashboard/DashboardContextInspector";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
 import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
@@ -75,7 +77,7 @@ import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartE
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
 import { MediaWidgetInspector } from "@/components/dashboard/MediaWidgetInspector";
-import { TabsWidgetInspector } from "@/components/dashboard/TabsWidgetInspector";
+import { TabsEditRail } from "@/components/dashboard/TabsEditRail";
 import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
 import { WidgetEnlargeDialog } from "@/components/dashboard/widget-actions/WidgetEnlargeDialog";
 import { WidgetViewDataDialog } from "@/components/dashboard/widget-actions/WidgetViewDataDialog";
@@ -415,46 +417,36 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     if (!open) setWidgetActionDialog(null);
   }, []);
 
-  const appendWidget = (type: PaletteInsertType, at?: GridInsertAt) => {
-    if (missing || !canSave) return;
-    const tabsHost =
-      selectedWidget?.type === "tabs" && selectedWidget.tabsConfig && type !== "tabs"
-        ? selectedWidget
-        : null;
-    if (layout.version === 2) {
-      const nextLayout = insertPixelPaletteWidget(type, layout, pixelViewportRef.current);
+  const commitPixelPaletteInsert = useCallback(
+    (
+      type: PaletteInsertType | PaletteDragPayload,
+      options?: { point?: { x: number; y: number }; tabsWidgetIdFromDom?: string | null },
+    ) => {
+      if (missing || !canSave || layout.version !== 2) return;
+      const insertType = type as PaletteInsertType;
+      if (insertType === "tabs") return;
+      let nextLayout = options?.point
+        ? insertPixelPaletteWidgetAt(insertType, layout, options.point)
+        : insertPixelPaletteWidget(insertType, layout, pixelViewportRef.current);
       const draft = nextLayout.widgets.find(
         (item) => !layout.widgets.some((widget) => widget.id === item.id),
       );
-      if (!draft) return;
+      if (!draft || draft.type === "tabs") return;
+      const tabsHost = resolvePixelTabsHost(
+        layout,
+        primarySelectedId,
+        options?.point,
+        options?.tabsWidgetIdFromDom,
+      );
       if (tabsHost?.tabsConfig) {
-        const withParent: PixelLayoutWidget = {
-          ...draft,
-          parentTabsId: tabsHost.id,
-          tabPaneId: tabsHost.tabsConfig.activePaneId,
-        };
-        const withParentWidgets = nextLayout.widgets.map((item) =>
-          item.id === draft.id ? withParent : item,
-        );
-        const legacyUpdated = appendWidgetToTabPane(
-          withParentWidgets.map(pixelWidgetToLayoutWidget),
-          tabsHost.id,
+        nextLayout = insertPixelWidgetIntoTab(
+          nextLayout,
+          draft,
+          tabsHost,
           tabsHost.tabsConfig.activePaneId,
-          draft.id,
         );
-        setPixelLayout({
-          ...nextLayout,
-          widgets: withParentWidgets.map((item) => {
-            if (item.id === tabsHost.id) {
-              const legacy = legacyUpdated.find((widget) => widget.id === tabsHost.id)!;
-              return mergeLayoutWidgetIntoPixel(item, legacy);
-            }
-            return item.id === draft.id ? withParent : item;
-          }),
-        });
-      } else {
-        setPixelLayout(nextLayout);
       }
+      setPixelLayout(nextLayout);
       handleSelect(draft.id, false);
       if (draft.type === "filter" && draft.filterConfig) {
         setFilterValues((previous) => ({
@@ -462,8 +454,27 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           [draft.filterConfig!.filterId]: draft.filterConfig!.defaultValue ?? "",
         }));
       }
+    },
+    [
+      canSave,
+      handleSelect,
+      layout,
+      missing,
+      primarySelectedId,
+      setPixelLayout,
+    ],
+  );
+
+  const appendWidget = (type: PaletteInsertType, at?: GridInsertAt) => {
+    if (missing || !canSave) return;
+    if (layout.version === 2) {
+      commitPixelPaletteInsert(type);
       return;
     }
+    const tabsHost =
+      selectedWidget?.type === "tabs" && selectedWidget.tabsConfig && type !== "tabs"
+        ? selectedWidget
+        : null;
     let draft = createPaletteWidget(type, widgets, at);
     if (tabsHost?.tabsConfig) {
       draft = {
@@ -533,22 +544,21 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     appendWidget(type, at);
   };
 
-  const handlePaletteDrop = (type: PaletteDragPayload, point: { x: number; y: number }) => {
-    if (missing || !canSave || layout.version !== 2) return;
-    const nextLayout = insertPixelPaletteWidgetAt(type, layout, point);
-    const draft = nextLayout.widgets.find(
-      (item) => !layout.widgets.some((widget) => widget.id === item.id),
-    );
-    if (!draft) return;
-    setPixelLayout(nextLayout);
-    handleSelect(draft.id, false);
-    if (draft.type === "filter" && draft.filterConfig) {
-      setFilterValues((previous) => ({
-        ...previous,
-        [draft.filterConfig!.filterId]: draft.filterConfig!.defaultValue ?? "",
-      }));
-    }
+  const handlePaletteDrop = (
+    type: PaletteDragPayload,
+    point: { x: number; y: number },
+    sourceEvent?: DragEvent,
+  ) => {
+    const tabsWidgetIdFromDom = sourceEvent ? readTabsWidgetIdFromDropEvent(sourceEvent) : null;
+    commitPixelPaletteInsert(type, { point, tabsWidgetIdFromDom });
   };
+
+  const handleTabPaletteDrop = useCallback(
+    (tabsWidgetId: string, type: PaletteDragPayload) => {
+      commitPixelPaletteInsert(type, { tabsWidgetIdFromDom: tabsWidgetId });
+    },
+    [commitPixelPaletteInsert],
+  );
 
   const handleFilterValueChange = (filterId: string, value: string) => {
     if (mode === "edit" && !canSave) return;
@@ -959,6 +969,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               onFilterValueChange={handleFilterValueChange}
               onDropInsert={handleDropInsert}
               onPaletteDrop={handlePaletteDrop}
+              onTabPaletteDrop={handleTabPaletteDrop}
               onViewportChange={handlePixelViewportChange}
               widgetActions={layout.version === 2 && canSave ? pixelWidgetActions : undefined}
             />
@@ -1023,8 +1034,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 }}
               />
             ) : selectedWidget?.type === "tabs" && selectedWidget.tabsConfig ? (
-              <TabsWidgetInspector
-                embedded
+              <TabsEditRail
                 widget={
                   selectedWidget as typeof selectedWidget & { tabsConfig: TabsWidgetConfig }
                 }
@@ -1034,6 +1044,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     prev.map((w) => (w.id === primarySelectedId ? { ...w, tabsConfig } : w)),
                   );
                 }}
+                onTitleChange={(title) => {
+                  if (!primarySelectedId) return;
+                  setWidgets((prev) =>
+                    prev.map((w) => (w.id === primarySelectedId ? { ...w, title } : w)),
+                  );
+                }}
+                onDelete={() => handleDeleteWidget(primarySelectedId!)}
               />
             ) : selectedWidget?.type === "chart" ? (
               <ChartEditRail
@@ -1121,6 +1138,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           onFilterValueChange={handleFilterValueChange}
           onDropInsert={handleDropInsert}
           onPaletteDrop={handlePaletteDrop}
+          onTabPaletteDrop={handleTabPaletteDrop}
           onViewportChange={handlePixelViewportChange}
         />
       )}

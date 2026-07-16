@@ -184,36 +184,110 @@ function buildGaugeOption(spec: RenderSpec, rows: unknown[][], columns: string[]
   return { series: [{ type: "gauge", data: [{ value }] }] };
 }
 
+function uniqueOrdered(values: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of values) {
+    if (seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+  }
+  return out;
+}
+
+type CartesianSeriesBuild = {
+  xData: string[];
+  series: Record<string, unknown>[];
+  isHorizontal: boolean;
+};
+
+/** 类别轴 + 可选子类别拆系列 + 指标聚合（对标 DataEase 折线/柱状） */
+function buildCartesianCategorySeries(
+  spec: RenderSpec,
+  rows: unknown[][],
+  columns: string[],
+  seriesType: "line" | "bar",
+  stylePatch?: (styleVariant: string) => Record<string, unknown>,
+): CartesianSeriesBuild {
+  const dim = spec.encoding.dimensions[0]?.field ?? "";
+  const subDim = spec.encoding.dimensions[1]?.field;
+  const metrics = spec.encoding.metrics.map((m) => m.field).filter(Boolean);
+  const isHorizontal = spec.styleVariant === "horizontal";
+  const d0i = safeColIndex(columns, dim);
+  const d1i = subDim ? safeColIndex(columns, subDim) : null;
+
+  if (d0i === null || metrics.length === 0) {
+    return { xData: [], series: [], isHorizontal };
+  }
+
+  const xData = uniqueOrdered(rows.map((r) => String(r[d0i] ?? "")));
+
+  const sumAt = (x: string, sub: string | null, metric: string) => {
+    const mi = safeColIndex(columns, metric);
+    if (mi === null) return 0;
+    let sum = 0;
+    for (const row of rows) {
+      if (String(row[d0i] ?? "") !== x) continue;
+      if (sub !== null && d1i !== null && String(row[d1i] ?? "") !== sub) continue;
+      sum += Number(row[mi] ?? 0);
+    }
+    return sum;
+  };
+
+  const patch = stylePatch?.(spec.styleVariant) ?? {};
+
+  if (!subDim || d1i === null) {
+    const series = metrics.map((metric) => {
+      const base: Record<string, unknown> = {
+        type: seriesType,
+        name: metric,
+        data: xData.map((x) => sumAt(x, null, metric)),
+        ...patch,
+      };
+      if (seriesType === "bar" && (spec.styleVariant === "stacked" || spec.styleVariant === "grouped")) {
+        base.stack = spec.styleVariant === "stacked" ? "total" : undefined;
+      }
+      return base;
+    });
+    return { xData, series, isHorizontal };
+  }
+
+  const subValues = uniqueOrdered(rows.map((r) => String(r[d1i] ?? "")));
+  const series: Record<string, unknown>[] = [];
+  for (const sub of subValues) {
+    for (const metric of metrics) {
+      const name = metrics.length > 1 ? `${sub}·${metric}` : sub;
+      const base: Record<string, unknown> = {
+        type: seriesType,
+        name,
+        data: xData.map((x) => sumAt(x, sub, metric)),
+        ...patch,
+      };
+      if (seriesType === "bar") {
+        if (spec.styleVariant === "stacked") base.stack = "total";
+        if (spec.styleVariant === "grouped") base.stack = undefined;
+      }
+      series.push(base);
+    }
+  }
+  return { xData, series, isHorizontal };
+}
+
 export function buildBarOption(
   spec: RenderSpec,
   rows: unknown[][],
   columns: string[],
 ): EChartsOption {
   if (rows.length === 0) return { series: [], dataset: { source: [] } };
-  const dim = spec.encoding.dimensions[0]?.field ?? "";
-  const metrics = spec.encoding.metrics.map((m) => m.field);
-  const di = safeColIndex(columns, dim);
-  const xData = di !== null ? rows.map((r) => String(r[di] ?? "")) : [];
-  const series = metrics.map((metric) => {
-    const mi = safeColIndex(columns, metric);
-    const data = mi !== null ? rows.map((r) => Number(r[mi] ?? 0)) : [];
-    const base: Record<string, unknown> = { type: "bar", name: metric, data };
-    if (spec.styleVariant === "stacked" || spec.styleVariant === "grouped") {
-      base.stack = spec.styleVariant === "stacked" ? "total" : undefined;
-    }
-    if (spec.styleVariant === "horizontal") {
-      return { ...base, type: "bar" };
-    }
-    return base;
-  });
-  const isHorizontal = spec.styleVariant === "horizontal";
+  const { xData, series, isHorizontal } = buildCartesianCategorySeries(
+    spec,
+    rows,
+    columns,
+    "bar",
+  );
   return {
-    xAxis: isHorizontal
-      ? { type: "value" }
-      : { type: "category", data: xData },
-    yAxis: isHorizontal
-      ? { type: "category", data: xData }
-      : { type: "value" },
+    xAxis: isHorizontal ? { type: "value" } : { type: "category", data: xData },
+    yAxis: isHorizontal ? { type: "category", data: xData } : { type: "value" },
     series,
   };
 }
@@ -240,21 +314,13 @@ export function buildLineOption(
   columns: string[],
 ): EChartsOption {
   if (rows.length === 0) return { series: [], dataset: { source: [] } };
-  const dim = spec.encoding.dimensions[0]?.field ?? "";
-  const metrics = spec.encoding.metrics.map((m) => m.field);
-  const di = safeColIndex(columns, dim);
-  const xData = di !== null ? rows.map((r) => String(r[di] ?? "")) : [];
-  const series = metrics.map((metric) => {
-    const mi = safeColIndex(columns, metric);
-    const data = mi !== null ? rows.map((r) => Number(r[mi] ?? 0)) : [];
-    const base: Record<string, unknown> = {
-      type: "line",
-      name: metric,
-      data,
-      ...applyLineStyleVariant(spec.styleVariant),
-    };
-    return base;
-  });
+  const { xData, series } = buildCartesianCategorySeries(
+    spec,
+    rows,
+    columns,
+    "line",
+    applyLineStyleVariant,
+  );
   return {
     tooltip: { trigger: "axis" },
     xAxis: { type: "category", data: xData },

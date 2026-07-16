@@ -1,6 +1,6 @@
 import type { EChartsOption } from "echarts";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartLegendVisible, type ChartDeStyle } from "./chartDeStyle";
+import { readChartLegendVisible, readChartLegendPosition, type ChartDeStyle } from "./chartDeStyle";
 import { echartsTooltipValueFormatter } from "./chartValueFormat";
 import { applyEchartsSeriesPresentation } from "./echartsSeriesPresentation";
 
@@ -64,9 +64,7 @@ function chartHasFunnelSeries(option: EChartsOption): boolean {
   );
 }
 
-function chartHasCenteredSeries(option: EChartsOption): boolean {
-  return chartHasPieSeries(option) || chartHasFunnelSeries(option);
-}
+function chartHasMapSeries(option: EChartsOption): boolean {
   return (
     Array.isArray(option.series) &&
     option.series.some(
@@ -85,7 +83,7 @@ export function resolveEchartsChromeInsets(
   option: EChartsOption,
   context?: EchartsLayoutContext,
 ): ChromeInsets {
-  const legendPos = deStyle.legend?.position ?? "bottom";
+  const legendPos = readChartLegendPosition(deStyle);
   const compact = Boolean(context?.embedded);
   const useShellLegend = Boolean(context?.shellLegend && compact);
   const showLegend =
@@ -330,6 +328,7 @@ export function applyDeStyleToEchartsOption(
   }
 
   next = applyPieInset(next, insets);
+  next = applyFunnelInset(next, insets);
 
   const showLabel = options?.showLabel ?? false;
   const valueFormat = options?.valueFormat;

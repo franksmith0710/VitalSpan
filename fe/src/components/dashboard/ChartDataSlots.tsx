@@ -17,12 +17,15 @@ export function ChartDataSlots() {
     activeSlot,
     setActiveSlot,
     assignField,
+    fieldAssignError,
+    clearFieldAssignError,
   } = useChartInspector();
 
   const columnsDisabled = columns.length === 0;
   const slots = chartDataSlotBlueprint(cfg.chartType);
 
   const clearSlot = (target: SlotTarget) => {
+    clearFieldAssignError();
     if (target.kind === "dimension") {
       const dimensions = [...(cfg.dimensions ?? [])];
       while (dimensions.length <= target.index) dimensions.push({ field: "" });
@@ -45,6 +48,11 @@ export function ChartDataSlots() {
 
   return (
     <div className="space-y-3">
+      {fieldAssignError ? (
+        <p className="rounded-md border border-error-200 bg-error-50 px-2 py-1.5 text-[10px] leading-snug text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+          {fieldAssignError}
+        </p>
+      ) : null}
       {columnsReady && columnsLoading ? (
         <p className="text-theme-xs text-gray-500 dark:text-gray-400">正在加载字段…</p>
       ) : null}
@@ -55,12 +63,16 @@ export function ChartDataSlots() {
           <ChartFieldSlot
             key={`${slot.kind}-${slot.index}-${slot.label}`}
             label={slot.label}
+            optional={slot.required === false}
             fieldName={rawField}
             fieldSuffix={rawField && slot.showAggregation ? "求和" : undefined}
             slotKind={slot.kind === "metric" ? "metric" : "dimension"}
             active={isActiveSlot(activeSlot, target)}
             disabled={columnsDisabled}
-            onClick={() => setActiveSlot(target)}
+            onClick={() => {
+              clearFieldAssignError();
+              setActiveSlot(target);
+            }}
             onClear={rawField ? () => clearSlot(target) : undefined}
             onDropField={(field) => assignField(field, target)}
           />

@@ -80,7 +80,7 @@ describe("RichTextEditor", () => {
     );
     await screen.findByRole("textbox", { name: "富文本内容" });
     await user.click(screen.getByRole("button", { name: "文字颜色" }));
-    await user.click(await screen.findByText("#dc2626"));
+    await user.click(screen.getByRole("option", { name: "正文" }));
     expect(onCommit).not.toHaveBeenCalled();
   });
 

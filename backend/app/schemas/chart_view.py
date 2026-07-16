@@ -41,6 +41,44 @@ class ChartFilterRef(BaseModel):
 
 ChartTimeRangePreset = Literal["last_7d", "last_30d", "last_90d", "mtd", "ytd"]
 
+_CHART_TYPE_ZH: dict[str, str] = {
+    "table": "表格",
+    "line": "折线图",
+    "bar": "柱状图",
+    "pie": "饼图",
+    "gauge": "仪表盘",
+    "map": "地图",
+    "heatmap": "热力图",
+    "kpi": "KPI 指标",
+    "timeline": "时间轴",
+    "sankey": "桑基图",
+    "funnel": "漏斗图",
+    "graph": "关系图",
+}
+
+
+def _field_count_message(
+    chart_type: str,
+    kind: Literal["dimensions", "metrics"],
+    rule_min: int,
+    rule_max: int,
+    got: int,
+    note: str | None,
+) -> str:
+    name = _CHART_TYPE_ZH.get(chart_type, chart_type)
+    kind_zh = "维度" if kind == "dimensions" else "指标"
+    if got > rule_max:
+        detail = f"当前配置了 {got} 个{kind_zh}，最多允许 {rule_max} 个"
+        action = f"请移除多余的{kind_zh}槽位中的字段"
+    elif got < rule_min:
+        detail = f"当前仅有 {got} 个{kind_zh}，至少需要 {rule_min} 个"
+        action = f"请在「数据」页签向{kind_zh}槽位拖入字段"
+    else:
+        detail = f"需要 {rule_min}–{rule_max} 个{kind_zh}，当前有 {got} 个"
+        action = f"请调整{kind_zh}字段数量"
+    suffix = f"。{note}" if note else ""
+    return f"{name}：{detail}。{action}{suffix}"
+
 _EMPTY_UUID_KEYS = ("dataSourceId", "bindingId", "chartId", "configId")
 
 
@@ -69,15 +107,15 @@ class ChartTimeRangeRef(BaseModel):
         if not self.enabled:
             return self
         if self.field is not None and not re.match(r"^[a-zA-Z_][\w]*$", self.field):
-            raise ValueError("CHART_INVALID_TIME_FIELD:field must be a valid identifier")
+            raise ValueError("CHART_INVALID_TIME_FIELD:时间字段名须为合法标识符")
         if self.mode == "relative":
             if self.relative_preset is None:
-                raise ValueError("CHART_MISSING_TIME_PRESET:relativePreset is required")
+                raise ValueError("CHART_MISSING_TIME_PRESET:相对时间范围需选择预设区间")
             return self
         if not self.start or not self.end:
-            raise ValueError("CHART_MISSING_TIME_BOUNDS:start and end are required for absolute mode")
+            raise ValueError("CHART_MISSING_TIME_BOUNDS:绝对时间范围需填写起止日期")
         if self.start > self.end:
-            raise ValueError("CHART_INVALID_TIME_BOUNDS:start must be <= end")
+            raise ValueError("CHART_INVALID_TIME_BOUNDS:起始日期不能晚于结束日期")
         return self
 
 
@@ -117,27 +155,27 @@ class ChartViewConfig(BaseModel):
         try:
             spec = get_spec(self.chart_type)
         except ChartTypeNotRegistered as exc:
-            raise ValueError("CHART_INVALID_TYPE:Unsupported chartType") from exc
+            raise ValueError("CHART_INVALID_TYPE:图表类型无效或未注册") from exc
 
         if self.style_variant not in spec.style_variants:
             raise ValueError(
                 "CHART_INVALID_STYLE_VARIANT:"
-                f"styleVariant '{self.style_variant}' is not valid for {self.chart_type}"
+                f"样式子类型「{self.style_variant}」对{_CHART_TYPE_ZH.get(self.chart_type, self.chart_type)}无效"
             )
 
         inline = [self.mode, self.sql, self.schema_name, self.table_name, self.data_source_id]
         if self.binding_id is not None and any(v is not None for v in inline):
-            raise ValueError("CHART_BINDING_CONFLICT:bindingId conflicts with inline fields")
+            raise ValueError("CHART_BINDING_CONFLICT:bindingId 与内联 SQL/数据源字段不能同时存在")
         if self.binding_id is None:
             if self.data_source_id is None:
-                raise ValueError("CHART_MISSING_DATASOURCE:dataSourceId is required")
+                raise ValueError("CHART_MISSING_DATASOURCE:请先选择数据源")
             if self.mode == "native":
                 if not self.native_body:
-                    raise ValueError("CHART_MISSING_NATIVE_BODY:nativeBody is required for native mode")
+                    raise ValueError("CHART_MISSING_NATIVE_BODY:原生模式需填写 nativeBody 配置")
                 if self.sql:
-                    raise ValueError("CHART_NATIVE_SQL_DISGUISE:sql is not allowed in native mode")
+                    raise ValueError("CHART_NATIVE_SQL_DISGUISE:原生模式不允许同时填写 SQL")
             if self.mode == "sql" and not self.sql:
-                raise ValueError("CHART_MISSING_SQL:sql is required for sql mode")
+                raise ValueError("CHART_MISSING_SQL:SQL 模式需填写查询语句")
             if self.mode == "sql" and self.sql:
                 from app.query.readonly import assert_readonly_sql
                 from app.query.schemas import QueryError
@@ -147,36 +185,47 @@ class ChartViewConfig(BaseModel):
                 except QueryError as exc:
                     raise ValueError(f"CHART_SQL_NOT_READONLY:{exc.message}") from exc
             if self.mode == "table" and (not self.schema_name or not self.table_name):
-                raise ValueError("CHART_MISSING_TABLE:schema and table are required for table mode")
+                raise ValueError("CHART_MISSING_TABLE:表模式需选择 schema 与数据表")
             if self.mode == "dataset":
                 if self.config_id is None:
-                    raise ValueError("CHART_MISSING_CONFIG_ID:configId is required for dataset mode")
+                    raise ValueError("CHART_MISSING_CONFIG_ID:Dataset 模式需选择数据集配置")
             elif self.mode is None:
-                raise ValueError("CHART_MISSING_MODE:mode is required when bindingId is absent")
+                raise ValueError("CHART_MISSING_MODE:请选择数据绑定方式（SQL / 表 / Dataset）")
 
         if self.binding_id is not None:
             return self
         if self.chart_type in ("line", "bar"):
             if not self.dimensions or not self.metrics:
                 raise ValueError(
-                    "CHART_MISSING_SERIES:dimensions and metrics are required for line/bar",
+                    "CHART_MISSING_SERIES:折线图/柱状图需至少配置 1 个维度与 1 个指标",
                 )
             return self
         rule = spec.field_rule
         dim_n = len(self.dimensions)
         met_n = len(self.metrics)
-        note = f" {rule.note}" if rule.note else ""
         if not (rule.min_dimensions <= dim_n <= rule.max_dimensions):
             raise ValueError(
                 "CHART_FIELD_REQUIREMENT:"
-                f"{self.chart_type} requires {rule.min_dimensions}-{rule.max_dimensions} "
-                f"dimensions, got {dim_n}.{note}"
+                + _field_count_message(
+                    self.chart_type,
+                    "dimensions",
+                    rule.min_dimensions,
+                    rule.max_dimensions,
+                    dim_n,
+                    rule.note,
+                )
             )
         if not (rule.min_metrics <= met_n <= rule.max_metrics):
             raise ValueError(
                 "CHART_FIELD_REQUIREMENT:"
-                f"{self.chart_type} requires {rule.min_metrics}-{rule.max_metrics} "
-                f"metrics, got {met_n}.{note}"
+                + _field_count_message(
+                    self.chart_type,
+                    "metrics",
+                    rule.min_metrics,
+                    rule.max_metrics,
+                    met_n,
+                    rule.note,
+                )
             )
         return self
 
@@ -219,12 +268,12 @@ class ChartViewConfigLayout(BaseModel):
         try:
             spec = get_spec(self.chart_type)
         except ChartTypeNotRegistered as exc:
-            raise ValueError("CHART_INVALID_TYPE:Unsupported chartType") from exc
+            raise ValueError("CHART_INVALID_TYPE:图表类型无效或未注册") from exc
 
         if self.style_variant not in spec.style_variants:
             raise ValueError(
                 "CHART_INVALID_STYLE_VARIANT:"
-                f"styleVariant '{self.style_variant}' is not valid for {self.chart_type}"
+                f"样式子类型「{self.style_variant}」对{_CHART_TYPE_ZH.get(self.chart_type, self.chart_type)}无效"
             )
         return self
 
@@ -277,6 +326,12 @@ _CODE_FIELD_HINTS: dict[str, list[str]] = {
 def _fields_for_code(code: str, text: str, loc: tuple[object, ...]) -> list[dict[str, str]]:
     if code == "CHART_MISSING_SERIES":
         return _series_missing_fields(text)
+    if code == "CHART_FIELD_REQUIREMENT":
+        if "维度" in text or "dimensions" in text:
+            return [{"field": "dimensions", "message": text}]
+        if "指标" in text or "度量" in text or "metrics" in text:
+            return [{"field": "metrics", "message": text}]
+        return [{"field": "dimensions", "message": text}]
     hints = _CODE_FIELD_HINTS.get(code)
     if hints:
         return [{"field": name, "message": text} for name in hints]
@@ -287,7 +342,7 @@ def _fields_for_code(code: str, text: str, loc: tuple[object, ...]) -> list[dict
 def _map_validation_error(exc: ValidationError) -> ChartViewError:
     fields: list[dict[str, str]] = []
     code = "CHART_INVALID"
-    message = "Invalid chart config"
+    message = "图表配置无效，请检查各字段"
     for err in exc.errors():
         msg = str(err.get("msg", "Invalid chart config"))
         if msg.startswith("Value error, "):

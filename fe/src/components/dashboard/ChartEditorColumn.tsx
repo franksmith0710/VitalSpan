@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ApiRequestError, apiFetch } from "@/lib/api";
-import { mapChartConfigError } from "@/lib/chartErrors";
+import { formatChartFieldErrors, mapChartConfigError } from "@/lib/chartErrors";
+import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import { ChartConfigPanel } from "@/components/charts/ChartConfigPanel";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,20 @@ import { ChartDataSlots } from "./ChartDataSlots";
 import { ensureChartSlotCapacity } from "./chartFieldSlots";
 import { useChartInspector } from "./ChartInspectorContext";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
+import { activeFieldRefs } from "@/lib/chartConfigState";
+
+function buildValidateSuccessMessage(cfg: ReturnType<typeof useChartInspector>["cfg"]): string {
+  const dims = activeFieldRefs(cfg.dimensions).map((d) => d.field);
+  const metrics = activeFieldRefs(cfg.metrics).map((m) => m.field);
+  const parts = [
+    `维度 ${dims.join("、") || "—"}`,
+    `指标 ${metrics.join("、") || "—"}`,
+  ];
+  if (dims.length > 1 && (cfg.chartType === "line" || cfg.chartType === "bar")) {
+    parts.push(`子类别「${dims[1]}」已用于拆分系列`);
+  }
+  return `配置校验通过（${parts.join("；")}）`;
+}
 
 type ChartEditorColumnProps = {
   onDelete?: () => void;
@@ -46,7 +61,10 @@ export function ChartEditorColumn({
     setRefreshOk(false);
     setValidating(true);
     try {
-      await apiFetch("/api/v1/charts/validate", { method: "POST", body: JSON.stringify(cfg) });
+      await apiFetch("/api/v1/charts/validate", {
+        method: "POST",
+        body: JSON.stringify(sanitizeChartFieldsForValidate(cfg)),
+      });
       refreshColumns();
       onDataRefresh?.();
       setRefreshOk(true);
@@ -56,7 +74,7 @@ export function ChartEditorColumn({
       if (err.code === "CHART_INVALID_STYLE_VARIANT") {
         setError(msg);
       } else if (err.fields?.length) {
-        setFieldError(err.fields.map((f) => mapChartConfigError("", f.message)).join("；"));
+        setFieldError(formatChartFieldErrors(err.code ?? "", err.fields));
       } else {
         setError(msg);
       }
@@ -76,7 +94,9 @@ export function ChartEditorColumn({
           {error}
         </div>
       ) : refreshOk ? (
-        <p className="text-theme-xs text-success-600 dark:text-success-400">配置校验通过，字段已同步</p>
+        <p className="text-theme-xs text-success-600 dark:text-success-400">
+          {buildValidateSuccessMessage(cfg)}
+        </p>
       ) : null}
       <Button
         type="button"
@@ -89,7 +109,9 @@ export function ChartEditorColumn({
       >
         {validating ? "校验中…" : "校验配置并刷新字段"}
       </Button>
-      <p className="text-[10px] leading-snug text-gray-400">数据随维度/指标变更自动查询，无需重复点击</p>
+      <p className="text-[10px] leading-snug text-gray-400">
+        拖入字段后画布会自动刷新；此按钮用于校验规则并同步右侧字段列
+      </p>
     </div>
   );
 

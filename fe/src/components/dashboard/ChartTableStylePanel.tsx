@@ -26,6 +26,10 @@ export function ChartTableStylePanel() {
   const tableStyle = readChartDeTableStyle(cfg);
   const paginationMode = tableStyle.paginationMode ?? "page";
   const columnWidthMode = tableStyle.columnWidthMode ?? "auto";
+  const hasMetrics = (cfg.metrics?.length ?? 0) > 0;
+  const summaryChecked =
+    tableStyle.showSummary === true ||
+    (tableStyle.showSummary !== false && hasMetrics);
 
   const patch = (next: Parameters<typeof patchChartDeTableStyle>[1]) =>
     onChange(patchChartDeTableStyle(cfg, next));
@@ -153,6 +157,18 @@ export function ChartTableStylePanel() {
             </div>
           </ChartDeAttrField>
         ) : null}
+
+        <DeAttrToggleRow
+          label="自动换行"
+          checked={tableStyle.wordWrap === true}
+          onCheckedChange={(wordWrap) => patch({ wordWrap })}
+        />
+
+        <DeAttrToggleRow
+          label="显示汇总行"
+          checked={summaryChecked}
+          onCheckedChange={(showSummary) => patch({ showSummary })}
+        />
 
         <DeAttrToggleRow
           label="显示鼠标悬浮样式"

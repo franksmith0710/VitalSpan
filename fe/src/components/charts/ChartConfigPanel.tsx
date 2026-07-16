@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { ApiRequestError, apiFetch } from "@/lib/api";
-import { mapChartConfigError } from "@/lib/chartErrors";
+import { formatChartFieldErrors, mapChartConfigError } from "@/lib/chartErrors";
+import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import type { ChartFilterRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import { fetchChartTypeCatalog, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
 import { Button } from "@/components/ui/button";
@@ -151,14 +152,17 @@ export function ChartConfigPanel({
     setFieldError(null);
     setValidating(true);
     try {
-      await apiFetch("/api/v1/charts/validate", { method: "POST", body: JSON.stringify(config) });
+      await apiFetch("/api/v1/charts/validate", {
+        method: "POST",
+        body: JSON.stringify(sanitizeChartFieldsForValidate(config)),
+      });
     } catch (e) {
       const err = e as ApiRequestError;
       const msg = mapChartConfigError(err.code ?? "", err.message);
       if (err.code === "CHART_INVALID_STYLE_VARIANT") {
         setError(msg);
       } else if (err.fields?.length) {
-        setFieldError(err.fields.map((f) => mapChartConfigError("", f.message)).join("；"));
+        setFieldError(formatChartFieldErrors(err.code ?? "", err.fields));
       } else {
         setError(msg);
       }

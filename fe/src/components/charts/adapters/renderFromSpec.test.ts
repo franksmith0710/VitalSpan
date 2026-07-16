@@ -50,6 +50,29 @@ describe("buildLineOption styleVariant", () => {
     expect(series[0]?.smooth).toBe(true);
     expect(series[0]?.areaStyle).toBeUndefined();
   });
+
+  it("splits line series by subcategory dimension (DataEase 子类别)", () => {
+    const spec: RenderSpec = {
+      ...baseSpec,
+      encoding: {
+        dimensions: [{ field: "month" }, { field: "channel" }],
+        metrics: [{ field: "sales" }],
+      },
+    };
+    const option = buildLineOption(
+      spec,
+      [
+        ["Jan", "A", 10],
+        ["Jan", "B", 20],
+        ["Feb", "A", 15],
+      ],
+      ["month", "channel", "sales"],
+    );
+    const series = option.series as Array<{ name: string; data: number[] }>;
+    expect(series.map((s) => s.name).sort()).toEqual(["A", "B"]);
+    expect(series.find((s) => s.name === "A")?.data).toEqual([10, 15]);
+    expect(series.find((s) => s.name === "B")?.data).toEqual([20, 0]);
+  });
 });
 
 describe("applyLineStyleVariant", () => {

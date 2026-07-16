@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chartDataSlotBlueprint, chartFieldSlotHints } from "@/components/dashboard/chartFieldSlots";
+import { chartDataSlotBlueprint, chartFieldSlotHints, chartRenderRequiredCounts } from "@/components/dashboard/chartFieldSlots";
 
 describe("chartFieldSlots", () => {
   it("T-INSP-DE-01: bar chart uses category/value axis labels", () => {
@@ -32,5 +32,19 @@ describe("chartFieldSlots", () => {
 
   it("T-INSP-DE-05: heatmap requires x and y dimensions", () => {
     expect(chartDataSlotBlueprint("heatmap").map((s) => s.label)).toContain("纵轴 / 维度");
+  });
+
+  it("T-INSP-DE-06: timeline uses single time dimension slot", () => {
+    expect(chartDataSlotBlueprint("timeline").map((s) => s.label)).toEqual([
+      "时间 / 维度",
+      "数值 / 指标",
+    ]);
+  });
+
+  it("T-INSP-DE-07: line chart render requires only category + metric", () => {
+    expect(chartRenderRequiredCounts("line")).toEqual({
+      minDimensions: 1,
+      minMetrics: 1,
+    });
   });
 });

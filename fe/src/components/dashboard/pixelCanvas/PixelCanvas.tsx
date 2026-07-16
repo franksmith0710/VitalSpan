@@ -21,6 +21,7 @@ import type {
   DashboardLayoutV2,
   PixelLayoutWidget,
 } from "../layoutUtils";
+import { getTopLevelPixelWidgets } from "../layoutUtils";
 import type { ScaleMode, DashboardStyleConfig } from "../dashboardStyleConfig";
 import {
   canvasArtboardStyleFingerprint,
@@ -55,7 +56,11 @@ type PixelCanvasProps = {
   onClearSelection?: () => void;
   onLayoutChange?: (layout: DashboardLayoutV2) => void;
   onViewportChange?: (viewport: PixelRect) => void;
-  onPaletteDrop?: (type: PaletteDragPayload, point: { x: number; y: number }) => void;
+  onPaletteDrop?: (
+    type: PaletteDragPayload,
+    point: { x: number; y: number },
+    sourceEvent?: DragEvent,
+  ) => void;
   widgetActions?: PixelWidgetActions;
   className?: string;
   scaleMode?: ScaleMode;
@@ -83,7 +88,10 @@ export function fitCanvasHeightToContent(
   layout: DashboardLayoutV2,
   minHeight = PIXEL_CANVAS_MIN_HEIGHT,
 ): DashboardLayoutV2 {
-  const lowest = layout.widgets.reduce((max, widget) => Math.max(max, widget.y + widget.height), 0);
+  const lowest = getTopLevelPixelWidgets(layout.widgets).reduce(
+    (max, widget) => Math.max(max, widget.y + widget.height),
+    0,
+  );
   const height = Math.max(minHeight, lowest);
   if (height === layout.canvas.height) return layout;
   return {
@@ -177,6 +185,10 @@ export function PixelCanvas({
     [styleConfig],
   );
   const activeLayout = layout;
+  const topLevelWidgets = useMemo(
+    () => getTopLevelPixelWidgets(activeLayout.widgets),
+    [activeLayout.widgets],
+  );
 
   const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
   const showMarkLines = mode === "edit";
@@ -191,12 +203,12 @@ export function PixelCanvas({
   );
   const userArtboardBg = hasUserCanvasBackground(styleConfig);
   const viewCanvasHeight = useMemo(() => {
-    const lowest = activeLayout.widgets.reduce(
+    const lowest = topLevelWidgets.reduce(
       (max, widget) => Math.max(max, widget.y + widget.height),
       0,
     );
     return Math.max(PIXEL_CANVAS_MIN_HEIGHT, lowest);
-  }, [activeLayout.widgets]);
+  }, [topLevelWidgets]);
   const viewCanvas = useMemo(
     () => ({ width: activeLayout.canvas.width, height: viewCanvasHeight }),
     [activeLayout.canvas.width, viewCanvasHeight],
@@ -471,7 +483,7 @@ export function PixelCanvas({
         scale,
         horizontalGutter,
       );
-      onPaletteDrop(payload, point);
+      onPaletteDrop(payload, point, event.nativeEvent);
     },
     [onPaletteDrop, scale, stageLeft, centerContent, contentSize.width],
   );
@@ -543,7 +555,7 @@ export function PixelCanvas({
               aria-hidden
             />
           ) : null}
-          {activeLayout.widgets.map((widget) => (
+          {topLevelWidgets.map((widget) => (
               <PixelShape
                 key={widget.id}
                 widget={widget}
@@ -565,9 +577,9 @@ export function PixelCanvas({
                   mode === "edit" ? handleMarkGuidesChange : undefined
                 }
                 markLinesEnabled={showAuxGrid}
-                snapTargets={activeLayout.widgets.filter((item) => item.id !== widget.id)}
+                snapTargets={topLevelWidgets.filter((item) => item.id !== widget.id)}
                 viewport={visibleViewport}
-                otherWidgets={activeLayout.widgets.filter((item) => item.id !== widget.id)}
+                otherWidgets={topLevelWidgets.filter((item) => item.id !== widget.id)}
                 widgetActions={widgetActions}
                 styleConfig={widgetChromeStyle}
                 registerPreviewSync={mode === "edit" ? registerPreviewSync : undefined}

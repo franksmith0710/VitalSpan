@@ -201,6 +201,14 @@ export const TEXT_COLOR_RECOMMENDED = [
   { color: "#ffffff", label: "白字" },
 ] as const;
 
+export const HIGHLIGHT_COLOR_RECOMMENDED = [
+  { color: "#fef08a", label: "浅黄" },
+  { color: "#bbf7d0", label: "浅绿" },
+  { color: "#bfdbfe", label: "浅蓝" },
+  { color: "#fbcfe8", label: "浅粉" },
+  { color: "#e5e7eb", label: "浅灰" },
+] as const;
+
 export const DASHBOARD_FONT_OPTIONS = [
   { value: "", label: "默认字体 / System" },
   {

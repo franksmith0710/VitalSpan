@@ -10,7 +10,7 @@ import {
 } from "@/lib/chartViewConfig";
 import { resolveChartColors } from "@/lib/chartPalette";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartShowLabel, readChartDataZoom } from "@/lib/chartDeStyle";
+import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartLegendPosition, readChartShowLabel, readChartDataZoom } from "@/lib/chartDeStyle";
 import { resolveChartValueFormat } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { resolveRenderSpec } from "@/lib/resolveRenderSpec";
@@ -291,7 +291,7 @@ export const ChartRenderer = memo(function ChartRenderer({
 
 
   const useShellLegendLayout = shellLegendVisible && shellLegendItems.length > 0;
-  const shellLegendPosition = deStyle.legend?.position ?? "bottom";
+  const shellLegendPosition = readChartLegendPosition(deStyle);
 
   const shellLegendState = useMemo(
     () => ({
@@ -385,6 +385,9 @@ export const ChartRenderer = memo(function ChartRenderer({
         colorScheme: resolvedScheme,
         widgetShellBg: widgetShellColor,
       });
+      const metricFields = (localConfig.metrics ?? [])
+        .map((metric) => metric.field)
+        .filter((field): field is string => Boolean(field));
 
       return wrapEmbedded(
         <EmbeddedChartTable
@@ -398,6 +401,7 @@ export const ChartRenderer = memo(function ChartRenderer({
           themeVars={tableThemeVars}
           surfaceScheme={surfaceScheme}
           valueFormat={valueFormat}
+          metricFields={metricFields}
           drillField={drillInteraction ? getClickDrillField(config, drill.stack) : undefined}
           onDrillCellClick={
             drillInteraction ? (_field, value) => handleDrillClick(value) : undefined

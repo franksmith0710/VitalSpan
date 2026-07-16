@@ -1,4 +1,5 @@
 import type { DashboardLayoutV2, PixelLayoutWidget } from "../layoutUtils";
+import { getTopLevelPixelWidgets, syncParkedTabChildren } from "../layoutUtils";
 import type { PixelCanvasBounds, PixelRect } from "./geometry";
 
 export type CollisionLayoutOptions = {
@@ -273,7 +274,8 @@ export function resolvePixelCollisions(
   options: CollisionLayoutOptions = {},
 ): DashboardLayoutV2 {
   const resolved = { ...DEFAULT_OPTIONS, ...options };
-  const positions = new Map(layout.widgets.map((widget) => [widget.id, widgetRect(widget)]));
+  const collisionWidgets = getTopLevelPixelWidgets(layout.widgets);
+  const positions = new Map(collisionWidgets.map((widget) => [widget.id, widgetRect(widget)]));
   const roundedActive = {
     x: Math.round(activeRect.x),
     y: Math.round(activeRect.y),
@@ -290,12 +292,12 @@ export function resolvePixelCollisions(
 
   if (shouldVacateLift) {
     positions.delete(activeId);
-    liftVacatedColumn(layout.widgets, positions, oldRect, activeId, resolved.gap);
+    liftVacatedColumn(collisionWidgets, positions, oldRect, activeId, resolved.gap);
   }
 
   positions.set(activeId, roundedActive);
   emptyTargetFootprint(
-    layout.widgets,
+    collisionWidgets,
     positions,
     activeId,
     roundedActive,
@@ -303,7 +305,20 @@ export function resolvePixelCollisions(
     resolved.minOverlap,
   );
 
-  return applyPositions(layout, positions, resolved);
+  const movedTopLevel = collisionWidgets.map((widget) =>
+    withRect(widget, positions.get(widget.id)!),
+  );
+  const movedById = new Map(movedTopLevel.map((w) => [w.id, w]));
+  const widgets = layout.widgets.map((w) => movedById.get(w.id) ?? w);
+
+  return {
+    ...layout,
+    canvas: {
+      ...layout.canvas,
+      height: growCanvasHeight(movedTopLevel, layout.canvas, resolved),
+    },
+    widgets: syncParkedTabChildren(widgets),
+  };
 }
 
 export function findNextOpenSlot(

@@ -29,6 +29,8 @@ export type ChartDeTableStyle = {
   columnWidths?: Record<string, number>;
   wordWrap?: boolean;
   rowHover?: boolean;
+  /** 是否显示底部汇总行；undefined 时在存在可汇总列时自动显示 */
+  showSummary?: boolean;
 };
 
 export const DEFAULT_TABLE_PAGE_SIZE = 20;
@@ -55,4 +57,56 @@ export function patchChartDeTableStyle(
 
 export function resolveTablePageSize(cfg: ChartViewConfig): number {
   return readChartDeTableStyle(cfg).pageSize ?? DEFAULT_TABLE_PAGE_SIZE;
+}
+
+function isNumericCell(value: unknown): boolean {
+  if (value == null || value === "") return false;
+  const n = Number(value);
+  return Number.isFinite(n);
+}
+
+/** 确定参与汇总的列：指标列优先，否则自动识别数值列 */
+export function resolveTableSummaryColumns(
+  columns: string[],
+  displayCols: string[],
+  rows: unknown[][],
+  options: { metricFields?: string[]; showSummary?: boolean },
+): string[] {
+  if (options.showSummary === false) return [];
+  const metricCols = (options.metricFields ?? []).filter((field) => displayCols.includes(field));
+  if (metricCols.length > 0) return metricCols;
+  if (options.showSummary === true) {
+    return displayCols.filter((col) => {
+      const idx = columns.indexOf(col);
+      if (idx < 0) return false;
+      return rows.some((row) => isNumericCell(row[idx]));
+    });
+  }
+  return [];
+}
+
+export function computeTableSummaryValues(
+  columns: string[],
+  displayCols: string[],
+  rows: unknown[][],
+  summaryCols: string[],
+): Record<string, unknown> {
+  const values: Record<string, unknown> = {};
+  for (const col of displayCols) {
+    if (!summaryCols.includes(col)) {
+      values[col] = null;
+      continue;
+    }
+    const idx = columns.indexOf(col);
+    let sum = 0;
+    let any = false;
+    for (const row of rows) {
+      const raw = idx >= 0 ? row[idx] : undefined;
+      if (!isNumericCell(raw)) continue;
+      sum += Number(raw);
+      any = true;
+    }
+    values[col] = any ? sum : null;
+  }
+  return values;
 }

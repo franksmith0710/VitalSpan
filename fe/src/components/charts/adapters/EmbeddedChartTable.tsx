@@ -8,8 +8,12 @@ import { cn } from "@/lib/utils";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import {
+  computeTableSummaryValues,
+  DEFAULT_TABLE_PAGE_SIZE,
+  resolveTableSummaryColumns,
+} from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
-import { DEFAULT_TABLE_PAGE_SIZE } from "@/lib/chartDeTableStyle";
 import { withBackgroundAlpha } from "@/lib/widgetSurfaceBackground";
 
 type EmbeddedChartTableProps = {
@@ -25,6 +29,8 @@ type EmbeddedChartTableProps = {
   valueFormat?: NumberFormatConfig;
   drillField?: string;
   onDrillCellClick?: (field: string, value: string) => void;
+  /** 指标字段名；与 showSummary 配合决定汇总列 */
+  metricFields?: string[];
   /** 看板内嵌：对标 DataEase，外框实时缩放时列宽与滚动区跟手 */
   embedded?: boolean;
 };
@@ -60,6 +66,7 @@ export function EmbeddedChartTable({
   valueFormat,
   drillField,
   onDrillCellClick,
+  metricFields,
   embedded = false,
 }: EmbeddedChartTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -87,10 +94,7 @@ export function EmbeddedChartTable({
     : rows;
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const columnWidthMode = tableStyle.columnWidthMode ?? "auto";
-  const fitContainer =
-    embedded && (columnWidthMode === "auto" || columnWidthMode === "fixed");
-  const useFixedLayout =
-    fitContainer || columnWidthMode === "fixed" || columnWidthMode === "custom";
+  const useFixedLayout = columnWidthMode === "fixed" || columnWidthMode === "custom";
   const equalPct = displayCols.length > 0 ? 100 / displayCols.length : 100;
 
   const resolveColWidth = (col: string): string | undefined => {
@@ -99,16 +103,25 @@ export function EmbeddedChartTable({
       if (custom != null && custom > 0) return `${custom}%`;
       return `${equalPct}%`;
     }
-    if (fitContainer || columnWidthMode === "fixed") return `${equalPct}%`;
+    if (columnWidthMode === "fixed") return `${equalPct}%`;
     return undefined;
   };
   const cellClass = cn(
     dwTableCell,
     wordWrap ? "whitespace-normal break-words" : "truncate",
   );
-  const rowHoverClass =
-    surfaceScheme === "dark" ? "hover:bg-white/[0.04]" : "hover:bg-black/[0.03]";
   const mergedThemeStyle = (themeVars ?? {}) as CSSProperties;
+  const summaryColumns = resolveTableSummaryColumns(columns, displayCols, rows, {
+    metricFields,
+    showSummary: tableStyle.showSummary,
+  });
+  const summaryValues =
+    summaryColumns.length > 0
+      ? computeTableSummaryValues(columns, displayCols, rows, summaryColumns)
+      : null;
+  const summaryLabelCol =
+    summaryValues &&
+    displayCols.find((col) => !summaryColumns.includes(col) || summaryValues[col] == null);
 
   return (
     <div
@@ -132,9 +145,11 @@ export function EmbeddedChartTable({
       >
         <table
           className={cn(
-            "dashboard-chart-table w-full text-left",
-            useFixedLayout ? "table-fixed min-w-full" : "table-auto min-w-0",
-            panel ? "min-w-[320px]" : "w-full",
+            "dashboard-chart-table text-left",
+            useFixedLayout
+              ? "w-full table-fixed min-w-full"
+              : cn("table-auto", embedded ? "w-max min-w-full" : "w-full min-w-0"),
+            panel && !useFixedLayout && "min-w-[320px]",
           )}
         >
           {useFixedLayout ? (
@@ -197,6 +212,32 @@ export function EmbeddedChartTable({
               </tr>
             ))}
           </tbody>
+          {summaryValues ? (
+            <tfoot>
+              <tr
+                className={cn(
+                  "border-t-2 border-[var(--dashboard-table-border,#f2f4f7)]",
+                  "bg-[var(--dashboard-table-summary-bg,var(--dashboard-table-header-bg,#f9fafb))]",
+                  "text-[var(--dashboard-table-summary-fg,var(--dashboard-table-body-fg,#344054))]",
+                )}
+              >
+                {displayCols.map((c) => {
+                  const raw = summaryValues[c];
+                  const isLabelCell = c === summaryLabelCol && raw == null;
+                  const text = isLabelCell
+                    ? "合计"
+                    : raw != null
+                      ? formatTableCellValue(raw, valueFormat)
+                      : "";
+                  return (
+                    <td key={c} title={text} className={cn(cellClass, "font-medium")}>
+                      {text}
+                    </td>
+                  );
+                })}
+              </tr>
+            </tfoot>
+          ) : null}
         </table>
       </div>
       {usePagination ? (

@@ -11,6 +11,7 @@ import { useInspectorColumns } from "@/hooks/useInspectorColumns";
 import type { LayoutWidget } from "./layoutUtils";
 import { defaultChartConfig } from "./layoutUtils";
 import { WIDGET_CHART_LABELS } from "./widgetIcons";
+import { resolveAutoAssignTarget, validateFieldAssignment } from "@/lib/chartFieldAssignment";
 import type { SlotTarget } from "./chartInspectorTypes";
 
 type DataSourceListItem = { id: string; name: string; code: string };
@@ -25,22 +26,6 @@ function resolveDataMode(cfg: ChartViewConfig): "dataset" | "sql" {
   return "dataset";
 }
 
-function firstEmptyDimension(cfg: ChartViewConfig, min: number): number | null {
-  const count = Math.max(min, cfg.dimensions?.length ?? 0);
-  for (let i = 0; i < count; i += 1) {
-    if (!cfg.dimensions?.[i]?.field) return i;
-  }
-  return count < min ? 0 : null;
-}
-
-function firstEmptyMetric(cfg: ChartViewConfig, min: number): number | null {
-  const count = Math.max(min, cfg.metrics?.length ?? 0);
-  for (let i = 0; i < count; i += 1) {
-    if (!cfg.metrics?.[i]?.field) return i;
-  }
-  return count < min ? 0 : null;
-}
-
 export type ChartInspectorState = ReturnType<typeof useChartInspectorState>;
 
 export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: ChartViewConfig) => void) {
@@ -49,6 +34,7 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
   const bindingSyncRef = useRef<string | null>(null);
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[]>([]);
   const [activeSlot, setActiveSlot] = useState<SlotTarget | null>(null);
+  const [fieldAssignError, setFieldAssignError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchChartTypeCatalog().then(setCatalog).catch(() => setCatalog([]));
@@ -165,17 +151,19 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
 
   const assignField = useCallback(
     (fieldName: string, target?: SlotTarget) => {
-      const slot =
-        target ??
-        activeSlot ??
-        (() => {
-          const dim = firstEmptyDimension(cfg, 1);
-          if (dim != null) return { kind: "dimension" as const, index: dim };
-          const met = firstEmptyMetric(cfg, 1);
-          if (met != null) return { kind: "metric" as const, index: met };
-          return { kind: "metric" as const, index: cfg.metrics?.length ?? 0 };
-        })();
+      const resolved = resolveAutoAssignTarget(cfg, cfg.chartType, fieldName, target ?? activeSlot);
+      if ("error" in resolved) {
+        setFieldAssignError(resolved.error);
+        return;
+      }
+      const slot = resolved.target;
+      const check = validateFieldAssignment(fieldName, slot, cfg.chartType);
+      if (!check.ok) {
+        setFieldAssignError(check.message);
+        return;
+      }
 
+      setFieldAssignError(null);
       if (slot.kind === "dimension") {
         const dimensions = [...(cfg.dimensions ?? [])];
         while (dimensions.length <= slot.index) dimensions.push({ field: "" });
@@ -215,5 +203,7 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
     activeSlot,
     setActiveSlot,
     assignField,
+    fieldAssignError,
+    clearFieldAssignError: () => setFieldAssignError(null),
   };
 }

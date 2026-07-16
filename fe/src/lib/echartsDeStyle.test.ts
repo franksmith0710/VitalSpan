@@ -116,6 +116,19 @@ describe("applyDeStyleToEchartsOption", () => {
     expect(slider.showDetail).toBe(false);
   });
 
+  it("uses scroll legend with fixed height in embedded pie charts", () => {
+    const option = applyDeStyleToEchartsOption(
+      { series: [{ type: "pie", data: [{ value: 1, name: "A" }] }] },
+      { legend: { show: true, position: "bottom" } },
+      false,
+      { layout: { embedded: true } },
+    );
+    const legend = option.legend as { type?: string; height?: number; bottom?: number };
+    expect(legend.type).toBe("scroll");
+    expect(legend.height).toBeGreaterThan(0);
+    expect(legend.bottom).toBe(0);
+  });
+
   it("shifts pie center when legend is on bottom", () => {
     const option = applyDeStyleToEchartsOption(
       { series: [{ type: "pie", data: [{ value: 1, name: "A" }] }] },

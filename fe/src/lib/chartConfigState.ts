@@ -1,6 +1,6 @@
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
-import { chartMinFieldCounts } from "@/components/dashboard/chartFieldSlots";
+import { chartRenderRequiredCounts } from "@/components/dashboard/chartFieldSlots";
 
 export type ChartConfigPhase = {
   bindingReady: boolean;
@@ -41,7 +41,7 @@ export function resolveChartConfigPhase(config: ChartViewConfig | undefined): Ch
     } else if (chartType === "kpi") {
       renderReady = metricFields.length > 0;
     } else {
-      const { minDimensions, minMetrics } = chartMinFieldCounts(chartType);
+      const { minDimensions, minMetrics } = chartRenderRequiredCounts(chartType);
       renderReady =
         hasRequiredFields(config.dimensions, minDimensions) &&
         hasRequiredFields(config.metrics, minMetrics);

@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { useRef } from "react";
-import { EmbeddedChartLegendShell } from "./EmbeddedChartLegend";
+import { EmbeddedChartLegendShell, legendShellMaxHeightPx } from "./EmbeddedChartLegend";
 
 function createChartBodyProbe() {
   let instanceId = "";
@@ -33,6 +33,25 @@ describe("EmbeddedChartLegendShell", () => {
     const chart = screen.getByTestId("chart-body");
     expect(chart.compareDocumentPosition(legend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(legend).toHaveStyle({ fontSize: "20px" });
+  });
+
+  it("caps horizontal legend height for adaptive layout", () => {
+    render(
+      <EmbeddedChartLegendShell
+        position="bottom"
+        fontSize={12}
+        items={[
+          { name: "A", color: "#111" },
+          { name: "B", color: "#222" },
+          { name: "C", color: "#333" },
+          { name: "D", color: "#444" },
+        ]}
+      >
+        <div data-testid="chart-body">chart</div>
+      </EmbeddedChartLegendShell>,
+    );
+    const legend = screen.getByLabelText("图例");
+    expect(legend).toHaveStyle({ maxHeight: `${legendShellMaxHeightPx(12)}px` });
   });
 
   it("does not remount chart children when legend items appear", () => {

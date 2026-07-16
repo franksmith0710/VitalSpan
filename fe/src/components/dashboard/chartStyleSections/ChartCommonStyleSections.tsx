@@ -21,6 +21,7 @@ import {
   patchChartShowLabel,
   readChartDeStyle,
   readChartLegendVisible,
+  readChartLegendPosition,
   readChartShowLabel,
   readChartTitleVisible,
 } from "@/lib/chartDeStyle";
@@ -166,7 +167,7 @@ export function ChartLegendStyleSection() {
           />
           <ChartDeSegmentField
             label="位置"
-            value={deStyle.legend?.position ?? "bottom"}
+            value={readChartLegendPosition(deStyle)}
             columns={4}
             options={LEGEND_POSITION_SEGMENT_OPTIONS}
             onChange={(position) =>

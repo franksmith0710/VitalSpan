@@ -38,4 +38,16 @@ describe("chartConfigState", () => {
     expect(next.dimensions).toEqual([{ field: "" }]);
     expect(next.metrics).toEqual([{ field: "amount" }]);
   });
+
+  it("line chart is renderReady with category + metric only (optional slots empty)", () => {
+    const config = {
+      ...defaultChartConfig("line"),
+      mode: "dataset" as const,
+      dataSourceId: "ds-1",
+      configId: "cfg-1",
+      dimensions: [{ field: "sale_date" }],
+      metrics: [{ field: "amount" }],
+    };
+    expect(resolveChartConfigPhase(config).renderReady).toBe(true);
+  });
 });

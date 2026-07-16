@@ -21,7 +21,7 @@ describe("EmbeddedChartTable", () => {
     expect(table).not.toHaveClass("min-w-[320px]");
   });
 
-  it("embedded auto column mode fits container with equal fixed columns", () => {
+  it("embedded auto column mode sizes by content with horizontal scroll", () => {
     const { container } = render(
       <div style={{ position: "relative", width: 320, height: 200 }}>
         <EmbeddedChartTable
@@ -37,6 +37,26 @@ describe("EmbeddedChartTable", () => {
     );
     const host = container.querySelector(".embedded-chart-table-host");
     expect(host).toHaveClass("absolute", "inset-0");
+    const table = container.querySelector("table");
+    expect(table).toHaveClass("table-auto");
+    expect(table).toHaveClass("w-max");
+    expect(container.querySelector("colgroup")).toBeNull();
+  });
+
+  it("embedded fixed column mode fills container with equal columns", () => {
+    const { container } = render(
+      <div style={{ position: "relative", width: 320, height: 200 }}>
+        <EmbeddedChartTable
+          embedded
+          columns={["a", "b", "c"]}
+          displayCols={["a", "b", "c"]}
+          rows={[[1, 2, 3]]}
+          page={1}
+          onPageChange={() => {}}
+          tableStyle={{ columnWidthMode: "fixed" }}
+        />
+      </div>,
+    );
     const table = container.querySelector("table");
     expect(table).toHaveClass("table-fixed");
     const cols = container.querySelectorAll("col");
@@ -208,6 +228,45 @@ describe("EmbeddedChartTable", () => {
       />,
     );
     expect(screen.getByTitle("长文本")).toHaveClass("break-words");
+  });
+
+  it("renders summary footer for metric columns", () => {
+    render(
+      <EmbeddedChartTable
+        columns={["region", "amount"]}
+        displayCols={["region", "amount"]}
+        rows={[
+          ["华东", 10],
+          ["华北", 20],
+        ]}
+        page={1}
+        onPageChange={() => {}}
+        metricFields={["amount"]}
+        themeVars={{
+          "--dashboard-table-summary-bg": "#fef3c7",
+          "--dashboard-table-summary-fg": "#92400e",
+        }}
+      />,
+    );
+    expect(screen.getByText("合计")).toBeInTheDocument();
+    expect(screen.getByText("30")).toBeInTheDocument();
+    const footer = document.querySelector("tfoot tr");
+    expect(footer).toHaveClass("bg-[var(--dashboard-table-summary-bg,var(--dashboard-table-header-bg,#f9fafb))]");
+  });
+
+  it("hides summary when showSummary is false", () => {
+    const { container } = render(
+      <EmbeddedChartTable
+        columns={["amount"]}
+        displayCols={["amount"]}
+        rows={[[1], [2]]}
+        page={1}
+        onPageChange={() => {}}
+        metricFields={["amount"]}
+        tableStyle={{ showSummary: false }}
+      />,
+    );
+    expect(container.querySelector("tfoot")).toBeNull();
   });
 
   it("responds to pixel shape live resize while playing", async () => {

@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { forwardRef, useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
 import {
   AlignCenter,
@@ -7,7 +7,6 @@ import {
   Bold,
   ChevronDown,
   Eraser,
-  Highlighter,
   Italic,
   Link2,
   List,
@@ -19,6 +18,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
+import { ColorField } from "@/components/ui/color-field";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,10 +35,16 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
+  HIGHLIGHT_COLOR_RECOMMENDED,
+  TEXT_COLOR_RECOMMENDED,
+} from "./dashboardStyleConfig";
+import {
   RICH_TEXT_DEFAULT_FONT_SIZE,
   RICH_TEXT_FONT_SIZES,
+  buildRichTextOverlayProps,
   richTextEditorSurfaceProps,
 } from "./richTextEditorSession";
+import { useRichTextTheme } from "./richTextToolbarTheme";
 
 const FONT_FAMILIES = [
   { label: "宋体", value: "SimSun, serif" },
@@ -46,9 +52,6 @@ const FONT_FAMILIES = [
   { label: "微软雅黑", value: "Microsoft YaHei, sans-serif" },
   { label: "Arial", value: "Arial, sans-serif" },
 ] as const;
-
-const TEXT_COLORS = ["#111827", "#dc2626", "#ea580c", "#ca8a04", "#16a34a", "#2563eb", "#7c3aed"] as const;
-const HIGHLIGHT_COLORS = ["#fef08a", "#bbf7d0", "#bfdbfe", "#fbcfe8", "#e5e7eb"] as const;
 
 type RichTextToolbarProps = {
   editor: Editor;
@@ -62,7 +65,10 @@ type RichTextToolbarProps = {
 function Divider({ tall }: { tall?: boolean }) {
   return (
     <span
-      className={cn("mx-1 w-px shrink-0 bg-gray-200 dark:bg-gray-700", tall ? "h-7" : "h-5")}
+      className={cn(
+        "mx-1 w-px shrink-0 bg-[color:var(--dashboard-widget-border,#e4e7ec)]",
+        tall ? "h-7" : "h-5",
+      )}
       aria-hidden
     />
   );
@@ -73,10 +79,23 @@ function matchFontFamily(current: string | undefined, option: string): boolean {
   return current.replace(/['"]/g, "").includes(option.split(",")[0].replace(/['"]/g, ""));
 }
 
+const RICH_TEXT_COLOR_TRIGGER_SHELL = cn(
+  "[&_button]:!h-7 [&_button]:min-h-7 [&_button]:rounded-md",
+  "[&_button]:border-[color:var(--dashboard-widget-border,#e4e7ec)]",
+  "[&_button]:bg-[var(--dashboard-dialog-bg,#ffffff)]",
+  "[&_button]:text-[color:var(--dashboard-text-primary,#344054)]",
+  "[&_button]:shadow-none",
+  "[&_button:hover]:bg-white/10",
+  "[&_button_svg]:text-[color:var(--dashboard-text-secondary,#98a2b3)]",
+);
+
 export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(function RichTextToolbar(
   { editor, className, style, density = "comfortable", floating = false, "data-testid": testId },
   ref,
 ) {
+  const theme = useRichTextTheme();
+  const overlayProps = buildRichTextOverlayProps(theme.style);
+  const colorPopoverProps = buildRichTextOverlayProps(theme.style, "rounded-xl shadow-theme-lg");
   const comfortable = density === "comfortable";
   const [, bump] = useState(0);
 
@@ -93,7 +112,7 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
   const textStyle = editor.getAttributes("textStyle");
   const currentSize = (textStyle.fontSize as string | undefined) ?? RICH_TEXT_DEFAULT_FONT_SIZE;
   const currentColor = (textStyle.color as string | undefined) ?? "#111827";
-  const currentHighlight = (textStyle.backgroundColor as string | undefined) ?? "transparent";
+  const currentHighlight = (textStyle.backgroundColor as string | undefined) ?? "";
   const currentFamily =
     FONT_FAMILIES.find((item) => matchFontFamily(textStyle.fontFamily as string | undefined, item.value))
       ?.value ?? FONT_FAMILIES[0].value;
@@ -101,7 +120,15 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
   const iconClass = comfortable ? "size-4" : "size-3.5";
   const btnClass = comfortable ? "size-9" : "size-7";
   const controlH = comfortable ? "h-9" : "h-7";
-  const textClass = comfortable ? "text-sm" : "text-xs";
+  const surfaceBtn =
+    "text-[color:var(--dashboard-text-primary,#344054)] hover:bg-white/10 hover:text-[color:var(--dashboard-text-primary,#344054)]";
+  const surfaceActive = "bg-white/10 text-[color:var(--dashboard-text-primary,#344054)]";
+  const selectTriggerClass = cn(
+    "dashboard-no-drag shrink-0 !h-7 min-h-7 !py-0 border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0",
+    "!text-[color:var(--dashboard-text-primary,#344054)] [&_span]:text-inherit",
+    "[&_svg]:size-3 [&_svg]:text-[color:var(--dashboard-text-secondary,#98a2b3)]",
+    surfaceBtn,
+  );
 
   const ToolbarIcon = ({
     label,
@@ -122,8 +149,9 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
       size={comfortable ? "sm" : "xs"}
       className={cn(
         btnClass,
-        "shrink-0 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white",
-        active && "bg-gray-100 text-gray-900 dark:bg-white/10 dark:text-white",
+        "shrink-0 rounded-md",
+        surfaceBtn,
+        active && surfaceActive,
       )}
       aria-label={label}
       title={label}
@@ -135,6 +163,8 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
     </IconButton>
   );
 
+  const preventBlur = (event: MouseEvent) => event.preventDefault();
+
   return (
     <div
       ref={ref}
@@ -142,9 +172,10 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
       {...richTextEditorSurfaceProps}
       style={style}
       className={cn(
-        "dashboard-no-drag z-[121] border border-gray-200 bg-white px-2.5 py-2 shadow-theme-md dark:border-gray-700 dark:bg-gray-900",
-        floating ? "rounded-xl" : "rounded-none border-t",
-        comfortable && "min-w-[42rem] max-w-[calc(100vw-1.5rem)]",
+        "dashboard-no-drag z-[121] border border-[var(--dashboard-widget-border,#e4e7ec)] bg-[var(--dashboard-dialog-bg,#ffffff)] text-[var(--dashboard-text-primary,#344054)]",
+        floating ? "rounded-lg px-2 py-1 shadow-theme-sm" : "rounded-none border-t px-2.5 py-2 shadow-theme-md",
+        comfortable && !floating && "min-w-[42rem] max-w-[calc(100vw-1.5rem)]",
+        floating && "w-max",
         className,
       )}
       onPointerDown={(event) => event.stopPropagation()}
@@ -173,15 +204,15 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
         >
           <SelectTrigger
             className={cn(
-              "dashboard-no-drag shrink-0 border-0 bg-transparent shadow-none focus:ring-0",
-              controlH,
+              selectTriggerClass,
               comfortable ? "w-28 px-2 text-sm" : "w-[4.5rem] px-1.5 text-xs",
             )}
             aria-label="字体"
+            onMouseDown={preventBlur}
           >
             <SelectValue />
           </SelectTrigger>
-          <SelectContent {...richTextEditorSurfaceProps}>
+          <SelectContent {...overlayProps}>
             {FONT_FAMILIES.map((font) => (
               <SelectItem key={font.value} value={font.value}>
                 {font.label}
@@ -196,15 +227,15 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
         >
           <SelectTrigger
             className={cn(
-              "dashboard-no-drag shrink-0 border-0 bg-transparent shadow-none focus:ring-0",
-              controlH,
-              comfortable ? "w-28 px-2 text-sm" : "w-[3.25rem] px-1.5 text-xs",
+              selectTriggerClass,
+              comfortable ? "w-28 px-2 text-sm" : "w-[4.75rem] px-1.5 text-xs",
             )}
             aria-label="字号"
+            onMouseDown={preventBlur}
           >
             <SelectValue />
           </SelectTrigger>
-          <SelectContent {...richTextEditorSurfaceProps}>
+          <SelectContent {...overlayProps}>
             {RICH_TEXT_FONT_SIZES.map((size) => (
               <SelectItem key={size} value={size}>
                 {size}
@@ -215,74 +246,48 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
 
         <Divider tall={comfortable} />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                "dashboard-no-drag inline-flex shrink-0 items-center gap-1 rounded-lg px-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10",
-                controlH,
-                textClass,
-              )}
-              aria-label="文字颜色"
-              onMouseDown={(event) => event.preventDefault()}
-            >
-              <span className="text-base font-semibold leading-none">A</span>
-              <span className={cn("rounded-full", comfortable ? "h-1 w-5" : "h-0.5 w-4")} style={{ backgroundColor: currentColor }} />
-              <ChevronDown className="size-4 opacity-60" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-[9rem]" {...richTextEditorSurfaceProps}>
-            {TEXT_COLORS.map((color) => (
-              <DropdownMenuItem
-                key={color}
-                className="gap-2 text-sm"
-                onClick={() => editor.chain().focus().setColor(color).run()}
-              >
-                <span className="size-3.5 rounded-full border border-gray-200" style={{ backgroundColor: color }} />
-                {color}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex shrink-0 items-center" onMouseDown={preventBlur}>
+          <ColorField
+            variant="swatch"
+            showLabel={false}
+            compact
+            allowClear={false}
+            liveCommitMs={0}
+            swatchTriggerPreset="text"
+            value={currentColor}
+            swatches={TEXT_COLOR_RECOMMENDED}
+            buttonAriaLabel="文字颜色"
+            className={RICH_TEXT_COLOR_TRIGGER_SHELL}
+            popoverContentProps={colorPopoverProps}
+            onChange={(color) => {
+              if (!color) return;
+              editor.chain().focus().setColor(color).run();
+            }}
+          />
+        </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                "dashboard-no-drag inline-flex shrink-0 items-center gap-1 rounded-lg px-2 hover:bg-gray-100 dark:hover:bg-white/10",
-                controlH,
-                textClass,
-              )}
-              aria-label="高亮颜色"
-              onMouseDown={(event) => event.preventDefault()}
-            >
-              <Highlighter className={iconClass} />
-              <span
-                className="size-3 rounded-full border border-gray-200"
-                style={{ backgroundColor: currentHighlight === "transparent" ? "#fef08a" : currentHighlight }}
-              />
-              <ChevronDown className="size-4 opacity-60" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-[9rem]" {...richTextEditorSurfaceProps}>
-            <DropdownMenuItem className="text-sm" onClick={() => editor.chain().focus().unsetHighlightColor().run()}>
-              无高亮
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {HIGHLIGHT_COLORS.map((color) => (
-              <DropdownMenuItem
-                key={color}
-                className="gap-2 text-sm"
-                onClick={() => editor.chain().focus().setHighlightColor(color).run()}
-              >
-                <span className="size-3.5 rounded-sm border border-gray-200" style={{ backgroundColor: color }} />
-                {color}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex shrink-0 items-center" onMouseDown={preventBlur}>
+          <ColorField
+            variant="swatch"
+            showLabel={false}
+            compact
+            allowClear
+            liveCommitMs={0}
+            swatchTriggerPreset="highlight"
+            value={currentHighlight}
+            swatches={HIGHLIGHT_COLOR_RECOMMENDED}
+            buttonAriaLabel="高亮颜色"
+            className={RICH_TEXT_COLOR_TRIGGER_SHELL}
+            popoverContentProps={colorPopoverProps}
+            onChange={(color) => {
+              if (!color) {
+                editor.chain().focus().unsetHighlightColor().run();
+                return;
+              }
+              editor.chain().focus().setHighlightColor(color).run();
+            }}
+          />
+        </div>
 
         <Divider tall={comfortable} />
 
@@ -319,17 +324,18 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
             <button
               type="button"
               className={cn(
-                "dashboard-no-drag inline-flex shrink-0 items-center gap-1 rounded-lg px-2 hover:bg-gray-100 dark:hover:bg-white/10",
+                "dashboard-no-drag inline-flex shrink-0 items-center gap-1 rounded-md px-1.5",
+                surfaceBtn,
                 controlH,
               )}
               aria-label="列表"
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={preventBlur}
             >
               <List className={iconClass} />
               <ChevronDown className="size-4 opacity-60" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" {...richTextEditorSurfaceProps}>
+          <DropdownMenuContent align="end" {...overlayProps}>
             <DropdownMenuItem className="text-sm" onClick={() => editor.chain().focus().toggleBulletList().run()}>
               <List className="size-4" />
               无序列表
@@ -348,16 +354,17 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
             <button
               type="button"
               className={cn(
-                "dashboard-no-drag inline-flex shrink-0 items-center justify-center rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10",
+                "dashboard-no-drag inline-flex shrink-0 items-center justify-center rounded-md",
+                surfaceBtn,
                 btnClass,
               )}
               aria-label="更多格式"
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={preventBlur}
             >
               <MoreHorizontal className={iconClass} />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" {...richTextEditorSurfaceProps}>
+          <DropdownMenuContent align="end" {...overlayProps}>
             <DropdownMenuItem className="text-sm" onClick={() => editor.chain().focus().setTextAlign("left").run()}>
               <AlignLeft className="size-4" />
               左对齐

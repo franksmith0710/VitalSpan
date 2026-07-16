@@ -5,12 +5,8 @@ import {
 import { cloneLayoutWidget } from "../cloneLayoutWidget";
 import { findNextOpenSlot, resolvePixelCollisions } from "./collisionLayout";
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
-import type {
-  DashboardCanvas,
-  DashboardLayoutV2,
-  LayoutWidget,
-  PixelLayoutWidget,
-} from "../layoutUtils";
+import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
+import { getTopLevelPixelWidgets } from "../layoutUtils";
 import type { PixelPoint, PixelRect } from "./geometry";
 
 /** 1440 基准画布上的默认插入尺寸（约 1/3 宽 × 适中高，编辑态更易辨认） */
@@ -147,7 +143,7 @@ export function insertPixelPaletteWidget(
     gridY: undefined,
   }));
   const legacy = createPaletteWidget(type, legacyWidgets);
-  const placement = placeInNextOpenSlot(defaultSize(legacy), layout.widgets, layout.canvas);
+  const placement = placeInNextOpenSlot(defaultSize(legacy), getTopLevelPixelWidgets(layout.widgets), layout.canvas);
   const draft = buildDraftWidget(type, layout.widgets, placement);
   const withDraft = { ...layout, widgets: [...layout.widgets, draft] };
   return withDraft;
@@ -200,7 +196,7 @@ export function insertClonedPixelWidget(
         height: Math.min(sourcePixel.height, layout.canvas.height),
       }
     : defaultSize(widget);
-  const placement = placeInNextOpenSlot(size, layout.widgets, layout.canvas);
+  const placement = placeInNextOpenSlot(size, getTopLevelPixelWidgets(layout.widgets), layout.canvas);
   const {
     colSpan: _colSpan,
     rowSpan: _rowSpan,

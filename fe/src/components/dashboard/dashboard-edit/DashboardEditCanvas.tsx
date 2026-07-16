@@ -49,7 +49,12 @@ type DashboardEditCanvasProps = {
   onDeleteWidget: (widgetId: string) => void;
   onFilterValueChange: (filterId: string, value: string) => void;
   onDropInsert: (type: PaletteInsertType, at: GridInsertAt) => void;
-  onPaletteDrop?: (type: PaletteDragPayload, point: { x: number; y: number }) => void;
+  onPaletteDrop?: (
+    type: PaletteDragPayload,
+    point: { x: number; y: number },
+    sourceEvent?: DragEvent,
+  ) => void;
+  onTabPaletteDrop?: (tabsWidgetId: string, type: PaletteDragPayload) => void;
   onViewportChange: (viewport: PixelRect) => void;
   widgetActions?: PixelWidgetActions;
 };
@@ -73,6 +78,7 @@ export function DashboardEditCanvas({
   onFilterValueChange,
   onDropInsert,
   onPaletteDrop,
+  onTabPaletteDrop,
   onViewportChange,
   widgetActions,
 }: DashboardEditCanvasProps) {
@@ -112,6 +118,7 @@ export function DashboardEditCanvas({
           dashboardStyle={widgetDashboardStyle}
           styleRevision={styleRevision}
           chartRefreshKeys={chartRefreshKeys}
+          onTabPaletteDrop={onTabPaletteDrop}
         />
       );
     },
@@ -127,6 +134,7 @@ export function DashboardEditCanvas({
       widgetDashboardStyle,
       styleRevision,
       chartRefreshKeys,
+      onTabPaletteDrop,
     ],
   );
 
@@ -136,8 +144,17 @@ export function DashboardEditCanvas({
   );
 
   const widgetContentRevision = useCallback(
-    (widget: PixelLayoutWidget) =>
-      widgetFilterExecuteRevision(widget.id, linkage, filterValues, chartRefreshKeys),
+    (widget: PixelLayoutWidget) => {
+      const base = widgetFilterExecuteRevision(widget.id, linkage, filterValues, chartRefreshKeys);
+      if (widget.type === "tabs" && widget.tabsConfig) {
+        const childCount = widget.tabsConfig.panes.reduce(
+          (sum, pane) => sum + pane.childWidgetIds.length,
+          0,
+        );
+        return `${base}:${childCount}:${widget.tabsConfig.activePaneId}`;
+      }
+      return base;
+    },
     [linkage, filterValues, chartRefreshKeys],
   );
 

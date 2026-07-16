@@ -41,6 +41,7 @@ const chipVariants = cva(
 
 type ChartFieldSlotProps = {
   label: string;
+  optional?: boolean;
   fieldName?: string;
   /** 聚合等后缀，如「求和」；展示为次要文案 */
   fieldSuffix?: string;
@@ -68,6 +69,7 @@ function FieldKindIcon({ field }: { field: string }) {
 
 export function ChartFieldSlot({
   label,
+  optional = false,
   fieldName,
   fieldSuffix,
   slotKind = "neutral",
@@ -85,7 +87,12 @@ export function ChartFieldSlot({
 
   return (
     <div className={cn("space-y-1", className)}>
-      <span className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">{label}</span>
+      <span className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+        {label}
+        {optional ? (
+          <span className="ml-1 font-normal text-gray-400 dark:text-gray-500">（可选）</span>
+        ) : null}
+      </span>
       <div
         role="button"
         tabIndex={disabled ? -1 : 0}

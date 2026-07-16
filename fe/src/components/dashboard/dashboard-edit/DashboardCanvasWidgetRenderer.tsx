@@ -19,6 +19,7 @@ import {
   type PixelLayoutWidget,
 } from "../layoutUtils";
 import { WidgetErrorBoundary } from "../WidgetErrorBoundary";
+import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import { useDashboardGridPlayer } from "../dashboardGridPlayerContext";
 import { usePixelShapePlayer } from "../pixelCanvas/pixelShapePlayerContext";
 
@@ -49,6 +50,7 @@ type DashboardCanvasWidgetRendererProps = {
   dashboardStyle?: DashboardStyleConfig;
   styleRevision?: string;
   chartRefreshKeys?: Record<string, number>;
+  onTabPaletteDrop?: (tabsWidgetId: string, type: PaletteDragPayload) => void;
   renderChild?: (
     widget: LayoutWidget,
     options?: RenderDashboardCanvasWidgetOptions,
@@ -115,6 +117,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   dashboardStyle,
   styleRevision: _styleRevision,
   chartRefreshKeys,
+  onTabPaletteDrop,
   renderChild,
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
@@ -187,6 +190,13 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
     [renderChild, shell],
   );
 
+  const handleTabPaletteDrop = useCallback(
+    (payload: PaletteDragPayload) => {
+      onTabPaletteDrop?.(widget.id, payload);
+    },
+    [onTabPaletteDrop, widget.id],
+  );
+
   return (
     <WidgetErrorBoundary
       widgetTitle={widget.title}
@@ -214,6 +224,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
         onTitleChange={handleTitleChange}
         onChartConfigChange={handleChartConfigChange}
         onTabsConfigChange={nested ? undefined : handleTabsConfigChange}
+        onTabPaletteDrop={nested || mode !== "edit" ? undefined : handleTabPaletteDrop}
         onTextConfigChange={handleTextConfigChange}
         dashboardStyle={dashboardStyle}
         suspendLiveResize={isShapePlaying || isGridPlaying}

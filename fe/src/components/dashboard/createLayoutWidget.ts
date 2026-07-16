@@ -128,7 +128,7 @@ export function createTabsWidget(
   return {
     id: widgetId,
     type: "tabs",
-    title: "Tab",
+    title: "页签",
     colSpan: at?.colSpan ?? 12,
     rowSpan: at?.rowSpan ?? 4,
     order: maxOrder + 1,

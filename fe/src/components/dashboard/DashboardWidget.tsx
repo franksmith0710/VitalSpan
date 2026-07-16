@@ -16,6 +16,7 @@ import {
 import { IconButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { FilterWidget } from "./FilterWidget";
 import { TextWidget } from "./TextWidget";
@@ -80,6 +81,7 @@ type DashboardWidgetProps = {
   allWidgets?: LayoutWidget[];
   renderNestedWidget?: (widget: LayoutWidget) => ReactNode;
   onTabsConfigChange?: (id: string, tabsConfig: TabsWidgetConfig) => void;
+  onTabPaletteDrop?: (payload: PaletteDragPayload) => void;
   onTextConfigChange?: (id: string, config: TextWidgetConfig) => void;
   dashboardStyle?: DashboardStyleConfig;
   /** DataEase isPlayer：交互中暂停 React 尺寸 props，由 DOM 百分比跟手 */
@@ -156,6 +158,7 @@ export function DashboardWidget({
   allWidgets,
   renderNestedWidget,
   onTabsConfigChange,
+  onTabPaletteDrop,
   onTextConfigChange,
   dashboardStyle,
   suspendLiveResize = false,
@@ -217,11 +220,13 @@ export function DashboardWidget({
         widget={widget as LayoutWidget & { tabsConfig: TabsWidgetConfig }}
         allWidgets={allWidgets ?? []}
         mode={mode}
+        shell={shell}
         selected={selected}
         onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
         onTitleChange={onTitleChange}
         onDelete={onDelete}
         onTabsConfigChange={(cfg) => onTabsConfigChange?.(widget.id, cfg)}
+        onPaletteDrop={onTabPaletteDrop}
         renderChild={(child) => renderNestedWidget?.(child) ?? null}
       />
     );

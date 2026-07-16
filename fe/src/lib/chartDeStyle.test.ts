@@ -6,6 +6,7 @@ import {
   mergeShapeInnerPresentation,
   patchChartDeStyleNested,
   readChartLegendVisible,
+  readChartLegendPosition,
   readChartTitleVisible,
   resolveChartContentShellStyle,
   resolveWidgetShellStyle,
@@ -79,6 +80,14 @@ describe("stripChartTitleOverrides", () => {
       color: "#aabbcc",
     });
     expect(stripChartTitleOverrides(cfg).nativeBody?.deStyle?.title).toBeUndefined();
+  });
+});
+
+describe("readChartLegendPosition", () => {
+  it("defaults to bottom when unset", () => {
+    expect(readChartLegendPosition({})).toBe("bottom");
+    expect(readChartLegendPosition({ legend: { show: true } })).toBe("bottom");
+    expect(readChartLegendPosition({ legend: { position: "left" } })).toBe("left");
   });
 });
 

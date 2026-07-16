@@ -1,7 +1,8 @@
 import type { ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle } from "@/lib/chartDeStyle";
-import type { LayoutWidget } from "./dashboardLayoutContracts";
+import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "./dashboardLayoutContracts";
+import type { WidgetStyleConfig } from "./dashboardStyleConfig";
 
 export type {
   DashboardCanvas,
@@ -62,10 +63,21 @@ export type TabPaneConfig = {
   childWidgetIds: string[];
 };
 
+export type TabsHeadStyleConfig = {
+  fontSize?: number;
+  activeColor?: string;
+  inactiveColor?: string;
+  barBackground?: string;
+};
+
 export type TabsWidgetConfig = {
   tabsId: string;
   panes: TabPaneConfig[];
   activePaneId: string;
+  /** 单组件外框样式（覆盖看板默认 widgetStyle） */
+  widgetStyle?: WidgetStyleConfig;
+  /** 页签栏外观 */
+  headStyle?: TabsHeadStyleConfig;
 };
 
 export type {
@@ -100,11 +112,13 @@ export function defaultMediaConfig(): MediaWidgetConfig {
 export function defaultTabsConfig(tabsId: string): TabsWidgetConfig {
   const paneA = crypto.randomUUID();
   const paneB = crypto.randomUUID();
+  const paneC = crypto.randomUUID();
   return {
     tabsId,
     panes: [
-      { id: paneA, title: "Tab 1", childWidgetIds: [] },
-      { id: paneB, title: "Tab 2", childWidgetIds: [] },
+      { id: paneA, title: "页签 1", childWidgetIds: [] },
+      { id: paneB, title: "页签 2", childWidgetIds: [] },
+      { id: paneC, title: "页签 3", childWidgetIds: [] },
     ],
     activePaneId: paneA,
   };
@@ -138,7 +152,7 @@ export function coerceLayoutWidget(raw: Partial<LayoutWidget> & { id: string }):
         : type === "media"
           ? "媒体"
           : type === "tabs"
-            ? "Tab"
+            ? "页签"
             : "图表";
   const base = {
     id: raw.id,
@@ -188,6 +202,113 @@ export function coerceLayoutWidget(raw: Partial<LayoutWidget> & { id: string }):
 
 export function getTopLevelWidgets(widgets: LayoutWidget[]): LayoutWidget[] {
   return widgets.filter((w) => !w.parentTabsId);
+}
+
+/** 像素画布仅渲染顶层 shape；Tab 内子组件在 TabsWidget 内嵌展示 */
+export function getTopLevelPixelWidgets(widgets: PixelLayoutWidget[]): PixelLayoutWidget[] {
+  return widgets.filter((w) => !w.parentTabsId);
+}
+
+export function pointInPixelWidget(
+  point: { x: number; y: number },
+  widget: Pick<PixelLayoutWidget, "x" | "y" | "width" | "height">,
+): boolean {
+  return (
+    point.x >= widget.x &&
+    point.x <= widget.x + widget.width &&
+    point.y >= widget.y &&
+    point.y <= widget.y + widget.height
+  );
+}
+
+/** 拖放落点处的 Tab 容器（多重重叠时取面积最小者，视为最上层） */
+export function findTabsHostAtPoint(
+  widgets: PixelLayoutWidget[],
+  point: { x: number; y: number },
+): PixelLayoutWidget | undefined {
+  const hosts = getTopLevelPixelWidgets(widgets).filter(
+    (w) =>
+      w.type === "tabs" &&
+      w.tabsConfig &&
+      w.width > 0 &&
+      w.height > 0 &&
+      pointInPixelWidget(point, w),
+  );
+  if (hosts.length === 0) return undefined;
+  return hosts.reduce((best, w) =>
+    w.width * w.height < best.width * best.height ? w : best,
+  );
+}
+
+/** 插入子组件时解析目标 Tab 宿主：已选中 Tab 优先，否则按落点命中 */
+export function resolvePixelTabsHost(
+  layout: DashboardLayoutV2,
+  selectedWidgetId: string | null | undefined,
+  point?: { x: number; y: number },
+  tabsWidgetIdFromDom?: string | null,
+): PixelLayoutWidget | undefined {
+  if (tabsWidgetIdFromDom) {
+    const fromDom = layout.widgets.find((w) => w.id === tabsWidgetIdFromDom);
+    if (fromDom?.type === "tabs" && fromDom.tabsConfig) return fromDom;
+  }
+  if (selectedWidgetId) {
+    const selected = layout.widgets.find((w) => w.id === selectedWidgetId);
+    if (selected?.type === "tabs" && selected.tabsConfig) return selected;
+  }
+  if (point) return findTabsHostAtPoint(layout.widgets, point);
+  return undefined;
+}
+
+/** Tab 子组件不参与画布占位与碰撞，坐标折叠到容器内 */
+export function parkPixelWidgetInTab(
+  child: PixelLayoutWidget,
+  host: PixelLayoutWidget,
+  tabPaneId: string,
+): PixelLayoutWidget {
+  return {
+    ...child,
+    parentTabsId: host.id,
+    tabPaneId,
+    x: host.x,
+    y: host.y,
+    width: 0,
+    height: 0,
+  };
+}
+
+/** Tab 宿主移动后，同步折叠子组件画布坐标 */
+export function syncParkedTabChildren(widgets: PixelLayoutWidget[]): PixelLayoutWidget[] {
+  const byId = new Map(widgets.map((w) => [w.id, w]));
+  return widgets.map((w) => {
+    if (!w.parentTabsId || !w.tabPaneId) return w;
+    const host = byId.get(w.parentTabsId);
+    if (!host || host.type !== "tabs") return w;
+    return parkPixelWidgetInTab(w, host, w.tabPaneId);
+  });
+}
+
+/** 将已写入 layout 的组件归入 Tab 页签（折叠占位 + 更新 childWidgetIds） */
+export function insertPixelWidgetIntoTab(
+  layout: DashboardLayoutV2,
+  draft: PixelLayoutWidget,
+  host: PixelLayoutWidget,
+  tabPaneId: string,
+): DashboardLayoutV2 {
+  if (host.type !== "tabs" || !host.tabsConfig || draft.type === "tabs") {
+    return layout;
+  }
+  const parked = parkPixelWidgetInTab(draft, host, tabPaneId);
+  const widgets = layout.widgets.map((w) => {
+    if (w.id === draft.id) return parked;
+    if (w.id !== host.id || w.type !== "tabs" || !w.tabsConfig) return w;
+    const panes = w.tabsConfig.panes.map((pane) =>
+      pane.id === tabPaneId && !pane.childWidgetIds.includes(draft.id)
+        ? { ...pane, childWidgetIds: [...pane.childWidgetIds, draft.id] }
+        : pane,
+    );
+    return { ...w, tabsConfig: { ...w.tabsConfig, panes } };
+  });
+  return { ...layout, widgets: syncParkedTabChildren(widgets) };
 }
 
 export function getTabChildWidgets(widgets: LayoutWidget[], tabsWidgetId: string, paneId: string): LayoutWidget[] {

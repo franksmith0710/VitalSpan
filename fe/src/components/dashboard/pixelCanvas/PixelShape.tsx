@@ -161,6 +161,13 @@ function resolveShapeTitleState(
       remark: readChartRemark(widget.chartConfig),
     };
   }
+  if (widget.type === "tabs") {
+    return {
+      showTitle: false,
+      titleStyle: mergeTitleStyle(styleConfig?.titleStyle),
+      remark: { show: false, text: "" },
+    };
+  }
   const showTitle = mode === "edit" ? chrome.showChartActionButtons : true;
   return {
     showTitle,
@@ -301,16 +308,20 @@ export function PixelShape({
   const chrome = resolveDashboardChrome(styleConfig);
   const effectiveScheme = resolveWidgetEffectiveScheme(styleConfig);
   const chromeInset = resolveWidgetChromeInset(styleConfig?.widgetStyle);
+  const shellWidgetStyle =
+    widget.type === "tabs" && widget.tabsConfig?.widgetStyle
+      ? { ...styleConfig?.widgetStyle, ...widget.tabsConfig.widgetStyle }
+      : styleConfig?.widgetStyle;
   const shell =
     widget.type === "chart" && widget.chartConfig
       ? resolveChartContentShellStyle(
-          styleConfig?.widgetStyle,
+          shellWidgetStyle,
           widget.chartConfig,
           effectiveScheme,
         )
       : {
           outer: resolveWidgetShellStyle(
-            styleConfig?.widgetStyle,
+            shellWidgetStyle,
             effectiveScheme,
           ),
           inner: {} as CSSProperties,

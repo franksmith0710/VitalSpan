@@ -776,8 +776,19 @@ html.admin-fill-lock #root {
 
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] .dashboard-chart-table tbody tr,
 .dashboard-theme-scope.dark .dashboard-chart-table tbody tr {
-  background-color: transparent;
+  background-color: var(--dashboard-table-body-bg, transparent);
   color: var(--dashboard-table-body-fg, #d0d5dd);
+}
+
+.dashboard-theme-scope .dashboard-chart-table tfoot tr {
+  background-color: var(--dashboard-table-summary-bg, var(--dashboard-table-header-bg, #f9fafb));
+  color: var(--dashboard-table-summary-fg, var(--dashboard-table-body-fg, #344054));
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .dashboard-chart-table tfoot tr,
+.dashboard-theme-scope.dark .dashboard-chart-table tfoot tr {
+  background-color: var(--dashboard-table-summary-bg, var(--dashboard-table-header-bg, #0f172a));
+  color: var(--dashboard-table-summary-fg, var(--dashboard-table-body-fg, #d0d5dd));
 }
 
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] .dashboard-chart-table thead,

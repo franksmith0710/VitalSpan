@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { useEffect, useRef, useState, type ComponentPropsWithoutRef } from "react";
+import { ChevronDown, Highlighter, X } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -28,11 +28,15 @@ type ColorFieldProps = {
   buttonAriaLabel?: string;
   /** swatch：是否在控件上方显示 label；行内配色行由左侧标签承担时应为 false */
   showLabel?: boolean;
+  /** swatch 触发器形态：chip 通用色块；text 字色 A+下划线；highlight 荧光笔+色块 */
+  swatchTriggerPreset?: "chip" | "text" | "highlight";
   className?: string;
   /** 取色器/输入框连续变更时防抖提交，减轻画布等大组件重渲染 */
   liveCommitMs?: number;
   /** 有推荐色板时默认展开 */
   swatchesDefaultOpen?: boolean;
+  /** 透传给 PopoverContent（className / style / data-* 等） */
+  popoverContentProps?: Omit<ComponentPropsWithoutRef<typeof PopoverContent>, "children">;
 };
 
 const DEFAULT_LIVE_COMMIT_MS = 120;
@@ -85,7 +89,14 @@ export function ColorField({
   showLabel,
   liveCommitMs = DEFAULT_LIVE_COMMIT_MS,
   swatchesDefaultOpen: _swatchesDefaultOpen = false,
+  popoverContentProps,
+  swatchTriggerPreset = "chip",
 }: ColorFieldProps) {
+  const {
+    className: popoverClassName,
+    style: popoverStyle,
+    ...restPopoverContentProps
+  } = popoverContentProps ?? {};
   const items = normalizeSwatches(swatches);
   const [localValue, setLocalValue] = useState(value);
   const [open, setOpen] = useState(false);
@@ -165,7 +176,12 @@ export function ColorField({
       side={popoverSide}
       sideOffset={6}
       collisionPadding={12}
-      className="w-[228px] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain p-2.5"
+      className={cn(
+        "w-[228px] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain p-2.5",
+        popoverClassName,
+      )}
+      style={popoverStyle}
+      {...restPopoverContentProps}
     >
       <p className="mb-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">{popoverTitle}</p>
       <ColorPickerPanel value={localValue} onChange={applyColor} />
@@ -220,6 +236,9 @@ export function ColorField({
   );
 
   if (variant === "swatch") {
+    const inkColor = displayHex || "#111827";
+    const highlightPreview = displayHex || "#fef08a";
+
     return (
       <div className={cn("min-w-0 shrink-0", className)}>
         {label && swatchLabelVisible ? (
@@ -231,29 +250,77 @@ export function ColorField({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className={swatchTriggerVariants({ open })}
+              className={cn(
+                swatchTriggerVariants({ open }),
+                swatchTriggerPreset === "text" && "inline-flex h-7 items-center gap-0.5 px-0",
+                swatchTriggerPreset === "highlight" && "h-7",
+              )}
               aria-label={pickerLabel}
               aria-expanded={open}
               title={swatchTitle}
             >
-              <span
-                className="flex h-full w-10 shrink-0 items-center justify-center border-r border-gray-100 bg-gray-50/90 p-1.5 dark:border-gray-800 dark:bg-white/[0.04]"
-                aria-hidden
-              >
-                <ColorSwatchChip color={displayHex || undefined} size={chipSize} />
-              </span>
-              <span className="flex shrink-0 items-center gap-1 px-2">
-                {!displayHex ? (
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">未设置</span>
-                ) : null}
-                <ChevronDown
-                  className={cn(
-                    "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
-                    open && "rotate-180 text-brand-500 dark:text-brand-400",
-                  )}
-                  aria-hidden
-                />
-              </span>
+              {swatchTriggerPreset === "text" ? (
+                <>
+                  <span className="flex flex-col items-center justify-center gap-0.5 px-1.5">
+                    <span className="text-sm font-bold leading-none">A</span>
+                    <span
+                      className="h-0.5 w-4 rounded-full ring-1 ring-black/10 dark:ring-white/15"
+                      style={{ backgroundColor: inkColor }}
+                    />
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "mr-1 size-3.5 shrink-0 opacity-60 transition-transform",
+                      open && "rotate-180 text-brand-500",
+                    )}
+                    aria-hidden
+                  />
+                </>
+              ) : swatchTriggerPreset === "highlight" ? (
+                <>
+                  <span className="flex h-full items-center gap-1 border-r border-gray-100 px-1.5 dark:border-gray-800">
+                    <Highlighter className="size-3.5 shrink-0 opacity-80" aria-hidden />
+                    <ColorSwatchChip
+                      color={highlightPreview}
+                      size={chipSize}
+                      className={!displayHex ? "opacity-50" : undefined}
+                    />
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1 px-1.5">
+                    {!displayHex ? (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">无</span>
+                    ) : null}
+                    <ChevronDown
+                      className={cn(
+                        "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
+                        open && "rotate-180 text-brand-500 dark:text-brand-400",
+                      )}
+                      aria-hidden
+                    />
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span
+                    className="flex h-full w-10 shrink-0 items-center justify-center border-r border-gray-100 bg-gray-50/90 p-1.5 dark:border-gray-800 dark:bg-white/[0.04]"
+                    aria-hidden
+                  >
+                    <ColorSwatchChip color={displayHex || undefined} size={chipSize} />
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1 px-2">
+                    {!displayHex ? (
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">未设置</span>
+                    ) : null}
+                    <ChevronDown
+                      className={cn(
+                        "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
+                        open && "rotate-180 text-brand-500 dark:text-brand-400",
+                      )}
+                      aria-hidden
+                    />
+                  </span>
+                </>
+              )}
             </button>
           </PopoverTrigger>
           {popoverBody}
