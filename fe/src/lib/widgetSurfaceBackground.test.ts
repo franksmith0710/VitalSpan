@@ -36,4 +36,15 @@ describe("applyBackgroundOpacityOnly", () => {
     expect(backgroundLayer?.opacity).toBe(0.8);
     expect(backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
   });
+
+  it("uses frosted glass layer when only backdrop blur is set", () => {
+    const { surface, backgroundLayer } = applyBackgroundOpacityOnly({
+      background: "#ffffff",
+      backdropFilter: "blur(12px)",
+    });
+    expect(surface.backdropFilter).toBeUndefined();
+    expect(surface.backgroundColor).toBeUndefined();
+    expect(backgroundLayer?.backdropFilter).toBe("blur(12px)");
+    expect(backgroundLayer?.backgroundColor).toBe("rgba(255, 255, 255, 0.82)");
+  });
 });

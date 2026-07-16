@@ -3,6 +3,12 @@ import { Link, useLocation } from "react-router";
 import { ChevronDown } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { cn } from "@/lib/utils";
+import {
+  ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
+  ADMIN_CONTENT_MARGIN_EXPANDED_CLASS,
+  ADMIN_SIDEBAR_COLLAPSED_CLASS,
+  ADMIN_SIDEBAR_EXPANDED_CLASS,
+} from "@/lib/adminLayoutTokens";
 import { useSidebar } from "@/context/sidebar-context";
 
 export type NavSubItem = {
@@ -408,7 +414,7 @@ export function AppSidebar({
     <aside
       className={cn(
         "fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-gray-200 bg-white text-gray-900 transition-all duration-300 ease-in-out xl:translate-x-0 dark:border-gray-800 dark:bg-gray-900",
-        isWide ? "w-[290px] px-5" : "w-[90px] px-3",
+        isWide ? ADMIN_SIDEBAR_EXPANDED_CLASS : ADMIN_SIDEBAR_COLLAPSED_CLASS,
         isMobileOpen ? "translate-x-0" : "-translate-x-full",
         className,
       )}

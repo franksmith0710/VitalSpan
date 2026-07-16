@@ -210,7 +210,7 @@ export function TabsStyleFields({ widget, onChange, onTitleChange }: TabsStyleFi
             <DeProgressSlider
               min={10}
               max={18}
-              value={headStyle.fontSize ?? 12}
+              value={headStyle.fontSize ?? 14}
               onChange={(fontSize) => patchHeadStyle({ fontSize })}
             />
           </div>

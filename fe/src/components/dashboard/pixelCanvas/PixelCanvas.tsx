@@ -21,8 +21,12 @@ import type {
   DashboardLayoutV2,
   PixelLayoutWidget,
 } from "../layoutUtils";
-import { getTopLevelPixelWidgets } from "../layoutUtils";
+import { getTopLevelPixelWidgets, findTabsHostAtPoint } from "../layoutUtils";
 import type { ScaleMode, DashboardStyleConfig } from "../dashboardStyleConfig";
+import { usePaletteDragActive } from "./paletteDragContext";
+import { TabPaletteDropZones } from "./TabPaletteDropZones";
+import { TAB_PALETTE_DROP_BUFFER_PX } from "./tabPaletteDrop";
+import { TabPaletteDropTargetProvider } from "./tabPaletteDropTargetContext";
 import {
   canvasArtboardStyleFingerprint,
   hasUserCanvasBackground,
@@ -33,7 +37,7 @@ import {
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
 import { auxiliaryGridPatternStyle, resolveDashboardChrome } from "../dashboardChromeConfig";
 import { resolvePixelCollisions, shouldRevertPixelDragCommit, widgetRect } from "./collisionLayout";
-import type { PixelRect } from "./geometry";
+import type { PixelPoint, PixelRect } from "./geometry";
 import { clientPointToCanvas, resolvePixelCanvasMeasureElement, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
 import { PixelShape } from "./PixelShape";
 import type { PixelWidgetActions } from "./PixelShapeActionRail";
@@ -44,6 +48,7 @@ import type { MarkLineGuide } from "./pixelMarkLine";
 import { PixelWidgetSlot } from "./PixelWidgetSlot";
 import { createPixelShapePreviewRegistry } from "./pixelShapePreviewRegistry";
 import { autoScrollPixelCanvasHost } from "./pixelCanvasAutoScroll";
+import { routePixelCanvasWheel } from "./pixelCanvasWheelScroll";
 import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
 
@@ -61,6 +66,7 @@ type PixelCanvasProps = {
     point: { x: number; y: number },
     sourceEvent?: DragEvent,
   ) => void;
+  onTabPaletteDrop?: (tabsWidgetId: string, type: PaletteDragPayload) => void;
   widgetActions?: PixelWidgetActions;
   className?: string;
   scaleMode?: ScaleMode;
@@ -132,6 +138,7 @@ export function PixelCanvas({
   onLayoutChange,
   onViewportChange,
   onPaletteDrop,
+  onTabPaletteDrop,
   widgetActions,
   className,
   scaleMode = "canvas",
@@ -154,6 +161,8 @@ export function PixelCanvas({
   const [stageLeft, setStageLeft] = useState(0);
   const [centerContent, setCenterContent] = useState(false);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
+  const [paletteDragPoint, setPaletteDragPoint] = useState<PixelPoint | null>(null);
+  const paletteDragActive = usePaletteDragActive();
   const [markGuides, setMarkGuides] = useState<MarkLineGuide[]>([]);
   const [playingWidgetId, setPlayingWidgetId] = useState<string | null>(null);
   const previewThrottleRef = useRef(0);
@@ -189,6 +198,20 @@ export function PixelCanvas({
     () => getTopLevelPixelWidgets(activeLayout.widgets),
     [activeLayout.widgets],
   );
+  const tabHosts = useMemo(
+    () => topLevelWidgets.filter((w) => w.type === "tabs" && w.tabsConfig),
+    [topLevelWidgets],
+  );
+  const activeTabDropId = useMemo(() => {
+    if (!paletteDragPoint || tabHosts.length === 0) return null;
+    return (
+      findTabsHostAtPoint(
+        activeLayout.widgets,
+        paletteDragPoint,
+        TAB_PALETTE_DROP_BUFFER_PX,
+      )?.id ?? null
+    );
+  }, [paletteDragPoint, tabHosts.length, activeLayout.widgets]);
 
   const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
   const showMarkLines = mode === "edit";
@@ -377,6 +400,17 @@ export function PixelCanvas({
     [],
   );
 
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const onWheel = (event: WheelEvent) => {
+      if (!routePixelCanvasWheel(host, event)) return;
+      publishViewport(visibleCanvasViewport(host, scale, viewCanvas));
+    };
+    host.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    return () => host.removeEventListener("wheel", onWheel, { capture: true });
+  }, [publishViewport, scale, viewCanvas]);
+
   const handlePlayingChange = useCallback((widgetId: string, playing: boolean) => {
     setPlayingWidgetId((current) => {
       if (playing) return widgetId;
@@ -442,19 +476,36 @@ export function PixelCanvas({
     [publishViewport, scale, viewCanvas],
   );
 
+  const resolveClientToCanvas = useCallback(
+    (clientX: number, clientY: number) => {
+      const host = hostRef.current;
+      if (!host) return null;
+      const horizontalGutter =
+        centerContent && contentSize.width > 0
+          ? Math.max(0, (host.clientWidth - contentSize.width) / 2)
+          : stageLeft;
+      return clientPointToCanvas(host, clientX, clientY, scale, horizontalGutter);
+    },
+    [centerContent, contentSize.width, scale, stageLeft],
+  );
+
   const handleDragOver = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
-      if (!onPaletteDrop || !isPaletteDragEvent(event)) return;
+      if (!onPaletteDrop && !onTabPaletteDrop) return;
+      if (!isPaletteDragEvent(event) && !paletteDragActive) return;
       event.preventDefault();
       event.dataTransfer.dropEffect = "copy";
       setPaletteDragOver(true);
+      const point = resolveClientToCanvas(event.clientX, event.clientY);
+      if (point) setPaletteDragPoint(point);
     },
-    [onPaletteDrop],
+    [onPaletteDrop, onTabPaletteDrop, paletteDragActive, resolveClientToCanvas],
   );
 
   const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
     if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
     setPaletteDragOver(false);
+    setPaletteDragPoint(null);
   }, []);
 
   const handleBlankPointerDown = useCallback(
@@ -469,23 +520,13 @@ export function PixelCanvas({
       if (!onPaletteDrop) return;
       event.preventDefault();
       setPaletteDragOver(false);
+      setPaletteDragPoint(null);
       const payload = readPaletteDragPayload(event.nativeEvent);
-      const host = hostRef.current;
-      if (!payload || !host) return;
-      const horizontalGutter =
-        centerContent && contentSize.width > 0
-          ? Math.max(0, (host.clientWidth - contentSize.width) / 2)
-          : stageLeft;
-      const point = clientPointToCanvas(
-        host,
-        event.clientX,
-        event.clientY,
-        scale,
-        horizontalGutter,
-      );
+      const point = resolveClientToCanvas(event.clientX, event.clientY);
+      if (!payload || !point) return;
       onPaletteDrop(payload, point, event.nativeEvent);
     },
-    [onPaletteDrop, scale, stageLeft, centerContent, contentSize.width],
+    [onPaletteDrop, resolveClientToCanvas],
   );
 
   return (
@@ -498,6 +539,7 @@ export function PixelCanvas({
         className,
       )}
       data-testid="pixel-canvas-host"
+      data-pixel-canvas-mode={mode}
       data-pixel-canvas-scale={scale}
       data-pixel-canvas-playing={playingWidgetId ?? undefined}
       style={{
@@ -526,6 +568,7 @@ export function PixelCanvas({
         <PixelCanvasInteractionProvider
           interaction={playingWidgetId ? { widgetId: playingWidgetId } : null}
         >
+        <TabPaletteDropTargetProvider targetTabsId={paletteDragActive ? activeTabDropId : null}>
         <div
           ref={stageRef}
           id="editor-canvas-main"
@@ -591,10 +634,19 @@ export function PixelCanvas({
                 />
               </PixelShape>
             ))}
+          {mode === "edit" && paletteDragActive && tabHosts.length > 0 && onTabPaletteDrop ? (
+            <TabPaletteDropZones
+              tabs={tabHosts}
+              bufferPx={TAB_PALETTE_DROP_BUFFER_PX}
+              activeTabsId={activeTabDropId}
+              onTabDrop={onTabPaletteDrop}
+            />
+          ) : null}
           {showMarkLines ? (
             <PixelMarkLineOverlay guides={markGuides} canvas={viewCanvas} />
           ) : null}
           </div>
+        </TabPaletteDropTargetProvider>
         </PixelCanvasInteractionProvider>
         </PixelCanvasScaleProvider>
       </div>

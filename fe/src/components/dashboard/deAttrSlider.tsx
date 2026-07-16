@@ -170,6 +170,7 @@ type DeSliderInlineRowProps = {
   disabled?: boolean;
   className?: string;
   onChange: (value: number) => void;
+  onPreview?: (value: number | null) => void;
 };
 
 /** 单行：标签 · 滑块 · 数值（TailAdmin / DE 紧凑密度） */
@@ -186,6 +187,7 @@ function DeSliderInlineRow({
   disabled = false,
   className,
   onChange,
+  onPreview,
 }: DeSliderInlineRowProps) {
   const clamped = clampValue(value, min, max);
   const [preview, setPreview] = useState<number | null>(null);
@@ -229,7 +231,10 @@ function DeSliderInlineRow({
         disabled={disabled}
         ariaLabel={ariaLabel ?? label}
         ariaValuetext={display}
-        onPreview={setPreview}
+        onPreview={(value) => {
+          setPreview(value);
+          onPreview?.(value);
+        }}
         onChange={onChange}
       />
       <span className="min-w-0 truncate text-right text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
@@ -342,6 +347,7 @@ export type ChartDeSliderFieldProps = {
   disabled?: boolean;
   /** stacked：标签+全宽滑块；inline：标签·定宽滑块·数值单行 */
   layout?: "stacked" | "inline";
+  onPreviewChange?: (value: number | null) => void;
   onChange: (value: number) => void;
 };
 
@@ -358,6 +364,7 @@ export function ChartDeSliderField({
   className,
   disabled = false,
   layout = "stacked",
+  onPreviewChange,
   onChange,
 }: ChartDeSliderFieldProps) {
   const resolved = value ?? fallback;
@@ -387,6 +394,7 @@ export function ChartDeSliderField({
           labelTone="field"
           disabled={disabled}
           onChange={onChange}
+          onPreview={onPreviewChange}
         />
       </div>
     );
@@ -415,7 +423,10 @@ export function ChartDeSliderField({
         disabled={disabled}
         ariaLabel={ariaLabel ?? label}
         ariaValuetext={display}
-        onPreview={setPreview}
+        onPreview={(value) => {
+          setPreview(value);
+          onPreviewChange?.(value);
+        }}
         onChange={onChange}
       />
     </div>

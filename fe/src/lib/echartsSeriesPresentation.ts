@@ -37,7 +37,7 @@ function patchLineSeries(
   series: Record<string, unknown>,
   context: SeriesPresentationContext,
 ): Record<string, unknown> {
-  const factor = colorAlpha(context.paletteOpacity ?? 1);
+  const areaFactor = colorAlpha(context.paletteOpacity ?? 1);
   const lineWidth = context.embedded ? DE_LINE_WIDTH_EMBEDDED : DE_LINE_WIDTH;
   const prevLineStyle =
     series.lineStyle && typeof series.lineStyle === "object"
@@ -60,7 +60,6 @@ function patchLineSeries(
     lineStyle: {
       ...prevLineStyle,
       width: prevLineStyle.width ?? lineWidth,
-      opacity: applyOpacityFactor(prevLineStyle.opacity as number | undefined, factor),
     },
     emphasis: {
       ...prevEmphasis,
@@ -81,19 +80,8 @@ function patchLineSeries(
       ...prevArea,
       opacity: applyOpacityFactor(
         (prevArea.opacity as number | undefined) ?? DE_AREA_FILL_OPACITY,
-        factor,
+        areaFactor,
       ),
-    };
-  }
-
-  const prevItem =
-    series.itemStyle && typeof series.itemStyle === "object"
-      ? (series.itemStyle as Record<string, unknown>)
-      : {};
-  if (factor < 1) {
-    next.itemStyle = {
-      ...prevItem,
-      opacity: applyOpacityFactor(prevItem.opacity as number | undefined, factor),
     };
   }
 
@@ -102,9 +90,8 @@ function patchLineSeries(
 
 function patchBarSeries(
   series: Record<string, unknown>,
-  context: SeriesPresentationContext,
+  _context: SeriesPresentationContext,
 ): Record<string, unknown> {
-  const factor = colorAlpha(context.paletteOpacity ?? 1);
   const prevItem =
     series.itemStyle && typeof series.itemStyle === "object"
       ? (series.itemStyle as Record<string, unknown>)
@@ -114,28 +101,15 @@ function patchBarSeries(
     barMaxWidth: series.barMaxWidth ?? DE_BAR_MAX_WIDTH,
     itemStyle: mergeRecord(prevItem, {
       borderRadius: prevItem.borderRadius ?? DE_BAR_RADIUS,
-      opacity: applyOpacityFactor(prevItem.opacity as number | undefined, factor),
     }),
   };
 }
 
 function patchPieSeries(
   series: Record<string, unknown>,
-  context: SeriesPresentationContext,
+  _context: SeriesPresentationContext,
 ): Record<string, unknown> {
-  const factor = colorAlpha(context.paletteOpacity ?? 1);
-  if (factor >= 1) return series;
-  const prevItem =
-    series.itemStyle && typeof series.itemStyle === "object"
-      ? (series.itemStyle as Record<string, unknown>)
-      : {};
-  return {
-    ...series,
-    itemStyle: {
-      ...prevItem,
-      opacity: applyOpacityFactor(prevItem.opacity as number | undefined, factor),
-    },
-  };
+  return series;
 }
 
 /** 统一 ECharts 系列视觉（对标 DataEase：折线更醒目、柱/饼配色一致） */

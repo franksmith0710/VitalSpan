@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { resolveChartColors, resolvePaletteId } from "./chartPalette";
+import {
+  applyChartColorsOpacity,
+  resolveChartColors,
+  resolvePaletteId,
+  withChartColorOpacity,
+} from "./chartPalette";
 
 describe("chartPalette", () => {
   it("resolveChartColors returns brand preset", () => {
@@ -13,5 +18,15 @@ describe("chartPalette", () => {
   it("maps legacy tech palette to clarity", () => {
     expect(resolvePaletteId("tech")).toBe("clarity");
     expect(resolveChartColors("tech")[0]).toBe("#0ba5ec");
+  });
+
+  it("withChartColorOpacity converts hex to rgba", () => {
+    expect(withChartColorOpacity("#465fff", 0.62)).toBe("rgba(70, 95, 255, 0.62)");
+  });
+
+  it("applyChartColorsOpacity skips full opacity", () => {
+    const colors = resolveChartColors("default");
+    expect(applyChartColorsOpacity(colors, 1)).toEqual(colors);
+    expect(applyChartColorsOpacity(colors, undefined)).toEqual(colors);
   });
 });

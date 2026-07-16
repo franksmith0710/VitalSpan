@@ -56,6 +56,11 @@ export function WidgetSurfaceAppearanceFields({
         unit="px"
         onChange={(backdropBlur) => onChange({ backdropBlur })}
       />
+      {(value.backdropBlur ?? 0) > 0 ? (
+        <p className="pb-1 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+          毛玻璃：模糊组件背后的画布内容，数值越大越模糊；可与不透明度叠加。
+        </p>
+      ) : null}
     </>
   );
 }

@@ -12,8 +12,10 @@ export {
   insertClonedPixelWidget,
   insertPixelPaletteWidget,
   insertPixelPaletteWidgetAt,
+  insertPaletteWidgetIntoTabHost,
   placeClonedPixelWidget,
 } from "./createPixelWidget";
+export { TAB_PALETTE_DROP_BUFFER_PX } from "./tabPaletteDrop";
 export {
   applyPixelInteraction,
   clientPointToCanvas,

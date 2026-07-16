@@ -189,7 +189,7 @@ describe("AdminLayout smoke", () => {
     expect(backdrop).not.toBeNull();
   });
 
-  it("toggles desktop sidebar margin between 290px and 90px (T-FE-21)", () => {
+  it("toggles desktop sidebar margin between 240px and 90px (T-FE-21)", () => {
     setDesktopViewport(1400);
     render(
       <MemoryRouter initialEntries={["/admin"]}>
@@ -203,13 +203,13 @@ describe("AdminLayout smoke", () => {
     const menuBtn = screen.getAllByRole("button", { name: "打开菜单" })[0];
     const main = screen.getAllByRole("main")[0];
     const contentWrapper = main.parentElement;
-    expect(contentWrapper?.className).toContain("xl:ml-[290px]");
+    expect(contentWrapper?.className).toContain("xl:ml-[240px]");
 
     fireEvent.click(menuBtn);
     expect(contentWrapper?.className).toContain("xl:ml-[90px]");
 
     fireEvent.click(menuBtn);
-    expect(contentWrapper?.className).toContain("xl:ml-[290px]");
+    expect(contentWrapper?.className).toContain("xl:ml-[240px]");
   });
 
   it("main and navigation token contract (T-FE-22)", () => {

@@ -16,7 +16,6 @@ import {
 } from "@/components/dashboard/dashboardFilterUtils";
 import {
   appendWidgetToTabPane,
-  insertPixelWidgetIntoTab,
   resolvePixelTabsHost,
   coerceLayoutWidgets,
   resizeWidget,
@@ -39,8 +38,10 @@ import {
   insertClonedPixelWidget,
   insertPixelPaletteWidget,
   insertPixelPaletteWidgetAt,
+  insertPaletteWidgetIntoTabHost,
   type PixelRect,
 } from "@/components/dashboard/pixelCanvas";
+import { TAB_PALETTE_DROP_BUFFER_PX } from "@/components/dashboard/pixelCanvas/tabPaletteDrop";
 import {
   hydrateDashboardStyle,
   persistDashboardFingerprint,
@@ -420,32 +421,41 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const commitPixelPaletteInsert = useCallback(
     (
       type: PaletteInsertType | PaletteDragPayload,
-      options?: { point?: { x: number; y: number }; tabsWidgetIdFromDom?: string | null },
+      options?: {
+        point?: { x: number; y: number };
+        tabsWidgetIdFromDom?: string | null;
+        tabsWidgetId?: string | null;
+      },
     ) => {
       if (missing || !canSave || layout.version !== 2) return;
       const insertType = type as PaletteInsertType;
-      if (insertType === "tabs") return;
-      let nextLayout = options?.point
-        ? insertPixelPaletteWidgetAt(insertType, layout, options.point)
-        : insertPixelPaletteWidget(insertType, layout, pixelViewportRef.current);
-      const draft = nextLayout.widgets.find(
-        (item) => !layout.widgets.some((widget) => widget.id === item.id),
-      );
-      if (!draft || draft.type === "tabs") return;
-      const tabsHost = resolvePixelTabsHost(
-        layout,
-        primarySelectedId,
-        options?.point,
-        options?.tabsWidgetIdFromDom,
-      );
+      const tabsHost =
+        insertType === "tabs"
+          ? undefined
+          : resolvePixelTabsHost(
+              layout,
+              primarySelectedId,
+              options?.point,
+              options?.tabsWidgetIdFromDom ?? options?.tabsWidgetId,
+              TAB_PALETTE_DROP_BUFFER_PX,
+            );
+      let nextLayout: DashboardLayoutV2;
       if (tabsHost?.tabsConfig) {
-        nextLayout = insertPixelWidgetIntoTab(
-          nextLayout,
-          draft,
+        nextLayout = insertPaletteWidgetIntoTabHost(
+          insertType,
+          layout,
           tabsHost,
           tabsHost.tabsConfig.activePaneId,
         );
+      } else {
+        nextLayout = options?.point
+          ? insertPixelPaletteWidgetAt(insertType, layout, options.point)
+          : insertPixelPaletteWidget(insertType, layout, pixelViewportRef.current);
       }
+      const draft = nextLayout.widgets.find(
+        (item) => !layout.widgets.some((widget) => widget.id === item.id),
+      );
+      if (!draft) return;
       setPixelLayout(nextLayout);
       handleSelect(draft.id, false);
       if (draft.type === "filter" && draft.filterConfig) {
@@ -468,7 +478,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const appendWidget = (type: PaletteInsertType, at?: GridInsertAt) => {
     if (missing || !canSave) return;
     if (layout.version === 2) {
-      commitPixelPaletteInsert(type);
+      const tabsWidgetId =
+        selectedWidget?.type === "tabs" && selectedWidget.tabsConfig && type !== "tabs"
+          ? selectedWidget.id
+          : undefined;
+      commitPixelPaletteInsert(type, tabsWidgetId ? { tabsWidgetId } : undefined);
       return;
     }
     const tabsHost =

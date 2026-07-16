@@ -121,6 +121,7 @@ export function defaultTabsConfig(tabsId: string): TabsWidgetConfig {
       { id: paneC, title: "页签 3", childWidgetIds: [] },
     ],
     activePaneId: paneA,
+    headStyle: { fontSize: 14 },
   };
 }
 
@@ -221,10 +222,27 @@ export function pointInPixelWidget(
   );
 }
 
+/** 落点落在组件外扩缓冲区内（对标碰撞轻触区，用于 Tab 投放命中） */
+export function pointInPixelWidgetWithBuffer(
+  point: { x: number; y: number },
+  widget: Pick<PixelLayoutWidget, "x" | "y" | "width" | "height">,
+  bufferPx: number,
+): boolean {
+  const buffer = Math.max(0, bufferPx);
+  if (buffer <= 0) return pointInPixelWidget(point, widget);
+  return (
+    point.x >= widget.x - buffer &&
+    point.x <= widget.x + widget.width + buffer &&
+    point.y >= widget.y - buffer &&
+    point.y <= widget.y + widget.height + buffer
+  );
+}
+
 /** 拖放落点处的 Tab 容器（多重重叠时取面积最小者，视为最上层） */
 export function findTabsHostAtPoint(
   widgets: PixelLayoutWidget[],
   point: { x: number; y: number },
+  dropBufferPx = 0,
 ): PixelLayoutWidget | undefined {
   const hosts = getTopLevelPixelWidgets(widgets).filter(
     (w) =>
@@ -232,7 +250,7 @@ export function findTabsHostAtPoint(
       w.tabsConfig &&
       w.width > 0 &&
       w.height > 0 &&
-      pointInPixelWidget(point, w),
+      pointInPixelWidgetWithBuffer(point, w, dropBufferPx),
   );
   if (hosts.length === 0) return undefined;
   return hosts.reduce((best, w) =>
@@ -240,22 +258,26 @@ export function findTabsHostAtPoint(
   );
 }
 
-/** 插入子组件时解析目标 Tab 宿主：已选中 Tab 优先，否则按落点命中 */
+/** 插入子组件时解析目标 Tab 宿主：DOM/落点（含缓冲）优先，否则已选中 Tab */
 export function resolvePixelTabsHost(
   layout: DashboardLayoutV2,
   selectedWidgetId: string | null | undefined,
   point?: { x: number; y: number },
   tabsWidgetIdFromDom?: string | null,
+  dropBufferPx = 0,
 ): PixelLayoutWidget | undefined {
   if (tabsWidgetIdFromDom) {
     const fromDom = layout.widgets.find((w) => w.id === tabsWidgetIdFromDom);
     if (fromDom?.type === "tabs" && fromDom.tabsConfig) return fromDom;
   }
+  if (point) {
+    const atPoint = findTabsHostAtPoint(layout.widgets, point, dropBufferPx);
+    if (atPoint) return atPoint;
+  }
   if (selectedWidgetId) {
     const selected = layout.widgets.find((w) => w.id === selectedWidgetId);
     if (selected?.type === "tabs" && selected.tabsConfig) return selected;
   }
-  if (point) return findTabsHostAtPoint(layout.widgets, point);
   return undefined;
 }
 

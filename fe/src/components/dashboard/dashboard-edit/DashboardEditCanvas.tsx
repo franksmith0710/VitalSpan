@@ -7,6 +7,10 @@ import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
 import { PixelCanvas, type PixelRect } from "../pixelCanvas";
 import type { PixelWidgetActions } from "../pixelCanvas/PixelShapeActionRail";
 import {
+  PaletteDragProvider,
+  usePaletteDocumentDrag,
+} from "../pixelCanvas/paletteDragContext";
+import {
   sortWidgets,
   type DashboardLayout,
   type DashboardLayoutV2,
@@ -91,6 +95,9 @@ export function DashboardEditCanvas({
     [widgetDashboardStyleFingerprint(effectiveStyle)],
   );
   const styleRevision = widgetDashboardStyleFingerprint(effectiveStyle);
+  const paletteDragActive = usePaletteDocumentDrag(
+    mode === "edit" && Boolean(onPaletteDrop || onTabPaletteDrop),
+  );
 
   const renderCanvasWidget = useCallback(
     (
@@ -174,6 +181,7 @@ export function DashboardEditCanvas({
 
   return (
     <DashboardWidgetsProvider widgets={widgets}>
+      <PaletteDragProvider active={paletteDragActive}>
       <DashboardStyleSurface
         styleConfig={effectiveStyle}
         componentGapPx={
@@ -193,6 +201,7 @@ export function DashboardEditCanvas({
             onLayoutChange={setPixelLayout}
             onViewportChange={onViewportChange}
             onPaletteDrop={onPaletteDrop}
+            onTabPaletteDrop={onTabPaletteDrop}
             widgetActions={widgetActions}
             renderWidget={renderPixelWidget}
             widgetContentRevision={widgetContentRevision}
@@ -219,6 +228,7 @@ export function DashboardEditCanvas({
           </div>
         )}
       </DashboardStyleSurface>
+      </PaletteDragProvider>
     </DashboardWidgetsProvider>
   );
 }

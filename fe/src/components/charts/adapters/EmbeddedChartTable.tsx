@@ -94,7 +94,8 @@ export function EmbeddedChartTable({
     : rows;
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const columnWidthMode = tableStyle.columnWidthMode ?? "auto";
-  const useFixedLayout = columnWidthMode === "fixed" || columnWidthMode === "custom";
+  /** DE：自适应=等分撑满容器；固定列宽=按内容定宽（可横向滚动） */
+  const useFixedLayout = columnWidthMode === "auto" || columnWidthMode === "custom";
   const equalPct = displayCols.length > 0 ? 100 / displayCols.length : 100;
 
   const resolveColWidth = (col: string): string | undefined => {
@@ -103,7 +104,7 @@ export function EmbeddedChartTable({
       if (custom != null && custom > 0) return `${custom}%`;
       return `${equalPct}%`;
     }
-    if (columnWidthMode === "fixed") return `${equalPct}%`;
+    if (columnWidthMode === "auto") return `${equalPct}%`;
     return undefined;
   };
   const cellClass = cn(
@@ -151,6 +152,7 @@ export function EmbeddedChartTable({
               : cn("table-auto", embedded ? "w-max min-w-full" : "w-full min-w-0"),
             panel && !useFixedLayout && "min-w-[320px]",
           )}
+          data-row-hover={rowHover ? "" : undefined}
         >
           {useFixedLayout ? (
             <colgroup>
@@ -177,10 +179,7 @@ export function EmbeddedChartTable({
             {pageRows.map((row, i) => (
               <tr
                 key={i}
-                className={cn(
-                  "border-t border-[var(--dashboard-table-border,#f2f4f7)]",
-                  rowHover && rowHoverClass,
-                )}
+                className="border-t border-[var(--dashboard-table-border,#f2f4f7)]"
               >
                 {displayCols.map((c) => {
                   const idx = columns.indexOf(c);

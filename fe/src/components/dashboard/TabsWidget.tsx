@@ -1,14 +1,19 @@
-import { useState, type DragEvent, type ReactNode } from "react";
+import { useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import { GripVertical, LayoutGrid, PanelsTopLeft, Plus, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { isPaletteDragEvent, readPaletteDragPayload, type PaletteDragPayload } from "@/lib/dashboardDnd";
+import { usePaletteDragActive } from "./pixelCanvas/paletteDragContext";
+import { useTabPaletteDropTarget } from "./pixelCanvas/tabPaletteDropTargetContext";
+import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
 import { getTabChildWidgets } from "./layoutUtils";
+import { shapeTitlePresentationStyle } from "./dashboardWidgetTypography";
 
 const MAX_PANES = 8;
+const DEFAULT_TAB_FONT_PX = 14;
 
 type TabsWidgetProps = {
   widget: LayoutWidget & { tabsConfig: TabsWidgetConfig };
@@ -24,7 +29,7 @@ type TabsWidgetProps = {
   renderChild: (child: LayoutWidget) => ReactNode;
 };
 
-function TabsPaneEmptyState({ mode }: { mode: "edit" | "view" }) {
+function TabsPaneEmptyState({ mode, dragHint }: { mode: "edit" | "view"; dragHint?: boolean }) {
   if (mode === "view") {
     return (
       <div className="flex flex-1 flex-col items-center justify-center py-8 text-center">
@@ -35,17 +40,63 @@ function TabsPaneEmptyState({ mode }: { mode: "edit" | "view" }) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-3">
-      <div className="flex w-full flex-col items-center gap-3 rounded-xl border border-dashed border-gray-200 bg-gray-50/60 px-3 py-5 dark:border-gray-700 dark:bg-white/[0.02]">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
-          <LayoutGrid className="size-5" aria-hidden />
+      <div
+        className={cn(
+          "flex w-full flex-col items-center gap-3 rounded-xl border border-dashed px-4 py-6",
+          dragHint
+            ? "border-brand-300 bg-brand-50/50 dark:border-brand-500/40 dark:bg-brand-500/5"
+            : "border-gray-200 bg-gray-50/60 dark:border-gray-700 dark:bg-white/[0.02]",
+        )}
+      >
+        <span className="tabs-widget-empty-icon flex items-center justify-center rounded-lg bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
+          <LayoutGrid className="tabs-widget-empty-icon-svg" aria-hidden />
         </span>
         <div className="space-y-1 text-center">
-          <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-200">拖入或插入组件</p>
-          <p className="text-[10px] leading-relaxed text-gray-400 dark:text-gray-500">
+          <p className="text-theme-sm font-medium text-gray-700 dark:text-gray-200">拖入或插入组件</p>
+          <p className="text-theme-xs leading-relaxed text-gray-400 dark:text-gray-500">
             先点选目标页签，再从左侧工具栏添加图表、筛选器等
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TabsPaletteDropOverlay({
+  activePaneTitle,
+  highlighted,
+  onDragEnter,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+}: {
+  activePaneTitle: string;
+  highlighted: boolean;
+  onDragEnter: (event: DragEvent) => void;
+  onDragOver: (event: DragEvent) => void;
+  onDragLeave: (event: DragEvent) => void;
+  onDrop: (event: DragEvent) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "tabs-widget-drop-layer absolute inset-0 z-[80] flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed transition-colors",
+        highlighted
+          ? "border-brand-500 bg-brand-50/85 dark:border-brand-400 dark:bg-brand-500/15"
+          : "border-brand-400/80 bg-brand-50/55 dark:border-brand-500/50 dark:bg-brand-500/8",
+      )}
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      <span className="tabs-widget-drop-icon flex items-center justify-center rounded-lg bg-brand-100 text-brand-500 dark:bg-brand-500/20 dark:text-brand-400">
+        <LayoutGrid className="tabs-widget-drop-icon-svg" aria-hidden />
+      </span>
+      <p className="text-theme-sm font-medium text-brand-600 dark:text-brand-400">
+        释放以加入「{activePaneTitle}」
+      </p>
+      <p className="text-theme-xs text-gray-500 dark:text-gray-400">可先切换页签再拖入</p>
     </div>
   );
 }
@@ -65,11 +116,18 @@ export function TabsWidget({
 }: TabsWidgetProps) {
   const cfg = widget.tabsConfig;
   const head = cfg.headStyle ?? {};
-  const tabFontSize = head.fontSize ?? 12;
+  const canvasScale = usePixelCanvasScale();
   const isShape = shell === "shape";
+  const paletteDragActive = usePaletteDragActive();
+  const tabDropTargetId = useTabPaletteDropTarget();
+  const isTabDropTarget = tabDropTargetId === widget.id;
   const [paletteOver, setPaletteOver] = useState(false);
   const activePane = cfg.panes.find((p) => p.id === cfg.activePaneId) ?? cfg.panes[0];
   const children = activePane ? getTabChildWidgets(allWidgets, widget.id, activePane.id) : [];
+
+  const tabLabelStyle: CSSProperties = isShape
+    ? shapeTitlePresentationStyle({ fontSize: head.fontSize ?? DEFAULT_TAB_FONT_PX }, canvasScale)
+    : { fontSize: head.fontSize ?? DEFAULT_TAB_FONT_PX };
 
   const setActivePane = (paneId: string) => {
     onTabsConfigChange?.({ ...cfg, activePaneId: paneId });
@@ -85,8 +143,10 @@ export function TabsWidget({
     });
   };
 
+  const canAcceptPalette = mode === "edit" && Boolean(onPaletteDrop);
+
   const handlePaletteDragOver = (event: DragEvent) => {
-    if (mode !== "edit" || !onPaletteDrop || !isPaletteDragEvent(event)) return;
+    if (!canAcceptPalette || !isPaletteDragEvent(event)) return;
     event.preventDefault();
     event.stopPropagation();
     event.dataTransfer.dropEffect = "copy";
@@ -99,27 +159,37 @@ export function TabsWidget({
   };
 
   const handlePaletteDrop = (event: DragEvent) => {
-    if (mode !== "edit" || !onPaletteDrop) return;
+    if (!canAcceptPalette) return;
     const payload = readPaletteDragPayload(event);
     if (!payload) return;
     event.preventDefault();
     event.stopPropagation();
     setPaletteOver(false);
-    onPaletteDrop(payload);
+    onPaletteDrop!(payload);
   };
+
+  const showPaletteDropLayer =
+    canAcceptPalette &&
+    paletteDragActive &&
+    (paletteOver || isTabDropTarget || children.length === 0);
 
   return (
     <div
       data-tabs-widget-id={widget.id}
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden",
+        "tabs-widget-root flex h-full min-h-0 flex-col overflow-hidden",
         !isShape &&
           "rounded-xl border bg-white shadow-theme-xs dark:bg-white/[0.03]",
         !isShape &&
           (selected
             ? "dashboard-widget-selected border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40"
             : "border-gray-200 dark:border-gray-800"),
+        canAcceptPalette && paletteDragActive && (paletteOver || isTabDropTarget) && "ring-2 ring-inset ring-brand-400/60 dark:ring-brand-500/50",
       )}
+      onDragEnter={canAcceptPalette ? handlePaletteDragOver : undefined}
+      onDragOver={canAcceptPalette ? handlePaletteDragOver : undefined}
+      onDragLeave={canAcceptPalette ? handlePaletteDragLeave : undefined}
+      onDrop={canAcceptPalette ? handlePaletteDrop : undefined}
     >
       {mode === "edit" && !isShape ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
@@ -128,10 +198,10 @@ export function TabsWidget({
             role="group"
             aria-label="拖动以移动组件"
           >
-            <GripVertical className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden />
+            <GripVertical className="size-4 shrink-0 text-gray-300 dark:text-gray-600" aria-hidden />
           </div>
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5">
-            <PanelsTopLeft className="size-3.5" aria-hidden />
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5">
+            <PanelsTopLeft className="size-4" aria-hidden />
           </span>
           <WidgetInlineTitle
             value={widget.title}
@@ -145,34 +215,26 @@ export function TabsWidget({
               type="button"
               variant="ghost"
               size="sm"
-              className="dashboard-no-drag size-7 shrink-0 text-gray-400 hover:text-error-600"
+              className="dashboard-no-drag size-8 shrink-0 text-gray-400 hover:text-error-600"
               aria-label="删除组件"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(widget.id);
               }}
             >
-              <Trash2 className="size-3.5" />
+              <Trash2 className="size-4" />
             </IconButton>
           ) : null}
         </div>
       ) : null}
 
       <div
-        className={cn(
-          "dashboard-no-drag relative flex min-h-0 flex-1 flex-col",
-          mode === "edit" && paletteOver && "ring-2 ring-inset ring-brand-400/50 dark:ring-brand-500/40",
-        )}
-        onClick={mode === "edit" ? () => onSelect?.() : undefined}
-        role={mode === "edit" ? "button" : undefined}
-        onDragEnter={handlePaletteDragOver}
-        onDragOver={handlePaletteDragOver}
-        onDragLeave={handlePaletteDragLeave}
-        onDrop={handlePaletteDrop}
+        className="dashboard-no-drag relative flex min-h-0 flex-1 flex-col"
+        onClick={mode === "edit" && !paletteDragActive ? () => onSelect?.() : undefined}
       >
         <div
           className={cn(
-            "relative flex shrink-0 items-start gap-1 border-b border-gray-100 px-2 dark:border-gray-800",
+            "tabs-widget-head relative flex shrink-0 items-start gap-1 border-b border-gray-100 px-2 dark:border-gray-800",
             isShape ? "pt-1.5" : "pt-2",
           )}
           style={head.barBackground ? { backgroundColor: head.barBackground } : undefined}
@@ -188,14 +250,14 @@ export function TabsWidget({
                   role="tab"
                   aria-selected={active}
                   className={cn(
-                    "relative max-w-[7.5rem] shrink-0 truncate rounded-t-lg px-2.5 py-1.5 font-medium transition-colors",
+                    "tabs-widget-tab relative max-w-[9rem] shrink-0 truncate rounded-t-lg px-3 py-2 font-medium transition-colors",
                     "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
                     active
                       ? "bg-brand-50 text-brand-600 after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-brand-500 dark:bg-brand-500/15 dark:text-brand-400 dark:after:bg-brand-400"
                       : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-200",
                   )}
                   style={{
-                    fontSize: tabFontSize,
+                    ...tabLabelStyle,
                     ...(active && head.activeColor
                       ? { color: head.activeColor }
                       : !active && head.inactiveColor
@@ -209,7 +271,7 @@ export function TabsWidget({
                 >
                   <span className="truncate">{pane.title}</span>
                   {childCount > 0 ? (
-                    <span className="ml-1 tabular-nums text-[10px] opacity-70">({childCount})</span>
+                    <span className="tabs-widget-tab-count ml-1 tabular-nums opacity-70">({childCount})</span>
                   ) : null}
                 </button>
               );
@@ -218,34 +280,51 @@ export function TabsWidget({
           {mode === "edit" && cfg.panes.length < MAX_PANES ? (
             <button
               type="button"
-              className="mb-0.5 ml-auto inline-flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-brand-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:hover:bg-white/5 dark:hover:text-brand-400"
+              className="tabs-widget-add-btn mb-0.5 ml-auto inline-flex shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-brand-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:hover:bg-white/5 dark:hover:text-brand-400"
               aria-label="添加页签"
               onClick={(e) => {
                 e.stopPropagation();
                 addPane();
               }}
             >
-              <Plus className="size-3.5" aria-hidden />
+              <Plus className="tabs-widget-add-icon" aria-hidden />
             </button>
           ) : null}
         </div>
 
         <div
-          className="dashboard-scroll pointer-events-auto min-h-0 flex-1 overflow-auto p-2"
+          className="dashboard-scroll relative min-h-0 flex-1 overflow-auto p-2"
           role="tabpanel"
           aria-label={activePane?.title ?? "页签内容"}
         >
-          {children.length === 0 ? (
-            <TabsPaneEmptyState mode={mode} />
-          ) : (
-            <div className="flex min-h-0 flex-col gap-2">
-              {children.map((child) => (
-                <div key={child.id} className="min-h-[72px] shrink-0">
-                  {renderChild(child)}
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            className={cn(
+              "relative min-h-[4rem]",
+              paletteDragActive && children.length > 0 && "pointer-events-none select-none opacity-50",
+            )}
+          >
+            {children.length === 0 ? (
+              <TabsPaneEmptyState mode={mode} dragHint={paletteDragActive} />
+            ) : (
+              <div className="flex min-h-0 flex-col gap-2">
+                {children.map((child) => (
+                  <div key={child.id} className="min-h-[72px] shrink-0">
+                    {renderChild(child)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {showPaletteDropLayer ? (
+            <TabsPaletteDropOverlay
+              activePaneTitle={activePane?.title ?? "当前页签"}
+              highlighted={paletteOver || isTabDropTarget}
+              onDragEnter={handlePaletteDragOver}
+              onDragOver={handlePaletteDragOver}
+              onDragLeave={handlePaletteDragLeave}
+              onDrop={handlePaletteDrop}
+            />
+          ) : null}
         </div>
       </div>
     </div>

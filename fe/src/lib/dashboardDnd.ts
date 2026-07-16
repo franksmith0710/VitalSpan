@@ -60,3 +60,10 @@ export function isPaletteDragEvent(event: React.DragEvent): boolean {
   const types = event.dataTransfer.types;
   return types.includes(DASHBOARD_CHART_DND_TYPE) || types.includes(DASHBOARD_FILTER_DND_TYPE);
 }
+
+export function isNativePaletteDragEvent(event: DragEvent): boolean {
+  const types = event.dataTransfer?.types;
+  if (!types) return false;
+  const list = Array.from(types);
+  return list.includes(DASHBOARD_CHART_DND_TYPE) || list.includes(DASHBOARD_FILTER_DND_TYPE);
+}

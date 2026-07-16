@@ -5,7 +5,7 @@ import { dispatchPixelShapeLiveResize } from "@/components/dashboard/pixelCanvas
 import { EmbeddedChartTable } from "./EmbeddedChartTable";
 
 describe("EmbeddedChartTable", () => {
-  it("uses table-auto in standalone mode by default", () => {
+  it("uses table-fixed equal columns in standalone mode by default", () => {
     const { container } = render(
       <EmbeddedChartTable
         columns={["id", "name"]}
@@ -16,12 +16,12 @@ describe("EmbeddedChartTable", () => {
       />,
     );
     const table = container.querySelector("table");
-    expect(table).toHaveClass("table-auto");
-    expect(table).toHaveClass("min-w-0");
-    expect(table).not.toHaveClass("min-w-[320px]");
+    expect(table).toHaveClass("table-fixed");
+    expect(table).toHaveClass("min-w-full");
+    expect(container.querySelectorAll("col")).toHaveLength(2);
   });
 
-  it("embedded auto column mode sizes by content with horizontal scroll", () => {
+  it("embedded auto column mode fills container with equal columns", () => {
     const { container } = render(
       <div style={{ position: "relative", width: 320, height: 200 }}>
         <EmbeddedChartTable
@@ -38,12 +38,13 @@ describe("EmbeddedChartTable", () => {
     const host = container.querySelector(".embedded-chart-table-host");
     expect(host).toHaveClass("absolute", "inset-0");
     const table = container.querySelector("table");
-    expect(table).toHaveClass("table-auto");
-    expect(table).toHaveClass("w-max");
-    expect(container.querySelector("colgroup")).toBeNull();
+    expect(table).toHaveClass("table-fixed");
+    const cols = container.querySelectorAll("col");
+    expect(cols).toHaveLength(3);
+    expect(cols[0]).toHaveStyle({ width: "33.333333333333336%" });
   });
 
-  it("embedded fixed column mode fills container with equal columns", () => {
+  it("embedded fixed column mode sizes by content with horizontal scroll", () => {
     const { container } = render(
       <div style={{ position: "relative", width: 320, height: 200 }}>
         <EmbeddedChartTable
@@ -58,10 +59,9 @@ describe("EmbeddedChartTable", () => {
       </div>,
     );
     const table = container.querySelector("table");
-    expect(table).toHaveClass("table-fixed");
-    const cols = container.querySelectorAll("col");
-    expect(cols).toHaveLength(3);
-    expect(cols[0]).toHaveStyle({ width: "33.333333333333336%" });
+    expect(table).toHaveClass("table-auto");
+    expect(table).toHaveClass("w-max");
+    expect(container.querySelector("colgroup")).toBeNull();
   });
 
   it("truncates cell text with title tooltip", () => {
@@ -151,7 +151,7 @@ describe("EmbeddedChartTable", () => {
     expect(screen.getByText("1/2 · 2条/页")).toBeInTheDocument();
   });
 
-  it("auto column mode uses table-auto without colgroup", () => {
+  it("auto column mode uses equal col widths in container", () => {
     const { container } = render(
       <EmbeddedChartTable
         columns={["a", "b"]}
@@ -163,11 +163,13 @@ describe("EmbeddedChartTable", () => {
       />,
     );
     const table = container.querySelector("table");
-    expect(table).toHaveClass("table-auto");
-    expect(container.querySelector("colgroup")).toBeNull();
+    expect(table).toHaveClass("table-fixed");
+    const cols = container.querySelectorAll("col");
+    expect(cols).toHaveLength(2);
+    expect(cols[0]).toHaveStyle({ width: "50%" });
   });
 
-  it("fixed column mode uses equal col widths", () => {
+  it("fixed column mode uses table-auto without colgroup", () => {
     const { container } = render(
       <EmbeddedChartTable
         columns={["a", "b"]}
@@ -178,9 +180,9 @@ describe("EmbeddedChartTable", () => {
         tableStyle={{ columnWidthMode: "fixed" }}
       />,
     );
-    const cols = container.querySelectorAll("col");
-    expect(cols).toHaveLength(2);
-    expect(cols[0]).toHaveStyle({ width: "50%" });
+    const table = container.querySelector("table");
+    expect(table).toHaveClass("table-auto");
+    expect(container.querySelector("colgroup")).toBeNull();
   });
 
   it("custom column mode applies configured widths", () => {
@@ -213,7 +215,20 @@ describe("EmbeddedChartTable", () => {
         tableStyle={{ rowHover: false }}
       />,
     );
-    expect(container.querySelector("tbody tr")).not.toHaveClass("hover:bg-black/[0.03]");
+    expect(container.querySelector("table")).not.toHaveAttribute("data-row-hover");
+  });
+
+  it("enables row hover marker on table by default", () => {
+    const { container } = render(
+      <EmbeddedChartTable
+        columns={["a"]}
+        displayCols={["a"]}
+        rows={[[1]]}
+        page={1}
+        onPageChange={() => {}}
+      />,
+    );
+    expect(container.querySelector("table")).toHaveAttribute("data-row-hover");
   });
 
   it("T-TABLE-UI-03: wordWrap uses break-words", () => {

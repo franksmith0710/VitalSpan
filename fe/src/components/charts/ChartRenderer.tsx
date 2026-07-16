@@ -8,7 +8,7 @@ import {
   isKpiType,
   type ChartViewConfig,
 } from "@/lib/chartViewConfig";
-import { resolveChartColors } from "@/lib/chartPalette";
+import { resolveChartColors, applyChartColorsOpacity } from "@/lib/chartPalette";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartLegendPosition, readChartShowLabel, readChartDataZoom } from "@/lib/chartDeStyle";
 import { resolveChartValueFormat } from "@/lib/chartValueFormat";
@@ -204,13 +204,12 @@ export const ChartRenderer = memo(function ChartRenderer({
     [chartRenderSpecKey(specConfig), displayField, drillInteraction, drill.stack.length],
   );
   const deStyle = useMemo(() => readChartDeStyle(localConfig), [localConfig]);
-  const chartColors = useMemo(
-    () =>
-      deStyle.paletteId
-        ? resolveChartColors(deStyle.paletteId)
-        : resolveChartColors(paletteId, paletteColors),
-    [deStyle.paletteId, paletteId, paletteColors],
-  );
+  const chartColors = useMemo(() => {
+    const base = deStyle.paletteId
+      ? resolveChartColors(deStyle.paletteId)
+      : resolveChartColors(paletteId, paletteColors);
+    return applyChartColorsOpacity(base, deStyle.paletteOpacity);
+  }, [deStyle.paletteId, deStyle.paletteOpacity, paletteId, paletteColors]);
   const showDataLabels = readChartShowLabel(localConfig);
   const dataZoomEnabled = readChartDataZoom(localConfig);
   const valueFormat = useMemo(

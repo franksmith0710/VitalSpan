@@ -8,6 +8,8 @@ type ChartPaletteConfigFieldsProps = {
   paletteOpacity?: number;
   onPaletteChange: (paletteId: string | undefined, colors: readonly string[]) => void;
   onOpacityChange?: (opacity: number) => void;
+  /** 拖拽滑块时实时预览（对标 DE 配色不透明度即时反馈） */
+  onOpacityPreview?: (opacity: number) => void;
   /** 组件级：可选跟随看板 */
   showInherit?: boolean;
   /** 216px 图表栏等窄容器 */
@@ -21,6 +23,7 @@ export function ChartPaletteConfigFields({
   paletteOpacity,
   onPaletteChange,
   onOpacityChange,
+  onOpacityPreview,
   showInherit = false,
   dense = false,
   className,
@@ -52,6 +55,13 @@ export function ChartPaletteConfigFields({
             unit="%"
             ariaLabel="配色不透明度"
             onChange={onOpacityChange}
+            onPreviewChange={
+              onOpacityPreview
+                ? (value) => {
+                    if (value != null) onOpacityPreview(value);
+                  }
+                : undefined
+            }
           />
           {inheritActive ? (
             <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">

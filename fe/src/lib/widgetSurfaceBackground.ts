@@ -35,10 +35,14 @@ export function withBackgroundAlpha(color: string, alpha: number): string {
   return `color-mix(in srgb, ${trimmed} ${pct}%, transparent)`;
 }
 
+/** 仅 backdrop-filter、未调不透明度时：底色需半透明才能看见毛玻璃 */
+const FROSTED_GLASS_BG_ALPHA = 0.82;
+
 export function needsWidgetBackgroundLayer(style: CSSProperties): boolean {
+  if (style.backdropFilter) return true;
   const opacity = readOpacity(style.opacity);
   if (opacity == null || opacity >= 1) return false;
-  return Boolean(style.backgroundImage || style.backdropFilter);
+  return Boolean(style.backgroundImage);
 }
 
 export type WidgetBackgroundPresentation = {
@@ -59,10 +63,6 @@ export function applyBackgroundOpacityOnly(
   const surface = { ...style };
   delete surface.opacity;
 
-  if (opacity == null || opacity >= 1) {
-    return { surface, backgroundLayer: null, frameLayer: null };
-  }
-
   if (needsWidgetBackgroundLayer(style)) {
     delete surface.background;
     delete surface.backgroundColor;
@@ -70,30 +70,43 @@ export function applyBackgroundOpacityOnly(
     delete surface.backgroundSize;
     delete surface.backgroundPosition;
     delete surface.backdropFilter;
-    return {
-      surface,
-      backgroundLayer: {
-        opacity,
-        background: style.background,
-        backgroundColor: style.backgroundColor,
-        backgroundImage: style.backgroundImage,
-        backgroundSize: style.backgroundSize,
-        backgroundPosition: style.backgroundPosition,
-        backdropFilter: style.backdropFilter,
-        borderRadius: style.borderRadius,
-      },
-      frameLayer: null,
+
+    const backgroundLayer: CSSProperties = {
+      backgroundImage: style.backgroundImage,
+      backgroundSize: style.backgroundSize,
+      backgroundPosition: style.backgroundPosition,
+      backdropFilter: style.backdropFilter,
+      borderRadius: style.borderRadius,
     };
+
+    if (opacity != null && opacity < 1) {
+      backgroundLayer.opacity = opacity;
+      backgroundLayer.background = style.background;
+      backgroundLayer.backgroundColor = style.backgroundColor;
+    } else if (style.backdropFilter && !style.backgroundImage) {
+      const base =
+        (typeof style.background === "string" && style.background) ||
+        (typeof style.backgroundColor === "string" && style.backgroundColor) ||
+        fallbackBg;
+      backgroundLayer.backgroundColor = withBackgroundAlpha(base, FROSTED_GLASS_BG_ALPHA);
+    } else {
+      backgroundLayer.background = style.background;
+      backgroundLayer.backgroundColor = style.backgroundColor;
+    }
+
+    return { surface, backgroundLayer, frameLayer: null };
   }
 
-  const base =
-    (typeof style.background === "string" && style.background) ||
-    (typeof style.backgroundColor === "string" && style.backgroundColor) ||
-    fallbackBg;
+  if (opacity != null && opacity < 1) {
+    const base =
+      (typeof style.background === "string" && style.background) ||
+      (typeof style.backgroundColor === "string" && style.backgroundColor) ||
+      fallbackBg;
 
-  delete surface.background;
-  delete surface.backgroundColor;
-  surface.backgroundColor = withBackgroundAlpha(base, opacity);
+    delete surface.background;
+    delete surface.backgroundColor;
+    surface.backgroundColor = withBackgroundAlpha(base, opacity);
+  }
 
   return { surface, backgroundLayer: null, frameLayer: null };
 }

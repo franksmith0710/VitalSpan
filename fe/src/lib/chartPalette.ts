@@ -190,4 +190,48 @@ export function resolveChartColors(paletteId?: string, custom?: string[]): strin
   return [...chartColors];
 }
 
+function expandHex(hex: string): string {
+  if (hex.length === 3) {
+    return hex
+      .split("")
+      .map((ch) => ch + ch)
+      .join("");
+  }
+  return hex;
+}
+
+/** 将调色板色值转为带 alpha 的 CSS 颜色（对标 DataEase 配色不透明度） */
+export function withChartColorOpacity(color: string, opacity: number): string {
+  const alpha = Math.min(1, Math.max(0, opacity));
+  if (alpha >= 1) return color;
+  const trimmed = color.trim();
+  if (trimmed.startsWith("rgba(")) {
+    return trimmed.replace(
+      /rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*[\d.]+\s*\)/,
+      `rgba($1, $2, $3, ${alpha})`,
+    );
+  }
+  if (trimmed.startsWith("rgb(")) {
+    return trimmed.replace(
+      /rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/,
+      `rgba($1, $2, $3, ${alpha})`,
+    );
+  }
+  if (trimmed.startsWith("#")) {
+    const hex = expandHex(trimmed.slice(1));
+    if (hex.length !== 6) return color;
+    const r = Number.parseInt(hex.slice(0, 2), 16);
+    const g = Number.parseInt(hex.slice(2, 4), 16);
+    const b = Number.parseInt(hex.slice(4, 6), 16);
+    if ([r, g, b].some((v) => Number.isNaN(v))) return color;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return color;
+}
+
+export function applyChartColorsOpacity(colors: string[], opacity?: number): string[] {
+  if (opacity == null || opacity >= 1) return colors;
+  return colors.map((color) => withChartColorOpacity(color, opacity));
+}
+
 export const chartFontFamily = "Outfit, sans-serif";

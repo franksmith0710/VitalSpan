@@ -46,6 +46,7 @@ import {
 import { dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
 import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
+import { usePaletteDragActive } from "./paletteDragContext";
 
 type ActiveInteraction = {
   pointerId: number;
@@ -303,6 +304,7 @@ export function PixelShape({
   onDragAutoScroll,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
+  const paletteDragActive = usePaletteDragActive();
   const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig, mode);
   const onTitleChange = widgetActions?.onTitleChange;
   const chrome = resolveDashboardChrome(styleConfig);
@@ -489,7 +491,7 @@ export function PixelShape({
     event: PointerEvent<HTMLElement>,
     kind: PixelInteractionKind,
   ) => {
-    if (mode !== "edit" || event.button > 0) return;
+    if (mode !== "edit" || event.button > 0 || paletteDragActive) return;
     event.preventDefault();
     event.stopPropagation();
     onSelect?.(widget.id, event.shiftKey);
@@ -536,9 +538,10 @@ export function PixelShape({
       data-testid={`pixel-shape-${widget.id}`}
       data-component-id={widget.id}
       data-pixel-is-player={isPlayer ? "" : undefined}
-      className={cn(
+        className={cn(
         "shape pixel-shape-outer dashboard-shape-gap-shell absolute flex touch-none select-none flex-col border-0 bg-transparent",
         selectedInEdit && "z-[1] pixel-shape-edit",
+        paletteDragActive && "pointer-events-none",
       )}
       style={{
         left: liveRect.x,
@@ -557,7 +560,7 @@ export function PixelShape({
           {hint}
         </p>
       ) : null}
-      {selectedInEdit ? (
+      {selectedInEdit && !paletteDragActive ? (
         <PixelShapeDragEdges
           widgetId={widget.id}
           scale={scale}
@@ -590,7 +593,9 @@ export function PixelShape({
                 style={innerShell.style}
                 data-pixel-no-drag
                 onPointerDown={(event) => {
-                  if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
+                  if (mode === "edit" && !paletteDragActive) {
+                    onSelect?.(widget.id, event.shiftKey);
+                  }
                 }}
               >
                 <PixelShapeInnerChrome

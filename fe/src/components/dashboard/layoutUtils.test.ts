@@ -216,6 +216,31 @@ describe("layoutUtils tabs", () => {
     expect(tabs?.tabsConfig?.panes[0]?.childWidgetIds).toContain("chart-1");
   });
 
+  it("findTabsHostAtPoint matches collision buffer ring outside strict bounds", () => {
+    const host: PixelLayoutWidget = {
+      id: "tabs",
+      type: "tabs",
+      title: "页签",
+      order: 0,
+      x: 100,
+      y: 100,
+      width: 400,
+      height: 240,
+      tabsConfig: defaultTabsConfig("tabs"),
+    };
+    const layout = {
+      version: 2 as const,
+      canvas: { width: 1440, height: 900 },
+      widgets: [host],
+      globalFilters: [],
+    };
+    expect(findTabsHostAtPoint(layout.widgets, { x: 95, y: 150 }, 0)?.id).toBeUndefined();
+    expect(findTabsHostAtPoint(layout.widgets, { x: 95, y: 150 }, 40)?.id).toBe("tabs");
+    expect(
+      resolvePixelTabsHost(layout, "other-chart", { x: 95, y: 150 }, null, 120)?.id,
+    ).toBe("tabs");
+  });
+
   it("resolvePixelTabsHost prefers selected tab over point miss", () => {
     const host: PixelLayoutWidget = {
       id: "tabs",

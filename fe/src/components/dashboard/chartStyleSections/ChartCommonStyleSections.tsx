@@ -34,6 +34,9 @@ export function ChartPaletteStyleSection() {
   const { cfg, onChange } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
 
+  const patchPaletteOpacity = (opacityPercent: number) =>
+    onChange(patchChartDeStyle(cfg, { paletteOpacity: opacityPercent / 100 }));
+
   return (
     <ChartInspectorSection title="图表配色" defaultOpen>
       <ChartPaletteConfigFields
@@ -50,9 +53,8 @@ export function ChartPaletteStyleSection() {
             }),
           )
         }
-        onOpacityChange={(opacity) =>
-          onChange(patchChartDeStyle(cfg, { paletteOpacity: opacity / 100 }))
-        }
+        onOpacityChange={patchPaletteOpacity}
+        onOpacityPreview={patchPaletteOpacity}
       />
     </ChartInspectorSection>
   );
