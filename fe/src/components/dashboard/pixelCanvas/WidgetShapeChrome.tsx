@@ -1,3 +1,4 @@
+import { GripVertical } from "lucide-react";
 import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import { cn } from "@/lib/utils";
 import { dwShapeTitle } from "../dashboardWidgetTypography";
@@ -11,6 +12,8 @@ export type WidgetShapeChromeProps = {
   mode: "edit" | "view";
   selected: boolean;
   widgetId: string;
+  /** 画布缩放，用于标题区抓手图标尺寸 */
+  canvasScale?: number;
   onTitleChange?: (widgetId: string, title: string) => void;
   onSelectPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
   onDragPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
@@ -28,6 +31,7 @@ export function WidgetShapeChrome({
   mode,
   selected,
   widgetId,
+  canvasScale = 1,
   onTitleChange,
   onSelectPointerDown,
   onDragPointerDown,
@@ -45,6 +49,7 @@ export function WidgetShapeChrome({
   const canDrag = isEdit && selected && Boolean(onDragPointerDown);
   const canEditTitle = isEdit && selected && Boolean(onTitleChange);
   const showRemark = Boolean(remark?.show && remark.text);
+  const gripPx = 16 / (canvasScale > 0 ? canvasScale : 1);
 
   const handleChromePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (canDrag) {
@@ -63,13 +68,21 @@ export function WidgetShapeChrome({
         className={cn(
           "shape-title shrink-0",
           canDrag && "cursor-grab active:cursor-grabbing",
+          canDrag && "pixel-shape-title-drag",
         )}
         onPointerDown={isEdit ? handleChromePointerDown : undefined}
         onKeyDown={canDrag ? onDragKeyDown : undefined}
         role={canDrag ? "group" : undefined}
-        aria-label={canDrag ? "拖动组件" : undefined}
+        aria-label={canDrag ? "拖动组件标题区" : undefined}
         tabIndex={canDrag ? 0 : undefined}
       >
+        {canDrag ? (
+          <GripVertical
+            aria-hidden
+            className="shrink-0 text-[var(--dashboard-text-muted,#98a2b3)]"
+            style={{ width: gripPx, height: gripPx }}
+          />
+        ) : null}
         <WidgetInlineTitle
           value={title}
           editable={canEditTitle}

@@ -44,9 +44,11 @@ import {
   hydrateDashboardStyle,
   persistDashboardFingerprint,
   persistDashboardLayout,
+  preparePixelLayoutForDisplay,
   syncPixelLayoutChartStyles,
 } from "@/components/dashboard/stylePipeline";
 import { resolvePixelGutter } from "@/components/dashboard/dashboardStyleConfig";
+import { resolveDashboardChrome } from "@/components/dashboard/dashboardChromeConfig";
 import {
   compactPixelLayoutForGapChange,
   compactPixelLayoutOuterRects,
@@ -276,6 +278,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           layoutForEditor,
           hydratedStyle.colorScheme ?? "light",
         );
+        layoutForEditor = preparePixelLayoutForDisplay(layoutForEditor, hydratedStyle);
       }
       resetLayout(layoutForEditor);
       setStyleConfig(hydratedStyle);
@@ -865,6 +868,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
       {mode === "edit" && canSave ? (
         <>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <DashboardEditWorkspace
           widgetCount={widgets.length}
           multiSelectCount={multiSelectCount}
@@ -918,6 +922,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           onOpenReuse={() => setReuseOpen(true)}
           onOpenDashboardStyle={openDashboardContext}
           onActivateDashboardContext={openDashboardContext}
+          showAuxiliaryGrid={resolveDashboardChrome(styleConfig).showAuxiliaryGrid}
+          onAuxiliaryGridChange={(showAuxiliaryGrid) =>
+            applyStyleConfig((prev) => ({
+              ...prev,
+              chrome: { ...prev.chrome, showAuxiliaryGrid },
+            }))
+          }
           canvas={
             <DashboardEditCanvas
               mode="edit"
@@ -1054,6 +1065,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             ) : null
           }
         />
+        </div>
         <ReuseWidgetDialog
           open={reuseOpen}
           onOpenChange={setReuseOpen}

@@ -64,37 +64,35 @@ describe("pixelMarkLine", () => {
     expect(result.guides).toEqual([{ id: "xt", position: 100 }]);
   });
 
-  it("snaps with gap adjacency on outer junction and shows gap midline", () => {
+  it("snaps outer right edge flush to neighbor left within threshold", () => {
     const active: PixelRect = { x: 303, y: 50, width: 200, height: 120 };
     const other: PixelRect = { x: 0, y: 80, width: 300, height: 120 };
 
     const result = computeMarkLineSnap(active, [other], {
       threshold: 3,
       dragDir: dragRightDown,
-      gap: 5,
     });
 
     expect(result.rect.x).toBe(300);
-    expect(result.guides).toContainEqual({ id: "yl", position: 300 });
+    expect(result.guides).toContainEqual({ id: "yr", position: 300 });
   });
 
-  it("snaps adjacent visuals flush when gap is zero with chrome inset", () => {
-    const active: PixelRect = { x: 292, y: 50, width: 200, height: 120 };
+  it("snaps outer rects flush without gap midline or chrome inset", () => {
+    const active: PixelRect = { x: 298, y: 50, width: 200, height: 120 };
     const other: PixelRect = { x: 0, y: 80, width: 300, height: 120 };
-    const inset = { top: 0, right: 0, bottom: 0, left: 8 };
 
     const result = computeMarkLineSnap(active, [other], {
       threshold: 3,
       dragDir: dragRightDown,
-      gap: 0,
-      chromeInset: inset,
+      gap: 5,
+      chromeInset: { top: 0, right: 0, bottom: 0, left: 8 },
     });
 
-    expect(result.rect.x).toBe(292);
+    expect(result.rect.x).toBe(300);
     expect(result.guides).toContainEqual({ id: "yr", position: 300 });
   });
 
-  it("aligns visual edges and draws guide on inset line when gap > 0", () => {
+  it("aligns outer top edges and draws guide on the neighbor edge", () => {
     const active: PixelRect = { x: 100, y: 102, width: 200, height: 120 };
     const other: PixelRect = { x: 400, y: 100, width: 200, height: 80 };
 
@@ -105,7 +103,7 @@ describe("pixelMarkLine", () => {
     });
 
     expect(result.rect.y).toBe(100);
-    expect(result.guides).toEqual([{ id: "xt", position: 108 }]);
+    expect(result.guides).toEqual([{ id: "xt", position: 100 }]);
   });
 
   it("prefers one horizontal and one vertical guide by drag direction", () => {
@@ -142,7 +140,7 @@ describe("pixelMarkLine", () => {
     ]);
   });
 
-  it("snaps to canvas right edge when canvas bounds provided", () => {
+  it("does not snap to canvas edges", () => {
     const active: PixelRect = { x: 1242, y: 100, width: 200, height: 120 };
 
     const result = computeMarkLineSnap(active, [], {
@@ -151,8 +149,14 @@ describe("pixelMarkLine", () => {
       canvas: { width: 1440, height: 900 },
     });
 
-    expect(result.rect.x).toBe(1240);
-    expect(result.guides).toEqual([{ id: "yr", position: 1440 }]);
+    expect(result.rect).toEqual(active);
+    expect(result.guides).toEqual([]);
+  });
+
+  it("uses fixed DE 3px canvas threshold regardless of scale", () => {
+    expect(markLineThreshold(1)).toBe(3);
+    expect(markLineThreshold(0.5)).toBe(3);
+    expect(markLineThreshold(4)).toBe(3);
   });
 
   it("snaps bottom edge while resizing south", () => {
@@ -198,11 +202,5 @@ describe("pixelMarkLine", () => {
 
     expect(result.rect.x).toBe(98);
     expect(result.guides).toEqual([]);
-  });
-
-  it("uses DE canvas threshold with screen floor at small scale", () => {
-    expect(markLineThreshold(1)).toBe(8);
-    expect(markLineThreshold(0.5)).toBe(16);
-    expect(markLineThreshold(4)).toBe(3);
   });
 });

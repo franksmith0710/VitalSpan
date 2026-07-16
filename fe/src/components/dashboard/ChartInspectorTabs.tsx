@@ -9,7 +9,12 @@ type ChartInspectorTabsProps = {
   dataFooter?: ReactNode;
   defaultTab?: "data" | "style" | "advanced";
   className?: string;
+  /** 由 {@link DASHBOARD_EDIT_RAIL_SCROLL_CLASS} 承担纵向滚动时，禁用 Tab 内层 overflow */
+  scrollMode?: "panel" | "parent";
 };
+
+const tabPanelScrollClass = (scrollMode: "panel" | "parent") =>
+  scrollMode === "panel" ? "min-h-0 flex-1 overflow-y-auto" : "min-h-0 flex-1";
 
 export function ChartInspectorTabs({
   data,
@@ -18,6 +23,7 @@ export function ChartInspectorTabs({
   dataFooter,
   defaultTab = "data",
   className,
+  scrollMode = "panel",
 }: ChartInspectorTabsProps) {
   return (
     <Tabs defaultValue={defaultTab} className={cn("flex min-h-0 flex-col", className)}>
@@ -40,18 +46,24 @@ export function ChartInspectorTabs({
         value="data"
         className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
       >
-        <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-2">{data}</div>
+        <div className={cn(tabPanelScrollClass(scrollMode), "px-2 py-1.5")}>{data}</div>
         {dataFooter}
       </TabsContent>
       <TabsContent
         value="style"
-        className="mt-0 min-h-0 flex-1 overflow-y-auto px-2 py-2 data-[state=inactive]:hidden"
+        className={cn(
+          "mt-0 min-h-0 flex-1 px-2 py-1.5 data-[state=inactive]:hidden",
+          scrollMode === "panel" && "overflow-y-auto",
+        )}
       >
         {style}
       </TabsContent>
       <TabsContent
         value="advanced"
-        className="mt-0 min-h-0 flex-1 overflow-y-auto px-2 py-2 data-[state=inactive]:hidden"
+        className={cn(
+          "mt-0 min-h-0 flex-1 px-2 py-1.5 data-[state=inactive]:hidden",
+          scrollMode === "panel" && "overflow-y-auto",
+        )}
       >
         {advanced}
       </TabsContent>

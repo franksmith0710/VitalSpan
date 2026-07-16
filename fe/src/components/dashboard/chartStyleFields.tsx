@@ -1,26 +1,24 @@
 import { Switch } from "@/components/ui/switch";
 import { ColorField } from "@/components/ui/color-field";
 import { ImageSourceField } from "./imageSourceField";
-import type { SpacingMode, WidgetStyleConfig } from "./dashboardStyleConfig";
+import type { WidgetStyleConfig } from "./dashboardStyleConfig";
 import { SURFACE_COLOR_RECOMMENDED, WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import {
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
-  INSPECTOR_SELECT,
   InspectorFieldRow,
+  InspectorSwitchRow,
 } from "./inspectorCompact";
 import { InspectorSliderField } from "./deAttrSlider";
-import { DeAttrSubField, DeSegmentGroup } from "./dashboardInspectorUi";
+import { DeSegmentGroup } from "./dashboardInspectorUi";
 import { ChartDeSegmentField } from "./chartInspectorDeFields";
 import { ChartFramePresetPicker } from "./ChartFramePresetPicker";
 import type { ChartBorderStyle } from "@/lib/chartDeStyle";
+import { InspectorNestedSection } from "./inspectorNestedSection";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  WidgetSurfaceAppearanceFields,
+  WidgetSurfaceSpacingFields,
+} from "./widgetSurfaceStyleFields";
 
 const LINE_BORDER_STYLES = [
   { value: "solid", label: "实线" },
@@ -48,22 +46,44 @@ type ChartBackgroundDeModeFieldsProps = {
   borderTab?: "decorative" | "line";
 };
 
+function DeAttrToggleRowCompact({
+  label,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <InspectorSwitchRow
+      label={label}
+      checked={checked}
+      onCheckedChange={onCheckedChange}
+    />
+  );
+}
+
 function WidgetStyleLineBorderControls({
   value,
   onChange,
+  showToggle = true,
 }: {
   value: WidgetStyleConfig;
   onChange: (patch: BackgroundPatch) => void;
+  showToggle?: boolean;
 }) {
   const lineOn = value.borderEnabled !== false;
 
   return (
     <div className="space-y-2">
-      <DeAttrToggleRowCompact
-        label="显示边框"
-        checked={lineOn}
-        onCheckedChange={(show) => onChange({ borderEnabled: show, backgroundShow: true })}
-      />
+      {showToggle ? (
+        <DeAttrToggleRowCompact
+          label="显示边框"
+          checked={lineOn}
+          onCheckedChange={(show) => onChange({ borderEnabled: show, backgroundShow: true })}
+        />
+      ) : null}
       {lineOn ? (
         <div className="space-y-2">
           <InspectorFieldRow label="边框色">
@@ -126,32 +146,55 @@ export function ChartBackgroundDeModeFields({
   }
 
   const segmentOptions = useLineBorder ? BG_MODE_LINE_BORDER_OPTIONS : BG_MODE_OPTIONS;
+  const lineOn = value.borderEnabled !== false;
 
   return (
     <div className="space-y-2">
-      <DeSegmentGroup
-        sizing="fit"
-        value={mode}
-        columns={2}
-        options={segmentOptions}
-        onChange={(next) => {
-          if (useLineBorder) {
+      <div className="flex flex-wrap items-center gap-2">
+        <DeSegmentGroup
+          sizing="fit"
+          className="min-w-0"
+          value={mode}
+          columns={2}
+          options={segmentOptions}
+          onChange={(next) => {
+            if (useLineBorder) {
+              onChange({
+                backgroundMode: next as "image" | "border",
+                backgroundShow: true,
+                ...(next === "border"
+                  ? {
+                      borderEnabled: true,
+                      framePresetId: undefined,
+                      frameColor: undefined,
+                    }
+                  : {}),
+              });
+              return;
+            }
             onChange({
-              backgroundMode: next as "image" | "border",
+              backgroundMode: next as "image" | "frame",
               backgroundShow: true,
-              ...(next === "border"
-                ? { framePresetId: undefined, frameColor: undefined }
-                : {}),
+              ...(next === "frame" && !value.framePresetId ? { framePresetId: "frame-1" } : {}),
             });
-            return;
-          }
-          onChange({
-            backgroundMode: next as "image" | "frame",
-            backgroundShow: true,
-            ...(next === "frame" && !value.framePresetId ? { framePresetId: "frame-1" } : {}),
-          });
-        }}
-      />
+          }}
+        />
+        {useLineBorder && mode === "border" ? (
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
+            <span className="whitespace-nowrap text-[10px] text-gray-500 dark:text-gray-400">
+              显示边框
+            </span>
+            <Switch
+              checked={lineOn}
+              onCheckedChange={(show) =>
+                onChange({ borderEnabled: show, backgroundShow: true, backgroundMode: "border" })
+              }
+              aria-label="显示边框"
+              className="scale-90"
+            />
+          </div>
+        ) : null}
+      </div>
       {mode === "image" ? (
         <ImageSourceField
           variant="rail"
@@ -162,9 +205,9 @@ export function ChartBackgroundDeModeFields({
           }
         />
       ) : useLineBorder ? (
-        <WidgetStyleLineBorderControls value={value} onChange={onChange} />
+        <WidgetStyleLineBorderControls value={value} onChange={onChange} showToggle={false} />
       ) : (
-        <div className="flex min-w-0 items-center gap-2 overflow-hidden">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
           <ColorField
             variant="swatch"
             label="边框色"
@@ -197,7 +240,7 @@ export function ChartBackgroundDeModeFields({
   );
 }
 
-/** 看板全局 · 背景区「更多」：底色 / 模糊 / 透明度 */
+/** @deprecated 使用 WidgetSurfaceAppearanceFields + InspectorNestedSection */
 export function WidgetStyleBackgroundExtrasFields({
   value,
   onChange,
@@ -210,37 +253,9 @@ export function WidgetStyleBackgroundExtrasFields({
   if (disabled) return null;
 
   return (
-    <DeAttrSubField label="更多">
-      <InspectorFieldRow label="背景色">
-        <ColorField
-          compact
-          allowClear
-          swatches={SURFACE_COLOR_RECOMMENDED}
-          value={value.background ?? ""}
-          onChange={(background) => onChange({ background: background || undefined })}
-        />
-      </InspectorFieldRow>
-      <InspectorSliderField
-        label="背景模糊"
-        value={value.backdropBlur}
-        fallback={0}
-        min={0}
-        max={48}
-        step={1}
-        unit="px"
-        onChange={(backdropBlur) => onChange({ backdropBlur })}
-      />
-      <InspectorSliderField
-        label="不透明度"
-        value={value.opacity != null ? Math.round(value.opacity * 100) : undefined}
-        fallback={100}
-        min={0}
-        max={100}
-        step={1}
-        unit="%"
-        onChange={(opacity) => onChange({ opacity: opacity / 100 })}
-      />
-    </DeAttrSubField>
+    <InspectorNestedSection title="外观" defaultOpen>
+      <WidgetSurfaceAppearanceFields value={value} onChange={onChange} density="wide" />
+    </InspectorNestedSection>
   );
 }
 
@@ -252,30 +267,6 @@ type ChartBackgroundStyleFieldsProps = {
   /** 背景开关在折叠标题栏时设为 false */
   showHeaderToggle?: boolean;
 };
-
-function SpacingModeSelect({
-  label,
-  mode,
-  onChange,
-}: {
-  label: string;
-  mode: SpacingMode;
-  onChange: (mode: SpacingMode) => void;
-}) {
-  return (
-    <InspectorFieldRow label={label}>
-      <Select value={mode} onValueChange={(v) => onChange(v as SpacingMode)}>
-        <SelectTrigger className={INSPECTOR_SELECT} aria-label={label}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="unified">统一值</SelectItem>
-          <SelectItem value="individual">分边</SelectItem>
-        </SelectContent>
-      </Select>
-    </InspectorFieldRow>
-  );
-}
 
 /** DataEase 样式 Tab · 背景区块（组件级 deStyle.background + 线框边框） */
 export function ChartBackgroundStyleFields({
@@ -291,15 +282,11 @@ export function ChartBackgroundStyleFields({
   return (
     <div className={INSPECTOR_SECTION_GAP}>
       {showHeaderToggle ? (
-        <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2 dark:border-white/[0.06]">
-          <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">启用</span>
-          <Switch
-            checked={showBackground}
-            onCheckedChange={(show) => onChange({ backgroundShow: show })}
-            aria-label="背景"
-            className="scale-90"
-          />
-        </div>
+        <InspectorSwitchRow
+          label="启用背景"
+          checked={showBackground}
+          onCheckedChange={(show) => onChange({ backgroundShow: show })}
+        />
       ) : null}
 
       <ChartBackgroundDeModeFields
@@ -308,25 +295,33 @@ export function ChartBackgroundStyleFields({
         disabled={!showBackground}
       />
 
-      <DeAttrSubField label="更多">
-        {onBorderChange ? (
-          <>
-            <DeAttrToggleRowCompact
-              label="线框"
-              checked={border?.show ?? false}
-              onCheckedChange={(show) => onBorderChange({ show })}
+      {showBackground ? (
+        <>
+          <InspectorNestedSection title="外观" defaultOpen>
+            <WidgetSurfaceAppearanceFields
+              value={ws}
+              onChange={onChange}
+              density="narrow"
             />
-            {border?.show ? (
-              <div className="space-y-2">
-                <InspectorFieldRow label="线框色">
-                  <ColorField
-                    compact
-                    swatches={WIDGET_BORDER_RECOMMENDED}
-                    value={border.color ?? ""}
-                    onChange={(color) => onBorderChange({ color: color || undefined })}
-                  />
-                </InspectorFieldRow>
-                <div className="grid grid-cols-2 gap-2">
+          </InspectorNestedSection>
+
+          {onBorderChange ? (
+            <InspectorNestedSection title="线框" defaultOpen={border?.show === true}>
+              <DeAttrToggleRowCompact
+                label="显示线框"
+                checked={border?.show ?? false}
+                onCheckedChange={(show) => onBorderChange({ show })}
+              />
+              {border?.show ? (
+                <div className="space-y-0">
+                  <InspectorFieldRow label="线框色">
+                    <ColorField
+                      compact
+                      swatches={WIDGET_BORDER_RECOMMENDED}
+                      value={border.color ?? ""}
+                      onChange={(color) => onBorderChange({ color: color || undefined })}
+                    />
+                  </InspectorFieldRow>
                   <InspectorSliderField
                     label="线宽"
                     value={border.width}
@@ -347,155 +342,25 @@ export function ChartBackgroundStyleFields({
                     unit="px"
                     onChange={(radius) => onBorderChange({ radius })}
                   />
+                  <ChartDeSegmentField
+                    label="线型"
+                    value={border.style ?? "solid"}
+                    columns={3}
+                    options={LINE_BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
+                    onChange={(style) =>
+                      onBorderChange({ style: style as ChartBorderStyle["style"] })
+                    }
+                  />
                 </div>
-                <ChartDeSegmentField
-                  label="线型"
-                  value={border.style ?? "solid"}
-                  columns={3}
-                  options={LINE_BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
-                  onChange={(style) =>
-                    onBorderChange({ style: style as ChartBorderStyle["style"] })
-                  }
-                />
-              </div>
-            ) : null}
-          </>
-        ) : null}
+              ) : null}
+            </InspectorNestedSection>
+          ) : null}
 
-        <InspectorSliderField
-          label="不透明度"
-          value={ws.opacity != null ? Math.round(ws.opacity * 100) : undefined}
-          fallback={100}
-          min={0}
-          max={100}
-          step={1}
-          unit="%"
-          onChange={(opacity) => onChange({ opacity: opacity / 100 })}
-        />
-        <InspectorFieldRow label="背景色">
-          <ColorField
-            compact
-            allowClear
-            swatches={SURFACE_COLOR_RECOMMENDED}
-            value={ws.background ?? ""}
-            onChange={(background) => onChange({ background: background || undefined })}
-          />
-        </InspectorFieldRow>
-        <InspectorSliderField
-          label="背景模糊"
-          value={ws.backdropBlur}
-          fallback={0}
-          min={0}
-          max={48}
-          step={1}
-          unit="px"
-          onChange={(backdropBlur) => onChange({ backdropBlur })}
-        />
-
-        <SpacingModeSelect
-          label="内边距模式"
-          mode={ws.paddingMode ?? "unified"}
-          onChange={(paddingMode) => onChange({ paddingMode })}
-        />
-        {(ws.paddingMode ?? "unified") === "unified" ? (
-          <InspectorSliderField
-            label="内边距"
-            value={ws.padding}
-            fallback={8}
-            min={0}
-            max={64}
-            step={1}
-            unit="px"
-            onChange={(padding) => onChange({ padding })}
-          />
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                ["paddingTop", "上"],
-                ["paddingRight", "右"],
-                ["paddingBottom", "下"],
-                ["paddingLeft", "左"],
-              ] as const
-            ).map(([key, label]) => (
-              <InspectorSliderField
-                key={key}
-                label={label}
-                value={ws[key]}
-                fallback={8}
-                min={0}
-                max={64}
-                step={1}
-                unit="px"
-                onChange={(next) => onChange({ [key]: next })}
-              />
-            ))}
-          </div>
-        )}
-
-        <SpacingModeSelect
-          label="圆角模式"
-          mode={ws.radiusMode ?? "unified"}
-          onChange={(radiusMode) => onChange({ radiusMode })}
-        />
-        {(ws.radiusMode ?? "unified") === "unified" ? (
-          <InspectorSliderField
-            label="圆角"
-            value={ws.borderRadius}
-            fallback={8}
-            min={0}
-            max={48}
-            step={1}
-            unit="px"
-            onChange={(borderRadius) => onChange({ borderRadius })}
-          />
-        ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                ["borderRadiusTopLeft", "左上"],
-                ["borderRadiusTopRight", "右上"],
-                ["borderRadiusBottomLeft", "左下"],
-                ["borderRadiusBottomRight", "右下"],
-              ] as const
-            ).map(([key, label]) => (
-              <InspectorSliderField
-                key={key}
-                label={label}
-                value={ws[key]}
-                fallback={8}
-                min={0}
-                max={48}
-                step={1}
-                unit="px"
-                onChange={(next) => onChange({ [key]: next })}
-              />
-            ))}
-          </div>
-        )}
-      </DeAttrSubField>
-    </div>
-  );
-}
-
-function DeAttrToggleRowCompact({
-  label,
-  checked,
-  onCheckedChange,
-}: {
-  label: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="mb-2 flex items-center justify-between gap-2">
-      <span className="text-[11px] text-gray-600 dark:text-gray-300">{label}</span>
-      <Switch
-        checked={checked}
-        onCheckedChange={onCheckedChange}
-        aria-label={label}
-        className="scale-90"
-      />
+          <InspectorNestedSection title="边距与圆角">
+            <WidgetSurfaceSpacingFields value={ws} onChange={onChange} density="narrow" />
+          </InspectorNestedSection>
+        </>
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Outlet, useLocation, useMatch } from "react-router";
 import { cn } from "@/lib/utils";
+import { useAdminFillScrollLock } from "@/hooks/useAdminFillScrollLock";
 import { ThemeProvider } from "@/context/theme-context";
 import { SidebarProvider, useSidebar } from "@/context/sidebar-context";
 import { WorkspaceProvider } from "@/context/workspace-context";
@@ -37,9 +38,13 @@ function AdminLayoutContent() {
   const isDashboardEditFill = Boolean(dashboardEditMatch || dashboardDetailMatch);
   const isListFillRoute = isAdminListFillRoute(location.pathname);
   const isFillHeightRoute = isChartTypesFill || isDashboardEditFill || isListFillRoute;
+  useAdminFillScrollLock(isFillHeightRoute);
 
   return (
-    <div className="flex h-dvh max-h-dvh min-h-0 overflow-hidden">
+    <div
+      className="flex h-dvh max-h-dvh min-h-0 overflow-hidden"
+      data-admin-layout={isFillHeightRoute ? "fill" : "default"}
+    >
       <AppSidebar
         sections={navSections}
         logo={<VitalSpanLogo />}

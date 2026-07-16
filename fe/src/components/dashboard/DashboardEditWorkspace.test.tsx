@@ -21,4 +21,20 @@ describe("DashboardEditWorkspace", () => {
     expect(surface).toHaveAttribute("data-dashboard-color-scheme", "dark");
     expect(screen.getByText("canvas")).toBeInTheDocument();
   });
+
+  it("uses a single hidden rail scroll shell for chartRail content", () => {
+    render(
+      <DashboardEditWorkspace
+        onPaletteInsert={vi.fn()}
+        canvas={<div>canvas</div>}
+        chartRail={<div data-testid="rail-child">rail</div>}
+      />,
+    );
+
+    const shells = screen.getAllByTestId("dashboard-edit-rail-scroll");
+    expect(shells).toHaveLength(1);
+    expect(shells[0]).toHaveClass("overflow-hidden");
+    expect(shells[0].querySelector(".dashboard-edit-rail-scroll")).toBeTruthy();
+    expect(shells[0]).toContainElement(screen.getByTestId("rail-child"));
+  });
 });

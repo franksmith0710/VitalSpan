@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ChartDeSliderField, DashboardConfigGridSlider, DashboardConfigSlider, DeAttrSliderField, DeProgressSlider, DE_SLIDER_WIDTH_NARROW, DE_SLIDER_WIDTH_WIDE } from "./deAttrSlider";
+import { ChartDeSliderField, DashboardConfigGridSlider, DashboardConfigSlider, DeAttrSliderField, DeProgressSlider, DE_SLIDER_WIDTH_WIDE } from "./deAttrSlider";
 
 afterEach(cleanup);
 
@@ -22,8 +22,7 @@ describe("ChartDeSliderField", () => {
     expect(screen.getByText("80%")).toBeInTheDocument();
     const slider = screen.getByRole("slider", { name: "不透明度 %" });
     expect(slider).toHaveValue("80");
-    expect(screen.getByTestId("de-progress-slider")).toHaveClass(DE_SLIDER_WIDTH_NARROW);
-    expect(screen.getByTestId("de-progress-slider")).not.toHaveClass("w-full");
+    expect(screen.getByTestId("de-progress-slider")).toHaveClass("w-full", "min-w-0");
 
     fireEvent.change(slider, { target: { value: "40" } });
     expect(onChange).toHaveBeenCalledWith(40);
@@ -106,7 +105,7 @@ describe("DashboardConfigSlider", () => {
     expect(screen.getByTestId("de-progress-slider")).not.toHaveClass("w-full");
   });
 
-  it("uses narrow track in compact popover density", () => {
+  it("uses stacked full-width track in compact popover density", () => {
     render(
       <DashboardConfigSlider
         compact
@@ -119,7 +118,7 @@ describe("DashboardConfigSlider", () => {
       />,
     );
 
-    expect(screen.getByTestId("de-progress-slider")).toHaveClass(DE_SLIDER_WIDTH_NARROW);
+    expect(screen.getByTestId("de-progress-slider")).toHaveClass("w-full", "min-w-0");
   });
 });
 

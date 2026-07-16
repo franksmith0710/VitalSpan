@@ -1,7 +1,7 @@
-import { cn } from "@/lib/utils";
 import {
   DASHBOARD_CONFIG_RAIL_CONTENT_CLASS,
-  DASHBOARD_CONFIG_RAIL_SCROLL_CLASS,
+  DASHBOARD_EDIT_RAIL_SCROLL_CLASS,
+  DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS,
 } from "./dashboardEditRailLayout";
 import {
   DashboardStyleSections,
@@ -40,7 +40,7 @@ export function DashboardContextInspector({
   };
 
   const sections = (
-    <div className={DASHBOARD_CONFIG_RAIL_CONTENT_CLASS}>
+    <>
       <DashboardStyleSections
         styleConfig={styleConfig}
         patchStyle={patchStyle}
@@ -56,15 +56,12 @@ export function DashboardContextInspector({
         patchStyle={patchStyle}
         isPixelLayout={isPixelLayout}
       />
-    </div>
+    </>
   );
 
   if (embedded) {
     return (
-      <div
-        className={cn(DASHBOARD_CONFIG_RAIL_SCROLL_CLASS, "h-full w-full")}
-        data-testid="dashboard-config-inspector"
-      >
+      <div className={DASHBOARD_CONFIG_RAIL_CONTENT_CLASS} data-testid="dashboard-config-inspector">
         {sections}
       </div>
     );
@@ -80,7 +77,11 @@ export function DashboardContextInspector({
           </p>
         </div>
       </div>
-      <div className={DASHBOARD_CONFIG_RAIL_SCROLL_CLASS}>{sections}</div>
+      <div className={DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS}>
+        <div className={DASHBOARD_EDIT_RAIL_SCROLL_CLASS}>
+          <div className={DASHBOARD_CONFIG_RAIL_CONTENT_CLASS}>{sections}</div>
+        </div>
+      </div>
     </div>
   );
 }

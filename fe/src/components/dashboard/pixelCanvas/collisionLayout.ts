@@ -5,25 +5,22 @@ export type CollisionLayoutOptions = {
   gap?: number;
   minCanvasHeight?: number;
   bottomPadding?: number;
-  /** 两轴重叠深度均需超过该值才算碰撞（拖拽预览抑制轻触即挤压） */
+  /** @deprecated DE 矩阵 reflow 不使用预览容差 */
   minOverlap?: number;
+  /** @deprecated DE reflow 在松手时一次性结算 */
+  skipVerticalCompact?: boolean;
 };
-
-/** 拖拽预览时，屏幕上两轴均需穿透该深度才触发邻组件下推（px） */
-export const COLLISION_PREVIEW_SCREEN_TOLERANCE_PX = 12;
-
-export function collisionPreviewOverlapTolerance(scale: number): number {
-  const safeScale = scale > 0 ? scale : 1;
-  return COLLISION_PREVIEW_SCREEN_TOLERANCE_PX / safeScale;
-}
 
 const PACK_SCAN_STEP = 8;
 
-const DEFAULT_OPTIONS: Required<CollisionLayoutOptions> = {
+const DEFAULT_OPTIONS: Required<Omit<CollisionLayoutOptions, "skipVerticalCompact">> & {
+  skipVerticalCompact: boolean;
+} = {
   gap: 0,
   minCanvasHeight: 220,
   bottomPadding: 0,
   minOverlap: 0,
+  skipVerticalCompact: false,
 };
 
 export function widgetRect(widget: Pick<PixelLayoutWidget, "x" | "y" | "width" | "height">): PixelRect {
@@ -89,22 +86,6 @@ function applyPositions(
   };
 }
 
-function pushDown(
-  positions: Map<string, PixelRect>,
-  moverId: string,
-  blockerId: string,
-  options: Required<CollisionLayoutOptions>,
-): boolean {
-  const blocker = positions.get(blockerId)!;
-  const mover = positions.get(moverId)!;
-  if (!rectsOverlap(blocker, mover, options.gap, options.minOverlap)) return false;
-  const gap = options.gap;
-  const nextY = blocker.y + blocker.height + gap;
-  if (mover.y >= nextY) return false;
-  positions.set(moverId, { ...mover, y: Math.round(nextY) });
-  return true;
-}
-
 function horizontalOverlap(a: PixelRect, b: PixelRect, gap = 0): boolean {
   return a.x < b.x + b.width + gap && a.x + a.width + gap > b.x;
 }
@@ -112,38 +93,6 @@ function horizontalOverlap(a: PixelRect, b: PixelRect, gap = 0): boolean {
 function isBelowVacatedFootprint(rect: PixelRect, vacated: PixelRect, gap: number): boolean {
   if (!horizontalOverlap(rect, vacated, gap)) return false;
   return rect.y >= vacated.y + vacated.height + gap;
-}
-
-function widgetsSharingColumn(
-  widgets: PixelLayoutWidget[],
-  column: PixelRect,
-  positions: Map<string, PixelRect>,
-  gap: number,
-  excludeId: string,
-): PixelLayoutWidget[] {
-  return widgets.filter((widget) => {
-    if (widget.id === excludeId) return false;
-    const rect = positions.get(widget.id);
-    return rect ? horizontalOverlap(rect, column, gap) : false;
-  });
-}
-
-function liftVacatedColumn(
-  widgets: PixelLayoutWidget[],
-  positions: Map<string, PixelRect>,
-  vacated: PixelRect,
-  activeId: string,
-  gap: number,
-): void {
-  const column = widgets.filter((widget) => {
-    if (widget.id === activeId) return false;
-    const rect = positions.get(widget.id);
-    return rect ? isBelowVacatedFootprint(rect, vacated, gap) : false;
-  });
-  const limit = column.length + 1;
-  for (let step = 0; step < limit; step += 1) {
-    if (!globalVerticalCompact(column, positions, gap)) break;
-  }
 }
 
 /** 对标 DE moveItemUp：同列组件可上浮的最高 y */
@@ -164,7 +113,6 @@ function maxUpwardTop(
   return top;
 }
 
-/** 全局垂直紧凑：按 y 顺序将各组件上浮填缝（DE 矩阵重力） */
 function globalVerticalCompact(
   widgets: PixelLayoutWidget[],
   positions: Map<string, PixelRect>,
@@ -186,39 +134,101 @@ function globalVerticalCompact(
   return changed;
 }
 
-function cascadeFromBlocker(
+function liftVacatedColumn(
   widgets: PixelLayoutWidget[],
   positions: Map<string, PixelRect>,
-  blockerId: string,
+  vacated: PixelRect,
   activeId: string,
-  options: Required<CollisionLayoutOptions>,
+  gap: number,
 ): void {
-  const limit = widgets.length * widgets.length;
-  const queue = [blockerId];
-  const queued = new Set([blockerId]);
-  let steps = 0;
-
-  while (queue.length > 0 && steps < limit) {
-    steps += 1;
-    const currentBlocker = queue.shift()!;
-    const sorted = [...widgets].sort(compareWidgets);
-    for (const candidate of sorted) {
-      if (candidate.id === currentBlocker) continue;
-      if (candidate.id === activeId) continue;
-      if (pushDown(positions, candidate.id, currentBlocker, options)) {
-        if (!queued.has(candidate.id)) {
-          queue.push(candidate.id);
-          queued.add(candidate.id);
-        }
-      }
-    }
-  }
-
-  if (queue.length > 0) {
-    throw new Error("resolvePixelCollisions exceeded cascade limit");
+  const column = widgets.filter((widget) => {
+    if (widget.id === activeId) return false;
+    const rect = positions.get(widget.id);
+    return rect ? isBelowVacatedFootprint(rect, vacated, gap) : false;
+  });
+  const limit = column.length + 1;
+  for (let step = 0; step < limit; step += 1) {
+    if (!globalVerticalCompact(column, positions, gap)) break;
   }
 }
 
+/** DE findBelowItems：同列中位于 item 下方的首层组件 */
+function findBelowItemsInColumn(
+  widgets: PixelLayoutWidget[],
+  positions: Map<string, PixelRect>,
+  itemId: string,
+  gap: number,
+): PixelLayoutWidget[] {
+  const item = positions.get(itemId);
+  if (!item) return [];
+  return widgets
+    .filter((widget) => widget.id !== itemId)
+    .filter((widget) => {
+      const rect = positions.get(widget.id);
+      return rect ? horizontalOverlap(rect, item, gap) && rect.y >= item.y : false;
+    })
+    .sort(compareWidgets);
+}
+
+/** DE moveItemDown：递归下推同列被占位组件 */
+function moveItemDown(
+  widgets: PixelLayoutWidget[],
+  positions: Map<string, PixelRect>,
+  itemId: string,
+  deltaY: number,
+  gap: number,
+  depth = 0,
+): void {
+  const limit = widgets.length * widgets.length;
+  if (depth > limit) {
+    throw new Error("moveItemDown exceeded cascade limit");
+  }
+  const item = positions.get(itemId);
+  if (!item || deltaY <= 0) return;
+  positions.set(itemId, { ...item, y: Math.round(item.y + deltaY) });
+  const moved = positions.get(itemId)!;
+  for (const below of findBelowItemsInColumn(widgets, positions, itemId, gap)) {
+    const belowRect = positions.get(below.id)!;
+    const moveSize = moved.y + moved.height + gap - belowRect.y;
+    if (moveSize > 0) {
+      moveItemDown(widgets, positions, below.id, moveSize, gap, depth + 1);
+    }
+  }
+}
+
+/** DE emptyTargetCell：落位时清空目标区占位（凡与目标外框重叠的块下推） */
+function emptyTargetFootprint(
+  widgets: PixelLayoutWidget[],
+  positions: Map<string, PixelRect>,
+  activeId: string,
+  target: PixelRect,
+  gap: number,
+): void {
+  const candidates = widgets
+    .filter((widget) => widget.id !== activeId)
+    .filter((widget) => {
+      const rect = positions.get(widget.id)!;
+      return horizontalOverlap(rect, target, gap) && rectsOverlap(rect, target, gap);
+    })
+    .sort(compareWidgets);
+
+  for (const blocked of candidates) {
+    const blockedRect = positions.get(blocked.id)!;
+    const moveSize = target.y + target.height + gap - blockedRect.y;
+    if (moveSize > 0) {
+      moveItemDown(widgets, positions, blocked.id, moveSize, gap);
+    }
+  }
+}
+
+/**
+ * 对标 DataEase CanvasCore movePlayer / resizePlayer：
+ * 1. 旧占位同列上浮（moveItemUp）
+ * 2. 写入新外框
+ * 3. 目标区占位下推（emptyTargetCell + moveItemDown）
+ *
+ * 拖动过程中仅 MarkLine 吸附，不做邻组件 preview 推挤。
+ */
 export function resolvePixelCollisions(
   layout: DashboardLayoutV2,
   activeId: string,
@@ -234,35 +244,20 @@ export function resolvePixelCollisions(
     height: Math.round(activeRect.height),
   };
 
-  const allowReflow = resolved.minOverlap <= 0;
-
-  // DE movePlayer：同列旧占位下方的组件先上浮填缝（预览轻触容差时跳过，避免误抬升）
   const oldRect = positions.get(activeId);
-  if (oldRect && allowReflow) {
+  const shouldVacateLift =
+    oldRect &&
+    (roundedActive.y !== oldRect.y ||
+      roundedActive.x !== oldRect.x ||
+      roundedActive.height < oldRect.height);
+
+  if (shouldVacateLift) {
     positions.delete(activeId);
     liftVacatedColumn(layout.widgets, positions, oldRect, activeId, resolved.gap);
   }
 
   positions.set(activeId, roundedActive);
-
-  const settleLimit = layout.widgets.length + 1;
-  const keepActiveY = new Set([activeId]);
-  const activeColumn = widgetsSharingColumn(
-    layout.widgets,
-    roundedActive,
-    positions,
-    resolved.gap,
-    activeId,
-  );
-  for (let step = 0; step < settleLimit; step += 1) {
-    cascadeFromBlocker(layout.widgets, positions, activeId, activeId, resolved);
-    if (
-      !allowReflow ||
-      !globalVerticalCompact(activeColumn, positions, resolved.gap, keepActiveY)
-    ) {
-      break;
-    }
-  }
+  emptyTargetFootprint(layout.widgets, positions, activeId, roundedActive, resolved.gap);
 
   return applyPositions(layout, positions, resolved);
 }

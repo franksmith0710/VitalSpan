@@ -132,7 +132,7 @@ export function DatasetFieldGroups({
           disabled={!datasetSelected}
         />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-3">
+      <div className="px-1 pb-3">
         {!datasetSelected ? (
           <div className="space-y-3">
             <FieldSection title="维度" fields={[]} onFieldClick={onFieldClick} />

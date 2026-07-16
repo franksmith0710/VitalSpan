@@ -57,7 +57,7 @@ describe("DashboardLayoutPreview", () => {
     ).toBe(5);
   });
 
-  it("bootstraps legacy widgetGap on layout when no override is passed", () => {
+  it("bootstraps legacy widgetGap without implying pixel shell gap", () => {
     render(
       <DashboardLayoutPreview
         layout={{
@@ -68,7 +68,7 @@ describe("DashboardLayoutPreview", () => {
     );
 
     const mock = screen.getByTestId("pixel-canvas-mock");
-    expect(mock).toHaveAttribute("data-gap-preset", "md");
-    expect(mock).toHaveAttribute("data-pixel-gutter", "5");
+    expect(mock).toHaveAttribute("data-gap-preset", "none");
+    expect(mock).toHaveAttribute("data-pixel-gutter", "0");
   });
 });

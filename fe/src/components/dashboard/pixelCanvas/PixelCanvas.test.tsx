@@ -61,14 +61,14 @@ function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
 }
 
 describe("PixelCanvas", () => {
-  it("previews cascade push-down on neighbors while dragging", async () => {
+  it("previews mark-line snap without pushing neighbors during drag", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",
       type: "chart",
       title: "下方",
       order: 2,
       x: 100,
-      y: 300,
+      y: 280,
       width: 300,
       height: 200,
     };
@@ -76,18 +76,19 @@ describe("PixelCanvas", () => {
       ...layout,
       widgets: [widget, blocker],
     };
+    const onChange = vi.fn();
     render(
       <PixelCanvas
         mode="edit"
         layout={stackedLayout}
         selectedIds={new Set(["w1"])}
-        onLayoutChange={vi.fn()}
+        onLayoutChange={onChange}
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
     const shape = screen.getByTestId("pixel-shape-w1");
     const blockerShape = screen.getByTestId("pixel-shape-w2");
-    expect(blockerShape).toHaveStyle({ top: "300px" });
+    expect(blockerShape).toHaveStyle({ top: "280px" });
 
     fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
       pointerId: 3,
@@ -95,25 +96,31 @@ describe("PixelCanvas", () => {
       clientY: 0,
       button: 0,
     });
-    fireEvent.pointerMove(shape, {
+    fireEvent.pointerMove(document, {
       pointerId: 3,
       clientX: 0,
       clientY: 120,
     });
     await flushPixelPointerFrames();
 
-    expect(blockerShape).toHaveStyle({ top: "0px" });
+    expect(blockerShape).toHaveStyle({ top: "280px" });
     fireEvent.pointerUp(shape, { pointerId: 3, clientX: 0, clientY: 120 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(layoutsOverlap(onChange.mock.calls[0][0], 0)).toBe(false);
+    expect(onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w2")).toMatchObject({
+      y: 0,
+    });
   });
 
-  it("previews cascade push-down on neighbors while resizing", async () => {
+  it("applies DE reflow to neighbors on pointer up after resize", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",
       type: "chart",
       title: "下方",
       order: 2,
       x: 100,
-      y: 300,
+      y: 280,
       width: 300,
       height: 200,
     };
@@ -134,7 +141,7 @@ describe("PixelCanvas", () => {
     const shape = screen.getByTestId("pixel-shape-w1");
     const blockerShape = screen.getByTestId("pixel-shape-w2");
     const handle = screen.getByLabelText("调整组件大小：右下");
-    expect(blockerShape).toHaveStyle({ top: "300px" });
+    expect(blockerShape).toHaveStyle({ top: "280px" });
 
     fireEvent.pointerDown(handle, {
       pointerId: 4,
@@ -142,11 +149,11 @@ describe("PixelCanvas", () => {
       clientY: 0,
       button: 0,
     });
-    fireEvent.pointerMove(shape, { pointerId: 4, clientX: 0, clientY: 1 });
-    fireEvent.pointerMove(shape, { pointerId: 4, clientX: 0, clientY: 120 });
+    fireEvent.pointerMove(document, { pointerId: 4, clientX: 0, clientY: 1 });
+    fireEvent.pointerMove(document, { pointerId: 4, clientX: 0, clientY: 120 });
     await flushPixelPointerFrames();
 
-    expect(blockerShape).toHaveStyle({ top: "400px" });
+    expect(blockerShape).toHaveStyle({ top: "280px" });
     fireEvent.pointerUp(shape, { pointerId: 4, clientX: 0, clientY: 120 });
 
     expect(onChange).toHaveBeenCalledTimes(1);
@@ -176,7 +183,7 @@ describe("PixelCanvas", () => {
     });
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 200, y: 140 });
+    expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 200, y: 130 });
   });
 
   it("clamps move to canvas bounds on document pointerup", () => {
@@ -237,7 +244,7 @@ describe("PixelCanvas", () => {
     fireEvent.pointerUp(document, { pointerId: 10, clientX: 60, clientY: 40 });
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 160, y: 120 });
+    expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 150, y: 110 });
   });
 
   it("does not start dragging from widget content", () => {
@@ -320,7 +327,7 @@ describe("PixelCanvas", () => {
     expect(screen.getByTestId("pixel-shape-w1")).not.toHaveClass("pixel-shape-selected");
   });
 
-  it("toggles auxiliary grid overlay and mark-line layer from chrome config", () => {
+  it("toggles auxiliary grid overlay and mark-line snap from chrome config", () => {
     const { rerender } = render(
       <PixelCanvas
         mode="edit"
@@ -343,7 +350,51 @@ describe("PixelCanvas", () => {
       />,
     );
     expect(screen.queryByTestId("pixel-canvas-aux-grid")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("canvas-mark-line")).not.toBeInTheDocument();
+    expect(screen.getByTestId("canvas-mark-line")).toBeInTheDocument();
+  });
+
+  it("does not compact intentional outer gaps on commit", async () => {
+    const spacedLayout: DashboardLayoutV2 = {
+      ...layout,
+      widgets: [
+        widget,
+        {
+          id: "w2",
+          type: "chart",
+          title: "右",
+          order: 2,
+          x: 420,
+          y: 0,
+          width: 300,
+          height: 200,
+        },
+      ],
+    };
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={spacedLayout}
+        styleConfig={{ chrome: { showAuxiliaryGrid: false } }}
+        selectedIds={new Set(["w2"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    expect(screen.getByTestId("pixel-shape-w2")).toHaveStyle({ left: "420px" });
+
+    const shape = screen.getByTestId("pixel-shape-w2");
+    fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
+      pointerId: 9,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 9, clientX: 0, clientY: 0 });
+    fireEvent.pointerUp(shape, { pointerId: 9, clientX: 0, clientY: 0 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w2")?.x).toBe(420);
   });
 
   it.each([1, 0.5, 0.25])(
@@ -376,7 +427,7 @@ describe("PixelCanvas", () => {
     });
     const handle = screen.getByTestId("pixel-resize-se");
     const visual = screen.getByTestId("pixel-resize-visual-se");
-    expect(Number.parseFloat(handle.style.width) * expectedScale).toBe(20);
+    expect(Number.parseFloat(handle.style.width) * expectedScale).toBe(28);
     expect(Number.parseFloat(visual.style.width) * expectedScale).toBe(12);
     },
   );

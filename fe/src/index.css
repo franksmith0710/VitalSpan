@@ -244,7 +244,7 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-only,
   .dashboard-scroll,
   .pixel-canvas-host
-) {
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail) {
   scrollbar-width: thin;
   scrollbar-color: var(--dashboard-scroll-thumb) transparent;
 }
@@ -257,7 +257,7 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-only,
   .dashboard-scroll,
   .pixel-canvas-host
-)::-webkit-scrollbar {
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail)::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
@@ -270,7 +270,7 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-only,
   .dashboard-scroll,
   .pixel-canvas-host
-)::-webkit-scrollbar-track {
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail)::-webkit-scrollbar-track {
   background: transparent;
 }
 
@@ -282,7 +282,7 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-only,
   .dashboard-scroll,
   .pixel-canvas-host
-)::-webkit-scrollbar-thumb {
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail)::-webkit-scrollbar-thumb {
   border-radius: 9999px;
   background-color: var(--dashboard-scroll-thumb);
 }
@@ -295,7 +295,7 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-only,
   .dashboard-scroll,
   .pixel-canvas-host
-):hover::-webkit-scrollbar-thumb {
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail):hover::-webkit-scrollbar-thumb {
   background-color: var(--dashboard-scroll-thumb-hover);
 }
 
@@ -407,6 +407,7 @@ html.dark {
   --dw-screen-table: 0.9375rem;
   --dw-screen-rail-text: 0.875rem;
   --dw-screen-rail-height: 2.25rem;
+  --dw-screen-edit-bar-width: 2rem;
   --dw-screen-action-icon: 1.125rem;
   --dw-screen-title-height: 2rem;
   overflow-x: hidden;
@@ -523,6 +524,16 @@ html.dark {
 .pixel-canvas-host .pixel-shape-drag-rail :where(svg) {
   width: calc(1rem / var(--pixel-canvas-scale));
   height: calc(1rem / var(--pixel-canvas-scale));
+}
+
+.pixel-canvas-host .pixel-shape-drag-edge {
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.pixel-canvas-host .pixel-shape-inner .shape-title.pixel-shape-title-drag {
+  gap: calc(0.25rem / var(--pixel-canvas-scale));
 }
 
 .pixel-canvas-host .pixel-shape-inner--with-rail {
@@ -678,6 +689,51 @@ html.dark {
 
 .dashboard-theme-scope:not([data-canvas-user-bg="true"]) [data-testid="pixel-canvas-artboard"] {
   background-color: var(--dashboard-artboard-bg, #f8fafc) !important;
+}
+
+.dashboard-edit-aux-grid {
+  pointer-events: none;
+}
+
+/* 看板编辑右栏：外层裁剪（滚动条不露出壳层 border 内缘） */
+.dashboard-edit-rail-scroll-clip {
+  overflow: hidden;
+}
+
+/* 看板编辑右栏：内层滚动 + 负边距藏条（Windows 叠加滚动条） */
+.dashboard-edit-rail-scroll {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+  scrollbar-gutter: auto !important;
+  overscroll-behavior-y: contain;
+  margin-right: -20px;
+  padding-right: 20px;
+}
+
+.dashboard-edit-rail-scroll::-webkit-scrollbar,
+.dashboard-config-rail::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.dashboard-config-rail {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* fill 高度路由：JS 挂载 admin-fill-lock，避免右栏内容撑出页面级第二条滚动条 */
+html.admin-fill-lock,
+html.admin-fill-lock body {
+  overflow: hidden !important;
+  height: 100%;
+  max-height: 100%;
+}
+
+html.admin-fill-lock #root {
+  overflow: hidden;
+  height: 100%;
+  max-height: 100%;
 }
 
 .dashboard-theme-scope .pixel-canvas-host {

@@ -22,7 +22,11 @@ import {
   type DashboardStyleConfig,
   type GapPreset,
 } from "./dashboardStyleConfig";
-import { resolveDashboardChrome, type DashboardChromeConfig } from "./dashboardChromeConfig";
+import {
+  auxiliaryGridToggleDescription,
+  resolveDashboardChrome,
+  type DashboardChromeConfig,
+} from "./dashboardChromeConfig";
 import {
   DE_SELECT,
   DeAttrField,
@@ -323,6 +327,15 @@ export function DashboardOverallConfigPanel({
           label="图表操作按钮"
           checked={chrome.showChartActionButtons}
           onCheckedChange={(checked) => patchChrome({ showChartActionButtons: checked })}
+        />
+        <DeAttrToggleRow
+          label="辅助对齐网格"
+          description={auxiliaryGridToggleDescription({
+            pixel: isPixelLayout,
+            hasGap: gapUi.hasGap,
+          })}
+          checked={chrome.showAuxiliaryGrid}
+          onCheckedChange={(checked) => patchChrome({ showAuxiliaryGrid: checked })}
         />
       </DeAttrToggleSection>
     </DeAttrForm>

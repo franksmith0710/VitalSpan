@@ -11,24 +11,24 @@ import { DashboardConfigSection } from "./DashboardConfigSection";
 import {
   formatMetricValue,
   TEXT_COLOR_RECOMMENDED,
+  type ColorScheme,
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ColorField } from "@/components/ui/color-field";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
 import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
 import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
-import { DashboardConfigGridSlider, DashboardConfigSlider } from "./deAttrSlider";
-import { ColorField } from "@/components/ui/color-field";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import type { ColorScheme } from "./dashboardStyleConfig";
-import { SpacingModeToggle } from "./inspectorSpacing";
 import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
-import { DeAttrField } from "./dashboardInspectorUi";
-import {
-  ChartBackgroundDeModeFields,
-  WidgetStyleBackgroundExtrasFields,
-} from "./chartStyleFields";
+import { DashboardConfigSlider } from "./deAttrSlider";
+import { ChartBackgroundDeModeFields } from "./chartStyleFields";
 import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
+import { InspectorNestedSection } from "./inspectorNestedSection";
+import {
+  WidgetSurfaceAppearanceFields,
+  WidgetSurfaceSpacingFields,
+} from "./widgetSurfaceStyleFields";
+import { InspectorSwitchRow } from "./inspectorCompact";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -102,113 +102,35 @@ export function DashboardWidgetStyleSections({
   return (
     <>
       <DashboardConfigSection title="图表样式" defaultOpen>
-        <div className="space-y-3">
-        <DeAttrField label="背景" compact>
-          <div className="space-y-2">
-            <div className="flex items-center justify-end">
-              <Switch
-                checked={ws.backgroundShow !== false}
-                onCheckedChange={(show) => patchWidgetStyle({ backgroundShow: show })}
-                aria-label="背景"
-                className="scale-90"
-              />
-            </div>
-            <ChartBackgroundDeModeFields
-              value={ws}
-              onChange={patchWidgetStyle}
-              disabled={ws.backgroundShow === false}
-              borderTab="line"
-            />
-            <WidgetStyleBackgroundExtrasFields
-              value={ws}
-              onChange={patchWidgetStyle}
-              disabled={ws.backgroundShow === false}
-            />
-          </div>
-        </DeAttrField>
-
-        <SpacingModeToggle
-          label="内边距模式"
-          mode={ws.paddingMode ?? "unified"}
-          onChange={(paddingMode) => patchWidgetStyle({ paddingMode })}
-        />
-        {(ws.paddingMode ?? "unified") === "unified" ? (
-          <DashboardConfigSlider
-            label="内边距"
-            value={ws.padding}
-            fallback={8}
-            min={0}
-            max={64}
-            step={1}
-            unit="px"
-            onChange={(padding) => patchWidgetStyle({ padding })}
+        <div className="space-y-2.5">
+          <InspectorSwitchRow
+            label="背景"
+            checked={ws.backgroundShow !== false}
+            onCheckedChange={(show) => patchWidgetStyle({ backgroundShow: show })}
           />
-        ) : (
-          <div className="grid grid-cols-2 gap-2 [&>*]:min-w-0">
-            {(["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"] as const).map((key) => (
-              <DashboardConfigGridSlider
-                key={key}
-                label={
-                  key === "paddingTop"
-                    ? "上"
-                    : key === "paddingRight"
-                      ? "右"
-                      : key === "paddingBottom"
-                        ? "下"
-                        : "左"
-                }
-                value={ws[key]}
-                fallback={8}
-                min={0}
-                max={64}
-                step={1}
-                unit="px"
-                onChange={(next) => patchWidgetStyle({ [key]: next })}
+          {ws.backgroundShow !== false ? (
+            <>
+              <ChartBackgroundDeModeFields
+                value={ws}
+                onChange={patchWidgetStyle}
+                borderTab="line"
               />
-            ))}
-          </div>
-        )}
-
-        <SpacingModeToggle
-          label="圆角模式"
-          mode={ws.radiusMode ?? "unified"}
-          onChange={(radiusMode) => patchWidgetStyle({ radiusMode })}
-        />
-        {(ws.radiusMode ?? "unified") === "unified" ? (
-          <DashboardConfigSlider
-            label="圆角"
-            value={ws.borderRadius}
-            fallback={8}
-            min={0}
-            max={48}
-            step={1}
-            unit="px"
-            onChange={(borderRadius) => patchWidgetStyle({ borderRadius })}
-          />
-        ) : (
-          <div className="grid grid-cols-2 gap-2 [&>*]:min-w-0">
-            {(
-              [
-                ["borderRadiusTopLeft", "左上"],
-                ["borderRadiusTopRight", "右上"],
-                ["borderRadiusBottomLeft", "左下"],
-                ["borderRadiusBottomRight", "右下"],
-              ] as const
-            ).map(([key, label]) => (
-              <DashboardConfigGridSlider
-                key={key}
-                label={label}
-                value={ws[key]}
-                fallback={8}
-                min={0}
-                max={48}
-                step={1}
-                unit="px"
-                onChange={(next) => patchWidgetStyle({ [key]: next })}
-              />
-            ))}
-          </div>
-        )}
+              <InspectorNestedSection title="外观" defaultOpen>
+                <WidgetSurfaceAppearanceFields
+                  value={ws}
+                  onChange={patchWidgetStyle}
+                  density="wide"
+                />
+              </InspectorNestedSection>
+              <InspectorNestedSection title="边距与圆角">
+                <WidgetSurfaceSpacingFields
+                  value={ws}
+                  onChange={patchWidgetStyle}
+                  density="wide"
+                />
+              </InspectorNestedSection>
+            </>
+          ) : null}
         </div>
       </DashboardConfigSection>
 

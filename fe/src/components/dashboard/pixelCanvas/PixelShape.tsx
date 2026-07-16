@@ -22,6 +22,8 @@ import {
   RESIZE_DIRECTIONS,
   RESIZE_LABELS,
   screenDeltaToCanvas,
+  SHAPE_RESIZE_HANDLE_SCREEN_PX,
+  SHAPE_RESIZE_VISUAL_SCREEN_PX,
   type PixelInteractionKind,
   pixelShapeZIndex,
   type PixelRect,
@@ -29,13 +31,14 @@ import {
 } from "./geometry";
 import { computeMarkLineSnap, markLineThreshold, type MarkLineGuide } from "./pixelMarkLine";
 import { resolveWidgetChromeInset } from "./shapeVisualInset";
-import { snapRectToAuxiliaryGrid } from "./auxiliaryGridSnap";
 import type { PixelShapePreviewSync } from "./pixelShapePreviewRegistry";
 import { PixelShapeActionRail, type PixelWidgetActions } from "./PixelShapeActionRail";
+import { PixelShapeDragEdges } from "./PixelShapeDragEdges";
 import { WidgetShapeChrome } from "./WidgetShapeChrome";
 import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
 import { PixelShapePlayerProvider } from "./pixelShapePlayerContext";
 import { dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
+import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
 
 type ActiveInteraction = {
@@ -229,6 +232,8 @@ export function PixelShape({
     return registerPreviewSync(widget.id, (rect) => {
       displayRef.current = rect;
       syncOuterStyle(rect);
+      if (activeRef.current) return;
+      setDisplay((previous) => (pixelRectsNearlyEqual(previous, rect) ? previous : rect));
     });
   }, [widget.id, registerPreviewSync]);
 
@@ -275,14 +280,10 @@ export function PixelShape({
         isRightward: event.clientX >= active.startClient.x,
         isDownward: event.clientY >= active.startClient.y,
       },
-      canvas,
-      gap: shapeGapPx,
-      chromeInset,
       interactionKind: active.kind,
       anchorRect: active.startRect,
     });
-    const gridSnapped = snapRectToAuxiliaryGrid(snapped.rect, active.kind);
-    return { rect: gridSnapped, guides: snapped.guides };
+    return { rect: snapped.rect, guides: snapped.guides };
   };
 
   const rectForPointer = (
@@ -403,7 +404,7 @@ export function PixelShape({
       data-pixel-is-player={isPlayer ? "" : undefined}
       className={cn(
         "shape pixel-shape-outer dashboard-shape-gap-shell absolute flex touch-none select-none flex-col border-0 bg-transparent",
-        selectedInEdit && "z-[1]",
+        selectedInEdit && "z-[1] pixel-shape-edit",
       )}
       style={{
         left: liveRect.x,
@@ -419,6 +420,14 @@ export function PixelShape({
         <p className="sr-only" role="status" data-testid="pixel-boundary-hint">
           {hint}
         </p>
+      ) : null}
+      {selectedInEdit ? (
+        <PixelShapeDragEdges
+          widgetId={widget.id}
+          scale={scale}
+          onDragPointerDown={(event) => startInteraction(event, "move")}
+          onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
+        />
       ) : null}
       <div
         data-testid={`pixel-shape-body-${widget.id}`}
@@ -465,6 +474,7 @@ export function PixelShape({
                 mode={mode}
                 selected={selectedInEdit}
                 widgetId={widget.id}
+                canvasScale={scale}
                 onTitleChange={onTitleChange}
                 onSelectPointerDown={(event) => onSelect?.(widget.id, event.shiftKey)}
                 onDragPointerDown={(event) => startInteraction(event, "move")}
@@ -506,8 +516,8 @@ export function PixelShape({
                 HANDLE_POSITION[direction],
               )}
               style={{
-                width: 20 / scale,
-                height: 20 / scale,
+                width: SHAPE_RESIZE_HANDLE_SCREEN_PX / scale,
+                height: SHAPE_RESIZE_HANDLE_SCREEN_PX / scale,
                 cursor: RESIZE_CURSORS[direction],
               }}
               aria-label={`调整组件大小：${RESIZE_LABELS[direction]}`}
@@ -517,7 +527,10 @@ export function PixelShape({
               <span
                 data-testid={`pixel-resize-visual-${direction}`}
                 className="rounded-sm border border-brand-500 bg-white dark:bg-gray-900"
-                style={{ width: 12 / scale, height: 12 / scale }}
+                style={{
+                  width: SHAPE_RESIZE_VISUAL_SCREEN_PX / scale,
+                  height: SHAPE_RESIZE_VISUAL_SCREEN_PX / scale,
+                }}
               />
             </IconButton>
           ))

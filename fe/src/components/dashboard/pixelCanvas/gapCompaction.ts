@@ -1,7 +1,7 @@
 import type { GapConfigInput } from "../gapPolicy";
 import { resolvePixelGutter } from "../gapPolicy";
 import type { DashboardLayoutV2, PixelLayoutWidget } from "../layoutUtils";
-import { hasPositiveOuterGaps, measurePixelLayoutOuterGaps } from "../gapRuntimeProbe";
+import { measurePixelLayoutOuterGaps } from "../gapRuntimeProbe";
 
 const CROSS_AXIS_OVERLAP_MIN = 1;
 const NEIGHBOR_GAP_EPS = 0.5;
@@ -33,13 +33,15 @@ function compactHorizontalPass(
   let moved = false;
 
   for (const left of next) {
+    const leftRect = byId.get(left.id)!;
     let closest: PixelLayoutWidget | null = null;
     let closestGap = Infinity;
 
     for (const right of next) {
       if (right.id === left.id) continue;
-      if (crossOverlap(left, right, "horizontal") < CROSS_AXIS_OVERLAP_MIN) continue;
-      const gap = right.x - (left.x + left.width);
+      const rightRect = byId.get(right.id)!;
+      if (crossOverlap(leftRect, rightRect, "horizontal") < CROSS_AXIS_OVERLAP_MIN) continue;
+      const gap = rightRect.x - (leftRect.x + leftRect.width);
       if (gap < -NEIGHBOR_GAP_EPS || gap >= closestGap) continue;
       closestGap = gap;
       closest = right;
@@ -64,13 +66,15 @@ function compactVerticalPass(
   let moved = false;
 
   for (const top of next) {
+    const topRect = byId.get(top.id)!;
     let closest: PixelLayoutWidget | null = null;
     let closestGap = Infinity;
 
     for (const bottom of next) {
       if (bottom.id === top.id) continue;
-      if (crossOverlap(top, bottom, "vertical") < CROSS_AXIS_OVERLAP_MIN) continue;
-      const gap = bottom.y - (top.y + top.height);
+      const bottomRect = byId.get(bottom.id)!;
+      if (crossOverlap(topRect, bottomRect, "vertical") < CROSS_AXIS_OVERLAP_MIN) continue;
+      const gap = bottomRect.y - (topRect.y + topRect.height);
       if (gap < -NEIGHBOR_GAP_EPS || gap >= closestGap) continue;
       closestGap = gap;
       closest = bottom;
@@ -140,15 +144,12 @@ export function shouldCompactForGapChange(prevShellGap: number, nextShellGap: nu
   return nextShellGap < prevShellGap;
 }
 
-/** gapPreset=none 时：加载/保存/已是零间隙仍存外框缝则压实 */
+/** gapPreset=none 时：加载/保存/编辑态零间隙一律压实外框正缝 */
 export function compactPixelLayoutWhenZeroGap(
   layout: DashboardLayoutV2,
   gapConfig: GapConfigInput,
 ): GapCompactionResult {
   if (resolvePixelGutter(gapConfig) > 0 || layout.widgets.length < 2) {
-    return { layout, compacted: false, closedGaps: 0 };
-  }
-  if (!hasPositiveOuterGaps(layout.widgets)) {
     return { layout, compacted: false, closedGaps: 0 };
   }
   return compactPixelLayoutOuterRects(layout);

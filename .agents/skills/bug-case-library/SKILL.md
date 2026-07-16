@@ -82,6 +82,7 @@ cases/<域>-<简短主题>.md
 | CASE-2026-07-13-001 | [auth-password-401-session-semantics.md](./cases/auth-password-401-session-semantics.md) | change-password, 401, apiFetch, logout, preserveSessionOn401Codes, AUTH_INVALID_CURRENT_PASSWORD |
 | CASE-2026-07-15-001 | [fe-dashboard-theme-variant-hydration.md](./cases/fe-dashboard-theme-variant-hydration.md) | dashboard, themeVariants, hydrate, 浅/深主题, 仪表板风格, styleConfig |
 | CASE-2026-07-15-002 | [fe-color-field-picker-jump.md](./cases/fe-color-field-picker-jump.md) | ColorField, 取色器, react-colorful, 跳色, widgetStyle background |
+| CASE-2026-07-16-001 | [fe-dashboard-pixel-drag-collision-squeeze.md](./cases/fe-dashboard-pixel-drag-collision-squeeze.md) | pixel canvas, drag, collision, 挤叠, 重叠, vacate, skipVerticalCompact |
 
 ## 维护规则
 

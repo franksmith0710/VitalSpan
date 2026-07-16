@@ -1,6 +1,5 @@
 import {
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -30,8 +29,7 @@ import {
   widgetDashboardStyleFingerprint,
 } from "../dashboardStyleConfig";
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
-import { compactPixelLayoutWhenZeroGap } from "./gapCompaction";
-import { mergeAuxiliaryGridIntoSurface, resolveDashboardChrome, auxiliaryGridPatternStyle } from "../dashboardChromeConfig";
+import { auxiliaryGridPatternStyle, resolveDashboardChrome } from "../dashboardChromeConfig";
 import { resolvePixelCollisions, widgetRect } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
 import { clientPointToCanvas, resolvePixelCanvasMeasureElement, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
@@ -66,7 +64,7 @@ export const PIXEL_CANVAS_GUTTER = 0;
 
 export const PIXEL_CANVAS_MIN_HEIGHT = 320;
 
-/** 邻组件推挤预览节流；位置经 DOM 直改，不再 setPreviewLayout */
+/** 保留导出供历史测试引用；DE 模型不在拖动中推挤邻组件 */
 export const PIXEL_PREVIEW_THROTTLE_MS = 32;
 
 export function canvasScaleForHost(
@@ -144,9 +142,6 @@ export function PixelCanvas({
   const [contentSize, setContentSize] = useState({ width: 0, height: 0 });
   const [stageLeft, setStageLeft] = useState(0);
   const [centerContent, setCenterContent] = useState(false);
-  const previewThrottleRef = useRef(0);
-  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingPreviewRef = useRef<PixelLayoutWidget | null>(null);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [markGuides, setMarkGuides] = useState<MarkLineGuide[]>([]);
   const [visibleViewport, setVisibleViewport] = useState<PixelRect>(() => ({
@@ -174,11 +169,10 @@ export function PixelCanvas({
     () => resolveComponentGapRuntime(styleConfig, "pixel"),
     [styleConfig],
   );
-  const activeLayout = useMemo(() => {
-    if (gapRuntime.shellPaddingPx > 0) return layout;
-    return compactPixelLayoutWhenZeroGap(layout, styleConfig).layout;
-  }, [layout, styleConfig, gapRuntime.shellPaddingPx]);
+  const activeLayout = layout;
+
   const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
+  const showMarkLines = mode === "edit";
   const scheme = styleConfig.colorScheme ?? "light";
   const artboardStyle = useMemo(
     () => resolveArtboardStyle(styleConfig),
@@ -266,49 +260,23 @@ export function PixelCanvas({
     [],
   );
 
-  const clearPreviewChrome = useCallback(() => {
-    stageRef.current?.style.removeProperty("height");
-    contentRef.current?.style.removeProperty("width");
-    contentRef.current?.style.removeProperty("height");
-    previewRegistryRef.current.reset(
-      layout.widgets.map((widget) => ({ id: widget.id, ...widgetRect(widget) })),
-    );
-  }, [layout.widgets]);
-
-  const syncPreviewStageMetrics = useCallback(
-    (nextLayout: DashboardLayoutV2) => {
-      const host = hostRef.current;
-      const stage = stageRef.current;
-      const content = contentRef.current;
-      if (!host || !stage) return;
-      const lowest = nextLayout.widgets.reduce(
-        (max, widget) => Math.max(max, widget.y + widget.height),
-        0,
+  const clearPreviewChrome = useCallback(
+    (snapshot?: DashboardLayoutV2) => {
+      stageRef.current?.style.removeProperty("height");
+      contentRef.current?.style.removeProperty("width");
+      contentRef.current?.style.removeProperty("height");
+      const source = snapshot ?? activeLayout;
+      previewRegistryRef.current.reset(
+        source.widgets.map((widget) => ({ id: widget.id, ...widgetRect(widget) })),
       );
-      const viewHeight = Math.max(PIXEL_CANVAS_MIN_HEIGHT, lowest);
-      const measureEl = resolvePixelCanvasMeasureElement(host);
-      const metrics = scaledCanvasMetrics(
-        measureEl.clientWidth,
-        measureEl.clientHeight,
-        layout.canvas.width,
-        resolveScaleDesignHeight(nextLayout.canvas.height),
-        viewHeight,
-        PIXEL_CANVAS_GUTTER,
-        scaleMode,
-      );
-      stage.style.height = `${viewHeight}px`;
-      if (content) {
-        content.style.width = `${metrics.contentWidth}px`;
-        content.style.height = `${metrics.contentHeight}px`;
-      }
     },
-    [layout.canvas.width, scaleMode],
+    [activeLayout],
   );
 
   const resolveActiveAt = useCallback(
     (widget: PixelLayoutWidget) =>
       resolvePixelCollisions(
-        layout,
+        activeLayout,
         widget.id,
         {
           x: widget.x,
@@ -318,48 +286,7 @@ export function PixelCanvas({
         },
         { gap: gapRuntime.collisionGapPx },
       ),
-    [layout, gapRuntime.collisionGapPx],
-  );
-
-  const flushPreview = useCallback(
-    (widget: PixelLayoutWidget) => {
-      if (!onLayoutChange) return;
-      previewThrottleRef.current = Date.now();
-      pendingPreviewRef.current = null;
-      const nextLayout = resolveActiveAt(widget);
-      const positions = new Map(
-        nextLayout.widgets.map((item) => [item.id, widgetRect(item)] as const),
-      );
-      previewRegistryRef.current.applyAll(positions);
-      syncPreviewStageMetrics(nextLayout);
-    },
-    [onLayoutChange, resolveActiveAt, syncPreviewStageMetrics],
-  );
-
-  const handlePreview = useCallback(
-    (widget: PixelLayoutWidget) => {
-      if (!onLayoutChange) return;
-      const elapsed = Date.now() - previewThrottleRef.current;
-      if (elapsed >= PIXEL_PREVIEW_THROTTLE_MS) {
-        flushPreview(widget);
-        return;
-      }
-      pendingPreviewRef.current = widget;
-      if (previewTimerRef.current) return;
-      previewTimerRef.current = setTimeout(() => {
-        previewTimerRef.current = null;
-        const pending = pendingPreviewRef.current;
-        if (pending) flushPreview(pending);
-      }, PIXEL_PREVIEW_THROTTLE_MS - elapsed);
-    },
-    [onLayoutChange, flushPreview],
-  );
-
-  useEffect(
-    () => () => {
-      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
-    },
-    [],
+    [activeLayout, gapRuntime.collisionGapPx],
   );
 
   const handleMarkGuidesChange = useCallback((guides: MarkLineGuide[] | null) => {
@@ -372,23 +299,14 @@ export function PixelCanvas({
   const handleCommit = useCallback(
     (widget: PixelLayoutWidget) => {
       if (!onLayoutChange) return;
-      if (previewTimerRef.current) {
-        clearTimeout(previewTimerRef.current);
-        previewTimerRef.current = null;
-      }
-      pendingPreviewRef.current = null;
-      clearPreviewChrome();
-      onLayoutChange(resolveActiveAt(widget));
+      const nextLayout = resolveActiveAt(widget);
+      onLayoutChange(nextLayout);
+      clearPreviewChrome(nextLayout);
     },
     [onLayoutChange, resolveActiveAt, clearPreviewChrome],
   );
 
   const handleCancel = useCallback(() => {
-    if (previewTimerRef.current) {
-      clearTimeout(previewTimerRef.current);
-      previewTimerRef.current = null;
-    }
-    pendingPreviewRef.current = null;
     clearPreviewChrome();
   }, [clearPreviewChrome]);
 
@@ -511,16 +429,15 @@ export function PixelCanvas({
                 mode={mode}
                 selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
                 onSelect={onSelect}
-                onPreview={mode === "edit" ? handlePreview : undefined}
                 onCommit={handleCommit}
                 onCancel={handleCancel}
                 onMarkGuidesChange={
                   mode === "edit" ? handleMarkGuidesChange : undefined
                 }
                 markLinesEnabled={showAuxGrid}
-                snapTargets={layout.widgets.filter((item) => item.id !== widget.id)}
+                snapTargets={activeLayout.widgets.filter((item) => item.id !== widget.id)}
                 viewport={visibleViewport}
-                otherWidgets={layout.widgets.filter((item) => item.id !== widget.id)}
+                otherWidgets={activeLayout.widgets.filter((item) => item.id !== widget.id)}
                 widgetActions={widgetActions}
                 styleConfig={widgetChromeStyle}
                 registerPreviewSync={mode === "edit" ? registerPreviewSync : undefined}
@@ -532,7 +449,7 @@ export function PixelCanvas({
                 />
               </PixelShape>
             ))}
-          {mode === "edit" && showAuxGrid ? (
+          {showMarkLines ? (
             <PixelMarkLineOverlay guides={markGuides} canvas={viewCanvas} />
           ) : null}
           </div>

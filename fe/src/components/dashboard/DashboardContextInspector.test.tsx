@@ -24,6 +24,7 @@ describe("DashboardContextInspector", () => {
     );
 
     expect(screen.getByTestId("dashboard-config-inspector")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-config-inspector").querySelector(".dashboard-edit-rail-scroll")).toBeNull();
     expect(screen.getByTestId("dashboard-theme-section")).toBeInTheDocument();
     expect(screen.getByText("仪表板风格")).toBeInTheDocument();
     expect(screen.getByTestId("dashboard-overall-config")).toBeInTheDocument();

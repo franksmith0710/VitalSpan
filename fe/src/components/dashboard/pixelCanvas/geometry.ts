@@ -170,6 +170,15 @@ export function resolvePixelCanvasMeasureElement(host: HTMLElement): HTMLElement
 export const SHAPE_ACTION_RAIL_SCREEN_WIDTH = 36;
 export const SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH = 18;
 export const SHAPE_ACTION_RAIL_SCREEN_GAP = 8;
+/** 对标 DE 左侧 edit-bar：屏幕 px，缩放后换算为画布命中宽 */
+export const SHAPE_EDIT_BAR_SCREEN_WIDTH = 32;
+export const SHAPE_RESIZE_HANDLE_SCREEN_PX = 28;
+export const SHAPE_RESIZE_VISUAL_SCREEN_PX = 12;
+/** DE `.de-drag-area` 透明边带（屏幕 px） */
+export const SHAPE_DRAG_EDGE_TOP_SCREEN_PX = 12;
+export const SHAPE_DRAG_EDGE_SIDE_SCREEN_PX = 16;
+export const SHAPE_DRAG_EDGE_RIGHT_TOP_SCREEN_PX = 70;
+export const SHAPE_DRAG_EDGE_BOTTOM_INSET_SCREEN_PX = 40;
 export const SHAPE_ACTION_MENU_SCREEN_WIDTH = 168;
 export const SHAPE_ACTION_RAIL_BUTTON_COUNT = 3;
 

@@ -144,6 +144,7 @@ describe("AdminLayout smoke", () => {
     const main = screen.getAllByRole("main")[0];
     expect(main.className).toContain("overflow-hidden");
     expect(main.className).not.toContain("overflow-y-auto");
+    expect(document.documentElement.classList.contains("admin-fill-lock")).toBe(true);
   });
 
   it("T-NAV-02: dashboard edit → list keeps AdminLayout mounted (useMatch hooks stable)", async () => {

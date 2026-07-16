@@ -2,6 +2,7 @@ import { forwardRef, useState, type ReactNode } from "react";
 import {
   Copy,
   Filter,
+  Grid3x3,
   Image,
   LayoutGrid,
   MoreHorizontal,
@@ -15,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import type { PaletteInsertType } from "./createLayoutWidget";
 import { ChartPickerPopover } from "./ChartPickerPopover";
@@ -24,6 +26,9 @@ type CanvasEditToolbarProps = {
   onInsert: (type: PaletteInsertType) => void;
   onOpenReuse?: () => void;
   onOpenDashboardStyle?: () => void;
+  /** 对标 DataEase 编辑区「更多」中的辅助对齐网格快捷开关 */
+  showAuxiliaryGrid?: boolean;
+  onAuxiliaryGridChange?: (enabled: boolean) => void;
 };
 
 const ToolbarNavButton = forwardRef<
@@ -68,6 +73,8 @@ export function CanvasEditToolbar({
   onInsert,
   onOpenReuse,
   onOpenDashboardStyle,
+  showAuxiliaryGrid = true,
+  onAuxiliaryGridChange,
 }: CanvasEditToolbarProps) {
   const [chartOpen, setChartOpen] = useState(false);
   const [queryOpen, setQueryOpen] = useState(false);
@@ -157,6 +164,24 @@ export function CanvasEditToolbar({
           />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="min-w-[180px]" data-testid="toolbar-more-menu">
+          {onAuxiliaryGridChange ? (
+            <DropdownMenuItem
+              className="flex items-center justify-between gap-3"
+              onSelect={(event) => event.preventDefault()}
+              data-testid="toolbar-auxiliary-grid-item"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <Grid3x3 className="size-4 shrink-0" aria-hidden />
+                辅助对齐网格
+              </span>
+              <Switch
+                checked={showAuxiliaryGrid}
+                onCheckedChange={onAuxiliaryGridChange}
+                aria-label="辅助对齐网格"
+                className="shrink-0"
+              />
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
             onClick={() => {
               onOpenDashboardStyle?.();

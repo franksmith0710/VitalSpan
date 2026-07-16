@@ -359,6 +359,26 @@ describe("dashboard admin smoke", () => {
     expect(onStyle).toHaveBeenCalled();
   });
 
+  it("T-DASH-PALETTE-05b: more menu toggles auxiliary grid when wired", async () => {
+    const user = userEvent.setup();
+    const onAuxGrid = vi.fn();
+    render(
+      <MemoryRouter>
+        <DashboardEditWorkspace
+          onPaletteInsert={() => {}}
+          showAuxiliaryGrid
+          onAuxiliaryGridChange={onAuxGrid}
+          canvas={<div>canvas</div>}
+          chartRail={<div>rail</div>}
+        />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByTestId("toolbar-more-toggle"));
+    expect(await screen.findByTestId("toolbar-auxiliary-grid-item")).toBeInTheDocument();
+    await user.click(screen.getByRole("switch", { name: "辅助对齐网格" }));
+    expect(onAuxGrid).toHaveBeenCalledWith(false);
+  });
+
   it("T-DASH-PALETTE-06: createPaletteWidget builds text widget config", () => {
     const widget = createPaletteWidget("text", []);
     expect(widget.type).toBe("text");
@@ -989,7 +1009,7 @@ describe("dashboard admin smoke", () => {
     expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
     expect(screen.getByText(/像素布局只读/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "保存" })).not.toBeInTheDocument();
-    expect(screen.queryByTestId("pixel-edit-bar-w1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("pixel-drag-edge-top-w1")).not.toBeInTheDocument();
     expect(screen.queryByTestId("palette-toolbar-toggle")).not.toBeInTheDocument();
     expect(screen.queryByTestId("toolbar-open-reuse")).not.toBeInTheDocument();
     expect(screen.queryByTestId("toolbar-more-toggle")).not.toBeInTheDocument();
@@ -1141,7 +1161,7 @@ describe("dashboard admin smoke", () => {
     const content = await screen.findByTestId("chart-mock");
     expect(content.closest("[data-pixel-no-drag]")).toBeTruthy();
     fireEvent.pointerDown(content);
-    expect(await screen.findByTestId("pixel-edit-bar-w1")).toBeInTheDocument();
+    expect(await screen.findByTestId("pixel-drag-edge-top-w1")).toBeInTheDocument();
     expect(screen.getByLabelText("拖动组件")).toBeInTheDocument();
     expect(screen.getByLabelText("调整组件大小：右下")).toBeInTheDocument();
   });
@@ -1233,7 +1253,7 @@ describe("dashboard admin smoke", () => {
 
     renderEditPage("/admin/dashboards/d1");
     expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
-    expect(screen.queryByTestId("pixel-edit-bar-w1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("pixel-drag-edge-top-w1")).not.toBeInTheDocument();
     expect(document.querySelector(".dashboard-grid-view")).toBeNull();
   });
 });

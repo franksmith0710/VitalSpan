@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { AUXILIARY_GRID_CELL_PX, snapRectToAuxiliaryGrid } from "./auxiliaryGridSnap";
+import {
+  AUXILIARY_GRID_CELL_PX,
+  shouldApplyAuxiliaryGridSnap,
+  snapRectToAuxiliaryGrid,
+} from "./auxiliaryGridSnap";
+
+describe("shouldApplyAuxiliaryGridSnap", () => {
+  it("always returns false — DE grid is visual-only", () => {
+    expect(shouldApplyAuxiliaryGridSnap(true, 0)).toBe(false);
+    expect(shouldApplyAuxiliaryGridSnap(false, 0)).toBe(false);
+    expect(shouldApplyAuxiliaryGridSnap(true, 5)).toBe(false);
+    expect(shouldApplyAuxiliaryGridSnap(false, 5)).toBe(false);
+  });
+});
 
 describe("snapRectToAuxiliaryGrid", () => {
   it("snaps move position to grid cells", () => {

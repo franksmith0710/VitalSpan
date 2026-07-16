@@ -54,7 +54,7 @@ export function DeAttrField({
   );
 }
 
-/** 嵌套子字段（如间隙大小） */
+/** 嵌套子字段（如间隙大小）：扁平分隔，不用圆角灰底块 */
 export function DeAttrSubField({
   label,
   children,
@@ -65,8 +65,13 @@ export function DeAttrSubField({
   className?: string;
 }) {
   return (
-    <div className={cn("mt-2.5 rounded-lg bg-gray-50/80 px-2.5 py-2.5 dark:bg-white/[0.03]", className)}>
-      <p className="mb-2 text-[11px] font-medium text-gray-500 dark:text-gray-400">{label}</p>
+    <div
+      className={cn(
+        "border-b border-gray-100 py-2 last:border-b-0 dark:border-white/[0.06]",
+        className,
+      )}
+    >
+      <p className="mb-1.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">{label}</p>
       {children}
     </div>
   );
@@ -142,25 +147,32 @@ export function DeSegmentGroup({
   );
 }
 
-/** 开关行：左文案 + 右 Switch */
+/** 开关行：左文案 + 右 Switch；可选 description 对标 DataEase 辅助项说明 */
 export function DeAttrToggleRow({
   label,
+  description,
   checked,
   onCheckedChange,
 }: {
   label: string;
+  description?: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-gray-100 py-2.5 last:border-b-0 dark:border-white/[0.06]">
-      <span className="min-w-0 flex-1 text-theme-xs text-gray-600 dark:text-gray-300">{label}</span>
-      <Switch
-        checked={checked}
-        onCheckedChange={onCheckedChange}
-        aria-label={label}
-        className="shrink-0"
-      />
+    <div className="border-b border-gray-100 py-2.5 last:border-b-0 dark:border-white/[0.06]">
+      <div className="flex items-center justify-between gap-3">
+        <span className="min-w-0 flex-1 text-theme-xs text-gray-600 dark:text-gray-300">{label}</span>
+        <Switch
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          aria-label={label}
+          className="shrink-0"
+        />
+      </div>
+      {description ? (
+        <p className="mt-1 text-[10px] leading-snug text-gray-400 dark:text-gray-500">{description}</p>
+      ) : null}
     </div>
   );
 }

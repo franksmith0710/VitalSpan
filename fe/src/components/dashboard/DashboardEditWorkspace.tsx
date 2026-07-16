@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { CanvasEditToolbar } from "@/components/dashboard/CanvasEditToolbar";
 import type { PaletteInsertType } from "@/components/dashboard/createLayoutWidget";
 import { CollapsedRailTab, RailFoldHeader } from "@/components/dashboard/RailFoldTab";
-import { DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
+import { DASHBOARD_EDIT_RAIL_SCROLL_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import { cn } from "@/lib/utils";
 
@@ -88,6 +88,9 @@ export type DashboardEditWorkspaceProps = {
   canvasColorScheme?: ColorScheme;
   /** 点击画布区顶栏空白时切回仪表板配置 */
   onActivateDashboardContext?: () => void;
+  /** 编辑区「更多」辅助对齐网格（与仪表板配置 chrome.showAuxiliaryGrid 联动） */
+  showAuxiliaryGrid?: boolean;
+  onAuxiliaryGridChange?: (enabled: boolean) => void;
   className?: string;
 };
 
@@ -107,12 +110,14 @@ export function DashboardEditWorkspace({
   showRailFoldHeader = true,
   canvasColorScheme = "light",
   onActivateDashboardContext,
+  showAuxiliaryGrid,
+  onAuxiliaryGridChange,
   className,
 }: DashboardEditWorkspaceProps) {
   return (
     <div
       className={cn(
-        "grid min-h-0 flex-1 gap-1.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch",
+        "grid min-h-0 flex-1 gap-1.5 overflow-hidden lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch [&>*]:min-h-0",
         className,
       )}
     >
@@ -123,6 +128,8 @@ export function DashboardEditWorkspace({
             onInsert={onPaletteInsert}
             onOpenReuse={onOpenReuse}
             onOpenDashboardStyle={onOpenDashboardStyle}
+            showAuxiliaryGrid={showAuxiliaryGrid}
+            onAuxiliaryGridChange={onAuxiliaryGridChange}
           />
         }
         hint={
@@ -153,7 +160,12 @@ export function DashboardEditWorkspace({
               onCollapse={() => onChartRailOpenChange(false)}
             />
           ) : null}
-          <div className="min-h-0 flex-1 overflow-hidden">{chartRail}</div>
+          <div
+            className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS)}
+            data-testid="dashboard-edit-rail-scroll"
+          >
+            <div className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLASS)}>{chartRail}</div>
+          </div>
         </div>
       ) : (
         <CollapsedRailTab

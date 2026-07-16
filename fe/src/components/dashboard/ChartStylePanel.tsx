@@ -8,7 +8,7 @@ export function ChartStylePanel() {
   const sections = chartStyleSectionsForType(cfg.chartType);
 
   return (
-    <div className="flex flex-col" data-testid="chart-style-panel">
+    <div className="flex flex-col gap-0" data-testid="chart-style-panel">
       {sections.map((sectionId) => (
         <ChartStyleSection key={sectionId} sectionId={sectionId} />
       ))}

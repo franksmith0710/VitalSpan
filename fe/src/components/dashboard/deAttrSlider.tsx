@@ -343,7 +343,7 @@ export function ChartDeSliderField({
         </span>
       </div>
       <DeProgressSlider
-        className={DE_SLIDER_WIDTH_NARROW}
+        className="w-full min-w-0"
         value={clamped}
         min={min}
         max={max}
@@ -359,23 +359,19 @@ export function ChartDeSliderField({
 
 export type InspectorSliderFieldProps = Omit<ChartDeSliderFieldProps, "className"> & {
   hint?: string;
+  className?: string;
 };
 
-/** 与 InspectorFieldRow 同密度，滑块替代 number 输入（图表右栏 216px：窄轨道单行） */
+/** 216px 图表右栏：标签+数值顶行，滑块独占下一行全宽 */
 export function InspectorSliderField({
   label,
   hint,
+  className,
   ...slider
 }: InspectorSliderFieldProps) {
   return (
     <div className="grid gap-1">
-      <DeAttrSliderField
-        label={label}
-        className="border-b-0 py-0"
-        density="narrow"
-        compact
-        {...slider}
-      />
+      <ChartDeSliderField label={label} className={className} {...slider} />
       {hint ? (
         <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">{hint}</p>
       ) : null}
@@ -418,6 +414,8 @@ export function DeAttrSliderField({
   className,
   onChange,
 }: DeAttrSliderFieldProps) {
+  const resolved = value ?? fallback;
+
   return (
     <div
       className={cn(
@@ -426,18 +424,31 @@ export function DeAttrSliderField({
         className,
       )}
     >
-      <DeSliderInlineRow
-        label={label}
-        value={value ?? fallback}
-        min={min}
-        max={max}
-        step={step}
-        unit={unit}
-        ariaLabel={ariaLabel}
-        density={density}
-        labelTone={labelTone}
-        onChange={onChange}
-      />
+      {density === "narrow" ? (
+        <DeSliderStackedRow
+          label={label}
+          value={resolved}
+          min={min}
+          max={max}
+          step={step}
+          unit={unit}
+          ariaLabel={ariaLabel}
+          onChange={onChange}
+        />
+      ) : (
+        <DeSliderInlineRow
+          label={label}
+          value={resolved}
+          min={min}
+          max={max}
+          step={step}
+          unit={unit}
+          ariaLabel={ariaLabel}
+          density={density}
+          labelTone={labelTone}
+          onChange={onChange}
+        />
+      )}
       {hint ? (
         <p className="mt-1.5 text-[10px] leading-snug text-gray-400 dark:text-gray-500">{hint}</p>
       ) : null}

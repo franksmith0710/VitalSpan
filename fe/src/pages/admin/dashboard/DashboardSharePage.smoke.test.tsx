@@ -121,7 +121,7 @@ describe("DashboardSharePage", () => {
     );
 
     expect(await screen.findByTestId("pixel-canvas-host")).toBeInTheDocument();
-    expect(screen.queryByTestId("pixel-edit-bar-w2")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("pixel-drag-edge-top-w2")).not.toBeInTheDocument();
     expect(screen.getByText(/\/embed\/chart\/w2/)).toBeInTheDocument();
   });
 });

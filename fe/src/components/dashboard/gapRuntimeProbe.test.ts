@@ -26,6 +26,14 @@ describe("gapRuntimeProbe", () => {
     });
   });
 
+  it("ignores non-adjacent vertical slack in the same column", () => {
+    const top = { id: "a", x: 0, y: 0, width: 480, height: 280 };
+    const middle = { id: "b", x: 0, y: 280, width: 480, height: 280 };
+    const bottom = { id: "c", x: 0, y: 560, width: 480, height: 280 };
+    expect(measurePixelLayoutOuterGaps([top, middle, bottom])).toEqual([]);
+    expect(hasPositiveOuterGaps([top, middle, bottom])).toBe(false);
+  });
+
   it("estimates visual gap from shell padding when outer rects touch", () => {
     expect(estimateVisualGapPx(0, 5)).toBe(10);
     expect(estimateVisualGapPx(20, 0)).toBe(20);

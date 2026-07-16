@@ -10,8 +10,19 @@ export const DEFAULT_DASHBOARD_CHROME: Required<DashboardChromeConfig> = {
 
 export const DEFAULT_DRILL_LEVEL_COLORS = ["#465fff", "#0ba5ec", "#12b76a"] as const;
 
-/** 编辑辅助网格步长（像素画布 overlay + 吸附） */
+/** 辅助对齐网格步长（像素画布 overlay，仅视觉） */
 export const AUXILIARY_GRID_CELL_PX = 20;
+
+/** 配置面板 / 工具栏开关说明（对标 DataEase「辅助设计网格」） */
+export function auxiliaryGridToggleDescription(options: {
+  pixel: boolean;
+  hasGap: boolean;
+}): string {
+  if (options.pixel) {
+    return `显示 ${AUXILIARY_GRID_CELL_PX}px 参考网格；开启时拖近邻组件边/中心（约 3px）会出现对齐参考线并吸附，关闭后可自由落位`;
+  }
+  return "显示参考网格线，辅助 12 列矩阵布局对齐";
+}
 
 export function resolveDashboardChrome(
   config: DashboardStyleConfig | undefined,

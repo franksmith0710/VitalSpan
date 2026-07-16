@@ -2,7 +2,6 @@ import type { GapConfigInput } from "./gapPolicy";
 import { resolvePixelGutter, resolveWidgetGap } from "./gapPolicy";
 import type { CanvasGapMode } from "./componentGapRuntime";
 import type { PixelLayoutWidget } from "./layoutUtils";
-import type { PixelLayoutWidget } from "./layoutUtils";
 
 export type OuterRectGap = {
   aId: string;
@@ -25,39 +24,59 @@ function crossOverlap(
   return Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
 }
 
-/** 采样像素布局中外框正缝（不含重叠区域） */
+/** 采样像素布局中相邻外框正缝（不含重叠、不含隔了其它块的远距缝） */
 export function measurePixelLayoutOuterGaps(
   widgets: Pick<PixelLayoutWidget, "id" | "x" | "y" | "width" | "height">[],
   options?: { maxGapPx?: number },
 ): OuterRectGap[] {
   const maxGap = options?.maxGapPx ?? 512;
   const gaps: OuterRectGap[] = [];
+  const seen = new Set<string>();
 
-  for (let i = 0; i < widgets.length; i += 1) {
-    for (let j = i + 1; j < widgets.length; j += 1) {
-      const a = widgets[i]!;
-      const b = widgets[j]!;
+  const record = (aId: string, bId: string, axis: "horizontal" | "vertical", gapPx: number) => {
+    if (gapPx <= 0 || gapPx > maxGap) return;
+    const key = [aId, bId, axis].sort().join("|");
+    if (seen.has(key)) return;
+    seen.add(key);
+    gaps.push({ aId, bId, axis, gapPx });
+  };
 
-      if (crossOverlap(a, b, "horizontal") >= CROSS_AXIS_OVERLAP_MIN) {
-        const rightGap = b.x - (a.x + a.width);
-        const leftGap = a.x - (b.x + b.width);
-        if (rightGap > 0 && rightGap <= maxGap) {
-          gaps.push({ aId: a.id, bId: b.id, axis: "horizontal", gapPx: rightGap });
-        } else if (leftGap > 0 && leftGap <= maxGap) {
-          gaps.push({ aId: b.id, bId: a.id, axis: "horizontal", gapPx: leftGap });
+  for (const anchor of widgets) {
+    let closestRight: { id: string; gap: number } | null = null;
+    let closestLeft: { id: string; gap: number } | null = null;
+    let closestDown: { id: string; gap: number } | null = null;
+    let closestUp: { id: string; gap: number } | null = null;
+
+    for (const other of widgets) {
+      if (other.id === anchor.id) continue;
+
+      if (crossOverlap(anchor, other, "horizontal") >= CROSS_AXIS_OVERLAP_MIN) {
+        const rightGap = other.x - (anchor.x + anchor.width);
+        if (rightGap >= 0 && (!closestRight || rightGap < closestRight.gap)) {
+          closestRight = { id: other.id, gap: rightGap };
+        }
+        const leftGap = anchor.x - (other.x + other.width);
+        if (leftGap >= 0 && (!closestLeft || leftGap < closestLeft.gap)) {
+          closestLeft = { id: other.id, gap: leftGap };
         }
       }
 
-      if (crossOverlap(a, b, "vertical") >= CROSS_AXIS_OVERLAP_MIN) {
-        const downGap = b.y - (a.y + a.height);
-        const upGap = a.y - (b.y + b.height);
-        if (downGap > 0 && downGap <= maxGap) {
-          gaps.push({ aId: a.id, bId: b.id, axis: "vertical", gapPx: downGap });
-        } else if (upGap > 0 && upGap <= maxGap) {
-          gaps.push({ aId: b.id, bId: a.id, axis: "vertical", gapPx: upGap });
+      if (crossOverlap(anchor, other, "vertical") >= CROSS_AXIS_OVERLAP_MIN) {
+        const downGap = other.y - (anchor.y + anchor.height);
+        if (downGap >= 0 && (!closestDown || downGap < closestDown.gap)) {
+          closestDown = { id: other.id, gap: downGap };
+        }
+        const upGap = anchor.y - (other.y + other.height);
+        if (upGap >= 0 && (!closestUp || upGap < closestUp.gap)) {
+          closestUp = { id: other.id, gap: upGap };
         }
       }
     }
+
+    if (closestRight) record(anchor.id, closestRight.id, "horizontal", closestRight.gap);
+    if (closestLeft) record(closestLeft.id, anchor.id, "horizontal", closestLeft.gap);
+    if (closestDown) record(anchor.id, closestDown.id, "vertical", closestDown.gap);
+    if (closestUp) record(closestUp.id, anchor.id, "vertical", closestUp.gap);
   }
 
   return gaps;
