@@ -311,6 +311,7 @@ export const ChartRenderer = memo(function ChartRenderer({
 
       return wrapEmbedded(
         <EmbeddedChartTable
+          embedded
           columns={displayColumns}
           displayCols={cols}
           rows={displayRows}

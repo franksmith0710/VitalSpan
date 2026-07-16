@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -30,16 +31,18 @@ import {
 } from "../dashboardStyleConfig";
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
 import { auxiliaryGridPatternStyle, resolveDashboardChrome } from "../dashboardChromeConfig";
-import { resolvePixelCollisions, widgetRect } from "./collisionLayout";
+import { resolvePixelCollisions, shouldRevertPixelDragCommit, widgetRect } from "./collisionLayout";
 import type { PixelRect } from "./geometry";
 import { clientPointToCanvas, resolvePixelCanvasMeasureElement, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
 import { PixelShape } from "./PixelShape";
 import type { PixelWidgetActions } from "./PixelShapeActionRail";
 import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
+import { PixelCanvasInteractionProvider } from "./PixelCanvasInteractionContext";
 import { markLineGuidesEqual } from "./markLineGuidesEqual";
 import type { MarkLineGuide } from "./pixelMarkLine";
 import { PixelWidgetSlot } from "./PixelWidgetSlot";
 import { createPixelShapePreviewRegistry } from "./pixelShapePreviewRegistry";
+import { autoScrollPixelCanvasHost } from "./pixelCanvasAutoScroll";
 import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
 
@@ -144,6 +147,10 @@ export function PixelCanvas({
   const [centerContent, setCenterContent] = useState(false);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [markGuides, setMarkGuides] = useState<MarkLineGuide[]>([]);
+  const [playingWidgetId, setPlayingWidgetId] = useState<string | null>(null);
+  const previewThrottleRef = useRef(0);
+  const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingPreviewRef = useRef<PixelLayoutWidget | null>(null);
   const [visibleViewport, setVisibleViewport] = useState<PixelRect>(() => ({
     x: 0,
     y: 0,
@@ -273,6 +280,36 @@ export function PixelCanvas({
     [activeLayout],
   );
 
+  const syncPreviewStageMetrics = useCallback(
+    (nextLayout: DashboardLayoutV2) => {
+      const host = hostRef.current;
+      const stage = stageRef.current;
+      const content = contentRef.current;
+      if (!host || !stage) return;
+      const lowest = nextLayout.widgets.reduce(
+        (max, widget) => Math.max(max, widget.y + widget.height),
+        0,
+      );
+      const viewHeight = Math.max(PIXEL_CANVAS_MIN_HEIGHT, lowest);
+      const measureEl = resolvePixelCanvasMeasureElement(host);
+      const metrics = scaledCanvasMetrics(
+        measureEl.clientWidth,
+        measureEl.clientHeight,
+        activeLayout.canvas.width,
+        resolveScaleDesignHeight(nextLayout.canvas.height),
+        viewHeight,
+        PIXEL_CANVAS_GUTTER,
+        scaleMode,
+      );
+      stage.style.height = `${viewHeight}px`;
+      if (content) {
+        content.style.width = `${metrics.contentWidth}px`;
+        content.style.height = `${metrics.contentHeight}px`;
+      }
+    },
+    [activeLayout.canvas.width, scaleMode],
+  );
+
   const resolveActiveAt = useCallback(
     (widget: PixelLayoutWidget) =>
       resolvePixelCollisions(
@@ -284,10 +321,56 @@ export function PixelCanvas({
           width: widget.width,
           height: widget.height,
         },
-        { gap: gapRuntime.collisionGapPx },
+        { gap: gapRuntime.collisionGapPx, minOverlap: gapRuntime.collisionOverlapBufferPx },
       ),
-    [activeLayout, gapRuntime.collisionGapPx],
+    [activeLayout, gapRuntime.collisionGapPx, gapRuntime.collisionOverlapBufferPx],
   );
+
+  const flushPreview = useCallback(
+    (widget: PixelLayoutWidget) => {
+      previewThrottleRef.current = Date.now();
+      pendingPreviewRef.current = null;
+      const nextLayout = resolveActiveAt(widget);
+      const positions = new Map(
+        nextLayout.widgets.map((item) => [item.id, widgetRect(item)] as const),
+      );
+      previewRegistryRef.current.applyAll(positions);
+      syncPreviewStageMetrics(nextLayout);
+    },
+    [resolveActiveAt, syncPreviewStageMetrics],
+  );
+
+  const handlePreview = useCallback(
+    (widget: PixelLayoutWidget) => {
+      const elapsed = Date.now() - previewThrottleRef.current;
+      if (elapsed >= PIXEL_PREVIEW_THROTTLE_MS) {
+        flushPreview(widget);
+        return;
+      }
+      pendingPreviewRef.current = widget;
+      if (previewTimerRef.current) return;
+      previewTimerRef.current = setTimeout(() => {
+        previewTimerRef.current = null;
+        const pending = pendingPreviewRef.current;
+        if (pending) flushPreview(pending);
+      }, PIXEL_PREVIEW_THROTTLE_MS - elapsed);
+    },
+    [flushPreview],
+  );
+
+  useEffect(
+    () => () => {
+      if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    },
+    [],
+  );
+
+  const handlePlayingChange = useCallback((widgetId: string, playing: boolean) => {
+    setPlayingWidgetId((current) => {
+      if (playing) return widgetId;
+      return current === widgetId ? null : current;
+    });
+  }, []);
 
   const handleMarkGuidesChange = useCallback((guides: MarkLineGuide[] | null) => {
     const next = guides ?? [];
@@ -296,9 +379,28 @@ export function PixelCanvas({
     );
   }, []);
 
+  const shouldRevertCommit = useCallback(
+    (widgetId: string, finalRect: PixelRect, startRect: PixelRect) =>
+      shouldRevertPixelDragCommit(
+        finalRect,
+        startRect,
+        activeLayout.widgets
+          .filter((item) => item.id !== widgetId)
+          .map((item) => widgetRect(item)),
+        gapRuntime.collisionOverlapBufferPx,
+        gapRuntime.collisionGapPx,
+      ),
+    [activeLayout.widgets, gapRuntime.collisionGapPx, gapRuntime.collisionOverlapBufferPx],
+  );
+
   const handleCommit = useCallback(
     (widget: PixelLayoutWidget) => {
       if (!onLayoutChange) return;
+      if (previewTimerRef.current) {
+        clearTimeout(previewTimerRef.current);
+        previewTimerRef.current = null;
+      }
+      pendingPreviewRef.current = null;
       const nextLayout = resolveActiveAt(widget);
       onLayoutChange(nextLayout);
       clearPreviewChrome(nextLayout);
@@ -307,8 +409,26 @@ export function PixelCanvas({
   );
 
   const handleCancel = useCallback(() => {
+    if (previewTimerRef.current) {
+      clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = null;
+    }
+    pendingPreviewRef.current = null;
     clearPreviewChrome();
   }, [clearPreviewChrome]);
+
+  const handleDragAutoScroll = useCallback(
+    (event: PointerEvent) => {
+      const host = hostRef.current;
+      if (!host) return 0;
+      const delta = autoScrollPixelCanvasHost(host, event.clientY);
+      if (delta !== 0) {
+        publishViewport(visibleCanvasViewport(host, scale, viewCanvas));
+      }
+      return delta;
+    },
+    [publishViewport, scale, viewCanvas],
+  );
 
   const handleDragOver = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
@@ -367,6 +487,7 @@ export function PixelCanvas({
       )}
       data-testid="pixel-canvas-host"
       data-pixel-canvas-scale={scale}
+      data-pixel-canvas-playing={playingWidgetId ?? undefined}
       style={{
         ...(userArtboardBg ? artboardStyle : undefined),
         "--pixel-canvas-scale": scale,
@@ -390,6 +511,9 @@ export function PixelCanvas({
         onDrop={handleDrop}
       >
         <PixelCanvasScaleProvider scale={scale}>
+        <PixelCanvasInteractionProvider
+          interaction={playingWidgetId ? { widgetId: playingWidgetId } : null}
+        >
         <div
           ref={stageRef}
           id="editor-canvas-main"
@@ -429,8 +553,14 @@ export function PixelCanvas({
                 mode={mode}
                 selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
                 onSelect={onSelect}
+                onPreview={mode === "edit" ? handlePreview : undefined}
                 onCommit={handleCommit}
                 onCancel={handleCancel}
+                shouldRevertCommit={(finalRect, startRect) =>
+                  shouldRevertCommit(widget.id, finalRect, startRect)
+                }
+                onPlayingChange={(playing) => handlePlayingChange(widget.id, playing)}
+                onDragAutoScroll={mode === "edit" ? handleDragAutoScroll : undefined}
                 onMarkGuidesChange={
                   mode === "edit" ? handleMarkGuidesChange : undefined
                 }
@@ -453,6 +583,7 @@ export function PixelCanvas({
             <PixelMarkLineOverlay guides={markGuides} canvas={viewCanvas} />
           ) : null}
           </div>
+        </PixelCanvasInteractionProvider>
         </PixelCanvasScaleProvider>
       </div>
     </div>

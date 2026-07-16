@@ -66,7 +66,7 @@ describe("ChartStylePanel", () => {
     expect(screen.getByRole("button", { name: "图例" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "背景" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "图片" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "边框" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "装饰边框" })).toBeInTheDocument();
 
     await user.click(await screen.findByRole("button", { name: "堆叠" }));
     expect(onChange).toHaveBeenCalledWith(

@@ -15,13 +15,13 @@
 
 1. **编辑态实时压实**：`PixelCanvas` 的 `activeLayout` / `finalizeLayout` / `useLayoutEffect` 在每次渲染与提交时调用 `compactPixelLayoutOuterRects`，把用户拖出的正缝强行收拢
 2. **吸附阈值按缩放放大**：`markLineThreshold = 3/scale` 在缩小画布时吸附范围大于 DE 固定的 `diff=3` 画布像素
-3. **辅助网格关仍吸附**：`markLinesEnabled` 与编辑态解耦后，关闭网格仍触发邻组件吸附
+3. ~~**辅助网格关仍吸附**~~ → 已解耦；碰撞预览与对齐吸附独立
 
-## 修复
+## 修复（勿回退）
 
-1. 编辑提交路径**不再**调用 `compactPixelLayoutOuterRects`；压实仅保留在 `stylePipeline` 加载/保存与 gap 预设切换
-2. `markLineThreshold` 固定为 **3 画布像素**（对标 DE `MarkLine.vue`）
-3. `markLinesEnabled={showAuxGrid}`：关闭「辅助对齐网格」后可自由拖放；开启时才有 3px 邻组件吸附
+- 拖动中 **`handlePreview` + `previewRegistry.applyAll`**：对标 DE `movePlayer` 实时 reflow 预览
+- 松手 **`handleCommit`**：同 `resolvePixelCollisions` 写入 layout
+- `isPlayer` 浮层：活动组件叠于邻块之上，邻块 `pointer-events: none` 不挡拖动手势
 
 ## 验证
 

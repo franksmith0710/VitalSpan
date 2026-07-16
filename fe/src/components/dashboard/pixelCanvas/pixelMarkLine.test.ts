@@ -153,10 +153,10 @@ describe("pixelMarkLine", () => {
     expect(result.guides).toEqual([]);
   });
 
-  it("uses fixed DE 3px canvas threshold regardless of scale", () => {
-    expect(markLineThreshold(1)).toBe(3);
-    expect(markLineThreshold(0.5)).toBe(3);
-    expect(markLineThreshold(4)).toBe(3);
+  it("converts screen threshold to canvas coords by scale", () => {
+    expect(markLineThreshold(1)).toBe(10);
+    expect(markLineThreshold(0.5)).toBe(20);
+    expect(markLineThreshold(2)).toBe(5);
   });
 
   it("snaps bottom edge while resizing south", () => {

@@ -191,6 +191,9 @@ export const PIXEL_SHAPE_BASE_Z_INDEX = 10;
 /** 选中 shape 抬升 z-index，使外伸操作条不被邻组件遮盖 */
 export const PIXEL_SHAPE_SELECTED_Z_BOOST = 1_000_000;
 
+/** 拖动/缩放中（isPlayer）再抬升，确保可叠过邻块且无体积阻挡 */
+export const PIXEL_SHAPE_PLAYER_Z_BOOST = PIXEL_SHAPE_SELECTED_Z_BOOST + 1_000;
+
 /** 对齐参考线须盖过选中 shape，否则拖动时蓝线被活动组件遮住 */
 export const PIXEL_MARK_LINE_Z_INDEX = PIXEL_SHAPE_SELECTED_Z_BOOST + 1_000_000;
 
@@ -198,6 +201,10 @@ export function pixelShapeZIndex(order: number, selected: boolean): number {
   return selected
     ? PIXEL_SHAPE_SELECTED_Z_BOOST + order
     : PIXEL_SHAPE_BASE_Z_INDEX + order;
+}
+
+export function pixelShapePlayerZIndex(order: number): number {
+  return PIXEL_SHAPE_PLAYER_Z_BOOST + order;
 }
 
 export type ShapeActionRailPlacement = "left" | "right";

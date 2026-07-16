@@ -10,6 +10,7 @@ describe("componentGapRuntime", () => {
     expect(runtime.shellPaddingPx).toBe(5);
     expect(runtime.snapGapPx).toBe(5);
     expect(runtime.collisionGapPx).toBe(0);
+    expect(runtime.collisionOverlapBufferPx).toBe(40);
   });
 
   it("maps grid md preset separately from pixel", () => {
@@ -19,5 +20,6 @@ describe("componentGapRuntime", () => {
     );
     expect(runtime.shellPaddingPx).toBe(8);
     expect(runtime.collisionGapPx).toBe(0);
+    expect(runtime.collisionOverlapBufferPx).toBe(40);
   });
 });

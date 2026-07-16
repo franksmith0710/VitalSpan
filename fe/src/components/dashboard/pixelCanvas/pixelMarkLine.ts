@@ -13,15 +13,18 @@ export type DragDirection = {
   isDownward: boolean;
 };
 
-/** DataEase `MarkLine.vue` 默认 diff（屏幕约 3px，换算为画布逻辑坐标） */
+/** 对齐吸附：屏幕像素阈值（换算为画布坐标后随 scale 放大，缩放手感一致） */
+export const MARK_LINE_SCREEN_THRESHOLD_PX = 10;
+
+/** @deprecated 仅测试对照 DE 原始 3px */
 export const MARK_LINE_CANVAS_THRESHOLD_PX = 3;
 
 const MIN_WIDTH = 120;
 const MIN_HEIGHT = 80;
 
-/** DataEase `MarkLine.vue`：`diff=3` 为画布逻辑坐标，不随缩放换算 */
-export function markLineThreshold(_scale: number): number {
-  return MARK_LINE_CANVAS_THRESHOLD_PX;
+export function markLineThreshold(scale: number): number {
+  const safeScale = scale > 0 ? scale : 1;
+  return MARK_LINE_SCREEN_THRESHOLD_PX / safeScale;
 }
 
 export type MarkLineSnapOptions = {

@@ -19,7 +19,7 @@ export function auxiliaryGridToggleDescription(options: {
   hasGap: boolean;
 }): string {
   if (options.pixel) {
-    return `显示 ${AUXILIARY_GRID_CELL_PX}px 参考网格；开启时拖近邻组件边/中心（约 3px）会出现对齐参考线并吸附，关闭后可自由落位`;
+    return `显示 ${AUXILIARY_GRID_CELL_PX}px 参考网格；开启时拖近邻组件边/中心（约 10px）会出现对齐参考线并吸附，关闭后可自由落位`;
   }
   return "显示参考网格线，辅助 12 列矩阵布局对齐";
 }

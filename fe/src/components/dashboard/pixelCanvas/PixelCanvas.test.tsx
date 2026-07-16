@@ -61,7 +61,7 @@ function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
 }
 
 describe("PixelCanvas", () => {
-  it("previews mark-line snap without pushing neighbors during drag", async () => {
+  it("previews DE collision reflow on neighbors while dragging", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",
       type: "chart",
@@ -103,7 +103,7 @@ describe("PixelCanvas", () => {
     });
     await flushPixelPointerFrames();
 
-    expect(blockerShape).toHaveStyle({ top: "280px" });
+    expect(blockerShape).not.toHaveStyle({ top: "280px" });
     fireEvent.pointerUp(shape, { pointerId: 3, clientX: 0, clientY: 120 });
 
     expect(onChange).toHaveBeenCalledTimes(1);
@@ -153,7 +153,7 @@ describe("PixelCanvas", () => {
     fireEvent.pointerMove(document, { pointerId: 4, clientX: 0, clientY: 120 });
     await flushPixelPointerFrames();
 
-    expect(blockerShape).toHaveStyle({ top: "280px" });
+    expect(blockerShape).not.toHaveStyle({ top: "280px" });
     fireEvent.pointerUp(shape, { pointerId: 4, clientX: 0, clientY: 120 });
 
     expect(onChange).toHaveBeenCalledTimes(1);
@@ -431,6 +431,96 @@ describe("PixelCanvas", () => {
     expect(Number.parseFloat(visual.style.width) * expectedScale).toBe(12);
     },
   );
+
+  it("reverts to start position when released within collision buffer", async () => {
+    const blocker: PixelLayoutWidget = {
+      id: "w2",
+      type: "chart",
+      title: "下方",
+      order: 2,
+      x: 100,
+      y: 270,
+      width: 300,
+      height: 200,
+    };
+    const stackedLayout: DashboardLayoutV2 = {
+      ...layout,
+      widgets: [{ ...widget, y: 80 }, blocker],
+    };
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={stackedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const shape = screen.getByTestId("pixel-shape-w1");
+    expect(shape).toHaveStyle({ top: "80px" });
+
+    fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
+      pointerId: 13,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 13, clientX: 0, clientY: 20 });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(shape, { pointerId: 13, clientX: 0, clientY: 20 });
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(shape).toHaveStyle({ top: "80px" });
+  });
+
+  it("auto-scrolls canvas host when dragging near the bottom edge", async () => {
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={layout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const host = screen.getByTestId("pixel-canvas-host");
+    let scrollTop = 0;
+    Object.defineProperty(host, "scrollTop", {
+      configurable: true,
+      get: () => scrollTop,
+      set: (value: number) => {
+        scrollTop = value;
+      },
+    });
+    Object.defineProperty(host, "scrollHeight", { configurable: true, value: 3_000 });
+    Object.defineProperty(host, "clientHeight", { configurable: true, value: 600 });
+    vi.spyOn(host, "getBoundingClientRect").mockReturnValue({
+      top: 100,
+      bottom: 700,
+      left: 0,
+      right: 1_200,
+      width: 1_200,
+      height: 600,
+      x: 0,
+      y: 100,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    const shape = screen.getByTestId("pixel-shape-w1");
+    fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
+      pointerId: 12,
+      clientX: 200,
+      clientY: 200,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 12, clientX: 200, clientY: 690 });
+    await flushPixelPointerFrames();
+
+    expect(scrollTop).toBe(20);
+    fireEvent.pointerUp(shape, { pointerId: 12, clientX: 200, clientY: 690 });
+  });
 
   it("reports the visible canonical viewport after resize and scroll", async () => {
     const onViewportChange = vi.fn();

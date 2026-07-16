@@ -1,5 +1,6 @@
-import type { CSSProperties } from "react";
+import { useCallback, useRef, type CSSProperties } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/button";
 import { dwTableCell, dwTableMeta } from "@/components/dashboard/dashboardWidgetTypography";
@@ -24,6 +25,8 @@ type EmbeddedChartTableProps = {
   valueFormat?: NumberFormatConfig;
   drillField?: string;
   onDrillCellClick?: (field: string, value: string) => void;
+  /** 看板内嵌：对标 DataEase，外框实时缩放时列宽与滚动区跟手 */
+  embedded?: boolean;
 };
 
 function scrollbarStyle(
@@ -57,7 +60,15 @@ export function EmbeddedChartTable({
   valueFormat,
   drillField,
   onDrillCellClick,
+  embedded = false,
 }: EmbeddedChartTableProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const remeasureLayout = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    void el.getBoundingClientRect();
+  }, []);
+  useEmbeddedChartLiveResize(embedded, containerRef, remeasureLayout);
   const pageSize = tableStyle.pageSize ?? DEFAULT_TABLE_PAGE_SIZE;
   const paginationMode = tableStyle.paginationMode ?? "page";
   const paginationVariant = tableStyle.paginationVariant ?? "compact";
@@ -76,7 +87,10 @@ export function EmbeddedChartTable({
     : rows;
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const columnWidthMode = tableStyle.columnWidthMode ?? "auto";
-  const useFixedLayout = columnWidthMode === "fixed" || columnWidthMode === "custom";
+  const fitContainer =
+    embedded && (columnWidthMode === "auto" || columnWidthMode === "fixed");
+  const useFixedLayout =
+    fitContainer || columnWidthMode === "fixed" || columnWidthMode === "custom";
   const equalPct = displayCols.length > 0 ? 100 / displayCols.length : 100;
 
   const resolveColWidth = (col: string): string | undefined => {
@@ -85,7 +99,7 @@ export function EmbeddedChartTable({
       if (custom != null && custom > 0) return `${custom}%`;
       return `${equalPct}%`;
     }
-    if (columnWidthMode === "fixed") return `${equalPct}%`;
+    if (fitContainer || columnWidthMode === "fixed") return `${equalPct}%`;
     return undefined;
   };
   const cellClass = cn(
@@ -98,7 +112,11 @@ export function EmbeddedChartTable({
 
   return (
     <div
-      className={cn("flex min-h-0 w-full min-w-0 flex-col", panel ? undefined : "h-full")}
+      ref={containerRef}
+      className={cn(
+        "embedded-chart-table-host flex min-h-0 w-full min-w-0 flex-col",
+        embedded ? "absolute inset-0" : panel ? undefined : "h-full",
+      )}
       style={{
         ...mergedThemeStyle,
         ...(panelBackground ? { backgroundColor: panelBackground } : null),

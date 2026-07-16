@@ -5,11 +5,14 @@ export type CollisionLayoutOptions = {
   gap?: number;
   minCanvasHeight?: number;
   bottomPadding?: number;
-  /** @deprecated DE 矩阵 reflow 不使用预览容差 */
+  /** 两轴重叠均超过该值（画布 px）才触发推挤，避免轻触即碰撞 */
   minOverlap?: number;
-  /** @deprecated DE reflow 在松手时一次性结算 */
+  /** @deprecated */
   skipVerticalCompact?: boolean;
 };
+
+/** 拖动/落位碰撞缓冲：XY 双向重叠均须超过此值才推挤邻块；未达则松手复原 */
+export const PIXEL_COLLISION_OVERLAP_BUFFER_PX = 40;
 
 const PACK_SCAN_STEP = 8;
 
@@ -19,7 +22,7 @@ const DEFAULT_OPTIONS: Required<Omit<CollisionLayoutOptions, "skipVerticalCompac
   gap: 0,
   minCanvasHeight: 220,
   bottomPadding: 0,
-  minOverlap: 0,
+  minOverlap: PIXEL_COLLISION_OVERLAP_BUFFER_PX,
   skipVerticalCompact: false,
 };
 
@@ -42,6 +45,36 @@ export function rectsOverlap(
   const overlapX = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
   const overlapY = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
   return overlapX > minOverlap && overlapY > minOverlap;
+}
+
+export function rectsTouch(a: PixelRect, b: PixelRect, gap = 0): boolean {
+  return (
+    a.x < b.x + b.width + gap &&
+    a.x + a.width + gap > b.x &&
+    a.y < b.y + b.height + gap &&
+    a.y + a.height + gap > b.y
+  );
+}
+
+/** 与邻块有交集，但双向重叠未超过缓冲（轻触区） */
+export function hasShallowOverlap(
+  a: PixelRect,
+  b: PixelRect,
+  minOverlap: number,
+  gap = 0,
+): boolean {
+  return rectsTouch(a, b, gap) && !rectsOverlap(a, b, gap, minOverlap);
+}
+
+/** 松手时落点仍在轻触区 → 应复原到拖动起点 */
+export function shouldRevertPixelDragCommit(
+  finalRect: PixelRect,
+  _startRect: PixelRect,
+  others: PixelRect[],
+  minOverlap: number,
+  gap = 0,
+): boolean {
+  return others.some((other) => hasShallowOverlap(finalRect, other, minOverlap, gap));
 }
 
 function stableWidgetKey(widget: PixelLayoutWidget): [number, number, number, string] {
@@ -203,12 +236,16 @@ function emptyTargetFootprint(
   activeId: string,
   target: PixelRect,
   gap: number,
+  minOverlap: number,
 ): void {
   const candidates = widgets
     .filter((widget) => widget.id !== activeId)
     .filter((widget) => {
       const rect = positions.get(widget.id)!;
-      return horizontalOverlap(rect, target, gap) && rectsOverlap(rect, target, gap);
+      return (
+        horizontalOverlap(rect, target, gap) &&
+        rectsOverlap(rect, target, gap, minOverlap)
+      );
     })
     .sort(compareWidgets);
 
@@ -227,7 +264,7 @@ function emptyTargetFootprint(
  * 2. 写入新外框
  * 3. 目标区占位下推（emptyTargetCell + moveItemDown）
  *
- * 拖动过程中仅 MarkLine 吸附，不做邻组件 preview 推挤。
+ * 拖动过程中经 PixelCanvas.handlePreview 节流预览；松手/提交同算法写入 layout。
  */
 export function resolvePixelCollisions(
   layout: DashboardLayoutV2,
@@ -257,7 +294,14 @@ export function resolvePixelCollisions(
   }
 
   positions.set(activeId, roundedActive);
-  emptyTargetFootprint(layout.widgets, positions, activeId, roundedActive, resolved.gap);
+  emptyTargetFootprint(
+    layout.widgets,
+    positions,
+    activeId,
+    roundedActive,
+    resolved.gap,
+    resolved.minOverlap,
+  );
 
   return applyPositions(layout, positions, resolved);
 }

@@ -28,12 +28,12 @@ const LINE_BORDER_STYLES = [
 
 const BG_MODE_OPTIONS = [
   { value: "image", label: "图片" },
-  { value: "frame", label: "边框" },
+  { value: "frame", label: "装饰边框" },
 ] as const;
 
 const BG_MODE_LINE_BORDER_OPTIONS = [
   { value: "image", label: "图片" },
-  { value: "border", label: "边框" },
+  { value: "border", label: "线框" },
 ] as const;
 
 type BackgroundPatch = Partial<WidgetStyleConfig>;
@@ -42,8 +42,8 @@ type ChartBackgroundDeModeFieldsProps = {
   value: WidgetStyleConfig;
   onChange: (patch: BackgroundPatch) => void;
   disabled?: boolean;
-  /** chart：装饰边框 SVG；dashboard：CSS 线框 */
-  borderTab?: "decorative" | "line";
+  /** chart：装饰边框 SVG；dashboard 全局：仅底图 + 独立线区块 */
+  borderTab?: "decorative" | "line" | "imageOnly";
 };
 
 function DeAttrToggleRowCompact({
@@ -64,7 +64,7 @@ function DeAttrToggleRowCompact({
   );
 }
 
-function WidgetStyleLineBorderControls({
+export function WidgetStyleLineBorderControls({
   value,
   onChange,
   showToggle = true,
@@ -79,14 +79,14 @@ function WidgetStyleLineBorderControls({
     <div className="space-y-2">
       {showToggle ? (
         <DeAttrToggleRowCompact
-          label="显示边框"
+          label="显示线框"
           checked={lineOn}
           onCheckedChange={(show) => onChange({ borderEnabled: show, backgroundShow: true })}
         />
       ) : null}
       {lineOn ? (
         <div className="space-y-2">
-          <InspectorFieldRow label="边框色">
+          <InspectorFieldRow label="线框色">
             <ColorField
               compact
               allowClear
@@ -106,7 +106,7 @@ function WidgetStyleLineBorderControls({
             onChange={(borderWidth) => onChange({ borderWidth })}
           />
           <ChartDeSegmentField
-            label="样式"
+            label="线型"
             value={value.borderStyle ?? "solid"}
             columns={3}
             options={LINE_BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
@@ -128,6 +128,7 @@ export function ChartBackgroundDeModeFields({
   borderTab = "decorative",
 }: ChartBackgroundDeModeFieldsProps) {
   const useLineBorder = borderTab === "line";
+  const imageOnly = borderTab === "imageOnly";
   const rawMode = value.backgroundMode ?? (value.framePresetId ? "frame" : "image");
   const mode = useLineBorder
     ? rawMode === "border" || rawMode === "frame"
@@ -140,8 +141,31 @@ export function ChartBackgroundDeModeFields({
   if (disabled) {
     return (
       <p className="py-1 text-[11px] text-gray-400 dark:text-gray-500">
-        {useLineBorder ? "开启背景后可设置图片或边框" : "开启背景后可设置图片或装饰边框"}
+        {imageOnly
+          ? "开启背景后可设置底图"
+          : useLineBorder
+            ? "开启背景后可设置图片或线框"
+            : "开启背景后可设置图片或装饰边框"}
       </p>
+    );
+  }
+
+  if (imageOnly) {
+    return (
+      <ImageSourceField
+        variant="rail"
+        inputClassName={INSPECTOR_CTRL}
+        value={value.backgroundImage ?? ""}
+        onChange={(backgroundImage) =>
+          onChange({
+            backgroundImage,
+            backgroundShow: true,
+            backgroundMode: "image",
+            framePresetId: undefined,
+            frameColor: undefined,
+          })
+        }
+      />
     );
   }
 
@@ -182,14 +206,14 @@ export function ChartBackgroundDeModeFields({
         {useLineBorder && mode === "border" ? (
           <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <span className="whitespace-nowrap text-[10px] text-gray-500 dark:text-gray-400">
-              显示边框
+              显示线框
             </span>
             <Switch
               checked={lineOn}
               onCheckedChange={(show) =>
                 onChange({ borderEnabled: show, backgroundShow: true, backgroundMode: "border" })
               }
-              aria-label="显示边框"
+              aria-label="显示线框"
               className="scale-90"
             />
           </div>
@@ -210,7 +234,7 @@ export function ChartBackgroundDeModeFields({
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
           <ColorField
             variant="swatch"
-            label="边框色"
+            label="装饰色"
             allowClear
             swatches={WIDGET_BORDER_RECOMMENDED}
             value={value.frameColor ?? ""}

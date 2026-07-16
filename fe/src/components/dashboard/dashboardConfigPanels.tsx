@@ -21,7 +21,7 @@ import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
 import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
 import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
 import { DashboardConfigSlider } from "./deAttrSlider";
-import { ChartBackgroundDeModeFields } from "./chartStyleFields";
+import { ChartBackgroundDeModeFields, WidgetStyleLineBorderControls } from "./chartStyleFields";
 import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
 import { InspectorNestedSection } from "./inspectorNestedSection";
 import {
@@ -113,8 +113,14 @@ export function DashboardWidgetStyleSections({
               <ChartBackgroundDeModeFields
                 value={ws}
                 onChange={patchWidgetStyle}
-                borderTab="line"
+                borderTab="imageOnly"
               />
+              <InspectorNestedSection
+                title="线框"
+                defaultOpen={ws.borderEnabled !== false && (ws.borderWidth ?? 1) > 0}
+              >
+                <WidgetStyleLineBorderControls value={ws} onChange={patchWidgetStyle} />
+              </InspectorNestedSection>
               <InspectorNestedSection title="外观" defaultOpen>
                 <WidgetSurfaceAppearanceFields
                   value={ws}

@@ -5,6 +5,8 @@ import {
   layoutsOverlap,
   packPixelLayoutSeamless,
   rectsOverlap,
+  hasShallowOverlap,
+  shouldRevertPixelDragCommit,
   resolvePixelCollisions,
 } from "./collisionLayout";
 import { insertPixelPaletteWidget } from "./createPixelWidget";
@@ -39,6 +41,40 @@ describe("collisionLayout", () => {
     expect(rectsOverlap({ x: 0, y: 0, width: 100, height: 100 }, { x: 100, y: 0, width: 100, height: 100 }, 0)).toBe(
       false,
     );
+  });
+
+  it("ignores shallow overlap below the collision buffer", () => {
+    const active = { x: 0, y: 90, width: 100, height: 100 };
+    const other = { x: 0, y: 0, width: 100, height: 100 };
+    expect(rectsOverlap(active, other, 0, 40)).toBe(false);
+    expect(hasShallowOverlap(active, other, 40)).toBe(true);
+    expect(rectsOverlap({ x: 0, y: 59, width: 100, height: 100 }, other, 0, 40)).toBe(true);
+  });
+
+  it("reverts commit while still in the shallow overlap zone", () => {
+    const start = { x: 100, y: 100, width: 300, height: 200 };
+    const final = { x: 100, y: 110, width: 300, height: 200 };
+    const other = { x: 120, y: 270, width: 300, height: 200 };
+    expect(shouldRevertPixelDragCommit(final, start, [other], 40)).toBe(true);
+    expect(
+      shouldRevertPixelDragCommit(
+        { x: 100, y: 130, width: 300, height: 200 },
+        start,
+        [other],
+        40,
+      ),
+    ).toBe(false);
+  });
+
+  it("does not push neighbors until overlap exceeds the buffer", () => {
+    const layout = baseLayout([
+      widget("a", 100, 100, 300, 200, 1),
+      widget("b", 120, 261, 300, 200, 2),
+    ]);
+    const shallow = resolvePixelCollisions(layout, "a", { x: 100, y: 100, width: 300, height: 200 });
+    expect(shallow.widgets.find((item) => item.id === "b")).toMatchObject({ y: 261 });
+    const deep = resolvePixelCollisions(layout, "a", { x: 100, y: 110, width: 300, height: 200 });
+    expect(deep.widgets.find((item) => item.id === "b")!.y).toBeGreaterThan(261);
   });
 
   it("keeps layout unchanged when there is no collision", () => {

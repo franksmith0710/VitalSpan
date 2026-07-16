@@ -195,19 +195,19 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     if (currentLayout.version === 2 && currentLayout.widgets.length > 0) {
       const prevGap = resolvePixelGutter(prev);
       const nextGap = resolvePixelGutter(next);
-      const shouldCompact =
-        nextGap < prevGap ||
-        (nextGap === 0 && hasPositiveOuterGaps(currentLayout.widgets));
-      if (shouldCompact) {
-        const result =
-          nextGap === 0
-            ? compactPixelLayoutOuterRects(currentLayout)
-            : compactPixelLayoutForGapChange(currentLayout, prevGap, nextGap);
-        if (result.compacted) {
-          setPixelLayout(result.layout);
-          toast.message("已收紧相邻组件外框，消除画板缝");
-        } else if (nextGap === 0 && prevGap > 0) {
-          toast.message("已关闭组件间隙");
+      // 仅间隙配置变更时收紧外框；避免切换字体/网格等无关项反复 compact + toast
+      if (prevGap !== nextGap) {
+        const shouldCompact =
+          nextGap < prevGap ||
+          (nextGap === 0 && hasPositiveOuterGaps(currentLayout.widgets));
+        if (shouldCompact) {
+          const result =
+            nextGap === 0
+              ? compactPixelLayoutOuterRects(currentLayout)
+              : compactPixelLayoutForGapChange(currentLayout, prevGap, nextGap);
+          if (result.compacted) {
+            setPixelLayout(result.layout);
+          }
         }
       }
     }

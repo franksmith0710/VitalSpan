@@ -19,7 +19,8 @@
 
 ## 修复方式（DE CanvasCore 对标）
 
-- **拖动中**：仅 `computeMarkLineSnap`（3px）+ 活动组件跟手；**不** preview 推挤邻居
+- **拖动中**：`resolvePixelCollisions` 经 `handlePreview` 节流预览（32ms），邻块跟手让位；活动组件 `isPlayer` 浮层跟指针
+- **松手/键盘提交**：同算法正式写入 layout
 - **松手/键盘提交**：`resolvePixelCollisions` = vacate 上浮 → 写入新外框 → `emptyTargetCell` 式下推
 - vacate 仅在 x/y 变化或高度缩小时触发；纯增高用 emptyTarget 下推
 - `PixelCanvas` 移除 `handlePreview` 碰撞路径

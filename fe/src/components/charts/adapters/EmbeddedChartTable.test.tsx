@@ -1,9 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { PixelShapePlayerProvider } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
+import { dispatchPixelShapeLiveResize } from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
 import { EmbeddedChartTable } from "./EmbeddedChartTable";
 
 describe("EmbeddedChartTable", () => {
-  it("uses table-auto in dashboard embed mode by default", () => {
+  it("uses table-auto in standalone mode by default", () => {
     const { container } = render(
       <EmbeddedChartTable
         columns={["id", "name"]}
@@ -17,6 +19,29 @@ describe("EmbeddedChartTable", () => {
     expect(table).toHaveClass("table-auto");
     expect(table).toHaveClass("min-w-0");
     expect(table).not.toHaveClass("min-w-[320px]");
+  });
+
+  it("embedded auto column mode fits container with equal fixed columns", () => {
+    const { container } = render(
+      <div style={{ position: "relative", width: 320, height: 200 }}>
+        <EmbeddedChartTable
+          embedded
+          columns={["a", "b", "c"]}
+          displayCols={["a", "b", "c"]}
+          rows={[[1, 2, 3]]}
+          page={1}
+          onPageChange={() => {}}
+          tableStyle={{ columnWidthMode: "auto" }}
+        />
+      </div>,
+    );
+    const host = container.querySelector(".embedded-chart-table-host");
+    expect(host).toHaveClass("absolute", "inset-0");
+    const table = container.querySelector("table");
+    expect(table).toHaveClass("table-fixed");
+    const cols = container.querySelectorAll("col");
+    expect(cols).toHaveLength(3);
+    expect(cols[0]).toHaveStyle({ width: "33.333333333333336%" });
   });
 
   it("truncates cell text with title tooltip", () => {
@@ -183,5 +208,39 @@ describe("EmbeddedChartTable", () => {
       />,
     );
     expect(screen.getByTitle("长文本")).toHaveClass("break-words");
+  });
+
+  it("responds to pixel shape live resize while playing", async () => {
+    const rects: DOMRect[] = [];
+    const { container } = render(
+      <PixelShapePlayerProvider playing>
+        <div className="pixel-shape-outer" style={{ width: 400, height: 240 }}>
+          <div className="pixel-shape-inner">
+            <EmbeddedChartTable
+              embedded
+              columns={["a"]}
+              displayCols={["a"]}
+              rows={[[1]]}
+              page={1}
+              onPageChange={() => {}}
+            />
+          </div>
+        </div>
+      </PixelShapePlayerProvider>,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const host = container.querySelector(".embedded-chart-table-host") as HTMLElement;
+    const original = host.getBoundingClientRect.bind(host);
+    host.getBoundingClientRect = () => {
+      const rect = original();
+      rects.push(rect);
+      return rect;
+    };
+    await act(() => {
+      dispatchPixelShapeLiveResize();
+    });
+    expect(rects.length).toBeGreaterThan(0);
   });
 });

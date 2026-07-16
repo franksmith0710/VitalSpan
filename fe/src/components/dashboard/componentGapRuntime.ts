@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { GapConfigInput } from "./gapPolicy";
+import { PIXEL_COLLISION_OVERLAP_BUFFER_PX } from "./pixelCanvas/collisionLayout";
 import {
   DASHBOARD_SHAPE_GAP_VAR,
   resolvePixelGutter,
@@ -20,6 +21,8 @@ export type ComponentGapRuntime = {
    * 布局坐标不扩缝 → 恒为 0。
    */
   collisionGapPx: number;
+  /** 碰撞推挤缓冲（画布 px）：双向重叠须超过此值 */
+  collisionOverlapBufferPx: number;
 };
 
 export function resolveComponentGapRuntime(
@@ -33,6 +36,7 @@ export function resolveComponentGapRuntime(
     shellPaddingPx,
     snapGapPx: shellPaddingPx,
     collisionGapPx: 0,
+    collisionOverlapBufferPx: PIXEL_COLLISION_OVERLAP_BUFFER_PX,
   };
 }
 

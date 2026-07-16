@@ -25,6 +25,7 @@ import {
   SHAPE_RESIZE_HANDLE_SCREEN_PX,
   SHAPE_RESIZE_VISUAL_SCREEN_PX,
   type PixelInteractionKind,
+  pixelShapePlayerZIndex,
   pixelShapeZIndex,
   type PixelRect,
   type ResizeDirection,
@@ -62,6 +63,9 @@ type PixelShapeProps = {
   onPreview?: (widget: PixelLayoutWidget) => void;
   onCommit?: (widget: PixelLayoutWidget) => void;
   onCancel?: (widgetId: string) => void;
+  /** 落点仍在碰撞轻触区时松手复原 */
+  shouldRevertCommit?: (finalRect: PixelRect, startRect: PixelRect) => boolean;
+  onPlayingChange?: (playing: boolean) => void;
   onMarkGuidesChange?: (guides: MarkLineGuide[] | null) => void;
   /** 编辑辅助网格：对齐参考线 + 20px 网格吸附 */
   markLinesEnabled?: boolean;
@@ -71,6 +75,8 @@ type PixelShapeProps = {
   widgetActions?: PixelWidgetActions;
   styleConfig?: DashboardStyleConfig;
   registerPreviewSync?: (widgetId: string, sync: PixelShapePreviewSync) => () => void;
+  /** 拖动/缩放中靠近画布边缘时自动滚动，返回 scrollTop 变化量 */
+  onDragAutoScroll?: (event: PointerEvent) => number;
 };
 
 const HANDLE_POSITION: Record<ResizeDirection, string> = {
@@ -172,6 +178,8 @@ export function PixelShape({
   onPreview,
   onCommit,
   onCancel,
+  shouldRevertCommit,
+  onPlayingChange,
   onMarkGuidesChange,
   markLinesEnabled = true,
   viewport,
@@ -180,6 +188,7 @@ export function PixelShape({
   widgetActions,
   styleConfig,
   registerPreviewSync,
+  onDragAutoScroll,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
   const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig, mode);
@@ -325,6 +334,10 @@ export function PixelShape({
     if (active.skipFirstMove) {
       active.skipFirstMove = false;
     }
+    const scrollDelta = onDragAutoScroll?.(event) ?? 0;
+    if (scrollDelta !== 0) {
+      active.startClient.y -= scrollDelta;
+    }
     const { rect: next, guides } = rectForPointer(event, active);
     pendingMoveRef.current = { rect: next, guides, event, active };
     if (moveFrameRef.current !== null) return;
@@ -344,11 +357,15 @@ export function PixelShape({
       : { rect: widgetRect(widget), guides: [] as MarkLineGuide[] };
     const finalRect = finalSnap.rect;
     activeRef.current = null;
-    setIsPlayer(false);
     setHint(null);
     onMarkGuidesChange?.(null);
-    applyDisplay(finalRect, true);
-    if (commit) onCommit?.(withRect(widget, finalRect));
+    const revert =
+      commit && shouldRevertCommit?.(finalRect, active.startRect) === true;
+    const settledRect = revert ? active.startRect : finalRect;
+    applyDisplay(settledRect, true);
+    setIsPlayer(false);
+    onPlayingChange?.(false);
+    if (commit && !revert) onCommit?.(withRect(widget, finalRect));
     else onCancel?.(widget.id);
   };
 
@@ -370,6 +387,7 @@ export function PixelShape({
       skipFirstMove: true,
     };
     setIsPlayer(true);
+    onPlayingChange?.(true);
     bindDocumentDrag(pointerId, {
       onMove: handlePointerMove,
       onEnd: (endEvent, commit) => finish(endEvent, commit),
@@ -411,7 +429,9 @@ export function PixelShape({
         top: liveRect.y,
         width: liveRect.width,
         height: liveRect.height,
-        zIndex: pixelShapeZIndex(widget.order, selectedInEdit),
+        zIndex: isPlayer
+          ? pixelShapePlayerZIndex(widget.order)
+          : pixelShapeZIndex(widget.order, selectedInEdit),
         boxSizing: "border-box",
         ["--dashboard-shape-gap" as string]: `${Math.max(0, shapeGapPx)}px`,
       }}
