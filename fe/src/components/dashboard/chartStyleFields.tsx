@@ -424,7 +424,12 @@ export function ChartBackgroundStyleFields({
       {showBackground ? (
         <>
           <InspectorNestedSection title="外观">
-            <WidgetSurfaceAppearanceFields value={ws} onChange={onChange} density={density} />
+            <WidgetSurfaceAppearanceFields
+              value={ws}
+              onChange={onChange}
+              onPreviewChange={onChange}
+              density={density}
+            />
           </InspectorNestedSection>
 
           {isDashboard ? (

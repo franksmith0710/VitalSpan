@@ -31,10 +31,11 @@ describe("DashboardOverallConfigPanel", () => {
   it("patches widgetStyle border from 组件线框 controls", async () => {
     const user = userEvent.setup();
     const patchStyle = vi.fn();
+    const styleConfig = { widgetStyle: { borderEnabled: true, borderWidth: 1 } };
 
     render(
       <DashboardOverallConfigPanel
-        styleConfig={{ widgetStyle: { borderEnabled: true, borderWidth: 1 } }}
+        styleConfig={styleConfig}
         patchStyle={patchStyle}
         isPixelLayout
       />,
@@ -43,7 +44,11 @@ describe("DashboardOverallConfigPanel", () => {
     const lineBorderField = screen.getByText("组件线框").closest("div")!.parentElement!;
     await user.click(within(lineBorderField).getByRole("switch", { name: "显示线框" }));
 
-    expect(patchStyle).toHaveBeenCalledWith({
+    expect(patchStyle).toHaveBeenCalledWith(expect.any(Function));
+    const patchFn = patchStyle.mock.calls[0][0] as (prev: typeof styleConfig) => Partial<typeof styleConfig>;
+    expect(
+      patchFn({ widgetStyle: { borderEnabled: true, borderWidth: 1 } }),
+    ).toEqual({
       widgetStyle: expect.objectContaining({ borderEnabled: false }),
     });
   });

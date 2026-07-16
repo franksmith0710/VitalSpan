@@ -594,6 +594,10 @@ export function PixelShape({
                 data-pixel-no-drag
                 onPointerDown={(event) => {
                   if (mode === "edit" && !paletteDragActive) {
+                    const target = event.target as HTMLElement;
+                    if (target.closest("[data-tabs-widget-id]")) {
+                      return;
+                    }
                     onSelect?.(widget.id, event.shiftKey);
                   }
                 }}

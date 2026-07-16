@@ -151,9 +151,11 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
     [setWidgets],
   );
 
+  const selectWidget = nested ? onNestedSelect : onSelect;
+
   const handleSelect = useCallback(
-    (event: { shiftKey: boolean }) => onSelect(widget.id, event.shiftKey),
-    [onSelect, widget.id],
+    (event: { shiftKey: boolean }) => selectWidget(widget.id, event.shiftKey),
+    [selectWidget, widget.id],
   );
 
   const handleTitleChange = useCallback(

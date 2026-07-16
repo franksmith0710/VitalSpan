@@ -1,0 +1,197 @@
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
+
+export type ChartMarkLine = {
+  id: string;
+  enabled: boolean;
+  name?: string;
+  axis: "y" | "x";
+  value: number;
+  color?: string;
+  lineStyle?: "solid" | "dashed";
+};
+
+export type ChartConditionalOperator = "gt" | "gte" | "lt" | "lte" | "eq";
+
+export type ChartConditionalRule = {
+  id: string;
+  enabled: boolean;
+  operator: ChartConditionalOperator;
+  value: number;
+  color: string;
+};
+
+export type ChartJumpMode = "url" | "dashboard";
+
+export type ChartJumpConfig = {
+  enabled: boolean;
+  mode: ChartJumpMode;
+  url?: string;
+  dashboardId?: string;
+  openInNewTab?: boolean;
+};
+
+export type ChartDeFeatures = {
+  dataZoom?: boolean;
+  showLabel?: boolean;
+  markLines?: ChartMarkLine[];
+  conditionalRules?: ChartConditionalRule[];
+  jump?: ChartJumpConfig;
+};
+
+const DEFAULT_JUMP: ChartJumpConfig = {
+  enabled: false,
+  mode: "url",
+  openInNewTab: true,
+};
+
+export function readChartDeFeatures(cfg: ChartViewConfig): ChartDeFeatures {
+  const raw = cfg.nativeBody?.deFeatures;
+  if (!raw || typeof raw !== "object") return {};
+  return raw as ChartDeFeatures;
+}
+
+export function patchChartDeFeatures(
+  cfg: ChartViewConfig,
+  patch: Partial<ChartDeFeatures>,
+): ChartViewConfig {
+  const prev = readChartDeFeatures(cfg);
+  return {
+    ...cfg,
+    nativeBody: {
+      ...cfg.nativeBody,
+      deFeatures: { ...prev, ...patch },
+    },
+  };
+}
+
+export function readChartMarkLines(cfg: ChartViewConfig): ChartMarkLine[] {
+  return readChartDeFeatures(cfg).markLines ?? [];
+}
+
+export function readChartConditionalRules(cfg: ChartViewConfig): ChartConditionalRule[] {
+  return readChartDeFeatures(cfg).conditionalRules ?? [];
+}
+
+export function readChartJumpConfig(cfg: ChartViewConfig): ChartJumpConfig {
+  const jump = readChartDeFeatures(cfg).jump;
+  return { ...DEFAULT_JUMP, ...jump };
+}
+
+export function chartJumpIsConfigured(jump: ChartJumpConfig): boolean {
+  if (!jump.enabled) return false;
+  if (jump.mode === "url") return Boolean(jump.url?.trim());
+  return Boolean(jump.dashboardId?.trim());
+}
+
+function matchConditionalRule(value: number, rule: ChartConditionalRule): boolean {
+  switch (rule.operator) {
+    case "gt":
+      return value > rule.value;
+    case "gte":
+      return value >= rule.value;
+    case "lt":
+      return value < rule.value;
+    case "lte":
+      return value <= rule.value;
+    default:
+      return value === rule.value;
+  }
+}
+
+function extractSeriesNumeric(item: unknown): number | null {
+  if (typeof item === "number" && Number.isFinite(item)) return item;
+  if (Array.isArray(item)) {
+    const tail = item[item.length - 1];
+    return typeof tail === "number" && Number.isFinite(tail) ? tail : null;
+  }
+  if (item && typeof item === "object" && "value" in item) {
+    const v = (item as { value?: unknown }).value;
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (Array.isArray(v)) return extractSeriesNumeric(v);
+  }
+  return null;
+}
+
+/** ECharts 辅助线（对标 DE 高级 · 辅助线） */
+export function applyMarkLinesToEchartsOption(
+  option: Record<string, unknown>,
+  markLines: ChartMarkLine[],
+): Record<string, unknown> {
+  const active = markLines.filter((line) => line.enabled && Number.isFinite(line.value));
+  if (active.length === 0 || !Array.isArray(option.series) || option.series.length === 0) {
+    return option;
+  }
+  const data = active.map((line) => ({
+    ...(line.axis === "y" ? { yAxis: line.value } : { xAxis: line.value }),
+    name: line.name?.trim() || undefined,
+    lineStyle: {
+      color: line.color || "#f04438",
+      type: line.lineStyle || "dashed",
+    },
+  }));
+  const series = option.series.map((entry, index) => {
+    if (index !== 0 || !entry || typeof entry !== "object") return entry;
+    return {
+      ...(entry as object),
+      markLine: {
+        symbol: "none",
+        silent: true,
+        label: { show: true, fontSize: 10 },
+        data,
+      },
+    };
+  });
+  return { ...option, series };
+}
+
+/** 柱/线条件着色（对标 DE 高级 · 条件样式） */
+export function applyConditionalRulesToEchartsOption(
+  option: Record<string, unknown>,
+  rules: ChartConditionalRule[],
+): Record<string, unknown> {
+  const active = rules.filter((rule) => rule.enabled && Number.isFinite(rule.value));
+  if (active.length === 0 || !Array.isArray(option.series)) return option;
+
+  const series = option.series.map((entry, index) => {
+    if (index !== 0 || !entry || typeof entry !== "object") return entry;
+    const seriesObj = entry as Record<string, unknown>;
+    if (!Array.isArray(seriesObj.data)) return entry;
+    const nextData = seriesObj.data.map((item) => {
+      const numeric = extractSeriesNumeric(item);
+      if (numeric == null) return item;
+      const matched = active.find((rule) => matchConditionalRule(numeric, rule));
+      if (!matched) return item;
+      if (item && typeof item === "object") {
+        return {
+          ...(item as object),
+          itemStyle: { color: matched.color },
+        };
+      }
+      return { value: item, itemStyle: { color: matched.color } };
+    });
+    return { ...seriesObj, data: nextData };
+  });
+  return { ...option, series };
+}
+
+export function applyChartAdvancedFeaturesToEchartsOption(
+  option: Record<string, unknown>,
+  cfg: ChartViewConfig,
+): Record<string, unknown> {
+  let next = option;
+  next = applyMarkLinesToEchartsOption(next, readChartMarkLines(cfg));
+  next = applyConditionalRulesToEchartsOption(next, readChartConditionalRules(cfg));
+  return next;
+}
+
+export function resolveChartJumpHref(jump: ChartJumpConfig): string | null {
+  if (!chartJumpIsConfigured(jump)) return null;
+  if (jump.mode === "dashboard") {
+    const id = jump.dashboardId?.trim();
+    return id ? `/admin/dashboards/${encodeURIComponent(id)}` : null;
+  }
+  const url = jump.url?.trim();
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url) || url.startsWith("/")) return url;
+  return `https://${url}`;
+}

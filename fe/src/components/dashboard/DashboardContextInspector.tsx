@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   DASHBOARD_CONFIG_RAIL_CONTENT_CLASS,
   DASHBOARD_EDIT_RAIL_SCROLL_CLASS,
@@ -12,6 +13,10 @@ import {
   applyDashboardStylePatch,
   switchDashboardThemeBundle,
 } from "./dashboardThemeVariants";
+
+export type DashboardStylePatch =
+  | Partial<DashboardStyleConfig>
+  | ((prev: DashboardStyleConfig) => Partial<DashboardStyleConfig>);
 
 type DashboardContextInspectorProps = {
   widgetCount: number;
@@ -33,8 +38,19 @@ export function DashboardContextInspector({
   embedded = false,
   isPixelLayout = false,
 }: DashboardContextInspectorProps) {
-  const patchStyle = (patch: Partial<DashboardStyleConfig>) => {
-    const bundle = applyDashboardStylePatch(styleConfig, widgets, patch);
+  const styleConfigRef = useRef(styleConfig);
+  styleConfigRef.current = styleConfig;
+  const widgetsRef = useRef(widgets);
+  widgetsRef.current = widgets;
+
+  const patchStyle = (patch: DashboardStylePatch) => {
+    const resolved =
+      typeof patch === "function" ? patch(styleConfigRef.current) : patch;
+    const bundle = applyDashboardStylePatch(
+      styleConfigRef.current,
+      widgetsRef.current,
+      resolved,
+    );
     onStyleChange(bundle.styleConfig);
     onWidgetsChange?.(bundle.widgets);
   };

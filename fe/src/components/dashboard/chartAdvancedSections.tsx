@@ -1,0 +1,376 @@
+import { Plus, Trash2 } from "lucide-react";
+import { TimeRangeConfig } from "@/components/charts/TimeRangeConfig";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
+import {
+  patchChartDeFeatures,
+  readChartConditionalRules,
+  readChartDeFeatures,
+  readChartJumpConfig,
+  readChartMarkLines,
+  type ChartConditionalOperator,
+  type ChartConditionalRule,
+  type ChartJumpConfig,
+  type ChartMarkLine,
+} from "@/lib/chartDeFeatures";
+import { useChartInspector } from "./chartInspectorContext";
+import { DashboardPickerField } from "./DashboardPickerField";
+import {
+  INSPECTOR_CTRL,
+  INSPECTOR_HINT,
+  INSPECTOR_NESTED_CARD,
+  INSPECTOR_SECTION_GAP,
+  INSPECTOR_SELECT,
+  InspectorFieldRow,
+  InspectorInlineColorRow,
+  InspectorSwitchRow,
+} from "./inspectorCompact";
+
+function newId(): string {
+  return crypto.randomUUID();
+}
+
+export function ChartAdvancedFeatureSettings() {
+  const { cfg, onChange, columns } = useChartInspector();
+  const caps = chartInspectorCapabilities(cfg.chartType);
+  const features = readChartDeFeatures(cfg);
+  const columnsDisabled = columns.length === 0;
+
+  return (
+    <div className={INSPECTOR_SECTION_GAP}>
+      {caps.dataZoom ? (
+        <InspectorSwitchRow
+          label="缩略轴"
+          checked={Boolean(features.dataZoom)}
+          onCheckedChange={(checked) =>
+            onChange(patchChartDeFeatures(cfg, { dataZoom: checked }))
+          }
+          hint="折线/柱图底部缩放条"
+          aria-label="缩略轴"
+        />
+      ) : null}
+      {caps.timeRange ? (
+        <TimeRangeConfig
+          value={cfg.timeRange}
+          columns={columns}
+          disabled={columnsDisabled}
+          dense
+          onChange={(timeRange) => onChange({ ...cfg, timeRange })}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function MarkLineRow({
+  line,
+  onChange,
+  onRemove,
+}: {
+  line: ChartMarkLine;
+  onChange: (next: ChartMarkLine) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className={INSPECTOR_NESTED_CARD}>
+      <div className="flex items-center justify-between gap-2">
+        <InspectorSwitchRow
+          label={line.name?.trim() || "辅助线"}
+          checked={line.enabled}
+          onCheckedChange={(enabled) => onChange({ ...line, enabled })}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0 text-gray-400"
+          aria-label="删除辅助线"
+          onClick={onRemove}
+        >
+          <Trash2 className="size-3.5" aria-hidden />
+        </Button>
+      </div>
+      <InspectorFieldRow label="名称">
+        <Input
+          className={INSPECTOR_CTRL}
+          value={line.name ?? ""}
+          onChange={(e) => onChange({ ...line, name: e.target.value })}
+          placeholder="目标线"
+        />
+      </InspectorFieldRow>
+      <div className="grid grid-cols-2 gap-2">
+        <InspectorFieldRow label="轴向">
+          <Select
+            value={line.axis}
+            onValueChange={(v) => onChange({ ...line, axis: v as ChartMarkLine["axis"] })}
+          >
+            <SelectTrigger className={INSPECTOR_SELECT}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="y">水平 (Y)</SelectItem>
+              <SelectItem value="x">垂直 (X)</SelectItem>
+            </SelectContent>
+          </Select>
+        </InspectorFieldRow>
+        <InspectorFieldRow label="数值">
+          <Input
+            type="number"
+            className={INSPECTOR_CTRL}
+            value={Number.isFinite(line.value) ? line.value : ""}
+            onChange={(e) => onChange({ ...line, value: Number(e.target.value) })}
+          />
+        </InspectorFieldRow>
+      </div>
+      <InspectorInlineColorRow
+        label="颜色"
+        value={line.color ?? "#f04438"}
+        onChange={(color) => onChange({ ...line, color })}
+      />
+    </div>
+  );
+}
+
+export function ChartAdvancedMarkLinesSection() {
+  const { cfg, onChange } = useChartInspector();
+  const lines = readChartMarkLines(cfg);
+
+  const setLines = (next: ChartMarkLine[]) =>
+    onChange(patchChartDeFeatures(cfg, { markLines: next }));
+
+  return (
+    <div className={INSPECTOR_SECTION_GAP}>
+      {lines.length === 0 ? (
+        <p className={INSPECTOR_HINT}>添加固定值参考线，用于标注目标或阈值</p>
+      ) : null}
+      {lines.map((line) => (
+        <MarkLineRow
+          key={line.id}
+          line={line}
+          onChange={(next) => setLines(lines.map((item) => (item.id === line.id ? next : item)))}
+          onRemove={() => setLines(lines.filter((item) => item.id !== line.id))}
+        />
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 w-full text-theme-xs"
+        onClick={() =>
+          setLines([
+            ...lines,
+            {
+              id: newId(),
+              enabled: true,
+              name: `辅助线 ${lines.length + 1}`,
+              axis: "y",
+              value: 0,
+              color: "#f04438",
+              lineStyle: "dashed",
+            },
+          ])
+        }
+      >
+        <Plus className="mr-1 size-3.5" aria-hidden />
+        添加辅助线
+      </Button>
+    </div>
+  );
+}
+
+const OPERATOR_OPTIONS: { value: ChartConditionalOperator; label: string }[] = [
+  { value: "gt", label: "大于" },
+  { value: "gte", label: "大于等于" },
+  { value: "lt", label: "小于" },
+  { value: "lte", label: "小于等于" },
+  { value: "eq", label: "等于" },
+];
+
+function ConditionalRuleRow({
+  rule,
+  onChange,
+  onRemove,
+}: {
+  rule: ChartConditionalRule;
+  onChange: (next: ChartConditionalRule) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className={INSPECTOR_NESTED_CARD}>
+      <div className="flex items-center justify-between gap-2">
+        <InspectorSwitchRow
+          label="规则"
+          checked={rule.enabled}
+          onCheckedChange={(enabled) => onChange({ ...rule, enabled })}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-7 shrink-0 text-gray-400"
+          aria-label="删除条件规则"
+          onClick={onRemove}
+        >
+          <Trash2 className="size-3.5" aria-hidden />
+        </Button>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <InspectorFieldRow label="比较">
+          <Select
+            value={rule.operator}
+            onValueChange={(v) =>
+              onChange({ ...rule, operator: v as ChartConditionalOperator })
+            }
+          >
+            <SelectTrigger className={INSPECTOR_SELECT}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {OPERATOR_OPTIONS.map((op) => (
+                <SelectItem key={op.value} value={op.value}>
+                  {op.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </InspectorFieldRow>
+        <InspectorFieldRow label="阈值">
+          <Input
+            type="number"
+            className={INSPECTOR_CTRL}
+            value={Number.isFinite(rule.value) ? rule.value : ""}
+            onChange={(e) => onChange({ ...rule, value: Number(e.target.value) })}
+          />
+        </InspectorFieldRow>
+      </div>
+      <InspectorInlineColorRow
+        label="满足时颜色"
+        value={rule.color}
+        onChange={(color) => onChange({ ...rule, color })}
+      />
+    </div>
+  );
+}
+
+export function ChartAdvancedConditionalSection() {
+  const { cfg, onChange } = useChartInspector();
+  const rules = readChartConditionalRules(cfg);
+
+  const setRules = (next: ChartConditionalRule[]) =>
+    onChange(patchChartDeFeatures(cfg, { conditionalRules: next }));
+
+  return (
+    <div className={INSPECTOR_SECTION_GAP}>
+      <p className={INSPECTOR_HINT}>按度量值阈值高亮柱/线段颜色（自上而下匹配首条规则）</p>
+      {rules.map((rule) => (
+        <ConditionalRuleRow
+          key={rule.id}
+          rule={rule}
+          onChange={(next) => setRules(rules.map((item) => (item.id === rule.id ? next : item)))}
+          onRemove={() => setRules(rules.filter((item) => item.id !== rule.id))}
+        />
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 w-full text-theme-xs"
+        disabled={rules.length >= 8}
+        onClick={() =>
+          setRules([
+            ...rules,
+            {
+              id: newId(),
+              enabled: true,
+              operator: "gte",
+              value: 0,
+              color: "#12b76a",
+            },
+          ])
+        }
+      >
+        <Plus className="mr-1 size-3.5" aria-hidden />
+        添加规则
+      </Button>
+    </div>
+  );
+}
+
+export function ChartAdvancedJumpSection() {
+  const { cfg, onChange, dashboardId: currentDashboardId } = useChartInspector();
+  const jump = readChartJumpConfig(cfg);
+
+  const patchJump = (patch: Partial<ChartJumpConfig>) =>
+    onChange(patchChartDeFeatures(cfg, { jump: { ...jump, ...patch } }));
+
+  return (
+    <div className={INSPECTOR_SECTION_GAP}>
+      <InspectorSwitchRow
+        label="启用跳转"
+        checked={jump.enabled}
+        onCheckedChange={(enabled) => patchJump({ enabled })}
+        hint={
+          jump.enabled
+            ? "查看态点击图表数据点触发跳转（与下钻互斥时优先跳转）"
+            : "启用后可在查看态点击数据点跳转"
+        }
+      />
+      {jump.enabled ? (
+        <>
+          <InspectorFieldRow label="跳转类型">
+            <Select
+              value={jump.mode}
+              onValueChange={(v) => patchJump({ mode: v as ChartJumpConfig["mode"] })}
+            >
+              <SelectTrigger className={INSPECTOR_SELECT}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="url">外部链接</SelectItem>
+                <SelectItem value="dashboard">看板</SelectItem>
+              </SelectContent>
+            </Select>
+          </InspectorFieldRow>
+          {jump.mode === "url" ? (
+            <InspectorFieldRow label="链接地址" hint="支持 https:// 或站内 / 路径">
+              <Input
+                className={INSPECTOR_CTRL}
+                value={jump.url ?? ""}
+                onChange={(e) => patchJump({ url: e.target.value })}
+                placeholder="https://example.com"
+              />
+            </InspectorFieldRow>
+          ) : (
+            <InspectorFieldRow
+              label="目标看板"
+              hint={
+                !jump.dashboardId?.trim()
+                  ? "从列表选择跳转目标看板（对标 DataEase 内部链接）"
+                  : undefined
+              }
+            >
+              <DashboardPickerField
+                value={jump.dashboardId}
+                onChange={(dashboardId) => patchJump({ dashboardId })}
+                currentDashboardId={currentDashboardId}
+              />
+            </InspectorFieldRow>
+          )}
+          <InspectorSwitchRow
+            label="新标签页打开"
+            checked={jump.openInNewTab !== false}
+            onCheckedChange={(openInNewTab) => patchJump({ openInNewTab })}
+          />
+        </>
+      ) : null}
+    </div>
+  );
+}

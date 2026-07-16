@@ -1,97 +1,93 @@
-import { TimeRangeConfig } from "@/components/charts/TimeRangeConfig";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import { useChartInspector } from "./ChartInspectorContext";
+import { useMemo } from "react";
+import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
+import {
+  readChartConditionalRules,
+  readChartDeFeatures,
+  readChartJumpConfig,
+  readChartMarkLines,
+} from "@/lib/chartDeFeatures";
+import { useChartInspector } from "./chartInspectorContext";
+import { InspectorSubtleEmpty } from "./inspectorCompact";
 import { WidgetAdvancedAccordion } from "./WidgetAdvancedAccordion";
-
-type ChartDeFeatures = {
-  dataZoom?: boolean;
-  showLabel?: boolean;
-};
-
-function readDeFeatures(cfg: ChartViewConfig): ChartDeFeatures {
-  const raw = cfg.nativeBody?.deFeatures;
-  if (!raw || typeof raw !== "object") return {};
-  const f = raw as ChartDeFeatures;
-  return { dataZoom: Boolean(f.dataZoom), showLabel: Boolean(f.showLabel) };
-}
-
-function patchDeFeatures(cfg: ChartViewConfig, patch: Partial<ChartDeFeatures>): ChartViewConfig {
-  const prev = readDeFeatures(cfg);
-  return {
-    ...cfg,
-    nativeBody: {
-      ...cfg.nativeBody,
-      deFeatures: { ...prev, ...patch },
-    },
-  };
-}
-
-function ChartFeatureSettings() {
-  const { cfg, onChange, columns } = useChartInspector();
-  const columnsDisabled = columns.length === 0;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <Label className="text-theme-xs text-gray-700 dark:text-gray-300">缩略轴</Label>
-          <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">折线/柱图底部缩放条</p>
-        </div>
-        <Switch
-          checked={readDeFeatures(cfg).dataZoom ?? false}
-          onCheckedChange={(checked) => onChange(patchDeFeatures(cfg, { dataZoom: checked }))}
-          aria-label="缩略轴"
-        />
-      </div>
-      <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-3 dark:border-gray-800 dark:bg-white/[0.03]">
-        <p className="text-theme-xs font-medium text-gray-700 dark:text-gray-300">时间范围</p>
-        <div className="mt-2">
-          <TimeRangeConfig
-            value={cfg.timeRange}
-            columns={columns}
-            disabled={columnsDisabled}
-            onChange={(timeRange) => onChange({ ...cfg, timeRange })}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
+import {
+  ChartAdvancedConditionalSection,
+  ChartAdvancedFeatureSettings,
+  ChartAdvancedJumpSection,
+  ChartAdvancedMarkLinesSection,
+} from "./chartAdvancedSections";
 
 type ChartAdvancedPanelProps = Record<string, never>;
 
-/** DataEase chart-edit「高级」Tab：功能设置 / 辅助线 / 条件样式 / 跳转 */
+/** DataEase chart-edit「高级」Tab：按图表能力动态展示区块 */
 export function ChartAdvancedPanel(_props: ChartAdvancedPanelProps) {
-  return (
-    <WidgetAdvancedAccordion
-      sections={[
-        {
-          id: "feature",
-          title: "功能设置",
-          defaultOpen: true,
-          content: <ChartFeatureSettings />,
-        },
-        {
-          id: "guide",
-          title: "辅助线",
-          disabled: true,
-          content: <p className="leading-relaxed">当前版本暂不支持图表辅助线。</p>,
-        },
-        {
-          id: "conditional",
-          title: "条件样式",
-          disabled: true,
-          content: <p className="leading-relaxed">条件样式将在后续版本提供。</p>,
-        },
-        {
-          id: "jump",
-          title: "跳转设置",
-          disabled: true,
-          content: <p className="leading-relaxed">外链跳转与下钻将在后续版本提供。</p>,
-        },
-      ]}
-    />
-  );
-}
+  const { cfg } = useChartInspector();
+  const caps = chartInspectorCapabilities(cfg.chartType);
+
+  const sections = useMemo(() => {
+    const markLines = readChartMarkLines(cfg);
+    const rules = readChartConditionalRules(cfg);
+    const jump = readChartJumpConfig(cfg);
+    const list = [];
+
+    if (caps.dataZoom || caps.timeRange) {
+      const features = readChartDeFeatures(cfg);
+      const featureTitle =
+        caps.dataZoom && caps.timeRange
+          ? "功能设置"
+          : caps.dataZoom
+            ? "缩略轴"
+            : "时间范围";
+      list.push({
+        id: "feature",
+        title: featureTitle,
+        defaultOpen: Boolean(features.dataZoom || cfg.timeRange?.enabled),
+        badge:
+          caps.dataZoom && features.dataZoom
+            ? "开"
+            : cfg.timeRange?.enabled
+              ? "开"
+              : undefined,
+        content: <ChartAdvancedFeatureSettings />,
+      });
+    }
+
+    if (caps.markLines) {
+      list.push({
+        id: "guide",
+        title: "辅助线",
+        defaultOpen: markLines.length > 0,
+        badge: markLines.filter((line) => line.enabled).length,
+        content: <ChartAdvancedMarkLinesSection />,
+      });
+    }
+
+    if (caps.conditional) {
+      list.push({
+        id: "conditional",
+        title: "条件样式",
+        defaultOpen: rules.length > 0,
+        badge: rules.filter((rule) => rule.enabled).length,
+        content: <ChartAdvancedConditionalSection />,
+      });
+    }
+
+    if (caps.jump) {
+      list.push({
+        id: "jump",
+        title: "跳转设置",
+        defaultOpen: jump.enabled,
+        content: <ChartAdvancedJumpSection />,
+      });
+    }
+
+    return list;
+  }, [caps, cfg]);
+
+  if (sections.length === 0) {
+    return (
+      <InspectorSubtleEmpty message="当前图表类型暂无高级配置项；可切换柱图/折线图以使用更多能力。" />
+    );
+  }
+
+  return <WidgetAdvancedAccordion sections={sections} />;
+};

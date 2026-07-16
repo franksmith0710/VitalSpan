@@ -130,7 +130,19 @@ export function TabsWidget({
     : { fontSize: head.fontSize ?? DEFAULT_TAB_FONT_PX };
 
   const setActivePane = (paneId: string) => {
+    if (paneId === cfg.activePaneId) return;
     onTabsConfigChange?.({ ...cfg, activePaneId: paneId });
+  };
+
+  const swallowWidgetPointer = (event: { stopPropagation: () => void; preventDefault?: () => void }) => {
+    event.stopPropagation();
+    event.preventDefault?.();
+  };
+
+  const activateTabsWidget = () => {
+    if (mode === "edit" && !paletteDragActive && !selected) {
+      onSelect?.();
+    }
   };
 
   const addPane = () => {
@@ -171,7 +183,14 @@ export function TabsWidget({
   const showPaletteDropLayer =
     canAcceptPalette &&
     paletteDragActive &&
-    (paletteOver || isTabDropTarget || children.length === 0);
+    children.length === 0 &&
+    (paletteOver || isTabDropTarget);
+
+  const showCompactDropHint =
+    canAcceptPalette &&
+    paletteDragActive &&
+    children.length > 0 &&
+    (paletteOver || isTabDropTarget);
 
   return (
     <div
@@ -190,6 +209,7 @@ export function TabsWidget({
       onDragOver={canAcceptPalette ? handlePaletteDragOver : undefined}
       onDragLeave={canAcceptPalette ? handlePaletteDragLeave : undefined}
       onDrop={canAcceptPalette ? handlePaletteDrop : undefined}
+      onPointerDown={swallowWidgetPointer}
     >
       {mode === "edit" && !isShape ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
@@ -228,16 +248,14 @@ export function TabsWidget({
         </div>
       ) : null}
 
-      <div
-        className="dashboard-no-drag relative flex min-h-0 flex-1 flex-col"
-        onClick={mode === "edit" && !paletteDragActive ? () => onSelect?.() : undefined}
-      >
+      <div className="dashboard-no-drag relative flex min-h-0 flex-1 flex-col">
         <div
           className={cn(
             "tabs-widget-head relative flex shrink-0 items-start gap-1 border-b border-gray-100 px-2 dark:border-gray-800",
             isShape ? "pt-1.5" : "pt-2",
           )}
           style={head.barBackground ? { backgroundColor: head.barBackground } : undefined}
+          onPointerDown={(event) => event.stopPropagation()}
         >
           <div className="flex min-w-0 flex-1 items-end gap-1 overflow-x-auto" role="tablist" aria-label="页签">
             {cfg.panes.map((pane) => {
@@ -264,6 +282,7 @@ export function TabsWidget({
                         ? { color: head.inactiveColor }
                         : undefined),
                   }}
+                  onPointerDown={swallowWidgetPointer}
                   onClick={(e) => {
                     e.stopPropagation();
                     setActivePane(pane.id);
@@ -282,6 +301,7 @@ export function TabsWidget({
               type="button"
               className="tabs-widget-add-btn mb-0.5 ml-auto inline-flex shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-brand-500 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:hover:bg-white/5 dark:hover:text-brand-400"
               aria-label="添加页签"
+              onPointerDown={swallowWidgetPointer}
               onClick={(e) => {
                 e.stopPropagation();
                 addPane();
@@ -293,28 +313,49 @@ export function TabsWidget({
         </div>
 
         <div
-          className="dashboard-scroll relative min-h-0 flex-1 overflow-auto p-2"
+          className={cn(
+            "dashboard-scroll relative min-h-0 flex-1 p-2",
+            isShape ? "overflow-hidden" : "overflow-auto",
+          )}
           role="tabpanel"
           aria-label={activePane?.title ?? "页签内容"}
+          onPointerDown={(event) => {
+            swallowWidgetPointer(event);
+            activateTabsWidget();
+          }}
         >
-          <div
-            className={cn(
-              "relative min-h-[4rem]",
-              paletteDragActive && children.length > 0 && "pointer-events-none select-none opacity-50",
-            )}
-          >
+          <div className="relative min-h-[4rem]">
             {children.length === 0 ? (
               <TabsPaneEmptyState mode={mode} dragHint={paletteDragActive} />
             ) : (
               <div className="flex min-h-0 flex-col gap-2">
                 {children.map((child) => (
-                  <div key={child.id} className="min-h-[72px] shrink-0">
-                    {renderChild(child)}
+                  <div
+                    key={child.id}
+                    className={cn(
+                      "shrink-0",
+                      isShape ? "min-h-0 flex-1" : "min-h-[72px]",
+                    )}
+                    data-tab-child-widget
+                  >
+                    <div className={cn(isShape && "flex h-full min-h-[5rem] flex-col")}>
+                      {renderChild(child)}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+          {showCompactDropHint ? (
+            <div
+              className="pointer-events-none absolute inset-x-2 bottom-2 z-[80] rounded-md border border-dashed border-brand-400/90 bg-brand-50/90 px-2 py-1 text-center shadow-theme-xs dark:border-brand-500/50 dark:bg-brand-500/15"
+              aria-hidden
+            >
+              <p className="text-theme-xs font-medium text-brand-600 dark:text-brand-400">
+                释放以加入「{activePane?.title ?? "当前页签"}」
+              </p>
+            </div>
+          ) : null}
           {showPaletteDropLayer ? (
             <TabsPaletteDropOverlay
               activePaneTitle={activePane?.title ?? "当前页签"}

@@ -17,6 +17,27 @@ export const INSPECTOR_LABEL = "text-[11px] font-medium text-gray-500 dark:text-
 export const INSPECTOR_HINT = "text-[10px] leading-relaxed text-gray-400 dark:text-gray-500";
 export const INSPECTOR_SECTION_GAP = "space-y-2.5";
 export const INSPECTOR_SWITCH_ROW = "flex items-center justify-between gap-2 py-0.5";
+export const INSPECTOR_NESTED_CARD =
+  "space-y-2 rounded-md border border-gray-200 bg-gray-50/70 p-2 dark:border-gray-800 dark:bg-white/[0.03]";
+
+export function InspectorSubtleEmpty({
+  message,
+  className,
+}: {
+  message: string;
+  className?: string;
+}) {
+  return (
+    <p
+      className={cn(
+        "rounded-md border border-dashed border-gray-200 bg-gray-50/50 px-2 py-2 text-center text-[10px] leading-relaxed text-gray-400 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-500",
+        className,
+      )}
+    >
+      {message}
+    </p>
+  );
+}
 
 export function InspectorFieldRow({
   label,
@@ -40,24 +61,38 @@ export function InspectorSwitchRow({
   label,
   checked,
   onCheckedChange,
+  disabled = false,
+  hint,
   "aria-label": ariaLabel,
 }: {
   label: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
+  hint?: string;
   "aria-label"?: string;
 }) {
   return (
-    <div className={INSPECTOR_SWITCH_ROW}>
-      <Label className={cn(INSPECTOR_LABEL, "font-normal text-gray-600 dark:text-gray-300")}>
-        {label}
-      </Label>
-      <Switch
-        checked={checked}
-        onCheckedChange={onCheckedChange}
-        aria-label={ariaLabel ?? label}
-        className="scale-90"
-      />
+    <div className="space-y-0.5">
+      <div className={INSPECTOR_SWITCH_ROW}>
+        <Label
+          className={cn(
+            INSPECTOR_LABEL,
+            "font-normal",
+            disabled ? "text-gray-400 dark:text-gray-500" : "text-gray-600 dark:text-gray-300",
+          )}
+        >
+          {label}
+        </Label>
+        <Switch
+          checked={checked}
+          disabled={disabled}
+          onCheckedChange={onCheckedChange}
+          aria-label={ariaLabel ?? label}
+          className="scale-90"
+        />
+      </div>
+      {hint ? <p className={INSPECTOR_HINT}>{hint}</p> : null}
     </div>
   );
 }

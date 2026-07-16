@@ -21,6 +21,7 @@ export type ChartEditRailProps = ChartEditRailChromeProps & {
   onChange: (chartConfig: ChartViewConfig) => void;
   onTitleChange?: (title: string) => void;
   dashboardStyle?: DashboardStyleConfig;
+  dashboardId?: string;
 };
 
 function ChartEditRailInner({
@@ -93,6 +94,7 @@ export function ChartEditRail({
   onChange,
   onTitleChange,
   dashboardStyle,
+  dashboardId,
   ...chromeProps
 }: ChartEditRailProps) {
   return (
@@ -101,6 +103,7 @@ export function ChartEditRail({
       onChange={onChange}
       onTitleChange={onTitleChange}
       dashboardStyle={dashboardStyle}
+      dashboardId={dashboardId}
     >
       <ChartEditRailInner {...chromeProps} />
     </ChartInspectorProvider>

@@ -16,26 +16,26 @@ import { ChartDeSliderField } from "../deAttrSlider";
 import { ChartPaletteConfigFields } from "../chartPaletteConfigFields";
 import { useChartInspector } from "../chartInspectorContext";
 import {
-  patchChartDeStyle,
-  patchChartDeStyleNested,
   patchChartShowLabel,
   readChartDeStyle,
   readChartLegendVisible,
   readChartLegendPosition,
   readChartShowLabel,
   readChartTitleVisible,
+  type ChartDeStyle,
 } from "@/lib/chartDeStyle";
+import type { WidgetStyleConfig } from "../dashboardStyleConfig";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import { LEGEND_POSITION_SEGMENT_OPTIONS } from "../inspectorSegmentIcons";
 import { ChartInspectorSection, INSPECTOR_SELECT, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 
 export function ChartPaletteStyleSection() {
-  const { cfg, onChange } = useChartInspector();
+  const { cfg, patchDeStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
 
   const patchPaletteOpacity = (opacityPercent: number) =>
-    onChange(patchChartDeStyle(cfg, { paletteOpacity: opacityPercent / 100 }));
+    patchDeStyle({ paletteOpacity: opacityPercent / 100 });
 
   return (
     <ChartInspectorSection title="图表配色" defaultOpen>
@@ -46,12 +46,10 @@ export function ChartPaletteStyleSection() {
         paletteId={deStyle.paletteId}
         paletteOpacity={deStyle.paletteOpacity}
         onPaletteChange={(paletteId) =>
-          onChange(
-            patchChartDeStyle(cfg, {
-              paletteId,
-              ...(paletteId === undefined ? { paletteOpacity: undefined } : {}),
-            }),
-          )
+          patchDeStyle({
+            paletteId,
+            ...(paletteId === undefined ? { paletteOpacity: undefined } : {}),
+          })
         }
         onOpacityChange={patchPaletteOpacity}
         onOpacityPreview={patchPaletteOpacity}
@@ -61,11 +59,11 @@ export function ChartPaletteStyleSection() {
 }
 
 export function ChartTitleStyleSection() {
-  const { widget, cfg, onChange, onTitleChange, dashboardStyle } = useChartInspector();
+  const { widget, cfg, patchDeStyleNested, onTitleChange, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const titleVisible = readChartTitleVisible(cfg, dashboardStyle?.titleStyle);
-  const patchTitle = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
-    onChange(patchChartDeStyleNested(cfg, "title", patch));
+  const patchTitle = (patch: Partial<NonNullable<ChartDeStyle["title"]>>) =>
+    patchDeStyleNested("title", patch);
 
   return (
     <ChartInspectorSection
@@ -106,10 +104,10 @@ export function ChartTitleStyleSection() {
 }
 
 export function ChartRemarkStyleSection() {
-  const { cfg, onChange } = useChartInspector();
+  const { cfg, patchDeStyleNested } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
-  const patchRemark = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
-    onChange(patchChartDeStyleNested(cfg, "remark", patch));
+  const patchRemark = (patch: Partial<NonNullable<ChartDeStyle["remark"]>>) =>
+    patchDeStyleNested("remark", patch);
 
   return (
     <ChartInspectorSection
@@ -136,11 +134,11 @@ export function ChartRemarkStyleSection() {
 }
 
 export function ChartLegendStyleSection() {
-  const { cfg, onChange } = useChartInspector();
+  const { cfg, patchDeStyleNested } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const legendVisible = readChartLegendVisible(deStyle, { embedded: true });
-  const patchLegend = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
-    onChange(patchChartDeStyleNested(cfg, "legend", patch));
+  const patchLegend = (patch: Partial<NonNullable<ChartDeStyle["legend"]>>) =>
+    patchDeStyleNested("legend", patch);
 
   return (
     <ChartInspectorSection
@@ -183,12 +181,12 @@ export function ChartLegendStyleSection() {
 }
 
 export function ChartLabelStyleSection() {
-  const { cfg, onChange } = useChartInspector();
+  const { cfg, mutateChartConfig, patchDeStyleNested } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const caps = chartInspectorCapabilities(cfg.chartType);
   const showLabel = readChartShowLabel(cfg);
-  const patchLabel = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
-    onChange(patchChartDeStyleNested(cfg, "label", patch));
+  const patchLabel = (patch: Partial<NonNullable<ChartDeStyle["label"]>>) =>
+    patchDeStyleNested("label", patch);
   const isKpi = cfg.chartType === "kpi";
 
   return (
@@ -198,7 +196,9 @@ export function ChartLabelStyleSection() {
         !isKpi ? (
           <Switch
             checked={showLabel}
-            onCheckedChange={(show) => onChange(patchChartShowLabel(cfg, show))}
+            onCheckedChange={(show) =>
+              mutateChartConfig((current) => patchChartShowLabel(current, show))
+            }
             aria-label="显示数据标签"
             className="scale-90"
           />
@@ -259,13 +259,13 @@ export function ChartLabelStyleSection() {
 }
 
 export function ChartBackgroundStyleSection() {
-  const { cfg, onChange } = useChartInspector();
+  const { cfg, patchDeStyleNested } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const showBackground = deStyle.background?.backgroundShow !== false;
-  const patchBackground = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
-    onChange(patchChartDeStyleNested(cfg, "background", patch));
-  const patchBorder = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
-    onChange(patchChartDeStyleNested(cfg, "border", patch));
+  const patchBackground = (patch: Partial<WidgetStyleConfig>) =>
+    patchDeStyleNested("background", patch);
+  const patchBorder = (patch: Partial<NonNullable<ChartDeStyle["border"]>>) =>
+    patchDeStyleNested("border", patch);
 
   return (
     <ChartInspectorSection

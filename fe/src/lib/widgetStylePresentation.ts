@@ -9,6 +9,8 @@ import {
 import { resolveChartFrameOverlayLayer } from "@/lib/chartFrameBorderPresets";
 import {
   applyBackgroundOpacityOnly,
+  buildWidgetBackdropBlurStyle,
+  buildWidgetImageBlurStyle,
   type WidgetBackgroundPresentation,
 } from "@/lib/widgetSurfaceBackground";
 
@@ -51,16 +53,20 @@ export function buildWidgetBackgroundPresentation(
     if (allowFrame && mode === "frame" && bg.framePresetId) {
       frameLayer = resolveChartFrameOverlayLayer(bg.framePresetId, bg.frameColor, radius);
     } else if (mode !== "border" && bg.backgroundImage) {
+      const imageUrl = `url(${bg.backgroundImage})`;
+      const blurPx = bg.backdropBlur ?? 0;
       imageLayer = {
-        backgroundImage: `url(${bg.backgroundImage})`,
+        backgroundImage: imageUrl,
         backgroundSize: "cover",
         backgroundPosition: "center",
         borderRadius: radius,
+        ...(blurPx > 0 ? buildWidgetImageBlurStyle(blurPx) : {}),
       };
     }
     if (bg.opacity != null) style.opacity = bg.opacity;
-    if (bg.backdropBlur != null && bg.backdropBlur > 0) {
-      style.backdropFilter = `blur(${bg.backdropBlur}px)`;
+    const blurPx = bg.backdropBlur ?? 0;
+    if (blurPx > 0 && !bg.backgroundImage) {
+      Object.assign(style, buildWidgetBackdropBlurStyle(blurPx));
     }
   }
 

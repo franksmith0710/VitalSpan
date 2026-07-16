@@ -23,9 +23,14 @@ import type {
 } from "../layoutUtils";
 import { getTopLevelPixelWidgets, findTabsHostAtPoint } from "../layoutUtils";
 import type { ScaleMode, DashboardStyleConfig } from "../dashboardStyleConfig";
-import { usePaletteDragActive } from "./paletteDragContext";
+import { usePaletteDragActive, useTabInsertIntent } from "./paletteDragContext";
 import { TabPaletteDropZones } from "./TabPaletteDropZones";
-import { TAB_PALETTE_DROP_BUFFER_PX } from "./tabPaletteDrop";
+import { preservePixelCanvasHostScroll } from "./preserveCanvasHostScroll";
+import type { TabInsertIntent } from "./tabInsertResolver";
+import {
+  resolveTabHostForWidgetDrop,
+  tryAbsorbTopLevelWidgetIntoTab,
+} from "./tabInsertResolver";
 import { TabPaletteDropTargetProvider } from "./tabPaletteDropTargetContext";
 import {
   canvasArtboardStyleFingerprint,
@@ -67,6 +72,7 @@ type PixelCanvasProps = {
     sourceEvent?: DragEvent,
   ) => void;
   onTabPaletteDrop?: (tabsWidgetId: string, type: PaletteDragPayload) => void;
+  onTabInsertIntentChange?: (intent: TabInsertIntent | null) => void;
   widgetActions?: PixelWidgetActions;
   className?: string;
   scaleMode?: ScaleMode;
@@ -139,6 +145,7 @@ export function PixelCanvas({
   onViewportChange,
   onPaletteDrop,
   onTabPaletteDrop,
+  onTabInsertIntentChange,
   widgetActions,
   className,
   scaleMode = "canvas",
@@ -162,7 +169,9 @@ export function PixelCanvas({
   const [centerContent, setCenterContent] = useState(false);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [paletteDragPoint, setPaletteDragPoint] = useState<PixelPoint | null>(null);
+  const [shapeDragWidget, setShapeDragWidget] = useState<PixelLayoutWidget | null>(null);
   const paletteDragActive = usePaletteDragActive();
+  const tabInsertIntent = useTabInsertIntent();
   const [markGuides, setMarkGuides] = useState<MarkLineGuide[]>([]);
   const [playingWidgetId, setPlayingWidgetId] = useState<string | null>(null);
   const previewThrottleRef = useRef(0);
@@ -212,6 +221,43 @@ export function PixelCanvas({
       )?.id ?? null
     );
   }, [paletteDragPoint, tabHosts.length, activeLayout.widgets]);
+
+  useEffect(() => {
+    if (!paletteDragActive || !onTabInsertIntentChange) return;
+    if (!activeTabDropId) return;
+    const host = tabHosts.find((t) => t.id === activeTabDropId);
+    if (!host?.tabsConfig) return;
+    onTabInsertIntentChange({
+      tabsWidgetId: host.id,
+      paneId: host.tabsConfig.activePaneId,
+    });
+  }, [activeTabDropId, onTabInsertIntentChange, paletteDragActive, tabHosts]);
+
+  const shapeTabDropTargetId = useMemo(() => {
+    if (!shapeDragWidget || shapeDragWidget.type === "tabs") return null;
+    return (
+      resolveTabHostForWidgetDrop(activeLayout, widgetRect(shapeDragWidget), {
+        intent: tabInsertIntent,
+        dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
+      })?.id ?? null
+    );
+  }, [activeLayout, shapeDragWidget, tabInsertIntent]);
+
+  const activeTabDropTargetId =
+    activeTabDropId ?? shapeTabDropTargetId ?? tabInsertIntent?.tabsWidgetId ?? null;
+
+  const reportTabHover = useCallback(
+    (tabsWidgetId: string) => {
+      if (!onTabInsertIntentChange) return;
+      const host = tabHosts.find((t) => t.id === tabsWidgetId);
+      if (!host?.tabsConfig) return;
+      onTabInsertIntentChange({
+        tabsWidgetId: host.id,
+        paneId: host.tabsConfig.activePaneId,
+      });
+    },
+    [onTabInsertIntentChange, tabHosts],
+  );
 
   const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
   const showMarkLines = mode === "edit";
@@ -365,6 +411,7 @@ export function PixelCanvas({
     (widget: PixelLayoutWidget) => {
       previewThrottleRef.current = Date.now();
       pendingPreviewRef.current = null;
+      setShapeDragWidget(widget);
       const nextLayout = resolveActiveAt(widget);
       const positions = new Map(
         nextLayout.widgets.map((item) => [item.id, widgetRect(item)] as const),
@@ -377,6 +424,7 @@ export function PixelCanvas({
 
   const handlePreview = useCallback(
     (widget: PixelLayoutWidget) => {
+      setShapeDragWidget(widget);
       const elapsed = Date.now() - previewThrottleRef.current;
       if (elapsed >= PIXEL_PREVIEW_THROTTLE_MS) {
         flushPreview(widget);
@@ -426,8 +474,16 @@ export function PixelCanvas({
   }, []);
 
   const shouldRevertCommit = useCallback(
-    (widgetId: string, finalRect: PixelRect, startRect: PixelRect) =>
-      shouldRevertPixelDragCommit(
+    (widgetId: string, finalRect: PixelRect, startRect: PixelRect) => {
+      const widget = activeLayout.widgets.find((item) => item.id === widgetId);
+      if (widget && widget.type !== "tabs" && !widget.parentTabsId) {
+        const host = resolveTabHostForWidgetDrop(activeLayout, finalRect, {
+          intent: tabInsertIntent,
+          dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
+        });
+        if (host && host.id !== widgetId) return false;
+      }
+      return shouldRevertPixelDragCommit(
         finalRect,
         startRect,
         activeLayout.widgets
@@ -435,8 +491,14 @@ export function PixelCanvas({
           .map((item) => widgetRect(item)),
         gapRuntime.collisionOverlapBufferPx,
         gapRuntime.collisionGapPx,
-      ),
-    [activeLayout.widgets, gapRuntime.collisionGapPx, gapRuntime.collisionOverlapBufferPx],
+      );
+    },
+    [
+      activeLayout,
+      gapRuntime.collisionGapPx,
+      gapRuntime.collisionOverlapBufferPx,
+      tabInsertIntent,
+    ],
   );
 
   const handleCommit = useCallback(
@@ -447,11 +509,31 @@ export function PixelCanvas({
         previewTimerRef.current = null;
       }
       pendingPreviewRef.current = null;
+      setShapeDragWidget(null);
+
+      const absorbed = tryAbsorbTopLevelWidgetIntoTab(activeLayout, widget, {
+        intent: tabInsertIntent,
+        dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
+      });
+      if (absorbed) {
+        onLayoutChange(absorbed);
+        clearPreviewChrome(absorbed);
+        onSelect?.(widget.id, false);
+        return;
+      }
+
       const nextLayout = resolveActiveAt(widget);
       onLayoutChange(nextLayout);
       clearPreviewChrome(nextLayout);
     },
-    [onLayoutChange, resolveActiveAt, clearPreviewChrome],
+    [
+      activeLayout,
+      clearPreviewChrome,
+      onLayoutChange,
+      onSelect,
+      resolveActiveAt,
+      tabInsertIntent,
+    ],
   );
 
   const handleCancel = useCallback(() => {
@@ -460,6 +542,7 @@ export function PixelCanvas({
       previewTimerRef.current = null;
     }
     pendingPreviewRef.current = null;
+    setShapeDragWidget(null);
     clearPreviewChrome();
   }, [clearPreviewChrome]);
 
@@ -508,6 +591,13 @@ export function PixelCanvas({
     setPaletteDragPoint(null);
   }, []);
 
+  const handleSelect = useCallback(
+    (widgetId: string, additive: boolean) => {
+      preservePixelCanvasHostScroll(() => onSelect?.(widgetId, additive));
+    },
+    [onSelect],
+  );
+
   const handleBlankPointerDown = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (event.target === event.currentTarget) onClearSelection?.();
@@ -517,16 +607,41 @@ export function PixelCanvas({
 
   const handleDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
-      if (!onPaletteDrop) return;
+      if (!onPaletteDrop && !onTabPaletteDrop) return;
       event.preventDefault();
       setPaletteDragOver(false);
       setPaletteDragPoint(null);
       const payload = readPaletteDragPayload(event.nativeEvent);
       const point = resolveClientToCanvas(event.clientX, event.clientY);
       if (!payload || !point) return;
-      onPaletteDrop(payload, point, event.nativeEvent);
+
+      const tabsHost = findTabsHostAtPoint(
+        activeLayout.widgets,
+        point,
+        TAB_PALETTE_DROP_BUFFER_PX,
+      );
+      const tabsId =
+        tabsHost?.id ??
+        (tabInsertIntent?.tabsWidgetId &&
+        activeLayout.widgets.some(
+          (w) => w.id === tabInsertIntent.tabsWidgetId && w.type === "tabs",
+        )
+          ? tabInsertIntent.tabsWidgetId
+          : null);
+
+      if (tabsId && onTabPaletteDrop) {
+        onTabPaletteDrop(tabsId, payload);
+        return;
+      }
+      onPaletteDrop?.(payload, point, event.nativeEvent);
     },
-    [onPaletteDrop, resolveClientToCanvas],
+    [
+      activeLayout.widgets,
+      onPaletteDrop,
+      onTabPaletteDrop,
+      resolveClientToCanvas,
+      tabInsertIntent,
+    ],
   );
 
   return (
@@ -568,7 +683,11 @@ export function PixelCanvas({
         <PixelCanvasInteractionProvider
           interaction={playingWidgetId ? { widgetId: playingWidgetId } : null}
         >
-        <TabPaletteDropTargetProvider targetTabsId={paletteDragActive ? activeTabDropId : null}>
+        <TabPaletteDropTargetProvider
+          targetTabsId={
+            paletteDragActive || shapeDragWidget ? activeTabDropTargetId : null
+          }
+        >
         <div
           ref={stageRef}
           id="editor-canvas-main"
@@ -607,7 +726,7 @@ export function PixelCanvas({
                 shapeGapPx={gapRuntime.snapGapPx}
                 mode={mode}
                 selected={mode === "edit" && Boolean(selectedIds?.has(widget.id))}
-                onSelect={onSelect}
+                onSelect={handleSelect}
                 onPreview={mode === "edit" ? handlePreview : undefined}
                 onCommit={handleCommit}
                 onCancel={handleCancel}
@@ -634,12 +753,17 @@ export function PixelCanvas({
                 />
               </PixelShape>
             ))}
-          {mode === "edit" && paletteDragActive && tabHosts.length > 0 && onTabPaletteDrop ? (
+          {mode === "edit" &&
+          tabHosts.length > 0 &&
+          (paletteDragActive || shapeDragWidget) &&
+          (onTabPaletteDrop || shapeDragWidget) ? (
             <TabPaletteDropZones
               tabs={tabHosts}
-              bufferPx={TAB_PALETTE_DROP_BUFFER_PX}
-              activeTabsId={activeTabDropId}
-              onTabDrop={onTabPaletteDrop}
+              hitBufferPx={TAB_PALETTE_DROP_BUFFER_PX}
+              visualBufferPx={TAB_PALETTE_DROP_VISUAL_BUFFER_PX}
+              activeTabsId={activeTabDropTargetId}
+              onTabDrop={onTabPaletteDrop ?? (() => {})}
+              onTabHover={reportTabHover}
             />
           ) : null}
           {showMarkLines ? (

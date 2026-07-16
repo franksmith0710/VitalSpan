@@ -49,8 +49,45 @@ describe("widgetStyleToContentCss", () => {
     expect(surface.opacity).toBeUndefined();
     expect(surface.backdropFilter).toBeUndefined();
     expect(backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
-    expect(backgroundLayer?.backdropFilter).toBe("blur(8px)");
+    expect(backgroundLayer?.filter).toBe("blur(8px)");
     expect(backgroundLayer?.opacity).toBe(0.9);
+  });
+
+  it("keeps custom background color when enabling backdrop blur", () => {
+    const { backgroundLayer } = widgetStyleToContentCss({
+      background: "#abcdef",
+      backgroundImage: "https://example.com/bg.png",
+      backdropBlur: 12,
+    });
+    expect(backgroundLayer?.background).toBeUndefined();
+    expect(backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
+    expect(backgroundLayer?.backdropFilter).toBeUndefined();
+    expect(backgroundLayer?.filter).toBe("blur(12px)");
+    expect(backgroundLayer?.transform).toContain("scale");
+  });
+
+  it("keeps background image when blur toggles from zero to non-zero", () => {
+    const withoutBlur = widgetStyleToContentCss({
+      backgroundImage: "https://example.com/bg.png",
+      backdropBlur: 0,
+    });
+    const withBlur = widgetStyleToContentCss({
+      backgroundImage: "https://example.com/bg.png",
+      backdropBlur: 12,
+    });
+    expect(withoutBlur.backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
+    expect(withoutBlur.backgroundLayer?.filter).toBeUndefined();
+    expect(withBlur.backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
+    expect(withBlur.backgroundLayer?.filter).toBe("blur(12px)");
+  });
+
+  it("uses backdrop blur for frosted glass without background image", () => {
+    const { backgroundLayer } = widgetStyleToContentCss({
+      backdropBlur: 8,
+    });
+    expect(backgroundLayer?.backdropFilter).toBe("blur(8px)");
+    expect(backgroundLayer?.WebkitBackdropFilter).toBe("blur(8px)");
+    expect(backgroundLayer?.filter).toBeUndefined();
   });
 });
 
@@ -275,5 +312,17 @@ describe("mergeShapeInnerPresentation", () => {
       innerFrameLayer: shell.innerFrameLayer,
     });
     expect(merged.shell.backgroundLayers[1]?.backgroundImage).toContain("data:image/svg+xml");
+  });
+
+  it("keeps shape-inner transparent when frosted glass backdrop layer is active", () => {
+    const outer = mergeWidgetShellStyle({ backdropBlur: 12 }, "light");
+    const merged = mergeShapeInnerPresentation({
+      outer,
+      inner: {},
+      innerBackgroundLayer: null,
+      innerFrameLayer: null,
+    });
+    expect(outer.backgroundLayer?.backdropFilter).toBe("blur(12px)");
+    expect(merged.shell.style.backgroundColor).toBe("transparent");
   });
 });

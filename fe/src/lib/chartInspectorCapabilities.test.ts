@@ -6,8 +6,11 @@ describe("chartInspectorCapabilities", () => {
     expect(chartInspectorCapabilities("table").legend).toBe(false);
   });
 
-  it("enables dataZoom for bar", () => {
-    expect(chartInspectorCapabilities("bar").dataZoom).toBe(true);
+  it("enables mark lines and conditional for bar", () => {
+    const caps = chartInspectorCapabilities("bar");
+    expect(caps.markLines).toBe(true);
+    expect(caps.conditional).toBe(true);
+    expect(caps.jump).toBe(true);
   });
 
   it("enables legend for graph", () => {

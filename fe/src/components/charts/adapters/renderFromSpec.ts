@@ -1,8 +1,10 @@
 import type { ChartFieldRef } from "@/lib/chartViewConfig";
+import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { GeoChartStyle } from "@/lib/geoMapChart";
 import { DE_AREA_FILL_OPACITY } from "@/lib/echartsSeriesPresentation";
 import {
   buildGeoHeatmapEchartsOption,
+  buildGeoHeatmapPlaceholderEchartsOption,
   buildGeoMapEchartsOption,
   buildGeoMapPlaceholderEchartsOption,
   isNumericRegionIdDimension,
@@ -26,6 +28,9 @@ export type BuildEchartsStyleContext = {
   geo?: GeoChartStyle;
   showLabel?: boolean;
   pie?: { innerRadiusPercent?: number };
+  isDark?: boolean;
+  embedEdit?: boolean;
+  valueFormat?: NumberFormatConfig;
 };
 
 export const FALLBACK_CHART_TYPE = "table";
@@ -124,7 +129,10 @@ function buildMapOption(
     rows.length === 0 ||
     isNumericRegionIdDimension(regionField, columns, rows)
   ) {
-    return buildGeoMapPlaceholderEchartsOption({ geo: style?.geo });
+    return buildGeoMapPlaceholderEchartsOption({
+      geo: style?.geo,
+      isDark: style?.isDark,
+    });
   }
   return buildGeoMapEchartsOption({
     rows,
@@ -133,6 +141,9 @@ function buildMapOption(
     metricField: metric,
     geo: style?.geo,
     showLabel: style?.showLabel,
+    isDark: style?.isDark,
+    embedEdit: style?.embedEdit,
+    valueFormat: style?.valueFormat,
   });
 }
 
@@ -145,7 +156,12 @@ function buildHeatmapOption(
   const xField = spec.encoding.dimensions[0]?.field ?? "";
   const yField = spec.encoding.dimensions[1]?.field ?? "";
   const metric = spec.encoding.metrics[0]?.field ?? "";
-  if (!xField || !yField || !metric) return { series: [] };
+  if (!xField || !yField || !metric) {
+    return buildGeoHeatmapPlaceholderEchartsOption({
+      geo: style?.geo,
+      isDark: style?.isDark,
+    });
+  }
   return buildGeoHeatmapEchartsOption({
     rows,
     columns,
@@ -153,6 +169,8 @@ function buildHeatmapOption(
     yField,
     metricField: metric,
     geo: style?.geo,
+    isDark: style?.isDark,
+    valueFormat: style?.valueFormat,
   });
 }
 

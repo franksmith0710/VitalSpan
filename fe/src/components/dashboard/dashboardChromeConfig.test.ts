@@ -91,7 +91,7 @@ describe("mergeWidgetShellStyle spacing", () => {
   });
 
   it("applies unified padding and per-corner radius", () => {
-    const { style } = mergeWidgetShellStyle({
+    const { style, backgroundLayer } = mergeWidgetShellStyle({
       padding: 8,
       radiusMode: "individual",
       borderRadiusTopLeft: 4,
@@ -102,6 +102,7 @@ describe("mergeWidgetShellStyle spacing", () => {
     });
     expect(style.padding).toBe("8px");
     expect(style.borderRadius).toBe("4px 6px 10px 8px");
-    expect(style.backdropFilter).toBe("blur(6px)");
+    expect(style.backdropFilter).toBeUndefined();
+    expect(backgroundLayer?.backdropFilter).toBe("blur(6px)");
   });
 });

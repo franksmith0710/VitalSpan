@@ -242,4 +242,32 @@ describe("collisionLayout", () => {
     expect(resolved.widgets.find((item) => item.id === "a")).toMatchObject({ x: 0, y: 0 });
     expect(resolved.widgets.find((item) => item.id !== "a")).toMatchObject({ x: 360, y: 0 });
   });
+
+  it("does not push tab hosts when another widget overlaps", () => {
+    const tabs: PixelLayoutWidget = {
+      id: "tabs",
+      type: "tabs",
+      title: "页签",
+      order: 0,
+      x: 100,
+      y: 200,
+      width: 400,
+      height: 240,
+      tabsConfig: {
+        activePaneId: "p1",
+        panes: [{ id: "p1", title: "页签 1", childWidgetIds: [] }],
+      },
+    };
+    const chart = widget("chart", 120, 220, 300, 180, 1);
+    const layout = baseLayout([tabs, chart]);
+    const resolved = resolvePixelCollisions(layout, "chart", {
+      x: 100,
+      y: 200,
+      width: 300,
+      height: 180,
+    });
+    const parked = resolved.widgets.find((w) => w.id === "tabs");
+    expect(parked?.x).toBe(100);
+    expect(parked?.y).toBe(200);
+  });
 });

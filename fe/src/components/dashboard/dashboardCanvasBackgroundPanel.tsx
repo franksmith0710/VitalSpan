@@ -17,7 +17,9 @@ import {
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
 
-type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
+import type { DashboardStylePatch } from "./DashboardContextInspector";
+
+type PatchFn = (patch: DashboardStylePatch) => void;
 
 type DashboardCanvasBackgroundPanelProps = {
   styleConfig: DashboardStyleConfig;

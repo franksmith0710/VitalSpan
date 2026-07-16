@@ -7,13 +7,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import type { FilterControlType, FilterWidgetConfig, LayoutWidget } from "./layoutUtils";
 import { FILTER_CONTROL_META, FILTER_CONTROL_TYPES } from "./layoutUtils";
+import { WidgetRailPanelHeader } from "./widgetRailChrome";
 
 type FilterWidgetInspectorProps = {
   widget: LayoutWidget & { filterConfig: FilterWidgetConfig };
   onChange: (filterConfig: FilterWidgetConfig) => void;
   embedded?: boolean;
+  onRailCollapse?: () => void;
 };
 
 const CONTROL_OPTIONS = FILTER_CONTROL_TYPES.map((value) => ({
@@ -21,7 +24,12 @@ const CONTROL_OPTIONS = FILTER_CONTROL_TYPES.map((value) => ({
   label: FILTER_CONTROL_META[value].label,
 }));
 
-export function FilterWidgetInspector({ widget, onChange, embedded = false }: FilterWidgetInspectorProps) {
+export function FilterWidgetInspector({
+  widget,
+  onChange,
+  embedded = false,
+  onRailCollapse,
+}: FilterWidgetInspectorProps) {
   const cfg = widget.filterConfig;
 
   const patch = (partial: Partial<FilterWidgetConfig>) => {
@@ -101,7 +109,19 @@ export function FilterWidgetInspector({ widget, onChange, embedded = false }: Fi
     </div>
   );
 
-  if (embedded) return body;
+  if (embedded) {
+    return (
+      <div className={cn("flex h-full min-h-0 w-full flex-col bg-white dark:bg-gray-900")}>
+        <WidgetRailPanelHeader
+          title={widget.title || "筛选器"}
+          subtitle="全局筛选控件"
+          onCollapse={onRailCollapse}
+          collapseAriaLabel="收起配置"
+        />
+        <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
+      </div>
+    );
+  }
 
   return (
     <aside className="w-full shrink-0">

@@ -10,6 +10,10 @@ vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
+vi.mock("echarts-for-react", () => ({
+  default: () => <div data-testid="echarts-chart" />,
+}));
+
 function mockExecute(rows: unknown[][], columns: string[]) {
   mockApiFetch.mockImplementation(async (path: string, opts?: { method?: string; body?: string }) => {
     if (path === "/api/v1/query/execute") {

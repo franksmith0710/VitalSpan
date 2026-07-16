@@ -38,8 +38,44 @@ export function withBackgroundAlpha(color: string, alpha: number): string {
 /** 仅 backdrop-filter、未调不透明度时：底色需半透明才能看见毛玻璃 */
 const FROSTED_GLASS_BG_ALPHA = 0.82;
 
+/** 底图模糊：略放大避免 filter 边缘露白 */
+const WIDGET_IMAGE_BLUR_BLEED_SCALE = 1.06;
+
+export function buildWidgetImageBlurStyle(blurPx: number): Pick<
+  CSSProperties,
+  "filter" | "transform" | "transformOrigin"
+> {
+  if (blurPx <= 0) return {};
+  return {
+    filter: `blur(${blurPx}px)`,
+    transform: `scale(${WIDGET_IMAGE_BLUR_BLEED_SCALE})`,
+    transformOrigin: "center",
+  };
+}
+
+export function buildWidgetBackdropBlurStyle(blurPx: number): Pick<
+  CSSProperties,
+  "backdropFilter" | "WebkitBackdropFilter"
+> {
+  if (blurPx <= 0) return {};
+  const value = `blur(${blurPx}px)`;
+  return { backdropFilter: value, WebkitBackdropFilter: value };
+}
+
+function applyBackgroundPaintToLayer(
+  backgroundLayer: CSSProperties,
+  style: CSSProperties,
+): void {
+  delete backgroundLayer.background;
+  if (typeof style.backgroundColor === "string") {
+    backgroundLayer.backgroundColor = style.backgroundColor;
+  } else if (typeof style.background === "string") {
+    backgroundLayer.backgroundColor = style.background;
+  }
+}
+
 export function needsWidgetBackgroundLayer(style: CSSProperties): boolean {
-  if (style.backdropFilter) return true;
+  if (style.backdropFilter || style.WebkitBackdropFilter) return true;
   const opacity = readOpacity(style.opacity);
   if (opacity == null || opacity >= 1) return false;
   return Boolean(style.backgroundImage);
@@ -70,28 +106,30 @@ export function applyBackgroundOpacityOnly(
     delete surface.backgroundSize;
     delete surface.backgroundPosition;
     delete surface.backdropFilter;
+    delete surface.WebkitBackdropFilter;
 
     const backgroundLayer: CSSProperties = {
       backgroundImage: style.backgroundImage,
       backgroundSize: style.backgroundSize,
       backgroundPosition: style.backgroundPosition,
       backdropFilter: style.backdropFilter,
+      WebkitBackdropFilter: style.WebkitBackdropFilter,
       borderRadius: style.borderRadius,
     };
 
     if (opacity != null && opacity < 1) {
       backgroundLayer.opacity = opacity;
-      backgroundLayer.background = style.background;
-      backgroundLayer.backgroundColor = style.backgroundColor;
+      applyBackgroundPaintToLayer(backgroundLayer, style);
     } else if (style.backdropFilter && !style.backgroundImage) {
       const base =
         (typeof style.background === "string" && style.background) ||
         (typeof style.backgroundColor === "string" && style.backgroundColor) ||
         fallbackBg;
-      backgroundLayer.backgroundColor = withBackgroundAlpha(base, FROSTED_GLASS_BG_ALPHA);
+      const alpha =
+        opacity != null && opacity < 1 ? opacity : FROSTED_GLASS_BG_ALPHA;
+      backgroundLayer.backgroundColor = withBackgroundAlpha(base, alpha);
     } else {
-      backgroundLayer.background = style.background;
-      backgroundLayer.backgroundColor = style.backgroundColor;
+      applyBackgroundPaintToLayer(backgroundLayer, style);
     }
 
     return { surface, backgroundLayer, frameLayer: null };

@@ -29,6 +29,7 @@ import { DashboardWidgetsProvider } from "../DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "../dashboardWidgetExecuteKey";
 import type { PaletteInsertType } from "../createLayoutWidget";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
+import type { TabInsertIntent } from "../pixelCanvas/tabInsertResolver";
 import {
   DashboardCanvasWidgetRenderer,
   type DashboardWidgetsSetter,
@@ -60,6 +61,8 @@ type DashboardEditCanvasProps = {
   ) => void;
   onTabPaletteDrop?: (tabsWidgetId: string, type: PaletteDragPayload) => void;
   onViewportChange: (viewport: PixelRect) => void;
+  tabInsertIntent?: TabInsertIntent | null;
+  onTabInsertIntentChange?: (intent: TabInsertIntent | null) => void;
   widgetActions?: PixelWidgetActions;
 };
 
@@ -84,6 +87,8 @@ export function DashboardEditCanvas({
   onPaletteDrop,
   onTabPaletteDrop,
   onViewportChange,
+  tabInsertIntent = null,
+  onTabInsertIntentChange,
   widgetActions,
 }: DashboardEditCanvasProps) {
   const effectiveStyle = useMemo(
@@ -158,7 +163,7 @@ export function DashboardEditCanvas({
           (sum, pane) => sum + pane.childWidgetIds.length,
           0,
         );
-        return `${base}:${childCount}:${widget.tabsConfig.activePaneId}`;
+        return `${base}:${childCount}`;
       }
       return base;
     },
@@ -181,7 +186,11 @@ export function DashboardEditCanvas({
 
   return (
     <DashboardWidgetsProvider widgets={widgets}>
-      <PaletteDragProvider active={paletteDragActive}>
+      <PaletteDragProvider
+        active={paletteDragActive}
+        tabInsertIntent={tabInsertIntent}
+        onTabInsertIntentChange={onTabInsertIntentChange ?? (() => {})}
+      >
       <DashboardStyleSurface
         styleConfig={effectiveStyle}
         componentGapPx={
@@ -202,6 +211,7 @@ export function DashboardEditCanvas({
             onViewportChange={onViewportChange}
             onPaletteDrop={onPaletteDrop}
             onTabPaletteDrop={onTabPaletteDrop}
+            onTabInsertIntentChange={onTabInsertIntentChange}
             widgetActions={widgetActions}
             renderWidget={renderPixelWidget}
             widgetContentRevision={widgetContentRevision}

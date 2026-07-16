@@ -544,4 +544,20 @@ describe("VIZ-008 空数据 + 异常态", () => {
     expect(option.__vsGeoMapPlaceholder).toBe(true);
     expect((option.series as Array<{ type: string }>)[0].type).toBe("map");
   });
+
+  it("T-VIZ-R250-008-04: buildEchartsOption heatmap rows=[] → 空热力网格占位", () => {
+    const spec: RenderSpec = {
+      engine: "echarts",
+      chartType: "heatmap",
+      styleVariant: "default",
+      encoding: {
+        dimensions: [{ field: "x" }, { field: "y" }],
+        metrics: [{ field: "val" }],
+      },
+      source: {},
+    };
+    const option = buildEchartsOption(spec, [], ["x", "y", "val"]) as Record<string, unknown>;
+    expect(option.__vsGeoHeatmapPlaceholder).toBe(true);
+    expect((option.series as Array<{ type: string }>)[0].type).toBe("heatmap");
+  });
 });

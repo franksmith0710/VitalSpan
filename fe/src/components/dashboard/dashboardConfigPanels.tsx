@@ -24,8 +24,9 @@ import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
 import { DashboardConfigSlider } from "./deAttrSlider";
 import { ChartBackgroundStyleFields } from "./chartStyleFields";
 import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
+import type { DashboardStylePatch } from "./DashboardContextInspector";
 
-type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
+type PatchFn = (patch: DashboardStylePatch) => void;
 
 type StyleSectionProps = {
   styleConfig: DashboardStyleConfig;
@@ -82,17 +83,19 @@ export function DashboardWidgetStyleSections({
   const fctrl = styleConfig.filterControlStyle ?? {};
 
   const patchWidgetStyle = (patch: Partial<typeof ws>) => {
-    const next = { ...ws, ...patch };
-    if (next.backgroundMode === "border" || next.backgroundMode === "image") {
-      next.framePresetId = undefined;
-      next.frameColor = undefined;
-    }
-    patchStyle({ widgetStyle: next });
+    patchStyle((prev) => {
+      const next = { ...(prev.widgetStyle ?? {}), ...patch };
+      if (next.backgroundMode === "border" || next.backgroundMode === "image") {
+        next.framePresetId = undefined;
+        next.frameColor = undefined;
+      }
+      return { widgetStyle: next };
+    });
   };
   const patchTitleStyle = (patch: Partial<typeof ts>) =>
-    patchStyle({ titleStyle: { ...ts, ...patch } });
+    patchStyle((prev) => ({ titleStyle: { ...prev.titleStyle, ...patch } }));
   const patchNumberFormat = (patch: Partial<typeof nf>) =>
-    patchStyle({ numberFormat: { ...nf, ...patch } });
+    patchStyle((prev) => ({ numberFormat: { ...prev.numberFormat, ...patch } }));
 
   return (
     <>

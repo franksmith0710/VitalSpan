@@ -35,7 +35,9 @@ import {
 import { DeAttrSliderField, DeAttrSubSliderRow } from "./deAttrSlider";
 import { WidgetStyleLineBorderControls } from "./chartStyleFields";
 
-type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
+import type { DashboardStylePatch } from "./DashboardContextInspector";
+
+type PatchFn = (patch: DashboardStylePatch) => void;
 
 type Props = {
   styleConfig: DashboardStyleConfig;
@@ -261,12 +263,12 @@ export function DashboardOverallConfigPanel({
         step={1}
         unit="px"
         onChange={(borderRadius) =>
-          patchStyle({
+          patchStyle((prev) => ({
             widgetStyle: {
-              ...ws,
+              ...prev.widgetStyle,
               borderRadius,
             },
-          })
+          }))
         }
       />
 
@@ -274,12 +276,12 @@ export function DashboardOverallConfigPanel({
         <WidgetStyleLineBorderControls
           value={ws}
           onChange={(patch) =>
-            patchStyle({
+            patchStyle((prev) => ({
               widgetStyle: {
-                ...ws,
+                ...prev.widgetStyle,
                 ...patch,
               },
-            })
+            }))
           }
           density="wide"
         />

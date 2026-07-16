@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { resolveChartConfigPhase } from "@/lib/chartConfigState";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
-import { DEFAULT_GEO_MAP_PLACEHOLDER_HINT, isNumericRegionIdDimension, MAP_REGION_NAME_HINT } from "@/lib/geoMapChart";
+import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT, isNumericRegionIdDimension, MAP_REGION_NAME_HINT } from "@/lib/geoMapChart";
 import {
   isEchartsChartType,
   isKpiType,
@@ -60,6 +60,11 @@ import { ChartDrillChrome } from "./ChartDrillChrome";
 import { drillStackRevision, useChartDrill } from "./ChartDrillContext";
 import { usePublishWidgetShellLegend } from "@/components/dashboard/pixelCanvas/widgetShellLegendContext";
 import { supportsEmbeddedShellLegend } from "@/lib/chartInspectorCapabilities";
+import {
+  chartJumpIsConfigured,
+  readChartJumpConfig,
+  resolveChartJumpHref,
+} from "@/lib/chartDeFeatures";
 
 type ChartRendererProps = {
   config: ChartViewConfig;
@@ -82,6 +87,8 @@ type ChartRendererProps = {
   suspendLiveResize?: boolean;
   widgetId?: string;
   drillEnabled?: boolean;
+  /** 看板编辑态内嵌（关闭地图滚轮缩放等） */
+  dashboardEditMode?: boolean;
 };
 
 export const ChartRenderer = memo(function ChartRenderer({
@@ -104,6 +111,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   suspendLiveResize: suspendLiveResizeProp = false,
   widgetId,
   drillEnabled = false,
+  dashboardEditMode = false,
 }: ChartRendererProps) {
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
   const drillInteraction = drillEnabled && Boolean(widgetId) && supportsChartDrillInteraction(config);
@@ -154,7 +162,9 @@ export const ChartRenderer = memo(function ChartRenderer({
   const [localConfig, setLocalConfig] = useState(config);
   const specConfig = mode === "config" ? localConfig : config;
   const isMapChart = localConfig.chartType === "map";
-  const empty = !loading && !error && (rows?.length ?? 0) === 0 && !isMapChart;
+  const isHeatmapChart = localConfig.chartType === "heatmap";
+  const isGeoChart = isMapChart || isHeatmapChart;
+  const empty = !loading && !error && (rows?.length ?? 0) === 0 && !isGeoChart;
 
   useEffect(() => {
     setLocalConfig(config);
@@ -188,6 +198,20 @@ export const ChartRenderer = memo(function ChartRenderer({
     },
     [config, drill, drillInteraction],
   );
+
+  const jumpConfig = useMemo(() => readChartJumpConfig(config), [config]);
+  const jumpHref = useMemo(() => resolveChartJumpHref(jumpConfig), [jumpConfig]);
+  const jumpInteraction =
+    drillEnabled && !drillInteraction && chartJumpIsConfigured(jumpConfig);
+
+  const handleJumpClick = useCallback(() => {
+    if (!jumpHref) return;
+    if (jumpConfig.openInNewTab !== false) {
+      window.open(jumpHref, "_blank", "noopener,noreferrer");
+      return;
+    }
+    window.location.assign(jumpHref);
+  }, [jumpConfig.openInNewTab, jumpHref]);
 
   const renderModel = useMemo(
     () =>
@@ -233,10 +257,23 @@ export const ChartRenderer = memo(function ChartRenderer({
     return undefined;
   }, [isMapChart, localConfig, loading, error, rows, columns, renderModel]);
 
+  const heatmapPlaceholderHint = useMemo(() => {
+    if (!isHeatmapChart) return undefined;
+    if (!isChartExecuteReady(localConfig)) return "请配置数据源与 SQL";
+    const phase = resolveChartConfigPhase(localConfig);
+    if (!phase.renderReady) return DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT;
+    if (renderModel?.kind === "error") {
+      return renderModel.message.split("。")[0] ?? renderModel.message;
+    }
+    if (!loading && !error && (rows?.length ?? 0) === 0) return "暂无数据";
+    return undefined;
+  }, [isHeatmapChart, localConfig, loading, error, rows, renderModel]);
+
   const shellLegendEligible =
     embedded &&
     isEchartsChartType(localConfig.chartType) &&
     localConfig.chartType !== "map" &&
+    localConfig.chartType !== "heatmap" &&
     supportsEmbeddedShellLegend(localConfig.chartType);
 
   const shellLegendVisible =
@@ -319,7 +356,11 @@ export const ChartRenderer = memo(function ChartRenderer({
       showLabel={showDataLabels}
       valueFormat={valueFormat}
       mapPlaceholderHint={mapPlaceholderHint}
+      heatmapPlaceholderHint={heatmapPlaceholderHint}
+      embedEdit={embedded && dashboardEditMode}
       onDrillClick={drillInteraction ? handleDrillClick : undefined}
+      onJumpClick={jumpInteraction ? handleJumpClick : undefined}
+      chartConfig={localConfig}
       shellLegend={useShellLegendLayout}
     />
   );
@@ -351,7 +392,7 @@ export const ChartRenderer = memo(function ChartRenderer({
           ? embeddedStateMessage(dwStateWarning, message)
           : <p className="text-theme-sm text-warning-600 dark:text-warning-400">{message}</p>;
       }
-      if (chartType === "map") {
+      if (chartType === "map" || chartType === "heatmap") {
         return wrapEmbedded(echartsChart());
       }
       if (!renderModel || renderModel.kind === "empty") {

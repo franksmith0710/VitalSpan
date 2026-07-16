@@ -410,6 +410,7 @@ html.dark {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
   overscroll-behavior-y: contain;
+  overflow-anchor: none;
   /* 藏条后回收轨道宽度，画布组件可多占横向空间 */
   margin-right: -20px;
   padding-right: 20px;
@@ -888,6 +889,10 @@ html.admin-fill-lock #root {
 .pixel-canvas-host .widget-pending-preview-icon :where(svg) {
   width: calc(1rem / var(--pixel-canvas-scale));
   height: calc(1rem / var(--pixel-canvas-scale));
+}
+
+.pixel-canvas-host .tabs-widget-root {
+  overflow-anchor: none;
 }
 
 /* Tab 容器：页签栏与投放层按画布缩放反比补偿 */

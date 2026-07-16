@@ -51,11 +51,65 @@ export type TextWidgetConfig = {
 
 export type MediaFit = "contain" | "cover" | "fill";
 
+export type MediaAlign = "center" | "top" | "bottom" | "left" | "right";
+
 export type MediaWidgetConfig = {
   url: string;
   alt: string;
   fit: MediaFit;
+  /** 图片在容器内的锚点（object-position） */
+  align?: MediaAlign;
+  /** 0–1，默认 1 */
+  opacity?: number;
+  borderRadius?: number;
+  /** 留白区域底色（contain 时可见） */
+  background?: string;
+  linkUrl?: string;
+  linkNewTab?: boolean;
 };
+
+export function mediaAlignToObjectPosition(align: MediaAlign = "center"): string {
+  const map: Record<MediaAlign, string> = {
+    center: "center center",
+    top: "center top",
+    bottom: "center bottom",
+    left: "left center",
+    right: "right center",
+  };
+  return map[align];
+}
+
+export function defaultMediaConfig(): MediaWidgetConfig {
+  return {
+    url: "",
+    alt: "",
+    fit: "contain",
+    align: "center",
+    opacity: 1,
+    borderRadius: 0,
+    background: "",
+    linkUrl: "",
+    linkNewTab: true,
+  };
+}
+
+export function normalizeMediaConfig(raw?: Partial<MediaWidgetConfig>): MediaWidgetConfig {
+  const defaults = defaultMediaConfig();
+  if (!raw) return defaults;
+  return {
+    ...defaults,
+    ...raw,
+    url: raw.url ?? defaults.url,
+    alt: raw.alt ?? defaults.alt,
+    fit: raw.fit ?? defaults.fit,
+    align: raw.align ?? defaults.align,
+    opacity: raw.opacity ?? defaults.opacity,
+    borderRadius: raw.borderRadius ?? defaults.borderRadius,
+    background: raw.background ?? defaults.background,
+    linkUrl: raw.linkUrl ?? defaults.linkUrl,
+    linkNewTab: raw.linkNewTab ?? defaults.linkNewTab,
+  };
+}
 
 export type TabPaneConfig = {
   id: string;
@@ -103,10 +157,6 @@ export type WidgetType = "chart" | "filter" | "text" | "media" | "tabs";
 
 export function defaultTextConfig(): TextWidgetConfig {
   return { content: "", variant: "html" };
-}
-
-export function defaultMediaConfig(): MediaWidgetConfig {
-  return { url: "", alt: "", fit: "contain" };
 }
 
 export function defaultTabsConfig(tabsId: string): TabsWidgetConfig {
@@ -184,7 +234,7 @@ export function coerceLayoutWidget(raw: Partial<LayoutWidget> & { id: string }):
     return {
       ...base,
       type: "media",
-      mediaConfig: raw.mediaConfig ?? defaultMediaConfig(),
+      mediaConfig: normalizeMediaConfig(raw.mediaConfig),
     };
   }
   if (type === "tabs") {
@@ -331,6 +381,40 @@ export function insertPixelWidgetIntoTab(
     return { ...w, tabsConfig: { ...w.tabsConfig, panes } };
   });
   return { ...layout, widgets: syncParkedTabChildren(widgets) };
+}
+
+function removeWidgetIdFromTabPanes(
+  widgets: PixelLayoutWidget[],
+  widgetId: string,
+): PixelLayoutWidget[] {
+  return widgets.map((w) => {
+    if (w.type !== "tabs" || !w.tabsConfig) return w;
+    const panes = w.tabsConfig.panes.map((pane) => ({
+      ...pane,
+      childWidgetIds: pane.childWidgetIds.filter((id) => id !== widgetId),
+    }));
+    return { ...w, tabsConfig: { ...w.tabsConfig, panes } };
+  });
+}
+
+/** 将画布顶层已有组件拖入 Tab 页签（先从旧页签摘除，再 park） */
+export function movePixelWidgetIntoTab(
+  layout: DashboardLayoutV2,
+  widgetId: string,
+  host: PixelLayoutWidget,
+  tabPaneId: string,
+): DashboardLayoutV2 {
+  const widget = layout.widgets.find((w) => w.id === widgetId);
+  if (!widget || widget.type === "tabs" || widget.id === host.id) return layout;
+  if (host.type !== "tabs" || !host.tabsConfig) return layout;
+
+  const cleaned: DashboardLayoutV2 = {
+    ...layout,
+    widgets: removeWidgetIdFromTabPanes(layout.widgets, widgetId),
+  };
+  const draft = cleaned.widgets.find((w) => w.id === widgetId);
+  if (!draft) return layout;
+  return insertPixelWidgetIntoTab(cleaned, draft, host, tabPaneId);
 }
 
 export function getTabChildWidgets(widgets: LayoutWidget[], tabsWidgetId: string, paneId: string): LayoutWidget[] {

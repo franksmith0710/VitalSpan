@@ -5,6 +5,10 @@ export const DASHBOARD_EDIT_RAIL_COLUMN_CLASS = "w-[216px]";
 export const DASHBOARD_EDIT_RAIL_SHELL_CLASS =
   "w-[432px] max-w-[min(100%,432px)] shrink-0";
 
+/** 单列组件配置（图片 / 页签 / 筛选等） */
+export const DASHBOARD_EDIT_RAIL_NARROW_SHELL_CLASS =
+  "w-[216px] max-w-[min(100%,216px)] shrink-0";
+
 /**
  * 看板编辑右栏滚动。
  * - 壳层 `…-clip` 裁剪；`…-scroll` 供仪表板配置等长内容整体滚动

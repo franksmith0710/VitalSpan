@@ -47,4 +47,27 @@ describe("applyBackgroundOpacityOnly", () => {
     expect(backgroundLayer?.backdropFilter).toBe("blur(12px)");
     expect(backgroundLayer?.backgroundColor).toBe("rgba(255, 255, 255, 0.82)");
   });
+
+  it("keeps custom opacity when backdrop blur is set", () => {
+    const { backgroundLayer } = applyBackgroundOpacityOnly({
+      background: "#ffffff",
+      backdropFilter: "blur(12px)",
+      opacity: 0.5,
+    });
+    expect(backgroundLayer?.opacity).toBe(0.5);
+    expect(backgroundLayer?.backgroundColor).toBe("#ffffff");
+    expect(backgroundLayer?.background).toBeUndefined();
+  });
+
+  it("preserves background image with backdrop blur", () => {
+    const { backgroundLayer } = applyBackgroundOpacityOnly({
+      background: "#112233",
+      backgroundImage: "url(https://example.com/bg.png)",
+      backdropFilter: "blur(8px)",
+    });
+    expect(backgroundLayer?.backgroundImage).toContain("example.com/bg.png");
+    expect(backgroundLayer?.backdropFilter).toBe("blur(8px)");
+    expect(backgroundLayer?.backgroundColor).toBe("#112233");
+    expect(backgroundLayer?.background).toBeUndefined();
+  });
 });

@@ -2,10 +2,12 @@ import { useCallback, useMemo, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type EChartsReact from "echarts-for-react";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
+import { applyChartAdvancedFeaturesToEchartsOption } from "@/lib/chartDeFeatures";
+import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { applyEchartsColorSchemeTokens, getEchartsTheme } from "@/lib/echarts-theme";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
-import { analyzeGeoMapMatch, buildGeoMapPlaceholderEchartsOption, isGeoMapPlaceholderOption } from "@/lib/geoMapChart";
+import { analyzeGeoMapMatch, buildGeoMapPlaceholderEchartsOption, buildGeoHeatmapPlaceholderEchartsOption, isGeoHeatmapPlaceholderOption, isGeoMapPlaceholderOption } from "@/lib/geoMapChart";
 import { dwHint } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
@@ -35,8 +37,15 @@ type Props = {
   valueFormat?: NumberFormatConfig;
   /** 地图占位态提示文案（对标 DataEase 图案地图） */
   mapPlaceholderHint?: string;
+  /** 热力图占位态提示文案 */
+  heatmapPlaceholderHint?: string;
+  /** 看板编辑态内嵌：关闭地图滚轮缩放 */
+  embedEdit?: boolean;
   /** 图表元素点击下钻（预览/查看态） */
   onDrillClick?: (name: string) => void;
+  /** 高级 · 跳转（查看态点击） */
+  onJumpClick?: () => void;
+  chartConfig?: ChartViewConfig;
   /** 看板内嵌：图例由组件外壳 DOM 渲染 */
   shellLegend?: boolean;
 };
@@ -56,7 +65,11 @@ export function AdvancedEchartsChart({
   showLabel = false,
   valueFormat,
   mapPlaceholderHint,
+  heatmapPlaceholderHint,
+  embedEdit = false,
   onDrillClick,
+  onJumpClick,
+  chartConfig,
   shellLegend = false,
 }: Props) {
   const chartRef = useRef<EChartsReact | null>(null);
@@ -81,9 +94,18 @@ export function AdvancedEchartsChart({
       geo: geoStyle,
       showLabel,
       pie: pieStyle,
+      isDark: scheme === "dark",
+      embedEdit,
+      valueFormat,
     });
     if (spec.chartType === "map" && isGeoMapPlaceholderOption(built)) {
       built = buildGeoMapPlaceholderEchartsOption({
+        geo: geoStyle,
+        isDark: scheme === "dark",
+      });
+    }
+    if (spec.chartType === "heatmap" && isGeoHeatmapPlaceholderOption(built)) {
+      built = buildGeoHeatmapPlaceholderEchartsOption({
         geo: geoStyle,
         isDark: scheme === "dark",
       });
@@ -97,15 +119,24 @@ export function AdvancedEchartsChart({
     if (chartColors?.length) {
       built = { ...built, color: chartColors };
     }
+    if (chartConfig) {
+      built = applyChartAdvancedFeaturesToEchartsOption(
+        built as Record<string, unknown>,
+        chartConfig,
+      );
+    }
     return built;
-  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat, scheme, shellLegend]);
+  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit]);
   const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
 
   const isMapPlaceholder =
     spec.chartType === "map" && isGeoMapPlaceholderOption(option as Record<string, unknown>);
+  const isHeatmapPlaceholder =
+    spec.chartType === "heatmap" && isGeoHeatmapPlaceholderOption(option as Record<string, unknown>);
+  const isGeoPlaceholder = isMapPlaceholder || isHeatmapPlaceholder;
 
   const isEmpty =
-    !isMapPlaceholder &&
+    !isGeoPlaceholder &&
     (!option ||
       (Array.isArray((option as { series?: unknown[] }).series) &&
         (option as { series?: unknown[] }).series!.length === 0));
@@ -116,10 +147,12 @@ export function AdvancedEchartsChart({
 
   useEmbeddedChartLiveResize(fill && !isEmpty, containerRef, resizeChart);
 
-  const placeholderHint = isMapPlaceholder && !fill ? mapPlaceholderHint : null;
+  const placeholderHint =
+    isMapPlaceholder ? mapPlaceholderHint
+    : isHeatmapPlaceholder ? heatmapPlaceholderHint
+    : null;
 
   const geoMatchWarning =
-    !fill &&
     geoMatchStats &&
     geoMatchStats.total > 0 &&
     geoMatchStats.matched < geoMatchStats.total
@@ -127,14 +160,18 @@ export function AdvancedEchartsChart({
       : null;
 
   const chartEvents = useMemo(() => {
-    if (!onDrillClick) return undefined;
+    if (!onDrillClick && !onJumpClick) return undefined;
     return {
       click: (params: { name?: string | number }) => {
+        if (onJumpClick) {
+          onJumpClick();
+          return;
+        }
         if (params?.name == null || params.name === "") return;
-        onDrillClick(String(params.name));
+        onDrillClick?.(String(params.name));
       },
     };
-  }, [onDrillClick]);
+  }, [onDrillClick, onJumpClick]);
 
   return (
     <div
@@ -150,8 +187,14 @@ export function AdvancedEchartsChart({
           数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条
         </p>
       ) : null}
-      {geoMatchWarning && !fill ? (
-        <p role="status" className="mb-2 shrink-0 text-theme-sm text-warning-600 dark:text-warning-400">
+      {geoMatchWarning ? (
+        <p
+          role="status"
+          className={cn(
+            "shrink-0 text-theme-xs text-warning-600 dark:text-warning-400",
+            fill ? "pointer-events-none absolute inset-x-2 top-2 z-[2] rounded-md bg-warning-500/10 px-2 py-1" : "mb-2",
+          )}
+        >
           {geoMatchWarning}
         </p>
       ) : null}
@@ -188,7 +231,8 @@ export function AdvancedEchartsChart({
           {placeholderHint ? (
             <p
               className={cn(
-                "dw-hint pointer-events-none absolute inset-x-0 bottom-[10%] text-center",
+                "dw-hint pointer-events-none absolute inset-x-0 text-center",
+                isHeatmapPlaceholder ? "bottom-[18%]" : "bottom-[10%]",
               )}
               role="status"
             >

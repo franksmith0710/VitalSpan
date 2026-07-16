@@ -15,11 +15,14 @@ type PatchFn = (patch: Partial<WidgetStyleConfig>) => void;
 export function WidgetSurfaceAppearanceFields({
   value,
   onChange,
+  onPreviewChange,
   disabled = false,
   density = "wide",
 }: {
   value: WidgetStyleConfig;
   onChange: PatchFn;
+  /** 拖拽预览（与 onChange 相同 patch 语义） */
+  onPreviewChange?: PatchFn;
   disabled?: boolean;
   density?: WidgetSurfaceStyleDensity;
 }) {
@@ -55,10 +58,19 @@ export function WidgetSurfaceAppearanceFields({
         step={1}
         unit="px"
         onChange={(backdropBlur) => onChange({ backdropBlur })}
+        onPreviewChange={
+          onPreviewChange
+            ? (backdropBlur) => {
+                if (backdropBlur != null) onPreviewChange({ backdropBlur });
+              }
+            : undefined
+        }
       />
       {(value.backdropBlur ?? 0) > 0 ? (
         <p className="pb-1 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
-          毛玻璃：模糊组件背后的画布内容，数值越大越模糊；可与不透明度叠加。
+          {value.backgroundImage
+            ? "底图模式：模糊作用于组件背景图；数值越大越模糊。"
+            : "毛玻璃：模糊组件背后的画布内容，建议配合不透明度；数值越大越模糊。"}
         </p>
       ) : null}
     </>

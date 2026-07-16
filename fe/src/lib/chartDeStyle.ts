@@ -53,6 +53,7 @@ export type ChartGeoStyle = {
   roam?: boolean;
   showRegionLabel?: boolean;
   visualMap?: boolean;
+  showCellLabel?: boolean;
 };
 
 /** 饼图/环形图样式（对标 DE attr-style · 基础样式） */
@@ -391,8 +392,13 @@ export function mergeShapeInnerPresentation(shell: {
   const hasShellBackground = Boolean(
     shellStyle.background || shellStyle.backgroundColor || shellStyle.backgroundImage,
   );
-  if (!hasShellBackground) {
+  const usesBackdropGlass = Boolean(
+    shell.outer.backgroundLayer?.backdropFilter ?? shell.outer.backgroundLayer?.WebkitBackdropFilter,
+  );
+  if (!hasShellBackground && !usesBackdropGlass) {
     shellStyle.backgroundColor = "var(--dashboard-widget-surface)";
+  } else if (usesBackdropGlass && !hasShellBackground) {
+    shellStyle.backgroundColor = "transparent";
   }
 
   return {

@@ -2,29 +2,60 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
 import { isNativePaletteDragEvent } from "@/lib/dashboardDnd";
+import type { TabInsertIntent } from "./tabInsertResolver";
 
-/** 组件面板 → 画布拖放进行中（对标 DE 拖入时暂停 shape 移动交互） */
-const PaletteDragContext = createContext(false);
+type PaletteDragContextValue = {
+  active: boolean;
+  tabInsertIntent: TabInsertIntent | null;
+  setTabInsertIntent: (intent: TabInsertIntent | null) => void;
+};
+
+const PaletteDragContext = createContext<PaletteDragContextValue>({
+  active: false,
+  tabInsertIntent: null,
+  setTabInsertIntent: () => {},
+});
 
 export function PaletteDragProvider({
   active,
+  tabInsertIntent,
+  onTabInsertIntentChange,
   children,
 }: {
   active: boolean;
+  tabInsertIntent: TabInsertIntent | null;
+  onTabInsertIntentChange: (intent: TabInsertIntent | null) => void;
   children: ReactNode;
 }) {
-  return <PaletteDragContext.Provider value={active}>{children}</PaletteDragContext.Provider>;
+  const value = useMemo(
+    () => ({
+      active,
+      tabInsertIntent,
+      setTabInsertIntent: onTabInsertIntentChange,
+    }),
+    [active, tabInsertIntent, onTabInsertIntentChange],
+  );
+  return <PaletteDragContext.Provider value={value}>{children}</PaletteDragContext.Provider>;
 }
 
 export function usePaletteDragActive(): boolean {
-  return useContext(PaletteDragContext);
+  return useContext(PaletteDragContext).active;
 }
 
-/** 文档级监听：面板拖拽期间为 true（capture 阶段 dragstart/dragover，同页内拖拽也生效） */
+export function useTabInsertIntent(): TabInsertIntent | null {
+  return useContext(PaletteDragContext).tabInsertIntent;
+}
+
+export function useSetTabInsertIntent(): (intent: TabInsertIntent | null) => void {
+  return useContext(PaletteDragContext).setTabInsertIntent;
+}
+
+/** 文档级监听：面板拖拽期间 active=true（不在 capture drop 上提前结束，避免卸载投放层） */
 export function usePaletteDocumentDrag(enabled: boolean): boolean {
   const [active, setActive] = useState(false);
 
@@ -40,12 +71,12 @@ export function usePaletteDocumentDrag(enabled: boolean): boolean {
     document.addEventListener("dragstart", activate, true);
     document.addEventListener("dragover", activate, true);
     document.addEventListener("dragend", end);
-    document.addEventListener("drop", end, true);
+    document.addEventListener("drop", end);
     return () => {
       document.removeEventListener("dragstart", activate, true);
       document.removeEventListener("dragover", activate, true);
       document.removeEventListener("dragend", end);
-      document.removeEventListener("drop", end, true);
+      document.removeEventListener("drop", end);
     };
   }, [enabled]);
 

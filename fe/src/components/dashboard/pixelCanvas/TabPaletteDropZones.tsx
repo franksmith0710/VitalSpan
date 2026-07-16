@@ -6,42 +6,58 @@ import { widgetRect } from "./collisionLayout";
 
 type TabPaletteDropZonesProps = {
   tabs: PixelLayoutWidget[];
-  bufferPx: number;
+  /** 命中检测外扩（逻辑区，可大于视觉区） */
+  hitBufferPx: number;
+  /** 虚线高亮外扩（仅绘制，默认 0 = 贴 Tab 外框） */
+  visualBufferPx?: number;
   activeTabsId: string | null;
   onTabDrop: (tabsWidgetId: string, payload: PaletteDragPayload) => void;
+  onTabHover?: (tabsWidgetId: string) => void;
 };
 
-function expandedOuter(
+function expandedZones(
   widget: Pick<PixelLayoutWidget, "x" | "y" | "width" | "height">,
-  bufferPx: number,
+  hitBufferPx: number,
+  visualBufferPx: number,
 ) {
   const inner = widgetRect(widget);
-  const buffer = Math.max(0, bufferPx);
+  const hit = Math.max(0, hitBufferPx);
+  const visual = Math.max(0, visualBufferPx);
   return {
     inner,
-    outer: {
-      x: inner.x - buffer,
-      y: inner.y - buffer,
-      width: inner.width + buffer * 2,
-      height: inner.height + buffer * 2,
+    hit: {
+      x: inner.x - hit,
+      y: inner.y - hit,
+      width: inner.width + hit * 2,
+      height: inner.height + hit * 2,
     },
-    buffer,
+    visual: {
+      x: inner.x - visual,
+      y: inner.y - visual,
+      width: inner.width + visual * 2,
+      height: inner.height + visual * 2,
+    },
+    hitPadding: hit,
+    visualPadding: visual,
   };
 }
 
-/** Tab 专用投放区：外扩缓冲 + 可交互捕获（高于 shape，穿透邻组件） */
+/** Tab 专用投放区：外扩缓冲命中 + 贴近外框虚线高亮 */
 export function TabPaletteDropZones({
   tabs,
-  bufferPx,
+  hitBufferPx,
+  visualBufferPx = 0,
   activeTabsId,
   onTabDrop,
+  onTabHover,
 }: TabPaletteDropZonesProps) {
-  if (tabs.length === 0 || bufferPx <= 0) return null;
+  if (tabs.length === 0 || hitBufferPx <= 0) return null;
 
-  const handleDragOver = (event: DragEvent) => {
+  const handleDragOver = (tabsWidgetId: string) => (event: DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
     event.dataTransfer.dropEffect = "copy";
+    onTabHover?.(tabsWidgetId);
   };
 
   const handleDrop = (tabsWidgetId: string) => (event: DragEvent) => {
@@ -55,38 +71,49 @@ export function TabPaletteDropZones({
   return (
     <>
       {tabs.map((tab) => {
-        const { inner, outer, buffer } = expandedOuter(tab, bufferPx);
+        const { inner, hit, visual, hitPadding, visualPadding } = expandedZones(
+          tab,
+          hitBufferPx,
+          visualBufferPx,
+        );
         const active = tab.id === activeTabsId;
+        const ringInset = hitPadding - visualPadding;
         return (
           <div
             key={tab.id}
             data-testid={`tab-palette-drop-zone-${tab.id}`}
             className="absolute z-[200]"
             style={{
-              left: outer.x,
-              top: outer.y,
-              width: outer.width,
-              height: outer.height,
+              left: hit.x,
+              top: hit.y,
+              width: hit.width,
+              height: hit.height,
             }}
-            onDragEnter={handleDragOver}
-            onDragOver={handleDragOver}
+            onDragEnter={handleDragOver(tab.id)}
+            onDragOver={handleDragOver(tab.id)}
             onDrop={handleDrop(tab.id)}
           >
             <div
               className={cn(
-                "tab-palette-buffer-ring pointer-events-none absolute inset-0 rounded-sm border-2 border-dashed transition-colors",
+                "tab-palette-buffer-ring pointer-events-none absolute rounded-sm border-2 border-dashed transition-colors",
                 active
-                  ? "border-brand-500 bg-brand-50/30 dark:border-brand-400 dark:bg-brand-500/12"
-                  : "border-brand-400/50 bg-brand-50/12 dark:border-brand-500/35 dark:bg-brand-500/6",
+                  ? "border-brand-500 bg-brand-50/20 dark:border-brand-400 dark:bg-brand-500/8"
+                  : "border-brand-400/35 bg-transparent dark:border-brand-500/25",
               )}
+              style={{
+                left: ringInset,
+                top: ringInset,
+                width: visual.width,
+                height: visual.height,
+              }}
               aria-hidden
             />
-            {buffer > 0 ? (
+            {visualPadding > 0 ? (
               <div
-                className="pointer-events-none absolute rounded-sm border border-dashed border-brand-300/40 dark:border-brand-500/30"
+                className="pointer-events-none absolute rounded-sm border border-dashed border-brand-300/30 dark:border-brand-500/20"
                 style={{
-                  left: buffer,
-                  top: buffer,
+                  left: ringInset + visualPadding,
+                  top: ringInset + visualPadding,
                   width: inner.width,
                   height: inner.height,
                 }}

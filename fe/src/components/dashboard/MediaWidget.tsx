@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { GripVertical, ImageIcon, Trash2 } from "lucide-react";
+import { ExternalLink, GripVertical, ImageIcon, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { LayoutWidget, MediaWidgetConfig } from "./layoutUtils";
+import { mediaAlignToObjectPosition, normalizeMediaConfig } from "./layoutUtils";
 
 type MediaWidgetProps = {
   widget: LayoutWidget & { mediaConfig: MediaWidgetConfig };
@@ -25,11 +26,50 @@ export function MediaWidget({
   onDelete,
   onTitleChange,
 }: MediaWidgetProps) {
-  const cfg = widget.mediaConfig;
+  const cfg = normalizeMediaConfig(widget.mediaConfig);
   const [broken, setBroken] = useState(false);
   const showImage = cfg.url.trim() && !broken;
   const inShapeShell = shell === "shape";
   const showGridChrome = !inShapeShell;
+  const linkUrl = cfg.linkUrl?.trim();
+  const isViewLink = mode === "view" && Boolean(linkUrl);
+
+  const imageNode = showImage ? (
+    <img
+      src={cfg.url}
+      alt={cfg.alt || widget.title}
+      className="size-full max-h-full max-w-full"
+      style={{
+        objectFit: cfg.fit,
+        objectPosition: mediaAlignToObjectPosition(cfg.align),
+        opacity: cfg.opacity ?? 1,
+        borderRadius: cfg.borderRadius ? `${cfg.borderRadius}px` : undefined,
+      }}
+      onError={() => setBroken(true)}
+    />
+  ) : (
+    <div className="flex flex-col items-center gap-2 text-center text-gray-400">
+      <ImageIcon className="size-10 opacity-40" aria-hidden />
+      <p className="text-theme-xs">{cfg.url ? "图片加载失败" : "在右侧配置图片"}</p>
+    </div>
+  );
+
+  const content = isViewLink ? (
+    <a
+      href={linkUrl}
+      target={cfg.linkNewTab ? "_blank" : undefined}
+      rel={cfg.linkNewTab ? "noopener noreferrer" : undefined}
+      className="group/link relative flex size-full min-h-0 items-center justify-center"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {imageNode}
+      <span className="pointer-events-none absolute right-2 top-2 rounded-md bg-black/45 p-1 text-white opacity-0 transition-opacity group-hover/link:opacity-100">
+        <ExternalLink className="size-3.5" aria-hidden />
+      </span>
+    </a>
+  ) : (
+    imageNode
+  );
 
   return (
     <div
@@ -83,26 +123,24 @@ export function MediaWidget({
       <div
         role={mode === "edit" ? "button" : undefined}
         tabIndex={mode === "edit" ? 0 : undefined}
-        onClick={mode === "edit" ? () => onSelect?.() : undefined}
+        onClick={
+          mode === "edit"
+            ? (event) => {
+                event.stopPropagation();
+                onSelect?.();
+              }
+            : undefined
+        }
+        onPointerDown={mode === "edit" ? (event) => event.stopPropagation() : undefined}
         className={cn(
           "dashboard-no-drag relative flex min-h-0 flex-1 items-center justify-center overflow-hidden p-2",
           mode === "edit" && "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
         )}
+        style={{
+          backgroundColor: cfg.background?.trim() || undefined,
+        }}
       >
-        {showImage ? (
-          <img
-            src={cfg.url}
-            alt={cfg.alt || widget.title}
-            className="max-h-full max-w-full"
-            style={{ objectFit: cfg.fit }}
-            onError={() => setBroken(true)}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-2 text-center text-gray-400">
-            <ImageIcon className="size-10 opacity-40" aria-hidden />
-            <p className="text-theme-xs">{cfg.url ? "图片加载失败" : "在右侧配置图片 URL"}</p>
-          </div>
-        )}
+        {content}
       </div>
     </div>
   );

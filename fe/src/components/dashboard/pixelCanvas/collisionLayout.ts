@@ -27,6 +27,11 @@ const DEFAULT_OPTIONS: Required<Omit<CollisionLayoutOptions, "skipVerticalCompac
   skipVerticalCompact: false,
 };
 
+/** Tab 容器为画布锚点：其他组件拖动推挤时保持原位 */
+function isTabAnchorHost(widget: PixelLayoutWidget): boolean {
+  return widget.type === "tabs";
+}
+
 export function widgetRect(widget: Pick<PixelLayoutWidget, "x" | "y" | "width" | "height">): PixelRect {
   return { x: widget.x, y: widget.y, width: widget.width, height: widget.height };
 }
@@ -176,7 +181,7 @@ function liftVacatedColumn(
   gap: number,
 ): void {
   const column = widgets.filter((widget) => {
-    if (widget.id === activeId) return false;
+    if (widget.id === activeId || isTabAnchorHost(widget)) return false;
     const rect = positions.get(widget.id);
     return rect ? isBelowVacatedFootprint(rect, vacated, gap) : false;
   });
@@ -240,7 +245,7 @@ function emptyTargetFootprint(
   minOverlap: number,
 ): void {
   const candidates = widgets
-    .filter((widget) => widget.id !== activeId)
+    .filter((widget) => widget.id !== activeId && !isTabAnchorHost(widget))
     .filter((widget) => {
       const rect = positions.get(widget.id)!;
       return (

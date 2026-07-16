@@ -18,7 +18,11 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
     onChange(patchChartDeStyleNested(cfg, "geo", patch));
 
   return (
-    <DashboardConfigSection title="地图样式" defaultOpen compact>
+    <DashboardConfigSection
+      title={chartType === "map" ? "地图样式" : "热力图样式"}
+      defaultOpen
+      compact
+    >
       <div className={INSPECTOR_SECTION_GAP}>
         {chartType === "map" ? (
           <InspectorSwitchRow
@@ -34,13 +38,22 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
             onCheckedChange={(showRegionLabel) => patchGeo({ showRegionLabel })}
           />
         ) : null}
+        {chartType === "heatmap" ? (
+          <InspectorSwitchRow
+            label="单元格数值"
+            checked={geo.showCellLabel === true}
+            onCheckedChange={(showCellLabel) => patchGeo({ showCellLabel })}
+          />
+        ) : null}
         <InspectorSwitchRow
           label="数值色带"
           checked={geo.visualMap !== false}
           onCheckedChange={(visualMap) => patchGeo({ visualMap })}
         />
         <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
-          离线中国省级底图（GEO-IRON-01）。地理维度支持「北京」「北京市」「广东省」及 adcode；须为地名，不可用 region_id。
+          {chartType === "map"
+            ? "离线中国省级底图（GEO-IRON-01）。地理维度支持「北京」「北京市」「广东省」及 adcode；须为地名，不可用 region_id。"
+            : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。"}
         </p>
       </div>
     </DashboardConfigSection>

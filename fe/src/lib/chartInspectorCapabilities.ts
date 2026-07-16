@@ -14,6 +14,14 @@ export type ChartInspectorCapabilities = {
   background: boolean;
   border: boolean;
   remark: boolean;
+  /** 高级 Tab · 辅助线 */
+  markLines: boolean;
+  /** 高级 Tab · 条件样式 */
+  conditional: boolean;
+  /** 高级 Tab · 跳转 */
+  jump: boolean;
+  /** 高级 Tab · 时间范围 */
+  timeRange: boolean;
 };
 
 export function chartInspectorCapabilities(
@@ -25,6 +33,13 @@ export function chartInspectorCapabilities(
     remark: true,
   };
 
+  const advanced = {
+    markLines: false,
+    conditional: false,
+    jump: true,
+    timeRange: true,
+  };
+
   if (chartType === "table") {
     return {
       ...base,
@@ -34,6 +49,10 @@ export function chartInspectorCapabilities(
       styleVariant: false,
       labelFormat: false,
       remark: false,
+      ...advanced,
+      conditional: false,
+      markLines: false,
+      jump: true,
     };
   }
 
@@ -46,6 +65,9 @@ export function chartInspectorCapabilities(
       styleVariant: false,
       labelFormat: true,
       remark: false,
+      ...advanced,
+      jump: false,
+      timeRange: false,
     };
   }
 
@@ -57,6 +79,10 @@ export function chartInspectorCapabilities(
       dataZoom: true,
       styleVariant: true,
       labelFormat: true,
+      markLines: true,
+      conditional: true,
+      jump: true,
+      timeRange: true,
     };
   }
 
@@ -68,6 +94,9 @@ export function chartInspectorCapabilities(
       dataZoom: false,
       styleVariant: false,
       labelFormat: true,
+      ...advanced,
+      conditional: false,
+      jump: false,
     };
   }
 
@@ -79,6 +108,8 @@ export function chartInspectorCapabilities(
       dataZoom: false,
       styleVariant: false,
       labelFormat: false,
+      ...advanced,
+      jump: false,
     };
   }
 
@@ -90,6 +121,9 @@ export function chartInspectorCapabilities(
       dataZoom: false,
       styleVariant: true,
       labelFormat: false,
+      ...advanced,
+      conditional: true,
+      markLines: false,
     };
   }
 
@@ -101,6 +135,9 @@ export function chartInspectorCapabilities(
       dataZoom: chartType === "timeline",
       styleVariant: false,
       labelFormat: chartType === "map",
+      ...advanced,
+      markLines: chartType === "timeline",
+      conditional: false,
     };
   }
 
@@ -111,6 +148,8 @@ export function chartInspectorCapabilities(
     dataZoom: false,
     styleVariant: false,
     labelFormat: false,
+    ...advanced,
+    jump: false,
   };
 }
 

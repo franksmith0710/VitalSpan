@@ -16,11 +16,11 @@ import {
 } from "@/components/dashboard/dashboardFilterUtils";
 import {
   appendWidgetToTabPane,
-  resolvePixelTabsHost,
   coerceLayoutWidgets,
   resizeWidget,
   sortWidgets,
   type DashboardLayout,
+  type DashboardLayoutV2,
   type DashboardStyleConfig,
   type FilterWidgetConfig,
   type LayoutWidget,
@@ -42,6 +42,11 @@ import {
   type PixelRect,
 } from "@/components/dashboard/pixelCanvas";
 import { TAB_PALETTE_DROP_BUFFER_PX } from "@/components/dashboard/pixelCanvas/tabPaletteDrop";
+import {
+  activePaneIdForTabHost,
+  resolveTabPaletteInsertHost,
+  type TabInsertIntent,
+} from "@/components/dashboard/pixelCanvas/tabInsertResolver";
 import {
   hydrateDashboardStyle,
   persistDashboardFingerprint,
@@ -77,7 +82,7 @@ import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/Dashb
 import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
-import { MediaWidgetInspector } from "@/components/dashboard/MediaWidgetInspector";
+import { MediaEditRail } from "@/components/dashboard/MediaEditRail";
 import { TabsEditRail } from "@/components/dashboard/TabsEditRail";
 import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
 import { WidgetEnlargeDialog } from "@/components/dashboard/widget-actions/WidgetEnlargeDialog";
@@ -376,6 +381,52 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   );
   const multiSelectCount = selectedIds.size;
 
+  const chartRailWidth = useMemo((): "wide" | "narrow" => {
+    if (multiSelectCount >= 2) return "wide";
+    const t = selectedWidget?.type;
+    if (t === "media" || t === "tabs" || t === "filter") return "narrow";
+    return "wide";
+  }, [multiSelectCount, selectedWidget?.type]);
+
+  const collapseChartRail = useCallback(() => setChartRailOpen(false), []);
+
+  const selectTabChildWidget = useCallback(
+    (childId: string) => {
+      setChartRailOpen(true);
+      handleSelect(childId, false);
+    },
+    [handleSelect],
+  );
+  const [tabInsertIntent, setTabInsertIntent] = useState<TabInsertIntent | null>(null);
+
+  /** 对标 DE：选中 Tab（或其子组件）即锁定投放意图 */
+  useEffect(() => {
+    if (selectedWidget?.type === "tabs" && selectedWidget.tabsConfig) {
+      setTabInsertIntent({
+        tabsWidgetId: selectedWidget.id,
+        paneId: selectedWidget.tabsConfig.activePaneId,
+      });
+      return;
+    }
+    if (layout.version === 2 && selectedWidget?.id) {
+      const pixelChild = layout.widgets.find((w) => w.id === selectedWidget.id);
+      if (pixelChild?.parentTabsId && pixelChild.tabPaneId) {
+        setTabInsertIntent({
+          tabsWidgetId: pixelChild.parentTabsId,
+          paneId: pixelChild.tabPaneId,
+        });
+        return;
+      }
+    }
+    setTabInsertIntent(null);
+  }, [
+    layout,
+    selectedWidget?.id,
+    selectedWidget?.type,
+    selectedWidget?.tabsConfig?.activePaneId,
+    selectedWidget?.tabsConfig,
+  ]);
+
   const openDashboardContext = useCallback(() => {
     clearSelection();
     setChartRailOpen(true);
@@ -432,21 +483,21 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       const tabsHost =
         insertType === "tabs"
           ? undefined
-          : resolvePixelTabsHost(
-              layout,
-              primarySelectedId,
-              options?.point,
-              options?.tabsWidgetIdFromDom ?? options?.tabsWidgetId,
-              TAB_PALETTE_DROP_BUFFER_PX,
-            );
+          : resolveTabPaletteInsertHost(layout, {
+              tabsWidgetId: options?.tabsWidgetIdFromDom ?? options?.tabsWidgetId,
+              point: options?.point,
+              selectedWidgetId: primarySelectedId,
+              intent: tabInsertIntent,
+              dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
+            });
       let nextLayout: DashboardLayoutV2;
       if (tabsHost?.tabsConfig) {
-        nextLayout = insertPaletteWidgetIntoTabHost(
-          insertType,
-          layout,
+        const paneId = activePaneIdForTabHost(
           tabsHost,
-          tabsHost.tabsConfig.activePaneId,
+          tabInsertIntent,
+          layout.widgets.find((w) => w.id === primarySelectedId),
         );
+        nextLayout = insertPaletteWidgetIntoTabHost(insertType, layout, tabsHost, paneId);
       } else {
         nextLayout = options?.point
           ? insertPixelPaletteWidgetAt(insertType, layout, options.point)
@@ -457,7 +508,12 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       );
       if (!draft) return;
       setPixelLayout(nextLayout);
-      handleSelect(draft.id, false);
+      if (tabsHost?.tabsConfig) {
+        handleSelect(draft.id, false);
+        setChartRailOpen(true);
+      } else {
+        handleSelect(draft.id, false);
+      }
       if (draft.type === "filter" && draft.filterConfig) {
         setFilterValues((previous) => ({
           ...previous,
@@ -472,17 +528,19 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       missing,
       primarySelectedId,
       setPixelLayout,
+      tabInsertIntent,
     ],
   );
 
   const appendWidget = (type: PaletteInsertType, at?: GridInsertAt) => {
     if (missing || !canSave) return;
     if (layout.version === 2) {
-      const tabsWidgetId =
-        selectedWidget?.type === "tabs" && selectedWidget.tabsConfig && type !== "tabs"
-          ? selectedWidget.id
-          : undefined;
-      commitPixelPaletteInsert(type, tabsWidgetId ? { tabsWidgetId } : undefined);
+      commitPixelPaletteInsert(
+        type,
+        tabInsertIntent && type !== "tabs"
+          ? { tabsWidgetId: tabInsertIntent.tabsWidgetId }
+          : undefined,
+      );
       return;
     }
     const tabsHost =
@@ -569,7 +627,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const handleTabPaletteDrop = useCallback(
     (tabsWidgetId: string, type: PaletteDragPayload) => {
-      commitPixelPaletteInsert(type, { tabsWidgetIdFromDom: tabsWidgetId });
+      commitPixelPaletteInsert(type, { tabsWidgetId });
     },
     [commitPixelPaletteInsert],
   );
@@ -900,6 +958,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           canvasColorScheme={styleConfig.colorScheme ?? "light"}
           chartRailOpen={chartRailOpen}
           onChartRailOpenChange={setChartRailOpen}
+          chartRailWidth={chartRailWidth}
           chartRailLabel="仪表板配置"
           showRailFoldHeader={!primarySelectedId && multiSelectCount < 2}
           canvasActions={
@@ -967,8 +1026,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               setWidgets={setWidgets}
               setPixelLayout={setPixelLayout}
               onSelect={(widgetId, additive) => {
+                const w = widgets.find((x) => x.id === widgetId);
                 if (
-                  widgets.find((w) => w.id === widgetId && w.type === "chart")
+                  w &&
+                  (w.type === "chart" ||
+                    w.type === "media" ||
+                    w.type === "tabs" ||
+                    w.type === "filter")
                 ) {
                   setChartRailOpen(true);
                 }
@@ -985,6 +1049,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               onPaletteDrop={handlePaletteDrop}
               onTabPaletteDrop={handleTabPaletteDrop}
               onViewportChange={handlePixelViewportChange}
+              tabInsertIntent={tabInsertIntent}
+              onTabInsertIntentChange={setTabInsertIntent}
               widgetActions={layout.version === 2 && canSave ? pixelWidgetActions : undefined}
             />
           }
@@ -1014,6 +1080,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     prev.map((w) => (w.id === primarySelectedId ? { ...w, filterConfig } : w)),
                   );
                 }}
+                onRailCollapse={collapseChartRail}
               />
             ) : selectedWidget?.type === "text" && selectedWidget.textConfig ? (
               <TextEditRail
@@ -1035,8 +1102,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
               />
             ) : selectedWidget?.type === "media" && selectedWidget.mediaConfig ? (
-              <MediaWidgetInspector
-                embedded
+              <MediaEditRail
                 widget={
                   selectedWidget as typeof selectedWidget & { mediaConfig: MediaWidgetConfig }
                 }
@@ -1046,18 +1112,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     prev.map((w) => (w.id === primarySelectedId ? { ...w, mediaConfig } : w)),
                   );
                 }}
-              />
-            ) : selectedWidget?.type === "tabs" && selectedWidget.tabsConfig ? (
-              <TabsEditRail
-                widget={
-                  selectedWidget as typeof selectedWidget & { tabsConfig: TabsWidgetConfig }
-                }
-                onChange={(tabsConfig) => {
-                  if (!primarySelectedId) return;
-                  setWidgets((prev) =>
-                    prev.map((w) => (w.id === primarySelectedId ? { ...w, tabsConfig } : w)),
-                  );
-                }}
                 onTitleChange={(title) => {
                   if (!primarySelectedId) return;
                   setWidgets((prev) =>
@@ -1065,11 +1119,42 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   );
                 }}
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
+                onRailCollapse={collapseChartRail}
+              />
+            ) : selectedWidget?.type === "tabs" && selectedWidget.tabsConfig ? (
+              <TabsEditRail
+                widget={
+                  selectedWidget as typeof selectedWidget & { tabsConfig: TabsWidgetConfig }
+                }
+                allWidgets={widgets}
+                selectedChildId={
+                  selectedWidget.tabsConfig.panes.some((pane) =>
+                    pane.childWidgetIds.includes(primarySelectedId ?? ""),
+                  )
+                    ? primarySelectedId
+                    : null
+                }
+                onChange={(tabsConfig) => {
+                  if (!primarySelectedId) return;
+                  setWidgets((prev) =>
+                    prev.map((w) => (w.id === primarySelectedId ? { ...w, tabsConfig } : w)),
+                  );
+                }}
+                onSelectChild={selectTabChildWidget}
+                onTitleChange={(title) => {
+                  if (!primarySelectedId) return;
+                  setWidgets((prev) =>
+                    prev.map((w) => (w.id === primarySelectedId ? { ...w, title } : w)),
+                  );
+                }}
+                onDelete={() => handleDeleteWidget(primarySelectedId!)}
+                onRailCollapse={collapseChartRail}
               />
             ) : selectedWidget?.type === "chart" ? (
               <ChartEditRail
                 key={primarySelectedId ?? selectedWidget.id}
                 widget={selectedWidget}
+                dashboardId={id}
                 dashboardStyle={styleConfig}
                 onTitleChange={(title) => {
                   if (!primarySelectedId) return;
@@ -1152,8 +1237,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           onFilterValueChange={handleFilterValueChange}
           onDropInsert={handleDropInsert}
           onPaletteDrop={handlePaletteDrop}
-          onTabPaletteDrop={handleTabPaletteDrop}
-          onViewportChange={handlePixelViewportChange}
+              onTabPaletteDrop={handleTabPaletteDrop}
+              onViewportChange={handlePixelViewportChange}
+              tabInsertIntent={tabInsertIntent}
+              onTabInsertIntentChange={setTabInsertIntent}
         />
       )}
       {mode === "edit" && canSave ? (

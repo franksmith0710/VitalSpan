@@ -1,5 +1,7 @@
 import chinaProvincesGeo from "@/assets/geo/china-provinces.json";
 import { chartPalette } from "@/lib/chartPalette";
+import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+import { formatChartValue } from "@/lib/chartValueFormat";
 import * as echarts from "echarts";
 
 /** GEO-IRON-01：仅离线中国省级 GeoJSON；禁止在线瓦片/境外底图。见 `.cursor/rules/geo-map-offline-china.mdc` */
@@ -9,7 +11,12 @@ export const VS_REGIONS_MAP_ID = "vs-regions";
 /** buildGeoMapPlaceholderEchartsOption 在 option 上打的标记 */
 export const VS_GEO_MAP_PLACEHOLDER_FLAG = "__vsGeoMapPlaceholder";
 
+/** buildGeoHeatmapPlaceholderEchartsOption 在 option 上打的标记 */
+export const VS_GEO_HEATMAP_PLACEHOLDER_FLAG = "__vsGeoHeatmapPlaceholder";
+
 export const DEFAULT_GEO_MAP_PLACEHOLDER_HINT = "请拖入地理维度与指标";
+
+export const DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT = "请拖入横轴、纵轴维度与指标";
 
 /** 画布底部短提示：region_id 不能作为地理维度 */
 export const MAP_REGION_NAME_HINT = "地理维度请使用省/市名称（如 regions.name）";
@@ -38,13 +45,25 @@ export type GeoChartStyle = {
   showRegionLabel?: boolean;
   /** 数值映射色带（地图/热力） */
   visualMap?: boolean;
+  /** 热力图单元格数值标签 */
+  showCellLabel?: boolean;
 };
 
 export const DEFAULT_GEO_CHART_STYLE: Required<GeoChartStyle> = {
   roam: true,
   showRegionLabel: false,
   visualMap: true,
+  showCellLabel: false,
 };
+
+/** 看板编辑态内嵌：关闭地图滚轮缩放，避免与画布纵向滚动抢事件 */
+export function resolveEmbeddedGeoRoam(
+  roam: boolean | undefined,
+  embedEdit: boolean,
+): boolean {
+  if (embedEdit) return false;
+  return roam !== false;
+}
 
 type GeoFeatureProps = {
   name?: string;
@@ -265,6 +284,48 @@ export function isGeoMapPlaceholderOption(option: Record<string, unknown> | null
   return Boolean(option?.[VS_GEO_MAP_PLACEHOLDER_FLAG]);
 }
 
+export function isGeoHeatmapPlaceholderOption(
+  option: Record<string, unknown> | null | undefined,
+): boolean {
+  return Boolean(option?.[VS_GEO_HEATMAP_PLACEHOLDER_FLAG]);
+}
+
+function aggregateMapRegionData(
+  rows: unknown[][],
+  columns: string[],
+  regionField: string,
+  metricField: string,
+): Array<{ name: string; value: number }> {
+  const ri = columns.indexOf(regionField);
+  const mi = columns.indexOf(metricField);
+  const knownNames = listVsRegionNames();
+  const bucket = new Map<string, number>();
+
+  for (const row of rows) {
+    const resolved = resolveMapRegionName(row[ri], knownNames);
+    if (!resolved.name) continue;
+    const raw = Number(row[mi] ?? 0);
+    const value = Number.isFinite(raw) ? raw : 0;
+    bucket.set(resolved.name, (bucket.get(resolved.name) ?? 0) + value);
+  }
+
+  return [...bucket.entries()].map(([name, value]) => ({ name, value }));
+}
+
+function geoMapSurfaceColors(isDark: boolean) {
+  return {
+    baseFill: isDark ? "#334155" : "#f1f5f9",
+    emphasisFill: isDark ? "#475569" : chartPalette.brand,
+    borderColor: isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(148, 163, 184, 0.45)",
+  };
+}
+
+function geoVisualMapColors(isDark: boolean): string[] {
+  return isDark
+    ? ["#0c4a6e", chartPalette.info, "#38bdf8"]
+    : ["#e0f2fe", chartPalette.info, chartPalette.brand];
+}
+
 export type GeoMapRowsInput = {
   rows: unknown[][];
   columns: string[];
@@ -272,49 +333,53 @@ export type GeoMapRowsInput = {
   metricField: string;
   geo?: GeoChartStyle;
   showLabel?: boolean;
+  isDark?: boolean;
+  embedEdit?: boolean;
+  valueFormat?: NumberFormatConfig;
 };
 
 export function buildGeoMapEchartsOption(input: GeoMapRowsInput): Record<string, unknown> {
   ensureVsRegionsMapRegistered();
-  const knownNames = listVsRegionNames();
-  const ri = input.columns.indexOf(input.regionField);
-  const mi = input.columns.indexOf(input.metricField);
   const geo = { ...DEFAULT_GEO_CHART_STYLE, ...input.geo };
   const showLabel = input.showLabel ?? geo.showRegionLabel;
+  const roam = resolveEmbeddedGeoRoam(geo.roam, input.embedEdit === true);
+  const isDark = input.isDark ?? false;
+  const surface = geoMapSurfaceColors(isDark);
 
-  const data = input.rows.map((row) => {
-    const resolved = resolveMapRegionName(row[ri], knownNames);
-    return {
-      name: resolved.name,
-      value: Number(row[mi] ?? 0),
-    };
-  });
+  const data = aggregateMapRegionData(
+    input.rows,
+    input.columns,
+    input.regionField,
+    input.metricField,
+  );
   const values = data.map((item) => item.value);
   const max = values.length ? Math.max(...values) : 1;
   const min = values.length ? Math.min(...values, 0) : 0;
+  const formatValue = (value: unknown) =>
+    formatChartValue(value, input.valueFormat);
 
   const option: Record<string, unknown> = {
     tooltip: {
       trigger: "item",
       formatter: (params: { name?: string; value?: number }) =>
-        `${params.name ?? ""}: ${params.value ?? 0}`,
+        `${params.name ?? ""}: ${formatValue(params.value ?? 0)}`,
     },
     series: [
       {
         type: "map",
         map: VS_REGIONS_MAP_ID,
-        roam: geo.roam,
+        roam,
         layoutCenter: ["50%", "52%"],
         layoutSize: "92%",
-        label: { show: showLabel, fontSize: 11 },
+        label: { show: showLabel, fontSize: 11, color: isDark ? "#e2e8f0" : "#475569" },
         emphasis: {
           label: { show: showLabel },
-          itemStyle: { areaColor: chartPalette.brand },
+          itemStyle: { areaColor: surface.emphasisFill },
         },
         itemStyle: {
-          borderColor: "rgba(148, 163, 184, 0.45)",
+          borderColor: surface.borderColor,
           borderWidth: 0.6,
-          areaColor: "#f1f5f9",
+          areaColor: surface.baseFill,
         },
         data,
       },
@@ -329,12 +394,57 @@ export function buildGeoMapEchartsOption(input: GeoMapRowsInput): Record<string,
       bottom: 16,
       calculable: true,
       text: ["高", "低"],
-      inRange: { color: ["#e0f2fe", chartPalette.info, chartPalette.brand] },
-      textStyle: { fontSize: 11 },
+      inRange: { color: geoVisualMapColors(isDark) },
+      textStyle: { fontSize: 11, color: isDark ? "#cbd5e1" : "#475569" },
+      formatter: (value: number) => formatValue(value),
     };
   }
 
   return option;
+}
+
+export type GeoHeatmapPlaceholderInput = {
+  geo?: GeoChartStyle;
+  isDark?: boolean;
+};
+
+/** 对标 DataEase：未绑字段/无数据时展示空热力网格 */
+export function buildGeoHeatmapPlaceholderEchartsOption(
+  input: GeoHeatmapPlaceholderInput = {},
+): Record<string, unknown> {
+  const isDark = input.isDark ?? false;
+  const geo = { ...DEFAULT_GEO_CHART_STYLE, ...input.geo };
+  const xCats = ["维度 A", "维度 B", "维度 C", "维度 D"];
+  const yCats = ["维度 1", "维度 2", "维度 3"];
+  const axisColor = isDark ? "#94a3b8" : "#667085";
+  const splitColor = isDark ? "rgba(148, 163, 184, 0.12)" : "rgba(148, 163, 184, 0.2)";
+
+  return {
+    [VS_GEO_HEATMAP_PLACEHOLDER_FLAG]: true,
+    grid: { containLabel: true, left: 48, right: 24, top: 24, bottom: geo.visualMap ? 56 : 24 },
+    xAxis: {
+      type: "category",
+      data: xCats,
+      splitArea: { show: true, areaStyle: { color: [splitColor, "transparent"] } },
+      axisLabel: { color: axisColor, fontSize: 11 },
+      axisLine: { lineStyle: { color: splitColor } },
+    },
+    yAxis: {
+      type: "category",
+      data: yCats,
+      splitArea: { show: true, areaStyle: { color: [splitColor, "transparent"] } },
+      axisLabel: { color: axisColor, fontSize: 11 },
+      axisLine: { lineStyle: { color: splitColor } },
+    },
+    series: [
+      {
+        type: "heatmap",
+        data: [],
+        label: { show: false },
+        itemStyle: { borderColor: isDark ? "#1e293b" : "#fff", borderWidth: 1 },
+      },
+    ],
+  };
 }
 
 export type GeoHeatmapRowsInput = {
@@ -344,26 +454,48 @@ export type GeoHeatmapRowsInput = {
   yField: string;
   metricField: string;
   geo?: GeoChartStyle;
+  isDark?: boolean;
+  valueFormat?: NumberFormatConfig;
 };
 
 export function buildGeoHeatmapEchartsOption(input: GeoHeatmapRowsInput): Record<string, unknown> {
-  if (input.rows.length === 0) return { series: [] };
+  if (input.rows.length === 0) {
+    return buildGeoHeatmapPlaceholderEchartsOption({
+      geo: input.geo,
+      isDark: input.isDark,
+    });
+  }
 
   const xi = input.columns.indexOf(input.xField);
   const yi = input.columns.indexOf(input.yField);
   const mi = input.columns.indexOf(input.metricField);
   const geo = { ...DEFAULT_GEO_CHART_STYLE, ...input.geo };
+  const isDark = input.isDark ?? false;
+  const formatValue = (value: unknown) =>
+    formatChartValue(value, input.valueFormat);
 
   const xCats = [...new Set(input.rows.map((row) => String(row[xi] ?? "")))];
   const yCats = [...new Set(input.rows.map((row) => String(row[yi] ?? "")))];
-  const data = input.rows.map((row) => [
-    xCats.indexOf(String(row[xi] ?? "")),
-    yCats.indexOf(String(row[yi] ?? "")),
-    Number(row[mi] ?? 0),
-  ]);
-  const values = data.map((item) => Number(item[2]));
+  const cellBucket = new Map<string, number>();
+
+  for (const row of input.rows) {
+    const xKey = String(row[xi] ?? "");
+    const yKey = String(row[yi] ?? "");
+    const raw = Number(row[mi] ?? 0);
+    const value = Number.isFinite(raw) ? raw : 0;
+    const key = `${xKey}\0${yKey}`;
+    cellBucket.set(key, (cellBucket.get(key) ?? 0) + value);
+  }
+
+  const data = [...cellBucket.entries()].map(([key, value]) => {
+    const [xKey, yKey] = key.split("\0");
+    return [xCats.indexOf(xKey), yCats.indexOf(yKey), value] as [number, number, number];
+  });
+  const values = data.map((item) => item[2]);
   const max = values.length ? Math.max(...values) : 1;
   const min = values.length ? Math.min(...values, 0) : 0;
+  const axisColor = isDark ? "#94a3b8" : "#667085";
+  const splitColor = isDark ? "rgba(148, 163, 184, 0.12)" : "rgba(148, 163, 184, 0.2)";
 
   const option: Record<string, unknown> = {
     tooltip: {
@@ -372,18 +504,37 @@ export function buildGeoHeatmapEchartsOption(input: GeoHeatmapRowsInput): Record
         const tuple = params.data;
         if (!tuple) return "";
         const [xIndex, yIndex, value] = tuple;
-        return `${xCats[xIndex] ?? ""} × ${yCats[yIndex] ?? ""}: ${value}`;
+        return `${xCats[xIndex] ?? ""} × ${yCats[yIndex] ?? ""}: ${formatValue(value)}`;
       },
     },
     grid: { containLabel: true, left: 48, right: 24, top: 24, bottom: geo.visualMap ? 56 : 24 },
-    xAxis: { type: "category", data: xCats, splitArea: { show: true } },
-    yAxis: { type: "category", data: yCats, splitArea: { show: true } },
+    xAxis: {
+      type: "category",
+      data: xCats,
+      splitArea: { show: true, areaStyle: { color: [splitColor, "transparent"] } },
+      axisLabel: { color: axisColor, fontSize: 11 },
+    },
+    yAxis: {
+      type: "category",
+      data: yCats,
+      splitArea: { show: true, areaStyle: { color: [splitColor, "transparent"] } },
+      axisLabel: { color: axisColor, fontSize: 11 },
+    },
     series: [
       {
         type: "heatmap",
         data,
-        label: { show: false },
+        label: {
+          show: geo.showCellLabel === true,
+          formatter: (params: { data?: [number, number, number] }) => {
+            const value = params.data?.[2];
+            return value == null ? "" : formatValue(value);
+          },
+          color: isDark ? "#e2e8f0" : "#344054",
+          fontSize: 10,
+        },
         emphasis: { itemStyle: { shadowBlur: 8, shadowColor: "rgba(0,0,0,0.2)" } },
+        itemStyle: { borderColor: isDark ? "#1e293b" : "#fff", borderWidth: 1 },
       },
     ],
   };
@@ -396,7 +547,9 @@ export function buildGeoHeatmapEchartsOption(input: GeoHeatmapRowsInput): Record
       orient: "horizontal",
       left: "center",
       bottom: 8,
-      inRange: { color: ["#f0f9ff", chartPalette.info, chartPalette.brand] },
+      inRange: { color: geoVisualMapColors(isDark) },
+      textStyle: { color: isDark ? "#cbd5e1" : "#475569" },
+      formatter: (value: number) => formatValue(value),
     };
   }
 

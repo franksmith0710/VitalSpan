@@ -298,6 +298,7 @@ export function DashboardWidget({
         widgetShellColor={shellColor}
         showLoadingHint={chrome.showChartLoadingHint}
         suspendLiveResize={suspendLiveResize}
+        dashboardEditMode={mode === "edit"}
       />
     ) : null;
 

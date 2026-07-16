@@ -471,6 +471,7 @@ export type DeAttrSliderFieldProps = {
   ariaLabel?: string;
   className?: string;
   onChange: (value: number) => void;
+  onPreviewChange?: (value: number | null) => void;
 };
 
 /** 432px 看板配置栏：单行滑块字段（对标 DE attr-style） */
@@ -489,6 +490,7 @@ export function DeAttrSliderField({
   ariaLabel,
   className,
   onChange,
+  onPreviewChange,
 }: DeAttrSliderFieldProps) {
   const resolved = value ?? fallback;
 
@@ -510,6 +512,7 @@ export function DeAttrSliderField({
           unit={unit}
           ariaLabel={ariaLabel}
           onChange={onChange}
+          onPreview={onPreviewChange}
         />
       ) : (
         <DeSliderInlineRow
@@ -523,6 +526,7 @@ export function DeAttrSliderField({
           density={density}
           labelTone={labelTone}
           onChange={onChange}
+          onPreview={onPreviewChange}
         />
       )}
       {hint ? (
@@ -550,6 +554,7 @@ export function DashboardConfigSlider({
   className,
   compact,
   onChange,
+  onPreviewChange,
 }: DashboardConfigSliderProps) {
   return (
     <DeAttrSliderField
@@ -565,6 +570,7 @@ export function DashboardConfigSlider({
       className={cn("border-b-0", compact ? "py-0" : undefined, className)}
       compact={compact}
       onChange={onChange}
+      onPreviewChange={onPreviewChange}
     />
   );
 }
