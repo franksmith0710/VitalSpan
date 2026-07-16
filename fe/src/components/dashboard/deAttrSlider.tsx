@@ -14,8 +14,10 @@ function clampValue(value: number, min: number, max: number): number {
 export const DE_SLIDER_WIDTH_WIDE = "w-[10.5rem]";
 /** 216px 图表检查栏滑块宽度 */
 export const DE_SLIDER_WIDTH_NARROW = "w-[7.25rem]";
+/** 216px 行内字段（标签+滑块+数值）定宽滑块 */
+export const DE_SLIDER_WIDTH_CHART_INLINE = "w-[5.5rem]";
 
-const SLIDER_SHELL = "relative h-5 touch-none";
+const SLIDER_SHELL = "relative flex h-7 items-center";
 const SLIDER_TRACK =
   "pointer-events-none absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full bg-gray-200 dark:bg-white/10";
 const SLIDER_THUMB =
@@ -32,6 +34,7 @@ export type DeProgressSliderProps = {
   ariaLabel: string;
   ariaValuetext?: string;
   className?: string;
+  disabled?: boolean;
   onChange: (value: number) => void;
   /** 拖拽过程中每帧预览（用于标签即时刷新，不触发重渲染链） */
   onPreview?: (value: number | null) => void;
@@ -49,6 +52,7 @@ export function DeProgressSlider({
   ariaLabel,
   ariaValuetext,
   className,
+  disabled = false,
   onChange,
   onPreview,
 }: DeProgressSliderProps) {
@@ -101,8 +105,25 @@ export function DeProgressSlider({
     }
   };
 
+  const handlePointerDown = (e: React.PointerEvent<HTMLInputElement>) => {
+    if (disabled) return;
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    beginDrag();
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLInputElement>) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    endDrag();
+  };
+
   return (
-    <div className={cn(SLIDER_SHELL, "max-w-full", className)} data-testid="de-progress-slider">
+    <div
+      className={cn(SLIDER_SHELL, "max-w-full", disabled && "opacity-50", className)}
+      data-testid="de-progress-slider"
+    >
       <div className={SLIDER_TRACK} aria-hidden>
         <div
           className="h-full w-full origin-left rounded-full bg-brand-500 will-change-transform dark:bg-brand-400"
@@ -116,15 +137,16 @@ export function DeProgressSlider({
         max={max}
         step={step}
         value={shown}
+        disabled={disabled}
         aria-label={ariaLabel}
         aria-valuemin={min}
         aria-valuemax={max}
         aria-valuenow={shown}
         aria-valuetext={valueText}
-        className="absolute inset-0 z-10 m-0 h-full w-full cursor-pointer opacity-0"
-        onPointerDown={beginDrag}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
+        className="absolute inset-0 z-20 m-0 h-full w-full cursor-pointer touch-none opacity-0 disabled:cursor-not-allowed"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onBlur={() => {
           if (draggingRef.current) endDrag();
         }}
@@ -145,6 +167,7 @@ type DeSliderInlineRowProps = {
   density?: "wide" | "narrow";
   /** field：DeAttr 表单标签；muted：grid 内次级标签；compact：2 列栅格短标签 */
   labelTone?: "field" | "muted" | "compact";
+  disabled?: boolean;
   className?: string;
   onChange: (value: number) => void;
 };
@@ -160,6 +183,7 @@ function DeSliderInlineRow({
   ariaLabel,
   density = "wide",
   labelTone = "muted",
+  disabled = false,
   className,
   onChange,
 }: DeSliderInlineRowProps) {
@@ -167,13 +191,20 @@ function DeSliderInlineRow({
   const [preview, setPreview] = useState<number | null>(null);
   const shown = preview ?? clamped;
   const display = unit ? `${shown}${unit}` : String(shown);
-  const sliderWidth = density === "narrow" ? DE_SLIDER_WIDTH_NARROW : DE_SLIDER_WIDTH_WIDE;
+  const sliderWidth =
+    density === "narrow" && labelTone === "field"
+      ? DE_SLIDER_WIDTH_CHART_INLINE
+      : density === "narrow"
+        ? DE_SLIDER_WIDTH_NARROW
+        : DE_SLIDER_WIDTH_WIDE;
   const gridCols =
-    labelTone === "field"
-      ? "grid-cols-[4.75rem_minmax(0,10.5rem)_2.5rem]"
-      : labelTone === "compact"
-        ? "grid-cols-[1.75rem_minmax(0,1fr)_2.5rem]"
-        : "grid-cols-[minmax(0,1fr)_minmax(0,10.5rem)_2.5rem]";
+    density === "narrow" && labelTone === "field"
+      ? "grid-cols-[minmax(0,1fr)_5.5rem_2rem]"
+      : labelTone === "field"
+        ? "grid-cols-[4.75rem_minmax(0,10.5rem)_2.5rem]"
+        : labelTone === "compact"
+          ? "grid-cols-[1.75rem_minmax(0,1fr)_2.5rem]"
+          : "grid-cols-[minmax(0,1fr)_minmax(0,10.5rem)_2.5rem]";
 
   return (
     <div className={cn("grid min-w-0 items-center gap-x-2.5", gridCols, className)}>
@@ -195,6 +226,7 @@ function DeSliderInlineRow({
         min={min}
         max={max}
         step={step}
+        disabled={disabled}
         ariaLabel={ariaLabel ?? label}
         ariaValuetext={display}
         onPreview={setPreview}
@@ -307,10 +339,13 @@ export type ChartDeSliderFieldProps = {
   unit?: string;
   ariaLabel?: string;
   className?: string;
+  disabled?: boolean;
+  /** stacked：标签+全宽滑块；inline：标签·定宽滑块·数值单行 */
+  layout?: "stacked" | "inline";
   onChange: (value: number) => void;
 };
 
-/** chart-edit 216px 栏：标签/数值一行 + 全宽滑块 */
+/** chart-edit 216px 栏：标签/数值一行 + 全宽或行内定宽滑块 */
 export function ChartDeSliderField({
   label,
   value,
@@ -321,6 +356,8 @@ export function ChartDeSliderField({
   unit = "",
   ariaLabel,
   className,
+  disabled = false,
+  layout = "stacked",
   onChange,
 }: ChartDeSliderFieldProps) {
   const resolved = value ?? fallback;
@@ -329,10 +366,37 @@ export function ChartDeSliderField({
   const shown = preview ?? clamped;
   const display = unit ? `${shown}${unit}` : String(shown);
 
+  if (layout === "inline") {
+    return (
+      <div
+        className={cn(
+          "border-b border-gray-100 py-2 last:border-b-0 dark:border-white/[0.06]",
+          disabled && "opacity-60",
+          className,
+        )}
+      >
+        <DeSliderInlineRow
+          label={label}
+          value={clamped}
+          min={min}
+          max={max}
+          step={step}
+          unit={unit}
+          ariaLabel={ariaLabel}
+          density="narrow"
+          labelTone="field"
+          disabled={disabled}
+          onChange={onChange}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
         "border-b border-gray-100 py-2 last:border-b-0 dark:border-white/[0.06]",
+        disabled && "opacity-60",
         className,
       )}
     >
@@ -348,6 +412,7 @@ export function ChartDeSliderField({
         min={min}
         max={max}
         step={step}
+        disabled={disabled}
         ariaLabel={ariaLabel ?? label}
         ariaValuetext={display}
         onPreview={setPreview}

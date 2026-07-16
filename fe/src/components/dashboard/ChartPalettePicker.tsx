@@ -97,7 +97,7 @@ function PaletteCardGrid({
   value?: string;
   showInherit: boolean;
   onChange: ChartPalettePickerProps["onChange"];
-  /** 216px 图表栏：双列小卡片，视觉与看板配置栏一致 */
+  /** 216px 图表栏：单列紧凑卡片 */
   compact?: boolean;
 }) {
   return (
@@ -105,7 +105,7 @@ function PaletteCardGrid({
       className={cn(
         "grid gap-1.5",
         compact
-          ? "grid-cols-2"
+          ? "grid-cols-1"
           : "grid-cols-[repeat(auto-fill,minmax(6.75rem,1fr))] gap-2",
       )}
       role="listbox"

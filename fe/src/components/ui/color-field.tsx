@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, X } from "lucide-react";
+import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -21,10 +22,12 @@ type ColorFieldProps = {
   label?: string;
   allowClear?: boolean;
   compact?: boolean;
-  /** field：完整输入；swatch：仅色块按钮（配置栏与下拉并排） */
+  /** field：完整输入；swatch：紧凑分栏（色块 + Hex 提示 + 下拉） */
   variant?: "field" | "swatch";
   /** 取色按钮 aria-label（外层已有可见标签时不传 label，用此项） */
   buttonAriaLabel?: string;
+  /** swatch：是否在控件上方显示 label；行内配色行由左侧标签承担时应为 false */
+  showLabel?: boolean;
   className?: string;
   /** 取色器/输入框连续变更时防抖提交，减轻画布等大组件重渲染 */
   liveCommitMs?: number;
@@ -36,6 +39,22 @@ const DEFAULT_LIVE_COMMIT_MS = 120;
 
 const FIELD_SHELL =
   "flex w-full items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-1.5 shadow-theme-xs transition-[border-color,box-shadow] focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/10 dark:border-gray-700 dark:bg-white/[0.03] dark:focus-within:border-brand-500/40 dark:focus-within:ring-brand-500/15";
+
+const swatchTriggerVariants = cva(
+  "flex h-9 overflow-hidden rounded-lg border bg-white text-left shadow-theme-xs transition-[border-color,box-shadow] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:bg-white/[0.03]",
+  {
+    variants: {
+      open: {
+        true: "border-brand-300 ring-2 ring-brand-500/20 dark:border-brand-500/50",
+        false:
+          "border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600",
+      },
+    },
+    defaultVariants: {
+      open: false,
+    },
+  },
+);
 
 function normalizeSwatches(
   swatches: readonly ColorSwatch[] | readonly string[],
@@ -63,6 +82,7 @@ export function ColorField({
   variant = "field",
   className,
   buttonAriaLabel,
+  showLabel,
   liveCommitMs = DEFAULT_LIVE_COMMIT_MS,
   swatchesDefaultOpen: _swatchesDefaultOpen = false,
 }: ColorFieldProps) {
@@ -130,9 +150,14 @@ export function ColorField({
 
   const displayHex = normalizeHexColor(localValue) ?? localValue;
   const pickerLabel = buttonAriaLabel ?? (label ? `${label}取色器` : "取色器");
+  const popoverTitle = label ?? buttonAriaLabel?.replace(/取色器$/, "") ?? "颜色";
   const chipSize = compact || variant === "swatch" ? "sm" : "md";
   const popoverAlign = variant === "swatch" ? "start" : compact ? "end" : "start";
   const popoverSide = variant === "swatch" ? "bottom" : compact ? "left" : "bottom";
+  const swatchLabelVisible = showLabel ?? Boolean(label);
+  const swatchTitle = displayHex
+    ? `${popoverTitle} · ${displayHex.toUpperCase()}`
+    : popoverTitle;
 
   const popoverBody = (
     <PopoverContent
@@ -142,6 +167,7 @@ export function ColorField({
       collisionPadding={12}
       className="w-[228px] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain p-2.5"
     >
+      <p className="mb-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">{popoverTitle}</p>
       <ColorPickerPanel value={localValue} onChange={applyColor} />
       {items.length > 0 ? (
         <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
@@ -195,25 +221,39 @@ export function ColorField({
 
   if (variant === "swatch") {
     return (
-      <div className={cn("shrink-0", className)}>
-        {label ? (
-          <Label className="sr-only text-theme-xs text-gray-600 dark:text-gray-400">{label}</Label>
+      <div className={cn("min-w-0 shrink-0", className)}>
+        {label && swatchLabelVisible ? (
+          <Label className="mb-1 block text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+            {label}
+          </Label>
         ) : null}
         <Popover open={open} onOpenChange={handleOpenChange}>
           <PopoverTrigger asChild>
             <button
               type="button"
+              className={swatchTriggerVariants({ open })}
               aria-label={pickerLabel}
               aria-expanded={open}
-              title={pickerLabel}
-              className={cn(
-                "flex size-9 items-center justify-center rounded-lg border border-gray-200 bg-white shadow-theme-xs transition-colors",
-                "hover:border-gray-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
-                "dark:border-gray-700 dark:bg-white/[0.03] dark:hover:border-gray-600",
-                open && "border-brand-300 ring-2 ring-brand-500/20 dark:border-brand-500/50",
-              )}
+              title={swatchTitle}
             >
-              <ColorSwatchChip color={displayHex || undefined} size={chipSize} />
+              <span
+                className="flex h-full w-10 shrink-0 items-center justify-center border-r border-gray-100 bg-gray-50/90 p-1.5 dark:border-gray-800 dark:bg-white/[0.04]"
+                aria-hidden
+              >
+                <ColorSwatchChip color={displayHex || undefined} size={chipSize} />
+              </span>
+              <span className="flex shrink-0 items-center gap-1 px-2">
+                {!displayHex ? (
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">未设置</span>
+                ) : null}
+                <ChevronDown
+                  className={cn(
+                    "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
+                    open && "rotate-180 text-brand-500 dark:text-brand-400",
+                  )}
+                  aria-hidden
+                />
+              </span>
             </button>
           </PopoverTrigger>
           {popoverBody}

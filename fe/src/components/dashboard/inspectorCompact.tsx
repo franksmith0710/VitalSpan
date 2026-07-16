@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ColorField, type ColorSwatch } from "@/components/ui/color-field";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
 /** 看板 chart-edit 窄栏（~216px）紧凑密度，对标 DataEase editor-light */
@@ -56,6 +62,60 @@ export function InspectorSwitchRow({
   );
 }
 
+/** 216px 图表样式栏：功能种类折叠（无灰底条），标题行右侧可放 Switch */
+export function ChartInspectorSection({
+  title,
+  children,
+  action,
+  defaultOpen = false,
+  className,
+}: {
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+  defaultOpen?: boolean;
+  className?: string;
+}) {
+  return (
+    <Collapsible
+      defaultOpen={defaultOpen}
+      className={cn("group border-b border-gray-100 dark:border-white/[0.06]", className)}
+    >
+      <div className="flex items-center gap-1 py-1">
+        <CollapsibleTrigger
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-1 rounded-md px-1 py-1 text-left",
+            "text-[11px] font-semibold text-gray-800 dark:text-white/90",
+            "transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
+            "dark:hover:bg-white/[0.04]",
+          )}
+        >
+          <ChevronRight
+            className="size-3 shrink-0 text-gray-400 transition-transform group-data-[state=open]:rotate-90"
+            aria-hidden
+          />
+          <span className="min-w-0 truncate">{title}</span>
+        </CollapsibleTrigger>
+        {action ? (
+          <div
+            className="flex shrink-0 items-center pr-0.5"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            {action}
+          </div>
+        ) : null}
+      </div>
+      {children ? (
+        <CollapsibleContent className="space-y-0 pb-2">{children}</CollapsibleContent>
+      ) : null}
+    </Collapsible>
+  );
+}
+
+/** @deprecated 使用 ChartInspectorSection */
+export const ChartInspectorFlatSection = ChartInspectorSection;
+
 /** 432px 配置栏：标签左 + 控件右，避免色块输入通栏拉长 */
 export function InspectorInlineColorRow({
   label,
@@ -82,6 +142,7 @@ export function InspectorInlineColorRow({
       <Label className={cn(INSPECTOR_LABEL, "shrink-0")}>{label}</Label>
       <ColorField
         variant="swatch"
+        showLabel={false}
         allowClear={allowClear}
         swatches={swatches}
         value={value}

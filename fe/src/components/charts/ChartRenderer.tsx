@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { resolveChartConfigPhase } from "@/lib/chartConfigState";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
@@ -17,6 +17,7 @@ import { resolveRenderSpec } from "@/lib/resolveRenderSpec";
 import { chartRenderSpecKey } from "@/lib/chartRenderSpecKey";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
 import { resolveChartLegendItems } from "@/lib/chartLegendItems";
+import type { ChartLegendItem } from "@/lib/chartLegendItems";
 import { buildEchartsOption } from "./adapters/renderFromSpec";
 import {
   applyChartDrillPipeline,
@@ -242,9 +243,17 @@ export const ChartRenderer = memo(function ChartRenderer({
   const shellLegendVisible =
     shellLegendEligible && readChartLegendVisible(deStyle, { embedded: true });
 
+  const shellLegendItemsRef = useRef<ChartLegendItem[]>([]);
   const shellLegendItems = useMemo(() => {
-    if (!shellLegendVisible || loading || error) return [];
-    if (!renderModel || renderModel.kind !== "ready") return [];
+    if (!shellLegendVisible || error) {
+      return shellLegendItemsRef.current;
+    }
+    if (loading) {
+      return shellLegendItemsRef.current;
+    }
+    if (!renderModel || renderModel.kind !== "ready") {
+      return shellLegendItemsRef.current;
+    }
     const geoStyle = readChartGeoStyle(deStyle);
     const pieStyle = readChartPieStyle(deStyle);
     let built = buildEchartsOption(renderSpec, displayRows, displayColumns, {
@@ -260,7 +269,11 @@ export const ChartRenderer = memo(function ChartRenderer({
     if (chartColors.length > 0) {
       built = { ...built, color: chartColors };
     }
-    return resolveChartLegendItems(built, chartColors);
+    const items = resolveChartLegendItems(built, chartColors);
+    if (items.length > 0) {
+      shellLegendItemsRef.current = items;
+    }
+    return items.length > 0 ? items : shellLegendItemsRef.current;
   }, [
     shellLegendVisible,
     loading,
@@ -431,9 +444,10 @@ export const ChartRenderer = memo(function ChartRenderer({
   ) : null;
 
   if (embedded) {
+    const showBlockingLoading = loading && columns.length === 0 && rows.length === 0;
     return (
       <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
-        {loading ? (
+        {showBlockingLoading ? (
           showLoadingHint ? (
             <Skeleton className="absolute inset-0 rounded-lg" aria-busy="true" aria-label="图表加载中" />
           ) : null

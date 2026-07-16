@@ -56,21 +56,15 @@ export function ChartInspectorTabs({
       </TabsContent>
       <TabsContent
         value="style"
-        className={cn(
-          "mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden",
-          scrollMode === "panel" && "overflow-y-auto overscroll-y-contain no-scrollbar",
-        )}
+        className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
       >
-        <div className="px-2 py-1.5">{style}</div>
+        <div className={cn(tabPanelScrollClass(scrollMode), "px-2 py-1.5")}>{style}</div>
       </TabsContent>
       <TabsContent
         value="advanced"
-        className={cn(
-          "mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden",
-          scrollMode === "panel" && "overflow-y-auto overscroll-y-contain no-scrollbar",
-        )}
+        className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
       >
-        <div className="px-2 py-1.5">{advanced}</div>
+        <div className={cn(tabPanelScrollClass(scrollMode), "px-2 py-1.5")}>{advanced}</div>
       </TabsContent>
     </Tabs>
   );

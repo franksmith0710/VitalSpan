@@ -9,6 +9,11 @@ const LEGEND_ROW_HEIGHT = 24;
 const DATA_ZOOM_SLIDER_HEIGHT = 18;
 const DATA_ZOOM_BOTTOM_GAP = 4;
 
+/** 内嵌 ECharts 图例滚动区高度（约 2 行 + 滚动） */
+export function compactEchartsLegendScrollHeight(fontSize: number): number {
+  return Math.min(Math.ceil(fontSize * 2.6 * 2) + 4, 52);
+}
+
 export type EchartsLayoutContext = {
   /** 看板 widget 内嵌：紧凑布局，禁用缩略轴彩色数据阴影 */
   embedded?: boolean;
@@ -47,7 +52,21 @@ function chartHasPieSeries(option: EChartsOption): boolean {
   );
 }
 
-function chartHasMapSeries(option: EChartsOption): boolean {
+function chartHasFunnelSeries(option: EChartsOption): boolean {
+  return (
+    Array.isArray(option.series) &&
+    option.series.some(
+      (series) =>
+        series &&
+        typeof series === "object" &&
+        (series as { type?: string }).type === "funnel",
+    )
+  );
+}
+
+function chartHasCenteredSeries(option: EChartsOption): boolean {
+  return chartHasPieSeries(option) || chartHasFunnelSeries(option);
+}
   return (
     Array.isArray(option.series) &&
     option.series.some(
@@ -111,6 +130,15 @@ export function resolveEchartsChromeInsets(
     gridBottom = Math.max(gridBottom, LEGEND_ROW_HEIGHT + (dataZoom ? DATA_ZOOM_SLIDER_HEIGHT + 8 : 4));
   }
 
+  if (compact && showLegend && (legendPos === "bottom" || legendPos === "top")) {
+    const scrollHeight = compactEchartsLegendScrollHeight(deStyle.legend?.fontSize ?? 12);
+    gridBottom = Math.max(
+      gridBottom,
+      legendPos === "bottom" ? scrollHeight + 4 : gridBottom,
+    );
+    gridTop = Math.max(gridTop, legendPos === "top" ? scrollHeight + 4 : gridTop);
+  }
+
   if (compact && dataZoom) {
     gridBottom = Math.max(gridBottom, DATA_ZOOM_SLIDER_HEIGHT + DATA_ZOOM_BOTTOM_GAP + 4);
   }
@@ -141,13 +169,38 @@ const LEGEND_LAYOUT: Record<
   right: { orient: "vertical", top: "middle" },
 };
 
+function applyFunnelInset(option: EChartsOption, insets: ChromeInsets): EChartsOption {
+  if (!chartHasFunnelSeries(option) || !insets.showLegend || !Array.isArray(option.series)) {
+    return option;
+  }
+  const reserveBottom = insets.legendPos === "bottom" ? "18%" : "8%";
+  const reserveTop = insets.legendPos === "top" ? "16%" : "6%";
+  return {
+    ...option,
+    series: option.series.map((series) => {
+      if (!series || typeof series !== "object" || (series as { type?: string }).type !== "funnel") {
+        return series;
+      }
+      return {
+        ...series,
+        top: reserveTop,
+        bottom: reserveBottom,
+        left: "12%",
+        width: "76%",
+      };
+    }),
+  };
+}
+
 function applyPieInset(option: EChartsOption, insets: ChromeInsets): EChartsOption {
   if (!chartHasPieSeries(option) || !Array.isArray(option.series)) return option;
   const shift =
     insets.showLegend && insets.legendPos === "bottom"
-      ? insets.dataZoom
-        ? 10
-        : 6
+      ? insets.compact
+        ? 12
+        : insets.dataZoom
+          ? 10
+          : 6
       : insets.showLegend && insets.legendPos === "top"
         ? -4
         : 0;
@@ -189,7 +242,10 @@ export function applyDeStyleToEchartsOption(
   next.legend = {
     ...prevLegend,
     show: insets.showLegend,
-    type: insets.compact && insets.showLegend ? "scroll" : (prevLegend as { type?: string }).type,
+    type:
+      insets.compact && insets.showLegend
+        ? "scroll"
+        : (prevLegend as { type?: string }).type,
     textStyle: {
       ...(typeof prevLegend.textStyle === "object" ? prevLegend.textStyle : {}),
       fontSize: deStyle.legend?.fontSize ?? 12,
@@ -200,6 +256,19 @@ export function applyDeStyleToEchartsOption(
     ...(insets.legendLeft !== undefined ? { left: insets.legendLeft } : {}),
     ...(insets.legendRight !== undefined ? { right: insets.legendRight } : {}),
   };
+
+  if (insets.compact && insets.showLegend && (insets.legendPos === "bottom" || insets.legendPos === "top")) {
+    const scrollHeight = compactEchartsLegendScrollHeight(deStyle.legend?.fontSize ?? 12);
+    next.legend = {
+      ...(next.legend as object),
+      type: "scroll",
+      height: scrollHeight,
+      width: "92%",
+      pageIconSize: 9,
+      pageTextStyle: { fontSize: 10 },
+      ...(insets.legendPos === "bottom" ? { bottom: 0, top: undefined } : { top: 0, bottom: undefined }),
+    };
+  }
 
   if (dataZoom) {
     next.dataZoom = [

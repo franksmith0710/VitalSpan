@@ -41,15 +41,49 @@ describe("ChartLegendStyleSection", () => {
       "aria-checked",
       "true",
     );
+    expect(screen.getByText("字号")).toBeInTheDocument();
+    expect(screen.getByText("位置")).toBeInTheDocument();
+  });
+
+  it("hides legend fields when legend is disabled", () => {
+    const widgetLegendOff: LayoutWidget = {
+      ...widget,
+      chartConfig: {
+        ...widget.chartConfig!,
+        nativeBody: { deStyle: { legend: { show: false } } },
+      },
+    };
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ChartInspectorProvider widget={widgetLegendOff} onChange={vi.fn()} dashboardStyle={{}}>
+          <ChartLegendStyleSection />
+        </ChartInspectorProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole("switch", { name: "显示图例" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+    expect(screen.queryByText("字号")).not.toBeInTheDocument();
+    expect(screen.queryByText("位置")).not.toBeInTheDocument();
   });
 
   it("patches per-chart legend.show when toggled off", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
+    const widgetWithLegend: LayoutWidget = {
+      ...widget,
+      chartConfig: {
+        ...widget.chartConfig!,
+        nativeBody: { deStyle: { legend: { show: true } } },
+      },
+    };
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
-        <ChartInspectorProvider widget={widget} onChange={onChange} dashboardStyle={{}}>
+        <ChartInspectorProvider widget={widgetWithLegend} onChange={onChange} dashboardStyle={{}}>
           <ChartLegendStyleSection />
         </ChartInspectorProvider>
       </QueryClientProvider>,

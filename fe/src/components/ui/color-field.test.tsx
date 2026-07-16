@@ -114,5 +114,22 @@ describe("ColorField", () => {
     );
     expect(screen.queryByPlaceholderText("#ffffff")).not.toBeInTheDocument();
     expect(screen.getByLabelText("边框色取色器")).toBeInTheDocument();
+    expect(screen.queryByText("#3370FF")).not.toBeInTheDocument();
+    expect(screen.getByText("边框色")).toBeInTheDocument();
+  });
+
+  it("renders swatch variant without hex code when label is external", () => {
+    const onChange = vi.fn();
+    render(
+      <ColorField
+        variant="swatch"
+        showLabel={false}
+        buttonAriaLabel="背景色取色器"
+        value="#43b379"
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText("#43B379")).not.toBeInTheDocument();
+    expect(screen.queryByText("背景色")).not.toBeInTheDocument();
   });
 });

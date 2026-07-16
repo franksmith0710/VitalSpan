@@ -1,5 +1,6 @@
 import { ChartPalettePicker } from "./ChartPalettePicker";
 import { ChartDeSliderField } from "./deAttrSlider";
+import { resolvePaletteId } from "@/lib/chartPalette";
 import { cn } from "@/lib/utils";
 
 type ChartPaletteConfigFieldsProps = {
@@ -25,6 +26,7 @@ export function ChartPaletteConfigFields({
   className,
 }: ChartPaletteConfigFieldsProps) {
   const pickerValue = showInherit ? paletteId : paletteId ?? "default";
+  const inheritActive = showInherit && resolvePaletteId(paletteId) == null;
 
   return (
     <div className={cn("space-y-2.5", className)}>
@@ -35,18 +37,28 @@ export function ChartPaletteConfigFields({
         onChange={onPaletteChange}
       />
       {onOpacityChange ? (
-        <ChartDeSliderField
-          label="配色不透明度"
-          value={
-            paletteOpacity != null ? Math.round(paletteOpacity * 100) : undefined
-          }
-          fallback={100}
-          min={0}
-          max={100}
-          step={1}
-          unit="%"
-          onChange={onOpacityChange}
-        />
+        <div className="space-y-1">
+          <ChartDeSliderField
+            label={dense ? "不透明度" : "配色不透明度"}
+            layout={dense ? "inline" : "stacked"}
+            disabled={inheritActive}
+            value={
+              paletteOpacity != null ? Math.round(paletteOpacity * 100) : undefined
+            }
+            fallback={100}
+            min={0}
+            max={100}
+            step={1}
+            unit="%"
+            ariaLabel="配色不透明度"
+            onChange={onOpacityChange}
+          />
+          {inheritActive ? (
+            <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+              跟随看板配色时，请先在上方选择独立配色方案
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

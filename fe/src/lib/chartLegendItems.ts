@@ -2,11 +2,13 @@ import type { EChartsOption } from "echarts";
 
 const DEFAULT_COLOR = "#465fff";
 
+export type ChartLegendItem = { name: string; color: string };
+
 /** 从 ECharts option 提取图例项（与 series / 配色顺序对齐） */
 export function resolveChartLegendItems(
   option: EChartsOption,
   paletteColors: string[] = [],
-): { name: string; color: string }[] {
+): ChartLegendItem[] {
   const colors = paletteColors.length > 0 ? paletteColors : [DEFAULT_COLOR];
   const items: { name: string; color: string }[] = [];
   let colorIndex = 0;

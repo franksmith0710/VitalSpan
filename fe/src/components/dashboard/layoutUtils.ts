@@ -1,4 +1,6 @@
 import type { ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
+import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
+import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle } from "@/lib/chartDeStyle";
 import type { LayoutWidget } from "./dashboardLayoutContracts";
 
 export type {
@@ -266,21 +268,34 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
     dataSourceId: "",
     mode: "dataset" as const,
   };
+  const withLegendDefault = (cfg: ChartViewConfig): ChartViewConfig => {
+    if (!chartInspectorCapabilities(type).legend) return cfg;
+    return {
+      ...cfg,
+      nativeBody: {
+        ...cfg.nativeBody,
+        deStyle: {
+          ...readChartDeStyle(cfg),
+          legend: { ...DEFAULT_CHART_LEGEND_STYLE },
+        },
+      },
+    };
+  };
   if (type === "table") {
     return { chartType: "table", ...base, dimensions: [], metrics: [] };
   }
   if (type === "kpi") {
-    return {
+    return withLegendDefault({
       chartType: "kpi",
       ...base,
       dimensions: [],
       metrics: [],
-    };
+    });
   }
-  return {
+  return withLegendDefault({
     chartType: type,
     ...base,
     dimensions: [],
     metrics: [],
-  };
+  });
 }

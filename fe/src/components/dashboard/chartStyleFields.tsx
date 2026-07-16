@@ -325,10 +325,11 @@ export function ChartBackgroundDeModeFields({
       ) : useLineBorder ? (
         <WidgetStyleLineBorderControls value={value} onChange={onChange} showToggle={false} density="narrow" />
       ) : (
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
           <ColorField
             variant="swatch"
             label="装饰色"
+            showLabel
             allowClear
             swatches={WIDGET_BORDER_RECOMMENDED}
             value={value.frameColor ?? ""}
@@ -342,6 +343,7 @@ export function ChartBackgroundDeModeFields({
           />
           <ChartFramePresetPicker
             className="min-w-0 flex-1"
+            label="边框样式"
             value={value.framePresetId}
             color={value.frameColor}
             onChange={(presetId) =>

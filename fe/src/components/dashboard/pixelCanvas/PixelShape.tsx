@@ -207,18 +207,18 @@ function PixelShapeInnerChrome({
 }: PixelShapeInnerChromeProps) {
   const legendCtx = useWidgetShellLegend();
   const legend = legendCtx?.state;
-  const legendActive = Boolean(legend?.visible && legend.items.length > 0);
+  // 始终使用同一壳层结构，避免图例从空→有时在 Shell/裸 children 间切换导致 ChartRenderer 卸载重挂、execute 死循环
+  const legendItems =
+    legend?.visible && legend.items.length > 0 ? legend.items : [];
 
-  const chartBody = legendActive && legend ? (
+  const chartBody = (
     <EmbeddedChartLegendShell
-      position={legend.position}
-      fontSize={legend.fontSize}
-      items={legend.items}
+      position={legend?.position ?? "bottom"}
+      fontSize={legend?.fontSize ?? 12}
+      items={legendItems}
     >
       {children}
     </EmbeddedChartLegendShell>
-  ) : (
-    children
   );
 
   return (

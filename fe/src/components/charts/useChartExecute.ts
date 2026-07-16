@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiRequestError } from "@/lib/api";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
-  chartExecuteRequestKey,
-  fetchChartExecuteResult,
+  chartExecuteBindingKey,
+  fetchChartExecuteResultShared,
+  peekChartExecuteCachedResult,
 } from "@/lib/chartExecuteProbe";
 
 export {
@@ -46,16 +47,20 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
   const configRef = useRef(config);
   const filterRef = useRef(filterParameters);
   const limitRef = useRef(limit);
+  const hasDisplayedDataRef = useRef(false);
   configRef.current = config;
   filterRef.current = filterParameters;
   limitRef.current = limit;
 
-  const requestKey = chartExecuteRequestKey(config, filterParameters);
+  const requestKey = chartExecuteBindingKey(config, filterParameters, limit);
 
   const run = useCallback(async () => {
     const activeConfig = configRef.current;
     const activeFilters = filterRef.current;
-    setLoading(true);
+    const showBlockingLoading = !hasDisplayedDataRef.current;
+    if (showBlockingLoading) {
+      setLoading(true);
+    }
     setError(null);
     setSlowHint(false);
     const started = Date.now();
@@ -64,15 +69,17 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
         setError("请选择数据源与已绑定配置的 Dataset");
         setColumns([]);
         setRows([]);
+        hasDisplayedDataRef.current = false;
         return;
       }
 
-      const data = await fetchChartExecuteResult(activeConfig, {
+      const data = await fetchChartExecuteResultShared(activeConfig, {
         filterParameters: activeFilters,
         limit: limitRef.current,
       });
       setColumns(data.columns);
       setRows(data.rows);
+      hasDisplayedDataRef.current = data.columns.length > 0 || data.rows.length > 0;
       setSlowHint(Date.now() - started > SLOW_THRESHOLD_MS);
     } catch (err) {
       if (err instanceof Error && err.message.includes("筛选值")) {
@@ -96,6 +103,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
       }
       setColumns([]);
       setRows([]);
+      hasDisplayedDataRef.current = false;
       setSlowHint(false);
     } finally {
       setLoading(false);
@@ -103,6 +111,20 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
   }, []);
 
   useEffect(() => {
+    const cached = peekChartExecuteCachedResult(configRef.current, {
+      filterParameters: filterRef.current,
+      limit: limitRef.current,
+    });
+    if (cached) {
+      setColumns(cached.columns);
+      setRows(cached.rows);
+      hasDisplayedDataRef.current =
+        cached.columns.length > 0 || cached.rows.length > 0;
+      setLoading(false);
+      setError(null);
+    } else {
+      hasDisplayedDataRef.current = false;
+    }
     void run();
   }, [requestKey, executeKey, run]);
 

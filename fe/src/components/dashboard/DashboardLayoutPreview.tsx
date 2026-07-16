@@ -113,7 +113,7 @@ export function DashboardLayoutPreview({
 
   if (displayLayout.version === 2) {
     const widgetContentRevision = (widget: PixelLayoutWidget) =>
-      `${styleRevision}:${widgetFilterExecuteRevision(widget.id, effectiveLinkage, filterValues)}`;
+      widgetFilterExecuteRevision(widget.id, effectiveLinkage, filterValues);
 
     return (
       <DashboardWidgetsProvider widgets={widgets}>

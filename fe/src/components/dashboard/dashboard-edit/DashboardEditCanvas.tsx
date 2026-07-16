@@ -137,8 +137,8 @@ export function DashboardEditCanvas({
 
   const widgetContentRevision = useCallback(
     (widget: PixelLayoutWidget) =>
-      `${styleRevision}:${widgetFilterExecuteRevision(widget.id, linkage, filterValues, chartRefreshKeys)}:${selectedIds.has(widget.id)}`,
-    [styleRevision, linkage, filterValues, chartRefreshKeys, selectedIds],
+      widgetFilterExecuteRevision(widget.id, linkage, filterValues, chartRefreshKeys),
+    [linkage, filterValues, chartRefreshKeys],
   );
 
   if (mode === "view" || editor === "pixel-readonly") {

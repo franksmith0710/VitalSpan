@@ -22,6 +22,13 @@ export type ChartLegendStyle = {
   fontSize?: number;
 };
 
+/** 看板内嵌图例默认：开启 + 底部 */
+export const DEFAULT_CHART_LEGEND_STYLE: Required<Pick<ChartLegendStyle, "show" | "position">> &
+  ChartLegendStyle = {
+  show: true,
+  position: "bottom",
+};
+
 export type ChartLabelStyle = {
   show?: boolean;
   fontSize?: number;
@@ -104,6 +111,13 @@ export function readChartLegendVisible(
   _options?: { embedded?: boolean },
 ): boolean {
   return deStyle.legend?.show !== false;
+}
+
+/** 图例位置：未配置时默认底部 */
+export function readChartLegendPosition(
+  deStyle: ChartDeStyle,
+): NonNullable<ChartLegendStyle["position"]> {
+  return deStyle.legend?.position ?? DEFAULT_CHART_LEGEND_STYLE.position;
 }
 
 export function mergeChartTitleStyle(

@@ -1,22 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import { fetchChartExecuteResult, isChartExecuteReady } from "@/lib/chartExecuteProbe";
-
-function columnsCacheKey(cfg: ChartViewConfig): string {
-  return [
-    cfg.mode ?? "sql",
-    cfg.dataSourceId ?? "",
-    cfg.configId ?? "",
-    cfg.datasetId ?? "",
-    cfg.sql ?? "",
-    cfg.table ?? "",
-    cfg.schema ?? "",
-  ].join("|");
-}
+import {
+  chartExecuteBindingKey,
+  fetchChartExecuteResultShared,
+  isChartExecuteReady,
+} from "@/lib/chartExecuteProbe";
 
 export function useInspectorColumns(cfg: ChartViewConfig) {
   const ready = isChartExecuteReady(cfg);
-  const cacheKey = useMemo(() => columnsCacheKey(cfg), [cfg]);
+  const bindingKey = chartExecuteBindingKey(cfg);
   const [columns, setColumns] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -35,7 +27,7 @@ export function useInspectorColumns(cfg: ChartViewConfig) {
     let cancelled = false;
     setLoading(true);
 
-    void fetchChartExecuteResult(cfg)
+    void fetchChartExecuteResultShared(cfg)
       .then((data) => {
         if (!cancelled) setColumns(Array.isArray(data.columns) ? data.columns : []);
       })
@@ -49,7 +41,7 @@ export function useInspectorColumns(cfg: ChartViewConfig) {
     return () => {
       cancelled = true;
     };
-  }, [ready, cacheKey, refreshTick]);
+  }, [ready, bindingKey, refreshTick]);
 
   return { columns, loading, ready, refreshColumns };
 }

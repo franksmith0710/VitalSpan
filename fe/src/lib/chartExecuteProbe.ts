@@ -81,26 +81,94 @@ export function isChartExecuteReady(config: ChartViewConfig): boolean {
   return Boolean(config.sql?.trim() || config.table);
 }
 
-/** 仅序列化会影响 execute 请求的字段，用于稳定 effect 依赖 */
+/** 仅序列化会影响 execute 请求的绑定字段（不含 deStyle/deDisplay 等展示配置） */
+export function chartExecuteBindingKey(
+  config: ChartViewConfig,
+  filterParameters?: Record<string, string>,
+  limit: number = CHART_EXECUTE_LIMIT,
+): string {
+  const mode = config.mode ?? (config.sql?.trim() ? "sql" : config.table ? "table" : "dataset");
+  const base: Record<string, unknown> = {
+    mode,
+    dataSourceId: config.dataSourceId,
+    configId: config.configId,
+    datasetId: config.datasetId,
+    bindingId: config.bindingId,
+    filterParameters: filterParameters ?? {},
+    limit,
+  };
+
+  if (mode === "dataset") {
+    return JSON.stringify(base);
+  }
+
+  if (mode === "native") {
+    return JSON.stringify({
+      ...base,
+      nativeBody: config.nativeBody,
+      index: config.index,
+    });
+  }
+
+  return JSON.stringify({
+    ...base,
+    sql: config.sql,
+    table: config.table,
+    schema: config.schema,
+    filters: config.filters,
+    timeRange: config.timeRange,
+  });
+}
+
+/** @deprecated 使用 chartExecuteBindingKey */
 export function chartExecuteRequestKey(
   config: ChartViewConfig,
   filterParameters?: Record<string, string>,
 ): string {
-  return JSON.stringify({
-    mode: config.mode,
-    dataSourceId: config.dataSourceId,
-    configId: config.configId,
-    datasetId: config.datasetId,
-    sql: config.sql,
-    table: config.table,
-    schema: config.schema,
-    bindingId: config.bindingId,
-    nativeBody: config.nativeBody,
-    index: config.index,
-    filters: config.filters,
-    timeRange: config.timeRange,
-    filterParameters: filterParameters ?? {},
-  });
+  return chartExecuteBindingKey(config, filterParameters);
+}
+
+const inflightExecute = new Map<string, Promise<ChartExecuteResult>>();
+const executeResultCache = new Map<string, ChartExecuteResult>();
+
+/** 读取最近一次成功的 execute 结果（用于 remount 时避免 loading 闪屏） */
+export function peekChartExecuteCachedResult(
+  config: ChartViewConfig,
+  options: ChartExecuteProbeOptions = {},
+): ChartExecuteResult | undefined {
+  const limit = options.limit ?? CHART_EXECUTE_LIMIT;
+  const key = chartExecuteBindingKey(config, options.filterParameters, limit);
+  return executeResultCache.get(key);
+}
+
+/** 合并并发中的相同 execute 请求（画布 + Inspector 共用） */
+export async function fetchChartExecuteResultShared(
+  config: ChartViewConfig,
+  options: ChartExecuteProbeOptions = {},
+): Promise<ChartExecuteResult> {
+  const limit = options.limit ?? CHART_EXECUTE_LIMIT;
+  const key = chartExecuteBindingKey(config, options.filterParameters, limit);
+  const pending = inflightExecute.get(key);
+  if (pending) return pending;
+
+  const promise = fetchChartExecuteResult(config, options)
+    .then((data) => {
+      executeResultCache.set(key, data);
+      return data;
+    })
+    .finally(() => {
+      if (inflightExecute.get(key) === promise) {
+        inflightExecute.delete(key);
+      }
+    });
+  inflightExecute.set(key, promise);
+  return promise;
+}
+
+/** 测试用：清空 in-flight 去重表 */
+export function resetChartExecuteSharedInflight(): void {
+  inflightExecute.clear();
+  executeResultCache.clear();
 }
 
 export async function fetchChartExecuteResult(
