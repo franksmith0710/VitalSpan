@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { ColorField, type ColorSwatch } from "@/components/ui/color-field";
 import { cn } from "@/lib/utils";
 
 /** 看板 chart-edit 窄栏（~216px）紧凑密度，对标 DataEase editor-light */
@@ -50,6 +51,42 @@ export function InspectorSwitchRow({
         onCheckedChange={onCheckedChange}
         aria-label={ariaLabel ?? label}
         className="scale-90"
+      />
+    </div>
+  );
+}
+
+/** 432px 配置栏：标签左 + 控件右，避免色块输入通栏拉长 */
+export function InspectorInlineColorRow({
+  label,
+  value,
+  onChange,
+  swatches,
+  allowClear = true,
+  className,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string | undefined) => void;
+  swatches?: readonly ColorSwatch[] | readonly string[];
+  allowClear?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-2 border-b border-gray-100 py-2 last:border-b-0 dark:border-white/[0.06]",
+        className,
+      )}
+    >
+      <Label className={cn(INSPECTOR_LABEL, "shrink-0")}>{label}</Label>
+      <ColorField
+        variant="swatch"
+        allowClear={allowClear}
+        swatches={swatches}
+        value={value}
+        buttonAriaLabel={`${label}取色器`}
+        onChange={onChange}
       />
     </div>
   );

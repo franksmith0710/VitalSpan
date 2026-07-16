@@ -20,10 +20,12 @@ type ChartDrillContextValue = {
 
 const ChartDrillContext = createContext<ChartDrillContextValue | null>(null);
 
+const EMPTY_DRILL_STACK: ChartDrillFrame[] = [];
+
 export function ChartDrillProvider({ children }: { children: ReactNode }) {
   const [stacks, setStacks] = useState<StackMap>({});
 
-  const getStack = useCallback((widgetId: string) => stacks[widgetId] ?? [], [stacks]);
+  const getStack = useCallback((widgetId: string) => stacks[widgetId] ?? EMPTY_DRILL_STACK, [stacks]);
 
   const push = useCallback((widgetId: string, frame: ChartDrillFrame) => {
     setStacks((prev) => {
@@ -84,7 +86,7 @@ export function useChartDrill(widgetId?: string) {
   const ctx = useContext(ChartDrillContext);
   if (!ctx || !widgetId) {
     return {
-      stack: [] as ChartDrillFrame[],
+      stack: EMPTY_DRILL_STACK,
       push: noop,
       pop: noop,
       reset: noop,

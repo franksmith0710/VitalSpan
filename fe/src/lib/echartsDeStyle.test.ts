@@ -27,15 +27,59 @@ describe("applyDeStyleToEchartsOption", () => {
     ).not.toThrow();
   });
 
-  it("hides legend in embedded compact widgets", () => {
+  it("shows legend in embedded widgets by default", () => {
     const insets = resolveEchartsChromeInsets(
-      { legend: { show: true, position: "bottom" } },
+      {},
+      false,
+      { series: [{ type: "bar", data: [1] }], xAxis: {}, yAxis: {} },
+      { embedded: true },
+    );
+    expect(insets.showLegend).toBe(true);
+    expect(insets.compact).toBe(true);
+  });
+
+  it("hides legend in embedded widgets when explicitly disabled", () => {
+    const insets = resolveEchartsChromeInsets(
+      { legend: { show: false } },
       false,
       { series: [{ type: "bar", data: [1] }], xAxis: {}, yAxis: {} },
       { embedded: true },
     );
     expect(insets.showLegend).toBe(false);
-    expect(insets.compact).toBe(true);
+  });
+
+  it("shows legend by default in full-size preview", () => {
+    const option = applyDeStyleToEchartsOption(
+      { series: [{ type: "bar", data: [1] }], xAxis: {}, yAxis: {} },
+      {},
+      false,
+    );
+    expect((option.legend as { show?: boolean }).show).toBe(true);
+  });
+
+  it("applies legend fontSize and position when enabled", () => {
+    const option = applyDeStyleToEchartsOption(
+      { series: [{ type: "bar", data: [1] }], xAxis: {}, yAxis: {} },
+      { legend: { show: true, fontSize: 20, position: "top" } },
+      false,
+      { layout: { embedded: true } },
+    );
+    const legend = option.legend as { show?: boolean; top?: number; textStyle?: { fontSize?: number } };
+    expect(legend.show).toBe(true);
+    expect(legend.textStyle?.fontSize).toBe(20);
+    expect(legend.top).toBe(0);
+  });
+
+  it("defers legend to shell layout when shellLegend is enabled", () => {
+    const option = applyDeStyleToEchartsOption(
+      { series: [{ type: "bar", name: "A", data: [1] }], xAxis: {}, yAxis: {} },
+      { legend: { show: true, fontSize: 20, position: "bottom" } },
+      false,
+      { layout: { embedded: true, shellLegend: true } },
+    );
+    expect((option.legend as { show?: boolean }).show).toBe(false);
+    const grid = option.grid as { bottom?: number };
+    expect(grid.bottom).toBeLessThan(20);
   });
 
   it("hides legend when show is false", () => {

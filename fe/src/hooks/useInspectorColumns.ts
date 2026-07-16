@@ -49,7 +49,7 @@ export function useInspectorColumns(cfg: ChartViewConfig) {
     return () => {
       cancelled = true;
     };
-  }, [ready, cacheKey, refreshTick, cfg]);
+  }, [ready, cacheKey, refreshTick]);
 
   return { columns, loading, ready, refreshColumns };
 }

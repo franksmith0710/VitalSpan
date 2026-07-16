@@ -15,20 +15,15 @@ import {
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ColorField } from "@/components/ui/color-field";
+import { Switch } from "@/components/ui/switch";
+import { InspectorInlineColorRow } from "./inspectorCompact";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
 import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
 import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
 import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
 import { DashboardConfigSlider } from "./deAttrSlider";
-import { ChartBackgroundDeModeFields, WidgetStyleLineBorderControls } from "./chartStyleFields";
+import { ChartBackgroundStyleFields } from "./chartStyleFields";
 import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
-import { InspectorNestedSection } from "./inspectorNestedSection";
-import {
-  WidgetSurfaceAppearanceFields,
-  WidgetSurfaceSpacingFields,
-} from "./widgetSurfaceStyleFields";
-import { InspectorSwitchRow } from "./inspectorCompact";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -101,43 +96,28 @@ export function DashboardWidgetStyleSections({
 
   return (
     <>
-      <DashboardConfigSection title="图表样式" defaultOpen>
-        <div className="space-y-2.5">
-          <InspectorSwitchRow
-            label="背景"
+      <DashboardConfigSection
+        title="图表样式"
+        defaultOpen
+        data-testid="dashboard-widget-chart-style"
+        action={
+          <Switch
             checked={ws.backgroundShow !== false}
             onCheckedChange={(show) => patchWidgetStyle({ backgroundShow: show })}
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+            aria-label="背景"
+            className="scale-90"
           />
-          {ws.backgroundShow !== false ? (
-            <>
-              <ChartBackgroundDeModeFields
-                value={ws}
-                onChange={patchWidgetStyle}
-                borderTab="imageOnly"
-              />
-              <InspectorNestedSection
-                title="线框"
-                defaultOpen={ws.borderEnabled !== false && (ws.borderWidth ?? 1) > 0}
-              >
-                <WidgetStyleLineBorderControls value={ws} onChange={patchWidgetStyle} />
-              </InspectorNestedSection>
-              <InspectorNestedSection title="外观" defaultOpen>
-                <WidgetSurfaceAppearanceFields
-                  value={ws}
-                  onChange={patchWidgetStyle}
-                  density="wide"
-                />
-              </InspectorNestedSection>
-              <InspectorNestedSection title="边距与圆角">
-                <WidgetSurfaceSpacingFields
-                  value={ws}
-                  onChange={patchWidgetStyle}
-                  density="wide"
-                />
-              </InspectorNestedSection>
-            </>
-          ) : null}
-        </div>
+        }
+      >
+        <ChartBackgroundStyleFields
+          value={ws}
+          onChange={patchWidgetStyle}
+          scope="dashboard"
+          density="wide"
+          showHeaderToggle={false}
+        />
       </DashboardConfigSection>
 
       <DashboardConfigSection title="图表配色">
@@ -175,18 +155,16 @@ export function DashboardWidgetStyleSections({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
-            <ColorField
-              compact
-              allowClear
-              label="标题颜色"
-              swatches={TEXT_COLOR_RECOMMENDED}
-              value={fc.titleColor ?? ""}
-              onChange={(color) =>
-                patchStyle({ filterChromeStyle: { ...fc, titleColor: color } })
-              }
-            />
-          </div>
+          <InspectorInlineColorRow
+            label="标题颜色"
+            allowClear
+            swatches={TEXT_COLOR_RECOMMENDED}
+            value={fc.titleColor ?? ""}
+            onChange={(color) =>
+              patchStyle({ filterChromeStyle: { ...fc, titleColor: color } })
+            }
+            className="col-span-2"
+          />
           <div className="col-span-2">
             <DashboardConfigSlider
               label="控件高度"

@@ -1,7 +1,7 @@
-import { ColorField } from "@/components/ui/color-field";
 import { TEXT_COLOR_RECOMMENDED, type TitleStyleConfig } from "./dashboardStyleConfig";
 import { DeTitleStyleToolbar } from "./deTitleStyleToolbar";
 import { DeAttrField, DeAttrToggleRow } from "./dashboardInspectorUi";
+import { InspectorInlineColorRow } from "./inspectorCompact";
 
 type Props = {
   titleStyle: TitleStyleConfig;
@@ -22,15 +22,13 @@ export function DashboardChartTitleStylePanel({ titleStyle, onPatch }: Props) {
       <DeAttrField label="文本" compact className="border-b-0 py-2">
         <DeTitleStyleToolbar value={ts} onChange={onPatch} defaultFontSize={16} />
       </DeAttrField>
-      <DeAttrField label="字体色" compact className="border-b-0 py-2">
-        <ColorField
-          compact
-          allowClear
-          swatches={TEXT_COLOR_RECOMMENDED}
-          value={ts.color ?? ""}
-          onChange={(color) => onPatch({ color: color || undefined })}
-        />
-      </DeAttrField>
+      <InspectorInlineColorRow
+        label="字体色"
+        allowClear
+        swatches={TEXT_COLOR_RECOMMENDED}
+        value={ts.color ?? ""}
+        onChange={(color) => onPatch({ color: color || undefined })}
+      />
     </div>
   );
 }

@@ -3,8 +3,11 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
   inferWidgetSyncScopes,
   mergeChartTitleStyle,
+  mergeShapeInnerPresentation,
   patchChartDeStyleNested,
+  readChartLegendVisible,
   readChartTitleVisible,
+  resolveChartContentShellStyle,
   stripChartLabelFormatOverrides,
   stripChartPaletteOverrides,
   stripChartQueryLimitOverride,
@@ -75,6 +78,19 @@ describe("stripChartTitleOverrides", () => {
       color: "#aabbcc",
     });
     expect(stripChartTitleOverrides(cfg).nativeBody?.deStyle?.title).toBeUndefined();
+  });
+});
+
+describe("readChartLegendVisible", () => {
+  it("defaults visible in embedded widgets until explicitly disabled", () => {
+    expect(readChartLegendVisible({}, { embedded: true })).toBe(true);
+    expect(readChartLegendVisible({ legend: { show: true } }, { embedded: true })).toBe(true);
+    expect(readChartLegendVisible({ legend: { show: false } }, { embedded: true })).toBe(false);
+  });
+
+  it("defaults visible in full-size preview", () => {
+    expect(readChartLegendVisible({})).toBe(true);
+    expect(readChartLegendVisible({ legend: { show: false } })).toBe(false);
   });
 });
 
@@ -179,6 +195,18 @@ describe("dashboard widget style sync", () => {
   });
 });
 
+describe("resolveChartContentShellStyle", () => {
+  it("merges per-chart background and border onto shape-inner shell", () => {
+    let cfg = patchChartDeStyleNested(baseCfg, "background", { background: "#abcdef" });
+    cfg = patchChartDeStyleNested(cfg, "border", { show: true, color: "#112233", width: 2 });
+    const resolved = resolveChartContentShellStyle({ borderEnabled: false }, cfg, "light");
+    expect(resolved.inner).toEqual({});
+    expect(resolved.outer.style.background).toBe("#abcdef");
+    expect(resolved.outer.style.borderColor).toBe("#112233");
+    expect(resolved.outer.style.borderWidth).toBe(2);
+  });
+});
+
 describe("mergeShapeInnerPresentation", () => {
   it("keeps global widget shell on shape-inner and chart inner on shape-content", () => {
     const outer = mergeWidgetShellStyle({ padding: 12, borderRadius: 8 }, "light");
@@ -208,20 +236,19 @@ describe("mergeShapeInnerPresentation", () => {
     expect(merged.shell.style.borderStyle).toBe("solid");
   });
 
-  it("includes decorative frame overlay in content background layers", () => {
-    const { frameLayer } = widgetStyleToContentCss({
+  it("includes decorative frame overlay on shape-inner shell layers", () => {
+    const cfg = patchChartDeStyleNested(baseCfg, "background", {
       backgroundShow: true,
       backgroundMode: "frame",
       framePresetId: "frame-1",
     });
+    const shell = resolveChartContentShellStyle(undefined, cfg, "light");
     const merged = mergeShapeInnerPresentation({
-      outer: mergeWidgetShellStyle(undefined, "light"),
-      inner: {},
-      innerBackgroundLayer: null,
-      innerFrameLayer: frameLayer,
+      outer: shell.outer,
+      inner: shell.inner,
+      innerBackgroundLayer: shell.innerBackgroundLayer,
+      innerFrameLayer: shell.innerFrameLayer,
     });
-    expect(merged.shell.backgroundLayers).toHaveLength(2);
-    expect(merged.content.backgroundLayers).toHaveLength(2);
-    expect(merged.content.backgroundLayers[1]?.backgroundImage).toContain("data:image/svg+xml");
+    expect(merged.shell.backgroundLayers[1]?.backgroundImage).toContain("data:image/svg+xml");
   });
 });

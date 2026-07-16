@@ -834,6 +834,10 @@ export function resolveBoxRadius(global: WidgetStyleConfig | undefined): string 
 export function mergeWidgetShellStyle(
   global: WidgetStyleConfig | undefined,
   colorScheme: ColorScheme = "light",
+  options?: {
+    /** 单图 deStyle.background 装饰边框需为 true */
+    allowDecorativeFrame?: boolean;
+  },
 ): {
   className: string;
   style: CSSProperties;
@@ -843,7 +847,7 @@ export function mergeWidgetShellStyle(
   const presentation = buildWidgetBackgroundPresentation(global, colorScheme, {
     respectBackgroundShow: true,
     applyThemeDefaultSurface: true,
-    allowDecorativeFrame: false,
+    allowDecorativeFrame: options?.allowDecorativeFrame ?? false,
   });
   const style: CSSProperties = { ...presentation.surface };
   const borderEnabled = global?.borderEnabled !== false;

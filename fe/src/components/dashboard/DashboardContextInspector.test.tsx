@@ -145,4 +145,23 @@ describe("DashboardContextInspector", () => {
       "示例20,000,000",
     );
   });
+
+  it("shows chart style section with image and decorative border tabs", async () => {
+    render(
+      <DashboardContextInspector
+        widgetCount={1}
+        widgets={[]}
+        styleConfig={{ widgetStyle: { backgroundShow: true } }}
+        onStyleChange={vi.fn()}
+        embedded
+        isPixelLayout
+      />,
+    );
+
+    expect(screen.getByTestId("dashboard-widget-chart-style")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "图片" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "装饰边框" })).toBeInTheDocument();
+    expect(screen.getByText("线框")).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "背景" })).toBeInTheDocument();
+  });
 });

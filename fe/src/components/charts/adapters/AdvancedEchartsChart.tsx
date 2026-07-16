@@ -37,6 +37,8 @@ type Props = {
   mapPlaceholderHint?: string;
   /** 图表元素点击下钻（预览/查看态） */
   onDrillClick?: (name: string) => void;
+  /** 看板内嵌：图例由组件外壳 DOM 渲染 */
+  shellLegend?: boolean;
 };
 
 export function AdvancedEchartsChart({
@@ -55,6 +57,7 @@ export function AdvancedEchartsChart({
   valueFormat,
   mapPlaceholderHint,
   onDrillClick,
+  shellLegend = false,
 }: Props) {
   const chartRef = useRef<EChartsReact | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -88,14 +91,14 @@ export function AdvancedEchartsChart({
     built = applyDeStyleToEchartsOption(built, deStyle ?? {}, dataZoom, {
       showLabel,
       valueFormat,
-      layout: { embedded: fill },
+      layout: { embedded: fill, shellLegend },
     });
     built = applyEchartsColorSchemeTokens(built, scheme);
     if (chartColors?.length) {
       built = { ...built, color: chartColors };
     }
     return built;
-  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat, scheme]);
+  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat, scheme, shellLegend]);
   const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
 
   const isMapPlaceholder =

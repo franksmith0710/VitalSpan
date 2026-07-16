@@ -10,11 +10,14 @@ import {
 } from "@/lib/chartViewConfig";
 import { resolveChartColors } from "@/lib/chartPalette";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartDeStyle, readChartShowLabel, readChartDataZoom } from "@/lib/chartDeStyle";
+import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartShowLabel, readChartDataZoom } from "@/lib/chartDeStyle";
 import { resolveChartValueFormat } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { resolveRenderSpec } from "@/lib/resolveRenderSpec";
 import { chartRenderSpecKey } from "@/lib/chartRenderSpecKey";
+import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
+import { resolveChartLegendItems } from "@/lib/chartLegendItems";
+import { buildEchartsOption } from "./adapters/renderFromSpec";
 import {
   applyChartDrillPipeline,
   drillStackToFilterParameters,
@@ -54,6 +57,8 @@ import {
 } from "./chartRendererEmbedded";
 import { ChartDrillChrome } from "./ChartDrillChrome";
 import { drillStackRevision, useChartDrill } from "./ChartDrillContext";
+import { usePublishWidgetShellLegend } from "@/components/dashboard/pixelCanvas/widgetShellLegendContext";
+import { supportsEmbeddedShellLegend } from "@/lib/chartInspectorCapabilities";
 
 type ChartRendererProps = {
   config: ChartViewConfig;
@@ -228,6 +233,64 @@ export const ChartRenderer = memo(function ChartRenderer({
     return undefined;
   }, [isMapChart, localConfig, loading, error, rows, columns, renderModel]);
 
+  const shellLegendEligible =
+    embedded &&
+    isEchartsChartType(localConfig.chartType) &&
+    localConfig.chartType !== "map" &&
+    supportsEmbeddedShellLegend(localConfig.chartType);
+
+  const shellLegendVisible =
+    shellLegendEligible && readChartLegendVisible(deStyle, { embedded: true });
+
+  const shellLegendItems = useMemo(() => {
+    if (!shellLegendVisible || loading || error) return [];
+    if (!renderModel || renderModel.kind !== "ready") return [];
+    const geoStyle = readChartGeoStyle(deStyle);
+    const pieStyle = readChartPieStyle(deStyle);
+    let built = buildEchartsOption(renderSpec, displayRows, displayColumns, {
+      geo: geoStyle,
+      showLabel: showDataLabels,
+      pie: pieStyle,
+    });
+    built = applyDeStyleToEchartsOption(built, deStyle, dataZoomEnabled, {
+      showLabel: showDataLabels,
+      valueFormat,
+      layout: { embedded: true, shellLegend: true },
+    });
+    if (chartColors.length > 0) {
+      built = { ...built, color: chartColors };
+    }
+    return resolveChartLegendItems(built, chartColors);
+  }, [
+    shellLegendVisible,
+    loading,
+    error,
+    renderModel,
+    renderSpec,
+    displayRows,
+    displayColumns,
+    deStyle,
+    showDataLabels,
+    dataZoomEnabled,
+    valueFormat,
+    chartColors,
+  ]);
+
+
+  const useShellLegendLayout = shellLegendVisible && shellLegendItems.length > 0;
+  const shellLegendPosition = deStyle.legend?.position ?? "bottom";
+
+  const shellLegendState = useMemo(
+    () => ({
+      visible: useShellLegendLayout,
+      position: shellLegendPosition,
+      fontSize: deStyle.legend?.fontSize ?? 12,
+      items: shellLegendItems,
+    }),
+    [useShellLegendLayout, shellLegendPosition, deStyle.legend?.fontSize, shellLegendItems],
+  );
+  usePublishWidgetShellLegend(shellLegendState, embedded && shellLegendEligible);
+
   const echartsChart = (spec = renderSpec) => (
     <AdvancedEchartsChart
       spec={spec}
@@ -245,6 +308,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       valueFormat={valueFormat}
       mapPlaceholderHint={mapPlaceholderHint}
       onDrillClick={drillInteraction ? handleDrillClick : undefined}
+      shellLegend={useShellLegendLayout}
     />
   );
 
@@ -351,9 +415,7 @@ export const ChartRenderer = memo(function ChartRenderer({
           onChange={setLocalConfig}
         />
       ) : null}
-      <div
-        className={embedded ? "absolute inset-0 overflow-hidden" : undefined}
-      >
+      <div className={embedded ? "absolute inset-0 overflow-hidden" : undefined}>
         {embedded && drill.stack.length > 0 ? (
           <ChartDrillChrome
             className="absolute inset-x-2 top-2 z-[2]"

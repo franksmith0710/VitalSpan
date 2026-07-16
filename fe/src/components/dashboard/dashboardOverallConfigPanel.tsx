@@ -22,11 +22,7 @@ import {
   type DashboardStyleConfig,
   type GapPreset,
 } from "./dashboardStyleConfig";
-import {
-  auxiliaryGridToggleDescription,
-  resolveDashboardChrome,
-  type DashboardChromeConfig,
-} from "./dashboardChromeConfig";
+import { resolveDashboardChrome, type DashboardChromeConfig } from "./dashboardChromeConfig";
 import {
   DE_SELECT,
   DeAttrField,
@@ -37,6 +33,7 @@ import {
   DeSegmentGroup,
 } from "./dashboardInspectorUi";
 import { DeAttrSliderField, DeAttrSubSliderRow } from "./deAttrSlider";
+import { WidgetStyleLineBorderControls } from "./chartStyleFields";
 
 type PatchFn = (patch: Partial<DashboardStyleConfig>) => void;
 
@@ -273,6 +270,21 @@ export function DashboardOverallConfigPanel({
         }
       />
 
+      <DeAttrField label="组件线框" compact hint="组件外框，作用于全部组件">
+        <WidgetStyleLineBorderControls
+          value={ws}
+          onChange={(patch) =>
+            patchStyle({
+              widgetStyle: {
+                ...ws,
+                ...patch,
+              },
+            })
+          }
+          density="wide"
+        />
+      </DeAttrField>
+
       <GapControls
         hasGap={gapUi.hasGap}
         preset={gapUi.preset}
@@ -330,10 +342,6 @@ export function DashboardOverallConfigPanel({
         />
         <DeAttrToggleRow
           label="辅助对齐网格"
-          description={auxiliaryGridToggleDescription({
-            pixel: isPixelLayout,
-            hasGap: gapUi.hasGap,
-          })}
           checked={chrome.showAuxiliaryGrid}
           onCheckedChange={(checked) => patchChrome({ showAuxiliaryGrid: checked })}
         />

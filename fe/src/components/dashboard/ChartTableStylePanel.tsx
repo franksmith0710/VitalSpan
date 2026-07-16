@@ -5,13 +5,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ColorField } from "@/components/ui/color-field";
 import { WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import { DashboardConfigSection } from "./DashboardConfigSection";
 import { ChartDeAttrField, ChartDeSegmentField } from "./chartInspectorDeFields";
 import { ChartDeSliderField } from "./deAttrSlider";
 import { DeAttrToggleRow } from "./dashboardInspectorUi";
-import { INSPECTOR_SELECT } from "./inspectorCompact";
+import { INSPECTOR_SELECT, InspectorInlineColorRow } from "./inspectorCompact";
 import { useChartInspector } from "./ChartInspectorContext";
 import {
   patchChartDeTableStyle,
@@ -55,25 +54,21 @@ export function ChartTableStylePanel() {
           onChange={(opacity) => patch({ opacity })}
         />
 
-        <ChartDeAttrField label="边框颜色">
-          <ColorField
-            compact
-            allowClear
-            swatches={WIDGET_BORDER_RECOMMENDED}
-            value={tableStyle.borderColor ?? ""}
-            onChange={(borderColor) => patch({ borderColor: borderColor || undefined })}
-          />
-        </ChartDeAttrField>
+        <InspectorInlineColorRow
+          label="边框颜色"
+          allowClear
+          swatches={WIDGET_BORDER_RECOMMENDED}
+          value={tableStyle.borderColor ?? ""}
+          onChange={(borderColor) => patch({ borderColor: borderColor || undefined })}
+        />
 
-        <ChartDeAttrField label="滚动条颜色">
-          <ColorField
-            compact
-            allowClear
-            swatches={WIDGET_BORDER_RECOMMENDED}
-            value={tableStyle.scrollbarColor ?? ""}
-            onChange={(scrollbarColor) => patch({ scrollbarColor: scrollbarColor || undefined })}
-          />
-        </ChartDeAttrField>
+        <InspectorInlineColorRow
+          label="滚动条颜色"
+          allowClear
+          swatches={WIDGET_BORDER_RECOMMENDED}
+          value={tableStyle.scrollbarColor ?? ""}
+          onChange={(scrollbarColor) => patch({ scrollbarColor: scrollbarColor || undefined })}
+        />
 
         <ChartDeSegmentField
           label="分页模式"

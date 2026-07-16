@@ -14,7 +14,9 @@ type ChartInspectorTabsProps = {
 };
 
 const tabPanelScrollClass = (scrollMode: "panel" | "parent") =>
-  scrollMode === "panel" ? "min-h-0 flex-1 overflow-y-auto" : "min-h-0 flex-1";
+  scrollMode === "panel"
+    ? "min-h-0 flex-1 overflow-y-auto overscroll-y-contain no-scrollbar"
+    : "min-h-0 flex-1";
 
 export function ChartInspectorTabs({
   data,
@@ -26,7 +28,10 @@ export function ChartInspectorTabs({
   scrollMode = "panel",
 }: ChartInspectorTabsProps) {
   return (
-    <Tabs defaultValue={defaultTab} className={cn("flex min-h-0 flex-col", className)}>
+    <Tabs
+      defaultValue={defaultTab}
+      className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}
+    >
       <TabsList
         variant="enclosed"
         size="sm"
@@ -52,20 +57,20 @@ export function ChartInspectorTabs({
       <TabsContent
         value="style"
         className={cn(
-          "mt-0 min-h-0 flex-1 px-2 py-1.5 data-[state=inactive]:hidden",
-          scrollMode === "panel" && "overflow-y-auto",
+          "mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden",
+          scrollMode === "panel" && "overflow-y-auto overscroll-y-contain no-scrollbar",
         )}
       >
-        {style}
+        <div className="px-2 py-1.5">{style}</div>
       </TabsContent>
       <TabsContent
         value="advanced"
         className={cn(
-          "mt-0 min-h-0 flex-1 px-2 py-1.5 data-[state=inactive]:hidden",
-          scrollMode === "panel" && "overflow-y-auto",
+          "mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden",
+          scrollMode === "panel" && "overflow-y-auto overscroll-y-contain no-scrollbar",
         )}
       >
-        {advanced}
+        <div className="px-2 py-1.5">{advanced}</div>
       </TabsContent>
     </Tabs>
   );

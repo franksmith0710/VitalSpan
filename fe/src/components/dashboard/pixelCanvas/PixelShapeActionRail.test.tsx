@@ -95,4 +95,20 @@ describe("PixelShapeActionRail", () => {
     expect(menu).toHaveAttribute("data-dashboard-color-scheme", "dark");
     expect(menu.className).toMatch(/bg-gray-900/);
   });
+
+  it("overlays action rail inside the widget when both sides overflow viewport", () => {
+    render(
+      <PixelShapeActionRail
+        widget={{ ...chartWidget, x: 0, width: 300 }}
+        scale={1}
+        viewport={{ x: 0, width: 320 }}
+        actions={{ onCopy: vi.fn() }}
+      />,
+    );
+
+    const rail = screen.getByTestId("pixel-shape-actions-w-map");
+    expect(rail).toHaveAttribute("data-placement", "overlay");
+    expect(rail.style.right).toBe("0px");
+    expect(rail.style.top).toBe("0px");
+  });
 });

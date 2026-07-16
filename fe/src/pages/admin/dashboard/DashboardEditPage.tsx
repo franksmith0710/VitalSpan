@@ -1039,6 +1039,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               <ChartEditRail
                 key={primarySelectedId ?? selectedWidget.id}
                 widget={selectedWidget}
+                dashboardStyle={styleConfig}
                 onTitleChange={(title) => {
                   if (!primarySelectedId) return;
                   setWidgets((prev) => resizeWidget(prev, primarySelectedId, { title }));

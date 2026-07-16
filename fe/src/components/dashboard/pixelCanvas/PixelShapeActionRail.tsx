@@ -109,6 +109,9 @@ function railPositionStyle(
   placement: ShapeActionRailPlacement,
   gapPx: number,
 ): Record<string, string | number> {
+  if (placement === "overlay") {
+    return { right: 0, top: 0 };
+  }
   if (placement === "right") {
     return { left: `calc(100% + ${gapPx}px)` };
   }
@@ -116,6 +119,7 @@ function railPositionStyle(
 }
 
 function railTipPositionClass(placement: ShapeActionRailPlacement): string {
+  if (placement === "overlay") return "right-full mr-1.5";
   return placement === "right" ? "left-full ml-1.5" : "right-full mr-1.5";
 }
 
@@ -230,7 +234,7 @@ export function PixelShapeActionRail({
   const gapPx = SHAPE_ACTION_RAIL_SCREEN_GAP / safeScale;
   const iconPx = SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH / safeScale;
   const isChart = widget.type === "chart";
-  const menuSide = placement === "right" ? "left" : "right";
+  const menuSide = placement === "left" ? "right" : "left";
   const tipClassName = railTipPositionClass(placement);
   const shellClass = railShellClass(colorScheme);
   const buttonClass = railButtonClass(colorScheme);
@@ -245,7 +249,10 @@ export function PixelShapeActionRail({
       data-testid={`pixel-shape-actions-${widget.id}`}
       data-placement={placement}
       data-dashboard-color-scheme={colorScheme}
-      className="dashboard-no-drag pointer-events-auto absolute top-0 z-40 flex touch-none select-none overflow-visible"
+      className={cn(
+        "dashboard-no-drag pointer-events-auto absolute top-0 z-40 flex touch-none select-none overflow-visible",
+        placement === "overlay" && "z-50",
+      )}
       style={{
         width: railPx,
         ...railPositionStyle(placement, gapPx),

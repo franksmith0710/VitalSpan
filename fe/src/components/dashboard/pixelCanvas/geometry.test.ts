@@ -206,6 +206,12 @@ describe("pixel canvas geometry", () => {
     ).toBe("right");
   });
 
+  it("uses overlay when both external sides overflow the viewport", () => {
+    const widget = { x: 0, y: 0, width: 300, height: 200 };
+    expect(resolveShapeActionRailPlacement(widget, { x: 0, width: 320 }, 1)).toBe("overlay");
+    expect(resolveShapeActionRailSide(widget, { x: 0, width: 320 }, 1)).toBe("overlay");
+  });
+
   it("elevates selected widget z-index above normal order", () => {
     expect(pixelShapeZIndex(3, false)).toBe(13);
     expect(pixelShapeZIndex(3, true)).toBeGreaterThan(pixelShapeZIndex(99, false));

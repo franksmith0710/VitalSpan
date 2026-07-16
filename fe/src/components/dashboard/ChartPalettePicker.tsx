@@ -86,74 +86,28 @@ function paletteLabelClass(selected: boolean): string {
   );
 }
 
-function InspectorPaletteList({
-  rows,
-  value,
-  showInherit,
-  onChange,
-}: {
-  rows: PaletteRow[];
-  value?: string;
-  showInherit: boolean;
-  onChange: ChartPalettePickerProps["onChange"];
-}) {
-  return (
-    <div className="flex flex-col gap-1.5" role="listbox" aria-label="配色方案">
-      {rows.map((row) => {
-        const selected = isSelected(row.id, value, showInherit);
-        const inherit = row.id === "__inherit__";
-
-        return (
-          <button
-            key={row.id}
-            type="button"
-            role="option"
-            aria-selected={selected}
-            aria-label={row.label}
-            className={cn(
-              "flex w-full items-center gap-2.5 p-2",
-              paletteOptionClass(selected),
-            )}
-            onClick={() => {
-              if (inherit) {
-                onChange(undefined, []);
-                return;
-              }
-              onChange(row.id, row.colors);
-            }}
-          >
-            <PaletteSwatchStrip
-              colors={row.colors}
-              inherit={inherit}
-              className="h-3.5 w-[3.25rem] shrink-0"
-            />
-            <div className="min-w-0 flex-1">
-              <span className={cn("block truncate text-theme-xs leading-snug", paletteLabelClass(selected))}>
-                {row.label}
-              </span>
-            </div>
-            {selected ? <Check className="size-3.5 shrink-0 text-brand-500" aria-hidden /> : null}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function PaletteCardGrid({
   rows,
   value,
   showInherit,
   onChange,
+  compact = false,
 }: {
   rows: PaletteRow[];
   value?: string;
   showInherit: boolean;
   onChange: ChartPalettePickerProps["onChange"];
+  /** 216px 图表栏：双列小卡片，视觉与看板配置栏一致 */
+  compact?: boolean;
 }) {
   return (
     <div
-      className="grid grid-cols-[repeat(auto-fill,minmax(6.75rem,1fr))] gap-2"
+      className={cn(
+        "grid gap-1.5",
+        compact
+          ? "grid-cols-2"
+          : "grid-cols-[repeat(auto-fill,minmax(6.75rem,1fr))] gap-2",
+      )}
       role="listbox"
       aria-label="配色方案"
     >
@@ -169,7 +123,8 @@ function PaletteCardGrid({
             aria-selected={selected}
             aria-label={row.label}
             className={cn(
-              "flex min-w-0 flex-col gap-1.5 p-2",
+              "flex min-w-0 flex-col",
+              compact ? "gap-1 p-1.5" : "gap-1.5 p-2",
               inherit && "col-span-full",
               paletteOptionClass(selected),
             )}
@@ -181,12 +136,22 @@ function PaletteCardGrid({
               onChange(row.id, row.colors);
             }}
           >
-            <PaletteSwatchStrip colors={row.colors} inherit={inherit} className="h-3.5" />
+            <PaletteSwatchStrip
+              colors={row.colors}
+              inherit={inherit}
+              className={compact ? "h-3" : "h-3.5"}
+            />
             <div className="flex min-w-0 items-center justify-between gap-1">
-              <span className={cn("min-w-0 truncate text-theme-xs leading-snug", paletteLabelClass(selected))}>
+              <span
+                className={cn(
+                  "min-w-0 truncate leading-snug",
+                  compact ? "text-[10px]" : "text-theme-xs",
+                  paletteLabelClass(selected),
+                )}
+              >
                 {row.label}
               </span>
-              {selected ? <Check className="size-3.5 shrink-0 text-brand-500" aria-hidden /> : null}
+              {selected ? <Check className="size-3 shrink-0 text-brand-500" aria-hidden /> : null}
             </div>
           </button>
         );
@@ -216,16 +181,13 @@ export function ChartPalettePicker({
 
   return (
     <div className={className}>
-      {dense ? (
-        <InspectorPaletteList
-          rows={rows}
-          value={value}
-          showInherit={showInherit}
-          onChange={onChange}
-        />
-      ) : (
-        <PaletteCardGrid rows={rows} value={value} showInherit={showInherit} onChange={onChange} />
-      )}
+      <PaletteCardGrid
+        rows={rows}
+        value={value}
+        showInherit={showInherit}
+        onChange={onChange}
+        compact={dense}
+      />
     </div>
   );
 }

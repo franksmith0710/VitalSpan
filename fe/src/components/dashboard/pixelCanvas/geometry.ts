@@ -207,10 +207,10 @@ export function pixelShapePlayerZIndex(order: number): number {
   return PIXEL_SHAPE_PLAYER_Z_BOOST + order;
 }
 
-export type ShapeActionRailPlacement = "left" | "right";
+export type ShapeActionRailPlacement = "left" | "right" | "overlay";
 
-/** @deprecated 不再使用 overlay */
-export type ShapeActionRailPlacementLegacy = ShapeActionRailPlacement | "overlay";
+/** @deprecated 使用 ShapeActionRailPlacement */
+export type ShapeActionRailPlacementLegacy = ShapeActionRailPlacement;
 
 function shapeActionRailRect(
   widget: Pick<PixelRect, "x" | "y" | "width" | "height">,
@@ -246,7 +246,7 @@ function pixelRectsOverlap(a: PixelRect, b: PixelRect): boolean {
   );
 }
 
-/** 根据视口空间决定操作条在左/右；不叠放在本组件内容上，可覆盖未选中的邻组件 */
+/** 根据视口空间决定操作条在左/右；两侧均越界时叠放在本组件内侧 */
 export function resolveShapeActionRailPlacement(
   widget: Pick<PixelRect, "x" | "y" | "width" | "height">,
   viewport: Pick<PixelRect, "x" | "width">,
@@ -270,13 +270,11 @@ export function resolveShapeActionRailPlacement(
   if (fitsViewport("right") && !collides("right")) return "right";
   if (fitsViewport("left") && !collides("left")) return "left";
 
-  // 邻组件碰撞时仍外置，靠选中 shape 的 z-index 浮在邻组件之上（不遮挡本组件内容）
+  // 邻组件碰撞时仍外置，靠选中 shape 的 z-index 浮在邻组件之上
   if (fitsViewport("right")) return "right";
   if (fitsViewport("left")) return "left";
 
-  const spaceRight = viewportRight - rightEdge;
-  const spaceLeft = widget.x - viewport.x;
-  return spaceRight >= spaceLeft ? "right" : "left";
+  return "overlay";
 }
 
 /** @deprecated 使用 resolveShapeActionRailPlacement */
@@ -285,7 +283,7 @@ export function resolveShapeActionRailSide(
   viewport: Pick<PixelRect, "x" | "width">,
   scale: number,
   others: Array<Pick<PixelRect, "x" | "y" | "width" | "height">> = [],
-): "left" | "right" {
+): ShapeActionRailPlacement {
   return resolveShapeActionRailPlacement(widget, viewport, scale, others);
 }
 

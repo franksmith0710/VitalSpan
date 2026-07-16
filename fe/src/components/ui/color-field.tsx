@@ -23,6 +23,8 @@ type ColorFieldProps = {
   compact?: boolean;
   /** field：完整输入；swatch：仅色块按钮（配置栏与下拉并排） */
   variant?: "field" | "swatch";
+  /** 取色按钮 aria-label（外层已有可见标签时不传 label，用此项） */
+  buttonAriaLabel?: string;
   className?: string;
   /** 取色器/输入框连续变更时防抖提交，减轻画布等大组件重渲染 */
   liveCommitMs?: number;
@@ -60,6 +62,7 @@ export function ColorField({
   compact = false,
   variant = "field",
   className,
+  buttonAriaLabel,
   liveCommitMs = DEFAULT_LIVE_COMMIT_MS,
   swatchesDefaultOpen: _swatchesDefaultOpen = false,
 }: ColorFieldProps) {
@@ -126,7 +129,7 @@ export function ColorField({
   };
 
   const displayHex = normalizeHexColor(localValue) ?? localValue;
-  const pickerLabel = label ? `${label}取色器` : "取色器";
+  const pickerLabel = buttonAriaLabel ?? (label ? `${label}取色器` : "取色器");
   const chipSize = compact || variant === "swatch" ? "sm" : "md";
   const popoverAlign = variant === "swatch" ? "start" : compact ? "end" : "start";
   const popoverSide = variant === "swatch" ? "bottom" : compact ? "left" : "bottom";

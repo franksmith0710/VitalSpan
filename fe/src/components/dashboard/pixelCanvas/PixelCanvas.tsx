@@ -480,7 +480,7 @@ export function PixelCanvas({
     <div
       ref={hostRef}
       className={cn(
-        "pixel-canvas-host dashboard-scroll relative h-full min-h-0 w-full overflow-x-hidden overflow-y-auto",
+        "pixel-canvas-host relative h-full min-h-0 w-full overflow-x-hidden overflow-y-auto",
         centerContent && "flex flex-col items-center",
         paletteDragOver && "dashboard-canvas-drop-active",
         className,

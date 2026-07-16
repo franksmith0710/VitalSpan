@@ -1,13 +1,11 @@
-import { ColorField } from "@/components/ui/color-field";
-import type { WidgetStyleConfig } from "./dashboardStyleConfig";
-import { SURFACE_COLOR_RECOMMENDED } from "./dashboardStyleConfig";
+import { SURFACE_COLOR_RECOMMENDED, type WidgetStyleConfig } from "./dashboardStyleConfig";
 import {
   DashboardConfigGridSlider,
   DashboardConfigSlider,
+  InspectorSliderField,
 } from "./deAttrSlider";
-import { InspectorSliderField } from "./deAttrSlider";
 import { SpacingModeToggle } from "./inspectorSpacing";
-import { InspectorFieldRow } from "./inspectorCompact";
+import { InspectorInlineColorRow } from "./inspectorCompact";
 
 export type WidgetSurfaceStyleDensity = "wide" | "narrow";
 
@@ -41,15 +39,13 @@ export function WidgetSurfaceAppearanceFields({
         unit="%"
         onChange={(opacity) => onChange({ opacity: opacity / 100 })}
       />
-      <InspectorFieldRow label="背景色">
-        <ColorField
-          compact
-          allowClear
-          swatches={SURFACE_COLOR_RECOMMENDED}
-          value={value.background ?? ""}
-          onChange={(background) => onChange({ background: background || undefined })}
-        />
-      </InspectorFieldRow>
+      <InspectorInlineColorRow
+        label="背景色"
+        allowClear
+        swatches={SURFACE_COLOR_RECOMMENDED}
+        value={value.background ?? ""}
+        onChange={(background) => onChange({ background: background || undefined })}
+      />
       <Slider
         label="背景模糊"
         value={value.backdropBlur}

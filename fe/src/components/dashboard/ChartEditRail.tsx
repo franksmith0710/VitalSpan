@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import type { DashboardStyleConfig } from "./dashboardStyleConfig";
 import type { LayoutWidget } from "./layoutUtils";
 import { ChartInspectorProvider } from "./ChartInspectorProvider";
 import { useChartInspector } from "./chartInspectorContext";
@@ -19,6 +20,7 @@ export type ChartEditRailProps = ChartEditRailChromeProps & {
   widget: LayoutWidget;
   onChange: (chartConfig: ChartViewConfig) => void;
   onTitleChange?: (title: string) => void;
+  dashboardStyle?: DashboardStyleConfig;
 };
 
 function ChartEditRailInner({
@@ -50,7 +52,7 @@ function ChartEditRailInner({
 
   return (
     <WidgetEditRailLayout
-      className={className}
+      className={cn("h-full min-h-0", className)}
       leftLabel={typeLabel}
       leftSubtitle={leftSubtitle}
       rightLabel="数据集"
@@ -90,10 +92,16 @@ export function ChartEditRail({
   widget,
   onChange,
   onTitleChange,
+  dashboardStyle,
   ...chromeProps
 }: ChartEditRailProps) {
   return (
-    <ChartInspectorProvider widget={widget} onChange={onChange} onTitleChange={onTitleChange}>
+    <ChartInspectorProvider
+      widget={widget}
+      onChange={onChange}
+      onTitleChange={onTitleChange}
+      dashboardStyle={dashboardStyle}
+    >
       <ChartEditRailInner {...chromeProps} />
     </ChartInspectorProvider>
   );

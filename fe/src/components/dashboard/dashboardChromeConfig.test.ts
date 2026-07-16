@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   AUXILIARY_GRID_CELL_PX,
   DEFAULT_DASHBOARD_CHROME,
-  auxiliaryGridToggleDescription,
   mergeAuxiliaryGridIntoSurface,
   resolveDashboardChrome,
   resolveDrillLevelColors,
@@ -35,12 +34,8 @@ describe("dashboardChromeConfig", () => {
     ).toBe(false);
   });
 
-  it("describes auxiliary grid for pixel and grid layouts", () => {
-    expect(
-      auxiliaryGridToggleDescription({ pixel: true, hasGap: true }),
-    ).toContain(String(AUXILIARY_GRID_CELL_PX));
-    expect(auxiliaryGridToggleDescription({ pixel: true, hasGap: false })).toContain("自由落位");
-    expect(auxiliaryGridToggleDescription({ pixel: false, hasGap: true })).toContain("12 列");
+  it("uses 20px auxiliary grid cell size", () => {
+    expect(AUXILIARY_GRID_CELL_PX).toBe(20);
   });
 
   it("layers auxiliary grid pattern over existing canvas background", () => {

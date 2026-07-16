@@ -38,6 +38,11 @@ import { PixelShapeDragEdges } from "./PixelShapeDragEdges";
 import { WidgetShapeChrome } from "./WidgetShapeChrome";
 import { PixelShapeInteractionProvider } from "./PixelShapeInteractionContext";
 import { PixelShapePlayerProvider } from "./pixelShapePlayerContext";
+import { EmbeddedChartLegendShell } from "@/components/charts/EmbeddedChartLegend";
+import {
+  WidgetShellLegendProvider,
+  useWidgetShellLegend,
+} from "./widgetShellLegendContext";
 import { dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
 import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
@@ -146,10 +151,8 @@ function resolveShapeTitleState(
       widget.chartConfig,
       styleConfig?.titleStyle,
     );
-    const showTitle =
-      mode === "edit" ? chrome.showChartActionButtons : chartTitleVisible;
     return {
-      showTitle,
+      showTitle: chartTitleVisible,
       titleStyle: mergeChartTitleStyle(
         styleConfig?.titleStyle,
         widget.chartConfig,
@@ -164,6 +167,108 @@ function resolveShapeTitleState(
     titleStyle: mergeTitleStyle(styleConfig?.titleStyle),
     remark: { show: false, text: "" },
   };
+}
+
+type PixelShapeInnerChromeProps = {
+  widget: PixelLayoutWidget;
+  scale: number;
+  mode: "edit" | "view";
+  selectedInEdit: boolean;
+  showTitle: boolean;
+  titleStyle: CSSProperties;
+  remark: { show: boolean; text: string };
+  innerShell: ReturnType<typeof mergeShapeInnerPresentation>["shell"];
+  contentShell: ReturnType<typeof mergeShapeInnerPresentation>["content"];
+  onTitleChange?: (widgetId: string, title: string) => void;
+  onSelect?: (widgetId: string, additive: boolean) => void;
+  startInteraction: (event: PointerEvent<HTMLElement>, kind: PixelInteractionKind) => void;
+  handleKeyboardInteraction: (
+    event: KeyboardEvent<HTMLElement>,
+    kind: PixelInteractionKind,
+  ) => void;
+  children: ReactNode;
+};
+
+function PixelShapeInnerChrome({
+  widget,
+  scale,
+  mode,
+  selectedInEdit,
+  showTitle,
+  titleStyle,
+  remark,
+  innerShell,
+  contentShell,
+  onTitleChange,
+  onSelect,
+  startInteraction,
+  handleKeyboardInteraction,
+  children,
+}: PixelShapeInnerChromeProps) {
+  const legendCtx = useWidgetShellLegend();
+  const legend = legendCtx?.state;
+  const legendActive = Boolean(legend?.visible && legend.items.length > 0);
+
+  const chartBody = legendActive && legend ? (
+    <EmbeddedChartLegendShell
+      position={legend.position}
+      fontSize={legend.fontSize}
+      items={legend.items}
+    >
+      {children}
+    </EmbeddedChartLegendShell>
+  ) : (
+    children
+  );
+
+  return (
+    <>
+      {innerShell.backgroundLayers.map((layer, index) =>
+        layer ? (
+          <div
+            key={`shell-bg-${index}`}
+            className="pointer-events-none absolute inset-0 z-0"
+            style={layer}
+            aria-hidden
+          />
+        ) : null,
+      )}
+      <div className="relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <WidgetShapeChrome
+          title={widget.title}
+          titleStyle={shapeTitlePresentationStyle(titleStyle, scale)}
+          showTitle={showTitle}
+          remark={remark}
+          mode={mode}
+          selected={selectedInEdit}
+          widgetId={widget.id}
+          canvasScale={scale}
+          onTitleChange={onTitleChange}
+          onSelectPointerDown={(event) => onSelect?.(widget.id, event.shiftKey)}
+          onDragPointerDown={(event) => startInteraction(event, "move")}
+          onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
+        />
+        <div
+          className="pixel-shape-content relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden"
+          style={contentShell.style}
+        >
+          {contentShell.backgroundLayers.map((layer, index) =>
+            layer ? (
+              <div
+                key={`content-bg-${index}`}
+                className="pointer-events-none absolute inset-0 z-0"
+                style={layer}
+                aria-hidden
+              />
+            ) : null,
+          )}
+          <div className="relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden">
+            {chartBody}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
 
 export function PixelShape({
@@ -464,62 +569,39 @@ export function PixelShape({
           />
         ) : null}
         <PixelShapeInteractionProvider value={startInteraction}>
-          <PixelShapePlayerProvider playing={isPlayer}>
-            <div
-              className={cn(
-                "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
-                selectedInEdit && "pixel-shape-selected",
-              )}
-              style={innerShell.style}
-              data-pixel-no-drag
-              onPointerDown={(event) => {
-                if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
-              }}
-            >
-              {innerShell.backgroundLayers.map((layer, index) =>
-                layer ? (
-                  <div
-                    key={`shell-bg-${index}`}
-                    className="pointer-events-none absolute inset-0 z-0"
-                    style={layer}
-                    aria-hidden
-                  />
-                ) : null,
-              )}
-              <WidgetShapeChrome
-                title={widget.title}
-                titleStyle={shapeTitlePresentationStyle(titleStyle, scale)}
-                showTitle={showTitle}
-                remark={remark}
-                mode={mode}
-                selected={selectedInEdit}
-                widgetId={widget.id}
-                canvasScale={scale}
-                onTitleChange={onTitleChange}
-                onSelectPointerDown={(event) => onSelect?.(widget.id, event.shiftKey)}
-                onDragPointerDown={(event) => startInteraction(event, "move")}
-                onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
-              />
+          <WidgetShellLegendProvider>
+            <PixelShapePlayerProvider playing={isPlayer}>
               <div
-                className="pixel-shape-content relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden"
-                style={contentShell.style}
-              >
-                {contentShell.backgroundLayers.map((layer, index) =>
-                  layer ? (
-                    <div
-                      key={`content-bg-${index}`}
-                      className="pointer-events-none absolute inset-0 z-0"
-                      style={layer}
-                      aria-hidden
-                    />
-                  ) : null,
+                className={cn(
+                  "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
+                  selectedInEdit && "pixel-shape-selected",
                 )}
-                <div className="relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col">
+                style={innerShell.style}
+                data-pixel-no-drag
+                onPointerDown={(event) => {
+                  if (mode === "edit") onSelect?.(widget.id, event.shiftKey);
+                }}
+              >
+                <PixelShapeInnerChrome
+                  widget={widget}
+                  scale={scale}
+                  mode={mode}
+                  selectedInEdit={selectedInEdit}
+                  showTitle={showTitle}
+                  titleStyle={titleStyle}
+                  remark={remark}
+                  innerShell={innerShell}
+                  contentShell={contentShell}
+                  onTitleChange={onTitleChange}
+                  onSelect={onSelect}
+                  startInteraction={startInteraction}
+                  handleKeyboardInteraction={handleKeyboardInteraction}
+                >
                   {children}
-                </div>
+                </PixelShapeInnerChrome>
               </div>
-            </div>
-          </PixelShapePlayerProvider>
+            </PixelShapePlayerProvider>
+          </WidgetShellLegendProvider>
         </PixelShapeInteractionProvider>
       </div>
 

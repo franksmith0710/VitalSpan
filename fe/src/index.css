@@ -242,9 +242,8 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-auto,
   .overflow-scroll,
   .overflow-x-only,
-  .dashboard-scroll,
-  .pixel-canvas-host
-):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail) {
+  .dashboard-scroll
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail):not(.pixel-canvas-host) {
   scrollbar-width: thin;
   scrollbar-color: var(--dashboard-scroll-thumb) transparent;
 }
@@ -255,9 +254,8 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-auto,
   .overflow-scroll,
   .overflow-x-only,
-  .dashboard-scroll,
-  .pixel-canvas-host
-):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail)::-webkit-scrollbar {
+  .dashboard-scroll
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail):not(.pixel-canvas-host)::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
@@ -268,9 +266,8 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-auto,
   .overflow-scroll,
   .overflow-x-only,
-  .dashboard-scroll,
-  .pixel-canvas-host
-):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail)::-webkit-scrollbar-track {
+  .dashboard-scroll
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail):not(.pixel-canvas-host)::-webkit-scrollbar-track {
   background: transparent;
 }
 
@@ -280,9 +277,8 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-auto,
   .overflow-scroll,
   .overflow-x-only,
-  .dashboard-scroll,
-  .pixel-canvas-host
-):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail)::-webkit-scrollbar-thumb {
+  .dashboard-scroll
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail):not(.pixel-canvas-host)::-webkit-scrollbar-thumb {
   border-radius: 9999px;
   background-color: var(--dashboard-scroll-thumb);
 }
@@ -293,9 +289,8 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   .overflow-x-auto,
   .overflow-scroll,
   .overflow-x-only,
-  .dashboard-scroll,
-  .pixel-canvas-host
-):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail):hover::-webkit-scrollbar-thumb {
+  .dashboard-scroll
+):not(.dashboard-edit-rail-scroll):not(.dashboard-config-rail):not(.pixel-canvas-host):hover::-webkit-scrollbar-thumb {
   background-color: var(--dashboard-scroll-thumb-hover);
 }
 
@@ -411,7 +406,13 @@ html.dark {
   --dw-screen-action-icon: 1.125rem;
   --dw-screen-title-height: 2rem;
   overflow-x: hidden;
-  scrollbar-gutter: auto;
+  scrollbar-gutter: auto !important;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+  overscroll-behavior-y: contain;
+  /* 藏条后回收轨道宽度，画布组件可多占横向空间 */
+  margin-right: -20px;
+  padding-right: 20px;
 }
 
 .pixel-canvas-host .dashboard-widget-surface {
@@ -718,7 +719,8 @@ html.dark {
 }
 
 .dashboard-edit-rail-scroll::-webkit-scrollbar,
-.dashboard-config-rail::-webkit-scrollbar {
+.dashboard-config-rail::-webkit-scrollbar,
+.pixel-canvas-host::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;

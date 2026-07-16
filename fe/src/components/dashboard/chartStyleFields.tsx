@@ -6,10 +6,10 @@ import { SURFACE_COLOR_RECOMMENDED, WIDGET_BORDER_RECOMMENDED } from "./dashboar
 import {
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
-  InspectorFieldRow,
+  InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "./inspectorCompact";
-import { InspectorSliderField } from "./deAttrSlider";
+import { InspectorSliderField, DashboardConfigSlider } from "./deAttrSlider";
 import { DeSegmentGroup } from "./dashboardInspectorUi";
 import { ChartDeSegmentField } from "./chartInspectorDeFields";
 import { ChartFramePresetPicker } from "./ChartFramePresetPicker";
@@ -18,6 +18,7 @@ import { InspectorNestedSection } from "./inspectorNestedSection";
 import {
   WidgetSurfaceAppearanceFields,
   WidgetSurfaceSpacingFields,
+  type WidgetSurfaceStyleDensity,
 } from "./widgetSurfaceStyleFields";
 
 const LINE_BORDER_STYLES = [
@@ -64,14 +65,79 @@ function DeAttrToggleRowCompact({
   );
 }
 
+type LineBorderStyleFields = {
+  color?: string;
+  width?: number;
+  style?: ChartBorderStyle["style"];
+  radius?: number;
+};
+
+function LineBorderStyleFields({
+  value,
+  onChange,
+  density,
+  showRadius = false,
+}: {
+  value: LineBorderStyleFields;
+  onChange: (patch: Partial<LineBorderStyleFields>) => void;
+  density: WidgetSurfaceStyleDensity;
+  showRadius?: boolean;
+}) {
+  const Slider = density === "narrow" ? InspectorSliderField : DashboardConfigSlider;
+
+  return (
+    <div className="space-y-0">
+      <InspectorInlineColorRow
+        label="线框色"
+        allowClear
+        swatches={WIDGET_BORDER_RECOMMENDED}
+        value={value.color ?? ""}
+        onChange={(color) => onChange({ color: color || undefined })}
+      />
+      <Slider
+        label="线宽"
+        value={value.width}
+        fallback={1}
+        min={0}
+        max={8}
+        step={1}
+        unit="px"
+        onChange={(width) => onChange({ width })}
+      />
+      {showRadius ? (
+        <Slider
+          label="圆角"
+          value={value.radius}
+          fallback={0}
+          min={0}
+          max={32}
+          step={1}
+          unit="px"
+          onChange={(radius) => onChange({ radius })}
+        />
+      ) : null}
+      <ChartDeSegmentField
+        label="线型"
+        value={value.style ?? "solid"}
+        columns={3}
+        options={LINE_BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
+        onChange={(style) => onChange({ style: style as LineBorderStyleFields["style"] })}
+      />
+    </div>
+  );
+}
+
+/** 看板整体 widgetStyle · 组件外框线框（pixel-shape-inner） */
 export function WidgetStyleLineBorderControls({
   value,
   onChange,
   showToggle = true,
+  density = "wide",
 }: {
   value: WidgetStyleConfig;
   onChange: (patch: BackgroundPatch) => void;
   showToggle?: boolean;
+  density?: WidgetSurfaceStyleDensity;
 }) {
   const lineOn = value.borderEnabled !== false;
 
@@ -85,36 +151,64 @@ export function WidgetStyleLineBorderControls({
         />
       ) : null}
       {lineOn ? (
-        <div className="space-y-2">
-          <InspectorFieldRow label="线框色">
-            <ColorField
-              compact
-              allowClear
-              swatches={WIDGET_BORDER_RECOMMENDED}
-              value={value.borderColor ?? ""}
-              onChange={(color) => onChange({ borderColor: color || undefined })}
-            />
-          </InspectorFieldRow>
-          <InspectorSliderField
-            label="线宽"
-            value={value.borderWidth}
-            fallback={1}
-            min={0}
-            max={8}
-            step={1}
-            unit="px"
-            onChange={(borderWidth) => onChange({ borderWidth })}
-          />
-          <ChartDeSegmentField
-            label="线型"
-            value={value.borderStyle ?? "solid"}
-            columns={3}
-            options={LINE_BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
-            onChange={(style) =>
-              onChange({ borderStyle: style as WidgetStyleConfig["borderStyle"] })
-            }
-          />
-        </div>
+        <LineBorderStyleFields
+          density={density}
+          value={{
+            color: value.borderColor,
+            width: value.borderWidth,
+            style: value.borderStyle,
+          }}
+          onChange={(patch) =>
+            onChange({
+              ...(patch.color !== undefined ? { borderColor: patch.color } : {}),
+              ...(patch.width !== undefined ? { borderWidth: patch.width } : {}),
+              ...(patch.style !== undefined ? { borderStyle: patch.style } : {}),
+            })
+          }
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/** 单图 deStyle.border · 内容区线框（pixel-shape-content，可覆盖看板默认） */
+export function ChartLineBorderControls({
+  value,
+  onChange,
+  density = "narrow",
+}: {
+  value?: ChartBorderStyle;
+  onChange: (patch: Partial<ChartBorderStyle>) => void;
+  density?: WidgetSurfaceStyleDensity;
+}) {
+  const lineOn = value?.show === true;
+
+  return (
+    <div className="space-y-2">
+      <DeAttrToggleRowCompact
+        label="显示线框"
+        checked={lineOn}
+        onCheckedChange={(show) => onChange({ show })}
+      />
+      {lineOn ? (
+        <LineBorderStyleFields
+          density={density}
+          showRadius
+          value={{
+            color: value?.color,
+            width: value?.width,
+            style: value?.style,
+            radius: value?.radius,
+          }}
+          onChange={(patch) =>
+            onChange({
+              ...(patch.color !== undefined ? { color: patch.color } : {}),
+              ...(patch.width !== undefined ? { width: patch.width } : {}),
+              ...(patch.style !== undefined ? { style: patch.style } : {}),
+              ...(patch.radius !== undefined ? { radius: patch.radius } : {}),
+            })
+          }
+        />
       ) : null}
     </div>
   );
@@ -229,7 +323,7 @@ export function ChartBackgroundDeModeFields({
           }
         />
       ) : useLineBorder ? (
-        <WidgetStyleLineBorderControls value={value} onChange={onChange} showToggle={false} />
+        <WidgetStyleLineBorderControls value={value} onChange={onChange} showToggle={false} density="narrow" />
       ) : (
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
           <ColorField
@@ -277,7 +371,7 @@ export function WidgetStyleBackgroundExtrasFields({
   if (disabled) return null;
 
   return (
-    <InspectorNestedSection title="外观" defaultOpen>
+    <InspectorNestedSection title="外观">
       <WidgetSurfaceAppearanceFields value={value} onChange={onChange} density="wide" />
     </InspectorNestedSection>
   );
@@ -290,18 +384,24 @@ type ChartBackgroundStyleFieldsProps = {
   onBorderChange?: (patch: Partial<ChartBorderStyle>) => void;
   /** 背景开关在折叠标题栏时设为 false */
   showHeaderToggle?: boolean;
+  /** dashboard：看板默认 widgetStyle；chart：单图 deStyle */
+  scope?: "chart" | "dashboard";
+  density?: WidgetSurfaceStyleDensity;
 };
 
-/** DataEase 样式 Tab · 背景区块（组件级 deStyle.background + 线框边框） */
+/** DataEase 样式 Tab · 背景区块（看板 widgetStyle 或单图 deStyle.background + 线框） */
 export function ChartBackgroundStyleFields({
   value,
   border,
   onChange,
   onBorderChange,
   showHeaderToggle = true,
+  scope = "chart",
+  density = "narrow",
 }: ChartBackgroundStyleFieldsProps) {
   const ws = value;
   const showBackground = ws.backgroundShow !== false;
+  const isDashboard = scope === "dashboard";
 
   return (
     <div className={INSPECTOR_SECTION_GAP}>
@@ -321,67 +421,36 @@ export function ChartBackgroundStyleFields({
 
       {showBackground ? (
         <>
-          <InspectorNestedSection title="外观" defaultOpen>
-            <WidgetSurfaceAppearanceFields
-              value={ws}
-              onChange={onChange}
-              density="narrow"
-            />
+          <InspectorNestedSection title="外观">
+            <WidgetSurfaceAppearanceFields value={ws} onChange={onChange} density={density} />
           </InspectorNestedSection>
 
-          {onBorderChange ? (
-            <InspectorNestedSection title="线框" defaultOpen={border?.show === true}>
-              <DeAttrToggleRowCompact
-                label="显示线框"
-                checked={border?.show ?? false}
-                onCheckedChange={(show) => onBorderChange({ show })}
+          {isDashboard ? (
+            <InspectorNestedSection title="线框">
+              <p className="pb-1 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+                作用于全部组件外框；单图可在样式 Tab 单独覆盖
+              </p>
+              <WidgetStyleLineBorderControls
+                value={ws}
+                onChange={onChange}
+                density={density}
               />
-              {border?.show ? (
-                <div className="space-y-0">
-                  <InspectorFieldRow label="线框色">
-                    <ColorField
-                      compact
-                      swatches={WIDGET_BORDER_RECOMMENDED}
-                      value={border.color ?? ""}
-                      onChange={(color) => onBorderChange({ color: color || undefined })}
-                    />
-                  </InspectorFieldRow>
-                  <InspectorSliderField
-                    label="线宽"
-                    value={border.width}
-                    fallback={1}
-                    min={0}
-                    max={8}
-                    step={1}
-                    unit="px"
-                    onChange={(width) => onBorderChange({ width })}
-                  />
-                  <InspectorSliderField
-                    label="圆角"
-                    value={border.radius}
-                    fallback={0}
-                    min={0}
-                    max={32}
-                    step={1}
-                    unit="px"
-                    onChange={(radius) => onBorderChange({ radius })}
-                  />
-                  <ChartDeSegmentField
-                    label="线型"
-                    value={border.style ?? "solid"}
-                    columns={3}
-                    options={LINE_BORDER_STYLES.map((s) => ({ value: s.value, label: s.label }))}
-                    onChange={(style) =>
-                      onBorderChange({ style: style as ChartBorderStyle["style"] })
-                    }
-                  />
-                </div>
-              ) : null}
+            </InspectorNestedSection>
+          ) : onBorderChange ? (
+            <InspectorNestedSection title="线框">
+              <p className="pb-1 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+                仅当前组件；覆盖看板默认，作用于整个组件外框
+              </p>
+              <ChartLineBorderControls
+                value={border}
+                onChange={onBorderChange}
+                density={density}
+              />
             </InspectorNestedSection>
           ) : null}
 
           <InspectorNestedSection title="边距与圆角">
-            <WidgetSurfaceSpacingFields value={ws} onChange={onChange} density="narrow" />
+            <WidgetSurfaceSpacingFields value={ws} onChange={onChange} density={density} />
           </InspectorNestedSection>
         </>
       ) : null}

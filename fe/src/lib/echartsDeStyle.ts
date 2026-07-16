@@ -1,6 +1,6 @@
 import type { EChartsOption } from "echarts";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import type { ChartDeStyle } from "./chartDeStyle";
+import { readChartLegendVisible, type ChartDeStyle } from "./chartDeStyle";
 import { echartsTooltipValueFormatter } from "./chartValueFormat";
 import { applyEchartsSeriesPresentation } from "./echartsSeriesPresentation";
 
@@ -12,6 +12,8 @@ const DATA_ZOOM_BOTTOM_GAP = 4;
 export type EchartsLayoutContext = {
   /** 看板 widget 内嵌：紧凑布局，禁用缩略轴彩色数据阴影 */
   embedded?: boolean;
+  /** 组件外壳 HTML 图例：ECharts 内不再绘制/占位 */
+  shellLegend?: boolean;
 };
 
 type ChromeInsets = {
@@ -66,8 +68,11 @@ export function resolveEchartsChromeInsets(
 ): ChromeInsets {
   const legendPos = deStyle.legend?.position ?? "bottom";
   const compact = Boolean(context?.embedded);
+  const useShellLegend = Boolean(context?.shellLegend && compact);
   const showLegend =
-    deStyle.legend?.show === true && !chartHasMapSeries(option) && !compact;
+    !useShellLegend &&
+    readChartLegendVisible(deStyle, { embedded: compact }) &&
+    !chartHasMapSeries(option);
   const hasPie = chartHasPieSeries(option);
 
   let gridTop = GRID_PAD + 4;

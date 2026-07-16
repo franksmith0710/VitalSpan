@@ -164,7 +164,7 @@ export function DashboardEditWorkspace({
             className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS)}
             data-testid="dashboard-edit-rail-scroll"
           >
-            <div className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLASS)}>{chartRail}</div>
+            <div className={cn(DASHBOARD_EDIT_RAIL_SCROLL_CLASS, "h-full min-h-0")}>{chartRail}</div>
           </div>
         </div>
       ) : (

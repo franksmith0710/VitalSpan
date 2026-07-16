@@ -98,6 +98,14 @@ export function readChartTitleVisible(
   return globalTitleStyle?.show !== false;
 }
 
+/** 图例显隐：显式 false 隐藏；未配置或 true 时显示（含看板内嵌） */
+export function readChartLegendVisible(
+  deStyle: ChartDeStyle,
+  _options?: { embedded?: boolean },
+): boolean {
+  return deStyle.legend?.show !== false;
+}
+
 export function mergeChartTitleStyle(
   global: DashboardStyleConfig["titleStyle"] | undefined,
   cfg: ChartViewConfig | undefined,
@@ -300,7 +308,29 @@ export function widgetStyleToContentCss(
   return buildWidgetBackgroundPresentation(bg, colorScheme, { respectBackgroundShow: true });
 }
 
-/** 看板 widgetStyle 外壳 + 图表 deStyle 内区（背景/内边距/边框） */
+/** 单图 deStyle 覆盖看板 widgetStyle，统一落到组件外框（pixel-shape-inner） */
+export function mergeChartDeStyleIntoWidgetShell(
+  global: WidgetStyleConfig | undefined,
+  de: ChartDeStyle,
+): WidgetStyleConfig {
+  const merged: WidgetStyleConfig = { ...(global ?? {}) };
+  const bg = de.background;
+  if (bg && typeof bg === "object") {
+    Object.assign(merged, bg);
+  }
+  if (de.border?.show) {
+    merged.borderEnabled = true;
+    if (de.border.color !== undefined) merged.borderColor = de.border.color;
+    if (de.border.width !== undefined) merged.borderWidth = de.border.width;
+    if (de.border.style !== undefined) merged.borderStyle = de.border.style;
+    if (de.border.radius !== undefined) merged.borderRadius = de.border.radius;
+  } else if (de.border?.show === false) {
+    merged.borderEnabled = false;
+  }
+  return merged;
+}
+
+/** 看板 widgetStyle 外壳 + 图表 deStyle 外观合并到同一外框层 */
 export function resolveChartContentShellStyle(
   globalWidgetStyle: DashboardStyleConfig["widgetStyle"] | undefined,
   cfg: ChartViewConfig | undefined,
@@ -309,23 +339,22 @@ export function resolveChartContentShellStyle(
   outer: ReturnType<typeof mergeWidgetShellStyle>;
   inner: CSSProperties;
   innerBackgroundLayer: CSSProperties | null;
+  innerFrameLayer: CSSProperties | null;
 } {
-  const outer = mergeWidgetShellStyle(globalWidgetStyle, colorScheme);
-  if (!cfg) return { outer, inner: {}, innerBackgroundLayer: null };
-  const de = readChartDeStyle(cfg);
-  const innerPresentation = widgetStyleToContentCss(de.background, colorScheme);
-  const inner = { ...innerPresentation.surface };
-  if (de.border?.show) {
-    inner.borderStyle = de.border.style ?? "solid";
-    inner.borderColor = de.border.color ?? "var(--dashboard-widget-border, var(--color-gray-200))";
-    inner.borderWidth = de.border.width ?? 1;
-    if (de.border.radius != null) inner.borderRadius = `${de.border.radius}px`;
-  }
+  const de = cfg ? readChartDeStyle(cfg) : {};
+  const mergedWidgetStyle = cfg
+    ? mergeChartDeStyleIntoWidgetShell(globalWidgetStyle, de)
+    : globalWidgetStyle;
+  const allowFrame =
+    mergedWidgetStyle?.backgroundMode === "frame" && Boolean(mergedWidgetStyle?.framePresetId);
+  const outer = mergeWidgetShellStyle(mergedWidgetStyle, colorScheme, {
+    allowDecorativeFrame: allowFrame,
+  });
   return {
     outer,
-    inner,
-    innerBackgroundLayer: innerPresentation.backgroundLayer,
-    innerFrameLayer: innerPresentation.frameLayer,
+    inner: {},
+    innerBackgroundLayer: null,
+    innerFrameLayer: null,
   };
 }
 
@@ -334,7 +363,7 @@ export type ShapePresentationLayers = {
   backgroundLayers: Array<CSSProperties | null>;
 };
 
-/** 外壳 widgetStyle → shape-inner；图表 deStyle.background → shape-content（对标 DE） */
+/** 外壳 widgetStyle + 单图 deStyle → shape-inner；shape-content 仅承载图表 */
 export function mergeShapeInnerPresentation(shell: {
   outer: ReturnType<typeof mergeWidgetShellStyle>;
   inner: CSSProperties;

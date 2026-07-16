@@ -59,7 +59,7 @@ export function DatasetPickerPanel({
   return (
     <div
       className={cn(
-        "flex min-h-0 min-w-0 flex-col bg-gray-50/50 dark:bg-white/[0.02]",
+        "flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-gray-50/50 dark:bg-white/[0.02]",
         className,
       )}
     >
@@ -100,7 +100,10 @@ export function DatasetPickerPanel({
         ) : null}
       </div>
 
-      <main className="dataset-main-top flex min-w-0 flex-col" aria-label="字段库">
+      <main
+        className="dataset-main-top flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain no-scrollbar"
+        aria-label="字段库"
+      >
         <DatasetFieldGroups
           columns={columns}
           columnsLoading={columnsLoading}

@@ -113,3 +113,10 @@ export function chartInspectorCapabilities(
     labelFormat: false,
   };
 }
+
+/** 看板内嵌 HTML 外壳图例（对标 DE 柱/线）；饼/漏斗等保留 ECharts 内置图例 */
+export function supportsEmbeddedShellLegend(
+  chartType: ChartViewConfig["chartType"],
+): boolean {
+  return isLineOrBarType(chartType);
+}

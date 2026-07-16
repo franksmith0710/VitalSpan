@@ -6,10 +6,9 @@ export const DASHBOARD_EDIT_RAIL_SHELL_CLASS =
   "w-[432px] max-w-[min(100%,432px)] shrink-0";
 
 /**
- * 看板编辑右栏**唯一**纵向滚动容器（壳层 header 下方）。
- * - 外层 `…-clip` 裁剪滚动条；内层 `…-scroll` 承担滚动
- * - 画布：`pixel-canvas-host.dashboard-scroll` 保留可见滚动条
- * - 子面板禁止再设 overflow-y-auto
+ * 看板编辑右栏滚动。
+ * - 壳层 `…-clip` 裁剪；`…-scroll` 供仪表板配置等长内容整体滚动
+ * - 图表编辑（ChartInspectorTabs scrollMode=panel）占满高度，仅在 Tab 内容区滚动
  */
 export const DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS =
   "dashboard-edit-rail-scroll-clip h-0 min-h-0 flex-1 overflow-hidden px-2 py-1";

@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { ColorField } from "@/components/ui/color-field";
 import {
   TEXT_COLOR_RECOMMENDED,
 } from "@/components/dashboard/dashboardStyleConfig";
@@ -19,7 +18,7 @@ import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "../chartI
 import { ChartDeSliderField } from "../deAttrSlider";
 import { DeAttrToggleRow } from "../dashboardInspectorUi";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
-import { INSPECTOR_SELECT } from "../inspectorCompact";
+import { INSPECTOR_SELECT, InspectorInlineColorRow } from "../inspectorCompact";
 import { ChartPaletteConfigFields } from "../chartPaletteConfigFields";
 import { useChartInspector } from "../ChartInspectorContext";
 import {
@@ -27,7 +26,9 @@ import {
   patchChartDeStyleNested,
   patchChartShowLabel,
   readChartDeStyle,
+  readChartLegendVisible,
   readChartShowLabel,
+  readChartTitleVisible,
 } from "@/lib/chartDeStyle";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import {
@@ -39,7 +40,7 @@ export function ChartPaletteStyleSection() {
   const deStyle = readChartDeStyle(cfg);
 
   return (
-    <DashboardConfigSection title="配色方案" defaultOpen compact>
+    <DashboardConfigSection title="图表配色" defaultOpen compact>
       <ChartPaletteConfigFields
         dense
         showInherit
@@ -63,8 +64,9 @@ export function ChartPaletteStyleSection() {
 }
 
 export function ChartTitleStyleSection() {
-  const { widget, cfg, onChange, onTitleChange } = useChartInspector();
+  const { widget, cfg, onChange, onTitleChange, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
+  const titleVisible = readChartTitleVisible(cfg, dashboardStyle?.titleStyle);
   const patchTitle = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
     onChange(patchChartDeStyleNested(cfg, "title", patch));
 
@@ -73,7 +75,7 @@ export function ChartTitleStyleSection() {
       <div className="pb-1">
         <DeAttrToggleRow
           label="显示标题"
-          checked={deStyle.title?.show !== false}
+          checked={titleVisible}
           onCheckedChange={(show) => patchTitle({ show })}
         />
         <ChartDeAttrField label="文本">
@@ -91,14 +93,12 @@ export function ChartTitleStyleSection() {
             />
           </div>
         </ChartDeAttrField>
-        <ChartDeAttrField label="字体色">
-          <ColorField
-            compact
-            swatches={TEXT_COLOR_RECOMMENDED}
-            value={deStyle.title?.color ?? ""}
-            onChange={(color) => patchTitle({ color: color || undefined })}
-          />
-        </ChartDeAttrField>
+        <InspectorInlineColorRow
+          label="字体色"
+          swatches={TEXT_COLOR_RECOMMENDED}
+          value={deStyle.title?.color ?? ""}
+          onChange={(color) => patchTitle({ color: color || undefined })}
+        />
       </div>
     </DashboardConfigSection>
   );
@@ -142,7 +142,7 @@ export function ChartLegendStyleSection() {
       <div className="pb-1">
         <DeAttrToggleRow
           label="显示图例"
-          checked={deStyle.legend?.show !== false}
+          checked={readChartLegendVisible(deStyle, { embedded: true })}
           onCheckedChange={(show) => patchLegend({ show })}
         />
         <ChartDeSliderField
