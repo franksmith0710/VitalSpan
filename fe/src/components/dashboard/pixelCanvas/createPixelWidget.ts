@@ -16,6 +16,12 @@ export const PIXEL_DEFAULT_TEXT_SIZE = { width: 480, height: 180 };
 export const PIXEL_DEFAULT_MEDIA_SIZE = { width: 480, height: 300 };
 export const PIXEL_DEFAULT_TABS_SIZE = { width: 720, height: 320 };
 
+export function defaultPixelSizeForWidget(
+  widget: Pick<LayoutWidget, "type">,
+): { width: number; height: number } {
+  return defaultSize({ type: widget.type } as LayoutWidget);
+}
+
 function defaultSize(widget: LayoutWidget) {
   switch (widget.type) {
     case "filter":

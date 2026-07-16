@@ -28,7 +28,28 @@
 - `fe/src/components/charts/adapters/AdvancedEchartsChart.tsx`
 - 回归：`fe/src/lib/geoMapChart.test.ts`、`fe/src/lib/buildChartRenderModel.test.ts`
 
+## 修复方式（2026-07-16 补充）
+
+- `chartFieldAssignment`：允许 `region_id` 拖入地图地理槽（不再硬拦截）
+- `resolveDemoMysqlRegionId`：演示库 `regions.id` 5–9 → 省级名称
+- `resolveEmbeddedGeoRoam`：编辑态保留缩放平移（对标 DE）
+- `GEO_MAP_SCALE_LIMIT` + `data-viz-wheel-zoom`：允许缩小；画布滚轮不再抢走地图滚轮
+- **省→市→区县下钻**（2026-07-16）：`chartFieldSlots` 三级维度槽；`geoMapLevels.ts` 懒加载 `assets/geo/cities/{adcode}.json`（33 省）与 `districts/{cityAdcode}.json`（演示城市）；预览态点击 + `ChartDrillChrome` 面包屑
+
+## 下钻配置（对标 DataEase）
+
+| 槽位 | 字段示例 |
+|------|----------|
+| 地理 / 维度 | `province` |
+| 钻取 / 市级 | `city` |
+| 钻取 / 区县 | `district`（可选） |
+
+预览态点击省/市切换底图；编辑态配置字段。区县边界按城市打包，未打包城市下钻到市后提示「暂无区县边界」。
+- `ChartDataSlots`：地图 SQL 提示 + `DEMO_MAP_JOIN_SQL`
+
 ## 正确用法（演示库）
+
+**方式 A（推荐）**：JOIN 取名称
 
 ```sql
 SELECT r.name AS region, SUM(s.amount) AS total
@@ -37,7 +58,9 @@ JOIN regions r ON s.region_id = r.id
 GROUP BY r.name
 ```
 
-地理维度选 `region`（省/市名称），指标选 `total`。
+地理维度选 `region`，指标选 `total`。
+
+**方式 B**：直接 `region_id` + 演示库自动映射（仅 id 5–9 有效）
 
 ## 预防
 

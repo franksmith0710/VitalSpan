@@ -11,7 +11,7 @@ _BUILTIN_SPECS: tuple[ChartTypeSpec, ...] = (
     ChartTypeSpec("bar", "柱状图", "basic", "echarts", _CAPS, ("default", "stacked", "grouped", "horizontal"), FieldRule(1, 8, 1, 8)),
     ChartTypeSpec("pie", "饼图", "basic", "echarts", _CAPS, ("default", "donut"), FieldRule(1, 1, 1, 1)),
     ChartTypeSpec("gauge", "仪表盘", "advanced", "echarts", _CAPS, ("default",), FieldRule(0, 0, 1, 1)),
-    ChartTypeSpec("map", "地图", "geo", "echarts", _CAPS, ("default",), FieldRule(1, 1, 1, 1)),
+    ChartTypeSpec("map", "地图", "geo", "echarts", _CAPS, ("default",), FieldRule(1, 3, 1, 1)),
     ChartTypeSpec("heatmap", "热力图", "geo", "echarts", _CAPS, ("default",), FieldRule(2, 2, 1, 1)),
     ChartTypeSpec("kpi", "KPI 指标", "indicator", "kpi", _CAPS, ("default",), FieldRule(0, 1, 1, 4)),
     ChartTypeSpec("timeline", "时间轴", "temporal", "echarts", _CAPS, ("default",), FieldRule(1, 1, 0, 4, note="时间轴需 1 个时间维度，可选 0–4 个指标")),

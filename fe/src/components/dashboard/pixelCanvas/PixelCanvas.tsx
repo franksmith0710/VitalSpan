@@ -25,13 +25,17 @@ import { getTopLevelPixelWidgets, findTabsHostAtPoint } from "../layoutUtils";
 import type { ScaleMode, DashboardStyleConfig } from "../dashboardStyleConfig";
 import { usePaletteDragActive, useTabInsertIntent } from "./paletteDragContext";
 import { TabPaletteDropZones } from "./TabPaletteDropZones";
-import { preservePixelCanvasHostScroll } from "./preserveCanvasHostScroll";
+import { preservePixelCanvasHostScroll, consumePendingCanvasHostScrollRestore } from "./preserveCanvasHostScroll";
 import type { TabInsertIntent } from "./tabInsertResolver";
 import {
+  TAB_PALETTE_DROP_BUFFER_PX,
+  TAB_PALETTE_DROP_VISUAL_BUFFER_PX,
   resolveTabHostForWidgetDrop,
   tryAbsorbTopLevelWidgetIntoTab,
 } from "./tabInsertResolver";
 import { TabPaletteDropTargetProvider } from "./tabPaletteDropTargetContext";
+import { TabChildExtractProvider } from "./tabChildExtractContext";
+import { canUnparkTabChildAtPoint } from "./tabParking";
 import {
   canvasArtboardStyleFingerprint,
   hasUserCanvasBackground,
@@ -72,6 +76,7 @@ type PixelCanvasProps = {
     sourceEvent?: DragEvent,
   ) => void;
   onTabPaletteDrop?: (tabsWidgetId: string, type: PaletteDragPayload) => void;
+  onTabChildUnpark?: (widgetId: string, point: PixelPoint) => void;
   onTabInsertIntentChange?: (intent: TabInsertIntent | null) => void;
   widgetActions?: PixelWidgetActions;
   className?: string;
@@ -145,6 +150,7 @@ export function PixelCanvas({
   onViewportChange,
   onPaletteDrop,
   onTabPaletteDrop,
+  onTabChildUnpark,
   onTabInsertIntentChange,
   widgetActions,
   className,
@@ -341,6 +347,10 @@ export function PixelCanvas({
       }
     };
   }, [publishViewport, viewCanvas, designCanvasHeight, scaleMode]);
+
+  useLayoutEffect(() => {
+    consumePendingCanvasHostScrollRestore(hostRef.current);
+  }, [contentSize, selectedIds]);
 
   const registerPreviewSync = useCallback(
     (widgetId: string, sync: (rect: PixelRect) => void) =>
@@ -644,7 +654,22 @@ export function PixelCanvas({
     ],
   );
 
+  const handleTabChildExtractEnd = useCallback(
+    (widgetId: string, point: PixelPoint) => {
+      if (!onTabChildUnpark) return;
+      if (!canUnparkTabChildAtPoint(activeLayout, widgetId, point, TAB_PALETTE_DROP_BUFFER_PX)) {
+        return;
+      }
+      onTabChildUnpark(widgetId, point);
+    },
+    [activeLayout, onTabChildUnpark],
+  );
+
   return (
+    <TabChildExtractProvider
+      onExtractEnd={handleTabChildExtractEnd}
+      resolveCanvasPoint={resolveClientToCanvas}
+    >
     <div
       ref={hostRef}
       className={cn(
@@ -775,5 +800,6 @@ export function PixelCanvas({
         </PixelCanvasScaleProvider>
       </div>
     </div>
+    </TabChildExtractProvider>
   );
 }

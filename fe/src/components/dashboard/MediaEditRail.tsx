@@ -20,7 +20,6 @@ import type {
   MediaWidgetConfig,
 } from "./layoutUtils";
 import { normalizeMediaConfig } from "./layoutUtils";
-import { WidgetAdvancedAccordion } from "./WidgetAdvancedAccordion";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
 import { WidgetRailPanelHeader } from "./widgetRailChrome";
 
@@ -74,6 +73,7 @@ export function MediaEditRail({
         className="min-h-0 flex-1"
         scrollMode="parent"
         defaultTab="data"
+        tabs={["data", "style"]}
         data={
           <DeAttrForm>
             <DeAttrField label="图片来源" hint="链接或本地上传" compact>
@@ -175,38 +175,10 @@ export function MediaEditRail({
                 onChange={(background) => patch({ background: background || "" })}
               />
             </DeAttrField>
+            <p className="pb-1 text-[10px] leading-relaxed text-gray-400 dark:text-gray-500">
+              支持 JPG、PNG、GIF、SVG、WebP；本地上传将转为 data URL 嵌入看板配置。
+            </p>
           </DeAttrForm>
-        }
-        advanced={
-          <WidgetAdvancedAccordion
-            sections={[
-              {
-                id: "guide",
-                title: "使用说明",
-                defaultOpen: true,
-                content: (
-                  <p className="leading-relaxed">
-                    「数据」配置图片与跳转；「样式」调整缩放与外观。点击右上角可收起配置栏以扩大画布。
-                  </p>
-                ),
-              },
-              {
-                id: "format",
-                title: "图片格式",
-                content: (
-                  <p className="leading-relaxed">
-                    支持 JPG、PNG、GIF、SVG、WebP；本地上传将转为 data URL 嵌入看板配置。
-                  </p>
-                ),
-              },
-              {
-                id: "linkage",
-                title: "联动设置",
-                disabled: true,
-                content: <p>图片组件不支持联动（对标 DataEase）。</p>,
-              },
-            ]}
-          />
         }
       />
 

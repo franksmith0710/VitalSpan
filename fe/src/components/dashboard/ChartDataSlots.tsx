@@ -2,6 +2,7 @@ import { ChartFieldSlot } from "./ChartFieldSlot";
 import { chartDataSlotBlueprint } from "./chartFieldSlots";
 import { useChartInspector } from "./chartInspectorContext";
 import type { SlotTarget } from "./chartInspectorTypes";
+import { DEMO_MAP_DRILL_SQL, DEMO_MAP_JOIN_SQL, mapChartFieldHint } from "@/lib/mapChartDataHint";
 
 function isActiveSlot(a: SlotTarget | null, b: SlotTarget): boolean {
   return a?.kind === b.kind && a?.index === b.index;
@@ -23,6 +24,7 @@ export function ChartDataSlots() {
 
   const columnsDisabled = columns.length === 0;
   const slots = chartDataSlotBlueprint(cfg.chartType);
+  const mapHint = cfg.chartType === "map" ? mapChartFieldHint(columns) : null;
 
   const clearSlot = (target: SlotTarget) => {
     clearFieldAssignError();
@@ -49,9 +51,23 @@ export function ChartDataSlots() {
   return (
     <div className="space-y-3">
       {fieldAssignError ? (
-        <p className="rounded-md border border-error-200 bg-error-50 px-2 py-1.5 text-[10px] leading-snug text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+        <p className="rounded-md border border-error-200 bg-error-50 px-2 py-1.5 text-[10px] leading-snug text-error-700 dark:border-error-200/30 dark:bg-error-500/10 dark:text-error-400">
           {fieldAssignError}
         </p>
+      ) : null}
+      {mapHint ? (
+        <div className="space-y-1.5 rounded-md border border-brand-500/20 bg-brand-500/5 px-2 py-1.5 text-[10px] leading-snug text-gray-600 dark:text-gray-400">
+          <p>{mapHint}</p>
+          {!columns.some((c) => /^(region|province|name)$/i.test(c)) ? (
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded bg-black/5 p-1.5 font-mono text-[9px] text-gray-700 dark:bg-white/5 dark:text-gray-300">
+              {DEMO_MAP_JOIN_SQL}
+            </pre>
+          ) : !columns.some((c) => /city/i.test(c)) ? (
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded bg-black/5 p-1.5 font-mono text-[9px] text-gray-700 dark:bg-white/5 dark:text-gray-300">
+              {DEMO_MAP_DRILL_SQL}
+            </pre>
+          ) : null}
+        </div>
       ) : null}
       {columnsReady && columnsLoading ? (
         <p className="text-theme-xs text-gray-500 dark:text-gray-400">正在加载字段…</p>

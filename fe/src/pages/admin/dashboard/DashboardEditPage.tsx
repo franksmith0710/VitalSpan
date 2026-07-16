@@ -47,6 +47,8 @@ import {
   resolveTabPaletteInsertHost,
   type TabInsertIntent,
 } from "@/components/dashboard/pixelCanvas/tabInsertResolver";
+import { preservePixelCanvasHostScroll } from "@/components/dashboard/pixelCanvas/preserveCanvasHostScroll";
+import { unparkPixelWidgetFromTab } from "@/components/dashboard/pixelCanvas/tabParking";
 import {
   hydrateDashboardStyle,
   persistDashboardFingerprint,
@@ -390,13 +392,45 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const collapseChartRail = useCallback(() => setChartRailOpen(false), []);
 
-  const selectTabChildWidget = useCallback(
-    (childId: string) => {
-      setChartRailOpen(true);
-      handleSelect(childId, false);
+  const selectWidgetOnCanvas = useCallback(
+    (widgetId: string, additive: boolean) => {
+      preservePixelCanvasHostScroll(() => {
+        const w = widgets.find((x) => x.id === widgetId);
+        if (
+          w &&
+          (w.type === "chart" ||
+            w.type === "media" ||
+            w.type === "tabs" ||
+            w.type === "filter")
+        ) {
+          setChartRailOpen(true);
+        }
+        handleSelect(widgetId, additive);
+      });
+    },
+    [handleSelect, widgets],
+  );
+
+  const selectNestedWidgetOnCanvas = useCallback(
+    (widgetId: string, additive: boolean) => {
+      preservePixelCanvasHostScroll(() => {
+        setChartRailOpen(true);
+        handleSelect(widgetId, false);
+      });
     },
     [handleSelect],
   );
+
+  const selectTabChildWidget = useCallback(
+    (childId: string) => {
+      preservePixelCanvasHostScroll(() => {
+        setChartRailOpen(true);
+        handleSelect(childId, false);
+      });
+    },
+    [handleSelect],
+  );
+
   const [tabInsertIntent, setTabInsertIntent] = useState<TabInsertIntent | null>(null);
 
   /** 对标 DE：选中 Tab（或其子组件）即锁定投放意图 */
@@ -630,6 +664,19 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       commitPixelPaletteInsert(type, { tabsWidgetId });
     },
     [commitPixelPaletteInsert],
+  );
+
+  const handleTabChildUnpark = useCallback(
+    (widgetId: string, point: PixelPoint) => {
+      if (missing || !canSave || layout.version !== 2) return;
+      preservePixelCanvasHostScroll(() => {
+        const next = unparkPixelWidgetFromTab(layout, widgetId, point);
+        setPixelLayout(next);
+        handleSelect(widgetId, false);
+        setChartRailOpen(true);
+      });
+    },
+    [canSave, handleSelect, layout, missing, setPixelLayout],
   );
 
   const handleFilterValueChange = (filterId: string, value: string) => {
@@ -1025,29 +1072,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               chartRefreshKeys={chartRefreshKeys}
               setWidgets={setWidgets}
               setPixelLayout={setPixelLayout}
-              onSelect={(widgetId, additive) => {
-                const w = widgets.find((x) => x.id === widgetId);
-                if (
-                  w &&
-                  (w.type === "chart" ||
-                    w.type === "media" ||
-                    w.type === "tabs" ||
-                    w.type === "filter")
-                ) {
-                  setChartRailOpen(true);
-                }
-                handleSelect(widgetId, additive);
-              }}
-              onNestedSelect={(widgetId, additive) => {
-                setChartRailOpen(true);
-                handleSelect(widgetId, additive);
-              }}
+              onSelect={selectWidgetOnCanvas}
+              onNestedSelect={selectNestedWidgetOnCanvas}
               onClearSelection={openDashboardContext}
               onDeleteWidget={handleDeleteWidget}
               onFilterValueChange={handleFilterValueChange}
               onDropInsert={handleDropInsert}
               onPaletteDrop={handlePaletteDrop}
               onTabPaletteDrop={handleTabPaletteDrop}
+              onTabChildUnpark={handleTabChildUnpark}
               onViewportChange={handlePixelViewportChange}
               tabInsertIntent={tabInsertIntent}
               onTabInsertIntentChange={setTabInsertIntent}
@@ -1230,14 +1263,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           styleConfig={styleConfig}
           setWidgets={setWidgets}
           setPixelLayout={setPixelLayout}
-          onSelect={handleSelect}
-          onNestedSelect={handleSelect}
+          onSelect={selectWidgetOnCanvas}
+          onNestedSelect={selectNestedWidgetOnCanvas}
           onClearSelection={clearSelection}
           onDeleteWidget={handleDeleteWidget}
           onFilterValueChange={handleFilterValueChange}
           onDropInsert={handleDropInsert}
           onPaletteDrop={handlePaletteDrop}
               onTabPaletteDrop={handleTabPaletteDrop}
+              onTabChildUnpark={handleTabChildUnpark}
               onViewportChange={handlePixelViewportChange}
               tabInsertIntent={tabInsertIntent}
               onTabInsertIntentChange={setTabInsertIntent}

@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
-import { WidgetAdvancedAccordion } from "./WidgetAdvancedAccordion";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
 import { TabsPaneList, TabsStyleFields } from "./TabsWidgetFields";
 import { WidgetRailPanelHeader } from "./widgetRailChrome";
@@ -45,6 +44,7 @@ export function TabsEditRail({
         className="min-h-0 flex-1"
         scrollMode="parent"
         defaultTab="data"
+        tabs={["data", "style"]}
         data={
           <div className="space-y-3 px-3 py-2">
             <div className="rounded-lg border border-brand-100 bg-brand-50/60 p-3 dark:border-brand-500/20 dark:bg-brand-500/10">
@@ -68,23 +68,6 @@ export function TabsEditRail({
           </div>
         }
         style={<TabsStyleFields widget={widget} onChange={onChange} onTitleChange={onTitleChange} />}
-        advanced={
-          <WidgetAdvancedAccordion
-            sections={[
-              {
-                id: "guide",
-                title: "辅助线",
-                content: <p>Tab 容器作为整体参与画布对齐，内部子组件不参与像素占位。</p>,
-              },
-              {
-                id: "linkage",
-                title: "联动设置",
-                disabled: true,
-                content: <p>Tab 容器不支持联动（对标 DataEase）。</p>,
-              },
-            ]}
-          />
-        }
       />
 
       {onDelete ? (

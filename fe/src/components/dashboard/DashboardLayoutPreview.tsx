@@ -80,7 +80,7 @@ export function DashboardLayoutPreview({
     shell: DashboardWidgetShell = "grid",
   ) => {
     const renderNested = (child: LayoutWidget) =>
-      renderWidget(child, grid, shell);
+      renderWidget(child, { w: child.colSpan, h: child.rowSpan }, "tab-child");
     return (
       <DashboardWidget
         widget={widget}

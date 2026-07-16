@@ -16,7 +16,7 @@ const FALLBACK_FIELD_RULES: Record<string, ChartFieldRule> = {
   bar: { minDimensions: 1, maxDimensions: 8, minMetrics: 1, maxMetrics: 8 },
   pie: { minDimensions: 1, maxDimensions: 1, minMetrics: 1, maxMetrics: 1 },
   gauge: { minDimensions: 0, maxDimensions: 0, minMetrics: 1, maxMetrics: 1 },
-  map: { minDimensions: 1, maxDimensions: 1, minMetrics: 1, maxMetrics: 1 },
+  map: { minDimensions: 1, maxDimensions: 3, minMetrics: 1, maxMetrics: 1 },
   heatmap: { minDimensions: 2, maxDimensions: 2, minMetrics: 1, maxMetrics: 1 },
   kpi: { minDimensions: 0, maxDimensions: 1, minMetrics: 1, maxMetrics: 4 },
   timeline: {

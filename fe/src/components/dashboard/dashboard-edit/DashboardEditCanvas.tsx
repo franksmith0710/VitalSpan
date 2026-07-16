@@ -60,6 +60,7 @@ type DashboardEditCanvasProps = {
     sourceEvent?: DragEvent,
   ) => void;
   onTabPaletteDrop?: (tabsWidgetId: string, type: PaletteDragPayload) => void;
+  onTabChildUnpark?: (widgetId: string, point: import("../pixelCanvas/geometry").PixelPoint) => void;
   onViewportChange: (viewport: PixelRect) => void;
   tabInsertIntent?: TabInsertIntent | null;
   onTabInsertIntentChange?: (intent: TabInsertIntent | null) => void;
@@ -86,6 +87,7 @@ export function DashboardEditCanvas({
   onDropInsert,
   onPaletteDrop,
   onTabPaletteDrop,
+  onTabChildUnpark,
   onViewportChange,
   tabInsertIntent = null,
   onTabInsertIntentChange,
@@ -211,6 +213,7 @@ export function DashboardEditCanvas({
             onViewportChange={onViewportChange}
             onPaletteDrop={onPaletteDrop}
             onTabPaletteDrop={onTabPaletteDrop}
+            onTabChildUnpark={onTabChildUnpark}
             onTabInsertIntentChange={onTabInsertIntentChange}
             widgetActions={widgetActions}
             renderWidget={renderPixelWidget}

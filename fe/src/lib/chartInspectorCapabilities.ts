@@ -159,3 +159,15 @@ export function supportsEmbeddedShellLegend(
 ): boolean {
   return isLineOrBarType(chartType);
 }
+
+/** 高级 Tab 是否至少有一项可配置能力 */
+export function chartHasAdvancedTab(chartType: ChartViewConfig["chartType"]): boolean {
+  const caps = chartInspectorCapabilities(chartType);
+  return (
+    caps.dataZoom ||
+    caps.timeRange ||
+    caps.markLines ||
+    caps.conditional ||
+    caps.jump
+  );
+}

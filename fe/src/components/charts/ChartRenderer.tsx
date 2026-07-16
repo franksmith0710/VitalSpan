@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { resolveChartConfigPhase } from "@/lib/chartConfigState";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
-import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT, isNumericRegionIdDimension, MAP_REGION_NAME_HINT } from "@/lib/geoMapChart";
+import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT, MAP_REGION_NAME_HINT, analyzeGeoMapMatch } from "@/lib/geoMapChart";
 import {
   isEchartsChartType,
   isKpiType,
@@ -189,6 +189,14 @@ export const ChartRenderer = memo(function ChartRenderer({
   const displayColumns = drillPipeline.columns;
   const displayField = drillPipeline.displayField;
 
+  const drillClickField = useMemo(
+    () =>
+      drillInteraction && localConfig.chartType === "map"
+        ? getClickDrillField(config, drill.stack)
+        : undefined,
+    [drillInteraction, config, drill.stack, localConfig.chartType],
+  );
+
   const handleDrillClick = useCallback(
     (value: string, label?: string) => {
       if (!drillInteraction) return;
@@ -247,8 +255,15 @@ export const ChartRenderer = memo(function ChartRenderer({
     const phase = resolveChartConfigPhase(localConfig);
     if (!phase.renderReady) return DEFAULT_GEO_MAP_PLACEHOLDER_HINT;
     const regionField = localConfig.dimensions?.[0]?.field ?? "";
-    if (regionField && isNumericRegionIdDimension(regionField, columns, rows as unknown[][])) {
-      return MAP_REGION_NAME_HINT;
+    if (regionField && (rows?.length ?? 0) > 0) {
+      const stats = analyzeGeoMapMatch(
+        rows as unknown[][],
+        columns,
+        regionField,
+      );
+      if (stats.total > 0 && stats.matched === 0) {
+        return MAP_REGION_NAME_HINT;
+      }
     }
     if (renderModel?.kind === "error") {
       return renderModel.message.split("。")[0] ?? renderModel.message;
@@ -361,6 +376,8 @@ export const ChartRenderer = memo(function ChartRenderer({
       onDrillClick={drillInteraction ? handleDrillClick : undefined}
       onJumpClick={jumpInteraction ? handleJumpClick : undefined}
       chartConfig={localConfig}
+      drillStack={drill.stack}
+      drillClickField={drillClickField}
       shellLegend={useShellLegendLayout}
     />
   );

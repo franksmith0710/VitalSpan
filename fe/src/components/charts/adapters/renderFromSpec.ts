@@ -7,7 +7,6 @@ import {
   buildGeoHeatmapPlaceholderEchartsOption,
   buildGeoMapEchartsOption,
   buildGeoMapPlaceholderEchartsOption,
-  isNumericRegionIdDimension,
 } from "@/lib/geoMapChart";
 
 export const ADVANCED_CHART_ROW_CAP = 500;
@@ -31,6 +30,10 @@ export type BuildEchartsStyleContext = {
   isDark?: boolean;
   embedEdit?: boolean;
   valueFormat?: NumberFormatConfig;
+  geoMapLevel?: {
+    mapId: string;
+    knownRegionNames: string[];
+  };
 };
 
 export const FALLBACK_CHART_TYPE = "table";
@@ -126,8 +129,7 @@ function buildMapOption(
   if (
     !regionField ||
     !metric ||
-    rows.length === 0 ||
-    isNumericRegionIdDimension(regionField, columns, rows)
+    rows.length === 0
   ) {
     return buildGeoMapPlaceholderEchartsOption({
       geo: style?.geo,
@@ -144,6 +146,8 @@ function buildMapOption(
     isDark: style?.isDark,
     embedEdit: style?.embedEdit,
     valueFormat: style?.valueFormat,
+    mapId: style?.geoMapLevel?.mapId,
+    knownRegionNames: style?.geoMapLevel?.knownRegionNames,
   });
 }
 

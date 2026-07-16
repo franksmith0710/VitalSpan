@@ -139,12 +139,6 @@ export function TabsWidget({
     event.preventDefault?.();
   };
 
-  const activateTabsWidget = () => {
-    if (mode === "edit" && !paletteDragActive && !selected) {
-      onSelect?.();
-    }
-  };
-
   const addPane = () => {
     if (cfg.panes.length >= MAX_PANES) return;
     const id = crypto.randomUUID();
@@ -314,33 +308,41 @@ export function TabsWidget({
 
         <div
           className={cn(
-            "dashboard-scroll relative min-h-0 flex-1 p-2",
+            "dashboard-scroll relative flex min-h-0 flex-1 flex-col p-2",
             isShape ? "overflow-hidden" : "overflow-auto",
           )}
           role="tabpanel"
           aria-label={activePane?.title ?? "页签内容"}
           onPointerDown={(event) => {
-            swallowWidgetPointer(event);
-            activateTabsWidget();
+            event.stopPropagation();
+            if (mode === "edit" && !paletteDragActive && !selected) {
+              event.preventDefault();
+              onSelect?.();
+            }
           }}
         >
-          <div className="relative min-h-[4rem]">
+          <div
+            className={cn(
+              "relative flex min-h-0 flex-1 flex-col",
+              children.length === 0 && "min-h-[4rem]",
+            )}
+          >
             {children.length === 0 ? (
               <TabsPaneEmptyState mode={mode} dragHint={paletteDragActive} />
             ) : (
-              <div className="flex min-h-0 flex-col gap-2">
+              <div className="flex min-h-0 flex-1 flex-col gap-2">
                 {children.map((child) => (
                   <div
                     key={child.id}
                     className={cn(
-                      "shrink-0",
-                      isShape ? "min-h-0 flex-1" : "min-h-[72px]",
+                      "min-h-0",
+                      isShape
+                        ? "flex min-h-[8rem] flex-1 flex-col"
+                        : "shrink-0 min-h-[72px]",
                     )}
                     data-tab-child-widget
                   >
-                    <div className={cn(isShape && "flex h-full min-h-[5rem] flex-col")}>
-                      {renderChild(child)}
-                    </div>
+                    {renderChild(child)}
                   </div>
                 ))}
               </div>

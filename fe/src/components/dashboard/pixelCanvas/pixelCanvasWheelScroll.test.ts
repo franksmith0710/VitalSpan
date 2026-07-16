@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   chainPixelCanvasWheelScroll,
   findVerticalScrollable,
+  isInsideWheelZoomSurface,
   normalizeWheelDeltaY,
   routePixelCanvasWheel,
+  VIZ_WHEEL_ZOOM_SURFACE_ATTR,
 } from "./pixelCanvasWheelScroll";
 
 function mockScrollable(
@@ -131,6 +133,35 @@ describe("routePixelCanvasWheel", () => {
 
     expect(routePixelCanvasWheel(host, event, leaf)).toBe(true);
     expect(getScrollTop()).toBe(200);
+  });
+
+  it("does not intercept wheel when the pointer is over a map zoom surface", () => {
+    const { host, getScrollTop } = mockHost(80);
+    const mapSurface = document.createElement("div");
+    mapSurface.setAttribute(VIZ_WHEEL_ZOOM_SURFACE_ATTR, "true");
+    const canvas = document.createElement("canvas");
+    mapSurface.append(canvas);
+    host.append(mapSurface);
+
+    const event = new WheelEvent("wheel", { deltaY: 120, bubbles: true });
+    const preventDefault = vi.spyOn(event, "preventDefault");
+
+    expect(routePixelCanvasWheel(host, event, canvas)).toBe(false);
+    expect(getScrollTop()).toBe(80);
+    expect(preventDefault).not.toHaveBeenCalled();
+  });
+});
+
+describe("isInsideWheelZoomSurface", () => {
+  it("detects nested chart canvas inside a wheel-zoom surface", () => {
+    const host = document.createElement("div");
+    const surface = document.createElement("div");
+    surface.setAttribute(VIZ_WHEEL_ZOOM_SURFACE_ATTR, "true");
+    const canvas = document.createElement("canvas");
+    surface.append(canvas);
+    host.append(surface);
+    expect(isInsideWheelZoomSurface(canvas, host)).toBe(true);
+    expect(isInsideWheelZoomSurface(host, host)).toBe(false);
   });
 });
 

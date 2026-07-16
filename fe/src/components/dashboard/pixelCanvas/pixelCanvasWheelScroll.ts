@@ -1,3 +1,20 @@
+/** 地图等组件用滚轮缩放时，画布不得拦截（见 data-viz-wheel-zoom） */
+export const VIZ_WHEEL_ZOOM_SURFACE_ATTR = "data-viz-wheel-zoom";
+
+export function isInsideWheelZoomSurface(
+  start: EventTarget | null,
+  host: HTMLElement,
+): boolean {
+  let node = start instanceof Node ? start : null;
+  while (node && node !== host) {
+    if (node instanceof HTMLElement && node.getAttribute(VIZ_WHEEL_ZOOM_SURFACE_ATTR) === "true") {
+      return true;
+    }
+    node = node.parentElement;
+  }
+  return false;
+}
+
 /** 从事件目标向上查找首个可纵向滚动的内层容器（不含画布 host） */
 export function findVerticalScrollable(
   start: EventTarget | null,
@@ -51,6 +68,7 @@ export function routePixelCanvasWheel(
   target: EventTarget | null = event.target,
 ): boolean {
   if (event.defaultPrevented) return false;
+  if (isInsideWheelZoomSurface(target, host)) return false;
 
   const deltaY = normalizeWheelDeltaY(event, host);
   if (deltaY === 0) return false;

@@ -34,7 +34,40 @@
 
 ---
 
-# Tab 点击页签画布滚到顶部
+# Tab 点击空页签占位 / 选中页签时画布滚到顶部
+
+## 症状
+
+- 画布滚到下方后，点击 Tab 内空页签占位「拖入或插入组件」，或首次点选 Tab 容器，`pixel-canvas-host` 滚回顶部
+
+## 根因
+
+1. `TabsWidget` 内 `onSelect` 经 `DashboardCanvasWidgetRenderer` 直达 `DashboardEditPage.handleSelect`，**绕过** `PixelCanvas.handleSelect` 的滚动保持
+2. 选中后右侧配置栏展开触发 `ResizeObserver` 重算 `contentSize`，异步把 `scrollTop` 归零
+3. 已选中 Tab 时 tabpanel 仍 `preventDefault`，可能触发多余焦点/锚定抖动
+
+## 修复
+
+- `preservePixelCanvasHostScroll`：多帧恢复 + `consumePendingCanvasHostScrollRestore` 在 `PixelCanvas` layout 提交后补恢复
+- `DashboardCanvasWidgetRenderer.handleSelect` 与 `DashboardEditPage` 的 `selectWidgetOnCanvas` 统一包滚动保持
+- 空页签区：仅未选中时 `preventDefault` + `onSelect`；已选中只 `stopPropagation`
+
+## 锚点
+
+- `fe/src/components/dashboard/pixelCanvas/preserveCanvasHostScroll.ts`
+- `fe/src/components/dashboard/pixelCanvas/PixelCanvas.tsx`
+- `fe/src/components/dashboard/dashboard-edit/DashboardCanvasWidgetRenderer.tsx`
+- `fe/src/components/dashboard/TabsWidget.tsx`
+- `fe/src/pages/admin/dashboard/DashboardEditPage.tsx`
+
+## 回归
+
+- `preserveCanvasHostScroll.test.ts`
+- 手测：滚到底部点空页签占位，画布不跳顶
+
+---
+
+# Tab 点击页签栏画布滚到顶部
 
 ## 症状
 

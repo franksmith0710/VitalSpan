@@ -23,6 +23,7 @@ import { ensureChartSlotCapacity } from "./chartFieldSlots";
 import { useChartInspector } from "./ChartInspectorContext";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
 import { activeFieldRefs } from "@/lib/chartConfigState";
+import { chartHasAdvancedTab } from "@/lib/chartInspectorCapabilities";
 
 function buildValidateSuccessMessage(cfg: ReturnType<typeof useChartInspector>["cfg"]): string {
   const dims = activeFieldRefs(cfg.dimensions).map((d) => d.field);
@@ -115,11 +116,14 @@ export function ChartEditorColumn({
     </div>
   );
 
+  const showAdvancedTab = chartHasAdvancedTab(cfg.chartType);
+
   return (
     <div className={cn("flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-gray-900", className)}>
       <ChartInspectorTabs
         className="min-h-0 flex-1"
         scrollMode="panel"
+        tabs={showAdvancedTab ? ["data", "style", "advanced"] : ["data", "style"]}
         dataFooter={dataFooter}
         data={
           <div className="space-y-3">
@@ -168,7 +172,7 @@ export function ChartEditorColumn({
           </div>
         }
         style={<ChartStylePanel />}
-        advanced={<ChartAdvancedPanel />}
+        advanced={showAdvancedTab ? <ChartAdvancedPanel /> : undefined}
       />
 
       {onDelete ? (

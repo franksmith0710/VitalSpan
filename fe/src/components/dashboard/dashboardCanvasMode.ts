@@ -1,18 +1,17 @@
-import type {
-  DashboardStyleConfig,
-  DashboardLayout,
-  DashboardLayoutV1,
-  DashboardLayoutV2,
-  LayoutWidget,
-  PixelLayoutWidget,
-} from "./layoutUtils";
 import {
+  TAB_CHILD_DEFAULT_COL_SPAN,
+  TAB_CHILD_DEFAULT_ROW_SPAN,
   normalizeWidgetIds,
   sortWidgets,
+  type DashboardLayout,
+  type DashboardLayoutV1,
+  type DashboardLayoutV2,
+  type LayoutWidget,
+  type PixelLayoutWidget,
 } from "./layoutUtils";
 import { normalizeWidgetLayout } from "./gridLayoutAdapter";
 import { normalizeDashboardGapConfig } from "./gapPolicy";
-import { styleConfigHasPersistedFields } from "./dashboardStyleConfig";
+import { styleConfigHasPersistedFields, type DashboardStyleConfig } from "./dashboardStyleConfig";
 import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
 import { fitCanvasHeightToContent } from "./pixelCanvas/PixelCanvas";
 import { compactPixelLayoutWhenZeroGap } from "./pixelCanvas/gapCompaction";
@@ -25,8 +24,8 @@ const PIXEL_ROW_MARGIN = 12;
 
 export type DashboardCanvasEditor = "grid" | "pixel" | "pixel-readonly";
 
-/** grid = RGL 卡片壳（顶栏拖动手柄）；shape = 像素画布 shape-inner 内容区（对标 DE） */
-export type DashboardWidgetShell = "grid" | "shape";
+/** grid = RGL 卡片壳；shape = 像素画布；tab-child = Tab 内嵌子组件（内容区 + 拖出把手） */
+export type DashboardWidgetShell = "grid" | "shape" | "tab-child";
 
 export type PreparedDashboardLayout = {
   editor: DashboardCanvasEditor;
@@ -102,6 +101,15 @@ function layoutWithHydratedStyle(layout: DashboardLayout): DashboardLayout {
 
 /** DashboardWidget 仍消费栅格 shape；此适配只提供内容渲染所需的显式兼容字段。 */
 export function pixelWidgetToLayoutWidget(widget: PixelLayoutWidget): LayoutWidget {
+  if (widget.parentTabsId) {
+    return {
+      ...widget,
+      colSpan: TAB_CHILD_DEFAULT_COL_SPAN,
+      rowSpan: TAB_CHILD_DEFAULT_ROW_SPAN,
+      gridX: 0,
+      gridY: 0,
+    };
+  }
   return {
     ...widget,
     colSpan: Math.max(1, Math.min(12, Math.round(widget.width / PIXEL_COLUMN_WIDTH))),

@@ -4,7 +4,9 @@ import type EChartsReact from "echarts-for-react";
 import {
   buildGeoMapPlaceholderEchartsOption,
   DEFAULT_GEO_MAP_PLACEHOLDER_HINT,
+  resolveEmbeddedGeoRoam,
 } from "@/lib/geoMapChart";
+import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { dwHint } from "@/components/dashboard/dashboardWidgetTypography";
 import { getEchartsTheme } from "@/lib/echarts-theme";
 import { cn } from "@/lib/utils";
@@ -32,7 +34,7 @@ export function GeoMapPlaceholderChart({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scheme = isDark ? "dark" : "light";
   const option = useMemo(
-    () => buildGeoMapPlaceholderEchartsOption({ isDark }),
+    () => buildGeoMapPlaceholderEchartsOption({ isDark, roam: resolveEmbeddedGeoRoam(true) }),
     [isDark],
   );
   const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
@@ -51,6 +53,7 @@ export function GeoMapPlaceholderChart({
       )}
       data-testid={testId}
       aria-label="中国地图占位"
+      {...{ [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" }}
     >
       <ReactECharts
         key={scheme}

@@ -45,15 +45,12 @@ describe("chartFieldAssignment", () => {
     }
   });
 
-  it("rejects region_id on map geo dimension", () => {
+  it("allows region_id on map geo dimension (demo mysql id mapping)", () => {
     const result = validateFieldAssignment(
       "region_id",
       { kind: "dimension", index: 0 },
       "map",
     );
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.message).toContain("区域编码");
-    }
+    expect(result.ok).toBe(true);
   });
 });

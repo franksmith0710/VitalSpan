@@ -56,14 +56,13 @@ export const DEFAULT_GEO_CHART_STYLE: Required<GeoChartStyle> = {
   showCellLabel: false,
 };
 
-/** 看板编辑态内嵌：关闭地图滚轮缩放，避免与画布纵向滚动抢事件 */
-export function resolveEmbeddedGeoRoam(
-  roam: boolean | undefined,
-  embedEdit: boolean,
-): boolean {
-  if (embedEdit) return false;
+/** 看板内嵌：保留 DataEase 式缩放平移（滚轮在地图上空时缩放地图） */
+export function resolveEmbeddedGeoRoam(roam: boolean | undefined): boolean {
   return roam !== false;
 }
+
+/** 对标 DataEase：允许缩小到 40%、放大到 4 倍 */
+export const GEO_MAP_SCALE_LIMIT = { min: 0.4, max: 4 } as const;
 
 type GeoFeatureProps = {
   name?: string;
@@ -148,6 +147,41 @@ export type GeoMapRegionResolve = {
   matched: boolean;
 };
 
+/** 演示库 regions.id → code（docker/demo-mysql；生产请 JOIN regions 取 name） */
+const DEMO_MYSQL_REGION_ID_TO_CODE: Record<number, string> = {
+  5: "SH",
+  6: "JS",
+  7: "BJ",
+  8: "GD",
+  9: "SC",
+};
+
+export function resolveDemoMysqlRegionId(raw: unknown): GeoMapRegionResolve | null {
+  const id =
+    typeof raw === "number"
+      ? raw
+      : Number.parseInt(String(raw ?? "").trim(), 10);
+  if (!Number.isFinite(id)) return null;
+  const code = DEMO_MYSQL_REGION_ID_TO_CODE[Math.round(id)];
+  if (!code) return null;
+  return resolveMapRegionName(code);
+}
+
+const REGION_ID_FIELD_PATTERN = /(?:^|_)(region_id|adcode|area_code|geo_id)(?:$|_)|^id$|_id$/i;
+
+/** 地图维度取值：地名 / adcode / 演示库 region_id */
+export function resolveMapDimensionValue(
+  regionField: string,
+  raw: unknown,
+  knownNames = listVsRegionNames(),
+): GeoMapRegionResolve {
+  if (REGION_ID_FIELD_PATTERN.test(regionField)) {
+    const demo = resolveDemoMysqlRegionId(raw);
+    if (demo) return demo;
+  }
+  return resolveMapRegionName(raw, knownNames);
+}
+
 function resolveAdcodeName(raw: string, adcodeMap: Map<number, string>): string | null {
   const digits = raw.replace(/\D/g, "");
   if (!digits) return null;
@@ -205,6 +239,26 @@ export function resolveMapRegionName(
   return { name: stripped || trimmed, matched: false };
 }
 
+/** 在指定底图名称列表内解析区域名（市/区县层级） */
+export function resolveMapRegionNameAtLevel(
+  raw: unknown,
+  knownNames: string[],
+): GeoMapRegionResolve {
+  const trimmed = String(raw ?? "").trim();
+  if (!trimmed) return { name: "", matched: false };
+  if (knownNames.includes(trimmed)) return { name: trimmed, matched: true };
+
+  const suffixRe = /(?:特别行政区|壮族自治区|回族自治区|维吾尔自治区|自治区|省|市|区|县)$/u;
+  const stripped = trimmed.replace(suffixRe, "");
+  for (const name of knownNames) {
+    const short = name.replace(suffixRe, "");
+    if (name === trimmed || short === trimmed || short === stripped || name.startsWith(trimmed)) {
+      return { name, matched: true };
+    }
+  }
+  return { name: stripped || trimmed, matched: false };
+}
+
 export type GeoMapMatchStats = {
   total: number;
   matched: number;
@@ -215,14 +269,15 @@ export function analyzeGeoMapMatch(
   rows: unknown[][],
   columns: string[],
   regionField: string,
+  knownNames = listVsRegionNames(),
+  atProvinceLevel = true,
 ): GeoMapMatchStats {
-  const knownNames = listVsRegionNames();
   const ri = columns.indexOf(regionField);
   const unmatched = new Set<string>();
   let matched = 0;
 
   for (const row of rows) {
-    const resolved = resolveMapRegionName(row[ri], knownNames);
+    const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, atProvinceLevel);
     if (resolved.matched) matched += 1;
     else if (resolved.name) unmatched.add(String(row[ri] ?? ""));
   }
@@ -247,6 +302,7 @@ export function buildGeoMapPlaceholderEchartsOption(
 ): Record<string, unknown> {
   ensureVsRegionsMapRegistered();
   const isDark = input.isDark ?? false;
+  const roam = resolveEmbeddedGeoRoam(input.roam ?? input.geo?.roam);
   const baseFill = isDark ? "#334155" : "#e8edf3";
   const emphasisFill = isDark ? "#475569" : "#d4dce6";
   const borderColor = isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(148, 163, 184, 0.55)";
@@ -261,7 +317,8 @@ export function buildGeoMapPlaceholderEchartsOption(
       {
         type: "map",
         map: VS_REGIONS_MAP_ID,
-        roam: input.roam ?? false,
+        roam,
+        ...(roam ? { scaleLimit: GEO_MAP_SCALE_LIMIT } : {}),
         layoutCenter: ["50%", "52%"],
         layoutSize: "92%",
         label: { show: false },
@@ -290,20 +347,37 @@ export function isGeoHeatmapPlaceholderOption(
   return Boolean(option?.[VS_GEO_HEATMAP_PLACEHOLDER_FLAG]);
 }
 
+function resolveRegionMetricValue(
+  regionField: string,
+  raw: unknown,
+  knownNames: string[],
+  atProvinceLevel: boolean,
+): GeoMapRegionResolve {
+  if (atProvinceLevel) {
+    return resolveMapDimensionValue(regionField, raw, knownNames);
+  }
+  if (REGION_ID_FIELD_PATTERN.test(regionField)) {
+    const demo = resolveDemoMysqlRegionId(raw);
+    if (demo) return demo;
+  }
+  return resolveMapRegionNameAtLevel(raw, knownNames);
+}
+
 function aggregateMapRegionData(
   rows: unknown[][],
   columns: string[],
   regionField: string,
   metricField: string,
+  knownNames = listVsRegionNames(),
+  atProvinceLevel = true,
 ): Array<{ name: string; value: number }> {
   const ri = columns.indexOf(regionField);
   const mi = columns.indexOf(metricField);
-  const knownNames = listVsRegionNames();
   const bucket = new Map<string, number>();
 
   for (const row of rows) {
-    const resolved = resolveMapRegionName(row[ri], knownNames);
-    if (!resolved.name) continue;
+    const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, atProvinceLevel);
+    if (!resolved.name || !resolved.matched) continue;
     const raw = Number(row[mi] ?? 0);
     const value = Number.isFinite(raw) ? raw : 0;
     bucket.set(resolved.name, (bucket.get(resolved.name) ?? 0) + value);
@@ -336,21 +410,28 @@ export type GeoMapRowsInput = {
   isDark?: boolean;
   embedEdit?: boolean;
   valueFormat?: NumberFormatConfig;
+  mapId?: string;
+  knownRegionNames?: string[];
 };
 
 export function buildGeoMapEchartsOption(input: GeoMapRowsInput): Record<string, unknown> {
   ensureVsRegionsMapRegistered();
   const geo = { ...DEFAULT_GEO_CHART_STYLE, ...input.geo };
   const showLabel = input.showLabel ?? geo.showRegionLabel;
-  const roam = resolveEmbeddedGeoRoam(geo.roam, input.embedEdit === true);
+  const roam = resolveEmbeddedGeoRoam(geo.roam);
   const isDark = input.isDark ?? false;
   const surface = geoMapSurfaceColors(isDark);
+  const mapId = input.mapId ?? VS_REGIONS_MAP_ID;
+  const atProvinceLevel = mapId === VS_REGIONS_MAP_ID;
+  const knownNames = input.knownRegionNames ?? listVsRegionNames();
 
   const data = aggregateMapRegionData(
     input.rows,
     input.columns,
     input.regionField,
     input.metricField,
+    knownNames,
+    atProvinceLevel,
   );
   const values = data.map((item) => item.value);
   const max = values.length ? Math.max(...values) : 1;
@@ -367,8 +448,9 @@ export function buildGeoMapEchartsOption(input: GeoMapRowsInput): Record<string,
     series: [
       {
         type: "map",
-        map: VS_REGIONS_MAP_ID,
+        map: mapId,
         roam,
+        ...(roam ? { scaleLimit: GEO_MAP_SCALE_LIMIT } : {}),
         layoutCenter: ["50%", "52%"],
         layoutSize: "92%",
         label: { show: showLabel, fontSize: 11, color: isDark ? "#e2e8f0" : "#475569" },

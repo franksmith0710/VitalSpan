@@ -8,7 +8,7 @@ export type FieldAssignResult = { ok: true } | { ok: false; message: string };
 const DATE_FIELD =
   /(?:^|_)(date|time|day|month|year|week|timestamp|datetime)(?:$|_)|_at$/i;
 const GEO_FIELD =
-  /(?:^|_)(region|area|city|province|country|geo|name|地名|省份|城市)(?:$|_)|省|市|自治区/i;
+  /(?:^|_)(region|area|city|province|country|geo|name|district|区县)(?:$|_)|省|市|自治区|区$|县$/i;
 const REGION_ID_FIELD = /(?:^|_)(region_id|adcode|area_code|geo_id)(?:$|_)|^id$|_id$/i;
 
 function slotMeta(chartType: ChartType | string, target: SlotTarget) {
@@ -57,16 +57,14 @@ export function validateFieldAssignment(
   }
 
   if (chartType === "map" && target.kind === "dimension") {
-    if (REGION_ID_FIELD.test(trimmed)) {
+    const geoLike =
+      GEO_FIELD.test(trimmed) ||
+      REGION_ID_FIELD.test(trimmed) ||
+      /^(name|region_name|province_name|city_name)$/i.test(trimmed);
+    if (!geoLike) {
       return {
         ok: false,
-        message: `「${trimmed}」是区域编码，地图无法直接匹配。请使用省/市名称类维度（如 region、province）`,
-      };
-    }
-    if (!GEO_FIELD.test(trimmed)) {
-      return {
-        ok: false,
-        message: `地图须使用地理名称维度（省/市/地区），「${trimmed}」无法参与地图着色`,
+        message: `地图须使用地理名称或区域编码字段（如 region、province、region_id），「${trimmed}」无法参与地图着色`,
       };
     }
   }

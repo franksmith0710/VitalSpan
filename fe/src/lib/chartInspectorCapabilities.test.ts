@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chartInspectorCapabilities, supportsEmbeddedShellLegend } from "./chartInspectorCapabilities";
+import { chartHasAdvancedTab, chartInspectorCapabilities, supportsEmbeddedShellLegend } from "./chartInspectorCapabilities";
 
 describe("chartInspectorCapabilities", () => {
   it("disables legend for table", () => {
@@ -22,5 +22,11 @@ describe("chartInspectorCapabilities", () => {
     expect(supportsEmbeddedShellLegend("line")).toBe(true);
     expect(supportsEmbeddedShellLegend("pie")).toBe(false);
     expect(supportsEmbeddedShellLegend("funnel")).toBe(false);
+  });
+
+  it("hides advanced tab for kpi without jump/timeRange", () => {
+    expect(chartHasAdvancedTab("kpi")).toBe(false);
+    expect(chartHasAdvancedTab("bar")).toBe(true);
+    expect(chartHasAdvancedTab("pie")).toBe(true);
   });
 });

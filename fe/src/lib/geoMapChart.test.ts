@@ -7,6 +7,7 @@ import {
   buildGeoMapPlaceholderEchartsOption,
   isGeoHeatmapPlaceholderOption,
   isNumericRegionIdDimension,
+  resolveDemoMysqlRegionId,
   resolveEmbeddedGeoRoam,
   resolveMapRegionName,
   VS_GEO_HEATMAP_PLACEHOLDER_FLAG,
@@ -28,25 +29,33 @@ describe("resolveMapRegionName", () => {
 });
 
 describe("analyzeGeoMapMatch", () => {
-  it("flags unmatched numeric region ids", () => {
+  it("flags unmatched numeric region ids without demo mapping", () => {
     const stats = analyzeGeoMapMatch(
       [
-        [5, 100],
-        [7, 80],
+        [99, 100],
+        [98, 80],
       ],
       ["region_id", "value"],
       "region_id",
     );
     expect(stats.matched).toBe(0);
-    expect(stats.unmatched).toContain("5");
+    expect(stats.unmatched.length).toBeGreaterThan(0);
   });
 });
 
 describe("resolveEmbeddedGeoRoam", () => {
-  it("disables roam in dashboard edit embed", () => {
-    expect(resolveEmbeddedGeoRoam(true, true)).toBe(false);
-    expect(resolveEmbeddedGeoRoam(true, false)).toBe(true);
-    expect(resolveEmbeddedGeoRoam(false, false)).toBe(false);
+  it("keeps roam enabled by default for embedded dashboard", () => {
+    expect(resolveEmbeddedGeoRoam(true)).toBe(true);
+    expect(resolveEmbeddedGeoRoam(undefined)).toBe(true);
+    expect(resolveEmbeddedGeoRoam(false)).toBe(false);
+  });
+});
+
+describe("resolveDemoMysqlRegionId", () => {
+  it("maps demo sales.region_id to province names", () => {
+    expect(resolveDemoMysqlRegionId(7)?.name).toBe("北京市");
+    expect(resolveDemoMysqlRegionId(8)?.matched).toBe(true);
+    expect(resolveDemoMysqlRegionId(99)).toBeNull();
   });
 });
 
@@ -57,6 +66,8 @@ describe("buildGeoMapPlaceholderEchartsOption", () => {
     expect(option.visualMap).toBeUndefined();
     const series = option.series as Array<Record<string, unknown>>;
     expect(series[0].type).toBe("map");
+    expect(series[0].roam).toBe(true);
+    expect(series[0].scaleLimit).toEqual({ min: 0.4, max: 4 });
     expect(series[0].data).toEqual([]);
   });
 });
@@ -76,6 +87,7 @@ describe("buildGeoMapEchartsOption", () => {
     const series = option.series as Array<Record<string, unknown>>;
     expect(series[0].type).toBe("map");
     expect(series[0].roam).toBe(true);
+    expect(series[0].scaleLimit).toEqual({ min: 0.4, max: 4 });
     expect(series[0].layoutSize).toBe("92%");
     expect(option.visualMap).toBeTruthy();
     const data = series[0].data as Array<{ name: string; value: number }>;
@@ -99,16 +111,18 @@ describe("buildGeoMapEchartsOption", () => {
     expect(beijing?.value).toBe(30);
   });
 
-  it("disables roam when embedEdit is true", () => {
+  it("maps demo region_id values to provinces", () => {
     const option = buildGeoMapEchartsOption({
-      rows: [["北京", 1]],
-      columns: ["region", "value"],
-      regionField: "region",
-      metricField: "value",
-      embedEdit: true,
+      rows: [
+        [7, 100],
+        [8, 200],
+      ],
+      columns: ["region_id", "amount"],
+      regionField: "region_id",
+      metricField: "amount",
     });
-    const series = option.series as Array<Record<string, unknown>>;
-    expect(series[0].roam).toBe(false);
+    const data = (option.series as Array<{ data: Array<{ name: string; value: number }> }>)[0].data;
+    expect(data.map((item) => item.name).sort()).toEqual(["北京市", "广东省"]);
   });
 });
 
@@ -116,6 +130,20 @@ describe("isNumericRegionIdDimension", () => {
   it("detects numeric region_id samples", () => {
     expect(isNumericRegionIdDimension("region_id", ["region_id", "v"], [[5, 1]])).toBe(true);
     expect(isNumericRegionIdDimension("region", ["region", "v"], [["北京", 1]])).toBe(false);
+  });
+});
+
+describe("analyzeGeoMapMatch with demo region_id", () => {
+  it("counts matched rows when demo ids map to provinces", () => {
+    const stats = analyzeGeoMapMatch(
+      [
+        [7, 100],
+        [8, 80],
+      ],
+      ["region_id", "value"],
+      "region_id",
+    );
+    expect(stats.matched).toBe(2);
   });
 });
 

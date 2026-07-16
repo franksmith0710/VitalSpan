@@ -7,10 +7,14 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { applyEchartsColorSchemeTokens, getEchartsTheme } from "@/lib/echarts-theme";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
-import { analyzeGeoMapMatch, buildGeoMapPlaceholderEchartsOption, buildGeoHeatmapPlaceholderEchartsOption, isGeoHeatmapPlaceholderOption, isGeoMapPlaceholderOption } from "@/lib/geoMapChart";
+import { analyzeGeoMapMatch, buildGeoMapPlaceholderEchartsOption, buildGeoHeatmapPlaceholderEchartsOption, isGeoHeatmapPlaceholderOption, isGeoMapPlaceholderOption, resolveEmbeddedGeoRoam } from "@/lib/geoMapChart";
+import { findMapDrillFilterValue } from "@/lib/geoMapLevels";
+import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { dwHint } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
+import { useGeoMapLevel } from "@/hooks/useGeoMapLevel";
+import type { ChartDrillFrame } from "@/lib/chartDrill";
 import {
   ADVANCED_CHART_ROW_CAP,
   buildEchartsOption,
@@ -24,30 +28,24 @@ type Props = {
   columns: string[];
   ariaLabel: string;
   isDark?: boolean;
-  /** 填满父容器（看板 widget 内嵌） */
   fill?: boolean;
   height?: number;
   width?: number;
-  /** @deprecated 保留兼容 */
   resizeDebounceMs?: number;
   deStyle?: ChartDeStyle;
   dataZoom?: boolean;
   chartColors?: string[];
   showLabel?: boolean;
   valueFormat?: NumberFormatConfig;
-  /** 地图占位态提示文案（对标 DataEase 图案地图） */
   mapPlaceholderHint?: string;
-  /** 热力图占位态提示文案 */
   heatmapPlaceholderHint?: string;
-  /** 看板编辑态内嵌：关闭地图滚轮缩放 */
   embedEdit?: boolean;
-  /** 图表元素点击下钻（预览/查看态） */
-  onDrillClick?: (name: string) => void;
-  /** 高级 · 跳转（查看态点击） */
+  onDrillClick?: (value: string, label?: string) => void;
   onJumpClick?: () => void;
   chartConfig?: ChartViewConfig;
-  /** 看板内嵌：图例由组件外壳 DOM 渲染 */
   shellLegend?: boolean;
+  drillStack?: ChartDrillFrame[];
+  drillClickField?: string;
 };
 
 export function AdvancedEchartsChart({
@@ -71,6 +69,8 @@ export function AdvancedEchartsChart({
   onJumpClick,
   chartConfig,
   shellLegend = false,
+  drillStack = [],
+  drillClickField,
 }: Props) {
   const chartRef = useRef<EChartsReact | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -80,15 +80,29 @@ export function AdvancedEchartsChart({
     [rows],
   );
   const scheme = isDark ? "dark" : "light";
+  const geoStyle = useMemo(() => readChartGeoStyle(deStyle ?? {}), [deStyle]);
+  const mapWheelZoom = spec.chartType === "map" && resolveEmbeddedGeoRoam(geoStyle.roam);
+  const mapDrillEnabled = spec.chartType === "map" && Boolean(chartConfig);
+  const { context: geoMapLevel, loading: geoMapLoading, version: geoMapVersion } = useGeoMapLevel({
+    enabled: mapDrillEnabled,
+    config: chartConfig,
+    drillStack,
+  });
+
   const geoMatchStats = useMemo(() => {
     if (spec.chartType !== "map") return null;
     const regionField = spec.encoding.dimensions[0]?.field;
     if (!regionField) return null;
-    return analyzeGeoMapMatch(capped, columns, regionField);
-  }, [spec, capped, columns]);
+    return analyzeGeoMapMatch(
+      capped,
+      columns,
+      regionField,
+      geoMapLevel.knownRegionNames,
+      geoMapLevel.drillDepth === 0,
+    );
+  }, [spec, capped, columns, geoMapLevel]);
 
   const option = useMemo(() => {
-    const geoStyle = readChartGeoStyle(deStyle ?? {});
     const pieStyle = readChartPieStyle(deStyle ?? {});
     let built = buildEchartsOption(spec, capped, columns, {
       geo: geoStyle,
@@ -97,11 +111,18 @@ export function AdvancedEchartsChart({
       isDark: scheme === "dark",
       embedEdit,
       valueFormat,
+      geoMapLevel: spec.chartType === "map"
+        ? {
+            mapId: geoMapLevel.mapId,
+            knownRegionNames: geoMapLevel.knownRegionNames,
+          }
+        : undefined,
     });
     if (spec.chartType === "map" && isGeoMapPlaceholderOption(built)) {
       built = buildGeoMapPlaceholderEchartsOption({
         geo: geoStyle,
         isDark: scheme === "dark",
+        roam: resolveEmbeddedGeoRoam(geoStyle.roam),
       });
     }
     if (spec.chartType === "heatmap" && isGeoHeatmapPlaceholderOption(built)) {
@@ -126,7 +147,7 @@ export function AdvancedEchartsChart({
       );
     }
     return built;
-  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit]);
+  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit, geoStyle, geoMapLevel, geoMapVersion]);
   const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
 
   const isMapPlaceholder =
@@ -159,6 +180,8 @@ export function AdvancedEchartsChart({
       ? `有 ${geoMatchStats.total - geoMatchStats.matched} 条无法匹配地图区域`
       : null;
 
+  const geoAssetWarning = geoMapLevel.missingAsset ?? null;
+
   const chartEvents = useMemo(() => {
     if (!onDrillClick && !onJumpClick) return undefined;
     return {
@@ -168,10 +191,25 @@ export function AdvancedEchartsChart({
           return;
         }
         if (params?.name == null || params.name === "") return;
-        onDrillClick?.(String(params.name));
+        const label = String(params.name);
+        if (!onDrillClick) return;
+        if (drillClickField) {
+          const filterValue = findMapDrillFilterValue(
+            label,
+            drillClickField,
+            capped,
+            columns,
+            geoMapLevel.knownRegionNames,
+          );
+          onDrillClick(filterValue, label);
+          return;
+        }
+        onDrillClick(label);
       },
     };
-  }, [onDrillClick, onJumpClick]);
+  }, [onDrillClick, onJumpClick, drillClickField, capped, columns, geoMapLevel.knownRegionNames]);
+
+  const chartKey = `${scheme}:${geoMapLevel.mapId}:${geoMapVersion}`;
 
   return (
     <div
@@ -187,7 +225,7 @@ export function AdvancedEchartsChart({
           数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条
         </p>
       ) : null}
-      {geoMatchWarning ? (
+      {(geoMatchWarning || geoAssetWarning) ? (
         <p
           role="status"
           className={cn(
@@ -195,7 +233,7 @@ export function AdvancedEchartsChart({
             fill ? "pointer-events-none absolute inset-x-2 top-2 z-[2] rounded-md bg-warning-500/10 px-2 py-1" : "mb-2",
           )}
         >
-          {geoMatchWarning}
+          {geoAssetWarning ?? geoMatchWarning}
         </p>
       ) : null}
       {isEmpty ? (
@@ -210,9 +248,23 @@ export function AdvancedEchartsChart({
           暂无数据
         </div>
       ) : (
-        <div className={cn(fill && "relative min-h-0 flex-1")}>
+        <div
+          className={cn(fill && "relative min-h-0 flex-1")}
+          {...(mapWheelZoom ? { [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" } : {})}
+        >
+          {geoMapLoading ? (
+            <p
+              role="status"
+              className={cn(
+                "pointer-events-none absolute inset-x-2 top-2 z-[2] text-theme-xs text-gray-500 dark:text-gray-400",
+                fill ? "" : "mb-2",
+              )}
+            >
+              正在加载{geoMapLevel.levelLabel}地图…
+            </p>
+          ) : null}
           <ReactECharts
-            key={isDark ? "dark" : "light"}
+            key={chartKey}
             ref={chartRef}
             option={option}
             theme={theme}

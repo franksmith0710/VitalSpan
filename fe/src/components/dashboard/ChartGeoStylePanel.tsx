@@ -52,7 +52,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
         />
         <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
           {chartType === "map"
-            ? "离线中国省级底图（GEO-IRON-01）。地理维度支持「北京」「北京市」「广东省」及 adcode；须为地名，不可用 region_id。"
+            ? "离线中国地图：省级 34 区划；配置「钻取/市级」「钻取/区县」可在预览态点击下钻（对标 DataEase）。支持省/市名称、adcode。"
             : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。"}
         </p>
       </div>

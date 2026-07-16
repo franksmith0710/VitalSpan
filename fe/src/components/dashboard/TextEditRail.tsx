@@ -5,9 +5,9 @@ import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
 import { ChartFieldSlot } from "./ChartFieldSlot";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
 import { DatasetPickerPanel } from "./DatasetPickerPanel";
+import { INSPECTOR_HINT } from "./inspectorCompact";
 import { textConfigToHtml } from "./richTextHtml";
 import { useTextDatasetInspector } from "./useTextDatasetInspector";
-import { WidgetAdvancedAccordion } from "./WidgetAdvancedAccordion";
 import { WidgetEditRailLayout } from "./WidgetEditRailLayout";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
 
@@ -20,7 +20,7 @@ type TextEditRailProps = {
 };
 
 type TextEditorColumnProps = TextEditRailProps & {
-  onAssignField: (field: string, target: "dimension" | "metric") => void;
+  onAssignField: (field: string) => void;
 };
 
 function TextEditorColumn({
@@ -35,6 +35,7 @@ function TextEditorColumn({
   const html = textConfigToHtml(textConfig);
   const document = new DOMParser().parseFromString(html, "text/html");
   const characters = (document.body.textContent ?? "").trim().length;
+  const displayField = textConfig.metricField ?? textConfig.dimensionField;
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col bg-white dark:bg-gray-900", className)}>
@@ -48,108 +49,67 @@ function TextEditorColumn({
       <ChartInspectorTabs
         className="min-h-0 flex-1"
         defaultTab="data"
+        tabs={["data", "style"]}
         data={
-          <div className="space-y-4">
-            <ChartFieldSlot
-              label="维度"
-              fieldName={textConfig.dimensionField}
-              slotKind="dimension"
-              disabled={!textConfig.datasetId}
-              onClear={
-                textConfig.dimensionField
-                  ? () => onConfigChange?.({ ...textConfig, dimensionField: undefined })
-                  : undefined
-              }
-              onDropField={(field) => onAssignField(field, "dimension")}
-            />
-            <ChartFieldSlot
-              label="指标"
-              fieldName={textConfig.metricField}
-              slotKind="metric"
-              disabled={!textConfig.datasetId}
-              onClear={
-                textConfig.metricField
-                  ? () => onConfigChange?.({ ...textConfig, metricField: undefined })
-                  : undefined
-              }
-              onDropField={(field) => onAssignField(field, "metric")}
-            />
-            <div className="space-y-1.5">
-              <span className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                过滤器
-              </span>
-              <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50/40 px-3 py-2 text-theme-xs text-gray-400 dark:border-gray-700 dark:bg-white/[0.02] dark:text-gray-500">
-                富文本不使用图表过滤器
-              </div>
-            </div>
-            <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-              从右侧数据集拖入字段；引用时仅展示首条结果值（对标 DataEase）。
-            </p>
+          <div className="space-y-3">
+            {textConfig.datasetId ? (
+              <ChartFieldSlot
+                label="显示字段"
+                fieldName={displayField}
+                slotKind="metric"
+                disabled={!textConfig.datasetId}
+                onClear={
+                  displayField
+                    ? () =>
+                        onConfigChange?.({
+                          ...textConfig,
+                          metricField: undefined,
+                          dimensionField: undefined,
+                        })
+                    : undefined
+                }
+                onDropField={onAssignField}
+              />
+            ) : (
+              <p className={INSPECTOR_HINT}>
+                先在右侧选择数据集，再拖入字段；正文以静态富文本为主（对标 DataEase 文本卡）。
+              </p>
+            )}
+            {textConfig.datasetId ? (
+              <p className={INSPECTOR_HINT}>
+                绑定字段后取首条结果值作占位引用；双击画布编辑正文样式与内容。
+              </p>
+            ) : null}
           </div>
         }
         style={
-          <div className="space-y-4">
+          <div className="space-y-3">
             {onTitleChange ? (
               <div className="space-y-1.5">
-                <Label htmlFor={`text-title-${widget.id}`}>组件名称</Label>
+                <Label htmlFor={`text-title-${widget.id}`} className="text-[11px] font-medium text-gray-500">
+                  组件名称
+                </Label>
                 <Input
                   id={`text-title-${widget.id}`}
                   value={widget.title}
                   onChange={(e) => onTitleChange(e.target.value)}
-                  className="h-10"
+                  className="h-8 rounded-md text-theme-xs"
                 />
               </div>
             ) : null}
-            <div className="rounded-lg border border-gray-200 bg-gray-50/60 p-3 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                文字样式
+            <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2.5 dark:border-gray-800 dark:bg-white/[0.03]">
+              <p className="text-[11px] font-medium text-gray-800 dark:text-white/90">文字样式</p>
+              <p className="mt-1 text-[10px] leading-relaxed text-gray-500 dark:text-gray-400">
+                双击画布进入编辑，使用浮动工具栏调整字体、字号、颜色与对齐。
               </p>
-              <p className="mt-1 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                在画布中双击进入编辑，使用浮动工具栏调整字体、字号、颜色与对齐。
-              </p>
-              <p className="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400">
                 当前内容：{characters} 个字符
+              </p>
+              <p className="mt-2 text-[10px] text-gray-400 dark:text-gray-500">
+                保存：点击外部或 Ctrl+Enter；取消：Esc
               </p>
             </div>
           </div>
-        }
-        advanced={
-          <WidgetAdvancedAccordion
-            sections={[
-              {
-                id: "feature",
-                title: "功能设置",
-                defaultOpen: true,
-                content: (
-                  <p className="leading-relaxed">
-                    双击画布编辑正文；点击外部或 Ctrl+Enter 保存，Esc 取消。
-                  </p>
-                ),
-              },
-              {
-                id: "guide",
-                title: "辅助线",
-                content: <p>富文本组件不支持辅助线。</p>,
-              },
-              {
-                id: "conditional",
-                title: "条件样式",
-                content: <p>富文本组件不支持条件样式。</p>,
-              },
-              {
-                id: "linkage",
-                title: "联动设置",
-                disabled: true,
-                content: <p>富文本组件不支持联动（对标 DataEase）。</p>,
-              },
-              {
-                id: "jump",
-                title: "跳转设置",
-                disabled: true,
-                content: <p>富文本组件不支持跳转（对标 DataEase）。</p>,
-              },
-            ]}
-          />
         }
       />
 
@@ -173,6 +133,14 @@ export function TextEditRail({
   const textConfig = widget.textConfig;
   const dataset = useTextDatasetInspector(textConfig, (next) => onConfigChange?.(next));
 
+  const assignDisplayField = (field: string) => {
+    onConfigChange?.({
+      ...textConfig,
+      metricField: field,
+      dimensionField: undefined,
+    });
+  };
+
   return (
     <WidgetEditRailLayout
       className={className}
@@ -184,7 +152,7 @@ export function TextEditRail({
           onTitleChange={onTitleChange}
           onConfigChange={onConfigChange}
           onDelete={onDelete}
-          onAssignField={dataset.assignField}
+          onAssignField={assignDisplayField}
           className="border-r border-gray-200 dark:border-gray-800"
         />
       }
@@ -200,13 +168,7 @@ export function TextEditRail({
           columnsLoading={dataset.columnsLoading}
           columnsReady={dataset.columnsReady}
           onDatasetSelect={dataset.handleDatasetSelect}
-          onFieldClick={(field) => {
-            if (!textConfig.dimensionField) {
-              dataset.assignField(field, "dimension");
-              return;
-            }
-            dataset.assignField(field, "metric");
-          }}
+          onFieldClick={assignDisplayField}
           onRefreshFields={dataset.refreshColumns}
         />
       }

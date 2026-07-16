@@ -331,6 +331,10 @@ export function resolvePixelTabsHost(
   return undefined;
 }
 
+/** Tab 内嵌子组件在布局适配层的默认栅格占位（与栅格模式 appendWidget 一致） */
+export const TAB_CHILD_DEFAULT_COL_SPAN = 12;
+export const TAB_CHILD_DEFAULT_ROW_SPAN = 2;
+
 /** Tab 子组件不参与画布占位与碰撞，坐标折叠到容器内 */
 export function parkPixelWidgetInTab(
   child: PixelLayoutWidget,

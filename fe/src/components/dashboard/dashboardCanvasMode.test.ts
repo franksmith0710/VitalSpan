@@ -5,8 +5,10 @@ import {
   dashboardPersistFingerprint,
   isPixelCanvasEnabled,
   migrateDashboardLayoutV1,
+  pixelWidgetToLayoutWidget,
   prepareDashboardLayout,
 } from "./dashboardCanvasMode";
+import { TAB_CHILD_DEFAULT_COL_SPAN, TAB_CHILD_DEFAULT_ROW_SPAN } from "./layoutUtils";
 import { packPixelLayoutSeamless } from "./pixelCanvas/collisionLayout";
 import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
 
@@ -167,6 +169,23 @@ describe("dashboard canvas mode", () => {
     expect(saved.styleConfig?.themeVariants?.light?.canvasBackground).toBe("#ffffff");
     expect(saved.styleConfig?.themeVariants?.dark?.canvasBackground).toBe("#0f172a");
     expect(saved.styleConfig?.colorScheme).toBe("dark");
+  });
+
+  it("pixelWidgetToLayoutWidget 为 Tab 子组件提供默认栅格占位", () => {
+    const parked = pixelWidgetToLayoutWidget({
+      id: "child",
+      type: "chart",
+      title: "图表",
+      order: 1,
+      x: 10,
+      y: 20,
+      width: 0,
+      height: 0,
+      parentTabsId: "tabs",
+      tabPaneId: "pane-1",
+    });
+    expect(parked.colSpan).toBe(TAB_CHILD_DEFAULT_COL_SPAN);
+    expect(parked.rowSpan).toBe(TAB_CHILD_DEFAULT_ROW_SPAN);
   });
 
   it("pack 会改变非紧凑布局（说明 hydrate 不可默认 pack）", () => {

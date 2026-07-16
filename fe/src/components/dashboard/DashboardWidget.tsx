@@ -22,6 +22,7 @@ import { FilterWidget } from "./FilterWidget";
 import { TextWidget } from "./TextWidget";
 import { MediaWidget } from "./MediaWidget";
 import { TabsWidget } from "./TabsWidget";
+import { TabChildWidgetChrome } from "./TabChildWidgetChrome";
 import type {
   FilterWidgetConfig,
   LayoutWidget,
@@ -241,6 +242,7 @@ export function DashboardWidget({
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
   const configReady = isWidgetConfigReady(widget.chartConfig);
   const inShapeShell = shell === "shape";
+  const inTabChildShell = shell === "tab-child";
   const sizeW = gridSize?.w ?? widget.colSpan;
   const sizeH = gridSize?.h ?? widget.rowSpan;
   const sizeLabel =
@@ -301,6 +303,24 @@ export function DashboardWidget({
         dashboardEditMode={mode === "edit"}
       />
     ) : null;
+
+  if (inTabChildShell) {
+    return (
+      <TabChildWidgetChrome
+        widgetId={widget.id}
+        title={widget.title}
+        selected={selected}
+        mode={mode}
+        icon={Icon}
+        editable={Boolean(onTitleChange)}
+        onTitleChange={onTitleChange ? (next) => onTitleChange(widget.id, next) : undefined}
+        onDelete={onDelete ? () => onDelete(widget.id) : undefined}
+        onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
+      >
+        <div className="flex min-h-0 flex-1 flex-col p-2">{chartBody}</div>
+      </TabChildWidgetChrome>
+    );
+  }
 
   if (inShapeShell) {
     return (

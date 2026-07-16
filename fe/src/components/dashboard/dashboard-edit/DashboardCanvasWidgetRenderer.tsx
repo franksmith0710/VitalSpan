@@ -22,6 +22,7 @@ import { WidgetErrorBoundary } from "../WidgetErrorBoundary";
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import { useDashboardGridPlayer } from "../dashboardGridPlayerContext";
 import { usePixelShapePlayer } from "../pixelCanvas/pixelShapePlayerContext";
+import { preservePixelCanvasHostScroll } from "../pixelCanvas/preserveCanvasHostScroll";
 
 export type DashboardWidgetsSetter = (
   update: LayoutWidget[] | ((previous: LayoutWidget[]) => LayoutWidget[]),
@@ -124,10 +125,18 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   const allWidgets = useDashboardWidgets();
   const isShapePlaying = usePixelShapePlayer();
   const isGridPlaying = useDashboardGridPlayer();
-  const pixelSize =
-    "width" in sourceWidget && !isShapePlaying
-      ? { width: sourceWidget.width, height: sourceWidget.height }
-      : undefined;
+  const hasPixelFootprint =
+    "width" in sourceWidget &&
+    !nested &&
+    !isShapePlaying &&
+    sourceWidget.width > 0 &&
+    sourceWidget.height > 0;
+  const pixelSize = hasPixelFootprint
+    ? { width: sourceWidget.width, height: sourceWidget.height }
+    : undefined;
+  const effectiveGridSize =
+    gridSize ??
+    (nested ? { w: widget.colSpan, h: widget.rowSpan } : undefined);
   const filterParameters = useMemo(
     () =>
       widget.type === "chart"
@@ -154,7 +163,9 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   const selectWidget = nested ? onNestedSelect : onSelect;
 
   const handleSelect = useCallback(
-    (event: { shiftKey: boolean }) => selectWidget(widget.id, event.shiftKey),
+    (event: { shiftKey: boolean }) => {
+      preservePixelCanvasHostScroll(() => selectWidget(widget.id, event.shiftKey));
+    },
     [selectWidget, widget.id],
   );
 
@@ -188,8 +199,8 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
 
   const renderNested = useCallback(
     (child: LayoutWidget) =>
-      renderChild?.(child, { nested: true, shell }) ?? null,
-    [renderChild, shell],
+      renderChild?.(child, { nested: true, shell: "tab-child" }) ?? null,
+    [renderChild],
   );
 
   const handleTabPaletteDrop = useCallback(
@@ -209,7 +220,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
         mode={mode}
         shell={shell}
         selected={selected}
-        gridSize={gridSize}
+        gridSize={effectiveGridSize}
         pixelSize={pixelSize}
         allWidgets={widget.type === "tabs" ? allWidgets : undefined}
         renderNestedWidget={nested ? undefined : renderNested}
