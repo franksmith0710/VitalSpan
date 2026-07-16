@@ -51,13 +51,13 @@ export function ChartDataSlots() {
       {slots.map((slot) => {
         const target: SlotTarget = { kind: slot.kind, index: slot.index };
         const rawField = fieldAt(target);
-        const displayField =
-          rawField && slot.showAggregation ? `${rawField} (求和)` : rawField;
         return (
           <ChartFieldSlot
             key={`${slot.kind}-${slot.index}-${slot.label}`}
             label={slot.label}
-            fieldName={displayField}
+            fieldName={rawField}
+            fieldSuffix={rawField && slot.showAggregation ? "求和" : undefined}
+            slotKind={slot.kind === "metric" ? "metric" : "dimension"}
             active={isActiveSlot(activeSlot, target)}
             disabled={columnsDisabled}
             onClick={() => setActiveSlot(target)}

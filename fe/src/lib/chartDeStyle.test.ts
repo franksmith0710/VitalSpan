@@ -8,6 +8,7 @@ import {
   readChartLegendVisible,
   readChartTitleVisible,
   resolveChartContentShellStyle,
+  resolveWidgetShellStyle,
   stripChartLabelFormatOverrides,
   stripChartPaletteOverrides,
   stripChartQueryLimitOverride,
@@ -192,6 +193,21 @@ describe("dashboard widget style sync", () => {
     expect(stripChartPaletteOverrides(baseCfg)).toBe(baseCfg);
     expect(stripChartLabelFormatOverrides(baseCfg)).toBe(baseCfg);
     expect(stripChartQueryLimitOverride(baseCfg)).toBe(baseCfg);
+  });
+});
+
+describe("resolveWidgetShellStyle", () => {
+  it("renders decorative frame for non-chart widgets when widgetStyle uses frame mode", () => {
+    const shell = resolveWidgetShellStyle(
+      {
+        backgroundShow: true,
+        backgroundMode: "frame",
+        framePresetId: "frame-7",
+        frameColor: "#3370ff",
+      },
+      "light",
+    );
+    expect(shell.frameLayer?.backgroundImage).toContain("data:image/svg+xml");
   });
 });
 

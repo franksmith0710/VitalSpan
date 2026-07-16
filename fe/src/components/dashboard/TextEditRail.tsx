@@ -53,6 +53,7 @@ function TextEditorColumn({
             <ChartFieldSlot
               label="维度"
               fieldName={textConfig.dimensionField}
+              slotKind="dimension"
               disabled={!textConfig.datasetId}
               onClear={
                 textConfig.dimensionField
@@ -64,6 +65,7 @@ function TextEditorColumn({
             <ChartFieldSlot
               label="指标"
               fieldName={textConfig.metricField}
+              slotKind="metric"
               disabled={!textConfig.datasetId}
               onClear={
                 textConfig.metricField

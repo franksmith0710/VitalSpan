@@ -330,6 +330,10 @@ export function mergeChartDeStyleIntoWidgetShell(
   return merged;
 }
 
+function widgetStyleAllowsDecorativeFrame(ws: WidgetStyleConfig | undefined): boolean {
+  return ws?.backgroundMode === "frame" && Boolean(ws?.framePresetId);
+}
+
 /** 看板 widgetStyle 外壳 + 图表 deStyle 外观合并到同一外框层 */
 export function resolveChartContentShellStyle(
   globalWidgetStyle: DashboardStyleConfig["widgetStyle"] | undefined,
@@ -345,8 +349,7 @@ export function resolveChartContentShellStyle(
   const mergedWidgetStyle = cfg
     ? mergeChartDeStyleIntoWidgetShell(globalWidgetStyle, de)
     : globalWidgetStyle;
-  const allowFrame =
-    mergedWidgetStyle?.backgroundMode === "frame" && Boolean(mergedWidgetStyle?.framePresetId);
+  const allowFrame = widgetStyleAllowsDecorativeFrame(mergedWidgetStyle);
   const outer = mergeWidgetShellStyle(mergedWidgetStyle, colorScheme, {
     allowDecorativeFrame: allowFrame,
   });
@@ -394,7 +397,9 @@ export function resolveWidgetShellStyle(
   globalWidgetStyle: DashboardStyleConfig["widgetStyle"] | undefined,
   colorScheme: ColorScheme = "light",
 ): ReturnType<typeof mergeWidgetShellStyle> {
-  return mergeWidgetShellStyle(globalWidgetStyle, colorScheme);
+  return mergeWidgetShellStyle(globalWidgetStyle, colorScheme, {
+    allowDecorativeFrame: widgetStyleAllowsDecorativeFrame(globalWidgetStyle),
+  });
 }
 
 export function patchChartShowLabel(cfg: ChartViewConfig, show: boolean): ChartViewConfig {
