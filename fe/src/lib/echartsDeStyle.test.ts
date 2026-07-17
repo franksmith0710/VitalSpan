@@ -138,4 +138,64 @@ describe("applyDeStyleToEchartsOption", () => {
     const pie = (option.series as Array<{ center?: [string, string] }>)[0];
     expect(pie?.center?.[1]).toBe("44%");
   });
+
+  it("applies label color and tooltip presentation from deStyle", () => {
+    const option = applyDeStyleToEchartsOption(
+      { series: [{ type: "bar", data: [1, 2] }], xAxis: {}, yAxis: {} },
+      {
+        label: { fontSize: 14, color: "#112233" },
+        tooltip: { fontSize: 13, color: "#ffffff", background: "#334455" },
+      },
+      false,
+      { showLabel: true, showTooltip: true },
+    );
+    const series = (option.series as Array<{ label?: { color?: string; fontSize?: number } }>)[0];
+    expect(series?.label?.color).toBe("#112233");
+    expect(series?.label?.fontSize).toBe(14);
+    const tooltip = option.tooltip as {
+      backgroundColor?: string;
+      textStyle?: { color?: string; fontSize?: number };
+    };
+    expect(tooltip.backgroundColor).toBe("#334455");
+    expect(tooltip.textStyle?.color).toBe("#ffffff");
+    expect(tooltip.textStyle?.fontSize).toBe(13);
+  });
+
+  it("prefers explicit labelPresentation over deStyle", () => {
+    const option = applyDeStyleToEchartsOption(
+      { series: [{ type: "line", data: [1] }], xAxis: {}, yAxis: {} },
+      { label: { fontSize: 10, color: "#000000" } },
+      false,
+      {
+        showLabel: true,
+        labelPresentation: { fontSize: 18, color: "#ff00ff" },
+      },
+    );
+    const series = (option.series as Array<{ label?: { color?: string; fontSize?: number } }>)[0];
+    expect(series?.label?.fontSize).toBe(18);
+    expect(series?.label?.color).toBe("#ff00ff");
+  });
+
+  it("keeps existing map label color when labelPresentation.color is unset", () => {
+    const option = applyDeStyleToEchartsOption(
+      {
+        series: [
+          {
+            type: "map",
+            map: "china",
+            data: [],
+            label: { show: true, color: "#475569" },
+          },
+        ],
+      },
+      {},
+      false,
+      {
+        showLabel: true,
+        labelPresentation: { fontSize: 12 },
+      },
+    );
+    const series = (option.series as Array<{ label?: { color?: string } }>)[0];
+    expect(series?.label?.color).toBe("#475569");
+  });
 });

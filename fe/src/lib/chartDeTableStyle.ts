@@ -19,6 +19,20 @@ export type ChartDeTableStyle = {
   summaryBg?: string;
   /** 汇总行文字色 */
   summaryFg?: string;
+  /** 斑马纹行背景色（有值即启用斑马纹，对标 DE 色块而非开关） */
+  zebraBg?: string;
+  /** @deprecated 使用 zebraBg；true 时回退默认斑马纹色 */
+  zebraStriped?: boolean;
+  /** 列背景（对标 DE「列背景」） */
+  columnBg?: string;
+  /** 表头左上角/冻结角背景（对标 DE「角背景」） */
+  cornerBg?: string;
+  /** 无数据提示文字色 */
+  emptyHintFg?: string;
+  /** 分页器文字/图标色 */
+  paginationFg?: string;
+  /** 分页器字号 */
+  paginationFontSize?: number;
   scrollbarColor?: string;
   borderColor?: string;
   paginationMode?: TablePaginationMode;
@@ -34,6 +48,29 @@ export type ChartDeTableStyle = {
 };
 
 export const DEFAULT_TABLE_PAGE_SIZE = 20;
+export const DEFAULT_TABLE_PAGINATION_FONT_SIZE = 14;
+export const DEFAULT_TABLE_ZEBRA_BG = "rgba(148, 163, 184, 0.12)";
+
+export function resolveTableZebraBg(style: ChartDeTableStyle): string | undefined {
+  if (style.zebraBg?.trim()) return style.zebraBg;
+  if (style.zebraStriped === true) return DEFAULT_TABLE_ZEBRA_BG;
+  return undefined;
+}
+
+/** 组件 deTableStyle 覆盖看板默认表格配色 */
+export function mergeChartTableStyle(
+  chartStyle: ChartDeTableStyle,
+  dashboardDefaults?: ChartDeTableStyle,
+): ChartDeTableStyle {
+  if (!dashboardDefaults || Object.keys(dashboardDefaults).length === 0) return chartStyle;
+  return { ...dashboardDefaults, ...chartStyle };
+}
+
+export function readDashboardTableColorDefaults(
+  styleConfig?: { tableColorStyle?: ChartDeTableStyle },
+): ChartDeTableStyle {
+  return styleConfig?.tableColorStyle ?? {};
+}
 
 export function readChartDeTableStyle(cfg: ChartViewConfig): ChartDeTableStyle {
   const raw = cfg.nativeBody?.deTableStyle;

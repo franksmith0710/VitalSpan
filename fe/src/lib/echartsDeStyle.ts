@@ -230,6 +230,8 @@ export function applyDeStyleToEchartsOption(
     seriesGradient?: boolean;
     valueFormat?: NumberFormatConfig;
     layout?: EchartsLayoutContext;
+    labelPresentation?: { fontSize: number; color?: string };
+    tooltipPresentation?: { fontSize: number; color?: string; background?: string };
   },
 ): EChartsOption {
   const insets = resolveEchartsChromeInsets(deStyle, dataZoom, option, options?.layout);
@@ -334,16 +336,35 @@ export function applyDeStyleToEchartsOption(
 
   const showLabel = options?.showLabel ?? false;
   const valueFormat = options?.valueFormat;
+  const labelPresentation = options?.labelPresentation ?? {
+    fontSize: deStyle.label?.fontSize ?? 12,
+    color: deStyle.label?.color,
+  };
+  const tooltipPresentation = options?.tooltipPresentation ?? {
+    fontSize: deStyle.tooltip?.fontSize ?? 12,
+    color: deStyle.tooltip?.color,
+    background: deStyle.tooltip?.background,
+  };
+
   if (options?.showTooltip === false) {
     const prevTooltip =
       next.tooltip && typeof next.tooltip === "object" ? next.tooltip : {};
     next.tooltip = { ...prevTooltip, show: false };
-  } else if (valueFormat) {
+  } else {
     const prevTooltip =
       next.tooltip && typeof next.tooltip === "object" ? next.tooltip : {};
     next.tooltip = {
       ...prevTooltip,
-      valueFormatter: echartsTooltipValueFormatter(valueFormat),
+      show: true,
+      backgroundColor: tooltipPresentation.background ?? prevTooltip.backgroundColor,
+      textStyle: {
+        ...(typeof prevTooltip.textStyle === "object" ? prevTooltip.textStyle : {}),
+        color: tooltipPresentation.color,
+        fontSize: tooltipPresentation.fontSize,
+      },
+      ...(valueFormat
+        ? { valueFormatter: echartsTooltipValueFormatter(valueFormat) }
+        : {}),
     };
   }
 
@@ -355,7 +376,8 @@ export function applyDeStyleToEchartsOption(
         series.label = {
           ...(typeof series.label === "object" ? series.label : {}),
           show: true,
-          fontSize: deStyle.label?.fontSize ?? 12,
+          fontSize: labelPresentation.fontSize,
+          ...(labelPresentation.color !== undefined ? { color: labelPresentation.color } : {}),
           formatter: valueFormat
             ? (params: { value?: unknown }) => {
                 const v = params?.value;

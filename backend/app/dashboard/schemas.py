@@ -18,6 +18,8 @@ MIN_CANVAS_HEIGHT = 900
 PIXEL_COLUMN_WIDTH = 120
 MIN_PIXEL_WIDGET_WIDTH = PIXEL_COLUMN_WIDTH
 MIN_PIXEL_WIDGET_HEIGHT = 32
+TAB_PARKED_PIXEL_WIDTH = 0
+TAB_PARKED_PIXEL_HEIGHT = 0
 _V1_WIDGET_FIELDS = frozenset({"colSpan", "rowSpan", "gridX", "gridY", "col_span", "row_span", "grid_x", "grid_y"})
 _V2_WIDGET_FIELDS = frozenset({"x", "y", "width", "height"})
 
@@ -207,8 +209,8 @@ class LayoutWidget(BaseModel):
     grid_y: int | None = Field(default=None, ge=0, alias="gridY")
     x: int | None = Field(default=None, ge=0)
     y: int | None = Field(default=None, ge=0)
-    width: int | None = Field(default=None, ge=MIN_PIXEL_WIDGET_WIDTH)
-    height: int | None = Field(default=None, ge=MIN_PIXEL_WIDGET_HEIGHT)
+    width: int | None = Field(default=None, ge=0)
+    height: int | None = Field(default=None, ge=0)
     order: int = Field(default=0, ge=0)
     chart_ref: uuid.UUID | None = Field(default=None, alias="chartRef")
     parent_tabs_id: str | None = Field(default=None, alias="parentTabsId", max_length=64)
@@ -270,6 +272,24 @@ class LayoutWidget(BaseModel):
             raise ValueError("gridX + colSpan must not exceed 12")
         return self
 
+    @staticmethod
+    def is_tab_parked_child(widget: LayoutWidget) -> bool:
+        return bool(widget.parent_tabs_id and widget.tab_pane_id)
+
+    @model_validator(mode="after")
+    def validate_v2_pixel_extent(self) -> LayoutWidget:
+        if self.width is None and self.height is None:
+            return self
+        if self.is_tab_parked_child(self):
+            if self.width != TAB_PARKED_PIXEL_WIDTH or self.height != TAB_PARKED_PIXEL_HEIGHT:
+                raise ValueError("tab child widgets must use width=0 and height=0")
+            return self
+        if self.width is not None and self.width < MIN_PIXEL_WIDGET_WIDTH:
+            raise ValueError(f"width must be >= {MIN_PIXEL_WIDGET_WIDTH}")
+        if self.height is not None and self.height < MIN_PIXEL_WIDGET_HEIGHT:
+            raise ValueError(f"height must be >= {MIN_PIXEL_WIDGET_HEIGHT}")
+        return self
+
 
 class DashboardCanvas(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -325,6 +345,8 @@ class DashboardLayout(BaseModel):
         for widget in self.widgets:
             if None in (widget.x, widget.y, widget.width, widget.height):
                 raise ValueError("version 2 widgets require x, y, width and height")
+            if LayoutWidget.is_tab_parked_child(widget):
+                continue
             if widget.x + widget.width > self.canvas.width:
                 raise ValueError("x + width must not exceed canvas width")
             if widget.y + widget.height > self.canvas.height:

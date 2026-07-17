@@ -234,4 +234,26 @@ export function applyChartColorsOpacity(colors: string[], opacity?: number): str
   return colors.map((color) => withChartColorOpacity(color, opacity));
 }
 
+/** 当前生效的调色板色序列（自定义优先于预设） */
+export function resolveActivePaletteColors(
+  paletteId?: string,
+  custom?: readonly string[],
+): readonly string[] {
+  if (custom?.length) return custom;
+  return resolveChartColors(paletteId);
+}
+
+/** 自定义色板是否与当前预设一致 */
+export function paletteColorsMatchPreset(
+  paletteId: string | undefined,
+  colors?: readonly string[],
+): boolean {
+  if (!colors?.length) return true;
+  const preset = resolveChartColors(paletteId);
+  if (colors.length !== preset.length) return false;
+  return colors.every(
+    (color, index) => color.toLowerCase() === preset[index]?.toLowerCase(),
+  );
+}
+
 export const chartFontFamily = "Outfit, sans-serif";

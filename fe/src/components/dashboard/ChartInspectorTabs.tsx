@@ -18,8 +18,21 @@ type ChartInspectorTabsProps = {
 
 const tabPanelScrollClass = (scrollMode: "panel" | "parent") =>
   scrollMode === "panel"
-    ? "min-h-0 flex-1 overflow-y-auto overscroll-y-contain no-scrollbar"
-    : "min-h-0 flex-1";
+    ? "h-0 min-h-0 flex-1 overflow-y-auto overscroll-y-contain no-scrollbar touch-pan-y"
+    : "w-full";
+
+const tabsShellClass = (scrollMode: "panel" | "parent", className?: string) =>
+  cn(
+    scrollMode === "panel"
+      ? "flex h-0 min-h-0 flex-1 flex-col overflow-hidden"
+      : "flex w-full flex-col",
+    className,
+  );
+
+const tabsContentClass = (scrollMode: "panel" | "parent") =>
+  scrollMode === "panel"
+    ? "mt-0 flex h-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
+    : "mt-0 flex flex-col data-[state=inactive]:hidden";
 
 const TAB_LABELS: Record<InspectorTabId, string> = {
   data: "数据",
@@ -55,7 +68,7 @@ export function ChartInspectorTabs({
   if (visibleTabs.length === 1) {
     const only = visibleTabs[0];
     return (
-      <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}>
+      <div className={tabsShellClass(scrollMode, className)}>
         {only === "data" ? (
           <>
             <div className={panelClass}>{data}</div>
@@ -71,7 +84,7 @@ export function ChartInspectorTabs({
   return (
     <Tabs
       defaultValue={initialTab}
-      className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", className)}
+      className={tabsShellClass(scrollMode, className)}
     >
       <TabsList
         variant="enclosed"
@@ -96,7 +109,7 @@ export function ChartInspectorTabs({
       {visibleTabs.includes("data") ? (
         <TabsContent
           value="data"
-          className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          className={tabsContentClass(scrollMode)}
         >
           <div className={panelClass}>{data}</div>
           {dataFooter}
@@ -105,7 +118,7 @@ export function ChartInspectorTabs({
       {visibleTabs.includes("style") ? (
         <TabsContent
           value="style"
-          className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          className={tabsContentClass(scrollMode)}
         >
           <div className={panelClass}>{style}</div>
         </TabsContent>
@@ -113,7 +126,7 @@ export function ChartInspectorTabs({
       {visibleTabs.includes("advanced") && advanced != null ? (
         <TabsContent
           value="advanced"
-          className="mt-0 flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+          className={tabsContentClass(scrollMode)}
         >
           <div className={panelClass}>{advanced}</div>
         </TabsContent>

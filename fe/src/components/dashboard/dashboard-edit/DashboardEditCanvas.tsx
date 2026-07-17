@@ -22,6 +22,8 @@ import {
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
   widgetDashboardStyleFingerprint,
+  pickChartPaletteDefaults,
+  chartPaletteDefaultsFingerprint,
 } from "../dashboardStyleConfig";
 import { resolveDashboardGapRuntimeFromLayout, resolveEffectiveDashboardStyle } from "../stylePipeline";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
@@ -102,6 +104,10 @@ export function DashboardEditCanvas({
     [widgetDashboardStyleFingerprint(effectiveStyle)],
   );
   const styleRevision = widgetDashboardStyleFingerprint(effectiveStyle);
+  const chartPaletteDefaults = useMemo(
+    () => pickChartPaletteDefaults(widgetDashboardStyle),
+    [chartPaletteDefaultsFingerprint(widgetDashboardStyle)],
+  );
   const paletteDragActive = usePaletteDocumentDrag(
     mode === "edit" && Boolean(onPaletteDrop || onTabPaletteDrop),
   );
@@ -130,6 +136,8 @@ export function DashboardEditCanvas({
           setWidgets={setWidgets}
           renderChild={renderCanvasWidget}
           dashboardStyle={widgetDashboardStyle}
+          chartPaletteDefaults={chartPaletteDefaults}
+          allWidgets={layoutWidget.type === "tabs" ? widgets : undefined}
           styleRevision={styleRevision}
           chartRefreshKeys={chartRefreshKeys}
           onTabPaletteDrop={onTabPaletteDrop}
@@ -146,6 +154,8 @@ export function DashboardEditCanvas({
       onDeleteWidget,
       setWidgets,
       widgetDashboardStyle,
+      chartPaletteDefaults,
+      widgets,
       styleRevision,
       chartRefreshKeys,
       onTabPaletteDrop,

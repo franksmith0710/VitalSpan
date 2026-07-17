@@ -384,13 +384,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   );
   const multiSelectCount = selectedIds.size;
 
-  const chartRailWidth = useMemo((): "wide" | "narrow" => {
-    if (multiSelectCount >= 2) return "wide";
-    const t = selectedWidget?.type;
-    if (t === "media" || t === "tabs" || t === "filter") return "narrow";
-    return "wide";
-  }, [multiSelectCount, selectedWidget?.type]);
-
   const collapseChartRail = useCallback(() => setChartRailOpen(false), []);
 
   const selectWidgetOnCanvas = useCallback(
@@ -804,8 +797,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         }),
       });
 
-      resetLayout(normalizedLayout);
       const savedStyle = hydrateDashboardStyle(normalizedLayout.styleConfig);
+      resetLayout(normalizedLayout);
       setStyleConfig(savedStyle);
       styleConfigRef.current = savedStyle;
       setSavedFingerprint(
@@ -1009,7 +1002,6 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           canvasColorScheme={styleConfig.colorScheme ?? "light"}
           chartRailOpen={chartRailOpen}
           onChartRailOpenChange={setChartRailOpen}
-          chartRailWidth={chartRailWidth}
           chartRailLabel="仪表板配置"
           showRailFoldHeader={!primarySelectedId && multiSelectCount < 2}
           canvasActions={
@@ -1137,6 +1129,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   );
                 }}
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
+                onRailCollapse={collapseChartRail}
               />
             ) : selectedWidget?.type === "media" && selectedWidget.mediaConfig ? (
               <MediaEditRail

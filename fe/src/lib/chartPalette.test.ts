@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyChartColorsOpacity,
+  paletteColorsMatchPreset,
   resolveChartColors,
   resolvePaletteId,
   withChartColorOpacity,
@@ -28,5 +29,11 @@ describe("chartPalette", () => {
     const colors = resolveChartColors("default");
     expect(applyChartColorsOpacity(colors, 1)).toEqual(colors);
     expect(applyChartColorsOpacity(colors, undefined)).toEqual(colors);
+  });
+
+  it("detects customized palette colors", () => {
+    const preset = resolveChartColors("default");
+    expect(paletteColorsMatchPreset("default", preset)).toBe(true);
+    expect(paletteColorsMatchPreset("default", ["#465fff", "#ff0000"])).toBe(false);
   });
 });

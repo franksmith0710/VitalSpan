@@ -10,13 +10,14 @@ import {
 } from "@/lib/chartViewConfig";
 import { resolveChartColors, applyChartColorsOpacity } from "@/lib/chartPalette";
 import type { ColorScheme, DashboardStyleConfig, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartLegendPosition, readChartShowLabel, readChartDataZoom, readChartPaletteOpacity, readChartSeriesGradient, readChartTooltipShow } from "@/lib/chartDeStyle";
+import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartLegendPosition, readChartShowLabel, readChartDataZoom, readChartPaletteOpacity, readChartSeriesGradient, readChartTooltipShow, resolveChartLabelPresentation, resolveChartTooltipPresentation } from "@/lib/chartDeStyle";
 import { resolveChartValueFormat } from "@/lib/chartValueFormat";
 import { resolveRenderSpec } from "@/lib/resolveRenderSpec";
 import { chartRenderSpecKey } from "@/lib/chartRenderSpecKey";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
-import { resolveChartLegendItems } from "@/lib/chartLegendItems";
+import { applyChartSeriesColorOverrides, resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
 import type { ChartLegendItem } from "@/lib/chartLegendItems";
+import { resolveChartLegendItems } from "@/lib/chartLegendItems";
 import { buildEchartsOption } from "./adapters/renderFromSpec";
 import {
   applyChartDrillPipeline,
@@ -39,7 +40,7 @@ import { KpiCard } from "./adapters/KpiCard";
 import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
 import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
-import { readChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import { readChartDeTableStyle, mergeChartTableStyle } from "@/lib/chartDeTableStyle";
 import {
   resolveEffectiveChartScheme,
   resolveTableThemeVars,
@@ -86,7 +87,13 @@ type ChartRendererProps = {
   paletteColors?: string[];
   dashboardColorDefaults?: Pick<
     DashboardStyleConfig,
-    "paletteOpacity" | "seriesGradient" | "chartLabelShow" | "tooltipShow"
+    | "paletteOpacity"
+    | "seriesGradient"
+    | "chartLabelShow"
+    | "tooltipShow"
+    | "chartLabelStyle"
+    | "chartTooltipStyle"
+    | "tableColorStyle"
   >;
   numberFormat?: NumberFormatConfig;
   colorScheme?: ColorScheme;
@@ -99,6 +106,64 @@ type ChartRendererProps = {
   /** 看板编辑态内嵌（关闭地图滚轮缩放等） */
   dashboardEditMode?: boolean;
 };
+
+function sizeSpanEqual(
+  a?: { w: number; h: number },
+  b?: { w: number; h: number },
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return !a && !b;
+  return a.w === b.w && a.h === b.h;
+}
+
+function pixelSizeEqual(
+  a?: { width: number; height: number },
+  b?: { width: number; height: number },
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return !a && !b;
+  return a.width === b.width && a.height === b.height;
+}
+
+function filterParamsEqual(
+  a?: Record<string, string>,
+  b?: Record<string, string>,
+): boolean {
+  if (a === b) return true;
+  if (!a || !b) return !a && !b;
+  const aKeys = Object.keys(a);
+  if (aKeys.length !== Object.keys(b).length) return false;
+  return aKeys.every((key) => a[key] === b[key]);
+}
+
+function chartRendererPropsAreEqual(
+  prev: ChartRendererProps,
+  next: ChartRendererProps,
+): boolean {
+  return (
+    prev.config === next.config &&
+    prev.title === next.title &&
+    prev.mode === next.mode &&
+    prev.embedded === next.embedded &&
+    sizeSpanEqual(prev.gridSpan, next.gridSpan) &&
+    pixelSizeEqual(prev.pixelSize, next.pixelSize) &&
+    prev.contentChromePx === next.contentChromePx &&
+    filterParamsEqual(prev.filterParameters, next.filterParameters) &&
+    prev.executeKey === next.executeKey &&
+    prev.queryLimit === next.queryLimit &&
+    prev.paletteId === next.paletteId &&
+    prev.paletteColors === next.paletteColors &&
+    prev.dashboardColorDefaults === next.dashboardColorDefaults &&
+    prev.numberFormat === next.numberFormat &&
+    prev.colorScheme === next.colorScheme &&
+    prev.widgetShellColor === next.widgetShellColor &&
+    prev.showLoadingHint === next.showLoadingHint &&
+    prev.suspendLiveResize === next.suspendLiveResize &&
+    prev.widgetId === next.widgetId &&
+    prev.drillEnabled === next.drillEnabled &&
+    prev.dashboardEditMode === next.dashboardEditMode
+  );
+}
 
 export const ChartRenderer = memo(function ChartRenderer({
   config,
@@ -286,6 +351,14 @@ export const ChartRenderer = memo(function ChartRenderer({
   const showDataLabels = readChartShowLabel(localConfig, dashboardColorDefaults);
   const showTooltip = readChartTooltipShow(localConfig, dashboardColorDefaults);
   const seriesGradient = readChartSeriesGradient(localConfig, dashboardColorDefaults);
+  const labelPresentation = useMemo(
+    () => resolveChartLabelPresentation(localConfig, dashboardColorDefaults),
+    [localConfig, dashboardColorDefaults],
+  );
+  const tooltipPresentation = useMemo(
+    () => resolveChartTooltipPresentation(localConfig, dashboardColorDefaults),
+    [localConfig, dashboardColorDefaults],
+  );
   const dataZoomEnabled = readChartDataZoom(localConfig);
   const valueFormat = useMemo(
     () => resolveChartValueFormat(deStyle.label, numberFormat),
@@ -360,10 +433,20 @@ export const ChartRenderer = memo(function ChartRenderer({
       showTooltip,
       seriesGradient,
       valueFormat,
+      labelPresentation,
+      tooltipPresentation,
       layout: { embedded: true, shellLegend: true },
     });
     if (chartColors.length > 0) {
       built = { ...built, color: chartColors };
+    }
+    if (deStyle.seriesColor?.length) {
+      const seriesItems = resolveChartSeriesColorItems(
+        localConfig,
+        deStyle.paletteId,
+        deStyle.seriesColor,
+      );
+      built = applyChartSeriesColorOverrides(built, seriesItems);
     }
     const items = resolveChartLegendItems(built, chartColors);
     if (items.length > 0) {
@@ -382,6 +465,8 @@ export const ChartRenderer = memo(function ChartRenderer({
     showDataLabels,
     showTooltip,
     seriesGradient,
+    labelPresentation,
+    tooltipPresentation,
     dataZoomEnabled,
     valueFormat,
     chartColors,
@@ -418,6 +503,8 @@ export const ChartRenderer = memo(function ChartRenderer({
       showLabel={showDataLabels}
       showTooltip={showTooltip}
       seriesGradient={seriesGradient}
+      labelPresentation={labelPresentation}
+      tooltipPresentation={tooltipPresentation}
       valueFormat={valueFormat}
       mapPlaceholderHint={mapPlaceholderHint}
       mapDrillError={mapDrillError}
@@ -488,7 +575,10 @@ export const ChartRenderer = memo(function ChartRenderer({
           : <p className="text-theme-sm text-gray-500">{renderModel.message}</p>;
       }
       const cols = renderModel.kind === "table" ? renderModel.displayCols : columns;
-      const tableStyle = readChartDeTableStyle(localConfig);
+      const tableStyle = mergeChartTableStyle(
+        readChartDeTableStyle(localConfig),
+        dashboardColorDefaults?.tableColorStyle,
+      );
       const tableThemeVars = resolveTableThemeVars(tableStyle, {
         colorScheme: resolvedScheme,
         widgetShellBg: widgetShellColor,
@@ -601,4 +691,4 @@ export const ChartRenderer = memo(function ChartRenderer({
       {body}
     </ChartPanel>
   );
-});
+}, chartRendererPropsAreEqual);

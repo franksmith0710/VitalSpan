@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MediaEditRail } from "./MediaEditRail";
@@ -33,6 +33,35 @@ describe("MediaEditRail", () => {
     expect(screen.getByRole("button", { name: "收起配置" })).toBeInTheDocument();
     expect(screen.getByText("图片来源")).toBeInTheDocument();
     expect(screen.getByText("宣传图")).toBeInTheDocument();
+  });
+
+  it("tab panels scroll inside the rail when content overflows", () => {
+    const { container } = render(
+      <div className="flex h-[320px] min-h-0 flex-col overflow-hidden">
+        <MediaEditRail
+          widget={baseWidget as LayoutWidget & { mediaConfig: typeof baseWidget.mediaConfig }}
+          onChange={() => {}}
+        />
+      </div>,
+    );
+    const scrollPanel = container.querySelector(".overflow-y-auto");
+    expect(scrollPanel).toBeTruthy();
+  });
+
+  it("style tab exposes background and image sections", async () => {
+    const user = userEvent.setup();
+    render(
+      <MediaEditRail
+        widget={baseWidget as LayoutWidget & { mediaConfig: typeof baseWidget.mediaConfig }}
+        onChange={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("tab", { name: "样式" }));
+    const panel = screen.getByTestId("media-widget-style-panel");
+    expect(panel).toBeInTheDocument();
+    expect(within(panel).getByText("背景")).toBeInTheDocument();
+    expect(within(panel).getByText("图片显示")).toBeInTheDocument();
+    expect(within(panel).getByText("线框")).toBeInTheDocument();
   });
 
   it("style tab exposes fit segments", async () => {

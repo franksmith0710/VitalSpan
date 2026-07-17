@@ -213,6 +213,20 @@ export function PixelCanvas({
     () => getTopLevelPixelWidgets(activeLayout.widgets),
     [activeLayout.widgets],
   );
+  const layoutGeometryKey = useMemo(
+    () =>
+      topLevelWidgets
+        .map((widget) => `${widget.id}:${widget.x},${widget.y},${widget.width},${widget.height}`)
+        .join("|"),
+    [topLevelWidgets],
+  );
+
+  useEffect(() => {
+    if (shapeDragWidget) return;
+    previewRegistryRef.current.reset(
+      activeLayout.widgets.map((widget) => ({ id: widget.id, ...widgetRect(widget) })),
+    );
+  }, [layoutGeometryKey, shapeDragWidget, activeLayout.widgets]);
   const tabHosts = useMemo(
     () => topLevelWidgets.filter((w) => w.type === "tabs" && w.tabsConfig),
     [topLevelWidgets],
@@ -249,8 +263,18 @@ export function PixelCanvas({
     );
   }, [activeLayout, shapeDragWidget, tabInsertIntent]);
 
-  const activeTabDropTargetId =
-    activeTabDropId ?? shapeTabDropTargetId ?? tabInsertIntent?.tabsWidgetId ?? null;
+  const isDraggingTabHost = shapeDragWidget?.type === "tabs";
+
+  const activeTabDropTargetId = isDraggingTabHost
+    ? null
+    : activeTabDropId ?? shapeTabDropTargetId ?? tabInsertIntent?.tabsWidgetId ?? null;
+
+  const showTabPaletteDropZones =
+    mode === "edit" &&
+    tabHosts.length > 0 &&
+    !isDraggingTabHost &&
+    (paletteDragActive || Boolean(shapeDragWidget)) &&
+    Boolean(onTabPaletteDrop || shapeDragWidget);
 
   const reportTabHover = useCallback(
     (tabsWidgetId: string) => {
@@ -719,7 +743,9 @@ export function PixelCanvas({
         >
         <TabPaletteDropTargetProvider
           targetTabsId={
-            paletteDragActive || shapeDragWidget ? activeTabDropTargetId : null
+            !isDraggingTabHost && (paletteDragActive || shapeDragWidget)
+              ? activeTabDropTargetId
+              : null
           }
         >
         <div
@@ -787,10 +813,7 @@ export function PixelCanvas({
                 />
               </PixelShape>
             ))}
-          {mode === "edit" &&
-          tabHosts.length > 0 &&
-          (paletteDragActive || shapeDragWidget) &&
-          (onTabPaletteDrop || shapeDragWidget) ? (
+          {showTabPaletteDropZones ? (
             <TabPaletteDropZones
               tabs={tabHosts}
               hitBufferPx={TAB_PALETTE_DROP_BUFFER_PX}

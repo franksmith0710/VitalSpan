@@ -5,8 +5,12 @@ import {
   mergeChartTitleStyle,
   mergeShapeInnerPresentation,
   patchChartDeStyleNested,
+  patchChartLabelStyle,
+  patchChartShowLabel,
   readChartLegendVisible,
   readChartLegendPosition,
+  readChartShowLabel,
+  resolveChartLabelDisplayColor,
   readChartTitleVisible,
   resolveChartContentShellStyle,
   resolveWidgetShellStyle,
@@ -190,6 +194,9 @@ describe("dashboard widget style sync", () => {
       new Set(["widgetAppearance"]),
     );
     expect(inferWidgetSyncScopes({ paletteId: "ocean" })).toEqual(new Set(["palette"]));
+    expect(inferWidgetSyncScopes({ chartLabelStyle: { color: "#fff" } })).toEqual(
+      new Set(["palette"]),
+    );
     expect(inferWidgetSyncScopes({ numberFormat: { decimals: 2 } })).toEqual(
       new Set(["numberFormat"]),
     );
@@ -230,8 +237,35 @@ describe("dashboard widget style sync", () => {
       widgets[0].type === "chart" ? widgets[0].chartConfig?.nativeBody?.deDisplay : undefined;
     expect(de?.background).toBeUndefined();
     expect(de?.paletteId).toBeUndefined();
-    expect(de?.label).toEqual({ fontSize: 12 });
+    expect(de?.label).toBeUndefined();
     expect(display).toBeUndefined();
+  });
+
+  it("stripChartPaletteOverrides clears label and tooltip palette fields", () => {
+    const cfg = patchChartShowLabel(baseCfg, true);
+    const withPalette = patchChartDeStyleNested(cfg, "tooltip", {
+      show: true,
+      fontSize: 14,
+      color: "#fff",
+      background: "#000",
+    });
+    const stripped = stripChartPaletteOverrides({
+      ...withPalette,
+      nativeBody: {
+        ...withPalette.nativeBody,
+        deStyle: {
+          ...withPalette.nativeBody?.deStyle,
+          paletteId: "ocean",
+          seriesGradient: true,
+        },
+      },
+    });
+    const de = stripped.nativeBody?.deStyle;
+    expect(de?.paletteId).toBeUndefined();
+    expect(de?.seriesGradient).toBeUndefined();
+    expect(de?.label).toBeUndefined();
+    expect(de?.tooltip).toBeUndefined();
+    expect(stripped.nativeBody?.deFeatures).toBeUndefined();
   });
 
   it("strip helpers are no-ops when override absent", () => {
@@ -239,6 +273,34 @@ describe("dashboard widget style sync", () => {
     expect(stripChartPaletteOverrides(baseCfg)).toBe(baseCfg);
     expect(stripChartLabelFormatOverrides(baseCfg)).toBe(baseCfg);
     expect(stripChartQueryLimitOverride(baseCfg)).toBe(baseCfg);
+  });
+});
+
+describe("patchChartLabelStyle", () => {
+  it("auto-enables showLabel when setting label color", () => {
+    const cfg = patchChartLabelStyle(baseCfg, { color: "#ff5500" });
+    expect(readChartShowLabel(cfg)).toBe(true);
+    expect(cfg.nativeBody?.deStyle?.label?.color).toBe("#ff5500");
+  });
+
+  it("does not toggle showLabel when only fontSize changes", () => {
+    const cfg = patchChartLabelStyle(baseCfg, { fontSize: 16 });
+    expect(readChartShowLabel(cfg)).toBe(false);
+    expect(cfg.nativeBody?.deStyle?.label?.fontSize).toBe(16);
+  });
+});
+
+describe("resolveChartLabelDisplayColor", () => {
+  it("falls back to dashboard style then theme token", () => {
+    expect(resolveChartLabelDisplayColor(baseCfg, { colorScheme: "light" })).toBe("#667085");
+    expect(
+      resolveChartLabelDisplayColor(baseCfg, {
+        colorScheme: "light",
+        chartLabelStyle: { color: "#112233" },
+      }),
+    ).toBe("#112233");
+    const cfg = patchChartDeStyleNested(baseCfg, "label", { color: "#aabbcc" });
+    expect(resolveChartLabelDisplayColor(cfg, { colorScheme: "light" })).toBe("#aabbcc");
   });
 });
 

@@ -163,7 +163,8 @@ describe("DashboardContextInspector", () => {
     expect(screen.getByRole("button", { name: "装饰边框" })).toBeInTheDocument();
     expect(screen.getByText("线框")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "渐变颜色" })).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: "图表标签" })).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: "图表提示" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "显示图表标签" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "显示图表提示" })).toBeInTheDocument();
+    expect(screen.getByText("表格配色")).toBeInTheDocument();
   });
 });

@@ -2,7 +2,8 @@ import { cn } from "@/lib/utils";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
-import { TabsPaneList, TabsStyleFields } from "./TabsWidgetFields";
+import { TabsPaneList } from "./TabsWidgetFields";
+import { TabsWidgetStylePanel } from "./widgetRailStyleSections";
 import { WidgetRailPanelHeader } from "./widgetRailChrome";
 import { INSPECTOR_HINT } from "./inspectorCompact";
 
@@ -43,11 +44,10 @@ export function TabsEditRail({
 
       <ChartInspectorTabs
         className="min-h-0 flex-1"
-        scrollMode="parent"
         defaultTab="data"
         tabs={["data", "style"]}
         data={
-          <div className="space-y-2 px-2 py-1.5">
+          <div className="space-y-2">
             <p className={INSPECTOR_HINT}>
               当前激活：
               <span className="font-medium text-gray-600 dark:text-gray-300">
@@ -64,7 +64,7 @@ export function TabsEditRail({
             />
           </div>
         }
-        style={<TabsStyleFields widget={widget} onChange={onChange} onTitleChange={onTitleChange} />}
+        style={<TabsWidgetStylePanel widget={widget} onChange={onChange} onTitleChange={onTitleChange} />}
       />
 
       {onDelete ? (

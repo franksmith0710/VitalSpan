@@ -132,4 +132,23 @@ describe("ColorField", () => {
     expect(screen.queryByText("#43B379")).not.toBeInTheDocument();
     expect(screen.queryByText("背景色")).not.toBeInTheDocument();
   });
+
+  it("shows fallback color in swatch trigger instead of 未设置", () => {
+    const onChange = vi.fn();
+    render(
+      <ColorField
+        variant="swatch"
+        showLabel={false}
+        buttonAriaLabel="字体颜色取色器"
+        value=""
+        fallbackValue="#667085"
+        onChange={onChange}
+      />,
+    );
+    expect(screen.queryByText("未设置")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("字体颜色取色器")).toHaveAttribute(
+      "title",
+      "字体颜色 · #667085",
+    );
+  });
 });

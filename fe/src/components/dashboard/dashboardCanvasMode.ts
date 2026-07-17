@@ -14,7 +14,7 @@ import { normalizeDashboardGapConfig } from "./gapPolicy";
 import { styleConfigHasPersistedFields, type DashboardStyleConfig } from "./dashboardStyleConfig";
 import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
 import { fitCanvasHeightToContent } from "./pixelCanvas/PixelCanvas";
-import { compactPixelLayoutWhenZeroGap } from "./pixelCanvas/gapCompaction";
+import { sanitizePixelLayoutGeometry } from "./pixelCanvas/layoutSanitize";
 
 const CANVAS_WIDTH = 1440 as const;
 const MIN_CANVAS_HEIGHT = 900;
@@ -63,11 +63,9 @@ export function migrateDashboardLayoutV1(layout: DashboardLayoutV1): DashboardLa
   };
 }
 
+/** 载入 / resetLayout 与 save 单路径：Tab 修复 + 顶层重叠 pack + 零间隙压实 */
 function preparePixelLayoutGeometry(layout: DashboardLayoutV2): DashboardLayoutV2 {
-  const gapConfig = normalizeDashboardGapConfig(
-    bootstrapDashboardStyleConfig(layout.styleConfig ?? {}),
-  );
-  return compactPixelLayoutWhenZeroGap(layout, gapConfig).layout;
+  return sanitizePixelLayoutGeometry(layout, layout.styleConfig);
 }
 
 export function prepareDashboardLayout(
@@ -122,10 +120,29 @@ export function pixelWidgetToLayoutWidget(widget: PixelLayoutWidget): LayoutWidg
   };
 }
 
+function pixelWidgetContentEqual(
+  previous: PixelLayoutWidget,
+  edited: LayoutWidget,
+): boolean {
+  return (
+    previous.id === edited.id &&
+    previous.type === edited.type &&
+    previous.title === edited.title &&
+    previous.chartConfig === edited.chartConfig &&
+    previous.textConfig === edited.textConfig &&
+    previous.tabsConfig === edited.tabsConfig &&
+    previous.filterConfig === edited.filterConfig &&
+    previous.mediaConfig === edited.mediaConfig
+  );
+}
+
 export function mergeLayoutWidgetIntoPixel(
   previous: PixelLayoutWidget,
   edited: LayoutWidget,
 ): PixelLayoutWidget {
+  if (pixelWidgetContentEqual(previous, edited)) {
+    return previous;
+  }
   const {
     colSpan: _colSpan,
     rowSpan: _rowSpan,

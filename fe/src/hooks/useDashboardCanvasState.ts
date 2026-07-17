@@ -10,6 +10,7 @@ import {
   pixelLayoutFingerprint,
 } from "@/components/dashboard/pixelCanvas";
 import { packPixelLayoutSeamless } from "@/components/dashboard/pixelCanvas/collisionLayout";
+import { repairPixelLayoutTabState } from "@/components/dashboard/pixelCanvas/layoutSanitize";
 import {
   fitCanvasHeightToContent,
   PIXEL_CANVAS_MIN_HEIGHT,
@@ -149,8 +150,7 @@ export function useDashboardCanvasState({
   const setPixelLayout = useCallback(
     (next: DashboardLayoutV2) => {
       if (editor !== "pixel") return;
-      const reconciled = reconcileTabPaneChildIdsInPixelLayout(next);
-      pixel.setLayout(fitCanvasHeightToContent(reconciled));
+      pixel.setLayout(repairPixelLayoutTabState(next));
     },
     [editor, pixel.setLayout],
   );

@@ -15,7 +15,26 @@
 | risk_level | medium |
 | blockers | 等待 BUG-7 resize 碰撞 preview 完结；C3 需勘误 |
 
-## 当前轮次
+## 当前轮次（像素画布重叠 + 保存 422）
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
+| request | 画布组件重叠未消除；重叠状态保存 PUT layout 422 |
+| type | bugfix |
+| plan | docs/automate/plans/2026-07-17-pixel-layout-overlap-save.md |
+| goal | 消毒链可落库；Tab 子组件 0×0 与后端契约一致；重叠保存后消除 |
+| scope_include | fe/pixelCanvas/layoutSanitize, stylePipeline, layoutUtils; backend/dashboard/schemas.py |
+| acceptance | pytest test_dashboard_pixel_layout; vitest layoutSanitize+collisionLayout+layoutUtils |
+| autonomy_policy | auto_accept_low_risk |
+| risk_level | low |
+| status | DONE |
+| last_verified_command | pytest tests/test_dashboard_pixel_layout.py; vitest layoutSanitize+collisionLayout+layoutUtils |
+| last_verified_exit_code | 0 |
+| verification_summary | 根因：park 0×0 与后端 ge=120/32 冲突→422；已放宽 Tab parked 子组件校验并补测试 |
+| repair_rounds | 1 |
+
+## 上一轮（归档）
 
 | 字段 | 值 |
 |------|----|

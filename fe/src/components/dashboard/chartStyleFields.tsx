@@ -6,6 +6,7 @@ import { SURFACE_COLOR_RECOMMENDED, WIDGET_BORDER_RECOMMENDED } from "./dashboar
 import {
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
+  INSPECTOR_SWITCH_SIZE,
   InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "./inspectorCompact";
@@ -308,7 +309,7 @@ export function ChartBackgroundDeModeFields({
                 onChange({ borderEnabled: show, backgroundShow: true, backgroundMode: "border" })
               }
               aria-label="显示线框"
-              className="scale-90"
+              size={INSPECTOR_SWITCH_SIZE}
             />
           </div>
         ) : null}

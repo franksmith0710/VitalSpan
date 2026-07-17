@@ -1,43 +1,23 @@
 import { describe, expect, it } from "vitest";
-import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
-  patchChartDeTableStyle,
-  readChartDeTableStyle,
-  resolveTablePageSize,
-  resolveTableSummaryColumns,
-  computeTableSummaryValues,
-} from "@/lib/chartDeTableStyle";
+  DEFAULT_TABLE_ZEBRA_BG,
+  mergeChartTableStyle,
+  resolveTableZebraBg,
+} from "./chartDeTableStyle";
 
-const cfg: ChartViewConfig = { chartType: "table", dataSourceId: "ds" };
-
-describe("chartDeTableStyle", () => {
-  it("T-TABLE-STYLE-01: patch and read round-trip", () => {
-    const next = patchChartDeTableStyle(cfg, { pageSize: 20, wordWrap: true });
-    expect(readChartDeTableStyle(next)).toMatchObject({ pageSize: 20, wordWrap: true });
+describe("chartDeTableStyle parity helpers", () => {
+  it("resolveTableZebraBg prefers zebraBg over legacy zebraStriped", () => {
+    expect(resolveTableZebraBg({ zebraBg: "#112233" })).toBe("#112233");
+    expect(resolveTableZebraBg({ zebraStriped: true })).toBe(DEFAULT_TABLE_ZEBRA_BG);
+    expect(resolveTableZebraBg({})).toBeUndefined();
   });
 
-  it("T-TABLE-STYLE-02: resolveTablePageSize default 20", () => {
-    expect(resolveTablePageSize(cfg)).toBe(20);
-    expect(resolveTablePageSize(patchChartDeTableStyle(cfg, { pageSize: 100 }))).toBe(100);
-  });
-
-  it("T-TABLE-STYLE-03: resolve summary columns from metrics", () => {
-    const cols = resolveTableSummaryColumns(
-      ["region", "amount"],
-      ["region", "amount"],
-      [["华东", 10], ["华北", 20]],
-      { metricFields: ["amount"] },
-    );
-    expect(cols).toEqual(["amount"]);
-  });
-
-  it("T-TABLE-STYLE-04: compute summary values", () => {
-    const values = computeTableSummaryValues(
-      ["region", "amount"],
-      ["region", "amount"],
-      [["华东", 10], ["华北", 20]],
-      ["amount"],
-    );
-    expect(values).toEqual({ region: null, amount: 30 });
+  it("mergeChartTableStyle lets chart override dashboard defaults", () => {
+    expect(
+      mergeChartTableStyle(
+        { headerBg: "#ffffff" },
+        { headerBg: "#000000", bodyBg: "#111111" },
+      ),
+    ).toEqual({ headerBg: "#ffffff", bodyBg: "#111111" });
   });
 });

@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef } from "react";
+import { memo, useCallback, useMemo, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type EChartsReact from "echarts-for-react";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
 import { applyEchartsSeriesGradient } from "@/lib/echartsSeriesPresentation";
+import { applyChartSeriesColorOverrides, resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
 import { applyChartAdvancedFeaturesToEchartsOption } from "@/lib/chartDeFeatures";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { applyEchartsColorSchemeTokens, getEchartsTheme } from "@/lib/echarts-theme";
@@ -39,6 +40,8 @@ type Props = {
   showLabel?: boolean;
   showTooltip?: boolean;
   seriesGradient?: boolean;
+  labelPresentation?: { fontSize: number; color?: string };
+  tooltipPresentation?: { fontSize: number; color?: string; background?: string };
   valueFormat?: NumberFormatConfig;
   mapPlaceholderHint?: string;
   mapDrillError?: string | null;
@@ -54,7 +57,44 @@ type Props = {
   drillClickField?: string;
 };
 
-export function AdvancedEchartsChart({
+function advancedEchartsPropsEqual(
+  prev: Props,
+  next: Props,
+): boolean {
+  return (
+    prev.spec === next.spec &&
+    prev.rows === next.rows &&
+    prev.columns === next.columns &&
+    prev.ariaLabel === next.ariaLabel &&
+    prev.isDark === next.isDark &&
+    prev.fill === next.fill &&
+    prev.height === next.height &&
+    prev.width === next.width &&
+    prev.resizeDebounceMs === next.resizeDebounceMs &&
+    prev.deStyle === next.deStyle &&
+    prev.dataZoom === next.dataZoom &&
+    prev.chartColors === next.chartColors &&
+    prev.showLabel === next.showLabel &&
+    prev.showTooltip === next.showTooltip &&
+    prev.seriesGradient === next.seriesGradient &&
+    prev.labelPresentation === next.labelPresentation &&
+    prev.tooltipPresentation === next.tooltipPresentation &&
+    prev.valueFormat === next.valueFormat &&
+    prev.mapPlaceholderHint === next.mapPlaceholderHint &&
+    prev.mapDrillError === next.mapDrillError &&
+    prev.heatmapPlaceholderHint === next.heatmapPlaceholderHint &&
+    prev.drillLookupRows === next.drillLookupRows &&
+    prev.embedEdit === next.embedEdit &&
+    prev.onDrillClick === next.onDrillClick &&
+    prev.onJumpClick === next.onJumpClick &&
+    prev.chartConfig === next.chartConfig &&
+    prev.shellLegend === next.shellLegend &&
+    prev.drillStack === next.drillStack &&
+    prev.drillClickField === next.drillClickField
+  );
+}
+
+function AdvancedEchartsChartInner({
   spec,
   rows,
   columns,
@@ -69,6 +109,8 @@ export function AdvancedEchartsChart({
   showLabel = false,
   showTooltip = true,
   seriesGradient = false,
+  labelPresentation,
+  tooltipPresentation,
   valueFormat,
   mapPlaceholderHint,
   mapDrillError,
@@ -93,7 +135,7 @@ export function AdvancedEchartsChart({
   const geoStyle = useMemo(() => readChartGeoStyle(deStyle ?? {}), [deStyle]);
   const mapWheelZoom = spec.chartType === "map" && resolveEmbeddedGeoRoam(geoStyle.roam);
   const mapDrillEnabled = spec.chartType === "map" && Boolean(chartConfig);
-  const { context: geoMapLevel, loading: geoMapLoading, version: geoMapVersion } = useGeoMapLevel({
+  const { context: geoMapLevel, loading: geoMapLoading } = useGeoMapLevel({
     enabled: mapDrillEnabled,
     config: chartConfig,
     drillStack,
@@ -146,12 +188,22 @@ export function AdvancedEchartsChart({
       showTooltip,
       seriesGradient,
       valueFormat,
+      labelPresentation,
+      tooltipPresentation,
       layout: { embedded: fill, shellLegend },
     });
     built = applyEchartsColorSchemeTokens(built, scheme);
     if (chartColors?.length) {
       built = { ...built, color: chartColors };
       built = applyEchartsSeriesGradient(built, chartColors, seriesGradient);
+    }
+    if (chartConfig && deStyle?.seriesColor?.length) {
+      const seriesItems = resolveChartSeriesColorItems(
+        chartConfig,
+        deStyle.paletteId,
+        deStyle.seriesColor,
+      );
+      built = applyChartSeriesColorOverrides(built, seriesItems);
     }
     if (chartConfig) {
       built = applyChartAdvancedFeaturesToEchartsOption(
@@ -160,7 +212,7 @@ export function AdvancedEchartsChart({
       );
     }
     return built;
-  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, showTooltip, seriesGradient, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit, geoStyle, geoMapLevel, geoMapVersion]);
+  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, showTooltip, seriesGradient, labelPresentation, tooltipPresentation, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit, geoStyle, geoMapLevel]);
   const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
 
   const isMapPlaceholder =
@@ -223,7 +275,7 @@ export function AdvancedEchartsChart({
     };
   }, [onDrillClick, onJumpClick, drillClickField, drillLookupRows, rows, columns, geoMapLevel.knownRegionNames]);
 
-  const chartKey = `${scheme}:${geoMapLevel.mapId}:${geoMapVersion}`;
+  const chartKey = `${scheme}:${geoMapLevel.mapId}`;
 
   return (
     <div
@@ -310,3 +362,5 @@ export function AdvancedEchartsChart({
     </div>
   );
 }
+
+export const AdvancedEchartsChart = memo(AdvancedEchartsChartInner, advancedEchartsPropsEqual);

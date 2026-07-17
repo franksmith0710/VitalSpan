@@ -151,8 +151,7 @@ export function insertPixelPaletteWidget(
   const legacy = createPaletteWidget(type, legacyWidgets);
   const placement = placeInNextOpenSlot(defaultSize(legacy), getTopLevelPixelWidgets(layout.widgets), layout.canvas);
   const draft = buildDraftWidget(type, layout.widgets, placement);
-  const withDraft = { ...layout, widgets: [...layout.widgets, draft] };
-  return withDraft;
+  return resolveInsert(layout, draft);
 }
 
 export function insertPixelPaletteWidgetAt(

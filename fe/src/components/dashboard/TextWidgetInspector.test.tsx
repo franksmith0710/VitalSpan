@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -37,7 +38,8 @@ describe("TextEditRail", () => {
     cleanup();
   });
 
-  it("renders data/style tabs without unsupported advanced slots", () => {
+  it("renders data/style tabs without unsupported advanced slots", async () => {
+    const user = userEvent.setup();
     renderRail();
 
     expect(screen.getByText("富文本")).toBeVisible();
@@ -46,8 +48,12 @@ describe("TextEditRail", () => {
     expect(screen.queryByRole("tab", { name: "高级" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("维度，拖动字段至此处")).not.toBeInTheDocument();
     expect(screen.queryByText("富文本不使用图表过滤器")).not.toBeInTheDocument();
-    expect(screen.getByText(/先在右侧选择数据集/)).toBeVisible();
+    expect(screen.getByText(/选择数据集后可绑定字段/)).toBeVisible();
     expect(screen.getByText("字段")).toBeVisible();
     expect(screen.getByRole("button", { name: "选择数据集" })).toBeVisible();
+    await user.click(screen.getByRole("tab", { name: "样式" }));
+    expect(screen.getByTestId("text-widget-style-panel")).toBeInTheDocument();
+    expect(screen.getByText("背景")).toBeVisible();
+    expect(screen.getByText("正文")).toBeVisible();
   });
 });

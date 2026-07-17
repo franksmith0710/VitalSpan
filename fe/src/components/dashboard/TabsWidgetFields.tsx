@@ -1,16 +1,11 @@
 import { Filter, ImageIcon, Plus, Trash2, Type } from "lucide-react";
 import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { LayoutWidget, TabsHeadStyleConfig, TabsWidgetConfig } from "./layoutUtils";
+import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
 import { getTabChildWidgets } from "./layoutUtils";
-import { DeAttrForm, DE_INPUT } from "./dashboardInspectorUi";
-import { InspectorNestedSection } from "./inspectorNestedSection";
 import { InspectorPanelSection } from "./inspector-panel-section";
-import { ChartBackgroundStyleFields } from "./chartStyleFields";
-import { INSPECTOR_HINT, InspectorSubtleEmpty, InspectorInlineColorRow } from "./inspectorCompact";
-import { DeProgressSlider } from "./deAttrSlider";
+import { INSPECTOR_HINT, InspectorSubtleEmpty } from "./inspectorCompact";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 
 const MAX_PANES = 8;
@@ -240,105 +235,4 @@ export function TabsPaneList({
   );
 }
 
-type TabsStyleFieldsProps = {
-  widget: LayoutWidget & { tabsConfig: TabsWidgetConfig };
-  onChange: (tabsConfig: TabsWidgetConfig) => void;
-  onTitleChange?: (title: string) => void;
-};
-
-export function TabsStyleFields({ widget, onChange, onTitleChange }: TabsStyleFieldsProps) {
-  const cfg = widget.tabsConfig;
-  const widgetStyle = cfg.widgetStyle ?? {};
-  const headStyle = cfg.headStyle ?? {};
-
-  const patchWidgetStyle = (patch: Partial<typeof widgetStyle>) => {
-    const current = widget.tabsConfig;
-    onChange({
-      ...current,
-      widgetStyle: { ...(current.widgetStyle ?? {}), ...patch },
-    });
-  };
-
-  const patchHeadStyle = (patch: Partial<TabsHeadStyleConfig>) => {
-    onChange({
-      ...cfg,
-      headStyle: { ...headStyle, ...patch },
-    });
-  };
-
-  return (
-    <DeAttrForm>
-      {onTitleChange ? (
-        <div className="border-b border-gray-100 px-3 py-3 dark:border-white/[0.06]">
-          <Label htmlFor={`tabs-title-${widget.id}`} className="mb-2 block text-theme-xs font-medium text-gray-700 dark:text-gray-300">
-            组件名称
-          </Label>
-          <Input
-            id={`tabs-title-${widget.id}`}
-            className={cn(DE_INPUT, "h-9")}
-            value={widget.title}
-            onChange={(e) => onTitleChange(e.target.value)}
-          />
-        </div>
-      ) : null}
-
-      <div className="px-3 py-2">
-        <ChartBackgroundStyleFields
-          scope="chart"
-          density="wide"
-          value={widgetStyle}
-          onChange={patchWidgetStyle}
-          border={{
-            show: widgetStyle.borderEnabled,
-            color: widgetStyle.borderColor,
-            width: widgetStyle.borderWidth,
-            style: widgetStyle.borderStyle,
-          }}
-          onBorderChange={(patch) => {
-            const current = widget.tabsConfig;
-            const currentStyle = current.widgetStyle ?? {};
-            onChange({
-              ...current,
-              widgetStyle: {
-                ...currentStyle,
-                borderEnabled: patch.show ?? currentStyle.borderEnabled,
-                borderColor: patch.color ?? currentStyle.borderColor,
-                borderWidth: patch.width ?? currentStyle.borderWidth,
-                borderStyle: patch.style ?? currentStyle.borderStyle,
-              },
-            });
-          }}
-        />
-      </div>
-
-      <InspectorNestedSection title="页签栏" className="px-3">
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">字号</Label>
-            <DeProgressSlider
-              min={10}
-              max={18}
-              value={headStyle.fontSize ?? 14}
-              onChange={(fontSize) => patchHeadStyle({ fontSize })}
-            />
-          </div>
-          <InspectorInlineColorRow
-            label="激活色"
-            value={headStyle.activeColor ?? ""}
-            onChange={(activeColor) => patchHeadStyle({ activeColor: activeColor || undefined })}
-          />
-          <InspectorInlineColorRow
-            label="未激活色"
-            value={headStyle.inactiveColor ?? ""}
-            onChange={(inactiveColor) => patchHeadStyle({ inactiveColor: inactiveColor || undefined })}
-          />
-          <InspectorInlineColorRow
-            label="栏背景"
-            value={headStyle.barBackground ?? ""}
-            onChange={(barBackground) => patchHeadStyle({ barBackground: barBackground || undefined })}
-          />
-        </div>
-      </InspectorNestedSection>
-    </DeAttrForm>
-  );
-}
+export { TabsWidgetStylePanel as TabsStyleFields } from "./widgetRailStyleSections";

@@ -47,6 +47,8 @@ export type TextWidgetConfig = {
   datasetId?: string;
   dimensionField?: string;
   metricField?: string;
+  /** 单组件外框样式（覆盖看板默认 widgetStyle） */
+  widgetStyle?: WidgetStyleConfig;
 };
 
 export type MediaFit = "contain" | "cover" | "fill";
@@ -66,6 +68,8 @@ export type MediaWidgetConfig = {
   background?: string;
   linkUrl?: string;
   linkNewTab?: boolean;
+  /** 单组件外框样式（覆盖看板默认 widgetStyle） */
+  widgetStyle?: WidgetStyleConfig;
 };
 
 export function mediaAlignToObjectPosition(align: MediaAlign = "center"): string {
@@ -361,6 +365,27 @@ export function syncParkedTabChildren(widgets: PixelLayoutWidget[]): PixelLayout
     if (!host || host.type !== "tabs") return w;
     return parkPixelWidgetInTab(w, host, w.tabPaneId);
   });
+}
+
+/**
+ * 页签 panes.childWidgetIds 已登记但 widget 仍带顶层坐标的组件 → park。
+ * 避免「页签内 + 画布顶层」双渲染叠放。
+ */
+export function repairUnparkedTabChildren(widgets: PixelLayoutWidget[]): PixelLayoutWidget[] {
+  let changed = false;
+  const next = widgets.map((widget) => {
+    if (widget.type === "tabs" || widget.parentTabsId) return widget;
+    for (const host of widgets) {
+      if (host.type !== "tabs" || !host.tabsConfig || host.id === widget.id) continue;
+      for (const pane of host.tabsConfig.panes) {
+        if (!pane.childWidgetIds.includes(widget.id)) continue;
+        changed = true;
+        return parkPixelWidgetInTab(widget, host, pane.id);
+      }
+    }
+    return widget;
+  });
+  return changed ? syncParkedTabChildren(next) : widgets;
 }
 
 /** 将已写入 layout 的组件归入 Tab 页签（折叠占位 + 更新 childWidgetIds） */

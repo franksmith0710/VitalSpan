@@ -1,6 +1,7 @@
 import type { GapConfigInput } from "../gapPolicy";
 import { resolvePixelGutter } from "../gapPolicy";
 import type { DashboardLayoutV2, PixelLayoutWidget } from "../layoutUtils";
+import { getTopLevelPixelWidgets } from "../layoutUtils";
 import { measurePixelLayoutOuterGaps } from "../gapRuntimeProbe";
 
 const CROSS_AXIS_OVERLAP_MIN = 1;
@@ -93,14 +94,15 @@ function compactVerticalPass(
 /**
  * 将外框正缝压实至相切（gapPreset=none 或加载/保存时调用）。
  */
-export function compactPixelLayoutOuterRects(layout: DashboardLayoutV2): GapCompactionResult {
-  if (layout.widgets.length < 2) {
-    return { layout, compacted: false, closedGaps: 0 };
+function compactTopLevelOuterRects(
+  topLevel: PixelLayoutWidget[],
+  targetOuterGap: number,
+): { widgets: PixelLayoutWidget[]; moved: boolean } {
+  if (topLevel.length < 2) {
+    return { widgets: topLevel, moved: false };
   }
 
-  const beforeGaps = measurePixelLayoutOuterGaps(layout.widgets);
-  const targetOuterGap = 0;
-  let widgets = cloneWidgets(layout.widgets);
+  let widgets = cloneWidgets(topLevel);
   let movedAny = false;
 
   for (let pass = 0; pass < MAX_PASSES; pass += 1) {
@@ -115,7 +117,31 @@ export function compactPixelLayoutOuterRects(layout: DashboardLayoutV2): GapComp
     if (!horizontal.moved && !vertical.moved) break;
   }
 
-  const afterGaps = measurePixelLayoutOuterGaps(widgets);
+  return { widgets, moved: movedAny };
+}
+
+export function compactPixelLayoutOuterRects(layout: DashboardLayoutV2): GapCompactionResult {
+  const topLevel = getTopLevelPixelWidgets(layout.widgets).filter(
+    (widget) => widget.width > 0 && widget.height > 0,
+  );
+  if (topLevel.length < 2) {
+    return { layout, compacted: false, closedGaps: 0 };
+  }
+
+  const beforeGaps = measurePixelLayoutOuterGaps(topLevel);
+  const targetOuterGap = 0;
+  const { widgets: compactedTopLevel, moved: movedAny } = compactTopLevelOuterRects(
+    topLevel,
+    targetOuterGap,
+  );
+  const movedById = new Map(compactedTopLevel.map((widget) => [widget.id, widget]));
+  const widgets = layout.widgets.map((widget) => {
+    const moved = movedById.get(widget.id);
+    if (!moved) return widget;
+    return { ...widget, x: moved.x, y: moved.y };
+  });
+
+  const afterGaps = measurePixelLayoutOuterGaps(compactedTopLevel);
   const closedGaps = Math.max(0, beforeGaps.length - afterGaps.length);
 
   return {

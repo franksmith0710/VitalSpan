@@ -1,57 +1,86 @@
-import { Label } from "@/components/ui/label";
+import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { queryKeys } from "@/lib/queryKeys";
 import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
 import { ChartFieldSlot } from "./ChartFieldSlot";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
-import { DatasetPickerPanel } from "./DatasetPickerPanel";
+import { DatasetFieldGroups } from "./DatasetFieldGroups";
+import { DatasetSelector } from "./DatasetSelector";
+import { DeAttrField, DeAttrForm, DE_INPUT } from "./dashboardInspectorUi";
 import { INSPECTOR_HINT } from "./inspectorCompact";
 import { textConfigToHtml } from "./richTextHtml";
 import { useTextDatasetInspector } from "./useTextDatasetInspector";
-import { WidgetEditRailLayout } from "./WidgetEditRailLayout";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
+import { TextWidgetStylePanel } from "./widgetRailStyleSections";
+import { WidgetRailPanelHeader } from "./widgetRailChrome";
 
-type TextEditRailProps = {
+export type TextEditRailProps = {
   widget: LayoutWidget & { textConfig: TextWidgetConfig };
   onTitleChange?: (title: string) => void;
   onConfigChange?: (config: TextWidgetConfig) => void;
   onDelete?: () => void;
+  onRailCollapse?: () => void;
   className?: string;
 };
 
-type TextEditorColumnProps = TextEditRailProps & {
-  onAssignField: (field: string) => void;
-};
-
-function TextEditorColumn({
+export function TextEditRail({
   widget,
   onTitleChange,
   onConfigChange,
   onDelete,
-  onAssignField,
+  onRailCollapse,
   className,
-}: TextEditorColumnProps) {
+}: TextEditRailProps) {
   const textConfig = widget.textConfig;
+  const queryClient = useQueryClient();
+  const dataset = useTextDatasetInspector(textConfig, (next) => onConfigChange?.(next));
   const html = textConfigToHtml(textConfig);
   const document = new DOMParser().parseFromString(html, "text/html");
   const characters = (document.body.textContent ?? "").trim().length;
   const displayField = textConfig.metricField ?? textConfig.dimensionField;
 
+  const refreshDatasets = () => {
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.datasets.list({ limit: 200, offset: 0 }),
+    });
+  };
+
+  const assignField = (field: string) => {
+    onConfigChange?.({
+      ...textConfig,
+      metricField: field,
+      dimensionField: undefined,
+    });
+  };
+
   return (
-    <div className={cn("flex h-full min-h-0 flex-col bg-white dark:bg-gray-900", className)}>
-      <div className="shrink-0 border-b border-gray-200 px-3 py-2.5 dark:border-gray-800">
-        <p className="truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-          {widget.title}
-        </p>
-        <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">富文本</p>
-      </div>
+    <div className={cn("flex h-full min-h-0 w-full flex-col bg-white dark:bg-gray-900", className)}>
+      <WidgetRailPanelHeader
+        title={widget.title || "富文本"}
+        subtitle="富文本"
+        onCollapse={onRailCollapse}
+        collapseAriaLabel="收起配置"
+      />
 
       <ChartInspectorTabs
         className="min-h-0 flex-1"
         defaultTab="data"
         tabs={["data", "style"]}
         data={
-          <div className="space-y-3">
+          <DeAttrForm>
+            <DeAttrField label="数据集" compact>
+              <DatasetSelector
+                widgetId={widget.id}
+                datasetId={textConfig.datasetId}
+                datasetsLoading={dataset.datasetsLoading}
+                datasetsError={dataset.datasetsError}
+                datasetsEmpty={dataset.datasetsEmpty}
+                datasetItems={dataset.datasetItems}
+                onSelect={dataset.handleDatasetSelect}
+                onRefresh={refreshDatasets}
+              />
+            </DeAttrField>
             {textConfig.datasetId ? (
               <ChartFieldSlot
                 label="显示字段"
@@ -68,48 +97,37 @@ function TextEditorColumn({
                         })
                     : undefined
                 }
-                onDropField={onAssignField}
+                onDropField={assignField}
               />
             ) : (
-              <p className={INSPECTOR_HINT}>
-                先在右侧选择数据集，再拖入字段；正文以静态富文本为主（对标 DataEase 文本卡）。
+              <p className={cn(INSPECTOR_HINT, "border-b border-gray-100 px-3 pb-3 dark:border-white/[0.06]")}>
+                选择数据集后可绑定字段作占位引用；正文在画布双击编辑。
               </p>
             )}
-            {textConfig.datasetId ? (
-              <p className={INSPECTOR_HINT}>
-                绑定字段后取首条结果值作占位引用；双击画布编辑正文样式与内容。
-              </p>
-            ) : null}
-          </div>
+            <DatasetFieldGroups
+              className="border-t border-gray-100 dark:border-white/[0.06]"
+              columns={dataset.columns}
+              columnsLoading={dataset.columnsLoading}
+              columnsReady={dataset.columnsReady}
+              datasetSelected={Boolean(textConfig.datasetId)}
+              onFieldClick={assignField}
+              onRefresh={dataset.refreshColumns}
+            />
+          </DeAttrForm>
         }
         style={
-          <div className="space-y-3">
-            {onTitleChange ? (
-              <div className="space-y-1.5">
-                <Label htmlFor={`text-title-${widget.id}`} className="text-[11px] font-medium text-gray-500">
-                  组件名称
-                </Label>
-                <Input
-                  id={`text-title-${widget.id}`}
-                  value={widget.title}
-                  onChange={(e) => onTitleChange(e.target.value)}
-                  className="h-8 rounded-md text-theme-xs"
-                />
-              </div>
-            ) : null}
-            <div className="rounded-md border border-gray-200 bg-gray-50/60 p-2.5 dark:border-gray-800 dark:bg-white/[0.03]">
-              <p className="text-[11px] font-medium text-gray-800 dark:text-white/90">文字样式</p>
-              <p className="mt-1 text-[10px] leading-relaxed text-gray-500 dark:text-gray-400">
-                双击画布进入编辑，使用浮动工具栏调整字体、字号、颜色与对齐。
-              </p>
-              <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400">
-                当前内容：{characters} 个字符
-              </p>
-              <p className="mt-2 text-[10px] text-gray-400 dark:text-gray-500">
-                保存：点击外部或 Ctrl+Enter；取消：Esc
-              </p>
-            </div>
-          </div>
+          <TextWidgetStylePanel
+            widget={widget}
+            characters={characters}
+            widgetStyle={textConfig.widgetStyle ?? {}}
+            onTitleChange={onTitleChange}
+            onWidgetStyleChange={(patch) =>
+              onConfigChange?.({
+                ...textConfig,
+                widgetStyle: { ...(textConfig.widgetStyle ?? {}), ...patch },
+              })
+            }
+          />
         }
       />
 
@@ -119,59 +137,5 @@ function TextEditorColumn({
         </div>
       ) : null}
     </div>
-  );
-}
-
-/** DataEase chart-edit：富文本配置列 + 数据集字段库双列（均可折叠） */
-export function TextEditRail({
-  widget,
-  onTitleChange,
-  onConfigChange,
-  onDelete,
-  className,
-}: TextEditRailProps) {
-  const textConfig = widget.textConfig;
-  const dataset = useTextDatasetInspector(textConfig, (next) => onConfigChange?.(next));
-
-  const assignDisplayField = (field: string) => {
-    onConfigChange?.({
-      ...textConfig,
-      metricField: field,
-      dimensionField: undefined,
-    });
-  };
-
-  return (
-    <WidgetEditRailLayout
-      className={className}
-      leftLabel={widget.title || "富文本"}
-      rightLabel="数据集"
-      left={
-        <TextEditorColumn
-          widget={widget}
-          onTitleChange={onTitleChange}
-          onConfigChange={onConfigChange}
-          onDelete={onDelete}
-          onAssignField={assignDisplayField}
-          className="border-r border-gray-200 dark:border-gray-800"
-        />
-      }
-      right={
-        <DatasetPickerPanel
-          widgetId={widget.id}
-          datasetId={textConfig.datasetId}
-          datasetsLoading={dataset.datasetsLoading}
-          datasetsError={dataset.datasetsError}
-          datasetsEmpty={dataset.datasetsEmpty}
-          datasetItems={dataset.datasetItems}
-          columns={dataset.columns}
-          columnsLoading={dataset.columnsLoading}
-          columnsReady={dataset.columnsReady}
-          onDatasetSelect={dataset.handleDatasetSelect}
-          onFieldClick={assignDisplayField}
-          onRefreshFields={dataset.refreshColumns}
-        />
-      }
-    />
   );
 }

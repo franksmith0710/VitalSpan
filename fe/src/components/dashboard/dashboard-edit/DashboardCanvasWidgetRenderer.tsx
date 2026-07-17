@@ -8,13 +8,12 @@ import {
   buildWidgetFilterParams,
   type Linkage,
 } from "../dashboardFilterUtils";
-import { useDashboardWidgets } from "../DashboardWidgetsContext";
 import {
   buildWidgetExecuteKey,
 } from "../dashboardWidgetExecuteKey";
+import type { DashboardStyleConfig } from "../dashboardStyleConfig";
 import {
   resizeWidget,
-  type DashboardStyleConfig,
   type LayoutWidget,
   type PixelLayoutWidget,
 } from "../layoutUtils";
@@ -49,6 +48,10 @@ type DashboardCanvasWidgetRendererProps = {
   nested?: boolean;
   shell?: DashboardWidgetShell;
   dashboardStyle?: DashboardStyleConfig;
+  chartPaletteDefaults?: ReturnType<
+    typeof import("../dashboardStyleConfig").pickChartPaletteDefaults
+  >;
+  allWidgets?: LayoutWidget[];
   styleRevision?: string;
   chartRefreshKeys?: Record<string, number>;
   onTabPaletteDrop?: (tabsWidgetId: string, type: PaletteDragPayload) => void;
@@ -94,6 +97,8 @@ function rendererPropsEqual(
   if (prev.selected !== next.selected) return false;
   if (prev.styleRevision !== next.styleRevision) return false;
   if (prev.dashboardStyle !== next.dashboardStyle) return false;
+  if (prev.chartPaletteDefaults !== next.chartPaletteDefaults) return false;
+  if (prev.allWidgets !== next.allWidgets) return false;
   if (!widgetContentEqual(prev.widget, next.widget)) return false;
   if (prev.gridSize?.w !== next.gridSize?.w || prev.gridSize?.h !== next.gridSize?.h) {
     return false;
@@ -116,13 +121,14 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   nested = false,
   shell = "grid",
   dashboardStyle,
+  chartPaletteDefaults,
+  allWidgets,
   styleRevision: _styleRevision,
   chartRefreshKeys,
   onTabPaletteDrop,
   renderChild,
 }: DashboardCanvasWidgetRendererProps) {
   const widget = asLayoutWidget(sourceWidget);
-  const allWidgets = useDashboardWidgets();
   const isShapePlaying = usePixelShapePlayer();
   const isGridPlaying = useDashboardGridPlayer();
   const hasPixelFootprint =
@@ -131,9 +137,15 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
     !isShapePlaying &&
     sourceWidget.width > 0 &&
     sourceWidget.height > 0;
-  const pixelSize = hasPixelFootprint
-    ? { width: sourceWidget.width, height: sourceWidget.height }
-    : undefined;
+  const pixelWidth = "width" in sourceWidget ? sourceWidget.width : 0;
+  const pixelHeight = "height" in sourceWidget ? sourceWidget.height : 0;
+  const pixelSize = useMemo(
+    () =>
+      hasPixelFootprint
+        ? { width: pixelWidth, height: pixelHeight }
+        : undefined,
+    [hasPixelFootprint, pixelWidth, pixelHeight],
+  );
   const effectiveGridSize =
     gridSize ??
     (nested ? { w: widget.colSpan, h: widget.rowSpan } : undefined);
@@ -241,6 +253,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
         onTabPaletteDrop={nested || mode !== "edit" ? undefined : handleTabPaletteDrop}
         onTextConfigChange={handleTextConfigChange}
         dashboardStyle={dashboardStyle}
+        chartPaletteDefaults={chartPaletteDefaults}
         suspendLiveResize={isShapePlaying || isGridPlaying}
       />
     </WidgetErrorBoundary>

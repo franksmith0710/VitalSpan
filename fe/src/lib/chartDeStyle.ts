@@ -12,9 +12,13 @@ import {
   mergeTitleStyle,
   mergeWidgetShellStyle,
 } from "@/components/dashboard/dashboardStyleConfig";
+import { getDashboardThemeTokens } from "@/components/dashboard/dashboardThemeTokens";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "@/components/dashboard/dashboardThemeTokens";
 import type { WidgetBackgroundPresentation } from "@/lib/widgetSurfaceBackground";
 import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
+import type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
+
+export type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 
 export type ChartLegendStyle = {
   show?: boolean;
@@ -32,6 +36,7 @@ export const DEFAULT_CHART_LEGEND_STYLE: Required<Pick<ChartLegendStyle, "show" 
 export type ChartLabelStyle = {
   show?: boolean;
   fontSize?: number;
+  color?: string;
   formatType?: NumberFormatConfig["type"];
   thousandSeparator?: boolean;
 };
@@ -71,6 +76,9 @@ export const PIE_INNER_RADIUS_MAX = 65;
 
 export type ChartTooltipStyle = {
   show?: boolean;
+  fontSize?: number;
+  color?: string;
+  background?: string;
 };
 
 export type ChartDeStyle = {
@@ -78,6 +86,8 @@ export type ChartDeStyle = {
   paletteOpacity?: number;
   /** 系列渐变填充（对标 DE「渐变颜色」） */
   seriesGradient?: boolean;
+  /** 柱/线等系列级配色（对标 DE seriesColor；优先于调色板循环色） */
+  seriesColor?: ChartSeriesColorItem[];
   title?: TitleStyleConfig & { show?: boolean };
   legend?: ChartLegendStyle;
   label?: ChartLabelStyle;
@@ -186,6 +196,17 @@ export function inferWidgetSyncScopes(
   if (patch.paletteId !== undefined || patch.paletteColors !== undefined) {
     scopes.add("palette");
   }
+  if (
+    patch.paletteOpacity !== undefined ||
+    patch.seriesGradient !== undefined ||
+    patch.chartLabelShow !== undefined ||
+    patch.tooltipShow !== undefined ||
+    patch.chartLabelStyle !== undefined ||
+    patch.chartTooltipStyle !== undefined ||
+    patch.tableColorStyle !== undefined
+  ) {
+    scopes.add("palette");
+  }
   if (patch.numberFormat) scopes.add("numberFormat");
   if (patch.defaultQueryLimit !== undefined) scopes.add("queryLimit");
   return scopes;
@@ -228,17 +249,66 @@ export function stripChartWidgetAppearanceOverrides(cfg: ChartViewConfig): Chart
 
 export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfig {
   const de = readChartDeStyle(cfg);
-  if (de.paletteId == null && de.paletteOpacity == null) return cfg;
+  const features = cfg.nativeBody?.deFeatures;
+  const hasShowLabelFeature =
+    features && typeof features === "object" && "showLabel" in features;
+  const label = de.label;
+  const hasLabelPaletteFields =
+    label &&
+    (label.show !== undefined || label.fontSize !== undefined || label.color !== undefined);
+  const tooltip = de.tooltip;
+  const hasTooltipFields =
+    tooltip &&
+    (tooltip.show !== undefined ||
+      tooltip.fontSize !== undefined ||
+      tooltip.color !== undefined ||
+      tooltip.background !== undefined);
+  const hasPaletteFields =
+    de.paletteId != null ||
+    de.paletteOpacity != null ||
+    de.seriesGradient != null ||
+    hasLabelPaletteFields ||
+    hasTooltipFields ||
+    hasShowLabelFeature;
+  if (!hasPaletteFields) return cfg;
+
   const nextDe: ChartDeStyle = { ...de };
   delete nextDe.paletteId;
   delete nextDe.paletteOpacity;
-  return {
-    ...cfg,
-    nativeBody: {
-      ...cfg.nativeBody,
-      deStyle: nextDe,
-    },
+  delete nextDe.seriesGradient;
+
+  if (label) {
+    const nextLabel: ChartLabelStyle = { ...label };
+    delete nextLabel.show;
+    delete nextLabel.fontSize;
+    delete nextLabel.color;
+    const hasLabel =
+      nextLabel.formatType !== undefined ||
+      nextLabel.thousandSeparator !== undefined;
+    if (hasLabel) nextDe.label = nextLabel;
+    else delete nextDe.label;
+  }
+
+  if (tooltip) {
+    delete nextDe.tooltip;
+  }
+
+  let nativeBody = {
+    ...cfg.nativeBody,
+    deStyle: nextDe,
   };
+
+  if (hasShowLabelFeature && features && typeof features === "object") {
+    const { showLabel: _removed, ...restFeatures } = features as { showLabel?: boolean };
+    if (Object.keys(restFeatures).length > 0) {
+      nativeBody = { ...nativeBody, deFeatures: restFeatures };
+    } else {
+      const { deFeatures: _drop, ...restBody } = nativeBody;
+      nativeBody = restBody;
+    }
+  }
+
+  return { ...cfg, nativeBody };
 }
 
 export function stripChartLabelFormatOverrides(cfg: ChartViewConfig): ChartViewConfig {
@@ -251,7 +321,9 @@ export function stripChartLabelFormatOverrides(cfg: ChartViewConfig): ChartViewC
   delete nextLabel.formatType;
   delete nextLabel.thousandSeparator;
   const hasLabel =
-    nextLabel.show !== undefined || nextLabel.fontSize !== undefined;
+    nextLabel.show !== undefined ||
+    nextLabel.fontSize !== undefined ||
+    nextLabel.color !== undefined;
   const nextDe: ChartDeStyle = { ...de };
   if (hasLabel) nextDe.label = nextLabel;
   else delete nextDe.label;
@@ -339,6 +411,63 @@ export function readChartPaletteOpacity(
   const opacity = readChartDeStyle(cfg).paletteOpacity;
   if (opacity !== undefined) return opacity;
   return defaults?.paletteOpacity;
+}
+
+export function resolveChartLabelPresentation(
+  cfg: ChartViewConfig,
+  defaults?: Pick<DashboardStyleConfig, "chartLabelStyle">,
+): { fontSize: number; color?: string } {
+  const label = readChartDeStyle(cfg).label;
+  return {
+    fontSize: label?.fontSize ?? defaults?.chartLabelStyle?.fontSize ?? 12,
+    color: label?.color ?? defaults?.chartLabelStyle?.color,
+  };
+}
+
+export function resolveChartTooltipPresentation(
+  cfg: ChartViewConfig,
+  defaults?: Pick<DashboardStyleConfig, "chartTooltipStyle">,
+): { fontSize: number; color?: string; background?: string } {
+  const tooltip = readChartDeStyle(cfg).tooltip;
+  return {
+    fontSize: tooltip?.fontSize ?? defaults?.chartTooltipStyle?.fontSize ?? 12,
+    color: tooltip?.color ?? defaults?.chartTooltipStyle?.color,
+    background: tooltip?.background ?? defaults?.chartTooltipStyle?.background,
+  };
+}
+
+/** 图表标签字体色：组件 → 看板 → 主题令牌（供取色器预览真实生效色） */
+export function resolveChartLabelDisplayColor(
+  cfg: ChartViewConfig | undefined,
+  defaults?: Pick<DashboardStyleConfig, "chartLabelStyle" | "colorScheme">,
+): string {
+  const label = cfg ? readChartDeStyle(cfg).label : undefined;
+  const scheme = defaults?.colorScheme ?? "light";
+  return label?.color ?? defaults?.chartLabelStyle?.color ?? getDashboardThemeTokens(scheme).chartAxis;
+}
+
+/** 图表提示字体色：组件 → 看板 → ECharts 常见默认 */
+export function resolveChartTooltipDisplayColor(
+  cfg: ChartViewConfig | undefined,
+  defaults?: Pick<DashboardStyleConfig, "chartTooltipStyle" | "colorScheme">,
+): string {
+  const tooltip = cfg ? readChartDeStyle(cfg).tooltip : undefined;
+  return tooltip?.color ?? defaults?.chartTooltipStyle?.color ?? "#ffffff";
+}
+
+/** 图表提示背景色：组件 → 看板 → 主题近似默认 */
+export function resolveChartTooltipDisplayBackground(
+  cfg: ChartViewConfig | undefined,
+  defaults?: Pick<DashboardStyleConfig, "chartTooltipStyle" | "colorScheme">,
+): string {
+  const tooltip = cfg ? readChartDeStyle(cfg).tooltip : undefined;
+  const scheme = defaults?.colorScheme ?? "light";
+  const tokens = getDashboardThemeTokens(scheme);
+  return (
+    tooltip?.background ??
+    defaults?.chartTooltipStyle?.background ??
+    (scheme === "dark" ? tokens.dialogBg : "#344054")
+  );
 }
 
 export function readChartRemark(cfg: ChartViewConfig | undefined): { show: boolean; text: string } {
@@ -469,4 +598,18 @@ export function patchChartShowLabel(cfg: ChartViewConfig, show: boolean): ChartV
   const deFeatures =
     prev && typeof prev === "object" ? { ...(prev as object), showLabel: show } : { showLabel: show };
   return { ...withLabel, nativeBody: { ...withLabel.nativeBody, deFeatures } };
+}
+
+/** 写入标签样式；设置字体颜色时若标签未开启则自动打开（对标 DataEase 选色即见效果） */
+export function patchChartLabelStyle(
+  cfg: ChartViewConfig,
+  patch: Partial<ChartLabelStyle>,
+  options?: { autoEnableShow?: boolean },
+): ChartViewConfig {
+  let next = patchChartDeStyleNested(cfg, "label", patch);
+  const autoEnable = options?.autoEnableShow ?? true;
+  if (autoEnable && patch.color !== undefined && !readChartShowLabel(next)) {
+    next = patchChartShowLabel(next, true);
+  }
+  return next;
 }

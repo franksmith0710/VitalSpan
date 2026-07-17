@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { INSPECTOR_SWITCH_SIZE } from "./inspectorCompact";
 
 export type DeSegmentOption = {
   value: string | boolean;
@@ -152,21 +153,30 @@ export function DeAttrToggleRow({
   label,
   description,
   checked,
+  disabled = false,
   onCheckedChange,
 }: {
   label: string;
   description?: string;
   checked: boolean;
+  disabled?: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="border-b border-gray-100 py-2.5 last:border-b-0 dark:border-white/[0.06]">
+    <div
+      className={cn(
+        "border-b border-gray-100 py-2.5 last:border-b-0 dark:border-white/[0.06]",
+        disabled && "opacity-60",
+      )}
+    >
       <div className="flex items-center justify-between gap-3">
         <span className="min-w-0 flex-1 text-theme-xs text-gray-600 dark:text-gray-300">{label}</span>
         <Switch
           checked={checked}
+          disabled={disabled}
           onCheckedChange={onCheckedChange}
           aria-label={label}
+          size={INSPECTOR_SWITCH_SIZE}
           className="shrink-0"
         />
       </div>

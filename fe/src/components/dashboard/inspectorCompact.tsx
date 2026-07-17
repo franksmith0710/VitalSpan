@@ -17,6 +17,8 @@ export const INSPECTOR_LABEL = "text-[11px] font-medium text-gray-500 dark:text-
 export const INSPECTOR_HINT = "text-[10px] leading-relaxed text-gray-400 dark:text-gray-500";
 export const INSPECTOR_SECTION_GAP = "space-y-2.5";
 export const INSPECTOR_SWITCH_ROW = "flex items-center justify-between gap-2 py-0.5";
+/** 看板配置轨 / 图表样式栏统一小号开关 */
+export const INSPECTOR_SWITCH_SIZE = "sm" as const;
 export const INSPECTOR_NESTED_CARD =
   "space-y-2 rounded-md border border-gray-200 bg-gray-50/70 p-2 dark:border-gray-800 dark:bg-white/[0.03]";
 
@@ -89,7 +91,7 @@ export function InspectorSwitchRow({
           disabled={disabled}
           onCheckedChange={onCheckedChange}
           aria-label={ariaLabel ?? label}
-          className="scale-90"
+          size={INSPECTOR_SWITCH_SIZE}
         />
       </div>
       {hint ? <p className={INSPECTOR_HINT}>{hint}</p> : null}
@@ -158,6 +160,7 @@ export function InspectorInlineColorRow({
   onChange,
   swatches,
   allowClear = true,
+  fallbackValue,
   className,
 }: {
   label: string;
@@ -165,6 +168,7 @@ export function InspectorInlineColorRow({
   onChange: (value: string | undefined) => void;
   swatches?: readonly ColorSwatch[] | readonly string[];
   allowClear?: boolean;
+  fallbackValue?: string;
   className?: string;
 }) {
   return (
@@ -181,6 +185,7 @@ export function InspectorInlineColorRow({
         allowClear={allowClear}
         swatches={swatches}
         value={value}
+        fallbackValue={fallbackValue}
         buttonAriaLabel={`${label}取色器`}
         onChange={onChange}
       />

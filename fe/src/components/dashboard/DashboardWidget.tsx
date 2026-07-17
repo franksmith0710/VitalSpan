@@ -31,7 +31,7 @@ import type {
   TextWidgetConfig,
   DashboardStyleConfig,
 } from "./layoutUtils";
-import { mergeTitleStyle, mergeWidgetShellStyle, resolveWidgetShellPaintColor } from "./dashboardStyleConfig";
+import { mergeTitleStyle, mergeWidgetShellStyle, pickChartPaletteDefaults, resolveWidgetShellPaintColor, chartPaletteDefaultsFingerprint } from "./dashboardStyleConfig";
 import { resolveDashboardChrome } from "./dashboardChromeConfig";
 import { parseDeRefreshIntervalSec, readChartDeDisplay, resolveChartQueryLimit } from "@/lib/chartDeDisplay";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
@@ -85,6 +85,7 @@ type DashboardWidgetProps = {
   onTabPaletteDrop?: (payload: PaletteDragPayload) => void;
   onTextConfigChange?: (id: string, config: TextWidgetConfig) => void;
   dashboardStyle?: DashboardStyleConfig;
+  chartPaletteDefaults?: ReturnType<typeof pickChartPaletteDefaults>;
   /** DataEase isPlayer：交互中暂停 React 尺寸 props，由 DOM 百分比跟手 */
   suspendLiveResize?: boolean;
   /** Tab 内嵌子组件：与顶层 shape 同壳层，左侧拖出把手回画布 */
@@ -164,11 +165,16 @@ export function DashboardWidget({
   onTabPaletteDrop,
   onTextConfigChange,
   dashboardStyle,
+  chartPaletteDefaults: chartPaletteDefaultsProp,
   suspendLiveResize = false,
   nested = false,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const canvasScale = usePixelCanvasScale();
+  const chartPaletteDefaults = useMemo(
+    () => chartPaletteDefaultsProp ?? pickChartPaletteDefaults(dashboardStyle),
+    [chartPaletteDefaultsProp, chartPaletteDefaultsFingerprint(dashboardStyle)],
+  );
   const chartCfg = widget.type === "chart" ? widget.chartConfig : undefined;
   const widgetExecuteKey = useWidgetAutoRefreshExecuteKey(chartCfg, executeKey);
 
@@ -300,12 +306,7 @@ export function DashboardWidget({
         queryLimit={queryLimit}
         paletteId={dashboardStyle?.paletteId}
         paletteColors={dashboardStyle?.paletteColors}
-        dashboardColorDefaults={{
-          paletteOpacity: dashboardStyle?.paletteOpacity,
-          seriesGradient: dashboardStyle?.seriesGradient,
-          chartLabelShow: dashboardStyle?.chartLabelShow,
-          tooltipShow: dashboardStyle?.tooltipShow,
-        }}
+        dashboardColorDefaults={chartPaletteDefaults}
         numberFormat={dashboardStyle?.numberFormat}
         colorScheme={dashboardStyle?.colorScheme ?? "light"}
         widgetShellColor={shellColor}

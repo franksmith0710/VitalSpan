@@ -3,10 +3,14 @@ import { ChartDeSliderField } from "./deAttrSlider";
 import { resolvePaletteId } from "@/lib/chartPalette";
 import { cn } from "@/lib/utils";
 
+import type { ChartSeriesColorItem } from "@/lib/chartDeStyle";
+
 type ChartPaletteConfigFieldsProps = {
   paletteId?: string;
-  paletteOpacity?: number;
+  paletteColors?: readonly string[];
+  seriesColors?: readonly ChartSeriesColorItem[];
   onPaletteChange: (paletteId: string | undefined, colors: readonly string[]) => void;
+  onSeriesColorsChange?: (items: readonly ChartSeriesColorItem[]) => void;
   onOpacityChange?: (opacity: number) => void;
   /** 拖拽滑块时实时预览（对标 DE 配色不透明度即时反馈） */
   onOpacityPreview?: (opacity: number) => void;
@@ -20,8 +24,11 @@ type ChartPaletteConfigFieldsProps = {
 /** 看板 / 组件共用的配色方案区块（选择器 + 可选不透明度） */
 export function ChartPaletteConfigFields({
   paletteId,
+  paletteColors,
   paletteOpacity,
+  seriesColors,
   onPaletteChange,
+  onSeriesColorsChange,
   onOpacityChange,
   onOpacityPreview,
   showInherit = false,
@@ -37,7 +44,10 @@ export function ChartPaletteConfigFields({
         showInherit={showInherit}
         dense={dense}
         value={pickerValue}
+        paletteColors={paletteColors}
+        seriesColors={seriesColors}
         onChange={onPaletteChange}
+        onSeriesColorsChange={onSeriesColorsChange}
       />
       {onOpacityChange ? (
         <div className="space-y-1">

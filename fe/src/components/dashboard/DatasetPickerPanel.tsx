@@ -105,6 +105,7 @@ export function DatasetPickerPanel({
         aria-label="字段库"
       >
         <DatasetFieldGroups
+          className="min-h-0 flex-1"
           columns={columns}
           columnsLoading={columnsLoading}
           columnsReady={columnsReady}

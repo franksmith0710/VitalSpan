@@ -8,7 +8,6 @@ import { TabNestedDragRail } from "./TabNestedDragRail";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import { isRichTextEmpty, textConfigToHtml } from "./richTextHtml";
 import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
-import { dwCaption } from "./dashboardWidgetTypography";
 
 type TextWidgetProps = {
   widget: LayoutWidget & { textConfig: TextWidgetConfig };
@@ -154,7 +153,7 @@ export function TextWidget({
           <p
             className={cn(
               "flex h-full items-center justify-center text-gray-400",
-              inShapeShell ? dwCaption : "p-3 text-theme-sm",
+              inShapeShell ? "px-2 text-theme-xs" : "p-3 text-theme-sm",
             )}
           >
             双击编辑文字
@@ -163,7 +162,7 @@ export function TextWidget({
           <div
             className={cn(
               "rich-main-class text-gray-700 dark:text-gray-300",
-              !inShapeShell && "p-4",
+              inShapeShell ? "px-2 py-1.5" : "p-4",
             )}
             dangerouslySetInnerHTML={{ __html: html }}
           />

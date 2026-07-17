@@ -105,23 +105,31 @@
 
 1. 曾将 Tab 标为画布锚点，碰撞时不推挤 Tab，活动块可叠在 Tab 上方
 2. `layoutsOverlap` / `packPixelLayoutSeamless` 未排除 Tab 内折叠子组件（`parentTabsId` + `0×0`）
+3. **保存 422（阻塞）**：`parkPixelWidgetInTab` 将子组件折叠为 `width/height=0`，但后端 `LayoutWidget` 曾强制 `ge=120/32`，Pydantic 在校验阶段即 422 → 消毒后的布局无法落库，用户仍见叠放脏态
+4. **保存假失败（TDZ）**：`handleSave` 在 layout PUT **200 之后**引用未声明的 `savedStyle` → toast 失败且 `resetLayout` 未执行
+5. **保存后叠放回显**：`resetLayout` → `prepareDashboardLayout` 仅 `compact`、不 `pack`；已消毒的坐标在回写时被跳过完整 sanitize
 
 ## 修复
 
 - Tab 与普通组件同一套 `resolvePixelCollisions`（可被下推、可上浮）
-- **拖入页签（DE）**：松手先 `tryAbsorbTopLevelWidgetIntoTab`；命中 Tab 时 `shouldRevertCommit` 不弹回；吸收后选中 Tab 宿主
-- `layoutsOverlap` / `packPixelLayoutSeamless` 仅处理 `getTopLevelPixelWidgets` 且 `width/height > 0`
-- 已存盘重叠布局：加载时 `preparePixelLayoutForDisplay` → `packPixelLayoutSeamless` 自动压实
+- **保存/加载单路径**：`sanitizePixelLayoutGeometry`（Tab park 修复 + 顶层重叠 pack）接入 `persistDashboardLayout` / `preparePixelLayoutForDisplay` / 保存后 `resetLayout`
+- **编辑态**：`setPixelLayout` → `repairPixelLayoutTabState`（仅 Tab 折叠，不整版 pack）
+- **工具栏插入**：`insertPixelPaletteWidget` 走 `resolvePixelCollisions`
+- **拖入页签（DE）**：松手 `tryAbsorbTopLevelWidgetIntoTab`；吸收后选中 Tab 宿主
+- **后端契约**：`parentTabsId` + `tabPaneId` 的 Tab 子组件允许 `0×0`，并跳过画布越界检查（`backend/app/dashboard/schemas.py`）
+- **`handleSave`**：`savedStyle` 须在 `resetLayout` 之前声明（修复 TDZ 假失败）
 
 ## 锚点
 
-- `fe/src/components/dashboard/pixelCanvas/collisionLayout.ts`
-- `fe/src/components/dashboard/pixelCanvas/PixelCanvas.tsx`
-- `fe/src/components/dashboard/pixelCanvas/tabInsertResolver.ts`
+- `fe/src/components/dashboard/pixelCanvas/layoutSanitize.ts`
 - `fe/src/components/dashboard/stylePipeline.ts`
+- `fe/src/components/dashboard/layoutUtils.ts`（`repairUnparkedTabChildren`）
+- `fe/src/pages/admin/dashboard/DashboardEditPage.tsx`（保存后 reset）
+- `backend/app/dashboard/schemas.py`（Tab parked 子组件尺寸豁免）
 
 ## 回归
 
 - `collisionLayout.test.ts`：`pushes tab hosts like any other widget when overlapped`
 - `tabInsertResolver.test.ts`：吸收与 intent
-- 手测：拖组件到 Tab 内松手 → 进页签；拖 Tab 本身 → 与邻块互推
+- `tests/test_dashboard_pixel_layout.py`：`test_pixel_layout_accepts_tab_parked_child_zero_size`
+- 手测：叠放画布 → 保存 200 → 无重叠；Tab 内子组件仅页签内可见

@@ -12,6 +12,7 @@ import {
   computeTableSummaryValues,
   DEFAULT_TABLE_PAGE_SIZE,
   resolveTableSummaryColumns,
+  resolveTableZebraBg,
 } from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
 import { withBackgroundAlpha } from "@/lib/widgetSurfaceBackground";
@@ -81,6 +82,8 @@ export function EmbeddedChartTable({
   const paginationVariant = tableStyle.paginationVariant ?? "compact";
   const wordWrap = tableStyle.wordWrap ?? false;
   const rowHover = tableStyle.rowHover !== false;
+  const zebraBg = resolveTableZebraBg(tableStyle);
+  const paginationFontSize = tableStyle.paginationFontSize;
   const opacity = tableStyle.opacity != null ? tableStyle.opacity / 100 : 1;
   const borderColor = tableStyle.borderColor;
   const panelBackground =
@@ -124,6 +127,26 @@ export function EmbeddedChartTable({
     summaryValues &&
     displayCols.find((col) => !summaryColumns.includes(col) || summaryValues[col] == null);
 
+  if (rows.length === 0) {
+    return (
+      <div
+        ref={containerRef}
+        className={cn(
+          "embedded-chart-table-host flex min-h-0 w-full min-w-0 flex-col items-center justify-center px-3 py-6 text-center",
+          embedded ? "absolute inset-0" : panel ? undefined : "h-full",
+        )}
+        style={{
+          ...mergedThemeStyle,
+          ...(panelBackground ? { backgroundColor: panelBackground } : null),
+          color: "var(--dashboard-table-empty-fg, #98a2b3)",
+          fontSize: "var(--dashboard-table-pagination-font-size, 12px)",
+        }}
+      >
+        暂无数据
+      </div>
+    );
+  }
+
   return (
     <div
       ref={containerRef}
@@ -164,22 +187,30 @@ export function EmbeddedChartTable({
           ) : null}
           <thead className="sticky top-0 z-[1] bg-[var(--dashboard-table-header-bg,#f9fafb)]">
             <tr>
-              {displayCols.map((c) => (
+              {displayCols.map((c, colIndex) => (
                 <th
                   key={c}
                   title={c}
-                  className={cn(cellClass, "font-medium text-[var(--dashboard-table-header-fg,#667085)]")}
+                  className={cn(
+                    cellClass,
+                    "font-medium text-[var(--dashboard-table-header-fg,#667085)]",
+                    colIndex === 0 &&
+                      "bg-[var(--dashboard-table-corner-bg,var(--dashboard-table-header-bg,#f9fafb))]",
+                  )}
                 >
                   {c}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-[var(--dashboard-table-body-bg,transparent)]">
             {pageRows.map((row, i) => (
               <tr
                 key={i}
-                className="border-t border-[var(--dashboard-table-border,#f2f4f7)]"
+                className={cn(
+                  "border-t border-[var(--dashboard-table-border,#f2f4f7)]",
+                  zebraBg && i % 2 === 1 && "bg-[var(--dashboard-table-zebra-bg)]",
+                )}
               >
                 {displayCols.map((c) => {
                   const idx = columns.indexOf(c);
@@ -192,7 +223,7 @@ export function EmbeddedChartTable({
                       title={text}
                       className={cn(
                         cellClass,
-                        "text-[var(--dashboard-table-body-fg,#344054)]",
+                        "bg-[var(--dashboard-table-column-bg,transparent)] text-[var(--dashboard-table-body-fg,#344054)]",
                         drillable && "cursor-pointer text-[var(--dashboard-drill-level-0,#465fff)] hover:underline",
                       )}
                       onClick={
@@ -241,7 +272,12 @@ export function EmbeddedChartTable({
       </div>
       {usePagination ? (
         paginationVariant === "compact" ? (
-          <div className="flex shrink-0 items-center justify-between gap-1 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-2 py-1.5">
+          <div
+            className="flex shrink-0 items-center justify-between gap-1 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-2 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
+            style={
+              paginationFontSize != null ? { fontSize: `${paginationFontSize}px` } : undefined
+            }
+          >
             <IconButton
               type="button"
               variant="ghost"
@@ -269,7 +305,12 @@ export function EmbeddedChartTable({
             </IconButton>
           </div>
         ) : (
-          <div className="mt-1 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-2 py-1.5">
+          <div
+            className="mt-1 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-2 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
+            style={
+              paginationFontSize != null ? { fontSize: `${paginationFontSize}px` } : undefined
+            }
+          >
             <Button
               type="button"
               variant="outline"

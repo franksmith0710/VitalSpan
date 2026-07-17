@@ -18,6 +18,8 @@ export type ColorSwatch = {
 type ColorFieldProps = {
   value: string;
   onChange: (value: string | undefined) => void;
+  /** 无组件级覆盖时用于预览/取色器初值（不写入 onChange） */
+  fallbackValue?: string;
   swatches?: readonly ColorSwatch[] | readonly string[];
   label?: string;
   allowClear?: boolean;
@@ -79,6 +81,7 @@ function resolveCommitValue(raw: string): string | undefined {
 export function ColorField({
   value,
   onChange,
+  fallbackValue,
   swatches = [],
   label,
   allowClear = true,
@@ -159,15 +162,18 @@ export function ColorField({
     flushCommit();
   };
 
-  const displayHex = normalizeHexColor(localValue) ?? localValue;
+  const explicitHex = normalizeHexColor(localValue);
+  const fallbackHex = fallbackValue ? normalizeHexColor(fallbackValue) : undefined;
+  const previewHex = explicitHex ?? fallbackHex;
+  const pickerSeed = localValue || fallbackValue || "";
   const pickerLabel = buttonAriaLabel ?? (label ? `${label}取色器` : "取色器");
   const popoverTitle = label ?? buttonAriaLabel?.replace(/取色器$/, "") ?? "颜色";
   const chipSize = compact || variant === "swatch" ? "sm" : "md";
   const popoverAlign = variant === "swatch" ? "start" : compact ? "end" : "start";
   const popoverSide = variant === "swatch" ? "bottom" : compact ? "left" : "bottom";
   const swatchLabelVisible = showLabel ?? Boolean(label);
-  const swatchTitle = displayHex
-    ? `${popoverTitle} · ${displayHex.toUpperCase()}`
+  const swatchTitle = previewHex
+    ? `${popoverTitle} · ${previewHex.toUpperCase()}`
     : popoverTitle;
 
   const popoverBody = (
@@ -184,7 +190,7 @@ export function ColorField({
       {...restPopoverContentProps}
     >
       <p className="mb-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">{popoverTitle}</p>
-      <ColorPickerPanel value={localValue} onChange={applyColor} />
+      <ColorPickerPanel value={pickerSeed} onChange={applyColor} />
       {items.length > 0 ? (
         <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
           <p className="mb-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">推荐</p>
@@ -194,8 +200,7 @@ export function ColorField({
             aria-label={label ? `${label}推荐色` : "推荐色"}
           >
             {items.map((item) => {
-              const selected =
-                normalizeHexColor(localValue) === normalizeHexColor(item.color);
+              const selected = previewHex === normalizeHexColor(item.color);
               return (
                 <button
                   key={item.color}
@@ -220,7 +225,7 @@ export function ColorField({
           </div>
         </div>
       ) : null}
-      {variant === "swatch" && allowClear && displayHex ? (
+      {variant === "swatch" && allowClear && explicitHex ? (
         <button
           type="button"
           className="mt-2 w-full rounded-md border border-gray-200 px-2 py-1.5 text-[11px] text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
@@ -236,8 +241,8 @@ export function ColorField({
   );
 
   if (variant === "swatch") {
-    const inkColor = displayHex || "#111827";
-    const highlightPreview = displayHex || "#fef08a";
+    const inkColor = previewHex || "#111827";
+    const highlightPreview = previewHex || "#fef08a";
 
     return (
       <div className={cn("min-w-0 shrink-0", className)}>
@@ -283,11 +288,11 @@ export function ColorField({
                     <ColorSwatchChip
                       color={highlightPreview}
                       size={chipSize}
-                      className={!displayHex ? "opacity-50" : undefined}
+                      className={!previewHex ? "opacity-50" : undefined}
                     />
                   </span>
                   <span className="flex shrink-0 items-center gap-1 px-1.5">
-                    {!displayHex ? (
+                    {!previewHex ? (
                       <span className="text-[10px] text-gray-400 dark:text-gray-500">无</span>
                     ) : null}
                     <ChevronDown
@@ -305,10 +310,10 @@ export function ColorField({
                     className="flex h-full w-10 shrink-0 items-center justify-center border-r border-gray-100 bg-gray-50/90 p-1.5 dark:border-gray-800 dark:bg-white/[0.04]"
                     aria-hidden
                   >
-                    <ColorSwatchChip color={displayHex || undefined} size={chipSize} />
+                    <ColorSwatchChip color={previewHex || undefined} size={chipSize} />
                   </span>
                   <span className="flex shrink-0 items-center gap-1 px-2">
-                    {!displayHex ? (
+                    {!previewHex ? (
                       <span className="text-[10px] text-gray-400 dark:text-gray-500">未设置</span>
                     ) : null}
                     <ChevronDown
@@ -349,7 +354,7 @@ export function ColorField({
                 open && "bg-gray-50 ring-1 ring-inset ring-brand-200 dark:bg-white/5 dark:ring-brand-500/30",
               )}
             >
-              <ColorSwatchChip color={displayHex || undefined} size={chipSize} />
+              <ColorSwatchChip color={previewHex || undefined} size={chipSize} />
               <ChevronDown
                 className={cn(
                   "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",

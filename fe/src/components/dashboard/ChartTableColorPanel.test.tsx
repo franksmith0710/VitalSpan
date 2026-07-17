@@ -47,11 +47,10 @@ describe("ChartTableColorPanel", () => {
     );
 
     expect(screen.getByTestId("table-style-color")).toBeInTheDocument();
-    expect(screen.getByText("表头背景")).toBeInTheDocument();
-    expect(screen.getByText("表头文字")).toBeInTheDocument();
-    expect(screen.getByText("单元格背景")).toBeInTheDocument();
-    expect(screen.getByText("单元格文字")).toBeInTheDocument();
-    expect(screen.getByText("汇总行背景")).toBeInTheDocument();
-    expect(screen.getByText("汇总行文字")).toBeInTheDocument();
+    expect(screen.getByText("表头/行背景")).toBeInTheDocument();
+    expect(screen.getByText("表头字体")).toBeInTheDocument();
+    expect(screen.getByText("表格背景")).toBeInTheDocument();
+    expect(screen.getByText("表格字体")).toBeInTheDocument();
+    expect(screen.getByText("分页器")).toBeInTheDocument();
   });
 });

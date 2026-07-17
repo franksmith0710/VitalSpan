@@ -5,6 +5,7 @@ import {
 } from "@/components/dashboard/dashboardStyleConfig";
 import { getDashboardThemeTokens } from "@/components/dashboard/dashboardThemeTokens";
 import type { ChartDeTableStyle } from "./chartDeTableStyle";
+import { resolveTableZebraBg } from "./chartDeTableStyle";
 import { DASHBOARD_SCROLL_CSS_VARS } from "./dashboardScrollTokens";
 
 /** 看板滚动条令牌（浅/深主题统一，对标 DE 白色半透明） */
@@ -47,6 +48,15 @@ export function resolveTableThemeVars(
   };
 
   if (tableStyle.bodyBg) vars["--dashboard-table-body-bg"] = tableStyle.bodyBg;
+  const zebraBg = resolveTableZebraBg(tableStyle);
+  if (zebraBg) vars["--dashboard-table-zebra-bg"] = zebraBg;
+  if (tableStyle.columnBg) vars["--dashboard-table-column-bg"] = tableStyle.columnBg;
+  if (tableStyle.cornerBg) vars["--dashboard-table-corner-bg"] = tableStyle.cornerBg;
+  if (tableStyle.emptyHintFg) vars["--dashboard-table-empty-fg"] = tableStyle.emptyHintFg;
+  if (tableStyle.paginationFg) vars["--dashboard-table-pagination-fg"] = tableStyle.paginationFg;
+  if (tableStyle.paginationFontSize != null) {
+    vars["--dashboard-table-pagination-font-size"] = `${tableStyle.paginationFontSize}px`;
+  }
   if (tableStyle.summaryBg) vars["--dashboard-table-summary-bg"] = tableStyle.summaryBg;
   if (tableStyle.summaryFg) vars["--dashboard-table-summary-fg"] = tableStyle.summaryFg;
 

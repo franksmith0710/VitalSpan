@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { DeAttrField, DeAttrForm } from "./dashboardInspectorUi";
+import { INSPECTOR_SWITCH_SIZE } from "./inspectorCompact";
 import { ColorField } from "@/components/ui/color-field";
 import { ImageSourceField } from "./imageSourceField";
 import { isImageSourceValue } from "./imageSourceUtils";
@@ -132,6 +133,7 @@ export function DashboardCanvasBackgroundPanel({
               checked={customImageEnabled}
               onCheckedChange={handleCustomImageToggle}
               aria-label="启用自定义背景图"
+              size={INSPECTOR_SWITCH_SIZE}
             />
           </div>
           {customImageEnabled ? (

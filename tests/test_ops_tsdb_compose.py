@@ -44,8 +44,9 @@ def test_ops_tsdb_host_metrics_has_rows(ops_tsdb_env):
     connector = TimescaledbConnector()
     conn = connector.open_connection(**ops_tsdb_env, connect_timeout_sec=10)
     try:
-        cur = conn.execute("SELECT count(*) FROM host_metrics")
-        count = cur.fetchone()[0]
+        with conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM host_metrics")
+            count = cur.fetchone()[0]
         assert count > 10_000, f"expected seeded host_metrics, got {count}"
     finally:
         conn.close()
@@ -55,8 +56,9 @@ def test_ops_tsdb_dimension_hosts(ops_tsdb_env):
     connector = TimescaledbConnector()
     conn = connector.open_connection(**ops_tsdb_env, connect_timeout_sec=10)
     try:
-        cur = conn.execute("SELECT count(*) FROM dim_host")
-        count = cur.fetchone()[0]
+        with conn.cursor() as cur:
+            cur.execute("SELECT count(*) FROM dim_host")
+            count = cur.fetchone()[0]
         assert count >= 30
     finally:
         conn.close()

@@ -7,6 +7,7 @@ import {
   formatMetricValue,
   hasUserCanvasBackground,
   pickWidgetDashboardStyle,
+  pickChartPaletteDefaults,
   resolveArtboardStyle,
   resolveDashboardFontOptionValue,
   widgetDashboardStyleFingerprint,
@@ -146,7 +147,7 @@ describe("dashboardStyleConfig theme vs background", () => {
     );
   });
 
-  it("pickWidgetDashboardStyle omits canvas-only fields", () => {
+  it("pickWidgetDashboardStyle omits canvas-only fields but keeps chart palette", () => {
     const widgetStyle = pickWidgetDashboardStyle({
       colorScheme: "dark",
       canvasBackground: "#ff0000",
@@ -156,16 +157,42 @@ describe("dashboardStyleConfig theme vs background", () => {
       themeAccent: "#465fff",
       actionIconColor: "#111111",
       paletteId: "tech",
+      paletteOpacity: 0.75,
+      seriesGradient: true,
+      chartLabelShow: true,
+      chartLabelStyle: { fontSize: 14, color: "#ff00ff" },
+      chartTooltipStyle: { background: "#112233", fontSize: 13 },
+      tableColorStyle: { headerBg: "#001122" },
       titleStyle: { fontSize: 14 },
     });
     expect(widgetStyle).toEqual({
       colorScheme: "dark",
       paletteId: "tech",
+      paletteOpacity: 0.75,
+      seriesGradient: true,
+      chartLabelShow: true,
+      chartLabelStyle: { fontSize: 14, color: "#ff00ff" },
+      chartTooltipStyle: { background: "#112233", fontSize: 13 },
+      tableColorStyle: { headerBg: "#001122" },
       titleStyle: { fontSize: 14 },
+    });
+    expect(pickChartPaletteDefaults(widgetStyle)).toEqual({
+      paletteOpacity: 0.75,
+      seriesGradient: true,
+      chartLabelShow: true,
+      chartLabelStyle: { fontSize: 14, color: "#ff00ff" },
+      chartTooltipStyle: { background: "#112233", fontSize: 13 },
+      tableColorStyle: { headerBg: "#001122" },
     });
     expect(widgetDashboardStyleFingerprint({ colorScheme: "dark", canvasBackground: "#a" })).toBe(
       widgetDashboardStyleFingerprint({ colorScheme: "dark", canvasBackground: "#b" }),
     );
+    expect(
+      widgetDashboardStyleFingerprint({
+        colorScheme: "dark",
+        paletteOpacity: 0.5,
+      }),
+    ).not.toBe(widgetDashboardStyleFingerprint({ colorScheme: "dark" }));
   });
 });
 

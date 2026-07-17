@@ -23,6 +23,12 @@ import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
 import { DashboardConfigSlider } from "./deAttrSlider";
 import { ChartBackgroundStyleFields } from "./chartStyleFields";
 import { ChartPaletteDeParityFields } from "./chartPaletteDeParityFields";
+import { ChartTableColorFields } from "./chartPaletteLabelTooltipFields";
+import {
+  resolveChartLabelDisplayColor,
+  resolveChartTooltipDisplayBackground,
+  resolveChartTooltipDisplayColor,
+} from "@/lib/chartDeStyle";
 import type { DashboardStylePatch } from "./DashboardContextInspector";
 
 type PatchFn = (patch: DashboardStylePatch) => void;
@@ -115,10 +121,23 @@ export function DashboardWidgetStyleSections({
       <DashboardConfigSection title="图表配色" defaultOpen>
         <ChartPaletteDeParityFields
           paletteId={styleConfig.paletteId}
+          paletteColors={styleConfig.paletteColors}
           paletteOpacity={styleConfig.paletteOpacity}
           seriesGradient={styleConfig.seriesGradient ?? false}
           labelShow={styleConfig.chartLabelShow ?? false}
           tooltipShow={styleConfig.tooltipShow ?? true}
+          labelStyle={{
+            fontSize: styleConfig.chartLabelStyle?.fontSize ?? 12,
+            color: styleConfig.chartLabelStyle?.color,
+          }}
+          tooltipStyle={{
+            fontSize: styleConfig.chartTooltipStyle?.fontSize ?? 12,
+            color: styleConfig.chartTooltipStyle?.color,
+            background: styleConfig.chartTooltipStyle?.background,
+          }}
+          labelColorFallback={resolveChartLabelDisplayColor(undefined, styleConfig)}
+          tooltipColorFallback={resolveChartTooltipDisplayColor(undefined, styleConfig)}
+          tooltipBackgroundFallback={resolveChartTooltipDisplayBackground(undefined, styleConfig)}
           onPaletteChange={(paletteId, colors) =>
             patchStyle({
               paletteId: paletteId ?? "default",
@@ -134,6 +153,29 @@ export function DashboardWidgetStyleSections({
           onSeriesGradientChange={(enabled) => patchStyle({ seriesGradient: enabled })}
           onLabelShowChange={(show) => patchStyle({ chartLabelShow: show })}
           onTooltipShowChange={(show) => patchStyle({ tooltipShow: show })}
+          onLabelStyleChange={(patch) =>
+            patchStyle((prev) => ({
+              ...(patch.color !== undefined && !(prev.chartLabelShow ?? false)
+                ? { chartLabelShow: true }
+                : {}),
+              chartLabelStyle: { fontSize: 12, ...prev.chartLabelStyle, ...patch },
+            }))
+          }
+          onTooltipStyleChange={(patch) =>
+            patchStyle((prev) => ({
+              chartTooltipStyle: { fontSize: 12, ...prev.chartTooltipStyle, ...patch },
+            }))
+          }
+          tableColorSection={
+            <ChartTableColorFields
+              tableStyle={styleConfig.tableColorStyle ?? {}}
+              onPatch={(patch) =>
+                patchStyle((prev) => ({
+                  tableColorStyle: { ...prev.tableColorStyle, ...patch },
+                }))
+              }
+            />
+          }
         />
       </DashboardConfigSection>
 

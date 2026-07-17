@@ -4,12 +4,14 @@ import {
   buildDashboardLayoutForSave,
   dashboardPersistFingerprint,
   isPixelCanvasEnabled,
+  mergeLayoutWidgetIntoPixel,
   migrateDashboardLayoutV1,
   pixelWidgetToLayoutWidget,
   prepareDashboardLayout,
 } from "./dashboardCanvasMode";
 import { TAB_CHILD_DEFAULT_COL_SPAN, TAB_CHILD_DEFAULT_ROW_SPAN } from "./layoutUtils";
-import { packPixelLayoutSeamless } from "./pixelCanvas/collisionLayout";
+import { layoutsOverlap, packPixelLayoutSeamless } from "./pixelCanvas/collisionLayout";
+import { persistDashboardLayout } from "./stylePipeline";
 import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
 
 const v1: DashboardLayoutV1 = {
@@ -112,6 +114,74 @@ describe("dashboard canvas mode", () => {
     expect(saved.widgets[0]).toMatchObject({ x: 120, y: 100, width: 480, height: 320 });
   });
 
+  it("prepareDashboardLayout packs overlapping top-level widgets on load", () => {
+    const overlapping: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        {
+          id: "a",
+          type: "chart",
+          title: "A",
+          order: 0,
+          x: 0,
+          y: 0,
+          width: 400,
+          height: 300,
+        },
+        {
+          id: "b",
+          type: "chart",
+          title: "B",
+          order: 1,
+          x: 100,
+          y: 100,
+          width: 400,
+          height: 300,
+        },
+      ],
+      globalFilters: [],
+    };
+    const prepared = prepareDashboardLayout(overlapping, true);
+    expect(prepared.layout.version).toBe(2);
+    if (prepared.layout.version !== 2) return;
+    expect(layoutsOverlap(prepared.layout, 0)).toBe(false);
+  });
+
+  it("persistDashboardLayout packs overlapping widgets before save", () => {
+    const overlapping: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        {
+          id: "a",
+          type: "chart",
+          title: "A",
+          order: 0,
+          x: 0,
+          y: 0,
+          width: 400,
+          height: 300,
+        },
+        {
+          id: "b",
+          type: "chart",
+          title: "B",
+          order: 1,
+          x: 100,
+          y: 100,
+          width: 400,
+          height: 300,
+        },
+      ],
+      globalFilters: [],
+    };
+    const saved = persistDashboardLayout(overlapping, { widgetGap: 8 });
+    expect(saved.version).toBe(2);
+    if (saved.version !== 2) return;
+    expect(layoutsOverlap(saved, 0)).toBe(false);
+  });
+
   it("save 往返保持稀疏布局坐标（不隐式 pack）", () => {
     const sparse: DashboardLayoutV2 = {
       version: 2,
@@ -208,5 +278,11 @@ describe("dashboard canvas mode", () => {
     };
     const packed = packPixelLayoutSeamless(sparse);
     expect(packed.widgets[0]).toMatchObject({ x: 0, y: 0 });
+  });
+
+  it("mergeLayoutWidgetIntoPixel 内容未变时复用 previous 引用", () => {
+    const previous = v2.widgets[0];
+    const edited = pixelWidgetToLayoutWidget(previous);
+    expect(mergeLayoutWidgetIntoPixel(previous, edited)).toBe(previous);
   });
 });

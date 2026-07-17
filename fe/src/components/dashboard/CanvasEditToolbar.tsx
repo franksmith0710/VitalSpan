@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
+import { INSPECTOR_SWITCH_SIZE } from "./inspectorCompact";
 import { cn } from "@/lib/utils";
 import type { PaletteInsertType } from "./createLayoutWidget";
 import { ChartPickerPopover } from "./ChartPickerPopover";
@@ -178,6 +179,7 @@ export function CanvasEditToolbar({
                 checked={showAuxiliaryGrid}
                 onCheckedChange={onAuxiliaryGridChange}
                 aria-label="辅助对齐网格"
+                size={INSPECTOR_SWITCH_SIZE}
                 className="shrink-0"
               />
             </DropdownMenuItem>

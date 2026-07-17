@@ -6,17 +6,52 @@ import { ChartPalettePicker } from "./ChartPalettePicker";
 afterEach(cleanup);
 
 describe("ChartPalettePicker", () => {
-  it("renders VitalSpan palette rows and supports inherit", async () => {
+  it("renders DE-style select with swatch strip and preset options", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<ChartPalettePicker showInherit value={undefined} onChange={onChange} />);
 
-    expect(screen.getByRole("listbox", { name: "配色方案" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: /跟随看板/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("option", { name: /^品牌$/ })).toHaveAttribute("aria-selected", "false");
-    expect(screen.getByRole("option", { name: /政企/ })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "配色方案" })).toBeInTheDocument();
+    expect(screen.getByText("跟随看板")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "自定义配色" })).toBeDisabled();
+
+    await user.click(screen.getByRole("combobox", { name: "配色方案" }));
+    expect(screen.getByRole("option", { name: /浅韵/ })).toBeInTheDocument();
 
     await user.click(screen.getByRole("option", { name: /浅韵/ }));
     expect(onChange).toHaveBeenCalledWith("pastel", expect.any(Array));
+  });
+
+  it("renders series color rows for bar chart metrics", async () => {
+    const user = userEvent.setup();
+    render(
+      <ChartPalettePicker
+        value="default"
+        seriesColors={[{ id: "amount", name: "amount", color: "#465fff" }]}
+        onChange={vi.fn()}
+        onSeriesColorsChange={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "自定义配色" }));
+    expect(screen.getByText("amount")).toBeInTheDocument();
+    expect(screen.queryByLabelText("系列色 1")).not.toBeInTheDocument();
+  });
+
+  it("opens custom palette editor and resets to preset", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <ChartPalettePicker
+        value="default"
+        paletteColors={["#465fff", "#ff0000"]}
+        onChange={onChange}
+      />,
+    );
+
+    expect(screen.getByTestId("chart-palette-custom")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "重置" }));
+    expect(onChange).toHaveBeenCalledWith("default", expect.arrayContaining(["#465fff"]));
   });
 });

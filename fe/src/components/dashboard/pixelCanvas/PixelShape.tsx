@@ -15,6 +15,7 @@ import type { DashboardStyleConfig } from "../dashboardStyleConfig";
 import { mergeTitleStyle } from "../dashboardStyleConfig";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { shapeTitlePresentationStyle } from "../dashboardWidgetTypography";
+import { mergeWidgetOverrideStyle } from "../widgetRailStyleSections";
 import { resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
   applyPixelInteraction,
@@ -162,7 +163,7 @@ function resolveShapeTitleState(
       remark: readChartRemark(widget.chartConfig),
     };
   }
-  if (widget.type === "tabs") {
+  if (widget.type === "tabs" || widget.type === "text" || widget.type === "media") {
     return {
       showTitle: false,
       titleStyle: mergeTitleStyle(styleConfig?.titleStyle),
@@ -310,10 +311,7 @@ export function PixelShape({
   const chrome = resolveDashboardChrome(styleConfig);
   const effectiveScheme = resolveWidgetEffectiveScheme(styleConfig);
   const chromeInset = resolveWidgetChromeInset(styleConfig?.widgetStyle);
-  const shellWidgetStyle =
-    widget.type === "tabs" && widget.tabsConfig?.widgetStyle
-      ? { ...styleConfig?.widgetStyle, ...widget.tabsConfig.widgetStyle }
-      : styleConfig?.widgetStyle;
+  const shellWidgetStyle = mergeWidgetOverrideStyle(styleConfig?.widgetStyle, widget);
   const shell =
     widget.type === "chart" && widget.chartConfig
       ? resolveChartContentShellStyle(

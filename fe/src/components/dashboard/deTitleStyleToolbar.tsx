@@ -11,16 +11,12 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { TitleStyleConfig } from "./dashboardStyleConfig";
+import { CHART_FONT_SIZE_OPTIONS, resolveChartFontSizeOptions } from "@/lib/chartFontSizes";
 import { DashboardConfigSlider } from "./deAttrSlider";
 import { DeAttrToggleRow } from "./dashboardInspectorUi";
 
-/** 图表标题字号：10–24 逐档 + 26–48 偶数档 */
-export const CHART_TITLE_FONT_SIZES: readonly number[] = (() => {
-  const sizes: number[] = [];
-  for (let n = 10; n <= 24; n += 1) sizes.push(n);
-  for (let n = 26; n <= 48; n += 2) sizes.push(n);
-  return sizes;
-})();
+/** @deprecated 使用 CHART_FONT_SIZE_OPTIONS */
+export const CHART_TITLE_FONT_SIZES: readonly number[] = [...CHART_FONT_SIZE_OPTIONS];
 
 export type DeTitleStyleToolbarValue = Pick<
   TitleStyleConfig,
@@ -78,9 +74,7 @@ function ToolbarIconButton({
 }
 
 function fontSizeOptions(current: number | undefined, fallback: number): number[] {
-  const size = current ?? fallback;
-  if (CHART_TITLE_FONT_SIZES.includes(size)) return [...CHART_TITLE_FONT_SIZES];
-  return [...CHART_TITLE_FONT_SIZES, size].sort((a, b) => a - b);
+  return resolveChartFontSizeOptions(current, fallback, CHART_FONT_SIZE_OPTIONS);
 }
 
 function TitleAdvancedPopover({

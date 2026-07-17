@@ -41,7 +41,7 @@ describe("ChartLegendStyleSection", () => {
       "aria-checked",
       "true",
     );
-    expect(screen.getByText("字号")).toBeInTheDocument();
+    expect(screen.getByText("字体大小")).toBeInTheDocument();
     expect(screen.getByText("位置")).toBeInTheDocument();
   });
 
@@ -66,7 +66,7 @@ describe("ChartLegendStyleSection", () => {
       "aria-checked",
       "false",
     );
-    expect(screen.queryByText("字号")).not.toBeInTheDocument();
+    expect(screen.queryByText("字体大小")).not.toBeInTheDocument();
     expect(screen.queryByText("位置")).not.toBeInTheDocument();
   });
 

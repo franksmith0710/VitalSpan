@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { CanvasEditToolbar } from "@/components/dashboard/CanvasEditToolbar";
 import type { PaletteInsertType } from "@/components/dashboard/createLayoutWidget";
 import { CollapsedRailTab, RailFoldHeader } from "@/components/dashboard/RailFoldTab";
-import { DASHBOARD_EDIT_RAIL_SCROLL_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CLASS, DASHBOARD_EDIT_RAIL_NARROW_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
+import { DASHBOARD_EDIT_RAIL_SCROLL_CLASS, DASHBOARD_EDIT_RAIL_SCROLL_CLIP_CLASS, DASHBOARD_EDIT_RAIL_SHELL_CLASS } from "@/components/dashboard/dashboardEditRailLayout";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import { cn } from "@/lib/utils";
 
@@ -84,8 +84,6 @@ export type DashboardEditWorkspaceProps = {
   chartRailLabel?: string;
   /** 未选中看板上下文时显示外层「收回」顶栏 */
   showRailFoldHeader?: boolean;
-  /** wide：432px 双列（图表/富文本）；narrow：216px 单列（图片/页签/筛选） */
-  chartRailWidth?: "wide" | "narrow";
   /** 编辑点阵 chrome 随看板 colorScheme，不随 Admin 壳层主题 */
   canvasColorScheme?: ColorScheme;
   /** 点击画布区顶栏空白时切回仪表板配置 */
@@ -110,7 +108,6 @@ export function DashboardEditWorkspace({
   onChartRailOpenChange,
   chartRailLabel = "仪表板配置",
   showRailFoldHeader = true,
-  chartRailWidth = "wide",
   canvasColorScheme = "light",
   onActivateDashboardContext,
   showAuxiliaryGrid,
@@ -154,9 +151,7 @@ export function DashboardEditWorkspace({
         <div
           className={cn(
             "flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
-            chartRailWidth === "narrow"
-              ? DASHBOARD_EDIT_RAIL_NARROW_SHELL_CLASS
-              : DASHBOARD_EDIT_RAIL_SHELL_CLASS,
+            DASHBOARD_EDIT_RAIL_SHELL_CLASS,
           )}
         >
           {showRailFoldHeader && onChartRailOpenChange ? (

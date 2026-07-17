@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { DashboardStyleConfig } from "@/components/dashboard/layoutUtils";
-import { resolveWidgetShellPaintColor } from "@/components/dashboard/dashboardStyleConfig";
+import { resolveWidgetShellPaintColor, pickChartPaletteDefaults } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { fitPreviewSize, WidgetDialogShell } from "./WidgetDialogShell";
 import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
@@ -117,6 +117,7 @@ export function WidgetEnlargeDialog({
               pixelSize={previewSize}
               paletteId={styleConfig?.paletteId}
               paletteColors={styleConfig?.paletteColors}
+              dashboardColorDefaults={pickChartPaletteDefaults(styleConfig)}
               numberFormat={styleConfig?.numberFormat}
               colorScheme={styleConfig?.colorScheme ?? "light"}
               widgetShellColor={resolveWidgetShellPaintColor(styleConfig)}

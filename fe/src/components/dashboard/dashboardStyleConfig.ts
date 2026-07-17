@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
 import type { DashboardThemeVariants } from "./dashboardThemeVariants";
 import { getDashboardThemeTokens } from "./dashboardThemeTokens";
@@ -151,8 +152,14 @@ export type DashboardStyleConfig = {
   seriesGradient?: boolean;
   /** 看板默认显示数据标签 */
   chartLabelShow?: boolean;
+  /** 看板默认标签样式 */
+  chartLabelStyle?: { fontSize?: number; color?: string };
   /** 看板默认显示图表提示 */
   tooltipShow?: boolean;
+  /** 看板默认提示框样式 */
+  chartTooltipStyle?: { fontSize?: number; color?: string; background?: string };
+  /** 看板默认明细表配色（对标 DE 仪表板配置 · 表格配色） */
+  tableColorStyle?: ChartDeTableStyle;
   titleStyle?: TitleStyleConfig;
   filterChromeStyle?: FilterChromeStyleConfig;
   filterControlStyle?: FilterControlStyleConfig;
@@ -720,12 +727,66 @@ export function pickWidgetDashboardStyle(
     paletteColors: config.paletteColors
       ? [...config.paletteColors]
       : undefined,
+    paletteOpacity: config.paletteOpacity,
+    seriesGradient: config.seriesGradient,
+    chartLabelShow: config.chartLabelShow,
+    tooltipShow: config.tooltipShow,
+    chartLabelStyle: config.chartLabelStyle
+      ? { ...config.chartLabelStyle }
+      : undefined,
+    chartTooltipStyle: config.chartTooltipStyle
+      ? { ...config.chartTooltipStyle }
+      : undefined,
+    tableColorStyle: config.tableColorStyle
+      ? { ...config.tableColorStyle }
+      : undefined,
     widgetStyle: config.widgetStyle,
     titleStyle: config.titleStyle,
     filterChromeStyle: config.filterChromeStyle,
     filterControlStyle: config.filterControlStyle,
     numberFormat: config.numberFormat,
     chrome: config.chrome,
+  };
+}
+
+/** ChartRenderer 看板级配色默认指纹（稳定 memo / 浅比较） */
+export function chartPaletteDefaultsFingerprint(
+  config?: DashboardStyleConfig,
+): string {
+  if (!config) return "";
+  return JSON.stringify({
+    paletteOpacity: config.paletteOpacity,
+    seriesGradient: config.seriesGradient,
+    chartLabelShow: config.chartLabelShow,
+    tooltipShow: config.tooltipShow,
+    chartLabelStyle: config.chartLabelStyle,
+    chartTooltipStyle: config.chartTooltipStyle,
+    tableColorStyle: config.tableColorStyle,
+  });
+}
+
+/** ChartRenderer 看板级配色默认（避免 DashboardWidget / 弹窗等处手写遗漏） */
+export function pickChartPaletteDefaults(
+  config?: DashboardStyleConfig,
+): Pick<
+  DashboardStyleConfig,
+  | "paletteOpacity"
+  | "seriesGradient"
+  | "chartLabelShow"
+  | "tooltipShow"
+  | "chartLabelStyle"
+  | "chartTooltipStyle"
+  | "tableColorStyle"
+> | undefined {
+  if (!config) return undefined;
+  return {
+    paletteOpacity: config.paletteOpacity,
+    seriesGradient: config.seriesGradient,
+    chartLabelShow: config.chartLabelShow,
+    tooltipShow: config.tooltipShow,
+    chartLabelStyle: config.chartLabelStyle,
+    chartTooltipStyle: config.chartTooltipStyle,
+    tableColorStyle: config.tableColorStyle,
   };
 }
 

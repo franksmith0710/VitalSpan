@@ -233,6 +233,114 @@ def test_pixel_layout_view_rejects_canvas_bounds():
     assert exc.value.code == "VIEW_LAYOUT_BOUNDS"
 
 
+def test_pixel_layout_accepts_tab_parked_child_zero_size(client, auth_headers):
+    dashboard_id = _create_dashboard(client, auth_headers)
+    tabs_id = str(uuid.uuid4())
+    pane_id = str(uuid.uuid4())
+    child_id = str(uuid.uuid4())
+    layout = {
+        "version": 2,
+        "canvas": {"width": 1440, "height": 900},
+        "widgets": [
+            {
+                "id": tabs_id,
+                "type": "tabs",
+                "title": "页签容器",
+                "x": 120,
+                "y": 44,
+                "width": 720,
+                "height": 360,
+                "order": 0,
+                "tabsConfig": {
+                    "tabsId": tabs_id,
+                    "activePaneId": pane_id,
+                    "panes": [{"id": pane_id, "title": "页签 1", "childWidgetIds": [child_id]}],
+                },
+            },
+            {
+                "id": child_id,
+                "type": "chart",
+                "title": "页签内图表",
+                "x": 120,
+                "y": 44,
+                "width": 0,
+                "height": 0,
+                "order": 1,
+                "parentTabsId": tabs_id,
+                "tabPaneId": pane_id,
+                "chartConfig": _chart_config(),
+            },
+        ],
+        "globalFilters": [],
+    }
+
+    put = client.put(
+        f"/api/v1/dashboards/{dashboard_id}/layout",
+        headers=auth_headers,
+        json={"layoutJson": layout},
+    )
+    assert put.status_code == 200, put.text
+    stored = put.json()["layoutJson"]
+    child = next(w for w in stored["widgets"] if w["id"] == child_id)
+    assert child["width"] == 0
+    assert child["height"] == 0
+    assert child["parentTabsId"] == tabs_id
+    assert child["tabPaneId"] == pane_id
+
+    view = validate_dashboard_view({"name": "Tab 嵌套", "layout": stored})
+    assert view.model_dump(by_alias=True, mode="json")["layout"] == stored
+
+
+def test_pixel_layout_rejects_tab_child_with_nonzero_size(client, auth_headers):
+    dashboard_id = _create_dashboard(client, auth_headers)
+    tabs_id = str(uuid.uuid4())
+    pane_id = str(uuid.uuid4())
+    child_id = str(uuid.uuid4())
+    layout = {
+        "version": 2,
+        "canvas": {"width": 1440, "height": 900},
+        "widgets": [
+            {
+                "id": tabs_id,
+                "type": "tabs",
+                "title": "页签容器",
+                "x": 120,
+                "y": 44,
+                "width": 720,
+                "height": 360,
+                "order": 0,
+                "tabsConfig": {
+                    "tabsId": tabs_id,
+                    "activePaneId": pane_id,
+                    "panes": [{"id": pane_id, "title": "页签 1", "childWidgetIds": [child_id]}],
+                },
+            },
+            {
+                "id": child_id,
+                "type": "chart",
+                "title": "页签内图表",
+                "x": 120,
+                "y": 44,
+                "width": 600,
+                "height": 120,
+                "order": 1,
+                "parentTabsId": tabs_id,
+                "tabPaneId": pane_id,
+                "chartConfig": _chart_config(),
+            },
+        ],
+        "globalFilters": [],
+    }
+
+    response = client.put(
+        f"/api/v1/dashboards/{dashboard_id}/layout",
+        headers=auth_headers,
+        json={"layoutJson": layout},
+    )
+    assert response.status_code == 422
+    _assert_layout_422(response, "DASH_INVALID_LAYOUT")
+
+
 def test_migrate_v1_to_v2_is_deterministic_and_expands_canvas():
     from app.dashboard.layout_migration import migrate_v1_to_v2
 

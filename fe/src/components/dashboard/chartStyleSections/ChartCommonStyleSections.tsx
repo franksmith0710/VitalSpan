@@ -12,34 +12,51 @@ import { TEXT_COLOR_RECOMMENDED } from "@/components/dashboard/dashboardStyleCon
 import { formatMetricValue } from "../dashboardStyleConfig";
 import { ChartBackgroundStyleFields } from "../chartStyleFields";
 import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "../chartInspectorDeFields";
-import { ChartDeSliderField } from "../deAttrSlider";
+import { ChartPaletteFontSizeSelect } from "../chartPaletteShared";
 import { ChartPaletteDeParityFields } from "../chartPaletteDeParityFields";
-import { ChartTableColorFields } from "../chartTableColorFields";
+import { ChartTableColorFields } from "../chartPaletteLabelTooltipFields";
 import { useChartInspector } from "../chartInspectorContext";
 import {
+  patchChartLabelStyle,
   patchChartShowLabel,
   readChartDeStyle,
   readChartLegendPosition,
   readChartLegendVisible,
   readChartShowLabel,
   readChartTitleVisible,
+  resolveChartLabelPresentation,
+  resolveChartTooltipPresentation,
+  resolveChartLabelDisplayColor,
+  resolveChartTooltipDisplayColor,
+  resolveChartTooltipDisplayBackground,
   readChartTooltipShow,
   type ChartDeStyle,
 } from "@/lib/chartDeStyle";
 import type { WidgetStyleConfig } from "../dashboardStyleConfig";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
+import {
+  resolveChartSeriesColorItems,
+  supportsChartSeriesColorEditing,
+} from "@/lib/chartSeriesColor";
+import { patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { LEGEND_POSITION_SEGMENT_OPTIONS } from "../inspectorSegmentIcons";
-import { ChartInspectorSection, INSPECTOR_SELECT, InspectorInlineColorRow } from "../inspectorCompact";
+import { ChartInspectorSection, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 
 export function ChartPaletteStyleSection() {
-  const { cfg, patchDeStyle, patchDeStyleNested, onChange } = useChartInspector();
+  const { cfg, patchDeStyle, patchDeStyleNested, onChange, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const caps = chartInspectorCapabilities(cfg.chartType);
   const isTable = cfg.chartType === "table";
+  const labelPresentation = resolveChartLabelPresentation(cfg, dashboardStyle);
+  const tooltipPresentation = resolveChartTooltipPresentation(cfg, dashboardStyle);
 
   const patchPaletteOpacity = (opacityPercent: number) =>
     patchDeStyle({ paletteOpacity: opacityPercent / 100 });
+
+  const seriesColorItems = supportsChartSeriesColorEditing(cfg.chartType)
+    ? resolveChartSeriesColorItems(cfg, deStyle.paletteId, deStyle.seriesColor)
+    : [];
 
   return (
     <ChartInspectorSection title="图表配色" defaultOpen>
@@ -47,25 +64,52 @@ export function ChartPaletteStyleSection() {
         dense
         showInherit
         paletteId={deStyle.paletteId}
+        seriesColor={seriesColorItems.length > 0 ? seriesColorItems : undefined}
         paletteOpacity={deStyle.paletteOpacity}
         seriesGradient={deStyle.seriesGradient ?? false}
-        labelShow={readChartShowLabel(cfg)}
-        tooltipShow={readChartTooltipShow(cfg)}
+        labelShow={readChartShowLabel(cfg, dashboardStyle)}
+        tooltipShow={readChartTooltipShow(cfg, dashboardStyle)}
+        labelStyle={{
+          fontSize: labelPresentation.fontSize,
+          color: deStyle.label?.color,
+        }}
+        tooltipStyle={{
+          fontSize: tooltipPresentation.fontSize,
+          color: deStyle.tooltip?.color,
+          background: deStyle.tooltip?.background,
+        }}
+        labelColorFallback={resolveChartLabelDisplayColor(cfg, dashboardStyle)}
+        tooltipColorFallback={resolveChartTooltipDisplayColor(cfg, dashboardStyle)}
+        tooltipBackgroundFallback={resolveChartTooltipDisplayBackground(cfg, dashboardStyle)}
         showLabelToggle={caps.label}
         showTooltipToggle={!isTable}
         showGradientToggle={!isTable}
         onPaletteChange={(paletteId) =>
           patchDeStyle({
             paletteId,
+            seriesColor: undefined,
             ...(paletteId === undefined ? { paletteOpacity: undefined } : {}),
           })
+        }
+        onSeriesColorsChange={(items) =>
+          patchDeStyle({ seriesColor: items.length > 0 ? [...items] : undefined })
         }
         onOpacityChange={patchPaletteOpacity}
         onOpacityPreview={patchPaletteOpacity}
         onSeriesGradientChange={(enabled) => patchDeStyle({ seriesGradient: enabled })}
         onLabelShowChange={(show) => onChange(patchChartShowLabel(cfg, show))}
         onTooltipShowChange={(show) => patchDeStyleNested("tooltip", { show })}
-        tableColorSlot={isTable ? <ChartTableColorFields /> : undefined}
+        onLabelStyleChange={(patch) => onChange(patchChartLabelStyle(cfg, patch))}
+        onTooltipStyleChange={(patch) => patchDeStyleNested("tooltip", patch)}
+        tableColorSection={
+          isTable ? (
+            <ChartTableColorFields
+              compact
+              tableStyle={readChartDeTableStyle(cfg)}
+              onPatch={(patch) => onChange(patchChartDeTableStyle(cfg, patch))}
+            />
+          ) : undefined
+        }
       />
     </ChartInspectorSection>
   );
@@ -87,7 +131,7 @@ export function ChartTitleStyleSection() {
           checked={titleVisible}
           onCheckedChange={(show) => patchTitle({ show })}
           aria-label="显示标题"
-          className="scale-90"
+          size={INSPECTOR_SWITCH_SIZE}
         />
       }
     >
@@ -130,7 +174,7 @@ export function ChartRemarkStyleSection() {
           checked={deStyle.remark?.show ?? false}
           onCheckedChange={(show) => patchRemark({ show })}
           aria-label="显示备注"
-          className="scale-90"
+          size={INSPECTOR_SWITCH_SIZE}
         />
       }
     >
@@ -162,20 +206,16 @@ export function ChartLegendStyleSection() {
           checked={legendVisible}
           onCheckedChange={(show) => patchLegend({ show })}
           aria-label="显示图例"
-          className="scale-90"
+          size={INSPECTOR_SWITCH_SIZE}
         />
       }
     >
       {legendVisible ? (
         <>
-          <ChartDeSliderField
-            label="字号"
+          <ChartPaletteFontSizeSelect
+            density="narrow"
             value={deStyle.legend?.fontSize}
             fallback={12}
-            min={10}
-            max={24}
-            step={1}
-            unit="px"
             onChange={(fontSize) => patchLegend({ fontSize })}
           />
           <ChartDeSegmentField
@@ -194,7 +234,7 @@ export function ChartLegendStyleSection() {
 }
 
 export function ChartLabelStyleSection() {
-  const { cfg, mutateChartConfig, patchDeStyleNested } = useChartInspector();
+  const { cfg, mutateChartConfig, patchDeStyleNested, onChange, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const caps = chartInspectorCapabilities(cfg.chartType);
   const showLabel = readChartShowLabel(cfg);
@@ -213,22 +253,30 @@ export function ChartLabelStyleSection() {
               mutateChartConfig((current) => patchChartShowLabel(current, show))
             }
             aria-label="显示数据标签"
-            className="scale-90"
+            size={INSPECTOR_SWITCH_SIZE}
           />
         ) : undefined
       }
     >
       {!isKpi ? (
-        <ChartDeSliderField
-          label="字号"
-          value={deStyle.label?.fontSize}
-          fallback={12}
-          min={10}
-          max={24}
-          step={1}
-          unit="px"
-          onChange={(fontSize) => patchLabel({ fontSize })}
-        />
+        <>
+          <InspectorInlineColorRow
+            label="字体颜色"
+            allowClear
+            swatches={TEXT_COLOR_RECOMMENDED}
+            value={deStyle.label?.color ?? ""}
+            fallbackValue={resolveChartLabelDisplayColor(cfg, dashboardStyle)}
+            onChange={(color) =>
+              onChange(patchChartLabelStyle(cfg, { color: color || undefined }))
+            }
+          />
+          <ChartPaletteFontSizeSelect
+            density="narrow"
+            value={deStyle.label?.fontSize}
+            fallback={12}
+            onChange={(fontSize) => patchLabel({ fontSize })}
+          />
+        </>
       ) : null}
       <ChartDeAttrField label="格式类型">
         <Select

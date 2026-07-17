@@ -36,6 +36,10 @@ export {
   rectsOverlap,
 } from "./collisionLayout";
 export {
+  repairPixelLayoutTabState,
+  sanitizePixelLayoutGeometry,
+} from "./layoutSanitize";
+export {
   pixelLayoutFingerprint,
   usePixelLayoutHistory,
 } from "./usePixelLayoutHistory";

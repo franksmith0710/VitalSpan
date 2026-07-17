@@ -45,7 +45,7 @@ export function useGeoMapLevel({ enabled, config, drillStack }: Options) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, config, stackKey, drillStack]);
+  }, [enabled, config, stackKey]);
 
   return { context, loading, version };
 }
