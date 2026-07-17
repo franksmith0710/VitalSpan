@@ -453,11 +453,11 @@ def m11_compose_env():
         },
         "timescaledb": {
             "host": "127.0.0.1",
-            "port": 5433,
-            "database": "analytics",
+            "port": 5434,
+            "database": "ops_tsdb",
             "username": "vitalspan",
             "password": "vitalspan",
-            "_available": _port_open("127.0.0.1", 5433),
+            "_available": _port_open("127.0.0.1", 5434),
         },
     }
 

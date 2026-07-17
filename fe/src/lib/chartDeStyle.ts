@@ -50,6 +50,8 @@ export type ChartRemarkStyle = {
 };
 
 export type ChartGeoStyle = {
+  /** 对标 DE「地区」：离线中国省级底图（GEO-IRON-01 仅 china） */
+  mapArea?: "china";
   roam?: boolean;
   showRegionLabel?: boolean;
   visualMap?: boolean;
@@ -67,12 +69,19 @@ export const DEFAULT_PIE_OUTER_RADIUS_PERCENT = 70;
 export const PIE_INNER_RADIUS_MIN = 0;
 export const PIE_INNER_RADIUS_MAX = 65;
 
+export type ChartTooltipStyle = {
+  show?: boolean;
+};
+
 export type ChartDeStyle = {
   paletteId?: string;
   paletteOpacity?: number;
+  /** 系列渐变填充（对标 DE「渐变颜色」） */
+  seriesGradient?: boolean;
   title?: TitleStyleConfig & { show?: boolean };
   legend?: ChartLegendStyle;
   label?: ChartLabelStyle;
+  tooltip?: ChartTooltipStyle;
   background?: WidgetStyleConfig;
   border?: ChartBorderStyle;
   remark?: ChartRemarkStyle;
@@ -292,12 +301,44 @@ export function patchChartDeStyleNested<
   return patchChartDeStyle(cfg, { [key]: nested } as Partial<ChartDeStyle>);
 }
 
-export function readChartShowLabel(cfg: ChartViewConfig): boolean {
+export function readChartShowLabel(
+  cfg: ChartViewConfig,
+  defaults?: Pick<DashboardStyleConfig, "chartLabelShow">,
+): boolean {
   const features = cfg.nativeBody?.deFeatures;
   if (features && typeof features === "object" && "showLabel" in features) {
     return Boolean((features as { showLabel?: boolean }).showLabel);
   }
-  return readChartDeStyle(cfg).label?.show ?? false;
+  const labelShow = readChartDeStyle(cfg).label?.show;
+  if (labelShow !== undefined) return labelShow;
+  return defaults?.chartLabelShow ?? false;
+}
+
+export function readChartTooltipShow(
+  cfg: ChartViewConfig,
+  defaults?: Pick<DashboardStyleConfig, "tooltipShow">,
+): boolean {
+  const tooltipShow = readChartDeStyle(cfg).tooltip?.show;
+  if (tooltipShow !== undefined) return tooltipShow;
+  return defaults?.tooltipShow ?? true;
+}
+
+export function readChartSeriesGradient(
+  cfg: ChartViewConfig,
+  defaults?: Pick<DashboardStyleConfig, "seriesGradient">,
+): boolean {
+  const gradient = readChartDeStyle(cfg).seriesGradient;
+  if (gradient !== undefined) return gradient;
+  return defaults?.seriesGradient ?? false;
+}
+
+export function readChartPaletteOpacity(
+  cfg: ChartViewConfig,
+  defaults?: Pick<DashboardStyleConfig, "paletteOpacity">,
+): number | undefined {
+  const opacity = readChartDeStyle(cfg).paletteOpacity;
+  if (opacity !== undefined) return opacity;
+  return defaults?.paletteOpacity;
 }
 
 export function readChartRemark(cfg: ChartViewConfig | undefined): { show: boolean; text: string } {

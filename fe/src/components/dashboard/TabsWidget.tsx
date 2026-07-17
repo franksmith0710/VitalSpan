@@ -254,7 +254,7 @@ export function TabsWidget({
           <div className="flex min-w-0 flex-1 items-end gap-1 overflow-x-auto" role="tablist" aria-label="页签">
             {cfg.panes.map((pane) => {
               const active = pane.id === cfg.activePaneId;
-              const childCount = pane.childWidgetIds.length;
+              const childCount = getTabChildWidgets(allWidgets, widget.id, pane.id).length;
               return (
                 <button
                   key={pane.id}
@@ -336,9 +336,7 @@ export function TabsWidget({
                     key={child.id}
                     className={cn(
                       "min-h-0",
-                      isShape
-                        ? "flex min-h-[8rem] flex-1 flex-col"
-                        : "shrink-0 min-h-[72px]",
+                      isShape ? "flex h-full min-h-[10rem] flex-1 flex-col" : "shrink-0 min-h-[72px]",
                     )}
                     data-tab-child-widget
                   >

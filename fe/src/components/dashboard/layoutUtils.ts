@@ -421,13 +421,106 @@ export function movePixelWidgetIntoTab(
   return insertPixelWidgetIntoTab(cleaned, draft, host, tabPaneId);
 }
 
+function sortTabChildrenByPaneOrder(children: LayoutWidget[], paneChildIds: string[]): LayoutWidget[] {
+  return [...children].sort((a, b) => {
+    const ai = paneChildIds.indexOf(a.id);
+    const bi = paneChildIds.indexOf(b.id);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return (a.order ?? 0) - (b.order ?? 0);
+  });
+}
+
+/** 以 widget.parentTabsId + tabPaneId 为真理源；childWidgetIds 仅作排序与无归属字段的旧数据兜底 */
 export function getTabChildWidgets(widgets: LayoutWidget[], tabsWidgetId: string, paneId: string): LayoutWidget[] {
   const tabs = widgets.find((w) => w.id === tabsWidgetId && w.type === "tabs" && w.tabsConfig);
   if (!tabs?.tabsConfig) return [];
   const pane = tabs.tabsConfig.panes.find((p) => p.id === paneId);
   if (!pane) return [];
+
+  const usesRelation = widgets.some((w) => w.parentTabsId === tabsWidgetId);
+  if (usesRelation) {
+    const byRelation = widgets.filter(
+      (w) => w.parentTabsId === tabsWidgetId && w.tabPaneId === paneId,
+    );
+    return sortTabChildrenByPaneOrder(byRelation, pane.childWidgetIds);
+  }
+
   const idSet = new Set(pane.childWidgetIds);
-  return widgets.filter((w) => idSet.has(w.id));
+  return sortTabChildrenByPaneOrder(
+    widgets.filter((w) => idSet.has(w.id)),
+    pane.childWidgetIds,
+  );
+}
+
+export function isTabPaneChild(
+  widgets: LayoutWidget[],
+  tabsWidgetId: string,
+  childId: string | null | undefined,
+): boolean {
+  if (!childId) return false;
+  const child = widgets.find((w) => w.id === childId);
+  if (!child) return false;
+  if (child.parentTabsId === tabsWidgetId && child.tabPaneId) return true;
+  const tabs = widgets.find((w) => w.id === tabsWidgetId && w.type === "tabs" && w.tabsConfig);
+  return Boolean(
+    tabs?.tabsConfig?.panes.some((pane) => pane.childWidgetIds.includes(childId)),
+  );
+}
+
+/** 将 tabsConfig.panes[].childWidgetIds 与 widget 归属字段对齐（加载/保存前调用） */
+export function reconcileTabPaneChildIds(widgets: LayoutWidget[]): LayoutWidget[] {
+  const byPane = new Map<string, LayoutWidget[]>();
+  for (const w of widgets) {
+    if (!w.parentTabsId || !w.tabPaneId) continue;
+    const key = `${w.parentTabsId}:${w.tabPaneId}`;
+    const list = byPane.get(key) ?? [];
+    list.push(w);
+    byPane.set(key, list);
+  }
+
+  return widgets.map((w) => {
+    if (w.type !== "tabs" || !w.tabsConfig) return w;
+    const hostUsesRelation = widgets.some((child) => child.parentTabsId === w.id);
+    const panes = w.tabsConfig.panes.map((pane) => {
+      const related = byPane.get(`${w.id}:${pane.id}`);
+      if (related?.length) {
+        const childWidgetIds = sortTabChildrenByPaneOrder(related, pane.childWidgetIds).map(
+          (child) => child.id,
+        );
+        return { ...pane, childWidgetIds };
+      }
+      if (hostUsesRelation) {
+        return { ...pane, childWidgetIds: [] };
+      }
+      return pane;
+    });
+    return { ...w, tabsConfig: { ...w.tabsConfig, panes } };
+  });
+}
+
+/** 像素布局载入/变更时同步 Tab 的 childWidgetIds */
+export function reconcileTabPaneChildIdsInPixelLayout(layout: DashboardLayoutV2): DashboardLayoutV2 {
+  const reconciled = reconcileTabPaneChildIds(layout.widgets);
+  const cfgById = new Map(
+    reconciled
+      .filter((w) => w.type === "tabs" && w.tabsConfig)
+      .map((w) => [w.id, w.tabsConfig!]),
+  );
+  if (cfgById.size === 0) return layout;
+  let changed = false;
+  const widgets = layout.widgets.map((w) => {
+    const nextCfg = cfgById.get(w.id);
+    if (!nextCfg || w.type !== "tabs") return w;
+    const same =
+      JSON.stringify(w.tabsConfig?.panes.map((p) => p.childWidgetIds)) ===
+      JSON.stringify(nextCfg.panes.map((p) => p.childWidgetIds));
+    if (same) return w;
+    changed = true;
+    return { ...w, tabsConfig: nextCfg };
+  });
+  return changed ? { ...layout, widgets } : layout;
 }
 
 export function appendWidgetToTabPane(
@@ -446,7 +539,7 @@ export function appendWidgetToTabPane(
 }
 
 export function coerceLayoutWidgets(widgets: Array<Partial<LayoutWidget> & { id: string }>): LayoutWidget[] {
-  return widgets.map(coerceLayoutWidget);
+  return reconcileTabPaneChildIds(widgets.map(coerceLayoutWidget));
 }
 
 export function sortWidgets(widgets: LayoutWidget[]): LayoutWidget[] {

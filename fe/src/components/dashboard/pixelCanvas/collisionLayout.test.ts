@@ -243,7 +243,7 @@ describe("collisionLayout", () => {
     expect(resolved.widgets.find((item) => item.id !== "a")).toMatchObject({ x: 360, y: 0 });
   });
 
-  it("does not push tab hosts when another widget overlaps", () => {
+  it("pushes tab hosts like any other widget when overlapped", () => {
     const tabs: PixelLayoutWidget = {
       id: "tabs",
       type: "tabs",
@@ -266,8 +266,10 @@ describe("collisionLayout", () => {
       width: 300,
       height: 180,
     });
-    const parked = resolved.widgets.find((w) => w.id === "tabs");
-    expect(parked?.x).toBe(100);
-    expect(parked?.y).toBe(200);
+    const chartPos = resolved.widgets.find((w) => w.id === "chart");
+    expect(chartPos).toMatchObject({ x: 100, y: 200 });
+    const tabsPos = resolved.widgets.find((w) => w.id === "tabs");
+    expect(tabsPos?.y).toBe(380);
+    expect(layoutsOverlap(resolved, 0)).toBe(false);
   });
 });

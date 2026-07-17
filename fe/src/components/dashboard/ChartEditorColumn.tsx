@@ -18,6 +18,7 @@ import { ChartStylePanel } from "./ChartStylePanel";
 import { ChartDataOptions } from "./ChartDataOptions";
 import { INSPECTOR_CTRL } from "./inspectorCompact";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
+import { ChartMapDataPanel } from "./ChartMapDataPanel";
 import { ChartDataSlots } from "./ChartDataSlots";
 import { ensureChartSlotCapacity } from "./chartFieldSlots";
 import { useChartInspector } from "./ChartInspectorContext";
@@ -26,8 +27,8 @@ import { activeFieldRefs } from "@/lib/chartConfigState";
 import { chartHasAdvancedTab } from "@/lib/chartInspectorCapabilities";
 
 function buildValidateSuccessMessage(cfg: ReturnType<typeof useChartInspector>["cfg"]): string {
-  const dims = activeFieldRefs(cfg.dimensions).map((d) => d.field);
-  const metrics = activeFieldRefs(cfg.metrics).map((m) => m.field);
+  const dims = [...new Set(activeFieldRefs(cfg.dimensions).map((d) => d.field))];
+  const metrics = [...new Set(activeFieldRefs(cfg.metrics).map((m) => m.field))];
   const parts = [
     `维度 ${dims.join("、") || "—"}`,
     `指标 ${metrics.join("、") || "—"}`,
@@ -106,13 +107,10 @@ export function ChartEditorColumn({
         className="h-8 w-full rounded-md text-[11px] font-medium"
         onClick={() => void validate()}
         disabled={validating}
-        title="校验配置并同步字段列；图表数据会随槽位变更自动刷新"
+        title="校验配置并刷新图表数据"
       >
-        {validating ? "校验中…" : "校验配置并刷新字段"}
+        {validating ? "更新中…" : "更新图表数据"}
       </Button>
-      <p className="text-[10px] leading-snug text-gray-400">
-        拖入字段后画布会自动刷新；此按钮用于校验规则并同步右侧字段列
-      </p>
     </div>
   );
 
@@ -158,7 +156,7 @@ export function ChartEditorColumn({
                 </SelectContent>
               </Select>
             </div>
-            <ChartDataSlots />
+            {cfg.chartType === "map" ? <ChartMapDataPanel /> : <ChartDataSlots />}
             <ChartConfigPanel
               config={cfg}
               columns={columns}
@@ -183,4 +181,5 @@ export function ChartEditorColumn({
     </div>
   );
 }
+
 

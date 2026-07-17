@@ -17,6 +17,7 @@ import {
 import {
   appendWidgetToTabPane,
   coerceLayoutWidgets,
+  isTabPaneChild,
   resizeWidget,
   sortWidgets,
   type DashboardLayout,
@@ -541,11 +542,14 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         (item) => !layout.widgets.some((widget) => widget.id === item.id),
       );
       if (!draft) return;
-      setPixelLayout(nextLayout);
       if (tabsHost?.tabsConfig) {
-        handleSelect(draft.id, false);
-        setChartRailOpen(true);
+        preservePixelCanvasHostScroll(() => {
+          setPixelLayout(nextLayout);
+          handleSelect(tabsHost.id, false);
+          setChartRailOpen(true);
+        });
       } else {
+        setPixelLayout(nextLayout);
         handleSelect(draft.id, false);
       }
       if (draft.type === "filter" && draft.filterConfig) {
@@ -1161,9 +1165,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 }
                 allWidgets={widgets}
                 selectedChildId={
-                  selectedWidget.tabsConfig.panes.some((pane) =>
-                    pane.childWidgetIds.includes(primarySelectedId ?? ""),
-                  )
+                  isTabPaneChild(widgets, selectedWidget.id, primarySelectedId)
                     ? primarySelectedId
                     : null
                 }

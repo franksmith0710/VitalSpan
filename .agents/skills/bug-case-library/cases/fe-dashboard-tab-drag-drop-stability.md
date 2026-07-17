@@ -17,7 +17,7 @@
 ## 修复
 
 - 命中区 `48px`，视觉虚线 `4px`（`TabPaletteDropZones` 分离 hit/visual）
-- `collisionLayout`：`type === "tabs"` 不参与被推挤
+- Tab 容器参与与普通组件相同的碰撞推挤（`emptyTargetFootprint` / `liftVacatedColumn` 不再豁免）
 - 有子组件时仅底部紧凑提示条，不再全屏遮罩
 - shape 壳层子组件 `min-h-[5rem]` + `flex-1` 撑满 panel
 
@@ -91,3 +91,37 @@
 - `fe/src/components/dashboard/TabsWidget.tsx`
 - `fe/src/components/dashboard/pixelCanvas/PixelShape.tsx`
 - `fe/src/components/dashboard/dashboard-edit/DashboardEditCanvas.tsx`
+
+---
+
+# 顶层组件与 Tab 容器相互重叠
+
+## 症状
+
+- 拖动图表/表格等到 Tab 上松手后，两者同区域叠放（Tab 半透明压在表格上）
+- 媒体、热力图等多个顶层组件与 Tab/表格占据同一坐标
+
+## 根因
+
+1. 曾将 Tab 标为画布锚点，碰撞时不推挤 Tab，活动块可叠在 Tab 上方
+2. `layoutsOverlap` / `packPixelLayoutSeamless` 未排除 Tab 内折叠子组件（`parentTabsId` + `0×0`）
+
+## 修复
+
+- Tab 与普通组件同一套 `resolvePixelCollisions`（可被下推、可上浮）
+- **拖入页签（DE）**：松手先 `tryAbsorbTopLevelWidgetIntoTab`；命中 Tab 时 `shouldRevertCommit` 不弹回；吸收后选中 Tab 宿主
+- `layoutsOverlap` / `packPixelLayoutSeamless` 仅处理 `getTopLevelPixelWidgets` 且 `width/height > 0`
+- 已存盘重叠布局：加载时 `preparePixelLayoutForDisplay` → `packPixelLayoutSeamless` 自动压实
+
+## 锚点
+
+- `fe/src/components/dashboard/pixelCanvas/collisionLayout.ts`
+- `fe/src/components/dashboard/pixelCanvas/PixelCanvas.tsx`
+- `fe/src/components/dashboard/pixelCanvas/tabInsertResolver.ts`
+- `fe/src/components/dashboard/stylePipeline.ts`
+
+## 回归
+
+- `collisionLayout.test.ts`：`pushes tab hosts like any other widget when overlapped`
+- `tabInsertResolver.test.ts`：吸收与 intent
+- 手测：拖组件到 Tab 内松手 → 进页签；拖 Tab 本身 → 与邻块互推

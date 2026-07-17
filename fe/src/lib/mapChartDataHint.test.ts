@@ -2,13 +2,19 @@ import { describe, expect, it } from "vitest";
 import { DEMO_MAP_DRILL_SQL, DEMO_MAP_JOIN_SQL, mapChartFieldHint } from "./mapChartDataHint";
 
 describe("mapChartFieldHint", () => {
-  it("suggests region_id usage for demo sales columns", () => {
+  it("suggests drill sql for demo sales region_id columns", () => {
     const hint = mapChartFieldHint(["sale_date", "region_id", "amount"]);
-    expect(hint).toContain("region_id");
+    expect(hint?.message).toContain("仅支持省级");
+    expect(hint?.sampleSql).toBe(DEMO_MAP_DRILL_SQL);
   });
 
   it("returns null when geo name column exists", () => {
     expect(mapChartFieldHint(["region", "amount"])).toBeNull();
+  });
+
+  it("hides sql when province and city are configured", () => {
+    const hint = mapChartFieldHint(["province", "city", "total"]);
+    expect(hint?.sampleSql).toBeNull();
   });
 });
 

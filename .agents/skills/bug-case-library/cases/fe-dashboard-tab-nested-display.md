@@ -17,16 +17,19 @@
 
 ## 修复
 
-- Tab 子组件嵌套渲染统一 `shell: "tab-child"`（内容区 + 拖出把手，非栅格 12×2 顶栏）
-- `pixelWidgetToLayoutWidget`：`parentTabsId` 时使用 `TAB_CHILD_DEFAULT_COL_SPAN/ROW_SPAN`（12×2，仅用于图表高度估算）
-- `TabsWidget` tabpanel 加 `flex flex-col`，内容区 `flex-1` 撑满
-- `unparkPixelWidgetFromTab` + 左侧把手拖出页签到画布顶层
+- Tab 内子组件使用与顶层一致的 **`shape` 壳层**（完整图表/内容区，非栅格 12×2 列表条）
+- `pixelWidgetToLayoutWidget`：`parentTabsId` 时默认栅格占位仅用于高度估算
+- `TabsWidget` tabpanel `flex flex-col`，子项撑满
+- **拖出页签**：左侧 `TabNestedDragRail`（与 shape 拖边一致）拖到 Tab 外画布
+- **拖入（DE）**：选中 Tab/子组件锁定 `tabInsertIntent`；工具栏插入走 intent；画布组件拖入 Tab 吸收；插入后选中 Tab 宿主
 
 ## 锚点
 
-- `fe/src/components/dashboard/TabChildWidgetChrome.tsx`
+- `fe/src/components/dashboard/TabNestedDragRail.tsx`
 - `fe/src/components/dashboard/pixelCanvas/tabParking.ts`
 - `fe/src/components/dashboard/pixelCanvas/tabChildExtractContext.tsx`
+- `fe/src/components/dashboard/dashboard-edit/DashboardCanvasWidgetRenderer.tsx`
+- `fe/src/components/dashboard/TabsWidget.tsx`
 
 ## 回归
 

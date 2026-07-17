@@ -5,8 +5,10 @@ import {
   defaultFilterConfig,
   defaultTabsConfig,
   findTabsHostAtPoint,
+  getTabChildWidgets,
   getTopLevelPixelWidgets,
   insertPixelWidgetIntoTab,
+  reconcileTabPaneChildIds,
   resolvePixelTabsHost,
   normalizeWidgetIds,
   parkPixelWidgetInTab,
@@ -71,6 +73,97 @@ describe("layoutUtils tabs", () => {
     const cfg = defaultTabsConfig("tabs-1");
     expect(cfg.panes).toHaveLength(3);
     expect(cfg.panes[0]?.title).toBe("页签 1");
+  });
+
+  it("getTabChildWidgets prefers parentTabsId over stale childWidgetIds", () => {
+    const tabsCfg = defaultTabsConfig("tabs-1");
+    const paneA = tabsCfg.panes[0]!.id;
+    const paneB = tabsCfg.panes[1]!.id;
+    const chart: PixelLayoutWidget = {
+      id: "chart-1",
+      type: "chart",
+      title: "销量趋势",
+      order: 1,
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      parentTabsId: "tabs-1",
+      tabPaneId: paneB,
+      chartConfig: {
+        chartType: "line",
+        dataSourceId: "ds",
+        mode: "sql",
+        sql: "select 1",
+        dimensions: [],
+        metrics: [],
+      },
+    };
+    const tabs: PixelLayoutWidget = {
+      id: "tabs-1",
+      type: "tabs",
+      title: "页签",
+      order: 0,
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 240,
+      tabsConfig: {
+        ...tabsCfg,
+        panes: tabsCfg.panes.map((pane) =>
+          pane.id === paneA ? { ...pane, childWidgetIds: ["chart-1"] } : pane,
+        ),
+      },
+    };
+    expect(getTabChildWidgets([tabs, chart], "tabs-1", paneA)).toEqual([]);
+    expect(getTabChildWidgets([tabs, chart], "tabs-1", paneB)).toEqual([chart]);
+  });
+
+  it("reconcileTabPaneChildIds repairs childWidgetIds from widget relations", () => {
+    const tabsCfg = defaultTabsConfig("tabs-1");
+    const paneB = tabsCfg.panes[1]!.id;
+    const chart: PixelLayoutWidget = {
+      id: "chart-1",
+      type: "chart",
+      title: "销量趋势",
+      order: 1,
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      parentTabsId: "tabs-1",
+      tabPaneId: paneB,
+      chartConfig: {
+        chartType: "line",
+        dataSourceId: "ds",
+        mode: "sql",
+        sql: "select 1",
+        dimensions: [],
+        metrics: [],
+      },
+    };
+    const tabs: PixelLayoutWidget = {
+      id: "tabs-1",
+      type: "tabs",
+      title: "页签",
+      order: 0,
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 240,
+      tabsConfig: {
+        ...tabsCfg,
+        panes: tabsCfg.panes.map((pane) =>
+          pane.id === tabsCfg.panes[0]!.id ? { ...pane, childWidgetIds: ["chart-1"] } : pane,
+        ),
+      },
+    };
+    const next = reconcileTabPaneChildIds([tabs, chart]);
+    const repaired = next.find((w) => w.id === "tabs-1")?.tabsConfig?.panes.find((p) => p.id === paneB);
+    expect(repaired?.childWidgetIds).toEqual(["chart-1"]);
+    expect(
+      next.find((w) => w.id === "tabs-1")?.tabsConfig?.panes[0]?.childWidgetIds,
+    ).toEqual([]);
   });
 
   it("getTopLevelPixelWidgets excludes tab children", () => {

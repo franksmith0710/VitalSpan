@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type EChartsReact from "echarts-for-react";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
+import { applyEchartsSeriesGradient } from "@/lib/echartsSeriesPresentation";
 import { applyChartAdvancedFeaturesToEchartsOption } from "@/lib/chartDeFeatures";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { applyEchartsColorSchemeTokens, getEchartsTheme } from "@/lib/echarts-theme";
@@ -36,6 +37,8 @@ type Props = {
   dataZoom?: boolean;
   chartColors?: string[];
   showLabel?: boolean;
+  showTooltip?: boolean;
+  seriesGradient?: boolean;
   valueFormat?: NumberFormatConfig;
   mapPlaceholderHint?: string;
   mapDrillError?: string | null;
@@ -64,6 +67,8 @@ export function AdvancedEchartsChart({
   dataZoom = false,
   chartColors,
   showLabel = false,
+  showTooltip = true,
+  seriesGradient = false,
   valueFormat,
   mapPlaceholderHint,
   mapDrillError,
@@ -138,12 +143,15 @@ export function AdvancedEchartsChart({
     }
     built = applyDeStyleToEchartsOption(built, deStyle ?? {}, dataZoom, {
       showLabel,
+      showTooltip,
+      seriesGradient,
       valueFormat,
       layout: { embedded: fill, shellLegend },
     });
     built = applyEchartsColorSchemeTokens(built, scheme);
     if (chartColors?.length) {
       built = { ...built, color: chartColors };
+      built = applyEchartsSeriesGradient(built, chartColors, seriesGradient);
     }
     if (chartConfig) {
       built = applyChartAdvancedFeaturesToEchartsOption(
@@ -152,7 +160,7 @@ export function AdvancedEchartsChart({
       );
     }
     return built;
-  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit, geoStyle, geoMapLevel, geoMapVersion]);
+  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, showTooltip, seriesGradient, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit, geoStyle, geoMapLevel, geoMapVersion]);
   const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
 
   const isMapPlaceholder =

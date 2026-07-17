@@ -145,6 +145,14 @@ export type DashboardStyleConfig = {
   widgetStyle?: WidgetStyleConfig;
   paletteId?: string;
   paletteColors?: string[];
+  /** 看板默认配色不透明度（0–1） */
+  paletteOpacity?: number;
+  /** 看板默认系列渐变填充 */
+  seriesGradient?: boolean;
+  /** 看板默认显示数据标签 */
+  chartLabelShow?: boolean;
+  /** 看板默认显示图表提示 */
+  tooltipShow?: boolean;
   titleStyle?: TitleStyleConfig;
   filterChromeStyle?: FilterChromeStyleConfig;
   filterControlStyle?: FilterControlStyleConfig;

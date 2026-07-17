@@ -4,6 +4,7 @@ import { ChartInspectorTabs } from "./ChartInspectorTabs";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
 import { TabsPaneList, TabsStyleFields } from "./TabsWidgetFields";
 import { WidgetRailPanelHeader } from "./widgetRailChrome";
+import { INSPECTOR_HINT } from "./inspectorCompact";
 
 type TabsEditRailProps = {
   widget: LayoutWidget & { tabsConfig: TabsWidgetConfig };
@@ -46,18 +47,14 @@ export function TabsEditRail({
         defaultTab="data"
         tabs={["data", "style"]}
         data={
-          <div className="space-y-3 px-3 py-2">
-            <div className="rounded-lg border border-brand-100 bg-brand-50/60 p-3 dark:border-brand-500/20 dark:bg-brand-500/10">
-              <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                选中页签后插入组件
-              </p>
-              <p className="mt-1 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                从顶部工具栏添加，或将组件拖入画布页签区域。点击下方子组件可跳转其配置栏。当前激活：
-                <span className="font-medium text-gray-700 dark:text-gray-200">
-                  {activePane?.title ?? "—"}
-                </span>
-              </p>
-            </div>
+          <div className="space-y-2 px-2 py-1.5">
+            <p className={INSPECTOR_HINT}>
+              当前激活：
+              <span className="font-medium text-gray-600 dark:text-gray-300">
+                {activePane?.title ?? "—"}
+              </span>
+              · 从工具栏添加或拖入画布页签区
+            </p>
             <TabsPaneList
               widget={widget}
               allWidgets={allWidgets}

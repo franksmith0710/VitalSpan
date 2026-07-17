@@ -66,10 +66,9 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
       ];
     case "map":
       return [
-        { kind: "dimension", index: 0, label: "地理 / 维度", required: true },
-        { kind: "dimension", index: 1, label: "钻取 / 市级", required: false },
-        { kind: "dimension", index: 2, label: "钻取 / 区县", required: false },
-        { kind: "metric", index: 0, label: "数值 / 指标", required: true, showAggregation: true },
+        { kind: "dimension", index: 0, label: "地区 / 维度", required: true },
+        { kind: "metric", index: 0, label: "数据 / 指标", required: true, showAggregation: true },
+        { kind: "dimension", index: 1, label: "钻取 / 维度", required: false },
       ];
     case "heatmap":
       return [

@@ -26,7 +26,7 @@ export const STYLE_VARIANT_LABELS: Record<string, string> = {
 
 const TABLE_SECTIONS: ChartStyleSectionId[] = [
   "tableBasic",
-  "tableColor",
+  "palette",
   "title",
   "background",
 ];

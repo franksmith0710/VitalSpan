@@ -79,7 +79,7 @@ export function MediaEditRail({
             <DeAttrField label="图片来源" hint="链接或本地上传" compact>
               <ImageSourceField
                 variant="rail"
-                showPreview={false}
+                showPreview
                 value={cfg.url}
                 onChange={(url) => patch({ url: url ?? "" })}
               />

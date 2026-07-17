@@ -62,9 +62,14 @@ describe("ChartStylePanel", () => {
 
     expect(await screen.findByRole("button", { name: "基础样式" })).toBeInTheDocument();
     expect(screen.getByRole("listbox", { name: "配色方案" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "渐变颜色" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "图表标签" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "图表提示" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "标题" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "图例" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "背景" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "背景" }));
     expect(screen.getByRole("button", { name: "图片" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "装饰边框" })).toBeInTheDocument();
 
@@ -89,7 +94,8 @@ describe("ChartStylePanel", () => {
     );
 
     expect(screen.getByRole("button", { name: "基础样式" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "图例" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "图表配色" })).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "背景" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "备注" })).not.toBeInTheDocument();
   });
 });

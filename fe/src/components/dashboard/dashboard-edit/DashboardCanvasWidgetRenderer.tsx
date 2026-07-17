@@ -199,7 +199,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
 
   const renderNested = useCallback(
     (child: LayoutWidget) =>
-      renderChild?.(child, { nested: true, shell: "tab-child" }) ?? null,
+      renderChild?.(child, { nested: true, shell: "shape" }) ?? null,
     [renderChild],
   );
 
@@ -219,6 +219,7 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
         widget={widget}
         mode={mode}
         shell={shell}
+        nested={nested}
         selected={selected}
         gridSize={effectiveGridSize}
         pixelSize={pixelSize}

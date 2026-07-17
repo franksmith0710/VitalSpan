@@ -13,7 +13,7 @@ import {
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FilterControl } from "./FilterWidgetControls";
-import { TabChildWidgetChrome } from "./TabChildWidgetChrome";
+import { TabNestedDragRail } from "./TabNestedDragRail";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import type { FilterWidgetConfig, LayoutWidget, DashboardStyleConfig } from "./layoutUtils";
@@ -23,6 +23,7 @@ type FilterWidgetProps = {
   widget: LayoutWidget & { filterConfig: FilterWidgetConfig };
   mode: "edit" | "view";
   shell?: DashboardWidgetShell;
+  nested?: boolean;
   selected?: boolean;
   value: string;
   onValueChange: (filterId: string, value: string) => void;
@@ -36,6 +37,7 @@ export function FilterWidget({
   widget,
   mode,
   shell = "grid",
+  nested = false,
   selected = false,
   value,
   onValueChange,
@@ -58,7 +60,6 @@ export function FilterWidget({
   const controlRadius = dashboardStyle?.filterControlStyle?.borderRadius;
   const labelPosition = dashboardStyle?.filterChromeStyle?.titlePosition ?? "top";
   const inShapeShell = shell === "shape";
-  const inTabChildShell = shell === "tab-child";
   const showGridChrome = shell === "grid";
 
   const filterBody = (
@@ -86,6 +87,7 @@ export function FilterWidget({
       className={cn(
         "dashboard-no-drag flex min-h-0 flex-1 items-start p-3",
         mode === "edit" && "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
+        nested && mode === "edit" && "pl-7",
       )}
       onPointerDown={(e) => e.stopPropagation()}
     >
@@ -106,46 +108,39 @@ export function FilterWidget({
     </div>
   );
 
-  if (inTabChildShell) {
+  const deleteDialog = onDelete ? (
+    <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>删除组件</AlertDialogTitle>
+          <AlertDialogDescription>
+            确定删除「{widget.title}」？删除后需保存布局才会生效。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onDelete(widget.id);
+              setConfirmOpen(false);
+            }}
+          >
+            删除
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  ) : null;
+
+  if (inShapeShell) {
     return (
-      <>
-        <TabChildWidgetChrome
-          widgetId={widget.id}
-          title={widget.title}
-          selected={selected}
-          mode={mode}
-          icon={FilterIcon}
-          editable={Boolean(onTitleChange)}
-          onTitleChange={onTitleChange ? (next) => onTitleChange(widget.id, next) : undefined}
-          onDelete={onDelete ? () => setConfirmOpen(true) : undefined}
-          onSelect={onSelect}
-        >
-          {filterBody}
-        </TabChildWidgetChrome>
-        {onDelete ? (
-          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>删除组件</AlertDialogTitle>
-                <AlertDialogDescription>
-                  确定删除「{widget.title}」？删除后需保存布局才会生效。
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    onDelete(widget.id);
-                    setConfirmOpen(false);
-                  }}
-                >
-                  删除
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+      <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+        {nested && mode === "edit" ? (
+          <TabNestedDragRail widgetId={widget.id} className="h-full w-7" />
         ) : null}
-      </>
+        {filterBody}
+        {deleteDialog}
+      </div>
     );
   }
 
@@ -217,73 +212,8 @@ export function FilterWidget({
           <span className="shrink-0 text-theme-xs text-gray-400">筛选器</span>
         </div>
       ) : null}
-
-      <div
-        role={mode === "edit" ? "button" : undefined}
-        tabIndex={mode === "edit" ? 0 : undefined}
-        onClick={
-          mode === "edit"
-            ? (e) => {
-                e.stopPropagation();
-                onSelect?.();
-              }
-            : undefined
-        }
-        onKeyDown={
-          mode === "edit"
-            ? (e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onSelect?.();
-                }
-              }
-            : undefined
-        }
-        className={cn(
-          "dashboard-no-drag flex min-h-0 flex-1 items-start p-3",
-          mode === "edit" && "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
-        )}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <FilterControl
-          id={controlId}
-          label={cfg.dimensionRef || widget.title}
-          controlType={cfg.controlType}
-          value={value}
-          options={cfg.options}
-          onChange={(next) => onValueChange(cfg.filterId, next)}
-          className="w-full max-w-none sm:max-w-none"
-          inputStyle={{
-            height: controlHeight ? `${controlHeight}px` : undefined,
-            borderRadius: controlRadius ? `${controlRadius}px` : undefined,
-          }}
-          labelPosition={labelPosition}
-        />
-      </div>
-
-      {onDelete ? (
-        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>删除组件</AlertDialogTitle>
-              <AlertDialogDescription>
-                确定删除「{widget.title}」？删除后需保存布局才会生效。
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>取消</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  onDelete(widget.id);
-                  setConfirmOpen(false);
-                }}
-              >
-                删除
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      ) : null}
+      {filterBody}
+      {deleteDialog}
     </div>
   );
 }

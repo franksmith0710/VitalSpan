@@ -24,8 +24,8 @@ const PIXEL_ROW_MARGIN = 12;
 
 export type DashboardCanvasEditor = "grid" | "pixel" | "pixel-readonly";
 
-/** grid = RGL 卡片壳；shape = 像素画布；tab-child = Tab 内嵌子组件（内容区 + 拖出把手） */
-export type DashboardWidgetShell = "grid" | "shape" | "tab-child";
+/** grid = RGL 卡片壳；shape = 像素画布 shape-inner 内容区（对标 DE） */
+export type DashboardWidgetShell = "grid" | "shape";
 
 export type PreparedDashboardLayout = {
   editor: DashboardCanvasEditor;

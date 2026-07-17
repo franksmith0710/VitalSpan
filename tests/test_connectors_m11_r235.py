@@ -5,7 +5,7 @@
   - Trino/Presto: 127.0.0.1:8080
   - InfluxDB: 127.0.0.1:8086
   - TDengine: 127.0.0.1:6041
-  - TimescaleDB: 127.0.0.1:5433
+  - TimescaleDB: 127.0.0.1:5434 (ops_tsdb)
 """
 from __future__ import annotations
 

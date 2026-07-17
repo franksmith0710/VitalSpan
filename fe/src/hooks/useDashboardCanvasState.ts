@@ -19,6 +19,7 @@ import {
   type DashboardLayoutV2,
   type LayoutWidget,
   type PixelLayoutWidget,
+  reconcileTabPaneChildIdsInPixelLayout,
 } from "@/components/dashboard/layoutUtils";
 import { useLayoutHistory } from "@/hooks/useLayoutHistory";
 
@@ -104,12 +105,14 @@ export function useDashboardCanvasState({
         });
       } else {
         const loaded = prepared.layout;
-        pixel.resetLayout(loaded);
-        if (editable && loaded.version === 2 && options?.repack) {
+        const normalized =
+          loaded.version === 2 ? reconcileTabPaneChildIdsInPixelLayout(loaded) : loaded;
+        pixel.resetLayout(normalized);
+        if (editable && normalized.version === 2 && options?.repack) {
           try {
-            const normalized = packPixelLayoutSeamless(loaded);
-            if (pixelLayoutFingerprint(normalized) !== pixelLayoutFingerprint(loaded)) {
-              pixel.setLayout(normalized);
+            const packed = packPixelLayoutSeamless(normalized);
+            if (pixelLayoutFingerprint(packed) !== pixelLayoutFingerprint(normalized)) {
+              pixel.setLayout(packed);
             }
           } catch {
             // Keep the loaded layout if normalization fails; editing still works via collision resolve.
@@ -146,7 +149,8 @@ export function useDashboardCanvasState({
   const setPixelLayout = useCallback(
     (next: DashboardLayoutV2) => {
       if (editor !== "pixel") return;
-      pixel.setLayout(fitCanvasHeightToContent(next));
+      const reconciled = reconcileTabPaneChildIdsInPixelLayout(next);
+      pixel.setLayout(fitCanvasHeightToContent(reconciled));
     },
     [editor, pixel.setLayout],
   );

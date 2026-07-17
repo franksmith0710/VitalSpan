@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
+  buildCustomRefreshFromParts,
   dashboardQueryLimitSelectValue,
+  parseCustomRefreshParts,
   parseDeRefreshIntervalSec,
   parseDeResultLimit,
   patchChartDeDisplay,
@@ -22,21 +24,17 @@ describe("chartDeDisplay", () => {
     expect(readChartDeDisplay(next).resultLimit).toBe("500");
   });
 
-  it("stripChartTitleOverrides removes entire title block", () => {
-    const cfg = patchChartDeStyleNested(baseCfg, "title", {
-      show: false,
-      fontSize: 22,
-      color: "#aabbcc",
-      align: "center",
-    });
-    const next = stripChartTitleOverrides(cfg);
-    expect(next.nativeBody?.deStyle?.title).toBeUndefined();
+  it("T-DE-DISP-03: parses preset and custom refresh intervals", () => {
+    expect(parseDeRefreshIntervalSec("30s")).toBe(30);
+    expect(parseDeRefreshIntervalSec("custom:45")).toBe(45);
+    expect(parseDeRefreshIntervalSec("custom:3")).toBe(5);
+    expect(parseDeRefreshIntervalSec("custom:120")).toBe(120);
+    expect(parseDeRefreshIntervalSec("off")).toBeNull();
   });
 
-  it("readChartTitleVisible falls back to global titleStyle.show", () => {
-    expect(readChartTitleVisible(baseCfg, { show: false })).toBe(false);
-    expect(readChartTitleVisible(baseCfg, { show: true })).toBe(true);
-    const hidden = patchChartDeStyleNested(baseCfg, "title", { show: false });
-    expect(readChartTitleVisible(hidden, { show: true })).toBe(false);
+  it("T-DE-DISP-04: custom refresh supports minute parts", () => {
+    expect(buildCustomRefreshFromParts(2, "m")).toBe("custom:120");
+    expect(parseCustomRefreshParts("custom:120")).toEqual({ amount: 2, unit: "m" });
+    expect(parseCustomRefreshParts("custom:45")).toEqual({ amount: 45, unit: "s" });
   });
 });

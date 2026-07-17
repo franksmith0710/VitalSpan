@@ -44,7 +44,7 @@ describe("AdminLayout smoke", () => {
     window.dispatchEvent(new Event("resize"));
   }
 
-  function setDesktopViewport(width = 1400) {
+  function setDesktopViewport(width = 1600) {
     Object.defineProperty(window, "innerWidth", {
       writable: true,
       configurable: true,
@@ -148,7 +148,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("T-NAV-02: dashboard edit → list keeps AdminLayout mounted (useMatch hooks stable)", async () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin/dashboards/d1/edit"]}>
@@ -190,7 +190,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("toggles desktop sidebar margin between 240px and 90px (T-FE-21)", () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -203,17 +203,17 @@ describe("AdminLayout smoke", () => {
     const menuBtn = screen.getAllByRole("button", { name: "打开菜单" })[0];
     const main = screen.getAllByRole("main")[0];
     const contentWrapper = main.parentElement;
-    expect(contentWrapper?.className).toContain("xl:ml-[240px]");
+    expect(contentWrapper?.className).toContain("md:ml-[240px]");
 
     fireEvent.click(menuBtn);
-    expect(contentWrapper?.className).toContain("xl:ml-[90px]");
+    expect(contentWrapper?.className).toContain("md:ml-[90px]");
 
     fireEvent.click(menuBtn);
-    expect(contentWrapper?.className).toContain("xl:ml-[240px]");
+    expect(contentWrapper?.className).toContain("md:ml-[240px]");
   });
 
   it("main and navigation token contract (T-FE-22)", () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -231,7 +231,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("desktop tab focus order: menu button then theme toggle (T-FE-24)", async () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
@@ -299,7 +299,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("shows return to workspace in user menu on account pages (T-FE-32)", async () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     localStorage.clear();
     const user = userEvent.setup();
     render(
@@ -334,7 +334,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("admin sidebar has 报表 collapsible that expands to show sub-items (T-FE-SMFA-01)", async () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
@@ -357,7 +357,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("T-FE-SMFA-05: hover expands collapsed nav group without click", async () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
@@ -377,7 +377,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("admin sidebar 数据连接 links to datasources (T-FE-SMFA-02)", async () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
@@ -398,7 +398,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("admin sidebar has no 预览 badge after M13 GA (T-FE-SMFA-03)", () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     render(
       <MemoryRouter initialEntries={["/admin/dashboards"]}>
         <Routes>
@@ -414,7 +414,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("viewer role: sidebar has no 系统 or 数据 section headings (T-FE-SMFA-04)", () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     mockUseAuth.mockReturnValueOnce({
       user: { id: "2", username: "viewer", roles: ["viewer"] },
       isLoading: false,
@@ -439,7 +439,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("T-FE-SMFB-01: system admin sidebar has 资源授权 link", async () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin/system/roles"]}>
@@ -457,7 +457,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("T-FE-SMFB-01b: main workspace sidebar has no 系统 heading", () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     render(
       <MemoryRouter initialEntries={["/admin/dashboards"]}>
         <Routes>
@@ -479,7 +479,7 @@ describe("AdminLayout smoke", () => {
       logout: vi.fn(),
       refresh: vi.fn(async () => {}),
     } as unknown as ReturnType<typeof mockUseAuth>);
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -493,7 +493,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("T-FE-SMFB-03: admin still has 报表 subItems (no regression T-FE-SMFA-01)", async () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={["/admin"]}>
@@ -516,7 +516,7 @@ describe("AdminLayout smoke", () => {
       logout: vi.fn(),
       refresh: vi.fn(async () => {}),
     } as unknown as ReturnType<typeof mockUseAuth>);
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     render(
       <MemoryRouter initialEntries={["/admin/dashboards"]}>
         <Routes>
@@ -531,7 +531,7 @@ describe("AdminLayout smoke", () => {
   });
 
   it("T-DESIGN-FC-01-smoke: admin sees 治理专用 badge on designer link", () => {
-    setDesktopViewport(1400);
+    setDesktopViewport(1600);
     render(
       <MemoryRouter initialEntries={["/admin/governance/tickets"]}>
         <Routes>

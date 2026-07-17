@@ -15,7 +15,6 @@ import {
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { InspectorInlineColorRow } from "./inspectorCompact";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
 import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
@@ -23,7 +22,7 @@ import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
 import { DashboardChartTitleStylePanel } from "./dashboardChartTitleStylePanel";
 import { DashboardConfigSlider } from "./deAttrSlider";
 import { ChartBackgroundStyleFields } from "./chartStyleFields";
-import { ChartPaletteConfigFields } from "./chartPaletteConfigFields";
+import { ChartPaletteDeParityFields } from "./chartPaletteDeParityFields";
 import type { DashboardStylePatch } from "./DashboardContextInspector";
 
 type PatchFn = (patch: DashboardStylePatch) => void;
@@ -103,16 +102,6 @@ export function DashboardWidgetStyleSections({
         title="图表样式"
         defaultOpen
         data-testid="dashboard-widget-chart-style"
-        action={
-          <Switch
-            checked={ws.backgroundShow !== false}
-            onCheckedChange={(show) => patchWidgetStyle({ backgroundShow: show })}
-            onClick={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
-            aria-label="背景"
-            className="scale-90"
-          />
-        }
       >
         <ChartBackgroundStyleFields
           value={ws}
@@ -123,15 +112,28 @@ export function DashboardWidgetStyleSections({
         />
       </DashboardConfigSection>
 
-      <DashboardConfigSection title="图表配色">
-        <ChartPaletteConfigFields
+      <DashboardConfigSection title="图表配色" defaultOpen>
+        <ChartPaletteDeParityFields
           paletteId={styleConfig.paletteId}
+          paletteOpacity={styleConfig.paletteOpacity}
+          seriesGradient={styleConfig.seriesGradient ?? false}
+          labelShow={styleConfig.chartLabelShow ?? false}
+          tooltipShow={styleConfig.tooltipShow ?? true}
           onPaletteChange={(paletteId, colors) =>
             patchStyle({
               paletteId: paletteId ?? "default",
               paletteColors: [...colors],
             })
           }
+          onOpacityChange={(opacityPercent) =>
+            patchStyle({ paletteOpacity: opacityPercent / 100 })
+          }
+          onOpacityPreview={(opacityPercent) =>
+            patchStyle({ paletteOpacity: opacityPercent / 100 })
+          }
+          onSeriesGradientChange={(enabled) => patchStyle({ seriesGradient: enabled })}
+          onLabelShowChange={(show) => patchStyle({ chartLabelShow: show })}
+          onTooltipShowChange={(show) => patchStyle({ tooltipShow: show })}
         />
       </DashboardConfigSection>
 

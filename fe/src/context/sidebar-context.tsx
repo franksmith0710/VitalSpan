@@ -4,6 +4,8 @@ export type SidebarContextType = {
   isExpanded: boolean;
   isMobileOpen: boolean;
   isHovered: boolean;
+  /** 视口 < 1280：侧栏抽屉，汉堡菜单切换 */
+  isDrawerMode: boolean;
   toggleSidebar: () => void;
   toggleMobileSidebar: () => void;
   setIsHovered: (hovered: boolean) => void;
@@ -49,6 +51,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
       isExpanded: isMobile ? false : isExpanded,
       isMobileOpen,
       isHovered,
+      isDrawerMode: isMobile,
       toggleSidebar,
       toggleMobileSidebar,
       setIsHovered,

@@ -25,7 +25,7 @@ import { useAuth } from "@/context/auth-context";
 import { RouteErrorBoundary } from "@/components/ui/route-error-boundary";
 
 function AdminLayoutContent() {
-  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const { isExpanded, isHovered, isMobileOpen, isDrawerMode } = useSidebar();
   const location = useLocation();
   const { user: authUser } = useAuth();
   const sessionUser = authUser
@@ -66,8 +66,10 @@ function AdminLayoutContent() {
       <div
         className={cn(
           "flex min-h-0 flex-1 flex-col overflow-hidden transition-[margin] duration-300 ease-in-out",
-          isExpanded || isHovered ? ADMIN_CONTENT_MARGIN_EXPANDED_CLASS : ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
-          isMobileOpen ? "ml-0" : "",
+          !isDrawerMode &&
+            (isExpanded || isHovered
+              ? ADMIN_CONTENT_MARGIN_EXPANDED_CLASS
+              : ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS),
         )}
       >
         <AppHeader

@@ -9,10 +9,9 @@ import {
   type ChartViewConfig,
 } from "@/lib/chartViewConfig";
 import { resolveChartColors, applyChartColorsOpacity } from "@/lib/chartPalette";
-import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartLegendPosition, readChartShowLabel, readChartDataZoom } from "@/lib/chartDeStyle";
+import type { ColorScheme, DashboardStyleConfig, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartLegendPosition, readChartShowLabel, readChartDataZoom, readChartPaletteOpacity, readChartSeriesGradient, readChartTooltipShow } from "@/lib/chartDeStyle";
 import { resolveChartValueFormat } from "@/lib/chartValueFormat";
-import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { resolveRenderSpec } from "@/lib/resolveRenderSpec";
 import { chartRenderSpecKey } from "@/lib/chartRenderSpecKey";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
@@ -85,6 +84,10 @@ type ChartRendererProps = {
   queryLimit?: number;
   paletteId?: string;
   paletteColors?: string[];
+  dashboardColorDefaults?: Pick<
+    DashboardStyleConfig,
+    "paletteOpacity" | "seriesGradient" | "chartLabelShow" | "tooltipShow"
+  >;
   numberFormat?: NumberFormatConfig;
   colorScheme?: ColorScheme;
   /** 组件实底色，用于表格/地图跟随组件外观而非仅 colorScheme */
@@ -110,6 +113,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   queryLimit,
   paletteId,
   paletteColors,
+  dashboardColorDefaults,
   numberFormat,
   colorScheme = "light",
   widgetShellColor,
@@ -276,9 +280,12 @@ export const ChartRenderer = memo(function ChartRenderer({
     const base = deStyle.paletteId
       ? resolveChartColors(deStyle.paletteId)
       : resolveChartColors(paletteId, paletteColors);
-    return applyChartColorsOpacity(base, deStyle.paletteOpacity);
-  }, [deStyle.paletteId, deStyle.paletteOpacity, paletteId, paletteColors]);
-  const showDataLabels = readChartShowLabel(localConfig);
+    const opacity = readChartPaletteOpacity(localConfig, dashboardColorDefaults);
+    return applyChartColorsOpacity(base, opacity);
+  }, [deStyle.paletteId, localConfig, dashboardColorDefaults, paletteId, paletteColors]);
+  const showDataLabels = readChartShowLabel(localConfig, dashboardColorDefaults);
+  const showTooltip = readChartTooltipShow(localConfig, dashboardColorDefaults);
+  const seriesGradient = readChartSeriesGradient(localConfig, dashboardColorDefaults);
   const dataZoomEnabled = readChartDataZoom(localConfig);
   const valueFormat = useMemo(
     () => resolveChartValueFormat(deStyle.label, numberFormat),
@@ -350,6 +357,8 @@ export const ChartRenderer = memo(function ChartRenderer({
     });
     built = applyDeStyleToEchartsOption(built, deStyle, dataZoomEnabled, {
       showLabel: showDataLabels,
+      showTooltip,
+      seriesGradient,
       valueFormat,
       layout: { embedded: true, shellLegend: true },
     });
@@ -371,6 +380,8 @@ export const ChartRenderer = memo(function ChartRenderer({
     displayColumns,
     deStyle,
     showDataLabels,
+    showTooltip,
+    seriesGradient,
     dataZoomEnabled,
     valueFormat,
     chartColors,
@@ -405,6 +416,8 @@ export const ChartRenderer = memo(function ChartRenderer({
       dataZoom={dataZoomEnabled}
       chartColors={chartColors}
       showLabel={showDataLabels}
+      showTooltip={showTooltip}
+      seriesGradient={seriesGradient}
       valueFormat={valueFormat}
       mapPlaceholderHint={mapPlaceholderHint}
       mapDrillError={mapDrillError}

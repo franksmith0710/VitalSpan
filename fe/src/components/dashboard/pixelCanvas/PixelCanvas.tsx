@@ -38,7 +38,6 @@ import { TabChildExtractProvider } from "./tabChildExtractContext";
 import { canUnparkTabChildAtPoint } from "./tabParking";
 import {
   canvasArtboardStyleFingerprint,
-  hasUserCanvasBackground,
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
   widgetDashboardStyleFingerprint,
@@ -47,7 +46,7 @@ import { resolveComponentGapRuntime } from "../componentGapRuntime";
 import { auxiliaryGridPatternStyle, resolveDashboardChrome } from "../dashboardChromeConfig";
 import { resolvePixelCollisions, shouldRevertPixelDragCommit, widgetRect } from "./collisionLayout";
 import type { PixelPoint, PixelRect } from "./geometry";
-import { clientPointToCanvas, resolvePixelCanvasMeasureElement, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
+import { clientPointToCanvasFromStage, PIXEL_CANVAS_EDIT_MIN_SCALE, resolvePixelCanvasMeasureElement, resolvePixelCanvasMeasureWidth, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
 import { PixelShape } from "./PixelShape";
 import type { PixelWidgetActions } from "./PixelShapeActionRail";
 import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
@@ -173,6 +172,7 @@ export function PixelCanvas({
   const [contentSize, setContentSize] = useState({ width: 0, height: 0 });
   const [stageLeft, setStageLeft] = useState(0);
   const [centerContent, setCenterContent] = useState(false);
+  const [scrollX, setScrollX] = useState(false);
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [paletteDragPoint, setPaletteDragPoint] = useState<PixelPoint | null>(null);
   const [shapeDragWidget, setShapeDragWidget] = useState<PixelLayoutWidget | null>(null);
@@ -276,7 +276,8 @@ export function PixelCanvas({
     () => auxiliaryGridPatternStyle(scheme),
     [scheme],
   );
-  const userArtboardBg = hasUserCanvasBackground(styleConfig);
+  /** 编辑态固定按画布宽度贴满，避免「按组件比例」两侧留白与 1440 可用区不一致 */
+  const effectiveScaleMode = mode === "edit" ? "canvas" : scaleMode;
   const viewCanvasHeight = useMemo(() => {
     const lowest = topLevelWidgets.reduce(
       (max, widget) => Math.max(max, widget.y + widget.height),
@@ -292,6 +293,7 @@ export function PixelCanvas({
     () => resolveScaleDesignHeight(activeLayout.canvas.height),
     [activeLayout.canvas.height],
   );
+  const editMinScale = mode === "edit" ? PIXEL_CANVAS_EDIT_MIN_SCALE : 0;
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -300,13 +302,14 @@ export function PixelCanvas({
 
     const applyMetrics = () => {
       const metrics = scaledCanvasMetrics(
-        measureEl.clientWidth,
+        resolvePixelCanvasMeasureWidth(measureEl),
         measureEl.clientHeight,
         viewCanvas.width,
         designCanvasHeight,
         viewCanvas.height,
         PIXEL_CANVAS_GUTTER,
-        scaleMode,
+        effectiveScaleMode,
+        editMinScale,
       );
       setScale((previous) =>
         Math.abs(previous - metrics.scale) < 0.0001 ? previous : metrics.scale,
@@ -315,6 +318,7 @@ export function PixelCanvas({
       setCenterContent((previous) =>
         previous === metrics.centerContent ? previous : metrics.centerContent,
       );
+      setScrollX((previous) => (previous === metrics.scrollX ? previous : metrics.scrollX));
       setContentSize((previous) => {
         const widthChanged = Math.abs(previous.width - metrics.contentWidth) >= 1;
         const heightDelta = Math.abs(previous.height - metrics.contentHeight);
@@ -346,7 +350,7 @@ export function PixelCanvas({
         metricsFrameRef.current = null;
       }
     };
-  }, [publishViewport, viewCanvas, designCanvasHeight, scaleMode]);
+  }, [publishViewport, viewCanvas, designCanvasHeight, mode, scaleMode, editMinScale]);
 
   useLayoutEffect(() => {
     consumePendingCanvasHostScrollRestore(hostRef.current);
@@ -384,21 +388,21 @@ export function PixelCanvas({
       const viewHeight = Math.max(PIXEL_CANVAS_MIN_HEIGHT, lowest);
       const measureEl = resolvePixelCanvasMeasureElement(host);
       const metrics = scaledCanvasMetrics(
-        measureEl.clientWidth,
+        resolvePixelCanvasMeasureWidth(measureEl),
         measureEl.clientHeight,
         activeLayout.canvas.width,
         resolveScaleDesignHeight(nextLayout.canvas.height),
         viewHeight,
         PIXEL_CANVAS_GUTTER,
-        scaleMode,
+        effectiveScaleMode,
+        editMinScale,
       );
       stage.style.height = `${viewHeight}px`;
       if (content) {
-        content.style.width = `${metrics.contentWidth}px`;
         content.style.height = `${metrics.contentHeight}px`;
       }
     },
-    [activeLayout.canvas.width, scaleMode],
+    [activeLayout.canvas.width, mode, scaleMode, editMinScale],
   );
 
   const resolveActiveAt = useCallback(
@@ -412,7 +416,10 @@ export function PixelCanvas({
           width: widget.width,
           height: widget.height,
         },
-        { gap: gapRuntime.collisionGapPx, minOverlap: gapRuntime.collisionOverlapBufferPx },
+        {
+          gap: gapRuntime.collisionGapPx,
+          minOverlap: gapRuntime.collisionOverlapBufferPx,
+        },
       ),
     [activeLayout, gapRuntime.collisionGapPx, gapRuntime.collisionOverlapBufferPx],
   );
@@ -521,6 +528,10 @@ export function PixelCanvas({
       pendingPreviewRef.current = null;
       setShapeDragWidget(null);
 
+      const absorbHost = resolveTabHostForWidgetDrop(activeLayout, widgetRect(widget), {
+        intent: tabInsertIntent,
+        dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
+      });
       const absorbed = tryAbsorbTopLevelWidgetIntoTab(activeLayout, widget, {
         intent: tabInsertIntent,
         dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
@@ -528,7 +539,7 @@ export function PixelCanvas({
       if (absorbed) {
         onLayoutChange(absorbed);
         clearPreviewChrome(absorbed);
-        onSelect?.(widget.id, false);
+        onSelect?.(absorbHost?.id ?? widget.id, false);
         return;
       }
 
@@ -571,15 +582,11 @@ export function PixelCanvas({
 
   const resolveClientToCanvas = useCallback(
     (clientX: number, clientY: number) => {
-      const host = hostRef.current;
-      if (!host) return null;
-      const horizontalGutter =
-        centerContent && contentSize.width > 0
-          ? Math.max(0, (host.clientWidth - contentSize.width) / 2)
-          : stageLeft;
-      return clientPointToCanvas(host, clientX, clientY, scale, horizontalGutter);
+      const stage = stageRef.current;
+      if (!stage) return null;
+      return clientPointToCanvasFromStage(stage, clientX, clientY, scale);
     },
-    [centerContent, contentSize.width, scale, stageLeft],
+    [scale],
   );
 
   const handleDragOver = useCallback(
@@ -673,7 +680,8 @@ export function PixelCanvas({
     <div
       ref={hostRef}
       className={cn(
-        "pixel-canvas-host relative h-full min-h-0 w-full overflow-x-hidden overflow-y-auto",
+        "pixel-canvas-host relative h-full min-h-0 w-full overflow-y-auto",
+        scrollX ? "overflow-x-auto" : "overflow-x-hidden",
         centerContent && "flex flex-col items-center",
         paletteDragOver && "dashboard-canvas-drop-active",
         className,
@@ -681,9 +689,10 @@ export function PixelCanvas({
       data-testid="pixel-canvas-host"
       data-pixel-canvas-mode={mode}
       data-pixel-canvas-scale={scale}
+      data-pixel-canvas-scroll-x={scrollX ? "true" : undefined}
       data-pixel-canvas-playing={playingWidgetId ?? undefined}
       style={{
-        ...(userArtboardBg ? artboardStyle : undefined),
+        ...artboardStyle,
         "--pixel-canvas-scale": scale,
       } as CSSProperties}
       onScroll={(event) => {

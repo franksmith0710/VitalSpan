@@ -4,8 +4,6 @@ import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/context/sidebar-context";
 
-const XL_BREAKPOINT = 1280;
-
 export type AppHeaderVariant = "default" | "transparent" | "elevated-on-scroll";
 
 export type AppHeaderProps = {
@@ -24,7 +22,7 @@ export function AppHeader({
   variant = "default",
   className,
 }: AppHeaderProps) {
-  const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const { isMobileOpen, isDrawerMode, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const [elevated, setElevated] = React.useState(false);
 
   React.useEffect(() => {
@@ -43,12 +41,15 @@ export function AppHeader({
   }, [variant]);
 
   const handleToggle = () => {
-    if (window.innerWidth >= XL_BREAKPOINT) {
-      toggleSidebar();
-    } else {
+    if (isDrawerMode) {
       toggleMobileSidebar();
+      return;
     }
+    toggleSidebar();
   };
+
+  /** 抽屉已展开时左侧由侧栏承接，避免顶栏 X/Logo 与侧栏叠闪 */
+  const hideLeftChrome = isDrawerMode && isMobileOpen;
 
   return (
     <header
@@ -62,7 +63,12 @@ export function AppHeader({
       data-elevated={variant === "elevated-on-scroll" && elevated ? "true" : undefined}
     >
       <div className="flex h-full w-full items-center justify-between gap-3 px-4 sm:gap-4 xl:px-6">
-        <div className="flex min-w-0 items-center gap-3">
+        <div
+          className={cn(
+            "flex min-w-0 items-center gap-3",
+            hideLeftChrome && "pointer-events-none invisible",
+          )}
+        >
           <button
             type="button"
             onClick={handleToggle}
@@ -70,11 +76,13 @@ export function AppHeader({
               "flex size-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors lg:size-11",
               "hover:bg-gray-50 hover:text-gray-700 focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
               "dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200",
-              isMobileOpen && "bg-gray-100 text-gray-700 dark:bg-white/[0.03] dark:text-gray-200",
+              isMobileOpen && !isDrawerMode && "bg-gray-100 text-gray-700 dark:bg-white/[0.03] dark:text-gray-200",
             )}
-            aria-label="打开菜单"
+            aria-label={isMobileOpen ? "关闭菜单" : "打开菜单"}
+            aria-hidden={hideLeftChrome}
+            tabIndex={hideLeftChrome ? -1 : undefined}
           >
-            {isMobileOpen ? (
+            {isMobileOpen && !isDrawerMode ? (
               <X className="size-5" aria-hidden />
             ) : (
               <Menu className="size-5" aria-hidden />
@@ -82,7 +90,13 @@ export function AppHeader({
           </button>
 
           {logo ? (
-            <Link to="/" className="shrink-0 xl:hidden" aria-label="返回首页">
+            <Link
+              to="/"
+              className="shrink-0 xl:hidden"
+              aria-label="返回首页"
+              aria-hidden={hideLeftChrome}
+              tabIndex={hideLeftChrome ? -1 : undefined}
+            >
               {logo}
             </Link>
           ) : null}

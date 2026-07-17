@@ -19,6 +19,7 @@ export { TAB_PALETTE_DROP_BUFFER_PX } from "./tabPaletteDrop";
 export {
   applyPixelInteraction,
   clientPointToCanvas,
+  clientPointToCanvasFromStage,
   RESIZE_DIRECTIONS,
   scaledCanvasMetrics,
   screenDeltaToCanvas,

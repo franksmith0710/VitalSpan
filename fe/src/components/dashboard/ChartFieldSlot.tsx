@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Calendar, GripVertical, Hash, Type, X } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,13 @@ const chipVariants = cva(
 
 type ChartFieldSlotProps = {
   label: string;
+  /** 对标 DE 必填红星 */
+  required?: boolean;
   optional?: boolean;
+  /** 标签旁说明图标（如钻取） */
+  hintIcon?: ReactNode;
+  /** 嵌套在组合槽内时不重复渲染标签 */
+  hideLabel?: boolean;
   fieldName?: string;
   /** 聚合等后缀，如「求和」；展示为次要文案 */
   fieldSuffix?: string;
@@ -69,7 +75,10 @@ function FieldKindIcon({ field }: { field: string }) {
 
 export function ChartFieldSlot({
   label,
+  required = false,
   optional = false,
+  hintIcon,
+  hideLabel = false,
   fieldName,
   fieldSuffix,
   slotKind = "neutral",
@@ -87,12 +96,16 @@ export function ChartFieldSlot({
 
   return (
     <div className={cn("space-y-1", className)}>
-      <span className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-        {label}
-        {optional ? (
-          <span className="ml-1 font-normal text-gray-400 dark:text-gray-500">（可选）</span>
-        ) : null}
-      </span>
+      {hideLabel ? null : (
+        <span className="inline-flex items-center gap-1 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+          {label}
+          {required ? <span className="text-error-500" aria-hidden>*</span> : null}
+          {hintIcon}
+          {optional ? (
+            <span className="font-normal text-gray-400 dark:text-gray-500">（可选）</span>
+          ) : null}
+        </span>
+      )}
       <div
         role="button"
         tabIndex={disabled ? -1 : 0}

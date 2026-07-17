@@ -160,7 +160,7 @@ function SidebarNavItem({
           className={cn(
             "group menu-item w-full cursor-pointer",
             open || hasActiveChild ? "menu-item-active" : "menu-item-inactive",
-            !showLabels && "xl:justify-center",
+            !showLabels && "md:justify-center",
           )}
           onClick={(event) => {
             event.preventDefault();
@@ -260,7 +260,7 @@ function SidebarNavItem({
       className={cn(
         "group menu-item",
         active ? "menu-item-active" : "menu-item-inactive",
-        !showLabels && "xl:justify-center",
+        !showLabels && "md:justify-center",
       )}
     >
       <span
@@ -394,6 +394,7 @@ export function AppSidebar({
     isExpanded,
     isMobileOpen,
     isHovered,
+    isDrawerMode,
     setIsHovered,
     setIsMobileOpen,
   } = useSidebar();
@@ -401,6 +402,14 @@ export function AppSidebar({
 
   const showLabels = isExpanded || isHovered || isMobileOpen;
   const isWide = isExpanded || isMobileOpen || isHovered;
+  /** 抽屉视口固定 240px + 全量 Logo/导航，随面板整体滑入 */
+  const brandExpanded = isDrawerMode || showLabels;
+  const navShowLabels = isDrawerMode || showLabels;
+  const sidebarSizeClass = isDrawerMode
+    ? ADMIN_SIDEBAR_EXPANDED_CLASS
+    : isWide
+      ? ADMIN_SIDEBAR_EXPANDED_CLASS
+      : ADMIN_SIDEBAR_COLLAPSED_CLASS;
 
   React.useEffect(() => {
     if (isMobileOpen) {
@@ -413,9 +422,19 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "fixed top-0 left-0 z-50 flex h-screen flex-col border-r border-gray-200 bg-white text-gray-900 transition-all duration-300 ease-in-out xl:translate-x-0 dark:border-gray-800 dark:bg-gray-900",
-        isWide ? ADMIN_SIDEBAR_EXPANDED_CLASS : ADMIN_SIDEBAR_COLLAPSED_CLASS,
-        isMobileOpen ? "translate-x-0" : "-translate-x-full",
+        "fixed top-0 left-0 flex h-screen flex-col border-r border-gray-200 bg-white text-gray-900 xl:translate-x-0 dark:border-gray-800 dark:bg-gray-900",
+        isDrawerMode
+          ? "z-[100000] transition-transform duration-300 ease-out"
+          : cn(
+              "transition-all duration-300 ease-in-out",
+              isMobileOpen ? "z-[100000]" : "z-50",
+            ),
+        sidebarSizeClass,
+        isDrawerMode || isMobileOpen
+          ? isMobileOpen
+            ? "translate-x-0"
+            : "-translate-x-full"
+          : undefined,
         className,
       )}
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
@@ -424,10 +443,10 @@ export function AppSidebar({
       <div
         className={cn(
           "flex shrink-0 border-b border-gray-100 py-5 dark:border-white/[0.06]",
-          !showLabels ? "xl:justify-center" : "justify-start",
+          brandExpanded ? "justify-start" : "xl:justify-center",
         )}
       >
-        {showLabels ? logo : (collapsedLogo ?? logo)}
+        {brandExpanded ? logo : (collapsedLogo ?? logo)}
       </div>
 
       <div className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto py-4 duration-300 ease-linear">
@@ -437,7 +456,7 @@ export function AppSidebar({
             <SidebarSection
               key={section.title}
               section={section}
-              showLabels={showLabels}
+              showLabels={navShowLabels}
               showDivider={index > 0}
             />
           ))}

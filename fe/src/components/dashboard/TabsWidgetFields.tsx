@@ -9,7 +9,7 @@ import { DeAttrForm, DE_INPUT } from "./dashboardInspectorUi";
 import { InspectorNestedSection } from "./inspectorNestedSection";
 import { InspectorPanelSection } from "./inspector-panel-section";
 import { ChartBackgroundStyleFields } from "./chartStyleFields";
-import { InspectorInlineColorRow } from "./inspectorCompact";
+import { INSPECTOR_HINT, InspectorSubtleEmpty, InspectorInlineColorRow } from "./inspectorCompact";
 import { DeProgressSlider } from "./deAttrSlider";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 
@@ -53,7 +53,11 @@ export function TabsPaneList({
   onSelectChild,
 }: TabsPaneListProps) {
   const cfg = widget.tabsConfig;
-  const totalChildren = cfg.panes.reduce((sum, pane) => sum + pane.childWidgetIds.length, 0);
+  const paneSummaries = cfg.panes.map((pane) => ({
+    pane,
+    children: getTabChildWidgets(allWidgets, widget.id, pane.id),
+  }));
+  const totalChildren = paneSummaries.reduce((sum, item) => sum + item.children.length, 0);
 
   const updatePaneTitle = (paneId: string, title: string) => {
     onChange({
@@ -110,42 +114,43 @@ export function TabsPaneList({
         ) : null
       }
     >
-      <div className="space-y-1.5">
-        {cfg.panes.map((pane, index) => {
+      <div className="space-y-1">
+        {paneSummaries.map(({ pane, children }, index) => {
           const active = pane.id === cfg.activePaneId;
-          const childCount = pane.childWidgetIds.length;
-          const children = getTabChildWidgets(allWidgets, widget.id, pane.id);
+          const childCount = children.length;
+          const showChildren =
+            children.length > 0 && (active || children.some((child) => child.id === selectedChildId));
           return (
-            <div key={pane.id} className="space-y-1">
+            <div key={pane.id} className="space-y-0.5">
               <div
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border px-2 py-1.5 transition-colors",
+                  "flex items-center gap-1.5 rounded-md border px-1.5 py-1 transition-colors",
                   active
-                    ? "border-brand-200 bg-brand-50/40 dark:border-brand-500/30 dark:bg-brand-500/10"
-                    : "border-gray-200 bg-white dark:border-gray-700 dark:bg-white/[0.02]",
+                    ? "border-brand-200 bg-brand-50/50 dark:border-brand-500/30 dark:bg-brand-500/10"
+                    : "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
                 )}
               >
                 <button
                   type="button"
                   className={cn(
-                    "flex size-6 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold tabular-nums transition-colors",
+                    "flex size-5 shrink-0 items-center justify-center rounded text-[10px] font-semibold tabular-nums transition-colors",
                     active
                       ? "bg-brand-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15",
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-300",
                   )}
                   aria-label={`切换到页签 ${index + 1}`}
                   aria-pressed={active}
                   onPointerDown={(event) => {
-                  event.stopPropagation();
-                  event.preventDefault();
-                }}
-                onClick={() => setActivePane(pane.id)}
+                    event.stopPropagation();
+                    event.preventDefault();
+                  }}
+                  onClick={() => setActivePane(pane.id)}
                 >
                   {index + 1}
                 </button>
                 <Input
                   id={`tab-pane-${pane.id}`}
-                  className={cn(DE_INPUT, "h-8 min-w-0 flex-1")}
+                  className={cn(DE_INPUT, "h-7 min-w-0 flex-1 px-2 text-[11px]")}
                   value={pane.title}
                   onChange={(e) => updatePaneTitle(pane.id, e.target.value)}
                   aria-label={`页签 ${index + 1} 名称`}
@@ -154,9 +159,10 @@ export function TabsPaneList({
                   <button
                     type="button"
                     className={cn(
-                      "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] tabular-nums transition-colors",
-                      "bg-gray-100 text-gray-600 hover:bg-brand-50 hover:text-brand-600",
-                      "dark:bg-white/10 dark:text-gray-300 dark:hover:bg-brand-500/15 dark:hover:text-brand-400",
+                      "shrink-0 rounded px-1 py-0.5 text-[10px] tabular-nums transition-colors",
+                      active
+                        ? "bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"
+                        : "text-gray-400 hover:text-brand-600 dark:text-gray-500 dark:hover:text-brand-400",
                     )}
                     aria-label={`查看页签 ${pane.title} 内的 ${childCount} 个组件`}
                     onPointerDown={(event) => {
@@ -165,16 +171,11 @@ export function TabsPaneList({
                     }}
                     onClick={() => focusChild(pane.id, children[0]!.id)}
                   >
-                    {childCount} 项
+                    {childCount}
                   </button>
                 ) : (
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] tabular-nums",
-                      "text-gray-400 dark:text-gray-500",
-                    )}
-                  >
-                    {childCount} 项
+                  <span className="shrink-0 px-1 text-[10px] tabular-nums text-gray-300 dark:text-gray-600">
+                    0
                   </span>
                 )}
                 {cfg.panes.length > 1 ? (
@@ -182,30 +183,32 @@ export function TabsPaneList({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="size-7 shrink-0 text-gray-400 hover:text-error-500"
+                    className="size-6 shrink-0 text-gray-400 hover:text-error-500"
                     aria-label={`删除页签 ${pane.title}`}
                     onClick={() => removePane(pane.id)}
                   >
-                    <Trash2 className="size-3.5" />
+                    <Trash2 className="size-3" />
                   </IconButton>
                 ) : null}
               </div>
-              {children.length > 0 ? (
-                <div className="space-y-0.5 pl-2">
+              {showChildren ? (
+                <div className="ml-2 space-y-0.5 border-l border-gray-200 pl-1.5 dark:border-gray-800">
                   {children.map((child) => {
                     const childSelected = selectedChildId === child.id;
                     const typeLabel = tabChildTypeLabel(child);
+                    const displayTitle = child.title?.trim() || typeLabel;
+                    const showTypeBadge = displayTitle !== typeLabel;
                     return (
                       <button
                         key={child.id}
                         type="button"
                         className={cn(
-                          "flex w-full min-w-0 items-center gap-2 rounded-md border px-2 py-1.5 text-left transition-colors",
+                          "flex w-full min-w-0 items-center gap-1.5 rounded px-1.5 py-1 text-left transition-colors",
                           childSelected
-                            ? "border-brand-200 bg-brand-50/70 dark:border-brand-500/30 dark:bg-brand-500/10"
-                            : "border-transparent bg-gray-50/80 hover:border-gray-200 hover:bg-white dark:bg-white/[0.03] dark:hover:border-gray-700 dark:hover:bg-white/[0.05]",
+                            ? "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
+                            : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04]",
                         )}
-                        aria-label={`配置 ${child.title || typeLabel}`}
+                        aria-label={`配置 ${displayTitle}`}
                         aria-current={childSelected ? "true" : undefined}
                         onPointerDown={(event) => {
                           event.stopPropagation();
@@ -214,16 +217,20 @@ export function TabsPaneList({
                         onClick={() => focusChild(pane.id, child.id)}
                       >
                         <TabChildTypeIcon widget={child} />
-                        <span className="min-w-0 flex-1 truncate text-theme-xs font-medium text-gray-800 dark:text-white/90">
-                          {child.title || typeLabel}
+                        <span className="min-w-0 flex-1 truncate text-[11px] font-medium">
+                          {displayTitle}
                         </span>
-                        <span className="shrink-0 text-[10px] text-gray-400 dark:text-gray-500">
-                          {typeLabel}
-                        </span>
+                        {showTypeBadge ? (
+                          <span className="shrink-0 text-[9px] text-gray-400 dark:text-gray-500">
+                            {typeLabel}
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}
                 </div>
+              ) : childCount === 0 && active ? (
+                <InspectorSubtleEmpty message="拖入组件或从工具栏添加" className="ml-2" />
               ) : null}
             </div>
           );

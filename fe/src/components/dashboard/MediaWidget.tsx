@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ExternalLink, GripVertical, ImageIcon, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { TabChildWidgetChrome } from "./TabChildWidgetChrome";
+import { TabNestedDragRail } from "./TabNestedDragRail";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { LayoutWidget, MediaWidgetConfig } from "./layoutUtils";
@@ -12,6 +12,7 @@ type MediaWidgetProps = {
   widget: LayoutWidget & { mediaConfig: MediaWidgetConfig };
   mode: "edit" | "view";
   shell?: DashboardWidgetShell;
+  nested?: boolean;
   selected?: boolean;
   onSelect?: () => void;
   onDelete?: (id: string) => void;
@@ -22,6 +23,7 @@ export function MediaWidget({
   widget,
   mode,
   shell = "grid",
+  nested = false,
   selected = false,
   onSelect,
   onDelete,
@@ -30,9 +32,8 @@ export function MediaWidget({
   const cfg = normalizeMediaConfig(widget.mediaConfig);
   const [broken, setBroken] = useState(false);
   const showImage = cfg.url.trim() && !broken;
-  const inShapeShell = shell === "shape";
-  const inTabChildShell = shell === "tab-child";
   const showGridChrome = shell === "grid";
+  const inShapeShell = shell === "shape";
   const linkUrl = cfg.linkUrl?.trim();
   const isViewLink = mode === "view" && Boolean(linkUrl);
 
@@ -89,6 +90,7 @@ export function MediaWidget({
       className={cn(
         "dashboard-no-drag relative flex min-h-0 flex-1 items-center justify-center overflow-hidden p-2",
         mode === "edit" && "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
+        nested && mode === "edit" && "pl-7",
       )}
       style={{
         backgroundColor: cfg.background?.trim() || undefined,
@@ -98,21 +100,14 @@ export function MediaWidget({
     </div>
   );
 
-  if (inTabChildShell) {
+  if (inShapeShell) {
     return (
-      <TabChildWidgetChrome
-        widgetId={widget.id}
-        title={widget.title}
-        selected={selected}
-        mode={mode}
-        icon={ImageIcon}
-        editable={Boolean(onTitleChange)}
-        onTitleChange={onTitleChange ? (next) => onTitleChange(widget.id, next) : undefined}
-        onDelete={onDelete ? () => onDelete(widget.id) : undefined}
-        onSelect={onSelect}
-      >
+      <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+        {nested && mode === "edit" ? (
+          <TabNestedDragRail widgetId={widget.id} className="h-full w-7" />
+        ) : null}
         {body}
-      </TabChildWidgetChrome>
+      </div>
     );
   }
 
@@ -164,29 +159,7 @@ export function MediaWidget({
           ) : null}
         </div>
       ) : null}
-
-      <div
-        role={mode === "edit" ? "button" : undefined}
-        tabIndex={mode === "edit" ? 0 : undefined}
-        onClick={
-          mode === "edit"
-            ? (event) => {
-                event.stopPropagation();
-                onSelect?.();
-              }
-            : undefined
-        }
-        onPointerDown={mode === "edit" ? (event) => event.stopPropagation() : undefined}
-        className={cn(
-          "dashboard-no-drag relative flex min-h-0 flex-1 items-center justify-center overflow-hidden p-2",
-          mode === "edit" && "cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
-        )}
-        style={{
-          backgroundColor: cfg.background?.trim() || undefined,
-        }}
-      >
-        {content}
-      </div>
+      {body}
     </div>
   );
 }

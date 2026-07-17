@@ -22,7 +22,7 @@ import { FilterWidget } from "./FilterWidget";
 import { TextWidget } from "./TextWidget";
 import { MediaWidget } from "./MediaWidget";
 import { TabsWidget } from "./TabsWidget";
-import { TabChildWidgetChrome } from "./TabChildWidgetChrome";
+import { TabNestedDragRail } from "./TabNestedDragRail";
 import type {
   FilterWidgetConfig,
   LayoutWidget,
@@ -87,6 +87,8 @@ type DashboardWidgetProps = {
   dashboardStyle?: DashboardStyleConfig;
   /** DataEase isPlayer：交互中暂停 React 尺寸 props，由 DOM 百分比跟手 */
   suspendLiveResize?: boolean;
+  /** Tab 内嵌子组件：与顶层 shape 同壳层，左侧拖出把手回画布 */
+  nested?: boolean;
 };
 
 function WidgetPendingPreview({
@@ -163,6 +165,7 @@ export function DashboardWidget({
   onTextConfigChange,
   dashboardStyle,
   suspendLiveResize = false,
+  nested = false,
 }: DashboardWidgetProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const canvasScale = usePixelCanvasScale();
@@ -175,6 +178,7 @@ export function DashboardWidget({
         widget={widget as LayoutWidget & { filterConfig: FilterWidgetConfig }}
         mode={mode}
         shell={shell}
+        nested={nested}
         selected={selected}
         value={filterValue ?? widget.filterConfig.defaultValue ?? ""}
         onValueChange={(filterId, value) => onFilterValueChange?.(filterId, value)}
@@ -192,6 +196,7 @@ export function DashboardWidget({
         widget={widget as LayoutWidget & { textConfig: TextWidgetConfig }}
         mode={mode}
         shell={shell}
+        nested={nested}
         selected={selected}
         onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
         onTitleChange={onTitleChange}
@@ -207,6 +212,7 @@ export function DashboardWidget({
         widget={widget as LayoutWidget & { mediaConfig: MediaWidgetConfig }}
         mode={mode}
         shell={shell}
+        nested={nested}
         selected={selected}
         onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
         onTitleChange={onTitleChange}
@@ -242,7 +248,6 @@ export function DashboardWidget({
   const typeLabel = WIDGET_CHART_LABELS[chartType] ?? chartType;
   const configReady = isWidgetConfigReady(widget.chartConfig);
   const inShapeShell = shell === "shape";
-  const inTabChildShell = shell === "tab-child";
   const sizeW = gridSize?.w ?? widget.colSpan;
   const sizeH = gridSize?.h ?? widget.rowSpan;
   const sizeLabel =
@@ -295,6 +300,12 @@ export function DashboardWidget({
         queryLimit={queryLimit}
         paletteId={dashboardStyle?.paletteId}
         paletteColors={dashboardStyle?.paletteColors}
+        dashboardColorDefaults={{
+          paletteOpacity: dashboardStyle?.paletteOpacity,
+          seriesGradient: dashboardStyle?.seriesGradient,
+          chartLabelShow: dashboardStyle?.chartLabelShow,
+          tooltipShow: dashboardStyle?.tooltipShow,
+        }}
         numberFormat={dashboardStyle?.numberFormat}
         colorScheme={dashboardStyle?.colorScheme ?? "light"}
         widgetShellColor={shellColor}
@@ -304,27 +315,12 @@ export function DashboardWidget({
       />
     ) : null;
 
-  if (inTabChildShell) {
-    return (
-      <TabChildWidgetChrome
-        widgetId={widget.id}
-        title={widget.title}
-        selected={selected}
-        mode={mode}
-        icon={Icon}
-        editable={Boolean(onTitleChange)}
-        onTitleChange={onTitleChange ? (next) => onTitleChange(widget.id, next) : undefined}
-        onDelete={onDelete ? () => onDelete(widget.id) : undefined}
-        onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
-      >
-        <div className="flex min-h-0 flex-1 flex-col p-2">{chartBody}</div>
-      </TabChildWidgetChrome>
-    );
-  }
-
   if (inShapeShell) {
     return (
-      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+        {nested && mode === "edit" ? (
+          <TabNestedDragRail widgetId={widget.id} className="h-full w-7" />
+        ) : null}
         <div
           role={mode === "edit" ? "button" : undefined}
           tabIndex={mode === "edit" ? 0 : undefined}
@@ -349,6 +345,7 @@ export function DashboardWidget({
           className={cn(
             "dashboard-no-drag flex min-h-0 flex-1 flex-col",
             mode === "edit" && "cursor-pointer",
+            nested && mode === "edit" && "pl-7",
           )}
         >
           {chartBody}

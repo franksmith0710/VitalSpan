@@ -2,13 +2,13 @@ import { ChartFieldSlot } from "./ChartFieldSlot";
 import { chartDataSlotBlueprint } from "./chartFieldSlots";
 import { useChartInspector } from "./chartInspectorContext";
 import type { SlotTarget } from "./chartInspectorTypes";
-import { DEMO_MAP_DRILL_SQL, DEMO_MAP_JOIN_SQL, mapChartFieldHint } from "@/lib/mapChartDataHint";
+import { mapChartFieldHint } from "@/lib/mapChartDataHint";
 
 function isActiveSlot(a: SlotTarget | null, b: SlotTarget): boolean {
   return a?.kind === b.kind && a?.index === b.index;
 }
 
-export function ChartDataSlots() {
+export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean }) {
   const {
     cfg,
     onChange,
@@ -55,16 +55,12 @@ export function ChartDataSlots() {
           {fieldAssignError}
         </p>
       ) : null}
-      {mapHint ? (
+      {mapHint && !hideMapHint ? (
         <div className="space-y-1.5 rounded-md border border-brand-500/20 bg-brand-500/5 px-2 py-1.5 text-[10px] leading-snug text-gray-600 dark:text-gray-400">
-          <p>{mapHint}</p>
-          {!columns.some((c) => /^(region|province|name)$/i.test(c)) ? (
+          <p>{mapHint.message}</p>
+          {mapHint.sampleSql ? (
             <pre className="overflow-x-auto whitespace-pre-wrap rounded bg-black/5 p-1.5 font-mono text-[9px] text-gray-700 dark:bg-white/5 dark:text-gray-300">
-              {DEMO_MAP_JOIN_SQL}
-            </pre>
-          ) : !columns.some((c) => /city/i.test(c)) ? (
-            <pre className="overflow-x-auto whitespace-pre-wrap rounded bg-black/5 p-1.5 font-mono text-[9px] text-gray-700 dark:bg-white/5 dark:text-gray-300">
-              {DEMO_MAP_DRILL_SQL}
+              {mapHint.sampleSql}
             </pre>
           ) : null}
         </div>
@@ -79,6 +75,7 @@ export function ChartDataSlots() {
           <ChartFieldSlot
             key={`${slot.kind}-${slot.index}-${slot.label}`}
             label={slot.label}
+            required={slot.required !== false}
             optional={slot.required === false}
             fieldName={rawField}
             fieldSuffix={rawField && slot.showAggregation ? "求和" : undefined}

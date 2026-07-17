@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyPixelInteraction,
+  clientPointToCanvasFromStage,
   RESIZE_CURSORS,
   resolvePixelCanvasMeasureElement,
   pixelShapeZIndex,
@@ -20,6 +21,24 @@ const rect: PixelRect = { x: 100, y: 80, width: 300, height: 200 };
 describe("pixel canvas geometry", () => {
   it("converts screen movement into canonical canvas coordinates", () => {
     expect(screenDeltaToCanvas({ x: 90, y: 45 }, 0.5)).toEqual({ x: 180, y: 90 });
+  });
+
+  it("maps screen coordinates from scaled stage bounding rect", () => {
+    const stage = {
+      getBoundingClientRect: () =>
+        ({
+          left: 120,
+          top: 80,
+          width: 720,
+          height: 450,
+          right: 840,
+          bottom: 530,
+          x: 120,
+          y: 80,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    };
+    expect(clientPointToCanvasFromStage(stage, 220, 180, 0.5)).toEqual({ x: 200, y: 200 });
   });
 
   it.each([
@@ -47,6 +66,7 @@ describe("pixel canvas geometry", () => {
       contentHeight: 420,
       stageLeft: 0,
       centerContent: false,
+      scrollX: false,
     });
   });
 
@@ -56,6 +76,7 @@ describe("pixel canvas geometry", () => {
     expect(metrics.contentHeight).toBe(699);
     expect(metrics.contentWidth).toBe(740);
     expect(metrics.centerContent).toBe(false);
+    expect(metrics.scrollX).toBe(false);
   });
 
   it("uses width-fit scale and ceil height when content exceeds the viewport", () => {
@@ -64,6 +85,20 @@ describe("pixel canvas geometry", () => {
     expect(metrics.contentWidth).toBe(800);
     expect(metrics.contentHeight).toBe(Math.ceil((2000 * 800) / 1440));
     expect(metrics.centerContent).toBe(false);
+    expect(metrics.scrollX).toBe(false);
+  });
+
+  it("clamps edit scale floor and enables horizontal scroll when host is very narrow", () => {
+    const metrics = scaledCanvasMetrics(855, 354, 2176, 900, 900, 0, "canvas", 0.5);
+    expect(metrics.scale).toBe(0.5);
+    expect(metrics.contentWidth).toBe(Math.ceil(2176 * 0.5));
+    expect(metrics.scrollX).toBe(true);
+  });
+
+  it("does not clamp when raw scale is above edit floor", () => {
+    const metrics = scaledCanvasMetrics(855, 354, 1440, 900, 900, 0, "canvas", 0.5);
+    expect(metrics.scale).toBeCloseTo(855 / 1440, 5);
+    expect(metrics.scrollX).toBe(false);
   });
 
   it("letterboxes component scale without leaving a wide empty content strip", () => {
@@ -73,6 +108,7 @@ describe("pixel canvas geometry", () => {
     expect(metrics.contentHeight).toBe(Math.ceil(400));
     expect(metrics.centerContent).toBe(true);
     expect(metrics.stageLeft).toBe(0);
+    expect(metrics.scrollX).toBe(false);
   });
 
   it("snaps component width when within sub-pixel gap of the host", () => {

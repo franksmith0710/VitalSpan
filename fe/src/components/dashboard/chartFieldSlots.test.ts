@@ -48,12 +48,11 @@ describe("chartFieldSlots", () => {
     });
   });
 
-  it("T-INSP-DE-08: map chart exposes province/city/district drill slots", () => {
+  it("T-INSP-DE-08: map chart matches DE slot order", () => {
     expect(chartDataSlotBlueprint("map").map((s) => s.label)).toEqual([
-      "地理 / 维度",
-      "钻取 / 市级",
-      "钻取 / 区县",
-      "数值 / 指标",
+      "地区 / 维度",
+      "数据 / 指标",
+      "钻取 / 维度",
     ]);
   });
 });

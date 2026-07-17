@@ -18,7 +18,13 @@ FROM sales s
 JOIN regions r ON s.region_id = r.id
 GROUP BY r.name`;
 
-export function mapChartFieldHint(columns: string[]): string | null {
+export type MapChartFieldHint = {
+  message: string;
+  /** 右栏展示的示例 SQL；null 表示仅文案、不展示代码块 */
+  sampleSql: string | null;
+};
+
+export function mapChartFieldHint(columns: string[]): MapChartFieldHint | null {
   const normalized = columns.map((c) => c.trim()).filter(Boolean);
   if (normalized.length === 0) return null;
 
@@ -27,9 +33,12 @@ export function mapChartFieldHint(columns: string[]): string | null {
   const hasDistrict = normalized.some((c) => /district|区县/i.test(c));
 
   if (hasProvince && hasCity) {
-    return hasDistrict
-      ? "已具备省/市/区县字段：拖入「地理」+「钻取/市级」+「钻取/区县」，预览态点击地图下钻。"
-      : "已具备省/市字段：拖入「地理」+「钻取/市级」可实现省→市下钻。";
+    return {
+      message: hasDistrict
+        ? "已具备省/市/区县字段：拖入对应槽位，预览态点击地图下钻。"
+        : "已具备省/市字段：预览态点击省可下钻到市级地图。",
+      sampleSql: null,
+    };
   }
 
   const hasGeoName = normalized.some(
@@ -40,8 +49,16 @@ export function mapChartFieldHint(columns: string[]): string | null {
   if (hasGeoName) return null;
 
   if (normalized.includes("region_id")) {
-    return "演示库可直接拖入 region_id（5–9 映射省级名称）；省→市下钻请用下方演示 SQL，并配置 province / city / district。";
+    return {
+      message:
+        "region_id 仅支持省级着色（5–9 映射到上海/北京/广东等）。市/区县下钻需 province、city、district 字段，请换用静态演示 SQL。",
+      sampleSql: DEMO_MAP_DRILL_SQL,
+    };
   }
 
-  return "地图支持省→市→区县下钻：配置 province、city、district，或使用下方演示 SQL。";
+  return {
+    message:
+      "省级：34 省离线底图。市：33 省可下钻；区县：仅部分城市已打包边界。请用下方 SQL 配置 province / city / district。",
+    sampleSql: DEMO_MAP_DRILL_SQL,
+  };
 }

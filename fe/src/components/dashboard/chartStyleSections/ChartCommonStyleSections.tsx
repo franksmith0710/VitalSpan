@@ -13,15 +13,17 @@ import { formatMetricValue } from "../dashboardStyleConfig";
 import { ChartBackgroundStyleFields } from "../chartStyleFields";
 import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "../chartInspectorDeFields";
 import { ChartDeSliderField } from "../deAttrSlider";
-import { ChartPaletteConfigFields } from "../chartPaletteConfigFields";
+import { ChartPaletteDeParityFields } from "../chartPaletteDeParityFields";
+import { ChartTableColorFields } from "../chartTableColorFields";
 import { useChartInspector } from "../chartInspectorContext";
 import {
   patchChartShowLabel,
   readChartDeStyle,
-  readChartLegendVisible,
   readChartLegendPosition,
+  readChartLegendVisible,
   readChartShowLabel,
   readChartTitleVisible,
+  readChartTooltipShow,
   type ChartDeStyle,
 } from "@/lib/chartDeStyle";
 import type { WidgetStyleConfig } from "../dashboardStyleConfig";
@@ -31,20 +33,27 @@ import { ChartInspectorSection, INSPECTOR_SELECT, InspectorInlineColorRow } from
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 
 export function ChartPaletteStyleSection() {
-  const { cfg, patchDeStyle } = useChartInspector();
+  const { cfg, patchDeStyle, patchDeStyleNested, onChange } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
+  const caps = chartInspectorCapabilities(cfg.chartType);
+  const isTable = cfg.chartType === "table";
 
   const patchPaletteOpacity = (opacityPercent: number) =>
     patchDeStyle({ paletteOpacity: opacityPercent / 100 });
 
   return (
     <ChartInspectorSection title="图表配色" defaultOpen>
-      <ChartPaletteConfigFields
+      <ChartPaletteDeParityFields
         dense
         showInherit
-        className="pb-0"
         paletteId={deStyle.paletteId}
         paletteOpacity={deStyle.paletteOpacity}
+        seriesGradient={deStyle.seriesGradient ?? false}
+        labelShow={readChartShowLabel(cfg)}
+        tooltipShow={readChartTooltipShow(cfg)}
+        showLabelToggle={caps.label}
+        showTooltipToggle={!isTable}
+        showGradientToggle={!isTable}
         onPaletteChange={(paletteId) =>
           patchDeStyle({
             paletteId,
@@ -53,6 +62,10 @@ export function ChartPaletteStyleSection() {
         }
         onOpacityChange={patchPaletteOpacity}
         onOpacityPreview={patchPaletteOpacity}
+        onSeriesGradientChange={(enabled) => patchDeStyle({ seriesGradient: enabled })}
+        onLabelShowChange={(show) => onChange(patchChartShowLabel(cfg, show))}
+        onTooltipShowChange={(show) => patchDeStyleNested("tooltip", { show })}
+        tableColorSlot={isTable ? <ChartTableColorFields /> : undefined}
       />
     </ChartInspectorSection>
   );
@@ -261,24 +274,13 @@ export function ChartLabelStyleSection() {
 export function ChartBackgroundStyleSection() {
   const { cfg, patchDeStyleNested } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
-  const showBackground = deStyle.background?.backgroundShow !== false;
   const patchBackground = (patch: Partial<WidgetStyleConfig>) =>
     patchDeStyleNested("background", patch);
   const patchBorder = (patch: Partial<NonNullable<ChartDeStyle["border"]>>) =>
     patchDeStyleNested("border", patch);
 
   return (
-    <ChartInspectorSection
-      title="背景"
-      action={
-        <Switch
-          checked={showBackground}
-          onCheckedChange={(show) => patchBackground({ backgroundShow: show })}
-          aria-label="背景"
-          className="scale-90"
-        />
-      }
-    >
+    <ChartInspectorSection title="背景">
       <ChartBackgroundStyleFields
         value={deStyle.background ?? {}}
         border={deStyle.border}

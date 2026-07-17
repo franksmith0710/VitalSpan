@@ -69,10 +69,15 @@ export type ScaledCanvasMetrics = {
   stageLeft: number;
   /** Center content block when letterboxed (component scale mode) */
   centerContent: boolean;
+  /** 缩放触底后内容宽于宿主，需横向滚动 */
+  scrollX: boolean;
 };
 
 /** DE 画板规范高度；缩放比例按设计尺寸而非内容撑开后的高度 */
 export const CANVAS_SCALE_DESIGN_HEIGHT = 900;
+
+/** 编辑态画布最小缩放，避免窄栏挤压时组件标题/操作条与图表严重叠压 */
+export const PIXEL_CANVAS_EDIT_MIN_SCALE = 0.5;
 
 const SCALE_HEIGHT_FLOOR = 320;
 
@@ -106,6 +111,7 @@ export function scaledCanvasMetrics(
   contentCanvasHeight: number,
   gutter = 0,
   scaleMode: "canvas" | "component" = "canvas",
+  minScale = 0,
 ): ScaledCanvasMetrics {
   const availableWidth = Math.max(0, hostWidth - gutter);
   const availableHeight = Math.max(0, hostHeight);
@@ -114,10 +120,15 @@ export function scaledCanvasMetrics(
   const safeContentHeight = Math.max(contentCanvasHeight, safeDesignHeight);
   const scaleX = availableWidth / safeCanvasWidth;
   const scaleY = availableHeight / safeDesignHeight;
-  const scale = scaleMode === "component" ? Math.min(scaleX, scaleY) : scaleX;
+  const rawScale = scaleMode === "component" ? Math.min(scaleX, scaleY) : scaleX;
+  const scale =
+    minScale > 0 && rawScale < minScale ? minScale : rawScale;
+  const scrollX = scaleMode === "canvas" && minScale > 0 && rawScale < minScale;
   const scaledWidth = safeCanvasWidth * scale;
   const scaledContentHeight = safeContentHeight * scale;
-  const contentWidth = snapScaledContentWidth(scaledWidth, availableWidth, scaleMode);
+  const contentWidth = scrollX
+    ? Math.ceil(scaledWidth)
+    : snapScaledContentWidth(scaledWidth, availableWidth, scaleMode);
 
   if (scaleMode === "component") {
     return {
@@ -126,6 +137,7 @@ export function scaledCanvasMetrics(
       contentHeight: Math.ceil(scaledContentHeight),
       stageLeft: 0,
       centerContent: contentWidth < availableWidth - 0.5,
+      scrollX: false,
     };
   }
 
@@ -137,6 +149,7 @@ export function scaledCanvasMetrics(
     contentHeight,
     stageLeft: gutter,
     centerContent: false,
+    scrollX,
   };
 }
 
@@ -300,6 +313,31 @@ export function clientPointToCanvas(
     x: (clientX - rect.left + host.scrollLeft - gutter) / safeScale,
     y: (clientY - rect.top + host.scrollTop) / safeScale,
   };
+}
+
+/**
+ * 屏幕坐标 → 画布逻辑坐标（以已 scale 的 stage 外框为准）。
+ * 自动吸收 scroll、居中留白、stageLeft 与 transform，避免 host 手算偏移漂移。
+ */
+export function clientPointToCanvasFromStage(
+  stage: Pick<HTMLElement, "getBoundingClientRect">,
+  clientX: number,
+  clientY: number,
+  scale: number,
+): PixelPoint {
+  const safeScale = scale > 0 ? scale : 1;
+  const rect = stage.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) / safeScale,
+    y: (clientY - rect.top) / safeScale,
+  };
+}
+
+/** 测量可用宽度：优先布局外框，避免 padding-right 藏条缝导致 scale 与视觉不一致 */
+export function resolvePixelCanvasMeasureWidth(element: HTMLElement): number {
+  const rect = element.getBoundingClientRect();
+  if (rect.width > 0) return rect.width;
+  return element.clientWidth;
 }
 
 export type PixelInteractionOptions = {

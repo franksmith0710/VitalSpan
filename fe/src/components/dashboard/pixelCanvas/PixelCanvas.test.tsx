@@ -432,6 +432,36 @@ describe("PixelCanvas", () => {
     },
   );
 
+  it("edit mode fills host width even when scaleMode is component", async () => {
+    const hostWidth = 1189;
+    const hostHeight = 400;
+    render(
+      <PixelCanvas
+        mode="edit"
+        scaleMode="component"
+        layout={layout}
+        selectedIds={new Set(["w1"])}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const host = screen.getByTestId("pixel-canvas-host");
+    Object.defineProperties(host, {
+      clientWidth: { configurable: true, value: hostWidth },
+      clientHeight: { configurable: true, value: hostHeight },
+    });
+    await act(async () => {
+      triggerResizeObservers();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
+
+    const expectedScale = hostWidth / 1440;
+    expect(host).toHaveAttribute("data-pixel-canvas-scale", String(expectedScale));
+    expect(host.className).not.toMatch(/items-center/);
+    expect(screen.getByTestId("pixel-canvas-content")).toHaveStyle({
+      width: `${hostWidth}px`,
+    });
+  });
+
   it("reverts to start position when released within collision buffer", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",

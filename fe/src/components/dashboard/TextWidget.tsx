@@ -4,6 +4,7 @@ import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { RichTextEditor } from "./RichTextEditor";
+import { TabNestedDragRail } from "./TabNestedDragRail";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import { isRichTextEmpty, textConfigToHtml } from "./richTextHtml";
 import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
@@ -13,6 +14,7 @@ type TextWidgetProps = {
   widget: LayoutWidget & { textConfig: TextWidgetConfig };
   mode: "edit" | "view";
   shell?: DashboardWidgetShell;
+  nested?: boolean;
   selected?: boolean;
   onSelect?: () => void;
   onDelete?: (id: string) => void;
@@ -24,6 +26,7 @@ export function TextWidget({
   widget,
   mode,
   shell = "grid",
+  nested = false,
   selected = false,
   onSelect,
   onDelete,
@@ -53,9 +56,9 @@ export function TextWidget({
     setIsEditing(false);
   };
 
-  const showGridChrome = !inShapeShell;
+  const showGridChrome = shell === "grid";
 
-  return (
+  const content = (
     <div
       ref={widgetRef}
       className={cn(
@@ -68,6 +71,7 @@ export function TextWidget({
           selected &&
           "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40",
         showGridChrome && !isEditing && !selected && "border-gray-200 dark:border-gray-800",
+        nested && inShapeShell && mode === "edit" && "pl-7",
       )}
     >
       {showGridChrome && mode === "edit" && !isEditing ? (
@@ -167,4 +171,17 @@ export function TextWidget({
       </div>
     </div>
   );
+
+  if (inShapeShell && nested) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+        {mode === "edit" ? (
+          <TabNestedDragRail widgetId={widget.id} className="h-full w-7" />
+        ) : null}
+        {content}
+      </div>
+    );
+  }
+
+  return content;
 }

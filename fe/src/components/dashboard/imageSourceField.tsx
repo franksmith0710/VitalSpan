@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, Link2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import {
   isImageSourceValue,
   readImageFileAsDataUrl,
 } from "./imageSourceUtils";
+import { ImagePreviewCard, ImageUploadDropZone, RailDivider } from "./imageSourceFieldRail";
 
 export type ImageSourceFieldProps = {
   value: string;
@@ -19,7 +20,7 @@ export type ImageSourceFieldProps = {
   showPreview?: boolean;
   pickerLabel?: string;
   allowClear?: boolean;
-  /** inline：输入框 + 按钮横排；rail：432px 配置栏纵向紧凑布局（无图标按钮） */
+  /** inline：输入框 + 按钮横排；rail：432px 配置栏纵向紧凑布局 */
   variant?: "inline" | "rail";
 };
 
@@ -38,10 +39,7 @@ function useImageSourceFieldState(
     if (!isLocal) setLocalName(null);
   }, [isLocal]);
 
-  const handleFilePick = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
+  const processFile = async (file: File) => {
     try {
       const dataUrl = await readImageFileAsDataUrl(file);
       setLocalName(file.name);
@@ -50,6 +48,13 @@ function useImageSourceFieldState(
     } catch (err) {
       setError(err instanceof Error ? err.message : "读取图片失败");
     }
+  };
+
+  const handleFilePick = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    await processFile(file);
   };
 
   const clearValue = () => {
@@ -68,11 +73,41 @@ function useImageSourceFieldState(
     previewUrl,
     hasPreview,
     handleFilePick,
+    processFile,
     clearValue,
     openFilePicker,
     setError,
     setLocalName,
   };
+}
+
+function HiddenFileInput({
+  fileRef,
+  pickerLabel,
+  onChange,
+}: {
+  fileRef: React.RefObject<HTMLInputElement | null>;
+  pickerLabel: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <input
+      ref={fileRef}
+      type="file"
+      accept={IMAGE_SOURCE_ACCEPT}
+      className="sr-only"
+      aria-label={pickerLabel}
+      onChange={onChange}
+    />
+  );
+}
+
+function FieldError({ error }: { error: string }) {
+  return (
+    <p className="text-theme-xs text-error-600 dark:text-error-400" role="alert">
+      {error}
+    </p>
+  );
 }
 
 /** 图片地址输入：支持 https 链接 + 系统文件选择（转 data URL 本地预览） */
@@ -96,6 +131,7 @@ export function ImageSourceField({
     previewUrl,
     hasPreview,
     handleFilePick,
+    processFile,
     clearValue,
     openFilePicker,
     setError,
@@ -103,83 +139,70 @@ export function ImageSourceField({
   } = useImageSourceFieldState(value, onChange);
 
   const railPlaceholder = isLocal
-    ? `已选择：${localName ?? "本地图片"}`
-    : (placeholder === "输入链接或选择本地图片" ? "粘贴图片链接" : placeholder);
+    ? "已选择本地图片，可在下方替换"
+    : placeholder === "输入链接或选择本地图片"
+      ? "粘贴图片 HTTPS 链接"
+      : placeholder;
 
-  const fileInput = (
-    <input
-      ref={fileRef}
-      type="file"
-      accept={IMAGE_SOURCE_ACCEPT}
-      className="sr-only"
-      aria-label={pickerLabel}
-      onChange={handleFilePick}
-    />
-  );
+  const showRailPreview = hasPreview && (showPreview || isLocal);
 
   if (variant === "rail") {
+    const previewCaption = isLocal
+      ? (localName ?? "本地图片")
+      : previewUrl.length > 48
+        ? `${previewUrl.slice(0, 48)}…`
+        : previewUrl;
+
     return (
       <div className={cn("space-y-2", className)}>
-        <div className="flex gap-2.5">
-          {showPreview && hasPreview ? (
-            <div
-              className="size-11 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
-              style={{
-                backgroundImage: `url(${previewUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-              role="img"
-              aria-label="图片预览"
-            />
-          ) : null}
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Input
-              id={inputId}
-              className={cn("h-9 w-full", inputClassName)}
-              value={isLocal ? "" : value}
-              readOnly={isLocal}
-              placeholder={railPlaceholder}
-              onChange={(event) => {
-                setError(null);
-                setLocalName(null);
-                const next = event.target.value;
-                onChange(next.trim() || undefined);
-              }}
-            />
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <button
-                type="button"
-                className="text-theme-xs font-medium text-brand-600 transition-colors hover:text-brand-700 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:text-brand-400 dark:hover:text-brand-300"
-                onClick={openFilePicker}
-              >
-                本地上传
-              </button>
-              {allowClear && value.trim() ? (
-                <button
-                  type="button"
-                  className="text-theme-xs text-gray-500 transition-colors hover:text-gray-700 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:text-gray-400 dark:hover:text-gray-300"
-                  onClick={clearValue}
-                >
-                  清除
-                </button>
-              ) : null}
-            </div>
-          </div>
+        <div className="space-y-1">
+          <label
+            htmlFor={inputId}
+            className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 dark:text-gray-400"
+          >
+            <Link2 className="size-3" aria-hidden />
+            图片链接
+          </label>
+          <Input
+            id={inputId}
+            className={cn("h-9 w-full", inputClassName)}
+            value={isLocal ? "" : value}
+            readOnly={isLocal}
+            placeholder={railPlaceholder}
+            onChange={(event) => {
+              setError(null);
+              setLocalName(null);
+              const next = event.target.value;
+              onChange(next.trim() || undefined);
+            }}
+          />
         </div>
-        {fileInput}
-        {error ? (
-          <p className="text-theme-xs text-error-600 dark:text-error-400" role="alert">
-            {error}
-          </p>
-        ) : null}
+
+        <RailDivider />
+
+        {showRailPreview ? (
+          <ImagePreviewCard
+            previewUrl={previewUrl}
+            caption={previewCaption}
+            onReplace={openFilePicker}
+            onClear={allowClear ? clearValue : undefined}
+            allowClear={allowClear}
+          />
+        ) : (
+          <ImageUploadDropZone
+            onOpen={openFilePicker}
+            onFile={(file) => void processFile(file)}
+            hasError={Boolean(error)}
+          />
+        )}
+
+        <HiddenFileInput fileRef={fileRef} pickerLabel={pickerLabel} onChange={handleFilePick} />
+        {error ? <FieldError error={error} /> : null}
       </div>
     );
   }
 
-  const inputPlaceholder = isLocal
-    ? `已选择：${localName ?? "本地图片"}`
-    : placeholder;
+  const inputPlaceholder = isLocal ? `已选择：${localName ?? "本地图片"}` : placeholder;
 
   return (
     <div className={cn("space-y-1.5", className)}>
@@ -206,7 +229,7 @@ export function ImageSourceField({
           <ImagePlus className="size-4 shrink-0" aria-hidden />
           {pickerLabel}
         </Button>
-        {fileInput}
+        <HiddenFileInput fileRef={fileRef} pickerLabel={pickerLabel} onChange={handleFilePick} />
         {allowClear && value.trim() ? (
           <Button
             type="button"
@@ -219,11 +242,7 @@ export function ImageSourceField({
           </Button>
         ) : null}
       </div>
-      {error ? (
-        <p className="text-theme-xs text-error-600 dark:text-error-400" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FieldError error={error} /> : null}
       {showPreview && hasPreview ? (
         <div
           className="h-16 overflow-hidden rounded-md border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"

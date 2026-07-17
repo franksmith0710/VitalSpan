@@ -226,6 +226,8 @@ export function applyDeStyleToEchartsOption(
   dataZoom: boolean,
   options?: {
     showLabel?: boolean;
+    showTooltip?: boolean;
+    seriesGradient?: boolean;
     valueFormat?: NumberFormatConfig;
     layout?: EchartsLayoutContext;
   },
@@ -332,7 +334,11 @@ export function applyDeStyleToEchartsOption(
 
   const showLabel = options?.showLabel ?? false;
   const valueFormat = options?.valueFormat;
-  if (valueFormat) {
+  if (options?.showTooltip === false) {
+    const prevTooltip =
+      next.tooltip && typeof next.tooltip === "object" ? next.tooltip : {};
+    next.tooltip = { ...prevTooltip, show: false };
+  } else if (valueFormat) {
     const prevTooltip =
       next.tooltip && typeof next.tooltip === "object" ? next.tooltip : {};
     next.tooltip = {
@@ -366,6 +372,7 @@ export function applyDeStyleToEchartsOption(
   next = applyEchartsSeriesPresentation(next, {
     embedded: options?.layout?.embedded,
     paletteOpacity: deStyle.paletteOpacity,
+    seriesGradient: options?.seriesGradient ?? deStyle.seriesGradient,
   });
 
   return next;

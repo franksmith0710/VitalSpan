@@ -394,9 +394,10 @@ html.dark {
   line-height: 1.375rem;
 }
 
-/* 像素画布：按 --pixel-canvas-scale 反比补偿，缩放后屏幕字号稳定 */
+/* 像素画布：按 --pixel-canvas-chrome-scale 反比补偿，缩放后屏幕字号稳定 */
 .pixel-canvas-host {
   --pixel-canvas-scale: 1;
+  --pixel-canvas-chrome-scale: var(--pixel-canvas-scale);
   --dw-screen-body: 1rem;
   --dw-screen-caption: 0.875rem;
   --dw-screen-table: 0.9375rem;
@@ -416,97 +417,107 @@ html.dark {
   padding-right: 20px;
 }
 
+.pixel-canvas-host[data-pixel-canvas-mode="edit"] {
+  --pixel-canvas-chrome-scale: max(var(--pixel-canvas-scale), 0.5);
+}
+
+.pixel-canvas-host[data-pixel-canvas-scroll-x="true"] {
+  margin-right: 0;
+  padding-right: 0;
+  scrollbar-width: thin !important;
+}
+
 /* 预览/分享态：内层滚到边界后继续滚动画布 */
 .pixel-canvas-host .dashboard-widget-surface :where(.overflow-auto, .overflow-y-auto) {
   overscroll-behavior-y: auto;
 }
 
 .pixel-canvas-host .dashboard-widget-surface {
-  font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-scale));
-  line-height: calc(1.375rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.375rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .dashboard-widget-surface :where(.text-theme-xs),
 .pixel-canvas-host .dashboard-widget-surface :where(.text-sm) {
-  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-scale));
-  line-height: calc(1.25rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .dashboard-widget-surface :where(.text-theme-sm),
 .pixel-canvas-host .dashboard-widget-surface :where(.text-base) {
-  font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-scale));
-  line-height: calc(1.375rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.375rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .dashboard-widget-surface :where(.text-title-sm) {
-  font-size: calc(0.875rem / var(--pixel-canvas-scale));
-  line-height: calc(1.25rem / var(--pixel-canvas-scale));
+  font-size: calc(0.875rem / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .dashboard-widget-surface :where(label.text-sm) {
-  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-scale));
-  line-height: calc(1.25rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .dashboard-widget-surface .dashboard-chart-table :where(th, td) {
-  font-size: calc(var(--dw-screen-table) / var(--pixel-canvas-scale));
-  line-height: calc(1.375rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-table) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.375rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .dashboard-widget-surface :where(.dw-hint, .dw-rail-tip) {
-  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-scale));
-  line-height: calc(1.25rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host [data-testid^="pixel-shape-actions"] :where(button svg) {
-  width: calc(var(--dw-screen-action-icon) / var(--pixel-canvas-scale));
-  height: calc(var(--dw-screen-action-icon) / var(--pixel-canvas-scale));
+  width: calc(var(--dw-screen-action-icon) / var(--pixel-canvas-chrome-scale));
+  height: calc(var(--dw-screen-action-icon) / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host [data-testid^="pixel-shape-actions"] .dw-rail-tip {
-  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-scale));
-  line-height: calc(1.25rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 /* DataEase shape-inner：标题与图表共享内边距；水平 padding 由 inner 承担 */
 .pixel-canvas-host .pixel-shape-inner .shape-title {
   display: flex;
   align-items: center;
-  min-height: calc(var(--dw-screen-title-height) / var(--pixel-canvas-scale));
-  padding: 0 0 calc(0.25rem / var(--pixel-canvas-scale));
+  min-height: calc(var(--dw-screen-title-height) / var(--pixel-canvas-chrome-scale));
+  padding: 0 0 calc(0.25rem / var(--pixel-canvas-chrome-scale));
   background: transparent;
 }
 
 .pixel-canvas-host .pixel-shape-inner .shape-title :where(.widget-inline-title:not([style*="font-size"])) {
-  font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-scale));
-  line-height: calc(1.375rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.375rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .pixel-shape-inner .shape-remark {
-  padding: 0 0 calc(0.375rem / var(--pixel-canvas-scale));
+  padding: 0 0 calc(0.375rem / var(--pixel-canvas-chrome-scale));
 }
 
 /* DE 默认 inner padding（无 widgetStyle 配置时） */
 .pixel-canvas-host .pixel-shape-inner.dashboard-widget-surface:not([style*="padding"]) {
-  padding: calc(0.6rem / var(--pixel-canvas-scale));
+  padding: calc(0.6rem / var(--pixel-canvas-chrome-scale));
 }
 
 /* 兼容旧选择器：栅格模式仍用 body 级标题 */
 .pixel-canvas-host .pixel-shape-body > .shape-title {
   display: flex;
   align-items: center;
-  min-height: calc(var(--dw-screen-title-height) / var(--pixel-canvas-scale));
-  padding: calc(0.5rem / var(--pixel-canvas-scale)) calc(0.75rem / var(--pixel-canvas-scale))
-    calc(0.25rem / var(--pixel-canvas-scale));
+  min-height: calc(var(--dw-screen-title-height) / var(--pixel-canvas-chrome-scale));
+  padding: calc(0.5rem / var(--pixel-canvas-chrome-scale)) calc(0.75rem / var(--pixel-canvas-chrome-scale))
+    calc(0.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .pixel-shape-body > .shape-title :where(.widget-inline-title:not([style*="font-size"])) {
-  font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-scale));
-  line-height: calc(1.375rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-body) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.375rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .pixel-shape-body > .shape-remark {
-  padding: 0 calc(0.75rem / var(--pixel-canvas-scale)) calc(0.375rem / var(--pixel-canvas-scale));
+  padding: 0 calc(0.75rem / var(--pixel-canvas-chrome-scale)) calc(0.375rem / var(--pixel-canvas-chrome-scale));
 }
 
 .dashboard-grid-edit .pixel-shape-body .shape-title,
@@ -523,14 +534,14 @@ html.dark {
 }
 
 .pixel-canvas-host .pixel-shape-drag-rail {
-  height: calc(var(--dw-screen-rail-height) / var(--pixel-canvas-scale));
-  font-size: calc(var(--dw-screen-rail-text) / var(--pixel-canvas-scale));
-  line-height: calc(1.25rem / var(--pixel-canvas-scale));
+  height: calc(var(--dw-screen-rail-height) / var(--pixel-canvas-chrome-scale));
+  font-size: calc(var(--dw-screen-rail-text) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .pixel-shape-drag-rail :where(svg) {
-  width: calc(1rem / var(--pixel-canvas-scale));
-  height: calc(1rem / var(--pixel-canvas-scale));
+  width: calc(1rem / var(--pixel-canvas-chrome-scale));
+  height: calc(1rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .pixel-shape-drag-edge {
@@ -540,11 +551,11 @@ html.dark {
 }
 
 .pixel-canvas-host .pixel-shape-inner .shape-title.pixel-shape-title-drag {
-  gap: calc(0.25rem / var(--pixel-canvas-scale));
+  gap: calc(0.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .pixel-shape-inner--with-rail {
-  padding-top: calc(var(--dw-screen-rail-height) / var(--pixel-canvas-scale));
+  padding-top: calc(var(--dw-screen-rail-height) / var(--pixel-canvas-chrome-scale));
 }
 
 /* shape-inner：边框由 mergeWidgetShellStyle 内联样式驱动，避免覆盖用户配置 */
@@ -698,7 +709,8 @@ html.dark {
 }
 
 .dashboard-theme-scope[data-canvas-user-bg="true"] .pixel-canvas-host {
-  background-color: transparent;
+  /* 宿主与画板同色铺满，避免按组件比例留白时两侧透出壳层底色 */
+  background-color: var(--dashboard-artboard-bg);
 }
 
 .dashboard-theme-scope:not([data-canvas-user-bg="true"]) [data-testid="pixel-canvas-artboard"] {
@@ -882,13 +894,13 @@ html.admin-fill-lock #root {
 }
 
 .pixel-canvas-host .widget-pending-preview-icon {
-  width: calc(2rem / var(--pixel-canvas-scale));
-  height: calc(2rem / var(--pixel-canvas-scale));
+  width: calc(2rem / var(--pixel-canvas-chrome-scale));
+  height: calc(2rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .widget-pending-preview-icon :where(svg) {
-  width: calc(1rem / var(--pixel-canvas-scale));
-  height: calc(1rem / var(--pixel-canvas-scale));
+  width: calc(1rem / var(--pixel-canvas-chrome-scale));
+  height: calc(1rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tabs-widget-root {
@@ -897,53 +909,53 @@ html.admin-fill-lock #root {
 
 /* Tab 容器：页签栏与投放层按画布缩放反比补偿 */
 .pixel-canvas-host .tabs-widget-root .tabs-widget-tab {
-  min-height: calc(2rem / var(--pixel-canvas-scale));
-  padding: calc(0.375rem / var(--pixel-canvas-scale)) calc(0.75rem / var(--pixel-canvas-scale));
+  min-height: calc(2rem / var(--pixel-canvas-chrome-scale));
+  padding: calc(0.375rem / var(--pixel-canvas-chrome-scale)) calc(0.75rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tabs-widget-root .tabs-widget-tab-count {
-  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tabs-widget-root .tabs-widget-add-btn {
-  width: calc(2rem / var(--pixel-canvas-scale));
-  height: calc(2rem / var(--pixel-canvas-scale));
-  margin-bottom: calc(0.125rem / var(--pixel-canvas-scale));
+  width: calc(2rem / var(--pixel-canvas-chrome-scale));
+  height: calc(2rem / var(--pixel-canvas-chrome-scale));
+  margin-bottom: calc(0.125rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tabs-widget-root .tabs-widget-add-icon {
-  width: calc(1rem / var(--pixel-canvas-scale));
-  height: calc(1rem / var(--pixel-canvas-scale));
+  width: calc(1rem / var(--pixel-canvas-chrome-scale));
+  height: calc(1rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tabs-widget-root .tabs-widget-empty-icon {
-  width: calc(2.5rem / var(--pixel-canvas-scale));
-  height: calc(2.5rem / var(--pixel-canvas-scale));
+  width: calc(2.5rem / var(--pixel-canvas-chrome-scale));
+  height: calc(2.5rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tabs-widget-root .tabs-widget-empty-icon-svg {
-  width: calc(1.25rem / var(--pixel-canvas-scale));
-  height: calc(1.25rem / var(--pixel-canvas-scale));
+  width: calc(1.25rem / var(--pixel-canvas-chrome-scale));
+  height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tabs-widget-root .tabs-widget-drop-icon {
-  width: calc(2.25rem / var(--pixel-canvas-scale));
-  height: calc(2.25rem / var(--pixel-canvas-scale));
+  width: calc(2.25rem / var(--pixel-canvas-chrome-scale));
+  height: calc(2.25rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tabs-widget-root .tabs-widget-drop-icon-svg {
-  width: calc(1.125rem / var(--pixel-canvas-scale));
-  height: calc(1.125rem / var(--pixel-canvas-scale));
+  width: calc(1.125rem / var(--pixel-canvas-chrome-scale));
+  height: calc(1.125rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tabs-widget-drop-layer {
-  border-width: calc(2px / var(--pixel-canvas-scale));
+  border-width: calc(2px / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-host .tab-palette-buffer-label {
-  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-scale));
-  line-height: calc(1.25rem / var(--pixel-canvas-scale));
-  padding: calc(0.125rem / var(--pixel-canvas-scale)) calc(0.5rem / var(--pixel-canvas-scale));
+  font-size: calc(var(--dw-screen-caption) / var(--pixel-canvas-chrome-scale));
+  line-height: calc(1.25rem / var(--pixel-canvas-chrome-scale));
+  padding: calc(0.125rem / var(--pixel-canvas-chrome-scale)) calc(0.5rem / var(--pixel-canvas-chrome-scale));
 }
 
 .pixel-canvas-mark-line {

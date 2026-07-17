@@ -27,11 +27,6 @@ const DEFAULT_OPTIONS: Required<Omit<CollisionLayoutOptions, "skipVerticalCompac
   skipVerticalCompact: false,
 };
 
-/** Tab 容器为画布锚点：其他组件拖动推挤时保持原位 */
-function isTabAnchorHost(widget: PixelLayoutWidget): boolean {
-  return widget.type === "tabs";
-}
-
 export function widgetRect(widget: Pick<PixelLayoutWidget, "x" | "y" | "width" | "height">): PixelRect {
   return { x: widget.x, y: widget.y, width: widget.width, height: widget.height };
 }
@@ -181,7 +176,7 @@ function liftVacatedColumn(
   gap: number,
 ): void {
   const column = widgets.filter((widget) => {
-    if (widget.id === activeId || isTabAnchorHost(widget)) return false;
+    if (widget.id === activeId) return false;
     const rect = positions.get(widget.id);
     return rect ? isBelowVacatedFootprint(rect, vacated, gap) : false;
   });
@@ -245,7 +240,7 @@ function emptyTargetFootprint(
   minOverlap: number,
 ): void {
   const candidates = widgets
-    .filter((widget) => widget.id !== activeId && !isTabAnchorHost(widget))
+    .filter((widget) => widget.id !== activeId)
     .filter((widget) => {
       const rect = positions.get(widget.id)!;
       return (
@@ -385,7 +380,10 @@ export function packPixelLayoutSeamless(
   options: CollisionLayoutOptions = {},
 ): DashboardLayoutV2 {
   const resolved = { ...DEFAULT_OPTIONS, ...options };
-  const sorted = [...layout.widgets].sort(compareWidgets);
+  const topLevel = getTopLevelPixelWidgets(layout.widgets).filter(
+    (widget) => widget.width > 0 && widget.height > 0,
+  );
+  const sorted = [...topLevel].sort(compareWidgets);
   const positions = new Map<string, PixelRect>();
   const placed: PixelRect[] = [];
 
@@ -402,7 +400,20 @@ export function packPixelLayoutSeamless(
     placed.push(rect);
   }
 
-  return applyPositions(layout, positions, resolved);
+  const movedById = new Map(
+    sorted.map((widget) => [widget.id, withRect(widget, positions.get(widget.id)!)] as const),
+  );
+  const widgets = layout.widgets.map((widget) => movedById.get(widget.id) ?? widget);
+  const movedTopLevel = sorted.map((widget) => movedById.get(widget.id)!);
+
+  return {
+    ...layout,
+    canvas: {
+      ...layout.canvas,
+      height: growCanvasHeight(movedTopLevel, layout.canvas, resolved),
+    },
+    widgets: syncParkedTabChildren(widgets),
+  };
 }
 
 /** @deprecated Use packPixelLayoutSeamless */
@@ -414,7 +425,9 @@ export function normalizeOverlappingPixelLayout(
 }
 
 export function layoutsOverlap(layout: DashboardLayoutV2, gap = 0): boolean {
-  const widgets = layout.widgets;
+  const widgets = getTopLevelPixelWidgets(layout.widgets).filter(
+    (widget) => widget.width > 0 && widget.height > 0,
+  );
   for (let i = 0; i < widgets.length; i += 1) {
     for (let j = i + 1; j < widgets.length; j += 1) {
       if (rectsOverlap(widgetRect(widgets[i]!), widgetRect(widgets[j]!), gap)) {

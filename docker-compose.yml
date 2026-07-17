@@ -78,6 +78,26 @@ services:
       timeout: 5s
       retries: 10
 
+  sample-timescaledb:
+    image: timescale/timescaledb:2.17.2-pg16
+    container_name: vitalspan-sample-timescaledb-1
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: vitalspan
+      POSTGRES_PASSWORD: vitalspan
+      POSTGRES_DB: ops_tsdb
+    volumes:
+      - ./docker/sample-timescaledb/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./docker/sample-timescaledb/02-dimensions.sql:/docker-entrypoint-initdb.d/02-dimensions.sql:ro
+      - vitalspan_ops_tsdb_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vitalspan -d ops_tsdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   vitalspan_pg_data:
   vitalspan_analytics_pg_data:
+  vitalspan_ops_tsdb_data:

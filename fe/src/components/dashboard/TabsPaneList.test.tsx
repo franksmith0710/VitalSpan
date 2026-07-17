@@ -72,4 +72,38 @@ describe("TabsPaneList", () => {
     await user.click(screen.getByRole("button", { name: "查看页签 页签 1 内的 1 个组件" }));
     expect(onSelectChild).toHaveBeenCalledWith(childId);
   });
+
+  it("does not duplicate type label when title matches chart type", () => {
+    const tableChild = {
+      ...mediaChild,
+      id: "table-1",
+      title: "表格",
+      type: "chart" as const,
+      mediaConfig: undefined,
+      chartConfig: {
+        chartType: "table" as const,
+        dataSourceId: "ds",
+        mode: "sql" as const,
+        sql: "select 1",
+        dimensions: [],
+        metrics: [],
+      },
+    };
+    const tabsWithTable = {
+      ...tabsWidget,
+      tabsConfig: {
+        ...tabsWidget.tabsConfig,
+        panes: [{ id: paneId, title: "页签 1", childWidgetIds: ["table-1"] }],
+      },
+    };
+    render(
+      <TabsPaneList
+        widget={tabsWithTable as LayoutWidget & { tabsConfig: typeof tabsWithTable.tabsConfig }}
+        allWidgets={[tabsWithTable, tableChild] as LayoutWidget[]}
+        onChange={() => {}}
+        onSelectChild={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "配置 表格" }).textContent).toBe("表格");
+  });
 });
