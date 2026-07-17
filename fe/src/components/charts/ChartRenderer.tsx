@@ -22,10 +22,16 @@ import { buildEchartsOption } from "./adapters/renderFromSpec";
 import {
   applyChartDrillPipeline,
   drillStackToFilterParameters,
+  filterRowsByDrillStack,
   getClickDrillField,
   resolveDrillRenderSpec,
   supportsChartDrillInteraction,
 } from "@/lib/chartDrill";
+import {
+  applyMapChartDrillPipeline,
+  getMapDrillClickField,
+  preflightMapDrillClick,
+} from "@/lib/geoMapDrill";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdvancedEchartsChart } from "./adapters/AdvancedEchartsChart";
@@ -174,6 +180,12 @@ export const ChartRenderer = memo(function ChartRenderer({
     setPage(1);
   }, [config, drillRevision]);
 
+  const [mapDrillError, setMapDrillError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMapDrillError(null);
+  }, [config, drillRevision]);
+
   const drillPipeline = useMemo(() => {
     if (!drillInteraction && !drill.stack.length) {
       return {
@@ -182,8 +194,16 @@ export const ChartRenderer = memo(function ChartRenderer({
         displayField: undefined as string | undefined,
       };
     }
+    if (config.chartType === "map") {
+      return applyMapChartDrillPipeline(config, columns, rows as unknown[][], drill.stack);
+    }
     return applyChartDrillPipeline(config, columns, rows as unknown[][], drill.stack);
   }, [drillInteraction, drill.stack, config, columns, rows]);
+
+  const drillFilterRows = useMemo(() => {
+    if (!drill.stack.length) return rows as unknown[][];
+    return filterRowsByDrillStack(rows as unknown[][], columns, drill.stack);
+  }, [rows, columns, drill.stack]);
 
   const displayRows = drillPipeline.rows;
   const displayColumns = drillPipeline.columns;
@@ -192,7 +212,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   const drillClickField = useMemo(
     () =>
       drillInteraction && localConfig.chartType === "map"
-        ? getClickDrillField(config, drill.stack)
+        ? getMapDrillClickField(config, drill.stack)
         : undefined,
     [drillInteraction, config, drill.stack, localConfig.chartType],
   );
@@ -200,11 +220,27 @@ export const ChartRenderer = memo(function ChartRenderer({
   const handleDrillClick = useCallback(
     (value: string, label?: string) => {
       if (!drillInteraction) return;
-      const field = getClickDrillField(config, drill.stack);
+      const field =
+        localConfig.chartType === "map"
+          ? getMapDrillClickField(config, drill.stack)
+          : getClickDrillField(config, drill.stack);
       if (!field || !value) return;
-      drill.push({ field, value, label: label ?? value });
+
+      const frame = { field, value, label: label ?? value };
+      if (localConfig.chartType === "map") {
+        void preflightMapDrillClick(config, drill.stack, frame).then((result) => {
+          if (!result.ok) {
+            setMapDrillError(result.message);
+            return;
+          }
+          setMapDrillError(null);
+          drill.push(frame);
+        });
+        return;
+      }
+      drill.push(frame);
     },
-    [config, drill, drillInteraction],
+    [config, drill, drillInteraction, localConfig.chartType],
   );
 
   const jumpConfig = useMemo(() => readChartJumpConfig(config), [config]);
@@ -371,7 +407,9 @@ export const ChartRenderer = memo(function ChartRenderer({
       showLabel={showDataLabels}
       valueFormat={valueFormat}
       mapPlaceholderHint={mapPlaceholderHint}
+      mapDrillError={mapDrillError}
       heatmapPlaceholderHint={heatmapPlaceholderHint}
+      drillLookupRows={drillFilterRows}
       embedEdit={embedded && dashboardEditMode}
       onDrillClick={drillInteraction ? handleDrillClick : undefined}
       onJumpClick={jumpInteraction ? handleJumpClick : undefined}

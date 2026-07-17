@@ -8,7 +8,7 @@ export type FieldAssignResult = { ok: true } | { ok: false; message: string };
 const DATE_FIELD =
   /(?:^|_)(date|time|day|month|year|week|timestamp|datetime)(?:$|_)|_at$/i;
 const GEO_FIELD =
-  /(?:^|_)(region|area|city|province|country|geo|name|district|区县)(?:$|_)|省|市|自治区|区$|县$/i;
+  /(?:^|_)(region|area|city|province|country|geo|name|district|地名|省份|城市)(?:$|_)|省|市|自治区|区$|县$/i;
 const REGION_ID_FIELD = /(?:^|_)(region_id|adcode|area_code|geo_id)(?:$|_)|^id$|_id$/i;
 
 function slotMeta(chartType: ChartType | string, target: SlotTarget) {

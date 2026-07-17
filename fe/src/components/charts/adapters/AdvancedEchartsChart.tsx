@@ -38,7 +38,10 @@ type Props = {
   showLabel?: boolean;
   valueFormat?: NumberFormatConfig;
   mapPlaceholderHint?: string;
+  mapDrillError?: string | null;
   heatmapPlaceholderHint?: string;
+  /** 下钻点击时用于解析过滤值的全量行（未采样、未聚合） */
+  drillLookupRows?: unknown[][];
   embedEdit?: boolean;
   onDrillClick?: (value: string, label?: string) => void;
   onJumpClick?: () => void;
@@ -63,7 +66,9 @@ export function AdvancedEchartsChart({
   showLabel = false,
   valueFormat,
   mapPlaceholderHint,
+  mapDrillError,
   heatmapPlaceholderHint,
+  drillLookupRows,
   embedEdit = false,
   onDrillClick,
   onJumpClick,
@@ -180,7 +185,7 @@ export function AdvancedEchartsChart({
       ? `有 ${geoMatchStats.total - geoMatchStats.matched} 条无法匹配地图区域`
       : null;
 
-  const geoAssetWarning = geoMapLevel.missingAsset ?? null;
+  const geoAssetWarning = geoMapLevel.missingAsset ?? mapDrillError ?? null;
 
   const chartEvents = useMemo(() => {
     if (!onDrillClick && !onJumpClick) return undefined;
@@ -194,10 +199,11 @@ export function AdvancedEchartsChart({
         const label = String(params.name);
         if (!onDrillClick) return;
         if (drillClickField) {
+          const lookupRows = drillLookupRows ?? rows;
           const filterValue = findMapDrillFilterValue(
             label,
             drillClickField,
-            capped,
+            lookupRows,
             columns,
             geoMapLevel.knownRegionNames,
           );
@@ -207,7 +213,7 @@ export function AdvancedEchartsChart({
         onDrillClick(label);
       },
     };
-  }, [onDrillClick, onJumpClick, drillClickField, capped, columns, geoMapLevel.knownRegionNames]);
+  }, [onDrillClick, onJumpClick, drillClickField, drillLookupRows, rows, columns, geoMapLevel.knownRegionNames]);
 
   const chartKey = `${scheme}:${geoMapLevel.mapId}:${geoMapVersion}`;
 
@@ -233,7 +239,7 @@ export function AdvancedEchartsChart({
             fill ? "pointer-events-none absolute inset-x-2 top-2 z-[2] rounded-md bg-warning-500/10 px-2 py-1" : "mb-2",
           )}
         >
-          {geoAssetWarning ?? geoMatchWarning}
+          {[geoAssetWarning, geoMatchWarning].filter(Boolean).join("；")}
         </p>
       ) : null}
       {isEmpty ? (

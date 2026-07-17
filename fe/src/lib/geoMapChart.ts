@@ -377,7 +377,8 @@ function aggregateMapRegionData(
 
   for (const row of rows) {
     const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, atProvinceLevel);
-    if (!resolved.name || !resolved.matched) continue;
+    if (!resolved.name) continue;
+    if (!atProvinceLevel && !resolved.matched) continue;
     const raw = Number(row[mi] ?? 0);
     const value = Number.isFinite(raw) ? raw : 0;
     bucket.set(resolved.name, (bucket.get(resolved.name) ?? 0) + value);

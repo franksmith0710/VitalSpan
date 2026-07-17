@@ -45,6 +45,12 @@
 | 钻取 / 区县 | `district`（可选） |
 
 预览态点击省/市切换底图；编辑态配置字段。区县边界按城市打包，未打包城市下钻到市后提示「暂无区县边界」。
+
+## Code review 修复（2026-07-17）
+
+- `preflightMapDrillClick`：下钻前校验底图资产，失败不 push 栈
+- `geoMapDrill.ts`：直辖市跳过市级槽；`drillLookupRows` 全量行解析过滤值
+- `DEMO_MAP_DRILL_SQL`：改为静态 UNION 示例（不依赖演示库 regions 层级）
 - `ChartDataSlots`：地图 SQL 提示 + `DEMO_MAP_JOIN_SQL`
 
 ## 正确用法（演示库）
