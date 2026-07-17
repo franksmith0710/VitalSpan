@@ -121,9 +121,12 @@ class QueryExecutor:
         row = self._load_row(session, data_source_id)
         dialect = get_sql_dialect(row.type)
         assert_readonly_sql(sql)
-        final_sql = sql if skip_wrap_limit else dialect.wrap_limit(sql, limit=limit, offset=offset)
+        scoped_sql = sql
         if apply_rls:
-            final_sql = apply_rls_to_sql(session, user, final_sql, rls_config=rls_config)
+            scoped_sql = apply_rls_to_sql(session, user, scoped_sql, rls_config=rls_config)
+        final_sql = scoped_sql if skip_wrap_limit else dialect.wrap_limit(
+            scoped_sql, limit=limit, offset=offset,
+        )
         connector, kwargs, pool_size = self._connector_kwargs(row)
         try:
             with pool_manager.pooled_connection(

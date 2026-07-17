@@ -15,7 +15,27 @@
 | risk_level | medium |
 | blockers | 等待 BUG-7 resize 碰撞 preview 完结；C3 需勘误 |
 
-## 当前轮次（像素画布重叠 + 保存 422）
+## 当前轮次（报表模块 DE IA 对标）
+
+| 字段 | 值 |
+|------|----|
+| phase | A5_EXECUTE |
+| request | 侧栏报表分组对标 DataEase：中心/预制/模板/调度全部可交付 |
+| type | feature |
+| plan | docs/automate/plans/2026-07-17-reports-de-ia-complete.md |
+| goal | 报表中心浏览运行、调度历史重试、导航四入口完整 |
+| scope_include | fe/pages/admin/reports, nav-manifest, routes, reportCatalogUtils, useReportSchedules |
+| scope_exclude | PDF 真实排版、DB 持久化、另存为 companion |
+| acceptance | vitest reports smoke + resolve-nav |
+| autonomy_policy | auto_accept_low_risk |
+| risk_level | low |
+| status | DONE |
+| last_verified_command | vitest src/pages/admin/reports src/lib/reportCatalogUtils.test.ts src/lib/resolve-nav.test.ts |
+| last_verified_exit_code | 0 |
+| verification_summary | 报表中心 hub、查看页、调度历史重试、导航「全部报表」；47 tests passed |
+| repair_rounds | 0 |
+
+## 上一轮（归档 · 像素画布重叠 + 保存 422）
 
 | 字段 | 值 |
 |------|----|
@@ -34,7 +54,7 @@
 | verification_summary | 根因：park 0×0 与后端 ge=120/32 冲突→422；已放宽 Tab parked 子组件校验并补测试 |
 | repair_rounds | 1 |
 
-## 上一轮（归档）
+## 更早轮次（归档 · 像素画布重叠 原当前节）
 
 | 字段 | 值 |
 |------|----|

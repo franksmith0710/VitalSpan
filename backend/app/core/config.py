@@ -1,8 +1,8 @@
 from functools import lru_cache
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from cryptography.fernet import Fernet
-from pydantic import computed_field, field_validator
+from pydantic import computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     rpt_smtp_user: str | None = None
     rpt_smtp_password: str | None = None
     rpt_smtp_from: str = "reports@vitalspan.local"
+    nfr08_runtime_mode: Literal["strict", "permissive"] = "permissive"
+
+    _DEV_SECRET_KEY: ClassVar[str] = "change-me-in-production"
+    _DEV_FERNET_EXAMPLE: ClassVar[str] = "SN0VrKv3d9y1xCzRerwAlw0VdGvrNqWacCMhrYbq2YI="
 
     @field_validator("push_wecom_webhook", "push_dingtalk_webhook", mode="before")
     @classmethod
@@ -116,6 +120,18 @@ class Settings(BaseSettings):
         except (TypeError, ValueError):
             raise ValueError("CREDENTIAL_FERNET_KEY 须为合法 Fernet 密钥") from None
         return value
+
+    @model_validator(mode="after")
+    def enforce_production_safety(self) -> "Settings":
+        if self.vitalspan_env != "production":
+            return self
+        if self.secret_key == self._DEV_SECRET_KEY:
+            raise ValueError("生产环境 SECRET_KEY 不能使用示例占位值")
+        if self.credential_fernet_key == self._DEV_FERNET_EXAMPLE:
+            raise ValueError("生产环境 CREDENTIAL_FERNET_KEY 必须重新生成")
+        if self.nfr08_runtime_mode != "strict":
+            raise ValueError("生产环境 NFR08_RUNTIME_MODE 须为 strict")
+        return self
 
     @computed_field  # type: ignore[prop-decorator]
     @property

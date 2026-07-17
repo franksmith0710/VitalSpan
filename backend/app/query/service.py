@@ -82,6 +82,12 @@ def execute_query(session: Session, user: UserContext, payload: ExecuteRequest) 
                 limit=limit, offset=payload.offset, rls_config=rls_config, apply_rls=apply_rls,
             )
         else:
+            if apply_rls:
+                raise QueryError(
+                    "QUERY_NATIVE_RLS_UNSUPPORTED",
+                    "Row-level security is not supported for native query mode",
+                    422,
+                )
             result = _native_executor.execute(
                 session,
                 user,

@@ -137,7 +137,7 @@ export function DeSegmentGroup({
             }}
             className={cn(
               "flex items-center justify-center rounded-md text-center text-[11px] font-medium leading-tight transition-all",
-              isCompact ? "min-h-7 px-0.5" : "min-h-8 py-1.5",
+              isCompact ? "h-7 px-0.5" : "h-8",
               !isCompact && isTextLabel ? "px-2" : !isCompact ? "px-1.5" : "",
               "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 focus-visible:ring-offset-1",
               selected

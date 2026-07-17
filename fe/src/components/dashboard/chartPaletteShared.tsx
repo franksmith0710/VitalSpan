@@ -55,7 +55,7 @@ export function ChartPaletteSwatchStrip({
       className={cn(
         "flex h-4 w-full min-w-0 items-stretch overflow-hidden rounded-sm",
         "ring-1 ring-inset ring-black/[0.06] dark:ring-white/10",
-        inherit && "opacity-60",
+        inherit && !inheritPreviewColors?.length && "opacity-60",
         className,
       )}
       aria-hidden

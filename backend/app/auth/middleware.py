@@ -16,13 +16,18 @@ from app.auth.users import service as user_service
 from app.core.config import Settings, get_settings
 from app.core.logging import trace_id_var
 
-PUBLIC_PATHS: frozenset[str] = frozenset({
+PUBLIC_PATHS_BASE: frozenset[str] = frozenset({
     "/health",
+    "/api/v1/auth/login",
+})
+
+PUBLIC_PATHS_DEV: frozenset[str] = frozenset({
     "/docs",
     "/redoc",
     "/openapi.json",
-    "/api/v1/auth/login",
 })
+
+PUBLIC_PATHS = PUBLIC_PATHS_BASE | PUBLIC_PATHS_DEV
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +43,20 @@ def _token_revoked_response() -> JSONResponse:
     return JSONResponse(
         status_code=401,
         content={"code": "TOKEN_REVOKED", "message": "Token has been revoked", "detail": None},
+    )
+
+
+def _user_disabled_response() -> JSONResponse:
+    return JSONResponse(
+        status_code=403,
+        content={"code": "AUTH_USER_DISABLED", "message": "账户已被禁用", "detail": None},
+    )
+
+
+def _user_locked_response() -> JSONResponse:
+    return JSONResponse(
+        status_code=403,
+        content={"code": "AUTH_USER_LOCKED", "message": "账户已锁定", "detail": None},
     )
 
 
@@ -81,6 +100,24 @@ class _ResolvedContext:
         self.is_root: bool = False
         self.token_revoked: bool = False
         self.root_initialized: bool = False
+        self.user_disabled: bool = False
+        self.user_locked: bool = False
+
+
+def _public_paths_for(settings: Settings) -> frozenset[str]:
+    if settings.vitalspan_env == "development":
+        return PUBLIC_PATHS_BASE | PUBLIC_PATHS_DEV
+    return PUBLIC_PATHS_BASE
+
+
+def _is_public_embed_route(path: str, request: Request) -> bool:
+    if path == "/api/v1/embed/sdk-params" and request.query_params.get("token"):
+        return True
+    if path == "/api/v1/embed/chart-view" and request.query_params.get("token"):
+        return True
+    if path == "/api/v1/embed/query/execute":
+        return bool(request.headers.get("X-Embed-Token", "").strip())
+    return False
 
 
 def _lookup_user(session, user_id: str, username: str) -> AuthUser | None:
@@ -101,7 +138,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         path = request.url.path
-        if path in PUBLIC_PATHS or path.startswith("/docs"):
+        if path in _public_paths_for(self.settings) or path.startswith("/docs"):
+            return await call_next(request)
+        if _is_public_embed_route(path, request):
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization", "")
@@ -133,6 +172,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return _root_not_initialized_response()
         if resolved.token_revoked:
             return _token_revoked_response()
+        if resolved.user_disabled:
+            return _user_disabled_response()
+        if resolved.user_locked:
+            return _user_locked_response()
 
         request.state.user = UserContext(
             id=str(user_id),
@@ -153,9 +196,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     resolved.token_revoked = True
                 resolved.roles = user_service.resolve_role_codes_for_user(session, user.id)
                 permissions, is_root = resolve_user_permissions(session, user.id)
-                if not user.is_active or _is_locked(user):
-                    resolved.permissions = set()
-                    resolved.is_root = False
+                if not user.is_active:
+                    resolved.user_disabled = True
+                elif _is_locked(user):
+                    resolved.user_locked = True
                 else:
                     resolved.permissions = permissions
                     resolved.is_root = is_root

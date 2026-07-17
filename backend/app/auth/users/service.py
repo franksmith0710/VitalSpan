@@ -431,6 +431,8 @@ def set_user_active(
     user = get_user(session, user_id)
     guard_needed = not is_active and _user_has_enabled_root_binding(session, user_id)
     user.is_active = is_active
+    if not is_active:
+        user.token_version = user.token_version + 1
     if guard_needed:
         _guard_root_admin(session)
     _audit_user_event(

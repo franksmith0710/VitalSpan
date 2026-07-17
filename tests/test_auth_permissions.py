@@ -600,7 +600,7 @@ def test_matrix_disabled_user_returns_403(client):
         session.close()
     response = client.get(_REQUIRE_READ_PATH, headers=_bearer(info))
     assert response.status_code == 403
-    assert response.json()["code"] == "PERMISSION_DENIED"
+    assert response.json()["code"] == "AUTH_USER_DISABLED"
 
 
 def test_matrix_locked_user_returns_403(client):
@@ -612,7 +612,7 @@ def test_matrix_locked_user_returns_403(client):
         session.close()
     response = client.get(_REQUIRE_READ_PATH, headers=_bearer(info))
     assert response.status_code == 403
-    assert response.json()["code"] == "PERMISSION_DENIED"
+    assert response.json()["code"] == "AUTH_USER_LOCKED"
 
 
 def test_matrix_token_version_mismatch_returns_401(client):

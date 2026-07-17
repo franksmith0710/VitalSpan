@@ -11,6 +11,7 @@ from app.auth.deps import PermissionDeniedError
 from app.auth.middleware import AuthMiddleware
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.core.nfr.runtime_guard import assert_runtime_compliant
 from app.core.middleware import TraceIdMiddleware
 from app.core.middleware.https_audit_guard import HttpsAuditGuardMiddleware
 from app.ingestion.scheduler import get_scheduler, refresh_all_jobs
@@ -45,6 +46,7 @@ def _warm_meta_database() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    assert_runtime_compliant()
     _warm_meta_database()
     scheduler = get_scheduler()
     refresh_all_jobs()

@@ -12,7 +12,7 @@ describe("ChartPalettePicker", () => {
     render(<ChartPalettePicker showInherit value={undefined} onChange={onChange} />);
 
     expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
-    expect(screen.getByText("跟随看板")).toBeInTheDocument();
+    expect(screen.getByText("默认")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "自定义配色" })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "配色方案" }));

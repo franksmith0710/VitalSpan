@@ -1151,3 +1151,78 @@ html.admin-fill-lock #root {
     0 0 0 1px rgb(0 0 0 / 10%),
     0 1px 3px rgb(0 0 0 / 16%);
 }
+
+/* 登录页品牌区动效 */
+@keyframes login-brand-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-brand-preview-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) rotate(-2deg) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(-2deg) scale(1);
+  }
+}
+
+@keyframes login-brand-bar-grow {
+  from {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  to {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+}
+
+@keyframes login-brand-line-draw {
+  from {
+    stroke-dashoffset: 240;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.login-brand-fade {
+  animation: login-brand-fade-up 0.7s ease-out both;
+}
+
+.login-brand-chip {
+  animation: login-brand-fade-up 0.55s ease-out both;
+}
+
+.login-brand-preview-enter {
+  animation: login-brand-preview-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+  transform: rotate(-2deg);
+}
+
+.login-brand-bar {
+  animation: login-brand-bar-grow 0.6s ease-out both;
+}
+
+.login-brand-line path {
+  stroke-dasharray: 240;
+  animation: login-brand-line-draw 1.2s ease-out 0.4s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-brand-fade,
+  .login-brand-chip,
+  .login-brand-preview-enter,
+  .login-brand-bar,
+  .login-brand-line path {
+    animation: none;
+  }
+}

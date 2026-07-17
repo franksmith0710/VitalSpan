@@ -122,6 +122,8 @@ export function DashboardWidgetStyleSections({
         <ChartPaletteDeParityFields
           paletteId={styleConfig.paletteId}
           paletteColors={styleConfig.paletteColors}
+          dashboardPaletteId={styleConfig.paletteId}
+          dashboardPaletteColors={styleConfig.paletteColors}
           paletteOpacity={styleConfig.paletteOpacity}
           seriesGradient={styleConfig.seriesGradient ?? false}
           labelShow={styleConfig.chartLabelShow ?? false}

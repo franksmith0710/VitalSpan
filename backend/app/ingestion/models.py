@@ -6,11 +6,12 @@ from functools import lru_cache
 from typing import Any, Literal
 
 from cryptography.fernet import Fernet, InvalidToken
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, Uuid, create_engine, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from app.core.config import get_settings
+from app.query.rls.guard import validate_identifier
 
 INGESTION_MAX_ROWS = 100_000
 
@@ -77,6 +78,12 @@ class SourceConnectionIn(BaseModel):
     password: str = Field(min_length=1)
     table: str
 
+    @field_validator("table")
+    @classmethod
+    def validate_table_name(cls, value: str) -> str:
+        validate_identifier(value)
+        return value
+
 
 class SourceConnectionUpdateIn(BaseModel):
     type: Literal["mysql", "postgres"]
@@ -86,6 +93,12 @@ class SourceConnectionUpdateIn(BaseModel):
     username: str
     password: str = ""
     table: str
+
+    @field_validator("table")
+    @classmethod
+    def validate_table_name(cls, value: str) -> str:
+        validate_identifier(value)
+        return value
 
 
 class SourceConnectionOut(BaseModel):

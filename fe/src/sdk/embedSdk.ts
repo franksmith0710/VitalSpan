@@ -32,7 +32,7 @@ function resolveContainer(container: string | HTMLElement): HTMLElement | null {
 
 async function fetchSdkParams(apiBase: string, token: string): Promise<SdkParams> {
   const url = `${apiBase.replace(/\/$/, "")}/embed/sdk-params?token=${encodeURIComponent(token)}`;
-  const resp = await fetch(url, { credentials: "same-origin" });
+  const resp = await fetch(url);
   if (!resp.ok) {
     throw new Error("获取嵌入参数失败");
   }

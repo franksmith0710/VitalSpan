@@ -25,6 +25,7 @@ from app.ingestion.models import (
 )
 from app.ingestion.scheduler import refresh_all_jobs
 from app.ingestion.sync_executor import run_job
+from app.query.rls.guard import validate_identifier
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
@@ -36,6 +37,12 @@ class SyncJobCreate(BaseModel):
     schedule_cron: str | None = None
     enabled: bool = True
 
+    @field_validator("target_table")
+    @classmethod
+    def validate_target_table(cls, value: str) -> str:
+        validate_identifier(value)
+        return value
+
 
 class SyncJobUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
@@ -43,6 +50,12 @@ class SyncJobUpdate(BaseModel):
     target_table: str
     schedule_cron: str | None = None
     enabled: bool = True
+
+    @field_validator("target_table")
+    @classmethod
+    def validate_target_table(cls, value: str) -> str:
+        validate_identifier(value)
+        return value
 
 
 class SyncJobSummary(BaseModel):

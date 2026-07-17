@@ -20,7 +20,16 @@ from app.ingestion.models import (
 )
 
 
+from app.query.rls.guard import validate_identifier
+
+
+def validate_sync_table_names(source_table: str, target_table: str) -> None:
+    validate_identifier(source_table)
+    validate_identifier(target_table)
+
+
 def _fetch_mysql_rows(job: SyncJob) -> list[dict[str, Any]]:
+    validate_sync_table_names(job.source_table, job.target_table)
     conn = pymysql.connect(
         host=job.source_host,
         port=job.source_port,

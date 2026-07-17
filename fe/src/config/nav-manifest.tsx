@@ -114,6 +114,7 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         name: "报表中心",
         icon: <FileBarChart className="size-5" aria-hidden />,
         subItems: [
+          { name: "全部报表", path: "/admin/reports/center", milestone: "M1", capability: "report:read" },
           { name: "预制报表", path: "/admin/reports", milestone: "M1", capability: "report:read" },
           {
             name: "报表模板",

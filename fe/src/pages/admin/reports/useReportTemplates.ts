@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
+import { normalizeCatalogNodes } from "@/lib/reportCatalogUtils";
 import { queryKeys } from "@/lib/queryKeys";
 
 export type CatalogNode = {
@@ -32,9 +33,12 @@ export function useReportTemplates(parentId: string | null = null, templateKey: 
   const qc = useQueryClient();
   const nodesQuery = useQuery({
     queryKey: queryKeys.reports.catalogNodes(parentId),
-    queryFn: () => {
+    queryFn: async () => {
       const q = parentId ? `?parentId=${encodeURIComponent(parentId)}` : "";
-      return apiFetch<{ items: CatalogNode[] }>(`/api/v1/reports/catalog/nodes${q}`);
+      const raw = await apiFetch<{ items: CatalogNode[] } | CatalogNode[]>(
+        `/api/v1/reports/catalog/nodes${q}`,
+      );
+      return { items: normalizeCatalogNodes(raw) };
     },
   });
 

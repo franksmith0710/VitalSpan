@@ -14,8 +14,9 @@ type ChartPaletteConfigFieldsProps = {
   onOpacityChange?: (opacity: number) => void;
   /** 拖拽滑块时实时预览（对标 DE 配色不透明度即时反馈） */
   onOpacityPreview?: (opacity: number) => void;
-  /** 组件级：可选跟随看板 */
+  /** 组件级：可选继承仪表板配色（首项「默认」） */
   showInherit?: boolean;
+  inheritPreviewColors?: readonly string[];
   /** 216px 图表栏等窄容器 */
   dense?: boolean;
   className?: string;
@@ -32,6 +33,7 @@ export function ChartPaletteConfigFields({
   onOpacityChange,
   onOpacityPreview,
   showInherit = false,
+  inheritPreviewColors,
   dense = false,
   className,
 }: ChartPaletteConfigFieldsProps) {
@@ -46,6 +48,7 @@ export function ChartPaletteConfigFields({
         value={pickerValue}
         paletteColors={paletteColors}
         seriesColors={seriesColors}
+        inheritPreviewColors={inheritPreviewColors}
         onChange={onPaletteChange}
         onSeriesColorsChange={onSeriesColorsChange}
       />
@@ -75,7 +78,7 @@ export function ChartPaletteConfigFields({
           />
           {inheritActive ? (
             <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">
-              跟随看板配色时，请先在上方选择独立配色方案
+              使用默认配色时，请先在上方选择独立配色方案
             </p>
           ) : null}
         </div>

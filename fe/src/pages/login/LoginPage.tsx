@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
-import { LogIn } from "lucide-react";
+import { Loader2, Lock, LogIn, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
+import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { useAuth } from "@/context/auth-context";
+import { ThemeProvider } from "@/context/theme-context";
 import { ApiRequestError, fetchWithTimeout } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { setAuthToken } from "@/lib/auth-token";
 import { resolveDefaultDashboardPath } from "@/lib/defaultViewResolve";
+import { cn } from "@/lib/utils";
+import { LoginBrandAside } from "./LoginBrandAside";
 
 type LoginResponse = {
   accessToken: string;
@@ -17,7 +21,7 @@ type LoginResponse = {
   expiresIn: number;
 };
 
-export function LoginPage() {
+function LoginFormPanel() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, refresh } = useAuth();
@@ -72,53 +76,122 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-950">
-      <Card className="w-full max-w-md" variant="outlined" elevation={2}>
-        <CardHeader className="flex-col items-start gap-2">
-          <CardTitle className="text-title-sm">登录 VitalSpan</CardTitle>
-          <CardDescription>使用管理员账号登录管理后台</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="grid gap-4" onSubmit={(e) => void handleSubmit(e)}>
-            {error ? (
-              <div
-                className="rounded-xl border border-error-500 bg-error-50 p-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/15 dark:text-error-400"
-                role="alert"
-              >
-                {error}
+    <div className="relative flex min-h-screen flex-1 flex-col bg-gray-50 dark:bg-gray-950">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -right-20 top-0 size-72 rounded-full bg-brand-500/10 blur-3xl dark:bg-brand-500/15" />
+        <div className="absolute bottom-0 left-0 size-64 rounded-full bg-brand-300/10 blur-3xl dark:bg-brand-400/10" />
+      </div>
+
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+        <ThemeToggleButton className="size-10" />
+      </div>
+
+      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
+        <div className="w-full max-w-[26rem]">
+          <div className="mb-8 flex justify-center lg:hidden">
+            <VitalSpanLogo linked={false} />
+          </div>
+
+          <div
+            className={cn(
+              "rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-theme-md backdrop-blur-sm",
+              "dark:border-gray-800 dark:bg-gray-900/80 dark:shadow-none sm:p-8",
+            )}
+          >
+            <div className="mb-6 space-y-2 text-center lg:text-left">
+              <h2 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+                欢迎回来
+              </h2>
+              <p className="text-theme-sm text-gray-500 dark:text-gray-400">
+                使用管理员账号登录 VitalSpan 管理后台
+              </p>
+            </div>
+
+            <form className="grid gap-5" onSubmit={(e) => void handleSubmit(e)}>
+              {error ? (
+                <div
+                  className="rounded-xl border border-error-500/30 bg-error-50 px-3 py-2.5 text-theme-sm text-error-700 dark:bg-error-500/10 dark:text-error-400"
+                  role="alert"
+                >
+                  {error}
+                </div>
+              ) : null}
+
+              <div className="grid gap-2">
+                <Label htmlFor="username">用户名</Label>
+                <div className="relative">
+                  <UserRound
+                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                    aria-hidden
+                  />
+                  <Input
+                    id="username"
+                    name="username"
+                    autoComplete="username"
+                    autoFocus
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="pl-10"
+                    placeholder="请输入用户名"
+                    required
+                  />
+                </div>
               </div>
-            ) : null}
-            <div className="grid gap-2">
-              <Label htmlFor="username">用户名</Label>
-              <Input
-                id="username"
-                name="username"
-                autoComplete="username"
-                autoFocus
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">密码</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" variant="primary" size="lg" className="w-full" disabled={submitting}>
-              <LogIn className="size-4" aria-hidden />
-              {submitting ? "登录中…" : "登录"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+
+              <div className="grid gap-2">
+                <Label htmlFor="password">密码</Label>
+                <div className="relative">
+                  <Lock
+                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                    aria-hidden
+                  />
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    placeholder="请输入密码"
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                className="mt-1 h-11 w-full rounded-xl text-theme-sm font-semibold shadow-theme-sm"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <LogIn className="size-4" aria-hidden />
+                )}
+                {submitting ? "登录中…" : "登录"}
+              </Button>
+            </form>
+          </div>
+
+          <p className="mt-6 text-center text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
+            登录即表示您已获授权访问本系统，请妥善保管账号凭证。
+          </p>
+        </div>
+      </div>
     </div>
+  );
+}
+
+export function LoginPage() {
+  return (
+    <ThemeProvider>
+      <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+        <LoginBrandAside />
+        <LoginFormPanel />
+      </div>
+    </ThemeProvider>
   );
 }

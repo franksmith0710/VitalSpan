@@ -146,7 +146,7 @@ def test_services_openapi_fragment_r44(client):
 
 def test_services_execute_ok_r44(client):
     """T-API-R44-003-08: POST execute → rowCount>=1。"""
-    eid = _create_catalog_entry(client, path="/api/v1/svc/exec")
+    eid = _create_catalog_entry(client, path="/api/v1/svc/exec;handler=demo")
     resp = client.post(
         f"/api/v1/services/{eid}/execute",
         headers=AUTH,
@@ -158,20 +158,14 @@ def test_services_execute_ok_r44(client):
 
 def test_services_execute_forbidden_r44(client):
     """T-API-R44-003-09: 非 admin/integration → 403。"""
-    app.dependency_overrides[get_current_user] = lambda: UserContext(
-        id="viewer", username="viewer", roles=["viewer"]
+    eid = _create_catalog_entry(client, path="/api/v1/svc/forbid;handler=demo")
+    resp = client.post(
+        f"/api/v1/services/{eid}/execute",
+        headers=_headers_with_permissions("governance:read"),
+        json={"parameters": {}},
     )
-    try:
-        eid = _create_catalog_entry(client, path="/api/v1/svc/forbid")
-        resp = client.post(
-            f"/api/v1/services/{eid}/execute",
-            headers=AUTH,
-            json={"parameters": {}},
-        )
-        assert resp.status_code == 403
-        assert resp.json()["code"] == "SERVICE_EXECUTE_FORBIDDEN"
-    finally:
-        app.dependency_overrides.pop(get_current_user, None)
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "SERVICE_EXECUTE_FORBIDDEN"
 
 
 def test_services_execute_force_error_r44(client):
@@ -190,6 +184,35 @@ from app.governance.bus.adapter import InMemoryBusAdapter, register_with_retry
 from app.governance.catalog.schemas import CatalogEntryOut
 from datetime import UTC, datetime
 from jwt_auth import AUTH, jwt_auth_headers
+
+
+def _headers_with_permissions(*codes: str):
+    from app.auth.jwt import create_access_token
+    from app.auth.models import AuthRole, AuthUser, AuthUserRole, get_meta_session
+    from app.auth.permissions import AuditWriteContext, replace_role_permissions
+
+    session = get_meta_session()
+    try:
+        user = AuthUser(username=f"gov_{uuid.uuid4().hex[:8]}", is_active=True)
+        session.add(user)
+        session.flush()
+        role = AuthRole(code=f"gov_only_{uuid.uuid4().hex[:6]}", name="Gov Only", is_active=True)
+        session.add(role)
+        session.flush()
+        replace_role_permissions(
+            session,
+            role.id,
+            list(codes),
+            expected_version=0,
+            audit=AuditWriteContext(actor_id="test", actor_username="test", trace_id="t"),
+        )
+        session.add(AuthUserRole(user_id=user.id, role_id=role.id))
+        session.commit()
+        session.refresh(user)
+        token = create_access_token(str(user.id), user.username, token_version=user.token_version)
+        return {"Authorization": f"Bearer {token}"}
+    finally:
+        session.close()
 
 
 def test_register_with_retry_timeout_exhausted_r44():
@@ -222,20 +245,14 @@ def test_integration_bus_unauthorized_r44(client):
 
 def test_integration_bus_forbidden_r44(client):
     """T-API-R44-004-02: 非 integration/admin → 403。"""
-    app.dependency_overrides[get_current_user] = lambda: UserContext(
-        id="viewer", username="viewer", roles=["viewer"]
+    eid = _create_catalog_entry(client, path="/api/v1/bus/forbid")
+    resp = client.post(
+        "/api/v1/integration/bus/register",
+        headers=_headers_with_permissions("governance:manage"),
+        json={"catalogEntryId": eid},
     )
-    try:
-        eid = _create_catalog_entry(client, path="/api/v1/bus/forbid")
-        resp = client.post(
-            "/api/v1/integration/bus/register",
-            headers=AUTH,
-            json={"catalogEntryId": eid},
-        )
-        assert resp.status_code == 403
-        assert resp.json()["code"] == "BUS_REGISTER_INTEGRATION_FORBIDDEN"
-    finally:
-        app.dependency_overrides.pop(get_current_user, None)
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "BUS_REGISTER_INTEGRATION_FORBIDDEN"
 
 
 def test_integration_bus_success_r44(client):

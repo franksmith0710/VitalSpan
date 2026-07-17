@@ -154,17 +154,6 @@ export const CHART_PALETTE_CATALOG: readonly ChartPalettePreset[] = [
 /** 组件级配色：未单独指定时继承仪表板配色（图表检查栏首项文案） */
 export const CHART_PALETTE_INHERIT_LABEL = "默认";
 
-/** 继承仪表板时的色带预览（与仪表板配置配色方案一致） */
-export function resolveInheritPreviewColors(
-  dashboardPaletteId?: string,
-  dashboardPaletteColors?: readonly string[],
-): readonly string[] {
-  return resolveChartColors(
-    dashboardPaletteId ?? "default",
-    dashboardPaletteColors?.length ? [...dashboardPaletteColors] : undefined,
-  );
-}
-
 /** 历史 paletteId → 现行模板（已存配置兼容） */
 const CHART_PALETTE_ALIASES: Record<string, string> = {
   tech: "clarity",
@@ -202,6 +191,17 @@ export function resolveChartColors(paletteId?: string, custom?: string[]): strin
     return [...CHART_PALETTE_PRESETS[resolved]!];
   }
   return [...chartColors];
+}
+
+/** 继承仪表板时的色带预览（与仪表板配置配色方案一致） */
+export function resolveInheritPreviewColors(
+  dashboardPaletteId?: string,
+  dashboardPaletteColors?: readonly string[],
+): readonly string[] {
+  return resolveChartColors(
+    dashboardPaletteId ?? "default",
+    dashboardPaletteColors?.length ? [...dashboardPaletteColors] : undefined,
+  );
 }
 
 function expandHex(hex: string): string {

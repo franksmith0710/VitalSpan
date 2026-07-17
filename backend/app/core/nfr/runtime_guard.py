@@ -82,7 +82,13 @@ def build_runtime_report(pyproject_text: str | None = None) -> RuntimeCompliance
 
 
 def assert_runtime_compliant(mode: str | None = None) -> RuntimeComplianceReport:
-    mode = mode or os.environ.get("NFR08_RUNTIME_MODE", "permissive")
+    if mode is None:
+        try:
+            from app.core.config import get_settings
+
+            mode = get_settings().nfr08_runtime_mode
+        except Exception:
+            mode = os.environ.get("NFR08_RUNTIME_MODE", "permissive")
     report = build_runtime_report()
     if mode == "strict" and report.overall_status != "compliant":
         raise RuntimeComplianceError(NFR_RUNTIME_VIOLATION, "Runtime compliance violation detected")

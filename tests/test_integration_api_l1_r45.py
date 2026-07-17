@@ -197,7 +197,7 @@ def test_execute_missing_required_param_r45(client):
 
 def test_execute_with_required_param_ok_r45(client):
     """T-API-R45-003-02: 补 region → 200。"""
-    eid = _create_catalog_entry(client, path="/api/v1/svc;requires=region")
+    eid = _create_catalog_entry(client, path="/api/v1/svc;requires=region;handler=demo")
     resp = client.post(
         f"/api/v1/services/{eid}/execute",
         headers=AUTH,
@@ -208,7 +208,7 @@ def test_execute_with_required_param_ok_r45(client):
 
 def test_execute_idempotency_key_r45(client):
     """T-API-R45-003-03: 同 Idempotency-Key 两次 execute → 相同 body。"""
-    eid = _create_catalog_entry(client, path="/api/v1/svc/idempotent")
+    eid = _create_catalog_entry(client, path="/api/v1/svc/idempotent;handler=demo")
     headers = {**AUTH, "Idempotency-Key": "idem-r45-1"}
     r1 = client.post(f"/api/v1/services/{eid}/execute", headers=headers, json={"parameters": {}})
     r2 = client.post(f"/api/v1/services/{eid}/execute", headers=headers, json={"parameters": {}})

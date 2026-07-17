@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime
 
@@ -14,6 +15,7 @@ from app.integration import bus_register
 from app.integration.errors import IntegrationError
 
 _IDEMPOTENCY_STORE: dict[str, QueryServiceExecuteOut] = {}
+logger = logging.getLogger(__name__)
 
 
 class QueryServiceOut(BaseModel):
@@ -85,7 +87,8 @@ def _parse_required_params(path: str) -> list[str]:
     if ";requires=" not in path:
         return []
     _, fragment = path.split(";requires=", 1)
-    return [p.strip() for p in fragment.split(",") if p.strip()]
+    requires_part = fragment.split(";")[0]
+    return [p.strip() for p in requires_part.split(",") if p.strip()]
 
 
 def _validate_execute_parameters(
@@ -142,13 +145,114 @@ def get_published_service(db: Session, service_id: uuid.UUID) -> QueryServiceOut
     return _entry_to_service(entry)
 
 
+def _strip_path_meta(path: str) -> tuple[str, dict[str, str]]:
+    meta: dict[str, str] = {}
+    for part in path.split(";"):
+        if part.startswith("requires=") or "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+        meta[key.strip()] = value.strip()
+    base = path.split(";")[0]
+    return base, meta
+
+
+def _demo_execute_result() -> QueryServiceExecuteOut:
+    trace = trace_id_var.get() or uuid.uuid4().hex
+    return QueryServiceExecuteOut(
+        columns=["value"],
+        rows=[[1]],
+        row_count=1,
+        truncated=False,
+        trace_id=trace,
+    )
+
+
+def _execute_cat02(
+    actor: UserContext,
+    parameters: dict[str, str | int | float | bool | None],
+    meta: dict[str, str],
+) -> QueryServiceExecuteOut:
+    from app.governance.catalog.cat02.errors import Cat02Error
+    from app.governance.catalog.cat02.query import query_aggregate
+
+    template_key = str(parameters.get("templateKey") or meta.get("templateKey") or "")
+    group_by = str(parameters.get("groupBy") or meta.get("groupBy") or "")
+    try:
+        result = query_aggregate(template_key, group_by, actor)
+    except Cat02Error as exc:
+        raise IntegrationError(exc.code, exc.message, exc.status) from exc
+    columns = list(result.dimensions) + list(result.metrics)
+    rows = [[row.get(col) for col in columns] for row in result.rows]
+    trace = trace_id_var.get() or uuid.uuid4().hex
+    return QueryServiceExecuteOut(
+        columns=columns,
+        rows=rows,
+        row_count=len(rows),
+        truncated=False,
+        trace_id=trace,
+    )
+
+
+def _execute_binding(
+    db: Session,
+    actor: UserContext,
+    binding_id: str,
+) -> QueryServiceExecuteOut:
+    from app.query import service as query_service
+    from app.query.schemas import ExecuteRequest, QueryError
+
+    try:
+        binding_uuid = uuid.UUID(binding_id)
+    except ValueError as exc:
+        raise IntegrationError(
+            "SERVICE_EXECUTE_INVALID",
+            "Invalid binding id",
+            422,
+            fields=[{"field": "binding", "message": "invalid uuid"}],
+        ) from exc
+    req = ExecuteRequest(binding_id=binding_uuid)
+    try:
+        out = query_service.execute_query(db, actor, req)
+    except QueryError as exc:
+        raise IntegrationError(exc.code, exc.message, exc.status) from exc
+    trace = trace_id_var.get() or uuid.uuid4().hex
+    return QueryServiceExecuteOut(
+        columns=out.columns,
+        rows=out.rows,
+        row_count=out.row_count,
+        truncated=out.truncated,
+        trace_id=trace,
+    )
+
+
+def _dispatch_service_execute(
+    db: Session,
+    actor: UserContext,
+    service: QueryServiceOut,
+    parameters: dict[str, str | int | float | bool | None],
+) -> QueryServiceExecuteOut:
+    base, meta = _strip_path_meta(service.path)
+    handler = meta.get("handler")
+    if "binding" in meta:
+        return _execute_binding(db, actor, meta["binding"])
+    if handler == "cat02" or "/cat02/aggregate" in base:
+        return _execute_cat02(actor, parameters, meta)
+    if handler == "demo" or "/demo/select-one" in base:
+        return _demo_execute_result()
+    raise IntegrationError(
+        "SERVICE_EXECUTE_NOT_CONFIGURED",
+        "Published service has no execution handler; use ;handler=demo, ;handler=cat02, or ;binding=<uuid>",
+        501,
+    )
+
+
 def get_service_openapi_fragment(service: QueryServiceOut) -> dict:
     op_id = service.path.strip("/").replace("/", ".") or "execute"
     return {
         "openapi": "3.1.0",
         "info": {"title": service.name, "version": service.version},
         "paths": {
-            service.path: {
+            service.path.split(";")[0]: {
                 service.http_method.lower(): {
                     "operationId": op_id,
                     "summary": service.name,
@@ -188,14 +292,7 @@ def execute_published_service(
             502,
             trace_id=trace,
         )
-    trace = trace_id_var.get() or uuid.uuid4().hex
-    result = QueryServiceExecuteOut(
-        columns=["value"],
-        rows=[[1]],
-        row_count=1,
-        truncated=False,
-        trace_id=trace,
-    )
+    result = _dispatch_service_execute(db, actor, service, parameters)
     if idempotency_key:
         _IDEMPOTENCY_STORE[f"{service_id}:{idempotency_key}"] = result
     return result
@@ -214,8 +311,11 @@ def publish_service(
     if entry.status == "published":
         try:
             bus_register.register_on_publish(db, service_id, actor)
-        except IntegrationError:
-            pass
+        except IntegrationError as exc:
+            logger.warning(
+                "bus_register_on_publish_failed",
+                extra={"service_id": str(service_id), "code": exc.code},
+            )
         return entry, False
     try:
         published = catalog_service.publish_entry(db, service_id)
@@ -223,6 +323,9 @@ def publish_service(
         raise IntegrationError(exc.code, exc.message, exc.status) from exc
     try:
         bus_register.register_on_publish(db, service_id, actor)
-    except IntegrationError:
-        pass
+    except IntegrationError as exc:
+        logger.warning(
+            "bus_register_on_publish_failed",
+            extra={"service_id": str(service_id), "code": exc.code},
+        )
     return published, True

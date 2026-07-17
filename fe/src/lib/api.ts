@@ -15,9 +15,23 @@ export function resetUnauthorizedHandler(): void {
   onUnauthorized = null;
 }
 
+function getEmbedTokenFromLocation(): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("token");
+}
+
 function getAuthHeaders(): Record<string, string> {
   const token = getAuthToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  if (token) return { Authorization: `Bearer ${token}` };
+  const embedToken = getEmbedTokenFromLocation();
+  if (embedToken) return { "X-Embed-Token": embedToken };
+  return {};
+}
+
+export function resolveQueryExecutePath(): string {
+  return getEmbedTokenFromLocation()
+    ? "/api/v1/embed/query/execute"
+    : "/api/v1/query/execute";
 }
 
 export class ApiRequestError extends Error {

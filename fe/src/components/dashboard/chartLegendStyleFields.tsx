@@ -173,7 +173,7 @@ export function ChartLegendDeParityFields({ deStyle, onPatch }: ChartLegendDePar
             value={hAlign}
             options={LEGEND_H_ALIGN_SEGMENT_OPTIONS}
             columns={3}
-            sizing="fill"
+            sizing="compact"
             className="min-w-0 flex-1"
             onChange={(value) => patchAlign(value as typeof hAlign, vAlign)}
           />
@@ -182,7 +182,7 @@ export function ChartLegendDeParityFields({ deStyle, onPatch }: ChartLegendDePar
             value={vAlign}
             options={LEGEND_V_ALIGN_SEGMENT_OPTIONS}
             columns={3}
-            sizing="fill"
+            sizing="compact"
             className="min-w-0 flex-1"
             onChange={(value) => patchAlign(hAlign, value as typeof vAlign)}
           />

@@ -5,7 +5,7 @@ describe("chartStyleSectionsForType", () => {
   it("table omits legend and remark", () => {
     expect(chartStyleSectionsForType("table")).toEqual([
       "tableBasic",
-      "tableColor",
+      "palette",
       "title",
       "background",
     ]);

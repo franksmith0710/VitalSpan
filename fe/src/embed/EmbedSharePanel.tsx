@@ -60,12 +60,17 @@ export function EmbedSharePanel() {
           allowedOrigins,
         }),
       });
-      const params = new URLSearchParams();
-      if (allowedOrigins.length) {
-        params.set("allowedOrigins", allowedOrigins.join(","));
-      }
-      const qs = params.toString();
-      const url = `${window.location.origin}/embed/chart/${chartId.trim()}${qs ? `?${qs}` : ""}`;
+      const tokenResp = await apiFetch<{
+        token: string;
+        embedUrl: string;
+      }>("/api/v1/embed/token", {
+        method: "POST",
+        body: JSON.stringify({
+          chartId: chartId.trim(),
+          allowedOrigins,
+        }),
+      });
+      const url = `${window.location.origin}${tokenResp.embedUrl}`;
       setEmbedUrl(url);
     } catch (e) {
       const err = e as Error & { code?: string; fields?: Array<{ message: string }> };

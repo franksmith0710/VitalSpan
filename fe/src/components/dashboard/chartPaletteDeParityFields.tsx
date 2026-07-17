@@ -5,7 +5,7 @@ import { ChartPaletteLabelTooltipFields } from "./chartPaletteLabelTooltipFields
 import { DashboardConfigSlider } from "./deAttrSlider";
 import { DeAttrField, DeAttrForm, DeAttrToggleRow } from "./dashboardInspectorUi";
 import { InspectorSwitchRow } from "./inspectorCompact";
-import { resolvePaletteId } from "@/lib/chartPalette";
+import { resolvePaletteId, resolveInheritPreviewColors } from "@/lib/chartPalette";
 import type { ChartLabelStyle, ChartSeriesColorItem, ChartTooltipStyle } from "@/lib/chartDeStyle";
 
 export type ChartPaletteDeParityFieldsProps = {
@@ -23,6 +23,9 @@ export type ChartPaletteDeParityFieldsProps = {
   seriesColor?: readonly ChartSeriesColorItem[];
   onSeriesColorsChange?: (items: readonly ChartSeriesColorItem[]) => void;
   showInherit?: boolean;
+  /** 仪表板配色（组件继承预览与仪表板配置对齐） */
+  dashboardPaletteId?: string;
+  dashboardPaletteColors?: readonly string[];
   dense?: boolean;
   showLabelToggle?: boolean;
   showTooltipToggle?: boolean;
@@ -56,6 +59,8 @@ export function ChartPaletteDeParityFields({
   tooltipColorFallback,
   tooltipBackgroundFallback,
   showInherit = false,
+  dashboardPaletteId,
+  dashboardPaletteColors,
   dense = false,
   showLabelToggle = true,
   showTooltipToggle = true,
@@ -76,6 +81,11 @@ export function ChartPaletteDeParityFields({
   const density = dense ? "narrow" : "wide";
   const pickerValue = showInherit ? paletteId : paletteId ?? "default";
   const inheritActive = showInherit && resolvePaletteId(paletteId) == null;
+
+  const inheritPreviewColors = resolveInheritPreviewColors(
+    dashboardPaletteId,
+    dashboardPaletteColors,
+  );
 
   const gradientToggle =
     showGradientToggle && onSeriesGradientChange ? (
@@ -161,6 +171,7 @@ export function ChartPaletteDeParityFields({
           paletteOpacity={paletteOpacity}
           seriesColors={seriesColor}
           showInherit={showInherit}
+          inheritPreviewColors={inheritPreviewColors}
           dense
           onPaletteChange={onPaletteChange}
           onSeriesColorsChange={onSeriesColorsChange}
@@ -182,6 +193,7 @@ export function ChartPaletteDeParityFields({
           value={pickerValue}
           paletteColors={paletteColors}
           seriesColors={seriesColor}
+          inheritPreviewColors={inheritPreviewColors}
           onChange={onPaletteChange}
           onSeriesColorsChange={onSeriesColorsChange}
         />

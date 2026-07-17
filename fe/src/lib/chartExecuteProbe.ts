@@ -171,6 +171,14 @@ export function resetChartExecuteSharedInflight(): void {
   executeResultCache.clear();
 }
 
+function queryExecutePath(): string {
+  if (typeof window !== "undefined") {
+    const embedToken = new URLSearchParams(window.location.search).get("token");
+    if (embedToken) return "/api/v1/embed/query/execute";
+  }
+  return "/api/v1/query/execute";
+}
+
 export async function fetchChartExecuteResult(
   config: ChartViewConfig,
   options: ChartExecuteProbeOptions = {},
@@ -229,7 +237,7 @@ export async function fetchChartExecuteResult(
           rls: { enabled: false },
         };
 
-  return apiFetch<ChartExecuteResult>("/api/v1/query/execute", {
+  return apiFetch<ChartExecuteResult>(queryExecutePath(), {
     method: "POST",
     body: JSON.stringify(body),
   });

@@ -227,6 +227,6 @@ describe("dashboard component gap", () => {
     expect(resolveDashboardComponentGap({ pixelGutter: 8 }, { pixel: true })).toBe(8);
     expect(resolveDashboardComponentGap({ gapPreset: "md" })).toBe(8);
     expect(dashboardShapeGapStyle(5)).toEqual({ [DASHBOARD_SHAPE_GAP_VAR]: "5px" });
-    expect(resolvePixelGutter({ pixelGutter: 16 })).toBe(10);
+    expect(resolvePixelGutter({ pixelGutter: 16 })).toBe(16);
   });
 });

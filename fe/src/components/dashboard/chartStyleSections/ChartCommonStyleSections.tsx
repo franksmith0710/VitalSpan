@@ -62,6 +62,8 @@ export function ChartPaletteStyleSection() {
       <ChartPaletteDeParityFields
         dense
         showInherit
+        dashboardPaletteId={dashboardStyle?.paletteId}
+        dashboardPaletteColors={dashboardStyle?.paletteColors}
         paletteId={deStyle.paletteId}
         seriesColor={seriesColorItems.length > 0 ? seriesColorItems : undefined}
         paletteOpacity={deStyle.paletteOpacity}

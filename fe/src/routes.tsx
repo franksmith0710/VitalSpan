@@ -43,6 +43,8 @@ import { DesignerPage } from "@/pages/admin/designer/DesignerPage";
 import { ChartExplorePage } from "@/pages/admin/charts/ChartExplorePage";
 import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { ReportSchedulesPage } from "@/pages/admin/reports/ReportSchedulesPage";
+import { ReportCenterPage } from "@/pages/admin/reports/ReportCenterPage";
+import { ReportViewPage } from "@/pages/admin/reports/ReportViewPage";
 import { ACCOUNT_PREFERENCES_PATH } from "@/lib/workspace";
 
 export function AppRoutes() {
@@ -74,6 +76,8 @@ export function AppRoutes() {
           <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
           <Route path="entities/overview" element={<RequireCapabilityName capability="theme:*"><EntityOverviewPage /></RequireCapabilityName>} />
           <Route path="reports" element={<RequireCapabilityName capability="report:read"><PrefabReportsPage /></RequireCapabilityName>} />
+          <Route path="reports/center" element={<RequireCapabilityName capability="report:read"><ReportCenterPage /></RequireCapabilityName>} />
+          <Route path="reports/view/:nodeId" element={<RequireCapabilityName capability="report:read"><ReportViewPage /></RequireCapabilityName>} />
           <Route path="reports/templates" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/templates/:nodeId" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/schedules" element={<RequireCapabilityName capability="report:manage"><ReportSchedulesPage /></RequireCapabilityName>} />

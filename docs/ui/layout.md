@@ -114,8 +114,9 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /charts/types                # 图表类型目录（**已移出侧栏**；仅 Palette「查看全部类型」深链）
 │
 ├── 报表
-│   ├── /reports                     # 授权报表列表（消费；analyst/viewer 侧栏仅此项）
-│   ├── /reports/:id                 # 报表查看
+│   ├── /reports/center              # 报表中心 hub（授权模板 + 快捷入口）
+│   ├── /reports                     # 预制分析报表
+│   ├── /reports/view/:nodeId        # 报表查看与运行
 │   ├── /reports/templates           # 模板目录（admin · `report:manage`）
 │   ├── /reports/templates/:id       # 模板编辑
 │   └── /reports/schedules           # 调度（admin · `report:manage`）
@@ -147,7 +148,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA |
 |------|--------|----------|--------|------|---------|
 | 分析 | Dashboard | — | M1 | admin/analyst/viewer | **展开**（主路径） |
-| 报表 | 报表中心（analyst/viewer 仅「预制报表」；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
+| 报表 | 报表中心（含「全部报表」hub；analyst/viewer 见全部报表+预制；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
 | 数据 | 数据连接（连接管理/同步任务）、语义建模（Dataset/元数据） | `datasource:*` / `dataset:*` / `metadata:*` | M1/M13 | admin | **展开** |
 | 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 默认隐藏**（`VITE_GOV_NAV=1` 才显示） |
 | 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |
@@ -183,7 +184,9 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 富文本正文 | 单击选中；双击进入内联编辑；点击外部或 Ctrl+Enter 提交；Esc 取消 |
 
+| `/admin/reports/center` | hub 卡片 + 授权模板网格 | RPT-002/004 |
 | `/admin/reports` | `table-list` + 运行结果区 | RPT-002 |
+| `/admin/reports/view/:nodeId` | 运行 + 结果 + 导出 | RPT-001 |
 | `/admin/reports/templates` | `master-detail` 树 + 扩展配置 Tabs | RPT-004/006 |
 | `/admin/reports/templates/:nodeId` | 同上（深链选中节点） | RPT-004/006 |
 | `/admin/themes/:dashboardId` | hub-tabs（配置 \| 分析） | DASH-006 |

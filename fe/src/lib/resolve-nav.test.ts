@@ -93,6 +93,7 @@ describe("resolveNavGroups", () => {
     const reportParent = reportSection?.items.find((i) => i.name === "报表中心");
     expect(reportParent).toBeDefined();
     const subNames = reportParent?.subItems?.map((s) => s.name) ?? [];
+    expect(subNames).toContain("全部报表");
     expect(subNames).toContain("预制报表");
     expect(subNames).not.toContain("报表模板");
     expect(subNames).not.toContain("报表调度");
@@ -241,11 +242,11 @@ describe("resolveNavGroups", () => {
     expect(names).not.toContain("图表类型目录");
   });
 
-  it("T-NAV-RPT-01: analyst 报表中心仅预制报表", () => {
+  it("T-NAV-RPT-01: analyst 报表中心含全部报表与预制报表", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("analyst", ["analyst"]));
     const report = groups.find((g) => g.title === "报表");
     const center = report?.items.find((i) => i.name === "报表中心");
-    expect(center?.subItems?.map((s) => s.name)).toEqual(["预制报表"]);
+    expect(center?.subItems?.map((s) => s.name)).toEqual(["全部报表", "预制报表"]);
   });
 
   it("T-DESIGN-FC-01: admin governance group has 查询设计器 with badge when gov nav on", () => {

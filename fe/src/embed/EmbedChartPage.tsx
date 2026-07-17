@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
@@ -11,6 +11,7 @@ export function EmbedChartPage() {
   const { chartId } = useParams<{ chartId: string }>();
   const [searchParams] = useSearchParams();
   const parentOrigin = window.location.origin;
+  const embedToken = searchParams.get("token");
 
   const allowedOrigins = useMemo(() => {
     const raw = searchParams.get("allowedOrigins");
@@ -21,17 +22,54 @@ export function EmbedChartPage() {
   const theme = searchParams.get("theme") === "dark" ? "dark" : "light";
   const authorized = isOriginAllowed(parentOrigin, allowedOrigins);
 
-  const config: ChartViewConfig | null = chartId
-    ? {
-        chartType: "funnel",
-        chartId,
-        dataSourceId: "00000000-0000-4000-8000-000000000001",
-        mode: "sql",
-        sql: "SELECT 1",
-        dimensions: [{ field: "stage" }],
-        metrics: [{ field: "value" }],
-      }
-    : null;
+  const [config, setConfig] = useState<ChartViewConfig | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(Boolean(chartId && embedToken));
+
+  useEffect(() => {
+    if (!chartId) {
+      setConfig(null);
+      setLoadError(null);
+      setLoading(false);
+      return;
+    }
+    if (!embedToken) {
+      setConfig(null);
+      setLoadError("缺少嵌入令牌，请通过分享页签发链接");
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    const qs = new URLSearchParams({ token: embedToken, chartId });
+    void fetch(`/api/v1/embed/chart-view?${qs.toString()}`)
+      .then(async (resp) => {
+        const body = (await resp.json().catch(() => ({}))) as {
+          message?: string;
+          chartType?: string;
+        };
+        if (!resp.ok) {
+          throw new Error(body.message || "加载图表配置失败");
+        }
+        return body as ChartViewConfig;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setConfig(data);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setConfig(null);
+        setLoadError(err instanceof Error ? err.message : "加载图表配置失败");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [chartId, embedToken]);
 
   if (!authorized) {
     return (
@@ -47,10 +85,29 @@ export function EmbedChartPage() {
     );
   }
 
-  if (!config) {
+  if (!chartId) {
     return (
       <div role="alert" className="p-6 text-theme-sm text-error-600">
         缺少图表 ID
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[240px] items-center justify-center p-6 text-theme-sm text-gray-500">
+        正在加载图表…
+      </div>
+    );
+  }
+
+  if (loadError || !config) {
+    return (
+      <div role="alert" className="flex min-h-[240px] flex-col items-center justify-center gap-3 p-6 text-center">
+        <p className="text-theme-sm text-error-600">{loadError ?? "无法加载图表"}</p>
+        <Button type="button" variant="outline" size="sm" onClick={() => window.location.reload()}>
+          重试
+        </Button>
       </div>
     );
   }

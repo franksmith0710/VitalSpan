@@ -97,11 +97,24 @@ def issue_embed_token(
         "theme": payload.theme,
         "api_base": api_base,
         "allowed_origins": list(payload.allowed_origins),
+        "chart_id": payload.chart_id,
+        "dashboard_id": payload.dashboard_id,
+        "actor_id": actor.id,
+        "actor_username": actor.username,
+        "actor_roles": list(actor.roles),
+        "actor_permissions": list(actor.permissions),
+        "actor_is_root": actor.is_root,
     }
+    if payload.chart_id is not None:
+        embed_path = f"/embed/chart/{payload.chart_id}?token={token}"
+    elif payload.dashboard_id is not None:
+        embed_path = f"/embed/chart/{payload.dashboard_id}?token={token}"
+    else:
+        embed_path = f"/embed/chart?token={token}"
     return EmbedTokenOut(
         token=token,
         expires_at=expires_at.isoformat(),
-        embed_url=f"/embed/{token}",
+        embed_url=embed_path,
         sdk_params={
             "containerId": container_id,
             "theme": payload.theme,
@@ -111,12 +124,28 @@ def issue_embed_token(
     )
 
 
-def resolve_sdk_params(token: str, origin_header: str | None = None) -> dict:
+def require_token_meta(token: str) -> dict:
     row = _TOKEN_STORE.get(token)
     if row is None:
         raise IntegrationError("EMBED_TOKEN_INVALID", "Invalid embed token", 404)
     if datetime.now(UTC) > row["expires_at"]:
         raise IntegrationError("EMBED_TOKEN_EXPIRED", "Embed token expired", 404)
+    return row
+
+
+def resolve_embed_actor(token: str) -> UserContext:
+    row = require_token_meta(token)
+    return UserContext(
+        id=str(row["actor_id"]),
+        username=str(row.get("actor_username") or ""),
+        roles=list(row.get("actor_roles") or []),
+        permissions=set(row.get("actor_permissions") or []),
+        is_root=bool(row.get("actor_is_root")),
+    )
+
+
+def resolve_sdk_params(token: str, origin_header: str | None = None) -> dict:
+    row = require_token_meta(token)
     allowed = row.get("allowed_origins") or []
     if allowed and origin_header and origin_header not in allowed:
         raise IntegrationError("EMBED_ORIGIN_DENIED", "Origin not allowed", 403)
