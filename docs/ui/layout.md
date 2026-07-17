@@ -5,7 +5,7 @@
 
 ```yaml
 version: 1.3.1
-last_updated: 2026-07-10
+last_updated: 2026-07-17
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
 layout_pattern_ref: references/layout-patterns/app-shell.md
@@ -107,9 +107,11 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │
 ├── 分析                            # 建设 + 消费（默认展开）
 │   ├── /dashboards                  # Dashboard 列表 · table-list（全员可见授权项）
-│   ├── /data-screens                # 数据大屏列表 · bi-data-screen
-│   ├── /data-screens/:id            # 大屏查看
-│   ├── /data-screens/:id/edit       # 大屏编辑（复用像素画布）
+│   ├── /data-screens                # 数据大屏列表 · bi-data-screen（`surfaceKind=data-screen`）
+│   ├── /data-screens/:id            # 大屏查看 view（`DashboardEditPage mode=view`）
+│   ├── /data-screens/:id/edit       # 大屏编辑（复用像素画布；默认画布 1920×1080）
+│   ├── /data-screens/:id/preview    # 大屏全屏预览投放（`DataScreenPreviewPage` + `DataScreenPresenter`）
+│   ├── /data-screens/:id/share      # 大屏分享/嵌入（复用 `DashboardSharePage`）
 │   ├── /dashboards/:id              # 查看 view · bi-dashboard-builder（只读）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
 │   ├── /dashboards/:id/preview      # （规划）构建器 preview；当前以 `/dashboards/:id` view 模式替代
@@ -180,8 +182,11 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 |-------------|---------------------------|-----|
 | `/admin/datasources` | `crud-flow` + `table-list` | DS-* |
 | `/admin/dashboards/:id/edit` | `bi-dashboard-builder`（edit） | DASH-*, VIZ-* |
-| `/admin/data-screens` | `bi-data-screen` 列表 | DASH-003 |
-| `/admin/data-screens/:id/edit` | `bi-data-screen` 编辑（复用像素画布） | DASH-003 |
+| `/admin/data-screens` | `bi-data-screen` 列表；`GET /dashboards?surfaceKind=data-screen` | DASH-002 companion |
+| `/admin/data-screens/:id/edit` | `bi-data-screen` 编辑（复用像素画布；`surfacePreset` 1920×1080） | DASH-002 companion |
+| `/admin/data-screens/:id` | `bi-data-screen` 查看 view（同壳层只读编辑页） | DASH-002 companion |
+| `/admin/data-screens/:id/preview` | 全屏投放预览（`CanvasScaleViewport` · 无 Admin 壳层） | DASH-002 companion |
+| `/admin/data-screens/:id/share` | `bi-share-embed`（复用分享页） | VIZ-006, API-006 |
 | `/admin/dashboards/:id` | `bi-dashboard-builder`（view） | DASH-*, VIEW-* |
 | `/admin/dashboards/:id/share` | `bi-share-embed` | VIZ-006, API-006 |
 
@@ -198,7 +203,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | `/admin/system/rls` | `form-composition` | AUTH-* |
 | `/admin/governance/tickets` | `master-detail-ops` | GOV-* |
 | `/admin/datasets` | `bi-dataset-management` | META-* |
-| 数据大屏（可选） | `bi-data-screen` | DASH-003 |
+| 数据大屏（`surfaceKind=data-screen`） | `bi-data-screen` | DASH-002 companion |
 
 检索路径：`pattern-index.md` → `layout-patterns/*.md` → `templates/**`。
 
@@ -277,6 +282,7 @@ fe/src/
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.3.2 | 2026-07-17 | 数据大屏 Phase 1：补 `preview`/`share` 路由；`surfaceKind` 与 view/preview 语义区分 |
 | 1.3.1 | 2026-07-10 | H1：治理侧栏默认隐藏（`VITE_GOV_NAV`）；深链诚实横幅；RLS/审计 Admin 说明 |
 | 1.2.3 | 2026-07-09 | F-F VIEW-001 companion：`dashboardLayoutToView` 适配层与 Dashboard PUT 校验说明 |
 | 1.0.0 | 2026-07-03 | 初版：Admin/Portal/Embed 双端 IA（已废止） |

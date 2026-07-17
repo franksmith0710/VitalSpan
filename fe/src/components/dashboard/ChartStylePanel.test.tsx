@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartStylePanel } from "./ChartStylePanel";
 import { ChartInspectorProvider } from "./ChartInspectorProvider";
+import { readChartDeStyle } from "@/lib/chartDeStyle";
 import type { LayoutWidget } from "./layoutUtils";
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -107,15 +108,17 @@ describe("ChartStylePanel", () => {
   it("re-renders palette display after provider onChange updates widget", async () => {
     const user = userEvent.setup();
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const onChange = vi.fn();
 
     function StatefulPanel() {
       const [currentWidget, setCurrentWidget] = useState(widget);
       return (
         <ChartInspectorProvider
           widget={currentWidget}
-          onChange={(chartConfig) =>
-            setCurrentWidget((prev) => ({ ...prev, chartConfig }))
-          }
+          onChange={(chartConfig) => {
+            onChange(chartConfig);
+            setCurrentWidget((prev) => ({ ...prev, chartConfig }));
+          }}
         >
           <ChartStylePanel />
         </ChartInspectorProvider>
@@ -129,6 +132,9 @@ describe("ChartStylePanel", () => {
     );
 
     await user.click(await screen.findByRole("option", { name: /浅韵/ }));
+
+    const lastConfig = onChange.mock.calls.at(-1)?.[0];
+    expect(readChartDeStyle(lastConfig).paletteId).toBe("pastel");
     expect(await screen.findByLabelText("当前配色方案")).toHaveTextContent("浅韵");
   });
 

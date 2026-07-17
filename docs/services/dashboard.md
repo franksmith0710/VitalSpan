@@ -10,6 +10,7 @@
 ## 职责
 
 - Dashboard 定义持久化（名称、slug、布局 JSON、图表组件引用）
+- **表面分化**：同表 `dashboards`，经 `layoutJson.styleConfig.surfaceKind` 区分仪表板（`dashboard`）与数据大屏（`data-screen`）；列表 API `?surfaceKind=` 过滤
 - 布局保存时校验内嵌 `chartConfig`（`ChartViewConfig`）
 - Dashboard 列表、生命周期与布局持久化用例
 - v1 栅格 / v2 像素布局的版本校验、边界校验与确定性迁移
@@ -21,6 +22,7 @@
 | Dashboard 领域模型、`DashboardService`、layout JSON 领域契约 | 单图表查询执行（→ `query`） |
 | layout 内 `chartConfig` 校验（→ `schemas/chart_view`） | 图表类型插件、全局筛选 SQL 注入（远期） |
 | v1→v2 纯迁移与双版本持久化完整性 | 浏览器 Pointer 事件编排（→ `fe/components/dashboard/pixelCanvas`） |
+| `surface_kind` 列表过滤与 layout 读取 | 数据大屏投放壳层 FE（→ `fe/components/dashboard/screen/`） |
 | | 发布/草稿版本、分享范围（远期 companion） |
 | | GIS 地图生产集成（DASH-006 companion） |
 
@@ -69,6 +71,7 @@
 | `Dashboard` ORM | `dashboards` 表 | DASH-001 | 已实现 |
 | `DashboardService` | CRUD + `validate_layout` + `update_layout` | DASH-001~003 | 已实现 |
 | `DashboardLayout` | v1 栅格 / v2 像素判别契约；保留 `widgets`/`globalFilters` 公共语义 | DASH-002 | 已实现 |
+| `surface_kind.py` | `read_surface_kind_from_layout`；列表 `surfaceKind` 查询过滤 | DASH-002 companion | 已实现（2026-07-17） |
 | `migrate_v1_to_v2` | 12 列栅格到 1440px 规范画布的纯迁移 | DASH-002 | 已实现 |
 | `dashboard/theme/` | 实体主题分析 config（`entity_theme` via config_store）+ chart_view 联动 + execute-plan + drill query + ACL | DASH-006 | M3-LITE 已实现（r233） |
 | `dashboard/global_filters/` | 全局筛选联动 validate/save/get + widget 绑定 + ACL/probe | DASH-004 | companion 已实现 r67 |
@@ -78,7 +81,8 @@
 ## Layout 领域契约
 
 - **v1 栅格**：组件几何由 `colSpan/rowSpan/gridX/gridY` 表达；保留用于历史数据与紧急回退。
-- **v2 像素**：规范画布宽 1440px，组件几何由 `x/y/width/height` 表达；矩形必须完整位于画布内。
+- **v2 像素**：规范画布宽默认 **1440px**（仪表板）；`surfaceKind=data-screen` 时默认 **1920×1080**（`fe/src/lib/surfacePreset.ts`）；组件几何由 `x/y/width/height` 表达；矩形必须完整位于画布内。
+- **`surfaceKind`**：`layoutJson.styleConfig.surfaceKind` 为 `dashboard`（默认）或 `data-screen`；列表 `GET /api/v1/dashboards?surfaceKind=` 过滤；FE 路由 `/admin/data-screens/*` 与 `/admin/dashboards/*` 共用引擎、分化 IA。
 - 两个版本共享组件标识、类型、内容配置、顺序、全局筛选和样式语义；禁止在同一版本中混用另一版几何字段。
 - DashboardView 外层协议可承载任一布局版本，不改变或降级布局几何。
 
@@ -90,5 +94,5 @@
 
 - Alembic `0013_dashboards`：`dashboards` 表
 - API：`backend/app/api/v1/dashboards.py`
-- FE：`fe/src/pages/admin/dashboard/`、`fe/src/components/dashboard/`
+- FE：`fe/src/pages/admin/dashboard/`、`fe/src/pages/admin/data-screens/`、`fe/src/lib/surfacePreset.ts`、`fe/src/components/dashboard/`
 - **组件标题（DASH-008-06）**：`LayoutWidget.title` 布局持久化；图表样式扩展 `chartConfig.nativeBody.deStyle.title|remark`（FE `chartDeStyle.ts` · 顶栏 `WidgetShapeChrome`）；设计见 `docs/superpowers/specs/2026-07-14-dashboard-widget-title-chrome-de.md`

@@ -28,10 +28,12 @@ function resolveDataMode(cfg: ChartViewConfig): "dataset" | "sql" {
 
 export type ChartInspectorState = ReturnType<typeof useChartInspectorState>;
 
-export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: ChartViewConfig) => void) {
+export function useChartInspectorState(
+  widget: LayoutWidget,
+  readChartConfig: () => ChartViewConfig,
+  emitChange: (cfg: ChartViewConfig) => void,
+) {
   const cfg = widget.chartConfig ?? defaultChartConfig("table");
-  const cfgRef = useRef(cfg);
-  cfgRef.current = cfg;
   const { columns, loading: columnsLoading, ready: columnsReady, refreshColumns } = useInspectorColumns(cfg);
   const bindingSyncRef = useRef<string | null>(null);
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[]>([]);
@@ -74,7 +76,8 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
     async (datasetId: string) => {
       const ds = datasetItems.find((d) => d.datasetId === datasetId);
       const boundId = ds?.boundConfigId ?? undefined;
-      let dataSourceId = cfg.dataSourceId;
+      const current = readChartConfig();
+      let dataSourceId = current.dataSourceId;
 
       if (boundId) {
         try {
@@ -85,8 +88,8 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
         }
       }
 
-      onChange({
-        ...cfgRef.current,
+      emitChange({
+        ...current,
         mode: "dataset",
         datasetId,
         configId: boundId,
@@ -94,7 +97,7 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
         sql: undefined,
       });
     },
-    [datasetItems, onChange],
+    [datasetItems, emitChange, readChartConfig],
   );
 
   useEffect(() => {
@@ -116,7 +119,8 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
 
     let cancelled = false;
     void (async () => {
-      let dataSourceId = cfg.dataSourceId;
+      const current = readChartConfig();
+      let dataSourceId = current.dataSourceId;
       try {
         const binding = await resolveDatasetChartBinding(boundId);
         if (binding.dataSourceId) dataSourceId = binding.dataSourceId;
@@ -126,8 +130,8 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
       if (cancelled) return;
 
       bindingSyncRef.current = syncKey;
-      onChange({
-        ...cfgRef.current,
+      emitChange({
+        ...readChartConfig(),
         mode: "dataset",
         configId: boundId,
         ...(dataSourceId ? { dataSourceId } : {}),
@@ -137,30 +141,31 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
     return () => {
       cancelled = true;
     };
-  }, [dataMode, cfg, datasetItems, datasetsLoading, onChange]);
+  }, [dataMode, cfg, datasetItems, datasetsLoading, emitChange, readChartConfig]);
 
   const columnsKey = columns.join("|");
   useEffect(() => {
     if (!columns.length) return;
-    const current = cfgRef.current;
+    const current = readChartConfig();
     const reconciled = reconcileChartFields(current, columns);
     const same =
       JSON.stringify(current.dimensions) === JSON.stringify(reconciled.dimensions) &&
       JSON.stringify(current.metrics) === JSON.stringify(reconciled.metrics);
-    if (!same) onChange(reconciled);
+    if (!same) emitChange(reconciled);
     // 仅在列集合变化时剔除无效字段，避免拖入字段时被立即清掉
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columnsKey]);
 
   const assignField = useCallback(
     (fieldName: string, target?: SlotTarget) => {
-      const resolved = resolveAutoAssignTarget(cfg, cfg.chartType, fieldName, target ?? activeSlot);
+      const current = readChartConfig();
+      const resolved = resolveAutoAssignTarget(current, current.chartType, fieldName, target ?? activeSlot);
       if ("error" in resolved) {
         setFieldAssignError(resolved.error);
         return;
       }
       const slot = resolved.target;
-      const check = validateFieldAssignment(fieldName, slot, cfg.chartType);
+      const check = validateFieldAssignment(fieldName, slot, current.chartType);
       if (!check.ok) {
         setFieldAssignError(check.message);
         return;
@@ -168,24 +173,24 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
 
       setFieldAssignError(null);
       if (slot.kind === "dimension") {
-        const dimensions = [...(cfg.dimensions ?? [])];
+        const dimensions = [...(current.dimensions ?? [])];
         while (dimensions.length <= slot.index) dimensions.push({ field: "" });
         dimensions[slot.index] = { field: fieldName };
-        onChange({ ...cfg, dimensions });
+        emitChange({ ...current, dimensions });
       } else {
-        const metrics = [...(cfg.metrics ?? [])];
+        const metrics = [...(current.metrics ?? [])];
         while (metrics.length <= slot.index) metrics.push({ field: "" });
         metrics[slot.index] = { field: fieldName };
-        onChange({ ...cfg, metrics });
+        emitChange({ ...current, metrics });
       }
       setActiveSlot(null);
     },
-    [activeSlot, cfg, onChange],
+    [activeSlot, emitChange, readChartConfig],
   );
 
   return {
     widget,
-    onChange,
+    onChange: emitChange,
     cfg,
     columns,
     columnsLoading,

@@ -8,10 +8,14 @@ import {
   Lock,
   Unlock,
 } from "lucide-react";
-import { sortWidgets, type LayoutWidget } from "@/components/dashboard/layoutUtils";
+import {
+  moveWidget,
+  moveWidgetToExtreme,
+  sortWidgets,
+  type LayoutWidget,
+} from "@/components/dashboard/layoutUtils";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { moveWidget, moveWidgetToExtreme } from "@/components/dashboard/layoutUtils";
 
 export type LayerPanelProps = {
   widgets: LayoutWidget[];
@@ -110,7 +114,7 @@ export function LayerPanel({
                   variant="ghost"
                   size="xs"
                   aria-label="上移一层"
-                  onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "up"))}
+                  onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "down"))}
                 >
                   <ArrowUp className="size-3.5" />
                 </IconButton>
@@ -119,7 +123,7 @@ export function LayerPanel({
                   variant="ghost"
                   size="xs"
                   aria-label="下移一层"
-                  onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "down"))}
+                  onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "up"))}
                 >
                   <ArrowDown className="size-3.5" />
                 </IconButton>

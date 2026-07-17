@@ -66,9 +66,17 @@ def _create_dashboard(client: TestClient, *, slug: str, surface_kind: str | None
         "globalFilters": [],
     }
     if surface_kind == "data-screen":
+        layout["canvas"] = {"width": 1920, "height": 1080}
         layout["styleConfig"] = {
             "surfaceKind": "data-screen",
             "colorScheme": "dark",
+            "canvasBackground": "#0b1220",
+            "canvasBackgroundCustom": True,
+            "scaleMode": "canvas",
+            "gapPreset": "none",
+            "widgetGap": 0,
+            "pixelGutter": 0,
+            "themeAccent": "#3b82f6",
         }
     put = client.put(
         f"/api/v1/dashboards/{dash_id}/layout",
@@ -100,3 +108,16 @@ def test_list_dashboards_surface_kind_filter(client: TestClient) -> None:
         read_surface_kind_from_layout(item.get("layoutJson")) == "data-screen"
         for item in screen_items
     )
+
+
+def test_data_screen_default_layout_accepts_1920_canvas(client: TestClient) -> None:
+    dash_id = _create_dashboard(
+        client,
+        slug=f"screen-1920-{uuid.uuid4().hex[:8]}",
+        surface_kind="data-screen",
+    )
+    get_resp = client.get(f"/api/v1/dashboards/{dash_id}", headers=AUTH)
+    assert get_resp.status_code == 200
+    layout = get_resp.json()["layoutJson"]
+    assert layout["canvas"] == {"width": 1920, "height": 1080}
+    assert layout["styleConfig"]["surfaceKind"] == "data-screen"

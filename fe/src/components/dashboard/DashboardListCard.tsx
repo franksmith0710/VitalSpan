@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { ListRowCheckbox } from "@/components/layout/list-batch-delete";
 import {
   dataScreenEditPath,
-  dataScreenViewPath,
+  dataScreenPreviewPath,
   dashboardSharePath,
   isDataScreenLayout,
 } from "@/lib/dataScreenLayout";
@@ -65,7 +65,7 @@ export function DashboardListCard({
 }) {
   const widgetCount = dashboard.layoutJson?.widgets?.length ?? 0;
   const isScreen = routeBase === "/admin/data-screens" || isDataScreenLayout(dashboard.layoutJson);
-  const viewPath = isScreen ? dataScreenViewPath(dashboard.id) : `${routeBase}/${dashboard.id}`;
+  const viewPath = isScreen ? dataScreenPreviewPath(dashboard.id) : `${routeBase}/${dashboard.id}`;
   const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
   const sharePath = dashboardSharePath(dashboard.id, isScreen);
   const primaryPath = canEdit ? editPath : viewPath;

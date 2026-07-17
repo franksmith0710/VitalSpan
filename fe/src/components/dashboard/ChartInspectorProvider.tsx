@@ -28,7 +28,6 @@ export function ChartInspectorProvider({
   dashboardId,
   children,
 }: ChartInspectorProviderProps) {
-  const state = useChartInspectorState(widget, onChange);
   const widgetRef = useRef(widget);
   widgetRef.current = widget;
 
@@ -37,11 +36,22 @@ export function ChartInspectorProvider({
     [],
   );
 
+  /** 同步更新 ref，避免 columns/binding effect 在父级 re-render 前用旧 cfg 覆盖 deStyle */
+  const emitChange = useCallback(
+    (next: ChartViewConfig) => {
+      widgetRef.current = { ...widgetRef.current, chartConfig: next };
+      onChange(next);
+    },
+    [onChange],
+  );
+
+  const state = useChartInspectorState(widget, readChartConfig, emitChange);
+
   const patchDeStyle = useCallback(
     (patch: Partial<ChartDeStyle>) => {
-      onChange(patchChartDeStyle(readChartConfig(), patch));
+      emitChange(patchChartDeStyle(readChartConfig(), patch));
     },
-    [onChange, readChartConfig],
+    [emitChange, readChartConfig],
   );
 
   const patchDeStyleNested = useCallback(
@@ -49,16 +59,16 @@ export function ChartInspectorProvider({
       key: K,
       patch: Partial<NonNullable<ChartDeStyle[K]>>,
     ) => {
-      onChange(patchChartDeStyleNested(readChartConfig(), key, patch));
+      emitChange(patchChartDeStyleNested(readChartConfig(), key, patch));
     },
-    [onChange, readChartConfig],
+    [emitChange, readChartConfig],
   );
 
   const mutateChartConfig = useCallback(
     (mutator: (cfg: ChartViewConfig) => ChartViewConfig) => {
-      onChange(mutator(readChartConfig()));
+      emitChange(mutator(readChartConfig()));
     },
-    [onChange, readChartConfig],
+    [emitChange, readChartConfig],
   );
 
   return (
@@ -66,7 +76,7 @@ export function ChartInspectorProvider({
       value={{
         ...state,
         widget,
-        onChange,
+        onChange: emitChange,
         onTitleChange,
         dashboardStyle,
         dashboardId,

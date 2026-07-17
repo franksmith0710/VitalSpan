@@ -29,10 +29,8 @@ import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
-import {
-  buildDefaultDataScreenLayout,
-  dataScreenEditPath,
-} from "@/lib/dataScreenLayout";
+import { buildDefaultLayoutForSurface } from "@/lib/surfacePreset";
+import { dataScreenEditPath } from "@/lib/dataScreenLayout";
 import { queryKeys } from "@/lib/queryKeys";
 import { useListPagination } from "@/lib/list-pagination";
 import { canEditDashboards, sessionUserFromMe } from "@/lib/session";
@@ -88,7 +86,7 @@ export function DataScreenListPage() {
       try {
         await apiFetch(`/api/v1/dashboards/${created.id}/layout`, {
           method: "PUT",
-          body: JSON.stringify({ layoutJson: buildDefaultDataScreenLayout() }),
+          body: JSON.stringify({ layoutJson: buildDefaultLayoutForSurface("data-screen") }),
         });
       } catch (layoutErr) {
         try {

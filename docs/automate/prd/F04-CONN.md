@@ -225,13 +225,13 @@
   - [x] type=`timescaledb` 已注册（types catalog + `schema_browser` capability，r40 L1）
   - [ ] UI 可选
   - [x] 连通性测试结构化错误（`TIMESCALE_CONN_REFUSED`/`TIMESCALE_AUTH_FAILED`/`TIMESCALE_TIMEOUT`/`TIMESCALE_UNKNOWN_DATABASE`/`TIMESCALE_EXTENSION_MISSING`，r40+r41+r235 mock）
-  - [x] compose 连通性（r235 T-CONN-R235-013-05；无 compose 分层 skip）
+  - [x] compose 连通性（r235 T-CONN-R235-013-05 + **2026-07-17** 专用 `sample-timescaledb:5434/ops_tsdb`；`tests/test_ops_tsdb_compose.py`；无 compose 分层 skip）
   - [x] schema 表自省 + hypertable 标记 + 列元数据 500 limit（r40+r41 mock + r235 T-CONN-R235-013-03）
   - [x] HTTP test_connection/metadata 链 + `probe_readonly_sql`（r41+r235 T-CONN-R235-013-02~04）
   - [ ] 只读查询通过
   - [x] category=`timeseries` 查询模式正确（r40）
-- **代码锚点**：`backend/app/datasources/dialects/timescaledb.py` · `backend/app/datasources/dialects/errors.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-013-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-013-01~07 · `tests/test_connectors_m11_r235.py` T-CONN-R235-013-01~05
-- **演化建议**：M11 r235 已闭合 compose 集成、hypertable metadata 与只读 SQL 探测；后续补只读查询集成测与 Admin UI 选型
+- **代码锚点**：`backend/app/datasources/dialects/timescaledb.py` · `backend/app/datasources/dialects/errors.py` · `docker/sample-timescaledb/` · `scripts/seed-ops-timescaledb.py` · `tests/test_ops_tsdb_compose.py` · `tests/test_connectors_gov_r40.py` T-CONN-R40-013-01~07 · `tests/test_connectors_gov_r41.py` T-CONN-R41-013-01~07 · `tests/test_connectors_m11_r235.py` T-CONN-R235-013-01~05
+- **演化建议**：M11 r235 已闭合 compose 集成、hypertable metadata 与只读 SQL 探测；**2026-07-17** 专用 Timescale compose（5434）与运维灌数脚本已落地；后续补只读查询集成测与 Admin UI 选型
 - **里程碑对齐**：M11 · 已完成 · 2026-07-07
 ### [CONN-014] MongoDB 连接器
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDefaultDataScreenLayout,
   dashboardSharePath,
+  dataScreenPreviewPath,
   ensureDataScreenStyleConfig,
   isDataScreenLayout,
   readSurfaceKind,
@@ -29,6 +30,10 @@ describe("dataScreenLayout", () => {
   it("resolves share paths by surface", () => {
     expect(dashboardSharePath("abc", true)).toBe("/admin/data-screens/abc/share");
     expect(dashboardSharePath("abc", false)).toBe("/admin/dashboards/abc/share");
+  });
+
+  it("resolves preview path for chromeless route", () => {
+    expect(dataScreenPreviewPath("abc")).toBe("/admin/data-screens/abc/preview");
   });
 
   it("ensures surfaceKind on screen saves", () => {

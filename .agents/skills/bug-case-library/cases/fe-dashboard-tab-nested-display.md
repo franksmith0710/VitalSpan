@@ -29,9 +29,11 @@
 - `fe/src/components/dashboard/pixelCanvas/tabParking.ts`
 - `fe/src/components/dashboard/pixelCanvas/tabChildExtractContext.tsx`
 - `fe/src/components/dashboard/dashboard-edit/DashboardCanvasWidgetRenderer.tsx`
-- `fe/src/components/dashboard/TabsWidget.tsx`
+- `fe/src/components/dashboard/layoutUtils.ts`（`reconcileTabPaneChildIds` / `reconcileTabPaneChildIdsInPixelLayout`）
+- `fe/src/components/dashboard/pixelCanvas/layoutSanitize.ts`
 
 ## 回归
 
 - `dashboardCanvasMode.test.ts`：parked tab child colSpan/rowSpan
+- `layoutUtils.test.ts` / `layoutSanitize.test.ts`：Tab child reconcile
 - 手测：拖柱状图进 Tab → 页签内可见待配置预览；配置后图表正常渲染

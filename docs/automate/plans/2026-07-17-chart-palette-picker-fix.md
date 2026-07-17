@@ -11,12 +11,11 @@ Execution trigger: dev-autopilot A5 plan-execute
 
 ## 根因分层（证据链）
 
-### R1 · 状态回写竞态（数据集图表，高置信）
+### R1 · Inspector 写回竞态（主因，已证实）
 
-`useChartInspectorState` 绑定同步 effect 在 async `resolveDatasetChartBinding` 完成时用**闭包内旧 `cfg`** 调用 `onChange({ ...cfg })`，可在用户刚写入 `deStyle.paletteId` 后被覆盖。
+`patchDeStyle` → 父级 `onChange` 异步提交；`columns` reconcile effect 在父级 re-render 前用旧 `chartConfig` 再次 `onChange`，**最后一次写回无 paletteId**。单测 `toHaveBeenCalledWith` 只匹配某次调用 → 假绿。
 
-- 证据：`fe/src/components/dashboard/useChartInspectorState.ts` L98–138，async 完成分支 spread 的是 effect 启动时的 `cfg`
-- 单测 widget 为 `mode: "sql"`，不触发该 effect → 假绿
+- 证据：有状态 re-render 测试 `lastConfig.paletteId === undefined`；`emitChange` 同步更新 `widgetRef` 后通过
 
 ### R2 · 窄栏滚动容器 `touch-pan-y`（实机交互，中置信）
 
@@ -38,7 +37,7 @@ Execution trigger: dev-autopilot A5 plan-execute
 
 | Task | 内容 | 文件 |
 |------|------|------|
-| T1 | binding/columns effect 用 `cfgRef.current` 写回 | `useChartInspectorState.ts` |
+| T1 | `emitChange` 同步 ref + effect 用 `readChartConfig()` | `ChartInspectorProvider.tsx`, `useChartInspectorState.ts` |
 | T2 | 内联选项 `onMouseDown` + `stopPropagation`，面板 `touch-manipulation` | `ChartPaletteOptionList.tsx`, `ChartPalettePicker.tsx` |
 | T3 | 样式 Tab 去掉 `touch-pan-y` | `ChartInspectorTabs.tsx` |
 | T4 | `onPaletteChange` 对齐仪表板语义（inherit 清 opacity） | `ChartCommonStyleSections.tsx` |

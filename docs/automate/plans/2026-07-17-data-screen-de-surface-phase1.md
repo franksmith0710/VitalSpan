@@ -56,7 +56,7 @@ flowchart TB
 | `DataScreenCanvas` + `CanvasScaleViewport` | 素材组件（边框/时钟/跑马灯） |
 | 大屏全屏预览/投放路由 | 模板市场 / 从模板新建大屏 |
 | `ChartSurfaceTheme` 大屏深色皮肤 | 仪表板移动端独立布局 |
-| 编辑页 `surfaceKind` 分支（文案/默认配置/工具栏） | 列表 API `?surfaceKind=`（Phase 1 可 FE 过滤） |
+| 编辑页 `surfaceKind` 分支（文案/默认配置/工具栏） | ~~列表 API `?surfaceKind=`~~（**2026-07-17 已实现**：`GET /dashboards?surfaceKind=` + `docs/api/README.md`） |
 | vitest smoke + `layout.md` 更新 | 轮播多屏、自动刷新调度 |
 
 ## Phase 0（已完成）
@@ -217,7 +217,7 @@ export function buildDefaultLayoutForSurface(kind: SurfaceKind): DashboardLayout
 
 | Task | 说明 |
 |------|------|
-| T7 | 后端 `GET /dashboards?surfaceKind=` 筛选 + 测试 |
+| ~~T7~~ | ~~后端 `GET /dashboards?surfaceKind=` 筛选 + 测试~~ → **已提前交付**（2026-07-17；`backend/app/dashboard/surface_kind.py`） |
 | T8 | `LayerPanel`：z-index、锁定、隐藏（对标 DE 大屏图层管理） |
 | T9 | `VisualAssetWidget`：边框/时钟/装饰（仅大屏 palette） |
 | T10 | 模板 JSON 导入 / 工作台「从模板新建大屏」 |
@@ -245,12 +245,13 @@ npx tsc --noEmit
 
 ## PRD / 文档同步评估
 
-| 变更 | 文档 |
-|------|------|
-| 大屏 preview 路由、表面分化行为 | `docs/ui/layout.md`（必须） |
-| 新增用户可见能力（全屏预览） | 评估 `docs/automate/prd/F07-DASH.md` companion 条（可选，不阻塞 Phase 1） |
-| 域边界不变 | `docs/services/` 无需新域 |
-| API 无变更（Phase 1） | `docs/api/README.md` 不改 |
+| 变更 | 文档 | 状态 |
+|------|------|------|
+| 大屏 preview 路由、表面分化行为 | `docs/ui/layout.md` | ✅ 2026-07-17 |
+| 新增用户可见能力（全屏预览） | `docs/automate/prd/F07-DASH.md` DASH-002 companion | ✅ 2026-07-17 |
+| `surfaceKind` 域边界 | `docs/services/dashboard.md` | ✅ 2026-07-17 |
+| 列表 `?surfaceKind=` + 画布尺寸契约 | `docs/api/README.md` | ✅ 2026-07-17 |
+| FE 组件登记 | `fe/src/components/README.md` | ✅ 2026-07-17 |
 
 ## 八维度自审（摘要）
 

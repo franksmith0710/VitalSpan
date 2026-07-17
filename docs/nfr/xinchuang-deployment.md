@@ -28,7 +28,7 @@
 
 ## docker-compose 对照
 
-本地开发栈见仓库根 `docker-compose.yml`（`postgres`、`analytics-postgres`、`sample-mysql` 等）。
+本地开发栈见仓库根 `docker-compose.yml`：`postgres`（5432）、`analytics-postgres`（5433）、`sample-mysql`（3307）、`sample-mariadb`（3308）、`sample-clickhouse`（8124）、`sample-timescaledb`（5434/`ops_tsdb`）。详见 `docs/arch.md` §9。
 
 ## 环境变量
 

@@ -33,3 +33,19 @@ describe("chartSurfaceTheme", () => {
     expect(vars["--dashboard-scroll-track"]).toBe("transparent");
   });
 });
+
+describe("screenChartTheme", () => {
+  it("applies data-screen axis tokens", async () => {
+    const { applyDataScreenSurfaceToEchartsOption, DATA_SCREEN_THEME_FINGERPRINT } = await import(
+      "./screenChartTheme"
+    );
+    const patched = applyDataScreenSurfaceToEchartsOption({
+      xAxis: { type: "category", data: ["A"] },
+      yAxis: { type: "value" },
+    });
+    expect(DATA_SCREEN_THEME_FINGERPRINT).toBe("data-screen-v1");
+    expect(patched.xAxis).toMatchObject({
+      axisLabel: { color: "rgba(255,255,255,0.72)" },
+    });
+  });
+});

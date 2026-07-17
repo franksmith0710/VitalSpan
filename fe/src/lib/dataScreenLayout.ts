@@ -1,13 +1,15 @@
 import type { DashboardLayout, DashboardLayoutV2 } from "@/components/dashboard/layoutUtils";
 import {
   buildDefaultLayoutForSurface,
-  getSurfacePreset,
   type SurfaceKind,
 } from "@/lib/surfacePreset";
 
 export type DashboardSurfaceKind = SurfaceKind;
 
-export const DATA_SCREEN_CANVAS = getSurfacePreset("data-screen").canvas;
+export const DATA_SCREEN_CANVAS = {
+  width: 1920,
+  height: 1080,
+} as const;
 
 export function readSurfaceKind(
   layout?: Pick<DashboardLayout, "styleConfig"> | null,

@@ -5,7 +5,7 @@
 
 ```yaml
 version: 1.0.0
-last_updated: 2026-07-15
+last_updated: 2026-07-17
 status: bootstrap
 srs_ref: docs/srs/全生命周期系统需求规格说明书.md
 prd_ref: docs/automate/prd.md
@@ -271,7 +271,7 @@ dataSourceId + ChartViewConfig + DashboardView
 | `backend/.env.example` | 环境变量模板 | ✅ |
 | `backend/.env` | 本地/部署秘密 | ❌ |
 | `fe/.env.example` | 前端 `VITE_*` 模板 | ✅ |
-| `docker-compose.yml` | 本地 MySQL/PG + 平台库 | ✅（待建） |
+| `docker-compose.yml` | 本地平台库 + 托管分析库 + 样例连接器库（见 §9） | ✅ |
 
 ### 7.2 后端环境变量（规划）
 
@@ -313,11 +313,30 @@ dataSourceId + ChartViewConfig + DashboardView
 
 ---
 
-## 9. 本地开发（规划）
+## 9. 本地开发
+
+### 9.1 Compose 服务矩阵
+
+| 服务 | 宿主机端口 | 库/用途 |
+|------|-----------|---------|
+| `postgres` | 5432 | 平台元库 `vitalspan`（`DATABASE_URL`） |
+| `analytics-postgres` | 5433 | 托管分析库 `analytics`（`ANALYTICS_DATABASE_URL`；ingestion 同步目标） |
+| `sample-mysql` | 3307 | 样例 OLTP `sample_db` |
+| `sample-mariadb` | 3308 | MariaDB 连接器集成测 |
+| `sample-clickhouse` | 8124 | ClickHouse 连接器集成测 |
+| `sample-timescaledb` | **5434** | 运维时序样例 **`ops_tsdb`**（TimescaleDB；CONN-013 演示，**非** 5433） |
+
+> **端口分工**：`5433` = 托管分析库；`5434` = TimescaleDB 专用样例源。详见 `docker/sample-timescaledb/README.md`。
+
+### 9.2 启动步骤
 
 ```bash
-# 1. 平台依赖
-docker compose up -d   # postgres + 可选 mysql/pg 样例库
+# 1. 平台依赖（按需启子集，如仅 mysql + analytics）
+docker compose up -d
+
+# 可选：运维时序样例库 + 灌数（约 7 天 ~160 万行）
+docker compose up -d sample-timescaledb
+python scripts/seed-ops-timescaledb.py   # 或 .\scripts\seed-ops-timescaledb.ps1
 
 # 2. 后端
 cd backend
@@ -331,7 +350,8 @@ cp .env.example .env
 pnpm dev            # 默认 :5173
 ```
 
-一期冒烟（P1-SMOKE）：MySQL/PG 建源 → SQL → Dashboard 出数 + 越权失败。
+一期冒烟（P1-SMOKE）：MySQL/PG 建源 → SQL → Dashboard 出数 + 越权失败。  
+三期冒烟（P3-SMOKE）：TimescaleDB `sample-timescaledb:5434` 建源 → hypertable 元数据浏览 → 图表出数。
 
 ---
 
@@ -359,3 +379,4 @@ pnpm dev            # 默认 :5173
 |------|------|------|
 | 1.0.2 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；增 ingestion 域与 ANALYTICS_DATABASE_URL |
 | 1.0.3 | 2026-07-03 | ADR-11 单应用 + RBAC；架构图 WebApp + Embed；废止双 URL 双端 |
+| 1.0.4 | 2026-07-17 | §9 补全 compose 六服务矩阵（含 `sample-timescaledb:5434/ops_tsdb`）；`docker-compose.yml` 状态 → 已建 |

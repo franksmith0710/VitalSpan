@@ -47,6 +47,10 @@
 | DashboardPreviewThumb | `dashboard/DashboardPreviewThumb.tsx` | 色块占位缩略图（独立页/测试） |
 | DashboardListCardPreview | `dashboard/DashboardListCardPreview.tsx` | 列表真渲染预览（视口内懒加载 + 轻模糊） |
 | DashboardLayoutPreview | `dashboard/DashboardLayoutPreview.tsx` | v1/v2 只读预览分发：v1 → DashboardGrid，v2 → PixelCanvas |
+| DataScreenPresenter | `dashboard/screen/DataScreenPresenter.tsx` | 数据大屏只读投放：固定画布 + `DashboardLayoutPreview` |
+| CanvasScaleViewport | `dashboard/screen/CanvasScaleViewport.tsx` | 视口级缩放（宽度/高度/等比/铺满/不缩放） |
+| ScreenPreviewChrome | `dashboard/screen/ScreenPreviewChrome.tsx` | 大屏预览顶栏（返回编辑、缩放模式、全屏） |
+| LayerPanel | `dashboard/LayerPanel.tsx` | 数据大屏图层管理（排序、显隐、锁定） |
 | DashboardGrid | `dashboard/DashboardGrid.tsx` | v1 栅格画布；引擎 **react-grid-layout**（`dashboardGridRgl.tsx` + WidthProvider 自适应宽度），仅历史兼容/紧急回退 |
 | dashboardGridRgl | `dashboard/dashboardGridRgl.tsx` | v1 RGL 封装：12 列拖拽/缩放/垂直紧凑（DASH-002） |
 | PixelCanvas / PixelShape | `dashboard/pixelCanvas/` | v2 公共像素画布边界：规范坐标、Pointer Capture 拖移/八向缩放、只读渲染、像素历史与 widget 工厂；不负责页面数据加载、保存或 Inspector |
@@ -75,7 +79,7 @@
 | WidgetInspector | `dashboard/WidgetInspector.tsx` | 图表编辑双列：配置区 + 字段库（DE chart-edit 布局） |
 | ChartEditRail | `dashboard/ChartEditRail.tsx` | 图表右栏内容；**须**在 `ChartInspectorProvider` 内（编辑页由 `DashboardEditPage` 提供） |
 | ChartEditRailWithProvider | `dashboard/ChartEditRail.tsx` | 自带 Provider 的便捷包装（复用对话框/单测） |
-| ChartEditorColumn | `dashboard/ChartEditorColumn.tsx` | 图表配置列：数据/样式/高级 Tab |
+| ChartEditorColumn | `dashboard/ChartEditorColumn.tsx` | 图表配置列：数据/样式/高级 Tab（高级内容由 `chartAdvancedSections` 注入） |
 | ChartStylePanel | `dashboard/ChartStylePanel.tsx` | DE 样式 Tab（配色/标题/图例/标签/背景/边框） |
 | DashboardContextInspector | `dashboard/DashboardContextInspector.tsx` | 无选中时看板级配置轨 |
 | chartDeStyle / chartValueFormat | `lib/chartDeStyle.ts` · `lib/chartValueFormat.ts` | 组件级 DE 样式与数值格式契约 |
@@ -86,6 +90,17 @@
 | useInspectorColumns | `../hooks/useInspectorColumns.ts` | Inspector 字段探测（复用 `chartExecuteProbe`） |
 | chartExecuteProbe | `../lib/chartExecuteProbe.ts` | 图表 query execute 共享探测与字段建议 |
 | DashboardQuickCreateDialog | `dashboard/DashboardQuickCreateDialog.tsx` | 看板列表快速创建向导（数据源 + Dataset + 首图） |
+| ChartPalettePicker / ChartPaletteOptionList | `dashboard/ChartPalettePicker.tsx` | 样式栏配色选择（含 dense 内联模式） |
+| ChartInspectorTabs | `dashboard/ChartInspectorTabs.tsx` | 数据/样式/**高级** Tab；`advanced` 可选隐藏 |
+| ChartAdvancedFeatureSettings | `dashboard/chartAdvancedSections.tsx` | 高级 Tab：缩放、跳转、条件格式、标线等 |
+| DashboardPickerField | `dashboard/DashboardPickerField.tsx` | 可搜索看板选择（图表跳转目标） |
+| TabsWidgetFields / TabsEditRail | `dashboard/TabsWidgetFields.tsx` · `TabsEditRail.tsx` | Tab 页签配置与子组件列表 |
+| layoutSanitize | `dashboard/pixelCanvas/layoutSanitize.ts` | 载入/保存前 Tab `childWidgetIds` reconcile + park 修复 |
+| PIXEL_CANVAS_EDIT_MIN_SCALE | `dashboard/pixelCanvas/geometry.ts` | 编辑态最小缩放 `0.5`（窄视口防叠压） |
+| CanvasScaleViewport | `dashboard/screen/CanvasScaleViewport.tsx` | 大屏缩放视口 |
+| DataScreenPresenter | `dashboard/screen/DataScreenPresenter.tsx` | 大屏全屏投放 |
+| ScreenPreviewChrome | `dashboard/screen/ScreenPreviewChrome.tsx` | 预览页 chrome |
+| surfacePreset | `../lib/surfacePreset.ts` | `dashboard` / `data-screen` 默认 layout 预设 |
 
 ## 看板样式配置优先级（右栏 ↔ 画布）
 

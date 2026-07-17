@@ -14,23 +14,24 @@
 
 ## 根因
 
-1. **数据集 binding 竞态**：`useChartInspectorState` 在 `resolveDatasetChartBinding` 异步完成后用 effect 闭包内旧 `cfg` 调 `onChange`，覆盖刚写入的 `nativeBody.deStyle.paletteId`（SQL 模式单测不触发 → 假绿）
-2. **窄栏触控手势**：样式 Tab 面板 `touch-pan-y` + 嵌套 `overflow-y-auto`，实机轻点被当作滚动手势，`click` 不触发
-3. **单测缺口**：仅断言 `onChange` 被调用，未 re-render 断言 CurrentDisplay 与 binding 延迟后状态
+1. **Inspector 写回竞态（主因）**：`patchDeStyle` 经父级 `onChange` 异步提交；columns reconcile / dataset binding effect 在父级 re-render 前用旧 `chartConfig` 再次 `onChange`，**最后一次写回无 paletteId**（单测 `toHaveBeenCalledWith` 只匹配某次调用 → 假绿）
+2. **窄栏触控手势（次因）**：样式 Tab `touch-pan-y` + 嵌套滚动，实机轻点可能被当作滚动手势
+3. **单测缺口**：未做 Provider → 父 state → re-render 闭环，未断言最后一次 `onChange`
 
 ## 错误做法（避免）
 
-- 在 async effect 完成时 spread 闭包 `cfg` 而非 `cfgRef.current`
+- 在 effect 中 `onChange` 前不通过 `emitChange` / `readChartConfig()` 读取最新配置
 - 216px 交互区继续使用 `touch-pan-y` 而不对选项区设 `touch-manipulation` / `mousedown` 选型
 - 仅用孤立 Picker 单测验收整条 inspector → widget 状态链
 
 ## 修复方式
 
-- `useChartInspectorState.ts`：引入 `cfgRef`，binding sync / columns reconcile 写回时用最新配置
-- `ChartPaletteOptionList.tsx`：`onMouseDown` + `stopPropagation` 选型（先于滚动/失焦）
+- `ChartInspectorProvider.tsx`：新增 `emitChange`，在调用父级 `onChange` 前同步更新 `widgetRef.chartConfig`；`patchDeStyle` / context `onChange` 均走 `emitChange`
+- `useChartInspectorState.ts`：columns reconcile / binding sync / 字段指派均 `readChartConfig()` + `emitChange`，避免 effect 覆盖 deStyle
+- `ChartPaletteOptionList.tsx`：选项 `onClick` + `stopPropagation`
 - `ChartPalettePicker.tsx`：内联面板 `touch-manipulation`
 - `ChartInspectorTabs.tsx`：去掉样式面板 `touch-pan-y`
-- `ChartInspectorProvider.palette.test.tsx`：集成测 re-render + 数据集 binding 延迟
+- `ChartInspectorProvider.palette.test.tsx` / `ChartStylePanel.test.tsx`：集成测 re-render + 最后一次写回
 
 ## 验证
 

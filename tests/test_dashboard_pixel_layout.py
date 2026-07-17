@@ -412,3 +412,18 @@ def test_dashboard_api_dto_layout_json_is_dashboard_layout():
 
     assert DashboardOut.model_fields["layout_json"].annotation is DashboardLayout
     assert DashboardLayoutUpdate.model_fields["layout_json"].annotation is DashboardLayout
+
+
+def test_data_screen_canvas_1920x1080_validates():
+    layout = DashboardLayout.model_validate(
+        {
+            "version": 2,
+            "canvas": {"width": 1920, "height": 1080},
+            "widgets": [],
+            "globalFilters": [],
+            "styleConfig": {"surfaceKind": "data-screen", "colorScheme": "dark"},
+        }
+    )
+    assert layout.canvas is not None
+    assert layout.canvas.width == 1920
+    assert layout.canvas.height == 1080

@@ -14,7 +14,9 @@ TextVariant = Literal["markdown", "plain", "html"]
 MediaFit = Literal["contain", "cover", "fill"]
 WidgetType = Literal["chart", "filter", "text", "media", "tabs"]
 CANVAS_WIDTH = 1440
+DATA_SCREEN_CANVAS_WIDTH = 1920
 MIN_CANVAS_HEIGHT = 900
+DATA_SCREEN_CANVAS_HEIGHT = 1080
 PIXEL_COLUMN_WIDTH = 120
 MIN_PIXEL_WIDGET_WIDTH = PIXEL_COLUMN_WIDTH
 MIN_PIXEL_WIDGET_HEIGHT = 32
@@ -215,6 +217,8 @@ class LayoutWidget(BaseModel):
     width: int | None = Field(default=None, ge=0)
     height: int | None = Field(default=None, ge=0)
     order: int = Field(default=0, ge=0)
+    hidden: bool | None = None
+    locked: bool | None = None
     chart_ref: uuid.UUID | None = Field(default=None, alias="chartRef")
     parent_tabs_id: str | None = Field(default=None, alias="parentTabsId", max_length=64)
     tab_pane_id: str | None = Field(default=None, alias="tabPaneId", max_length=64)
@@ -296,7 +300,7 @@ class LayoutWidget(BaseModel):
 
 class DashboardCanvas(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    width: Literal[1440] = CANVAS_WIDTH
+    width: Literal[1440, 1920] = CANVAS_WIDTH
     height: int = Field(default=MIN_CANVAS_HEIGHT, ge=MIN_CANVAS_HEIGHT)
 
 

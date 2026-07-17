@@ -216,6 +216,10 @@ export function PixelCanvas({
     () => getTopLevelPixelWidgets(activeLayout.widgets),
     [activeLayout.widgets],
   );
+  const visibleTopLevelWidgets = useMemo(
+    () => (mode === "edit" ? topLevelWidgets : topLevelWidgets.filter((w) => !w.hidden)),
+    [mode, topLevelWidgets],
+  );
   const layoutGeometryKey = useMemo(
     () =>
       topLevelWidgets
@@ -792,7 +796,7 @@ export function PixelCanvas({
               aria-hidden
             />
           ) : null}
-          {topLevelWidgets.map((widget) => (
+          {visibleTopLevelWidgets.map((widget) => (
               <PixelShape
                 key={widget.id}
                 widget={widget}

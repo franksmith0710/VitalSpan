@@ -290,7 +290,7 @@ DATA-004 → DATA-001 → DATA-002 → ETL-001 → DATA-003 → DATA-005
 
 | 交付物 | 说明 |
 |--------|------|
-| `docker-compose.yml` | 增 `analytics-postgres`；增 **`mysql` 与/或 `postgres` 样例源库**（L1 验收用，端口与元库错开） |
+| `docker-compose.yml` | 增 `analytics-postgres`（`:5433`）；样例源：`sample-mysql`（`:3307`）、`sample-mariadb`（`:3308`）、`sample-clickhouse`（`:8124`）、`sample-timescaledb`（`:5434/ops_tsdb`） |
 | `backend/app/core/config.py` | `ANALYTICS_DATABASE_URL` |
 | `backend/.env.example` | 上述变量 + 样例源连接注释；**`CREDENTIAL_FERNET_KEY` 在 M1B 启用**（加密 `SourceConnection` 凭证） |
 | `backend/migrations/versions/` | **元库**新增 revision：`ingestion_*` 表（同步任务、运行历史、清洗规则、`SourceConnection` 凭证引用） |

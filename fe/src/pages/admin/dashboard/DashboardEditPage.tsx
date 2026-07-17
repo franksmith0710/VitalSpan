@@ -4,7 +4,7 @@ import { ChevronLeft, Redo2, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
-import { isDataScreenAdminPath, dataScreenListPath, dashboardSharePath, ensureDataScreenStyleConfig, isDataScreenLayout } from "@/lib/dataScreenLayout";
+import { isDataScreenAdminPath, dataScreenListPath, dataScreenPreviewPath, dashboardSharePath, ensureDataScreenStyleConfig, isDataScreenLayout } from "@/lib/dataScreenLayout";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -18,6 +18,7 @@ import {
   appendWidgetToTabPane,
   coerceLayoutWidgets,
   isTabPaneChild,
+  moveWidgetToExtreme,
   resizeWidget,
   sortWidgets,
   type DashboardLayout,
@@ -80,6 +81,7 @@ import {
 import type { PaletteDragPayload } from "@/lib/dashboardDnd";
 import { readTabsWidgetIdFromDropEvent } from "@/lib/tabsDropTarget";
 import { DashboardContextInspector } from "@/components/dashboard/DashboardContextInspector";
+import { LayerPanel } from "@/components/dashboard/LayerPanel";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
 import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
 import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
@@ -735,8 +737,22 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
       onTitleChange: (widgetId, title) => {
         setWidgets((prev) => resizeWidget(prev, widgetId, { title }));
       },
+      showLayerActions: isDataScreenSurface,
+      onBringToFront: isDataScreenSurface
+        ? (widgetId) => setWidgets((prev) => moveWidgetToExtreme(prev, widgetId, "top"))
+        : undefined,
+      onSendToBack: isDataScreenSurface
+        ? (widgetId) => setWidgets((prev) => moveWidgetToExtreme(prev, widgetId, "bottom"))
+        : undefined,
     }),
-    [handleCopyWidget, handleDeleteWidget, openWidgetEnlargeDialog, openWidgetViewDataDialog, setWidgets],
+    [
+      handleCopyWidget,
+      handleDeleteWidget,
+      openWidgetEnlargeDialog,
+      openWidgetViewDataDialog,
+      setWidgets,
+      isDataScreenSurface,
+    ],
   );
 
   const handleBatchDelete = () => {
@@ -886,7 +902,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           {mode === "edit" ? (
             <>
               <Button asChild variant="outline" size="sm">
-                <Link to={`${routeBase}/${id}`}>预览</Link>
+                <Link to={isDataScreenSurface && id ? dataScreenPreviewPath(id) : `${routeBase}/${id}`}>
+                  预览
+                </Link>
               </Button>
               <Button asChild variant="outline" size="sm">
                 <Link to={sharePath}>分享</Link>
@@ -1016,7 +1034,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           canvasColorScheme={styleConfig.colorScheme ?? "light"}
           chartRailOpen={chartRailOpen}
           onChartRailOpenChange={setChartRailOpen}
-          chartRailLabel="仪表板配置"
+          chartRailLabel={isDataScreenSurface ? "大屏配置" : "仪表板配置"}
           showRailFoldHeader={!primarySelectedId && multiSelectCount < 2}
           canvasActions={
             <div className="flex shrink-0 flex-wrap items-center gap-1">
@@ -1054,7 +1072,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 <Redo2 aria-hidden />
               </IconButton>
               <span className="hidden text-theme-xs text-gray-400 sm:inline">
-                {layout.version === 2 ? "1440px 画布" : "12 列"}
+                {layout.version === 2
+                  ? isDataScreenSurface
+                    ? "1920px 画布"
+                    : "1440px 画布"
+                  : "12 列"}
               </span>
             </div>
           }
@@ -1212,15 +1234,26 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onDataRefresh={() => primarySelectedId && handleChartDataRefresh(primarySelectedId)}
               />
             ) : id ? (
-              <DashboardContextInspector
-                embedded
-                widgetCount={widgets.length}
-                widgets={widgets}
-                styleConfig={styleConfig}
-                onStyleChange={applyStyleConfig}
-                onWidgetsChange={setWidgets}
-                isPixelLayout={layout.version === 2}
-              />
+              <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+                {isDataScreenSurface ? (
+                  <LayerPanel
+                    widgets={widgets}
+                    selectedId={primarySelectedId}
+                    onSelect={(widgetId) => handleSelect(widgetId, false)}
+                    onWidgetsChange={setWidgets}
+                    className="max-h-56 shrink-0 border-b border-gray-100 pb-4 dark:border-white/[0.06]"
+                  />
+                ) : null}
+                <DashboardContextInspector
+                  embedded
+                  widgetCount={widgets.length}
+                  widgets={widgets}
+                  styleConfig={styleConfig}
+                  onStyleChange={applyStyleConfig}
+                  onWidgetsChange={setWidgets}
+                  isPixelLayout={layout.version === 2}
+                />
+              </div>
             ) : null
           }
         />

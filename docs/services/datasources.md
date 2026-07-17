@@ -209,9 +209,18 @@
 - **CONN-010**：`PrestoConnector` 委托 `TrinoConnector`（`type=presto`）；`metadata/service.py` 对 `trino`/`presto` 传 `catalog=row.database`
 - **CONN-011**：InfluxDB **2.x only**（`username=org`, `password=token`, `database=bucket`）；**不支持** InfluxDB 1.x / InfluxQL；连接器级只读 Flux `limit(n:1)` 探测
 - **CONN-012**：`taospy>=2.7.0`（`connectors-ext`）；HTTP metadata stable 类型标记
-- **CONN-013**：`probe_readonly_sql` → `SELECT 1`；hypertable 元数据标记
+- **CONN-013**：`probe_readonly_sql` → `SELECT 1`；hypertable 元数据标记；compose 专用服务 **`sample-timescaledb:5434`** / 库 `ops_tsdb`（与 `analytics-postgres:5433` 分离）
 - 集成测：`tests/test_connectors_m11_r235.py`（`@pytest.mark.integration`，无 compose 时分层 skip）
 - 回归：r34~r35、r38~r39、r40~r41 不删旧套件
+
+### CONN-013 运维时序样例库（2026-07-17）
+
+- **compose**：`sample-timescaledb` 宿主机 **5434** → 库 `ops_tsdb`（TimescaleDB 2.x + PG16）
+- **schema**：`docker/sample-timescaledb/01-schema.sql`（hypertable：`host_metrics`、`service_metrics`、`k8s_pod_metrics` 等）
+- **维度种子**：`docker/sample-timescaledb/02-dimensions.sql`
+- **灌数**：`scripts/seed-ops-timescaledb.py`（`--days N` / `--truncate`）；PowerShell 启动器 `scripts/seed-ops-timescaledb.ps1`
+- **集成测**：`tests/test_ops_tsdb_compose.py`（`@pytest.mark.integration`；`conftest` `timescaledb.port=5434`）
+- **与 analytics 边界**：`analytics-postgres:5433` 为 ingestion 托管分析库，**无** Timescale 扩展；CONN-013 compose 验收须连 **5434**
 
 ### r242 companion 收官（CONN-017~021 · 2026-07-07）
 

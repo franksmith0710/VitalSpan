@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAdminListFillRoute } from "./admin-layout-routes";
+import { isAdminListFillRoute, isAdminScreenPreviewRoute } from "./admin-layout-routes";
 
 describe("isAdminListFillRoute", () => {
   it("matches paginated list routes", () => {
@@ -13,5 +13,12 @@ describe("isAdminListFillRoute", () => {
     expect(isAdminListFillRoute("/admin/dashboards/abc/edit")).toBe(false);
     expect(isAdminListFillRoute("/admin/datasources/new")).toBe(false);
     expect(isAdminListFillRoute("/admin/account/profile")).toBe(false);
+  });
+});
+
+describe("isAdminScreenPreviewRoute", () => {
+  it("matches data screen preview chromeless route", () => {
+    expect(isAdminScreenPreviewRoute("/admin/data-screens/abc/preview")).toBe(true);
+    expect(isAdminScreenPreviewRoute("/admin/data-screens/abc/edit")).toBe(false);
   });
 });

@@ -39,15 +39,6 @@ vi.mock("@/lib/datasetChartBinding", () => ({
   ),
 }));
 
-vi.mock("@/hooks/useInspectorColumns", () => ({
-  useInspectorColumns: () => ({
-    columns: [],
-    loading: false,
-    ready: true,
-    refreshColumns: vi.fn(),
-  }),
-}));
-
 const sqlWidget: LayoutWidget = {
   id: "w-sql",
   type: "chart",

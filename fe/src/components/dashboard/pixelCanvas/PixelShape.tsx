@@ -494,7 +494,7 @@ export function PixelShape({
     event: PointerEvent<HTMLElement>,
     kind: PixelInteractionKind,
   ) => {
-    if (mode !== "edit" || event.button > 0 || paletteDragActive) return;
+    if (mode !== "edit" || event.button > 0 || paletteDragActive || widget.locked) return;
     event.preventDefault();
     event.stopPropagation();
     onSelect?.(widget.id, event.shiftKey);
@@ -534,6 +534,10 @@ export function PixelShape({
   const liveRect = isPlayer ? displayRef.current : display;
   const selectedInEdit = Boolean(mode === "edit" && selected);
 
+  if (mode === "view" && widget.hidden) {
+    return null;
+  }
+
   return (
     <div
       ref={outerRef}
@@ -544,6 +548,7 @@ export function PixelShape({
         className={cn(
         "shape pixel-shape-outer dashboard-shape-gap-shell absolute flex touch-none select-none flex-col border-0 bg-transparent",
         selectedInEdit && "z-[1] pixel-shape-edit",
+        widget.hidden && mode === "edit" && "opacity-40",
         paletteDragActive && "pointer-events-none",
       )}
       style={{
