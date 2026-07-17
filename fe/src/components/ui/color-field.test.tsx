@@ -60,7 +60,7 @@ describe("ColorField", () => {
     expect(onChange).toHaveBeenCalledWith("#465fff");
   });
 
-  it("commits picker changes immediately while popover is open", () => {
+  it("commits picker changes while popover stays open (debounced)", () => {
     const onChange = vi.fn();
     render(<ColorField value="#ffffff" onChange={onChange} label="背景色" />);
     fireEvent.click(screen.getByLabelText("背景色取色器"));
@@ -68,6 +68,10 @@ describe("ColorField", () => {
 
     fireEvent.change(picker, { target: { value: "#43b379" } });
 
+    expect(onChange).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(120);
+    });
     expect(onChange).toHaveBeenCalledWith("#43b379");
   });
 

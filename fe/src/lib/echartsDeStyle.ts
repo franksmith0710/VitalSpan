@@ -1,6 +1,13 @@
 import type { EChartsOption } from "echarts";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { readChartLegendVisible, readChartLegendPosition, type ChartDeStyle } from "./chartDeStyle";
+import {
+  readChartLegendIcon,
+  readChartLegendIconSize,
+  readChartLegendOrient,
+  readChartLegendHAlign,
+  readChartLegendVAlign,
+} from "./chartLegendPresentation";
 import { echartsTooltipValueFormatter } from "./chartValueFormat";
 import { applyEchartsSeriesPresentation } from "./echartsSeriesPresentation";
 
@@ -161,11 +168,26 @@ const LEGEND_LAYOUT: Record<
   NonNullable<ChartDeStyle["legend"]>["position"] & string,
   Record<string, unknown>
 > = {
-  top: { orient: "horizontal", left: "center" },
-  bottom: { orient: "horizontal", left: "center" },
-  left: { orient: "vertical", top: "middle" },
-  right: { orient: "vertical", top: "middle" },
+  top: { orient: "horizontal" },
+  bottom: { orient: "horizontal" },
+  left: { orient: "vertical" },
+  right: { orient: "vertical" },
 };
+
+function resolveEchartsLegendAlign(deStyle: ChartDeStyle, pos: string) {
+  const h = readChartLegendHAlign(deStyle);
+  const v = readChartLegendVAlign(deStyle);
+  if (pos === "top" || pos === "bottom") {
+    return {
+      left: h === "left" ? 0 : h === "right" ? "auto" : "center",
+      ...(h === "right" ? { right: 0 } : {}),
+    };
+  }
+  return {
+    top: v === "top" ? 0 : v === "bottom" ? "auto" : "middle",
+    ...(v === "bottom" ? { bottom: 0 } : {}),
+  };
+}
 
 function applyFunnelInset(option: EChartsOption, insets: ChromeInsets): EChartsOption {
   if (!chartHasFunnelSeries(option) || !insets.showLegend || !Array.isArray(option.series)) {
@@ -241,6 +263,9 @@ export function applyDeStyleToEchartsOption(
     next.legend && typeof next.legend === "object" && !Array.isArray(next.legend)
       ? next.legend
       : {};
+  const legendIcon = readChartLegendIcon(deStyle);
+  const legendIconSize = readChartLegendIconSize(deStyle);
+  const legendOrient = readChartLegendOrient(deStyle);
   next.legend = {
     ...prevLegend,
     show: insets.showLegend,
@@ -252,7 +277,12 @@ export function applyDeStyleToEchartsOption(
       ...(typeof prevLegend.textStyle === "object" ? prevLegend.textStyle : {}),
       fontSize: deStyle.legend?.fontSize ?? 12,
     },
+    icon: legendIcon,
+    itemWidth: legendIconSize,
+    itemHeight: legendIconSize,
+    orient: legendOrient,
     ...LEGEND_LAYOUT[insets.legendPos ?? "bottom"],
+    ...resolveEchartsLegendAlign(deStyle, insets.legendPos ?? "bottom"),
     ...(insets.legendTop !== undefined ? { top: insets.legendTop } : {}),
     ...(insets.legendBottom !== undefined ? { bottom: insets.legendBottom } : {}),
     ...(insets.legendLeft !== undefined ? { left: insets.legendLeft } : {}),

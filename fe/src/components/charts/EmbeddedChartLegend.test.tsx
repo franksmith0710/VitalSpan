@@ -54,6 +54,43 @@ describe("EmbeddedChartLegendShell", () => {
     expect(legend).toHaveStyle({ maxHeight: `${legendShellMaxHeightPx(12)}px` });
   });
 
+  it("renders vertical legend layout when orient is vertical", () => {
+    render(
+      <EmbeddedChartLegendShell
+        position="right"
+        orient="vertical"
+        fontSize={12}
+        icon="triangle"
+        iconSize={6}
+        items={[{ name: "访问", color: "#465fff" }]}
+      >
+        <div data-testid="chart-body">chart</div>
+      </EmbeddedChartLegendShell>,
+    );
+
+    const legend = screen.getByLabelText("图例");
+    expect(legend).toHaveClass("flex-col");
+  });
+
+  it("keeps chart area flex-1 when legend is on the side", () => {
+    const { container } = render(
+      <div className="w-[240px]">
+        <EmbeddedChartLegendShell
+          position="left"
+          orient="horizontal"
+          items={[{ name: "amount", color: "#465fff" }]}
+        >
+          <div data-testid="chart-body">chart</div>
+        </EmbeddedChartLegendShell>
+      </div>,
+    );
+
+    const chart = screen.getByTestId("chart-body");
+    expect(chart.parentElement).toHaveClass("flex-1");
+    expect(container.querySelector('[data-legend-slot="side"]')).toBeTruthy();
+    expect(screen.getByLabelText("图例")).toHaveClass("flex-col");
+  });
+
   it("does not remount chart children when legend items appear", () => {
     const { ChartBody, getInstanceId } = createChartBodyProbe();
 

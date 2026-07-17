@@ -290,6 +290,19 @@ describe("patchChartLabelStyle", () => {
   });
 });
 
+describe("readChartShowLabel", () => {
+  it("prefers explicit label.show over deFeatures.showLabel", () => {
+    const cfg: ChartViewConfig = {
+      ...baseCfg,
+      nativeBody: {
+        deStyle: { label: { show: true } },
+        deFeatures: { showLabel: false },
+      },
+    };
+    expect(readChartShowLabel(cfg)).toBe(true);
+  });
+});
+
 describe("resolveChartLabelDisplayColor", () => {
   it("falls back to dashboard style then theme token", () => {
     expect(resolveChartLabelDisplayColor(baseCfg, { colorScheme: "light" })).toBe("#667085");

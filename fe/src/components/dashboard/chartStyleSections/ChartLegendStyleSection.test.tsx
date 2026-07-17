@@ -41,8 +41,17 @@ describe("ChartLegendStyleSection", () => {
       "aria-checked",
       "true",
     );
-    expect(screen.getByText("字体大小")).toBeInTheDocument();
+    expect(screen.getByText("图标")).toBeInTheDocument();
+    expect(screen.getByText("文本")).toBeInTheDocument();
+    expect(screen.getByText("方向")).toBeInTheDocument();
     expect(screen.getByText("位置")).toBeInTheDocument();
+    expect(screen.getByTestId("chart-legend-de-form")).toBeInTheDocument();
+    expect(screen.getByLabelText("图例图标形状")).toBeInTheDocument();
+    expect(screen.getByLabelText("图标大小")).toBeInTheDocument();
+    expect(screen.getByLabelText("图例文本字号")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "水平排列" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "水平居中" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "垂直居下" })).toBeInTheDocument();
   });
 
   it("hides legend fields when legend is disabled", () => {
@@ -66,7 +75,7 @@ describe("ChartLegendStyleSection", () => {
       "aria-checked",
       "false",
     );
-    expect(screen.queryByText("字体大小")).not.toBeInTheDocument();
+    expect(screen.queryByText("图标")).not.toBeInTheDocument();
     expect(screen.queryByText("位置")).not.toBeInTheDocument();
   });
 

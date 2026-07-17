@@ -33,7 +33,7 @@ type DeTitleStyleToolbarProps = {
 };
 
 const TOOLBAR_SHELL =
-  "flex min-w-0 flex-wrap items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50/90 p-1 shadow-theme-xs dark:border-gray-700 dark:bg-white/[0.03]";
+  "flex min-w-0 flex-wrap items-end gap-0.5 rounded-lg border border-gray-200 bg-gray-50/90 p-1 shadow-theme-xs dark:border-gray-700 dark:bg-white/[0.03]";
 
 const FONT_SIZE_TRIGGER =
   "h-8 min-h-8 w-[3.75rem] shrink-0 rounded-md border-0 bg-white px-2 py-0 text-xs shadow-none ring-1 ring-inset ring-gray-200 hover:bg-gray-50 focus-visible:ring-brand-500/30 data-[state=open]:ring-brand-500/40 dark:bg-gray-900 dark:ring-gray-600 dark:hover:bg-white/[0.04]";

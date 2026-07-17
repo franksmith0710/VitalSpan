@@ -131,7 +131,7 @@ export function ColorField({
     if (pendingRef.current === undefined) return;
     const next = pendingRef.current;
     pendingRef.current = undefined;
-    onChangeRef.current(next);
+    onChangeRef.current(next === "" ? undefined : next);
   };
 
   const commitNow = (raw: string) => {
@@ -159,7 +159,8 @@ export function ColorField({
     const resolved = resolveCommitValue(next);
     if (resolved === undefined) return;
     pendingRef.current = resolved;
-    flushCommit();
+    // 面板打开时用防抖异步提交：既实时预览，又避免同步 onChange 导致 Radix Popover 在 pointer 交互中被 dismiss
+    scheduleCommit(next);
   };
 
   const explicitHex = normalizeHexColor(localValue);
@@ -182,6 +183,7 @@ export function ColorField({
       side={popoverSide}
       sideOffset={6}
       collisionPadding={12}
+      onOpenAutoFocus={(event) => event.preventDefault()}
       className={cn(
         "w-[228px] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain p-2.5",
         popoverClassName,
@@ -231,7 +233,8 @@ export function ColorField({
           className="mt-2 w-full rounded-md border border-gray-200 px-2 py-1.5 text-[11px] text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
           onClick={() => {
             setLocalValue("");
-            commitNow("");
+            pendingRef.current = "";
+            scheduleCommit("");
           }}
         >
           清除颜色
@@ -374,10 +377,6 @@ export function ColorField({
               const next = event.target.value;
               setLocalValue(next);
               const resolved = resolveCommitValue(next);
-              if (open) {
-                if (resolved !== undefined) commitNow(resolved);
-                return;
-              }
               if (resolved !== undefined) scheduleCommit(resolved);
             }}
             onBlur={(event) => {

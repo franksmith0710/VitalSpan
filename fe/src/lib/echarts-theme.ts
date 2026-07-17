@@ -104,11 +104,13 @@ export function applyEchartsColorSchemeTokens(
       const typed = series as Record<string, unknown>;
       const type = typed.type as string | undefined;
       if (type !== "pie" && type !== "funnel") return series;
+      const prevLabel =
+        typeof typed.label === "object" && typed.label ? (typed.label as { color?: string }) : {};
       return {
         ...typed,
         label: {
           ...(typeof typed.label === "object" ? typed.label : {}),
-          color: tokens.chartAxis,
+          color: prevLabel.color ?? tokens.chartAxis,
         },
         labelLine: {
           ...(typeof typed.labelLine === "object" ? typed.labelLine : {}),

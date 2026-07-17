@@ -11,16 +11,16 @@ import { Switch } from "@/components/ui/switch";
 import { TEXT_COLOR_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
 import { formatMetricValue } from "../dashboardStyleConfig";
 import { ChartBackgroundStyleFields } from "../chartStyleFields";
-import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "../chartInspectorDeFields";
+import { ChartDeAttrField, CHART_DE_INPUT } from "../chartInspectorDeFields";
 import { ChartPaletteFontSizeSelect } from "../chartPaletteShared";
 import { ChartPaletteDeParityFields } from "../chartPaletteDeParityFields";
 import { ChartTableColorFields } from "../chartPaletteLabelTooltipFields";
+import { ChartLegendDeParityFields } from "../chartLegendStyleFields";
 import { useChartInspector } from "../chartInspectorContext";
 import {
   patchChartLabelStyle,
   patchChartShowLabel,
   readChartDeStyle,
-  readChartLegendPosition,
   readChartLegendVisible,
   readChartShowLabel,
   readChartTitleVisible,
@@ -39,12 +39,11 @@ import {
   supportsChartSeriesColorEditing,
 } from "@/lib/chartSeriesColor";
 import { patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
-import { LEGEND_POSITION_SEGMENT_OPTIONS } from "../inspectorSegmentIcons";
 import { ChartInspectorSection, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 
 export function ChartPaletteStyleSection() {
-  const { cfg, patchDeStyle, patchDeStyleNested, onChange, dashboardStyle } = useChartInspector();
+  const { cfg, patchDeStyle, patchDeStyleNested, mutateChartConfig, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const caps = chartInspectorCapabilities(cfg.chartType);
   const isTable = cfg.chartType === "table";
@@ -97,16 +96,22 @@ export function ChartPaletteStyleSection() {
         onOpacityChange={patchPaletteOpacity}
         onOpacityPreview={patchPaletteOpacity}
         onSeriesGradientChange={(enabled) => patchDeStyle({ seriesGradient: enabled })}
-        onLabelShowChange={(show) => onChange(patchChartShowLabel(cfg, show))}
+        onLabelShowChange={(show) =>
+          mutateChartConfig((current) => patchChartShowLabel(current, show))
+        }
         onTooltipShowChange={(show) => patchDeStyleNested("tooltip", { show })}
-        onLabelStyleChange={(patch) => onChange(patchChartLabelStyle(cfg, patch))}
+        onLabelStyleChange={(patch) =>
+          mutateChartConfig((current) => patchChartLabelStyle(current, patch))
+        }
         onTooltipStyleChange={(patch) => patchDeStyleNested("tooltip", patch)}
         tableColorSection={
           isTable ? (
             <ChartTableColorFields
               compact
               tableStyle={readChartDeTableStyle(cfg)}
-              onPatch={(patch) => onChange(patchChartDeTableStyle(cfg, patch))}
+              onPatch={(patch) =>
+                mutateChartConfig((current) => patchChartDeTableStyle(current, patch))
+              }
             />
           ) : undefined
         }
@@ -211,30 +216,14 @@ export function ChartLegendStyleSection() {
       }
     >
       {legendVisible ? (
-        <>
-          <ChartPaletteFontSizeSelect
-            density="narrow"
-            value={deStyle.legend?.fontSize}
-            fallback={12}
-            onChange={(fontSize) => patchLegend({ fontSize })}
-          />
-          <ChartDeSegmentField
-            label="位置"
-            value={readChartLegendPosition(deStyle)}
-            columns={4}
-            options={LEGEND_POSITION_SEGMENT_OPTIONS}
-            onChange={(position) =>
-              patchLegend({ position: position as "top" | "bottom" | "left" | "right" })
-            }
-          />
-        </>
+        <ChartLegendDeParityFields deStyle={deStyle} onPatch={patchLegend} />
       ) : null}
     </ChartInspectorSection>
   );
 }
 
 export function ChartLabelStyleSection() {
-  const { cfg, mutateChartConfig, patchDeStyleNested, onChange, dashboardStyle } = useChartInspector();
+  const { cfg, mutateChartConfig, patchDeStyleNested, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const caps = chartInspectorCapabilities(cfg.chartType);
   const showLabel = readChartShowLabel(cfg);
@@ -267,7 +256,9 @@ export function ChartLabelStyleSection() {
             value={deStyle.label?.color ?? ""}
             fallbackValue={resolveChartLabelDisplayColor(cfg, dashboardStyle)}
             onChange={(color) =>
-              onChange(patchChartLabelStyle(cfg, { color: color || undefined }))
+              mutateChartConfig((current) =>
+                patchChartLabelStyle(current, { color: color || undefined }),
+              )
             }
           />
           <ChartPaletteFontSizeSelect

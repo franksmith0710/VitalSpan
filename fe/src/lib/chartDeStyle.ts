@@ -23,8 +23,24 @@ export type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 export type ChartLegendStyle = {
   show?: boolean;
   position?: "top" | "bottom" | "left" | "right";
+  /** 图例项排列：水平 / 垂直（对标 DE「方向」） */
+  orient?: "horizontal" | "vertical";
+  /** 对标 DE 位置 · 水平对齐（左/中/右） */
+  hAlign?: "left" | "center" | "right";
+  /** 对标 DE 位置 · 垂直对齐（上/中/下） */
+  vAlign?: "top" | "middle" | "bottom";
   fontSize?: number;
+  /** 对标 ECharts legend.icon */
+  icon?: ChartLegendIconShape;
+  iconSize?: number;
 };
+
+export type ChartLegendIconShape =
+  | "circle"
+  | "rect"
+  | "roundRect"
+  | "triangle"
+  | "diamond";
 
 /** 看板内嵌图例默认：开启 + 底部 */
 export const DEFAULT_CHART_LEGEND_STYLE: Required<Pick<ChartLegendStyle, "show" | "position">> &
@@ -377,12 +393,12 @@ export function readChartShowLabel(
   cfg: ChartViewConfig,
   defaults?: Pick<DashboardStyleConfig, "chartLabelShow">,
 ): boolean {
+  const labelShow = readChartDeStyle(cfg).label?.show;
+  if (labelShow !== undefined) return labelShow;
   const features = cfg.nativeBody?.deFeatures;
   if (features && typeof features === "object" && "showLabel" in features) {
     return Boolean((features as { showLabel?: boolean }).showLabel);
   }
-  const labelShow = readChartDeStyle(cfg).label?.show;
-  if (labelShow !== undefined) return labelShow;
   return defaults?.chartLabelShow ?? false;
 }
 

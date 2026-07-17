@@ -64,10 +64,46 @@ describe("applyDeStyleToEchartsOption", () => {
       false,
       { layout: { embedded: true } },
     );
-    const legend = option.legend as { show?: boolean; top?: number; textStyle?: { fontSize?: number } };
+    const legend = option.legend as {
+      show?: boolean;
+      top?: number;
+      textStyle?: { fontSize?: number };
+      icon?: string;
+      itemWidth?: number;
+      orient?: string;
+    };
     expect(legend.show).toBe(true);
     expect(legend.textStyle?.fontSize).toBe(20);
     expect(legend.top).toBe(0);
+    expect(legend.icon).toBe("triangle");
+    expect(legend.itemWidth).toBe(6);
+    expect(legend.orient).toBe("horizontal");
+  });
+
+  it("applies custom legend icon, size and orient", () => {
+    const option = applyDeStyleToEchartsOption(
+      { series: [{ type: "pie", data: [{ name: "A", value: 1 }] }] },
+      {
+        legend: {
+          show: true,
+          icon: "diamond",
+          iconSize: 10,
+          orient: "vertical",
+          position: "right",
+        },
+      },
+      false,
+    );
+    const legend = option.legend as {
+      icon?: string;
+      itemWidth?: number;
+      itemHeight?: number;
+      orient?: string;
+    };
+    expect(legend.icon).toBe("diamond");
+    expect(legend.itemWidth).toBe(10);
+    expect(legend.itemHeight).toBe(10);
+    expect(legend.orient).toBe("vertical");
   });
 
   it("defers legend to shell layout when shellLegend is enabled", () => {

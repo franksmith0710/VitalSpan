@@ -13,6 +13,13 @@ import { cn } from "@/lib/utils";
 /** 看板 chart-edit 窄栏（~216px）紧凑密度，对标 DataEase editor-light */
 export const INSPECTOR_CTRL = "h-8 rounded-md text-theme-xs";
 export const INSPECTOR_SELECT = cn(INSPECTOR_CTRL, "w-full");
+/** 覆盖 ui/select 默认 h-11·px-4，216px 栏内下拉统一外观 */
+export const INSPECTOR_SELECT_TRIGGER = cn(
+  INSPECTOR_SELECT,
+  "min-h-8 border border-gray-200 bg-white px-2 py-0 shadow-theme-xs",
+  "text-gray-800 dark:border-gray-700 dark:bg-white/[0.03] dark:text-white/90",
+  "[&>svg]:size-3.5 [&>svg]:opacity-50",
+);
 export const INSPECTOR_LABEL = "text-[11px] font-medium text-gray-500 dark:text-gray-400";
 export const INSPECTOR_HINT = "text-[10px] leading-relaxed text-gray-400 dark:text-gray-500";
 export const INSPECTOR_SECTION_GAP = "space-y-2.5";
@@ -144,7 +151,7 @@ export function ChartInspectorSection({
         ) : null}
       </div>
       {children ? (
-        <CollapsibleContent className="space-y-0 pb-2">{children}</CollapsibleContent>
+        <CollapsibleContent className="space-y-0 overflow-visible pb-2">{children}</CollapsibleContent>
       ) : null}
     </Collapsible>
   );

@@ -92,25 +92,30 @@ export function DeSegmentGroup({
   onChange: (value: string | boolean) => void;
   columns?: number;
   className?: string;
-  /** fill：撑满栏宽；fit：按文案收窄，适合 432px 看板配置 */
-  sizing?: "fill" | "fit";
+  /** fill：均分撑满；fit：按文案收窄；compact：窄栏图标分段（216px 图例形状行） */
+  sizing?: "fill" | "fit" | "compact";
 }) {
   const cols = columns ?? Math.min(options.length, 4);
   const fitCell =
     cols >= 4 ? "minmax(3.75rem, 5.25rem)" : "minmax(4.25rem, 6.25rem)";
+  const compactCell = "minmax(1.5rem, 1fr)";
+  const isCompact = sizing === "compact";
 
   return (
     <div
       className={cn(
         "grid gap-0.5 rounded-lg bg-gray-100 p-0.5 dark:bg-white/[0.06]",
         sizing === "fit" && "inline-grid w-fit max-w-full",
+        (sizing === "fill" || isCompact) && "min-w-0 w-full",
         className,
       )}
       style={{
         gridTemplateColumns:
           sizing === "fit"
             ? `repeat(${cols}, ${fitCell})`
-            : `repeat(${cols}, minmax(0, 1fr))`,
+            : isCompact
+              ? `repeat(${cols}, ${compactCell})`
+              : `repeat(${cols}, minmax(0, 1fr))`,
       }}
       role="group"
     >
@@ -131,8 +136,9 @@ export function DeSegmentGroup({
               if (!opt.disabled) onChange(opt.value);
             }}
             className={cn(
-              "flex min-h-8 items-center justify-center rounded-md py-1.5 text-center text-[11px] font-medium leading-tight transition-all",
-              isTextLabel ? "px-2" : "px-1.5",
+              "flex items-center justify-center rounded-md text-center text-[11px] font-medium leading-tight transition-all",
+              isCompact ? "min-h-7 px-0.5" : "min-h-8 py-1.5",
+              !isCompact && isTextLabel ? "px-2" : !isCompact ? "px-1.5" : "",
               "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 focus-visible:ring-offset-1",
               selected
                 ? "bg-white text-brand-600 shadow-theme-xs dark:bg-gray-900 dark:text-brand-300"

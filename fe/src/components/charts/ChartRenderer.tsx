@@ -11,6 +11,13 @@ import {
 import { resolveChartColors, applyChartColorsOpacity } from "@/lib/chartPalette";
 import type { ColorScheme, DashboardStyleConfig, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartLegendPosition, readChartShowLabel, readChartDataZoom, readChartPaletteOpacity, readChartSeriesGradient, readChartTooltipShow, resolveChartLabelPresentation, resolveChartTooltipPresentation } from "@/lib/chartDeStyle";
+import {
+  readChartLegendIcon,
+  readChartLegendIconSize,
+  readChartLegendOrient,
+  readChartLegendHAlign,
+  readChartLegendVAlign,
+} from "@/lib/chartLegendPresentation";
 import { resolveChartValueFormat } from "@/lib/chartValueFormat";
 import { resolveRenderSpec } from "@/lib/resolveRenderSpec";
 import { chartRenderSpecKey } from "@/lib/chartRenderSpecKey";
@@ -480,10 +487,25 @@ export const ChartRenderer = memo(function ChartRenderer({
     () => ({
       visible: useShellLegendLayout,
       position: shellLegendPosition,
+      orient: readChartLegendOrient(deStyle),
+      hAlign: readChartLegendHAlign(deStyle),
+      vAlign: readChartLegendVAlign(deStyle),
       fontSize: deStyle.legend?.fontSize ?? 12,
+      icon: readChartLegendIcon(deStyle),
+      iconSize: readChartLegendIconSize(deStyle),
       items: shellLegendItems,
     }),
-    [useShellLegendLayout, shellLegendPosition, deStyle.legend?.fontSize, shellLegendItems],
+    [
+      useShellLegendLayout,
+      shellLegendPosition,
+      deStyle.legend?.fontSize,
+      deStyle.legend?.orient,
+      deStyle.legend?.hAlign,
+      deStyle.legend?.vAlign,
+      deStyle.legend?.icon,
+      deStyle.legend?.iconSize,
+      shellLegendItems,
+    ],
   );
   usePublishWidgetShellLegend(shellLegendState, embedded && shellLegendEligible);
 

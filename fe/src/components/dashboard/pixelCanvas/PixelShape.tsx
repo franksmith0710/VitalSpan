@@ -223,7 +223,12 @@ function PixelShapeInnerChrome({
   const chartBody = (
     <EmbeddedChartLegendShell
       position={legend?.position ?? "bottom"}
+      orient={legend?.orient ?? "horizontal"}
+      hAlign={legend?.hAlign ?? "center"}
+      vAlign={legend?.vAlign ?? "bottom"}
       fontSize={legend?.fontSize ?? 12}
+      icon={legend?.icon ?? "triangle"}
+      iconSize={legend?.iconSize ?? 6}
       items={legendItems}
     >
       {children}

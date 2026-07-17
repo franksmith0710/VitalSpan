@@ -17,7 +17,12 @@ function PublishProbe({
     {
       visible,
       position: "bottom",
+      orient: "horizontal",
+      hAlign: "center",
+      vAlign: "bottom",
       fontSize: 12,
+      icon: "triangle",
+      iconSize: 6,
       items: visible ? [{ name: "A", color: "#465fff" }] : [],
     },
     enabled,

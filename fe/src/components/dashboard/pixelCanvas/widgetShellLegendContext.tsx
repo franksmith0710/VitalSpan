@@ -8,20 +8,36 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { ChartLegendStyle } from "@/lib/chartDeStyle";
+import type { ChartLegendIconShape, ChartLegendStyle } from "@/lib/chartDeStyle";
 import type { ChartLegendItem } from "@/lib/chartLegendItems";
+import {
+  DEFAULT_CHART_LEGEND_ICON,
+  DEFAULT_CHART_LEGEND_ICON_SIZE,
+  DEFAULT_CHART_LEGEND_FONT_SIZE,
+} from "@/lib/chartLegendPresentation";
+import type { ChartLegendHAlign, ChartLegendVAlign } from "@/lib/chartLegendPresentation";
 
 export type WidgetShellLegendState = {
   visible: boolean;
   position: NonNullable<ChartLegendStyle["position"]>;
+  orient: NonNullable<ChartLegendStyle["orient"]>;
+  hAlign: ChartLegendHAlign;
+  vAlign: ChartLegendVAlign;
   fontSize: number;
+  icon: ChartLegendIconShape;
+  iconSize: number;
   items: ChartLegendItem[];
 };
 
 const EMPTY_LEGEND: WidgetShellLegendState = {
   visible: false,
   position: "bottom",
-  fontSize: 12,
+  orient: "horizontal",
+  hAlign: "center",
+  vAlign: "bottom",
+  fontSize: DEFAULT_CHART_LEGEND_FONT_SIZE,
+  icon: DEFAULT_CHART_LEGEND_ICON,
+  iconSize: DEFAULT_CHART_LEGEND_ICON_SIZE,
   items: [],
 };
 
@@ -40,7 +56,12 @@ function legendStateEqual(a: WidgetShellLegendState, b: WidgetShellLegendState):
   return (
     a.visible === b.visible &&
     a.position === b.position &&
+    a.orient === b.orient &&
+    a.hAlign === b.hAlign &&
+    a.vAlign === b.vAlign &&
     a.fontSize === b.fontSize &&
+    a.icon === b.icon &&
+    a.iconSize === b.iconSize &&
     legendItemsKey(a.items) === legendItemsKey(b.items)
   );
 }
@@ -81,7 +102,7 @@ export function usePublishWidgetShellLegend(
       return;
     }
     setStateRef.current?.(stateRef.current);
-  }, [enabled, state.visible, state.position, state.fontSize, itemsKey]);
+  }, [enabled, state.visible, state.position, state.orient, state.hAlign, state.vAlign, state.fontSize, state.icon, state.iconSize, itemsKey]);
 
   useEffect(() => {
     if (!enabled) return;

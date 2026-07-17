@@ -25,4 +25,22 @@ describe("echarts-theme", () => {
       "#cbd5e1",
     );
   });
+
+  it("preserves explicit pie label color from deStyle", () => {
+    const option = applyEchartsColorSchemeTokens(
+      {
+        series: [
+          {
+            type: "pie",
+            data: [{ name: "A", value: 1 }],
+            label: { show: true, color: "#ff5500" },
+          },
+        ],
+      },
+      "dark",
+    );
+    expect((option.series as Array<{ label?: { color?: string } }>)[0].label?.color).toBe(
+      "#ff5500",
+    );
+  });
 });

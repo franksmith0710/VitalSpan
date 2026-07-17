@@ -23,28 +23,39 @@ import { resolveChartColors } from "@/lib/chartPalette";
 import { CHART_FONT_SIZE_OPTIONS, resolveChartFontSizeOptions } from "@/lib/chartFontSizes";
 import { cn } from "@/lib/utils";
 import { DE_SELECT } from "./dashboardInspectorUi";
-import { INSPECTOR_SELECT } from "./inspectorCompact";
+import { INSPECTOR_LABEL, INSPECTOR_SELECT } from "./inspectorCompact";
 
-const PALETTE_STRIP_SWATCH_COUNT = 8;
+export const PALETTE_STRIP_SWATCH_COUNT = 8;
+/** 下拉项 / 触发器色带统一宽度，避免首项「跟随看板」与预设行错位 */
+export const PALETTE_SWATCH_STRIP_WIDTH = "5.5rem";
 
 /** 配色方案色带预览（对标 DataEase 下拉条） */
 export function ChartPaletteSwatchStrip({
   colors,
   inherit,
+  inheritPreviewColors,
   className,
   count = PALETTE_STRIP_SWATCH_COUNT,
 }: {
   colors: readonly string[];
   inherit?: boolean;
+  /** 继承仪表板时展示的色带（与看板配置一致） */
+  inheritPreviewColors?: readonly string[];
   className?: string;
   count?: number;
 }) {
-  const palette = inherit ? resolveChartColors("default").slice(0, count) : colors;
+  const palette = inherit
+    ? (inheritPreviewColors?.length
+        ? inheritPreviewColors
+        : resolveChartColors("default")
+      ).slice(0, count)
+    : colors;
   return (
     <div
       className={cn(
-        "flex h-3 min-w-0 flex-1 items-stretch gap-px overflow-hidden rounded-sm",
+        "flex h-4 w-full min-w-0 items-stretch overflow-hidden rounded-sm",
         "ring-1 ring-inset ring-black/[0.06] dark:ring-white/10",
+        inherit && "opacity-60",
         className,
       )}
       aria-hidden
@@ -52,7 +63,7 @@ export function ChartPaletteSwatchStrip({
       {palette.slice(0, count).map((color, index) => (
         <span
           key={`${inherit ? "inherit" : color}-${index}`}
-          className={cn("min-w-0 flex-1", inherit && "opacity-45")}
+          className="min-w-0 flex-1"
           style={{ backgroundColor: color }}
         />
       ))}
@@ -233,6 +244,8 @@ type ChartPaletteFontSizeSelectProps = {
   density?: "narrow" | "wide";
   className?: string;
   showLabel?: boolean;
+  /** 左侧标签文案，默认「字体大小」 */
+  label?: string;
 };
 
 export function ChartPaletteFontSizeSelect({
@@ -243,6 +256,7 @@ export function ChartPaletteFontSizeSelect({
   density = "wide",
   className,
   showLabel = true,
+  label = "字体大小",
 }: ChartPaletteFontSizeSelectProps) {
   const resolved = value ?? fallback;
   const optionList = resolveChartFontSizeOptions(value, fallback, options);
@@ -257,9 +271,7 @@ export function ChartPaletteFontSizeSelect({
       )}
     >
       {showLabel ? (
-        <span className="shrink-0 text-[11px] font-medium text-gray-500 dark:text-gray-400">
-          字体大小
-        </span>
+        <span className={cn(INSPECTOR_LABEL, "w-7 shrink-0")}>{label}</span>
       ) : null}
       <Select value={String(resolved)} onValueChange={(v) => onChange(Number(v))}>
         <SelectTrigger
