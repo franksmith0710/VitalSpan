@@ -37,6 +37,8 @@ type DashboardLayoutPreviewProps = {
   filterValues?: Record<string, string>;
   onFilterValueChange?: (filterId: string, value: string) => void;
   scaleMode?: ScaleMode;
+  /** 大屏投放：固定设计尺寸，由外层 CanvasScaleViewport 独占缩放 */
+  fixedDesignViewport?: boolean;
   className?: string;
 };
 
@@ -47,6 +49,7 @@ export function DashboardLayoutPreview({
   filterValues = {},
   onFilterValueChange,
   scaleMode,
+  fixedDesignViewport = false,
   className,
 }: DashboardLayoutPreviewProps) {
   const styleConfig = useMemo(
@@ -127,7 +130,8 @@ export function DashboardLayoutPreview({
           mode="view"
           layout={displayLayout}
           styleConfig={styleConfig}
-          scaleMode={scaleMode ?? styleConfig.scaleMode}
+          scaleMode={fixedDesignViewport ? "canvas" : (scaleMode ?? styleConfig.scaleMode)}
+          designViewportLocked={fixedDesignViewport}
           className="h-full min-h-0"
           renderWidget={(widget: PixelLayoutWidget) =>
             renderWidget(pixelWidgetToLayoutWidget(widget), undefined, "shape")

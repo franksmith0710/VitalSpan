@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { apiFetch } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,7 +81,7 @@ export function SyncJobFormPage() {
           schedule_cron: job.schedule_cron ?? "",
         });
       } catch (err) {
-        setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+        setError(mapApiError(err));
       } finally {
         setLoading(false);
       }
@@ -124,7 +125,7 @@ export function SyncJobFormPage() {
       }
       navigate("/admin/ingestion/sync-jobs");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setSubmitting(false);
     }

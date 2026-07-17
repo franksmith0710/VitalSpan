@@ -45,4 +45,22 @@ describe("layoutSanitize", () => {
     const sanitized = sanitizePixelLayoutGeometry(layout);
     expect(layoutsOverlap(sanitized, 0)).toBe(false);
   });
+
+  it("preserves overlapping widgets on data-screen sanitize", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1920, height: 1080 },
+      widgets: [
+        chart("a", 0, 0, 400, 300, 0),
+        chart("b", 100, 100, 400, 300, 1),
+      ],
+      globalFilters: [],
+      styleConfig: { surfaceKind: "data-screen" },
+    };
+    const sanitized = sanitizePixelLayoutGeometry(layout);
+    const b = sanitized.widgets.find((w) => w.id === "b");
+    expect(b?.x).toBe(100);
+    expect(b?.y).toBe(100);
+    expect(layoutsOverlap(sanitized, 0)).toBe(true);
+  });
 });

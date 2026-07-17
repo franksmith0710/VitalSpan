@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
 import { SyncJobsEmptyState } from "./components/SyncJobsEmptyState";
 import { SyncJobsMetrics } from "./components/SyncJobsMetrics";
 import { SyncJobsTable } from "./components/SyncJobsTable";
@@ -69,7 +70,7 @@ export function SyncJobsPage() {
       const data = await apiFetch<SyncJobListResponse>("/api/v1/ingestion/sync-jobs");
       setJobs(data.items);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setLoading(false);
     }
@@ -121,7 +122,7 @@ export function SyncJobsPage() {
       await apiFetch(`/api/v1/ingestion/sync-jobs/${jobId}/run`, { method: "POST" });
       setRunTarget(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setRunningId(null);
     }
@@ -135,7 +136,7 @@ export function SyncJobsPage() {
       setDeleteTarget(null);
       await loadJobs();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setDeleting(false);
     }

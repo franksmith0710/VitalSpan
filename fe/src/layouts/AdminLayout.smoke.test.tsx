@@ -165,7 +165,7 @@ describe("AdminLayout smoke", () => {
     expect(main.className).toContain("overflow-hidden");
     expect(screen.getByText("edit canvas")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("link", { name: "Dashboard" }));
+    await user.click(screen.getByRole("link", { name: "仪表板" }));
 
     expect(await screen.findByText("dashboard list")).toBeInTheDocument();
     expect(screen.queryByText("edit canvas")).not.toBeInTheDocument();

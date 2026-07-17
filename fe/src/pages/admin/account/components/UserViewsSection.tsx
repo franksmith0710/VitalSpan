@@ -173,7 +173,7 @@ export function UserViewsSection() {
                 <Input id="view-name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="view-dash">Dashboard ID</Label>
+                <Label htmlFor="view-dash">仪表板 ID</Label>
                 <Input
                   id="view-dash"
                   value={dashboardId}
@@ -231,7 +231,7 @@ export function UserViewsSection() {
                     </TableHead>
                   ) : null}
                   <TableHead>名称</TableHead>
-                <TableHead>Dashboard ID</TableHead>
+                <TableHead>仪表板 ID</TableHead>
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -270,7 +270,7 @@ export function UserViewsSection() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>删除个人视图？</AlertDialogTitle>
                             <AlertDialogDescription>
-                              删除后将回落到角色默认 Dashboard。
+                              删除后将回落到角色默认仪表板。
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -298,7 +298,7 @@ export function UserViewsSection() {
         onOpenChange={setBatchDeleteOpen}
         count={selection.selectedCount}
         title="批量删除个人视图"
-        description="删除后将回落到角色默认 Dashboard。"
+        description="删除后将回落到角色默认仪表板。"
         pending={batchDeleting}
         onConfirm={() => void handleBatchDelete()}
       />

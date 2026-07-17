@@ -45,6 +45,8 @@ import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { ReportSchedulesPage } from "@/pages/admin/reports/ReportSchedulesPage";
 import { ReportCenterPage } from "@/pages/admin/reports/ReportCenterPage";
 import { ReportViewPage } from "@/pages/admin/reports/ReportViewPage";
+import { DataScreenListPage } from "@/pages/admin/data-screens/DataScreenListPage";
+import { DataScreenPreviewPage } from "@/pages/admin/data-screens/DataScreenPreviewPage";
 import { ACCOUNT_PREFERENCES_PATH } from "@/lib/workspace";
 
 export function AppRoutes() {
@@ -74,6 +76,11 @@ export function AppRoutes() {
           <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
           <Route path="dashboards/:id/share" element={<DashboardSharePage />} />
           <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
+          <Route path="data-screens/:id/share" element={<DashboardSharePage />} />
+          <Route path="data-screens" element={<DataScreenListPage />} />
+          <Route path="data-screens/:id/edit" element={<DashboardEditPage mode="edit" />} />
+          <Route path="data-screens/:id/preview" element={<DataScreenPreviewPage />} />
+          <Route path="data-screens/:id" element={<DashboardEditPage mode="view" />} />
           <Route path="entities/overview" element={<RequireCapabilityName capability="theme:*"><EntityOverviewPage /></RequireCapabilityName>} />
           <Route path="reports" element={<RequireCapabilityName capability="report:read"><PrefabReportsPage /></RequireCapabilityName>} />
           <Route path="reports/center" element={<RequireCapabilityName capability="report:read"><ReportCenterPage /></RequireCapabilityName>} />

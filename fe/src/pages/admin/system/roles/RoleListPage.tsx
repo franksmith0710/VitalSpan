@@ -278,7 +278,7 @@ export function RoleListPage() {
     <AdminPageShell
       layout="list"
       title="角色管理"
-      description="创建与管理角色，可配置默认 Dashboard 与报表模板。"
+      description="创建与管理角色，可配置默认仪表板与报表模板。"
       actions={
         <Button type="button" variant="primary" onClick={openCreate}>
           新建角色
@@ -541,7 +541,7 @@ export function RoleListPage() {
               </div>
             ) : null}
             <div className="grid gap-2">
-              <Label htmlFor="role-dash">默认 Dashboard</Label>
+              <Label htmlFor="role-dash">默认仪表板</Label>
               <Select
                 value={form.defaultDashboardId || "__none__"}
                 onValueChange={(v) =>

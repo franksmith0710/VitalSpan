@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -61,7 +62,8 @@ describe("ChartStylePanel", () => {
     );
 
     expect(await screen.findByRole("button", { name: "基础样式" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "配色方案" })).toBeInTheDocument();
+    expect(screen.getByLabelText("当前配色方案")).toBeInTheDocument();
+    expect(screen.getByTestId("chart-palette-inline-menu-panel")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "渐变颜色" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "显示图表标签" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "显示图表提示" })).toBeInTheDocument();
@@ -77,6 +79,57 @@ describe("ChartStylePanel", () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ styleVariant: "stacked" }),
     );
+  });
+
+  it("patches chart palette when selecting a preset in the inspector", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ChartInspectorProvider widget={widget} onChange={onChange}>
+          <ChartStylePanel />
+        </ChartInspectorProvider>
+      </QueryClientProvider>,
+    );
+
+    await user.click(screen.getByRole("option", { name: /浅韵/ }));
+
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nativeBody: expect.objectContaining({
+          deStyle: expect.objectContaining({ paletteId: "pastel" }),
+        }),
+      }),
+    );
+  });
+
+  it("re-renders palette display after provider onChange updates widget", async () => {
+    const user = userEvent.setup();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    function StatefulPanel() {
+      const [currentWidget, setCurrentWidget] = useState(widget);
+      return (
+        <ChartInspectorProvider
+          widget={currentWidget}
+          onChange={(chartConfig) =>
+            setCurrentWidget((prev) => ({ ...prev, chartConfig }))
+          }
+        >
+          <ChartStylePanel />
+        </ChartInspectorProvider>
+      );
+    }
+
+    render(
+      <QueryClientProvider client={qc}>
+        <StatefulPanel />
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("option", { name: /浅韵/ }));
+    expect(await screen.findByLabelText("当前配色方案")).toHaveTextContent("浅韵");
   });
 
   it("table shows only table-specific sections", () => {

@@ -101,6 +101,7 @@ type ChartRendererProps = {
     | "chartLabelStyle"
     | "chartTooltipStyle"
     | "tableColorStyle"
+    | "surfaceKind"
   >;
   numberFormat?: NumberFormatConfig;
   colorScheme?: ColorScheme;
@@ -537,6 +538,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       onJumpClick={jumpInteraction ? handleJumpClick : undefined}
       chartConfig={localConfig}
       drillStack={drill.stack}
+      dataScreenSurface={dashboardColorDefaults?.surfaceKind === "data-screen"}
       drillClickField={drillClickField}
       shellLegend={useShellLegendLayout}
     />

@@ -584,6 +584,21 @@ export function moveWidget(widgets: LayoutWidget[], id: string, direction: "up" 
   return next;
 }
 
+export function moveWidgetToExtreme(
+  widgets: LayoutWidget[],
+  id: string,
+  position: "top" | "bottom",
+): LayoutWidget[] {
+  const sorted = sortWidgets(widgets);
+  const idx = sorted.findIndex((w) => w.id === id);
+  if (idx < 0) return widgets;
+  const targetOrder =
+    position === "top"
+      ? Math.max(...sorted.map((w) => w.order)) + 1
+      : Math.min(...sorted.map((w) => w.order)) - 1;
+  return widgets.map((w) => (w.id === id ? { ...w, order: targetOrder } : w));
+}
+
 export function resizeWidget(
   widgets: LayoutWidget[],
   id: string,

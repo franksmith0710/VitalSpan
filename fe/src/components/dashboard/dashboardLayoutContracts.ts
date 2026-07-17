@@ -13,6 +13,10 @@ export type DashboardWidgetBase = {
   type: WidgetType;
   title: string;
   order: number;
+  /** 图层隐藏（大屏投放不渲染） */
+  hidden?: boolean;
+  /** 图层锁定（编辑态禁止拖动/缩放） */
+  locked?: boolean;
   parentTabsId?: string;
   tabPaneId?: string;
   chartConfig?: ChartViewConfig;

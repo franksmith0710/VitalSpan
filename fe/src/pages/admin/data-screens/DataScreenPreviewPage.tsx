@@ -1,0 +1,93 @@
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "react-router";
+import { apiFetch } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
+import { dataScreenEditPath } from "@/lib/dataScreenLayout";
+import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
+import { DataScreenPresenter } from "@/components/dashboard/screen/DataScreenPresenter";
+import { ScreenPreviewChrome } from "@/components/dashboard/screen/ScreenPreviewChrome";
+import type { PresentationMode } from "@/components/dashboard/screen/presentationScale";
+import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { Skeleton } from "@/components/ui/skeleton";
+
+type DashboardDetail = {
+  id: string;
+  name: string;
+  layoutJson: DashboardLayout;
+};
+
+export function DataScreenPreviewPage() {
+  const { id } = useParams<{ id: string }>();
+  const [detail, setDetail] = useState<DashboardDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [presentationMode, setPresentationMode] = useState<PresentationMode>("fit");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`);
+      setDetail(data);
+    } catch (err) {
+      setError(mapApiError(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const handleFullscreen = () => {
+    const root = document.documentElement;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+      return;
+    }
+    void root.requestFullscreen?.();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-dvh flex-col bg-slate-950 p-4">
+        <Skeleton className="mb-3 h-10 w-full max-w-xl" />
+        <Skeleton className="flex-1" />
+      </div>
+    );
+  }
+
+  if (error || !detail || !id) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-slate-950 p-6">
+        <PageErrorBanner message={error ?? "大屏不存在"} onRetry={() => void load()} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-dvh min-h-0 flex-col bg-slate-950 text-white" data-screen-preview>
+      <ScreenPreviewChrome
+        title={detail.name}
+        editPath={dataScreenEditPath(id)}
+        presentationMode={presentationMode}
+        onPresentationModeChange={setPresentationMode}
+        onFullscreen={handleFullscreen}
+      />
+      <div className="min-h-0 flex-1">
+        <DataScreenPresenter
+          layout={detail.layoutJson}
+          presentationMode={presentationMode}
+          filterValues={filterValues}
+          onFilterValueChange={(filterId, value) =>
+            setFilterValues((prev) => ({ ...prev, [filterId]: value }))
+          }
+          className="h-full"
+        />
+      </div>
+    </div>
+  );
+}

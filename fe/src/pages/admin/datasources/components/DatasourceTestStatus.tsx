@@ -1,4 +1,5 @@
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { localizeApiMessage } from "@/lib/apiError";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -32,10 +33,15 @@ function stripErrorCode(message: string, code: string | null) {
 
 function parseTestFeedback(error: string | null, result: TestConnectionResult | null) {
   const failed = Boolean(error) || (result != null && !result.ok);
+  if (!failed) {
+    const raw = (result?.message ?? "").trim();
+    const message = raw ? localizeApiMessage(raw) : "数据库连接正常";
+    return { failed: false, code: result?.code ?? null, message };
+  }
   const raw = error ?? result?.message ?? "";
   const code = result?.code ?? extractErrorCode(raw);
-  const message = stripErrorCode(raw, code);
-  return { failed, code, message };
+  const message = localizeApiMessage(stripErrorCode(raw, code));
+  return { failed: true, code, message };
 }
 
 export function DatasourceTestStatus({

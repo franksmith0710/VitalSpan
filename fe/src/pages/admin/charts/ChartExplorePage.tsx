@@ -213,13 +213,13 @@ export function ChartExplorePage() {
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <AdminPageShell
         title="图表类型目录"
-        description="浏览平台已注册的图表类型、渲染器与字段绑定规则（VIZ-003）。此处为只读参考目录；实际建图请在 Dashboard 编辑态添加组件并配置数据源与 SQL。"
+        description="浏览平台已注册的图表类型、渲染器与字段绑定规则（VIZ-003）。此处为只读参考目录；实际建图请在仪表板编辑态添加组件并配置数据源与 SQL。"
         layout="fill"
         actions={
           <Button asChild variant="outline" size="sm">
             <Link to={WORKSPACE_HOME_PATH}>
               <LayoutDashboard className="size-4" aria-hidden />
-              去 Dashboard 建图
+              去仪表板建图
             </Link>
           </Button>
         }
@@ -347,7 +347,7 @@ export function ChartExplorePage() {
                 </h3>
                 <p className="mt-2 max-w-sm text-theme-sm text-gray-500 dark:text-gray-400">
                   从左侧目录选择图表，查看字段规则、样式变体与支持能力。要创建可出图的组件，请前往
-                  Dashboard 编辑页。
+                  仪表板编辑页。
                 </p>
               </div>
             )}

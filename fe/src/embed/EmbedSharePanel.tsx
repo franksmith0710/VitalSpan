@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api";
+import { localizeApiMessage, mapApiError } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
 
 const ORIGIN_RE = /^https?:\/\/[a-zA-Z0-9.-]+(:\d+)?$/;
@@ -75,9 +76,9 @@ export function EmbedSharePanel() {
     } catch (e) {
       const err = e as Error & { code?: string; fields?: Array<{ message: string }> };
       if (err.fields?.length) {
-        setAlertError(err.fields.map((f) => f.message).join("；"));
+        setAlertError(err.fields.map((f) => localizeApiMessage(f.message)).join("；"));
       } else {
-        setAlertError(err.message || "嵌入配置校验失败");
+        setAlertError(mapApiError(e));
       }
     }
   };

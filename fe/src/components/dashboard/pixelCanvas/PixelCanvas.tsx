@@ -82,6 +82,8 @@ type PixelCanvasProps = {
   scaleMode?: ScaleMode;
   styleConfig?: DashboardStyleConfig;
   widgetContentRevision?: (widget: PixelLayoutWidget) => string;
+  /** 外层视口已锁定设计尺寸缩放（大屏投放） */
+  designViewportLocked?: boolean;
 };
 
 export const PIXEL_CANVAS_GUTTER = 0;
@@ -156,6 +158,7 @@ export function PixelCanvas({
   scaleMode = "canvas",
   styleConfig = {},
   widgetContentRevision,
+  designViewportLocked = false,
 }: PixelCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -310,8 +313,11 @@ export function PixelCanvas({
     return Math.max(PIXEL_CANVAS_MIN_HEIGHT, lowest);
   }, [topLevelWidgets]);
   const viewCanvas = useMemo(
-    () => ({ width: activeLayout.canvas.width, height: viewCanvasHeight }),
-    [activeLayout.canvas.width, viewCanvasHeight],
+    () =>
+      designViewportLocked
+        ? { width: activeLayout.canvas.width, height: activeLayout.canvas.height }
+        : { width: activeLayout.canvas.width, height: viewCanvasHeight },
+    [activeLayout.canvas.width, activeLayout.canvas.height, designViewportLocked, viewCanvasHeight],
   );
   const designCanvasHeight = useMemo(
     () => resolveScaleDesignHeight(activeLayout.canvas.height),
@@ -325,6 +331,15 @@ export function PixelCanvas({
     const measureEl = resolvePixelCanvasMeasureElement(host);
 
     const applyMetrics = () => {
+      if (designViewportLocked) {
+        setScale(1);
+        setStageLeft(0);
+        setCenterContent(false);
+        setScrollX(false);
+        setContentSize({ width: viewCanvas.width, height: viewCanvas.height });
+        publishViewport(visibleCanvasViewport(host, 1, viewCanvas));
+        return;
+      }
       const metrics = scaledCanvasMetrics(
         resolvePixelCanvasMeasureWidth(measureEl),
         measureEl.clientHeight,
@@ -374,7 +389,7 @@ export function PixelCanvas({
         metricsFrameRef.current = null;
       }
     };
-  }, [publishViewport, viewCanvas, designCanvasHeight, mode, scaleMode, editMinScale]);
+  }, [publishViewport, viewCanvas, designCanvasHeight, mode, scaleMode, editMinScale, designViewportLocked, effectiveScaleMode]);
 
   useLayoutEffect(() => {
     consumePendingCanvasHostScrollRestore(hostRef.current);

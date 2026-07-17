@@ -94,8 +94,8 @@ export function ThemeAnalysisPage() {
       {needsDashboardPicker ? (
         <div className="mb-4 max-w-md">
           <Select value={effectiveDashboardId} onValueChange={setSelectedDashboardId}>
-            <SelectTrigger aria-label="选择 Dashboard">
-              <SelectValue placeholder="选择 Dashboard" />
+            <SelectTrigger aria-label="选择仪表板">
+              <SelectValue placeholder="选择仪表板" />
             </SelectTrigger>
             <SelectContent>
               {(dashboardsQuery.data?.items ?? []).map((d) => (

@@ -27,6 +27,7 @@ function inferNavCapability(item: ManifestItem, section: ManifestSection): strin
   const explicit = item.capability ?? section.capability;
   if (explicit) return explicit;
   if (item.path?.startsWith("/admin/dashboards")) return "dashboard:read";
+  if (item.path?.startsWith("/admin/data-screens")) return "dashboard:read";
   if (item.path?.startsWith("/admin/reports")) return "report:read";
   return undefined;
 }

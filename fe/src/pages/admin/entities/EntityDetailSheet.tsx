@@ -100,10 +100,10 @@ export function EntityDetailSheet({
           <Button
             type="button"
             disabled={!drillTargetId}
-            title={drillTargetId ? undefined : "请先在 Dashboard 配置实体总览下钻目标"}
+            title={drillTargetId ? undefined : "请先在仪表板配置实体总览下钻目标"}
             onClick={onDrill}
           >
-            下钻至 Dashboard
+            下钻至仪表板
           </Button>
         </SheetFooter>
       </SheetContent>

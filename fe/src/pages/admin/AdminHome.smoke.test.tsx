@@ -35,13 +35,13 @@ describe("AdminHomePage smoke", () => {
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
           <Route path="/admin" element={<AdminHomePage />} />
-          <Route path="/admin/dashboards" element={<div>Dashboard 列表</div>} />
+          <Route path="/admin/dashboards" element={<div>仪表板列表</div>} />
         </Routes>
       </MemoryRouter>,
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Dashboard 列表")).toBeInTheDocument();
+      expect(screen.getByText("仪表板列表")).toBeInTheDocument();
     });
     expect(mockResolve).toHaveBeenCalledWith(["admin"]);
   });
@@ -60,13 +60,13 @@ describe("AdminHomePage smoke", () => {
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
           <Route path="/admin" element={<AdminHomePage />} />
-          <Route path="/admin/dashboards/:id" element={<div>Dashboard 消费页</div>} />
+          <Route path="/admin/dashboards/:id" element={<div>仪表板消费页</div>} />
         </Routes>
       </MemoryRouter>,
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Dashboard 消费页")).toBeInTheDocument();
+      expect(screen.getByText("仪表板消费页")).toBeInTheDocument();
     });
     expect(mockResolve).toHaveBeenCalledWith(["viewer"]);
   });

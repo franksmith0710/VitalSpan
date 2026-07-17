@@ -6,19 +6,16 @@ import { ChartPalettePicker } from "./ChartPalettePicker";
 afterEach(cleanup);
 
 describe("ChartPalettePicker", () => {
-  it("renders DE-style select with swatch strip and preset options", async () => {
+  it("renders wide select with swatch presets", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<ChartPalettePicker showInherit value={undefined} onChange={onChange} />);
 
-    expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "配色方案" })).toBeInTheDocument();
     expect(screen.getByText("默认")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "自定义配色" })).toBeEnabled();
 
-    await user.click(screen.getByRole("button", { name: "配色方案" }));
-    expect(screen.getByRole("menuitem", { name: /浅韵/ })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("menuitem", { name: /浅韵/ }));
+    await user.click(screen.getByRole("combobox", { name: "配色方案" }));
+    await user.click(screen.getByRole("option", { name: /浅韵/ }));
     expect(onChange).toHaveBeenCalledWith("pastel", expect.any(Array));
   });
 
@@ -35,17 +32,28 @@ describe("ChartPalettePicker", () => {
 
     await user.click(screen.getByRole("button", { name: "自定义配色" }));
     expect(screen.getByText("amount")).toBeInTheDocument();
-    expect(screen.queryByLabelText("系列色 1")).not.toBeInTheDocument();
   });
 
   it("switches from inherit to default when opening custom colors", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<ChartPalettePicker showInherit value={undefined} onChange={onChange} />);
+    render(<ChartPalettePicker dense showInherit value={undefined} onChange={onChange} />);
 
     await user.click(screen.getByRole("button", { name: "自定义配色" }));
     expect(onChange).toHaveBeenCalledWith("default", expect.arrayContaining(["#465fff"]));
     expect(screen.getByTestId("chart-palette-custom")).toBeInTheDocument();
+  });
+
+  it("selects preset via always-visible inline menu in dense chart inspector mode", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<ChartPalettePicker dense showInherit value={undefined} onChange={onChange} />);
+
+    expect(screen.getByTestId("chart-palette-inline-menu-panel")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "配色方案" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("option", { name: /清透/ }));
+    expect(onChange).toHaveBeenCalledWith("clarity", expect.any(Array));
   });
 
   it("opens custom palette editor and resets to preset", async () => {
@@ -60,7 +68,6 @@ describe("ChartPalettePicker", () => {
     );
 
     expect(screen.getByTestId("chart-palette-custom")).toBeInTheDocument();
-
     await user.click(screen.getByRole("button", { name: "重置" }));
     expect(onChange).toHaveBeenCalledWith("default", expect.arrayContaining(["#465fff"]));
   });

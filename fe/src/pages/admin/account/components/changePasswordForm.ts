@@ -87,14 +87,14 @@ export function mapChangePasswordApiError(err: unknown): {
     if (err.code === "AUTH_INVALID_CURRENT_PASSWORD") {
       return {
         field: "currentPassword",
-        message: err.message || "当前密码不正确",
+        message: mapApiError(err),
         isFieldError: true,
       };
     }
     if (err.code === "AUTH_PASSWORD_UNCHANGED") {
       return {
         field: "newPassword",
-        message: err.message || "新密码不能与当前密码相同",
+        message: mapApiError(err),
         isFieldError: true,
       };
     }

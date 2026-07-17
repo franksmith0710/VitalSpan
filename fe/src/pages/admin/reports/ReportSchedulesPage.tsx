@@ -14,7 +14,7 @@ import {
   RowActions,
 } from "@/components/layout/list-page-kit";
 import { Skeleton } from "@/components/ui/skeleton";
-import { mapApiError } from "@/lib/apiError";
+import { localizeApiMessage, mapApiError } from "@/lib/apiError";
 import { fetchAllCatalogTemplates } from "@/lib/reportCatalogUtils";
 import {
   SCHEDULE_ACTION_LABELS,
@@ -81,8 +81,8 @@ function ScheduleHistoryPanel({
                 <tr key={row.executionId} className="border-b border-gray-50 dark:border-gray-800/60">
                   <td className="px-3 py-2">{row.status}</td>
                   <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{row.executedAt}</td>
-                  <td className="max-w-[200px] truncate px-3 py-2 text-gray-600 dark:text-gray-400" title={row.errorMessage ?? undefined}>
-                    {row.errorMessage ?? "—"}
+                  <td className="max-w-[200px] truncate px-3 py-2 text-gray-600 dark:text-gray-400" title={row.errorMessage ? localizeApiMessage(row.errorMessage) : undefined}>
+                    {row.errorMessage ? localizeApiMessage(row.errorMessage) : "—"}
                   </td>
                   <td className="px-3 py-2">
                     {!readOnly && canRetryExecution(row.status) ? (

@@ -9,6 +9,7 @@ import {
   isImageSourceValue,
   readImageFileAsDataUrl,
 } from "./imageSourceUtils";
+import { localizeApiMessage } from "@/lib/apiError";
 import { ImagePreviewCard, ImageUploadDropZone, RailDivider } from "./imageSourceFieldRail";
 
 export type ImageSourceFieldProps = {
@@ -46,7 +47,7 @@ function useImageSourceFieldState(
       setError(null);
       onChange(dataUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "读取图片失败");
+      setError(err instanceof Error ? localizeApiMessage(err.message) : "读取图片失败");
     }
   };
 

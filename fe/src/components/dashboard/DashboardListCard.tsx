@@ -1,9 +1,9 @@
 import { Link } from "react-router";
 import { Eye, LayoutDashboard, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
 import {
-  DashboardPreviewThumb,
   DASHBOARD_LIST_CARD_ASPECT_RATIO,
 } from "@/components/dashboard/DashboardPreviewThumb";
+import { DashboardListCardPreview } from "@/components/dashboard/DashboardListCardPreview";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
@@ -15,6 +15,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ListRowCheckbox } from "@/components/layout/list-batch-delete";
+import {
+  dataScreenEditPath,
+  dataScreenViewPath,
+  dashboardSharePath,
+  isDataScreenLayout,
+} from "@/lib/dataScreenLayout";
 
 export type DashboardListItem = {
   id: string;
@@ -46,6 +52,7 @@ export function DashboardListCard({
   selected,
   onToggleSelect,
   className,
+  routeBase = "/admin/dashboards",
 }: {
   dashboard: DashboardListItem;
   canEdit: boolean;
@@ -53,10 +60,14 @@ export function DashboardListCard({
   selected?: boolean;
   onToggleSelect?: () => void;
   className?: string;
+  /** 列表入口：看板或数据大屏 */
+  routeBase?: string;
 }) {
   const widgetCount = dashboard.layoutJson?.widgets?.length ?? 0;
-  const viewPath = `/admin/dashboards/${dashboard.id}`;
-  const editPath = `/admin/dashboards/${dashboard.id}/edit`;
+  const isScreen = routeBase === "/admin/data-screens" || isDataScreenLayout(dashboard.layoutJson);
+  const viewPath = isScreen ? dataScreenViewPath(dashboard.id) : `${routeBase}/${dashboard.id}`;
+  const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
+  const sharePath = dashboardSharePath(dashboard.id, isScreen);
   const primaryPath = canEdit ? editPath : viewPath;
 
   return (
@@ -79,8 +90,8 @@ export function DashboardListCard({
             />
           </div>
         ) : null}
-        <DashboardPreviewThumb layoutJson={dashboard.layoutJson} className="h-full" embedded />
-        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gray-900/55 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        <DashboardListCardPreview layoutJson={dashboard.layoutJson} className="h-full" />
+        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gray-900/30 opacity-0 backdrop-blur-[3px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button asChild variant="primary" size="sm">
             <Link to={primaryPath}>{canEdit ? "编辑" : "查看"}</Link>
           </Button>
@@ -138,7 +149,7 @@ export function DashboardListCard({
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to={`/admin/dashboards/${dashboard.id}/share`} className="gap-2">
+                    <Link to={sharePath} className="gap-2">
                       <Share2 className="size-4" />
                       分享
                     </Link>

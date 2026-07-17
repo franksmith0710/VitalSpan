@@ -55,6 +55,7 @@ export function DashboardListCardPreview({
       ref={hostRef}
       className={cn(
         "dashboard-canvas-surface dashboard-list-card-preview relative h-full overflow-hidden bg-white dark:bg-gray-900/60",
+        "transition-[filter,transform] duration-300 group-hover:scale-[1.02] group-hover:blur-[2px]",
         className,
       )}
       data-testid="dashboard-list-card-preview"

@@ -30,7 +30,7 @@ import type { ResourceGrantOut, RoleOut } from "./useGrantsPage";
 
 const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
   datasource: "数据源",
-  dashboard: "Dashboard",
+  dashboard: "仪表板",
   report: "报表",
 };
 

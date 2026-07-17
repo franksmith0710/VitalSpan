@@ -122,7 +122,7 @@ export function DatasetBindPanel({
               )}
             </div>
             <CardDescription>
-              将 Dataset 主表映射为 dataset_query 配置，Dashboard 选此 Dataset 即可出图（P0：单表）。
+              将 Dataset 主表映射为 dataset_query 配置，仪表板选此 Dataset 即可出图（P0：单表）。
             </CardDescription>
           </div>
         </div>

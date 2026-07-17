@@ -4,6 +4,7 @@ import {
   FileBarChart,
   LayoutDashboard,
   Layers,
+  Monitor,
   Server,
   SlidersHorizontal,
   Workflow,
@@ -99,9 +100,15 @@ export const NAV_MANIFEST: NavManifestSection[] = [
     roles: ["admin", "analyst", "viewer"],
     items: [
       {
-        name: "Dashboard",
+        name: "仪表板",
         icon: <LayoutDashboard className="size-5" aria-hidden />,
         path: "/admin/dashboards",
+        milestone: "M1",
+      },
+      {
+        name: "数据大屏",
+        icon: <Monitor className="size-5" aria-hidden />,
+        path: "/admin/data-screens",
         milestone: "M1",
       },
     ],

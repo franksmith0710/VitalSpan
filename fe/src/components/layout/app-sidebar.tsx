@@ -254,7 +254,7 @@ function SidebarNavItem({
       target={item.target}
       title={
         item.badgeLabel
-          ? "面向数据治理闭环；普通分析请使用 Dashboard。"
+          ? "面向数据治理闭环；普通分析请使用仪表板。"
           : undefined
       }
       className={cn(

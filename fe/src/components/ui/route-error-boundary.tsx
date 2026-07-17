@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { mapApiError } from "@/lib/apiError";
 import { WORKSPACE_HOME_PATH } from "@/lib/workspace";
 
 type BoundaryState = { error: Error | null };
@@ -52,7 +53,7 @@ class RouteErrorBoundaryClass extends Component<
               {isApp ? "应用加载失败" : "页面加载失败"}
             </p>
             <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              {error.message || "未知错误"}
+              {mapApiError(error)}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
               <Button type="button" variant="outline" size="sm" onClick={this.handleRetry}>

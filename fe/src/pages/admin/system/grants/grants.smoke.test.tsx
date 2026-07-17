@@ -63,7 +63,7 @@ describe("GrantsPage smoke", () => {
     renderGrants();
     expect(await screen.findByRole("table", { name: "资源授权列表" })).toBeInTheDocument();
     expect(await screen.findByText("分析师")).toBeInTheDocument();
-    expect(await screen.findByText("Dashboard")).toBeInTheDocument();
+    expect(await screen.findByText("仪表板")).toBeInTheDocument();
     expect(await screen.findByText(RES_ID)).toBeInTheDocument();
   });
 

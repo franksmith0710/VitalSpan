@@ -300,7 +300,7 @@ describe("AppRoutes smoke", () => {
     const dataConn = await screen.findByRole("link", { name: "连接管理" });
     expect(dataConn.getAttribute("href")).toBe("/admin/datasources");
 
-    const dashLinks = screen.getAllByRole("link", { name: "Dashboard" });
+    const dashLinks = screen.getAllByRole("link", { name: "仪表板" });
     expect(dashLinks[0].getAttribute("href")).toBe("/admin/dashboards");
 
     const allNavLinks = screen

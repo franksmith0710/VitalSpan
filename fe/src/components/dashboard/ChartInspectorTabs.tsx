@@ -18,7 +18,7 @@ type ChartInspectorTabsProps = {
 
 const tabPanelScrollClass = (scrollMode: "panel" | "parent") =>
   scrollMode === "panel"
-    ? "h-0 min-h-0 flex-1 overflow-y-auto overscroll-y-contain no-scrollbar touch-pan-y"
+    ? "h-0 min-h-0 flex-1 overflow-y-auto overscroll-y-contain no-scrollbar"
     : "w-full";
 
 const tabsShellClass = (scrollMode: "panel" | "parent", className?: string) =>

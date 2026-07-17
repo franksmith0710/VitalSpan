@@ -4,7 +4,7 @@ import { Loader2, Lock, LogIn, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { VitalSpanLogo } from "@/components/layout/vitalspan-logo";
+import { LoginBrandAside, LoginMobileBrandMark } from "./LoginBrandAside";
 import { ThemeToggleButton } from "@/components/layout/theme-toggle";
 import { useAuth } from "@/context/auth-context";
 import { ThemeProvider } from "@/context/theme-context";
@@ -13,7 +13,6 @@ import { mapApiError } from "@/lib/apiError";
 import { setAuthToken } from "@/lib/auth-token";
 import { resolveDefaultDashboardPath } from "@/lib/defaultViewResolve";
 import { cn } from "@/lib/utils";
-import { LoginBrandAside } from "./LoginBrandAside";
 
 type LoginResponse = {
   accessToken: string;
@@ -82,16 +81,17 @@ function LoginFormPanel() {
         <div className="absolute bottom-0 left-0 size-64 rounded-full bg-brand-300/10 blur-3xl dark:bg-brand-400/10" />
       </div>
 
-      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+      <header className="relative z-20 flex shrink-0 items-center justify-between px-4 pt-4 sm:px-6 sm:pt-6 lg:hidden">
+        <LoginMobileBrandMark />
+        <ThemeToggleButton className="size-10" />
+      </header>
+
+      <div className="absolute right-4 top-4 z-20 hidden sm:right-6 sm:top-6 lg:block">
         <ThemeToggleButton className="size-10" />
       </div>
 
-      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
+      <div className="relative z-10 flex flex-1 items-center justify-center px-4 pb-10 pt-4 sm:px-6">
         <div className="w-full max-w-[26rem]">
-          <div className="mb-8 flex justify-center lg:hidden">
-            <VitalSpanLogo linked={false} />
-          </div>
-
           <div
             className={cn(
               "rounded-3xl border border-gray-200/80 bg-white/90 p-6 shadow-theme-md backdrop-blur-sm",

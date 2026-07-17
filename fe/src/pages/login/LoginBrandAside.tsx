@@ -7,10 +7,24 @@ const FEATURES = [
   { icon: MapPin, label: "离线地图" },
 ] as const;
 
-function BrandPreviewCard() {
+function LoginBrandMark({ className }: { className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-3", className)} aria-label="VitalSpan">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-lg shadow-brand-600/25 ring-1 ring-white/20">
+        <Activity className="size-5" strokeWidth={2.25} aria-hidden />
+      </span>
+      <span className="text-lg font-semibold tracking-tight text-white">VitalSpan</span>
+    </span>
+  );
+}
+
+function BrandPreviewCard({ className }: { className?: string }) {
   return (
     <div
-      className="login-brand-preview pointer-events-none absolute right-8 top-[42%] z-[1] hidden w-[min(92%,22rem)] -translate-y-1/2 xl:right-12 xl:block"
+      className={cn(
+        "login-brand-preview pointer-events-none w-full max-w-[19rem] shrink-0 self-center",
+        className,
+      )}
       aria-hidden
     >
       <div className="login-brand-preview-enter relative rounded-2xl border border-white/15 bg-white/[0.07] p-4 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.45)] backdrop-blur-xl ring-1 ring-inset ring-white/10">
@@ -36,7 +50,7 @@ function BrandPreviewCard() {
             </div>
           ))}
         </div>
-        <div className="flex h-24 items-end gap-1.5 rounded-lg bg-white/[0.04] px-3 pb-2 pt-3 ring-1 ring-inset ring-white/6">
+        <div className="relative flex h-24 items-end gap-1.5 rounded-lg bg-white/[0.04] px-3 pb-2 pt-3 ring-1 ring-inset ring-white/6">
           {[38, 52, 44, 68, 58, 76, 62, 84].map((h, i) => (
             <span
               key={i}
@@ -44,21 +58,21 @@ function BrandPreviewCard() {
               style={{ height: `${h}%`, animationDelay: `${200 + i * 50}ms` }}
             />
           ))}
+          <svg
+            className="login-brand-line pointer-events-none absolute bottom-2 left-3 right-3 h-10 text-cyan-300/70"
+            viewBox="0 0 200 40"
+            fill="none"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0 32 C30 28 40 8 70 18 S120 38 150 12 S190 6 200 16"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
         </div>
-        <svg
-          className="login-brand-line absolute bottom-14 left-6 right-6 h-10 text-cyan-300/70"
-          viewBox="0 0 200 40"
-          fill="none"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M0 32 C30 28 40 8 70 18 S120 38 150 12 S190 6 200 16"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
       </div>
     </div>
   );
@@ -70,7 +84,7 @@ export function LoginBrandAside({ className }: { className?: string }) {
   return (
     <aside
       className={cn(
-        "login-brand-aside relative hidden min-h-screen flex-1 overflow-hidden lg:flex lg:flex-col",
+        "login-brand-aside relative hidden min-h-screen flex-1 flex-col overflow-hidden lg:flex",
         className,
       )}
       aria-hidden
@@ -89,47 +103,58 @@ export function LoginBrandAside({ className }: { className?: string }) {
       <div className="pointer-events-none absolute -left-32 top-1/4 size-[28rem] rounded-full bg-brand-500/20 blur-[100px]" />
       <div className="pointer-events-none absolute bottom-0 right-0 size-[24rem] rounded-full bg-cyan-400/10 blur-[80px]" />
 
-      <BrandPreviewCard />
+      <header className="relative z-10 shrink-0 px-10 pt-8 xl:px-14 xl:pt-10">
+        <LoginBrandMark />
+      </header>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-center px-10 py-12 xl:px-14 xl:py-16">
-        <div className="login-brand-fade max-w-lg space-y-8">
-          <span className="inline-flex items-center gap-3" aria-label="VitalSpan">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-lg shadow-brand-600/30 ring-1 ring-white/20">
-              <Activity className="size-6" strokeWidth={2.25} aria-hidden />
-            </span>
-            <span className="text-xl font-semibold tracking-tight text-white">VitalSpan</span>
-          </span>
+      <div className="relative z-10 flex min-h-0 flex-1 items-center px-10 py-10 xl:px-14">
+        <div className="login-brand-fade grid w-full max-w-4xl grid-cols-1 items-center gap-10 xl:grid-cols-[minmax(0,1fr)_auto] xl:gap-12">
+          <div className="max-w-md space-y-6">
+            <div className="space-y-3">
+              <p className="text-sm font-medium tracking-wide text-brand-200/90">
+                政企可视化分析平台
+              </p>
+              <h1 className="text-[1.75rem] font-semibold leading-snug tracking-tight text-white xl:text-[2.125rem]">
+                从数据接入到看板发布
+              </h1>
+              <p className="text-[15px] leading-relaxed text-white/55">
+                自研 BI 引擎，零第三方运行时依赖；面向行业与政企 IT 团队的全链路可控分析体验。
+              </p>
+            </div>
 
-          <div className="space-y-4">
-            <p className="text-sm font-medium text-brand-200/90">政企可视化分析平台</p>
-            <h1 className="text-[2rem] font-semibold leading-[1.15] tracking-tight text-white xl:text-[2.35rem]">
-              从数据接入
-              <br />
-              到看板发布
-            </h1>
-            <p className="max-w-sm text-[15px] leading-relaxed text-white/55">
-              自研 BI 引擎，零第三方运行时依赖；面向行业与政企 IT 团队的全链路可控分析体验。
-            </p>
+            <ul className="flex flex-wrap gap-2">
+              {FEATURES.map(({ icon: Icon, label }, i) => (
+                <li
+                  key={label}
+                  className="login-brand-chip inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-sm"
+                  style={{ animationDelay: `${80 + i * 60}ms` }}
+                >
+                  <Icon className="size-3.5 shrink-0 text-brand-300" aria-hidden />
+                  {label}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <ul className="flex flex-wrap gap-2">
-            {FEATURES.map(({ icon: Icon, label }, i) => (
-              <li
-                key={label}
-                className="login-brand-chip inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur-sm"
-                style={{ animationDelay: `${80 + i * 60}ms` }}
-              >
-                <Icon className="size-3.5 text-brand-300" aria-hidden />
-                {label}
-              </li>
-            ))}
-          </ul>
+          <BrandPreviewCard className="hidden xl:block" />
         </div>
       </div>
 
-      <p className="relative z-10 px-10 pb-8 text-[11px] text-white/30 xl:px-14">
-        © {year} VitalSpan
-      </p>
+      <footer className="relative z-10 shrink-0 px-10 pb-8 xl:px-14">
+        <p className="text-[11px] text-white/30">© {year} VitalSpan</p>
+      </footer>
     </aside>
+  );
+}
+
+/** 移动端右侧表单顶栏品牌标（左上角） */
+export function LoginMobileBrandMark({ className }: { className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-2.5", className)} aria-label="VitalSpan">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-white shadow-theme-xs">
+          <Activity className="size-5" strokeWidth={2.25} aria-hidden />
+        </span>
+        <span className="text-base font-semibold text-gray-900 dark:text-white">VitalSpan</span>
+    </span>
   );
 }

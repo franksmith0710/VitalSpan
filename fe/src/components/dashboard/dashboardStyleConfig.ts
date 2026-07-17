@@ -127,7 +127,11 @@ export type NumberFormatConfig = {
   thousandSeparator?: boolean;
 };
 
+export type DashboardSurfaceKind = "dashboard" | "data-screen";
+
 export type DashboardStyleConfig = {
+  /** dashboard=普通看板；data-screen=数据大屏（独立列表入口） */
+  surfaceKind?: DashboardSurfaceKind;
   colorScheme?: ColorScheme;
   themeAccent?: string;
   fontFamily?: string;
@@ -762,6 +766,7 @@ export function chartPaletteDefaultsFingerprint(
     chartLabelStyle: config.chartLabelStyle,
     chartTooltipStyle: config.chartTooltipStyle,
     tableColorStyle: config.tableColorStyle,
+    surfaceKind: config.surfaceKind,
   });
 }
 
@@ -777,6 +782,7 @@ export function pickChartPaletteDefaults(
   | "chartLabelStyle"
   | "chartTooltipStyle"
   | "tableColorStyle"
+  | "surfaceKind"
 > | undefined {
   if (!config) return undefined;
   return {
@@ -787,6 +793,7 @@ export function pickChartPaletteDefaults(
     chartLabelStyle: config.chartLabelStyle,
     chartTooltipStyle: config.chartTooltipStyle,
     tableColorStyle: config.tableColorStyle,
+    surfaceKind: config.surfaceKind,
   };
 }
 

@@ -28,7 +28,7 @@ export function SyncJobsEmptyState() {
       <PanelEmptyState
         icon={<RefreshCw className="size-7" aria-hidden />}
         title="暂无同步任务"
-        description="将业务源库数据全量同步到托管分析库，供 Dashboard 与查询使用。点击右上角「新建任务」开始配置。"
+        description="将业务源库数据全量同步到托管分析库，供仪表板与查询使用。点击右上角「新建任务」开始配置。"
         size="lg"
         footer={
           <div className="border-t border-gray-200 px-6 pb-6 pt-2 dark:border-gray-800">

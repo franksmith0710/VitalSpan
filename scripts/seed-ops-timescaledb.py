@@ -66,7 +66,7 @@ def load_ids(cur: psycopg.Cursor) -> dict[str, list]:
     host_cluster = {r[0]: r[1] for r in cur.fetchall()}
     cur.execute("SELECT id FROM dim_service ORDER BY id")
     services = [r[0] for r in cur.fetchall()]
-    cur.execute("SELECT id, cluster_id FROM dim_cluster ORDER BY id")
+    cur.execute("SELECT id FROM dim_cluster ORDER BY id")
     clusters = [r[0] for r in cur.fetchall()]
     cur.execute("SELECT id FROM dim_alert_rule ORDER BY id")
     rules = [r[0] for r in cur.fetchall()]
@@ -221,14 +221,14 @@ def seed_k8s_pod_metrics(
     end: datetime,
     step: timedelta,
     rng: random.Random,
-    pods_per_cluster: int = 12,
+    pods_per_svc: int = 2,
 ) -> int:
     pods = [
         (cid, ns, f"{ns}-{svc}-{i:02d}")
         for cid in clusters
-        for ns in NAMESPACES[:3]
-        for svc in ("api", "worker", "web", "job")
-        for i in range(1, pods_per_cluster // 3 + 1)
+        for ns in NAMESPACES[:2]
+        for svc in ("api", "worker", "web")
+        for i in range(1, pods_per_svc + 1)
     ]
     rows: list[tuple] = []
     total = 0
@@ -404,7 +404,7 @@ def main() -> None:
     start = end - timedelta(days=args.days)
     step = timedelta(minutes=args.step_minutes)
 
-    print(f"连接 {args.dsn}")
+    print(f"连接 {args.dsn}", flush=True)
     t0 = time.perf_counter()
     with psycopg.connect(args.dsn, autocommit=False) as conn:
         with conn.cursor() as cur:

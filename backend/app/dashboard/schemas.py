@@ -184,6 +184,9 @@ class DashboardStyleConfig(BaseModel):
         default=None, alias="drillLevelColors", max_length=8
     )
     theme_variants: DashboardThemeVariants | None = Field(default=None, alias="themeVariants")
+    surface_kind: Literal["dashboard", "data-screen"] | None = Field(
+        default=None, alias="surfaceKind"
+    )
 
     @model_validator(mode="after")
     def normalize_gap_fields(self) -> DashboardStyleConfig:

@@ -1,3 +1,5 @@
+import { localizeApiMessage } from "@/lib/apiError";
+
 const CODE_MAP: Record<string, string> = {
   CHART_FIELD_REQUIREMENT: "字段数量不符合图表要求",
   CHART_INVALID_STYLE_VARIANT: "所选样式子类型对该图表无效",
@@ -112,7 +114,7 @@ export function mapChartConfigError(code: string, message?: string): string {
     }
     return CODE_MAP[code];
   }
-  return message ?? "配置校验失败，请检查字段与样式";
+  return localizeApiMessage(message ?? "") || "配置校验失败，请检查字段与样式";
 }
 
 /** 合并 fields 中的重复提示 */

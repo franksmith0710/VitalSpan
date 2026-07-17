@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { localizeApiMessage } from "@/lib/apiError";
 import { AlertTriangle, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { dwCaption } from "./dashboardWidgetTypography";
@@ -18,8 +19,9 @@ type WidgetErrorBoundaryState = {
 function formatWidgetErrorMessage(message: string): string {
   const trimmed = message.trim();
   if (!trimmed) return "未知错误";
-  if (trimmed.length <= 120) return trimmed;
-  return `${trimmed.slice(0, 117)}…`;
+  const localized = localizeApiMessage(trimmed);
+  if (localized.length <= 120) return localized;
+  return `${localized.slice(0, 117)}…`;
 }
 
 export class WidgetErrorBoundary extends Component<

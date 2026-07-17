@@ -199,7 +199,7 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建；列表可选 `surfaceKind=dashboard\|data-screen` 按 `layoutJson.styleConfig` 过滤 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET/PUT/DELETE | `/api/v1/dashboards/{id}` | Dashboard CRUD | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT | `/api/v1/dashboards/{id}/layout` | 双版本布局：v1 `colSpan/rowSpan/gridX/gridY`；v2 `canvas(1440×≥900)` + `x/y/width/height`；禁止跨版本字段混用；422 码：`VIEW_LAYOUT_BOUNDS` / `DASH_INVALID_LAYOUT` / `DASH_DUPLICATE_WIDGET` / `DASH_MISSING_CHART_CONFIG` / `DASH_CHART_ID_MISMATCH` | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | POST | `/api/v1/dashboards/theme-analysis/execute-plan` | 主题分析 execute-plan 四步链（`theme-plan-v1`；yoy/mom compareWindow） | 内部 | 一期 | DASH-006 | 已实现 | `backend/app/api/v1/dashboards.py` |

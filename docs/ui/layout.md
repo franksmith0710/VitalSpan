@@ -107,6 +107,9 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │
 ├── 分析                            # 建设 + 消费（默认展开）
 │   ├── /dashboards                  # Dashboard 列表 · table-list（全员可见授权项）
+│   ├── /data-screens                # 数据大屏列表 · bi-data-screen
+│   ├── /data-screens/:id            # 大屏查看
+│   ├── /data-screens/:id/edit       # 大屏编辑（复用像素画布）
 │   ├── /dashboards/:id              # 查看 view · bi-dashboard-builder（只读）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
 │   ├── /dashboards/:id/preview      # （规划）构建器 preview；当前以 `/dashboards/:id` view 模式替代
@@ -147,7 +150,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 分组 | 图标区 | 典型权限 | 里程碑 | 角色 | 默认 IA |
 |------|--------|----------|--------|------|---------|
-| 分析 | Dashboard | — | M1 | admin/analyst/viewer | **展开**（主路径） |
+| 分析 | 仪表板、数据大屏 | — | M1 | admin/analyst/viewer | **展开**（主路径） |
 | 报表 | 报表中心（含「全部报表」hub；analyst/viewer 见全部报表+预制；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
 | 数据 | 数据连接（连接管理/同步任务）、语义建模（Dataset/元数据） | `datasource:*` / `dataset:*` / `metadata:*` | M1/M13 | admin | **展开** |
 | 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 默认隐藏**（`VITE_GOV_NAV=1` 才显示） |
@@ -177,6 +180,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 |-------------|---------------------------|-----|
 | `/admin/datasources` | `crud-flow` + `table-list` | DS-* |
 | `/admin/dashboards/:id/edit` | `bi-dashboard-builder`（edit） | DASH-*, VIZ-* |
+| `/admin/data-screens` | `bi-data-screen` 列表 | DASH-003 |
+| `/admin/data-screens/:id/edit` | `bi-data-screen` 编辑（复用像素画布） | DASH-003 |
 | `/admin/dashboards/:id` | `bi-dashboard-builder`（view） | DASH-*, VIEW-* |
 | `/admin/dashboards/:id/share` | `bi-share-embed` | VIZ-006, API-006 |
 
@@ -221,7 +226,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 |------|-------|---------|--------|
 | 数据（含嵌套「实体与主题」子分组） | 可见 | 隐藏 | 隐藏 |
 | 治理 | **默认隐藏**（`VITE_GOV_NAV=1` 可见） | 隐藏 | 隐藏 |
-| 分析（主路径：Dashboard） | 可见 | 可见 | 可见 |
+| 分析（仪表板 / 数据大屏） | 可见 | 可见 | 可见 |
 | 报表 | 可见 | 可见 | 可见 |
 | 我的 | 可见 | 可见 | 可见 |
 | 系统 | 可见 | 隐藏 | 隐藏 |
@@ -230,7 +235,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 - **数据工程** = `数据` 分组（`iaTier: engineering`）；「实体与主题」为其内嵌子分组（`nav-manifest.tsx` 未独立为侧栏一级分组）
 - **图表类型目录**（`/admin/charts/types`）在「治理」分组；旧路径 `/admin/charts/explore` 重定向
-- **查询设计器**位于治理分组，侧栏 Badge「治理专用」；普通分析请使用 Dashboard
+- **查询设计器**位于治理分组，侧栏 Badge「治理专用」；普通分析请使用仪表板
 
 ---
 

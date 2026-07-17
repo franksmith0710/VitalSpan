@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import { Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
+import {
+  dataScreenEditPath,
+  isDataScreenAdminPath,
+  isDataScreenLayout,
+} from "@/lib/dataScreenLayout";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import type {
   DashboardLayout,
@@ -29,6 +35,7 @@ function chartIdFromWidget(widget: DashboardWidgetBase): string | null {
 
 export function DashboardSharePage() {
   const { id } = useParams();
+  const location = useLocation();
   const [detail, setDetail] = useState<DashboardDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +48,7 @@ export function DashboardSharePage() {
       const data = await apiFetch<DashboardDetail>(`/api/v1/dashboards/${id}`);
       setDetail(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
+      setError(mapApiError(err));
     } finally {
       setLoading(false);
     }
@@ -66,14 +73,22 @@ export function DashboardSharePage() {
   };
 
   const widgets = detail?.layoutJson?.widgets ?? [];
+  const isScreen = isDataScreenAdminPath(location.pathname) || isDataScreenLayout(detail?.layoutJson);
+  const editPath = id
+    ? isScreen
+      ? dataScreenEditPath(id)
+      : `/admin/dashboards/${id}/edit`
+    : isScreen
+      ? "/admin/data-screens"
+      : "/admin/dashboards";
 
   return (
     <AdminPageShell
-      title={detail?.name ? `${detail.name} · 分享` : "Dashboard 分享"}
-      description="为看板内图表生成可嵌入的外部链接。"
+      title={detail?.name ? `${detail.name} · 分享` : isScreen ? "大屏分享" : "仪表板分享"}
+      description={isScreen ? "为大屏内图表生成可嵌入的外部链接。" : "为看板内图表生成可嵌入的外部链接。"}
       actions={
         <Button asChild variant="outline" size="sm">
-          <Link to={id ? `/admin/dashboards/${id}/edit` : "/admin/dashboards"}>返回编辑</Link>
+          <Link to={editPath}>返回编辑</Link>
         </Button>
       }
     >

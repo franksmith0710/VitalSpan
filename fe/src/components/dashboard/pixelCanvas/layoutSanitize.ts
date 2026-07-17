@@ -1,3 +1,4 @@
+import { readSurfaceKind } from "@/lib/dataScreenLayout";
 import { bootstrapDashboardStyleConfig } from "../dashboardThemeVariants";
 import { normalizeDashboardGapConfig } from "../gapPolicy";
 import type { DashboardLayoutV2, DashboardStyleConfig } from "../layoutUtils";
@@ -14,7 +15,11 @@ import { fitCanvasHeightToContent } from "./PixelCanvas";
 export function repairPixelLayoutTabState(layout: DashboardLayoutV2): DashboardLayoutV2 {
   const reconciled = reconcileTabPaneChildIdsInPixelLayout(layout);
   const widgets = syncParkedTabChildren(repairUnparkedTabChildren(reconciled.widgets));
-  return fitCanvasHeightToContent({ ...reconciled, widgets });
+  const repaired = { ...reconciled, widgets };
+  if (readSurfaceKind(layout) === "data-screen") {
+    return repaired;
+  }
+  return fitCanvasHeightToContent(repaired);
 }
 
 /**
@@ -28,10 +33,14 @@ export function sanitizePixelLayoutGeometry(
   const gapConfig = normalizeDashboardGapConfig(
     bootstrapDashboardStyleConfig(style ?? layout.styleConfig ?? {}),
   );
+  const isDataScreen = readSurfaceKind(style ?? layout) === "data-screen";
   let prepared = compactPixelLayoutWhenZeroGap(layout, gapConfig).layout;
   prepared = repairPixelLayoutTabState(prepared);
-  if (layoutsOverlap(prepared, 0)) {
+  if (!isDataScreen && layoutsOverlap(prepared, 0)) {
     prepared = packPixelLayoutSeamless(prepared);
+  }
+  if (isDataScreen) {
+    return prepared;
   }
   return fitCanvasHeightToContent(prepared);
 }

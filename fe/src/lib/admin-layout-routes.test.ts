@@ -6,6 +6,7 @@ describe("isAdminListFillRoute", () => {
     expect(isAdminListFillRoute("/admin/system/roles")).toBe(true);
     expect(isAdminListFillRoute("/admin/system/users/")).toBe(true);
     expect(isAdminListFillRoute("/admin/dashboards")).toBe(true);
+    expect(isAdminListFillRoute("/admin/data-screens")).toBe(true);
   });
 
   it("does not match edit or detail routes", () => {

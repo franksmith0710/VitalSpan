@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated, Generator
+from typing import Annotated, Generator, Literal
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
@@ -271,8 +271,18 @@ def list_dashboards(
     db: Annotated[Session, Depends(_db)],
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    surface_kind: Annotated[
+        Literal["dashboard", "data-screen"] | None,
+        Query(alias="surfaceKind"),
+    ] = None,
 ):
-    return dash_service.list_dashboards(db, limit=limit, offset=offset, actor=user)
+    return dash_service.list_dashboards(
+        db,
+        limit=limit,
+        offset=offset,
+        actor=user,
+        surface_kind=surface_kind,
+    )
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

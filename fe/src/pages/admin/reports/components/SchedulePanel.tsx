@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api";
-import { mapApiError } from "@/lib/apiError";
+import { localizeApiMessage, mapApiError } from "@/lib/apiError";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 
 type ScheduleRow = {
@@ -285,9 +285,11 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
                       <TableCell className="text-theme-sm">{row.executedAt}</TableCell>
                       <TableCell
                         className="max-w-[160px] truncate text-theme-sm text-gray-600 dark:text-gray-400"
-                        title={row.errorMessage ?? undefined}
+                        title={row.errorMessage ? localizeApiMessage(row.errorMessage) : undefined}
                       >
-                        <span className="line-clamp-2">{row.errorMessage ?? "—"}</span>
+                        <span className="line-clamp-2">
+                          {row.errorMessage ? localizeApiMessage(row.errorMessage) : "—"}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {canRetry ? (

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ChevronLeft, Redo2, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { isDashboardNotFound, mapApiError } from "@/lib/apiError";
-import { cn } from "@/lib/utils";
+import { isDataScreenAdminPath, dataScreenListPath, dashboardSharePath, ensureDataScreenStyleConfig, isDataScreenLayout } from "@/lib/dataScreenLayout";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { GlobalFilterBar } from "@/components/dashboard/GlobalFilterBar";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -125,6 +125,8 @@ function linkageSnapshot(widgets: LayoutWidget[], linkage: Linkage | null): stri
 export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const routeIsDataScreen = isDataScreenAdminPath(location.pathname);
   const [name, setName] = useState("");
   const pixelEnabled = isPixelCanvasEnabled(import.meta.env.VITE_DASHBOARD_PIXEL_CANVAS);
   const {
@@ -145,6 +147,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     editable: mode === "edit",
   });
   const [loading, setLoading] = useState(true);
+  const isDataScreenSurface = useMemo(() => {
+    if (!loading && layout) {
+      return isDataScreenLayout(layout);
+    }
+    return routeIsDataScreen;
+  }, [layout, loading, routeIsDataScreen]);
+  const listPath = isDataScreenSurface ? dataScreenListPath() : "/admin/dashboards";
+  const routeBase = isDataScreenSurface ? "/admin/data-screens" : "/admin/dashboards";
+  const sharePath = id ? dashboardSharePath(id, isDataScreenSurface) : "/admin/dashboards";
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteDashboardOpen, setDeleteDashboardOpen] = useState(false);
@@ -244,8 +255,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setSavedName("");
     setSavedLinkageSnapshot(null);
     setDeleteDashboardOpen(false);
-    navigate("/admin/dashboards", { replace: true });
-  }, [navigate, resetLayout]);
+    navigate(listPath, { replace: true });
+  }, [navigate, resetLayout, listPath]);
 
   const load = useCallback(async (opts?: { force?: boolean }) => {
     if (!id) return;
@@ -767,7 +778,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     }
 
     const currentLayout = layoutRef.current;
-    const currentStyle = styleConfigRef.current;
+    const currentStyle = ensureDataScreenStyleConfig(
+      styleConfigRef.current,
+      isDataScreenSurface,
+    );
     const currentName = nameRef.current;
     const currentLinkage = linkageRef.current;
 
@@ -857,7 +871,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const headerActions = (
     <div className="flex flex-wrap items-center gap-2">
       <Button asChild variant="ghost" size="sm">
-        <Link to="/admin/dashboards">
+        <Link to={listPath}>
           <ChevronLeft className="size-4" aria-hidden />
           <span className="hidden sm:inline">返回</span>
         </Link>
@@ -872,15 +886,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           {mode === "edit" ? (
             <>
               <Button asChild variant="outline" size="sm">
-                <Link to={`/admin/dashboards/${id}`}>预览</Link>
+                <Link to={`${routeBase}/${id}`}>预览</Link>
               </Button>
               <Button asChild variant="outline" size="sm">
-                <Link to={`/admin/dashboards/${id}/share`}>分享</Link>
+                <Link to={sharePath}>分享</Link>
               </Button>
             </>
           ) : (
             <Button asChild variant="outline" size="sm">
-              <Link to={`/admin/dashboards/${id}/edit`}>编辑布局</Link>
+              <Link to={`${routeBase}/${id}/edit`}>编辑布局</Link>
             </Button>
           )}
         </>
@@ -919,7 +933,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   if (loading) {
     return (
-      <AdminPageShell title="Dashboard" description="加载中…">
+      <AdminPageShell title="仪表板" description="加载中…">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="min-h-[320px] w-full rounded-2xl" />
       </AdminPageShell>
@@ -938,7 +952,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             {error ?? "看板不存在或已被删除"}
           </p>
           <Button asChild variant="primary" size="sm">
-            <Link to="/admin/dashboards">返回看板列表</Link>
+            <Link to={listPath}>{isDataScreenSurface ? "返回大屏列表" : "返回看板列表"}</Link>
           </Button>
         </div>
       </AdminPageShell>
@@ -949,7 +963,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     mode === "edit" && !missing && canSave ? (
       <DashboardInlineTitle value={name} onChange={applyName} />
     ) : (
-      name || "Dashboard"
+      name || "仪表板"
     );
 
   const titleUnwrapped = mode === "edit" && !missing && canSave;

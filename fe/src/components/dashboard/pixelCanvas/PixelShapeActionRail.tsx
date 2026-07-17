@@ -1,6 +1,8 @@
 import {
   Copy,
   Eye,
+  ChevronsDown,
+  ChevronsUp,
   Maximize2,
   MoreVertical,
   Table2,
@@ -36,6 +38,9 @@ export type PixelWidgetActions = {
   onEnlarge?: (widgetId: string) => void;
   onViewData?: (widgetId: string) => void;
   onTitleChange?: (widgetId: string, title: string) => void;
+  onBringToFront?: (widgetId: string) => void;
+  onSendToBack?: (widgetId: string) => void;
+  showLayerActions?: boolean;
 };
 
 type PixelShapeActionRailProps = {
@@ -287,6 +292,34 @@ export function PixelShapeActionRail({
         >
           <Maximize2 className="size-full" aria-hidden />
         </RailActionItem>
+        {actions.showLayerActions ? (
+          <>
+            <RailActionItem
+              label="置顶"
+              tipClassName={tipClassName}
+              tipToneClass={tipToneClass}
+              buttonClassName={buttonClass}
+              disabled={!actions.onBringToFront}
+              sizePx={railPx}
+              iconSizePx={iconPx}
+              onAction={() => actions.onBringToFront?.(widget.id)}
+            >
+              <ChevronsUp className="size-full" aria-hidden />
+            </RailActionItem>
+            <RailActionItem
+              label="置底"
+              tipClassName={tipClassName}
+              tipToneClass={tipToneClass}
+              buttonClassName={buttonClass}
+              disabled={!actions.onSendToBack}
+              sizePx={railPx}
+              iconSizePx={iconPx}
+              onAction={() => actions.onSendToBack?.(widget.id)}
+            >
+              <ChevronsDown className="size-full" aria-hidden />
+            </RailActionItem>
+          </>
+        ) : null}
         <div className="group/rail-item relative overflow-visible">
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>

@@ -16,7 +16,7 @@ import { resolveSidebarSections } from "@/lib/resolve-nav";
 import { sessionUserFromMe } from "@/lib/session";
 import { isDetachedFromWorkspacePath } from "@/lib/workspace";
 import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
-import { isAdminListFillRoute } from "@/lib/admin-layout-routes";
+import { isAdminListFillRoute, isAdminScreenPreviewRoute } from "@/lib/admin-layout-routes";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
   ADMIN_CONTENT_MARGIN_EXPANDED_CLASS,
@@ -39,10 +39,25 @@ function AdminLayoutContent() {
   const isChartTypesFill = Boolean(useMatch(CHART_TYPES_CATALOG_PATH));
   const dashboardEditMatch = useMatch("/admin/dashboards/:id/edit");
   const dashboardDetailMatch = useMatch("/admin/dashboards/:id");
-  const isDashboardEditFill = Boolean(dashboardEditMatch || dashboardDetailMatch);
+  const dataScreenEditMatch = useMatch("/admin/data-screens/:id/edit");
+  const dataScreenDetailMatch = useMatch("/admin/data-screens/:id");
+  const isDashboardEditFill = Boolean(
+    dashboardEditMatch || dashboardDetailMatch || dataScreenEditMatch || dataScreenDetailMatch,
+  );
   const isListFillRoute = isAdminListFillRoute(location.pathname);
+  const isScreenPreviewRoute = isAdminScreenPreviewRoute(location.pathname);
   const isFillHeightRoute = isChartTypesFill || isDashboardEditFill || isListFillRoute;
   useAdminFillScrollLock(isFillHeightRoute);
+
+  if (isScreenPreviewRoute) {
+    return (
+      <div className="h-dvh max-h-dvh min-h-0 overflow-hidden" data-admin-layout="screen-preview">
+        <RouteErrorBoundary>
+          <Outlet />
+        </RouteErrorBoundary>
+      </div>
+    );
+  }
 
   return (
     <div

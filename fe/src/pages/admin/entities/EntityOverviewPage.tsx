@@ -46,7 +46,7 @@ export function EntityOverviewPage() {
 
   if (!canRead) {
     return (
-      <AdminPageShell title="实体总览" description="按实体类型浏览登记物理表并下钻至 Dashboard。">
+      <AdminPageShell title="实体总览" description="按实体类型浏览登记物理表并下钻至仪表板。">
         <Card>
           <CardContent className="py-10 text-center text-theme-sm text-gray-600 dark:text-gray-400">
             无权查看实体总览
@@ -59,7 +59,7 @@ export function EntityOverviewPage() {
   return (
     <AdminPageShell
       title="实体总览"
-      description="按实体类型浏览登记物理表并下钻至 Dashboard。"
+      description="按实体类型浏览登记物理表并下钻至仪表板。"
     >
       {entityTypesQuery.isError ? (
         <PageErrorBanner message={mapApiError(entityTypesQuery.error)} onRetry={() => void entityTypesQuery.refetch()} />
@@ -98,10 +98,10 @@ export function EntityOverviewPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2 text-theme-sm text-gray-600 dark:text-gray-400">
-          <span>关联 Dashboard</span>
+          <span>关联仪表板</span>
           <Select value={dashboardId} onValueChange={setDashboardId}>
-            <SelectTrigger className="w-[220px]" aria-label="选择 Dashboard">
-              <SelectValue placeholder="选择 Dashboard" />
+            <SelectTrigger className="w-[220px]" aria-label="选择仪表板">
+              <SelectValue placeholder="选择仪表板" />
             </SelectTrigger>
             <SelectContent>
               {(dashboardsQuery.data?.items ?? []).map((d) => (
@@ -220,7 +220,7 @@ export function EntityOverviewPage() {
                             size="sm"
                             className="focus-visible:ring-2"
                             disabled={!drillTargetId}
-                            title={drillTargetId ? undefined : "请先在 Dashboard 配置实体总览下钻目标"}
+                            title={drillTargetId ? undefined : "请先在仪表板配置实体总览下钻目标"}
                             onClick={() => {
                               if (drillTargetId) navigate(`/admin/dashboards/${drillTargetId}`);
                             }}

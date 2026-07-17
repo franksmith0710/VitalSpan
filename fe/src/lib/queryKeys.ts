@@ -23,7 +23,8 @@ export const queryKeys = {
   },
   dashboards: {
     all: ["dashboards"] as const,
-    list: (params?: { limit?: number; offset?: number }) => ["dashboards", "list", params] as const,
+    list: (params?: { limit?: number; offset?: number; surfaceKind?: string }) =>
+      ["dashboards", "list", params] as const,
     globalFilters: (id: string) => ["dashboards", id, "globalFilters"] as const,
   },
   metadata: {

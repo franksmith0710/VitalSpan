@@ -30,6 +30,8 @@ export type ChartInspectorState = ReturnType<typeof useChartInspectorState>;
 
 export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: ChartViewConfig) => void) {
   const cfg = widget.chartConfig ?? defaultChartConfig("table");
+  const cfgRef = useRef(cfg);
+  cfgRef.current = cfg;
   const { columns, loading: columnsLoading, ready: columnsReady, refreshColumns } = useInspectorColumns(cfg);
   const bindingSyncRef = useRef<string | null>(null);
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[]>([]);
@@ -84,7 +86,7 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
       }
 
       onChange({
-        ...cfg,
+        ...cfgRef.current,
         mode: "dataset",
         datasetId,
         configId: boundId,
@@ -92,7 +94,7 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
         sql: undefined,
       });
     },
-    [cfg, datasetItems, onChange],
+    [datasetItems, onChange],
   );
 
   useEffect(() => {
@@ -125,7 +127,7 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
 
       bindingSyncRef.current = syncKey;
       onChange({
-        ...cfg,
+        ...cfgRef.current,
         mode: "dataset",
         configId: boundId,
         ...(dataSourceId ? { dataSourceId } : {}),
@@ -140,10 +142,11 @@ export function useChartInspectorState(widget: LayoutWidget, onChange: (cfg: Cha
   const columnsKey = columns.join("|");
   useEffect(() => {
     if (!columns.length) return;
-    const reconciled = reconcileChartFields(cfg, columns);
+    const current = cfgRef.current;
+    const reconciled = reconcileChartFields(current, columns);
     const same =
-      JSON.stringify(cfg.dimensions) === JSON.stringify(reconciled.dimensions) &&
-      JSON.stringify(cfg.metrics) === JSON.stringify(reconciled.metrics);
+      JSON.stringify(current.dimensions) === JSON.stringify(reconciled.dimensions) &&
+      JSON.stringify(current.metrics) === JSON.stringify(reconciled.metrics);
     if (!same) onChange(reconciled);
     // 仅在列集合变化时剔除无效字段，避免拖入字段时被立即清掉
     // eslint-disable-next-line react-hooks/exhaustive-deps

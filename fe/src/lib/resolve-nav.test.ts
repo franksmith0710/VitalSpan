@@ -31,7 +31,7 @@ describe("resolveNavGroups", () => {
     expect(sectionTitles).not.toContain("系统");
     expect(sectionTitles).not.toContain("数据");
     const analysisSection = groups.find((g) => g.title === "分析");
-    expect(analysisSection?.items.map((i) => i.name)).toContain("Dashboard");
+    expect(analysisSection?.items.map((i) => i.name)).toContain("仪表板");
     const allItemNames = groups.flatMap((g) => g.items.map((i) => i.name));
     expect(allItemNames).not.toContain("数据源");
     const reportSection = groups.find((g) => g.title === "报表");
@@ -142,7 +142,7 @@ describe("resolveNavGroups", () => {
     expect(titles).toContain("分析");
     expect(titles).toContain("报表");
     expect(groups.find((g) => g.title === "分析")?.items.map((i) => i.name)).toContain(
-      "Dashboard",
+      "仪表板",
     );
   });
 
@@ -233,7 +233,7 @@ describe("resolveNavGroups", () => {
   it("T-VIZ-FC-02: admin analysis group is dashboard-only", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const analysis = groups.find((g) => g.title === "分析");
-    expect(analysis?.items.map((i) => i.name)).toEqual(["Dashboard"]);
+    expect(analysis?.items.map((i) => i.name)).toEqual(["仪表板", "数据大屏"]);
   });
 
   it("T-VIZ-FC-03: admin nav no longer lists 图表类型目录（Palette 深链保留）", () => {

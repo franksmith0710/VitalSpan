@@ -64,7 +64,7 @@ export function GrantsPage() {
   return (
     <AdminPageShell
       title="资源授权"
-      description="按角色绑定数据源、Dashboard 或报表资源的访问授权。"
+      description="按角色绑定数据源、仪表板或报表资源的访问授权。"
       actions={
         <Button type="button" variant="primary" onClick={page.openCreate}>
           新建授权
@@ -163,7 +163,7 @@ export function GrantsPage() {
                     <PanelEmptyState
                       icon={<Shield className="size-10" aria-hidden />}
                       title="暂无资源授权"
-                      description="点击「新建授权」为角色绑定数据源、Dashboard 或报表资源。"
+                      description="点击「新建授权」为角色绑定数据源、仪表板或报表资源。"
                       size="sm"
                       variant="plain"
                     />

@@ -567,7 +567,7 @@ describe("dashboard admin smoke", () => {
   it("T-DASH-R28-002-02: list page empty state", async () => {
     mockApiFetch.mockResolvedValueOnce({ items: [], total: 0, limit: 50, offset: 0 });
     renderListPage();
-    expect(await screen.findByText("暂无 Dashboard")).toBeInTheDocument();
+    expect(await screen.findByText("暂无仪表板")).toBeInTheDocument();
   });
 
   it("T-DASH-R28-002-03: edit page loads layout", async () => {

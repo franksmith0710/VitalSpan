@@ -47,6 +47,7 @@ import { canEditDashboards, sessionUserFromMe } from "@/lib/session";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import { useAuth } from "@/context/auth-context";
+import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
 
 type DashboardListResponse = {
   items: DashboardListItem[];
@@ -128,10 +129,15 @@ export function DashboardListPage() {
     queryKey: queryKeys.dashboards.list({
       limit: pagination.pageSize,
       offset: pagination.offset,
+      surfaceKind: "dashboard",
     }),
     queryFn: () =>
       apiFetch<DashboardListResponse>(
-        `/api/v1/dashboards?limit=${pagination.pageSize}&offset=${pagination.offset}`,
+        buildDashboardsListUrl({
+          limit: pagination.pageSize,
+          offset: pagination.offset,
+          surfaceKind: "dashboard",
+        }),
       ),
   });
 
@@ -247,7 +253,7 @@ export function DashboardListPage() {
                   <DashboardListEmptyIcon />
                 </div>
                 <h2 className="mt-4 text-theme-sm font-semibold text-gray-900 dark:text-white">
-                  暂无 Dashboard
+                  暂无仪表板
                 </h2>
                 <p className="mt-2 max-w-md text-theme-sm text-gray-500 dark:text-gray-400">
                   创建第一个看板，拖拽图表组件并绑定数据源后即可发布。
@@ -305,7 +311,7 @@ export function DashboardListPage() {
             lastColumnAlign="right"
             emptyState={{
               icon: <DashboardListEmptyIcon />,
-              title: "暂无 Dashboard",
+              title: "暂无仪表板",
               description: "创建第一个看板，拖拽图表组件并绑定数据源后即可发布。",
               action: createButton,
             }}

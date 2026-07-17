@@ -20,7 +20,7 @@ describe("ChartInspectorTabs scroll", () => {
     const panel = container.querySelector(".overflow-y-auto");
     expect(panel).toBeTruthy();
     expect(panel).toHaveClass("h-0");
-    expect(panel).toHaveClass("touch-pan-y");
+    expect(panel).not.toHaveClass("touch-pan-y");
     expect(container.querySelector('[class*="h-0"][class*="flex-1"][class*="overflow-hidden"]')).toBeTruthy();
   });
 });

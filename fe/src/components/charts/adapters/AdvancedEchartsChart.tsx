@@ -2,6 +2,7 @@ import { memo, useCallback, useMemo, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type EChartsReact from "echarts-for-react";
 import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
+import { applyDataScreenSurfaceToEchartsOption } from "@/lib/screenChartTheme";
 import { applyEchartsSeriesGradient } from "@/lib/echartsSeriesPresentation";
 import { applyChartSeriesColorOverrides, resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
 import { applyChartAdvancedFeaturesToEchartsOption } from "@/lib/chartDeFeatures";
@@ -55,6 +56,7 @@ type Props = {
   shellLegend?: boolean;
   drillStack?: ChartDrillFrame[];
   drillClickField?: string;
+  dataScreenSurface?: boolean;
 };
 
 function advancedEchartsPropsEqual(
@@ -90,7 +92,8 @@ function advancedEchartsPropsEqual(
     prev.chartConfig === next.chartConfig &&
     prev.shellLegend === next.shellLegend &&
     prev.drillStack === next.drillStack &&
-    prev.drillClickField === next.drillClickField
+    prev.drillClickField === next.drillClickField &&
+    prev.dataScreenSurface === next.dataScreenSurface
   );
 }
 
@@ -123,6 +126,7 @@ function AdvancedEchartsChartInner({
   shellLegend = false,
   drillStack = [],
   drillClickField,
+  dataScreenSurface = false,
 }: Props) {
   const chartRef = useRef<EChartsReact | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -192,6 +196,9 @@ function AdvancedEchartsChartInner({
       tooltipPresentation,
       layout: { embedded: fill, shellLegend },
     });
+    if (dataScreenSurface) {
+      built = applyDataScreenSurfaceToEchartsOption(built);
+    }
     built = applyEchartsColorSchemeTokens(built, scheme);
     if (chartColors?.length) {
       built = { ...built, color: chartColors };
@@ -212,7 +219,7 @@ function AdvancedEchartsChartInner({
       );
     }
     return built;
-  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, showTooltip, seriesGradient, labelPresentation, tooltipPresentation, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit, geoStyle, geoMapLevel]);
+  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, showTooltip, seriesGradient, labelPresentation, tooltipPresentation, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit, geoStyle, geoMapLevel, dataScreenSurface]);
   const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
 
   const isMapPlaceholder =

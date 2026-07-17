@@ -161,7 +161,7 @@ export function DatasourceConnectionForm({
           <div>
             <h2 className="text-theme-base font-semibold text-gray-900 dark:text-white">填写连接信息</h2>
             <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-              注册后可测试连通性并用于查询与 Dashboard。
+              注册后可测试连通性并用于查询与仪表板。
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

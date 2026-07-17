@@ -23,7 +23,7 @@ const CODE_MESSAGES: Record<string, string> = {
   USERNAME_CONFLICT: "用户名已存在",
   USER_NOT_FOUND: "用户不存在",
   BINDING_FORBIDDEN: "无权管理用户角色绑定",
-  BINDING_NOT_FOUND: "用户角色绑定不存在",
+  BINDING_NOT_FOUND: "绑定记录不存在",
   ORG_NOT_FOUND: "组织节点不存在",
   ORG_PARENT_NOT_FOUND: "上级组织节点不存在",
   ORG_CYCLE: "组织树移动会形成循环，操作被拒绝",
@@ -73,16 +73,32 @@ const CODE_MESSAGES: Record<string, string> = {
   DATASOURCE_TEST_INFLIGHT: "已有连接测试进行中，请稍候",
   TEST_IN_PROGRESS: "已有连接测试进行中，请稍候",
   UNKNOWN_CONNECTOR_TYPE: "不支持的连接器类型",
-  CREDENTIAL_DECRYPT_FAILED: "凭证解密失败，请联系管理员",
+  CREDENTIAL_DECRYPT_FAILED: "数据源凭证无法解密，请重启后端或在「数据连接」中重新保存密码",
   QUERY_NOT_READONLY: "仅允许只读查询，请检查 SQL",
   QUERY_CONNECTION_FAILED: "数据库连接失败",
+  QUERY_TIMEOUT: "查询超时，请缩小数据范围",
+  QUERY_SYNTAX_ERROR: "SQL 语法错误，请检查配置",
+  QUERY_TABLE_NOT_FOUND: "表不存在，请检查 schema 与表名",
+  QUERY_EXECUTION_ERROR: "查询执行失败",
+  QUERY_NATIVE_WRONG_MODE: "当前数据源不支持原生查询模式",
+  QUERY_NATIVE_UNSUPPORTED_CONNECTOR: "不支持的 native 连接器",
+  QUERY_NATIVE_INJECTION_SUSPECT: "原生查询参数存在安全风险",
+  QUERY_NATIVE_SQL_DISGUISE: "原生模式不允许填写 SQL 字段",
+  QUERY_NATIVE_EMPTY_BODY: "原生查询体不能为空",
+  QUERY_NATIVE_INVALID_BODY: "原生查询体格式无效",
+  QUERY_NATIVE_EXECUTE_UNSUPPORTED: "该连接器暂不支持原生执行",
+  QUERY_NATIVE_OFFSET_UNSUPPORTED: "该连接器不支持分页偏移",
+  QUERY_NATIVE_RLS_UNSUPPORTED: "原生查询暂不支持行级权限",
+  QUERY_FILTER_UNSAFE: "筛选值不安全，请修改后重试",
+  QUERY_INVALID_REQUEST: "查询请求参数无效",
+  QUERY_PATH_AMBIGUOUS: "查询路径字段冲突",
   QUERY_DATASET_NOT_FOUND: "Dataset 不存在",
   QUERY_DATASET_FORBIDDEN: "无权访问该 Dataset",
   QUERY_DATASET_NOT_READONLY: "Dataset 查询仅允许 SELECT",
-  QUERY_PATH_AMBIGUOUS: "查询路径字段冲突",
-  QUERY_EXECUTION_ERROR: "查询执行失败",
-  QUERY_NATIVE_INVALID_BODY: "原生查询请求体无效",
+  QUERY_DATASET_PLAN_INVALID_PARAMS: "Dataset 查询参数无效",
+  BINDING_CHART_CONFLICT: "该图表已绑定其他查询",
   RLS_CONFIG_INVALID: "行级权限配置无效",
+  PERMISSION_DENIED: "无权执行此操作",
 
   // Dataset / 元数据
   META_DATASET_CONFLICT: "Dataset ID 已存在，请更换标识",
@@ -162,6 +178,7 @@ const EXACT_MESSAGE_MAP: Record<string, string> = {
   "Username already exists": "用户名已存在",
   "User not found": "用户不存在",
   "Binding changes require admin role": "仅管理员可修改绑定关系",
+  "Binding not found": "绑定记录不存在",
   "User-role binding not found": "用户角色绑定不存在",
   "Org node not found": "组织节点不存在",
   "Resource grant already exists": "该资源授权已存在",
@@ -175,6 +192,7 @@ const EXACT_MESSAGE_MAP: Record<string, string> = {
   "Data source code already exists": "数据源标识已存在",
   "Data source name already exists": "数据源名称已存在",
   "Connection test already in progress": "已有连接测试进行中，请稍候",
+  "Connection successful": "数据库连接正常",
   "Dataset not found": "Dataset 不存在",
   "Dataset already exists": "Dataset 已存在",
   "Group not found": "维度分组不存在",
@@ -229,26 +247,32 @@ export function isDashboardNotFound(err: unknown): boolean {
   return false;
 }
 
+type CodedError = Error & {
+  code?: string;
+  fields?: Array<{ field: string; message: string }>;
+};
+
+function asCodedError(err: unknown): CodedError | null {
+  if (!(err instanceof Error)) return null;
+  return err as CodedError;
+}
+
 export function mapApiError(err: unknown): string {
-  if (err instanceof ApiRequestError) {
-    if (err.code && CODE_MESSAGES[err.code]) {
-      const mapped = CODE_MESSAGES[err.code];
-      const fieldHint = err.fields?.[0]?.message?.trim();
+  const coded = asCodedError(err);
+  if (coded) {
+    if (coded.code && CODE_MESSAGES[coded.code]) {
+      const mapped = CODE_MESSAGES[coded.code];
+      const fieldHint = coded.fields?.[0]?.message?.trim();
       if (fieldHint && !mapped.includes(fieldHint)) {
         return `${mapped}（${localizeApiMessage(fieldHint)}）`;
       }
       return mapped;
     }
-    if (err.message && !err.message.includes("traceId")) {
-      return localizeApiMessage(err.message);
+    if (coded.message && !coded.message.includes("traceId")) {
+      return localizeApiMessage(coded.message);
     }
-  }
-  if (err instanceof Error) {
-    if (/failed to fetch|networkerror|load failed/i.test(err.message)) {
+    if (/failed to fetch|networkerror|load failed/i.test(coded.message)) {
       return "无法连接服务器，请确认后端已启动（uvicorn :8000）且数据库可访问";
-    }
-    if (err.message && !/failed to fetch/i.test(err.message)) {
-      return localizeApiMessage(err.message);
     }
   }
   return GENERIC_FAILURE;

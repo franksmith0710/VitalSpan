@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { Copy } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { localizeApiMessage, mapApiError } from "@/lib/apiError";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,7 +45,7 @@ export function SyncJobHistoryPage() {
       );
       setRuns(data.items);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setLoading(false);
     }
@@ -119,9 +120,9 @@ export function SyncJobHistoryPage() {
                       </td>
                       <td
                         className="max-w-xs truncate px-6 py-4 text-gray-600 dark:text-gray-300"
-                        title={run.error_message ?? undefined}
+                        title={run.error_message ? localizeApiMessage(run.error_message) : undefined}
                       >
-                        {run.error_message ?? "—"}
+                        {run.error_message ? localizeApiMessage(run.error_message) : "—"}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">

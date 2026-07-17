@@ -1,0 +1,43 @@
+import { describe, expect, it } from "vitest";
+import {
+  buildDefaultDataScreenLayout,
+  dashboardSharePath,
+  ensureDataScreenStyleConfig,
+  isDataScreenLayout,
+  readSurfaceKind,
+} from "./dataScreenLayout";
+
+describe("dataScreenLayout", () => {
+  it("detects data-screen surface kind", () => {
+    const layout = buildDefaultDataScreenLayout();
+    expect(readSurfaceKind(layout)).toBe("data-screen");
+    expect(isDataScreenLayout(layout)).toBe(true);
+  });
+
+  it("defaults to dashboard surface", () => {
+    expect(readSurfaceKind({ styleConfig: {} })).toBe("dashboard");
+    expect(isDataScreenLayout(undefined)).toBe(false);
+  });
+
+  it("builds 1920x1080 dark canvas defaults", () => {
+    const layout = buildDefaultDataScreenLayout();
+    expect(layout.canvas.width).toBe(1920);
+    expect(layout.canvas.height).toBe(1080);
+    expect(layout.styleConfig?.colorScheme).toBe("dark");
+  });
+
+  it("resolves share paths by surface", () => {
+    expect(dashboardSharePath("abc", true)).toBe("/admin/data-screens/abc/share");
+    expect(dashboardSharePath("abc", false)).toBe("/admin/dashboards/abc/share");
+  });
+
+  it("ensures surfaceKind on screen saves", () => {
+    expect(ensureDataScreenStyleConfig({ colorScheme: "dark" }, true)).toEqual({
+      colorScheme: "dark",
+      surfaceKind: "data-screen",
+    });
+    expect(ensureDataScreenStyleConfig({ colorScheme: "light" }, false)).toEqual({
+      colorScheme: "light",
+    });
+  });
+});

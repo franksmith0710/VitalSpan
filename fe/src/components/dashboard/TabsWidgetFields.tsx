@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
 import { getTabChildWidgets } from "./layoutUtils";
 import { InspectorPanelSection } from "./inspector-panel-section";
+import { DE_INPUT } from "./dashboardInspectorUi";
 import { INSPECTOR_HINT, InspectorSubtleEmpty } from "./inspectorCompact";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 

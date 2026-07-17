@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { localizeApiMessage } from "@/lib/apiError";
 import { isOriginAllowed } from "./EmbedSharePanel";
 
 const DEFAULT_ALLOWED = ["http://localhost:5173", "https://localhost:5173"];
@@ -50,7 +51,7 @@ export function EmbedChartPage() {
           chartType?: string;
         };
         if (!resp.ok) {
-          throw new Error(body.message || "加载图表配置失败");
+          throw new Error(localizeApiMessage(body.message || "加载图表配置失败"));
         }
         return body as ChartViewConfig;
       })
@@ -61,7 +62,7 @@ export function EmbedChartPage() {
       .catch((err: unknown) => {
         if (cancelled) return;
         setConfig(null);
-        setLoadError(err instanceof Error ? err.message : "加载图表配置失败");
+        setLoadError(err instanceof Error ? localizeApiMessage(err.message) : "加载图表配置失败");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

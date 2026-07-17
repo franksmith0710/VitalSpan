@@ -8,6 +8,7 @@ import {
 } from "@/components/layout/list-batch-delete";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { apiFetch } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
 import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -73,7 +74,7 @@ export function EtlRulesPage() {
       );
       setRules(data.rules.length > 0 ? data.rules : [emptyRule()]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setLoading(false);
     }
@@ -138,7 +139,7 @@ export function EtlRulesPage() {
       setFieldErrors(false);
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "操作失败，请稍后重试");
+      setError(mapApiError(err));
     } finally {
       setSaving(false);
     }

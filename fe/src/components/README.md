@@ -43,9 +43,9 @@
 | EmbedSharePanel | `../embed/EmbedSharePanel.tsx` | `/embed/share` origin 配置 |
 | EmbedToolShell | `embed/embed-tool-shell.tsx` | 嵌入工具页统一壳层（标题 + 取消 + 卡片） |
 | EmbedLayout | `../layouts/EmbedLayout.tsx` | Embed chromeless 布局 |
-| DashboardListCard | `dashboard/DashboardListCard.tsx` | 看板列表卡片（预览缩略图 + 操作） |
-| DashboardPreviewThumb | `dashboard/DashboardPreviewThumb.tsx` | 色块占位缩略图（独立页/测试）；列表卡片已改用 DashboardListCardPreview |
-| DashboardListCardPreview | `dashboard/DashboardListCardPreview.tsx` | 列表真渲染预览（实验）；列表页已改回色块缩略图，保留供分享/截图方案 |
+| DashboardListCard | `dashboard/DashboardListCard.tsx` | 看板列表卡片（真实预览缩略图 + 悬停操作） |
+| DashboardPreviewThumb | `dashboard/DashboardPreviewThumb.tsx` | 色块占位缩略图（独立页/测试） |
+| DashboardListCardPreview | `dashboard/DashboardListCardPreview.tsx` | 列表真渲染预览（视口内懒加载 + 轻模糊） |
 | DashboardLayoutPreview | `dashboard/DashboardLayoutPreview.tsx` | v1/v2 只读预览分发：v1 → DashboardGrid，v2 → PixelCanvas |
 | DashboardGrid | `dashboard/DashboardGrid.tsx` | v1 栅格画布；引擎 **react-grid-layout**（`dashboardGridRgl.tsx` + WidthProvider 自适应宽度），仅历史兼容/紧急回退 |
 | dashboardGridRgl | `dashboard/dashboardGridRgl.tsx` | v1 RGL 封装：12 列拖拽/缩放/垂直紧凑（DASH-002） |

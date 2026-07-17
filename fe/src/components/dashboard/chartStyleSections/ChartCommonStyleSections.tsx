@@ -85,13 +85,15 @@ export function ChartPaletteStyleSection() {
         showLabelToggle={caps.label}
         showTooltipToggle={!isTable}
         showGradientToggle={!isTable}
-        onPaletteChange={(paletteId) =>
+        onPaletteChange={(paletteId) => {
           patchDeStyle({
             paletteId,
             seriesColor: undefined,
-            ...(paletteId === undefined ? { paletteOpacity: undefined } : {}),
-          })
-        }
+            ...(paletteId === undefined
+              ? { paletteOpacity: undefined }
+              : {}),
+          });
+        }}
         onSeriesColorsChange={(items) =>
           patchDeStyle({ seriesColor: items.length > 0 ? [...items] : undefined })
         }

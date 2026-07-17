@@ -5,12 +5,13 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.dashboard.models import Dashboard
+from app.dashboard.surface_kind import SurfaceKindFilter, matches_surface_filter
 from app.dashboard.schemas import (
     DashboardCreate,
     DashboardLayout,
@@ -122,20 +123,22 @@ def list_dashboards(
     limit: int = 50,
     offset: int = 0,
     actor: UserContext | None = None,
+    surface_kind: SurfaceKindFilter | None = None,
 ) -> DashboardListResponse:
     base = select(Dashboard).where(Dashboard.deleted_at.is_(None))
-    count_base = select(func.count()).select_from(Dashboard).where(Dashboard.deleted_at.is_(None))
     if actor is not None and "admin" not in actor.roles:
         try:
             actor_uuid = uuid.UUID(actor.id)
         except ValueError:
             return DashboardListResponse(items=[], total=0, limit=limit, offset=offset)
         base = base.where(Dashboard.created_by == actor_uuid)
-        count_base = count_base.where(Dashboard.created_by == actor_uuid)
-    total = db.scalar(count_base) or 0
-    rows = db.scalars(base.order_by(Dashboard.updated_at.desc()).limit(limit).offset(offset)).all()
+    rows = db.scalars(base.order_by(Dashboard.updated_at.desc())).all()
+    if surface_kind is not None:
+        rows = [row for row in rows if matches_surface_filter(row.layout_json, surface_kind)]
+    total = len(rows)
+    page = rows[offset : offset + limit]
     return DashboardListResponse(
-        items=[_to_out(row) for row in rows],
+        items=[_to_out(row) for row in page],
         total=total,
         limit=limit,
         offset=offset,

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ApiRequestError } from "@/lib/api";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { mapApiError } from "@/lib/apiError";
 import {
   chartExecuteBindingKey,
   fetchChartExecuteResultShared,
@@ -21,19 +21,13 @@ type ChartExecuteOptions = {
   limit?: number;
 };
 
+/** @deprecated 请直接使用 mapApiError；保留供测试与外部引用 */
 export function mapChartQueryError(code: string | undefined, message: string): string {
-  switch (code) {
-    case "QUERY_TIMEOUT":
-      return "查询超时，请缩小数据范围";
-    case "QUERY_SYNTAX_ERROR":
-      return "SQL 语法错误，请检查配置";
-    case "QUERY_TABLE_NOT_FOUND":
-      return "表不存在";
-    case "CREDENTIAL_DECRYPT_FAILED":
-      return "数据源凭证无法解密，请重启后端或在「数据连接」中重新保存密码";
-    default:
-      return message || "操作失败，请稍后重试";
+  if (code) {
+    const withCode = Object.assign(new Error(message), { code });
+    return mapApiError(withCode);
   }
+  return mapApiError(new Error(message));
 }
 
 export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOptions = {}) {
@@ -52,7 +46,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
   filterRef.current = filterParameters;
   limitRef.current = limit;
 
-  const requestKey = chartExecuteBindingKey(config, filterParameters, limit);
+  const requestKey = chartExecuteBindingKey(config, filterParameters);
 
   const run = useCallback(async () => {
     const activeConfig = configRef.current;
@@ -82,25 +76,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
       hasDisplayedDataRef.current = data.columns.length > 0 || data.rows.length > 0;
       setSlowHint(Date.now() - started > SLOW_THRESHOLD_MS);
     } catch (err) {
-      if (err instanceof Error && err.message.includes("筛选值")) {
-        setError(err.message);
-      } else if (err instanceof Error && err.message.includes("Dataset")) {
-        setError(err.message);
-      } else if (err instanceof ApiRequestError) {
-        setError(mapChartQueryError(err.code, err.message));
-      } else if (
-        err instanceof Error &&
-        /failed to fetch|networkerror|load failed/i.test(err.message)
-      ) {
-        setError("无法连接后端服务，请确认 uvicorn（:8000）已启动并通过前端 dev 代理访问");
-      } else {
-        setError(
-          mapChartQueryError(
-            undefined,
-            err instanceof Error ? err.message : "操作失败，请稍后重试",
-          ),
-        );
-      }
+      setError(mapApiError(err));
       setColumns([]);
       setRows([]);
       hasDisplayedDataRef.current = false;
