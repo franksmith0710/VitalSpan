@@ -6,6 +6,7 @@ import { dataScreenEditPath } from "@/lib/dataScreenLayout";
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { DataScreenPresenter } from "@/components/dashboard/screen/DataScreenPresenter";
 import { ScreenPreviewChrome } from "@/components/dashboard/screen/ScreenPreviewChrome";
+import { useScreenAutoRefresh } from "@/components/dashboard/screen/useScreenAutoRefresh";
 import type { PresentationMode } from "@/components/dashboard/screen/presentationScale";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,6 +52,12 @@ export function DataScreenPreviewPage() {
     void root.requestFullscreen?.();
   };
 
+  const refreshIntervalSec = detail?.layoutJson?.styleConfig?.refreshIntervalSec;
+  const autoRefresh = useScreenAutoRefresh({
+    refreshIntervalSec,
+    enabled: Boolean(detail),
+  });
+
   if (loading) {
     return (
       <div className="flex h-dvh flex-col bg-slate-950 p-4">
@@ -76,6 +83,11 @@ export function DataScreenPreviewPage() {
         presentationMode={presentationMode}
         onPresentationModeChange={setPresentationMode}
         onFullscreen={handleFullscreen}
+        refreshIntervalSec={refreshIntervalSec}
+        refreshLastAt={autoRefresh.lastAt}
+        refreshCountdownSec={autoRefresh.countdownSec}
+        refreshState={autoRefresh.state}
+        onManualRefresh={autoRefresh.manualRefresh}
       />
       <div className="min-h-0 flex-1">
         <DataScreenPresenter
@@ -85,6 +97,7 @@ export function DataScreenPreviewPage() {
           onFilterValueChange={(filterId, value) =>
             setFilterValues((prev) => ({ ...prev, [filterId]: value }))
           }
+          globalChartRefreshKey={autoRefresh.globalChartRefreshKey}
           className="h-full"
         />
       </div>

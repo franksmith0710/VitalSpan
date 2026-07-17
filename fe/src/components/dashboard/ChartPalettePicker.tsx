@@ -69,6 +69,7 @@ export function ChartPalettePicker({
 
   const [customOpen, setCustomOpen] = useState(false);
   const [bootstrapCustom, setBootstrapCustom] = useState(false);
+  const [denseMenuOpen, setDenseMenuOpen] = useState(false);
 
   const committedSelectValue = resolveSelectValue(value, showInherit);
   const resolvedId = committedSelectValue === INHERIT_VALUE ? undefined : committedSelectValue;
@@ -132,6 +133,7 @@ export function ChartPalettePicker({
 
   const selectPreset = (next: string) => {
     handlePresetChange(next);
+    if (dense) setDenseMenuOpen(false);
   };
 
   const handleColorChange = (index: number, color: string | undefined) => {
@@ -205,21 +207,25 @@ export function ChartPalettePicker({
               inheritActive={effectiveInheritActive}
               inheritPreviewColors={inheritPreviewColors}
               triggerClass={INSPECTOR_SELECT_TRIGGER}
+              menuOpen={denseMenuOpen}
+              onMenuToggle={() => setDenseMenuOpen((open) => !open)}
             />
             {settingsButton}
           </div>
-          <div
-            className="max-h-[min(14rem,40vh)] touch-manipulation overflow-y-auto overscroll-y-contain rounded-lg border border-gray-200 bg-white p-1 shadow-theme-sm dark:border-gray-700 dark:bg-gray-900"
-            data-testid="chart-palette-inline-menu-panel"
-          >
-            <ChartPaletteInlineMenu
-              rows={rows}
-              selectedId={committedSelectValue}
-              inheritValue={INHERIT_VALUE}
-              inheritPreviewColors={inheritPreviewColors}
-              onSelect={selectPreset}
-            />
-          </div>
+          {denseMenuOpen ? (
+            <div
+              className="max-h-[min(14rem,40vh)] touch-manipulation overflow-y-auto overscroll-y-contain rounded-lg border border-gray-200 bg-white p-1 shadow-theme-sm dark:border-gray-700 dark:bg-gray-900"
+              data-testid="chart-palette-inline-menu-panel"
+            >
+              <ChartPaletteInlineMenu
+                rows={rows}
+                selectedId={committedSelectValue}
+                inheritValue={INHERIT_VALUE}
+                inheritPreviewColors={inheritPreviewColors}
+                onSelect={selectPreset}
+              />
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="flex items-start gap-1.5">

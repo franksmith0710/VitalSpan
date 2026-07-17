@@ -10,6 +10,7 @@ export type DataScreenPresenterProps = {
   linkage?: Linkage | null;
   filterValues?: Record<string, string>;
   onFilterValueChange?: (filterId: string, value: string) => void;
+  globalChartRefreshKey?: number;
   className?: string;
 };
 
@@ -19,6 +20,7 @@ export function DataScreenPresenter({
   linkage = null,
   filterValues = {},
   onFilterValueChange,
+  globalChartRefreshKey = 0,
   className,
 }: DataScreenPresenterProps) {
   if (layout.version !== 2) {
@@ -49,6 +51,7 @@ export function DataScreenPresenter({
           filterValues={filterValues}
           onFilterValueChange={onFilterValueChange}
           fixedDesignViewport
+          globalChartRefreshKey={globalChartRefreshKey}
           className="h-full w-full"
         />
       </div>

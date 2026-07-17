@@ -1,13 +1,16 @@
 import { forwardRef, useState, type ReactNode } from "react";
 import {
+  Clock3,
   Copy,
   Filter,
+  Frame,
   Grid3x3,
   Image,
   LayoutGrid,
   MoreHorizontal,
   PanelsTopLeft,
   Palette,
+  Sparkles,
   Type,
 } from "lucide-react";
 import {
@@ -27,6 +30,8 @@ type CanvasEditToolbarProps = {
   onInsert: (type: PaletteInsertType) => void;
   onOpenReuse?: () => void;
   onOpenDashboardStyle?: () => void;
+  /** 数据大屏编辑态：展示装饰组件入口 */
+  showScreenVisualAssets?: boolean;
   /** 对标 DataEase 编辑区「更多」中的辅助对齐网格快捷开关 */
   showAuxiliaryGrid?: boolean;
   onAuxiliaryGridChange?: (enabled: boolean) => void;
@@ -74,11 +79,13 @@ export function CanvasEditToolbar({
   onInsert,
   onOpenReuse,
   onOpenDashboardStyle,
+  showScreenVisualAssets = false,
   showAuxiliaryGrid = true,
   onAuxiliaryGridChange,
 }: CanvasEditToolbarProps) {
   const [chartOpen, setChartOpen] = useState(false);
   const [queryOpen, setQueryOpen] = useState(false);
+  const [materialOpen, setMaterialOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
 
   return (
@@ -154,6 +161,39 @@ export function CanvasEditToolbar({
         testId="toolbar-insert-tabs"
         onClick={() => onInsert("tabs")}
       />
+
+      {showScreenVisualAssets ? (
+        <DropdownMenu open={materialOpen} onOpenChange={setMaterialOpen} modal={false}>
+          <DropdownMenuTrigger asChild>
+            <ToolbarNavButton
+              icon={<Sparkles aria-hidden />}
+              label="素材"
+              active={materialOpen}
+              testId="toolbar-insert-screen-material"
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[160px]" data-testid="screen-material-menu">
+            <DropdownMenuItem
+              onClick={() => {
+                onInsert("screen-clock");
+                setMaterialOpen(false);
+              }}
+            >
+              <Clock3 className="size-4" aria-hidden />
+              时钟
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                onInsert("screen-border");
+                setMaterialOpen(false);
+              }}
+            >
+              <Frame className="size-4" aria-hidden />
+              边框
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
 
       <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen} modal={false}>
         <DropdownMenuTrigger asChild>

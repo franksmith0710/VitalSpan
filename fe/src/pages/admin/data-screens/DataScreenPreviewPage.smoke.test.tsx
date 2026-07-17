@@ -12,7 +12,7 @@ vi.mock("@/lib/api", () => ({
       canvas: { width: 1920, height: 1080 },
       widgets: [],
       globalFilters: [],
-      styleConfig: { surfaceKind: "data-screen", colorScheme: "dark" },
+      styleConfig: { surfaceKind: "data-screen", colorScheme: "dark", refreshIntervalSec: 30 },
     },
   })),
 }));
@@ -31,5 +31,6 @@ describe("DataScreenPreviewPage smoke", () => {
     });
     expect(screen.getByText("返回编辑")).toBeInTheDocument();
     expect(screen.getByText("全屏")).toBeInTheDocument();
+    expect(screen.getByTestId("screen-refresh-badge")).toBeInTheDocument();
   });
 });

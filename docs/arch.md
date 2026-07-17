@@ -56,8 +56,8 @@ flowchart TB
 **建设原则**（摘自 goal / SRS）：
 
 - BI 层全部自研；**零** Superset / DataEase 运行时依赖（NFR-08）
-- 一至三期：图表 **直连** `dataSourceId` + SQL/表/native，**不经** Dataset
-- 四期：补齐 M1 Dataset、M2 设计器、M8 治理全自动
+- 一至三期：**主路径**为图表直连 `dataSourceId` + SQL/表/native；**Dataset 路径已提前可用**（META-004 + QUERY-009，见 §6.2）
+- 四期：补齐 M1 Dataset 全量语义层、M2 设计器、M8 治理全自动
 
 ---
 
@@ -243,15 +243,26 @@ DataSourceCategory → DataSourceType → ConnectionConfig → dataSourceId
 
 类型全量枚举见 SRS §3.2 FR-2.0 与 PRD `F04-CONN`。
 
-### 6.2 查询与展现（一至三期）
+### 6.2 查询与展现
+
+**路径 A — 直连（一至三期合同主路径 · QUERY-005）**
 
 ```
-dataSourceId + ChartViewConfig + DashboardView
+dataSourceId + ChartViewConfig(mode=sql|table|native)
   → POST /query/execute
   → 图表 / Dashboard 组件渲染
 ```
 
-四期起可增加 `datasetId` 路径（M1），与直连绑定可迁移（QUERY-009 / META-007）。
+**路径 B — Dataset（四期能力 · 已提前落地 · META-004 + QUERY-009）**
+
+```
+Dataset CRUD（ORM `datasets` 表）
+  → bind-query-config（dataset_query 配置）
+  → POST /query/dataset/execute（真实 SQL 执行）
+  → 图表 ChartViewConfig(mode=dataset, datasetId, configId)
+```
+
+两条路径**并存**：编辑页 `ChartEditRail` 可选 Dataset 或 SQL；快速创建向导默认走 Dataset。直连与 Dataset 可迁移（`POST /datasets/migrate-binding` 规划中）。
 
 ### 6.3 权限（M7）
 
@@ -379,4 +390,4 @@ pnpm dev            # 默认 :5173
 |------|------|------|
 | 1.0.2 | 2026-07-03 | FR-DATA/FR-ETL 纳入 M1B；增 ingestion 域与 ANALYTICS_DATABASE_URL |
 | 1.0.3 | 2026-07-03 | ADR-11 单应用 + RBAC；架构图 WebApp + Embed；废止双 URL 双端 |
-| 1.0.4 | 2026-07-17 | §9 补全 compose 六服务矩阵（含 `sample-timescaledb:5434/ops_tsdb`）；`docker-compose.yml` 状态 → 已建 |
+| 1.0.4 | 2026-07-17 | §9 compose 六服务；§6.2 双查询路径（直连 + Dataset）；Dataset 已落地说明 |

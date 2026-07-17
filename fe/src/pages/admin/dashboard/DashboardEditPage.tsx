@@ -87,6 +87,8 @@ import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/Dashb
 import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
+import { ScreenVisualEditRail } from "@/components/dashboard/screen/ScreenVisualEditRail";
+import { isScreenVisualWidget } from "@/lib/screenVisualAssets";
 import { MediaEditRail } from "@/components/dashboard/MediaEditRail";
 import { TabsEditRail } from "@/components/dashboard/TabsEditRail";
 import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
@@ -1091,6 +1093,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               chrome: { ...prev.chrome, showAuxiliaryGrid },
             }))
           }
+          showScreenVisualAssets={isDataScreenSurface}
           canvas={
             <DashboardEditCanvas
               mode="edit"
@@ -1148,6 +1151,21 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onRailCollapse={collapseChartRail}
               />
             ) : selectedWidget?.type === "text" && selectedWidget.textConfig ? (
+              isScreenVisualWidget(selectedWidget) ? (
+                <ScreenVisualEditRail
+                  widget={
+                    selectedWidget as typeof selectedWidget & { textConfig: TextWidgetConfig }
+                  }
+                  onTitleChange={(title) => {
+                    if (!primarySelectedId) return;
+                    setWidgets((prev) =>
+                      prev.map((w) => (w.id === primarySelectedId ? { ...w, title } : w)),
+                    );
+                  }}
+                  onDelete={() => handleDeleteWidget(primarySelectedId!)}
+                  onRailCollapse={collapseChartRail}
+                />
+              ) : (
               <TextEditRail
                 widget={
                   selectedWidget as typeof selectedWidget & { textConfig: TextWidgetConfig }
@@ -1167,6 +1185,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 onDelete={() => handleDeleteWidget(primarySelectedId!)}
                 onRailCollapse={collapseChartRail}
               />
+              )
             ) : selectedWidget?.type === "media" && selectedWidget.mediaConfig ? (
               <MediaEditRail
                 widget={

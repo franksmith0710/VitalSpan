@@ -84,6 +84,7 @@
 | DashboardContextInspector | `dashboard/DashboardContextInspector.tsx` | 无选中时看板级配置轨 |
 | chartDeStyle / chartValueFormat | `lib/chartDeStyle.ts` · `lib/chartValueFormat.ts` | 组件级 DE 样式与数值格式契约 |
 | DatasetFieldBank | `dashboard/DatasetFieldBank.tsx` | 数据集字段库（拖放/点击填入槽位） |
+| DatasetPickerPanel | `dashboard/DatasetPickerPanel.tsx` | 图表右栏 Dataset 选择与绑定 |
 | ChartFieldSlot | `dashboard/ChartFieldSlot.tsx` | 单字段槽位（虚线框 + 拖放） |
 | ChartDataSlots | `dashboard/ChartDataSlots.tsx` | 类别轴/值轴等语义槽位组 |
 | ChartInspectorProvider | `dashboard/ChartInspectorContext.tsx` | 图表 Inspector 共享状态 |

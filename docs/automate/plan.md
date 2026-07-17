@@ -38,7 +38,7 @@ code_gap_note: F-C 余 RPT-005 历史 UI + API-003 试跑增强；主路径诚�
 > **决策（2026-07-08）**：追加 **§M-PRODUCT** 处理成品感、DataEase 数据源分类、IA 收敛与 companion 验收清扫。  
 > **决策（2026-07-09）**：方案 A → **§M-DASH-UX** 为当前节；**§M-PRODUCT** queued → 同日全勾收官。  
 > **决策（2026-07-10）**：毕业后全栈 DE/SS 审视（SATURATED）→ 插入 **§M-DEPTH** 为当前节；不扩 PRD 合同面，对已实现 ID 做持久化/可视化/控件/消费落差 companion。  
-> **依据**：`goal.md` G1/G3/G5；代码证据：Dataset 内存 store L1；widget 仅 `type:"chart"`；`GlobalFilterBar` 纯 Input；`/rls/groups` `/audit/events` 后端已有、FE 未消费。
+> **依据**：`goal.md` G1/G3/G5；代码证据：Dataset ORM + 真实 execute 已落地（M-DEPTH F-A · 2026-07-10）；`GlobalFilterBar` 纯 Input；`/rls/groups` `/audit/events` 后端已有、FE 未消费。
 
 | 范围 | 子批 | PRD 项 | 已实现 | 待完成 | 状态 |
 |------|------|--------|--------|--------|------|

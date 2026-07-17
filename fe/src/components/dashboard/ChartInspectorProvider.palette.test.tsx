@@ -96,12 +96,13 @@ describe("ChartInspectorProvider palette persistence", () => {
     const user = userEvent.setup();
     render(<PaletteHarness initialWidget={sqlWidget} />);
 
-    await user.click(await screen.findByRole("option", { name: /清透/ }));
+    await user.click(screen.getByRole("button", { name: "配色方案" }));
+    await user.click(screen.getByRole("option", { name: /清透/ }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText("当前配色方案")).toHaveTextContent("清透");
+      expect(screen.getByRole("button", { name: "配色方案" })).toHaveTextContent("清透");
     });
-    expect(screen.getByRole("option", { name: /清透/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
   });
 
   it("keeps paletteId after delayed dataset binding sync completes", async () => {
@@ -117,18 +118,20 @@ describe("ChartInspectorProvider palette persistence", () => {
     const user = userEvent.setup();
     render(<PaletteHarness initialWidget={datasetWidget} />);
 
-    await user.click(await screen.findByRole("option", { name: /浅韵/ }));
+    await user.click(screen.getByRole("button", { name: "配色方案" }));
+    await user.click(screen.getByRole("option", { name: /浅韵/ }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText("当前配色方案")).toHaveTextContent("浅韵");
+      expect(screen.getByRole("button", { name: "配色方案" })).toHaveTextContent("浅韵");
     });
 
     await waitFor(
       () => {
-        expect(screen.getByLabelText("当前配色方案")).toHaveTextContent("浅韵");
+        expect(screen.getByRole("button", { name: "配色方案" })).toHaveTextContent("浅韵");
       },
       { timeout: 300 },
     );
+    expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
   });
 });
 
@@ -166,7 +169,8 @@ describe("readChartDeStyle after palette patch", () => {
       </QueryClientProvider>,
     );
 
-    await user.click(await screen.findByRole("option", { name: /政企/ }));
+    await user.click(screen.getByRole("button", { name: "配色方案" }));
+    await user.click(screen.getByRole("option", { name: /政企/ }));
     await waitFor(() => {
       expect(screen.getByTestId("palette-id-probe")).toHaveTextContent("enterprise");
     });

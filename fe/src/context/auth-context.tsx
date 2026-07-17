@@ -10,6 +10,7 @@ import {
 import { useNavigate } from "react-router";
 import { apiFetch, registerUnauthorizedHandler } from "@/lib/api";
 import { clearAuthToken, getAuthToken } from "@/lib/auth-token";
+import { shouldClearAuthSession } from "@/lib/auth-session";
 import type { SessionRole } from "@/lib/session";
 
 export type AuthUser = {
@@ -71,9 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       setUser(next);
       return next;
-    } catch {
-      clearAuthToken();
-      setUser(null);
+    } catch (err) {
+      if (shouldClearAuthSession(err)) {
+        clearAuthToken();
+        setUser(null);
+      }
       return null;
     } finally {
       setIsLoading(false);
@@ -90,7 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       isLoading,
-      isAuthenticated: Boolean(user),
+      // 本地 token 仍在时视为已登录，避免 /me 瞬时失败（后端 reload、超时）误踢回登录页
+      isAuthenticated: Boolean(user) || Boolean(getAuthToken()),
       logout,
       refresh,
     }),

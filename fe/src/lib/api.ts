@@ -102,6 +102,27 @@ async function parseErrorBody(response: Response): Promise<ApiErrorBody | null> 
   try {
     const body: unknown = await response.json();
     if (!isRecord(body)) return null;
+
+    if (Array.isArray(body.detail)) {
+      const fields = body.detail
+        .map((item) => {
+          if (!isRecord(item)) return null;
+          const loc = Array.isArray(item.loc)
+            ? item.loc.filter((part) => typeof part === "string").join(".")
+            : "";
+          const message = typeof item.msg === "string" ? item.msg : "";
+          if (!message) return null;
+          return { field: loc || "detail", message };
+        })
+        .filter((item): item is { field: string; message: string } => item !== null);
+      const first = fields[0];
+      return {
+        message: first ? `${first.field}: ${first.message}` : undefined,
+        code: typeof body.code === "string" ? body.code : "VALIDATION_ERROR",
+        fields: fields.length > 0 ? fields : undefined,
+      };
+    }
+
     const detail = isRecord(body.detail) ? body.detail : null;
     return {
       message: typeof body.message === "string" ? body.message : undefined,

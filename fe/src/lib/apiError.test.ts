@@ -21,6 +21,13 @@ describe("mapApiError", () => {
     expect(mapApiError(err)).toBe("查询超时，请缩小数据范围");
   });
 
+  it("maps VALIDATION_ERROR with field hint", () => {
+    const err = new ApiRequestError("body.layoutJson.canvas.height: ge", "VALIDATION_ERROR", [
+      { field: "body.layoutJson.canvas.height", message: "Input should be greater than or equal to 900" },
+    ]);
+    expect(mapApiError(err)).toContain("布局校验失败");
+  });
+
   it("falls back to generic message for unknown English", () => {
     expect(mapApiError(new Error("Something went wrong"))).toBe("操作失败，请稍后重试");
   });

@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import {
   ChartPaletteSwatchStrip,
   PALETTE_SWATCH_STRIP_WIDTH,
@@ -109,24 +109,23 @@ type ChartPaletteCurrentDisplayProps = {
   inheritActive: boolean;
   inheritPreviewColors?: ChartPaletteSwatchStripProps["inheritPreviewColors"];
   triggerClass: string;
+  /** 窄栏：作为展开触发器（点击展开列表，选中后收起） */
+  menuOpen?: boolean;
+  onMenuToggle?: () => void;
 };
 
-/** 当前选中展示（窄栏内不参与展开，列表常显） */
+/** 当前选中展示；窄栏可点击展开配色列表 */
 export function ChartPaletteCurrentDisplay({
   activeLabel,
   activeColors,
   inheritActive,
   inheritPreviewColors,
   triggerClass,
+  menuOpen = false,
+  onMenuToggle,
 }: ChartPaletteCurrentDisplayProps) {
-  return (
-    <div
-      aria-label="当前配色方案"
-      className={cn(
-        triggerClass,
-        "pointer-events-none flex min-w-0 flex-1 items-center justify-between gap-2 text-left",
-      )}
-    >
+  const content = (
+    <>
       <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
         <span className="shrink-0" style={{ width: PALETTE_SWATCH_STRIP_WIDTH }}>
           <ChartPaletteSwatchStrip
@@ -140,6 +139,48 @@ export function ChartPaletteCurrentDisplay({
           {activeLabel}
         </span>
       </span>
+      {onMenuToggle ? (
+        <ChevronDown
+          className={cn(
+            "size-3.5 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
+            menuOpen && "rotate-180",
+          )}
+          aria-hidden
+        />
+      ) : null}
+    </>
+  );
+
+  if (onMenuToggle) {
+    return (
+      <button
+        type="button"
+        aria-label="配色方案"
+        aria-expanded={menuOpen}
+        aria-haspopup="listbox"
+        className={cn(
+          triggerClass,
+          "flex min-w-0 flex-1 cursor-pointer items-center justify-between gap-2 text-left",
+        )}
+        onClick={(event) => {
+          event.stopPropagation();
+          onMenuToggle();
+        }}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div
+      aria-label="当前配色方案"
+      className={cn(
+        triggerClass,
+        "pointer-events-none flex min-w-0 flex-1 items-center justify-between gap-2 text-left",
+      )}
+    >
+      {content}
     </div>
   );
 }

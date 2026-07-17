@@ -9,6 +9,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { PresentationMode } from "./presentationScale";
+import {
+  RefreshStatusBadge,
+  type ScreenRefreshState,
+} from "./RefreshStatusBadge";
+import { ScreenClockDisplay } from "./ScreenClockDisplay";
 
 const MODE_LABELS: Record<PresentationMode, string> = {
   fit: "等比适应",
@@ -24,6 +29,11 @@ export type ScreenPreviewChromeProps = {
   presentationMode: PresentationMode;
   onPresentationModeChange: (mode: PresentationMode) => void;
   onFullscreen: () => void;
+  refreshIntervalSec?: number;
+  refreshLastAt?: string | null;
+  refreshCountdownSec?: number | null;
+  refreshState?: ScreenRefreshState;
+  onManualRefresh?: () => void;
 };
 
 export function ScreenPreviewChrome({
@@ -32,6 +42,11 @@ export function ScreenPreviewChrome({
   presentationMode,
   onPresentationModeChange,
   onFullscreen,
+  refreshIntervalSec,
+  refreshLastAt,
+  refreshCountdownSec,
+  refreshState = "idle",
+  onManualRefresh,
 }: ScreenPreviewChromeProps) {
   return (
     <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-slate-950/90 px-3 py-2 text-white backdrop-blur-sm">
@@ -44,7 +59,18 @@ export function ScreenPreviewChrome({
         </Button>
         <h1 className="truncate text-sm font-medium tracking-wide text-cyan-50">{title}</h1>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-3">
+        <ScreenClockDisplay compact className="hidden sm:block" />
+        {onManualRefresh ? (
+          <RefreshStatusBadge
+            lastAt={refreshLastAt}
+            intervalSec={refreshIntervalSec && refreshIntervalSec >= 5 ? refreshIntervalSec : undefined}
+            countdownSec={refreshCountdownSec}
+            state={refreshState}
+            theme="dark"
+            onClick={onManualRefresh}
+          />
+        ) : null}
         <Select
           value={presentationMode}
           onValueChange={(value) => onPresentationModeChange(value as PresentationMode)}

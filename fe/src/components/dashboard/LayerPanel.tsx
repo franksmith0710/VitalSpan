@@ -14,6 +14,7 @@ import {
   sortWidgets,
   type LayoutWidget,
 } from "@/components/dashboard/layoutUtils";
+import { resolveScreenWidgetLayerLabel } from "@/lib/screenVisualAssets";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -24,23 +25,6 @@ export type LayerPanelProps = {
   onWidgetsChange: (widgets: LayoutWidget[]) => void;
   className?: string;
 };
-
-function widgetTypeLabel(type: LayoutWidget["type"]): string {
-  switch (type) {
-    case "chart":
-      return "图表";
-    case "filter":
-      return "筛选";
-    case "text":
-      return "文本";
-    case "media":
-      return "媒体";
-    case "tabs":
-      return "页签";
-    default:
-      return type;
-  }
-}
 
 export function LayerPanel({
   widgets,
@@ -78,8 +62,7 @@ export function LayerPanel({
                 className="min-w-0 flex-1 truncate text-left text-theme-xs text-gray-800 dark:text-gray-100"
                 onClick={() => onSelect(widget.id)}
               >
-                <span className="text-gray-400 dark:text-gray-500">{widgetTypeLabel(widget.type)} · </span>
-                {widget.title || widget.id}
+                {resolveScreenWidgetLayerLabel(widget)}
               </button>
               <div className="flex shrink-0 items-center gap-0.5">
                 <IconButton

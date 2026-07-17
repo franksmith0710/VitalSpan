@@ -1,6 +1,8 @@
 import type { DashboardLayoutV2 } from "@/components/dashboard/layoutUtils";
 import type { DashboardStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { PIXEL_CANVAS_MIN_HEIGHT } from "@/components/dashboard/pixelCanvas/PixelCanvas";
+import { DATA_SCREEN_CANVAS } from "@/lib/canvasPersistPolicy";
+import { SCREEN_ACCENT, SCREEN_CANVAS_BG } from "@/lib/screenTokens";
+import { PIXEL_CANVAS_MIN_HEIGHT } from "@/components/dashboard/pixelCanvas/constants";
 
 export type SurfaceKind = "dashboard" | "data-screen";
 
@@ -22,17 +24,18 @@ const DASHBOARD_PRESET: SurfacePreset = {
 
 const DATA_SCREEN_PRESET: SurfacePreset = {
   kind: "data-screen",
-  canvas: { width: 1920, height: 1080 },
+  canvas: { width: DATA_SCREEN_CANVAS.width, height: DATA_SCREEN_CANVAS.height },
   defaultStyle: {
     surfaceKind: "data-screen",
     colorScheme: "dark",
-    canvasBackground: "#0b1220",
+    canvasBackground: SCREEN_CANVAS_BG,
     canvasBackgroundCustom: true,
     scaleMode: "canvas",
     gapPreset: "none",
     widgetGap: 0,
     pixelGutter: 0,
-    themeAccent: "#3b82f6",
+    themeAccent: SCREEN_ACCENT,
+    refreshIntervalSec: 60,
   },
 };
 

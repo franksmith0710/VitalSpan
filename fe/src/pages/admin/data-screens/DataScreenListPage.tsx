@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { Monitor, Plus } from "lucide-react";
+import { ChevronDown, Monitor, Plus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import {
@@ -26,10 +26,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
-import { buildDefaultLayoutForSurface } from "@/lib/surfacePreset";
+import {
+  buildDataScreenLayoutFromTemplate,
+  DATA_SCREEN_TEMPLATE_CATALOG,
+  parseImportedDataScreenLayout,
+  type DataScreenTemplateId,
+} from "@/lib/dataScreenTemplates";
 import { dataScreenEditPath } from "@/lib/dataScreenLayout";
 import { queryKeys } from "@/lib/queryKeys";
 import { useListPagination } from "@/lib/list-pagination";
@@ -58,6 +69,7 @@ export function DataScreenListPage() {
     : sessionUserFromMe({ username: "用户", roles: ["viewer"] });
   const canEdit = canEditDashboards(sessionUser);
   const [deleteTarget, setDeleteTarget] = useState<DashboardListItem | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const pagination = useListPagination();
 
   const listQuery = useQuery({
@@ -77,7 +89,7 @@ export function DataScreenListPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (templateId: DataScreenTemplateId = "blank") => {
       const slug = `screen-${Date.now()}`;
       const created = await apiFetch<{ id: string }>("/api/v1/dashboards", {
         method: "POST",
@@ -86,7 +98,9 @@ export function DataScreenListPage() {
       try {
         await apiFetch(`/api/v1/dashboards/${created.id}/layout`, {
           method: "PUT",
-          body: JSON.stringify({ layoutJson: buildDefaultLayoutForSurface("data-screen") }),
+          body: JSON.stringify({
+            layoutJson: buildDataScreenLayoutFromTemplate(templateId),
+          }),
         });
       } catch (layoutErr) {
         try {
@@ -104,6 +118,38 @@ export function DataScreenListPage() {
     },
     onError: (err) => {
       toast.error(mapApiError(err));
+    },
+  });
+
+  const importMutation = useMutation({
+    mutationFn: async (layoutJson: ReturnType<typeof parseImportedDataScreenLayout>) => {
+      const slug = `screen-import-${Date.now()}`;
+      const created = await apiFetch<{ id: string }>("/api/v1/dashboards", {
+        method: "POST",
+        body: JSON.stringify({ name: "导入的大屏", slug }),
+      });
+      try {
+        await apiFetch(`/api/v1/dashboards/${created.id}/layout`, {
+          method: "PUT",
+          body: JSON.stringify({ layoutJson }),
+        });
+      } catch (layoutErr) {
+        try {
+          await apiFetch(`/api/v1/dashboards/${created.id}`, { method: "DELETE" });
+        } catch {
+          // best-effort rollback
+        }
+        throw layoutErr;
+      }
+      return created;
+    },
+    onSuccess: (created) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
+      toast.success("布局已导入");
+      navigate(dataScreenEditPath(created.id));
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : mapApiError(err));
     },
   });
 
@@ -127,16 +173,69 @@ export function DataScreenListPage() {
   const total = listQuery.data?.total ?? 0;
 
   const createButton = canEdit ? (
-    <Button
-      type="button"
-      variant="primary"
-      size="sm"
-      disabled={createMutation.isPending}
-      onClick={() => createMutation.mutate()}
-    >
-      <Plus className="size-4" />
-      新建大屏
-    </Button>
+    <div className="flex flex-wrap items-center gap-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={createMutation.isPending || importMutation.isPending}
+          >
+            <Plus className="size-4" />
+            新建大屏
+            <ChevronDown className="size-4 opacity-70" aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-[220px]">
+          {DATA_SCREEN_TEMPLATE_CATALOG.map((template) => (
+            <DropdownMenuItem
+              key={template.id}
+              onClick={() => createMutation.mutate(template.id)}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span className="font-medium">{template.name}</span>
+                <span className="text-theme-xs text-gray-500 dark:text-gray-400">
+                  {template.description}
+                </span>
+              </div>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={createMutation.isPending || importMutation.isPending}
+        onClick={() => importInputRef.current?.click()}
+      >
+        <Upload className="size-4" />
+        导入 JSON
+      </Button>
+      <input
+        ref={importInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const parsed = JSON.parse(String(reader.result ?? ""));
+              const layoutJson = parseImportedDataScreenLayout(parsed);
+              importMutation.mutate(layoutJson);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "无法解析布局 JSON");
+            }
+          };
+          reader.readAsText(file);
+        }}
+      />
+    </div>
   ) : null;
 
   return (

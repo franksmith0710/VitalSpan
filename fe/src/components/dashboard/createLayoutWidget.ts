@@ -5,6 +5,11 @@ import {
   DEFAULT_WIDGET_ROWSPAN,
 } from "@/lib/dashboardDnd";
 import {
+  createScreenBorderWidget,
+  createScreenClockWidget,
+  type ScreenVisualInsertType,
+} from "@/lib/screenVisualAssets";
+import {
   defaultChartConfig,
   defaultFilterConfig,
   defaultMediaConfig,
@@ -21,7 +26,14 @@ export type FilterInsertPayload = {
   controlType: FilterControlType;
 };
 
-export type PaletteInsertType = ChartType | "filter" | FilterInsertPayload | "text" | "media" | "tabs";
+export type PaletteInsertType =
+  | ChartType
+  | "filter"
+  | FilterInsertPayload
+  | "text"
+  | "media"
+  | "tabs"
+  | ScreenVisualInsertType;
 
 const FILTER_WIDGET_TITLES: Record<FilterControlType, string> = {
   text: "文本筛选",
@@ -148,6 +160,8 @@ export function createPaletteWidget(
   if (type === "text") return createTextWidget(widgets, at);
   if (type === "media") return createMediaWidget(widgets, at);
   if (type === "tabs") return createTabsWidget(widgets, at);
+  if (type === "screen-clock") return createScreenClockWidget(widgets, at);
+  if (type === "screen-border") return createScreenBorderWidget(widgets, at);
   return createLayoutWidget(type as ChartType, widgets, at);
 }
 

@@ -6,6 +6,7 @@ import {
   ensureDataScreenStyleConfig,
   isDataScreenLayout,
   readSurfaceKind,
+  resolvePersistedCanvasMinHeight,
 } from "./dataScreenLayout";
 
 describe("dataScreenLayout", () => {
@@ -34,6 +35,15 @@ describe("dataScreenLayout", () => {
 
   it("resolves preview path for chromeless route", () => {
     expect(dataScreenPreviewPath("abc")).toBe("/admin/data-screens/abc/preview");
+  });
+
+  it("resolves persisted canvas min height by surface", () => {
+    expect(resolvePersistedCanvasMinHeight({ styleConfig: { surfaceKind: "data-screen" } })).toBe(
+      1080,
+    );
+    expect(resolvePersistedCanvasMinHeight({ styleConfig: { surfaceKind: "dashboard" } })).toBe(
+      900,
+    );
   });
 
   it("ensures surfaceKind on screen saves", () => {

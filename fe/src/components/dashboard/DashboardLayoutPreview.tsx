@@ -39,6 +39,8 @@ type DashboardLayoutPreviewProps = {
   scaleMode?: ScaleMode;
   /** 大屏投放：固定设计尺寸，由外层 CanvasScaleViewport 独占缩放 */
   fixedDesignViewport?: boolean;
+  /** 大屏预览整页图表刷新计数 */
+  globalChartRefreshKey?: number;
   className?: string;
 };
 
@@ -50,6 +52,7 @@ export function DashboardLayoutPreview({
   onFilterValueChange,
   scaleMode,
   fixedDesignViewport = false,
+  globalChartRefreshKey = 0,
   className,
 }: DashboardLayoutPreviewProps) {
   const styleConfig = useMemo(
@@ -101,6 +104,8 @@ export function DashboardLayoutPreview({
           widget.id,
           effectiveLinkage,
           filterValues,
+          undefined,
+          globalChartRefreshKey,
         )}
         filterValue={
           widget.filterConfig
@@ -116,7 +121,13 @@ export function DashboardLayoutPreview({
 
   if (displayLayout.version === 2) {
     const widgetContentRevision = (widget: PixelLayoutWidget) =>
-      widgetFilterExecuteRevision(widget.id, effectiveLinkage, filterValues);
+      widgetFilterExecuteRevision(
+        widget.id,
+        effectiveLinkage,
+        filterValues,
+        undefined,
+        globalChartRefreshKey,
+      );
 
     return (
       <DashboardWidgetsProvider widgets={widgets}>

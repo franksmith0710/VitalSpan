@@ -13,7 +13,9 @@ export function widgetFilterExecuteRevision(
   linkage: Linkage,
   filterValues: Record<string, string>,
   chartRefreshKeys?: Record<string, number>,
+  globalChartRefreshKey = 0,
 ): string {
   const filters = buildWidgetFilterParams(widgetId, linkage, filterValues);
-  return buildWidgetExecuteKey(filters, chartRefreshKeys?.[widgetId] ?? 0);
+  const perWidget = chartRefreshKeys?.[widgetId] ?? 0;
+  return buildWidgetExecuteKey(filters, perWidget + globalChartRefreshKey);
 }

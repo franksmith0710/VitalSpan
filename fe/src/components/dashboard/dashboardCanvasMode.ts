@@ -15,6 +15,10 @@ import { styleConfigHasPersistedFields, type DashboardStyleConfig } from "./dash
 import { bootstrapDashboardStyleConfig } from "./dashboardThemeVariants";
 import { fitCanvasHeightToContent } from "./pixelCanvas/PixelCanvas";
 import { sanitizePixelLayoutGeometry } from "./pixelCanvas/layoutSanitize";
+import {
+  clampCanvasHeightForPersist,
+  resolvePersistedCanvasMinHeight,
+} from "@/lib/canvasPersistPolicy";
 
 const CANVAS_WIDTH = 1440 as const;
 const MIN_CANVAS_HEIGHT = 900;
@@ -190,20 +194,25 @@ export function buildDashboardLayoutForSave(
       styleConfig: persistedStyle(styleConfig),
     };
   }
-  return fitCanvasHeightToContent({
-    ...layout,
-    widgets: layout.widgets.map((widget) => {
-      const withChartId =
-        widget.type === "chart" && widget.chartConfig
-          ? {
-              ...widget,
-              chartConfig: { ...widget.chartConfig, chartId: widget.id },
-            }
-          : widget;
-      return stripV1LayoutGeometry(withChartId as Record<string, unknown>) as typeof widget;
-    }),
-    styleConfig: persistedStyle(styleConfig),
-  });
+  const minCanvasHeight = resolvePersistedCanvasMinHeight({ styleConfig });
+  const fitted = fitCanvasHeightToContent(
+    {
+      ...layout,
+      widgets: layout.widgets.map((widget) => {
+        const withChartId =
+          widget.type === "chart" && widget.chartConfig
+            ? {
+                ...widget,
+                chartConfig: { ...widget.chartConfig, chartId: widget.id },
+              }
+            : widget;
+        return stripV1LayoutGeometry(withChartId as Record<string, unknown>) as typeof widget;
+      }),
+      styleConfig: persistedStyle(styleConfig),
+    },
+    minCanvasHeight,
+  );
+  return clampCanvasHeightForPersist(fitted, minCanvasHeight);
 }
 
 /** 与保存后内存态一致的指纹（不再 pack，保证 WYSIWYG 与 DB 一致） */

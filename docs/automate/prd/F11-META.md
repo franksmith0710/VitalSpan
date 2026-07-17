@@ -45,12 +45,12 @@
 - **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07
 ### [META-004] Dataset CRUD M1-DATASET
 
-- **状态**：已实现（M-FINAL F-D r244 收官；**M-DEPTH F-A 深度 companion 进行中**）
+- **状态**：已实现（M-FINAL F-D r244 + **M-DEPTH F-A** ORM/可视化编辑 · 2026-07-10）
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：四期
-- **描述**：Dataset CRUD M1-DATASET（SRS 追溯项）。当前 L1 为内存 store；M-DEPTH 将持久化与可视化编辑升至对标 DE/SS 可用深度。
+- **描述**：Dataset CRUD M1-DATASET（SRS 追溯项）。**ORM 持久化**（`datasets` 表 · Alembic `0023`）；Admin 可视化编辑（`DatasetTablePicker` + `ComputedFieldsEditor`）；Dashboard 可绑定出图。
 - **验收标准**：
-  - [x] Dataset 内存 store + list/create/get/validate（r59 L1：`POST/GET /api/v1/datasets` + `POST validate` + `META_DATASET_*` 错误域）
+  - [x] Dataset 内存 store + list/create/get/validate（r59 L1；已由 ORM 替代）
   - [x] 计算字段名校验链（空 tables/非法 field 名/冲突 409，r59）
   - [x] companion dataset write ACL + duplicate table guard + perf probe（r66：viewer create 403 `META_DATASET_FORBIDDEN`；duplicate table 409；`probe_validate_dataset_budget_ms`/`probe_list_datasets_budget_ms` ≤50ms）
   - [x] PUT/DELETE + bind-query-config + QUERY 四步集成测（r244：`PUT/DELETE /api/v1/datasets/{id}`；`POST bind-query-config`；create→bind→execute 链；`DatasetListPage` 编辑/删除；T-META-R244-004-01~08）
@@ -58,11 +58,11 @@
   - [x] **M-DASH-UX F-A**：检视器改 Dataset/SQL 后编辑态画布即时刷新（`onChange`→`chartConfig`→`ChartRenderer` `executeKey`；Wave1 2026-07-09）
   - [x] 计算字段执行与指标引擎（companion F-F：`computed_sql.py` 白名单表达式注入 SELECT；`execute_config.py` bound dataset 链；T-META-FF-004）
   - [x] **M-DEPTH F-0**：Inspector 真实 columns 探测（`useInspectorColumns` + `chartExecuteProbe`；2026-07-10）
-  - [ ] **M-DEPTH F-A**：Dataset ORM 持久化（替内存 store；重启不丢；Alembic 迁移）
-  - [ ] **M-DEPTH F-A**：Dataset 可视化编辑器（SchemaBrowser 选表/字段；无裸 JSON textarea）
-  - [ ] **M-DEPTH F-A**：计算字段行编辑（name+expression；替 `computedJson` textarea）
+  - [x] **M-DEPTH F-A**：Dataset ORM 持久化（替内存 store；重启不丢；Alembic `0023`）（完成于 2026-07-10）
+  - [x] **M-DEPTH F-A**：Dataset 可视化编辑器（`DatasetTablePicker` + SchemaBrowser 选表/字段；无裸 JSON textarea）（完成于 2026-07-10）
+  - [x] **M-DEPTH F-A**：计算字段行编辑（`ComputedFieldsEditor` name+expression；替 `computedJson` textarea）（完成于 2026-07-10）
   - [ ] Dataset 对标 DE/SS 全量能力（远期 companion；含多表 join 可视化等，不阻塞 F-A 收官）
-- **代码锚点**：`backend/app/metadata/dataset/` · `backend/app/api/v1/datasets.py` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `fe/src/hooks/useInspectorColumns.ts` · `fe/src/lib/chartExecuteProbe.ts` · `fe/src/components/dashboard/WidgetInspector.tsx` · `fe/src/components/charts/useChartExecute.ts` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-004-01~08
+- **代码锚点**：`backend/app/metadata/dataset/models.py` · `backend/migrations/versions/0023_datasets_orm.py` · `backend/app/metadata/dataset/service.py` · `backend/app/api/v1/datasets.py` · `fe/src/pages/admin/datasets/DatasetListPage.tsx` · `fe/src/pages/admin/datasets/DatasetEditorForm.tsx` · `fe/src/pages/admin/datasets/components/DatasetBindPanel.tsx` · `fe/src/hooks/useInspectorColumns.ts` · `fe/src/lib/chartExecuteProbe.ts` · `fe/src/components/dashboard/ChartEditRail.tsx` · `fe/src/components/charts/useChartExecute.ts` · `tests/test_mfinal_fd_meta_r244.py` T-META-R244-004-01~08
 - **演化建议**：M-DEPTH F-A 优先 ORM + 可视化编辑；全量 DE/SS 对标（多表 join UX 等）留远期
 - **里程碑对齐**：M-FINAL · F-D · 已完成 · 2026-07-07；M-PRODUCT F-A · Dashboard 绑定 · 2026-07-08；**M-DEPTH F-A · 当前节 · 2026-07-10**
 ### [META-005] 物理表元数据登记 M1-ENTITY

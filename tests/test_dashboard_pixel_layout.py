@@ -427,3 +427,18 @@ def test_data_screen_canvas_1920x1080_validates():
     assert layout.canvas is not None
     assert layout.canvas.width == 1920
     assert layout.canvas.height == 1080
+
+
+def test_data_screen_rejects_canvas_height_below_backend_min(client, auth_headers):
+    dashboard_id = _create_dashboard(client, auth_headers)
+    layout = _pixel_layout()
+    layout["canvas"] = {"width": 1920, "height": 583}
+    layout["styleConfig"] = {"surfaceKind": "data-screen", "colorScheme": "dark"}
+
+    response = client.put(
+        f"/api/v1/dashboards/{dashboard_id}/layout",
+        headers=auth_headers,
+        json={"layoutJson": layout},
+    )
+    assert response.status_code == 422
+    _assert_layout_422(response)

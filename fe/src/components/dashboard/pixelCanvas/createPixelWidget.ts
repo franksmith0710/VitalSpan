@@ -1,4 +1,8 @@
 import {
+  isScreenBorderWidget,
+  isScreenClockWidget,
+} from "@/lib/screenVisualAssets";
+import {
   createPaletteWidget,
   type PaletteInsertType,
 } from "../createLayoutWidget";
@@ -15,6 +19,8 @@ export const PIXEL_DEFAULT_FILTER_SIZE = { width: 320, height: 140 };
 export const PIXEL_DEFAULT_TEXT_SIZE = { width: 480, height: 180 };
 export const PIXEL_DEFAULT_MEDIA_SIZE = { width: 480, height: 300 };
 export const PIXEL_DEFAULT_TABS_SIZE = { width: 720, height: 320 };
+export const PIXEL_DEFAULT_SCREEN_CLOCK_SIZE = { width: 420, height: 72 };
+export const PIXEL_DEFAULT_SCREEN_BORDER_SIZE = { width: 560, height: 360 };
 
 export function defaultPixelSizeForWidget(
   widget: Pick<LayoutWidget, "type">,
@@ -27,6 +33,8 @@ function defaultSize(widget: LayoutWidget) {
     case "filter":
       return PIXEL_DEFAULT_FILTER_SIZE;
     case "text":
+      if (isScreenClockWidget(widget)) return PIXEL_DEFAULT_SCREEN_CLOCK_SIZE;
+      if (isScreenBorderWidget(widget)) return PIXEL_DEFAULT_SCREEN_BORDER_SIZE;
       return PIXEL_DEFAULT_TEXT_SIZE;
     case "media":
       return PIXEL_DEFAULT_MEDIA_SIZE;

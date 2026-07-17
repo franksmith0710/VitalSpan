@@ -91,6 +91,8 @@ export type DashboardEditWorkspaceProps = {
   /** 编辑区「更多」辅助对齐网格（与仪表板配置 chrome.showAuxiliaryGrid 联动） */
   showAuxiliaryGrid?: boolean;
   onAuxiliaryGridChange?: (enabled: boolean) => void;
+  /** 数据大屏：工具栏展示装饰组件 */
+  showScreenVisualAssets?: boolean;
   className?: string;
 };
 
@@ -112,6 +114,7 @@ export function DashboardEditWorkspace({
   onActivateDashboardContext,
   showAuxiliaryGrid,
   onAuxiliaryGridChange,
+  showScreenVisualAssets = false,
   className,
 }: DashboardEditWorkspaceProps) {
   return (
@@ -128,6 +131,7 @@ export function DashboardEditWorkspace({
             onInsert={onPaletteInsert}
             onOpenReuse={onOpenReuse}
             onOpenDashboardStyle={onOpenDashboardStyle}
+            showScreenVisualAssets={showScreenVisualAssets}
             showAuxiliaryGrid={showAuxiliaryGrid}
             onAuxiliaryGridChange={onAuxiliaryGridChange}
           />

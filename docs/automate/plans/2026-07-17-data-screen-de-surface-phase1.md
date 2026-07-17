@@ -213,15 +213,17 @@ export function buildDefaultLayoutForSurface(kind: SurfaceKind): DashboardLayout
 
 ---
 
-## Phase 2（规划，不在 Phase 1 执行）
+## Phase 2（2026-07-17 已交付核心）
 
-| Task | 说明 |
-|------|------|
-| ~~T7~~ | ~~后端 `GET /dashboards?surfaceKind=` 筛选 + 测试~~ → **已提前交付**（2026-07-17；`backend/app/dashboard/surface_kind.py`） |
-| T8 | `LayerPanel`：z-index、锁定、隐藏（对标 DE 大屏图层管理） |
-| T9 | `VisualAssetWidget`：边框/时钟/装饰（仅大屏 palette） |
-| T10 | 模板 JSON 导入 / 工作台「从模板新建大屏」 |
-| T11 | 自动刷新倒计时 + `RefreshStatusBadge` |
+| Task | 说明 | 状态 |
+|------|------|------|
+| ~~T7~~ | ~~后端 `GET /dashboards?surfaceKind=` 筛选 + 测试~~ | ✅ 已提前交付 |
+| T8 | `LayerPanel`：z-index、锁定、隐藏 | ✅ |
+| T9 | `VisualAssetWidget`：边框/时钟（素材菜单） | ✅ 基础版 |
+| T10 | 模板 JSON 导入 / 从模板新建大屏 | ✅ 内置模板 + 导入 |
+| T11 | 自动刷新倒计时 + `RefreshStatusBadge` | ✅ preview 页 |
+
+> **缺口与后续**：见 [Phase 2.5 需求说明](./2026-07-17-data-screen-phase25-requirements.md) · [执行计划](./2026-07-17-data-screen-phase25-execute.md)（投放闭环、整屏 embed、Tab 轮播、导出等）。
 
 ## Phase 3（规划）
 

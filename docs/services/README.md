@@ -20,7 +20,7 @@
 |------|----------|----------|--------|------|
 | [core.md](./core.md) | `app/core/` | F01-BOOT | M1 | 已实现 |
 | [nfr.md](./nfr.md) | `app/core/nfr/` | F15-NFR | 横切 | 部分（L1） |
-| [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | 部分（L1 · r59 META-004 dataset） |
+| [metadata.md](./metadata.md) | `app/metadata/` | F11-META | M1（四期） | 部分（L1 · **META-004 ORM + 可视化编辑已实现**） |
 | [datasources.md](./datasources.md) | `app/datasources/` | F03-DS · F04-CONN | 连接层 | 部分（L1 · r59 CONN-018 kingbase） |
 | [query.md](./query.md) | `app/query/` | F05-QUERY | M3 | 部分（L1） |
 | [designer.md](./designer.md) | `app/designer/` | F12-DESIGN | M2（四期） | 部分（L1 · r59 DESIGN-004 workflow-link） |

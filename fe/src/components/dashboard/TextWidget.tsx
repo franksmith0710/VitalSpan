@@ -7,7 +7,13 @@ import { RichTextEditor } from "./RichTextEditor";
 import { TabNestedDragRail } from "./TabNestedDragRail";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import { isRichTextEmpty, textConfigToHtml } from "./richTextHtml";
+import { ScreenBorderDisplay } from "./screen/ScreenBorderDisplay";
+import { ScreenClockDisplay } from "./screen/ScreenClockDisplay";
 import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
+import {
+  isScreenBorderWidget,
+  isScreenClockWidget,
+} from "@/lib/screenVisualAssets";
 
 type TextWidgetProps = {
   widget: LayoutWidget & { textConfig: TextWidgetConfig };
@@ -36,9 +42,12 @@ export function TextWidget({
   const widgetRef = useRef<HTMLDivElement>(null);
   const html = textConfigToHtml(widget.textConfig);
   const inShapeShell = shell === "shape";
+  const screenClock = isScreenClockWidget(widget);
+  const screenBorder = isScreenBorderWidget(widget);
+  const screenVisual = screenClock || screenBorder;
 
   const beginEditing = () => {
-    if (mode !== "edit") return;
+    if (mode !== "edit" || screenVisual) return;
     onSelect?.();
     setIsEditing(true);
   };
@@ -133,7 +142,7 @@ export function TextWidget({
         }
         onDoubleClick={(event) => {
           event.stopPropagation();
-          beginEditing();
+          if (!screenVisual) beginEditing();
         }}
         className={cn(
           "dashboard-no-drag dashboard-scroll min-h-0 flex-1 overflow-auto",
@@ -149,6 +158,10 @@ export function TextWidget({
             onCommit={commit}
             onCancel={cancel}
           />
+        ) : screenClock ? (
+          <ScreenClockDisplay />
+        ) : screenBorder ? (
+          <ScreenBorderDisplay />
         ) : isRichTextEmpty(html) ? (
           <p
             className={cn(

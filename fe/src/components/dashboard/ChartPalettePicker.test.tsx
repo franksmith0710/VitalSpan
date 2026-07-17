@@ -44,16 +44,20 @@ describe("ChartPalettePicker", () => {
     expect(screen.getByTestId("chart-palette-custom")).toBeInTheDocument();
   });
 
-  it("selects preset via always-visible inline menu in dense chart inspector mode", async () => {
+  it("selects preset via collapsible inline menu in dense chart inspector mode", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<ChartPalettePicker dense showInherit value={undefined} onChange={onChange} />);
 
+    expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "配色方案" }));
     expect(screen.getByTestId("chart-palette-inline-menu-panel")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "配色方案" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("option", { name: /清透/ }));
     expect(onChange).toHaveBeenCalledWith("clarity", expect.any(Array));
+    expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
   });
 
   it("opens custom palette editor and resets to preset", async () => {

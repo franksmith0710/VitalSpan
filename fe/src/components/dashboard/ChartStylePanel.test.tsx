@@ -63,8 +63,8 @@ describe("ChartStylePanel", () => {
     );
 
     expect(await screen.findByRole("button", { name: "基础样式" })).toBeInTheDocument();
-    expect(screen.getByLabelText("当前配色方案")).toBeInTheDocument();
-    expect(screen.getByTestId("chart-palette-inline-menu-panel")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
+    expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "渐变颜色" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "显示图表标签" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "显示图表提示" })).toBeInTheDocument();
@@ -94,6 +94,7 @@ describe("ChartStylePanel", () => {
       </QueryClientProvider>,
     );
 
+    await user.click(screen.getByRole("button", { name: "配色方案" }));
     await user.click(screen.getByRole("option", { name: /浅韵/ }));
 
     expect(onChange).toHaveBeenCalledWith(
@@ -103,6 +104,7 @@ describe("ChartStylePanel", () => {
         }),
       }),
     );
+    expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
   });
 
   it("re-renders palette display after provider onChange updates widget", async () => {
@@ -131,11 +133,13 @@ describe("ChartStylePanel", () => {
       </QueryClientProvider>,
     );
 
-    await user.click(await screen.findByRole("option", { name: /浅韵/ }));
+    await user.click(screen.getByRole("button", { name: "配色方案" }));
+    await user.click(screen.getByRole("option", { name: /浅韵/ }));
 
     const lastConfig = onChange.mock.calls.at(-1)?.[0];
     expect(readChartDeStyle(lastConfig).paletteId).toBe("pastel");
-    expect(await screen.findByLabelText("当前配色方案")).toHaveTextContent("浅韵");
+    expect(screen.getByRole("button", { name: "配色方案" })).toHaveTextContent("浅韵");
+    expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
   });
 
   it("table shows only table-specific sections", () => {

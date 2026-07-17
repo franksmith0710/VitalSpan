@@ -10,6 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
+import { resolvePersistedCanvasMinHeight } from "@/lib/canvasPersistPolicy";
 import { cn } from "@/lib/utils";
 import {
   isPaletteDragEvent,
@@ -88,7 +89,8 @@ type PixelCanvasProps = {
 
 export const PIXEL_CANVAS_GUTTER = 0;
 
-export const PIXEL_CANVAS_MIN_HEIGHT = 320;
+export { PIXEL_CANVAS_MIN_HEIGHT } from "./constants";
+import { PIXEL_CANVAS_MIN_HEIGHT } from "./constants";
 
 /** 保留导出供历史测试引用；DE 模型不在拖动中推挤邻组件 */
 export const PIXEL_PREVIEW_THROTTLE_MS = 32;
@@ -104,13 +106,14 @@ export function canvasScaleForHost(
 
 export function fitCanvasHeightToContent(
   layout: DashboardLayoutV2,
-  minHeight = PIXEL_CANVAS_MIN_HEIGHT,
+  minHeight?: number,
 ): DashboardLayoutV2 {
+  const resolvedMin = minHeight ?? resolvePersistedCanvasMinHeight(layout);
   const lowest = getTopLevelPixelWidgets(layout.widgets).reduce(
     (max, widget) => Math.max(max, widget.y + widget.height),
     0,
   );
-  const height = Math.max(minHeight, lowest);
+  const height = Math.max(resolvedMin, lowest);
   if (height === layout.canvas.height) return layout;
   return {
     ...layout,

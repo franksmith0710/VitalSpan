@@ -1,21 +1,23 @@
 import type { DashboardLayout, DashboardLayoutV2 } from "@/components/dashboard/layoutUtils";
 import {
+  DATA_SCREEN_CANVAS,
+  PERSISTED_CANVAS_MIN_HEIGHT,
+  readCanvasSurfaceKind,
+  resolvePersistedCanvasMinHeight,
+} from "@/lib/canvasPersistPolicy";
+import {
   buildDefaultLayoutForSurface,
   type SurfaceKind,
 } from "@/lib/surfacePreset";
 
 export type DashboardSurfaceKind = SurfaceKind;
 
-export const DATA_SCREEN_CANVAS = {
-  width: 1920,
-  height: 1080,
-} as const;
+export { DATA_SCREEN_CANVAS, PERSISTED_CANVAS_MIN_HEIGHT, resolvePersistedCanvasMinHeight };
 
 export function readSurfaceKind(
   layout?: Pick<DashboardLayout, "styleConfig"> | null,
 ): DashboardSurfaceKind {
-  const kind = layout?.styleConfig?.surfaceKind;
-  return kind === "data-screen" ? "data-screen" : "dashboard";
+  return readCanvasSurfaceKind(layout);
 }
 
 export function isDataScreenLayout(

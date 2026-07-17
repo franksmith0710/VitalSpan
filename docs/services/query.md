@@ -20,11 +20,11 @@
 | In | Out |
 |----|-----|
 | 查询编排、执行、结果返回 | 连接器与池（→ `datasources`） |
-| M3-LITE 直连 SQL + mode=table | 四期 Dataset 语义层（→ `metadata`） |
+| M3-LITE 直连 SQL + mode=table | Dataset 语义解析全量（多表 join 可视化等远期） |
 | L1 chart_query_bindings CRUD + bindingId 执行 | Native 查询执行器（仅路由守卫 L1） |
 | L1 配置元模型存储（`query_conditions`/`compute_rules`/… JSON） | 设计器画布 UI |
-| 已存 `dataset_query` 翻译与执行（configId→SQL→execute） | Dataset ORM/META-004 CRUD（companion） |
-| `query/dataset/guard` 第三路径 routing + ACL/readonly | Dataset ORM/META-004 CRUD（companion） |
+| 已存 `dataset_query` 翻译与执行（`execute_config.py` → 真实 SQL） | Dataset CRUD（→ `metadata`） |
+| `query/dataset/guard` 第三路径 routing + ACL/readonly | |
 | `query/native/guard` 路由模式探测 + native spec 校验 | SQL 模式执行（仍走 sql 路径） |
 | 执行前 RLS WHERE 注入 | 图表/Dashboard 持久化（→ `dashboard` / `designer`） |
 | | M5 VIZ 渲染 |
@@ -47,7 +47,8 @@
 | `query/native/guard` | `resolve_query_mode` + `validate_native_spec` | QUERY-003 | L1 已实现 |
 | `query/native/executor` | `NativeQueryExecutor`（MongoDB/ES/OpenSearch native 出数） | QUERY-003 | L1 已实现（r236） |
 | `query/dataset/guard` | 第三路径 dataset + 内置 ACL registry | QUERY-009 | L1 已实现（r53） |
-| `query/dataset/executor` | execute-plan 四步链 companion（stub） | QUERY-009 | companion 已实现（r57） |
+| `query/dataset/executor` | execute-plan 四步链 companion（契约/探针） | QUERY-009 | companion 已实现（r57） |
+| `query/dataset/execute_config.py` | `POST /query/dataset/execute` 真实 SQL 出数（M-DEPTH F-A） | QUERY-009 | **已实现**（2026-07-10） |
 | `query/dialects` | MySQL/PostgreSQL/ClickHouse 方言适配 | QUERY-004 | 已实现 |
 | `rls/guard` | 行级过滤注入 | QUERY-006 | 已实现 |
 
@@ -81,8 +82,14 @@
 
 - **QUERY-007**：`dataset_query` 配置类型 + `DatasetQueryConfigPayload` 校验 + `config_store/access.py` owner 守卫
 - **QUERY-008**：`translator/from_config.py` → `POST /query/configs/{id}/translate`
-- **QUERY-009**：`dataset/execute_config.py` → `POST /query/dataset/execute`（与 r53 内置 `demo-orders` 正交）
+- **QUERY-009**：`dataset/execute_config.py` → `POST /query/dataset/execute`（真实 `QueryExecutor` 出数；**生产主路径**；与 r53 内置 `demo-orders` 正交）
 - **集成测**：`tests/test_mfinal_fd_r243.py` ≥18 断言
+
+### M-DEPTH F-A（QUERY-009 · 2026-07-10）
+
+- **`execute_dataset_from_config`**：`config_store` 读取 `dataset_query` → `translate_from_config_record` → `QueryExecutor.execute` → 真实 rows
+- **与 execute-plan 分工**：`/dataset/execute-plan` 保留契约/探针；图表 `useChartExecute` mode=dataset 走 `/dataset/execute`
+- **FE**：`DatasetBindPanel` 创建并绑定 config；`ChartEditRail` `DatasetPickerPanel`；`useChartExecute` dataset 路径
 
 ### r52 companion 质量推分（QUERY-003）
 

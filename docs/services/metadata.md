@@ -5,7 +5,7 @@
 | 模块路径 | `backend/app/metadata/` |
 | PRD | [F11-META](../automate/prd/F11-META.md) · META-001 ~ META-006 |
 | 里程碑 | M1（四期 Dataset 语义层） |
-| 状态 | **部分（L1）** · F-D r244 收官（META-001~004 写 ACL + Admin CRUD UI） |
+| 状态 | **部分（L1）** · META-004 ORM + Admin UI 已实现（M-DEPTH F-A · 2026-07-10） |
 
 ## 职责
 
@@ -27,8 +27,8 @@
 | 维度字典 CRUD、枚举值注册/列表/删除 | 物理字段映射（META-001 后续） |
 | 实体类型 schema CRUD + GOV openapi 引用计数 | 物理字段映射（META-001 后续） |
 | Dataset 元数据项 validate/list/create/update/delete/bind（`datasets` 表 ORM） | 物理字段映射（META-001 后续） |
-| Dataset 语义模型 CRUD（ORM + Alembic `0023`） | 查询执行（→ `query`；主路径 `POST /query/dataset/execute`） |
-| 一至三期 | 图表直连查询不走本域 |
+| Dataset 语义模型 CRUD + 可视化编辑 + 计算字段 | 查询执行（→ `query`；主路径 `POST /query/dataset/execute`） |
+| 图表可选绑定 Dataset（与直连 SQL 并存） | 一至三期「不经 Dataset」仅指合同主路径，非禁用本域 |
 
 ## 依赖
 
@@ -46,7 +46,7 @@
 | `ThemeNode` / `themes/service` | 主题树 CRUD/move、环检测 | META-002 | L1 已实现 |
 | `DimensionDict` / `dimensions/service` | 维度字典 CRUD + 枚举值注册 | META-003 | L1 已实现 |
 | `entity/service` | 实体类型 schema CRUD + `validate_entity_type_ref` | META-006 | L1 已实现 r54 |
-| `dataset/service` + `DatasetRecord` | Dataset ORM（`datasets`）+ validate/list/create/update/delete/bind + scope ACL + probe | META-004 | M-DEPTH T1 ORM 持久化 |
+| `dataset/service` + `DatasetRecord` | Dataset ORM（`datasets` · Alembic `0023`）+ validate/list/create/update/delete/bind + scope ACL + probe | META-004 | **已实现**（M-DEPTH F-A） |
 | `physical/service` | 物理表 validate/register/list/update/delete + register-from-schema + `_ds_table_index` 复合唯一 | META-005 | L1 M8 r232 收官 |
 | `DatasetService` | 语义层 CRUD（ORM 四期） | META-001~003 | 待建 |
 | `SemanticResolver` | 逻辑 → 物理 SQL | META-004 | 待建 |
@@ -102,7 +102,7 @@
 ### r244 F-D 收官（META-001~004 · 2026-07-07）
 
 - **META-001~003**：共享写 ACL + Admin CRUD UI（`metadata-panels.tsx`）；维度可选 `themeNodeId` FK
-- **META-004**：`PUT/DELETE /datasets/{id}`、`POST …/bind-query-config`；`boundConfigId` 内存字段；四步 QUERY 集成测 `tests/test_mfinal_fd_meta_r244.py`（28 条）
+- **META-004**：`PUT/DELETE /datasets/{id}`、`POST …/bind-query-config`；`bound_config_id` ORM 列（Alembic `0023`）；四步 QUERY 集成测 `tests/test_mfinal_fd_meta_r244.py`（28 条）；M-DEPTH F-A：`DatasetTablePicker` + `ComputedFieldsEditor` + `DatasetBindPanel`
 
 ## 关联 API
 
