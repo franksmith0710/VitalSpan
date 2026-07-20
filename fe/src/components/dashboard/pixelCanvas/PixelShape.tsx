@@ -45,7 +45,6 @@ import {
   useWidgetShellLegend,
 } from "./widgetShellLegendContext";
 import { dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
-import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
 import { usePaletteDragActive } from "./paletteDragContext";
 
@@ -373,8 +372,6 @@ export function PixelShape({
     return registerPreviewSync(widget.id, (rect) => {
       displayRef.current = rect;
       syncOuterStyle(rect);
-      if (activeRef.current) return;
-      setDisplay((previous) => (pixelRectsNearlyEqual(previous, rect) ? previous : rect));
     });
   }, [widget.id, registerPreviewSync]);
 
@@ -384,7 +381,7 @@ export function PixelShape({
     displayRef.current = next;
     setDisplay(next);
     syncOuterStyle(next);
-  }, [widget]);
+  }, [widget.id, widget.x, widget.y, widget.width, widget.height]);
 
   useEffect(
     () => () => {

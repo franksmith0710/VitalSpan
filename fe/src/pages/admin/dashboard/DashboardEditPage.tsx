@@ -775,27 +775,26 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const handleDataScreenCanvasSize = useCallback(
     (width: number, height: number) => {
-      if (!canSave || layout.version !== 2) return;
+      const currentLayout = layoutRef.current;
+      if (!canSave || currentLayout.version !== 2) return;
       const next = clampDataScreenCanvasSize(width, height);
       if (
-        next.width === layout.canvas.width &&
-        next.height === layout.canvas.height
+        next.width === currentLayout.canvas.width &&
+        next.height === currentLayout.canvas.height
       ) {
         return;
       }
-      resetLayout(
+      setPixelLayout(
         clampPixelLayoutToCanvasBounds({
-          ...layout,
+          ...currentLayout,
           canvas: next,
         }),
       );
       if (next.width !== width || next.height !== height) {
         toast.message(`画布尺寸已调整为 ${next.width}×${next.height}（已钳制到允许范围）`);
-      } else {
-        toast.message(`画布尺寸已更新为 ${next.width}×${next.height}`);
       }
     },
-    [canSave, layout, resetLayout],
+    [canSave, setPixelLayout],
   );
 
   const handleDeleteDashboard = async () => {
@@ -891,9 +890,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           );
           applyLinkage(nextLinkage);
         } catch (filterErr) {
-          toast.error(mapApiError(filterErr));
+          toast.error(`布局已保存，但筛选联动保存失败：${mapApiError(filterErr)}`);
           setSavedLinkageSnapshot(linkageSnapshot(normalized, currentLinkage));
-          toast.success("看板布局已保存");
           return true;
         }
       }

@@ -103,9 +103,10 @@ def _load_linkage_payload(session: Session, dashboard_id: uuid.UUID) -> GlobalFi
 
 def _widget_ids(session: Session, dashboard_id: uuid.UUID) -> set[str]:
     dashboard = dash_service.get_dashboard(session, dashboard_id)
-    layout = dashboard.layout_json or {}
-    widgets = layout.get("widgets") or []
-    return {str(w.get("id")) for w in widgets if w.get("id")}
+    layout = dashboard.layout_json
+    if layout is None:
+        return set()
+    return {str(widget.id) for widget in layout.widgets if widget.id}
 
 
 def _validate_linkage(session: Session, item: GlobalFilterLinkageItem) -> GlobalFilterLinkageItem:

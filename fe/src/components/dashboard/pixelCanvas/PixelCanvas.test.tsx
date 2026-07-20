@@ -169,6 +169,104 @@ describe("PixelCanvas", () => {
     expect(layoutsOverlap(onChange.mock.calls[0][0], 0)).toBe(true);
   });
 
+  it("clamps move to bottom canvas bound on data-screen", async () => {
+    const dataScreenLayout: DashboardLayoutV2 = {
+      ...layout,
+      canvas: { width: 1920, height: 1080 },
+      styleConfig: { surfaceKind: "data-screen" },
+    };
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={dataScreenLayout}
+        styleConfig={{ surfaceKind: "data-screen" }}
+        designViewportLocked
+        viewportFit="data-screen"
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
+      pointerId: 12,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, {
+      pointerId: 12,
+      clientX: 0,
+      clientY: 5000,
+    });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(document, {
+      pointerId: 12,
+      clientX: 0,
+      clientY: 5000,
+    });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const moved = onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w1");
+    expect(moved?.y).toBeLessThanOrEqual(1080 - widget.height);
+    expect(moved?.y).toBe(880);
+  });
+
+  it("keeps resized widget geometry after data-screen resize commit", async () => {
+    const dataScreenLayout: DashboardLayoutV2 = {
+      ...layout,
+      canvas: { width: 1920, height: 1080 },
+      styleConfig: { surfaceKind: "data-screen" },
+    };
+    let currentLayout = dataScreenLayout;
+    const onChange = vi.fn((next: DashboardLayoutV2) => {
+      currentLayout = next;
+    });
+    const { rerender } = render(
+      <PixelCanvas
+        mode="edit"
+        layout={currentLayout}
+        styleConfig={{ surfaceKind: "data-screen" }}
+        designViewportLocked
+        viewportFit="data-screen"
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span data-testid={`widget-body-${item.id}`}>{item.title}</span>}
+      />,
+    );
+    const handle = screen.getByLabelText("调整组件大小：右下");
+    fireEvent.pointerDown(handle, {
+      pointerId: 21,
+      clientX: 400,
+      clientY: 280,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 21, clientX: 420, clientY: 300 });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(document, { pointerId: 21, clientX: 420, clientY: 300 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const resized = onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w1");
+    expect(resized).toMatchObject({ width: 320, height: 220 });
+
+    rerender(
+      <PixelCanvas
+        mode="edit"
+        layout={currentLayout}
+        styleConfig={{ surfaceKind: "data-screen" }}
+        designViewportLocked
+        viewportFit="data-screen"
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span data-testid={`widget-body-${item.id}`}>{item.title}</span>}
+      />,
+    );
+
+    const shape = screen.getByTestId("pixel-shape-w1");
+    expect(shape).toHaveStyle({ width: "320px", height: "220px" });
+    expect(screen.getByTestId("widget-body-w1")).toBeInTheDocument();
+  });
+
   it("applies DE reflow to neighbors on pointer up after resize", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",

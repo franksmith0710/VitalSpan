@@ -1,6 +1,15 @@
 /** 横/纵标尺统一厚度（px） */
 export const CANVAS_RULER_SIZE_PX = 28;
 
+/** 大屏编辑视口固定色（不跟随壳层浅/深主题） */
+export const DATA_SCREEN_VIEWPORT_BG = "#0a0f1a";
+export const DATA_SCREEN_RULER_BG = "#121a27";
+export const DATA_SCREEN_RULER_EDGE = "#1c2633";
+export const DATA_SCREEN_RULER_LABEL = "#8b9cb3";
+export const DATA_SCREEN_RULER_TICK_MAJOR = "#6b7f96";
+export const DATA_SCREEN_RULER_TICK_MINOR = "#4d6075";
+export const DATA_SCREEN_RULER_TICK_MICRO = "#354558";
+
 const MIN_TICK_GAP_PX = 4;
 const MIN_LABEL_GAP_PX = 40;
 

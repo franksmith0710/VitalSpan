@@ -429,6 +429,34 @@ def test_data_screen_canvas_1920x1080_validates():
     assert layout.canvas.height == 1080
 
 
+def test_data_screen_custom_canvas_within_bounds_validates():
+    layout = DashboardLayout.model_validate(
+        {
+            "version": 2,
+            "canvas": {"width": 1944, "height": 1174},
+            "widgets": [],
+            "globalFilters": [],
+            "styleConfig": {"surfaceKind": "data-screen", "colorScheme": "dark"},
+        }
+    )
+    assert layout.canvas is not None
+    assert layout.canvas.width == 1944
+    assert layout.canvas.height == 1174
+
+
+def test_data_screen_rejects_canvas_width_out_of_bounds():
+    with pytest.raises(ValidationError):
+        DashboardLayout.model_validate(
+            {
+                "version": 2,
+                "canvas": {"width": 700, "height": 1080},
+                "widgets": [],
+                "globalFilters": [],
+                "styleConfig": {"surfaceKind": "data-screen"},
+            }
+        )
+
+
 def test_data_screen_rejects_canvas_height_below_backend_min(client, auth_headers):
     dashboard_id = _create_dashboard(client, auth_headers)
     layout = _pixel_layout()

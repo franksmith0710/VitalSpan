@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -9,7 +10,8 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import { CanvasRuler } from "./CanvasRuler";
-import { CANVAS_RULER_SIZE_PX } from "./canvasRulerUtils";
+import { canvasRulerChromeVars, canvasRulerSurfaceStyle } from "./canvasRulerChrome";
+import { CANVAS_RULER_SIZE_PX, DATA_SCREEN_VIEWPORT_BG } from "./canvasRulerUtils";
 import {
   applyViewportPanTranslate,
   type ViewportPanSession,
@@ -20,9 +22,22 @@ import {
   type PresentationMode,
 } from "./presentationScale";
 
-const MIN_USER_ZOOM = 0.25;
-const MAX_USER_ZOOM = 2;
-const ZOOM_WHEEL_STEP = 0.08;
+import { CanvasScaleArea } from "./CanvasScaleArea";
+import {
+  CanvasViewportScrollbarHorizontal,
+  CanvasViewportScrollbarVertical,
+  canvasViewportScrollbarStyle,
+} from "./CanvasViewportScrollbars";
+import {
+  clampViewportPan,
+  computeViewportScrollMetrics,
+  CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX,
+} from "./dataScreenViewportScroll";
+import {
+  clampDataScreenUserZoom,
+  DATA_SCREEN_ZOOM_WHEEL_STEP,
+  stepDataScreenUserZoom,
+} from "./dataScreenViewportZoom";
 
 export type DataScreenEditViewportProps = {
   canvasWidth: number;
@@ -46,7 +61,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 function clampZoom(value: number): number {
-  return Math.min(MAX_USER_ZOOM, Math.max(MIN_USER_ZOOM, value));
+  return clampDataScreenUserZoom(value);
 }
 
 export function DataScreenEditViewport({
@@ -101,6 +116,52 @@ export function DataScreenEditViewport({
       ? 0
       : baseTransform.translateY;
 
+  const contentLayout = useMemo(
+    () => ({
+      scaledWidth,
+      scaledHeight,
+      offsetX,
+      offsetY,
+    }),
+    [scaledWidth, scaledHeight, offsetX, offsetY],
+  );
+
+  const scrollMetrics = useMemo(
+    () => computeViewportScrollMetrics(viewportSize, contentLayout, viewPan),
+    [viewportSize, contentLayout, viewPan],
+  );
+  const boundsRef = useRef(scrollMetrics.bounds);
+  boundsRef.current = scrollMetrics.bounds;
+
+  const applyPan = useCallback(
+    (next: { x: number; y: number } | ((prev: { x: number; y: number }) => { x: number; y: number })) => {
+      setViewPan((previous) => {
+        const resolved = typeof next === "function" ? next(previous) : next;
+        return clampViewportPan(resolved, boundsRef.current);
+      });
+    },
+    [],
+  );
+
+  const applyPanPatch = useCallback(
+    (patch: { x?: number; y?: number }) => {
+      applyPan((previous) => ({
+        x: patch.x ?? previous.x,
+        y: patch.y ?? previous.y,
+      }));
+    },
+    [applyPan],
+  );
+
+  useEffect(() => {
+    setViewPan((previous) => clampViewportPan(previous, scrollMetrics.bounds));
+  }, [
+    scrollMetrics.bounds.minPanX,
+    scrollMetrics.bounds.maxPanX,
+    scrollMetrics.bounds.minPanY,
+    scrollMetrics.bounds.maxPanY,
+  ]);
+
   const endPanSession = useCallback(() => {
     panSessionRef.current = null;
   }, []);
@@ -128,7 +189,7 @@ export function DataScreenEditViewport({
       if (!session || session.pointerId !== event.pointerId) return;
       event.preventDefault();
       const next = applyViewportPanTranslate(session, event.clientX, event.clientY);
-      setViewPan({ x: next.panX, y: next.panY });
+      applyPan({ x: next.panX, y: next.panY });
     };
 
     const onPointerEnd = (event: PointerEvent) => {
@@ -169,13 +230,41 @@ export function DataScreenEditViewport({
       document.removeEventListener("pointerup", onPointerEnd, { capture: true });
       document.removeEventListener("pointercancel", onPointerEnd, { capture: true });
     };
-  }, [endPanSession]);
+  }, [applyPan, endPanSession]);
 
-  const handleWheel = useCallback((event: ReactWheelEvent<HTMLDivElement>) => {
-    if (!event.ctrlKey && !event.metaKey) return;
-    event.preventDefault();
-    const direction = event.deltaY > 0 ? -1 : 1;
-    setUserZoom((previous) => clampZoom(previous + direction * ZOOM_WHEEL_STEP));
+  const handleWheel = useCallback(
+    (event: ReactWheelEvent<HTMLDivElement>) => {
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+        const direction = event.deltaY > 0 ? -1 : 1;
+        setUserZoom((previous) => clampZoom(previous + direction * DATA_SCREEN_ZOOM_WHEEL_STEP));
+        return;
+      }
+      if (event.deltaX === 0 && event.deltaY === 0) return;
+      event.preventDefault();
+      applyPan((previous) => ({
+        x: previous.x - event.deltaX,
+        y: previous.y - event.deltaY,
+      }));
+    },
+    [applyPan],
+  );
+
+  const handleZoomChange = useCallback((zoom: number) => {
+    setUserZoom(clampZoom(zoom));
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    setUserZoom((previous) => stepDataScreenUserZoom(previous, 1));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setUserZoom((previous) => stepDataScreenUserZoom(previous, -1));
+  }, []);
+
+  const handleResetViewport = useCallback(() => {
+    setUserZoom(1);
+    setViewPan({ x: 0, y: 0 });
   }, []);
 
   const handleViewportPointerDownCapture = useCallback(
@@ -185,7 +274,8 @@ export function DataScreenEditViewport({
       if (isPixelCanvasWidgetTarget(event.target)) return;
       if (
         event.target instanceof Element &&
-        event.target.closest("[data-viewport-zoom-hint]")
+        (event.target.closest("[data-canvas-scale-area]") ||
+          event.target.closest("[data-testid^='canvas-scrollbar-']"))
       ) {
         return;
       }
@@ -218,23 +308,25 @@ export function DataScreenEditViewport({
         className="grid min-h-0 flex-1"
         style={
           {
-            "--canvas-ruler-size": `${CANVAS_RULER_SIZE_PX}px`,
-            gridTemplateColumns: `${CANVAS_RULER_SIZE_PX}px minmax(0, 1fr)`,
-            gridTemplateRows: `${CANVAS_RULER_SIZE_PX}px minmax(0, 1fr)`,
+            ...canvasViewportScrollbarStyle(),
+            ...canvasRulerChromeVars(),
+            gridTemplateColumns: `${CANVAS_RULER_SIZE_PX}px minmax(0, 1fr) ${CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX}px`,
+            gridTemplateRows: `${CANVAS_RULER_SIZE_PX}px minmax(0, 1fr) ${CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX}px`,
           } as CSSProperties
         }
       >
-        <div
-          className="shrink-0 border-r border-b border-gray-300/80 bg-[#e8eaef] dark:border-white/10 dark:bg-[#111827]"
-          style={{ width: CANVAS_RULER_SIZE_PX, height: CANVAS_RULER_SIZE_PX }}
-          aria-hidden
-        />
+        <div style={canvasRulerSurfaceStyle} aria-hidden />
         <CanvasRuler
           orientation="horizontal"
           designLength={canvasWidth}
           scale={scale}
           scrollOffsetPx={rulerOffsetX}
           viewportPx={viewportSize.width}
+        />
+        <div
+          className="bg-[#0d1117]"
+          style={{ width: CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX, height: CANVAS_RULER_SIZE_PX }}
+          aria-hidden
         />
         <CanvasRuler
           orientation="vertical"
@@ -246,9 +338,10 @@ export function DataScreenEditViewport({
         <div
           ref={viewportRef}
           className={cn(
-            "relative min-h-0 min-w-0 overflow-hidden bg-[#0a0f1a]",
+            "relative min-h-0 min-w-0 overflow-hidden",
             spacePan && "cursor-grab",
           )}
+          style={{ backgroundColor: DATA_SCREEN_VIEWPORT_BG }}
           data-canvas-scale-viewport
           onWheel={handleWheel}
           onPointerDownCapture={handleViewportPointerDownCapture}
@@ -270,13 +363,38 @@ export function DataScreenEditViewport({
               {children}
             </div>
           </div>
-          <p
-            data-viewport-zoom-hint
-            className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/50 px-2 py-1 text-[10px] text-white/80 select-none"
-          >
-            空格拖动画布 · Ctrl+滚轮缩放 · {Math.round(userZoom * 100)}%
-          </p>
+          <CanvasScaleArea
+            userZoom={userZoom}
+            spacePanActive={spacePan}
+            onZoomChange={handleZoomChange}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onResetViewport={handleResetViewport}
+          />
         </div>
+        <CanvasViewportScrollbarVertical
+          metrics={scrollMetrics.vertical}
+          bounds={scrollMetrics.bounds}
+          onPanChange={applyPanPatch}
+        />
+        <div
+          className="bg-[#0d1117]"
+          style={{ width: CANVAS_RULER_SIZE_PX, height: CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX }}
+          aria-hidden
+        />
+        <CanvasViewportScrollbarHorizontal
+          metrics={scrollMetrics.horizontal}
+          bounds={scrollMetrics.bounds}
+          onPanChange={applyPanPatch}
+        />
+        <div
+          className="bg-[#0d1117]"
+          style={{
+            width: CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX,
+            height: CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX,
+          }}
+          aria-hidden
+        />
       </div>
     </div>
   );

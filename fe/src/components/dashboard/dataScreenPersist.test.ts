@@ -4,7 +4,7 @@ import { insertPixelPaletteWidget } from "./pixelCanvas/createPixelWidget";
 import { persistDashboardLayout, hydrateDashboardStyle } from "./stylePipeline";
 
 describe("data-screen persist bounds", () => {
-  it("expands canvas height when widgets extend below 1080", () => {
+  it("keeps fixed canvas height when widgets extend below 1080", () => {
     let layout = buildDefaultLayoutForSurface("data-screen");
     layout = insertPixelPaletteWidget("gauge", layout);
     layout = insertPixelPaletteWidget("line", layout);
@@ -12,6 +12,7 @@ describe("data-screen persist bounds", () => {
     layout = { ...layout, widgets };
     const style = hydrateDashboardStyle(layout.styleConfig);
     const saved = persistDashboardLayout(layout, style);
+    expect(saved.canvas.height).toBe(1080);
     for (const w of saved.widgets) {
       expect(w.y + w.height).toBeLessThanOrEqual(saved.canvas.height);
       expect(w.x + w.width).toBeLessThanOrEqual(saved.canvas.width);

@@ -1,4 +1,5 @@
 import type { DashboardLayout, DashboardLayoutV2 } from "@/components/dashboard/layoutUtils";
+import type { DashboardStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
 import {
   DATA_SCREEN_CANVAS,
   PERSISTED_CANVAS_MIN_HEIGHT,
@@ -15,9 +16,9 @@ export type DashboardSurfaceKind = SurfaceKind;
 export { DATA_SCREEN_CANVAS, PERSISTED_CANVAS_MIN_HEIGHT, resolvePersistedCanvasMinHeight };
 
 export function readSurfaceKind(
-  layout?: Pick<DashboardLayout, "styleConfig"> | null,
+  input?: Pick<DashboardLayout, "styleConfig"> | DashboardStyleConfig | null,
 ): DashboardSurfaceKind {
-  return readCanvasSurfaceKind(layout);
+  return readCanvasSurfaceKind(input);
 }
 
 export function isDataScreenLayout(

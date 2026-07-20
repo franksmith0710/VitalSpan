@@ -10,7 +10,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { resolvePersistedCanvasMinHeight } from "@/lib/canvasPersistPolicy";
+import { readCanvasSurfaceKind, resolvePersistedCanvasMinHeight } from "@/lib/canvasPersistPolicy";
 import { cn } from "@/lib/utils";
 import {
   isPaletteDragEvent,
@@ -124,6 +124,9 @@ export function fitCanvasHeightToContent(
   layout: DashboardLayoutV2,
   minHeight?: number,
 ): DashboardLayoutV2 {
+  if (readCanvasSurfaceKind(layout) === "data-screen") {
+    return layout;
+  }
   const resolvedMin = minHeight ?? resolvePersistedCanvasMinHeight(layout);
   const lowest = getTopLevelPixelWidgets(layout.widgets).reduce(
     (max, widget) => Math.max(max, widget.y + widget.height),
@@ -253,7 +256,7 @@ export function PixelCanvas({
     previewRegistryRef.current.reset(
       activeLayout.widgets.map((widget) => ({ id: widget.id, ...widgetRect(widget) })),
     );
-  }, [layoutGeometryKey, shapeDragWidget, activeLayout.widgets]);
+  }, [layoutGeometryKey, shapeDragWidget]);
   const tabHosts = useMemo(
     () => topLevelWidgets.filter((w) => w.type === "tabs" && w.tabsConfig),
     [topLevelWidgets],
@@ -365,7 +368,8 @@ export function PixelCanvas({
   const editMinScale =
     mode === "edit" && viewportFit === "data-screen" ? 0 : mode === "edit" ? PIXEL_CANVAS_EDIT_MIN_SCALE : 0;
   const hostOverflowLocked = designViewportLocked || viewportFit === "data-screen";
-  const hostCentered = centerContent || viewportFit === "data-screen";
+  const hostCentered =
+    (centerContent || viewportFit === "data-screen") && !designViewportLocked;
   const fixedCanvasBounds = hostOverflowLocked;
 
   const clampWidgetToViewCanvas = useCallback(
@@ -651,7 +655,6 @@ export function PixelCanvas({
         previewTimerRef.current = null;
       }
       pendingPreviewRef.current = null;
-      setShapeDragWidget(null);
 
       const boundedWidget = clampWidgetToViewCanvas(widget);
 
@@ -666,6 +669,7 @@ export function PixelCanvas({
       if (absorbed) {
         onLayoutChange(absorbed);
         clearPreviewChrome(absorbed);
+        setShapeDragWidget(null);
         onSelect?.(absorbHost?.id ?? boundedWidget.id, false);
         return;
       }
@@ -673,6 +677,7 @@ export function PixelCanvas({
       const nextLayout = resolveActiveAt(boundedWidget);
       onLayoutChange(nextLayout);
       clearPreviewChrome(nextLayout);
+      setShapeDragWidget(null);
     },
     [
       activeLayout,

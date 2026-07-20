@@ -221,7 +221,7 @@ redoc: /redoc
 |------|------|-----|------|
 | DashboardView | `protocolVersion` | `1` | FR-VIEW-1 视图文档版本（M5 VIEW-001） |
 | DashboardLayout | `version` | `1 \| 2` | v1 网格布局与 v2 像素布局统一入口；两版均保留 `widgets`、`globalFilters` 和组件公共字段 |
-| DashboardLayout v2 | `canvas` | `{width: 1440, height: int >= 900}` | 持久化规范坐标空间；每个组件矩形必须完整位于 canvas 内 |
+| DashboardLayout v2 | `canvas` | 仪表板 `{width: 1440, height: int >= 900}`；数据大屏 `styleConfig.surfaceKind=data-screen` 时 `{width: 800–7680, height: 600–4320}` | 持久化规范坐标空间；每个组件矩形必须完整位于 canvas 内 |
 
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |

@@ -36,7 +36,7 @@ export function CanvasScaleArea({
   const zoomValue = String(userZoom);
 
   return (
-    <motion.div
+    <div
       data-canvas-scale-area
       className={cn(
         "absolute right-3 bottom-3 z-20 flex max-w-[min(100%,24rem)] items-center gap-2 rounded-lg border border-white/10 bg-[#0d1117]/90 px-2.5 py-1.5 text-[11px] text-white/75 shadow-lg backdrop-blur-sm select-none",
@@ -103,6 +103,6 @@ export function CanvasScaleArea({
       >
         <RotateCcw className="size-3.5" aria-hidden />
       </IconButton>
-    </motion.div>
+    </div>
   );
 }

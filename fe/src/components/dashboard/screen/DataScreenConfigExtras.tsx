@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Download, FileJson } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -54,32 +54,79 @@ function CanvasSizeField({
   id,
   label,
   value,
-  committedValue,
   min,
   max,
   disabled,
-  onDraftChange,
   onCommit,
 }: {
   id: string;
   label: string;
-  value: string;
-  committedValue: number;
+  value: number;
   min: number;
   max: number;
   disabled: boolean;
-  onDraftChange: (next: string) => void;
-  onCommit: () => void;
+  onCommit: (value: number) => void;
 }) {
+  const [draft, setDraft] = useState(String(value));
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAppliedRef = useRef(value);
+
+  useEffect(() => {
+    setDraft(String(value));
+    lastAppliedRef.current = value;
+  }, [value]);
+
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [],
+  );
+
+  const applyValue = (parsed: number) => {
+    if (!Number.isFinite(parsed) || parsed === lastAppliedRef.current) return;
+    lastAppliedRef.current = parsed;
+    onCommit(parsed);
+  };
+
+  const handleChange = (raw: string) => {
+    setDraft(raw);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed)) return;
+    if (parsed >= min && parsed <= max) {
+      applyValue(parsed);
+      return;
+    }
+    debounceRef.current = setTimeout(() => applyValue(parsed), 400);
+  };
+
+  const flushDraft = () => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    const parsed = Number.parseInt(draft, 10);
+    if (!Number.isFinite(parsed)) {
+      setDraft(String(value));
+      return;
+    }
+    applyValue(parsed);
+  };
+
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
+      flushDraft();
       event.currentTarget.blur();
       return;
     }
     if (event.key === "Escape") {
       event.preventDefault();
-      onDraftChange(String(committedValue));
+      setDraft(String(value));
       event.currentTarget.blur();
     }
   };
@@ -96,11 +143,11 @@ function CanvasSizeField({
         min={min}
         max={max}
         step={1}
-        value={value}
+        value={draft}
         disabled={disabled}
         className="h-8"
-        onChange={(event) => onDraftChange(event.target.value)}
-        onBlur={onCommit}
+        onChange={(event) => handleChange(event.target.value)}
+        onBlur={flushDraft}
         onKeyDown={handleKeyDown}
       />
     </div>
@@ -117,35 +164,9 @@ export function DataScreenConfigExtras({
   onPresentationModeChange,
   onCanvasSizeChange,
 }: DataScreenConfigExtrasProps) {
-  const [draftWidth, setDraftWidth] = useState(String(layout.canvas.width));
-  const [draftHeight, setDraftHeight] = useState(String(layout.canvas.height));
-
-  useEffect(() => {
-    setDraftWidth(String(layout.canvas.width));
-    setDraftHeight(String(layout.canvas.height));
-  }, [layout.canvas.width, layout.canvas.height]);
-
   if (layout.version !== 2) return null;
 
   const exportLayout = buildExportLayout(layout, widgets, styleConfig);
-
-  const commitWidth = () => {
-    const parsed = Number.parseInt(draftWidth, 10);
-    if (!Number.isFinite(parsed)) {
-      setDraftWidth(String(layout.canvas.width));
-      return;
-    }
-    onCanvasSizeChange(parsed, layout.canvas.height);
-  };
-
-  const commitHeight = () => {
-    const parsed = Number.parseInt(draftHeight, 10);
-    if (!Number.isFinite(parsed)) {
-      setDraftHeight(String(layout.canvas.height));
-      return;
-    }
-    onCanvasSizeChange(layout.canvas.width, parsed);
-  };
 
   return (
     <section
@@ -155,7 +176,7 @@ export function DataScreenConfigExtras({
       <div>
         <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">大屏工具</p>
         <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-          画布尺寸、编辑区缩放与导出（修改尺寸不自动缩放已有组件，Enter 确认）
+          画布尺寸、编辑区缩放与导出（输入后实时预览，越界组件自动收进画布）
         </p>
       </div>
 
@@ -163,24 +184,20 @@ export function DataScreenConfigExtras({
         <CanvasSizeField
           id="screen-canvas-w"
           label="W"
-          value={draftWidth}
-          committedValue={layout.canvas.width}
+          value={layout.canvas.width}
           min={DATA_SCREEN_CANVAS_BOUNDS.minWidth}
           max={DATA_SCREEN_CANVAS_BOUNDS.maxWidth}
           disabled={!canSave}
-          onDraftChange={setDraftWidth}
-          onCommit={commitWidth}
+          onCommit={(width) => onCanvasSizeChange(width, layout.canvas.height)}
         />
         <CanvasSizeField
           id="screen-canvas-h"
           label="H"
-          value={draftHeight}
-          committedValue={layout.canvas.height}
+          value={layout.canvas.height}
           min={DATA_SCREEN_CANVAS_BOUNDS.minHeight}
           max={DATA_SCREEN_CANVAS_BOUNDS.maxHeight}
           disabled={!canSave}
-          onDraftChange={setDraftHeight}
-          onCommit={commitHeight}
+          onCommit={(height) => onCanvasSizeChange(layout.canvas.width, height)}
         />
       </div>
 

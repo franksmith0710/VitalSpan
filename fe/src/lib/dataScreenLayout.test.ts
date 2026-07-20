@@ -22,6 +22,10 @@ describe("dataScreenLayout", () => {
     expect(isDataScreenLayout(undefined)).toBe(false);
   });
 
+  it("reads surface kind from bare style config", () => {
+    expect(readSurfaceKind({ surfaceKind: "data-screen" })).toBe("data-screen");
+  });
+
   it("builds 1920x1080 dark canvas defaults", () => {
     const layout = buildDefaultDataScreenLayout();
     expect(layout.canvas.width).toBe(1920);

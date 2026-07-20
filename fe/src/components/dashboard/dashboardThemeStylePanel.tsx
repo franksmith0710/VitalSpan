@@ -21,7 +21,7 @@ function ThemePreviewCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "flex w-[8.75rem] shrink-0 flex-col gap-2 rounded-xl border p-2 text-left transition-all",
+        "flex min-w-0 flex-1 flex-col gap-2 rounded-xl border p-2.5 text-left transition-all",
         "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/30",
         selected
           ? "border-brand-500 bg-brand-50/40 shadow-theme-xs ring-1 ring-brand-500/20 dark:border-brand-500 dark:bg-brand-500/10"
@@ -90,7 +90,7 @@ export function DashboardThemeStylePanel({
 
   return (
     <div className="space-y-3" data-testid="dashboard-theme-style-body">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-3">
         <ThemePreviewCard
           label="浅色主题"
           variant="light"

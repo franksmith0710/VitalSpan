@@ -17,6 +17,10 @@ CANVAS_WIDTH = 1440
 DATA_SCREEN_CANVAS_WIDTH = 1920
 MIN_CANVAS_HEIGHT = 900
 DATA_SCREEN_CANVAS_HEIGHT = 1080
+DATA_SCREEN_CANVAS_MIN_WIDTH = 800
+DATA_SCREEN_CANVAS_MAX_WIDTH = 7680
+DATA_SCREEN_CANVAS_MIN_HEIGHT = 600
+DATA_SCREEN_CANVAS_MAX_HEIGHT = 4320
 PIXEL_COLUMN_WIDTH = 120
 MIN_PIXEL_WIDGET_WIDTH = PIXEL_COLUMN_WIDTH
 MIN_PIXEL_WIDGET_HEIGHT = 32
@@ -300,8 +304,8 @@ class LayoutWidget(BaseModel):
 
 class DashboardCanvas(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    width: Literal[1440, 1920] = CANVAS_WIDTH
-    height: int = Field(default=MIN_CANVAS_HEIGHT, ge=MIN_CANVAS_HEIGHT)
+    width: int = Field(default=CANVAS_WIDTH, ge=1)
+    height: int = Field(default=MIN_CANVAS_HEIGHT, ge=1)
 
 
 class DashboardLayout(BaseModel):
@@ -349,6 +353,28 @@ class DashboardLayout(BaseModel):
             return self
         if self.canvas is None:
             raise ValueError("version 2 layout requires canvas")
+        surface_kind = (
+            self.style_config.surface_kind
+            if self.style_config and self.style_config.surface_kind
+            else "dashboard"
+        )
+        if surface_kind == "data-screen":
+            canvas = self.canvas
+            if not (DATA_SCREEN_CANVAS_MIN_WIDTH <= canvas.width <= DATA_SCREEN_CANVAS_MAX_WIDTH):
+                raise ValueError(
+                    f"data-screen canvas width must be between "
+                    f"{DATA_SCREEN_CANVAS_MIN_WIDTH} and {DATA_SCREEN_CANVAS_MAX_WIDTH}"
+                )
+            if not (DATA_SCREEN_CANVAS_MIN_HEIGHT <= canvas.height <= DATA_SCREEN_CANVAS_MAX_HEIGHT):
+                raise ValueError(
+                    f"data-screen canvas height must be between "
+                    f"{DATA_SCREEN_CANVAS_MIN_HEIGHT} and {DATA_SCREEN_CANVAS_MAX_HEIGHT}"
+                )
+        else:
+            if self.canvas.width != CANVAS_WIDTH:
+                raise ValueError("dashboard canvas width must be 1440")
+            if self.canvas.height < MIN_CANVAS_HEIGHT:
+                raise ValueError(f"dashboard canvas height must be >= {MIN_CANVAS_HEIGHT}")
         for widget in self.widgets:
             if None in (widget.x, widget.y, widget.width, widget.height):
                 raise ValueError("version 2 widgets require x, y, width and height")
