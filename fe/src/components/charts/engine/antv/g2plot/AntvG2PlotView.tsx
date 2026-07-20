@@ -74,9 +74,10 @@ function AntvG2PlotViewInner(props: ChartEngineViewProps) {
     plotOptions,
     plan.kind === "g2plot" && !plan.empty,
     interactionHandlers,
+    props.layoutFootprint,
   );
 
-  useEmbeddedChartLiveResize(fill && !plan.empty, containerRef, resize);
+  useEmbeddedChartLiveResize(fill && !plan.empty, containerRef, resize, resize);
 
   if (plan.empty || capped.length === 0) {
     return (

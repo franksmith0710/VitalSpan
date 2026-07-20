@@ -567,7 +567,6 @@ export function PixelCanvas({
 
   const handlePreview = useCallback(
     (widget: PixelLayoutWidget) => {
-      setShapeDragWidget(widget);
       const elapsed = Date.now() - previewThrottleRef.current;
       if (elapsed >= PIXEL_PREVIEW_THROTTLE_MS) {
         flushPreview(widget);
@@ -922,6 +921,7 @@ export function PixelCanvas({
                 styleConfig={widgetChromeStyle}
                 registerPreviewSync={mode === "edit" ? registerPreviewSync : undefined}
                 allowBottomGrowth={!fixedCanvasBounds}
+                suppressResizePreview={allowWidgetOverlap}
               >
                 <PixelWidgetSlot
                   widget={widget}

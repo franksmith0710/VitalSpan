@@ -530,6 +530,11 @@ export const ChartRenderer = memo(function ChartRenderer({
       drillClickField={drillClickField}
       onInteraction={drillInteraction ? handleChartInteraction : undefined}
       onJumpClick={jumpInteraction ? handleJumpClick : undefined}
+      layoutFootprint={
+        embedded && pixelSize && pixelSize.width > 0 && pixelSize.height > 0
+          ? pixelSize
+          : undefined
+      }
     />
   );
 

@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type EChartsReact from "echarts-for-react";
 import { applyDeStyleToEchartsOption } from "@/components/charts/engine/echarts/applyEchartsStyle";
@@ -13,7 +13,9 @@ import { findMapDrillFilterValue } from "@/components/charts/engine/echarts/geo/
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { cn } from "@/lib/utils";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
+import { readEmbeddedContainerSize } from "@/components/charts/engine/embeddedContainerSize";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
+import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
 import { useGeoMapLevel } from "@/hooks/useGeoMapLevel";
 import {
   ADVANCED_CHART_ROW_CAP,
@@ -68,6 +70,7 @@ function EchartsEngineViewInner({
 }: ChartEngineViewProps) {
   const chartRef = useRef<EChartsReact | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const isShapePlaying = usePixelShapePlayer();
   const visualScale = useChartVisualScale();
   const spec = useMemo(() => chartViewModelToRenderSpec(viewModel), [viewModel]);
   const rows = viewModel.dataset.rows;
@@ -203,15 +206,22 @@ function EchartsEngineViewInner({
         (option as { series?: unknown[] }).series!.length === 0));
 
   const resizeChart = useCallback(() => {
-    chartRef.current?.getEchartsInstance()?.resize();
+    const next = readEmbeddedContainerSize(containerRef.current);
+    const chart = chartRef.current?.getEchartsInstance();
+    if (!chart || !next) return;
+    chart.resize({
+      width: next.width,
+      height: next.height,
+      animation: { duration: 0 },
+    });
   }, []);
 
-  useEmbeddedChartLiveResize(fill && !isEmpty, containerRef, resizeChart);
+  useEmbeddedChartLiveResize(fill && !isEmpty, containerRef, resizeChart, resizeChart);
 
   useEffect(() => {
-    if (!fill || isEmpty) return;
+    if (!fill || isEmpty || isShapePlaying) return;
     resizeChart();
-  }, [visualScale, fill, isEmpty, resizeChart]);
+  }, [visualScale, fill, isEmpty, isShapePlaying, resizeChart]);
 
   const placeholderHint =
     isMapPlaceholder ? mapPlaceholderHint
@@ -338,7 +348,7 @@ function EchartsEngineViewInner({
             opts={{ renderer: "canvas" }}
             notMerge
             lazyUpdate
-            autoResize={fill}
+            autoResize={false}
             onEvents={chartEvents}
             data-testid="echarts-chart"
           />

@@ -46,9 +46,9 @@ import {
   WidgetShellLegendProvider,
   useWidgetShellLegend,
 } from "./widgetShellLegendContext";
-import { isResizeInteraction } from "./pixelShapePlayer";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
 import { usePaletteDragActive } from "./paletteDragContext";
+import { dispatchPixelLayoutGeometryCommitted, dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
 
 type ActiveInteraction = {
   pointerId: number;
@@ -87,6 +87,8 @@ type PixelShapeProps = {
   onDragAutoScroll?: (event: PointerEvent) => number;
   /** 仪表板可向下撑高画布；大屏等固定画布场景为 false */
   allowBottomGrowth?: boolean;
+  /** 重叠布局下 resize 仅改活动组件，无需 preview 推挤 */
+  suppressResizePreview?: boolean;
 };
 
 const HANDLE_POSITION: Record<ResizeDirection, string> = {
@@ -323,6 +325,7 @@ export function PixelShape({
   registerPreviewSync,
   onDragAutoScroll,
   allowBottomGrowth = true,
+  suppressResizePreview = false,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
   const paletteDragActive = usePaletteDragActive();
@@ -352,7 +355,6 @@ export function PixelShape({
   const activeRef = useRef<ActiveInteraction | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const contentBaseRef = useRef<{ width: number; height: number } | null>(null);
   const displayRef = useRef(widgetRect(widget));
   const moveFrameRef = useRef<number | null>(null);
   const pendingMoveRef = useRef<{
@@ -362,8 +364,23 @@ export function PixelShape({
     active: ActiveInteraction;
   } | null>(null);
   const [display, setDisplay] = useState(displayRef.current);
-  const [hint, setHint] = useState<string | null>(null);
+  const hintRef = useRef<HTMLParagraphElement>(null);
+  const hintValueRef = useRef<string | null>(null);
   const [isPlayer, setIsPlayer] = useState(false);
+
+  const syncHint = (nextHint: string | null) => {
+    if (hintValueRef.current === nextHint) return;
+    hintValueRef.current = nextHint;
+    const el = hintRef.current;
+    if (!el) return;
+    if (nextHint) {
+      el.textContent = nextHint;
+      el.hidden = false;
+    } else {
+      el.textContent = "";
+      el.hidden = true;
+    }
+  };
 
   const syncOuterStyle = (next: PixelRect) => {
     const el = outerRef.current;
@@ -372,38 +389,6 @@ export function PixelShape({
     el.style.top = `${next.y}px`;
     el.style.width = `${next.width}px`;
     el.style.height = `${next.height}px`;
-  };
-
-  const clearContentLiveScale = () => {
-    contentBaseRef.current = null;
-    const el = contentRef.current;
-    if (el) {
-      el.style.removeProperty("width");
-      el.style.removeProperty("height");
-      el.style.removeProperty("transform");
-      el.style.removeProperty("transform-origin");
-      el.style.removeProperty("will-change");
-    }
-    outerRef.current?.removeAttribute("data-pixel-live-resize");
-  };
-
-  const syncContentLiveScale = (next: PixelRect) => {
-    const active = activeRef.current;
-    if (!active || !isResizeInteraction(active.kind)) return;
-    const el = contentRef.current;
-    const base = contentBaseRef.current;
-    if (!el || !base) return;
-    const scaleX = next.width / active.startRect.width;
-    const scaleY = next.height / active.startRect.height;
-    if (!Number.isFinite(scaleX) || !Number.isFinite(scaleY) || scaleX <= 0 || scaleY <= 0) {
-      return;
-    }
-    outerRef.current?.setAttribute("data-pixel-live-resize", "");
-    el.style.width = `${base.width}px`;
-    el.style.height = `${base.height}px`;
-    el.style.transformOrigin = "top left";
-    el.style.transform = `scale(${scaleX}, ${scaleY})`;
-    el.style.willChange = "transform";
   };
 
   useEffect(() => {
@@ -434,7 +419,9 @@ export function PixelShape({
   const applyDisplay = (next: PixelRect, commitReact = false) => {
     displayRef.current = next;
     syncOuterStyle(next);
-    syncContentLiveScale(next);
+    if (activeRef.current) {
+      dispatchPixelShapeLiveResize();
+    }
     if (commitReact || !activeRef.current) {
       setDisplay(next);
     }
@@ -481,7 +468,7 @@ export function PixelShape({
       canvas,
       allowBottomGrowth,
     );
-    setHint((previous) => (previous === nextHint ? previous : nextHint));
+    syncHint(nextHint);
     return snapPointerRect(raw, event, active);
   };
 
@@ -490,10 +477,12 @@ export function PixelShape({
     const pending = pendingMoveRef.current;
     if (!pending) return;
     pendingMoveRef.current = null;
-    const { rect: next, guides, event: _event, active: _active } = pending;
+    const { rect: next, guides, event: _event, active } = pending;
     applyDisplay(next);
     onMarkGuidesChange?.(guides.length > 0 ? guides : null);
-    onPreview?.(withRect(widget, next));
+    if (!suppressResizePreview || active.kind === "move") {
+      onPreview?.(withRect(widget, next));
+    }
   };
 
   const handlePointerMove = (event: PointerEvent) => {
@@ -525,13 +514,13 @@ export function PixelShape({
       : { rect: widgetRect(widget), guides: [] as MarkLineGuide[] };
     const finalRect = finalSnap.rect;
     activeRef.current = null;
-    setHint(null);
+    syncHint(null);
     onMarkGuidesChange?.(null);
     const revert =
       commit && shouldRevertCommit?.(finalRect, active.startRect) === true;
     const settledRect = revert ? active.startRect : finalRect;
-    clearContentLiveScale();
     applyDisplay(settledRect, true);
+    dispatchPixelLayoutGeometryCommitted();
     setIsPlayer(false);
     onPlayingChange?.(false);
     if (commit && !revert) onCommit?.(withRect(widget, finalRect));
@@ -546,7 +535,7 @@ export function PixelShape({
     event.preventDefault();
     event.stopPropagation();
     onSelect?.(widget.id, event.shiftKey);
-    setHint(null);
+    syncHint(null);
     const pointerId = event.pointerId;
     activeRef.current = {
       pointerId,
@@ -555,14 +544,6 @@ export function PixelShape({
       startRect: displayRef.current,
       skipFirstMove: true,
     };
-    if (isResizeInteraction(kind)) {
-      contentBaseRef.current = {
-        width: contentRef.current?.offsetWidth ?? displayRef.current.width,
-        height: contentRef.current?.offsetHeight ?? displayRef.current.height,
-      };
-    } else {
-      contentBaseRef.current = null;
-    }
     setIsPlayer(true);
     onPlayingChange?.(true);
     bindDocumentDrag(pointerId, {
@@ -624,11 +605,13 @@ export function PixelShape({
         ["--dashboard-shape-gap" as string]: `${Math.max(0, shapeGapPx)}px`,
       }}
     >
-      {hint ? (
-        <p className="sr-only" role="status" data-testid="pixel-boundary-hint">
-          {hint}
-        </p>
-      ) : null}
+      <p
+        ref={hintRef}
+        className="sr-only"
+        role="status"
+        data-testid="pixel-boundary-hint"
+        hidden
+      />
       {selectedInEdit && !paletteDragActive ? (
         <PixelShapeDragEdges
           widgetId={widget.id}

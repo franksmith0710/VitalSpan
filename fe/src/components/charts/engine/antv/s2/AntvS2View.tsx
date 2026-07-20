@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { TableSheet } from "@antv/s2-react";
 import { S2Event, type SpreadSheet } from "@antv/s2";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
@@ -6,8 +6,12 @@ import { buildAntvRenderPlan } from "@/components/charts/engine/antv/buildAntvSp
 import { buildS2DataConfig } from "@/components/charts/engine/antv/s2/buildS2DataConfig";
 import { buildS2SheetOptions } from "@/components/charts/engine/antv/s2/buildS2SheetOptions";
 import { chartViewModelToRenderSpec } from "@/components/charts/engine/buildChartViewModel";
+import {
+  embeddedSizeChanged,
+} from "@/components/charts/engine/embeddedContainerSize";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
+import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
 import {
   computeTableSummaryValues,
   DEFAULT_TABLE_PAGE_SIZE,
@@ -37,6 +41,9 @@ function AntvS2ViewInner(props: ChartEngineViewProps) {
   const sheetRef = useRef<SpreadSheet>();
   const containerRef = useRef<HTMLDivElement>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
+  const isShapePlaying = usePixelShapePlayer();
+  const isShapePlayingRef = useRef(isShapePlaying);
+  isShapePlayingRef.current = isShapePlaying;
   const visualScale = useChartVisualScale();
   const [size, setSize] = useState({ width: 400, height: height ?? 180 });
   const [page, setPage] = useState(1);
@@ -123,6 +130,11 @@ function AntvS2ViewInner(props: ChartEngineViewProps) {
 
   const footerHeight = (summaryFooter ? 36 : 0) + paginationHeight;
 
+  const columnFields = useMemo(() => {
+    const cols = dataCfg.fields?.columns;
+    return Array.isArray(cols) ? cols.filter((field): field is string => Boolean(field)) : allColumns;
+  }, [allColumns, dataCfg.fields?.columns]);
+
   const sheetOptions = useMemo(() => {
     if (!profile) return {};
     return buildS2SheetOptions({
@@ -133,37 +145,78 @@ function AntvS2ViewInner(props: ChartEngineViewProps) {
       plotType: plan.plotType,
       colorScheme: style.scheme,
       widgetShellBg: style.widgetShellBg,
+      columnFields,
     });
-  }, [profile, tableStyle, size.width, size.height, footerHeight, plan.plotType, style.scheme, style.widgetShellBg]);
+  }, [
+    profile,
+    tableStyle,
+    size.width,
+    size.height,
+    footerHeight,
+    plan.plotType,
+    style.scheme,
+    style.widgetShellBg,
+    columnFields,
+  ]);
+
+  const syncSheet = useCallback(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    sheet.setDataCfg(dataCfg);
+    sheet.setOptions(sheetOptions, true);
+    sheet.changeSheetSize(
+      typeof sheetOptions.width === "number" ? sheetOptions.width : size.width,
+      typeof sheetOptions.height === "number" ? sheetOptions.height : size.height,
+    );
+    void sheet.render(false);
+  }, [dataCfg, sheetOptions, size.width, size.height]);
+
+  const handleSheetMounted = useCallback(
+    (sheet: SpreadSheet) => {
+      sheetRef.current = sheet;
+      syncSheet();
+    },
+    [syncSheet],
+  );
+
+  useEffect(() => {
+    syncSheet();
+  }, [syncSheet]);
 
   const remeasure = useMemo(
-    () => () => {
+    () => (force = false) => {
       const el = containerRef.current;
       if (!el) return;
       const next = { width: el.clientWidth || 400, height: el.clientHeight || height || 180 };
-      if (
-        next.width === lastMeasureRef.current.width &&
-        next.height === lastMeasureRef.current.height
-      ) {
+      if (!embeddedSizeChanged(next, lastMeasureRef.current)) {
         return;
       }
       lastMeasureRef.current = next;
-      setSize(next);
-      sheetRef.current?.changeSheetSize(next.width, Math.max(next.height - footerHeight, 120));
+      const sheetHeight = Math.max(next.height - footerHeight, 120);
+      sheetRef.current?.changeSheetSize(next.width, sheetHeight);
       sheetRef.current?.render(false);
+      if (!isShapePlayingRef.current || force) {
+        setSize(next);
+      }
     },
     [footerHeight, height],
   );
 
-  useEmbeddedChartLiveResize(fill, containerRef, remeasure);
+  useEmbeddedChartLiveResize(fill, containerRef, () => remeasure(false), () => remeasure(true));
+
+  useEffect(() => {
+    if (isShapePlaying) return;
+    remeasure();
+  }, [isShapePlaying, remeasure]);
 
   useEffect(() => {
     remeasure();
   }, [visualScale, remeasure]);
 
   useEffect(() => {
+    if (!props.layoutFootprint) return;
     remeasure();
-  }, [dataCfg, sheetOptions, remeasure]);
+  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, remeasure]);
 
   useEffect(() => {
     const sheet = sheetRef.current;
@@ -209,7 +262,15 @@ function AntvS2ViewInner(props: ChartEngineViewProps) {
       className={cn("flex w-full flex-col", fill ? "absolute inset-0 min-h-0" : "min-h-[120px]")}
       aria-label={ariaLabel}
       data-testid="antv-s2-chart"
-      style={{ ...(themeVars as CSSProperties), height: fill ? undefined : height, width: width ?? "100%" }}
+      style={{
+        ...(themeVars as CSSProperties),
+        height: fill ? undefined : height,
+        width: width ?? "100%",
+        opacity:
+          tableStyle.opacity != null && tableStyle.opacity < 100
+            ? tableStyle.opacity / 100
+            : undefined,
+      }}
     >
       <div
         className={cn(
@@ -218,7 +279,12 @@ function AntvS2ViewInner(props: ChartEngineViewProps) {
           scrollMode && "dashboard-scroll overflow-auto overscroll-contain",
         )}
       >
-        <TableSheet ref={sheetRef} dataCfg={dataCfg} options={sheetOptions} />
+        <TableSheet
+          ref={sheetRef}
+          onMounted={handleSheetMounted}
+          dataCfg={dataCfg}
+          options={sheetOptions}
+        />
       </div>
       {summaryFooter ? (
         <div

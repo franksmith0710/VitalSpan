@@ -33,6 +33,9 @@ const TICK_COLOR: Record<CanvasRulerTickKind, string> = {
   micro: DATA_SCREEN_RULER_TICK_MICRO,
 };
 
+/** 靠原点一侧的刻度数字改右/下对齐，避免被角块裁切 */
+const ORIGIN_LABEL_INSET_PX = CANVAS_RULER_SIZE_PX - 4;
+
 function RulerTick({
   tick,
   orientation,
@@ -42,12 +45,13 @@ function RulerTick({
 }) {
   const isHorizontal = orientation === "horizontal";
   const tickLen = TICK_LENGTH[tick.kind];
+  const nearOrigin = tick.positionPx < ORIGIN_LABEL_INSET_PX;
 
   if (isHorizontal) {
     return (
       <div
         className="pointer-events-none absolute bottom-0"
-        style={{ left: tick.positionPx, transform: "translateX(-50%)" }}
+        style={{ left: tick.positionPx, transform: nearOrigin ? undefined : "translateX(-50%)" }}
       >
         <div
           className="w-px"
@@ -56,7 +60,10 @@ function RulerTick({
         />
         {tick.showLabel ? (
           <span
-            className="absolute bottom-[12px] left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] leading-none font-medium tabular-nums select-none"
+            className={cn(
+              "absolute bottom-[12px] whitespace-nowrap text-[8px] leading-none font-medium tabular-nums select-none",
+              nearOrigin ? "left-0" : "left-1/2 -translate-x-1/2",
+            )}
             style={{ color: DATA_SCREEN_RULER_LABEL }}
           >
             {tick.value}
@@ -69,7 +76,7 @@ function RulerTick({
   return (
     <div
       className="pointer-events-none absolute right-0"
-      style={{ top: tick.positionPx, transform: "translateY(-50%)" }}
+      style={{ top: tick.positionPx, transform: nearOrigin ? undefined : "translateY(-50%)" }}
     >
       <div
         className="h-px"
@@ -78,7 +85,12 @@ function RulerTick({
       />
       {tick.showLabel ? (
         <span
-          className="absolute top-1/2 right-[12px] -translate-y-1/2 whitespace-nowrap text-right text-[8px] leading-none font-medium tabular-nums select-none"
+          className={cn(
+            "absolute whitespace-nowrap text-[8px] leading-none font-medium tabular-nums select-none",
+            nearOrigin
+              ? "top-0 right-[4px] text-right"
+              : "top-1/2 right-[12px] -translate-y-1/2 text-right",
+          )}
           style={{ color: DATA_SCREEN_RULER_LABEL }}
         >
           {tick.value}

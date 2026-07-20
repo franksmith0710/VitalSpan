@@ -31,7 +31,7 @@ const tabsShellClass = (scrollMode: "panel" | "parent", className?: string) =>
 
 const tabsContentClass = (scrollMode: "panel" | "parent") =>
   scrollMode === "panel"
-    ? "mt-0 flex h-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
+    ? "mt-0 flex h-0 min-h-[120px] flex-1 flex-col overflow-hidden data-[state=inactive]:hidden"
     : "mt-0 flex flex-col data-[state=inactive]:hidden";
 
 const TAB_LABELS: Record<InspectorTabId, string> = {

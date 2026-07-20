@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartEditRail } from "./ChartEditRail";
@@ -62,5 +63,31 @@ describe("ChartEditRail", () => {
     expect(screen.getByRole("tab", { name: "样式" })).toBeInTheDocument();
     expect(screen.getByText("数据集")).toBeInTheDocument();
     expect(screen.queryByText(/useChartInspector must be used/)).not.toBeInTheDocument();
+  });
+
+  it("shows ChartStylePanel fields after switching to the style tab", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.includes("/datasets")) return { items: [] };
+      if (path.includes("/datasources")) return { items: [] };
+      if (path.includes("/charts/types")) {
+        return [{ type: "line", displayName: "折线图", styleVariants: ["default"], fieldRule: {} }];
+      }
+      return { columns: [], rows: [] };
+    });
+
+    const user = userEvent.setup();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <MemoryRouter>
+          <ChartEditRail widget={widget} onChange={vi.fn()} />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("tab", { name: "样式" }));
+    const panel = await screen.findByTestId("chart-style-panel");
+    expect(panel).toBeVisible();
+    expect(screen.getByRole("switch", { name: "显示标题" })).toBeInTheDocument();
   });
 });

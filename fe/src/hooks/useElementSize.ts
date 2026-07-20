@@ -5,6 +5,13 @@ import {
 
 type Size = { width: number; height: number };
 
+function readLayoutSize(node: HTMLElement): Size {
+  return {
+    width: Math.round(node.clientWidth),
+    height: Math.round(node.clientHeight),
+  };
+}
+
 type UseElementSizeOptions = {
   enabled?: boolean;
   /** 合并连续尺寸变更，减轻拖拽缩放时图表逐帧重绘 */
@@ -37,8 +44,7 @@ export function useElementSize<T extends HTMLElement>(
     if (!enabled || !node) return;
 
     const apply = () => {
-      const rect = node.getBoundingClientRect();
-      setSize({ width: Math.round(rect.width), height: Math.round(rect.height) });
+      setSize(readLayoutSize(node));
     };
 
     const update = () => {
@@ -65,15 +71,13 @@ export function useElementSize<T extends HTMLElement>(
 
   useEffect(() => {
     if (!enabled || !node || paused) return;
-    const rect = node.getBoundingClientRect();
-    setSize({ width: Math.round(rect.width), height: Math.round(rect.height) });
+    setSize(readLayoutSize(node));
   }, [enabled, node, paused]);
 
   useEffect(() => {
     if (!enabled || !node) return;
     const remeasure = () => {
-      const rect = node.getBoundingClientRect();
-      setSize({ width: Math.round(rect.width), height: Math.round(rect.height) });
+      setSize(readLayoutSize(node));
     };
     document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, remeasure);
     return () => document.removeEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, remeasure);

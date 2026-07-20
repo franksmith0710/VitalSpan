@@ -95,6 +95,7 @@ import {
   clampDataScreenCanvasSize,
 } from "@/lib/surfacePreset";
 import type { PresentationMode } from "@/components/dashboard/screen/presentationScale";
+import { DATA_SCREEN_EDIT_PRESENTATION_DEFAULT } from "@/components/dashboard/screen/presentationScale";
 import { MediaEditRail } from "@/components/dashboard/MediaEditRail";
 import { TabsEditRail } from "@/components/dashboard/TabsEditRail";
 import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
@@ -416,7 +417,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           (w.type === "chart" ||
             w.type === "media" ||
             w.type === "tabs" ||
-            w.type === "filter")
+            w.type === "filter" ||
+            w.type === "text")
         ) {
           setChartRailOpen(true);
         }
@@ -448,7 +450,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
 
   const [tabInsertIntent, setTabInsertIntent] = useState<TabInsertIntent | null>(null);
   const [dataScreenEditPresentationMode, setDataScreenEditPresentationMode] =
-    useState<PresentationMode>("fitHeight");
+    useState<PresentationMode>(DATA_SCREEN_EDIT_PRESENTATION_DEFAULT);
 
   /** 对标 DE：选中 Tab（或其子组件）即锁定投放意图 */
   useEffect(() => {
@@ -774,9 +776,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   };
 
   const handleDataScreenCanvasSize = useCallback(
-    (width: number, height: number) => {
+    (patch: { width?: number; height?: number }) => {
       const currentLayout = layoutRef.current;
       if (!canSave || currentLayout.version !== 2) return;
+      const width = patch.width ?? currentLayout.canvas.width;
+      const height = patch.height ?? currentLayout.canvas.height;
       const next = clampDataScreenCanvasSize(width, height);
       if (
         next.width === currentLayout.canvas.width &&
@@ -1302,7 +1306,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   <LayerPanel
                     widgets={widgets}
                     selectedId={primarySelectedId}
-                    onSelect={(widgetId) => handleSelect(widgetId, false)}
+                    onSelect={(widgetId) => selectWidgetOnCanvas(widgetId, false)}
                     onWidgetsChange={setWidgets}
                     className="max-h-56 shrink-0 border-b border-gray-100 pb-4 dark:border-white/[0.06]"
                   />

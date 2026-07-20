@@ -47,7 +47,31 @@ async function flushPixelPointerFrames() {
   });
 }
 
-function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
+async function pinPixelHostMetrics(width = 1440, height = 900) {
+  const host = screen.getByTestId("pixel-canvas-host");
+  Object.defineProperties(host, {
+    clientWidth: { configurable: true, value: width },
+    clientHeight: { configurable: true, value: height },
+  });
+  vi.spyOn(host, "getBoundingClientRect").mockReturnValue({
+    top: 0,
+    bottom: height,
+    left: 0,
+    right: width,
+    width,
+    height,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  } as DOMRect);
+  await act(async () => {
+    triggerResizeObservers();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  });
+  expect(host).toHaveAttribute("data-pixel-canvas-scale", "1");
+}
+
+async function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
   render(
     <PixelCanvas
       mode={mode}
@@ -57,6 +81,7 @@ function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
       renderWidget={(item) => <button data-pixel-no-drag>{item.title}</button>}
     />,
   );
+  await pinPixelHostMetrics();
   return onLayoutChange;
 }
 
@@ -86,6 +111,7 @@ describe("PixelCanvas", () => {
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
+    await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
     const blockerShape = screen.getByTestId("pixel-shape-w2");
     expect(blockerShape).toHaveStyle({ top: "280px" });
@@ -307,6 +333,7 @@ describe("PixelCanvas", () => {
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
+    await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
     const blockerShape = screen.getByTestId("pixel-shape-w2");
     const handle = screen.getByLabelText("调整组件大小：右下");
@@ -332,8 +359,8 @@ describe("PixelCanvas", () => {
     });
   });
 
-  it("commits canonical drag coordinates on pointer up", () => {
-    const onChange = renderCanvas("edit");
+  it("commits canonical drag coordinates on pointer up", async () => {
+    const onChange = await renderCanvas("edit");
     fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
       pointerId: 7,
       clientX: 10,
@@ -355,8 +382,8 @@ describe("PixelCanvas", () => {
     expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 200, y: 130 });
   });
 
-  it("clamps move to canvas bounds on document pointerup", () => {
-    const onChange = renderCanvas("edit");
+  it("clamps move to canvas bounds on document pointerup", async () => {
+    const onChange = await renderCanvas("edit");
     const drag = screen.getByLabelText("拖动组件");
     fireEvent.pointerDown(drag, {
       pointerId: 11,
@@ -379,8 +406,8 @@ describe("PixelCanvas", () => {
     expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 0, y: 0 });
   });
 
-  it("cancels an in-progress interaction without writing layout", () => {
-    const onChange = renderCanvas("edit");
+  it("cancels an in-progress interaction without writing layout", async () => {
+    const onChange = await renderCanvas("edit");
     fireEvent.pointerDown(screen.getByLabelText("调整组件大小：右下"), {
       pointerId: 8,
       clientX: 0,
@@ -397,8 +424,8 @@ describe("PixelCanvas", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("commits the last live rectangle on document pointerup", () => {
-    const onChange = renderCanvas("edit");
+  it("commits the last live rectangle on document pointerup", async () => {
+    const onChange = await renderCanvas("edit");
     fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
       pointerId: 10,
       clientX: 10,
@@ -416,8 +443,8 @@ describe("PixelCanvas", () => {
     expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 150, y: 110 });
   });
 
-  it("does not start dragging from widget content", () => {
-    const onChange = renderCanvas("edit");
+  it("does not start dragging from widget content", async () => {
+    const onChange = await renderCanvas("edit");
     fireEvent.pointerDown(screen.getByRole("button", { name: "图表" }), {
       pointerId: 9,
       clientX: 0,
@@ -550,6 +577,7 @@ describe("PixelCanvas", () => {
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
+    await pinPixelHostMetrics();
     expect(screen.getByTestId("pixel-shape-w2")).toHaveStyle({ left: "420px" });
 
     const shape = screen.getByTestId("pixel-shape-w2");
@@ -566,10 +594,14 @@ describe("PixelCanvas", () => {
     expect(onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w2")?.x).toBe(420);
   });
 
-  it.each([1, 0.5, 0.25])(
-    "keeps resize handles inside the host at scale %s",
-    async (expectedScale) => {
-    const hostWidth = 1440 * expectedScale;
+  it.each([
+    [1, 1],
+    [0.5, 0.5],
+    [0.25, 0.5],
+  ])(
+    "keeps resize handles inside the host at scale %s (clamped to %s)",
+    async (hostScaleFactor, expectedScale) => {
+    const hostWidth = 1440 * hostScaleFactor;
     const hostHeight = 320 * expectedScale;
     render(
       <PixelCanvas
@@ -656,6 +688,7 @@ describe("PixelCanvas", () => {
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
+    await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
     expect(shape).toHaveStyle({ top: "80px" });
 
@@ -769,8 +802,8 @@ describe("PixelCanvas", () => {
     expect(screen.queryByLabelText("调整组件大小：右下")).not.toBeInTheDocument();
   });
 
-  it("supports keyboard move and resize without Enter or Space mutations", () => {
-    const onChange = renderCanvas("edit");
+  it("supports keyboard move and resize without Enter or Space mutations", async () => {
+    const onChange = await renderCanvas("edit");
     const drag = screen.getByLabelText("拖动组件");
     fireEvent.keyDown(drag, { key: "ArrowRight" });
     expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 101, y: 80 });

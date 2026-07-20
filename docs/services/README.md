@@ -30,7 +30,7 @@
 | [auth.md](./auth.md) | `app/auth/` | F02-AUTH | M7 | 已实现 |
 | [ingestion.md](./ingestion.md) | `app/ingestion/` | F16-DATA | M1B | 已实现 |
 | [governance.md](./governance.md) | `app/governance/` | F10-GOV · F14-CAT | M6 | **部分**（API L1；FE catalog 深链 + 诚实横幅） |
-| [viz.md](./viz.md) | `app/viz/` | F06-VIZ | M9 | **部分**（BE 注册表 + FE ECharts/Apex 渲染已实现） |
+| [viz.md](./viz.md) | `app/viz/` | F06-VIZ | M9 | **部分**（BE 注册表 + FE **AntV** 渲染已实现） |
 | [integration.md](./integration.md) | `app/integration/` | F13-API | M8/M12/M13 | companion 已实现（r45） |
 
 **横切**：F13-API（对外集成）、F15-NFR（非功能）——F15-NFR 域附录见 [nfr.md](./nfr.md)；其余横切由各服务与 `core` 分担。F06-VIZ 图表类型注册与渲染/嵌入配置契约现由 [viz.md](./viz.md) 域承载。

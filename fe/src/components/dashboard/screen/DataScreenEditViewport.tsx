@@ -10,8 +10,8 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import { CanvasRuler } from "./CanvasRuler";
-import { canvasRulerChromeVars, canvasRulerSurfaceStyle } from "./canvasRulerChrome";
-import { CANVAS_RULER_SIZE_PX, DATA_SCREEN_VIEWPORT_BG } from "./canvasRulerUtils";
+import { canvasRulerChromeVars, canvasRulerCornerClass, canvasRulerCornerStyle } from "./canvasRulerChrome";
+import { CANVAS_RULER_SIZE_PX, DATA_SCREEN_VIEWPORT_BG, resolveCanvasRulerScrollOffset } from "./canvasRulerUtils";
 import {
   applyViewportPanTranslate,
   type ViewportPanSession,
@@ -19,6 +19,8 @@ import {
 import { isPixelCanvasWidgetTarget } from "../pixelCanvas/pixelCanvasHitTest";
 import {
   computePresentationTransform,
+  DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
+  resolveDataScreenViewportOffsets,
   type PresentationMode,
 } from "./presentationScale";
 
@@ -68,7 +70,7 @@ function clampZoom(value: number): number {
 export function DataScreenEditViewport({
   canvasWidth,
   canvasHeight,
-  presentationMode = "fitHeight",
+  presentationMode = DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
   className,
   onBlankPointerDown,
   children,
@@ -85,6 +87,7 @@ export function DataScreenEditViewport({
 
   useEffect(() => {
     setViewPan({ x: 0, y: 0 });
+    setUserZoom(1);
   }, [canvasWidth, canvasHeight, presentationMode]);
 
   useEffect(() => {
@@ -108,14 +111,14 @@ export function DataScreenEditViewport({
   const scale = baseTransform.scaleX * userZoom;
   const scaledWidth = canvasWidth * scale;
   const scaledHeight = canvasHeight * scale;
-  const offsetX =
-    presentationMode === "fitHeight" || scaledWidth > viewportSize.width
-      ? 0
-      : baseTransform.translateX;
-  const offsetY =
-    presentationMode === "fitHeight" || scaledHeight > viewportSize.height
-      ? 0
-      : baseTransform.translateY;
+  const { offsetX, offsetY } = resolveDataScreenViewportOffsets(
+    presentationMode,
+    viewportSize.width,
+    viewportSize.height,
+    baseTransform,
+    scaledWidth,
+    scaledHeight,
+  );
 
   const contentLayout = useMemo(
     () => ({
@@ -285,6 +288,9 @@ export function DataScreenEditViewport({
     [onBlankPointerDown],
   );
 
+  const panTranslateX = viewPan.x + offsetX;
+  const panTranslateY = viewPan.y + offsetY;
+
   const stageStyle: CSSProperties = {
     width: canvasWidth,
     height: canvasHeight,
@@ -292,8 +298,8 @@ export function DataScreenEditViewport({
     transformOrigin: "top left",
   };
 
-  const rulerOffsetX = -viewPan.x;
-  const rulerOffsetY = -viewPan.y;
+  const rulerOffsetX = resolveCanvasRulerScrollOffset(viewPan.x, offsetX);
+  const rulerOffsetY = resolveCanvasRulerScrollOffset(viewPan.y, offsetY);
 
   return (
     <div
@@ -316,7 +322,14 @@ export function DataScreenEditViewport({
           } as CSSProperties
         }
       >
-        <div style={canvasRulerSurfaceStyle} aria-hidden />
+        <div className={canvasRulerCornerClass} style={canvasRulerCornerStyle} aria-hidden>
+          <span
+            className="pointer-events-none absolute right-1 bottom-0.5 text-[8px] leading-none font-medium tabular-nums select-none text-[var(--canvas-ruler-label)]"
+            aria-hidden
+          >
+            0
+          </span>
+        </div>
         <CanvasRuler
           orientation="horizontal"
           designLength={canvasWidth}
@@ -350,15 +363,14 @@ export function DataScreenEditViewport({
           <div
             className="absolute top-0 left-0"
             style={{
-              transform: `translate(${viewPan.x}px, ${viewPan.y}px)`,
-              width: scaledWidth,
-              height: scaledHeight,
-              left: offsetX,
-              top: offsetY,
+              transform: `translate(${panTranslateX}px, ${panTranslateY}px)`,
             }}
           >
             <div
-              className={cn("absolute top-0 left-0", spacePan && "pointer-events-none")}
+              className={cn("origin-top-left", spacePan && "pointer-events-none")}
+              data-testid="data-screen-canvas-stage"
+              data-canvas-design-width={canvasWidth}
+              data-canvas-design-height={canvasHeight}
               style={stageStyle}
             >
               <DataScreenVisualScaleProvider scale={scale}>
@@ -368,6 +380,8 @@ export function DataScreenEditViewport({
           </div>
           <CanvasScaleArea
             userZoom={userZoom}
+            designCanvasWidth={canvasWidth}
+            designCanvasHeight={canvasHeight}
             spacePanActive={spacePan}
             onZoomChange={handleZoomChange}
             onZoomIn={handleZoomIn}

@@ -29,6 +29,7 @@ import { resolveDashboardGapRuntimeFromLayout, resolveEffectiveDashboardStyle } 
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
 import { DataScreenEditViewport } from "../screen/DataScreenEditViewport";
 import type { PresentationMode } from "../screen/presentationScale";
+import { DATA_SCREEN_EDIT_PRESENTATION_DEFAULT } from "../screen/presentationScale";
 import { DashboardWidgetsProvider } from "../DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "../dashboardWidgetExecuteKey";
 import type { PaletteInsertType } from "../createLayoutWidget";
@@ -97,7 +98,7 @@ export function DashboardEditCanvas({
   tabInsertIntent = null,
   onTabInsertIntentChange,
   widgetActions,
-  dataScreenPresentationMode = "fitHeight",
+  dataScreenPresentationMode = DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
 }: DashboardEditCanvasProps) {
   const effectiveStyle = useMemo(
     () => resolveEffectiveDashboardStyle(layout, styleConfig),
@@ -248,12 +249,7 @@ export function DashboardEditCanvas({
               className="h-full min-h-0 w-full"
               onBlankPointerDown={onClearSelection}
             >
-              <div
-                className="h-full w-full"
-                style={{ width: layout.canvas.width, height: layout.canvas.height }}
-              >
-                {pixelCanvas}
-              </div>
+              {pixelCanvas}
             </DataScreenEditViewport>
           ) : (
             pixelCanvas

@@ -132,6 +132,8 @@ pnpm exec playwright test e2e/data-screen-resize-content.spec.ts
 
 **plan-review state: PASS**（2026-07-20，dev-autopilot 自审）
 
+**execution state: PARTIAL → superseded by viz-inspector plan**（T2/T3/T4 核心已并入 viz-inspector 闭环；T1 E2E 与 T5 Vitest 同上）
+
 ## 推荐执行模型
 
 `inherit`（默认）；T1 Playwright 探针可用 `composer-2.5-fast` 加速迭代。

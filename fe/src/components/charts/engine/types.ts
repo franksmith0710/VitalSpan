@@ -70,6 +70,8 @@ export type ChartEngineViewProps = {
   onInteraction?: (event: ChartInteractionEvent) => void;
   /** 跳转交互：点击图表任意区域触发（优先于下钻） */
   onJumpClick?: () => void;
+  /** 像素画布逻辑尺寸（松手 commit 后驱动引擎 remeasure） */
+  layoutFootprint?: { width: number; height: number };
 };
 
 /** @deprecated 使用 ChartViewModel；兼容过渡期 */

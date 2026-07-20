@@ -49,6 +49,14 @@ function classifyTick(value: number, density: RulerStepDensity): CanvasRulerTick
   return "micro";
 }
 
+/** 将视口平移与内容留白换算为标尺 scrollOffset（使设计 0 点对齐画布原点） */
+export function resolveCanvasRulerScrollOffset(
+  viewPanPx: number,
+  contentOffsetPx: number,
+): number {
+  return -viewPanPx - contentOffsetPx;
+}
+
 /** 按设计坐标生成标尺刻度（随平移与缩放偏移） */
 export function buildCanvasRulerTicks(
   designLength: number,

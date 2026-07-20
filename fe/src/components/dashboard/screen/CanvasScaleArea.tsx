@@ -15,6 +15,8 @@ import {
 
 export type CanvasScaleAreaProps = {
   userZoom: number;
+  designCanvasWidth?: number;
+  designCanvasHeight?: number;
   spacePanActive?: boolean;
   onZoomChange: (zoom: number) => void;
   onZoomIn: () => void;
@@ -26,6 +28,8 @@ export type CanvasScaleAreaProps = {
 /** 大屏编辑画布右下角缩放 HUD（对标 DE `.scale-area`） */
 export function CanvasScaleArea({
   userZoom,
+  designCanvasWidth,
+  designCanvasHeight,
   spacePanActive = false,
   onZoomChange,
   onZoomIn,
@@ -45,6 +49,17 @@ export function CanvasScaleArea({
       )}
       onPointerDown={(event) => event.stopPropagation()}
     >
+      {designCanvasWidth != null && designCanvasHeight != null ? (
+        <span
+          className="shrink-0 tabular-nums text-white/55"
+          data-testid="canvas-design-size-hud"
+        >
+          {designCanvasWidth}×{designCanvasHeight}
+        </span>
+      ) : null}
+      {designCanvasWidth != null && designCanvasHeight != null ? (
+        <div className="hidden h-4 w-px shrink-0 bg-white/15 sm:block" aria-hidden />
+      ) : null}
       <p className="hidden min-w-0 truncate sm:block">
         <span className={spacePanActive ? "text-cyan-200" : undefined}>空格拖动画布</span>
         <span className="mx-1.5 text-white/30">·</span>

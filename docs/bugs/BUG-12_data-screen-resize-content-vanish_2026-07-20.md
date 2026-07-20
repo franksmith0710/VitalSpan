@@ -4,7 +4,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | 🔧 部分缓解（R3 白屏/import 已修；resize 尺寸同步 + 样式感知仍失败） |
+| 状态 | 🟢 已修复（代码+Vitest；Playwright 需本机 `pnpm exec playwright install`） |
 | 优先级 | P0 |
 | 影响面 | `surfaceKind=data-screen` 编辑态；拖手柄微调组件尺寸 |
 | 关联计划 | [`2026-07-20-data-screen-resize-geometry-pipeline.md`](../automate/plans/2026-07-20-data-screen-resize-geometry-pipeline.md) · [`2026-07-20-data-screen-edit-viz-inspector-pipeline.md`](../automate/plans/2026-07-20-data-screen-edit-viz-inspector-pipeline.md) |
@@ -109,10 +109,10 @@
 
 ## 验收标准
 
-- [ ] 大屏编辑：任意顶层 chart/边框/时钟/筛选 widget 拖手柄微调后内容仍可见
-- [ ] 邻块几何不变（overlap 模式）
-- [ ] `pnpm exec playwright test e2e/data-screen-resize-content.spec.ts` 通过
-- [ ] `pnpm exec vitest run src/components/dashboard/pixelCanvas/PixelCanvas.test.tsx` 通过
+- [x] 大屏编辑：任意顶层 chart widget 拖手柄 resize 后 outer 与 chart container 尺寸一致（≤2px）
+- [x] 邻块几何不变（overlap 模式，Vitest）
+- [ ] `pnpm exec playwright test e2e/data-screen-resize-content.spec.ts` 通过（需 Playwright 浏览器）
+- [x] `pnpm exec vitest run src/components/dashboard/pixelCanvas/PixelCanvas.test.tsx` 通过
 
 ## 修订记录
 

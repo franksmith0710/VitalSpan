@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCanvasRulerTicks,
+  resolveCanvasRulerScrollOffset,
   resolveRulerStepDensity,
 } from "./canvasRulerUtils";
 
@@ -27,5 +28,21 @@ describe("canvasRulerUtils", () => {
     for (let i = 1; i < labels.length; i += 1) {
       expect(labels[i]!.positionPx - labels[i - 1]!.positionPx).toBeGreaterThanOrEqual(40);
     }
+  });
+
+  it("aligns design zero with letterboxed canvas origin", () => {
+    const scale = 0.5;
+    const contentOffsetY = 40;
+    const scrollOffset = resolveCanvasRulerScrollOffset(0, contentOffsetY);
+    const ticks = buildCanvasRulerTicks(1080, scale, scrollOffset, 600);
+    expect(ticks.find((tick) => tick.value === 0)?.positionPx).toBe(40);
+    expect(ticks.find((tick) => tick.value === 200)?.positionPx).toBe(140);
+  });
+
+  it("tracks view pan in ruler scroll offset", () => {
+    const scrollOffset = resolveCanvasRulerScrollOffset(30, 40);
+    expect(scrollOffset).toBe(-70);
+    const ticks = buildCanvasRulerTicks(1080, 1, scrollOffset, 400);
+    expect(ticks.find((tick) => tick.value === 0)?.positionPx).toBe(70);
   });
 });

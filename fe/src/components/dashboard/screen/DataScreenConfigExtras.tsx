@@ -15,16 +15,39 @@ import type { DashboardStyleConfig } from "@/components/dashboard/dashboardStyle
 import { DE_SELECT } from "@/components/dashboard/dashboardInspectorUi";
 import { exportDataScreenTemplate } from "@/lib/dataScreenTemplates";
 import { downloadJsonFile, downloadLayoutJson } from "@/lib/exportLayoutJson";
-import { DATA_SCREEN_CANVAS_BOUNDS } from "@/lib/surfacePreset";
+import { DATA_SCREEN_CANVAS_BOUNDS, DATA_SCREEN_CANVAS_PRESETS } from "@/lib/surfacePreset";
 import type { PresentationMode } from "./presentationScale";
+import {
+  DATA_SCREEN_EDIT_PRESENTATION_MODES,
+  DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
+} from "./presentationScale";
 
-const PRESENTATION_MODE_LABELS: Record<PresentationMode, string> = {
+const PRESENTATION_MODE_LABELS: Record<
+  (typeof DATA_SCREEN_EDIT_PRESENTATION_MODES)[number],
+  string
+> = {
   fit: "等比适应",
   fitWidth: "宽度优先",
   fitHeight: "高度优先",
-  fill: "铺满视口",
-  none: "不缩放",
 };
+
+const PRESENTATION_MODE_HINTS: Record<
+  (typeof DATA_SCREEN_EDIT_PRESENTATION_MODES)[number],
+  string
+> = {
+  fitWidth: "宽度优先：编辑区宽度贴满；改 W 会改变纵向比例，改 H 改变可见高度",
+  fitHeight: "高度优先：编辑区高度贴满；改 H 会改变横向比例，改 W 改变可见宽度",
+  fit: "等比适应：整画布缩放进视口；改 W/H 同时影响设计分辨率与缩放",
+};
+
+function resolvePresentationHint(mode: PresentationMode): string {
+  if ((DATA_SCREEN_EDIT_PRESENTATION_MODES as readonly PresentationMode[]).includes(mode)) {
+    return PRESENTATION_MODE_HINTS[mode as (typeof DATA_SCREEN_EDIT_PRESENTATION_MODES)[number]];
+  }
+  return PRESENTATION_MODE_HINTS[DATA_SCREEN_EDIT_PRESENTATION_DEFAULT];
+}
+
+type CanvasSizePatch = { width?: number; height?: number };
 
 type DataScreenConfigExtrasProps = {
   layout: DashboardLayoutV2;
@@ -34,7 +57,7 @@ type DataScreenConfigExtrasProps = {
   canSave: boolean;
   presentationMode: PresentationMode;
   onPresentationModeChange: (mode: PresentationMode) => void;
-  onCanvasSizeChange: (width: number, height: number) => void;
+  onCanvasSizeChange: (patch: CanvasSizePatch) => void;
 };
 
 function buildExportLayout(
@@ -174,9 +197,9 @@ export function DataScreenConfigExtras({
       data-testid="data-screen-config-extras"
     >
       <div>
-        <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">大屏工具</p>
+        <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">画布</p>
         <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-          画布尺寸、编辑区缩放与导出（输入后实时预览，越界组件自动收进画布）
+          {resolvePresentationHint(presentationMode)}
         </p>
       </div>
 
@@ -188,7 +211,7 @@ export function DataScreenConfigExtras({
           min={DATA_SCREEN_CANVAS_BOUNDS.minWidth}
           max={DATA_SCREEN_CANVAS_BOUNDS.maxWidth}
           disabled={!canSave}
-          onCommit={(width) => onCanvasSizeChange(width, layout.canvas.height)}
+          onCommit={(width) => onCanvasSizeChange({ width })}
         />
         <CanvasSizeField
           id="screen-canvas-h"
@@ -197,7 +220,7 @@ export function DataScreenConfigExtras({
           min={DATA_SCREEN_CANVAS_BOUNDS.minHeight}
           max={DATA_SCREEN_CANVAS_BOUNDS.maxHeight}
           disabled={!canSave}
-          onCommit={(height) => onCanvasSizeChange(layout.canvas.width, height)}
+          onCommit={(height) => onCanvasSizeChange({ height })}
         />
       </div>
 
@@ -211,7 +234,7 @@ export function DataScreenConfigExtras({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {(Object.keys(PRESENTATION_MODE_LABELS) as PresentationMode[]).map((mode) => (
+            {DATA_SCREEN_EDIT_PRESENTATION_MODES.map((mode) => (
               <SelectItem key={mode} value={mode}>
                 {PRESENTATION_MODE_LABELS[mode]}
               </SelectItem>
@@ -220,7 +243,30 @@ export function DataScreenConfigExtras({
         </Select>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-1.5">
+        {(Object.keys(DATA_SCREEN_CANVAS_PRESETS) as Array<keyof typeof DATA_SCREEN_CANVAS_PRESETS>).map(
+          (presetId) => {
+            const preset = DATA_SCREEN_CANVAS_PRESETS[presetId];
+            return (
+              <Button
+                key={presetId}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-theme-xs"
+                disabled={!canSave}
+                onClick={() =>
+                  onCanvasSizeChange({ width: preset.width, height: preset.height })
+                }
+              >
+                {preset.label}
+              </Button>
+            );
+          },
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2 pt-1">
         <Button
           type="button"
           variant="outline"

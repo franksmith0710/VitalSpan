@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { Plot } from "@antv/g2plot";
 import { createG2Plot } from "@/components/charts/engine/antv/g2plot/createPlot";
+import {
+  embeddedSizeChanged,
+  readEmbeddedContainerSize,
+} from "@/components/charts/engine/embeddedContainerSize";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
+import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
 
 export type G2PlotInteractionHandlers = {
   onElementClick?: (datum: Record<string, unknown>) => void;
@@ -24,6 +29,7 @@ export function useG2Plot(
   options: Record<string, unknown> | undefined,
   enabled = true,
   handlers?: G2PlotInteractionHandlers,
+  layoutFootprint?: { width: number; height: number },
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const plotRef = useRef<Plot<Record<string, unknown>> | null>(null);
@@ -31,7 +37,19 @@ export function useG2Plot(
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
   const visualScale = useChartVisualScale();
+  const isShapePlaying = usePixelShapePlayer();
+  const isShapePlayingRef = useRef(isShapePlaying);
+  isShapePlayingRef.current = isShapePlaying;
   const lastSizeRef = useRef({ width: 0, height: 0 });
+
+  const applyContainerSize = useCallback((force = false) => {
+    if (!force && isShapePlayingRef.current) return;
+    const next = readEmbeddedContainerSize(containerRef.current);
+    if (!next || !plotRef.current) return;
+    if (!embeddedSizeChanged(next, lastSizeRef.current)) return;
+    lastSizeRef.current = next;
+    plotRef.current.changeSize(next.width, next.height);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -61,44 +79,30 @@ export function useG2Plot(
       bindElementClick(plot, handlersRef.current);
       lastSizeRef.current = { width: 0, height: 0 };
       plot.render();
+      applyContainerSize();
       return;
     }
+
+    if (isShapePlayingRef.current) return;
 
     plotRef.current.update(options);
     bindElementClick(plotRef.current, handlersRef.current);
-  }, [plotType, options, enabled]);
+    applyContainerSize();
+  }, [plotType, options, enabled, applyContainerSize]);
 
   useEffect(() => {
-    if (!enabled || !plotRef.current) return;
-    const el = containerRef.current;
-    if (el) {
-      const width = el.clientWidth;
-      const height = el.clientHeight;
-      if (
-        width === lastSizeRef.current.width &&
-        height === lastSizeRef.current.height
-      ) {
-        return;
-      }
-      lastSizeRef.current = { width, height };
-      plotRef.current.changeSize(width, height);
-    }
-  }, [visualScale, enabled]);
+    if (!enabled || !plotRef.current || isShapePlaying) return;
+    applyContainerSize();
+  }, [visualScale, enabled, isShapePlaying, applyContainerSize]);
+
+  useEffect(() => {
+    if (!enabled || !layoutFootprint || isShapePlaying) return;
+    applyContainerSize();
+  }, [enabled, isShapePlaying, layoutFootprint?.width, layoutFootprint?.height, applyContainerSize]);
 
   const resize = useCallback(() => {
-    const el = containerRef.current;
-    if (!el || !plotRef.current) return;
-    const width = el.clientWidth;
-    const height = el.clientHeight;
-    if (
-      width === lastSizeRef.current.width &&
-      height === lastSizeRef.current.height
-    ) {
-      return;
-    }
-    lastSizeRef.current = { width, height };
-    plotRef.current.changeSize(width, height);
-  }, []);
+    applyContainerSize(true);
+  }, [applyContainerSize]);
 
   return { containerRef, plotRef, resize };
 }

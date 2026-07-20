@@ -38,7 +38,14 @@ export function GeoMapPlaceholderView({
   const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
 
   useEmbeddedChartLiveResize(fill, containerRef, () => {
-    chartRef.current?.getEchartsInstance()?.resize();
+    const el = containerRef.current;
+    const chart = chartRef.current?.getEchartsInstance();
+    if (!chart || !el) return;
+    chart.resize({
+      width: el.clientWidth,
+      height: el.clientHeight,
+      animation: { duration: 0 },
+    });
   });
 
   return (
@@ -66,7 +73,7 @@ export function GeoMapPlaceholderView({
         opts={{ renderer: "canvas" }}
         notMerge
         lazyUpdate
-        autoResize={fill}
+        autoResize={false}
       />
       {hint ? (
         <p

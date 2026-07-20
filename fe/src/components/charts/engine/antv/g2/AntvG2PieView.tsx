@@ -4,6 +4,10 @@ import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { chartViewModelToRenderSpec } from "@/components/charts/engine/buildChartViewModel";
 import { encodePieRows } from "@/components/charts/engine/antv/spec/encodePie";
 import { buildG2PieRenderConfig } from "@/components/charts/engine/antv/g2/buildG2PieOptions";
+import {
+  embeddedSizeChanged,
+  readEmbeddedContainerSize,
+} from "@/components/charts/engine/embeddedContainerSize";
 import { cn } from "@/lib/utils";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import {
@@ -33,6 +37,7 @@ function AntvG2PieViewInner(props: ChartEngineViewProps) {
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<Chart | null>(null);
+  const lastSizeRef = useRef({ width: 0, height: 0 });
   const spec = useMemo(() => chartViewModelToRenderSpec(viewModel), [viewModel]);
   const rows = viewModel.dataset.rows;
   const columns = viewModel.dataset.columns;
@@ -144,6 +149,7 @@ function AntvG2PieViewInner(props: ChartEngineViewProps) {
 
     chart.render();
     chartRef.current = chart;
+    lastSizeRef.current = { width: 0, height: 0 };
 
     return () => {
       chart.destroy();
@@ -151,9 +157,16 @@ function AntvG2PieViewInner(props: ChartEngineViewProps) {
     };
   }, [configKey, pieRows.length, handleElementClick, onInteraction, onJumpClick, style.scheme]);
 
-  useEmbeddedChartLiveResize(fill && pieRows.length > 0, containerRef, () =>
-    chartRef.current?.render(),
-  );
+  const resizePie = useCallback((force = false) => {
+    const chart = chartRef.current;
+    const next = readEmbeddedContainerSize(containerRef.current);
+    if (!chart || !next) return;
+    if (!embeddedSizeChanged(next, lastSizeRef.current)) return;
+    lastSizeRef.current = next;
+    void chart.changeSize(next.width, next.height);
+  }, []);
+
+  useEmbeddedChartLiveResize(fill && pieRows.length > 0, containerRef, () => resizePie(true));
 
   if (pieRows.length === 0) {
     return (

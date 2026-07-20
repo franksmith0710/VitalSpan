@@ -21,6 +21,22 @@ describe("CanvasScaleArea", () => {
     expect(screen.getByRole("combobox", { name: "画布缩放比例" })).toHaveTextContent("60%");
   });
 
+  it("shows design canvas size when provided", () => {
+    render(
+      <CanvasScaleArea
+        userZoom={1}
+        designCanvasWidth={1920}
+        designCanvasHeight={1080}
+        onZoomChange={vi.fn()}
+        onZoomIn={vi.fn()}
+        onZoomOut={vi.fn()}
+        onResetViewport={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("canvas-design-size-hud")).toHaveTextContent("1920×1080");
+  });
+
   it("calls zoom handlers from controls", () => {
     const onZoomIn = vi.fn();
     const onZoomOut = vi.fn();

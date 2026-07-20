@@ -1,5 +1,14 @@
 export type PresentationMode = "fit" | "fitWidth" | "fitHeight" | "fill" | "none";
 
+/** 大屏编辑右栏「缩放方式」选项（对标 DataEase） */
+export const DATA_SCREEN_EDIT_PRESENTATION_MODES: PresentationMode[] = [
+  "fitWidth",
+  "fitHeight",
+  "fit",
+];
+
+export const DATA_SCREEN_EDIT_PRESENTATION_DEFAULT: PresentationMode = "fitWidth";
+
 export type PresentationTransform = {
   scaleX: number;
   scaleY: number;
@@ -47,5 +56,32 @@ export function computePresentationTransform(
     scaleY: scale,
     translateX: Math.max(0, (safeContainerW - scaledW) / 2),
     translateY: Math.max(0, (safeContainerH - scaledH) / 2),
+  };
+}
+
+/** 编辑视口留白：宽度/高度优先时固定贴齐一侧，等比适应时居中 */
+export function resolveDataScreenViewportOffsets(
+  mode: PresentationMode,
+  viewportWidth: number,
+  viewportHeight: number,
+  base: PresentationTransform,
+  scaledWidth: number,
+  scaledHeight: number,
+): { offsetX: number; offsetY: number } {
+  if (mode === "fitWidth") {
+    return {
+      offsetX: 0,
+      offsetY: scaledHeight > viewportHeight ? 0 : base.translateY,
+    };
+  }
+  if (mode === "fitHeight") {
+    return {
+      offsetX: scaledWidth > viewportWidth ? 0 : base.translateX,
+      offsetY: 0,
+    };
+  }
+  return {
+    offsetX: scaledWidth > viewportWidth ? 0 : base.translateX,
+    offsetY: scaledHeight > viewportHeight ? 0 : base.translateY,
   };
 }

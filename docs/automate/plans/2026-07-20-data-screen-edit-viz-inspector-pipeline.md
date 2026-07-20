@@ -178,6 +178,8 @@ pnpm exec playwright test e2e/data-screen-resize-content.spec.ts
 
 **plan-review state: PASS**（2026-07-20，dev-autopilot 深度剖析后自审）
 
+**execution state: DONE**（2026-07-20）— T4/T7/T5/T1(spec)/T6/T8 已落地；Vitest 验证通过；Playwright 需本机 `pnpm exec playwright install chromium` 后跑 `e2e/data-screen-resize-content.spec.ts`。
+
 ## 推荐执行模型
 
 `inherit`；T1 Playwright 可用 `composer-2.5-fast`。

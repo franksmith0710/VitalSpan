@@ -56,4 +56,29 @@ describe("DataScreenEditViewport blank selection", () => {
     fireEvent.pointerDown(screen.getByTestId("canvas-stage"));
     expect(onBlankPointerDown).toHaveBeenCalledTimes(1);
   });
+
+  it("updates design stage dimensions when canvas size changes", () => {
+    const { rerender } = render(
+      <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
+        <div data-testid="canvas-stage" />
+      </DataScreenEditViewport>,
+    );
+
+    const stage = screen.getByTestId("data-screen-canvas-stage");
+    expect(stage).toHaveAttribute("data-canvas-design-width", "1920");
+    expect(stage).toHaveAttribute("data-canvas-design-height", "1080");
+    expect(stage).toHaveStyle({ width: "1920px", height: "1080px" });
+
+    rerender(
+      <DataScreenEditViewport canvasWidth={2560} canvasHeight={1080}>
+        <div data-testid="canvas-stage" />
+      </DataScreenEditViewport>,
+    );
+
+    expect(screen.getByTestId("data-screen-canvas-stage")).toHaveAttribute(
+      "data-canvas-design-width",
+      "2560",
+    );
+    expect(screen.getByTestId("data-screen-canvas-stage")).toHaveStyle({ width: "2560px" });
+  });
 });

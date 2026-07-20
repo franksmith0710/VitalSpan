@@ -1,8 +1,6 @@
 import type { S2Options } from "@antv/s2";
-import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
-import {
-  resolveTableZebraBg,
-} from "@/lib/chartDeTableStyle";
+import type { ChartDeTableStyle, TableColumnWidthMode } from "@/lib/chartDeTableStyle";
+import { resolveTableZebraBg } from "@/lib/chartDeTableStyle";
 import type { TableInspectorProfile } from "@/lib/chartTableInspector";
 import { resolveTableThemeVars } from "@/lib/chartSurfaceTheme";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
@@ -16,10 +14,56 @@ type BuildS2SheetOptionsInput = {
   plotType: string;
   colorScheme: ColorScheme;
   widgetShellBg?: string;
+  /** 列 field 名，供自定义列宽换算为 S2 像素宽 */
+  columnFields?: string[];
 };
 
+export function resolveS2LayoutWidthType(
+  mode: TableColumnWidthMode | undefined,
+): "adaptive" | "colAdaptive" | "compact" {
+  switch (mode) {
+    case "fixed":
+      return "compact";
+    case "custom":
+      return "colAdaptive";
+    default:
+      return "adaptive";
+  }
+}
+
+/** DE 列宽比例 % → S2 widthByField 像素（field → px） */
+export function resolveS2ColumnWidthByField(
+  tableStyle: ChartDeTableStyle,
+  columnFields: string[],
+  sheetWidth: number,
+): Record<string, number> | undefined {
+  if (tableStyle.columnWidthMode !== "custom" || columnFields.length === 0) {
+    return undefined;
+  }
+  const widths = tableStyle.columnWidths ?? {};
+  const usableWidth = Math.max(sheetWidth - 2, 120);
+  const defaultPct = Math.floor(100 / columnFields.length);
+  const pctSum = columnFields.reduce((sum, field) => sum + (widths[field] ?? defaultPct), 0);
+  const normalized = pctSum > 0 ? pctSum : 100;
+  const result: Record<string, number> = {};
+  for (const field of columnFields) {
+    const pct = widths[field] ?? defaultPct;
+    result[field] = Math.max(48, Math.round((usableWidth * pct) / normalized));
+  }
+  return result;
+}
+
 export function buildS2SheetOptions(input: BuildS2SheetOptionsInput): S2Options {
-  const { profile, tableStyle, width, height, plotType, colorScheme, widgetShellBg } = input;
+  const {
+    profile,
+    tableStyle,
+    width,
+    height,
+    plotType,
+    colorScheme,
+    widgetShellBg,
+    columnFields = [],
+  } = input;
   const themeVars = resolveTableThemeVars(tableStyle, { colorScheme, widgetShellBg });
   const headerBg = themeVars["--dashboard-table-header-bg"];
   const headerFg = themeVars["--dashboard-table-header-fg"];
@@ -29,19 +73,25 @@ export function buildS2SheetOptions(input: BuildS2SheetOptionsInput): S2Options 
   const cornerBg = themeVars["--dashboard-table-corner-bg"] ?? headerBg;
   const zebraBg = resolveTableZebraBg(tableStyle);
   const wordWrap = tableStyle.wordWrap === true;
+  const sheetWidth = Math.max(width, 120);
+  const sheetHeight = Math.max(height, 120);
+  const showTotals = tableStyle.showSummary !== false;
+  const widthByField = resolveS2ColumnWidthByField(tableStyle, columnFields, sheetWidth);
 
   const options: S2Options = {
     ...CANVAS_CSS_TRANSFORM_SUPPORT,
-    width: Math.max(width, 120),
-    height: Math.max(height, 120),
+    width: sheetWidth,
+    height: sheetHeight,
     showSeriesNumber: profile.showSeriesNumber,
     style: {
-      layoutWidthType: tableStyle.columnWidthMode === "fixed" ? "compact" : "adaptive",
+      layoutWidthType: resolveS2LayoutWidthType(tableStyle.columnWidthMode),
       colCell: {
         backgroundColor: headerBg,
         textFill: headerFg,
         horizontalBorderColor: borderColor,
         verticalBorderColor: borderColor,
+        wordWrap,
+        ...(widthByField ? { widthByField } : {}),
       },
       cornerCell: {
         backgroundColor: cornerBg,
@@ -71,33 +121,16 @@ export function buildS2SheetOptions(input: BuildS2SheetOptionsInput): S2Options 
     },
   };
 
-  if (plotType === "table-pivot" && profile.showSummary) {
+  if (plotType === "table-pivot" && profile.showSummary && showTotals) {
     options.totals = {
       row: { showGrandTotals: true, showSubTotals: profile.showSubTotals },
       col: { showGrandTotals: profile.showSubTotals },
     };
   }
 
-  if (plotType === "table-normal" && profile.showSubTotals && profile.showSummary) {
+  if (plotType === "table-normal" && profile.showSubTotals && profile.showSummary && showTotals) {
     options.totals = {
       row: { showGrandTotals: true },
-    };
-  }
-
-  if (tableStyle.columnWidthMode === "custom" && tableStyle.columnWidths) {
-    options.style = {
-      ...options.style,
-      colCell: {
-        ...options.style?.colCell,
-        widthByField: tableStyle.columnWidths,
-      },
-    };
-  }
-
-  if (tableStyle.opacity != null && tableStyle.opacity < 100) {
-    options.style = {
-      ...options.style,
-      backgroundColor: `rgba(255,255,255,${tableStyle.opacity / 100})`,
     };
   }
 
