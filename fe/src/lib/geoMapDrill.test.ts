@@ -61,4 +61,43 @@ describe("preflightMapDrillClick", () => {
       expect(result.context.drillDepth).toBe(1);
     }
   });
+
+  it("accepts drill from guangdong into guangzhou district map", async () => {
+    const result = await preflightMapDrillClick(
+      mapConfig,
+      [{ field: "province", value: "广东省", label: "广东省" }],
+      { field: "city", value: "广州市", label: "广州市" },
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.context.mapId).toBe("vs-geo-440100");
+      expect(result.context.drillDepth).toBe(2);
+      expect(result.context.knownRegionNames).toContain("天河区");
+    }
+  });
+
+  it("rejects drill into Taiwan city map", async () => {
+    const result = await preflightMapDrillClick(
+      mapConfig,
+      [],
+      { field: "province", value: "台湾省", label: "台湾省" },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toBe("台湾省暂无市级离线边界资产");
+    }
+  });
+
+  it("rejects drill into dongguan district map when asset is missing", async () => {
+    const result = await preflightMapDrillClick(
+      mapConfig,
+      [{ field: "province", value: "广东省", label: "广东省" }],
+      { field: "city", value: "东莞市", label: "东莞市" },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("东莞市");
+      expect(result.message).toContain("区县离线边界");
+    }
+  });
 });

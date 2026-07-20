@@ -18,11 +18,12 @@ export function readCanvasSurfaceKind(
 
 /** 持久化 PUT /layout 时 canvas.height 不得低于此值 */
 export function resolvePersistedCanvasMinHeight(
-  layout?: Pick<DashboardLayout, "styleConfig"> | null,
+  layout?: Pick<DashboardLayout, "styleConfig" | "canvas"> | null,
 ): number {
-  return readCanvasSurfaceKind(layout) === "data-screen"
-    ? DATA_SCREEN_CANVAS.height
-    : PERSISTED_CANVAS_MIN_HEIGHT;
+  if (readCanvasSurfaceKind(layout) === "data-screen") {
+    return layout?.canvas?.height ?? DATA_SCREEN_CANVAS.height;
+  }
+  return PERSISTED_CANVAS_MIN_HEIGHT;
 }
 
 /** 保存前最终钳制：大屏固定 16:9 基线，普通看板不低于后端契约 */

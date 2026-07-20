@@ -45,9 +45,22 @@ import {
 } from "../dashboardStyleConfig";
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
 import { auxiliaryGridPatternStyle, resolveDashboardChrome } from "../dashboardChromeConfig";
-import { resolvePixelCollisions, shouldRevertPixelDragCommit, widgetRect } from "./collisionLayout";
+import {
+  allowsPixelWidgetOverlap,
+  resolvePixelLayoutWithActiveRect,
+  shouldRevertPixelDragCommit,
+  widgetRect,
+} from "./collisionLayout";
 import type { PixelPoint, PixelRect } from "./geometry";
-import { clientPointToCanvasFromStage, PIXEL_CANVAS_EDIT_MIN_SCALE, resolvePixelCanvasMeasureElement, resolvePixelCanvasMeasureWidth, resolveScaleDesignHeight, scaledCanvasMetrics } from "./geometry";
+import {
+  clientPointToCanvasFromStage,
+  PIXEL_CANVAS_EDIT_MIN_SCALE,
+  resolvePixelCanvasMeasureElement,
+  resolvePixelCanvasMeasureWidth,
+  resolveScaleDesignHeight,
+  resolveStageVisualScale,
+  scaledCanvasMetrics,
+} from "./geometry";
 import { PixelShape } from "./PixelShape";
 import type { PixelWidgetActions } from "./PixelShapeActionRail";
 import { PixelMarkLineOverlay } from "./PixelMarkLineOverlay";
@@ -85,6 +98,8 @@ type PixelCanvasProps = {
   widgetContentRevision?: (widget: PixelLayoutWidget) => string;
   /** 外层视口已锁定设计尺寸缩放（大屏投放） */
   designViewportLocked?: boolean;
+  /** 大屏编辑：在宿主框内等比适配整画布，无滚动条 */
+  viewportFit?: "data-screen";
 };
 
 export const PIXEL_CANVAS_GUTTER = 0;
@@ -162,6 +177,7 @@ export function PixelCanvas({
   styleConfig = {},
   widgetContentRevision,
   designViewportLocked = false,
+  viewportFit,
 }: PixelCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -301,6 +317,8 @@ export function PixelCanvas({
 
   const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
   const showMarkLines = mode === "edit";
+  const allowWidgetOverlap = allowsPixelWidgetOverlap(activeLayout);
+  const markLinesEnabled = showAuxGrid || allowWidgetOverlap;
   const scheme = styleConfig.colorScheme ?? "light";
   const artboardStyle = useMemo(
     () => resolveArtboardStyle(styleConfig),
@@ -310,27 +328,43 @@ export function PixelCanvas({
     () => auxiliaryGridPatternStyle(scheme),
     [scheme],
   );
-  /** 编辑态固定按画布宽度贴满，避免「按组件比例」两侧留白与 1440 可用区不一致 */
-  const effectiveScaleMode = mode === "edit" ? "canvas" : scaleMode;
+  /** 编辑态固定按画布宽度贴满；大屏编辑改为整画布 fit 宿主 */
+  const effectiveScaleMode =
+    mode === "edit"
+      ? viewportFit === "data-screen"
+        ? "component"
+        : "canvas"
+      : scaleMode;
   const viewCanvasHeight = useMemo(() => {
+    if (viewportFit === "data-screen" || designViewportLocked) {
+      return activeLayout.canvas.height;
+    }
     const lowest = topLevelWidgets.reduce(
       (max, widget) => Math.max(max, widget.y + widget.height),
       0,
     );
     return Math.max(PIXEL_CANVAS_MIN_HEIGHT, lowest);
-  }, [topLevelWidgets]);
+  }, [
+    activeLayout.canvas.height,
+    designViewportLocked,
+    topLevelWidgets,
+    viewportFit,
+  ]);
   const viewCanvas = useMemo(
-    () =>
-      designViewportLocked
-        ? { width: activeLayout.canvas.width, height: activeLayout.canvas.height }
-        : { width: activeLayout.canvas.width, height: viewCanvasHeight },
-    [activeLayout.canvas.width, activeLayout.canvas.height, designViewportLocked, viewCanvasHeight],
+    () => ({ width: activeLayout.canvas.width, height: viewCanvasHeight }),
+    [activeLayout.canvas.width, viewCanvasHeight],
   );
   const designCanvasHeight = useMemo(
-    () => resolveScaleDesignHeight(activeLayout.canvas.height),
-    [activeLayout.canvas.height],
+    () =>
+      viewportFit === "data-screen"
+        ? activeLayout.canvas.height
+        : resolveScaleDesignHeight(activeLayout.canvas.height),
+    [activeLayout.canvas.height, viewportFit],
   );
-  const editMinScale = mode === "edit" ? PIXEL_CANVAS_EDIT_MIN_SCALE : 0;
+  const editMinScale =
+    mode === "edit" && viewportFit === "data-screen" ? 0 : mode === "edit" ? PIXEL_CANVAS_EDIT_MIN_SCALE : 0;
+  const hostOverflowLocked = designViewportLocked || viewportFit === "data-screen";
+  const hostCentered = centerContent || viewportFit === "data-screen";
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -339,7 +373,14 @@ export function PixelCanvas({
 
     const applyMetrics = () => {
       if (designViewportLocked) {
-        setScale(1);
+        const visualScale = resolveStageVisualScale(
+          stageRef.current,
+          viewCanvas.width,
+          viewCanvas.height,
+        );
+        setScale((previous) =>
+          Math.abs(previous - visualScale) < 0.0001 ? previous : visualScale,
+        );
         setStageLeft(0);
         setCenterContent(false);
         setScrollX(false);
@@ -389,6 +430,12 @@ export function PixelCanvas({
     applyMetrics();
     const observer = new ResizeObserver(scheduleMetrics);
     observer.observe(measureEl);
+    if (designViewportLocked) {
+      const viewportHost = host.closest("[data-canvas-scale-viewport]");
+      if (viewportHost instanceof HTMLElement) {
+        observer.observe(viewportHost);
+      }
+    }
     return () => {
       observer.disconnect();
       if (metricsFrameRef.current !== null) {
@@ -396,7 +443,7 @@ export function PixelCanvas({
         metricsFrameRef.current = null;
       }
     };
-  }, [publishViewport, viewCanvas, designCanvasHeight, mode, scaleMode, editMinScale, designViewportLocked, effectiveScaleMode]);
+  }, [publishViewport, viewCanvas, designCanvasHeight, mode, scaleMode, editMinScale, designViewportLocked, effectiveScaleMode, viewportFit]);
 
   useLayoutEffect(() => {
     consumePendingCanvasHostScrollRestore(hostRef.current);
@@ -453,7 +500,7 @@ export function PixelCanvas({
 
   const resolveActiveAt = useCallback(
     (widget: PixelLayoutWidget) =>
-      resolvePixelCollisions(
+      resolvePixelLayoutWithActiveRect(
         activeLayout,
         widget.id,
         {
@@ -475,6 +522,16 @@ export function PixelCanvas({
       previewThrottleRef.current = Date.now();
       pendingPreviewRef.current = null;
       setShapeDragWidget(widget);
+      if (allowWidgetOverlap) {
+        const positions = new Map(
+          activeLayout.widgets.map((item) => [
+            item.id,
+            item.id === widget.id ? widgetRect(widget) : widgetRect(item),
+          ] as const),
+        );
+        previewRegistryRef.current.applyAll(positions);
+        return;
+      }
       const nextLayout = resolveActiveAt(widget);
       const positions = new Map(
         nextLayout.widgets.map((item) => [item.id, widgetRect(item)] as const),
@@ -482,7 +539,7 @@ export function PixelCanvas({
       previewRegistryRef.current.applyAll(positions);
       syncPreviewStageMetrics(nextLayout);
     },
-    [resolveActiveAt, syncPreviewStageMetrics],
+    [activeLayout, allowWidgetOverlap, resolveActiveAt, syncPreviewStageMetrics],
   );
 
   const handlePreview = useCallback(
@@ -546,6 +603,7 @@ export function PixelCanvas({
         });
         if (host && host.id !== widgetId) return false;
       }
+      if (allowWidgetOverlap) return false;
       return shouldRevertPixelDragCommit(
         finalRect,
         startRect,
@@ -558,6 +616,7 @@ export function PixelCanvas({
     },
     [
       activeLayout,
+      allowWidgetOverlap,
       gapRuntime.collisionGapPx,
       gapRuntime.collisionOverlapBufferPx,
       tabInsertIntent,
@@ -726,9 +785,10 @@ export function PixelCanvas({
     <div
       ref={hostRef}
       className={cn(
-        "pixel-canvas-host relative h-full min-h-0 w-full overflow-y-auto",
-        scrollX ? "overflow-x-auto" : "overflow-x-hidden",
-        centerContent && "flex flex-col items-center",
+        "pixel-canvas-host relative h-full min-h-0 w-full",
+        hostOverflowLocked ? "overflow-hidden" : "overflow-y-auto",
+        !hostOverflowLocked && scrollX ? "overflow-x-auto" : "overflow-x-hidden",
+        hostCentered && "flex flex-col items-center justify-center",
         paletteDragOver && "dashboard-canvas-drop-active",
         className,
       )}
@@ -779,7 +839,7 @@ export function PixelCanvas({
             left: stageLeft,
             width: viewCanvas.width,
             height: viewCanvas.height,
-            transform: `scale(${scale})`,
+            transform: designViewportLocked ? undefined : `scale(${scale})`,
           }}
           onPointerDown={handleBlankPointerDown}
           onDragOver={handleDragOver}
@@ -820,7 +880,7 @@ export function PixelCanvas({
                 onMarkGuidesChange={
                   mode === "edit" ? handleMarkGuidesChange : undefined
                 }
-                markLinesEnabled={showAuxGrid}
+                markLinesEnabled={markLinesEnabled}
                 snapTargets={topLevelWidgets.filter((item) => item.id !== widget.id)}
                 viewport={visibleViewport}
                 otherWidgets={topLevelWidgets.filter((item) => item.id !== widget.id)}

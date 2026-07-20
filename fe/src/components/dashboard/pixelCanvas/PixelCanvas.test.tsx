@@ -583,6 +583,23 @@ describe("PixelCanvas", () => {
     });
   });
 
+  it("hides resize handles when widget is locked", () => {
+    const lockedLayout: DashboardLayoutV2 = {
+      ...layout,
+      widgets: [{ ...widget, locked: true }],
+    };
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={lockedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={vi.fn()}
+        renderWidget={(item) => <button data-pixel-no-drag>{item.title}</button>}
+      />,
+    );
+    expect(screen.queryByLabelText("调整组件大小：右下")).not.toBeInTheDocument();
+  });
+
   it("supports keyboard move and resize without Enter or Space mutations", () => {
     const onChange = renderCanvas("edit");
     const drag = screen.getByLabelText("拖动组件");

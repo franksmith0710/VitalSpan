@@ -333,6 +333,21 @@ export function clientPointToCanvasFromStage(
   };
 }
 
+/** 从 stage 屏幕外框反推视觉缩放（含祖先 transform；设计视口锁定时替代内部 scale=1） */
+export function resolveStageVisualScale(
+  stage: Pick<HTMLElement, "getBoundingClientRect"> | null | undefined,
+  designWidth: number,
+  designHeight: number,
+): number {
+  if (!stage || designWidth <= 0 || designHeight <= 0) return 1;
+  const rect = stage.getBoundingClientRect();
+  if (rect.width <= 0 && rect.height <= 0) return 1;
+  const widthScale = rect.width > 0 ? rect.width / designWidth : Number.POSITIVE_INFINITY;
+  const heightScale = rect.height > 0 ? rect.height / designHeight : Number.POSITIVE_INFINITY;
+  const visual = Math.min(widthScale, heightScale);
+  return visual > 0 && Number.isFinite(visual) ? visual : 1;
+}
+
 /** 测量可用宽度：优先布局外框，避免 padding-right 藏条缝导致 scale 与视觉不一致 */
 export function resolvePixelCanvasMeasureWidth(element: HTMLElement): number {
   const rect = element.getBoundingClientRect();

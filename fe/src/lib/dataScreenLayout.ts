@@ -54,6 +54,10 @@ export function isDataScreenPreviewPath(pathname: string): boolean {
   return /^\/admin\/data-screens\/[^/]+\/preview\/?$/.test(pathname);
 }
 
+export function dataScreenEmbedPath(id: string): string {
+  return `/embed/screen/${id}`;
+}
+
 export function dashboardSharePath(id: string, isScreen: boolean): string {
   return isScreen ? `/admin/data-screens/${id}/share` : `/admin/dashboards/${id}/share`;
 }

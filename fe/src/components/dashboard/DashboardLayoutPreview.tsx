@@ -141,7 +141,7 @@ export function DashboardLayoutPreview({
           mode="view"
           layout={displayLayout}
           styleConfig={styleConfig}
-          scaleMode={fixedDesignViewport ? "canvas" : (scaleMode ?? styleConfig.scaleMode)}
+          scaleMode={fixedDesignViewport ? "canvas" : (scaleMode ?? "canvas")}
           designViewportLocked={fixedDesignViewport}
           className="h-full min-h-0"
           renderWidget={(widget: PixelLayoutWidget) =>

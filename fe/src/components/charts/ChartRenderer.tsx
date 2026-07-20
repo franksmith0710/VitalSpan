@@ -30,7 +30,9 @@ import {
   applyChartDrillPipeline,
   drillStackToFilterParameters,
   filterRowsByDrillStack,
+  canDrillDeeper,
   getClickDrillField,
+  getDrillChain,
   resolveDrillRenderSpec,
   supportsChartDrillInteraction,
 } from "@/lib/chartDrill";
@@ -297,6 +299,13 @@ export const ChartRenderer = memo(function ChartRenderer({
   const handleDrillClick = useCallback(
     (value: string, label?: string) => {
       if (!drillInteraction) return;
+      if (localConfig.chartType === "map" && value && !canDrillDeeper(drill.stack, config)) {
+        const chain = getDrillChain(config);
+        if (chain.length >= 2 && drill.stack.length >= chain.length - 1) {
+          setMapDrillError("已是最后一层");
+        }
+        return;
+      }
       const field =
         localConfig.chartType === "map"
           ? getMapDrillClickField(config, drill.stack)

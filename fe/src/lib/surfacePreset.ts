@@ -6,6 +6,33 @@ import { PIXEL_CANVAS_MIN_HEIGHT } from "@/components/dashboard/pixelCanvas/cons
 
 export type SurfaceKind = "dashboard" | "data-screen";
 
+export type DataScreenCanvasPresetId = "16:9" | "21:9";
+
+export const DATA_SCREEN_CANVAS_16_9 = {
+  width: DATA_SCREEN_CANVAS.width,
+  height: DATA_SCREEN_CANVAS.height,
+} as const;
+
+export const DATA_SCREEN_CANVAS_21_9 = {
+  width: 2560,
+  height: 1080,
+} as const;
+
+export const DATA_SCREEN_CANVAS_PRESETS: Record<
+  DataScreenCanvasPresetId,
+  { width: number; height: number; label: string }
+> = {
+  "16:9": { ...DATA_SCREEN_CANVAS_16_9, label: "1920×1080 (16:9)" },
+  "21:9": { ...DATA_SCREEN_CANVAS_21_9, label: "2560×1080 (21:9)" },
+};
+
+export function resolveDataScreenCanvasPresetId(canvas: {
+  width: number;
+  height: number;
+}): DataScreenCanvasPresetId {
+  return canvas.width >= DATA_SCREEN_CANVAS_21_9.width ? "21:9" : "16:9";
+}
+
 export type SurfacePreset = {
   kind: SurfaceKind;
   canvas: { width: number; height: number };

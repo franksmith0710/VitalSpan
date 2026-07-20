@@ -1,5 +1,6 @@
 import type { DashboardLayoutV2, PixelLayoutWidget } from "../layoutUtils";
 import { getTopLevelPixelWidgets, syncParkedTabChildren } from "../layoutUtils";
+import { readSurfaceKind } from "@/lib/dataScreenLayout";
 import type { PixelCanvasBounds, PixelRect } from "./geometry";
 
 export type CollisionLayoutOptions = {
@@ -26,6 +27,13 @@ const DEFAULT_OPTIONS: Required<Omit<CollisionLayoutOptions, "skipVerticalCompac
   minOverlap: PIXEL_COLLISION_OVERLAP_BUFFER_PX,
   skipVerticalCompact: false,
 };
+
+/** 数据大屏：允许自由叠放，不做 DE 式邻块推挤 */
+export function allowsPixelWidgetOverlap(
+  layout: Pick<DashboardLayoutV2, "styleConfig">,
+): boolean {
+  return readSurfaceKind(layout) === "data-screen";
+}
 
 export function widgetRect(widget: Pick<PixelLayoutWidget, "x" | "y" | "width" | "height">): PixelRect {
   return { x: widget.x, y: widget.y, width: widget.width, height: widget.height };
@@ -76,6 +84,39 @@ export function shouldRevertPixelDragCommit(
   gap = 0,
 ): boolean {
   return others.some((other) => hasShallowOverlap(finalRect, other, minOverlap, gap));
+}
+
+/** 仅更新活动组件外框，不触发邻块碰撞推挤（数据大屏叠放） */
+export function applyActiveWidgetRect(
+  layout: DashboardLayoutV2,
+  activeId: string,
+  activeRect: PixelRect,
+): DashboardLayoutV2 {
+  const roundedActive = {
+    x: Math.round(activeRect.x),
+    y: Math.round(activeRect.y),
+    width: Math.round(activeRect.width),
+    height: Math.round(activeRect.height),
+  };
+  return {
+    ...layout,
+    widgets: layout.widgets.map((widget) =>
+      widget.id === activeId ? { ...widget, ...roundedActive } : widget,
+    ),
+  };
+}
+
+/** 按 surface 策略写入活动组件外框：仪表板推挤邻块，大屏仅叠放 */
+export function resolvePixelLayoutWithActiveRect(
+  layout: DashboardLayoutV2,
+  activeId: string,
+  activeRect: PixelRect,
+  options: CollisionLayoutOptions = {},
+): DashboardLayoutV2 {
+  if (allowsPixelWidgetOverlap(layout)) {
+    return applyActiveWidgetRect(layout, activeId, activeRect);
+  }
+  return resolvePixelCollisions(layout, activeId, activeRect, options);
 }
 
 function stableWidgetKey(widget: PixelLayoutWidget): [number, number, number, string] {

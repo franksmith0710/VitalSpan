@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type ReactNode } from "react";
 import { GripVertical, LayoutGrid, PanelsTopLeft, Plus, Trash2 } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
-import { getTabChildWidgets } from "./layoutUtils";
+import { TABS_CAROUSEL_MIN_INTERVAL_SEC, getTabChildWidgets } from "./layoutUtils";
 import { shapeTitlePresentationStyle } from "./dashboardWidgetTypography";
 
 const MAX_PANES = 8;
@@ -115,6 +115,8 @@ export function TabsWidget({
   renderChild,
 }: TabsWidgetProps) {
   const cfg = widget.tabsConfig;
+  const cfgRef = useRef(cfg);
+  cfgRef.current = cfg;
   const head = cfg.headStyle ?? {};
   const canvasScale = usePixelCanvasScale();
   const isShape = shell === "shape";
@@ -124,6 +126,24 @@ export function TabsWidget({
   const [paletteOver, setPaletteOver] = useState(false);
   const activePane = cfg.panes.find((p) => p.id === cfg.activePaneId) ?? cfg.panes[0];
   const children = activePane ? getTabChildWidgets(allWidgets, widget.id, activePane.id) : [];
+
+  useEffect(() => {
+    const carousel = cfg.carousel;
+    if (mode === "edit" || !carousel?.enabled || cfg.panes.length < 2 || !onTabsConfigChange) {
+      return;
+    }
+    const intervalMs = Math.max(TABS_CAROUSEL_MIN_INTERVAL_SEC, carousel.intervalSec) * 1000;
+    const timer = window.setInterval(() => {
+      const current = cfgRef.current;
+      const index = current.panes.findIndex((pane) => pane.id === current.activePaneId);
+      const nextIndex = index < 0 ? 0 : (index + 1) % current.panes.length;
+      onTabsConfigChange({
+        ...current,
+        activePaneId: current.panes[nextIndex]!.id,
+      });
+    }, intervalMs);
+    return () => window.clearInterval(timer);
+  }, [cfg.carousel?.enabled, cfg.carousel?.intervalSec, cfg.panes.length, mode, onTabsConfigChange]);
 
   const tabLabelStyle: CSSProperties = isShape
     ? shapeTitlePresentationStyle({ fontSize: head.fontSize ?? DEFAULT_TAB_FONT_PX }, canvasScale)

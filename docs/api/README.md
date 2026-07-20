@@ -228,8 +228,10 @@ redoc: /redoc
 | GET | `/api/v1/users/me/views/{view_id}` | IF-06 | 已实现 | `api/v1/views.py` | 用户视图覆盖按 id 读取（r63 VIEW-003） |
 | PUT | `/api/v1/users/me/views/{id}` | 用户视图覆盖更新 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | DELETE | `/api/v1/users/me/views/{id}` | 用户视图覆盖删除 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
-| POST | `/api/v1/embed/token` | 门户嵌入 token 签发（admin 或 `dashboard:share`；422 `EMBED_TARGET_CONFLICT`/`EMBED_INVALID_ORIGIN`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
-| GET | `/api/v1/embed/sdk-params` | 按 token 解析 SDK 参数（`containerId`/`apiBase`） | IF-04 | 三期 | API-006 | 已实现（骨架） | `backend/app/api/v1/embed.py` |
+| POST | `/api/v1/embed/token` | 门户嵌入 token 签发（`chartId` 或 `dashboardId`；大屏整屏 URL `/embed/screen/{id}`） | IF-04 | 三期 | API-006 | 已实现 | `backend/app/integration/embed_token.py` |
+| GET | `/api/v1/embed/sdk-params` | 按 token 解析 SDK 参数（`containerId`/`apiBase`） | IF-04 | 三期 | API-006 | 已实现 | `backend/app/api/v1/embed.py` |
+| GET | `/api/v1/embed/chart-view` | 按 embed token 加载单图 `ChartViewConfig` | IF-04 | 三期 | VIZ-006 | 已实现 | `backend/app/integration/embed_resolve.py` |
+| GET | `/api/v1/embed/dashboard-layout` | 按 embed token 加载数据大屏 `layoutJson`（`EMBED_NOT_DATA_SCREEN`） | IF-04 | 三期 | DASH-002 | 已实现 | `backend/app/integration/embed_resolve.py` |
 
 ---
 

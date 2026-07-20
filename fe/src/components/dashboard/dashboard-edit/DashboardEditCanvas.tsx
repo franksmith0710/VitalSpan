@@ -27,6 +27,7 @@ import {
 } from "../dashboardStyleConfig";
 import { resolveDashboardGapRuntimeFromLayout, resolveEffectiveDashboardStyle } from "../stylePipeline";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
+import { CanvasScaleViewport } from "../screen/CanvasScaleViewport";
 import { DashboardWidgetsProvider } from "../DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "../dashboardWidgetExecuteKey";
 import type { PaletteInsertType } from "../createLayoutWidget";
@@ -190,11 +191,35 @@ export function DashboardEditCanvas({
         linkage={linkage}
         filterValues={filterValues}
         onFilterValueChange={mode === "view" ? onFilterValueChange : undefined}
-        scaleMode={effectiveStyle.scaleMode}
         className="h-full min-h-0 w-full"
       />
     );
   }
+
+  const isDataScreenEdit =
+    layout.version === 2 && effectiveStyle.surfaceKind === "data-screen";
+
+  const pixelCanvas = (
+    <PixelCanvas
+      mode="edit"
+      layout={layout as DashboardLayoutV2}
+      styleConfig={effectiveStyle}
+      designViewportLocked={isDataScreenEdit}
+      selectedIds={selectedIds}
+      onSelect={onSelect}
+      onClearSelection={onClearSelection}
+      onLayoutChange={setPixelLayout}
+      onViewportChange={onViewportChange}
+      onPaletteDrop={onPaletteDrop}
+      onTabPaletteDrop={onTabPaletteDrop}
+      onTabChildUnpark={onTabChildUnpark}
+      onTabInsertIntentChange={onTabInsertIntentChange}
+      widgetActions={widgetActions}
+      renderWidget={renderPixelWidget}
+      widgetContentRevision={widgetContentRevision}
+      className={isDataScreenEdit ? "h-full w-full" : undefined}
+    />
+  );
 
   return (
     <DashboardWidgetsProvider widgets={widgets}>
@@ -211,24 +236,23 @@ export function DashboardEditCanvas({
         className="h-full min-h-0"
       >
         {layout.version === 2 ? (
-          <PixelCanvas
-            mode="edit"
-            layout={layout}
-            styleConfig={effectiveStyle}
-            scaleMode={effectiveStyle.scaleMode}
-            selectedIds={selectedIds}
-            onSelect={onSelect}
-            onClearSelection={onClearSelection}
-            onLayoutChange={setPixelLayout}
-            onViewportChange={onViewportChange}
-            onPaletteDrop={onPaletteDrop}
-            onTabPaletteDrop={onTabPaletteDrop}
-            onTabChildUnpark={onTabChildUnpark}
-            onTabInsertIntentChange={onTabInsertIntentChange}
-            widgetActions={widgetActions}
-            renderWidget={renderPixelWidget}
-            widgetContentRevision={widgetContentRevision}
-          />
+          isDataScreenEdit ? (
+            <CanvasScaleViewport
+              canvasWidth={layout.canvas.width}
+              canvasHeight={layout.canvas.height}
+              mode="fit"
+              className="h-full min-h-0 w-full"
+            >
+              <div
+                className="h-full w-full"
+                style={{ width: layout.canvas.width, height: layout.canvas.height }}
+              >
+                {pixelCanvas}
+              </div>
+            </CanvasScaleViewport>
+          ) : (
+            pixelCanvas
+          )
         ) : (
           <div className="relative h-full min-h-0">
             <div

@@ -108,10 +108,10 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 ├── 分析                            # 建设 + 消费（默认展开）
 │   ├── /dashboards                  # Dashboard 列表 · table-list（全员可见授权项）
 │   ├── /data-screens                # 数据大屏列表 · bi-data-screen（`surfaceKind=data-screen`）
-│   ├── /data-screens/:id            # 大屏查看 view（`DashboardEditPage mode=view`）
+│   ├── /data-screens/:id            # 大屏查看 → 重定向 `/preview`（Wave 2.5 A1）
 │   ├── /data-screens/:id/edit       # 大屏编辑（复用像素画布；默认画布 1920×1080）
 │   ├── /data-screens/:id/preview    # 大屏全屏预览投放（`DataScreenPreviewPage` + `DataScreenPresenter`）
-│   ├── /data-screens/:id/share      # 大屏分享/嵌入（复用 `DashboardSharePage`）
+│   ├── /data-screens/:id/share      # 大屏分享/整屏嵌入（`DataScreenSharePanel`）
 │   ├── /dashboards/:id              # 查看 view · bi-dashboard-builder（只读）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
 │   ├── /dashboards/:id/preview      # （规划）构建器 preview；当前以 `/dashboards/:id` view 模式替代
@@ -169,7 +169,9 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 
 | 路由 | 说明 | 布局模式 |
 |------|------|----------|
-| `/embed/:token` | 校验 embed token 后渲染单个 Dashboard/图表 | chromeless + `ChartPanel` |
+| `/embed/chart/:chartId` | 单图嵌入（须 `?token=`） | chromeless |
+| `/embed/screen/:dashboardId` | 数据大屏整屏嵌入（须 `?token=`；`DataScreenPresenter`） | chromeless |
+| `/embed/share` | 嵌入配置与 token 签发 | `bi-share-embed` |
 | SDK | `fe/src/sdk/` 初始化，容器内挂载 | `bi-share-embed` |
 
 域名白名单、token 过期、撤销 → 见 PRD API-006 / VIZ-007。

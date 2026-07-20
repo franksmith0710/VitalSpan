@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import {
   Select,
@@ -70,6 +70,18 @@ export function ChartPalettePicker({
   const [customOpen, setCustomOpen] = useState(false);
   const [bootstrapCustom, setBootstrapCustom] = useState(false);
   const [denseMenuOpen, setDenseMenuOpen] = useState(false);
+  const denseMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dense || !denseMenuOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (denseMenuRef.current?.contains(target)) return;
+      setDenseMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [dense, denseMenuOpen]);
 
   const committedSelectValue = resolveSelectValue(value, showInherit);
   const resolvedId = committedSelectValue === INHERIT_VALUE ? undefined : committedSelectValue;
@@ -199,7 +211,7 @@ export function ChartPalettePicker({
       onPointerDown={(event) => event.stopPropagation()}
     >
       {dense ? (
-        <div className="space-y-1.5">
+        <div ref={denseMenuRef} className="space-y-1.5">
           <div className="flex min-w-0 items-start gap-1.5">
             <ChartPaletteCurrentDisplay
               activeLabel={activeLabel}

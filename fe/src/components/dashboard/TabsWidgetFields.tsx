@@ -3,9 +3,9 @@ import { Button, IconButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
-import { getTabChildWidgets } from "./layoutUtils";
+import { TABS_CAROUSEL_MIN_INTERVAL_SEC, getTabChildWidgets } from "./layoutUtils";
 import { InspectorPanelSection } from "./inspector-panel-section";
-import { DE_INPUT } from "./dashboardInspectorUi";
+import { DE_INPUT, DeAttrToggleRow } from "./dashboardInspectorUi";
 import { INSPECTOR_HINT, InspectorSubtleEmpty } from "./inspectorCompact";
 import { widgetChartIcon, WIDGET_CHART_LABELS } from "./widgetIcons";
 
@@ -237,3 +237,54 @@ export function TabsPaneList({
 }
 
 export { TabsWidgetStylePanel as TabsStyleFields } from "./widgetRailStyleSections";
+
+export function TabsCarouselFields({
+  cfg,
+  onChange,
+}: {
+  cfg: TabsWidgetConfig;
+  onChange: (tabsConfig: TabsWidgetConfig) => void;
+}) {
+  const carousel = cfg.carousel ?? { enabled: false, intervalSec: 5 };
+  const intervalSec = Math.max(TABS_CAROUSEL_MIN_INTERVAL_SEC, carousel.intervalSec);
+
+  return (
+    <InspectorPanelSection title="预览轮播">
+      <DeAttrToggleRow
+        label="自动轮播"
+        description="仅在预览/投放态生效"
+        checked={carousel.enabled}
+        onCheckedChange={(enabled) =>
+          onChange({
+            ...cfg,
+            carousel: { enabled, intervalSec },
+          })
+        }
+      />
+      {carousel.enabled ? (
+        <div className="mt-2">
+          <label className="mb-1 block text-theme-xs text-gray-500 dark:text-gray-400">
+            间隔（秒，≥{TABS_CAROUSEL_MIN_INTERVAL_SEC}）
+          </label>
+          <Input
+            type="number"
+            min={TABS_CAROUSEL_MIN_INTERVAL_SEC}
+            className={DE_INPUT}
+            value={intervalSec}
+            onChange={(event) => {
+              const next = Number(event.target.value);
+              if (!Number.isFinite(next)) return;
+              onChange({
+                ...cfg,
+                carousel: {
+                  enabled: true,
+                  intervalSec: Math.max(TABS_CAROUSEL_MIN_INTERVAL_SEC, Math.round(next)),
+                },
+              });
+            }}
+          />
+        </div>
+      ) : null}
+    </InspectorPanelSection>
+  );
+}

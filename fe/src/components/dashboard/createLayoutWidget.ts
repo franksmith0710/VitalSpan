@@ -7,6 +7,7 @@ import {
 import {
   createScreenBorderWidget,
   createScreenClockWidget,
+  createScreenTitleBarWidget,
   type ScreenVisualInsertType,
 } from "@/lib/screenVisualAssets";
 import {
@@ -162,6 +163,7 @@ export function createPaletteWidget(
   if (type === "tabs") return createTabsWidget(widgets, at);
   if (type === "screen-clock") return createScreenClockWidget(widgets, at);
   if (type === "screen-border") return createScreenBorderWidget(widgets, at);
+  if (type === "screen-title-bar") return createScreenTitleBarWidget(widgets, at);
   return createLayoutWidget(type as ChartType, widgets, at);
 }
 

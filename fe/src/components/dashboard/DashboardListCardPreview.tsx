@@ -2,7 +2,9 @@ import { LayoutDashboard } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { isDataScreenLayout } from "@/lib/dataScreenLayout";
 import { DashboardLayoutPreview } from "./DashboardLayoutPreview";
+import { DataScreenPresenter } from "./screen/DataScreenPresenter";
 import type { DashboardLayout } from "./layoutUtils";
 
 type DashboardListCardPreviewProps = {
@@ -12,6 +14,7 @@ type DashboardListCardPreviewProps = {
 
 /**
  * 看板列表卡片真实预览：复用 DashboardLayoutPreview，进入视口后再挂载以控制查询量。
+ * 数据大屏使用 DataScreenPresenter 保持 16:9 投放比例。
  */
 export function DashboardListCardPreview({
   layoutJson,
@@ -19,6 +22,7 @@ export function DashboardListCardPreview({
 }: DashboardListCardPreviewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
+  const isScreen = isDataScreenLayout(layoutJson);
 
   useEffect(() => {
     const el = hostRef.current;
@@ -42,6 +46,7 @@ export function DashboardListCardPreview({
       <div
         className={cn(
           "flex h-full items-center justify-center bg-gray-50 dark:bg-gray-900/60",
+          isScreen && "bg-slate-950",
           className,
         )}
       >
@@ -54,7 +59,8 @@ export function DashboardListCardPreview({
     <div
       ref={hostRef}
       className={cn(
-        "dashboard-canvas-surface dashboard-list-card-preview relative h-full overflow-hidden bg-white dark:bg-gray-900/60",
+        "dashboard-canvas-surface dashboard-list-card-preview relative h-full overflow-hidden",
+        isScreen ? "bg-slate-950" : "bg-white dark:bg-gray-900/60",
         "transition-[filter,transform] duration-300 group-hover:scale-[1.02] group-hover:blur-[2px]",
         className,
       )}
@@ -62,11 +68,19 @@ export function DashboardListCardPreview({
       aria-hidden
     >
       {active ? (
-        <DashboardLayoutPreview
-          layout={layoutJson}
-          scaleMode="component"
-          className="pointer-events-none h-full min-h-0 select-none [&_.pixel-canvas-host]:h-full [&_.pixel-canvas-host]:min-h-0 [&_.pixel-canvas-host]:overflow-hidden"
-        />
+        isScreen ? (
+          <DataScreenPresenter
+            layout={layoutJson}
+            presentationMode="fit"
+            className="pointer-events-none h-full min-h-0 select-none"
+          />
+        ) : (
+          <DashboardLayoutPreview
+            layout={layoutJson}
+            scaleMode="component"
+            className="pointer-events-none h-full min-h-0 select-none [&_.pixel-canvas-host]:h-full [&_.pixel-canvas-host]:min-h-0 [&_.pixel-canvas-host]:overflow-hidden"
+          />
+        )
       ) : (
         <Skeleton className="h-full w-full rounded-none" />
       )}

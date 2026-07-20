@@ -71,6 +71,26 @@ def get_embed_chart_view(
         return _err(exc)
 
 
+@router.get("/dashboard-layout")
+def get_embed_dashboard_layout(
+    token: str = Query(),
+    dashboard_id: UUID = Query(alias="dashboardId"),
+    origin: Annotated[str | None, Header(alias="Origin")] = None,
+):
+    try:
+        meta = et.require_token_meta(token)
+        allowed = meta.get("allowed_origins") or []
+        if allowed and origin and origin not in allowed:
+            raise IntegrationError("EMBED_ORIGIN_DENIED", "Origin not allowed", 403)
+        session = get_meta_session()
+        try:
+            return embed_resolve.resolve_embed_dashboard_layout(session, token, dashboard_id)
+        finally:
+            session.close()
+    except IntegrationError as exc:
+        return _err(exc)
+
+
 @router.post("/query/execute", response_model=ExecuteResponse)
 def embed_query_execute(request: Request, payload: ExecuteRequest):
     token = request.headers.get("X-Embed-Token", "").strip()

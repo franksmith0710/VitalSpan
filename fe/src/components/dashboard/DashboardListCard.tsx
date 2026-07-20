@@ -69,6 +69,7 @@ export function DashboardListCard({
   const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
   const sharePath = dashboardSharePath(dashboard.id, isScreen);
   const primaryPath = canEdit ? editPath : viewPath;
+  const previewAspectRatio = isScreen ? "16 / 9" : DASHBOARD_LIST_CARD_ASPECT_RATIO;
 
   return (
     <article
@@ -79,7 +80,7 @@ export function DashboardListCard({
     >
       <div
         className="relative overflow-hidden border-b border-gray-100 dark:border-white/[0.06]"
-        style={{ aspectRatio: DASHBOARD_LIST_CARD_ASPECT_RATIO }}
+        style={{ aspectRatio: previewAspectRatio }}
       >
         {onToggleSelect ? (
           <div className="absolute left-2 top-2 z-10 rounded-md bg-white/90 p-0.5 shadow-sm dark:bg-gray-900/90">

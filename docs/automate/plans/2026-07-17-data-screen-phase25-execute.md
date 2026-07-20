@@ -6,7 +6,7 @@
 | Cursor Build | disabled |
 | Execution trigger | dev-autopilot A5 plan-execute（或人工按 Wave 推进） |
 | 日期 | 2026-07-17 |
-| 状态 | **queued** |
+| 状态 | **Wave A 已交付**（Wave B 待执行） |
 | 需求真理源 | [Phase 2.5 需求说明](./2026-07-17-data-screen-phase25-requirements.md) |
 
 > **摘要**：补齐「对外投放闭环」与 DE 工作台高频能力。优先 Wave A（view/share/embed），再 Wave B（编辑深化），C/D 可并行。
@@ -52,8 +52,8 @@ flowchart TB
 
 **验收**
 
-- [ ] 从列表进入查看为 chromeless 16:9 投放
-- [ ] 仪表板 `/admin/dashboards/:id` 行为无回归
+- [x] 从列表进入查看为 chromeless 16:9 投放
+- [x] 仪表板 `/admin/dashboards/:id` 行为无回归
 
 ---
 
@@ -76,8 +76,8 @@ flowchart TB
 
 **验收**
 
-- [ ] 大屏分享页缩放预览与 preview 视觉一致
-- [ ] 配置 `refreshIntervalSec=30` 时图表刷新、页面不闪白
+- [x] 大屏分享页缩放预览与 preview 视觉一致
+- [x] 配置 `refreshIntervalSec=30` 时图表刷新、页面不闪白
 - [ ] smoke：`DashboardSharePage` data-screen fixture
 
 ---
@@ -100,8 +100,8 @@ flowchart TB
 
 **验收**
 
-- [ ] `/embed/screen/{uuid}` iframe 可展示整屏
-- [ ] 非 data-screen dashboard 返回明确错误
+- [x] `/embed/screen/{uuid}` iframe 可展示整屏
+- [x] 非 data-screen dashboard 返回明确错误
 
 ---
 
@@ -123,8 +123,8 @@ flowchart TB
 
 **验收**
 
-- [ ] `POST /api/v1/embed/token` body `{ dashboardId }` 返回的 `embedUrl` 含 `/embed/screen/`
-- [ ] 后端单测通过
+- [x] `POST /api/v1/embed/token` body `{ dashboardId }` 返回的 `embedUrl` 含 `/embed/screen/`
+- [x] 后端单测通过
 
 ---
 
@@ -143,7 +143,7 @@ flowchart TB
 
 **验收**
 
-- [ ] 大屏列表卡片预览无拉伸变形
+- [x] 大屏列表卡片预览无拉伸变形
 
 ---
 

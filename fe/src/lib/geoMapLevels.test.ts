@@ -40,7 +40,72 @@ describe("resolveGeoMapLevelContext", () => {
     });
     expect(ctx.mapId).toBe("vs-geo-440000");
     expect(ctx.drillDepth).toBe(1);
+    expect(ctx.levelLabel).toBe("市级");
     expect(ctx.knownRegionNames).toContain("广州市");
+  });
+
+  it("loads district map after province and city drill", async () => {
+    const ctx = await resolveGeoMapLevelContext({
+      config: {
+        chartType: "map",
+        dimensions: [{ field: "province" }, { field: "city" }, { field: "district" }],
+        metrics: [{ field: "total" }],
+      } as never,
+      drillStack: [
+        { field: "province", value: "广东省", label: "广东省" },
+        { field: "city", value: "广州市", label: "广州市" },
+      ],
+    });
+    expect(ctx.mapId).toBe("vs-geo-440100");
+    expect(ctx.drillDepth).toBe(2);
+    expect(ctx.levelLabel).toBe("区县级");
+    expect(ctx.knownRegionNames).toContain("天河区");
+  });
+
+  it("shows municipality districts at depth 1", async () => {
+    const ctx = await resolveGeoMapLevelContext({
+      config: {
+        chartType: "map",
+        dimensions: [{ field: "province" }, { field: "city" }, { field: "district" }],
+        metrics: [{ field: "total" }],
+      } as never,
+      drillStack: [{ field: "province", value: "北京市", label: "北京市" }],
+    });
+    expect(ctx.mapId).toBe("vs-geo-110000");
+    expect(ctx.drillDepth).toBe(1);
+    expect(ctx.levelLabel).toBe("区县级");
+    expect(ctx.knownRegionNames.length).toBeGreaterThan(0);
+  });
+
+  it("reports missing city asset for Taiwan", async () => {
+    const ctx = await resolveGeoMapLevelContext({
+      config: {
+        chartType: "map",
+        dimensions: [{ field: "province" }, { field: "city" }],
+        metrics: [{ field: "total" }],
+      } as never,
+      drillStack: [{ field: "province", value: "台湾省", label: "台湾省" }],
+    });
+    expect(ctx.missingAsset).toBe("台湾省暂无市级离线边界资产");
+    expect(ctx.drillDepth).toBe(0);
+  });
+
+  it("reports missing district asset and stays at city level", async () => {
+    const ctx = await resolveGeoMapLevelContext({
+      config: {
+        chartType: "map",
+        dimensions: [{ field: "province" }, { field: "city" }, { field: "district" }],
+        metrics: [{ field: "total" }],
+      } as never,
+      drillStack: [
+        { field: "province", value: "广东省", label: "广东省" },
+        { field: "city", value: "东莞市", label: "东莞市" },
+      ],
+    });
+    expect(ctx.mapId).toBe("vs-geo-440000");
+    expect(ctx.drillDepth).toBe(1);
+    expect(ctx.missingAsset).toContain("东莞市");
+    expect(ctx.missingAsset).toContain("区县离线边界");
   });
 });
 

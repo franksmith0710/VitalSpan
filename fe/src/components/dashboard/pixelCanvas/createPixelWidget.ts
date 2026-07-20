@@ -1,13 +1,14 @@
 import {
   isScreenBorderWidget,
   isScreenClockWidget,
+  isScreenTitleBarWidget,
 } from "@/lib/screenVisualAssets";
 import {
   createPaletteWidget,
   type PaletteInsertType,
 } from "../createLayoutWidget";
 import { cloneLayoutWidget } from "../cloneLayoutWidget";
-import { findNextOpenSlot, resolvePixelCollisions } from "./collisionLayout";
+import { findNextOpenSlot, resolvePixelLayoutWithActiveRect } from "./collisionLayout";
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
 import { getTopLevelPixelWidgets, insertPixelWidgetIntoTab } from "../layoutUtils";
@@ -21,6 +22,7 @@ export const PIXEL_DEFAULT_MEDIA_SIZE = { width: 480, height: 300 };
 export const PIXEL_DEFAULT_TABS_SIZE = { width: 720, height: 320 };
 export const PIXEL_DEFAULT_SCREEN_CLOCK_SIZE = { width: 420, height: 72 };
 export const PIXEL_DEFAULT_SCREEN_BORDER_SIZE = { width: 560, height: 360 };
+export const PIXEL_DEFAULT_SCREEN_TITLE_BAR_SIZE = { width: 720, height: 64 };
 
 export function defaultPixelSizeForWidget(
   widget: Pick<LayoutWidget, "type">,
@@ -35,6 +37,7 @@ function defaultSize(widget: LayoutWidget) {
     case "text":
       if (isScreenClockWidget(widget)) return PIXEL_DEFAULT_SCREEN_CLOCK_SIZE;
       if (isScreenBorderWidget(widget)) return PIXEL_DEFAULT_SCREEN_BORDER_SIZE;
+      if (isScreenTitleBarWidget(widget)) return PIXEL_DEFAULT_SCREEN_TITLE_BAR_SIZE;
       return PIXEL_DEFAULT_TEXT_SIZE;
     case "media":
       return PIXEL_DEFAULT_MEDIA_SIZE;
@@ -110,7 +113,7 @@ function resolveInsert(
   layout: DashboardLayoutV2,
   draft: PixelLayoutWidget,
 ): DashboardLayoutV2 {
-  return resolvePixelCollisions(
+  return resolvePixelLayoutWithActiveRect(
     { ...layout, widgets: [...layout.widgets, draft] },
     draft.id,
     {

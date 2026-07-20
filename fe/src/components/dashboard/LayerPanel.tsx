@@ -26,6 +26,28 @@ export type LayerPanelProps = {
   className?: string;
 };
 
+type LayerRow = {
+  widget: LayoutWidget;
+  depth: number;
+  readOnly?: boolean;
+};
+
+function buildLayerRows(widgets: LayoutWidget[]): LayerRow[] {
+  const topLevel = sortWidgets(widgets.filter((w) => !w.parentTabsId)).reverse();
+  const rows: LayerRow[] = [];
+  for (const widget of topLevel) {
+    rows.push({ widget, depth: 0 });
+    if (widget.type === "tabs" && widget.tabsConfig) {
+      const childIds = widget.tabsConfig.panes.flatMap((pane) => pane.childWidgetIds);
+      for (const childId of childIds) {
+        const child = widgets.find((w) => w.id === childId);
+        if (child) rows.push({ widget: child, depth: 1, readOnly: true });
+      }
+    }
+  }
+  return rows;
+}
+
 export function LayerPanel({
   widgets,
   selectedId,
@@ -33,7 +55,8 @@ export function LayerPanel({
   onWidgetsChange,
   className,
 }: LayerPanelProps) {
-  const topLevel = sortWidgets(widgets.filter((w) => !w.parentTabsId)).reverse();
+  const rows = buildLayerRows(widgets);
+  const topLevelCount = rows.filter((row) => row.depth === 0).length;
 
   const patchWidget = (id: string, patch: Partial<LayoutWidget>) => {
     onWidgetsChange(widgets.map((w) => (w.id === id ? { ...w, ...patch } : w)));
@@ -43,14 +66,15 @@ export function LayerPanel({
     <section className={cn("flex min-h-0 flex-col", className)} data-layer-panel>
       <header className="mb-2 flex items-center justify-between gap-2">
         <h3 className="text-theme-sm font-medium text-gray-800 dark:text-white/90">图层管理</h3>
-        <span className="text-theme-xs text-gray-500">{topLevel.length} 项</span>
+        <span className="text-theme-xs text-gray-500">{topLevelCount} 项</span>
       </header>
       <ul className="custom-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
-        {topLevel.map((widget) => (
+        {rows.map(({ widget, depth, readOnly }) => (
           <li key={widget.id}>
             <div
               className={cn(
                 "flex items-center gap-1 rounded-lg border px-2 py-1.5 transition-colors",
+                depth > 0 && "ml-4 border-dashed",
                 selectedId === widget.id
                   ? "border-brand-300 bg-brand-50 dark:border-brand-500/40 dark:bg-brand-500/10"
                   : "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]",
@@ -64,66 +88,68 @@ export function LayerPanel({
               >
                 {resolveScreenWidgetLayerLabel(widget)}
               </button>
-              <div className="flex shrink-0 items-center gap-0.5">
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  aria-label={widget.hidden ? "显示图层" : "隐藏图层"}
-                  onClick={() => patchWidget(widget.id, { hidden: !widget.hidden })}
-                >
-                  {widget.hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  aria-label={widget.locked ? "解锁图层" : "锁定图层"}
-                  onClick={() => patchWidget(widget.id, { locked: !widget.locked })}
-                >
-                  {widget.locked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />}
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  aria-label="置顶"
-                  onClick={() => onWidgetsChange(moveWidgetToExtreme(widgets, widget.id, "top"))}
-                >
-                  <ChevronsUp className="size-3.5" />
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  aria-label="上移一层"
-                  onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "down"))}
-                >
-                  <ArrowUp className="size-3.5" />
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  aria-label="下移一层"
-                  onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "up"))}
-                >
-                  <ArrowDown className="size-3.5" />
-                </IconButton>
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  aria-label="置底"
-                  onClick={() => onWidgetsChange(moveWidgetToExtreme(widgets, widget.id, "bottom"))}
-                >
-                  <ChevronsDown className="size-3.5" />
-                </IconButton>
-              </div>
+              {readOnly ? null : (
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    aria-label={widget.hidden ? "显示图层" : "隐藏图层"}
+                    onClick={() => patchWidget(widget.id, { hidden: !widget.hidden })}
+                  >
+                    {widget.hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                  </IconButton>
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    aria-label={widget.locked ? "解锁图层" : "锁定图层"}
+                    onClick={() => patchWidget(widget.id, { locked: !widget.locked })}
+                  >
+                    {widget.locked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />}
+                  </IconButton>
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    aria-label="置顶"
+                    onClick={() => onWidgetsChange(moveWidgetToExtreme(widgets, widget.id, "top"))}
+                  >
+                    <ChevronsUp className="size-3.5" />
+                  </IconButton>
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    aria-label="上移一层"
+                    onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "down"))}
+                  >
+                    <ArrowUp className="size-3.5" />
+                  </IconButton>
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    aria-label="下移一层"
+                    onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "up"))}
+                  >
+                    <ArrowDown className="size-3.5" />
+                  </IconButton>
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    aria-label="置底"
+                    onClick={() => onWidgetsChange(moveWidgetToExtreme(widgets, widget.id, "bottom"))}
+                  >
+                    <ChevronsDown className="size-3.5" />
+                  </IconButton>
+                </div>
+              )}
             </div>
           </li>
         ))}
-        {topLevel.length === 0 ? (
+        {topLevelCount === 0 ? (
           <li className="rounded-lg border border-dashed border-gray-200 px-3 py-6 text-center text-theme-xs text-gray-500 dark:border-gray-800">
             画布中暂无组件
           </li>

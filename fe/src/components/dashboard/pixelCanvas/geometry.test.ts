@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyPixelInteraction,
   clientPointToCanvasFromStage,
+  resolveStageVisualScale,
   RESIZE_CURSORS,
   resolvePixelCanvasMeasureElement,
   pixelShapeZIndex,
@@ -39,6 +40,29 @@ describe("pixel canvas geometry", () => {
         }) as DOMRect,
     };
     expect(clientPointToCanvasFromStage(stage, 220, 180, 0.5)).toEqual({ x: 200, y: 200 });
+  });
+
+  it("derives visual scale from stage rect when outer viewport scales the canvas", () => {
+    const stage = {
+      getBoundingClientRect: () =>
+        ({
+          left: 580,
+          top: 377,
+          width: 683,
+          height: 384,
+          right: 1263,
+          bottom: 761,
+          x: 580,
+          y: 377,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    };
+    const visualScale = resolveStageVisualScale(stage, 1920, 1080);
+    expect(visualScale).toBeCloseTo(Math.min(683 / 1920, 384 / 1080), 5);
+    expect(clientPointToCanvasFromStage(stage, 580 + 100, 377 + 50, visualScale)).toEqual({
+      x: 100 / visualScale,
+      y: 50 / visualScale,
+    });
   });
 
   it.each([
@@ -108,6 +132,15 @@ describe("pixel canvas geometry", () => {
     expect(metrics.contentHeight).toBe(Math.ceil(400));
     expect(metrics.centerContent).toBe(true);
     expect(metrics.stageLeft).toBe(0);
+    expect(metrics.scrollX).toBe(false);
+  });
+
+  it("fits data-screen 1920x1080 inside host without scroll", () => {
+    const metrics = scaledCanvasMetrics(1024, 718, 1920, 1080, 1080, 0, "component", 0);
+    expect(metrics.scrollX).toBe(false);
+    expect(metrics.scale).toBeCloseTo(1024 / 1920, 5);
+    expect(metrics.contentHeight).toBeLessThanOrEqual(718);
+    expect(metrics.contentWidth).toBe(1024);
     expect(metrics.scrollX).toBe(false);
   });
 

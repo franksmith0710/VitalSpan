@@ -4,6 +4,10 @@ import { useChartInspector } from "./chartInspectorContext";
 import type { SlotTarget } from "./chartInspectorTypes";
 
 const MAP_DRILL_DIM_INDEXES = [1, 2] as const;
+const MAP_DRILL_SLOT_LABELS: Record<(typeof MAP_DRILL_DIM_INDEXES)[number], string> = {
+  1: "钻取 / 市级",
+  2: "钻取 / 区县",
+};
 
 function isActiveSlot(a: SlotTarget | null, b: SlotTarget): boolean {
   return a?.kind === b.kind && a?.index === b.index;
@@ -39,7 +43,7 @@ function ChartMapDrillSlots({
   const hintIcon = (
     <CircleHelp
       className="size-3 text-gray-400 dark:text-gray-500"
-      aria-label="预览态点击地图下钻；依次拖入市、区县字段"
+      aria-label="预览态点击地图下钻；依次拖入市级、区县字段"
     />
   );
 
@@ -56,7 +60,7 @@ function ChartMapDrillSlots({
           return (
             <ChartFieldSlot
               key={`drill-${index}`}
-              label="钻取 / 维度"
+              label={MAP_DRILL_SLOT_LABELS[index]}
               hideLabel
               optional
               fieldName={rawField}

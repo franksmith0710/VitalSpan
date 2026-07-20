@@ -129,9 +129,17 @@ export type NumberFormatConfig = {
 
 export type DashboardSurfaceKind = "dashboard" | "data-screen";
 
+/** Phase 3 挂点：多屏轮播投放（仅 schema，播放逻辑未实现） */
+export type DataScreenPlaylistConfig = {
+  screenIds: string[];
+  intervalSec: number;
+};
+
 export type DashboardStyleConfig = {
   /** dashboard=普通看板；data-screen=数据大屏（独立列表入口） */
   surfaceKind?: DashboardSurfaceKind;
+  /** 多屏轮播配置挂点（Phase 3） */
+  screenPlaylist?: DataScreenPlaylistConfig;
   colorScheme?: ColorScheme;
   themeAccent?: string;
   fontFamily?: string;

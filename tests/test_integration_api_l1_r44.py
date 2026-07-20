@@ -407,6 +407,24 @@ def test_embed_token_ok_r44(client):
     assert body["sdkParams"]["apiBase"]
 
 
+def test_embed_token_dashboard_screen_path_r44(client):
+    """Phase 2.5 A4: dashboardId token → /embed/screen/{id}。"""
+    dash_id = uuid.uuid4()
+    resp = client.post(
+        "/api/v1/embed/token",
+        headers=AUTH,
+        json={
+            "dashboardId": str(dash_id),
+            "allowedOrigins": ["https://portal.example.com"],
+            "theme": "dark",
+        },
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert f"/embed/screen/{dash_id}" in body["embedUrl"]
+    assert "/embed/chart/" not in body["embedUrl"]
+
+
 def test_embed_token_conflict_r44(client):
     """T-API-R44-006-03: 双 target → 422 EMBED_TARGET_CONFLICT。"""
     resp = client.post(

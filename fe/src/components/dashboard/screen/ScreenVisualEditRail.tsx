@@ -1,10 +1,11 @@
-import { Clock3, Frame } from "lucide-react";
+import { Clock3, Frame, Minus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { LayoutWidget } from "@/components/dashboard/layoutUtils";
 import {
   isScreenBorderWidget,
   isScreenClockWidget,
+  isScreenTitleBarWidget,
 } from "@/lib/screenVisualAssets";
 import { DeAttrField, DeAttrForm } from "@/components/dashboard/dashboardInspectorUi";
 import { INSPECTOR_HINT } from "@/components/dashboard/inspectorCompact";
@@ -28,8 +29,9 @@ export function ScreenVisualEditRail({
 }: ScreenVisualEditRailProps) {
   const isClock = isScreenClockWidget(widget);
   const isBorder = isScreenBorderWidget(widget);
-  const kindLabel = isClock ? "时钟" : isBorder ? "边框" : "素材";
-  const Icon = isClock ? Clock3 : Frame;
+  const isTitleBar = isScreenTitleBarWidget(widget);
+  const kindLabel = isClock ? "时钟" : isBorder ? "边框" : isTitleBar ? "标题装饰" : "素材";
+  const Icon = isClock ? Clock3 : isBorder ? Frame : Minus;
 
   return (
     <div className={cn("flex h-full min-h-0 w-full flex-col bg-white dark:bg-gray-900", className)}>
@@ -61,7 +63,9 @@ export function ScreenVisualEditRail({
             <p className={INSPECTOR_HINT}>
               {isClock
                 ? "预览时自动显示日期时间与星期，内容不可编辑。"
-                : "装饰边框叠加在画布上，请通过拖拽调整尺寸与位置。"}
+                : isTitleBar
+                  ? "顶部标题装饰条，标题取自图层名称。"
+                  : "装饰边框叠加在画布上，请通过拖拽调整尺寸与位置。"}
             </p>
           </div>
         </div>

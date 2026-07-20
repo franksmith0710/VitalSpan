@@ -9,10 +9,13 @@ import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import { isRichTextEmpty, textConfigToHtml } from "./richTextHtml";
 import { ScreenBorderDisplay } from "./screen/ScreenBorderDisplay";
 import { ScreenClockDisplay } from "./screen/ScreenClockDisplay";
+import { ScreenTitleBarDisplay } from "./screen/ScreenTitleBarDisplay";
 import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
 import {
   isScreenBorderWidget,
   isScreenClockWidget,
+  isScreenTitleBarWidget,
+  isScreenVisualWidget,
 } from "@/lib/screenVisualAssets";
 
 type TextWidgetProps = {
@@ -44,7 +47,8 @@ export function TextWidget({
   const inShapeShell = shell === "shape";
   const screenClock = isScreenClockWidget(widget);
   const screenBorder = isScreenBorderWidget(widget);
-  const screenVisual = screenClock || screenBorder;
+  const screenTitleBar = isScreenTitleBarWidget(widget);
+  const screenVisual = isScreenVisualWidget(widget);
 
   const beginEditing = () => {
     if (mode !== "edit" || screenVisual) return;
@@ -162,6 +166,8 @@ export function TextWidget({
           <ScreenClockDisplay />
         ) : screenBorder ? (
           <ScreenBorderDisplay />
+        ) : screenTitleBar ? (
+          <ScreenTitleBarDisplay title={widget.title || "数据大屏标题"} />
         ) : isRichTextEmpty(html) ? (
           <p
             className={cn(

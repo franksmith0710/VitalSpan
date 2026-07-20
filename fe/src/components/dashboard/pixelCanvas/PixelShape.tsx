@@ -519,6 +519,7 @@ export function PixelShape({
     event: KeyboardEvent<HTMLElement>,
     kind: PixelInteractionKind,
   ) => {
+    if (widget.locked) return;
     const delta = keyboardDelta(event);
     if (!delta) return;
     event.preventDefault();
@@ -633,7 +634,7 @@ export function PixelShape({
         </PixelShapeInteractionProvider>
       </div>
 
-      {mode === "edit" && selected
+      {mode === "edit" && selected && !widget.locked
         ? RESIZE_DIRECTIONS.map((direction) => (
             <IconButton
               key={direction}

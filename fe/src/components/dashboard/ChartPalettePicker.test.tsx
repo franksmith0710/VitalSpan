@@ -44,6 +44,17 @@ describe("ChartPalettePicker", () => {
     expect(screen.getByTestId("chart-palette-custom")).toBeInTheDocument();
   });
 
+  it("closes dense inline menu when clicking outside", async () => {
+    const user = userEvent.setup();
+    render(<ChartPalettePicker dense showInherit value={undefined} onChange={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: "配色方案" }));
+    expect(screen.getByTestId("chart-palette-inline-menu-panel")).toBeInTheDocument();
+
+    await user.click(document.body);
+    expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
+  });
+
   it("selects preset via collapsible inline menu in dense chart inspector mode", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

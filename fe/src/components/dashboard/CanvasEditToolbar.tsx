@@ -7,6 +7,7 @@ import {
   Grid3x3,
   Image,
   LayoutGrid,
+  Minus,
   MoreHorizontal,
   PanelsTopLeft,
   Palette,
@@ -190,6 +191,15 @@ export function CanvasEditToolbar({
             >
               <Frame className="size-4" aria-hidden />
               边框
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                onInsert("screen-title-bar");
+                setMaterialOpen(false);
+              }}
+            >
+              <Minus className="size-4" aria-hidden />
+              标题装饰
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -4,7 +4,7 @@ import {
   applyMapDataPreset,
   detectMapDataPreset,
 } from "./mapChartPresets";
-import { DEMO_MAP_DRILL_SQL, DEMO_MAP_JOIN_SQL } from "./mapChartDataHint";
+import { DEMO_MAP_DRILL_SQL, DEMO_MAP_JOIN_SQL, DEMO_MAP_SALES_DRILL_SQL } from "./mapChartDataHint";
 import type { ChartViewConfig } from "./chartViewConfig";
 
 const baseCfg: ChartViewConfig = {
@@ -29,9 +29,17 @@ describe("mapChartPresets", () => {
     expect(next.dimensions?.map((d) => d.field)).toEqual(["province", "city", "district"]);
   });
 
+  it("applies sales drill preset from v_sales_geo", () => {
+    const next = applyMapDataPreset(baseCfg, "demo-sales-drill");
+    expect(next.sql).toBe(DEMO_MAP_SALES_DRILL_SQL);
+    expect(next.dimensions?.map((d) => d.field)).toEqual(["province", "city", "district"]);
+  });
+
   it("detects active preset", () => {
     const drill = applyMapDataPreset(baseCfg, "demo-drill-sql");
     expect(detectMapDataPreset(drill)).toBe("demo-drill-sql");
+    const salesDrill = applyMapDataPreset(baseCfg, "demo-sales-drill");
+    expect(detectMapDataPreset(salesDrill)).toBe("demo-sales-drill");
     const prov = applyMapDataPreset(baseCfg, "demo-sales-province");
     expect(detectMapDataPreset(prov)).toBe("demo-sales-province");
   });

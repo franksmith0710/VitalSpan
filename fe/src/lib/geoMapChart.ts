@@ -149,11 +149,12 @@ export type GeoMapRegionResolve = {
 
 /** 演示库 regions.id → code（docker/demo-mysql；生产请 JOIN regions 取 name） */
 const DEMO_MYSQL_REGION_ID_TO_CODE: Record<number, string> = {
-  5: "SH",
+  5: "GD",
   6: "JS",
   7: "BJ",
-  8: "GD",
+  8: "SH",
   9: "SC",
+  10: "ZJ",
 };
 
 export function resolveDemoMysqlRegionId(raw: unknown): GeoMapRegionResolve | null {

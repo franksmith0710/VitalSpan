@@ -128,15 +128,24 @@ export type TabsHeadStyleConfig = {
   barBackground?: string;
 };
 
+export type TabsCarouselConfig = {
+  enabled: boolean;
+  intervalSec: number;
+};
+
 export type TabsWidgetConfig = {
   tabsId: string;
   panes: TabPaneConfig[];
   activePaneId: string;
+  /** 预览/投放态自动轮播（编辑态不生效） */
+  carousel?: TabsCarouselConfig;
   /** 单组件外框样式（覆盖看板默认 widgetStyle） */
   widgetStyle?: WidgetStyleConfig;
   /** 页签栏外观 */
   headStyle?: TabsHeadStyleConfig;
 };
+
+export const TABS_CAROUSEL_MIN_INTERVAL_SEC = 3;
 
 export type {
   DashboardStyleConfig,

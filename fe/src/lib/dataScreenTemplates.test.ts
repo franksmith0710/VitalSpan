@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildDataScreenLayoutFromTemplate,
+  exportDataScreenTemplate,
   parseImportedDataScreenLayout,
 } from "./dataScreenTemplates";
 import { isScreenClockWidget } from "./screenVisualAssets";
@@ -36,5 +37,15 @@ describe("dataScreenTemplates", () => {
     expect(() =>
       parseImportedDataScreenLayout({ version: 1, widgets: [] }),
     ).toThrow(/version 2/);
+  });
+
+  it("round-trips template export wrapper", () => {
+    const layout = buildDataScreenLayoutFromTemplate("blank");
+    const exported = exportDataScreenTemplate(layout, "演示大屏");
+    expect(exported.templateVersion).toBe(1);
+    expect(exported.kind).toBe("data-screen");
+    const imported = parseImportedDataScreenLayout(exported);
+    expect(imported.canvas).toEqual(layout.canvas);
+    expect(imported.styleConfig?.surfaceKind).toBe("data-screen");
   });
 });

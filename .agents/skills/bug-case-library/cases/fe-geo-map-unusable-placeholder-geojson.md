@@ -55,18 +55,27 @@
 
 ## 正确用法（演示库）
 
-**方式 A（推荐）**：JOIN 取名称
+**方式 A（省→市→区县下钻，推荐）**：`v_sales_geo` 视图
 
 ```sql
-SELECT r.name AS region, SUM(s.amount) AS total
-FROM sales s
-JOIN regions r ON s.region_id = r.id
-GROUP BY r.name
+SELECT province, city, district, SUM(amount) AS total
+FROM v_sales_geo
+GROUP BY province, city, district
+```
+
+槽位：地区 `province` · 钻取 `city` / `district` · 指标 `total`。预览态点击下钻。
+
+**方式 B（仅省级）**：
+
+```sql
+SELECT province AS region, SUM(amount) AS total
+FROM v_sales_geo
+GROUP BY province
 ```
 
 地理维度选 `region`，指标选 `total`。
 
-**方式 B**：直接 `region_id` + 演示库自动映射（仅 id 5–9 有效）
+**方式 C**：直接 `region_id`（仅省级 id 5–10 自动映射，**不能下钻**）
 
 ## 预防
 

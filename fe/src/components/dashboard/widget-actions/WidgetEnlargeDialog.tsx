@@ -1,5 +1,5 @@
+import { useMemo, useRef, useState } from "react";
 import { Download } from "lucide-react";
-import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,10 @@ import {
 import type { DashboardStyleConfig } from "@/components/dashboard/layoutUtils";
 import { resolveWidgetShellPaintColor, pickChartPaletteDefaults } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { isEchartsChartType } from "@/lib/chartViewConfig";
 import { fitPreviewSize, WidgetDialogShell } from "./WidgetDialogShell";
 import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
+import { exportChartPngFromContainer } from "./exportChartImage";
 
 const RESOLUTION_PRESETS = [
   { id: "1280x720", label: "1280 × 720", width: 1280, height: 720 },
@@ -49,6 +51,12 @@ export function WidgetEnlargeDialog({
 }: WidgetEnlargeDialogProps) {
   const [resolutionId, setResolutionId] =
     useState<(typeof RESOLUTION_PRESETS)[number]["id"]>("1280x720");
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  const canExportImage = useMemo(
+    () => isEchartsChartType(chartConfig.chartType),
+    [chartConfig.chartType],
+  );
 
   const resolution = useMemo(
     () => RESOLUTION_PRESETS.find((item) => item.id === resolutionId) ?? RESOLUTION_PRESETS[0],
@@ -92,7 +100,16 @@ export function WidgetEnlargeDialog({
               variant="outline"
               size="sm"
               className="h-9"
-              onClick={() => toast.message("导出图片将在后续版本提供")}
+              disabled={!canExportImage}
+              onClick={() => {
+                if (!previewRef.current) return;
+                try {
+                  exportChartPngFromContainer(previewRef.current, title);
+                  toast.success("图片已下载");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "导出失败");
+                }
+              }}
             >
               <Download className="size-4" aria-hidden />
               导出图片
@@ -101,6 +118,7 @@ export function WidgetEnlargeDialog({
         }
       >
         <div
+          ref={previewRef}
           className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900"
           style={{ width: previewSize.width, height: previewSize.height }}
           data-testid="widget-enlarge-preview"

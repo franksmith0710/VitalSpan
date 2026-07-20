@@ -114,8 +114,8 @@ describe("buildGeoMapEchartsOption", () => {
   it("maps demo region_id values to provinces", () => {
     const option = buildGeoMapEchartsOption({
       rows: [
-        [7, 100],
-        [8, 200],
+        [5, 100],
+        [7, 200],
       ],
       columns: ["region_id", "amount"],
       regionField: "region_id",
@@ -137,8 +137,8 @@ describe("analyzeGeoMapMatch with demo region_id", () => {
   it("counts matched rows when demo ids map to provinces", () => {
     const stats = analyzeGeoMapMatch(
       [
-        [7, 100],
-        [8, 80],
+        [5, 100],
+        [7, 80],
       ],
       ["region_id", "value"],
       "region_id",

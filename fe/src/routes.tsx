@@ -4,6 +4,7 @@ import { RequireCapabilityName } from "@/components/auth/require-capability";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { EmbedLayout } from "@/layouts/EmbedLayout";
 import { EmbedChartPage } from "@/embed/EmbedChartPage";
+import { EmbedScreenPage } from "@/embed/EmbedScreenPage";
 import { EmbedSharePanel } from "@/embed/EmbedSharePanel";
 import { AdminHomePage } from "@/pages/admin/AdminHomePage";
 import { SyncJobsPage } from "@/pages/admin/ingestion/SyncJobsPage";
@@ -47,6 +48,7 @@ import { ReportCenterPage } from "@/pages/admin/reports/ReportCenterPage";
 import { ReportViewPage } from "@/pages/admin/reports/ReportViewPage";
 import { DataScreenListPage } from "@/pages/admin/data-screens/DataScreenListPage";
 import { DataScreenPreviewPage } from "@/pages/admin/data-screens/DataScreenPreviewPage";
+import { DataScreenViewRedirect } from "@/pages/admin/data-screens/DataScreenViewRedirect";
 import { ACCOUNT_PREFERENCES_PATH } from "@/lib/workspace";
 
 export function AppRoutes() {
@@ -80,7 +82,7 @@ export function AppRoutes() {
           <Route path="data-screens" element={<DataScreenListPage />} />
           <Route path="data-screens/:id/edit" element={<DashboardEditPage mode="edit" />} />
           <Route path="data-screens/:id/preview" element={<DataScreenPreviewPage />} />
-          <Route path="data-screens/:id" element={<DashboardEditPage mode="view" />} />
+          <Route path="data-screens/:id" element={<DataScreenViewRedirect />} />
           <Route path="entities/overview" element={<RequireCapabilityName capability="theme:*"><EntityOverviewPage /></RequireCapabilityName>} />
           <Route path="reports" element={<RequireCapabilityName capability="report:read"><PrefabReportsPage /></RequireCapabilityName>} />
           <Route path="reports/center" element={<RequireCapabilityName capability="report:read"><ReportCenterPage /></RequireCapabilityName>} />
@@ -122,6 +124,7 @@ export function AppRoutes() {
       </Route>
       <Route path="/embed" element={<EmbedLayout />}>
         <Route path="chart/:chartId" element={<EmbedChartPage />} />
+        <Route path="screen/:dashboardId" element={<EmbedScreenPage />} />
         <Route path="share" element={<EmbedSharePanel />} />
         {import.meta.env.DEV ? (
           <Route path="sdk-demo" element={<EmbedSdkDemoPage />} />

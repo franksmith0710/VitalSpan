@@ -88,7 +88,12 @@ import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartE
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
 import { ScreenVisualEditRail } from "@/components/dashboard/screen/ScreenVisualEditRail";
+import { DataScreenConfigExtras } from "@/components/dashboard/screen/DataScreenConfigExtras";
 import { isScreenVisualWidget } from "@/lib/screenVisualAssets";
+import {
+  DATA_SCREEN_CANVAS_PRESETS,
+  type DataScreenCanvasPresetId,
+} from "@/lib/surfacePreset";
 import { MediaEditRail } from "@/components/dashboard/MediaEditRail";
 import { TabsEditRail } from "@/components/dashboard/TabsEditRail";
 import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
@@ -765,6 +770,19 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setBatchDeleteOpen(false);
   };
 
+  const handleDataScreenCanvasPreset = useCallback(
+    (presetId: DataScreenCanvasPresetId) => {
+      if (!canSave || layout.version !== 2) return;
+      const preset = DATA_SCREEN_CANVAS_PRESETS[presetId];
+      resetLayout({
+        ...layout,
+        canvas: { width: preset.width, height: preset.height },
+      });
+      toast.message("已切换画布基准尺寸，已有组件位置与大小未自动缩放");
+    },
+    [canSave, layout, resetLayout],
+  );
+
   const handleDeleteDashboard = async () => {
     if (!canSave) return;
     if (!id || missing) {
@@ -1254,6 +1272,16 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               />
             ) : id ? (
               <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+                {isDataScreenSurface && layout.version === 2 ? (
+                  <DataScreenConfigExtras
+                    layout={layout}
+                    styleConfig={styleConfig}
+                    widgets={widgets}
+                    name={name}
+                    canSave={canSave}
+                    onCanvasPresetChange={handleDataScreenCanvasPreset}
+                  />
+                ) : null}
                 {isDataScreenSurface ? (
                   <LayerPanel
                     widgets={widgets}

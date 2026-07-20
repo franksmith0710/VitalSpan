@@ -108,7 +108,7 @@ def issue_embed_token(
     if payload.chart_id is not None:
         embed_path = f"/embed/chart/{payload.chart_id}?token={token}"
     elif payload.dashboard_id is not None:
-        embed_path = f"/embed/chart/{payload.dashboard_id}?token={token}"
+        embed_path = f"/embed/screen/{payload.dashboard_id}?token={token}"
     else:
         embed_path = f"/embed/chart?token={token}"
     return EmbedTokenOut(

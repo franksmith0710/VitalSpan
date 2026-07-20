@@ -264,7 +264,12 @@ export function parseImportedDataScreenLayout(raw: unknown): DashboardLayoutV2 {
   if (!raw || typeof raw !== "object") {
     throw new Error("布局 JSON 格式无效");
   }
-  const layout = raw as DashboardLayoutV2;
+  const record = raw as Record<string, unknown>;
+  const layoutSource =
+    record.kind === "data-screen" && record.layout && typeof record.layout === "object"
+      ? (record.layout as DashboardLayoutV2)
+      : (raw as DashboardLayoutV2);
+  const layout = layoutSource;
   if (layout.version !== 2) {
     throw new Error("仅支持 version 2 像素布局");
   }
@@ -280,5 +285,30 @@ export function parseImportedDataScreenLayout(raw: unknown): DashboardLayoutV2 {
     },
     widgets: Array.isArray(layout.widgets) ? layout.widgets : [],
     globalFilters: Array.isArray(layout.globalFilters) ? layout.globalFilters : [],
+  };
+}
+
+export type DataScreenTemplateExport = {
+  templateVersion: 1;
+  kind: "data-screen";
+  name: string;
+  layout: DashboardLayoutV2;
+};
+
+export function exportDataScreenTemplate(
+  layout: DashboardLayoutV2,
+  name: string,
+): DataScreenTemplateExport {
+  return {
+    templateVersion: 1,
+    kind: "data-screen",
+    name: name.trim() || "未命名大屏",
+    layout: {
+      ...layout,
+      styleConfig: {
+        ...layout.styleConfig,
+        surfaceKind: "data-screen",
+      },
+    },
   };
 }

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
-import { TabsPaneList } from "./TabsWidgetFields";
+import { TabsPaneList, TabsCarouselFields } from "./TabsWidgetFields";
 import { TabsWidgetStylePanel } from "./widgetRailStyleSections";
 import { WidgetRailPanelHeader } from "./widgetRailChrome";
 import { INSPECTOR_HINT } from "./inspectorCompact";
@@ -62,6 +62,7 @@ export function TabsEditRail({
               onChange={onChange}
               onSelectChild={onSelectChild}
             />
+            <TabsCarouselFields cfg={cfg} onChange={onChange} />
           </div>
         }
         style={<TabsWidgetStylePanel widget={widget} onChange={onChange} onTitleChange={onTitleChange} />}

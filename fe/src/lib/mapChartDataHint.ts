@@ -12,11 +12,15 @@ FROM (
   UNION ALL SELECT '四川省', '成都市', '武侯区', 430
 ) AS demo_geo`;
 
-/** 演示库省级地图 SQL（JOIN regions 取省/市名称） */
-export const DEMO_MAP_JOIN_SQL = `SELECT r.name AS region, SUM(s.amount) AS total
-FROM sales s
-JOIN regions r ON s.region_id = r.id
-GROUP BY r.name`;
+/** 演示库 sales 表：省→市→区县下钻（需已执行 docker/demo-mysql/tables.sql） */
+export const DEMO_MAP_SALES_DRILL_SQL = `SELECT province, city, district, SUM(amount) AS total
+FROM v_sales_geo
+GROUP BY province, city, district`;
+
+/** 演示库省级地图 SQL（v_sales_geo 聚合到省） */
+export const DEMO_MAP_JOIN_SQL = `SELECT province AS region, SUM(amount) AS total
+FROM v_sales_geo
+GROUP BY province`;
 
 export type MapChartFieldHint = {
   message: string;
@@ -51,8 +55,8 @@ export function mapChartFieldHint(columns: string[]): MapChartFieldHint | null {
   if (normalized.includes("region_id")) {
     return {
       message:
-        "region_id 仅支持省级着色（5–9 映射到上海/北京/广东等）。市/区县下钻需 province、city、district 字段，请换用静态演示 SQL。",
-      sampleSql: DEMO_MAP_DRILL_SQL,
+        "region_id 为区县级 ID，不能直接下钻。请改用 SQL 查询 v_sales_geo（province/city/district），或使用下方示例。",
+      sampleSql: DEMO_MAP_SALES_DRILL_SQL,
     };
   }
 

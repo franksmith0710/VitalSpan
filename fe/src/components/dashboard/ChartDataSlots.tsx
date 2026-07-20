@@ -2,6 +2,7 @@ import { ChartFieldSlot } from "./ChartFieldSlot";
 import { chartDataSlotBlueprint } from "./chartFieldSlots";
 import { useChartInspector } from "./chartInspectorContext";
 import type { SlotTarget } from "./chartInspectorTypes";
+import { MapChartFieldHintBanner } from "./MapChartFieldHint";
 import { mapChartFieldHint } from "@/lib/mapChartDataHint";
 
 function isActiveSlot(a: SlotTarget | null, b: SlotTarget): boolean {
@@ -55,16 +56,7 @@ export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean 
           {fieldAssignError}
         </p>
       ) : null}
-      {mapHint && !hideMapHint ? (
-        <div className="space-y-1.5 rounded-md border border-brand-500/20 bg-brand-500/5 px-2 py-1.5 text-[10px] leading-snug text-gray-600 dark:text-gray-400">
-          <p>{mapHint.message}</p>
-          {mapHint.sampleSql ? (
-            <pre className="overflow-x-auto whitespace-pre-wrap rounded bg-black/5 p-1.5 font-mono text-[9px] text-gray-700 dark:bg-white/5 dark:text-gray-300">
-              {mapHint.sampleSql}
-            </pre>
-          ) : null}
-        </div>
-      ) : null}
+      {mapHint && !hideMapHint ? <MapChartFieldHintBanner hint={mapHint} /> : null}
       {columnsReady && columnsLoading ? (
         <p className="text-theme-xs text-gray-500 dark:text-gray-400">正在加载字段…</p>
       ) : null}

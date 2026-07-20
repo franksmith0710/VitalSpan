@@ -2,6 +2,37 @@
 
 > 自我演化单一状态账本。Automations 可读写；人工可审计。不要另建并行运行态文件。
 
+## 当前轮次（数据大屏 Phase 2.5 Wave B–E）
+
+| 字段 | 值 |
+|------|----|
+| phase | DONE |
+| request | Phase 2.5 编辑深化 + 素材画布 + 模板导出闭环 |
+| type | feature |
+| plan | docs/automate/plans/2026-07-17-data-screen-phase25-execute.md |
+| goal | Wave B–E 交付：锁定缩放、Tab 轮播、JSON/PNG 导出、图层 Tab 子项、标题条、21:9、模板导出、screenPlaylist schema |
+| scope_include | fe/dashboard pixelCanvas, TabsWidget, LayerPanel, DataScreenConfigExtras, screenVisualAssets, surfacePreset, dataScreenTemplates |
+| scope_exclude | M-DEPTH F-C（调度历史/服务试跑）；Phase 3 多屏播放；Wave A share smoke |
+| acceptance | vitest surfacePreset+dataScreenTemplates+PixelCanvas locked; tsc --noEmit |
+| autonomy_policy | auto_accept_low_risk |
+| risk_level | low |
+| status | DONE |
+| last_verified_command | vitest src/lib/dataScreenTemplates.test.ts src/lib/surfacePreset.test.ts; tsc --noEmit |
+| last_verified_exit_code | 0 |
+| verification_summary | Wave B1–B5、C1–C2、D1–D2、E1 schema 已落地；Wave A 此前已交付 |
+| repair_rounds | 0 |
+
+## 当前需求契约
+
+- request: 完成数据大屏 Phase 2.5 Wave B–E 功能闭环
+- type: feature
+- goal: 编辑/导出/素材/画布比例与 DE 对标缺口补齐
+- scope_include: Wave B–E per 2026-07-17-data-screen-phase25-execute.md
+- scope_exclude: M-DEPTH RPT-005/API-003；Phase 3 播放逻辑；模板市场
+- acceptance: plan 验收项 + vitest/tsc 绿
+- risk_level: low
+- autonomy_policy: auto_accept_low_risk
+
 ## 排队下一轮（看板画布 UX · 未启动）
 
 | 字段 | 值 |
