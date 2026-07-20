@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { defaultTabsConfig } from "../layoutUtils";
 import type { DashboardLayoutV2, PixelLayoutWidget } from "../layoutUtils";
 import { layoutsOverlap } from "./collisionLayout";
-import { repairPixelLayoutTabState, sanitizePixelLayoutGeometry } from "./layoutSanitize";
+import { repairPixelLayoutTabState, sanitizePixelLayoutGeometry, clampPixelLayoutToCanvasBounds } from "./layoutSanitize";
 
 function chart(id: string, x: number, y: number, w: number, h: number, order: number): PixelLayoutWidget {
   return { id, type: "chart", title: id, order, x, y, width: w, height: h };
@@ -62,5 +62,19 @@ describe("layoutSanitize", () => {
     expect(b?.x).toBe(100);
     expect(b?.y).toBe(100);
     expect(layoutsOverlap(sanitized, 0)).toBe(true);
+  });
+
+  it("clamps widgets when data-screen canvas shrinks", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1200, height: 800 },
+      widgets: [chart("a", 1500, 900, 400, 300, 0)],
+      globalFilters: [],
+      styleConfig: { surfaceKind: "data-screen" },
+    };
+    const clamped = clampPixelLayoutToCanvasBounds(layout);
+    const widget = clamped.widgets[0]!;
+    expect(widget.x + widget.width).toBeLessThanOrEqual(1200);
+    expect(widget.y + widget.height).toBeLessThanOrEqual(800);
   });
 });

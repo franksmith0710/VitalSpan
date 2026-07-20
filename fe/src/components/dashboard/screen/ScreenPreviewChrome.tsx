@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ChevronLeft, Maximize2 } from "lucide-react";
+import { ChevronLeft, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -28,6 +28,7 @@ export type ScreenPreviewChromeProps = {
   editPath: string;
   presentationMode: PresentationMode;
   onPresentationModeChange: (mode: PresentationMode) => void;
+  isFullscreen?: boolean;
   onFullscreen: () => void;
   refreshIntervalSec?: number;
   refreshLastAt?: string | null;
@@ -41,6 +42,7 @@ export function ScreenPreviewChrome({
   editPath,
   presentationMode,
   onPresentationModeChange,
+  isFullscreen = false,
   onFullscreen,
   refreshIntervalSec,
   refreshLastAt,
@@ -92,9 +94,14 @@ export function ScreenPreviewChrome({
           size="sm"
           className="border-white/20 bg-white/5 text-white hover:bg-white/10"
           onClick={onFullscreen}
+          aria-label={isFullscreen ? "退出全屏" : "全屏"}
         >
-          <Maximize2 className="size-4" aria-hidden />
-          全屏
+          {isFullscreen ? (
+            <Minimize2 className="size-4" aria-hidden />
+          ) : (
+            <Maximize2 className="size-4" aria-hidden />
+          )}
+          {isFullscreen ? "退出全屏" : "全屏"}
         </Button>
       </div>
     </header>

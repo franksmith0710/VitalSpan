@@ -9,7 +9,33 @@ import {
 } from "../layoutUtils";
 import { compactPixelLayoutWhenZeroGap } from "./gapCompaction";
 import { layoutsOverlap, packPixelLayoutSeamless } from "./collisionLayout";
+import { clampPixelRectToCanvas } from "./geometry";
 import { fitCanvasHeightToContent } from "./PixelCanvas";
+
+/** 顶层组件收进画布边界；Tab 子组件随宿主同步 park 坐标 */
+export function clampPixelLayoutToCanvasBounds(layout: DashboardLayoutV2): DashboardLayoutV2 {
+  const canvas = layout.canvas;
+  let changed = false;
+  const widgets = layout.widgets.map((widget) => {
+    if (widget.parentTabsId) return widget;
+    const next = clampPixelRectToCanvas(widget, canvas);
+    if (
+      next.x === widget.x &&
+      next.y === widget.y &&
+      next.width === widget.width &&
+      next.height === widget.height
+    ) {
+      return widget;
+    }
+    changed = true;
+    return { ...widget, ...next };
+  });
+  if (!changed) return layout;
+  return {
+    ...layout,
+    widgets: syncParkedTabChildren(widgets),
+  };
+}
 
 /** 编辑态轻量修复：Tab park + 子组件折叠，不触发 pack（避免拖动中整版重排） */
 export function repairPixelLayoutTabState(layout: DashboardLayoutV2): DashboardLayoutV2 {
@@ -40,7 +66,7 @@ export function sanitizePixelLayoutGeometry(
     prepared = packPixelLayoutSeamless(prepared);
   }
   if (isDataScreen) {
-    return prepared;
+    return clampPixelLayoutToCanvasBounds(prepared);
   }
   return fitCanvasHeightToContent(prepared);
 }

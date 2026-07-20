@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useDocumentFullscreen } from "@/hooks/useDocumentFullscreen";
 import { useParams } from "react-router";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
@@ -24,6 +25,7 @@ export function DataScreenPreviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [presentationMode, setPresentationMode] = useState<PresentationMode>("fit");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const { isFullscreen, toggleFullscreen } = useDocumentFullscreen();
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -42,15 +44,6 @@ export function DataScreenPreviewPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const handleFullscreen = () => {
-    const root = document.documentElement;
-    if (document.fullscreenElement) {
-      void document.exitFullscreen();
-      return;
-    }
-    void root.requestFullscreen?.();
-  };
 
   const refreshIntervalSec = detail?.layoutJson?.styleConfig?.refreshIntervalSec;
   const autoRefresh = useScreenAutoRefresh({
@@ -82,7 +75,8 @@ export function DataScreenPreviewPage() {
         editPath={dataScreenEditPath(id)}
         presentationMode={presentationMode}
         onPresentationModeChange={setPresentationMode}
-        onFullscreen={handleFullscreen}
+        isFullscreen={isFullscreen}
+        onFullscreen={toggleFullscreen}
         refreshIntervalSec={refreshIntervalSec}
         refreshLastAt={autoRefresh.lastAt}
         refreshCountdownSec={autoRefresh.countdownSec}

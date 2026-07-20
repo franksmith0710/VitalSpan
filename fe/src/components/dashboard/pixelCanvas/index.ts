@@ -28,11 +28,14 @@ export {
   type ResizeDirection,
 } from "./geometry";
 export {
+  allowsPixelWidgetOverlap,
+  applyActiveWidgetRect,
   findNextOpenSlot,
   layoutsOverlap,
   normalizeOverlappingPixelLayout,
   packPixelLayoutSeamless,
   resolvePixelCollisions,
+  resolvePixelLayoutWithActiveRect,
   rectsOverlap,
 } from "./collisionLayout";
 export {

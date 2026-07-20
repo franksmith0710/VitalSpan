@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DashboardLayoutV2, PixelLayoutWidget } from "../layoutUtils";
 import {
+  applyActiveWidgetRect,
   findNextOpenSlot,
   layoutsOverlap,
   packPixelLayoutSeamless,
@@ -8,6 +9,7 @@ import {
   hasShallowOverlap,
   shouldRevertPixelDragCommit,
   resolvePixelCollisions,
+  resolvePixelLayoutWithActiveRect,
 } from "./collisionLayout";
 import { insertPixelPaletteWidget } from "./createPixelWidget";
 
@@ -271,5 +273,41 @@ describe("collisionLayout", () => {
     const tabsPos = resolved.widgets.find((w) => w.id === "tabs");
     expect(tabsPos?.y).toBe(380);
     expect(layoutsOverlap(resolved, 0)).toBe(false);
+  });
+
+  it("keeps overlapping widgets in place on data-screen surfaces", () => {
+    const a = widget("a", 100, 100, 300, 200, 1);
+    const b = widget("b", 180, 160, 300, 200, 2);
+    const screenLayout: DashboardLayoutV2 = {
+      ...baseLayout([a, b]),
+      styleConfig: { surfaceKind: "data-screen" },
+    };
+    const resolved = resolvePixelLayoutWithActiveRect(screenLayout, "a", {
+      x: 120,
+      y: 120,
+      width: 300,
+      height: 200,
+    });
+    expect(resolved.widgets.find((item) => item.id === "a")).toMatchObject({ x: 120, y: 120 });
+    expect(resolved.widgets.find((item) => item.id === "b")).toMatchObject({ x: 180, y: 160 });
+    expect(layoutsOverlap(resolved, 0)).toBe(true);
+  });
+
+  it("applyActiveWidgetRect only mutates the active widget", () => {
+    const a = widget("a", 0, 0, 200, 120, 1);
+    const b = widget("b", 220, 0, 200, 120, 2);
+    const resolved = applyActiveWidgetRect(baseLayout([a, b]), "a", {
+      x: 40,
+      y: 40,
+      width: 240,
+      height: 160,
+    });
+    expect(resolved.widgets.find((item) => item.id === "a")).toMatchObject({
+      x: 40,
+      y: 40,
+      width: 240,
+      height: 160,
+    });
+    expect(resolved.widgets.find((item) => item.id === "b")).toMatchObject({ x: 220, y: 0 });
   });
 });

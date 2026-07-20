@@ -27,7 +27,8 @@ import {
 } from "../dashboardStyleConfig";
 import { resolveDashboardGapRuntimeFromLayout, resolveEffectiveDashboardStyle } from "../stylePipeline";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
-import { CanvasScaleViewport } from "../screen/CanvasScaleViewport";
+import { DataScreenEditViewport } from "../screen/DataScreenEditViewport";
+import type { PresentationMode } from "../screen/presentationScale";
 import { DashboardWidgetsProvider } from "../DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "../dashboardWidgetExecuteKey";
 import type { PaletteInsertType } from "../createLayoutWidget";
@@ -68,6 +69,7 @@ type DashboardEditCanvasProps = {
   tabInsertIntent?: TabInsertIntent | null;
   onTabInsertIntentChange?: (intent: TabInsertIntent | null) => void;
   widgetActions?: PixelWidgetActions;
+  dataScreenPresentationMode?: PresentationMode;
 };
 
 export function DashboardEditCanvas({
@@ -95,6 +97,7 @@ export function DashboardEditCanvas({
   tabInsertIntent = null,
   onTabInsertIntentChange,
   widgetActions,
+  dataScreenPresentationMode = "fitHeight",
 }: DashboardEditCanvasProps) {
   const effectiveStyle = useMemo(
     () => resolveEffectiveDashboardStyle(layout, styleConfig),
@@ -205,6 +208,7 @@ export function DashboardEditCanvas({
       layout={layout as DashboardLayoutV2}
       styleConfig={effectiveStyle}
       designViewportLocked={isDataScreenEdit}
+      viewportFit={isDataScreenEdit ? "data-screen" : undefined}
       selectedIds={selectedIds}
       onSelect={onSelect}
       onClearSelection={onClearSelection}
@@ -237,11 +241,12 @@ export function DashboardEditCanvas({
       >
         {layout.version === 2 ? (
           isDataScreenEdit ? (
-            <CanvasScaleViewport
+            <DataScreenEditViewport
               canvasWidth={layout.canvas.width}
               canvasHeight={layout.canvas.height}
-              mode="fit"
+              presentationMode={dataScreenPresentationMode}
               className="h-full min-h-0 w-full"
+              onBlankPointerDown={onClearSelection}
             >
               <div
                 className="h-full w-full"
@@ -249,7 +254,7 @@ export function DashboardEditCanvas({
               >
                 {pixelCanvas}
               </div>
-            </CanvasScaleViewport>
+            </DataScreenEditViewport>
           ) : (
             pixelCanvas
           )

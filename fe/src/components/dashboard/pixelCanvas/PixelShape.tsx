@@ -84,6 +84,8 @@ type PixelShapeProps = {
   registerPreviewSync?: (widgetId: string, sync: PixelShapePreviewSync) => () => void;
   /** 拖动/缩放中靠近画布边缘时自动滚动，返回 scrollTop 变化量 */
   onDragAutoScroll?: (event: PointerEvent) => number;
+  /** 仪表板可向下撑高画布；大屏等固定画布场景为 false */
+  allowBottomGrowth?: boolean;
 };
 
 const HANDLE_POSITION: Record<ResizeDirection, string> = {
@@ -124,16 +126,24 @@ function boundaryHint(
   delta: PixelRect,
   next: PixelRect,
   kind: PixelInteractionKind,
+  canvas: DashboardCanvas,
+  allowBottomGrowth: boolean,
 ): string | null {
   if (kind === "move") {
     if (delta.x > 0 && next.x < start.x + delta.x) return "已到画布右边界";
     if (delta.x < 0 && next.x > start.x + delta.x) return "已到画布左边界";
     if (delta.y < 0 && next.y > start.y + delta.y) return "已到画布顶部";
+    if (!allowBottomGrowth && delta.y > 0 && next.y + next.height > canvas.height) {
+      return "已到画布底部";
+    }
     return null;
   }
   if (kind.includes("e") && next.width < start.width + delta.width) return "已到画布右边界";
   if (kind.includes("w") && next.x > start.x + delta.x) return "已到画布左边界";
   if (kind.includes("n") && next.y > start.y + delta.y) return "已到画布顶部";
+  if (!allowBottomGrowth && kind.includes("s") && next.y + next.height > canvas.height) {
+    return "已到画布底部";
+  }
   return null;
 }
 
@@ -308,6 +318,7 @@ export function PixelShape({
   styleConfig,
   registerPreviewSync,
   onDragAutoScroll,
+  allowBottomGrowth = true,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
   const paletteDragActive = usePaletteDragActive();
@@ -426,13 +437,15 @@ export function PixelShape({
     };
     const delta = screenDeltaToCanvas(screenDelta, scale);
     const raw = applyPixelInteraction(active.startRect, delta, active.kind, canvas, {
-      allowBottomGrowth: true,
+      allowBottomGrowth,
     });
     const nextHint = boundaryHint(
       active.startRect,
       { x: delta.x, y: delta.y, width: raw.width - active.startRect.width, height: raw.height - active.startRect.height },
       raw,
       active.kind,
+      canvas,
+      allowBottomGrowth,
     );
     setHint((previous) => (previous === nextHint ? previous : nextHint));
     return snapPointerRect(raw, event, active);
@@ -526,7 +539,7 @@ export function PixelShape({
     event.stopPropagation();
     onSelect?.(widget.id, event.shiftKey);
     const next = applyPixelInteraction(displayRef.current, delta, kind, canvas, {
-      allowBottomGrowth: true,
+      allowBottomGrowth,
     });
     applyDisplay(next, true);
     onCommit?.(withRect(widget, next));

@@ -113,6 +113,62 @@ describe("PixelCanvas", () => {
     });
   });
 
+  it("does not reflow neighbors on data-screen while dragging", async () => {
+    const blocker: PixelLayoutWidget = {
+      id: "w2",
+      type: "chart",
+      title: "下方",
+      order: 2,
+      x: 100,
+      y: 280,
+      width: 300,
+      height: 200,
+    };
+    const stackedLayout: DashboardLayoutV2 = {
+      ...layout,
+      canvas: { width: 1920, height: 1080 },
+      styleConfig: { surfaceKind: "data-screen" },
+      widgets: [widget, blocker],
+    };
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={stackedLayout}
+        styleConfig={{ surfaceKind: "data-screen" }}
+        designViewportLocked
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const shape = screen.getByTestId("pixel-shape-w1");
+    const blockerShape = screen.getByTestId("pixel-shape-w2");
+    expect(blockerShape).toHaveStyle({ top: "280px" });
+
+    fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
+      pointerId: 5,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, {
+      pointerId: 5,
+      clientX: 0,
+      clientY: 120,
+    });
+    await flushPixelPointerFrames();
+
+    expect(blockerShape).toHaveStyle({ top: "280px" });
+    fireEvent.pointerUp(shape, { pointerId: 5, clientX: 0, clientY: 120 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w2")).toMatchObject({
+      y: 280,
+    });
+    expect(layoutsOverlap(onChange.mock.calls[0][0], 0)).toBe(true);
+  });
+
   it("applies DE reflow to neighbors on pointer up after resize", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",

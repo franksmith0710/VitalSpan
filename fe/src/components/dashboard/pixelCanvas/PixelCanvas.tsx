@@ -53,6 +53,7 @@ import {
 } from "./collisionLayout";
 import type { PixelPoint, PixelRect } from "./geometry";
 import {
+  clampPixelRectToCanvas,
   clientPointToCanvasFromStage,
   PIXEL_CANVAS_EDIT_MIN_SCALE,
   resolvePixelCanvasMeasureElement,
@@ -365,6 +366,24 @@ export function PixelCanvas({
     mode === "edit" && viewportFit === "data-screen" ? 0 : mode === "edit" ? PIXEL_CANVAS_EDIT_MIN_SCALE : 0;
   const hostOverflowLocked = designViewportLocked || viewportFit === "data-screen";
   const hostCentered = centerContent || viewportFit === "data-screen";
+  const fixedCanvasBounds = hostOverflowLocked;
+
+  const clampWidgetToViewCanvas = useCallback(
+    (widget: PixelLayoutWidget): PixelLayoutWidget => {
+      if (!fixedCanvasBounds || widget.parentTabsId) return widget;
+      const clamped = clampPixelRectToCanvas(widgetRect(widget), viewCanvas);
+      if (
+        clamped.x === widget.x &&
+        clamped.y === widget.y &&
+        clamped.width === widget.width &&
+        clamped.height === widget.height
+      ) {
+        return widget;
+      }
+      return { ...widget, ...clamped };
+    },
+    [fixedCanvasBounds, viewCanvas],
+  );
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -521,25 +540,26 @@ export function PixelCanvas({
     (widget: PixelLayoutWidget) => {
       previewThrottleRef.current = Date.now();
       pendingPreviewRef.current = null;
-      setShapeDragWidget(widget);
+      const boundedWidget = clampWidgetToViewCanvas(widget);
+      setShapeDragWidget(boundedWidget);
       if (allowWidgetOverlap) {
         const positions = new Map(
           activeLayout.widgets.map((item) => [
             item.id,
-            item.id === widget.id ? widgetRect(widget) : widgetRect(item),
+            item.id === boundedWidget.id ? widgetRect(boundedWidget) : widgetRect(item),
           ] as const),
         );
         previewRegistryRef.current.applyAll(positions);
         return;
       }
-      const nextLayout = resolveActiveAt(widget);
+      const nextLayout = resolveActiveAt(boundedWidget);
       const positions = new Map(
         nextLayout.widgets.map((item) => [item.id, widgetRect(item)] as const),
       );
       previewRegistryRef.current.applyAll(positions);
       syncPreviewStageMetrics(nextLayout);
     },
-    [activeLayout, allowWidgetOverlap, resolveActiveAt, syncPreviewStageMetrics],
+    [activeLayout, allowWidgetOverlap, clampWidgetToViewCanvas, resolveActiveAt, syncPreviewStageMetrics],
   );
 
   const handlePreview = useCallback(
@@ -633,27 +653,30 @@ export function PixelCanvas({
       pendingPreviewRef.current = null;
       setShapeDragWidget(null);
 
-      const absorbHost = resolveTabHostForWidgetDrop(activeLayout, widgetRect(widget), {
+      const boundedWidget = clampWidgetToViewCanvas(widget);
+
+      const absorbHost = resolveTabHostForWidgetDrop(activeLayout, widgetRect(boundedWidget), {
         intent: tabInsertIntent,
         dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
       });
-      const absorbed = tryAbsorbTopLevelWidgetIntoTab(activeLayout, widget, {
+      const absorbed = tryAbsorbTopLevelWidgetIntoTab(activeLayout, boundedWidget, {
         intent: tabInsertIntent,
         dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
       });
       if (absorbed) {
         onLayoutChange(absorbed);
         clearPreviewChrome(absorbed);
-        onSelect?.(absorbHost?.id ?? widget.id, false);
+        onSelect?.(absorbHost?.id ?? boundedWidget.id, false);
         return;
       }
 
-      const nextLayout = resolveActiveAt(widget);
+      const nextLayout = resolveActiveAt(boundedWidget);
       onLayoutChange(nextLayout);
       clearPreviewChrome(nextLayout);
     },
     [
       activeLayout,
+      clampWidgetToViewCanvas,
       clearPreviewChrome,
       onLayoutChange,
       onSelect,
@@ -834,7 +857,10 @@ export function PixelCanvas({
           ref={stageRef}
           id="editor-canvas-main"
           data-testid="pixel-canvas-stage"
-          className="editor-canvas-main pixel-canvas-stage absolute top-0 origin-top-left overflow-visible"
+          className={cn(
+            "editor-canvas-main pixel-canvas-stage absolute top-0 origin-top-left",
+            hostOverflowLocked ? "overflow-hidden" : "overflow-visible",
+          )}
           style={{
             left: stageLeft,
             width: viewCanvas.width,
@@ -887,6 +913,7 @@ export function PixelCanvas({
                 widgetActions={widgetActions}
                 styleConfig={widgetChromeStyle}
                 registerPreviewSync={mode === "edit" ? registerPreviewSync : undefined}
+                allowBottomGrowth={!fixedCanvasBounds}
               >
                 <PixelWidgetSlot
                   widget={widget}

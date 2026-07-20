@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyPixelInteraction,
+  clampPixelRectToCanvas,
   clientPointToCanvasFromStage,
   resolveStageVisualScale,
   RESIZE_CURSORS,
@@ -173,6 +174,15 @@ describe("pixel canvas geometry", () => {
         { allowBottomGrowth: true },
       ),
     ).toEqual({ x: 61, y: 106, width: 1379, height: 894 });
+  });
+
+  it("clamps rects that overflow after canvas shrink", () => {
+    expect(
+      clampPixelRectToCanvas({ x: 1500, y: 900, width: 400, height: 300 }, { width: 1200, height: 800 }),
+    ).toEqual({ x: 800, y: 500, width: 400, height: 300 });
+    expect(
+      clampPixelRectToCanvas({ x: 0, y: 0, width: 1800, height: 1000 }, { width: 1200, height: 800 }),
+    ).toEqual({ x: 0, y: 0, width: 1200, height: 800 });
   });
 
   it("clamps movement to canvas bounds by default", () => {

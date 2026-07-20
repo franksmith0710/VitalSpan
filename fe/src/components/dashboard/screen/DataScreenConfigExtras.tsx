@@ -1,6 +1,8 @@
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { Download, FileJson } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -13,11 +15,16 @@ import type { DashboardStyleConfig } from "@/components/dashboard/dashboardStyle
 import { DE_SELECT } from "@/components/dashboard/dashboardInspectorUi";
 import { exportDataScreenTemplate } from "@/lib/dataScreenTemplates";
 import { downloadJsonFile, downloadLayoutJson } from "@/lib/exportLayoutJson";
-import {
-  DATA_SCREEN_CANVAS_PRESETS,
-  resolveDataScreenCanvasPresetId,
-  type DataScreenCanvasPresetId,
-} from "@/lib/surfacePreset";
+import { DATA_SCREEN_CANVAS_BOUNDS } from "@/lib/surfacePreset";
+import type { PresentationMode } from "./presentationScale";
+
+const PRESENTATION_MODE_LABELS: Record<PresentationMode, string> = {
+  fit: "等比适应",
+  fitWidth: "宽度优先",
+  fitHeight: "高度优先",
+  fill: "铺满视口",
+  none: "不缩放",
+};
 
 type DataScreenConfigExtrasProps = {
   layout: DashboardLayoutV2;
@@ -25,7 +32,9 @@ type DataScreenConfigExtrasProps = {
   widgets: DashboardLayoutV2["widgets"];
   name: string;
   canSave: boolean;
-  onCanvasPresetChange: (presetId: DataScreenCanvasPresetId) => void;
+  presentationMode: PresentationMode;
+  onPresentationModeChange: (mode: PresentationMode) => void;
+  onCanvasSizeChange: (width: number, height: number) => void;
 };
 
 function buildExportLayout(
@@ -41,18 +50,102 @@ function buildExportLayout(
   };
 }
 
+function CanvasSizeField({
+  id,
+  label,
+  value,
+  committedValue,
+  min,
+  max,
+  disabled,
+  onDraftChange,
+  onCommit,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  committedValue: number;
+  min: number;
+  max: number;
+  disabled: boolean;
+  onDraftChange: (next: string) => void;
+  onCommit: () => void;
+}) {
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.currentTarget.blur();
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onDraftChange(String(committedValue));
+      event.currentTarget.blur();
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <label className="text-theme-xs text-gray-500 dark:text-gray-400" htmlFor={id}>
+        {label}
+      </label>
+      <Input
+        id={id}
+        type="number"
+        inputMode="numeric"
+        min={min}
+        max={max}
+        step={1}
+        value={value}
+        disabled={disabled}
+        className="h-8"
+        onChange={(event) => onDraftChange(event.target.value)}
+        onBlur={onCommit}
+        onKeyDown={handleKeyDown}
+      />
+    </div>
+  );
+}
+
 export function DataScreenConfigExtras({
   layout,
   styleConfig,
   widgets,
   name,
   canSave,
-  onCanvasPresetChange,
+  presentationMode,
+  onPresentationModeChange,
+  onCanvasSizeChange,
 }: DataScreenConfigExtrasProps) {
+  const [draftWidth, setDraftWidth] = useState(String(layout.canvas.width));
+  const [draftHeight, setDraftHeight] = useState(String(layout.canvas.height));
+
+  useEffect(() => {
+    setDraftWidth(String(layout.canvas.width));
+    setDraftHeight(String(layout.canvas.height));
+  }, [layout.canvas.width, layout.canvas.height]);
+
   if (layout.version !== 2) return null;
 
-  const presetId = resolveDataScreenCanvasPresetId(layout.canvas);
   const exportLayout = buildExportLayout(layout, widgets, styleConfig);
+
+  const commitWidth = () => {
+    const parsed = Number.parseInt(draftWidth, 10);
+    if (!Number.isFinite(parsed)) {
+      setDraftWidth(String(layout.canvas.width));
+      return;
+    }
+    onCanvasSizeChange(parsed, layout.canvas.height);
+  };
+
+  const commitHeight = () => {
+    const parsed = Number.parseInt(draftHeight, 10);
+    if (!Number.isFinite(parsed)) {
+      setDraftHeight(String(layout.canvas.height));
+      return;
+    }
+    onCanvasSizeChange(layout.canvas.width, parsed);
+  };
 
   return (
     <section
@@ -62,23 +155,48 @@ export function DataScreenConfigExtras({
       <div>
         <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">大屏工具</p>
         <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-          导出与画布比例（切换比例不自动缩放已有组件）
+          画布尺寸、编辑区缩放与导出（修改尺寸不自动缩放已有组件，Enter 确认）
         </p>
       </div>
 
+      <div className="grid grid-cols-2 gap-2">
+        <CanvasSizeField
+          id="screen-canvas-w"
+          label="W"
+          value={draftWidth}
+          committedValue={layout.canvas.width}
+          min={DATA_SCREEN_CANVAS_BOUNDS.minWidth}
+          max={DATA_SCREEN_CANVAS_BOUNDS.maxWidth}
+          disabled={!canSave}
+          onDraftChange={setDraftWidth}
+          onCommit={commitWidth}
+        />
+        <CanvasSizeField
+          id="screen-canvas-h"
+          label="H"
+          value={draftHeight}
+          committedValue={layout.canvas.height}
+          min={DATA_SCREEN_CANVAS_BOUNDS.minHeight}
+          max={DATA_SCREEN_CANVAS_BOUNDS.maxHeight}
+          disabled={!canSave}
+          onDraftChange={setDraftHeight}
+          onCommit={commitHeight}
+        />
+      </div>
+
       <div className="space-y-1.5">
-        <label className="text-theme-xs text-gray-500 dark:text-gray-400">画布比例</label>
+        <label className="text-theme-xs text-gray-500 dark:text-gray-400">缩放方式</label>
         <Select
-          value={presetId}
-          onValueChange={(value) => onCanvasPresetChange(value as DataScreenCanvasPresetId)}
+          value={presentationMode}
+          onValueChange={(value) => onPresentationModeChange(value as PresentationMode)}
         >
-          <SelectTrigger className={DE_SELECT} aria-label="画布比例">
+          <SelectTrigger className={DE_SELECT} aria-label="编辑区缩放方式">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {(Object.keys(DATA_SCREEN_CANVAS_PRESETS) as DataScreenCanvasPresetId[]).map((id) => (
-              <SelectItem key={id} value={id}>
-                {DATA_SCREEN_CANVAS_PRESETS[id].label}
+            {(Object.keys(PRESENTATION_MODE_LABELS) as PresentationMode[]).map((mode) => (
+              <SelectItem key={mode} value={mode}>
+                {PRESENTATION_MODE_LABELS[mode]}
               </SelectItem>
             ))}
           </SelectContent>

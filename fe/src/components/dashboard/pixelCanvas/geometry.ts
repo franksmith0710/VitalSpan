@@ -53,6 +53,26 @@ function roundedRect(x: number, y: number, width: number, height: number): Pixel
   };
 }
 
+/** 将组件矩形收进画布：先缩尺寸再平移，避免缩小画布后越界 */
+export function clampPixelRectToCanvas(
+  rect: PixelRect,
+  canvas: PixelCanvasBounds,
+): PixelRect {
+  const safeW = Math.max(1, canvas.width);
+  const safeH = Math.max(1, canvas.height);
+  let { x, y, width, height } = rect;
+
+  width = Math.min(width, safeW);
+  height = Math.min(height, safeH);
+  width = Math.max(width, Math.min(MIN_WIDTH, safeW));
+  height = Math.max(height, Math.min(MIN_HEIGHT, safeH));
+
+  x = clamp(x, 0, Math.max(0, safeW - width));
+  y = clamp(y, 0, Math.max(0, safeH - height));
+
+  return roundedRect(x, y, width, height);
+}
+
 export function screenDeltaToCanvas(delta: PixelPoint, scale: number): PixelPoint {
   const safeScale = scale > 0 ? scale : 1;
   return {

@@ -50,6 +50,7 @@ import {
   type TabInsertIntent,
 } from "@/components/dashboard/pixelCanvas/tabInsertResolver";
 import { preservePixelCanvasHostScroll } from "@/components/dashboard/pixelCanvas/preserveCanvasHostScroll";
+import { clampPixelLayoutToCanvasBounds } from "@/components/dashboard/pixelCanvas/layoutSanitize";
 import { unparkPixelWidgetFromTab } from "@/components/dashboard/pixelCanvas/tabParking";
 import {
   hydrateDashboardStyle,
@@ -91,9 +92,9 @@ import { ScreenVisualEditRail } from "@/components/dashboard/screen/ScreenVisual
 import { DataScreenConfigExtras } from "@/components/dashboard/screen/DataScreenConfigExtras";
 import { isScreenVisualWidget } from "@/lib/screenVisualAssets";
 import {
-  DATA_SCREEN_CANVAS_PRESETS,
-  type DataScreenCanvasPresetId,
+  clampDataScreenCanvasSize,
 } from "@/lib/surfacePreset";
+import type { PresentationMode } from "@/components/dashboard/screen/presentationScale";
 import { MediaEditRail } from "@/components/dashboard/MediaEditRail";
 import { TabsEditRail } from "@/components/dashboard/TabsEditRail";
 import { ReuseWidgetDialog } from "@/components/dashboard/ReuseWidgetDialog";
@@ -446,6 +447,8 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   );
 
   const [tabInsertIntent, setTabInsertIntent] = useState<TabInsertIntent | null>(null);
+  const [dataScreenEditPresentationMode, setDataScreenEditPresentationMode] =
+    useState<PresentationMode>("fitHeight");
 
   /** 对标 DE：选中 Tab（或其子组件）即锁定投放意图 */
   useEffect(() => {
@@ -770,15 +773,27 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     setBatchDeleteOpen(false);
   };
 
-  const handleDataScreenCanvasPreset = useCallback(
-    (presetId: DataScreenCanvasPresetId) => {
+  const handleDataScreenCanvasSize = useCallback(
+    (width: number, height: number) => {
       if (!canSave || layout.version !== 2) return;
-      const preset = DATA_SCREEN_CANVAS_PRESETS[presetId];
-      resetLayout({
-        ...layout,
-        canvas: { width: preset.width, height: preset.height },
-      });
-      toast.message("已切换画布基准尺寸，已有组件位置与大小未自动缩放");
+      const next = clampDataScreenCanvasSize(width, height);
+      if (
+        next.width === layout.canvas.width &&
+        next.height === layout.canvas.height
+      ) {
+        return;
+      }
+      resetLayout(
+        clampPixelLayoutToCanvasBounds({
+          ...layout,
+          canvas: next,
+        }),
+      );
+      if (next.width !== width || next.height !== height) {
+        toast.message(`画布尺寸已调整为 ${next.width}×${next.height}（已钳制到允许范围）`);
+      } else {
+        toast.message(`画布尺寸已更新为 ${next.width}×${next.height}`);
+      }
     },
     [canSave, layout, resetLayout],
   );
@@ -1138,6 +1153,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               tabInsertIntent={tabInsertIntent}
               onTabInsertIntentChange={setTabInsertIntent}
               widgetActions={layout.version === 2 && canSave ? pixelWidgetActions : undefined}
+              dataScreenPresentationMode={dataScreenEditPresentationMode}
             />
           }
           chartRail={
@@ -1279,7 +1295,9 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     widgets={widgets}
                     name={name}
                     canSave={canSave}
-                    onCanvasPresetChange={handleDataScreenCanvasPreset}
+                    presentationMode={dataScreenEditPresentationMode}
+                    onPresentationModeChange={setDataScreenEditPresentationMode}
+                    onCanvasSizeChange={handleDataScreenCanvasSize}
                   />
                 ) : null}
                 {isDataScreenSurface ? (
@@ -1364,6 +1382,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               onViewportChange={handlePixelViewportChange}
               tabInsertIntent={tabInsertIntent}
               onTabInsertIntentChange={setTabInsertIntent}
+              dataScreenPresentationMode={dataScreenEditPresentationMode}
         />
       )}
       {mode === "edit" && canSave ? (

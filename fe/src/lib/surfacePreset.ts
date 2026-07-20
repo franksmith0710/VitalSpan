@@ -18,6 +18,33 @@ export const DATA_SCREEN_CANVAS_21_9 = {
   height: 1080,
 } as const;
 
+export const DATA_SCREEN_CANVAS_BOUNDS = {
+  minWidth: 800,
+  minHeight: 600,
+  maxWidth: 7680,
+  maxHeight: 4320,
+} as const;
+
+export function clampDataScreenCanvasSize(width: number, height: number): {
+  width: number;
+  height: number;
+} {
+  return {
+    width: Math.round(
+      Math.min(
+        Math.max(width, DATA_SCREEN_CANVAS_BOUNDS.minWidth),
+        DATA_SCREEN_CANVAS_BOUNDS.maxWidth,
+      ),
+    ),
+    height: Math.round(
+      Math.min(
+        Math.max(height, DATA_SCREEN_CANVAS_BOUNDS.minHeight),
+        DATA_SCREEN_CANVAS_BOUNDS.maxHeight,
+      ),
+    ),
+  };
+}
+
 export const DATA_SCREEN_CANVAS_PRESETS: Record<
   DataScreenCanvasPresetId,
   { width: number; height: number; label: string }
