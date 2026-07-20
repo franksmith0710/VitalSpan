@@ -277,8 +277,11 @@ describe("dashboard admin smoke", () => {
     await user.click(screen.getByTestId("palette-toolbar-toggle"));
     expect(await screen.findByTestId("palette-dropdown-menu")).toBeInTheDocument();
     expect(screen.getByTestId("chart-picker-popover")).toBeInTheDocument();
-    expect(screen.getByText("线/面图")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "折线图" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "图表分类" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "指标" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "线/面图" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "线/面图" }));
+    expect(screen.getByRole("button", { name: "基础折线图" })).toBeInTheDocument();
   });
 
   it("T-DASH-PALETTE-02: query filter picker inserts filter with control type", async () => {

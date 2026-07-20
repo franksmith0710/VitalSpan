@@ -1,5 +1,7 @@
 # 报表模块 DataEase IA 对标补齐
 
+> **状态：已实现**（2026-07-17 归档）。侧栏四入口 + 报表中心/调度重试 FE 已交付。
+
 Plan type: Headless Automation Plan  
 Cursor Build: disabled  
 Execution trigger: dev-autopilot A5 plan-execute  

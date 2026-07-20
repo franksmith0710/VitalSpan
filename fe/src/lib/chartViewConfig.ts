@@ -1,18 +1,8 @@
 import { isKnownChartType } from "./chartRegistry";
+import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
 
-export type ChartType =
-  | "table"
-  | "line"
-  | "bar"
-  | "pie"
-  | "gauge"
-  | "map"
-  | "heatmap"
-  | "kpi"
-  | "timeline"
-  | "sankey"
-  | "funnel"
-  | "graph";
+/** catalog 驱动；保留 string 以兼容 DE 独立 chartType */
+export type ChartType = string;
 
 export type ChartTypeL1 = ChartType;
 
@@ -63,24 +53,55 @@ export type ChartViewConfig = {
   timeRange?: ChartTimeRangeRef;
 };
 
-const KPI_TYPES: ChartType[] = ["kpi"];
+import { isCanvasChartType as isCanvasChartTypeFromRegistry } from "@/components/charts/engine/registry";
+
+const KPI_TYPES = new Set<string>(["kpi"]);
 
 export function isKpiType(type: ChartType): boolean {
-  return KPI_TYPES.includes(type);
+  return KPI_TYPES.has(type);
 }
 
-/** 走 ECharts 渲染的图表类型（非 table / kpi） */
+/** 走外部画布引擎渲染的图表类型（非 legacy table / kpi） */
+export function isCanvasChartType(type: ChartType): boolean {
+  return isCanvasChartTypeFromRegistry(type);
+}
+
+/** @deprecated 使用 isCanvasChartType */
 export function isEchartsChartType(type: ChartType): boolean {
-  return type !== "table" && !isKpiType(type);
+  return isCanvasChartType(type);
 }
 
 export function isLineOrBarType(type: ChartType): boolean {
-  return type === "line" || type === "bar";
+  const plugin = getChartPlugin(type);
+  if (plugin) {
+    return (
+      plugin.paletteCategory === "trend" ||
+      plugin.paletteCategory === "compare" ||
+      plugin.paletteCategory === "dual_axes"
+    );
+  }
+  return type === "line" || type === "bar" || type === "timeline";
+}
+
+export function isGeoMapChartType(type: ChartType): boolean {
+  return type === "map";
+}
+
+export function isMatrixHeatmapChartType(type: ChartType): boolean {
+  return type === "heatmap" || type === "t-heatmap";
+}
+
+export function isLegacyTableChartType(type: ChartType): boolean {
+  return type === "table";
+}
+
+export function isCartesianRowLimitedType(type: ChartType): boolean {
+  return isLineOrBarType(type);
 }
 
 /** 漏斗/桑基/地图等扩展图 */
 export function isExtendedEchartsType(type: ChartType): boolean {
-  return isEchartsChartType(type) && type !== "line" && type !== "bar" && type !== "pie";
+  return isCanvasChartType(type) && type !== "line" && type !== "bar" && type !== "pie";
 }
 
 export function isChartViewConfig(value: unknown): value is ChartViewConfig {

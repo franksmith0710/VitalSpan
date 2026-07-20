@@ -1,21 +1,22 @@
 import type { ChartTypeCatalogItem } from "@/lib/chartRegistry";
+import { getChartPlugin, listChartPlugins } from "@/components/charts/engine/plugins/registry";
+import { CHART_TYPE_DISPLAY_NAMES } from "@/lib/chartTypeDisplayNames";
 
-/** 对标 DataEase 组件库分区标题（展示层，不改后端 category） */
+/** 对标 DataEase 组件库分区标题 */
 export type DePaletteSectionDef = {
   id: string;
   label: string;
-  types: string[];
 };
 
-export const DE_PALETTE_SECTIONS: readonly DePaletteSectionDef[] = [
-  { id: "indicator", label: "指标", types: ["kpi", "gauge"] },
-  { id: "table", label: "表格", types: ["table"] },
-  { id: "line", label: "线/面图", types: ["line"] },
-  { id: "bar", label: "柱/条图", types: ["bar"] },
-  { id: "dist", label: "分布图", types: ["pie", "funnel"] },
-  { id: "map", label: "地图", types: ["map", "heatmap"] },
-  { id: "relation", label: "关系图", types: ["graph", "sankey"] },
-  { id: "temporal", label: "时序", types: ["timeline"] },
+export const DE_PALETTE_CATEGORY_SECTIONS: readonly DePaletteSectionDef[] = [
+  { id: "quota", label: "指标" },
+  { id: "table", label: "表格" },
+  { id: "trend", label: "线/面图" },
+  { id: "compare", label: "柱/条图" },
+  { id: "distribute", label: "分布图" },
+  { id: "map", label: "地图" },
+  { id: "relation", label: "关系图" },
+  { id: "dual_axes", label: "双轴图" },
 ] as const;
 
 export type DePaletteSection = {
@@ -24,27 +25,57 @@ export type DePaletteSection = {
   items: ChartTypeCatalogItem[];
 };
 
+function resolvePaletteCategory(item: ChartTypeCatalogItem): string {
+  if (item.paletteCategory) return item.paletteCategory;
+  return getChartPlugin(item.type)?.paletteCategory ?? "compare";
+}
+
+function isVisibleCatalogItem(item: ChartTypeCatalogItem): boolean {
+  if (item.deprecated) return false;
+  const plugin = getChartPlugin(item.type);
+  if (plugin?.deprecated) return false;
+  return true;
+}
+
+/** catalog / plugin 驱动 Picker 分区（paletteCategory） */
 export function buildDeStylePaletteSections(
   items: ChartTypeCatalogItem[],
 ): DePaletteSection[] {
-  const byType = new Map(items.map((item) => [item.type, item]));
+  const visible = items.filter(isVisibleCatalogItem);
+  const byType = new Map(visible.map((item) => [item.type, item]));
   const used = new Set<string>();
   const sections: DePaletteSection[] = [];
 
-  for (const section of DE_PALETTE_SECTIONS) {
-    const sectionItems = section.types
-      .map((type) => byType.get(type))
-      .filter((item): item is ChartTypeCatalogItem => item != null);
+  for (const section of DE_PALETTE_CATEGORY_SECTIONS) {
+    const sectionItems = visible.filter(
+      (item) => resolvePaletteCategory(item) === section.id,
+    );
     for (const item of sectionItems) used.add(item.type);
     if (sectionItems.length > 0) {
       sections.push({ id: section.id, label: section.label, items: sectionItems });
     }
   }
 
-  const orphans = items.filter((item) => !used.has(item.type));
+  const orphans = visible.filter((item) => !used.has(item.type));
   if (orphans.length > 0) {
     sections.push({ id: "more", label: "更多", items: orphans });
   }
 
   return sections;
+}
+
+/** catalog 请求失败时从 FE plugin registry 构造 */
+export function buildPluginCatalogFallback(): ChartTypeCatalogItem[] {
+  return listChartPlugins()
+    .filter((plugin) => !plugin.deprecated)
+    .map((plugin) => ({
+      type: plugin.type,
+      displayName: CHART_TYPE_DISPLAY_NAMES[plugin.type] ?? plugin.type,
+      category: plugin.paletteCategory,
+      paletteCategory: plugin.paletteCategory,
+      renderer: plugin.renderer,
+      library: plugin.library,
+      styleVariants: ["default"],
+      fieldRule: {},
+    }));
 }

@@ -9,6 +9,7 @@ import {
   getClickDrillField,
   getDrillChain,
   isDrillEnabled,
+  supportsChartDrillInteraction,
 } from "./chartDrill";
 
 function chartConfig(overrides: Partial<ChartViewConfig> = {}): ChartViewConfig {
@@ -93,6 +94,26 @@ describe("chartDrill", () => {
         { field: "city", value: "杭州" },
       ]),
     ).toEqual({ province: "浙江", city: "杭州" });
+  });
+
+  it("supports drill on migrated table-info type", () => {
+    expect(
+      supportsChartDrillInteraction(
+        chartConfig({
+          chartType: "table-info" as ChartViewConfig["chartType"],
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("supports drill on bar-group via plugin category", () => {
+    expect(
+      supportsChartDrillInteraction(
+        chartConfig({
+          chartType: "bar-group" as ChartViewConfig["chartType"],
+        }),
+      ),
+    ).toBe(true);
   });
 
   it("uses first dimension at root level", () => {

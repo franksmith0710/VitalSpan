@@ -2,15 +2,20 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { resolveChartConfigPhase } from "@/lib/chartConfigState";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
-import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT, MAP_REGION_NAME_HINT, analyzeGeoMapMatch } from "@/lib/geoMapChart";
+import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT, MAP_REGION_NAME_HINT, antvGeoEngine } from "@/components/charts/engine/geoEnginePort";
 import {
-  isEchartsChartType,
+  isCanvasChartType,
   isKpiType,
+  isCartesianRowLimitedType,
+  isGeoMapChartType,
+  isLegacyTableChartType,
+  isMatrixHeatmapChartType,
   type ChartViewConfig,
 } from "@/lib/chartViewConfig";
+import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartColors, applyChartColorsOpacity } from "@/lib/chartPalette";
 import type { ColorScheme, DashboardStyleConfig, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, readChartLegendVisible, readChartLegendPosition, readChartShowLabel, readChartDataZoom, readChartPaletteOpacity, readChartSeriesGradient, readChartTooltipShow, resolveChartLabelPresentation, resolveChartTooltipPresentation } from "@/lib/chartDeStyle";
+import { readChartDeStyle, readChartLegendVisible, readChartLegendPosition, readChartPaletteOpacity } from "@/lib/chartDeStyle";
 import {
   readChartLegendIcon,
   readChartLegendIconSize,
@@ -19,13 +24,12 @@ import {
   readChartLegendVAlign,
 } from "@/lib/chartLegendPresentation";
 import { resolveChartValueFormat } from "@/lib/chartValueFormat";
-import { resolveRenderSpec } from "@/lib/resolveRenderSpec";
-import { chartRenderSpecKey } from "@/lib/chartRenderSpecKey";
-import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
-import { applyChartSeriesColorOverrides, resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
 import type { ChartLegendItem } from "@/lib/chartLegendItems";
-import { resolveChartLegendItems } from "@/lib/chartLegendItems";
-import { buildEchartsOption } from "./adapters/renderFromSpec";
+import { buildChartViewModel } from "@/components/charts/engine/buildChartViewModel";
+import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
+import { buildLegendSnapshot } from "@/components/charts/engine/legendSnapshot";
+import { CanvasChartHost } from "@/components/charts/engine/CanvasChartHost";
+import type { ChartInteractionEvent } from "@/components/charts/engine/types";
 import {
   applyChartDrillPipeline,
   drillStackToFilterParameters,
@@ -33,7 +37,6 @@ import {
   canDrillDeeper,
   getClickDrillField,
   getDrillChain,
-  resolveDrillRenderSpec,
   supportsChartDrillInteraction,
 } from "@/lib/chartDrill";
 import {
@@ -43,7 +46,6 @@ import {
 } from "@/lib/geoMapDrill";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AdvancedEchartsChart } from "./adapters/AdvancedEchartsChart";
 import { EmbeddedChartTable } from "./adapters/EmbeddedChartTable";
 import { KpiCard } from "./adapters/KpiCard";
 import { ChartConfigPanel } from "./ChartConfigPanel";
@@ -199,7 +201,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   dashboardEditMode = false,
 }: ChartRendererProps) {
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
-  const drillInteraction = drillEnabled && Boolean(widgetId) && supportsChartDrillInteraction(config);
+  const effectiveConfig = useMemo(() => migrateChartViewConfig(config), [config]);
   const mergedFilterParameters = useMemo(
     () => ({
       ...filterParameters,
@@ -244,16 +246,17 @@ export const ChartRenderer = memo(function ChartRenderer({
     limit: queryLimit,
   });
   const [page, setPage] = useState(1);
-  const [localConfig, setLocalConfig] = useState(config);
-  const specConfig = mode === "config" ? localConfig : config;
-  const isMapChart = localConfig.chartType === "map";
-  const isHeatmapChart = localConfig.chartType === "heatmap";
+  const [localConfig, setLocalConfig] = useState(() => effectiveConfig);
+  const drillInteraction =
+    drillEnabled && Boolean(widgetId) && supportsChartDrillInteraction(localConfig);
+  const isMapChart = isGeoMapChartType(localConfig.chartType);
+  const isHeatmapChart = isMatrixHeatmapChartType(localConfig.chartType);
   const isGeoChart = isMapChart || isHeatmapChart;
   const empty = !loading && !error && (rows?.length ?? 0) === 0 && !isGeoChart;
 
   useEffect(() => {
-    setLocalConfig(config);
-  }, [config]);
+    setLocalConfig(effectiveConfig);
+  }, [effectiveConfig]);
 
   useEffect(() => {
     setPage(1);
@@ -273,11 +276,11 @@ export const ChartRenderer = memo(function ChartRenderer({
         displayField: undefined as string | undefined,
       };
     }
-    if (config.chartType === "map") {
-      return applyMapChartDrillPipeline(config, columns, rows as unknown[][], drill.stack);
+    if (localConfig.chartType === "map") {
+      return applyMapChartDrillPipeline(localConfig, columns, rows as unknown[][], drill.stack);
     }
-    return applyChartDrillPipeline(config, columns, rows as unknown[][], drill.stack);
-  }, [drillInteraction, drill.stack, config, columns, rows]);
+    return applyChartDrillPipeline(localConfig, columns, rows as unknown[][], drill.stack);
+  }, [drillInteraction, drill.stack, localConfig, columns, rows]);
 
   const drillFilterRows = useMemo(() => {
     if (!drill.stack.length) return rows as unknown[][];
@@ -286,21 +289,20 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   const displayRows = drillPipeline.rows;
   const displayColumns = drillPipeline.columns;
-  const displayField = drillPipeline.displayField;
 
-  const drillClickField = useMemo(
-    () =>
-      drillInteraction && localConfig.chartType === "map"
-        ? getMapDrillClickField(config, drill.stack)
-        : undefined,
-    [drillInteraction, config, drill.stack, localConfig.chartType],
-  );
+  const drillClickField = useMemo(() => {
+    if (!drillInteraction) return undefined;
+    if (localConfig.chartType === "map") {
+      return getMapDrillClickField(localConfig, drill.stack);
+    }
+    return getClickDrillField(localConfig, drill.stack);
+  }, [drillInteraction, localConfig, drill.stack]);
 
   const handleDrillClick = useCallback(
     (value: string, label?: string) => {
       if (!drillInteraction) return;
-      if (localConfig.chartType === "map" && value && !canDrillDeeper(drill.stack, config)) {
-        const chain = getDrillChain(config);
+      if (localConfig.chartType === "map" && value && !canDrillDeeper(drill.stack, localConfig)) {
+        const chain = getDrillChain(localConfig);
         if (chain.length >= 2 && drill.stack.length >= chain.length - 1) {
           setMapDrillError("已是最后一层");
         }
@@ -308,13 +310,13 @@ export const ChartRenderer = memo(function ChartRenderer({
       }
       const field =
         localConfig.chartType === "map"
-          ? getMapDrillClickField(config, drill.stack)
-          : getClickDrillField(config, drill.stack);
+          ? getMapDrillClickField(localConfig, drill.stack)
+          : getClickDrillField(localConfig, drill.stack);
       if (!field || !value) return;
 
       const frame = { field, value, label: label ?? value };
       if (localConfig.chartType === "map") {
-        void preflightMapDrillClick(config, drill.stack, frame).then((result) => {
+        void preflightMapDrillClick(localConfig, drill.stack, frame).then((result) => {
           if (!result.ok) {
             setMapDrillError(result.message);
             return;
@@ -326,7 +328,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       }
       drill.push(frame);
     },
-    [config, drill, drillInteraction, localConfig.chartType],
+    [localConfig, drill, drillInteraction],
   );
 
   const jumpConfig = useMemo(() => readChartJumpConfig(config), [config]);
@@ -350,13 +352,6 @@ export const ChartRenderer = memo(function ChartRenderer({
         : null,
     [localConfig, displayColumns, displayRows, loading, error],
   );
-  const renderSpec = useMemo(
-    () =>
-      drillInteraction || drill.stack.length
-        ? resolveDrillRenderSpec(specConfig, displayField)
-        : resolveRenderSpec(specConfig),
-    [chartRenderSpecKey(specConfig), displayField, drillInteraction, drill.stack.length],
-  );
   const deStyle = useMemo(() => readChartDeStyle(localConfig), [localConfig]);
   const chartColors = useMemo(() => {
     const base = deStyle.paletteId
@@ -365,18 +360,6 @@ export const ChartRenderer = memo(function ChartRenderer({
     const opacity = readChartPaletteOpacity(localConfig, dashboardColorDefaults);
     return applyChartColorsOpacity(base, opacity);
   }, [deStyle.paletteId, localConfig, dashboardColorDefaults, paletteId, paletteColors]);
-  const showDataLabels = readChartShowLabel(localConfig, dashboardColorDefaults);
-  const showTooltip = readChartTooltipShow(localConfig, dashboardColorDefaults);
-  const seriesGradient = readChartSeriesGradient(localConfig, dashboardColorDefaults);
-  const labelPresentation = useMemo(
-    () => resolveChartLabelPresentation(localConfig, dashboardColorDefaults),
-    [localConfig, dashboardColorDefaults],
-  );
-  const tooltipPresentation = useMemo(
-    () => resolveChartTooltipPresentation(localConfig, dashboardColorDefaults),
-    [localConfig, dashboardColorDefaults],
-  );
-  const dataZoomEnabled = readChartDataZoom(localConfig);
   const valueFormat = useMemo(
     () => resolveChartValueFormat(deStyle.label, numberFormat),
     [deStyle.label, numberFormat],
@@ -389,7 +372,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     if (!phase.renderReady) return DEFAULT_GEO_MAP_PLACEHOLDER_HINT;
     const regionField = localConfig.dimensions?.[0]?.field ?? "";
     if (regionField && (rows?.length ?? 0) > 0) {
-      const stats = analyzeGeoMapMatch(
+      const stats = antvGeoEngine.analyzeMatch(
         rows as unknown[][],
         columns,
         regionField,
@@ -419,13 +402,46 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   const shellLegendEligible =
     embedded &&
-    isEchartsChartType(localConfig.chartType) &&
+    isCanvasChartType(localConfig.chartType) &&
     localConfig.chartType !== "map" &&
     localConfig.chartType !== "heatmap" &&
     supportsEmbeddedShellLegend(localConfig.chartType);
 
   const shellLegendVisible =
     shellLegendEligible && readChartLegendVisible(deStyle, { embedded: true });
+
+  const chartViewModel = useMemo(
+    () =>
+      buildChartViewModel(localConfig, {
+        columns: displayColumns,
+        rows: displayRows as unknown[][],
+      }),
+    [localConfig, displayColumns, displayRows],
+  );
+
+  const styleContext = useMemo(
+    () =>
+      buildStyleContext({
+        config: localConfig,
+        scheme: surfaceScheme,
+        chartColors,
+        dashboardDefaults: dashboardColorDefaults,
+        shellLegend: false,
+        embedEdit: embedded && dashboardEditMode,
+        numberFormat,
+        widgetShellBg: widgetShellColor,
+      }),
+    [
+      localConfig,
+      surfaceScheme,
+      chartColors,
+      dashboardColorDefaults,
+      embedded,
+      dashboardEditMode,
+      numberFormat,
+      widgetShellColor,
+    ],
+  );
 
   const shellLegendItemsRef = useRef<ChartLegendItem[]>([]);
   const shellLegendItems = useMemo(() => {
@@ -438,55 +454,21 @@ export const ChartRenderer = memo(function ChartRenderer({
     if (!renderModel || renderModel.kind !== "ready") {
       return shellLegendItemsRef.current;
     }
-    const geoStyle = readChartGeoStyle(deStyle);
-    const pieStyle = readChartPieStyle(deStyle);
-    let built = buildEchartsOption(renderSpec, displayRows, displayColumns, {
-      geo: geoStyle,
-      showLabel: showDataLabels,
-      pie: pieStyle,
+    const snapshot = buildLegendSnapshot(chartViewModel, {
+      ...styleContext,
+      shellLegend: true,
     });
-    built = applyDeStyleToEchartsOption(built, deStyle, dataZoomEnabled, {
-      showLabel: showDataLabels,
-      showTooltip,
-      seriesGradient,
-      valueFormat,
-      labelPresentation,
-      tooltipPresentation,
-      layout: { embedded: true, shellLegend: true },
-    });
-    if (chartColors.length > 0) {
-      built = { ...built, color: chartColors };
+    if (snapshot.items.length > 0) {
+      shellLegendItemsRef.current = snapshot.items;
     }
-    if (deStyle.seriesColor?.length) {
-      const seriesItems = resolveChartSeriesColorItems(
-        localConfig,
-        deStyle.paletteId,
-        deStyle.seriesColor,
-      );
-      built = applyChartSeriesColorOverrides(built, seriesItems);
-    }
-    const items = resolveChartLegendItems(built, chartColors);
-    if (items.length > 0) {
-      shellLegendItemsRef.current = items;
-    }
-    return items.length > 0 ? items : shellLegendItemsRef.current;
+    return snapshot.items.length > 0 ? snapshot.items : shellLegendItemsRef.current;
   }, [
     shellLegendVisible,
     loading,
     error,
     renderModel,
-    renderSpec,
-    displayRows,
-    displayColumns,
-    deStyle,
-    showDataLabels,
-    showTooltip,
-    seriesGradient,
-    labelPresentation,
-    tooltipPresentation,
-    dataZoomEnabled,
-    valueFormat,
-    chartColors,
+    chartViewModel,
+    styleContext,
   ]);
 
 
@@ -519,37 +501,35 @@ export const ChartRenderer = memo(function ChartRenderer({
   );
   usePublishWidgetShellLegend(shellLegendState, embedded && shellLegendEligible);
 
-  const echartsChart = (spec = renderSpec) => (
-    <AdvancedEchartsChart
-      spec={spec}
-      rows={displayRows}
-      columns={displayColumns}
+  const handleChartInteraction = useCallback(
+    (event: ChartInteractionEvent) => {
+      if (event.kind !== "drill") return;
+      handleDrillClick(event.value, event.label);
+    },
+    [handleDrillClick],
+  );
+
+  const canvasChart = () => (
+    <CanvasChartHost
+      viewModel={chartViewModel}
+      style={{
+        ...styleContext,
+        shellLegend: useShellLegendLayout,
+      }}
       ariaLabel={title}
       isDark={isDark}
       fill={embedded}
       height={embedded ? undefined : chartSize.height}
       width={embedded ? undefined : chartSize.width}
-      deStyle={deStyle}
-      dataZoom={dataZoomEnabled}
-      chartColors={chartColors}
-      showLabel={showDataLabels}
-      showTooltip={showTooltip}
-      seriesGradient={seriesGradient}
-      labelPresentation={labelPresentation}
-      tooltipPresentation={tooltipPresentation}
-      valueFormat={valueFormat}
       mapPlaceholderHint={mapPlaceholderHint}
       mapDrillError={mapDrillError}
       heatmapPlaceholderHint={heatmapPlaceholderHint}
       drillLookupRows={drillFilterRows}
-      embedEdit={embedded && dashboardEditMode}
-      onDrillClick={drillInteraction ? handleDrillClick : undefined}
-      onJumpClick={jumpInteraction ? handleJumpClick : undefined}
       chartConfig={localConfig}
       drillStack={drill.stack}
-      dataScreenSurface={dashboardColorDefaults?.surfaceKind === "data-screen"}
       drillClickField={drillClickField}
-      shellLegend={useShellLegendLayout}
+      onInteraction={drillInteraction ? handleChartInteraction : undefined}
+      onJumpClick={jumpInteraction ? handleJumpClick : undefined}
     />
   );
 
@@ -569,19 +549,16 @@ export const ChartRenderer = memo(function ChartRenderer({
       );
     }
 
-    if (isEchartsChartType(localConfig.chartType)) {
+    if (isCanvasChartType(localConfig.chartType)) {
       const chartType = localConfig.chartType;
-      if (
-        (chartType === "line" || chartType === "bar") &&
-        displayRows.length > CHART_EXECUTE_LIMIT
-      ) {
+      if (isCartesianRowLimitedType(chartType) && displayRows.length > CHART_EXECUTE_LIMIT) {
         const message = `结果超过 ${CHART_EXECUTE_LIMIT} 行，请缩小查询范围`;
         return embedded
           ? embeddedStateMessage(dwStateWarning, message)
           : <p className="text-theme-sm text-warning-600 dark:text-warning-400">{message}</p>;
       }
-      if (chartType === "map" || chartType === "heatmap") {
-        return wrapEmbedded(echartsChart());
+      if (isGeoMapChartType(chartType) || isMatrixHeatmapChartType(chartType)) {
+        return wrapEmbedded(canvasChart());
       }
       if (!renderModel || renderModel.kind === "empty") {
         return embedded
@@ -593,10 +570,10 @@ export const ChartRenderer = memo(function ChartRenderer({
           ? embeddedErrorMessage(renderModel.message)
           : <p className="text-theme-sm text-gray-500">{renderModel.message}</p>;
       }
-      return wrapEmbedded(echartsChart());
+      return wrapEmbedded(canvasChart());
     }
 
-    if (localConfig.chartType === "table") {
+    if (isLegacyTableChartType(localConfig.chartType)) {
       if (!renderModel || renderModel.kind === "empty") {
         return embedded
           ? embeddedEmptyMessage()
@@ -633,9 +610,11 @@ export const ChartRenderer = memo(function ChartRenderer({
           surfaceScheme={surfaceScheme}
           valueFormat={valueFormat}
           metricFields={metricFields}
-          drillField={drillInteraction ? getClickDrillField(config, drill.stack) : undefined}
+          drillField={drillClickField}
           onDrillCellClick={
-            drillInteraction ? (_field, value) => handleDrillClick(value) : undefined
+            drillInteraction && drillClickField
+              ? (_field, value) => handleDrillClick(value)
+              : undefined
           }
         />,
       );

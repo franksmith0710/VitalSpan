@@ -1,5 +1,7 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { isLegacyTableChartType } from "@/lib/chartViewConfig";
 import { activeFieldRefs } from "@/lib/chartConfigState";
+import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
 
 export type ChartRenderModel =
   | { kind: "error"; message: string }
@@ -26,7 +28,7 @@ export function buildChartRenderModel(
   columns: string[],
   rows: (string | number | boolean | null)[][],
 ): ChartRenderModel {
-  if (config.chartType === "table") {
+  if (isLegacyTableChartType(config.chartType)) {
     const fields = [
       ...activeFieldRefs(config.dimensions).map((d) => d.field),
       ...activeFieldRefs(config.metrics).map((m) => m.field),
@@ -34,6 +36,12 @@ export function buildChartRenderModel(
     const displayCols = pickColumns(columns, fields);
     if (rows.length === 0) return { kind: "empty" };
     return { kind: "table", displayCols: displayCols.length ? displayCols : columns };
+  }
+
+  const plugin = getChartPlugin(config.chartType);
+  if (plugin?.library === "s2") {
+    if (rows.length === 0) return { kind: "empty" };
+    return { kind: "ready" };
   }
 
   if (config.chartType === "kpi") {
@@ -68,7 +76,7 @@ export function buildChartRenderModel(
     return { kind: "ready" };
   }
 
-  if (config.chartType === "heatmap") {
+  if (config.chartType === "heatmap" || config.chartType === "t-heatmap") {
     const xDim = dims[0]?.field;
     const yDim = dims[1]?.field;
     if (!xDim || !yDim) return { kind: "error", message: "请配置横轴与纵轴维度" };

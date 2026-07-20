@@ -21,3 +21,7 @@ class ChartTypeSpec:
     capabilities: tuple[str, ...] = ()
     style_variants: tuple[str, ...] = ("default",)
     field_rule: FieldRule = field(default_factory=FieldRule)
+    library: str = "g2plot"
+    palette_category: str = ""
+    deprecated: bool = False
+    migrates_to: str | None = None

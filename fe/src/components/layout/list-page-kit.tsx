@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { PaginationBar, type PaginationBarProps } from "@/components/ui/pagination-bar";
+import type { ListEmptyPreviewLayout } from "@/components/ui/list-empty-preview";
 import { ListGhostEmptyState } from "@/components/ui/panel-empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -106,11 +107,43 @@ export function ListPagePagination(props: PaginationBarProps) {
   );
 }
 
+export type ListPageCardGridEmptyStateProps = {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  headingId?: string;
+  layout?: Extract<ListEmptyPreviewLayout, "cards" | "data-screen">;
+};
+
+/** 卡片栅格列表空态（仪表板 / 数据大屏等）。 */
+export function ListPageCardGridEmptyState({
+  icon,
+  title,
+  description,
+  action,
+  headingId,
+  layout = "cards",
+}: ListPageCardGridEmptyStateProps) {
+  return (
+    <ListGhostEmptyState
+      icon={icon}
+      title={title}
+      description={description}
+      action={action}
+      headingId={headingId}
+      layout={layout}
+      rows={3}
+    />
+  );
+}
+
 type DataTableEmptyProps = {
   icon: ReactNode;
   title: string;
   description: string;
   action?: ReactNode;
+  layout?: ListEmptyPreviewLayout;
 };
 
 export type DataTableProps = {
@@ -142,6 +175,7 @@ export function DataTable({
         description={emptyState.description}
         action={emptyState.action}
         headingId="data-table-empty"
+        layout={emptyState.layout}
       />
     );
   }

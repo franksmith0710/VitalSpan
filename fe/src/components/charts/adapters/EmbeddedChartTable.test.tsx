@@ -1,7 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { PixelShapePlayerProvider } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
-import { dispatchPixelShapeLiveResize } from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
+import { dispatchPixelLayoutGeometryCommitted } from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
 import { EmbeddedChartTable } from "./EmbeddedChartTable";
 
 describe("EmbeddedChartTable", () => {
@@ -284,23 +283,21 @@ describe("EmbeddedChartTable", () => {
     expect(container.querySelector("tfoot")).toBeNull();
   });
 
-  it("responds to pixel shape live resize while playing", async () => {
+  it("responds to pixel layout geometry committed after resize", async () => {
     const rects: DOMRect[] = [];
     const { container } = render(
-      <PixelShapePlayerProvider playing>
-        <div className="pixel-shape-outer" style={{ width: 400, height: 240 }}>
-          <div className="pixel-shape-inner">
-            <EmbeddedChartTable
-              embedded
-              columns={["a"]}
-              displayCols={["a"]}
-              rows={[[1]]}
-              page={1}
-              onPageChange={() => {}}
-            />
-          </div>
+      <div className="pixel-shape-outer" style={{ width: 400, height: 240 }}>
+        <div className="pixel-shape-inner">
+          <EmbeddedChartTable
+            embedded
+            columns={["a"]}
+            displayCols={["a"]}
+            rows={[[1]]}
+            page={1}
+            onPageChange={() => {}}
+          />
         </div>
-      </PixelShapePlayerProvider>,
+      </div>,
     );
     await act(async () => {
       await Promise.resolve();
@@ -313,7 +310,7 @@ describe("EmbeddedChartTable", () => {
       return rect;
     };
     await act(() => {
-      dispatchPixelShapeLiveResize();
+      dispatchPixelLayoutGeometryCommitted();
     });
     expect(rects.length).toBeGreaterThan(0);
   });

@@ -1,4 +1,4 @@
-import type { EChartsOption } from "echarts";
+type EChartsOption = Record<string, unknown>;
 
 const DEFAULT_COLOR = "#465fff";
 

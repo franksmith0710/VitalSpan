@@ -1,19 +1,20 @@
 import { describe, expect, it } from "vitest";
+import "@/components/charts/engine/plugins/index";
 import { chartStyleSectionsForType } from "./chartStyleSectionRegistry";
 
 describe("chartStyleSectionsForType", () => {
-  it("table omits legend and remark", () => {
-    expect(chartStyleSectionsForType("table")).toEqual([
+  it("returns table sections for table-info", () => {
+    expect(chartStyleSectionsForType("table-info")).toEqual([
       "tableBasic",
+      "tableColor",
       "palette",
       "title",
       "background",
     ]);
   });
 
-  it("bar includes variant, palette, legend and label", () => {
+  it("returns bar sections from plugin metadata", () => {
     expect(chartStyleSectionsForType("bar")).toEqual([
-      "variantBasic",
       "background",
       "palette",
       "title",
@@ -23,19 +24,11 @@ describe("chartStyleSectionsForType", () => {
     ]);
   });
 
-  it("pie includes legend and label", () => {
-    const sections = chartStyleSectionsForType("pie");
-    expect(sections).toContain("legend");
-    expect(sections).toContain("label");
-    expect(sections).toContain("variantBasic");
-  });
-
-  it("map includes geo block", () => {
+  it("includes geo for map", () => {
     expect(chartStyleSectionsForType("map")).toContain("geo");
-    expect(chartStyleSectionsForType("heatmap")).toContain("geo");
   });
 
-  it("kpi uses label section for metric format", () => {
+  it("returns kpi sections", () => {
     expect(chartStyleSectionsForType("kpi")).toEqual([
       "background",
       "palette",

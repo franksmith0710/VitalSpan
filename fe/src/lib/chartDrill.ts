@@ -1,7 +1,10 @@
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import type { RenderSpec } from "@/components/charts/adapters/renderFromSpec";
+import { isGeoMapChartType } from "@/lib/chartViewConfig";
+import type { RenderSpec } from "@/components/charts/engine/types";
+import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
 import { resolveRenderSpec } from "@/lib/resolveRenderSpec";
+import { tableInspectorProfile } from "@/lib/chartTableInspector";
 
 export type ChartDrillFrame = {
   field: string;
@@ -155,7 +158,7 @@ export function drillBreadcrumbLabels(stack: ChartDrillFrame[]): string[] {
   return stack.map((frame) => frame.label?.trim() || frame.value);
 }
 
-const DRILLABLE_CHART_TYPES = new Set([
+const LEGACY_DRILLABLE_CHART_TYPES = new Set([
   "bar",
   "line",
   "timeline",
@@ -164,6 +167,15 @@ const DRILLABLE_CHART_TYPES = new Set([
   "map",
 ]);
 
+const DRILLABLE_PALETTE_CATEGORIES = new Set(["compare", "trend", "distribute"]);
+
+/** 是否支持点击下钻（须已配置 ≥2 级维度） */
 export function supportsChartDrillInteraction(config: ChartViewConfig): boolean {
-  return isDrillEnabled(config) && DRILLABLE_CHART_TYPES.has(config.chartType);
+  if (!isDrillEnabled(config)) return false;
+  if (isGeoMapChartType(config.chartType)) return true;
+  if (tableInspectorProfile(config.chartType)) return true;
+  if (LEGACY_DRILLABLE_CHART_TYPES.has(config.chartType)) return true;
+  const plugin = getChartPlugin(config.chartType);
+  if (plugin && DRILLABLE_PALETTE_CATEGORIES.has(plugin.paletteCategory)) return true;
+  return false;
 }

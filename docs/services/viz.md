@@ -9,7 +9,7 @@
 
 ## 职责
 
-- chart-type 注册表：`ChartTypeRegistry` + 9 内置类型（table/line/bar/pie/gauge/map/sankey/funnel/graph）与 catalog 导出
+- chart-type 注册表：`ChartTypeRegistry` + 内置 **~40 DE 独立 chartType**（`backend/app/viz/builtin/*`）与 catalog 导出；字段含 `library` / `paletteCategory` / `deprecated` / `migratesTo`；canvas 类型 `renderer: antv`
 - 样式变体（`style_variant`）与字段规则（`field_rule`）校验的规则真理源
 - 引擎无关 render-spec 归一（`build_render_spec`）
 - 图表嵌入配置契约（`ChartEmbedConfig` + origin 白名单校验）
@@ -18,8 +18,8 @@
 
 | In | Out |
 |----|-----|
-| 类型注册与 catalog、`style_variant`/`field_rule` 校验规则源 | 真实 ECharts 渲染（`fe/`）；**不含**在线地图 |
-| 引擎无关 render-spec 归一 | 在线瓦片底图、境外地图、运行时外链 GeoJSON CDN |
+| 类型注册与 catalog、`style_variant`/`field_rule` 校验规则源 | 具体图表库渲染（`fe/charts/engine/`）；**不含**在线地图 |
+| 引擎无关 render-spec 归一（`engine` 字段由 FE registry 填充） | 在线瓦片底图、境外地图、运行时外链 GeoJSON CDN |
 | embed origin 白名单/目标唯一性校验 | 图表出数（复用 `query` 链）、嵌入 token 签发与 CSP 响应头 |
 | `sdk_portal/` SDK init validate + lifecycle manifest（只读引用 `_ORIGIN_RE`） | npm JS SDK 发布、修改 `embed.py` 校验语义 |
 
@@ -34,7 +34,7 @@
 |------|------|-----|------|
 | `ChartTypeSpec` / `FieldRule` | frozen dataclass 类型/字段规则 | VIZ-003 | 已实现（骨架） |
 | `ChartTypeRegistry` / `registry` | 类型注册表与单例 | VIZ-003 | 已实现（骨架） |
-| `get_spec` / `export_chart_type_catalog` | 查规格 / 导出 catalog | VIZ-003 | 已实现（骨架） |
+| `get_spec` / `export_chart_type_catalog` | 查规格 / 导出 catalog（含 library·paletteCategory·deprecated） | VIZ-003 | 已实现 |
 | `build_render_spec` | render-spec 归一映射 | VIZ-008 | 已实现（骨架） |
 | `validate_chart_embed_config` / `ChartEmbedConfig` | 嵌入配置校验与契约 | VIZ-006 | 已实现（骨架） |
 | `viz/sdk_portal/` | SDK portal init validate + lifecycle manifest + capabilities | VIZ-007 | L1 已实现 r61 |

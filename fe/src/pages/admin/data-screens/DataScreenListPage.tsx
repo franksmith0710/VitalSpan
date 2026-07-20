@@ -10,6 +10,7 @@ import {
   type DashboardListItem,
 } from "@/components/dashboard/DashboardListCard";
 import {
+  ListPageCardGridEmptyState,
   ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
@@ -261,42 +262,38 @@ export function DataScreenListPage() {
               ))}
             </div>
           ) : sortedItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 px-6 py-16 text-center dark:border-gray-800">
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-gray-50 text-gray-400 dark:bg-white/[0.04] dark:text-gray-500">
-                <Monitor className="size-7" aria-hidden />
-              </div>
-              <h2 className="mt-4 text-theme-sm font-semibold text-gray-900 dark:text-white">
-                暂无数据大屏
-              </h2>
-              <p className="mt-2 max-w-md text-theme-sm text-gray-500 dark:text-gray-400">
-                创建 1920×1080 深色画布，拖拽图表与 KPI 组件，用于指挥大厅与监控墙展示。
-              </p>
-              {createButton ? <div className="mt-6">{createButton}</div> : null}
-            </div>
+            <ListPageCardGridEmptyState
+              icon={<Monitor className="size-7" aria-hidden />}
+              title="暂无数据大屏"
+              description="创建 1920×1080 深色画布，拖拽图表与 KPI 组件，用于指挥大厅与监控墙展示。"
+              action={createButton}
+              headingId="data-screen-empty-title"
+              layout="data-screen"
+            />
           ) : (
-            <>
-              <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {sortedItems.map((screen) => (
-                  <DashboardListCard
-                    key={screen.id}
-                    dashboard={screen}
-                    canEdit={canEdit}
-                    routeBase="/admin/data-screens"
-                    onDelete={() => setDeleteTarget(screen)}
-                  />
-                ))}
-              </div>
-              <ListPagePagination
-                total={total}
-                pageSize={pagination.pageSize}
-                page={pagination.page}
-                onPageChange={pagination.setPage}
-                onPageSizeChange={pagination.setPageSize}
-                entityLabel="个大屏"
-              />
-            </>
+            <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {sortedItems.map((screen) => (
+                <DashboardListCard
+                  key={screen.id}
+                  dashboard={screen}
+                  canEdit={canEdit}
+                  routeBase="/admin/data-screens"
+                  onDelete={() => setDeleteTarget(screen)}
+                />
+              ))}
+            </div>
           )}
         </ListPageTableFrame>
+
+        {!listQuery.isLoading && total > 0 ? (
+          <ListPagePagination
+            current={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+            showSizeChanger
+            onChange={pagination.onPageChange}
+          />
+        ) : null}
       </ListPageSection>
 
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>

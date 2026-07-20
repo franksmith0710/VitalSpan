@@ -144,7 +144,59 @@ export function applyMarkLinesToEchartsOption(
   return { ...option, series };
 }
 
-/** 柱/线条件着色（对标 DE 高级 · 条件样式） */
+/** 柱/线/热力条件着色（对标 DE 高级 · 条件样式）→ G2Plot */
+export function applyConditionalRulesToG2PlotOptions(
+  options: Record<string, unknown>,
+  plotType: string,
+  rules: ChartConditionalRule[],
+): Record<string, unknown> {
+  const active = rules.filter((rule) => rule.enabled && Number.isFinite(rule.value));
+  if (active.length === 0) return options;
+
+  const yField = options.yField as string | undefined;
+  const colorField = options.colorField as string | undefined;
+
+  const resolveNumeric = (datum: Record<string, unknown>): number | null => {
+    if (yField && datum[yField] != null) {
+      const value = Number(datum[yField]);
+      return Number.isFinite(value) ? value : null;
+    }
+    if (colorField && datum[colorField] != null) {
+      const value = Number(datum[colorField]);
+      return Number.isFinite(value) ? value : null;
+    }
+    return null;
+  };
+
+  const styleFn = (datum: Record<string, unknown>) => {
+    const numeric = resolveNumeric(datum);
+    if (numeric == null) return {};
+    const matched = active.find((rule) => matchConditionalRule(numeric, rule));
+    return matched ? { fill: matched.color } : {};
+  };
+
+  if (plotType === "Column" || plotType === "Bar") {
+    const key = plotType === "Bar" ? "barStyle" : "columnStyle";
+    return { ...options, [key]: styleFn };
+  }
+  if (plotType === "Line") {
+    return { ...options, lineStyle: styleFn };
+  }
+  if (plotType === "Heatmap") {
+    return {
+      ...options,
+      color: (datum: Record<string, unknown>) => {
+        const numeric = resolveNumeric(datum);
+        if (numeric == null) return undefined;
+        const matched = active.find((rule) => matchConditionalRule(numeric, rule));
+        return matched?.color;
+      },
+    };
+  }
+  return options;
+}
+
+/** 柱/线条件着色（对标 DE 高级 · 条件样式）→ ECharts */
 export function applyConditionalRulesToEchartsOption(
   option: Record<string, unknown>,
   rules: ChartConditionalRule[],

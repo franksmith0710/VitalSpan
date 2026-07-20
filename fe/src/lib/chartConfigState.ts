@@ -1,5 +1,7 @@
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
+import { isLegacyTableChartType } from "@/lib/chartViewConfig";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
+import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
 import { chartRenderRequiredCounts } from "@/components/dashboard/chartFieldSlots";
 
 export type ChartConfigPhase = {
@@ -36,8 +38,10 @@ export function resolveChartConfigPhase(config: ChartViewConfig | undefined): Ch
 
   let renderReady = false;
   if (queryReady && config) {
-    if (chartType === "table") {
+    if (isLegacyTableChartType(chartType)) {
       renderReady = dimFields.length > 0 || metricFields.length > 0;
+    } else if (getChartPlugin(chartType)?.library === "s2") {
+      renderReady = true;
     } else if (chartType === "kpi") {
       renderReady = metricFields.length > 0;
     } else {

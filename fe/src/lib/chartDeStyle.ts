@@ -12,7 +12,6 @@ import {
   mergeTitleStyle,
   mergeWidgetShellStyle,
 } from "@/components/dashboard/dashboardStyleConfig";
-import { getDashboardThemeTokens } from "@/components/dashboard/dashboardThemeTokens";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "@/components/dashboard/dashboardThemeTokens";
 import type { WidgetBackgroundPresentation } from "@/lib/widgetSurfaceBackground";
 import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";

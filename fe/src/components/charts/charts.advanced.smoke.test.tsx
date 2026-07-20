@@ -178,7 +178,7 @@ describe("AdvancedEchartsChart", () => {
         ariaLabel="地图"
       />,
     );
-    expect(screen.getByTestId("echarts-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("antv-map-chart")).toBeInTheDocument();
   });
 });
 
@@ -305,7 +305,7 @@ describe("ChartRenderer advanced", () => {
       metrics: [{ field: "value" }],
     };
     render(<ChartRenderer config={cfg} />);
-    expect(await screen.findByTestId("echarts-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("antv-g2plot-chart")).toBeInTheDocument();
   });
 
   it("T-VIZ-R43-005-03: 501 行 → 警告 + 渲染不抛错", async () => {
@@ -321,7 +321,7 @@ describe("ChartRenderer advanced", () => {
     };
     render(<ChartRenderer config={cfg} />);
     expect(await screen.findByRole("status")).toHaveTextContent(/500/);
-    expect(screen.getByTestId("echarts-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("antv-g2plot-chart")).toBeInTheDocument();
   });
 });
 
@@ -391,7 +391,7 @@ describe("ChartRenderer extended", () => {
       metrics: [{ field: "amt" }],
     };
     render(<ChartRenderer config={cfg} />);
-    expect(await screen.findByTestId("echarts-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("antv-g2plot-chart")).toBeInTheDocument();
   });
 
   it("T-VIZ-R43-005-01: funnel 3 阶段 mock → 漏斗 series 可见", async () => {
@@ -408,7 +408,7 @@ describe("ChartRenderer extended", () => {
       metrics: [{ field: "value" }],
     };
     render(<ChartRenderer config={cfg} />);
-    expect(await screen.findByTestId("echarts-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("antv-g2plot-chart")).toBeInTheDocument();
   });
 });
 

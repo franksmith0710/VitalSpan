@@ -134,7 +134,6 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   const hasPixelFootprint =
     "width" in sourceWidget &&
     !nested &&
-    !isShapePlaying &&
     sourceWidget.width > 0 &&
     sourceWidget.height > 0;
   const pixelWidth = "width" in sourceWidget ? sourceWidget.width : 0;

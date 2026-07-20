@@ -888,6 +888,16 @@ html.admin-fill-lock #root {
   flex: 1;
 }
 
+/* isPlayer 缩放：内容区 GPU transform 跟手，不触发图表引擎每帧 resize */
+.pixel-canvas-host .pixel-shape-outer[data-pixel-live-resize] .pixel-shape-content {
+  flex: none;
+}
+
+.pixel-canvas-host .pixel-shape-outer[data-pixel-live-resize] .pixel-shape-inner {
+  overflow: hidden;
+}
+
+/* isPlayer：子树 100% 填满外框 */
 .pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .embedded-chart-table-host {
   width: 100%;
   height: 100%;

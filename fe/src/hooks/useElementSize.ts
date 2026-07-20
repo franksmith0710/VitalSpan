@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  PIXEL_LAYOUT_GEOMETRY_COMMITTED,
+} from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
 
 type Size = { width: number; height: number };
 
@@ -65,6 +68,16 @@ export function useElementSize<T extends HTMLElement>(
     const rect = node.getBoundingClientRect();
     setSize({ width: Math.round(rect.width), height: Math.round(rect.height) });
   }, [enabled, node, paused]);
+
+  useEffect(() => {
+    if (!enabled || !node) return;
+    const remeasure = () => {
+      const rect = node.getBoundingClientRect();
+      setSize({ width: Math.round(rect.width), height: Math.round(rect.height) });
+    };
+    document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, remeasure);
+    return () => document.removeEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, remeasure);
+  }, [enabled, node]);
 
   return { ref, size };
 }

@@ -21,6 +21,7 @@ import { DashboardQuickCreateDialog } from "@/components/dashboard/DashboardQuic
 import {
   DataTable,
   ListPageBody,
+  ListPageCardGridEmptyState,
   ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
@@ -248,18 +249,14 @@ export function DashboardListPage() {
                 ))}
               </div>
             ) : sortedItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 px-6 py-16 text-center dark:border-gray-800">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-gray-50 text-gray-400 dark:bg-white/[0.04] dark:text-gray-500">
-                  <DashboardListEmptyIcon />
-                </div>
-                <h2 className="mt-4 text-theme-sm font-semibold text-gray-900 dark:text-white">
-                  暂无仪表板
-                </h2>
-                <p className="mt-2 max-w-md text-theme-sm text-gray-500 dark:text-gray-400">
-                  创建第一个看板，拖拽图表组件并绑定数据源后即可发布。
-                </p>
-                {createButton ? <div className="mt-6">{createButton}</div> : null}
-              </div>
+              <ListPageCardGridEmptyState
+                icon={<DashboardListEmptyIcon />}
+                title="暂无仪表板"
+                description="创建第一个看板，拖拽图表组件并绑定数据源后即可发布。"
+                action={createButton}
+                headingId="dashboard-empty-title"
+                layout="cards"
+              />
             ) : (
               <>
                 <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -314,6 +311,7 @@ export function DashboardListPage() {
               title: "暂无仪表板",
               description: "创建第一个看板，拖拽图表组件并绑定数据源后即可发布。",
               action: createButton,
+              layout: "cards",
             }}
             rows={sortedItems.map((row) => {
               const widgetCount = row.layoutJson?.widgets?.length ?? 0;

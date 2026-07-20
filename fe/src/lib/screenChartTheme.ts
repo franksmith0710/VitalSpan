@@ -1,4 +1,4 @@
-import type { EChartsOption } from "echarts";
+type EChartsOption = Record<string, unknown>;
 
 const SCREEN_AXIS_LABEL = "rgba(255,255,255,0.72)";
 const SCREEN_AXIS_LINE = "rgba(255,255,255,0.2)";

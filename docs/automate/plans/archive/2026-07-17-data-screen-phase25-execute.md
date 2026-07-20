@@ -6,8 +6,8 @@
 | Cursor Build | disabled |
 | Execution trigger | dev-autopilot A5 plan-execute（或人工按 Wave 推进） |
 | 日期 | 2026-07-17 |
-| 状态 | **Wave A 已交付**（Wave B 待执行） |
-| 需求真理源 | [Phase 2.5 需求说明](./2026-07-17-data-screen-phase25-requirements.md) |
+| 状态 | **已实现**（2026-07-17 归档） |
+| 需求真理源 | [Phase 2.5 需求说明](../2026-07-17-data-screen-phase25-requirements.md) |
 
 > **摘要**：补齐「对外投放闭环」与 DE 工作台高频能力。优先 Wave A（view/share/embed），再 Wave B（编辑深化），C/D 可并行。
 

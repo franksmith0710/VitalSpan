@@ -12,7 +12,7 @@ alwaysApply: true
 | 项 | 约定 |
 |----|------|
 | **范围** | **仅中华人民共和国**省级行政区（可扩展省→市下钻，仍须离线 GeoJSON） |
-| **底图** | **仅离线**：`fe/src/assets/geo/*.json` 或经平台 API 分发的 GeoJSON；`echarts.registerMap` |
+| **底图** | **仅离线**：`fe/src/assets/geo/*.json` 或经平台 API 分发的 GeoJSON；经 `GeoEnginePort`（默认 ECharts `registerMap`） |
 | **渲染** | ECharts `series.type=map` / 分类热力（非经纬度瓦片底图） |
 | **数据 join** | 维度为**省/市名称**或**国标 adcode**；禁止把业务 `region_id` 直接当地理维度 |
 | **依赖** | **零**在线地图 SDK、瓦片 CDN、地图 Key 环境变量 |
@@ -35,7 +35,7 @@ alwaysApply: true
 
 ## 代码锚点
 
-- `fe/src/lib/geoMapChart.ts` · `fe/src/assets/geo/china-provinces.json`
+- `fe/src/components/charts/engine/geoEnginePort.ts` · `fe/src/components/charts/engine/antv/geo/OfflineGeoAntVPort.ts` · `fe/src/assets/geo/china-provinces.json`
 - `fe/src/components/charts/adapters/renderFromSpec.ts`（`map` / `heatmap`）
 - `fe/src/lib/buildChartRenderModel.ts`（`region_id` 校验）
 

@@ -10,10 +10,6 @@ vi.mock("@/lib/api", () => ({
   apiFetch: (...args: unknown[]) => mockApiFetch(...args),
 }));
 
-vi.mock("echarts-for-react", () => ({
-  default: () => <div data-testid="echarts-chart" />,
-}));
-
 function mockExecute(rows: unknown[][], columns: string[]) {
   mockApiFetch.mockImplementation(async (path: string, opts?: { method?: string; body?: string }) => {
     if (path === "/api/v1/query/execute") {
@@ -22,7 +18,7 @@ function mockExecute(rows: unknown[][], columns: string[]) {
     if (path === "/api/v1/charts/render-spec") {
       const cfg = JSON.parse(opts?.body ?? "{}") as ChartViewConfig;
       return {
-        engine: cfg.chartType === "kpi" ? "kpi" : "echarts",
+        engine: cfg.chartType === "kpi" ? "kpi" : cfg.chartType === "table" ? "table" : "antv",
         chartType: cfg.chartType,
         styleVariant: "default",
         encoding: {
@@ -42,6 +38,7 @@ const cases: Array<{
   rows: unknown[][];
   cols: string[];
   dimensions: ChartViewConfig["dimensions"];
+  testId?: string;
 }> = [
   {
     type: "map",
@@ -49,6 +46,7 @@ const cases: Array<{
     rows: [["北京", 100]],
     cols: ["region", "value"],
     dimensions: [{ field: "region" }],
+    testId: "antv-map-chart",
   },
   {
     type: "heatmap",
@@ -56,6 +54,7 @@ const cases: Array<{
     rows: [["A", "Y1", 10]],
     cols: ["x", "y", "v"],
     dimensions: [{ field: "x" }, { field: "y" }],
+    testId: "antv-g2plot-chart",
   },
   {
     type: "kpi",
@@ -66,10 +65,11 @@ const cases: Array<{
   },
   {
     type: "timeline",
-    label: "时间轴",
+    label: "时间序列",
     rows: [["2026-01-01", 1]],
     cols: ["t", "v"],
     dimensions: [{ field: "t" }],
+    testId: "antv-g2plot-chart",
   },
 ];
 
@@ -77,7 +77,7 @@ describe("DASH-003 chart render smoke", () => {
   beforeEach(() => mockApiFetch.mockReset());
   afterEach(() => cleanup());
 
-  it.each(cases)("renders $type container", async ({ type, label, rows, cols, dimensions }) => {
+  it.each(cases)("renders $type container", async ({ type, label, rows, cols, dimensions, testId }) => {
     mockExecute(rows, cols);
     const config: ChartViewConfig = {
       chartType: type,
@@ -96,6 +96,8 @@ describe("DASH-003 chart render smoke", () => {
     expect(screen.getByText(label)).toBeInTheDocument();
     if (type === "kpi") {
       expect(screen.getByRole("group", { name: /指标/ })).toBeInTheDocument();
+    } else if (testId) {
+      expect(screen.getByTestId(testId)).toBeInTheDocument();
     }
   });
 });

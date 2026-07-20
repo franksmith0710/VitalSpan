@@ -14,7 +14,8 @@
 | Table | `ui/table.tsx` | 数据表格（TailAdmin 风格） |
 | Alert | `ui/alert.tsx` | 字段级/区块提示 |
 | Skeleton | `ui/skeleton.tsx` | 加载占位 |
-| PanelEmptyState | `ui/panel-empty-state.tsx` | 面板空态；`ListGhostEmptyState` 列表骨架空态、`PanelEmptyStateSteps` 引导步骤 |
+| PanelEmptyState | `ui/panel-empty-state.tsx` | 面板空态；`ListGhostEmptyState` 模糊虚拟数据列表空态、`PanelEmptyStateSteps` 引导步骤 |
+| ListEmptyPreview | `ui/list-empty-preview.tsx` · `list-empty-preview-dashboard.tsx` · `list-empty-preview-data-screen.tsx` | 列表空态背景与 `ListEmptyHeroPanel` 玻璃态 CTA 条 |
 | Select | `ui/select.tsx` | 下拉选择（Radix） |
 | DropdownMenu | `ui/dropdown-menu.tsx` | 下拉菜单（Radix） |
 | Avatar | `ui/avatar.tsx` | 用户头像 |
@@ -30,13 +31,16 @@
 | RequireCapability | `auth/require-capability.tsx` | 路由级 RBAC 守卫（`RequireCapabilityName` 与侧栏 `resolveNavGroups` 对齐） |
 | VitalSpanLogo | `layout/vitalspan-logo.tsx` | 侧栏品牌标（展开/折叠） |
 | AdminPageShell | `layout/admin-page-shell.tsx` | PageHeader：标题 + 描述 + 操作区 + `gap-6` 主内容栅格 |
-| ListPageSection / DataTable | `layout/list-page-kit.tsx` | 列表/Hub 页卡片容器、工具栏、表格、分页与空态 |
+| ListPageSection / DataTable | `layout/list-page-kit.tsx` | 列表/Hub 页卡片容器、工具栏、表格、`ListPageCardGridEmptyState` 栅格空态、分页 |
 | ListBatchDeleteBar / BatchDeleteDialog | `layout/list-batch-delete.tsx` | 列表多选勾选列 + 批量删除工具条与确认框；配合 `hooks/useListRowSelection.ts` · `lib/runBatchDelete.ts` |
 | PaginationBar | `ui/pagination-bar.tsx` | 列表底部分页（上一页/下一页/每页条数） |
 | AdminLayout | `../layouts/AdminLayout.tsx` | `/admin/*` 布局入口 |
 | ChartPanel | `charts/ChartPanel.tsx` | 图表壳：loading/empty/error |
-| ChartRenderer | `charts/ChartRenderer.tsx` | 表格/折线/柱 + 高级 ECharts 渲染（VIZ-002/003） |
-| AdvancedEchartsChart | `charts/adapters/AdvancedEchartsChart.tsx` | 高级 ECharts 渲染（map/sankey/funnel/graph/gauge/heatmap/timeline） |
+| ChartRenderer | `charts/ChartRenderer.tsx` | 引擎无关编排：table/kpi 分支 + `CanvasChartHost`（VIZ-002/003） |
+| CanvasChartHost | `charts/engine/CanvasChartHost.tsx` | 生产画布入口 → `AntvEngineView`（**仅 AntV**） |
+| AntvEngineView | `charts/engine/antv/AntvEngineView.tsx` | G2Plot / S2 / G6 / G2 离线地图分发 |
+| `engine/echarts/` | `charts/engine/echarts/**` | **遗留**（已迁 AntV；`geoMapChart` 地名工具仍被 AntV 地图引用；待归档删除） |
+| AdvancedEchartsChart | `charts/adapters/AdvancedEchartsChart.tsx` | **deprecated**；内部已转 `CanvasChartHost` |
 | KpiCard | `charts/adapters/KpiCard.tsx` | KPI 指标卡（1–4 metrics，DASH-003）；供 `ChartRenderer` |
 | ChartConfigPanel | `charts/ChartConfigPanel.tsx` | 字段 + styleVariant 配置 |
 | EmbedChartPage | `../embed/EmbedChartPage.tsx` | `/embed/chart/:chartId` |

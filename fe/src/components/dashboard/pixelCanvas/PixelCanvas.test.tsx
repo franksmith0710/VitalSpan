@@ -213,10 +213,21 @@ describe("PixelCanvas", () => {
   });
 
   it("keeps resized widget geometry after data-screen resize commit", async () => {
+    const sibling: PixelLayoutWidget = {
+      id: "w2",
+      type: "chart",
+      title: "邻块",
+      order: 2,
+      x: 500,
+      y: 80,
+      width: 300,
+      height: 200,
+    };
     const dataScreenLayout: DashboardLayoutV2 = {
       ...layout,
       canvas: { width: 1920, height: 1080 },
       styleConfig: { surfaceKind: "data-screen" },
+      widgets: [widget, sibling],
     };
     let currentLayout = dataScreenLayout;
     const onChange = vi.fn((next: DashboardLayoutV2) => {
@@ -265,6 +276,10 @@ describe("PixelCanvas", () => {
     const shape = screen.getByTestId("pixel-shape-w1");
     expect(shape).toHaveStyle({ width: "320px", height: "220px" });
     expect(screen.getByTestId("widget-body-w1")).toBeInTheDocument();
+
+    const blockerShape = screen.getByTestId("pixel-shape-w2");
+    expect(blockerShape).toHaveStyle({ width: "300px", height: "200px" });
+    expect(screen.getByTestId("widget-body-w2")).toBeInTheDocument();
   });
 
   it("applies DE reflow to neighbors on pointer up after resize", async () => {

@@ -93,6 +93,13 @@ def coerce_chart_config_ids(data: Any) -> Any:
     return out
 
 
+def normalize_chart_config_input(data: Any) -> Any:
+    """UUID 空串归一 + 存量 chartType/styleVariant 迁移。"""
+    from app.viz.migrate_chart_types import migrate_chart_config
+
+    return migrate_chart_config(coerce_chart_config_ids(data))
+
+
 class ChartTimeRangeRef(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     enabled: bool = False
@@ -146,7 +153,7 @@ class ChartViewConfig(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def coerce_optional_ids(cls, data: Any) -> Any:
-        return coerce_chart_config_ids(data)
+        return normalize_chart_config_input(data)
 
     @model_validator(mode="after")
     def validate_l1_rules(self) -> ChartViewConfig:
@@ -259,7 +266,7 @@ class ChartViewConfigLayout(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def coerce_optional_ids(cls, data: Any) -> Any:
-        return coerce_chart_config_ids(data)
+        return normalize_chart_config_input(data)
 
     @model_validator(mode="after")
     def validate_layout_shell(self) -> ChartViewConfigLayout:

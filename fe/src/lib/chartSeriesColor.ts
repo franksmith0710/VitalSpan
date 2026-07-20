@@ -1,6 +1,7 @@
-import type { EChartsOption } from "echarts";
+type EChartsOption = Record<string, unknown>;
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { isLineOrBarType, type ChartType, type ChartViewConfig } from "@/lib/chartViewConfig";
+import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
 import { resolveChartColors, resolvePaletteId } from "@/lib/chartPalette";
 
 /** 对标 DE basicStyle.seriesColor：按系列/指标单独设色 */
@@ -11,6 +12,14 @@ export type ChartSeriesColorItem = {
 };
 
 export function supportsChartSeriesColorEditing(chartType: ChartType): boolean {
+  const plugin = getChartPlugin(chartType);
+  if (plugin) {
+    return (
+      plugin.paletteCategory === "trend" ||
+      plugin.paletteCategory === "compare" ||
+      plugin.paletteCategory === "dual_axes"
+    );
+  }
   return isLineOrBarType(chartType);
 }
 

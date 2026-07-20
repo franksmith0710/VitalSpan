@@ -1,12 +1,19 @@
+import { getChartTypeDisplayName } from "@/lib/chartRegistry";
 import {
-  chartTypeIcon as widgetChartIcon,
-  CHART_TYPE_ICONS as WIDGET_CHART_ICONS,
+  chartTypeIcon,
+  CHART_TYPE_ICONS,
   FALLBACK_CATALOG_ITEMS,
 } from "@/lib/chartTypeCatalogDisplay";
 
-export { widgetChartIcon, WIDGET_CHART_ICONS, FALLBACK_CATALOG_ITEMS };
+export { chartTypeIcon as widgetChartIcon, CHART_TYPE_ICONS as WIDGET_CHART_ICONS, FALLBACK_CATALOG_ITEMS };
+export { getChartTypeDisplayName };
 
-/** @deprecated 优先使用 catalog displayName；仅作无 catalog 时的兜底 */
-export const WIDGET_CHART_LABELS: Record<string, string> = Object.fromEntries(
-  FALLBACK_CATALOG_ITEMS.map((item) => [item.type, item.displayName]),
+/** @deprecated 使用 getChartTypeDisplayName */
+export const WIDGET_CHART_LABELS: Record<string, string> = new Proxy(
+  {},
+  {
+    get(_target, prop: string) {
+      return getChartTypeDisplayName(prop);
+    },
+  },
 );

@@ -74,6 +74,8 @@ import { autoScrollPixelCanvasHost } from "./pixelCanvasAutoScroll";
 import { routePixelCanvasWheel } from "./pixelCanvasWheelScroll";
 import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
+import { dispatchPixelLayoutGeometryCommitted } from "./pixelShapeLiveResize";
+import { useDataScreenVisualScale } from "../screen/dataScreenVisualScaleContext";
 
 type PixelCanvasProps = {
   mode: "edit" | "view";
@@ -206,6 +208,7 @@ export function PixelCanvas({
   const tabInsertIntent = useTabInsertIntent();
   const [markGuides, setMarkGuides] = useState<MarkLineGuide[]>([]);
   const [playingWidgetId, setPlayingWidgetId] = useState<string | null>(null);
+  const injectedVisualScale = useDataScreenVisualScale();
   const previewThrottleRef = useRef(0);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPreviewRef = useRef<PixelLayoutWidget | null>(null);
@@ -243,20 +246,14 @@ export function PixelCanvas({
     () => (mode === "edit" ? topLevelWidgets : topLevelWidgets.filter((w) => !w.hidden)),
     [mode, topLevelWidgets],
   );
-  const layoutGeometryKey = useMemo(
-    () =>
-      topLevelWidgets
-        .map((widget) => `${widget.id}:${widget.x},${widget.y},${widget.width},${widget.height}`)
-        .join("|"),
-    [topLevelWidgets],
-  );
 
-  useEffect(() => {
-    if (shapeDragWidget) return;
-    previewRegistryRef.current.reset(
-      activeLayout.widgets.map((widget) => ({ id: widget.id, ...widgetRect(widget) })),
-    );
-  }, [layoutGeometryKey, shapeDragWidget]);
+  const notifyGeometryCommitted = useCallback(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        dispatchPixelLayoutGeometryCommitted();
+      });
+    });
+  }, []);
   const tabHosts = useMemo(
     () => topLevelWidgets.filter((w) => w.type === "tabs" && w.tabsConfig),
     [topLevelWidgets],
@@ -396,11 +393,13 @@ export function PixelCanvas({
 
     const applyMetrics = () => {
       if (designViewportLocked) {
-        const visualScale = resolveStageVisualScale(
-          stageRef.current,
-          viewCanvas.width,
-          viewCanvas.height,
-        );
+        const visualScale =
+          injectedVisualScale ??
+          resolveStageVisualScale(
+            stageRef.current,
+            viewCanvas.width,
+            viewCanvas.height,
+          );
         setScale((previous) =>
           Math.abs(previous - visualScale) < 0.0001 ? previous : visualScale,
         );
@@ -466,7 +465,7 @@ export function PixelCanvas({
         metricsFrameRef.current = null;
       }
     };
-  }, [publishViewport, viewCanvas, designCanvasHeight, mode, scaleMode, editMinScale, designViewportLocked, effectiveScaleMode, viewportFit]);
+  }, [publishViewport, viewCanvas, designCanvasHeight, mode, scaleMode, editMinScale, designViewportLocked, effectiveScaleMode, viewportFit, injectedVisualScale]);
 
   useLayoutEffect(() => {
     consumePendingCanvasHostScrollRestore(hostRef.current);
@@ -670,6 +669,7 @@ export function PixelCanvas({
         onLayoutChange(absorbed);
         clearPreviewChrome(absorbed);
         setShapeDragWidget(null);
+        notifyGeometryCommitted();
         onSelect?.(absorbHost?.id ?? boundedWidget.id, false);
         return;
       }
@@ -678,11 +678,13 @@ export function PixelCanvas({
       onLayoutChange(nextLayout);
       clearPreviewChrome(nextLayout);
       setShapeDragWidget(null);
+      notifyGeometryCommitted();
     },
     [
       activeLayout,
       clampWidgetToViewCanvas,
       clearPreviewChrome,
+      notifyGeometryCommitted,
       onLayoutChange,
       onSelect,
       resolveActiveAt,
@@ -698,7 +700,8 @@ export function PixelCanvas({
     pendingPreviewRef.current = null;
     setShapeDragWidget(null);
     clearPreviewChrome();
-  }, [clearPreviewChrome]);
+    notifyGeometryCommitted();
+  }, [clearPreviewChrome, notifyGeometryCommitted]);
 
   const handleDragAutoScroll = useCallback(
     (event: PointerEvent) => {

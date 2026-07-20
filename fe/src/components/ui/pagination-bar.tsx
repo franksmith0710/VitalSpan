@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { getPaginationRange, LIST_PAGE_SIZE_OPTIONS } from "@/lib/list-pagination";
+import { getPaginationRange, LIST_PAGE_SIZE_DEFAULT, LIST_PAGE_SIZE_OPTIONS } from "@/lib/list-pagination";
 import {
   Pagination,
   PaginationContent,
@@ -45,7 +45,11 @@ export function PaginationBar({
   onChange,
   className,
 }: PaginationBarProps) {
-  const range = getPaginationRange(current, pageSize, total);
+  const range = getPaginationRange(
+    Number.isFinite(current) ? current : 1,
+    Number.isFinite(pageSize) && pageSize > 0 ? pageSize : LIST_PAGE_SIZE_DEFAULT,
+    total,
+  );
   const { totalPages, start, end } = range;
   const safeCurrent = range.current;
   const pageItems = buildPageNumbers(safeCurrent, totalPages);

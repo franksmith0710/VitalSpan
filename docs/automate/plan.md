@@ -1,36 +1,30 @@
 # 演化里程碑计划（活跃）
 
 > 人工维护（`create-evolution-plan`）；演化 agent **只读**。
-> **当前节** = **§M-DEPTH**（DE/SS 深度打穿）。**M-FINAL 已冻结**；**M-PRODUCT + M-DASH-UX 已收官**。  
+> **当前节** = **数据大屏编辑视口 companion**（`plans/2026-07-20-data-screen-edit-viewport-de.md`）；§M-DEPTH 深度打穿仍开放 backlog。**M-FINAL 已冻结**；**M-PRODUCT + M-DASH-UX 已收官**。  
 > **全量路线图**：M1–M12 + M-FE-1~3 + M-FINAL + M-PRODUCT + M-DASH-UX 已完成；**PRD 总数 129**（合同已实现）；当前 companion 见 §M-DEPTH。  
 > **完成定义**：`[x]` = companion 浏览器可感知 / 合同项分片「已实现」；`[ ]` = companion 未达；标「可选」不阻塞收官。  
 > **实施细则**：架构见 [`../arch.md`](../arch.md)；验收见 [`prd/F07-DASH.md`](./prd/F07-DASH.md) · [`prd/F11-META.md`](./prd/F11-META.md)；壳层见 [`../ui/layout.md`](../ui/layout.md)；全栈审视见 [`plans/2026-07-10-fe-de-ss-ia-optimization.md`](./plans/2026-07-10-fe-de-ss-ia-optimization.md)。
 
 ```yaml
-version: 3.0.0
-last_updated: 2026-07-10
+version: 3.0.1
+last_updated: 2026-07-20
 archive_ref: docs/automate/plan.archive.md
 execute_scope: M-DEPTH
 frozen_milestone: M-FINAL
-queued_milestone: none
-roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX+M-DEPTH
+queued_milestone: data-screen-edit-viewport
+roadmap: M1-M12+M-FE-1~3+M-FINAL+M-PRODUCT+M-DASH-UX+M-DEPTH+data-screen-companion
 prd_total: 129
 prd_in_scope: 129
 prd_completed_in_scope: 129
 prd_remaining_in_scope: 0
-companion_scope: M-DEPTH
-companion_remaining: 2
-current_milestone: M-DEPTH
-intervention: m-depth-four-track-merge-2026-07-10
-scope_change: graduation-to-depth-companion
-plan_review: 2026-07-10-phase-m-merge
-prd_hub_ref: docs/automate/prd.md@v1.2.117
-polish_checklist_ref: docs/automate/plans/2026-07-08-product-polish-checklist.md
-e2e_pass_ref: docs/automate/plans/2026-07-09-graduation-e2e-pass.md
-depth_plan_ref: docs/automate/plans/2026-07-10-customer-delivery-graduation.md
-bug_case_ref: .agents/skills/bug-case-library/cases/fe-dashboard-zombie-edit-flicker.md
-code_gap_note: F-C 余 RPT-005 历史 UI + API-003 试跑增强；主路径诚实 FAKE-01~06 已处置
+companion_scope: M-DEPTH + data-screen
+companion_active_plan: docs/automate/plans/2026-07-20-data-screen-edit-viewport-de.md
+intervention: data-screen-phase25-done-2026-07-17
 ```
+
+> **决策（2026-07-17）**：数据大屏 `surfaceKind=data-screen` Phase 1 + Phase 2.5（投放/导出/编辑深化）已交付；计划见 `plans/archive/2026-07-17-data-screen-*`。  
+> **决策（2026-07-20）**：大屏**编辑视口**对标 DE 为当前 companion，计划 `plans/2026-07-20-data-screen-edit-viewport-de.md`；看板画布 UX 排队 `plans/2026-07-14-dashboard-canvas-ux-de-complete.md`。
 
 ### 执行范围：M-FINAL 已冻结 · M-DEPTH 深度 companion（2026-07-10）
 

@@ -1,6 +1,7 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import type { RenderSpec } from "@/components/charts/adapters/renderFromSpec";
+import type { RenderSpec } from "@/components/charts/engine/types";
 import { activeFieldRefs } from "@/lib/chartConfigState";
+import { getEngineIdForChartType } from "@/components/charts/engine/registry";
 
 function buildRenderSource(config: ChartViewConfig): Record<string, unknown> {
   if (config.bindingId) {
@@ -22,7 +23,7 @@ function buildRenderSource(config: ChartViewConfig): Record<string, unknown> {
 /** 前端本地构建 render-spec，与 backend `build_render_spec` 字段对齐 */
 export function resolveRenderSpec(config: ChartViewConfig): RenderSpec {
   return {
-    engine: "echarts",
+    engine: getEngineIdForChartType(config.chartType),
     chartType: config.chartType,
     styleVariant: config.styleVariant ?? "default",
     encoding: {

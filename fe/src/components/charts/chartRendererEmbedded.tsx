@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 export function embeddedChartSurface(children: ReactNode) {
   return (
-    <div className="absolute inset-0 min-h-0 overflow-hidden">
+    <div className="embedded-chart-live-surface absolute inset-0 min-h-0 overflow-hidden">
       {children}
     </div>
   );

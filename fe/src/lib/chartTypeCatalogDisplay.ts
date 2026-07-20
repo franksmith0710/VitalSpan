@@ -1,19 +1,7 @@
-import {
-  BarChart3,
-  CalendarClock,
-  Filter,
-  Gauge,
-  GitBranch,
-  Grid3x3,
-  LineChart,
-  Map as MapIcon,
-  Network,
-  PieChart,
-  Table2,
-  TrendingUp,
-  type LucideIcon,
-} from "lucide-react";
 import type { ChartTypeCatalogItem } from "@/lib/chartRegistry";
+import { chartTypeIcon, CHART_TYPE_ICONS } from "@/lib/chartTypeIcons";
+
+export { chartTypeIcon, CHART_TYPE_ICONS };
 
 /** 与后端 ChartTypeSpec.category 对齐；分组标题供 Palette / 类型目录共用 */
 export const CHART_CATEGORY_LABELS: Record<string, string> = {
@@ -28,33 +16,18 @@ export const CHART_CATEGORY_LABELS: Record<string, string> = {
 
 export const CHART_CATEGORY_ORDER: readonly string[] = [
   "basic",
-  "advanced",
-  "geo",
   "indicator",
-  "temporal",
+  "geo",
   "flow",
   "relation",
+  "advanced",
 ] as const;
-
-export const CHART_TYPE_ICONS: Record<string, LucideIcon> = {
-  table: Table2,
-  line: LineChart,
-  bar: BarChart3,
-  pie: PieChart,
-  gauge: Gauge,
-  map: MapIcon,
-  heatmap: Grid3x3,
-  kpi: TrendingUp,
-  timeline: CalendarClock,
-  sankey: GitBranch,
-  funnel: Filter,
-  graph: Network,
-};
 
 export const CHART_RENDERER_LABELS: Record<string, string> = {
   table: "表格引擎",
-  echarts: "ECharts",
+  antv: "AntV",
   kpi: "KPI 卡",
+  echarts: "ECharts（已迁移）",
 };
 
 export const CHART_CAPABILITY_LABELS: Record<string, string> = {
@@ -63,28 +36,29 @@ export const CHART_CAPABILITY_LABELS: Record<string, string> = {
   render_spec: "渲染规格",
 };
 
-/** catalog 请求失败时的完整 12 类型回退（与 backend builtin 一致） */
+/** catalog 请求失败时的回退（与 backend builtin 一致） */
 export const FALLBACK_CATALOG_ITEMS: ChartTypeCatalogItem[] = [
   { type: "table", displayName: "表格", category: "basic", renderer: "table", styleVariants: ["default"], fieldRule: {} },
-  { type: "line", displayName: "折线图", category: "basic", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
-  { type: "bar", displayName: "柱状图", category: "basic", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
-  { type: "pie", displayName: "饼图", category: "basic", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
-  { type: "gauge", displayName: "仪表盘", category: "advanced", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
-  { type: "map", displayName: "地图", category: "geo", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
-  { type: "heatmap", displayName: "热力图", category: "geo", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
+  { type: "line", displayName: "折线图", category: "basic", renderer: "antv", styleVariants: ["default", "area", "smooth", "stacked"], fieldRule: {} },
+  { type: "bar", displayName: "柱状图", category: "basic", renderer: "antv", styleVariants: ["default", "stacked", "grouped", "horizontal"], fieldRule: {} },
+  { type: "pie", displayName: "饼图", category: "basic", renderer: "antv", styleVariants: ["default", "donut", "rose"], fieldRule: {} },
+  { type: "scatter", displayName: "散点图", category: "basic", renderer: "antv", styleVariants: ["default", "bubble"], fieldRule: {} },
+  { type: "combo", displayName: "折柱组合", category: "basic", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
+  { type: "gauge", displayName: "仪表盘", category: "indicator", renderer: "antv", styleVariants: ["default", "progress"], fieldRule: {} },
+  { type: "map", displayName: "地图", category: "geo", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
+  { type: "heatmap", displayName: "热力图", category: "geo", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
   { type: "kpi", displayName: "KPI 指标", category: "indicator", renderer: "kpi", styleVariants: ["default"], fieldRule: {} },
-  { type: "timeline", displayName: "时间轴", category: "temporal", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
-  { type: "sankey", displayName: "桑基图", category: "flow", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
-  { type: "funnel", displayName: "漏斗图", category: "flow", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
-  { type: "graph", displayName: "关系图", category: "relation", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
+  { type: "timeline", displayName: "时间轴", category: "basic", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
+  { type: "sankey", displayName: "桑基图", category: "flow", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
+  { type: "funnel", displayName: "漏斗图", category: "flow", renderer: "antv", styleVariants: ["default", "pyramid"], fieldRule: {} },
+  { type: "graph", displayName: "关系图", category: "relation", renderer: "antv", styleVariants: ["default", "force", "dagre"], fieldRule: {} },
+  { type: "wordCloud", displayName: "词云", category: "advanced", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
+  { type: "bidirectional-bar", displayName: "双向条形图", category: "advanced", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
+  { type: "waterfall", displayName: "瀑布图", category: "advanced", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
 ];
 
 export function chartCategoryLabel(category: string): string {
   return CHART_CATEGORY_LABELS[category] ?? category;
-}
-
-export function chartTypeIcon(type: string): LucideIcon {
-  return CHART_TYPE_ICONS[type] ?? LineChart;
 }
 
 export type ChartCatalogGroup = {

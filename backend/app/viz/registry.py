@@ -58,6 +58,10 @@ def export_chart_type_catalog() -> list[dict]:
             "renderer": s.renderer,
             "styleVariants": list(s.style_variants),
             "capabilities": list(s.capabilities),
+            "library": s.library,
+            "paletteCategory": s.palette_category or s.category,
+            "deprecated": s.deprecated,
+            "migratesTo": s.migrates_to,
             "fieldRule": {
                 "minDimensions": s.field_rule.min_dimensions,
                 "maxDimensions": s.field_rule.max_dimensions,

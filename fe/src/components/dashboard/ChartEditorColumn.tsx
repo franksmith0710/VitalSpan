@@ -16,6 +16,13 @@ import { cn } from "@/lib/utils";
 import { ChartAdvancedPanel } from "./ChartAdvancedPanel";
 import { ChartStylePanel } from "./ChartStylePanel";
 import { ChartDataOptions } from "./ChartDataOptions";
+import { ChartTableDataHint } from "./ChartTableDataHint";
+import { tableInspectorProfile } from "@/lib/chartTableInspector";
+import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
+import {
+  shouldSyncWidgetTitleOnChartTypeChange,
+} from "@/lib/chartTypeDisplayNames";
+import { getChartTypeDisplayName } from "@/lib/chartRegistry";
 import { INSPECTOR_CTRL } from "./inspectorCompact";
 import { ChartInspectorTabs } from "./ChartInspectorTabs";
 import { ChartMapDataPanel } from "./ChartMapDataPanel";
@@ -50,7 +57,7 @@ export function ChartEditorColumn({
   onDataRefresh,
   className,
 }: ChartEditorColumnProps) {
-  const { widget, cfg, onChange, catalog, columns, refreshColumns } = useChartInspector();
+  const { widget, cfg, onChange, catalog, columns, refreshColumns, onTitleChange } = useChartInspector();
 
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
@@ -115,6 +122,7 @@ export function ChartEditorColumn({
   );
 
   const showAdvancedTab = chartHasAdvancedTab(cfg.chartType);
+  const tableProfile = tableInspectorProfile(cfg.chartType);
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col overflow-hidden bg-white dark:bg-gray-900", className)}>
@@ -131,14 +139,23 @@ export function ChartEditorColumn({
               </Label>
               <Select
                 value={cfg.chartType}
-                onValueChange={(chartType) =>
+                onValueChange={(chartType) => {
+                  const oldChartType = cfg.chartType;
                   onChange(
-                    ensureChartSlotCapacity({
-                      ...cfg,
-                      chartType: chartType as typeof cfg.chartType,
-                    }),
-                  )
-                }
+                    ensureChartSlotCapacity(
+                      migrateChartViewConfig({
+                        ...cfg,
+                        chartType: chartType as typeof cfg.chartType,
+                      }),
+                    ),
+                  );
+                  if (
+                    onTitleChange &&
+                    shouldSyncWidgetTitleOnChartTypeChange(widget.title, oldChartType)
+                  ) {
+                    onTitleChange(getChartTypeDisplayName(chartType));
+                  }
+                }}
               >
                 <SelectTrigger
                   id={`chart-type-${widget.id}`}
@@ -157,6 +174,7 @@ export function ChartEditorColumn({
               </Select>
             </div>
             {cfg.chartType === "map" ? <ChartMapDataPanel /> : <ChartDataSlots />}
+            {tableProfile ? <ChartTableDataHint /> : null}
             <ChartConfigPanel
               config={cfg}
               columns={columns}

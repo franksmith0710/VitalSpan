@@ -1,14 +1,14 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.118
-last_updated: 2026-07-13
+version: 1.2.119
+last_updated: 2026-07-20
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
 features_ref: docs/automate/prd/
 scoring_ref: .cursor/automate/skills/prd-scoring/SKILL.md
-feature_count: 130
+feature_count: 129
 domain_count: 16
 ```
 
@@ -239,6 +239,7 @@ domain_count: 16
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.2.119 | 2026-07-20 | 文档卫生：`feature_count` 与正文 129 项对齐；数据大屏 companion 执行见 `plans/` 与 `evolution-state.md`（不扩合同 ID） |
 | 1.2.118 | 2026-07-13 | 非计数文档纠错：明确 AUTH-003 不含账户自服务 profile/change-password；追溯 BUG-001 + Account Self-Service plan；`feature_count`/评分/F02 ID 范围不变 |
 | 1.2.117 | 2026-07-10 | PRD 分片同步 §M-DEPTH：META-004/QUERY-009/DASH-002·004/AUTH-006·008/RPT-005/API-003 补深度 companion `[ ]`；BOOT-002/DASH-001 勾 F-0；API-006/DESIGN-001/BOOT-002 标 F-D 可选；`prd/README` 对齐 |
 | 1.2.116 | 2026-07-10 | 人工 plan 干预：插入 §M-DEPTH（Dataset 打穿 / 筛选器 / 消费落差）；执行范围对齐 plan v3.0.0；G2 解除饱和 |

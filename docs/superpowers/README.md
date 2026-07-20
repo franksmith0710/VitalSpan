@@ -19,9 +19,10 @@
 
 | 目录 | 命名 | 产出阶段 |
 |------|------|----------|
-| [evolution/](./evolution/) | `YYYY-MM-DD-round-target.md` | G2 选题 |
+| [evolution/](./evolution/) | `YYYY-MM-DD-round-target.md` | G2 选题（**07-10 起为空**；历史见 [archive/evolution/](./archive/evolution/)） |
 | [specs/](./specs/) | `YYYY-MM-DD-<name>-design.md` | P1 设计 |
 | [plans/](./plans/) | `YYYY-MM-DD-<name>.md` | P2 计划 |
+| [archive/](./archive/) | M1–M-FINAL 轮次归档 | 只读追溯 |
 
 ## Superpowers skill（项目已安装）
 
@@ -38,4 +39,5 @@
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.1.0 | 2026-07-20 | M1–M-FINAL 轮次移入 `archive/`；automate/plans 同步归档 |
 | 1.0.0 | 2026-07-03 | 初版目录骨架 |

@@ -1,4 +1,6 @@
 import type { ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
+import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
+import { resolveChartWidgetTitle } from "@/lib/chartTypeDisplayNames";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle } from "@/lib/chartDeStyle";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "./dashboardLayoutContracts";
@@ -257,11 +259,19 @@ export function coerceLayoutWidget(raw: Partial<LayoutWidget> & { id: string }):
       tabsConfig: raw.tabsConfig ?? defaultTabsConfig(raw.id),
     };
   }
-  return {
+  return normalizeChartWidgetTitle({
     ...base,
     type: "chart",
-    chartConfig: raw.chartConfig ?? defaultChartConfig("bar"),
-  };
+    chartConfig: migrateChartViewConfig(raw.chartConfig ?? defaultChartConfig("bar")),
+  });
+}
+
+function normalizeChartWidgetTitle(widget: LayoutWidget): LayoutWidget {
+  if (widget.type !== "chart") return widget;
+  const chartType = widget.chartConfig?.chartType;
+  const nextTitle = resolveChartWidgetTitle(widget.title, chartType);
+  if (nextTitle === widget.title) return widget;
+  return { ...widget, title: nextTitle };
 }
 
 export function getTopLevelWidgets(widgets: LayoutWidget[]): LayoutWidget[] {

@@ -1,29 +1,13 @@
-import { memo, useCallback, useMemo, useRef } from "react";
-import ReactECharts from "echarts-for-react";
-import type EChartsReact from "echarts-for-react";
-import { applyDeStyleToEchartsOption } from "@/lib/echartsDeStyle";
-import { applyDataScreenSurfaceToEchartsOption } from "@/lib/screenChartTheme";
-import { applyEchartsSeriesGradient } from "@/lib/echartsSeriesPresentation";
-import { applyChartSeriesColorOverrides, resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
-import { applyChartAdvancedFeaturesToEchartsOption } from "@/lib/chartDeFeatures";
+import { memo, useMemo } from "react";
+import type { ChartDeStyle } from "@/lib/chartDeStyle";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import { applyEchartsColorSchemeTokens, getEchartsTheme } from "@/lib/echarts-theme";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartDeStyle, readChartGeoStyle, readChartPieStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
-import { analyzeGeoMapMatch, buildGeoMapPlaceholderEchartsOption, buildGeoHeatmapPlaceholderEchartsOption, isGeoHeatmapPlaceholderOption, isGeoMapPlaceholderOption, resolveEmbeddedGeoRoam } from "@/lib/geoMapChart";
-import { findMapDrillFilterValue } from "@/lib/geoMapLevels";
-import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
-import { dwHint } from "@/components/dashboard/dashboardWidgetTypography";
-import { cn } from "@/lib/utils";
-import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
-import { useGeoMapLevel } from "@/hooks/useGeoMapLevel";
 import type { ChartDrillFrame } from "@/lib/chartDrill";
-import {
-  ADVANCED_CHART_ROW_CAP,
-  buildEchartsOption,
-  capRows,
-  type RenderSpec,
-} from "./renderFromSpec";
+import type { RenderSpec } from "@/components/charts/engine/types";
+import { buildChartViewModel } from "@/components/charts/engine/buildChartViewModel";
+import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
+import { CanvasChartHost } from "@/components/charts/engine/CanvasChartHost";
+import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 
 type Props = {
   spec: RenderSpec;
@@ -47,7 +31,6 @@ type Props = {
   mapPlaceholderHint?: string;
   mapDrillError?: string | null;
   heatmapPlaceholderHint?: string;
-  /** 下钻点击时用于解析过滤值的全量行（未采样、未聚合） */
   drillLookupRows?: unknown[][];
   embedEdit?: boolean;
   onDrillClick?: (value: string, label?: string) => void;
@@ -59,315 +42,111 @@ type Props = {
   dataScreenSurface?: boolean;
 };
 
-function advancedEchartsPropsEqual(
-  prev: Props,
-  next: Props,
-): boolean {
-  return (
-    prev.spec === next.spec &&
-    prev.rows === next.rows &&
-    prev.columns === next.columns &&
-    prev.ariaLabel === next.ariaLabel &&
-    prev.isDark === next.isDark &&
-    prev.fill === next.fill &&
-    prev.height === next.height &&
-    prev.width === next.width &&
-    prev.resizeDebounceMs === next.resizeDebounceMs &&
-    prev.deStyle === next.deStyle &&
-    prev.dataZoom === next.dataZoom &&
-    prev.chartColors === next.chartColors &&
-    prev.showLabel === next.showLabel &&
-    prev.showTooltip === next.showTooltip &&
-    prev.seriesGradient === next.seriesGradient &&
-    prev.labelPresentation === next.labelPresentation &&
-    prev.tooltipPresentation === next.tooltipPresentation &&
-    prev.valueFormat === next.valueFormat &&
-    prev.mapPlaceholderHint === next.mapPlaceholderHint &&
-    prev.mapDrillError === next.mapDrillError &&
-    prev.heatmapPlaceholderHint === next.heatmapPlaceholderHint &&
-    prev.drillLookupRows === next.drillLookupRows &&
-    prev.embedEdit === next.embedEdit &&
-    prev.onDrillClick === next.onDrillClick &&
-    prev.onJumpClick === next.onJumpClick &&
-    prev.chartConfig === next.chartConfig &&
-    prev.shellLegend === next.shellLegend &&
-    prev.drillStack === next.drillStack &&
-    prev.drillClickField === next.drillClickField &&
-    prev.dataScreenSurface === next.dataScreenSurface
-  );
-}
-
+/** @deprecated 请使用 CanvasChartHost + EchartsEngineView */
 function AdvancedEchartsChartInner({
   spec,
   rows,
   columns,
-  ariaLabel,
-  isDark = false,
-  fill = false,
-  height = 180,
-  width,
   deStyle,
   dataZoom = false,
-  chartColors,
+  chartColors = [],
   showLabel = false,
   showTooltip = true,
   seriesGradient = false,
   labelPresentation,
   tooltipPresentation,
   valueFormat,
-  mapPlaceholderHint,
-  mapDrillError,
-  heatmapPlaceholderHint,
-  drillLookupRows,
   embedEdit = false,
+  shellLegend = false,
+  dataScreenSurface = false,
   onDrillClick,
   onJumpClick,
-  chartConfig,
-  shellLegend = false,
-  drillStack = [],
-  drillClickField,
-  dataScreenSurface = false,
+  ...rest
 }: Props) {
-  const chartRef = useRef<EChartsReact | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const { rows: capped, truncated } = useMemo(
-    () => capRows(rows, ADVANCED_CHART_ROW_CAP),
-    [rows],
+  const viewModel = useMemo(
+    () =>
+      buildChartViewModel(
+        {
+          chartType: spec.chartType as ChartViewConfig["chartType"],
+          styleVariant: spec.styleVariant,
+          dimensions: spec.encoding.dimensions,
+          metrics: spec.encoding.metrics,
+          ...(spec.source.bindingId
+            ? { bindingId: String(spec.source.bindingId) }
+            : {
+                mode: spec.source.mode as ChartViewConfig["mode"],
+                dataSourceId: spec.source.dataSourceId as string | undefined,
+                sql: spec.source.sql as string | undefined,
+                schema: spec.source.schema as string | undefined,
+                table: spec.source.table as string | undefined,
+              }),
+        },
+        { columns, rows },
+      ),
+    [spec, columns, rows],
   );
-  const scheme = isDark ? "dark" : "light";
-  const geoStyle = useMemo(() => readChartGeoStyle(deStyle ?? {}), [deStyle]);
-  const mapWheelZoom = spec.chartType === "map" && resolveEmbeddedGeoRoam(geoStyle.roam);
-  const mapDrillEnabled = spec.chartType === "map" && Boolean(chartConfig);
-  const { context: geoMapLevel, loading: geoMapLoading } = useGeoMapLevel({
-    enabled: mapDrillEnabled,
-    config: chartConfig,
-    drillStack,
-  });
 
-  const geoMatchStats = useMemo(() => {
-    if (spec.chartType !== "map") return null;
-    const regionField = spec.encoding.dimensions[0]?.field;
-    if (!regionField) return null;
-    return analyzeGeoMapMatch(
-      capped,
-      columns,
-      regionField,
-      geoMapLevel.knownRegionNames,
-      geoMapLevel.drillDepth === 0,
-    );
-  }, [spec, capped, columns, geoMapLevel]);
+  const scheme: ColorScheme = rest.isDark ? "dark" : "light";
+  const style = useMemo(
+    () =>
+      buildStyleContext({
+        config: rest.chartConfig ?? { chartType: spec.chartType as ChartViewConfig["chartType"] },
+        scheme,
+        chartColors,
+        shellLegend,
+        embedEdit,
+        numberFormat: valueFormat,
+        dashboardDefaults: dataScreenSurface ? { surfaceKind: "data-screen" } : undefined,
+      }),
+    [rest.chartConfig, spec.chartType, scheme, chartColors, shellLegend, embedEdit, valueFormat, dataScreenSurface],
+  );
 
-  const option = useMemo(() => {
-    const pieStyle = readChartPieStyle(deStyle ?? {});
-    let built = buildEchartsOption(spec, capped, columns, {
-      geo: geoStyle,
+  const mergedStyle = useMemo(
+    () => ({
+      ...style,
+      deStyle: deStyle ?? style.deStyle,
+      dataZoom,
       showLabel,
-      pie: pieStyle,
-      isDark: scheme === "dark",
+      showTooltip,
+      seriesGradient,
+      valueFormat: valueFormat ?? style.valueFormat,
+      labelPresentation: labelPresentation ?? style.labelPresentation,
+      tooltipPresentation: tooltipPresentation ?? style.tooltipPresentation,
+      dataScreenSurface,
+      shellLegend,
       embedEdit,
-      valueFormat,
-      geoMapLevel: spec.chartType === "map"
-        ? {
-            mapId: geoMapLevel.mapId,
-            knownRegionNames: geoMapLevel.knownRegionNames,
-          }
-        : undefined,
-    });
-    if (spec.chartType === "map" && isGeoMapPlaceholderOption(built)) {
-      built = buildGeoMapPlaceholderEchartsOption({
-        geo: geoStyle,
-        isDark: scheme === "dark",
-        roam: resolveEmbeddedGeoRoam(geoStyle.roam),
-      });
-    }
-    if (spec.chartType === "heatmap" && isGeoHeatmapPlaceholderOption(built)) {
-      built = buildGeoHeatmapPlaceholderEchartsOption({
-        geo: geoStyle,
-        isDark: scheme === "dark",
-      });
-    }
-    built = applyDeStyleToEchartsOption(built, deStyle ?? {}, dataZoom, {
+    }),
+    [
+      style,
+      deStyle,
+      dataZoom,
       showLabel,
       showTooltip,
       seriesGradient,
       valueFormat,
       labelPresentation,
       tooltipPresentation,
-      layout: { embedded: fill, shellLegend },
-    });
-    if (dataScreenSurface) {
-      built = applyDataScreenSurfaceToEchartsOption(built);
-    }
-    built = applyEchartsColorSchemeTokens(built, scheme);
-    if (chartColors?.length) {
-      built = { ...built, color: chartColors };
-      built = applyEchartsSeriesGradient(built, chartColors, seriesGradient);
-    }
-    if (chartConfig && deStyle?.seriesColor?.length) {
-      const seriesItems = resolveChartSeriesColorItems(
-        chartConfig,
-        deStyle.paletteId,
-        deStyle.seriesColor,
-      );
-      built = applyChartSeriesColorOverrides(built, seriesItems);
-    }
-    if (chartConfig) {
-      built = applyChartAdvancedFeaturesToEchartsOption(
-        built as Record<string, unknown>,
-        chartConfig,
-      );
-    }
-    return built;
-  }, [spec, capped, columns, deStyle, dataZoom, chartColors, showLabel, showTooltip, seriesGradient, labelPresentation, tooltipPresentation, valueFormat, scheme, shellLegend, chartConfig, fill, embedEdit, geoStyle, geoMapLevel, dataScreenSurface]);
-  const theme = useMemo(() => getEchartsTheme(scheme), [scheme]);
-
-  const isMapPlaceholder =
-    spec.chartType === "map" && isGeoMapPlaceholderOption(option as Record<string, unknown>);
-  const isHeatmapPlaceholder =
-    spec.chartType === "heatmap" && isGeoHeatmapPlaceholderOption(option as Record<string, unknown>);
-  const isGeoPlaceholder = isMapPlaceholder || isHeatmapPlaceholder;
-
-  const isEmpty =
-    !isGeoPlaceholder &&
-    (!option ||
-      (Array.isArray((option as { series?: unknown[] }).series) &&
-        (option as { series?: unknown[] }).series!.length === 0));
-
-  const resizeChart = useCallback(() => {
-    chartRef.current?.getEchartsInstance()?.resize();
-  }, []);
-
-  useEmbeddedChartLiveResize(fill && !isEmpty, containerRef, resizeChart);
-
-  const placeholderHint =
-    isMapPlaceholder ? mapPlaceholderHint
-    : isHeatmapPlaceholder ? heatmapPlaceholderHint
-    : null;
-
-  const geoMatchWarning =
-    geoMatchStats &&
-    geoMatchStats.total > 0 &&
-    geoMatchStats.matched < geoMatchStats.total
-      ? `有 ${geoMatchStats.total - geoMatchStats.matched} 条无法匹配地图区域`
-      : null;
-
-  const geoAssetWarning = geoMapLevel.missingAsset ?? mapDrillError ?? null;
-
-  const chartEvents = useMemo(() => {
-    if (!onDrillClick && !onJumpClick) return undefined;
-    return {
-      click: (params: { name?: string | number }) => {
-        if (onJumpClick) {
-          onJumpClick();
-          return;
-        }
-        if (params?.name == null || params.name === "") return;
-        const label = String(params.name);
-        if (!onDrillClick) return;
-        if (drillClickField) {
-          const lookupRows = drillLookupRows ?? rows;
-          const filterValue = findMapDrillFilterValue(
-            label,
-            drillClickField,
-            lookupRows,
-            columns,
-            geoMapLevel.knownRegionNames,
-          );
-          onDrillClick(filterValue, label);
-          return;
-        }
-        onDrillClick(label);
-      },
-    };
-  }, [onDrillClick, onJumpClick, drillClickField, drillLookupRows, rows, columns, geoMapLevel.knownRegionNames]);
-
-  const chartKey = `${scheme}:${geoMapLevel.mapId}`;
+      dataScreenSurface,
+      shellLegend,
+      embedEdit,
+    ],
+  );
 
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        "w-full",
-        fill ? "absolute inset-0 flex min-h-0 flex-col" : "min-h-[120px]",
-      )}
-      aria-label={ariaLabel}
-    >
-      {truncated && !fill ? (
-        <p role="status" className="mb-2 shrink-0 text-theme-sm text-warning-600 dark:text-warning-400">
-          数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条
-        </p>
-      ) : null}
-      {(geoMatchWarning || geoAssetWarning) ? (
-        <p
-          role="status"
-          className={cn(
-            "shrink-0 text-theme-xs text-warning-600 dark:text-warning-400",
-            fill ? "pointer-events-none absolute inset-x-2 top-2 z-[2] rounded-md bg-warning-500/10 px-2 py-1" : "mb-2",
-          )}
-        >
-          {[geoAssetWarning, geoMatchWarning].filter(Boolean).join("；")}
-        </p>
-      ) : null}
-      {isEmpty ? (
-        <div
-          className={cn(
-            "flex items-center justify-center text-theme-sm text-gray-400 dark:text-gray-500",
-            fill ? "min-h-0 flex-1" : "min-h-[180px]",
-          )}
-          role="status"
-          aria-label="暂无数据"
-        >
-          暂无数据
-        </div>
-      ) : (
-        <div
-          className={cn(fill && "relative min-h-0 flex-1")}
-          {...(mapWheelZoom ? { [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" } : {})}
-        >
-          {geoMapLoading ? (
-            <p
-              role="status"
-              className={cn(
-                "pointer-events-none absolute inset-x-2 top-2 z-[2] text-theme-xs text-gray-500 dark:text-gray-400",
-                fill ? "" : "mb-2",
-              )}
-            >
-              正在加载{geoMapLevel.levelLabel}地图…
-            </p>
-          ) : null}
-          <ReactECharts
-            key={chartKey}
-            ref={chartRef}
-            option={option}
-            theme={theme}
-            style={
-              fill
-                ? { height: "100%", width: "100%", minHeight: 0 }
-                : { height, width: width ?? "100%" }
+    <CanvasChartHost
+      viewModel={viewModel}
+      style={mergedStyle}
+      onInteraction={
+        onDrillClick
+          ? (event) => {
+              if (event.kind === "drill") onDrillClick(event.value, event.label);
             }
-            opts={{ renderer: "canvas" }}
-            notMerge
-            lazyUpdate
-            autoResize={fill}
-            onEvents={chartEvents}
-            data-testid="echarts-chart"
-          />
-          {placeholderHint ? (
-            <p
-              className={cn(
-                "dw-hint pointer-events-none absolute inset-x-0 text-center",
-                isHeatmapPlaceholder ? "bottom-[18%]" : "bottom-[10%]",
-              )}
-              role="status"
-            >
-              {placeholderHint}
-            </p>
-          ) : null}
-        </div>
-      )}
-    </div>
+          : undefined
+      }
+      onJumpClick={onJumpClick}
+      {...rest}
+    />
   );
 }
 
-export const AdvancedEchartsChart = memo(AdvancedEchartsChartInner, advancedEchartsPropsEqual);
+export const AdvancedEchartsChart = memo(AdvancedEchartsChartInner);

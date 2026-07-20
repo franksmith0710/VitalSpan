@@ -1,11 +1,13 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
   type KeyboardEvent,
   type PointerEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -44,7 +46,7 @@ import {
   WidgetShellLegendProvider,
   useWidgetShellLegend,
 } from "./widgetShellLegendContext";
-import { dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
+import { isResizeInteraction } from "./pixelShapePlayer";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
 import { usePaletteDragActive } from "./paletteDragContext";
 
@@ -204,6 +206,7 @@ type PixelShapeInnerChromeProps = {
     event: KeyboardEvent<HTMLElement>,
     kind: PixelInteractionKind,
   ) => void;
+  contentRef?: RefObject<HTMLDivElement | null>;
   children: ReactNode;
 };
 
@@ -221,6 +224,7 @@ function PixelShapeInnerChrome({
   onSelect,
   startInteraction,
   handleKeyboardInteraction,
+  contentRef,
   children,
 }: PixelShapeInnerChromeProps) {
   const legendCtx = useWidgetShellLegend();
@@ -272,6 +276,7 @@ function PixelShapeInnerChrome({
           onDragKeyDown={(event) => handleKeyboardInteraction(event, "move")}
         />
         <div
+          ref={contentRef}
           className="pixel-shape-content relative z-[1] flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden"
           style={contentShell.style}
         >
@@ -346,6 +351,8 @@ export function PixelShape({
   const { shell: innerShell, content: contentShell } = mergeShapeInnerPresentation(shell);
   const activeRef = useRef<ActiveInteraction | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const contentBaseRef = useRef<{ width: number; height: number } | null>(null);
   const displayRef = useRef(widgetRect(widget));
   const moveFrameRef = useRef<number | null>(null);
   const pendingMoveRef = useRef<{
@@ -367,6 +374,38 @@ export function PixelShape({
     el.style.height = `${next.height}px`;
   };
 
+  const clearContentLiveScale = () => {
+    contentBaseRef.current = null;
+    const el = contentRef.current;
+    if (el) {
+      el.style.removeProperty("width");
+      el.style.removeProperty("height");
+      el.style.removeProperty("transform");
+      el.style.removeProperty("transform-origin");
+      el.style.removeProperty("will-change");
+    }
+    outerRef.current?.removeAttribute("data-pixel-live-resize");
+  };
+
+  const syncContentLiveScale = (next: PixelRect) => {
+    const active = activeRef.current;
+    if (!active || !isResizeInteraction(active.kind)) return;
+    const el = contentRef.current;
+    const base = contentBaseRef.current;
+    if (!el || !base) return;
+    const scaleX = next.width / active.startRect.width;
+    const scaleY = next.height / active.startRect.height;
+    if (!Number.isFinite(scaleX) || !Number.isFinite(scaleY) || scaleX <= 0 || scaleY <= 0) {
+      return;
+    }
+    outerRef.current?.setAttribute("data-pixel-live-resize", "");
+    el.style.width = `${base.width}px`;
+    el.style.height = `${base.height}px`;
+    el.style.transformOrigin = "top left";
+    el.style.transform = `scale(${scaleX}, ${scaleY})`;
+    el.style.willChange = "transform";
+  };
+
   useEffect(() => {
     if (!registerPreviewSync) return;
     return registerPreviewSync(widget.id, (rect) => {
@@ -375,7 +414,7 @@ export function PixelShape({
     });
   }, [widget.id, registerPreviewSync]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (activeRef.current) return;
     const next = widgetRect(widget);
     displayRef.current = next;
@@ -395,11 +434,9 @@ export function PixelShape({
   const applyDisplay = (next: PixelRect, commitReact = false) => {
     displayRef.current = next;
     syncOuterStyle(next);
+    syncContentLiveScale(next);
     if (commitReact || !activeRef.current) {
       setDisplay(next);
-    }
-    if (activeRef.current) {
-      dispatchPixelShapeLiveResize();
     }
   };
 
@@ -493,6 +530,7 @@ export function PixelShape({
     const revert =
       commit && shouldRevertCommit?.(finalRect, active.startRect) === true;
     const settledRect = revert ? active.startRect : finalRect;
+    clearContentLiveScale();
     applyDisplay(settledRect, true);
     setIsPlayer(false);
     onPlayingChange?.(false);
@@ -517,6 +555,14 @@ export function PixelShape({
       startRect: displayRef.current,
       skipFirstMove: true,
     };
+    if (isResizeInteraction(kind)) {
+      contentBaseRef.current = {
+        width: contentRef.current?.offsetWidth ?? displayRef.current.width,
+        height: contentRef.current?.offsetHeight ?? displayRef.current.height,
+      };
+    } else {
+      contentBaseRef.current = null;
+    }
     setIsPlayer(true);
     onPlayingChange?.(true);
     bindDocumentDrag(pointerId, {
@@ -542,7 +588,7 @@ export function PixelShape({
     onCommit?.(withRect(widget, next));
   };
 
-  const liveRect = isPlayer ? displayRef.current : display;
+
   const selectedInEdit = Boolean(mode === "edit" && selected);
 
   if (mode === "view" && widget.hidden) {
@@ -563,10 +609,14 @@ export function PixelShape({
         paletteDragActive && "pointer-events-none",
       )}
       style={{
-        left: liveRect.x,
-        top: liveRect.y,
-        width: liveRect.width,
-        height: liveRect.height,
+        ...(isPlayer
+          ? {}
+          : {
+              left: display.x,
+              top: display.y,
+              width: display.width,
+              height: display.height,
+            }),
         zIndex: isPlayer
           ? pixelShapePlayerZIndex(widget.order)
           : pixelShapeZIndex(widget.order, selectedInEdit),
@@ -635,6 +685,7 @@ export function PixelShape({
                   onSelect={onSelect}
                   startInteraction={startInteraction}
                   handleKeyboardInteraction={handleKeyboardInteraction}
+                  contentRef={contentRef}
                 >
                   {children}
                 </PixelShapeInnerChrome>

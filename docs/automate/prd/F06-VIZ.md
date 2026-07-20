@@ -36,11 +36,12 @@
 - **状态**：已实现
 - **goal_ref**：goal.md §2.3（G3）
 - **期次**：三期
-- **描述**：图表类型插件注册（SRS 追溯项）。r42 L1 kickoff 交付后端 `ChartTypeRegistry` + 9 类型骨架；r43 companion 交付 `fe/chartRegistry.ts` 镜像 catalog + 地图/桑基/漏斗/关系/仪表高级类型 ECharts 渲染骨架。
+- **描述**：图表类型插件注册（SRS 追溯项）。backend `ChartTypeSpec` + `builtin/*` ~40 type；FE `ChartViewPlugin` registry（`engine/plugins/`）驱动 render-plan / Inspector / Picker 分区；S2 表格 `table-info|normal|pivot`。
 - **验收标准**：
-  - [x] 折线/柱/饼/仪表/表格/地图最小集（registry 9 类型 + fe 高级渲染对接 render-spec）
-  - [x] 新类型可插件注册（`ChartTypeRegistry.register` + `register_builtin_chart_types()` 幂等；`fetchChartTypeCatalog` 镜像）
-- **代码锚点**：`backend/app/viz/registry.py` · `backend/app/viz/builtin.py` · `backend/app/api/v1/charts.py`（GET /charts/types）· `fe/src/lib/chartRegistry.ts` · `fe/src/components/charts/adapters/renderFromSpec.ts`
+  - [x] DE 独立 chartType（bar-stack、pie-donut、chart-mix* 等；弃用 type 带 migratesTo）
+  - [x] FE plugin registry + `buildAntvSpec` 委托；catalog 契约字段 library/paletteCategory
+  - [x] `@antv/s2-react` 表格三件套 + `migrateChartTypes` 存量迁移
+- **代码锚点**：`backend/app/viz/registry.py` · `backend/app/viz/builtin/` · `backend/app/api/v1/charts.py` · `fe/src/components/charts/engine/plugins/` · `fe/src/lib/migrateChartTypes.ts` · `fe/src/lib/chartRegistry.ts` · `fe/src/lib/chartPaletteTaxonomy.ts`
 - **演化建议**：类型元数据（icon/预览缩略图）扩展；**离线**中国省/市 GeoJSON 分级与地名映射（GEO-IRON-01，禁止在线瓦片）；r250 补 `isKnownChartType` + `getFallbackChartType` → table fallback（T-VIZ-R250-003-01~02）
 - **里程碑对齐**：
 ### [VIZ-004] 图表样式子类型

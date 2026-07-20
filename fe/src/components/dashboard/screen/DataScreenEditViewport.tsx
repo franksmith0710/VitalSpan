@@ -23,6 +23,7 @@ import {
 } from "./presentationScale";
 
 import { CanvasScaleArea } from "./CanvasScaleArea";
+import { DataScreenVisualScaleProvider } from "./dataScreenVisualScaleContext";
 import {
   CanvasViewportScrollbarHorizontal,
   CanvasViewportScrollbarVertical,
@@ -360,7 +361,9 @@ export function DataScreenEditViewport({
               className={cn("absolute top-0 left-0", spacePan && "pointer-events-none")}
               style={stageStyle}
             >
-              {children}
+              <DataScreenVisualScaleProvider scale={scale}>
+                {children}
+              </DataScreenVisualScaleProvider>
             </div>
           </div>
           <CanvasScaleArea

@@ -66,6 +66,25 @@ describe("layoutUtils filter type", () => {
     expect(list[0].type).toBe("chart");
     expect(list[1].type).toBe("filter");
   });
+
+  it("coerceLayoutWidget migrates slug chart titles to Chinese", () => {
+    const w = coerceLayoutWidget({
+      id: "w-mix",
+      title: "chart-mix-dual-line",
+      order: 0,
+      colSpan: 6,
+      rowSpan: 2,
+      chartConfig: {
+        chartType: "chart-mix-dual-line",
+        dataSourceId: "ds",
+        mode: "sql",
+        sql: "select 1",
+        dimensions: [],
+        metrics: [],
+      },
+    } as Parameters<typeof coerceLayoutWidget>[0]);
+    expect(w.title).toBe("双线组合图");
+  });
 });
 
 describe("layoutUtils tabs", () => {

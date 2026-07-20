@@ -20,7 +20,7 @@ import {
   type FilterControlType,
   type LayoutWidget,
 } from "./layoutUtils";
-import { WIDGET_CHART_LABELS } from "./widgetIcons";
+import { getChartTypeDisplayName } from "@/lib/chartRegistry";
 
 export type FilterInsertPayload = {
   type: "filter";
@@ -59,7 +59,7 @@ export function createLayoutWidget(
   return {
     id: widgetId,
     type: "chart",
-    title: WIDGET_CHART_LABELS[type] ?? type,
+    title: getChartTypeDisplayName(type),
     colSpan: at?.colSpan ?? DEFAULT_WIDGET_COLSPAN,
     rowSpan: at?.rowSpan ?? DEFAULT_WIDGET_ROWSPAN,
     order: maxOrder + 1,

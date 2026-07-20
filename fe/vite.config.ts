@@ -24,7 +24,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    setupFiles: ["./src/vitest.setup.ts"],
+    setupFiles: ["./src/vitest.setup.ts", "./src/vitest.antv.mock.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
   },
 });

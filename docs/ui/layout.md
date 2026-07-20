@@ -4,8 +4,8 @@
 > **行为需求**：Dashboard/权限/嵌入能力见 [PRD](../automate/prd.md)；HTTP 路由见 [api/README.md](../api/README.md)。
 
 ```yaml
-version: 1.3.1
-last_updated: 2026-07-17
+version: 1.3.3
+last_updated: 2026-07-20
 frontend_root: fe/
 design_system: .agents/skills/b-design-system-tailadmin-radix
 layout_pattern_ref: references/layout-patterns/app-shell.md
@@ -109,7 +109,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /dashboards                  # Dashboard 列表 · table-list（全员可见授权项）
 │   ├── /data-screens                # 数据大屏列表 · bi-data-screen（`surfaceKind=data-screen`）
 │   ├── /data-screens/:id            # 大屏查看 → 重定向 `/preview`（Wave 2.5 A1）
-│   ├── /data-screens/:id/edit       # 大屏编辑（复用像素画布；默认画布 1920×1080）
+│   ├── /data-screens/:id/edit       # 大屏编辑（DataScreenEditViewport + PixelCanvas）
 │   ├── /data-screens/:id/preview    # 大屏全屏预览投放（`DataScreenPreviewPage` + `DataScreenPresenter`）
 │   ├── /data-screens/:id/share      # 大屏分享/整屏嵌入（`DataScreenSharePanel`）
 │   ├── /dashboards/:id              # 查看 view · bi-dashboard-builder（只读）
@@ -185,16 +185,23 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | `/admin/datasources` | `crud-flow` + `table-list` | DS-* |
 | `/admin/dashboards/:id/edit` | `bi-dashboard-builder`（edit） | DASH-*, VIZ-* |
 | `/admin/data-screens` | `bi-data-screen` 列表；`GET /dashboards?surfaceKind=data-screen` | DASH-002 companion |
-| `/admin/data-screens/:id/edit` | `bi-data-screen` 编辑（复用像素画布；`surfacePreset` 1920×1080） | DASH-002 companion |
+| `/admin/data-screens/:id/edit` | `bi-data-screen` 编辑：`DataScreenEditViewport`（平移/缩放/标尺）+ `PixelCanvas`（`designViewportLocked`） | DASH-002 companion |
 | `/admin/data-screens/:id` | `bi-data-screen` 查看 view（同壳层只读编辑页） | DASH-002 companion |
-| `/admin/data-screens/:id/preview` | 全屏投放预览（`CanvasScaleViewport` · 无 Admin 壳层） | DASH-002 companion |
+| `/admin/data-screens/:id/preview` | 全屏投放：`DataScreenPresenter` + `CanvasScaleViewport`（只读，无 pan） | DASH-002 companion |
 | `/admin/data-screens/:id/share` | `bi-share-embed`（复用分享页） | VIZ-006, API-006 |
 | `/admin/dashboards/:id` | `bi-dashboard-builder`（view） | DASH-*, VIEW-* |
 | `/admin/dashboards/:id/share` | `bi-share-embed` | VIZ-006, API-006 |
 
 **DashboardView 适配（VIEW-001 companion）**：Dashboard 存储形态为 `layoutJson`（widgets + globalFilters）；消费/校验时经 `dashboardLayoutToView()`（`fe/src/lib/dashboardLayoutToView.ts` · 后端 `views/adapter.py`）映射为 FR-VIEW-1 `DashboardView` 文档（含 `protocolVersion: 1` 与 `dashboardId`）。`PUT /api/v1/dashboards/{id}/layout` 在持久化前执行 DashboardView 校验，与 `POST /api/v1/views/validate` 同域错误码。
 
-| 富文本正文 | 单击选中；双击进入内联编辑；点击外部或 Ctrl+Enter 提交；Esc 取消 |
+### 数据大屏：编辑视口 vs 投放视口
+
+| 场景 | 组件 | 行为 |
+|------|------|------|
+| **编辑** `/data-screens/:id/edit` | `DataScreenEditViewport` | 独立「相机」：`viewPan` translate + `userZoom` × fit 缩放；空格拖画布；标尺与 pan 同步；`PixelCanvas` `designViewportLocked` |
+| **投放/预览** `/preview`、`/embed/screen/:id` | `DataScreenPresenter` + `CanvasScaleViewport` | 只读 fit 缩放，无编辑平移；不混用编辑视口 |
+
+代码锚点：`fe/src/components/dashboard/screen/DataScreenEditViewport.tsx` · `fe/src/components/dashboard/dashboard-edit/DashboardEditCanvas.tsx`（`isDataScreenEdit` 分支）。
 
 | `/admin/reports/center` | hub 卡片 + 授权模板网格 | RPT-002/004 |
 | `/admin/reports` | `table-list` + 运行结果区 | RPT-002 |
@@ -284,6 +291,7 @@ fe/src/
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.3.3 | 2026-07-20 | 大屏编辑：`DataScreenEditViewport` 与投放 `CanvasScaleViewport` 分层说明 |
 | 1.3.2 | 2026-07-17 | 数据大屏 Phase 1：补 `preview`/`share` 路由；`surfaceKind` 与 view/preview 语义区分 |
 | 1.3.1 | 2026-07-10 | H1：治理侧栏默认隐藏（`VITE_GOV_NAV`）；深链诚实横幅；RLS/审计 Admin 说明 |
 | 1.2.3 | 2026-07-09 | F-F VIEW-001 companion：`dashboardLayoutToView` 适配层与 Dashboard PUT 校验说明 |

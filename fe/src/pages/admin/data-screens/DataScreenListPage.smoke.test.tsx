@@ -42,4 +42,28 @@ describe("DataScreenListPage smoke", () => {
       expect.stringContaining("surfaceKind=data-screen"),
     );
   });
+
+  it("renders pagination summary without NaN when list has items", async () => {
+    mockApiFetch.mockResolvedValue({
+      items: [
+        {
+          id: "s1",
+          name: "测试大屏",
+          slug: "test-screen",
+          updatedAt: "2026-07-20T10:00:00.000Z",
+        },
+      ],
+      total: 1,
+      limit: 20,
+      offset: 0,
+    });
+    renderPage();
+    expect(await screen.findByText("测试大屏")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.body.textContent).toMatch(/显示\s+1.1/);
+      expect(document.body.textContent).toMatch(/共\s*1\s*条/);
+      expect(document.body.textContent).toMatch(/第\s*1\s*\/\s*1\s*页/);
+      expect(document.body.textContent).not.toContain("NaN");
+    });
+  });
 });

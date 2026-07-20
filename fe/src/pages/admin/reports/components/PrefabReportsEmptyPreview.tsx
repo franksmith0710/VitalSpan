@@ -9,7 +9,8 @@ export function PrefabReportsEmptyPreview() {
       title="暂无预制报表"
       description="系统预置的分析报表尚未配置，请联系管理员添加实体与分析类型绑定。"
       headingId="prefab-empty-title"
-      rows={3}
+      layout="cards"
+      rows={6}
     />
   );
 }

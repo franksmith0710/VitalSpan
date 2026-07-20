@@ -17,12 +17,14 @@ import {
   readChartDeTableStyle,
   DEFAULT_TABLE_PAGE_SIZE,
 } from "@/lib/chartDeTableStyle";
+import { tableInspectorProfile } from "@/lib/chartTableInspector";
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100] as const;
 
-/** DataEase 明细表 · 样式 Tab「基础样式」折叠（单块，字段顺序对齐 DE） */
+/** DataEase 表格 · 样式 Tab「基础样式」（按 table-info / normal / pivot 差异化） */
 export function ChartTableStylePanel() {
   const { cfg, onChange, columns } = useChartInspector();
+  const profile = tableInspectorProfile(cfg.chartType);
   const tableStyle = readChartDeTableStyle(cfg);
   const paginationMode = tableStyle.paginationMode ?? "page";
   const columnWidthMode = tableStyle.columnWidthMode ?? "auto";
@@ -30,6 +32,8 @@ export function ChartTableStylePanel() {
   const summaryChecked =
     tableStyle.showSummary === true ||
     (tableStyle.showSummary !== false && hasMetrics);
+
+  if (!profile) return null;
 
   const patch = (next: Parameters<typeof patchChartDeTableStyle>[1]) =>
     onChange(patchChartDeTableStyle(cfg, next));
@@ -45,7 +49,12 @@ export function ChartTableStylePanel() {
   };
 
   return (
-    <DashboardConfigSection title="基础样式" defaultOpen compact data-testid="table-style-basic">
+    <DashboardConfigSection
+      title={`${profile.label} · 基础样式`}
+      defaultOpen
+      compact
+      data-testid="table-style-basic"
+    >
       <div className="pb-1">
         <ChartDeSliderField
           label="不透明度 %"
@@ -74,107 +83,127 @@ export function ChartTableStylePanel() {
           onChange={(scrollbarColor) => patch({ scrollbarColor: scrollbarColor || undefined })}
         />
 
-        <ChartDeSegmentField
-          label="分页模式"
-          value={paginationMode}
-          columns={2}
-          options={[
-            { value: "page", label: "翻页" },
-            { value: "scroll", label: "下拉" },
-          ]}
-          onChange={(value) => patch({ paginationMode: value as "page" | "scroll" })}
-        />
-
-        {paginationMode === "page" ? (
+        {profile.showPagination ? (
           <>
             <ChartDeSegmentField
-              label="分页器风格"
-              value={tableStyle.paginationVariant ?? "compact"}
+              label="分页模式"
+              value={paginationMode}
               columns={2}
               options={[
-                { value: "compact", label: "精简" },
-                { value: "normal", label: "常规" },
+                { value: "page", label: "翻页" },
+                { value: "scroll", label: "下拉" },
               ]}
-              onChange={(value) =>
-                patch({ paginationVariant: value as "compact" | "normal" })
-              }
+              onChange={(value) => patch({ paginationMode: value as "page" | "scroll" })}
             />
 
-            <ChartDeAttrField label="分页">
-              <Select
-                value={String(tableStyle.pageSize ?? DEFAULT_TABLE_PAGE_SIZE)}
-                onValueChange={(value) =>
-                  patch({ pageSize: Number(value) as 20 | 50 | 100 })
-                }
-              >
-                <SelectTrigger className={INSPECTOR_SELECT} aria-label="每页条数">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_SIZE_OPTIONS.map((n) => (
-                    <SelectItem key={n} value={String(n)}>
-                      {n}条/页
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </ChartDeAttrField>
+            {paginationMode === "page" ? (
+              <>
+                <ChartDeSegmentField
+                  label="分页器风格"
+                  value={tableStyle.paginationVariant ?? "compact"}
+                  columns={2}
+                  options={[
+                    { value: "compact", label: "精简" },
+                    { value: "normal", label: "常规" },
+                  ]}
+                  onChange={(value) =>
+                    patch({ paginationVariant: value as "compact" | "normal" })
+                  }
+                />
+
+                <ChartDeAttrField label="分页">
+                  <Select
+                    value={String(tableStyle.pageSize ?? DEFAULT_TABLE_PAGE_SIZE)}
+                    onValueChange={(value) =>
+                      patch({ pageSize: Number(value) as 20 | 50 | 100 })
+                    }
+                  >
+                    <SelectTrigger className={INSPECTOR_SELECT} aria-label="每页条数">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAGE_SIZE_OPTIONS.map((n) => (
+                        <SelectItem key={n} value={String(n)}>
+                          {n}条/页
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ChartDeAttrField>
+              </>
+            ) : null}
           </>
         ) : null}
 
-        <ChartDeSegmentField
-          label="列宽调整"
-          value={columnWidthMode}
-          columns={3}
-          options={[
-            { value: "auto", label: "自适应" },
-            { value: "fixed", label: "固定列宽" },
-            { value: "custom", label: "自定义" },
-          ]}
-          onChange={(value) =>
-            patch({ columnWidthMode: value as "auto" | "fixed" | "custom" })
-          }
-        />
+        {profile.showColumnWidth ? (
+          <>
+            <ChartDeSegmentField
+              label="列宽调整"
+              value={columnWidthMode}
+              columns={3}
+              options={[
+                { value: "auto", label: "自适应" },
+                { value: "fixed", label: "固定列宽" },
+                { value: "custom", label: "自定义" },
+              ]}
+              onChange={(value) =>
+                patch({ columnWidthMode: value as "auto" | "fixed" | "custom" })
+              }
+            />
 
-        {columnWidthMode === "custom" && displayCols.length > 0 ? (
-          <ChartDeAttrField label="列宽比例 %">
-            <div className="space-y-2">
-              {displayCols.map((col) => (
-                <ChartDeSliderField
-                  key={col}
-                  className="border-b-0 py-0 last:border-b-0"
-                  label={col}
-                  value={tableStyle.columnWidths?.[col]}
-                  fallback={Math.floor(100 / displayCols.length)}
-                  min={1}
-                  max={100}
-                  step={1}
-                  unit="%"
-                  ariaLabel={`${col} 列宽`}
-                  onChange={(pct) => patchColumnWidth(col, pct)}
-                />
-              ))}
-            </div>
-          </ChartDeAttrField>
+            {columnWidthMode === "custom" && displayCols.length > 0 ? (
+              <ChartDeAttrField label="列宽比例 %">
+                <div className="space-y-2">
+                  {displayCols.map((col) => (
+                    <ChartDeSliderField
+                      key={col}
+                      className="border-b-0 py-0 last:border-b-0"
+                      label={col}
+                      value={tableStyle.columnWidths?.[col]}
+                      fallback={Math.floor(100 / displayCols.length)}
+                      min={1}
+                      max={100}
+                      step={1}
+                      unit="%"
+                      ariaLabel={`${col} 列宽`}
+                      onChange={(pct) => patchColumnWidth(col, pct)}
+                    />
+                  ))}
+                </div>
+              </ChartDeAttrField>
+            ) : null}
+          </>
         ) : null}
 
-        <DeAttrToggleRow
-          label="自动换行"
-          checked={tableStyle.wordWrap === true}
-          onCheckedChange={(wordWrap) => patch({ wordWrap })}
-        />
+        {profile.showWordWrap ? (
+          <DeAttrToggleRow
+            label="自动换行"
+            checked={tableStyle.wordWrap === true}
+            onCheckedChange={(wordWrap) => patch({ wordWrap })}
+          />
+        ) : null}
 
-        <DeAttrToggleRow
-          label="显示汇总行"
-          checked={summaryChecked}
-          onCheckedChange={(showSummary) => patch({ showSummary })}
-        />
+        {profile.showSummary ? (
+          <DeAttrToggleRow
+            label={profile.showSubTotals ? "显示合计/小计" : "显示汇总行"}
+            checked={summaryChecked}
+            onCheckedChange={(showSummary) => patch({ showSummary })}
+          />
+        ) : null}
 
-        <DeAttrToggleRow
-          label="显示鼠标悬浮样式"
-          checked={tableStyle.rowHover !== false}
-          onCheckedChange={(rowHover) => patch({ rowHover })}
-        />
+        {profile.showRowHover ? (
+          <DeAttrToggleRow
+            label="显示鼠标悬浮样式"
+            checked={tableStyle.rowHover !== false}
+            onCheckedChange={(rowHover) => patch({ rowHover })}
+          />
+        ) : null}
+
+        {profile.showSeriesNumber ? (
+          <p className="px-1 pb-1 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+            明细表左侧序号列已启用（对标 DataEase 序号列）。
+          </p>
+        ) : null}
       </div>
     </DashboardConfigSection>
   );

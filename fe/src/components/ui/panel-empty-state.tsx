@@ -1,5 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import {
+  ListEmptyHeroPanel,
+  ListEmptyPreviewBackdrop,
+  type ListEmptyPreviewLayout,
+} from "@/components/ui/list-empty-preview";
 import { cn } from "@/lib/utils";
 
 type PanelEmptyStateSize = "sm" | "md" | "lg";
@@ -45,7 +50,7 @@ export function PanelEmptyState({
         variant === "framed" &&
           "rounded-2xl border border-dashed border-gray-300 bg-gradient-to-b from-gray-50/90 to-white dark:border-gray-700 dark:from-white/[0.03] dark:to-white/[0.01]",
         variant === "elevated" &&
-          "rounded-2xl border border-gray-200 bg-white shadow-theme-md dark:border-gray-800 dark:bg-gray-900",
+          "rounded-2xl border border-gray-200/90 bg-white/95 shadow-theme-md ring-1 ring-gray-200/60 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/95 dark:ring-white/10",
         className,
       )}
     >
@@ -72,7 +77,7 @@ export function PanelEmptyState({
       {footer ? <div className="mt-8 w-full">{footer}</div> : null}
     </div>
   );
-};
+}
 
 type PanelEmptyStateStep = {
   step: number;
@@ -107,63 +112,54 @@ export function PanelEmptyStateSteps({ steps }: { steps: readonly PanelEmptyStat
   );
 }
 
-type ListGhostEmptyStateProps = {
+export type ListGhostEmptyStateProps = {
   icon: ReactNode;
   title: string;
   description: string;
   action?: ReactNode;
   headingId?: string;
   rows?: number;
+  layout?: ListEmptyPreviewLayout;
   className?: string;
 };
 
-function GhostListRow() {
-  return (
-    <li className="flex items-center justify-between gap-3 py-3.5">
-      <div className="min-w-0 flex-1 space-y-2">
-        <div className="h-4 w-[42%] max-w-[200px] rounded-md bg-gray-200/90 dark:bg-white/10" />
-        <div className="h-3 w-[28%] max-w-[140px] rounded-md bg-gray-100 dark:bg-white/5" />
-      </div>
-      <div className="h-8 w-14 shrink-0 rounded-lg bg-gray-100 dark:bg-white/5" />
-    </li>
-  );
-}
-
-/** 列表卡片内的空态：骨架行背景 + 居中浮层说明。 */
+/** 列表卡片内的空态：模糊虚拟数据背景 + 底部玻璃态 CTA。 */
 export function ListGhostEmptyState({
   icon,
   title,
   description,
   action,
   headingId,
-  rows = 3,
+  rows = 5,
+  layout = "table",
   className,
 }: ListGhostEmptyStateProps) {
+  const isGridLayout = layout === "cards" || layout === "data-screen";
+
   return (
     <div
-      className={cn("relative min-h-[300px] w-full overflow-hidden rounded-xl", className)}
+      className={cn(
+        "relative w-full overflow-hidden rounded-2xl border border-gray-200/90 bg-gray-50/60 dark:border-gray-800 dark:bg-white/[0.02]",
+        isGridLayout ? "min-h-[min(480px,58vh)]" : "min-h-[400px]",
+        className,
+      )}
       aria-labelledby={headingId}
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-50/80 via-gray-50/40 to-white dark:from-white/[0.02] dark:via-white/[0.01] dark:to-transparent" />
-      <ul className="relative divide-y divide-gray-100 px-1 dark:divide-gray-800" aria-hidden>
-        {Array.from({ length: rows }).map((_, index) => (
-          <GhostListRow key={index} />
-        ))}
-      </ul>
+      <ListEmptyPreviewBackdrop layout={layout} rows={rows} />
 
-      <div className="absolute inset-0 flex items-center justify-center bg-white/55 p-4 backdrop-blur-[3px] dark:bg-gray-950/55">
-        <div className="w-full max-w-md">
-          <PanelEmptyState
-            icon={icon}
-            title={title}
-            description={description}
-            action={action}
-            headingId={headingId}
-            size="sm"
-            variant="elevated"
-            className="min-h-0 py-8"
-          />
-        </div>
+      <div
+        className={cn(
+          "relative flex h-full flex-col justify-end p-5 sm:p-6 md:p-8",
+          isGridLayout ? "min-h-[min(480px,58vh)]" : "min-h-[400px]",
+        )}
+      >
+        <ListEmptyHeroPanel
+          icon={icon}
+          title={title}
+          description={description}
+          action={action}
+          headingId={headingId}
+        />
       </div>
     </div>
   );

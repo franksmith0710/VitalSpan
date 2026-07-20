@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyConditionalRulesToEchartsOption,
+  applyConditionalRulesToG2PlotOptions,
   applyMarkLinesToEchartsOption,
   chartJumpIsConfigured,
   patchChartDeFeatures,
@@ -50,6 +51,19 @@ describe("chartDeFeatures", () => {
     const data = (next.series as { data: { itemStyle?: { color?: string } }[] }[])[0].data;
     expect(data[1]?.itemStyle?.color).toBe("#12b76a");
     expect(data[0]?.itemStyle?.color).toBeUndefined();
+  });
+
+  it("applyConditionalRulesToG2PlotOptions sets columnStyle for Column", () => {
+    const options = applyConditionalRulesToG2PlotOptions(
+      { data: [{ x: "a", y: 30 }], xField: "x", yField: "y" },
+      "Column",
+      [{ id: "r1", enabled: true, operator: "gte", value: 20, color: "#12b76a" }],
+    );
+    expect(typeof options.columnStyle).toBe("function");
+    const styled = (options.columnStyle as (d: Record<string, unknown>) => { fill?: string })({
+      y: 30,
+    });
+    expect(styled.fill).toBe("#12b76a");
   });
 
   it("resolveChartJumpHref supports dashboard and url modes", () => {

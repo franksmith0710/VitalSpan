@@ -39,6 +39,7 @@ import {
   supportsChartSeriesColorEditing,
 } from "@/lib/chartSeriesColor";
 import { patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import { isTableLikeChartType, tableStyleSectionsForType } from "@/lib/chartTableInspector";
 import { ChartInspectorSection, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 
@@ -46,7 +47,8 @@ export function ChartPaletteStyleSection() {
   const { cfg, patchDeStyle, patchDeStyleNested, mutateChartConfig, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const caps = chartInspectorCapabilities(cfg.chartType);
-  const isTable = cfg.chartType === "table";
+  const isTableLike = isTableLikeChartType(cfg.chartType);
+  const tableColorInOwnSection = tableStyleSectionsForType(cfg.chartType).includes("tableColor");
   const labelPresentation = resolveChartLabelPresentation(cfg, dashboardStyle);
   const tooltipPresentation = resolveChartTooltipPresentation(cfg, dashboardStyle);
 
@@ -83,8 +85,8 @@ export function ChartPaletteStyleSection() {
         tooltipColorFallback={resolveChartTooltipDisplayColor(cfg, dashboardStyle)}
         tooltipBackgroundFallback={resolveChartTooltipDisplayBackground(cfg, dashboardStyle)}
         showLabelToggle={caps.label}
-        showTooltipToggle={!isTable}
-        showGradientToggle={!isTable}
+        showTooltipToggle={!isTableLike && cfg.chartType !== "t-heatmap"}
+        showGradientToggle={!isTableLike && cfg.chartType !== "t-heatmap"}
         onPaletteChange={(paletteId) => {
           patchDeStyle({
             paletteId,
@@ -109,7 +111,7 @@ export function ChartPaletteStyleSection() {
         }
         onTooltipStyleChange={(patch) => patchDeStyleNested("tooltip", patch)}
         tableColorSection={
-          isTable ? (
+          isTableLike && !tableColorInOwnSection ? (
             <ChartTableColorFields
               compact
               tableStyle={readChartDeTableStyle(cfg)}

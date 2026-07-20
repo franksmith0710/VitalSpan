@@ -107,7 +107,7 @@ export function CanvasEditToolbar({
           align="start"
           side="bottom"
           sideOffset={8}
-          className="w-[min(100vw-2rem,410px)] max-h-[min(70vh,420px)] overflow-y-auto p-4"
+          className="w-[min(100vw-2rem,520px)] overflow-hidden p-0"
           data-testid="palette-dropdown-menu"
           onCloseAutoFocus={(e) => e.preventDefault()}
         >

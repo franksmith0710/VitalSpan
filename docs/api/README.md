@@ -5,8 +5,8 @@
 > **真理源**：行为需求见 [SRS §6](../srs/全生命周期系统需求规格说明书.md#6-接口需求)；功能项见 [PRD API-001~007](../automate/prd/F13-API.md)。
 
 ```yaml
-version: 1.0.6
-last_updated: 2026-07-14
+version: 1.0.7
+last_updated: 2026-07-20
 api_prefix: /api/v1
 openapi_docs: /docs
 redoc: /redoc
@@ -184,7 +184,7 @@ redoc: /redoc
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
 | POST | `/api/v1/charts/validate` | ChartViewConfig 预校验；422 时 `detail.fields: [{field, message}]` | 内部 | 一期 | VIZ-001 | 已实现 | `backend/app/api/v1/charts.py` |
-| GET | `/api/v1/charts/types` | 图表类型 catalog（9 类型注册表）；只读 | 内部 | 一期 | VIZ-003 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
+| GET | `/api/v1/charts/types` | 图表类型 catalog（~40 DE type + deprecated/migratesTo）；只读 | 内部 | 一期 | VIZ-003 | 已实现 | `backend/app/api/v1/charts.py` · `backend/app/viz/builtin/` |
 | POST | `/api/v1/charts/render-spec` | 校验并归一为引擎无关 render-spec；非法 type → 422 `CHART_INVALID_TYPE` | 内部 | 一期 | VIZ-008 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
 | POST | `/api/v1/charts/embed/validate` | 图表嵌入配置校验（目标唯一性 + origin 白名单） | 内部 | 一期 | VIZ-006 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
 | POST | `/api/v1/charts/sdk/validate` | SDK portal init 配置校验（`VIZ_SDK_*`） | 内部 | 一期 | VIZ-007 | 已实现 | `backend/app/api/v1/charts.py` |
@@ -225,7 +225,7 @@ redoc: /redoc
 
 | GET/PUT | `/api/v1/roles/{id}/default-views` | 角色默认视图模板 | 内部 | 二期 | VIEW-002 | 已实现 | `backend/app/api/v1/views.py` |
 | GET/POST | `/api/v1/users/me/views` | 用户个人视图 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
-| GET | `/api/v1/users/me/views/{view_id}` | IF-06 | 已实现 | `api/v1/views.py` | 用户视图覆盖按 id 读取（r63 VIEW-003） |
+| GET | `/api/v1/users/me/views/{view_id}` | 用户视图覆盖按 id 读取 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | PUT | `/api/v1/users/me/views/{id}` | 用户视图覆盖更新 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | DELETE | `/api/v1/users/me/views/{id}` | 用户视图覆盖删除 | 内部 | 三期 | VIEW-003 | 已实现 | `backend/app/api/v1/views.py` |
 | POST | `/api/v1/embed/token` | 门户嵌入 token 签发（`chartId` 或 `dashboardId`；大屏整屏 URL `/embed/screen/{id}`） | IF-04 | 三期 | API-006 | 已实现 | `backend/app/integration/embed_token.py` |
@@ -501,6 +501,8 @@ redoc: /redoc
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
+| 1.0.7 | 2026-07-20 | 修复 §8 用户视图表行 228 列错位；大屏 layoutJson 扩展字段见 §5 Dashboard |
+| 1.0.6 | 2026-07-17 | `surfaceKind=data-screen` 画布尺寸 800–7680；Tab parked 子组件 0×0 校验放宽 |
 | 1.0.5 | 2026-07-13 | Dashboard `layoutJson` 请求/响应 DTO 改为 `DashboardLayout`（v1 栅格 + v2 像素）；OpenAPI 可见 `version`/`canvas`/像素字段 |
 | 1.0.4 | 2026-07-13 | BUG-001 文档纠错：`PATCH /api/v1/me` 与 `POST /api/v1/auth/change-password` PRD 列改为 `—`；说明列引用 BUG-001 + Account Self-Service plan；change-password 补充 204/401 业务码与 422 边界 |
 | 1.0.3 | 2026-07-09 | F-E API-007 对账：`/docs`/`/redoc` 状态 规划→已实现（`AuthMiddleware.PUBLIC_PATHS` 已豁免且 FastAPI `docs_url`/`redoc_url` 已启用）；补 `/health`/`/openapi.json`/`/api/v1/auth/login` 免鉴权注记 |

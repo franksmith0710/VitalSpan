@@ -1,11 +1,22 @@
 import { DashboardConfigSection } from "./DashboardConfigSection";
 import { ChartTableColorFields } from "./chartPaletteLabelTooltipFields";
+import { useChartInspector } from "./ChartInspectorContext";
+import { patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import { isTableLikeChartType } from "@/lib/chartTableInspector";
 
-/** @deprecated 表格配色已并入「图表配色」；保留兼容测试锚点 */
+/** 表格配色（S2 / legacy 明细表） */
 export function ChartTableColorPanel() {
+  const { cfg, onChange } = useChartInspector();
+  if (!isTableLikeChartType(cfg.chartType)) return null;
+
+  const tableStyle = readChartDeTableStyle(cfg);
   return (
     <DashboardConfigSection title="表格配色" defaultOpen compact data-testid="table-style-color">
-      <ChartTableColorFields tableStyle={{}} onPatch={() => {}} compact />
+      <ChartTableColorFields
+        compact
+        tableStyle={tableStyle}
+        onPatch={(patch) => onChange(patchChartDeTableStyle(cfg, patch))}
+      />
     </DashboardConfigSection>
   );
 }
