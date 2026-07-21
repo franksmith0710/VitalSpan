@@ -1,9 +1,10 @@
 # 图表逐型验收手册（对标 DataEase）
 
-> **状态**：执行中 · 覆盖 catalog **48** 项（含 6 项 deprecated 仅测迁移）  
+> **状态**：**AUTO 已闭环**（2026-07-21）· catalog **48** 项（含 **5** 项 deprecated 已 MIG 门禁）  
 > **真理源**：`backend/app/viz/builtin/*.py`（field_rule）· `fe/src/components/dashboard/chartFieldSlots.ts`（槽位文案）· `fe/src/components/charts/engine/plugins/metadata.ts`（FE 注册）  
 > **前置**：D3 全量迁移已完成（见 [`2026-07-21-d3-full-chart-migration.md`](./2026-07-21-d3-full-chart-migration.md)）  
-> **取代**：[`2026-07-20-chart-component-acceptance.md`](./2026-07-20-chart-component-acceptance.md) 中已过时的 G2Plot/S2 分路描述，以本文 **§4 逐型矩阵** 为准
+> **取代**：[`2026-07-20-chart-component-acceptance.md`](./2026-07-20-chart-component-acceptance.md) 中已过时的 G2Plot/S2 分路描述，以本文 **§4 逐型矩阵** 为准  
+> **一键门禁**：`cd fe && pnpm run test:chart-catalog` · 后端 `pytest tests/test_viz_chart_catalog_parity.py -q`
 
 ## 1. 验收目标（三层）
 
@@ -153,6 +154,11 @@ UNION ALL SELECT '2025-07-03', '华北', 'B', 200;
 
 图例：**维** = `minDimensions–maxDimensions` · **指** = `minMetrics–maxMetrics` · **夹具** = §2 · **testId** = 渲染容器
 
+> **AUTO 汇总（2026-07-21）**  
+> - **43** 个非 deprecated 类型：`T-VIZ-R30`（L1）· `T-VIZ-R31`（L2 plan 编码）· `T-VIZ-R32`（L3 fieldRule/槽位）已全部参数化门禁。  
+> - **5** 个 deprecated 类型：`T-VIZ-R33`（`migratesTo` 迁移）已门禁。  
+> - 下表 **L1/L2/L3** 列 `☐` 为**浏览器手查**待勾选；**AUTO** 列 `✅` = 已纳入 `pnpm run test:chart-catalog`。
+
 ### 4.1 指标（quota）— 对标 DE「指标」区
 
 | chartType | DE 名称 | 维 | 指 | 槽位（DE） | 夹具 | testId | L1 | L2 | L3 | AUTO |
@@ -277,33 +283,21 @@ UNION ALL SELECT '2025-07-03', '华北', 'B', 200;
 ### 5.2 自动化（AUTO）
 
 ```bash
-# L1 + L2 + L3 全 catalog（43 型）
+# 前端一键门禁（L1 + L2 + L3 + MIG + 注册表 + 槽位 + 样式链 + 引擎依赖）
+cd fe && pnpm run test:chart-catalog
+
+# 或分项：
 cd fe && pnpm exec vitest run \
   src/components/charts/charts.smoke.test.tsx \
   src/components/charts/chartCatalogSmokeFixtures.test.ts \
   src/components/charts/chartCatalogData.test.ts \
   src/components/charts/chartCatalogFieldRules.test.ts \
+  src/components/charts/chartCatalogMigration.test.ts \
   src/lib/buildChartRenderModel.test.ts
 
-# 类型与注册表
-cd fe && pnpm exec vitest run \
-  src/components/charts/engine/plugins/catalogParity.test.ts
-
-# 字段规则与槽位
-cd fe && pnpm exec vitest run \
-  src/lib/chartFieldRules.test.ts \
-  src/components/dashboard/chartFieldSlots.test.ts
-
-# 编码与样式链
-cd fe && pnpm exec vitest run \
-  src/components/charts/engine/antv/spec/encodeCartesian.test.ts \
-  src/components/charts/engine/applyChartStyleChain.test.ts
-
 # Backend catalog ↔ FE
-cd backend && pytest tests/test_viz_chart_catalog_parity.py -q
-
-# 依赖门禁
-cd fe && pnpm run check:chart-engine
+cd fe && pnpm exec vitest run src/components/charts/engine/plugins/catalogParity.test.ts
+python -m pytest tests/test_viz_chart_catalog_parity.py -q
 ```
 
 ### 5.3 AUTO 覆盖状态（2026-07-21）
@@ -319,14 +313,27 @@ cd fe && pnpm run check:chart-engine
 | gauge/liquid 无维度 | ✅ | `buildChartRenderModel.ts` |
 | graph 指标可选 | ✅ | `buildChartRenderModel.ts` |
 | 双轴槽位 2 指标 | ✅ | `chartFieldSlots.ts` · `dual_axes` blueprint |
+| deprecated MIG | ✅ | `T-VIZ-R33-*` · `chartCatalogMigration.test.ts` |
 
-### 5.4 待补 AUTO（P2+）
+### 5.4 闭环清单（2026-07-21）
+
+| # | 项 | 状态 | 证据 |
+|---|-----|------|------|
+| 1 | 43 型 L1 可渲染 + 空数据 | ✅ | `T-VIZ-R30-001/002` |
+| 2 | 43 型 L2 plan 数据编码 | ✅ | `T-VIZ-R31-001` |
+| 3 | 43 型 L3 fieldRule + 槽位 | ✅ | `T-VIZ-R32-*` |
+| 4 | 5 型 deprecated 迁移 | ✅ | `T-VIZ-R33-*` |
+| 5 | FE↔BE catalog 数量/fieldRule | ✅ | `catalogParity` + pytest |
+| 6 | 双轴 Inspector 2 指标槽 | ✅ | `T-INSP-DE-09` |
+| 7 | 引擎依赖零 AntV 画布 | ✅ | `check:chart-engine` |
+| 8 | §4 矩阵浏览器手查 | ☐ | `/admin/charts/explore` 走查后勾选 L1/L2/L3 列 |
+
+### 5.5 待补（P2 · 非阻断 AUTO 闭环）
 
 | 优先级 | 范围 | 做法 |
 |--------|------|------|
 | P2 | L2 DOM 数值 | 渲染后 text/attribute 与 mock 对照（tooltip、KPI 数值） |
 | P2 | 地图/桑基/关系图 | 节点/边数量 DOM 断言、tooltip 数值 |
-| P2 | deprecated MIG | `migrateChartViewConfig` 6 型回归 |
 | MANUAL | §4 矩阵勾选 | 浏览器走查后 L1/L2/L3 列改 ✅ |
 
 ---
@@ -397,6 +404,7 @@ cd fe && pnpm run check:chart-engine
 
 | 日期 | 说明 |
 |------|------|
+| 2026-07-21 | **AUTO 闭环**：`pnpm test:chart-catalog` + §5.4 清单 + MIG 门禁 |
 | 2026-07-21 | L2/L3 AUTO：plan 数据断言 + fieldRule 契约 + 双轴槽位修复 |
 | 2026-07-21 | P0：43 型 L1 AUTO smoke + buildChartRenderModel 字段校验修复 |
 | 2026-07-21 | 初版：D3 全量后逐型 L1/L2/L3 矩阵 + 标准夹具 + AUTO 路径 |

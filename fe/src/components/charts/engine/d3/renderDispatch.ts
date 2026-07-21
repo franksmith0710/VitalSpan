@@ -20,7 +20,7 @@ import { renderD3LiquidChart } from "@/components/charts/engine/d3/radial/render
 import { renderD3PieChart } from "@/components/charts/engine/d3/radial/renderPie";
 import { renderD3KpiChart } from "@/components/charts/engine/d3/quota/renderKpi";
 import { renderD3RadarChart } from "@/components/charts/engine/d3/radial/renderRadar";
-import { renderD3ScatterChart } from "@/components/charts/engine/d3/relation/renderScatter";
+import { renderD3QuadrantChart } from "@/components/charts/engine/d3/relation/renderQuadrant";
 import type {
   D3BarRangeRenderConfig,
   D3BidirectionalBarRenderConfig,
@@ -91,6 +91,8 @@ export function renderD3Chart(
       return renderD3RadarChart(container, generic);
     case "Scatter":
       return renderD3ScatterChart(container, generic);
+    case "Quadrant":
+      return renderD3QuadrantChart(container, generic);
     case "Funnel":
       return renderD3FunnelChart(container, generic);
     case "Sankey":
@@ -118,10 +120,16 @@ export function renderD3Chart(
     case "Column":
     case "Bar":
       return renderD3BarChart(container, payload.config as unknown as D3CartesianRenderConfig);
-    default:
+    default: {
+      container.replaceChildren();
+      const msg = document.createElement("div");
+      msg.className = "flex h-full items-center justify-center text-theme-sm text-error-600";
+      msg.setAttribute("role", "alert");
+      msg.textContent = `未支持的图表渲染类型: ${plotType}`;
+      container.appendChild(msg);
       return () => {
         container.replaceChildren();
-        return () => undefined;
       };
+    }
   }
 }

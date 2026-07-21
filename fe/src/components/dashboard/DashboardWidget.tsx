@@ -155,6 +155,7 @@ export function DashboardWidget({
   onSelect,
   onDelete,
   onTitleChange,
+  onChartConfigChange,
   filterParameters,
   executeKey,
   filterValue,
@@ -313,6 +314,11 @@ export function DashboardWidget({
         showLoadingHint={chrome.showChartLoadingHint}
         suspendLiveResize={suspendLiveResize}
         dashboardEditMode={mode === "edit"}
+        onChartConfigChange={
+          onChartConfigChange && widget.chartConfig
+            ? (config) => onChartConfigChange(widget.id, config)
+            : undefined
+        }
       />
     ) : null;
 

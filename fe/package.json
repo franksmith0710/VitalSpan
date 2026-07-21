@@ -12,7 +12,8 @@
     "check:chart-engine": "node scripts/check-chart-engine.mjs",
     "test": "vitest run && node --test scripts/check-design.fixture.test.mjs && node scripts/check-chart-engine.mjs",
     "test:e2e": "playwright test",
-    "test:smoke": "vitest run src/routes.smoke.test.tsx"
+    "test:smoke": "vitest run src/routes.smoke.test.tsx",
+    "test:chart-catalog": "vitest run src/components/charts/charts.smoke.test.tsx src/components/charts/chartCatalogSmokeFixtures.test.ts src/components/charts/chartCatalogData.test.ts src/components/charts/chartCatalogFieldRules.test.ts src/components/charts/chartCatalogMigration.test.ts src/lib/buildChartRenderModel.test.ts src/lib/migrateChartTypes.test.ts src/components/charts/engine/plugins/catalogParity.test.ts src/components/dashboard/chartFieldSlots.test.ts src/components/charts/engine/applyChartStyleChain.test.ts && node scripts/check-chart-engine.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.18",

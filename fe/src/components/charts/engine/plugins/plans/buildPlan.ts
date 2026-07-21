@@ -16,8 +16,12 @@ import { encodePieRows } from "@/components/charts/engine/antv/spec/encodePie";
 import { PIE_RADIUS_FRAC_DEFAULT } from "@/components/charts/engine/d3/radial/pieLayout";
 import type { ChartViewModel, RenderSpec } from "@/components/charts/engine/types";
 
-export function emptyPlan(plotType = "Line"): ChartRenderPlan {
-  return { kind: "d3", plotType, options: { data: [] }, empty: true };
+export function emptyPlan(plotType = "Line", error?: string): ChartRenderPlan {
+  return { kind: "d3", plotType, options: { data: [] }, empty: true, error };
+}
+
+export function errorPlan(message: string, plotType = "Line"): ChartRenderPlan {
+  return { kind: "d3", plotType, options: { data: [] }, empty: true, error: message };
 }
 
 export function d3Plan(plotType: string, options: Record<string, unknown>): ChartRenderPlan {
@@ -35,12 +39,12 @@ function specWithMetrics(spec: RenderSpec, metricFields: string[]): RenderSpec {
   };
 }
 
-/** 仪表盘/水波图：0~1 原样；1~100 视为百分比；更大数值按首行展示原值 */
+/** 仪表盘/水波图：0~1 原样；1~100 视为百分比；更大数值满弧展示原值 */
 function resolveQuotaPercent(value: number): { percent: number; rawValue: number } {
   if (!Number.isFinite(value)) return { percent: 0, rawValue: 0 };
   if (value >= 0 && value <= 1) return { percent: value, rawValue: value };
   if (value > 1 && value <= 100) return { percent: value / 100, rawValue: value };
-  return { percent: 0, rawValue: value };
+  return { percent: 1, rawValue: value };
 }
 
 function gaugePlan(rows: unknown[][], columns: string[], metricField: string): ChartRenderPlan {
@@ -313,7 +317,7 @@ function bidirectionalBarPlan(
   const di = colIndex(columns, dim);
   const li = colIndex(columns, leftField);
   const ri = colIndex(columns, rightField);
-  if (di < 0 || li < 0) return emptyPlan("BidirectionalBar");
+  if (di < 0 || li < 0) return errorPlan("双向条形图缺少维度或指标列", "BidirectionalBar");
 
   const map = new Map<string, { type: string; left: number; right: number }>();
   for (const row of rows) {
@@ -353,6 +357,7 @@ function scatterPlan(
   const yField = metrics[1] ?? metrics[0] ?? "";
   const xi = colIndex(columns, xField);
   const yi = colIndex(columns, yField);
+  if (xi < 0 || yi < 0) return errorPlan("散点图缺少指标列", "Scatter");
   const seriesField = multi && metrics.length > 2 ? metrics[2] : undefined;
   const si = seriesField ? colIndex(columns, seriesField) : -1;
   const data = rows.map((r) => ({
@@ -361,6 +366,16 @@ function scatterPlan(
     ...(seriesField && si >= 0 ? { series: String(r[si] ?? "") } : {}),
   }));
   return d3Plan("Scatter", { data, xField: "x", yField: "y", colorField: seriesField ? "series" : undefined });
+}
+
+function quadrantPlan(
+  spec: ReturnType<typeof chartViewModelToRenderSpec>,
+  rows: unknown[][],
+  columns: string[],
+): ChartRenderPlan {
+  const base = scatterPlan(spec, rows, columns);
+  if (base.empty) return base;
+  return { ...base, plotType: "Quadrant" };
 }
 
 function d3TablePlan(type: string, vm: ChartViewModel): ChartRenderPlan {
@@ -434,7 +449,7 @@ export function buildPlanForType(chartType: string, vm: ChartViewModel): ChartRe
     case "scatter":
       return scatterPlan(spec, capped, columns);
     case "quadrant":
-      return scatterPlan(spec, capped, columns);
+      return quadrantPlan(spec, capped, columns);
     case "multi-scatter":
       return scatterPlan(spec, capped, columns, true);
     case "chart-mix":
@@ -484,6 +499,6 @@ export function buildPlanForType(chartType: string, vm: ChartViewModel): ChartRe
     case "combo":
       return dualAxesPlan(spec, capped, columns, "default");
     default:
-      return emptyPlan();
+      return errorPlan(`未支持的图表类型: ${chartType}`);
   }
 }

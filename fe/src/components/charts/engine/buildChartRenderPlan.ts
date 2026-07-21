@@ -10,6 +10,7 @@ export type ChartRenderPlan = {
   plotType: string;
   options: Record<string, unknown>;
   empty?: boolean;
+  error?: string;
 };
 
 export function buildChartRenderPlan(vm: ChartViewModel): ChartRenderPlan {

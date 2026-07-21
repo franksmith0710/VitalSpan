@@ -938,6 +938,44 @@ html.admin-fill-lock #root {
   --vs-scroll-fade: color-mix(in srgb, var(--dashboard-widget-surface, #1e293b) 92%, transparent);
 }
 
+.vs-chart-table[data-layout-interactive] .vs-table-resize-handle-line {
+  opacity: 0.85;
+}
+
+.vs-chart-table[data-layout-interactive] .vs-table-th:hover .vs-table-resize-handle-line,
+.vs-chart-table[data-layout-interactive] .vs-table-resize-handle:hover .vs-table-resize-handle-line {
+  opacity: 1;
+  background-color: rgb(70 95 255 / 0.85);
+}
+
+.vs-chart-table[data-layout-interactive] .vs-table-row-resize .vs-table-resize-handle {
+  opacity: 0.55;
+}
+
+.vs-chart-table[data-layout-interactive] .vs-table-row-resize:hover .vs-table-resize-handle {
+  opacity: 1;
+}
+
+.vs-table-resize-guide[data-orientation="column"]::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: inherit;
+  width: 0;
+  border-left: 1px dashed rgb(70 95 255 / 0.95);
+}
+
+.vs-table-resize-guide[data-orientation="row"]::before {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: inherit;
+  height: 0;
+  border-top: 1px dashed rgb(70 95 255 / 0.95);
+}
+
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] .vs-chart-table[data-freeze-lead] .vs-table-sticky-first,
 .dashboard-theme-scope.dark .vs-chart-table[data-freeze-lead] .vs-table-sticky-first {
   box-shadow: 4px 0 8px -4px rgb(0 0 0 / 0.35);

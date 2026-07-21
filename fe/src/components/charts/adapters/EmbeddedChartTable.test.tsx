@@ -12,6 +12,7 @@ describe("EmbeddedChartTable", () => {
         rows={[[1, "a"]]}
         page={1}
         onPageChange={() => {}}
+        layoutInteractive={false}
       />,
     );
     const table = container.querySelector("table");
@@ -25,6 +26,7 @@ describe("EmbeddedChartTable", () => {
       <div style={{ position: "relative", width: 320, height: 200 }}>
         <EmbeddedChartTable
           embedded
+          layoutInteractive={false}
           columns={["a", "b", "c"]}
           displayCols={["a", "b", "c"]}
           rows={[[1, 2, 3]]}
@@ -48,6 +50,7 @@ describe("EmbeddedChartTable", () => {
       <div style={{ position: "relative", width: 320, height: 200 }}>
         <EmbeddedChartTable
           embedded
+          layoutInteractive={false}
           columns={["a", "b", "c"]}
           displayCols={["a", "b", "c"]}
           rows={[[1, 2, 3]]}
@@ -161,6 +164,7 @@ describe("EmbeddedChartTable", () => {
         rows={[[1, 2]]}
         page={1}
         onPageChange={() => {}}
+        layoutInteractive={false}
         tableStyle={{ columnWidthMode: "auto" }}
       />,
     );
@@ -179,6 +183,7 @@ describe("EmbeddedChartTable", () => {
         rows={[[1, 2]]}
         page={1}
         onPageChange={() => {}}
+        layoutInteractive={false}
         tableStyle={{ columnWidthMode: "fixed" }}
       />,
     );
@@ -195,6 +200,7 @@ describe("EmbeddedChartTable", () => {
         rows={[[1, 2]]}
         page={1}
         onPageChange={() => {}}
+        layoutInteractive={false}
         tableStyle={{
           columnWidthMode: "custom",
           columnWidths: { a: 30, b: 70 },

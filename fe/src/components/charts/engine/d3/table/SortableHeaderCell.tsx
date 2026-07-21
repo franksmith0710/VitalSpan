@@ -15,6 +15,7 @@ type SortableHeaderCellProps = {
   resizable?: boolean;
   onSort: (field: string) => void;
   onColumnResize?: (event: React.PointerEvent<HTMLDivElement>) => void;
+  onColumnAutoFit?: (field: string) => void;
 };
 
 function SortIcon({ active, direction }: { active: boolean; direction?: "asc" | "desc" }) {
@@ -34,6 +35,7 @@ export function SortableHeaderCell({
   resizable = false,
   onSort,
   onColumnResize,
+  onColumnAutoFit,
 }: SortableHeaderCellProps) {
   const active = sort?.field === field;
   const content = (
@@ -56,7 +58,19 @@ export function SortableHeaderCell({
 
   const resize =
     resizable && onColumnResize ? (
-      <TableResizeHandle orientation="column" onPointerDown={onColumnResize} />
+      <TableResizeHandle
+        orientation="column"
+        onPointerDown={onColumnResize}
+        onDoubleClick={
+          onColumnAutoFit
+            ? (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onColumnAutoFit(field);
+              }
+            : undefined
+        }
+      />
     ) : null;
 
   if (!sortable) {
@@ -73,7 +87,7 @@ export function SortableHeaderCell({
       <button
         type="button"
         className={cn(
-          "flex w-full items-center gap-1.5 rounded-sm transition-colors",
+          "flex w-full items-center gap-1.5 rounded-sm pr-2 transition-colors",
           align === "right" && "justify-end",
           align === "center" && "justify-center",
           "hover:text-[var(--dashboard-table-header-active-fg,var(--dashboard-table-body-fg,#344054))]",

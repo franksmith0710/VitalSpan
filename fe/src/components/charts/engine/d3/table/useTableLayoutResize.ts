@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-
-const MIN_COL_PX = 56;
-const MIN_ROW_PX = 28;
-const DEFAULT_COL_PX = 96;
-const DEFAULT_SERIES_PX = 48;
-const DEFAULT_ROW_PX = 36;
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  measureColumnAutoFitWidth,
+  measureTableLayoutFromDom,
+} from "@/components/charts/engine/d3/table/measureTableLayout";
+import {
+  TABLE_DEFAULT_COL_PX,
+  TABLE_DEFAULT_ROW_PX,
+  TABLE_DEFAULT_SERIES_PX,
+  TABLE_MIN_COL_PX,
+  TABLE_MIN_ROW_PX,
+} from "@/components/charts/engine/d3/table/tableLayoutConstants";
 
 export type TableLayoutResizeState = {
   columnWidthsPx: Record<string, number>;
@@ -12,22 +17,36 @@ export type TableLayoutResizeState = {
   rowHeightPx: number;
 };
 
+export type TableResizeGuideState = {
+  orientation: "column" | "row";
+  position: number;
+};
+
+type AutoFitContext = {
+  columns: string[];
+  displayCols: string[];
+  rows: unknown[][];
+  showSeriesNumber: boolean;
+  headerLabel: (field: string) => string;
+  formatCell: (value: unknown) => string;
+};
+
 type UseTableLayoutResizeOptions = {
   columns: string[];
   showSeriesNumber: boolean;
   initial: Partial<TableLayoutResizeState>;
   enabled: boolean;
+  tableRef: React.RefObject<HTMLTableElement | null>;
   onCommit?: (patch: Partial<TableLayoutResizeState>) => void;
 };
 
-export function defaultColumnWidthPx(field: string, columns: string[]): number {
-  return initialWidthForField(field, columns);
-}
+type DragTarget =
+  | { kind: "column"; field: string; startX: number; startWidth: number }
+  | { kind: "series"; startX: number; startWidth: number }
+  | { kind: "row"; startY: number; startHeight: number };
 
-function initialWidthForField(field: string, columns: string[]): number {
-  if (field === "__vs_series__") return DEFAULT_SERIES_PX;
-  const label = field;
-  return Math.max(MIN_COL_PX, Math.min(180, label.length * 10 + 40));
+function hasSavedColumnWidths(initial: Partial<TableLayoutResizeState>): boolean {
+  return Boolean(initial.columnWidthsPx && Object.keys(initial.columnWidthsPx).length > 0);
 }
 
 function buildInitialState(
@@ -37,40 +56,80 @@ function buildInitialState(
 ): TableLayoutResizeState {
   const columnWidthsPx: Record<string, number> = {};
   for (const col of columns) {
-    columnWidthsPx[col] =
-      initial.columnWidthsPx?.[col] ?? initialWidthForField(col, columns);
+    columnWidthsPx[col] = initial.columnWidthsPx?.[col] ?? TABLE_DEFAULT_COL_PX;
   }
   return {
     columnWidthsPx,
     seriesColumnWidthPx:
-      initial.seriesColumnWidthPx ??
-      (showSeriesNumber ? DEFAULT_SERIES_PX : 0),
-    rowHeightPx: initial.rowHeightPx ?? DEFAULT_ROW_PX,
+      initial.seriesColumnWidthPx ?? (showSeriesNumber ? TABLE_DEFAULT_SERIES_PX : 0),
+    rowHeightPx: initial.rowHeightPx ?? TABLE_DEFAULT_ROW_PX,
   };
 }
-
-type DragTarget =
-  | { kind: "column"; field: string; startX: number; startWidth: number }
-  | { kind: "series"; startX: number; startWidth: number }
-  | { kind: "row"; startY: number; startHeight: number };
 
 export function useTableLayoutResize({
   columns,
   showSeriesNumber,
   initial,
   enabled,
+  tableRef,
   onCommit,
 }: UseTableLayoutResizeOptions) {
+  const savedInitially = hasSavedColumnWidths(initial);
+  const [pixelActive, setPixelActive] = useState(
+    savedInitially || initial.rowHeightPx != null,
+  );
   const [layout, setLayout] = useState<TableLayoutResizeState>(() =>
     buildInitialState(columns, showSeriesNumber, initial),
   );
+  const [guide, setGuide] = useState<TableResizeGuideState | null>(null);
   const dragRef = useRef<DragTarget | null>(null);
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
+  const autoFitRef = useRef<AutoFitContext | null>(null);
+
+  const initialKey = useMemo(
+    () =>
+      JSON.stringify({
+        columns,
+        showSeriesNumber,
+        columnWidthsPx: initial.columnWidthsPx,
+        seriesColumnWidthPx: initial.seriesColumnWidthPx,
+        rowHeightPx: initial.rowHeightPx,
+      }),
+    [
+      columns,
+      showSeriesNumber,
+      initial.columnWidthsPx,
+      initial.seriesColumnWidthPx,
+      initial.rowHeightPx,
+    ],
+  );
 
   useEffect(() => {
+    const nextSaved = hasSavedColumnWidths(initial);
     setLayout(buildInitialState(columns, showSeriesNumber, initial));
-  }, [columns.join("|"), showSeriesNumber, initial.columnWidthsPx, initial.rowHeightPx, initial.seriesColumnWidthPx]);
+    setPixelActive(nextSaved || initial.rowHeightPx != null);
+  }, [initialKey]);
+
+  const hydrateFromDom = useCallback(() => {
+    const table = tableRef.current;
+    if (!table) return false;
+    const measured = measureTableLayoutFromDom({ table, columns, showSeriesNumber });
+    const next = {
+      columnWidthsPx: { ...layoutRef.current.columnWidthsPx, ...measured.columnWidthsPx },
+      seriesColumnWidthPx: measured.seriesColumnWidthPx,
+      rowHeightPx: measured.rowHeightPx,
+    };
+    layoutRef.current = next;
+    setLayout(next);
+    setPixelActive(true);
+    return true;
+  }, [columns, showSeriesNumber, tableRef]);
+
+  const ensurePixelReady = useCallback(() => {
+    if (pixelActive) return true;
+    return hydrateFromDom();
+  }, [hydrateFromDom, pixelActive]);
 
   const commit = useCallback(() => {
     if (!onCommit) return;
@@ -89,51 +148,71 @@ export function useTableLayoutResize({
       const drag = dragRef.current;
       if (!drag) return;
       if (drag.kind === "row") {
-        const next = Math.max(MIN_ROW_PX, drag.startHeight + (event.clientY - drag.startY));
+        const next = Math.max(TABLE_MIN_ROW_PX, drag.startHeight + (event.clientY - drag.startY));
         setLayout((prev) => ({ ...prev, rowHeightPx: next }));
+        setGuide({ orientation: "row", position: event.clientY });
         return;
       }
       const delta = event.clientX - drag.startX;
-      const next = Math.max(MIN_COL_PX, drag.startWidth + delta);
+      const next = Math.max(TABLE_MIN_COL_PX, drag.startWidth + delta);
       if (drag.kind === "series") {
         setLayout((prev) => ({ ...prev, seriesColumnWidthPx: next }));
-        return;
+      } else {
+        setLayout((prev) => ({
+          ...prev,
+          columnWidthsPx: { ...prev.columnWidthsPx, [drag.field]: next },
+        }));
       }
-      setLayout((prev) => ({
-        ...prev,
-        columnWidthsPx: { ...prev.columnWidthsPx, [drag.field]: next },
-      }));
+      setGuide({ orientation: "column", position: event.clientX });
     };
 
     const onUp = () => {
       if (!dragRef.current) return;
       dragRef.current = null;
+      setGuide(null);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
+      document.body.removeAttribute("data-vs-table-resizing");
       commit();
     };
 
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
     };
   }, [commit, enabled]);
+
+  const beginDrag = useCallback(
+    (target: DragTarget, cursor: string, guideState: TableResizeGuideState) => {
+      dragRef.current = target;
+      setGuide(guideState);
+      document.body.style.cursor = cursor;
+      document.body.style.userSelect = "none";
+      document.body.setAttribute("data-vs-table-resizing", "");
+    },
+    [],
+  );
 
   const startColumnResize = useCallback(
     (field: string, event: React.PointerEvent<HTMLDivElement>) => {
       if (!enabled) return;
       event.preventDefault();
       event.stopPropagation();
+      ensurePixelReady();
       const th = event.currentTarget.closest("th");
-      const startWidth = th?.getBoundingClientRect().width ?? DEFAULT_COL_PX;
-      dragRef.current = { kind: "column", field, startX: event.clientX, startWidth };
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
+      const startWidth = th?.getBoundingClientRect().width ?? TABLE_DEFAULT_COL_PX;
+      beginDrag(
+        { kind: "column", field, startX: event.clientX, startWidth },
+        "col-resize",
+        { orientation: "column", position: event.clientX },
+      );
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [enabled],
+    [beginDrag, enabled, ensurePixelReady],
   );
 
   const startSeriesResize = useCallback(
@@ -141,14 +220,17 @@ export function useTableLayoutResize({
       if (!enabled || !showSeriesNumber) return;
       event.preventDefault();
       event.stopPropagation();
+      ensurePixelReady();
       const th = event.currentTarget.closest("th");
-      const startWidth = th?.getBoundingClientRect().width ?? DEFAULT_SERIES_PX;
-      dragRef.current = { kind: "series", startX: event.clientX, startWidth };
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
+      const startWidth = th?.getBoundingClientRect().width ?? TABLE_DEFAULT_SERIES_PX;
+      beginDrag(
+        { kind: "series", startX: event.clientX, startWidth },
+        "col-resize",
+        { orientation: "column", position: event.clientX },
+      );
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [enabled, showSeriesNumber],
+    [beginDrag, enabled, ensurePixelReady, showSeriesNumber],
   );
 
   const startRowResize = useCallback(
@@ -156,24 +238,71 @@ export function useTableLayoutResize({
       if (!enabled) return;
       event.preventDefault();
       event.stopPropagation();
-      dragRef.current = {
-        kind: "row",
-        startY: event.clientY,
-        startHeight: layoutRef.current.rowHeightPx,
-      };
-      document.body.style.cursor = "row-resize";
-      document.body.style.userSelect = "none";
+      if (!pixelActive) {
+        hydrateFromDom();
+        setPixelActive(true);
+      }
+      const table = tableRef.current;
+      const bodyRow = table?.querySelector("tbody tr");
+      const startHeight =
+        bodyRow?.getBoundingClientRect().height ?? layoutRef.current.rowHeightPx;
+      beginDrag(
+        { kind: "row", startY: event.clientY, startHeight },
+        "row-resize",
+        { orientation: "row", position: event.clientY },
+      );
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [enabled],
+    [beginDrag, enabled, hydrateFromDom, pixelActive, tableRef],
+  );
+
+  const setAutoFitContext = useCallback((ctx: AutoFitContext | null) => {
+    autoFitRef.current = ctx;
+  }, []);
+
+  const autoFitColumn = useCallback(
+    (field: string) => {
+      const ctx = autoFitRef.current;
+      if (!ctx || !enabled) return;
+      ensurePixelReady();
+      const width = measureColumnAutoFitWidth({
+        field,
+        columns: ctx.columns,
+        displayCols: ctx.displayCols,
+        rows: ctx.rows,
+        headerLabel: ctx.headerLabel(field),
+        showSeriesNumber: ctx.showSeriesNumber,
+        formatCell: ctx.formatCell,
+      });
+      setLayout((prev) => {
+        const next =
+          field === "__vs_series__"
+            ? { ...prev, seriesColumnWidthPx: width }
+            : { ...prev, columnWidthsPx: { ...prev.columnWidthsPx, [field]: width } };
+        layoutRef.current = next;
+        return next;
+      });
+      setPixelActive(true);
+      if (onCommit) {
+        const current = layoutRef.current;
+        onCommit({
+          columnWidthsPx: current.columnWidthsPx,
+          seriesColumnWidthPx: showSeriesNumber ? current.seriesColumnWidthPx : undefined,
+          rowHeightPx: current.rowHeightPx,
+        });
+      }
+    },
+    [enabled, ensurePixelReady, onCommit, showSeriesNumber],
   );
 
   return {
     layout,
+    pixelActive,
+    guide,
     startColumnResize,
     startSeriesResize,
     startRowResize,
-    MIN_COL_PX,
-    DEFAULT_COL_PX,
+    autoFitColumn,
+    setAutoFitContext,
   };
 }

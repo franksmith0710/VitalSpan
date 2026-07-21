@@ -49,7 +49,7 @@ import { EmbeddedChartTable } from "./adapters/EmbeddedChartTable";
 import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
 import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
-import { readChartDeTableStyle, mergeChartTableStyle } from "@/lib/chartDeTableStyle";
+import { readChartDeTableStyle, mergeChartTableStyle, patchChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import {
   resolveEffectiveChartScheme,
   resolveTableThemeVars,
@@ -115,6 +115,7 @@ type ChartRendererProps = {
   drillEnabled?: boolean;
   /** 看板编辑态内嵌（关闭地图滚轮缩放等） */
   dashboardEditMode?: boolean;
+  onChartConfigChange?: (config: ChartViewConfig) => void;
 };
 
 function sizeSpanEqual(
@@ -197,6 +198,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   widgetId,
   drillEnabled = false,
   dashboardEditMode = false,
+  onChartConfigChange,
 }: ChartRendererProps) {
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
   const effectiveConfig = useMemo(() => migrateChartViewConfig(config), [config]);
@@ -507,6 +509,16 @@ export const ChartRenderer = memo(function ChartRenderer({
     [handleDrillClick],
   );
 
+  const handleTableStylePatch = useCallback(
+    (patch: Parameters<typeof patchChartDeTableStyle>[1]) => {
+      if (!onChartConfigChange) return;
+      const next = patchChartDeTableStyle(localConfig, patch);
+      setLocalConfig(next);
+      onChartConfigChange(next);
+    },
+    [localConfig, onChartConfigChange],
+  );
+
   const canvasChart = () => (
     <CanvasChartHost
       viewModel={chartViewModel}
@@ -528,6 +540,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       drillClickField={drillClickField}
       onInteraction={drillInteraction ? handleChartInteraction : undefined}
       onJumpClick={jumpInteraction ? handleJumpClick : undefined}
+      onTableStylePatch={dashboardEditMode ? handleTableStylePatch : undefined}
       layoutFootprint={
         embedded && pixelSize && pixelSize.width > 0 && pixelSize.height > 0
           ? pixelSize
@@ -607,6 +620,7 @@ export const ChartRenderer = memo(function ChartRenderer({
               ? (_field, value) => handleDrillClick(value)
               : undefined
           }
+          onTableStylePatch={dashboardEditMode ? handleTableStylePatch : undefined}
         />,
       );
     }

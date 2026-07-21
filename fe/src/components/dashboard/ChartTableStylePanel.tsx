@@ -137,6 +137,9 @@ export function ChartTableStylePanel() {
 
         {profile.showColumnWidth ? (
           <>
+            <p className="px-1 pb-2 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+              表头列右缘拖拽调列宽（双击自动适应内容）；表头底边拖拽调行高。编辑态松手自动保存。
+            </p>
             <ChartDeSegmentField
               label="列宽调整"
               value={columnWidthMode}

@@ -26,4 +26,14 @@ describe("migrateChartViewConfig", () => {
     expect(next.chartType).toBe("line");
     expect(next.styleVariant).toBe("smooth");
   });
+
+  it("migrates legacy heatmap to t-heatmap", () => {
+    const next = migrateChartViewConfig({ chartType: "heatmap" });
+    expect(next.chartType).toBe("t-heatmap");
+  });
+
+  it("migrates legacy wordCloud to word-cloud", () => {
+    const next = migrateChartViewConfig({ chartType: "wordCloud" });
+    expect(next.chartType).toBe("word-cloud");
+  });
 });

@@ -30,14 +30,28 @@ describe("chartFieldSlots", () => {
     ]);
   });
 
-  it("T-INSP-DE-05: heatmap requires x and y dimensions", () => {
-    expect(chartDataSlotBlueprint("heatmap").map((s) => s.label)).toContain("纵轴 / 维度");
+  it("T-INSP-DE-05: t-heatmap requires x and y dimensions", () => {
+    expect(chartDataSlotBlueprint("t-heatmap").map((s) => s.label)).toEqual([
+      "横轴 / 维度",
+      "纵轴 / 维度",
+      "数值 / 指标",
+    ]);
   });
 
-  it("T-INSP-DE-06: timeline uses single time dimension slot", () => {
+  it("T-INSP-DE-06: deprecated timeline uses trend slots until migrate", () => {
     expect(chartDataSlotBlueprint("timeline").map((s) => s.label)).toEqual([
-      "时间 / 维度",
-      "数值 / 指标",
+      "类别轴 / 维度",
+      "子类别 / 维度",
+      "值轴 / 指标",
+      "钻取 / 维度",
+    ]);
+  });
+
+  it("T-INSP-DE-08: map chart matches DE slot order", () => {
+    expect(chartDataSlotBlueprint("map").map((s) => s.label)).toEqual([
+      "地区 / 维度",
+      "数据 / 指标",
+      "钻取 / 维度",
     ]);
   });
 

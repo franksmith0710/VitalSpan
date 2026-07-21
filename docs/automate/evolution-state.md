@@ -8,18 +8,18 @@
 |------|----|
 | phase | **A8_DONE** |
 | status | **DONE** |
-| request | 大屏 resize 后图表不跟尺寸 + 样式面板不可用 |
-| type | bug |
-| plan | [`plans/2026-07-20-data-screen-edit-viz-inspector-pipeline.md`](./plans/2026-07-20-data-screen-edit-viz-inspector-pipeline.md) |
-| plan_prev | [`plans/2026-07-20-data-screen-resize-geometry-pipeline.md`](./plans/2026-07-20-data-screen-resize-geometry-pipeline.md) |
-| bug | [`../bugs/BUG-12_data-screen-resize-content-vanish_2026-07-20.md`](../bugs/BUG-12_data-screen-resize-content-vanish_2026-07-20.md) |
-| goal | viz remeasure 双保险 + Inspector 可用性 + Playwright 门控 |
-| last_verified | 2026-07-20 Vitest 全绿；Playwright spec 已建（浏览器 install 待本机） |
+| request | 图表逐型验收对标 DataEase（能渲染 / 数据对 / 维度对） |
+| type | feature |
+| plan | [`plans/2026-07-21-chart-per-type-verification.md`](./plans/2026-07-21-chart-per-type-verification.md) |
+| plan_prev | [`plans/2026-07-20-data-screen-edit-viz-inspector-pipeline.md`](./plans/2026-07-20-data-screen-edit-viz-inspector-pipeline.md) |
+| goal | 43 型 L1/L2/L3 AUTO + 5 型 MIG + 一键门禁 |
+| last_verified | 2026-07-21 `pnpm test:chart-catalog` 146 passed · pytest catalog parity 4 passed |
 
 ## 最近完成（摘要）
 
 | 日期 | 项 | 摘要 |
 |------|-----|------|
+| 2026-07-21 | chart-catalog 闭环 | T-VIZ-R30~33、双轴槽位修复、`test:chart-catalog` 门禁 |
 | 2026-07-20 | viz-inspector 闭环 | T4 remeasure 链、T7 Inspector、T5 Vitest、T1 E2E spec、T6/T8 文档 |
 | 2026-07-20 | R3 partial | commit 总线 + visualScale 注入 |
 | 2026-07-20 | 文档卫生 | plans/superpowers 归档 |
@@ -28,5 +28,6 @@
 
 | 日期 | 说明 |
 |------|------|
+| 2026-07-21 | A8_DONE：图表逐型验收 AUTO 闭环 |
 | 2026-07-20 | A8_DONE：viz-inspector plan 执行闭环 |
 | 2026-07-20 | viz-inspector 计划；BUG-12 增 RC6/R3 现象 |

@@ -19,6 +19,8 @@ type EmbeddedChartTableProps = {
   onDrillCellClick?: (field: string, value: string) => void;
   metricFields?: string[];
   embedded?: boolean;
+  layoutInteractive?: boolean;
+  onTableStylePatch?: (patch: ChartDeTableStyle extends object ? Partial<ChartDeTableStyle> : never) => void;
 };
 
 /**
@@ -39,6 +41,8 @@ export function EmbeddedChartTable({
   onDrillCellClick,
   metricFields,
   embedded = false,
+  layoutInteractive = true,
+  onTableStylePatch,
 }: EmbeddedChartTableProps) {
   const columnMeta = displayCols.map((field) => ({ field, label: field }));
   return (
@@ -58,6 +62,8 @@ export function EmbeddedChartTable({
       onDrillCellClick={onDrillCellClick}
       metricFields={metricFields}
       embedded={embedded}
+      layoutInteractive={layoutInteractive}
+      onTableStylePatch={onTableStylePatch}
       testId="embedded-chart-table"
     />
   );

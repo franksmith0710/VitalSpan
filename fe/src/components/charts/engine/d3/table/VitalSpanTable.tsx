@@ -21,6 +21,9 @@ import { sortTableRows, useTableClientSort } from "@/components/charts/engine/d3
 import { SortableHeaderCell } from "@/components/charts/engine/d3/table/SortableHeaderCell";
 import { TableScrollRegion } from "@/components/charts/engine/d3/table/TableScrollRegion";
 import { TableStatusBar } from "@/components/charts/engine/d3/table/TableStatusBar";
+import { TableResizeHandle } from "@/components/charts/engine/d3/table/TableResizeHandle";
+import { TableResizeGuide } from "@/components/charts/engine/d3/table/TableResizeGuide";
+import { useTableLayoutResize } from "@/components/charts/engine/d3/table/useTableLayoutResize";
 import type { TableColumnMeta } from "@/components/charts/engine/d3/table/types";
 
 export type VitalSpanTableProps = {
@@ -40,6 +43,9 @@ export type VitalSpanTableProps = {
   metricFields?: string[];
   embedded?: boolean;
   showSeriesNumber?: boolean;
+  /** 启用 AntV 式行列拖拽（默认开启） */
+  layoutInteractive?: boolean;
+  onTableStylePatch?: (patch: Partial<ChartDeTableStyle>) => void;
   testId?: string;
 };
 
@@ -91,9 +97,12 @@ export function VitalSpanTable({
   metricFields,
   embedded = false,
   showSeriesNumber = false,
+  layoutInteractive = true,
+  onTableStylePatch,
   testId = "d3-table-chart",
 }: VitalSpanTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
   const { sort, toggle: toggleSort } = useTableClientSort();
   const remeasureLayout = useCallback(() => {
     void containerRef.current?.getBoundingClientRect();
@@ -133,15 +142,84 @@ export function VitalSpanTable({
 
   const layoutColumnCount = displayCols.length + (showSeriesNumber ? 1 : 0);
   const columnWidthMode = resolveEffectiveColumnWidthMode(tableStyle.columnWidthMode, layoutColumnCount);
-  const useFixedLayout = columnWidthMode === "auto" || columnWidthMode === "custom";
-  const useContentLayout = columnWidthMode === "fixed";
+
+  const handleLayoutCommit = useCallback(
+    (patch: Parameters<typeof onTableStylePatch>[0]) => {
+      onTableStylePatch?.({
+        ...patch,
+        columnWidthMode: "custom",
+      });
+    },
+    [onTableStylePatch],
+  );
+
+  const {
+    layout: pixelLayout,
+    pixelActive,
+    guide,
+    startColumnResize,
+    startSeriesResize,
+    startRowResize,
+    autoFitColumn,
+    setAutoFitContext,
+  } = useTableLayoutResize({
+    columns: displayCols,
+    showSeriesNumber,
+    initial: {
+      columnWidthsPx: tableStyle.columnWidthsPx,
+      seriesColumnWidthPx: tableStyle.seriesColumnWidthPx,
+      rowHeightPx: tableStyle.rowHeightPx,
+    },
+    enabled: layoutInteractive,
+    tableRef,
+    onCommit: onTableStylePatch ? handleLayoutCommit : undefined,
+  });
+
+  useEffect(() => {
+    if (!layoutInteractive) {
+      setAutoFitContext(null);
+      return;
+    }
+    setAutoFitContext({
+      columns,
+      displayCols,
+      rows: sortedRows,
+      showSeriesNumber,
+      headerLabel: (field) => headerLabel(field, columnMeta),
+      formatCell: (value) => formatTableCellValue(value, valueFormat),
+    });
+  }, [
+    columnMeta,
+    columns,
+    displayCols,
+    layoutInteractive,
+    setAutoFitContext,
+    showSeriesNumber,
+    sortedRows,
+    valueFormat,
+  ]);
+
+  const usePixelLayout = pixelActive || guide != null;
+  const useFixedLayout = usePixelLayout || columnWidthMode === "auto" || columnWidthMode === "custom";
+  const useContentLayout = usePixelLayout || columnWidthMode === "fixed";
   const freezeLead = useContentLayout && layoutColumnCount > 1;
+  const applyRowHeight = usePixelLayout;
+
   const cellClass = bodyCellClass(wordWrap);
+  const rowStyle = applyRowHeight
+    ? { height: pixelLayout.rowHeightPx, maxHeight: pixelLayout.rowHeightPx }
+    : undefined;
   const mergedThemeStyle = (themeVars ?? {}) as CSSProperties;
 
-  const equalPct =
-    layoutColumnCount > 0 ? 100 / layoutColumnCount : 100;
+  const equalPct = layoutColumnCount > 0 ? 100 / layoutColumnCount : 100;
   const resolveColWidth = (col: string): string | undefined => {
+    if (usePixelLayout) {
+      if (col === SERIES_FIELD) {
+        return showSeriesNumber ? `${pixelLayout.seriesColumnWidthPx}px` : undefined;
+      }
+      const px = pixelLayout.columnWidthsPx[col];
+      return px != null ? `${px}px` : undefined;
+    }
     if (col === SERIES_FIELD) return showSeriesNumber ? `${Math.min(equalPct, 8)}%` : undefined;
     if (columnWidthMode === "custom") {
       const custom = tableStyle.columnWidths?.[col];
@@ -188,7 +266,9 @@ export function VitalSpanTable({
   const seriesOffset = showSeriesNumber ? (page - 1) * pageSize : 0;
   const tableStyleVars = {
     ...mergedThemeStyle,
-    ["--vs-table-sticky-offset" as string]: showSeriesNumber ? "3rem" : "0px",
+    ["--vs-table-sticky-offset" as string]: showSeriesNumber
+      ? `${pixelLayout.seriesColumnWidthPx}px`
+      : "0px",
   } as CSSProperties;
 
   return (
@@ -209,21 +289,25 @@ export function VitalSpanTable({
             : "1px solid var(--dashboard-table-border, #f2f4f7)",
       }}
       data-testid={testId}
+      {...(layoutInteractive ? { "data-pixel-no-drag": true } : {})}
     >
+      <TableResizeGuide guide={guide} />
       <TableScrollRegion
         className={panel ? "overflow-x-only" : undefined}
         style={scrollbarStyle(tableStyle.scrollbarColor, themeVars)}
         edgeDeps={[displayCols.length, pageRows.length, freezeLead]}
       >
         <table
+          ref={tableRef}
           className={cn(
             "dashboard-chart-table vs-chart-table w-full border-separate border-spacing-0 text-left",
             useFixedLayout
-              ? "table-fixed min-w-full"
+              ? cn("table-fixed", useContentLayout ? "w-max min-w-full" : "min-w-full")
               : useContentLayout
                 ? "table-auto w-max min-w-full"
                 : cn("table-auto", embedded ? "w-max min-w-full" : "min-w-0"),
           )}
+          data-layout-interactive={layoutInteractive ? "" : undefined}
           data-row-hover={rowHover ? "" : undefined}
           data-zebra={zebraBg ? "" : undefined}
           data-freeze-lead={freezeLead ? "" : undefined}
@@ -239,8 +323,8 @@ export function VitalSpanTable({
               ))}
             </colgroup>
           ) : null}
-          <thead>
-            <tr>
+          <thead className="relative">
+            <tr className="relative">
               {showSeriesNumber ? (
                 <SortableHeaderCell
                   label="#"
@@ -249,8 +333,11 @@ export function VitalSpanTable({
                   sort={sort}
                   sortable={false}
                   sticky={freezeLead ? "lead" : false}
-                  className={cn(cellClass, "w-12 min-w-[3rem]")}
+                  resizable={layoutInteractive}
+                  className={cn(cellClass)}
                   onSort={toggleSort}
+                  onColumnResize={startSeriesResize}
+                  onColumnAutoFit={layoutInteractive ? autoFitColumn : undefined}
                 />
               ) : null}
               {displayCols.map((c, colIndex) => {
@@ -267,12 +354,26 @@ export function VitalSpanTable({
                     sort={sort}
                     sortable
                     sticky={sticky}
+                    resizable={layoutInteractive}
                     className={cn(cellClass, useContentLayout && "min-w-[5.5rem]")}
                     onSort={toggleSort}
+                    onColumnResize={(event) => startColumnResize(c, event)}
+                    onColumnAutoFit={layoutInteractive ? autoFitColumn : undefined}
                   />
                 );
               })}
             </tr>
+            {layoutInteractive ? (
+              <tr className="vs-table-row-resize pointer-events-none" aria-hidden>
+                <td colSpan={Math.max(layoutColumnCount, 1)} className="relative h-0 border-0 p-0">
+                  <TableResizeHandle
+                    orientation="row"
+                    className="pointer-events-auto -top-1"
+                    onPointerDown={startRowResize}
+                  />
+                </td>
+              </tr>
+            ) : null}
           </thead>
           <tbody>
             {pageRows.map((row, i) => (
@@ -286,6 +387,7 @@ export function VitalSpanTable({
                       columnAlignClass("center"),
                       freezeLead && "vs-table-sticky-col vs-table-sticky-lead",
                     )}
+                    style={rowStyle}
                   >
                     {seriesOffset + i + 1}
                   </td>
@@ -312,6 +414,7 @@ export function VitalSpanTable({
                         sticky === "first" && "vs-table-sticky-col vs-table-sticky-first",
                         drillable && "vs-table-drillable",
                       )}
+                      style={rowStyle}
                       onClick={
                         drillable
                           ? (event) => {

@@ -7,6 +7,10 @@ function d3Plan(plotType: string, options: Record<string, unknown>): ChartRender
   return { kind: "d3", plotType, options };
 }
 
+function errorPlan(message: string, plotType: string): ChartRenderPlan {
+  return { kind: "d3", plotType, options: { data: [] }, empty: true, error: message };
+}
+
 function emptyPlan(plotType = "Line"): ChartRenderPlan {
   return { kind: "d3", plotType, options: { data: [] }, empty: true };
 }
@@ -47,7 +51,7 @@ export function barRangePlan(
   const highField = spec.encoding.metrics[1]?.field ?? lowField;
   const li = colIndex(columns, lowField);
   const hi = colIndex(columns, highField);
-  if (li < 0) return emptyPlan("BarRange");
+  if (li < 0) return errorPlan(`指标列「${lowField}」不存在`, "BarRange");
 
   const data = aggregateDimMetric(spec, rows, columns, (row, di) => ({
     type: di >= 0 ? String(row[di] ?? "") : "?",
@@ -69,7 +73,7 @@ export function progressBarPlan(
 ): ChartRenderPlan {
   const metric = spec.encoding.metrics[0]?.field ?? "";
   const mi = colIndex(columns, metric);
-  if (mi < 0) return emptyPlan("ProgressBar");
+  if (mi < 0) return errorPlan(`指标列「${metric}」不存在`, "ProgressBar");
 
   const raw = aggregateDimMetric(spec, rows, columns, (row, di, idx) => ({
     type: di >= 0 ? String(row[di] ?? "") : "?",
@@ -97,7 +101,7 @@ export function bulletGraphPlan(
   const ai = colIndex(columns, actualField);
   const ti = colIndex(columns, targetField);
   const ri = rangeField ? colIndex(columns, rangeField) : -1;
-  if (ai < 0) return emptyPlan("Bullet");
+  if (ai < 0) return errorPlan(`指标列「${actualField}」不存在`, "Bullet");
 
   const data = aggregateDimMetric(spec, rows, columns, (row, di) => {
     const actual = Number(row[ai] ?? 0);
@@ -131,7 +135,7 @@ export function stockLinePlan(
   const ci = colIndex(columns, metrics[1] ?? metrics[0] ?? "");
   const li = colIndex(columns, metrics[2] ?? metrics[1] ?? metrics[0] ?? "");
   const hi = colIndex(columns, metrics[3] ?? metrics[2] ?? metrics[1] ?? metrics[0] ?? "");
-  if (di < 0 || oi < 0) return emptyPlan("Stock");
+  if (di < 0 || oi < 0) return errorPlan("K 线图缺少日期或价格列", "Stock");
 
   const data = rows.map((row) => {
     const open = Number(row[oi] ?? 0);

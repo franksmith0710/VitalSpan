@@ -1,9 +1,10 @@
-import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import { applyChartStyleChain } from "@/components/charts/engine/applyChartStyleChain";
 import { embeddedSizeChanged } from "@/components/charts/engine/embeddedContainerSize";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
+import { disposeD3Renderer, runD3Renderer } from "@/components/charts/engine/d3/core/d3RendererSession";
 import { renderD3Chart } from "@/components/charts/engine/d3/renderDispatch";
 import { buildD3DispatchPayload } from "@/components/charts/engine/d3/views/buildRenderConfig";
 import { d3ChartTestId } from "@/components/charts/engine/d3/views/d3TestId";
@@ -37,6 +38,7 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
 
   const { ref: sizeRef, size } = useElementSize<HTMLDivElement>({
     enabled: !fill,
@@ -73,7 +75,10 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
       try {
         const payload = buildD3DispatchPayload(props, plan, chartWidth, chartHeight);
         if (!payload) return;
-        renderD3Chart(el, plan, payload);
+        runD3Renderer(el, () => renderD3Chart(el, plan, payload));
+        setRenderError(null);
+      } catch (err) {
+        setRenderError(err instanceof Error ? err.message : "图表渲染失败");
       } finally {
         if (mode !== "live") setChartAnimationSuppressed(false);
       }
@@ -120,9 +125,24 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     return () => {
       if (liveTimerRef.current !== null) clearTimeout(liveTimerRef.current);
+      disposeD3Renderer(containerRef.current);
       setChartAnimationSuppressed(false);
     };
   }, []);
+
+  if (plan.error) {
+    return (
+      <motion.div
+        className={cn(
+          "flex items-center justify-center px-3 text-center text-theme-sm text-error-600 dark:text-error-400",
+          fill ? "absolute inset-0" : "min-h-[180px]",
+        )}
+        role="alert"
+      >
+        {plan.error}
+      </motion.div>
+    );
+  }
 
   if (plan.empty || (!mapEmptyOk && capped.length === 0)) {
     return (

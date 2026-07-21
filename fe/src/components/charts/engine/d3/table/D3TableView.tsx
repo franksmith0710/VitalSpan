@@ -31,6 +31,7 @@ function D3TableViewInner(props: ChartEngineViewProps) {
     onInteraction,
     onJumpClick,
     drillClickField,
+    onTableStylePatch,
   } = props;
 
   const [page, setPage] = useState(1);
@@ -156,6 +157,8 @@ function D3TableViewInner(props: ChartEngineViewProps) {
         metricFields={metricFields}
         embedded={fill}
         showSeriesNumber={profile?.showSeriesNumber}
+        layoutInteractive
+        onTableStylePatch={onTableStylePatch}
       />
     </div>
   );
