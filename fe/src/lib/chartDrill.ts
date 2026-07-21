@@ -167,7 +167,7 @@ const LEGACY_DRILLABLE_CHART_TYPES = new Set([
   "map",
 ]);
 
-const DRILLABLE_PALETTE_CATEGORIES = new Set(["compare", "trend", "distribute"]);
+const DRILLABLE_PALETTE_CATEGORIES = new Set(["compare", "trend", "distribute", "dual_axes"]);
 
 /** 是否支持点击下钻（须已配置 ≥2 级维度） */
 export function supportsChartDrillInteraction(config: ChartViewConfig): boolean {

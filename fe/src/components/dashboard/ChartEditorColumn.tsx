@@ -32,6 +32,7 @@ import { useChartInspector } from "./ChartInspectorContext";
 import { WidgetInspectorDelete } from "./widget-inspector-delete";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { chartHasAdvancedTab } from "@/lib/chartInspectorCapabilities";
+import { filterVisibleCatalogItems } from "@/lib/chartPaletteTaxonomy";
 
 function buildValidateSuccessMessage(cfg: ReturnType<typeof useChartInspector>["cfg"]): string {
   const dims = [...new Set(activeFieldRefs(cfg.dimensions).map((d) => d.field))];
@@ -165,7 +166,7 @@ export function ChartEditorColumn({
                   <SelectValue placeholder="选择图表类型" />
                 </SelectTrigger>
                 <SelectContent>
-                  {catalog.map((item) => (
+                  {filterVisibleCatalogItems(catalog).map((item) => (
                     <SelectItem key={item.type} value={item.type}>
                       {item.displayName ?? item.type}
                     </SelectItem>

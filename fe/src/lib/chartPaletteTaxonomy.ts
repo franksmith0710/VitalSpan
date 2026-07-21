@@ -37,6 +37,10 @@ function isVisibleCatalogItem(item: ChartTypeCatalogItem): boolean {
   return true;
 }
 
+export function filterVisibleCatalogItems(items: ChartTypeCatalogItem[]): ChartTypeCatalogItem[] {
+  return items.filter(isVisibleCatalogItem);
+}
+
 /** catalog / plugin 驱动 Picker 分区（paletteCategory） */
 export function buildDeStylePaletteSections(
   items: ChartTypeCatalogItem[],

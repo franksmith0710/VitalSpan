@@ -31,11 +31,15 @@ export function readChartPaintSize(
       };
     }
   }
-  const width = options.fill
+  const rawWidth = options.fill
     ? el.clientWidth
-    : (options.width ?? options.observedWidth ?? el.clientWidth);
-  const height = options.fill ? el.clientHeight : (options.height ?? el.clientHeight);
-  if (width <= 0 || height <= 0) return null;
+    : (typeof options.width === "number" ? options.width : 0) ||
+      options.observedWidth ||
+      el.clientWidth;
+  const rawHeight = options.fill ? el.clientHeight : (options.height ?? el.clientHeight);
+  const height = rawHeight > 0 ? rawHeight : 180;
+  const width = rawWidth > 0 ? rawWidth : Math.max(320, height);
+  if (height <= 0) return null;
   return { width: Math.round(width), height: Math.round(height) };
 }
 

@@ -55,6 +55,7 @@ describe("DashboardContextInspector", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: "整体配置" }));
     await user.click(screen.getByRole("button", { name: "组件比例" }));
     expect(onStyleChange).toHaveBeenCalledWith(
       expect.objectContaining({ scaleMode: "component" }),
@@ -76,6 +77,7 @@ describe("DashboardContextInspector", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: "整体配置" }));
     await user.click(screen.getByRole("button", { name: "自定义" }));
     expect(onStyleChange).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -96,6 +98,7 @@ describe("DashboardContextInspector", () => {
       />,
     );
 
+    await user.click(screen.getByRole("button", { name: "整体配置" }));
     expect(screen.getByTestId("dashboard-gap-custom-controls")).toBeInTheDocument();
     const slider = screen.getByRole("slider", { name: "自定义间隙滑块" });
     expect(slider).toHaveValue("3");
@@ -147,6 +150,7 @@ describe("DashboardContextInspector", () => {
   });
 
   it("shows chart style section with image and decorative border tabs", async () => {
+    const user = userEvent.setup();
     render(
       <DashboardContextInspector
         widgetCount={1}
@@ -159,9 +163,11 @@ describe("DashboardContextInspector", () => {
     );
 
     expect(screen.getByTestId("dashboard-widget-chart-style")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "图表样式" }));
     expect(screen.getByRole("button", { name: "图片" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "装饰边框" })).toBeInTheDocument();
     expect(screen.getByText("线框")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "图表配色" }));
     expect(screen.getByRole("switch", { name: "渐变颜色" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "显示图表标签" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "显示图表提示" })).toBeInTheDocument();

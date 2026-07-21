@@ -1,28 +1,39 @@
 ﻿import * as d3 from "d3";
 import {
   animateStrokePath,
-  applyRotatedCategoryLabels,
   buildAreaGenerator,
   buildLineGenerator,
-  cartesianMargin,
-  createTooltip,
   ensureGradientDef,
   groupSeries,
-  nearestCategory,
   normalizeCartesianData,
-  pickCategoryTicks,
   resolveDatumColor,
-  styleAxis,
-  tooltipHtml,
 } from "@/components/charts/engine/d3/d3LineVisual";
+import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { attachCrosshairHover, createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
+import {
+  buildCartesianScene,
+  drawCartesianAxes,
+  drawHorizontalGrid,
+} from "@/components/charts/engine/d3/core/sceneGraph";
+import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
+import {
+  createTooltipLayer,
+  hideTooltip,
+  showMergedTooltip,
+} from "@/components/charts/engine/d3/core/tooltipLayer";
+import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
+import { highlightCategoryDots } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianDatum, D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
 export type { D3CartesianDatum as D3LineDatum, D3CartesianRenderConfig as D3LineRenderConfig } from "@/components/charts/engine/d3/types";
 
 export type D3LineRenderConfig = D3CartesianRenderConfig;
+
 export function renderD3LineChart(container: HTMLElement, config: D3LineRenderConfig): () => void {
-  container.replaceChildren();
+  const incremental = container.dataset.vsIncremental === "true";
+  if (!incremental) container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
   const {
@@ -35,7 +46,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     smooth = false,
     isHorizontal = false,
     colors,
-    theme,
+    theme: rawTheme,
     showLabel,
     showTooltip,
     showLegend,
@@ -44,180 +55,102 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     markLines = [],
     conditionalRules = [],
     onPointClick,
+    dataZoom = false,
   } = config;
 
+  const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
-
   const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
   const seriesGroups = groupSeries(normalized, seriesField);
   const colorScale = d3.scaleOrdinal<string>().domain(seriesGroups.map((s) => s.name)).range(colors);
   const singleSeries = seriesGroups.length === 1;
 
-  const margin = cartesianMargin(Boolean(showLegend && seriesField));
-  const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
-
-  const root = d3
-    .select(container)
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("role", "img")
-    .style("overflow", "visible");
-
-  const defs = root.append("defs");
-  const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  g.append("clipPath")
-    .attr("id", "d3-line-clip")
-    .append("rect")
-    .attr("width", innerW)
-    .attr("height", innerH)
-    .attr("rx", 4);
-
-  let xScale: d3.ScalePoint<string> | d3.ScaleLinear<number, number>;
-  let yScale: d3.ScaleLinear<number, number> | d3.ScalePoint<string>;
-
   if (isHorizontal) {
-    xScale = d3.scalePoint<string>().domain(categories).range([0, innerH]).padding(0.5);
-    const maxVal = d3.max(normalized, (d) => Number(d.__value__)) ?? 0;
-    yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([0, innerW]);
-  } else {
-    xScale = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
-    const maxVal = d3.max(normalized, (d) => Number(d.__value__)) ?? 0;
-    yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
+    return renderHorizontalLineFallback(container, config, normalized, categories, seriesGroups, colorScale);
   }
 
-  const lineGen = buildLineGenerator(isHorizontal, smooth, xScale, yScale);
-  const areaGen = buildAreaGenerator(isHorizontal, smooth, innerH, xScale, yScale);
-  const xTicks = pickCategoryTicks(categories, innerW);
-  const rotateX = xTicks.length >= 6 && innerW / xTicks.length < 72 ? -32 : 0;
+  const scene = buildCartesianScene({
+    container,
+    width,
+    height,
+    showLegend: Boolean(showLegend && seriesField),
+    incremental,
+  });
+  const { root, defs, g, plot, innerW, innerH } = scene;
 
-  const plot = g.append("g").attr("clip-path", "url(#d3-line-clip)");
+  const maxVal = d3.max(normalized, (d) => Number(d.__value__)) ?? 0;
+  const xScale = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
+  const yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
 
-  if (!isHorizontal) {
-    plot
-      .append("g")
-      .attr("class", "grid")
-      .call(
-        d3
-          .axisLeft(yScale as d3.ScaleLinear<number, number>)
-          .ticks(5)
-          .tickSize(-innerW)
-          .tickFormat(() => ""),
-      )
-      .call((sel) => sel.select(".domain").remove())
-      .call((sel) => sel.selectAll(".tick line").attr("stroke", theme.gridLine).attr("stroke-opacity", 0.9));
-  }
+  drawHorizontalGrid(plot, { yScale, innerW, theme });
+  drawCartesianAxes({ g, xScale, yScale, categories, innerW, innerH, theme, valueFormat });
 
-  const xAxisG = g.append("g").attr("transform", `translate(0,${innerH})`);
-  const yAxisG = g.append("g");
+  plot.selectAll("*").remove();
 
-  if (isHorizontal) {
-    xAxisG.call(d3.axisLeft(xScale as d3.ScalePoint<string>)).call(styleAxis, theme);
-    yAxisG.call(d3.axisBottom(yScale as d3.ScaleLinear<number, number>)).call(styleAxis, theme);
-  } else {
-    xAxisG
-      .call(d3.axisBottom(xScale as d3.ScalePoint<string>).tickValues(xTicks))
-      .call(styleAxis, theme)
-      .call((sel) => {
-        sel
-          .selectAll("text")
-          .attr("transform", rotateX ? `rotate(${rotateX})` : null)
-          .style("text-anchor", rotateX ? "end" : "middle")
-          .attr("dx", rotateX ? "-0.4em" : null)
-          .attr("dy", rotateX ? "0.15em" : "0.71em");
-      });
-    yAxisG
-      .call(
-        d3
-          .axisLeft(yScale as d3.ScaleLinear<number, number>)
-          .ticks(5)
-          .tickFormat((d) => formatChartValue(d, valueFormat)),
-      )
-      .call(styleAxis, theme);
-  }
+  const lineGen = buildLineGenerator(false, smooth, xScale, yScale);
+  const areaGen = buildAreaGenerator(false, smooth, innerH, xScale, yScale);
 
   const markLineLayer = plot.append("g").attr("class", "mark-lines");
   for (const line of markLines.filter((m) => m.enabled && Number.isFinite(m.value))) {
-    const y = (yScale as d3.ScaleLinear<number, number>)(line.value);
+    const y = yScale(line.value);
     markLineLayer
       .append("line")
       .attr("x1", 0)
       .attr("x2", innerW)
       .attr("y1", y)
       .attr("y2", y)
-      .attr("stroke", line.color ?? "#465fff")
+      .attr("stroke", line.color ?? theme.accent)
       .attr("stroke-opacity", 0.85)
       .attr("stroke-dasharray", line.lineStyle === "solid" ? undefined : "5 4");
   }
 
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
-  const focusLayer = plot.append("g").attr("class", "focus").style("opacity", 0);
-  const crossV = focusLayer
-    .append("line")
-    .attr("y1", 0)
-    .attr("y2", innerH)
-    .attr("stroke", theme.axisLine)
-    .attr("stroke-dasharray", "4 4")
-    .attr("stroke-opacity", 0.85);
-  const crossDot = focusLayer.append("circle").attr("r", 5).attr("stroke", "#fff").attr("stroke-width", 2);
-
+  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  const crosshair = createCrosshair({ plot, innerW, innerH, theme });
   const dotLayers: d3.Selection<SVGCircleElement, D3CartesianDatum, SVGGElement, unknown>[] = [];
 
   seriesGroups.forEach((series, seriesIndex) => {
-    const color = colorScale(series.name) ?? colors[0] ?? "#465fff";
+    const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
     const gradId = ensureGradientDef(defs, `d3-line-grad-${seriesIndex}`, color, singleSeries ? 0.32 : 0.16, 0.01);
-
     const points = [...series.points].sort(
       (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
     );
 
-    if (!isHorizontal) {
-      plot
-        .append("path")
-        .datum(points)
-        .attr("fill", `url(#${gradId})`)
-        .attr("d", areaGen)
-        .attr("opacity", 0.95);
-    }
+    plot.append("path").datum(points).attr("fill", `url(#${gradId})`).attr("d", areaGen).attr("opacity", 0.95);
 
     const linePath = plot
       .append("path")
       .datum(points)
       .attr("fill", "none")
       .attr("stroke", color)
-      .attr("stroke-width", 2.5)
-      .attr("stroke-linecap", "round")
-      .attr("stroke-linejoin", "round")
+      .attr("stroke-width", VCDS.line.width)
+      .attr("stroke-linecap", VCDS.line.cap)
+      .attr("stroke-linejoin", VCDS.line.join)
       .attr("d", lineGen);
-    if (!isHorizontal) animateStrokePath(linePath);
+    animateStrokePath(linePath);
 
     const dots = plot
       .selectAll<SVGCircleElement, D3CartesianDatum>(`circle.series-${seriesIndex}`)
       .data(points)
       .join("circle")
       .attr("class", `series-${seriesIndex}`)
-      .attr("r", 3)
+      .attr("r", VCDS.dot.radius)
       .attr("fill", (d) => resolveDatumColor(Number(d.__value__), color, conditionalRules))
       .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5)
+      .attr("stroke-width", VCDS.dot.strokeWidth)
       .attr("opacity", 0.92)
       .attr("cursor", onPointClick ? "pointer" : "default")
-      .attr("cx", (d) => (xScale as d3.ScalePoint<string>)(String(d.__category__)) ?? 0)
-      .attr("cy", (d) => (yScale as d3.ScaleLinear<number, number>)(Number(d.__value__)));
-
+      .attr("cx", (d) => xScale(String(d.__category__)) ?? 0)
+      .attr("cy", (d) => yScale(Number(d.__value__)));
     dotLayers.push(dots);
-
     if (onPointClick) dots.on("click", (_event, datum) => onPointClick(datum));
 
-    if (showLabel && !isHorizontal) {
+    if (showLabel) {
       plot
         .selectAll<SVGTextElement, D3CartesianDatum>(`text.label-${seriesIndex}`)
         .data(points)
         .join("text")
-        .attr("class", `label-${seriesIndex}`)
-        .attr("x", (d) => (xScale as d3.ScalePoint<string>)(String(d.__category__)) ?? 0)
-        .attr("y", (d) => (yScale as d3.ScaleLinear<number, number>)(Number(d.__value__)) - 8)
+        .attr("x", (d) => xScale(String(d.__category__)) ?? 0)
+        .attr("y", (d) => yScale(Number(d.__value__)) - 8)
         .attr("text-anchor", "middle")
         .attr("fill", theme.axisLabel)
         .style("font-size", `${labelFontSize}px`)
@@ -225,84 +158,87 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     }
   });
 
-  function setActiveCategory(category: string | null) {
-    dotLayers.forEach((dots) => {
-      dots
-        .transition()
-        .duration(120)
-        .attr("r", (d) => (category && String(d.__category__) === category ? 5.5 : 3))
-        .attr("opacity", (d) => (category && String(d.__category__) === category ? 1 : 0.85));
-    });
-  }
+  const primaryColor = colorScale(seriesGroups[0]?.name ?? "") ?? colors[0] ?? theme.accent;
+  crosshair.dot.attr("fill", primaryColor);
 
-  if (!isHorizontal) {
-    plot
-      .append("rect")
-      .attr("width", innerW)
-      .attr("height", innerH)
-      .attr("fill", "transparent")
-      .style("cursor", "crosshair")
-      .on("mousemove", (event) => {
-        const [mx, my] = d3.pointer(event);
-        const category = nearestCategory(mx, categories, xScale as d3.ScalePoint<string>);
-        const cx = (xScale as d3.ScalePoint<string>)(category) ?? 0;
-        const rows = seriesGroups.map((series) => {
-          const point = series.points.find((p) => String(p.__category__) === category);
-          const color = colorScale(series.name) ?? colors[0] ?? "#465fff";
-          return { name: series.name, color, value: point?.__value__ ?? 0 };
-        });
-        const anchor = rows[0];
-        const cy = anchor
-          ? (yScale as d3.ScaleLinear<number, number>)(Number(anchor.value))
-          : my;
-
-        focusLayer.style("opacity", 1);
-        crossV.attr("x1", cx).attr("x2", cx);
-        crossDot.attr("cx", cx).attr("cy", cy).attr("fill", colorScale(seriesGroups[0]?.name ?? "") ?? colors[0]);
-        setActiveCategory(category);
-
-        if (tooltip) {
-          tooltip
-            .style("opacity", "1")
-            .html(tooltipHtml(category, rows, valueFormat));
-          const rect = container.getBoundingClientRect();
-          tooltip
-            .style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
-            .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
-        }
-      })
-      .on("mouseleave", () => {
-        focusLayer.style("opacity", 0);
-        setActiveCategory(null);
-        tooltip?.style("opacity", "0");
+  attachCrosshairHover({
+    plot,
+    innerW,
+    innerH,
+    categories,
+    xScale,
+    crosshair,
+    onCategory: (category, _mx, my, event) => {
+      const cx = xScale(category) ?? 0;
+      const rows = seriesGroups.map((series) => {
+        const point = series.points.find((p) => String(p.__category__) === category);
+        const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
+        return { name: series.name, color, value: point?.__value__ ?? 0 };
       });
-  }
+      const anchor = rows[0];
+      const cy = anchor ? yScale(Number(anchor.value)) : my;
+      crosshair.show(cx, cy, primaryColor);
+      highlightCategoryDots(dotLayers, category);
+      showMergedTooltip(tooltip, container, event, category, rows, valueFormat, width);
+    },
+    onLeave: () => {
+      highlightCategoryDots(dotLayers, null);
+      hideTooltip(tooltip);
+    },
+  });
 
+  root.selectAll("g.vs-inline-legend").remove();
   if (showLegend && seriesField) {
-    const legend = root.append("g").attr("transform", `translate(${margin.left},10)`);
+    const legend = root.append("g").attr("class", "vs-inline-legend").attr("transform", `translate(${scene.margin.left},10)`);
     let offsetX = 0;
     seriesGroups.forEach((series) => {
-      const color = colorScale(series.name) ?? colors[0] ?? "#465fff";
-      const label = series.name || "绯诲垪";
+      const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
+      const label = series.name || "系列";
       const item = legend.append("g").attr("transform", `translate(${offsetX},0)`);
-      item
-        .append("rect")
-        .attr("width", 14)
-        .attr("height", 6)
-        .attr("y", 2)
-        .attr("rx", 3)
-        .attr("fill", color)
-        .attr("opacity", 0.9);
-      item
-        .append("text")
-        .attr("x", 18)
-        .attr("y", 10)
-        .attr("fill", theme.legendText)
-        .style("font-size", "11px")
-        .text(label);
+      item.append("rect").attr("width", 14).attr("height", 6).attr("y", 2).attr("rx", 3).attr("fill", color);
+      item.append("text").attr("x", 18).attr("y", 10).attr("fill", theme.legendText).style("font-size", "11px").text(label);
       offsetX += label.length * 7 + 36;
     });
   }
 
-  return () => container.replaceChildren();
+  writeIncrementalSession(container, { plotType: "Line", width, height });
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+
+  return () => {
+    detachZoom();
+    if (!incremental) container.replaceChildren();
+  };
+}
+
+function renderHorizontalLineFallback(
+  container: HTMLElement,
+  config: D3LineRenderConfig,
+  normalized: D3CartesianDatum[],
+  categories: string[],
+  seriesGroups: ReturnType<typeof groupSeries>,
+  colorScale: d3.ScaleOrdinal<string, string>,
+): () => void {
+  container.replaceChildren();
+  const { width, height, colors, theme: rawTheme, smooth, showTooltip, valueFormat, onPointClick } = config;
+  const theme = themeFromConfig(rawTheme);
+  const scene = buildCartesianScene({ container, width, height, showLegend: false });
+  const maxVal = d3.max(normalized, (d) => Number(d.__value__)) ?? 0;
+  const xScale = d3.scalePoint<string>().domain(categories).range([0, scene.innerH]).padding(0.5);
+  const yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([0, scene.innerW]);
+  const lineGen = buildLineGenerator(true, smooth, xScale, yScale);
+  seriesGroups.forEach((series, i) => {
+    const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
+    scene.plot
+      .append("path")
+      .datum(series.points)
+      .attr("fill", "none")
+      .attr("stroke", color)
+      .attr("stroke-width", VCDS.line.width)
+      .attr("d", lineGen);
+  });
+  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  return () => {
+    hideTooltip(tooltip);
+    container.replaceChildren();
+  };
 }

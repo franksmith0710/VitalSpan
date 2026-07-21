@@ -400,6 +400,18 @@ python -m pytest tests/test_viz_chart_catalog_parity.py -q
 
 ---
 
+## 5. L4–L6 视觉/动效/性能（VCDS）
+
+> 真理源：[`2026-07-21-d3-visual-excellence.md`](./2026-07-21-d3-visual-excellence.md)
+
+| 层级 | 代号 | 抽检类型 | 证据 |
+|------|------|----------|------|
+| L4 | LOOK | line, bar, pie, map, table | `[MANUAL]` 暗色/浅色对照 |
+| L5 | FEEL | line, pie, kpi | `[MANUAL]` 入场/hover/count-up |
+| L6 | FAST | line embedded resize, table scroll | `[AUTO]` core tests · `[MANUAL]` 大屏缩放 |
+
+---
+
 ## 修订记录
 
 | 日期 | 说明 |

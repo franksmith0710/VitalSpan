@@ -51,7 +51,6 @@ export function ChartTableStylePanel() {
   return (
     <DashboardConfigSection
       title={`${profile.label} · 基础样式`}
-      defaultOpen
       compact
       data-testid="table-style-basic"
     >

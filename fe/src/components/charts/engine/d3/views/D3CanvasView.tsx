@@ -21,6 +21,17 @@ type PaintMode = "data" | "live" | "commit";
 
 const LIVE_RESIZE_THROTTLE_MS = 100;
 
+function resolvePaintWidth(
+  el: HTMLElement,
+  width: number | string | undefined,
+  observedWidth: number,
+  height: number,
+): number {
+  const fromProp = typeof width === "number" ? width : 0;
+  const fromDom = el.clientWidth || observedWidth || fromProp;
+  return fromDom > 0 ? fromDom : Math.max(320, height);
+}
+
 function D3CanvasViewInner(props: ChartEngineViewProps) {
   const { viewModel, style, chartConfig, fill = false, height = 180, width, ariaLabel } = props;
 
@@ -63,12 +74,14 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
       if (!el || plan.kind !== "d3" || plan.empty) return;
       if (!mapEmptyOk && capped.length === 0) return;
 
-      const chartWidth = fill ? el.clientWidth : (width ?? size.width ?? el.clientWidth);
+      const chartWidth = fill ? el.clientWidth : resolvePaintWidth(el, width, size.width ?? 0, height);
       const chartHeight = fill ? el.clientHeight : height;
       const next = { width: Math.round(chartWidth), height: Math.round(chartHeight) };
       if (next.width <= 0 || next.height <= 0) return;
       if (!force && !embeddedSizeChanged(next, lastMeasureRef.current)) return;
       lastMeasureRef.current = next;
+
+      el.dataset.vsIncremental = mode === "live" ? "true" : "false";
 
       const suppressAnim = mode === "live" || mode === "commit";
       setChartAnimationSuppressed(suppressAnim);
@@ -132,7 +145,7 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
 
   if (plan.error) {
     return (
-      <motion.div
+      <div
         className={cn(
           "flex items-center justify-center px-3 text-center text-theme-sm text-error-600 dark:text-error-400",
           fill ? "absolute inset-0" : "min-h-[180px]",
@@ -140,7 +153,7 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
         role="alert"
       >
         {plan.error}
-      </motion.div>
+      </div>
     );
   }
 
@@ -161,9 +174,14 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
 
   return (
     <div className={cn("w-full", fill ? "absolute inset-0 flex min-h-0 flex-col" : "min-h-[120px]")} aria-label={ariaLabel}>
-      {truncated && !fill ? (
+      {truncated ? (
         <p role="status" className="mb-2 shrink-0 text-theme-sm text-warning-600 dark:text-warning-400">
           数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条</p>
+      ) : null}
+      {renderError ? (
+        <p role="alert" className="mb-2 shrink-0 text-theme-sm text-error-600 dark:text-error-400">
+          {renderError}
+        </p>
       ) : null}
       <div
         ref={setContainerRef}

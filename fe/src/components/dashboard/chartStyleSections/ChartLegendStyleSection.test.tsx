@@ -27,7 +27,8 @@ const widget: LayoutWidget = {
 afterEach(cleanup);
 
 describe("ChartLegendStyleSection", () => {
-  it("switch is on by default in embedded chart inspector", () => {
+  it("switch is on by default in embedded chart inspector", async () => {
+    const user = userEvent.setup();
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={qc}>
@@ -37,6 +38,7 @@ describe("ChartLegendStyleSection", () => {
       </QueryClientProvider>,
     );
 
+    await user.click(screen.getByRole("button", { name: "图例" }));
     expect(screen.getByRole("switch", { name: "显示图例" })).toHaveAttribute(
       "aria-checked",
       "true",

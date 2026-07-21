@@ -3,9 +3,8 @@ import { Link } from "react-router";
 import { ExternalLink, Filter, GripVertical, Plus } from "lucide-react";
 import type { ChartType } from "@/lib/chartViewConfig";
 import { setChartTypeDragData, setFilterWidgetDragData } from "@/lib/dashboardDnd";
-import { fetchChartTypeCatalog, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
+import { fetchChartTypeCatalog, buildFallbackCatalogItems, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
 import {
-  FALLBACK_CATALOG_ITEMS,
   groupCatalogItemsByCategory,
 } from "@/lib/chartTypeCatalogDisplay";
 import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
@@ -157,7 +156,7 @@ export function WidgetPalette({ onInsert, embedded = false }: WidgetPaletteProps
   }, []);
 
   const groups = useMemo(() => {
-    const items = catalog?.length ? catalog : FALLBACK_CATALOG_ITEMS;
+    const items = catalog?.length ? catalog : buildFallbackCatalogItems();
     return groupCatalogItemsByCategory(items);
   }, [catalog]);
 

@@ -102,5 +102,5 @@ export function engineSupports(
 }
 
 export function listRegisteredEngines(): ChartEngineId[] {
-  return ["antv", "table"];
+  return ["d3", "antv", "table"];
 }

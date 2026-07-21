@@ -1,7 +1,13 @@
+import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { motionDuration } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import * as d3 from "d3";
+import { renderScatterCanvasLayer } from "@/components/charts/engine/d3/core/canvasScatterLayer";
 import { styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
-import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
+import { drawScatterMarkLines } from "@/components/charts/engine/d3/core/markLines";
+import { resolveRenderMode, sampleIndices } from "@/components/charts/engine/d3/core/perfRouter";
+import { createTooltipLayer, showMergedTooltip, hideTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
+import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -9,7 +15,19 @@ type ScatterDatum = Record<string, string | number>;
 
 export function renderD3ScatterChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, options, onPointClick } = config;
+  const {
+    width,
+    height,
+    colors,
+    theme: rawTheme,
+    showLabel,
+    showTooltip,
+    valueFormat,
+    options,
+    onPointClick,
+    markLines = [],
+  } = config;
+  const theme = themeFromConfig(rawTheme);
   const data = (options.data as ScatterDatum[]) ?? [];
   const xField = String(options.xField ?? "x");
   const yField = String(options.yField ?? "y");
@@ -19,6 +37,13 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
   const margin = cartesianMargin(false);
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
+  const renderMode = resolveRenderMode(data.length, "Scatter");
+  const useCanvas = renderMode === "hybrid-canvas";
+  const maxSvgPoints =
+    renderMode === "svg-full" ? data.length : VCDS.perf.svgSampleMaxPoints;
+  const svgIndices =
+    renderMode === "svg-full" ? data.map((_, i) => i) : sampleIndices(data.length, maxSvgPoints);
+  const svgData = svgIndices.map((i) => data[i]);
 
   const xExtent = d3.extent(data, (d) => Number(d[xField])) as [number, number];
   const yExtent = d3.extent(data, (d) => Number(d[yField])) as [number, number];
@@ -35,7 +60,9 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     .append("svg")
     .attr("width", width)
     .attr("height", height)
-    .attr("role", "img");
+    .attr("role", "img")
+    .style("position", useCanvas ? "relative" : undefined)
+    .style("z-index", useCanvas ? "1" : undefined);
 
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
@@ -62,58 +89,110 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     .call(d3.axisLeft(yScale).ticks(5))
     .call(styleAxis, theme);
 
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  drawScatterMarkLines(plot, markLines, xScale, yScale, innerW, innerH);
+
+  let removeCanvas = () => undefined;
+  if (useCanvas) {
+    const canvasPoints = data.map((d) => {
+      const key = colorField ? String(d[colorField] ?? "") : "value";
+      return {
+        x: xScale(Number(d[xField])),
+        y: yScale(Number(d[yField])),
+        color: colorScale(key) ?? colors[0] ?? theme.accent,
+      };
+    });
+    removeCanvas = renderScatterCanvasLayer(container, canvasPoints, width, height, margin);
+  }
+
+  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
   plot
     .selectAll<SVGCircleElement, ScatterDatum>("circle.point")
-    .data(data)
+    .data(svgData)
     .join("circle")
     .attr("class", "point")
-    .attr("r", 4.5)
+    .attr("r", useCanvas ? VCDS.dot.radius : VCDS.dot.radius + 1.5)
     .attr("cx", (d) => xScale(Number(d[xField])))
     .attr("cy", (d) => yScale(Number(d[yField])))
     .attr("fill", (d) => {
       const key = colorField ? String(d[colorField] ?? "") : "value";
-      return colorScale(key) ?? colors[0] ?? "#465fff";
+      return colorScale(key) ?? colors[0] ?? theme.accent;
     })
     .attr("stroke", "#fff")
     .attr("stroke-width", 1.5)
-    .attr("opacity", 0.9)
+    .attr("opacity", useCanvas ? 0 : 0.9)
     .style("cursor", onPointClick ? "pointer" : "default")
     .on("mouseenter", function () {
-      d3.select(this).attr("r", 6).attr("opacity", 1);
+      if (useCanvas) return;
+      d3.select(this).transition().duration(motionDuration("hover")).attr("r", VCDS.dot.activeRadius).attr("opacity", 1);
     })
     .on("mouseleave", function () {
-      d3.select(this).attr("r", 4.5).attr("opacity", 0.9);
-      tooltip?.style("opacity", "0");
+      if (useCanvas) return;
+      d3.select(this).transition().duration(motionDuration("hover")).attr("r", VCDS.dot.radius + 1.5).attr("opacity", 0.9);
+      hideTooltip(tooltip);
     })
     .on("mousemove", (event, d) => {
       if (!tooltip) return;
       const series = colorField ? String(d[colorField] ?? "") : "";
-      const color = colorScale(series || "value") ?? colors[0] ?? "#465fff";
+      const color = colorScale(series || "value") ?? colors[0] ?? theme.accent;
       const title = series || `${xField} / ${yField}`;
-      tooltip
-        .style("opacity", "1")
-        .html(
-          tooltipHtml(
-            title,
-            [
-              { name: xField, color, value: d[xField] },
-              { name: yField, color, value: d[yField] },
-            ],
-            valueFormat,
-          ),
-        );
-      const rect = container.getBoundingClientRect();
-      tooltip
-        .style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
-        .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+      showMergedTooltip(
+        tooltip,
+        container,
+        event,
+        title,
+        [
+          { name: xField, color, value: d[xField] },
+          { name: yField, color, value: d[yField] },
+        ],
+        valueFormat,
+        width,
+      );
     })
     .on("click", (_event, d) => onPointClick?.(d as D3Datum));
 
-  if (showLabel) {
+  if (useCanvas && showTooltip) {
+    plot
+      .append("rect")
+      .attr("width", innerW)
+      .attr("height", innerH)
+      .attr("fill", "transparent")
+      .style("cursor", "crosshair")
+      .on("mousemove", (event) => {
+        const [mx, my] = d3.pointer(event);
+        let best: ScatterDatum | null = null;
+        let bestDist = Infinity;
+        for (const d of data) {
+          const dx = xScale(Number(d[xField])) - mx;
+          const dy = yScale(Number(d[yField])) - my;
+          const dist = dx * dx + dy * dy;
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = d;
+          }
+        }
+        if (!best || !tooltip) return;
+        const series = colorField ? String(best[colorField] ?? "") : "";
+        const color = colorScale(series || "value") ?? colors[0] ?? theme.accent;
+        showMergedTooltip(
+          tooltip,
+          container,
+          event,
+          series || `${xField} / ${yField}`,
+          [
+            { name: xField, color, value: best[xField] },
+            { name: yField, color, value: best[yField] },
+          ],
+          valueFormat,
+          width,
+        );
+      })
+      .on("mouseleave", () => hideTooltip(tooltip));
+  }
+
+  if (showLabel && !useCanvas) {
     plot
       .selectAll<SVGTextElement, ScatterDatum>("text.scatter-label")
-      .data(data)
+      .data(svgData)
       .join("text")
       .attr("class", "scatter-label")
       .attr("x", (d) => xScale(Number(d[xField])) + 6)
@@ -126,5 +205,8 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
       });
   }
 
-  return () => container.replaceChildren();
+  return () => {
+    removeCanvas();
+    container.replaceChildren();
+  };
 }

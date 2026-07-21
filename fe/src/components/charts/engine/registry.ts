@@ -31,6 +31,7 @@ export function getEngineIdForChartType(chartType: string): ChartEngineId {
   const plugin = resolvePlugin(chartType);
   if (plugin) {
     if (plugin.renderer === "table") return "table";
+    if (plugin.library === "d3") return "d3";
     return "antv";
   }
   if (chartType === "table") return "table";
@@ -77,11 +78,7 @@ export async function exportChartPng(
   if (engine === "table") {
     throw new Error("当前图表类型不支持 PNG 导出");
   }
-  const plugin = getChartPlugin(chartType);
-  if (engine === "table") {
-    throw new Error("当前图表类型不支持 PNG 导出");
-  }
-  exportD3PngFromContainer(container, title ?? "chart");
+  await exportD3PngFromContainer(container, title ?? "chart");
 }
 
 export function listRegisteredCanvasChartTypes(): string[] {

@@ -21,6 +21,7 @@ import { renderD3PieChart } from "@/components/charts/engine/d3/radial/renderPie
 import { renderD3KpiChart } from "@/components/charts/engine/d3/quota/renderKpi";
 import { renderD3RadarChart } from "@/components/charts/engine/d3/radial/renderRadar";
 import { renderD3QuadrantChart } from "@/components/charts/engine/d3/relation/renderQuadrant";
+import { renderD3ScatterChart } from "@/components/charts/engine/d3/relation/renderScatter";
 import type {
   D3BarRangeRenderConfig,
   D3BidirectionalBarRenderConfig,

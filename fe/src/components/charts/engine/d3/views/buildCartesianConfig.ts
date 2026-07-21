@@ -70,6 +70,7 @@ export function buildCartesianRenderConfig(
     markLines: chartConfig ? readChartMarkLines(chartConfig) : markLinesFromPlan ?? style.deFeatures?.markLines,
     conditionalRules:
       chartConfig ? readChartConditionalRules(chartConfig) : conditionalFromPlan ?? style.deFeatures?.conditionalRules,
+    dataZoom: Boolean(options.__dataZoom),
     onPointClick:
       onInteraction || onJumpClick
         ? (datum) => {

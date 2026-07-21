@@ -3,7 +3,7 @@ import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
-import { readChartConditionalRules } from "@/lib/chartDeFeatures";
+import { readChartConditionalRules, readChartMarkLines } from "@/lib/chartDeFeatures";
 
 export function buildD3StyleProps(props: ChartEngineViewProps, plan: ChartRenderPlan) {
   const { style, chartConfig, isDark } = props;
@@ -31,6 +31,10 @@ export function buildD3StyleProps(props: ChartEngineViewProps, plan: ChartRender
   const conditionalRules = chartConfig
     ? readChartConditionalRules(chartConfig)
     : conditionalFromPlan ?? style.deFeatures?.conditionalRules;
+  const markLinesFromPlan = options.__markLines as ReturnType<typeof readChartMarkLines>;
+  const markLines = chartConfig
+    ? readChartMarkLines(chartConfig)
+    : markLinesFromPlan ?? style.deFeatures?.markLines;
 
   return {
     colors,
@@ -41,5 +45,6 @@ export function buildD3StyleProps(props: ChartEngineViewProps, plan: ChartRender
     labelFontSize: style.labelPresentation.fontSize,
     valueFormat: style.valueFormat,
     conditionalRules,
+    markLines,
   };
 }

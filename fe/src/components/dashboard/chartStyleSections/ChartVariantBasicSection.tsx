@@ -43,7 +43,7 @@ export function ChartVariantBasicSection() {
   const options = variants.map((v) => ({ value: v, label: styleVariantLabel(v) }));
 
   return (
-    <DashboardConfigSection title="基础样式" defaultOpen compact data-testid="chart-variant-basic">
+    <DashboardConfigSection title="基础样式" compact data-testid="chart-variant-basic">
       {options.length <= 4 ? (
         <ChartDeSegmentField
           label={cfg.chartType === "pie" ? "饼图类型" : "图表类型"}

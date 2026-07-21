@@ -890,6 +890,24 @@ html.admin-fill-lock #root {
   background-color: var(--dashboard-table-row-hover-bg, rgba(70, 95, 255, 0.06)) !important;
 }
 
+.vs-chart-table[data-row-hover] tbody tr:hover td:first-child {
+  box-shadow: inset 3px 0 0 var(--dashboard-table-accent, #465fff);
+}
+
+.vs-chart-table[data-density="compact"] :where(.vs-table-th, .vs-table-td) {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.vs-chart-table[data-density="comfortable"] :where(.vs-table-th, .vs-table-td) {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.vs-chart-table tbody tr {
+  transition: background-color 150ms ease;
+}
+
 .vs-chart-table[data-freeze-lead] .vs-table-sticky-lead {
   position: sticky;
   left: 0;

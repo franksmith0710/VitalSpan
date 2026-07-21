@@ -7,6 +7,7 @@ import { resolveDatasetChartBinding } from "@/lib/datasetChartBinding";
 import { queryKeys } from "@/lib/queryKeys";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { fetchChartTypeCatalog, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
+import { filterVisibleCatalogItems } from "@/lib/chartPaletteTaxonomy";
 import { useInspectorColumns } from "@/hooks/useInspectorColumns";
 import type { LayoutWidget } from "./layoutUtils";
 import { defaultChartConfig } from "./layoutUtils";
@@ -69,7 +70,7 @@ export function useChartInspectorState(
   const typeLabel = WIDGET_CHART_LABELS[cfg.chartType] ?? cfg.chartType;
   const chartTypeOptions =
     catalog.length > 0
-      ? catalog
+      ? filterVisibleCatalogItems(catalog)
       : [{ type: cfg.chartType, displayName: typeLabel } as ChartTypeCatalogItem];
 
   const handleDatasetSelect = useCallback(

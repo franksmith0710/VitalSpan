@@ -54,7 +54,13 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   const geo = getOfflineGeoMap(mapId);
   if (!geo?.features?.length) {
     container.replaceChildren();
-    return () => undefined;
+    const msg = document.createElement("div");
+    msg.className =
+      "flex h-full items-center justify-center px-3 text-center text-theme-sm text-error-600 dark:text-error-400";
+    msg.setAttribute("role", "alert");
+    msg.textContent = "离线地图资产缺失，无法渲染";
+    container.appendChild(msg);
+    return () => container.replaceChildren();
   }
 
   const features = joinOfflineMapFeatures(
@@ -111,7 +117,12 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .attr("stroke-width", 0.8)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .on("mouseenter", function (_event, d) {
-      d3.select(this).attr("stroke-width", 1.4).attr("opacity", 0.92);
+      d3.select(this)
+        .transition()
+        .duration(120)
+        .attr("stroke-width", 1.6)
+        .attr("transform", "translate(0,-1)")
+        .attr("opacity", 1);
       if (!tooltip) return;
       tooltip
         .style("opacity", "1")
@@ -128,7 +139,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
         .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
     })
     .on("mouseleave", function () {
-      d3.select(this).attr("stroke-width", 0.8).attr("opacity", 1);
+      d3.select(this).attr("stroke-width", 0.8).attr("transform", null).attr("opacity", 1);
       tooltip?.style("opacity", "0");
     })
     .on("click", (_event, d) => onPointClick?.({ name: d.name, value: d.value, adcode: d.adcode }));

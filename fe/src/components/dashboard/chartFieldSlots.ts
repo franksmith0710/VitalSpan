@@ -41,14 +41,21 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
           { kind: "metric", index: 0, label: "值轴 / 指标", required: true, showAggregation: true },
           { kind: "dimension", index: 2, label: "钻取 / 维度", required: false },
         ];
-      case "dual_axes":
+      case "dual_axes": {
+        const subLabel =
+          chartType === "chart-mix-stack"
+            ? "堆叠项 / 维度"
+            : chartType === "chart-mix-group"
+              ? "分组项 / 维度"
+              : "子类别 / 维度";
         return [
           { kind: "dimension", index: 0, label: "类别轴 / 维度", required: true },
-          { kind: "dimension", index: 1, label: "子类别 / 维度", required: false },
-          { kind: "metric", index: 0, label: "柱指标 / 指标", required: true, showAggregation: true },
-          { kind: "metric", index: 1, label: "线指标 / 指标", required: true, showAggregation: true },
+          { kind: "dimension", index: 1, label: subLabel, required: false },
+          { kind: "metric", index: 0, label: "左值轴 / 柱指标", required: true, showAggregation: true },
+          { kind: "metric", index: 1, label: "右值轴 / 线指标", required: true, showAggregation: true },
           { kind: "dimension", index: 2, label: "钻取 / 维度", required: false },
         ];
+      }
       case "distribute":
         return [
           { kind: "dimension", index: 0, label: "扇区 / 维度", required: true },

@@ -7,6 +7,7 @@ const PLOT_TEST_IDS: Record<string, string> = {
   Liquid: "d3-liquid-chart",
   Radar: "d3-radar-chart",
   Scatter: "d3-scatter-chart",
+  Quadrant: "d3-quadrant-chart",
   DualAxes: "d3-dual-axes-chart",
   Funnel: "d3-funnel-chart",
   Sankey: "d3-sankey-chart",

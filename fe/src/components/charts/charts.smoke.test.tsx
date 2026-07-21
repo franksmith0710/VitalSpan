@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ChartRenderer } from "./ChartRenderer";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -334,10 +334,19 @@ describe("ChartRenderer smoke", () => {
     for (const item of CHART_CATALOG_SMOKE_CASES) {
       cleanup();
       renderChartCase(item);
-      expect(
-        await screen.findByTestId(item.testId),
-        `chartType=${item.type} testId=${item.testId}`,
-      ).toBeInTheDocument();
+      const host = await screen.findByTestId(item.testId, undefined, {
+        timeout: 5000,
+      });
+      expect(host, `chartType=${item.type} testId=${item.testId}`).toBeInTheDocument();
+      await waitFor(
+        () => {
+          expect(
+            host.querySelector("svg, table, [role='group']"),
+            `chartType=${item.type} missing render root`,
+          ).toBeTruthy();
+        },
+        { timeout: 3000 },
+      );
     }
   });
 

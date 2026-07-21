@@ -67,14 +67,17 @@ describe("ChartStylePanel", () => {
     );
 
     expect(await screen.findByRole("button", { name: "图表配色" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "标题" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "图例" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "背景" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "图表配色" }));
     expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
     expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "渐变颜色" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "显示图表标签" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "显示图表提示" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "标题" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "图例" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "背景" })).toBeInTheDocument();
+    expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "背景" }));
     expect(screen.getByRole("button", { name: "图片" })).toBeInTheDocument();
@@ -93,6 +96,7 @@ describe("ChartStylePanel", () => {
       </QueryClientProvider>,
     );
 
+    await user.click(screen.getByRole("button", { name: "图表配色" }));
     await user.click(screen.getByRole("button", { name: "配色方案" }));
     await user.click(screen.getByRole("option", { name: /浅韵/ }));
 
@@ -132,6 +136,7 @@ describe("ChartStylePanel", () => {
       </QueryClientProvider>,
     );
 
+    await user.click(screen.getByRole("button", { name: "图表配色" }));
     await user.click(screen.getByRole("button", { name: "配色方案" }));
     await user.click(screen.getByRole("option", { name: /浅韵/ }));
 

@@ -20,7 +20,6 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   return (
     <DashboardConfigSection
       title={chartType === "map" ? "地图样式" : "热力图样式"}
-      defaultOpen
       compact
     >
       <div className={INSPECTOR_SECTION_GAP}>

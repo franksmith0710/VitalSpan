@@ -39,6 +39,17 @@ function specWithMetrics(spec: RenderSpec, metricFields: string[]): RenderSpec {
   };
 }
 
+/** 双轴线侧仅类别轴聚合，不拆分子类别维 */
+function trimSpecToCategoryAxis(spec: RenderSpec): RenderSpec {
+  return {
+    ...spec,
+    encoding: {
+      ...spec.encoding,
+      dimensions: spec.encoding.dimensions.slice(0, 1),
+    },
+  };
+}
+
 /** 仪表盘/水波图：0~1 原样；1~100 视为百分比；更大数值满弧展示原值 */
 function resolveQuotaPercent(value: number): { percent: number; rawValue: number } {
   if (!Number.isFinite(value)) return { percent: 0, rawValue: 0 };
@@ -257,18 +268,19 @@ function dualAxesPlan(
   mode: "default" | "group" | "stack" | "dual-line",
 ): ChartRenderPlan {
   const metrics = spec.encoding.metrics.map((m) => m.field).filter(Boolean);
-  const lineMetric = metrics[0] ?? "";
-  const columnMetric = metrics[1] ?? metrics[0] ?? "";
+  const catSpec = trimSpecToCategoryAxis(spec);
 
   if (mode === "dual-line") {
+    const leftMetric = metrics[0] ?? "";
+    const rightMetric = metrics[1] ?? metrics[0] ?? "";
     const lineEnc = encodeCartesianRows(
-      specWithMetrics(spec, [lineMetric]),
+      specWithMetrics(catSpec, [leftMetric]),
       rows,
       columns,
       "line",
     );
     const lineEnc2 = encodeCartesianRows(
-      specWithMetrics(spec, [columnMetric]),
+      specWithMetrics(catSpec, [rightMetric]),
       rows,
       columns,
       "line",
@@ -277,13 +289,15 @@ function dualAxesPlan(
       data: [lineEnc.data, lineEnc2.data],
       xField: lineEnc.xField,
       yField: [lineEnc.yField, lineEnc2.yField],
-      lineLabels: [lineMetric, columnMetric],
+      lineLabels: [leftMetric, rightMetric],
       geometryOptions: [{ geometry: "line" }, { geometry: "line" }],
     });
   }
 
+  const columnMetric = metrics[0] ?? "";
+  const lineMetric = metrics[1] ?? metrics[0] ?? "";
   const lineEnc = encodeCartesianRows(
-    specWithMetrics(spec, [lineMetric]),
+    specWithMetrics(catSpec, [lineMetric]),
     rows,
     columns,
     "line",
@@ -299,6 +313,7 @@ function dualAxesPlan(
     xField: lineEnc.xField,
     yField: [lineEnc.yField, barEnc.yField],
     lineLabels: [lineMetric, columnMetric],
+    columnSeriesField: barEnc.seriesField,
     geometryOptions: [
       { geometry: "line" },
       { geometry: "column", isGroup: mode === "group", isStack: mode === "stack" },

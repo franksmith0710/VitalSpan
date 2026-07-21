@@ -84,6 +84,7 @@ export function buildD3DispatchPayload(
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
         valueFormat: styleProps.valueFormat,
+        conditionalRules: styleProps.conditionalRules,
         onPointClick: props.onInteraction
           ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.x, label: `${datum.x}/${datum.y}` })
           : undefined,
@@ -108,11 +109,14 @@ export function buildD3DispatchPayload(
           { geometry: "column"; isGroup?: boolean; isStack?: boolean },
         ],
         lineLabels: options.lineLabels as [string, string] | undefined,
+        columnSeriesField: options.columnSeriesField as string | undefined,
         colors: styleProps.colors,
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
         showLegend: styleProps.showLegend,
         valueFormat: styleProps.valueFormat,
+        markLines: styleProps.markLines,
+        conditionalRules: styleProps.conditionalRules,
         onPointClick: onDatumClick(props, xField),
       },
     };
@@ -201,6 +205,7 @@ export function buildD3DispatchPayload(
       labelFontSize: styleProps.labelFontSize,
       valueFormat: styleProps.valueFormat,
       conditionalRules: styleProps.conditionalRules,
+      markLines: styleProps.markLines,
       onPointClick: props.onInteraction
         ? (datum) => {
             const label = String(datum.type ?? datum.stage ?? datum.name ?? datum.word ?? "");

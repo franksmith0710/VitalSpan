@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { Table2 } from "lucide-react";
+import { useScrollTop, useTableVirtualRows } from "@/components/charts/engine/d3/table/useTableVirtualRows";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { dwTableCell } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
@@ -102,6 +103,7 @@ export function VitalSpanTable({
   testId = "d3-table-chart",
 }: VitalSpanTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const { sort, toggle: toggleSort } = useTableClientSort();
   const remeasureLayout = useCallback(() => {
@@ -113,6 +115,7 @@ export function VitalSpanTable({
   const paginationMode = tableStyle.paginationMode ?? "page";
   const wordWrap = tableStyle.wordWrap ?? false;
   const rowHover = tableStyle.rowHover !== false;
+  const density = tableStyle.paginationVariant === "compact" ? "compact" : "comfortable";
   const zebraBg =
     resolveTableZebraBg(tableStyle) ??
     (typeof themeVars?.["--dashboard-table-zebra-bg"] === "string"
@@ -135,6 +138,7 @@ export function VitalSpanTable({
   }, [sort, onPageChange]);
 
   const usePagination = paginationMode === "page" && sortedRows.length > pageSize;
+  const scrollMode = paginationMode === "scroll";
   const pageRows = usePagination
     ? sortedRows.slice((page - 1) * pageSize, page * pageSize)
     : sortedRows;
@@ -204,6 +208,17 @@ export function VitalSpanTable({
   const useContentLayout = usePixelLayout || columnWidthMode === "fixed";
   const freezeLead = useContentLayout && layoutColumnCount > 1;
   const applyRowHeight = usePixelLayout;
+
+  const { scrollTop, viewportHeight } = useScrollTop(scrollRef);
+  const virtual = useTableVirtualRows({
+    rowCount: pageRows.length,
+    rowHeightPx: pixelLayout.rowHeightPx,
+    scrollTop,
+    viewportHeight,
+    enabled: scrollMode,
+  });
+  const visibleRows = virtual.active ? pageRows.slice(virtual.start, virtual.end) : pageRows;
+  const virtualOffset = virtual.active ? virtual.start : 0;
 
   const cellClass = bodyCellClass(wordWrap);
   const rowStyle = applyRowHeight
@@ -293,9 +308,10 @@ export function VitalSpanTable({
     >
       <TableResizeGuide guide={guide} />
       <TableScrollRegion
+        ref={scrollRef}
         className={panel ? "overflow-x-only" : undefined}
         style={scrollbarStyle(tableStyle.scrollbarColor, themeVars)}
-        edgeDeps={[displayCols.length, pageRows.length, freezeLead]}
+        edgeDeps={[displayCols.length, pageRows.length, freezeLead, virtual.active]}
       >
         <table
           ref={tableRef}
@@ -309,6 +325,7 @@ export function VitalSpanTable({
           )}
           data-layout-interactive={layoutInteractive ? "" : undefined}
           data-row-hover={rowHover ? "" : undefined}
+          data-density={density}
           data-zebra={zebraBg ? "" : undefined}
           data-freeze-lead={freezeLead ? "" : undefined}
           style={tableStyleVars}
@@ -375,9 +392,14 @@ export function VitalSpanTable({
               </tr>
             ) : null}
           </thead>
-          <tbody>
-            {pageRows.map((row, i) => (
-              <tr key={`${page}-${i}`}>
+          <tbody style={virtual.active ? { height: virtual.totalHeight } : undefined}>
+            {virtual.active ? (
+              <tr aria-hidden style={{ height: virtual.offsetY, border: 0 }}>
+                <td colSpan={Math.max(layoutColumnCount, 1)} className="border-0 p-0" />
+              </tr>
+            ) : null}
+            {visibleRows.map((row, i) => (
+              <tr key={`${page}-${virtualOffset + i}`}>
                 {showSeriesNumber ? (
                   <td
                     data-sticky={freezeLead ? "lead" : undefined}
@@ -389,7 +411,7 @@ export function VitalSpanTable({
                     )}
                     style={rowStyle}
                   >
-                    {seriesOffset + i + 1}
+                    {seriesOffset + virtualOffset + i + 1}
                   </td>
                 ) : null}
                 {displayCols.map((c, colIndex) => {

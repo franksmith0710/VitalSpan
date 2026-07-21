@@ -1,0 +1,46 @@
+/** VCDS 视觉 Token 真理源 */
+export const VCDS = {
+  line: { width: 2.5, cap: "round" as const, join: "round" as const },
+  bar: { rx: 4, stackGap: 1, hoverBrightness: 1.08 },
+  pie: { padAngle: 0.015, hoverOffset: 6, strokeWidth: 1.5 },
+  grid: { dash: "4 4", opacity: 0.9 },
+  axis: { fontSize: 11, rotateThreshold: 72, rotateDeg: -32 },
+  dot: { radius: 3, activeRadius: 5.5, strokeWidth: 1.5 },
+  crosshair: { dash: "4 4", opacity: 0.85 },
+  motion: {
+    enter: 720,
+    hover: 120,
+    dataUpdate: 480,
+    stagger: 40,
+  },
+  perf: {
+    svgFullMaxPoints: 500,
+    svgSampleMaxPoints: 5000,
+    canvasMinPoints: 5000,
+    tableVirtualScrollThreshold: 200,
+  },
+  tooltip: {
+    padding: "10px 12px",
+    borderRadius: 8,
+    fontSize: 12,
+    maxWidth: 240,
+  },
+} as const;
+
+export type MotionIntensity = "off" | "standard" | "enhanced";
+
+let motionIntensity: MotionIntensity = "standard";
+
+export function setMotionIntensity(level: MotionIntensity): void {
+  motionIntensity = level;
+}
+
+export function getMotionIntensity(): MotionIntensity {
+  return motionIntensity;
+}
+
+export function motionDuration(kind: keyof typeof VCDS.motion): number {
+  if (motionIntensity === "off") return 0;
+  const base = VCDS.motion[kind];
+  return motionIntensity === "enhanced" ? Math.round(base * 1.15) : base;
+}

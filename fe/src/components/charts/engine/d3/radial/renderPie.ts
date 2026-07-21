@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
@@ -6,8 +7,8 @@ import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/type
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { computePieLayout, PIE_RADIUS_FRAC_DEFAULT } from "./pieLayout";
 
-const PIE_PAD = 0.015;
-const HOVER_EXPAND = 6;
+const PIE_PAD = VCDS.pie.padAngle;
+const HOVER_EXPAND = VCDS.pie.hoverOffset;
 
 function fractionRadius(value: unknown, base: number, fallback = PIE_RADIUS_FRAC_DEFAULT): number {
   if (typeof value === "number") return value * base;
@@ -105,7 +106,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
       return resolveDatumColor(Number(d.data[angleField] ?? 0), base, conditionalRules);
     })
     .attr("stroke", "#fff")
-    .attr("stroke-width", 1.5)
+    .attr("stroke-width", VCDS.pie.strokeWidth)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .attr("d", arc)
     .each(function (d) {

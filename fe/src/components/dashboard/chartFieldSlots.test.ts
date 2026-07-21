@@ -66,8 +66,8 @@ describe("chartFieldSlots", () => {
     expect(chartDataSlotBlueprint("chart-mix").map((s) => s.label)).toEqual([
       "类别轴 / 维度",
       "子类别 / 维度",
-      "柱指标 / 指标",
-      "线指标 / 指标",
+      "左值轴 / 柱指标",
+      "右值轴 / 线指标",
       "钻取 / 维度",
     ]);
     expect(chartRenderRequiredCounts("chart-mix")).toEqual({

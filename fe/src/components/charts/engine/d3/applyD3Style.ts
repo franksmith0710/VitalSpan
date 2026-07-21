@@ -1,13 +1,13 @@
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import type { ChartStyleContext } from "@/components/charts/engine/types";
-import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
+import { resolveD3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { readChartPieStyle } from "@/lib/chartDeStyle";
 
 /** D3 渲染计划样式映射（配色、图例开关等） */
 export function applyD3Style(plan: ChartRenderPlan, ctx: ChartStyleContext): ChartRenderPlan {
   if (plan.kind !== "d3") return plan;
   const options = { ...plan.options };
-  const tokens = getAntvThemeTokens(ctx.scheme);
+  const tokens = resolveD3Theme(ctx.scheme, ctx.chartColors[0]);
 
   if (ctx.chartColors.length > 0) {
     options.color = ctx.chartColors;
@@ -28,7 +28,13 @@ export function applyD3Style(plan: ChartRenderPlan, ctx: ChartStyleContext): Cha
   options.__shellLegend = ctx.shellLegend;
   options.__legendShow = ctx.deStyle.legend?.show !== false;
 
-  if (ctx.dataZoom && (plan.plotType === "Line" || plan.plotType === "Column" || plan.plotType === "Bar")) {
+  if (
+    ctx.dataZoom &&
+    (plan.plotType === "Line" ||
+      plan.plotType === "Column" ||
+      plan.plotType === "Bar" ||
+      Boolean(options.area))
+  ) {
     options.__dataZoom = true;
   }
 

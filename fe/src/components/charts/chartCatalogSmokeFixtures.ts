@@ -344,7 +344,7 @@ export const CHART_CATALOG_SMOKE_CASES: ChartCatalogSmokeCase[] = [
   },
   {
     type: "quadrant",
-    testId: "d3-scatter-chart",
+    testId: "d3-quadrant-chart",
     columns: ["series", "x", "y"],
     rows: [
       ["A", 10, 20],

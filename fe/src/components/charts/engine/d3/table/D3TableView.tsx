@@ -129,6 +129,8 @@ function D3TableViewInner(props: ChartEngineViewProps) {
           themeVars={themeVars}
           valueFormat={style.valueFormat}
           embedded={fill}
+          layoutInteractive
+          onTableStylePatch={onTableStylePatch}
         />
       </div>
     );

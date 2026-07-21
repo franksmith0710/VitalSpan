@@ -42,6 +42,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
   const filterRef = useRef(filterParameters);
   const limitRef = useRef(limit);
   const hasDisplayedDataRef = useRef(false);
+  const requestGenRef = useRef(0);
   configRef.current = config;
   filterRef.current = filterParameters;
   limitRef.current = limit;
@@ -49,6 +50,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
   const requestKey = chartExecuteBindingKey(config, filterParameters);
 
   const run = useCallback(async () => {
+    const gen = ++requestGenRef.current;
     const activeConfig = configRef.current;
     const activeFilters = filterRef.current;
     const showBlockingLoading = !hasDisplayedDataRef.current;
@@ -60,6 +62,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     const started = Date.now();
     try {
       if (activeConfig.mode === "dataset" && (!activeConfig.dataSourceId || !activeConfig.configId)) {
+        if (gen !== requestGenRef.current) return;
         setError("请选择数据源与已绑定配置的 Dataset");
         setColumns([]);
         setRows([]);
@@ -71,18 +74,22 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
         filterParameters: activeFilters,
         limit: limitRef.current,
       });
+      if (gen !== requestGenRef.current) return;
       setColumns(data.columns);
       setRows(data.rows);
       hasDisplayedDataRef.current = data.columns.length > 0 || data.rows.length > 0;
       setSlowHint(Date.now() - started > SLOW_THRESHOLD_MS);
     } catch (err) {
+      if (gen !== requestGenRef.current) return;
       setError(mapApiError(err));
       setColumns([]);
       setRows([]);
       hasDisplayedDataRef.current = false;
       setSlowHint(false);
     } finally {
-      setLoading(false);
+      if (gen === requestGenRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 

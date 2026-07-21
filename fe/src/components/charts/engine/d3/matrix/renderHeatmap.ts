@@ -1,18 +1,33 @@
 import * as d3 from "d3";
 import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
-import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
+import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
+import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
+import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3MatrixRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
-const CELL_RX = 2;
+const CELL_RX = VCDS.bar.rx;
 
 export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRenderConfig): () => void {
   container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
-  const { width, height, data, colors, theme, showTooltip, valueFormat, onPointClick } = config;
+  const {
+    width,
+    height,
+    data,
+    colors,
+    theme: rawTheme,
+    showTooltip,
+    valueFormat,
+    onPointClick,
+    conditionalRules = [],
+  } = config;
 
+  const theme = themeFromConfig(rawTheme);
   const xCategories = [...new Set(data.map((d) => d.x))];
   const yCategories = [...new Set(data.map((d) => d.y))];
   const margin = cartesianMargin(false);
@@ -22,7 +37,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
   const values = data.map((d) => d.value);
   const maxVal = d3.max(values) ?? 0;
   const minVal = d3.min(values) ?? 0;
-  const baseColor = colors[0] ?? "#465fff";
+  const baseColor = colors[0] ?? theme.accent;
   const colorScale = d3
     .scaleSequential(d3.interpolateRgb("#f2f4f7", baseColor))
     .domain(minVal === maxVal ? [0, maxVal || 1] : [minVal, maxVal]);
@@ -34,7 +49,27 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+
+  const cross = g.append("g").attr("class", "vs-heatmap-cross").style("pointer-events", "none").style("opacity", 0);
+  const colBand = cross
+    .append("rect")
+    .attr("fill", theme.crosshair)
+    .attr("opacity", 0.08);
+  const rowBand = cross
+    .append("rect")
+    .attr("fill", theme.crosshair)
+    .attr("opacity", 0.08);
+  const colLabel = cross
+    .append("text")
+    .attr("fill", theme.axisLabel)
+    .attr("font-size", `${VCDS.axis.fontSize}px`)
+    .attr("font-weight", 600);
+  const rowLabel = cross
+    .append("text")
+    .attr("fill", theme.axisLabel)
+    .attr("font-size", `${VCDS.axis.fontSize}px`)
+    .attr("font-weight", 600);
 
   g.append("g")
     .call(d3.axisLeft(y))
@@ -54,32 +89,58 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     .attr("width", x.bandwidth())
     .attr("height", y.bandwidth())
     .attr("rx", CELL_RX)
-    .attr("fill", (d) => colorScale(d.value))
+    .attr("fill", (d) => {
+      const tinted = resolveDatumColor(d.value, baseColor, conditionalRules);
+      return conditionalRules.length > 0 ? tinted : colorScale(d.value);
+    })
     .attr("stroke", theme.axisLine)
     .attr("stroke-width", 0.4)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .on("mouseenter", function (_event, d) {
-      d3.select(this).attr("stroke-width", 1.2);
+      d3.select(this).attr("stroke-width", 1.2).attr("stroke", theme.accent);
+      cross.style("opacity", 1);
+      colBand
+        .attr("x", x(d.x) ?? 0)
+        .attr("y", 0)
+        .attr("width", x.bandwidth())
+        .attr("height", innerH);
+      rowBand
+        .attr("x", 0)
+        .attr("y", y(d.y) ?? 0)
+        .attr("width", innerW)
+        .attr("height", y.bandwidth());
+      colLabel.attr("x", (x(d.x) ?? 0) + x.bandwidth() / 2).attr("y", -6).attr("text-anchor", "middle").text(d.x);
+      rowLabel.attr("x", -8).attr("y", (y(d.y) ?? 0) + y.bandwidth() / 2).attr("text-anchor", "end").attr("dominant-baseline", "middle").text(d.y);
       if (!tooltip) return;
-      tooltip
-        .style("opacity", "1")
-        .html(
-          `<div style="font-weight:600;margin-bottom:2px">${d.x} · ${d.y}</div>` +
-            `<div><strong>${formatChartValue(d.value, valueFormat)}</strong></div>`,
-        );
+      showMergedTooltip(
+        tooltip,
+        container,
+        _event,
+        `${d.x} · ${d.y}`,
+        [{ name: "值", color: baseColor, value: d.value }],
+        valueFormat,
+        width,
+      );
     })
-    .on("mousemove", (event) => {
+    .on("mousemove", (event, d) => {
       if (!tooltip) return;
-      const rect = container.getBoundingClientRect();
-      tooltip
-        .style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
-        .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+      showMergedTooltip(
+        tooltip,
+        container,
+        event,
+        `${d.x} · ${d.y}`,
+        [{ name: "值", color: baseColor, value: d.value }],
+        valueFormat,
+        width,
+      );
     })
     .on("mouseleave", function () {
-      d3.select(this).attr("stroke-width", 0.4);
-      tooltip?.style("opacity", "0");
+      d3.select(this).attr("stroke-width", 0.4).attr("stroke", theme.axisLine);
+      cross.style("opacity", 0);
+      hideTooltip(tooltip);
     })
     .on("click", (_event, d) => onPointClick?.(d));
 
+  writeIncrementalSession(container, { plotType: "Heatmap", width, height });
   return () => container.replaceChildren();
 }

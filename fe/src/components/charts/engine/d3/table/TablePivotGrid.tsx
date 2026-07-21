@@ -1,4 +1,4 @@
-import { useCallback, useRef, type CSSProperties } from "react";
+import { useCallback, useMemo, useRef, type CSSProperties } from "react";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { dwTableCell } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
@@ -7,7 +7,14 @@ import { resolveTableZebraBg } from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import { withBackgroundAlpha } from "@/lib/widgetSurfaceBackground";
+import { TableResizeGuide } from "@/components/charts/engine/d3/table/TableResizeGuide";
+import { TableResizeHandle } from "@/components/charts/engine/d3/table/TableResizeHandle";
+import { useTableLayoutResize } from "@/components/charts/engine/d3/table/useTableLayoutResize";
 import type { PivotTableModel } from "@/components/charts/engine/d3/table/types";
+
+export const PIVOT_ROW_FIELD = "__pivot_row__";
+export const PIVOT_TOTAL_FIELD = "__pivot_total__";
+export const pivotColField = (colKey: string) => `pivot:${colKey}`;
 
 type TablePivotGridProps = {
   model: PivotTableModel;
@@ -16,6 +23,8 @@ type TablePivotGridProps = {
   valueFormat?: NumberFormatConfig;
   embedded?: boolean;
   testId?: string;
+  layoutInteractive?: boolean;
+  onTableStylePatch?: (patch: Partial<ChartDeTableStyle>) => void;
 };
 
 function sumMetric(
@@ -42,8 +51,11 @@ export function TablePivotGrid({
   valueFormat,
   embedded = false,
   testId = "d3-table-chart",
+  layoutInteractive = false,
+  onTableStylePatch,
 }: TablePivotGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
   const remeasureLayout = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -51,18 +63,52 @@ export function TablePivotGrid({
   }, []);
   useEmbeddedChartLiveResize(embedded, containerRef, remeasureLayout);
 
+  const showTotals = tableStyle.showSummary !== false;
+  const resizeColumns = useMemo(() => {
+    const cols = [PIVOT_ROW_FIELD, ...model.colKeys.map(pivotColField)];
+    if (showTotals && model.showRowTotal) cols.push(PIVOT_TOTAL_FIELD);
+    return cols;
+  }, [model.colKeys, model.showRowTotal, showTotals]);
+
+  const { layout, guide, startColumnResize, startRowResize } = useTableLayoutResize({
+    columns: resizeColumns,
+    showSeriesNumber: false,
+    initial: {
+      columnWidthsPx: tableStyle.columnWidthsPx,
+      rowHeightPx: tableStyle.rowHeightPx,
+    },
+    enabled: layoutInteractive,
+    tableRef,
+    onCommit: (patch) => onTableStylePatch?.(patch),
+  });
+
   const wordWrap = tableStyle.wordWrap ?? false;
   const rowHover = tableStyle.rowHover !== false;
   const zebraBg = resolveTableZebraBg(tableStyle);
+  const density = tableStyle.paginationVariant === "compact" ? "compact" : "comfortable";
   const opacity = tableStyle.opacity != null ? tableStyle.opacity / 100 : 1;
   const borderColor = tableStyle.borderColor;
   const panelBackground =
     opacity < 1 ? withBackgroundAlpha("var(--dashboard-widget-surface)", opacity) : undefined;
-  const cellClass = cn(dwTableCell, wordWrap ? "whitespace-normal break-words" : "truncate");
+  const cellClass = cn("vs-table-td", dwTableCell, wordWrap ? "whitespace-normal break-words" : "truncate");
+  const headerClass = cn("vs-table-th", cellClass, "font-medium text-[var(--dashboard-table-header-fg,#667085)]");
   const mergedThemeStyle = (themeVars ?? {}) as CSSProperties;
-  const showTotals = tableStyle.showSummary !== false;
   const metricCount = model.metrics.length;
   const colSpanUnit = metricCount;
+  const useFixedLayout = layoutInteractive && Object.keys(layout.columnWidthsPx).length > 0;
+  const rowStyle =
+    layoutInteractive && layout.rowHeightPx
+      ? ({ height: `${layout.rowHeightPx}px` } as CSSProperties)
+      : undefined;
+
+  const colWidth = (field: string) =>
+    layout.columnWidthsPx[field] ? `${layout.columnWidthsPx[field]}px` : undefined;
+
+  const metricColWidth = (colKey: string) => {
+    const group = layout.columnWidthsPx[pivotColField(colKey)];
+    if (!group || metricCount <= 1) return group ? `${group}px` : undefined;
+    return `${Math.max(48, Math.floor(group / metricCount))}px`;
+  };
 
   if (model.rowKeys.length === 0 || model.colKeys.length === 0) {
     return (
@@ -84,8 +130,8 @@ export function TablePivotGrid({
     <div
       ref={containerRef}
       className={cn(
-        "flex min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl",
-        embedded ? "absolute inset-0" : "h-full",
+        "vs-chart-table-host embedded-chart-table-host flex min-h-0 w-full min-w-0 flex-col overflow-hidden rounded-xl",
+        embedded ? "absolute inset-0 rounded-none" : "h-full",
       )}
       style={{
         ...mergedThemeStyle,
@@ -93,32 +139,75 @@ export function TablePivotGrid({
         border: borderColor ? `1px solid ${borderColor}` : "1px solid var(--dashboard-table-border, #f2f4f7)",
       }}
       data-testid={testId}
+      {...(layoutInteractive ? { "data-pixel-no-drag": true } : {})}
     >
-      <div className="dashboard-scroll min-h-0 flex-1 overflow-auto overscroll-contain">
-        <table className="dashboard-chart-table w-full min-w-full table-auto text-left">
+      <TableResizeGuide guide={guide} />
+      <div className="vs-table-scroll dashboard-scroll min-h-0 flex-1 overflow-auto overscroll-contain">
+        <table
+          ref={tableRef}
+          className={cn(
+            "dashboard-chart-table vs-chart-table w-full min-w-full text-left",
+            useFixedLayout ? "table-fixed" : "table-auto",
+          )}
+          data-layout-interactive={layoutInteractive ? "" : undefined}
+          data-row-hover={rowHover ? "" : undefined}
+          data-zebra={zebraBg ? "" : undefined}
+          data-density={density}
+        >
+          {useFixedLayout ? (
+            <colgroup>
+              <col style={{ width: colWidth(PIVOT_ROW_FIELD) }} />
+              {model.colKeys.flatMap((ck) =>
+                model.metrics.map((metric) => (
+                  <col key={`${ck}-${metric.field}`} style={{ width: metricColWidth(ck) }} />
+                )),
+              )}
+              {showTotals && model.showRowTotal ? (
+                <col style={{ width: colWidth(PIVOT_TOTAL_FIELD) }} />
+              ) : null}
+            </colgroup>
+          ) : null}
           <thead className="sticky top-0 z-[1] bg-[var(--dashboard-table-header-bg,#f9fafb)]">
             <tr>
               <th
                 rowSpan={metricCount > 1 ? 2 : 1}
-                className={cn(cellClass, "font-medium text-[var(--dashboard-table-header-fg,#667085)]")}
+                className={cn(headerClass, "group/th relative")}
               >
                 {model.rowLabel}
+                {layoutInteractive ? (
+                  <TableResizeHandle
+                    orientation="column"
+                    onPointerDown={(event) => startColumnResize(PIVOT_ROW_FIELD, event)}
+                  />
+                ) : null}
               </th>
               {model.colKeys.map((ck) => (
                 <th
                   key={ck}
                   colSpan={colSpanUnit}
-                  className={cn(cellClass, "text-center font-medium text-[var(--dashboard-table-header-fg,#667085)]")}
+                  className={cn(headerClass, "group/th relative text-center")}
                 >
                   {ck}
+                  {layoutInteractive ? (
+                    <TableResizeHandle
+                      orientation="column"
+                      onPointerDown={(event) => startColumnResize(pivotColField(ck), event)}
+                    />
+                  ) : null}
                 </th>
               ))}
               {showTotals && model.showRowTotal ? (
                 <th
                   rowSpan={metricCount > 1 ? 2 : 1}
-                  className={cn(cellClass, "font-medium text-[var(--dashboard-table-header-fg,#667085)]")}
+                  className={cn(headerClass, "group/th relative")}
                 >
                   合计
+                  {layoutInteractive ? (
+                    <TableResizeHandle
+                      orientation="column"
+                      onPointerDown={(event) => startColumnResize(PIVOT_TOTAL_FIELD, event)}
+                    />
+                  ) : null}
                 </th>
               ) : null}
             </tr>
@@ -128,7 +217,7 @@ export function TablePivotGrid({
                   model.metrics.map((metric) => (
                     <th
                       key={`${ck}-${metric.field}`}
-                      className={cn(cellClass, "text-center text-theme-xs font-medium text-[var(--dashboard-table-header-fg,#667085)]")}
+                      className={cn(headerClass, "text-center text-theme-xs font-medium")}
                     >
                       {metric.label}
                     </th>
@@ -136,18 +225,36 @@ export function TablePivotGrid({
                 )}
               </tr>
             ) : null}
+            {layoutInteractive ? (
+              <tr className="vs-table-row-resize pointer-events-none" aria-hidden>
+                <td
+                  colSpan={1 + model.colKeys.length * metricCount + (showTotals && model.showRowTotal ? 1 : 0)}
+                  className="relative h-0 border-0 p-0"
+                >
+                  <TableResizeHandle
+                    orientation="row"
+                    className="pointer-events-auto -top-1"
+                    onPointerDown={startRowResize}
+                  />
+                </td>
+              </tr>
+            ) : null}
           </thead>
-          <tbody className="bg-[var(--dashboard-table-body-bg,transparent)]" data-row-hover={rowHover ? "" : undefined}>
+          <tbody className="bg-[var(--dashboard-table-body-bg,transparent)]">
             {model.rowKeys.map((rk, rowIndex) => (
               <tr
                 key={rk}
                 className={cn(
-                  "border-t border-[var(--dashboard-table-border,#f2f4f7)]",
-                  rowHover && "hover:bg-[var(--dashboard-table-row-hover,rgba(70,95,255,0.04))]",
+                  "border-t border-[var(--dashboard-table-border,#f2f4f7)] transition-colors duration-150",
                   zebraBg && rowIndex % 2 === 1 && "bg-[var(--dashboard-table-zebra-bg)]",
                 )}
               >
-                <td className={cn(cellClass, "font-medium text-[var(--dashboard-table-body-fg,#344054)]")}>{rk}</td>
+                <td
+                  style={rowStyle}
+                  className={cn(cellClass, "font-medium text-[var(--dashboard-table-body-fg,#344054)]")}
+                >
+                  {rk}
+                </td>
                 {model.colKeys.map((ck) =>
                   model.metrics.map((metric) => {
                     const raw = model.cells[rk]?.[ck]?.[metric.field] ?? 0;
@@ -155,6 +262,7 @@ export function TablePivotGrid({
                     return (
                       <td
                         key={`${rk}-${ck}-${metric.field}`}
+                        style={rowStyle}
                         title={text}
                         className={cn(cellClass, "text-[var(--dashboard-table-body-fg,#344054)]")}
                       >
@@ -164,7 +272,10 @@ export function TablePivotGrid({
                   }),
                 )}
                 {showTotals && model.showRowTotal ? (
-                  <td className={cn(cellClass, "font-medium text-[var(--dashboard-table-body-fg,#344054)]")}>
+                  <td
+                    style={rowStyle}
+                    className={cn(cellClass, "font-medium text-[var(--dashboard-table-body-fg,#344054)]")}
+                  >
                     {formatTableCellValue(
                       model.metrics.reduce((sum, m) => sum + sumMetric(model, rk, null, m.field), 0),
                       valueFormat,
@@ -174,7 +285,7 @@ export function TablePivotGrid({
               </tr>
             ))}
             {showTotals && model.showColTotal ? (
-              <tr className="border-t-2 border-[var(--dashboard-table-border,#f2f4f7)] bg-[var(--dashboard-table-summary-bg,var(--dashboard-table-header-bg,#f9fafb))]">
+              <tr className="vs-table-summary-row border-t-2 border-[var(--dashboard-table-border,#f2f4f7)]">
                 <td className={cn(cellClass, "font-medium")}>合计</td>
                 {model.colKeys.map((ck) =>
                   model.metrics.map((metric) => (

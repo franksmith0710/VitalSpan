@@ -174,7 +174,7 @@ type ChartPaletteNestedSectionProps = {
 export function ChartPaletteNestedSection({
   title,
   children,
-  defaultOpen = true,
+  defaultOpen = false,
   action,
   compact = false,
 }: ChartPaletteNestedSectionProps) {

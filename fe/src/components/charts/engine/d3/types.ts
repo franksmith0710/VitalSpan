@@ -16,6 +16,7 @@ export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<str
   valueFormat?: NumberFormatConfig;
   conditionalRules?: ChartConditionalRule[];
   onPointClick?: (datum: D3Datum) => void;
+  markLines?: ChartMarkLine[];
   options: TOptions;
 };
 
@@ -50,6 +51,7 @@ export type D3CartesianRenderConfig = {
   markLines?: ChartMarkLine[];
   conditionalRules?: ChartConditionalRule[];
   onPointClick?: (datum: D3CartesianDatum) => void;
+  dataZoom?: boolean;
 };
 
 /** @deprecated 使用 D3CartesianDatum */
@@ -77,6 +79,7 @@ export type D3MatrixCell = { x: string; y: string; value: number };
 
 export type D3MatrixRenderConfig = D3RenderConfigBase & {
   data: D3MatrixCell[];
+  conditionalRules?: ChartConditionalRule[];
   onPointClick?: (datum: D3MatrixCell) => void;
 };
 
@@ -90,7 +93,11 @@ export type D3DualAxesRenderConfig = D3RenderConfigBase & {
   yField: [string, string];
   geometryOptions: [D3DualAxesGeometryOption, D3DualAxesGeometryOption];
   lineLabels?: [string, string];
+  /** 柱侧子类别/堆叠系列字段（来自 encodeCartesianRows） */
+  columnSeriesField?: string;
   showLegend?: boolean;
+  markLines?: ChartMarkLine[];
+  conditionalRules?: ChartConditionalRule[];
   onPointClick?: (datum: D3CartesianDatum) => void;
 };
 

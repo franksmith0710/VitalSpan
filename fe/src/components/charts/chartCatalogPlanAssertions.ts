@@ -156,6 +156,28 @@ export function assertPlanMatchesFixture(item: ChartCatalogSmokeCase, plan: Char
       expect(Array.isArray(part)).toBe(true);
       expect((part as unknown[]).length).toBeGreaterThan(0);
     }
+    const lineLabels = plan.options.lineLabels as [string, string] | undefined;
+    const colMetric = item.metrics[0]?.field ?? "";
+    const lineMetric = item.metrics[1]?.field ?? "";
+    if (type === "chart-mix-dual-line") {
+      expect(lineLabels).toEqual([colMetric, lineMetric]);
+    } else {
+      expect(lineLabels).toEqual([lineMetric, colMetric]);
+    }
+
+    if (type === "chart-mix-stack") {
+      expect(plan.options.columnSeriesField).toBe("__series__");
+      const colGeom = (plan.options.geometryOptions as [{ geometry: string }, { isStack?: boolean }])[1];
+      expect(colGeom?.isStack).toBe(true);
+      const barData = series[1] as Array<Record<string, unknown>>;
+      const stackNames = new Set(barData.map((r) => r.__series__));
+      expect(stackNames.size).toBeGreaterThan(1);
+    }
+    if (type === "chart-mix-group") {
+      expect(plan.options.columnSeriesField).toBe("__series__");
+      const colGeom = (plan.options.geometryOptions as [{ geometry: string }, { isGroup?: boolean }])[1];
+      expect(colGeom?.isGroup).toBe(true);
+    }
     return;
   }
 
@@ -167,6 +189,10 @@ export function assertPlanMatchesFixture(item: ChartCatalogSmokeCase, plan: Char
     expect(data[0]![xField]).toBeDefined();
     expect(data[0]![yField]).toBeDefined();
     return;
+  }
+
+  if (type === "quadrant") {
+    expect(plan.plotType).toBe("Quadrant");
   }
 
   if (type === "scatter" || type === "quadrant" || type === "multi-scatter") {

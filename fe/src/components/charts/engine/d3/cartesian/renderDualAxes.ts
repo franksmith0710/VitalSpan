@@ -1,13 +1,17 @@
 import * as d3 from "d3";
 import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
-import { animateStrokePath, chartTransition } from "@/components/charts/engine/d3/core/animate";
+import { animateStrokePath } from "@/components/charts/engine/d3/core/animate";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { normalizeCartesianData } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
+import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
+import {
+  columnTooltipRows,
+  renderDualAxesColumnBars,
+  resolveDualAxesColumnMax,
+} from "@/components/charts/engine/d3/cartesian/renderDualAxesColumn";
 import type { D3CartesianDatum, D3DualAxesRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
-
-const BAR_RX = 4;
 
 function normalizeDataset(
   data: D3CartesianDatum[],
@@ -30,11 +34,14 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     xField,
     yField: [lineYField, columnYField],
     geometryOptions,
+    columnSeriesField,
     colors,
     theme,
     showTooltip,
     showLegend = true,
     valueFormat,
+    markLines = [],
+    conditionalRules,
     onPointClick,
   } = config;
   const lineLabels = config.lineLabels;
@@ -54,7 +61,9 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
 
   const x = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
   const lineMax = d3.max(lineSet.points, (d) => Number(d.__value__)) ?? 0;
-  const columnMax = d3.max(columnSet.points, (d) => Number(d.__value__)) ?? 0;
+  const columnMax = dualLine
+    ? (d3.max(columnSet.points, (d) => Number(d.__value__)) ?? 0)
+    : resolveDualAxesColumnMax(columnData, xField, columnYField, columnSeriesField, columnOpts);
   const yLeft = d3.scaleLinear().domain([0, lineMax]).nice().range([innerH, 0]);
   const yRight = d3.scaleLinear().domain([0, columnMax]).nice().range([innerH, 0]);
   const lineColor = colors[0] ?? "#465fff";
@@ -66,6 +75,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
+  drawHorizontalMarkLines(plot, markLines, yLeft, innerW);
   const tooltip = showTooltip ? createTooltip(container, theme) : null;
 
   g.append("g")
@@ -98,6 +108,8 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     .attr("stroke-linecap", "round")
     .attr("d", lineGen);
   animateStrokePath(linePath);
+
+  let columnLegendItems: Array<{ label: string; color: string; w: number; h: number }> = [];
 
   if (dualLine) {
     const linePoints2 = [...columnSet.points].sort(
@@ -132,33 +144,25 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       .attr("cursor", onPointClick ? "pointer" : "default")
       .on("click", (_event, d) => onPointClick?.(d));
   } else {
-  const barWidth = Math.min(28, innerW / Math.max(categories.length, 1) * 0.55);
-  plot
-    .selectAll("rect.dual-col")
-    .data(columnSet.points)
-    .join("rect")
-    .attr("class", "dual-col")
-    .attr("x", (d) => (x(String(d.__category__)) ?? 0) - barWidth / 2)
-    .attr("width", barWidth)
-    .attr("rx", BAR_RX)
-    .attr("fill", columnColor)
-    .attr("opacity", columnOpts.isStack ? 0.92 : 1)
-    .attr("cursor", onPointClick ? "pointer" : "default")
-    .each(function (d) {
-      const y1 = yRight(Number(d.__value__));
-      const h = innerH - y1;
-      const sel = d3.select(this as SVGRectElement);
-      if (h <= 0) {
-        sel.attr("y", y1).attr("height", 0);
-        return;
-      }
-      chartTransition(sel.attr("y", innerH).attr("height", 0))
-        .duration(600)
-        .ease(d3.easeCubicOut)
-        .attr("y", y1)
-        .attr("height", h);
-    })
-    .on("click", (_event, d) => onPointClick?.(d));
+    const columnResult = renderDualAxesColumnBars({
+      plot,
+      columnData,
+      xField,
+      columnYField,
+      columnSeriesField,
+      categories,
+      x,
+      yRight,
+      innerH,
+      innerW,
+      columnOpts,
+      colors,
+      fallbackColor: columnColor,
+      theme,
+      conditionalRules,
+      onPointClick,
+    });
+    columnLegendItems = columnResult.legendItems;
   }
 
   plot
@@ -196,21 +200,32 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
           }
         }
         const linePt = lineSet.points.find((p) => String(p.__category__) === best);
-        const colPt = columnSet.points.find((p) => String(p.__category__) === best);
         const lineName = lineLabels?.[0] ?? "线";
         const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
+        const rows = dualLine
+          ? [
+              { name: lineName, color: lineColor, value: linePt?.__value__ ?? 0 },
+              {
+                name: colName,
+                color: columnColor,
+                value: columnSet.points.find((p) => String(p.__category__) === best)?.__value__ ?? 0,
+              },
+            ]
+          : [
+              { name: lineName, color: lineColor, value: linePt?.__value__ ?? 0 },
+              ...columnTooltipRows(
+                columnData,
+                xField,
+                columnYField,
+                columnSeriesField,
+                best,
+                colors,
+                columnColor,
+              ).map((r) => ({ ...r, name: r.name === "柱" ? colName : r.name })),
+            ];
         tooltip
           ?.style("opacity", "1")
-          .html(
-            tooltipHtml(
-              best,
-              [
-                { name: lineName, color: lineColor, value: linePt?.__value__ ?? 0 },
-                { name: colName, color: columnColor, value: colPt?.__value__ ?? 0 },
-              ],
-              valueFormat,
-            ),
-          );
+          .html(tooltipHtml(best, rows, valueFormat));
         const rect = container.getBoundingClientRect();
         tooltip
           ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
@@ -223,14 +238,37 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     const legend = root.append("g").attr("transform", `translate(${margin.left},10)`);
     const lineName = lineLabels?.[0] ?? "线";
     const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
-    [
+    const items: Array<{ label: string; color: string; w: number; h: number }> = [
       { label: lineName, color: lineColor, w: 14, h: 3 },
-      { label: colName, color: columnColor, w: dualLine ? 14 : 10, h: dualLine ? 3 : 10 },
-    ].forEach((item, i) => {
-      const gItem = legend.append("g").attr("transform", `translate(${i * 72},0)`);
-      gItem.append("rect").attr("width", item.w).attr("height", item.h).attr("y", item.h === 10 ? 1 : 4).attr("rx", 2).attr("fill", item.color);
-      gItem.append("text").attr("x", 18).attr("y", 10).attr("fill", theme.legendText).style("font-size", "11px").text(item.label);
-    });
+    ];
+    if (dualLine) {
+      items.push({ label: colName, color: columnColor, w: 14, h: 3 });
+    } else if (columnLegendItems.length > 1 && columnLegendItems[0]?.label) {
+      for (const item of columnLegendItems) {
+        items.push({ label: item.label, color: item.color, w: 10, h: 10 });
+      }
+    } else {
+      items.push({ label: colName, color: columnColor, w: 10, h: 10 });
+    }
+    let offsetX = 0;
+    for (const item of items) {
+      const gItem = legend.append("g").attr("transform", `translate(${offsetX},0)`);
+      gItem
+        .append("rect")
+        .attr("width", item.w)
+        .attr("height", item.h)
+        .attr("y", item.h === 10 ? 1 : 4)
+        .attr("rx", 2)
+        .attr("fill", item.color);
+      gItem
+        .append("text")
+        .attr("x", 18)
+        .attr("y", 10)
+        .attr("fill", theme.legendText)
+        .style("font-size", "11px")
+        .text(item.label);
+      offsetX += Math.max(item.label.length * 7 + 32, 72);
+    }
   }
 
   return () => container.replaceChildren();

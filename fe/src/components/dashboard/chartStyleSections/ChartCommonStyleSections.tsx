@@ -60,7 +60,7 @@ export function ChartPaletteStyleSection() {
     : [];
 
   return (
-    <ChartInspectorSection title="图表配色" defaultOpen>
+    <ChartInspectorSection title="图表配色">
       <ChartPaletteDeParityFields
         dense
         showInherit
@@ -136,7 +136,6 @@ export function ChartTitleStyleSection() {
   return (
     <ChartInspectorSection
       title="标题"
-      defaultOpen
       action={
         <Switch
           checked={titleVisible}
@@ -211,7 +210,6 @@ export function ChartLegendStyleSection() {
   return (
     <ChartInspectorSection
       title="图例"
-      defaultOpen
       action={
         <Switch
           checked={legendVisible}

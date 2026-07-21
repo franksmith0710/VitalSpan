@@ -62,7 +62,7 @@ export function DashboardStyleSections({
         />
       </DashboardConfigSection>
 
-      <DashboardConfigSection title="整体配置" defaultOpen data-testid="dashboard-overall-config">
+      <DashboardConfigSection title="整体配置" data-testid="dashboard-overall-config">
         <DashboardOverallConfigPanel
           styleConfig={styleConfig}
           patchStyle={patchStyle}
@@ -106,7 +106,6 @@ export function DashboardWidgetStyleSections({
     <>
       <DashboardConfigSection
         title="图表样式"
-        defaultOpen
         data-testid="dashboard-widget-chart-style"
       >
         <ChartBackgroundStyleFields
@@ -118,7 +117,7 @@ export function DashboardWidgetStyleSections({
         />
       </DashboardConfigSection>
 
-      <DashboardConfigSection title="图表配色" defaultOpen>
+      <DashboardConfigSection title="图表配色">
         <ChartPaletteDeParityFields
           paletteId={styleConfig.paletteId}
           paletteColors={styleConfig.paletteColors}

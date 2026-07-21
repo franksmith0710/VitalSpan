@@ -11,7 +11,7 @@ export function ChartTableColorPanel() {
 
   const tableStyle = readChartDeTableStyle(cfg);
   return (
-    <DashboardConfigSection title="表格配色" defaultOpen compact data-testid="table-style-color">
+    <DashboardConfigSection title="表格配色" compact data-testid="table-style-color">
       <ChartTableColorFields
         compact
         tableStyle={tableStyle}

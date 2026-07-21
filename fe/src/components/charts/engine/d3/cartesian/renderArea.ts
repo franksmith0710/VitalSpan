@@ -1,33 +1,25 @@
 import * as d3 from "d3";
-import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
-import { animateBarHeight } from "@/components/charts/engine/d3/core/animate";
 import { ensureGradientDef } from "@/components/charts/engine/d3/core/gradient";
-import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
-import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
-import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
+import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
+import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
+import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
+import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import {
+  buildCartesianScene,
+  drawCartesianAxes,
+  drawHorizontalGrid,
+} from "@/components/charts/engine/d3/core/sceneGraph";
+import { groupSeries, normalizeCartesianData, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
+import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
+import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLayer";
+import { attachPointCategoryInteraction } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
-import { formatChartValue } from "@/lib/chartValueFormat";
-
-const BAR_RX = 4;
 
 type WideRow = Record<string, string | number>;
 
-function pickCategoryAtBand(mx: number, categories: string[], x: d3.ScaleBand<string>): string {
-  let best = categories[0] ?? "";
-  let bestDist = Infinity;
-  for (const cat of categories) {
-    const px = (x(cat) ?? 0) + x.bandwidth() / 2;
-    const dist = Math.abs(px - mx);
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = cat;
-    }
-  }
-  return best;
-}
-
 export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRenderConfig): () => void {
-  container.replaceChildren();
+  const incremental = container.dataset.vsIncremental === "true";
+  if (!incremental) container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
   const {
@@ -40,25 +32,30 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     smooth = false,
     isStack = false,
     colors,
-    theme,
+    theme: rawTheme,
     showTooltip,
     showLegend,
     valueFormat,
+    markLines = [],
     onPointClick,
+    dataZoom = false,
   } = config;
 
+  const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
   const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
   const seriesGroups = groupSeries(normalized, seriesField);
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
-  const margin = cartesianMargin(showLegend && hasMultiSeries);
-  const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
 
-  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
-  const defs = root.append("defs");
-  const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+  const scene = buildCartesianScene({
+    container,
+    width,
+    height,
+    showLegend: Boolean(showLegend && hasMultiSeries),
+    incremental,
+  });
+  const { root, defs, g, plot, innerW, innerH } = scene;
   const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
 
   const x = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
@@ -76,20 +73,12 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     : (d3.max(normalized, (d) => Number(d.__value__)) ?? 0);
   const y = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
   const curve = smooth ? d3.curveMonotoneX : d3.curveLinear;
-  const xTicks = pickCategoryTicks(categories, innerW);
-  const rotateX = xTicks.length >= 6 && innerW / xTicks.length < 72 ? -32 : 0;
 
-  g.append("g")
-    .call(d3.axisLeft(y).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
-    .call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).tickValues(xTicks))
-    .call(styleAxis, theme)
-    .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+  drawHorizontalGrid(plot, { yScale: y, innerW, theme });
+  drawCartesianAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat });
 
-  const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  plot.selectAll("*").remove();
+  drawHorizontalMarkLines(plot, markLines, y, innerW);
 
   if (isStack && hasMultiSeries) {
     const stack = d3.stack<WideRow>().keys(keys);
@@ -139,38 +128,37 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     }
   }
 
+  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  const crosshair = createCrosshair({ plot, innerW, innerH, theme });
   if (showTooltip) {
-    plot
-      .append("rect")
-      .attr("width", innerW)
-      .attr("height", innerH)
-      .attr("fill", "transparent")
-      .style("cursor", "crosshair")
-      .lower()
-      .on("mousemove", (event) => {
-        const [mx] = d3.pointer(event);
-        let best = categories[0] ?? "";
-        let bestDist = Infinity;
-        for (const cat of categories) {
-          const px = x(cat) ?? 0;
-          const dist = Math.abs(px - mx);
-          if (dist < bestDist) {
-            bestDist = dist;
-            best = cat;
-          }
-        }
-        const rows = seriesGroups.map((s) => {
-          const pt = s.points.find((p) => String(p.__category__) === best);
-          return { name: s.name, color: colorScale(s.name) ?? colors[0], value: pt?.__value__ ?? 0 };
-        });
-        tooltip?.style("opacity", "1").html(tooltipHtml(best, rows, valueFormat));
-        const rect = container.getBoundingClientRect();
-        tooltip
-          ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
-          .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
-      })
-      .on("mouseleave", () => tooltip?.style("opacity", "0"));
+    attachPointCategoryInteraction({
+      container,
+      plot,
+      innerW,
+      innerH,
+      width,
+      categories,
+      xScale: x,
+      crosshair,
+      tooltip,
+      valueFormat,
+      buildRows: (cat) =>
+        seriesGroups.map((s) => {
+          const pt = s.points.find((p) => String(p.__category__) === cat);
+          return {
+            name: s.name,
+            color: colorScale(s.name) ?? colors[0] ?? theme.accent,
+            value: pt?.__value__ ?? 0,
+          };
+        }),
+    });
   }
 
-  return () => container.replaceChildren();
+  writeIncrementalSession(container, { plotType: "Area", width, height });
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+
+  return () => {
+    detachZoom();
+    container.replaceChildren();
+  };
 }

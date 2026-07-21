@@ -1,34 +1,32 @@
 import * as d3 from "d3";
-import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { animateBarHeight } from "@/components/charts/engine/d3/core/animate";
-import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
+import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
+import {
+  buildCartesianScene,
+  drawCartesianBandAxes,
+  drawHorizontalGrid,
+} from "@/components/charts/engine/d3/core/sceneGraph";
 import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
-import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
+import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
+import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLayer";
+import { attachBandCategoryInteraction } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import { renderD3HorizontalBarChart } from "@/components/charts/engine/d3/cartesian/renderBarHorizontal";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
-const BAR_RX = 4;
+const BAR_RX = VCDS.bar.rx;
+const STACK_GAP = VCDS.bar.stackGap;
 
 type WideRow = Record<string, string | number>;
 
-function pickCategoryAtBand(mx: number, categories: string[], x: d3.ScaleBand<string>): string {
-  let best = categories[0] ?? "";
-  let bestDist = Infinity;
-  for (const cat of categories) {
-    const px = (x(cat) ?? 0) + x.bandwidth() / 2;
-    const dist = Math.abs(px - mx);
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = cat;
-    }
-  }
-  return best;
-}
-
 export function renderD3BarChart(container: HTMLElement, config: D3CartesianRenderConfig): () => void {
   if (config.isHorizontal) return renderD3HorizontalBarChart(container, config);
-  container.replaceChildren();
+
+  const incremental = container.dataset.vsIncremental === "true";
+  if (!incremental) container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
   const {
@@ -42,7 +40,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     isGroup = false,
     isPercent = false,
     colors,
-    theme,
+    theme: rawTheme,
     showLabel,
     showTooltip,
     showLegend,
@@ -51,20 +49,25 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     markLines = [],
     conditionalRules = [],
     onPointClick,
+    dataZoom = false,
   } = config;
 
+  const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
   const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
   const seriesGroups = groupSeries(normalized, seriesField);
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
   const useGrouped = hasMultiSeries && (isGroup || !isStack);
-  const margin = cartesianMargin(showLegend && hasMultiSeries);
-  const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
 
-  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
-  const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+  const scene = buildCartesianScene({
+    container,
+    width,
+    height,
+    showLegend: Boolean(showLegend && hasMultiSeries),
+    incremental,
+  });
+  const { root, g, plot, innerW, innerH, margin } = scene;
   const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
   const keys = resolveSeriesKeys(seriesNames);
 
@@ -89,26 +92,17 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(0.22);
   const y = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
   const xSub = useGrouped ? d3.scaleBand<string>().domain(keys).range([0, x.bandwidth()]).padding(0.12) : null;
-  const xTicks = pickCategoryTicks(categories, innerW);
-  const rotateX = xTicks.length >= 6 && innerW / xTicks.length < 72 ? -32 : 0;
 
-  g.append("g")
-    .call(d3.axisLeft(y).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
-    .call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).tickValues(xTicks))
-    .call(styleAxis, theme)
-    .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+  drawHorizontalGrid(plot, { yScale: y, innerW, theme });
+  drawCartesianBandAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat });
 
-  const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  plot.selectAll("*").remove();
 
   if (isStack) {
     const stack = d3.stack<WideRow>().keys(keys);
     for (const layer of stack(wideRows)) {
       const name = String(layer.key);
-      const color = colorScale(name) ?? colors[0] ?? "#465fff";
+      const color = colorScale(name) ?? colors[0] ?? theme.accent;
       plot
         .selectAll(`rect.${name}`)
         .data(layer)
@@ -120,7 +114,8 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
           const y1 = y(Number(d[1]));
-          const h = Math.max(0, y(Number(d[0])) - y1);
+          const rawH = Math.max(0, y(Number(d[0])) - y1);
+          const h = rawH > STACK_GAP ? rawH - STACK_GAP : rawH;
           animateBarHeight(d3.select(this), y1, h);
         })
         .on("click", (_e, d) =>
@@ -134,7 +129,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   } else {
     for (const s of seriesGroups) {
       const name = s.name || "value";
-      const color = colorScale(name) ?? colors[0] ?? "#465fff";
+      const color = colorScale(name) ?? colors[0] ?? theme.accent;
       plot
         .selectAll(`rect.bar-${name}`)
         .data(s.points)
@@ -163,32 +158,34 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
       .attr("x2", innerW)
       .attr("y1", ly)
       .attr("y2", ly)
-      .attr("stroke", line.color ?? "#465fff")
+      .attr("stroke", line.color ?? theme.accent)
       .attr("stroke-dasharray", line.lineStyle === "solid" ? undefined : "5 4");
   }
 
+  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  const crosshair = createCrosshair({ plot, innerW, innerH, theme });
   if (showTooltip) {
-    plot
-      .append("rect")
-      .attr("width", innerW)
-      .attr("height", innerH)
-      .attr("fill", "transparent")
-      .style("cursor", "crosshair")
-      .lower()
-      .on("mousemove", (event) => {
-        const [mx] = d3.pointer(event);
-        const cat = pickCategoryAtBand(mx, categories, x);
-        const rows = seriesGroups.map((s) => {
+    attachBandCategoryInteraction({
+      container,
+      plot,
+      innerW,
+      innerH,
+      width,
+      categories,
+      xScale: x,
+      crosshair,
+      tooltip,
+      valueFormat,
+      buildRows: (cat) =>
+        seriesGroups.map((s) => {
           const pt = s.points.find((p) => String(p.__category__) === cat);
-          return { name: s.name, color: colorScale(s.name) ?? colors[0], value: pt?.__value__ ?? 0 };
-        });
-        tooltip?.style("opacity", "1").html(tooltipHtml(cat, rows, valueFormat));
-        const rect = container.getBoundingClientRect();
-        tooltip
-          ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
-          .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
-      })
-      .on("mouseleave", () => tooltip?.style("opacity", "0"));
+          return {
+            name: s.name,
+            color: colorScale(s.name) ?? colors[0] ?? theme.accent,
+            value: pt?.__value__ ?? 0,
+          };
+        }),
+    });
   }
 
   if (showLabel) {
@@ -206,10 +203,11 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   }
 
   if (showLegend && hasMultiSeries) {
-    const legend = root.append("g").attr("transform", `translate(${margin.left},10)`);
+    root.selectAll("g.vs-legend").remove();
+    const legend = root.append("g").attr("class", "vs-legend").attr("transform", `translate(${margin.left},10)`);
     let offsetX = 0;
     for (const name of seriesNames) {
-      const color = colorScale(name) ?? colors[0] ?? "#465fff";
+      const color = colorScale(name) ?? colors[0] ?? theme.accent;
       const label = name || "系列";
       const item = legend.append("g").attr("transform", `translate(${offsetX},0)`);
       item.append("rect").attr("width", 10).attr("height", 10).attr("y", 1).attr("rx", 2).attr("fill", color);
@@ -218,5 +216,11 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     }
   }
 
-  return () => container.replaceChildren();
+  writeIncrementalSession(container, { plotType: "Column", width, height });
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+
+  return () => {
+    detachZoom();
+    container.replaceChildren();
+  };
 }

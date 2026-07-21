@@ -1,4 +1,13 @@
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { CanvasChartHost } from "@/components/charts/engine/CanvasChartHost";
+import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
+import {
+  CHART_CATALOG_SMOKE_CASES,
+  smokeCaseToConfig,
+  smokeCaseToViewModel,
+} from "@/components/charts/chartCatalogSmokeFixtures";
+import { resolveChartColors } from "@/lib/chartPalette";
 import {
   CHART_CAPABILITY_LABELS,
   CHART_CATEGORY_LABELS,
@@ -11,6 +20,32 @@ import type { ChartTypeCatalogEntry } from "./chartExploreTypes";
 const CATEGORY_LABELS = CHART_CATEGORY_LABELS;
 const RENDERER_LABELS = CHART_RENDERER_LABELS;
 const CAPABILITY_LABELS = CHART_CAPABILITY_LABELS;
+
+export function ChartExplorePreview({ chartType }: { chartType: string }) {
+  const fixture = CHART_CATALOG_SMOKE_CASES.find((item) => item.type === chartType);
+  const config = useMemo(() => (fixture ? smokeCaseToConfig(fixture) : null), [fixture]);
+  const viewModel = useMemo(() => (fixture ? smokeCaseToViewModel(fixture) : null), [fixture]);
+  const style = useMemo(() => {
+    if (!config) return null;
+    return buildStyleContext({
+      config,
+      scheme: "light",
+      chartColors: resolveChartColors("default"),
+    });
+  }, [config]);
+
+  if (!fixture || !config || !viewModel || !style) {
+    return (
+      <p className="text-theme-sm text-gray-500 dark:text-gray-400">暂无标准夹具预览</p>
+    );
+  }
+
+  return (
+    <div className="h-[220px] w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+      <CanvasChartHost viewModel={viewModel} style={style} chartConfig={config} height={190} />
+    </div>
+  );
+}
 
 export function CatalogMetric({ label, value }: { label: string; value: number }) {
   return (
@@ -52,6 +87,12 @@ export function ChartTypeDetail({ chart }: { chart: ChartTypeCatalogEntry }) {
       </div>
 
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
+        <div>
+          <h3 className="mb-2 text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+            标准夹具预览
+          </h3>
+          <ChartExplorePreview chartType={chart.type} />
+        </div>
         <dl className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-white/[0.02] sm:grid-cols-2">
           <div>
             <dt className="text-theme-xs text-gray-500 dark:text-gray-400">维度字段</dt>
