@@ -7,12 +7,15 @@ import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/
 import { setDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { disposeD3Renderer, runD3Renderer } from "@/components/charts/engine/d3/core/d3RendererSession";
 import { renderD3Chart } from "@/components/charts/engine/d3/renderDispatch";
-import { renderThreeChoroplethChart } from "@/components/charts/engine/three/renderThreeChoropleth";
 import { buildD3DispatchPayload } from "@/components/charts/engine/d3/views/buildRenderConfig";
 import {
   ADVANCED_CHART_ROW_CAP,
   capRows,
 } from "@/components/charts/engine/buildDatasetEncoding";
+import {
+  GEO_MAP_FALLBACK_BANNER,
+  type GeoMapRenderEngine,
+} from "@/components/charts/engine/geo/geoMapRenderResult";
 import { activeGeoEngine } from "@/components/charts/engine/geoEnginePort";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
@@ -97,7 +100,11 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const renderGenRef = useRef(0);
   const [renderError, setRenderError] = useState<string | null>(null);
+  const [renderEngine, setRenderEngine] = useState<GeoMapRenderEngine | null>(null);
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
+  const [threeLoading, setThreeLoading] = useState(false);
 
   const { ref: sizeRef, size } = useElementSize<HTMLDivElement>({
     enabled: !fill,
@@ -111,6 +118,14 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       sizeRef(node);
     },
     [sizeRef],
+  );
+
+  const applyRenderMeta = useCallback(
+    (engine: GeoMapRenderEngine | null, reason?: string | null) => {
+      setRenderEngine(engine);
+      setFallbackReason(reason ?? null);
+    },
+    [],
   );
 
   const measureAndRender = useCallback(
@@ -137,20 +152,58 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
       const suppressAnim = mode === "live" || mode === "commit";
       setChartAnimationSuppressed(suppressAnim);
-      try {
-        const payload = buildD3DispatchPayload(props, planWithGeo, chartWidth, chartHeight);
-        if (!payload || payload.kind !== "geo") return;
-        runD3Renderer(el, () =>
-          isThreeMap
-            ? renderThreeChoroplethChart(el, payload.config)
-            : renderD3Chart(el, planWithGeo, payload),
-        );
-        setRenderError(null);
-      } catch (err) {
-        setRenderError(err instanceof Error ? err.message : "地图渲染失败");
-      } finally {
+
+      const payload = buildD3DispatchPayload(props, planWithGeo, chartWidth, chartHeight);
+      if (!payload || payload.kind !== "geo") {
         if (mode !== "live") setChartAnimationSuppressed(false);
+        return;
       }
+
+      const gen = ++renderGenRef.current;
+
+      const runD3 = () => {
+        runD3Renderer(el, () => renderD3Chart(el, planWithGeo, payload));
+        applyRenderMeta(null, null);
+        setRenderError(null);
+        if (mode !== "live") setChartAnimationSuppressed(false);
+      };
+
+      if (!isThreeMap) {
+        try {
+          runD3();
+        } catch (err) {
+          setRenderError(err instanceof Error ? err.message : "地图渲染失败");
+          if (mode !== "live") setChartAnimationSuppressed(false);
+        }
+        return;
+      }
+
+      setThreeLoading(true);
+      void import("@/components/charts/engine/three/renderThreeChoropleth")
+        .then(({ renderThreeChoroplethChart }) => {
+          if (gen !== renderGenRef.current) return;
+          try {
+            runD3Renderer(el, () => {
+              const result = renderThreeChoroplethChart(el, payload.config);
+              applyRenderMeta(result.engine, result.fallbackReason ?? null);
+              return result.dispose;
+            });
+            setRenderError(null);
+          } catch (err) {
+            setRenderError(err instanceof Error ? err.message : "3D 地图渲染失败");
+            applyRenderMeta(null, null);
+          } finally {
+            setThreeLoading(false);
+            if (mode !== "live") setChartAnimationSuppressed(false);
+          }
+        })
+        .catch(() => {
+          if (gen !== renderGenRef.current) return;
+          setRenderError("3D 地图模块加载失败");
+          setThreeLoading(false);
+          applyRenderMeta(null, null);
+          if (mode !== "live") setChartAnimationSuppressed(false);
+        });
     },
     [
       isThreeMap,
@@ -162,10 +215,11 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       size.width,
       size.height,
       props,
-      geoMapLevel.mapId,
+      style.depthVisual,
       visualScale,
       props.layoutFootprint?.width,
       props.layoutFootprint?.height,
+      applyRenderMeta,
     ],
   );
 
@@ -216,10 +270,13 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     return () => {
       if (liveTimerRef.current !== null) clearTimeout(liveTimerRef.current);
+      renderGenRef.current += 1;
       disposeD3Renderer(containerRef.current);
       setChartAnimationSuppressed(false);
     };
   }, []);
+
+  const showFallbackBanner = isThreeMap && renderEngine === "d3-fallback";
 
   if (plan.error) {
     return (
@@ -262,6 +319,15 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
           {renderError}
         </p>
       ) : null}
+      {showFallbackBanner ? (
+        <p
+          role="status"
+          className="mb-2 shrink-0 rounded-md bg-warning-500/10 px-2 py-1 text-theme-xs text-warning-700 dark:text-warning-400"
+          data-fallback-reason={fallbackReason ?? undefined}
+        >
+          {GEO_MAP_FALLBACK_BANNER}
+        </p>
+      ) : null}
       {geoMatchWarning || geoAssetWarning ? (
         <p
           role="status"
@@ -274,18 +340,19 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         </p>
       ) : null}
       <div className={cn("relative", fill ? "min-h-0 flex-1" : "w-full")}>
-        {geoMapLoading ? (
+        {geoMapLoading || threeLoading ? (
           <p
             role="status"
             className="pointer-events-none absolute inset-x-2 top-2 z-[2] text-theme-xs text-gray-500 dark:text-gray-400"
           >
-            正在加载{geoMapLevel.levelLabel}地图…
+            {threeLoading ? "正在加载 3D 地图…" : `正在加载${geoMapLevel.levelLabel}地图…`}
           </p>
         ) : null}
         <div
           ref={setContainerRef}
           className={cn("relative h-full w-full")}
           data-testid={isThreeMap ? "three-map-chart" : "d3-map-chart"}
+          data-render-engine={isThreeMap ? (renderEngine ?? "pending") : undefined}
           style={fill ? undefined : { height, width: width ?? "100%" }}
         />
         {showPlaceholderHint ? (

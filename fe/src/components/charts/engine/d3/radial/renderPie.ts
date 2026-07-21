@@ -39,6 +39,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     showLabel,
     showTooltip,
     showLegend,
+    legendLayout,
     labelFontSize,
     labelColor,
     tooltipPresentation,
@@ -57,6 +58,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
   const layout = computePieLayout(width, height, showLegend);
+  const legendFontSize = legendLayout?.fontSize ?? 11;
   const outerR = fractionRadius(options.radius, layout.maxR, PIE_RADIUS_FRAC_DEFAULT);
   const innerFrac = resolveInnerFrac(options.innerRadius);
   const innerR = outerR * innerFrac;
@@ -185,7 +187,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
           .attr("x", 14)
           .attr("y", 9)
           .attr("fill", theme.legendText)
-          .style("font-size", "11px")
+          .style("font-size", `${legendFontSize}px`)
           .text(label);
         offsetY += 18;
       }
@@ -202,7 +204,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
           .attr("x", 14)
           .attr("y", 9)
           .attr("fill", theme.legendText)
-          .style("font-size", "11px")
+          .style("font-size", `${legendFontSize}px`)
           .text(label);
         offsetX += label.length * 7 + 28;
       }

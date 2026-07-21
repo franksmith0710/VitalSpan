@@ -36,7 +36,9 @@ import { mergeTitleStyle, mergeWidgetShellStyle, pickChartPaletteDefaults, resol
 import { resolveDashboardChrome } from "./dashboardChromeConfig";
 import { parseDeRefreshIntervalSec, readChartDeDisplay, resolveChartQueryLimit } from "@/lib/chartDeDisplay";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
-import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible } from "@/lib/chartDeStyle";
+import { mergeChartTitleStyle, readChartRemark, readChartTitleVisible, resolveChartContentShellStyle } from "@/lib/chartDeStyle";
+import { WidgetShellLegendProvider } from "./pixelCanvas/widgetShellLegendContext";
+import { WidgetChartLegendShell } from "@/components/charts/WidgetChartLegendShell";
 import { isWidgetConfigReady } from "./createLayoutWidget";
 import { pixelDragRailHeightPx, pixelViewTitleHeightPx, dwCaption, dwHint } from "./dashboardWidgetTypography";
 import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
@@ -268,12 +270,15 @@ export function DashboardWidget({
       : inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle)
         ? pixelViewTitleHeightPx(canvasScale)
         : 0;
-  const shellStyle = mergeWidgetShellStyle(
-    dashboardStyle?.widgetStyle,
-    dashboardStyle?.colorScheme ?? "light",
-  );
-  const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
   const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
+  const shellStyle = widget.chartConfig
+    ? resolveChartContentShellStyle(
+        dashboardStyle?.widgetStyle,
+        widget.chartConfig,
+        effectiveScheme,
+      ).outer
+    : mergeWidgetShellStyle(dashboardStyle?.widgetStyle, effectiveScheme);
+  const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
   const chrome = resolveDashboardChrome(dashboardStyle);
   const chartTitleVisible =
     inShapeShell && mode === "view" && readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle);
@@ -491,7 +496,11 @@ export function DashboardWidget({
         )}
       >
         {chartBody ? (
-          <div className="flex min-h-0 flex-1 flex-col p-2">{chartBody}</div>
+          <div className="flex min-h-0 flex-1 flex-col p-2">
+            <WidgetShellLegendProvider>
+              <WidgetChartLegendShell>{chartBody}</WidgetChartLegendShell>
+            </WidgetShellLegendProvider>
+          </div>
         ) : null}
       </div>
 

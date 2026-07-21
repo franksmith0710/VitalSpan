@@ -40,6 +40,7 @@ const TABLE_SECTIONS: ChartStyleSectionId[] = [
 ];
 
 const LINE_BAR_SECTIONS: ChartStyleSectionId[] = [
+  "variantBasic",
   "background",
   "palette",
   "title",

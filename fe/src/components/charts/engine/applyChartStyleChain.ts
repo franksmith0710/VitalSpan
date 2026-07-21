@@ -1,6 +1,7 @@
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import { applyD3Style } from "@/components/charts/engine/d3/applyD3Style";
 import type { ChartStyleContext } from "@/components/charts/engine/types";
+import { hasActiveConditionalRules } from "@/components/charts/engine/d3/views/resolveD3ChartColors";
 import { resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -14,15 +15,16 @@ export function applyChartStyleChain(
 
   if (!chartConfig) return next;
 
+  const paletteId = style.effectivePaletteId ?? style.deStyle.paletteId;
   const items = resolveChartSeriesColorItems(
     chartConfig,
-    style.deStyle.paletteId,
+    paletteId,
     readChartDeStyle(chartConfig).seriesColor ?? style.deStyle.seriesColor,
   );
-  const conditionalRules = style.deFeatures?.conditionalRules ?? [];
-  if (items.length && conditionalRules.length === 0) {
+  if (items.length && !hasActiveConditionalRules(style)) {
     next = { ...next, options: { ...next.options, color: items.map((item) => item.color) } };
   }
+  const conditionalRules = style.deFeatures?.conditionalRules ?? [];
   if (conditionalRules.length > 0) {
     next = { ...next, options: { ...next.options, __conditionalRules: conditionalRules } };
   }

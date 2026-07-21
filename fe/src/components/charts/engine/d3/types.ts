@@ -140,6 +140,8 @@ export type D3WaterfallDatum = { type: string; value: number };
 export type D3WaterfallRenderConfig = D3RenderConfigBase & {
   data: D3WaterfallDatum[];
   showLabel?: boolean;
+  showLegend?: boolean;
+  legendLayout?: import("@/components/charts/engine/d3/core/d3Legend").D3LegendLayout;
   labelFontSize?: number;
   onPointClick?: (datum: D3WaterfallDatum & { runningTotal: number }) => void;
 };
@@ -149,6 +151,8 @@ export type D3BidirectionalBarDatum = { type: string; left: number; right: numbe
 export type D3BidirectionalBarRenderConfig = D3RenderConfigBase & {
   data: D3BidirectionalBarDatum[];
   showLabel?: boolean;
+  showLegend?: boolean;
+  legendLayout?: import("@/components/charts/engine/d3/core/d3Legend").D3LegendLayout;
   labelFontSize?: number;
   onPointClick?: (datum: D3BidirectionalBarDatum) => void;
 };

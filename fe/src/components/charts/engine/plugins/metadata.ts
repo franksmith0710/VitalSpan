@@ -66,6 +66,7 @@ const KPI: EngineCapabilities = {
 };
 
 const LINE_BAR_SECTIONS: ChartStyleSectionId[] = [
+  "variantBasic",
   "background",
   "palette",
   "title",
@@ -78,6 +79,8 @@ const PIE_SECTIONS: ChartStyleSectionId[] = LINE_BAR_SECTIONS;
 const GEO_SECTIONS: ChartStyleSectionId[] = ["background", "palette", "geo", "title", "remark"];
 const TABLE_SECTIONS: ChartStyleSectionId[] = ["tableBasic", "palette", "title", "background"];
 const MINIMAL: ChartStyleSectionId[] = ["background", "palette", "title"];
+const FLOW_WITH_LEGEND: ChartStyleSectionId[] = ["background", "palette", "title", "legend"];
+const HEATMAP_SECTIONS: ChartStyleSectionId[] = ["background", "palette", "geo", "title"];
 const KPI_SECTIONS: ChartStyleSectionId[] = ["background", "palette", "title", "label"];
 
 function def(
@@ -109,7 +112,7 @@ export const BUILTIN_PLUGIN_DEFS: ChartPluginDef[] = [
   def("table-info", "table", "d3", "antv", TABLE, TABLE_SECTIONS),
   def("table-normal", "table", "d3", "antv", TABLE, TABLE_SECTIONS),
   def("table-pivot", "table", "d3", "antv", TABLE, TABLE_SECTIONS),
-  def("t-heatmap", "table", "d3", "antv", TABLE, MINIMAL),
+  def("t-heatmap", "table", "d3", "antv", TABLE, HEATMAP_SECTIONS),
 
   def("line", "trend", "d3", "antv", STATS, LINE_BAR_SECTIONS),
   def("area", "trend", "d3", "antv", STATS, LINE_BAR_SECTIONS),
@@ -137,7 +140,7 @@ export const BUILTIN_PLUGIN_DEFS: ChartPluginDef[] = [
   def("pie-donut-rose", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
   def("radar", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
   def("treemap", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
-  def("word-cloud", "distribute", "d3", "antv", PIE, PIE_SECTIONS),
+  def("word-cloud", "distribute", "d3", "antv", PIE, MINIMAL),
   def("wordCloud", "distribute", "d3", "antv", PIE, PIE_SECTIONS, { deprecated: true, migratesTo: "word-cloud" }),
 
   def("map", "map", "d3", "antv", MAP, GEO_SECTIONS),
@@ -146,7 +149,7 @@ export const BUILTIN_PLUGIN_DEFS: ChartPluginDef[] = [
 
   def("scatter", "relation", "d3", "antv", STATS, LINE_BAR_SECTIONS),
   def("quadrant", "relation", "d3", "antv", STATS, LINE_BAR_SECTIONS),
-  def("funnel", "relation", "d3", "antv", FLOW, MINIMAL),
+  def("funnel", "relation", "d3", "antv", FLOW, FLOW_WITH_LEGEND),
   def("sankey", "relation", "d3", "antv", FLOW, MINIMAL),
   def("circle-packing", "relation", "d3", "antv", PIE, MINIMAL),
   def("multi-scatter", "relation", "d3", "antv", STATS, LINE_BAR_SECTIONS),

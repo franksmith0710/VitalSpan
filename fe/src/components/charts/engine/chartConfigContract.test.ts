@@ -4,6 +4,7 @@ import { buildChartRenderPlan } from "@/components/charts/engine/buildChartRende
 import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
 import { buildChartViewModel } from "@/components/charts/engine/buildChartViewModel";
 import { buildD3DispatchPayload } from "@/components/charts/engine/d3/views/buildRenderConfig";
+import { resolveChartColors } from "@/lib/chartPalette";
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import type { ChartStyleContext } from "@/components/charts/engine/types";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -212,6 +213,42 @@ describe("chart config contract L2", () => {
       expect(payload.config.labelColor).toBe("#112233");
       expect(payload.config.seriesGradient).toBe(true);
       expect(payload.config.tooltipPresentation?.background).toBe("#222222");
+    }
+  });
+
+  it("pie chart uses pastel palette from style chain", () => {
+    const pieConfig: ChartViewConfig = {
+      chartType: "pie",
+      dataSourceId: "ds",
+      mode: "sql",
+      sql: "select 1",
+      dimensions: [{ field: "category" }],
+      metrics: [{ field: "value" }],
+      nativeBody: { deStyle: { paletteId: "pastel" } },
+    };
+    const pastelColors = resolveChartColors("pastel");
+    const vm = buildChartViewModel(pieConfig, {
+      columns: ["category", "value"],
+      rows: [
+        ["A", 30],
+        ["B", 70],
+      ],
+    });
+    const style = buildStyleContext({
+      config: pieConfig,
+      chartColors: [...pastelColors],
+      dashboardPaletteId: "default",
+    });
+    const plan = applyChartStyleChain(buildChartRenderPlan(vm), style, pieConfig);
+    const payload = buildD3DispatchPayload(
+      { viewModel: vm, style, chartConfig: pieConfig, isDark: false },
+      plan,
+      400,
+      300,
+    );
+    expect(payload?.kind).toBe("generic");
+    if (payload?.kind === "generic") {
+      expect(payload.config.colors[0]).toBe(pastelColors[0]);
     }
   });
 });

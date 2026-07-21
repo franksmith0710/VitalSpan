@@ -3,6 +3,8 @@ import { styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
+import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3BidirectionalBarRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -24,6 +26,9 @@ export function renderD3BidirectionalBarChart(
     showTooltip,
     showLabel,
     labelFontSize = 11,
+    labelColor,
+    showLegend = true,
+    legendLayout,
     valueFormat,
     onPointClick,
   } = config;
@@ -123,15 +128,15 @@ export function renderD3BidirectionalBarChart(
     bindTooltip(plot.selectAll<SVGGElement, (typeof data)[0]>("g.right-bar"), "right");
   }
 
-  const legend = root.append("g").attr("transform", `translate(${margin.left},10)`);
-  [
-    { label: "左", color: leftColor },
-    { label: "右", color: rightColor },
-  ].forEach((item, i) => {
-    const gItem = legend.append("g").attr("transform", `translate(${i * 72},0)`);
-    gItem.append("rect").attr("width", 10).attr("height", 10).attr("y", 1).attr("rx", 2).attr("fill", item.color);
-    gItem.append("text").attr("x", 14).attr("y", 10).attr("fill", theme.legendText).style("font-size", "11px").text(item.label);
-  });
+  renderConfiguredInlineLegend(
+    root,
+    showLegend,
+    [
+      { label: "左", color: leftColor },
+      { label: "右", color: rightColor },
+    ],
+    { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
+  );
 
   if (showLabel) {
     plot
@@ -143,7 +148,7 @@ export function renderD3BidirectionalBarChart(
       .attr("y", (d) => (y(d.type) ?? 0) + y.bandwidth() / 2)
       .attr("dy", "0.32em")
       .attr("text-anchor", "end")
-      .attr("fill", theme.axisLabel)
+      .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${labelFontSize}px`)
       .text((d) => formatChartValue(d.left, valueFormat));
     plot
@@ -155,7 +160,7 @@ export function renderD3BidirectionalBarChart(
       .attr("y", (d) => (y(d.type) ?? 0) + y.bandwidth() / 2)
       .attr("dy", "0.32em")
       .attr("text-anchor", "start")
-      .attr("fill", theme.axisLabel)
+      .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${labelFontSize}px`)
       .text((d) => formatChartValue(d.right, valueFormat));
   }

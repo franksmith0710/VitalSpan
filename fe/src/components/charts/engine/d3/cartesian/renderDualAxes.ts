@@ -6,6 +6,8 @@ import { normalizeCartesianData } from "@/components/charts/engine/d3/core/serie
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
 import {
@@ -52,6 +54,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     conditionalRules,
     dataZoom = false,
     onPointClick,
+    legendLayout,
   } = config;
   const lineLabels = config.lineLabels;
   const dualLine = geometryOptions[0].geometry === "line" && geometryOptions[1].geometry === "line";
@@ -148,7 +151,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       .join("circle")
       .attr("class", "dual-line-dot-2")
       .attr("r", 3)
-      .attr("fill", columnColor)
+      .attr("fill", (d) => resolveDatumColor(Number(d.__value__), columnColor, conditionalRules ?? []))
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .attr("cx", (d) => x(String(d.__category__)) ?? 0)
@@ -185,7 +188,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     .join("circle")
     .attr("class", "dual-line-dot")
     .attr("r", 3)
-    .attr("fill", lineColor)
+    .attr("fill", (d) => resolveDatumColor(Number(d.__value__), lineColor, conditionalRules ?? []))
     .attr("stroke", "#fff")
     .attr("stroke-width", 1.5)
     .attr("cx", (d) => x(String(d.__category__)) ?? 0)
@@ -277,44 +280,30 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       .on("mouseleave", () => tooltip?.style("opacity", "0"));
   }
 
-  if (showLegend) {
-    const legend = root.append("g").attr("transform", `translate(${margin.left},10)`);
-    const lineName = lineLabels?.[0] ?? "线";
-    const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
-    const items: Array<{ label: string; color: string; w: number; h: number }> = [
-      { label: lineName, color: lineColor, w: 14, h: 3 },
-    ];
-    if (dualLine) {
-      items.push({ label: colName, color: columnColor, w: 14, h: 3 });
-    } else if (columnLegendItems.length > 1 && columnLegendItems[0]?.label) {
-      for (const item of columnLegendItems) {
-        items.push({ label: item.label, color: item.color, w: 10, h: 10 });
-      }
-    } else {
-      items.push({ label: colName, color: columnColor, w: 10, h: 10 });
+  const lineName = lineLabels?.[0] ?? "线";
+  const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
+  const legendItems: Array<{ label: string; color: string; marker?: "line" | "rect"; markerWidth?: number; markerHeight?: number }> = [
+    { label: lineName, color: lineColor, marker: "line", markerWidth: 14, markerHeight: 3 },
+  ];
+  if (dualLine) {
+    legendItems.push({ label: colName, color: columnColor, marker: "line", markerWidth: 14, markerHeight: 3 });
+  } else if (columnLegendItems.length > 1 && columnLegendItems[0]?.label) {
+    for (const item of columnLegendItems) {
+      legendItems.push({ label: item.label, color: item.color });
     }
-    let offsetX = 0;
-    for (const item of items) {
-      const gItem = legend.append("g").attr("transform", `translate(${offsetX},0)`);
-      gItem
-        .append("rect")
-        .attr("width", item.w)
-        .attr("height", item.h)
-        .attr("y", item.h === 10 ? 1 : 4)
-        .attr("rx", 2)
-        .attr("fill", item.color);
-      gItem
-        .append("text")
-        .attr("x", 18)
-        .attr("y", 10)
-        .attr("fill", theme.legendText)
-        .style("font-size", "11px")
-        .text(item.label);
-      offsetX += Math.max(item.label.length * 7 + 32, 72);
-    }
+  } else {
+    legendItems.push({ label: colName, color: columnColor });
   }
+  renderConfiguredInlineLegend(root, showLegend, legendItems, {
+    width,
+    height,
+    margin,
+    theme,
+    layout: legendLayout,
+    fontSize: legendLayout?.fontSize,
+  });
 
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
 
   return () => {
     detachZoom();

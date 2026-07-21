@@ -9,6 +9,7 @@ import {
   resolveDatumColor,
 } from "@/components/charts/engine/d3/d3LineVisual";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachCrosshairHover, createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
@@ -61,6 +62,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     tooltipPresentation,
     onPointClick,
     dataZoom = false,
+    legendLayout,
   } = config;
 
   const theme = themeFromConfig(rawTheme);
@@ -200,20 +202,29 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
 
   root.selectAll("g.vs-inline-legend").remove();
   if (showLegend && seriesField) {
-    const legend = root.append("g").attr("class", "vs-inline-legend").attr("transform", `translate(${scene.margin.left},10)`);
-    let offsetX = 0;
-    seriesGroups.forEach((series) => {
-      const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
-      const label = series.name || "系列";
-      const item = legend.append("g").attr("transform", `translate(${offsetX},0)`);
-      item.append("rect").attr("width", 14).attr("height", 6).attr("y", 2).attr("rx", 3).attr("fill", color);
-      item.append("text").attr("x", 18).attr("y", 10).attr("fill", theme.legendText).style("font-size", "11px").text(label);
-      offsetX += label.length * 7 + 36;
-    });
+    renderConfiguredInlineLegend(
+      root,
+      true,
+      seriesGroups.map((series) => ({
+        label: series.name || "系列",
+        color: colorScale(series.name) ?? colors[0] ?? theme.accent,
+        marker: "line",
+        markerWidth: 14,
+        markerHeight: 3,
+      })),
+      {
+        width,
+        height,
+        margin: scene.margin,
+        theme,
+        layout: legendLayout,
+        fontSize: legendLayout?.fontSize,
+      },
+    );
   }
 
   writeIncrementalSession(container, { plotType: "Line", width, height });
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
 
   return () => {
     detachZoom();

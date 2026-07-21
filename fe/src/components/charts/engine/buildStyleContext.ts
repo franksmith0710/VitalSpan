@@ -9,6 +9,7 @@ import {
   readChartTooltipShow,
   resolveChartLabelPresentation,
   resolveChartTooltipPresentation,
+  resolveEffectivePaletteId,
 } from "@/lib/chartDeStyle";
 import { readChartDeFeatures } from "@/lib/chartDeFeatures";
 import { resolveChartValueFormat } from "@/lib/chartValueFormat";
@@ -33,6 +34,7 @@ type BuildStyleContextInput = {
   embedEdit?: boolean;
   numberFormat?: NumberFormatConfig;
   widgetShellBg?: string;
+  dashboardPaletteId?: string;
 };
 
 export function buildStyleContext(input: BuildStyleContextInput): ChartStyleContext {
@@ -50,6 +52,7 @@ export function buildStyleContext(input: BuildStyleContextInput): ChartStyleCont
     scheme,
     deStyle,
     deFeatures: readChartDeFeatures(config),
+    effectivePaletteId: resolveEffectivePaletteId(config, input.dashboardPaletteId),
     chartColors,
     dataScreenSurface: dashboardDefaults?.surfaceKind === "data-screen",
     showLabel,

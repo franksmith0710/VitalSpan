@@ -338,6 +338,19 @@ describe("ChartRenderer smoke", () => {
         timeout: 5000,
       });
       expect(host, `chartType=${item.type} testId=${item.testId}`).toBeInTheDocument();
+      if (item.type === "map-3d") {
+        await waitFor(
+          () => {
+            const engine = host.getAttribute("data-render-engine");
+            expect(engine === "d3-fallback" || engine === "three").toBe(true);
+            if (engine === "d3-fallback") {
+              expect(screen.getByText(/当前环境不支持 WebGL/)).toBeInTheDocument();
+            }
+          },
+          { timeout: 5000 },
+        );
+        continue;
+      }
       await waitFor(
         () => {
           expect(

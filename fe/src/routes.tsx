@@ -28,6 +28,7 @@ import { PrefabReportsPage } from "@/pages/admin/reports/PrefabReportsPage";
 import { ReportTemplatesPage } from "@/pages/admin/reports/ReportTemplatesPage";
 import { ThemeAnalysisPage } from "@/pages/admin/themes/ThemeAnalysisPage";
 import { EmbedSdkDemoPage } from "@/pages/embed/EmbedSdkDemoPage";
+import { DevChartsPage } from "@/pages/dev/DevChartsPage";
 import { OrgTreePage } from "@/pages/admin/system/orgs/OrgTreePage";
 import { RlsAdminPage } from "@/pages/admin/system/rls/RlsAdminPage";
 import { AuditLogPage } from "@/pages/admin/system/audit/AuditLogPage";
@@ -56,6 +57,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Navigate to="/admin" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      {import.meta.env.DEV ? <Route path="/dev/charts" element={<DevChartsPage />} /> : null}
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
           <Route index element={<AdminHomePage />} />

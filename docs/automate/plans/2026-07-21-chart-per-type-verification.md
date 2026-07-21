@@ -1,6 +1,6 @@
 # 图表逐型验收手册（对标 DataEase）
 
-> **状态**：**AUTO 已闭环**（2026-07-21）· catalog **48** 项（含 **5** 项 deprecated 已 MIG 门禁）  
+> **状态**：**AUTO 已闭环**（2026-07-21）· catalog **49** 项（含 **5** 项 deprecated 已 MIG 门禁）  
 > **真理源**：`backend/app/viz/builtin/*.py`（field_rule）· `fe/src/components/dashboard/chartFieldSlots.ts`（槽位文案）· `fe/src/components/charts/engine/plugins/metadata.ts`（FE 注册）  
 > **前置**：D3 全量迁移已完成（见 [`2026-07-21-d3-full-chart-migration.md`](./2026-07-21-d3-full-chart-migration.md)）  
 > **取代**：[`2026-07-20-chart-component-acceptance.md`](./2026-07-20-chart-component-acceptance.md) 中已过时的 G2Plot/S2 分路描述，以本文 **§4 逐型矩阵** 为准  
@@ -252,6 +252,9 @@ UNION ALL SELECT '2025-07-03', '华北', 'B', 200;
 | chartType | DE 名称 | 维 | 指 | FIELD 要点 | 夹具 | testId |
 |-----------|---------|:--:|:--:|------------|------|--------|
 | `map` | 区域地图 | 1–3 | 1–1 | 地区维 + 数据指；可选钻取维 | F3 | `d3-map-chart` |
+| `map-3d` | 3D 区域地图 | 1–3 | 1–1 | 同 `map`；WebGL 不可用时 `data-render-engine=d3-fallback` + 横幅 | F3 | `three-map-chart` |
+
+**`map-3d` L1 附加**：`data-render-engine` 为 `three` 或 `d3-fallback`；降级须见「当前环境不支持 WebGL」文案。
 
 **L1/L2/L3 必查（GEO-IRON-01）**
 

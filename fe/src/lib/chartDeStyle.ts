@@ -16,6 +16,7 @@ import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "@/components
 import type { WidgetBackgroundPresentation } from "@/lib/widgetSurfaceBackground";
 import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
 import type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
+import { resolvePaletteId } from "@/lib/chartPalette";
 
 export type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 
@@ -128,6 +129,17 @@ export function readChartDeStyle(cfg: ChartViewConfig): ChartDeStyle {
   const raw = cfg.nativeBody?.deStyle;
   if (!raw || typeof raw !== "object") return {};
   return raw as ChartDeStyle;
+}
+
+/** 组件 override → 看板默认；均未配置时 undefined（由 resolveChartColors 回退 default） */
+export function resolveEffectivePaletteId(
+  cfg: ChartViewConfig,
+  dashboardPaletteId?: string,
+): string | undefined {
+  const own = readChartDeStyle(cfg).paletteId;
+  if (own != null) return resolvePaletteId(own);
+  if (dashboardPaletteId != null) return resolvePaletteId(dashboardPaletteId);
+  return undefined;
 }
 
 /** 默认显示；组件 deStyle.title.show > 看板 titleStyle.show */

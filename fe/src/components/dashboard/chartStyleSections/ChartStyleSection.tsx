@@ -38,7 +38,7 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
           cfg={cfg}
           deStyle={deStyle}
           chartType={
-            cfg.chartType === "heatmap"
+            cfg.chartType === "heatmap" || cfg.chartType === "t-heatmap"
               ? "heatmap"
               : cfg.chartType === "map-3d"
                 ? "map-3d"

@@ -65,4 +65,31 @@ describe("applyChartStyleChain", () => {
     expect(next.options.color).toBeUndefined();
     expect(next.options.__conditionalRules).toHaveLength(1);
   });
+
+  it("uses dashboard palette for inherited series colors", () => {
+    const style: ChartStyleContext = {
+      ...baseStyle,
+      deFeatures: {},
+      deStyle: {},
+      effectivePaletteId: "pastel",
+      chartColors: ["#84adff", "#b2ddff"],
+    };
+    const next = applyChartStyleChain(basePlan, style, barConfig);
+    expect(next.options.color).toEqual(["#84adff"]);
+  });
+
+  it("ignores disabled conditional rules for palette injection", () => {
+    const style: ChartStyleContext = {
+      ...baseStyle,
+      deFeatures: {
+        conditionalRules: [
+          { id: "r1", enabled: false, operator: "gte", value: 20, color: "#12b76a" },
+        ],
+      },
+      effectivePaletteId: "pastel",
+      chartColors: ["#84adff"],
+    };
+    const next = applyChartStyleChain(basePlan, style, barConfig);
+    expect(next.options.color).toEqual(["#84adff"]);
+  });
 });

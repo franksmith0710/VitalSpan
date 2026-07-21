@@ -33,6 +33,11 @@ describe("inspectorCapabilityMatrix", () => {
     expect(resolveEngineCapabilities("gauge").label).toBe(true);
   });
 
+  it("map-3d disables label in inspector matrix", () => {
+    expect(resolveD3InspectorFeatureMatrix("map-3d")?.label).toBe("missing");
+    expect(resolveD3WiredCapabilities("map-3d")?.label).toBe(false);
+  });
+
   it("chartInspectorCapabilities stays aligned with D3 matrix", () => {
     const scatter = chartInspectorCapabilities("scatter");
     expect(scatter.conditional).toBe(true);

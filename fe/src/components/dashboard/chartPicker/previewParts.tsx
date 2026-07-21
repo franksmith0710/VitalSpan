@@ -299,6 +299,18 @@ export function PreviewMap({ className }: SvgProps) {
   );
 }
 
+/** 3D 地图：挤出块 + 透视底图 */
+export function PreviewMap3d({ className }: SvgProps) {
+  return (
+    <PreviewSvg className={className}>
+      <path d="M12 30l12-6 12 6-12 6z" className={fillLo} />
+      <path d="M18 22v8l6 3V25l-6-3z" className={fillMid} />
+      <path d="M24 25v8l6-3V22l-6 3z" className={fillHi} />
+      <path d="M30 19v8l6 3V22l-6-3z" className={fillMid} />
+    </PreviewSvg>
+  );
+}
+
 export function PreviewScatter({ className, quadrant = false, multi = false }: SvgProps & { quadrant?: boolean; multi?: boolean }) {
   return (
     <PreviewSvg className={className}>

@@ -2,10 +2,9 @@ import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRende
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { D3CartesianRenderConfig, D3CartesianDatum } from "@/components/charts/engine/d3/types";
-import { resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
-import { readChartDeStyle } from "@/lib/chartDeStyle";
-import { readChartConditionalRules, readChartMarkLines } from "@/lib/chartDeFeatures";
 import { buildD3PresentationProps } from "@/components/charts/engine/d3/core/presentation";
+import { readChartConditionalRules, readChartMarkLines } from "@/lib/chartDeFeatures";
+import { resolveD3ChartColors } from "@/components/charts/engine/d3/views/resolveD3ChartColors";
 
 export function extractDrillValue(datum: D3CartesianDatum, xField: string): string {
   const value = datum[xField] ?? datum.__category__;
@@ -26,24 +25,7 @@ export function buildCartesianRenderConfig(
   const yField = String(options.yField ?? "__value__");
   const seriesField = options.seriesField ? String(options.seriesField) : undefined;
   const data = (options.data as D3CartesianDatum[]) ?? [];
-
-  const paletteItems =
-    chartConfig && style.deFeatures?.conditionalRules?.length === 0
-      ? resolveChartSeriesColorItems(
-          chartConfig,
-          style.deStyle.paletteId,
-          readChartDeStyle(chartConfig).seriesColor ?? style.deStyle.seriesColor,
-        )
-      : [];
-  const optionColors = Array.isArray(options.color) ? (options.color as string[]) : [];
-  const colors =
-    paletteItems.length > 0
-      ? paletteItems.map((item) => item.color)
-      : optionColors.length > 0
-        ? optionColors
-        : style.chartColors.length > 0
-          ? style.chartColors
-          : ["#465fff"];
+  const colors = resolveD3ChartColors(style, plan, chartConfig);
 
   const conditionalFromPlan = options.__conditionalRules as D3CartesianRenderConfig["conditionalRules"];
   const markLinesFromPlan = options.__markLines as D3CartesianRenderConfig["markLines"];

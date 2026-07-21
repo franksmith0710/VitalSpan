@@ -27,6 +27,8 @@ import {
 } from "@/lib/chartLegendPresentation";
 import { resolveChartFontSizeOptions } from "@/lib/chartFontSizes";
 import type { ChartDeStyle } from "@/lib/chartDeStyle";
+import type { ChartType } from "@/lib/chartViewConfig";
+import type { LegendEditorMode } from "@/lib/chartStylePanelGates";
 import { cn } from "@/lib/utils";
 
 const legendSelectContentClass = "z-[100001] max-h-56 min-w-[var(--radix-select-trigger-width)]";
@@ -55,13 +57,15 @@ function ChartLegendFormField({
 }
 
 type ChartLegendDeParityFieldsProps = {
+  chartType?: ChartType;
   deStyle: ChartDeStyle;
-  editorMode?: "shell" | "d3";
+  editorMode?: LegendEditorMode;
   onPatch: (patch: Partial<NonNullable<ChartDeStyle["legend"]>>) => void;
 };
 
 /** 对标 DataEase attr-style · 图例：图标 / 文本 / 方向 / 位置 */
 export function ChartLegendDeParityFields({
+  chartType,
   deStyle,
   editorMode = "shell",
   onPatch,
@@ -78,6 +82,8 @@ export function ChartLegendDeParityFields({
   const vAlign = readChartLegendVAlign(deStyle);
   const position = resolveLegendPositionFromAlign(hAlign, vAlign);
   const isSidePosition = position === "left" || position === "right";
+  const pieFamily = chartType === "pie" || chartType?.startsWith("pie-");
+  const showLayoutControls = editorMode === "shell" || !pieFamily;
 
   const patchAlign = (nextH: typeof hAlign, nextV: typeof vAlign) => {
     const nextPosition = resolveLegendPositionFromAlign(nextH, nextV);
@@ -152,28 +158,31 @@ export function ChartLegendDeParityFields({
         </Select>
       </ChartLegendFormField>
 
-      <ChartLegendFormField label="方向">
-        <DeSegmentGroup
-          value={readChartLegendOrient(deStyle)}
-          options={[
-            { value: "horizontal", label: "水平", ariaLabel: "水平排列" },
-            {
-              value: "vertical",
-              label: "垂直",
-              ariaLabel: "垂直排列",
-              disabled: isSidePosition,
-            },
-          ]}
-          columns={2}
-          sizing="fill"
-          onChange={(value) =>
-            onPatch({ orient: value as NonNullable<ChartLegendStyle["orient"]> })
-          }
-        />
-      </ChartLegendFormField>
+      {showLayoutControls ? (
+        <ChartLegendFormField label="方向">
+          <DeSegmentGroup
+            value={readChartLegendOrient(deStyle)}
+            options={[
+              { value: "horizontal", label: "水平", ariaLabel: "水平排列" },
+              {
+                value: "vertical",
+                label: "垂直",
+                ariaLabel: "垂直排列",
+                disabled: isSidePosition,
+              },
+            ]}
+            columns={2}
+            sizing="fill"
+            onChange={(value) =>
+              onPatch({ orient: value as NonNullable<ChartLegendStyle["orient"]> })
+            }
+          />
+        </ChartLegendFormField>
+      ) : null}
 
-      <ChartLegendFormField label="位置" className="border-b-0 pb-0">
-        <div className="flex items-center gap-1">
+      {showLayoutControls ? (
+        <ChartLegendFormField label="位置" className="border-b-0 pb-0">
+          <div className="flex items-center gap-1">
           <DeSegmentGroup
             value={hAlign}
             options={LEGEND_H_ALIGN_SEGMENT_OPTIONS}
@@ -192,7 +201,8 @@ export function ChartLegendDeParityFields({
             onChange={(value) => patchAlign(hAlign, value as typeof vAlign)}
           />
         </div>
-      </ChartLegendFormField>
+        </ChartLegendFormField>
+      ) : null}
     </div>
   );
 }

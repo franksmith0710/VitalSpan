@@ -39,5 +39,6 @@ describe("chartStylePanelGates", () => {
     expect(resolveLegendEditorMode("bar")).toBe("shell");
     expect(resolveLegendEditorMode("pie")).toBe("d3");
     expect(resolveLegendEditorMode("gauge")).toBe("none");
+    expect(resolveLegendEditorMode("waterfall")).toBe("d3");
   });
 });

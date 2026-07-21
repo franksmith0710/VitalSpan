@@ -36,4 +36,9 @@ describe("chartSeriesColor", () => {
     const series = option.series as Array<{ itemStyle?: { color?: string } }>;
     expect(series[0]?.itemStyle?.color).toBe("#ff0000");
   });
+
+  it("inherits dashboard palette when component palette is unset", () => {
+    const items = resolveChartSeriesColorItems(barCfg, "pastel");
+    expect(items[0]?.color).toBe("#84adff");
+  });
 });

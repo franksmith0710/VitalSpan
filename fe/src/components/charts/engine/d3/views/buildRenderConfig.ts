@@ -163,6 +163,8 @@ export function buildD3DispatchPayload(
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
         showLabel: styleProps.showLabel,
+        showLegend: styleProps.showLegend,
+        legendLayout: styleProps.legendLayout,
         ...presentation,
         valueFormat: styleProps.valueFormat,
         onPointClick: props.onInteraction
@@ -184,6 +186,8 @@ export function buildD3DispatchPayload(
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
         showLabel: styleProps.showLabel,
+        showLegend: styleProps.showLegend,
+        legendLayout: styleProps.legendLayout,
         ...presentation,
         valueFormat: styleProps.valueFormat,
       },

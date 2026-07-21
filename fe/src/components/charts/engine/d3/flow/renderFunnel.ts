@@ -4,7 +4,7 @@ import { depthExtrudePx, resolveEffectiveDepth, shadeColor } from "@/components/
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
-import { layoutD3InlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
+import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -149,8 +149,9 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
   });
 
   if (showLegend) {
-    layoutD3InlineLegend(
+    renderConfiguredInlineLegend(
       root,
+      true,
       data.map((row, index) => ({
         label: row.stage,
         color: colorScale(row.stage) ?? colors[index % colors.length] ?? "#465fff",

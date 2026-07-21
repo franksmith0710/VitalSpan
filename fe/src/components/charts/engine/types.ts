@@ -28,6 +28,8 @@ export type ChartStyleContext = {
   scheme: ColorScheme;
   deStyle: ChartDeStyle;
   deFeatures: ChartDeFeatures;
+  /** 组件 override 与看板默认合并后的调色板 id */
+  effectivePaletteId?: string;
   chartColors: string[];
   dataScreenSurface: boolean;
   showLabel: boolean;

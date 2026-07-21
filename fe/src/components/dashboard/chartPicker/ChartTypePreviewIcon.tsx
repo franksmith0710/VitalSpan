@@ -9,6 +9,7 @@ import {
   PreviewLineTrend,
   PreviewLiquid,
   PreviewMap,
+  PreviewMap3d,
   PreviewMix,
   PreviewPie,
   PreviewRadar,
@@ -99,7 +100,7 @@ export function ChartTypePreviewIcon({ type, className }: ChartTypePreviewIconPr
 
     case "map":
     case "map-3d":
-      return <PreviewMap className={box} />;
+      return <PreviewMap3d className={box} />;
 
     case "scatter":
       return <PreviewScatter className={box} />;

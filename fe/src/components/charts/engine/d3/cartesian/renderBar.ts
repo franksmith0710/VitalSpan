@@ -3,7 +3,7 @@ import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { paintVerticalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
-import { layoutD3InlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
+import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
@@ -235,8 +235,9 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   }
 
   if (showLegend && hasMultiSeries) {
-    layoutD3InlineLegend(
+    renderConfiguredInlineLegend(
       root,
+      true,
       seriesNames.map((name) => ({
         label: name || "系列",
         color: colorScale(name) ?? colors[0] ?? theme.accent,

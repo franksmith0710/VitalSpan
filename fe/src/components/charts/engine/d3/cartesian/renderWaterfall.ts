@@ -2,6 +2,8 @@ import * as d3 from "d3";
 import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { paintVerticalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3WaterfallDatum, D3WaterfallRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -33,6 +35,9 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
     showTooltip,
     showLabel,
     labelFontSize = 11,
+    labelColor,
+    showLegend = true,
+    legendLayout,
     valueFormat,
     onPointClick,
   } = config;
@@ -148,10 +153,20 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
       .attr("x", (d) => (x(d.type) ?? 0) + x.bandwidth() / 2)
       .attr("y", (d) => y(Math.max(d.start, d.end)) - 4)
       .attr("text-anchor", "middle")
-      .attr("fill", theme.axisLabel)
+      .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${labelFontSize}px`)
       .text((d) => formatChartValue(d.value, valueFormat));
   }
+
+  renderConfiguredInlineLegend(
+    root,
+    showLegend,
+    [
+      { label: "增加", color: posColor },
+      { label: "减少", color: negColor },
+    ],
+    { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
+  );
 
   return () => container.replaceChildren();
 }

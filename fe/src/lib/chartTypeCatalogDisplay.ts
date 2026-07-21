@@ -46,6 +46,7 @@ export const FALLBACK_CATALOG_ITEMS: ChartTypeCatalogItem[] = [
   { type: "combo", displayName: "折柱组合", category: "basic", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
   { type: "gauge", displayName: "仪表盘", category: "indicator", renderer: "antv", styleVariants: ["default", "progress"], fieldRule: {} },
   { type: "map", displayName: "地图", category: "geo", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
+  { type: "map-3d", displayName: "3D 区域地图", category: "geo", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
   { type: "heatmap", displayName: "热力图", category: "geo", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
   { type: "kpi", displayName: "KPI 指标", category: "indicator", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
   { type: "timeline", displayName: "时间轴", category: "basic", renderer: "antv", styleVariants: ["default"], fieldRule: {} },

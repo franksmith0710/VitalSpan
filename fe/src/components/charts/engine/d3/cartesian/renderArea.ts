@@ -192,7 +192,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
   }
 
   writeIncrementalSession(container, { plotType: "Area", width, height });
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
 
   return () => {
     detachZoom();

@@ -42,7 +42,7 @@
   - [x] FE plugin registry + `buildAntvSpec` 委托；catalog 契约字段 library/paletteCategory
   - [x] `@antv/s2-react` 表格三件套 + `migrateChartTypes` 存量迁移
 - **代码锚点**：`backend/app/viz/registry.py` · `backend/app/viz/builtin/` · `backend/app/api/v1/charts.py` · `fe/src/components/charts/engine/plugins/` · `fe/src/lib/migrateChartTypes.ts` · `fe/src/lib/chartRegistry.ts` · `fe/src/lib/chartPaletteTaxonomy.ts`
-- **演化建议**：类型元数据（icon/预览缩略图）扩展；**离线**中国省/市 GeoJSON 分级与地名映射（GEO-IRON-01，禁止在线瓦片）；r250 补 `isKnownChartType` + `getFallbackChartType` → table fallback（T-VIZ-R250-003-01~02）
+- **演化建议**：类型元数据（icon/预览缩略图）扩展；**离线**中国省/市 GeoJSON 分级与地名映射（GEO-IRON-01，禁止在线瓦片）；**`map-3d`（3D 区域地图）**：Three.js 挤出 + WebGL 不可用时诚实降级为 2D（`data-render-engine` + 横幅，见 `renderThreeChoropleth`）；r250 补 `isKnownChartType` + `getFallbackChartType` → table fallback（T-VIZ-R250-003-01~02）
 - **里程碑对齐**：
 ### [VIZ-004] 图表样式子类型
 

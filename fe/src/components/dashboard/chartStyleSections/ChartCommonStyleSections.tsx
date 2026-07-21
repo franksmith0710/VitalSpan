@@ -25,6 +25,7 @@ import {
   readChartLegendVisible,
   readChartShowLabel,
   readChartTitleVisible,
+  resolveEffectivePaletteId,
   resolveChartLabelPresentation,
   resolveChartTooltipPresentation,
   resolveChartLabelDisplayColor,
@@ -61,7 +62,11 @@ export function ChartPaletteStyleSection() {
     patchDeStyle({ paletteOpacity: opacityPercent / 100 });
 
   const seriesColorItems = supportsChartSeriesColorEditing(cfg.chartType)
-    ? resolveChartSeriesColorItems(cfg, deStyle.paletteId, deStyle.seriesColor)
+    ? resolveChartSeriesColorItems(
+        cfg,
+        resolveEffectivePaletteId(cfg, dashboardStyle?.paletteId),
+        deStyle.seriesColor,
+      )
     : [];
 
   return (
@@ -234,7 +239,12 @@ export function ChartLegendStyleSection() {
       }
     >
       {legendVisible ? (
-        <ChartLegendDeParityFields deStyle={deStyle} editorMode={editorMode} onPatch={patchLegend} />
+        <ChartLegendDeParityFields
+          chartType={cfg.chartType}
+          deStyle={deStyle}
+          editorMode={editorMode}
+          onPatch={patchLegend}
+        />
       ) : null}
     </ChartInspectorSection>
   );

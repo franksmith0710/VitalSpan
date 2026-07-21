@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { paintHorizontalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { drawVerticalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
@@ -76,6 +77,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     tooltipPresentation,
     dataZoom = false,
     onPointClick,
+    legendLayout,
   } = config;
 
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
@@ -229,19 +231,18 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   }
 
   if (showLegend && hasMultiSeries) {
-    const legend = root.append("g").attr("transform", `translate(${margin.left},10)`);
-    let offsetX = 0;
-    for (const name of seriesNames) {
-      const color = colorScale(name) ?? colors[0] ?? "#465fff";
-      const label = name || "系列";
-      const item = legend.append("g").attr("transform", `translate(${offsetX},0)`);
-      item.append("rect").attr("width", 10).attr("height", 10).attr("y", 1).attr("rx", 2).attr("fill", color);
-      item.append("text").attr("x", 14).attr("y", 10).attr("fill", theme.legendText).style("font-size", "11px").text(label);
-      offsetX += label.length * 7 + 32;
-    }
+    renderConfiguredInlineLegend(
+      root,
+      true,
+      seriesNames.map((name) => ({
+        label: name || "系列",
+        color: colorScale(name) ?? colors[0] ?? theme.accent,
+      })),
+      { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
+    );
   }
 
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
 
   return () => {
     detachZoom();

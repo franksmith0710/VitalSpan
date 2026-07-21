@@ -2,7 +2,6 @@ import type { ChartType } from "@/lib/chartViewConfig";
 import {
   isGeoMapChartType,
   isKpiType,
-  isLineOrBarType,
   isMatrixHeatmapChartType,
 } from "@/lib/chartViewConfig";
 import { isTableLikeChartType } from "@/lib/chartTableInspector";
@@ -58,11 +57,21 @@ export function supportsSeriesGradientToggle(chartType: ChartType): boolean {
   return !SERIES_GRADIENT_EXCLUDED.has(chartType);
 }
 
+const D3_INLINE_LEGEND_TYPES = new Set<ChartType>([
+  "pie",
+  "pie-donut",
+  "pie-rose",
+  "pie-donut-rose",
+  "waterfall",
+  "bidirectional-bar",
+  "funnel",
+]);
+
 export function resolveLegendEditorMode(chartType: ChartType): LegendEditorMode {
   const caps = chartInspectorCapabilities(chartType);
   if (!caps.legend) return "none";
+  if (D3_INLINE_LEGEND_TYPES.has(chartType)) return "d3";
   if (supportsEmbeddedShellLegend(chartType)) return "shell";
-  if (isLineOrBarType(chartType)) return "shell";
   return "d3";
 }
 

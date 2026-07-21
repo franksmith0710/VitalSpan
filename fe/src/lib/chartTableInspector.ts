@@ -98,7 +98,7 @@ const PROFILES: Record<TableChartKind, TableInspectorProfile> = {
     kind: "matrix-heat",
     label: "矩阵热力",
     dataHint: "横轴维度、纵轴维度与数值指标均为必填。",
-    styleSections: ["palette", "title", "background"],
+    styleSections: ["background", "palette", "geo", "title"],
     showPagination: false,
     showSummary: false,
     showSeriesNumber: false,
