@@ -15,7 +15,6 @@ import {
 import type { ChartLegendIconShape, ChartLegendStyle } from "@/lib/chartDeStyle";
 import {
   CHART_LEGEND_FONT_SIZE_OPTIONS,
-  CHART_LEGEND_ICON_SIZE_OPTIONS,
   LEGEND_ICON_SHAPE_SELECT_OPTIONS,
   normalizeLegendIconShape,
   readChartLegendHAlign,
@@ -23,6 +22,7 @@ import {
   readChartLegendIconSize,
   readChartLegendOrient,
   readChartLegendVAlign,
+  resolveLegendIconSizeOptions,
   resolveLegendPositionFromAlign,
 } from "@/lib/chartLegendPresentation";
 import { resolveChartFontSizeOptions } from "@/lib/chartFontSizes";
@@ -71,6 +71,7 @@ export function ChartLegendDeParityFields({
   onPatch,
 }: ChartLegendDeParityFieldsProps) {
   const iconSize = readChartLegendIconSize(deStyle);
+  const iconSizeOptions = resolveLegendIconSizeOptions(deStyle.legend?.iconSize);
   const iconShape = normalizeLegendIconShape(readChartLegendIcon(deStyle));
   const fontSize = deStyle.legend?.fontSize ?? 12;
   const fontSizeOptions = resolveChartFontSizeOptions(
@@ -124,13 +125,13 @@ export function ChartLegendDeParityFields({
             onValueChange={(value) => onPatch({ iconSize: Number(value) })}
           >
             <SelectTrigger
-              className={cn(INSPECTOR_SELECT_TRIGGER, "w-12 shrink-0 px-1.5")}
+              className={cn(INSPECTOR_SELECT_TRIGGER, "w-14 shrink-0 px-1.5")}
               aria-label="图标大小"
             >
               <SelectValue />
             </SelectTrigger>
             <SelectContent className={legendSelectContentClass}>
-              {CHART_LEGEND_ICON_SIZE_OPTIONS.map((size) => (
+              {iconSizeOptions.map((size) => (
                 <SelectItem key={size} value={String(size)}>
                   {size}
                 </SelectItem>

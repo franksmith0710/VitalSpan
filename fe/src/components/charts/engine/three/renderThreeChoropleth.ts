@@ -17,6 +17,12 @@ import {
   webglAvailable,
 } from "@/components/charts/engine/three/geoToThreeShapes";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
+import {
+  configureThreeGeoOrbitControls,
+  layoutThreeGeoMapGroup,
+  resetThreeGeoOrbitView,
+} from "@/components/charts/engine/three/threeGeoOrbit";
+import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConstants";
 
 type ProjectFn = (coord: [number, number]) => [number, number] | null;
 
@@ -118,12 +124,11 @@ export function renderThreeChoroplethChart(
     };
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(isDark ? 0x0f172a : 0xf8fafc);
 
     const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 5000);
-    camera.position.set(0, -height * 0.85, height * 0.72);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
@@ -170,22 +175,18 @@ export function renderThreeChoroplethChart(
       }
     }
 
-    const box = new THREE.Box3().setFromObject(mapGroup);
-    const center = box.getCenter(new THREE.Vector3());
-    mapGroup.position.sub(center);
     scene.add(mapGroup);
-    mapGroup.rotation.x = -Math.PI / 2;
+    const orbitLayout = layoutThreeGeoMapGroup(mapGroup);
+    const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
 
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.enablePan = geoStyle.roam !== false;
-    controls.enableZoom = geoStyle.roam !== false;
-    controls.enableRotate = geoStyle.roam !== false;
-    controls.minDistance = height * 0.35;
-    controls.maxDistance = height * 3;
-    controls.target.set(0, 0, maxExtrude * 0.4);
-    controls.update();
+    const detachOrbitPan = configureThreeGeoOrbitControls(camera, controls, orbitLayout, roam);
+
+    const onDblClick = () => {
+      if (!roam) return;
+      resetThreeGeoOrbitView(camera, controls, orbitLayout);
+    };
+    renderer.domElement.addEventListener("dblclick", onDblClick);
 
     const tooltip = showTooltip
       ? createTooltipLayer(container, theme as D3Theme, tooltipPresentation)
@@ -270,10 +271,12 @@ export function renderThreeChoroplethChart(
       engine: "three",
       dispose: () => {
         cancelAnimationFrame(frameId);
+        renderer.domElement.removeEventListener("dblclick", onDblClick);
         renderer.domElement.removeEventListener("pointermove", onMove);
         renderer.domElement.removeEventListener("pointerleave", onLeave);
         renderer.domElement.removeEventListener("click", onClick);
         controls.dispose();
+        detachOrbitPan();
         for (const mesh of meshes) {
           mesh.geometry.dispose();
           (mesh.material as THREE.Material).dispose();

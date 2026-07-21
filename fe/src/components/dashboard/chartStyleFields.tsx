@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { Switch } from "@/components/ui/switch";
 import { ColorField } from "@/components/ui/color-field";
 import { ImageSourceField } from "./imageSourceField";
@@ -10,7 +11,7 @@ import {
   InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "./inspectorCompact";
-import { InspectorSliderField, DashboardConfigSlider } from "./deAttrSlider";
+import { DashboardConfigSlider, ChartDeSliderField } from "./deAttrSlider";
 import { DeSegmentGroup } from "./dashboardInspectorUi";
 import { ChartDeSegmentField } from "./chartInspectorDeFields";
 import { ChartFramePresetPicker } from "./ChartFramePresetPicker";
@@ -46,6 +47,7 @@ type ChartBackgroundDeModeFieldsProps = {
   disabled?: boolean;
   /** chart：装饰边框 SVG；dashboard 全局：仅底图 + 独立线区块 */
   borderTab?: "decorative" | "line" | "imageOnly";
+  density?: WidgetSurfaceStyleDensity;
 };
 
 function DeAttrToggleRowCompact({
@@ -221,6 +223,7 @@ export function ChartBackgroundDeModeFields({
   onChange,
   disabled = false,
   borderTab = "decorative",
+  density = "narrow",
 }: ChartBackgroundDeModeFieldsProps) {
   const useLineBorder = borderTab === "line";
   const imageOnly = borderTab === "imageOnly";
@@ -266,6 +269,12 @@ export function ChartBackgroundDeModeFields({
 
   const segmentOptions = useLineBorder ? BG_MODE_LINE_BORDER_OPTIONS : BG_MODE_OPTIONS;
   const lineOn = value.borderEnabled !== false;
+  const FrameOpacitySlider =
+    density === "narrow"
+      ? (props: ComponentProps<typeof ChartDeSliderField>) => (
+          <ChartDeSliderField layout="inline" {...props} />
+        )
+      : DashboardConfigSlider;
 
   return (
     <div className="space-y-2">
@@ -326,34 +335,53 @@ export function ChartBackgroundDeModeFields({
       ) : useLineBorder ? (
         <WidgetStyleLineBorderControls value={value} onChange={onChange} showToggle={false} density="narrow" />
       ) : (
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
-          <ColorField
-            variant="swatch"
-            label="装饰色"
-            showLabel
-            allowClear
-            swatches={WIDGET_BORDER_RECOMMENDED}
-            value={value.frameColor ?? ""}
-            onChange={(color) =>
-              onChange({
-                frameColor: color || undefined,
-                backgroundShow: true,
-                backgroundMode: "frame",
-              })
+        <div className="space-y-2">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
+            <ColorField
+              variant="swatch"
+              label="装饰色"
+              showLabel
+              allowClear
+              swatches={WIDGET_BORDER_RECOMMENDED}
+              value={value.frameColor ?? ""}
+              onChange={(color) =>
+                onChange({
+                  frameColor: color || undefined,
+                  backgroundShow: true,
+                  backgroundMode: "frame",
+                })
+              }
+            />
+            <ChartFramePresetPicker
+              className="min-w-0 flex-1"
+              label="装饰边框"
+              value={value.framePresetId}
+              color={value.frameColor}
+              onChange={(presetId) =>
+                onChange({
+                  framePresetId: presetId,
+                  backgroundShow: true,
+                  backgroundMode: "frame",
+                })
+              }
+            />
+          </div>
+          <FrameOpacitySlider
+            label="装饰边框不透明度"
+            ariaLabel="装饰边框不透明度"
+            value={
+              value.frameOpacity != null
+                ? Math.round(value.frameOpacity * 100)
+                : value.opacity != null
+                  ? Math.round(value.opacity * 100)
+                  : undefined
             }
-          />
-          <ChartFramePresetPicker
-            className="min-w-0 flex-1"
-            label="边框样式"
-            value={value.framePresetId}
-            color={value.frameColor}
-            onChange={(presetId) =>
-              onChange({
-                framePresetId: presetId,
-                backgroundShow: true,
-                backgroundMode: "frame",
-              })
-            }
+            fallback={100}
+            min={0}
+            max={100}
+            step={1}
+            unit="%"
+            onChange={(opacity) => onChange({ frameOpacity: opacity / 100 })}
           />
         </div>
       )}
@@ -420,6 +448,7 @@ export function ChartBackgroundStyleFields({
         value={ws}
         onChange={onChange}
         disabled={!showBackground}
+        density={density}
       />
 
       {showBackground ? (

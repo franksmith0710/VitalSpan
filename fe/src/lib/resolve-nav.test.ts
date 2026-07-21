@@ -99,7 +99,7 @@ describe("resolveNavGroups", () => {
     expect(subNames).not.toContain("报表调度");
   });
 
-  it("T-NAV-MF-06: admin 数据 section has 数据连接与语义建模（无实体与主题）", () => {
+  it("T-NAV-MF-06: admin 数据 section has 数据连接与数据集（无实体与主题、元数据）", () => {
     const groups = resolveNavGroups(sessionUserFromAuth("admin", ["admin"]));
     const dataSection = groups.find((g) => g.title === "数据");
     expect(dataSection).toBeDefined();
@@ -107,11 +107,11 @@ describe("resolveNavGroups", () => {
     const dataConn = dataSection?.items.find((i) => i.name === "数据连接");
     expect(dataConn).toBeDefined();
     expect(dataConn?.subItems?.map((s) => s.name)).toEqual(["连接管理", "同步任务"]);
-    const semantic = dataSection?.items.find((i) => i.name === "语义建模");
-    expect(semantic).toBeDefined();
-    const semanticSubs = semantic?.subItems?.map((s) => s.name) ?? [];
-    expect(semanticSubs[0]).toBe("Dataset");
-    expect(semanticSubs).toContain("元数据");
+    const dataset = dataSection?.items.find((i) => i.name === "数据集");
+    expect(dataset?.path).toBe("/admin/datasets");
+    const allSubNames = dataSection?.items.flatMap((i) => i.subItems?.map((s) => s.name) ?? []) ?? [];
+    expect(allSubNames).not.toContain("元数据");
+    expect(dataSection?.items.some((i) => i.name === "语义建模")).toBe(false);
     expect(dataSection?.items.some((i) => i.name === "实体与主题")).toBe(false);
     expect(groups.some((g) => g.title === "语义层")).toBe(false);
     expect(groups.some((g) => g.title === "主题与实体")).toBe(false);

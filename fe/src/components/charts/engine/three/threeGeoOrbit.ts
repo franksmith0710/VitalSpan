@@ -1,0 +1,114 @@
+import * as THREE from "three";
+import type { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GEO_MAP_SCALE_LIMIT } from "@/components/charts/engine/geo/geoConstants";
+
+export type ThreeGeoOrbitLayout = {
+  size: THREE.Vector3;
+  defaultDistance: number;
+  minDistance: number;
+  maxDistance: number;
+  halfX: number;
+  halfZ: number;
+  maxY: number;
+  target: THREE.Vector3;
+};
+
+/** 将挤出地图躺平（XZ 平面）并几何居中到场景原点 */
+export function layoutThreeGeoMapGroup(mapGroup: THREE.Group): ThreeGeoOrbitLayout {
+  mapGroup.rotation.x = -Math.PI / 2;
+  mapGroup.updateMatrixWorld(true);
+
+  const box = new THREE.Box3().setFromObject(mapGroup);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  mapGroup.position.sub(center);
+  mapGroup.updateMatrixWorld(true);
+
+  const halfX = Math.max(size.x * 0.5, 1);
+  const halfZ = Math.max(size.z * 0.5, 1);
+  const maxY = Math.max(size.y, 0.5);
+  const radius = Math.max(halfX, halfZ, maxY * 0.6);
+  const defaultDistance = radius * 2.15;
+
+  return {
+    size,
+    defaultDistance,
+    minDistance: defaultDistance / GEO_MAP_SCALE_LIMIT.max,
+    maxDistance: defaultDistance / GEO_MAP_SCALE_LIMIT.min,
+    halfX,
+    halfZ,
+    maxY,
+    target: new THREE.Vector3(0, maxY * 0.32, 0),
+  };
+}
+
+export function configureThreeGeoOrbitControls(
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
+  layout: ThreeGeoOrbitLayout,
+  roam: boolean,
+): () => void {
+  controls.target.copy(layout.target);
+  controls.screenSpacePanning = false;
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minPolarAngle = 0.2;
+  controls.maxPolarAngle = Math.PI / 2 - 0.1;
+  controls.minDistance = layout.minDistance;
+  controls.maxDistance = layout.maxDistance;
+  controls.enablePan = roam;
+  controls.enableZoom = roam;
+  controls.enableRotate = roam;
+
+  const azimuth = -Math.PI / 5;
+  const polar = 0.58;
+  const d = layout.defaultDistance;
+  const { target } = layout;
+  camera.position.set(
+    target.x + d * Math.sin(polar) * Math.sin(azimuth),
+    target.y + d * Math.cos(polar),
+    target.z + d * Math.sin(polar) * Math.cos(azimuth),
+  );
+  camera.lookAt(target);
+
+  const clampPan = () => {
+    if (!roam) return;
+    const dist = camera.position.distanceTo(controls.target);
+    const zoomRatio = layout.defaultDistance / Math.max(dist, layout.minDistance);
+    const panScale = THREE.MathUtils.clamp(zoomRatio, 1, GEO_MAP_SCALE_LIMIT.max);
+    const maxPanX = layout.halfX * 0.88 * panScale;
+    const maxPanZ = layout.halfZ * 0.88 * panScale;
+    controls.target.x = THREE.MathUtils.clamp(controls.target.x, -maxPanX, maxPanX);
+    controls.target.z = THREE.MathUtils.clamp(controls.target.z, -maxPanZ, maxPanZ);
+    controls.target.y = THREE.MathUtils.clamp(
+      controls.target.y,
+      layout.maxY * 0.12,
+      layout.maxY * 0.52,
+    );
+  };
+
+  controls.addEventListener("change", clampPan);
+  controls.update();
+  clampPan();
+
+  return () => controls.removeEventListener("change", clampPan);
+}
+
+export function resetThreeGeoOrbitView(
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
+  layout: ThreeGeoOrbitLayout,
+): void {
+  controls.target.copy(layout.target);
+  const azimuth = -Math.PI / 5;
+  const polar = 0.58;
+  const d = layout.defaultDistance;
+  const { target } = layout;
+  camera.position.set(
+    target.x + d * Math.sin(polar) * Math.sin(azimuth),
+    target.y + d * Math.cos(polar),
+    target.z + d * Math.sin(polar) * Math.cos(azimuth),
+  );
+  camera.lookAt(target);
+  controls.update();
+}

@@ -1,11 +1,18 @@
 import type { CSSProperties } from "react";
 import type { ChartDeStyle, ChartLegendIconShape, ChartLegendStyle } from "./chartDeStyle";
 import { readChartLegendPosition } from "./chartDeStyle";
+import { CHART_FONT_SIZE_OPTIONS } from "./chartFontSizes";
 
-export const CHART_LEGEND_ICON_SIZE_OPTIONS = [4, 6, 8, 10, 12, 14] as const;
+/** 图例图标边长（px）：小屏 4px 起，大屏可到 32px */
+export const CHART_LEGEND_ICON_SIZE_OPTIONS = [
+  4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32,
+] as const;
 
-/** 图例文本字号（对标 DE，不含标题/KPI 大档） */
-export const CHART_LEGEND_FONT_SIZE_OPTIONS = [8, 10, 12, 14, 16, 18, 20, 22, 24] as const;
+/** 图例文本字号：8px 极小档 + 与轴标签/标题统一的 10–48 档位 */
+export const CHART_LEGEND_FONT_SIZE_OPTIONS: readonly number[] = [
+  8,
+  ...CHART_FONT_SIZE_OPTIONS,
+];
 
 export const DEFAULT_CHART_LEGEND_ICON: ChartLegendIconShape = "triangle";
 export const DEFAULT_CHART_LEGEND_ICON_SIZE = 6;
@@ -17,6 +24,17 @@ export function readChartLegendIcon(deStyle: ChartDeStyle): ChartLegendIconShape
 
 export function readChartLegendIconSize(deStyle: ChartDeStyle): number {
   return deStyle.legend?.iconSize ?? DEFAULT_CHART_LEGEND_ICON_SIZE;
+}
+
+/** 当前图标尺寸不在预设档位时，追加后排序（保留历史配置可编辑） */
+export function resolveLegendIconSizeOptions(
+  current: number | undefined,
+  fallback: number = DEFAULT_CHART_LEGEND_ICON_SIZE,
+): number[] {
+  const size = current ?? fallback;
+  const base = CHART_LEGEND_ICON_SIZE_OPTIONS as readonly number[];
+  if (base.includes(size)) return [...base];
+  return [...base, size].sort((a, b) => a - b);
 }
 
 /** 图例项排列方向（对标 DE「方向」；未配置时随位置推断） */

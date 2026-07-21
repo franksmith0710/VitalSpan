@@ -84,8 +84,11 @@ export function buildWidgetBackgroundPresentation(
       presentation.backgroundLayer = imageLayer;
     }
   }
-  if (frameLayer && bg.opacity != null && bg.opacity < 1) {
-    frameLayer = { ...frameLayer, opacity: bg.opacity };
+  if (frameLayer) {
+    const frameAlpha = bg.frameOpacity ?? bg.opacity;
+    if (frameAlpha != null && frameAlpha < 1) {
+      frameLayer = { ...frameLayer, opacity: frameAlpha };
+    }
   }
   presentation.frameLayer = frameLayer;
   return presentation;

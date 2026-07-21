@@ -75,23 +75,11 @@ export const NAV_MANIFEST: NavManifestSection[] = [
         ],
       },
       {
-        name: "语义建模",
+        name: "数据集",
         icon: <Layers className="size-5" aria-hidden />,
+        path: "/admin/datasets",
         milestone: "M13",
-        subItems: [
-          {
-            name: "Dataset",
-            path: "/admin/datasets",
-            milestone: "M13",
-            capability: "dataset:*",
-          },
-          {
-            name: "元数据",
-            path: "/admin/metadata",
-            milestone: "M13",
-            capability: "metadata:*",
-          },
-        ],
+        capability: "dataset:*",
       },
     ],
   },

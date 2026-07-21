@@ -151,7 +151,7 @@ export function DeTitleStyleToolbar({
 
         <Divider />
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 px-1">
           <DashboardConfigSlider
             compact
             label="字间距"

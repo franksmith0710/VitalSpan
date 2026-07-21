@@ -1,8 +1,9 @@
+import type { ComponentProps } from "react";
 import { SURFACE_COLOR_RECOMMENDED, type WidgetStyleConfig } from "./dashboardStyleConfig";
 import {
+  ChartDeSliderField,
   DashboardConfigGridSlider,
   DashboardConfigSlider,
-  InspectorSliderField,
 } from "./deAttrSlider";
 import { SpacingModeToggle } from "./inspectorSpacing";
 import { InspectorInlineColorRow } from "./inspectorCompact";
@@ -28,12 +29,18 @@ export function WidgetSurfaceAppearanceFields({
 }) {
   if (disabled) return null;
 
-  const Slider = density === "narrow" ? InspectorSliderField : DashboardConfigSlider;
+  const Slider =
+    density === "narrow"
+      ? (props: ComponentProps<typeof ChartDeSliderField>) => (
+          <ChartDeSliderField layout="inline" {...props} />
+        )
+      : DashboardConfigSlider;
 
   return (
     <>
       <Slider
-        label="不透明度"
+        label="背景不透明度"
+        ariaLabel="背景不透明度"
         value={value.opacity != null ? Math.round(value.opacity * 100) : undefined}
         fallback={100}
         min={0}
@@ -70,7 +77,11 @@ export function WidgetSurfaceAppearanceFields({
         <p className="pb-1 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
           {value.backgroundImage
             ? "底图模式：模糊作用于组件背景图；数值越大越模糊。"
-            : "毛玻璃：模糊组件背后的画布内容，建议配合不透明度；数值越大越模糊。"}
+            : "毛玻璃：模糊组件背后的画布内容，建议配合背景不透明度；数值越大越模糊。"}
+        </p>
+      ) : value.backgroundMode === "frame" ? (
+        <p className="pb-1 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
+          作用于组件底色；装饰边框不透明度请在上方「装饰边框」区单独调节。
         </p>
       ) : null}
     </>
@@ -89,7 +100,12 @@ export function WidgetSurfaceSpacingFields({
 }) {
   const paddingMode = value.paddingMode ?? "unified";
   const radiusMode = value.radiusMode ?? "unified";
-  const Slider = density === "narrow" ? InspectorSliderField : DashboardConfigSlider;
+  const Slider =
+    density === "narrow"
+      ? (props: ComponentProps<typeof ChartDeSliderField>) => (
+          <ChartDeSliderField layout="inline" {...props} />
+        )
+      : DashboardConfigSlider;
   const GridSlider = DashboardConfigGridSlider;
 
   return (

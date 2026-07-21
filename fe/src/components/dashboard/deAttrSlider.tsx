@@ -16,12 +16,21 @@ export const DE_SLIDER_WIDTH_WIDE = "w-[10.5rem]";
 export const DE_SLIDER_WIDTH_NARROW = "w-[8.25rem]";
 /** 252px 行内字段（标签+滑块+数值）定宽滑块 */
 export const DE_SLIDER_WIDTH_CHART_INLINE = "w-[6rem]";
+/** 字段标签列宽：容纳「装饰边框不透明度」等长标签，同行滑块左对齐 */
+export const DE_SLIDER_FIELD_LABEL_COL = "7rem";
+
+/** 圆形滑块半径（size-3），轨道两端内缩避免贴边/裁切 */
+const SLIDER_THUMB_RADIUS = "0.375rem";
 
 const SLIDER_SHELL = "relative flex h-7 items-center";
 const SLIDER_TRACK =
-  "pointer-events-none absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full bg-gray-200 dark:bg-white/10";
+  "pointer-events-none absolute top-1/2 left-1.5 right-1.5 h-1 -translate-y-1/2 overflow-hidden rounded-full bg-gray-200 dark:bg-white/10";
 const SLIDER_THUMB =
   "pointer-events-none absolute top-1/2 z-[1] size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-brand-500 bg-white shadow-theme-xs will-change-[left] dark:border-brand-400 dark:bg-gray-900";
+
+function sliderThumbLeft(percent: number): string {
+  return `calc(${SLIDER_THUMB_RADIUS} + (100% - 2 * ${SLIDER_THUMB_RADIUS}) * ${percent / 100})`;
+}
 
 const DE_ATTR_FIELD_SHELL =
   "border-b border-gray-100 dark:border-white/[0.06]";
@@ -130,7 +139,7 @@ export function DeProgressSlider({
           style={{ transform: `scaleX(${percent / 100})` }}
         />
       </div>
-      <div className={SLIDER_THUMB} style={{ left: `${percent}%` }} aria-hidden />
+      <div className={SLIDER_THUMB} style={{ left: sliderThumbLeft(percent) }} aria-hidden />
       <input
         type="range"
         min={min}
@@ -195,15 +204,15 @@ function DeSliderInlineRow({
   const display = unit ? `${shown}${unit}` : String(shown);
   const sliderWidth =
     density === "narrow" && labelTone === "field"
-      ? DE_SLIDER_WIDTH_CHART_INLINE
+      ? "w-full min-w-0 max-w-full"
       : density === "narrow"
         ? DE_SLIDER_WIDTH_NARROW
         : DE_SLIDER_WIDTH_WIDE;
   const gridCols =
     density === "narrow" && labelTone === "field"
-      ? "grid-cols-[minmax(0,1fr)_5.5rem_2rem]"
+      ? "grid-cols-[7rem_minmax(0,1fr)_2rem]"
       : labelTone === "field"
-        ? "grid-cols-[4.75rem_minmax(0,10.5rem)_2.5rem]"
+        ? "grid-cols-[7rem_minmax(0,10.5rem)_2.5rem]"
         : labelTone === "compact"
           ? "grid-cols-[1.75rem_minmax(0,1fr)_2.5rem]"
           : "grid-cols-[minmax(0,1fr)_minmax(0,10.5rem)_2.5rem]";
@@ -212,12 +221,12 @@ function DeSliderInlineRow({
     <div className={cn("grid min-w-0 items-center gap-x-2.5", gridCols, className)}>
       <span
         className={cn(
-          "min-w-0 truncate text-theme-xs",
+          "text-theme-xs",
           labelTone === "field"
-            ? "font-medium text-gray-700 dark:text-gray-300"
+            ? "shrink-0 whitespace-nowrap font-medium text-gray-700 dark:text-gray-300"
             : labelTone === "compact"
-              ? "text-center text-gray-500 dark:text-gray-400"
-              : "text-gray-500 dark:text-gray-400",
+              ? "min-w-0 truncate text-center text-gray-500 dark:text-gray-400"
+              : "min-w-0 truncate text-gray-500 dark:text-gray-400",
         )}
       >
         {label}
@@ -640,8 +649,8 @@ export function DeAttrSubSliderRow({
 
   return (
     <div className="space-y-1.5">
-      <div className="grid min-w-0 grid-cols-[4.75rem_minmax(0,10.5rem)_2.5rem] items-center gap-x-2.5">
-        <span className="min-w-0 truncate text-[11px] text-gray-500 dark:text-gray-400">{label}</span>
+      <div className="grid min-w-0 grid-cols-[7rem_minmax(0,10.5rem)_2.5rem] items-center gap-x-2.5">
+        <span className="shrink-0 whitespace-nowrap text-[11px] text-gray-500 dark:text-gray-400">{label}</span>
         <DeProgressSlider
           className={cn(DE_SLIDER_WIDTH_WIDE, "min-w-0 max-w-full justify-self-start")}
           value={clamped}

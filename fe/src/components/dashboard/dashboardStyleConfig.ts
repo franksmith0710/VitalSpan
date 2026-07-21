@@ -52,6 +52,9 @@ export type WidgetStyleConfig = {
   framePresetId?: string;
   /** 装饰边框着色 */
   frameColor?: string;
+  /** 装饰边框不透明度（0–1）；未设时回退 opacity */
+  frameOpacity?: number;
+  /** 组件底色/底图不透明度（0–1） */
   opacity?: number;
   backdropBlur?: number;
   borderRadius?: number;

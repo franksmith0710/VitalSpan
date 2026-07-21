@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  CHART_LEGEND_FONT_SIZE_OPTIONS,
+  CHART_LEGEND_ICON_SIZE_OPTIONS,
   readChartLegendHAlign,
   readChartLegendIcon,
   readChartLegendIconSize,
@@ -13,6 +15,12 @@ describe("chartLegendPresentation", () => {
   it("defaults icon to triangle and size to 6", () => {
     expect(readChartLegendIcon({})).toBe("triangle");
     expect(readChartLegendIconSize({})).toBe(6);
+  });
+
+  it("exposes expanded legend icon and font size presets", () => {
+    expect(CHART_LEGEND_ICON_SIZE_OPTIONS.at(-1)).toBe(32);
+    expect(CHART_LEGEND_FONT_SIZE_OPTIONS.at(-1)).toBe(48);
+    expect(CHART_LEGEND_FONT_SIZE_OPTIONS[0]).toBe(8);
   });
 
   it("infers vertical orient for left/right position", () => {

@@ -52,9 +52,9 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
         />
         <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
           {isMap
-            ? chartType === "map-3d"
-              ? "离线中国 3D 地图：配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击区域下钻；可拖拽旋转视角。"
-              : "离线中国地图：配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击地图下钻。"
+              ? chartType === "map-3d"
+                ? "离线中国 3D 地图：滚轮缩放、拖拽旋转；平移与缩放有边界（对标 2D 地图）。双击地图恢复默认视角。"
+                : "离线中国地图：滚轮缩放与拖拽平移；配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击地图下钻。"
             : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。"}
         </p>
       </div>

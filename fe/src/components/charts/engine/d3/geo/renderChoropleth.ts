@@ -85,7 +85,13 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   ).filter((f) => f.geometry != null);
   if (features.length === 0) {
     container.replaceChildren();
-    return () => undefined;
+    const msg = document.createElement("div");
+    msg.className =
+      "flex h-full items-center justify-center px-3 text-center text-theme-sm text-warning-600 dark:text-warning-400";
+    msg.setAttribute("role", "status");
+    msg.textContent = "无有效地图区域可渲染，请检查地区维度与数据";
+    container.appendChild(msg);
+    return () => container.replaceChildren();
   }
 
   container.replaceChildren();

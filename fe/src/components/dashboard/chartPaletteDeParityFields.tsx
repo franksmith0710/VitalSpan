@@ -251,7 +251,7 @@ export function ChartPaletteDeParityFields({
 
       {showOpacity && onOpacityChange ? (
         <DashboardConfigSlider
-          label="不透明度"
+          label="配色不透明度"
           disabled={inheritActive}
           value={paletteOpacity != null ? Math.round(paletteOpacity * 100) : undefined}
           fallback={100}

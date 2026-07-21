@@ -23,6 +23,8 @@ import { useElementSize } from "@/hooks/useElementSize";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { useGeoMapLevel } from "@/hooks/useGeoMapLevel";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
+import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
+import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
 import { cn } from "@/lib/utils";
 
 type PaintMode = "data" | "live" | "commit";
@@ -44,6 +46,11 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   } = props;
 
   const isThreeMap = viewModel.chartType === "map-3d";
+
+  const geoRoamEnabled = useMemo(() => {
+    if (!chartConfig) return true;
+    return readChartGeoStyle(readChartDeStyle(chartConfig)).roam !== false;
+  }, [chartConfig]);
 
   const plan = useMemo(() => {
     const base = buildChartRenderPlan(viewModel);
@@ -169,6 +176,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       };
 
       if (!isThreeMap) {
+        setThreeLoading(false);
         try {
           runD3();
         } catch (err) {
@@ -183,7 +191,11 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         .then(({ renderThreeChoroplethChart }) => {
           if (gen !== renderGenRef.current) return;
           try {
+            if (gen !== renderGenRef.current) return;
             runD3Renderer(el, () => {
+              if (gen !== renderGenRef.current) {
+                return () => undefined;
+              }
               const result = renderThreeChoroplethChart(el, payload.config);
               applyRenderMeta(result.engine, result.fallbackReason ?? null);
               return result.dispose;
@@ -266,6 +278,13 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     if (!fill || plan.empty || playing) return;
     measureAndRender("commit", true);
   }, [visualScale, fill, plan.empty, playing, measureAndRender]);
+
+  useEffect(() => {
+    renderGenRef.current += 1;
+    setThreeLoading(false);
+    applyRenderMeta(null, null);
+    disposeD3Renderer(containerRef.current);
+  }, [viewModel.chartType, applyRenderMeta]);
 
   useEffect(() => {
     return () => {
@@ -353,6 +372,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
           className={cn("relative h-full w-full")}
           data-testid={isThreeMap ? "three-map-chart" : "d3-map-chart"}
           data-render-engine={isThreeMap ? (renderEngine ?? "pending") : undefined}
+          {...(geoRoamEnabled ? { [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" } : {})}
           style={fill ? undefined : { height, width: width ?? "100%" }}
         />
         {showPlaceholderHint ? (

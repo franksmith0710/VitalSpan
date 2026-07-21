@@ -100,8 +100,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /datasources/new             # 新建 · form-flow（含类型选型向导）
 │   ├── /datasources/:id             # 详情/连通性/schema · detail-page
 │   ├── /ingestion/sync-jobs         # 同步任务（侧栏挂在「数据连接」下，非一级项）
-│   ├── /metadata                    # 元数据（语义建模子项；非独立一级）
-│   ├── /datasets                    # Dataset（语义建模默认子项）
+│   ├── /datasets                    # 数据集（对标 DataEase；侧栏一级，M13）
+│   ├── /metadata                    # 语义层元数据（**已移出侧栏**；路由保留，深链可达）
 │   │
 │   > **实体与主题**（`/entities/overview`、`/themes/:id`）**已移出侧栏**；路由与能力保留，深链可达。
 │
@@ -154,13 +154,13 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 |------|--------|----------|--------|------|---------|
 | 分析 | 仪表板、数据大屏 | — | M1 | admin/analyst/viewer | **展开**（主路径） |
 | 报表 | 报表中心（含「全部报表」hub；analyst/viewer 见全部报表+预制；admin 另含模板/调度） | `report:read` / `report:manage` | M1/M7/M11 | 全员 | **展开** |
-| 数据 | 数据连接（连接管理/同步任务）、语义建模（Dataset/元数据） | `datasource:*` / `dataset:*` / `metadata:*` | M1/M13 | admin | **展开** |
+| 数据 | 数据连接（连接管理/同步任务）、**数据集** | `datasource:*` / `dataset:*` | M1/M13 | admin | **展开** |
 | 治理 | 治理流程、查询服务、查询设计器 | `governance:*` | M1/M13 | admin | **H1 默认隐藏**（`VITE_GOV_NAV=1` 才显示） |
 | 我的 | 个人资料、偏好、安全 | — | — | 全员 | 头像菜单进入 |
 | 后台管理 | 权限与安全 / 组织 / 审计 | `system:*` | M1 | admin | 头像菜单进入 |
 
 > **H1（客户交付）**：`fe/src/lib/gov-nav.ts` + `nav-manifest.requiresGovNav`；默认不展示「治理」，避免 InMemory 总线冒充。深链仍可达，路由壳层展示「未对接真实总线 / 差异化能力」横幅。  
-> **已移出侧栏（路由保留）**：图表类型目录、实体总览、主题分析、独立「数据接入」一级项。  
+> **已移出侧栏（路由保留）**：图表类型目录、实体总览、主题分析、独立「数据接入」一级项、**语义层元数据**（`/admin/metadata`；术语/主题/维度字典能力保留，对标 DataEase 不在顶栏单独暴露）。  
 > **生产不注册**：`/embed/sdk-demo` 仅 `import.meta.env.DEV`。  
 > **nav 单一真理源**：主 IA `fe/src/config/nav-manifest.tsx`；个人中心 `account-nav.tsx`、后台管理 `system-admin-nav.tsx`；派生：`fe/src/lib/resolve-nav.ts`。
 ---

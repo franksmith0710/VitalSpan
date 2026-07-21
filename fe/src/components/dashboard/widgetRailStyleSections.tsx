@@ -164,7 +164,8 @@ export function MediaWidgetStylePanel({
             />
           </DeAttrField>
           <DashboardConfigSlider
-            label="不透明度"
+            label="图片不透明度"
+            ariaLabel="图片不透明度"
             value={cfg.opacity != null ? Math.round(cfg.opacity * 100) : undefined}
             fallback={100}
             min={0}

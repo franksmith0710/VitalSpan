@@ -55,7 +55,7 @@ export function ChartPaletteConfigFields({
       {onOpacityChange ? (
         <div className="space-y-1">
           <ChartDeSliderField
-            label={dense ? "不透明度" : "配色不透明度"}
+            label="配色不透明度"
             layout={dense ? "inline" : "stacked"}
             disabled={inheritActive}
             value={
