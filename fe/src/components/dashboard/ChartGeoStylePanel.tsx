@@ -7,7 +7,7 @@ import { INSPECTOR_SECTION_GAP, InspectorSwitchRow } from "./inspectorCompact";
 type ChartGeoStylePanelProps = {
   cfg: ChartViewConfig;
   deStyle: ChartDeStyle;
-  chartType: "map" | "heatmap";
+  chartType: "map" | "map-3d" | "heatmap";
   onChange: (cfg: ChartViewConfig) => void;
 };
 
@@ -16,21 +16,22 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const geo = readChartGeoStyle(deStyle);
   const patchGeo = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
     onChange(patchChartDeStyleNested(cfg, "geo", patch));
+  const isMap = chartType === "map" || chartType === "map-3d";
 
   return (
     <DashboardConfigSection
-      title={chartType === "map" ? "地图样式" : "热力图样式"}
+      title={isMap ? "地图样式" : "热力图样式"}
       compact
     >
       <div className={INSPECTOR_SECTION_GAP}>
-        {chartType === "map" ? (
+        {isMap ? (
           <InspectorSwitchRow
             label="缩放平移"
             checked={geo.roam !== false}
             onCheckedChange={(roam) => patchGeo({ roam })}
           />
         ) : null}
-        {chartType === "map" ? (
+        {isMap && chartType === "map" ? (
           <InspectorSwitchRow
             label="区域标签"
             checked={geo.showRegionLabel === true}
@@ -50,8 +51,10 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
           onCheckedChange={(visualMap) => patchGeo({ visualMap })}
         />
         <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
-          {chartType === "map"
-            ? "离线中国地图：配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击地图下钻。"
+          {isMap
+            ? chartType === "map-3d"
+              ? "离线中国 3D 地图：配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击区域下钻；可拖拽旋转视角。"
+              : "离线中国地图：配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击地图下钻。"
             : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。"}
         </p>
       </div>

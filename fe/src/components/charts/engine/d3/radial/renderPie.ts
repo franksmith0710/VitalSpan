@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
+import { drawPieExtrude } from "@/components/charts/engine/d3/core/depthEngine";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
@@ -101,6 +102,12 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
 
   const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
   const arcs = g.selectAll<SVGGElement, d3.PieArcDatum<D3Datum>>("g.slice").data(pie(data)).join("g").attr("class", "slice");
+
+  arcs.each(function (d) {
+    const base = colorScale(String(d.data[colorField] ?? "")) ?? colors[0] ?? "#465fff";
+    const color = resolveDatumColor(Number(d.data[angleField] ?? 0), base, conditionalRules);
+    drawPieExtrude(d3.select(this), arc(d), color);
+  });
 
   arcs
     .append("path")

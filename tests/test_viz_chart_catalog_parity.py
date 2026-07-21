@@ -5,7 +5,7 @@ from __future__ import annotations
 from app.viz.builtin import ALL_BUILTIN_SPECS, register_builtin_chart_types
 from app.viz.registry import export_chart_type_catalog
 
-EXPECTED_CHART_TYPE_COUNT = 48
+EXPECTED_CHART_TYPE_COUNT = 49
 
 
 def test_catalog_count_and_types():

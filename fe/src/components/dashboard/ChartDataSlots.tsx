@@ -4,6 +4,7 @@ import { useChartInspector } from "./chartInspectorContext";
 import type { SlotTarget } from "./chartInspectorTypes";
 import { MapChartFieldHintBanner } from "./MapChartFieldHint";
 import { mapChartFieldHint } from "@/lib/mapChartDataHint";
+import { isGeoMapChartType } from "@/lib/chartViewConfig";
 
 function isActiveSlot(a: SlotTarget | null, b: SlotTarget): boolean {
   return a?.kind === b.kind && a?.index === b.index;
@@ -25,7 +26,7 @@ export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean 
 
   const columnsDisabled = columns.length === 0;
   const slots = chartDataSlotBlueprint(cfg.chartType);
-  const mapHint = cfg.chartType === "map" ? mapChartFieldHint(columns) : null;
+  const mapHint = isGeoMapChartType(cfg.chartType) ? mapChartFieldHint(columns) : null;
 
   const clearSlot = (target: SlotTarget) => {
     clearFieldAssignError();

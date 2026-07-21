@@ -3,6 +3,7 @@ import { GripVertical, Trash2 } from "lucide-react";
 import { GeoMapPlaceholderChart } from "@/components/charts/adapters/GeoMapPlaceholderChart";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { isGeoMapChartType } from "@/lib/chartViewConfig";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,7 +107,7 @@ function WidgetPendingPreview({
   const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
   const mapIsDark = effectiveScheme === "dark";
 
-  if (chartType === "map") {
+  if (isGeoMapChartType(chartType)) {
     return (
       <div className="relative flex h-full min-h-[64px] flex-col overflow-hidden">
         <GeoMapPlaceholderChart fill hint="" isDark={mapIsDark} />

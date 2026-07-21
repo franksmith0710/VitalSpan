@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
+import { depthPieExtrudeOffset, resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -32,6 +33,9 @@ export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConf
   const cy = margin.top + innerH / 2;
   const radius = Math.min(innerW, innerH) * 0.38;
   const fillColor = colors[0] ?? "#465fff";
+  const depthLevel = resolveEffectiveDepth();
+  const depthOn = depthLevel !== "off";
+  const depthOffset = depthPieExtrudeOffset(depthLevel);
   const clipId = `d3-liquid-clip-${Math.random().toString(36).slice(2, 9)}`;
 
   const root = d3
@@ -62,16 +66,44 @@ export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConf
   const fillLevel = cy + radius - percent * radius * 2;
   const waveG = root.append("g").attr("clip-path", `url(#${clipId})`);
 
+  const shadowTransform =
+    depthOn && depthOffset > 0
+      ? `translate(${cx + depthOffset * 0.6},${fillLevel + depthOffset})`
+      : null;
+  const shadowWave =
+    depthOn && shadowTransform
+      ? waveG
+          .append("path")
+          .attr("class", "vs-liquid-extrude")
+          .attr("fill", shadeColor(fillColor, "shadow"))
+          .attr("opacity", 0.45)
+          .attr("transform", shadowTransform)
+      : null;
+
   const wave = waveG
     .append("path")
-    .attr("fill", fillColor)
+    .attr("fill", depthOn ? shadeColor(fillColor, "top") : fillColor)
     .attr("opacity", 0.88)
     .attr("transform", `translate(${cx},${fillLevel})`);
 
   const updateWave = (phase: number) => {
-    wave.attr("d", wavePath(radius * 2.2, radius * 0.06, phase));
+    const d = wavePath(radius * 2.2, radius * 0.06, phase);
+    wave.attr("d", d);
+    shadowWave?.attr("d", d);
   };
   updateWave(0);
+
+  if (depthOn && shadowTransform) {
+    waveG
+      .append("rect")
+      .attr("class", "vs-liquid-extrude")
+      .attr("x", cx - radius + depthOffset * 0.6)
+      .attr("y", fillLevel + depthOffset)
+      .attr("width", radius * 2)
+      .attr("height", cy + radius - fillLevel)
+      .attr("fill", shadeColor(fillColor, "shadow"))
+      .attr("opacity", 0.45);
+  }
 
   waveG
     .append("rect")
@@ -79,7 +111,7 @@ export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConf
     .attr("y", fillLevel)
     .attr("width", radius * 2)
     .attr("height", cy + radius - fillLevel)
-    .attr("fill", fillColor)
+    .attr("fill", depthOn ? shadeColor(fillColor, "top") : fillColor)
     .attr("opacity", 0.88);
 
   if (!prefersReducedMotion()) {

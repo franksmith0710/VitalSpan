@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 
@@ -23,7 +24,8 @@ function positionTooltip(
 
 export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showLabel, showTooltip, options, onPointClick } = config;
+  const { width, height, colors, theme, showLabel, showTooltip, options, onPointClick, depthVisual } = config;
+  const depthLevel = resolveEffectiveDepth(depthVisual);
   const nodesInput = (options.nodes as GraphNodeInput[]) ?? [];
   const edgesInput = (options.edges as GraphEdgeInput[]) ?? [];
   const layout = (options.layout as GraphLayout | undefined) ?? {};
@@ -52,6 +54,25 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
 
   const linkLayer = svg.append("g").attr("class", "links");
   const nodeLayer = svg.append("g").attr("class", "nodes");
+  const defs = depthLevel !== "off" ? svg.append("defs") : null;
+
+  const nodeFill = (id: string): string => {
+    const color = colorScale(id) ?? colors[0] ?? "#465fff";
+    if (!defs || depthLevel === "off") return color;
+    const safeId = id.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const gradId = `vs-force-node-${safeId}`;
+    if (defs.select(`#${gradId}`).empty()) {
+      const grad = defs
+        .append("radialGradient")
+        .attr("id", gradId)
+        .attr("cx", "35%")
+        .attr("cy", "35%")
+        .attr("r", "70%");
+      grad.append("stop").attr("offset", "0%").attr("stop-color", shadeColor(color, "top"));
+      grad.append("stop").attr("offset", "100%").attr("stop-color", color);
+    }
+    return `url(#${gradId})`;
+  };
 
   const link = linkLayer
     .selectAll<SVGLineElement, SimLink>("line")
@@ -72,7 +93,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   node
     .append("circle")
     .attr("r", 10)
-    .attr("fill", (d) => colorScale(d.id) ?? colors[0] ?? "#465fff")
+    .attr("fill", (d) => nodeFill(d.id))
     .attr("stroke", "#fff")
     .attr("stroke-width", 2)
     .on("mouseenter", function () {

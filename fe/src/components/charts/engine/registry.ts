@@ -10,6 +10,7 @@ const LEGACY_CANVAS_TYPES = new Set<string>([
   "pie",
   "gauge",
   "map",
+  "map-3d",
   "heatmap",
   "timeline",
   "sankey",

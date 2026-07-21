@@ -1,82 +1,162 @@
-import * as d3 from "d3";
+import type { Selection } from "d3";
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
+import type { ChartLegendIconShape } from "@/lib/chartDeStyle";
+import { normalizeLegendIconShape } from "@/lib/chartLegendPresentation";
 
 export type D3LegendItem = { label: string; color: string };
 
 export type D3LegendLayout = {
-  position: "top" | "bottom" | "left" | "right";
-  orient: "horizontal" | "vertical";
+  position?: "top" | "bottom" | "left" | "right";
+  orient?: "horizontal" | "vertical";
+  icon?: ChartLegendIconShape;
+  iconSize?: number;
+  fontSize?: number;
+  hAlign?: "left" | "center" | "right";
+  vAlign?: "top" | "middle" | "bottom";
 };
 
-const ICON = 10;
-const GAP = 6;
-const PAD = 8;
+type LayoutOpts = {
+  width: number;
+  height: number;
+  margin: { top: number; right: number; bottom: number; left: number };
+  theme: AntvThemeTokens;
+  layout?: D3LegendLayout;
+  fontSize?: number;
+};
 
-function itemSize(label: string, orient: "horizontal" | "vertical"): { w: number; h: number } {
-  const textW = Math.max(label.length * 6.5, 16);
-  if (orient === "vertical") return { w: ICON + GAP + textW, h: ICON + 4 };
-  return { w: ICON + GAP + textW + PAD, h: ICON + 4 };
+function estimateLegendSize(
+  items: D3LegendItem[],
+  horizontal: boolean,
+  fontSize: number,
+  iconSize: number,
+): { width: number; height: number } {
+  if (items.length === 0) return { width: 0, height: 0 };
+  if (horizontal) {
+    const width = items.reduce((sum, item) => sum + item.label.length * 7 + iconSize + 24, 0);
+    return { width, height: Math.max(iconSize, fontSize) + 6 };
+  }
+  return {
+    width: Math.max(...items.map((item) => item.label.length * 7 + iconSize + 24), 48),
+    height: items.length * (Math.max(iconSize, fontSize) + 8),
+  };
 }
 
-/** 在 SVG 根节点绘制内联图例（对标 DE 图例位置/方向） */
-export function layoutD3InlineLegend(
-  root: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+function legendOrigin(
+  opts: LayoutOpts,
   items: D3LegendItem[],
-  opts: {
-    width: number;
-    height: number;
-    margin: { top: number; right: number; bottom: number; left: number };
-    theme: AntvThemeTokens;
-    layout: D3LegendLayout;
-  },
-): void {
-  if (items.length === 0) return;
-  root.selectAll("g.vs-legend").remove();
-
-  const { width, height, margin, theme, layout } = opts;
-  const orient = layout.orient;
-  const sizes = items.map((it) => itemSize(it.label, orient));
-  const blockW =
-    orient === "horizontal" ? sizes.reduce((s, x) => s + x.w, 0) : Math.max(...sizes.map((x) => x.w));
-  const blockH =
-    orient === "horizontal" ? Math.max(...sizes.map((x) => x.h)) : sizes.reduce((s, x) => s + x.h, 0);
+  horizontal: boolean,
+): { x: number; y: number } {
+  const position = opts.layout?.position ?? "top";
+  const fontSize = opts.layout?.fontSize ?? opts.fontSize ?? 11;
+  const iconSize = opts.layout?.iconSize ?? 10;
+  const hAlign = opts.layout?.hAlign ?? "left";
+  const vAlign = opts.layout?.vAlign ?? "top";
+  const { width, height, margin } = opts;
+  const size = estimateLegendSize(items, horizontal, fontSize, iconSize);
 
   let x = margin.left;
   let y = 10;
-  if (layout.position === "top") {
-    x = margin.left + Math.max(0, (width - margin.left - margin.right - blockW) / 2);
-    y = 8;
-  } else if (layout.position === "bottom") {
-    x = margin.left + Math.max(0, (width - margin.left - margin.right - blockW) / 2);
-    y = height - margin.bottom - blockH - 4;
-  } else if (layout.position === "left") {
-    x = 8;
-    y = margin.top + Math.max(0, (height - margin.top - margin.bottom - blockH) / 2);
-  } else {
-    x = width - margin.right - blockW - 8;
-    y = margin.top + Math.max(0, (height - margin.top - margin.bottom - blockH) / 2);
+
+  switch (position) {
+    case "bottom":
+      y = height - margin.bottom + 6;
+      break;
+    case "left":
+      x = 8;
+      y = margin.top;
+      break;
+    case "right":
+      x = width - margin.right - size.width;
+      y = margin.top;
+      break;
+    case "top":
+    default:
+      x = margin.left;
+      y = 10;
+      break;
   }
 
+  if (position === "top" || position === "bottom") {
+    if (hAlign === "center") x = Math.max(margin.left, (width - size.width) / 2);
+    if (hAlign === "right") x = Math.max(margin.left, width - margin.right - size.width);
+  }
+
+  if (position === "left" || position === "right") {
+    if (vAlign === "middle") y = Math.max(margin.top, (height - size.height) / 2);
+    if (vAlign === "bottom") y = Math.max(margin.top, height - margin.bottom - size.height);
+  }
+
+  return { x, y };
+}
+
+function appendLegendIcon(
+  g: Selection<SVGGElement, unknown, null, undefined>,
+  shape: Exclude<ChartLegendIconShape, "roundRect">,
+  size: number,
+  color: string,
+) {
+  const y = 1;
+  switch (shape) {
+    case "circle":
+      g.append("circle").attr("cx", size / 2).attr("cy", y + size / 2).attr("r", size / 2).attr("fill", color);
+      return size;
+    case "triangle":
+      g.append("path")
+        .attr(
+          "d",
+          `M ${size / 2} ${y} L ${size} ${y + size} L 0 ${y + size} Z`,
+        )
+        .attr("fill", color);
+      return size;
+    case "diamond":
+      g.append("path")
+        .attr(
+          "d",
+          `M ${size / 2} ${y} L ${size} ${y + size / 2} L ${size / 2} ${y + size} L 0 ${y + size / 2} Z`,
+        )
+        .attr("fill", color);
+      return size;
+    case "rect":
+    default:
+      g.append("rect").attr("width", size).attr("height", size).attr("y", y).attr("rx", 2).attr("fill", color);
+      return size;
+  }
+}
+
+/** 在 SVG 根节点绘制内联图例（对标 DE 图例位置/方向/图标） */
+export function layoutD3InlineLegend(
+  root: Selection<SVGSVGElement, unknown, null, undefined>,
+  items: D3LegendItem[],
+  opts: LayoutOpts,
+): void {
+  if (items.length === 0) return;
+
+  root.selectAll("g.vs-legend").remove();
+  const horizontal = (opts.layout?.orient ?? "horizontal") === "horizontal";
+  const fontSize = opts.layout?.fontSize ?? opts.fontSize ?? 11;
+  const iconSize = opts.layout?.iconSize ?? 10;
+  const iconShape = normalizeLegendIconShape(opts.layout?.icon ?? "rect");
+  const { x, y } = legendOrigin(opts, items, horizontal);
   const legend = root.append("g").attr("class", "vs-legend").attr("transform", `translate(${x},${y})`);
   let offsetX = 0;
   let offsetY = 0;
-  for (let i = 0; i < items.length; i += 1) {
-    const item = items[i]!;
-    const size = sizes[i]!;
+
+  for (const item of items) {
     const g = legend.append("g").attr("transform", `translate(${offsetX},${offsetY})`);
-    g.append("rect")
-      .attr("width", ICON)
-      .attr("height", ICON)
-      .attr("y", 1)
-      .attr("rx", 2)
-      .attr("fill", item.color);
+    const iconW = appendLegendIcon(g, iconShape, iconSize, item.color);
     g.append("text")
-      .attr("x", ICON + GAP)
-      .attr("y", 10)
-      .attr("fill", theme.legendText)
-      .style("font-size", "11px")
+      .attr("x", iconW + 4)
+      .attr("y", Math.max(iconSize, fontSize) - 1)
+      .attr("fill", opts.theme.legendText)
+      .style("font-size", `${fontSize}px`)
       .text(item.label);
-    if (orient === "horizontal") offsetX += size.w;
-    else offsetY += size.h;
+
+    const rowH = Math.max(iconSize, fontSize) + 8;
+    const rowW = item.label.length * 7 + iconW + 24;
+    if (horizontal) {
+      offsetX += rowW;
+    } else {
+      offsetY += rowH;
+    }
   }
 }

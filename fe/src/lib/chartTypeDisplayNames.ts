@@ -35,6 +35,7 @@ export const CHART_TYPE_DISPLAY_NAMES: Record<string, string> = {
   "word-cloud": "词云图",
   wordCloud: "词云（旧 ID）",
   map: "区域地图",
+  "map-3d": "3D 区域地图",
   heatmap: "热力图（已弃用）",
   scatter: "散点图",
   quadrant: "象限图",

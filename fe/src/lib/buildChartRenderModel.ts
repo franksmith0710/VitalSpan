@@ -1,4 +1,4 @@
-import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { isGeoMapChartType } from "@/lib/chartViewConfig";
 import { isLegacyTableChartType } from "@/lib/chartViewConfig";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { chartRenderRequiredCounts } from "@/components/dashboard/chartFieldSlots";
@@ -107,7 +107,7 @@ export function buildChartRenderModel(
   const dims = activeFieldRefs(config.dimensions);
   const metrics = activeFieldRefs(config.metrics);
 
-  if (config.chartType === "map") {
+  if (isGeoMapChartType(config.chartType)) {
     const regionDim = dims[0]?.field;
     if (!regionDim) return { kind: "error", message: "请配置地理维度字段" };
     if (!metrics.length) return { kind: "error", message: "请配置指标字段" };

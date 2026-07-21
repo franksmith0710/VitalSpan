@@ -87,7 +87,7 @@ function axisScrollMetrics(
 ): ViewportScrollAxisMetrics {
   const scrollSize = Math.max(clientSize, maxPan - minPan + clientSize);
   const maxScroll = Math.max(0, scrollSize - clientSize);
-  const scrollOffset = Math.min(maxScroll, Math.max(0, pan - minPan));
+  const scrollOffset = Math.min(maxScroll, Math.max(0, maxPan - pan));
   return {
     scrollSize,
     clientSize,
@@ -123,12 +123,12 @@ export function panFromHorizontalScroll(
   scrollOffset: number,
   bounds: ViewportPanBounds,
 ): number {
-  return bounds.minPanX + scrollOffset;
+  return bounds.maxPanX - scrollOffset;
 }
 
 export function panFromVerticalScroll(
   scrollOffset: number,
   bounds: ViewportPanBounds,
 ): number {
-  return bounds.minPanY + scrollOffset;
+  return bounds.maxPanY - scrollOffset;
 }

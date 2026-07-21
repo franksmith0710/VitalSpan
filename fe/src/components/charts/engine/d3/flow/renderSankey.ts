@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
@@ -78,7 +79,9 @@ function linkPath(
 export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
 
-  const { width, height, colors, theme, showTooltip, valueFormat, options } = config;
+  const { width, height, colors, theme, showTooltip, valueFormat, options, depthVisual } = config;
+  const depthLevel = resolveEffectiveDepth(depthVisual);
+  const linkOpacity = depthLevel === "enhanced" ? 0.38 : depthLevel === "standard" ? 0.32 : 0.28;
   const sourceField = String(options.sourceField ?? "source");
   const targetField = String(options.targetField ?? "target");
   const weightField = String(options.weightField ?? "value");
@@ -123,7 +126,7 @@ export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConf
     g.append("path")
       .attr("d", linkPath(s.x, sy, strokeW, t.x, ty, strokeW, nodeWidth))
       .attr("fill", color)
-      .attr("opacity", 0.28)
+      .attr("opacity", linkOpacity)
       .on("mouseenter", (event) => {
         if (!tooltip) return;
         tooltip

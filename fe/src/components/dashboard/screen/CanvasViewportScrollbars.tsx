@@ -63,6 +63,12 @@ function ScrollbarAxis({
     const track = trackRef.current;
     if (!track) return;
 
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {
+      // jsdom / legacy browsers
+    }
+
     const rect = track.getBoundingClientRect();
     const trackSize = isHorizontal ? rect.width : rect.height;
     const maxScroll = Math.max(0, metrics.scrollSize - metrics.clientSize);
@@ -82,7 +88,13 @@ function ScrollbarAxis({
       );
     };
 
+    const thumbEl = event.currentTarget;
+    const pointerId = event.pointerId;
+
     const onUp = () => {
+      if (thumbEl.hasPointerCapture(pointerId)) {
+        thumbEl.releasePointerCapture(pointerId);
+      }
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);

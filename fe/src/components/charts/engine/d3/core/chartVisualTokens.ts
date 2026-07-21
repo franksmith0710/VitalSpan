@@ -26,9 +26,9 @@ export const VCDS = {
     maxWidth: 240,
   },
   depth: {
-    extrudePx: { standard: 4, enhanced: 8 },
-    sideDarken: 0.22,
-    topLighten: 0.14,
+    extrudePx: { standard: 6, enhanced: 10 },
+    sideDarken: 0.28,
+    topLighten: 0.18,
     shadowBlur: { standard: 3, enhanced: 6 },
     pieExtrudeOffset: { standard: 3, enhanced: 6 },
     hoverLiftPx: { standard: 1, enhanced: 2 },

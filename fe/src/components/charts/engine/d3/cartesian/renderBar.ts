@@ -1,8 +1,9 @@
 import * as d3 from "d3";
-import { animateBarHeight } from "@/components/charts/engine/d3/core/animate";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { paintVerticalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { layoutD3InlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
@@ -23,6 +24,24 @@ const BAR_RX = VCDS.bar.rx;
 const STACK_GAP = VCDS.bar.stackGap;
 
 type WideRow = Record<string, string | number>;
+
+function paintVBarCell(
+  cell: d3.Selection<SVGGElement, unknown, null, undefined>,
+  opts: { y1: number; h: number; w: number; front: string; solid: string },
+): void {
+  cell.selectAll("*").remove();
+  const depthOn = resolveEffectiveDepth() !== "off";
+  paintVerticalBar({
+    plot: cell,
+    x: 0,
+    y1: opts.y1,
+    height: opts.h,
+    width: opts.w,
+    color: depthOn ? opts.solid : opts.front,
+    rx: BAR_RX,
+  });
+  if (depthOn && opts.front !== opts.solid) cell.select(".vs-bar-front").attr("fill", opts.front);
+}
 
 export function renderD3BarChart(container: HTMLElement, config: D3CartesianRenderConfig): () => void {
   if (config.isHorizontal) return renderD3HorizontalBarChart(container, config);
@@ -55,6 +74,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     tooltipPresentation,
     onPointClick,
     dataZoom = false,
+    legendLayout,
   } = config;
 
   const theme = themeFromConfig(rawTheme);
@@ -72,7 +92,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     showLegend: Boolean(showLegend && hasMultiSeries),
     incremental,
   });
-  const { root, g, plot, innerW, innerH, margin } = scene;
+  const { root, defs, g, plot, innerW, innerH, margin } = scene;
   const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
   const keys = resolveSeriesKeys(seriesNames);
 
@@ -108,24 +128,22 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     for (const layer of stack(wideRows)) {
       const name = String(layer.key);
       const color = colorScale(name) ?? colors[0] ?? theme.accent;
+      const gradientFill = resolveSeriesGradientFill(defs, `bar-stack-${name}`, color, seriesGradient);
       plot
-        .selectAll(`rect.${name}`)
+        .selectAll(`g.bar-stack-${name}`)
         .data(layer)
-        .join("rect")
-        .attr("x", (d) => x(String(d.data.__category__)) ?? 0)
-        .attr("width", x.bandwidth())
-        .attr("rx", BAR_RX)
-        .attr("fill", (d) => {
-          const base = resolveSeriesGradientFill(defs, `bar-stack-${name}`, color, seriesGradient);
-          if (base.startsWith("url(")) return base;
-          return resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules);
-        })
+        .join("g")
+        .attr("class", `bar-stack-${name}`)
+        .attr("transform", (d) => `translate(${x(String(d.data.__category__)) ?? 0},0)`)
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
           const y1 = y(Number(d[1]));
           const rawH = Math.max(0, y(Number(d[0])) - y1);
           const h = rawH > STACK_GAP ? rawH - STACK_GAP : rawH;
-          animateBarHeight(d3.select(this), y1, h);
+          const val = Number(d[1]) - Number(d[0]);
+          const solid = gradientFill.startsWith("url(") ? color : resolveDatumColor(val, color, conditionalRules);
+          const front = gradientFill.startsWith("url(") ? gradientFill : solid;
+          paintVBarCell(d3.select(this), { y1, h, w: x.bandwidth(), front, solid });
         })
         .on("click", (_e, d) =>
           onPointClick?.({
@@ -139,25 +157,26 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     for (const s of seriesGroups) {
       const name = s.name || "value";
       const color = colorScale(name) ?? colors[0] ?? theme.accent;
+      const barW = useGrouped && xSub ? xSub.bandwidth() : x.bandwidth();
+      const gradientFill = resolveSeriesGradientFill(defs, `bar-${name}`, color, seriesGradient);
       plot
-        .selectAll(`rect.bar-${name}`)
+        .selectAll(`g.bar-${name}`)
         .data(s.points)
-        .join("rect")
-        .attr("rx", BAR_RX)
-        .attr("fill", (d) => {
-          const base = resolveSeriesGradientFill(defs, `bar-${name}`, color, seriesGradient);
-          if (base.startsWith("url(")) return base;
-          return resolveDatumColor(Number(d.__value__), color, conditionalRules);
+        .join("g")
+        .attr("class", `bar-${name}`)
+        .attr("transform", (d) => {
+          const base = x(String(d.__category__)) ?? 0;
+          const bx = useGrouped && xSub ? base + (xSub(name) ?? 0) : base;
+          return `translate(${bx},0)`;
         })
         .attr("cursor", onPointClick ? "pointer" : "default")
-        .attr("x", (d) => {
-          const base = x(String(d.__category__)) ?? 0;
-          return useGrouped && xSub ? base + (xSub(name) ?? 0) : base;
-        })
-        .attr("width", useGrouped && xSub ? xSub.bandwidth() : x.bandwidth())
         .each(function (d) {
           const y1 = y(Number(d.__value__));
-          animateBarHeight(d3.select(this), y1, innerH - y1);
+          const solid = gradientFill.startsWith("url(")
+            ? color
+            : resolveDatumColor(Number(d.__value__), color, conditionalRules);
+          const front = gradientFill.startsWith("url(") ? gradientFill : solid;
+          paintVBarCell(d3.select(this), { y1, h: innerH - y1, w: barW, front, solid });
         })
         .on("click", (_e, d) => onPointClick?.(d));
     }
@@ -216,21 +235,18 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   }
 
   if (showLegend && hasMultiSeries) {
-    root.selectAll("g.vs-legend").remove();
-    const legend = root.append("g").attr("class", "vs-legend").attr("transform", `translate(${margin.left},10)`);
-    let offsetX = 0;
-    for (const name of seriesNames) {
-      const color = colorScale(name) ?? colors[0] ?? theme.accent;
-      const label = name || "系列";
-      const item = legend.append("g").attr("transform", `translate(${offsetX},0)`);
-      item.append("rect").attr("width", 10).attr("height", 10).attr("y", 1).attr("rx", 2).attr("fill", color);
-      item.append("text").attr("x", 14).attr("y", 10).attr("fill", theme.legendText).style("font-size", "11px").text(label);
-      offsetX += label.length * 7 + 32;
-    }
+    layoutD3InlineLegend(
+      root,
+      seriesNames.map((name) => ({
+        label: name || "系列",
+        color: colorScale(name) ?? colors[0] ?? theme.accent,
+      })),
+      { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
+    );
   }
 
   writeIncrementalSession(container, { plotType: "Column", width, height });
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
 
   return () => {
     detachZoom();

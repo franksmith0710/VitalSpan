@@ -141,6 +141,7 @@ export const BUILTIN_PLUGIN_DEFS: ChartPluginDef[] = [
   def("wordCloud", "distribute", "d3", "antv", PIE, PIE_SECTIONS, { deprecated: true, migratesTo: "word-cloud" }),
 
   def("map", "map", "d3", "antv", MAP, GEO_SECTIONS),
+  def("map-3d", "map", "d3", "antv", MAP, GEO_SECTIONS),
   def("heatmap", "map", "d3", "antv", MAP, MINIMAL, { deprecated: true, migratesTo: "t-heatmap" }),
 
   def("scatter", "relation", "d3", "antv", STATS, LINE_BAR_SECTIONS),

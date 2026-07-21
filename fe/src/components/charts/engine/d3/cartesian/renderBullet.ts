@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { styleAxis } from "@/components/charts/engine/d3/core/axes";
-import { chartTransition } from "@/components/charts/engine/d3/core/animate";
+import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3BulletRenderConfig } from "@/components/charts/engine/d3/types";
@@ -71,19 +71,14 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
     }
 
     const measure = plot
-      .append("rect")
+      .append("g")
       .attr("class", "bullet-measure")
-      .attr("y", y0)
-      .attr("height", barH)
-      .attr("rx", BAR_RX)
-      .attr("fill", measureColor)
+      .attr("transform", `translate(0,${y0})`)
       .attr("cursor", onPointClick ? "pointer" : "default")
       .each(function () {
+        const cell = d3.select(this);
         const w = x(d.actual);
-        chartTransition(d3.select(this).attr("x", 0).attr("width", 0))
-          .duration(600)
-          .ease(d3.easeCubicOut)
-          .attr("width", w);
+        paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: barH, color: measureColor, rx: BAR_RX });
       })
       .on("click", () => onPointClick?.(d));
 

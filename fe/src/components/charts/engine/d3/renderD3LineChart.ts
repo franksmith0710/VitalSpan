@@ -10,6 +10,7 @@ import {
 } from "@/components/charts/engine/d3/d3LineVisual";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachCrosshairHover, createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
 import {
   buildCartesianScene,
@@ -135,6 +136,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       .attr("stroke-linecap", VCDS.line.cap)
       .attr("stroke-linejoin", VCDS.line.join)
       .attr("d", lineGen);
+    applyPathDepthShadow(defs, linePath, color, `line-${seriesIndex}`);
     animateStrokePath(linePath);
 
     const dots = plot
@@ -237,13 +239,14 @@ function renderHorizontalLineFallback(
   const lineGen = buildLineGenerator(true, smooth, xScale, yScale);
   seriesGroups.forEach((series, i) => {
     const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
-    scene.plot
+    const linePath = scene.plot
       .append("path")
       .datum(series.points)
       .attr("fill", "none")
       .attr("stroke", color)
       .attr("stroke-width", VCDS.line.width)
       .attr("d", lineGen);
+    applyPathDepthShadow(scene.defs, linePath, color, `hline-${i}`);
   });
   const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
   return () => {

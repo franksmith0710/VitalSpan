@@ -13,6 +13,7 @@ import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKe
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
+import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachPointCategoryInteraction } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -139,13 +140,14 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
         .attr("fill", seriesGradient ? `url(#${gradId})` : strokeColor)
         .attr("fill-opacity", seriesGradient ? 1 : 0.2)
         .attr("d", areaGen);
-      plot
+      const topLine = plot
         .append("path")
         .datum(points)
         .attr("fill", "none")
         .attr("stroke", strokeColor)
         .attr("stroke-width", 2)
         .attr("d", d3.line<typeof points[0]>().x((d) => x(String(d.__category__)) ?? 0).y((d) => y(Number(d.__value__))).curve(curve));
+      applyPathDepthShadow(defs, topLine, strokeColor, `area-top-${i}`);
 
       if (showLabel) {
         plot

@@ -33,6 +33,7 @@ import { WidgetInspectorDelete } from "./widget-inspector-delete";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { chartHasAdvancedTab } from "@/lib/chartInspectorCapabilities";
 import { filterVisibleCatalogItems } from "@/lib/chartPaletteTaxonomy";
+import { isGeoMapChartType } from "@/lib/chartViewConfig";
 
 function buildValidateSuccessMessage(cfg: ReturnType<typeof useChartInspector>["cfg"]): string {
   const dims = [...new Set(activeFieldRefs(cfg.dimensions).map((d) => d.field))];
@@ -174,7 +175,7 @@ export function ChartEditorColumn({
                 </SelectContent>
               </Select>
             </div>
-            {cfg.chartType === "map" ? <ChartMapDataPanel /> : <ChartDataSlots />}
+            {isGeoMapChartType(cfg.chartType) ? <ChartMapDataPanel /> : <ChartDataSlots />}
             {tableProfile ? <ChartTableDataHint /> : null}
             <ChartConfigPanel
               config={cfg}

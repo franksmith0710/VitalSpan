@@ -1,7 +1,9 @@
 import * as d3 from "d3";
 import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
+import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import type { D3StockRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -9,7 +11,7 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
-  const { width, height, data, colors, theme, showTooltip, valueFormat, onPointClick } = config;
+  const { width, height, data, colors, theme, showTooltip, showLabel, labelFontSize, labelColor, valueFormat, onPointClick } = config;
 
   const categories = data.map((d) => d.type);
   const yMin = d3.min(data, (d) => d.low) ?? 0;
@@ -25,6 +27,7 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(0.3);
   const y = d3.scaleLinear().domain([yMin, yMax]).nice().range([innerH, 0]);
   const bodyW = Math.max(4, x.bandwidth() * 0.6);
+  const depthOn = resolveEffectiveDepth() !== "off";
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
@@ -68,6 +71,13 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
       .attr("cursor", onPointClick ? "pointer" : "default")
       .on("click", () => onPointClick?.(d));
 
+    if (depthOn) {
+      candle
+        .attr("stroke", shadeColor(color, "top"))
+        .attr("stroke-width", 1)
+        .style("paint-order", "stroke fill");
+    }
+
     if (showTooltip) {
       candle
         .on("mouseenter", () => {
@@ -86,6 +96,18 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
             .style("top", `${Math.max(event.clientY - rect.top - 56, 8)}px`);
         })
         .on("mouseleave", () => tooltip?.style("opacity", "0"));
+    }
+
+    if (showLabel) {
+      plot
+        .append("text")
+        .attr("x", cx)
+        .attr("y", y(d.close) - 6)
+        .attr("text-anchor", "middle")
+        .attr("fill", resolveLabelFill(theme, labelColor))
+        .style("font-size", `${labelFontSize}px`)
+        .style("pointer-events", "none")
+        .text(formatChartValue(d.close, valueFormat));
     }
   }
 

@@ -81,4 +81,25 @@ describe("DataScreenEditViewport blank selection", () => {
     );
     expect(screen.getByTestId("data-screen-canvas-stage")).toHaveStyle({ width: "2560px" });
   });
+
+  it("prevents browser zoom on ctrl+wheel over canvas viewport", () => {
+    render(
+      <DataScreenEditViewport canvasWidth={1920} canvasHeight={1080}>
+        <div data-testid="canvas-stage" className="h-[1080px] w-[1920px]" />
+      </DataScreenEditViewport>,
+    );
+
+    const viewport = screen
+      .getByTestId("data-screen-edit-viewport")
+      .querySelector("[data-canvas-scale-viewport]") as HTMLElement;
+    const event = new WheelEvent("wheel", {
+      deltaY: -100,
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const preventDefault = vi.spyOn(event, "preventDefault");
+    viewport.dispatchEvent(event);
+    expect(preventDefault).toHaveBeenCalled();
+  });
 });

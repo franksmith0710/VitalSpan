@@ -48,6 +48,7 @@ _CHART_TYPE_ZH: dict[str, str] = {
     "pie": "饼图",
     "gauge": "仪表盘",
     "map": "地图",
+    "map-3d": "3D 区域地图",
     "heatmap": "热力图",
     "kpi": "KPI 指标",
     "timeline": "时间轴",

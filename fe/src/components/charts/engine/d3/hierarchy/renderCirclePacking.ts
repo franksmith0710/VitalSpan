@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -20,7 +21,9 @@ function positionTooltip(
 
 export function renderD3CirclePackingChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, options, onPointClick } = config;
+  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, options, onPointClick, depthVisual } =
+    config;
+  const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as PackDatum[]) ?? [];
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
@@ -57,8 +60,12 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     .attr("r", (d) => d.r)
     .attr("fill", (d) => colorScale(d.data.name) ?? colors[0] ?? "#465fff")
     .attr("opacity", 0.9)
-    .attr("stroke", "#fff")
-    .attr("stroke-width", 1.5)
+    .attr("stroke", (d) => {
+      const fill = colorScale(d.data.name) ?? colors[0] ?? "#465fff";
+      return depthLevel === "off" ? "#fff" : shadeColor(fill, "top");
+    })
+    .attr("stroke-width", depthLevel === "off" ? 1.5 : 1)
+    .style("paint-order", depthLevel === "off" ? undefined : "stroke fill")
     .style("cursor", onPointClick ? "pointer" : "default")
     .on("mouseenter", function () {
       d3.select(this).attr("opacity", 1);

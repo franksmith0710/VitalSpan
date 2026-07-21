@@ -84,7 +84,7 @@ export function isLineOrBarType(type: ChartType): boolean {
 }
 
 export function isGeoMapChartType(type: ChartType): boolean {
-  return type === "map";
+  return type === "map" || type === "map-3d";
 }
 
 export function isMatrixHeatmapChartType(type: ChartType): boolean {

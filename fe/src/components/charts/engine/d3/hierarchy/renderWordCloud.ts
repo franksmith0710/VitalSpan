@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { applyCellBevel, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -94,7 +95,8 @@ function positionTooltip(
 
 export function renderD3WordCloudChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showTooltip, valueFormat, options, onPointClick } = config;
+  const { width, height, colors, theme, showTooltip, valueFormat, options, onPointClick, depthVisual } = config;
+  const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as WordDatum[]) ?? [];
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
@@ -112,23 +114,43 @@ export function renderD3WordCloudChart(container: HTMLElement, config: D3RenderC
     .range(colors);
 
   const tooltip = showTooltip ? createTooltip(container, theme) : null;
-  svg
-    .selectAll<SVGTextElement, PlacedWord>("text.word")
+  const cells = svg
+    .selectAll<SVGGElement, PlacedWord>("g.word-cell")
     .data(placed)
-    .join("text")
+    .join("g")
+    .attr("class", "word-cell")
+    .style("cursor", onPointClick ? "pointer" : "default");
+
+  cells
+    .append("rect")
+    .attr("x", (d) => d.x)
+    .attr("y", (d) => d.y)
+    .attr("width", (d) => d.w)
+    .attr("height", (d) => d.h)
+    .attr("rx", 2)
+    .attr("fill", (d) => colorScale(d.word) ?? colors[0] ?? "#465fff")
+    .attr("opacity", 0.12)
+    .each(function () {
+      applyCellBevel(d3.select(this), depthLevel);
+    });
+
+  cells
+    .append("text")
     .attr("class", "word")
     .attr("x", (d) => d.x)
     .attr("y", (d) => d.y + d.h * 0.85)
     .attr("fill", (d) => colorScale(d.word) ?? colors[0] ?? "#465fff")
     .style("font-size", (d) => `${d.fontSize}px`)
     .style("font-family", "inherit")
-    .style("cursor", onPointClick ? "pointer" : "default")
-    .text((d) => d.word)
+    .style("pointer-events", "none")
+    .text((d) => d.word);
+
+  cells
     .on("mouseenter", function () {
-      d3.select(this).attr("opacity", 0.75);
+      d3.select(this).select("text").attr("opacity", 0.75);
     })
     .on("mouseleave", function () {
-      d3.select(this).attr("opacity", 1);
+      d3.select(this).select("text").attr("opacity", 1);
     })
     .on("mousemove", (event, d) => {
       if (!tooltip) return;

@@ -6,11 +6,15 @@ import type { D3LegendPresentation, D3TooltipPresentation } from "@/components/c
 
 export type D3Datum = Record<string, unknown>;
 
+import type { DepthVisualLevel } from "@/components/charts/engine/d3/core/chartVisualTokens";
+
 export type D3PresentationConfig = {
   labelFontSize?: number;
   labelColor?: string;
   seriesGradient?: boolean;
+  depthVisual?: DepthVisualLevel;
   tooltipPresentation?: D3TooltipPresentation;
+  legendLayout?: D3LegendPresentation;
 };
 
 export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<string, unknown>> = {
@@ -29,6 +33,7 @@ export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<str
   conditionalRules?: ChartConditionalRule[];
   onPointClick?: (datum: D3Datum) => void;
   markLines?: ChartMarkLine[];
+  legendLayout?: import("@/components/charts/engine/d3/core/d3Legend").D3LegendLayout;
   options: TOptions;
 };
 
@@ -66,6 +71,7 @@ export type D3CartesianRenderConfig = {
   valueFormat?: NumberFormatConfig;
   markLines?: ChartMarkLine[];
   conditionalRules?: ChartConditionalRule[];
+  legendLayout?: import("@/components/charts/engine/d3/core/d3Legend").D3LegendLayout;
   onPointClick?: (datum: D3CartesianDatum) => void;
   dataZoom?: boolean;
 };
@@ -80,6 +86,12 @@ export type D3GeoFeature = {
   geometry: GeoJSON.Geometry | null;
 };
 
+export type D3GeoStyleProps = {
+  roam?: boolean;
+  showRegionLabel?: boolean;
+  visualMap?: boolean;
+};
+
 export type D3GeoRenderConfig = D3RenderConfigBase & {
   rows: unknown[][];
   columns: string[];
@@ -88,6 +100,7 @@ export type D3GeoRenderConfig = D3RenderConfigBase & {
   knownRegionNames?: string[];
   mapId?: string;
   isDark?: boolean;
+  geoStyle?: D3GeoStyleProps;
   onPointClick?: (datum: { name: string; value: number; adcode?: number }) => void;
 };
 
@@ -96,6 +109,8 @@ export type D3MatrixCell = { x: string; y: string; value: number };
 export type D3MatrixRenderConfig = D3RenderConfigBase & {
   data: D3MatrixCell[];
   conditionalRules?: ChartConditionalRule[];
+  showCellLabel?: boolean;
+  showVisualMap?: boolean;
   onPointClick?: (datum: D3MatrixCell) => void;
 };
 

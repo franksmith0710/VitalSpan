@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import { chartTransition } from "@/components/charts/engine/d3/core/animate";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { paintVerticalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import {
   groupSeries,
@@ -17,6 +17,24 @@ const BAR_RX = VCDS.bar.rx;
 const STACK_GAP = VCDS.bar.stackGap;
 
 type WideRow = Record<string, string | number>;
+
+function paintDualVBarCell(
+  cell: d3.Selection<SVGGElement, unknown, null, undefined>,
+  opts: { y1: number; h: number; w: number; front: string; solid: string },
+): void {
+  cell.selectAll("*").remove();
+  const depthOn = resolveEffectiveDepth() !== "off";
+  paintVerticalBar({
+    plot: cell,
+    x: 0,
+    y1: opts.y1,
+    height: opts.h,
+    width: opts.w,
+    color: depthOn ? opts.solid : opts.front,
+    rx: BAR_RX,
+  });
+  if (depthOn && opts.front !== opts.solid) cell.select(".vs-bar-front").attr("fill", opts.front);
+}
 
 type ColumnOpts = { isGroup?: boolean; isStack?: boolean };
 
@@ -115,43 +133,28 @@ export function renderDualAxesColumnBars(params: {
   const barWidth = Math.min(28, (innerW / Math.max(categories.length, 1)) * 0.55);
   const legendItems: DualAxesColumnLegendItem[] = [];
 
-  const animateBar = (sel: d3.Selection<SVGRectElement, unknown, null, undefined>, y1: number, h: number) => {
-    if (h <= 0) {
-      sel.attr("y", y1).attr("height", 0);
-      return;
-    }
-    chartTransition(sel.attr("y", innerH).attr("height", 0))
-      .duration(600)
-      .ease(d3.easeCubicOut)
-      .attr("y", y1)
-      .attr("height", h);
-  };
-
   if (columnOpts.isStack && hasMultiSeries) {
     const stack = d3.stack<WideRow>().keys(keys);
     for (const layer of stack(wideRows)) {
       const name = String(layer.key);
       const color = colorScale(name) ?? fallbackColor;
       legendItems.push({ label: name, color, w: 10, h: 10 });
+      const gradientFill = resolveSeriesGradientFill(defs, `dual-stack-${name}`, color, seriesGradient);
       plot
-        .selectAll(`rect.dual-stack-${name}`)
+        .selectAll(`g.dual-stack-${name}`)
         .data(layer)
-        .join("rect")
+        .join("g")
         .attr("class", `dual-stack-${name}`)
-        .attr("x", (d) => (x(String(d.data.__category__)) ?? 0) - barWidth / 2)
-        .attr("width", barWidth)
-        .attr("rx", BAR_RX)
-        .attr("fill", (d) => {
-          const base = resolveSeriesGradientFill(defs, `dual-stack-${name}`, color, seriesGradient);
-          if (base.startsWith("url(")) return base;
-          return resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules);
-        })
+        .attr("transform", (d) => `translate(${(x(String(d.data.__category__)) ?? 0) - barWidth / 2},0)`)
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
           const y1 = yRight(Number(d[1]));
           const rawH = Math.max(0, yRight(Number(d[0])) - y1);
           const h = rawH > STACK_GAP ? rawH - STACK_GAP : rawH;
-          animateBar(d3.select(this), y1, h);
+          const val = Number(d[1]) - Number(d[0]);
+          const solid = gradientFill.startsWith("url(") ? color : resolveDatumColor(val, color, conditionalRules);
+          const front = gradientFill.startsWith("url(") ? gradientFill : solid;
+          paintDualVBarCell(d3.select(this), { y1, h, w: barWidth, front, solid });
         })
         .on("click", (_event, d) =>
           onPointClick?.({
@@ -167,48 +170,45 @@ export function renderDualAxesColumnBars(params: {
       const name = s.name || "value";
       const color = colorScale(name) ?? fallbackColor;
       legendItems.push({ label: name, color, w: 10, h: 10 });
+      const cellW = Math.max(2, groupWidth * 0.9);
+      const gradientFill = resolveSeriesGradientFill(defs, `dual-group-${name}`, color, seriesGradient);
       plot
-        .selectAll(`rect.dual-group-${name}`)
+        .selectAll(`g.dual-group-${name}`)
         .data(s.points)
-        .join("rect")
+        .join("g")
         .attr("class", `dual-group-${name}`)
-        .attr("x", (d) => {
+        .attr("transform", (d) => {
           const cx = x(String(d.__category__)) ?? 0;
-          return cx - barWidth / 2 + i * groupWidth;
-        })
-        .attr("width", Math.max(2, groupWidth * 0.9))
-        .attr("rx", BAR_RX)
-        .attr("fill", (d) => {
-          const base = resolveSeriesGradientFill(defs, `dual-group-${name}`, color, seriesGradient);
-          if (base.startsWith("url(")) return base;
-          return resolveDatumColor(Number(d.__value__), color, conditionalRules);
+          return `translate(${cx - barWidth / 2 + i * groupWidth},0)`;
         })
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
           const y1 = yRight(Number(d.__value__));
-          animateBar(d3.select(this), y1, innerH - y1);
+          const solid = gradientFill.startsWith("url(")
+            ? color
+            : resolveDatumColor(Number(d.__value__), color, conditionalRules);
+          const front = gradientFill.startsWith("url(") ? gradientFill : solid;
+          paintDualVBarCell(d3.select(this), { y1, h: innerH - y1, w: cellW, front, solid });
         })
         .on("click", (_event, d) => onPointClick?.(d));
     });
   } else {
     legendItems.push({ label: "", color: fallbackColor, w: 10, h: 10 });
+    const gradientFill = resolveSeriesGradientFill(defs, "dual-col", fallbackColor, seriesGradient);
     plot
-      .selectAll("rect.dual-col")
+      .selectAll("g.dual-col")
       .data(normalized)
-      .join("rect")
+      .join("g")
       .attr("class", "dual-col")
-      .attr("x", (d) => (x(String(d.__category__)) ?? 0) - barWidth / 2)
-      .attr("width", barWidth)
-      .attr("rx", BAR_RX)
-      .attr("fill", (d) => {
-        const base = resolveSeriesGradientFill(defs, "dual-col", fallbackColor, seriesGradient);
-        if (base.startsWith("url(")) return base;
-        return resolveDatumColor(Number(d.__value__), fallbackColor, conditionalRules);
-      })
+      .attr("transform", (d) => `translate(${(x(String(d.__category__)) ?? 0) - barWidth / 2},0)`)
       .attr("cursor", onPointClick ? "pointer" : "default")
       .each(function (d) {
         const y1 = yRight(Number(d.__value__));
-        animateBar(d3.select(this), y1, innerH - y1);
+        const solid = gradientFill.startsWith("url(")
+          ? fallbackColor
+          : resolveDatumColor(Number(d.__value__), fallbackColor, conditionalRules);
+        const front = gradientFill.startsWith("url(") ? gradientFill : solid;
+        paintDualVBarCell(d3.select(this), { y1, h: innerH - y1, w: barWidth, front, solid });
       })
       .on("click", (_event, d) => onPointClick?.(d));
   }

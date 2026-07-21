@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
+import type { DepthVisualLevel } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import {
   computeTableSummaryValues,
   DEFAULT_TABLE_PAGE_SIZE,
@@ -48,6 +49,7 @@ export type VitalSpanTableProps = {
   layoutInteractive?: boolean;
   onTableStylePatch?: (patch: Partial<ChartDeTableStyle>) => void;
   testId?: string;
+  depthVisual?: DepthVisualLevel;
 };
 
 const SERIES_FIELD = "__vs_series__";
@@ -101,6 +103,7 @@ export function VitalSpanTable({
   layoutInteractive = true,
   onTableStylePatch,
   testId = "d3-table-chart",
+  depthVisual,
 }: VitalSpanTableProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -328,6 +331,7 @@ export function VitalSpanTable({
           data-density={density}
           data-zebra={zebraBg ? "" : undefined}
           data-freeze-lead={freezeLead ? "" : undefined}
+          data-depth-visual={depthVisual !== "off" && depthVisual ? depthVisual : undefined}
           style={tableStyleVars}
         >
           {useFixedLayout ? (

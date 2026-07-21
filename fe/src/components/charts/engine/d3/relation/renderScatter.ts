@@ -1,5 +1,5 @@
-import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
-import { motionDuration } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { VCDS, motionDuration } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { ensureDepthShadowFilter, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import * as d3 from "d3";
 import { renderScatterCanvasLayer } from "@/components/charts/engine/d3/core/canvasScatterLayer";
 import { styleAxis } from "@/components/charts/engine/d3/core/axes";
@@ -7,6 +7,7 @@ import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { drawScatterMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveRenderMode, sampleIndices } from "@/components/charts/engine/d3/core/perfRouter";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltipLayer, showMergedTooltip, hideTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
@@ -30,8 +31,11 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     options,
     onPointClick,
     markLines = [],
+    conditionalRules = [],
+    depthVisual,
   } = config;
   const theme = themeFromConfig(rawTheme);
+  const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as ScatterDatum[]) ?? [];
   const xField = String(options.xField ?? "x");
   const yField = String(options.yField ?? "y");
@@ -95,14 +99,24 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
 
   drawScatterMarkLines(plot, markLines, xScale, yScale, innerW, innerH);
 
+  const scatterShadowId =
+    !useCanvas && depthLevel !== "off"
+      ? ensureDepthShadowFilter(svg.append("defs"), "scatter", depthLevel)
+      : null;
+
   let removeCanvas = () => undefined;
   if (useCanvas) {
     const canvasPoints = data.map((d) => {
       const key = colorField ? String(d[colorField] ?? "") : "value";
+      const base = colorScale(key) ?? colors[0] ?? theme.accent;
+      const fill =
+        conditionalRules.length > 0
+          ? resolveDatumColor(Number(d[yField]), base, conditionalRules)
+          : base;
       return {
         x: xScale(Number(d[xField])),
         y: yScale(Number(d[yField])),
-        color: colorScale(key) ?? colors[0] ?? theme.accent,
+        color: fill,
       };
     });
     removeCanvas = renderScatterCanvasLayer(container, canvasPoints, width, height, margin);
@@ -119,10 +133,14 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     .attr("cy", (d) => yScale(Number(d[yField])))
     .attr("fill", (d) => {
       const key = colorField ? String(d[colorField] ?? "") : "value";
-      return colorScale(key) ?? colors[0] ?? theme.accent;
+      const base = colorScale(key) ?? colors[0] ?? theme.accent;
+      return conditionalRules.length > 0
+        ? resolveDatumColor(Number(d[yField]), base, conditionalRules)
+        : base;
     })
     .attr("stroke", "#fff")
     .attr("stroke-width", 1.5)
+    .attr("filter", scatterShadowId ? `url(#${scatterShadowId})` : null)
     .attr("opacity", useCanvas ? 0 : 0.9)
     .style("cursor", onPointClick ? "pointer" : "default")
     .on("mouseenter", function () {

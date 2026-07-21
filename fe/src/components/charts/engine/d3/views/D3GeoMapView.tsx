@@ -4,8 +4,10 @@ import { applyChartStyleChain } from "@/components/charts/engine/applyChartStyle
 import { chartViewModelToRenderSpec } from "@/components/charts/engine/buildChartViewModel";
 import { embeddedSizeChanged, readChartPaintSize } from "@/components/charts/engine/embeddedContainerSize";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
+import { setDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { disposeD3Renderer, runD3Renderer } from "@/components/charts/engine/d3/core/d3RendererSession";
 import { renderD3Chart } from "@/components/charts/engine/d3/renderDispatch";
+import { renderThreeChoroplethChart } from "@/components/charts/engine/three/renderThreeChoropleth";
 import { buildD3DispatchPayload } from "@/components/charts/engine/d3/views/buildRenderConfig";
 import {
   ADVANCED_CHART_ROW_CAP,
@@ -37,6 +39,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     mapDrillError,
     drillStack = [],
   } = props;
+
+  const isThreeMap = viewModel.chartType === "map-3d";
 
   const plan = useMemo(() => {
     const base = buildChartRenderPlan(viewModel);
@@ -129,13 +133,18 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       if (next.width <= 0 || next.height <= 0) return;
       if (!force && !embeddedSizeChanged(next, lastMeasureRef.current)) return;
       lastMeasureRef.current = next;
+      setDepthVisual(style.depthVisual ?? "off");
 
       const suppressAnim = mode === "live" || mode === "commit";
       setChartAnimationSuppressed(suppressAnim);
       try {
         const payload = buildD3DispatchPayload(props, planWithGeo, chartWidth, chartHeight);
-        if (!payload) return;
-        runD3Renderer(el, () => renderD3Chart(el, planWithGeo, payload));
+        if (!payload || payload.kind !== "geo") return;
+        runD3Renderer(el, () =>
+          isThreeMap
+            ? renderThreeChoroplethChart(el, payload.config)
+            : renderD3Chart(el, planWithGeo, payload),
+        );
         setRenderError(null);
       } catch (err) {
         setRenderError(err instanceof Error ? err.message : "地图渲染失败");
@@ -144,6 +153,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       }
     },
     [
+      isThreeMap,
       geoMapLoading,
       planWithGeo,
       fill,
@@ -275,7 +285,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         <div
           ref={setContainerRef}
           className={cn("relative h-full w-full")}
-          data-testid="d3-map-chart"
+          data-testid={isThreeMap ? "three-map-chart" : "d3-map-chart"}
           style={fill ? undefined : { height, width: width ?? "100%" }}
         />
         {showPlaceholderHint ? (

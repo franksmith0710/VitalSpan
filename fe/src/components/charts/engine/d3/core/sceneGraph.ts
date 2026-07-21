@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
-import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { VCDS, getDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { depthExtrudePx } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -63,13 +64,31 @@ export function buildCartesianScene(opts: BuildCartesianSceneOptions): Cartesian
     clip.append("rect").attr("rx", 4);
   }
   clip.select("rect").attr("width", innerW).attr("height", innerH);
+  applyPlotClipPadding(clip, innerW, innerH);
 
   let plot = g.select<SVGGElement>("g.vs-chart-plot");
   if (plot.empty()) {
     plot = g.append("g").attr("class", "vs-chart-plot").attr("clip-path", `url(#${clipId})`);
+  } else {
+    plot.attr("clip-path", `url(#${clipId})`);
   }
 
   return { root, defs, g, plot, margin, innerW, innerH, clipId };
+}
+
+/** 2.5D 挤出面会超出 plot 盒，须扩展 clip 区域否则顶/右侧面被裁切 */
+function applyPlotClipPadding(
+  clip: d3.Selection<d3.BaseType, unknown, null, undefined>,
+  innerW: number,
+  innerH: number,
+): void {
+  const level = getDepthVisual();
+  const pad = level !== "off" ? depthExtrudePx(level) + 1 : 0;
+  if (pad <= 0) {
+    clip.select("rect").attr("x", 0).attr("y", 0);
+    return;
+  }
+  clip.select("rect").attr("x", 0).attr("y", -pad).attr("width", innerW + pad).attr("height", innerH + pad);
 }
 
 type GridOptions = {

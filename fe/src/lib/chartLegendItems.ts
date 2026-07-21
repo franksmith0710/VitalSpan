@@ -31,7 +31,7 @@ export function resolveChartLegendItems(
       continue;
     }
 
-    if (type === "map" || type === "heatmap" || type === "gauge" || type === "sankey") {
+    if (type === "map" || type === "map-3d" || type === "heatmap" || type === "gauge" || type === "sankey") {
       continue;
     }
 

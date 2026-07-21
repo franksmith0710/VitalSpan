@@ -1,3 +1,4 @@
+import { isGeoMapChartType } from "@/lib/chartViewConfig";
 import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
 import { ChartTableStylePanel } from "../ChartTableStylePanel";
 import { ChartTableColorPanel } from "../ChartTableColorPanel";
@@ -36,7 +37,13 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
         <ChartGeoStylePanel
           cfg={cfg}
           deStyle={deStyle}
-          chartType={cfg.chartType === "heatmap" ? "heatmap" : "map"}
+          chartType={
+            cfg.chartType === "heatmap"
+              ? "heatmap"
+              : cfg.chartType === "map-3d"
+                ? "map-3d"
+                : "map"
+          }
           onChange={onChange}
         />
       );

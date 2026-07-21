@@ -1,6 +1,6 @@
 import { chartDataSlotBlueprint } from "@/components/dashboard/chartFieldSlots";
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
-import type { ChartType } from "@/lib/chartViewConfig";
+import { isGeoMapChartType, type ChartType } from "@/lib/chartViewConfig";
 import type { SlotTarget } from "@/components/dashboard/chartInspectorTypes";
 
 export type FieldAssignResult = { ok: true } | { ok: false; message: string };
@@ -56,7 +56,7 @@ export function validateFieldAssignment(
     };
   }
 
-  if (chartType === "map" && target.kind === "dimension") {
+  if (isGeoMapChartType(chartType) && target.kind === "dimension") {
     const geoLike =
       GEO_FIELD.test(trimmed) ||
       REGION_ID_FIELD.test(trimmed) ||

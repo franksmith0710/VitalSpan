@@ -15,6 +15,11 @@ export type D3LabelPresentation = {
 export type D3LegendPresentation = {
   position: "top" | "bottom" | "left" | "right";
   orient: "horizontal" | "vertical";
+  icon?: import("@/lib/chartDeStyle").ChartLegendIconShape;
+  iconSize?: number;
+  fontSize?: number;
+  hAlign?: "left" | "center" | "right";
+  vAlign?: "top" | "middle" | "bottom";
 };
 
 export function buildD3PresentationProps(style: ChartStyleContext) {
@@ -23,10 +28,16 @@ export function buildD3PresentationProps(style: ChartStyleContext) {
     labelFontSize: style.labelPresentation.fontSize,
     labelColor: style.labelPresentation.color,
     seriesGradient: style.seriesGradient,
+    depthVisual: style.depthVisual,
     tooltipPresentation: style.tooltipPresentation,
     legendLayout: {
       position: legend?.position ?? "bottom",
       orient: legend?.orient ?? "horizontal",
+      icon: legend?.icon,
+      iconSize: legend?.iconSize,
+      fontSize: legend?.fontSize,
+      hAlign: legend?.hAlign,
+      vAlign: legend?.vAlign,
     } satisfies D3LegendPresentation,
   };
 }

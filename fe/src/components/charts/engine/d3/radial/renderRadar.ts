@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
+import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
@@ -33,6 +34,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   const levels = 4;
   const maxValue = d3.max(data, (d) => Number(d[yField] ?? 0)) ?? 1;
   const baseColor = colors[0] ?? "#465fff";
+  const depthOn = resolveEffectiveDepth() !== "off";
 
   const root = d3
     .select(container)
@@ -93,9 +95,10 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
     .append("path")
     .attr("fill", baseColor)
     .attr("fill-opacity", 0.18)
-    .attr("stroke", baseColor)
-    .attr("stroke-width", 2)
-    .attr("stroke-linejoin", "round");
+    .attr("stroke", depthOn ? shadeColor(baseColor, "top") : baseColor)
+    .attr("stroke-width", depthOn ? 2.5 : 2)
+    .attr("stroke-linejoin", "round")
+    .style("paint-order", depthOn ? "stroke fill" : null);
 
   if (!prefersReducedMotion()) {
     areaPath

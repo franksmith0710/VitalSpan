@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import { chartTransition } from "@/components/charts/engine/d3/core/animate";
 import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3BarRangeRenderConfig } from "@/components/charts/engine/d3/types";
@@ -50,29 +50,25 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
     .call(styleAxis, theme);
 
   plot
-    .selectAll("rect.range-bar")
+    .selectAll("g.range-bar")
     .data(data)
-    .join("rect")
+    .join("g")
     .attr("class", "range-bar")
-    .attr("y", (d) => y(d.type) ?? 0)
-    .attr("height", y.bandwidth())
-    .attr("rx", BAR_RX)
-    .attr("fill", rangeColor)
-    .attr("opacity", 0.85)
+    .attr("transform", (d) => `translate(0,${y(d.type) ?? 0})`)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .each(function (d) {
+      const cell = d3.select(this);
+      cell.selectAll("*").remove();
       const x0 = x(Math.min(d.low, d.high));
       const w = Math.max(0, Math.abs(x(d.high) - x(d.low)));
-      chartTransition(d3.select(this).attr("x", x0).attr("width", 0))
-        .duration(600)
-        .ease(d3.easeCubicOut)
-        .attr("width", w);
+      paintHorizontalBar({ plot: cell, x: x0, y: 0, width: w, height: y.bandwidth(), color: rangeColor, rx: BAR_RX });
+      cell.attr("opacity", 0.85);
     })
     .on("click", (_e, d) => onPointClick?.(d));
 
   if (showTooltip) {
     plot
-      .selectAll<SVGRectElement, (typeof data)[number]>("rect.range-bar")
+      .selectAll<SVGGElement, (typeof data)[number]>("g.range-bar")
       .on("mouseenter", (_e, d) => {
         tooltip
           ?.style("opacity", "1")

@@ -162,6 +162,8 @@ export type DashboardStyleConfig = {
   paletteOpacity?: number;
   /** 看板默认系列渐变填充 */
   seriesGradient?: boolean;
+  /** 看板默认立体视觉（VCDS 2.5D） */
+  depthVisual?: "off" | "standard" | "enhanced";
   /** 看板默认显示数据标签 */
   chartLabelShow?: boolean;
   /** 看板默认标签样式 */
@@ -741,6 +743,7 @@ export function pickWidgetDashboardStyle(
       : undefined,
     paletteOpacity: config.paletteOpacity,
     seriesGradient: config.seriesGradient,
+    depthVisual: config.depthVisual,
     chartLabelShow: config.chartLabelShow,
     tooltipShow: config.tooltipShow,
     chartLabelStyle: config.chartLabelStyle
@@ -769,6 +772,7 @@ export function chartPaletteDefaultsFingerprint(
   return JSON.stringify({
     paletteOpacity: config.paletteOpacity,
     seriesGradient: config.seriesGradient,
+    depthVisual: config.depthVisual,
     chartLabelShow: config.chartLabelShow,
     tooltipShow: config.tooltipShow,
     chartLabelStyle: config.chartLabelStyle,
@@ -785,6 +789,7 @@ export function pickChartPaletteDefaults(
   DashboardStyleConfig,
   | "paletteOpacity"
   | "seriesGradient"
+  | "depthVisual"
   | "chartLabelShow"
   | "tooltipShow"
   | "chartLabelStyle"
@@ -796,6 +801,7 @@ export function pickChartPaletteDefaults(
   return {
     paletteOpacity: config.paletteOpacity,
     seriesGradient: config.seriesGradient,
+    depthVisual: config.depthVisual,
     chartLabelShow: config.chartLabelShow,
     tooltipShow: config.tooltipShow,
     chartLabelStyle: config.chartLabelStyle,

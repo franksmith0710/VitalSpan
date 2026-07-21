@@ -7,6 +7,7 @@ import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/t
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
+import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
 import {
   columnTooltipRows,
   renderDualAxesColumnBars,
@@ -116,6 +117,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     .attr("stroke-width", 2.5)
     .attr("stroke-linecap", "round")
     .attr("d", lineGen);
+  applyPathDepthShadow(defs, linePath, lineColor, "dual-line-0");
   animateStrokePath(linePath);
 
   let columnLegendItems: Array<{ label: string; color: string; w: number; h: number }> = [];
@@ -137,6 +139,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       .attr("stroke-width", 2.5)
       .attr("stroke-linecap", "round")
       .attr("d", lineGen2);
+    applyPathDepthShadow(defs, linePath2, columnColor, "dual-line-1");
     animateStrokePath(linePath2);
 
     plot

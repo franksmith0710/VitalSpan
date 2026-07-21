@@ -105,9 +105,12 @@ export function DashboardWidgetStyleSections({
   return (
     <>
       <DashboardConfigSection
-        title="图表样式"
+        title="组件外观"
         data-testid="dashboard-widget-chart-style"
       >
+        <p className="mb-2 text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
+          配置图表组件外壳的背景与边框；图表绘图区样式请在选中组件后的「样式」Tab 中调整。
+        </p>
         <ChartBackgroundStyleFields
           value={ws}
           onChange={patchWidgetStyle}
@@ -125,6 +128,7 @@ export function DashboardWidgetStyleSections({
           dashboardPaletteColors={styleConfig.paletteColors}
           paletteOpacity={styleConfig.paletteOpacity}
           seriesGradient={styleConfig.seriesGradient ?? false}
+          depthVisual={styleConfig.depthVisual ?? "off"}
           labelShow={styleConfig.chartLabelShow ?? false}
           tooltipShow={styleConfig.tooltipShow ?? true}
           labelStyle={{
@@ -152,6 +156,7 @@ export function DashboardWidgetStyleSections({
             patchStyle({ paletteOpacity: opacityPercent / 100 })
           }
           onSeriesGradientChange={(enabled) => patchStyle({ seriesGradient: enabled })}
+          onDepthVisualChange={(level) => patchStyle({ depthVisual: level })}
           onLabelShowChange={(show) => patchStyle({ chartLabelShow: show })}
           onTooltipShowChange={(show) => patchStyle({ tooltipShow: show })}
           onLabelStyleChange={(patch) =>

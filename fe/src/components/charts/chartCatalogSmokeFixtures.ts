@@ -329,6 +329,17 @@ export const CHART_CATALOG_SMOKE_CASES: ChartCatalogSmokeCase[] = [
     dimensions: [{ field: "province" }],
     metrics: [{ field: "value" }],
   },
+  {
+    type: "map-3d",
+    testId: "three-map-chart",
+    columns: ["province", "value"],
+    rows: [
+      ["广东省", 320],
+      ["浙江省", 280],
+    ],
+    dimensions: [{ field: "province" }],
+    metrics: [{ field: "value" }],
+  },
 
   // relation
   {

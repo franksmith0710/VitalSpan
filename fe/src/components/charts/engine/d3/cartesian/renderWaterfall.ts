@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
-import { chartTransition } from "@/components/charts/engine/d3/core/animate";
+import { paintVerticalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3WaterfallDatum, D3WaterfallRenderConfig } from "@/components/charts/engine/d3/types";
@@ -78,24 +78,27 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
   }
 
   plot
-    .selectAll("rect.waterfall")
+    .selectAll("g.waterfall")
     .data(segments)
-    .join("rect")
+    .join("g")
     .attr("class", "waterfall")
-    .attr("x", (d) => x(d.type) ?? 0)
-    .attr("width", x.bandwidth())
-    .attr("rx", BAR_RX)
-    .attr("fill", (d) => (d.value >= 0 ? posColor : negColor))
+    .attr("transform", (d) => `translate(${x(d.type) ?? 0},0)`)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .each(function (d) {
+      const cell = d3.select(this);
+      cell.selectAll("*").remove();
       const yTop = y(Math.max(d.start, d.end));
       const yBottom = y(Math.min(d.start, d.end));
       const h = Math.max(0, yBottom - yTop);
-      chartTransition(d3.select(this as SVGRectElement).attr("y", yTop + h).attr("height", 0))
-        .duration(600)
-        .ease(d3.easeCubicOut)
-        .attr("y", yTop)
-        .attr("height", h);
+      paintVerticalBar({
+        plot: cell,
+        x: 0,
+        y1: yTop,
+        height: h,
+        width: x.bandwidth(),
+        color: d.value >= 0 ? posColor : negColor,
+        rx: BAR_RX,
+      });
     })
     .on("click", (_event, d) => onPointClick?.(d));
 
@@ -117,7 +120,7 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
 
   if (showTooltip) {
     plot
-      .selectAll<SVGRectElement, WaterfallSegment>("rect.waterfall")
+      .selectAll<SVGGElement, WaterfallSegment>("g.waterfall")
       .on("mouseenter", (_event, d) => {
         tooltip
           ?.style("opacity", "1")

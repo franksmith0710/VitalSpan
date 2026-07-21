@@ -27,8 +27,24 @@
 | `perfRouter.ts` | SVG 全量 / 采样 / canvas 混合 |
 | `incrementalRender.ts` | live resize 会话 |
 | `canvasScatterLayer.ts` | 散点 >5k canvas 混合层 |
+| `depthEngine.ts` | 伪 3D 深度（bevel / extrude / shadow / hover lift） |
 
-## 3. L4–L6 验收清单
+## 3. Depth Visual（VCDS 伪 3D）
+
+看板 `depthVisual`（off / standard / enhanced）经 `D3CanvasView` → `setDepthVisual` 注入渲染器；`depthEngine.ts` 提供统一 helper：
+
+| Helper | 用途 |
+|--------|------|
+| `shadeColor` | 顶面提亮 / 侧面压暗 |
+| `resolveEffectiveDepth` | 尊重 `prefers-reduced-motion` 与显式 off |
+| `ensureDepthShadowFilter` | SVG feDropShadow |
+| `applyCellBevel` | 矩阵/层级单元斜面描边 |
+| `applyDepthHoverLift` | hover 微抬升 |
+| `paintVerticalBar` / `drawExtrudedBar` | 柱系挤出 |
+
+已接入：笛卡尔柱、饼图 extrude、散点 SVG 阴影、象限 radial 底、漏斗侧壁、Sankey 链 opacity、层级 bevel、力导向 radial 节点、热力 bevel+lift、 choropleth lift+enhanced 阴影、表格 `data-depth-visual` 行 hover 投影。
+
+## 4. L4–L6 验收清单
 
 ### L4 Visual（LOOK）
 
@@ -53,13 +69,13 @@
 - [x] 散点 >5k 走 `hybrid-canvas` + 全量 canvas 点层
 - [x] 透视表列宽/行高拖拽 + deTableStyle 持久化
 
-## 4. Renderer 纪律
+## 5. Renderer 纪律
 
 - 禁止 renderer 内硬编码 `#hex`；用 `themeEngine.resolveD3Theme`
 - 禁止无故 `replaceChildren`；plotType 切换或空数据除外
 - 单文件 ≤300 行；笛卡尔交互上浮 `cartesian/renderCartesianBase.ts`
 
-## 5. 已接入 VCDS 的图表
+## 6. 已接入 VCDS 的图表
 
 | 族 | 文件 | VCDS 能力 |
 |----|------|-----------|
@@ -68,13 +84,18 @@
 | 面积 | `renderArea.ts` | sceneGraph, crosshair, tooltipLayer, incremental |
 | 饼/漏斗 | `renderPie.ts` / `renderFunnel.ts` | VCDS.pie.* / 分层入场 |
 | KPI | `renderKpi.ts` | morphNumber count-up |
-| 散点 | `renderScatter.ts` | perfRouter 采样 + canvas 混合 |
-| 热力 | `renderHeatmap.ts` | 行列十字高亮 + tooltipLayer |
-| 地图 | `renderChoropleth.ts` | hover 浮起 |
-| 表格 | `VitalSpanTable.tsx` | 虚拟滚动、resize、密度档 |
+| 散点 | `renderScatter.ts` | perfRouter 采样 + canvas 混合 + SVG depth shadow |
+| 象限 | `renderQuadrant.ts` | 四象限 radial 深度底 |
+| 漏斗 | `renderFunnel.ts` | 梯形侧壁 extrude |
+| Sankey | `renderSankey.ts` | 链 depth opacity |
+| 层级 | `renderTreemap.ts` 等 | `applyCellBevel` |
+| 力导向 | `renderForceGraph.ts` | 节点 radialGradient |
+| 热力 | `renderHeatmap.ts` | bevel + hover lift + 十字高亮 |
+| 地图 | `renderChoropleth.ts` | hover lift + enhanced shadow |
+| 表格 | `VitalSpanTable.tsx` | 虚拟滚动、resize、密度档、`data-depth-visual` hover 投影 |
 | 透视表 | `TablePivotGrid.tsx` | resize + 密度档 + 行 hover |
 
-## 6. 测试
+## 7. 测试
 
 ```bash
 cd fe && pnpm vitest run src/components/charts/engine/d3/core

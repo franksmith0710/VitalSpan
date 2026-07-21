@@ -101,6 +101,8 @@ export type ChartDeStyle = {
   paletteOpacity?: number;
   /** 系列渐变填充（对标 DE「渐变颜色」） */
   seriesGradient?: boolean;
+  /** 立体视觉：关 / 标准 / 增强（VCDS 2.5D） */
+  depthVisual?: "off" | "standard" | "enhanced";
   /** 柱/线等系列级配色（对标 DE seriesColor；优先于调色板循环色） */
   seriesColor?: ChartSeriesColorItem[];
   title?: TitleStyleConfig & { show?: boolean };
@@ -214,6 +216,7 @@ export function inferWidgetSyncScopes(
   if (
     patch.paletteOpacity !== undefined ||
     patch.seriesGradient !== undefined ||
+    patch.depthVisual !== undefined ||
     patch.chartLabelShow !== undefined ||
     patch.tooltipShow !== undefined ||
     patch.chartLabelStyle !== undefined ||
@@ -282,6 +285,7 @@ export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfi
     de.paletteId != null ||
     de.paletteOpacity != null ||
     de.seriesGradient != null ||
+    de.depthVisual != null ||
     hasLabelPaletteFields ||
     hasTooltipFields ||
     hasShowLabelFeature;
@@ -291,6 +295,7 @@ export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfi
   delete nextDe.paletteId;
   delete nextDe.paletteOpacity;
   delete nextDe.seriesGradient;
+  delete nextDe.depthVisual;
 
   if (label) {
     const nextLabel: ChartLabelStyle = { ...label };
@@ -417,6 +422,15 @@ export function readChartSeriesGradient(
   const gradient = readChartDeStyle(cfg).seriesGradient;
   if (gradient !== undefined) return gradient;
   return defaults?.seriesGradient ?? false;
+}
+
+export function readChartDepthVisual(
+  cfg: ChartViewConfig,
+  defaults?: Pick<DashboardStyleConfig, "depthVisual">,
+): "off" | "standard" | "enhanced" {
+  const depth = readChartDeStyle(cfg).depthVisual;
+  if (depth !== undefined) return depth;
+  return defaults?.depthVisual ?? "off";
 }
 
 export function readChartPaletteOpacity(

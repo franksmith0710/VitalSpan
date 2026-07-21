@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
-import { AlignCenter, AlignLeft, AlignRight, Bold, ChevronDown, Italic } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, Italic } from "lucide-react";
 import { IconButton } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -13,7 +12,6 @@ import { cn } from "@/lib/utils";
 import type { TitleStyleConfig } from "./dashboardStyleConfig";
 import { CHART_FONT_SIZE_OPTIONS, resolveChartFontSizeOptions } from "@/lib/chartFontSizes";
 import { DashboardConfigSlider } from "./deAttrSlider";
-import { DeAttrToggleRow } from "./dashboardInspectorUi";
 
 /** @deprecated 使用 CHART_FONT_SIZE_OPTIONS */
 export const CHART_TITLE_FONT_SIZES: readonly number[] = [...CHART_FONT_SIZE_OPTIONS];
@@ -27,7 +25,6 @@ type DeTitleStyleToolbarProps = {
   value: DeTitleStyleToolbarValue;
   onChange: (patch: Partial<TitleStyleConfig>) => void;
   defaultFontSize?: number;
-  showAdvanced?: boolean;
   className?: string;
   "data-testid"?: string;
 };
@@ -79,60 +76,11 @@ function fontSizeOptions(current: number | undefined, fallback: number): number[
   return resolveChartFontSizeOptions(current, fallback, CHART_FONT_SIZE_OPTIONS);
 }
 
-function TitleAdvancedPopover({
-  value,
-  onChange,
-}: {
-  value: DeTitleStyleToolbarValue;
-  onChange: (patch: Partial<TitleStyleConfig>) => void;
-}) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "inline-flex h-8 shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-gray-600 transition-colors",
-            "bg-white ring-1 ring-inset ring-gray-200 hover:bg-gray-50 hover:text-gray-800",
-            "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
-            "data-[state=open]:text-brand-600 data-[state=open]:ring-brand-300",
-            "dark:bg-gray-900 dark:text-gray-400 dark:ring-gray-600 dark:hover:bg-white/[0.04] dark:hover:text-gray-200",
-            "dark:data-[state=open]:text-brand-400 dark:data-[state=open]:ring-brand-500/40",
-          )}
-          aria-label="高级文本样式"
-        >
-          高级
-          <ChevronDown className="size-3.5 opacity-60" aria-hidden />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={6} className="z-99999 w-60 space-y-3 p-3">
-        <DashboardConfigSlider
-          compact
-          label="字间距"
-          value={value.letterSpacing}
-          fallback={0}
-          min={0}
-          max={8}
-          step={1}
-          unit="px"
-          onChange={(letterSpacing) => onChange({ letterSpacing })}
-        />
-        <DeAttrToggleRow
-          label="字体阴影"
-          checked={value.shadow ?? false}
-          onCheckedChange={(shadow) => onChange({ shadow })}
-        />
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-/** 紧凑文本样式工具条：字号 / 粗体 / 斜体 / 对齐（对标 DE + TailAdmin 密度） */
+/** 紧凑文本样式工具条：字号 / 粗体 / 斜体 / 字间距 / 对齐 */
 export function DeTitleStyleToolbar({
   value,
   onChange,
   defaultFontSize = 16,
-  showAdvanced = true,
   className,
   "data-testid": testId = "de-title-style-toolbar",
 }: DeTitleStyleToolbarProps) {
@@ -176,16 +124,9 @@ export function DeTitleStyleToolbar({
         >
           <Italic className="size-4" />
         </ToolbarIconButton>
-
-        {showAdvanced ? (
-          <>
-            <Divider />
-            <TitleAdvancedPopover value={value} onChange={onChange} />
-          </>
-        ) : null}
       </div>
 
-      <div className={TOOLBAR_ROW}>
+      <div className={cn(TOOLBAR_ROW, "w-full px-0.5")}>
         <ToolbarIconButton
           label="左对齐"
           active={align === "left"}
@@ -207,6 +148,22 @@ export function DeTitleStyleToolbar({
         >
           <AlignRight className="size-4" />
         </ToolbarIconButton>
+
+        <Divider />
+
+        <div className="min-w-0 flex-1">
+          <DashboardConfigSlider
+            compact
+            label="字间距"
+            value={value.letterSpacing}
+            fallback={0}
+            min={0}
+            max={8}
+            step={1}
+            unit="px"
+            onChange={(letterSpacing) => onChange({ letterSpacing })}
+          />
+        </div>
       </div>
     </div>
   );

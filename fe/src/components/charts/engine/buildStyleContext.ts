@@ -3,6 +3,7 @@ import type { DashboardStyleConfig, NumberFormatConfig } from "@/components/dash
 import {
   readChartDeStyle,
   readChartDataZoom,
+  readChartDepthVisual,
   readChartSeriesGradient,
   readChartShowLabel,
   readChartTooltipShow,
@@ -22,6 +23,7 @@ type BuildStyleContextInput = {
     DashboardStyleConfig,
     | "chartLabelShow"
     | "seriesGradient"
+    | "depthVisual"
     | "tooltipShow"
     | "chartLabelStyle"
     | "chartTooltipStyle"
@@ -40,6 +42,7 @@ export function buildStyleContext(input: BuildStyleContextInput): ChartStyleCont
   const showLabel = readChartShowLabel(config, dashboardDefaults);
   const showTooltip = readChartTooltipShow(config, dashboardDefaults);
   const seriesGradient = readChartSeriesGradient(config, dashboardDefaults);
+  const depthVisual = readChartDepthVisual(config, dashboardDefaults);
   const dataZoom = readChartDataZoom(config);
   const valueFormat = resolveChartValueFormat(deStyle.label, input.numberFormat);
 
@@ -52,6 +55,7 @@ export function buildStyleContext(input: BuildStyleContextInput): ChartStyleCont
     showLabel,
     showTooltip,
     seriesGradient,
+    depthVisual,
     dataZoom,
     valueFormat,
     labelPresentation: resolveChartLabelPresentation(config, dashboardDefaults),

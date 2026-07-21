@@ -4,6 +4,7 @@ import { buildChartRenderPlan } from "@/components/charts/engine/buildChartRende
 import { applyChartStyleChain } from "@/components/charts/engine/applyChartStyleChain";
 import { embeddedSizeChanged } from "@/components/charts/engine/embeddedContainerSize";
 import { setChartAnimationSuppressed } from "@/components/charts/engine/d3/core/animate";
+import { setDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { disposeD3Renderer, runD3Renderer } from "@/components/charts/engine/d3/core/d3RendererSession";
 import { renderD3Chart } from "@/components/charts/engine/d3/renderDispatch";
 import { buildD3DispatchPayload } from "@/components/charts/engine/d3/views/buildRenderConfig";
@@ -66,7 +67,7 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   );
 
   const testId = d3ChartTestId(viewModel.chartType, plan.plotType);
-  const mapEmptyOk = viewModel.chartType === "map";
+  const mapEmptyOk = viewModel.chartType === "map" || viewModel.chartType === "map-3d";
 
   const measureAndRender = useCallback(
     (mode: PaintMode, force = false) => {
@@ -82,6 +83,7 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
       lastMeasureRef.current = next;
 
       el.dataset.vsIncremental = mode === "live" ? "true" : "false";
+      setDepthVisual(style.depthVisual ?? "off");
 
       const suppressAnim = mode === "live" || mode === "commit";
       setChartAnimationSuppressed(suppressAnim);

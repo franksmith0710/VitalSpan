@@ -6,7 +6,6 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
-  type WheelEvent as ReactWheelEvent,
 } from "react";
 import { cn } from "@/lib/utils";
 import { CanvasRuler } from "./CanvasRuler";
@@ -76,6 +75,7 @@ export function DataScreenEditViewport({
   children,
 }: DataScreenEditViewportProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
+  const wheelHostRef = useRef<HTMLDivElement>(null);
   const spacePanRef = useRef(false);
   const panSessionRef = useRef<ViewportPanSession | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
@@ -84,6 +84,7 @@ export function DataScreenEditViewport({
   viewPanRef.current = viewPan;
   const [userZoom, setUserZoom] = useState(1);
   const [spacePan, setSpacePan] = useState(false);
+  const [panDragging, setPanDragging] = useState(false);
 
   useEffect(() => {
     setViewPan({ x: 0, y: 0 });
@@ -140,6 +141,9 @@ export function DataScreenEditViewport({
     [],
   );
 
+  const applyPanRef = useRef(applyPan);
+  applyPanRef.current = applyPan;
+
   const applyPanPatch = useCallback(
     (patch: { x?: number; y?: number }) => {
       applyPan((previous) => ({
@@ -161,13 +165,13 @@ export function DataScreenEditViewport({
 
   const endPanSession = useCallback(() => {
     panSessionRef.current = null;
+    setPanDragging(false);
   }, []);
 
   useEffect(() => {
     const releaseSpacePan = () => {
       spacePanRef.current = false;
       setSpacePan(false);
-      panSessionRef.current = null;
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -186,12 +190,20 @@ export function DataScreenEditViewport({
       if (!session || session.pointerId !== event.pointerId) return;
       event.preventDefault();
       const next = applyViewportPanTranslate(session, event.clientX, event.clientY);
-      applyPan({ x: next.panX, y: next.panY });
+      applyPanRef.current({ x: next.panX, y: next.panY });
+    };
+
+    const releasePointerCapture = (event: PointerEvent) => {
+      const viewportEl = viewportRef.current;
+      if (viewportEl?.hasPointerCapture(event.pointerId)) {
+        viewportEl.releasePointerCapture(event.pointerId);
+      }
     };
 
     const onPointerEnd = (event: PointerEvent) => {
       const session = panSessionRef.current;
       if (!session || session.pointerId !== event.pointerId) return;
+      releasePointerCapture(event);
       endPanSession();
     };
 
@@ -201,6 +213,11 @@ export function DataScreenEditViewport({
       if (!viewportEl || !viewportEl.contains(event.target as Node)) return;
       event.preventDefault();
       event.stopPropagation();
+      try {
+        viewportEl.setPointerCapture(event.pointerId);
+      } catch {
+        // jsdom / legacy browsers
+      }
       panSessionRef.current = {
         pointerId: event.pointerId,
         startX: event.clientX,
@@ -208,6 +225,7 @@ export function DataScreenEditViewport({
         panX: viewPanRef.current.x,
         panY: viewPanRef.current.y,
       };
+      setPanDragging(true);
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -217,6 +235,7 @@ export function DataScreenEditViewport({
     document.addEventListener("pointermove", onPointerMove, { capture: true });
     document.addEventListener("pointerup", onPointerEnd, { capture: true });
     document.addEventListener("pointercancel", onPointerEnd, { capture: true });
+    document.addEventListener("lostpointercapture", onPointerEnd, { capture: true });
 
     return () => {
       window.removeEventListener("keydown", onKeyDown);
@@ -226,26 +245,41 @@ export function DataScreenEditViewport({
       document.removeEventListener("pointermove", onPointerMove, { capture: true });
       document.removeEventListener("pointerup", onPointerEnd, { capture: true });
       document.removeEventListener("pointercancel", onPointerEnd, { capture: true });
+      document.removeEventListener("lostpointercapture", onPointerEnd, { capture: true });
     };
-  }, [applyPan, endPanSession]);
+  }, [endPanSession]);
 
-  const handleWheel = useCallback(
-    (event: ReactWheelEvent<HTMLDivElement>) => {
-      if (event.ctrlKey || event.metaKey) {
-        event.preventDefault();
+  useEffect(() => {
+    const wheelHost = wheelHostRef.current;
+    if (!wheelHost) return undefined;
+
+    const onWheel = (event: WheelEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node) || !wheelHost.contains(target)) return;
+
+      const onCanvasViewport = viewportRef.current?.contains(target) ?? false;
+      const isZoomGesture = event.ctrlKey || event.metaKey;
+
+      if (isZoomGesture) {
+        if (event.cancelable) event.preventDefault();
+        if (!onCanvasViewport) return;
         const direction = event.deltaY > 0 ? -1 : 1;
         setUserZoom((previous) => clampZoom(previous + direction * DATA_SCREEN_ZOOM_WHEEL_STEP));
         return;
       }
+
+      if (!onCanvasViewport) return;
       if (event.deltaX === 0 && event.deltaY === 0) return;
-      event.preventDefault();
-      applyPan((previous) => ({
+      if (event.cancelable) event.preventDefault();
+      applyPanRef.current((previous) => ({
         x: previous.x - event.deltaX,
         y: previous.y - event.deltaY,
       }));
-    },
-    [applyPan],
-  );
+    };
+
+    wheelHost.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    return () => wheelHost.removeEventListener("wheel", onWheel, { capture: true });
+  }, []);
 
   const handleZoomChange = useCallback((zoom: number) => {
     setUserZoom(clampZoom(zoom));
@@ -305,6 +339,7 @@ export function DataScreenEditViewport({
       data-view-pan-y={viewPan.y}
     >
       <div
+        ref={wheelHostRef}
         className="grid min-h-0 flex-1"
         style={
           {
@@ -347,10 +382,10 @@ export function DataScreenEditViewport({
           className={cn(
             "relative min-h-0 min-w-0 overflow-hidden",
             spacePan && "cursor-grab",
+            panDragging && "cursor-grabbing",
           )}
           style={{ backgroundColor: DATA_SCREEN_VIEWPORT_BG }}
           data-canvas-scale-viewport
-          onWheel={handleWheel}
           onPointerDownCapture={handleViewportPointerDownCapture}
         >
           <div
@@ -360,7 +395,7 @@ export function DataScreenEditViewport({
             }}
           >
             <div
-              className={cn("origin-top-left", spacePan && "pointer-events-none")}
+              className={cn("origin-top-left", (spacePan || panDragging) && "pointer-events-none")}
               data-testid="data-screen-canvas-stage"
               data-canvas-design-width={canvasWidth}
               data-canvas-design-height={canvasHeight}

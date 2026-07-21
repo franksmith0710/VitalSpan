@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
+import { animateBarHeight, prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { VCDS, type DepthVisualLevel, getDepthVisual, setDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
 
 export { setDepthVisual, getDepthVisual };
@@ -44,7 +44,6 @@ export function shadeColor(base: string, role: DepthRole): string {
 
 export function resolveEffectiveDepth(requested?: DepthVisualLevel): DepthVisualLevel {
   const level = requested ?? getDepthVisual();
-  if (prefersReducedMotion()) return "off";
   return level;
 }
 
@@ -254,4 +253,82 @@ export function applyCellBevel(
     .attr("stroke", shadeColor(rect.attr("fill") || "#465fff", "top"))
     .attr("stroke-width", 1)
     .style("paint-order", "stroke fill");
+}
+
+type PaintVerticalBarOpts = {
+  plot: d3.Selection<SVGGElement, unknown, null, undefined>;
+  x: number;
+  y1: number;
+  height: number;
+  width: number;
+  color: string;
+  rx?: number;
+  depthLevel?: DepthVisualLevel;
+  animate?: boolean;
+};
+
+export function paintVerticalBar(opts: PaintVerticalBarOpts): void {
+  const level = resolveEffectiveDepth(opts.depthLevel);
+  const h = Math.max(0, opts.height);
+  if (level === "off") {
+    const rect = opts.plot
+      .append("rect")
+      .attr("x", opts.x)
+      .attr("width", opts.width)
+      .attr("rx", opts.rx ?? VCDS.bar.rx)
+      .attr("fill", opts.color);
+    if (opts.animate !== false) animateBarHeight(rect, opts.y1, h);
+    else rect.attr("y", opts.y1).attr("height", h);
+    return;
+  }
+  drawExtrudedBar({
+    plot: opts.plot,
+    x: opts.x,
+    y: opts.y1,
+    width: opts.width,
+    height: h,
+    color: opts.color,
+    rx: opts.rx,
+    depthLevel: level,
+  });
+}
+
+type PaintHorizontalBarOpts = {
+  plot: d3.Selection<SVGGElement, unknown, null, undefined>;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  rx?: number;
+  depthLevel?: DepthVisualLevel;
+  animate?: boolean;
+};
+
+export function paintHorizontalBar(opts: PaintHorizontalBarOpts): void {
+  const level = resolveEffectiveDepth(opts.depthLevel);
+  const w = Math.max(0, opts.width);
+  if (level === "off") {
+    const rect = opts.plot
+      .append("rect")
+      .attr("y", opts.y)
+      .attr("height", opts.height)
+      .attr("rx", opts.rx ?? VCDS.bar.rx)
+      .attr("fill", opts.color)
+      .attr("x", opts.x)
+      .attr("width", w);
+    if (opts.animate === false) return;
+    rect.attr("width", 0).transition().duration(480).attr("width", w);
+    return;
+  }
+  drawExtrudedHorizontalBar({
+    plot: opts.plot,
+    x: opts.x,
+    y: opts.y,
+    width: w,
+    height: opts.height,
+    color: opts.color,
+    rx: opts.rx,
+    depthLevel: level,
+  });
 }

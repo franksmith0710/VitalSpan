@@ -1,6 +1,9 @@
 import * as d3 from "d3";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
+import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
+import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -20,7 +23,19 @@ function gaugeArcPath(innerR: number, outerR: number, start: number, end: number
 export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
 
-  const { width, height, colors, theme, showTooltip, valueFormat, options } = config;
+  const {
+    width,
+    height,
+    colors,
+    theme,
+    showLabel,
+    showTooltip,
+    labelColor,
+    labelFontSize,
+    tooltipPresentation,
+    valueFormat,
+    options,
+  } = config;
   const rawValue = Number(options.rawValue ?? NaN);
   const percent = Math.min(1, Math.max(0, Number(options.percent ?? 0)));
   const usePercent = Number.isFinite(rawValue) ? rawValue <= 100 : true;
@@ -36,6 +51,7 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
   const rangeColors = (options.range as { color?: string[] } | undefined)?.color;
   const activeColor = rangeColors?.[0] ?? colors[0] ?? "#465fff";
   const trackColor = rangeColors?.[1] ?? theme.gridLine;
+  const depthOn = resolveEffectiveDepth() !== "off";
 
   const root = d3
     .select(container)
@@ -54,14 +70,38 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
     START_ANGLE + (END_ANGLE - START_ANGLE) * percent,
   );
 
-  g.append("path").attr("d", trackArc).attr("fill", trackColor).attr("opacity", 0.95);
+  if (depthOn) {
+    g.append("path").attr("d", trackArc).attr("fill", shadeColor(trackColor, "shadow")).attr("opacity", 0.95);
+    g.append("path").attr("d", trackArc).attr("fill", shadeColor(trackColor, "top")).attr("opacity", 0.45);
+  } else {
+    g.append("path").attr("d", trackArc).attr("fill", trackColor).attr("opacity", 0.95);
+  }
 
-  const valuePath = g.append("path").attr("fill", activeColor).attr("opacity", 0.95).attr("d", valueArc);
+  let valueShadowPath: d3.Selection<SVGPathElement, unknown, null, undefined> | null = null;
+  if (depthOn) {
+    valueShadowPath = g
+      .append("path")
+      .attr("fill", shadeColor(activeColor, "shadow"))
+      .attr("opacity", 0.75)
+      .attr("d", valueArc);
+  }
+  const valuePath = g
+    .append("path")
+    .attr("fill", depthOn ? shadeColor(activeColor, "top") : activeColor)
+    .attr("opacity", 0.95)
+    .attr("d", valueArc);
 
   if (!prefersReducedMotion()) {
     const interp = d3.interpolateNumber(START_ANGLE, START_ANGLE + (END_ANGLE - START_ANGLE) * percent);
+    const collapsed = gaugeArcPath(radius * 0.72, radius, START_ANGLE, START_ANGLE);
     valuePath
-      .attr("d", gaugeArcPath(radius * 0.72, radius, START_ANGLE, START_ANGLE))
+      .attr("d", collapsed)
+      .transition()
+      .duration(720)
+      .ease(d3.easeCubicOut)
+      .attrTween("d", () => (t) => gaugeArcPath(radius * 0.72, radius, START_ANGLE, interp(t)));
+    valueShadowPath
+      ?.attr("d", collapsed)
       .transition()
       .duration(720)
       .ease(d3.easeCubicOut)
@@ -100,28 +140,18 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
       ? formatChartValue(percent * 100, valueFormat ? { ...valueFormat, unit: "%" } : { type: "percent" })
       : formatChartValue(rawValue, valueFormat));
 
-  g.append("text")
-    .attr("y", radius * 0.35)
-    .attr("text-anchor", "middle")
-    .attr("fill", theme.legendText)
-    .style("font-size", "22px")
-    .style("font-weight", "600")
-    .text(centerText);
+  if (showLabel) {
+    g.append("text")
+      .attr("y", radius * 0.35)
+      .attr("text-anchor", "middle")
+      .attr("fill", resolveLabelFill(theme, labelColor))
+      .style("font-size", `${labelFontSize + 10}px`)
+      .style("font-weight", "600")
+      .text(centerText);
+  }
 
   if (showTooltip) {
-    const tip = d3
-      .select(container)
-      .append("div")
-      .style("position", "absolute")
-      .style("pointer-events", "none")
-      .style("opacity", "0")
-      .style("padding", "6px 8px")
-      .style("border-radius", "6px")
-      .style("font-size", "12px")
-      .style("background", theme.tooltipBg)
-      .style("color", theme.tooltipText)
-      .style("border", `1px solid ${theme.axisLine}`)
-      .style("z-index", "10");
+    const tip = createTooltip(container, theme, tooltipPresentation);
 
     root
       .append("rect")

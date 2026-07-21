@@ -329,7 +329,7 @@ describe("ChartRenderer smoke", () => {
 
   it("T-VIZ-R30-001: all active catalog chart types render d3 hosts (L1)", async () => {
     assertCatalogSmokeCoverage();
-    expect(CHART_CATALOG_SMOKE_CASES.length).toBeGreaterThanOrEqual(43);
+    expect(CHART_CATALOG_SMOKE_CASES.length).toBeGreaterThanOrEqual(44);
 
     for (const item of CHART_CATALOG_SMOKE_CASES) {
       cleanup();
@@ -341,7 +341,7 @@ describe("ChartRenderer smoke", () => {
       await waitFor(
         () => {
           expect(
-            host.querySelector("svg, table, [role='group']"),
+            host.querySelector("svg, table, [role='group'], canvas"),
             `chartType=${item.type} missing render root`,
           ).toBeTruthy();
         },

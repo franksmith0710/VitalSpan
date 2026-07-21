@@ -12,6 +12,7 @@ const baseStyle = (): ChartStyleContext => ({
   showLabel: true,
   showTooltip: true,
   seriesGradient: true,
+  depthVisual: "standard",
   dataZoom: false,
   labelPresentation: { fontSize: 14, color: "#ff0000" },
   tooltipPresentation: { fontSize: 13, color: "#00ff00", background: "#111111" },
@@ -25,7 +26,9 @@ describe("presentation", () => {
       labelFontSize: 14,
       labelColor: "#ff0000",
       seriesGradient: true,
+      depthVisual: "standard",
       tooltipPresentation: { fontSize: 13, color: "#00ff00", background: "#111111" },
+      legendLayout: { position: "bottom", orient: "horizontal" },
     });
   });
 

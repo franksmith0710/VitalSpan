@@ -17,6 +17,7 @@ import { ChartPaletteDeParityFields } from "../chartPaletteDeParityFields";
 import { ChartTableColorFields } from "../chartPaletteLabelTooltipFields";
 import { ChartLegendDeParityFields } from "../chartLegendStyleFields";
 import { useChartInspector } from "../chartInspectorContext";
+import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
 import {
   patchChartLabelStyle,
   patchChartShowLabel,
@@ -33,7 +34,11 @@ import {
   type ChartDeStyle,
 } from "@/lib/chartDeStyle";
 import type { WidgetStyleConfig } from "../dashboardStyleConfig";
-import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
+import {
+  supportsDepthVisualToggle,
+  supportsSeriesGradientToggle,
+  resolveLegendEditorMode,
+} from "@/lib/chartStylePanelGates";
 import {
   resolveChartSeriesColorItems,
   supportsChartSeriesColorEditing,
@@ -70,6 +75,7 @@ export function ChartPaletteStyleSection() {
         seriesColor={seriesColorItems.length > 0 ? seriesColorItems : undefined}
         paletteOpacity={deStyle.paletteOpacity}
         seriesGradient={deStyle.seriesGradient ?? false}
+        depthVisual={deStyle.depthVisual ?? dashboardStyle?.depthVisual ?? "off"}
         labelShow={readChartShowLabel(cfg, dashboardStyle)}
         tooltipShow={readChartTooltipShow(cfg, dashboardStyle)}
         labelStyle={{
@@ -86,7 +92,8 @@ export function ChartPaletteStyleSection() {
         tooltipBackgroundFallback={resolveChartTooltipDisplayBackground(cfg, dashboardStyle)}
         showLabelToggle={caps.label}
         showTooltipToggle={!isTableLike && cfg.chartType !== "t-heatmap"}
-        showGradientToggle={!isTableLike && cfg.chartType !== "t-heatmap"}
+        showGradientToggle={supportsSeriesGradientToggle(cfg.chartType)}
+        showDepthToggle={supportsDepthVisualToggle(cfg.chartType)}
         onPaletteChange={(paletteId) => {
           patchDeStyle({
             paletteId,
@@ -102,6 +109,7 @@ export function ChartPaletteStyleSection() {
         onOpacityChange={patchPaletteOpacity}
         onOpacityPreview={patchPaletteOpacity}
         onSeriesGradientChange={(enabled) => patchDeStyle({ seriesGradient: enabled })}
+        onDepthVisualChange={(level) => patchDeStyle({ depthVisual: level })}
         onLabelShowChange={(show) =>
           mutateChartConfig((current) => patchChartShowLabel(current, show))
         }
@@ -172,6 +180,8 @@ export function ChartTitleStyleSection() {
 
 export function ChartRemarkStyleSection() {
   const { cfg, patchDeStyleNested } = useChartInspector();
+  if (!chartInspectorCapabilities(cfg.chartType).remark) return null;
+
   const deStyle = readChartDeStyle(cfg);
   const patchRemark = (patch: Partial<NonNullable<ChartDeStyle["remark"]>>) =>
     patchDeStyleNested("remark", patch);
@@ -202,8 +212,12 @@ export function ChartRemarkStyleSection() {
 
 export function ChartLegendStyleSection() {
   const { cfg, patchDeStyleNested } = useChartInspector();
+  const caps = chartInspectorCapabilities(cfg.chartType);
+  if (!caps.legend) return null;
+
   const deStyle = readChartDeStyle(cfg);
   const legendVisible = readChartLegendVisible(deStyle, { embedded: true });
+  const editorMode = resolveLegendEditorMode(cfg.chartType);
   const patchLegend = (patch: Partial<NonNullable<ChartDeStyle["legend"]>>) =>
     patchDeStyleNested("legend", patch);
 
@@ -220,7 +234,7 @@ export function ChartLegendStyleSection() {
       }
     >
       {legendVisible ? (
-        <ChartLegendDeParityFields deStyle={deStyle} onPatch={patchLegend} />
+        <ChartLegendDeParityFields deStyle={deStyle} editorMode={editorMode} onPatch={patchLegend} />
       ) : null}
     </ChartInspectorSection>
   );
@@ -230,7 +244,7 @@ export function ChartLabelStyleSection() {
   const { cfg, mutateChartConfig, patchDeStyleNested, dashboardStyle } = useChartInspector();
   const deStyle = readChartDeStyle(cfg);
   const caps = chartInspectorCapabilities(cfg.chartType);
-  const showLabel = readChartShowLabel(cfg);
+  const showLabel = readChartShowLabel(cfg, dashboardStyle);
   const patchLabel = (patch: Partial<NonNullable<ChartDeStyle["label"]>>) =>
     patchDeStyleNested("label", patch);
   const isKpi = cfg.chartType === "kpi";

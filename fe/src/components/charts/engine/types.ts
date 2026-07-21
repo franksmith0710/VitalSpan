@@ -33,6 +33,7 @@ export type ChartStyleContext = {
   showLabel: boolean;
   showTooltip: boolean;
   seriesGradient: boolean;
+  depthVisual: "off" | "standard" | "enhanced";
   dataZoom: boolean;
   valueFormat?: NumberFormatConfig;
   labelPresentation: { fontSize: number; color?: string };

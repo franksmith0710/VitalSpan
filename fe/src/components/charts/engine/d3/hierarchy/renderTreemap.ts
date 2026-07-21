@@ -1,5 +1,7 @@
 import * as d3 from "d3";
+import { applyCellBevel, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
+import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -20,7 +22,20 @@ function positionTooltip(
 
 export function renderD3TreemapChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
-  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, options, onPointClick } = config;
+  const {
+    width,
+    height,
+    colors,
+    theme,
+    showLabel,
+    showTooltip,
+    valueFormat,
+    options,
+    onPointClick,
+    conditionalRules = [],
+    depthVisual,
+  } = config;
+  const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as TreemapDatum[]) ?? [];
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
@@ -57,11 +72,19 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     .attr("width", (d) => Math.max(0, d.x1 - d.x0))
     .attr("height", (d) => Math.max(0, d.y1 - d.y0))
     .attr("rx", 3)
-    .attr("fill", (d) => colorScale(d.data.name) ?? colors[0] ?? "#465fff")
+    .attr("fill", (d) => {
+      const base = colorScale(d.data.name) ?? colors[0] ?? "#465fff";
+      return conditionalRules.length > 0
+        ? resolveDatumColor(d.value ?? 0, base, conditionalRules)
+        : base;
+    })
     .attr("opacity", 0.92)
     .attr("stroke", theme.background === "transparent" ? "#fff" : theme.background)
     .attr("stroke-width", 1.5)
     .style("cursor", onPointClick ? "pointer" : "default")
+    .each(function () {
+      applyCellBevel(d3.select(this), depthLevel);
+    })
     .on("mouseenter", function () {
       d3.select(this).attr("opacity", 1);
     })

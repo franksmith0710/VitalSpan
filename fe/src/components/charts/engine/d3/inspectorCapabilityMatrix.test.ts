@@ -17,10 +17,10 @@ describe("inspectorCapabilityMatrix", () => {
     expect(types.length).toBeGreaterThan(30);
   });
 
-  it("hides conditional for scatter after D3 wiring audit", () => {
+  it("wires conditional for scatter after D3 renderer hook-up", () => {
     const caps = resolveD3WiredCapabilities("scatter");
-    expect(caps?.conditional).toBe(false);
-    expect(resolveD3InspectorFeatureMatrix("scatter")?.conditional).toBe("missing");
+    expect(caps?.conditional).toBe(true);
+    expect(resolveD3InspectorFeatureMatrix("scatter")?.conditional).toBe("wired");
   });
 
   it("enables dataZoom for dual axes after P0 wiring", () => {
@@ -28,14 +28,14 @@ describe("inspectorCapabilityMatrix", () => {
   });
 
   it("resolveEngineCapabilities uses D3 matrix for canvas types", () => {
-    expect(resolveEngineCapabilities("scatter").conditional).toBe(false);
+    expect(resolveEngineCapabilities("scatter").conditional).toBe(true);
     expect(resolveEngineCapabilities("line").dataZoom).toBe(true);
-    expect(resolveEngineCapabilities("gauge").label).toBe(false);
+    expect(resolveEngineCapabilities("gauge").label).toBe(true);
   });
 
   it("chartInspectorCapabilities stays aligned with D3 matrix", () => {
     const scatter = chartInspectorCapabilities("scatter");
-    expect(scatter.conditional).toBe(false);
+    expect(scatter.conditional).toBe(true);
     expect(scatter.markLines).toBe(true);
 
     const mix = chartInspectorCapabilities("chart-mix");

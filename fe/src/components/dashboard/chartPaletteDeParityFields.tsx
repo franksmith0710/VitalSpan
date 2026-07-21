@@ -7,12 +7,22 @@ import { DeAttrField, DeAttrForm, DeAttrToggleRow } from "./dashboardInspectorUi
 import { InspectorSwitchRow } from "./inspectorCompact";
 import { resolvePaletteId, resolveInheritPreviewColors } from "@/lib/chartPalette";
 import type { ChartLabelStyle, ChartSeriesColorItem, ChartTooltipStyle } from "@/lib/chartDeStyle";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export type DepthVisualOption = "off" | "standard" | "enhanced";
 
 export type ChartPaletteDeParityFieldsProps = {
   paletteId?: string;
   paletteColors?: readonly string[];
   paletteOpacity?: number;
   seriesGradient?: boolean;
+  depthVisual?: DepthVisualOption;
   labelShow?: boolean;
   tooltipShow?: boolean;
   labelStyle?: Pick<ChartLabelStyle, "fontSize" | "color">;
@@ -30,12 +40,14 @@ export type ChartPaletteDeParityFieldsProps = {
   showLabelToggle?: boolean;
   showTooltipToggle?: boolean;
   showGradientToggle?: boolean;
+  showDepthToggle?: boolean;
   showOpacity?: boolean;
   labelDisabled?: boolean;
   onPaletteChange: (paletteId: string | undefined, colors: readonly string[]) => void;
   onOpacityChange?: (opacity: number) => void;
   onOpacityPreview?: (opacity: number) => void;
   onSeriesGradientChange?: (enabled: boolean) => void;
+  onDepthVisualChange?: (level: DepthVisualOption) => void;
   onLabelShowChange?: (show: boolean) => void;
   onTooltipShowChange?: (show: boolean) => void;
   onLabelStyleChange?: (patch: Partial<ChartLabelStyle>) => void;
@@ -50,6 +62,7 @@ export function ChartPaletteDeParityFields({
   paletteColors,
   paletteOpacity,
   seriesGradient = false,
+  depthVisual = "off",
   seriesColor,
   labelShow = false,
   tooltipShow = true,
@@ -65,12 +78,14 @@ export function ChartPaletteDeParityFields({
   showLabelToggle = true,
   showTooltipToggle = true,
   showGradientToggle = true,
+  showDepthToggle = true,
   showOpacity = true,
   labelDisabled = false,
   onPaletteChange,
   onOpacityChange,
   onOpacityPreview,
   onSeriesGradientChange,
+  onDepthVisualChange,
   onLabelShowChange,
   onTooltipShowChange,
   onLabelStyleChange,
@@ -101,6 +116,37 @@ export function ChartPaletteDeParityFields({
           checked={seriesGradient}
           onCheckedChange={onSeriesGradientChange}
         />
+      )
+    ) : null;
+
+  const depthSelect =
+    showDepthToggle && onDepthVisualChange ? (
+      density === "narrow" ? (
+        <DeAttrField label="立体视觉" compact>
+          <Select value={depthVisual} onValueChange={(v) => onDepthVisualChange(v as DepthVisualOption)}>
+            <SelectTrigger className="h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="off">关</SelectItem>
+              <SelectItem value="standard">标准</SelectItem>
+              <SelectItem value="enhanced">增强</SelectItem>
+            </SelectContent>
+          </Select>
+        </DeAttrField>
+      ) : (
+        <DeAttrField label="立体视觉" compact>
+          <Select value={depthVisual} onValueChange={(v) => onDepthVisualChange(v as DepthVisualOption)}>
+            <SelectTrigger className="h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="off">关</SelectItem>
+              <SelectItem value="standard">标准</SelectItem>
+              <SelectItem value="enhanced">增强</SelectItem>
+            </SelectContent>
+          </Select>
+        </DeAttrField>
       )
     ) : null;
 
@@ -179,6 +225,7 @@ export function ChartPaletteDeParityFields({
           onOpacityPreview={showOpacity ? onOpacityPreview : undefined}
         />
         {gradientToggle}
+        {depthSelect}
         {labelTooltipFields}
         {tableColors}
       </div>
@@ -200,6 +247,7 @@ export function ChartPaletteDeParityFields({
       </DeAttrField>
 
       {gradientToggle}
+      {depthSelect}
 
       {showOpacity && onOpacityChange ? (
         <DashboardConfigSlider

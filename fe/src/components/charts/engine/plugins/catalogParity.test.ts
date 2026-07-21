@@ -3,7 +3,7 @@ import "@/components/charts/engine/plugins/index";
 import { BUILTIN_PLUGIN_DEFS } from "@/components/charts/engine/plugins/metadata";
 import { getChartPlugin, listChartPluginTypes } from "@/components/charts/engine/plugins/registry";
 
-const EXPECTED_CHART_TYPE_COUNT = 48;
+const EXPECTED_CHART_TYPE_COUNT = 49;
 
 describe("chart catalog parity (FE registry ↔ metadata)", () => {
   it("registers all builtin plugin defs", () => {

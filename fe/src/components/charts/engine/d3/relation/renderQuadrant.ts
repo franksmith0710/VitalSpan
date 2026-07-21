@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { renderD3ScatterChart } from "@/components/charts/engine/d3/relation/renderScatter";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
 
@@ -29,6 +30,47 @@ export function renderD3QuadrantChart(container: HTMLElement, config: D3RenderCo
 
   const plot = d3.select(svg).select<SVGGElement>("g");
   if (plot.empty()) return cleanupScatter;
+
+  const depthLevel = resolveEffectiveDepth(config.depthVisual);
+  if (depthLevel !== "off") {
+    const xMid = xScale(xMean);
+    const yMid = yScale(yMean);
+    const quadrants = [
+      { key: "tl", x: margin.left, y: margin.top, w: xMid, h: yMid, cx: 0, cy: 0 },
+      { key: "tr", x: margin.left + xMid, y: margin.top, w: innerW - xMid, h: yMid, cx: 1, cy: 0 },
+      { key: "bl", x: margin.left, y: margin.top + yMid, w: xMid, h: innerH - yMid, cx: 0, cy: 1 },
+      {
+        key: "br",
+        x: margin.left + xMid,
+        y: margin.top + yMid,
+        w: innerW - xMid,
+        h: innerH - yMid,
+        cx: 1,
+        cy: 1,
+      },
+    ];
+    const defs = d3.select(svg).select("defs").empty() ? d3.select(svg).append("defs") : d3.select(svg).select("defs");
+    const bg = plot.insert("g", ":first-child").attr("class", "quadrant-depth-bg");
+    for (const q of quadrants) {
+      if (q.w <= 0 || q.h <= 0) continue;
+      const gradId = `vs-quadrant-radial-${q.key}`;
+      const grad = defs
+        .append("radialGradient")
+        .attr("id", gradId)
+        .attr("cx", q.cx === 0 ? "0%" : "100%")
+        .attr("cy", q.cy === 0 ? "0%" : "100%")
+        .attr("r", "100%");
+      grad.append("stop").attr("offset", "0%").attr("stop-color", "#465fff").attr("stop-opacity", 0.1);
+      grad.append("stop").attr("offset", "100%").attr("stop-color", "#465fff").attr("stop-opacity", 0);
+      bg.append("rect")
+        .attr("x", q.x)
+        .attr("y", q.y)
+        .attr("width", q.w)
+        .attr("height", q.h)
+        .attr("fill", `url(#${gradId})`)
+        .attr("pointer-events", "none");
+    }
+  }
 
   plot
     .append("line")

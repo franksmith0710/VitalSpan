@@ -57,14 +57,22 @@ export function ListPageToolbar({
   actions?: ReactNode;
   className?: string;
 }) {
+  const hasFilters = filters != null;
+  const actionsOnly = !hasFilters && actions != null;
+
   return (
     <div
       className={cn(
-        "flex shrink-0 flex-col gap-3 border-b border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.06]",
+        "flex shrink-0 border-b border-gray-100 dark:border-white/[0.06]",
+        actionsOnly
+          ? "justify-end px-5 py-2"
+          : "flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">{filters}</div>
+      {hasFilters ? (
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">{filters}</div>
+      ) : null}
       {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
     </div>
   );

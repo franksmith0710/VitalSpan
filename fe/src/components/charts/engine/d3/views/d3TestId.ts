@@ -31,7 +31,9 @@ const PLOT_TEST_IDS: Record<string, string> = {
 export function d3ChartTestId(chartType: string, plotType: string): string {
   if (chartType.startsWith("area")) return "d3-area-chart";
   if (chartType === "line" || plotType === "Line") return "d3-line-chart";
-  if (chartType === "map" || plotType === "Choropleth") return "d3-map-chart";
+  if (chartType === "map" || chartType === "map-3d" || plotType === "Choropleth") {
+    return chartType === "map-3d" ? "three-map-chart" : "d3-map-chart";
+  }
   if (chartType === "graph" || plotType === "ForceGraph") return "d3-graph-chart";
   if (chartType === "t-heatmap" || plotType === "Heatmap") return "d3-heatmap-chart";
   return PLOT_TEST_IDS[plotType] ?? "d3-chart";

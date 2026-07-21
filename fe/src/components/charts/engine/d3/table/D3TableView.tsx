@@ -131,6 +131,7 @@ function D3TableViewInner(props: ChartEngineViewProps) {
           embedded={fill}
           layoutInteractive
           onTableStylePatch={onTableStylePatch}
+          depthVisual={style.depthVisual}
         />
       </div>
     );
@@ -161,6 +162,7 @@ function D3TableViewInner(props: ChartEngineViewProps) {
         showSeriesNumber={profile?.showSeriesNumber}
         layoutInteractive
         onTableStylePatch={onTableStylePatch}
+        depthVisual={style.depthVisual}
       />
     </div>
   );

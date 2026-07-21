@@ -63,7 +63,7 @@ export function chartStyleSectionsForType(chartType: ChartType): ChartStyleSecti
 
   if (chartType === "table") return TABLE_SECTIONS;
   if (chartType === "pie") return PIE_SECTIONS;
-  if (chartType === "map") return GEO_MAP_SECTIONS;
+  if (chartType === "map" || chartType === "map-3d") return GEO_MAP_SECTIONS;
   if (chartType === "heatmap" || chartType === "t-heatmap") return MINIMAL_SECTIONS;
   if (isKpiType(chartType)) return KPI_SECTIONS;
   if (chartType === "funnel" || chartType === "sankey" || chartType === "graph") {

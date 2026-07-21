@@ -30,6 +30,7 @@ const baseStyle: ChartStyleContext = {
   showLabel: false,
   showTooltip: true,
   seriesGradient: false,
+  depthVisual: "off",
   dataZoom: false,
   labelPresentation: { fontSize: 12 },
   tooltipPresentation: { fontSize: 12 },

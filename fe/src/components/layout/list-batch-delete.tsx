@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
+import { Check, ListChecks } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,12 +52,15 @@ export function ListBatchModeButton({
   return (
     <Button
       type="button"
-      variant={active ? "primary" : "outline"}
-      size="sm"
+      variant={active ? "primary" : "ghost"}
+      size="xs"
       className={className}
+      aria-label={active ? "完成批量操作" : "批量操作"}
+      title={active ? "完成" : "批量操作"}
       onClick={onToggle}
     >
-      {active ? "完成" : "批量操作"}
+      {active ? <Check className="size-3.5" aria-hidden /> : <ListChecks className="size-3.5" aria-hidden />}
+      {active ? "完成" : "批量"}
     </Button>
   );
 }
@@ -79,7 +83,7 @@ export function ListPageBatchActions({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-center gap-3", className)}>
+    <div className={cn("inline-flex max-w-full flex-wrap items-center gap-2", className)}>
       <ListBatchModeButton active={batchMode} onToggle={onToggleBatchMode} />
       {batchMode ? (
         <ListBatchDeleteBar
@@ -87,7 +91,6 @@ export function ListPageBatchActions({
           entityLabel={entityLabel}
           onClear={onClear}
           onDelete={onDelete}
-          className="min-w-0 flex-1"
         />
       ) : null}
     </div>
@@ -155,24 +158,24 @@ export function ListBatchDeleteBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-2 rounded-lg border border-brand-200 bg-brand-50/60 px-3 py-2 text-theme-xs dark:border-brand-500/30 dark:bg-brand-500/10",
+        "inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-md border border-brand-200 bg-brand-50/60 px-2 py-1 text-[11px] leading-none dark:border-brand-500/30 dark:bg-brand-500/10",
         className,
       )}
     >
       <span className="font-medium text-brand-700 dark:text-brand-300">
         已选 {selectedCount} {entityLabel}
       </span>
-      <Button type="button" variant="ghost" size="sm" className="h-8" onClick={onClear}>
-        取消选择
+      <Button type="button" variant="ghost" size="xs" className="h-7 px-2" onClick={onClear}>
+        取消
       </Button>
       <Button
         type="button"
         variant="outline"
-        size="sm"
-        className="h-8 border-error-200 text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400"
+        size="xs"
+        className="h-7 border-error-200 px-2 text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400"
         onClick={onDelete}
       >
-        批量删除 ({selectedCount})
+        删除 ({selectedCount})
       </Button>
     </div>
   );

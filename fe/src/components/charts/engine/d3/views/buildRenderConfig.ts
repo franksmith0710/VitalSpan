@@ -5,6 +5,7 @@ import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import type { D3DispatchPayload } from "@/components/charts/engine/d3/renderDispatch";
 import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyleProps";
 import { extractDrillValue, buildCartesianRenderConfig } from "@/components/charts/engine/d3/views/buildCartesianConfig";
+import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
 import type {
   D3BarRangeDatum,
   D3BidirectionalBarDatum,
@@ -47,6 +48,7 @@ export function buildD3DispatchPayload(
     labelFontSize: styleProps.labelFontSize,
     labelColor: styleProps.labelColor,
     seriesGradient: styleProps.seriesGradient,
+    depthVisual: styleProps.depthVisual,
     tooltipPresentation: styleProps.tooltipPresentation,
   };
 
@@ -56,6 +58,7 @@ export function buildD3DispatchPayload(
     const metricField = spec.encoding.metrics[0]?.field ?? "";
     const rows = (options.rows as unknown[][]) ?? [];
     const columns = (options.columns as string[]) ?? [];
+    const geoStyle = props.chartConfig ? readChartGeoStyle(readChartDeStyle(props.chartConfig)) : {};
     return {
       kind: "geo",
       config: {
@@ -68,6 +71,11 @@ export function buildD3DispatchPayload(
         knownRegionNames: options.knownRegionNames as string[] | undefined,
         mapId: (options.mapId as string | undefined) ?? VS_REGIONS_MAP_ID,
         isDark: props.isDark ?? props.style.scheme === "dark",
+        geoStyle: {
+          roam: geoStyle.roam,
+          showRegionLabel: geoStyle.showRegionLabel,
+          visualMap: geoStyle.visualMap,
+        },
         colors: styleProps.colors,
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
@@ -76,12 +84,14 @@ export function buildD3DispatchPayload(
         onPointClick: props.onInteraction
           ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.name, label: datum.name })
           : undefined,
+        depthVisual: styleProps.depthVisual,
       },
     };
   }
 
   if (plotType === "Heatmap") {
     const data = (options.data as D3MatrixCell[]) ?? [];
+    const geoStyle = props.chartConfig ? readChartGeoStyle(readChartDeStyle(props.chartConfig)) : {};
     return {
       kind: "matrix",
       config: {
@@ -94,6 +104,9 @@ export function buildD3DispatchPayload(
         tooltipPresentation: styleProps.tooltipPresentation,
         valueFormat: styleProps.valueFormat,
         conditionalRules: styleProps.conditionalRules,
+        showCellLabel: geoStyle.showCellLabel === true,
+        showVisualMap: geoStyle.visualMap !== false,
+        depthVisual: styleProps.depthVisual,
         onPointClick: props.onInteraction
           ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.x, label: `${datum.x}/${datum.y}` })
           : undefined,
@@ -132,6 +145,7 @@ export function buildD3DispatchPayload(
         valueFormat: styleProps.valueFormat,
         markLines: styleProps.markLines,
         conditionalRules: styleProps.conditionalRules,
+        legendLayout: styleProps.legendLayout,
         onPointClick: onDatumClick(props, xField),
       },
     };
@@ -221,6 +235,7 @@ export function buildD3DispatchPayload(
       valueFormat: styleProps.valueFormat,
       conditionalRules: styleProps.conditionalRules,
       markLines: styleProps.markLines,
+      legendLayout: styleProps.legendLayout,
       onPointClick: props.onInteraction
         ? (datum) => {
             const label = String(datum.type ?? datum.stage ?? datum.name ?? datum.word ?? "");

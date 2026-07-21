@@ -49,10 +49,18 @@ describe("dataScreenViewportScroll", () => {
     const metrics = computeViewportScrollMetrics(viewport, content, { x: -100, y: -50 });
     expect(metrics.horizontal.canScroll).toBe(true);
     expect(metrics.vertical.canScroll).toBe(true);
-    expect(metrics.horizontal.scrollOffset).toBe(-100 - bounds.minPanX);
-    expect(metrics.vertical.scrollOffset).toBe(-50 - bounds.minPanY);
+    expect(metrics.horizontal.scrollOffset).toBe(bounds.maxPanX - -100);
+    expect(metrics.vertical.scrollOffset).toBe(bounds.maxPanY - -50);
     expect(panFromHorizontalScroll(metrics.horizontal.scrollOffset, bounds)).toBe(-100);
     expect(panFromVerticalScroll(metrics.vertical.scrollOffset, bounds)).toBe(-50);
+  });
+
+  it("moves scrollbar thumb down when viewing further into canvas content", () => {
+    const bounds = computeViewportPanBounds(viewport, content);
+    const home = computeViewportScrollMetrics(viewport, content, { x: 0, y: 0 });
+    const deeper = computeViewportScrollMetrics(viewport, content, { x: -100, y: -80 });
+    expect(deeper.horizontal.scrollOffset).toBeGreaterThan(home.horizontal.scrollOffset);
+    expect(deeper.vertical.scrollOffset).toBeGreaterThan(home.vertical.scrollOffset);
   });
 
   it("clamps pan inside bounds", () => {

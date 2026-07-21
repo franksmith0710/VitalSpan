@@ -11,6 +11,7 @@ import { TableResizeGuide } from "@/components/charts/engine/d3/table/TableResiz
 import { TableResizeHandle } from "@/components/charts/engine/d3/table/TableResizeHandle";
 import { useTableLayoutResize } from "@/components/charts/engine/d3/table/useTableLayoutResize";
 import type { PivotTableModel } from "@/components/charts/engine/d3/table/types";
+import type { DepthVisualLevel } from "@/components/charts/engine/d3/core/chartVisualTokens";
 
 export const PIVOT_ROW_FIELD = "__pivot_row__";
 export const PIVOT_TOTAL_FIELD = "__pivot_total__";
@@ -25,6 +26,7 @@ type TablePivotGridProps = {
   testId?: string;
   layoutInteractive?: boolean;
   onTableStylePatch?: (patch: Partial<ChartDeTableStyle>) => void;
+  depthVisual?: DepthVisualLevel;
 };
 
 function sumMetric(
@@ -53,6 +55,7 @@ export function TablePivotGrid({
   testId = "d3-table-chart",
   layoutInteractive = false,
   onTableStylePatch,
+  depthVisual,
 }: TablePivotGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -153,6 +156,7 @@ export function TablePivotGrid({
           data-row-hover={rowHover ? "" : undefined}
           data-zebra={zebraBg ? "" : undefined}
           data-density={density}
+          data-depth-visual={depthVisual !== "off" && depthVisual ? depthVisual : undefined}
         >
           {useFixedLayout ? (
             <colgroup>

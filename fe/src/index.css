@@ -894,6 +894,28 @@ html.admin-fill-lock #root {
   box-shadow: inset 3px 0 0 var(--dashboard-table-accent, #465fff);
 }
 
+.vs-chart-table[data-depth-visual] tbody tr {
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.vs-chart-table[data-depth-visual] tbody tr:hover {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+}
+
+.vs-chart-table[data-depth-visual="enhanced"] tbody tr:hover {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16);
+}
+
+.vs-kpi-depth-standard {
+  filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.12));
+}
+
+.vs-kpi-depth-enhanced {
+  filter: drop-shadow(0 6px 16px rgba(15, 23, 42, 0.18));
+  transform: perspective(480px) rotateX(2deg);
+  transform-origin: center bottom;
+}
+
 .vs-chart-table[data-density="compact"] :where(.vs-table-th, .vs-table-td) {
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;

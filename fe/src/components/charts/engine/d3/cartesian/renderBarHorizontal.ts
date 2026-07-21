@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import { chartTransition } from "@/components/charts/engine/d3/core/animate";
 import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { paintHorizontalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
 import { drawVerticalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
@@ -14,6 +14,24 @@ import { formatChartValue } from "@/lib/chartValueFormat";
 const BAR_RX = 4;
 
 type WideRow = Record<string, string | number>;
+
+function paintHBarCell(
+  cell: d3.Selection<SVGGElement, unknown, null, undefined>,
+  opts: { x: number; w: number; h: number; front: string; solid: string },
+): void {
+  cell.selectAll("*").remove();
+  const depthOn = resolveEffectiveDepth() !== "off";
+  paintHorizontalBar({
+    plot: cell,
+    x: opts.x,
+    y: 0,
+    width: opts.w,
+    height: opts.h,
+    color: depthOn ? opts.solid : opts.front,
+    rx: BAR_RX,
+  });
+  if (depthOn && opts.front !== opts.solid) cell.select(".vs-hbar-front").attr("fill", opts.front);
+}
 
 function pickCategoryAtBand(my: number, categories: string[], y: d3.ScaleBand<string>): string {
   let best = categories[0] ?? "";
@@ -119,26 +137,21 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     for (const layer of stack(wideRows)) {
       const name = String(layer.key);
       const color = colorScale(name) ?? colors[0] ?? "#465fff";
+      const gradientFill = resolveSeriesGradientFill(defs, `hbar-stack-${name}`, color, seriesGradient, "horizontal");
       plot
-        .selectAll(`rect.h-${name}`)
+        .selectAll(`g.hbar-stack-${name}`)
         .data(layer)
-        .join("rect")
-        .attr("y", (d) => y(String(d.data.__category__)) ?? 0)
-        .attr("height", y.bandwidth())
-        .attr("rx", BAR_RX)
-        .attr("fill", (d) => {
-          const base = resolveSeriesGradientFill(defs, `hbar-stack-${name}`, color, seriesGradient, "horizontal");
-          if (base.startsWith("url(")) return base;
-          return resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules);
-        })
+        .join("g")
+        .attr("class", `hbar-stack-${name}`)
+        .attr("transform", (d) => `translate(0,${y(String(d.data.__category__)) ?? 0})`)
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
           const x0 = x(Number(d[0]));
           const w = Math.max(0, x(Number(d[1])) - x0);
-          chartTransition(d3.select(this).attr("x", x0).attr("width", 0))
-            .duration(600)
-            .ease(d3.easeCubicOut)
-            .attr("width", w);
+          const val = Number(d[1]) - Number(d[0]);
+          const solid = gradientFill.startsWith("url(") ? color : resolveDatumColor(val, color, conditionalRules);
+          const front = gradientFill.startsWith("url(") ? gradientFill : solid;
+          paintHBarCell(d3.select(this), { x: x0, w, h: y.bandwidth(), front, solid });
         })
         .on("click", (_e, d) =>
           onPointClick?.({
@@ -152,28 +165,26 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     for (const s of seriesGroups) {
       const name = s.name || "value";
       const color = colorScale(name) ?? colors[0] ?? "#465fff";
+      const barH = useGrouped && ySub ? ySub.bandwidth() : y.bandwidth();
+      const gradientFill = resolveSeriesGradientFill(defs, `hbar-${name}`, color, seriesGradient, "horizontal");
       plot
-        .selectAll(`rect.hbar-${name}`)
+        .selectAll(`g.hbar-${name}`)
         .data(s.points)
-        .join("rect")
-        .attr("rx", BAR_RX)
-        .attr("fill", (d) => {
-          const base = resolveSeriesGradientFill(defs, `hbar-${name}`, color, seriesGradient, "horizontal");
-          if (base.startsWith("url(")) return base;
-          return resolveDatumColor(Number(d.__value__), color, conditionalRules);
+        .join("g")
+        .attr("class", `hbar-${name}`)
+        .attr("transform", (d) => {
+          const base = y(String(d.__category__)) ?? 0;
+          const by = useGrouped && ySub ? base + (ySub(name) ?? 0) : base;
+          return `translate(0,${by})`;
         })
         .attr("cursor", onPointClick ? "pointer" : "default")
-        .attr("y", (d) => {
-          const base = y(String(d.__category__)) ?? 0;
-          return useGrouped && ySub ? base + (ySub(name) ?? 0) : base;
-        })
-        .attr("height", useGrouped && ySub ? ySub.bandwidth() : y.bandwidth())
         .each(function (d) {
           const w = x(Number(d.__value__));
-          chartTransition(d3.select(this).attr("x", 0).attr("width", 0))
-            .duration(600)
-            .ease(d3.easeCubicOut)
-            .attr("width", w);
+          const solid = gradientFill.startsWith("url(")
+            ? color
+            : resolveDatumColor(Number(d.__value__), color, conditionalRules);
+          const front = gradientFill.startsWith("url(") ? gradientFill : solid;
+          paintHBarCell(d3.select(this), { x: 0, w, h: barH, front, solid });
         })
         .on("click", (_e, d) => onPointClick?.(d));
     }

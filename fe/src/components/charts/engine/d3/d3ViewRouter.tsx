@@ -6,7 +6,7 @@ import { D3TableView, isD3TableChartType } from "@/components/charts/engine/d3/t
 
 /** D3 画布图表统一入口 */
 function D3ViewRouterInner(props: ChartEngineViewProps) {
-  if (props.viewModel.chartType === "map") {
+  if (props.viewModel.chartType === "map" || props.viewModel.chartType === "map-3d") {
     return <D3GeoMapView {...props} />;
   }
   if (isD3TableChartType(props.viewModel.chartType)) {

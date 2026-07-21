@@ -92,7 +92,7 @@ export function assertPlanMatchesFixture(item: ChartCatalogSmokeCase, plan: Char
     return;
   }
 
-  if (type === "map") {
+  if (type === "map" || type === "map-3d") {
     expect(plan.options.rows).toEqual(item.rows);
     expect(plan.options.columns).toEqual(item.columns);
     return;

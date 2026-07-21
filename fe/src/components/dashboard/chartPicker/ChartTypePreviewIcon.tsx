@@ -98,6 +98,7 @@ export function ChartTypePreviewIcon({ type, className }: ChartTypePreviewIconPr
       return <PreviewWordCloud className={box} />;
 
     case "map":
+    case "map-3d":
       return <PreviewMap className={box} />;
 
     case "scatter":

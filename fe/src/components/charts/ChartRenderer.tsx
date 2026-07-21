@@ -98,6 +98,7 @@ type ChartRendererProps = {
     DashboardStyleConfig,
     | "paletteOpacity"
     | "seriesGradient"
+    | "depthVisual"
     | "chartLabelShow"
     | "tooltipShow"
     | "chartLabelStyle"
@@ -276,7 +277,7 @@ export const ChartRenderer = memo(function ChartRenderer({
         displayField: undefined as string | undefined,
       };
     }
-    if (localConfig.chartType === "map") {
+    if (isGeoMapChartType(localConfig.chartType)) {
       return applyMapChartDrillPipeline(localConfig, columns, rows as unknown[][], drill.stack);
     }
     return applyChartDrillPipeline(localConfig, columns, rows as unknown[][], drill.stack);
@@ -292,7 +293,7 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   const drillClickField = useMemo(() => {
     if (!drillInteraction) return undefined;
-    if (localConfig.chartType === "map") {
+    if (isGeoMapChartType(localConfig.chartType)) {
       return getMapDrillClickField(localConfig, drill.stack);
     }
     return getClickDrillField(localConfig, drill.stack);
@@ -301,7 +302,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   const handleDrillClick = useCallback(
     (value: string, label?: string) => {
       if (!drillInteraction) return;
-      if (localConfig.chartType === "map" && value && !canDrillDeeper(drill.stack, localConfig)) {
+      if (isGeoMapChartType(localConfig.chartType) && value && !canDrillDeeper(drill.stack, localConfig)) {
         const chain = getDrillChain(localConfig);
         if (chain.length >= 2 && drill.stack.length >= chain.length - 1) {
           setMapDrillError("已是最后一层");
@@ -309,13 +310,13 @@ export const ChartRenderer = memo(function ChartRenderer({
         return;
       }
       const field =
-        localConfig.chartType === "map"
+        isGeoMapChartType(localConfig.chartType)
           ? getMapDrillClickField(localConfig, drill.stack)
           : getClickDrillField(localConfig, drill.stack);
       if (!field || !value) return;
 
       const frame = { field, value, label: label ?? value };
-      if (localConfig.chartType === "map") {
+      if (isGeoMapChartType(localConfig.chartType)) {
         void preflightMapDrillClick(localConfig, drill.stack, frame).then((result) => {
           if (!result.ok) {
             setMapDrillError(result.message);
@@ -403,7 +404,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   const shellLegendEligible =
     embedded &&
     isCanvasChartType(localConfig.chartType) &&
-    localConfig.chartType !== "map" &&
+    !isGeoMapChartType(localConfig.chartType) &&
     localConfig.chartType !== "heatmap" &&
     supportsEmbeddedShellLegend(localConfig.chartType);
 

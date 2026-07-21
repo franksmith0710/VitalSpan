@@ -56,11 +56,16 @@ function ChartLegendFormField({
 
 type ChartLegendDeParityFieldsProps = {
   deStyle: ChartDeStyle;
+  editorMode?: "shell" | "d3";
   onPatch: (patch: Partial<NonNullable<ChartDeStyle["legend"]>>) => void;
 };
 
 /** 对标 DataEase attr-style · 图例：图标 / 文本 / 方向 / 位置 */
-export function ChartLegendDeParityFields({ deStyle, onPatch }: ChartLegendDeParityFieldsProps) {
+export function ChartLegendDeParityFields({
+  deStyle,
+  editorMode = "shell",
+  onPatch,
+}: ChartLegendDeParityFieldsProps) {
   const iconSize = readChartLegendIconSize(deStyle);
   const iconShape = normalizeLegendIconShape(readChartLegendIcon(deStyle));
   const fontSize = deStyle.legend?.fontSize ?? 12;

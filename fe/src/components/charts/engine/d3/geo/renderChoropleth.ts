@@ -4,8 +4,11 @@ import {
   getOfflineGeoMap,
   joinOfflineMapFeatures,
 } from "@/components/charts/engine/geo/OfflineGeoPort";
+import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConstants";
 import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
-import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
+import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
+import { applyDepthHoverLift, ensureDepthShadowFilter, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
 
 function geoSurfaceColors(isDark: boolean) {
@@ -39,12 +42,21 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     metricField,
     theme,
     showTooltip,
+    tooltipPresentation,
     valueFormat,
     knownRegionNames,
     mapId = VS_REGIONS_MAP_ID,
     isDark = false,
+    geoStyle = {},
     onPointClick,
+    depthVisual,
   } = config;
+
+  const depthLevel = resolveEffectiveDepth(depthVisual);
+
+  const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
+  const showRegionLabel = geoStyle.showRegionLabel === true;
+  const showVisualMap = geoStyle.visualMap !== false;
 
   if (width <= 0 || height <= 0) {
     container.replaceChildren();
@@ -83,10 +95,11 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
 
-  const projection = d3.geoMercator().fitSize([innerW, innerH], {
-    type: "FeatureCollection",
+  const featureCollection = {
+    type: "FeatureCollection" as const,
     features: features.map((f) => ({ type: "Feature" as const, properties: { name: f.name }, geometry: f.geometry! })),
-  });
+  };
+  const projection = d3.geoMercator().fitSize([innerW, innerH], featureCollection);
   const pathGen = d3.geoPath().projection(projection);
 
   const positiveValues = features.map((f) => f.value).filter((v) => v > 0);
@@ -105,9 +118,13 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .style("overflow", "visible");
 
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const mapLayer = g.append("g").attr("class", "map-layer");
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
+  const regionShadowId =
+    depthLevel === "enhanced" ? ensureDepthShadowFilter(root.append("defs"), "choropleth", depthLevel) : null;
 
-  g.selectAll("path.region")
+  mapLayer
+    .selectAll("path.region")
     .data(features)
     .join("path")
     .attr("class", "region")
@@ -115,65 +132,112 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .attr("fill", (d) => colorForValue(d.value, minVal, maxVal, surface))
     .attr("stroke", surface.border)
     .attr("stroke-width", 0.8)
+    .attr("filter", regionShadowId ? `url(#${regionShadowId})` : null)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .on("mouseenter", function (_event, d) {
-      d3.select(this)
-        .transition()
-        .duration(120)
-        .attr("stroke-width", 1.6)
-        .attr("transform", "translate(0,-1)")
-        .attr("opacity", 1);
+      const sel = d3.select(this);
+      sel.transition().duration(120).attr("stroke-width", 1.6);
+      applyDepthHoverLift(sel);
       if (!tooltip) return;
-      tooltip
-        .style("opacity", "1")
-        .html(
-          `<div style="font-weight:600;margin-bottom:2px">${d.name}</div>` +
-            `<div><strong>${formatGeoTooltipValue(d.value, valueFormat)}</strong></div>`,
-        );
+      showMergedTooltip(
+        tooltip,
+        container,
+        _event,
+        d.name,
+        [{ name: metricField || "值", color: surface.rangeHigh, value: d.value }],
+        valueFormat,
+        width,
+      );
     })
-    .on("mousemove", (event) => {
+    .on("mousemove", (event, d) => {
       if (!tooltip) return;
-      const rect = container.getBoundingClientRect();
-      tooltip
-        .style("left", `${Math.min(event.clientX - rect.left + 12, rect.width - 160)}px`)
-        .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+      showMergedTooltip(
+        tooltip,
+        container,
+        event,
+        d.name,
+        [{ name: metricField || "值", color: surface.rangeHigh, value: d.value }],
+        valueFormat,
+        width,
+      );
     })
     .on("mouseleave", function () {
       d3.select(this).attr("stroke-width", 0.8).attr("transform", null).attr("opacity", 1);
-      tooltip?.style("opacity", "0");
+      hideTooltip(tooltip);
     })
     .on("click", (_event, d) => onPointClick?.({ name: d.name, value: d.value, adcode: d.adcode }));
 
-  const legendW = 100;
-  const legendH = 8;
-  const legendX = width - margin.right - legendW;
-  const legendY = height - margin.bottom + 4;
-  const legendG = root.append("g").attr("transform", `translate(${legendX},${legendY})`);
-  const defs = root.append("defs");
-  const gradId = `d3-choropleth-legend-${Math.random().toString(36).slice(2, 9)}`;
-  const grad = defs.append("linearGradient").attr("id", gradId).attr("x1", "0%").attr("x2", "100%");
-  for (let i = 0; i <= 10; i += 1) {
-    const t = i / 10;
-    grad
-      .append("stop")
-      .attr("offset", `${t * 100}%`)
-      .attr("stop-color", colorForValue(minVal + t * (maxVal - minVal || 1), minVal, maxVal, surface));
+  if (showRegionLabel) {
+    mapLayer
+      .selectAll("text.region-label")
+      .data(features)
+      .join("text")
+      .attr("class", "region-label")
+      .attr("transform", (d) => {
+        const centroid = pathGen.centroid({ type: "Feature", properties: {}, geometry: d.geometry! });
+        return `translate(${centroid[0]},${centroid[1]})`;
+      })
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.35em")
+      .attr("fill", resolveLabelFill(theme))
+      .style("font-size", "9px")
+      .style("pointer-events", "none")
+      .text((d) => d.name);
   }
-  legendG.append("rect").attr("width", legendW).attr("height", legendH).attr("rx", 2).attr("fill", `url(#${gradId})`);
-  legendG
-    .append("text")
-    .attr("y", legendH + 12)
-    .attr("fill", theme.axisLabel)
-    .style("font-size", "10px")
-    .text(formatGeoTooltipValue(minVal, valueFormat));
-  legendG
-    .append("text")
-    .attr("x", legendW)
-    .attr("y", legendH + 12)
-    .attr("text-anchor", "end")
-    .attr("fill", theme.axisLabel)
-    .style("font-size", "10px")
-    .text(formatGeoTooltipValue(maxVal, valueFormat));
 
-  return () => container.replaceChildren();
+  if (showVisualMap) {
+    const legendW = 100;
+    const legendH = 8;
+    const legendX = width - margin.right - legendW;
+    const legendY = height - margin.bottom + 4;
+    const legendG = root.append("g").attr("transform", `translate(${legendX},${legendY})`);
+    const defs = root.append("defs");
+    const gradId = `d3-choropleth-legend-${Math.random().toString(36).slice(2, 9)}`;
+    const grad = defs.append("linearGradient").attr("id", gradId).attr("x1", "0%").attr("x2", "100%");
+    for (let i = 0; i <= 10; i += 1) {
+      const t = i / 10;
+      grad
+        .append("stop")
+        .attr("offset", `${t * 100}%`)
+        .attr("stop-color", colorForValue(minVal + t * (maxVal - minVal || 1), minVal, maxVal, surface));
+    }
+    legendG.append("rect").attr("width", legendW).attr("height", legendH).attr("rx", 2).attr("fill", `url(#${gradId})`);
+    legendG
+      .append("text")
+      .attr("y", legendH + 12)
+      .attr("fill", theme.axisLabel)
+      .style("font-size", "10px")
+      .text(formatGeoTooltipValue(minVal, valueFormat));
+    legendG
+      .append("text")
+      .attr("x", legendW)
+      .attr("y", legendH + 12)
+      .attr("text-anchor", "end")
+      .attr("fill", theme.axisLabel)
+      .style("font-size", "10px")
+      .text(formatGeoTooltipValue(maxVal, valueFormat));
+  }
+
+  let detachZoom = () => undefined;
+  if (roam) {
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([1, 12])
+      .on("zoom", (event) => {
+        mapLayer.attr("transform", event.transform.toString());
+      });
+    root.call(zoom);
+    root.on("dblclick.zoom", () => {
+      root.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
+    });
+    detachZoom = () => {
+      root.on(".zoom", null);
+      root.on("dblclick.zoom", null);
+    };
+  }
+
+  return () => {
+    detachZoom();
+    container.replaceChildren();
+  };
 }

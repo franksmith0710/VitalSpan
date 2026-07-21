@@ -1,9 +1,11 @@
 import * as d3 from "d3";
 import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { applyCellBevel, applyDepthHoverLift, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3MatrixRenderConfig } from "@/components/charts/engine/d3/types";
@@ -26,9 +28,13 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     valueFormat,
     onPointClick,
     conditionalRules = [],
+    depthVisual,
+    showCellLabel = false,
+    showVisualMap = true,
   } = config;
 
   const theme = themeFromConfig(rawTheme);
+  const depthLevel = resolveEffectiveDepth(depthVisual);
   const xCategories = [...new Set(data.map((d) => d.x))];
   const yCategories = [...new Set(data.map((d) => d.y))];
   const margin = cartesianMargin(false);
@@ -97,8 +103,13 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     .attr("stroke", theme.axisLine)
     .attr("stroke-width", 0.4)
     .attr("cursor", onPointClick ? "pointer" : "default")
+    .each(function () {
+      applyCellBevel(d3.select(this), depthLevel);
+    })
     .on("mouseenter", function (_event, d) {
-      d3.select(this).attr("stroke-width", 1.2).attr("stroke", theme.accent);
+      const cell = d3.select(this);
+      applyDepthHoverLift(cell);
+      cell.attr("stroke-width", 1.2).attr("stroke", theme.accent);
       cross.style("opacity", 1);
       colBand
         .attr("x", x(d.x) ?? 0)
@@ -136,11 +147,58 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
       );
     })
     .on("mouseleave", function () {
-      d3.select(this).attr("stroke-width", 0.4).attr("stroke", theme.axisLine);
+      d3.select(this).attr("stroke-width", 0.4).attr("stroke", theme.axisLine).attr("transform", null);
       cross.style("opacity", 0);
       hideTooltip(tooltip);
     })
     .on("click", (_event, d) => onPointClick?.(d));
+
+  if (showCellLabel) {
+    g.selectAll("text.cell-label")
+      .data(data)
+      .join("text")
+      .attr("class", "cell-label")
+      .attr("x", (d) => (x(d.x) ?? 0) + x.bandwidth() / 2)
+      .attr("y", (d) => (y(d.y) ?? 0) + y.bandwidth() / 2)
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
+      .attr("fill", resolveLabelFill(theme))
+      .style("font-size", "10px")
+      .style("pointer-events", "none")
+      .text((d) => formatChartValue(d.value, valueFormat));
+  }
+
+  if (showVisualMap) {
+    const legendW = 10;
+    const legendH = Math.min(innerH, 120);
+    const legendX = innerW + 12;
+    const legendG = g.append("g").attr("transform", `translate(${legendX},0)`);
+    const defs = svg.append("defs");
+    const gradId = `d3-heatmap-legend-${Math.random().toString(36).slice(2, 9)}`;
+    const grad = defs.append("linearGradient").attr("id", gradId).attr("x1", "0%").attr("y1", "100%").attr("x2", "0%").attr("y2", "0%");
+    for (let i = 0; i <= 10; i += 1) {
+      const t = i / 10;
+      grad
+        .append("stop")
+        .attr("offset", `${t * 100}%`)
+        .attr("stop-color", colorScale(minVal + t * (maxVal - minVal || 1)));
+    }
+    legendG.append("rect").attr("width", legendW).attr("height", legendH).attr("rx", 2).attr("fill", `url(#${gradId})`);
+    legendG
+      .append("text")
+      .attr("x", legendW + 4)
+      .attr("y", legendH)
+      .attr("fill", theme.axisLabel)
+      .style("font-size", "9px")
+      .text(formatChartValue(maxVal, valueFormat));
+    legendG
+      .append("text")
+      .attr("x", legendW + 4)
+      .attr("y", 8)
+      .attr("fill", theme.axisLabel)
+      .style("font-size", "9px")
+      .text(formatChartValue(minVal, valueFormat));
+  }
 
   writeIncrementalSession(container, { plotType: "Heatmap", width, height });
   return () => container.replaceChildren();

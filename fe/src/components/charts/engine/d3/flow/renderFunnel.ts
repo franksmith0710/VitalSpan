@@ -1,8 +1,10 @@
 import * as d3 from "d3";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
+import { depthExtrudePx, resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
+import { layoutD3InlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -34,9 +36,14 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     labelFontSize,
     valueFormat,
     conditionalRules = [],
+    legendLayout,
     onPointClick,
     options,
+    depthVisual,
   } = config;
+
+  const depthLevel = resolveEffectiveDepth(depthVisual);
+  const extrude = depthExtrudePx(depthLevel);
 
   const xField = String(options.xField ?? "stage");
   const yField = String(options.yField ?? "number");
@@ -74,6 +81,24 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     const bottomY = topY + layerH - 2;
     const baseColor = colorScale(row.stage) ?? colors[index % colors.length] ?? "#465fff";
     const fill = resolveDatumColor(row.number, baseColor, conditionalRules);
+
+    if (extrude > 0) {
+      g.insert("path", ":first-child")
+        .attr("class", "vs-funnel-side")
+        .attr(
+          "d",
+          trapezoidPath(
+            cx + extrude * 0.55,
+            topY + extrude * 0.35,
+            bottomY + extrude * 0.35,
+            topW,
+            bottomW,
+          ),
+        )
+        .attr("fill", shadeColor(fill, "side"))
+        .attr("opacity", 0.88)
+        .attr("pointer-events", "none");
+    }
 
     const path = g
       .append("path")
@@ -124,21 +149,14 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
   });
 
   if (showLegend) {
-    const legend = root.append("g").attr("transform", `translate(${margin.left},10)`);
-    let offsetX = 0;
-    for (const row of data) {
-      const color = colorScale(row.stage) ?? colors[0] ?? "#465fff";
-      const item = legend.append("g").attr("transform", `translate(${offsetX},0)`);
-      item.append("rect").attr("width", 10).attr("height", 10).attr("rx", 2).attr("fill", color);
-      item
-        .append("text")
-        .attr("x", 14)
-        .attr("y", 9)
-        .attr("fill", theme.legendText)
-        .style("font-size", "11px")
-        .text(row.stage);
-      offsetX += row.stage.length * 7 + 28;
-    }
+    layoutD3InlineLegend(
+      root,
+      data.map((row, index) => ({
+        label: row.stage,
+        color: colorScale(row.stage) ?? colors[index % colors.length] ?? "#465fff",
+      })),
+      { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
+    );
   }
 
   return () => container.replaceChildren();

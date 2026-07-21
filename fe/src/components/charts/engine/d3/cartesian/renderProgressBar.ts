@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import { chartTransition } from "@/components/charts/engine/d3/core/animate";
 import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3ProgressBarRenderConfig } from "@/components/charts/engine/d3/types";
@@ -65,28 +65,24 @@ export function renderD3ProgressBarChart(
     .attr("opacity", 0.35);
 
   plot
-    .selectAll("rect.progress")
+    .selectAll("g.progress")
     .data(data)
-    .join("rect")
+    .join("g")
     .attr("class", "progress")
-    .attr("y", (d) => y(d.type) ?? 0)
-    .attr("height", y.bandwidth())
-    .attr("rx", BAR_RX)
-    .attr("fill", fillColor)
+    .attr("transform", (d) => `translate(0,${y(d.type) ?? 0})`)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .each(function (d) {
+      const cell = d3.select(this);
+      cell.selectAll("*").remove();
       const ratio = d.max > 0 ? d.value / d.max : 0;
       const w = x(Math.min(1, Math.max(0, ratio)));
-      chartTransition(d3.select(this).attr("x", 0).attr("width", 0))
-        .duration(600)
-        .ease(d3.easeCubicOut)
-        .attr("width", w);
+      paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: y.bandwidth(), color: fillColor, rx: BAR_RX });
     })
     .on("click", (_e, d) => onPointClick?.(d));
 
   if (showTooltip) {
     plot
-      .selectAll<SVGRectElement, (typeof data)[number]>("rect.progress")
+      .selectAll<SVGGElement, (typeof data)[number]>("g.progress")
       .on("mouseenter", (_e, d) => {
         const pct = d.max > 0 ? (d.value / d.max) * 100 : 0;
         tooltip

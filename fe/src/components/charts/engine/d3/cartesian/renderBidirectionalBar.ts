@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import { chartTransition } from "@/components/charts/engine/d3/core/animate";
 import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3BidirectionalBarRenderConfig } from "@/components/charts/engine/d3/types";
@@ -69,47 +69,38 @@ export function renderD3BidirectionalBarChart(
     .attr("stroke-width", 1);
 
   plot
-    .selectAll("rect.left-bar")
+    .selectAll("g.left-bar")
     .data(data)
-    .join("rect")
+    .join("g")
     .attr("class", "left-bar")
-    .attr("y", (d) => y(d.type) ?? 0)
-    .attr("height", y.bandwidth())
-    .attr("rx", BAR_RX)
-    .attr("fill", leftColor)
+    .attr("transform", (d) => `translate(0,${y(d.type) ?? 0})`)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .each(function (d) {
+      const cell = d3.select(this) as d3.Selection<SVGGElement, unknown, null, undefined>;
+      cell.selectAll("*").remove();
       const x1 = xLeft(Math.abs(d.left));
       const w = centerX - x1;
-      chartTransition(d3.select(this).attr("x", x1).attr("width", 0))
-        .duration(600)
-        .ease(d3.easeCubicOut)
-        .attr("width", w);
+      paintHorizontalBar({ plot: cell, x: x1, y: 0, width: w, height: y.bandwidth(), color: leftColor, rx: BAR_RX });
     })
     .on("click", (_event, d) => onPointClick?.(d));
 
   plot
-    .selectAll("rect.right-bar")
+    .selectAll("g.right-bar")
     .data(data)
-    .join("rect")
+    .join("g")
     .attr("class", "right-bar")
-    .attr("x", centerX)
-    .attr("y", (d) => y(d.type) ?? 0)
-    .attr("height", y.bandwidth())
-    .attr("rx", BAR_RX)
-    .attr("fill", rightColor)
+    .attr("transform", (d) => `translate(0,${y(d.type) ?? 0})`)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .each(function (d) {
+      const cell = d3.select(this) as d3.Selection<SVGGElement, unknown, null, undefined>;
+      cell.selectAll("*").remove();
       const w = xRight(Math.abs(d.right)) - centerX;
-      chartTransition(d3.select(this).attr("width", 0))
-        .duration(600)
-        .ease(d3.easeCubicOut)
-        .attr("width", w);
+      paintHorizontalBar({ plot: cell, x: centerX, y: 0, width: w, height: y.bandwidth(), color: rightColor, rx: BAR_RX });
     })
     .on("click", (_event, d) => onPointClick?.(d));
 
   if (showTooltip) {
-    const bindTooltip = (sel: d3.Selection<SVGRectElement, (typeof data)[0], SVGGElement, unknown>, side: "left" | "right") => {
+    const bindTooltip = (sel: d3.Selection<SVGGElement, (typeof data)[0], SVGGElement, unknown>, side: "left" | "right") => {
       sel
         .on("mouseenter", function (_event, d) {
           const value = side === "left" ? d.left : d.right;
@@ -128,8 +119,8 @@ export function renderD3BidirectionalBarChart(
         })
         .on("mouseleave", () => tooltip?.style("opacity", "0"));
     };
-    bindTooltip(plot.selectAll<SVGRectElement, (typeof data)[0]>("rect.left-bar"), "left");
-    bindTooltip(plot.selectAll<SVGRectElement, (typeof data)[0]>("rect.right-bar"), "right");
+    bindTooltip(plot.selectAll<SVGGElement, (typeof data)[0]>("g.left-bar"), "left");
+    bindTooltip(plot.selectAll<SVGGElement, (typeof data)[0]>("g.right-bar"), "right");
   }
 
   const legend = root.append("g").attr("transform", `translate(${margin.left},10)`);

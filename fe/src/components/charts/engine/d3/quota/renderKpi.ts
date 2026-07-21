@@ -1,4 +1,5 @@
 import { morphNumber } from "@/components/charts/engine/d3/core/motionEngine";
+import { getDepthVisual } from "@/components/charts/engine/d3/core/depthEngine";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -29,6 +30,9 @@ export function renderD3KpiChart(container: HTMLElement, config: D3RenderConfig)
   root.setAttribute("role", "group");
   root.setAttribute("aria-label", "指标卡");
   root.className = "vs-kpi-chart flex h-full min-h-0 flex-col justify-center overflow-auto p-4";
+  const depthVisual = getDepthVisual();
+  if (depthVisual === "enhanced") root.classList.add("vs-kpi-depth-enhanced");
+  else if (depthVisual === "standard") root.classList.add("vs-kpi-depth-standard");
   root.style.width = "100%";
   root.style.height = "100%";
   root.style.boxSizing = "border-box";
