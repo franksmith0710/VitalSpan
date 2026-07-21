@@ -8,7 +8,7 @@
 
 1. **配置即生效**：Inspector 可见项必须写入 `nativeBody` 并在预览/看板渲染中体现；禁止仅 UI 占位。
 2. **迁移不回归**：存量 `table`/`combo`/`heatmap` 等经 `migrateChartViewConfig` 后，原有下钻/样式/分页行为不得劣化。
-3. **分路一致**：G2Plot / G6 / G2(地图) / S2(表格) / React(KPI) 按 plugin.library 分路，验收时注明引擎。
+3. **分路一致**：D3(画布) / S2(表格) / React(KPI) 按 plugin.library 分路，验收时注明引擎。
 4. **证据**：每项标注 `[AUTO]`（单测/smoke）或 `[MANUAL]`（浏览器走查）；未通过标 ❌ 并登记 bug。
 
 ---
@@ -50,10 +50,8 @@
 
 | 引擎 | chartType 范围 | 核心检查 |
 |------|----------------|----------|
+| **D3** | 43 项画布型（trend/compare/distribute/quota/relation/map 等） | `data-testid="d3-*-chart"`；编码、legend、条件色、下钻 |
 | **S2** | table-info, table-normal, table-pivot | 分页/滚动/汇总/序号/主题色/下钻列 |
-| **G2Plot** | compare/trend/distribute 大部分 | 编码字段、legend、dataZoom、条件色 |
-| **G2** | map | 离线 GeoJSON、省→市下钻、region 匹配 |
-| **G6** | graph | 力导向/dagre 布局、节点边渲染 |
 | **React** | kpi, legacy table | KPI 数值格式；legacy table 仍走 EmbeddedChartTable |
 
 | ID | 检查项 | 期望 | 证据 |

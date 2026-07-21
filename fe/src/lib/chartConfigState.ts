@@ -1,4 +1,5 @@
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
+import { isD3TableChartType } from "@/components/charts/engine/registry";
 import { isLegacyTableChartType } from "@/lib/chartViewConfig";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
@@ -40,7 +41,7 @@ export function resolveChartConfigPhase(config: ChartViewConfig | undefined): Ch
   if (queryReady && config) {
     if (isLegacyTableChartType(chartType)) {
       renderReady = dimFields.length > 0 || metricFields.length > 0;
-    } else if (getChartPlugin(chartType)?.library === "s2") {
+    } else if (isD3TableChartType(chartType)) {
       renderReady = true;
     } else if (chartType === "kpi") {
       renderReady = metricFields.length > 0;

@@ -271,11 +271,11 @@ export function ChartPaletteFontSizeSelect({
       )}
     >
       {showLabel ? (
-        <span className={cn(INSPECTOR_LABEL, "w-7 shrink-0")}>{label}</span>
+        <span className={cn(INSPECTOR_LABEL, "shrink-0 whitespace-nowrap")}>{label}</span>
       ) : null}
       <Select value={String(resolved)} onValueChange={(v) => onChange(Number(v))}>
         <SelectTrigger
-          className={cn(density === "narrow" ? INSPECTOR_SELECT : DE_SELECT, "h-8 w-[4.5rem] shrink-0")}
+          className={cn(density === "narrow" ? INSPECTOR_SELECT : DE_SELECT, "h-8 w-[5rem] shrink-0")}
           aria-label="字体大小"
         >
           <SelectValue />

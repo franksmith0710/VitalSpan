@@ -23,6 +23,7 @@ import { DashboardStyleSurface } from "./DashboardStyleSurface";
 import { DashboardWidgetsProvider } from "./DashboardWidgetsContext";
 import { widgetFilterExecuteRevision } from "./dashboardWidgetExecuteKey";
 import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
+import { WidgetErrorBoundary } from "./WidgetErrorBoundary";
 import type {
   DashboardLayout,
   LayoutWidget,
@@ -88,34 +89,36 @@ export function DashboardLayoutPreview({
     const renderNested = (child: LayoutWidget) =>
       renderWidget(child, { w: child.colSpan, h: child.rowSpan }, "shape");
     return (
-      <DashboardWidget
-        widget={widget}
-        mode="view"
-        shell={shell}
-        gridSize={grid}
-        allWidgets={widget.type === "tabs" ? widgets : undefined}
-        renderNestedWidget={renderNested}
-        filterParameters={
-          widget.type === "chart"
-            ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
-            : undefined
-        }
-        executeKey={widgetFilterExecuteRevision(
-          widget.id,
-          effectiveLinkage,
-          filterValues,
-          undefined,
-          globalChartRefreshKey,
-        )}
-        filterValue={
-          widget.filterConfig
-            ? filterValues[widget.filterConfig.filterId]
-            : undefined
-        }
-        onFilterValueChange={onFilterValueChange}
-        onTitleChange={() => {}}
-        dashboardStyle={widgetDashboardStyle}
-      />
+      <WidgetErrorBoundary widgetTitle={widget.title}>
+        <DashboardWidget
+          widget={widget}
+          mode="view"
+          shell={shell}
+          gridSize={grid}
+          allWidgets={widget.type === "tabs" ? widgets : undefined}
+          renderNestedWidget={renderNested}
+          filterParameters={
+            widget.type === "chart"
+              ? buildWidgetFilterParams(widget.id, effectiveLinkage, filterValues)
+              : undefined
+          }
+          executeKey={widgetFilterExecuteRevision(
+            widget.id,
+            effectiveLinkage,
+            filterValues,
+            undefined,
+            globalChartRefreshKey,
+          )}
+          filterValue={
+            widget.filterConfig
+              ? filterValues[widget.filterConfig.filterId]
+              : undefined
+          }
+          onFilterValueChange={onFilterValueChange}
+          onTitleChange={() => {}}
+          dashboardStyle={widgetDashboardStyle}
+        />
+      </WidgetErrorBoundary>
     );
   };
 

@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { dispatchPixelLayoutGeometryCommitted } from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
 import { EmbeddedChartTable } from "./EmbeddedChartTable";
@@ -94,8 +94,8 @@ describe("EmbeddedChartTable", () => {
     );
     const root = container.firstElementChild as HTMLElement;
     expect(root.style.getPropertyValue("--dashboard-table-header-bg")).toBe("#eef2ff");
-    const thead = container.querySelector("thead");
-    expect(thead).toHaveClass("bg-[var(--dashboard-table-header-bg,#f9fafb)]");
+    const thead = container.querySelector("thead th");
+    expect(thead).toHaveClass("vs-table-th");
   });
 
   it("applies opacity, border and scrollbar theme variables", () => {
@@ -147,7 +147,10 @@ describe("EmbeddedChartTable", () => {
       />,
     );
     expect(screen.getByLabelText("上一页")).toBeInTheDocument();
-    expect(screen.getByText("1/2 · 2条/页")).toBeInTheDocument();
+    const bar = screen.getByTestId("table-pagination-compact");
+    expect(within(bar).getByText("1/2")).toBeInTheDocument();
+    expect(within(bar).getByText("共 3 条")).toBeInTheDocument();
+    expect(within(bar).getByText("2 条/页")).toBeInTheDocument();
   });
 
   it("auto column mode uses equal col widths in container", () => {
@@ -265,7 +268,7 @@ describe("EmbeddedChartTable", () => {
     expect(screen.getByText("合计")).toBeInTheDocument();
     expect(screen.getByText("30")).toBeInTheDocument();
     const footer = document.querySelector("tfoot tr");
-    expect(footer).toHaveClass("bg-[var(--dashboard-table-summary-bg,var(--dashboard-table-header-bg,#f9fafb))]");
+    expect(footer).toHaveClass("vs-table-summary-row");
   });
 
   it("hides summary when showSummary is false", () => {

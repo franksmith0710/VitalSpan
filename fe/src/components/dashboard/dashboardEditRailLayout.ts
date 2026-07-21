@@ -1,5 +1,14 @@
-/** DataEase chart-edit 单列宽（配置 / 数据集），双列各一半 */
-export const DASHBOARD_EDIT_RAIL_COLUMN_CLASS = "w-[216px]";
+/** DataEase chart-edit 双列总宽（与 {@link DASHBOARD_EDIT_RAIL_SHELL_CLASS} 一致） */
+export const DASHBOARD_EDIT_RAIL_WIDTH_PX = 432;
+
+/** 图表编辑左列：数据/样式/高级配置（略宽，便于字段槽与标签横排） */
+export const DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS = "w-[252px]";
+
+/** 图表编辑右列：数据集与字段库（略窄，总宽不变） */
+export const DASHBOARD_EDIT_RAIL_RIGHT_COLUMN_CLASS = "w-[180px]";
+
+/** @deprecated 使用 {@link DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS} / {@link DASHBOARD_EDIT_RAIL_RIGHT_COLUMN_CLASS} */
+export const DASHBOARD_EDIT_RAIL_COLUMN_CLASS = DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS;
 
 /** 右栏外壳固定总宽（仪表板配置 / 图表双列 / 页签·筛选·图片单列均同宽，避免切换时画布横向跳动） */
 export const DASHBOARD_EDIT_RAIL_SHELL_CLASS =

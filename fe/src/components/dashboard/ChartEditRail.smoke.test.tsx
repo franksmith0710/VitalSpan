@@ -16,10 +16,6 @@ vi.mock("@/lib/api", async (importOriginal) => {
   };
 });
 
-vi.mock("echarts-for-react", () => ({
-  default: () => <div data-testid="echarts-chart" />,
-}));
-
 const widget: LayoutWidget = {
   id: "w-chart-1",
   type: "chart",

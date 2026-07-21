@@ -54,7 +54,7 @@ type PixelShapeActionRailProps = {
 
 function railShellClass(scheme: ColorScheme): string {
   return cn(
-    "flex w-full flex-col overflow-visible rounded-lg shadow-theme-md",
+    "flex w-full shrink-0 flex-col overflow-visible rounded-lg shadow-theme-md",
     "border divide-y",
     scheme === "dark"
       ? "border-gray-700 bg-gray-900 divide-gray-800"
@@ -64,7 +64,7 @@ function railShellClass(scheme: ColorScheme): string {
 
 function railButtonClass(scheme: ColorScheme): string {
   return cn(
-    "size-full min-h-0 rounded-none p-0",
+    "shrink-0 rounded-none p-0",
     "focus-visible:ring-inset focus-visible:ring-brand-500/25",
     "disabled:pointer-events-none disabled:opacity-35",
     scheme === "dark" ? "hover:bg-white/5" : "hover:bg-gray-50",
@@ -255,7 +255,7 @@ export function PixelShapeActionRail({
       data-placement={placement}
       data-dashboard-color-scheme={colorScheme}
       className={cn(
-        "dashboard-no-drag pointer-events-auto absolute top-0 z-40 flex touch-none select-none overflow-visible",
+        "dashboard-no-drag pointer-events-auto absolute top-0 z-40 flex h-fit touch-none select-none items-start overflow-visible",
         placement === "overlay" && "z-50",
       )}
       style={{

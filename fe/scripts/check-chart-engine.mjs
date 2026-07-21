@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,6 +15,18 @@ const echartsPatterns = [
 const antvPatterns = [
   /from\s+["']@antv\//,
   /require\s*\(\s*["']@antv\//,
+];
+
+const forbiddenImportPatterns = [
+  /from\s+["']@\/components\/charts\/engine\/echarts/,
+  /from\s+["']@\/components\/charts\/engine\/antv\/s2/,
+  /from\s+["']@\/components\/charts\/engine\/antv\/g2/,
+];
+
+const forbiddenDirs = [
+  join(root, "components", "charts", "engine", "echarts"),
+  join(root, "components", "charts", "engine", "antv", "s2"),
+  join(root, "components", "charts", "engine", "antv", "g2"),
 ];
 
 function walk(dir, files = []) {
@@ -35,6 +47,12 @@ function walk(dir, files = []) {
 
 const violations = [];
 
+for (const dir of forbiddenDirs) {
+  if (existsSync(dir)) {
+    violations.push(`forbidden path exists: ${relative(root, dir)}`);
+  }
+}
+
 for (const file of walk(root)) {
   const content = readFileSync(file, "utf8");
 
@@ -51,6 +69,12 @@ for (const file of walk(root)) {
       if (pattern.test(content)) {
         violations.push(`${relative(root, file)}: antv ${pattern}`);
       }
+    }
+  }
+
+  for (const pattern of forbiddenImportPatterns) {
+    if (pattern.test(content)) {
+      violations.push(`${relative(root, file)}: forbidden import ${pattern}`);
     }
   }
 }

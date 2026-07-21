@@ -124,7 +124,7 @@ export function resolveTableChartKind(chartType: string): TableChartKind | null 
     case "t-heatmap":
       return "matrix-heat";
     default:
-      if (getChartPlugin(chartType)?.library === "s2") return "info";
+      if (getChartPlugin(chartType)?.paletteCategory === "table") return "info";
       return null;
   }
 }

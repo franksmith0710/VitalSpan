@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { DASHBOARD_EDIT_RAIL_COLUMN_CLASS } from "./dashboardEditRailLayout";
+import {
+  DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS,
+  DASHBOARD_EDIT_RAIL_RIGHT_COLUMN_CLASS,
+} from "./dashboardEditRailLayout";
 import { CollapsedRailTab, RailFoldHeader } from "./RailFoldTab";
 type WidgetEditRailLayoutProps = {
   left: ReactNode;
@@ -11,7 +14,8 @@ type WidgetEditRailLayoutProps = {
   className?: string;
 };
 
-const RAIL_COLUMN_WIDTH = DASHBOARD_EDIT_RAIL_COLUMN_CLASS;
+const RAIL_LEFT_WIDTH = DASHBOARD_EDIT_RAIL_LEFT_COLUMN_CLASS;
+const RAIL_RIGHT_WIDTH = DASHBOARD_EDIT_RAIL_RIGHT_COLUMN_CLASS;
 
 const WidgetEditRailRightCollapseContext = createContext<(() => void) | undefined>(undefined);
 
@@ -70,7 +74,7 @@ export function WidgetEditRailLayout({
         <ExpandedRailPanel
           label={leftLabel}
           subtitle={leftSubtitle}
-          widthClass={RAIL_COLUMN_WIDTH}
+          widthClass={RAIL_LEFT_WIDTH}
           onCollapse={() => setLeftOpen(false)}
         >
           {left}
@@ -81,7 +85,7 @@ export function WidgetEditRailLayout({
       {rightOpen ? (
         <ExpandedRailPanel
           label={rightLabel}
-          widthClass={RAIL_COLUMN_WIDTH}
+          widthClass={RAIL_RIGHT_WIDTH}
           bordered
           hideFoldHeader
           onCollapse={() => setRightOpen(false)}

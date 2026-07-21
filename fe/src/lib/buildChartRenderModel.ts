@@ -1,7 +1,7 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { isLegacyTableChartType } from "@/lib/chartViewConfig";
 import { activeFieldRefs } from "@/lib/chartConfigState";
-import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
+import { chartRenderRequiredCounts } from "@/components/dashboard/chartFieldSlots";
 
 export type ChartRenderModel =
   | { kind: "error"; message: string }
@@ -16,6 +16,40 @@ export function parseMetricValue(raw: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+function hasRequiredFields(
+  refs: ReturnType<typeof activeFieldRefs>,
+  minCount: number,
+): boolean {
+  if (minCount <= 0) return true;
+  for (let i = 0; i < minCount; i += 1) {
+    if (!refs[i]?.field?.trim()) return false;
+  }
+  return true;
+}
+
+function validateFieldColumns(
+  columns: string[],
+  dims: ReturnType<typeof activeFieldRefs>,
+  metrics: ReturnType<typeof activeFieldRefs>,
+): ChartRenderModel | null {
+  for (const dim of dims) {
+    if (!columns.includes(dim.field)) {
+      return { kind: "error", message: `维度列「${dim.field}」不存在，请检查字段配置` };
+    }
+  }
+  for (const metric of metrics) {
+    if (!columns.includes(metric.field)) {
+      return { kind: "error", message: `指标列「${metric.field}」不存在，请检查字段配置` };
+    }
+  }
+  return null;
+}
+
+function readyWhenRows(rows: unknown[][]): ChartRenderModel {
+  if (rows.length === 0) return { kind: "empty" };
+  return { kind: "ready" };
 }
 
 function pickColumns(columns: string[], fields: string[]): string[] {
@@ -38,22 +72,36 @@ export function buildChartRenderModel(
     return { kind: "table", displayCols: displayCols.length ? displayCols : columns };
   }
 
-  const plugin = getChartPlugin(config.chartType);
-  if (plugin?.library === "s2") {
-    if (rows.length === 0) return { kind: "empty" };
-    return { kind: "ready" };
-  }
-
-  if (config.chartType === "kpi") {
+  if (
+    config.chartType === "table-info" ||
+    config.chartType === "table-normal" ||
+    config.chartType === "table-pivot"
+  ) {
+    const dims = activeFieldRefs(config.dimensions);
     const metrics = activeFieldRefs(config.metrics);
-    if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
-    for (const metric of metrics) {
-      if (!columns.includes(metric.field)) {
-        return { kind: "error", message: `指标列「${metric.field}」不存在，请检查字段配置` };
+    if (config.chartType === "table-normal") {
+      if (!dims.length) return { kind: "error", message: "请配置维度字段" };
+      if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
+    }
+    if (config.chartType === "table-pivot") {
+      if (dims.length < 2) return { kind: "error", message: "请配置行维度与列维度" };
+      if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
+    }
+    for (const field of [...dims, ...metrics].map((f) => f.field)) {
+      if (field && !columns.includes(field)) {
+        return { kind: "error", message: `列「${field}」不存在，请检查字段配置` };
       }
     }
     if (rows.length === 0) return { kind: "empty" };
     return { kind: "ready" };
+  }
+
+  if (config.chartType === "kpi" || config.chartType === "gauge" || config.chartType === "liquid") {
+    const metrics = activeFieldRefs(config.metrics);
+    if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
+    const columnError = validateFieldColumns(columns, [], metrics);
+    if (columnError) return columnError;
+    return readyWhenRows(rows);
   }
 
   const dims = activeFieldRefs(config.dimensions);
@@ -96,31 +144,37 @@ export function buildChartRenderModel(
     return { kind: "ready" };
   }
 
-  if (config.chartType === "sankey" || config.chartType === "graph") {
+  if (config.chartType === "sankey") {
     const src = dims[0]?.field;
     const dst = dims[1]?.field;
     if (!src || !dst) return { kind: "error", message: "请配置起止维度字段" };
     if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
-    for (const field of [src, dst, ...metrics.map((m) => m.field)]) {
-      if (!columns.includes(field)) {
-        return { kind: "error", message: `列「${field}」不存在，请检查字段配置` };
-      }
-    }
-    if (rows.length === 0) return { kind: "empty" };
-    return { kind: "ready" };
+    const columnError = validateFieldColumns(
+      columns,
+      dims.slice(0, 2),
+      metrics,
+    );
+    if (columnError) return columnError;
+    return readyWhenRows(rows);
   }
 
-  const dim = dims[0]?.field;
-  if (!dim) return { kind: "error", message: "请配置维度字段" };
-  if (!metrics.length) return { kind: "error", message: "请配置指标字段" };
-  if (!columns.includes(dim)) {
-    return { kind: "error", message: `维度列「${dim}」不存在，请检查字段配置` };
+  if (config.chartType === "graph") {
+    const src = dims[0]?.field;
+    const dst = dims[1]?.field;
+    if (!src || !dst) return { kind: "error", message: "请配置起止维度字段" };
+    const columnError = validateFieldColumns(columns, dims.slice(0, 2), metrics);
+    if (columnError) return columnError;
+    return readyWhenRows(rows);
   }
-  for (const metric of metrics) {
-    if (!columns.includes(metric.field)) {
-      return { kind: "error", message: `指标列「${metric.field}」不存在，请检查字段配置` };
-    }
+
+  const { minDimensions, minMetrics } = chartRenderRequiredCounts(config.chartType);
+  if (!hasRequiredFields(dims, minDimensions)) {
+    return { kind: "error", message: "请配置维度字段" };
   }
-  if (rows.length === 0) return { kind: "empty" };
-  return { kind: "ready" };
+  if (!hasRequiredFields(metrics, minMetrics)) {
+    return { kind: "error", message: "请配置指标字段" };
+  }
+  const columnError = validateFieldColumns(columns, dims, metrics);
+  if (columnError) return columnError;
+  return readyWhenRows(rows);
 }

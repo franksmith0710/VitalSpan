@@ -1,5 +1,8 @@
 export const CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX = 8;
 
+/** 编辑视口留白：仅向 minPan 方向扩展（拖动画布露出右下工作区） */
+export const DATA_SCREEN_EDIT_PAN_PADDING_MIN_PX = 480;
+
 export type ViewportPan = { x: number; y: number };
 
 export type ViewportPanBounds = {
@@ -30,16 +33,40 @@ type ContentLayout = {
   offsetY: number;
 };
 
-/** 平移上下界：保证画布在视口内可浏览（含留白时的有限滑动）。 */
+/** 平移上下界：左上锚定（maxPan≤0），右下大留白（minPan 负向扩展）。 */
+export function resolveDataScreenEditPanPadding(
+  viewport: ViewportSize,
+  content: Pick<ContentLayout, "scaledWidth" | "scaledHeight">,
+): { padX: number; padY: number } {
+  return {
+    padX: Math.max(
+      DATA_SCREEN_EDIT_PAN_PADDING_MIN_PX,
+      viewport.width,
+      Math.round(content.scaledWidth * 0.5),
+    ),
+    padY: Math.max(
+      DATA_SCREEN_EDIT_PAN_PADDING_MIN_PX,
+      viewport.height,
+      Math.round(content.scaledHeight * 0.5),
+    ),
+  };
+}
+
 export function computeViewportPanBounds(
   viewport: ViewportSize,
   content: ContentLayout,
 ): ViewportPanBounds {
-  const minPanX = viewport.width - content.scaledWidth - content.offsetX;
-  const maxPanX = content.offsetX === 0 ? 0 : -content.offsetX;
-  const minPanY = viewport.height - content.scaledHeight - content.offsetY;
-  const maxPanY = content.offsetY === 0 ? 0 : -content.offsetY;
-  return { minPanX, maxPanX, minPanY, maxPanY };
+  const { padX, padY } = resolveDataScreenEditPanPadding(viewport, content);
+  const contentMinPanX = viewport.width - content.scaledWidth - content.offsetX;
+  const contentMaxPanX = content.offsetX === 0 ? 0 : -content.offsetX;
+  const contentMinPanY = viewport.height - content.scaledHeight - content.offsetY;
+  const contentMaxPanY = content.offsetY === 0 ? 0 : -content.offsetY;
+  return {
+    minPanX: Math.min(contentMinPanX, contentMaxPanX) - padX,
+    maxPanX: contentMaxPanX,
+    minPanY: Math.min(contentMinPanY, contentMaxPanY) - padY,
+    maxPanY: contentMaxPanY,
+  };
 }
 
 export function clampViewportPan(pan: ViewportPan, bounds: ViewportPanBounds): ViewportPan {

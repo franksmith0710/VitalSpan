@@ -772,6 +772,21 @@ html.admin-fill-lock #root {
   background-color: transparent !important;
 }
 
+.dashboard-theme-scope .dashboard-chart-table thead {
+  background-color: var(--dashboard-table-header-bg, #f9fafb);
+  backdrop-filter: blur(6px);
+}
+
+.dashboard-theme-scope .dashboard-chart-table thead th {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.dashboard-theme-scope .dashboard-chart-table tbody td {
+  vertical-align: middle;
+}
+
 .dashboard-theme-scope .dashboard-chart-table tbody tr {
   background-color: var(--dashboard-table-body-bg, transparent);
   color: var(--dashboard-table-body-fg, #344054);
@@ -783,10 +798,6 @@ html.admin-fill-lock #root {
 
 .dashboard-theme-scope .dashboard-chart-table[data-row-hover] tbody tr:hover {
   background-color: var(--dashboard-table-row-hover-bg, rgb(0 0 0 / 0.07));
-}
-
-.dashboard-theme-scope .dashboard-chart-table thead {
-  background-color: var(--dashboard-table-header-bg, #f9fafb);
 }
 
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"]:not([data-canvas-user-bg="true"])
@@ -825,6 +836,111 @@ html.admin-fill-lock #root {
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] .dashboard-chart-table thead,
 .dashboard-theme-scope.dark .dashboard-chart-table thead {
   background-color: var(--dashboard-table-header-bg, #0f172a);
+}
+
+/* VitalSpan 图表表格 — DataEase 向视觉与交互 */
+.vs-table-scroll {
+  --vs-scroll-fade: color-mix(in srgb, var(--dashboard-widget-surface, #fff) 90%, transparent);
+}
+
+.vs-table-scroll::before,
+.vs-table-scroll::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.vs-table-scroll[data-scroll-left]::before {
+  left: 0;
+  opacity: 1;
+  background: linear-gradient(to right, var(--vs-scroll-fade), transparent);
+}
+
+.vs-table-scroll[data-scroll-right]::after {
+  right: 0;
+  opacity: 1;
+  background: linear-gradient(to left, var(--vs-scroll-fade), transparent);
+}
+
+.vs-chart-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+}
+
+.vs-chart-table :where(.vs-table-th, .vs-table-td) {
+  border-right: 1px solid var(--dashboard-table-border, #f2f4f7);
+}
+
+.vs-chart-table :where(.vs-table-th:last-child, .vs-table-td:last-child) {
+  border-right: none;
+}
+
+.vs-chart-table[data-zebra] tbody tr:nth-child(even) td {
+  background-color: var(--dashboard-table-zebra-bg);
+}
+
+.vs-chart-table[data-row-hover] tbody tr:hover td {
+  background-color: var(--dashboard-table-row-hover-bg, rgba(70, 95, 255, 0.06)) !important;
+}
+
+.vs-chart-table[data-freeze-lead] .vs-table-sticky-lead {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background-color: var(--dashboard-table-index-bg, var(--dashboard-table-header-bg));
+  box-shadow: 1px 0 0 var(--dashboard-table-border);
+}
+
+.vs-chart-table[data-freeze-lead] .vs-table-sticky-first {
+  position: sticky;
+  left: var(--vs-table-sticky-offset, 0px);
+  z-index: 3;
+  background-color: var(--dashboard-table-body-bg, var(--dashboard-widget-surface));
+  box-shadow: 4px 0 8px -4px rgb(15 23 42 / 0.1);
+}
+
+.vs-chart-table[data-freeze-lead] thead .vs-table-sticky-lead,
+.vs-chart-table[data-freeze-lead] thead .vs-table-sticky-first {
+  z-index: 12;
+  background-color: var(--dashboard-table-header-bg);
+}
+
+.vs-chart-table .vs-table-index {
+  background-color: var(--dashboard-table-index-bg);
+  font-weight: 500;
+}
+
+.vs-chart-table .vs-table-drillable {
+  color: var(--dashboard-drill-level-0, #465fff);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.vs-chart-table .vs-table-drillable:hover {
+  text-decoration: underline;
+}
+
+.vs-chart-table .vs-table-summary-row td {
+  background-color: var(--dashboard-table-summary-bg, var(--dashboard-table-header-bg));
+  color: var(--dashboard-table-summary-fg, var(--dashboard-table-body-fg));
+  border-top: 2px solid var(--dashboard-table-border);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .vs-table-scroll,
+.dashboard-theme-scope.dark .vs-table-scroll {
+  --vs-scroll-fade: color-mix(in srgb, var(--dashboard-widget-surface, #1e293b) 92%, transparent);
+}
+
+.dashboard-theme-scope[data-dashboard-color-scheme="dark"] .vs-chart-table[data-freeze-lead] .vs-table-sticky-first,
+.dashboard-theme-scope.dark .vs-chart-table[data-freeze-lead] .vs-table-sticky-first {
+  box-shadow: 4px 0 8px -4px rgb(0 0 0 / 0.35);
 }
 
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] .widget-pending-preview-icon,
@@ -901,11 +1017,17 @@ html.admin-fill-lock #root {
   flex: 1;
 }
 
-.pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .dashboard-no-drag,
+.pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .dashboard-no-drag:not([data-testid^="pixel-shape-actions"]),
 .pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] .embedded-chart-table-host {
   width: 100%;
   height: 100%;
   min-height: 0;
+}
+
+/* isPlayer 下操作栏仅保持固定尺寸，避免随组件外框被拉高 */
+.pixel-canvas-host .pixel-shape-outer[data-pixel-is-player] [data-testid^="pixel-shape-actions"] {
+  width: auto;
+  height: auto;
 }
 
 .pixel-canvas-host .widget-pending-preview-icon {

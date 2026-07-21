@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computePresentationTransform, resolveDataScreenViewportOffsets } from "./presentationScale";
+import {
+  computePresentationTransform,
+  resolveDataScreenEditViewportOffsets,
+  resolveDataScreenViewportOffsets,
+} from "./presentationScale";
 
 describe("presentationScale", () => {
   it("fit scales uniformly to fit container", () => {
@@ -56,5 +60,9 @@ describe("presentationScale", () => {
     );
     expect(offsets.offsetY).toBe(0);
     expect(offsets.offsetX).toBeGreaterThan(0);
+  });
+
+  it("edit viewport offsets pin canvas to top-left", () => {
+    expect(resolveDataScreenEditViewportOffsets()).toEqual({ offsetX: 0, offsetY: 0 });
   });
 });

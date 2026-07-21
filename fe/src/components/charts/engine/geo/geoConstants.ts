@@ -1,4 +1,4 @@
-/** GEO-IRON-01 共享常量（无运行时依赖，避免 geoMapChart ↔ OfflineGeoAntVPort 循环引用） */
+/** GEO-IRON-01 共享常量（无运行时依赖，避免 geoMapChart ↔ OfflineGeoPort 循环引用） */
 
 export const VS_REGIONS_MAP_ID = "vs-regions";
 

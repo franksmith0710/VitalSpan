@@ -63,8 +63,8 @@ export function DatasetPickerPanel({
         className,
       )}
     >
-      <div className="shrink-0 border-b border-gray-200 px-3 py-2.5 dark:border-gray-800">
-        <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="shrink-0 border-b border-gray-200 px-2 py-2 dark:border-gray-800">
+        <div className="mb-1.5 flex items-center justify-between gap-1.5">
           <h3 className="text-theme-xs font-semibold text-gray-800 dark:text-white/90">数据集</h3>
           {collapseRail ? (
             <IconButton

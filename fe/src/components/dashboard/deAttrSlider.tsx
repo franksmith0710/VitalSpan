@@ -12,10 +12,10 @@ function clampValue(value: number, min: number, max: number): number {
 
 /** 432px 看板配置栏滑块宽度 */
 export const DE_SLIDER_WIDTH_WIDE = "w-[10.5rem]";
-/** 216px 图表检查栏滑块宽度 */
-export const DE_SLIDER_WIDTH_NARROW = "w-[7.25rem]";
-/** 216px 行内字段（标签+滑块+数值）定宽滑块 */
-export const DE_SLIDER_WIDTH_CHART_INLINE = "w-[5.5rem]";
+/** 252px 图表配置列滑块宽度 */
+export const DE_SLIDER_WIDTH_NARROW = "w-[8.25rem]";
+/** 252px 行内字段（标签+滑块+数值）定宽滑块 */
+export const DE_SLIDER_WIDTH_CHART_INLINE = "w-[6rem]";
 
 const SLIDER_SHELL = "relative flex h-7 items-center";
 const SLIDER_TRACK =

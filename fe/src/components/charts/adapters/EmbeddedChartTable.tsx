@@ -1,19 +1,8 @@
-import { useCallback, useRef, type CSSProperties } from "react";
-import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
-import { dwTableCell } from "@/components/dashboard/dashboardWidgetTypography";
-import { cn } from "@/lib/utils";
-import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
+import type { ChartFieldRef } from "@/lib/chartViewConfig";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+import type { ColorScheme } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
-import {
-  computeTableSummaryValues,
-  DEFAULT_TABLE_PAGE_SIZE,
-  resolveTableSummaryColumns,
-  resolveTableZebraBg,
-} from "@/lib/chartDeTableStyle";
-import { formatTableCellValue } from "@/lib/chartValueFormat";
-import { withBackgroundAlpha } from "@/lib/widgetSurfaceBackground";
-import { TablePaginationBar } from "@/components/charts/adapters/TablePaginationBar";
+import { VitalSpanTable } from "@/components/charts/engine/d3/table/VitalSpanTable";
 
 type EmbeddedChartTableProps = {
   columns: string[];
@@ -28,29 +17,12 @@ type EmbeddedChartTableProps = {
   valueFormat?: NumberFormatConfig;
   drillField?: string;
   onDrillCellClick?: (field: string, value: string) => void;
-  /** 指标字段名；与 showSummary 配合决定汇总列 */
   metricFields?: string[];
-  /** 看板内嵌：对标 DataEase，外框实时缩放时列宽与滚动区跟手 */
   embedded?: boolean;
 };
 
-function scrollbarStyle(
-  color: string | undefined,
-  themeVars?: Record<string, string>,
-): CSSProperties | undefined {
-  if (themeVars && Object.keys(themeVars).length > 0) {
-    return themeVars as CSSProperties;
-  }
-  if (!color) return undefined;
-  return {
-    ["--dashboard-scroll-thumb" as string]: color,
-    ["--dashboard-scroll-thumb-hover" as string]: color,
-    scrollbarColor: `${color} var(--dashboard-scroll-track, transparent)`,
-  };
-}
-
 /**
- * 看板内嵌表格：对标 DataEase 明细表样式与分页
+ * 看板内嵌表格（legacy `table` 类型）：复用 D3 自研 VitalSpanTable
  */
 export function EmbeddedChartTable({
   columns,
@@ -59,223 +31,34 @@ export function EmbeddedChartTable({
   page,
   onPageChange,
   panel = false,
-  tableStyle = {},
+  tableStyle,
   themeVars,
-  surfaceScheme = "light",
+  surfaceScheme,
   valueFormat,
   drillField,
   onDrillCellClick,
   metricFields,
   embedded = false,
 }: EmbeddedChartTableProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const remeasureLayout = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    void el.getBoundingClientRect();
-  }, []);
-  useEmbeddedChartLiveResize(embedded, containerRef, remeasureLayout);
-  const pageSize = tableStyle.pageSize ?? DEFAULT_TABLE_PAGE_SIZE;
-  const paginationMode = tableStyle.paginationMode ?? "page";
-  const wordWrap = tableStyle.wordWrap ?? false;
-  const rowHover = tableStyle.rowHover !== false;
-  const zebraBg = resolveTableZebraBg(tableStyle);
-  const opacity = tableStyle.opacity != null ? tableStyle.opacity / 100 : 1;
-  const borderColor = tableStyle.borderColor;
-  const panelBackground =
-    opacity < 1
-      ? withBackgroundAlpha("var(--dashboard-widget-surface)", opacity)
-      : undefined;
-
-  const usePagination = paginationMode === "page" && rows.length > pageSize;
-  const pageRows = usePagination
-    ? rows.slice((page - 1) * pageSize, page * pageSize)
-    : rows;
-  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
-  const columnWidthMode = tableStyle.columnWidthMode ?? "auto";
-  /** DE：自适应=等分撑满容器；固定列宽=按内容定宽（可横向滚动） */
-  const useFixedLayout = columnWidthMode === "auto" || columnWidthMode === "custom";
-  const equalPct = displayCols.length > 0 ? 100 / displayCols.length : 100;
-
-  const resolveColWidth = (col: string): string | undefined => {
-    if (columnWidthMode === "custom") {
-      const custom = tableStyle.columnWidths?.[col];
-      if (custom != null && custom > 0) return `${custom}%`;
-      return `${equalPct}%`;
-    }
-    if (columnWidthMode === "auto") return `${equalPct}%`;
-    return undefined;
-  };
-  const cellClass = cn(
-    dwTableCell,
-    wordWrap ? "whitespace-normal break-words" : "truncate",
-  );
-  const mergedThemeStyle = (themeVars ?? {}) as CSSProperties;
-  const summaryColumns = resolveTableSummaryColumns(columns, displayCols, rows, {
-    metricFields,
-    showSummary: tableStyle.showSummary,
-  });
-  const summaryValues =
-    summaryColumns.length > 0
-      ? computeTableSummaryValues(columns, displayCols, rows, summaryColumns)
-      : null;
-  const summaryLabelCol =
-    summaryValues &&
-    displayCols.find((col) => !summaryColumns.includes(col) || summaryValues[col] == null);
-
-  if (rows.length === 0) {
-    return (
-      <div
-        ref={containerRef}
-        className={cn(
-          "embedded-chart-table-host flex min-h-0 w-full min-w-0 flex-col items-center justify-center px-3 py-6 text-center",
-          embedded ? "absolute inset-0" : panel ? undefined : "h-full",
-        )}
-        style={{
-          ...mergedThemeStyle,
-          ...(panelBackground ? { backgroundColor: panelBackground } : null),
-          color: "var(--dashboard-table-empty-fg, #98a2b3)",
-          fontSize: "var(--dashboard-table-pagination-font-size, 12px)",
-        }}
-      >
-        暂无数据
-      </div>
-    );
-  }
-
+  const columnMeta = displayCols.map((field) => ({ field, label: field }));
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        "embedded-chart-table-host flex min-h-0 w-full min-w-0 flex-col",
-        embedded ? "absolute inset-0" : panel ? undefined : "h-full",
-      )}
-      style={{
-        ...mergedThemeStyle,
-        ...(panelBackground ? { backgroundColor: panelBackground } : null),
-        ...(borderColor ? { border: `1px solid ${borderColor}`, borderRadius: 4 } : null),
-      }}
-    >
-      <div
-        className={cn(
-          "dashboard-scroll min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain",
-          panel && "overflow-x-only",
-        )}
-        style={scrollbarStyle(tableStyle.scrollbarColor, themeVars)}
-      >
-        <table
-          className={cn(
-            "dashboard-chart-table text-left",
-            useFixedLayout
-              ? "w-full table-fixed min-w-full"
-              : cn("table-auto", embedded ? "w-max min-w-full" : "w-full min-w-0"),
-            panel && !useFixedLayout && "min-w-[320px]",
-          )}
-          data-row-hover={rowHover ? "" : undefined}
-        >
-          {useFixedLayout ? (
-            <colgroup>
-              {displayCols.map((c) => {
-                const width = resolveColWidth(c);
-                return <col key={c} style={width ? { width } : undefined} />;
-              })}
-            </colgroup>
-          ) : null}
-          <thead className="sticky top-0 z-[1] bg-[var(--dashboard-table-header-bg,#f9fafb)]">
-            <tr>
-              {displayCols.map((c, colIndex) => (
-                <th
-                  key={c}
-                  title={c}
-                  className={cn(
-                    cellClass,
-                    "font-medium text-[var(--dashboard-table-header-fg,#667085)]",
-                    colIndex === 0 &&
-                      "bg-[var(--dashboard-table-corner-bg,var(--dashboard-table-header-bg,#f9fafb))]",
-                  )}
-                >
-                  {c}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-[var(--dashboard-table-body-bg,transparent)]">
-            {pageRows.map((row, i) => (
-              <tr
-                key={i}
-                className={cn(
-                  "border-t border-[var(--dashboard-table-border,#f2f4f7)]",
-                  zebraBg && i % 2 === 1 && "bg-[var(--dashboard-table-zebra-bg)]",
-                )}
-              >
-                {displayCols.map((c) => {
-                  const idx = columns.indexOf(c);
-                  const raw = idx >= 0 ? row[idx] : "";
-                  const text = formatTableCellValue(raw, valueFormat);
-                  const drillable = drillField === c && onDrillCellClick && text !== "";
-                  return (
-                    <td
-                      key={c}
-                      title={text}
-                      className={cn(
-                        cellClass,
-                        "bg-[var(--dashboard-table-column-bg,transparent)] text-[var(--dashboard-table-body-fg,#344054)]",
-                        drillable && "cursor-pointer text-[var(--dashboard-drill-level-0,#465fff)] hover:underline",
-                      )}
-                      onClick={
-                        drillable
-                          ? (event) => {
-                              event.stopPropagation();
-                              onDrillCellClick(c, String(raw ?? ""));
-                            }
-                          : undefined
-                      }
-                    >
-                      {text}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-          {summaryValues ? (
-            <tfoot>
-              <tr
-                className={cn(
-                  "border-t-2 border-[var(--dashboard-table-border,#f2f4f7)]",
-                  "bg-[var(--dashboard-table-summary-bg,var(--dashboard-table-header-bg,#f9fafb))]",
-                  "text-[var(--dashboard-table-summary-fg,var(--dashboard-table-body-fg,#344054))]",
-                )}
-              >
-                {displayCols.map((c) => {
-                  const raw = summaryValues[c];
-                  const isLabelCell = c === summaryLabelCol && raw == null;
-                  const text = isLabelCell
-                    ? "合计"
-                    : raw != null
-                      ? formatTableCellValue(raw, valueFormat)
-                      : "";
-                  return (
-                    <td key={c} title={text} className={cn(cellClass, "font-medium")}>
-                      {text}
-                    </td>
-                  );
-                })}
-              </tr>
-            </tfoot>
-          ) : null}
-        </table>
-      </div>
-      {usePagination ? (
-        <TablePaginationBar
-          page={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalRows={rows.length}
-          tableStyle={tableStyle}
-          onPageChange={onPageChange}
-        />
-      ) : null}
-    </div>
+    <VitalSpanTable
+      columns={columns}
+      columnMeta={columnMeta}
+      displayCols={displayCols}
+      rows={rows}
+      page={page}
+      onPageChange={onPageChange}
+      panel={panel}
+      tableStyle={tableStyle}
+      themeVars={themeVars}
+      surfaceScheme={surfaceScheme}
+      valueFormat={valueFormat}
+      drillField={drillField}
+      onDrillCellClick={onDrillCellClick}
+      metricFields={metricFields}
+      embedded={embedded}
+      testId="embedded-chart-table"
+    />
   );
 }

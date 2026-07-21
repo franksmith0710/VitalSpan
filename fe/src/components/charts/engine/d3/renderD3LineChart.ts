@@ -1,75 +1,26 @@
-import * as d3 from "d3";
-import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
+﻿import * as d3 from "d3";
 import {
   animateStrokePath,
+  applyRotatedCategoryLabels,
   buildAreaGenerator,
   buildLineGenerator,
+  cartesianMargin,
+  createTooltip,
   ensureGradientDef,
+  groupSeries,
   nearestCategory,
+  normalizeCartesianData,
   pickCategoryTicks,
-  type D3LineDatum,
+  resolveDatumColor,
+  styleAxis,
+  tooltipHtml,
 } from "@/components/charts/engine/d3/d3LineVisual";
-import type { ChartConditionalRule, ChartMarkLine } from "@/lib/chartDeFeatures";
-import { matchConditionalRule } from "@/lib/chartDeFeatures";
+import type { D3CartesianDatum, D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
-import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 
-export type { D3LineDatum } from "@/components/charts/engine/d3/d3LineVisual";
+export type { D3CartesianDatum as D3LineDatum, D3CartesianRenderConfig as D3LineRenderConfig } from "@/components/charts/engine/d3/types";
 
-export type D3LineRenderConfig = {
-  width: number;
-  height: number;
-  data: D3LineDatum[];
-  xField: string;
-  yField: string;
-  seriesField?: string;
-  smooth?: boolean;
-  isHorizontal?: boolean;
-  colors: string[];
-  theme: AntvThemeTokens;
-  showLabel: boolean;
-  showTooltip: boolean;
-  showLegend: boolean;
-  labelFontSize: number;
-  valueFormat?: NumberFormatConfig;
-  markLines?: ChartMarkLine[];
-  conditionalRules?: ChartConditionalRule[];
-  onPointClick?: (datum: D3LineDatum) => void;
-};
-
-type SeriesGroup = { name: string; points: D3LineDatum[] };
-
-const MARGIN = { top: 24, right: 20, bottom: 44, left: 52 };
-
-function groupSeries(data: D3LineDatum[], seriesField?: string): SeriesGroup[] {
-  if (!seriesField) return [{ name: "", points: data }];
-  const map = d3.group(data, (d) => String(d[seriesField] ?? ""));
-  return [...map.entries()].map(([name, points]) => ({ name, points }));
-}
-
-function resolvePointColor(value: number, baseColor: string, rules: ChartConditionalRule[]): string {
-  const active = rules.filter((rule) => rule.enabled && Number.isFinite(rule.value));
-  const matched = active.find((rule) => matchConditionalRule(value, rule));
-  return matched?.color ?? baseColor;
-}
-
-function tooltipHtml(
-  category: string,
-  rows: { name: string; color: string; value: unknown }[],
-  valueFormat?: NumberFormatConfig,
-): string {
-  const items = rows
-    .map(
-      (row) =>
-        `<div style="display:flex;align-items:center;gap:6px;margin-top:4px">` +
-        `<span style="width:8px;height:8px;border-radius:999px;background:${row.color};flex-shrink:0"></span>` +
-        `<span style="opacity:0.78">${row.name ? `${row.name} · ` : ""}</span>` +
-        `<strong>${formatChartValue(row.value, valueFormat)}</strong></div>`,
-    )
-    .join("");
-  return `<div style="font-weight:600;margin-bottom:2px">${category}</div>${items}`;
-}
-
+export type D3LineRenderConfig = D3CartesianRenderConfig;
 export function renderD3LineChart(container: HTMLElement, config: D3LineRenderConfig): () => void {
   container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
@@ -95,20 +46,14 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     onPointClick,
   } = config;
 
-  const normalized = data.map((row) => ({
-    ...row,
-    __category__: row[xField],
-    __value__: Number(row[yField] ?? 0),
-    __series__: seriesField ? String(row[seriesField] ?? "") : "",
-  }));
+  const normalized = normalizeCartesianData(data, xField, yField, seriesField);
 
   const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
   const seriesGroups = groupSeries(normalized, seriesField);
   const colorScale = d3.scaleOrdinal<string>().domain(seriesGroups.map((s) => s.name)).range(colors);
   const singleSeries = seriesGroups.length === 1;
 
-  const legendRows = showLegend && seriesField ? seriesGroups.length : 0;
-  const margin = { ...MARGIN, top: MARGIN.top + (legendRows > 0 ? 20 : 0) };
+  const margin = cartesianMargin(Boolean(showLegend && seriesField));
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
 
@@ -217,12 +162,11 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     .attr("stroke-opacity", 0.85);
   const crossDot = focusLayer.append("circle").attr("r", 5).attr("stroke", "#fff").attr("stroke-width", 2);
 
-  const dotLayers: d3.Selection<SVGCircleElement, D3LineDatum, SVGGElement, unknown>[] = [];
+  const dotLayers: d3.Selection<SVGCircleElement, D3CartesianDatum, SVGGElement, unknown>[] = [];
 
   seriesGroups.forEach((series, seriesIndex) => {
     const color = colorScale(series.name) ?? colors[0] ?? "#465fff";
-    const gradId = `d3-line-grad-${seriesIndex}`;
-    ensureGradientDef(defs, gradId, color, singleSeries ? 0.32 : 0.16, 0.01);
+    const gradId = ensureGradientDef(defs, `d3-line-grad-${seriesIndex}`, color, singleSeries ? 0.32 : 0.16, 0.01);
 
     const points = [...series.points].sort(
       (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
@@ -249,12 +193,12 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     if (!isHorizontal) animateStrokePath(linePath);
 
     const dots = plot
-      .selectAll<SVGCircleElement, D3LineDatum>(`circle.series-${seriesIndex}`)
+      .selectAll<SVGCircleElement, D3CartesianDatum>(`circle.series-${seriesIndex}`)
       .data(points)
       .join("circle")
       .attr("class", `series-${seriesIndex}`)
       .attr("r", 3)
-      .attr("fill", (d) => resolvePointColor(Number(d.__value__), color, conditionalRules))
+      .attr("fill", (d) => resolveDatumColor(Number(d.__value__), color, conditionalRules))
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .attr("opacity", 0.92)
@@ -268,7 +212,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
 
     if (showLabel && !isHorizontal) {
       plot
-        .selectAll<SVGTextElement, D3LineDatum>(`text.label-${seriesIndex}`)
+        .selectAll<SVGTextElement, D3CartesianDatum>(`text.label-${seriesIndex}`)
         .data(points)
         .join("text")
         .attr("class", `label-${seriesIndex}`)
@@ -339,7 +283,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     let offsetX = 0;
     seriesGroups.forEach((series) => {
       const color = colorScale(series.name) ?? colors[0] ?? "#465fff";
-      const label = series.name || "系列";
+      const label = series.name || "绯诲垪";
       const item = legend.append("g").attr("transform", `translate(${offsetX},0)`);
       item
         .append("rect")
@@ -361,36 +305,4 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
   }
 
   return () => container.replaceChildren();
-}
-
-function styleAxis(
-  sel: d3.Selection<SVGGElement, unknown, null, undefined>,
-  theme: AntvThemeTokens,
-) {
-  sel
-    .selectAll("text")
-    .attr("fill", theme.axisLabel)
-    .style("font-size", "11px")
-    .style("font-family", "inherit");
-  sel.select(".domain").attr("stroke", theme.axisLine);
-  sel.selectAll(".tick line").attr("stroke", theme.axisLine);
-}
-
-function createTooltip(container: HTMLElement, theme: AntvThemeTokens) {
-  return d3
-    .select(container)
-    .append("div")
-    .style("position", "absolute")
-    .style("pointer-events", "none")
-    .style("opacity", "0")
-    .style("padding", "8px 10px")
-    .style("border-radius", "8px")
-    .style("font-size", "12px")
-    .style("line-height", "1.35")
-    .style("background", theme.tooltipBg)
-    .style("color", theme.tooltipText)
-    .style("border", `1px solid ${theme.axisLine}`)
-    .style("box-shadow", "0 8px 24px rgba(16,24,40,0.14)")
-    .style("backdrop-filter", "blur(6px)")
-    .style("transition", "opacity 120ms ease");
 }

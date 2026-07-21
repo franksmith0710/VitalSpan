@@ -18,7 +18,7 @@ function mockExecute(rows: unknown[][], columns: string[]) {
     if (path === "/api/v1/charts/render-spec") {
       const cfg = JSON.parse(opts?.body ?? "{}") as ChartViewConfig;
       return {
-        engine: cfg.chartType === "kpi" ? "kpi" : cfg.chartType === "table" ? "table" : "antv",
+        engine: cfg.chartType === "table" ? "table" : "antv",
         chartType: cfg.chartType,
         styleVariant: "default",
         encoding: {
@@ -46,7 +46,7 @@ const cases: Array<{
     rows: [["北京", 100]],
     cols: ["region", "value"],
     dimensions: [{ field: "region" }],
-    testId: "antv-map-chart",
+    testId: "d3-map-chart",
   },
   {
     type: "heatmap",
@@ -54,7 +54,7 @@ const cases: Array<{
     rows: [["A", "Y1", 10]],
     cols: ["x", "y", "v"],
     dimensions: [{ field: "x" }, { field: "y" }],
-    testId: "antv-g2plot-chart",
+    testId: "d3-heatmap-chart",
   },
   {
     type: "kpi",
@@ -62,6 +62,7 @@ const cases: Array<{
     rows: [[1280, 12.5]],
     cols: ["total", "rate"],
     dimensions: [],
+    testId: "d3-kpi-chart",
   },
   {
     type: "timeline",
@@ -69,7 +70,7 @@ const cases: Array<{
     rows: [["2026-01-01", 1]],
     cols: ["t", "v"],
     dimensions: [{ field: "t" }],
-    testId: "antv-g2plot-chart",
+    testId: "d3-line-chart",
   },
 ];
 
@@ -94,9 +95,7 @@ describe("DASH-003 chart render smoke", () => {
       expect(screen.queryByLabelText("图表加载中")).not.toBeInTheDocument();
     });
     expect(screen.getByText(label)).toBeInTheDocument();
-    if (type === "kpi") {
-      expect(screen.getByRole("group", { name: /指标/ })).toBeInTheDocument();
-    } else if (testId) {
+    if (testId) {
       expect(screen.getByTestId(testId)).toBeInTheDocument();
     }
   });

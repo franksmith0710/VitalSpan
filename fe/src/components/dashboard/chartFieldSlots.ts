@@ -35,11 +35,18 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
     switch (plugin.paletteCategory) {
       case "trend":
       case "compare":
-      case "dual_axes":
         return [
           { kind: "dimension", index: 0, label: "类别轴 / 维度", required: true },
           { kind: "dimension", index: 1, label: "子类别 / 维度", required: false },
           { kind: "metric", index: 0, label: "值轴 / 指标", required: true, showAggregation: true },
+          { kind: "dimension", index: 2, label: "钻取 / 维度", required: false },
+        ];
+      case "dual_axes":
+        return [
+          { kind: "dimension", index: 0, label: "类别轴 / 维度", required: true },
+          { kind: "dimension", index: 1, label: "子类别 / 维度", required: false },
+          { kind: "metric", index: 0, label: "柱指标 / 指标", required: true, showAggregation: true },
+          { kind: "metric", index: 1, label: "线指标 / 指标", required: true, showAggregation: true },
           { kind: "dimension", index: 2, label: "钻取 / 维度", required: false },
         ];
       case "distribute":
@@ -181,12 +188,37 @@ export function chartDataSlotBlueprint(chartType: ChartType | string): ChartData
         { kind: "metric", index: 0, label: "柱指标", required: true, showAggregation: true },
         { kind: "metric", index: 1, label: "线指标", required: true, showAggregation: true },
       ];
-    case "wordCloud":
     case "waterfall":
     case "bidirectional-bar":
       return [
         { kind: "dimension", index: 0, label: "类别 / 维度", required: true },
         { kind: "metric", index: 0, label: "数值 / 指标", required: true, showAggregation: true },
+      ];
+    case "bar-range":
+      return [
+        { kind: "dimension", index: 0, label: "类别 / 维度", required: true },
+        { kind: "metric", index: 0, label: "下限 / 指标", required: true, showAggregation: true },
+        { kind: "metric", index: 1, label: "上限 / 指标", required: true, showAggregation: true },
+      ];
+    case "progress-bar":
+      return [
+        { kind: "dimension", index: 0, label: "类别 / 维度", required: true },
+        { kind: "metric", index: 0, label: "进度值 / 指标", required: true, showAggregation: true },
+      ];
+    case "bullet-graph":
+      return [
+        { kind: "dimension", index: 0, label: "类别 / 维度", required: false },
+        { kind: "metric", index: 0, label: "实际值 / 指标", required: true, showAggregation: true },
+        { kind: "metric", index: 1, label: "目标值 / 指标", required: false, showAggregation: true },
+        { kind: "metric", index: 2, label: "区间上限 / 指标", required: false, showAggregation: true },
+      ];
+    case "stock-line":
+      return [
+        { kind: "dimension", index: 0, label: "日期 / 维度", required: true },
+        { kind: "metric", index: 0, label: "开盘价", required: true, showAggregation: true },
+        { kind: "metric", index: 1, label: "收盘价", required: true, showAggregation: true },
+        { kind: "metric", index: 2, label: "最低价", required: true, showAggregation: true },
+        { kind: "metric", index: 3, label: "最高价", required: true, showAggregation: true },
       ];
     default:
       return [

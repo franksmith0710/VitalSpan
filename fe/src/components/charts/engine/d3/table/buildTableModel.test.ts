@@ -1,0 +1,47 @@
+import { describe, expect, it } from "vitest";
+import { buildPivotTableModel, buildDetailTableModel } from "./buildTableModel";
+
+describe("buildTableModel", () => {
+  it("builds detail columns from dimensions and metrics", () => {
+    const model = buildDetailTableModel({
+      plotType: "table-info",
+      columns: ["region", "amount", "extra"],
+      rows: [["华东", 10, 1]],
+      spec: {
+        encoding: {
+          dimensions: [{ field: "region", label: "区域" }],
+          metrics: [{ field: "amount", label: "金额" }],
+        },
+      } as never,
+    });
+    expect(model.kind).toBe("detail");
+    expect(model.columns).toEqual(["region", "amount"]);
+    expect(model.columnMeta[0]?.label).toBe("区域");
+  });
+
+  it("aggregates pivot cells by row and column keys", () => {
+    const model = buildPivotTableModel({
+      plotType: "table-pivot",
+      columns: ["product", "city", "amount"],
+      rows: [
+        ["A", "北京", 10],
+        ["A", "上海", 20],
+        ["B", "北京", 5],
+      ],
+      spec: {
+        encoding: {
+          dimensions: [
+            { field: "product", label: "产品" },
+            { field: "city", label: "城市" },
+          ],
+          metrics: [{ field: "amount", label: "销售额" }],
+        },
+      } as never,
+    });
+    expect(model.rowKeys).toEqual(["A", "B"]);
+    expect(model.colKeys).toEqual(["北京", "上海"]);
+    expect(model.cells.A?.北京?.amount).toBe(10);
+    expect(model.cells.A?.上海?.amount).toBe(20);
+    expect(model.cells.B?.北京?.amount).toBe(5);
+  });
+});

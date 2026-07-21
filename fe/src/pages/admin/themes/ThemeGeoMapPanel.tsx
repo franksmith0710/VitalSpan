@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { buildChartViewModel } from "@/components/charts/engine/buildChartViewModel";
 import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
-import { AntvMapView } from "@/components/charts/engine/antv/geo/AntvMapView";
+import { D3ViewRouter } from "@/components/charts/engine/d3/d3ViewRouter";
 
 type ThemeGeoMapPanelProps = {
   columns: string[];
@@ -55,7 +55,7 @@ export function ThemeGeoMapPanel({
   );
 
   return (
-    <AntvMapView
+    <D3ViewRouter
       viewModel={viewModel}
       style={style}
       ariaLabel={ariaLabel}

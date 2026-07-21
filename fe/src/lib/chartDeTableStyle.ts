@@ -41,6 +41,12 @@ export type ChartDeTableStyle = {
   columnWidthMode?: TableColumnWidthMode;
   /** 自定义列宽：列名 → 百分比 */
   columnWidths?: Record<string, number>;
+  /** 交互拖拽列宽：列名 → 像素（优先于百分比） */
+  columnWidthsPx?: Record<string, number>;
+  /** 序号列像素宽度 */
+  seriesColumnWidthPx?: number;
+  /** 数据行统一高度（像素） */
+  rowHeightPx?: number;
   wordWrap?: boolean;
   rowHover?: boolean;
   /** 是否显示底部汇总行；undefined 时在存在可汇总列时自动显示 */

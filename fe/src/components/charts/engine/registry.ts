@@ -1,7 +1,7 @@
 import "@/components/charts/engine/plugins/index";
 import type { ChartEngineId, ChartViewModel } from "@/components/charts/engine/types";
 import type { ChartType } from "@/lib/chartViewConfig";
-import { exportAntvPngFromContainer } from "@/components/charts/engine/antv/exportPng";
+import { exportD3PngFromContainer } from "@/components/charts/engine/d3/exportPng";
 import { getChartPlugin, listChartPlugins } from "@/components/charts/engine/plugins/registry";
 
 const LEGACY_CANVAS_TYPES = new Set<string>([
@@ -31,11 +31,9 @@ export function getEngineIdForChartType(chartType: string): ChartEngineId {
   const plugin = resolvePlugin(chartType);
   if (plugin) {
     if (plugin.renderer === "table") return "table";
-    if (plugin.renderer === "kpi") return "kpi";
     return "antv";
   }
   if (chartType === "table") return "table";
-  if (chartType === "kpi") return "kpi";
   return "antv";
 }
 
@@ -47,9 +45,14 @@ export function isCanvasChartType(type: ChartType | string): boolean {
   return LEGACY_CANVAS_TYPES.has(type);
 }
 
-export function isS2TableChartType(type: string): boolean {
+export function isD3TableChartType(type: string): boolean {
   const plugin = resolvePlugin(type);
-  return plugin?.library === "s2";
+  return plugin?.paletteCategory === "table" && plugin.library === "d3" && type.startsWith("table-");
+}
+
+/** @deprecated 表格已迁移至 D3 自研引擎 */
+export function isS2TableChartType(type: string): boolean {
+  return isD3TableChartType(type);
 }
 
 export function isLegacyTableChartType(type: string): boolean {
@@ -71,14 +74,14 @@ export async function exportChartPng(
   title?: string,
 ): Promise<void> {
   const engine = getEngineIdForChartType(chartType);
-  if (engine === "antv") {
-    exportAntvPngFromContainer(container, title ?? "chart");
-    return;
-  }
-  if (engine === "table" || engine === "kpi") {
+  if (engine === "table") {
     throw new Error("当前图表类型不支持 PNG 导出");
   }
-  exportAntvPngFromContainer(container, title ?? "chart");
+  const plugin = getChartPlugin(chartType);
+  if (engine === "table") {
+    throw new Error("当前图表类型不支持 PNG 导出");
+  }
+  exportD3PngFromContainer(container, title ?? "chart");
 }
 
 export function listRegisteredCanvasChartTypes(): string[] {

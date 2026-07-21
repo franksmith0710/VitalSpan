@@ -90,7 +90,7 @@ export function AppRoutes() {
           <Route path="reports/templates" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/templates/:nodeId" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/schedules" element={<RequireCapabilityName capability="report:manage"><ReportSchedulesPage /></RequireCapabilityName>} />
-          <Route path="charts/types" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<ChartExplorePage />)}</RequireCapabilityName>} />
+          <Route path="charts/types" element={<RequireCapabilityName capability="dashboard:read"><ChartExplorePage /></RequireCapabilityName>} />
           <Route
             path="charts/explore"
             element={<Navigate to={CHART_TYPES_CATALOG_PATH} replace />}

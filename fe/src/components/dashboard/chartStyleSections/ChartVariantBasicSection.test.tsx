@@ -10,18 +10,22 @@ vi.mock("@/lib/api", async (importOriginal) => {
   return { ...actual, apiFetch: vi.fn().mockResolvedValue({ items: [] }) };
 });
 
-vi.mock("@/lib/chartRegistry", () => ({
-  fetchChartTypeCatalog: vi.fn().mockResolvedValue([
-    {
-      type: "pie",
-      displayName: "饼图",
-      category: "basic",
-      renderer: "echarts",
-      styleVariants: ["default", "donut"],
-      fieldRule: {},
-    },
-  ]),
-}));
+vi.mock("@/lib/chartRegistry", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/chartRegistry")>();
+  return {
+    ...actual,
+    fetchChartTypeCatalog: vi.fn().mockResolvedValue([
+      {
+        type: "pie",
+        displayName: "饼图",
+        category: "basic",
+        renderer: "antv",
+        styleVariants: ["default", "donut"],
+        fieldRule: {},
+      },
+    ]),
+  };
+});
 
 const pieWidget: LayoutWidget = {
   id: "w-pie",

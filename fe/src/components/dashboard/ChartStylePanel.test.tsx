@@ -16,18 +16,22 @@ vi.mock("@/lib/api", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/chartRegistry", () => ({
-  fetchChartTypeCatalog: vi.fn().mockResolvedValue([
-    {
-      type: "bar",
-      displayName: "柱状图",
-      category: "basic",
-      renderer: "echarts",
-      styleVariants: ["default", "stacked"],
-      fieldRule: {},
-    },
-  ]),
-}));
+vi.mock("@/lib/chartRegistry", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/chartRegistry")>();
+  return {
+    ...actual,
+    fetchChartTypeCatalog: vi.fn().mockResolvedValue([
+      {
+        type: "bar",
+        displayName: "柱状图",
+        category: "basic",
+        renderer: "antv",
+        styleVariants: ["default", "stacked"],
+        fieldRule: {},
+      },
+    ]),
+  };
+});
 
 const widget: LayoutWidget = {
   id: "w1",
@@ -50,7 +54,7 @@ const widget: LayoutWidget = {
 afterEach(cleanup);
 
 describe("ChartStylePanel", () => {
-  it("renders DE-style accordion sections and patches style variant", async () => {
+  it("renders DE-style accordion sections for cartesian charts", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -62,7 +66,7 @@ describe("ChartStylePanel", () => {
       </QueryClientProvider>,
     );
 
-    expect(await screen.findByRole("button", { name: "基础样式" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "图表配色" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "配色方案" })).toBeInTheDocument();
     expect(screen.queryByTestId("chart-palette-inline-menu-panel")).not.toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "渐变颜色" })).toBeInTheDocument();
@@ -75,11 +79,6 @@ describe("ChartStylePanel", () => {
     await user.click(screen.getByRole("button", { name: "背景" }));
     expect(screen.getByRole("button", { name: "图片" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "装饰边框" })).toBeInTheDocument();
-
-    await user.click(await screen.findByRole("button", { name: "堆叠" }));
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ styleVariant: "stacked" }),
-    );
   });
 
   it("patches chart palette when selecting a preset in the inspector", async () => {
@@ -156,7 +155,7 @@ describe("ChartStylePanel", () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByRole("button", { name: "基础样式" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /明细表（旧） · 基础样式/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "图表配色" })).toBeInTheDocument();
     expect(screen.queryByRole("switch", { name: "背景" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "备注" })).not.toBeInTheDocument();

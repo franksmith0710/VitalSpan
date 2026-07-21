@@ -1,5 +1,5 @@
 import { DEFAULT_GEO_MAP_PLACEHOLDER_HINT } from "@/components/charts/engine/geoEnginePort";
-import { GeoMapPlaceholderView } from "@/components/charts/engine/antv/geo/AntvGeoPlaceholderView";
+import { GeoMapPlaceholderView } from "@/components/charts/engine/geo/GeoMapPlaceholderView";
 
 type Props = {
   hint?: string;

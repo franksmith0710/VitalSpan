@@ -1,0 +1,173 @@
+import * as d3 from "d3";
+import { chartTransition } from "@/components/charts/engine/d3/core/animate";
+import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
+import type { D3BidirectionalBarRenderConfig } from "@/components/charts/engine/d3/types";
+import { formatChartValue } from "@/lib/chartValueFormat";
+
+const BAR_RX = 4;
+
+export function renderD3BidirectionalBarChart(
+  container: HTMLElement,
+  config: D3BidirectionalBarRenderConfig,
+): () => void {
+  container.replaceChildren();
+  if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
+
+  const {
+    width,
+    height,
+    data,
+    colors,
+    theme,
+    showTooltip,
+    showLabel,
+    labelFontSize = 11,
+    valueFormat,
+    onPointClick,
+  } = config;
+
+  const categories = data.map((d) => d.type);
+  const maxLeft = d3.max(data, (d) => Math.abs(d.left)) ?? 0;
+  const maxRight = d3.max(data, (d) => Math.abs(d.right)) ?? 0;
+  const maxVal = Math.max(maxLeft, maxRight, 1);
+  const margin = { ...cartesianMargin(false), left: 72, right: 72 };
+  const innerW = Math.max(0, width - margin.left - margin.right);
+  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  const centerX = innerW / 2;
+
+  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(0.22);
+  const xLeft = d3.scaleLinear().domain([0, maxVal]).range([centerX, 0]);
+  const xRight = d3.scaleLinear().domain([0, maxVal]).range([centerX, innerW]);
+  const leftColor = colors[0] ?? "#465fff";
+  const rightColor = colors[1] ?? "#12b76a";
+
+  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+  const plot = g.append("g");
+  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+
+  g.append("g").call(d3.axisLeft(y)).call(styleAxis, theme);
+  g.append("g")
+    .attr("transform", `translate(0,${innerH})`)
+    .call(
+      d3
+        .axisBottom(xRight)
+        .ticks(5)
+        .tickFormat((d) => formatChartValue(d, valueFormat)),
+    )
+    .call(styleAxis, theme);
+
+  plot
+    .append("line")
+    .attr("x1", centerX)
+    .attr("x2", centerX)
+    .attr("y1", 0)
+    .attr("y2", innerH)
+    .attr("stroke", theme.axisLine)
+    .attr("stroke-width", 1);
+
+  plot
+    .selectAll("rect.left-bar")
+    .data(data)
+    .join("rect")
+    .attr("class", "left-bar")
+    .attr("y", (d) => y(d.type) ?? 0)
+    .attr("height", y.bandwidth())
+    .attr("rx", BAR_RX)
+    .attr("fill", leftColor)
+    .attr("cursor", onPointClick ? "pointer" : "default")
+    .each(function (d) {
+      const x1 = xLeft(Math.abs(d.left));
+      const w = centerX - x1;
+      chartTransition(d3.select(this).attr("x", x1).attr("width", 0))
+        .duration(600)
+        .ease(d3.easeCubicOut)
+        .attr("width", w);
+    })
+    .on("click", (_event, d) => onPointClick?.(d));
+
+  plot
+    .selectAll("rect.right-bar")
+    .data(data)
+    .join("rect")
+    .attr("class", "right-bar")
+    .attr("x", centerX)
+    .attr("y", (d) => y(d.type) ?? 0)
+    .attr("height", y.bandwidth())
+    .attr("rx", BAR_RX)
+    .attr("fill", rightColor)
+    .attr("cursor", onPointClick ? "pointer" : "default")
+    .each(function (d) {
+      const w = xRight(Math.abs(d.right)) - centerX;
+      chartTransition(d3.select(this).attr("width", 0))
+        .duration(600)
+        .ease(d3.easeCubicOut)
+        .attr("width", w);
+    })
+    .on("click", (_event, d) => onPointClick?.(d));
+
+  if (showTooltip) {
+    const bindTooltip = (sel: d3.Selection<SVGRectElement, (typeof data)[0], SVGGElement, unknown>, side: "left" | "right") => {
+      sel
+        .on("mouseenter", function (_event, d) {
+          const value = side === "left" ? d.left : d.right;
+          tooltip
+            ?.style("opacity", "1")
+            .html(
+              `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
+                `<div>${side === "left" ? "左" : "右"} · <strong>${formatChartValue(value, valueFormat)}</strong></div>`,
+            );
+        })
+        .on("mousemove", (event) => {
+          const rect = container.getBoundingClientRect();
+          tooltip
+            ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
+            .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+        })
+        .on("mouseleave", () => tooltip?.style("opacity", "0"));
+    };
+    bindTooltip(plot.selectAll<SVGRectElement, (typeof data)[0]>("rect.left-bar"), "left");
+    bindTooltip(plot.selectAll<SVGRectElement, (typeof data)[0]>("rect.right-bar"), "right");
+  }
+
+  const legend = root.append("g").attr("transform", `translate(${margin.left},10)`);
+  [
+    { label: "左", color: leftColor },
+    { label: "右", color: rightColor },
+  ].forEach((item, i) => {
+    const gItem = legend.append("g").attr("transform", `translate(${i * 72},0)`);
+    gItem.append("rect").attr("width", 10).attr("height", 10).attr("y", 1).attr("rx", 2).attr("fill", item.color);
+    gItem.append("text").attr("x", 14).attr("y", 10).attr("fill", theme.legendText).style("font-size", "11px").text(item.label);
+  });
+
+  if (showLabel) {
+    plot
+      .selectAll("text.left-label")
+      .data(data)
+      .join("text")
+      .attr("class", "left-label")
+      .attr("x", (d) => xLeft(Math.abs(d.left)) - 4)
+      .attr("y", (d) => (y(d.type) ?? 0) + y.bandwidth() / 2)
+      .attr("dy", "0.32em")
+      .attr("text-anchor", "end")
+      .attr("fill", theme.axisLabel)
+      .style("font-size", `${labelFontSize}px`)
+      .text((d) => formatChartValue(d.left, valueFormat));
+    plot
+      .selectAll("text.right-label")
+      .data(data)
+      .join("text")
+      .attr("class", "right-label")
+      .attr("x", (d) => xRight(Math.abs(d.right)) + 4)
+      .attr("y", (d) => (y(d.type) ?? 0) + y.bandwidth() / 2)
+      .attr("dy", "0.32em")
+      .attr("text-anchor", "start")
+      .attr("fill", theme.axisLabel)
+      .style("font-size", `${labelFontSize}px`)
+      .text((d) => formatChartValue(d.right, valueFormat));
+  }
+
+  return () => container.replaceChildren();
+}

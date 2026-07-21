@@ -70,7 +70,7 @@ flowchart TB
 | ADR-11 | 前端 **单应用 + RBAC 菜单**（非 `/portal` 双 URL） | 对标 DE/SS 权限模型；M1 兼容 `/admin/*`；见 `layout.md` ADR | 已定 |
 | ADR-03 | 图表 **ChartEngine 抽象**；生产 **AntV**（G2Plot/G6/G2）；GIS 见 **ADR-12** | 业务层与具体库解耦；`buildEchartsOption` 仅测试/兼容 | 已定 |
 | ADR-12 | **地图仅离线中国 GeoJSON**（GEO-IRON-01） | 政企内网/合规；零瓦片 CDN、零地图 Key；禁止境外与在线底图 | 已定 |
-| ADR-13 | 前端 **`fe/src/components/charts/engine/`** 引擎端口 + registry | `CanvasChartHost` → `AntvEngineView`；`@antv/*` 仅 `engine/antv/**`；地图经 `GeoEnginePort`/`OfflineGeoAntVPort` | 已定 |
+| ADR-13 | 前端 **`fe/src/components/charts/engine/`** 引擎端口 + registry | `CanvasChartHost` → `ChartEngineView`；`@antv/*` 仅 `engine/antv/**`；地图经 `GeoEnginePort`/`OfflineGeoPort` | 已定 |
 | ADR-04 | **ConnectorRegistry** 插件式数据源 | NFR-04：新增类型不改核心服务与查询执行器 | 已定 |
 | ADR-05 | 查询双路径：**SqlCapable** + **NativeQuery** | 关系型/OLAP 走 SQL；时序/文档/搜索走原生 DSL | 已定 |
 | ADR-06 | 凭证 **Fernet** 加密（可换 KMS） | NFR-03；API 不返回明文密码 | 已定 |
@@ -82,7 +82,7 @@ flowchart TB
 ### ADR-12 · GEO-IRON-01（地图铁律）
 
 - **仅中国**：中华人民共和国省级行政区（可扩展省→市下钻，资产仍为离线 GeoJSON）
-- **仅离线**：`GeoEnginePort` / `OfflineGeoAntVPort` + 仓库内或平台分发的 `.json`；**禁止**运行时拉取瓦片 CDN
+- **仅离线**：`GeoEnginePort` / `OfflineGeoPort` + 仓库内或平台分发的 `.json`；**禁止**运行时拉取瓦片 CDN
 - **禁止**：高德/天地图/腾讯/Mapbox/MapLibre/OSM、AntV L7 在线 Scene、世界地图/境外行政区、地图 Key 配置项
 - **执行规则**：`.cursor/rules/geo-map-offline-china.mdc`（`alwaysApply: true`）
 

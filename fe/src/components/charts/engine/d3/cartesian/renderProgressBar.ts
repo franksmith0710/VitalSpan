@@ -1,0 +1,127 @@
+import * as d3 from "d3";
+import { chartTransition } from "@/components/charts/engine/d3/core/animate";
+import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
+import type { D3ProgressBarRenderConfig } from "@/components/charts/engine/d3/types";
+import { formatChartValue } from "@/lib/chartValueFormat";
+
+const BAR_RX = 6;
+
+export function renderD3ProgressBarChart(
+  container: HTMLElement,
+  config: D3ProgressBarRenderConfig,
+): () => void {
+  container.replaceChildren();
+  if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
+
+  const {
+    width,
+    height,
+    data,
+    colors,
+    theme,
+    showTooltip,
+    showLabel,
+    labelFontSize = 11,
+    valueFormat,
+    onPointClick,
+  } = config;
+
+  const categories = data.map((d) => d.type);
+  const maxLabelChars = categories.reduce((max, cat) => Math.max(max, String(cat).length), 0);
+  const baseMargin = cartesianMargin(false);
+  const margin = { ...baseMargin, left: Math.max(baseMargin.left, Math.min(140, maxLabelChars * 6.5 + 20)) };
+  const innerW = Math.max(0, width - margin.left - margin.right);
+  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  const fillColor = colors[0] ?? "#465fff";
+  const trackColor = theme.gridLine;
+
+  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(0.28);
+  const x = d3.scaleLinear().domain([0, 1]).range([0, innerW]);
+
+  const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+  const plot = g.append("g");
+  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+
+  g.append("g").call(d3.axisLeft(y)).call(styleAxis, theme);
+  g.append("g")
+    .attr("transform", `translate(0,${innerH})`)
+    .call(d3.axisBottom(x).ticks(5).tickFormat((d) => `${Math.round(Number(d) * 100)}%`))
+    .call(styleAxis, theme);
+
+  plot
+    .selectAll("rect.track")
+    .data(data)
+    .join("rect")
+    .attr("class", "track")
+    .attr("x", 0)
+    .attr("y", (d) => y(d.type) ?? 0)
+    .attr("width", innerW)
+    .attr("height", y.bandwidth())
+    .attr("rx", BAR_RX)
+    .attr("fill", trackColor)
+    .attr("opacity", 0.35);
+
+  plot
+    .selectAll("rect.progress")
+    .data(data)
+    .join("rect")
+    .attr("class", "progress")
+    .attr("y", (d) => y(d.type) ?? 0)
+    .attr("height", y.bandwidth())
+    .attr("rx", BAR_RX)
+    .attr("fill", fillColor)
+    .attr("cursor", onPointClick ? "pointer" : "default")
+    .each(function (d) {
+      const ratio = d.max > 0 ? d.value / d.max : 0;
+      const w = x(Math.min(1, Math.max(0, ratio)));
+      chartTransition(d3.select(this).attr("x", 0).attr("width", 0))
+        .duration(600)
+        .ease(d3.easeCubicOut)
+        .attr("width", w);
+    })
+    .on("click", (_e, d) => onPointClick?.(d));
+
+  if (showTooltip) {
+    plot
+      .selectAll<SVGRectElement, (typeof data)[number]>("rect.progress")
+      .on("mouseenter", (_e, d) => {
+        const pct = d.max > 0 ? (d.value / d.max) * 100 : 0;
+        tooltip
+          ?.style("opacity", "1")
+          .html(
+            `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
+              `<div>进度 <strong>${pct.toFixed(1)}%</strong></div>` +
+              `<div>数值 <strong>${formatChartValue(d.value, valueFormat)}</strong> / ${formatChartValue(d.max, valueFormat)}</div>`,
+          );
+      })
+      .on("mousemove", (event) => {
+        const rect = container.getBoundingClientRect();
+        tooltip
+          ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
+          .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+      })
+      .on("mouseleave", () => tooltip?.style("opacity", "0"));
+  }
+
+  if (showLabel) {
+    plot
+      .selectAll("text.progress-label")
+      .data(data)
+      .join("text")
+      .attr("class", "progress-label")
+      .attr("x", (d) => x(d.max > 0 ? d.value / d.max : 0) + 6)
+      .attr("y", (d) => (y(d.type) ?? 0) + y.bandwidth() / 2)
+      .attr("dy", "0.32em")
+      .attr("fill", theme.axisLabel)
+      .style("font-size", `${labelFontSize}px`)
+      .text((d) => {
+        const pct = d.max > 0 ? (d.value / d.max) * 100 : 0;
+        return `${pct.toFixed(0)}%`;
+      });
+  }
+
+  return () => container.replaceChildren();
+}

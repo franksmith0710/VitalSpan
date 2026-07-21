@@ -1,10 +1,10 @@
 import type { EngineCapabilities } from "@/components/charts/engine/capabilities";
-import type { AntvRenderPlan } from "@/components/charts/engine/antv/buildAntvSpec";
+import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import type { ChartViewModel } from "@/components/charts/engine/types";
 import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
-export type ChartLibrary = "g2plot" | "g6" | "g2" | "s2" | "react" | "d3";
+export type ChartLibrary = "d3" | "react";
 
 export type DePaletteCategory =
   | "quota"
@@ -20,15 +20,15 @@ export type ChartViewPlugin = {
   type: string;
   library: ChartLibrary;
   paletteCategory: DePaletteCategory;
-  renderer: "antv" | "table" | "kpi";
+  renderer: "antv" | "table";
   properties: ChartStyleSectionId[];
   engineCapabilities: EngineCapabilities;
   deprecated?: boolean;
   migratesTo?: string;
-  buildRenderPlan: (vm: ChartViewModel) => AntvRenderPlan;
+  buildRenderPlan: (vm: ChartViewModel) => ChartRenderPlan;
   setupDefaultConfig?: (cfg: ChartViewConfig) => ChartViewConfig;
 };
 
 export type ChartPluginDef = Omit<ChartViewPlugin, "buildRenderPlan"> & {
-  planKind?: "column" | "line" | "pie" | "dual" | "geo" | "graph" | "s2" | "kpi" | "custom";
+  planKind?: "column" | "line" | "pie" | "dual" | "geo" | "graph" | "table" | "kpi" | "custom";
 };

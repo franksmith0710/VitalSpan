@@ -183,7 +183,7 @@ export function DatasetSelector({
           type="button"
           variant="ghost"
           size="sm"
-          className="size-7 shrink-0 text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
+          className="size-6 shrink-0 text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
           aria-label="编辑数据集"
           asChild
         >
@@ -196,7 +196,7 @@ export function DatasetSelector({
           type="button"
           variant="ghost"
           size="sm"
-          className="size-7 shrink-0 text-gray-300 dark:text-gray-600"
+          className="size-6 shrink-0 text-gray-300 dark:text-gray-600"
           aria-label="编辑数据集"
           disabled
         >
@@ -208,7 +208,7 @@ export function DatasetSelector({
         type="button"
         variant="ghost"
         size="sm"
-        className="size-7 shrink-0 text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
+        className="size-6 shrink-0 text-gray-400 hover:text-brand-600 dark:hover:text-brand-400"
         aria-label="刷新数据集列表"
         onClick={() => onRefresh?.()}
         disabled={datasetsLoading}

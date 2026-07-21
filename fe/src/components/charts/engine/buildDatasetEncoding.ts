@@ -134,7 +134,12 @@ export function resolveSeriesLegendNames(
   columns: string[],
 ): string[] {
   const { chartType, encoding } = spec;
-  if (chartType === "pie" || chartType === "funnel") {
+  if (
+    chartType === "pie" ||
+    chartType.startsWith("pie-") ||
+    chartType === "funnel" ||
+    chartType === "radar"
+  ) {
     const dim = encoding.dimensions[0]?.field ?? "";
     const di = safeColIndex(columns, dim);
     if (di === null) return [];

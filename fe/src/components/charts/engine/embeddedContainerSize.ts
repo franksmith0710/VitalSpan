@@ -9,6 +9,36 @@ export function readEmbeddedContainerSize(
   return { width, height };
 }
 
+/** 像素画布 CSS scale 下用视觉尺寸反推绘制分辨率（对标 ECharts resize） */
+export function readChartPaintSize(
+  el: HTMLElement,
+  options: {
+    fill?: boolean;
+    visualScale?: number;
+    layoutFootprint?: { width: number; height: number };
+    width?: number;
+    height?: number;
+    observedWidth?: number;
+  } = {},
+): { width: number; height: number } | null {
+  const scale = options.visualScale && options.visualScale > 0 ? options.visualScale : 1;
+  if (options.fill) {
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      return {
+        width: Math.max(1, Math.round(rect.width / scale)),
+        height: Math.max(1, Math.round(rect.height / scale)),
+      };
+    }
+  }
+  const width = options.fill
+    ? el.clientWidth
+    : (options.width ?? options.observedWidth ?? el.clientWidth);
+  const height = options.fill ? el.clientHeight : (options.height ?? el.clientHeight);
+  if (width <= 0 || height <= 0) return null;
+  return { width: Math.round(width), height: Math.round(height) };
+}
+
 export function embeddedSizeChanged(
   next: { width: number; height: number },
   last: { width: number; height: number },

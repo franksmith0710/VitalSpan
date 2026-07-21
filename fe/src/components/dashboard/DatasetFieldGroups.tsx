@@ -110,7 +110,7 @@ export function DatasetFieldGroups({
 
   return (
     <div className={cn("flex min-w-0 flex-col", className)}>
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-3 py-2 dark:border-white/[0.06]">
+      <div className="flex shrink-0 items-center justify-between gap-1.5 border-b border-gray-100 px-2 py-1.5 dark:border-white/[0.06]">
         <h4 className="text-theme-xs font-semibold text-gray-800 dark:text-white/90">字段</h4>
         <Button
           type="button"
@@ -124,7 +124,7 @@ export function DatasetFieldGroups({
           <RefreshCw className={cn("size-3.5", columnsLoading && "animate-spin")} aria-hidden />
         </Button>
       </div>
-      <div className="shrink-0 px-3 py-2" onPointerDown={(event) => event.stopPropagation()}>
+      <div className="shrink-0 px-2 py-1.5" onPointerDown={(event) => event.stopPropagation()}>
         <SearchField
           value={search}
           onChange={setSearch}

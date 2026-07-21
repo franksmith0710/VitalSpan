@@ -59,7 +59,7 @@ export function ChartInspectorTabs({
         ? "grid-cols-2"
         : "grid-cols-3";
 
-  const panelClass = cn(tabPanelScrollClass(scrollMode), "px-2 py-1.5");
+  const panelClass = cn(tabPanelScrollClass(scrollMode), "px-2.5 py-1.5");
 
   if (visibleTabs.length === 0) {
     return null;

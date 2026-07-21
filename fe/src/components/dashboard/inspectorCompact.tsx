@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-/** 看板 chart-edit 窄栏（~216px）紧凑密度，对标 DataEase editor-light */
+/** 看板 chart-edit 左列（~252px）/ 右列（~180px）紧凑密度，对标 DataEase editor-light */
 export const INSPECTOR_CTRL = "h-8 rounded-md text-theme-xs";
 export const INSPECTOR_SELECT = cn(INSPECTOR_CTRL, "w-full");
 /** 覆盖 ui/select 默认 h-11·px-4，216px 栏内下拉统一外观 */

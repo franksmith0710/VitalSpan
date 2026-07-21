@@ -3,6 +3,7 @@ import { safeColIndex } from "@/components/charts/engine/buildDatasetEncoding";
 
 export type AntvPieRow = { type: string; value: number };
 
+/** 按维度聚合指标（与笛卡尔图 sumAt 语义一致） */
 export function encodePieRows(
   spec: RenderSpec,
   rows: unknown[][],
@@ -13,8 +14,11 @@ export function encodePieRows(
   const di = safeColIndex(columns, dim);
   const mi = safeColIndex(columns, metric);
   if (di === null || mi === null) return [];
-  return rows.map((r) => ({
-    type: String(r[di] ?? ""),
-    value: mi !== null ? Number(r[mi] ?? 0) : 0,
-  }));
+
+  const totals = new Map<string, number>();
+  for (const row of rows) {
+    const key = String(row[di] ?? "");
+    totals.set(key, (totals.get(key) ?? 0) + Number(row[mi] ?? 0));
+  }
+  return [...totals.entries()].map(([type, value]) => ({ type, value }));
 }

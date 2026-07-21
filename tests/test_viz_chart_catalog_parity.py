@@ -37,3 +37,29 @@ def test_deprecated_types_declare_valid_migrates_to():
             continue
         assert target, entry["type"]
         assert target in types, f"{entry['type']} → {target}"
+
+
+def test_field_rules_match_fe_snapshot():
+    """FE chartCatalogBackendFieldRules.ts must stay in sync with backend catalog."""
+    from pathlib import Path
+
+    register_builtin_chart_types()
+    backend_rules = {
+        entry["type"]: entry["fieldRule"] for entry in export_chart_type_catalog()
+    }
+    fe_path = (
+        Path(__file__).resolve().parents[1]
+        / "fe"
+        / "src"
+        / "components"
+        / "charts"
+        / "chartCatalogBackendFieldRules.ts"
+    )
+    text = fe_path.read_text(encoding="utf-8")
+    for chart_type, rule in backend_rules.items():
+        assert chart_type in text, f"missing type {chart_type} in FE snapshot"
+        assert f"minDimensions: {rule['minDimensions']}" in text
+        assert f"maxDimensions: {rule['maxDimensions']}" in text
+        assert f"minMetrics: {rule['minMetrics']}" in text
+        assert f"maxMetrics: {rule['maxMetrics']}" in text
+

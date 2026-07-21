@@ -1,6 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { fetchChartTypeCatalog } from "@/lib/chartRegistry";
-import { buildBarOption } from "@/components/charts/adapters/renderFromSpec";
 
 const mockApiFetch = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
@@ -22,7 +21,7 @@ describe("chartRegistry", () => {
         type: "map",
         displayName: "地图",
         category: "geo",
-        renderer: "echarts",
+        renderer: "antv",
         styleVariants: ["default"],
         fieldRule: { minDimensions: 1 },
       },
@@ -30,7 +29,7 @@ describe("chartRegistry", () => {
         type: "sankey",
         displayName: "桑基",
         category: "flow",
-        renderer: "echarts",
+        renderer: "antv",
         styleVariants: ["default"],
         fieldRule: {},
       },
@@ -38,7 +37,7 @@ describe("chartRegistry", () => {
         type: "funnel",
         displayName: "漏斗",
         category: "flow",
-        renderer: "echarts",
+        renderer: "antv",
         styleVariants: ["default"],
         fieldRule: {},
       },
@@ -46,7 +45,7 @@ describe("chartRegistry", () => {
         type: "graph",
         displayName: "关系",
         category: "relation",
-        renderer: "echarts",
+        renderer: "antv",
         styleVariants: ["default"],
         fieldRule: {},
       },
@@ -54,7 +53,7 @@ describe("chartRegistry", () => {
         type: "gauge",
         displayName: "仪表",
         category: "advanced",
-        renderer: "echarts",
+        renderer: "antv",
         styleVariants: ["default"],
         fieldRule: {},
       },
@@ -62,7 +61,7 @@ describe("chartRegistry", () => {
         type: "line",
         displayName: "折线",
         category: "basic",
-        renderer: "echarts",
+        renderer: "antv",
         styleVariants: ["default"],
         fieldRule: {},
       },
@@ -70,7 +69,7 @@ describe("chartRegistry", () => {
         type: "bar",
         displayName: "柱",
         category: "basic",
-        renderer: "echarts",
+        renderer: "antv",
         styleVariants: ["default", "stacked"],
         fieldRule: {},
       },
@@ -78,7 +77,7 @@ describe("chartRegistry", () => {
         type: "pie",
         displayName: "饼",
         category: "basic",
-        renderer: "echarts",
+        renderer: "antv",
         styleVariants: ["default"],
         fieldRule: {},
       },
@@ -89,99 +88,7 @@ describe("chartRegistry", () => {
   });
 });
 
-import { getEchartsTheme } from "@/lib/echarts-theme";
-
-describe("echarts-theme", () => {
-  it("T-VIZ-R43-003-03: echarts-theme 暗色 label 色非空", () => {
-    const theme = getEchartsTheme("dark");
-    const textStyle = theme.textStyle as { color?: string };
-    expect(textStyle?.color).toBeTruthy();
-    expect(textStyle?.color).not.toBe("#ffffff"); // @design-token-ok test assertion
-  });
-});
-
-import { buildEchartsOption, type RenderSpec } from "@/components/charts/adapters/renderFromSpec";
-
-describe("renderFromSpec", () => {
-  it("T-VIZ-R43-008-01: funnel 合法 spec+rows → series[0].type===funnel", () => {
-    const spec: RenderSpec = {
-      engine: "echarts",
-      chartType: "funnel",
-      styleVariant: "default",
-      encoding: { dimensions: [{ field: "stage" }], metrics: [{ field: "value" }] },
-      source: {},
-    };
-    const columns = ["stage", "value"];
-    const rows = [["A", 100], ["B", 60], ["C", 30]];
-    const option = buildEchartsOption(spec, rows, columns);
-    expect((option.series as Array<{ type: string }>)[0].type).toBe("funnel");
-  });
-
-  it("T-VIZ-R43-008-02: graph 201 节点 → option 节点数 ≤200", () => {
-    const spec: RenderSpec = {
-      engine: "echarts",
-      chartType: "graph",
-      styleVariant: "default",
-      encoding: {
-        dimensions: [{ field: "src" }, { field: "dst" }],
-        metrics: [{ field: "w" }],
-      },
-      source: {},
-    };
-    const columns = ["src", "dst", "w"];
-    const rows = Array.from({ length: 201 }, (_, i) => [`n${i}`, `n${i + 1}`, 1]);
-    const option = buildEchartsOption(spec, rows, columns);
-    const nodes = (option.series as Array<{ data: unknown[] }>)[0].data;
-    expect(nodes.length).toBeLessThanOrEqual(200);
-  });
-});
-
-vi.mock("echarts-for-react", () => ({
-  default: () => <div data-testid="echarts-chart" />,
-}));
-
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
-import { AdvancedEchartsChart } from "@/components/charts/adapters/AdvancedEchartsChart";
-
-describe("AdvancedEchartsChart", () => {
-  it("T-VIZ-R43-003-01: map + 3 省 mock → echarts 容器", () => {
-    const option = buildEchartsOption(
-      {
-        engine: "echarts",
-        chartType: "map",
-        styleVariant: "default",
-        encoding: { dimensions: [{ field: "region" }], metrics: [{ field: "v" }] },
-        source: {},
-      },
-      [
-        ["北京市", 1],
-        ["上海", 2],
-        ["广东", 3],
-      ],
-      ["region", "v"],
-    );
-    const series = (option.series as Array<{ type: string; data: Array<{ name: string }> }>)[0];
-    expect(series.type).toBe("map");
-    expect(series.data[0].name).toBe("北京市");
-
-    render(
-      <AdvancedEchartsChart
-        spec={{
-          engine: "echarts",
-          chartType: "map",
-          styleVariant: "default",
-          encoding: { dimensions: [{ field: "region" }], metrics: [{ field: "v" }] },
-          source: {},
-        }}
-        rows={[["北京", 1], ["上海", 2], ["广东", 3]]}
-        columns={["region", "v"]}
-        ariaLabel="地图"
-      />,
-    );
-    expect(screen.getByTestId("antv-map-chart")).toBeInTheDocument();
-  });
-});
-
 import userEvent from "@testing-library/user-event";
 import { ChartConfigPanel } from "@/components/charts/ChartConfigPanel";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -305,7 +212,7 @@ describe("ChartRenderer advanced", () => {
       metrics: [{ field: "value" }],
     };
     render(<ChartRenderer config={cfg} />);
-    expect(await screen.findByTestId("antv-g2plot-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("d3-funnel-chart")).toBeInTheDocument();
   });
 
   it("T-VIZ-R43-005-03: 501 行 → 警告 + 渲染不抛错", async () => {
@@ -321,7 +228,7 @@ describe("ChartRenderer advanced", () => {
     };
     render(<ChartRenderer config={cfg} />);
     expect(await screen.findByRole("status")).toHaveTextContent(/500/);
-    expect(screen.getByTestId("antv-g2plot-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("d3-funnel-chart")).toBeInTheDocument();
   });
 });
 
@@ -357,7 +264,9 @@ describe("Embed", () => {
   });
 
   it("T-VIZ-R43-006-02: 合法配置 → iframe title 可访问", async () => {
-    mockApiFetch.mockResolvedValueOnce({});
+    mockApiFetch
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ token: "t", embedUrl: "/embed/chart/t" });
     render(
       <MemoryRouter>
         <EmbedSharePanel />
@@ -377,7 +286,7 @@ describe("ChartRenderer extended", () => {
   });
   afterEach(() => cleanup());
 
-  it("T-VIZ-R43-004-01: sankey 2 维+1 度量 → echarts 容器", async () => {
+  it("T-VIZ-R43-004-01: sankey 2 维+1 度量 → d3 容器", async () => {
     mockApiFetch.mockResolvedValueOnce({
       columns: ["src", "dst", "amt"],
       rows: [["A", "B", 10]],
@@ -391,7 +300,7 @@ describe("ChartRenderer extended", () => {
       metrics: [{ field: "amt" }],
     };
     render(<ChartRenderer config={cfg} />);
-    expect(await screen.findByTestId("antv-g2plot-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("d3-sankey-chart")).toBeInTheDocument();
   });
 
   it("T-VIZ-R43-005-01: funnel 3 阶段 mock → 漏斗 series 可见", async () => {
@@ -408,31 +317,24 @@ describe("ChartRenderer extended", () => {
       metrics: [{ field: "value" }],
     };
     render(<ChartRenderer config={cfg} />);
-    expect(await screen.findByTestId("antv-g2plot-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("d3-funnel-chart")).toBeInTheDocument();
   });
 });
 
-describe("bar stacked options", () => {
-  it("T-VIZ-R43-004-03: bar stacked mock → ECharts series stack", () => {
-    const opts = buildBarOption(
-      {
-        engine: "echarts",
-        chartType: "bar",
-        styleVariant: "stacked",
-        encoding: {
-          dimensions: [{ field: "x" }],
-          metrics: [{ field: "a" }, { field: "b" }],
-        },
-        source: {},
-      },
-      [["a", 1, 2]],
-      ["x", "a", "b"],
-    );
-    expect((opts.series as Array<{ stack?: string }>)[0].stack).toBe("total");
+import { isKnownChartType } from "@/lib/chartRegistry";
+import { getFallbackChartType } from "@/lib/chartFallback";
+
+describe("VIZ-003 未知 chartType 降级", () => {
+  it("T-VIZ-R250-003-01: isKnownChartType('line')→true; isKnownChartType('unknown_xyz')→false", () => {
+    expect(isKnownChartType("line")).toBe(true);
+    expect(isKnownChartType("unknown_xyz")).toBe(false);
+  });
+
+  it("T-VIZ-R250-003-03: getFallbackChartType('line')→'line'; getFallbackChartType('xyz')→'table-info'", () => {
+    expect(getFallbackChartType("line")).toBe("line");
+    expect(getFallbackChartType("unknown_xyz")).toBe("table-info");
   });
 });
-
-import { buildTimeRangeParameters } from "@/components/charts/useChartExecute";
 
 describe("buildTimeRangeParameters", () => {
   it("T-VIZ-R237-005-06: native mode does not require time params in execute body", () => {
@@ -442,122 +344,4 @@ describe("buildTimeRangeParameters", () => {
   });
 });
 
-// ─── VIZ-003/004/008 r250 补强 ──────────────────────────────────────────────
-
-import { isKnownChartType } from "@/lib/chartRegistry";
-import { getFallbackChartType } from "@/components/charts/adapters/renderFromSpec";
-
-describe("VIZ-003 未知 chartType 降级", () => {
-  it("T-VIZ-R250-003-01: isKnownChartType('line')→true; isKnownChartType('unknown_xyz')→false", () => {
-    expect(isKnownChartType("line")).toBe(true);
-    expect(isKnownChartType("unknown_xyz")).toBe(false);
-  });
-
-  it("T-VIZ-R250-003-03: getFallbackChartType('line')→'line'; getFallbackChartType('xyz')→'table'", () => {
-    expect(getFallbackChartType("line")).toBe("line");
-    expect(getFallbackChartType("unknown_xyz")).toBe("table");
-  });
-
-  it("T-VIZ-R250-003-02: buildEchartsOption unknown_xyz → series 为空数组（table fallback）", () => {
-    const spec: RenderSpec = {
-      engine: "echarts",
-      chartType: "unknown_xyz",
-      styleVariant: "default",
-      encoding: { dimensions: [{ field: "d" }], metrics: [{ field: "m" }] },
-      source: {},
-    };
-    const option = buildEchartsOption(spec, [["A", 1]], ["d", "m"]);
-    expect(Array.isArray((option as { series?: unknown[] }).series)).toBe(true);
-    expect((option as { series?: unknown[] }).series!.length).toBe(0);
-  });
-});
-
-describe("VIZ-004 样式子类型 smoke", () => {
-  it("T-VIZ-R250-004-01: buildEchartsOption bar stacked → series[0].stack 非空", () => {
-    const spec: RenderSpec = {
-      engine: "echarts",
-      chartType: "bar",
-      styleVariant: "stacked",
-      encoding: { dimensions: [{ field: "cat" }], metrics: [{ field: "val" }] },
-      source: {},
-    };
-    const option = buildEchartsOption(spec, [["A", 10], ["B", 20]], ["cat", "val"]);
-    const s = (option.series as Array<{ stack?: string }>)[0];
-    expect(s.stack).toBeTruthy();
-  });
-
-  it("T-VIZ-R250-004-02: buildEchartsOption pie donut → series[0].radius 为长度 2 数组", () => {
-    const spec: RenderSpec = {
-      engine: "echarts",
-      chartType: "pie",
-      styleVariant: "donut",
-      encoding: { dimensions: [{ field: "name" }], metrics: [{ field: "val" }] },
-      source: {},
-    };
-    const option = buildEchartsOption(spec, [["A", 10]], ["name", "val"]);
-    const radius = (option.series as Array<{ radius?: unknown }>)[0].radius;
-    expect(Array.isArray(radius)).toBe(true);
-    expect((radius as unknown[]).length).toBe(2);
-  });
-
-  it("T-VIZ-R250-004-03: buildEchartsOption pie donut innerRadiusPercent → 内径可配置", () => {
-    const spec: RenderSpec = {
-      engine: "echarts",
-      chartType: "pie",
-      styleVariant: "donut",
-      encoding: { dimensions: [{ field: "name" }], metrics: [{ field: "val" }] },
-      source: {},
-    };
-    const option = buildEchartsOption(spec, [["A", 10]], ["name", "val"], {
-      pie: { innerRadiusPercent: 52 },
-    });
-    const radius = (option.series as Array<{ radius?: string[] }>)[0].radius;
-    expect(radius).toEqual(["52%", "70%"]);
-  });
-});
-
-describe("VIZ-008 空数据 + 异常态", () => {
-  it("T-VIZ-R250-008-01: buildEchartsOption rows=[] → series 为 [] 不抛错", () => {
-    const spec: RenderSpec = {
-      engine: "echarts",
-      chartType: "funnel",
-      styleVariant: "default",
-      encoding: { dimensions: [{ field: "stage" }], metrics: [{ field: "value" }] },
-      source: {},
-    };
-    let option: ReturnType<typeof buildEchartsOption> | undefined;
-    expect(() => {
-      option = buildEchartsOption(spec, [], ["stage", "value"]);
-    }).not.toThrow();
-    expect((option as { series?: unknown[] })?.series?.length).toBe(0);
-  });
-
-  it("T-VIZ-R250-008-03: buildEchartsOption map rows=[] → 中国轮廓占位", () => {
-    const spec: RenderSpec = {
-      engine: "echarts",
-      chartType: "map",
-      styleVariant: "default",
-      encoding: { dimensions: [{ field: "region" }], metrics: [{ field: "val" }] },
-      source: {},
-    };
-    const option = buildEchartsOption(spec, [], ["region", "val"]) as Record<string, unknown>;
-    expect(option.__vsGeoMapPlaceholder).toBe(true);
-    expect((option.series as Array<{ type: string }>)[0].type).toBe("map");
-  });
-
-  it("T-VIZ-R250-008-04: buildEchartsOption heatmap rows=[] → 空热力网格占位", () => {
-    const spec: RenderSpec = {
-      engine: "echarts",
-      chartType: "heatmap",
-      styleVariant: "default",
-      encoding: {
-        dimensions: [{ field: "x" }, { field: "y" }],
-        metrics: [{ field: "val" }],
-      },
-      source: {},
-    };
-    const option = buildEchartsOption(spec, [], ["x", "y", "val"]) as Record<string, unknown>;
-    expect(option.__vsGeoHeatmapPlaceholder).toBe(true);
-    expect((option.series as Array<{ type: string }>)[0].type).toBe("heatmap");
-  });
-});
+import { buildTimeRangeParameters } from "@/components/charts/useChartExecute";

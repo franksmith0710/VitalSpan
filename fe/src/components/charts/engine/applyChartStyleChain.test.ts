@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { applyChartStyleChain } from "@/components/charts/engine/applyChartStyleChain";
-import type { AntvRenderPlan } from "@/components/charts/engine/antv/buildAntvSpec";
+import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import type { ChartStyleContext } from "@/components/charts/engine/types";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
-const basePlan: AntvRenderPlan = {
-  kind: "g2plot",
+const basePlan: ChartRenderPlan = {
+  kind: "d3",
   plotType: "Column",
   options: {
     data: [
@@ -47,16 +47,12 @@ const barConfig: ChartViewConfig = {
 };
 
 describe("applyChartStyleChain", () => {
-  it("maps conditional rules to G2Plot columnStyle", () => {
+  it("passes conditional rules into d3 plan options", () => {
     const next = applyChartStyleChain(basePlan, baseStyle, barConfig);
-    expect(typeof next.options.columnStyle).toBe("function");
-    const styled = (
-      next.options.columnStyle as (datum: Record<string, unknown>) => { fill?: string }
-    )({ y: 30 });
-    expect(styled.fill).toBe("#12b76a");
+    expect(next.options.__conditionalRules).toHaveLength(1);
   });
 
-  it("prefers conditional columnStyle over seriesColor palette", () => {
+  it("prefers conditional rules over seriesColor palette injection", () => {
     const styleWithSeries: ChartStyleContext = {
       ...baseStyle,
       chartColors: [],
@@ -66,7 +62,6 @@ describe("applyChartStyleChain", () => {
     };
     const next = applyChartStyleChain(basePlan, styleWithSeries, barConfig);
     expect(next.options.color).toBeUndefined();
-    expect(typeof next.options.columnStyle).toBe("function");
+    expect(next.options.__conditionalRules).toHaveLength(1);
   });
-
 });

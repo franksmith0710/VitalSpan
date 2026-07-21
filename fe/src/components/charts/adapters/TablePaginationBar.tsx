@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/button";
 import { dwTableMeta } from "@/components/dashboard/dashboardWidgetTypography";
+import { cn } from "@/lib/utils";
 import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { DEFAULT_TABLE_PAGE_SIZE } from "@/lib/chartDeTableStyle";
 
@@ -30,42 +31,46 @@ export function TablePaginationBar({
   if (paginationVariant === "compact") {
     return (
       <div
-        className="flex shrink-0 items-center justify-between gap-1 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-2 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
+        className="flex shrink-0 items-center justify-between gap-2 border-t border-[var(--dashboard-table-border,#f2f4f7)] bg-[var(--dashboard-table-footer-bg,var(--dashboard-table-header-bg,#f9fafb))] px-2.5 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
         style={fontStyle}
         data-testid="table-pagination-compact"
       >
-        <IconButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="size-8"
-          disabled={page <= 1}
-          aria-label="上一页"
-          onClick={() => onPageChange(page - 1)}
-        >
-          <ChevronLeft className="size-4" />
-        </IconButton>
-        <span className={dwTableMeta}>
-          {page}/{totalPages} · {pageSize || DEFAULT_TABLE_PAGE_SIZE}条/页
-        </span>
-        <IconButton
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="size-8"
-          disabled={page >= totalPages}
-          aria-label="下一页"
-          onClick={() => onPageChange(page + 1)}
-        >
-          <ChevronRight className="size-4" />
-        </IconButton>
+        <span className={dwTableMeta}>共 {totalRows.toLocaleString("zh-CN")} 条</span>
+        <div className="flex items-center gap-0.5">
+          <IconButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="size-8"
+            disabled={page <= 1}
+            aria-label="上一页"
+            onClick={() => onPageChange(page - 1)}
+          >
+            <ChevronLeft className="size-4" />
+          </IconButton>
+          <span className={cn(dwTableMeta, "min-w-[4.5rem] text-center tabular-nums")}>
+            {page}/{totalPages}
+          </span>
+          <IconButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="size-8"
+            disabled={page >= totalPages}
+            aria-label="下一页"
+            onClick={() => onPageChange(page + 1)}
+          >
+            <ChevronRight className="size-4" />
+          </IconButton>
+        </div>
+        <span className={dwTableMeta}>{pageSize || DEFAULT_TABLE_PAGE_SIZE} 条/页</span>
       </div>
     );
   }
 
   return (
     <div
-      className="mt-1 flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--dashboard-table-border,#f2f4f7)] px-2 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
+      className="flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--dashboard-table-border,#f2f4f7)] bg-[var(--dashboard-table-footer-bg,var(--dashboard-table-header-bg,#f9fafb))] px-2.5 py-1.5 text-[var(--dashboard-table-pagination-fg,inherit)]"
       style={fontStyle}
       data-testid="table-pagination-normal"
     >
@@ -80,7 +85,7 @@ export function TablePaginationBar({
         上一页
       </Button>
       <span className={dwTableMeta}>
-        第 {page}/{totalPages} 页，共 {totalRows} 条
+        第 {page}/{totalPages} 页，共 {totalRows.toLocaleString("zh-CN")} 条
       </span>
       <Button
         type="button"

@@ -17,18 +17,22 @@ vi.mock("@/lib/api", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/chartRegistry", () => ({
-  fetchChartTypeCatalog: vi.fn().mockResolvedValue([
-    {
-      type: "bar",
-      displayName: "柱状图",
-      category: "basic",
-      renderer: "echarts",
-      styleVariants: ["default", "stacked"],
-      fieldRule: {},
-    },
-  ]),
-}));
+vi.mock("@/lib/chartRegistry", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/chartRegistry")>();
+  return {
+    ...actual,
+    fetchChartTypeCatalog: vi.fn().mockResolvedValue([
+      {
+        type: "bar",
+        displayName: "柱状图",
+        category: "basic",
+        renderer: "antv",
+        styleVariants: ["default", "stacked"],
+        fieldRule: {},
+      },
+    ]),
+  };
+});
 
 vi.mock("@/lib/datasetChartBinding", () => ({
   resolveDatasetChartBinding: vi.fn().mockImplementation(

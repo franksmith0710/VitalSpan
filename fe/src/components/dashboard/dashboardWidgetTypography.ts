@@ -72,8 +72,8 @@ export const dwCaption =
 export const dwHint =
   "text-sm leading-snug text-[var(--dashboard-text-muted,#667085)]";
 
-/** 看板内嵌表格单元格 */
-export const dwTableCell = "px-2.5 py-1.5 text-theme-sm tabular-nums";
+/** 看板内嵌表格单元格（对标 DE 行高与密度） */
+export const dwTableCell = "px-3 py-2 text-theme-sm tabular-nums";
 
 /** 表格分页、页码等元信息 */
 export const dwTableMeta =

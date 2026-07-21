@@ -5,7 +5,7 @@ import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import type { ColorScheme, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartLegendItem } from "@/lib/chartLegendItems";
 
-export type ChartEngineId = "echarts" | "antv" | "table" | "kpi";
+export type ChartEngineId = "antv" | "table";
 
 export type VizDataset = {
   columns: string[];

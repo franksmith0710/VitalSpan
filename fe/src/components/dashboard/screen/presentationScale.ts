@@ -85,3 +85,8 @@ export function resolveDataScreenViewportOffsets(
     offsetY: scaledHeight > viewportHeight ? 0 : base.translateY,
   };
 }
+
+/** 编辑视口：画布原点贴齐视口左上（不居中留白），与 DE 编辑相机一致 */
+export function resolveDataScreenEditViewportOffsets(): { offsetX: number; offsetY: number } {
+  return { offsetX: 0, offsetY: 0 };
+}

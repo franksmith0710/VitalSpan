@@ -22,19 +22,6 @@ vi.mock("@/context/auth-context", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-vi.mock("echarts-for-react", () => ({
-  default: ({ option, onEvents }: { option?: { series?: unknown[] }; onEvents?: { click?: (p: { name?: string }) => void } }) => (
-    <div
-      data-testid="theme-geo-map"
-      role="img"
-      aria-label="GIS mock map"
-      onClick={() => onEvents?.click?.({ name: "广东" })}
-    >
-      mock-map:{String((option?.series as unknown[])?.length ?? 0)}
-    </div>
-  ),
-}));
-
 vi.mock("@/assets/geo/china-provinces.json", () => ({
   default: {
     type: "FeatureCollection",
@@ -195,7 +182,7 @@ describe("ThemeAnalysisPage smoke", () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole("tab", { name: "分析" }));
     expect(await screen.findByText("GIS 分布")).toBeInTheDocument();
-    expect(await screen.findByTestId("theme-geo-map")).toBeInTheDocument();
+    expect(await screen.findByTestId("d3-map-chart")).toBeInTheDocument();
   });
 
   it("viewer sees read-only message on config tab", async () => {

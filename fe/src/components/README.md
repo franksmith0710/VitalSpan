@@ -36,12 +36,14 @@
 | PaginationBar | `ui/pagination-bar.tsx` | 列表底部分页（上一页/下一页/每页条数） |
 | AdminLayout | `../layouts/AdminLayout.tsx` | `/admin/*` 布局入口 |
 | ChartPanel | `charts/ChartPanel.tsx` | 图表壳：loading/empty/error |
-| ChartRenderer | `charts/ChartRenderer.tsx` | 引擎无关编排：table/kpi 分支 + `CanvasChartHost`（VIZ-002/003） |
-| CanvasChartHost | `charts/engine/CanvasChartHost.tsx` | 生产画布入口 → `AntvEngineView`（**仅 AntV**） |
-| AntvEngineView | `charts/engine/antv/AntvEngineView.tsx` | G2Plot / S2 / G6 / G2 离线地图分发 |
-| `engine/echarts/` | `charts/engine/echarts/**` | **遗留**（已迁 AntV；`geoMapChart` 地名工具仍被 AntV 地图引用；待归档删除） |
-| AdvancedEchartsChart | `charts/adapters/AdvancedEchartsChart.tsx` | **deprecated**；内部已转 `CanvasChartHost` |
-| KpiCard | `charts/adapters/KpiCard.tsx` | KPI 指标卡（1–4 metrics，DASH-003）；供 `ChartRenderer` |
+| ChartRenderer | `charts/ChartRenderer.tsx` | 引擎无关编排：legacy table 分支 + `CanvasChartHost`（VIZ-002/003） |
+| CanvasChartHost | `charts/engine/CanvasChartHost.tsx` | 生产画布入口 → `ChartEngineView` → `D3ViewRouter` |
+| ChartEngineView | `charts/engine/ChartEngineView.tsx` | 画布图表统一渲染入口（D3 单轨） |
+| engine README | `charts/engine/README.md` | 渲染管线与门禁说明 |
+| `engine/d3/` | `charts/engine/d3/**` | D3 渲染：画布图 + 自研表格 + 地图 |
+| `engine/geo/` | `charts/engine/geo/**` | 离线中国地图数据 join / 下钻层级 / `OfflineGeoPort` |
+| VitalSpanTable | `charts/engine/d3/table/VitalSpanTable.tsx` | 自研明细/汇总表（D3 引擎域） |
+| EmbeddedChartTable | `charts/adapters/EmbeddedChartTable.tsx` | legacy `table` 薄壳 → `VitalSpanTable` |
 | ChartConfigPanel | `charts/ChartConfigPanel.tsx` | 字段 + styleVariant 配置 |
 | EmbedChartPage | `../embed/EmbedChartPage.tsx` | `/embed/chart/:chartId` |
 | EmbedSharePanel | `../embed/EmbedSharePanel.tsx` | `/embed/share` origin 配置 |

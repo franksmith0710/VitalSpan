@@ -5,15 +5,17 @@ import {
   buildGeoHeatmapPlaceholderEchartsOption,
   buildGeoMapEchartsOption,
   buildGeoMapPlaceholderEchartsOption,
-  DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT,
-  DEFAULT_GEO_MAP_PLACEHOLDER_HINT,
   isGeoHeatmapPlaceholderOption,
   isGeoMapPlaceholderOption,
-  MAP_REGION_NAME_HINT,
   resolveEmbeddedGeoRoam,
   type GeoChartStyle,
   VS_REGIONS_MAP_ID,
-} from "@/components/charts/engine/echarts/geo/geoMapChart";
+} from "@/components/charts/engine/geo/geoMapChart";
+import {
+  DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT,
+  DEFAULT_GEO_MAP_PLACEHOLDER_HINT,
+  MAP_REGION_NAME_HINT,
+} from "@/components/charts/engine/geo/geoConstants";
 
 export type GeoMapBuildInput = {
   rows: unknown[][];
@@ -65,7 +67,8 @@ export type GeoEnginePort = {
   resolveEmbeddedRoam(roam: boolean | undefined): boolean;
 };
 
-export const echartsGeoEngine: GeoEnginePort = {
+/** @deprecated ECharts option 形态；仅测试与历史占位契约保留 */
+export const legacyGeoOptionEngine: GeoEnginePort = {
   mapId: VS_REGIONS_MAP_ID,
   buildMapOption: (input) =>
     buildGeoMapEchartsOption({
@@ -109,6 +112,9 @@ export const echartsGeoEngine: GeoEnginePort = {
   resolveEmbeddedRoam: resolveEmbeddedGeoRoam,
 };
 
+/** @deprecated 使用 legacyGeoOptionEngine */
+export const echartsGeoEngine = legacyGeoOptionEngine;
+
 export {
   buildGeoMapEchartsOption,
   buildGeoMapPlaceholderEchartsOption,
@@ -117,9 +123,12 @@ export {
   DEFAULT_GEO_MAP_PLACEHOLDER_HINT,
   DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT,
   MAP_REGION_NAME_HINT,
-} from "@/components/charts/engine/echarts/geo/geoMapChart";
+} from "@/components/charts/engine/geo/geoMapChart";
 
-export { antvGeoEngine } from "@/components/charts/engine/antv/geo/OfflineGeoAntVPort";
+export {
+  offlineGeoEngine,
+  antvGeoEngine,
+} from "@/components/charts/engine/geo/OfflineGeoPort";
 
-/** 当前生产地图引擎（AntV 离线 GeoJSON） */
-export { antvGeoEngine as activeGeoEngine } from "@/components/charts/engine/antv/geo/OfflineGeoAntVPort";
+/** 当前生产地图引擎（离线 GeoJSON + D3 choropleth） */
+export { offlineGeoEngine as activeGeoEngine } from "@/components/charts/engine/geo/OfflineGeoPort";

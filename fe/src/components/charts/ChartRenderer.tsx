@@ -2,10 +2,9 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode
 import { buildChartRenderModel } from "@/lib/buildChartRenderModel";
 import { resolveChartConfigPhase } from "@/lib/chartConfigState";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
-import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT, MAP_REGION_NAME_HINT, antvGeoEngine } from "@/components/charts/engine/geoEnginePort";
+import { DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT, DEFAULT_GEO_MAP_PLACEHOLDER_HINT, MAP_REGION_NAME_HINT, activeGeoEngine } from "@/components/charts/engine/geoEnginePort";
 import {
   isCanvasChartType,
-  isKpiType,
   isCartesianRowLimitedType,
   isGeoMapChartType,
   isLegacyTableChartType,
@@ -47,7 +46,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmbeddedChartTable } from "./adapters/EmbeddedChartTable";
-import { KpiCard } from "./adapters/KpiCard";
 import { ChartConfigPanel } from "./ChartConfigPanel";
 import { ChartPanel } from "./ChartPanel";
 import { CHART_EXECUTE_LIMIT, useChartExecute } from "./useChartExecute";
@@ -372,7 +370,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     if (!phase.renderReady) return DEFAULT_GEO_MAP_PLACEHOLDER_HINT;
     const regionField = localConfig.dimensions?.[0]?.field ?? "";
     if (regionField && (rows?.length ?? 0) > 0) {
-      const stats = antvGeoEngine.analyzeMatch(
+      const stats = activeGeoEngine.analyzeMatch(
         rows as unknown[][],
         columns,
         regionField,
@@ -541,18 +539,6 @@ export const ChartRenderer = memo(function ChartRenderer({
   const renderBody = () => {
     const wrapEmbedded = (node: ReactNode) =>
       embedded ? embeddedChartSurface(node) : node;
-
-    if (isKpiType(localConfig.chartType)) {
-      return wrapEmbedded(
-        <KpiCard
-          title={title}
-          metrics={localConfig.metrics ?? []}
-          columns={displayColumns}
-          rows={displayRows}
-          numberFormat={numberFormat}
-        />,
-      );
-    }
 
     if (isCanvasChartType(localConfig.chartType)) {
       const chartType = localConfig.chartType;

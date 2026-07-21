@@ -62,7 +62,7 @@ function setupMocks(widgets: LayoutWidget[]) {
           chartType = "map";
         }
       }
-      const engine = chartType === "kpi" ? "kpi" : "echarts";
+      const engine = chartType === "table" ? "table" : "antv";
       return {
         engine,
         chartType,

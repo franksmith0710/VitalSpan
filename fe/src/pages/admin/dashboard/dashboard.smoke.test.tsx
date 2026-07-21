@@ -234,7 +234,7 @@ describe("dashboard admin smoke", () => {
     const user = userEvent.setup();
     mockApiFetch.mockResolvedValueOnce([
       { type: "table", displayName: "表格", category: "basic", renderer: "table", styleVariants: ["default"], fieldRule: {} },
-      { type: "heatmap", displayName: "热力图", category: "geo", renderer: "echarts", styleVariants: ["default"], fieldRule: {} },
+      { type: "heatmap", displayName: "热力图", category: "geo", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
     ]);
     const onInsert = vi.fn();
     render(

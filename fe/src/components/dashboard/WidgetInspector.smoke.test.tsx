@@ -103,7 +103,7 @@ describe("WidgetInspector dataset select", () => {
       }
       if (path.includes("/api/v1/datasets")) return { items: [], total: 0 };
       if (path === "/api/v1/charts/types") {
-        return [{ type: "line", displayName: "折线图", category: "basic", renderer: "echarts", styleVariants: ["default"], fieldRule: {} }];
+        return [{ type: "line", displayName: "折线图", category: "basic", renderer: "antv", styleVariants: ["default"], fieldRule: {} }];
       }
       return {};
     });

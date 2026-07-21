@@ -63,4 +63,31 @@ describe("buildChartRenderModel", () => {
     const model = buildChartRenderModel(config, ["stage", "value"], [["A", 10]]);
     expect(model).toEqual({ kind: "ready" });
   });
+
+  it("returns ready for gauge with metric only", () => {
+    const config = {
+      ...defaultChartConfig("gauge"),
+      dimensions: [],
+      metrics: [{ field: "value" }],
+    };
+    const model = buildChartRenderModel(config, ["value"], [[86.5]]);
+    expect(model).toEqual({ kind: "ready" });
+  });
+
+  it("returns ready for graph without metric", () => {
+    const config = {
+      ...defaultChartConfig("graph"),
+      dimensions: [{ field: "source" }, { field: "target" }],
+      metrics: [],
+    };
+    const model = buildChartRenderModel(
+      config,
+      ["source", "target"],
+      [
+        ["A", "B"],
+        ["B", "C"],
+      ],
+    );
+    expect(model).toEqual({ kind: "ready" });
+  });
 });

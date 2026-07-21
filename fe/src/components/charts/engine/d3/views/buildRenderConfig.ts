@@ -1,0 +1,212 @@
+import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
+import { chartViewModelToRenderSpec } from "@/components/charts/engine/buildChartViewModel";
+import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
+import type { ChartEngineViewProps } from "@/components/charts/engine/types";
+import type { D3DispatchPayload } from "@/components/charts/engine/d3/renderDispatch";
+import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyleProps";
+import { extractDrillValue, buildCartesianRenderConfig } from "@/components/charts/engine/d3/views/buildCartesianConfig";
+import type {
+  D3BarRangeDatum,
+  D3BidirectionalBarDatum,
+  D3BulletDatum,
+  D3CartesianDatum,
+  D3MatrixCell,
+  D3ProgressBarDatum,
+  D3StockDatum,
+  D3WaterfallDatum,
+} from "@/components/charts/engine/d3/types";
+
+function onDatumClick(
+  props: ChartEngineViewProps,
+  xField: string,
+): ((datum: D3CartesianDatum) => void) | undefined {
+  const { onInteraction, onJumpClick } = props;
+  if (!onInteraction && !onJumpClick) return undefined;
+  return (datum) => {
+    if (onJumpClick) {
+      onJumpClick();
+      return;
+    }
+    const value = extractDrillValue(datum, xField);
+    if (value) onInteraction?.({ kind: "drill", value, label: value });
+  };
+}
+
+export function buildD3DispatchPayload(
+  props: ChartEngineViewProps,
+  plan: ChartRenderPlan,
+  chartWidth: number,
+  chartHeight: number,
+): D3DispatchPayload | null {
+  if (plan.kind !== "d3" || plan.empty) return null;
+  const styleProps = buildD3StyleProps(props, plan);
+  const options = plan.options;
+  const plotType = plan.plotType;
+
+  if (plotType === "Choropleth") {
+    const spec = chartViewModelToRenderSpec(props.viewModel);
+    const regionField = spec.encoding.dimensions[0]?.field ?? "";
+    const metricField = spec.encoding.metrics[0]?.field ?? "";
+    const rows = (options.rows as unknown[][]) ?? [];
+    const columns = (options.columns as string[]) ?? [];
+    return {
+      kind: "geo",
+      config: {
+        width: chartWidth,
+        height: chartHeight,
+        rows,
+        columns,
+        regionField,
+        metricField,
+        knownRegionNames: options.knownRegionNames as string[] | undefined,
+        mapId: (options.mapId as string | undefined) ?? VS_REGIONS_MAP_ID,
+        isDark: props.isDark ?? props.style.scheme === "dark",
+        colors: styleProps.colors,
+        theme: styleProps.theme,
+        showTooltip: styleProps.showTooltip,
+        valueFormat: styleProps.valueFormat,
+        onPointClick: props.onInteraction
+          ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.name, label: datum.name })
+          : undefined,
+      },
+    };
+  }
+
+  if (plotType === "Heatmap") {
+    const data = (options.data as D3MatrixCell[]) ?? [];
+    return {
+      kind: "matrix",
+      config: {
+        width: chartWidth,
+        height: chartHeight,
+        data,
+        colors: styleProps.colors,
+        theme: styleProps.theme,
+        showTooltip: styleProps.showTooltip,
+        valueFormat: styleProps.valueFormat,
+        onPointClick: props.onInteraction
+          ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.x, label: `${datum.x}/${datum.y}` })
+          : undefined,
+      },
+    };
+  }
+
+  if (plotType === "DualAxes") {
+    const data = options.data as [D3CartesianDatum[], D3CartesianDatum[]];
+    const xField = String(options.xField ?? "__category__");
+    const yField = options.yField as [string, string];
+    return {
+      kind: "dualAxes",
+      config: {
+        width: chartWidth,
+        height: chartHeight,
+        data,
+        xField,
+        yField,
+        geometryOptions: (options.geometryOptions ?? []) as [
+          { geometry: "line" },
+          { geometry: "column"; isGroup?: boolean; isStack?: boolean },
+        ],
+        lineLabels: options.lineLabels as [string, string] | undefined,
+        colors: styleProps.colors,
+        theme: styleProps.theme,
+        showTooltip: styleProps.showTooltip,
+        showLegend: styleProps.showLegend,
+        valueFormat: styleProps.valueFormat,
+        onPointClick: onDatumClick(props, xField),
+      },
+    };
+  }
+
+  if (plotType === "Waterfall") {
+    const data = (options.data as D3WaterfallDatum[]) ?? [];
+    return {
+      kind: "waterfall",
+      config: {
+        width: chartWidth,
+        height: chartHeight,
+        data,
+        colors: styleProps.colors,
+        theme: styleProps.theme,
+        showTooltip: styleProps.showTooltip,
+        showLabel: styleProps.showLabel,
+        labelFontSize: styleProps.labelFontSize,
+        valueFormat: styleProps.valueFormat,
+        onPointClick: props.onInteraction
+          ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type })
+          : undefined,
+      },
+    };
+  }
+
+  if (plotType === "BidirectionalBar") {
+    const raw = (options.data as D3BidirectionalBarDatum[]) ?? [];
+    return {
+      kind: "bidirectional",
+      config: {
+        width: chartWidth,
+        height: chartHeight,
+        data: raw,
+        colors: styleProps.colors,
+        theme: styleProps.theme,
+        showTooltip: styleProps.showTooltip,
+        showLabel: styleProps.showLabel,
+        labelFontSize: styleProps.labelFontSize,
+        valueFormat: styleProps.valueFormat,
+      },
+    };
+  }
+
+  const specialPlot = new Set(["BarRange", "ProgressBar", "Bullet", "Stock"]);
+  if (specialPlot.has(plotType)) {
+    const data = (options.data as D3BarRangeDatum[] | D3ProgressBarDatum[] | D3BulletDatum[] | D3StockDatum[]) ?? [];
+    const base = {
+      width: chartWidth,
+      height: chartHeight,
+      data,
+      colors: styleProps.colors,
+      theme: styleProps.theme,
+      showTooltip: styleProps.showTooltip,
+      showLabel: styleProps.showLabel,
+      labelFontSize: styleProps.labelFontSize,
+      valueFormat: styleProps.valueFormat,
+      onPointClick: props.onInteraction
+        ? (datum: { type: string }) =>
+            props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type })
+        : undefined,
+    };
+    if (plotType === "BarRange") return { kind: "barRange", config: base as never };
+    if (plotType === "ProgressBar") return { kind: "progressBar", config: base as never };
+    if (plotType === "Bullet") return { kind: "bullet", config: base as never };
+    return { kind: "stock", config: base as never };
+  }
+
+  const cartesianTypes = new Set(["Line", "Column", "Bar"]);
+  if (cartesianTypes.has(plotType)) {
+    const cartesian = buildCartesianRenderConfig(props, plan, chartWidth, chartHeight);
+    if (cartesian) return { kind: "cartesian", config: cartesian };
+  }
+
+  return {
+    kind: "generic",
+    config: {
+      width: chartWidth,
+      height: chartHeight,
+      options,
+      colors: styleProps.colors,
+      theme: styleProps.theme,
+      showLabel: styleProps.showLabel,
+      showTooltip: styleProps.showTooltip,
+      showLegend: styleProps.showLegend,
+      labelFontSize: styleProps.labelFontSize,
+      valueFormat: styleProps.valueFormat,
+      conditionalRules: styleProps.conditionalRules,
+      onPointClick: props.onInteraction
+        ? (datum) => {
+            const label = String(datum.type ?? datum.stage ?? datum.name ?? datum.word ?? "");
+            if (label) props.onInteraction?.({ kind: "drill", value: label, label });
+          }
+        : undefined,
+    },
+  };
+}

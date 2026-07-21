@@ -20,7 +20,7 @@ import { isPixelCanvasWidgetTarget } from "../pixelCanvas/pixelCanvasHitTest";
 import {
   computePresentationTransform,
   DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
-  resolveDataScreenViewportOffsets,
+  resolveDataScreenEditViewportOffsets,
   type PresentationMode,
 } from "./presentationScale";
 
@@ -111,14 +111,7 @@ export function DataScreenEditViewport({
   const scale = baseTransform.scaleX * userZoom;
   const scaledWidth = canvasWidth * scale;
   const scaledHeight = canvasHeight * scale;
-  const { offsetX, offsetY } = resolveDataScreenViewportOffsets(
-    presentationMode,
-    viewportSize.width,
-    viewportSize.height,
-    baseTransform,
-    scaledWidth,
-    scaledHeight,
-  );
+  const { offsetX, offsetY } = resolveDataScreenEditViewportOffsets();
 
   const contentLayout = useMemo(
     () => ({

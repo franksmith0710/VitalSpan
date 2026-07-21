@@ -1,0 +1,95 @@
+import { describe, expect, it } from "vitest";
+import { renderD3PieChart } from "./renderPie";
+import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
+
+describe("renderD3PieChart", () => {
+  it("renders distinct slice paths for each category", () => {
+    const container = document.createElement("div");
+    const cleanup = renderD3PieChart(container, {
+      width: 320,
+      height: 240,
+      colors: ["#465fff", "#12b76a", "#f79009"],
+      theme: getAntvThemeTokens("light"),
+      showLabel: false,
+      showTooltip: false,
+      showLegend: false,
+      labelFontSize: 11,
+      options: {
+        data: [
+          { type: "A", value: 40 },
+          { type: "B", value: 35 },
+          { type: "C", value: 25 },
+        ],
+        angleField: "value",
+        colorField: "type",
+        radius: 0.8,
+        innerRadius: 0,
+      },
+    });
+
+    const paths = [...container.querySelectorAll("path")].map((node) => node.getAttribute("d"));
+    expect(paths).toHaveLength(3);
+    expect(new Set(paths).size).toBe(3);
+    cleanup();
+  });
+
+  it("renders donut-rose slices at small dashboard size", () => {
+    const container = document.createElement("div");
+    const cleanup = renderD3PieChart(container, {
+      width: 225,
+      height: 101,
+      colors: ["#465fff", "#12b76a", "#f79009"],
+      theme: getAntvThemeTokens("light"),
+      showLabel: false,
+      showTooltip: false,
+      showLegend: true,
+      labelFontSize: 11,
+      options: {
+        data: [
+          { type: "A", value: 40 },
+          { type: "B", value: 35 },
+          { type: "C", value: 25 },
+        ],
+        angleField: "value",
+        colorField: "type",
+        radius: 0.92,
+        innerRadius: 0.5,
+        roseType: "radius",
+      },
+    });
+
+    const paths = [...container.querySelectorAll("path")].map((node) => node.getAttribute("d"));
+    expect(paths.length).toBeGreaterThanOrEqual(3);
+    expect(paths.every((d) => d && d.length > 8)).toBe(true);
+    cleanup();
+  });
+
+  it("honors donut inner radius", () => {
+    const container = document.createElement("div");
+    const cleanup = renderD3PieChart(container, {
+      width: 320,
+      height: 240,
+      colors: ["#465fff", "#12b76a"],
+      theme: getAntvThemeTokens("light"),
+      showLabel: false,
+      showTooltip: false,
+      showLegend: false,
+      labelFontSize: 11,
+      options: {
+        data: [
+          { type: "A", value: 60 },
+          { type: "B", value: 40 },
+        ],
+        angleField: "value",
+        colorField: "type",
+        radius: 0.8,
+        innerRadius: 0.5,
+      },
+    });
+
+    const paths = [...container.querySelectorAll("path")].map((node) => node.getAttribute("d"));
+    expect(paths).toHaveLength(2);
+    expect(new Set(paths).size).toBe(2);
+    cleanup();
+  });
+});

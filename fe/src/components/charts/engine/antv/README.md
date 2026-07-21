@@ -1,32 +1,12 @@
-# AntV 图表引擎
+# AntV 引擎目录（Plan 层）
 
-> 生产路径：`CanvasChartHost` → `AntvEngineView`（G2Plot / G6 / G2 离线地图）
+> **运行时渲染已迁 D3**；本目录保留数据编码与主题 token。
 
-## 状态（2026-07）
-
-| 包 | 用途 |
-|----|------|
-| `@antv/g2plot` | line/bar/pie/gauge/scatter/combo/funnel/sankey/heatmap/wordCloud 等 |
-| `@antv/g6` | graph（force/dagre） |
-| `@antv/g2` | map 离线 choropleth（`OfflineGeoAntVPort`） |
-
-| 类型 | 引擎 |
+| 路径 | 用途 |
 |------|------|
-| table / kpi | React 自研 |
-| 其余 canvas | `registry` → `antv` |
+| `buildChartRenderPlan.ts`（`engine/`） | `buildChartRenderPlan` → `buildPlanForType` |
+| `spec/encodeCartesian.ts` · `encodePie.ts` | 行列数据编码 |
+| `theme.ts` | `AntvThemeTokens`（D3 复用） |
+| `exportPng.ts` | 画布 PNG 导出 |
 
-## 目录
-
-- `buildAntvSpec.ts` — VM → render plan
-- `applyAntvStyle.ts` — deStyle → G2Plot options
-- `applyAdvancedFeatures.ts` — markLine / conditional（部分映射）
-- `g2plot/` · `g6/` · `geo/` — 视图与端口
-- `exportPng.ts` — canvas PNG 导出
-
-## 门禁
-
-`pnpm check:chart-engine`：`@antv/*` 仅允许 `engine/antv/**`。`engine/echarts/**` 为**遗留目录**（生产不挂载；`geoMapChart` 地名工具仍被 AntV 地图引用），待归档删除；`package.json` 已无 `echarts` 依赖。
-
-## timeline 迁移
-
-存量 `chartType: timeline` 在 `layoutUtils` 加载时自动转为 `line`（见 `lib/migrateTimelineChartType.ts`）。
+**已移除**：`@antv/s2` · `@antv/g2plot` · `@antv/g2` · `@antv/g6` · `AntvEngineView` · `geo/`（迁至 `engine/geo/`）（2026-07-21）

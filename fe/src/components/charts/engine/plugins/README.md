@@ -9,21 +9,19 @@
 | `types.ts` | `ChartViewPlugin` / `DePaletteCategory` |
 | `metadata.ts` | ~40 内置 type 元数据（paletteCategory、properties、capabilities） |
 | `registry.ts` | `registerChartPlugin` / `getChartPlugin` |
-| `plans/buildPlan.ts` | `buildPlanForType` → `AntvRenderPlan` |
+| `plans/buildPlan.ts` | `buildPlanForType` → `ChartRenderPlan` |
 | `index.ts` | 启动时 `registerBuiltinChartPlugins()` |
 
 ## 渲染分路
 
-`AntvEngineView` 按 `plugin.library` 路由：
+`ChartEngineView` → `D3ViewRouter`：
 
 | library | 视图 |
 |---------|------|
-| `g2plot` | `AntvG2PlotView` |
-| `g6` | `AntvG6View` |
-| `g2` | `AntvMapView`（离线中国） |
-| `s2` | `AntvS2View`（`table-info` / `table-normal` / `table-pivot`） |
+| `d3` | `D3CanvasView` / `D3GeoMapView` / `D3TableView` |
+| `react` | legacy `table`（`EmbeddedChartTable` 薄壳） |
 
-样式管线：`applyChartStyleChain`（palette / advanced / seriesColor / conditional）。
+样式管线：`applyChartStyleChain`（D3 主题 / seriesColor / conditional / markLines）。
 
 ## 存量迁移
 

@@ -5,7 +5,7 @@ import {
 } from "@/components/dashboard/dashboardStyleConfig";
 import { getDashboardThemeTokens } from "@/components/dashboard/dashboardThemeTokens";
 import type { ChartDeTableStyle } from "./chartDeTableStyle";
-import { resolveTableZebraBg } from "./chartDeTableStyle";
+import { DEFAULT_TABLE_ZEBRA_BG, resolveTableZebraBg } from "./chartDeTableStyle";
 import { DASHBOARD_SCROLL_CSS_VARS } from "./dashboardScrollTokens";
 
 /** 看板滚动条令牌（浅/深主题统一，对标 DE 白色半透明） */
@@ -42,14 +42,27 @@ export function resolveTableThemeVars(
   const vars: Record<string, string> = {
     "--dashboard-table-header-bg": tableStyle.headerBg ?? tokens.tableHeaderBg,
     "--dashboard-table-header-fg": tableStyle.headerFg ?? tokens.tableHeaderFg,
+    "--dashboard-table-header-active-fg": tokens.textPrimary,
     "--dashboard-table-body-fg": tableStyle.bodyFg ?? tokens.tableBodyFg,
     "--dashboard-table-border": tableStyle.borderColor ?? tokens.tableBorder,
+    "--dashboard-table-row-hover-bg":
+      scheme === "dark" ? "rgba(70, 95, 255, 0.12)" : "rgba(70, 95, 255, 0.06)",
+    "--dashboard-table-index-bg":
+      scheme === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(148, 163, 184, 0.08)",
+    "--dashboard-table-index-fg": tokens.textMuted,
+    "--dashboard-table-footer-bg": tableStyle.headerBg ?? tokens.tableHeaderBg,
+    "--dashboard-table-header-font-size": "12px",
     ...SCROLL_VARS,
   };
 
   if (tableStyle.bodyBg) vars["--dashboard-table-body-bg"] = tableStyle.bodyBg;
   const zebraBg = resolveTableZebraBg(tableStyle);
-  if (zebraBg) vars["--dashboard-table-zebra-bg"] = zebraBg;
+  if (zebraBg) {
+    vars["--dashboard-table-zebra-bg"] = zebraBg;
+  } else if (tableStyle.zebraStriped !== false) {
+    vars["--dashboard-table-zebra-bg"] =
+      scheme === "dark" ? "rgba(255, 255, 255, 0.04)" : DEFAULT_TABLE_ZEBRA_BG;
+  }
   if (tableStyle.columnBg) vars["--dashboard-table-column-bg"] = tableStyle.columnBg;
   if (tableStyle.cornerBg) vars["--dashboard-table-corner-bg"] = tableStyle.cornerBg;
   if (tableStyle.emptyHintFg) vars["--dashboard-table-empty-fg"] = tableStyle.emptyHintFg;

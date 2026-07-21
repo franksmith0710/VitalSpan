@@ -90,7 +90,6 @@ export function resolveEngineCapabilities(
 
   const engine = engineId ?? getEngineIdForChartType(chartType);
   if (engine === "table") return LEGACY_CAPS.table;
-  if (engine === "kpi") return LEGACY_CAPS.kpi;
   return legacyCapsForType(chartType);
 }
 
@@ -103,5 +102,5 @@ export function engineSupports(
 }
 
 export function listRegisteredEngines(): ChartEngineId[] {
-  return ["antv", "table", "kpi"];
+  return ["antv", "table"];
 }

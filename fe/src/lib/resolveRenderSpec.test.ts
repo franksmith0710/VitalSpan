@@ -14,7 +14,7 @@ describe("resolveRenderSpec", () => {
       styleVariant: "default",
     };
     expect(resolveRenderSpec(config)).toEqual({
-      engine: "echarts",
+      engine: "antv",
       chartType: "funnel",
       styleVariant: "default",
       encoding: {

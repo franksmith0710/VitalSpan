@@ -66,4 +66,24 @@ describe("DataScreenListPage smoke", () => {
       expect(document.body.textContent).not.toContain("NaN");
     });
   });
+
+  it("renders batch actions toolbar for editors", async () => {
+    mockApiFetch.mockResolvedValue({
+      items: [
+        {
+          id: "s1",
+          name: "测试大屏",
+          slug: "test-screen",
+          updatedAt: "2026-07-20T10:00:00.000Z",
+        },
+      ],
+      total: 1,
+      limit: 50,
+      offset: 0,
+    });
+    renderPage();
+    expect(await screen.findByRole("button", { name: "批量操作" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "卡片" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "列表" })).toBeInTheDocument();
+  });
 });

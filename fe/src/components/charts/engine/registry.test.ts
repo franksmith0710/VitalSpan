@@ -20,16 +20,17 @@ describe("chart engine registry", () => {
     }
   });
 
-  it("maps legacy table and kpi to react engines", () => {
+  it("maps legacy table to react engine and kpi to antv canvas", () => {
     expect(getEngineIdForChartType("table")).toBe("table");
-    expect(getEngineIdForChartType("kpi")).toBe("kpi");
+    expect(getEngineIdForChartType("kpi")).toBe("antv");
     expect(isCanvasChartType("table")).toBe(false);
-    expect(isCanvasChartType("kpi")).toBe(false);
+    expect(isCanvasChartType("kpi")).toBe(true);
+    expect(getChartPlugin("kpi")?.library).toBe("d3");
   });
 
-  it("routes s2 table types through antv canvas host", () => {
+  it("routes d3 table types through antv canvas host", () => {
     expect(isS2TableChartType("table-info")).toBe(true);
-    expect(getChartPlugin("table-info")?.library).toBe("s2");
+    expect(getChartPlugin("table-info")?.library).toBe("d3");
   });
 
   it("routes line chart through d3 renderer", () => {
@@ -40,5 +41,7 @@ describe("chart engine registry", () => {
     const canvasTypes = listRegisteredCanvasChartTypes();
     expect(canvasTypes).toContain("bar-stack");
     expect(canvasTypes).toContain("t-heatmap");
+    expect(canvasTypes).toContain("kpi");
+    expect(canvasTypes).toContain("table-info");
   });
 });

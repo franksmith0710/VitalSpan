@@ -48,11 +48,17 @@ describe("chartFieldSlots", () => {
     });
   });
 
-  it("T-INSP-DE-08: map chart matches DE slot order", () => {
-    expect(chartDataSlotBlueprint("map").map((s) => s.label)).toEqual([
-      "地区 / 维度",
-      "数据 / 指标",
+  it("T-INSP-DE-09: dual-axis chart requires column + line metrics", () => {
+    expect(chartDataSlotBlueprint("chart-mix").map((s) => s.label)).toEqual([
+      "类别轴 / 维度",
+      "子类别 / 维度",
+      "柱指标 / 指标",
+      "线指标 / 指标",
       "钻取 / 维度",
     ]);
+    expect(chartRenderRequiredCounts("chart-mix")).toEqual({
+      minDimensions: 1,
+      minMetrics: 2,
+    });
   });
 });

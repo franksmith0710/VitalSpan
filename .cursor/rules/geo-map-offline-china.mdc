@@ -35,7 +35,7 @@ alwaysApply: true
 
 ## 代码锚点
 
-- `fe/src/components/charts/engine/geoEnginePort.ts` · `fe/src/components/charts/engine/antv/geo/OfflineGeoAntVPort.ts` · `fe/src/assets/geo/china-provinces.json`
+- `fe/src/components/charts/engine/geoEnginePort.ts` · `fe/src/components/charts/engine/geo/OfflineGeoPort.ts` · `fe/src/assets/geo/china-provinces.json`
 - `fe/src/components/charts/adapters/renderFromSpec.ts`（`map` / `heatmap`）
 - `fe/src/lib/buildChartRenderModel.ts`（`region_id` 校验）
 

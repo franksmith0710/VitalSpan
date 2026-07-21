@@ -47,6 +47,31 @@ const FALLBACK_FIELD_RULES: Record<string, ChartFieldRule> = {
     maxMetrics: 1,
     note: "关系图需 2 个维度（起点、终点）",
   },
+  "chart-mix": {
+    minDimensions: 1,
+    maxDimensions: 8,
+    minMetrics: 2,
+    maxMetrics: 8,
+    note: "双轴图至少 2 个指标",
+  },
+  "chart-mix-group": {
+    minDimensions: 1,
+    maxDimensions: 8,
+    minMetrics: 2,
+    maxMetrics: 8,
+  },
+  "chart-mix-stack": {
+    minDimensions: 1,
+    maxDimensions: 8,
+    minMetrics: 2,
+    maxMetrics: 8,
+  },
+  "chart-mix-dual-line": {
+    minDimensions: 1,
+    maxDimensions: 8,
+    minMetrics: 2,
+    maxMetrics: 8,
+  },
 };
 
 export function resolveChartFieldRule(chartType: string): ChartFieldRule {
