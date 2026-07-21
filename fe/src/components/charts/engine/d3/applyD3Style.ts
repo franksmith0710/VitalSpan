@@ -24,6 +24,9 @@ export function applyD3Style(plan: ChartRenderPlan, ctx: ChartStyleContext): Cha
   options.__showLabel = ctx.showLabel;
   options.__showTooltip = ctx.showTooltip;
   options.__labelFontSize = ctx.labelPresentation.fontSize;
+  options.__labelColor = ctx.labelPresentation.color;
+  options.__seriesGradient = ctx.seriesGradient;
+  options.__tooltipPresentation = ctx.tooltipPresentation;
   options.__valueFormat = ctx.valueFormat;
   options.__shellLegend = ctx.shellLegend;
   options.__legendShow = ctx.deStyle.legend?.show !== false;
@@ -33,6 +36,7 @@ export function applyD3Style(plan: ChartRenderPlan, ctx: ChartStyleContext): Cha
     (plan.plotType === "Line" ||
       plan.plotType === "Column" ||
       plan.plotType === "Bar" ||
+      plan.plotType === "DualAxes" ||
       Boolean(options.area))
   ) {
     options.__dataZoom = true;

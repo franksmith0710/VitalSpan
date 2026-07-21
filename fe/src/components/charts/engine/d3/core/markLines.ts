@@ -22,6 +22,27 @@ export function drawHorizontalMarkLines(
   }
 }
 
+export function drawVerticalMarkLines(
+  plot: d3.Selection<SVGGElement, unknown, null, undefined>,
+  markLines: ChartMarkLine[] | undefined,
+  xScale: d3.ScaleLinear<number, number>,
+  innerH: number,
+): void {
+  const layer = plot.append("g").attr("class", "mark-lines");
+  for (const line of (markLines ?? []).filter((m) => m.enabled && Number.isFinite(m.value))) {
+    const x = xScale(line.value);
+    layer
+      .append("line")
+      .attr("x1", x)
+      .attr("x2", x)
+      .attr("y1", 0)
+      .attr("y2", innerH)
+      .attr("stroke", line.color ?? "#465fff")
+      .attr("stroke-opacity", 0.85)
+      .attr("stroke-dasharray", line.lineStyle === "solid" ? undefined : "5 4");
+  }
+}
+
 export function drawScatterMarkLines(
   plot: d3.Selection<SVGGElement, unknown, null, undefined>,
   markLines: ChartMarkLine[] | undefined,

@@ -6,6 +6,7 @@ import { styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { drawScatterMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveRenderMode, sampleIndices } from "@/components/charts/engine/d3/core/perfRouter";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltipLayer, showMergedTooltip, hideTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
@@ -22,6 +23,9 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     theme: rawTheme,
     showLabel,
     showTooltip,
+    labelFontSize,
+    labelColor,
+    tooltipPresentation,
     valueFormat,
     options,
     onPointClick,
@@ -104,7 +108,7 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     removeCanvas = renderScatterCanvasLayer(container, canvasPoints, width, height, margin);
   }
 
-  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
   plot
     .selectAll<SVGCircleElement, ScatterDatum>("circle.point")
     .data(svgData)
@@ -197,7 +201,7 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
       .attr("class", "scatter-label")
       .attr("x", (d) => xScale(Number(d[xField])) + 6)
       .attr("y", (d) => yScale(Number(d[yField])) - 6)
-      .attr("fill", theme.axisLabel)
+      .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", "10px")
       .text((d) => {
         if (colorField) return String(d[colorField] ?? "");

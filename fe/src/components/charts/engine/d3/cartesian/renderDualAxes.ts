@@ -5,6 +5,8 @@ import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { normalizeCartesianData } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
+import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import {
   columnTooltipRows,
   renderDualAxesColumnBars,
@@ -39,9 +41,15 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     theme,
     showTooltip,
     showLegend = true,
+    showLabel = false,
+    labelFontSize = 12,
+    labelColor,
+    seriesGradient = false,
+    tooltipPresentation,
     valueFormat,
     markLines = [],
     conditionalRules,
+    dataZoom = false,
     onPointClick,
   } = config;
   const lineLabels = config.lineLabels;
@@ -73,10 +81,11 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   const curve = lineSmooth ? d3.curveMonotoneX : d3.curveLinear;
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const defs = root.append("defs");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
   drawHorizontalMarkLines(plot, markLines, yLeft, innerW);
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
 
   g.append("g")
     .call(d3.axisLeft(yLeft).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
@@ -146,6 +155,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   } else {
     const columnResult = renderDualAxesColumnBars({
       plot,
+      defs,
       columnData,
       xField,
       columnYField,
@@ -159,6 +169,7 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       colors,
       fallbackColor: columnColor,
       theme,
+      seriesGradient,
       conditionalRules,
       onPointClick,
     });
@@ -178,6 +189,35 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     .attr("cy", (d) => yLeft(Number(d.__value__)))
     .attr("cursor", onPointClick ? "pointer" : "default")
     .on("click", (_event, d) => onPointClick?.(d));
+
+  if (showLabel) {
+    plot
+      .selectAll("text.dual-line-label")
+      .data(linePoints)
+      .join("text")
+      .attr("class", "dual-line-label")
+      .attr("x", (d) => x(String(d.__category__)) ?? 0)
+      .attr("y", (d) => yLeft(Number(d.__value__)) - 8)
+      .attr("text-anchor", "middle")
+      .attr("fill", resolveLabelFill(theme, labelColor))
+      .style("font-size", `${labelFontSize}px`)
+      .text((d) => formatChartValue(d.__value__, valueFormat));
+
+    if (!dualLine) {
+      const colPoints = normalizeCartesianData(columnData, xField, columnYField, columnSeriesField);
+      plot
+        .selectAll("text.dual-col-label")
+        .data(colPoints)
+        .join("text")
+        .attr("class", "dual-col-label")
+        .attr("x", (d) => x(String(d.__category__)) ?? 0)
+        .attr("y", (d) => yRight(Number(d.__value__)) - 4)
+        .attr("text-anchor", "middle")
+        .attr("fill", resolveLabelFill(theme, labelColor))
+        .style("font-size", `${labelFontSize}px`)
+        .text((d) => formatChartValue(d.__value__, valueFormat));
+    }
+  }
 
   if (showTooltip) {
     plot
@@ -271,5 +311,10 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     }
   }
 
-  return () => container.replaceChildren();
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+
+  return () => {
+    detachZoom();
+    container.replaceChildren();
+  };
 }

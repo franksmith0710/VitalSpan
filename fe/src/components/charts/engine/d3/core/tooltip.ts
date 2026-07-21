@@ -1,26 +1,41 @@
 ﻿import * as d3 from "d3";
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
+import type { D3TooltipPresentation } from "@/components/charts/engine/d3/core/presentation";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 
-export function createTooltip(container: HTMLElement, theme: AntvThemeTokens) {
-  return d3
-    .select(container)
-    .append("div")
+function applyTooltipPresentation(
+  layer: d3.Selection<HTMLDivElement, unknown, null, undefined>,
+  theme: AntvThemeTokens,
+  presentation?: D3TooltipPresentation,
+): void {
+  const fontSize = presentation?.fontSize ?? 12;
+  layer
+    .style("font-size", `${fontSize}px`)
+    .style("color", presentation?.color ?? theme.tooltipText)
+    .style("background", presentation?.background ?? theme.tooltipBg);
+}
+
+export function createTooltip(
+  container: HTMLElement,
+  theme: AntvThemeTokens,
+  presentation?: D3TooltipPresentation,
+) {
+  const layer = d3.select(container).append("div");
+  layer
     .style("position", "absolute")
     .style("pointer-events", "none")
     .style("opacity", "0")
     .style("padding", "8px 10px")
     .style("border-radius", "8px")
-    .style("font-size", "12px")
     .style("line-height", "1.35")
-    .style("background", theme.tooltipBg)
-    .style("color", theme.tooltipText)
     .style("border", `1px solid ${theme.axisLine}`)
     .style("box-shadow", "0 8px 24px rgba(16,24,40,0.14)")
     .style("backdrop-filter", "blur(6px)")
     .style("transition", "opacity 120ms ease")
     .style("z-index", "10");
+  applyTooltipPresentation(layer, theme, presentation);
+  return layer;
 }
 
 export function tooltipHtml(

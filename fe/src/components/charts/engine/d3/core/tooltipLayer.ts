@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import type { D3TooltipPresentation } from "@/components/charts/engine/d3/core/presentation";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
@@ -7,19 +8,27 @@ import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/t
 
 export type TooltipLayer = d3.Selection<HTMLDivElement, unknown, null, undefined>;
 
-export function createTooltipLayer(container: HTMLElement, theme: D3Theme): TooltipLayer {
+export function createTooltipLayer(
+  container: HTMLElement,
+  theme: D3Theme,
+  presentation?: D3TooltipPresentation,
+): TooltipLayer {
   const existing = d3.select(container).select<HTMLDivElement>("div.vs-tooltip-layer");
   if (!existing.empty()) return existing;
 
-  const layer = createTooltip(container, theme);
+  const layer = createTooltip(container, theme, presentation);
   layer
     .classed("vs-tooltip-layer", true)
     .style("padding", VCDS.tooltip.padding)
     .style("border-radius", `${VCDS.tooltip.borderRadius}px`)
-    .style("font-size", `${VCDS.tooltip.fontSize}px`)
     .style("max-width", `${VCDS.tooltip.maxWidth}px`)
-    .style("backdrop-filter", "blur(8px)")
-    .style("background", theme.floatSurface);
+    .style("backdrop-filter", "blur(8px)");
+  if (!presentation?.fontSize) {
+    layer.style("font-size", `${VCDS.tooltip.fontSize}px`);
+  }
+  if (!presentation?.background) {
+    layer.style("background", theme.floatSurface);
+  }
 
   return layer;
 }

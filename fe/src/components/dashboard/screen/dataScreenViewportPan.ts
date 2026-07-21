@@ -21,14 +21,14 @@ export function applyViewportPanScroll(
   };
 }
 
-/** DE 式视口平移：相机拖拽（指针右移 → 画布左移，露出右侧工作区） */
+/** 视口平移：画布跟随指针（拖右 → 画布右移） */
 export function applyViewportPanTranslate(
   session: ViewportPanSession,
   clientX: number,
   clientY: number,
 ): { panX: number; panY: number } {
   return {
-    panX: session.panX - (clientX - session.startX),
-    panY: session.panY - (clientY - session.startY),
+    panX: session.panX + (clientX - session.startX),
+    panY: session.panY + (clientY - session.startY),
   };
 }

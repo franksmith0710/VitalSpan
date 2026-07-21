@@ -43,6 +43,13 @@ export function buildD3DispatchPayload(
   const options = plan.options;
   const plotType = plan.plotType;
 
+  const presentation = {
+    labelFontSize: styleProps.labelFontSize,
+    labelColor: styleProps.labelColor,
+    seriesGradient: styleProps.seriesGradient,
+    tooltipPresentation: styleProps.tooltipPresentation,
+  };
+
   if (plotType === "Choropleth") {
     const spec = chartViewModelToRenderSpec(props.viewModel);
     const regionField = spec.encoding.dimensions[0]?.field ?? "";
@@ -64,6 +71,7 @@ export function buildD3DispatchPayload(
         colors: styleProps.colors,
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
+        tooltipPresentation: styleProps.tooltipPresentation,
         valueFormat: styleProps.valueFormat,
         onPointClick: props.onInteraction
           ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.name, label: datum.name })
@@ -83,6 +91,7 @@ export function buildD3DispatchPayload(
         colors: styleProps.colors,
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
+        tooltipPresentation: styleProps.tooltipPresentation,
         valueFormat: styleProps.valueFormat,
         conditionalRules: styleProps.conditionalRules,
         onPointClick: props.onInteraction
@@ -110,6 +119,12 @@ export function buildD3DispatchPayload(
         ],
         lineLabels: options.lineLabels as [string, string] | undefined,
         columnSeriesField: options.columnSeriesField as string | undefined,
+        showLabel: styleProps.showLabel,
+        labelFontSize: styleProps.labelFontSize,
+        labelColor: styleProps.labelColor,
+        seriesGradient: styleProps.seriesGradient,
+        tooltipPresentation: styleProps.tooltipPresentation,
+        dataZoom: Boolean(options.__dataZoom),
         colors: styleProps.colors,
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
@@ -134,7 +149,7 @@ export function buildD3DispatchPayload(
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
         showLabel: styleProps.showLabel,
-        labelFontSize: styleProps.labelFontSize,
+        ...presentation,
         valueFormat: styleProps.valueFormat,
         onPointClick: props.onInteraction
           ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type })
@@ -155,7 +170,7 @@ export function buildD3DispatchPayload(
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
         showLabel: styleProps.showLabel,
-        labelFontSize: styleProps.labelFontSize,
+        ...presentation,
         valueFormat: styleProps.valueFormat,
       },
     };
@@ -172,7 +187,7 @@ export function buildD3DispatchPayload(
       theme: styleProps.theme,
       showTooltip: styleProps.showTooltip,
       showLabel: styleProps.showLabel,
-      labelFontSize: styleProps.labelFontSize,
+      ...presentation,
       valueFormat: styleProps.valueFormat,
       onPointClick: props.onInteraction
         ? (datum: { type: string }) =>
@@ -202,7 +217,7 @@ export function buildD3DispatchPayload(
       showLabel: styleProps.showLabel,
       showTooltip: styleProps.showTooltip,
       showLegend: styleProps.showLegend,
-      labelFontSize: styleProps.labelFontSize,
+      ...presentation,
       valueFormat: styleProps.valueFormat,
       conditionalRules: styleProps.conditionalRules,
       markLines: styleProps.markLines,

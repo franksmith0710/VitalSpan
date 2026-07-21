@@ -1,8 +1,17 @@
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartConditionalRule, ChartMarkLine } from "@/lib/chartDeFeatures";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
+import type { ChartGeoStyle } from "@/lib/chartDeStyle";
+import type { D3LegendPresentation, D3TooltipPresentation } from "@/components/charts/engine/d3/core/presentation";
 
 export type D3Datum = Record<string, unknown>;
+
+export type D3PresentationConfig = {
+  labelFontSize?: number;
+  labelColor?: string;
+  seriesGradient?: boolean;
+  tooltipPresentation?: D3TooltipPresentation;
+};
 
 export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<string, unknown>> = {
   width: number;
@@ -13,6 +22,9 @@ export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<str
   showTooltip: boolean;
   showLegend: boolean;
   labelFontSize: number;
+  labelColor?: string;
+  seriesGradient?: boolean;
+  tooltipPresentation?: D3TooltipPresentation;
   valueFormat?: NumberFormatConfig;
   conditionalRules?: ChartConditionalRule[];
   onPointClick?: (datum: D3Datum) => void;
@@ -23,7 +35,8 @@ export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<str
 export type D3RenderConfigBase = Pick<
   D3RenderConfig,
   "width" | "height" | "colors" | "theme" | "showTooltip" | "valueFormat"
->;
+> &
+  D3PresentationConfig;
 
 export type D3CartesianDatum = Record<string, string | number>;
 
@@ -47,6 +60,9 @@ export type D3CartesianRenderConfig = {
   showTooltip: boolean;
   showLegend: boolean;
   labelFontSize: number;
+  labelColor?: string;
+  seriesGradient?: boolean;
+  tooltipPresentation?: D3TooltipPresentation;
   valueFormat?: NumberFormatConfig;
   markLines?: ChartMarkLine[];
   conditionalRules?: ChartConditionalRule[];
@@ -95,6 +111,9 @@ export type D3DualAxesRenderConfig = D3RenderConfigBase & {
   lineLabels?: [string, string];
   /** 柱侧子类别/堆叠系列字段（来自 encodeCartesianRows） */
   columnSeriesField?: string;
+  showLabel?: boolean;
+  labelFontSize?: number;
+  dataZoom?: boolean;
   showLegend?: boolean;
   markLines?: ChartMarkLine[];
   conditionalRules?: ChartConditionalRule[];

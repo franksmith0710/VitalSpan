@@ -1,7 +1,11 @@
 import * as d3 from "d3";
 import { chartTransition } from "@/components/charts/engine/d3/core/animate";
 import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { drawVerticalMarkLines } from "@/components/charts/engine/d3/core/markLines";
+import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
@@ -47,7 +51,12 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     showLegend,
     labelFontSize,
     valueFormat,
+    markLines = [],
     conditionalRules = [],
+    labelColor,
+    seriesGradient = false,
+    tooltipPresentation,
+    dataZoom = false,
     onPointClick,
   } = config;
 
@@ -67,6 +76,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   const innerH = Math.max(0, height - margin.top - margin.bottom);
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
+  const defs = root.append("defs");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
   const keys = resolveSeriesKeys(seriesNames);
@@ -93,7 +103,8 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   const x = d3.scaleLinear().domain([0, maxVal]).nice().range([0, innerW]);
   const ySub = useGrouped ? d3.scaleBand<string>().domain(keys).range([0, y.bandwidth()]).padding(0.12) : null;
   const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  drawVerticalMarkLines(plot, markLines, x, innerH);
+  const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
 
   g.append("g")
     .call(d3.axisLeft(y))
@@ -115,7 +126,11 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
         .attr("y", (d) => y(String(d.data.__category__)) ?? 0)
         .attr("height", y.bandwidth())
         .attr("rx", BAR_RX)
-        .attr("fill", (d) => resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules))
+        .attr("fill", (d) => {
+          const base = resolveSeriesGradientFill(defs, `hbar-stack-${name}`, color, seriesGradient, "horizontal");
+          if (base.startsWith("url(")) return base;
+          return resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules);
+        })
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
           const x0 = x(Number(d[0]));
@@ -142,7 +157,11 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
         .data(s.points)
         .join("rect")
         .attr("rx", BAR_RX)
-        .attr("fill", (d) => resolveDatumColor(Number(d.__value__), color, conditionalRules))
+        .attr("fill", (d) => {
+          const base = resolveSeriesGradientFill(defs, `hbar-${name}`, color, seriesGradient, "horizontal");
+          if (base.startsWith("url(")) return base;
+          return resolveDatumColor(Number(d.__value__), color, conditionalRules);
+        })
         .attr("cursor", onPointClick ? "pointer" : "default")
         .attr("y", (d) => {
           const base = y(String(d.__category__)) ?? 0;
@@ -193,7 +212,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
       .attr("x", (d) => x(Number(d.__value__)) + 4)
       .attr("y", (d) => (y(String(d.__category__)) ?? 0) + y.bandwidth() / 2)
       .attr("dy", "0.32em")
-      .attr("fill", theme.axisLabel)
+      .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${labelFontSize}px`)
       .text((d) => formatChartValue(d.__value__, valueFormat));
   }
@@ -211,5 +230,10 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     }
   }
 
-  return () => container.replaceChildren();
+  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH) : () => undefined;
+
+  return () => {
+    detachZoom();
+    container.replaceChildren();
+  };
 }

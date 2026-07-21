@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { chartTransition } from "@/components/charts/engine/d3/core/animate";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import {
   groupSeries,
   normalizeCartesianData,
@@ -50,6 +51,7 @@ export function resolveDualAxesColumnMax(
 
 export function renderDualAxesColumnBars(params: {
   plot: d3.Selection<SVGGElement, unknown, null, undefined>;
+  defs?: d3.Selection<SVGDefsElement, unknown, null, undefined>;
   columnData: D3CartesianDatum[];
   xField: string;
   columnYField: string;
@@ -63,11 +65,13 @@ export function renderDualAxesColumnBars(params: {
   colors: string[];
   fallbackColor: string;
   theme: AntvThemeTokens;
+  seriesGradient?: boolean;
   conditionalRules?: ChartConditionalRule[];
   onPointClick?: (datum: D3CartesianDatum) => void;
 }): { columnMax: number; legendItems: DualAxesColumnLegendItem[] } {
   const {
     plot,
+    defs,
     columnData,
     xField,
     columnYField,
@@ -81,6 +85,7 @@ export function renderDualAxesColumnBars(params: {
     colors,
     fallbackColor,
     theme,
+    seriesGradient = false,
     conditionalRules = [],
     onPointClick,
   } = params;
@@ -136,9 +141,11 @@ export function renderDualAxesColumnBars(params: {
         .attr("x", (d) => (x(String(d.data.__category__)) ?? 0) - barWidth / 2)
         .attr("width", barWidth)
         .attr("rx", BAR_RX)
-        .attr("fill", (d) =>
-          resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules),
-        )
+        .attr("fill", (d) => {
+          const base = resolveSeriesGradientFill(defs, `dual-stack-${name}`, color, seriesGradient);
+          if (base.startsWith("url(")) return base;
+          return resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules);
+        })
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
           const y1 = yRight(Number(d[1]));
@@ -171,7 +178,11 @@ export function renderDualAxesColumnBars(params: {
         })
         .attr("width", Math.max(2, groupWidth * 0.9))
         .attr("rx", BAR_RX)
-        .attr("fill", (d) => resolveDatumColor(Number(d.__value__), color, conditionalRules))
+        .attr("fill", (d) => {
+          const base = resolveSeriesGradientFill(defs, `dual-group-${name}`, color, seriesGradient);
+          if (base.startsWith("url(")) return base;
+          return resolveDatumColor(Number(d.__value__), color, conditionalRules);
+        })
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
           const y1 = yRight(Number(d.__value__));
@@ -189,7 +200,11 @@ export function renderDualAxesColumnBars(params: {
       .attr("x", (d) => (x(String(d.__category__)) ?? 0) - barWidth / 2)
       .attr("width", barWidth)
       .attr("rx", BAR_RX)
-      .attr("fill", (d) => resolveDatumColor(Number(d.__value__), fallbackColor, conditionalRules))
+      .attr("fill", (d) => {
+        const base = resolveSeriesGradientFill(defs, "dual-col", fallbackColor, seriesGradient);
+        if (base.startsWith("url(")) return base;
+        return resolveDatumColor(Number(d.__value__), fallbackColor, conditionalRules);
+      })
       .attr("cursor", onPointClick ? "pointer" : "default")
       .each(function (d) {
         const y1 = yRight(Number(d.__value__));

@@ -11,8 +11,8 @@ describe("dataScreenViewportPan", () => {
       panY: 0,
     };
     expect(applyViewportPanTranslate(session, 130, 110)).toEqual({
-      panX: -30,
-      panY: -30,
+      panX: 30,
+      panY: 30,
     });
   });
 

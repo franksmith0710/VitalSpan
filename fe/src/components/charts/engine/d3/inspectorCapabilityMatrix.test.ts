@@ -1,0 +1,45 @@
+import { describe, expect, it } from "vitest";
+import {
+  listD3WiringChartTypes,
+  resolveD3InspectorFeatureMatrix,
+  resolveD3WiredCapabilities,
+} from "./inspectorCapabilityMatrix";
+import { resolveEngineCapabilities } from "@/components/charts/engine/capabilities";
+import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
+
+describe("inspectorCapabilityMatrix", () => {
+  it("registers all major canvas chart types", () => {
+    const types = listD3WiringChartTypes();
+    expect(types).toContain("line");
+    expect(types).toContain("area");
+    expect(types).toContain("bar-horizontal");
+    expect(types).toContain("chart-mix-stack");
+    expect(types.length).toBeGreaterThan(30);
+  });
+
+  it("hides conditional for scatter after D3 wiring audit", () => {
+    const caps = resolveD3WiredCapabilities("scatter");
+    expect(caps?.conditional).toBe(false);
+    expect(resolveD3InspectorFeatureMatrix("scatter")?.conditional).toBe("missing");
+  });
+
+  it("enables dataZoom for dual axes after P0 wiring", () => {
+    expect(resolveD3WiredCapabilities("chart-mix")?.dataZoom).toBe(true);
+  });
+
+  it("resolveEngineCapabilities uses D3 matrix for canvas types", () => {
+    expect(resolveEngineCapabilities("scatter").conditional).toBe(false);
+    expect(resolveEngineCapabilities("line").dataZoom).toBe(true);
+    expect(resolveEngineCapabilities("gauge").label).toBe(false);
+  });
+
+  it("chartInspectorCapabilities stays aligned with D3 matrix", () => {
+    const scatter = chartInspectorCapabilities("scatter");
+    expect(scatter.conditional).toBe(false);
+    expect(scatter.markLines).toBe(true);
+
+    const mix = chartInspectorCapabilities("chart-mix");
+    expect(mix.dataZoom).toBe(true);
+    expect(mix.label).toBe(true);
+  });
+});

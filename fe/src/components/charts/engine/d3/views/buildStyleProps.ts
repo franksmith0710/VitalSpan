@@ -1,6 +1,7 @@
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
+import { buildD3PresentationProps } from "@/components/charts/engine/d3/core/presentation";
 import { resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
 import { readChartConditionalRules, readChartMarkLines } from "@/lib/chartDeFeatures";
@@ -42,9 +43,9 @@ export function buildD3StyleProps(props: ChartEngineViewProps, plan: ChartRender
     showLabel: style.showLabel,
     showTooltip: style.showTooltip,
     showLegend: !style.shellLegend && style.deStyle.legend?.show !== false,
-    labelFontSize: style.labelPresentation.fontSize,
     valueFormat: style.valueFormat,
     conditionalRules,
     markLines,
+    ...buildD3PresentationProps(style),
   };
 }

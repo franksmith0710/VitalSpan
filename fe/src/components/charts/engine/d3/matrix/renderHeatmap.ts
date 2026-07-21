@@ -22,6 +22,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     colors,
     theme: rawTheme,
     showTooltip,
+    tooltipPresentation,
     valueFormat,
     onPointClick,
     conditionalRules = [],
@@ -49,7 +50,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
 
   const cross = g.append("g").attr("class", "vs-heatmap-cross").style("pointer-events", "none").style("opacity", 0);
   const colBand = cross

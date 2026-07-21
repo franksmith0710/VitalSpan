@@ -5,6 +5,7 @@ import type { D3CartesianRenderConfig, D3CartesianDatum } from "@/components/cha
 import { resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
 import { readChartConditionalRules, readChartMarkLines } from "@/lib/chartDeFeatures";
+import { buildD3PresentationProps } from "@/components/charts/engine/d3/core/presentation";
 
 export function extractDrillValue(datum: D3CartesianDatum, xField: string): string {
   const value = datum[xField] ?? datum.__category__;
@@ -65,8 +66,8 @@ export function buildCartesianRenderConfig(
     showLabel: style.showLabel,
     showTooltip: style.showTooltip,
     showLegend: !style.shellLegend && style.deStyle.legend?.show !== false && Boolean(seriesField),
-    labelFontSize: style.labelPresentation.fontSize,
     valueFormat: style.valueFormat,
+    ...buildD3PresentationProps(style),
     markLines: chartConfig ? readChartMarkLines(chartConfig) : markLinesFromPlan ?? style.deFeatures?.markLines,
     conditionalRules:
       chartConfig ? readChartConditionalRules(chartConfig) : conditionalFromPlan ?? style.deFeatures?.conditionalRules,

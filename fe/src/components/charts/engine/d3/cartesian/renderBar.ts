@@ -3,7 +3,9 @@ import { animateBarHeight } from "@/components/charts/engine/d3/core/animate";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import {
   buildCartesianScene,
   drawCartesianBandAxes,
@@ -48,6 +50,9 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     valueFormat,
     markLines = [],
     conditionalRules = [],
+    labelColor,
+    seriesGradient = false,
+    tooltipPresentation,
     onPointClick,
     dataZoom = false,
   } = config;
@@ -110,7 +115,11 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
         .attr("x", (d) => x(String(d.data.__category__)) ?? 0)
         .attr("width", x.bandwidth())
         .attr("rx", BAR_RX)
-        .attr("fill", (d) => resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules))
+        .attr("fill", (d) => {
+          const base = resolveSeriesGradientFill(defs, `bar-stack-${name}`, color, seriesGradient);
+          if (base.startsWith("url(")) return base;
+          return resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules);
+        })
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
           const y1 = y(Number(d[1]));
@@ -135,7 +144,11 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
         .data(s.points)
         .join("rect")
         .attr("rx", BAR_RX)
-        .attr("fill", (d) => resolveDatumColor(Number(d.__value__), color, conditionalRules))
+        .attr("fill", (d) => {
+          const base = resolveSeriesGradientFill(defs, `bar-${name}`, color, seriesGradient);
+          if (base.startsWith("url(")) return base;
+          return resolveDatumColor(Number(d.__value__), color, conditionalRules);
+        })
         .attr("cursor", onPointClick ? "pointer" : "default")
         .attr("x", (d) => {
           const base = x(String(d.__category__)) ?? 0;
@@ -162,7 +175,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
       .attr("stroke-dasharray", line.lineStyle === "solid" ? undefined : "5 4");
   }
 
-  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
   const crosshair = createCrosshair({ plot, innerW, innerH, theme });
   if (showTooltip) {
     attachBandCategoryInteraction({
@@ -197,7 +210,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
       .attr("x", (d) => (x(String(d.__category__)) ?? 0) + x.bandwidth() / 2)
       .attr("y", (d) => y(Number(d.__value__)) - 4)
       .attr("text-anchor", "middle")
-      .attr("fill", theme.axisLabel)
+      .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${labelFontSize}px`)
       .text((d) => formatChartValue(d.__value__, valueFormat));
   }

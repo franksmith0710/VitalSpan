@@ -281,8 +281,8 @@ export function DataScreenEditViewport({
     [onBlankPointerDown],
   );
 
-  const panTranslateX = viewPan.x + offsetX;
-  const panTranslateY = viewPan.y + offsetY;
+  const panTranslateX = offsetX + viewPan.x;
+  const panTranslateY = offsetY + viewPan.y;
 
   const stageStyle: CSSProperties = {
     width: canvasWidth,

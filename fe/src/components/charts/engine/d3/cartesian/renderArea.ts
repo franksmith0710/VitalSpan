@@ -9,11 +9,13 @@ import {
   drawCartesianAxes,
   drawHorizontalGrid,
 } from "@/components/charts/engine/d3/core/sceneGraph";
-import { groupSeries, normalizeCartesianData, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
+import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLayer";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { attachPointCategoryInteraction } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
+import { formatChartValue } from "@/lib/chartValueFormat";
 
 type WideRow = Record<string, string | number>;
 
@@ -35,8 +37,14 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     theme: rawTheme,
     showTooltip,
     showLegend,
+    showLabel,
+    labelFontSize,
     valueFormat,
     markLines = [],
+    conditionalRules = [],
+    labelColor,
+    seriesGradient = false,
+    tooltipPresentation,
     onPointClick,
     dataZoom = false,
   } = config;
@@ -97,9 +105,12 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
       plot
         .append("path")
         .datum(layer)
-        .attr("fill", `url(#${gradId})`)
+        .attr("fill", seriesGradient ? `url(#${gradId})` : color)
+        .attr("fill-opacity", seriesGradient ? 1 : 0.35)
         .attr("d", areaGen)
-        .attr("stroke", color)
+        .attr("stroke", (d) =>
+          resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules),
+        )
         .attr("stroke-width", 1)
         .style("cursor", onPointClick ? "pointer" : "default")
         .on("click", () => onPointClick?.({ __category__: name, __value__: 0 }));
@@ -107,7 +118,12 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
   } else {
     for (const [i, s] of seriesGroups.entries()) {
       const color = colorScale(s.name) ?? colors[i] ?? "#465fff";
-      const gradId = ensureGradientDef(defs, `area-${i}`, color, 0.38, 0.04);
+      const strokeColor = resolveDatumColor(
+        d3.max(s.points, (d) => Number(d.__value__)) ?? 0,
+        color,
+        conditionalRules,
+      );
+      const gradId = ensureGradientDef(defs, `area-${i}`, strokeColor, 0.38, 0.04);
       const points = [...s.points].sort(
         (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
       );
@@ -117,18 +133,37 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
         .y0(innerH)
         .y1((d) => y(Number(d.__value__)))
         .curve(curve);
-      plot.append("path").datum(points).attr("fill", `url(#${gradId})`).attr("d", areaGen);
+      plot
+        .append("path")
+        .datum(points)
+        .attr("fill", seriesGradient ? `url(#${gradId})` : strokeColor)
+        .attr("fill-opacity", seriesGradient ? 1 : 0.2)
+        .attr("d", areaGen);
       plot
         .append("path")
         .datum(points)
         .attr("fill", "none")
-        .attr("stroke", color)
+        .attr("stroke", strokeColor)
         .attr("stroke-width", 2)
         .attr("d", d3.line<typeof points[0]>().x((d) => x(String(d.__category__)) ?? 0).y((d) => y(Number(d.__value__))).curve(curve));
+
+      if (showLabel) {
+        plot
+          .selectAll(`text.area-label-${i}`)
+          .data(points)
+          .join("text")
+          .attr("class", `area-label-${i}`)
+          .attr("x", (d) => x(String(d.__category__)) ?? 0)
+          .attr("y", (d) => y(Number(d.__value__)) - 6)
+          .attr("text-anchor", "middle")
+          .attr("fill", resolveLabelFill(theme, labelColor))
+          .style("font-size", `${labelFontSize ?? 12}px`)
+          .text((d) => formatChartValue(d.__value__, valueFormat));
+      }
     }
   }
 
-  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
   const crosshair = createCrosshair({ plot, innerW, innerH, theme });
   if (showTooltip) {
     attachPointCategoryInteraction({

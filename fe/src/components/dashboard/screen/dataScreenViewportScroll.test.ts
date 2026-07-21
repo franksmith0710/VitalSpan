@@ -20,13 +20,13 @@ describe("dataScreenViewportScroll", () => {
   it("computes pan bounds when content exceeds viewport", () => {
     const { padX, padY } = resolveDataScreenEditPanPadding(viewport, content);
     const bounds = computeViewportPanBounds(viewport, content);
-    expect(bounds.minPanX).toBe(-200 - padX);
-    expect(bounds.maxPanX).toBe(0);
-    expect(bounds.minPanY).toBe(-200 - padY);
-    expect(bounds.maxPanY).toBe(0);
+    expect(bounds.minPanX).toBe(-(200 + padX));
+    expect(bounds.maxPanX).toBe(padX);
+    expect(bounds.minPanY).toBe(-(200 + padY));
+    expect(bounds.maxPanY).toBe(padY);
   });
 
-  it("locks left/top (maxPan=0) while extending minPan for right/bottom workspace", () => {
+  it("anchors home at pan=0 and extends workspace padding on right/bottom", () => {
     const smaller = {
       scaledWidth: 900,
       scaledHeight: 400,
@@ -35,12 +35,13 @@ describe("dataScreenViewportScroll", () => {
     };
     const { padX, padY } = resolveDataScreenEditPanPadding(viewport, smaller);
     const bounds = computeViewportPanBounds(viewport, smaller);
-    expect(bounds.maxPanX).toBe(0);
-    expect(bounds.maxPanY).toBe(0);
     expect(bounds.minPanX).toBe(-padX);
     expect(bounds.minPanY).toBe(-padY);
+    expect(bounds.maxPanX).toBe(padX);
+    expect(bounds.maxPanY).toBe(padY);
     expect(clampViewportPan({ x: -80, y: -200 }, bounds)).toEqual({ x: -80, y: -200 });
-    expect(clampViewportPan({ x: 200, y: 150 }, bounds)).toEqual({ x: 0, y: 0 });
+    expect(clampViewportPan({ x: 200, y: 150 }, bounds)).toEqual({ x: 200, y: 150 });
+    expect(clampViewportPan({ x: 9999, y: 9999 }, bounds)).toEqual({ x: padX, y: padY });
   });
 
   it("maps pan to scrollbar offset and back", () => {
@@ -48,8 +49,8 @@ describe("dataScreenViewportScroll", () => {
     const metrics = computeViewportScrollMetrics(viewport, content, { x: -100, y: -50 });
     expect(metrics.horizontal.canScroll).toBe(true);
     expect(metrics.vertical.canScroll).toBe(true);
-    expect(metrics.horizontal.scrollOffset).toBe(bounds.maxPanX - -100);
-    expect(metrics.vertical.scrollOffset).toBe(bounds.maxPanY - -50);
+    expect(metrics.horizontal.scrollOffset).toBe(-100 - bounds.minPanX);
+    expect(metrics.vertical.scrollOffset).toBe(-50 - bounds.minPanY);
     expect(panFromHorizontalScroll(metrics.horizontal.scrollOffset, bounds)).toBe(-100);
     expect(panFromVerticalScroll(metrics.vertical.scrollOffset, bounds)).toBe(-50);
   });

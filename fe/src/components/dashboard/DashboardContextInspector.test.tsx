@@ -87,6 +87,7 @@ describe("DashboardContextInspector", () => {
     );
 
     onStyleChange.mockClear();
+    cleanup();
     render(
       <DashboardContextInspector
         widgetCount={1}

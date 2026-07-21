@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -38,6 +39,8 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     showTooltip,
     showLegend,
     labelFontSize,
+    labelColor,
+    tooltipPresentation,
     valueFormat,
     conditionalRules = [],
     onPointClick,
@@ -96,7 +99,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
 
   const arc = createArc();
 
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
   const arcs = g.selectAll<SVGGElement, d3.PieArcDatum<D3Datum>>("g.slice").data(pie(data)).join("g").attr("class", "slice");
 
   arcs
@@ -155,7 +158,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
       .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
       .attr("text-anchor", "middle")
       .attr("dy", "0.35em")
-      .attr("fill", theme.axisLabel)
+      .attr("fill", resolveLabelFill(theme, labelColor))
       .style("font-size", `${labelFontSize}px`)
       .text((d) => formatChartValue(d.data[angleField], valueFormat));
   }

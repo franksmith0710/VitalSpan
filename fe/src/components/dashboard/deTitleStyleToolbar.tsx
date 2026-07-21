@@ -33,7 +33,9 @@ type DeTitleStyleToolbarProps = {
 };
 
 const TOOLBAR_SHELL =
-  "flex min-w-0 flex-wrap items-end gap-0.5 rounded-lg border border-gray-200 bg-gray-50/90 p-1 shadow-theme-xs dark:border-gray-700 dark:bg-white/[0.03]";
+  "flex min-w-0 flex-col gap-1 rounded-lg border border-gray-200 bg-gray-50/90 p-1 shadow-theme-xs dark:border-gray-700 dark:bg-white/[0.03]";
+
+const TOOLBAR_ROW = "flex min-w-0 flex-wrap items-center gap-0.5";
 
 const FONT_SIZE_TRIGGER =
   "h-8 min-h-8 w-[3.75rem] shrink-0 rounded-md border-0 bg-white px-2 py-0 text-xs shadow-none ring-1 ring-inset ring-gray-200 hover:bg-gray-50 focus-visible:ring-brand-500/30 data-[state=open]:ring-brand-500/40 dark:bg-gray-900 dark:ring-gray-600 dark:hover:bg-white/[0.04]";
@@ -143,67 +145,69 @@ export function DeTitleStyleToolbar({
 
   return (
     <div data-testid={testId} className={cn(TOOLBAR_SHELL, className)}>
-      <Select
-        value={String(fontSize)}
-        onValueChange={(next) => onChange({ fontSize: Number(next) })}
-      >
-        <SelectTrigger className={FONT_SIZE_TRIGGER} aria-label="字号">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent className="z-99999 max-h-56 min-w-[5.5rem]">
-          {sizes.map((size) => (
-            <SelectItem key={size} value={String(size)} className="text-sm">
-              {size}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className={TOOLBAR_ROW}>
+        <Select
+          value={String(fontSize)}
+          onValueChange={(next) => onChange({ fontSize: Number(next) })}
+        >
+          <SelectTrigger className={FONT_SIZE_TRIGGER} aria-label="字号">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="z-99999 max-h-56 min-w-[5.5rem]">
+            {sizes.map((size) => (
+              <SelectItem key={size} value={String(size)} className="text-sm">
+                {size}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      <ToolbarIconButton
-        label="粗体"
-        active={isBold}
-        onClick={() => onChange({ fontWeight: isBold ? 400 : 600 })}
-      >
-        <Bold className="size-4" />
-      </ToolbarIconButton>
-      <ToolbarIconButton
-        label="斜体"
-        active={isItalic}
-        onClick={() => onChange({ fontStyle: isItalic ? "normal" : "italic" })}
-      >
-        <Italic className="size-4" />
-      </ToolbarIconButton>
+        <ToolbarIconButton
+          label="粗体"
+          active={isBold}
+          onClick={() => onChange({ fontWeight: isBold ? 400 : 600 })}
+        >
+          <Bold className="size-4" />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          label="斜体"
+          active={isItalic}
+          onClick={() => onChange({ fontStyle: isItalic ? "normal" : "italic" })}
+        >
+          <Italic className="size-4" />
+        </ToolbarIconButton>
 
-      <Divider />
+        {showAdvanced ? (
+          <>
+            <Divider />
+            <TitleAdvancedPopover value={value} onChange={onChange} />
+          </>
+        ) : null}
+      </div>
 
-      <ToolbarIconButton
-        label="左对齐"
-        active={align === "left"}
-        onClick={() => onChange({ align: "left" })}
-      >
-        <AlignLeft className="size-4" />
-      </ToolbarIconButton>
-      <ToolbarIconButton
-        label="居中对齐"
-        active={align === "center"}
-        onClick={() => onChange({ align: "center" })}
-      >
-        <AlignCenter className="size-4" />
-      </ToolbarIconButton>
-      <ToolbarIconButton
-        label="右对齐"
-        active={align === "right"}
-        onClick={() => onChange({ align: "right" })}
-      >
-        <AlignRight className="size-4" />
-      </ToolbarIconButton>
-
-      {showAdvanced ? (
-        <>
-          <Divider />
-          <TitleAdvancedPopover value={value} onChange={onChange} />
-        </>
-      ) : null}
+      <div className={TOOLBAR_ROW}>
+        <ToolbarIconButton
+          label="左对齐"
+          active={align === "left"}
+          onClick={() => onChange({ align: "left" })}
+        >
+          <AlignLeft className="size-4" />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          label="居中对齐"
+          active={align === "center"}
+          onClick={() => onChange({ align: "center" })}
+        >
+          <AlignCenter className="size-4" />
+        </ToolbarIconButton>
+        <ToolbarIconButton
+          label="右对齐"
+          active={align === "right"}
+          onClick={() => onChange({ align: "right" })}
+        >
+          <AlignRight className="size-4" />
+        </ToolbarIconButton>
+      </div>
     </div>
   );
 }

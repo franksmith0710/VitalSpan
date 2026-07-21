@@ -25,11 +25,21 @@ export const VCDS = {
     fontSize: 12,
     maxWidth: 240,
   },
+  depth: {
+    extrudePx: { standard: 4, enhanced: 8 },
+    sideDarken: 0.22,
+    topLighten: 0.14,
+    shadowBlur: { standard: 3, enhanced: 6 },
+    pieExtrudeOffset: { standard: 3, enhanced: 6 },
+    hoverLiftPx: { standard: 1, enhanced: 2 },
+  },
 } as const;
 
 export type MotionIntensity = "off" | "standard" | "enhanced";
+export type DepthVisualLevel = "off" | "standard" | "enhanced";
 
 let motionIntensity: MotionIntensity = "standard";
+let depthVisual: DepthVisualLevel = "off";
 
 export function setMotionIntensity(level: MotionIntensity): void {
   motionIntensity = level;
@@ -37,6 +47,14 @@ export function setMotionIntensity(level: MotionIntensity): void {
 
 export function getMotionIntensity(): MotionIntensity {
   return motionIntensity;
+}
+
+export function setDepthVisual(level: DepthVisualLevel): void {
+  depthVisual = level;
+}
+
+export function getDepthVisual(): DepthVisualLevel {
+  return depthVisual;
 }
 
 export function motionDuration(kind: keyof typeof VCDS.motion): number {

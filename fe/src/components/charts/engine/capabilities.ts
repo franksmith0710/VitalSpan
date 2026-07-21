@@ -1,5 +1,6 @@
 import type { ChartEngineId } from "@/components/charts/engine/types";
 import type { ChartType } from "@/lib/chartViewConfig";
+import { resolveD3WiredCapabilities } from "@/components/charts/engine/d3/inspectorCapabilityMatrix";
 import { getEngineIdForChartType } from "@/components/charts/engine/registry";
 import { getChartPlugin } from "@/components/charts/engine/plugins/registry";
 
@@ -85,10 +86,13 @@ export function resolveEngineCapabilities(
   chartType: ChartType | string,
   engineId?: ChartEngineId,
 ): EngineCapabilities {
+  const engine = engineId ?? getEngineIdForChartType(chartType);
+  const d3Caps = engine !== "table" ? resolveD3WiredCapabilities(chartType) : null;
+  if (d3Caps) return d3Caps;
+
   const plugin = getChartPlugin(chartType);
   if (plugin) return plugin.engineCapabilities;
 
-  const engine = engineId ?? getEngineIdForChartType(chartType);
   if (engine === "table") return LEGACY_CAPS.table;
   return legacyCapsForType(chartType);
 }

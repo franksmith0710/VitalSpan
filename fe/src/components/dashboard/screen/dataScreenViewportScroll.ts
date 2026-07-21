@@ -1,6 +1,6 @@
 export const CANVAS_VIEWPORT_SCROLLBAR_SIZE_PX = 8;
 
-/** 编辑视口留白：仅向 minPan 方向扩展（拖动画布露出右下工作区） */
+/** 编辑视口留白：画布四向可扩展，右下为主工作区方向 */
 export const DATA_SCREEN_EDIT_PAN_PADDING_MIN_PX = 480;
 
 export type ViewportPan = { x: number; y: number };
@@ -33,7 +33,7 @@ type ContentLayout = {
   offsetY: number;
 };
 
-/** 平移上下界：左上锚定（maxPan≤0），右下大留白（minPan 负向扩展）。 */
+/** 编辑视口留白尺寸（与画布缩放尺寸、视口尺寸取较大值） */
 export function resolveDataScreenEditPanPadding(
   viewport: ViewportSize,
   content: Pick<ContentLayout, "scaledWidth" | "scaledHeight">,
@@ -52,20 +52,19 @@ export function resolveDataScreenEditPanPadding(
   };
 }
 
+/** 平移上下界：pan 即画布位移；左上为 0，向左/上可浏览溢出内容，向右/下可进入工作区留白。 */
 export function computeViewportPanBounds(
   viewport: ViewportSize,
   content: ContentLayout,
 ): ViewportPanBounds {
   const { padX, padY } = resolveDataScreenEditPanPadding(viewport, content);
-  const contentMinPanX = viewport.width - content.scaledWidth - content.offsetX;
-  const contentMaxPanX = content.offsetX === 0 ? 0 : -content.offsetX;
-  const contentMinPanY = viewport.height - content.scaledHeight - content.offsetY;
-  const contentMaxPanY = content.offsetY === 0 ? 0 : -content.offsetY;
+  const overflowX = Math.max(0, content.scaledWidth - viewport.width);
+  const overflowY = Math.max(0, content.scaledHeight - viewport.height);
   return {
-    minPanX: Math.min(contentMinPanX, contentMaxPanX) - padX,
-    maxPanX: contentMaxPanX,
-    minPanY: Math.min(contentMinPanY, contentMaxPanY) - padY,
-    maxPanY: contentMaxPanY,
+    minPanX: -(overflowX + padX),
+    maxPanX: padX,
+    minPanY: -(overflowY + padY),
+    maxPanY: padY,
   };
 }
 
@@ -88,7 +87,7 @@ function axisScrollMetrics(
 ): ViewportScrollAxisMetrics {
   const scrollSize = Math.max(clientSize, maxPan - minPan + clientSize);
   const maxScroll = Math.max(0, scrollSize - clientSize);
-  const scrollOffset = Math.min(maxScroll, Math.max(0, maxPan - pan));
+  const scrollOffset = Math.min(maxScroll, Math.max(0, pan - minPan));
   return {
     scrollSize,
     clientSize,
@@ -124,12 +123,12 @@ export function panFromHorizontalScroll(
   scrollOffset: number,
   bounds: ViewportPanBounds,
 ): number {
-  return bounds.maxPanX - scrollOffset;
+  return bounds.minPanX + scrollOffset;
 }
 
 export function panFromVerticalScroll(
   scrollOffset: number,
   bounds: ViewportPanBounds,
 ): number {
-  return bounds.maxPanY - scrollOffset;
+  return bounds.minPanY + scrollOffset;
 }

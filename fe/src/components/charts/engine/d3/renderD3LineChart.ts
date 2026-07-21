@@ -23,6 +23,7 @@ import {
   showMergedTooltip,
 } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { highlightCategoryDots } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianDatum, D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -54,6 +55,9 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     valueFormat,
     markLines = [],
     conditionalRules = [],
+    labelColor,
+    seriesGradient = false,
+    tooltipPresentation,
     onPointClick,
     dataZoom = false,
   } = config;
@@ -104,7 +108,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       .attr("stroke-dasharray", line.lineStyle === "solid" ? undefined : "5 4");
   }
 
-  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
   const crosshair = createCrosshair({ plot, innerW, innerH, theme });
   const dotLayers: d3.Selection<SVGCircleElement, D3CartesianDatum, SVGGElement, unknown>[] = [];
 
@@ -115,7 +119,12 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
     );
 
-    plot.append("path").datum(points).attr("fill", `url(#${gradId})`).attr("d", areaGen).attr("opacity", 0.95);
+    plot
+      .append("path")
+      .datum(points)
+      .attr("fill", seriesGradient ? `url(#${gradId})` : color)
+      .attr("fill-opacity", seriesGradient ? 0.95 : 0.12)
+      .attr("d", areaGen);
 
     const linePath = plot
       .append("path")
@@ -152,7 +161,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
         .attr("x", (d) => xScale(String(d.__category__)) ?? 0)
         .attr("y", (d) => yScale(Number(d.__value__)) - 8)
         .attr("text-anchor", "middle")
-        .attr("fill", theme.axisLabel)
+        .attr("fill", resolveLabelFill(theme, labelColor))
         .style("font-size", `${labelFontSize}px`)
         .text((d) => formatChartValue(d.__value__, valueFormat));
     }
@@ -236,7 +245,7 @@ function renderHorizontalLineFallback(
       .attr("stroke-width", VCDS.line.width)
       .attr("d", lineGen);
   });
-  const tooltip = showTooltip ? createTooltipLayer(container, theme) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
   return () => {
     hideTooltip(tooltip);
     container.replaceChildren();
