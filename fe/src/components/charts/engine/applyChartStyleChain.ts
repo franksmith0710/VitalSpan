@@ -15,7 +15,7 @@ export function applyChartStyleChain(
   let next = applyAntvStyle(plan, style);
   next = applyAdvancedFeatures(next, style);
 
-  if (chartConfig && next.kind === "g2plot") {
+  if (chartConfig && (plan.kind === "g2plot" || plan.kind === "d3")) {
     const items = resolveChartSeriesColorItems(
       chartConfig,
       style.deStyle.paletteId,
@@ -25,7 +25,7 @@ export function applyChartStyleChain(
     if (items.length && conditionalRules.length === 0) {
       next = { ...next, options: { ...next.options, color: items.map((item) => item.color) } };
     }
-    if (conditionalRules.length > 0) {
+    if (conditionalRules.length > 0 && plan.kind === "g2plot") {
       next = {
         ...next,
         options: applyConditionalRulesToG2PlotOptions(

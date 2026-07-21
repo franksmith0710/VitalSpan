@@ -111,7 +111,7 @@ export const BUILTIN_PLUGIN_DEFS: ChartPluginDef[] = [
   def("table-pivot", "table", "s2", "antv", TABLE, TABLE_SECTIONS),
   def("t-heatmap", "table", "g2plot", "antv", TABLE, MINIMAL),
 
-  def("line", "trend", "g2plot", "antv", STATS, LINE_BAR_SECTIONS),
+  def("line", "trend", "d3", "antv", STATS, LINE_BAR_SECTIONS),
   def("area", "trend", "g2plot", "antv", STATS, LINE_BAR_SECTIONS),
   def("area-stack", "trend", "g2plot", "antv", STATS, LINE_BAR_SECTIONS),
   def("timeline", "trend", "g2plot", "antv", STATS, LINE_BAR_SECTIONS, { deprecated: true, migratesTo: "line" }),

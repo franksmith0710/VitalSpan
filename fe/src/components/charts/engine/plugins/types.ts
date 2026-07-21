@@ -4,7 +4,7 @@ import type { ChartViewModel } from "@/components/charts/engine/types";
 import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
-export type ChartLibrary = "g2plot" | "g6" | "g2" | "s2" | "react";
+export type ChartLibrary = "g2plot" | "g6" | "g2" | "s2" | "react" | "d3";
 
 export type DePaletteCategory =
   | "quota"

@@ -32,6 +32,10 @@ describe("chart engine registry", () => {
     expect(getChartPlugin("table-info")?.library).toBe("s2");
   });
 
+  it("routes line chart through d3 renderer", () => {
+    expect(getChartPlugin("line")?.library).toBe("d3");
+  });
+
   it("lists registered canvas types from plugins", () => {
     const canvasTypes = listRegisteredCanvasChartTypes();
     expect(canvasTypes).toContain("bar-stack");

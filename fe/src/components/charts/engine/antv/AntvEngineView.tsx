@@ -6,6 +6,7 @@ import { AntvG2PlotView } from "@/components/charts/engine/antv/g2plot/AntvG2Plo
 import { AntvG6View } from "@/components/charts/engine/antv/g6/AntvG6View";
 import { AntvMapView } from "@/components/charts/engine/antv/geo/AntvMapView";
 import { AntvS2View } from "@/components/charts/engine/antv/s2/AntvS2View";
+import { D3LineView } from "@/components/charts/engine/d3/D3LineView";
 
 function resolveLibrary(chartType: string, planKind: string): string {
   const plugin = getChartPlugin(chartType);
@@ -28,6 +29,9 @@ function AntvEngineViewInner(props: ChartEngineViewProps) {
   }
   if (library === "s2" || plan.kind === "s2") {
     return <AntvS2View {...props} />;
+  }
+  if (library === "d3" || plan.kind === "d3") {
+    return <D3LineView {...props} />;
   }
   return <AntvG2PlotView {...props} />;
 }

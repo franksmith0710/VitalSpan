@@ -171,21 +171,22 @@ function linePlan(
   vm: ChartViewModel,
   rows: unknown[][],
   columns: string[],
-  opts: { area?: boolean; stack?: boolean; smooth?: boolean },
+  opts: { area?: boolean; stack?: boolean; smooth?: boolean; engine?: "g2plot" | "d3" },
 ): AntvRenderPlan {
   const enc = encodeCartesianRows(spec, rows, columns, "line");
-  const plotType = enc.isHorizontal ? "Bar" : "Line";
+  const isHorizontal = enc.isHorizontal;
   return {
-    kind: "g2plot",
-    plotType,
+    kind: opts.engine ?? "g2plot",
+    plotType: isHorizontal ? "Bar" : "Line",
     options: {
       data: enc.data,
-      xField: enc.isHorizontal ? enc.yField : enc.xField,
-      yField: enc.isHorizontal ? enc.xField : enc.yField,
+      xField: isHorizontal ? enc.yField : enc.xField,
+      yField: isHorizontal ? enc.xField : enc.yField,
       seriesField: enc.seriesField,
       smooth: opts.smooth ?? vm.styleVariant === "smooth",
       area: opts.area ? {} : undefined,
       isStack: opts.stack ?? false,
+      isHorizontal,
     },
   };
 }
@@ -273,7 +274,7 @@ export function buildPlanForType(chartType: string, vm: ChartViewModel): AntvRen
 
   switch (chartType) {
     case "line":
-      return linePlan(spec, vm, capped, columns, { smooth: vm.styleVariant === "smooth" });
+      return linePlan(spec, vm, capped, columns, { smooth: vm.styleVariant === "smooth", engine: "d3" });
     case "area":
       return linePlan(spec, vm, capped, columns, { area: true });
     case "area-stack":

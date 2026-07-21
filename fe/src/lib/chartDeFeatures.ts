@@ -83,7 +83,7 @@ export function chartJumpIsConfigured(jump: ChartJumpConfig): boolean {
   return Boolean(jump.dashboardId?.trim());
 }
 
-function matchConditionalRule(value: number, rule: ChartConditionalRule): boolean {
+export function matchConditionalRule(value: number, rule: ChartConditionalRule): boolean {
   switch (rule.operator) {
     case "gt":
       return value > rule.value;

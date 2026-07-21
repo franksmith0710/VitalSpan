@@ -37,7 +37,7 @@ describe("ChartRenderer smoke", () => {
     expect(screen.getByRole("button", { name: "重试" })).toBeInTheDocument();
   });
 
-  it("T-VIZ-R28-002-05: line chart renders antv container", async () => {
+  it("T-VIZ-R28-002-05: line chart renders d3 container", async () => {
     mockApiFetch.mockResolvedValueOnce({ columns: ["x", "y"], rows: [[1, 2]] });
     const lineConfig: ChartViewConfig = {
       chartType: "line",
@@ -48,7 +48,7 @@ describe("ChartRenderer smoke", () => {
       metrics: [{ field: "y" }],
     };
     render(<ChartRenderer config={lineConfig} />);
-    expect(await screen.findByTestId("antv-g2plot-chart")).toBeInTheDocument();
+    expect(await screen.findByTestId("d3-line-chart")).toBeInTheDocument();
   });
 
   it("T-VIZ-R29-002-01: table-info renders s2 host with capped visible rows", async () => {
