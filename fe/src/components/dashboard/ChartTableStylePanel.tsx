@@ -14,6 +14,7 @@ import { INSPECTOR_SELECT, InspectorInlineColorRow } from "./inspectorCompact";
 import { useChartInspector } from "./ChartInspectorContext";
 import {
   patchChartDeTableStyle,
+  patchTableColumnWidthMode,
   readChartDeTableStyle,
   DEFAULT_TABLE_PAGE_SIZE,
 } from "@/lib/chartDeTableStyle";
@@ -137,7 +138,7 @@ export function ChartTableStylePanel() {
         {profile.showColumnWidth ? (
           <>
             <p className="px-1 pb-2 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
-              表头列右缘拖拽调列宽（双击自动适应内容）；表头底边拖拽调行高。编辑态松手自动保存。
+              列宽模式立即生效；编辑看板时可在表头拖拽列宽/行高，松手自动保存。
             </p>
             <ChartDeSegmentField
               label="列宽调整"
@@ -149,7 +150,7 @@ export function ChartTableStylePanel() {
                 { value: "custom", label: "自定义" },
               ]}
               onChange={(value) =>
-                patch({ columnWidthMode: value as "auto" | "fixed" | "custom" })
+                onChange(patchTableColumnWidthMode(cfg, value as "auto" | "fixed" | "custom"))
               }
             />
 

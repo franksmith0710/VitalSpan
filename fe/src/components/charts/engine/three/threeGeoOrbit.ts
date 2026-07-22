@@ -16,14 +16,16 @@ export type ThreeGeoOrbitLayout = {
 
 const GEO_MAP_TARGET_SPAN = 18;
 
-/** 仅用 Mesh 算包围盒，排除 LineSegments 边线对质心的拉扯 */
+/** 仅用 Mesh 几何体算包围盒，排除 LineSegments 边线对质心的拉扯 */
 function boundsFromMapMeshes(mapGroup: THREE.Group): THREE.Box3 {
   const box = new THREE.Box3();
   let hasMesh = false;
   mapGroup.traverse((obj) => {
     if (!(obj instanceof THREE.Mesh)) return;
-    const meshBox = new THREE.Box3().setFromObject(obj);
-    if (meshBox.isEmpty()) return;
+    const geom = obj.geometry;
+    if (!geom.boundingBox) geom.computeBoundingBox();
+    if (!geom.boundingBox) return;
+    const meshBox = geom.boundingBox.clone().applyMatrix4(obj.matrixWorld);
     if (!hasMesh) {
       box.copy(meshBox);
       hasMesh = true;

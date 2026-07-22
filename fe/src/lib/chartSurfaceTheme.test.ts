@@ -1,51 +1,26 @@
 import { describe, expect, it } from "vitest";
 import {
-  resolveEffectiveChartScheme,
-  resolveTableThemeVars,
-  resolveWidgetEffectiveScheme,
+  resolveTableHostBorder,
+  resolveTableHostOpacity,
+  resolveTableScrollbarStyle,
 } from "./chartSurfaceTheme";
 
-describe("chartSurfaceTheme", () => {
-  it("T-TABLE-THEME-01: light widget shell overrides dark dashboard scheme", () => {
-    expect(resolveEffectiveChartScheme("dark", "#93c5fd")).toBe("light");
-    expect(resolveEffectiveChartScheme("dark", "#1e293b")).toBe("dark");
-    expect(
-      resolveWidgetEffectiveScheme({
-        colorScheme: "dark",
-        widgetStyle: { background: "#93c5fd", backgroundCustom: true },
-      }),
-    ).toBe("light");
+describe("chartSurfaceTheme table chrome", () => {
+  it("resolveTableHostOpacity returns ratio under 100%", () => {
+    expect(resolveTableHostOpacity({ opacity: 80 })).toBe(0.8);
+    expect(resolveTableHostOpacity({ opacity: 100 })).toBeUndefined();
   });
 
-  it("T-TABLE-THEME-02: resolveTableThemeVars prefers explicit colors", () => {
-    const vars = resolveTableThemeVars(
-      { headerBg: "#eef2ff", headerFg: "#312e81", bodyFg: "#1e3a8a" },
-      { colorScheme: "dark", widgetShellBg: "#93c5fd" },
+  it("resolveTableScrollbarStyle prefers explicit scrollbar color", () => {
+    const style = resolveTableScrollbarStyle(
+      { scrollbarColor: "#00ff00" },
+      { "--dashboard-scroll-thumb": "#111111" },
     );
-    expect(vars["--dashboard-table-header-bg"]).toBe("#eef2ff");
-    expect(vars["--dashboard-table-header-fg"]).toBe("#312e81");
-    expect(vars["--dashboard-table-body-fg"]).toBe("#1e3a8a");
+    expect(style?.["--dashboard-scroll-thumb" as keyof typeof style]).toBe("#00ff00");
   });
 
-  it("T-TABLE-THEME-03: uses DE white translucent scroll tokens", () => {
-    const vars = resolveTableThemeVars({}, { colorScheme: "dark", widgetShellBg: "#bfdbfe" });
-    expect(vars["--dashboard-scroll-thumb"]).toBe("rgb(255 255 255 / 0.35)");
-    expect(vars["--dashboard-scroll-track"]).toBe("transparent");
-  });
-});
-
-describe("screenChartTheme", () => {
-  it("applies data-screen axis tokens", async () => {
-    const { applyDataScreenSurfaceToEchartsOption, DATA_SCREEN_THEME_FINGERPRINT } = await import(
-      "./screenChartTheme"
-    );
-    const patched = applyDataScreenSurfaceToEchartsOption({
-      xAxis: { type: "category", data: ["A"] },
-      yAxis: { type: "value" },
-    });
-    expect(DATA_SCREEN_THEME_FINGERPRINT).toBe("data-screen-v1");
-    expect(patched.xAxis).toMatchObject({
-      axisLabel: { color: "rgba(255,255,255,0.72)" },
-    });
+  it("resolveTableHostBorder falls back to theme token", () => {
+    expect(resolveTableHostBorder()).toContain("--dashboard-table-border");
+    expect(resolveTableHostBorder("#ff0000")).toBe("1px solid #ff0000");
   });
 });

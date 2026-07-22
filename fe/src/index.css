@@ -874,6 +874,15 @@ html.admin-fill-lock #root {
   z-index: 8;
 }
 
+.vs-chart-table :where(td.vs-table-td) {
+  background-color: var(--dashboard-table-column-bg, transparent);
+}
+
+.vs-chart-table thead .vs-table-sticky-lead,
+.vs-chart-table thead .vs-table-sticky-first {
+  background-color: var(--dashboard-table-corner-bg, var(--dashboard-table-header-bg));
+}
+
 .vs-chart-table :where(.vs-table-th, .vs-table-td) {
   border-right: 1px solid var(--dashboard-table-border, #f2f4f7);
 }

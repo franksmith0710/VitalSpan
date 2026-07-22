@@ -13,6 +13,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
 
 vi.mock("@/lib/chartRegistry", () => ({
   fetchChartTypeCatalog: vi.fn().mockResolvedValue([]),
+  getChartTypeDisplayName: (type: string) => type,
 }));
 
 const tableWidget: LayoutWidget = {

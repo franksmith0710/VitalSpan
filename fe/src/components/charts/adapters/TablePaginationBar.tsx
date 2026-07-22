@@ -25,8 +25,10 @@ export function TablePaginationBar({
   onPageChange,
 }: TablePaginationBarProps) {
   const paginationVariant = tableStyle.paginationVariant ?? "compact";
-  const paginationFontSize = tableStyle.paginationFontSize;
-  const fontStyle = paginationFontSize != null ? { fontSize: `${paginationFontSize}px` } : undefined;
+  const fontStyle =
+    tableStyle.paginationFontSize != null
+      ? { fontSize: `${tableStyle.paginationFontSize}px` }
+      : { fontSize: "var(--dashboard-table-pagination-font-size, 14px)" };
 
   if (paginationVariant === "compact") {
     return (

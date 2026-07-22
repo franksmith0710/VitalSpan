@@ -21,8 +21,8 @@ export type ChinaTerrainPack = {
   adcode: number | null;
   bounds: TerrainGeoBounds;
   colorMap: THREE.Texture;
-  normalMap: THREE.Texture;
-  displacementMap: THREE.Texture;
+  normalMap?: THREE.Texture;
+  displacementMap?: THREE.Texture;
   dispose: () => void;
 };
 
@@ -121,17 +121,29 @@ function createPack(
   adcode: number | null,
   bounds: TerrainGeoBounds,
   diffuseUrl: string,
-  normalUrl: string,
-  displacementUrl: string,
+  normalUrl?: string | null,
+  displacementUrl?: string | null,
 ): Promise<ChinaTerrainPack> {
-  return Promise.all([
-    loadImage(diffuseUrl),
-    loadImage(normalUrl),
-    loadImage(displacementUrl),
-  ]).then(([diffuseImg, normalImg, displacementImg]) => {
+  return loadImage(diffuseUrl).then(async (diffuseImg) => {
     const colorMap = textureFromImage(diffuseImg, THREE.SRGBColorSpace);
-    const normalMap = textureFromImage(normalImg);
-    const displacementMap = textureFromImage(displacementImg);
+    let normalMap: THREE.Texture | undefined;
+    let displacementMap: THREE.Texture | undefined;
+
+    if (normalUrl) {
+      try {
+        normalMap = textureFromImage(await loadImage(normalUrl));
+      } catch {
+        normalMap = undefined;
+      }
+    }
+    if (displacementUrl) {
+      try {
+        displacementMap = textureFromImage(await loadImage(displacementUrl));
+      } catch {
+        displacementMap = undefined;
+      }
+    }
+
     return {
       level,
       adcode,
@@ -141,8 +153,8 @@ function createPack(
       displacementMap,
       dispose: () => {
         colorMap.dispose();
-        normalMap.dispose();
-        displacementMap.dispose();
+        normalMap?.dispose();
+        displacementMap?.dispose();
       },
     };
   });

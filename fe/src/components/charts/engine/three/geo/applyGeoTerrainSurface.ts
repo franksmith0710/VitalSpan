@@ -95,10 +95,13 @@ function capUvFromPosition(x: number, y: number, opts: TerrainSurfaceOpts): [num
   if (lngLat) {
     const u = (lngLat[0] - geoBounds.west) / lngSpan;
     const v = 1 - (lngLat[1] - geoBounds.south) / latSpan;
-    return [Math.max(0, Math.min(1, u)), Math.max(0, Math.min(1, v))];
+    if (u >= 0 && u <= 1 && v >= 0 && v <= 1) {
+      return [u, v];
+    }
   }
+
   const u = (x - projBounds.minX) / spanX;
-  const v = (y - projBounds.minY) / spanY;
+  const v = 1 - (y - projBounds.minY) / spanY;
   return [Math.max(0, Math.min(1, u)), Math.max(0, Math.min(1, v))];
 }
 

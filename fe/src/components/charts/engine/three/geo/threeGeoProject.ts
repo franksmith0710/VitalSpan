@@ -1,8 +1,5 @@
 import * as d3 from "d3";
-import {
-  chinaGeoLayoutCenterInViewport,
-  fitChinaGeoProjection,
-} from "@/components/charts/engine/geo/geoProjection";
+import { fitChinaGeoProjection } from "@/components/charts/engine/geo/geoProjection";
 import {
   computeGeoProjBounds,
   type GeoMapLayoutMargin,
@@ -26,7 +23,7 @@ export type ThreeGeoProjectContext = {
   viewport: { width: number; height: number };
 };
 
-/** 与 D3 choropleth 同投影，并将地图质心对齐到 Three 原点（修复中轴偏移） */
+/** 与 D3 choropleth 同投影；几何居中交给 layoutThreeGeoMapGroup */
 export function buildThreeGeoProject(
   width: number,
   height: number,
@@ -38,18 +35,10 @@ export function buildThreeGeoProject(
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const projection = fitChinaGeoProjection(d3.geoMercator(), innerW, innerH, fitCollection);
 
-  const projectRaw = (coord: [number, number]): [number, number] | null => {
+  const project = (coord: [number, number]): [number, number] | null => {
     const p = projection(coord);
     if (!p) return null;
     return [p[0] + margin.left - width / 2, -(p[1] + margin.top - height / 2)];
-  };
-
-  const { centerX, centerY } = chinaGeoLayoutCenterInViewport(width, height, margin);
-
-  const project = (coord: [number, number]): [number, number] | null => {
-    const p = projectRaw(coord);
-    if (!p) return null;
-    return [p[0] - centerX, p[1] - centerY];
   };
 
   return {
@@ -57,8 +46,8 @@ export function buildThreeGeoProject(
     project,
     projBounds: computeGeoProjBounds(features, project),
     margin,
-    centerX,
-    centerY,
+    centerX: 0,
+    centerY: 0,
     viewport: { width, height },
   };
 }

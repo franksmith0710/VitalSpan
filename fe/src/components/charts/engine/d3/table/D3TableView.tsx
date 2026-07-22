@@ -112,8 +112,6 @@ function D3TableViewInner(props: ChartEngineViewProps) {
     ...(themeVars as CSSProperties),
     height: fill ? undefined : height,
     width: width ?? "100%",
-    opacity:
-      tableStyle.opacity != null && tableStyle.opacity < 100 ? tableStyle.opacity / 100 : undefined,
   };
 
   if (tableModel.kind === "pivot") {

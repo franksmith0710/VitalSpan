@@ -6,8 +6,16 @@ import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { resolveTableZebraBg } from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { withBackgroundAlpha } from "@/lib/widgetSurfaceBackground";
-import { TableResizeGuide } from "@/components/charts/engine/d3/table/TableResizeGuide";
+import {
+  resolveTableHostBorder,
+  resolveTableHostOpacity,
+  resolveTableScrollbarStyle,
+} from "@/lib/chartSurfaceTheme";
+import {
+  buildTableColumnWidthPlan,
+  resolveEffectiveColumnWidthMode,
+} from "@/components/charts/engine/d3/table/resolveTableLayoutMode";
+import { TABLE_DEFAULT_COL_PX } from "@/components/charts/engine/d3/table/tableLayoutConstants";
 import { TableResizeHandle } from "@/components/charts/engine/d3/table/TableResizeHandle";
 import { useTableLayoutResize } from "@/components/charts/engine/d3/table/useTableLayoutResize";
 import type { PivotTableModel } from "@/components/charts/engine/d3/table/types";
@@ -82,26 +90,39 @@ export function TablePivotGrid({
     },
     enabled: layoutInteractive,
     tableRef,
-    onCommit: (patch) => onTableStylePatch?.(patch),
+    onCommit: (patch) =>
+      onTableStylePatch?.({
+        ...patch,
+        columnWidthMode: "custom",
+      }),
   });
+
+  const columnWidthMode = resolveEffectiveColumnWidthMode(
+    tableStyle.columnWidthMode,
+    resizeColumns.length,
+  );
+  const contentScroll = columnWidthMode === "fixed";
 
   const wordWrap = tableStyle.wordWrap ?? false;
   const rowHover = tableStyle.rowHover !== false;
   const zebraBg = resolveTableZebraBg(tableStyle);
   const density = tableStyle.paginationVariant === "compact" ? "compact" : "comfortable";
-  const opacity = tableStyle.opacity != null ? tableStyle.opacity / 100 : 1;
+  const hostOpacity = resolveTableHostOpacity(tableStyle);
   const borderColor = tableStyle.borderColor;
-  const panelBackground =
-    opacity < 1 ? withBackgroundAlpha("var(--dashboard-widget-surface)", opacity) : undefined;
   const cellClass = cn("vs-table-td", dwTableCell, wordWrap ? "whitespace-normal break-words" : "truncate");
   const headerClass = cn("vs-table-th", cellClass, "font-medium text-[var(--dashboard-table-header-fg,#667085)]");
   const mergedThemeStyle = (themeVars ?? {}) as CSSProperties;
   const metricCount = model.metrics.length;
   const colSpanUnit = metricCount;
-  const useFixedLayout = layoutInteractive && Object.keys(layout.columnWidthsPx).length > 0;
+  const usePixelLayout =
+    columnWidthMode === "custom" &&
+    layoutInteractive &&
+    Object.keys(layout.columnWidthsPx).length > 0;
   const rowStyle =
-    layoutInteractive && layout.rowHeightPx
-      ? ({ height: `${layout.rowHeightPx}px` } as CSSProperties)
+    tableStyle.rowHeightPx || (layoutInteractive && layout.rowHeightPx)
+      ? ({
+          height: `${layout.rowHeightPx ?? tableStyle.rowHeightPx}px`,
+        } as CSSProperties)
       : undefined;
 
   const colWidth = (field: string) =>
@@ -138,27 +159,31 @@ export function TablePivotGrid({
       )}
       style={{
         ...mergedThemeStyle,
-        ...(panelBackground ? { backgroundColor: panelBackground } : null),
-        border: borderColor ? `1px solid ${borderColor}` : "1px solid var(--dashboard-table-border, #f2f4f7)",
+        opacity: hostOpacity,
+        border: resolveTableHostBorder(borderColor),
       }}
       data-testid={testId}
       {...(layoutInteractive ? { "data-pixel-no-drag": true } : {})}
     >
       <TableResizeGuide guide={guide} />
-      <div className="vs-table-scroll dashboard-scroll min-h-0 flex-1 overflow-auto overscroll-contain">
+      <div
+        className="vs-table-scroll dashboard-scroll min-h-0 flex-1 overflow-auto overscroll-contain"
+        style={resolveTableScrollbarStyle(tableStyle, themeVars)}
+      >
         <table
           ref={tableRef}
           className={cn(
-            "dashboard-chart-table vs-chart-table w-full min-w-full text-left",
-            useFixedLayout ? "table-fixed" : "table-auto",
+            "dashboard-chart-table vs-chart-table text-left table-fixed",
+            contentScroll || usePixelLayout ? "w-max min-w-full" : "min-w-full w-full",
           )}
+          data-column-width-mode={columnWidthMode}
           data-layout-interactive={layoutInteractive ? "" : undefined}
           data-row-hover={rowHover ? "" : undefined}
           data-zebra={zebraBg ? "" : undefined}
           data-density={density}
           data-depth-visual={depthVisual !== "off" && depthVisual ? depthVisual : undefined}
         >
-          {useFixedLayout ? (
+          {usePixelLayout ? (
             <colgroup>
               <col style={{ width: colWidth(PIVOT_ROW_FIELD) }} />
               {model.colKeys.flatMap((ck) =>
@@ -168,6 +193,18 @@ export function TablePivotGrid({
               )}
               {showTotals && model.showRowTotal ? (
                 <col style={{ width: colWidth(PIVOT_TOTAL_FIELD) }} />
+              ) : null}
+            </colgroup>
+          ) : contentScroll ? (
+            <colgroup>
+              <col style={{ width: `${TABLE_DEFAULT_COL_PX}px` }} />
+              {model.colKeys.flatMap((ck) =>
+                model.metrics.map((metric) => (
+                  <col key={`${ck}-${metric.field}`} style={{ width: `${TABLE_DEFAULT_COL_PX}px` }} />
+                )),
+              )}
+              {showTotals && model.showRowTotal ? (
+                <col style={{ width: `${TABLE_DEFAULT_COL_PX}px` }} />
               ) : null}
             </colgroup>
           ) : null}

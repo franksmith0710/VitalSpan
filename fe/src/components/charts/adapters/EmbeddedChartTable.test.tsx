@@ -1,7 +1,9 @@
-import { act, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { dispatchPixelLayoutGeometryCommitted } from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
 import { EmbeddedChartTable } from "./EmbeddedChartTable";
+
+afterEach(cleanup);
 
 describe("EmbeddedChartTable", () => {
   it("uses table-fixed equal columns in standalone mode by default", () => {
@@ -45,15 +47,15 @@ describe("EmbeddedChartTable", () => {
     expect(cols[0]).toHaveStyle({ width: "33.333333333333336%" });
   });
 
-  it("embedded fixed column mode sizes by content with horizontal scroll", () => {
+  it("embedded fixed column mode uses pixel colgroup and horizontal scroll", () => {
     const { container } = render(
-      <div style={{ position: "relative", width: 320, height: 200 }}>
+      <div style={{ position: "relative", width: 200, height: 200 }}>
         <EmbeddedChartTable
           embedded
           layoutInteractive={false}
-          columns={["a", "b", "c"]}
-          displayCols={["a", "b", "c"]}
-          rows={[[1, 2, 3]]}
+          columns={["a", "b", "c", "d"]}
+          displayCols={["a", "b", "c", "d"]}
+          rows={[["长文本列标题A", 2, 3, 4]]}
           page={1}
           onPageChange={() => {}}
           tableStyle={{ columnWidthMode: "fixed" }}
@@ -61,9 +63,13 @@ describe("EmbeddedChartTable", () => {
       </div>,
     );
     const table = container.querySelector("table");
-    expect(table).toHaveClass("table-auto");
+    expect(table).toHaveClass("table-fixed");
     expect(table).toHaveClass("w-max");
-    expect(container.querySelector("colgroup")).toBeNull();
+    expect(table).toHaveAttribute("data-column-width-mode", "fixed");
+    const cols = container.querySelectorAll("col");
+    expect(cols.length).toBeGreaterThan(0);
+    expect(cols[0]?.getAttribute("style")).toMatch(/px/);
+    expect(cols).toHaveLength(4);
   });
 
   it("truncates cell text with title tooltip", () => {
@@ -117,10 +123,25 @@ describe("EmbeddedChartTable", () => {
       />,
     );
     const root = container.firstElementChild as HTMLElement;
-    expect(root).toHaveStyle({ backgroundColor: expect.stringMatching(/rgba|color-mix/), border: "1px solid rgb(255, 0, 0)" });
-    expect(root.style.opacity).toBe("");
+    expect(root).toHaveStyle({ border: "1px solid rgb(255, 0, 0)", opacity: "0.8" });
     const scroll = container.querySelector(".dashboard-scroll") as HTMLElement;
     expect(scroll.style.getPropertyValue("--dashboard-scroll-thumb")).toBe("#00ff00");
+  });
+
+  it("page mode shows pagination bar even when rows fit one page", () => {
+    const { container } = render(
+      <EmbeddedChartTable
+        columns={["id"]}
+        displayCols={["id"]}
+        rows={[[1], [2]]}
+        page={1}
+        onPageChange={() => {}}
+        tableStyle={{ paginationMode: "page", pageSize: 20 }}
+      />,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(within(root).getByTestId("table-pagination-compact")).toBeInTheDocument();
+    expect(within(root).getByText("1/1")).toBeInTheDocument();
   });
 
   it("scroll mode renders all rows without pagination", () => {
@@ -135,7 +156,8 @@ describe("EmbeddedChartTable", () => {
       />,
     );
     expect(container.querySelectorAll("tbody tr")).toHaveLength(3);
-    expect(screen.queryByLabelText("上一页")).not.toBeInTheDocument();
+    expect(within(container).queryByLabelText("上一页")).not.toBeInTheDocument();
+    expect(within(container).getByText("下拉滚动浏览")).toBeInTheDocument();
   });
 
   it("page mode uses compact pagination variant", () => {
@@ -175,7 +197,7 @@ describe("EmbeddedChartTable", () => {
     expect(cols[0]).toHaveStyle({ width: "50%" });
   });
 
-  it("fixed column mode uses table-auto without colgroup", () => {
+  it("fixed column mode uses table-fixed with pixel colgroup", () => {
     const { container } = render(
       <EmbeddedChartTable
         columns={["a", "b"]}
@@ -188,8 +210,11 @@ describe("EmbeddedChartTable", () => {
       />,
     );
     const table = container.querySelector("table");
-    expect(table).toHaveClass("table-auto");
-    expect(container.querySelector("colgroup")).toBeNull();
+    expect(table).toHaveClass("table-fixed");
+    expect(table).toHaveAttribute("data-column-width-mode", "fixed");
+    const cols = container.querySelectorAll("col");
+    expect(cols).toHaveLength(2);
+    expect(cols[0]?.getAttribute("style")).toMatch(/px/);
   });
 
   it("custom column mode applies configured widths", () => {

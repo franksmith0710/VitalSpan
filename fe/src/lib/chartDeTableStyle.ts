@@ -98,6 +98,22 @@ export function patchChartDeTableStyle(
   };
 }
 
+/** 切换列宽模式时清理互斥配置，避免「面板选了自适应但拖拽像素仍生效」 */
+export function patchTableColumnWidthMode(
+  cfg: ChartViewConfig,
+  mode: TableColumnWidthMode,
+): ChartViewConfig {
+  const patch: Partial<ChartDeTableStyle> = { columnWidthMode: mode };
+  if (mode === "auto") {
+    patch.columnWidths = undefined;
+    patch.columnWidthsPx = undefined;
+  if (mode === "fixed") {
+    patch.columnWidths = undefined;
+    patch.columnWidthsPx = undefined;
+  }
+  return patchChartDeTableStyle(cfg, patch);
+}
+
 export function resolveTablePageSize(cfg: ChartViewConfig): number {
   return readChartDeTableStyle(cfg).pageSize ?? DEFAULT_TABLE_PAGE_SIZE;
 }

@@ -15,9 +15,17 @@ import {
   resolveTableZebraBg,
 } from "@/lib/chartDeTableStyle";
 import { formatTableCellValue } from "@/lib/chartValueFormat";
-import { withBackgroundAlpha } from "@/lib/widgetSurfaceBackground";
+import {
+  resolveTableHostBorder,
+  resolveTableHostOpacity,
+  resolveTableScrollbarStyle,
+} from "@/lib/chartSurfaceTheme";
 import { TablePaginationBar } from "@/components/charts/adapters/TablePaginationBar";
-import { resolveEffectiveColumnWidthMode } from "@/components/charts/engine/d3/table/resolveTableLayoutMode";
+import { measureColumnAutoFitWidth } from "@/components/charts/engine/d3/table/measureTableLayout";
+import {
+  buildTableColumnWidthPlan,
+  resolveEffectiveColumnWidthMode,
+} from "@/components/charts/engine/d3/table/resolveTableLayoutMode";
 import { columnAlignClass, resolveColumnAlign } from "@/components/charts/engine/d3/table/tableColumnAlign";
 import { sortTableRows, useTableClientSort } from "@/components/charts/engine/d3/table/tableClientSort";
 import { SortableHeaderCell } from "@/components/charts/engine/d3/table/SortableHeaderCell";
@@ -59,16 +67,10 @@ function headerLabel(field: string, columnMeta?: TableColumnMeta[]): string {
 }
 
 function scrollbarStyle(
-  color: string | undefined,
+  tableStyle: ChartDeTableStyle,
   themeVars?: Record<string, string>,
 ): CSSProperties | undefined {
-  if (themeVars && Object.keys(themeVars).length > 0) return themeVars as CSSProperties;
-  if (!color) return undefined;
-  return {
-    ["--dashboard-scroll-thumb" as string]: color,
-    ["--dashboard-scroll-thumb-hover" as string]: color,
-    scrollbarColor: `${color} var(--dashboard-scroll-track, transparent)`,
-  };
+  return resolveTableScrollbarStyle(tableStyle, themeVars);
 }
 
 function bodyCellClass(wordWrap: boolean): string {
@@ -124,10 +126,8 @@ export function VitalSpanTable({
     (typeof themeVars?.["--dashboard-table-zebra-bg"] === "string"
       ? themeVars["--dashboard-table-zebra-bg"]
       : undefined);
-  const opacity = tableStyle.opacity != null ? tableStyle.opacity / 100 : 1;
+  const hostOpacity = resolveTableHostOpacity(tableStyle);
   const borderColor = tableStyle.borderColor;
-  const panelBackground =
-    opacity < 1 ? withBackgroundAlpha("var(--dashboard-widget-surface)", opacity) : undefined;
 
   const sortedRows = useMemo(() => sortTableRows(rows, columns, sort), [columns, rows, sort]);
   const skipSortPageReset = useRef(true);
@@ -141,6 +141,7 @@ export function VitalSpanTable({
   }, [sort, onPageChange]);
 
   const usePagination = paginationMode === "page" && sortedRows.length > pageSize;
+  const showPaginationBar = paginationMode === "page";
   const scrollMode = paginationMode === "scroll";
   const pageRows = usePagination
     ? sortedRows.slice((page - 1) * pageSize, page * pageSize)
@@ -149,6 +150,62 @@ export function VitalSpanTable({
 
   const layoutColumnCount = displayCols.length + (showSeriesNumber ? 1 : 0);
   const columnWidthMode = resolveEffectiveColumnWidthMode(tableStyle.columnWidthMode, layoutColumnCount);
+
+  const measuredWidthsPx = useMemo(() => {
+    if (columnWidthMode !== "fixed") return null;
+    const widths: Record<string, number> = {};
+    for (const col of displayCols) {
+      widths[col] = measureColumnAutoFitWidth({
+        field: col,
+        columns,
+        displayCols,
+        rows: sortedRows,
+        showSeriesNumber,
+        headerLabel: (field) => headerLabel(field, columnMeta),
+        formatCell: (value) => formatTableCellValue(value, valueFormat),
+      });
+    }
+    if (showSeriesNumber) {
+      widths[SERIES_FIELD] = measureColumnAutoFitWidth({
+        field: SERIES_FIELD,
+        columns,
+        displayCols,
+        rows: sortedRows,
+        showSeriesNumber,
+        headerLabel: () => "#",
+        formatCell: (value) => String(value ?? ""),
+      });
+    }
+    return widths;
+  }, [
+    columnMeta,
+    columnWidthMode,
+    columns,
+    displayCols,
+    showSeriesNumber,
+    sortedRows,
+    valueFormat,
+  ]);
+
+  const columnWidthPlan = useMemo(
+    () =>
+      buildTableColumnWidthPlan({
+        mode: columnWidthMode,
+        displayCols,
+        showSeriesNumber,
+        columnWidthsPct: tableStyle.columnWidths,
+        columnWidthsPx: tableStyle.columnWidthsPx,
+        measuredWidthsPx,
+      }),
+    [
+      columnWidthMode,
+      displayCols,
+      measuredWidthsPx,
+      showSeriesNumber,
+      tableStyle.columnWidths,
+      tableStyle.columnWidthsPx,
+    ],
+  );
 
   const handleLayoutCommit = useCallback(
     (patch: Parameters<typeof onTableStylePatch>[0]) => {
@@ -206,11 +263,14 @@ export function VitalSpanTable({
     valueFormat,
   ]);
 
-  const usePixelLayout = pixelActive || guide != null;
-  const useFixedLayout = usePixelLayout || columnWidthMode === "auto" || columnWidthMode === "custom";
-  const useContentLayout = usePixelLayout || columnWidthMode === "fixed";
-  const freezeLead = useContentLayout && layoutColumnCount > 1;
-  const applyRowHeight = usePixelLayout;
+  const usePixelLayout =
+    (columnWidthMode === "custom" && pixelActive) || guide != null;
+  const freezeLead = columnWidthPlan.contentScroll && layoutColumnCount > 1;
+  const resolvedRowHeightPx =
+    usePixelLayout && pixelLayout.rowHeightPx
+      ? pixelLayout.rowHeightPx
+      : tableStyle.rowHeightPx;
+  const applyRowHeight = resolvedRowHeightPx != null && resolvedRowHeightPx > 0;
 
   const { scrollTop, viewportHeight } = useScrollTop(scrollRef);
   const virtual = useTableVirtualRows({
@@ -225,27 +285,20 @@ export function VitalSpanTable({
 
   const cellClass = bodyCellClass(wordWrap);
   const rowStyle = applyRowHeight
-    ? { height: pixelLayout.rowHeightPx, maxHeight: pixelLayout.rowHeightPx }
+    ? { height: resolvedRowHeightPx, maxHeight: resolvedRowHeightPx }
     : undefined;
   const mergedThemeStyle = (themeVars ?? {}) as CSSProperties;
 
-  const equalPct = layoutColumnCount > 0 ? 100 / layoutColumnCount : 100;
   const resolveColWidth = (col: string): string | undefined => {
     if (usePixelLayout) {
       if (col === SERIES_FIELD) {
         return showSeriesNumber ? `${pixelLayout.seriesColumnWidthPx}px` : undefined;
       }
       const px = pixelLayout.columnWidthsPx[col];
-      return px != null ? `${px}px` : undefined;
+      return px != null ? `${px}px` : columnWidthPlan.columnWidths[col];
     }
-    if (col === SERIES_FIELD) return showSeriesNumber ? `${Math.min(equalPct, 8)}%` : undefined;
-    if (columnWidthMode === "custom") {
-      const custom = tableStyle.columnWidths?.[col];
-      if (custom != null && custom > 0) return `${custom}%`;
-      return `${equalPct}%`;
-    }
-    if (columnWidthMode === "auto") return `${equalPct}%`;
-    return undefined;
+    if (col === SERIES_FIELD) return columnWidthPlan.seriesWidth;
+    return columnWidthPlan.columnWidths[col];
   };
 
   const summaryColumns = resolveTableSummaryColumns(columns, displayCols, sortedRows, {
@@ -270,7 +323,7 @@ export function VitalSpanTable({
         )}
         style={{
           ...mergedThemeStyle,
-          ...(panelBackground ? { backgroundColor: panelBackground } : null),
+          opacity: hostOpacity,
           color: "var(--dashboard-table-empty-fg, #98a2b3)",
         }}
         data-testid={testId}
@@ -299,12 +352,8 @@ export function VitalSpanTable({
       )}
       style={{
         ...tableStyleVars,
-        ...(panelBackground ? { backgroundColor: panelBackground } : null),
-        border: embedded
-          ? undefined
-          : borderColor
-            ? `1px solid ${borderColor}`
-            : "1px solid var(--dashboard-table-border, #f2f4f7)",
+        opacity: hostOpacity,
+        border: resolveTableHostBorder(borderColor),
       }}
       data-testid={testId}
       {...(layoutInteractive ? { "data-pixel-no-drag": true } : {})}
@@ -313,19 +362,16 @@ export function VitalSpanTable({
       <TableScrollRegion
         ref={scrollRef}
         className={panel ? "overflow-x-only" : undefined}
-        style={scrollbarStyle(tableStyle.scrollbarColor, themeVars)}
+        style={scrollbarStyle(tableStyle, themeVars)}
         edgeDeps={[displayCols.length, pageRows.length, freezeLead, virtual.active]}
       >
         <table
           ref={tableRef}
           className={cn(
-            "dashboard-chart-table vs-chart-table w-full border-separate border-spacing-0 text-left",
-            useFixedLayout
-              ? cn("table-fixed", useContentLayout ? "w-max min-w-full" : "min-w-full")
-              : useContentLayout
-                ? "table-auto w-max min-w-full"
-                : cn("table-auto", embedded ? "w-max min-w-full" : "min-w-0"),
+            "dashboard-chart-table vs-chart-table border-separate border-spacing-0 text-left table-fixed",
+            columnWidthPlan.contentScroll ? "w-max min-w-full" : "min-w-full w-full",
           )}
+          data-column-width-mode={columnWidthPlan.mode}
           data-layout-interactive={layoutInteractive ? "" : undefined}
           data-row-hover={rowHover ? "" : undefined}
           data-density={density}
@@ -334,16 +380,14 @@ export function VitalSpanTable({
           data-depth-visual={depthVisual !== "off" && depthVisual ? depthVisual : undefined}
           style={tableStyleVars}
         >
-          {useFixedLayout ? (
-            <colgroup>
-              {showSeriesNumber ? (
-                <col key={SERIES_FIELD} style={{ width: resolveColWidth(SERIES_FIELD) }} />
-              ) : null}
-              {displayCols.map((c) => (
-                <col key={c} style={resolveColWidth(c) ? { width: resolveColWidth(c) } : undefined} />
-              ))}
-            </colgroup>
-          ) : null}
+          <colgroup>
+            {showSeriesNumber ? (
+              <col key={SERIES_FIELD} style={{ width: resolveColWidth(SERIES_FIELD) }} />
+            ) : null}
+            {displayCols.map((c) => (
+              <col key={c} style={resolveColWidth(c) ? { width: resolveColWidth(c) } : undefined} />
+            ))}
+          </colgroup>
           <thead className="relative">
             <tr className="relative">
               {showSeriesNumber ? (
@@ -376,7 +420,7 @@ export function VitalSpanTable({
                     sortable
                     sticky={sticky}
                     resizable={layoutInteractive}
-                    className={cn(cellClass, useContentLayout && "min-w-[5.5rem]")}
+                    className={cn(cellClass, columnWidthPlan.contentScroll && "min-w-[5.5rem]")}
                     onSort={toggleSort}
                     onColumnResize={(event) => startColumnResize(c, event)}
                     onColumnAutoFit={layoutInteractive ? autoFitColumn : undefined}
@@ -435,7 +479,7 @@ export function VitalSpanTable({
                         cellClass,
                         columnAlignClass(align),
                         "text-[var(--dashboard-table-body-fg,#344054)]",
-                        useContentLayout && "min-w-[5.5rem] whitespace-nowrap",
+                        columnWidthPlan.contentScroll && "min-w-[5.5rem] whitespace-nowrap",
                         sticky === "lead" && "vs-table-sticky-col vs-table-sticky-lead",
                         sticky === "first" && "vs-table-sticky-col vs-table-sticky-first",
                         drillable && "vs-table-drillable",
@@ -500,7 +544,7 @@ export function VitalSpanTable({
           ) : null}
         </table>
       </TableScrollRegion>
-      {usePagination ? (
+      {showPaginationBar ? (
         <TablePaginationBar
           page={page}
           totalPages={totalPages}
@@ -510,7 +554,7 @@ export function VitalSpanTable({
           onPageChange={onPageChange}
         />
       ) : (
-        <TableStatusBar totalRows={sortedRows.length} />
+        <TableStatusBar totalRows={sortedRows.length} scrollMode={scrollMode} />
       )}
     </div>
   );

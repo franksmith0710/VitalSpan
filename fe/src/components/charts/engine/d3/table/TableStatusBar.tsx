@@ -3,14 +3,12 @@ import { cn } from "@/lib/utils";
 
 type TableStatusBarProps = {
   totalRows: number;
-  page?: number;
-  totalPages?: number;
-  pageSize?: number;
+  scrollMode?: boolean;
   className?: string;
 };
 
-/** 表格底栏：无分页时显示总行数；有分页时由 TablePaginationBar 承担 */
-export function TableStatusBar({ totalRows, className }: TableStatusBarProps) {
+/** 表格底栏：下拉模式显示滚动提示；翻页模式由 TablePaginationBar 承担 */
+export function TableStatusBar({ totalRows, scrollMode, className }: TableStatusBarProps) {
   return (
     <div
       className={cn(
@@ -21,6 +19,11 @@ export function TableStatusBar({ totalRows, className }: TableStatusBarProps) {
       data-testid="table-status-bar"
     >
       <span className={dwTableMeta}>共 {totalRows.toLocaleString("zh-CN")} 条</span>
+      {scrollMode ? (
+        <span className={cn(dwTableMeta, "text-[var(--dashboard-table-pagination-fg,inherit)]")}>
+          下拉滚动浏览
+        </span>
+      ) : null}
     </div>
   );
 }

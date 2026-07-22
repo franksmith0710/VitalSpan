@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { chinaGeoLayoutCenterInViewport } from "@/components/charts/engine/geo/geoProjection";
-import { buildThreeGeoProject, THREE_GEO_MAP_MARGIN } from "@/components/charts/engine/three/geo/threeGeoProject";
+import { buildThreeGeoProject } from "@/components/charts/engine/three/geo/threeGeoProject";
 
 describe("buildThreeGeoProject", () => {
-  it("uses D3 layout center (not feature bbox) for axis alignment", () => {
-    const width = 640;
-    const height = 480;
-    const layoutCenter = chinaGeoLayoutCenterInViewport(width, height, THREE_GEO_MAP_MARGIN);
-    const ctx = buildThreeGeoProject(width, height, [], {
+  it("matches D3 margin-aware mercator projection", () => {
+    const ctx = buildThreeGeoProject(800, 600, [], {
       type: "FeatureCollection",
       features: [
         {
@@ -28,55 +24,33 @@ describe("buildThreeGeoProject", () => {
         },
       ],
     });
-    expect(ctx.centerX).toBeCloseTo(layoutCenter.centerX, 8);
-    expect(ctx.centerY).toBeCloseTo(layoutCenter.centerY, 8);
+    const p = ctx.project([116.4, 39.9]);
+    expect(p).not.toBeNull();
+    expect(ctx.centerX).toBe(0);
+    expect(ctx.centerY).toBe(0);
+    expect(ctx.projBounds.maxX).toBeGreaterThan(ctx.projBounds.minX);
   });
 
-  it("centers projected bounds around origin", () => {
+  it("computes proj bounds from joined features", () => {
+    const geometry = {
+      type: "Polygon" as const,
+      coordinates: [
+        [
+          [105, 30],
+          [106, 30],
+          [106, 31],
+          [105, 31],
+          [105, 30],
+        ],
+      ],
+    };
     const ctx = buildThreeGeoProject(
       800,
       600,
-      [
-        {
-          geometry: {
-            type: "Polygon",
-            coordinates: [
-              [
-                [100, 20],
-                [110, 20],
-                [110, 30],
-                [100, 30],
-                [100, 20],
-              ],
-            ],
-          },
-        },
-      ],
-      {
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "Polygon",
-              coordinates: [
-                [
-                  [100, 20],
-                  [110, 20],
-                  [110, 30],
-                  [100, 30],
-                  [100, 20],
-                ],
-              ],
-            },
-          },
-        ],
-      },
+      [{ geometry }],
+      { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry }] },
     );
-    const midX = (ctx.projBounds.minX + ctx.projBounds.maxX) / 2;
-    const midY = (ctx.projBounds.minY + ctx.projBounds.maxY) / 2;
-    expect(Math.abs(midX)).toBeLessThan(1);
-    expect(Math.abs(midY)).toBeLessThan(1);
+    expect(ctx.projBounds.maxX - ctx.projBounds.minX).toBeGreaterThan(0);
+    expect(ctx.projBounds.maxY - ctx.projBounds.minY).toBeGreaterThan(0);
   });
 });

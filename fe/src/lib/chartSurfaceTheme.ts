@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { ColorScheme, DashboardStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
 import {
   isDarkWidgetShellColor,
@@ -79,4 +80,29 @@ export function resolveTableThemeVars(
   }
 
   return vars;
+}
+
+/** 表格滚动区仅注入滚动条 CSS 变量，避免把表头/单元格主题变量误挂到滚动容器上 */
+export function resolveTableScrollbarStyle(
+  tableStyle: Pick<ChartDeTableStyle, "scrollbarColor">,
+  themeVars?: Record<string, string>,
+): CSSProperties | undefined {
+  const thumb = tableStyle.scrollbarColor?.trim() || themeVars?.["--dashboard-scroll-thumb"];
+  if (!thumb) return undefined;
+  const hover = themeVars?.["--dashboard-scroll-thumb-hover"] ?? thumb;
+  return {
+    ["--dashboard-scroll-thumb" as string]: thumb,
+    ["--dashboard-scroll-thumb-hover" as string]: hover,
+  };
+}
+
+export function resolveTableHostOpacity(tableStyle: Pick<ChartDeTableStyle, "opacity">): number | undefined {
+  if (tableStyle.opacity == null || tableStyle.opacity >= 100) return undefined;
+  return tableStyle.opacity / 100;
+}
+
+export function resolveTableHostBorder(borderColor?: string): string {
+  return borderColor?.trim()
+    ? `1px solid ${borderColor}`
+    : "1px solid var(--dashboard-table-border, #f2f4f7)";
 }
