@@ -59,7 +59,7 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     .attr("height", height)
     .attr("role", "img");
 
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
   const cells = svg
     .selectAll<SVGGElement, d3.HierarchyRectangularNode<TreeNode>>("g.cell")
     .data(leaves)

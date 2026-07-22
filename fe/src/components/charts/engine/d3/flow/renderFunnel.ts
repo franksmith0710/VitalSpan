@@ -72,7 +72,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     .attr("role", "img");
 
   const g = root.append("g");
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
   const colorScale = d3.scaleOrdinal<string>().domain(data.map((d) => d.stage)).range(colors);
 
   data.forEach((row, index) => {

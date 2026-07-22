@@ -97,23 +97,22 @@ function boundsFromMeta(meta: { bounds: number[] }): TerrainGeoBounds {
   return { west, south, east, north };
 }
 
-function loadImage(url: string): Promise<HTMLImageElement> {
+function loadTexture(url: string, colorSpace?: THREE.ColorSpace): Promise<THREE.Texture> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`terrain image failed: ${url}`));
-    img.src = url;
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      url,
+      (tex) => {
+        tex.flipY = false;
+        tex.wrapS = THREE.ClampToEdgeWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        if (colorSpace) tex.colorSpace = colorSpace;
+        resolve(tex);
+      },
+      undefined,
+      () => reject(new Error(`terrain texture failed: ${url}`)),
+    );
   });
-}
-
-function textureFromImage(image: HTMLImageElement, colorSpace?: THREE.ColorSpace): THREE.Texture {
-  const tex = new THREE.Texture(image);
-  tex.needsUpdate = true;
-  tex.flipY = false;
-  tex.wrapS = THREE.ClampToEdgeWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
-  if (colorSpace) tex.colorSpace = colorSpace;
-  return tex;
 }
 
 function createPack(
@@ -124,21 +123,20 @@ function createPack(
   normalUrl?: string | null,
   displacementUrl?: string | null,
 ): Promise<ChinaTerrainPack> {
-  return loadImage(diffuseUrl).then(async (diffuseImg) => {
-    const colorMap = textureFromImage(diffuseImg, THREE.SRGBColorSpace);
+  return loadTexture(diffuseUrl, THREE.SRGBColorSpace).then(async (colorMap) => {
     let normalMap: THREE.Texture | undefined;
     let displacementMap: THREE.Texture | undefined;
 
     if (normalUrl) {
       try {
-        normalMap = textureFromImage(await loadImage(normalUrl));
+        normalMap = await loadTexture(normalUrl);
       } catch {
         normalMap = undefined;
       }
     }
     if (displacementUrl) {
       try {
-        displacementMap = textureFromImage(await loadImage(displacementUrl));
+        displacementMap = await loadTexture(displacementUrl);
       } catch {
         displacementMap = undefined;
       }

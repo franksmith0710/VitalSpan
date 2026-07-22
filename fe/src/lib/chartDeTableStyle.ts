@@ -107,7 +107,7 @@ export function patchTableColumnWidthMode(
   if (mode === "auto") {
     patch.columnWidths = undefined;
     patch.columnWidthsPx = undefined;
-  if (mode === "fixed") {
+  } else if (mode === "fixed") {
     patch.columnWidths = undefined;
     patch.columnWidthsPx = undefined;
   }

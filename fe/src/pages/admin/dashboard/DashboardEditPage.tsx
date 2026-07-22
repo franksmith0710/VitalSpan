@@ -85,6 +85,7 @@ import { DashboardContextInspector } from "@/components/dashboard/DashboardConte
 import { LayerPanel } from "@/components/dashboard/LayerPanel";
 import { DashboardEditWorkspace } from "@/components/dashboard/DashboardEditWorkspace";
 import { DashboardEditCanvas } from "@/components/dashboard/dashboard-edit/DashboardEditCanvas";
+import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import { ChartEditRail, ChartEditRailEmpty } from "@/components/dashboard/ChartEditRail";
 import { FilterWidgetInspector } from "@/components/dashboard/FilterWidgetInspector";
 import { TextEditRail } from "@/components/dashboard/TextEditRail";
@@ -1058,11 +1059,13 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           dashboardId={id}
           values={filterValues}
           onChange={handleFilterValueChange}
+          dashboardStyle={styleConfig}
         />
       ) : null}
 
       {mode === "edit" && canSave ? (
         <>
+        <ChartDrillProvider>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <DashboardEditWorkspace
           widgetCount={widgets.length}
@@ -1359,6 +1362,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               styleConfig={styleConfig}
             />
           )}
+        </ChartDrillProvider>
         </>
       ) : (
         <DashboardEditCanvas

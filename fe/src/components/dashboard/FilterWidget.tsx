@@ -17,7 +17,8 @@ import { TabNestedDragRail } from "./TabNestedDragRail";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import type { FilterWidgetConfig, LayoutWidget, DashboardStyleConfig } from "./layoutUtils";
-import { mergeTitleStyle, mergeWidgetShellStyle } from "./dashboardStyleConfig";
+import { mergeTitleStyle } from "./dashboardStyleConfig";
+import { gridWidgetShellClassName, resolveGridWidgetShell } from "./widgetRailStyleSections";
 
 type FilterWidgetProps = {
   widget: LayoutWidget & { filterConfig: FilterWidgetConfig };
@@ -49,13 +50,13 @@ export function FilterWidget({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const cfg = widget.filterConfig;
   const controlId = `fw-${widget.id}`;
-  const shellStyle = mergeWidgetShellStyle(
-    dashboardStyle?.widgetStyle,
-    dashboardStyle?.colorScheme ?? "light",
-  );
+  const shellStyle = resolveGridWidgetShell(widget, dashboardStyle);
   const titleStyle = mergeTitleStyle(dashboardStyle?.titleStyle, {
     color: dashboardStyle?.filterChromeStyle?.titleColor,
   });
+  const labelStyle = dashboardStyle?.filterChromeStyle?.titleColor
+    ? { color: dashboardStyle.filterChromeStyle.titleColor }
+    : undefined;
   const controlHeight = dashboardStyle?.filterControlStyle?.height;
   const controlRadius = dashboardStyle?.filterControlStyle?.borderRadius;
   const labelPosition = dashboardStyle?.filterChromeStyle?.titlePosition ?? "top";
@@ -104,6 +105,7 @@ export function FilterWidget({
           borderRadius: controlRadius ? `${controlRadius}px` : undefined,
         }}
         labelPosition={labelPosition}
+        labelStyle={labelStyle}
       />
     </div>
   );
@@ -146,16 +148,7 @@ export function FilterWidget({
 
   return (
     <div
-      className={cn(
-        "flex h-full min-h-0 flex-col",
-        showGridChrome && "overflow-hidden rounded-xl border bg-white shadow-theme-xs transition-[border-color,box-shadow] dark:bg-white/[0.03]",
-        showGridChrome && selected && "dashboard-widget-selected",
-        showGridChrome &&
-          selected &&
-          "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40",
-        showGridChrome && !selected && "border-gray-200 dark:border-gray-800",
-        showGridChrome && shellStyle.className,
-      )}
+      className={gridWidgetShellClassName(showGridChrome, Boolean(selected), shellStyle.className)}
       style={showGridChrome ? shellStyle.style : undefined}
     >
       {showGridChrome && mode === "edit" ? (

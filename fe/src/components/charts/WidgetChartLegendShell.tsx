@@ -17,6 +17,7 @@ export function WidgetChartLegendShell({ children }: { children: ReactNode }) {
       fontSize={legend?.fontSize ?? 12}
       icon={legend?.icon ?? "triangle"}
       iconSize={legend?.iconSize ?? 6}
+      textColor={legend?.textColor}
       items={legendItems}
     >
       {children}

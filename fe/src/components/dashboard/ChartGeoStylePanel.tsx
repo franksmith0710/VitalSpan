@@ -58,6 +58,9 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
             onCheckedChange={(showCellLabel) => patchGeo({ showCellLabel })}
           />
         ) : null}
+        {is3d ? (
+          <p className={INSPECTOR_HINT}>3D 地图暂不支持区域名称标签，请切换 2D 地图或依赖 Tooltip。</p>
+        ) : null}
         <InspectorSwitchRow
           label="数值色带"
           checked={geo.visualMap !== false}

@@ -8,8 +8,9 @@ import { useTabPaletteDropTarget } from "./pixelCanvas/tabPaletteDropTargetConte
 import { usePixelCanvasScale } from "./pixelCanvas/PixelCanvasScaleContext";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
-import type { LayoutWidget, TabsWidgetConfig } from "./layoutUtils";
+import type { LayoutWidget, TabsWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
 import { TABS_CAROUSEL_MIN_INTERVAL_SEC, getTabChildWidgets } from "./layoutUtils";
+import { gridWidgetShellClassName, resolveGridWidgetShell } from "./widgetRailStyleSections";
 import { shapeTitlePresentationStyle } from "./dashboardWidgetTypography";
 
 const MAX_PANES = 8;
@@ -27,6 +28,7 @@ type TabsWidgetProps = {
   onTabsConfigChange?: (tabsConfig: TabsWidgetConfig) => void;
   onPaletteDrop?: (payload: PaletteDragPayload) => void;
   renderChild: (child: LayoutWidget) => ReactNode;
+  dashboardStyle?: DashboardStyleConfig;
 };
 
 function TabsPaneEmptyState({ mode, dragHint }: { mode: "edit" | "view"; dragHint?: boolean }) {
@@ -113,6 +115,7 @@ export function TabsWidget({
   onTabsConfigChange,
   onPaletteDrop,
   renderChild,
+  dashboardStyle,
 }: TabsWidgetProps) {
   const cfg = widget.tabsConfig;
   const cfgRef = useRef(cfg);
@@ -120,6 +123,7 @@ export function TabsWidget({
   const head = cfg.headStyle ?? {};
   const canvasScale = usePixelCanvasScale();
   const isShape = shell === "shape";
+  const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
   const paletteDragActive = usePaletteDragActive();
   const tabDropTargetId = useTabPaletteDropTarget();
   const isTabDropTarget = tabDropTargetId === widget.id;
@@ -211,14 +215,10 @@ export function TabsWidget({
       data-tabs-widget-id={widget.id}
       className={cn(
         "tabs-widget-root flex h-full min-h-0 flex-col overflow-hidden",
-        !isShape &&
-          "rounded-xl border bg-white shadow-theme-xs dark:bg-white/[0.03]",
-        !isShape &&
-          (selected
-            ? "dashboard-widget-selected border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40"
-            : "border-gray-200 dark:border-gray-800"),
+        !isShape && gridWidgetShellClassName(true, selected),
         canAcceptPalette && paletteDragActive && (paletteOver || isTabDropTarget) && "ring-2 ring-inset ring-brand-400/60 dark:ring-brand-500/50",
       )}
+      style={!isShape ? gridShell.style : undefined}
       onDragEnter={canAcceptPalette ? handlePaletteDragOver : undefined}
       onDragOver={canAcceptPalette ? handlePaletteDragOver : undefined}
       onDragLeave={canAcceptPalette ? handlePaletteDragLeave : undefined}

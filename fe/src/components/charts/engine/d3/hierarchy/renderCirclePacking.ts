@@ -120,7 +120,7 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
   const clipId = appendPackPlotChrome(plot, innerW, innerH, theme);
   const layer = plot.append("g").attr("clip-path", `url(#${clipId})`);
 
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
   const groups = layer
     .selectAll<SVGGElement, PackPhysicsNode>("g.pack-node")
     .data(physicsNodes)

@@ -262,6 +262,7 @@ function ConditionalRuleRow({
 
 export function ChartAdvancedConditionalSection() {
   const { cfg, onChange } = useChartInspector();
+  const caps = chartInspectorCapabilities(cfg.chartType);
   const rules = readChartConditionalRules(cfg);
 
   const setRules = (next: ChartConditionalRule[]) =>
@@ -270,6 +271,11 @@ export function ChartAdvancedConditionalSection() {
   return (
     <div className={INSPECTOR_SECTION_GAP}>
       <p className={INSPECTOR_HINT}>按度量值阈值高亮柱/线段颜色（自上而下匹配首条规则）</p>
+      {caps.conditionalPartial ? (
+        <p className={INSPECTOR_HINT}>
+          柱线组合图条件色可能仅作用于部分系列，请预览确认效果。
+        </p>
+      ) : null}
       {rules.map((rule) => (
         <ConditionalRuleRow
           key={rule.id}

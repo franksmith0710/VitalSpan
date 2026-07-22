@@ -16,16 +16,17 @@ export type ThreeGeoOrbitLayout = {
 
 const GEO_MAP_TARGET_SPAN = 18;
 
-/** 仅用 Mesh 几何体算包围盒，排除 LineSegments 边线对质心的拉扯 */
+/** 仅用挤出本体几何算包围盒，忽略边线子节点 */
 function boundsFromMapMeshes(mapGroup: THREE.Group): THREE.Box3 {
   const box = new THREE.Box3();
   let hasMesh = false;
   mapGroup.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) return;
-    const geom = obj.geometry;
+    if (obj.type !== "Mesh") return;
+    const mesh = obj as THREE.Mesh;
+    const geom = mesh.geometry;
     if (!geom.boundingBox) geom.computeBoundingBox();
     if (!geom.boundingBox) return;
-    const meshBox = geom.boundingBox.clone().applyMatrix4(obj.matrixWorld);
+    const meshBox = geom.boundingBox.clone().applyMatrix4(mesh.matrixWorld);
     if (!hasMesh) {
       box.copy(meshBox);
       hasMesh = true;
@@ -37,16 +38,26 @@ function boundsFromMapMeshes(mapGroup: THREE.Group): THREE.Box3 {
   return box;
 }
 
+export type ThreeGeoOrbitLayoutOptions = {
+  /** 投影阶段已按 D3 layoutCenter 对齐原点时，跳过二次 bbox 居中 */
+  preCentered?: boolean;
+};
+
 /** 将挤出地图躺平（XZ 平面）、居中并缩放到可 orbit 的合理尺度 */
-export function layoutThreeGeoMapGroup(mapGroup: THREE.Group): ThreeGeoOrbitLayout {
+export function layoutThreeGeoMapGroup(
+  mapGroup: THREE.Group,
+  options: ThreeGeoOrbitLayoutOptions = {},
+): ThreeGeoOrbitLayout {
   mapGroup.rotation.x = -Math.PI / 2;
   mapGroup.updateMatrixWorld(true);
 
   const box = boundsFromMapMeshes(mapGroup);
   const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
-  mapGroup.position.sub(center);
-  mapGroup.updateMatrixWorld(true);
+  if (!options.preCentered) {
+    mapGroup.position.sub(center);
+    mapGroup.updateMatrixWorld(true);
+  }
 
   let halfX = Math.max(size.x * 0.5, 0.5);
   let halfZ = Math.max(size.z * 0.5, 0.5);

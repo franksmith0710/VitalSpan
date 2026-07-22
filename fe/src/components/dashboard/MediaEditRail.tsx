@@ -90,7 +90,7 @@ export function MediaEditRail({
               checked={cfg.linkNewTab ?? true}
               onCheckedChange={(linkNewTab) => patch({ linkNewTab })}
             />
-            {!hasLink ? (
+            {hasLink ? (
               <p className="pb-2 text-[10px] leading-snug text-gray-400 dark:text-gray-500">
                 预览态下点击图片可打开上述链接
               </p>

@@ -241,12 +241,19 @@ export function ChartLegendStyleSection() {
       }
     >
       {legendVisible ? (
-        <ChartLegendDeParityFields
-          chartType={cfg.chartType}
-          deStyle={deStyle}
-          editorMode={editorMode}
-          onPatch={patchLegend}
-        />
+        <>
+          {caps.legendPartial ? (
+            <p className={INSPECTOR_HINT}>
+              部分组合图图例仅覆盖主系列或壳层图例，请预览确认全部系列是否展示。
+            </p>
+          ) : null}
+          <ChartLegendDeParityFields
+            chartType={cfg.chartType}
+            deStyle={deStyle}
+            editorMode={editorMode}
+            onPatch={patchLegend}
+          />
+        </>
       ) : null}
     </ChartInspectorSection>
   );

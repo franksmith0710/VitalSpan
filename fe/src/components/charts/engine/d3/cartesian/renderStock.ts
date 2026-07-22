@@ -30,7 +30,7 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
 
   drawCartesianBandAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat, axisStyle });
 
@@ -76,8 +76,8 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
             ?.style("opacity", "1")
             .html(
               `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
-                `<div>开 <strong>${formatChartValue(d.open, valueFormat)}</strong> · 收 <strong>${formatChartValue(d.close, valueFormat)}</strong></div>` +
-                `<div>低 <strong>${formatChartValue(d.low, valueFormat)}</strong> · 高 <strong>${formatChartValue(d.high, valueFormat)}</strong></div>`,
+                `<div>开 <strong>${formatChartValue(d.open, valueFormat)}</strong> · �?<strong>${formatChartValue(d.close, valueFormat)}</strong></div>` +
+                `<div>�?<strong>${formatChartValue(d.low, valueFormat)}</strong> · �?<strong>${formatChartValue(d.high, valueFormat)}</strong></div>`,
             );
         })
         .on("mousemove", (event) => {

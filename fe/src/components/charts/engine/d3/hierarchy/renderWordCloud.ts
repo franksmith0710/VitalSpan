@@ -119,7 +119,7 @@ export function renderD3WordCloudChart(container: HTMLElement, config: D3RenderC
     .domain(placed.map((d) => d.word))
     .range(colors);
 
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
   const cells = svg
     .selectAll<SVGGElement, PlacedWord>("g.word-cell")
     .data(placed)

@@ -24,6 +24,7 @@ type DatasetPickerPanelProps = {
   columns: string[];
   columnsLoading: boolean;
   columnsReady: boolean;
+  datasetBindingError?: string | null;
   onDatasetSelect: (datasetId: string) => void;
   onFieldClick?: (fieldName: string) => void;
   onRefreshFields?: () => void;
@@ -42,6 +43,7 @@ export function DatasetPickerPanel({
   columnsLoading,
   columnsReady,
   onDatasetSelect,
+  datasetBindingError,
   onFieldClick,
   onRefreshFields,
   className,
@@ -89,6 +91,11 @@ export function DatasetPickerPanel({
           onSelect={onDatasetSelect}
           onRefresh={refreshDatasets}
         />
+        {datasetBindingError ? (
+          <p className="mt-2 text-[11px] leading-snug text-warning-600 dark:text-warning-400" role="alert">
+            {datasetBindingError}
+          </p>
+        ) : null}
         {datasetsEmpty ? (
           <p className="mt-2 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
             请先在{" "}

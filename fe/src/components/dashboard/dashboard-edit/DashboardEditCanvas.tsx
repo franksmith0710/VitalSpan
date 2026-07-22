@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { DashboardGrid, type GridInsertAt } from "../DashboardGrid";
 import { DashboardLayoutPreview } from "../DashboardLayoutPreview";
+import { ChartDrillProvider } from "@/components/charts/ChartDrillContext";
 import type { Linkage } from "../dashboardFilterUtils";
 import type { DashboardCanvasEditor } from "../dashboardCanvasMode";
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
@@ -227,6 +228,7 @@ export function DashboardEditCanvas({
   );
 
   return (
+    <ChartDrillProvider>
     <DashboardWidgetsProvider widgets={widgets}>
       <PaletteDragProvider
         active={paletteDragActive}
@@ -278,5 +280,6 @@ export function DashboardEditCanvas({
       </DashboardStyleSurface>
       </PaletteDragProvider>
     </DashboardWidgetsProvider>
+    </ChartDrillProvider>
   );
 }

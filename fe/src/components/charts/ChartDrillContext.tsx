@@ -16,6 +16,7 @@ type ChartDrillContextValue = {
   pop: (widgetId: string) => void;
   reset: (widgetId: string) => void;
   navigateTo: (widgetId: string, depth: number) => void;
+  setStack: (widgetId: string, stack: ChartDrillFrame[]) => void;
 };
 
 const ChartDrillContext = createContext<ChartDrillContextValue | null>(null);
@@ -72,9 +73,21 @@ export function ChartDrillProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setStack = useCallback((widgetId: string, stack: ChartDrillFrame[]) => {
+    setStacks((prev) => {
+      if (!stack.length) {
+        if (!prev[widgetId]?.length) return prev;
+        const copy = { ...prev };
+        delete copy[widgetId];
+        return copy;
+      }
+      return { ...prev, [widgetId]: stack.slice(0, MAX_DRILL_DEPTH) };
+    });
+  }, []);
+
   const value = useMemo(
-    () => ({ getStack, push, pop, reset, navigateTo }),
-    [getStack, push, pop, reset, navigateTo],
+    () => ({ getStack, push, pop, reset, navigateTo, setStack }),
+    [getStack, push, pop, reset, navigateTo, setStack],
   );
 
   return <ChartDrillContext.Provider value={value}>{children}</ChartDrillContext.Provider>;
@@ -91,6 +104,7 @@ export function useChartDrill(widgetId?: string) {
       pop: noop,
       reset: noop,
       navigateTo: noop,
+      setStack: noop,
       active: false,
     };
   }
@@ -102,6 +116,7 @@ export function useChartDrill(widgetId?: string) {
     pop: () => ctx.pop(widgetId),
     reset: () => ctx.reset(widgetId),
     navigateTo: (depth: number) => ctx.navigateTo(widgetId, depth),
+    setStack: (next: ChartDrillFrame[]) => ctx.setStack(widgetId, next),
     active: true,
   };
 }

@@ -14,7 +14,7 @@ import {
 import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartColors, applyChartColorsOpacity } from "@/lib/chartPalette";
 import type { ColorScheme, DashboardStyleConfig, NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import { readChartDeStyle, readChartLegendVisible, readChartLegendPosition, readChartPaletteOpacity } from "@/lib/chartDeStyle";
+import { readChartDeStyle, readChartGeoStyle, readChartLegendVisible, readChartLegendPosition, readChartPaletteOpacity, patchChartDeStyleNested } from "@/lib/chartDeStyle";
 import {
   readChartLegendIcon,
   readChartLegendIconSize,
@@ -203,14 +203,28 @@ export const ChartRenderer = memo(function ChartRenderer({
 }: ChartRendererProps) {
   const drill = useChartDrill(drillEnabled ? widgetId : undefined);
   const effectiveConfig = useMemo(() => migrateChartViewConfig(config), [config]);
+  const persistedDrillStack = useMemo(
+    () => readChartGeoStyle(readChartDeStyle(effectiveConfig)).manualDrillStack ?? [],
+    [effectiveConfig],
+  );
+
+  useEffect(() => {
+    if (!drillEnabled || !widgetId || !drill.active) return;
+    if (drill.stack.length > 0) return;
+    if (!persistedDrillStack.length) return;
+    drill.setStack(persistedDrillStack);
+  }, [drillEnabled, widgetId, drill.active, drill.setStack, drill.stack.length, persistedDrillStack]);
+
+  const effectiveDrillStack = drill.stack.length > 0 ? drill.stack : persistedDrillStack;
+
   const mergedFilterParameters = useMemo(
     () => ({
       ...filterParameters,
-      ...drillStackToFilterParameters(drill.stack),
+      ...drillStackToFilterParameters(effectiveDrillStack),
     }),
-    [filterParameters, drill.stack],
+    [filterParameters, effectiveDrillStack],
   );
-  const drillRevision = drillStackRevision(drill.stack);
+  const drillRevision = drillStackRevision(effectiveDrillStack);
   const resolvedExecuteKey = drillRevision
     ? `${executeKey ?? "chart"}:drill:${drillRevision}`
     : executeKey;
@@ -270,7 +284,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   }, [config, drillRevision]);
 
   const drillPipeline = useMemo(() => {
-    if (!drillInteraction && !drill.stack.length) {
+    if (!drillInteraction && !effectiveDrillStack.length) {
       return {
         rows: rows as unknown[][],
         columns,
@@ -278,15 +292,15 @@ export const ChartRenderer = memo(function ChartRenderer({
       };
     }
     if (isGeoMapChartType(localConfig.chartType)) {
-      return applyMapChartDrillPipeline(localConfig, columns, rows as unknown[][], drill.stack);
+      return applyMapChartDrillPipeline(localConfig, columns, rows as unknown[][], effectiveDrillStack);
     }
-    return applyChartDrillPipeline(localConfig, columns, rows as unknown[][], drill.stack);
-  }, [drillInteraction, drill.stack, localConfig, columns, rows]);
+    return applyChartDrillPipeline(localConfig, columns, rows as unknown[][], effectiveDrillStack);
+  }, [drillInteraction, effectiveDrillStack, localConfig, columns, rows]);
 
   const drillFilterRows = useMemo(() => {
-    if (!drill.stack.length) return rows as unknown[][];
-    return filterRowsByDrillStack(rows as unknown[][], columns, drill.stack);
-  }, [rows, columns, drill.stack]);
+    if (!effectiveDrillStack.length) return rows as unknown[][];
+    return filterRowsByDrillStack(rows as unknown[][], columns, effectiveDrillStack);
+  }, [rows, columns, effectiveDrillStack]);
 
   const displayRows = drillPipeline.rows;
   const displayColumns = drillPipeline.columns;
@@ -294,42 +308,56 @@ export const ChartRenderer = memo(function ChartRenderer({
   const drillClickField = useMemo(() => {
     if (!drillInteraction) return undefined;
     if (isGeoMapChartType(localConfig.chartType)) {
-      return getMapDrillClickField(localConfig, drill.stack);
+      return getMapDrillClickField(localConfig, effectiveDrillStack);
     }
-    return getClickDrillField(localConfig, drill.stack);
-  }, [drillInteraction, localConfig, drill.stack]);
+    return getClickDrillField(localConfig, effectiveDrillStack);
+  }, [drillInteraction, localConfig, effectiveDrillStack]);
+
+  const persistManualDrillStack = useCallback(
+    (stack: typeof effectiveDrillStack) => {
+      if (!onChartConfigChange || !isGeoMapChartType(localConfig.chartType)) return;
+      onChartConfigChange(
+        patchChartDeStyleNested(localConfig, "geo", {
+          manualDrillStack: stack.length ? stack : undefined,
+        }),
+      );
+    },
+    [localConfig, onChartConfigChange],
+  );
 
   const handleDrillClick = useCallback(
     (value: string, label?: string) => {
       if (!drillInteraction) return;
-      if (isGeoMapChartType(localConfig.chartType) && value && !canDrillDeeper(drill.stack, localConfig)) {
+      if (isGeoMapChartType(localConfig.chartType) && value && !canDrillDeeper(effectiveDrillStack, localConfig)) {
         const chain = getDrillChain(localConfig);
-        if (chain.length >= 2 && drill.stack.length >= chain.length - 1) {
+        if (chain.length >= 2 && effectiveDrillStack.length >= chain.length - 1) {
           setMapDrillError("已是最后一层");
         }
         return;
       }
       const field =
         isGeoMapChartType(localConfig.chartType)
-          ? getMapDrillClickField(localConfig, drill.stack)
-          : getClickDrillField(localConfig, drill.stack);
+          ? getMapDrillClickField(localConfig, effectiveDrillStack)
+          : getClickDrillField(localConfig, effectiveDrillStack);
       if (!field || !value) return;
 
       const frame = { field, value, label: label ?? value };
       if (isGeoMapChartType(localConfig.chartType)) {
-        void preflightMapDrillClick(localConfig, drill.stack, frame).then((result) => {
+        void preflightMapDrillClick(localConfig, effectiveDrillStack, frame).then((result) => {
           if (!result.ok) {
             setMapDrillError(result.message);
             return;
           }
           setMapDrillError(null);
+          const nextStack = [...effectiveDrillStack, frame];
           drill.push(frame);
+          persistManualDrillStack(nextStack);
         });
         return;
       }
       drill.push(frame);
     },
-    [localConfig, drill, drillInteraction],
+    [localConfig, drill, drillInteraction, effectiveDrillStack, persistManualDrillStack],
   );
 
   const jumpConfig = useMemo(() => readChartJumpConfig(config), [config]);
@@ -493,6 +521,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       fontSize: deStyle.legend?.fontSize ?? 12,
       icon: readChartLegendIcon(deStyle),
       iconSize: readChartLegendIconSize(deStyle),
+      textColor: deStyle.legend?.color,
       items: shellLegendItems,
     }),
     [
@@ -504,6 +533,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       deStyle.legend?.vAlign,
       deStyle.legend?.icon,
       deStyle.legend?.iconSize,
+      deStyle.legend?.color,
       shellLegendItems,
     ],
   );
@@ -544,7 +574,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       heatmapPlaceholderHint={heatmapPlaceholderHint}
       drillLookupRows={drillFilterRows}
       chartConfig={localConfig}
-      drillStack={drill.stack}
+      drillStack={effectiveDrillStack}
       drillClickField={drillClickField}
       onInteraction={drillInteraction ? handleChartInteraction : undefined}
       onJumpClick={jumpInteraction ? handleJumpClick : undefined}
@@ -656,13 +686,25 @@ export const ChartRenderer = memo(function ChartRenderer({
         />
       ) : null}
       <div className={embedded ? "absolute inset-0 overflow-hidden" : undefined}>
-        {embedded && drill.stack.length > 0 ? (
+        {embedded && effectiveDrillStack.length > 0 ? (
           <ChartDrillChrome
             className="absolute inset-x-2 top-2 z-[2]"
-            stack={drill.stack}
-            onBack={drill.pop}
-            onReset={drill.reset}
-            onNavigate={drill.navigateTo}
+            stack={effectiveDrillStack}
+            onBack={() => {
+              const next = effectiveDrillStack.slice(0, -1);
+              if (next.length) drill.navigateTo(next.length);
+              else drill.reset();
+              persistManualDrillStack(next);
+            }}
+            onReset={() => {
+              drill.reset();
+              persistManualDrillStack([]);
+            }}
+            onNavigate={(depth) => {
+              const next = depth <= 0 ? [] : effectiveDrillStack.slice(0, depth);
+              drill.navigateTo(depth);
+              persistManualDrillStack(next);
+            }}
           />
         ) : null}
         {renderBody()}

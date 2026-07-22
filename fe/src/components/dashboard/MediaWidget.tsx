@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
 import { TabNestedDragRail } from "./TabNestedDragRail";
 import type { DashboardWidgetShell } from "./dashboardCanvasMode";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
-import type { LayoutWidget, MediaWidgetConfig } from "./layoutUtils";
+import type { LayoutWidget, MediaWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
 import { mediaAlignToObjectPosition, normalizeMediaConfig } from "./layoutUtils";
+import { gridWidgetShellClassName, resolveGridWidgetShell } from "./widgetRailStyleSections";
 
 type MediaWidgetProps = {
   widget: LayoutWidget & { mediaConfig: MediaWidgetConfig };
@@ -17,6 +18,7 @@ type MediaWidgetProps = {
   onSelect?: () => void;
   onDelete?: (id: string) => void;
   onTitleChange?: (id: string, title: string) => void;
+  dashboardStyle?: DashboardStyleConfig;
 };
 
 export function MediaWidget({
@@ -28,11 +30,13 @@ export function MediaWidget({
   onSelect,
   onDelete,
   onTitleChange,
+  dashboardStyle,
 }: MediaWidgetProps) {
   const cfg = normalizeMediaConfig(widget.mediaConfig);
   const [broken, setBroken] = useState(false);
   const showImage = cfg.url.trim() && !broken;
   const showGridChrome = shell === "grid";
+  const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
   const inShapeShell = shell === "shape";
   const linkUrl = cfg.linkUrl?.trim();
   const isViewLink = mode === "view" && Boolean(linkUrl);
@@ -113,15 +117,8 @@ export function MediaWidget({
 
   return (
     <div
-      className={cn(
-        "flex h-full min-h-0 flex-col",
-        showGridChrome && "overflow-hidden rounded-xl border bg-white shadow-theme-xs dark:bg-white/[0.03]",
-        showGridChrome && selected && "dashboard-widget-selected",
-        showGridChrome &&
-          selected &&
-          "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40",
-        showGridChrome && !selected && "border-gray-200 dark:border-gray-800",
-      )}
+      className={gridWidgetShellClassName(showGridChrome, Boolean(selected))}
+      style={showGridChrome ? gridShell.style : undefined}
     >
       {showGridChrome && mode === "edit" ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">

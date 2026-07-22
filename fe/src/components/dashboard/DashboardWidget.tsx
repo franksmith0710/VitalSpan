@@ -212,6 +212,7 @@ export function DashboardWidget({
         onTitleChange={onTitleChange}
         onDelete={onDelete}
         onTextConfigChange={onTextConfigChange}
+        dashboardStyle={dashboardStyle}
       />
     );
   }
@@ -227,6 +228,7 @@ export function DashboardWidget({
         onSelect={() => onSelect?.({ shiftKey: false } as MouseEvent)}
         onTitleChange={onTitleChange}
         onDelete={onDelete}
+        dashboardStyle={dashboardStyle}
       />
     );
   }
@@ -245,6 +247,7 @@ export function DashboardWidget({
         onTabsConfigChange={(cfg) => onTabsConfigChange?.(widget.id, cfg)}
         onPaletteDrop={onTabPaletteDrop}
         renderChild={(child) => renderNestedWidget?.(child) ?? null}
+        dashboardStyle={dashboardStyle}
       />
     );
   }

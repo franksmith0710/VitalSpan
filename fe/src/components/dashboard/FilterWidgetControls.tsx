@@ -24,6 +24,8 @@ export type FilterControlProps = {
   inputStyle?: CSSProperties;
   /** 查询组件标题相对控件的位置（看板级 filterChromeStyle.titlePosition） */
   labelPosition?: "top" | "left";
+  /** 维度/字段标签颜色（看板级 filterChromeStyle.titleColor） */
+  labelStyle?: CSSProperties;
 };
 
 function splitMulti(value: string): string[] {
@@ -46,6 +48,7 @@ export function FilterControl({
   disabled,
   inputStyle,
   labelPosition = "top",
+  labelStyle,
 }: FilterControlProps) {
   const emptyHint = options.length === 0;
   const labelRowClass =
@@ -56,7 +59,7 @@ export function FilterControl({
   if (controlType === "select") {
     return (
       <div className={cn(labelRowClass, className)}>
-        <Label htmlFor={id} className={labelPosition === "left" ? "shrink-0" : undefined}>
+        <Label htmlFor={id} className={labelPosition === "left" ? "shrink-0" : undefined} style={labelStyle}>
           {label}
         </Label>
         <div className={labelPosition === "left" ? "min-w-0 flex-1" : undefined}>
@@ -91,7 +94,7 @@ export function FilterControl({
   if (controlType === "date") {
     return (
       <div className={cn(labelRowClass, className)}>
-        <Label htmlFor={id} className={labelPosition === "left" ? "shrink-0" : undefined}>
+        <Label htmlFor={id} className={labelPosition === "left" ? "shrink-0" : undefined} style={labelStyle}>
           {label}
         </Label>
         <Input
@@ -111,7 +114,7 @@ export function FilterControl({
     const selected = new Set(splitMulti(value));
     return (
       <div className={cn(labelRowClass, className)}>
-        <Label className={labelPosition === "left" ? "shrink-0 self-start pt-2" : undefined}>
+        <Label className={labelPosition === "left" ? "shrink-0 self-start pt-2" : undefined} style={labelStyle}>
           {label}
         </Label>
         <div className={labelPosition === "left" ? "min-w-0 flex-1" : undefined}>
@@ -153,7 +156,7 @@ export function FilterControl({
 
   return (
     <div className={cn(labelRowClass, className)}>
-      <Label htmlFor={id} className={labelPosition === "left" ? "shrink-0" : undefined}>
+      <Label htmlFor={id} className={labelPosition === "left" ? "shrink-0" : undefined} style={labelStyle}>
         {label}
       </Label>
       <Input

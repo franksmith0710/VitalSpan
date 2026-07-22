@@ -83,7 +83,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
     .attr("stroke-opacity", 0.75)
     .attr("stroke-width", 1.5);
 
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
   const node = nodeLayer
     .selectAll<SVGGElement, SimNode>("g.node")
     .data(simNodes)

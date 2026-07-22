@@ -97,7 +97,7 @@ export function ChartLiquidStyleSection() {
   return (
     <DashboardConfigSection title="水波样式" compact data-testid="chart-liquid-shape">
       <div className={INSPECTOR_SECTION_GAP}>
-        <ChartDeSliderField label="目标值" value={liquid.targetValue} fallback={100} min={1} max={10000} step={1} onChange={(targetValue) => patch({ targetValue })} />
+        <ChartDeSliderField label="目标线（%）" value={liquid.targetValue} fallback={100} min={0} max={100} step={1} onChange={(targetValue) => patch({ targetValue })} />
         <ChartDeSliderField label="轮廓宽度" value={liquid.outlineWidth} fallback={2} min={0} max={8} step={1} onChange={(outlineWidth) => patch({ outlineWidth })} />
       </div>
     </DashboardConfigSection>

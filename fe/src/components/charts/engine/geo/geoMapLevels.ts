@@ -304,6 +304,22 @@ export function findMapDrillFilterValue(
   return clickedName;
 }
 
+export function listOfflineProvinceNames(): string[] {
+  return [...getProvinceGeoIndex().fullNames].sort((a, b) => a.localeCompare(b, "zh-CN"));
+}
+
+export async function listOfflineCityNames(provinceAdcode: number): Promise<string[]> {
+  const index = await ensureCityMap(provinceAdcode);
+  if (!index) return [];
+  return [...index.fullNames].sort((a, b) => a.localeCompare(b, "zh-CN"));
+}
+
+export async function listOfflineDistrictNames(cityAdcode: number): Promise<string[]> {
+  const index = await ensureDistrictMap(cityAdcode);
+  if (!index) return [];
+  return [...index.fullNames].sort((a, b) => a.localeCompare(b, "zh-CN"));
+}
+
 export function listBundledCityProvinceAdcodes(): number[] {
   return Object.keys(cityGeoModules)
     .map(parseAdcodeFromModulePath)

@@ -16,7 +16,7 @@ import {
   geometryToShapes,
   webglAvailable,
 } from "@/components/charts/engine/three/geoToThreeShapes";
-import { buildThreeGeoProject } from "@/components/charts/engine/three/geo/threeGeoProject";
+import { buildThreeGeoProject, buildMapFitCollection } from "@/components/charts/engine/three/geo/threeGeoProject";
 import { loadChinaTerrainPack } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import { buildGeoFlatPlateMesh } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
@@ -35,12 +35,12 @@ function noopDispose(): void {
   /* empty */
 }
 
-function capMaterialOf(mesh: THREE.Mesh): THREE.MeshStandardMaterial {
+function capMaterialOf(mesh: THREE.Mesh): THREE.MeshBasicMaterial | THREE.MeshStandardMaterial {
   const stored = mesh.userData.capMaterial as THREE.MeshStandardMaterial | undefined;
   if (stored) return stored;
   const mats = mesh.material;
-  if (Array.isArray(mats)) return mats[1] as THREE.MeshStandardMaterial;
-  return mats as THREE.MeshStandardMaterial;
+  if (Array.isArray(mats)) return mats[1] as THREE.MeshBasicMaterial | THREE.MeshStandardMaterial;
+  return mats as THREE.MeshBasicMaterial | THREE.MeshStandardMaterial;
 }
 
 function disposeMesh(mesh: THREE.Mesh): void {
@@ -118,7 +118,15 @@ export async function renderThreeChoroplethChart(
   ).filter((f) => f.geometry != null);
 
   container.replaceChildren();
-  if (features.length === 0) return { dispose: noopDispose, engine: "three" };
+  if (features.length === 0) {
+    const msg = document.createElement("div");
+    msg.className =
+      "flex h-full items-center justify-center px-3 text-center text-theme-sm text-warning-600 dark:text-warning-400";
+    msg.setAttribute("role", "status");
+    msg.textContent = "暂无匹配地区数据，请检查维度字段与地图区域是否对应";
+    container.appendChild(msg);
+    return { dispose: () => container.replaceChildren(), engine: "three" };
+  }
 
   const quality = resolveGeo3dQuality({
     quality: geo3dStyle.quality,
@@ -142,18 +150,12 @@ export async function renderThreeChoroplethChart(
     const plateDepth = Math.max(0.18, Math.min(width, height) * PLATE_DEPTH_RATIO * plateScale);
     const borderColor = isDark ? 0x7dd3fc : 0x1e40af;
     const showVisualMap = geoStyle.visualMap !== false;
-    const terrainOn = geo3dStyle.terrainTexture !== false;
+    const terrainTextureOn = geo3dStyle.terrainTexture !== false;
+    const terrainReliefOn = geo3dStyle.terrainRelief !== false;
+    const terrainOn = terrainTextureOn && terrainReliefOn;
 
-    const featureCollection: GeoJSON.FeatureCollection = {
-      type: "FeatureCollection",
-      features: features.map((f) => ({
-        type: "Feature",
-        properties: { name: f.name, value: f.value },
-        geometry: f.geometry!,
-      })),
-    };
-
-    const geoProject = buildThreeGeoProject(width, height, features, featureCollection);
+    const fitCollection = buildMapFitCollection(geo);
+    const geoProject = buildThreeGeoProject(width, height, fitCollection.features, fitCollection);
     const { project, projBounds, margin, centerX, centerY, viewport } = geoProject;
 
     let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
@@ -217,8 +219,14 @@ export async function renderThreeChoroplethChart(
           name: feature.name,
           value: feature.value,
           adcode: feature.adcode,
-          emissiveTint: built.capMaterial.emissive.clone(),
-          emissiveIntensity: built.capMaterial.emissiveIntensity,
+          capTint: built.capMaterial instanceof THREE.MeshBasicMaterial
+            ? built.capMaterial.color.clone()
+            : (built.capMaterial as THREE.MeshStandardMaterial).emissive.clone(),
+          capIsBasic: built.capMaterial instanceof THREE.MeshBasicMaterial,
+          emissiveIntensity:
+            built.capMaterial instanceof THREE.MeshStandardMaterial
+              ? built.capMaterial.emissiveIntensity
+              : undefined,
         };
         mapGroup.add(built.mesh);
         meshes.push(built.mesh);
@@ -238,7 +246,7 @@ export async function renderThreeChoroplethChart(
     }
 
     scene.add(mapGroup);
-    const orbitLayout = layoutThreeGeoMapGroup(mapGroup);
+    const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: true });
 
     const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -264,7 +272,12 @@ export async function renderThreeChoroplethChart(
 
     const restoreCap = (mesh: THREE.Mesh) => {
       const cap = capMaterialOf(mesh);
-      cap.emissive.copy(mesh.userData.emissiveTint as THREE.Color);
+      const tint = mesh.userData.capTint as THREE.Color;
+      if (cap instanceof THREE.MeshBasicMaterial) {
+        cap.color.copy(tint);
+        return;
+      }
+      cap.emissive.copy(tint);
       cap.emissiveIntensity = mesh.userData.emissiveIntensity as number;
     };
 
@@ -281,6 +294,10 @@ export async function renderThreeChoroplethChart(
         surface.palette,
       );
       const hoverCol = new THREE.Color(hoverCss);
+      if (cap instanceof THREE.MeshBasicMaterial) {
+        cap.color.copy(hoverCol);
+        return;
+      }
       cap.emissive.copy(hoverCol);
       cap.emissiveIntensity = isDark ? 0.45 : 0.32;
     };

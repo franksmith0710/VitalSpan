@@ -38,6 +38,7 @@ type EmbeddedChartLegendProps = {
   vAlign?: ChartLegendVAlign;
   icon?: ChartLegendIconShape;
   iconSize?: number;
+  textColor?: string;
 };
 
 function EmbeddedChartLegend({
@@ -49,6 +50,7 @@ function EmbeddedChartLegend({
   vAlign = "bottom",
   icon = "triangle",
   iconSize = 6,
+  textColor,
 }: EmbeddedChartLegendProps) {
   if (items.length === 0) return null;
 
@@ -80,7 +82,10 @@ function EmbeddedChartLegend({
             style={legendMarkerStyle(icon, item.color, iconSize)}
             aria-hidden
           />
-          <span className="whitespace-nowrap leading-tight text-[var(--dashboard-text-muted,#667085)]">
+          <span
+            className="whitespace-nowrap leading-tight"
+            style={{ color: textColor ?? "var(--dashboard-text-muted,#667085)" }}
+          >
             {item.name}
           </span>
         </li>
@@ -97,6 +102,7 @@ type EmbeddedChartLegendShellProps = {
   vAlign?: ChartLegendVAlign;
   icon?: ChartLegendIconShape;
   iconSize?: number;
+  textColor?: string;
   items: ChartLegendItem[];
   children: ReactNode;
 };
@@ -110,6 +116,7 @@ export function EmbeddedChartLegendShell({
   vAlign = "bottom",
   icon,
   iconSize,
+  textColor,
   items,
   children,
 }: EmbeddedChartLegendShellProps) {
@@ -126,6 +133,7 @@ export function EmbeddedChartLegendShell({
       vAlign={vAlign}
       icon={icon}
       iconSize={iconSize}
+      textColor={textColor}
     />
   );
 

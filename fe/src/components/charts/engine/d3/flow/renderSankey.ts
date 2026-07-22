@@ -112,7 +112,7 @@ export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConf
     .attr("role", "img");
 
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
   const maxLink = d3.max(links, (l) => l.value) ?? 1;
 
   for (const link of links) {

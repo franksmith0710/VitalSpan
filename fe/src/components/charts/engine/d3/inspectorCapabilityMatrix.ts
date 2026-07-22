@@ -83,6 +83,20 @@ export function resolveD3InspectorFeatureMatrix(chartType: string): D3InspectorF
   return D3_WIRING_BY_TYPE[chartType] ?? null;
 }
 
+export type D3InspectorFeatureKey = keyof D3InspectorFeatureMatrix;
+
+export function readD3FeatureWiring(
+  chartType: string,
+  feature: D3InspectorFeatureKey,
+): D3FeatureWiring | null {
+  const matrix = D3_WIRING_BY_TYPE[chartType];
+  return matrix?.[feature] ?? null;
+}
+
+export function isD3FeaturePartial(chartType: string, feature: D3InspectorFeatureKey): boolean {
+  return readD3FeatureWiring(chartType, feature) === "partial";
+}
+
 /** 将 D3 实测矩阵转为 Inspector 应展示的能力（轨 B：missing 不展示） */
 export function resolveD3WiredCapabilities(chartType: string): EngineCapabilities | null {
   const matrix = D3_WIRING_BY_TYPE[chartType];

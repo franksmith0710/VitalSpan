@@ -17,6 +17,7 @@ import {
 } from "@/components/charts/engine/d3/table/resolveTableLayoutMode";
 import { TABLE_DEFAULT_COL_PX } from "@/components/charts/engine/d3/table/tableLayoutConstants";
 import { TableResizeHandle } from "@/components/charts/engine/d3/table/TableResizeHandle";
+import { TableResizeGuide } from "@/components/charts/engine/d3/table/TableResizeGuide";
 import { useTableLayoutResize } from "@/components/charts/engine/d3/table/useTableLayoutResize";
 import type { PivotTableModel } from "@/components/charts/engine/d3/table/types";
 import type { DepthVisualLevel } from "@/components/charts/engine/d3/core/chartVisualTokens";

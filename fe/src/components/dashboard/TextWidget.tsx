@@ -10,7 +10,8 @@ import { isRichTextEmpty, textConfigToHtml } from "./richTextHtml";
 import { ScreenBorderDisplay } from "./screen/ScreenBorderDisplay";
 import { ScreenClockDisplay } from "./screen/ScreenClockDisplay";
 import { ScreenTitleBarDisplay } from "./screen/ScreenTitleBarDisplay";
-import type { LayoutWidget, TextWidgetConfig } from "./layoutUtils";
+import type { LayoutWidget, TextWidgetConfig, DashboardStyleConfig } from "./layoutUtils";
+import { gridWidgetShellClassName, resolveGridWidgetShell } from "./widgetRailStyleSections";
 import {
   isScreenBorderWidget,
   isScreenClockWidget,
@@ -28,6 +29,7 @@ type TextWidgetProps = {
   onDelete?: (id: string) => void;
   onTitleChange?: (id: string, title: string) => void;
   onTextConfigChange?: (id: string, config: TextWidgetConfig) => void;
+  dashboardStyle?: DashboardStyleConfig;
 };
 
 export function TextWidget({
@@ -40,6 +42,7 @@ export function TextWidget({
   onDelete,
   onTitleChange,
   onTextConfigChange,
+  dashboardStyle,
 }: TextWidgetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -69,22 +72,17 @@ export function TextWidget({
   };
 
   const showGridChrome = shell === "grid";
+  const gridShell = resolveGridWidgetShell(widget, dashboardStyle);
 
   const content = (
     <div
       ref={widgetRef}
       className={cn(
-        "flex h-full min-h-0 flex-col",
-        showGridChrome && "overflow-hidden rounded-xl border bg-white shadow-theme-xs dark:bg-white/[0.03]",
+        gridWidgetShellClassName(showGridChrome, Boolean(selected && !isEditing)),
         showGridChrome && isEditing && "ring-2 ring-brand-500/50 border-brand-400 dark:border-brand-500/60",
-        showGridChrome && !isEditing && selected && "dashboard-widget-selected",
-        showGridChrome &&
-          !isEditing &&
-          selected &&
-          "border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40",
-        showGridChrome && !isEditing && !selected && "border-gray-200 dark:border-gray-800",
         nested && inShapeShell && mode === "edit" && "pl-7",
       )}
+      style={showGridChrome ? gridShell.style : undefined}
     >
       {showGridChrome && mode === "edit" && !isEditing ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">

@@ -125,7 +125,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
     areaPath.attr("d", d3.line()(points) ?? "");
   }
 
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
   const dots = g
     .selectAll<SVGCircleElement, D3Datum>("circle.radar-dot")
     .data(data)

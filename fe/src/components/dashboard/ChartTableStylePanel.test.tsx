@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartTableStylePanel } from "./ChartTableStylePanel";
 import { ChartInspectorProvider } from "./ChartInspectorProvider";
+import { patchChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import type { LayoutWidget } from "./layoutUtils";
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -49,6 +50,8 @@ describe("ChartTableStylePanel", () => {
       </QueryClientProvider>,
     );
 
+    await user.click(screen.getByRole("button", { name: /明细表（旧） · 基础样式/ }));
+
     expect(screen.getByTestId("table-style-basic")).toBeInTheDocument();
     expect(screen.getByText("不透明度 %")).toBeInTheDocument();
     expect(screen.getByText("边框颜色")).toBeInTheDocument();
@@ -64,6 +67,40 @@ describe("ChartTableStylePanel", () => {
       expect.objectContaining({
         nativeBody: expect.objectContaining({
           deTableStyle: expect.objectContaining({ columnWidthMode: "custom" }),
+        }),
+      }),
+    );
+  });
+
+  it("switching to auto clears incompatible column width state", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const widget = {
+      ...tableWidget,
+      chartConfig: patchChartDeTableStyle(tableWidget.chartConfig!, {
+        columnWidthMode: "custom",
+        columnWidthsPx: { region: 200 },
+        columnWidths: { region: 100 },
+      }),
+    };
+    render(
+      <QueryClientProvider client={qc}>
+        <ChartInspectorProvider widget={widget} onChange={onChange}>
+          <ChartTableStylePanel />
+        </ChartInspectorProvider>
+      </QueryClientProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: /明细表（旧） · 基础样式/ }));
+    await user.click(screen.getByRole("button", { name: "自适应" }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nativeBody: expect.objectContaining({
+          deTableStyle: expect.objectContaining({
+            columnWidthMode: "auto",
+            columnWidths: undefined,
+            columnWidthsPx: undefined,
+          }),
         }),
       }),
     );

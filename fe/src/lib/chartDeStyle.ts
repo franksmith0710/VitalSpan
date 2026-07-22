@@ -17,6 +17,7 @@ import type { WidgetBackgroundPresentation } from "@/lib/widgetSurfaceBackground
 import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
 import type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 import { resolvePaletteId } from "@/lib/chartPalette";
+import type { ChartDrillFrame } from "@/lib/chartDrill";
 import type { ChartDeStyleBlocks } from "@/lib/chartDeStyleBlocks";
 
 export type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
@@ -75,6 +76,8 @@ export type ChartRemarkStyle = {
 export type ChartGeoStyle = {
   /** 对标 DE「地区」：离线中国省级底图（GEO-IRON-01 仅 china） */
   mapArea?: "china";
+  /** 对标 DE 数据页「地区」手动下钻路径（预览/编辑共用） */
+  manualDrillStack?: ChartDrillFrame[];
   roam?: boolean;
   showRegionLabel?: boolean;
   visualMap?: boolean;

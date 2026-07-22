@@ -26,6 +26,7 @@ export type WidgetShellLegendState = {
   fontSize: number;
   icon: ChartLegendIconShape;
   iconSize: number;
+  textColor?: string;
   items: ChartLegendItem[];
 };
 
@@ -62,6 +63,7 @@ function legendStateEqual(a: WidgetShellLegendState, b: WidgetShellLegendState):
     a.fontSize === b.fontSize &&
     a.icon === b.icon &&
     a.iconSize === b.iconSize &&
+    a.textColor === b.textColor &&
     legendItemsKey(a.items) === legendItemsKey(b.items)
   );
 }
@@ -102,7 +104,7 @@ export function usePublishWidgetShellLegend(
       return;
     }
     setStateRef.current?.(stateRef.current);
-  }, [enabled, state.visible, state.position, state.orient, state.hAlign, state.vAlign, state.fontSize, state.icon, state.iconSize, itemsKey]);
+  }, [enabled, state.visible, state.position, state.orient, state.hAlign, state.vAlign, state.fontSize, state.icon, state.iconSize, state.textColor, itemsKey]);
 
   useEffect(() => {
     if (!enabled) return;

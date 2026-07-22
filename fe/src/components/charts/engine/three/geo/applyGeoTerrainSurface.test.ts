@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
   applyTerrainToExtrudeGeometry,
+  buildTerrainCapMaterial,
   lngLatToTerrainUv,
 } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
 import { CHINA_TERRAIN_BOUNDS } from "@/assets/geo/terrain/manifest";
@@ -84,5 +85,12 @@ describe("applyTerrainToExtrudeGeometry", () => {
     }
     expect(maxU).toBeGreaterThan(0.05);
     expect(maxV).toBeGreaterThan(0.05);
+  });
+
+  it("builds basic cap material with terrain map", () => {
+    const tex = new THREE.Texture();
+    const mat = buildTerrainCapMaterial(tex, new THREE.Color(0xff8844), 0.8);
+    expect(mat.map).toBe(tex);
+    expect(mat.type).toBe("MeshBasicMaterial");
   });
 });

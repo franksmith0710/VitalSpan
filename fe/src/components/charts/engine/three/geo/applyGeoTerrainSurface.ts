@@ -73,26 +73,18 @@ type TerrainSurfaceOpts = {
   centerY: number;
 };
 
-function projectionPlaneFromThree(
-  x: number,
-  y: number,
-  viewport: { width: number; height: number },
-  margin: GeoMapLayoutMargin,
-): [number, number] {
-  return [x + viewport.width / 2 - margin.left, viewport.height / 2 - y - margin.top];
-}
-
-/** 顶面 UV：经纬度对齐 hillshade（纹理按 lng/lat 栅格生成） */
+/** 投影平面 UV：与 mesh 同 Mercator 平面，hillshade 纹理按 projBounds 铺展 */
 function capUvFromPosition(x: number, y: number, opts: TerrainSurfaceOpts): [number, number] {
   const { geoBounds, projBounds, projection, viewport, margin, centerX, centerY } = opts;
-  const lngSpan = geoBounds.east - geoBounds.west || 1;
-  const latSpan = geoBounds.north - geoBounds.south || 1;
   const spanX = projBounds.maxX - projBounds.minX || 1;
   const spanY = projBounds.maxY - projBounds.minY || 1;
 
-  const [px, py] = projectionPlaneFromThree(x + centerX, y + centerY, viewport, margin);
+  const px = x + centerX + viewport.width / 2 - margin.left;
+  const py = viewport.height / 2 - (y + centerY) - margin.top;
   const lngLat = projection.invert?.([px, py]);
   if (lngLat) {
+    const lngSpan = geoBounds.east - geoBounds.west || 1;
+    const latSpan = geoBounds.north - geoBounds.south || 1;
     const u = (lngLat[0] - geoBounds.west) / lngSpan;
     const v = 1 - (lngLat[1] - geoBounds.south) / latSpan;
     if (u >= 0 && u <= 1 && v >= 0 && v <= 1) {
@@ -102,11 +94,12 @@ function capUvFromPosition(x: number, y: number, opts: TerrainSurfaceOpts): [num
 
   const u = (x - projBounds.minX) / spanX;
   const v = 1 - (y - projBounds.minY) / spanY;
+  if (!Number.isFinite(u) || !Number.isFinite(v)) return [0.5, 0.5];
   return [Math.max(0, Math.min(1, u)), Math.max(0, Math.min(1, v))];
 }
 
 function isTopCapVertex(z: number, depth: number): boolean {
-  return z >= depth * 0.5;
+  return z >= depth - 1e-4;
 }
 
 function writeCapUvsForRange(
@@ -118,15 +111,14 @@ function writeCapUvsForRange(
   opts: TerrainSurfaceOpts,
 ): void {
   for (let i = start; i < start + count; i += 1) {
-    const z = pos.getZ(i);
-    if (!isTopCapVertex(z, depth)) continue;
+    if (!isTopCapVertex(pos.getZ(i), depth)) continue;
     const [u, v] = capUvFromPosition(pos.getX(i), pos.getY(i), opts);
     uvs[i * 2] = u;
     uvs[i * 2 + 1] = v;
   }
 }
 
-/** 写入 cap UV；按 ExtrudeGeometry group 定位顶面，不 mergeVertices */
+/** 写入 cap UV；不 mergeVertices */
 export function applyTerrainToExtrudeGeometry(
   geometry: THREE.ExtrudeGeometry,
   opts: TerrainSurfaceOpts,
@@ -145,7 +137,6 @@ export function applyTerrainToExtrudeGeometry(
   }
 
   geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-  geometry.computeVertexNormals();
   return geometry;
 }
 
@@ -159,4 +150,19 @@ export function lngLatToTerrainUv(
   const u = Math.max(0, Math.min(1, (lng - geoBounds.west) / lngSpan));
   const v = Math.max(0, Math.min(1, 1 - (lat - geoBounds.south) / latSpan));
   return [u, v];
+}
+
+export function buildTerrainCapMaterial(
+  terrainMap: THREE.Texture,
+  dataTint: THREE.Color,
+  valueT: number,
+): THREE.MeshBasicMaterial {
+  terrainMap.colorSpace = THREE.SRGBColorSpace;
+  const tintMix = 0.22 + valueT * 0.42;
+  const color = new THREE.Color(0xffffff).lerp(dataTint, tintMix);
+  return new THREE.MeshBasicMaterial({
+    map: terrainMap,
+    color,
+    side: THREE.FrontSide,
+  });
 }

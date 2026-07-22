@@ -10,7 +10,6 @@ function mockMapGroup(): THREE.Group {
   const group = new THREE.Group();
   const geom = new THREE.BoxGeometry(200, 8, 120);
   const mesh = new THREE.Mesh(geom, new THREE.MeshBasicMaterial());
-  mesh.position.set(10, 0, -5);
   group.add(mesh);
   return group;
 }

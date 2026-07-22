@@ -42,9 +42,14 @@ describe("inspectorCapabilityMatrix", () => {
     const scatter = chartInspectorCapabilities("scatter");
     expect(scatter.conditional).toBe(true);
     expect(scatter.markLines).toBe(true);
+    expect(scatter.legendPartial).toBe(false);
 
     const mix = chartInspectorCapabilities("chart-mix");
     expect(mix.dataZoom).toBe(true);
     expect(mix.label).toBe(true);
+    expect(mix.conditionalPartial).toBe(true);
+
+    const dual = chartInspectorCapabilities("chart-mix-dual-line");
+    expect(dual.legendPartial).toBe(true);
   });
 });

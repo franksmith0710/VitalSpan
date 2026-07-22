@@ -50,7 +50,7 @@ export function renderD3ProgressBarChart(
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltip(container, theme) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
 
   drawCartesianHorizontalBandAxes({
     g,
@@ -103,7 +103,7 @@ export function renderD3ProgressBarChart(
           .html(
             `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
               `<div>进度 <strong>${pct.toFixed(1)}%</strong></div>` +
-              `<div>数值 <strong>${formatChartValue(d.value, valueFormat)}</strong> / ${formatChartValue(d.max, valueFormat)}</div>`,
+              `<div>数�?<strong>${formatChartValue(d.value, valueFormat)}</strong> / ${formatChartValue(d.max, valueFormat)}</div>`,
           );
       })
       .on("mousemove", (event) => {

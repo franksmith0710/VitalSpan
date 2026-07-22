@@ -21,7 +21,11 @@ import type {
   MediaWidgetConfig,
   TabsHeadStyleConfig,
   TabsWidgetConfig,
+  DashboardStyleConfig,
 } from "./layoutUtils";
+import { mergeWidgetShellStyle } from "./dashboardStyleConfig";
+import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
+import { cn } from "@/lib/utils";
 
 export function readWidgetStyleBorder(ws: WidgetStyleConfig = {}): ChartBorderStyle {
   return {
@@ -56,6 +60,29 @@ export function mergeWidgetOverrideStyle(
 
   if (!dashboardWidgetStyle && !override) return undefined;
   return { ...(dashboardWidgetStyle ?? {}), ...(override ?? {}) };
+}
+
+/** 栅格看板：合并看板级 + 单组件 widgetStyle 外壳（对标 PixelShape） */
+export function resolveGridWidgetShell(widget: LayoutWidget, dashboardStyle?: DashboardStyleConfig) {
+  const scheme = resolveWidgetEffectiveScheme(dashboardStyle);
+  const merged = mergeWidgetOverrideStyle(dashboardStyle?.widgetStyle, widget);
+  return mergeWidgetShellStyle(merged, scheme);
+}
+
+export function gridWidgetShellClassName(
+  showGridChrome: boolean,
+  selected: boolean,
+  extra?: string,
+) {
+  return cn(
+    "flex h-full min-h-0 flex-col",
+    showGridChrome && "overflow-hidden rounded-xl border shadow-theme-xs",
+    showGridChrome &&
+      selected &&
+      "dashboard-widget-selected border-gray-400 shadow-theme-sm ring-1 ring-gray-300/70 dark:border-gray-600 dark:ring-gray-600/40",
+    showGridChrome && !selected && "border-gray-200 dark:border-gray-800",
+    extra,
+  );
 }
 
 export function WidgetShellBackgroundSection({

@@ -38,6 +38,7 @@ function ChartEditRailInner({
     datasetItems,
     datasetsEmpty,
     handleDatasetSelect,
+    datasetBindingError,
     columns,
     columnsLoading,
     columnsReady,
@@ -77,6 +78,7 @@ function ChartEditRailInner({
             columnsLoading={columnsLoading}
             columnsReady={columnsReady}
             onDatasetSelect={handleDatasetSelect}
+            datasetBindingError={datasetBindingError}
             onFieldClick={(field) => assignField(field)}
             onRefreshFields={refreshColumns}
           />

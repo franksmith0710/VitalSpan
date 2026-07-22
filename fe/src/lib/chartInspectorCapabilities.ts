@@ -6,6 +6,7 @@ import {
   isLineOrBarType,
 } from "@/lib/chartViewConfig";
 import { resolveEngineCapabilities } from "@/components/charts/engine/capabilities";
+import { isD3FeaturePartial } from "@/components/charts/engine/d3/inspectorCapabilityMatrix";
 import { tableInspectorProfile } from "@/lib/chartTableInspector";
 
 export type ChartInspectorCapabilities = {
@@ -21,7 +22,12 @@ export type ChartInspectorCapabilities = {
   conditional: boolean;
   jump: boolean;
   timeRange: boolean;
+  /** D3 矩阵标 partial：能力可用但仅部分系列/场景生效 */
+  legendPartial: boolean;
+  conditionalPartial: boolean;
 };
+
+const NO_PARTIAL = { legendPartial: false, conditionalPartial: false } as const;
 
 export function chartInspectorCapabilities(
   chartType: ChartViewConfig["chartType"],
@@ -47,6 +53,7 @@ export function chartInspectorCapabilities(
       conditional: tableProfile.advancedConditional,
       jump: tableProfile.advancedJump,
       timeRange: tableProfile.advancedTimeRange,
+      ...NO_PARTIAL,
     };
   }
 
@@ -63,6 +70,7 @@ export function chartInspectorCapabilities(
       conditional: false,
       jump: false,
       timeRange: false,
+      ...NO_PARTIAL,
     };
   }
 
@@ -88,6 +96,8 @@ export function chartInspectorCapabilities(
       !isMatrixHeatmapChartType(chartType) &&
       !isKpiType(chartType),
     timeRange: !isGeoMapChartType(chartType) && !isKpiType(chartType),
+    legendPartial: isD3FeaturePartial(chartType, "legend"),
+    conditionalPartial: isD3FeaturePartial(chartType, "conditional"),
   };
 }
 
