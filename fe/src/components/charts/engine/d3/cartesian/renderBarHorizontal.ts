@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
@@ -11,6 +11,7 @@ import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKe
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 
 const BAR_RX = 4;
 
@@ -18,7 +19,7 @@ type WideRow = Record<string, string | number>;
 
 function paintHBarCell(
   cell: d3.Selection<SVGGElement, unknown, null, undefined>,
-  opts: { x: number; w: number; h: number; front: string; solid: string },
+  opts: { x: number; w: number; h: number; front: string; solid: string; rx?: number },
 ): void {
   cell.selectAll("*").remove();
   const depthOn = resolveEffectiveDepth() !== "off";
@@ -29,7 +30,7 @@ function paintHBarCell(
     width: opts.w,
     height: opts.h,
     color: depthOn ? opts.solid : opts.front,
-    rx: BAR_RX,
+    rx: opts.rx ?? BAR_RX,
   });
   if (depthOn && opts.front !== opts.solid) cell.select(".vs-hbar-front").attr("fill", opts.front);
 }
@@ -78,7 +79,12 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     dataZoom = false,
     onPointClick,
     legendLayout,
+    barWidthRatio,
+    barRadius,
+    axisStyle,
   } = config;
+
+  const barRx = barRadius ?? BAR_RX;
 
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
   const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
@@ -119,20 +125,14 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
       ? (d3.max(wideRows, (row) => keys.reduce((sum, k) => sum + Number(row[k] ?? 0), 0)) ?? 0)
       : (d3.max(normalized, (d) => Number(d.__value__)) ?? 0);
 
-  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(0.22);
+  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
   const x = d3.scaleLinear().domain([0, maxVal]).nice().range([0, innerW]);
   const ySub = useGrouped ? d3.scaleBand<string>().domain(keys).range([0, y.bandwidth()]).padding(0.12) : null;
   const plot = g.append("g");
   drawVerticalMarkLines(plot, markLines, x, innerH);
   const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
 
-  g.append("g")
-    .call(d3.axisLeft(y))
-    .call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
-    .call(styleAxis, theme);
+  drawCartesianHorizontalBandAxes({ g, xScale: x, yScale: y, innerW, innerH, theme, valueFormat, axisStyle });
 
   if (isStack) {
     const stack = d3.stack<WideRow>().keys(keys);
@@ -153,7 +153,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
           const val = Number(d[1]) - Number(d[0]);
           const solid = gradientFill.startsWith("url(") ? color : resolveDatumColor(val, color, conditionalRules);
           const front = gradientFill.startsWith("url(") ? gradientFill : solid;
-          paintHBarCell(d3.select(this), { x: x0, w, h: y.bandwidth(), front, solid });
+          paintHBarCell(d3.select(this), { x: x0, w, h: y.bandwidth(), front, solid, rx: barRx });
         })
         .on("click", (_e, d) =>
           onPointClick?.({
@@ -186,7 +186,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
             ? color
             : resolveDatumColor(Number(d.__value__), color, conditionalRules);
           const front = gradientFill.startsWith("url(") ? gradientFill : solid;
-          paintHBarCell(d3.select(this), { x: 0, w, h: barH, front, solid });
+          paintHBarCell(d3.select(this), { x: 0, w, h: barH, front, solid, rx: barRx });
         })
         .on("click", (_e, d) => onPointClick?.(d));
     }

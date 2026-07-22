@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { drawCartesianBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
@@ -11,7 +11,7 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
-  const { width, height, data, colors, theme, showTooltip, showLabel, labelFontSize, labelColor, valueFormat, onPointClick } = config;
+  const { width, height, data, colors, theme, showTooltip, showLabel, labelFontSize, labelColor, valueFormat, onPointClick, axisStyle } = config;
 
   const categories = data.map((d) => d.type);
   const yMin = d3.min(data, (d) => d.low) ?? 0;
@@ -21,8 +21,6 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const upColor = colors[0] ?? "#12b76a";
   const downColor = colors[1] ?? "#f04438";
-  const xTicks = pickCategoryTicks(categories, innerW);
-  const rotateX = xTicks.length >= 6 && innerW / xTicks.length < 72 ? -32 : 0;
 
   const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(0.3);
   const y = d3.scaleLinear().domain([yMin, yMax]).nice().range([innerH, 0]);
@@ -34,14 +32,7 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme) : null;
 
-  g.append("g")
-    .call(d3.axisLeft(y).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
-    .call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).tickValues(xTicks))
-    .call(styleAxis, theme)
-    .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+  drawCartesianBandAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat, axisStyle });
 
   for (const d of data) {
     const cx = (x(d.type) ?? 0) + x.bandwidth() / 2;

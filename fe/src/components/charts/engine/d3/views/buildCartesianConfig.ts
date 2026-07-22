@@ -50,6 +50,11 @@ export function buildCartesianRenderConfig(
     showLegend: !style.shellLegend && style.deStyle.legend?.show !== false && Boolean(seriesField),
     valueFormat: style.valueFormat,
     ...buildD3PresentationProps(style),
+    barWidthRatio: options.__barWidthRatio as number | undefined,
+    barRadius: options.__barRadius as number | undefined,
+    pointSize: options.__pointSize as number | undefined,
+    areaOpacity: options.__areaOpacity as number | undefined,
+    axisStyle: options.__axisStyle as D3CartesianRenderConfig["axisStyle"],
     markLines: chartConfig ? readChartMarkLines(chartConfig) : markLinesFromPlan ?? style.deFeatures?.markLines,
     conditionalRules:
       chartConfig ? readChartConditionalRules(chartConfig) : conditionalFromPlan ?? style.deFeatures?.conditionalRules,

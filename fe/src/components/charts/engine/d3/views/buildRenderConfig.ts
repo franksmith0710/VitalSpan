@@ -1,11 +1,13 @@
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import { chartViewModelToRenderSpec } from "@/components/charts/engine/buildChartViewModel";
 import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
+import { findMapDrillFilterValue } from "@/lib/geoMapLevels";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import type { D3DispatchPayload } from "@/components/charts/engine/d3/renderDispatch";
 import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyleProps";
 import { extractDrillValue, buildCartesianRenderConfig } from "@/components/charts/engine/d3/views/buildCartesianConfig";
-import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
+import { readCartesianStyleFromPlanOptions } from "@/lib/applyChartDeStyleBlocks";
+import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
 import type {
   D3BarRangeDatum,
   D3BidirectionalBarDatum,
@@ -43,6 +45,7 @@ export function buildD3DispatchPayload(
   const styleProps = buildD3StyleProps(props, plan);
   const options = plan.options;
   const plotType = plan.plotType;
+  const cartesianStyle = readCartesianStyleFromPlanOptions(options);
 
   const presentation = {
     labelFontSize: styleProps.labelFontSize,
@@ -59,6 +62,7 @@ export function buildD3DispatchPayload(
     const rows = (options.rows as unknown[][]) ?? [];
     const columns = (options.columns as string[]) ?? [];
     const geoStyle = props.chartConfig ? readChartGeoStyle(readChartDeStyle(props.chartConfig)) : {};
+    const geo3dStyle = props.chartConfig ? readChartGeo3dStyle(readChartDeStyle(props.chartConfig)) : {};
     return {
       kind: "geo",
       config: {
@@ -70,19 +74,29 @@ export function buildD3DispatchPayload(
         metricField,
         knownRegionNames: options.knownRegionNames as string[] | undefined,
         mapId: (options.mapId as string | undefined) ?? VS_REGIONS_MAP_ID,
+        drillDepth: (options.drillDepth as number | undefined) ?? 0,
         isDark: props.isDark ?? props.style.scheme === "dark",
         geoStyle: {
           roam: geoStyle.roam,
           showRegionLabel: geoStyle.showRegionLabel,
           visualMap: geoStyle.visualMap,
         },
+        geo3dStyle,
         colors: styleProps.colors,
         theme: styleProps.theme,
         showTooltip: styleProps.showTooltip,
         tooltipPresentation: styleProps.tooltipPresentation,
         valueFormat: styleProps.valueFormat,
         onPointClick: props.onInteraction
-          ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.name, label: datum.name })
+          ? (datum) => {
+              const clickField = props.drillClickField ?? regionField;
+              const lookupRows = props.drillLookupRows ?? rows;
+              const known = (options.knownRegionNames as string[] | undefined) ?? [];
+              const value = clickField
+                ? findMapDrillFilterValue(datum.name, clickField, lookupRows, columns, known)
+                : datum.name;
+              props.onInteraction?.({ kind: "drill", value, label: datum.name });
+            }
           : undefined,
         depthVisual: styleProps.depthVisual,
       },
@@ -146,6 +160,7 @@ export function buildD3DispatchPayload(
         markLines: styleProps.markLines,
         conditionalRules: styleProps.conditionalRules,
         legendLayout: styleProps.legendLayout,
+        ...cartesianStyle,
         onPointClick: onDatumClick(props, xField),
       },
     };
@@ -167,6 +182,7 @@ export function buildD3DispatchPayload(
         legendLayout: styleProps.legendLayout,
         ...presentation,
         valueFormat: styleProps.valueFormat,
+        ...cartesianStyle,
         onPointClick: props.onInteraction
           ? (datum) => props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type })
           : undefined,
@@ -190,6 +206,7 @@ export function buildD3DispatchPayload(
         legendLayout: styleProps.legendLayout,
         ...presentation,
         valueFormat: styleProps.valueFormat,
+        ...cartesianStyle,
       },
     };
   }
@@ -207,6 +224,7 @@ export function buildD3DispatchPayload(
       showLabel: styleProps.showLabel,
       ...presentation,
       valueFormat: styleProps.valueFormat,
+      ...cartesianStyle,
       onPointClick: props.onInteraction
         ? (datum: { type: string }) =>
             props.onInteraction?.({ kind: "drill", value: datum.type, label: datum.type })
@@ -240,6 +258,7 @@ export function buildD3DispatchPayload(
       conditionalRules: styleProps.conditionalRules,
       markLines: styleProps.markLines,
       legendLayout: styleProps.legendLayout,
+      ...cartesianStyle,
       onPointClick: props.onInteraction
         ? (datum) => {
             const label = String(datum.type ?? datum.stage ?? datum.name ?? datum.word ?? "");

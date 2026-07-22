@@ -6,9 +6,19 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveGaugeValuePercent } from "@/lib/applyChartDeStyleBlocks";
 
-const START_ANGLE = -Math.PI * 0.75;
-const END_ANGLE = Math.PI * 0.75;
+const START_ANGLE_DEFAULT = -Math.PI * 0.75;
+const END_ANGLE_DEFAULT = Math.PI * 0.75;
+
+function gaugeAnglesFromOptions(options: Record<string, unknown>) {
+  const startDeg = Number(options.__gaugeStartAngleDeg ?? -135);
+  const endDeg = Number(options.__gaugeEndAngleDeg ?? 135);
+  return {
+    start: (startDeg * Math.PI) / 180,
+    end: (endDeg * Math.PI) / 180,
+  };
+}
 
 function gaugeArcPath(innerR: number, outerR: number, start: number, end: number): string {
   const arc = d3
@@ -37,8 +47,8 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
     options,
   } = config;
   const rawValue = Number(options.rawValue ?? NaN);
-  const percent = Math.min(1, Math.max(0, Number(options.percent ?? 0)));
-  const usePercent = Number.isFinite(rawValue) ? rawValue <= 100 : true;
+  const percent = resolveGaugeValuePercent(options, rawValue, Math.min(1, Math.max(0, Number(options.percent ?? 0))));
+  const usePercent = !Number.isFinite(rawValue);
 
   if (width <= 0 || height <= 0) return () => undefined;
 
@@ -48,6 +58,7 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
   const cx = margin.left + innerW / 2;
   const cy = margin.top + innerH * 0.58;
   const radius = Math.min(innerW, innerH) * 0.42;
+  const { start: START_ANGLE, end: END_ANGLE } = gaugeAnglesFromOptions(options);
   const rangeColors = (options.range as { color?: string[] } | undefined)?.color;
   const activeColor = rangeColors?.[0] ?? colors[0] ?? "#465fff";
   const trackColor = rangeColors?.[1] ?? theme.gridLine;

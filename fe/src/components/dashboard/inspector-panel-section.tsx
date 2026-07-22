@@ -19,11 +19,14 @@ export function InspectorPanelSection({
     <section className={cn("space-y-3", className)}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+          <h3 className="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">
             {title}
           </h3>
           {description ? (
-            <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+            <p
+              className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400"
+              title={description}
+            >
               {description}
             </p>
           ) : null}

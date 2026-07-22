@@ -29,7 +29,7 @@ describe("DataScreenConfigExtras canvas size", () => {
       />,
     );
 
-    const widthInput = screen.getByLabelText("W");
+    const widthInput = screen.getByLabelText("宽度");
     fireEvent.change(widthInput, { target: { value: "1920" } });
     fireEvent.blur(widthInput);
 
@@ -56,5 +56,24 @@ describe("DataScreenConfigExtras canvas size", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "1920×1080 (16:9)" }));
     expect(onCanvasSizeChange).toHaveBeenCalledWith({ width: 1920, height: 1080 });
+  });
+
+  it("increments width with inline stepper buttons", () => {
+    const onCanvasSizeChange = vi.fn();
+    render(
+      <DataScreenConfigExtras
+        layout={baseLayout}
+        styleConfig={baseLayout.styleConfig!}
+        widgets={[]}
+        name="测试大屏"
+        canSave
+        presentationMode="fitWidth"
+        onPresentationModeChange={vi.fn()}
+        onCanvasSizeChange={onCanvasSizeChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "增加宽度" }));
+    expect(onCanvasSizeChange).toHaveBeenCalledWith({ width: 2073 });
   });
 });

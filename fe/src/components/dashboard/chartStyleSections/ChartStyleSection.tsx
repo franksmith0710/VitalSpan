@@ -14,6 +14,22 @@ import {
   ChartRemarkStyleSection,
   ChartTitleStyleSection,
 } from "./ChartCommonStyleSections";
+import {
+  ChartAxisStyleSection,
+  ChartCartesianShapeSection,
+} from "./ChartCartesianStyleSections";
+import {
+  ChartFunnelShapeSection,
+  ChartGaugeStyleSection,
+  ChartGraphShapeSection,
+  ChartKpiIndicatorSection,
+  ChartLiquidStyleSection,
+  ChartPieShapeSection,
+  ChartRadarShapeSection,
+  ChartSankeyShapeSection,
+  ChartTooltipStyleSection,
+  ChartWordCloudShapeSection,
+} from "./ChartTypeStyleSections";
 
 type ChartStyleSectionProps = {
   sectionId: ChartStyleSectionId;
@@ -30,6 +46,30 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
       return <ChartTableColorPanel />;
     case "variantBasic":
       return <ChartVariantBasicSection />;
+    case "axis":
+      return <ChartAxisStyleSection />;
+    case "cartesianShape":
+      return <ChartCartesianShapeSection />;
+    case "pieShape":
+      return <ChartPieShapeSection />;
+    case "gaugeShape":
+      return <ChartGaugeStyleSection />;
+    case "liquidShape":
+      return <ChartLiquidStyleSection />;
+    case "kpiIndicator":
+      return <ChartKpiIndicatorSection />;
+    case "funnelShape":
+      return <ChartFunnelShapeSection />;
+    case "sankeyShape":
+      return <ChartSankeyShapeSection />;
+    case "graphShape":
+      return <ChartGraphShapeSection />;
+    case "radarShape":
+      return <ChartRadarShapeSection />;
+    case "wordCloudShape":
+      return <ChartWordCloudShapeSection />;
+    case "tooltip":
+      return <ChartTooltipStyleSection />;
     case "palette":
       return <ChartPaletteStyleSection />;
     case "geo":

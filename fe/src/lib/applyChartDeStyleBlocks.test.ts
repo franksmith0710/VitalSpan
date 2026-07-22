@@ -1,0 +1,89 @@
+import { describe, expect, it } from "vitest";
+import {
+  applyChartDeStyleBlocksToPlan,
+  readCartesianStyleFromPlanOptions,
+  resolveBarBandPadding,
+  resolveCartesianLineSmooth,
+  resolveGaugeValuePercent,
+} from "@/lib/applyChartDeStyleBlocks";
+import type { ChartDeStyle } from "@/lib/chartDeStyle";
+
+describe("applyChartDeStyleBlocksToPlan", () => {
+  it("maps cartesian and axis blocks to plan options", () => {
+    const deStyle: ChartDeStyle = {
+      cartesian: { barWidthRatio: 0.7, barRadius: 4, lineSmooth: true },
+      axis: { x: { name: "月份" }, y: { name: "销售额" } },
+    };
+    const plan = applyChartDeStyleBlocksToPlan(
+      { kind: "d3", plotType: "Line", empty: false, options: {} },
+      deStyle,
+    );
+    expect(plan.options.__barWidthRatio).toBe(0.7);
+    expect(plan.options.__barRadius).toBe(4);
+    expect(plan.options.smooth).toBe(true);
+    expect(plan.options.__axisStyle).toEqual(deStyle.axis);
+  });
+
+  it("lineSmooth false overrides styleVariant smooth on line plans", () => {
+    const plan = applyChartDeStyleBlocksToPlan(
+      { kind: "d3", plotType: "Line", empty: false, options: { smooth: true } },
+      { cartesian: { lineSmooth: false } },
+      { styleVariant: "smooth" },
+    );
+    expect(plan.options.smooth).toBe(false);
+  });
+
+  it("falls back to styleVariant smooth when lineSmooth is unset", () => {
+    const plan = applyChartDeStyleBlocksToPlan(
+      { kind: "d3", plotType: "Line", empty: false, options: {} },
+      {},
+      { styleVariant: "smooth" },
+    );
+    expect(plan.options.smooth).toBe(true);
+  });
+});
+
+describe("resolveCartesianLineSmooth", () => {
+  it("prefers explicit lineSmooth over plan and variant", () => {
+    expect(
+      resolveCartesianLineSmooth({ lineSmooth: false, planSmooth: true, styleVariant: "smooth" }),
+    ).toBe(false);
+    expect(
+      resolveCartesianLineSmooth({ lineSmooth: true, planSmooth: false, styleVariant: "default" }),
+    ).toBe(true);
+  });
+});
+
+describe("resolveBarBandPadding", () => {
+  it("converts bar width ratio to band padding", () => {
+    expect(resolveBarBandPadding(0.55)).toBeCloseTo(0.45, 2);
+  });
+});
+
+describe("readCartesianStyleFromPlanOptions", () => {
+  it("reads cartesian style fields from plan options", () => {
+    expect(
+      readCartesianStyleFromPlanOptions({
+        __barWidthRatio: 0.7,
+        __barRadius: 5,
+        __pointSize: 6,
+        smooth: true,
+        __axisStyle: { x: { name: "类目" } },
+      }),
+    ).toEqual({
+      barWidthRatio: 0.7,
+      barRadius: 5,
+      pointSize: 6,
+      areaOpacity: undefined,
+      smooth: true,
+      axisStyle: { x: { name: "类目" } },
+    });
+  });
+});
+
+describe("resolveGaugeValuePercent", () => {
+  it("maps raw value into min/max range", () => {
+    expect(resolveGaugeValuePercent({ __gaugeMin: 0, __gaugeMax: 200 }, 100, 0)).toBe(0.5);
+    expect(resolveGaugeValuePercent({ __gaugeMin: 20, __gaugeMax: 120 }, 70, 0)).toBe(0.5);
+  });
+});

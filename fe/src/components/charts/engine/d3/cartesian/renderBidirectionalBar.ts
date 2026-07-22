@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { drawBidirectionalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
@@ -7,6 +7,7 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3BidirectionalBarRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 
 const BAR_RX = 4;
 
@@ -31,7 +32,12 @@ export function renderD3BidirectionalBarChart(
     legendLayout,
     valueFormat,
     onPointClick,
+    barWidthRatio,
+    barRadius,
+    axisStyle,
   } = config;
+
+  const barRx = barRadius ?? BAR_RX;
 
   const categories = data.map((d) => d.type);
   const maxLeft = d3.max(data, (d) => Math.abs(d.left)) ?? 0;
@@ -42,7 +48,7 @@ export function renderD3BidirectionalBarChart(
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const centerX = innerW / 2;
 
-  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(0.22);
+  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
   const xLeft = d3.scaleLinear().domain([0, maxVal]).range([centerX, 0]);
   const xRight = d3.scaleLinear().domain([0, maxVal]).range([centerX, innerW]);
   const leftColor = colors[0] ?? "#465fff";
@@ -53,16 +59,16 @@ export function renderD3BidirectionalBarChart(
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme) : null;
 
-  g.append("g").call(d3.axisLeft(y)).call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(
-      d3
-        .axisBottom(xRight)
-        .ticks(5)
-        .tickFormat((d) => formatChartValue(d, valueFormat)),
-    )
-    .call(styleAxis, theme);
+  drawBidirectionalBandAxes({
+    g,
+    yScale: y,
+    xScale: xRight,
+    innerW,
+    innerH,
+    theme,
+    valueFormat,
+    axisStyle,
+  });
 
   plot
     .append("line")
@@ -85,7 +91,7 @@ export function renderD3BidirectionalBarChart(
       cell.selectAll("*").remove();
       const x1 = xLeft(Math.abs(d.left));
       const w = centerX - x1;
-      paintHorizontalBar({ plot: cell, x: x1, y: 0, width: w, height: y.bandwidth(), color: leftColor, rx: BAR_RX });
+      paintHorizontalBar({ plot: cell, x: x1, y: 0, width: w, height: y.bandwidth(), color: leftColor, rx: barRx });
     })
     .on("click", (_event, d) => onPointClick?.(d));
 
@@ -100,7 +106,7 @@ export function renderD3BidirectionalBarChart(
       const cell = d3.select(this) as d3.Selection<SVGGElement, unknown, null, undefined>;
       cell.selectAll("*").remove();
       const w = xRight(Math.abs(d.right)) - centerX;
-      paintHorizontalBar({ plot: cell, x: centerX, y: 0, width: w, height: y.bandwidth(), color: rightColor, rx: BAR_RX });
+      paintHorizontalBar({ plot: cell, x: centerX, y: 0, width: w, height: y.bandwidth(), color: rightColor, rx: barRx });
     })
     .on("click", (_event, d) => onPointClick?.(d));
 

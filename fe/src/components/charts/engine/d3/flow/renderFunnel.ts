@@ -48,6 +48,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
   const xField = String(options.xField ?? "stage");
   const yField = String(options.yField ?? "number");
   const raw = (options.data as D3Datum[]) ?? [];
+  const showConversion = options.__funnelShowConversion === true;
   const data: FunnelRow[] = raw
     .map((row) => ({ stage: String(row[xField] ?? ""), number: Number(row[yField] ?? 0) }))
     .sort((a, b) => b.number - a.number);
@@ -59,7 +60,8 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const cx = margin.left + innerW / 2;
   const maxVal = d3.max(data, (d) => d.number) ?? 1;
-  const layerH = innerH / data.length;
+  const gap = Number(options.__funnelGap ?? 2);
+  const layerH = (innerH - gap * Math.max(0, data.length - 1)) / data.length;
   const maxWidth = innerW * 0.82;
 
   const root = d3
@@ -78,7 +80,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     const next = data[index + 1];
     const bottomW = next ? (next.number / maxVal) * maxWidth : topW * 0.72;
     const topY = margin.top + index * layerH;
-    const bottomY = topY + layerH - 2;
+    const bottomY = topY + layerH;
     const baseColor = colorScale(row.stage) ?? colors[index % colors.length] ?? "#465fff";
     const fill = resolveDatumColor(row.number, baseColor, conditionalRules);
 
@@ -145,6 +147,22 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
         .style("font-size", `${labelFontSize}px`)
         .style("pointer-events", "none")
         .text(`${row.stage} · ${formatChartValue(row.number, valueFormat)}`);
+    }
+
+    if (showConversion && index < data.length - 1) {
+      const next = data[index + 1]!;
+      const rate = row.number > 0 ? (next.number / row.number) * 100 : 0;
+      g.append("text")
+        .attr("x", cx + maxWidth / 2 + 10)
+        .attr("y", bottomY + gap / 2)
+        .attr("text-anchor", "start")
+        .attr("dy", "0.35em")
+        .attr("fill", theme.axisLabel)
+        .style("font-size", `${Math.max(10, labelFontSize - 1)}px`)
+        .style("pointer-events", "none")
+        .text(
+          formatChartValue(rate, valueFormat ? { ...valueFormat, unit: "%" } : { type: "percent" }),
+        );
     }
   });
 

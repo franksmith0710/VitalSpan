@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { ChartMapPresetBar } from "./ChartMapPresetBar";
-import { DEMO_MAP_SALES_DRILL_SQL } from "@/lib/mapChartDataHint";
+import { ChartMapSalesGeoSetup } from "./ChartMapSalesGeoSetup";
+import { SALES_GEO_DRILL_SQL } from "@/lib/mapChartSalesGeo";
 
 const onChange = vi.fn();
 
@@ -10,17 +10,20 @@ vi.mock("./chartInspectorContext", () => ({
   useChartInspector: () => ({
     cfg: { chartType: "map", dimensions: [], metrics: [] },
     onChange,
+    datasourceItems: [{ id: "ds-sample", name: "sample-mysql", code: "sample-mysql-3307" }],
+    datasourcesEmpty: false,
   }),
 }));
 
-describe("ChartMapPresetBar", () => {
-  it("applies sales drill preset on click", async () => {
+describe("ChartMapSalesGeoSetup", () => {
+  it("applies sales geo config on click", async () => {
     const user = userEvent.setup();
-    render(<ChartMapPresetBar />);
-    await user.click(screen.getByRole("button", { name: /省→市→区县 · 演示库 sales/ }));
+    render(<ChartMapSalesGeoSetup />);
+    await user.click(screen.getByRole("button", { name: /接入 sample_db · v_sales_geo/ }));
     expect(onChange).toHaveBeenCalled();
     const next = onChange.mock.calls.at(-1)?.[0];
-    expect(next.sql).toBe(DEMO_MAP_SALES_DRILL_SQL);
+    expect(next.sql).toBe(SALES_GEO_DRILL_SQL);
+    expect(next.dataSourceId).toBe("ds-sample");
     expect(next.dimensions?.map((d: { field: string }) => d.field)).toEqual([
       "province",
       "city",

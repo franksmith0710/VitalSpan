@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { drawCartesianBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintVerticalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
@@ -7,6 +7,7 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3WaterfallDatum, D3WaterfallRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 
 const BAR_RX = 4;
 
@@ -40,7 +41,12 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
     legendLayout,
     valueFormat,
     onPointClick,
+    barWidthRatio,
+    barRadius,
+    axisStyle,
   } = config;
+
+  const barRx = barRadius ?? BAR_RX;
 
   const segments = buildSegments(data);
   const categories = segments.map((d) => d.type);
@@ -50,26 +56,17 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
 
-  const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(0.22);
+  const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(resolveBarBandPadding(barWidthRatio));
   const y = d3.scaleLinear().domain([yMin, yMax]).nice().range([innerH, 0]);
   const posColor = colors[0] ?? "#465fff";
   const negColor = colors[1] ?? "#f04438";
-  const xTicks = pickCategoryTicks(categories, innerW);
-  const rotateX = xTicks.length >= 6 && innerW / xTicks.length < 72 ? -32 : 0;
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme) : null;
 
-  g.append("g")
-    .call(d3.axisLeft(y).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
-    .call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).tickValues(xTicks))
-    .call(styleAxis, theme)
-    .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+  drawCartesianBandAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat, axisStyle });
 
   if (yMin < 0 && yMax > 0) {
     plot
@@ -102,7 +99,7 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
         height: h,
         width: x.bandwidth(),
         color: d.value >= 0 ? posColor : negColor,
-        rx: BAR_RX,
+        rx: barRx,
       });
     })
     .on("click", (_event, d) => onPointClick?.(d));

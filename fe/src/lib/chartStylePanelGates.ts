@@ -10,6 +10,7 @@ import {
   supportsEmbeddedShellLegend,
 } from "@/lib/chartInspectorCapabilities";
 import type { ChartStyleSectionId } from "@/lib/chartStyleSectionRegistry";
+import { resolveD3InspectorFeatureMatrix } from "@/components/charts/engine/d3/inspectorCapabilityMatrix";
 
 const DEPTH_VISUAL_CHART_TYPES = new Set<ChartType>([
   "bar",
@@ -81,8 +82,12 @@ export function filterStyleSectionsForChart(
   sections: ChartStyleSectionId[],
 ): ChartStyleSectionId[] {
   const caps = chartInspectorCapabilities(chartType);
+  const d3Matrix = resolveD3InspectorFeatureMatrix(chartType);
   return sections.filter((id) => {
-    if (id === "legend") return caps.legend;
+    if (id === "legend") {
+      if (d3Matrix?.legend === "missing") return false;
+      return caps.legend;
+    }
     if (id === "label") return caps.label || caps.labelFormat;
     if (id === "remark") return caps.remark;
     return true;

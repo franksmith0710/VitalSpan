@@ -11,6 +11,11 @@ const mapConfig = {
   metrics: [{ field: "total" }],
 } as never;
 
+const map3dConfig = {
+  ...mapConfig,
+  chartType: "map-3d",
+} as never;
+
 describe("getMapDrillDisplayField", () => {
   it("skips city slot for municipalities at depth 1", () => {
     const field = getMapDrillDisplayField(mapConfig, [
@@ -98,6 +103,27 @@ describe("preflightMapDrillClick", () => {
     if (!result.ok) {
       expect(result.message).toContain("东莞市");
       expect(result.message).toContain("区县离线边界");
+    }
+  });
+});
+
+describe("map-3d drill parity", () => {
+  it("uses same display field chain as 2D map", () => {
+    const stack = [{ field: "province", value: "广东省", label: "广东省" }];
+    expect(getMapDrillDisplayField(map3dConfig, stack)).toBe(
+      getMapDrillDisplayField(mapConfig, stack),
+    );
+  });
+
+  it("accepts guangdong drill for map-3d", async () => {
+    const result = await preflightMapDrillClick(
+      map3dConfig,
+      [],
+      { field: "province", value: "广东省", label: "广东省" },
+    );
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.context.mapId).toBe("vs-geo-440000");
     }
   });
 });

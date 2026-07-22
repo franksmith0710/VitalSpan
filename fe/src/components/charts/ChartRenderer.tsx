@@ -411,14 +411,19 @@ export const ChartRenderer = memo(function ChartRenderer({
   const shellLegendVisible =
     shellLegendEligible && readChartLegendVisible(deStyle, { embedded: true });
 
-  const chartViewModel = useMemo(
-    () =>
-      buildChartViewModel(localConfig, {
-        columns: displayColumns,
-        rows: displayRows as unknown[][],
-      }),
-    [localConfig, displayColumns, displayRows],
-  );
+  const chartViewModel = useMemo(() => {
+    let configForView = localConfig;
+    if (isGeoMapChartType(localConfig.chartType) && drillPipeline.displayField) {
+      const dims = [...(localConfig.dimensions ?? [])];
+      while (dims.length === 0) dims.push({ field: "" });
+      dims[0] = { ...dims[0], field: drillPipeline.displayField };
+      configForView = { ...localConfig, dimensions: dims };
+    }
+    return buildChartViewModel(configForView, {
+      columns: displayColumns,
+      rows: displayRows as unknown[][],
+    });
+  }, [localConfig, displayColumns, displayRows, drillPipeline.displayField]);
 
   const styleContext = useMemo(
     () =>

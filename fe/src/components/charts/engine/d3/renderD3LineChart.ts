@@ -29,6 +29,7 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { highlightCategoryDots } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianDatum, D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 
 export type { D3CartesianDatum as D3LineDatum, D3CartesianRenderConfig as D3LineRenderConfig } from "@/components/charts/engine/d3/types";
 
@@ -63,7 +64,13 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     onPointClick,
     dataZoom = false,
     legendLayout,
+    pointSize,
+    axisStyle,
+    areaOpacity,
   } = config;
+
+  const dotRadius = resolveCartesianPointSize(pointSize);
+  const areaFillOpacity = areaOpacity ?? 0.12;
 
   const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
@@ -90,7 +97,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
   const yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
 
   drawHorizontalGrid(plot, { yScale, innerW, theme });
-  drawCartesianAxes({ g, xScale, yScale, categories, innerW, innerH, theme, valueFormat });
+  drawCartesianAxes({ g, xScale, yScale, categories, innerW, innerH, theme, valueFormat, axisStyle });
 
   plot.selectAll("*").remove();
 
@@ -126,7 +133,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       .append("path")
       .datum(points)
       .attr("fill", seriesGradient ? `url(#${gradId})` : color)
-      .attr("fill-opacity", seriesGradient ? 0.95 : 0.12)
+      .attr("fill-opacity", seriesGradient ? 0.95 : areaFillOpacity)
       .attr("d", areaGen);
 
     const linePath = plot
@@ -146,7 +153,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       .data(points)
       .join("circle")
       .attr("class", `series-${seriesIndex}`)
-      .attr("r", VCDS.dot.radius)
+      .attr("r", dotRadius)
       .attr("fill", (d) => resolveDatumColor(Number(d.__value__), color, conditionalRules))
       .attr("stroke", "#fff")
       .attr("stroke-width", VCDS.dot.strokeWidth)

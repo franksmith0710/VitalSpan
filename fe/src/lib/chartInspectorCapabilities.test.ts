@@ -13,8 +13,8 @@ describe("chartInspectorCapabilities", () => {
     expect(caps.jump).toBe(true);
   });
 
-  it("enables legend for graph", () => {
-    expect(chartInspectorCapabilities("graph").legend).toBe(true);
+  it("disables legend for graph (D3 matrix missing)", () => {
+    expect(chartInspectorCapabilities("graph").legend).toBe(false);
   });
 
   it("uses shell legend only for line and bar", () => {

@@ -12,6 +12,7 @@ import {
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartConditionalRule } from "@/lib/chartDeFeatures";
 import type { D3CartesianDatum } from "@/components/charts/engine/d3/types";
+import { DEFAULT_CARTESIAN_BAR_WIDTH_RATIO } from "@/lib/chartDeStyleBlocks";
 
 const BAR_RX = VCDS.bar.rx;
 const STACK_GAP = VCDS.bar.stackGap;
@@ -20,7 +21,7 @@ type WideRow = Record<string, string | number>;
 
 function paintDualVBarCell(
   cell: d3.Selection<SVGGElement, unknown, null, undefined>,
-  opts: { y1: number; h: number; w: number; front: string; solid: string },
+  opts: { y1: number; h: number; w: number; front: string; solid: string; rx?: number },
 ): void {
   cell.selectAll("*").remove();
   const depthOn = resolveEffectiveDepth() !== "off";
@@ -31,7 +32,7 @@ function paintDualVBarCell(
     height: opts.h,
     width: opts.w,
     color: depthOn ? opts.solid : opts.front,
-    rx: BAR_RX,
+    rx: opts.rx ?? BAR_RX,
   });
   if (depthOn && opts.front !== opts.solid) cell.select(".vs-bar-front").attr("fill", opts.front);
 }
@@ -86,6 +87,8 @@ export function renderDualAxesColumnBars(params: {
   seriesGradient?: boolean;
   conditionalRules?: ChartConditionalRule[];
   onPointClick?: (datum: D3CartesianDatum) => void;
+  barWidthRatio?: number;
+  barRadius?: number;
 }): { columnMax: number; legendItems: DualAxesColumnLegendItem[] } {
   const {
     plot,
@@ -106,7 +109,11 @@ export function renderDualAxesColumnBars(params: {
     seriesGradient = false,
     conditionalRules = [],
     onPointClick,
+    barWidthRatio,
+    barRadius,
   } = params;
+
+  const barRx = barRadius ?? BAR_RX;
 
   const normalized = normalizeCartesianData(columnData, xField, columnYField, columnSeriesField);
   const seriesGroups = groupSeries(normalized, columnSeriesField);
@@ -130,7 +137,8 @@ export function renderDualAxesColumnBars(params: {
       ? (d3.max(wideRows, (row) => keys.reduce((sum, k) => sum + Number(row[k] ?? 0), 0)) ?? 0)
       : (d3.max(normalized, (d) => Number(d.__value__)) ?? 0);
 
-  const barWidth = Math.min(28, (innerW / Math.max(categories.length, 1)) * 0.55);
+  const widthRatio = barWidthRatio ?? DEFAULT_CARTESIAN_BAR_WIDTH_RATIO;
+  const barWidth = Math.min(28, (innerW / Math.max(categories.length, 1)) * widthRatio);
   const legendItems: DualAxesColumnLegendItem[] = [];
 
   if (columnOpts.isStack && hasMultiSeries) {
@@ -154,7 +162,7 @@ export function renderDualAxesColumnBars(params: {
           const val = Number(d[1]) - Number(d[0]);
           const solid = gradientFill.startsWith("url(") ? color : resolveDatumColor(val, color, conditionalRules);
           const front = gradientFill.startsWith("url(") ? gradientFill : solid;
-          paintDualVBarCell(d3.select(this), { y1, h, w: barWidth, front, solid });
+          paintDualVBarCell(d3.select(this), { y1, h, w: barWidth, front, solid, rx: barRx });
         })
         .on("click", (_event, d) =>
           onPointClick?.({
@@ -188,7 +196,7 @@ export function renderDualAxesColumnBars(params: {
             ? color
             : resolveDatumColor(Number(d.__value__), color, conditionalRules);
           const front = gradientFill.startsWith("url(") ? gradientFill : solid;
-          paintDualVBarCell(d3.select(this), { y1, h: innerH - y1, w: cellW, front, solid });
+          paintDualVBarCell(d3.select(this), { y1, h: innerH - y1, w: cellW, front, solid, rx: barRx });
         })
         .on("click", (_event, d) => onPointClick?.(d));
     });
@@ -208,7 +216,7 @@ export function renderDualAxesColumnBars(params: {
           ? fallbackColor
           : resolveDatumColor(Number(d.__value__), fallbackColor, conditionalRules);
         const front = gradientFill.startsWith("url(") ? gradientFill : solid;
-        paintDualVBarCell(d3.select(this), { y1, h: innerH - y1, w: barWidth, front, solid });
+        paintDualVBarCell(d3.select(this), { y1, h: innerH - y1, w: barWidth, front, solid, rx: barRx });
       })
       .on("click", (_event, d) => onPointClick?.(d));
   }

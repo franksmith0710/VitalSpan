@@ -24,10 +24,22 @@ export function getDrillChain(config: ChartViewConfig): string[] {
 }
 
 export function isDrillEnabled(config: ChartViewConfig): boolean {
+  if (isGeoMapChartType(config.chartType)) {
+    return getDrillChain(config).length >= 1;
+  }
   return getDrillChain(config).length >= 2;
 }
 
+function geoMapMaxDrillDepth(config: ChartViewConfig): number {
+  const chain = getDrillChain(config);
+  if (!chain.length) return 0;
+  return Math.max(1, Math.min(chain.length - 1, 2));
+}
+
 export function canDrillDeeper(stack: ChartDrillFrame[], config: ChartViewConfig): boolean {
+  if (isGeoMapChartType(config.chartType)) {
+    return stack.length < geoMapMaxDrillDepth(config);
+  }
   const chain = getDrillChain(config);
   return isDrillEnabled(config) && stack.length < chain.length - 1;
 }
@@ -171,8 +183,10 @@ const DRILLABLE_PALETTE_CATEGORIES = new Set(["compare", "trend", "distribute", 
 
 /** 是否支持点击下钻（须已配置 ≥2 级维度） */
 export function supportsChartDrillInteraction(config: ChartViewConfig): boolean {
+  if (isGeoMapChartType(config.chartType)) {
+    return getDrillChain(config).length >= 1;
+  }
   if (!isDrillEnabled(config)) return false;
-  if (isGeoMapChartType(config.chartType)) return true;
   if (tableInspectorProfile(config.chartType)) return true;
   if (LEGACY_DRILLABLE_CHART_TYPES.has(config.chartType)) return true;
   const plugin = getChartPlugin(config.chartType);

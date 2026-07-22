@@ -1,9 +1,10 @@
 import * as d3 from "d3";
-import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3BulletRenderConfig } from "@/components/charts/engine/d3/types";
+import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
 const BAR_RX = 3;
@@ -23,8 +24,12 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
     labelFontSize = 11,
     valueFormat,
     onPointClick,
+    barWidthRatio,
+    barRadius,
+    axisStyle,
   } = config;
 
+  const barRx = barRadius ?? BAR_RX;
   const categories = data.map((d) => d.type);
   const maxRange = d3.max(data, (d) => d.rangeMax) ?? 1;
   const maxLabelChars = categories.reduce((max, cat) => Math.max(max, String(cat).length), 0);
@@ -35,7 +40,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
   const measureColor = colors[0] ?? "#465fff";
   const zoneColors = [colors[2] ?? "#e4e7ec", colors[3] ?? "#d0d5dd", colors[4] ?? "#98a2b3"];
 
-  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(0.3);
+  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
   const x = d3.scaleLinear().domain([0, maxRange]).nice().range([0, innerW]);
   const barH = Math.max(8, y.bandwidth() * 0.55);
 
@@ -44,11 +49,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme) : null;
 
-  g.append("g").call(d3.axisLeft(y)).call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
-    .call(styleAxis, theme);
+  drawCartesianHorizontalBandAxes({ g, xScale: x, yScale: y, innerW, innerH, theme, valueFormat, axisStyle });
 
   for (const d of data) {
     const y0 = (y(d.type) ?? 0) + (y.bandwidth() - barH) / 2;
@@ -78,7 +79,7 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
       .each(function () {
         const cell = d3.select(this);
         const w = x(d.actual);
-        paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: barH, color: measureColor, rx: BAR_RX });
+        paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: barH, color: measureColor, rx: barRx });
       })
       .on("click", () => onPointClick?.(d));
 

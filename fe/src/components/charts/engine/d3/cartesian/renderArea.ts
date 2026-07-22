@@ -48,7 +48,12 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     tooltipPresentation,
     onPointClick,
     dataZoom = false,
+    axisStyle,
+    areaOpacity,
   } = config;
+
+  const stackFillOpacity = areaOpacity ?? 0.35;
+  const singleFillOpacity = areaOpacity ?? 0.2;
 
   const theme = themeFromConfig(rawTheme);
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
@@ -84,7 +89,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
   const curve = smooth ? d3.curveMonotoneX : d3.curveLinear;
 
   drawHorizontalGrid(plot, { yScale: y, innerW, theme });
-  drawCartesianAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat });
+  drawCartesianAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat, axisStyle });
 
   plot.selectAll("*").remove();
   drawHorizontalMarkLines(plot, markLines, y, innerW);
@@ -107,7 +112,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
         .append("path")
         .datum(layer)
         .attr("fill", seriesGradient ? `url(#${gradId})` : color)
-        .attr("fill-opacity", seriesGradient ? 1 : 0.35)
+        .attr("fill-opacity", seriesGradient ? 1 : stackFillOpacity)
         .attr("d", areaGen)
         .attr("stroke", (d) =>
           resolveDatumColor(Number(d[1]) - Number(d[0]), color, conditionalRules),
@@ -138,7 +143,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
         .append("path")
         .datum(points)
         .attr("fill", seriesGradient ? `url(#${gradId})` : strokeColor)
-        .attr("fill-opacity", seriesGradient ? 1 : 0.2)
+        .attr("fill-opacity", seriesGradient ? 1 : singleFillOpacity)
         .attr("d", areaGen);
       const topLine = plot
         .append("path")

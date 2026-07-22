@@ -307,7 +307,10 @@ export function DashboardWidget({
         config={widget.chartConfig}
         title={widget.title}
         widgetId={widget.id}
-        drillEnabled={mode === "view"}
+        drillEnabled={
+          mode === "view" ||
+          (mode === "edit" && Boolean(widget.chartConfig && isGeoMapChartType(widget.chartConfig.chartType)))
+        }
         filterParameters={filterParameters}
         executeKey={widgetExecuteKey}
         queryLimit={queryLimit}

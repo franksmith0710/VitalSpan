@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Download, FileJson } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, FileJson } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -115,10 +115,26 @@ function CanvasSizeInput({
     [],
   );
 
+  const commitSized = (next: number) => {
+    const clamped = Math.min(max, Math.max(min, Math.round(next)));
+    if (!Number.isFinite(clamped) || clamped === lastAppliedRef.current) return;
+    lastAppliedRef.current = clamped;
+    setDraft(String(clamped));
+    onCommit(clamped);
+  };
+
   const applyValue = (parsed: number) => {
-    if (!Number.isFinite(parsed) || parsed === lastAppliedRef.current) return;
-    lastAppliedRef.current = parsed;
-    onCommit(parsed);
+    commitSized(parsed);
+  };
+
+  const bump = (delta: number) => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    const parsed = Number.parseInt(draft, 10);
+    const base = Number.isFinite(parsed) ? parsed : value;
+    commitSized(base + delta);
   };
 
   const handleChange = (raw: string) => {
@@ -163,29 +179,58 @@ function CanvasSizeInput({
     }
   };
 
+  const parsedDraft = Number.parseInt(draft, 10);
+  const shownValue = Number.isFinite(parsedDraft) ? parsedDraft : value;
+
   return (
-    <motion.div className="min-w-0 flex-1 space-y-1.5">
+    <div className="min-w-0 flex-1 space-y-1.5">
       <label
         className="text-[11px] font-medium text-gray-500 dark:text-gray-400"
         htmlFor={id}
       >
         {label}
       </label>
-      <Input
-        id={id}
-        type="number"
-        inputMode="numeric"
-        min={min}
-        max={max}
-        step={1}
-        value={draft}
-        disabled={disabled}
-        className={cn(DE_INPUT, "h-8 tabular-nums")}
-        onChange={(event) => handleChange(event.target.value)}
-        onBlur={flushDraft}
-        onKeyDown={handleKeyDown}
-      />
-    </motion.div>
+      <div className="relative min-w-0">
+        <Input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          value={draft}
+          disabled={disabled}
+          className={cn(DE_INPUT, "h-8 tabular-nums pr-7")}
+          onChange={(event) => handleChange(event.target.value)}
+          onBlur={flushDraft}
+          onKeyDown={handleKeyDown}
+        />
+        <div
+          className={cn(
+            "absolute inset-y-0 right-0 flex w-6 flex-col overflow-hidden rounded-r-lg border-l",
+            "border-gray-200 bg-gray-50/90 dark:border-gray-700 dark:bg-white/[0.04]",
+            disabled && "pointer-events-none opacity-50",
+          )}
+          aria-hidden={disabled ? true : undefined}
+        >
+          <button
+            type="button"
+            disabled={disabled || shownValue >= max}
+            className="flex h-1/2 items-center justify-center text-gray-500 transition-colors hover:bg-white hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/10 dark:hover:text-white"
+            aria-label={`增加${label}`}
+            onClick={() => bump(1)}
+          >
+            <ChevronUp className="size-3" />
+          </button>
+          <button
+            type="button"
+            disabled={disabled || shownValue <= min}
+            className="flex h-1/2 items-center justify-center border-t border-gray-200 text-gray-500 transition-colors hover:bg-white hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:hover:bg-white/10 dark:hover:text-white"
+            aria-label={`减少${label}`}
+            onClick={() => bump(-1)}
+          >
+            <ChevronDown className="size-3" />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -268,12 +313,8 @@ export function DataScreenConfigExtras({
     : DATA_SCREEN_EDIT_PRESENTATION_DEFAULT;
 
   return (
-    <ChartInspectorSection
-      title="画布"
-      defaultOpen
-      className="shrink-0"
-      data-testid="data-screen-config-extras"
-    >
+    <div data-testid="data-screen-config-extras" className="shrink-0">
+      <ChartInspectorSection title="画布" defaultOpen>
       <DeAttrForm>
         <DeAttrField label="设计尺寸" compact>
           <div className="flex items-end gap-2">
@@ -333,7 +374,7 @@ export function DataScreenConfigExtras({
           </p>
         </DeAttrField>
 
-        <motion.div
+        <div
           className="border-t border-gray-100 pt-3 dark:border-white/[0.06]"
           data-testid="data-screen-export-actions"
         >
@@ -368,9 +409,10 @@ export function DataScreenConfigExtras({
               <Download className="size-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="truncate">导出模板</span>
             </Button>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </DeAttrForm>
     </ChartInspectorSection>
+    </div>
   );
 }

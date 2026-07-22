@@ -5,6 +5,10 @@ import {
   resolveMapRegionName,
 } from "@/components/charts/engine/geo/geoMapChart";
 import {
+  isDecorativeGeoFeature,
+  prepareOfflineGeoGeometry,
+} from "@/components/charts/engine/geo/geoProjection";
+import {
   DEFAULT_GEO_HEATMAP_PLACEHOLDER_HINT,
   DEFAULT_GEO_MAP_PLACEHOLDER_HINT,
   MAP_REGION_NAME_HINT,
@@ -19,18 +23,33 @@ import type {
 } from "@/components/charts/engine/geoEnginePort";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
-type RegionsGeo = { features?: Array<{ properties?: { name?: string; adcode?: number }; geometry?: unknown }> };
+type RegionsGeo = {
+  features?: Array<{ properties?: { name?: string; adcode?: number }; geometry?: GeoJSON.Geometry }>;
+};
 
 const registeredMaps = new Map<string, RegionsGeo>();
 
+function normalizeRegionsGeo(geo: RegionsGeo): RegionsGeo {
+  return {
+    ...geo,
+    features: (geo.features ?? []).map((feature) => {
+      if (!feature.geometry) return feature;
+      return {
+        ...feature,
+        geometry: prepareOfflineGeoGeometry(feature.geometry),
+      };
+    }),
+  };
+}
+
 function ensureDefaultMapRegistered(): void {
   if (!registeredMaps.has(VS_REGIONS_MAP_ID)) {
-    registeredMaps.set(VS_REGIONS_MAP_ID, chinaProvincesGeo as RegionsGeo);
+    registeredMaps.set(VS_REGIONS_MAP_ID, normalizeRegionsGeo(chinaProvincesGeo as RegionsGeo));
   }
 }
 
 export function registerOfflineGeoMap(mapId: string, geo: RegionsGeo): void {
-  registeredMaps.set(mapId, geo);
+  registeredMaps.set(mapId, normalizeRegionsGeo(geo));
 }
 
 export function getOfflineGeoMap(mapId: string): RegionsGeo | undefined {
@@ -59,7 +78,9 @@ function joinMapRows(
       valueByName.set(key, Number(row[mi] ?? 0));
     }
   }
-  return (geo.features ?? []).map((f) => {
+  return (geo.features ?? [])
+    .filter((f) => !isDecorativeGeoFeature(f.properties ?? undefined) && f.geometry != null)
+    .map((f) => {
     const name = f.properties?.name ?? "";
     return {
       name,

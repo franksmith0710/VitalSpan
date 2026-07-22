@@ -17,6 +17,7 @@ import type { WidgetBackgroundPresentation } from "@/lib/widgetSurfaceBackground
 import { buildWidgetBackgroundPresentation } from "@/lib/widgetStylePresentation";
 import type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 import { resolvePaletteId } from "@/lib/chartPalette";
+import type { ChartDeStyleBlocks } from "@/lib/chartDeStyleBlocks";
 
 export type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 
@@ -30,6 +31,7 @@ export type ChartLegendStyle = {
   /** 对标 DE 位置 · 垂直对齐（上/中/下） */
   vAlign?: "top" | "middle" | "bottom";
   fontSize?: number;
+  color?: string;
   /** 对标 ECharts legend.icon */
   icon?: ChartLegendIconShape;
   iconSize?: number;
@@ -79,10 +81,25 @@ export type ChartGeoStyle = {
   showCellLabel?: boolean;
 };
 
+/** map-3d 专属样式（挤出、质量档位、装饰层） */
+export type ChartGeo3dStyle = {
+  extrudeIntensity?: number;
+  quality?: "auto" | "high" | "medium" | "low";
+  effectsEnabled?: boolean;
+  groundMirror?: boolean;
+  outlineGlow?: boolean;
+  beamScan?: boolean;
+};
+
+export const DEFAULT_GEO3D_EXTRUDE_INTENSITY = 1;
+
 /** 饼图/环形图样式（对标 DE attr-style · 基础样式） */
 export type ChartPieStyle = {
   /** 环形内径，占容器短边百分比 */
   innerRadiusPercent?: number;
+  outerRadiusPercent?: number;
+  padAngle?: number;
+  topN?: number;
 };
 
 export const DEFAULT_PIE_INNER_RADIUS_PERCENT = 40;
@@ -114,11 +131,16 @@ export type ChartDeStyle = {
   border?: ChartBorderStyle;
   remark?: ChartRemarkStyle;
   geo?: ChartGeoStyle;
+  geo3d?: ChartGeo3dStyle;
   pie?: ChartPieStyle;
-};
+} & ChartDeStyleBlocks;
 
 export function readChartGeoStyle(deStyle: ChartDeStyle) {
   return deStyle.geo ?? {};
+}
+
+export function readChartGeo3dStyle(deStyle: ChartDeStyle): ChartGeo3dStyle {
+  return deStyle.geo3d ?? {};
 }
 
 export function readChartPieStyle(deStyle: ChartDeStyle): ChartPieStyle {

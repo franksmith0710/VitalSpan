@@ -9,7 +9,7 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import { CanvasRuler } from "./CanvasRuler";
-import { canvasRulerChromeVars, canvasRulerCornerClass, canvasRulerCornerStyle } from "./canvasRulerChrome";
+import { canvasRulerChromeVars, canvasRulerCornerClass, canvasRulerCornerStyle, CanvasRulerCornerMark } from "./canvasRulerChrome";
 import { CANVAS_RULER_SIZE_PX, DATA_SCREEN_VIEWPORT_BG, resolveCanvasRulerScrollOffset } from "./canvasRulerUtils";
 import {
   applyViewportPanTranslate,
@@ -351,12 +351,7 @@ export function DataScreenEditViewport({
         }
       >
         <div className={canvasRulerCornerClass} style={canvasRulerCornerStyle} aria-hidden>
-          <span
-            className="pointer-events-none absolute right-1 bottom-0.5 text-[8px] leading-none font-medium tabular-nums select-none text-[var(--canvas-ruler-label)]"
-            aria-hidden
-          >
-            0
-          </span>
+          <CanvasRulerCornerMark />
         </div>
         <CanvasRuler
           orientation="horizontal"

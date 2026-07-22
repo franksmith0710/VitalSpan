@@ -165,6 +165,7 @@ export function layoutD3InlineLegend(
   root.selectAll("g.vs-legend").remove();
   const horizontal = (opts.layout?.orient ?? "horizontal") === "horizontal";
   const fontSize = opts.layout?.fontSize ?? opts.fontSize ?? 11;
+  const textColor = opts.layout?.color ?? opts.theme.legendText;
   const defaultIconSize = opts.layout?.iconSize ?? 10;
   const { x, y } = legendOrigin(opts, items, horizontal, defaultIconSize, fontSize);
   const legend = root.append("g").attr("class", "vs-legend").attr("transform", `translate(${x},${y})`);
@@ -178,7 +179,7 @@ export function layoutD3InlineLegend(
     g.append("text")
       .attr("x", iconW + 4)
       .attr("y", Math.max(resolved.height, fontSize))
-      .attr("fill", opts.theme.legendText)
+      .attr("fill", textColor)
       .style("font-size", `${fontSize}px`)
       .text(item.label);
 

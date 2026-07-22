@@ -15,9 +15,10 @@ describe("inspector style wiring registry", () => {
     expect(sections).toContain("geo");
   });
 
-  it("line charts expose variantBasic for style subtypes", () => {
+  it("line charts expose variantBasic then axis", () => {
     const sections = chartStyleSectionsForType("line");
     expect(sections[0]).toBe("variantBasic");
+    expect(sections[1]).toBe("axis");
   });
 
   it("grid shell merges per-chart background override", () => {

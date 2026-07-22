@@ -15,10 +15,12 @@ import {
   type GeoMapLevelContext,
 } from "@/lib/geoMapLevels";
 
+const GEO_DRILL_LEVEL_FIELDS = ["province", "city", "district"] as const;
+
 function mapDisplayChainIndex(config: ChartViewConfig, stack: ChartDrillFrame[]): number {
   const chain = getDrillChain(config);
   if (!chain.length) return 0;
-  let index = Math.min(stack.length, chain.length - 1);
+  let index = Math.min(stack.length, GEO_DRILL_LEVEL_FIELDS.length - 1);
   if (stack.length >= 1) {
     const provinceAdcode = lookupProvinceAdcode(stack[0].value);
     if (provinceAdcode && isMunicipalityAdcode(provinceAdcode) && stack.length === 1 && chain.length >= 3) {
@@ -47,7 +49,8 @@ export function getMapDrillDisplayField(
 ): string | undefined {
   const chain = getDrillChain(config);
   if (!chain.length) return undefined;
-  return chain[mapDisplayChainIndex(config, stack)];
+  const index = mapDisplayChainIndex(config, stack);
+  return chain[index] ?? GEO_DRILL_LEVEL_FIELDS[index];
 }
 
 export function getMapDrillClickField(
@@ -56,7 +59,10 @@ export function getMapDrillClickField(
 ): string | undefined {
   const chain = getDrillChain(config);
   const index = mapClickChainIndex(config, stack);
-  if (index < 0 || index >= chain.length) return undefined;
+  if (index < 0 || index >= chain.length) {
+    if (index < 0) return undefined;
+    return GEO_DRILL_LEVEL_FIELDS[index] ?? chain[0];
+  }
   return chain[index];
 }
 

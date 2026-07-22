@@ -2,7 +2,7 @@ import { VCDS, motionDuration } from "@/components/charts/engine/d3/core/chartVi
 import { ensureDepthShadowFilter, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import * as d3 from "d3";
 import { renderScatterCanvasLayer } from "@/components/charts/engine/d3/core/canvasScatterLayer";
-import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { drawLinearCartesianAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { drawScatterMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveRenderMode, sampleIndices } from "@/components/charts/engine/d3/core/perfRouter";
@@ -12,6 +12,7 @@ import { createTooltipLayer, showMergedTooltip, hideTooltip } from "@/components
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 
 type ScatterDatum = Record<string, string | number>;
 
@@ -33,7 +34,10 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     markLines = [],
     conditionalRules = [],
     depthVisual,
+    axisStyle,
+    pointSize,
   } = config;
+  const dotRadius = resolveCartesianPointSize(pointSize ?? (options.__pointSize as number | undefined));
   const theme = themeFromConfig(rawTheme);
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as ScatterDatum[]) ?? [];
@@ -88,14 +92,16 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     .call((sel) => sel.select(".domain").remove())
     .call((sel) => sel.selectAll(".tick line").attr("stroke", theme.gridLine).attr("stroke-opacity", 0.9));
 
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(xScale).ticks(6))
-    .call(styleAxis, theme);
-
-  g.append("g")
-    .call(d3.axisLeft(yScale).ticks(5))
-    .call(styleAxis, theme);
+  drawLinearCartesianAxes({
+    g,
+    xScale,
+    yScale,
+    innerW,
+    innerH,
+    theme,
+    valueFormat,
+    axisStyle: axisStyle ?? (options.__axisStyle as typeof axisStyle),
+  });
 
   drawScatterMarkLines(plot, markLines, xScale, yScale, innerW, innerH);
 
@@ -128,7 +134,7 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     .data(svgData)
     .join("circle")
     .attr("class", "point")
-    .attr("r", useCanvas ? VCDS.dot.radius : VCDS.dot.radius + 1.5)
+    .attr("r", useCanvas ? dotRadius : dotRadius + 1.5)
     .attr("cx", (d) => xScale(Number(d[xField])))
     .attr("cy", (d) => yScale(Number(d[yField])))
     .attr("fill", (d) => {
@@ -145,11 +151,11 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     .style("cursor", onPointClick ? "pointer" : "default")
     .on("mouseenter", function () {
       if (useCanvas) return;
-      d3.select(this).transition().duration(motionDuration("hover")).attr("r", VCDS.dot.activeRadius).attr("opacity", 1);
+      d3.select(this).transition().duration(motionDuration("hover")).attr("r", dotRadius + 2).attr("opacity", 1);
     })
     .on("mouseleave", function () {
       if (useCanvas) return;
-      d3.select(this).transition().duration(motionDuration("hover")).attr("r", VCDS.dot.radius + 1.5).attr("opacity", 0.9);
+      d3.select(this).transition().duration(motionDuration("hover")).attr("r", dotRadius + 1.5).attr("opacity", 0.9);
       hideTooltip(tooltip);
     })
     .on("mousemove", (event, d) => {

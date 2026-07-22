@@ -15,7 +15,8 @@ export function mountThreeGeoVisualMap(container: HTMLElement, opts: VisualMapOp
   layer.className = "pointer-events-none absolute bottom-2 right-3 z-[3] flex flex-col items-end gap-1";
   const bar = document.createElement("div");
   bar.className = "h-2 w-[100px] rounded-sm";
-  bar.style.background = `linear-gradient(to right, ${opts.surface.rangeLowCss}, ${opts.surface.rangeHighCss})`;
+  bar.style.background = `linear-gradient(to right, ${opts.surface.rangeLowCss}, ${opts.surface.rangeMidCss}, ${opts.surface.rangeHighCss}, ${opts.surface.rangePeakCss})`;
+  bar.style.boxShadow = opts.isDark ? "0 0 10px rgba(34, 211, 238, 0.35)" : "0 0 8px rgba(59, 130, 246, 0.25)";
   const labels = document.createElement("div");
   labels.className = "flex w-[100px] justify-between text-[10px] leading-none";
   labels.style.color = opts.isDark ? "#94a3b8" : "#64748b";

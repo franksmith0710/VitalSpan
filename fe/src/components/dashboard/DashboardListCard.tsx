@@ -114,7 +114,10 @@ export function DashboardListCard({
               {dashboard.name}
             </Link>
             {dashboard.description ? (
-              <p className="mt-1 line-clamp-2 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+              <p
+                className="mt-1 truncate text-theme-xs text-gray-500 dark:text-gray-400"
+                title={dashboard.description}
+              >
                 {dashboard.description}
               </p>
             ) : (

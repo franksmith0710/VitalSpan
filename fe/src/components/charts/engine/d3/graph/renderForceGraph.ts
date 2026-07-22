@@ -29,6 +29,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   const nodesInput = (options.nodes as GraphNodeInput[]) ?? [];
   const edgesInput = (options.edges as GraphEdgeInput[]) ?? [];
   const layout = (options.layout as GraphLayout | undefined) ?? {};
+  const styleLayout = String(options.__graphLayout ?? "");
   if (width <= 0 || height <= 0 || nodesInput.length === 0) return () => undefined;
 
   const simNodes: SimNode[] = nodesInput.map((n) => ({
@@ -123,7 +124,17 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
       .text((d) => d.label);
   }
 
-  const chargeStrength = layout.type === "dagre" ? -120 : -220;
+  const layoutType = styleLayout || layout.type || "force";
+  const repulsionBase = layoutType === "dagre" ? 120 : 220;
+  const repulsion = Number.isFinite(Number(options.__graphRepulsion))
+    ? Math.abs(Number(options.__graphRepulsion))
+    : repulsionBase;
+  const edgeLength = Number.isFinite(Number(options.__graphEdgeLength))
+    ? Math.abs(Number(options.__graphEdgeLength))
+    : layoutType === "dagre"
+      ? 56
+      : 72;
+  const chargeStrength = -repulsion;
   const simulation = d3
     .forceSimulation(simNodes)
     .force(
@@ -131,7 +142,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
       d3
         .forceLink<SimNode, SimLink>(simLinks)
         .id((d) => d.id)
-        .distance(72),
+        .distance(edgeLength),
     )
     .force("charge", d3.forceManyBody().strength(chargeStrength))
     .force("center", d3.forceCenter(width / 2, height / 2))

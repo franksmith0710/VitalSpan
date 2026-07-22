@@ -71,8 +71,8 @@ function legacyCapsForType(chartType: ChartType | string): EngineCapabilities {
   }
   if (chartType === "sankey" || chartType === "funnel" || chartType === "waterfall" || chartType === "graph") {
     return {
-      legend: true,
-      label: false,
+      legend: chartType !== "graph",
+      label: chartType === "graph",
       dataZoom: false,
       markLines: false,
       conditional: false,

@@ -59,7 +59,9 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
 
   const layout = computePieLayout(width, height, showLegend);
   const legendFontSize = legendLayout?.fontSize ?? 11;
-  const outerR = fractionRadius(options.radius, layout.maxR, PIE_RADIUS_FRAC_DEFAULT);
+  const outerPercent = Number(options.__outerRadiusPercent ?? 70);
+  const outerR = fractionRadius(options.radius, layout.maxR, outerPercent / 100);
+  const padAngle = Number(options.__padAngle ?? PIE_PAD);
   const innerFrac = resolveInnerFrac(options.innerRadius);
   const innerR = outerR * innerFrac;
   const maxValue = d3.max(data, (d) => Number(d[angleField] ?? 0)) ?? 1;
@@ -98,7 +100,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     .pie<D3Datum>()
     .value((d) => (isRose ? 1 : Number(d[angleField] ?? 0)))
     .sort(null)
-    .padAngle(PIE_PAD);
+    .padAngle(padAngle > 0 ? (padAngle * Math.PI) / 180 : PIE_PAD);
 
   const arc = createArc();
 

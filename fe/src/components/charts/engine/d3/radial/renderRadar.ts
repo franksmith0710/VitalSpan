@@ -26,6 +26,9 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   const data = (options.data as D3Datum[]) ?? [];
   const xField = String(options.xField ?? "type");
   const yField = String(options.yField ?? "value");
+  const radarShape = String(options.__radarShape ?? "polygon");
+  const radarAreaOpacity = Number(options.__radarAreaOpacity ?? 0.18);
+  const showAxisName = options.__radarShowAxisName !== false;
 
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
@@ -48,16 +51,24 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
 
   for (let level = 1; level <= levels; level += 1) {
     const r = (radius * level) / levels;
-    const ring = d3.range(data.length).map((i) => {
-      const angle = i * angleStep - Math.PI / 2;
-      return [Math.cos(angle) * r, Math.sin(angle) * r] as [number, number];
-    });
-    ring.push(ring[0]!);
-    g.append("path")
-      .attr("d", d3.line()(ring) ?? "")
-      .attr("fill", "none")
-      .attr("stroke", theme.gridLine)
-      .attr("stroke-opacity", 0.9);
+    if (radarShape === "circle") {
+      g.append("circle")
+        .attr("r", r)
+        .attr("fill", "none")
+        .attr("stroke", theme.gridLine)
+        .attr("stroke-opacity", 0.9);
+    } else {
+      const ring = d3.range(data.length).map((i) => {
+        const angle = i * angleStep - Math.PI / 2;
+        return [Math.cos(angle) * r, Math.sin(angle) * r] as [number, number];
+      });
+      ring.push(ring[0]!);
+      g.append("path")
+        .attr("d", d3.line()(ring) ?? "")
+        .attr("fill", "none")
+        .attr("stroke", theme.gridLine)
+        .attr("stroke-opacity", 0.9);
+    }
   }
 
   data.forEach((row, i) => {
@@ -70,7 +81,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
       .attr("stroke", theme.gridLine)
       .attr("stroke-opacity", 0.9);
 
-    if (showLabel) {
+    if (showLabel && showAxisName) {
       const labelR = radius + 14;
       g.append("text")
         .attr("x", Math.cos(angle) * labelR)
@@ -94,7 +105,7 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   const areaPath = g
     .append("path")
     .attr("fill", baseColor)
-    .attr("fill-opacity", 0.18)
+    .attr("fill-opacity", radarAreaOpacity)
     .attr("stroke", depthOn ? shadeColor(baseColor, "top") : baseColor)
     .attr("stroke-width", depthOn ? 2.5 : 2)
     .attr("stroke-linejoin", "round")

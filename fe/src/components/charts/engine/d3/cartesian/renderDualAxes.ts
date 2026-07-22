@@ -1,11 +1,12 @@
 import * as d3 from "d3";
-import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { animateStrokePath } from "@/components/charts/engine/d3/core/animate";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import { drawDualAxesAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { normalizeCartesianData } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
@@ -55,6 +56,10 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     dataZoom = false,
     onPointClick,
     legendLayout,
+    barWidthRatio,
+    barRadius,
+    axisStyle,
+    smooth: styleSmooth,
   } = config;
   const lineLabels = config.lineLabels;
   const dualLine = geometryOptions[0].geometry === "line" && geometryOptions[1].geometry === "line";
@@ -64,7 +69,8 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   const categories = [...new Set([...lineSet.categories, ...columnSet.categories])];
   if (categories.length === 0) return () => undefined;
 
-  const lineSmooth = geometryOptions[0].geometry === "line" && geometryOptions[0].smooth;
+  const lineSmooth =
+    geometryOptions[0].geometry === "line" && (geometryOptions[0].smooth ?? styleSmooth);
   const columnOpts = geometryOptions[1].geometry === "column" ? geometryOptions[1] : { geometry: "column" as const };
 
   const margin = { ...cartesianMargin(showLegend), right: 56 };
@@ -80,8 +86,6 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   const yRight = d3.scaleLinear().domain([0, columnMax]).nice().range([innerH, 0]);
   const lineColor = colors[0] ?? "#465fff";
   const columnColor = colors[1] ?? "#12b76a";
-  const xTicks = pickCategoryTicks(categories, innerW);
-  const rotateX = xTicks.length >= 6 && innerW / xTicks.length < 72 ? -32 : 0;
   const curve = lineSmooth ? d3.curveMonotoneX : d3.curveLinear;
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
@@ -91,18 +95,18 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   drawHorizontalMarkLines(plot, markLines, yLeft, innerW);
   const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
 
-  g.append("g")
-    .call(d3.axisLeft(yLeft).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
-    .call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(${innerW},0)`)
-    .call(d3.axisRight(yRight).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
-    .call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).tickValues(xTicks))
-    .call(styleAxis, theme)
-    .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+  drawDualAxesAxes({
+    g,
+    xScale: x,
+    yLeft,
+    yRight,
+    categories,
+    innerW,
+    innerH,
+    theme,
+    valueFormat,
+    axisStyle,
+  });
 
   const linePoints = [...lineSet.points].sort(
     (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
@@ -178,6 +182,8 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       seriesGradient,
       conditionalRules,
       onPointClick,
+      barWidthRatio,
+      barRadius,
     });
     columnLegendItems = columnResult.legendItems;
   }

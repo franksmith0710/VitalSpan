@@ -1,30 +1,46 @@
 import * as THREE from "three";
+import {
+  colorForGeoValue,
+  geoSurfaceColors as buildGeoPalette,
+  geoValueIntensity,
+  type GeoSurfacePalette,
+} from "@/components/charts/engine/geo/geoSurfaceColors";
 
 export type GeoSurfaceColors = {
+  palette: GeoSurfacePalette;
   emptyFill: number;
   rangeLow: number;
   rangeHigh: number;
   rangeLowCss: string;
+  rangeMidCss: string;
   rangeHighCss: string;
+  rangePeakCss: string;
 };
 
+function cssToHex(color: string): number {
+  return new THREE.Color(color).getHex();
+}
+
 export function geoSurfaceColors(isDark: boolean): GeoSurfaceColors {
+  const palette = buildGeoPalette(isDark);
   return {
-    emptyFill: isDark ? 0x334155 : 0xe8edf3,
-    rangeLow: isDark ? 0x0c4a6e : 0xe0f2fe,
-    rangeHigh: isDark ? 0x38bdf8 : 0x1653a9,
-    rangeLowCss: isDark ? "#0c4a6e" : "#e0f2fe",
-    rangeHighCss: isDark ? "#38bdf8" : "#1653a9",
+    palette,
+    emptyFill: cssToHex(palette.emptyFill),
+    rangeLow: cssToHex(palette.rangeLow),
+    rangeHigh: cssToHex(palette.rangeHigh),
+    rangeLowCss: palette.rangeLow,
+    rangeMidCss: palette.rangeMid,
+    rangeHighCss: palette.rangeHigh,
+    rangePeakCss: palette.rangePeak,
   };
 }
 
 export function colorForValue(value: number, min: number, max: number, surface: GeoSurfaceColors): number {
-  if (!Number.isFinite(value) || value <= 0) return surface.emptyFill;
-  if (max <= 0) return surface.emptyFill;
-  const t = max <= min ? 1 : (value - min) / (max - min);
-  const low = new THREE.Color(surface.rangeLow);
-  const high = new THREE.Color(surface.rangeHigh);
-  return low.lerp(high, Math.max(0, Math.min(1, t))).getHex();
+  return cssToHex(colorForGeoValue(value, min, max, surface.palette));
+}
+
+export function emissiveIntensityForValue(value: number, min: number, max: number): number {
+  return 0.12 + geoValueIntensity(value, min, max) * 0.62;
 }
 
 type ProjectFn = (coord: [number, number]) => [number, number] | null;

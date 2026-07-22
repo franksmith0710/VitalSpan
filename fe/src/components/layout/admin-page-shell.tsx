@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type AdminPageShellProps = {
@@ -46,7 +46,7 @@ export function AdminPageShell({
         }}
       >
         <div
-          className="grid min-w-0 gap-1.5"
+          className="grid min-w-0 flex-1 gap-1.5"
           onPointerDown={(event) => {
             if (event.target === event.currentTarget) onHeaderBlankPointerDown?.();
           }}
@@ -54,10 +54,13 @@ export function AdminPageShell({
           {titleUnwrapped ? (
             title
           ) : (
-            <h1 className="text-title-sm font-semibold text-gray-900 dark:text-white">{title}</h1>
+            <h1 className="truncate text-title-sm font-semibold text-gray-900 dark:text-white">{title}</h1>
           )}
           {description ? (
-            <div className="max-w-3xl text-theme-sm leading-relaxed text-gray-500 dark:text-gray-400">
+            <div
+              className="truncate text-theme-sm text-gray-500 dark:text-gray-400"
+              title={typeof description === "string" ? description : undefined}
+            >
               {description}
             </div>
           ) : null}

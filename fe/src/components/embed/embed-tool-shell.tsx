@@ -24,10 +24,13 @@ export function EmbedToolShell({
   return (
     <div className={cn("mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 md:px-6 md:py-10", className)}>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="grid gap-1.5">
-          <h1 className="text-title-sm font-semibold text-gray-900 dark:text-white">{title}</h1>
+        <div className="grid min-w-0 flex-1 gap-1.5">
+          <h1 className="truncate text-title-sm font-semibold text-gray-900 dark:text-white">{title}</h1>
           {description ? (
-            <p className="max-w-2xl text-theme-sm leading-relaxed text-gray-500 dark:text-gray-400">
+            <p
+              className="truncate text-theme-sm text-gray-500 dark:text-gray-400"
+              title={description}
+            >
               {description}
             </p>
           ) : null}
@@ -65,9 +68,11 @@ export function EmbedToolCard({
     >
       {title ? (
         <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
-          <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{title}</h2>
+          <h2 className="truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">{title}</h2>
           {description ? (
-            <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">{description}</p>
+            <p className="mt-1 truncate text-theme-xs text-gray-500 dark:text-gray-400" title={description}>
+              {description}
+            </p>
           ) : null}
         </div>
       ) : null}

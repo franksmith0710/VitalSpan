@@ -4,33 +4,20 @@ import {
   getOfflineGeoMap,
   joinOfflineMapFeatures,
 } from "@/components/charts/engine/geo/OfflineGeoPort";
-import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConstants";
-import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
+import { fitChinaGeoProjection } from "@/components/charts/engine/geo/geoProjection";
+import { mountGeoChoroplethAtmosphere, paintGeoSilhouetteGlow } from "@/components/charts/engine/geo/geoChoroplethVisual";
+import { GEO_MAP_SCALE_LIMIT, resolveEmbeddedGeoRoam, VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
+import {
+  colorForGeoHover,
+  colorForGeoValue,
+  geoPlotBackground,
+  geoStrokeWidth,
+  geoSurfaceColors,
+} from "@/components/charts/engine/geo/geoSurfaceColors";
 import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
-import { applyDepthHoverLift, ensureDepthShadowFilter, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
+import { chartTransition, prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
-
-function geoSurfaceColors(isDark: boolean) {
-  return {
-    emptyFill: isDark ? "#334155" : "#e8edf3",
-    border: isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(148, 163, 184, 0.55)",
-    rangeLow: isDark ? "#0c4a6e" : "#e0f2fe",
-    rangeHigh: isDark ? "#38bdf8" : "#1653a9",
-  };
-}
-
-function colorForValue(
-  value: number,
-  min: number,
-  max: number,
-  surface: ReturnType<typeof geoSurfaceColors>,
-): string {
-  if (!Number.isFinite(value) || value <= 0) return surface.emptyFill;
-  if (max <= 0) return surface.emptyFill;
-  const t = max <= min ? 1 : (value - min) / (max - min);
-  return d3.interpolateRgb(surface.rangeLow, surface.rangeHigh)(Math.max(0, Math.min(1, t)));
-}
 
 export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRenderConfig): () => void {
   const {
@@ -49,10 +36,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     isDark = false,
     geoStyle = {},
     onPointClick,
-    depthVisual,
   } = config;
-
-  const depthLevel = resolveEffectiveDepth(depthVisual);
 
   const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
   const showRegionLabel = geoStyle.showRegionLabel === true;
@@ -97,6 +81,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   container.replaceChildren();
 
   const surface = geoSurfaceColors(isDark);
+  const strokeWidth = geoStrokeWidth(width);
   const margin = { top: 8, right: 12, bottom: 24, left: 12 };
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
@@ -105,7 +90,12 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     type: "FeatureCollection" as const,
     features: features.map((f) => ({ type: "Feature" as const, properties: { name: f.name }, geometry: f.geometry! })),
   };
-  const projection = d3.geoMercator().fitSize([innerW, innerH], featureCollection);
+  const projection = fitChinaGeoProjection(
+    d3.geoMercator(),
+    innerW,
+    innerH,
+    featureCollection,
+  );
   const pathGen = d3.geoPath().projection(projection);
 
   const positiveValues = features.map((f) => f.value).filter((v) => v > 0);
@@ -120,37 +110,93 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("preserveAspectRatio", "xMidYMid meet")
     .attr("role", "img")
+    .attr("data-region-count", String(features.length))
     .style("display", "block")
     .style("overflow", "visible");
 
-  const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const mapLayer = g.append("g").attr("class", "map-layer");
-  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
-  const regionShadowId =
-    depthLevel === "enhanced" ? ensureDepthShadowFilter(root.append("defs"), "choropleth", depthLevel) : null;
+  root
+    .append("rect")
+    .attr("class", "map-plot-bg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", geoPlotBackground(isDark))
+    .attr("pointer-events", "none");
 
-  mapLayer
+  const visualUid = `geo-2d-${Math.random().toString(36).slice(2, 9)}`;
+  const filters = mountGeoChoroplethAtmosphere(root, {
+    uid: visualUid,
+    width,
+    height,
+    isDark,
+    surface,
+  });
+
+  const g = root.append("g").attr("class", "map-zoom-root");
+  const chartG = g.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+  const mapLayer = chartG.append("g").attr("class", "map-layer");
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
+
+  paintGeoSilhouetteGlow(mapLayer, featureCollection, pathGen, surface, filters.mapShadow);
+
+  const regions = mapLayer
     .selectAll("path.region")
     .data(features)
     .join("path")
     .attr("class", "region")
     .attr("d", (d) => pathGen({ type: "Feature", properties: {}, geometry: d.geometry! }) ?? "")
-    .attr("fill", (d) => colorForValue(d.value, minVal, maxVal, surface))
+    .attr("fill", (d) => colorForGeoValue(d.value, minVal, maxVal, surface))
+    .attr("fill-opacity", (d) => (d.value > 0 ? 0.96 : 0.88))
+    .attr("fill-rule", "evenodd")
     .attr("stroke", surface.border)
-    .attr("stroke-width", 0.8)
-    .attr("filter", regionShadowId ? `url(#${regionShadowId})` : null)
+    .attr("stroke-width", strokeWidth)
+    .attr("stroke-linejoin", "round")
     .attr("cursor", onPointClick ? "pointer" : "default")
+    .attr("opacity", prefersReducedMotion() ? 1 : 0);
+
+  if (!prefersReducedMotion()) {
+    chartTransition(regions)
+      .delay((_, index) => index * 14)
+      .duration(520)
+      .ease(d3.easeCubicOut)
+      .attr("opacity", 1);
+  }
+
+  const hoverLayer = mapLayer.append("g").attr("class", "map-hover-layer").attr("pointer-events", "none");
+  const hoverPath = hoverLayer
+    .append("path")
+    .attr("class", "region-hover")
+    .attr("fill-rule", "evenodd")
+    .attr("stroke-linejoin", "round")
+    .style("display", "none");
+
+  const featurePath = (geometry: GeoJSON.Geometry) =>
+    pathGen({ type: "Feature", properties: {}, geometry }) ?? "";
+
+  const showRegionHover = (d: (typeof features)[number]) => {
+    hoverPath
+      .style("display", null)
+      .attr("d", featurePath(d.geometry!))
+      .attr("fill", colorForGeoHover(d.value, minVal, maxVal, surface))
+      .attr("fill-opacity", 1)
+      .attr("stroke", surface.borderBright)
+      .attr("stroke-width", strokeWidth * 1.55)
+      .attr("stroke-opacity", 0.95);
+  };
+
+  const clearRegionHover = () => {
+    hoverPath.style("display", "none").attr("d", null);
+  };
+
+  regions
     .on("mouseenter", function (_event, d) {
-      const sel = d3.select(this);
-      sel.transition().duration(120).attr("stroke-width", 1.6);
-      applyDepthHoverLift(sel);
+      showRegionHover(d);
       if (!tooltip) return;
       showMergedTooltip(
         tooltip,
         container,
         _event,
         d.name,
-        [{ name: metricField || "值", color: surface.rangeHigh, value: d.value }],
+        [{ name: metricField || "值", color: surface.rangePeak, value: d.value }],
         valueFormat,
         width,
       );
@@ -162,16 +208,24 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
         container,
         event,
         d.name,
-        [{ name: metricField || "值", color: surface.rangeHigh, value: d.value }],
+        [{ name: metricField || "值", color: surface.rangePeak, value: d.value }],
         valueFormat,
         width,
       );
     })
-    .on("mouseleave", function () {
-      d3.select(this).attr("stroke-width", 0.8).attr("transform", null).attr("opacity", 1);
+    .on("mouseleave", () => {
+      clearRegionHover();
       hideTooltip(tooltip);
     })
-    .on("click", (_event, d) => onPointClick?.({ name: d.name, value: d.value, adcode: d.adcode }));
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      onPointClick?.({ name: d.name, value: d.value, adcode: d.adcode });
+    });
+
+  mapLayer.on("mouseleave", () => {
+    clearRegionHover();
+    hideTooltip(tooltip);
+  });
 
   if (showRegionLabel) {
     mapLayer
@@ -200,14 +254,21 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     const defs = root.append("defs");
     const gradId = `d3-choropleth-legend-${Math.random().toString(36).slice(2, 9)}`;
     const grad = defs.append("linearGradient").attr("id", gradId).attr("x1", "0%").attr("x2", "100%");
-    for (let i = 0; i <= 10; i += 1) {
-      const t = i / 10;
+    const legendStops = [0, 0.35, 0.7, 1];
+    for (const t of legendStops) {
       grad
         .append("stop")
         .attr("offset", `${t * 100}%`)
-        .attr("stop-color", colorForValue(minVal + t * (maxVal - minVal || 1), minVal, maxVal, surface));
+        .attr("stop-color", colorForGeoValue(minVal + t * (maxVal - minVal || 1), minVal, maxVal, surface));
     }
-    legendG.append("rect").attr("width", legendW).attr("height", legendH).attr("rx", 2).attr("fill", `url(#${gradId})`);
+    legendG
+      .append("rect")
+      .attr("width", legendW)
+      .attr("height", legendH)
+      .attr("rx", 3)
+      .attr("fill", `url(#${gradId})`)
+      .attr("stroke", isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(148, 163, 184, 0.5)")
+      .attr("stroke-width", 0.75);
     legendG
       .append("text")
       .attr("y", legendH + 12)
@@ -228,11 +289,20 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   if (roam) {
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, 12])
+      .scaleExtent([GEO_MAP_SCALE_LIMIT.min, GEO_MAP_SCALE_LIMIT.max])
+      .extent([
+        [0, 0],
+        [width, height],
+      ])
       .on("zoom", (event) => {
-        mapLayer.attr("transform", event.transform.toString());
+        g.attr("transform", event.transform.toString());
       });
     root.call(zoom);
+    try {
+      root.call(zoom.transform, d3.zoomIdentity);
+    } catch {
+      // jsdom 无 layout，跳过初始 transform
+    }
     root.on("dblclick.zoom", () => {
       root.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
     });

@@ -23,6 +23,8 @@ import {
   resetThreeGeoOrbitView,
 } from "@/components/charts/engine/three/threeGeoOrbit";
 import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConstants";
+import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
+import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
 
 type ProjectFn = (coord: [number, number]) => [number, number] | null;
 
@@ -61,6 +63,8 @@ export function renderThreeChoroplethChart(
     mapId,
     isDark = false,
     geoStyle = {},
+    geo3dStyle = {},
+    drillDepth = 0,
     onPointClick,
   } = config;
 
@@ -96,6 +100,16 @@ export function renderThreeChoroplethChart(
     return { dispose: noopDispose, engine: "three" };
   }
 
+  const quality = resolveGeo3dQuality({
+    quality: geo3dStyle.quality,
+    drillDepth,
+    featureCount: features.length,
+    shortSide: Math.min(width, height),
+  });
+  if (!shouldRenderGeo3d(quality)) {
+    return d3Fallback(container, config, "quality-degraded");
+  }
+
   if (!webglAvailable()) {
     return d3Fallback(container, config, "webgl-unavailable");
   }
@@ -105,7 +119,8 @@ export function renderThreeChoroplethChart(
     const values = features.map((f) => f.value);
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values, 1);
-    const maxExtrude = Math.min(width, height) * 0.12;
+    const extrudeScale = Math.max(0.35, geo3dStyle.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY);
+    const maxExtrude = Math.min(width, height) * 0.12 * extrudeScale;
     const showVisualMap = geoStyle.visualMap !== false;
 
     const featureCollection: GeoJSON.FeatureCollection = {
@@ -169,7 +184,7 @@ export function renderThreeChoroplethChart(
           side: THREE.DoubleSide,
         });
         const mesh = new THREE.Mesh(geom, mat);
-        mesh.userData = { name: feature.name, value: feature.value };
+        mesh.userData = { name: feature.name, value: feature.value, adcode: feature.adcode };
         mapGroup.add(mesh);
         meshes.push(mesh);
       }
@@ -191,7 +206,7 @@ export function renderThreeChoroplethChart(
     const tooltip = showTooltip
       ? createTooltipLayer(container, theme as D3Theme, tooltipPresentation)
       : null;
-    let detachVisualMap = showVisualMap
+    const detachVisualMap = showVisualMap
       ? mountThreeGeoVisualMap(container, {
           min: minVal,
           max: maxVal,
@@ -252,8 +267,11 @@ export function renderThreeChoroplethChart(
 
     const onClick = () => {
       if (!hovered?.userData?.name || !onPointClick) return;
-      const name = String(hovered.userData.name);
-      onPointClick({ name, value: Number(hovered.userData.value ?? 0) });
+      onPointClick({
+        name: String(hovered.userData.name),
+        value: Number(hovered.userData.value ?? 0),
+        adcode: hovered.userData.adcode as number | undefined,
+      });
     };
 
     renderer.domElement.addEventListener("pointermove", onMove);

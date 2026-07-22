@@ -81,7 +81,7 @@ export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConf
 
   const { width, height, colors, theme, showTooltip, valueFormat, options, depthVisual } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
-  const linkOpacity = depthLevel === "enhanced" ? 0.38 : depthLevel === "standard" ? 0.32 : 0.28;
+  const defaultLinkOpacity = depthLevel === "enhanced" ? 0.38 : depthLevel === "standard" ? 0.32 : 0.28;
   const sourceField = String(options.sourceField ?? "source");
   const targetField = String(options.targetField ?? "target");
   const weightField = String(options.weightField ?? "value");
@@ -97,8 +97,9 @@ export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConf
   const margin = radialMargin(false);
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
-  const nodeWidth = 12;
-  const nodePadding = 10;
+  const nodeWidth = Number(options.__sankeyNodeWidth ?? 12);
+  const nodePadding = Number(options.__sankeyNodeGap ?? 10);
+  const linkOpacity = Number(options.__sankeyLinkOpacity ?? defaultLinkOpacity);
   const nodes = layoutSankeyNodes(links, innerW, innerH, nodeWidth, nodePadding);
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
   const colorScale = d3.scaleOrdinal<string>().domain(nodes.map((n) => n.id)).range(colors);

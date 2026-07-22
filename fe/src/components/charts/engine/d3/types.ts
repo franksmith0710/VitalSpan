@@ -1,7 +1,7 @@
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartConditionalRule, ChartMarkLine } from "@/lib/chartDeFeatures";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
-import type { ChartGeoStyle } from "@/lib/chartDeStyle";
+import type { ChartGeoStyle, ChartGeo3dStyle } from "@/lib/chartDeStyle";
 import type { D3LegendPresentation, D3TooltipPresentation } from "@/components/charts/engine/d3/core/presentation";
 
 export type D3Datum = Record<string, unknown>;
@@ -15,6 +15,15 @@ export type D3PresentationConfig = {
   depthVisual?: DepthVisualLevel;
   tooltipPresentation?: D3TooltipPresentation;
   legendLayout?: D3LegendPresentation;
+};
+
+export type D3CartesianStyleExtras = {
+  barWidthRatio?: number;
+  barRadius?: number;
+  pointSize?: number;
+  areaOpacity?: number;
+  smooth?: boolean;
+  axisStyle?: import("@/lib/chartDeStyleBlocks").ChartAxisStyle;
 };
 
 export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<string, unknown>> = {
@@ -41,7 +50,8 @@ export type D3RenderConfigBase = Pick<
   D3RenderConfig,
   "width" | "height" | "colors" | "theme" | "showTooltip" | "valueFormat"
 > &
-  D3PresentationConfig;
+  D3PresentationConfig &
+  D3CartesianStyleExtras;
 
 export type D3CartesianDatum = Record<string, string | number>;
 
@@ -74,6 +84,11 @@ export type D3CartesianRenderConfig = {
   legendLayout?: import("@/components/charts/engine/d3/core/d3Legend").D3LegendLayout;
   onPointClick?: (datum: D3CartesianDatum) => void;
   dataZoom?: boolean;
+  barWidthRatio?: number;
+  barRadius?: number;
+  pointSize?: number;
+  areaOpacity?: number;
+  axisStyle?: import("@/lib/chartDeStyleBlocks").ChartAxisStyle;
 };
 
 /** @deprecated 使用 D3CartesianDatum */
@@ -99,8 +114,10 @@ export type D3GeoRenderConfig = D3RenderConfigBase & {
   metricField: string;
   knownRegionNames?: string[];
   mapId?: string;
+  drillDepth?: number;
   isDark?: boolean;
   geoStyle?: D3GeoStyleProps;
+  geo3dStyle?: ChartGeo3dStyle;
   onPointClick?: (datum: { name: string; value: number; adcode?: number }) => void;
 };
 
@@ -133,6 +150,10 @@ export type D3DualAxesRenderConfig = D3RenderConfigBase & {
   markLines?: ChartMarkLine[];
   conditionalRules?: ChartConditionalRule[];
   onPointClick?: (datum: D3CartesianDatum) => void;
+  barWidthRatio?: number;
+  barRadius?: number;
+  axisStyle?: import("@/lib/chartDeStyleBlocks").ChartAxisStyle;
+  smooth?: boolean;
 };
 
 export type D3WaterfallDatum = { type: string; value: number };

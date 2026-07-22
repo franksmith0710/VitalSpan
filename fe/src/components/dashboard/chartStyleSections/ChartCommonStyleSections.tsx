@@ -46,6 +46,7 @@ import {
 } from "@/lib/chartSeriesColor";
 import { patchChartDeTableStyle, readChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType, tableStyleSectionsForType } from "@/lib/chartTableInspector";
+import { chartTypeHasTooltipSection } from "@/lib/chartStyleCartesianFields";
 import { ChartInspectorSection, INSPECTOR_SELECT, INSPECTOR_SWITCH_SIZE, InspectorInlineColorRow } from "../inspectorCompact";
 import { DeTitleStyleToolbar } from "../deTitleStyleToolbar";
 
@@ -55,6 +56,7 @@ export function ChartPaletteStyleSection() {
   const caps = chartInspectorCapabilities(cfg.chartType);
   const isTableLike = isTableLikeChartType(cfg.chartType);
   const tableColorInOwnSection = tableStyleSectionsForType(cfg.chartType).includes("tableColor");
+  const tooltipInOwnSection = chartTypeHasTooltipSection(cfg.chartType);
   const labelPresentation = resolveChartLabelPresentation(cfg, dashboardStyle);
   const tooltipPresentation = resolveChartTooltipPresentation(cfg, dashboardStyle);
 
@@ -96,7 +98,7 @@ export function ChartPaletteStyleSection() {
         tooltipColorFallback={resolveChartTooltipDisplayColor(cfg, dashboardStyle)}
         tooltipBackgroundFallback={resolveChartTooltipDisplayBackground(cfg, dashboardStyle)}
         showLabelToggle={caps.label}
-        showTooltipToggle={!isTableLike && cfg.chartType !== "t-heatmap"}
+        showTooltipToggle={!isTableLike && tooltipInOwnSection && cfg.chartType !== "t-heatmap"}
         showGradientToggle={supportsSeriesGradientToggle(cfg.chartType)}
         showDepthToggle={supportsDepthVisualToggle(cfg.chartType)}
         onPaletteChange={(paletteId) => {

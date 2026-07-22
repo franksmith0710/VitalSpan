@@ -159,6 +159,16 @@ export function ChartLegendDeParityFields({
         </Select>
       </ChartLegendFormField>
 
+      <ChartLegendFormField label="文本颜色">
+        <input
+          type="color"
+          className="h-8 w-full cursor-pointer rounded border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900"
+          value={deStyle.legend?.color ?? "#667085"}
+          onChange={(e) => onPatch({ color: e.target.value })}
+          aria-label="图例文本颜色"
+        />
+      </ChartLegendFormField>
+
       {showLayoutControls ? (
         <ChartLegendFormField label="方向">
           <DeSegmentGroup

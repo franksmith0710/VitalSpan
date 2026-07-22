@@ -58,7 +58,7 @@ function RulerTick({
           style={{ height: tickLen, backgroundColor: TICK_COLOR[tick.kind] }}
           aria-hidden
         />
-        {tick.showLabel ? (
+        {tick.showLabel && tick.value !== 0 ? (
           <span
             className={cn(
               "absolute bottom-[12px] whitespace-nowrap text-[8px] leading-none font-medium tabular-nums select-none",
@@ -83,7 +83,7 @@ function RulerTick({
         style={{ width: tickLen, backgroundColor: TICK_COLOR[tick.kind] }}
         aria-hidden
       />
-      {tick.showLabel ? (
+      {tick.showLabel && tick.value !== 0 ? (
         <span
           className={cn(
             "absolute whitespace-nowrap text-[8px] leading-none font-medium tabular-nums select-none",

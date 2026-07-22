@@ -1,5 +1,5 @@
 import { ChartMapFieldSlots } from "./ChartMapFieldSlots";
-import { ChartMapPresetBar } from "./ChartMapPresetBar";
+import { ChartMapSalesGeoSetup } from "./ChartMapSalesGeoSetup";
 import { MapChartFieldHintBanner } from "./MapChartFieldHint";
 import { useChartInspector } from "./chartInspectorContext";
 import { mapChartFieldHint } from "@/lib/mapChartDataHint";
@@ -11,7 +11,7 @@ export function ChartMapDataPanel() {
 
   return (
     <div className="space-y-3">
-      <ChartMapPresetBar />
+      <ChartMapSalesGeoSetup />
       {mapHint ? <MapChartFieldHintBanner hint={mapHint} /> : null}
       <ChartMapFieldSlots />
     </div>

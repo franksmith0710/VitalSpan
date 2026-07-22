@@ -30,6 +30,9 @@ export function renderD3KpiChart(container: HTMLElement, config: D3RenderConfig)
   root.setAttribute("role", "group");
   root.setAttribute("aria-label", "指标卡");
   root.className = "vs-kpi-chart flex h-full min-h-0 flex-col justify-center overflow-auto p-4";
+  const kpiFontSize = Number(options.__kpiFontSize ?? 28);
+  const kpiAlign = String(options.__kpiAlign ?? "center") as "left" | "center" | "right";
+  root.style.textAlign = kpiAlign;
   const depthVisual = getDepthVisual();
   if (depthVisual === "enhanced") root.classList.add("vs-kpi-depth-enhanced");
   else if (depthVisual === "standard") root.classList.add("vs-kpi-depth-standard");
@@ -58,7 +61,8 @@ export function renderD3KpiChart(container: HTMLElement, config: D3RenderConfig)
     label.textContent = metricLabel(metric);
 
     const valueEl = document.createElement("p");
-    valueEl.className = "mt-1 text-2xl font-semibold tabular-nums tracking-tight";
+    valueEl.className = "mt-1 font-semibold tabular-nums tracking-tight";
+    valueEl.style.fontSize = `${kpiFontSize}px`;
     valueEl.style.color = theme.legendText;
     valueEl.textContent = formatChartValue(raw, valueFormat);
 

@@ -19,6 +19,7 @@ import { attachBandCategoryInteraction } from "@/components/charts/engine/d3/car
 import { renderD3HorizontalBarChart } from "@/components/charts/engine/d3/cartesian/renderBarHorizontal";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { resolveBarBandPadding, resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 
 const BAR_RX = VCDS.bar.rx;
 const STACK_GAP = VCDS.bar.stackGap;
@@ -27,7 +28,7 @@ type WideRow = Record<string, string | number>;
 
 function paintVBarCell(
   cell: d3.Selection<SVGGElement, unknown, null, undefined>,
-  opts: { y1: number; h: number; w: number; front: string; solid: string },
+  opts: { y1: number; h: number; w: number; front: string; solid: string; rx?: number },
 ): void {
   cell.selectAll("*").remove();
   const depthOn = resolveEffectiveDepth() !== "off";
@@ -38,7 +39,7 @@ function paintVBarCell(
     height: opts.h,
     width: opts.w,
     color: depthOn ? opts.solid : opts.front,
-    rx: BAR_RX,
+    rx: opts.rx ?? BAR_RX,
   });
   if (depthOn && opts.front !== opts.solid) cell.select(".vs-bar-front").attr("fill", opts.front);
 }
@@ -75,6 +76,9 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     onPointClick,
     dataZoom = false,
     legendLayout,
+    barWidthRatio,
+    barRadius,
+    axisStyle,
   } = config;
 
   const theme = themeFromConfig(rawTheme);
@@ -114,12 +118,17 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
       ? (d3.max(wideRows, (row) => keys.reduce((sum, k) => sum + Number(row[k] ?? 0), 0)) ?? 0)
       : (d3.max(normalized, (d) => Number(d.__value__)) ?? 0);
 
-  const x = d3.scaleBand<string>().domain(categories).range([0, innerW]).padding(0.22);
+  const x = d3
+    .scaleBand<string>()
+    .domain(categories)
+    .range([0, innerW])
+    .padding(resolveBarBandPadding(barWidthRatio));
   const y = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
   const xSub = useGrouped ? d3.scaleBand<string>().domain(keys).range([0, x.bandwidth()]).padding(0.12) : null;
+  const barRx = barRadius ?? BAR_RX;
 
   drawHorizontalGrid(plot, { yScale: y, innerW, theme });
-  drawCartesianBandAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat });
+  drawCartesianBandAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat, axisStyle });
 
   plot.selectAll("*").remove();
 
@@ -143,7 +152,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
           const val = Number(d[1]) - Number(d[0]);
           const solid = gradientFill.startsWith("url(") ? color : resolveDatumColor(val, color, conditionalRules);
           const front = gradientFill.startsWith("url(") ? gradientFill : solid;
-          paintVBarCell(d3.select(this), { y1, h, w: x.bandwidth(), front, solid });
+          paintVBarCell(d3.select(this), { y1, h, w: x.bandwidth(), front, solid, rx: barRx });
         })
         .on("click", (_e, d) =>
           onPointClick?.({
@@ -176,7 +185,7 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
             ? color
             : resolveDatumColor(Number(d.__value__), color, conditionalRules);
           const front = gradientFill.startsWith("url(") ? gradientFill : solid;
-          paintVBarCell(d3.select(this), { y1, h: innerH - y1, w: barW, front, solid });
+          paintVBarCell(d3.select(this), { y1, h: innerH - y1, w: barW, front, solid, rx: barRx });
         })
         .on("click", (_e, d) => onPointClick?.(d));
     }

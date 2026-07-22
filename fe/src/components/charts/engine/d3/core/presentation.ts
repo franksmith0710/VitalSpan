@@ -18,6 +18,7 @@ export type D3LegendPresentation = {
   icon?: import("@/lib/chartDeStyle").ChartLegendIconShape;
   iconSize?: number;
   fontSize?: number;
+  color?: string;
   hAlign?: "left" | "center" | "right";
   vAlign?: "top" | "middle" | "bottom";
 };
@@ -36,6 +37,7 @@ export function buildD3PresentationProps(style: ChartStyleContext) {
       icon: legend?.icon,
       iconSize: legend?.iconSize,
       fontSize: legend?.fontSize,
+      color: legend?.color,
       hAlign: legend?.hAlign,
       vAlign: legend?.vAlign,
     } satisfies D3LegendPresentation,

@@ -1,9 +1,10 @@
 import * as d3 from "d3";
-import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3ProgressBarRenderConfig } from "@/components/charts/engine/d3/types";
+import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
 const BAR_RX = 6;
@@ -26,8 +27,12 @@ export function renderD3ProgressBarChart(
     labelFontSize = 11,
     valueFormat,
     onPointClick,
+    barWidthRatio,
+    barRadius,
+    axisStyle,
   } = config;
 
+  const barRx = barRadius ?? BAR_RX;
   const categories = data.map((d) => d.type);
   const maxLabelChars = categories.reduce((max, cat) => Math.max(max, String(cat).length), 0);
   const baseMargin = cartesianMargin(false);
@@ -37,7 +42,7 @@ export function renderD3ProgressBarChart(
   const fillColor = colors[0] ?? "#465fff";
   const trackColor = theme.gridLine;
 
-  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(0.28);
+  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
   const x = d3.scaleLinear().domain([0, 1]).range([0, innerW]);
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
@@ -45,11 +50,17 @@ export function renderD3ProgressBarChart(
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme) : null;
 
-  g.append("g").call(d3.axisLeft(y)).call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).ticks(5).tickFormat((d) => `${Math.round(Number(d) * 100)}%`))
-    .call(styleAxis, theme);
+  drawCartesianHorizontalBandAxes({
+    g,
+    xScale: x,
+    yScale: y,
+    innerW,
+    innerH,
+    theme,
+    valueFormat,
+    axisStyle,
+    xTickFormat: (d) => `${Math.round(Number(d) * 100)}%`,
+  });
 
   plot
     .selectAll("rect.track")
@@ -60,7 +71,7 @@ export function renderD3ProgressBarChart(
     .attr("y", (d) => y(d.type) ?? 0)
     .attr("width", innerW)
     .attr("height", y.bandwidth())
-    .attr("rx", BAR_RX)
+    .attr("rx", barRx)
     .attr("fill", trackColor)
     .attr("opacity", 0.35);
 
@@ -76,7 +87,7 @@ export function renderD3ProgressBarChart(
       cell.selectAll("*").remove();
       const ratio = d.max > 0 ? d.value / d.max : 0;
       const w = x(Math.min(1, Math.max(0, ratio)));
-      paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: y.bandwidth(), color: fillColor, rx: BAR_RX });
+      paintHorizontalBar({ plot: cell, x: 0, y: 0, width: w, height: y.bandwidth(), color: fillColor, rx: barRx });
     })
     .on("click", (_e, d) => onPointClick?.(d));
 

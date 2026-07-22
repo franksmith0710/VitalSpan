@@ -68,7 +68,7 @@ export function ConnectorCategoryCard({
             ) : null}
           </div>
           {subtitle ? (
-            <p className="mt-1 line-clamp-2 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+            <p className="mt-1 truncate text-theme-xs text-gray-500 dark:text-gray-400">
               {subtitle}
             </p>
           ) : null}
@@ -101,7 +101,7 @@ export function ConnectorCategoryCard({
       <div className="mt-4 min-w-0 flex-1">
         <h3 className="text-theme-sm font-semibold text-gray-900 dark:text-white">{label}</h3>
         {description ? (
-          <p className="mt-1.5 line-clamp-2 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+          <p className="mt-1.5 truncate text-theme-xs text-gray-500 dark:text-gray-400">
             {description}
           </p>
         ) : null}

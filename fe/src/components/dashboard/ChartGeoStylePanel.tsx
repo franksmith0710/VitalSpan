@@ -1,8 +1,13 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import { patchChartDeStyleNested } from "@/lib/chartDeStyle";
-import { readChartGeoStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
+import {
+  DEFAULT_GEO3D_EXTRUDE_INTENSITY,
+  patchChartDeStyleNested,
+  readChartGeoStyle,
+  readChartGeo3dStyle,
+  type ChartDeStyle,
+} from "@/lib/chartDeStyle";
 import { DashboardConfigSection } from "./DashboardConfigSection";
-import { INSPECTOR_SECTION_GAP, InspectorSwitchRow } from "./inspectorCompact";
+import { INSPECTOR_HINT, INSPECTOR_SECTION_GAP, InspectorFieldRow, InspectorSwitchRow } from "./inspectorCompact";
 
 type ChartGeoStylePanelProps = {
   cfg: ChartViewConfig;
@@ -11,12 +16,23 @@ type ChartGeoStylePanelProps = {
   onChange: (cfg: ChartViewConfig) => void;
 };
 
+const QUALITY_OPTIONS = [
+  { value: "auto", label: "自动" },
+  { value: "high", label: "高（全国/省级）" },
+  { value: "medium", label: "中（市级）" },
+  { value: "low", label: "低（优先 2D）" },
+] as const;
+
 /** DataEase 对标：地图/热力图专属样式 */
 export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartGeoStylePanelProps) {
   const geo = readChartGeoStyle(deStyle);
+  const geo3d = readChartGeo3dStyle(deStyle);
   const patchGeo = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
     onChange(patchChartDeStyleNested(cfg, "geo", patch));
+  const patchGeo3d = (patch: Parameters<typeof patchChartDeStyleNested>[2]) =>
+    onChange(patchChartDeStyleNested(cfg, "geo3d", patch));
   const isMap = chartType === "map" || chartType === "map-3d";
+  const is3d = chartType === "map-3d";
 
   return (
     <DashboardConfigSection
@@ -50,11 +66,63 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
           checked={geo.visualMap !== false}
           onCheckedChange={(visualMap) => patchGeo({ visualMap })}
         />
-        <p className="text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
+        {is3d ? (
+          <>
+            <InspectorFieldRow label="3D 质量">
+              <select
+                className="h-8 w-full rounded-md border border-gray-200 bg-white px-2 text-[11px] text-gray-800 dark:border-gray-700 dark:bg-white/[0.03] dark:text-white/90"
+                value={geo3d.quality ?? "auto"}
+                onChange={(e) =>
+                  patchGeo3d({
+                    quality: e.target.value as (typeof QUALITY_OPTIONS)[number]["value"],
+                  })
+                }
+              >
+                {QUALITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </InspectorFieldRow>
+            <InspectorFieldRow label="挤出强度">
+              <input
+                type="range"
+                min={0.2}
+                max={1.5}
+                step={0.05}
+                value={geo3d.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY}
+                onChange={(e) => patchGeo3d({ extrudeIntensity: Number(e.target.value) })}
+                className="w-full"
+              />
+            </InspectorFieldRow>
+            <InspectorSwitchRow
+              label="装饰效果"
+              checked={geo3d.effectsEnabled !== false}
+              onCheckedChange={(effectsEnabled) => patchGeo3d({ effectsEnabled })}
+            />
+            <InspectorSwitchRow
+              label="底面反射"
+              checked={geo3d.groundMirror !== false}
+              onCheckedChange={(groundMirror) => patchGeo3d({ groundMirror })}
+            />
+            <InspectorSwitchRow
+              label="轮廓高亮"
+              checked={geo3d.outlineGlow !== false}
+              onCheckedChange={(outlineGlow) => patchGeo3d({ outlineGlow })}
+            />
+            <InspectorSwitchRow
+              label="扫光动画"
+              checked={geo3d.beamScan === true}
+              onCheckedChange={(beamScan) => patchGeo3d({ beamScan })}
+            />
+          </>
+        ) : null}
+        <p className={INSPECTOR_HINT}>
           {isMap
-              ? chartType === "map-3d"
-                ? "离线中国 3D 地图：滚轮缩放、拖拽旋转；平移与缩放有边界（对标 2D 地图）。双击地图恢复默认视角。"
-                : "离线中国地图：滚轮缩放与拖拽平移；配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击地图下钻。"
+            ? is3d
+              ? "离线中国 3D 地图：单击区域下钻换层级（省→市→区县）；滚轮/拖拽仅旋转缩放当前层，不会自动进入下级。区县级或要素过多时自动切换 2D。"
+              : "离线中国地图：滚轮缩放与拖拽平移；配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击地图下钻。"
             : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。"}
         </p>
       </div>

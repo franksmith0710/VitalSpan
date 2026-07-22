@@ -42,6 +42,20 @@ export function ChartVariantBasicSection() {
 
   const options = variants.map((v) => ({ value: v, label: styleVariantLabel(v) }));
 
+  const applyVariant = (variant: string) => {
+    if (cfg.chartType !== "line") {
+      onChange({ ...cfg, styleVariant: variant });
+      return;
+    }
+    let next: typeof cfg = { ...cfg, styleVariant: variant };
+    if (variant === "smooth") {
+      next = patchChartDeStyleNested(next, "cartesian", { lineSmooth: true });
+    } else if (variant === "default" && current === "smooth") {
+      next = patchChartDeStyleNested(next, "cartesian", { lineSmooth: false });
+    }
+    onChange(next);
+  };
+
   return (
     <DashboardConfigSection title="基础样式" compact data-testid="chart-variant-basic">
       {options.length <= 4 ? (
@@ -50,12 +64,12 @@ export function ChartVariantBasicSection() {
           value={current}
           columns={Math.min(options.length, 4)}
           options={options}
-          onChange={(v) => onChange({ ...cfg, styleVariant: v })}
+          onChange={applyVariant}
         />
       ) : (
         <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
           <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">图表类型</p>
-          <Select value={current} onValueChange={(v) => onChange({ ...cfg, styleVariant: v })}>
+          <Select value={current} onValueChange={applyVariant}>
             <SelectTrigger className={INSPECTOR_SELECT} aria-label="图表类型">
               <SelectValue />
             </SelectTrigger>

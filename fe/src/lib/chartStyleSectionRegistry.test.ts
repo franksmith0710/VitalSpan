@@ -13,14 +13,17 @@ describe("chartStyleSectionsForType", () => {
     ]);
   });
 
-  it("returns bar sections from plugin metadata", () => {
+  it("returns bar sections from style profile", () => {
     expect(chartStyleSectionsForType("bar")).toEqual([
+      "axis",
+      "cartesianShape",
       "background",
       "palette",
       "title",
       "remark",
       "legend",
       "label",
+      "tooltip",
     ]);
   });
 
@@ -36,6 +39,7 @@ describe("chartStyleSectionsForType", () => {
       "palette",
       "title",
       "label",
+      "kpiIndicator",
     ]);
   });
 });

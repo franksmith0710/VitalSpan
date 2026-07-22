@@ -4,6 +4,7 @@ import type { ChartStyleContext } from "@/components/charts/engine/types";
 import { hasActiveConditionalRules } from "@/components/charts/engine/d3/views/resolveD3ChartColors";
 import { resolveChartSeriesColorItems } from "@/lib/chartSeriesColor";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
+import { applyChartDeStyleBlocksToPlan } from "@/lib/applyChartDeStyleBlocks";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 export function applyChartStyleChain(
@@ -12,6 +13,9 @@ export function applyChartStyleChain(
   chartConfig?: ChartViewConfig,
 ): ChartRenderPlan {
   let next = applyD3Style(plan, style);
+  next = applyChartDeStyleBlocksToPlan(next, style.deStyle, {
+    styleVariant: chartConfig?.styleVariant,
+  });
 
   if (!chartConfig) return next;
 

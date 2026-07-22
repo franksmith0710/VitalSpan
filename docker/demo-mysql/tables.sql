@@ -3,6 +3,16 @@
 
 SET NAMES utf8mb4;
 
+DROP VIEW IF EXISTS de_map_flow;
+DROP VIEW IF EXISTS de_map_heat;
+DROP VIEW IF EXISTS de_map_district;
+DROP VIEW IF EXISTS de_map_city;
+DROP VIEW IF EXISTS de_map_province;
+DROP VIEW IF EXISTS de_sales_wide;
+DROP VIEW IF EXISTS v_sales_geo;
+DROP TABLE IF EXISTS map_flows;
+DROP TABLE IF EXISTS geo_locations;
+
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS sales;
@@ -150,7 +160,67 @@ INSERT INTO regions (id, code, name, parent_id, level) VALUES
   (911, 'CD-WH', '武侯区', 91, 3),
   (912, 'CD-JN', '锦江区', 91, 3),
   (1011, 'HZ-XH', '西湖区', 101, 3),
-  (1012, 'HZ-YH', '余杭区', 101, 3);
+  (1012, 'HZ-YH', '余杭区', 101, 3),
+  (11, 'SD', '山东省', NULL, 1),
+  (12, 'HA', '河南省', NULL, 1),
+  (13, 'HB', '湖北省', NULL, 1),
+  (14, 'HN', '湖南省', NULL, 1),
+  (15, 'FJ', '福建省', NULL, 1),
+  (16, 'AH', '安徽省', NULL, 1),
+  (17, 'SN', '陕西省', NULL, 1),
+  (18, 'CQ', '重庆市', NULL, 1),
+  (19, 'TJ', '天津市', NULL, 1),
+  (20, 'LN', '辽宁省', NULL, 1),
+  (21, 'HE', '河北省', NULL, 1),
+  (22, 'YN', '云南省', NULL, 1),
+  (23, 'GZU', '贵州省', NULL, 1),
+  (24, 'JX', '江西省', NULL, 1),
+  (25, 'GX', '广西壮族自治区', NULL, 1),
+  (26, 'SX', '山西省', NULL, 1),
+  (27, 'JL', '吉林省', NULL, 1),
+  (28, 'HL', '黑龙江省', NULL, 1),
+  (29, 'GS', '甘肃省', NULL, 1),
+  (30, 'HI', '海南省', NULL, 1),
+  (111, 'SD-JN', '济南市', 11, 2),
+  (121, 'HA-ZZ', '郑州市', 12, 2),
+  (131, 'HB-WH', '武汉市', 13, 2),
+  (141, 'HN-CS', '长沙市', 14, 2),
+  (151, 'FJ-FZ', '福州市', 15, 2),
+  (161, 'AH-HF', '合肥市', 16, 2),
+  (171, 'SN-XA', '西安市', 17, 2),
+  (181, 'CQ-CITY', '重庆市', 18, 2),
+  (191, 'TJ-CITY', '天津市', 19, 2),
+  (201, 'LN-SY', '沈阳市', 20, 2),
+  (211, 'HE-SJZ', '石家庄市', 21, 2),
+  (221, 'YN-KM', '昆明市', 22, 2),
+  (231, 'GZU-GY', '贵阳市', 23, 2),
+  (241, 'JX-NC', '南昌市', 24, 2),
+  (251, 'GX-NN', '南宁市', 25, 2),
+  (261, 'SX-TY', '太原市', 26, 2),
+  (271, 'JL-CC', '长春市', 27, 2),
+  (281, 'HL-HEB', '哈尔滨市', 28, 2),
+  (291, 'GS-LZ', '兰州市', 29, 2),
+  (301, 'HI-HK', '海口市', 30, 2),
+  (1111, 'SD-JN-LX', '历下区', 111, 3),
+  (1211, 'HA-ZZ-JS', '金水区', 121, 3),
+  (1311, 'HB-WH-WC', '武昌区', 131, 3),
+  (1411, 'HN-CS-FR', '芙蓉区', 141, 3),
+  (1511, 'FJ-FZ-GL', '鼓楼区', 151, 3),
+  (1611, 'AH-HF-BH', '包河区', 161, 3),
+  (1711, 'SN-XA-YT', '雁塔区', 171, 3),
+  (1811, 'CQ-YZ', '渝中区', 181, 3),
+  (1911, 'TJ-HP', '和平区', 191, 3),
+  (2011, 'LN-SY-HP', '和平区', 201, 3),
+  (2111, 'HE-SJZ-CA', '长安区', 211, 3),
+  (2211, 'YN-KM-WH', '五华区', 221, 3),
+  (2311, 'GZU-GY-NM', '南明区', 231, 3),
+  (2411, 'JX-NC-DH', '东湖区', 241, 3),
+  (2511, 'GX-NN-QX', '青秀区', 251, 3),
+  (2611, 'SX-TY-XD', '小店区', 261, 3),
+  (2711, 'JL-CC-NG', '南关区', 271, 3),
+  (2811, 'HL-HEB-NG', '南岗区', 281, 3),
+  (2911, 'GS-LZ-CG', '城关区', 291, 3),
+  (3011, 'HI-HK-LH', '龙华区', 301, 3);
 
 INSERT INTO product_categories (id, name) VALUES
   (1, '电脑整机'),
@@ -209,7 +279,31 @@ INSERT INTO sales (sale_date, region_id, product_id, customer_id, quantity, amou
   ('2025-06-08', 811, 4, 1, 2, 3198.00, '线下门店'),
   ('2025-06-25', 711, 1, 2, 1, 8999.00, '电商平台'),
   ('2025-07-01', 1012, 7, 9, 15, 2985.00, '电商平台'),
-  ('2025-07-01', 911, 7, 5, 15, 2985.00, '电商平台');
+  ('2025-07-01', 911, 7, 5, 15, 2985.00, '电商平台'),
+  ('2025-01-20', 1111, 2, NULL, 3, 22497.00, '企业直销'),
+  ('2025-02-08', 1211, 4, NULL, 2, 3198.00, '电商平台'),
+  ('2025-02-18', 1311, 1, NULL, 1, 8999.00, '线下门店'),
+  ('2025-03-05', 1411, 3, NULL, 4, 13196.00, '电话销售'),
+  ('2025-03-15', 1511, 5, NULL, 6, 7794.00, '电商平台'),
+  ('2025-03-28', 1611, 8, NULL, 2, 1198.00, '线下门店'),
+  ('2025-04-02', 1711, 2, NULL, 1, 7499.00, '企业直销'),
+  ('2025-04-12', 1811, 6, NULL, 5, 2295.00, '电商平台'),
+  ('2025-04-25', 1911, 7, NULL, 8, 1592.00, '电话销售'),
+  ('2025-05-06', 2011, 4, NULL, 3, 4797.00, '企业直销'),
+  ('2025-05-14', 2111, 9, NULL, 10, 890.00, '电商平台'),
+  ('2025-05-22', 2211, 10, NULL, 4, 1196.00, '电话销售'),
+  ('2025-06-01', 2311, 1, NULL, 2, 17998.00, '企业直销'),
+  ('2025-06-10', 2411, 3, NULL, 1, 3299.00, '线下门店'),
+  ('2025-06-18', 2511, 5, NULL, 3, 3897.00, '电商平台'),
+  ('2025-06-22', 2611, 6, NULL, 6, 1377.00, '电话销售'),
+  ('2025-06-28', 2711, 2, NULL, 2, 14998.00, '企业直销'),
+  ('2025-07-05', 2811, 8, NULL, 4, 2396.00, '电商平台'),
+  ('2025-07-08', 2911, 7, NULL, 7, 1393.00, '电话销售'),
+  ('2025-07-12', 3011, 3, NULL, 2, 6598.00, '线下门店'),
+  ('2025-07-15', 1111, 1, NULL, 1, 8999.00, '企业直销'),
+  ('2025-07-16', 1311, 4, NULL, 5, 6396.00, '电商平台'),
+  ('2025-07-17', 1711, 5, NULL, 3, 3897.00, '电话销售'),
+  ('2025-07-18', 2311, 6, NULL, 8, 918.00, '线下门店');
 
 INSERT INTO orders (id, order_no, order_date, customer_id, region_id, status, total_amount, salesperson_id) VALUES
   (1, 'ORD-202501-001', '2025-01-10', 1, 811, '已完成', 8999.00, 1),
@@ -277,3 +371,241 @@ FROM sales s
 JOIN regions dist ON s.region_id = dist.id AND dist.level = 3
 JOIN regions city ON dist.parent_id = city.id
 JOIN regions prov ON city.parent_id = prov.id;
+
+-- ---------------------------------------------------------------------------
+-- DataEase 地图练习：经纬度锚点 + 各图层 SQL 视图
+-- 名称对齐离线 GeoJSON（省/市/区县全称，如 广东省、广州市、天河区）
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE geo_locations (
+  region_id INT PRIMARY KEY,
+  region_name VARCHAR(64) NOT NULL,
+  level TINYINT NOT NULL,
+  lng DECIMAL(10, 6) NOT NULL,
+  lat DECIMAL(10, 6) NOT NULL,
+  INDEX idx_geo_level (level)
+);
+
+INSERT INTO geo_locations (region_id, region_name, level, lng, lat) VALUES
+  (5, '广东省', 1, 113.266530, 23.132191),
+  (6, '江苏省', 1, 118.796877, 32.060255),
+  (7, '北京市', 1, 116.407396, 39.904200),
+  (8, '上海市', 1, 121.473701, 31.230416),
+  (9, '四川省', 1, 104.066541, 30.572269),
+  (10, '浙江省', 1, 120.153576, 30.287459),
+  (11, '山东省', 1, 117.000923, 36.675807),
+  (12, '河南省', 1, 113.665412, 34.757975),
+  (13, '湖北省', 1, 114.298572, 30.584355),
+  (14, '湖南省', 1, 112.982279, 28.194090),
+  (15, '福建省', 1, 119.306239, 26.075302),
+  (16, '安徽省', 1, 117.283042, 31.861190),
+  (17, '陕西省', 1, 108.948024, 34.263161),
+  (18, '重庆市', 1, 106.504962, 29.533155),
+  (19, '天津市', 1, 117.190182, 39.125596),
+  (20, '辽宁省', 1, 123.429096, 41.796767),
+  (21, '河北省', 1, 114.502461, 38.045474),
+  (22, '云南省', 1, 102.712251, 25.040609),
+  (23, '贵州省', 1, 106.713478, 26.578343),
+  (24, '江西省', 1, 115.892151, 28.676493),
+  (25, '广西壮族自治区', 1, 108.320004, 22.824020),
+  (26, '山西省', 1, 112.549248, 37.857014),
+  (27, '吉林省', 1, 125.324500, 43.886841),
+  (28, '黑龙江省', 1, 126.642464, 45.756967),
+  (29, '甘肃省', 1, 103.823557, 36.058039),
+  (30, '海南省', 1, 110.331190, 20.031971),
+  (51, '广州市', 2, 113.264385, 23.129112),
+  (52, '深圳市', 2, 114.057868, 22.543099),
+  (61, '南京市', 2, 118.796877, 32.060255),
+  (71, '北京市', 2, 116.407396, 39.904200),
+  (81, '上海市', 2, 121.473701, 31.230416),
+  (91, '成都市', 2, 104.066541, 30.572269),
+  (101, '杭州市', 2, 120.155070, 30.274084),
+  (111, '济南市', 2, 117.000923, 36.675807),
+  (121, '郑州市', 2, 113.665412, 34.757975),
+  (131, '武汉市', 2, 114.298572, 30.584355),
+  (141, '长沙市', 2, 112.982279, 28.194090),
+  (151, '福州市', 2, 119.306239, 26.075302),
+  (161, '合肥市', 2, 117.283042, 31.861190),
+  (171, '西安市', 2, 108.948024, 34.263161),
+  (181, '重庆市', 2, 106.504962, 29.533155),
+  (191, '天津市', 2, 117.190182, 39.125596),
+  (201, '沈阳市', 2, 123.429096, 41.796767),
+  (211, '石家庄市', 2, 114.502461, 38.045474),
+  (221, '昆明市', 2, 102.712251, 25.040609),
+  (231, '贵阳市', 2, 106.713478, 26.578343),
+  (241, '南昌市', 2, 115.892151, 28.676493),
+  (251, '南宁市', 2, 108.320004, 22.824020),
+  (261, '太原市', 2, 112.549248, 37.857014),
+  (271, '长春市', 2, 125.324500, 43.886841),
+  (281, '哈尔滨市', 2, 126.642464, 45.756967),
+  (291, '兰州市', 2, 103.823557, 36.058039),
+  (301, '海口市', 2, 110.331190, 20.031971),
+  (511, '天河区', 3, 113.361200, 23.124680),
+  (512, '越秀区', 3, 113.266830, 23.128910),
+  (521, '南山区', 3, 113.930290, 22.533320),
+  (522, '福田区', 3, 114.055036, 22.521520),
+  (611, '鼓楼区', 3, 118.769700, 32.066600),
+  (612, '玄武区', 3, 118.797900, 32.048700),
+  (711, '朝阳区', 3, 116.443400, 39.921500),
+  (712, '海淀区', 3, 116.298300, 39.959300),
+  (811, '浦东新区', 3, 121.544700, 31.222200),
+  (812, '徐汇区', 3, 121.436500, 31.188300),
+  (911, '武侯区', 3, 104.043000, 30.641700),
+  (912, '锦江区', 3, 104.081000, 30.656100),
+  (1011, '西湖区', 3, 120.130200, 30.259000),
+  (1012, '余杭区', 3, 120.299400, 30.419200),
+  (1111, '历下区', 3, 117.076000, 36.666400),
+  (1211, '金水区', 3, 113.660300, 34.800400),
+  (1311, '武昌区', 3, 114.316200, 30.554000),
+  (1411, '芙蓉区', 3, 113.031600, 28.185400),
+  (1511, '鼓楼区', 3, 119.303900, 26.082600),
+  (1611, '包河区', 3, 117.310000, 31.793800),
+  (1711, '雁塔区', 3, 108.926600, 34.213600),
+  (1811, '渝中区', 3, 106.562900, 29.552800),
+  (1911, '和平区', 3, 117.214500, 39.117200),
+  (2011, '和平区', 3, 123.420400, 41.789900),
+  (2111, '长安区', 3, 114.539100, 38.036300),
+  (2211, '五华区', 3, 102.707860, 25.043470),
+  (2311, '南明区', 3, 106.715300, 26.573300),
+  (2411, '东湖区', 3, 115.899300, 28.685100),
+  (2511, '青秀区', 3, 108.494700, 22.785800),
+  (2611, '小店区', 3, 112.565500, 37.736000),
+  (2711, '南关区', 3, 125.350400, 43.864100),
+  (2811, '南岗区', 3, 126.668800, 45.760200),
+  (2911, '城关区', 3, 103.825200, 36.057100),
+  (3011, '龙华区', 3, 110.330800, 20.031000);
+
+CREATE TABLE map_flows (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  start_name VARCHAR(64) NOT NULL,
+  start_lng DECIMAL(10, 6) NOT NULL,
+  start_lat DECIMAL(10, 6) NOT NULL,
+  end_name VARCHAR(64) NOT NULL,
+  end_lng DECIMAL(10, 6) NOT NULL,
+  end_lat DECIMAL(10, 6) NOT NULL,
+  flow_amount DECIMAL(12, 2) NOT NULL,
+  flow_date DATE NOT NULL,
+  channel VARCHAR(32) NOT NULL,
+  INDEX idx_map_flows_date (flow_date)
+);
+
+INSERT INTO map_flows (start_name, start_lng, start_lat, end_name, end_lng, end_lat, flow_amount, flow_date, channel) VALUES
+  ('华南仓-广州', 113.264385, 23.129112, '深圳市', 114.057868, 22.543099, 18500.00, '2025-07-01', '公路'),
+  ('华南仓-广州', 113.264385, 23.129112, '南山区', 113.930290, 22.533320, 12200.00, '2025-07-01', '公路'),
+  ('华南仓-广州', 113.264385, 23.129112, '福田区', 114.055036, 22.521520, 9800.00, '2025-07-02', '公路'),
+  ('华东仓-上海', 121.473701, 31.230416, '杭州市', 120.155070, 30.274084, 15600.00, '2025-07-01', '铁路'),
+  ('华东仓-上海', 121.473701, 31.230416, '南京市', 118.796877, 32.060255, 11200.00, '2025-07-02', '铁路'),
+  ('华东仓-上海', 121.473701, 31.230416, '浦东新区', 121.544700, 31.222200, 22400.00, '2025-07-03', '公路'),
+  ('华北仓-北京', 116.407396, 39.904200, '朝阳区', 116.443400, 39.921500, 18900.00, '2025-07-01', '公路'),
+  ('华北仓-北京', 116.407396, 39.904200, '海淀区', 116.298300, 39.959300, 14300.00, '2025-07-02', '公路'),
+  ('华北仓-北京', 116.407396, 39.904200, '天津市', 117.190182, 39.125596, 8700.00, '2025-07-03', '铁路'),
+  ('西南仓-成都', 104.066541, 30.572269, '武侯区', 104.043000, 30.641700, 13400.00, '2025-07-01', '公路'),
+  ('西南仓-成都', 104.066541, 30.572269, '锦江区', 104.081000, 30.656100, 9200.00, '2025-07-02', '公路'),
+  ('西南仓-成都', 104.066541, 30.572269, '重庆市', 106.504962, 29.533155, 11800.00, '2025-07-03', '铁路'),
+  ('华中仓-武汉', 114.298572, 30.584355, '长沙市', 112.982279, 28.194090, 7600.00, '2025-07-01', '铁路'),
+  ('华中仓-武汉', 114.298572, 30.584355, '郑州市', 113.665412, 34.757975, 6900.00, '2025-07-02', '铁路'),
+  ('华中仓-武汉', 114.298572, 30.584355, '武昌区', 114.316200, 30.554000, 10500.00, '2025-07-03', '公路');
+
+-- 填色地图 / 气泡地图：省级
+CREATE OR REPLACE VIEW de_map_province AS
+SELECT
+  prov.name AS region_map,
+  prov.name AS province,
+  SUM(s.amount) AS amount,
+  SUM(s.quantity) AS quantity,
+  COUNT(*) AS sale_count
+FROM sales s
+JOIN regions dist ON s.region_id = dist.id AND dist.level = 3
+JOIN regions city ON dist.parent_id = city.id
+JOIN regions prov ON city.parent_id = prov.id
+GROUP BY prov.id, prov.name;
+
+-- 填色地图下钻：市级（地区选省后，维度用 region_map）
+CREATE OR REPLACE VIEW de_map_city AS
+SELECT
+  prov.name AS province,
+  city.name AS region_map,
+  SUM(s.amount) AS amount,
+  SUM(s.quantity) AS quantity,
+  COUNT(*) AS sale_count
+FROM sales s
+JOIN regions dist ON s.region_id = dist.id AND dist.level = 3
+JOIN regions city ON dist.parent_id = city.id
+JOIN regions prov ON city.parent_id = prov.id
+GROUP BY prov.id, prov.name, city.id, city.name;
+
+-- 填色地图下钻：区县级
+CREATE OR REPLACE VIEW de_map_district AS
+SELECT
+  prov.name AS province,
+  city.name AS city,
+  dist.name AS region_map,
+  SUM(s.amount) AS amount,
+  SUM(s.quantity) AS quantity,
+  COUNT(*) AS sale_count
+FROM sales s
+JOIN regions dist ON s.region_id = dist.id AND dist.level = 3
+JOIN regions city ON dist.parent_id = city.id
+JOIN regions prov ON city.parent_id = prov.id
+GROUP BY prov.id, prov.name, city.id, city.name, dist.id, dist.name;
+
+-- 热力地图 / 符号地图：区县坐标 + 销售额（字段类型须设为「地理位置」）
+CREATE OR REPLACE VIEW de_map_heat AS
+SELECT
+  s.id AS sale_id,
+  s.sale_date,
+  s.channel,
+  prov.name AS province,
+  city.name AS city,
+  dist.name AS point_name,
+  gl.lng,
+  gl.lat,
+  s.amount,
+  s.quantity
+FROM sales s
+JOIN regions dist ON s.region_id = dist.id AND dist.level = 3
+JOIN regions city ON dist.parent_id = city.id
+JOIN regions prov ON city.parent_id = prov.id
+JOIN geo_locations gl ON gl.region_id = dist.id;
+
+-- 流向地图：仓 → 目的地
+CREATE OR REPLACE VIEW de_map_flow AS
+SELECT
+  id,
+  flow_date,
+  channel,
+  start_name,
+  start_lng,
+  start_lat,
+  end_name,
+  end_lng,
+  end_lat,
+  flow_amount
+FROM map_flows;
+
+-- 销售全宽表（柱/线/饼 + 省级地图 region_map）
+CREATE OR REPLACE VIEW de_sales_wide AS
+SELECT
+  s.id AS sale_id,
+  s.sale_date,
+  YEAR(s.sale_date) AS sale_year,
+  MONTH(s.sale_date) AS sale_month,
+  s.quantity,
+  s.amount,
+  s.channel,
+  prov.name AS province,
+  city.name AS city,
+  dist.name AS district,
+  prov.name AS region_map,
+  p.sku AS product_sku,
+  p.name AS product_name,
+  pc.name AS category_name,
+  c.name AS customer_name,
+  c.tier AS customer_tier
+FROM sales s
+JOIN regions dist ON s.region_id = dist.id AND dist.level = 3
+JOIN regions city ON dist.parent_id = city.id
+JOIN regions prov ON city.parent_id = prov.id
+JOIN products p ON s.product_id = p.id
+JOIN product_categories pc ON p.category_id = pc.id
+LEFT JOIN customers c ON s.customer_id = c.id;

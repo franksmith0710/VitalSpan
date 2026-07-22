@@ -13,7 +13,7 @@ import {
   capRows,
 } from "@/components/charts/engine/buildDatasetEncoding";
 import {
-  GEO_MAP_FALLBACK_BANNER,
+  resolveGeoMapFallbackBanner,
   type GeoMapRenderEngine,
 } from "@/components/charts/engine/geo/geoMapRenderResult";
 import { activeGeoEngine } from "@/components/charts/engine/geoEnginePort";
@@ -77,9 +77,10 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         ...plan.options,
         mapId: geoMapLevel.mapId,
         knownRegionNames: geoMapLevel.knownRegionNames,
+        drillDepth: geoMapLevel.drillDepth,
       },
     }),
-    [plan, geoMapLevel.mapId, geoMapLevel.knownRegionNames],
+    [plan, geoMapLevel.mapId, geoMapLevel.knownRegionNames, geoMapLevel.drillDepth],
   );
 
   const spec = useMemo(() => chartViewModelToRenderSpec(viewModel), [viewModel]);
@@ -341,10 +342,13 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       {showFallbackBanner ? (
         <p
           role="status"
-          className="mb-2 shrink-0 rounded-md bg-warning-500/10 px-2 py-1 text-theme-xs text-warning-700 dark:text-warning-400"
+          className={cn(
+            "shrink-0 rounded-md bg-warning-500/10 px-2 py-1 text-theme-xs text-warning-700 dark:text-warning-400",
+            fill ? "pointer-events-none absolute inset-x-2 top-2 z-[2]" : "mb-2",
+          )}
           data-fallback-reason={fallbackReason ?? undefined}
         >
-          {GEO_MAP_FALLBACK_BANNER}
+          {resolveGeoMapFallbackBanner(fallbackReason ?? undefined)}
         </p>
       ) : null}
       {geoMatchWarning || geoAssetWarning ? (

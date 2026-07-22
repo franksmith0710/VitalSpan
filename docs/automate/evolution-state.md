@@ -7,40 +7,37 @@
 | 字段 | 值 |
 |------|----|
 | phase | **A8_DONE** |
-| status | **IDLE** |
-| request | map-3d Code Review 修复：消除 WebGL 静默降级假绿，Inspector/测试/catalog 对齐 |
-| type | bug |
-| plan | [`plans/2026-07-21-map-3d-code-review-fixes.md`](./plans/2026-07-21-map-3d-code-review-fixes.md) |
-| plan_prev | [`plans/2026-07-21-chart-per-type-verification.md`](./plans/2026-07-21-chart-per-type-verification.md) |
-| goal | map-3d 诚实降级 + Inspector 真接线 + 测试/catalog/文档闭环 |
-| last_verified | 2026-07-21：`test:chart-catalog` 167 passed · `test_viz_chart_catalog_parity` 4 passed |
+| status | **DONE** |
+| request | 3D 离线中国地图增强：全国省市区下钻 + geo3d 质量档位与装饰层 |
+| type | feature |
+| plan | [`plans/2026-07-22-geo-map-3d-national-datav.md`](./plans/2026-07-22-geo-map-3d-national-datav.md) |
+| plan_prev | [`plans/2026-07-22-chart-style-tab-de-parity.md`](./plans/2026-07-22-chart-style-tab-de-parity.md) |
+| goal | map-3d 与 map 下钻等价 + sc-datav 风 3D 装饰 + Inspector geo3d 配置闭环 |
+| last_verified | 2026-07-22：`test:chart-catalog` 193 passed · check-chart-engine passed |
 
 ## 当前需求契约
 
-- **request**: 按 Code Review 2026-07-21 修复 map-3d P0/P1 问题
-- **type**: bug
-- **goal**: 用户选 3D 地图时，渲染引擎状态对用户与测试可见；Inspector 无假开关；catalog 一致
-- **scope_include**: `renderThreeChoropleth`、 `D3GeoMapView`、Inspector 矩阵/门控、smoke 测试、BE `map.py`、验收文档 §4.8
-- **scope_exclude**: 在线地图、3D 区域文字标签、Playwright 像素基线（GPU）、撤掉 map-3d 入口
-- **acceptance**: `pnpm run test:chart-catalog` 全绿；`data-render-engine` + 降级横幅；visualMap 3D 可用；pytest catalog parity
-- **risk_level**: low
-- **autonomy_policy**: auto_accept_low_risk（T8/T9 可 follow-up）
-- **assumptions**: 诚实降级（2D+说明）优于禁用选型；GEO-IRON-01 不变
+- **request**: 按 `2026-07-22-geo-map-3d-national-datav.md` 完成 M1+M2（T0–T6、T9 部分）
+- **type**: feature
+- **goal**: 全国省市区点击下钻可信；3D 质量档位与装饰层；geo3d 样式到达 renderer
+- **scope_include**: geoMap3d 审计测试、geo3dQuality、three layers、ChartGeoStylePanel geo3d、PRD 脚注
+- **scope_exclude**: T7 飞线数据槽、T8 大屏 autofit（M3）
+- **acceptance**: `pnpm run test:chart-catalog` 全绿
+- **risk_level**: medium
+- **autonomy_policy**: auto_accept_low_risk
+- **assumptions**: D1 auto 区县降 2D；D3 保持命令式 Three
 
 ## 最近完成（摘要）
 
 | 日期 | 项 | 摘要 |
 |------|-----|------|
-| 2026-07-21 | map-3d CR 修复闭环 | 诚实 WebGL 降级、`@types/three`、Inspector/测试/catalog/文档对齐 |
-| 2026-07-21 | map-3d 初版 | Picker 登记 + Three 挤出渲染 |
-| 2026-07-21 | chart-catalog 闭环 | T-VIZ-R30~33、`test:chart-catalog` 门禁 |
-| 2026-07-20 | viz-inspector 闭环 | T4 remeasure 链、T7 Inspector |
+| 2026-07-22 | 3D 地图 M1+M2 | geo3dQuality、装饰层、下钻测试、Inspector geo3d |
+| 2026-07-22 | 图表样式 Tab DE 对标 | P0–P4 全量闭环 |
+| 2026-07-21 | map-3d CR 修复 | WebGL 诚实降级 |
 
 ## 修订记录
 
 | 日期 | 说明 |
 |------|------|
-| 2026-07-21 | A8_DONE：map-3d code review 修复计划执行闭环 |
-| 2026-07-21 | A4_PLAN：map-3d code review 修复 Headless Plan |
-| 2026-07-21 | A8_DONE：图表逐型验收 AUTO 闭环 |
-| 2026-07-20 | A8_DONE：viz-inspector plan 执行闭环 |
+| 2026-07-22 | A8_DONE：geo-map-3d-national-datav M1+M2 执行闭环 |
+| 2026-07-22 | A8_DONE：图表样式 Tab DE 对标 |

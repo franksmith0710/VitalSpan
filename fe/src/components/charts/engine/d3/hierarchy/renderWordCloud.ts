@@ -44,12 +44,15 @@ function placeWords(
   words: WordDatum[],
   width: number,
   height: number,
+  fontMin: number,
+  fontMax: number,
+  spacing: number,
 ): PlacedWord[] {
   const weights = words.map((d) => d.weight);
   const sizeScale = d3
     .scaleLinear()
     .domain([d3.min(weights) ?? 0, d3.max(weights) ?? 1])
-    .range([12, Math.min(48, width / 8)])
+    .range([fontMin, fontMax])
     .clamp(true);
 
   const sorted = [...words].sort((a, b) => b.weight - a.weight);
@@ -68,7 +71,7 @@ function placeWords(
       const x = cx + radius * Math.cos(angle) - w / 2;
       const y = cy + radius * Math.sin(angle) - h / 2;
       const inBounds = x >= 2 && y >= 2 && x + w <= width - 2 && y + h <= height - 2;
-      const hit = placed.some((p) => overlaps(p, x, y, w, h));
+      const hit = placed.some((p) => overlaps(p, x, y, w, h, spacing));
       if (inBounds && !hit) {
         placed.push({ ...item, x, y, fontSize, w, h });
         found = true;
@@ -98,6 +101,9 @@ export function renderD3WordCloudChart(container: HTMLElement, config: D3RenderC
   const { width, height, colors, theme, showTooltip, valueFormat, options, onPointClick, depthVisual } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as WordDatum[]) ?? [];
+  const fontMin = Number(options.__wordCloudFontMin ?? 12);
+  const fontMax = Number(options.__wordCloudFontMax ?? Math.min(48, width / 8));
+  const spacing = Number(options.__wordCloudSpacing ?? 2);
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
   const svg = d3
@@ -107,7 +113,7 @@ export function renderD3WordCloudChart(container: HTMLElement, config: D3RenderC
     .attr("height", height)
     .attr("role", "img");
 
-  const placed = placeWords(svg, data, width, height);
+  const placed = placeWords(svg, data, width, height, fontMin, fontMax, spacing);
   const colorScale = d3
     .scaleOrdinal<string>()
     .domain(placed.map((d) => d.word))

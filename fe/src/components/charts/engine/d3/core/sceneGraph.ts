@@ -5,6 +5,7 @@ import { depthExtrudePx } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 
 export type CartesianScene = {
@@ -131,35 +132,68 @@ type BandAxesOptions = {
   innerH: number;
   theme: D3Theme;
   valueFormat?: NumberFormatConfig;
+  axisStyle?: ChartAxisStyle;
 };
 
 export function drawCartesianBandAxes(opts: BandAxesOptions): { rotateX: number } {
   const xTicks = pickCategoryTicks(opts.categories, opts.innerW);
   const rotateX =
-    xTicks.length >= 6 && opts.innerW / xTicks.length < VCDS.axis.rotateThreshold
+    opts.axisStyle?.x?.labelRotate ??
+    (xTicks.length >= 6 && opts.innerW / xTicks.length < VCDS.axis.rotateThreshold
       ? VCDS.axis.rotateDeg
-      : 0;
+      : 0);
 
   opts.g.selectAll("g.vs-axis-x, g.vs-axis-y").remove();
 
-  opts.g
-    .append("g")
-    .attr("class", "vs-axis-y")
-    .call(
-      d3
-        .axisLeft(opts.yScale)
-        .ticks(5)
-        .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
-    )
-    .call(styleAxis, opts.theme);
+  if (opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-y")
+      .call(
+        d3
+          .axisLeft(opts.yScale)
+          .ticks(5)
+          .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
+      )
+      .call(styleAxis, opts.theme);
+  }
 
-  opts.g
-    .append("g")
-    .attr("class", "vs-axis-x")
-    .attr("transform", `translate(0,${opts.innerH})`)
-    .call(d3.axisBottom(opts.xScale).tickValues(xTicks))
-    .call(styleAxis, opts.theme)
-    .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+  if (opts.axisStyle?.x?.show !== false) {
+    const xAxis = opts.g
+      .append("g")
+      .attr("class", "vs-axis-x")
+      .attr("transform", `translate(0,${opts.innerH})`)
+      .call(d3.axisBottom(opts.xScale).tickValues(xTicks))
+      .call(styleAxis, opts.theme)
+      .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+
+    const xName = opts.axisStyle?.x?.name?.trim();
+    if (xName) {
+      xAxis
+        .append("text")
+        .attr("class", "vs-axis-name")
+        .attr("x", opts.innerW / 2)
+        .attr("y", rotateX ? 42 : 32)
+        .attr("fill", opts.theme.axisLabel)
+        .attr("text-anchor", "middle")
+        .style("font-size", "11px")
+        .text(xName);
+    }
+  }
+
+  const yName = opts.axisStyle?.y?.name?.trim();
+  if (yName && opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("text")
+      .attr("class", "vs-axis-name-y")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -opts.innerH / 2)
+      .attr("y", -44)
+      .attr("fill", opts.theme.axisLabel)
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .text(yName);
+  }
 
   return { rotateX };
 }
@@ -173,35 +207,360 @@ type AxesOptions = {
   innerH: number;
   theme: D3Theme;
   valueFormat?: NumberFormatConfig;
+  axisStyle?: ChartAxisStyle;
 };
 
 export function drawCartesianAxes(opts: AxesOptions): { rotateX: number } {
   const xTicks = pickCategoryTicks(opts.categories, opts.innerW);
   const rotateX =
-    xTicks.length >= 6 && opts.innerW / xTicks.length < VCDS.axis.rotateThreshold
+    opts.axisStyle?.x?.labelRotate ??
+    (xTicks.length >= 6 && opts.innerW / xTicks.length < VCDS.axis.rotateThreshold
       ? VCDS.axis.rotateDeg
-      : 0;
+      : 0);
 
-  opts.g.selectAll("g.vs-axis-x, g.vs-axis-y").remove();
+  opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
 
-  opts.g
-    .append("g")
-    .attr("class", "vs-axis-x")
-    .attr("transform", `translate(0,${opts.innerH})`)
-    .call(d3.axisBottom(opts.xScale).tickValues(xTicks))
-    .call(styleAxis, opts.theme)
-    .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+  if (opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-y")
+      .call(
+        d3
+          .axisLeft(opts.yScale)
+          .ticks(5)
+          .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
+      )
+      .call(styleAxis, opts.theme);
+  }
 
-  opts.g
-    .append("g")
-    .attr("class", "vs-axis-y")
-    .call(
-      d3
-        .axisLeft(opts.yScale)
-        .ticks(5)
-        .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
-    )
-    .call(styleAxis, opts.theme);
+  if (opts.axisStyle?.x?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-x")
+      .attr("transform", `translate(0,${opts.innerH})`)
+      .call(d3.axisBottom(opts.xScale).tickValues(xTicks))
+      .call(styleAxis, opts.theme)
+      .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+
+    const xName = opts.axisStyle?.x?.name?.trim();
+    if (xName) {
+      opts.g
+        .append("text")
+        .attr("class", "vs-axis-name")
+        .attr("x", opts.innerW / 2)
+        .attr("y", opts.innerH + (rotateX ? 42 : 32))
+        .attr("fill", opts.theme.axisLabel)
+        .attr("text-anchor", "middle")
+        .style("font-size", "11px")
+        .text(xName);
+    }
+  }
+
+  const yName = opts.axisStyle?.y?.name?.trim();
+  if (yName && opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("text")
+      .attr("class", "vs-axis-name-y")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -opts.innerH / 2)
+      .attr("y", -44)
+      .attr("fill", opts.theme.axisLabel)
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .text(yName);
+  }
 
   return { rotateX };
+}
+
+type HorizontalBandAxesOptions = {
+  g: d3.Selection<SVGGElement, unknown, null, undefined>;
+  xScale: d3.ScaleLinear<number, number>;
+  yScale: d3.ScaleBand<string>;
+  innerW: number;
+  innerH: number;
+  theme: D3Theme;
+  valueFormat?: NumberFormatConfig;
+  axisStyle?: ChartAxisStyle;
+  /** 覆盖横轴刻度文案（如进度条 0–1 轴显示为百分比） */
+  xTickFormat?: (value: d3.NumberValue) => string;
+};
+
+/** 横向柱图：x=数值轴，y=类目 band 轴 */
+export function drawCartesianHorizontalBandAxes(opts: HorizontalBandAxesOptions): void {
+  opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
+
+  if (opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-y")
+      .call(d3.axisLeft(opts.yScale))
+      .call(styleAxis, opts.theme);
+  }
+
+  if (opts.axisStyle?.x?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-x")
+      .attr("transform", `translate(0,${opts.innerH})`)
+      .call(
+        d3
+          .axisBottom(opts.xScale)
+          .ticks(5)
+          .tickFormat((d) =>
+            opts.xTickFormat ? opts.xTickFormat(d) : formatChartValue(d, opts.valueFormat),
+          ),
+      )
+      .call(styleAxis, opts.theme);
+
+    const xName = opts.axisStyle?.x?.name?.trim();
+    if (xName) {
+      opts.g
+        .append("text")
+        .attr("class", "vs-axis-name")
+        .attr("x", opts.innerW / 2)
+        .attr("y", opts.innerH + 32)
+        .attr("fill", opts.theme.axisLabel)
+        .attr("text-anchor", "middle")
+        .style("font-size", "11px")
+        .text(xName);
+    }
+  }
+
+  const yName = opts.axisStyle?.y?.name?.trim();
+  if (yName && opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("text")
+      .attr("class", "vs-axis-name-y")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -opts.innerH / 2)
+      .attr("y", -44)
+      .attr("fill", opts.theme.axisLabel)
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .text(yName);
+  }
+}
+
+type LinearAxesOptions = {
+  g: d3.Selection<SVGGElement, unknown, null, undefined>;
+  xScale: d3.ScaleLinear<number, number>;
+  yScale: d3.ScaleLinear<number, number>;
+  innerW: number;
+  innerH: number;
+  theme: D3Theme;
+  valueFormat?: NumberFormatConfig;
+  axisStyle?: ChartAxisStyle;
+};
+
+/** 散点/象限：双数值轴 */
+export function drawLinearCartesianAxes(opts: LinearAxesOptions): void {
+  opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
+
+  if (opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-y")
+      .call(
+        d3
+          .axisLeft(opts.yScale)
+          .ticks(5)
+          .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
+      )
+      .call(styleAxis, opts.theme);
+  }
+
+  if (opts.axisStyle?.x?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-x")
+      .attr("transform", `translate(0,${opts.innerH})`)
+      .call(
+        d3
+          .axisBottom(opts.xScale)
+          .ticks(6)
+          .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
+      )
+      .call(styleAxis, opts.theme);
+
+    const xName = opts.axisStyle?.x?.name?.trim();
+    if (xName) {
+      opts.g
+        .append("text")
+        .attr("class", "vs-axis-name")
+        .attr("x", opts.innerW / 2)
+        .attr("y", opts.innerH + 32)
+        .attr("fill", opts.theme.axisLabel)
+        .attr("text-anchor", "middle")
+        .style("font-size", "11px")
+        .text(xName);
+    }
+  }
+
+  const yName = opts.axisStyle?.y?.name?.trim();
+  if (yName && opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("text")
+      .attr("class", "vs-axis-name-y")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -opts.innerH / 2)
+      .attr("y", -44)
+      .attr("fill", opts.theme.axisLabel)
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .text(yName);
+  }
+}
+
+type DualAxesOptions = {
+  g: d3.Selection<SVGGElement, unknown, null, undefined>;
+  xScale: d3.ScalePoint<string>;
+  yLeft: d3.ScaleLinear<number, number>;
+  yRight: d3.ScaleLinear<number, number>;
+  categories: string[];
+  innerW: number;
+  innerH: number;
+  theme: D3Theme;
+  valueFormat?: NumberFormatConfig;
+  axisStyle?: ChartAxisStyle;
+};
+
+/** 双轴图：左/右数值轴 + 类目横轴 */
+export function drawDualAxesAxes(opts: DualAxesOptions): void {
+  const xTicks = pickCategoryTicks(opts.categories, opts.innerW);
+  const rotateX =
+    opts.axisStyle?.x?.labelRotate ??
+    (xTicks.length >= 6 && opts.innerW / xTicks.length < VCDS.axis.rotateThreshold
+      ? VCDS.axis.rotateDeg
+      : 0);
+
+  opts.g
+    .selectAll("g.vs-axis-x, g.vs-axis-y, g.vs-axis-y-right, text.vs-axis-name, text.vs-axis-name-y")
+    .remove();
+
+  if (opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-y")
+      .call(
+        d3
+          .axisLeft(opts.yLeft)
+          .ticks(5)
+          .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
+      )
+      .call(styleAxis, opts.theme);
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-y-right")
+      .attr("transform", `translate(${opts.innerW},0)`)
+      .call(
+        d3
+          .axisRight(opts.yRight)
+          .ticks(5)
+          .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
+      )
+      .call(styleAxis, opts.theme);
+  }
+
+  if (opts.axisStyle?.x?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-x")
+      .attr("transform", `translate(0,${opts.innerH})`)
+      .call(d3.axisBottom(opts.xScale).tickValues(xTicks))
+      .call(styleAxis, opts.theme)
+      .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+
+    const xName = opts.axisStyle?.x?.name?.trim();
+    if (xName) {
+      opts.g
+        .append("text")
+        .attr("class", "vs-axis-name")
+        .attr("x", opts.innerW / 2)
+        .attr("y", opts.innerH + (rotateX ? 42 : 32))
+        .attr("fill", opts.theme.axisLabel)
+        .attr("text-anchor", "middle")
+        .style("font-size", "11px")
+        .text(xName);
+    }
+  }
+
+  const yName = opts.axisStyle?.y?.name?.trim();
+  if (yName && opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("text")
+      .attr("class", "vs-axis-name-y")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -opts.innerH / 2)
+      .attr("y", -44)
+      .attr("fill", opts.theme.axisLabel)
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .text(yName);
+  }
+}
+
+type BidirectionalAxesOptions = {
+  g: d3.Selection<SVGGElement, unknown, null, undefined>;
+  yScale: d3.ScaleBand<string>;
+  xScale: d3.ScaleLinear<number, number>;
+  innerW: number;
+  innerH: number;
+  theme: D3Theme;
+  valueFormat?: NumberFormatConfig;
+  axisStyle?: ChartAxisStyle;
+};
+
+/** 双向柱图：类目纵轴 + 底部数值轴 */
+export function drawBidirectionalBandAxes(opts: BidirectionalAxesOptions): void {
+  opts.g.selectAll("g.vs-axis-x, g.vs-axis-y, text.vs-axis-name, text.vs-axis-name-y").remove();
+
+  if (opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-y")
+      .call(d3.axisLeft(opts.yScale))
+      .call(styleAxis, opts.theme);
+  }
+
+  if (opts.axisStyle?.x?.show !== false) {
+    opts.g
+      .append("g")
+      .attr("class", "vs-axis-x")
+      .attr("transform", `translate(0,${opts.innerH})`)
+      .call(
+        d3
+          .axisBottom(opts.xScale)
+          .ticks(5)
+          .tickFormat((d) => formatChartValue(d, opts.valueFormat)),
+      )
+      .call(styleAxis, opts.theme);
+
+    const xName = opts.axisStyle?.x?.name?.trim();
+    if (xName) {
+      opts.g
+        .append("text")
+        .attr("class", "vs-axis-name")
+        .attr("x", opts.innerW / 2)
+        .attr("y", opts.innerH + 32)
+        .attr("fill", opts.theme.axisLabel)
+        .attr("text-anchor", "middle")
+        .style("font-size", "11px")
+        .text(xName);
+    }
+  }
+
+  const yName = opts.axisStyle?.y?.name?.trim();
+  if (yName && opts.axisStyle?.y?.show !== false) {
+    opts.g
+      .append("text")
+      .attr("class", "vs-axis-name-y")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -opts.innerH / 2)
+      .attr("y", -44)
+      .attr("fill", opts.theme.axisLabel)
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .text(yName);
+  }
 }

@@ -1,9 +1,10 @@
 import * as d3 from "d3";
-import { styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3BarRangeRenderConfig } from "@/components/charts/engine/d3/types";
+import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
 const BAR_RX = 4;
@@ -23,8 +24,12 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
     labelFontSize = 11,
     valueFormat,
     onPointClick,
+    barWidthRatio,
+    barRadius,
+    axisStyle,
   } = config;
 
+  const barRx = barRadius ?? BAR_RX;
   const categories = data.map((d) => d.type);
   const maxVal = d3.max(data, (d) => Math.max(d.low, d.high)) ?? 0;
   const minVal = d3.min(data, (d) => Math.min(d.low, d.high)) ?? 0;
@@ -35,7 +40,7 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const rangeColor = colors[0] ?? "#465fff";
 
-  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(0.22);
+  const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
   const x = d3.scaleLinear().domain([Math.min(0, minVal), maxVal]).nice().range([0, innerW]);
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
@@ -43,11 +48,7 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
   const plot = g.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme) : null;
 
-  g.append("g").call(d3.axisLeft(y)).call(styleAxis, theme);
-  g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).ticks(5).tickFormat((d) => formatChartValue(d, valueFormat)))
-    .call(styleAxis, theme);
+  drawCartesianHorizontalBandAxes({ g, xScale: x, yScale: y, innerW, innerH, theme, valueFormat, axisStyle });
 
   plot
     .selectAll("g.range-bar")
@@ -61,7 +62,7 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
       cell.selectAll("*").remove();
       const x0 = x(Math.min(d.low, d.high));
       const w = Math.max(0, Math.abs(x(d.high) - x(d.low)));
-      paintHorizontalBar({ plot: cell, x: x0, y: 0, width: w, height: y.bandwidth(), color: rangeColor, rx: BAR_RX });
+      paintHorizontalBar({ plot: cell, x: x0, y: 0, width: w, height: y.bandwidth(), color: rangeColor, rx: barRx });
       cell.attr("opacity", 0.85);
     })
     .on("click", (_e, d) => onPointClick?.(d));

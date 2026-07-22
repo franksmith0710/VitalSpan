@@ -42,7 +42,7 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
     <div
       ref={ref}
       className={cn(
-        "flex flex-col gap-1 px-6 py-5 sm:flex-row sm:items-center sm:justify-between",
+        "flex min-w-0 flex-col gap-1 px-6 py-5 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
       {...props}
@@ -56,7 +56,7 @@ const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTML
     <h3
       ref={ref}
       className={cn(
-        "text-base font-semibold leading-none text-gray-800 dark:text-white/90",
+        "truncate text-base font-semibold leading-none text-gray-800 dark:text-white/90",
         className,
       )}
       {...props}
@@ -71,7 +71,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-theme-sm text-gray-500 dark:text-gray-400", className)}
+    className={cn("truncate text-theme-sm text-gray-500 dark:text-gray-400", className)}
     {...props}
   />
 ));
