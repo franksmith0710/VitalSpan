@@ -10,11 +10,72 @@ export type ThreeGeoOrbitLayout = {
   halfX: number;
   halfZ: number;
   maxY: number;
+  minY: number;
   target: THREE.Vector3;
 };
 
-/** 将挤出地图躺平（XZ 平面）并几何居中到场景原点 */
+const GEO_MAP_TARGET_SPAN = 18;
+
+/** 仅用 Mesh 算包围盒，排除 LineSegments 边线对质心的拉扯 */
+function boundsFromMapMeshes(mapGroup: THREE.Group): THREE.Box3 {
+  const box = new THREE.Box3();
+  let hasMesh = false;
+  mapGroup.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh)) return;
+    const meshBox = new THREE.Box3().setFromObject(obj);
+    if (meshBox.isEmpty()) return;
+    if (!hasMesh) {
+      box.copy(meshBox);
+      hasMesh = true;
+    } else {
+      box.union(meshBox);
+    }
+  });
+  if (!hasMesh) box.setFromObject(mapGroup);
+  return box;
+}
+
+/** 将挤出地图躺平（XZ 平面）、居中并缩放到可 orbit 的合理尺度 */
 export function layoutThreeGeoMapGroup(mapGroup: THREE.Group): ThreeGeoOrbitLayout {
+  mapGroup.rotation.x = -Math.PI / 2;
+  mapGroup.updateMatrixWorld(true);
+
+  const box = boundsFromMapMeshes(mapGroup);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  mapGroup.position.sub(center);
+  mapGroup.updateMatrixWorld(true);
+
+  let halfX = Math.max(size.x * 0.5, 0.5);
+  let halfZ = Math.max(size.z * 0.5, 0.5);
+  const span = Math.max(halfX, halfZ);
+  const normalize = span > 0 ? (GEO_MAP_TARGET_SPAN / span) * 0.5 : 0.5;
+  mapGroup.scale.multiplyScalar(normalize);
+  mapGroup.updateMatrixWorld(true);
+
+  const scaledBox = boundsFromMapMeshes(mapGroup);
+  const scaledSize = scaledBox.getSize(new THREE.Vector3());
+  halfX = Math.max(scaledSize.x * 0.5, 0.5);
+  halfZ = Math.max(scaledSize.z * 0.5, 0.5);
+  const halfY = Math.max(scaledSize.y * 0.5, 0.08);
+  const radius = Math.max(halfX, halfZ);
+  const defaultDistance = Math.max(radius * 2.35, 14);
+
+  return {
+    size: scaledSize,
+    defaultDistance,
+    minDistance: defaultDistance / GEO_MAP_SCALE_LIMIT.max,
+    maxDistance: defaultDistance / GEO_MAP_SCALE_LIMIT.min,
+    halfX,
+    halfZ,
+    maxY: halfY,
+    minY: -halfY,
+    target: new THREE.Vector3(0, 0, 0),
+  };
+}
+
+/** sc-datav Demo1/Demo2：缩放到 ~16 单位，雾效与相机可复用 */
+export function layoutDatavMapGroup(mapGroup: THREE.Group): ThreeGeoOrbitLayout {
   mapGroup.rotation.x = -Math.PI / 2;
   mapGroup.updateMatrixWorld(true);
 
@@ -24,21 +85,33 @@ export function layoutThreeGeoMapGroup(mapGroup: THREE.Group): ThreeGeoOrbitLayo
   mapGroup.position.sub(center);
   mapGroup.updateMatrixWorld(true);
 
-  const halfX = Math.max(size.x * 0.5, 1);
-  const halfZ = Math.max(size.z * 0.5, 1);
-  const maxY = Math.max(size.y, 0.5);
-  const radius = Math.max(halfX, halfZ, maxY * 0.6);
-  const defaultDistance = radius * 2.15;
+  let halfX = Math.max(size.x * 0.5, 0.5);
+  let halfZ = Math.max(size.z * 0.5, 0.5);
+  let maxY = Math.max(size.y, 0.2);
+
+  const targetSpan = 16;
+  const span = Math.max(halfX, halfZ);
+  const normalize = span > 0 ? (targetSpan / span) * 0.5 : 0.5;
+  mapGroup.scale.multiplyScalar(normalize);
+  mapGroup.position.y = 0.2;
+  mapGroup.updateMatrixWorld(true);
+
+  const scaledBox = new THREE.Box3().setFromObject(mapGroup);
+  const scaledSize = scaledBox.getSize(new THREE.Vector3());
+  halfX = Math.max(scaledSize.x * 0.5, 0.5);
+  halfZ = Math.max(scaledSize.z * 0.5, 0.5);
+  const halfY = Math.max(scaledSize.y * 0.5, 0.1);
 
   return {
-    size,
-    defaultDistance,
-    minDistance: defaultDistance / GEO_MAP_SCALE_LIMIT.max,
-    maxDistance: defaultDistance / GEO_MAP_SCALE_LIMIT.min,
+    size: scaledSize,
+    defaultDistance: 18,
+    minDistance: 8,
+    maxDistance: 24,
     halfX,
     halfZ,
-    maxY,
-    target: new THREE.Vector3(0, maxY * 0.32, 0),
+    maxY: halfY,
+    minY: -halfY,
+    target: new THREE.Vector3(0, 0, 0),
   };
 }
 
@@ -60,8 +133,8 @@ export function configureThreeGeoOrbitControls(
   controls.enableZoom = roam;
   controls.enableRotate = roam;
 
-  const azimuth = -Math.PI / 5;
-  const polar = 0.58;
+  const azimuth = -Math.PI / 6;
+  const polar = 0.42;
   const d = layout.defaultDistance;
   const { target } = layout;
   camera.position.set(
@@ -82,8 +155,8 @@ export function configureThreeGeoOrbitControls(
     controls.target.z = THREE.MathUtils.clamp(controls.target.z, -maxPanZ, maxPanZ);
     controls.target.y = THREE.MathUtils.clamp(
       controls.target.y,
-      layout.maxY * 0.12,
-      layout.maxY * 0.52,
+      layout.minY,
+      layout.maxY,
     );
   };
 
@@ -100,8 +173,8 @@ export function resetThreeGeoOrbitView(
   layout: ThreeGeoOrbitLayout,
 ): void {
   controls.target.copy(layout.target);
-  const azimuth = -Math.PI / 5;
-  const polar = 0.58;
+  const azimuth = -Math.PI / 6;
+  const polar = 0.42;
   const d = layout.defaultDistance;
   const { target } = layout;
   camera.position.set(

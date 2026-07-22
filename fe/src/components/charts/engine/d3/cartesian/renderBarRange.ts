@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/d3/core/axes";
 import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
@@ -33,9 +34,10 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
   const categories = data.map((d) => d.type);
   const maxVal = d3.max(data, (d) => Math.max(d.low, d.high)) ?? 0;
   const minVal = d3.min(data, (d) => Math.min(d.low, d.high)) ?? 0;
-  const maxLabelChars = categories.reduce((max, cat) => Math.max(max, String(cat).length), 0);
   const baseMargin = cartesianMargin(false);
-  const margin = { ...baseMargin, left: Math.max(baseMargin.left, Math.min(140, maxLabelChars * 6.5 + 20)) };
+  const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
+  const yLayout = resolveHorizontalCategoryAxisLayout(categories, provisionalInnerH);
+  const margin = { ...baseMargin, left: Math.max(baseMargin.left, yLayout.leftMargin) };
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const rangeColor = colors[0] ?? "#465fff";

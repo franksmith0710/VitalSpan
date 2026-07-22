@@ -81,10 +81,14 @@ export type ChartGeoStyle = {
   showCellLabel?: boolean;
 };
 
-/** map-3d 专属样式（挤出、质量档位、装饰层） */
 export type ChartGeo3dStyle = {
   extrudeIntensity?: number;
   quality?: "auto" | "high" | "medium" | "low";
+  /** 离线 hillshade 地形贴图（diffuse + normal + displacement） */
+  terrainTexture?: boolean;
+  /** displacement 起伏强度（非按省拔高） */
+  terrainRelief?: boolean;
+  /** @deprecated 不再渲染背景装饰 */
   effectsEnabled?: boolean;
   groundMirror?: boolean;
   outlineGlow?: boolean;

@@ -35,10 +35,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
   const is3d = chartType === "map-3d";
 
   return (
-    <DashboardConfigSection
-      title={isMap ? "地图样式" : "热力图样式"}
-      compact
-    >
+    <DashboardConfigSection title={isMap ? "地图样式" : "热力图样式"} compact>
       <div className={INSPECTOR_SECTION_GAP}>
         {isMap ? (
           <InspectorSwitchRow
@@ -85,7 +82,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
                 ))}
               </select>
             </InspectorFieldRow>
-            <InspectorFieldRow label="挤出强度">
+            <InspectorFieldRow label="底板厚度">
               <input
                 type="range"
                 min={0.2}
@@ -97,31 +94,21 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               />
             </InspectorFieldRow>
             <InspectorSwitchRow
-              label="装饰效果"
-              checked={geo3d.effectsEnabled !== false}
-              onCheckedChange={(effectsEnabled) => patchGeo3d({ effectsEnabled })}
+              label="地形贴图（离线 hillshade）"
+              checked={geo3d.terrainTexture !== false}
+              onCheckedChange={(terrainTexture) => patchGeo3d({ terrainTexture })}
             />
             <InspectorSwitchRow
-              label="底面反射"
-              checked={geo3d.groundMirror !== false}
-              onCheckedChange={(groundMirror) => patchGeo3d({ groundMirror })}
-            />
-            <InspectorSwitchRow
-              label="轮廓高亮"
-              checked={geo3d.outlineGlow !== false}
-              onCheckedChange={(outlineGlow) => patchGeo3d({ outlineGlow })}
-            />
-            <InspectorSwitchRow
-              label="扫光动画"
-              checked={geo3d.beamScan === true}
-              onCheckedChange={(beamScan) => patchGeo3d({ beamScan })}
+              label="起伏强度"
+              checked={geo3d.terrainRelief !== false}
+              onCheckedChange={(terrainRelief) => patchGeo3d({ terrainRelief })}
             />
           </>
         ) : null}
         <p className={INSPECTOR_HINT}>
           {isMap
             ? is3d
-              ? "离线中国 3D 地图：单击区域下钻换层级（省→市→区县）；滚轮/拖拽仅旋转缩放当前层，不会自动进入下级。区县级或要素过多时自动切换 2D。"
+              ? "离线中国 3D：hillshade 地形贴图 + 法线/位移起伏，数据以色光叠加；无背景。单击下钻。"
               : "离线中国地图：滚轮缩放与拖拽平移；配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击地图下钻。"
             : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。"}
         </p>

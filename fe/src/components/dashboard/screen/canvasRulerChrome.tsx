@@ -33,7 +33,7 @@ export function canvasRulerChromeVars(): CSSProperties {
 export function CanvasRulerCornerMark() {
   return (
     <svg
-      className="absolute right-1 bottom-1 size-3.5 text-[var(--canvas-ruler-tick-major)]"
+      className="absolute right-0.5 bottom-0.5 size-3.5 text-[var(--canvas-ruler-tick-major)]"
       viewBox="0 0 14 14"
       fill="none"
       aria-hidden

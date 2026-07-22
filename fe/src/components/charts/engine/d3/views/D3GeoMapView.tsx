@@ -189,23 +189,44 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
       setThreeLoading(true);
       void import("@/components/charts/engine/three/renderThreeChoropleth")
-        .then(({ renderThreeChoroplethChart }) => {
+        .then(async ({ renderThreeChoroplethChart }) => {
           if (gen !== renderGenRef.current) return;
           try {
             if (gen !== renderGenRef.current) return;
+            let disposed = false;
+            let disposeFn: (() => void) | undefined;
             runD3Renderer(el, () => {
               if (gen !== renderGenRef.current) {
                 return () => undefined;
               }
-              const result = renderThreeChoroplethChart(el, payload.config);
-              applyRenderMeta(result.engine, result.fallbackReason ?? null);
-              return result.dispose;
+              void renderThreeChoroplethChart(el, payload.config)
+                .then((result) => {
+                  if (gen !== renderGenRef.current || disposed) {
+                    result.dispose();
+                    return;
+                  }
+                  disposeFn = result.dispose;
+                  applyRenderMeta(result.engine, result.fallbackReason ?? null);
+                  setRenderError(null);
+                })
+                .catch((err) => {
+                  if (gen !== renderGenRef.current || disposed) return;
+                  setRenderError(err instanceof Error ? err.message : "3D 地图渲染失败");
+                  applyRenderMeta(null, null);
+                })
+                .finally(() => {
+                  if (gen !== renderGenRef.current) return;
+                  setThreeLoading(false);
+                  if (mode !== "live") setChartAnimationSuppressed(false);
+                });
+              return () => {
+                disposed = true;
+                disposeFn?.();
+              };
             });
-            setRenderError(null);
           } catch (err) {
             setRenderError(err instanceof Error ? err.message : "3D 地图渲染失败");
             applyRenderMeta(null, null);
-          } finally {
             setThreeLoading(false);
             if (mode !== "live") setChartAnimationSuppressed(false);
           }

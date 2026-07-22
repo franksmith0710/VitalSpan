@@ -1,8 +1,31 @@
 import * as d3 from "d3";
 
 /** 对标 ECharts map series layoutSize / layoutCenter */
-const LAYOUT_SIZE = 0.92;
-const LAYOUT_CENTER_Y = 0.52;
+export const CHINA_GEO_LAYOUT_SIZE = 0.92;
+export const CHINA_GEO_LAYOUT_CENTER_Y = 0.52;
+const LAYOUT_SIZE = CHINA_GEO_LAYOUT_SIZE;
+const LAYOUT_CENTER_Y = CHINA_GEO_LAYOUT_CENTER_Y;
+
+export type GeoMapLayoutMargin = {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+};
+
+/** D3 / Three 共用：布局框中心在 viewport 居中坐标系下的位置（与 fitChinaGeoProjection 一致） */
+export function chinaGeoLayoutCenterInViewport(
+  width: number,
+  height: number,
+  margin: GeoMapLayoutMargin,
+): { centerX: number; centerY: number } {
+  const innerW = Math.max(0, width - margin.left - margin.right);
+  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  return {
+    centerX: margin.left + innerW / 2 - width / 2,
+    centerY: -((margin.top + innerH * LAYOUT_CENTER_Y) - height / 2),
+  };
+}
 
 export type GeoFeatureProperties = {
   adcode?: number | string;

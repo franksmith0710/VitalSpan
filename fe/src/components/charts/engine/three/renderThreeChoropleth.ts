@@ -1,4 +1,3 @@
-import * as d3 from "d3";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { GeoMapRenderResult } from "@/components/charts/engine/geo/geoMapRenderResult";
@@ -6,6 +5,7 @@ import {
   getOfflineGeoMap,
   joinOfflineMapFeatures,
 } from "@/components/charts/engine/geo/OfflineGeoPort";
+import { colorForGeoHover } from "@/components/charts/engine/geo/geoSurfaceColors";
 import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { renderD3ChoroplethChart } from "@/components/charts/engine/d3/geo/renderChoropleth";
@@ -16,6 +16,9 @@ import {
   geometryToShapes,
   webglAvailable,
 } from "@/components/charts/engine/three/geoToThreeShapes";
+import { buildThreeGeoProject } from "@/components/charts/engine/three/geo/threeGeoProject";
+import { loadChinaTerrainPack } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
+import { buildGeoFlatPlateMesh } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
   configureThreeGeoOrbitControls,
@@ -26,10 +29,30 @@ import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConsta
 import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
 
-type ProjectFn = (coord: [number, number]) => [number, number] | null;
+const PLATE_DEPTH_RATIO = 0.0028;
 
 function noopDispose(): void {
   /* empty */
+}
+
+function capMaterialOf(mesh: THREE.Mesh): THREE.MeshStandardMaterial {
+  const stored = mesh.userData.capMaterial as THREE.MeshStandardMaterial | undefined;
+  if (stored) return stored;
+  const mats = mesh.material;
+  if (Array.isArray(mats)) return mats[1] as THREE.MeshStandardMaterial;
+  return mats as THREE.MeshStandardMaterial;
+}
+
+function disposeMesh(mesh: THREE.Mesh): void {
+  mesh.geometry.dispose();
+  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  for (const m of mats) m.dispose();
+  mesh.children.forEach((child) => {
+    if (child instanceof THREE.LineSegments) {
+      child.geometry.dispose();
+      (child.material as THREE.Material).dispose();
+    }
+  });
 }
 
 function d3Fallback(
@@ -44,10 +67,10 @@ function d3Fallback(
   };
 }
 
-export function renderThreeChoroplethChart(
+export async function renderThreeChoroplethChart(
   container: HTMLElement,
   config: D3GeoRenderConfig,
-): GeoMapRenderResult {
+): Promise<GeoMapRenderResult> {
   const {
     width,
     height,
@@ -95,10 +118,7 @@ export function renderThreeChoroplethChart(
   ).filter((f) => f.geometry != null);
 
   container.replaceChildren();
-
-  if (features.length === 0) {
-    return { dispose: noopDispose, engine: "three" };
-  }
+  if (features.length === 0) return { dispose: noopDispose, engine: "three" };
 
   const quality = resolveGeo3dQuality({
     quality: geo3dStyle.quality,
@@ -109,7 +129,6 @@ export function renderThreeChoroplethChart(
   if (!shouldRenderGeo3d(quality)) {
     return d3Fallback(container, config, "quality-degraded");
   }
-
   if (!webglAvailable()) {
     return d3Fallback(container, config, "webgl-unavailable");
   }
@@ -119,9 +138,11 @@ export function renderThreeChoroplethChart(
     const values = features.map((f) => f.value);
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values, 1);
-    const extrudeScale = Math.max(0.35, geo3dStyle.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY);
-    const maxExtrude = Math.min(width, height) * 0.12 * extrudeScale;
+    const plateScale = Math.max(0.35, geo3dStyle.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY);
+    const plateDepth = Math.max(0.18, Math.min(width, height) * PLATE_DEPTH_RATIO * plateScale);
+    const borderColor = isDark ? 0x7dd3fc : 0x1e40af;
     const showVisualMap = geoStyle.visualMap !== false;
+    const terrainOn = geo3dStyle.terrainTexture !== false;
 
     const featureCollection: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
@@ -132,68 +153,94 @@ export function renderThreeChoroplethChart(
       })),
     };
 
-    const projection = d3.geoMercator().fitSize([width * 0.88, height * 0.88], featureCollection);
-    const project: ProjectFn = (coord) => {
-      const p = projection(coord);
-      return p ? [p[0] - width / 2, -(p[1] - height / 2)] : null;
-    };
+    const geoProject = buildThreeGeoProject(width, height, features, featureCollection);
+    const { project, projBounds, margin, centerX, centerY, viewport } = geoProject;
+
+    let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
+    if (terrainOn) {
+      try {
+        terrainPack = await loadChinaTerrainPack({ mapId, drillDepth, isDark });
+      } catch (err) {
+        terrainPack = null;
+        if (import.meta.env.DEV) {
+          console.warn("[map-3d] terrain pack load failed", err);
+        }
+      }
+    }
 
     const scene = new THREE.Scene();
-
-    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 5000);
-
+    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 5000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(width, height);
     container.appendChild(renderer.domElement);
 
-    const ambient = new THREE.AmbientLight(0xffffff, 0.65);
-    const keyLight = new THREE.DirectionalLight(0xffffff, 0.85);
-    keyLight.position.set(-1, -1.2, 2);
-    const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.35);
-    fillLight.position.set(1.5, 0.5, 1);
-    scene.add(ambient, keyLight, fillLight);
+    scene.add(new THREE.AmbientLight(0x9eb4c8, isDark ? 0.48 : 0.38));
+    const keyLight = new THREE.DirectionalLight(0xf0f6fc, isDark ? 1.35 : 1.1);
+    keyLight.position.set(-1.2, 2.4, 1.0);
+    const fillLight = new THREE.DirectionalLight(0x5a8ab0, isDark ? 0.45 : 0.32);
+    fillLight.position.set(1.4, 1.2, -0.8);
+    scene.add(keyLight, fillLight);
 
     const mapGroup = new THREE.Group();
     const meshes: THREE.Mesh[] = [];
+    const terrainOpts = terrainPack
+      ? {
+          terrainColorMap: terrainPack.colorMap,
+          geoBounds: terrainPack.bounds,
+          projBounds,
+          margin,
+          centerX,
+          centerY,
+          projection: geoProject.projection,
+          viewport,
+        }
+      : {};
 
     for (const feature of features) {
       if (!feature.geometry) continue;
       const shapes = geometryToShapes(feature.geometry, project);
       if (shapes.length === 0) continue;
 
-      const depth =
-        feature.value > 0
-          ? 1 + maxExtrude * (maxVal <= minVal ? 1 : (feature.value - minVal) / (maxVal - minVal))
-          : 0.6;
       const color = colorForValue(feature.value, minVal, maxVal, surface);
+      const valueT = maxVal <= minVal ? 1 : (feature.value - minVal) / (maxVal - minVal);
 
       for (const shape of shapes) {
-        const geom = new THREE.ExtrudeGeometry(shape, {
-          depth,
-          bevelEnabled: true,
-          bevelThickness: 0.4,
-          bevelSize: 0.3,
-          bevelSegments: 1,
+        const built = buildGeoFlatPlateMesh(shape, plateDepth, color, borderColor, isDark, {
+          ...terrainOpts,
+          dataTint: color,
+          valueT,
         });
-        const mat = new THREE.MeshStandardMaterial({
-          color,
-          metalness: 0.08,
-          roughness: 0.72,
-          side: THREE.DoubleSide,
-        });
-        const mesh = new THREE.Mesh(geom, mat);
-        mesh.userData = { name: feature.name, value: feature.value, adcode: feature.adcode };
-        mapGroup.add(mesh);
-        meshes.push(mesh);
+        built.mesh.userData = {
+          name: feature.name,
+          value: feature.value,
+          adcode: feature.adcode,
+          emissiveTint: built.capMaterial.emissive.clone(),
+          emissiveIntensity: built.capMaterial.emissiveIntensity,
+        };
+        mapGroup.add(built.mesh);
+        meshes.push(built.mesh);
       }
+    }
+
+    if (meshes.length === 0) {
+      renderer.dispose();
+      container.replaceChildren();
+      const msg = document.createElement("div");
+      msg.className =
+        "flex h-full items-center justify-center px-3 text-center text-theme-sm text-warning-600 dark:text-warning-400";
+      msg.setAttribute("role", "status");
+      msg.textContent = "3D 地图几何构建失败，请检查地区维度与 GeoJSON";
+      container.appendChild(msg);
+      return { dispose: () => container.replaceChildren(), engine: "three" };
     }
 
     scene.add(mapGroup);
     const orbitLayout = layoutThreeGeoMapGroup(mapGroup);
-    const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
 
+    const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
     const detachOrbitPan = configureThreeGeoOrbitControls(camera, controls, orbitLayout, roam);
 
@@ -207,13 +254,7 @@ export function renderThreeChoroplethChart(
       ? createTooltipLayer(container, theme as D3Theme, tooltipPresentation)
       : null;
     const detachVisualMap = showVisualMap
-      ? mountThreeGeoVisualMap(container, {
-          min: minVal,
-          max: maxVal,
-          surface,
-          valueFormat,
-          isDark,
-        })
+      ? mountThreeGeoVisualMap(container, { min: minVal, max: maxVal, surface, valueFormat, isDark })
       : () => undefined;
 
     const raycaster = new THREE.Raycaster();
@@ -221,17 +262,27 @@ export function renderThreeChoroplethChart(
     let hovered: THREE.Mesh | null = null;
     let frameId = 0;
 
+    const restoreCap = (mesh: THREE.Mesh) => {
+      const cap = capMaterialOf(mesh);
+      cap.emissive.copy(mesh.userData.emissiveTint as THREE.Color);
+      cap.emissiveIntensity = mesh.userData.emissiveIntensity as number;
+    };
+
     const setHover = (mesh: THREE.Mesh | null) => {
       if (hovered === mesh) return;
-      if (hovered) {
-        const mat = hovered.material as THREE.MeshStandardMaterial;
-        mat.emissive.setHex(0x000000);
-      }
+      if (hovered) restoreCap(hovered);
       hovered = mesh;
-      if (hovered) {
-        const mat = hovered.material as THREE.MeshStandardMaterial;
-        mat.emissive.setHex(isDark ? 0x1e3a5f : 0xbfdbfe);
-      }
+      if (!hovered) return;
+      const cap = capMaterialOf(hovered);
+      const hoverCss = colorForGeoHover(
+        Number(hovered.userData.value ?? 0),
+        minVal,
+        maxVal,
+        surface.palette,
+      );
+      const hoverCol = new THREE.Color(hoverCss);
+      cap.emissive.copy(hoverCol);
+      cap.emissiveIntensity = isDark ? 0.45 : 0.32;
     };
 
     const onMove = (event: PointerEvent) => {
@@ -247,22 +298,15 @@ export function renderThreeChoroplethChart(
       }
       setHover(hit);
       if (!tooltip) return;
-      const name = String(hit.userData.name);
-      const value = Number(hit.userData.value ?? 0);
       showMergedTooltip(
         tooltip,
         container,
         event,
-        name,
-        [{ name: metricField || "值", color: surface.rangeHighCss, value }],
+        String(hit.userData.name),
+        [{ name: metricField || "值", color: surface.rangeHighCss, value: Number(hit.userData.value ?? 0) }],
         valueFormat,
         width,
       );
-    };
-
-    const onLeave = () => {
-      setHover(null);
-      hideTooltip(tooltip);
     };
 
     const onClick = () => {
@@ -275,7 +319,10 @@ export function renderThreeChoroplethChart(
     };
 
     renderer.domElement.addEventListener("pointermove", onMove);
-    renderer.domElement.addEventListener("pointerleave", onLeave);
+    renderer.domElement.addEventListener("pointerleave", () => {
+      setHover(null);
+      hideTooltip(tooltip);
+    });
     renderer.domElement.addEventListener("click", onClick);
 
     const animate = () => {
@@ -291,14 +338,11 @@ export function renderThreeChoroplethChart(
         cancelAnimationFrame(frameId);
         renderer.domElement.removeEventListener("dblclick", onDblClick);
         renderer.domElement.removeEventListener("pointermove", onMove);
-        renderer.domElement.removeEventListener("pointerleave", onLeave);
         renderer.domElement.removeEventListener("click", onClick);
         controls.dispose();
         detachOrbitPan();
-        for (const mesh of meshes) {
-          mesh.geometry.dispose();
-          (mesh.material as THREE.Material).dispose();
-        }
+        terrainPack?.dispose();
+        for (const mesh of meshes) disposeMesh(mesh);
         renderer.dispose();
         hideTooltip(tooltip);
         detachVisualMap();

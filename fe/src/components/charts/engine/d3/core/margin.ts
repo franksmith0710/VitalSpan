@@ -1,7 +1,13 @@
 export const CARTESIAN_MARGIN = { top: 24, right: 20, bottom: 44, left: 52 };
 
-export function cartesianMargin(showLegend: boolean): typeof CARTESIAN_MARGIN {
-  return { ...CARTESIAN_MARGIN, top: CARTESIAN_MARGIN.top + (showLegend ? 20 : 0) };
+type MarginOverrides = Partial<typeof CARTESIAN_MARGIN>;
+
+export function cartesianMargin(showLegend: boolean, overrides?: MarginOverrides): typeof CARTESIAN_MARGIN {
+  return {
+    ...CARTESIAN_MARGIN,
+    top: CARTESIAN_MARGIN.top + (showLegend ? 20 : 0),
+    ...overrides,
+  };
 }
 
 export const RADIAL_MARGIN = { top: 24, right: 20, bottom: 24, left: 20 };

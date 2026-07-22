@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link } from "react-router";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ADMIN_HEADER_HEIGHT_CLASS } from "@/lib/adminLayoutTokens";
 import { useSidebar } from "@/context/sidebar-context";
 
 export type AppHeaderVariant = "default" | "transparent" | "elevated-on-scroll";
@@ -54,7 +55,8 @@ export function AppHeader({
   return (
     <header
       className={cn(
-        "sticky top-0 z-99999 flex h-[72px] w-full shrink-0 items-center border-b border-gray-200 dark:border-gray-800",
+        "sticky top-0 z-99999 flex w-full shrink-0 items-center border-b border-gray-200 dark:border-gray-800",
+        ADMIN_HEADER_HEIGHT_CLASS,
         variant === "transparent" ? "bg-transparent" : "bg-white dark:bg-gray-900",
         variant === "elevated-on-scroll" && elevated && "shadow-theme-sm",
         className,

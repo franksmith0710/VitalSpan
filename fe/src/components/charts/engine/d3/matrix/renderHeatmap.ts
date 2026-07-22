@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { applyRotatedCategoryLabels, pickCategoryTicks, styleAxis } from "@/components/charts/engine/d3/core/axes";
+import { applyRotatedCategoryLabels, formatAxisCategoryLabel, formatHorizontalBandAxisLabel, planCategoryAxisLayout, resolveBandAxisFontSize, resolveHorizontalCategoryAxisLayout, styleAxis } from "@/components/charts/engine/d3/core/axes";
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { applyCellBevel, applyDepthHoverLift, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
@@ -37,9 +37,14 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const xCategories = [...new Set(data.map((d) => d.x))];
   const yCategories = [...new Set(data.map((d) => d.y))];
-  const margin = cartesianMargin(false);
+  const baseMargin = cartesianMargin(false);
+  const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
+  const ySideLayout = resolveHorizontalCategoryAxisLayout(yCategories, provisionalInnerH);
+  let margin = cartesianMargin(false, { left: Math.max(baseMargin.left, ySideLayout.leftMargin) });
   const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  const xLayout = planCategoryAxisLayout(xCategories, innerW);
+  margin = { ...margin, bottom: margin.bottom + xLayout.extraBottom };
+  const plotInnerH = Math.max(0, height - margin.top - margin.bottom);
 
   const values = data.map((d) => d.value);
   const maxVal = d3.max(values) ?? 0;
@@ -50,9 +55,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     .domain(minVal === maxVal ? [0, maxVal || 1] : [minVal, maxVal]);
 
   const x = d3.scaleBand<string>().domain(xCategories).range([0, innerW]).padding(0.06);
-  const y = d3.scaleBand<string>().domain(yCategories).range([0, innerH]).padding(0.06);
-  const xTicks = pickCategoryTicks(xCategories, innerW);
-  const rotateX = xTicks.length >= 6 && innerW / xTicks.length < 72 ? -32 : 0;
+  const y = d3.scaleBand<string>().domain(yCategories).range([0, plotInnerH]).padding(0.06);
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
@@ -79,13 +82,17 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     .attr("font-weight", 600);
 
   g.append("g")
-    .call(d3.axisLeft(y))
-    .call(styleAxis, theme);
+    .call(d3.axisLeft(y).tickValues(ySideLayout.ticks))
+    .call(styleAxis, theme, resolveBandAxisFontSize(ySideLayout.bandHeight))
+    .selectAll<SVGTextElement, string>("text")
+    .text((d) => formatHorizontalBandAxisLabel(String(d)));
   g.append("g")
-    .attr("transform", `translate(0,${innerH})`)
-    .call(d3.axisBottom(x).tickValues(xTicks))
+    .attr("transform", `translate(0,${plotInnerH})`)
+    .call(d3.axisBottom(x).tickValues(xLayout.ticks))
     .call(styleAxis, theme)
-    .call((sel) => applyRotatedCategoryLabels(sel, rotateX));
+    .selectAll<SVGTextElement, string>("text")
+    .text((d) => formatAxisCategoryLabel(String(d), xLayout.slotSpan, xLayout.rotateDeg))
+    .call((sel) => applyRotatedCategoryLabels(sel, xLayout.rotateDeg));
 
   g.selectAll("rect.cell")
     .data(data)
@@ -115,7 +122,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
         .attr("x", x(d.x) ?? 0)
         .attr("y", 0)
         .attr("width", x.bandwidth())
-        .attr("height", innerH);
+        .attr("height", plotInnerH);
       rowBand
         .attr("x", 0)
         .attr("y", y(d.y) ?? 0)
@@ -170,10 +177,10 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
 
   if (showVisualMap) {
     const legendW = 10;
-    const legendH = Math.min(innerH, 120);
+    const legendH = Math.min(plotInnerH, 120);
     const legendX = innerW + 12;
     const legendG = g.append("g").attr("transform", `translate(${legendX},0)`);
-    const defs = svg.append("defs");
+    const defs = root.append("defs");
     const gradId = `d3-heatmap-legend-${Math.random().toString(36).slice(2, 9)}`;
     const grad = defs.append("linearGradient").attr("id", gradId).attr("x1", "0%").attr("y1", "100%").attr("x2", "0%").attr("y2", "0%");
     for (let i = 0; i <= 10; i += 1) {

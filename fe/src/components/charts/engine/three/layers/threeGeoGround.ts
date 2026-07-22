@@ -84,7 +84,7 @@ export function mountThreeGeoGround(
     }),
   );
   floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -0.42;
+  floor.position.y = layout.minY - Math.max(layout.maxY * 0.08, 0.5);
   floor.receiveShadow = true;
   scene.add(floor);
 
@@ -99,7 +99,7 @@ export function mountThreeGeoGround(
     }),
   );
   glow.rotation.x = -Math.PI / 2;
-  glow.position.y = -0.4;
+  glow.position.y = layout.minY - Math.max(layout.maxY * 0.06, 0.35);
   scene.add(glow);
 
   return () => {

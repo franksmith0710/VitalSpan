@@ -3,9 +3,25 @@ import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import {
+  blurPackNode,
+  createPackPhysicsNodes,
+  createPackPhysicsSimulation,
+  enforcePackBounds,
+  fitPackLayoutToPlot,
+  focusPackNode,
+  packNodeRadius,
+  resolvePackEdgeInset,
+  stepPackRenderScales,
+  type PackPhysicsNode,
+} from "@/components/charts/engine/d3/hierarchy/circlePackingPhysics";
 
 type PackDatum = { name: string; value: number };
 type TreeNode = { name: string; value?: number; children?: TreeNode[] };
+
+const PACK_PLOT_PAD = 4;
+const PACK_LAYOUT_PADDING = 0;
+const HOVER_LEAVE_MS = 48;
 
 function positionTooltip(
   tooltip: d3.Selection<HTMLDivElement, unknown, null, undefined>,
@@ -19,6 +35,47 @@ function positionTooltip(
     .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
 }
 
+function appendPackPlotChrome(
+  root: d3.Selection<SVGGElement, unknown, null, undefined>,
+  innerW: number,
+  innerH: number,
+  theme: D3RenderConfig["theme"],
+): string {
+  root
+    .append("rect")
+    .attr("class", "pack-plot-frame")
+    .attr("width", innerW)
+    .attr("height", innerH)
+    .attr("fill", "none")
+    .attr("stroke", theme.axisLine)
+    .attr("stroke-opacity", 0.38)
+    .attr("rx", 4);
+
+  const clipId = `vs-pack-clip-${Math.random().toString(36).slice(2, 9)}`;
+  root
+    .append("defs")
+    .append("clipPath")
+    .attr("id", clipId)
+    .append("rect")
+    .attr("width", innerW)
+    .attr("height", innerH);
+  return clipId;
+}
+
+function packLeaves(
+  data: PackDatum[],
+  width: number,
+  height: number,
+): d3.HierarchyCircularNode<TreeNode>[] {
+  const root = d3
+    .hierarchy<TreeNode>({ name: "root", children: data })
+    .sum((d) => d.value ?? 0)
+    .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+
+  d3.pack<TreeNode>().size([width, height]).padding(PACK_LAYOUT_PADDING)(root);
+  return root.descendants().filter((d) => d.depth > 0) as d3.HierarchyCircularNode<TreeNode>[];
+}
+
 export function renderD3CirclePackingChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
   const { width, height, colors, theme, showLabel, showTooltip, valueFormat, options, onPointClick, depthVisual } =
@@ -27,75 +84,192 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
   const data = (options.data as PackDatum[]) ?? [];
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
-  const root = d3
-    .hierarchy<TreeNode>({ name: "root", children: data })
-    .sum((d) => d.value ?? 0)
-    .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+  const innerW = Math.max(0, width - PACK_PLOT_PAD * 2);
+  const innerH = Math.max(0, height - PACK_PLOT_PAD * 2);
+  const strokeWidth = depthLevel === "off" ? 1.5 : 1;
 
-  d3.pack<TreeNode>().size([width, height]).padding(3)(root);
+  const packed = packLeaves(data, innerW, innerH);
+  const rawLayout = packed.map((d) => ({ name: d.data.name, x: d.x, y: d.y, r: d.r }));
+  const maxR = rawLayout.length > 0 ? Math.max(...rawLayout.map((d) => d.r)) : 0;
+  const edgeMargin = resolvePackEdgeInset(maxR, strokeWidth);
+  const layout = fitPackLayoutToPlot(rawLayout, innerW, innerH, edgeMargin);
 
-  const nodes = root.descendants().filter((d) => d.depth > 0) as d3.HierarchyCircularNode<TreeNode>[];
   const colorScale = d3
     .scaleOrdinal<string>()
-    .domain(nodes.map((d) => d.data.name))
+    .domain(layout.map((d) => d.name))
     .range(colors);
+
+  const physicsNodes = createPackPhysicsNodes(layout);
+  const simulation = createPackPhysicsSimulation(physicsNodes, innerW, innerH, strokeWidth);
+  simulation.alpha(0);
+  simulation.alphaTarget(0);
+
+  let hovered: PackPhysicsNode | null = null;
+  let leaveTimer: ReturnType<typeof setTimeout> | null = null;
+  let visualFrame: number | null = null;
 
   const svg = d3
     .select(container)
     .append("svg")
     .attr("width", width)
     .attr("height", height)
-    .attr("role", "img");
+    .attr("role", "img")
+    .attr("data-pixel-no-drag", "true");
+
+  const plot = svg.append("g").attr("transform", `translate(${PACK_PLOT_PAD},${PACK_PLOT_PAD})`);
+  const clipId = appendPackPlotChrome(plot, innerW, innerH, theme);
+  const layer = plot.append("g").attr("clip-path", `url(#${clipId})`);
 
   const tooltip = showTooltip ? createTooltip(container, theme) : null;
-  const groups = svg
-    .selectAll<SVGGElement, d3.HierarchyCircularNode<TreeNode>>("g.pack-node")
-    .data(nodes)
+  const groups = layer
+    .selectAll<SVGGElement, PackPhysicsNode>("g.pack-node")
+    .data(physicsNodes)
     .join("g")
     .attr("class", "pack-node")
-    .attr("transform", (d) => `translate(${d.x},${d.y})`);
+    .attr("transform", (d) => `translate(${d.x ?? d.targetX},${d.y ?? d.targetY})`);
+
+  const labels = showLabel
+    ? groups
+        .append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.35em")
+        .attr("fill", "#fff")
+        .style("pointer-events", "none")
+        .text((d) => d.name)
+    : null;
+
+  const updateVisual = () => {
+    groups.attr("transform", (d) => `translate(${d.x ?? d.targetX},${d.y ?? d.targetY})`);
+    groups.select("circle").attr("r", (d) => packNodeRadius(d));
+    if (labels) {
+      labels.style("font-size", (d) => `${Math.min(14, Math.max(9, packNodeRadius(d) / 3))}px`);
+      labels.text((d) => (packNodeRadius(d) > 18 ? d.name : ""));
+    }
+  };
+
+  const clearLeaveTimer = () => {
+    if (leaveTimer !== null) {
+      clearTimeout(leaveTimer);
+      leaveTimer = null;
+    }
+  };
+
+  const stopVisualPump = () => {
+    if (visualFrame !== null) {
+      cancelAnimationFrame(visualFrame);
+      visualFrame = null;
+    }
+  };
+
+  const pumpVisual = () => {
+    stepPackRenderScales(physicsNodes);
+    updateVisual();
+    const scaling = physicsNodes.some((n) => Math.abs(n.renderScale - n.focusScale) > 0.004);
+    if (scaling || hovered) {
+      visualFrame = requestAnimationFrame(pumpVisual);
+    } else {
+      visualFrame = null;
+    }
+  };
+
+  const ensureVisualPump = () => {
+    if (visualFrame === null) visualFrame = requestAnimationFrame(pumpVisual);
+  };
+
+  const beginHover = (d: PackPhysicsNode) => {
+    clearLeaveTimer();
+    if (hovered && hovered !== d) blurPackNode(hovered);
+    hovered = d;
+    focusPackNode(d);
+    simulation.setInteraction("hover");
+    simulation.reheat();
+    ensureVisualPump();
+  };
+
+  const endHover = (d: PackPhysicsNode) => {
+    if (hovered !== d) return;
+    clearLeaveTimer();
+    leaveTimer = setTimeout(() => {
+      leaveTimer = null;
+      if (hovered !== d) return;
+      blurPackNode(d);
+      hovered = null;
+      simulation.setInteraction("idle");
+      simulation.alphaTarget(0);
+      simulation.alpha(0.35).restart();
+      ensureVisualPump();
+    }, HOVER_LEAVE_MS);
+  };
 
   groups
     .append("circle")
-    .attr("r", (d) => d.r)
-    .attr("fill", (d) => colorScale(d.data.name) ?? colors[0] ?? "#465fff")
-    .attr("opacity", 0.9)
+    .attr("r", (d) => packNodeRadius(d))
+    .attr("fill", (d) => colorScale(d.name) ?? colors[0] ?? "#465fff")
+    .attr("opacity", 0.92)
     .attr("stroke", (d) => {
-      const fill = colorScale(d.data.name) ?? colors[0] ?? "#465fff";
+      const fill = colorScale(d.name) ?? colors[0] ?? "#465fff";
       return depthLevel === "off" ? "#fff" : shadeColor(fill, "top");
     })
-    .attr("stroke-width", depthLevel === "off" ? 1.5 : 1)
+    .attr("stroke-width", strokeWidth)
     .style("paint-order", depthLevel === "off" ? undefined : "stroke fill")
-    .style("cursor", onPointClick ? "pointer" : "default")
-    .on("mouseenter", function () {
-      d3.select(this).attr("opacity", 1);
+    .style("cursor", "default")
+    .on("mouseenter", function (event, d) {
+      event.stopPropagation();
+      d3.select(this.parentNode as SVGGElement).raise();
+      beginHover(d);
     })
-    .on("mouseleave", function () {
-      d3.select(this).attr("opacity", 0.9);
+    .on("mouseleave", (_event, d) => {
+      endHover(d);
     })
     .on("mousemove", (event, d) => {
       if (!tooltip) return;
+      const packedNode = packed.find((item) => item.data.name === d.name);
       tooltip
         .style("opacity", "1")
         .html(
-          `<div style="font-weight:600;margin-bottom:2px">${d.data.name}</div>` +
-            `<div><strong>${formatChartValue(d.value ?? 0, valueFormat)}</strong></div>`,
+          `<div style="font-weight:600;margin-bottom:2px">${d.name}</div>` +
+            `<div><strong>${formatChartValue(packedNode?.value ?? 0, valueFormat)}</strong></div>`,
         );
       positionTooltip(tooltip, event, container, width);
     })
     .on("mouseout", () => tooltip?.style("opacity", "0"))
-    .on("click", (_event, d) => onPointClick?.({ name: d.data.name, value: d.value ?? 0 } as D3Datum));
+    .on("click", (_event, d) => {
+      const packedNode = packed.find((item) => item.data.name === d.name);
+      onPointClick?.({ name: d.name, value: packedNode?.value ?? 0 } as D3Datum);
+    });
 
-  if (showLabel) {
-    groups
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dy", "0.35em")
-      .attr("fill", "#fff")
-      .style("font-size", (d) => `${Math.min(14, Math.max(9, d.r / 3))}px`)
-      .style("pointer-events", "none")
-      .text((d) => (d.r > 18 ? d.data.name : ""));
-  }
+  layer.on("mouseleave", () => {
+    clearLeaveTimer();
+    if (hovered) blurPackNode(hovered);
+    hovered = null;
+    simulation.setInteraction("idle");
+    simulation.alphaTarget(0);
+    simulation.alpha(0.3).restart();
+    ensureVisualPump();
+  });
 
-  return () => container.replaceChildren();
+  simulation.on("tick", updateVisual);
+
+  simulation.on("end", () => {
+    if (hovered) return;
+    for (const node of physicsNodes) {
+      const dx = (node.x ?? node.targetX) - node.targetX;
+      const dy = (node.y ?? node.targetY) - node.targetY;
+      if (Math.hypot(dx, dy) < 1.2 && Math.abs(node.renderScale - 1) < 0.01) {
+        node.x = node.targetX;
+        node.y = node.targetY;
+        node.vx = 0;
+        node.vy = 0;
+      }
+    }
+    enforcePackBounds(physicsNodes, innerW, innerH, strokeWidth);
+    updateVisual();
+  });
+
+  return () => {
+    clearLeaveTimer();
+    stopVisualPump();
+    simulation.stop();
+    container.replaceChildren();
+  };
 }

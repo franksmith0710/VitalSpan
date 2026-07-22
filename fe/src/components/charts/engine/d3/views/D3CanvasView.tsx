@@ -98,7 +98,7 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
         if (mode !== "live") setChartAnimationSuppressed(false);
       }
     },
-    [plan, capped.length, fill, width, height, size.width, size.height, props, mapEmptyOk],
+    [plan, capped.length, fill, width, height, size.width, size.height, props, mapEmptyOk, style.depthVisual],
   );
 
   const onLiveResize = useCallback(() => {

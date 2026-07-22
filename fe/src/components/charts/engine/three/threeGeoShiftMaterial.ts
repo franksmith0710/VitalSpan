@@ -1,5 +1,11 @@
 import * as THREE from "three";
 
+export type GeoShiftColors = {
+  top: string;
+  bottom: string;
+  scan: string;
+};
+
 const VERTEX = /* glsl */ `
 varying vec3 vPosition;
 void main() {
@@ -37,19 +43,21 @@ void main() {
 }
 `;
 
-export function createGeoSideShiftMaterial(depth: number, isDark: boolean): THREE.ShaderMaterial {
+export function createGeoSideShiftMaterial(
+  depth: number,
+  colors: GeoShiftColors,
+): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0 },
       depth: { value: depth },
-      baseTopColor: { value: new THREE.Color(isDark ? "#8fc2ff" : "#60a5fa") },
-      baseBottomColor: { value: new THREE.Color(isDark ? "#10182c" : "#1e3a5f") },
-      scanColor: { value: new THREE.Color(isDark ? "#8fc2ff" : "#38bdf8") },
+      baseTopColor: { value: new THREE.Color(colors.top) },
+      baseBottomColor: { value: new THREE.Color(colors.bottom) },
+      scanColor: { value: new THREE.Color(colors.scan) },
       opacity: { value: 1 },
     },
     vertexShader: VERTEX,
     fragmentShader: FRAGMENT,
-    transparent: true,
     side: THREE.DoubleSide,
   });
 }

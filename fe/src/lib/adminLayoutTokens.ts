@@ -1,3 +1,8 @@
+/** Admin 顶栏与侧栏品牌区共用高度，保证底部分割线对齐 */
+export const ADMIN_HEADER_HEIGHT_PX = 72;
+
+export const ADMIN_HEADER_HEIGHT_CLASS = "h-[72px]";
+
 /** Admin 侧栏展开宽度（原 290px，收窄以让编辑画布占比更大） */
 export const ADMIN_SIDEBAR_EXPANDED_PX = 240;
 

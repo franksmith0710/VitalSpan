@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
   ADMIN_CONTENT_MARGIN_EXPANDED_CLASS,
+  ADMIN_HEADER_HEIGHT_CLASS,
   ADMIN_SIDEBAR_COLLAPSED_CLASS,
   ADMIN_SIDEBAR_EXPANDED_CLASS,
 } from "@/lib/adminLayoutTokens";
@@ -442,7 +443,8 @@ export function AppSidebar({
     >
       <div
         className={cn(
-          "flex shrink-0 border-b border-gray-100 py-5 dark:border-white/[0.06]",
+          "flex shrink-0 items-center border-b border-gray-200 dark:border-gray-800",
+          ADMIN_HEADER_HEIGHT_CLASS,
           brandExpanded ? "justify-start" : "xl:justify-center",
         )}
       >

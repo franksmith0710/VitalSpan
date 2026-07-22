@@ -6,11 +6,11 @@ import * as geo3dQuality from "@/components/charts/engine/three/geo3dQuality";
 import { renderThreeChoroplethChart } from "@/components/charts/engine/three/renderThreeChoropleth";
 
 describe("renderThreeChoroplethChart", () => {
-  it("returns d3-fallback when WebGL is unavailable (jsdom)", () => {
+  it("returns d3-fallback when WebGL is unavailable (jsdom)", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
 
-    const result = renderThreeChoroplethChart(container, {
+    const result = await renderThreeChoroplethChart(container, {
       width: 400,
       height: 300,
       colors: ["#465fff"],
@@ -35,14 +35,14 @@ describe("renderThreeChoroplethChart", () => {
     container.remove();
   });
 
-  it("returns d3-fallback when quality auto degrades to low", () => {
+  it("returns d3-fallback when quality auto degrades to low", async () => {
     vi.spyOn(geo3dQuality, "resolveGeo3dQuality").mockReturnValue("low");
     vi.spyOn(geo3dQuality, "shouldRenderGeo3d").mockReturnValue(false);
 
     const container = document.createElement("div");
     document.body.appendChild(container);
 
-    const result = renderThreeChoroplethChart(container, {
+    const result = await renderThreeChoroplethChart(container, {
       width: 400,
       height: 300,
       colors: ["#465fff"],

@@ -89,6 +89,8 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     height,
     showLegend: Boolean(showLegend && seriesField),
     incremental,
+    categories,
+    axisStyle,
   });
   const { root, defs, g, plot, innerW, innerH } = scene;
 

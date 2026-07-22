@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { resolveBarLabelFontSize, resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/d3/core/axes";
 import { drawBidirectionalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
@@ -43,7 +44,10 @@ export function renderD3BidirectionalBarChart(
   const maxLeft = d3.max(data, (d) => Math.abs(d.left)) ?? 0;
   const maxRight = d3.max(data, (d) => Math.abs(d.right)) ?? 0;
   const maxVal = Math.max(maxLeft, maxRight, 1);
-  const margin = { ...cartesianMargin(false), left: 72, right: 72 };
+  const baseMargin = cartesianMargin(false);
+  const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
+  const yLayout = resolveHorizontalCategoryAxisLayout(categories, provisionalInnerH);
+  const margin = { ...baseMargin, left: Math.max(72, yLayout.leftMargin), right: 72 };
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const centerX = innerW / 2;
@@ -145,6 +149,7 @@ export function renderD3BidirectionalBarChart(
   );
 
   if (showLabel) {
+    const barLabelFs = resolveBarLabelFontSize(y.bandwidth(), labelFontSize);
     plot
       .selectAll("text.left-label")
       .data(data)
@@ -155,7 +160,7 @@ export function renderD3BidirectionalBarChart(
       .attr("dy", "0.32em")
       .attr("text-anchor", "end")
       .attr("fill", resolveLabelFill(theme, labelColor))
-      .style("font-size", `${labelFontSize}px`)
+      .style("font-size", `${barLabelFs}px`)
       .text((d) => formatChartValue(d.left, valueFormat));
     plot
       .selectAll("text.right-label")
@@ -167,7 +172,7 @@ export function renderD3BidirectionalBarChart(
       .attr("dy", "0.32em")
       .attr("text-anchor", "start")
       .attr("fill", resolveLabelFill(theme, labelColor))
-      .style("font-size", `${labelFontSize}px`)
+      .style("font-size", `${barLabelFs}px`)
       .text((d) => formatChartValue(d.right, valueFormat));
   }
 

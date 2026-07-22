@@ -95,6 +95,8 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
     height,
     showLegend: Boolean(showLegend && hasMultiSeries),
     incremental,
+    categories,
+    axisStyle,
   });
   const { root, defs, g, plot, innerW, innerH, margin } = scene;
   const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);

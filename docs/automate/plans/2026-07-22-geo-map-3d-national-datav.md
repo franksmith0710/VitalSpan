@@ -33,7 +33,8 @@
 | 331 市区县级 GeoJSON | ✅ | ✅ | `districts/*.json` |
 | 点击下钻 + drill 面包屑 | ✅ | ✅（共用） | `ChartRenderer` · `geoMapDrill.ts` |
 | roam（缩放/平移/旋转） | d3.zoom 0.4–4x | OrbitControls | `renderChoropleth.ts` · `threeGeoOrbit.ts` |
-| 指标挤出高度 | — | ✅ | `renderThreeChoropleth.ts` |
+| 指标挤出高度 | — | ✅ 统一薄底板 | `buildGeoFlatPlateMesh.ts` |
+| 离线 hillshade 地形贴图（diffuse+normal+displacement） | — | ✅ | `fe/src/assets/geo/terrain/` · `chinaTerrainLoader.ts` · `build:geo-terrain` |
 | WebGL 降级横幅 | — | ✅ | `geoMapRenderResult.ts` |
 | 区域名称标签 | ✅ `showRegionLabel` | ❌（刻意不做，见 map-3d CR 计划） | — |
 | 飞线/扫光/镜面/轮廓 Shader | — | ❌ | sc-datav `Demo2/map/*` |
@@ -211,14 +212,21 @@ export type ChartGeo3dStyle = {
 | **验证** | `geo3dQuality.test.ts`：depth0→high、depth2→low、81 features→low |
 | **依赖** | T1 |
 
-### T4 · 3D 装饰层 Phase A — 底面 + 轮廓光（2d）
+### T4 · 离线地形贴图（hillshade 三件套）— **DONE 2026-07-22**
 
 | 项 | 内容 |
 |----|------|
-| **位置** | `three/layers/threeGeoGround.ts` · `threeGeoOutline.ts`；`renderThreeChoropleth.ts` |
-| **改动** | 底面：半透明圆盘 + 轻微反射（替代 sc-datav 全镜面以控性能）；轮廓：`LineSegments` 沿省界 extrude 顶面；受 `geo3d.effectsEnabled` + 子开关控制；dispose 链完整 |
-| **验证** | `renderThreeChoropleth.test.ts` mock WebGL 断言 layer 创建；手测全国省图 |
+| **位置** | `fe/scripts/build-china-terrain-assets.mjs` · `fe/src/assets/geo/terrain/` · `three/geo/chinaTerrainLoader.ts` · `buildGeoFlatPlateMesh.ts` · `applyGeoTerrainSurface.ts` |
+| **改动** | L0 全国 + 下钻 L1 省级（粤/川/京/沪试点）懒加载 `diffuse/normal/displacement` WebP；UV 按 `meta.bounds` 经纬度；`displacementScale` 驱动起伏（非按省拔高）；删除 Canvas 程序化手绘河线；**无**背景装饰层 |
+| **验证** | `chinaTerrainLoader.test.ts` · `applyGeoTerrainSurface.test.ts` · `pnpm run test:chart-catalog` |
 | **依赖** | T3 |
+
+### T4b · 3D 装饰层 Phase A — 底面 + 轮廓光（2d，**已废弃**）
+
+| 项 | 内容 |
+|----|------|
+| **位置** | ~~`three/layers/threeGeoGround.ts`~~ |
+| **说明** | 产品决策：3D 地图透明背景，不渲染镜面底面/扫光；保留省界 `LineSegments` 于 `buildGeoFlatPlateMesh` |
 
 ### T5 · 3D 装饰层 Phase B — 扫光（1d，可选本里程碑）
 

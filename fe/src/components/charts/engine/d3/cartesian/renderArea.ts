@@ -68,6 +68,8 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     height,
     showLegend: Boolean(showLegend && hasMultiSeries),
     incremental,
+    categories,
+    axisStyle,
   });
   const { root, defs, g, plot, innerW, innerH } = scene;
   const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);

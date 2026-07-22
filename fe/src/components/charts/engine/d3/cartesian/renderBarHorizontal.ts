@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/d3/core/axes";
 import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
@@ -93,10 +94,11 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
   const useGrouped = hasMultiSeries && (isGroup || !isStack);
   const baseMargin = cartesianMargin(showLegend && hasMultiSeries);
-  const maxLabelChars = categories.reduce((max, cat) => Math.max(max, String(cat).length), 0);
+  const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
+  const yLayout = resolveHorizontalCategoryAxisLayout(categories, provisionalInnerH);
   const margin = {
     ...baseMargin,
-    left: Math.max(baseMargin.left, Math.min(140, maxLabelChars * 6.5 + 20)),
+    left: Math.max(baseMargin.left, yLayout.leftMargin),
   };
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
