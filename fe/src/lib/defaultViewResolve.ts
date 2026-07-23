@@ -17,6 +17,21 @@ type UserViewsResponse = {
 
 const MAX_INHERIT_DEPTH = 8;
 
+async function verifyDashboardPath(dashboardId: string): Promise<string | null> {
+  try {
+    await apiFetch(`/api/v1/dashboards/${dashboardId}`);
+    return `/admin/dashboards/${dashboardId}`;
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    if (code === "DASH_NOT_FOUND") {
+      console.warn("defaultViewResolve: stale dashboardId ignored", dashboardId);
+      return null;
+    }
+    console.warn("defaultViewResolve: dashboard verify failed", dashboardId, err);
+    return null;
+  }
+}
+
 async function fetchUserOverridePath(): Promise<string | null> {
   try {
     const data = await apiFetch<UserViewsResponse>("/api/v1/users/me/views");
@@ -24,7 +39,7 @@ async function fetchUserOverridePath(): Promise<string | null> {
     if (items.length === 0) return null;
     const preferred = items.find((item) => item.name === "默认") ?? items[0];
     if (preferred.dashboardId) {
-      return `/admin/dashboards/${preferred.dashboardId}`;
+      return verifyDashboardPath(preferred.dashboardId);
     }
     return null;
   } catch (err) {
@@ -53,7 +68,10 @@ async function resolveInheritedLanding(
   visited.add(roleKey);
   const data = await fetchRoleDefaults(roleKey);
   if (!data) return null;
-  if (data.dashboardId) return `/admin/dashboards/${data.dashboardId}`;
+  if (data.dashboardId) {
+    const path = await verifyDashboardPath(data.dashboardId);
+    if (path) return path;
+  }
   if (data.reportTemplateNodeId) {
     return `/admin/reports/templates/${data.reportTemplateNodeId}?panel=run`;
   }

@@ -3,7 +3,9 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { mapApiError } from "@/lib/apiError";
 import {
   chartExecuteBindingKey,
+  chartExecuteNotReadyMessage,
   fetchChartExecuteResultShared,
+  isChartExecuteReady,
   peekChartExecuteCachedResult,
 } from "@/lib/chartExecuteProbe";
 
@@ -61,9 +63,9 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     setSlowHint(false);
     const started = Date.now();
     try {
-      if (activeConfig.mode === "dataset" && (!activeConfig.dataSourceId || !activeConfig.configId)) {
+      if (!isChartExecuteReady(activeConfig)) {
         if (gen !== requestGenRef.current) return;
-        setError("请选择数据源与已绑定配置的 Dataset");
+        setError(chartExecuteNotReadyMessage(activeConfig));
         setColumns([]);
         setRows([]);
         hasDisplayedDataRef.current = false;

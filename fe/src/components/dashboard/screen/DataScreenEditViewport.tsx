@@ -161,6 +161,9 @@ export function DataScreenEditViewport({
     scrollMetrics.bounds.maxPanX,
     scrollMetrics.bounds.minPanY,
     scrollMetrics.bounds.maxPanY,
+    viewportSize.width,
+    viewportSize.height,
+    scale,
   ]);
 
   const endPanSession = useCallback(() => {

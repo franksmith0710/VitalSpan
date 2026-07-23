@@ -5,5 +5,13 @@
     117.64023300000001,
     41.15640182
   ],
-  "size": 768
+  "width": 757,
+  "height": 768,
+  "source": "satellite",
+  "uvMode": "projBounds",
+  "refViewport": [
+    800,
+    600
+  ],
+  "masked": true
 }

@@ -190,6 +190,7 @@ export function PixelCanvas({
   const contentRef = useRef<HTMLDivElement>(null);
   const previewRegistryRef = useRef(createPixelShapePreviewRegistry());
   const metricsFrameRef = useRef<number | null>(null);
+  const scheduleMetricsRef = useRef<(() => void) | null>(null);
   const viewportRef = useRef<PixelRect>({
     x: 0,
     y: 0,
@@ -204,6 +205,7 @@ export function PixelCanvas({
   const [paletteDragOver, setPaletteDragOver] = useState(false);
   const [paletteDragPoint, setPaletteDragPoint] = useState<PixelPoint | null>(null);
   const [shapeDragWidget, setShapeDragWidget] = useState<PixelLayoutWidget | null>(null);
+  const shapeDragWidgetRef = useRef<PixelLayoutWidget | null>(null);
   const paletteDragActive = usePaletteDragActive();
   const tabInsertIntent = useTabInsertIntent();
   const [markGuides, setMarkGuides] = useState<MarkLineGuide[]>([]);
@@ -281,16 +283,17 @@ export function PixelCanvas({
   }, [activeTabDropId, onTabInsertIntentChange, paletteDragActive, tabHosts]);
 
   const shapeTabDropTargetId = useMemo(() => {
-    if (!shapeDragWidget || shapeDragWidget.type === "tabs") return null;
+    const dragWidget = shapeDragWidget ?? shapeDragWidgetRef.current;
+    if (!dragWidget || dragWidget.type === "tabs") return null;
     return (
-      resolveTabHostForWidgetDrop(activeLayout, widgetRect(shapeDragWidget), {
+      resolveTabHostForWidgetDrop(activeLayout, widgetRect(dragWidget), {
         intent: tabInsertIntent,
         dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
       })?.id ?? null
     );
-  }, [activeLayout, shapeDragWidget, tabInsertIntent]);
+  }, [activeLayout, shapeDragWidget, tabInsertIntent, playingWidgetId]);
 
-  const isDraggingTabHost = shapeDragWidget?.type === "tabs";
+  const isDraggingTabHost = (shapeDragWidget ?? shapeDragWidgetRef.current)?.type === "tabs";
 
   const activeTabDropTargetId = isDraggingTabHost
     ? null
@@ -300,8 +303,8 @@ export function PixelCanvas({
     mode === "edit" &&
     tabHosts.length > 0 &&
     !isDraggingTabHost &&
-    (paletteDragActive || Boolean(shapeDragWidget)) &&
-    Boolean(onTabPaletteDrop || shapeDragWidget);
+    (paletteDragActive || Boolean(shapeDragWidget) || Boolean(playingWidgetId)) &&
+    Boolean(onTabPaletteDrop || shapeDragWidget || shapeDragWidgetRef.current);
 
   const reportTabHover = useCallback(
     (tabsWidgetId: string) => {
@@ -368,6 +371,19 @@ export function PixelCanvas({
   const hostCentered =
     (centerContent || viewportFit === "data-screen") && !designViewportLocked;
   const fixedCanvasBounds = hostOverflowLocked;
+  const resolvedContentSize = designViewportLocked
+    ? { width: viewCanvas.width, height: viewCanvas.height }
+    : contentSize;
+
+  const syncShapeGeometryFromLayout = useCallback((source: DashboardLayoutV2) => {
+    if (!allowsPixelWidgetOverlap(source)) return;
+    const positions = new Map(
+      getTopLevelPixelWidgets(source.widgets).map(
+        (item) => [item.id, widgetRect(item)] as const,
+      ),
+    );
+    previewRegistryRef.current.applyAll(positions);
+  }, []);
 
   const clampWidgetToViewCanvas = useCallback(
     (widget: PixelLayoutWidget): PixelLayoutWidget => {
@@ -406,7 +422,6 @@ export function PixelCanvas({
         setStageLeft(0);
         setCenterContent(false);
         setScrollX(false);
-        setContentSize({ width: viewCanvas.width, height: viewCanvas.height });
         publishViewport(visibleCanvasViewport(host, 1, viewCanvas));
         return;
       }
@@ -448,6 +463,8 @@ export function PixelCanvas({
       });
     };
 
+    scheduleMetricsRef.current = scheduleMetrics;
+
     scheduleMetrics();
     applyMetrics();
     const observer = new ResizeObserver(scheduleMetrics);
@@ -459,6 +476,7 @@ export function PixelCanvas({
       }
     }
     return () => {
+      scheduleMetricsRef.current = null;
       observer.disconnect();
       if (metricsFrameRef.current !== null) {
         cancelAnimationFrame(metricsFrameRef.current);
@@ -471,6 +489,10 @@ export function PixelCanvas({
     consumePendingCanvasHostScrollRestore(hostRef.current);
   }, [contentSize, selectedIds]);
 
+  const refreshCanvasMetrics = useCallback(() => {
+    scheduleMetricsRef.current?.();
+  }, []);
+
   const registerPreviewSync = useCallback(
     (widgetId: string, sync: (rect: PixelRect) => void) =>
       previewRegistryRef.current.register(widgetId, sync),
@@ -480,14 +502,22 @@ export function PixelCanvas({
   const clearPreviewChrome = useCallback(
     (snapshot?: DashboardLayoutV2) => {
       stageRef.current?.style.removeProperty("height");
-      contentRef.current?.style.removeProperty("width");
-      contentRef.current?.style.removeProperty("height");
+      if (!designViewportLocked) {
+        contentRef.current?.style.removeProperty("width");
+        contentRef.current?.style.removeProperty("height");
+      }
+      if (allowsPixelWidgetOverlap(snapshot ?? activeLayout)) {
+        return;
+      }
       const source = snapshot ?? activeLayout;
       previewRegistryRef.current.reset(
-        source.widgets.map((widget) => ({ id: widget.id, ...widgetRect(widget) })),
+        getTopLevelPixelWidgets(source.widgets).map((widget) => ({
+          id: widget.id,
+          ...widgetRect(widget),
+        })),
       );
     },
-    [activeLayout],
+    [activeLayout, designViewportLocked],
   );
 
   const syncPreviewStageMetrics = useCallback(
@@ -544,20 +574,16 @@ export function PixelCanvas({
       previewThrottleRef.current = Date.now();
       pendingPreviewRef.current = null;
       const boundedWidget = clampWidgetToViewCanvas(widget);
-      setShapeDragWidget(boundedWidget);
       if (allowWidgetOverlap) {
-        const positions = new Map(
-          activeLayout.widgets.map((item) => [
-            item.id,
-            item.id === boundedWidget.id ? widgetRect(boundedWidget) : widgetRect(item),
-          ] as const),
-        );
-        previewRegistryRef.current.applyAll(positions);
+        shapeDragWidgetRef.current = boundedWidget;
         return;
       }
+      setShapeDragWidget(boundedWidget);
       const nextLayout = resolveActiveAt(boundedWidget);
       const positions = new Map(
-        nextLayout.widgets.map((item) => [item.id, widgetRect(item)] as const),
+        getTopLevelPixelWidgets(nextLayout.widgets).map(
+          (item) => [item.id, widgetRect(item)] as const,
+        ),
       );
       previewRegistryRef.current.applyAll(positions);
       syncPreviewStageMetrics(nextLayout);
@@ -667,7 +693,10 @@ export function PixelCanvas({
       if (absorbed) {
         onLayoutChange(absorbed);
         clearPreviewChrome(absorbed);
+        syncShapeGeometryFromLayout(absorbed);
+        shapeDragWidgetRef.current = null;
         setShapeDragWidget(null);
+        refreshCanvasMetrics();
         notifyGeometryCommitted();
         onSelect?.(absorbHost?.id ?? boundedWidget.id, false);
         return;
@@ -676,7 +705,10 @@ export function PixelCanvas({
       const nextLayout = resolveActiveAt(boundedWidget);
       onLayoutChange(nextLayout);
       clearPreviewChrome(nextLayout);
+      syncShapeGeometryFromLayout(nextLayout);
+      shapeDragWidgetRef.current = null;
       setShapeDragWidget(null);
+      refreshCanvasMetrics();
       notifyGeometryCommitted();
     },
     [
@@ -686,7 +718,9 @@ export function PixelCanvas({
       notifyGeometryCommitted,
       onLayoutChange,
       onSelect,
+      refreshCanvasMetrics,
       resolveActiveAt,
+      syncShapeGeometryFromLayout,
       tabInsertIntent,
     ],
   );
@@ -697,10 +731,13 @@ export function PixelCanvas({
       previewTimerRef.current = null;
     }
     pendingPreviewRef.current = null;
+    shapeDragWidgetRef.current = null;
     setShapeDragWidget(null);
     clearPreviewChrome();
+    syncShapeGeometryFromLayout(activeLayout);
+    refreshCanvasMetrics();
     notifyGeometryCommitted();
-  }, [clearPreviewChrome, notifyGeometryCommitted]);
+  }, [activeLayout, clearPreviewChrome, notifyGeometryCommitted, refreshCanvasMetrics, syncShapeGeometryFromLayout]);
 
   const handleDragAutoScroll = useCallback(
     (event: PointerEvent) => {
@@ -843,7 +880,7 @@ export function PixelCanvas({
         ref={contentRef}
         data-testid="pixel-canvas-content"
         className="relative shrink-0"
-        style={{ width: contentSize.width, height: contentSize.height }}
+        style={{ width: resolvedContentSize.width, height: resolvedContentSize.height }}
         onPointerDown={handleBlankPointerDown}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -855,7 +892,7 @@ export function PixelCanvas({
         >
         <TabPaletteDropTargetProvider
           targetTabsId={
-            !isDraggingTabHost && (paletteDragActive || shapeDragWidget)
+            !isDraggingTabHost && (paletteDragActive || shapeDragWidget || playingWidgetId)
               ? activeTabDropTargetId
               : null
           }
@@ -922,6 +959,7 @@ export function PixelCanvas({
                 registerPreviewSync={mode === "edit" ? registerPreviewSync : undefined}
                 allowBottomGrowth={!fixedCanvasBounds}
                 suppressResizePreview={allowWidgetOverlap}
+                layoutStyleDeferred={Boolean(shapeDragWidget && !allowWidgetOverlap)}
               >
                 <PixelWidgetSlot
                   widget={widget}

@@ -24,6 +24,7 @@ export function useEmbeddedChartLiveResize(
   onCommitRef.current = onCommitResize ?? onLiveResize;
   const resizeFrameRef = useRef<number | null>(null);
   const flushingRef = useRef(false);
+  const commitRetryRef = useRef(0);
 
   const runLiveResize = useCallback(() => {
     if (resizeFrameRef.current !== null) return;
@@ -37,11 +38,25 @@ export function useEmbeddedChartLiveResize(
     if (flushingRef.current) return;
     flushingRef.current = true;
     try {
+      const el = containerRef.current;
+      const hasSize =
+        !el ||
+        (el.clientWidth > 0 && el.clientHeight > 0) ||
+        (el.closest(".pixel-shape-outer")?.clientWidth ?? 0) > 0;
+      if (!hasSize && commitRetryRef.current < 2) {
+        commitRetryRef.current += 1;
+        requestAnimationFrame(() => {
+          flushingRef.current = false;
+          flushCommitResize();
+        });
+        return;
+      }
+      commitRetryRef.current = 0;
       onCommitRef.current();
     } finally {
       flushingRef.current = false;
     }
-  }, []);
+  }, [containerRef]);
 
   usePixelShapeLiveResize(enabled, runLiveResize);
 

@@ -8,6 +8,7 @@ import {
   CHINA_TERRAIN_PROVINCE_ADCODES,
   type ChinaTerrainProvinceAdcode,
 } from "@/assets/geo/terrain/manifest";
+import type { TerrainCapSource } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
 
 export type TerrainGeoBounds = {
   west: number;
@@ -20,6 +21,7 @@ export type ChinaTerrainPack = {
   level: "national" | "province";
   adcode: number | null;
   bounds: TerrainGeoBounds;
+  source: TerrainCapSource;
   colorMap: THREE.Texture;
   normalMap?: THREE.Texture;
   displacementMap?: THREE.Texture;
@@ -105,7 +107,6 @@ function loadTexture(url: string, colorSpace?: THREE.ColorSpace): Promise<THREE.
     loader.load(
       url,
       (tex) => {
-        tex.flipY = false;
         tex.wrapS = THREE.ClampToEdgeWrapping;
         tex.wrapT = THREE.ClampToEdgeWrapping;
         if (colorSpace) tex.colorSpace = colorSpace;
@@ -130,10 +131,15 @@ async function loadTextureWithRetry(
   }
 }
 
+function metaSource(meta: { source?: string }): TerrainCapSource {
+  return meta.source === "procedural" ? "procedural" : "satellite";
+}
+
 function createPack(
   level: "national" | "province",
   adcode: number | null,
   bounds: TerrainGeoBounds,
+  source: TerrainCapSource,
   diffuseUrl: string,
   normalUrl?: string | null,
   displacementUrl?: string | null,
@@ -161,6 +167,7 @@ function createPack(
       level,
       adcode,
       bounds,
+      source,
       colorMap,
       normalMap,
       displacementMap,
@@ -194,13 +201,22 @@ export function loadChinaTerrainPack(opts: LoadTerrainPackOpts): Promise<ChinaTe
     if (!meta || !diffuse) {
       promise = loadChinaTerrainPack({ mapId: VS_REGIONS_MAP_ID, drillDepth: 0 });
     } else {
-      promise = createPack("province", adcode, boundsFromMeta(meta), diffuse, normal, displacement);
+      promise = createPack(
+        "province",
+        adcode,
+        boundsFromMeta(meta),
+        metaSource(meta),
+        diffuse,
+        normal,
+        displacement,
+      );
     }
   } else {
     promise = createPack(
       "national",
       null,
       boundsFromMeta(nationalMeta),
+      metaSource(nationalMeta),
       nationalDiffuseUrl,
       nationalNormalUrl,
       nationalDisplacementUrl,

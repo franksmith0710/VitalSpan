@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -48,7 +49,11 @@ import {
 } from "./widgetShellLegendContext";
 import { usePixelShapeDocumentDrag } from "./usePixelShapeDocumentDrag";
 import { usePaletteDragActive } from "./paletteDragContext";
-import { dispatchPixelLayoutGeometryCommitted, dispatchPixelShapeLiveResize } from "./pixelShapeLiveResize";
+import {
+  dispatchPixelShapeLiveResize,
+} from "./pixelShapeLiveResize";
+import { shouldApplyPropsRectToDisplay } from "./pixelShapePropsSync";
+import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 
 type ActiveInteraction = {
   pointerId: number;
@@ -89,6 +94,8 @@ type PixelShapeProps = {
   allowBottomGrowth?: boolean;
   /** 重叠布局下 resize 仅改活动组件，无需 preview 推挤 */
   suppressResizePreview?: boolean;
+  /** 仪表板碰撞 preview 推挤期：邻块仅 imperative，不写 React 几何 */
+  layoutStyleDeferred?: boolean;
 };
 
 const HANDLE_POSITION: Record<ResizeDirection, string> = {
@@ -327,6 +334,7 @@ export function PixelShape({
   onDragAutoScroll,
   allowBottomGrowth = true,
   suppressResizePreview = false,
+  layoutStyleDeferred = false,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
   const paletteDragActive = usePaletteDragActive();
@@ -364,9 +372,9 @@ export function PixelShape({
     event: PointerEvent;
     active: ActiveInteraction;
   } | null>(null);
-  const [display, setDisplay] = useState(displayRef.current);
   const hintRef = useRef<HTMLParagraphElement>(null);
   const hintValueRef = useRef<string | null>(null);
+  const lastSyncedPropsRectRef = useRef<PixelRect | null>(null);
   const [isPlayer, setIsPlayer] = useState(false);
 
   const syncHint = (nextHint: string | null) => {
@@ -392,6 +400,29 @@ export function PixelShape({
     el.style.height = `${next.height}px`;
   };
 
+  const bindOuterRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      outerRef.current = el;
+      if (!el || activeRef.current) return;
+      const propsRect = widgetRect(widget);
+      const display = displayRef.current;
+      if (
+        !shouldApplyPropsRectToDisplay(
+          display,
+          propsRect,
+          lastSyncedPropsRectRef.current,
+        )
+      ) {
+        syncOuterStyle(display);
+        return;
+      }
+      lastSyncedPropsRectRef.current = propsRect;
+      displayRef.current = propsRect;
+      syncOuterStyle(propsRect);
+    },
+    [widget.x, widget.y, widget.width, widget.height],
+  );
+
   useEffect(() => {
     if (!registerPreviewSync) return;
     return registerPreviewSync(widget.id, (rect) => {
@@ -403,10 +434,16 @@ export function PixelShape({
   useLayoutEffect(() => {
     if (activeRef.current) return;
     const next = widgetRect(widget);
+    const prev = lastSyncedPropsRectRef.current;
+    if (prev && pixelRectsNearlyEqual(prev, next)) return;
+    if (!shouldApplyPropsRectToDisplay(displayRef.current, next, prev)) {
+      syncOuterStyle(displayRef.current);
+      return;
+    }
+    lastSyncedPropsRectRef.current = next;
     displayRef.current = next;
-    setDisplay(next);
     syncOuterStyle(next);
-  }, [widget.id, widget.x, widget.y, widget.width, widget.height]);
+  }, [widget.x, widget.y, widget.width, widget.height]);
 
   useEffect(
     () => () => {
@@ -417,14 +454,11 @@ export function PixelShape({
     [],
   );
 
-  const applyDisplay = (next: PixelRect, commitReact = false) => {
+  const applyDisplay = (next: PixelRect) => {
     displayRef.current = next;
     syncOuterStyle(next);
     if (activeRef.current) {
       dispatchPixelShapeLiveResize();
-    }
-    if (commitReact || !activeRef.current) {
-      setDisplay(next);
     }
   };
 
@@ -504,7 +538,8 @@ export function PixelShape({
 
   const finish = (event: PointerEvent, commit: boolean) => {
     const active = activeRef.current;
-    if (!active || active.pointerId !== event.pointerId) return;
+    if (!active) return;
+    if (active.pointerId !== event.pointerId) return;
     if (moveFrameRef.current !== null) {
       cancelAnimationFrame(moveFrameRef.current);
       moveFrameRef.current = null;
@@ -520,12 +555,11 @@ export function PixelShape({
     const revert =
       commit && shouldRevertCommit?.(finalRect, active.startRect) === true;
     const settledRect = revert ? active.startRect : finalRect;
-    applyDisplay(settledRect, true);
-    dispatchPixelLayoutGeometryCommitted();
-    setIsPlayer(false);
-    onPlayingChange?.(false);
+    applyDisplay(settledRect);
     if (commit && !revert) onCommit?.(withRect(widget, finalRect));
     else onCancel?.(widget.id);
+    setIsPlayer(false);
+    onPlayingChange?.(false);
   };
 
   const startInteraction = (
@@ -566,12 +600,21 @@ export function PixelShape({
     const next = applyPixelInteraction(displayRef.current, delta, kind, canvas, {
       allowBottomGrowth,
     });
-    applyDisplay(next, true);
+    applyDisplay(next);
     onCommit?.(withRect(widget, next));
   };
 
 
   const selectedInEdit = Boolean(mode === "edit" && selected);
+  const committedRect = widgetRect(widget);
+  const liveRect = displayRef.current;
+  const rectOutOfSync =
+    liveRect.x !== committedRect.x ||
+    liveRect.y !== committedRect.y ||
+    liveRect.width !== committedRect.width ||
+    liveRect.height !== committedRect.height;
+  const omitReactGeometry = layoutStyleDeferred;
+  const stableRect = rectOutOfSync ? liveRect : committedRect;
 
   if (mode === "view" && widget.hidden) {
     return null;
@@ -579,7 +622,7 @@ export function PixelShape({
 
   return (
     <div
-      ref={outerRef}
+      ref={bindOuterRef}
       id={`shape-id-${widget.id}`}
       data-testid={`pixel-shape-${widget.id}`}
       data-component-id={widget.id}
@@ -591,13 +634,13 @@ export function PixelShape({
         paletteDragActive && "pointer-events-none",
       )}
       style={{
-        ...(isPlayer
+        ...(omitReactGeometry
           ? {}
           : {
-              left: display.x,
-              top: display.y,
-              width: display.width,
-              height: display.height,
+              left: stableRect.x,
+              top: stableRect.y,
+              width: stableRect.width,
+              height: stableRect.height,
             }),
         zIndex: isPlayer
           ? pixelShapePlayerZIndex(widget.order)

@@ -23,10 +23,30 @@ const TABLE_WIDGET = {
   },
 };
 
+const BAR_WIDGET = {
+  id: "w-bar-1",
+  type: "chart",
+  title: "区域对比",
+  order: 1,
+  x: 680,
+  y: 120,
+  width: 400,
+  height: 280,
+  chartConfig: {
+    chartType: "bar",
+    chartId: "w-bar-1",
+    mode: "sql",
+    dataSourceId: DS_ID,
+    sql: "SELECT region, amount FROM sales LIMIT 10",
+    dimensions: [{ field: "region" }],
+    metrics: [{ field: "amount" }],
+  },
+};
+
 const DATA_SCREEN_LAYOUT = {
   version: 2,
   canvas: { width: 1920, height: 1080 },
-  widgets: [TABLE_WIDGET],
+  widgets: [TABLE_WIDGET, BAR_WIDGET],
   globalFilters: [],
   styleConfig: { surfaceKind: "data-screen", colorScheme: "dark" },
 };
@@ -68,6 +88,13 @@ async function mockDataScreenEditApis(page: Page) {
         {
           type: "table-info",
           displayName: "明细表",
+          styleVariants: ["default"],
+          fieldRule: {},
+          renderer: "antv",
+        },
+        {
+          type: "bar",
+          displayName: "柱状图",
           styleVariants: ["default"],
           fieldRule: {},
           renderer: "antv",
@@ -115,7 +142,7 @@ async function mockDataScreenEditApis(page: Page) {
   });
 }
 
-test("data-screen resize keeps chart container aligned with widget outer box", async ({ page }) => {
+test("data-screen resize keeps all widgets and content container visible", async ({ page }) => {
   await mockDataScreenEditApis(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(`/admin/data-screens/${SCREEN_ID}/edit`);
@@ -124,10 +151,23 @@ test("data-screen resize keeps chart container aligned with widget outer box", a
     timeout: 20_000,
   });
 
-  const shape = page.locator('[data-testid="pixel-shape-w-table-1"]');
-  await expect(shape).toBeVisible({ timeout: 15_000 });
+  const content = page.locator('[data-testid="pixel-canvas-content"]');
+  const shapes = page.locator('[data-testid^="pixel-shape-"]');
+  const activeShape = page.locator('[data-testid="pixel-shape-w-table-1"]');
+  const peerShape = page.locator('[data-testid="pixel-shape-w-bar-1"]');
 
-  const before = await shape.evaluate((el) => ({
+  await expect(activeShape).toBeVisible({ timeout: 15_000 });
+  await expect(peerShape).toBeVisible({ timeout: 15_000 });
+  await expect(shapes).toHaveCount(2);
+
+  const contentBox = await content.boundingBox();
+  expect(contentBox).not.toBeNull();
+  if (contentBox) {
+    expect(contentBox.width).toBeGreaterThanOrEqual(800);
+    expect(contentBox.height).toBeGreaterThanOrEqual(400);
+  }
+
+  const before = await activeShape.evaluate((el) => ({
     outerWidth: el.clientWidth,
     outerHeight: el.clientHeight,
     containerWidth: el.querySelector(".dashboard-widget-body")?.clientWidth ?? 0,
@@ -147,20 +187,28 @@ test("data-screen resize keeps chart container aligned with widget outer box", a
   await page.mouse.up();
 
   await expect
-    .poll(async () => {
-      return shape.evaluate((el) => ({
-        outerWidth: el.clientWidth,
-        outerHeight: el.clientHeight,
-        containerWidth: el.querySelector(".dashboard-widget-body")?.clientWidth ?? 0,
-        containerHeight: el.querySelector(".dashboard-widget-body")?.clientHeight ?? 0,
-      }));
-    })
-    .toMatchObject({
-      outerWidth: expect.any(Number),
-      containerWidth: expect.any(Number),
-    });
+    .poll(async () => shapes.count())
+    .toBe(2);
 
-  const after = await shape.evaluate((el) => ({
+  for (const id of ["w-table-1", "w-bar-1"]) {
+    const shape = page.locator(`[data-testid="pixel-shape-${id}"]`);
+    await expect(shape).toBeVisible();
+    const bbox = await shape.boundingBox();
+    expect(bbox).not.toBeNull();
+    if (bbox) {
+      expect(bbox.width).toBeGreaterThan(50);
+      expect(bbox.height).toBeGreaterThan(50);
+    }
+  }
+
+  const afterContent = await content.boundingBox();
+  expect(afterContent).not.toBeNull();
+  if (afterContent) {
+    expect(afterContent.width).toBeGreaterThanOrEqual(800);
+    expect(afterContent.height).toBeGreaterThanOrEqual(400);
+  }
+
+  const after = await activeShape.evaluate((el) => ({
     outerWidth: el.clientWidth,
     outerHeight: el.clientHeight,
     containerWidth: el.querySelector(".dashboard-widget-body")?.clientWidth ?? 0,

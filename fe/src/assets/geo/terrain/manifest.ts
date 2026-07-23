@@ -3,10 +3,10 @@
 export const CHINA_TERRAIN_NATIONAL_ID = "national" as const;
 
 export const CHINA_TERRAIN_BOUNDS = {
-  west: 73,
-  south: 17,
-  east: 136,
-  north: 54,
+  west: 72.27048869999999,
+  south: 2.82878928,
+  east: 136.32753630000002,
+  north: 54.558062719999995,
 } as const;
 
 export const CHINA_TERRAIN_PROVINCE_ADCODES = [

@@ -5,6 +5,10 @@ vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...
 
 import { resolveDefaultDashboardPath, resolveDefaultLandingPath } from "./defaultViewResolve";
 
+function mockDashboardExists(id: string) {
+  mockApiFetch.mockResolvedValueOnce({ id });
+}
+
 describe("resolveDefaultDashboardPath", () => {
   beforeEach(() => mockApiFetch.mockReset());
 
@@ -17,10 +21,12 @@ describe("resolveDefaultDashboardPath", () => {
         maxWidgetCount: 24,
         inheritFromRoleId: null,
       });
+    mockDashboardExists("d-1");
     const path = await resolveDefaultDashboardPath(["viewer", "admin"]);
     expect(path).toBe("/admin/dashboards/d-1");
     expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/users/me/views");
     expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/roles/viewer/default-views");
+    expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/dashboards/d-1");
   });
 
   it("follows inheritFromRoleId chain", async () => {
@@ -36,6 +42,7 @@ describe("resolveDefaultDashboardPath", () => {
         inheritFromRoleId: null,
         maxWidgetCount: 24,
       });
+    mockDashboardExists("d-2");
     const path = await resolveDefaultDashboardPath(["viewer"]);
     expect(path).toBe("/admin/dashboards/d-2");
   });
@@ -50,15 +57,10 @@ describe("resolveDefaultDashboardPath", () => {
   });
 
   it("prefers user override over role default", async () => {
-    mockApiFetch
-      .mockResolvedValueOnce({
-        items: [{ id: "v1", name: "我的看板", dashboardId: "d-override" }],
-      })
-      .mockResolvedValueOnce({
-        dashboardId: "d-role",
-        inheritFromRoleId: null,
-        maxWidgetCount: 24,
-      });
+    mockApiFetch.mockResolvedValueOnce({
+      items: [{ id: "v1", name: "我的看板", dashboardId: "d-override" }],
+    });
+    mockDashboardExists("d-override");
     const path = await resolveDefaultDashboardPath(["viewer"]);
     expect(path).toBe("/admin/dashboards/d-override");
     expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/users/me/views");
@@ -72,6 +74,7 @@ describe("resolveDefaultDashboardPath", () => {
         { name: "默认", dashboardId: "d-default-name" },
       ],
     });
+    mockDashboardExists("d-default-name");
     expect(await resolveDefaultDashboardPath(["viewer"])).toBe("/admin/dashboards/d-default-name");
   });
 
@@ -83,6 +86,23 @@ describe("resolveDefaultDashboardPath", () => {
         inheritFromRoleId: null,
         maxWidgetCount: 24,
       });
+    mockDashboardExists("d-role");
+    expect(await resolveDefaultDashboardPath(["viewer"])).toBe("/admin/dashboards/d-role");
+  });
+
+  it("skips stale dashboard ids from user override", async () => {
+    const notFound = Object.assign(new Error("Dashboard not found"), { code: "DASH_NOT_FOUND" });
+    mockApiFetch
+      .mockResolvedValueOnce({
+        items: [{ name: "默认", dashboardId: "d-missing" }],
+      })
+      .mockRejectedValueOnce(notFound)
+      .mockResolvedValueOnce({
+        dashboardId: "d-role",
+        inheritFromRoleId: null,
+        maxWidgetCount: 24,
+      });
+    mockDashboardExists("d-role");
     expect(await resolveDefaultDashboardPath(["viewer"])).toBe("/admin/dashboards/d-role");
   });
 
@@ -96,6 +116,7 @@ describe("resolveDefaultDashboardPath", () => {
         inheritFromRoleId: null,
         maxWidgetCount: 24,
       });
+    mockDashboardExists("d-admin");
     expect(await resolveDefaultDashboardPath(["viewer", "admin"])).toBe("/admin/dashboards/d-admin");
   });
 
@@ -112,6 +133,7 @@ describe("resolveDefaultDashboardPath", () => {
         inheritFromRoleId: null,
         maxWidgetCount: 24,
       });
+    mockDashboardExists("d-2");
     expect(await resolveDefaultDashboardPath(["viewer", "analyst"])).toBe("/admin/dashboards/d-2");
   });
 
@@ -135,6 +157,7 @@ describe("resolveDefaultDashboardPath", () => {
         inheritFromRoleId: null,
         maxWidgetCount: 24,
       });
+    mockDashboardExists("d-fallback");
     expect(await resolveDefaultDashboardPath(["viewer"])).toBe("/admin/dashboards/d-fallback");
   });
 });
@@ -163,6 +186,7 @@ describe("resolveDefaultLandingPath report template fallback", () => {
         reportTemplateNodeId: "tpl-node-1",
         inheritFromRoleId: null,
       });
+    mockDashboardExists("d-1");
     expect(await resolveDefaultLandingPath(["viewer"])).toBe("/admin/dashboards/d-1");
   });
 

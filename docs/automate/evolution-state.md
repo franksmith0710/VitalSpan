@@ -7,42 +7,38 @@
 | 字段 | 值 |
 |------|----|
 | phase | **A8_DONE** |
-| status | **DONE** |
-| request | Code Review 假功能修复（P0/P1 批次） |
-| type | bug / small-change |
-| plan | [`plans/2026-07-22-code-review-fake-features-fix.md`](./plans/2026-07-22-code-review-fake-features-fix.md) |
-| goal | 消除配置面板「能保存不生效」假功能 |
-| last_verified | 2026-07-22：`test:chart-catalog` 210 passed |
+| status | **DONE**（待用户目视验收 BUG-13） |
+| request | 3D 地图卫星纹理与省界对齐（/dev-autopilot 持续修复） |
+| type | bug |
+| plan | 内联 R5：projBounds 烘焙方案 |
+| goal | map-3d 地形贴图地物与省界对齐，无「局部放大」感 |
+| last_verified | 2026-07-23：`test:chart-catalog` 235 passed |
 
 ## 当前需求契约
 
-- **request**: 修复 code-reviewer 报告 P0/P1
-- **type**: bug-fix batch
-- **goal**: Inspector 控件与渲染/runtime 一致
-- **scope_include**: terrainRelief、富文本假数据 Tab、栅格 widgetStyle、tooltip、shell 图例色、liquid%、筛选器标签色、媒体链接提示、3D 空态
-- **scope_exclude**: 富文本 Dataset 动态渲染、LinkageRulesPanel 挂载、region_id demo 映射
-- **acceptance**: `pnpm run test:chart-catalog` 全绿
+- **request**: BUG-13 3D 卫星纹理错位，一直改到对为止
+- **type**: bug
+- **goal**: 全国 map-3d 开启地形贴图后省界与真实地物对齐
+- **scope_include**: terrain 构建脚本、运行时 UV、national + 试点省资产
+- **scope_exclude**: 在线瓦片、境外地图
+- **acceptance**: 目视验收 + `pnpm run test:chart-catalog` 全绿
 - **risk_level**: low
 - **autonomy_policy**: auto_accept_low_risk
 
-## 本轮修复摘要
+## 本轮修复摘要（BUG-13 R5）
 
-| ID | 修复 |
+| 项 | 改动 |
 |----|------|
-| P0-1 | `TextEditRail` 移除假数据 Tab，仅样式 + 双击编辑提示 |
-| P0-2 | `terrainRelief` 与 `terrainTexture` 联合门控 hillshade 加载 |
-| P0-3 | `resolveGridWidgetShell` 接入 Text/Media/Tabs/Filter 栅格外壳 |
-| P1-1 | 13 个 D3 renderer 补齐 `tooltipPresentation` |
-| P1-2 | Shell 图例发布 `legend.color` → `EmbeddedChartLegendShell` |
-| P1-3 | 水波图 UI 改为「目标线（%）」0–100 |
-| P1-6 | 3D 地图 `features.length===0` 显示占位文案 |
-| P1-9/10 | 筛选器 `labelStyle` + 媒体链接提示条件修正 |
-| 附带 | `TablePivotGrid` 补 `TableResizeGuide` import |
+| 根因 | Mercator 纹理 ≠ mesh projBounds 平面；需 sc-datav 同构烘焙 |
+| 构建 | `terrainProjBake.mjs` + `terrainThreeProject.mjs` |
+| 运行时 | `applyGeoCapBboxUv(projBounds)`，移除 `geoUvContext` |
+| 资产 | `fetch:terrain-sat --force` + `build:geo-terrain` |
+| 文档 | `docs/ui/map-texture.md`、`docs/bugs/BUG-13_*` |
 
 ## 修订记录
 
 | 日期 | 说明 |
 |------|------|
-| 2026-07-22 | A8_DONE：code-review P1 续（partial 提示、GlobalFilterBar、Dataset 绑定错误） |
+| 2026-07-23 | A8_DONE：BUG-13 R5 projBounds 烘焙 + bbox UV |
+| 2026-07-22 | A8_DONE：code-review P1 续 |
 | 2026-07-22 | A8_DONE：code-review-fake-features-fix |
-| 2026-07-22 | A8_DONE：chart-dense-viewport-scroll P0 |

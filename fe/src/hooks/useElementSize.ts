@@ -26,6 +26,7 @@ export function useElementSize<T extends HTMLElement>(
 ): {
   ref: (node: T | null) => void;
   size: Size;
+  remeasure: () => void;
 } {
   const options =
     typeof enabledOrOptions === "boolean"
@@ -74,14 +75,19 @@ export function useElementSize<T extends HTMLElement>(
     setSize(readLayoutSize(node));
   }, [enabled, node, paused]);
 
+  const remeasure = useCallback(() => {
+    if (!node) return;
+    setSize(readLayoutSize(node));
+  }, [node]);
+
   useEffect(() => {
     if (!enabled || !node) return;
-    const remeasure = () => {
-      setSize(readLayoutSize(node));
+    const remeasureOnCommit = () => {
+      remeasure();
     };
-    document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, remeasure);
-    return () => document.removeEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, remeasure);
-  }, [enabled, node]);
+    document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, remeasureOnCommit);
+    return () => document.removeEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, remeasureOnCommit);
+  }, [enabled, node, remeasure]);
 
-  return { ref, size };
+  return { ref, size, remeasure };
 }

@@ -1,33 +1,17 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { buildGeoFlatPlateMesh } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
-import { nationalTerrainBounds } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
-import { THREE_GEO_MAP_MARGIN, buildThreeGeoProject } from "@/components/charts/engine/three/geo/threeGeoProject";
+import {
+  GEO_CAP_Z_EPS,
+  buildGeoFlatPlateMesh,
+} from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
+import { buildThreeGeoProject } from "@/components/charts/engine/three/geo/threeGeoProject";
 
 describe("buildGeoFlatPlateMesh", () => {
-  it("applies terrain diffuse map to cap when terrain opts provided", () => {
-    const featureCollection = {
-      type: "FeatureCollection" as const,
-      features: [
-        {
-          type: "Feature" as const,
-          properties: {},
-          geometry: {
-            type: "Polygon" as const,
-            coordinates: [
-              [
-                [105, 30],
-                [106, 30],
-                [106, 31],
-                [105, 31],
-                [105, 30],
-              ],
-            ],
-          },
-        },
-      ],
-    };
-    const geoProject = buildThreeGeoProject(800, 600, [], featureCollection);
+  it("returns group with cap + extrude body when terrain opts provided", () => {
+    const geoProject = buildThreeGeoProject(800, 600, [], {
+      type: "FeatureCollection",
+      features: [],
+    });
     const shape = new THREE.Shape();
     shape.moveTo(-10, -10);
     shape.lineTo(10, -10);
@@ -36,24 +20,28 @@ describe("buildGeoFlatPlateMesh", () => {
     shape.closePath();
 
     const terrainMap = new THREE.Texture();
-    const built = buildGeoFlatPlateMesh(shape, 2, 0x0284c7, 0x7dd3fc, true, {
+    const depth = 2;
+    const built = buildGeoFlatPlateMesh(shape, depth, 0x0284c7, 0x7dd3fc, true, {
       terrainColorMap: terrainMap,
-      geoBounds: nationalTerrainBounds(),
       projBounds: geoProject.projBounds,
-      margin: THREE_GEO_MAP_MARGIN,
-      centerX: geoProject.centerX,
-      centerY: geoProject.centerY,
-      projection: geoProject.projection,
-      viewport: geoProject.viewport,
       dataTint: 0x0284c7,
       valueT: 0.5,
     });
 
-    expect(built.capMaterial).toBeInstanceOf(THREE.MeshBasicMaterial);
-    expect((built.capMaterial as THREE.MeshBasicMaterial).map).toBe(terrainMap);
+    expect(built.mesh).toBeInstanceOf(THREE.Group);
+    expect(built.mesh.children.length).toBe(3);
+    expect(built.capMaterial).toBeInstanceOf(THREE.MeshStandardMaterial);
+    expect(built.capMaterial.map).toBe(terrainMap);
+
+    const capMesh = built.mesh.children.find(
+      (c) => c instanceof THREE.Mesh && c.material === built.capMaterial,
+    ) as THREE.Mesh;
+    expect(capMesh).toBeTruthy();
+    expect(capMesh.position.z).toBeCloseTo(depth + GEO_CAP_Z_EPS);
+    expect(capMesh.geometry.attributes.uv).toBeTruthy();
   });
 
-  it("uses standard cap material when relief maps provided", () => {
+  it("applies displacement on cap when relief maps provided", () => {
     const shape = new THREE.Shape();
     shape.moveTo(0, 0);
     shape.lineTo(1, 0);
@@ -63,23 +51,20 @@ describe("buildGeoFlatPlateMesh", () => {
       type: "FeatureCollection",
       features: [],
     });
+    const displacement = new THREE.Texture();
     const built = buildGeoFlatPlateMesh(shape, 1, 0x0284c7, 0x7dd3fc, true, {
       terrainColorMap: new THREE.Texture(),
       terrainNormalMap: new THREE.Texture(),
-      terrainDisplacementMap: new THREE.Texture(),
+      terrainDisplacementMap: displacement,
       displacementScale: 2,
       reliefOn: true,
-      geoBounds: nationalTerrainBounds(),
       projBounds: geoProject.projBounds,
-      margin: THREE_GEO_MAP_MARGIN,
-      centerX: geoProject.centerX,
-      centerY: geoProject.centerY,
-      projection: geoProject.projection,
-      viewport: geoProject.viewport,
       dataTint: 0x0284c7,
       valueT: 0.5,
     });
     expect(built.capMaterial).toBeInstanceOf(THREE.MeshStandardMaterial);
-    expect((built.capMaterial as THREE.MeshStandardMaterial).normalMap).toBeTruthy();
+    expect(built.capMaterial.normalMap).toBeTruthy();
+    expect(built.capMaterial.displacementMap).toBe(displacement);
+    expect(built.capMaterial.displacementScale).toBe(2);
   });
 });

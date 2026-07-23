@@ -43,6 +43,24 @@ export function migrateChartViewConfig<T extends ChartViewConfig>(config: T): T 
     break;
   }
 
+  if (!next.mode) {
+    if (next.sql?.trim()) {
+      next = { ...next, mode: "sql" };
+    } else if (next.table) {
+      next = { ...next, mode: "table" };
+    } else if (next.nativeBody && Object.keys(next.nativeBody).length > 0) {
+      next = { ...next, mode: "native" };
+    }
+  } else if (next.mode === "dataset" && !next.configId) {
+    if (next.sql?.trim()) {
+      next = { ...next, mode: "sql" };
+    } else if (next.table) {
+      next = { ...next, mode: "table" };
+    } else if (next.nativeBody && Object.keys(next.nativeBody).length > 0) {
+      next = { ...next, mode: "native" };
+    }
+  }
+
   return next;
 }
 

@@ -1,17 +1,16 @@
 import * as THREE from "three";
-import type * as d3 from "d3";
+import { applyGeoCapBboxUv } from "@/components/charts/engine/three/geo/applyGeoCapBboxUv";
 import {
-  applyTerrainToExtrudeGeometry,
   buildTerrainCapMaterial,
-  buildTerrainReliefCapMaterial,
-  type GeoMapLayoutMargin,
   type GeoProjBounds,
+  type TerrainCapSource,
 } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
-import type { TerrainGeoBounds } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
+/** 顶盖上浮，避免与 Extrude 顶面 Z-fighting（对标 sc-datav depth+0.1） */
+export const GEO_CAP_Z_EPS = 0.02;
 
 export type GeoFlatPlateMesh = {
-  mesh: THREE.Mesh;
-  capMaterial: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial;
+  mesh: THREE.Group;
+  capMaterial: THREE.MeshStandardMaterial;
   borderLines: THREE.LineSegments;
 };
 
@@ -21,18 +20,13 @@ export type GeoFlatPlateOptions = {
   terrainDisplacementMap?: THREE.Texture;
   displacementScale?: number;
   reliefOn?: boolean;
-  geoBounds?: TerrainGeoBounds;
   projBounds?: GeoProjBounds;
-  margin?: GeoMapLayoutMargin;
-  centerX?: number;
-  centerY?: number;
-  projection?: d3.GeoProjection;
-  viewport?: { width: number; height: number };
   dataTint?: number;
   valueT?: number;
+  terrainSource?: TerrainCapSource;
 };
 
-/** 统一薄底板：顶面 hillshade + 可选法线/位移起伏 */
+/** sc-datav Demo1：Shape 顶盖贴图 + Extrude 侧壁挤压 */
 export function buildGeoFlatPlateMesh(
   shape: THREE.Shape,
   depth: number,
@@ -41,61 +35,26 @@ export function buildGeoFlatPlateMesh(
   isDark: boolean,
   options: GeoFlatPlateOptions = {},
 ): GeoFlatPlateMesh {
-  let geometry: THREE.ExtrudeGeometry = new THREE.ExtrudeGeometry(shape, {
-    depth,
-    bevelEnabled: false,
-  });
-
-  const hasTerrain =
-    options.terrainColorMap &&
-    options.geoBounds &&
-    options.projBounds &&
-    options.margin &&
-    options.projection &&
-    options.viewport &&
-    options.centerX != null &&
-    options.centerY != null;
-
-  if (hasTerrain) {
-    geometry = applyTerrainToExtrudeGeometry(geometry, {
-      geoBounds: options.geoBounds!,
-      projBounds: options.projBounds!,
-      depth,
-      projection: options.projection!,
-      viewport: options.viewport!,
-      margin: options.margin!,
-      centerX: options.centerX!,
-      centerY: options.centerY!,
-    });
-  }
-
-  const sideMaterial = new THREE.MeshStandardMaterial({
-    color: isDark ? 0x0a121c : 0x5a6a78,
-    roughness: 0.96,
-    metalness: 0.02,
-  });
-
+  const hasTerrain = Boolean(options.terrainColorMap && options.projBounds);
   const dataTint = new THREE.Color(options.dataTint ?? capColor);
   const valueT = options.valueT ?? 1;
-  const useRelief =
-    hasTerrain &&
-    options.reliefOn &&
-    options.terrainNormalMap &&
-    options.displacementScale != null &&
-    options.displacementScale > 0;
+
+  const displacementScale =
+    hasTerrain && options.reliefOn && options.terrainDisplacementMap
+      ? (options.displacementScale ?? 0)
+      : 0;
 
   const capMaterial = hasTerrain
-    ? useRelief
-      ? buildTerrainReliefCapMaterial(
-          options.terrainColorMap!,
-          options.terrainNormalMap!,
-          options.terrainDisplacementMap,
-          dataTint,
-          valueT,
-          options.displacementScale!,
-          isDark,
-        )
-      : buildTerrainCapMaterial(options.terrainColorMap!, dataTint, valueT, isDark)
+    ? buildTerrainCapMaterial(
+        options.terrainColorMap!,
+        options.terrainNormalMap,
+        options.terrainDisplacementMap,
+        dataTint,
+        valueT,
+        isDark,
+        displacementScale,
+        options.terrainSource ?? "satellite",
+      )
     : new THREE.MeshStandardMaterial({
         color: dataTint,
         emissive: dataTint,
@@ -105,10 +64,37 @@ export function buildGeoFlatPlateMesh(
         side: THREE.DoubleSide,
       });
 
-  const mesh = new THREE.Mesh(geometry, [sideMaterial, capMaterial]);
-  mesh.userData.capMaterial = capMaterial;
+  const invisibleCap = new THREE.MeshStandardMaterial({
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
 
-  const edges = new THREE.EdgesGeometry(geometry, 15);
+  const sideMaterial = new THREE.MeshStandardMaterial({
+    color: isDark ? 0x0a121c : 0x5a6a78,
+    roughness: 0.96,
+    metalness: 0.02,
+  });
+
+  const extrudeGeometry = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    bevelEnabled: false,
+  });
+
+  const bodyMesh = new THREE.Mesh(extrudeGeometry, [sideMaterial, invisibleCap]);
+  bodyMesh.castShadow = true;
+  bodyMesh.receiveShadow = true;
+
+  const capGeometry = new THREE.ShapeGeometry(shape);
+  if (hasTerrain) {
+    applyGeoCapBboxUv(capGeometry, options.projBounds!);
+  }
+  const capMesh = new THREE.Mesh(capGeometry, capMaterial);
+  capMesh.position.z = depth + GEO_CAP_Z_EPS;
+  capMesh.userData.capMaterial = capMaterial;
+
+  const edges = new THREE.EdgesGeometry(extrudeGeometry, 15);
   const borderLines = new THREE.LineSegments(
     edges,
     new THREE.LineBasicMaterial({
@@ -117,8 +103,13 @@ export function buildGeoFlatPlateMesh(
       opacity: isDark ? 0.82 : 0.75,
     }),
   );
-  borderLines.position.z = depth + 0.02;
-  mesh.add(borderLines);
+  borderLines.position.z = depth + GEO_CAP_Z_EPS + 0.01;
 
-  return { mesh, capMaterial, borderLines };
+  const group = new THREE.Group();
+  group.add(bodyMesh);
+  group.add(capMesh);
+  group.add(borderLines);
+  group.userData.capMaterial = capMaterial;
+
+  return { mesh: group, capMaterial, borderLines };
 }

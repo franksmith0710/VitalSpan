@@ -88,16 +88,32 @@ describe("applyTerrainToExtrudeGeometry", () => {
     expect(maxV).toBeGreaterThan(0.05);
   });
 
-  it("builds basic cap material with terrain map", () => {
+  it("builds standard cap material with terrain map", () => {
     const tex = new THREE.Texture();
-    const mat = buildTerrainCapMaterial(tex, new THREE.Color(0xff8844), 0.8, true);
+    const mat = buildTerrainCapMaterial(
+      tex,
+      undefined,
+      undefined,
+      new THREE.Color(0xff8844),
+      0.8,
+      true,
+    );
     expect(mat.map).toBe(tex);
-    expect(mat.type).toBe("MeshBasicMaterial");
+    expect(mat.type).toBe("MeshStandardMaterial");
   });
 
-  it("keeps cap tint bright enough in dark theme", () => {
+  it("keeps cap tint bright enough in dark theme for procedural source", () => {
     const darkTint = new THREE.Color(0x042f2e);
-    const color = computeCapTintColor(darkTint, 0, true);
+    const color = computeCapTintColor(darkTint, 0, true, "procedural");
     expect(color.r + color.g + color.b).toBeGreaterThan(1.8);
+  });
+
+  it("satellite source uses stronger data tint mix", () => {
+    const tint = new THREE.Color(0x0284c7);
+    const procedural = computeCapTintColor(tint, 1, false, "procedural");
+    const satellite = computeCapTintColor(tint, 1, false, "satellite");
+    const procSum = procedural.r + procedural.g + procedural.b;
+    const satSum = satellite.r + satellite.g + satellite.b;
+    expect(satSum).toBeLessThan(procSum);
   });
 });

@@ -36,4 +36,23 @@ describe("migrateChartViewConfig", () => {
     const next = migrateChartViewConfig({ chartType: "wordCloud" });
     expect(next.chartType).toBe("word-cloud");
   });
+
+  it("infers sql mode when sql exists without mode", () => {
+    const next = migrateChartViewConfig({
+      chartType: "line",
+      dataSourceId: "ds-1",
+      sql: "SELECT 1",
+    });
+    expect(next.mode).toBe("sql");
+  });
+
+  it("promotes dataset mode to sql when sql is configured without configId", () => {
+    const next = migrateChartViewConfig({
+      chartType: "line",
+      mode: "dataset",
+      dataSourceId: "ds-1",
+      sql: "SELECT 1",
+    });
+    expect(next.mode).toBe("sql");
+  });
 });

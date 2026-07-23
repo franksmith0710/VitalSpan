@@ -50,6 +50,7 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const measureRetryRef = useRef(0);
   const [renderError, setRenderError] = useState<string | null>(null);
 
   const { ref: sizeRef, size } = useElementSize<HTMLDivElement>({
@@ -78,7 +79,14 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
       const chartWidth = fill ? el.clientWidth : resolvePaintWidth(el, width, size.width ?? 0, height);
       const chartHeight = fill ? el.clientHeight : height;
       const next = { width: Math.round(chartWidth), height: Math.round(chartHeight) };
-      if (next.width <= 0 || next.height <= 0) return;
+      if (next.width <= 0 || next.height <= 0) {
+        if ((mode === "commit" || mode === "live") && measureRetryRef.current < 2) {
+          measureRetryRef.current += 1;
+          requestAnimationFrame(() => measureAndRender(mode, force));
+        }
+        return;
+      }
+      measureRetryRef.current = 0;
       if (!force && !embeddedSizeChanged(next, lastMeasureRef.current)) return;
       lastMeasureRef.current = next;
 

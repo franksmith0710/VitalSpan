@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { fetchChartExecuteResult, isChartExecuteReady } from "@/lib/chartExecuteProbe";
+import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 
 export type StatCardMetric = {
   metricKey: string;
@@ -53,6 +55,7 @@ export function useEntityStatMetrics(
     queryKey: ["dashboards", "detail", dashboardId],
     enabled: enabled && Boolean(dashboardId) && sourcedCards.length > 0,
     queryFn: () => apiFetch<DashboardDetail>(`/api/v1/dashboards/${dashboardId}`),
+    retry: false,
   });
 
   const widgetIds = useMemo(
@@ -68,21 +71,11 @@ export function useEntityStatMetrics(
       const results: Record<string, ExecuteResult> = {};
       await Promise.all(
         widgetIds.map(async (widgetId) => {
-          const config = findWidgetMetricConfig(dashboard, widgetId);
-          if (!config?.dataSourceId && !config?.bindingId) return;
-          const body: Record<string, unknown> = {
-            dataSourceId: config.dataSourceId,
-            mode: config.mode ?? "sql",
-            sql: config.sql,
-            schema: config.schema,
-            table: config.table,
-            bindingId: config.bindingId,
-            limit: 1,
-          };
-          results[widgetId] = await apiFetch<ExecuteResult>("/api/v1/query/execute", {
-            method: "POST",
-            body: JSON.stringify(body),
-          });
+          const raw = findWidgetMetricConfig(dashboard, widgetId);
+          if (!raw) return;
+          const config = migrateChartViewConfig(raw);
+          if (!isChartExecuteReady(config)) return;
+          results[widgetId] = await fetchChartExecuteResult(config, { limit: 1 });
         }),
       );
       return results;

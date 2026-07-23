@@ -53,7 +53,7 @@ function showDevTerrainFailureHint(container: HTMLElement): () => void {
 function logDevTerrainDiagnostics(
   terrainOn: boolean,
   terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null,
-  firstCap: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial | undefined,
+  firstCap: THREE.MeshStandardMaterial | undefined,
   mapId: string | undefined,
   drillDepth: number,
   webglApi?: WebGLApi | "none",
@@ -97,22 +97,26 @@ function attachOrbitGrabCursor(
   };
 }
 
-function capMaterialOf(mesh: THREE.Mesh): THREE.MeshBasicMaterial | THREE.MeshStandardMaterial {
-  const stored = mesh.userData.capMaterial as THREE.MeshStandardMaterial | undefined;
-  if (stored) return stored;
-  const mats = mesh.material;
-  if (Array.isArray(mats)) return mats[1] as THREE.MeshBasicMaterial | THREE.MeshStandardMaterial;
-  return mats as THREE.MeshBasicMaterial | THREE.MeshStandardMaterial;
+function provinceGroupOf(obj: THREE.Object3D): THREE.Object3D | null {
+  let cur: THREE.Object3D | null = obj;
+  while (cur) {
+    if (cur.userData?.name != null) return cur;
+    cur = cur.parent;
+  }
+  return null;
 }
 
-function disposeMesh(mesh: THREE.Mesh): void {
-  mesh.geometry.dispose();
-  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-  for (const m of mats) m.dispose();
-  mesh.children.forEach((child) => {
-    if (child instanceof THREE.LineSegments) {
-      child.geometry.dispose();
-      (child.material as THREE.Material).dispose();
+function capMaterialOf(target: THREE.Object3D): THREE.MeshStandardMaterial {
+  const group = provinceGroupOf(target) ?? target;
+  return group.userData.capMaterial as THREE.MeshStandardMaterial;
+}
+
+function disposePlateGroup(group: THREE.Group): void {
+  group.traverse((child) => {
+    if (child instanceof THREE.Mesh || child instanceof THREE.LineSegments) {
+      child.geometry?.dispose();
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      for (const m of mats) m.dispose();
     }
   });
 }
@@ -223,7 +227,7 @@ export async function renderThreeChoroplethChart(
 
     const fitCollection = buildMapFitCollection(geo);
     const geoProject = buildThreeGeoProject(width, height, fitCollection.features, fitCollection);
-    const { project, projBounds, margin, centerX, centerY, viewport } = geoProject;
+    const { project, projBounds } = geoProject;
 
     let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
     if (terrainOn) {
@@ -260,7 +264,7 @@ export async function renderThreeChoroplethChart(
     scene.add(keyLight, fillLight);
 
     const mapGroup = new THREE.Group();
-    const meshes: THREE.Mesh[] = [];
+    const meshes: THREE.Group[] = [];
     const displacementScale = reliefOn ? plateDepth * 5.5 : 0;
     const terrainOpts = terrainPack
       ? {
@@ -269,17 +273,12 @@ export async function renderThreeChoroplethChart(
           terrainDisplacementMap: terrainPack.displacementMap,
           displacementScale,
           reliefOn,
-          geoBounds: terrainPack.bounds,
           projBounds,
-          margin,
-          centerX,
-          centerY,
-          projection: geoProject.projection,
-          viewport,
+          terrainSource: terrainPack.source,
         }
       : {};
 
-    let firstCapMaterial: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial | undefined;
+    let firstCapMaterial: THREE.MeshStandardMaterial | undefined;
 
     for (const feature of features) {
       if (!feature.geometry) continue;
@@ -302,12 +301,9 @@ export async function renderThreeChoroplethChart(
           value: feature.value,
           adcode: feature.adcode,
           terrainApplied: Boolean(terrainPack?.colorMap),
+          capMaterial: built.capMaterial,
           capTint,
-          capIsBasic: built.capMaterial instanceof THREE.MeshBasicMaterial,
-          emissiveIntensity:
-            built.capMaterial instanceof THREE.MeshStandardMaterial
-              ? built.capMaterial.emissiveIntensity
-              : undefined,
+          emissiveIntensity: built.capMaterial.emissiveIntensity,
         };
         mapGroup.add(built.mesh);
         meshes.push(built.mesh);
@@ -351,25 +347,21 @@ export async function renderThreeChoroplethChart(
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    let hovered: THREE.Mesh | null = null;
+    let hovered: THREE.Object3D | null = null;
     let frameId = 0;
 
-    const restoreCap = (mesh: THREE.Mesh) => {
-      const cap = capMaterialOf(mesh);
-      const tint = mesh.userData.capTint as THREE.Color;
-      if (cap instanceof THREE.MeshBasicMaterial) {
-        cap.color.copy(tint);
-        return;
-      }
+    const restoreCap = (group: THREE.Object3D) => {
+      const cap = capMaterialOf(group);
+      const tint = group.userData.capTint as THREE.Color;
       cap.color.copy(tint);
       cap.emissive.copy(tint);
-      cap.emissiveIntensity = mesh.userData.emissiveIntensity as number;
+      cap.emissiveIntensity = group.userData.emissiveIntensity as number;
     };
 
-    const setHover = (mesh: THREE.Mesh | null) => {
-      if (hovered === mesh) return;
+    const setHover = (group: THREE.Object3D | null) => {
+      if (hovered === group) return;
       if (hovered) restoreCap(hovered);
-      hovered = mesh;
+      hovered = group;
       if (!hovered) return;
       const cap = capMaterialOf(hovered);
       const hoverCss = colorForGeoHover(
@@ -379,10 +371,6 @@ export async function renderThreeChoroplethChart(
         surface.palette,
       );
       const hoverCol = new THREE.Color(hoverCss);
-      if (cap instanceof THREE.MeshBasicMaterial) {
-        cap.color.copy(hoverCol);
-        return;
-      }
       cap.color.copy(hoverCol);
       cap.emissive.copy(hoverCol);
       cap.emissiveIntensity = isDark ? 0.45 : 0.32;
@@ -393,20 +381,21 @@ export async function renderThreeChoroplethChart(
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
-      const hit = raycaster.intersectObjects(meshes, false)[0]?.object as THREE.Mesh | undefined;
-      if (!hit?.userData?.name) {
+      const hit = raycaster.intersectObjects(meshes, true)[0]?.object;
+      const group = hit ? provinceGroupOf(hit) : null;
+      if (!group?.userData?.name) {
         setHover(null);
         hideTooltip(tooltip);
         return;
       }
-      setHover(hit);
+      setHover(group);
       if (!tooltip) return;
       showMergedTooltip(
         tooltip,
         container,
         event,
-        String(hit.userData.name),
-        [{ name: metricField || "值", color: surface.rangeHighCss, value: Number(hit.userData.value ?? 0) }],
+        String(group.userData.name),
+        [{ name: metricField || "值", color: surface.rangeHighCss, value: Number(group.userData.value ?? 0) }],
         valueFormat,
         width,
       );
@@ -448,7 +437,7 @@ export async function renderThreeChoroplethChart(
         detachGrabCursor();
         detachTerrainHint();
         terrainPack?.dispose();
-        for (const mesh of meshes) disposeMesh(mesh);
+        for (const mesh of meshes) disposePlateGroup(mesh);
         renderer.dispose();
         hideTooltip(tooltip);
         detachVisualMap();

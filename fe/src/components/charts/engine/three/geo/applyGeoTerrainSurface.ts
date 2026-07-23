@@ -1,5 +1,6 @@
 import type * as d3 from "d3";
 import * as THREE from "three";
+import { lngLatToMercatorCapUv } from "@/lib/geoMercatorUv";
 import type { TerrainGeoBounds } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 
 export type GeoProjBounds = {
@@ -83,10 +84,7 @@ function capUvFromPosition(x: number, y: number, opts: TerrainSurfaceOpts): [num
   const py = viewport.height / 2 - (y + centerY) - margin.top;
   const lngLat = projection.invert?.([px, py]);
   if (lngLat) {
-    const lngSpan = geoBounds.east - geoBounds.west || 1;
-    const latSpan = geoBounds.north - geoBounds.south || 1;
-    const u = (lngLat[0] - geoBounds.west) / lngSpan;
-    const v = 1 - (lngLat[1] - geoBounds.south) / latSpan;
+    const [u, v] = lngLatToMercatorCapUv(lngLat[0], lngLat[1], geoBounds);
     if (u >= 0 && u <= 1 && v >= 0 && v <= 1) {
       return [u, v];
     }
@@ -145,22 +143,22 @@ export function lngLatToTerrainUv(
   lat: number,
   geoBounds: TerrainGeoBounds,
 ): [number, number] {
-  const lngSpan = geoBounds.east - geoBounds.west || 1;
-  const latSpan = geoBounds.north - geoBounds.south || 1;
-  const u = Math.max(0, Math.min(1, (lng - geoBounds.west) / lngSpan));
-  const v = Math.max(0, Math.min(1, 1 - (lat - geoBounds.south) / latSpan));
-  return [u, v];
+  return lngLatToMercatorCapUv(lng, lat, geoBounds);
 }
 
-/** 数据色乘算权重：hillshade 为主，避免 dark 主题下顶面近黑 */
+export type TerrainCapSource = "satellite" | "procedural";
+
+/** 数据色乘算：卫星底图保留彩色，指标色半透明叠加 */
 export function computeCapTintColor(
   dataTint: THREE.Color,
   valueT: number,
   isDark = false,
+  source: TerrainCapSource = "satellite",
 ): THREE.Color {
-  const tintMix = 0.08 + valueT * 0.22;
+  const tintMix =
+    source === "satellite" ? 0.22 + valueT * 0.38 : 0.08 + valueT * 0.22;
   let color = new THREE.Color(0xffffff).lerp(dataTint, tintMix);
-  if (isDark) {
+  if (isDark && source !== "satellite") {
     color = color.lerp(new THREE.Color(0xcccccc), 0.1);
   }
   return color;
@@ -168,18 +166,33 @@ export function computeCapTintColor(
 
 export function buildTerrainCapMaterial(
   terrainMap: THREE.Texture,
+  normalMap: THREE.Texture | undefined,
+  displacementMap: THREE.Texture | undefined,
   dataTint: THREE.Color,
   valueT: number,
-  isDark = false,
-): THREE.MeshBasicMaterial {
+  isDark: boolean,
+  displacementScale = 0,
+  source: TerrainCapSource = "satellite",
+): THREE.MeshStandardMaterial {
   terrainMap.colorSpace = THREE.SRGBColorSpace;
-  return new THREE.MeshBasicMaterial({
+  const tint = computeCapTintColor(dataTint, valueT, isDark, source);
+  const emissiveIntensity =
+    source === "satellite" ? (isDark ? 0.04 : 0.02) : isDark ? 0.1 : 0.05;
+  return new THREE.MeshStandardMaterial({
     map: terrainMap,
-    color: computeCapTintColor(dataTint, valueT, isDark),
+    normalMap: normalMap ?? null,
+    displacementMap: displacementMap && displacementScale > 0 ? displacementMap : null,
+    displacementScale: displacementMap && displacementScale > 0 ? displacementScale : 0,
+    color: tint,
+    emissive: tint.clone(),
+    emissiveIntensity,
+    metalness: 0.2,
+    roughness: 0.5,
     side: THREE.FrontSide,
   });
 }
 
+/** @deprecated 使用 buildTerrainCapMaterial（Standard + map/normal） */
 export function buildTerrainReliefCapMaterial(
   terrainMap: THREE.Texture,
   normalMap: THREE.Texture,
@@ -189,18 +202,13 @@ export function buildTerrainReliefCapMaterial(
   displacementScale: number,
   isDark: boolean,
 ): THREE.MeshStandardMaterial {
-  terrainMap.colorSpace = THREE.SRGBColorSpace;
-  const tint = computeCapTintColor(dataTint, valueT, isDark);
-  return new THREE.MeshStandardMaterial({
-    map: terrainMap,
+  return buildTerrainCapMaterial(
+    terrainMap,
     normalMap,
-    displacementMap: displacementMap ?? null,
-    displacementScale: displacementMap ? displacementScale : 0,
-    color: tint,
-    emissive: tint.clone(),
-    emissiveIntensity: isDark ? 0.12 : 0.06,
-    metalness: 0.04,
-    roughness: 0.72,
-    side: THREE.FrontSide,
-  });
+    displacementMap,
+    dataTint,
+    valueT,
+    isDark,
+    displacementScale,
+  );
 }

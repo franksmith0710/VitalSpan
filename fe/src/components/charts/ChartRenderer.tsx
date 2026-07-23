@@ -231,7 +231,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   const isShapePlaying = usePixelShapePlayer();
   const isGridPlaying = useDashboardGridPlayer();
   const suspendLiveResize = suspendLiveResizeProp || isShapePlaying || isGridPlaying;
-  const { ref: bodyRef, size: bodySize } = useElementSize<HTMLDivElement>({
+  const { ref: bodyRef, size: bodySize, remeasure: remeasureBody } = useElementSize<HTMLDivElement>({
     enabled: embedded,
     paused: suspendLiveResize,
   });
@@ -248,6 +248,18 @@ export const ChartRenderer = memo(function ChartRenderer({
     pixelSize?.height,
     contentChromePx,
     gridSpan?.h,
+  ]);
+
+  useEffect(() => {
+    if (!embedded || suspendLiveResize) return;
+    if (!pixelSize || pixelSize.width <= 0 || pixelSize.height <= 0) return;
+    remeasureBody();
+  }, [
+    embedded,
+    suspendLiveResize,
+    pixelSize?.width,
+    pixelSize?.height,
+    remeasureBody,
   ]);
   const chartSize = useMemo(() => {
     if (embedded) {

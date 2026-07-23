@@ -109,4 +109,19 @@ describe("useChartExecute", () => {
 
     await waitFor(() => expect(fetchChartExecuteResult).toHaveBeenCalledTimes(1));
   });
+
+  it("does not call execute when chart binding is not ready", async () => {
+    const config = {
+      ...defaultChartConfig("line"),
+      mode: "sql" as const,
+      dataSourceId: "",
+      sql: "",
+    };
+
+    const { result } = renderHook(() => useChartExecute(config));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(fetchChartExecuteResult).not.toHaveBeenCalled();
+    expect(result.current.error).toBe("请配置数据源与 SQL");
+  });
 });

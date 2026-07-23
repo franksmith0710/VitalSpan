@@ -1,5 +1,7 @@
 /** 离线高程合成 + hillshade / normal / displacement（构建脚本用） */
 
+import { pixelToLngLat } from "./terrainMercator.mjs";
+
 export const CHINA_BOUNDS = Object.freeze({
   west: 73,
   east: 136,
@@ -97,6 +99,18 @@ export function buildHeightGrid(size, bounds) {
   return grid;
 }
 
+/** 与卫星 diffuse 同 Mercator 像素→经纬度映射 */
+export function buildHeightGridMercator(width, height, bounds) {
+  const grid = new Float32Array(width * height);
+  for (let py = 0; py < height; py += 1) {
+    for (let px = 0; px < width; px += 1) {
+      const { lng, lat } = pixelToLngLat(px, py, width, height, bounds);
+      grid[py * width + px] = sampleElevation(lng, lat);
+    }
+  }
+  return grid;
+}
+
 function hillshadeAt(height, size, px, py) {
   const zx = height[py * size + Math.min(px + 1, size - 1)] - height[py * size + Math.max(px - 1, 0)];
   const zy =
@@ -164,8 +178,12 @@ export function buildNormalRgba(height, size, strength = 3.8) {
 }
 
 export function buildDisplacementRgba(height, size) {
-  const rgba = Buffer.alloc(size * size * 4);
-  for (let i = 0; i < size * size; i += 1) {
+  return buildDisplacementRgbaRect(height, size, size);
+}
+
+export function buildDisplacementRgbaRect(height, width, h) {
+  const rgba = Buffer.alloc(width * h * 4);
+  for (let i = 0; i < width * h; i += 1) {
     const g = Math.round(height[i] * 255);
     const o = i * 4;
     rgba[o] = g;

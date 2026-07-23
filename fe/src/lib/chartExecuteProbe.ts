@@ -74,11 +74,42 @@ export function buildTimeRangeParameters(tr?: ChartTimeRangeRef): Record<string,
   return { time_start: formatUtcDate(start), time_end: formatUtcDate(end) };
 }
 
+export type ChartExecuteMode = NonNullable<ChartViewConfig["mode"]>;
+
+/** 与 chartExecuteBindingKey / fetch 请求体共用，避免缺 mode 导致 422 */
+export function resolveChartExecuteMode(config: ChartViewConfig): ChartExecuteMode {
+  if (config.bindingId) {
+    return config.mode ?? "sql";
+  }
+  if (config.mode) return config.mode;
+  if (config.sql?.trim()) return "sql";
+  if (config.table) return "table";
+  if (config.nativeBody && Object.keys(config.nativeBody).length > 0) return "native";
+  return "dataset";
+}
+
+export function chartExecuteNotReadyMessage(config: ChartViewConfig): string {
+  if (config.bindingId) return "请配置有效的查询绑定";
+  const mode = resolveChartExecuteMode(config);
+  if (!config.dataSourceId) return "请配置数据源与 SQL";
+  if (mode === "dataset") return "请选择数据源与已绑定配置的 Dataset";
+  if (mode === "sql") return "请配置数据源与 SQL";
+  if (mode === "table") return "请配置数据源、schema 与表名";
+  if (mode === "native") return "请配置原生查询体";
+  return "请配置数据源与 SQL";
+}
+
 export function isChartExecuteReady(config: ChartViewConfig): boolean {
+  if (config.bindingId) return true;
   if (!config.dataSourceId) return false;
-  if (config.mode === "dataset") return Boolean(config.configId);
-  if (config.mode === "sql") return Boolean(config.sql?.trim());
-  return Boolean(config.sql?.trim() || config.table);
+  const mode = resolveChartExecuteMode(config);
+  if (mode === "dataset") return Boolean(config.configId);
+  if (mode === "sql") return Boolean(config.sql?.trim());
+  if (mode === "table") return Boolean(config.schema && config.table);
+  if (mode === "native") {
+    return Boolean(config.nativeBody && Object.keys(config.nativeBody).length > 0);
+  }
+  return false;
 }
 
 /** 仅序列化会影响 execute 请求的绑定字段（不含 deStyle/deDisplay 等展示配置） */
@@ -87,7 +118,7 @@ export function chartExecuteBindingKey(
   filterParameters?: Record<string, string>,
   limit: number = CHART_EXECUTE_LIMIT,
 ): string {
-  const mode = config.mode ?? (config.sql?.trim() ? "sql" : config.table ? "table" : "dataset");
+  const mode = resolveChartExecuteMode(config);
   const base: Record<string, unknown> = {
     mode,
     dataSourceId: config.dataSourceId,
@@ -185,10 +216,13 @@ export async function fetchChartExecuteResult(
 ): Promise<ChartExecuteResult> {
   const { filterParameters, limit = CHART_EXECUTE_LIMIT } = options;
 
-  if (config.mode === "dataset") {
-    if (!config.dataSourceId || !config.configId) {
-      throw new Error("请选择数据源与已绑定配置的 Dataset");
-    }
+  if (!isChartExecuteReady(config)) {
+    throw new Error(chartExecuteNotReadyMessage(config));
+  }
+
+  const mode = resolveChartExecuteMode(config);
+
+  if (mode === "dataset") {
     return apiFetch<ChartExecuteResult>("/api/v1/query/dataset/execute", {
       method: "POST",
       body: JSON.stringify({
@@ -201,9 +235,9 @@ export async function fetchChartExecuteResult(
     });
   }
 
-  const timeParams = config.mode === "sql" ? buildTimeRangeParameters(config.timeRange) : {};
+  const timeParams = mode === "sql" ? buildTimeRangeParameters(config.timeRange) : {};
   const filterParams =
-    config.mode === "sql"
+    mode === "sql"
       ? {
           ...filterParameters,
           ...buildFilterParameters(config.filters ?? []),
@@ -218,7 +252,7 @@ export async function fetchChartExecuteResult(
 
   const body = config.bindingId
     ? { bindingId: config.bindingId, rls: { enabled: false } }
-    : config.mode === "native"
+    : mode === "native"
       ? {
           dataSourceId: config.dataSourceId,
           mode: "native",
@@ -229,7 +263,7 @@ export async function fetchChartExecuteResult(
         }
       : {
           dataSourceId: config.dataSourceId,
-          mode: config.mode,
+          mode,
           sql,
           schema: config.schema,
           table: config.table,
