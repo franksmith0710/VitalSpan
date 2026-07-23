@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
+import { resolveEffectiveDepth, type DepthVisualLevel } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -37,6 +37,13 @@ function positionTooltip(
     .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
 }
 
+function packCircleStroke(fill: string, depthLevel: DepthVisualLevel): string {
+  const parsed = d3.color(fill);
+  if (!parsed) return "rgba(15, 23, 42, 0.65)";
+  const darken = depthLevel === "enhanced" ? 0.85 : depthLevel === "standard" ? 0.7 : 0.55;
+  return parsed.darker(darken).formatRgb();
+}
+
 function appendPackPlotChrome(
   root: d3.Selection<SVGGElement, unknown, null, undefined>,
   innerW: number,
@@ -49,8 +56,8 @@ function appendPackPlotChrome(
     .attr("width", innerW)
     .attr("height", innerH)
     .attr("fill", "none")
-    .attr("stroke", theme.axisLine)
-    .attr("stroke-opacity", 0.38)
+    .attr("stroke", theme.axisLabel)
+    .attr("stroke-opacity", 0.55)
     .attr("rx", 4);
 
   const clipId = `vs-pack-clip-${Math.random().toString(36).slice(2, 9)}`;
@@ -242,10 +249,8 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     .attr("r", (d) => packNodeRadius(d))
     .attr("fill", (d) => colorScale(d.name) ?? colors[0] ?? "#465fff")
     .attr("opacity", 0.92)
-    .attr("stroke", (d) => {
-      const fill = colorScale(d.name) ?? colors[0] ?? "#465fff";
-      return depthLevel === "off" ? "#fff" : shadeColor(fill, "top");
-    })
+    .attr("stroke", (d) => packCircleStroke(colorScale(d.name) ?? colors[0] ?? "#465fff", depthLevel))
+    .attr("stroke-opacity", 0.92)
     .attr("stroke-width", strokeWidth)
     .style("paint-order", depthLevel === "off" ? undefined : "stroke fill")
     .style("cursor", "default")
