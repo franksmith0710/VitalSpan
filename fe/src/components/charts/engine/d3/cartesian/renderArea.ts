@@ -1,9 +1,6 @@
 import * as d3 from "d3";
-import { animateStrokePath } from "@/components/charts/engine/d3/core/animate";
 import { ensureGradientDef } from "@/components/charts/engine/d3/core/gradient";
 import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
-import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
-import { wirePlotSeriesLegendDimming } from "@/components/charts/engine/d3/core/legendInteraction";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
@@ -51,7 +48,6 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     tooltipPresentation,
     onPointClick,
     dataZoom = false,
-    legendLayout,
     axisStyle,
     areaOpacity,
   } = config;
@@ -75,7 +71,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     categories,
     axisStyle,
   });
-  const { root, defs, g, plot, innerW, innerH, margin } = scene;
+  const { root, defs, g, plot, innerW, innerH } = scene;
   const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
 
   const x = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
@@ -112,13 +108,11 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
 
     layers.forEach((layer, i) => {
       const name = String(layer.key);
-      const seriesKey = name || `series-${i}`;
       const color = colorScale(name) ?? colors[i] ?? "#465fff";
       const gradId = ensureGradientDef(defs, `area-stack-${i}`, color, 0.45, 0.08);
       plot
         .append("path")
         .datum(layer)
-        .attr("data-series-key", seriesKey)
         .attr("fill", seriesGradient ? `url(#${gradId})` : color)
         .attr("fill-opacity", seriesGradient ? 1 : stackFillOpacity)
         .attr("d", areaGen)
@@ -131,7 +125,6 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     });
   } else {
     for (const [i, s] of seriesGroups.entries()) {
-      const seriesKey = s.name || `series-${i}`;
       const color = colorScale(s.name) ?? colors[i] ?? "#465fff";
       const strokeColor = resolveDatumColor(
         d3.max(s.points, (d) => Number(d.__value__)) ?? 0,
@@ -151,20 +144,17 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
       plot
         .append("path")
         .datum(points)
-        .attr("data-series-key", seriesKey)
         .attr("fill", seriesGradient ? `url(#${gradId})` : strokeColor)
         .attr("fill-opacity", seriesGradient ? 1 : singleFillOpacity)
         .attr("d", areaGen);
       const topLine = plot
         .append("path")
         .datum(points)
-        .attr("data-series-key", seriesKey)
         .attr("fill", "none")
         .attr("stroke", strokeColor)
         .attr("stroke-width", 2)
         .attr("d", d3.line<typeof points[0]>().x((d) => x(String(d.__category__)) ?? 0).y((d) => y(Number(d.__value__))).curve(curve));
       applyPathDepthShadow(defs, topLine, strokeColor, `area-top-${i}`);
-      animateStrokePath(topLine);
 
       if (showLabel) {
         plot
@@ -208,32 +198,11 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
     });
   }
 
-  const detachLegend =
-    showLegend && hasMultiSeries
-      ? renderConfiguredInlineLegend(
-          root,
-          true,
-          seriesNames.map((name) => ({
-            label: name || "系列",
-            seriesKey: name || "系列",
-            color: colorScale(name) ?? colors[0] ?? theme.accent,
-            marker: "line",
-            markerWidth: 14,
-            markerHeight: 3,
-          })),
-          { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
-        )
-      : () => undefined;
-
-  const detachLegendDim = wirePlotSeriesLegendDimming(plot);
-
   writeIncrementalSession(container, { plotType: "Area", width, height });
   const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
 
   return () => {
     detachZoom();
-    detachLegend();
-    detachLegendDim();
-    if (!incremental) container.replaceChildren();
+    container.replaceChildren();
   };
 }

@@ -1,18 +1,10 @@
 import * as d3 from "d3";
-import { VCDS, motionDuration } from "@/components/charts/engine/d3/core/chartVisualTokens";
-import { chartTransition, prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
+import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
+import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { drawPieExtrude } from "@/components/charts/engine/d3/core/depthEngine";
-import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
-import { emitSeriesFocus } from "@/components/charts/engine/d3/core/interactionBus";
-import { wirePlotSeriesLegendDimming } from "@/components/charts/engine/d3/core/legendInteraction";
-import { morphPath } from "@/components/charts/engine/d3/core/motionEngine";
-import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
-import {
-  createTooltipLayer,
-  hideTooltip,
-  showMergedTooltip,
-} from "@/components/charts/engine/d3/core/tooltipLayer";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
+import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { computePieLayout, PIE_RADIUS_FRAC_DEFAULT } from "./pieLayout";
@@ -34,10 +26,6 @@ function resolveInnerFrac(value: unknown): number {
     return parseFloat(value) / 100;
   }
   return 0;
-}
-
-function sliceKey(d: d3.PieArcDatum<D3Datum>, colorField: string): string {
-  return String(d.data[colorField] ?? "");
 }
 
 export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig): () => void {
@@ -70,6 +58,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
   const layout = computePieLayout(width, height, showLegend);
+  const legendFontSize = legendLayout?.fontSize ?? 11;
   const outerPercent = Number(options.__outerRadiusPercent ?? 70);
   const outerR = fractionRadius(options.radius, layout.maxR, outerPercent / 100);
   const padAngle = Number(options.__padAngle ?? PIE_PAD);
@@ -106,6 +95,7 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     .style("overflow", "visible");
 
   const g = root.append("g").attr("transform", `translate(${layout.cx},${layout.cy})`);
+
   const pie = d3
     .pie<D3Datum>()
     .value((d) => (isRose ? 1 : Number(d[angleField] ?? 0)))
@@ -113,113 +103,69 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     .padAngle(padAngle > 0 ? (padAngle * Math.PI) / 180 : PIE_PAD);
 
   const arc = createArc();
-  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
-  const pieData = pie(data);
 
-  const arcs = g
-    .selectAll<SVGGElement, d3.PieArcDatum<D3Datum>>("g.slice")
-    .data(pieData, (d) => sliceKey(d, colorField))
-    .join("g")
-    .attr("class", "slice")
-    .attr("data-series-key", (d) => sliceKey(d, colorField));
+  const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
+  const arcs = g.selectAll<SVGGElement, d3.PieArcDatum<D3Datum>>("g.slice").data(pie(data)).join("g").attr("class", "slice");
 
   arcs.each(function (d) {
-    const base = colorScale(sliceKey(d, colorField)) ?? colors[0] ?? "#465fff";
+    const base = colorScale(String(d.data[colorField] ?? "")) ?? colors[0] ?? "#465fff";
     const color = resolveDatumColor(Number(d.data[angleField] ?? 0), base, conditionalRules);
     drawPieExtrude(d3.select(this), arc(d), color);
   });
 
-  const paths = arcs
-    .selectAll<SVGPathElement, d3.PieArcDatum<D3Datum>>("path.slice-path")
-    .data((d) => [d], (d) => sliceKey(d, colorField))
-    .join("path")
-    .attr("class", "slice-path")
+  arcs
+    .append("path")
     .attr("fill", (d) => {
-      const base = colorScale(sliceKey(d, colorField)) ?? colors[0] ?? "#465fff";
+      const base = colorScale(String(d.data[colorField] ?? "")) ?? colors[0] ?? "#465fff";
       return resolveDatumColor(Number(d.data[angleField] ?? 0), base, conditionalRules);
     })
     .attr("stroke", "#fff")
     .attr("stroke-width", VCDS.pie.strokeWidth)
-    .attr("cursor", onPointClick ? "pointer" : "default");
-
-  paths.each(function (d) {
-    const el = d3.select(this);
-    const target = createArc()(d) ?? "";
-    const existing = el.attr("d");
-    if (existing && existing.length > 8 && motionDuration("dataUpdate") > 0) {
-      morphPath(el, target);
-      return;
-    }
-    if (prefersReducedMotion() || motionDuration("enter") <= 0) {
-      el.attr("d", target);
-      return;
-    }
-    const collapsed =
-      createArc()
-        .startAngle(d.startAngle)
-        .endAngle(d.startAngle)(d) ?? "";
-    el.attr("d", collapsed);
-    chartTransition(el)
-      .duration(motionDuration("enter"))
-      .ease(d3.easeCubicOut)
-      .attrTween("d", () => {
-        const interp = d3.interpolateString(collapsed, target);
-        return (t) => interp(t);
-      });
-  });
-
-  paths
-    .on("mouseenter", function (event, d) {
-      chartTransition(d3.select(this))
-        .duration(motionDuration("hover"))
-        .attr("transform", () => {
-          const [cx, cy] = createArc().centroid(d);
-          const len = Math.hypot(cx, cy) || 1;
-          return `translate(${(cx / len) * HOVER_EXPAND},${(cy / len) * HOVER_EXPAND})`;
-        });
-      if (!tooltip) return;
-      const base = colorScale(sliceKey(d, colorField)) ?? colors[0] ?? "#465fff";
-      const color = resolveDatumColor(Number(d.data[angleField] ?? 0), base, conditionalRules);
-      showMergedTooltip(
-        tooltip,
-        container,
-        event as MouseEvent,
-        sliceKey(d, colorField),
-        [{ name: "", color, value: d.data[angleField] }],
-        valueFormat,
-        width,
-      );
+    .attr("cursor", onPointClick ? "pointer" : "default")
+    .attr("d", arc)
+    .each(function (d) {
+      if (prefersReducedMotion()) return;
+      const el = d3.select(this);
+      const target = createArc()(d) ?? "";
+      const collapsed =
+        createArc()
+          .startAngle(d.startAngle)
+          .endAngle(d.startAngle)(d) ?? "";
+      el.attr("d", collapsed).transition().duration(680).ease(d3.easeCubicOut).attr("d", target);
     })
-    .on("mousemove", (event, d) => {
+    .on("mouseenter", function (_event, d) {
+      d3.select(this).transition().duration(120).attr("transform", () => {
+        const [cx, cy] = createArc().centroid(d);
+        const len = Math.hypot(cx, cy) || 1;
+        return `translate(${(cx / len) * HOVER_EXPAND},${(cy / len) * HOVER_EXPAND})`;
+      });
       if (!tooltip) return;
-      const base = colorScale(sliceKey(d, colorField)) ?? colors[0] ?? "#465fff";
+      const base = colorScale(String(d.data[colorField] ?? "")) ?? colors[0] ?? "#465fff";
       const color = resolveDatumColor(Number(d.data[angleField] ?? 0), base, conditionalRules);
-      showMergedTooltip(
-        tooltip,
-        container,
-        event as MouseEvent,
-        sliceKey(d, colorField),
-        [{ name: "", color, value: d.data[angleField] }],
-        valueFormat,
-        width,
-      );
+      tooltip
+        .style("opacity", "1")
+        .html(
+          tooltipHtml(String(d.data[colorField] ?? ""), [
+            { name: "", color, value: d.data[angleField] },
+          ], valueFormat),
+        );
+    })
+    .on("mousemove", (event) => {
+      if (!tooltip) return;
+      const rect = container.getBoundingClientRect();
+      tooltip
+        .style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
+        .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
     })
     .on("mouseleave", function () {
-      chartTransition(d3.select(this)).duration(motionDuration("hover")).attr("transform", null);
-      hideTooltip(tooltip);
+      d3.select(this).transition().duration(120).attr("transform", null);
+      tooltip?.style("opacity", "0");
     })
-    .on("click", (event, d) => {
-      event.stopPropagation();
-      emitSeriesFocus(sliceKey(d, colorField));
-      onPointClick?.(d.data);
-    });
+    .on("click", (_event, d) => onPointClick?.(d.data));
 
   if (showLabel) {
     arcs
-      .selectAll<SVGTextElement, d3.PieArcDatum<D3Datum>>("text.slice-label")
-      .data((d) => [d], (d) => sliceKey(d, colorField))
-      .join("text")
-      .attr("class", "slice-label")
+      .append("text")
       .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
       .attr("text-anchor", "middle")
       .attr("dy", "0.35em")
@@ -228,32 +174,44 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
       .text((d) => formatChartValue(d.data[angleField], valueFormat));
   }
 
-  const legendCleanup = renderConfiguredInlineLegend(
-    root,
-    showLegend,
-    data.map((row) => {
-      const label = String(row[colorField] ?? "");
-      return {
-        label,
-        color: colorScale(label) ?? colors[0] ?? "#465fff",
-        seriesKey: label,
-      };
-    }),
-    {
-      width,
-      height,
-      margin: layout.margin,
-      theme,
-      layout: { ...legendLayout, position: layout.legendMode === "right" ? "right" : "top", orient: "vertical" },
-      fontSize: legendLayout?.fontSize,
-    },
-  );
+  if (showLegend) {
+    const legend = root.append("g");
+    if (layout.legendMode === "right" && layout.legendBox) {
+      legend.attr("transform", `translate(${layout.legendBox.x},${layout.legendBox.y})`);
+      let offsetY = 0;
+      for (const row of data) {
+        const label = String(row[colorField] ?? "");
+        const color = colorScale(label) ?? colors[0] ?? "#465fff";
+        const item = legend.append("g").attr("transform", `translate(0,${offsetY})`);
+        item.append("rect").attr("width", 10).attr("height", 10).attr("rx", 2).attr("fill", color);
+        item
+          .append("text")
+          .attr("x", 14)
+          .attr("y", 9)
+          .attr("fill", theme.legendText)
+          .style("font-size", `${legendFontSize}px`)
+          .text(label);
+        offsetY += 18;
+      }
+    } else {
+      legend.attr("transform", `translate(${layout.margin.left},${layout.margin.top - 16})`);
+      let offsetX = 0;
+      for (const row of data) {
+        const label = String(row[colorField] ?? "");
+        const color = colorScale(label) ?? colors[0] ?? "#465fff";
+        const item = legend.append("g").attr("transform", `translate(${offsetX},0)`);
+        item.append("rect").attr("width", 10).attr("height", 10).attr("rx", 2).attr("fill", color);
+        item
+          .append("text")
+          .attr("x", 14)
+          .attr("y", 9)
+          .attr("fill", theme.legendText)
+          .style("font-size", `${legendFontSize}px`)
+          .text(label);
+        offsetX += label.length * 7 + 28;
+      }
+    }
+  }
 
-  const dimCleanup = wirePlotSeriesLegendDimming(g);
-
-  return () => {
-    dimCleanup();
-    legendCleanup();
-    container.replaceChildren();
-  };
+  return () => container.replaceChildren();
 }

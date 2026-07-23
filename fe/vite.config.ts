@@ -22,6 +22,19 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/three")) return "vendor-three";
+          if (id.includes("node_modules/d3")) return "vendor-d3";
+          if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/")) {
+            return "vendor-react";
+          }
+          if (id.includes("/pages/admin/dashboard/DashboardEditPage")) return "page-dashboard-edit";
+          if (id.includes("/components/charts/engine/")) return "charts-engine";
+        },
+      },
+    },
   },
   test: {
     environment: "jsdom",

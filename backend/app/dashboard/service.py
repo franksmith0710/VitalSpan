@@ -5,18 +5,21 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
 from app.dashboard.models import Dashboard
-from app.dashboard.surface_kind import SurfaceKindFilter, matches_surface_filter
+from app.dashboard.surface_kind import SurfaceKindFilter
+from app.dashboard.preview_summary import extract_preview_summary, sync_surface_kind_column
 from app.dashboard.schemas import (
     DashboardCreate,
     DashboardLayout,
+    DashboardListItemOut,
     DashboardListResponse,
     DashboardOut,
+    DashboardPreviewSummary,
     DashboardUpdate,
 )
 from app.schemas.chart_view import ChartViewError
@@ -52,6 +55,40 @@ def _slugify(name: str) -> str:
 
 def _active(stmt):
     return stmt.where(Dashboard.deleted_at.is_(None))
+
+
+def _thumbnail_url(row: Dashboard) -> str | None:
+    if not row.thumbnail_ref:
+        return None
+    from app.dashboard.thumbnails import thumbnail_path_for_ref
+
+    try:
+        if not thumbnail_path_for_ref(row.thumbnail_ref).is_file():
+            return None
+    except ValueError:
+        return None
+    version = int(row.updated_at.timestamp()) if row.updated_at else 0
+    return f"/api/v1/dashboards/{row.id}/thumbnail?v={version}"
+
+
+def _to_list_item(row: Dashboard) -> DashboardListItemOut:
+    layout = row.layout_json if isinstance(row.layout_json, dict) else {}
+    summary = extract_preview_summary(layout)
+    widgets = layout.get("widgets") or []
+    kind = getattr(row, "surface_kind", None) or sync_surface_kind_column(layout)
+    return DashboardListItemOut(
+        id=row.id,
+        name=row.name,
+        slug=row.slug,
+        description=row.description,
+        surface_kind=kind if kind == "data-screen" else "dashboard",
+        widget_count=len(widgets) if isinstance(widgets, list) else 0,
+        preview_summary=DashboardPreviewSummary.model_validate(summary),
+        thumbnail_url=_thumbnail_url(row),
+        created_by=row.created_by,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+    )
 
 
 def _to_out(row: Dashboard) -> DashboardOut:
@@ -132,13 +169,18 @@ def list_dashboards(
         except ValueError:
             return DashboardListResponse(items=[], total=0, limit=limit, offset=offset)
         base = base.where(Dashboard.created_by == actor_uuid)
-    rows = db.scalars(base.order_by(Dashboard.updated_at.desc())).all()
-    if surface_kind is not None:
-        rows = [row for row in rows if matches_surface_filter(row.layout_json, surface_kind)]
-    total = len(rows)
-    page = rows[offset : offset + limit]
+    if surface_kind == "data-screen":
+        base = base.where(Dashboard.surface_kind == "data-screen")
+    elif surface_kind == "dashboard":
+        base = base.where(Dashboard.surface_kind != "data-screen")
+
+    count_stmt = select(func.count()).select_from(base.subquery())
+    total = int(db.scalar(count_stmt) or 0)
+    rows = db.scalars(
+        base.order_by(Dashboard.updated_at.desc()).limit(limit).offset(offset),
+    ).all()
     return DashboardListResponse(
-        items=[_to_out(row) for row in page],
+        items=[_to_list_item(row) for row in rows],
         total=total,
         limit=limit,
         offset=offset,
@@ -258,6 +300,47 @@ def update_layout(
     except Exception as exc:
         raise DashboardError("DASH_INVALID_LAYOUT", "Invalid layout JSON", 422) from exc
     row.layout_json = validated
+    row.surface_kind = sync_surface_kind_column(validated)
     db.commit()
     db.refresh(row)
     return _to_out(row)
+
+
+def save_dashboard_thumbnail(
+    db: Session,
+    dashboard_id: uuid.UUID,
+    content: bytes,
+    content_type: str,
+) -> DashboardListItemOut:
+    from app.dashboard.thumbnails import write_thumbnail
+
+    row = db.scalar(_active(select(Dashboard).where(Dashboard.id == dashboard_id)))
+    if row is None:
+        raise DashboardError("DASH_NOT_FOUND", "Dashboard not found", 404)
+    try:
+        row.thumbnail_ref = write_thumbnail(dashboard_id, content, content_type)
+    except ValueError as exc:
+        raise DashboardError("DASH_INVALID_THUMBNAIL", str(exc), 422) from exc
+    row.updated_at = datetime.now(UTC)
+    db.commit()
+    db.refresh(row)
+    return _to_list_item(row)
+
+
+def get_dashboard_thumbnail(
+    db: Session,
+    dashboard_id: uuid.UUID,
+    actor: UserContext,
+) -> tuple[bytes, str]:
+    from app.dashboard.thumbnails import read_thumbnail_bytes
+
+    row = db.scalar(_active(select(Dashboard).where(Dashboard.id == dashboard_id)))
+    if row is None:
+        raise DashboardError("DASH_NOT_FOUND", "Dashboard not found", 404)
+    assert_dashboard_access(actor, row.created_by)
+    if not row.thumbnail_ref:
+        raise DashboardError("DASH_THUMBNAIL_NOT_FOUND", "Thumbnail not found", 404)
+    try:
+        return read_thumbnail_bytes(row.thumbnail_ref)
+    except FileNotFoundError as exc:
+        raise DashboardError("DASH_THUMBNAIL_NOT_FOUND", "Thumbnail not found", 404) from exc

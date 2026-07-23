@@ -342,7 +342,7 @@ export function DashboardListPage() {
               layout: "cards",
             }}
             rows={sortedItems.map((row) => {
-              const widgetCount = row.layoutJson?.widgets?.length ?? 0;
+              const widgetCount = row.widgetCount ?? row.previewSummary?.widgets?.length ?? row.layoutJson?.widgets?.length ?? 0;
               const viewPath = `/admin/dashboards/${row.id}`;
               const editPath = `/admin/dashboards/${row.id}/edit`;
 

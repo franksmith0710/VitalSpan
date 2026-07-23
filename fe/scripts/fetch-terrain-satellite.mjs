@@ -36,7 +36,8 @@ function parseCliArgs(argv) {
     .filter((a) => a.startsWith("--adcode="))
     .map((a) => Number(a.slice("--adcode=".length)))
     .filter((n) => Number.isFinite(n));
-  return { force, nationalOnly, provincesOnly, adcodeFilters };
+  const withNormal = argv.includes("--with-normal");
+  return { force, nationalOnly, provincesOnly, adcodeFilters, withNormal };
 }
 
 function resolveProvinceAdcodes(adcodeFilters) {
@@ -44,7 +45,7 @@ function resolveProvinceAdcodes(adcodeFilters) {
   return ALL_PROVINCE_ADCODES;
 }
 
-async function writeSourcePack(dir, bounds, featureCollection, size, national, force) {
+async function writeSourcePack(dir, bounds, featureCollection, size, national, force, withNormal) {
   const sourceDir = path.join(dir, "_source");
   await fs.mkdir(sourceDir, { recursive: true });
   const zoom = pickZoom(bounds, national);
@@ -74,7 +75,7 @@ async function writeSourcePack(dir, bounds, featureCollection, size, national, f
     console.log("  diffuse.png exists — skip (use --force to refresh)");
   }
 
-  if (force || !(await fileExists(normalPath))) {
+  if (withNormal && (force || !(await fileExists(normalPath)))) {
     try {
       console.log(force ? "  re-baking normal…" : "  baking normal (hillshade → projBounds)…");
       const { buffer } = await bakeProjSatellitePng(
@@ -89,6 +90,8 @@ async function writeSourcePack(dir, bounds, featureCollection, size, national, f
     } catch (err) {
       console.warn("  normal fetch failed — build will skip normal.webp:", err.message);
     }
+  } else if (!withNormal) {
+    console.log("  normal skipped (pass --with-normal to fetch hillshade)");
   } else {
     console.log("  normal.png exists — skip (use --force to refresh)");
   }
@@ -106,7 +109,9 @@ async function fileExists(p) {
 }
 
 async function main() {
-  const { force, nationalOnly, provincesOnly, adcodeFilters } = parseCliArgs(process.argv.slice(2));
+  const { force, nationalOnly, provincesOnly, adcodeFilters, withNormal } = parseCliArgs(
+    process.argv.slice(2),
+  );
 
   if (!provincesOnly) {
     const nationalBounds = await readNationalBounds();
@@ -119,6 +124,7 @@ async function main() {
       NATIONAL_SIZE,
       true,
       force,
+      withNormal,
     );
   }
 
@@ -140,6 +146,7 @@ async function main() {
         PROVINCE_SIZE,
         false,
         force,
+        withNormal,
       );
     }
   }

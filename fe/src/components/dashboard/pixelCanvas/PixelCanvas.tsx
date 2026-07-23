@@ -906,6 +906,7 @@ export function PixelCanvas({
           ref={stageRef}
           id="editor-canvas-main"
           data-testid="pixel-canvas-stage"
+          data-dashboard-thumbnail-capture=""
           className={cn(
             "editor-canvas-main pixel-canvas-stage absolute top-0 origin-top-left",
             hostOverflowLocked ? "overflow-hidden" : "overflow-visible",
@@ -929,6 +930,7 @@ export function PixelCanvas({
           {showAuxGrid ? (
             <div
               data-testid="pixel-canvas-aux-grid"
+              data-thumbnail-ignore=""
               className="dashboard-edit-aux-grid pointer-events-none absolute inset-0 z-[1]"
               style={auxGridStyle}
               aria-hidden

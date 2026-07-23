@@ -427,8 +427,31 @@ class DashboardOut(BaseModel):
     updated_at: datetime = Field(alias="updatedAt")
 
 
+class DashboardPreviewSummary(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    version: int
+    canvas: dict[str, Any] | None = None
+    widgets: list[dict[str, Any]]
+    style_config: dict[str, Any] | None = Field(default=None, alias="styleConfig")
+
+
+class DashboardListItemOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, from_attributes=True)
+    id: uuid.UUID
+    name: str
+    slug: str
+    description: str | None = None
+    surface_kind: Literal["dashboard", "data-screen"] = Field(alias="surfaceKind")
+    widget_count: int = Field(alias="widgetCount")
+    preview_summary: DashboardPreviewSummary = Field(alias="previewSummary")
+    thumbnail_url: str | None = Field(default=None, alias="thumbnailUrl")
+    created_by: uuid.UUID | None = Field(default=None, alias="createdBy")
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+
+
 class DashboardListResponse(BaseModel):
-    items: list[DashboardOut]
+    items: list[DashboardListItemOut]
     total: int
     limit: int
     offset: int

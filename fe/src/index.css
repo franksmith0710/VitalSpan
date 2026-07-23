@@ -939,32 +939,6 @@ html.admin-fill-lock #root {
   transition: background-color 150ms ease;
 }
 
-.vs-table-sort-icon {
-  display: inline-flex;
-  transition: transform 160ms ease, opacity 160ms ease, color 160ms ease;
-}
-
-.vs-table-sort-icon.is-active {
-  transform: scale(1.08);
-}
-
-.vs-chart-table[data-row-hover] tbody tr {
-  position: relative;
-}
-
-.vs-chart-table[data-row-hover] tbody tr:active {
-  animation: vs-table-row-ripple 360ms ease;
-}
-
-@keyframes vs-table-row-ripple {
-  0% {
-    box-shadow: inset 0 0 0 0 rgb(70 95 255 / 0.22);
-  }
-  100% {
-    box-shadow: inset 0 0 0 10px rgb(70 95 255 / 0);
-  }
-}
-
 .vs-chart-table[data-freeze-lead] .vs-table-sticky-lead {
   position: sticky;
   left: 0;
@@ -978,9 +952,7 @@ html.admin-fill-lock #root {
   left: var(--vs-table-sticky-offset, 0px);
   z-index: 3;
   background-color: var(--dashboard-table-body-bg, var(--dashboard-widget-surface));
-  box-shadow:
-    1px 0 0 var(--dashboard-table-border),
-    6px 0 12px -6px rgb(15 23 42 / 0.14);
+  box-shadow: 4px 0 8px -4px rgb(15 23 42 / 0.1);
 }
 
 .vs-chart-table[data-freeze-lead] thead .vs-table-sticky-lead,
@@ -1055,9 +1027,7 @@ html.admin-fill-lock #root {
 
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] .vs-chart-table[data-freeze-lead] .vs-table-sticky-first,
 .dashboard-theme-scope.dark .vs-chart-table[data-freeze-lead] .vs-table-sticky-first {
-  box-shadow:
-    1px 0 0 var(--dashboard-table-border),
-    6px 0 12px -6px rgb(0 0 0 / 0.42);
+  box-shadow: 4px 0 8px -4px rgb(0 0 0 / 0.35);
 }
 
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"] .widget-pending-preview-icon,

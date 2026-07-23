@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { RequireCapabilityName } from "@/components/auth/require-capability";
@@ -15,8 +16,6 @@ import { AccountProfilePage } from "@/pages/admin/account/AccountProfilePage";
 import { AccountPreferencesPage } from "@/pages/admin/account/AccountPreferencesPage";
 import { AccountSecurityPage } from "@/pages/admin/account/AccountSecurityPage";
 import { DashboardListPage } from "@/pages/admin/dashboard/DashboardListPage";
-import { DashboardEditPage } from "@/pages/admin/dashboard/DashboardEditPage";
-import { DashboardSharePage } from "@/pages/admin/dashboard/DashboardSharePage";
 import { LoginPage } from "@/pages/login/LoginPage";
 import { DatasourceListPage } from "@/pages/admin/datasources/DatasourceListPage";
 import { DatasourceFormPage } from "@/pages/admin/datasources/DatasourceFormPage";
@@ -28,7 +27,6 @@ import { PrefabReportsPage } from "@/pages/admin/reports/PrefabReportsPage";
 import { ReportTemplatesPage } from "@/pages/admin/reports/ReportTemplatesPage";
 import { ThemeAnalysisPage } from "@/pages/admin/themes/ThemeAnalysisPage";
 import { EmbedSdkDemoPage } from "@/pages/embed/EmbedSdkDemoPage";
-import { DevChartsPage } from "@/pages/dev/DevChartsPage";
 import { OrgTreePage } from "@/pages/admin/system/orgs/OrgTreePage";
 import { RlsAdminPage } from "@/pages/admin/system/rls/RlsAdminPage";
 import { AuditLogPage } from "@/pages/admin/system/audit/AuditLogPage";
@@ -41,24 +39,56 @@ import { QueryServicesPage } from "@/pages/admin/services/QueryServicesPage";
 import { MetadataHubPage } from "@/pages/admin/metadata/MetadataHubPage";
 import { DatasetListPage } from "@/pages/admin/datasets/DatasetListPage";
 import { DatasetFormPage } from "@/pages/admin/datasets/DatasetFormPage";
-import { DesignerPage } from "@/pages/admin/designer/DesignerPage";
-import { ChartExplorePage } from "@/pages/admin/charts/ChartExplorePage";
-import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { ReportSchedulesPage } from "@/pages/admin/reports/ReportSchedulesPage";
 import { ReportCenterPage } from "@/pages/admin/reports/ReportCenterPage";
 import { ReportViewPage } from "@/pages/admin/reports/ReportViewPage";
 import { DataScreenListPage } from "@/pages/admin/data-screens/DataScreenListPage";
-import { DataScreenPreviewPage } from "@/pages/admin/data-screens/DataScreenPreviewPage";
 import { DataScreenViewRedirect } from "@/pages/admin/data-screens/DataScreenViewRedirect";
-import { VizTemplatesHubPage } from "@/pages/admin/viz-templates/VizTemplatesHubPage";
+import { CHART_TYPES_CATALOG_PATH } from "@/lib/chartPaths";
 import { ACCOUNT_PREFERENCES_PATH } from "@/lib/workspace";
+import { withRouteSuspense } from "@/lib/routeLazy";
+
+const DashboardEditPage = lazy(() =>
+  import("@/pages/admin/dashboard/DashboardEditPage").then((m) => ({ default: m.DashboardEditPage })),
+);
+const DashboardSharePage = lazy(() =>
+  import("@/pages/admin/dashboard/DashboardSharePage").then((m) => ({ default: m.DashboardSharePage })),
+);
+const DataScreenPreviewPage = lazy(() =>
+  import("@/pages/admin/data-screens/DataScreenPreviewPage").then((m) => ({
+    default: m.DataScreenPreviewPage,
+  })),
+);
+const ChartExplorePage = lazy(() =>
+  import("@/pages/admin/charts/ChartExplorePage").then((m) => ({ default: m.ChartExplorePage })),
+);
+const DesignerPage = lazy(() =>
+  import("@/pages/admin/designer/DesignerPage").then((m) => ({ default: m.DesignerPage })),
+);
+const VizTemplatesHubPage = lazy(() =>
+  import("@/pages/admin/viz-templates/VizTemplatesHubPage").then((m) => ({
+    default: m.VizTemplatesHubPage,
+  })),
+);
+const DevChartsPage = lazy(() =>
+  import("@/pages/dev/DevChartsPage").then((m) => ({ default: m.DevChartsPage })),
+);
+
+function Lazy({ children }: { children: ReactNode }) {
+  return withRouteSuspense(children);
+}
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/admin" replace />} />
       <Route path="/login" element={<LoginPage />} />
-      {import.meta.env.DEV ? <Route path="/dev/charts" element={<DevChartsPage />} /> : null}
+      {import.meta.env.DEV ? (
+        <Route
+          path="/dev/charts"
+          element={<Lazy><DevChartsPage /></Lazy>}
+        />
+      ) : null}
       <Route path="/admin" element={<RequireAuth />}>
         <Route element={<AdminLayout />}>
           <Route index element={<AdminHomePage />} />
@@ -78,15 +108,22 @@ export function AppRoutes() {
           <Route path="account/settings" element={<Navigate to={ACCOUNT_PREFERENCES_PATH} replace />} />
           <Route path="account" element={<Navigate to="/admin/account/profile" replace />} />
           <Route path="dashboards" element={<DashboardListPage />} />
-          <Route path="dashboards/:id/edit" element={<DashboardEditPage mode="edit" />} />
-          <Route path="dashboards/:id/share" element={<DashboardSharePage />} />
-          <Route path="dashboards/:id" element={<DashboardEditPage mode="view" />} />
-          <Route path="data-screens/:id/share" element={<DashboardSharePage />} />
+          <Route path="dashboards/:id/edit" element={<Lazy><DashboardEditPage mode="edit" /></Lazy>} />
+          <Route path="dashboards/:id/share" element={<Lazy><DashboardSharePage /></Lazy>} />
+          <Route path="dashboards/:id" element={<Lazy><DashboardEditPage mode="view" /></Lazy>} />
+          <Route path="data-screens/:id/share" element={<Lazy><DashboardSharePage /></Lazy>} />
           <Route path="data-screens" element={<DataScreenListPage />} />
-          <Route path="data-screens/:id/edit" element={<DashboardEditPage mode="edit" />} />
-          <Route path="data-screens/:id/preview" element={<DataScreenPreviewPage />} />
+          <Route path="data-screens/:id/edit" element={<Lazy><DashboardEditPage mode="edit" /></Lazy>} />
+          <Route path="data-screens/:id/preview" element={<Lazy><DataScreenPreviewPage /></Lazy>} />
           <Route path="data-screens/:id" element={<DataScreenViewRedirect />} />
-          <Route path="viz-templates" element={<RequireCapabilityName capability="dashboard:read"><VizTemplatesHubPage /></RequireCapabilityName>} />
+          <Route
+            path="viz-templates"
+            element={
+              <RequireCapabilityName capability="dashboard:read">
+                <Lazy><VizTemplatesHubPage /></Lazy>
+              </RequireCapabilityName>
+            }
+          />
           <Route path="entities/overview" element={<RequireCapabilityName capability="theme:*"><EntityOverviewPage /></RequireCapabilityName>} />
           <Route path="reports" element={<RequireCapabilityName capability="report:read"><PrefabReportsPage /></RequireCapabilityName>} />
           <Route path="reports/center" element={<RequireCapabilityName capability="report:read"><ReportCenterPage /></RequireCapabilityName>} />
@@ -94,12 +131,28 @@ export function AppRoutes() {
           <Route path="reports/templates" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/templates/:nodeId" element={<RequireCapabilityName capability="report:manage"><ReportTemplatesPage /></RequireCapabilityName>} />
           <Route path="reports/schedules" element={<RequireCapabilityName capability="report:manage"><ReportSchedulesPage /></RequireCapabilityName>} />
-          <Route path="charts/types" element={<RequireCapabilityName capability="dashboard:read"><ChartExplorePage /></RequireCapabilityName>} />
+          <Route
+            path="charts/types"
+            element={
+              <RequireCapabilityName capability="dashboard:read">
+                <Lazy><ChartExplorePage /></Lazy>
+              </RequireCapabilityName>
+            }
+          />
           <Route
             path="charts/explore"
             element={<Navigate to={CHART_TYPES_CATALOG_PATH} replace />}
           />
-          <Route path="designer" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<DesignerPage />)}</RequireCapabilityName>} />
+          <Route
+            path="designer"
+            element={
+              <RequireCapabilityName capability="governance:*">
+                {withGovernanceHonesty(
+                  <Lazy><DesignerPage /></Lazy>,
+                )}
+              </RequireCapabilityName>
+            }
+          />
           <Route path="governance/catalog" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<GovernanceCatalogPage />)}</RequireCapabilityName>} />
           <Route path="governance/tickets" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<GovernanceWorkflowPage />)}</RequireCapabilityName>} />
           <Route path="governance/publish" element={<RequireCapabilityName capability="governance:*">{withGovernanceHonesty(<GovernancePublishPage />)}</RequireCapabilityName>} />

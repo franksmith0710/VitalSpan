@@ -20,7 +20,7 @@ function getEmbedTokenFromLocation(): string | null {
   return new URLSearchParams(window.location.search).get("token");
 }
 
-function getAuthHeaders(): Record<string, string> {
+export function getAuthHeaders(): Record<string, string> {
   const token = getAuthToken();
   if (token) return { Authorization: `Bearer ${token}` };
   const embedToken = getEmbedTokenFromLocation();

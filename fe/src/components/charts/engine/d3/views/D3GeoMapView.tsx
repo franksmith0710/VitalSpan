@@ -78,10 +78,9 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         mapId: geoMapLevel.mapId,
         knownRegionNames: geoMapLevel.knownRegionNames,
         drillDepth: geoMapLevel.drillDepth,
-        levelLabel: geoMapLevel.levelLabel,
       },
     }),
-    [plan, geoMapLevel.mapId, geoMapLevel.knownRegionNames, geoMapLevel.drillDepth, geoMapLevel.levelLabel],
+    [plan, geoMapLevel.mapId, geoMapLevel.knownRegionNames, geoMapLevel.drillDepth],
   );
 
   const spec = useMemo(() => chartViewModelToRenderSpec(viewModel), [viewModel]);

@@ -4,7 +4,6 @@ import { paintVerticalBar, resolveEffectiveDepth } from "@/components/charts/eng
 import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
-import { wirePlotSeriesLegendDimming } from "@/components/charts/engine/d3/core/legendInteraction";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
@@ -146,7 +145,6 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
         .data(layer)
         .join("g")
         .attr("class", `bar-stack-${name}`)
-        .attr("data-series-key", name)
         .attr("transform", (d) => `translate(${x(String(d.data.__category__)) ?? 0},0)`)
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
@@ -177,7 +175,6 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
         .data(s.points)
         .join("g")
         .attr("class", `bar-${name}`)
-        .attr("data-series-key", name)
         .attr("transform", (d) => {
           const base = x(String(d.__category__)) ?? 0;
           const bx = useGrouped && xSub ? base + (xSub(name) ?? 0) : base;
@@ -248,29 +245,23 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
       .text((d) => formatChartValue(d.__value__, valueFormat));
   }
 
-  const detachLegend =
-    showLegend && hasMultiSeries
-      ? renderConfiguredInlineLegend(
-          root,
-          true,
-          seriesNames.map((name) => ({
-            label: name || "系列",
-            seriesKey: name || "系列",
-            color: colorScale(name) ?? colors[0] ?? theme.accent,
-          })),
-          { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
-        )
-      : () => undefined;
-
-  const detachLegendDim = wirePlotSeriesLegendDimming(plot);
+  if (showLegend && hasMultiSeries) {
+    renderConfiguredInlineLegend(
+      root,
+      true,
+      seriesNames.map((name) => ({
+        label: name || "系列",
+        color: colorScale(name) ?? colors[0] ?? theme.accent,
+      })),
+      { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
+    );
+  }
 
   writeIncrementalSession(container, { plotType: "Column", width, height });
   const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
 
   return () => {
     detachZoom();
-    detachLegend();
-    detachLegendDim();
-    if (!incremental) container.replaceChildren();
+    container.replaceChildren();
   };
 }

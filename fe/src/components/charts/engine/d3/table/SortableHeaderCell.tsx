@@ -19,13 +19,9 @@ type SortableHeaderCellProps = {
 };
 
 function SortIcon({ active, direction }: { active: boolean; direction?: "asc" | "desc" }) {
-  if (!active) {
-    return <ArrowUpDown className="vs-table-sort-icon size-3 shrink-0 opacity-40" aria-hidden />;
-  }
-  if (direction === "asc") {
-    return <ArrowUp className="vs-table-sort-icon is-active size-3 shrink-0 text-brand-500" aria-hidden />;
-  }
-  return <ArrowDown className="vs-table-sort-icon is-active size-3 shrink-0 text-brand-500" aria-hidden />;
+  if (!active) return <ArrowUpDown className="size-3 shrink-0 opacity-40" aria-hidden />;
+  if (direction === "asc") return <ArrowUp className="size-3 shrink-0 text-brand-500" aria-hidden />;
+  return <ArrowDown className="size-3 shrink-0 text-brand-500" aria-hidden />;
 }
 
 export function SortableHeaderCell({

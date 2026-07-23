@@ -1,35 +1,34 @@
 import * as d3 from "d3";
-import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 
 /** 悬停放大倍率 */
-export const PACK_FOCUS_SCALE = VCDS.pack.focusScale;
+export const PACK_FOCUS_SCALE = 1.18;
 
 /** 半径插值速度（越大越快） */
-export const PACK_SCALE_LERP = VCDS.pack.scaleLerp;
+export const PACK_SCALE_LERP = 0.22;
 
 /** 软碰撞：overlap 转冲量比例 */
-export const PACK_COLLISION_BLEND = VCDS.pack.collisionBlend;
+export const PACK_COLLISION_BLEND = 0.3;
 
 /** 每帧碰撞子步 */
 export const PACK_COLLISION_SUBSTEPS = 1;
 
 /** 速度衰减（按 16.67ms 帧归一化） */
-export const PACK_VELOCITY_DAMPING = VCDS.pack.velocityDamping;
+export const PACK_VELOCITY_DAMPING = 0.78;
 
 /** 邻球相对 baseR 的最大位移比例 */
-export const PACK_MAX_DRIFT_RATIO = VCDS.pack.maxDriftRatio;
+export const PACK_MAX_DRIFT_RATIO = 0.32;
 
 /** 每帧最大速度（px，按 60fps 基准） */
-export const PACK_MAX_SPEED = VCDS.pack.maxSpeed;
+export const PACK_MAX_SPEED = 5;
 
 /** 悬停休眠速度阈值 */
 export const PACK_HOVER_SLEEP_SPEED = 0.04;
 
 /** 悬停弱锚定弹簧 */
-export const PACK_SPRING_K_HOVER = VCDS.pack.springKHover;
+export const PACK_SPRING_K_HOVER = 0.003;
 
 /** 恢复/idle 弹簧强度 */
-export const PACK_SPRING_K_IDLE = VCDS.pack.springKIdle;
+export const PACK_SPRING_K_IDLE = 0.075;
 
 const PACK_FRAME_MS = 1000 / 60;
 

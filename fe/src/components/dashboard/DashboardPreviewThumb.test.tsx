@@ -66,6 +66,61 @@ describe("DashboardPreviewThumb", () => {
     });
   });
 
+  it("renders chart mock visuals for chart widgets", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        {
+          id: "bar-widget",
+          type: "chart",
+          title: "销售",
+          order: 0,
+          x: 0,
+          y: 0,
+          width: 400,
+          height: 300,
+          chartConfig: { chartType: "bar" } as never,
+        },
+      ],
+      globalFilters: [],
+    };
+
+    const { getByTestId, container } = render(
+      <DashboardPreviewThumb layoutJson={layout} />,
+    );
+
+    expect(getByTestId("dashboard-preview-widget-bar-widget")).toBeInTheDocument();
+    expect(container.querySelector("svg rect")).toBeTruthy();
+  });
+
+  it("uses data-screen dark canvas background", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1920, height: 1080 },
+      styleConfig: { surfaceKind: "data-screen" },
+      widgets: [
+        {
+          id: "screen-widget",
+          type: "chart",
+          title: "Screen",
+          order: 0,
+          x: 0,
+          y: 0,
+          width: 960,
+          height: 540,
+        },
+      ],
+      globalFilters: [],
+    };
+
+    const { getByTestId } = render(
+      <DashboardPreviewThumb layoutJson={layout} isDataScreen />,
+    );
+
+    expect(getByTestId("dashboard-preview-thumb")).toHaveClass("from-slate-950");
+  });
+
   it("uses a tall v2 canvas aspect ratio without distorting percentages", () => {
     const layout: DashboardLayoutV2 = {
       version: 2,

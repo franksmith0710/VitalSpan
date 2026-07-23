@@ -453,7 +453,7 @@ export function DataScreenListPage() {
                 layout: "data-screen",
               }}
               rows={sortedItems.map((row) => {
-                const widgetCount = row.layoutJson?.widgets?.length ?? 0;
+                const widgetCount = row.widgetCount ?? row.previewSummary?.widgets?.length ?? row.layoutJson?.widgets?.length ?? 0;
                 const viewPath = dataScreenPreviewPath(row.id);
                 const editPath = dataScreenEditPath(row.id);
                 const sharePath = dashboardSharePath(row.id, true);

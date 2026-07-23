@@ -1,22 +1,23 @@
 import * as d3 from "d3";
-import { VCDS, motionDuration } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
-import {
-  createTooltipLayer,
-  hideTooltip,
-  showSimpleTooltip,
-  formatChartValue,
-} from "@/components/charts/engine/d3/core/tooltipLayer";
+import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3RenderConfig } from "@/components/charts/engine/d3/types";
+import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveGaugeValuePercent } from "@/lib/applyChartDeStyleBlocks";
+
+const START_ANGLE_DEFAULT = -Math.PI * 0.75;
+const END_ANGLE_DEFAULT = Math.PI * 0.75;
 
 function gaugeAnglesFromOptions(options: Record<string, unknown>) {
   const startDeg = Number(options.__gaugeStartAngleDeg ?? -135);
   const endDeg = Number(options.__gaugeEndAngleDeg ?? 135);
-  return { start: (startDeg * Math.PI) / 180, end: (endDeg * Math.PI) / 180 };
+  return {
+    start: (startDeg * Math.PI) / 180,
+    end: (endDeg * Math.PI) / 180,
+  };
 }
 
 function gaugeArcPath(innerR: number, outerR: number, start: number, end: number): string {
@@ -27,20 +28,6 @@ function gaugeArcPath(innerR: number, outerR: number, start: number, end: number
     .startAngle(start)
     .endAngle(end);
   return arc({ innerRadius: innerR, outerRadius: outerR, startAngle: start, endAngle: end }) ?? "";
-}
-
-function resolveSegmentColors(
-  rangeColors: string[] | undefined,
-  colors: string[],
-  themeGrid: string,
-): { segments: string[]; track: string } {
-  if (!rangeColors || rangeColors.length === 0) {
-    return { segments: [colors[0] ?? "#465fff"], track: themeGrid };
-  }
-  if (rangeColors.length === 1) {
-    return { segments: [rangeColors[0]!], track: themeGrid };
-  }
-  return { segments: rangeColors.slice(0, -1), track: rangeColors[rangeColors.length - 1] ?? themeGrid };
 }
 
 export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfig): () => void {
@@ -57,7 +44,6 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
     labelFontSize,
     tooltipPresentation,
     valueFormat,
-    onPointClick,
     options,
   } = config;
   const rawValue = Number(options.rawValue ?? NaN);
@@ -74,18 +60,9 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
   const radius = Math.min(innerW, innerH) * 0.42;
   const { start: START_ANGLE, end: END_ANGLE } = gaugeAnglesFromOptions(options);
   const rangeColors = (options.range as { color?: string[] } | undefined)?.color;
-  const { segments, track } = resolveSegmentColors(rangeColors, colors, theme.gridLine);
-  const activeColor =
-    segments[Math.min(segments.length - 1, Math.floor(percent * segments.length))] ??
-    segments[0] ??
-    colors[0] ??
-    "#465fff";
-  const pointerColor = String(options.__gaugePointerColor ?? activeColor);
+  const activeColor = rangeColors?.[0] ?? colors[0] ?? "#465fff";
+  const trackColor = rangeColors?.[1] ?? theme.gridLine;
   const depthOn = resolveEffectiveDepth() !== "off";
-  const arcWidth = VCDS.gauge.arcWidth;
-  const innerR = radius * 0.72;
-  const outerR = innerR + arcWidth;
-  const tickCount = Number(options.__gaugeSplitNumber ?? VCDS.gauge.tickCount);
 
   const root = d3
     .select(container)
@@ -95,24 +72,22 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
     .attr("role", "img");
 
   const g = root.append("g").attr("transform", `translate(${cx},${cy})`);
-  const span = END_ANGLE - START_ANGLE;
-  const segCount = segments.length;
 
-  for (let i = 0; i < segCount; i += 1) {
-    const segStart = START_ANGLE + (span * i) / segCount;
-    const segEnd = START_ANGLE + (span * (i + 1)) / segCount;
-    const segPath = gaugeArcPath(innerR, outerR, segStart, segEnd);
-    const color = segments[i] ?? track;
-    if (depthOn) {
-      g.append("path").attr("d", segPath).attr("fill", shadeColor(color, "shadow")).attr("opacity", 0.35);
-    }
-    g.append("path").attr("d", segPath).attr("fill", depthOn ? shadeColor(color, "top") : color).attr("opacity", 0.55);
+  const trackArc = gaugeArcPath(radius * 0.72, radius, START_ANGLE, END_ANGLE);
+  const valueArc = gaugeArcPath(
+    radius * 0.72,
+    radius,
+    START_ANGLE,
+    START_ANGLE + (END_ANGLE - START_ANGLE) * percent,
+  );
+
+  if (depthOn) {
+    g.append("path").attr("d", trackArc).attr("fill", shadeColor(trackColor, "shadow")).attr("opacity", 0.95);
+    g.append("path").attr("d", trackArc).attr("fill", shadeColor(trackColor, "top")).attr("opacity", 0.45);
+  } else {
+    g.append("path").attr("d", trackArc).attr("fill", trackColor).attr("opacity", 0.95);
   }
 
-  const trackArc = gaugeArcPath(innerR, outerR, START_ANGLE, END_ANGLE);
-  g.append("path").attr("d", trackArc).attr("fill", track).attr("opacity", depthOn ? 0.25 : 0.4);
-
-  const valueArc = gaugeArcPath(innerR, outerR, START_ANGLE, START_ANGLE + span * percent);
   let valueShadowPath: d3.Selection<SVGPathElement, unknown, null, undefined> | null = null;
   if (depthOn) {
     valueShadowPath = g
@@ -128,43 +103,31 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
     .attr("d", valueArc);
 
   if (!prefersReducedMotion()) {
-    const interp = d3.interpolateNumber(START_ANGLE, START_ANGLE + span * percent);
-    const collapsed = gaugeArcPath(innerR, outerR, START_ANGLE, START_ANGLE);
-    const tween = () => (t: number) => gaugeArcPath(innerR, outerR, START_ANGLE, interp(t));
-    valuePath.attr("d", collapsed).transition().duration(motionDuration("enter")).ease(d3.easeCubicOut).attrTween("d", tween);
+    const interp = d3.interpolateNumber(START_ANGLE, START_ANGLE + (END_ANGLE - START_ANGLE) * percent);
+    const collapsed = gaugeArcPath(radius * 0.72, radius, START_ANGLE, START_ANGLE);
+    valuePath
+      .attr("d", collapsed)
+      .transition()
+      .duration(720)
+      .ease(d3.easeCubicOut)
+      .attrTween("d", () => (t) => gaugeArcPath(radius * 0.72, radius, START_ANGLE, interp(t)));
     valueShadowPath
       ?.attr("d", collapsed)
       .transition()
-      .duration(motionDuration("enter"))
+      .duration(720)
       .ease(d3.easeCubicOut)
-      .attrTween("d", tween);
+      .attrTween("d", () => (t) => gaugeArcPath(radius * 0.72, radius, START_ANGLE, interp(t)));
   }
 
-  for (let i = 0; i <= tickCount; i += 1) {
-    const t = i / tickCount;
-    const angle = START_ANGLE + span * t - Math.PI / 2;
-    const r0 = outerR + 2;
-    const majorEvery = Math.max(1, Math.floor(tickCount / 2));
-    const r1 = outerR + (i % majorEvery === 0 ? 8 : 5);
-    g.append("line")
-      .attr("x1", Math.cos(angle) * r0)
-      .attr("y1", Math.sin(angle) * r0)
-      .attr("x2", Math.cos(angle) * r1)
-      .attr("y2", Math.sin(angle) * r1)
-      .attr("stroke", theme.axisLine)
-      .attr("stroke-width", 1)
-      .attr("stroke-opacity", 0.85);
-  }
-
-  const pointerAngle = START_ANGLE + span * percent;
-  const pointerLen = radius * VCDS.gauge.pointerLength;
+  const pointerAngle = START_ANGLE + (END_ANGLE - START_ANGLE) * percent;
+  const pointerLen = radius * 0.62;
   const pointer = g
     .append("line")
     .attr("x1", 0)
     .attr("y1", 0)
     .attr("x2", Math.cos(pointerAngle - Math.PI / 2) * pointerLen)
     .attr("y2", Math.sin(pointerAngle - Math.PI / 2) * pointerLen)
-    .attr("stroke", pointerColor)
+    .attr("stroke", activeColor)
     .attr("stroke-width", 3)
     .attr("stroke-linecap", "round");
 
@@ -173,13 +136,13 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
       .attr("x2", Math.cos(START_ANGLE - Math.PI / 2) * pointerLen)
       .attr("y2", Math.sin(START_ANGLE - Math.PI / 2) * pointerLen)
       .transition()
-      .duration(motionDuration("enter"))
+      .duration(720)
       .ease(d3.easeCubicOut)
       .attr("x2", Math.cos(pointerAngle - Math.PI / 2) * pointerLen)
       .attr("y2", Math.sin(pointerAngle - Math.PI / 2) * pointerLen);
   }
 
-  g.append("circle").attr("r", 5).attr("fill", pointerColor);
+  g.append("circle").attr("r", 5).attr("fill", activeColor);
 
   const statistic = options.statistic as { content?: { formatter?: () => string } } | undefined;
   const centerText =
@@ -198,21 +161,23 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
       .text(centerText);
   }
 
-  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
-  const tipHtml = `<strong>${centerText}</strong><br/><span style="opacity:0.85">${formatChartValue(percent * 100, valueFormat ? { ...valueFormat, unit: "%" } : { type: "percent" })}</span>`;
+  if (showTooltip) {
+    const tip = createTooltip(container, theme, tooltipPresentation);
 
-  root
-    .append("rect")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("fill", "transparent")
-    .attr("cursor", onPointClick ? "pointer" : "default")
-    .on("mousemove", (event) => {
-      if (!tooltip) return;
-      showSimpleTooltip(tooltip, container, event as MouseEvent, tipHtml, width);
-    })
-    .on("mouseleave", () => hideTooltip(tooltip))
-    .on("click", () => onPointClick?.({ value: rawValue, percent }));
+    root
+      .append("rect")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill", "transparent")
+      .on("mousemove", (event) => {
+        tip.style("opacity", "1").text(formatChartValue(percent * 100, valueFormat));
+        const rect = container.getBoundingClientRect();
+        tip
+          .style("left", `${event.clientX - rect.left + 10}px`)
+          .style("top", `${event.clientY - rect.top - 28}px`);
+      })
+      .on("mouseleave", () => tip.style("opacity", "0"));
+  }
 
   return () => container.replaceChildren();
 }

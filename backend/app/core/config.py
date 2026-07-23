@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     rpt_smtp_password: str | None = None
     rpt_smtp_from: str = "reports@vitalspan.local"
     nfr08_runtime_mode: Literal["strict", "permissive"] = "permissive"
+    vitalspan_data_dir: str = "./data"
 
     _DEV_SECRET_KEY: ClassVar[str] = "change-me-in-production"
     _DEV_FERNET_EXAMPLE: ClassVar[str] = "SN0VrKv3d9y1xCzRerwAlw0VdGvrNqWacCMhrYbq2YI="

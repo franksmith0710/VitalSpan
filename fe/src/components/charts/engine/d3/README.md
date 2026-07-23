@@ -22,20 +22,4 @@
 
 Plan 构建仍经 `buildPlanForType`（`kind: "d3"`）。
 
-详细计划：
-
-- L4–L6：[`docs/automate/plans/2026-07-21-d3-visual-excellence.md`](../../../../docs/automate/plans/2026-07-21-d3-visual-excellence.md)
-- **L7 全族天花板**：[`docs/automate/plans/2026-07-23-d3-vcds-l7-ceiling.md`](../../../../docs/automate/plans/2026-07-23-d3-vcds-l7-ceiling.md)
-
-## L7 全族天花板（摘要）
-
-| 族 | 关键增强 |
-|----|----------|
-| 笛卡尔 | legend dim · brush dataZoom · 专科柱 enter |
-| 径向 | 多系列雷达 · 饼 morph · gauge 分段 |
-| 关系/流向 | 散点 brush · 漏斗转化率 · Sankey 高亮 |
-| 层级/图 | Treemap drill · 力导向 drag/zoom |
-| 地图 | visualMap 拆分 · 下钻面包屑 · 标注密度 · 3D CSS2D 标签 + 相机入场 |
-| 表格 | 排序图标过渡 · 行涟漪 · 冻结列阴影 |
-
-Inspector 接线真理源：`inspectorCapabilityMatrix.ts`（`wired` / `partial` / `missing`）。
+详细计划：[`docs/automate/plans/2026-07-21-d3-visual-excellence.md`](../../../../docs/automate/plans/2026-07-21-d3-visual-excellence.md)

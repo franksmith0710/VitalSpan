@@ -98,16 +98,15 @@ def test_list_dashboards_surface_kind_filter(client: TestClient) -> None:
     dash_resp = client.get("/api/v1/dashboards?surfaceKind=dashboard", headers=AUTH)
     assert dash_resp.status_code == 200
     dash_items = dash_resp.json()["items"]
-    assert all(read_surface_kind_from_layout(item.get("layoutJson")) != "data-screen" for item in dash_items)
+    assert all(item.get("surfaceKind") != "data-screen" for item in dash_items)
 
     screen_resp = client.get("/api/v1/dashboards?surfaceKind=data-screen", headers=AUTH)
     assert screen_resp.status_code == 200
     screen_items = screen_resp.json()["items"]
     assert len(screen_items) >= 1
-    assert all(
-        read_surface_kind_from_layout(item.get("layoutJson")) == "data-screen"
-        for item in screen_items
-    )
+    assert all(item.get("surfaceKind") == "data-screen" for item in screen_items)
+    assert all("previewSummary" in item for item in screen_items)
+    assert all("layoutJson" not in item for item in screen_items)
 
 
 def test_data_screen_default_layout_accepts_1920_canvas(client: TestClient) -> None:

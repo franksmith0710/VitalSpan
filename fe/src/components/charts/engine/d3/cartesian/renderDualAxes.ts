@@ -1,23 +1,21 @@
 import * as d3 from "d3";
 import { animateStrokePath } from "@/components/charts/engine/d3/core/animate";
-import { createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { drawDualAxesAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { normalizeCartesianData } from "@/components/charts/engine/d3/core/series";
+import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
+import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
-import { wirePlotSeriesLegendDimming } from "@/components/charts/engine/d3/core/legendInteraction";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
-import { attachPointCategoryInteraction } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import {
   columnTooltipRows,
   renderDualAxesColumnBars,
   resolveDualAxesColumnMax,
 } from "@/components/charts/engine/d3/cartesian/renderDualAxesColumn";
-import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3CartesianDatum, D3DualAxesRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -89,17 +87,13 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   const lineColor = colors[0] ?? "#465fff";
   const columnColor = colors[1] ?? "#12b76a";
   const curve = lineSmooth ? d3.curveMonotoneX : d3.curveLinear;
-  const lineName = lineLabels?.[0] ?? "线";
-  const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
 
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const defs = root.append("defs");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
   drawHorizontalMarkLines(plot, markLines, yLeft, innerW);
-  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
-  const crosshair = createCrosshair({ plot, innerW, innerH, theme });
-  crosshair.dot.attr("fill", lineColor);
+  const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
 
   drawDualAxesAxes({
     g,
@@ -125,7 +119,6 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   const linePath = plot
     .append("path")
     .datum(linePoints)
-    .attr("data-series-key", lineName)
     .attr("fill", "none")
     .attr("stroke", lineColor)
     .attr("stroke-width", 2.5)
@@ -148,7 +141,6 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     const linePath2 = plot
       .append("path")
       .datum(linePoints2)
-      .attr("data-series-key", colName)
       .attr("fill", "none")
       .attr("stroke", columnColor)
       .attr("stroke-width", 2.5)
@@ -162,7 +154,6 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       .data(linePoints2)
       .join("circle")
       .attr("class", "dual-line-dot-2")
-      .attr("data-series-key", colName)
       .attr("r", 3)
       .attr("fill", (d) => resolveDatumColor(Number(d.__value__), columnColor, conditionalRules ?? []))
       .attr("stroke", "#fff")
@@ -195,7 +186,6 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       barRadius,
     });
     columnLegendItems = columnResult.legendItems;
-    plot.selectAll("g.dual-col").attr("data-series-key", colName);
   }
 
   plot
@@ -203,7 +193,6 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     .data(linePoints)
     .join("circle")
     .attr("class", "dual-line-dot")
-    .attr("data-series-key", lineName)
     .attr("r", 3)
     .attr("fill", (d) => resolveDatumColor(Number(d.__value__), lineColor, conditionalRules ?? []))
     .attr("stroke", "#fff")
@@ -243,20 +232,29 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
   }
 
   if (showTooltip) {
-    attachPointCategoryInteraction({
-      container,
-      plot,
-      innerW,
-      innerH,
-      width,
-      categories,
-      xScale: x,
-      crosshair,
-      tooltip,
-      valueFormat,
-      buildRows: (best) => {
+    plot
+      .append("rect")
+      .attr("width", innerW)
+      .attr("height", innerH)
+      .attr("fill", "transparent")
+      .style("cursor", "crosshair")
+      .lower()
+      .on("mousemove", (event) => {
+        const [mx] = d3.pointer(event);
+        let best = categories[0] ?? "";
+        let bestDist = Infinity;
+        for (const cat of categories) {
+          const px = x(cat) ?? 0;
+          const dist = Math.abs(px - mx);
+          if (dist < bestDist) {
+            bestDist = dist;
+            best = cat;
+          }
+        }
         const linePt = lineSet.points.find((p) => String(p.__category__) === best);
-        return dualLine
+        const lineName = lineLabels?.[0] ?? "线";
+        const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
+        const rows = dualLine
           ? [
               { name: lineName, color: lineColor, value: linePt?.__value__ ?? 0 },
               {
@@ -277,38 +275,32 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
                 columnColor,
               ).map((r) => ({ ...r, name: r.name === "柱" ? colName : r.name })),
             ];
-      },
-    });
+        tooltip
+          ?.style("opacity", "1")
+          .html(tooltipHtml(best, rows, valueFormat));
+        const rect = container.getBoundingClientRect();
+        tooltip
+          ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
+          .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+      })
+      .on("mouseleave", () => tooltip?.style("opacity", "0"));
   }
 
-  const legendItems: Array<{
-    label: string;
-    seriesKey: string;
-    color: string;
-    marker?: "line" | "rect";
-    markerWidth?: number;
-    markerHeight?: number;
-  }> = [
-    { label: lineName, seriesKey: lineName, color: lineColor, marker: "line", markerWidth: 14, markerHeight: 3 },
+  const lineName = lineLabels?.[0] ?? "线";
+  const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
+  const legendItems: Array<{ label: string; color: string; marker?: "line" | "rect"; markerWidth?: number; markerHeight?: number }> = [
+    { label: lineName, color: lineColor, marker: "line", markerWidth: 14, markerHeight: 3 },
   ];
   if (dualLine) {
-    legendItems.push({
-      label: colName,
-      seriesKey: colName,
-      color: columnColor,
-      marker: "line",
-      markerWidth: 14,
-      markerHeight: 3,
-    });
+    legendItems.push({ label: colName, color: columnColor, marker: "line", markerWidth: 14, markerHeight: 3 });
   } else if (columnLegendItems.length > 1 && columnLegendItems[0]?.label) {
     for (const item of columnLegendItems) {
-      legendItems.push({ label: item.label, seriesKey: item.label, color: item.color });
+      legendItems.push({ label: item.label, color: item.color });
     }
   } else {
-    legendItems.push({ label: colName, seriesKey: colName, color: columnColor });
+    legendItems.push({ label: colName, color: columnColor });
   }
-
-  const detachLegend = renderConfiguredInlineLegend(root, showLegend, legendItems, {
+  renderConfiguredInlineLegend(root, showLegend, legendItems, {
     width,
     height,
     margin,
@@ -317,14 +309,10 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     fontSize: legendLayout?.fontSize,
   });
 
-  const detachLegendDim = wirePlotSeriesLegendDimming(plot);
-
   const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
 
   return () => {
     detachZoom();
-    detachLegend();
-    detachLegendDim();
     container.replaceChildren();
   };
 }

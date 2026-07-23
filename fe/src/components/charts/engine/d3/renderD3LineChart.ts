@@ -13,8 +13,6 @@ import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core
 import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachCrosshairHover, createCrosshair } from "@/components/charts/engine/d3/core/crosshair";
-import { wirePlotSeriesLegendDimming } from "@/components/charts/engine/d3/core/legendInteraction";
-import { pulseSelection } from "@/components/charts/engine/d3/core/motionEngine";
 import {
   buildCartesianScene,
   drawCartesianAxes,
@@ -127,7 +125,6 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
   const dotLayers: d3.Selection<SVGCircleElement, D3CartesianDatum, SVGGElement, unknown>[] = [];
 
   seriesGroups.forEach((series, seriesIndex) => {
-    const seriesKey = series.name || `series-${seriesIndex}`;
     const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
     const gradId = ensureGradientDef(defs, `d3-line-grad-${seriesIndex}`, color, singleSeries ? 0.32 : 0.16, 0.01);
     const points = [...series.points].sort(
@@ -137,7 +134,6 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     plot
       .append("path")
       .datum(points)
-      .attr("data-series-key", seriesKey)
       .attr("fill", seriesGradient ? `url(#${gradId})` : color)
       .attr("fill-opacity", seriesGradient ? 0.95 : areaFillOpacity)
       .attr("d", areaGen);
@@ -145,7 +141,6 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     const linePath = plot
       .append("path")
       .datum(points)
-      .attr("data-series-key", seriesKey)
       .attr("fill", "none")
       .attr("stroke", color)
       .attr("stroke-width", VCDS.line.width)
@@ -160,7 +155,6 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       .data(points)
       .join("circle")
       .attr("class", `series-${seriesIndex}`)
-      .attr("data-series-key", seriesKey)
       .attr("r", dotRadius)
       .attr("fill", (d) => resolveDatumColor(Number(d.__value__), color, conditionalRules))
       .attr("stroke", "#fff")
@@ -207,7 +201,6 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
       const cy = anchor ? yScale(Number(anchor.value)) : my;
       crosshair.show(cx, cy, primaryColor);
       highlightCategoryDots(dotLayers, category);
-      pulseSelection(crosshair.dot);
       showMergedTooltip(tooltip, container, event, category, rows, valueFormat, width);
     },
     onLeave: () => {
@@ -216,39 +209,34 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     },
   });
 
-  const detachLegend =
-    showLegend && seriesField
-      ? renderConfiguredInlineLegend(
-          root,
-          true,
-          seriesGroups.map((series) => ({
-            label: series.name || "系列",
-            seriesKey: series.name || "系列",
-            color: colorScale(series.name) ?? colors[0] ?? theme.accent,
-            marker: "line",
-            markerWidth: 14,
-            markerHeight: 3,
-          })),
-          {
-            width,
-            height,
-            margin: scene.margin,
-            theme,
-            layout: legendLayout,
-            fontSize: legendLayout?.fontSize,
-          },
-        )
-      : () => undefined;
-
-  const detachLegendDim = wirePlotSeriesLegendDimming(plot);
+  root.selectAll("g.vs-inline-legend").remove();
+  if (showLegend && seriesField) {
+    renderConfiguredInlineLegend(
+      root,
+      true,
+      seriesGroups.map((series) => ({
+        label: series.name || "系列",
+        color: colorScale(series.name) ?? colors[0] ?? theme.accent,
+        marker: "line",
+        markerWidth: 14,
+        markerHeight: 3,
+      })),
+      {
+        width,
+        height,
+        margin: scene.margin,
+        theme,
+        layout: legendLayout,
+        fontSize: legendLayout?.fontSize,
+      },
+    );
+  }
 
   writeIncrementalSession(container, { plotType: "Line", width, height });
   const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
 
   return () => {
     detachZoom();
-    detachLegend();
-    detachLegendDim();
     if (!incremental) container.replaceChildren();
   };
 }
@@ -262,144 +250,26 @@ function renderHorizontalLineFallback(
   colorScale: d3.ScaleOrdinal<string, string>,
 ): () => void {
   container.replaceChildren();
-  const {
-    width,
-    height,
-    colors,
-    theme: rawTheme,
-    smooth,
-    showTooltip,
-    valueFormat,
-    onPointClick,
-    tooltipPresentation,
-    showLegend,
-    seriesField,
-    legendLayout,
-  } = config;
+  const { width, height, colors, theme: rawTheme, smooth, showTooltip, valueFormat, onPointClick } = config;
   const theme = themeFromConfig(rawTheme);
-  const scene = buildCartesianScene({
-    container,
-    width,
-    height,
-    showLegend: Boolean(showLegend && seriesField),
-    categories,
-  });
-  const { root, plot, innerW, innerH } = scene;
+  const scene = buildCartesianScene({ container, width, height, showLegend: false });
   const maxVal = d3.max(normalized, (d) => Number(d.__value__)) ?? 0;
-  const catScale = d3.scalePoint<string>().domain(categories).range([0, innerH]).padding(0.5);
-  const valScale = d3.scaleLinear().domain([0, maxVal]).nice().range([0, innerW]);
-  const lineGen = buildLineGenerator(true, smooth, catScale, valScale);
-  const dotLayers: d3.Selection<SVGCircleElement, D3CartesianDatum, SVGGElement, unknown>[] = [];
-
+  const xScale = d3.scalePoint<string>().domain(categories).range([0, scene.innerH]).padding(0.5);
+  const yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([0, scene.innerW]);
+  const lineGen = buildLineGenerator(true, smooth, xScale, yScale);
   seriesGroups.forEach((series, i) => {
-    const seriesKey = series.name || `series-${i}`;
     const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
-    const points = [...series.points].sort(
-      (a, b) => categories.indexOf(String(a.__category__)) - categories.indexOf(String(b.__category__)),
-    );
-    const linePath = plot
+    const linePath = scene.plot
       .append("path")
-      .datum(points)
-      .attr("data-series-key", seriesKey)
+      .datum(series.points)
       .attr("fill", "none")
       .attr("stroke", color)
       .attr("stroke-width", VCDS.line.width)
       .attr("d", lineGen);
     applyPathDepthShadow(scene.defs, linePath, color, `hline-${i}`);
-    animateStrokePath(linePath);
-
-    const dots = plot
-      .selectAll<SVGCircleElement, D3CartesianDatum>(`circle.hseries-${i}`)
-      .data(points)
-      .join("circle")
-      .attr("class", `hseries-${i}`)
-      .attr("data-series-key", seriesKey)
-      .attr("r", VCDS.dot.radius)
-      .attr("fill", color)
-      .attr("stroke", "#fff")
-      .attr("stroke-width", VCDS.dot.strokeWidth)
-      .attr("cx", (d) => valScale(Number(d.__value__)))
-      .attr("cy", (d) => catScale(String(d.__category__)) ?? 0)
-      .attr("cursor", onPointClick ? "pointer" : "default");
-    dotLayers.push(dots);
-    if (onPointClick) dots.on("click", (_event, datum) => onPointClick(datum));
   });
-
   const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
-  const crosshair = createCrosshair({ plot, innerW, innerH, theme });
-  const primaryColor = colorScale(seriesGroups[0]?.name ?? "") ?? colors[0] ?? theme.accent;
-  crosshair.dot.attr("fill", primaryColor);
-
-  if (showTooltip) {
-    plot
-      .append("rect")
-      .attr("class", "vs-crosshair-hit")
-      .attr("width", innerW)
-      .attr("height", innerH)
-      .attr("fill", "transparent")
-      .style("cursor", "crosshair")
-      .lower()
-      .on("mousemove", (event) => {
-        const [mx, my] = d3.pointer(event);
-        let best = categories[0] ?? "";
-        let bestDist = Infinity;
-        for (const cat of categories) {
-          const py = catScale(cat) ?? 0;
-          const dist = Math.abs(py - my);
-          if (dist < bestDist) {
-            bestDist = dist;
-            best = cat;
-          }
-        }
-        const rows = seriesGroups.map((series) => {
-          const point = series.points.find((p) => String(p.__category__) === best);
-          const color = colorScale(series.name) ?? colors[0] ?? theme.accent;
-          return { name: series.name, color, value: point?.__value__ ?? 0 };
-        });
-        const anchor = rows[0];
-        const cx = anchor ? valScale(Number(anchor.value)) : mx;
-        const cy = catScale(best) ?? my;
-        crosshair.show(cx, cy, primaryColor);
-        highlightCategoryDots(dotLayers, best);
-        pulseSelection(crosshair.dot);
-        showMergedTooltip(tooltip, container, event, best, rows, valueFormat, width);
-      })
-      .on("mouseleave", () => {
-        crosshair.hide();
-        highlightCategoryDots(dotLayers, null);
-        hideTooltip(tooltip);
-      });
-  }
-
-  const detachLegend =
-    showLegend && seriesField
-      ? renderConfiguredInlineLegend(
-          root,
-          true,
-          seriesGroups.map((series) => ({
-            label: series.name || "系列",
-            seriesKey: series.name || "系列",
-            color: colorScale(series.name) ?? colors[0] ?? theme.accent,
-            marker: "line",
-            markerWidth: 14,
-            markerHeight: 3,
-          })),
-          {
-            width,
-            height,
-            margin: scene.margin,
-            theme,
-            layout: legendLayout,
-            fontSize: legendLayout?.fontSize,
-          },
-        )
-      : () => undefined;
-
-  const detachLegendDim = wirePlotSeriesLegendDimming(plot);
-
   return () => {
-    detachLegend();
-    detachLegendDim();
     hideTooltip(tooltip);
     container.replaceChildren();
   };

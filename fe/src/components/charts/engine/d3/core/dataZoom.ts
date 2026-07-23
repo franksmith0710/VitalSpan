@@ -7,11 +7,9 @@ const SLIDER_GAP = 6;
 type DataZoomOpts = {
   showSlider?: boolean;
   theme?: AntvThemeTokens;
-  /** 横棒图：brush 在右侧竖向 */
-  orientation?: "vertical" | "horizontal";
 };
 
-/** 笛卡尔图缩略轴：滚轮/拖拽缩放平移；可选底部/右侧 brush 滑条 */
+/** 笛卡尔图缩略轴：滚轮/拖拽缩放平移；可选底部 brush 滑条 */
 export function attachCartesianDataZoom(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
   plot: d3.Selection<SVGGElement, unknown, null, undefined>,
@@ -21,7 +19,6 @@ export function attachCartesianDataZoom(
 ): () => void {
   const showSlider = opts.showSlider !== false;
   const theme = opts.theme;
-  const horizontal = opts.orientation !== "horizontal";
   const plotBase = plot.attr("transform") ?? null;
 
   const zoom = d3
@@ -40,77 +37,42 @@ export function attachCartesianDataZoom(
   let brushG: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
   let brushCleanup = () => undefined;
 
-  const sliderSpan = horizontal ? innerW : innerH;
-  if (showSlider && sliderSpan > 48) {
+  if (showSlider && innerW > 48) {
     const parent = plot.node()?.parentElement
       ? d3.select<SVGGElement, unknown>(plot.node()!.parentElement as SVGGElement)
       : null;
     if (parent) {
-      if (horizontal) {
-        brushG = parent
-          .append("g")
-          .attr("class", "data-zoom-slider")
-          .attr("transform", `translate(0,${innerH + SLIDER_GAP})`);
+      brushG = parent
+        .append("g")
+        .attr("class", "data-zoom-slider")
+        .attr("transform", `translate(0,${innerH + SLIDER_GAP})`);
 
-        brushG
-          .append("rect")
-          .attr("width", innerW)
-          .attr("height", SLIDER_H)
-          .attr("rx", 3)
-          .attr("fill", theme?.gridLine ?? "#e4e7ec")
-          .attr("opacity", 0.35);
+      brushG
+        .append("rect")
+        .attr("width", innerW)
+        .attr("height", SLIDER_H)
+        .attr("rx", 3)
+        .attr("fill", theme?.gridLine ?? "#e4e7ec")
+        .attr("opacity", 0.35);
 
-        const brush = d3
-          .brushX()
-          .extent([
-            [0, 0],
-            [innerW, SLIDER_H],
-          ])
-          .on("end", (event) => {
-            if (!event.selection) return;
-            const [x0, x1] = event.selection as [number, number];
-            const span = Math.max(x1 - x0, 8);
-            const k = innerW / span;
-            const t = d3.zoomIdentity.translate(-x0 * k, 0).scale(k);
-            svg.transition().duration(280).call(zoom.transform, t);
-          });
+      const brush = d3
+        .brushX()
+        .extent([
+          [0, 0],
+          [innerW, SLIDER_H],
+        ])
+        .on("end", (event) => {
+          if (!event.selection) return;
+          const [x0, x1] = event.selection as [number, number];
+          const span = Math.max(x1 - x0, 8);
+          const k = innerW / span;
+          const t = d3.zoomIdentity.translate(-x0 * k, 0).scale(k);
+          svg.transition().duration(280).call(zoom.transform, t);
+        });
 
-        brushG.call(brush);
-        brushG.selectAll(".overlay").attr("cursor", "crosshair");
-        brushG.selectAll(".selection").attr("fill", theme?.accent ?? "#465fff").attr("fill-opacity", 0.18);
-      } else {
-        brushG = parent
-          .append("g")
-          .attr("class", "data-zoom-slider")
-          .attr("transform", `translate(${innerW + SLIDER_GAP},0)`);
-
-        brushG
-          .append("rect")
-          .attr("width", SLIDER_H)
-          .attr("height", innerH)
-          .attr("rx", 3)
-          .attr("fill", theme?.gridLine ?? "#e4e7ec")
-          .attr("opacity", 0.35);
-
-        const brush = d3
-          .brushY()
-          .extent([
-            [0, 0],
-            [SLIDER_H, innerH],
-          ])
-          .on("end", (event) => {
-            if (!event.selection) return;
-            const [y0, y1] = event.selection as [number, number];
-            const span = Math.max(y1 - y0, 8);
-            const k = innerH / span;
-            const t = d3.zoomIdentity.translate(0, -y0 * k).scale(k);
-            svg.transition().duration(280).call(zoom.transform, t);
-          });
-
-        brushG.call(brush);
-        brushG.selectAll(".overlay").attr("cursor", "crosshair");
-        brushG.selectAll(".selection").attr("fill", theme?.accent ?? "#465fff").attr("fill-opacity", 0.18);
-      }
+      brushG.call(brush);
+      brushG.selectAll(".overlay").attr("cursor", "crosshair");
+      brushG.selectAll(".selection").attr("fill", theme?.accent ?? "#465fff").attr("fill-opacity", 0.18);
 
       brushCleanup = () => {
         brushG?.remove();

@@ -1,17 +1,21 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { GeoMapRenderResult } from "@/components/charts/engine/geo/geoMapRenderResult";
-import { getOfflineGeoMap, joinOfflineMapFeatures } from "@/components/charts/engine/geo/OfflineGeoPort";
+import {
+  getOfflineGeoMap,
+  joinOfflineMapFeatures,
+} from "@/components/charts/engine/geo/OfflineGeoPort";
 import { colorForGeoHover } from "@/components/charts/engine/geo/geoSurfaceColors";
 import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
+import { renderD3ChoroplethChart } from "@/components/charts/engine/d3/geo/renderChoropleth";
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
 import {
   colorForValue,
   geoSurfaceColors,
   geometryToShapes,
 } from "@/components/charts/engine/three/geoToThreeShapes";
-import { probeWebGL } from "@/components/charts/engine/three/webglProbe";
+import { probeWebGL, type WebGLApi } from "@/components/charts/engine/three/webglProbe";
 import { buildThreeGeoProject, buildMapFitCollection } from "@/components/charts/engine/three/geo/threeGeoProject";
 import { loadChinaTerrainPack } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import { computeCapTintColor } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
@@ -25,21 +29,110 @@ import {
 import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConstants";
 import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
-import { runThreeGeoCameraIntro } from "@/components/charts/engine/three/threeGeoCameraIntro";
-import { mountThreeGeoRegionLabels } from "@/components/charts/engine/three/threeGeoRegionLabels";
-import {
-  attachOrbitGrabCursor,
-  capMaterialOf,
-  collectThreeGeoRegionLabelPositions,
-  d3Fallback,
-  disposePlateGroup,
-  logDevTerrainDiagnostics,
-  noopDispose,
-  provinceGroupOf,
-  showDevTerrainFailureHint,
-} from "@/components/charts/engine/three/threeChoroplethHelpers";
 
 const PLATE_DEPTH_RATIO = 0.0028;
+
+function noopDispose(): void {
+  /* empty */
+}
+
+function showDevTerrainFailureHint(container: HTMLElement): () => void {
+  if (!import.meta.env.DEV) return () => undefined;
+  const hint = document.createElement("div");
+  hint.className =
+    "pointer-events-none absolute bottom-1 left-1 z-10 rounded bg-warning-500/90 px-1.5 py-0.5 text-[10px] text-white";
+  hint.setAttribute("role", "status");
+  hint.textContent = "地形贴图加载失败，已使用纯色顶面";
+  if (getComputedStyle(container).position === "static") {
+    container.style.position = "relative";
+  }
+  container.appendChild(hint);
+  return () => hint.remove();
+}
+
+function logDevTerrainDiagnostics(
+  terrainOn: boolean,
+  terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null,
+  firstCap: THREE.MeshStandardMaterial | undefined,
+  mapId: string | undefined,
+  drillDepth: number,
+  webglApi?: WebGLApi | "none",
+): void {
+  if (!import.meta.env.DEV) return;
+  if (terrainOn && !terrainPack) {
+    console.warn("[map-3d] terrain pack missing", { mapId, drillDepth, webglApi });
+    return;
+  }
+  if (!terrainPack) return;
+  const mapImage = firstCap?.map?.image;
+  console.debug("[map-3d] terrain pack loaded", {
+    level: terrainPack.level,
+    debugUrl: terrainPack.debugUrl,
+    capHasMap: Boolean(firstCap?.map),
+    capMapImage: mapImage instanceof HTMLImageElement ? `${mapImage.width}x${mapImage.height}` : mapImage,
+    webglApi,
+    renderEngine: "three",
+  });
+}
+
+function attachOrbitGrabCursor(
+  domElement: HTMLElement,
+  controls: OrbitControls,
+  roam: boolean,
+): () => void {
+  if (!roam) return () => undefined;
+  domElement.style.cursor = "grab";
+  const onStart = () => {
+    domElement.style.cursor = "grabbing";
+  };
+  const onEnd = () => {
+    domElement.style.cursor = "grab";
+  };
+  controls.addEventListener("start", onStart);
+  controls.addEventListener("end", onEnd);
+  return () => {
+    controls.removeEventListener("start", onStart);
+    controls.removeEventListener("end", onEnd);
+    domElement.style.cursor = "";
+  };
+}
+
+function provinceGroupOf(obj: THREE.Object3D): THREE.Object3D | null {
+  let cur: THREE.Object3D | null = obj;
+  while (cur) {
+    if (cur.userData?.name != null) return cur;
+    cur = cur.parent;
+  }
+  return null;
+}
+
+function capMaterialOf(target: THREE.Object3D): THREE.MeshStandardMaterial {
+  const group = provinceGroupOf(target) ?? target;
+  return group.userData.capMaterial as THREE.MeshStandardMaterial;
+}
+
+function disposePlateGroup(group: THREE.Group): void {
+  group.traverse((child) => {
+    if (child instanceof THREE.Mesh || child instanceof THREE.LineSegments) {
+      child.geometry?.dispose();
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      for (const m of mats) m.dispose();
+    }
+  });
+}
+
+function d3Fallback(
+  container: HTMLElement,
+  config: D3GeoRenderConfig,
+  reason: string,
+): GeoMapRenderResult {
+  container.dataset.webglApi = "none";
+  return {
+    dispose: renderD3ChoroplethChart(container, config),
+    engine: "d3-fallback",
+    fallbackReason: reason,
+  };
+}
 
 export async function renderThreeChoroplethChart(
   container: HTMLElement,
@@ -73,12 +166,12 @@ export async function renderThreeChoroplethChart(
   const geo = getOfflineGeoMap(mapId ?? "");
   if (!geo?.features?.length) {
     container.replaceChildren();
-    const alert = document.createElement("div");
-    alert.className =
+    const msg = document.createElement("div");
+    msg.className =
       "flex h-full items-center justify-center px-3 text-center text-theme-sm text-error-600 dark:text-error-400";
-    alert.setAttribute("role", "alert");
-    alert.textContent = "离线地图资产缺失，无法渲染";
-    container.appendChild(alert);
+    msg.setAttribute("role", "alert");
+    msg.textContent = "离线地图资产缺失，无法渲染";
+    container.appendChild(msg);
     return { dispose: () => container.replaceChildren(), engine: "three" };
   }
 
@@ -127,7 +220,6 @@ export async function renderThreeChoroplethChart(
     const plateDepth = Math.max(0.18, Math.min(width, height) * PLATE_DEPTH_RATIO * plateScale);
     const borderColor = isDark ? 0x7dd3fc : 0x1e40af;
     const showVisualMap = geoStyle.visualMap !== false;
-    const showRegionLabel = geoStyle.showRegionLabel === true;
     const terrainTextureOn = geo3dStyle.terrainTexture !== false;
     const terrainReliefOn = geo3dStyle.terrainRelief !== false;
     const terrainOn = terrainTextureOn;
@@ -253,16 +345,6 @@ export async function renderThreeChoroplethChart(
       ? mountThreeGeoVisualMap(container, { min: minVal, max: maxVal, surface, valueFormat, isDark })
       : () => undefined;
 
-    const regionLabels =
-      showRegionLabel && features.length <= 34
-        ? mountThreeGeoRegionLabels(
-            container,
-            camera,
-            collectThreeGeoRegionLabelPositions(meshes),
-            isDark,
-          )
-        : null;
-
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let hovered: THREE.Object3D | null = null;
@@ -335,26 +417,18 @@ export async function renderThreeChoroplethChart(
     });
     renderer.domElement.addEventListener("click", onClick);
 
-    const renderFrame = () => {
-      controls.update();
-      renderer.render(scene, camera);
-      regionLabels?.render();
-    };
-
     const animate = () => {
       frameId = requestAnimationFrame(animate);
-      renderFrame();
+      controls.update();
+      renderer.render(scene, camera);
     };
     animate();
-
-    const cancelCameraIntro = runThreeGeoCameraIntro(camera, controls, orbitLayout, renderFrame);
 
     return {
       engine: "three",
       webglApi: webglProbe.api ?? "none",
       dispose: () => {
         cancelAnimationFrame(frameId);
-        cancelCameraIntro();
         renderer.domElement.removeEventListener("dblclick", onDblClick);
         renderer.domElement.removeEventListener("pointermove", onMove);
         renderer.domElement.removeEventListener("click", onClick);
@@ -362,7 +436,6 @@ export async function renderThreeChoroplethChart(
         detachOrbitPan();
         detachGrabCursor();
         detachTerrainHint();
-        regionLabels?.dispose();
         terrainPack?.dispose();
         for (const mesh of meshes) disposePlateGroup(mesh);
         renderer.dispose();

@@ -51,7 +51,7 @@
 | EmbedLayout | `../layouts/EmbedLayout.tsx` | Embed chromeless 布局 |
 | DashboardListCard | `dashboard/DashboardListCard.tsx` | 看板列表卡片（真实预览缩略图 + 悬停操作） |
 | DashboardPreviewThumb | `dashboard/DashboardPreviewThumb.tsx` | 色块占位缩略图（独立页/测试） |
-| DashboardListCardPreview | `dashboard/DashboardListCardPreview.tsx` | 列表真渲染预览（视口内懒加载 + 轻模糊） |
+| DashboardListCardPreview | `dashboard/DashboardListCardPreview.tsx` | 列表缩略图：优先保存时真实渲染截图，无图时回退静态示意 |
 | DashboardLayoutPreview | `dashboard/DashboardLayoutPreview.tsx` | v1/v2 只读预览分发：v1 → DashboardGrid，v2 → PixelCanvas |
 | DataScreenPresenter | `dashboard/screen/DataScreenPresenter.tsx` | 数据大屏只读投放：固定画布 + `DashboardLayoutPreview` |
 | CanvasScaleViewport | `dashboard/screen/CanvasScaleViewport.tsx` | 视口级缩放（宽度/高度/等比/铺满/不缩放） |

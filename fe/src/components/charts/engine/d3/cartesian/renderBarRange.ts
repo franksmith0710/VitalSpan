@@ -1,19 +1,14 @@
 import * as d3 from "d3";
-import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/d3/core/axes";
 import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
-import { applyCellBevel, applyDepthHoverLift, paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
+import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
-import {
-  createTooltipLayer,
-  hideTooltip,
-  showSimpleTooltip,
-} from "@/components/charts/engine/d3/core/tooltipLayer";
+import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3BarRangeRenderConfig } from "@/components/charts/engine/d3/types";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
-const BAR_RX = VCDS.bar.rx;
+const BAR_RX = 4;
 
 export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRangeRenderConfig): () => void {
   container.replaceChildren();
@@ -33,7 +28,6 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
     barWidthRatio,
     barRadius,
     axisStyle,
-    tooltipPresentation,
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -54,7 +48,7 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
 
   drawCartesianHorizontalBandAxes({ g, xScale: x, yScale: y, innerW, innerH, theme, valueFormat, axisStyle });
 
@@ -71,31 +65,29 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
       const x0 = x(Math.min(d.low, d.high));
       const w = Math.max(0, Math.abs(x(d.high) - x(d.low)));
       paintHorizontalBar({ plot: cell, x: x0, y: 0, width: w, height: y.bandwidth(), color: rangeColor, rx: barRx });
-      const front = cell.select<SVGRectElement>(".vs-hbar-front, rect").filter(function () {
-        return d3.select(this).attr("class") !== "vs-hbar-side";
-      });
-      if (!front.empty()) applyCellBevel(front);
       cell.attr("opacity", 0.85);
     })
     .on("click", (_e, d) => onPointClick?.(d));
 
   if (showTooltip) {
-    const tipHtml = (d: (typeof data)[number]) =>
-      `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
-      `<div>?? <strong>${formatChartValue(d.low, valueFormat)}</strong></div>` +
-      `<div>?? <strong>${formatChartValue(d.high, valueFormat)}</strong></div>`;
-
     plot
       .selectAll<SVGGElement, (typeof data)[number]>("g.range-bar")
-      .on("mouseenter", (event, d) => {
-        applyDepthHoverLift(d3.select(event.currentTarget), -VCDS.depth.hoverLiftPx.standard);
-        showSimpleTooltip(tooltip, container, event, tipHtml(d), width);
+      .on("mouseenter", (_e, d) => {
+        tooltip
+          ?.style("opacity", "1")
+          .html(
+            `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
+              `<div>下限 <strong>${formatChartValue(d.low, valueFormat)}</strong></div>` +
+              `<div>上限 <strong>${formatChartValue(d.high, valueFormat)}</strong></div>`,
+          );
       })
-      .on("mousemove", (event, d) => showSimpleTooltip(tooltip, container, event, tipHtml(d), width))
-      .on("mouseleave", function () {
-        d3.select(this).attr("transform", (d) => `translate(0,${y((d as (typeof data)[number]).type) ?? 0})`);
-        hideTooltip(tooltip);
-      });
+      .on("mousemove", (event) => {
+        const rect = container.getBoundingClientRect();
+        tooltip
+          ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
+          .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+      })
+      .on("mouseleave", () => tooltip?.style("opacity", "0"));
   }
 
   if (showLabel) {
@@ -109,11 +101,8 @@ export function renderD3BarRangeChart(container: HTMLElement, config: D3BarRange
       .attr("dy", "0.32em")
       .attr("fill", theme.axisLabel)
       .style("font-size", `${labelFontSize}px`)
-      .text((d) => `${formatChartValue(d.low, valueFormat)} ? ${formatChartValue(d.high, valueFormat)}`);
+      .text((d) => `${formatChartValue(d.low, valueFormat)} �?${formatChartValue(d.high, valueFormat)}`);
   }
 
-  return () => {
-    hideTooltip(tooltip);
-    container.replaceChildren();
-  };
+  return () => container.replaceChildren();
 }

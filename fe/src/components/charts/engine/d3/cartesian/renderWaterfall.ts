@@ -1,23 +1,15 @@
 import * as d3 from "d3";
-import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { drawCartesianBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintVerticalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
-import { wirePlotSeriesLegendDimming } from "@/components/charts/engine/d3/core/legendInteraction";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
-import {
-  createTooltipLayer,
-  hideTooltip,
-  showSimpleTooltip,
-} from "@/components/charts/engine/d3/core/tooltipLayer";
+import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3WaterfallDatum, D3WaterfallRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 
-const BAR_RX = VCDS.bar.rx;
-const POS_KEY = "增加";
-const NEG_KEY = "减少";
+const BAR_RX = 4;
 
 type WaterfallSegment = D3WaterfallDatum & { start: number; end: number; runningTotal: number };
 
@@ -52,7 +44,6 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
     barWidthRatio,
     barRadius,
     axisStyle,
-    tooltipPresentation,
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -73,7 +64,7 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
 
   drawCartesianBandAxes({ g, xScale: x, yScale: y, categories, innerW, innerH, theme, valueFormat, axisStyle });
 
@@ -85,7 +76,7 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
       .attr("y1", y(0))
       .attr("y2", y(0))
       .attr("stroke", theme.gridLine)
-      .attr("stroke-dasharray", VCDS.grid.dash);
+      .attr("stroke-dasharray", "4 4");
   }
 
   plot
@@ -93,7 +84,6 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
     .data(segments)
     .join("g")
     .attr("class", "waterfall")
-    .attr("data-series-key", (d) => (d.value >= 0 ? POS_KEY : NEG_KEY))
     .attr("transform", (d) => `translate(${x(d.type) ?? 0},0)`)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .each(function (d) {
@@ -133,29 +123,22 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
   if (showTooltip) {
     plot
       .selectAll<SVGGElement, WaterfallSegment>("g.waterfall")
-      .on("mouseenter", (event, d) => {
-        showSimpleTooltip(
-          tooltip,
-          container,
-          event,
-          `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
-            `<div>增量 <strong>${formatChartValue(d.value, valueFormat)}</strong></div>` +
-            `<div>累计 <strong>${formatChartValue(d.runningTotal, valueFormat)}</strong></div>`,
-          width,
-        );
+      .on("mouseenter", (_event, d) => {
+        tooltip
+          ?.style("opacity", "1")
+          .html(
+            `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
+              `<div>增量 <strong>${formatChartValue(d.value, valueFormat)}</strong></div>` +
+              `<div>累计 <strong>${formatChartValue(d.runningTotal, valueFormat)}</strong></div>`,
+          );
       })
-      .on("mousemove", (event, d) => {
-        showSimpleTooltip(
-          tooltip,
-          container,
-          event,
-          `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
-            `<div>增量 <strong>${formatChartValue(d.value, valueFormat)}</strong></div>` +
-            `<div>累计 <strong>${formatChartValue(d.runningTotal, valueFormat)}</strong></div>`,
-          width,
-        );
+      .on("mousemove", (event) => {
+        const rect = container.getBoundingClientRect();
+        tooltip
+          ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
+          .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
       })
-      .on("mouseleave", () => hideTooltip(tooltip));
+      .on("mouseleave", () => tooltip?.style("opacity", "0"));
   }
 
   if (showLabel) {
@@ -172,22 +155,15 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
       .text((d) => formatChartValue(d.value, valueFormat));
   }
 
-  const detachLegend = renderConfiguredInlineLegend(
+  renderConfiguredInlineLegend(
     root,
     showLegend,
     [
-      { label: POS_KEY, seriesKey: POS_KEY, color: posColor },
-      { label: NEG_KEY, seriesKey: NEG_KEY, color: negColor },
+      { label: "增加", color: posColor },
+      { label: "减少", color: negColor },
     ],
     { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
   );
 
-  const detachLegendDim = wirePlotSeriesLegendDimming(plot);
-
-  return () => {
-    detachLegend();
-    detachLegendDim();
-    hideTooltip(tooltip);
-    container.replaceChildren();
-  };
+  return () => container.replaceChildren();
 }

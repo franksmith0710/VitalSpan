@@ -1,22 +1,11 @@
 import { cleanup, render } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   DashboardListCard,
   type DashboardListItem,
 } from "@/components/dashboard/DashboardListCard";
 import { DASHBOARD_LIST_CARD_ASPECT_RATIO } from "@/components/dashboard/DashboardPreviewThumb";
-
-class MockIntersectionObserver {
-  constructor(private callback: IntersectionObserverCallback) {
-    this.callback = callback;
-  }
-  observe() {
-    this.callback([{ isIntersecting: false } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
-  }
-  disconnect() {}
-  unobserve() {}
-}
 
 const tallCanvasDashboard: DashboardListItem = {
   id: "dash-tall",
@@ -43,13 +32,8 @@ const tallCanvasDashboard: DashboardListItem = {
 };
 
 describe("DashboardListCard", () => {
-  beforeEach(() => {
-    vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
-  });
-
   afterEach(() => {
     cleanup();
-    vi.unstubAllGlobals();
   });
 
   it("uses fixed list card aspect ratio regardless of canvas height", () => {

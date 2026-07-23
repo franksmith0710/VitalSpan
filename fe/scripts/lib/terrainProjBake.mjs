@@ -93,13 +93,15 @@ export async function bakeProjSatellitePng(
   const aspect = spanY / spanX;
   const outW = outputSize;
   const outH = Math.max(1, Math.round(outputSize * aspect));
+  const bakeW = Math.min(outW, 2048);
+  const bakeH = Math.max(1, Math.round(bakeW * aspect));
 
-  const outData = Buffer.alloc(outW * outH * 4);
+  const outData = Buffer.alloc(bakeW * bakeH * 4);
 
-  for (let py = 0; py < outH; py += 1) {
-    for (let px = 0; px < outW; px += 1) {
-      const uMesh = px / (outW - 1 || 1);
-      const vMesh = 1 - py / (outH - 1 || 1);
+  for (let py = 0; py < bakeH; py += 1) {
+    for (let px = 0; px < bakeW; px += 1) {
+      const uMesh = px / (bakeW - 1 || 1);
+      const vMesh = 1 - py / (bakeH - 1 || 1);
       const x = projBounds.minX + uMesh * spanX;
       const y = projBounds.minY + vMesh * spanY;
 
@@ -112,7 +114,7 @@ export async function bakeProjSatellitePng(
         rgba = sampleMercatorRgba(mercData, mercW, mercH, lngLat[0], lngLat[1], bounds);
       }
 
-      const i = (py * outW + px) * 4;
+      const i = (py * bakeW + px) * 4;
       outData[i] = rgba[0];
       outData[i + 1] = rgba[1];
       outData[i + 2] = rgba[2];
@@ -120,9 +122,12 @@ export async function bakeProjSatellitePng(
     }
   }
 
-  const buffer = await sharp(outData, { raw: { width: outW, height: outH, channels: 4 } })
+  let buffer = await sharp(outData, { raw: { width: bakeW, height: bakeH, channels: 4 } })
     .png()
     .toBuffer();
+  if (bakeW !== outW || bakeH !== outH) {
+    buffer = await sharp(buffer).resize(outW, outH, { fit: "fill" }).png().toBuffer();
+  }
 
   return {
     buffer,

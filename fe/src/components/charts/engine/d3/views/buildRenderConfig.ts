@@ -2,7 +2,6 @@ import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRende
 import { chartViewModelToRenderSpec } from "@/components/charts/engine/buildChartViewModel";
 import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
 import { findMapDrillFilterValue } from "@/lib/geoMapLevels";
-import { drillBreadcrumbLabels } from "@/lib/chartDrill";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import type { D3DispatchPayload } from "@/components/charts/engine/d3/renderDispatch";
 import { buildD3StyleProps } from "@/components/charts/engine/d3/views/buildStyleProps";
@@ -76,10 +75,6 @@ export function buildD3DispatchPayload(
         knownRegionNames: options.knownRegionNames as string[] | undefined,
         mapId: (options.mapId as string | undefined) ?? VS_REGIONS_MAP_ID,
         drillDepth: (options.drillDepth as number | undefined) ?? 0,
-        drillBreadcrumbLabels: props.drillStack?.length
-          ? drillBreadcrumbLabels(props.drillStack)
-          : undefined,
-        levelLabel: (options.levelLabel as string | undefined) ?? undefined,
         isDark: props.isDark ?? props.style.scheme === "dark",
         geoStyle: {
           roam: geoStyle.roam,

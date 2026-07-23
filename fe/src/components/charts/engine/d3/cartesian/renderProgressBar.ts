@@ -1,14 +1,9 @@
 import * as d3 from "d3";
-import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/d3/core/axes";
 import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
-import {
-  createTooltipLayer,
-  hideTooltip,
-  showSimpleTooltip,
-} from "@/components/charts/engine/d3/core/tooltipLayer";
+import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3ProgressBarRenderConfig } from "@/components/charts/engine/d3/types";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -36,8 +31,6 @@ export function renderD3ProgressBarChart(
     barWidthRatio,
     barRadius,
     axisStyle,
-    showTargetLine = true,
-    tooltipPresentation,
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
@@ -57,7 +50,7 @@ export function renderD3ProgressBarChart(
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
+  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
 
   drawCartesianHorizontalBandAxes({
     g,
@@ -100,36 +93,26 @@ export function renderD3ProgressBarChart(
     })
     .on("click", (_e, d) => onPointClick?.(d));
 
-  if (showTargetLine) {
-    plot
-      .selectAll("line.progress-target")
-      .data(data.filter((d) => d.max > 0))
-      .join("line")
-      .attr("class", "progress-target")
-      .attr("x1", (d) => x(d.value / d.max))
-      .attr("x2", (d) => x(d.value / d.max))
-      .attr("y1", (d) => y(d.type) ?? 0)
-      .attr("y2", (d) => (y(d.type) ?? 0) + y.bandwidth())
-      .attr("stroke", theme.axisLabel)
-      .attr("stroke-width", 1.5)
-      .attr("stroke-dasharray", VCDS.grid.dash);
-  }
-
   if (showTooltip) {
-    const tipHtml = (d: (typeof data)[number]) => {
-      const pct = d.max > 0 ? (d.value / d.max) * 100 : 0;
-      return (
-        `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
-        `<div>?? <strong>${pct.toFixed(1)}%</strong></div>` +
-        `<div>?? <strong>${formatChartValue(d.value, valueFormat)}</strong> / ${formatChartValue(d.max, valueFormat)}</div>`
-      );
-    };
-
     plot
       .selectAll<SVGGElement, (typeof data)[number]>("g.progress")
-      .on("mouseenter", (event, d) => showSimpleTooltip(tooltip, container, event, tipHtml(d), width))
-      .on("mousemove", (event, d) => showSimpleTooltip(tooltip, container, event, tipHtml(d), width))
-      .on("mouseleave", () => hideTooltip(tooltip));
+      .on("mouseenter", (_e, d) => {
+        const pct = d.max > 0 ? (d.value / d.max) * 100 : 0;
+        tooltip
+          ?.style("opacity", "1")
+          .html(
+            `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
+              `<div>进度 <strong>${pct.toFixed(1)}%</strong></div>` +
+              `<div>数�?<strong>${formatChartValue(d.value, valueFormat)}</strong> / ${formatChartValue(d.max, valueFormat)}</div>`,
+          );
+      })
+      .on("mousemove", (event) => {
+        const rect = container.getBoundingClientRect();
+        tooltip
+          ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
+          .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+      })
+      .on("mouseleave", () => tooltip?.style("opacity", "0"));
   }
 
   if (showLabel) {
@@ -149,8 +132,5 @@ export function renderD3ProgressBarChart(
       });
   }
 
-  return () => {
-    hideTooltip(tooltip);
-    container.replaceChildren();
-  };
+  return () => container.replaceChildren();
 }

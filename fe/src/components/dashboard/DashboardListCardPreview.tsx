@@ -1,88 +1,51 @@
-import { LayoutDashboard } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useAuthenticatedBlobUrl } from "@/hooks/useAuthenticatedBlobUrl";
 import { isDataScreenLayout } from "@/lib/dataScreenLayout";
-import { DashboardLayoutPreview } from "./DashboardLayoutPreview";
-import { DataScreenPresenter } from "./screen/DataScreenPresenter";
+import { DashboardPreviewThumb } from "./DashboardPreviewThumb";
 import type { DashboardLayout } from "./layoutUtils";
 
 type DashboardListCardPreviewProps = {
   layoutJson?: DashboardLayout;
+  thumbnailUrl?: string | null;
   className?: string;
 };
 
 /**
- * 看板列表卡片真实预览：复用 DashboardLayoutPreview，进入视口后再挂载以控制查询量。
- * 数据大屏使用 DataScreenPresenter 保持 16:9 投放比例。
+ * 列表卡片预览：优先展示保存时截取的真实渲染缩略图，无图时回退静态示意。
  */
 export function DashboardListCardPreview({
   layoutJson,
+  thumbnailUrl,
   className,
 }: DashboardListCardPreviewProps) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(false);
   const isScreen = isDataScreenLayout(layoutJson);
-
-  useEffect(() => {
-    const el = hostRef.current;
-    if (!el || !layoutJson?.widgets?.length) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setActive(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "160px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [layoutJson]);
-
-  if (!layoutJson?.widgets?.length) {
-    return (
-      <div
-        className={cn(
-          "flex h-full items-center justify-center bg-gray-50 dark:bg-gray-900/60",
-          isScreen && "bg-slate-950",
-          className,
-        )}
-      >
-        <LayoutDashboard className="size-10 text-gray-300 dark:text-gray-600" aria-hidden />
-      </div>
-    );
-  }
+  const screenshotSrc = useAuthenticatedBlobUrl(thumbnailUrl);
 
   return (
     <div
-      ref={hostRef}
       className={cn(
-        "dashboard-canvas-surface dashboard-list-card-preview relative h-full overflow-hidden",
-        isScreen ? "bg-slate-950" : "bg-white dark:bg-gray-900/60",
+        "dashboard-list-card-preview relative h-full overflow-hidden",
         "transition-[filter,transform] duration-300 group-hover:scale-[1.02] group-hover:blur-[2px]",
         className,
       )}
       data-testid="dashboard-list-card-preview"
       aria-hidden
     >
-      {active ? (
-        isScreen ? (
-          <DataScreenPresenter
-            layout={layoutJson}
-            presentationMode="fit"
-            className="pointer-events-none h-full min-h-0 select-none"
-          />
-        ) : (
-          <DashboardLayoutPreview
-            layout={layoutJson}
-            scaleMode="component"
-            className="pointer-events-none h-full min-h-0 select-none [&_.pixel-canvas-host]:h-full [&_.pixel-canvas-host]:min-h-0 [&_.pixel-canvas-host]:overflow-hidden"
-          />
-        )
+      {screenshotSrc ? (
+        <img
+          src={screenshotSrc}
+          alt=""
+          draggable={false}
+          className="h-full w-full object-cover object-top"
+          data-testid="dashboard-list-card-screenshot"
+        />
       ) : (
-        <Skeleton className="h-full w-full rounded-none" />
+        <DashboardPreviewThumb
+          layoutJson={layoutJson}
+          embedded
+          isDataScreen={isScreen}
+          className="h-full"
+        />
       )}
     </div>
   );

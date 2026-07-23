@@ -21,13 +21,19 @@ import {
   dashboardSharePath,
   isDataScreenLayout,
 } from "@/lib/dataScreenLayout";
+import { previewSummaryToLayout, type DashboardPreviewSummary } from "@/lib/dashboardListPreview";
 
 export type DashboardListItem = {
   id: string;
   name: string;
   slug: string;
   description?: string | null;
+  /** 详情接口字段；列表接口使用 previewSummary */
   layoutJson?: DashboardLayout;
+  previewSummary?: DashboardPreviewSummary;
+  surfaceKind?: "dashboard" | "data-screen";
+  widgetCount?: number;
+  thumbnailUrl?: string | null;
   updatedAt: string;
 };
 
@@ -63,8 +69,12 @@ export function DashboardListCard({
   /** 列表入口：看板或数据大屏 */
   routeBase?: string;
 }) {
-  const widgetCount = dashboard.layoutJson?.widgets?.length ?? 0;
-  const isScreen = routeBase === "/admin/data-screens" || isDataScreenLayout(dashboard.layoutJson);
+  const layoutForPreview =
+    dashboard.layoutJson ?? previewSummaryToLayout(dashboard.previewSummary);
+  const widgetCount =
+    dashboard.widgetCount ?? layoutForPreview?.widgets?.length ?? 0;
+  const isScreen =
+    dashboard.surfaceKind === "data-screen" || isDataScreenLayout(layoutForPreview);
   const viewPath = isScreen ? dataScreenPreviewPath(dashboard.id) : `${routeBase}/${dashboard.id}`;
   const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
   const sharePath = dashboardSharePath(dashboard.id, isScreen);
@@ -91,7 +101,11 @@ export function DashboardListCard({
             />
           </div>
         ) : null}
-        <DashboardListCardPreview layoutJson={dashboard.layoutJson} className="h-full" />
+        <DashboardListCardPreview
+          layoutJson={layoutForPreview}
+          thumbnailUrl={dashboard.thumbnailUrl}
+          className="h-full"
+        />
         <div className="absolute inset-0 flex items-center justify-center gap-2 bg-gray-900/30 opacity-0 backdrop-blur-[3px] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button asChild variant="primary" size="sm">
             <Link to={primaryPath}>{canEdit ? "编辑" : "查看"}</Link>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { ChevronLeft, Redo2, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
@@ -107,6 +108,8 @@ import { DashboardInlineTitle } from "@/components/dashboard/DashboardInlineTitl
 import { useDashboardCanvasState } from "@/hooks/useDashboardCanvasState";
 import { useWidgetSelection } from "@/hooks/useWidgetSelection";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
+import { queryKeys } from "@/lib/queryKeys";
+import { uploadDashboardThumbnail } from "@/lib/uploadDashboardThumbnail";
 import { Button, IconButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -138,6 +141,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const routeIsDataScreen = isDataScreenAdminPath(location.pathname);
   const [name, setName] = useState("");
   const pixelEnabled = isPixelCanvasEnabled(import.meta.env.VITE_DASHBOARD_PIXEL_CANVAS);
@@ -825,6 +829,18 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
     }
   };
 
+  const persistThumbnail = useCallback(async () => {
+    if (!id) return;
+    clearSelection();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    try {
+      await uploadDashboardThumbnail(id);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
+    } catch (err) {
+      toast.error(`布局已保存，但缩略图生成失败：${mapApiError(err)}`);
+    }
+  }, [clearSelection, id, queryClient]);
+
   const handleSave = async (): Promise<boolean> => {
     if (!id || missing || !canSave || saving) return false;
     const active = document.activeElement;
@@ -897,11 +913,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
         } catch (filterErr) {
           toast.error(`布局已保存，但筛选联动保存失败：${mapApiError(filterErr)}`);
           setSavedLinkageSnapshot(linkageSnapshot(normalized, currentLinkage));
+          setSaving(false);
+          await persistThumbnail();
           return true;
         }
       }
 
       setSavedLinkageSnapshot(linkageSnapshot(normalized, nextLinkage));
+      setSaving(false);
+      await persistThumbnail();
       toast.success("看板已保存");
       return true;
     } catch (err) {

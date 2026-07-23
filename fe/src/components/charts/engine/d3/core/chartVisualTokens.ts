@@ -33,22 +33,6 @@ export const VCDS = {
     pieExtrudeOffset: { standard: 3, enhanced: 6 },
     hoverLiftPx: { standard: 1, enhanced: 2 },
   },
-  radar: { gridLevels: 5, pointRadius: 3.5, areaOpacity: 0.22, strokeWidth: 2 },
-  gauge: { tickCount: 6, arcWidth: 14, pointerLength: 0.72 },
-  funnel: { conversionFontSize: 10, layerGap: 2, enterStagger: 56 },
-  sankey: { nodeWidth: 12, nodePadding: 10, linkOpacity: 0.45, highlightOpacity: 0.85 },
-  graph: { nodeRadius: 6, linkDistance: 80, chargeStrength: -280, dimOpacity: 0.18 },
-  wordCloud: { rotationAngles: [0, -90] as const, minFontSize: 10 },
-  pack: {
-    focusScale: 1.18,
-    scaleLerp: 0.22,
-    collisionBlend: 0.3,
-    velocityDamping: 0.78,
-    maxDriftRatio: 0.32,
-    maxSpeed: 5,
-    springKHover: 0.003,
-    springKIdle: 0.075,
-  },
 } as const;
 
 export type MotionIntensity = "off" | "standard" | "enhanced";

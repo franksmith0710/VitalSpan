@@ -33,9 +33,9 @@ describe("inspectorCapabilityMatrix", () => {
     expect(resolveEngineCapabilities("gauge").label).toBe(true);
   });
 
-  it("map-3d exposes partial label when CSS2D region labels enabled", () => {
-    expect(resolveD3InspectorFeatureMatrix("map-3d")?.label).toBe("partial");
-    expect(resolveD3WiredCapabilities("map-3d")?.label).toBe(true);
+  it("map-3d disables label in inspector matrix", () => {
+    expect(resolveD3InspectorFeatureMatrix("map-3d")?.label).toBe("missing");
+    expect(resolveD3WiredCapabilities("map-3d")?.label).toBe(false);
   });
 
   it("chartInspectorCapabilities stays aligned with D3 matrix", () => {

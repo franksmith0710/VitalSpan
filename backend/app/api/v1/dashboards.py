@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated, Generator, Literal
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
@@ -379,5 +379,39 @@ def update_layout(
         existing = dash_service.get_dashboard(db, dashboard_id)
         dash_service.assert_dashboard_access(user, existing.created_by)
         return dash_service.update_layout(db, dashboard_id, payload.layout_json)
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+
+
+@router.put("/{dashboard_id}/thumbnail")
+async def upload_dashboard_thumbnail(
+    dashboard_id: uuid.UUID,
+    request: Request,
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        existing = dash_service.get_dashboard(db, dashboard_id)
+        dash_service.assert_dashboard_access(user, existing.created_by)
+        content = await request.body()
+        content_type = request.headers.get("content-type", "application/octet-stream")
+        return dash_service.save_dashboard_thumbnail(db, dashboard_id, content, content_type)
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+
+
+@router.get("/{dashboard_id}/thumbnail")
+def download_dashboard_thumbnail(
+    dashboard_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        body, media_type = dash_service.get_dashboard_thumbnail(db, dashboard_id, user)
+        return Response(
+            content=body,
+            media_type=media_type,
+            headers={"Cache-Control": "private, max-age=3600"},
+        )
     except dash_service.DashboardError as exc:
         return _error_response(exc)

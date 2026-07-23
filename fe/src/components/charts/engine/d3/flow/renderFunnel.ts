@@ -1,11 +1,10 @@
 import * as d3 from "d3";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
-import { VCDS, motionDuration } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { depthExtrudePx, resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
-import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
+import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -61,7 +60,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const cx = margin.left + innerW / 2;
   const maxVal = d3.max(data, (d) => d.number) ?? 1;
-  const gap = Number(options.__funnelGap ?? VCDS.funnel.layerGap);
+  const gap = Number(options.__funnelGap ?? 2);
   const layerH = (innerH - gap * Math.max(0, data.length - 1)) / data.length;
   const maxWidth = innerW * 0.82;
 
@@ -80,16 +79,14 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     const topW = (row.number / maxVal) * maxWidth;
     const next = data[index + 1];
     const bottomW = next ? (next.number / maxVal) * maxWidth : topW * 0.72;
-    const topY = margin.top + index * (layerH + gap);
+    const topY = margin.top + index * layerH;
     const bottomY = topY + layerH;
-    const baseColor = colorScale(row.stage) ?? colors[index % colors.length] ?? theme.accent;
+    const baseColor = colorScale(row.stage) ?? colors[index % colors.length] ?? "#465fff";
     const fill = resolveDatumColor(row.number, baseColor, conditionalRules);
-    const finalPath = trapezoidPath(cx, topY, bottomY, topW, bottomW);
 
     if (extrude > 0) {
       g.insert("path", ":first-child")
         .attr("class", "vs-funnel-side")
-        .attr("data-series-key", row.stage)
         .attr(
           "d",
           trapezoidPath(
@@ -107,28 +104,21 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
 
     const path = g
       .append("path")
-      .attr("data-series-key", row.stage)
-      .attr("d", finalPath)
+      .attr("d", trapezoidPath(cx, topY, bottomY, topW, bottomW))
       .attr("fill", fill)
-      .attr("stroke", theme.background === "transparent" ? "#fff" : theme.background)
+      .attr("stroke", "#fff")
       .attr("stroke-width", 1.5)
       .attr("opacity", 0.94)
       .attr("cursor", onPointClick ? "pointer" : "default");
 
     if (!prefersReducedMotion()) {
       const collapsed = trapezoidPath(cx, topY, topY, 0, 0);
-      path
-        .attr("d", collapsed)
-        .transition()
-        .duration(motionDuration("enter"))
-        .delay(index * VCDS.funnel.enterStagger)
-        .ease(d3.easeCubicOut)
-        .attr("d", finalPath);
+      path.attr("d", collapsed).transition().duration(560).delay(index * 60).ease(d3.easeCubicOut).attr("d", trapezoidPath(cx, topY, bottomY, topW, bottomW));
     }
 
     path
       .on("mouseenter", () => {
-        path.transition().duration(motionDuration("hover")).attr("opacity", 1);
+        path.transition().duration(120).attr("opacity", 1);
         if (!tooltip) return;
         tooltip
           .style("opacity", "1")
@@ -142,7 +132,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
           .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
       })
       .on("mouseleave", () => {
-        path.transition().duration(motionDuration("hover")).attr("opacity", 0.94);
+        path.transition().duration(120).attr("opacity", 0.94);
         tooltip?.style("opacity", "0");
       })
       .on("click", () => onPointClick?.({ [xField]: row.stage, [yField]: row.number }));
@@ -160,16 +150,15 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     }
 
     if (showConversion && index < data.length - 1) {
-      const nextRow = data[index + 1]!;
-      const rate = row.number > 0 ? (nextRow.number / row.number) * 100 : 0;
+      const next = data[index + 1]!;
+      const rate = row.number > 0 ? (next.number / row.number) * 100 : 0;
       g.append("text")
-        .attr("class", "funnel-conversion")
         .attr("x", cx + maxWidth / 2 + 10)
         .attr("y", bottomY + gap / 2)
         .attr("text-anchor", "start")
         .attr("dy", "0.35em")
         .attr("fill", theme.axisLabel)
-        .style("font-size", `${VCDS.funnel.conversionFontSize}px`)
+        .style("font-size", `${Math.max(10, labelFontSize - 1)}px`)
         .style("pointer-events", "none")
         .text(
           formatChartValue(rate, valueFormat ? { ...valueFormat, unit: "%" } : { type: "percent" }),
@@ -177,19 +166,17 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     }
   });
 
-  const cleanupLegend = renderConfiguredInlineLegend(
-    root,
-    showLegend,
-    data.map((row, index) => ({
-      label: row.stage,
-      color: colorScale(row.stage) ?? colors[index % colors.length] ?? theme.accent,
-      seriesKey: row.stage,
-    })),
-    { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
-  );
+  if (showLegend) {
+    renderConfiguredInlineLegend(
+      root,
+      true,
+      data.map((row, index) => ({
+        label: row.stage,
+        color: colorScale(row.stage) ?? colors[index % colors.length] ?? "#465fff",
+      })),
+      { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
+    );
+  }
 
-  return () => {
-    cleanupLegend();
-    container.replaceChildren();
-  };
+  return () => container.replaceChildren();
 }

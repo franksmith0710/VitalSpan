@@ -257,7 +257,7 @@ export function DashboardEditCanvas({
             pixelCanvas
           )
         ) : (
-          <div className="relative h-full min-h-0">
+          <div className="relative h-full min-h-0" data-dashboard-thumbnail-capture="">
             <div
               data-testid="dashboard-canvas-backdrop"
               className="pointer-events-none absolute inset-0 z-0"

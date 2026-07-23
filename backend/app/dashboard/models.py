@@ -17,6 +17,8 @@ class Dashboard(Base):
     slug: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     layout_json: Mapped[dict] = mapped_column(JSON, nullable=False)
+    surface_kind: Mapped[str] = mapped_column(String(32), nullable=False, default="dashboard", server_default="dashboard")
+    thumbnail_ref: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

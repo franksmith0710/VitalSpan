@@ -1,32 +1,12 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import type { DashboardLayoutV2 } from "@/components/dashboard/layoutUtils";
 import { DashboardListCardPreview } from "./DashboardListCardPreview";
 
-vi.mock("./DashboardLayoutPreview", () => ({
-  DashboardLayoutPreview: () => <div data-testid="dashboard-layout-preview-mock">preview</div>,
-}));
-
-class MockIntersectionObserver {
-  static instances: MockIntersectionObserver[] = [];
-  private callback: IntersectionObserverCallback;
-
-  constructor(callback: IntersectionObserverCallback) {
-    this.callback = callback;
-    MockIntersectionObserver.instances.push(this);
-  }
-
-  observe() {
-    this.callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
-  }
-
-  disconnect() {}
-  unobserve() {}
-}
-
 const sampleLayout: DashboardLayoutV2 = {
   version: 2,
-  canvas: { width: 1440, height: 900 },
+  canvas: { width: 1920, height: 1080 },
+  styleConfig: { surfaceKind: "data-screen" },
   widgets: [
     {
       id: "w1",
@@ -43,29 +23,24 @@ const sampleLayout: DashboardLayoutV2 = {
 };
 
 describe("DashboardListCardPreview", () => {
-  beforeEach(() => {
-    MockIntersectionObserver.instances = [];
-    vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
-  });
-
   afterEach(() => {
     cleanup();
-    vi.unstubAllGlobals();
   });
 
   it("shows empty icon when dashboard has no widgets", () => {
     const { container } = render(
-      <DashboardListCardPreview layoutJson={{ version: 2, canvas: { width: 1440, height: 900 }, widgets: [], globalFilters: [] }} />,
+      <DashboardListCardPreview
+        layoutJson={{ version: 2, canvas: { width: 1440, height: 900 }, widgets: [], globalFilters: [] }}
+      />,
     );
     expect(container.querySelector("svg")).toBeTruthy();
-    expect(screen.queryByTestId("dashboard-list-card-preview")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-list-card-preview")).toBeInTheDocument();
   });
 
-  it("mounts real layout preview after entering viewport", async () => {
+  it("renders static wireframe thumb without chart engine", () => {
     render(<DashboardListCardPreview layoutJson={sampleLayout} />);
     expect(screen.getByTestId("dashboard-list-card-preview")).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.getByTestId("dashboard-layout-preview-mock")).toBeInTheDocument();
-    });
+    expect(screen.getByTestId("dashboard-preview-thumb")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-preview-widget-w1")).toBeInTheDocument();
   });
 });

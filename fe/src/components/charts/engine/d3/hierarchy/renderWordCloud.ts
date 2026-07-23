@@ -1,8 +1,5 @@
 import * as d3 from "d3";
-import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
-import { VCDS, motionDuration } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { applyCellBevel, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
-import { staggerDelay } from "@/components/charts/engine/d3/core/motionEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
@@ -15,7 +12,6 @@ type PlacedWord = WordDatum & {
   fontSize: number;
   w: number;
   h: number;
-  rotate: number;
 };
 
 function overlaps(a: PlacedWord, x: number, y: number, w: number, h: number, pad = 2): boolean {
@@ -31,14 +27,12 @@ function measureText(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
   word: string,
   fontSize: number,
-  rotate: number,
 ): { w: number; h: number } {
   const probe = svg
     .append("text")
     .attr("visibility", "hidden")
     .style("font-size", `${fontSize}px`)
     .style("font-family", "inherit")
-    .attr("transform", rotate ? `rotate(${rotate})` : null)
     .text(word);
   const box = (probe.node() as SVGTextElement).getBBox();
   probe.remove();
@@ -65,25 +59,25 @@ function placeWords(
   const placed: PlacedWord[] = [];
   const cx = width / 2;
   const cy = height / 2;
-  const rotations = VCDS.wordCloud.rotationAngles;
+  let angle = 0;
+  let radius = 0;
 
   for (const item of sorted) {
     const fontSize = sizeScale(item.weight);
+    const { w, h } = measureText(svg, item.word, fontSize);
     let found = false;
 
-    for (let step = 0; step < 1600 && !found; step += 1) {
-      const angle = step * 0.32;
-      const radius = step * 0.55;
-      const rotate = rotations[step % rotations.length] ?? 0;
-      const { w, h } = measureText(svg, item.word, fontSize, rotate);
+    for (let step = 0; step < 1200 && !found; step += 1) {
       const x = cx + radius * Math.cos(angle) - w / 2;
       const y = cy + radius * Math.sin(angle) - h / 2;
       const inBounds = x >= 2 && y >= 2 && x + w <= width - 2 && y + h <= height - 2;
       const hit = placed.some((p) => overlaps(p, x, y, w, h, spacing));
       if (inBounds && !hit) {
-        placed.push({ ...item, x, y, fontSize, w, h, rotate });
+        placed.push({ ...item, x, y, fontSize, w, h });
         found = true;
       }
+      angle += 0.35;
+      radius += 0.45;
     }
   }
 
@@ -107,7 +101,7 @@ export function renderD3WordCloudChart(container: HTMLElement, config: D3RenderC
   const { width, height, colors, theme, showTooltip, valueFormat, options, onPointClick, depthVisual } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const data = (options.data as WordDatum[]) ?? [];
-  const fontMin = Number(options.__wordCloudFontMin ?? VCDS.wordCloud.minFontSize);
+  const fontMin = Number(options.__wordCloudFontMin ?? 12);
   const fontMax = Number(options.__wordCloudFontMax ?? Math.min(48, width / 8));
   const spacing = Number(options.__wordCloudSpacing ?? 2);
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
@@ -131,26 +125,16 @@ export function renderD3WordCloudChart(container: HTMLElement, config: D3RenderC
     .data(placed)
     .join("g")
     .attr("class", "word-cell")
-    .attr("transform", (d) => `translate(${d.x + d.w / 2},${d.y + d.h / 2})`)
     .style("cursor", onPointClick ? "pointer" : "default");
-
-  if (!prefersReducedMotion()) {
-    cells
-      .attr("opacity", 0)
-      .transition()
-      .delay((_d, i) => staggerDelay(i))
-      .duration(motionDuration("enter"))
-      .attr("opacity", 1);
-  }
 
   cells
     .append("rect")
-    .attr("x", (d) => -d.w / 2)
-    .attr("y", (d) => -d.h / 2)
+    .attr("x", (d) => d.x)
+    .attr("y", (d) => d.y)
     .attr("width", (d) => d.w)
     .attr("height", (d) => d.h)
     .attr("rx", 2)
-    .attr("fill", (d) => colorScale(d.word) ?? colors[0] ?? theme.accent)
+    .attr("fill", (d) => colorScale(d.word) ?? colors[0] ?? "#465fff")
     .attr("opacity", 0.12)
     .each(function () {
       applyCellBevel(d3.select(this), depthLevel);
@@ -159,24 +143,13 @@ export function renderD3WordCloudChart(container: HTMLElement, config: D3RenderC
   cells
     .append("text")
     .attr("class", "word")
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .attr("fill", (d) => colorScale(d.word) ?? colors[0] ?? theme.accent)
+    .attr("x", (d) => d.x)
+    .attr("y", (d) => d.y + d.h * 0.85)
+    .attr("fill", (d) => colorScale(d.word) ?? colors[0] ?? "#465fff")
     .style("font-size", (d) => `${d.fontSize}px`)
     .style("font-family", "inherit")
     .style("pointer-events", "none")
-    .attr("transform", (d) => (d.rotate ? `rotate(${d.rotate})` : null))
     .text((d) => d.word);
-
-  if (!prefersReducedMotion()) {
-    cells
-      .select("text")
-      .attr("transform", (d) => `${d.rotate ? `rotate(${d.rotate}) ` : ""}scale(0)`)
-      .transition()
-      .delay((_d, i) => staggerDelay(i))
-      .duration(motionDuration("enter"))
-      .attr("transform", (d) => (d.rotate ? `rotate(${d.rotate})` : null));
-  }
 
   cells
     .on("mouseenter", function () {
