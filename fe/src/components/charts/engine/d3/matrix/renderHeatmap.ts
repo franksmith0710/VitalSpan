@@ -4,6 +4,7 @@ import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { applyCellBevel, applyDepthHoverLift, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
 import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
+import { brushFade, staggerEnterSelection } from "@/components/charts/engine/d3/core/motionEngine";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
@@ -31,6 +32,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     depthVisual,
     showCellLabel = false,
     showVisualMap = true,
+    heatmapBrush = false,
   } = config;
 
   const theme = themeFromConfig(rawTheme);
@@ -112,6 +114,7 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
     .attr("cursor", onPointClick ? "pointer" : "default")
     .each(function () {
       applyCellBevel(d3.select(this), depthLevel);
+      staggerEnterSelection(d3.select(this));
     })
     .on("mouseenter", function (_event, d) {
       const cell = d3.select(this);
@@ -159,6 +162,41 @@ export function renderD3HeatmapChart(container: HTMLElement, config: D3MatrixRen
       hideTooltip(tooltip);
     })
     .on("click", (_event, d) => onPointClick?.(d));
+
+  const enableBrush = heatmapBrush === true;
+  if (enableBrush) {
+    const brushG = g.append("g").attr("class", "heatmap-brush").raise();
+    const brush = d3
+      .brush()
+      .extent([
+        [0, 0],
+        [innerW, plotInnerH],
+      ])
+      .on("brush end", (event) => {
+        const sel = event.selection as [[number, number], [number, number]] | null;
+        if (!sel) {
+          g.selectAll("rect.cell").attr("opacity", 1);
+          return;
+        }
+        const [[x0, y0], [x1, y1]] = sel;
+        const minX = Math.min(x0, x1);
+        const maxX = Math.max(x0, x1);
+        const minY = Math.min(y0, y1);
+        const maxY = Math.max(y0, y1);
+        g.selectAll<SVGRectElement, (typeof data)[0]>("rect.cell").attr("opacity", function (d) {
+          const cx = (x(d.x) ?? 0) + x.bandwidth() / 2;
+          const cy = (y(d.y) ?? 0) + y.bandwidth() / 2;
+          return cx >= minX && cx <= maxX && cy >= minY && cy <= maxY ? 1 : 0.2;
+        });
+      });
+    brushG.call(brush);
+    brushG.selectAll(".overlay").attr("cursor", "crosshair");
+    brushG
+      .selectAll<SVGRectElement, unknown>(".selection")
+      .attr("fill", theme.accent)
+      .attr("fill-opacity", 0.1)
+      .call((sel) => brushFade(sel, 0.1));
+  }
 
   if (showCellLabel) {
     g.selectAll("text.cell-label")

@@ -27,6 +27,16 @@ export const queryKeys = {
       ["dashboards", "list", params] as const,
     globalFilters: (id: string) => ["dashboards", id, "globalFilters"] as const,
   },
+  dashboardTemplates: {
+    all: ["dashboardTemplates"] as const,
+    list: (params?: {
+      surfaceKind?: string;
+      categoryKey?: string;
+      q?: string;
+      includeDrafts?: boolean;
+    }) => ["dashboardTemplates", "list", params] as const,
+    detail: (id: string) => ["dashboardTemplates", "detail", id] as const,
+  },
   metadata: {
     entityTypes: ["metadata", "entityTypes"] as const,
     physicalTables: (entityTypeCode?: string) =>

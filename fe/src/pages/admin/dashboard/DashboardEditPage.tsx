@@ -1300,6 +1300,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                     widgets={widgets}
                     name={name}
                     canSave={canSave}
+                    dashboardId={id}
                     presentationMode={dataScreenEditPresentationMode}
                     onPresentationModeChange={setDataScreenEditPresentationMode}
                     onCanvasSizeChange={handleDataScreenCanvasSize}

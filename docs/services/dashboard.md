@@ -25,6 +25,15 @@
 | `surface_kind` 列表过滤与 layout 读取 | 数据大屏投放壳层 FE（→ `fe/components/dashboard/screen/`） |
 | | 发布/草稿版本、分享范围（远期 companion） |
 | | GIS 地图生产集成（DASH-006 companion） |
+| | 在线模板商店 / 外网 CDN（GEO-IRON 式离线原则） |
+| | 报表 Word/Excel/PDF 模板（→ `reports/templates`） |
+
+### templates/ 子域（DASH-009 · 2026-07-23）
+
+- **In**：`dashboard_templates` 持久化；内置种子（大屏 4 + 看板 3）；组织/私有模板 CRUD；发布/下架；`viz-layout` 信封导入导出；`from-template` 原子实例化；widget id 重生
+- **Out**：报表模板树；在线模板市场；第三方 CDN 缩略图
+- **依赖**：`dashboard/service`（layout 校验与实例化）、`auth`（`dashboard:read` / `dashboard:edit` / `dashboard:template.manage`）
+- **FE**：`fe/src/pages/admin/viz-templates/VizTemplatesHubPage.tsx` · `fe/src/components/dashboard/templates/*`
 
 ### theme/ 子域（DASH-006 · r53 + r57 + r58 companion）
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ChevronDown, ChevronUp, Download, FileJson } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, FileJson, LayoutTemplate } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
 } from "@/components/dashboard/dashboardInspectorUi";
 import { ChartInspectorSection, INSPECTOR_HINT } from "@/components/dashboard/inspectorCompact";
 import { exportDataScreenTemplate } from "@/lib/dataScreenTemplates";
+import { PublishTemplateDialog } from "@/components/dashboard/templates/PublishTemplateDialog";
 import { downloadJsonFile, downloadLayoutJson } from "@/lib/exportLayoutJson";
 import { DATA_SCREEN_CANVAS_BOUNDS, DATA_SCREEN_CANVAS_PRESETS } from "@/lib/surfacePreset";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,7 @@ type DataScreenConfigExtrasProps = {
   widgets: DashboardLayoutV2["widgets"];
   name: string;
   canSave: boolean;
+  dashboardId?: string;
   presentationMode: PresentationMode;
   onPresentationModeChange: (mode: PresentationMode) => void;
   onCanvasSizeChange: (patch: CanvasSizePatch) => void;
@@ -299,10 +301,12 @@ export function DataScreenConfigExtras({
   widgets,
   name,
   canSave,
+  dashboardId,
   presentationMode,
   onPresentationModeChange,
   onCanvasSizeChange,
 }: DataScreenConfigExtrasProps) {
+  const [publishOpen, setPublishOpen] = useState(false);
   if (layout.version !== 2) return null;
 
   const exportLayout = buildExportLayout(layout, widgets, styleConfig);
@@ -409,10 +413,32 @@ export function DataScreenConfigExtras({
               <Download className="size-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="truncate">导出模板</span>
             </Button>
+            {dashboardId ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="col-span-2 h-8 gap-1.5 px-2 text-[11px] font-medium"
+                disabled={!canSave}
+                onClick={() => setPublishOpen(true)}
+              >
+                <LayoutTemplate className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                <span className="truncate">发布为模板</span>
+              </Button>
+            ) : null}
           </div>
         </div>
       </DeAttrForm>
     </ChartInspectorSection>
+    {dashboardId ? (
+      <PublishTemplateDialog
+        open={publishOpen}
+        onOpenChange={setPublishOpen}
+        dashboardId={dashboardId}
+        defaultName={name}
+        surfaceKind="data-screen"
+      />
+    ) : null}
     </div>
   );
 }

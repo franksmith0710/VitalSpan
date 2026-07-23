@@ -4,17 +4,25 @@ import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/c
 import { paintHorizontalBar, resolveEffectiveDepth } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
+import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { drawVerticalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { resolveSeriesGradientFill } from "@/components/charts/engine/d3/core/gradient";
+import { writeIncrementalSession } from "@/components/charts/engine/d3/core/incrementalRender";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import { wirePlotSeriesLegendDimming } from "@/components/charts/engine/d3/core/legendInteraction";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
-import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
+import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
+import {
+  createTooltipLayer,
+  hideTooltip,
+  showMergedTooltip,
+} from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 
-const BAR_RX = 4;
+const BAR_RX = VCDS.bar.rx;
 
 type WideRow = Record<string, string | number>;
 
@@ -52,7 +60,8 @@ function pickCategoryAtBand(my: number, categories: string[], y: d3.ScaleBand<st
 
 /** 横向柱状图（isHorizontal=true 时由 renderD3BarChart 委托） */
 export function renderD3HorizontalBarChart(container: HTMLElement, config: D3CartesianRenderConfig): () => void {
-  container.replaceChildren();
+  const incremental = container.dataset.vsIncremental === "true";
+  if (!incremental) container.replaceChildren();
   if (config.width <= 0 || config.height <= 0 || config.data.length === 0) return () => undefined;
 
   const {
@@ -66,7 +75,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     isGroup = false,
     isPercent = false,
     colors,
-    theme,
+    theme: rawTheme,
     showLabel,
     showTooltip,
     showLegend,
@@ -85,6 +94,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     axisStyle,
   } = config;
 
+  const theme = themeFromConfig(rawTheme);
   const barRx = barRadius ?? BAR_RX;
 
   const normalized = normalizeCartesianData(data, xField, yField, seriesField);
@@ -132,7 +142,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   const ySub = useGrouped ? d3.scaleBand<string>().domain(keys).range([0, y.bandwidth()]).padding(0.12) : null;
   const plot = g.append("g");
   drawVerticalMarkLines(plot, markLines, x, innerH);
-  const tooltip = showTooltip ? createTooltip(container, theme, tooltipPresentation) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
 
   drawCartesianHorizontalBandAxes({ g, xScale: x, yScale: y, innerW, innerH, theme, valueFormat, axisStyle });
 
@@ -140,13 +150,14 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
     const stack = d3.stack<WideRow>().keys(keys);
     for (const layer of stack(wideRows)) {
       const name = String(layer.key);
-      const color = colorScale(name) ?? colors[0] ?? "#465fff";
+      const color = colorScale(name) ?? colors[0] ?? theme.accent;
       const gradientFill = resolveSeriesGradientFill(defs, `hbar-stack-${name}`, color, seriesGradient, "horizontal");
       plot
         .selectAll(`g.hbar-stack-${name}`)
         .data(layer)
         .join("g")
         .attr("class", `hbar-stack-${name}`)
+        .attr("data-series-key", name)
         .attr("transform", (d) => `translate(0,${y(String(d.data.__category__)) ?? 0})`)
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
@@ -168,7 +179,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   } else {
     for (const s of seriesGroups) {
       const name = s.name || "value";
-      const color = colorScale(name) ?? colors[0] ?? "#465fff";
+      const color = colorScale(name) ?? colors[0] ?? theme.accent;
       const barH = useGrouped && ySub ? ySub.bandwidth() : y.bandwidth();
       const gradientFill = resolveSeriesGradientFill(defs, `hbar-${name}`, color, seriesGradient, "horizontal");
       plot
@@ -176,6 +187,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
         .data(s.points)
         .join("g")
         .attr("class", `hbar-${name}`)
+        .attr("data-series-key", name)
         .attr("transform", (d) => {
           const base = y(String(d.__category__)) ?? 0;
           const by = useGrouped && ySub ? base + (ySub(name) ?? 0) : base;
@@ -197,6 +209,7 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   if (showTooltip) {
     plot
       .append("rect")
+      .attr("class", "vs-crosshair-hit")
       .attr("width", innerW)
       .attr("height", innerH)
       .attr("fill", "transparent")
@@ -207,15 +220,11 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
         const cat = pickCategoryAtBand(my, categories, y);
         const rows = seriesGroups.map((s) => {
           const pt = s.points.find((p) => String(p.__category__) === cat);
-          return { name: s.name, color: colorScale(s.name) ?? colors[0], value: pt?.__value__ ?? 0 };
+          return { name: s.name, color: colorScale(s.name) ?? colors[0] ?? theme.accent, value: pt?.__value__ ?? 0 };
         });
-        tooltip?.style("opacity", "1").html(tooltipHtml(cat, rows, valueFormat));
-        const rect = container.getBoundingClientRect();
-        tooltip
-          ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
-          .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+        showMergedTooltip(tooltip, container, event, cat, rows, valueFormat, width);
       })
-      .on("mouseleave", () => tooltip?.style("opacity", "0"));
+      .on("mouseleave", () => hideTooltip(tooltip));
   }
 
   if (showLabel) {
@@ -232,22 +241,32 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
       .text((d) => formatChartValue(d.__value__, valueFormat));
   }
 
-  if (showLegend && hasMultiSeries) {
-    renderConfiguredInlineLegend(
-      root,
-      true,
-      seriesNames.map((name) => ({
-        label: name || "系列",
-        color: colorScale(name) ?? colors[0] ?? theme.accent,
-      })),
-      { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
-    );
-  }
+  const detachLegend =
+    showLegend && hasMultiSeries
+      ? renderConfiguredInlineLegend(
+          root,
+          true,
+          seriesNames.map((name) => ({
+            label: name || "系列",
+            seriesKey: name || "系列",
+            color: colorScale(name) ?? colors[0] ?? theme.accent,
+          })),
+          { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
+        )
+      : () => undefined;
 
-  const detachZoom = dataZoom ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme }) : () => undefined;
+  const detachLegendDim = wirePlotSeriesLegendDimming(plot);
+
+  writeIncrementalSession(container, { plotType: "Bar", width, height });
+  const detachZoom = dataZoom
+    ? attachCartesianDataZoom(root, plot, innerW, innerH, { theme, orientation: "horizontal" })
+    : () => undefined;
 
   return () => {
     detachZoom();
-    container.replaceChildren();
+    detachLegend();
+    detachLegendDim();
+    hideTooltip(tooltip);
+    if (!incremental) container.replaceChildren();
   };
 }

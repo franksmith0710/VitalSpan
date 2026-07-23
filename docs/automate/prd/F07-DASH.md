@@ -132,3 +132,16 @@
   - [x] DASH-008-10：筛选联动分组常显
 - **代码锚点**：`fe/src/components/dashboard/DashboardContextInspector.tsx` · `dashboardConfigPanels.tsx` · `dashboardStyleConfig.ts` · `DashboardStyleSurface.tsx` · `backend/app/dashboard/schemas.py` · `docs/automate/plans/2026-07-13-dashboard-config-inspector-de-full.md`
 - **演化建议**：背景图上传 API、组件级样式覆盖 Tab、批量样式操作留 companion
+
+### [DASH-009] 可视化模板中心（企业内）
+
+- **状态**：已实现（2026-07-23）
+- **描述**：企业内看板/大屏布局模板库：内置种子、组织发布/上下架、分类检索、JSON 导入导出、`POST /dashboards/from-template` 原子实例化；不含在线商店与报表模板。
+- **验收标准**：
+  - [x] `dashboard_templates` 表 + `backend/app/dashboard/templates/` 子域 CRUD/ACL/seed
+  - [x] API：`/api/v1/dashboard-templates/*` + `POST /api/v1/dashboards/from-template`
+  - [x] 能力码 `dashboard:template.manage`；内置模板只读
+  - [x] FE Hub `/admin/viz-templates`；列表「使用模板新建」；大屏/看板发布为模板
+  - [x] 统一信封 `kind: viz-layout`；兼容旧 `kind: data-screen` 导入
+- **代码锚点**：`backend/app/dashboard/templates/` · `backend/app/api/v1/dashboard_templates.py` · `fe/src/pages/admin/viz-templates/VizTemplatesHubPage.tsx` · `fe/src/components/dashboard/templates/` · `tests/test_dash_templates_r01.py`
+- **演化建议**：模板缩略图自动生成、组织级分类管理 UI、看板编辑页对称发布入口

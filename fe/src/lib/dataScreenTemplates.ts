@@ -266,7 +266,9 @@ export function parseImportedDataScreenLayout(raw: unknown): DashboardLayoutV2 {
   }
   const record = raw as Record<string, unknown>;
   const layoutSource =
-    record.kind === "data-screen" && record.layout && typeof record.layout === "object"
+    (record.kind === "data-screen" || record.kind === "viz-layout") &&
+    record.layout &&
+    typeof record.layout === "object"
       ? (record.layout as DashboardLayoutV2)
       : (raw as DashboardLayoutV2);
   const layout = layoutSource;
@@ -288,20 +290,24 @@ export function parseImportedDataScreenLayout(raw: unknown): DashboardLayoutV2 {
   };
 }
 
-export type DataScreenTemplateExport = {
+export type VizLayoutEnvelope = {
   templateVersion: 1;
-  kind: "data-screen";
+  kind: "viz-layout" | "data-screen";
+  surfaceKind?: "dashboard" | "data-screen";
   name: string;
+  description?: string | null;
+  categoryKey?: string;
   layout: DashboardLayoutV2;
 };
 
 export function exportDataScreenTemplate(
   layout: DashboardLayoutV2,
   name: string,
-): DataScreenTemplateExport {
+): VizLayoutEnvelope {
   return {
     templateVersion: 1,
-    kind: "data-screen",
+    kind: "viz-layout",
+    surfaceKind: "data-screen",
     name: name.trim() || "未命名大屏",
     layout: {
       ...layout,

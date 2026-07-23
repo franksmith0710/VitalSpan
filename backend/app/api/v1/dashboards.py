@@ -16,6 +16,9 @@ PERM_THEME_READ = "theme:read"
 PERM_THEME_MANAGE = "theme:manage"
 from app.dashboard import service as dash_service
 from app.dashboard.schemas import DashboardCreate, DashboardLayoutUpdate, DashboardUpdate
+from app.dashboard.templates.errors import DashboardTemplateError
+from app.dashboard.templates.schemas import DashboardFromTemplateIn
+from app.dashboard.templates import service as template_service
 from app.dashboard.theme.errors import ThemeAnalysisError
 from app.dashboard.theme import service as theme_service
 from app.dashboard.entity_overview.errors import EntityOverviewError
@@ -295,6 +298,28 @@ def create_dashboard(
         return dash_service.create_dashboard(
             db, payload, created_by=_parse_user_id(user),
         )
+    except dash_service.DashboardError as exc:
+        return _error_response(exc)
+
+
+def _template_error(exc: DashboardTemplateError) -> JSONResponse:
+    detail = {"fields": exc.fields} if exc.fields else None
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": detail},
+    )
+
+
+@router.post("/from-template", status_code=status.HTTP_201_CREATED)
+def create_dashboard_from_template(
+    payload: DashboardFromTemplateIn,
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        return template_service.create_dashboard_from_template(db, payload, user)
+    except DashboardTemplateError as exc:
+        return _template_error(exc)
     except dash_service.DashboardError as exc:
         return _error_response(exc)
 

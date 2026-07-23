@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { ChevronDown, Eye, LayoutGrid, LayoutList, Monitor, Pencil, Plus, Share2, Trash2, Upload } from "lucide-react";
+import { ChevronDown, Eye, LayoutGrid, LayoutList, LayoutTemplate, Monitor, Pencil, Plus, Share2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
@@ -49,10 +49,11 @@ import { mapApiError } from "@/lib/apiError";
 import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
 import {
   buildDataScreenLayoutFromTemplate,
-  DATA_SCREEN_TEMPLATE_CATALOG,
   parseImportedDataScreenLayout,
   type DataScreenTemplateId,
 } from "@/lib/dataScreenTemplates";
+import { createFromTemplate, type DashboardTemplateListItem } from "@/lib/dashboardTemplates";
+import { TemplatePickerDialog } from "@/components/dashboard/templates/TemplatePickerDialog";
 import {
   dashboardSharePath,
   dataScreenEditPath,
@@ -137,6 +138,7 @@ export function DataScreenListPage() {
   const [deleteTarget, setDeleteTarget] = useState<DashboardListItem | null>(null);
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
   const pagination = useListPagination();
 
@@ -181,6 +183,19 @@ export function DataScreenListPage() {
       return created;
     },
     onSuccess: (created) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
+      navigate(dataScreenEditPath(created.id));
+    },
+    onError: (err) => {
+      toast.error(mapApiError(err));
+    },
+  });
+
+  const fromTemplateMutation = useMutation({
+    mutationFn: (template: DashboardTemplateListItem) =>
+      createFromTemplate(template.id, "未命名大屏"),
+    onSuccess: (created) => {
+      setTemplatePickerOpen(false);
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
       navigate(dataScreenEditPath(created.id));
     },
@@ -266,7 +281,7 @@ export function DataScreenListPage() {
             type="button"
             variant="primary"
             size="sm"
-            disabled={createMutation.isPending || importMutation.isPending}
+            disabled={createMutation.isPending || importMutation.isPending || fromTemplateMutation.isPending}
           >
             <Plus className="size-4" />
             新建大屏
@@ -274,19 +289,22 @@ export function DataScreenListPage() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[220px]">
-          {DATA_SCREEN_TEMPLATE_CATALOG.map((template) => (
-            <DropdownMenuItem
-              key={template.id}
-              onClick={() => createMutation.mutate(template.id)}
-            >
-              <div className="flex flex-col gap-0.5">
-                <span className="font-medium">{template.name}</span>
-                <span className="text-theme-xs text-gray-500 dark:text-gray-400">
-                  {template.description}
-                </span>
-              </div>
-            </DropdownMenuItem>
-          ))}
+          <DropdownMenuItem onClick={() => createMutation.mutate("blank")}>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-medium">空白大屏</span>
+              <span className="text-theme-xs text-gray-500 dark:text-gray-400">
+                1920×1080 深色画布
+              </span>
+            </div>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setTemplatePickerOpen(true)}>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-medium">从模板库选择</span>
+              <span className="text-theme-xs text-gray-500 dark:text-gray-400">
+                浏览企业内可视化模板
+              </span>
+            </div>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <Button
@@ -539,6 +557,16 @@ export function DataScreenListPage() {
           description={`确定删除选中的 ${selection.selectedCount} 个大屏？删除后无法恢复。`}
           pending={batchDeleting}
           onConfirm={() => void handleBatchDelete()}
+        />
+      ) : null}
+
+      {canEdit ? (
+        <TemplatePickerDialog
+          open={templatePickerOpen}
+          onOpenChange={setTemplatePickerOpen}
+          surfaceKind="data-screen"
+          pending={fromTemplateMutation.isPending}
+          onSelect={(template) => fromTemplateMutation.mutate(template)}
         />
       ) : null}
     </AdminPageShell>

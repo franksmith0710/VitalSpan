@@ -1,9 +1,5 @@
 import * as d3 from "d3";
-import {
-  formatGeoTooltipValue,
-  getOfflineGeoMap,
-  joinOfflineMapFeatures,
-} from "@/components/charts/engine/geo/OfflineGeoPort";
+import { getOfflineGeoMap, joinOfflineMapFeatures } from "@/components/charts/engine/geo/OfflineGeoPort";
 import { fitChinaGeoProjection } from "@/components/charts/engine/geo/geoProjection";
 import { mountGeoChoroplethAtmosphere, paintGeoSilhouetteGlow } from "@/components/charts/engine/geo/geoChoroplethVisual";
 import { GEO_MAP_SCALE_LIMIT, resolveEmbeddedGeoRoam, VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
@@ -17,6 +13,12 @@ import {
 import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { chartTransition, prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
+import { mountChoroplethDrillBreadcrumb } from "@/components/charts/engine/d3/geo/choroplethDrillBreadcrumb";
+import {
+  pickChoroplethLabelFeatures,
+  resolveChoroplethLabelFontSize,
+} from "@/components/charts/engine/d3/geo/choroplethLabelDensity";
+import { mountChoroplethVisualMap } from "@/components/charts/engine/d3/geo/choroplethVisualMap";
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
 
 export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRenderConfig): () => void {
@@ -35,6 +37,9 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     mapId = VS_REGIONS_MAP_ID,
     isDark = false,
     geoStyle = {},
+    drillDepth = 0,
+    drillBreadcrumbLabels,
+    levelLabel,
     onPointClick,
   } = config;
 
@@ -50,12 +55,12 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   const geo = getOfflineGeoMap(mapId);
   if (!geo?.features?.length) {
     container.replaceChildren();
-    const msg = document.createElement("div");
-    msg.className =
+    const alert = document.createElement("div");
+    alert.className =
       "flex h-full items-center justify-center px-3 text-center text-theme-sm text-error-600 dark:text-error-400";
-    msg.setAttribute("role", "alert");
-    msg.textContent = "离线地图资产缺失，无法渲染";
-    container.appendChild(msg);
+    alert.setAttribute("role", "alert");
+    alert.textContent = "离线地图资产缺失，无法渲染";
+    container.appendChild(alert);
     return () => container.replaceChildren();
   }
 
@@ -90,12 +95,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     type: "FeatureCollection" as const,
     features: features.map((f) => ({ type: "Feature" as const, properties: { name: f.name }, geometry: f.geometry! })),
   };
-  const projection = fitChinaGeoProjection(
-    d3.geoMercator(),
-    innerW,
-    innerH,
-    featureCollection,
-  );
+  const projection = fitChinaGeoProjection(d3.geoMercator(), innerW, innerH, featureCollection);
   const pathGen = d3.geoPath().projection(projection);
 
   const positiveValues = features.map((f) => f.value).filter((v) => v > 0);
@@ -121,6 +121,14 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .attr("height", height)
     .attr("fill", geoPlotBackground(isDark))
     .attr("pointer-events", "none");
+
+  mountChoroplethDrillBreadcrumb(root, {
+    drillBreadcrumbLabels,
+    levelLabel,
+    drillDepth,
+    theme,
+    isDark,
+  });
 
   const visualUid = `geo-2d-${Math.random().toString(36).slice(2, 9)}`;
   const filters = mountGeoChoroplethAtmosphere(root, {
@@ -228,9 +236,11 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   });
 
   if (showRegionLabel) {
+    const labelFeatures = pickChoroplethLabelFeatures(features, pathGen, innerW, innerH);
+    const labelSize = resolveChoroplethLabelFontSize(labelFeatures.length, innerW);
     mapLayer
       .selectAll("text.region-label")
-      .data(features)
+      .data(labelFeatures)
       .join("text")
       .attr("class", "region-label")
       .attr("transform", (d) => {
@@ -240,49 +250,23 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
       .attr("text-anchor", "middle")
       .attr("dy", "0.35em")
       .attr("fill", resolveLabelFill(theme))
-      .style("font-size", "9px")
+      .style("font-size", `${labelSize}px`)
       .style("pointer-events", "none")
       .text((d) => d.name);
   }
 
   if (showVisualMap) {
-    const legendW = 100;
-    const legendH = 8;
-    const legendX = width - margin.right - legendW;
-    const legendY = height - margin.bottom + 4;
-    const legendG = root.append("g").attr("transform", `translate(${legendX},${legendY})`);
-    const defs = root.append("defs");
-    const gradId = `d3-choropleth-legend-${Math.random().toString(36).slice(2, 9)}`;
-    const grad = defs.append("linearGradient").attr("id", gradId).attr("x1", "0%").attr("x2", "100%");
-    const legendStops = [0, 0.35, 0.7, 1];
-    for (const t of legendStops) {
-      grad
-        .append("stop")
-        .attr("offset", `${t * 100}%`)
-        .attr("stop-color", colorForGeoValue(minVal + t * (maxVal - minVal || 1), minVal, maxVal, surface));
-    }
-    legendG
-      .append("rect")
-      .attr("width", legendW)
-      .attr("height", legendH)
-      .attr("rx", 3)
-      .attr("fill", `url(#${gradId})`)
-      .attr("stroke", isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(148, 163, 184, 0.5)")
-      .attr("stroke-width", 0.75);
-    legendG
-      .append("text")
-      .attr("y", legendH + 12)
-      .attr("fill", theme.axisLabel)
-      .style("font-size", "10px")
-      .text(formatGeoTooltipValue(minVal, valueFormat));
-    legendG
-      .append("text")
-      .attr("x", legendW)
-      .attr("y", legendH + 12)
-      .attr("text-anchor", "end")
-      .attr("fill", theme.axisLabel)
-      .style("font-size", "10px")
-      .text(formatGeoTooltipValue(maxVal, valueFormat));
+    mountChoroplethVisualMap(root, {
+      minVal,
+      maxVal,
+      surface,
+      theme,
+      valueFormat,
+      isDark,
+      width,
+      height,
+      margin,
+    });
   }
 
   let detachZoom = () => undefined;

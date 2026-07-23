@@ -1,16 +1,25 @@
 import * as d3 from "d3";
+import { VCDS } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { resolveBarLabelFontSize, resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/d3/core/axes";
 import { drawBidirectionalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
-import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
-import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
+import { wirePlotSeriesLegendDimming } from "@/components/charts/engine/d3/core/legendInteraction";
+import { staggerEnterSelection } from "@/components/charts/engine/d3/core/motionEngine";
+import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
+import {
+  createTooltipLayer,
+  hideTooltip,
+  showSimpleTooltip,
+} from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3BidirectionalBarRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 
-const BAR_RX = 4;
+const BAR_RX = VCDS.bar.rx;
+const LEFT_KEY = "left";
+const RIGHT_KEY = "right";
 
 export function renderD3BidirectionalBarChart(
   container: HTMLElement,
@@ -36,9 +45,14 @@ export function renderD3BidirectionalBarChart(
     barWidthRatio,
     barRadius,
     axisStyle,
+    leftLabel,
+    rightLabel,
+    tooltipPresentation,
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
+  const leftName = leftLabel ?? "左";
+  const rightName = rightLabel ?? "右";
 
   const categories = data.map((d) => d.type);
   const maxLeft = d3.max(data, (d) => Math.abs(d.left)) ?? 0;
@@ -61,7 +75,7 @@ export function renderD3BidirectionalBarChart(
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
 
   drawBidirectionalBandAxes({
     g,
@@ -83,11 +97,12 @@ export function renderD3BidirectionalBarChart(
     .attr("stroke", theme.axisLine)
     .attr("stroke-width", 1);
 
-  plot
+  const leftBars = plot
     .selectAll("g.left-bar")
     .data(data)
     .join("g")
     .attr("class", "left-bar")
+    .attr("data-series-key", LEFT_KEY)
     .attr("transform", (d) => `translate(0,${y(d.type) ?? 0})`)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .each(function (d) {
@@ -99,11 +114,12 @@ export function renderD3BidirectionalBarChart(
     })
     .on("click", (_event, d) => onPointClick?.(d));
 
-  plot
+  const rightBars = plot
     .selectAll("g.right-bar")
     .data(data)
     .join("g")
     .attr("class", "right-bar")
+    .attr("data-series-key", RIGHT_KEY)
     .attr("transform", (d) => `translate(0,${y(d.type) ?? 0})`)
     .attr("cursor", onPointClick ? "pointer" : "default")
     .each(function (d) {
@@ -114,39 +130,52 @@ export function renderD3BidirectionalBarChart(
     })
     .on("click", (_event, d) => onPointClick?.(d));
 
+  staggerEnterSelection(leftBars);
+  staggerEnterSelection(rightBars);
+
   if (showTooltip) {
     const bindTooltip = (sel: d3.Selection<SVGGElement, (typeof data)[0], SVGGElement, unknown>, side: "left" | "right") => {
+      const label = side === "left" ? leftName : rightName;
       sel
-        .on("mouseenter", function (_event, d) {
+        .on("mouseenter", (event, d) => {
           const value = side === "left" ? d.left : d.right;
-          tooltip
-            ?.style("opacity", "1")
-            .html(
-              `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
-                `<div>${side === "left" ? "左" : "右"} · <strong>${formatChartValue(value, valueFormat)}</strong></div>`,
-            );
+          showSimpleTooltip(
+            tooltip,
+            container,
+            event,
+            `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
+              `<div>${label} · <strong>${formatChartValue(value, valueFormat)}</strong></div>`,
+            width,
+          );
         })
-        .on("mousemove", (event) => {
-          const rect = container.getBoundingClientRect();
-          tooltip
-            ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
-            .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+        .on("mousemove", (event, d) => {
+          const value = side === "left" ? d.left : d.right;
+          showSimpleTooltip(
+            tooltip,
+            container,
+            event,
+            `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
+              `<div>${label} · <strong>${formatChartValue(value, valueFormat)}</strong></div>`,
+            width,
+          );
         })
-        .on("mouseleave", () => tooltip?.style("opacity", "0"));
+        .on("mouseleave", () => hideTooltip(tooltip));
     };
     bindTooltip(plot.selectAll<SVGGElement, (typeof data)[0]>("g.left-bar"), "left");
     bindTooltip(plot.selectAll<SVGGElement, (typeof data)[0]>("g.right-bar"), "right");
   }
 
-  renderConfiguredInlineLegend(
+  const detachLegend = renderConfiguredInlineLegend(
     root,
     showLegend,
     [
-      { label: "左", color: leftColor },
-      { label: "右", color: rightColor },
+      { label: leftName, seriesKey: LEFT_KEY, color: leftColor },
+      { label: rightName, seriesKey: RIGHT_KEY, color: rightColor },
     ],
     { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
   );
+
+  const detachLegendDim = wirePlotSeriesLegendDimming(plot);
 
   if (showLabel) {
     const barLabelFs = resolveBarLabelFontSize(y.bandwidth(), labelFontSize);
@@ -176,5 +205,10 @@ export function renderD3BidirectionalBarChart(
       .text((d) => formatChartValue(d.right, valueFormat));
   }
 
-  return () => container.replaceChildren();
+  return () => {
+    detachLegend();
+    detachLegendDim();
+    hideTooltip(tooltip);
+    container.replaceChildren();
+  };
 }

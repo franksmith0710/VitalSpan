@@ -3,12 +3,17 @@ import { resolveHorizontalCategoryAxisLayout } from "@/components/charts/engine/
 import { drawCartesianHorizontalBandAxes } from "@/components/charts/engine/d3/core/sceneGraph";
 import { paintHorizontalBar } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
-import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
+import {
+  createTooltipLayer,
+  hideTooltip,
+  showSimpleTooltip,
+} from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3BulletRenderConfig } from "@/components/charts/engine/d3/types";
 import { resolveBarBandPadding } from "@/lib/applyChartDeStyleBlocks";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
 const BAR_RX = 3;
+const DEFAULT_ZONE_FRACTIONS = [0.66, 0.85, 1];
 
 export function renderD3BulletChart(container: HTMLElement, config: D3BulletRenderConfig): () => void {
   container.replaceChildren();
@@ -28,9 +33,12 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
     barWidthRatio,
     barRadius,
     axisStyle,
+    bulletZones,
+    tooltipPresentation,
   } = config;
 
   const barRx = barRadius ?? BAR_RX;
+  const zoneFractions = bulletZones?.length ? bulletZones : DEFAULT_ZONE_FRACTIONS;
   const categories = data.map((d) => d.type);
   const maxRange = d3.max(data, (d) => d.rangeMax) ?? 1;
   const baseMargin = cartesianMargin(false);
@@ -49,29 +57,25 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
   const root = d3.select(container).append("svg").attr("width", width).attr("height", height).attr("role", "img");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const plot = g.append("g");
-  const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
+  const tooltip = showTooltip ? createTooltipLayer(container, theme, tooltipPresentation) : null;
 
   drawCartesianHorizontalBandAxes({ g, xScale: x, yScale: y, innerW, innerH, theme, valueFormat, axisStyle });
 
   for (const d of data) {
     const y0 = (y(d.type) ?? 0) + (y.bandwidth() - barH) / 2;
-    const zones = [
-      { end: d.rangeMax * 0.66, color: zoneColors[0] },
-      { end: d.rangeMax * 0.85, color: zoneColors[1] },
-      { end: d.rangeMax, color: zoneColors[2] },
-    ];
     let start = 0;
-    for (const zone of zones) {
+    zoneFractions.forEach((frac, zi) => {
+      const end = d.rangeMax * frac;
       plot
         .append("rect")
         .attr("x", x(start))
         .attr("y", y0)
-        .attr("width", Math.max(0, x(zone.end) - x(start)))
+        .attr("width", Math.max(0, x(end) - x(start)))
         .attr("height", barH)
-        .attr("fill", zone.color)
+        .attr("fill", zoneColors[zi] ?? zoneColors[zoneColors.length - 1])
         .attr("opacity", 0.55);
-      start = zone.end;
-    }
+      start = end;
+    });
 
     const measure = plot
       .append("g")
@@ -86,25 +90,15 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
       .on("click", () => onPointClick?.(d));
 
     if (showTooltip) {
+      const tipHtml =
+        `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
+        `<div>实际 <strong>${formatChartValue(d.actual, valueFormat)}</strong></div>` +
+        `<div>目标 <strong>${formatChartValue(d.target, valueFormat)}</strong></div>`;
+
       measure
-        .on("mouseenter", () => {
-          tooltip
-            ?.style("opacity", "1")
-            .html(
-              [
-                `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>`,
-                `<div>实际 <strong>${formatChartValue(d.actual, valueFormat)}</strong></div>`,
-                `<div>目标 <strong>${formatChartValue(d.target, valueFormat)}</strong></div>`,
-              ].join(""),
-            );
-        })
-        .on("mousemove", (event) => {
-          const rect = container.getBoundingClientRect();
-          tooltip
-            ?.style("left", `${Math.min(event.clientX - rect.left + 12, width - 160)}px`)
-            .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
-        })
-        .on("mouseleave", () => tooltip?.style("opacity", "0"));
+        .on("mouseenter", (event) => showSimpleTooltip(tooltip, container, event, tipHtml, width))
+        .on("mousemove", (event) => showSimpleTooltip(tooltip, container, event, tipHtml, width))
+        .on("mouseleave", () => hideTooltip(tooltip));
     }
 
     plot
@@ -128,5 +122,8 @@ export function renderD3BulletChart(container: HTMLElement, config: D3BulletRend
     }
   }
 
-  return () => container.replaceChildren();
+  return () => {
+    hideTooltip(tooltip);
+    container.replaceChildren();
+  };
 }

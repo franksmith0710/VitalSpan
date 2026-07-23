@@ -27,11 +27,16 @@ def _warm_meta_database() -> None:
     """预热元数据库连接池；开发环境顺带修复 admin 孤儿绑定与样例源凭证。"""
     from app.auth.bootstrap_root import ensure_admin_username_root_binding
     from app.auth.models import get_meta_session
+    from app.dashboard.templates.seed import seed_builtin_dashboard_templates
     from app.datasources.dev_credential_repair import repair_dev_datasource_credentials
 
     session = get_meta_session()
     try:
         session.execute(text("SELECT 1"))
+        try:
+            seed_builtin_dashboard_templates(session)
+        except Exception:
+            logger.warning("dashboard_template_seed_failed", exc_info=True)
         if settings.vitalspan_env == "development":
             ensure_admin_username_root_binding(
                 session,

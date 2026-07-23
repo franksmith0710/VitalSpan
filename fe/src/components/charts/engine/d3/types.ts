@@ -115,6 +115,8 @@ export type D3GeoRenderConfig = D3RenderConfigBase & {
   knownRegionNames?: string[];
   mapId?: string;
   drillDepth?: number;
+  drillBreadcrumbLabels?: string[];
+  levelLabel?: string;
   isDark?: boolean;
   geoStyle?: D3GeoStyleProps;
   geo3dStyle?: ChartGeo3dStyle;
@@ -128,6 +130,7 @@ export type D3MatrixRenderConfig = D3RenderConfigBase & {
   conditionalRules?: ChartConditionalRule[];
   showCellLabel?: boolean;
   showVisualMap?: boolean;
+  heatmapBrush?: boolean;
   onPointClick?: (datum: D3MatrixCell) => void;
 };
 
@@ -175,6 +178,10 @@ export type D3BidirectionalBarRenderConfig = D3RenderConfigBase & {
   showLegend?: boolean;
   legendLayout?: import("@/components/charts/engine/d3/core/d3Legend").D3LegendLayout;
   labelFontSize?: number;
+  /** 图例/提示左系列名；缺省「左」 */
+  leftLabel?: string;
+  /** 图例/提示右系列名；缺省「右」 */
+  rightLabel?: string;
   onPointClick?: (datum: D3BidirectionalBarDatum) => void;
 };
 
@@ -193,6 +200,8 @@ export type D3ProgressBarRenderConfig = D3RenderConfigBase & {
   data: D3ProgressBarDatum[];
   showLabel?: boolean;
   labelFontSize?: number;
+  /** 是否绘制目标竖线；默认 true */
+  showTargetLine?: boolean;
   onPointClick?: (datum: D3ProgressBarDatum) => void;
 };
 
@@ -207,6 +216,8 @@ export type D3BulletRenderConfig = D3RenderConfigBase & {
   data: D3BulletDatum[];
   showLabel?: boolean;
   labelFontSize?: number;
+  /** rangeMax 比例阈值，如 [0.66, 0.85, 1]；缺省使用内置三区 */
+  bulletZones?: number[];
   onPointClick?: (datum: D3BulletDatum) => void;
 };
 
@@ -222,5 +233,6 @@ export type D3StockRenderConfig = D3RenderConfigBase & {
   data: D3StockDatum[];
   showLabel?: boolean;
   labelFontSize?: number;
+  dataZoom?: boolean;
   onPointClick?: (datum: D3StockDatum) => void;
 };

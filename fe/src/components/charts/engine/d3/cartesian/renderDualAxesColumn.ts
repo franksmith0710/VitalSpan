@@ -153,6 +153,7 @@ export function renderDualAxesColumnBars(params: {
         .data(layer)
         .join("g")
         .attr("class", `dual-stack-${name}`)
+        .attr("data-series-key", name)
         .attr("transform", (d) => `translate(${(x(String(d.data.__category__)) ?? 0) - barWidth / 2},0)`)
         .attr("cursor", onPointClick ? "pointer" : "default")
         .each(function (d) {
@@ -185,6 +186,7 @@ export function renderDualAxesColumnBars(params: {
         .data(s.points)
         .join("g")
         .attr("class", `dual-group-${name}`)
+        .attr("data-series-key", name)
         .attr("transform", (d) => {
           const cx = x(String(d.__category__)) ?? 0;
           return `translate(${cx - barWidth / 2 + i * groupWidth},0)`;
@@ -208,6 +210,7 @@ export function renderDualAxesColumnBars(params: {
       .data(normalized)
       .join("g")
       .attr("class", "dual-col")
+      .attr("data-series-key", "column")
       .attr("transform", (d) => `translate(${(x(String(d.__category__)) ?? 0) - barWidth / 2},0)`)
       .attr("cursor", onPointClick ? "pointer" : "default")
       .each(function (d) {

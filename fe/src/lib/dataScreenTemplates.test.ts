@@ -43,7 +43,7 @@ describe("dataScreenTemplates", () => {
     const layout = buildDataScreenLayoutFromTemplate("blank");
     const exported = exportDataScreenTemplate(layout, "演示大屏");
     expect(exported.templateVersion).toBe(1);
-    expect(exported.kind).toBe("data-screen");
+    expect(exported.kind).toBe("viz-layout");
     const imported = parseImportedDataScreenLayout(exported);
     expect(imported.canvas).toEqual(layout.canvas);
     expect(imported.styleConfig?.surfaceKind).toBe("data-screen");

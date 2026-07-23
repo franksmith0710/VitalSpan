@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
-import { Eye, LayoutGrid, LayoutList, Pencil, Plus, Share2, Trash2 } from "lucide-react";
+import { Eye, LayoutGrid, LayoutList, LayoutTemplate, Pencil, Plus, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   BatchDeleteDialog,
@@ -18,6 +18,7 @@ import {
   type DashboardListItem,
 } from "@/components/dashboard/DashboardListCard";
 import { DashboardQuickCreateDialog } from "@/components/dashboard/DashboardQuickCreateDialog";
+import { TemplatePickerDialog } from "@/components/dashboard/templates/TemplatePickerDialog";
 import {
   DataTable,
   ListPageBody,
@@ -49,6 +50,7 @@ import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import { useAuth } from "@/context/auth-context";
 import { buildDashboardsListUrl } from "@/lib/dashboardsListQuery";
+import { createFromTemplate, type DashboardTemplateListItem } from "@/lib/dashboardTemplates";
 
 type DashboardListResponse = {
   items: DashboardListItem[];
@@ -124,6 +126,7 @@ export function DashboardListPage() {
   const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
   const [batchDeleting, setBatchDeleting] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const pagination = useListPagination();
 
   const listQuery = useQuery({
@@ -153,6 +156,19 @@ export function DashboardListPage() {
     onSuccess: (created) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
       navigate(`/admin/dashboards/${created.id}/edit`);
+    },
+  });
+
+  const fromTemplateMutation = useMutation({
+    mutationFn: (template: DashboardTemplateListItem) =>
+      createFromTemplate(template.id, template.name),
+    onSuccess: (created) => {
+      setTemplatePickerOpen(false);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboards.all });
+      navigate(`/admin/dashboards/${created.id}/edit`);
+    },
+    onError: (err) => {
+      toast.error(mapApiError(err));
     },
   });
 
@@ -188,16 +204,28 @@ export function DashboardListPage() {
   };
 
   const createButton = canEdit ? (
-    <Button
-      type="button"
-      variant="primary"
-      size="sm"
-      disabled={createMutation.isPending}
-      onClick={() => setQuickCreateOpen(true)}
-    >
-      <Plus className="size-4" />
-      新建看板
-    </Button>
+    <div className="flex flex-wrap items-center gap-2">
+      <Button
+        type="button"
+        variant="primary"
+        size="sm"
+        disabled={createMutation.isPending || fromTemplateMutation.isPending}
+        onClick={() => setQuickCreateOpen(true)}
+      >
+        <Plus className="size-4" />
+        新建看板
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={createMutation.isPending || fromTemplateMutation.isPending}
+        onClick={() => setTemplatePickerOpen(true)}
+      >
+        <LayoutTemplate className="size-4" />
+        使用模板新建
+      </Button>
+    </div>
   ) : null;
 
   return (
@@ -439,6 +467,16 @@ export function DashboardListPage() {
           onOpenChange={setQuickCreateOpen}
           onBlankCreate={() => createMutation.mutate()}
           blankPending={createMutation.isPending}
+        />
+      ) : null}
+
+      {canEdit ? (
+        <TemplatePickerDialog
+          open={templatePickerOpen}
+          onOpenChange={setTemplatePickerOpen}
+          surfaceKind="dashboard"
+          pending={fromTemplateMutation.isPending}
+          onSelect={(template) => fromTemplateMutation.mutate(template)}
         />
       ) : null}
     </AdminPageShell>
