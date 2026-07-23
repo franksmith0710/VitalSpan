@@ -41,6 +41,66 @@ describe("DashboardContextInspector", () => {
     );
   });
 
+  it("resets all colors to the active theme from the theme style panel", async () => {
+    const user = userEvent.setup();
+    const onStyleChange = vi.fn();
+    const onWidgetsChange = vi.fn();
+
+    render(
+      <DashboardContextInspector
+        widgetCount={1}
+        widgets={[
+          {
+            id: "w1",
+            type: "chart",
+            title: "柱图",
+            colSpan: 6,
+            rowSpan: 4,
+            chartConfig: {
+              chartType: "bar",
+              dataSourceId: "ds1",
+              nativeBody: {
+                deStyle: { title: { color: "#ff0000" } },
+              },
+            },
+          },
+        ]}
+        styleConfig={{
+          colorScheme: "light",
+          titleStyle: { color: "#884422" },
+          canvasBackground: "#ffeedd",
+          canvasBackgroundCustom: true,
+        }}
+        onStyleChange={onStyleChange}
+        onWidgetsChange={onWidgetsChange}
+        embedded
+        isPixelLayout
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "初始化当前主题样式" }));
+    expect(onStyleChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        colorScheme: "light",
+        canvasBackground: expect.not.stringMatching(/ffeedd/i),
+        titleStyle: expect.objectContaining({ color: expect.any(String) }),
+      }),
+    );
+    expect(onWidgetsChange).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          chartConfig: expect.objectContaining({
+            nativeBody: expect.objectContaining({
+              deStyle: expect.not.objectContaining({
+                title: expect.objectContaining({ color: "#ff0000" }),
+              }),
+            }),
+          }),
+        }),
+      ]),
+    );
+  });
+
   it("emits scaleMode when switching zoom mode", async () => {
     const user = userEvent.setup();
     const onStyleChange = vi.fn();

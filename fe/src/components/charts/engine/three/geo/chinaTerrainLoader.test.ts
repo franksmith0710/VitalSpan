@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   parseAdcodeFromMapId,
+  resolveProvinceAdcodeFromMapId,
   resolveTerrainPackKey,
 } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import { VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
@@ -20,18 +21,35 @@ describe("resolveTerrainPackKey", () => {
     });
   });
 
-  it("resolves pilot province L1 for vs-geo-440000", () => {
+  it("resolves province L1 for vs-geo-440000 when pack exists", () => {
     expect(resolveTerrainPackKey("vs-geo-440000", 1)).toEqual({
       level: "province",
       adcode: 440000,
     });
   });
 
+  it("resolves parent province for city mapId at drill depth 2", () => {
+    expect(resolveTerrainPackKey("vs-geo-440100", 2)).toEqual({
+      level: "province",
+      adcode: 440000,
+    });
+  });
+
   it("falls back to national for province without L1 pack", () => {
-    expect(resolveTerrainPackKey("vs-geo-330000", 1)).toEqual({
+    expect(resolveTerrainPackKey("vs-geo-999000", 1)).toEqual({
       level: "national",
       adcode: null,
     });
+  });
+});
+
+describe("resolveProvinceAdcodeFromMapId", () => {
+  it("keeps provincial adcode", () => {
+    expect(resolveProvinceAdcodeFromMapId("vs-geo-330000")).toBe(330000);
+  });
+
+  it("normalizes city adcode to parent province", () => {
+    expect(resolveProvinceAdcodeFromMapId("vs-geo-440100")).toBe(440000);
   });
 });
 

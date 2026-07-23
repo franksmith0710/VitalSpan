@@ -7,7 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import {
-  PILOT_PROVINCE_ADCODES,
+  ALL_PROVINCE_ADCODES,
   buildHeightGridMercator,
   buildDisplacementRgbaRect,
 } from "./lib/chinaTerrainSynth.mjs";
@@ -17,8 +17,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.join(ROOT, "src/assets/geo/terrain");
 
-const NATIONAL_MAX_EDGE = 1024;
-const PROVINCE_MAX_EDGE = 768;
+const NATIONAL_MAX_EDGE = 4096;
+const PROVINCE_MAX_EDGE = 4096;
+const NATIONAL_WEBP_QUALITY = 92;
+const PROVINCE_WEBP_QUALITY = 92;
 
 const SATHUNTER_HINT = `
 缺少卫星源图。请任选其一：
@@ -44,29 +46,32 @@ async function requireSource(packDir, name) {
   return p;
 }
 
-async function resizePreserveAspect(srcPath, maxEdge) {
+async function resizePreserveAspect(srcPath, maxEdge, webpQuality = 85) {
   const meta = await sharp(srcPath).metadata();
   const w = meta.width ?? maxEdge;
   const h = meta.height ?? maxEdge;
   const scale = maxEdge / Math.max(w, h);
   const outW = Math.max(1, Math.round(w * scale));
   const outH = Math.max(1, Math.round(h * scale));
-  const buf = await sharp(srcPath).resize(outW, outH, { fit: "fill" }).webp({ quality: 85 }).toBuffer();
+  const buf = await sharp(srcPath)
+    .resize(outW, outH, { fit: "fill" })
+    .webp({ quality: webpQuality })
+    .toBuffer();
   return { buf, width: outW, height: outH };
 }
 
-async function writePack(dir, bounds, maxEdge) {
+async function writePack(dir, bounds, maxEdge, webpQuality = 85) {
   await fs.mkdir(dir, { recursive: true });
   const diffuseSrc = await requireSource(dir, "diffuse.png");
   const normalSrc = path.join(dir, "_source", "normal.png");
   const hasNormal = await fileExists(normalSrc);
 
-  const diffuse = await resizePreserveAspect(diffuseSrc, maxEdge);
+  const diffuse = await resizePreserveAspect(diffuseSrc, maxEdge, webpQuality);
   await fs.writeFile(path.join(dir, "diffuse.webp"), diffuse.buf);
 
   let normal = null;
   if (hasNormal) {
-    normal = await resizePreserveAspect(normalSrc, maxEdge);
+    normal = await resizePreserveAspect(normalSrc, maxEdge, webpQuality);
     await fs.writeFile(path.join(dir, "normal.webp"), normal.buf);
   } else {
     console.warn(`  no normal.png in ${dir}/_source — skipping normal.webp`);
@@ -105,24 +110,24 @@ async function writePack(dir, bounds, maxEdge) {
 }
 
 async function writeManifest(nationalBounds) {
-  const manifest = `/** 自动生成：pnpm run build:geo-terrain */\n\nexport const CHINA_TERRAIN_NATIONAL_ID = "national" as const;\n\nexport const CHINA_TERRAIN_BOUNDS = {\n  west: ${nationalBounds.west},\n  south: ${nationalBounds.south},\n  east: ${nationalBounds.east},\n  north: ${nationalBounds.north},\n} as const;\n\nexport const CHINA_TERRAIN_PROVINCE_ADCODES = [\n${PILOT_PROVINCE_ADCODES.map((c) => `  ${c},`).join("\n")}\n] as const;\n\nexport type ChinaTerrainProvinceAdcode = (typeof CHINA_TERRAIN_PROVINCE_ADCODES)[number];\n`;
+  const manifest = `/** 自动生成：pnpm run build:geo-terrain */\n\nexport const CHINA_TERRAIN_NATIONAL_ID = "national" as const;\n\nexport const CHINA_TERRAIN_BOUNDS = {\n  west: ${nationalBounds.west},\n  south: ${nationalBounds.south},\n  east: ${nationalBounds.east},\n  north: ${nationalBounds.north},\n} as const;\n\nexport const CHINA_TERRAIN_PROVINCE_ADCODES = [\n${ALL_PROVINCE_ADCODES.map((c) => `  ${c},`).join("\n")}\n] as const;\n\nexport type ChinaTerrainProvinceAdcode = (typeof CHINA_TERRAIN_PROVINCE_ADCODES)[number];\n`;
   await fs.writeFile(path.join(OUT, "manifest.ts"), manifest, "utf8");
 }
 
 async function main() {
   const nationalBounds = await readNationalBounds();
   console.log("Building national terrain pack…");
-  await writePack(path.join(OUT, "national"), nationalBounds, NATIONAL_MAX_EDGE);
+  await writePack(path.join(OUT, "national"), nationalBounds, NATIONAL_MAX_EDGE, NATIONAL_WEBP_QUALITY);
 
   const builtProvinces = [];
-  for (const adcode of PILOT_PROVINCE_ADCODES) {
+  for (const adcode of ALL_PROVINCE_ADCODES) {
     const bounds = await readProvinceBounds(adcode);
     if (!bounds) {
       console.warn(`Skip province ${adcode}: no geometry`);
       continue;
     }
     console.log(`Building province ${adcode}…`);
-    await writePack(path.join(OUT, "provinces", String(adcode)), bounds, PROVINCE_MAX_EDGE);
+    await writePack(path.join(OUT, "provinces", String(adcode)), bounds, PROVINCE_MAX_EDGE, PROVINCE_WEBP_QUALITY);
     builtProvinces.push(adcode);
   }
 

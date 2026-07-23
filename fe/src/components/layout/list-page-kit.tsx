@@ -63,17 +63,17 @@ export function ListPageToolbar({
   return (
     <div
       className={cn(
-        "flex shrink-0 border-b border-gray-100 dark:border-white/[0.06]",
+        "flex shrink-0 border-b border-gray-100 bg-gray-50/80 dark:border-white/[0.06] dark:bg-white/[0.02]",
         actionsOnly
-          ? "justify-end px-5 py-2"
-          : "flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
+          ? "justify-end px-5 py-3"
+          : "flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
       {hasFilters ? (
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">{filters}</div>
       ) : null}
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div> : null}
     </div>
   );
 }

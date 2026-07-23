@@ -14,6 +14,7 @@ import type { Linkage } from "./dashboardFilterUtils";
 import type { DashboardStyleConfig, LayoutWidget } from "./layoutUtils";
 import {
   applyDashboardStylePatch,
+  resetDashboardColorsToActiveThemeBundle,
   switchDashboardThemeBundle,
 } from "./dashboardThemeVariants";
 
@@ -74,6 +75,11 @@ export function DashboardContextInspector({
         isPixelLayout={isPixelLayout}
         onSwitchColorScheme={(scheme) => {
           const bundle = switchDashboardThemeBundle(styleConfig, widgets, scheme);
+          onStyleChange(bundle.styleConfig);
+          onWidgetsChange?.(bundle.widgets);
+        }}
+        onResetColorsToTheme={() => {
+          const bundle = resetDashboardColorsToActiveThemeBundle(styleConfig, widgets);
           onStyleChange(bundle.styleConfig);
           onWidgetsChange?.(bundle.widgets);
         }}

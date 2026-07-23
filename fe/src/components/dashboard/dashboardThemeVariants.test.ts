@@ -7,6 +7,7 @@ import {
   hydrateDashboardStyleConfig,
   initializeDualThemePresets,
   normalizeStyleConfigForColorScheme,
+  resetDashboardColorsToActiveThemeBundle,
   resolveThemePresetForSwitch,
   switchDashboardColorScheme,
   switchDashboardThemeBundle,
@@ -279,5 +280,83 @@ describe("dashboardThemeVariants", () => {
     expect(de?.background).toBeUndefined();
     expect(de?.paletteId).toBeUndefined();
     expect(de?.paletteOpacity).toBeUndefined();
+  });
+
+  it("resetDashboardColorsToActiveThemeBundle resets dashboard and chart color overrides", () => {
+    const bundle = resetDashboardColorsToActiveThemeBundle(
+      {
+        colorScheme: "light",
+        canvasBackground: "#ff0000",
+        canvasBackgroundCustom: true,
+        canvasBackgroundImage: "https://example.com/bg.png",
+        canvasDecorPresetId: "dots",
+        titleStyle: { fontSize: 18, color: "#884422" },
+        widgetStyle: {
+          padding: 12,
+          background: "#eeeeee",
+          borderColor: "#111111",
+          backgroundImage: "https://example.com/widget.png",
+          backgroundMode: "image",
+          framePresetId: "frame-1",
+        },
+        chartLabelStyle: { fontSize: 14, color: "#ff00ff" },
+        chartTooltipStyle: { fontSize: 12, color: "#000000", background: "#abcdef" },
+        tableColorStyle: { headerBg: "#001122" },
+        paletteId: "warm",
+      },
+      [
+        {
+          id: "w1",
+          type: "chart",
+          title: "柱图",
+          colSpan: 6,
+          rowSpan: 4,
+          chartConfig: {
+            chartType: "bar",
+            dataSourceId: "ds1",
+            nativeBody: {
+              deStyle: {
+                title: { fontSize: 20, color: "#ff0000" },
+                background: { background: "#cccccc", padding: 8 },
+                label: { fontSize: 11, color: "#00ff00" },
+                tooltip: { fontSize: 12, color: "#0000ff", background: "#ffff00" },
+              },
+              deTableStyle: { headerBg: "#334455", columnWidthMode: "auto" },
+            },
+          },
+        },
+      ],
+    );
+
+    expect(bundle.styleConfig.canvasBackground).toBe(CANVAS_BG_LIGHT_DEFAULT);
+    expect(bundle.styleConfig.canvasBackgroundCustom).toBeUndefined();
+    expect(bundle.styleConfig.canvasBackgroundImage).toBeUndefined();
+    expect(bundle.styleConfig.canvasDecorPresetId).toBeUndefined();
+    expect(bundle.styleConfig.titleStyle).toEqual({
+      fontSize: 18,
+      color: defaultThemeVariant("light").titleStyle?.color,
+    });
+    expect(bundle.styleConfig.widgetStyle?.padding).toBe(12);
+    expect(bundle.styleConfig.widgetStyle?.background).toBe("#ffffff");
+    expect(bundle.styleConfig.widgetStyle?.backgroundImage).toBeUndefined();
+    expect(bundle.styleConfig.widgetStyle?.backgroundMode).toBeUndefined();
+    expect(bundle.styleConfig.widgetStyle?.framePresetId).toBeUndefined();
+    expect(bundle.styleConfig.chartLabelStyle?.fontSize).toBe(14);
+    expect(bundle.styleConfig.chartLabelStyle?.color).toBe("#667085");
+    expect(bundle.styleConfig.paletteId).toBe("warm");
+
+    const de =
+      bundle.widgets[0].type === "chart"
+        ? bundle.widgets[0].chartConfig?.nativeBody?.deStyle
+        : undefined;
+    expect(de?.title).toEqual({ fontSize: 20 });
+    expect(de?.background).toBeUndefined();
+    expect(de?.label).toEqual({ fontSize: 11 });
+    expect(de?.tooltip).toEqual({ fontSize: 12 });
+    const tableStyle =
+      bundle.widgets[0].type === "chart"
+        ? bundle.widgets[0].chartConfig?.nativeBody?.deTableStyle
+        : undefined;
+    expect(tableStyle).toEqual({ columnWidthMode: "auto" });
   });
 });

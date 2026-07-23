@@ -465,6 +465,52 @@ describe("PixelCanvas", () => {
     expect(screen.getByTestId("widget-body-w2")).toBeInTheDocument();
   });
 
+  it("keeps data-screen stage height after resize commit without parent rerender", async () => {
+    const dataScreenLayout: DashboardLayoutV2 = {
+      ...layout,
+      canvas: { width: 1920, height: 1080 },
+      styleConfig: { surfaceKind: "data-screen" },
+    };
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={dataScreenLayout}
+        styleConfig={{ surfaceKind: "data-screen" }}
+        designViewportLocked
+        viewportFit="data-screen"
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span data-testid={`widget-body-${item.id}`}>{item.title}</span>}
+      />,
+    );
+    const stage = screen.getByTestId("pixel-canvas-stage");
+    const host = screen.getByTestId("pixel-canvas-host");
+    expect(stage).toHaveStyle({ width: "1920px", height: "1080px" });
+
+    const handle = screen.getByLabelText("调整组件大小：右下");
+    fireEvent.pointerDown(handle, {
+      pointerId: 51,
+      clientX: 400,
+      clientY: 280,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 51, clientX: 440, clientY: 310 });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(document, { pointerId: 51, clientX: 440, clientY: 310 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+    });
+
+    expect(stage).toHaveStyle({ width: "1920px", height: "1080px" });
+    expect(host).not.toHaveAttribute("data-pixel-canvas-playing");
+    expect(screen.getByTestId("widget-body-w1")).toBeInTheDocument();
+  });
+
   it("keeps data-screen outer geometry after drag commit without parent rerender", async () => {
     const dataScreenLayout: DashboardLayoutV2 = {
       ...layout,

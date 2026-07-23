@@ -19,6 +19,7 @@ import type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 import { resolvePaletteId } from "@/lib/chartPalette";
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import type { ChartDeStyleBlocks } from "@/lib/chartDeStyleBlocks";
+import { stripChartTableColorOverrides } from "@/lib/chartDeTableStyle";
 
 export type { ChartSeriesColorItem } from "@/lib/chartSeriesColor";
 
@@ -306,6 +307,21 @@ export function stripChartWidgetAppearanceOverrides(cfg: ChartViewConfig): Chart
   };
 }
 
+/** 清除组件级背景 override（含底色/图片/装饰边框），回退看板默认 */
+export function stripChartBackgroundStyleOverrides(cfg: ChartViewConfig): ChartViewConfig {
+  const de = readChartDeStyle(cfg);
+  if (!de.background) return cfg;
+  const nextDe: ChartDeStyle = { ...de };
+  delete nextDe.background;
+  return {
+    ...cfg,
+    nativeBody: {
+      ...cfg.nativeBody,
+      deStyle: nextDe,
+    },
+  };
+}
+
 export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfig {
   const de = readChartDeStyle(cfg);
   const features = cfg.nativeBody?.deFeatures;
@@ -370,6 +386,72 @@ export function stripChartPaletteOverrides(cfg: ChartViewConfig): ChartViewConfi
   }
 
   return { ...cfg, nativeBody };
+}
+
+function omitEmptyDeStyleField<T extends Record<string, unknown>>(
+  value: T | undefined,
+): T | undefined {
+  if (!value) return undefined;
+  const entries = Object.entries(value).filter(([, field]) => field !== undefined);
+  return entries.length > 0 ? (Object.fromEntries(entries) as T) : undefined;
+}
+
+/** 仅清除组件级颜色 override，保留字号/圆角/边框宽度等结构字段 */
+export function stripChartColorStyleOverrides(cfg: ChartViewConfig): ChartViewConfig {
+  const de = readChartDeStyle(cfg);
+  const nextDe: ChartDeStyle = { ...de };
+  let changed = false;
+
+  if (de.title?.color !== undefined) {
+    nextDe.title = omitEmptyDeStyleField(
+      (({ color: _removed, ...rest }) => rest)(de.title),
+    );
+    changed = true;
+  }
+
+  if (de.legend?.color !== undefined) {
+    nextDe.legend = omitEmptyDeStyleField(
+      (({ color: _removed, ...rest }) => rest)(de.legend),
+    );
+    changed = true;
+  }
+
+  if (de.label?.color !== undefined) {
+    nextDe.label = omitEmptyDeStyleField(
+      (({ color: _removed, ...rest }) => rest)(de.label),
+    );
+    changed = true;
+  }
+
+  if (de.tooltip && (de.tooltip.color !== undefined || de.tooltip.background !== undefined)) {
+    const { color: _c, background: _b, ...rest } = de.tooltip;
+    nextDe.tooltip = omitEmptyDeStyleField(rest);
+    changed = true;
+  }
+
+  if (de.border?.color !== undefined) {
+    nextDe.border = omitEmptyDeStyleField(
+      (({ color: _removed, ...rest }) => rest)(de.border),
+    );
+    changed = true;
+  }
+
+  if (de.seriesColor?.length) {
+    delete nextDe.seriesColor;
+    changed = true;
+  }
+
+  let nextCfg = cfg;
+  if (changed) {
+    nextCfg = {
+      ...cfg,
+      nativeBody: {
+        ...cfg.nativeBody,
+        deStyle: nextDe,
+      },
+    };
+  }
+  return stripChartTableColorOverrides(nextCfg);
 }
 
 export function stripChartLabelFormatOverrides(cfg: ChartViewConfig): ChartViewConfig {

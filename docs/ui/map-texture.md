@@ -18,6 +18,40 @@
 
 ---
 
+## 数据来源（构建期）
+
+| 项 | 说明 |
+|----|------|
+| **彩色卫星** | [ESRI World Imagery](https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer)（与 sat-hunter 可选源一致） |
+| **阴影法线** | [ESRI World Hillshade](https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer)（可选，构建期拉取） |
+| **下载入口** | `pnpm run fetch:terrain-sat` → [`satelliteTileStitch.mjs`](../../fe/scripts/lib/satelliteTileStitch.mjs) |
+| **运行时** | 仅读仓库内 `diffuse.webp`，**零外链**（GEO-IRON-01） |
+
+### 两级下钻纹理范围
+
+| 层级 | drillDepth | mapId 示例 | 纹理包 |
+|------|------------|-----------|--------|
+| L0 全国 | 0 | `vs-regions` | `terrain/national/` 4096px |
+| L1 省级 | 1 | `vs-geo-440000` | `terrain/provinces/{adcode}/` 4096px × **34 省** |
+| L2 市/区县 | 2 | `vs-geo-440100` | **无独立包**；回退父省级纹理 |
+
+### 分辨率（R6 + 省级全覆盖）
+
+| 参数 | 全国 | 省级（34 省） |
+|------|------|---------------|
+| 瓦片 zoom | 7（自适应 8→7→6） | 8~9（按省界） |
+| 烘焙输出 | 4096px 长边 | **4096px** 长边 |
+| WebP quality | 92 | **92** |
+| 体积 | ≈ 4.7 MB | 单省约 2~8 MB，合计约 80~200 MB |
+
+```bash
+# 仅重生成省级（跳过全国）
+pnpm run fetch:terrain-sat -- --force --provinces-only
+pnpm run build:geo-terrain
+```
+
+---
+
 ## 坐标系契约（BUG-13 修复后）
 
 | 层 | 约定 |
@@ -52,6 +86,7 @@
 
 ```bash
 cd fe && pnpm run fetch:terrain-sat -- --force && pnpm run build:geo-terrain
+# 分片：--national-only | --provinces-only | --adcode=330000
 ```
 
 - `terrainProjBake.mjs`：参考视口 800×600，`projBounds` 逐像素反投影采样 Mercator 源图

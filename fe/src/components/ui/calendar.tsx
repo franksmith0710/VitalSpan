@@ -28,24 +28,39 @@ function Calendar({
     md: "size-9",
     lg: "size-10",
   }[size];
+  const navButtonSize = {
+    sm: "size-7",
+    md: "size-9",
+    lg: "size-10",
+  }[size];
+  const captionRow = {
+    sm: "h-7 px-7",
+    md: "h-9 px-9",
+    lg: "h-10 px-10",
+  }[size];
 
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-2", className)}
+      className={cn("w-fit p-2", className)}
       classNames={{
-        months: "flex flex-col gap-2",
+        months: "relative flex flex-col gap-2",
         month: "flex flex-col gap-3",
-        month_caption: "relative flex items-center justify-center pt-0.5",
+        month_caption: cn(
+          "flex w-full items-center justify-center",
+          captionRow,
+        ),
         caption_label: "text-sm font-medium text-gray-800 dark:text-white/90",
-        nav: "flex items-center gap-1",
+        nav: "pointer-events-none absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1",
         button_previous: cn(
           buttonVariants({ variant: "outline", size: "icon" }),
-          "absolute left-0 size-7 bg-transparent p-0 opacity-70 hover:opacity-100",
+          "pointer-events-auto bg-transparent p-0 opacity-70 hover:opacity-100",
+          navButtonSize,
         ),
         button_next: cn(
           buttonVariants({ variant: "outline", size: "icon" }),
-          "absolute right-0 size-7 bg-transparent p-0 opacity-70 hover:opacity-100",
+          "pointer-events-auto bg-transparent p-0 opacity-70 hover:opacity-100",
+          navButtonSize,
         ),
         month_grid: "w-full border-collapse",
         weekdays: "flex",

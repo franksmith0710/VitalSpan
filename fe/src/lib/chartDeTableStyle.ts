@@ -84,6 +84,43 @@ export function readChartDeTableStyle(cfg: ChartViewConfig): ChartDeTableStyle {
   return raw as ChartDeTableStyle;
 }
 
+const TABLE_COLOR_FIELD_KEYS = [
+  "headerBg",
+  "headerFg",
+  "bodyBg",
+  "bodyFg",
+  "summaryBg",
+  "summaryFg",
+  "zebraBg",
+  "zebraStriped",
+  "columnBg",
+  "cornerBg",
+  "emptyHintFg",
+  "paginationFg",
+  "scrollbarColor",
+  "borderColor",
+] as const satisfies readonly (keyof ChartDeTableStyle)[];
+
+/** 清除组件级表格配色 override，保留列宽/分页等结构字段 */
+export function stripChartTableColorOverrides(cfg: ChartViewConfig): ChartViewConfig {
+  const prev = readChartDeTableStyle(cfg);
+  const hasColorField = TABLE_COLOR_FIELD_KEYS.some((key) => prev[key] !== undefined);
+  if (!hasColorField) return cfg;
+
+  const next: ChartDeTableStyle = { ...prev };
+  for (const key of TABLE_COLOR_FIELD_KEYS) {
+    delete next[key];
+  }
+
+  const nativeBody = { ...cfg.nativeBody };
+  if (Object.keys(next).length > 0) {
+    nativeBody.deTableStyle = next;
+  } else {
+    delete nativeBody.deTableStyle;
+  }
+  return { ...cfg, nativeBody };
+}
+
 export function patchChartDeTableStyle(
   cfg: ChartViewConfig,
   patch: Partial<ChartDeTableStyle>,

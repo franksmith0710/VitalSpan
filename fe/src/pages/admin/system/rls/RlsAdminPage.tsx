@@ -7,11 +7,17 @@ import {
   ListHeaderCheckbox,
   ListPageBatchActions,
   ListRowCheckbox,
-  listTableSelectCellClass,
-  listTableSelectHeadClass,
   useListBatchMode,
 } from "@/components/layout/list-batch-delete";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
+import {
+  DataTable,
+  ListPagePagination,
+  ListPageSection,
+  ListPageTableFrame,
+  ListPageToolbar,
+  RowActions,
+} from "@/components/layout/list-page-kit";
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { runBatchDelete } from "@/lib/runBatchDelete";
 import {
@@ -47,6 +53,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
+import { useListPagination } from "@/lib/list-pagination";
 import { queryKeys } from "@/lib/queryKeys";
 import { RlsRoleBindingPanel } from "./RlsRoleBindingPanel";
 import type { DimensionGroupOut, DimensionTypeOut } from "./rls-types";
@@ -71,24 +78,60 @@ export function RlsAdminPage() {
   const [valuesGroup, setValuesGroup] = useState<DimensionGroupOut | null>(null);
   const [valuesText, setValuesText] = useState("");
 
-  const dimensionsQuery = useQuery({
-    queryKey: queryKeys.rls.dimensions({ limit: 200, offset: 0 }),
+  const dimPagination = useListPagination();
+  const groupPagination = useListPagination(20, [filterDimId]);
+
+  const dimensionsCatalogQuery = useQuery({
+    queryKey: queryKeys.rls.dimensions({ limit: 500, offset: 0 }),
     queryFn: () =>
       apiFetch<{ items: DimensionTypeOut[]; total: number }>(
-        "/api/v1/rls/dimensions?limit=200&offset=0",
+        "/api/v1/rls/dimensions?limit=500&offset=0",
       ),
   });
 
-  const groupsQuery = useQuery({
-    queryKey: queryKeys.rls.groups(filterDimId === "__all__" ? undefined : filterDimId),
+  const dimensionsQuery = useQuery({
+    queryKey: queryKeys.rls.dimensions({
+      limit: dimPagination.pageSize,
+      offset: dimPagination.offset,
+    }),
     queryFn: () => {
-      const q = new URLSearchParams({ limit: "200", offset: "0" });
+      const q = new URLSearchParams({
+        limit: String(dimPagination.pageSize),
+        offset: String(dimPagination.offset),
+      });
+      return apiFetch<{ items: DimensionTypeOut[]; total: number }>(
+        `/api/v1/rls/dimensions?${q}`,
+      );
+    },
+    enabled: tab === "dimensions",
+  });
+
+  const groupsQuery = useQuery({
+    queryKey: queryKeys.rls.groups({
+      dimensionTypeId: filterDimId === "__all__" ? undefined : filterDimId,
+      limit: groupPagination.pageSize,
+      offset: groupPagination.offset,
+    }),
+    queryFn: () => {
+      const q = new URLSearchParams({
+        limit: String(groupPagination.pageSize),
+        offset: String(groupPagination.offset),
+      });
       if (filterDimId !== "__all__") q.set("dimension_type_id", filterDimId);
       return apiFetch<{ items: DimensionGroupOut[]; total: number }>(
         `/api/v1/rls/groups?${q}`,
       );
     },
-    enabled: tab === "groups" || tab === "bindings",
+    enabled: tab === "groups",
+  });
+
+  const bindingsGroupsQuery = useQuery({
+    queryKey: queryKeys.rls.groups({ limit: 500, offset: 0 }),
+    queryFn: () =>
+      apiFetch<{ items: DimensionGroupOut[]; total: number }>(
+        "/api/v1/rls/groups?limit=500&offset=0",
+      ),
+    enabled: tab === "bindings",
   });
 
   const valuesQuery = useQuery({
@@ -174,14 +217,16 @@ export function RlsAdminPage() {
     setValuesGroup(g);
   };
 
-  const dimensions = dimensionsQuery.data?.items ?? [];
+  const dimensions = dimensionsCatalogQuery.data?.items ?? [];
+  const dimensionItems = dimensionsQuery.data?.items ?? [];
+  const dimensionTotal = dimensionsQuery.data?.total ?? 0;
   const groups = groupsQuery.data?.items ?? [];
+  const groupTotal = groupsQuery.data?.total ?? 0;
+  const bindingGroups = bindingsGroupsQuery.data?.items ?? [];
   const dimNameById = Object.fromEntries(dimensions.map((d) => [d.id, d.name]));
   const groupRowIds = useMemo(() => groups.map((g) => g.id), [groups]);
   const groupSelection = useListRowSelection(groupRowIds);
   const groupBatch = useListBatchMode(groupSelection.clear);
-  const groupTableColSpan = groupBatch.batchMode ? 5 : 4;
-
   const handleBatchDeleteGroups = async () => {
     const ids = [...groupSelection.selectedIds];
     if (ids.length === 0) return;
@@ -199,207 +244,224 @@ export function RlsAdminPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="行级权限"
       description="配置 RLS 维度类型与分组，管理分组成员值，并为角色绑定维度分组。"
     >
-      {dimensionsQuery.isError ? (
+      {dimensionsCatalogQuery.isError ? (
         <PageErrorBanner
-          message={mapApiError(dimensionsQuery.error)}
-          onRetry={() => void dimensionsQuery.refetch()}
+          message={mapApiError(dimensionsCatalogQuery.error)}
+          onRetry={() => void dimensionsCatalogQuery.refetch()}
         />
       ) : null}
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="dimensions">维度类型</TabsTrigger>
-          <TabsTrigger value="groups">维度分组</TabsTrigger>
-          <TabsTrigger value="bindings">角色绑定</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="dimensions" className="mt-6 space-y-4">
-          <div className="flex justify-end">
-            <Button type="button" variant="primary" size="sm" onClick={() => setDimOpen(true)}>
-              <Plus className="size-4" aria-hidden />
-              新建维度
-            </Button>
-          </div>
-          <div className="overflow-x-only rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-            <table className="min-w-[640px] w-full text-left text-theme-sm">
-              <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-                <tr>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">名称</th>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">编码</th>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">值类型</th>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">组织维度</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dimensionsQuery.isLoading
-                  ? Array.from({ length: 4 }).map((_, i) => (
-                      <tr key={i}>
-                        <td colSpan={4} className="px-4 py-3">
-                          <Skeleton className="h-6 w-full" />
-                        </td>
-                      </tr>
-                    ))
-                  : null}
-                {dimensions.map((d) => (
-                  <tr key={d.id} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{d.name}</td>
-                    <td className="px-4 py-3 font-mono text-theme-xs">{d.code}</td>
-                    <td className="px-4 py-3">{d.value_type}</td>
-                    <td className="px-4 py-3">
-                      {d.org_dimension ? (
-                        <Badge variant="light" color="primary" size="sm">
-                          是
-                        </Badge>
-                      ) : (
-                        "否"
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="groups" className="mt-6 space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="grid gap-2 sm:w-64">
-              <Label>按维度类型筛选</Label>
-              <Select value={filterDimId} onValueChange={setFilterDimId}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">全部</SelectItem>
-                  {dimensions.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <ListPageBatchActions
-                batchMode={groupBatch.batchMode}
-                onToggleBatchMode={groupBatch.toggleBatchMode}
-                selectedCount={groupSelection.selectedCount}
-                entityLabel="个分组"
-                onClear={groupSelection.clear}
-                onDelete={() => setBatchDeleteOpen(true)}
-              />
-              <Button type="button" variant="primary" size="sm" onClick={() => setGroupOpen(true)}>
+      <ListPageSection>
+        <Tabs value={tab} onValueChange={setTab}>
+          <div className="flex flex-col gap-3 border-b border-gray-100 px-5 pb-3 pt-4 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between">
+            <TabsList>
+              <TabsTrigger value="dimensions">维度类型</TabsTrigger>
+              <TabsTrigger value="groups">维度分组</TabsTrigger>
+              <TabsTrigger value="bindings">角色绑定</TabsTrigger>
+            </TabsList>
+            {tab === "dimensions" ? (
+              <Button type="button" variant="primary" size="sm" onClick={() => setDimOpen(true)}>
                 <Plus className="size-4" aria-hidden />
-                新建分组
+                新建维度
               </Button>
-            </div>
+            ) : null}
+            {tab === "groups" ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <ListPageBatchActions
+                  batchMode={groupBatch.batchMode}
+                  onToggleBatchMode={groupBatch.toggleBatchMode}
+                  selectedCount={groupSelection.selectedCount}
+                  entityLabel="个分组"
+                  onClear={groupSelection.clear}
+                  onDelete={() => setBatchDeleteOpen(true)}
+                />
+                <Button type="button" variant="primary" size="sm" onClick={() => setGroupOpen(true)}>
+                  <Plus className="size-4" aria-hidden />
+                  新建分组
+                </Button>
+              </div>
+            ) : null}
           </div>
-          <div className="overflow-x-only rounded-xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
-            <table className="min-w-[720px] w-full text-left text-theme-sm">
-              <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-white/[0.02]">
-                <tr>
-                  {groupBatch.batchMode ? (
-                    <th className={listTableSelectHeadClass}>
-                      <ListHeaderCheckbox
-                        checked={groupSelection.allSelected}
-                        indeterminate={groupSelection.someSelected}
-                        disabled={groups.length === 0}
-                        onCheckedChange={() => groupSelection.toggleAll()}
-                      />
-                    </th>
-                  ) : null}
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">名称</th>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">编码</th>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-400">维度类型</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-400">
-                    操作
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {groupsQuery.isLoading
-                  ? Array.from({ length: 4 }).map((_, i) => (
-                      <tr key={i}>
-                        <td colSpan={groupTableColSpan} className="px-4 py-3">
-                          <Skeleton className="h-6 w-full" />
-                        </td>
-                      </tr>
-                    ))
-                  : null}
-                {groups.length === 0 && !groupsQuery.isLoading ? (
-                  <tr>
-                    <td colSpan={groupTableColSpan} className="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
-                      暂无分组
-                    </td>
-                  </tr>
-                ) : null}
-                {groups.map((g) => (
-                  <tr key={g.id} className="border-b border-gray-100 dark:border-gray-800">
-                    {groupBatch.batchMode ? (
-                      <td className={listTableSelectCellClass}>
-                        <ListRowCheckbox
-                          checked={groupSelection.isSelected(g.id)}
-                          onCheckedChange={() => groupSelection.toggle(g.id)}
-                          ariaLabel={`选择分组 ${g.name}`}
-                        />
-                      </td>
-                    ) : null}
-                    <td className="px-4 py-3 font-medium text-gray-800 dark:text-white/90">{g.name}</td>
-                    <td className="px-4 py-3 font-mono text-theme-xs">{g.code}</td>
-                    <td className="px-4 py-3">
-                      {dimNameById[g.dimension_type_id] ?? (
-                        <span className="font-mono text-theme-xs">
-                          {g.dimension_type_id.slice(0, 8)}…
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openValues(g)}
-                        >
-                          成员值
-                        </Button>
-                        <IconButton
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          aria-label="编辑分组"
-                          onClick={() => {
-                            setEditGroup(g);
-                            setEditName(g.name);
-                          }}
-                        >
-                          <Pencil className="size-4" />
-                        </IconButton>
-                        <IconButton
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          aria-label="删除分组"
-                          onClick={() => setDeleteGroup(g)}
-                        >
-                          <Trash2 className="size-4" />
-                        </IconButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+        <TabsContent value="dimensions" className="mt-0 flex min-h-0 flex-1 flex-col">
+          {dimensionsQuery.isError ? (
+            <ListPageTableFrame className="px-0 py-3">
+              <PageErrorBanner
+                message={mapApiError(dimensionsQuery.error)}
+                onRetry={() => void dimensionsQuery.refetch()}
+              />
+            </ListPageTableFrame>
+          ) : (
+            <>
+              <ListPageTableFrame className="px-0">
+                <DataTable
+                  loading={dimensionsQuery.isLoading}
+                  empty={!dimensionsQuery.isLoading && dimensionItems.length === 0}
+                  headers={["名称", "编码", "值类型", "组织维度"]}
+                  rows={dimensionItems.map((d) => [
+                    <span key="n" className="font-medium text-gray-800 dark:text-white/90">
+                      {d.name}
+                    </span>,
+                    <code
+                      key="c"
+                      className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300"
+                    >
+                      {d.code}
+                    </code>,
+                    d.value_type,
+                    d.org_dimension ? (
+                      <Badge key="o" variant="light" color="primary" size="sm">
+                        是
+                      </Badge>
+                    ) : (
+                      "否"
+                    ),
+                  ])}
+                />
+              </ListPageTableFrame>
+              <ListPagePagination
+                current={dimPagination.page}
+                pageSize={dimPagination.pageSize}
+                total={dimensionTotal}
+                onChange={dimPagination.onPageChange}
+              />
+            </>
+          )}
         </TabsContent>
 
-        <TabsContent value="bindings" className="mt-6">
-          <RlsRoleBindingPanel groups={groups} groupsLoading={groupsQuery.isLoading} />
+        <TabsContent value="groups" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <ListPageToolbar
+            filters={
+              <div className="grid w-full gap-2 sm:max-w-xs">
+                <Label>按维度类型筛选</Label>
+                <Select value={filterDimId} onValueChange={setFilterDimId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">全部</SelectItem>
+                    {dimensions.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            }
+          />
+          {groupsQuery.isError ? (
+            <ListPageTableFrame className="px-0 py-3">
+              <PageErrorBanner
+                message={mapApiError(groupsQuery.error)}
+                onRetry={() => void groupsQuery.refetch()}
+              />
+            </ListPageTableFrame>
+          ) : (
+            <>
+              <ListPageTableFrame className="px-0">
+                <DataTable
+                  loading={groupsQuery.isLoading}
+                  empty={!groupsQuery.isLoading && groups.length === 0}
+                  lastColumnAlign="right"
+                  headers={[
+                    ...(groupBatch.batchMode
+                      ? [
+                          <ListHeaderCheckbox
+                            key="select-all"
+                            checked={groupSelection.allSelected}
+                            indeterminate={groupSelection.someSelected}
+                            disabled={groups.length === 0}
+                            onCheckedChange={() => groupSelection.toggleAll()}
+                          />,
+                        ]
+                      : []),
+                    "名称",
+                    "编码",
+                    "维度类型",
+                    "操作",
+                  ]}
+                  rows={groups.map((g) => [
+                    ...(groupBatch.batchMode
+                      ? [
+                          <ListRowCheckbox
+                            key={`${g.id}-select`}
+                            checked={groupSelection.isSelected(g.id)}
+                            onCheckedChange={() => groupSelection.toggle(g.id)}
+                            ariaLabel={`选择分组 ${g.name}`}
+                          />,
+                        ]
+                      : []),
+                    <span key="n" className="font-medium text-gray-800 dark:text-white/90">
+                      {g.name}
+                    </span>,
+                    <code
+                      key="c"
+                      className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-theme-xs text-gray-600 dark:bg-white/10 dark:text-gray-300"
+                    >
+                      {g.code}
+                    </code>,
+                    dimNameById[g.dimension_type_id] ?? (
+                      <span key="d" className="font-mono text-theme-xs">
+                        {g.dimension_type_id.slice(0, 8)}…
+                      </span>
+                    ),
+                    <RowActions key="a">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openValues(g)}
+                      >
+                        成员值
+                      </Button>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="编辑分组"
+                        onClick={() => {
+                          setEditGroup(g);
+                          setEditName(g.name);
+                        }}
+                      >
+                        <Pencil className="size-4" />
+                      </IconButton>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="删除分组"
+                        onClick={() => setDeleteGroup(g)}
+                      >
+                        <Trash2 className="size-4" />
+                      </IconButton>
+                    </RowActions>,
+                  ])}
+                />
+              </ListPageTableFrame>
+              <ListPagePagination
+                current={groupPagination.page}
+                pageSize={groupPagination.pageSize}
+                total={groupTotal}
+                onChange={groupPagination.onPageChange}
+              />
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="bindings" className="mt-0 p-5">
+          <RlsRoleBindingPanel
+            groups={bindingGroups}
+            groupsLoading={bindingsGroupsQuery.isLoading}
+          />
         </TabsContent>
       </Tabs>
+      </ListPageSection>
 
       <Dialog open={dimOpen} onOpenChange={setDimOpen}>
         <DialogContent>

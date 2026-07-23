@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import type { ColorScheme } from "./dashboardStyleConfig";
 
 type ThemePreviewCardProps = {
@@ -75,6 +76,7 @@ type Props = {
   colorScheme: ColorScheme;
   onSwitchColorScheme?: (scheme: ColorScheme) => void;
   onPatchColorScheme?: (scheme: ColorScheme) => void;
+  onResetColorsToTheme?: () => void;
 };
 
 /** DataEase「仪表板风格」：浅色/深色主题预览卡片 */
@@ -82,6 +84,7 @@ export function DashboardThemeStylePanel({
   colorScheme,
   onSwitchColorScheme,
   onPatchColorScheme,
+  onResetColorsToTheme,
 }: Props) {
   const patchColorScheme = (scheme: ColorScheme) => {
     if (onSwitchColorScheme) onSwitchColorScheme(scheme);
@@ -104,6 +107,18 @@ export function DashboardThemeStylePanel({
           onSelect={() => patchColorScheme("dark")}
         />
       </div>
+      {onResetColorsToTheme ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 w-full text-theme-xs"
+          data-testid="dashboard-theme-reset-colors"
+          onClick={onResetColorsToTheme}
+        >
+          初始化当前主题样式
+        </Button>
+      ) : null}
     </div>
   );
 }

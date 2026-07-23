@@ -66,9 +66,9 @@ function tileUrl(template, z, x, y) {
  */
 export async function stitchSatellitePng(sharp, bounds, outputSize, zoom, kind) {
   const range = tileRangeForBounds(bounds, zoom);
-  if (range.count > 1500) {
+  if (range.count > MAX_TILE_COUNT) {
     throw new Error(
-      `zoom ${zoom} needs ${range.count} tiles (>1500). Lower zoom or shrink bounds.`,
+      `zoom ${zoom} needs ${range.count} tiles (>${MAX_TILE_COUNT}). Lower zoom or shrink bounds.`,
     );
   }
 
@@ -116,8 +116,16 @@ export async function stitchSatellitePng(sharp, bounds, outputSize, zoom, kind) 
   return { buffer, width: outW, height: outH };
 }
 
+export const MAX_TILE_COUNT = 1500;
+
 export function pickZoom(bounds, national) {
+  if (national) {
+    for (const zoom of [8, 7, 6]) {
+      const range = tileRangeForBounds(bounds, zoom);
+      if (range.count <= MAX_TILE_COUNT) return zoom;
+    }
+    return 6;
+  }
   const span = Math.max(bounds.east - bounds.west, bounds.north - bounds.south);
-  if (national) return span > 40 ? 6 : 7;
   return span > 8 ? 8 : 9;
 }

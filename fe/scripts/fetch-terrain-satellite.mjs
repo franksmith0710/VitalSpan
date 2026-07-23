@@ -2,13 +2,17 @@
  * 构建期下载卫星/阴影瓦片到 terrain 各包的 _source 目录
  * 对标 sc-datav：参考视口 projBounds 空间烘焙 + 轮廓裁切
  *
- * 用法：pnpm run fetch:terrain-sat [-- --force]
+ * 用法：
+ *   pnpm run fetch:terrain-sat [-- --force]
+ *   pnpm run fetch:terrain-sat -- --force --national-only
+ *   pnpm run fetch:terrain-sat -- --force --provinces-only
+ *   pnpm run fetch:terrain-sat -- --force --adcode=330000
  */
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { PILOT_PROVINCE_ADCODES } from "./lib/chinaTerrainSynth.mjs";
+import { ALL_PROVINCE_ADCODES } from "./lib/terrainProvinceAdcodes.mjs";
 import { pickZoom } from "./lib/satelliteTileStitch.mjs";
 import { bakeProjSatellitePng } from "./lib/terrainProjBake.mjs";
 import {
@@ -21,8 +25,24 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const OUT = path.join(ROOT, "src/assets/geo/terrain");
 
-const NATIONAL_SIZE = 1024;
-const PROVINCE_SIZE = 768;
+const NATIONAL_SIZE = 4096;
+const PROVINCE_SIZE = 4096;
+
+function parseCliArgs(argv) {
+  const force = argv.includes("--force");
+  const nationalOnly = argv.includes("--national-only");
+  const provincesOnly = argv.includes("--provinces-only");
+  const adcodeFilters = argv
+    .filter((a) => a.startsWith("--adcode="))
+    .map((a) => Number(a.slice("--adcode=".length)))
+    .filter((n) => Number.isFinite(n));
+  return { force, nationalOnly, provincesOnly, adcodeFilters };
+}
+
+function resolveProvinceAdcodes(adcodeFilters) {
+  if (adcodeFilters.length > 0) return adcodeFilters;
+  return ALL_PROVINCE_ADCODES;
+}
 
 async function writeSourcePack(dir, bounds, featureCollection, size, national, force) {
   const sourceDir = path.join(dir, "_source");
@@ -86,36 +106,42 @@ async function fileExists(p) {
 }
 
 async function main() {
-  const force = process.argv.includes("--force");
-  const nationalBounds = await readNationalBounds();
-  const nationalFeatures = await loadChinaTerrainFeatureCollection();
+  const { force, nationalOnly, provincesOnly, adcodeFilters } = parseCliArgs(process.argv.slice(2));
 
-  console.log("National pack…");
-  await writeSourcePack(
-    path.join(OUT, "national"),
-    nationalBounds,
-    nationalFeatures,
-    NATIONAL_SIZE,
-    true,
-    force,
-  );
-
-  for (const adcode of PILOT_PROVINCE_ADCODES) {
-    const bounds = await readProvinceBounds(adcode);
-    const features = await loadProvinceFeatureCollection(adcode);
-    if (!bounds || !features) {
-      console.warn(`Skip ${adcode}: no bounds or geometry`);
-      continue;
-    }
-    console.log(`Province ${adcode}…`);
+  if (!provincesOnly) {
+    const nationalBounds = await readNationalBounds();
+    const nationalFeatures = await loadChinaTerrainFeatureCollection();
+    console.log("National pack…");
     await writeSourcePack(
-      path.join(OUT, "provinces", String(adcode)),
-      bounds,
-      features,
-      PROVINCE_SIZE,
-      false,
+      path.join(OUT, "national"),
+      nationalBounds,
+      nationalFeatures,
+      NATIONAL_SIZE,
+      true,
       force,
     );
+  }
+
+  if (!nationalOnly) {
+    const provinceAdcodes = resolveProvinceAdcodes(adcodeFilters);
+    console.log(`Provinces: ${provinceAdcodes.length} pack(s)…`);
+    for (const adcode of provinceAdcodes) {
+      const bounds = await readProvinceBounds(adcode);
+      const features = await loadProvinceFeatureCollection(adcode);
+      if (!bounds || !features) {
+        console.warn(`Skip ${adcode}: no bounds or geometry`);
+        continue;
+      }
+      console.log(`Province ${adcode}…`);
+      await writeSourcePack(
+        path.join(OUT, "provinces", String(adcode)),
+        bounds,
+        features,
+        PROVINCE_SIZE,
+        false,
+        force,
+      );
+    }
   }
 
   console.log("Done. Run: pnpm run build:geo-terrain");

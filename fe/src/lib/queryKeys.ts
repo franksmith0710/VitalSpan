@@ -63,7 +63,11 @@ export const queryKeys = {
   rls: {
     dimensions: (params?: { limit?: number; offset?: number }) =>
       ["rls", "dimensions", params] as const,
-    groups: (dimensionTypeId?: string) => ["rls", "groups", dimensionTypeId ?? "all"] as const,
+    groups: (params?: {
+      dimensionTypeId?: string;
+      limit?: number;
+      offset?: number;
+    }) => ["rls", "groups", params ?? {}] as const,
   },
   audit: {
     events: (params?: Record<string, string | number | undefined>) =>

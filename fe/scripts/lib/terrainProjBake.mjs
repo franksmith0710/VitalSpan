@@ -67,7 +67,7 @@ export async function bakeProjSatellitePng(
   zoom,
   kind,
 ) {
-  const mercSize = Math.min(outputSize * 2, 2048);
+  const mercSize = Math.min(outputSize * 2, 8192);
   const { buffer: mercBuffer, width: mercW, height: mercH } = await stitchSatellitePng(
     sharp,
     bounds,

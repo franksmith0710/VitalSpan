@@ -38,6 +38,7 @@ type StyleSectionProps = {
   patchStyle: PatchFn;
   isPixelLayout: boolean;
   onSwitchColorScheme?: (scheme: ColorScheme) => void;
+  onResetColorsToTheme?: () => void;
 };
 
 export function DashboardStyleSections({
@@ -45,6 +46,7 @@ export function DashboardStyleSections({
   patchStyle,
   isPixelLayout,
   onSwitchColorScheme,
+  onResetColorsToTheme,
 }: StyleSectionProps) {
   const colorScheme = styleConfig.colorScheme ?? "light";
 
@@ -59,6 +61,7 @@ export function DashboardStyleSections({
           colorScheme={colorScheme}
           onSwitchColorScheme={onSwitchColorScheme}
           onPatchColorScheme={(scheme) => patchStyle({ colorScheme: scheme })}
+          onResetColorsToTheme={onResetColorsToTheme}
         />
       </DashboardConfigSection>
 

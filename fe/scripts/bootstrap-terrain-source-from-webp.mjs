@@ -6,7 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { PILOT_PROVINCE_ADCODES } from "./lib/chinaTerrainSynth.mjs";
+import { ALL_PROVINCE_ADCODES } from "./lib/terrainProvinceAdcodes.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(__dirname, "../src/assets/geo/terrain");
@@ -37,7 +37,7 @@ async function bootstrapPack(packDir) {
 async function main() {
   console.log("national");
   await bootstrapPack(path.join(OUT, "national"));
-  for (const adcode of PILOT_PROVINCE_ADCODES) {
+  for (const adcode of ALL_PROVINCE_ADCODES) {
     console.log(`province ${adcode}`);
     await bootstrapPack(path.join(OUT, "provinces", String(adcode)));
   }

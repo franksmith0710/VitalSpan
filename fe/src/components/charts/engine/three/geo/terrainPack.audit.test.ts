@@ -43,20 +43,27 @@ function assertPack(level: "national" | "province", adcode?: number) {
   const diffuse = path.join(dir, "diffuse.webp");
   expect(fs.existsSync(diffuse), diffuse).toBe(true);
   expect(fs.statSync(diffuse).size).toBeGreaterThan(1024);
+  if (level === "province") {
+    expect(w).toBeGreaterThanOrEqual(3500);
+    expect(h).toBeGreaterThanOrEqual(2000);
+  }
 }
 
 describe("terrain satellite pack audit", () => {
-  it("national pack has satellite meta and non-square diffuse webp", () => {
+  it("national pack has satellite meta and high-res diffuse webp", () => {
     assertPack("national");
     const meta = JSON.parse(
       fs.readFileSync(path.join(packDir("national"), "meta.json"), "utf8"),
     ) as { bounds: number[]; width: number; height: number };
     expect(meta.bounds[0]).toBe(CHINA_TERRAIN_BOUNDS.west);
     expect(meta.bounds[2]).toBe(CHINA_TERRAIN_BOUNDS.east);
+    expect(meta.width).toBeGreaterThanOrEqual(3500);
+    expect(meta.height).toBeGreaterThanOrEqual(3500);
     expect(meta.width).toBeGreaterThan(meta.height * 0.9);
   });
 
-  it("pilot province packs are complete", () => {
+  it("all 34 province packs are complete at 4096px", () => {
+    expect(CHINA_TERRAIN_PROVINCE_ADCODES.length).toBe(34);
     for (const adcode of CHINA_TERRAIN_PROVINCE_ADCODES) {
       assertPack("province", adcode);
     }

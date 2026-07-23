@@ -10,10 +10,13 @@ import { CANVAS_BG_DARK_DEFAULT, CANVAS_BG_LIGHT_DEFAULT, isDarkCanvasColor, isD
 import { normalizeDashboardGapConfig } from "./gapPolicy";
 import type { LayoutWidget } from "./layoutUtils";
 import { getDashboardThemeTokens, isOppositeThemeTitleColor } from "./dashboardThemeTokens";
+import type { ChartDeTableStyle } from "@/lib/chartDeTableStyle";
 import {
   inferWidgetSyncScopes,
   patchChartDeStyleNested,
   readChartDeStyle,
+  stripChartBackgroundStyleOverrides,
+  stripChartColorStyleOverrides,
   syncChartWidgetsForDashboardScopes,
 } from "@/lib/chartDeStyle";
 
@@ -554,6 +557,170 @@ export function resetActiveThemePreset(config: DashboardStyleConfig): DashboardS
   const scheme = config.colorScheme ?? "light";
   const preset = defaultThemeVariant(scheme);
   return patchDashboardStyle(mergeThemeVariantIntoConfig(config, preset), {});
+}
+
+function defaultDashboardTableColorStyle(scheme: ColorScheme): ChartDeTableStyle {
+  const tokens = getDashboardThemeTokens(scheme);
+  return {
+    headerBg: tokens.tableHeaderBg,
+    headerFg: tokens.tableHeaderFg,
+    bodyFg: tokens.tableBodyFg,
+    borderColor: tokens.tableBorder,
+    paginationFg: tokens.textMuted,
+    emptyHintFg: tokens.stateText,
+  };
+}
+
+/** 将看板 styleConfig 中颜色与背景重置为当前 colorScheme 的主题默认（保留结构类字段） */
+export function buildDashboardColorResetPatch(
+  config: DashboardStyleConfig,
+): Partial<DashboardStyleConfig> {
+  const scheme = config.colorScheme ?? "light";
+  const preset = defaultThemeVariant(scheme);
+  const tokens = getDashboardThemeTokens(scheme);
+  const tooltipBackground = scheme === "dark" ? tokens.dialogBg : "#344054";
+
+  return {
+    canvasBackground: preset.canvasBackground,
+    canvasBackgroundCustom: undefined,
+    canvasBackgroundImage: undefined,
+    canvasDecorPresetId: undefined,
+    widgetStyle: {
+      ...config.widgetStyle,
+      background: preset.widgetStyle?.background,
+      backgroundImage: undefined,
+      backgroundMode: undefined,
+      framePresetId: undefined,
+      frameColor: undefined,
+      frameOpacity: undefined,
+      opacity: undefined,
+      backdropBlur: undefined,
+      borderColor: preset.widgetStyle?.borderColor,
+    },
+    titleStyle: {
+      ...config.titleStyle,
+      color: preset.titleStyle?.color,
+    },
+    dialogStyle: preset.dialogStyle,
+    filterChromeStyle: {
+      ...config.filterChromeStyle,
+      titleColor: preset.filterChromeStyle?.titleColor,
+    },
+    chartLabelStyle: {
+      ...config.chartLabelStyle,
+      color: tokens.chartAxis,
+    },
+    chartTooltipStyle: {
+      ...config.chartTooltipStyle,
+      color: "#ffffff",
+      background: tooltipBackground,
+    },
+    tableColorStyle: defaultDashboardTableColorStyle(scheme),
+  };
+}
+
+function stripWidgetStyleBackgroundOverrides(
+  ws: WidgetStyleConfig | undefined,
+): WidgetStyleConfig | undefined {
+  if (!ws) return ws;
+  const {
+    background: _bg,
+    backgroundImage: _bi,
+    backgroundMode: _bm,
+    framePresetId: _fp,
+    frameColor: _fc,
+    frameOpacity: _fo,
+    opacity: _op,
+    backdropBlur: _bb,
+    borderColor: _bc,
+    ...rest
+  } = ws;
+  const hasBackgroundOverride =
+    _bg !== undefined ||
+    _bi !== undefined ||
+    _bm !== undefined ||
+    _fp !== undefined ||
+    _fc !== undefined ||
+    _fo !== undefined ||
+    _op !== undefined ||
+    _bb !== undefined ||
+    _bc !== undefined;
+  if (!hasBackgroundOverride) return ws;
+  return Object.keys(rest).length > 0 ? rest : undefined;
+}
+
+function stripLayoutWidgetColorOverrides(widget: LayoutWidget): LayoutWidget {
+  if (widget.type === "chart" && widget.chartConfig) {
+    let chartConfig = stripChartBackgroundStyleOverrides(widget.chartConfig);
+    chartConfig = stripChartColorStyleOverrides(chartConfig);
+    return chartConfig === widget.chartConfig ? widget : { ...widget, chartConfig };
+  }
+
+  if (widget.type === "text" && widget.textConfig) {
+    const widgetStyle = stripWidgetStyleBackgroundOverrides(widget.textConfig.widgetStyle);
+    if (widgetStyle === widget.textConfig.widgetStyle) return widget;
+    return {
+      ...widget,
+      textConfig: { ...widget.textConfig, widgetStyle },
+    };
+  }
+
+  if (widget.type === "media" && widget.mediaConfig) {
+    const mediaConfig = { ...widget.mediaConfig };
+    let changed = false;
+    if (mediaConfig.background) {
+      mediaConfig.background = "";
+      changed = true;
+    }
+    const widgetStyle = stripWidgetStyleBackgroundOverrides(mediaConfig.widgetStyle);
+    if (widgetStyle !== mediaConfig.widgetStyle) {
+      mediaConfig.widgetStyle = widgetStyle;
+      changed = true;
+    }
+    return changed ? { ...widget, mediaConfig } : widget;
+  }
+
+  if (widget.type === "tabs" && widget.tabsConfig) {
+    const tabsConfig = { ...widget.tabsConfig };
+    let changed = false;
+    if (tabsConfig.headStyle) {
+      const { activeColor, inactiveColor, barBackground, ...rest } = tabsConfig.headStyle;
+      if (activeColor !== undefined || inactiveColor !== undefined || barBackground !== undefined) {
+        tabsConfig.headStyle = Object.keys(rest).length > 0 ? rest : undefined;
+        changed = true;
+      }
+    }
+    const widgetStyle = stripWidgetStyleBackgroundOverrides(tabsConfig.widgetStyle);
+    if (widgetStyle !== tabsConfig.widgetStyle) {
+      tabsConfig.widgetStyle = widgetStyle;
+      changed = true;
+    }
+    return changed ? { ...widget, tabsConfig } : widget;
+  }
+
+  return widget;
+}
+
+/** 将看板与全部组件的颜色样式统一初始化到当前选中的主题 */
+export function resetDashboardColorsToActiveThemeBundle(
+  styleConfig: DashboardStyleConfig,
+  widgets: LayoutWidget[],
+): { styleConfig: DashboardStyleConfig; widgets: LayoutWidget[] } {
+  const patch = buildDashboardColorResetPatch(styleConfig);
+  const patchedStyle = patchDashboardStyle(styleConfig, patch);
+  const normalizedStyle = normalizeStyleConfigForColorScheme(patchedStyle);
+  const syncedWidgets = widgets.map(stripLayoutWidgetColorOverrides);
+
+  return {
+    styleConfig: {
+      ...normalizedStyle,
+      themeVariants: {
+        ...normalizedStyle.themeVariants,
+        [normalizedStyle.colorScheme ?? "light"]: extractThemeVariant(normalizedStyle),
+      },
+    },
+    widgets: syncedWidgets,
+  };
 }
 
 export function initializeDualThemePresets(config: DashboardStyleConfig): DashboardStyleConfig {

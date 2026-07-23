@@ -4,7 +4,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| 状态 | 🔧 待用户目视验收（R5 projBounds 烘焙已落地） |
+| 状态 | ✅ 对齐已验收；R6 提清已落地（4096px / zoom 7） |
 | 优先级 | P0 |
 | 发现日期 | 2026-07-23 |
 | 影响范围 | 全部 `map-3d` 全国/试点省卫星纹理（必现） |
@@ -21,6 +21,23 @@
 | 4 | `sharp` 链式 `composite→extract` 像素错位 | ✅ 已修复 | R3 先 `png()` 物化再裁切 |
 | 5 | 矩形 bbox 纹理 + `terrainProjBounds` UV，非 sat-hunter 轮廓语义 | ✅ 已修复 | R4 轮廓 mask |
 | 6 | Mercator 纹理 + `applyGeoCapGeoUv` 与 mesh `projBounds` 坐标系不一致 | ✅ 已修复 | R5 projBounds 空间烘焙 + `applyGeoCapBboxUv` |
+| 7 | 全国纹理 zoom 6 + 1024px 输出，目视不够清晰 | ✅ 已修复 | R6 自适应 zoom 7 + 4096px + webp q92 |
+
+---
+
+## R6：全国纹理提清（2026-07-23）
+
+**现象**：用户确认全国省界对齐正确，但纹理不够高清。
+
+**改动**：
+| 参数 | 旧值 | 新值 |
+|------|------|------|
+| 全国 zoom | 固定 6 | 自适应 **7**（8 超限回退） |
+| 输出尺寸 | 1024px | **4096px** |
+| Mercator 源上限 | 2048 | **8192** |
+| WebP quality | 85 | **92**（national） |
+
+**验收**：national `diffuse.webp` 4096×3980，≈4.7 MB；对齐逻辑未变。
 
 ---
 

@@ -14,8 +14,7 @@ import {
 } from "@/components/layout/list-page-kit";
 import { Badge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DateField } from "@/components/ui/date-field";
 import { SearchField } from "@/components/ui/search-field";
 import {
   Select,
@@ -82,10 +81,10 @@ export function AuditLogPage() {
     if (debounced.action) p.action = debounced.action;
     if (debounced.targetType) p.target_type = debounced.targetType;
     if (debounced.createdAfter) {
-      p.created_after = new Date(debounced.createdAfter).toISOString();
+      p.created_after = new Date(`${debounced.createdAfter}T00:00:00`).toISOString();
     }
     if (debounced.createdBefore) {
-      p.created_before = new Date(debounced.createdBefore).toISOString();
+      p.created_before = new Date(`${debounced.createdBefore}T23:59:59.999`).toISOString();
     }
     return p;
   }, [debounced, pagination.pageSize, pagination.offset]);
@@ -122,71 +121,50 @@ export function AuditLogPage() {
         <ListPageToolbar
           filters={
             <>
-              <div className="grid w-full gap-2 sm:max-w-md">
-                <Label htmlFor="audit-action-search" className="sr-only">
-                  搜索操作
-                </Label>
-                <SearchField
-                  value={action}
-                  onChange={setAction}
-                  placeholder="按操作编码筛选，如 user.roles.replace"
-                  aria-label="搜索操作"
-                />
-              </div>
-              <div className="grid w-full gap-2 sm:w-[160px]">
-                <Label htmlFor="audit-target-type" className="sr-only">
-                  目标类型
-                </Label>
-                <Select value={targetType} onValueChange={setTargetType}>
-                  <SelectTrigger id="audit-target-type" className="h-11" aria-label="筛选目标类型">
-                    <SelectValue placeholder="目标类型" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AUDIT_TARGET_TYPE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid w-full gap-1 sm:w-[200px]">
-                <Label htmlFor="audit-created-after" className="text-theme-xs text-gray-500">
-                  起始时间
-                </Label>
-                <Input
-                  id="audit-created-after"
-                  type="datetime-local"
-                  className="h-11"
-                  value={createdAfter}
-                  onChange={(e) => setCreatedAfter(e.target.value)}
-                  aria-label="筛选起始时间"
-                />
-              </div>
-              <div className="grid w-full gap-1 sm:w-[200px]">
-                <Label htmlFor="audit-created-before" className="text-theme-xs text-gray-500">
-                  结束时间
-                </Label>
-                <Input
-                  id="audit-created-before"
-                  type="datetime-local"
-                  className="h-11"
-                  value={createdBefore}
-                  onChange={(e) => setCreatedBefore(e.target.value)}
-                  aria-label="筛选结束时间"
-                />
-              </div>
+              <SearchField
+                className="w-full sm:max-w-xs"
+                value={action}
+                onChange={setAction}
+                placeholder="搜索操作编码…"
+                aria-label="搜索操作"
+              />
+              <Select value={targetType} onValueChange={setTargetType}>
+                <SelectTrigger className="h-11 w-full sm:w-[160px]" aria-label="筛选目标类型">
+                  <SelectValue placeholder="目标类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AUDIT_TARGET_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <DateField
+                className="w-full sm:w-[168px]"
+                value={createdAfter || undefined}
+                onChange={(value) => setCreatedAfter(value ?? "")}
+                placeholder="起始日期"
+                aria-label="筛选起始日期"
+              />
+              <DateField
+                className="w-full sm:w-[168px]"
+                value={createdBefore || undefined}
+                onChange={(value) => setCreatedBefore(value ?? "")}
+                placeholder="结束日期"
+                aria-label="筛选结束日期"
+              />
             </>
           }
           actions={
-            !isLoading &&
-            data &&
-            (debounced.action ||
-              debounced.targetType ||
-              debounced.createdAfter ||
-              debounced.createdBefore) ? (
+            !isLoading && data ? (
               <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-                筛选结果 {items.length} 条
+                {debounced.action ||
+                debounced.targetType ||
+                debounced.createdAfter ||
+                debounced.createdBefore
+                  ? `筛选结果 ${items.length} 条`
+                  : `共 ${total} 条`}
               </p>
             ) : null
           }

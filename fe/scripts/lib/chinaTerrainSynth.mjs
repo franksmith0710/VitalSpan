@@ -9,7 +9,10 @@ export const CHINA_BOUNDS = Object.freeze({
   north: 54,
 });
 
-export const PILOT_PROVINCE_ADCODES = [440000, 510000, 110000, 310000];
+export { ALL_PROVINCE_ADCODES, readAllProvinceAdcodes } from "./terrainProvinceAdcodes.mjs";
+
+/** @deprecated 使用 ALL_PROVINCE_ADCODES */
+export { ALL_PROVINCE_ADCODES as PILOT_PROVINCE_ADCODES } from "./terrainProvinceAdcodes.mjs";
 
 function hash2(x, y) {
   const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;

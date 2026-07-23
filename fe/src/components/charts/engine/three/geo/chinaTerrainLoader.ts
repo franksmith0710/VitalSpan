@@ -3,11 +3,7 @@ import nationalMeta from "@/assets/geo/terrain/national/meta.json";
 import nationalDiffuseUrl from "@/assets/geo/terrain/national/diffuse.webp?url";
 import nationalNormalUrl from "@/assets/geo/terrain/national/normal.webp?url";
 import nationalDisplacementUrl from "@/assets/geo/terrain/national/displacement.webp?url";
-import {
-  CHINA_TERRAIN_NATIONAL_ID,
-  CHINA_TERRAIN_PROVINCE_ADCODES,
-  type ChinaTerrainProvinceAdcode,
-} from "@/assets/geo/terrain/manifest";
+import { CHINA_TERRAIN_NATIONAL_ID } from "@/assets/geo/terrain/manifest";
 import type { TerrainCapSource } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
 
 export type TerrainGeoBounds = {
@@ -71,8 +67,15 @@ function provinceAssetUrl(glob: Record<string, string>, adcode: number, kind: st
   return key ? glob[key] : null;
 }
 
-function isPilotProvince(adcode: number): adcode is ChinaTerrainProvinceAdcode {
-  return (CHINA_TERRAIN_PROVINCE_ADCODES as readonly number[]).includes(adcode);
+function hasProvinceTerrainPack(adcode: number): boolean {
+  return provinceMetaByAdcode.has(adcode);
+}
+
+/** 市/区县 mapId 归一到省级 adcode（XX0000） */
+export function resolveProvinceAdcodeFromMapId(mapId: string): number | null {
+  const raw = parseAdcodeFromMapId(mapId);
+  if (raw == null) return null;
+  return Math.floor(raw / 10000) * 10000;
 }
 
 export function parseAdcodeFromMapId(mapId: string): number | null {
@@ -89,9 +92,9 @@ export function resolveTerrainPackKey(mapId: string | undefined, drillDepth = 0)
   if (drillDepth <= 0 || id === VS_REGIONS_MAP_ID) {
     return { level: "national", adcode: null };
   }
-  const adcode = parseAdcodeFromMapId(id);
-  if (adcode != null && isPilotProvince(adcode) && provinceMetaByAdcode.has(adcode)) {
-    return { level: "province", adcode };
+  const provinceAdcode = resolveProvinceAdcodeFromMapId(id);
+  if (provinceAdcode != null && hasProvinceTerrainPack(provinceAdcode)) {
+    return { level: "province", adcode: provinceAdcode };
   }
   return { level: "national", adcode: null };
 }

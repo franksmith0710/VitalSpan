@@ -501,8 +501,10 @@ export function PixelCanvas({
 
   const clearPreviewChrome = useCallback(
     (snapshot?: DashboardLayoutV2) => {
-      stageRef.current?.style.removeProperty("height");
+      // 大屏 designViewportLocked：stage/content 尺寸由 React style 固定；
+      // removeProperty 会剥掉内联尺寸，而 canvas 尺寸 props 不变时 React 不会重刷 DOM → 0 高裁剪全画布。
       if (!designViewportLocked) {
+        stageRef.current?.style.removeProperty("height");
         contentRef.current?.style.removeProperty("width");
         contentRef.current?.style.removeProperty("height");
       }
@@ -696,6 +698,7 @@ export function PixelCanvas({
         syncShapeGeometryFromLayout(absorbed);
         shapeDragWidgetRef.current = null;
         setShapeDragWidget(null);
+        setPlayingWidgetId(null);
         refreshCanvasMetrics();
         notifyGeometryCommitted();
         onSelect?.(absorbHost?.id ?? boundedWidget.id, false);
@@ -708,6 +711,7 @@ export function PixelCanvas({
       syncShapeGeometryFromLayout(nextLayout);
       shapeDragWidgetRef.current = null;
       setShapeDragWidget(null);
+      setPlayingWidgetId(null);
       refreshCanvasMetrics();
       notifyGeometryCommitted();
     },
@@ -735,6 +739,7 @@ export function PixelCanvas({
     setShapeDragWidget(null);
     clearPreviewChrome();
     syncShapeGeometryFromLayout(activeLayout);
+    setPlayingWidgetId(null);
     refreshCanvasMetrics();
     notifyGeometryCommitted();
   }, [activeLayout, clearPreviewChrome, notifyGeometryCommitted, refreshCanvasMetrics, syncShapeGeometryFromLayout]);

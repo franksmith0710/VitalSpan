@@ -29,6 +29,7 @@
 | RC-M | `clearPreviewChrome` 剥除 content 宽高 | ✅ R6 已修复 | `designViewportLocked` 时跳过 content imperative 清除 |
 | RC-N | `flushSync` + viewPan clamp 副作用 | ✅ R6 已修复 | 移除 flushSync；clamp 仅随 viewport/scale |
 | RC-O | 图表 commit 在 0 尺寸静默跳过 | ✅ R6 已修复 | D3/liveResize rAF 重试 |
+| RC-P | `clearPreviewChrome` 剥除 **stage** 高度（R6 仅保护 content） | ✅ R6.1 已修复 | `designViewportLocked` 时跳过 stage/content imperative 清除 |
 
 ---
 
@@ -112,6 +113,7 @@ R4 在 `PixelShape` 订阅该事件后，`syncDisplayFromWidgetProps()` 用**未
 | R5 | 2026-07-23 | 稳定态 widget props React style + layoutStyleDeferred + finish 顺序 | 用户仍复现卡顿+消失 |
 | R5.1 | 2026-07-23 | useLayoutEffect 仅在 props 真变化时同步；大屏 overlap 跳过 flushPreview 全画布重渲染 | Vitest 绿；用户仍复现全画布消失 |
 | R5.2 | 2026-07-23 | `shouldApplyPropsRectToDisplay` + flushSync onCommit | 用户确认 layout 生效但全画布仍消失 |
+| R6.1 | 2026-07-23 | 用户手测仍复现；RC-P stage 高度被 removeProperty + React 不重刷 | Vitest 40 绿；待手测 |
 | R6 | 2026-07-23 | content 去状态化 + commit applyAll + 单轨几何 + clearPreviewChrome 不修 content + viewPan 稳定 + remeasure 重试 | Vitest 47 绿；e2e 待跑 |
 
 ---
