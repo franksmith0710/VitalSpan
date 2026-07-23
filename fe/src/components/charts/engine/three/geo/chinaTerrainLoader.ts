@@ -23,6 +23,8 @@ export type ChinaTerrainPack = {
   colorMap: THREE.Texture;
   normalMap?: THREE.Texture;
   displacementMap?: THREE.Texture;
+  /** DEV：diffuse 源 URL，便于 Network 对照 */
+  debugUrl?: string;
   dispose: () => void;
 };
 
@@ -115,6 +117,19 @@ function loadTexture(url: string, colorSpace?: THREE.ColorSpace): Promise<THREE.
   });
 }
 
+async function loadTextureWithRetry(
+  url: string,
+  colorSpace?: THREE.ColorSpace,
+  retries = 1,
+): Promise<THREE.Texture> {
+  try {
+    return await loadTexture(url, colorSpace);
+  } catch (err) {
+    if (retries <= 0) throw err;
+    return loadTextureWithRetry(url, colorSpace, retries - 1);
+  }
+}
+
 function createPack(
   level: "national" | "province",
   adcode: number | null,
@@ -123,20 +138,20 @@ function createPack(
   normalUrl?: string | null,
   displacementUrl?: string | null,
 ): Promise<ChinaTerrainPack> {
-  return loadTexture(diffuseUrl, THREE.SRGBColorSpace).then(async (colorMap) => {
+  return loadTextureWithRetry(diffuseUrl, THREE.SRGBColorSpace).then(async (colorMap) => {
     let normalMap: THREE.Texture | undefined;
     let displacementMap: THREE.Texture | undefined;
 
     if (normalUrl) {
       try {
-        normalMap = await loadTexture(normalUrl);
+        normalMap = await loadTextureWithRetry(normalUrl);
       } catch {
         normalMap = undefined;
       }
     }
     if (displacementUrl) {
       try {
-        displacementMap = await loadTexture(displacementUrl);
+        displacementMap = await loadTextureWithRetry(displacementUrl);
       } catch {
         displacementMap = undefined;
       }
@@ -149,6 +164,7 @@ function createPack(
       colorMap,
       normalMap,
       displacementMap,
+      ...(import.meta.env.DEV ? { debugUrl: diffuseUrl } : {}),
       dispose: () => {
         colorMap.dispose();
         normalMap?.dispose();
@@ -175,7 +191,7 @@ export function loadChinaTerrainPack(opts: LoadTerrainPackOpts): Promise<ChinaTe
     const diffuse = provinceAssetUrl(provinceDiffuseGlob, adcode, "diffuse");
     const normal = provinceAssetUrl(provinceNormalGlob, adcode, "normal");
     const displacement = provinceAssetUrl(provinceDisplacementGlob, adcode, "displacement");
-    if (!meta || !diffuse || !normal || !displacement) {
+    if (!meta || !diffuse) {
       promise = loadChinaTerrainPack({ mapId: VS_REGIONS_MAP_ID, drillDepth: 0 });
     } else {
       promise = createPack("province", adcode, boundsFromMeta(meta), diffuse, normal, displacement);

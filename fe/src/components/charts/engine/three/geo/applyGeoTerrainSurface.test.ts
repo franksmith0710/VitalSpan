@@ -3,6 +3,7 @@ import * as THREE from "three";
 import {
   applyTerrainToExtrudeGeometry,
   buildTerrainCapMaterial,
+  computeCapTintColor,
   lngLatToTerrainUv,
 } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
 import { CHINA_TERRAIN_BOUNDS } from "@/assets/geo/terrain/manifest";
@@ -89,8 +90,14 @@ describe("applyTerrainToExtrudeGeometry", () => {
 
   it("builds basic cap material with terrain map", () => {
     const tex = new THREE.Texture();
-    const mat = buildTerrainCapMaterial(tex, new THREE.Color(0xff8844), 0.8);
+    const mat = buildTerrainCapMaterial(tex, new THREE.Color(0xff8844), 0.8, true);
     expect(mat.map).toBe(tex);
     expect(mat.type).toBe("MeshBasicMaterial");
+  });
+
+  it("keeps cap tint bright enough in dark theme", () => {
+    const darkTint = new THREE.Color(0x042f2e);
+    const color = computeCapTintColor(darkTint, 0, true);
+    expect(color.r + color.g + color.b).toBeGreaterThan(1.8);
   });
 });

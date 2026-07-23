@@ -29,7 +29,7 @@ describe("DashboardContextInspector", () => {
     expect(screen.getByText("仪表板风格")).toBeInTheDocument();
     expect(screen.getByTestId("dashboard-overall-config")).toBeInTheDocument();
     expect(screen.getByText("整体配置")).toBeInTheDocument();
-    expect(screen.queryByText("筛选联动")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dashboard-linkage-section")).not.toBeInTheDocument();
     expect(screen.queryByText("高级样式设置")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "深色主题" }));
@@ -164,7 +164,7 @@ describe("DashboardContextInspector", () => {
     );
 
     expect(screen.getByTestId("dashboard-widget-chart-style")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "图表样式" }));
+    await user.click(screen.getByRole("button", { name: "组件外观" }));
     expect(screen.getByRole("button", { name: "图片" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "装饰边框" })).toBeInTheDocument();
     expect(screen.getByText("线框")).toBeInTheDocument();
@@ -173,5 +173,36 @@ describe("DashboardContextInspector", () => {
     expect(screen.getByRole("switch", { name: "显示图表标签" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "显示图表提示" })).toBeInTheDocument();
     expect(screen.getByText("表格配色")).toBeInTheDocument();
+  });
+
+  it("shows linkage section when dashboard linkage props are provided", async () => {
+    const user = userEvent.setup();
+    render(
+      <DashboardContextInspector
+        widgetCount={2}
+        widgets={[
+          {
+            id: "w1",
+            type: "chart",
+            title: "A",
+            colSpan: 6,
+            rowSpan: 1,
+            order: 0,
+          },
+        ]}
+        styleConfig={{ gapPreset: "md" }}
+        onStyleChange={vi.fn()}
+        onLinkageChange={vi.fn()}
+        dashboardId="d1"
+        linkage={{
+          filters: [{ filterId: "f1", dimensionRef: "区域", defaultValue: "华东" }],
+          linkageRules: [],
+        }}
+        embedded
+      />,
+    );
+
+    expect(screen.getByTestId("dashboard-linkage-section")).toBeInTheDocument();
+    expect(screen.getByText("源筛选器")).toBeInTheDocument();
   });
 });

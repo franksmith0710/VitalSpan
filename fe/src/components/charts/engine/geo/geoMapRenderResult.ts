@@ -4,10 +4,17 @@ export type GeoMapRenderResult = {
   dispose: () => void;
   engine: GeoMapRenderEngine;
   fallbackReason?: string;
+  webglApi?: "webgl2" | "webgl" | "none";
 };
 
-export const GEO_MAP_FALLBACK_BANNER =
-  "当前环境不支持 WebGL，已显示 2D 区域地图";
+export const GEO_MAP_WEBGL_FALLBACK_BANNER =
+  "当前环境无法创建 WebGL 上下文，已显示 2D 区域地图。请检查浏览器「使用硬件加速」或更新显卡驱动。";
+
+export const GEO_MAP_THREE_INIT_FALLBACK_BANNER =
+  "3D 地图初始化失败，已显示 2D 区域地图。";
+
+/** @deprecated 使用 resolveGeoMapFallbackBanner */
+export const GEO_MAP_FALLBACK_BANNER = GEO_MAP_WEBGL_FALLBACK_BANNER;
 
 export const GEO_MAP_QUALITY_FALLBACK_BANNER =
   "区县级或要素过多时已切换为 2D 区域地图以保障流畅度";
@@ -16,5 +23,11 @@ export function resolveGeoMapFallbackBanner(reason?: string): string {
   if (reason === "quality-degraded") {
     return GEO_MAP_QUALITY_FALLBACK_BANNER;
   }
-  return GEO_MAP_FALLBACK_BANNER;
+  if (reason === "three-init-failed") {
+    return GEO_MAP_THREE_INIT_FALLBACK_BANNER;
+  }
+  if (reason === "webgl-unavailable") {
+    return GEO_MAP_WEBGL_FALLBACK_BANNER;
+  }
+  return GEO_MAP_WEBGL_FALLBACK_BANNER;
 }

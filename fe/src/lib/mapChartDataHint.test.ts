@@ -4,7 +4,7 @@ import { SALES_GEO_DRILL_SQL, mapChartFieldHint } from "./mapChartDataHint";
 describe("mapChartFieldHint", () => {
   it("suggests drill sql for demo sales region_id columns", () => {
     const hint = mapChartFieldHint(["sale_date", "region_id", "amount"]);
-    expect(hint?.message).toContain("v_sales_geo");
+    expect(hint?.message).toContain("5–10");
     expect(hint?.sampleSql).toBe(SALES_GEO_DRILL_SQL);
   });
 

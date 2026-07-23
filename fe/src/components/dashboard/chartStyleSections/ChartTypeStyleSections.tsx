@@ -207,6 +207,17 @@ export function ChartGraphShapeSection() {
             mutateChartConfig((current) => patchBlock(current, "graph", { repulsion }))
           }
         />
+        <ChartDeSliderField
+          label="边长"
+          value={graph.edgeLength}
+          fallback={80}
+          min={20}
+          max={300}
+          step={5}
+          onChange={(edgeLength) =>
+            mutateChartConfig((current) => patchBlock(current, "graph", { edgeLength }))
+          }
+        />
       </div>
     </DashboardConfigSection>
   );
@@ -221,6 +232,21 @@ export function ChartRadarShapeSection() {
   return (
     <DashboardConfigSection title="雷达样式" compact data-testid="chart-radar-shape">
       <div className={INSPECTOR_SECTION_GAP}>
+        <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
+          <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">形状</p>
+          <Select
+            value={radar.shape ?? "polygon"}
+            onValueChange={(shape) => patch({ shape })}
+          >
+            <SelectTrigger className={INSPECTOR_SELECT} aria-label="雷达图形状">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="polygon">多边形</SelectItem>
+              <SelectItem value="circle">圆形</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <InspectorSwitchRow
           label="显示轴名称"
           checked={radar.showAxisName !== false}

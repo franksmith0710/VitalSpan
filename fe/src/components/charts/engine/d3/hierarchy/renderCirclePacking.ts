@@ -10,9 +10,12 @@ import {
   enforcePackBounds,
   fitPackLayoutToPlot,
   focusPackNode,
+  isPackMotionActive,
+  normalizePackDt,
   packNodeRadius,
+  pickPackNodeAt,
   resolvePackEdgeInset,
-  stepPackRenderScales,
+  stepPackMotionFrame,
   type PackPhysicsNode,
 } from "@/components/charts/engine/d3/hierarchy/circlePackingPhysics";
 
@@ -21,7 +24,6 @@ type TreeNode = { name: string; value?: number; children?: TreeNode[] };
 
 const PACK_PLOT_PAD = 4;
 const PACK_LAYOUT_PADDING = 0;
-const HOVER_LEAVE_MS = 48;
 
 function positionTooltip(
   tooltip: d3.Selection<HTMLDivElement, unknown, null, undefined>,
@@ -91,7 +93,9 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
   const packed = packLeaves(data, innerW, innerH);
   const rawLayout = packed.map((d) => ({ name: d.data.name, x: d.x, y: d.y, r: d.r }));
   const maxR = rawLayout.length > 0 ? Math.max(...rawLayout.map((d) => d.r)) : 0;
-  const edgeMargin = resolvePackEdgeInset(maxR, strokeWidth);
+  const avgR =
+    rawLayout.length > 0 ? rawLayout.reduce((sum, d) => sum + d.r, 0) / rawLayout.length : maxR;
+  const edgeMargin = resolvePackEdgeInset(avgR, strokeWidth);
   const layout = fitPackLayoutToPlot(rawLayout, innerW, innerH, edgeMargin);
 
   const colorScale = d3
@@ -105,8 +109,8 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
   simulation.alphaTarget(0);
 
   let hovered: PackPhysicsNode | null = null;
-  let leaveTimer: ReturnType<typeof setTimeout> | null = null;
   let visualFrame: number | null = null;
+  let lastFrameMs: number | null = null;
 
   const svg = d3
     .select(container)
@@ -114,7 +118,8 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     .attr("width", width)
     .attr("height", height)
     .attr("role", "img")
-    .attr("data-pixel-no-drag", "true");
+    .attr("data-pixel-no-drag", "true")
+    .style("touch-action", "none");
 
   const plot = svg.append("g").attr("transform", `translate(${PACK_PLOT_PAD},${PACK_PLOT_PAD})`);
   const clipId = appendPackPlotChrome(plot, innerW, innerH, theme);
@@ -147,13 +152,6 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     }
   };
 
-  const clearLeaveTimer = () => {
-    if (leaveTimer !== null) {
-      clearTimeout(leaveTimer);
-      leaveTimer = null;
-    }
-  };
-
   const stopVisualPump = () => {
     if (visualFrame !== null) {
       cancelAnimationFrame(visualFrame);
@@ -161,44 +159,82 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     }
   };
 
-  const pumpVisual = () => {
-    stepPackRenderScales(physicsNodes);
+  const pumpVisual = (now: number) => {
+    const dt = normalizePackDt(lastFrameMs == null ? 16.67 : now - lastFrameMs);
+    lastFrameMs = now;
+
+    stepPackMotionFrame(physicsNodes, {
+      width: innerW,
+      height: innerH,
+      strokeWidth,
+      interaction: hovered ? "hover" : "idle",
+      dt,
+    });
     updateVisual();
-    const scaling = physicsNodes.some((n) => Math.abs(n.renderScale - n.focusScale) > 0.004);
-    if (scaling || hovered) {
+
+    if (isPackMotionActive(physicsNodes, hovered ? "hover" : "idle")) {
       visualFrame = requestAnimationFrame(pumpVisual);
     } else {
       visualFrame = null;
+      lastFrameMs = null;
     }
   };
 
   const ensureVisualPump = () => {
-    if (visualFrame === null) visualFrame = requestAnimationFrame(pumpVisual);
+    if (visualFrame === null) {
+      lastFrameMs = null;
+      visualFrame = requestAnimationFrame(pumpVisual);
+    }
   };
 
   const beginHover = (d: PackPhysicsNode) => {
-    clearLeaveTimer();
-    if (hovered && hovered !== d) blurPackNode(hovered);
+    if (hovered === d) {
+      ensureVisualPump();
+      return;
+    }
+    if (hovered) blurPackNode(hovered);
     hovered = d;
     focusPackNode(d);
     simulation.setInteraction("hover");
-    simulation.reheat();
+    simulation.stop();
+    simulation.alphaTarget(0);
     ensureVisualPump();
   };
 
-  const endHover = (d: PackPhysicsNode) => {
-    if (hovered !== d) return;
-    clearLeaveTimer();
-    leaveTimer = setTimeout(() => {
-      leaveTimer = null;
-      if (hovered !== d) return;
-      blurPackNode(d);
-      hovered = null;
-      simulation.setInteraction("idle");
-      simulation.alphaTarget(0);
-      simulation.alpha(0.35).restart();
-      ensureVisualPump();
-    }, HOVER_LEAVE_MS);
+  const endHover = () => {
+    if (!hovered) return;
+    blurPackNode(hovered);
+    hovered = null;
+    simulation.setInteraction("idle");
+    simulation.stop();
+    simulation.alphaTarget(0);
+    ensureVisualPump();
+  };
+
+  const handlePointerMove = (event: PointerEvent) => {
+    const layerEl = layer.node();
+    if (!layerEl) return;
+    const [x, y] = d3.pointer(event, layerEl);
+    const hit = pickPackNodeAt(physicsNodes, x, y);
+    if (hit) {
+      beginHover(hit);
+      d3.select(groups.nodes().find((el) => (d3.select(el).datum() as PackPhysicsNode).name === hit.name)).raise();
+    } else {
+      endHover();
+    }
+
+    if (tooltip && hit) {
+      const packedNode = packed.find((item) => item.data.name === hit.name);
+      tooltip
+        .style("opacity", "1")
+        .html(
+          `<div style="font-weight:600;margin-bottom:2px">${hit.name}</div>` +
+            `<div><strong>${formatChartValue(packedNode?.value ?? 0, valueFormat)}</strong></div>`,
+        );
+      positionTooltip(tooltip, event, container, width);
+    } else {
+      tooltip?.style("opacity", "0");
+    }
   };
 
   groups
@@ -213,62 +249,42 @@ export function renderD3CirclePackingChart(container: HTMLElement, config: D3Ren
     .attr("stroke-width", strokeWidth)
     .style("paint-order", depthLevel === "off" ? undefined : "stroke fill")
     .style("cursor", "default")
-    .on("mouseenter", function (event, d) {
+    .style("pointer-events", "all")
+    .on("pointerdown", (event, d) => {
       event.stopPropagation();
-      d3.select(this.parentNode as SVGGElement).raise();
       beginHover(d);
     })
-    .on("mouseleave", (_event, d) => {
-      endHover(d);
-    })
-    .on("mousemove", (event, d) => {
-      if (!tooltip) return;
-      const packedNode = packed.find((item) => item.data.name === d.name);
-      tooltip
-        .style("opacity", "1")
-        .html(
-          `<div style="font-weight:600;margin-bottom:2px">${d.name}</div>` +
-            `<div><strong>${formatChartValue(packedNode?.value ?? 0, valueFormat)}</strong></div>`,
-        );
-      positionTooltip(tooltip, event, container, width);
-    })
-    .on("mouseout", () => tooltip?.style("opacity", "0"))
-    .on("click", (_event, d) => {
+    .on("click", (event, d) => {
+      event.stopPropagation();
       const packedNode = packed.find((item) => item.data.name === d.name);
       onPointClick?.({ name: d.name, value: packedNode?.value ?? 0 } as D3Datum);
     });
 
-  layer.on("mouseleave", () => {
-    clearLeaveTimer();
-    if (hovered) blurPackNode(hovered);
-    hovered = null;
-    simulation.setInteraction("idle");
-    simulation.alphaTarget(0);
-    simulation.alpha(0.3).restart();
-    ensureVisualPump();
-  });
+  layer
+    .style("pointer-events", "all")
+    .on("pointermove", handlePointerMove)
+    .on("pointerleave", () => {
+      endHover();
+      tooltip?.style("opacity", "0");
+    });
 
   simulation.on("tick", updateVisual);
 
   simulation.on("end", () => {
     if (hovered) return;
     for (const node of physicsNodes) {
-      const dx = (node.x ?? node.targetX) - node.targetX;
-      const dy = (node.y ?? node.targetY) - node.targetY;
-      if (Math.hypot(dx, dy) < 1.2 && Math.abs(node.renderScale - 1) < 0.01) {
-        node.x = node.targetX;
-        node.y = node.targetY;
-        node.vx = 0;
-        node.vy = 0;
-      }
+      node.x = node.targetX;
+      node.y = node.targetY;
+      node.vx = 0;
+      node.vy = 0;
     }
     enforcePackBounds(physicsNodes, innerW, innerH, strokeWidth);
     updateVisual();
   });
 
   return () => {
-    clearLeaveTimer();
     stopVisualPump();
+    lastFrameMs = null;
     simulation.stop();
     container.replaceChildren();
   };

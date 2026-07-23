@@ -152,17 +152,55 @@ export function lngLatToTerrainUv(
   return [u, v];
 }
 
+/** 数据色乘算权重：hillshade 为主，避免 dark 主题下顶面近黑 */
+export function computeCapTintColor(
+  dataTint: THREE.Color,
+  valueT: number,
+  isDark = false,
+): THREE.Color {
+  const tintMix = 0.08 + valueT * 0.22;
+  let color = new THREE.Color(0xffffff).lerp(dataTint, tintMix);
+  if (isDark) {
+    color = color.lerp(new THREE.Color(0xcccccc), 0.1);
+  }
+  return color;
+}
+
 export function buildTerrainCapMaterial(
   terrainMap: THREE.Texture,
   dataTint: THREE.Color,
   valueT: number,
+  isDark = false,
 ): THREE.MeshBasicMaterial {
   terrainMap.colorSpace = THREE.SRGBColorSpace;
-  const tintMix = 0.22 + valueT * 0.42;
-  const color = new THREE.Color(0xffffff).lerp(dataTint, tintMix);
   return new THREE.MeshBasicMaterial({
     map: terrainMap,
-    color,
+    color: computeCapTintColor(dataTint, valueT, isDark),
+    side: THREE.FrontSide,
+  });
+}
+
+export function buildTerrainReliefCapMaterial(
+  terrainMap: THREE.Texture,
+  normalMap: THREE.Texture,
+  displacementMap: THREE.Texture | undefined,
+  dataTint: THREE.Color,
+  valueT: number,
+  displacementScale: number,
+  isDark: boolean,
+): THREE.MeshStandardMaterial {
+  terrainMap.colorSpace = THREE.SRGBColorSpace;
+  const tint = computeCapTintColor(dataTint, valueT, isDark);
+  return new THREE.MeshStandardMaterial({
+    map: terrainMap,
+    normalMap,
+    displacementMap: displacementMap ?? null,
+    displacementScale: displacementMap ? displacementScale : 0,
+    color: tint,
+    emissive: tint.clone(),
+    emissiveIntensity: isDark ? 0.12 : 0.06,
+    metalness: 0.04,
+    roughness: 0.72,
     side: THREE.FrontSide,
   });
 }

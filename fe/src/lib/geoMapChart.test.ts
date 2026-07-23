@@ -145,6 +145,19 @@ describe("analyzeGeoMapMatch with demo region_id", () => {
     );
     expect(stats.matched).toBe(2);
   });
+
+  it("skips unmapped numeric region_id values", () => {
+    const stats = analyzeGeoMapMatch(
+      [
+        [99, 100],
+        [7, 80],
+      ],
+      ["region_id", "value"],
+      "region_id",
+    );
+    expect(stats.matched).toBe(1);
+    expect(stats.unmatched).toContain("99");
+  });
 });
 
 describe("buildGeoHeatmapPlaceholderEchartsOption", () => {

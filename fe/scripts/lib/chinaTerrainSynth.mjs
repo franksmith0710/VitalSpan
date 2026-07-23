@@ -115,11 +115,11 @@ function reliefRgb(shade, elev) {
   const baseR = 10 + elev * 45;
   const baseG = 18 + elev * 52;
   const baseB = 28 + elev * 70;
-  const lit = shade * 0.72 + 0.28;
+  const lit = shade * 0.83 + 0.32;
   return [
-    Math.round(Math.min(255, baseR + lit * 120)),
-    Math.round(Math.min(255, baseG + lit * 130)),
-    Math.round(Math.min(255, baseB + lit * 145)),
+    Math.round(Math.min(255, baseR + lit * 138)),
+    Math.round(Math.min(255, baseG + lit * 149)),
+    Math.round(Math.min(255, baseB + lit * 166)),
   ];
 }
 

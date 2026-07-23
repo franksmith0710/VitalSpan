@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GlobalFilterBar } from "./GlobalFilterBar";
@@ -23,6 +23,14 @@ import { apiFetch } from "@/lib/api";
 const mockApiFetch = vi.mocked(apiFetch);
 
 describe("FilterControl / GlobalFilterBar", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   it("renders select control and emits change", async () => {
     const onChange = vi.fn();
     render(
@@ -76,6 +84,35 @@ describe("FilterControl / GlobalFilterBar", () => {
     );
     expect(await screen.findByLabelText("区域")).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("GlobalFilterBar lazy mode defers onChange until apply", async () => {
+    const user = userEvent.setup();
+    mockApiFetch.mockImplementation(async () => ({
+      filters: [
+        {
+          filterId: "f1",
+          dimensionRef: "区域",
+          controlType: "text",
+          defaultValue: "all",
+        },
+      ],
+      linkageRules: [],
+      refreshMode: "lazy",
+    }));
+    const onChange = vi.fn();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <GlobalFilterBar dashboardId="d1" values={{ f1: "all" }} onChange={onChange} />
+      </QueryClientProvider>,
+    );
+    await screen.findByRole("button", { name: "应用筛选" });
+    const input = screen.getByLabelText("区域");
+    fireEvent.change(input, { target: { value: "east" } });
+    expect(onChange).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "应用筛选" }));
+    expect(onChange).toHaveBeenCalledWith("f1", "east");
   });
 
   it("FilterWidget renders text control and propagates value", async () => {

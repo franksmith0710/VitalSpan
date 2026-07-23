@@ -536,7 +536,7 @@ describe("dashboard admin smoke", () => {
     ]);
   });
 
-  it("T-DASH-004-03: edit page loads global-filters without linkage inspector section", async () => {
+  it("T-DASH-004-03: edit page shows linkage section when global-filters has entries", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
@@ -553,7 +553,8 @@ describe("dashboard admin smoke", () => {
     });
     renderEditPage();
     expect(await screen.findByTestId("dashboard-name-field")).toHaveTextContent("销售看板");
-    expect(screen.queryByText("筛选联动")).not.toBeInTheDocument();
+    expect(await screen.findByTestId("dashboard-linkage-section")).toBeInTheDocument();
+    expect(screen.getByText("筛选联动")).toBeInTheDocument();
   });
 
   it("T-DASH-002-03: normalizeWidgetLayout unpacks overlapping widgets", () => {
@@ -913,7 +914,7 @@ describe("dashboard admin smoke", () => {
     expect(screen.getAllByTestId("chart-mock")).toHaveLength(2);
   });
 
-  it("F-D: edit mode loads global filters without linkage inspector UI", async () => {
+  it("F-D: edit mode loads global filters and shows linkage config in dashboard rail", async () => {
     mockApiFetch.mockImplementation(async (...args: unknown[]) => {
       const path = String(args[0] ?? "");
       if (path === "/api/v1/datasources") return { items: [{ id: DS_ID, name: "分析库", code: "a" }] };
@@ -932,7 +933,7 @@ describe("dashboard admin smoke", () => {
     await waitForEditPageName();
     expect(mockApiFetch).toHaveBeenCalledWith("/api/v1/dashboards/d1/global-filters");
     expect(screen.queryByLabelText("区域")).not.toBeInTheDocument();
-    expect(screen.queryByText("筛选联动")).not.toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-linkage-section")).toBeInTheDocument();
   });
 
   it("B3: pixel on + v1 migrates in memory and first save writes complete v2 layout", async () => {

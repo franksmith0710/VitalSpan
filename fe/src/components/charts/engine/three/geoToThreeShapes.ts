@@ -80,12 +80,4 @@ export function geometryToShapes(geometry: GeoJSON.Geometry, project: ProjectFn)
   return [];
 }
 
-export function webglAvailable(): boolean {
-  try {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("webgl") ?? canvas.getContext("experimental-webgl");
-    return Boolean(ctx);
-  } catch {
-    return false;
-  }
-}
+export { webglAvailable } from "@/components/charts/engine/three/webglProbe";

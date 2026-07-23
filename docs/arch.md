@@ -83,6 +83,7 @@ flowchart TB
 
 - **仅中国**：中华人民共和国省级行政区（可扩展省→市下钻，资产仍为离线 GeoJSON）
 - **仅离线**：`GeoEnginePort` / `OfflineGeoPort` + 仓库内或平台分发的 `.json`；**禁止**运行时拉取瓦片 CDN
+- **3D 地形纹理**（仅 `map-3d`）：离线 hillshade WebP 贴 Extrude 顶面；`pnpm run build:geo-terrain` → `fe/src/assets/geo/terrain/`；详见 [ui/map-texture.md](ui/map-texture.md)
 - **禁止**：高德/天地图/腾讯/Mapbox/MapLibre/OSM、AntV L7 在线 Scene、世界地图/境外行政区、地图 Key 配置项
 - **执行规则**：`.cursor/rules/geo-map-offline-china.mdc`（`alwaysApply: true`）
 
@@ -380,6 +381,7 @@ pnpm dev            # 默认 :5173
 | [api/README.md](api/README.md) | API 端点一行索引 |
 | [services/README.md](services/README.md) | 域服务附录（随实现补充） |
 | [ui/layout.md](ui/layout.md) | 壳层与信息架构（单应用 + Embed） |
+| [ui/map-texture.md](ui/map-texture.md) | 3D 地图离线 hillshade 纹理管线（`map-3d`） |
 | [superpowers/README.md](superpowers/README.md) | 演化轮次 design/plan 产出（G2–P3） |
 | `.cursor/rules/` | Cursor 项目规则（见 `vitalspan-project.mdc`） |
 

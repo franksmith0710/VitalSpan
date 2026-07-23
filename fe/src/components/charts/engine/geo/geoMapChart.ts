@@ -144,7 +144,7 @@ export type GeoMapRegionResolve = {
 };
 
 /** 演示库 regions.id → code（docker/demo-mysql；生产请 JOIN regions 取 name） */
-const DEMO_MYSQL_REGION_ID_TO_CODE: Record<number, string> = {
+export const DEMO_MYSQL_REGION_ID_TO_CODE: Record<number, string> = {
   5: "GD",
   6: "JS",
   7: "BJ",
@@ -152,6 +152,23 @@ const DEMO_MYSQL_REGION_ID_TO_CODE: Record<number, string> = {
   9: "SC",
   10: "ZJ",
 };
+
+export function isDemoMysqlRegionIdValue(raw: unknown): boolean {
+  const id =
+    typeof raw === "number"
+      ? raw
+      : Number.parseInt(String(raw ?? "").trim(), 10);
+  return Number.isFinite(id) && id in DEMO_MYSQL_REGION_ID_TO_CODE;
+}
+
+function isNumericRegionIdRaw(raw: unknown): boolean {
+  if (typeof raw === "number") return Number.isFinite(raw);
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    return trimmed !== "" && !Number.isNaN(Number(trimmed));
+  }
+  return false;
+}
 
 export function resolveDemoMysqlRegionId(raw: unknown): GeoMapRegionResolve | null {
   const id =
@@ -175,6 +192,9 @@ export function resolveMapDimensionValue(
   if (REGION_ID_FIELD_PATTERN.test(regionField)) {
     const demo = resolveDemoMysqlRegionId(raw);
     if (demo) return demo;
+    if (isNumericRegionIdRaw(raw)) {
+      return { name: "", matched: false };
+    }
   }
   return resolveMapRegionName(raw, knownNames);
 }
@@ -277,6 +297,9 @@ export function analyzeGeoMapMatch(
     const resolved = resolveRegionMetricValue(regionField, row[ri], knownNames, atProvinceLevel);
     if (resolved.matched) matched += 1;
     else if (resolved.name) unmatched.add(String(row[ri] ?? ""));
+    else if (REGION_ID_FIELD_PATTERN.test(regionField) && isNumericRegionIdRaw(row[ri])) {
+      unmatched.add(String(row[ri] ?? ""));
+    }
   }
 
   return {

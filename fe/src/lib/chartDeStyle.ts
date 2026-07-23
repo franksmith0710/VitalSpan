@@ -87,9 +87,9 @@ export type ChartGeoStyle = {
 export type ChartGeo3dStyle = {
   extrudeIntensity?: number;
   quality?: "auto" | "high" | "medium" | "low";
-  /** 离线 hillshade 地形贴图（diffuse + normal + displacement） */
+  /** 离线 hillshade 地形贴图（diffuse）；单独控制是否加载 */
   terrainTexture?: boolean;
-  /** displacement 起伏强度（非按省拔高） */
+  /** 法线/位移凹凸起伏；需先开启 terrainTexture */
   terrainRelief?: boolean;
   /** @deprecated 不再渲染背景装饰 */
   effectsEnabled?: boolean;

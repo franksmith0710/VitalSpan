@@ -14,10 +14,11 @@ import {
   colorForValue,
   geoSurfaceColors,
   geometryToShapes,
-  webglAvailable,
 } from "@/components/charts/engine/three/geoToThreeShapes";
+import { probeWebGL, type WebGLApi } from "@/components/charts/engine/three/webglProbe";
 import { buildThreeGeoProject, buildMapFitCollection } from "@/components/charts/engine/three/geo/threeGeoProject";
 import { loadChinaTerrainPack } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
+import { computeCapTintColor } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
 import { buildGeoFlatPlateMesh } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
 import {
@@ -33,6 +34,67 @@ const PLATE_DEPTH_RATIO = 0.0028;
 
 function noopDispose(): void {
   /* empty */
+}
+
+function showDevTerrainFailureHint(container: HTMLElement): () => void {
+  if (!import.meta.env.DEV) return () => undefined;
+  const hint = document.createElement("div");
+  hint.className =
+    "pointer-events-none absolute bottom-1 left-1 z-10 rounded bg-warning-500/90 px-1.5 py-0.5 text-[10px] text-white";
+  hint.setAttribute("role", "status");
+  hint.textContent = "地形贴图加载失败，已使用纯色顶面";
+  if (getComputedStyle(container).position === "static") {
+    container.style.position = "relative";
+  }
+  container.appendChild(hint);
+  return () => hint.remove();
+}
+
+function logDevTerrainDiagnostics(
+  terrainOn: boolean,
+  terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null,
+  firstCap: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial | undefined,
+  mapId: string | undefined,
+  drillDepth: number,
+  webglApi?: WebGLApi | "none",
+): void {
+  if (!import.meta.env.DEV) return;
+  if (terrainOn && !terrainPack) {
+    console.warn("[map-3d] terrain pack missing", { mapId, drillDepth, webglApi });
+    return;
+  }
+  if (!terrainPack) return;
+  const mapImage = firstCap?.map?.image;
+  console.debug("[map-3d] terrain pack loaded", {
+    level: terrainPack.level,
+    debugUrl: terrainPack.debugUrl,
+    capHasMap: Boolean(firstCap?.map),
+    capMapImage: mapImage instanceof HTMLImageElement ? `${mapImage.width}x${mapImage.height}` : mapImage,
+    webglApi,
+    renderEngine: "three",
+  });
+}
+
+function attachOrbitGrabCursor(
+  domElement: HTMLElement,
+  controls: OrbitControls,
+  roam: boolean,
+): () => void {
+  if (!roam) return () => undefined;
+  domElement.style.cursor = "grab";
+  const onStart = () => {
+    domElement.style.cursor = "grabbing";
+  };
+  const onEnd = () => {
+    domElement.style.cursor = "grab";
+  };
+  controls.addEventListener("start", onStart);
+  controls.addEventListener("end", onEnd);
+  return () => {
+    controls.removeEventListener("start", onStart);
+    controls.removeEventListener("end", onEnd);
+    domElement.style.cursor = "";
+  };
 }
 
 function capMaterialOf(mesh: THREE.Mesh): THREE.MeshBasicMaterial | THREE.MeshStandardMaterial {
@@ -60,6 +122,7 @@ function d3Fallback(
   config: D3GeoRenderConfig,
   reason: string,
 ): GeoMapRenderResult {
+  container.dataset.webglApi = "none";
   return {
     dispose: renderD3ChoroplethChart(container, config),
     engine: "d3-fallback",
@@ -137,7 +200,10 @@ export async function renderThreeChoroplethChart(
   if (!shouldRenderGeo3d(quality)) {
     return d3Fallback(container, config, "quality-degraded");
   }
-  if (!webglAvailable()) {
+
+  const webglProbe = probeWebGL();
+  container.dataset.webglApi = webglProbe.api ?? "none";
+  if (!webglProbe.ok) {
     return d3Fallback(container, config, "webgl-unavailable");
   }
 
@@ -152,7 +218,8 @@ export async function renderThreeChoroplethChart(
     const showVisualMap = geoStyle.visualMap !== false;
     const terrainTextureOn = geo3dStyle.terrainTexture !== false;
     const terrainReliefOn = geo3dStyle.terrainRelief !== false;
-    const terrainOn = terrainTextureOn && terrainReliefOn;
+    const terrainOn = terrainTextureOn;
+    const reliefOn = terrainTextureOn && terrainReliefOn;
 
     const fitCollection = buildMapFitCollection(geo);
     const geoProject = buildThreeGeoProject(width, height, fitCollection.features, fitCollection);
@@ -170,9 +237,15 @@ export async function renderThreeChoroplethChart(
       }
     }
 
+    const detachTerrainHint = terrainOn && !terrainPack ? showDevTerrainFailureHint(container) : () => undefined;
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 5000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    if (!renderer.getContext()) {
+      renderer.dispose();
+      return d3Fallback(container, config, "webgl-unavailable");
+    }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -188,9 +261,14 @@ export async function renderThreeChoroplethChart(
 
     const mapGroup = new THREE.Group();
     const meshes: THREE.Mesh[] = [];
+    const displacementScale = reliefOn ? plateDepth * 5.5 : 0;
     const terrainOpts = terrainPack
       ? {
           terrainColorMap: terrainPack.colorMap,
+          terrainNormalMap: terrainPack.normalMap,
+          terrainDisplacementMap: terrainPack.displacementMap,
+          displacementScale,
+          reliefOn,
           geoBounds: terrainPack.bounds,
           projBounds,
           margin,
@@ -201,6 +279,8 @@ export async function renderThreeChoroplethChart(
         }
       : {};
 
+    let firstCapMaterial: THREE.MeshBasicMaterial | THREE.MeshStandardMaterial | undefined;
+
     for (const feature of features) {
       if (!feature.geometry) continue;
       const shapes = geometryToShapes(feature.geometry, project);
@@ -208,6 +288,7 @@ export async function renderThreeChoroplethChart(
 
       const color = colorForValue(feature.value, minVal, maxVal, surface);
       const valueT = maxVal <= minVal ? 1 : (feature.value - minVal) / (maxVal - minVal);
+      const capTint = computeCapTintColor(new THREE.Color(color), valueT, isDark);
 
       for (const shape of shapes) {
         const built = buildGeoFlatPlateMesh(shape, plateDepth, color, borderColor, isDark, {
@@ -215,13 +296,13 @@ export async function renderThreeChoroplethChart(
           dataTint: color,
           valueT,
         });
+        if (!firstCapMaterial) firstCapMaterial = built.capMaterial;
         built.mesh.userData = {
           name: feature.name,
           value: feature.value,
           adcode: feature.adcode,
-          capTint: built.capMaterial instanceof THREE.MeshBasicMaterial
-            ? built.capMaterial.color.clone()
-            : (built.capMaterial as THREE.MeshStandardMaterial).emissive.clone(),
+          terrainApplied: Boolean(terrainPack?.colorMap),
+          capTint,
           capIsBasic: built.capMaterial instanceof THREE.MeshBasicMaterial,
           emissiveIntensity:
             built.capMaterial instanceof THREE.MeshStandardMaterial
@@ -232,6 +313,8 @@ export async function renderThreeChoroplethChart(
         meshes.push(built.mesh);
       }
     }
+
+    logDevTerrainDiagnostics(terrainOn, terrainPack, firstCapMaterial, mapId, drillDepth, webglProbe.api ?? "none");
 
     if (meshes.length === 0) {
       renderer.dispose();
@@ -251,6 +334,7 @@ export async function renderThreeChoroplethChart(
     const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
     const detachOrbitPan = configureThreeGeoOrbitControls(camera, controls, orbitLayout, roam);
+    const detachGrabCursor = attachOrbitGrabCursor(renderer.domElement, controls, roam);
 
     const onDblClick = () => {
       if (!roam) return;
@@ -277,6 +361,7 @@ export async function renderThreeChoroplethChart(
         cap.color.copy(tint);
         return;
       }
+      cap.color.copy(tint);
       cap.emissive.copy(tint);
       cap.emissiveIntensity = mesh.userData.emissiveIntensity as number;
     };
@@ -298,6 +383,7 @@ export async function renderThreeChoroplethChart(
         cap.color.copy(hoverCol);
         return;
       }
+      cap.color.copy(hoverCol);
       cap.emissive.copy(hoverCol);
       cap.emissiveIntensity = isDark ? 0.45 : 0.32;
     };
@@ -351,6 +437,7 @@ export async function renderThreeChoroplethChart(
 
     return {
       engine: "three",
+      webglApi: webglProbe.api ?? "none",
       dispose: () => {
         cancelAnimationFrame(frameId);
         renderer.domElement.removeEventListener("dblclick", onDblClick);
@@ -358,6 +445,8 @@ export async function renderThreeChoroplethChart(
         renderer.domElement.removeEventListener("click", onClick);
         controls.dispose();
         detachOrbitPan();
+        detachGrabCursor();
+        detachTerrainHint();
         terrainPack?.dispose();
         for (const mesh of meshes) disposeMesh(mesh);
         renderer.dispose();
@@ -371,4 +460,4 @@ export async function renderThreeChoroplethChart(
   }
 }
 
-export { webglAvailable } from "@/components/charts/engine/three/geoToThreeShapes";
+export { webglAvailable } from "@/components/charts/engine/three/webglProbe";

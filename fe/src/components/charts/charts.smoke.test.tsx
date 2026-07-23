@@ -344,7 +344,7 @@ describe("ChartRenderer smoke", () => {
             const engine = host.getAttribute("data-render-engine");
             expect(engine === "d3-fallback" || engine === "three").toBe(true);
             if (engine === "d3-fallback") {
-              expect(screen.getByText(/当前环境不支持 WebGL/)).toBeInTheDocument();
+              expect(screen.getByText(/无法创建 WebGL 上下文/)).toBeInTheDocument();
             }
           },
           { timeout: 5000 },

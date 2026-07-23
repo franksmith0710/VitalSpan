@@ -74,7 +74,8 @@
 | RichTextEditor / RichTextFloatingToolbar / RichTextToolbar | `dashboard/RichTextEditor.tsx` · `RichTextFloatingToolbar.tsx` | Tiptap 3 富文本画布内联编辑（独立浮动工具栏） |
 | richTextHtml | `dashboard/richTextHtml.ts` | 旧格式转 HTML、白名单净化与空值判断 |
 | ReuseWidgetDialog | `dashboard/ReuseWidgetDialog.tsx` | 跨看板复用组件（克隆 ID） |
-| DashboardStyleDialog | `dashboard/DashboardStyleDialog.tsx` | 仪表板样式（间距/背景） |
+| LinkageRulesPanel | `dashboard/LinkageRulesPanel.tsx` | 筛选器联动规则（编辑页仪表板配置轨 draft 模式） |
+| DashboardOverallConfigPanel | `dashboard/dashboardOverallConfigPanel.tsx` | 仪表板整体配置（间距/背景/刷新等） |
 | DashboardWidget | `dashboard/DashboardWidget.tsx` | 单组件卡片 + 删除/排序 |
 | WidgetErrorBoundary | `dashboard/WidgetErrorBoundary.tsx` | widget 级渲染异常隔离（重试/删除，不拖垮整页） |
 | chartConfigState | `../lib/chartConfigState.ts` | 图表 binding/query/render 阶段判定与字段 reconcile |

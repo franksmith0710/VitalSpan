@@ -8,6 +8,9 @@ import {
   DashboardStyleSections,
   DashboardWidgetStyleSections,
 } from "./dashboardConfigPanels";
+import { LinkageRulesPanel } from "./LinkageRulesPanel";
+import { DashboardConfigSection } from "./DashboardConfigSection";
+import type { Linkage } from "./dashboardFilterUtils";
 import type { DashboardStyleConfig, LayoutWidget } from "./layoutUtils";
 import {
   applyDashboardStylePatch,
@@ -26,6 +29,10 @@ type DashboardContextInspectorProps = {
   onWidgetsChange?: (widgets: LayoutWidget[]) => void;
   embedded?: boolean;
   isPixelLayout?: boolean;
+  dashboardId?: string;
+  linkage?: Linkage | null;
+  effectiveLinkage?: Linkage | null;
+  onLinkageChange?: (linkage: Linkage) => void;
 };
 
 /** DataEase 对标：画布空白时右侧「仪表板配置」手风琴（§5 样式分组顺序） */
@@ -37,6 +44,10 @@ export function DashboardContextInspector({
   onWidgetsChange,
   embedded = false,
   isPixelLayout = false,
+  dashboardId,
+  linkage,
+  effectiveLinkage,
+  onLinkageChange,
 }: DashboardContextInspectorProps) {
   const styleConfigRef = useRef(styleConfig);
   styleConfigRef.current = styleConfig;
@@ -72,6 +83,23 @@ export function DashboardContextInspector({
         patchStyle={patchStyle}
         isPixelLayout={isPixelLayout}
       />
+      {dashboardId && onLinkageChange ? (
+        <DashboardConfigSection
+          title="筛选联动"
+          defaultOpen
+          data-testid="dashboard-linkage-section"
+        >
+          <LinkageRulesPanel
+            embedded
+            draftMode
+            dashboardId={dashboardId}
+            linkage={linkage ?? null}
+            effectiveLinkage={effectiveLinkage}
+            widgets={widgets}
+            onLinkageChange={onLinkageChange}
+          />
+        </DashboardConfigSection>
+      ) : null}
     </>
   );
 

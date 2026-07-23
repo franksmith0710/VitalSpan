@@ -22,6 +22,7 @@ ChartRenderer
 | `plugins/` | `metadata.ts` 真理源 · `buildPlanForType` |
 | `d3/` | SVG 渲染实现 |
 | `geo/` | `OfflineGeoPort` · 下钻 · 占位视图 · `geoMapChart` join |
+| `three/` · `three/geo/` | `map-3d` Three.js choropleth · `chinaTerrainLoader` · `applyGeoTerrainSurface`（见 [docs/ui/map-texture.md](../../../../docs/ui/map-texture.md)） |
 | `antv/spec/` · `theme.ts` | 行列编码与主题 token（无 AntV 运行时） |
 | `geoEnginePort.ts` | `activeGeoEngine` / `legacyGeoOptionEngine` 端口 |
 

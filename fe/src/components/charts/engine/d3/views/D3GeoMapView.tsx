@@ -370,6 +370,9 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
           data-fallback-reason={fallbackReason ?? undefined}
         >
           {resolveGeoMapFallbackBanner(fallbackReason ?? undefined)}
+          {import.meta.env.DEV && fallbackReason ? (
+            <span className="ml-1 opacity-70">({fallbackReason})</span>
+          ) : null}
         </p>
       ) : null}
       {geoMatchWarning || geoAssetWarning ? (

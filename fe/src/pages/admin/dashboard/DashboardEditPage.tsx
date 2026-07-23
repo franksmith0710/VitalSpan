@@ -1322,6 +1322,10 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                   onStyleChange={applyStyleConfig}
                   onWidgetsChange={setWidgets}
                   isPixelLayout={layout.version === 2}
+                  dashboardId={id}
+                  linkage={linkage}
+                  effectiveLinkage={effectiveLinkage}
+                  onLinkageChange={applyLinkage}
                 />
               </div>
             ) : null

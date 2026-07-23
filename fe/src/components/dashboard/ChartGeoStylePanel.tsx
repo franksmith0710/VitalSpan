@@ -102,7 +102,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
               onCheckedChange={(terrainTexture) => patchGeo3d({ terrainTexture })}
             />
             <InspectorSwitchRow
-              label="起伏强度"
+              label="地形凹凸（法线/位移）"
               checked={geo3d.terrainRelief !== false}
               onCheckedChange={(terrainRelief) => patchGeo3d({ terrainRelief })}
             />
@@ -111,7 +111,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
         <p className={INSPECTOR_HINT}>
           {isMap
             ? is3d
-              ? "离线中国 3D：hillshade 地形贴图 + 法线/位移起伏，数据以色光叠加；无背景。单击下钻。"
+              ? "离线中国 3D：hillshade 地形贴图 + 可选法线/位移凹凸，数据以色光叠加；无背景。单击下钻。"
               : "离线中国地图：滚轮缩放与拖拽平移；配置「地区/维度」「数据/指标」与「钻取/维度」，预览态点击地图下钻。"
             : "对标 DataEase 分类热力图：横轴、纵轴各一维度，指标决定色深；重复单元格自动求和。"}
         </p>
