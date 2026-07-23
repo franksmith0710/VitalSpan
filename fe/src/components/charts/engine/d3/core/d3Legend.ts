@@ -2,6 +2,12 @@ import type { Selection } from "d3";
 import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartLegendIconShape } from "@/lib/chartDeStyle";
 import { normalizeLegendIconShape } from "@/lib/chartLegendPresentation";
+import {
+  emitSeriesFocus,
+  resetSeriesInteraction,
+  subscribeSeriesFocus,
+  toggleSeriesVisibility,
+} from "@/components/charts/engine/d3/core/interactionBus";
 
 export type D3LegendMarker = "rect" | "line" | "circle" | "triangle" | "diamond";
 
@@ -11,6 +17,8 @@ export type D3LegendItem = {
   marker?: D3LegendMarker;
   markerWidth?: number;
   markerHeight?: number;
+  /** 系列名；用于 dim/toggle，缺省用 label */
+  seriesKey?: string;
 };
 
 export type D3LegendLayout = {
@@ -21,6 +29,9 @@ export type D3LegendLayout = {
   fontSize?: number;
   hAlign?: "left" | "center" | "right";
   vAlign?: "top" | "middle" | "bottom";
+  color?: string;
+  /** 启用 click dim / toggle / 双击复位 */
+  interactive?: boolean;
 };
 
 type LayoutOpts = {
@@ -159,22 +170,36 @@ export function layoutD3InlineLegend(
   root: Selection<SVGSVGElement, unknown, null, undefined>,
   items: D3LegendItem[],
   opts: LayoutOpts,
-): void {
-  if (items.length === 0) return;
+): () => void {
+  if (items.length === 0) return () => undefined;
 
   root.selectAll("g.vs-legend").remove();
   const horizontal = (opts.layout?.orient ?? "horizontal") === "horizontal";
   const fontSize = opts.layout?.fontSize ?? opts.fontSize ?? 11;
   const textColor = opts.layout?.color ?? opts.theme.legendText;
   const defaultIconSize = opts.layout?.iconSize ?? 10;
+  const interactive = opts.layout?.interactive !== false;
   const { x, y } = legendOrigin(opts, items, horizontal, defaultIconSize, fontSize);
   const legend = root.append("g").attr("class", "vs-legend").attr("transform", `translate(${x},${y})`);
   let offsetX = 0;
   let offsetY = 0;
 
+  const itemGroups: Selection<SVGGElement, unknown, null, undefined>[] = [];
+
   for (const item of items) {
     const resolved = resolveMarker(item, opts.layout);
-    const g = legend.append("g").attr("transform", `translate(${offsetX},${offsetY})`);
+    const g = legend
+      .append("g")
+      .attr("class", "vs-legend-item")
+      .attr("data-series-key", item.seriesKey ?? item.label)
+      .attr("transform", `translate(${offsetX},${offsetY})`)
+      .attr("opacity", 1);
+    if (interactive) {
+      g.attr("tabindex", 0)
+        .attr("role", "button")
+        .attr("cursor", "pointer")
+        .style("outline", "none");
+    }
     const iconW = appendLegendIcon(g, resolved.marker, resolved.width, resolved.height, item.color);
     g.append("text")
       .attr("x", iconW + 4)
@@ -182,6 +207,8 @@ export function layoutD3InlineLegend(
       .attr("fill", textColor)
       .style("font-size", `${fontSize}px`)
       .text(item.label);
+
+    itemGroups.push(g);
 
     const rowH = Math.max(resolved.height, fontSize) + 8;
     const rowW = item.label.length * 7 + iconW + 24;
@@ -191,18 +218,64 @@ export function layoutD3InlineLegend(
       offsetY += rowH;
     }
   }
+
+  const applyDimState = (focused: string | null, hidden: ReadonlySet<string>) => {
+    const dimmed = focused != null || hidden.size > 0;
+    itemGroups.forEach((g, i) => {
+      const key = items[i]?.seriesKey ?? items[i]?.label ?? "";
+      const active = focused === key || focused == null;
+      const visible = !hidden.has(key);
+      const opacity = !visible ? 0.35 : dimmed && !active && focused != null ? 0.45 : 1;
+      g.attr("opacity", opacity);
+      g.select("text").attr("text-decoration", visible ? null : "line-through");
+    });
+  };
+
+  let unsub = () => undefined;
+  if (interactive) {
+    unsub = subscribeSeriesFocus(applyDimState);
+    itemGroups.forEach((g, i) => {
+      const key = items[i]?.seriesKey ?? items[i]?.label ?? "";
+      g.on("click", (event) => {
+        event.stopPropagation();
+        if (event.detail >= 2) {
+          resetSeriesInteraction();
+          return;
+        }
+        if (event.shiftKey) toggleSeriesVisibility(key);
+        else emitSeriesFocus(key);
+      });
+      g.on("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          if (event.shiftKey) toggleSeriesVisibility(key);
+          else emitSeriesFocus(key);
+        }
+        if (event.key === "Escape") resetSeriesInteraction();
+      });
+    });
+    legend.on("dblclick", (event) => {
+      event.stopPropagation();
+      resetSeriesInteraction();
+    });
+  }
+
+  return () => {
+    unsub();
+    root.selectAll("g.vs-legend").remove();
+  };
 }
 
-/** 按 showLegend 开关绘制内联图例 */
+/** 按 showLegend 开关绘制内联图例；返回清理函数（含交互订阅） */
 export function renderConfiguredInlineLegend(
   root: Selection<SVGSVGElement, unknown, null, undefined>,
   showLegend: boolean,
   items: D3LegendItem[],
   opts: LayoutOpts,
-): void {
+): () => void {
   if (!showLegend || items.length === 0) {
     root.selectAll("g.vs-legend").remove();
-    return;
+    return () => undefined;
   }
-  layoutD3InlineLegend(root, items, opts);
+  return layoutD3InlineLegend(root, items, opts);
 }

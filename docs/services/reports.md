@@ -30,6 +30,33 @@
 - `core`、`auth`、`query`
 - `reports/catalog` → `reports/scheduler`（`catalogNodeId` 引用）
 
+## 前端消费 IA（报表中心）
+
+侧栏 **「报表中心」** 为「报表」分组的一级父项（可展开）；落地 Hub 页为子菜单 **「全部报表」** → `/admin/reports/center`（`fe/src/pages/admin/reports/ReportCenterPage.tsx`）。职责：**报表消费聚合** —— 展示当前用户可访问的 catalog 模板节点，并提供到预制分析、模板管理、调度的快捷入口；与仪表板/数据大屏（交互画布）不同，本域输出为 **模板树 + 报表引擎** 的文档型/固定版式报表（RPT-001~007）。
+
+| 子入口（nav-manifest） | 路由 | 权限 | PRD | 说明 |
+|------------------------|------|------|-----|------|
+| 全部报表 | `/admin/reports/center` | `report:read` | RPT-004/001 | Hub：快捷卡片 + 授权模板网格 → `view/:nodeId` 运行/导出 |
+| 预制报表 | `/admin/reports` | `report:read` | RPT-002 | 内置 entity×analysis 绑定浏览与运行（FR-3.1） |
+| 报表模板 | `/admin/reports/templates` | `report:manage` | RPT-003/004/006 | 模板树 master-detail、扩展配置 |
+| 报表调度 | `/admin/reports/schedules` | `report:manage` | RPT-005 | cron FSM、执行历史与重试（FR-3.2） |
+
+- **analyst / viewer**：Hub + 预制报表（消费侧）
+- **admin**：另含模板管理、调度管理（生产侧）
+
+壳层路由与布局模式见 [ui/layout.md](../ui/layout.md) §3、§5。
+
+### DataEase 对标（IA，非菜单名 1:1）
+
+对标 DataEase **「报表」产品线** 的整体分组与 **浏览 → 运行 → 导出/投递** 消费路径（归档计划 `docs/automate/plans/archive/2026-07-17-reports-de-ia-complete.md`）。
+
+| VitalSpan 入口 | 近似 DataEase 能力 |
+|----------------|-------------------|
+| 报表中心 / 全部报表 | 报表列表 / 我的报表 / 报表查看（授权后打开、运行） |
+| 预制报表 | 内置/主题分析类固定报表（VitalSpan 政企扩展 FR-3.1，DE 无完全同名项） |
+| 报表模板 | 报表模板管理（Word/Excel/PDF、目录树、扩展指标） |
+| 报表调度 | 定时报告 / 报表调度（cron、执行历史、重试） |
+
 ## 主要类型 / 入口
 
 | 符号 | 说明 | PRD | 状态 |
@@ -48,6 +75,9 @@
 | `prefab/run.py` | binding → analysisType SQL → `engine/execute`；`RPT_PREFAB_RUN_FORBIDDEN` | RPT-002 | M3-LITE 已实现 r233 |
 | `prefab/seed.py` | 内置 lifecycle/distribution binding 幂等 upsert | RPT-002 | M3-LITE 已实现 r233 |
 | **FE** | `fe/src/pages/admin/reports/PrefabReportsPage.tsx` + `usePrefabReports.ts`（列表/运行/空态 vitest） | RPT-002 | M3-LITE 已实现 r233 |
+| **FE** | `fe/src/pages/admin/reports/ReportCenterPage.tsx` + `reportCatalogUtils.ts`（Hub 授权模板网格） | RPT-004/001 | 已实现（2026-07-17 IA） |
+| **FE** | `fe/src/pages/admin/reports/ReportViewPage.tsx`（模板运行 + 导出） | RPT-001 | 已实现（2026-07-17 IA） |
+| **FE** | `fe/src/pages/admin/reports/ReportSchedulesPage.tsx` + `useReportSchedules.ts`（调度列表/历史/重试） | RPT-005 | 已实现（2026-07-17 IA） |
 | `templates/acl.py` | viewer 禁写 + enterprise scope（`set_user_template_scope`） | RPT-003 | companion 已实现 r67 |
 | `templates/probe.py` | validate/get/list perf probe ≤50ms | RPT-003 | M10 已实现 r234 |
 | `templates/service.py` | 模板块 validate/upsert/get/list/delete + `storageRef`/`exportHook` + duplicate block 守卫 | RPT-003 | M10 已实现 r234 |

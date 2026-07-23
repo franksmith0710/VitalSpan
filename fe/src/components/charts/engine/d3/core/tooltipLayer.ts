@@ -57,4 +57,23 @@ export function hideTooltip(layer: TooltipLayer | null): void {
   layer?.style("opacity", "0");
 }
 
+/** 单行/简单 tooltip（收敛手写 innerHTML） */
+export function showSimpleTooltip(
+  layer: TooltipLayer | null,
+  container: HTMLElement,
+  event: MouseEvent,
+  html: string,
+  chartWidth?: number,
+): void {
+  if (!layer) return;
+  const rect = container.getBoundingClientRect();
+  const w = chartWidth ?? rect.width;
+  layer
+    .style("opacity", "1")
+    .html(html);
+  layer
+    .style("left", `${Math.min(event.clientX - rect.left + 12, w - VCDS.tooltip.maxWidth)}px`)
+    .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
+}
+
 export { tooltipHtml, formatChartValue };
