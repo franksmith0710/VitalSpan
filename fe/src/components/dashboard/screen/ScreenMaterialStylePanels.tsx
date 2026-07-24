@@ -5,11 +5,11 @@ import type { ScreenIconStyleConfig, ScreenShapeKind, ScreenShapeStyleConfig } f
 import { normalizeScreenIconStyle, normalizeScreenShapeStyle } from "@/lib/screenVisualStyle";
 import {
   DeAttrField,
-  DeAttrForm,
   DeSegmentGroup,
   DE_INPUT,
 } from "@/components/dashboard/dashboardInspectorUi";
 import { DeAttrSliderField } from "@/components/dashboard/deAttrSlider";
+import { ChartInspectorSection } from "@/components/dashboard/inspectorCompact";
 import { resolveScreenIcon } from "./ScreenIconDisplay";
 import { ScreenColorField } from "./ScreenVisualStylePanels";
 
@@ -26,8 +26,8 @@ export function ScreenShapeStylePanel({
   const patch = (partial: Partial<ScreenShapeStyleConfig>) => onChange({ ...style, ...partial });
 
   return (
-    <DeAttrForm>
-      <DeAttrField label="图形类型" compact>
+    <ChartInspectorSection title="图形" defaultOpen data-testid="screen-shape-style-panel">
+      <DeAttrField label="图形类型" compact className="border-b-0 py-0">
         <DeSegmentGroup
           value={style.shape}
           options={SCREEN_SHAPE_OPTIONS.map((shape) => ({
@@ -39,7 +39,7 @@ export function ScreenShapeStylePanel({
         />
       </DeAttrField>
       <ScreenColorField label="描边颜色" value={style.strokeColor} onChange={(strokeColor) => patch({ strokeColor })} />
-      <DeAttrField label="描边宽度" compact>
+      <DeAttrField label="描边宽度" compact className="border-b-0 py-0">
         <Input
           type="number"
           min={1}
@@ -59,7 +59,7 @@ export function ScreenShapeStylePanel({
         ariaLabel="填充透明度"
         onChange={(fillOpacity) => patch({ fillOpacity })}
       />
-    </DeAttrForm>
+    </ChartInspectorSection>
   );
 }
 
@@ -71,8 +71,8 @@ export function ScreenIconStylePanel({
   const patch = (partial: Partial<ScreenIconStyleConfig>) => onChange({ ...style, ...partial });
 
   return (
-    <DeAttrForm>
-      <DeAttrField label="图标" compact>
+    <ChartInspectorSection title="图标" defaultOpen data-testid="screen-icon-style-panel">
+      <DeAttrField label="图标" compact className="border-b-0 py-0">
         <div className="grid max-h-44 grid-cols-6 gap-0.5 overflow-y-auto rounded-lg bg-gray-100 p-1 dark:bg-white/[0.06]">
           {getScreenIconCatalog().map((entry) => {
             const selected = style.icon === entry.name;
@@ -100,7 +100,7 @@ export function ScreenIconStylePanel({
         </div>
       </DeAttrField>
       <ScreenColorField label="图标颜色" value={style.color} onChange={(color) => patch({ color })} />
-      <DeAttrField label="图标尺寸" compact>
+      <DeAttrField label="图标尺寸" compact className="border-b-0 py-0">
         <Input
           type="number"
           min={16}
@@ -110,6 +110,6 @@ export function ScreenIconStylePanel({
           onChange={(e) => patch({ size: Number(e.target.value) || style.size })}
         />
       </DeAttrField>
-    </DeAttrForm>
+    </ChartInspectorSection>
   );
 }

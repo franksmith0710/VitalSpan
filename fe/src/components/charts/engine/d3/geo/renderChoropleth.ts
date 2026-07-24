@@ -13,6 +13,7 @@ import {
   geoStrokeWidth,
   geoSurfaceColors,
 } from "@/components/charts/engine/geo/geoSurfaceColors";
+import { resolveGeoRegionBorder } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components/charts/engine/d3/core/tooltipLayer";
 import { chartTransition, prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
@@ -40,6 +41,8 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
   const showRegionLabel = geoStyle.showRegionLabel === true;
   const showVisualMap = geoStyle.visualMap !== false;
+  const regionBorder = resolveGeoRegionBorder(geoStyle, isDark);
+  const strokeWidth = geoStrokeWidth(width);
 
   if (width <= 0 || height <= 0) {
     container.replaceChildren();
@@ -80,7 +83,6 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   container.replaceChildren();
 
   const surface = geoSurfaceColors(isDark);
-  const strokeWidth = geoStrokeWidth(width);
   const margin = { top: 8, right: 12, bottom: 24, left: 12 };
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
@@ -147,8 +149,8 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     .attr("fill", (d) => colorForGeoValue(d.value, minVal, maxVal, surface))
     .attr("fill-opacity", (d) => (d.value > 0 ? 0.96 : 0.88))
     .attr("fill-rule", "evenodd")
-    .attr("stroke", surface.border)
-    .attr("stroke-width", strokeWidth)
+    .attr("stroke", regionBorder.show ? regionBorder.colorCss : "none")
+    .attr("stroke-width", regionBorder.show ? strokeWidth : 0)
     .attr("stroke-linejoin", "round")
     .attr("cursor", onPointClick ? "pointer" : "default")
     .attr("opacity", prefersReducedMotion() ? 1 : 0);
@@ -178,8 +180,8 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
       .attr("d", featurePath(d.geometry!))
       .attr("fill", colorForGeoHover(d.value, minVal, maxVal, surface))
       .attr("fill-opacity", 1)
-      .attr("stroke", surface.borderBright)
-      .attr("stroke-width", strokeWidth * 1.55)
+      .attr("stroke", regionBorder.show ? regionBorder.hoverColorCss : "none")
+      .attr("stroke-width", regionBorder.show ? strokeWidth * 1.55 : 0)
       .attr("stroke-opacity", 0.95);
   };
 

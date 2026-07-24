@@ -2,15 +2,11 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { ScreenBorderSparkleConfig } from "@/lib/screenBorderSparkle";
 import {
-  BORDER_FLOW_STROKE_WIDTH_PX,
-  BORDER_FLOW_TRAIL_SEGMENTS,
+  BORDER_FLOW_GLOW_STROKE_PX,
   normalizeScreenBorderSparkle,
 } from "@/lib/screenBorderSparkle";
 import type { ScreenBorderVariant } from "@/lib/screenVisualStyle";
-import {
-  getBorderFlowSegment,
-  type BorderFlowMotion,
-} from "@/lib/screenBorderFlowPaths";
+import { getBorderFlowSegment } from "@/lib/screenBorderFlowPaths";
 
 type ScreenBorderSparklesProps = {
   sparkles: ScreenBorderSparkleConfig[];
@@ -18,100 +14,70 @@ type ScreenBorderSparklesProps = {
   className?: string;
 };
 
-function glowLength(pathLength: number): number {
-  return Math.min(Math.max(pathLength * 0.22, 8), 52);
+function safeId(id: string): string {
+  return id.replace(/[^a-zA-Z0-9_-]/g, "");
 }
 
-function FlowStroke({
+/**
+ * 对标 sc-datav Demo1 header：path 与可见描边同坐标，径向渐变光斑 mask + animateMotion 裁切高亮线段。
+ */
+function MaskedFlowStroke({
+  sparkleId,
   path,
   color,
-  motion,
   speed,
   phaseOffset,
+  trailLengthPx,
+  pxPerUnit,
 }: {
+  sparkleId: string;
   path: string;
   color: string;
-  motion: BorderFlowMotion;
   speed: number;
   phaseOffset: number;
+  trailLengthPx: number;
+  pxPerUnit: number;
 }) {
-  const measureRef = useRef<SVGPathElement>(null);
-  const [pathLength, setPathLength] = useState(0);
-
-  useLayoutEffect(() => {
-    const length = measureRef.current?.getTotalLength() ?? 0;
-    setPathLength(length);
-  }, [path]);
-
-  if (pathLength <= 0) {
-    return <path ref={measureRef} d={path} fill="none" stroke="none" visibility="hidden" />;
-  }
-
-  const streak = glowLength(pathLength);
-  const dasharray = `${streak} ${pathLength}`;
-  const phaseShift = phaseOffset * pathLength;
-  const trailStep = speed * 0.07;
-  const layers = BORDER_FLOW_TRAIL_SEGMENTS + 1;
+  const uid = safeId(sparkleId);
+  const gradId = `border-flow-grad-${uid}`;
+  const maskId = `border-flow-mask-${uid}`;
+  const begin = `${-phaseOffset * speed}s`;
+  const maskRadius = Math.max(2, trailLengthPx / pxPerUnit);
 
   return (
-    <>
-      <path ref={measureRef} d={path} fill="none" stroke="none" visibility="hidden" />
-      {Array.from({ length: layers }, (_, index) => {
-        const trailOpacity = 1 - index * 0.32;
-        const begin = `${-phaseOffset * speed - index * trailStep}s`;
-        const blur = 2.5 + index * 0.8;
-        const haloWidth = BORDER_FLOW_STROKE_WIDTH_PX + 2.5 + index * 0.6;
-
-        const animateProps =
-          motion === "pingpong"
-            ? {
-                attributeName: "stroke-dashoffset" as const,
-                values: `${phaseShift};${phaseShift - pathLength};${phaseShift}`,
-                keyTimes: "0;0.5;1",
-                dur: `${speed}s`,
-                repeatCount: "indefinite" as const,
-                begin,
-              }
-            : {
-                attributeName: "stroke-dashoffset" as const,
-                from: phaseShift,
-                to: phaseShift - pathLength,
-                dur: `${speed}s`,
-                repeatCount: "indefinite" as const,
-                begin,
-              };
-
-        return (
-          <g key={index} opacity={trailOpacity}>
-            <path
-              d={path}
-              fill="none"
-              stroke={color}
-              strokeWidth={haloWidth}
-              strokeLinecap="round"
-              vectorEffect="nonScalingStroke"
-              strokeDasharray={dasharray}
-              strokeDashoffset={phaseShift}
-              style={{ filter: `blur(${blur}px)` }}
-            >
-              <animate {...animateProps} />
-            </path>
-            <path
-              d={path}
-              fill="none"
-              stroke={color}
-              strokeWidth={BORDER_FLOW_STROKE_WIDTH_PX}
-              strokeLinecap="round"
-              vectorEffect="nonScalingStroke"
-              strokeDasharray={dasharray}
-              strokeDashoffset={phaseShift}
-            >
-              <animate {...animateProps} />
-            </path>
-          </g>
-        );
-      })}
-    </>
+    <g>
+      <defs>
+        <radialGradient id={gradId} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fff" stopOpacity="1" />
+          <stop offset="55%" stopColor="#fff" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+        </radialGradient>
+        <mask id={maskId}>
+          <circle r={maskRadius} cx={0} cy={0} fill={`url(#${gradId})`}>
+            <animateMotion
+              dur={`${speed}s`}
+              repeatCount="indefinite"
+              path={path}
+              rotate="auto"
+              keyPoints="0;1"
+              keyTimes="0;1"
+              calcMode="linear"
+              begin={begin}
+            />
+          </circle>
+        </mask>
+      </defs>
+      <path
+        d={path}
+        fill="none"
+        stroke={color}
+        strokeWidth={BORDER_FLOW_GLOW_STROKE_PX}
+        vectorEffect="nonScalingStroke"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        mask={`url(#${maskId})`}
+      />
+    </g>
   );
 }
 
@@ -120,10 +86,29 @@ export function ScreenBorderSparkles({
   variant,
   className,
 }: ScreenBorderSparklesProps) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [pxPerUnit, setPxPerUnit] = useState(4);
+
+  useLayoutEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect();
+      setPxPerUnit(Math.max(width, height, 1) / 100);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   if (sparkles.length === 0) return null;
+
+  const segment = getBorderFlowSegment(variant, 0);
 
   return (
     <svg
+      ref={svgRef}
       className={cn("pointer-events-none absolute inset-0 size-full overflow-visible", className)}
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
@@ -132,16 +117,17 @@ export function ScreenBorderSparkles({
     >
       {sparkles.map((raw, index) => {
         const sparkle = normalizeScreenBorderSparkle(raw);
-        const segment = getBorderFlowSegment(variant, index);
         const phaseOffset = index / sparkles.length;
         return (
-          <FlowStroke
+          <MaskedFlowStroke
             key={sparkle.id}
+            sparkleId={sparkle.id}
             path={segment.path}
             color={sparkle.color}
-            motion={segment.motion}
             speed={sparkle.speed}
             phaseOffset={phaseOffset}
+            trailLengthPx={sparkle.trailLength}
+            pxPerUnit={pxPerUnit}
           />
         );
       })}

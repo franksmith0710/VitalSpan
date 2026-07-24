@@ -1468,6 +1468,19 @@ html.dashboard-thumbnail-capture [data-testid^="pixel-align"] {
   visibility: hidden !important;
 }
 
+.pixel-shape-inner[data-screen-border-asset] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.pixel-shape-inner[data-screen-border-asset] .pixel-shape-content {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-screen-border-flow] animateMotion {
     display: none;

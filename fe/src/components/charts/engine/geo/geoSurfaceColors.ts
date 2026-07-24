@@ -49,6 +49,83 @@ export function geoSurfaceColors(isDark: boolean): GeoSurfacePalette {
   };
 }
 
+/** 经典暖色预设：顶面数据色带偏琥珀/金 */
+export function geoClassicSurfaceColors(isDark: boolean): GeoSurfacePalette {
+  if (isDark) {
+    return {
+      emptyFill: "#3d2f1f",
+      hoverFill: "#fbbf24",
+      hoverGlow: "#fcd34d",
+      border: "rgba(240, 194, 122, 0.45)",
+      borderBright: "rgba(252, 211, 77, 0.95)",
+      rangeLow: "#422006",
+      rangeMid: "#b45309",
+      rangeHigh: "#d97706",
+      rangePeak: "#fbbf24",
+      plotBgCenter: "#292018",
+      plotBgEdge: "#1a1208",
+      glow: "#f59e0b",
+    };
+  }
+  return {
+    emptyFill: "#e8dcc8",
+    hoverFill: "#d97706",
+    hoverGlow: "#b45309",
+    border: "rgba(180, 83, 9, 0.4)",
+    borderBright: "rgba(217, 119, 6, 0.9)",
+    rangeLow: "#fef3c7",
+    rangeMid: "#fcd34d",
+    rangeHigh: "#f59e0b",
+    rangePeak: "#b45309",
+    plotBgCenter: "#fffbeb",
+    plotBgEdge: "#fef3c7",
+    glow: "#d97706",
+  };
+}
+
+/** 简洁预设：低饱和蓝灰 */
+export function geoMinimalSurfaceColors(isDark: boolean): GeoSurfacePalette {
+  if (isDark) {
+    return {
+      emptyFill: "#1e293b",
+      hoverFill: "#94a3b8",
+      hoverGlow: "#cbd5e1",
+      border: "rgba(100, 116, 139, 0.35)",
+      borderBright: "rgba(148, 163, 184, 0.85)",
+      rangeLow: "#0f172a",
+      rangeMid: "#334155",
+      rangeHigh: "#475569",
+      rangePeak: "#94a3b8",
+      plotBgCenter: "#0f172a",
+      plotBgEdge: "#020617",
+      glow: "#64748b",
+    };
+  }
+  return {
+    emptyFill: "#e2e8f0",
+    hoverFill: "#64748b",
+    hoverGlow: "#475569",
+    border: "rgba(71, 85, 105, 0.3)",
+    borderBright: "rgba(51, 65, 85, 0.75)",
+    rangeLow: "#f1f5f9",
+    rangeMid: "#cbd5e1",
+    rangeHigh: "#94a3b8",
+    rangePeak: "#475569",
+    plotBgCenter: "#f8fafc",
+    plotBgEdge: "#f1f5f9",
+    glow: "#64748b",
+  };
+}
+
+export function geoSurfaceColorsForPreset(
+  isDark: boolean,
+  preset: "satellite" | "tech" | "classic" | "minimal",
+): GeoSurfacePalette {
+  if (preset === "classic") return geoClassicSurfaceColors(isDark);
+  if (preset === "minimal") return geoMinimalSurfaceColors(isDark);
+  return geoSurfaceColors(isDark);
+}
+
 export function colorForGeoValue(
   value: number,
   min: number,

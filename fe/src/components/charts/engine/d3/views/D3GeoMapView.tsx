@@ -26,7 +26,9 @@ import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { useGeoMapLevel } from "@/hooks/useGeoMapLevel";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
-import { readChartDeStyle, readChartGeoStyle } from "@/lib/chartDeStyle";
+import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
+import { buildGeo3dStyleContentSig } from "@/components/charts/engine/three/geo3dVisualStyle";
+import { buildGeoRegionBorderContentSig } from "@/components/charts/engine/geo/geoRegionBorderStyle";
 import { cn } from "@/lib/utils";
 
 type PaintMode = "data" | "live" | "commit";
@@ -140,6 +142,15 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   );
 
   const regionField = spec.encoding.dimensions[0]?.field;
+  const geoStyleRenderSig = useMemo(() => {
+    if (!chartConfig) return "";
+    const de = readChartDeStyle(chartConfig);
+    const geo = readChartGeoStyle(de);
+    if (isThreeMap) {
+      return buildGeo3dStyleContentSig(readChartGeo3dStyle(de), geo);
+    }
+    return buildGeoRegionBorderContentSig(geo);
+  }, [chartConfig, isThreeMap]);
   const contentKey = useMemo(
     () =>
       buildGeoMapContentKey({
@@ -153,6 +164,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         depthVisual: style.depthVisual,
         isDark: style.isDark,
         renderTier: props.geo3dRenderTier ?? "full",
+        geo3dStyleSig: geoStyleRenderSig,
       }),
     [
       viewModel.chartType,
@@ -164,6 +176,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       style.depthVisual,
       style.isDark,
       props.geo3dRenderTier,
+      geoStyleRenderSig,
     ],
   );
 

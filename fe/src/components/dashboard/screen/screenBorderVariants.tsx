@@ -141,15 +141,19 @@ export function renderScreenBorderVariant(
 export function ScreenBorderVariantPreview({
   variant,
   className,
+  accent = "#7dd3fc",
+  innerOpacity = 0.4,
 }: {
   variant: ScreenBorderVariant;
   className?: string;
+  accent?: string;
+  innerOpacity?: number;
 }) {
   return (
     <div className={cn("relative aspect-[4/3] w-full overflow-hidden rounded-md bg-[#0a0e14]", className)}>
       {renderScreenBorderVariant(variant, {
-        accent: "#7dd3fc",
-        innerOpacity: 0.4,
+        accent,
+        innerOpacity,
         className: "p-1",
       })}
     </div>

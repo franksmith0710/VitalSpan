@@ -8,8 +8,8 @@ import {
 describe("screenBorderSparkle", () => {
   it("normalizes sparkle defaults", () => {
     const sparkle = normalizeScreenBorderSparkle(createScreenBorderSparkle());
-    expect(sparkle.size).toBe(1.5);
-    expect(sparkle.trailLength).toBe(2);
+    expect(sparkle.size).toBe(2);
+    expect(sparkle.trailLength).toBe(48);
     expect(sparkle.direction).toBe("cw");
   });
 

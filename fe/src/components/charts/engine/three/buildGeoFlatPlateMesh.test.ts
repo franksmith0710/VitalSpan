@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
   buildGeoFlatPlateMesh,
+  GEO_BORDER_ABOVE_CAP_Z,
   resolveGeoCapTopZ,
   resolveGeoPlateDepth,
 } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
@@ -64,11 +65,15 @@ describe("buildGeoFlatPlateMesh", () => {
     shape.lineTo(0, 1);
     shape.closePath();
     const built = buildGeoFlatPlateMesh(shape, 1, 0x0284c7, 0x7dd3fc, true);
+    const hidden = buildGeoFlatPlateMesh(shape, 1, 0x0284c7, 0x7dd3fc, true, {
+      showBorderLines: false,
+    });
     const border = built.borderLines;
     const pos = border.geometry.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < pos.count; i++) {
-      expect(pos.getZ(i)).toBeCloseTo(resolveGeoCapTopZ(1, false) + 0.008);
+      expect(pos.getZ(i)).toBeCloseTo(resolveGeoCapTopZ(1, false) + GEO_BORDER_ABOVE_CAP_Z);
     }
+    expect(hidden.borderLines.visible).toBe(false);
   });
 
   it("applies displacement on cap when relief maps provided", () => {

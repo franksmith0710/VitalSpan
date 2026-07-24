@@ -106,6 +106,8 @@ export type D3GeoStyleProps = {
   roam?: boolean;
   showRegionLabel?: boolean;
   visualMap?: boolean;
+  showRegionBorder?: boolean;
+  regionBorderColor?: string;
 };
 
 export type D3GeoRenderConfig = D3RenderConfigBase & {

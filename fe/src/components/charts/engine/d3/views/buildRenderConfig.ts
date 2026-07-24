@@ -91,6 +91,8 @@ export function buildD3DispatchPayload(
           roam: geoStyle.roam,
           showRegionLabel: geoStyle.showRegionLabel,
           visualMap: geoStyle.visualMap,
+          showRegionBorder: geoStyle.showRegionBorder,
+          regionBorderColor: geoStyle.regionBorderColor,
         },
         geo3dStyle,
         renderTier,

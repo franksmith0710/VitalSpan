@@ -11,6 +11,7 @@ export type GeoMapContentKeyInput = {
   depthVisual?: string;
   isDark?: boolean;
   renderTier?: string;
+  geo3dStyleSig?: string;
 };
 
 /** 判断 3D 地图是否需要全量重建（数据/下钻/样式变更），尺寸变化走 resize。 */
@@ -33,5 +34,6 @@ export function buildGeoMapContentKey(input: GeoMapContentKeyInput): string {
     input.depthVisual ?? "off",
     input.isDark ? "dark" : "light",
     input.renderTier ?? "full",
+    input.geo3dStyleSig ?? "",
   ].join("§");
 }

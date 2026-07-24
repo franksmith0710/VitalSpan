@@ -1,34 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
-  BORDER_FLOW_SEGMENTS,
+  BORDER_FLOW_PATHS,
   getBorderFlowSegment,
   getBorderFlowSegments,
 } from "./screenBorderFlowPaths";
 import type { ScreenBorderVariant } from "./screenVisualStyle";
 
-const VARIANTS = Object.keys(BORDER_FLOW_SEGMENTS) as ScreenBorderVariant[];
+const VARIANTS = Object.keys(BORDER_FLOW_PATHS) as ScreenBorderVariant[];
 
 describe("screenBorderFlowPaths", () => {
-  it("returns segments for every border variant", () => {
+  it("returns a visible-line path for every border variant", () => {
     for (const variant of VARIANTS) {
       const segments = getBorderFlowSegments(variant);
-      expect(segments.length).toBeGreaterThan(0);
-      for (const segment of segments) {
-        expect(segment.path.length).toBeGreaterThan(0);
-        expect(["loop", "pingpong"]).toContain(segment.motion);
-      }
+      expect(segments).toHaveLength(1);
+      expect(segments[0]?.path).toBe(BORDER_FLOW_PATHS[variant]);
+      expect(segments[0]?.motion).toBe("loop");
     }
   });
 
-  it("cycles segments by sparkle index", () => {
-    const segments = getBorderFlowSegments("border-5");
-    expect(getBorderFlowSegment("border-5", 0)).toBe(segments[0]);
-    expect(getBorderFlowSegment("border-5", segments.length)).toBe(segments[0]);
-  });
-
-  it("marks short accent lines as pingpong", () => {
-    expect(getBorderFlowSegment("border-1", 1).motion).toBe("pingpong");
-    expect(getBorderFlowSegment("border-5", 0).motion).toBe("pingpong");
-    expect(getBorderFlowSegment("border-4", 0).motion).toBe("loop");
+  it("uses distinct paths per border style", () => {
+    const paths = VARIANTS.map((variant) => getBorderFlowSegment(variant, 0).path);
+    expect(new Set(paths).size).toBe(VARIANTS.length);
   });
 });

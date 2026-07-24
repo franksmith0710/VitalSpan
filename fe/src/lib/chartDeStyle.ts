@@ -83,19 +83,28 @@ export type ChartGeoStyle = {
   showRegionLabel?: boolean;
   visualMap?: boolean;
   showCellLabel?: boolean;
+  /** 省/市/区县行政边界线（随下钻层级切换 GeoJSON 轮廓） */
+  showRegionBorder?: boolean;
+  /** 行政边界线颜色（#rrggbb）；未设置时跟随 3D 样式预设或主题 */
+  regionBorderColor?: string;
 };
 
 export type ChartGeo3dStyle = {
+  /** 视觉预设：卫星 / 科技 / 经典 / 简洁（对标 sc-datav Demo0–2） */
+  stylePreset?: "satellite" | "tech" | "classic" | "minimal";
   extrudeIntensity?: number;
   quality?: "auto" | "high" | "medium" | "low";
   /** 离线 hillshade 地形贴图（diffuse）；单独控制是否加载 */
   terrainTexture?: boolean;
   /** 法线/位移凹凸起伏；需先开启 terrainTexture */
   terrainRelief?: boolean;
+  /** 场景雾（科技预设默认开启，可手动覆盖） */
+  sceneFog?: boolean;
+  /** 挤出侧壁/底板颜色（#rrggbb）；未设置时跟随样式预设 */
+  shellColor?: string;
   /** @deprecated 不再渲染背景装饰 */
   effectsEnabled?: boolean;
   groundMirror?: boolean;
-  outlineGlow?: boolean;
   beamScan?: boolean;
 };
 

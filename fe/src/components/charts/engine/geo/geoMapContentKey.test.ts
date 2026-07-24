@@ -38,4 +38,24 @@ describe("buildGeoMapContentKey", () => {
     });
     expect(national).not.toBe(drilled);
   });
+
+  it("geo3d 样式签名变化时 key 不同", () => {
+    const base = {
+      chartType: "map-3d",
+      mapId: "100000",
+      drillDepth: 0,
+      drillStack: [] as { dimension: string; value: string }[],
+      rowCount: 34,
+      regionField: "province",
+      rowsSample: [{ province: "安徽省" }],
+      depthVisual: "off",
+      isDark: false,
+      geo3dStyleSig: "satellite,1.15,auto,1,0,0,0",
+    };
+    const other = buildGeoMapContentKey({
+      ...base,
+      geo3dStyleSig: "tech,1.15,auto,1,0,1,1",
+    });
+    expect(buildGeoMapContentKey(base)).not.toBe(other);
+  });
 });

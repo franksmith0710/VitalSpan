@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { CalendarClock, Globe } from "lucide-react";
+import { setScreenInsertDragData } from "@/lib/dashboardDnd";
 import { cn } from "@/lib/utils";
 import type { PaletteInsertType } from "@/components/dashboard/createLayoutWidget";
 import { SCREEN_MORE_CATALOG, type ScreenMoreCatalogItem } from "@/lib/screenMoreCatalog";
@@ -24,14 +25,24 @@ function MoreTile({
   onInserted?: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
+      draggable
+      onDragStart={(event) => setScreenInsertDragData(event.dataTransfer, item.insertType)}
       onClick={() => {
         onInsert(item.insertType);
         onInserted?.();
       }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onInsert(item.insertType);
+          onInserted?.();
+        }
+      }}
       className={cn(
-        "flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border border-transparent p-2 text-center transition-colors",
+        "flex cursor-grab flex-col items-center gap-1.5 rounded-lg border border-transparent p-2 text-center transition-colors active:cursor-grabbing",
         "hover:border-brand-200 hover:bg-brand-50/60 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10",
         "focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20",
       )}

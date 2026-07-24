@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import {
   colorForGeoValue,
+  geoClassicSurfaceColors,
+  geoMinimalSurfaceColors,
   geoSurfaceColors as buildGeoPalette,
   geoValueIntensity,
   type GeoSurfacePalette,
@@ -23,6 +25,10 @@ function cssToHex(color: string): number {
 
 export function geoSurfaceColors(isDark: boolean): GeoSurfaceColors {
   const palette = buildGeoPalette(isDark);
+  return geoSurfaceColorsFromPalette(palette);
+}
+
+function geoSurfaceColorsFromPalette(palette: GeoSurfacePalette): GeoSurfaceColors {
   return {
     palette,
     emptyFill: cssToHex(palette.emptyFill),
@@ -33,6 +39,17 @@ export function geoSurfaceColors(isDark: boolean): GeoSurfaceColors {
     rangeHighCss: palette.rangeHigh,
     rangePeakCss: palette.rangePeak,
   };
+}
+
+export function geoSurfaceColorsForPreset(
+  isDark: boolean,
+  preset: "satellite" | "tech" | "classic" | "minimal",
+): GeoSurfaceColors {
+  let palette: GeoSurfacePalette;
+  if (preset === "classic") palette = geoClassicSurfaceColors(isDark);
+  else if (preset === "minimal") palette = geoMinimalSurfaceColors(isDark);
+  else palette = buildGeoPalette(isDark);
+  return geoSurfaceColorsFromPalette(palette);
 }
 
 export function colorForValue(value: number, min: number, max: number, surface: GeoSurfaceColors): number {

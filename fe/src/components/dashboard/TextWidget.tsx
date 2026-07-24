@@ -157,9 +157,10 @@ export function TextWidget({
           if (!screenVisual) beginEditing();
         }}
         className={cn(
-          "dashboard-no-drag dashboard-scroll min-h-0 flex-1 overflow-auto",
+          "dashboard-no-drag min-h-0 flex-1",
+          screenBorder ? "relative h-full overflow-hidden p-0" : "dashboard-scroll overflow-auto",
           mode === "edit" && !isEditing && "cursor-pointer",
-          !inShapeShell && mode === "edit" && !isEditing && "hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
+          !screenBorder && !inShapeShell && mode === "edit" && !isEditing && "hover:bg-gray-50/50 dark:hover:bg-white/[0.02]",
         )}
       >
         {isEditing ? (
@@ -173,7 +174,7 @@ export function TextWidget({
         ) : screenClock ? (
           <ScreenClockDisplay styleConfig={screenStyle?.clock} />
         ) : screenBorder ? (
-          <ScreenBorderDisplay styleConfig={screenStyle?.border} />
+          <ScreenBorderDisplay className="absolute inset-0" styleConfig={screenStyle?.border} />
         ) : screenTitleBar ? (
           <ScreenTitleBarDisplay
             title={widget.title || "数据大屏标题"}

@@ -25,8 +25,7 @@ describe("ScreenVisualEditRail", () => {
 
     expect(screen.queryByRole("tab", { name: "数据" })).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "样式" })).not.toBeInTheDocument();
-    expect(screen.getByText("装饰边框叠加在画布上，请通过拖拽调整尺寸与位置。")).toBeVisible();
-    expect(screen.getByTestId("border-variant-border-1")).toBeInTheDocument();
+    expect(screen.getByTestId("border-variant-select")).toBeInTheDocument();
   });
 
   it("updates clock style from style panel", () => {
@@ -60,6 +59,7 @@ describe("ScreenVisualEditRail", () => {
       <ScreenVisualEditRail widget={borderWidget} onTextConfigChange={onTextConfigChange} />,
     );
 
+    await user.click(screen.getByTestId("border-variant-select"));
     await user.click(screen.getByTestId("border-variant-border-3"));
 
     const lastCall = onTextConfigChange.mock.calls.at(-1)?.[0];

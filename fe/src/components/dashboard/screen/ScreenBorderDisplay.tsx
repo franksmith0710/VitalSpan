@@ -9,6 +9,21 @@ export type ScreenBorderDisplayProps = {
   styleConfig?: ScreenBorderStyleConfig;
 };
 
+/** 配置栏缩略图：与画布 ScreenBorderDisplay 同一路径渲染 */
+export function ScreenBorderStyleThumbnail({
+  styleConfig,
+  className,
+}: {
+  styleConfig?: ScreenBorderStyleConfig;
+  className?: string;
+}) {
+  return (
+    <div className={cn("relative size-full min-h-0 overflow-hidden", className)}>
+      <ScreenBorderDisplay className="absolute inset-0" styleConfig={styleConfig} />
+    </div>
+  );
+}
+
 /** 对标 DataEase 素材边框 + screen-panel 角标发光 */
 export function ScreenBorderDisplay({ className, styleConfig }: ScreenBorderDisplayProps) {
   const style = normalizeScreenBorderStyle(styleConfig);

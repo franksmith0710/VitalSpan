@@ -154,15 +154,27 @@ export function computeCapTintColor(
   valueT: number,
   isDark = false,
   source: TerrainCapSource = "satellite",
+  tintMixScale = 1,
 ): THREE.Color {
-  const tintMix =
+  const baseMix =
     source === "satellite" ? 0.22 + valueT * 0.38 : 0.08 + valueT * 0.22;
+  const tintMix = Math.min(0.92, baseMix * tintMixScale);
   let color = new THREE.Color(0xffffff).lerp(dataTint, tintMix);
   if (isDark && source !== "satellite") {
     color = color.lerp(new THREE.Color(0xcccccc), 0.1);
   }
   return color;
 }
+
+export type TerrainCapBuildOpts = {
+  displacementScale?: number;
+  source?: TerrainCapSource;
+  tintMixScale?: number;
+  techSatelliteOverlay?: boolean;
+  capEmissiveIntensity?: number;
+  capMetalness?: number;
+  capRoughness?: number;
+};
 
 export function buildTerrainCapMaterial(
   terrainMap: THREE.Texture,
@@ -171,13 +183,35 @@ export function buildTerrainCapMaterial(
   dataTint: THREE.Color,
   valueT: number,
   isDark: boolean,
-  displacementScale = 0,
-  source: TerrainCapSource = "satellite",
+  opts: TerrainCapBuildOpts = {},
 ): THREE.MeshBasicMaterial | THREE.MeshStandardMaterial {
+  const {
+    displacementScale = 0,
+    source = "satellite",
+    tintMixScale = 1,
+    techSatelliteOverlay = false,
+    capEmissiveIntensity,
+    capMetalness = 0.2,
+    capRoughness = 0.5,
+  } = opts;
   terrainMap.colorSpace = THREE.SRGBColorSpace;
-  const tint = computeCapTintColor(dataTint, valueT, isDark, source);
+  const tint = computeCapTintColor(dataTint, valueT, isDark, source, tintMixScale);
   const useRelief =
     Boolean(displacementMap) && displacementScale > 0 && source !== "satellite";
+
+  // 科技预设：卫星 + 发光 Standard，顶面更有大屏质感
+  if (source === "satellite" && techSatelliteOverlay && !useRelief) {
+    const emissive = new THREE.Color(isDark ? 0x1a6aaa : 0x3b82f6);
+    return new THREE.MeshStandardMaterial({
+      map: terrainMap,
+      color: tint,
+      emissive,
+      emissiveIntensity: capEmissiveIntensity ?? (isDark ? 0.22 + valueT * 0.28 : 0.14 + valueT * 0.2),
+      metalness: capMetalness,
+      roughness: capRoughness,
+      side: THREE.FrontSide,
+    });
+  }
 
   // 卫星平面贴图：MeshBasic 无光照，避免稀疏三角面打出伪阴影；也更省 GPU
   if (source === "satellite" && !useRelief) {
@@ -189,7 +223,8 @@ export function buildTerrainCapMaterial(
   }
 
   const emissiveIntensity =
-    source === "satellite" ? (isDark ? 0.04 : 0.02) : isDark ? 0.1 : 0.05;
+    capEmissiveIntensity ??
+    (source === "satellite" ? (isDark ? 0.04 : 0.02) : isDark ? 0.1 : 0.05);
   return new THREE.MeshStandardMaterial({
     map: terrainMap,
     normalMap: source === "satellite" ? null : (normalMap ?? null),
@@ -198,8 +233,8 @@ export function buildTerrainCapMaterial(
     color: tint,
     emissive: tint.clone(),
     emissiveIntensity,
-    metalness: 0.2,
-    roughness: 0.5,
+    metalness: capMetalness,
+    roughness: capRoughness,
     side: THREE.FrontSide,
   });
 }
@@ -221,6 +256,6 @@ export function buildTerrainReliefCapMaterial(
     dataTint,
     valueT,
     isDark,
-    displacementScale,
-  );
+    { displacementScale },
+  ) as THREE.MeshStandardMaterial;
 }

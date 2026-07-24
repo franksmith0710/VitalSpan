@@ -1,14 +1,19 @@
 import type { ChartType } from "@/lib/chartViewConfig";
+import {
+  isScreenMaterialInsertType,
+  type ScreenMaterialInsertType,
+} from "@/lib/screenVisualAssets";
 
 /** HTML5 拖放 MIME；对齐 DataEase/Superset「组件面板 → 画布」 */
 export const DASHBOARD_CHART_DND_TYPE = "application/vnd.vitalspan.chart-type";
 export const DASHBOARD_FILTER_DND_TYPE = "application/vnd.vitalspan.filter-widget";
+export const DASHBOARD_SCREEN_INSERT_DND_TYPE = "application/vnd.vitalspan.screen-insert";
 
 /** 新组件默认占位（12 列栅格，约半宽 × 3 行） */
 export const DEFAULT_WIDGET_COLSPAN = 6;
 export const DEFAULT_WIDGET_ROWSPAN = 3;
 
-export type PaletteDragPayload = ChartType | "filter";
+export type PaletteDragPayload = ChartType | "filter" | ScreenMaterialInsertType;
 
 export function setChartTypeDragData(dataTransfer: DataTransfer, chartType: ChartType): void {
   dataTransfer.setData(DASHBOARD_CHART_DND_TYPE, chartType);
@@ -20,9 +25,21 @@ export function setFilterWidgetDragData(dataTransfer: DataTransfer): void {
   dataTransfer.effectAllowed = "copy";
 }
 
+export function setScreenInsertDragData(
+  dataTransfer: DataTransfer,
+  insertType: ScreenMaterialInsertType,
+): void {
+  dataTransfer.setData(DASHBOARD_SCREEN_INSERT_DND_TYPE, insertType);
+  dataTransfer.effectAllowed = "copy";
+}
+
 export function setPaletteDragData(dataTransfer: DataTransfer, payload: PaletteDragPayload): void {
   if (payload === "filter") {
     setFilterWidgetDragData(dataTransfer);
+    return;
+  }
+  if (isScreenMaterialInsertType(payload)) {
+    setScreenInsertDragData(dataTransfer, payload);
     return;
   }
   setChartTypeDragData(dataTransfer, payload);
@@ -35,10 +52,19 @@ export function readChartTypeFromDragEvent(event: Event): ChartType | null {
   return raw ? (raw as ChartType) : null;
 }
 
+export function readScreenInsertFromDragEvent(event: Event): ScreenMaterialInsertType | null {
+  const dt = (event as DragEvent).dataTransfer;
+  if (!dt) return null;
+  const raw = dt.getData(DASHBOARD_SCREEN_INSERT_DND_TYPE);
+  return raw && isScreenMaterialInsertType(raw) ? raw : null;
+}
+
 export function readPaletteDragPayload(event: Event): PaletteDragPayload | null {
   const dt = (event as DragEvent).dataTransfer;
   if (!dt) return null;
   if (dt.getData(DASHBOARD_FILTER_DND_TYPE) === "filter") return "filter";
+  const screenInsert = readScreenInsertFromDragEvent(event);
+  if (screenInsert) return screenInsert;
   return readChartTypeFromDragEvent(event);
 }
 
@@ -58,12 +84,20 @@ export function paletteDropSize(payload: PaletteDragPayload): { w: number; h: nu
 
 export function isPaletteDragEvent(event: React.DragEvent): boolean {
   const types = event.dataTransfer.types;
-  return types.includes(DASHBOARD_CHART_DND_TYPE) || types.includes(DASHBOARD_FILTER_DND_TYPE);
+  return (
+    types.includes(DASHBOARD_CHART_DND_TYPE) ||
+    types.includes(DASHBOARD_FILTER_DND_TYPE) ||
+    types.includes(DASHBOARD_SCREEN_INSERT_DND_TYPE)
+  );
 }
 
 export function isNativePaletteDragEvent(event: DragEvent): boolean {
   const types = event.dataTransfer?.types;
   if (!types) return false;
   const list = Array.from(types);
-  return list.includes(DASHBOARD_CHART_DND_TYPE) || list.includes(DASHBOARD_FILTER_DND_TYPE);
+  return (
+    list.includes(DASHBOARD_CHART_DND_TYPE) ||
+    list.includes(DASHBOARD_FILTER_DND_TYPE) ||
+    list.includes(DASHBOARD_SCREEN_INSERT_DND_TYPE)
+  );
 }

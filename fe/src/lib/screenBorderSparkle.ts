@@ -1,11 +1,13 @@
 import { SCREEN_ACCENT } from "@/lib/screenTokens";
 
-/** 流光描边宽度（与边框线重合，固定像素） */
-export const BORDER_FLOW_STROKE_WIDTH_PX = 1.5;
-/** 流光拖尾层数（沿同一条线的渐隐光带） */
-export const BORDER_FLOW_TRAIL_SEGMENTS = 2;
-/** @deprecated 使用 BORDER_FLOW_STROKE_WIDTH_PX */
-export const BORDER_FLOW_DOT_SIZE_PX = BORDER_FLOW_STROKE_WIDTH_PX;
+/** 流光高亮描边宽度（mask 裁切段，贴可见线） */
+export const BORDER_FLOW_GLOW_STROKE_PX = 2;
+/** @deprecated 使用 BORDER_FLOW_GLOW_STROKE_PX */
+export const BORDER_FLOW_HEAD_DOT_PX = BORDER_FLOW_GLOW_STROKE_PX;
+/** 拖影长度默认值（像素） */
+export const BORDER_FLOW_TRAIL_LENGTH_DEFAULT_PX = 48;
+export const BORDER_FLOW_TRAIL_LENGTH_MIN_PX = 8;
+export const BORDER_FLOW_TRAIL_LENGTH_MAX_PX = 120;
 
 export type ScreenBorderSparkleDirection = "cw" | "ccw";
 
@@ -16,9 +18,9 @@ export type ScreenBorderSparkleConfig = {
   size?: number;
   /** 绕边框一圈的秒数 */
   speed?: number;
-  /** @deprecated 拖影固定开启 */
+  /** @deprecated 拖影始终开启 */
   trailEnabled?: boolean;
-  /** @deprecated 拖影长度固定 */
+  /** 拖影长度（像素） */
   trailLength?: number;
   /** @deprecated 起始位置由序号自动均分 */
   offset?: number;
@@ -35,10 +37,10 @@ export const DEFAULT_SCREEN_BORDER_SPARKLE: Required<
   Omit<ScreenBorderSparkleConfig, "id">
 > = {
   color: SCREEN_ACCENT,
-  size: BORDER_FLOW_DOT_SIZE_PX,
+  size: BORDER_FLOW_HEAD_DOT_PX,
   speed: 4,
   trailEnabled: true,
-  trailLength: BORDER_FLOW_TRAIL_SEGMENTS,
+  trailLength: BORDER_FLOW_TRAIL_LENGTH_DEFAULT_PX,
   offset: 0,
   direction: "cw",
 };
@@ -65,10 +67,14 @@ export function normalizeScreenBorderSparkle(
   return {
     id: base.id,
     color: base.color ?? DEFAULT_SCREEN_BORDER_SPARKLE.color,
-    size: BORDER_FLOW_STROKE_WIDTH_PX,
+    size: BORDER_FLOW_HEAD_DOT_PX,
     speed: clamp(base.speed ?? DEFAULT_SCREEN_BORDER_SPARKLE.speed, 1, 20),
     trailEnabled: true,
-    trailLength: BORDER_FLOW_TRAIL_SEGMENTS,
+    trailLength: clamp(
+      base.trailLength ?? BORDER_FLOW_TRAIL_LENGTH_DEFAULT_PX,
+      BORDER_FLOW_TRAIL_LENGTH_MIN_PX,
+      BORDER_FLOW_TRAIL_LENGTH_MAX_PX,
+    ),
     offset: 0,
     direction: "cw",
   };

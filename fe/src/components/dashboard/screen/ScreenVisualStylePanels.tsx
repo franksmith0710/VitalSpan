@@ -1,16 +1,17 @@
 import { Input } from "@/components/ui/input";
 import {
   DeAttrField,
-  DeAttrForm,
   DeAttrToggleRow,
   DE_INPUT,
 } from "@/components/dashboard/dashboardInspectorUi";
 import { DeAttrSliderField } from "@/components/dashboard/deAttrSlider";
-import { getScreenBorderCatalogItems } from "@/lib/screenMaterialCatalog";
-import { cn } from "@/lib/utils";
+import {
+  TEXT_COLOR_RECOMMENDED,
+  WIDGET_BORDER_RECOMMENDED,
+} from "@/components/dashboard/dashboardStyleConfig";
+import { ChartInspectorSection, InspectorInlineColorRow } from "@/components/dashboard/inspectorCompact";
 import type {
   ScreenBorderStyleConfig,
-  ScreenBorderVariant,
   ScreenClockStyleConfig,
   ScreenDateTimeStyleConfig,
   ScreenTitleBarStyleConfig,
@@ -22,45 +23,8 @@ import {
   normalizeScreenDateTimeStyle,
   normalizeScreenTitleBarStyle,
 } from "@/lib/screenVisualStyle";
-import { ScreenBorderVariantPreview } from "./screenBorderVariants";
 import { ScreenBorderSparkleStylePanel } from "./ScreenBorderSparkleStylePanel";
-
-function BorderVariantPicker({
-  value,
-  onChange,
-}: {
-  value: ScreenBorderVariant;
-  onChange: (variant: ScreenBorderVariant) => void;
-}) {
-  return (
-    <DeAttrField label="边框样式" compact>
-      <div className="grid grid-cols-3 gap-1 rounded-lg bg-gray-100 p-1 dark:bg-white/[0.06]">
-        {getScreenBorderCatalogItems().map((item) => {
-          const variant = item.payload.preset as ScreenBorderVariant;
-          const selected = value === variant;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onChange(variant)}
-              className={cn(
-                "overflow-hidden rounded-md p-0.5 transition-all",
-                selected
-                  ? "bg-white shadow-theme-xs ring-1 ring-brand-500/30 dark:bg-gray-900"
-                  : "hover:bg-white/70 dark:hover:bg-white/[0.04]",
-              )}
-              aria-label={item.label}
-              aria-pressed={selected}
-              data-testid={`border-variant-${variant}`}
-            >
-              <ScreenBorderVariantPreview variant={variant} />
-            </button>
-          );
-        })}
-      </div>
-    </DeAttrField>
-  );
-}
+import { ScreenBorderVariantPicker } from "./ScreenBorderVariantPicker";
 
 type ScreenStylePanelProps<T> = {
   value: T;
@@ -71,28 +35,21 @@ export function ScreenColorField({
   label,
   value,
   onChange,
+  kind = "accent",
 }: {
   label: string;
   value: string;
   onChange: (next: string) => void;
+  kind?: "accent" | "text";
 }) {
   return (
-    <DeAttrField label={label} compact>
-      <div className="flex items-center gap-2">
-        <Input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-12 shrink-0 cursor-pointer p-1"
-          aria-label={`${label}色块`}
-        />
-        <Input
-          className={DE_INPUT}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      </div>
-    </DeAttrField>
+    <InspectorInlineColorRow
+      label={label}
+      value={value}
+      allowClear={false}
+      swatches={kind === "text" ? TEXT_COLOR_RECOMMENDED : WIDGET_BORDER_RECOMMENDED}
+      onChange={(next) => onChange(next ?? value)}
+    />
   );
 }
 
@@ -104,8 +61,8 @@ export function ScreenClockStylePanel({
   const patch = (partial: Partial<ScreenClockStyleConfig>) => onChange({ ...style, ...partial });
 
   return (
-    <DeAttrForm>
-      <DeAttrField label="字号" compact>
+    <ChartInspectorSection title="时钟" defaultOpen data-testid="screen-clock-style-panel">
+      <DeAttrField label="字号" compact className="border-b-0 py-0">
         <Input
           type="number"
           min={10}
@@ -115,7 +72,7 @@ export function ScreenClockStylePanel({
           onChange={(e) => patch({ fontSize: Number(e.target.value) || style.fontSize })}
         />
       </DeAttrField>
-      <ScreenColorField label="文字颜色" value={style.color} onChange={(color) => patch({ color })} />
+      <ScreenColorField label="文字颜色" kind="text" value={style.color} onChange={(color) => patch({ color })} />
       <DeAttrToggleRow
         label="显示星期"
         checked={style.showWeekday}
@@ -126,7 +83,7 @@ export function ScreenClockStylePanel({
         checked={style.showSeconds}
         onCheckedChange={(showSeconds) => patch({ showSeconds })}
       />
-    </DeAttrForm>
+    </ChartInspectorSection>
   );
 }
 
@@ -138,8 +95,8 @@ export function ScreenDateTimeStylePanel({
   const patch = (partial: Partial<ScreenDateTimeStyleConfig>) => onChange({ ...style, ...partial });
 
   return (
-    <DeAttrForm>
-      <DeAttrField label="日期字号" compact>
+    <ChartInspectorSection title="日期时间" defaultOpen data-testid="screen-datetime-style-panel">
+      <DeAttrField label="日期字号" compact className="border-b-0 py-0">
         <Input
           type="number"
           min={10}
@@ -149,7 +106,7 @@ export function ScreenDateTimeStylePanel({
           onChange={(e) => patch({ dateFontSize: Number(e.target.value) || style.dateFontSize })}
         />
       </DeAttrField>
-      <DeAttrField label="时间字号" compact>
+      <DeAttrField label="时间字号" compact className="border-b-0 py-0">
         <Input
           type="number"
           min={12}
@@ -159,7 +116,7 @@ export function ScreenDateTimeStylePanel({
           onChange={(e) => patch({ timeFontSize: Number(e.target.value) || style.timeFontSize })}
         />
       </DeAttrField>
-      <ScreenColorField label="文字颜色" value={style.color} onChange={(color) => patch({ color })} />
+      <ScreenColorField label="文字颜色" kind="text" value={style.color} onChange={(color) => patch({ color })} />
       <DeAttrToggleRow
         label="显示星期"
         checked={style.showWeekday}
@@ -170,7 +127,7 @@ export function ScreenDateTimeStylePanel({
         checked={style.showSeconds}
         onCheckedChange={(showSeconds) => patch({ showSeconds })}
       />
-    </DeAttrForm>
+    </ChartInspectorSection>
   );
 }
 
@@ -183,8 +140,10 @@ export function ScreenBorderStylePanel({
     onChange({ ...(value ?? {}), ...partial });
 
   return (
-    <DeAttrForm>
-      <BorderVariantPicker value={style.variant} onChange={(variant) => patch({ variant })} />
+    <ChartInspectorSection title="边框" defaultOpen data-testid="screen-border-style-panel">
+      <DeAttrField label="边框样式" compact className="border-b-0 py-0">
+        <ScreenBorderVariantPicker style={style} onChange={(variant) => patch({ variant })} />
+      </DeAttrField>
       <ScreenColorField label="强调色" value={style.accentColor} onChange={(accentColor) => patch({ accentColor })} />
       <DeAttrToggleRow
         label="外发光"
@@ -206,7 +165,7 @@ export function ScreenBorderStylePanel({
         accentFallback={style.accentColor}
         onChange={(sparkle) => patch({ sparkle })}
       />
-    </DeAttrForm>
+    </ChartInspectorSection>
   );
 }
 
@@ -218,15 +177,15 @@ export function ScreenTitleBarStylePanel({
   const patch = (partial: Partial<ScreenTitleBarStyleConfig>) => onChange({ ...style, ...partial });
 
   return (
-    <DeAttrForm>
-      <ScreenColorField label="标题颜色" value={style.titleColor} onChange={(titleColor) => patch({ titleColor })} />
+    <ChartInspectorSection title="标题装饰" defaultOpen data-testid="screen-titlebar-style-panel">
+      <ScreenColorField label="标题颜色" kind="text" value={style.titleColor} onChange={(titleColor) => patch({ titleColor })} />
       <ScreenColorField label="装饰线颜色" value={style.accentColor} onChange={(accentColor) => patch({ accentColor })} />
       <DeAttrToggleRow
         label="显示两侧装饰线"
         checked={style.showSideLines}
         onCheckedChange={(showSideLines) => patch({ showSideLines })}
       />
-    </DeAttrForm>
+    </ChartInspectorSection>
   );
 }
 

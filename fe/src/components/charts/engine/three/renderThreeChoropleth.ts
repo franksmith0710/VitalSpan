@@ -12,7 +12,7 @@ import { renderD3ChoroplethChart } from "@/components/charts/engine/d3/geo/rende
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
 import {
   colorForValue,
-  geoSurfaceColors,
+  geoSurfaceColorsForPreset,
   geometryToShapes,
 } from "@/components/charts/engine/three/geoToThreeShapes";
 import { probeWebGL, type WebGLApi } from "@/components/charts/engine/three/webglProbe";
@@ -51,6 +51,8 @@ import {
   isPointerTapMove,
   type GeoMapTapState,
 } from "@/components/charts/engine/three/geoMapDoubleTap";
+import { resolveGeoRegionBorder } from "@/components/charts/engine/geo/geoRegionBorderStyle";
+import { resolveGeo3dVisualStyle, applyGeo3dSceneFog, hasCustomGeo3dShellColor, resolveGeo3dShellColorNumber } from "@/components/charts/engine/three/geo3dVisualStyle";
 
 function noopDispose(): void {
   /* empty */
@@ -268,12 +270,24 @@ export async function renderThreeChoroplethChart(
   }
 
   try {
-    const surface = geoSurfaceColors(isDark);
+    const visualStyle = resolveGeo3dVisualStyle(geo3dStyle, isDark);
+    const surface = geoSurfaceColorsForPreset(isDark, visualStyle.preset);
     const values = features.map((f) => f.value);
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values, 1);
     const plateScale = Math.max(0.35, geo3dStyle.extrudeIntensity ?? DEFAULT_GEO3D_EXTRUDE_INTENSITY);
-    const borderColor = isDark ? 0x7dd3fc : 0x1e40af;
+    const regionBorder = resolveGeoRegionBorder(geoStyle, isDark, { preset: visualStyle.preset });
+    const borderColor = regionBorder.colorHex;
+    const borderOpacity = regionBorder.opacity;
+    const customShell = hasCustomGeo3dShellColor(geo3dStyle);
+    const shellColor = resolveGeo3dShellColorNumber(geo3dStyle, isDark);
+    const shellEmissive = customShell
+      ? 0x000000
+      : isDark
+        ? visualStyle.shellEmissiveDark
+        : visualStyle.shellEmissiveLight;
+    const shellEmissiveIntensity = customShell ? 0 : visualStyle.shellEmissiveIntensity;
+    const capEmissiveIntensity = isDark ? visualStyle.capEmissiveDark : visualStyle.capEmissiveLight;
     const showVisualMap = geoStyle.visualMap !== false;
     const terrainTextureOn = resolveTerrainTextureEnabled(
       renderTier as Geo3dRenderTier,
@@ -336,12 +350,15 @@ export async function renderThreeChoroplethChart(
     });
     container.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0x9eb4c8, isDark ? 0.48 : 0.38));
-    // 顶盖卫星走 MeshBasic；侧壁实体柱仍需方向光塑形
+    const ambientIntensity = isDark ? visualStyle.ambientDark : visualStyle.ambientLight;
+    scene.add(new THREE.AmbientLight(0x9eb4c8, ambientIntensity));
+
+    const keyBase = isDark ? visualStyle.keyDark : visualStyle.keyLight;
+    const fillBase = isDark ? visualStyle.fillDark : visualStyle.fillLight;
     const keyIntensity =
-      terrainOn && !reliefOn ? (isDark ? 0.9 : 0.72) : isDark ? 1.35 : 1.1;
+      terrainOn && !reliefOn ? keyBase * (isDark ? 0.85 : 0.9) : keyBase;
     const fillIntensity =
-      terrainOn && !reliefOn ? (isDark ? 0.32 : 0.24) : isDark ? 0.45 : 0.32;
+      terrainOn && !reliefOn ? fillBase * (isDark ? 0.75 : 0.8) : fillBase;
     const keyLight = new THREE.DirectionalLight(0xf0f6fc, keyIntensity);
     keyLight.position.set(-1.2, 2.4, 1.0);
     const fillLight = new THREE.DirectionalLight(0x5a8ab0, fillIntensity);
@@ -383,6 +400,18 @@ export async function renderThreeChoroplethChart(
           ...perShapeTerrainOpts,
           dataTint: color,
           valueT,
+          shellColor,
+          shellEmissive,
+          shellEmissiveIntensity,
+          shellMetalness: visualStyle.shellMetalness,
+          shellRoughness: visualStyle.shellRoughness,
+          capEmissiveIntensity,
+          capMetalness: visualStyle.capMetalness,
+          capRoughness: visualStyle.capRoughness,
+          capTintMixScale: visualStyle.capTintMixScale,
+          techSatelliteOverlay: visualStyle.techSatelliteOverlay,
+          borderOpacity,
+          showBorderLines: regionBorder.show,
         });
         if (!firstCapMaterial) firstCapMaterial = built.capMaterial;
         const emissiveIntensity =
@@ -399,6 +428,7 @@ export async function renderThreeChoroplethChart(
           emissiveIntensity,
           borderLines: built.borderLines,
           borderColor,
+          borderOpacity,
         };
         mapGroup.add(built.mesh);
         meshes.push(built.mesh);
@@ -421,6 +451,7 @@ export async function renderThreeChoroplethChart(
 
     scene.add(mapGroup);
     const orbitLayout = layoutThreeGeoMapGroup(mapGroup, { preCentered: false });
+    applyGeo3dSceneFog(scene, orbitLayout, visualStyle, isDark);
 
     const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -632,11 +663,13 @@ export async function renderThreeChoroplethChart(
 
     const restoreProvinceVisual = (group: THREE.Object3D) => {
       const border = group.userData.borderLines as THREE.LineSegments | undefined;
-      if (terrainOn && border) {
+      if (border && regionBorder.show) {
         const mat = border.material as THREE.LineBasicMaterial;
         mat.color.setHex(group.userData.borderColor as number);
-        mat.opacity = isDark ? 0.82 : 0.75;
-        return;
+        mat.opacity = (group.userData.borderOpacity as number) ?? borderOpacity;
+        border.visible = true;
+      } else if (border) {
+        border.visible = false;
       }
       const cap = capMaterialOf(group);
       const tint = group.userData.capTint as THREE.Color;
@@ -655,21 +688,21 @@ export async function renderThreeChoroplethChart(
         hoveredProvince = nextName;
 
         if (hoveredProvince) {
-          const hoverCss = colorForGeoHover(
-            Number(group!.userData.value ?? 0),
-            minVal,
-            maxVal,
-            surface.palette,
-          );
           for (const part of provinceParts(hoveredProvince)) {
             const border = part.userData.borderLines as THREE.LineSegments | undefined;
-            if (terrainOn && border) {
+            if (border && regionBorder.show) {
               const mat = border.material as THREE.LineBasicMaterial;
-              mat.color.set(hoverCss);
+              mat.color.setHex(regionBorder.hoverColorHex);
               mat.opacity = 1;
               continue;
             }
             const cap = capMaterialOf(part);
+            const hoverCss = colorForGeoHover(
+              Number(group!.userData.value ?? 0),
+              minVal,
+              maxVal,
+              surface.palette,
+            );
             const hoverCol = new THREE.Color(hoverCss);
             applyCapTint(cap, hoverCol, isDark ? 0.45 : 0.32);
           }

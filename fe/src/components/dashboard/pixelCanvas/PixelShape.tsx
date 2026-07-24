@@ -52,8 +52,10 @@ import { usePaletteDragActive } from "./paletteDragContext";
 import {
   dispatchPixelShapeLiveResize,
 } from "./pixelShapeLiveResize";
-import { shouldApplyPropsRectToDisplay } from "./pixelShapePropsSync";
+import { isScreenBorderWidget } from "@/lib/screenVisualAssets";
+import { applyScreenBorderShellPresentation } from "../screen/screenBorderWidgetChrome";
 import { pixelRectsNearlyEqual } from "./pixelRectEqual";
+import { shouldApplyPropsRectToDisplay } from "./pixelShapePropsSync";
 
 type ActiveInteraction = {
   pointerId: number;
@@ -360,7 +362,11 @@ export function PixelShape({
           innerBackgroundLayer: null,
           innerFrameLayer: null,
         };
-  const { shell: innerShell, content: contentShell } = mergeShapeInnerPresentation(shell);
+  const { shell: innerShell, content: contentShell } =
+    widget.type === "text" && isScreenBorderWidget(widget)
+      ? applyScreenBorderShellPresentation(mergeShapeInnerPresentation(shell))
+      : mergeShapeInnerPresentation(shell);
+  const isBorderAsset = widget.type === "text" && isScreenBorderWidget(widget);
   const activeRef = useRef<ActiveInteraction | null>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -689,6 +695,7 @@ export function PixelShape({
                 )}
                 style={innerShell.style}
                 data-pixel-no-drag
+                data-screen-border-asset={isBorderAsset ? "" : undefined}
                 onPointerDown={(event) => {
                   if (mode === "edit" && !paletteDragActive) {
                     const target = event.target as HTMLElement;

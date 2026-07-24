@@ -1,12 +1,13 @@
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DeAttrForm,
-  DeAttrToggleRow,
-} from "@/components/dashboard/dashboardInspectorUi";
+import { DeAttrToggleRow } from "@/components/dashboard/dashboardInspectorUi";
 import { DeAttrSliderField } from "@/components/dashboard/deAttrSlider";
+import { INSPECTOR_NESTED_CARD } from "@/components/dashboard/inspectorCompact";
 import {
+  BORDER_FLOW_TRAIL_LENGTH_MAX_PX,
+  BORDER_FLOW_TRAIL_LENGTH_MIN_PX,
   createScreenBorderSparkle,
+  normalizeScreenBorderSparkle,
   type ScreenBorderSparkleConfig,
   type ScreenBorderSparkleStyleConfig,
 } from "@/lib/screenBorderSparkle";
@@ -33,12 +34,13 @@ function SparkleItemEditor({
   onRemove: () => void;
   canRemove: boolean;
 }) {
+  const normalized = normalizeScreenBorderSparkle(sparkle);
   const patch = (partial: Partial<ScreenBorderSparkleConfig>) =>
-    onChange({ ...sparkle, ...partial });
+    onChange({ ...normalized, ...partial });
 
   return (
     <div
-      className="rounded-lg border border-gray-100 bg-gray-50/50 p-3 dark:border-white/[0.06] dark:bg-white/[0.02]"
+      className={INSPECTOR_NESTED_CARD}
       data-testid={`border-sparkle-item-${index}`}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -61,13 +63,24 @@ function SparkleItemEditor({
       <div className="space-y-0">
         <ScreenColorField
           label="流光颜色"
-          value={sparkle.color || accentFallback}
+          value={normalized.color || accentFallback}
           onChange={(color) => patch({ color })}
+        />
+        <DeAttrSliderField
+          label="拖影长度"
+          compact
+          value={normalized.trailLength}
+          min={BORDER_FLOW_TRAIL_LENGTH_MIN_PX}
+          max={BORDER_FLOW_TRAIL_LENGTH_MAX_PX}
+          step={4}
+          unit="px"
+          ariaLabel="拖影长度"
+          onChange={(trailLength) => patch({ trailLength })}
         />
         <DeAttrSliderField
           label="移动速度"
           compact
-          value={sparkle.speed ?? 4}
+          value={normalized.speed}
           min={1}
           max={20}
           step={0.5}
@@ -114,17 +127,15 @@ export function ScreenBorderSparkleStylePanel({
   };
 
   return (
-    <DeAttrForm>
+    <>
       <DeAttrToggleRow
         label="边框流光"
         checked={style.enabled}
         onCheckedChange={(enabled) => patch({ enabled })}
+        description="沿边框可见线条运动；光斑裁切高亮段（对标 sc-datav）。"
       />
       {style.enabled ? (
         <>
-          <p className="px-1 pb-1 text-[10px] leading-relaxed text-gray-400 dark:text-gray-500">
-            光带沿线条滑动，与描边重合，呈现柔和流光。
-          </p>
           <div className="space-y-2 py-2">
             {style.sparkles.map((sparkle, index) => (
               <SparkleItemEditor
@@ -151,6 +162,6 @@ export function ScreenBorderSparkleStylePanel({
           </Button>
         </>
       ) : null}
-    </DeAttrForm>
+    </>
   );
 }

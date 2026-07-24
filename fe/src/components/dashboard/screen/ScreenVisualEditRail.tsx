@@ -1,5 +1,3 @@
-import { CalendarClock, Circle, Clock3, Frame, Minus, Shapes } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { LayoutWidget, TextWidgetConfig } from "@/components/dashboard/layoutUtils";
 import {
@@ -10,10 +8,9 @@ import {
   isScreenShapeWidget,
   isScreenTitleBarWidget,
 } from "@/lib/screenVisualAssets";
-import { DeAttrField, DeAttrForm } from "@/components/dashboard/dashboardInspectorUi";
-import { INSPECTOR_HINT } from "@/components/dashboard/inspectorCompact";
 import { WidgetInspectorDelete } from "@/components/dashboard/widget-inspector-delete";
 import { WidgetRailPanelHeader } from "@/components/dashboard/widgetRailChrome";
+import { WidgetComponentNameSection } from "@/components/dashboard/widgetRailStyleSections";
 import {
   ScreenIconStylePanel,
   ScreenShapeStylePanel,
@@ -62,17 +59,6 @@ export function ScreenVisualEditRail({
             : isIcon
               ? "图标"
               : "素材";
-  const Icon = isClock
-    ? Clock3
-    : isBorder
-      ? Frame
-      : isDateTime
-        ? CalendarClock
-        : isShape
-          ? Shapes
-          : isIcon
-            ? Circle
-            : Minus;
   const screenStyle = widget.textConfig.screenStyle ?? {};
 
   const patchStyle = (
@@ -85,18 +71,6 @@ export function ScreenVisualEditRail({
     });
   };
 
-  const hintText = isClock
-    ? "预览时自动显示日期时间与星期，内容不可编辑。"
-    : isDateTime
-      ? "上下分行展示日期与时间，可在下方调整字号与颜色。"
-      : isTitleBar
-        ? "顶部标题装饰条，标题取自图层名称。"
-        : isShape
-          ? "基础几何图形装饰，可调整描边与填充。"
-          : isIcon
-            ? "线框图标装饰，可调整颜色与尺寸。"
-            : "装饰边框叠加在画布上，请通过拖拽调整尺寸与位置。";
-
   return (
     <div className={cn("flex h-full min-h-0 w-full flex-col bg-white dark:bg-gray-900", className)}>
       <WidgetRailPanelHeader
@@ -106,25 +80,13 @@ export function ScreenVisualEditRail({
         collapseAriaLabel="收起配置"
       />
 
-      <div className="flex shrink-0 items-start gap-3 border-b border-gray-100 px-3 py-2.5 dark:border-white/[0.06]">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-300">
-          <Icon className="size-4" aria-hidden />
-        </span>
-        <p className={cn(INSPECTOR_HINT, "min-w-0 pt-0.5")}>{hintText}</p>
-      </div>
-
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain no-scrollbar px-2 py-1.5">
-        <div className="p-2">
-          <DeAttrForm>
-            <DeAttrField label="图层名称" compact>
-              <Input
-                value={widget.title}
-                onChange={(e) => onTitleChange?.(e.target.value)}
-                className="h-9"
-                placeholder={kindLabel}
-              />
-            </DeAttrField>
-          </DeAttrForm>
+        <div className="flex flex-col gap-0" data-testid="screen-visual-style-panel">
+          <WidgetComponentNameSection
+            widgetId={widget.id}
+            title={widget.title}
+            onTitleChange={onTitleChange}
+          />
 
           {isClock ? (
             <ScreenClockStylePanel
