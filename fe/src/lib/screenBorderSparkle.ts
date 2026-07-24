@@ -99,7 +99,17 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-/** 拖影像素配置 → mask 圆半径（viewBox 单位，避免首帧 0 尺寸换算撑满整圈） */
+/** 拖影像素配置 → mask 圆半径（屏幕像素，光斑不随拉伸变椭圆） */
+export function trailLengthToMaskRadiusPx(trailLengthPx: number): number {
+  const clamped = clamp(
+    trailLengthPx,
+    BORDER_FLOW_TRAIL_LENGTH_MIN_PX,
+    BORDER_FLOW_TRAIL_LENGTH_MAX_PX,
+  );
+  return Math.max(6, clamped / 2.2);
+}
+
+/** @deprecated 拖影光斑半径（viewBox 0–100）；画布流光请用 trailLengthToMaskRadiusPx */
 export function trailLengthToMaskRadius(trailLengthPx: number): number {
   const clamped = clamp(
     trailLengthPx,

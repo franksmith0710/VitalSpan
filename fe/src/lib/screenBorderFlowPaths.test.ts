@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildBorderFlowPathsFromDeFrames,
   pickOuterFlowSubpath,
+  scaleNormalizedFlowPath,
 } from "./screenBorderFlowPathExtract";
 import { DATAEASE_BOARD_SVGS } from "./chartFrameBorderSvgs";
 import { SCREEN_BORDER_DE_FRAME_IDS } from "./screenBorderDeFrames";
@@ -70,6 +71,15 @@ describe("screenBorderFlowPathExtract", () => {
       }
       expect(maxY - minY, variant).toBeGreaterThan(85);
     }
+  });
+
+  it("scales normalized flow path to pixel coordinates", () => {
+    const base = BORDER_FLOW_PATHS["border-1"];
+    const scaled = scaleNormalizedFlowPath(base, 400, 200);
+    expect(scaled).toMatch(/^M\s/);
+    expect(scaled).not.toBe(base);
+    const nums = scaled.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/g)?.map(Number) ?? [];
+    expect(nums[0]).toBeCloseTo((base.match(/-?\d*\.?\d+/)?.map(Number)[0] ?? 0) * 4, 0);
   });
 });
 

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import {
   pickOuterPerimeterSegments,
   ringToSegments,
+  chainSegmentsIntoRings,
   buildGeoOuterBorderFlowLines,
 } from "./geoOuterBorderFlow";
 
@@ -34,6 +35,20 @@ describe("geoOuterBorderFlow", () => {
     const shape = rectPolygon(0, 0, 2, 1);
     const outer = pickOuterPerimeterSegments([shape], identityProject);
     expect(outer).toHaveLength(ringToSegments(shape.coordinates[0] as [number, number][]).length);
+  });
+
+  it("chains outer segments into a closed ring", () => {
+    const left = rectPolygon(0, 0, 1, 1);
+    const right = rectPolygon(1, 0, 1, 1);
+    const outer = pickOuterPerimeterSegments([left, right], identityProject);
+    const rings = chainSegmentsIntoRings(outer);
+    expect(rings).toHaveLength(1);
+    expect(rings[0]).toHaveLength(6);
+    for (let i = 0; i < rings[0]!.length; i++) {
+      const cur = rings[0]![i]!;
+      const next = rings[0]![(i + 1) % rings[0]!.length]!;
+      expect(Math.hypot(cur.bx - next.ax, cur.by - next.ay)).toBeLessThan(0.06);
+    }
   });
 
   it("builds flow lines only on outer perimeter", () => {

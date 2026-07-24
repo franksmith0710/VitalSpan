@@ -4,6 +4,7 @@ import {
   normalizeScreenBorderSparkle,
   normalizeScreenBorderSparkleStyle,
   trailLengthToMaskRadius,
+  trailLengthToMaskRadiusPx,
 } from "./screenBorderSparkle";
 
 describe("screenBorderSparkle", () => {
@@ -23,5 +24,11 @@ describe("screenBorderSparkle", () => {
     expect(trailLengthToMaskRadius(8)).toBe(4);
     expect(trailLengthToMaskRadius(48)).toBe(9);
     expect(trailLengthToMaskRadius(120)).toBe(18);
+  });
+
+  it("maps trail length to pixel mask radius for flow overlay", () => {
+    expect(trailLengthToMaskRadiusPx(8)).toBe(6);
+    expect(trailLengthToMaskRadiusPx(48)).toBeCloseTo(21.82, 1);
+    expect(trailLengthToMaskRadiusPx(120)).toBeCloseTo(54.55, 1);
   });
 });

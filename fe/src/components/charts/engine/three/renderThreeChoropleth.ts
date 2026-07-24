@@ -22,6 +22,10 @@ import {
 } from "@/components/charts/engine/three/geo/threeGeoProject";
 import { loadChinaTerrainPack, resolveProvinceTerrainUvBounds, shouldLoadProvinceTerrainPack } from "@/components/charts/engine/three/geo/chinaTerrainLoader";
 import { computeCapTintColor } from "@/components/charts/engine/three/geo/applyGeoTerrainSurface";
+import {
+  isProvinceTerrainPackUsable,
+  resolveProvinceTerrainProbeUv,
+} from "@/components/charts/engine/three/geo/provinceTerrainProbe";
 import { buildGeoFlatPlateMesh, resolveGeoPlateDepth, GEO_BORDER_ABOVE_CAP_Z, resolveGeoCapTopZ } from "@/components/charts/engine/three/buildGeoFlatPlateMesh";
 import { buildGeoOuterBorderFlowLines } from "@/components/charts/engine/three/geoOuterBorderFlow";
 import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGeoVisualMap";
@@ -322,14 +326,7 @@ export async function renderThreeChoroplethChart(
 
     const geoProject = buildTerrainAlignedGeoProject(width, height, mapId, drillDepth, geo);
     const { project, projBounds } = geoProject;
-    const provinceTerrain = terrainOn && shouldLoadProvinceTerrainPack(mapId, drillDepth);
-    const drillNationalUv = terrainOn && drillDepth > 0 && !provinceTerrain;
-    const nationalGeoProject = drillNationalUv
-      ? buildNationalTerrainProject(getOfflineGeoMap(VS_REGIONS_MAP_ID) ?? { features: [] })
-      : null;
-    const terrainUvBounds = provinceTerrain
-      ? geoProject.projBounds
-      : resolveProvinceTerrainUvBounds(mapId, drillDepth) ?? projBounds;
+    let provinceTerrain = terrainOn && shouldLoadProvinceTerrainPack(mapId, drillDepth);
     const plateDepth = resolveGeoPlateDepth(projBounds, plateScale, drillDepth);
 
     let terrainPack: Awaited<ReturnType<typeof loadChinaTerrainPack>> | null = null;
@@ -339,11 +336,30 @@ export async function renderThreeChoroplethChart(
 
     if (terrainOn) {
       try {
-        terrainPack = await loadChinaTerrainPack({
-          mapId: provinceTerrain ? mapId : drillNationalUv ? VS_REGIONS_MAP_ID : mapId,
-          drillDepth: provinceTerrain ? drillDepth : drillNationalUv ? 0 : drillDepth,
-          isDark,
-        });
+        if (provinceTerrain) {
+          terrainPack = await loadChinaTerrainPack({ mapId, drillDepth, isDark });
+          const probeUv = resolveProvinceTerrainProbeUv(mapId, drillDepth, geo);
+          if (terrainPack && !isProvinceTerrainPackUsable(terrainPack, probeUv)) {
+            if (import.meta.env.DEV) {
+              console.warn("[map-3d] province diffuse misaligned, fallback to national bridge", {
+                mapId,
+                drillDepth,
+                probeUv,
+              });
+            }
+            terrainPack.dispose();
+            terrainPack = null;
+            provinceTerrain = false;
+          }
+        }
+        if (!terrainPack) {
+          const useNationalBridge = drillDepth > 0;
+          terrainPack = await loadChinaTerrainPack({
+            mapId: useNationalBridge ? VS_REGIONS_MAP_ID : mapId,
+            drillDepth: useNationalBridge ? 0 : drillDepth,
+            isDark,
+          });
+        }
       } catch (err) {
         detachTerrainHint = showDevTerrainFailureHint(container);
         if (import.meta.env.DEV) {
@@ -351,6 +367,14 @@ export async function renderThreeChoroplethChart(
         }
       }
     }
+
+    const drillNationalUv = terrainOn && drillDepth > 0 && !provinceTerrain;
+    const nationalGeoProject = drillNationalUv
+      ? buildNationalTerrainProject(getOfflineGeoMap(VS_REGIONS_MAP_ID) ?? { features: [] })
+      : null;
+    const terrainUvBounds = provinceTerrain
+      ? (resolveProvinceTerrainUvBounds(mapId, drillDepth) ?? geoProject.projBounds)
+      : resolveProvinceTerrainUvBounds(mapId, drillDepth) ?? projBounds;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 5000);
@@ -461,7 +485,7 @@ export async function renderThreeChoroplethChart(
     const outerBorderFlow = buildGeoOuterBorderFlowLines(
       mapGeometries,
       project,
-      borderZ,
+      borderZ + 0.02,
       borderColor,
       isDark,
       borderOpacity,

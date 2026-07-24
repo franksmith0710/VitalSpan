@@ -131,6 +131,16 @@ function scaleAbsPath(d: string, scaleX: number, scaleY: number): string {
   return out.join(" ");
 }
 
+/** 将 viewBox 0–100 归一化流光路径缩放到实际像素尺寸（与 DE 边框拉伸一致） */
+export function scaleNormalizedFlowPath(
+  normalizedPath: string,
+  width: number,
+  height: number,
+): string {
+  if (width <= 0 || height <= 0) return normalizedPath;
+  return scaleAbsPath(normalizedPath, width / 100, height / 100);
+}
+
 function pathBBox(d: string): { minX: number; minY: number; maxX: number; maxY: number } {
   const cmds = tokenizePath(absolutizePath(d));
   let minX = Infinity;

@@ -1,13 +1,14 @@
-import { useId } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { ScreenBorderSparkleConfig } from "@/lib/screenBorderSparkle";
 import {
   BORDER_FLOW_GLOW_STROKE_PX,
   normalizeScreenBorderSparkle,
-  trailLengthToMaskRadius,
+  trailLengthToMaskRadiusPx,
 } from "@/lib/screenBorderSparkle";
 import type { ScreenBorderVariant } from "@/lib/screenVisualStyle";
 import { getBorderFlowSegment } from "@/lib/screenBorderFlowPaths";
+import { scaleNormalizedFlowPath } from "@/lib/screenBorderFlowPathExtract";
 
 type ScreenBorderSparklesProps = {
   sparkles: ScreenBorderSparkleConfig[];
@@ -17,12 +18,18 @@ type ScreenBorderSparklesProps = {
   instanceScope?: string;
 };
 
+type FlowSize = {
+  width: number;
+  height: number;
+};
+
 function safeId(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, "");
 }
 
 /**
  * 对标 sc-datav Demo1 header：path 与可见描边同坐标，径向渐变光斑 mask + animateMotion 裁切高亮线段。
+ * viewBox 与容器像素 1:1，避免 preserveAspectRatio=none 导致流光拉长、运动失真。
  */
 function MaskedFlowStroke({
   instanceScope,
@@ -46,7 +53,7 @@ function MaskedFlowStroke({
   const gradId = `border-flow-grad-${scope}-${uid}`;
   const maskId = `border-flow-mask-${scope}-${uid}`;
   const begin = `${-phaseOffset * speed}s`;
-  const maskRadius = trailLengthToMaskRadius(trailLengthPx);
+  const maskRadius = trailLengthToMaskRadiusPx(trailLengthPx);
 
   return (
     <g>
@@ -98,35 +105,66 @@ export function ScreenBorderSparkles({
 }: ScreenBorderSparklesProps) {
   const autoScope = useId();
   const scope = safeId(instanceScope ?? autoScope);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [flowSize, setFlowSize] = useState<FlowSize>({ width: 0, height: 0 });
+
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect();
+      setFlowSize({
+        width: Math.max(1, Math.round(width)),
+        height: Math.max(1, Math.round(height)),
+      });
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   if (sparkles.length === 0) return null;
 
+  const { width, height } = flowSize;
   const segment = getBorderFlowSegment(variant, 0);
+  const pixelPath =
+    width > 0 && height > 0
+      ? scaleNormalizedFlowPath(segment.path, width, height)
+      : "";
 
   return (
-    <svg
-      className={cn("pointer-events-none absolute inset-0 size-full overflow-visible", className)}
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
+    <div
+      ref={rootRef}
+      className={cn("pointer-events-none absolute inset-0", className)}
       data-screen-border-flow
-      aria-hidden
     >
-      {sparkles.map((raw, index) => {
-        const sparkle = normalizeScreenBorderSparkle(raw);
-        const phaseOffset = index / sparkles.length;
-        return (
-          <MaskedFlowStroke
-            key={sparkle.id}
-            instanceScope={scope}
-            sparkleId={sparkle.id}
-            path={segment.path}
-            color={sparkle.color}
-            speed={sparkle.speed}
-            phaseOffset={phaseOffset}
-            trailLengthPx={sparkle.trailLength}
-          />
-        );
-      })}
-    </svg>
+      {pixelPath ? (
+        <svg
+          className="size-full overflow-visible"
+          viewBox={`0 0 ${width} ${height}`}
+          aria-hidden
+        >
+          {sparkles.map((raw, index) => {
+            const sparkle = normalizeScreenBorderSparkle(raw);
+            const phaseOffset = index / sparkles.length;
+            return (
+              <MaskedFlowStroke
+                key={sparkle.id}
+                instanceScope={scope}
+                sparkleId={sparkle.id}
+                path={pixelPath}
+                color={sparkle.color}
+                speed={sparkle.speed}
+                phaseOffset={phaseOffset}
+                trailLengthPx={sparkle.trailLength}
+              />
+            );
+          })}
+        </svg>
+      ) : null}
+    </div>
   );
 }

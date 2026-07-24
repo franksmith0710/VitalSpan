@@ -91,6 +91,78 @@ export function pickOuterPerimeterSegments(
     .map(([key]) => canonical.get(key)!);
 }
 
+function segmentLength(seg: Segment2): number {
+  return Math.hypot(seg.bx - seg.ax, seg.by - seg.ay);
+}
+
+function ringPerimeter(ring: Segment2[]): number {
+  return ring.reduce((sum, seg) => sum + segmentLength(seg), 0);
+}
+
+/** 将无序外缘边段串联为闭合环（每岛/外轮廓一条） */
+export function chainSegmentsIntoRings(segments: Segment2[]): Segment2[][] {
+  if (segments.length === 0) return [];
+
+  type Edge = { segKey: string; seg: Segment2; aKey: string; bKey: string };
+  const adj = new Map<string, Edge[]>();
+
+  for (const seg of segments) {
+    const segKey = segmentKey(seg);
+    const aKey = pointKey(seg.ax, seg.ay);
+    const bKey = pointKey(seg.bx, seg.by);
+    const edge: Edge = { segKey, seg, aKey, bKey };
+    const aList = adj.get(aKey);
+    if (aList) aList.push(edge);
+    else adj.set(aKey, [edge]);
+    const bList = adj.get(bKey);
+    if (bList) bList.push(edge);
+    else adj.set(bKey, [edge]);
+  }
+
+  const used = new Set<string>();
+  const rings: Segment2[][] = [];
+
+  for (const startSeg of segments) {
+    const startSegKey = segmentKey(startSeg);
+    if (used.has(startSegKey)) continue;
+
+    const ring: Segment2[] = [];
+    const startPointKey = pointKey(startSeg.ax, startSeg.ay);
+    used.add(startSegKey);
+    ring.push({ ax: startSeg.ax, ay: startSeg.ay, bx: startSeg.bx, by: startSeg.by });
+
+    let curKey = pointKey(startSeg.bx, startSeg.by);
+    let guard = 0;
+
+    while (curKey !== startPointKey && guard < segments.length + 2) {
+      guard += 1;
+      const candidates = (adj.get(curKey) ?? []).filter((edge) => !used.has(edge.segKey));
+      const edge = candidates[0];
+      if (!edge) break;
+
+      used.add(edge.segKey);
+      const nextKey = edge.aKey === curKey ? edge.bKey : edge.aKey;
+      const oriented =
+        pointKey(edge.seg.ax, edge.seg.ay) === curKey
+          ? { ax: edge.seg.ax, ay: edge.seg.ay, bx: edge.seg.bx, by: edge.seg.by }
+          : { ax: edge.seg.bx, ay: edge.seg.by, bx: edge.seg.ax, by: edge.seg.ay };
+      ring.push(oriented);
+      curKey = nextKey;
+    }
+
+    if (ring.length > 0) rings.push(ring);
+  }
+
+  return rings;
+}
+
+/** 多岛时取最长外轮廓，保证同一时刻只有一条流光 */
+export function pickLongestRing(segments: Segment2[]): Segment2[] {
+  const rings = chainSegmentsIntoRings(segments);
+  if (rings.length === 0) return [];
+  return rings.reduce((best, ring) => (ringPerimeter(ring) > ringPerimeter(best) ? ring : best));
+}
+
 export function buildGeoOuterBorderFlowLines(
   geometries: GeoJSON.Geometry[],
   project: ProjectFn,
@@ -103,10 +175,11 @@ export function buildGeoOuterBorderFlowLines(
   if (!borderFlow.enabled || geometries.length === 0) return null;
 
   const outerSegments = pickOuterPerimeterSegments(geometries, project);
-  if (outerSegments.length === 0) return null;
+  const orderedRing = pickLongestRing(outerSegments);
+  if (orderedRing.length === 0) return null;
 
   const positions: number[] = [];
-  for (const seg of outerSegments) {
+  for (const seg of orderedRing) {
     positions.push(seg.ax, seg.ay, z, seg.bx, seg.by, z);
   }
 

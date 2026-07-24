@@ -32,11 +32,15 @@ uniform float uTrailWidth;
 varying float vLineDistance;
 
 void main() {
-  float phase = fract(vLineDistance - uPhase);
-  float glow = smoothstep(0.0, uTrailWidth, phase)
-    * (1.0 - smoothstep(uTrailWidth, uTrailWidth * 2.0, phase));
+  // 单向拖尾：只从流光头部向前延伸，避免闭合环 fract 首尾各亮一段
+  float dist = fract(vLineDistance - uPhase + 1.0);
+  float trail = max(uTrailWidth, 0.001);
+  float head = 1.0 - smoothstep(0.0, trail * 0.12, dist);
+  float tail = 1.0 - smoothstep(0.0, trail, dist);
+  float glow = head * tail;
+  if (glow < 0.02) discard;
   vec3 color = mix(uBaseColor, uFlowColor, glow);
-  gl_FragColor = vec4(color, uOpacity);
+  gl_FragColor = vec4(color, uOpacity * glow);
 }
 `;
 
@@ -67,7 +71,7 @@ export function attachBorderLineDistance(geometry: THREE.BufferGeometry): void {
 
 export function trailLengthToFlowTrailWidth(trailLengthPx: number): number {
   const radius = trailLengthToMaskRadius(trailLengthPx);
-  return Math.min(0.22, Math.max(0.04, radius / 100));
+  return Math.min(0.35, Math.max(0.06, radius / 85));
 }
 
 export function createGeoBorderFlowMaterial(
@@ -86,6 +90,7 @@ export function createGeoBorderFlowMaterial(
     transparent: true,
     depthTest: false,
     depthWrite: false,
+    blending: THREE.AdditiveBlending,
   });
   material.renderOrder = 25;
   return material;
