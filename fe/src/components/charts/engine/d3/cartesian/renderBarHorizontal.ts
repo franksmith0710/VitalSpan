@@ -91,13 +91,21 @@ export function renderD3HorizontalBarChart(container: HTMLElement, config: D3Car
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
   const useGrouped = hasMultiSeries && (isGroup || !isStack);
+  const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
+  const legendItems = hasMultiSeries
+    ? seriesNames.map((name) => ({
+        label: name || "系列",
+        color: colorScale(name) ?? colors[0] ?? theme.accent,
+      }))
+    : undefined;
   const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories, {
-    showLegend: showLegend && hasMultiSeries,
+    showLegend: Boolean(showLegend && hasMultiSeries),
+    legendLayout,
+    legendItems,
   });
   const root = appendChartSvg(container, width, height);
   const defs = root.append("defs");
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
   const keys = resolveSeriesKeys(seriesNames);
 
   const wideRows: WideRow[] = categories.map((cat) => {

@@ -1,5 +1,6 @@
 ﻿import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 
 export type AdminPageShellProps = {
   title: ReactNode;
@@ -57,12 +58,17 @@ export function AdminPageShell({
             <h1 className="truncate text-title-sm font-semibold text-gray-900 dark:text-white">{title}</h1>
           )}
           {description ? (
-            <div
-              className="truncate text-theme-sm text-gray-500 dark:text-gray-400"
-              title={typeof description === "string" ? description : undefined}
-            >
-              {description}
-            </div>
+            typeof description === "string" ? (
+              <TruncateHint
+                title={description}
+                as="div"
+                className="text-theme-sm text-gray-500 dark:text-gray-400"
+              >
+                {description}
+              </TruncateHint>
+            ) : (
+              <div className="truncate text-theme-sm text-gray-500 dark:text-gray-400">{description}</div>
+            )
           ) : null}
         </div>
         {actions ? (

@@ -113,7 +113,7 @@ export function CanvasScaleArea({
         size="xs"
         className="hidden size-7 text-white/80 hover:bg-white/10 hover:text-white md:inline-flex"
         aria-label="重置视口"
-        title="重置平移与缩放"
+        tooltip="重置平移与缩放"
         onClick={onResetViewport}
       >
         <RotateCcw className="size-3.5" aria-hidden />

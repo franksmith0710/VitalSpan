@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import type { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GEO_MAP_SCALE_LIMIT } from "@/components/charts/engine/geo/geoConstants";
+import type { Geo3dOrbitSnapshot } from "@/components/charts/engine/three/geo3dOrbitState";
 
 export type ThreeGeoOrbitLayout = {
   size: THREE.Vector3;
@@ -128,16 +129,23 @@ export function layoutDatavMapGroup(mapGroup: THREE.Group): ThreeGeoOrbitLayout 
   };
 }
 
+export type ThreeGeoOrbitControlOptions = {
+  /** roam 时开启阻尼；须配合持续 RAF 的 controls.update() */
+  enableDamping?: boolean;
+};
+
 export function configureThreeGeoOrbitControls(
   camera: THREE.PerspectiveCamera,
   controls: OrbitControls,
   layout: ThreeGeoOrbitLayout,
   roam: boolean,
+  options: ThreeGeoOrbitControlOptions = {},
 ): () => void {
+  const enableDamping = options.enableDamping ?? true;
   controls.target.copy(layout.target);
   controls.screenSpacePanning = false;
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
+  controls.enableDamping = enableDamping;
+  controls.dampingFactor = enableDamping ? 0.08 : 0;
   controls.minPolarAngle = 0.2;
   controls.maxPolarAngle = Math.PI / 2 - 0.1;
   controls.minDistance = layout.minDistance;
@@ -157,27 +165,9 @@ export function configureThreeGeoOrbitControls(
   );
   camera.lookAt(target);
 
-  const clampPan = () => {
-    if (!roam) return;
-    const dist = camera.position.distanceTo(controls.target);
-    const zoomRatio = layout.defaultDistance / Math.max(dist, layout.minDistance);
-    const panScale = THREE.MathUtils.clamp(zoomRatio, 1, GEO_MAP_SCALE_LIMIT.max);
-    const maxPanX = layout.halfX * 0.88 * panScale;
-    const maxPanZ = layout.halfZ * 0.88 * panScale;
-    controls.target.x = THREE.MathUtils.clamp(controls.target.x, -maxPanX, maxPanX);
-    controls.target.z = THREE.MathUtils.clamp(controls.target.z, -maxPanZ, maxPanZ);
-    controls.target.y = THREE.MathUtils.clamp(
-      controls.target.y,
-      layout.minY,
-      layout.maxY,
-    );
-  };
-
-  controls.addEventListener("change", clampPan);
   controls.update();
-  clampPan();
 
-  return () => controls.removeEventListener("change", clampPan);
+  return () => undefined;
 }
 
 export function resetThreeGeoOrbitView(
@@ -197,4 +187,25 @@ export function resetThreeGeoOrbitView(
   );
   camera.lookAt(target);
   controls.update();
+}
+
+export function applyGeo3dOrbitSnapshot(
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
+  snapshot: Geo3dOrbitSnapshot,
+): void {
+  controls.target.set(snapshot.target.x, snapshot.target.y, snapshot.target.z);
+  camera.position.set(snapshot.position.x, snapshot.position.y, snapshot.position.z);
+  camera.lookAt(controls.target);
+  controls.update();
+}
+
+export function captureGeo3dOrbitSnapshot(
+  camera: THREE.PerspectiveCamera,
+  controls: OrbitControls,
+): Geo3dOrbitSnapshot {
+  return {
+    target: { x: controls.target.x, y: controls.target.y, z: controls.target.z },
+    position: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+  };
 }

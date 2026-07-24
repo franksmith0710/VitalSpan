@@ -25,8 +25,13 @@ import { mountThreeGeoVisualMap } from "@/components/charts/engine/three/threeGe
 import {
   configureThreeGeoOrbitControls,
   layoutThreeGeoMapGroup,
-  resetThreeGeoOrbitView,
+  applyGeo3dOrbitSnapshot,
+  captureGeo3dOrbitSnapshot,
 } from "@/components/charts/engine/three/threeGeoOrbit";
+import {
+  readGeo3dOrbitState,
+  writeGeo3dOrbitState,
+} from "@/components/charts/engine/three/geo3dOrbitState";
 import { resolveEmbeddedGeoRoam } from "@/components/charts/engine/geo/geoConstants";
 import { DEFAULT_GEO3D_EXTRUDE_INTENSITY } from "@/lib/chartDeStyle";
 import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
@@ -290,6 +295,7 @@ export async function renderThreeChoroplethChart(
     const renderer = new THREE.WebGLRenderer({
       antialias: renderTier === "full",
       alpha: true,
+      powerPreference: "high-performance",
     });
     if (!renderer.getContext()) {
       renderer.dispose();
@@ -299,6 +305,11 @@ export async function renderThreeChoroplethChart(
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
     renderer.setSize(width, height);
+    Object.assign(renderer.domElement.style, {
+      display: "block",
+      width: "100%",
+      height: "100%",
+    });
     container.appendChild(renderer.domElement);
 
     scene.add(new THREE.AmbientLight(0x9eb4c8, isDark ? 0.48 : 0.38));
@@ -433,13 +444,63 @@ export async function renderThreeChoroplethChart(
 
     const roam = resolveEmbeddedGeoRoam(geoStyle.roam);
     const controls = new OrbitControls(camera, renderer.domElement);
-    const detachOrbitPan = configureThreeGeoOrbitControls(camera, controls, orbitLayout, roam);
+    const orbitDamping = roam && renderTier === "full";
+    const detachOrbitPan = configureThreeGeoOrbitControls(camera, controls, orbitLayout, roam, {
+      enableDamping: orbitDamping,
+    });
+    const savedOrbit = readGeo3dOrbitState(instanceKey);
+    if (savedOrbit) {
+      applyGeo3dOrbitSnapshot(camera, controls, savedOrbit);
+    }
+    const persistOrbit = () => {
+      writeGeo3dOrbitState(instanceKey, captureGeo3dOrbitSnapshot(camera, controls));
+    };
     const detachGrabCursor = attachOrbitGrabCursor(renderer.domElement, controls, roam);
+
+    let orbitDragging = false;
+    let dampingFrameId = 0;
+    let hoverFrameId = 0;
+    let renderFrameId = 0;
+    let lastHoverEvent: PointerEvent | null = null;
+    let animationActive = true;
+    let visibleInViewport = true;
+    const enableHoverPick = showTooltip && renderTier !== "embed";
+
+    const renderFrame = () => {
+      renderer.render(scene, camera);
+    };
+
+    const scheduleRender = () => {
+      if (!visibleInViewport || renderFrameId) return;
+      renderFrameId = requestAnimationFrame(() => {
+        renderFrameId = 0;
+        if (!visibleInViewport) return;
+        renderFrame();
+        runDampingTail();
+      });
+    };
+
+    const runDampingTail = () => {
+      if (!orbitDamping || dampingFrameId || !visibleInViewport) return;
+      const tick = () => {
+        dampingFrameId = 0;
+        if (!visibleInViewport || !roam) return;
+        if (controls.update()) {
+          renderFrame();
+          dampingFrameId = requestAnimationFrame(tick);
+        }
+      };
+      dampingFrameId = requestAnimationFrame(tick);
+    };
+
+    const onControlsChange = () => {
+      scheduleRender();
+    };
+    controls.addEventListener("change", onControlsChange);
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let hovered: THREE.Object3D | null = null;
-    let frameId = 0;
     let lastTap: GeoMapTapState = null;
     let pointerDown: { x: number; y: number } | null = null;
 
@@ -486,11 +547,6 @@ export async function renderThreeChoroplethChart(
 
       if (tapKey !== "__empty__" && group) {
         handleMapDoubleActivate(event, group);
-        return;
-      }
-
-      if (tapKey === "__empty__" && roam) {
-        resetThreeGeoOrbitView(camera, controls, orbitLayout);
       }
     };
 
@@ -499,16 +555,19 @@ export async function renderThreeChoroplethChart(
       const group = raycastProvinceGroup(event);
       if (group?.userData?.name) {
         handleMapDoubleActivate(event, group);
-        return;
       }
-      if (roam) resetThreeGeoOrbitView(camera, controls, orbitLayout);
     };
 
     renderer.domElement.addEventListener("pointerdown", onPointerDown);
     renderer.domElement.addEventListener("pointerup", onPointerUp);
     renderer.domElement.addEventListener("click", onClick);
-
-    const tooltip = showTooltip
+    if (enableHoverPick) {
+      renderer.domElement.addEventListener("pointermove", onMove);
+      renderer.domElement.addEventListener("pointerleave", () => {
+        setHover(null);
+        hideTooltip(tooltip);
+      });
+    }
       ? createTooltipLayer(container, theme as D3Theme, tooltipPresentation)
       : null;
     const detachVisualMap = showVisualMap
@@ -538,23 +597,35 @@ export async function renderThreeChoroplethChart(
     };
 
     const onMove = (event: PointerEvent) => {
-      const group = raycastProvinceGroup(event);
-      if (!group?.userData?.name) {
+      if (!enableHoverPick || orbitDragging || event.buttons !== 0) {
         setHover(null);
         hideTooltip(tooltip);
         return;
       }
-      setHover(group);
-      if (!tooltip) return;
-      showMergedTooltip(
-        tooltip,
-        container,
-        event,
-        String(group.userData.name),
-        [{ name: metricField || "值", color: surface.rangeHighCss, value: Number(group.userData.value ?? 0) }],
-        valueFormat,
-        chartWidth,
-      );
+      lastHoverEvent = event;
+      if (hoverFrameId) return;
+      hoverFrameId = requestAnimationFrame(() => {
+        hoverFrameId = 0;
+        const moveEvent = lastHoverEvent;
+        if (!moveEvent || orbitDragging) return;
+        const group = raycastProvinceGroup(moveEvent);
+        if (!group?.userData?.name) {
+          setHover(null);
+          hideTooltip(tooltip);
+          return;
+        }
+        setHover(group);
+        if (!tooltip) return;
+        showMergedTooltip(
+          tooltip,
+          container,
+          moveEvent,
+          String(group.userData.name),
+          [{ name: metricField || "值", color: surface.rangeHighCss, value: Number(group.userData.value ?? 0) }],
+          valueFormat,
+          chartWidth,
+        );
+      });
     };
 
     renderer.domElement.addEventListener("pointermove", onMove);
@@ -563,48 +634,39 @@ export async function renderThreeChoroplethChart(
       hideTooltip(tooltip);
     });
 
-    const animate = () => {
-      frameId = requestAnimationFrame(animate);
-      if (!animationActive || !visibleInViewport) {
-        cancelAnimationFrame(frameId);
-        frameId = 0;
-        return;
-      }
-      controls.update();
-      renderer.render(scene, camera);
-    };
-
-    let animationActive = true;
-    let visibleInViewport = true;
-
-    const stopLoop = () => {
-      if (frameId) {
-        cancelAnimationFrame(frameId);
-        frameId = 0;
+    const stopDampingTail = () => {
+      if (dampingFrameId) {
+        cancelAnimationFrame(dampingFrameId);
+        dampingFrameId = 0;
       }
     };
 
-    const startLoop = () => {
-      if (frameId || !animationActive || !visibleInViewport) return;
-      animate();
+    const onOrbitStart = () => {
+      orbitDragging = true;
+      if (hoverFrameId) {
+        cancelAnimationFrame(hoverFrameId);
+        hoverFrameId = 0;
+      }
+      setHover(null);
+      hideTooltip(tooltip);
     };
-
-    const updateLoopState = () => {
-      if (animationActive && visibleInViewport) startLoop();
-      else stopLoop();
+    const onOrbitEnd = () => {
+      orbitDragging = false;
+      persistOrbit();
     };
+    controls.addEventListener("start", onOrbitStart);
+    controls.addEventListener("end", onOrbitEnd);
 
     renderer.render(scene, camera);
 
     const viewportObserver = new IntersectionObserver(
       ([entry]) => {
         visibleInViewport = entry?.isIntersecting ?? false;
-        updateLoopState();
+        if (!visibleInViewport) stopDampingTail();
       },
       { threshold: 0 },
     );
     viewportObserver.observe(container);
-    startLoop();
 
     let chartWidth = width;
     let chartHeight = height;
@@ -617,18 +679,31 @@ export async function renderThreeChoroplethChart(
       camera.updateProjectionMatrix();
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
       renderer.setSize(nextWidth, nextHeight);
+      renderFrame();
       return true;
     };
 
     const disposeImpl = () => {
       renderDisposed = true;
       viewportObserver.disconnect();
-      stopLoop();
+      stopDampingTail();
+      if (hoverFrameId) {
+        cancelAnimationFrame(hoverFrameId);
+        hoverFrameId = 0;
+      }
+      if (renderFrameId) {
+        cancelAnimationFrame(renderFrameId);
+        renderFrameId = 0;
+      }
+      persistOrbit();
       releaseSlot();
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("click", onClick);
       renderer.domElement.removeEventListener("pointermove", onMove);
+      controls.removeEventListener("change", onControlsChange);
+      controls.removeEventListener("start", onOrbitStart);
+      controls.removeEventListener("end", onOrbitEnd);
       controls.dispose();
       detachOrbitPan();
       detachGrabCursor();
@@ -655,7 +730,6 @@ export async function renderThreeChoroplethChart(
       resize,
       setAnimationActive: (active: boolean) => {
         animationActive = active;
-        updateLoopState();
       },
       dispose: disposeImpl,
     };

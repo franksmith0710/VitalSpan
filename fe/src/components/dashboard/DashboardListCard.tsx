@@ -7,6 +7,7 @@ import { DashboardListCardPreview } from "@/components/dashboard/DashboardListCa
 import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -128,12 +129,13 @@ export function DashboardListCard({
               {dashboard.name}
             </Link>
             {dashboard.description ? (
-              <p
-                className="mt-1 truncate text-theme-xs text-gray-500 dark:text-gray-400"
+              <TruncateHint
                 title={dashboard.description}
+                as="p"
+                className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400"
               >
                 {dashboard.description}
-              </p>
+              </TruncateHint>
             ) : (
               <p className="mt-1 truncate text-theme-xs text-gray-400 dark:text-gray-500">
                 {dashboard.slug}

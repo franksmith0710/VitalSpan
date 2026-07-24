@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ColorPickerPanel } from "@/components/ui/color-picker-panel";
 import { ColorSwatchChip } from "@/components/ui/color-swatch-chip";
+import { HintTooltip } from "@/components/ui/hint-tooltip";
 import { normalizeHexColor } from "@/components/ui/color-utils";
 
 export { normalizeHexColor } from "@/components/ui/color-utils";
@@ -204,13 +205,12 @@ export function ColorField({
             {items.map((item) => {
               const selected = previewHex === normalizeHexColor(item.color);
               return (
-                <button
-                  key={item.color}
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  title={item.label}
-                  aria-label={item.label}
+                <HintTooltip key={item.color} label={item.label}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    aria-label={item.label}
                   className={cn(
                     "flex size-7 items-center justify-center rounded-md transition-colors",
                     "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
@@ -222,6 +222,7 @@ export function ColorField({
                 >
                   <ColorSwatchChip color={item.color} size="sm" selected={selected} />
                 </button>
+                </HintTooltip>
               );
             })}
           </div>
@@ -256,17 +257,17 @@ export function ColorField({
         ) : null}
         <Popover open={open} onOpenChange={handleOpenChange}>
           <PopoverTrigger asChild>
-            <button
-              type="button"
-              className={cn(
-                swatchTriggerVariants({ open }),
-                swatchTriggerPreset === "text" && "inline-flex h-7 items-center gap-0.5 px-0",
-                swatchTriggerPreset === "highlight" && "h-7",
-              )}
-              aria-label={pickerLabel}
-              aria-expanded={open}
-              title={swatchTitle}
-            >
+            <HintTooltip label={swatchTitle}>
+              <button
+                type="button"
+                className={cn(
+                  swatchTriggerVariants({ open }),
+                  swatchTriggerPreset === "text" && "inline-flex h-7 items-center gap-0.5 px-0",
+                  swatchTriggerPreset === "highlight" && "h-7",
+                )}
+                aria-label={pickerLabel}
+                aria-expanded={open}
+              >
               {swatchTriggerPreset === "text" ? (
                 <>
                   <span className="flex flex-col items-center justify-center gap-0.5 px-1.5">
@@ -330,6 +331,7 @@ export function ColorField({
                 </>
               )}
             </button>
+            </HintTooltip>
           </PopoverTrigger>
           {popoverBody}
         </Popover>
@@ -345,11 +347,11 @@ export function ColorField({
       <Popover open={open} onOpenChange={handleOpenChange}>
         <div className={cn(FIELD_SHELL, compact ? "h-8" : "h-9")}>
           <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label={pickerLabel}
-              aria-expanded={open}
-              title="打开取色器"
+            <HintTooltip label="打开取色器">
+              <button
+                type="button"
+                aria-label={pickerLabel}
+                aria-expanded={open}
               className={cn(
                 "flex shrink-0 items-center gap-1 rounded-md py-0.5 pl-0.5 pr-1 transition-colors",
                 "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30",
@@ -366,6 +368,7 @@ export function ColorField({
                 aria-hidden
               />
             </button>
+            </HintTooltip>
           </PopoverTrigger>
           <input
             className="min-w-0 flex-1 border-0 bg-transparent px-0.5 font-mono text-[11px] uppercase tracking-wide text-gray-700 placeholder:normal-case placeholder:tracking-normal placeholder:text-gray-400 focus:outline-none dark:text-gray-200 dark:placeholder:text-gray-500"

@@ -129,7 +129,6 @@ export function DeSegmentGroup({
             type="button"
             aria-pressed={selected}
             aria-label={ariaLabel}
-            title={ariaLabel}
             disabled={opt.disabled}
             style={opt.style}
             onClick={() => {

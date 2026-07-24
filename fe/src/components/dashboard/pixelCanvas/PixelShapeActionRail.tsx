@@ -71,17 +71,6 @@ function railButtonClass(scheme: ColorScheme): string {
   );
 }
 
-function railTipClass(scheme: ColorScheme): string {
-  return cn(
-    "dw-rail-tip pointer-events-none absolute top-1/2 z-[80] -translate-y-1/2 whitespace-nowrap rounded-md px-2.5 py-1 text-theme-xs font-medium shadow-theme-sm",
-    "border opacity-0 transition-opacity duration-150",
-    "group-hover/rail-item:opacity-100 group-focus-within/rail-item:opacity-100",
-    scheme === "dark"
-      ? "border-gray-700 bg-gray-900 text-gray-100"
-      : "border-gray-200 bg-white text-gray-700",
-  );
-}
-
 function menuChromeClass(scheme: ColorScheme): string {
   return cn(
     "z-[90] min-w-[10.5rem]",
@@ -123,13 +112,13 @@ function railPositionStyle(
   return { right: `calc(100% + ${gapPx}px)` };
 }
 
-function railTipPositionClass(placement: ShapeActionRailPlacement): string {
-  if (placement === "overlay") return "right-full mr-1.5";
-  return placement === "right" ? "left-full ml-1.5" : "right-full mr-1.5";
+function railTipSide(placement: ShapeActionRailPlacement): "left" | "right" {
+  return placement === "right" ? "left" : "right";
 }
 
 type RailIconButtonProps = {
   label: string;
+  tooltipSide?: "left" | "right";
   dimmed?: boolean;
   sizePx: number;
   iconSizePx: number;
@@ -141,6 +130,7 @@ type RailIconButtonProps = {
 const RailIconButton = forwardRef<HTMLButtonElement, RailIconButtonProps>(function RailIconButton(
   {
     label,
+    tooltipSide,
     disabled,
     dimmed,
     sizePx,
@@ -170,7 +160,7 @@ const RailIconButton = forwardRef<HTMLButtonElement, RailIconButtonProps>(functi
       className={cn(buttonClassName, dimmed && "opacity-40", className)}
       style={{ width: sizePx, height: sizePx }}
       aria-label={label}
-      title={label}
+      tooltipSide={tooltipSide}
       disabled={disabled}
       {...rest}
       onClick={handleClick}
@@ -181,49 +171,6 @@ const RailIconButton = forwardRef<HTMLButtonElement, RailIconButtonProps>(functi
     </IconButton>
   );
 });
-
-function RailActionItem({
-  label,
-  tipClassName,
-  disabled,
-  dimmed,
-  sizePx,
-  iconSizePx,
-  buttonClassName,
-  tipToneClass,
-  onAction,
-  children,
-}: {
-  label: string;
-  tipClassName: string;
-  disabled?: boolean;
-  dimmed?: boolean;
-  sizePx: number;
-  iconSizePx: number;
-  buttonClassName: string;
-  tipToneClass: string;
-  onAction?: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <div className="group/rail-item relative overflow-visible">
-      <RailIconButton
-        label={label}
-        disabled={disabled}
-        dimmed={dimmed}
-        sizePx={sizePx}
-        iconSizePx={iconSizePx}
-        buttonClassName={buttonClassName}
-        onAction={onAction}
-      >
-        {children}
-      </RailIconButton>
-      <span className={cn(tipToneClass, tipClassName)} role="tooltip">
-        {label}
-      </span>
-    </div>
-  );
-}
 
 export function PixelShapeActionRail({
   widget,
@@ -240,10 +187,9 @@ export function PixelShapeActionRail({
   const iconPx = SHAPE_ACTION_RAIL_ICON_SCREEN_WIDTH / safeScale;
   const isChart = widget.type === "chart";
   const menuSide = placement === "left" ? "right" : "left";
-  const tipClassName = railTipPositionClass(placement);
+  const tipSide = railTipSide(placement);
   const shellClass = railShellClass(colorScheme);
   const buttonClass = railButtonClass(colorScheme);
-  const tipToneClass = railTipClass(colorScheme);
 
   const stopPointer = (event: PointerEvent) => {
     event.stopPropagation();
@@ -266,10 +212,9 @@ export function PixelShapeActionRail({
       onPointerDown={stopPointer}
     >
       <div className={shellClass}>
-        <RailActionItem
+        <RailIconButton
           label="查看数据"
-          tipClassName={tipClassName}
-          tipToneClass={tipToneClass}
+          tooltipSide={tipSide}
           buttonClassName={buttonClass}
           dimmed={!isChart}
           disabled={!isChart || !actions.onViewData}
@@ -278,11 +223,10 @@ export function PixelShapeActionRail({
           onAction={() => actions.onViewData?.(widget.id)}
         >
           <Table2 className="size-full" aria-hidden />
-        </RailActionItem>
-        <RailActionItem
+        </RailIconButton>
+        <RailIconButton
           label="放大"
-          tipClassName={tipClassName}
-          tipToneClass={tipToneClass}
+          tooltipSide={tipSide}
           buttonClassName={buttonClass}
           dimmed={!isChart}
           disabled={!isChart || !actions.onEnlarge}
@@ -291,13 +235,12 @@ export function PixelShapeActionRail({
           onAction={() => actions.onEnlarge?.(widget.id)}
         >
           <Maximize2 className="size-full" aria-hidden />
-        </RailActionItem>
+        </RailIconButton>
         {actions.showLayerActions ? (
           <>
-            <RailActionItem
+            <RailIconButton
               label="置顶"
-              tipClassName={tipClassName}
-              tipToneClass={tipToneClass}
+              tooltipSide={tipSide}
               buttonClassName={buttonClass}
               disabled={!actions.onBringToFront}
               sizePx={railPx}
@@ -305,11 +248,10 @@ export function PixelShapeActionRail({
               onAction={() => actions.onBringToFront?.(widget.id)}
             >
               <ChevronsUp className="size-full" aria-hidden />
-            </RailActionItem>
-            <RailActionItem
+            </RailIconButton>
+            <RailIconButton
               label="置底"
-              tipClassName={tipClassName}
-              tipToneClass={tipToneClass}
+              tooltipSide={tipSide}
               buttonClassName={buttonClass}
               disabled={!actions.onSendToBack}
               sizePx={railPx}
@@ -317,89 +259,85 @@ export function PixelShapeActionRail({
               onAction={() => actions.onSendToBack?.(widget.id)}
             >
               <ChevronsDown className="size-full" aria-hidden />
-            </RailActionItem>
+            </RailIconButton>
           </>
         ) : null}
-        <div className="group/rail-item relative overflow-visible">
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <RailIconButton
-                label="更多操作"
-                sizePx={railPx}
-                iconSizePx={iconPx}
-                buttonClassName={buttonClass}
-                data-testid="pixel-shape-action-more"
-              >
-                <MoreVertical className="size-full" aria-hidden />
-              </RailIconButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              side={menuSide}
-              align="start"
-              sideOffset={6}
-              className={menuChromeClass(colorScheme)}
-              data-dashboard-menu=""
-              data-dashboard-color-scheme={colorScheme}
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <RailIconButton
+              label="更多操作"
+              tooltipSide={tipSide}
+              sizePx={railPx}
+              iconSizePx={iconPx}
+              buttonClassName={buttonClass}
+              data-testid="pixel-shape-action-more"
             >
-              <DropdownMenuItem
-                className={menuItemClass(colorScheme)}
-                disabled={!actions.onCopy}
-                onSelect={() => actions.onCopy?.(widget.id)}
-              >
-                <Copy className="size-3.5" aria-hidden />
-                复制
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className={menuItemClass(colorScheme)}
-                disabled={!isChart || !actions.onEnlarge}
-                onSelect={() => actions.onEnlarge?.(widget.id)}
-              >
-                <Maximize2 className="size-3.5" aria-hidden />
-                放大
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className={menuItemClass(colorScheme)}
-                disabled={!isChart || !actions.onViewData}
-                onSelect={() => actions.onViewData?.(widget.id)}
-              >
-                <Eye className="size-3.5" aria-hidden />
-                查看数据
-              </DropdownMenuItem>
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className={menuSubTriggerClass(colorScheme)} disabled>
-                  导出为
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent
+              <MoreVertical className="size-full" aria-hidden />
+            </RailIconButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+                  side={menuSide}
+                  align="start"
+                  sideOffset={6}
                   className={menuChromeClass(colorScheme)}
                   data-dashboard-menu=""
                   data-dashboard-color-scheme={colorScheme}
                 >
-                  <DropdownMenuItem className={menuItemClass(colorScheme)} disabled>
-                    图片
+                  <DropdownMenuItem
+                    className={menuItemClass(colorScheme)}
+                    disabled={!actions.onCopy}
+                    onSelect={() => actions.onCopy?.(widget.id)}
+                  >
+                    <Copy className="size-3.5" aria-hidden />
+                    复制
                   </DropdownMenuItem>
-                  <DropdownMenuItem className={menuItemClass(colorScheme)} disabled>
-                    PDF
+                  <DropdownMenuItem
+                    className={menuItemClass(colorScheme)}
+                    disabled={!isChart || !actions.onEnlarge}
+                    onSelect={() => actions.onEnlarge?.(widget.id)}
+                  >
+                    <Maximize2 className="size-3.5" aria-hidden />
+                    放大
                   </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuItem className={menuItemClass(colorScheme)} disabled>
-                隐藏
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className={menuSeparatorClass(colorScheme)} />
-              <DropdownMenuItem
-                className={menuItemClass(colorScheme, true)}
-                disabled={!actions.onDelete}
-                onSelect={() => actions.onDelete?.(widget.id)}
-              >
-                <Trash2 className="size-3.5" aria-hidden />
-                删除
-              </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className={menuItemClass(colorScheme)}
+                    disabled={!isChart || !actions.onViewData}
+                    onSelect={() => actions.onViewData?.(widget.id)}
+                  >
+                    <Eye className="size-3.5" aria-hidden />
+                    查看数据
+                  </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className={menuSubTriggerClass(colorScheme)} disabled>
+                      导出为
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent
+                      className={menuChromeClass(colorScheme)}
+                      data-dashboard-menu=""
+                      data-dashboard-color-scheme={colorScheme}
+                    >
+                      <DropdownMenuItem className={menuItemClass(colorScheme)} disabled>
+                        图片
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className={menuItemClass(colorScheme)} disabled>
+                        PDF
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuItem className={menuItemClass(colorScheme)} disabled>
+                    隐藏
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className={menuSeparatorClass(colorScheme)} />
+                  <DropdownMenuItem
+                    className={menuItemClass(colorScheme, true)}
+                    disabled={!actions.onDelete}
+                    onSelect={() => actions.onDelete?.(widget.id)}
+                  >
+                    <Trash2 className="size-3.5" aria-hidden />
+                    删除
+                  </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
-          <span className={cn(tipToneClass, tipClassName)} role="tooltip">
-            更多操作
-          </span>
-        </div>
+        </DropdownMenu>
       </div>
     </div>
   );

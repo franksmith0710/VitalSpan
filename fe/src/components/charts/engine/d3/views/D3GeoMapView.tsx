@@ -227,7 +227,17 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       if (
         isThreeMap &&
         threeApiRef.current?.contentKey === contentKey &&
-        (mode === "live" || mode === "commit" || (!force && embeddedSizeChanged(next, lastMeasureRef.current)))
+        (mode === "live" || mode === "commit")
+      ) {
+        tryThreeResize(mode);
+        return;
+      }
+
+      if (
+        isThreeMap &&
+        threeApiRef.current?.contentKey === contentKey &&
+        !force &&
+        embeddedSizeChanged(next, lastMeasureRef.current)
       ) {
         if (tryThreeResize(mode)) return;
         if (threeLoading && mode !== "data") return;
@@ -343,6 +353,10 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
   const onLiveResize = useCallback(() => {
     setChartAnimationSuppressed(true);
+    if (isThreeMap && threeApiRef.current) {
+      tryThreeResize("live");
+      return;
+    }
     if (isThreeMap && tryThreeResize("live")) return;
     if (liveTimerRef.current !== null) return;
     liveTimerRef.current = setTimeout(() => {
@@ -357,6 +371,10 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       liveTimerRef.current = null;
     }
     setChartAnimationSuppressed(false);
+    if (isThreeMap && threeApiRef.current) {
+      tryThreeResize("commit");
+      return;
+    }
     if (isThreeMap && tryThreeResize("commit")) return;
     measureAndRender("commit", true);
   }, [isThreeMap, tryThreeResize, measureAndRender]);

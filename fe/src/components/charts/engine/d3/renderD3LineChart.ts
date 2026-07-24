@@ -88,6 +88,17 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
     width,
     height,
     showLegend: Boolean(showLegend && seriesField),
+    legendLayout,
+    legendItems:
+      showLegend && seriesField
+        ? seriesGroups.map((series) => ({
+            label: series.name || "系列",
+            color: colorScale(series.name) ?? colors[0] ?? theme.accent,
+            marker: "line" as const,
+            markerWidth: 14,
+            markerHeight: 3,
+          }))
+        : undefined,
     incremental,
     categories,
     axisStyle,

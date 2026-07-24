@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 import { localizeApiMessage } from "@/lib/apiError";
 import { AlertTriangle, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HintTooltip } from "@/components/ui/hint-tooltip";
 import { dwCaption } from "./dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
 
@@ -67,15 +68,27 @@ export class WidgetErrorBoundary extends Component<
           <p className="text-theme-xs font-medium text-gray-800 dark:text-white/90">
             {label}无法渲染
           </p>
-          <p
-            className={cn(
-              "mx-auto max-w-full break-words text-[11px] leading-snug",
-              dwCaption,
-            )}
-            title={error.message || undefined}
-          >
-            {detail}
-          </p>
+          {error.message ? (
+            <HintTooltip label={error.message}>
+              <p
+                className={cn(
+                  "mx-auto max-w-full truncate text-[11px] leading-snug",
+                  dwCaption,
+                )}
+              >
+                {detail}
+              </p>
+            </HintTooltip>
+          ) : (
+            <p
+              className={cn(
+                "mx-auto max-w-full break-words text-[11px] leading-snug",
+                dwCaption,
+              )}
+            >
+              {detail}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
           <Button

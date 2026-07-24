@@ -1,6 +1,7 @@
 import * as React from "react";
 import { HexColorPicker } from "react-colorful";
 import { Pipette } from "lucide-react";
+import { IconButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ColorSwatchChip } from "@/components/ui/color-swatch-chip";
 import { hexToRgb, normalizeHexColor, resolvePickerHex, rgbToHex } from "@/components/ui/color-utils";
@@ -86,16 +87,18 @@ export function ColorPickerPanel({ value, onChange, className }: ColorPickerPane
     <div className={cn("vs-color-picker", className)}>
       <HexColorPicker color={hex} onChange={(next) => onChange(next.toLowerCase())} />
       <div className="mt-2 flex items-center gap-1.5">
-        <button
+        <IconButton
           type="button"
-          className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 shadow-theme-xs transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+          variant="outline"
+          size="xs"
+          className="size-7 shrink-0 rounded-lg shadow-theme-xs"
           onClick={() => void pickFromScreen()}
           disabled={!canEyeDrop}
-          title={canEyeDrop ? "从屏幕取色" : "当前浏览器不支持屏幕取色"}
+          tooltip={canEyeDrop ? "从屏幕取色" : "当前浏览器不支持屏幕取色"}
           aria-label="从屏幕取色"
         >
           <Pipette className="size-3.5" aria-hidden />
-        </button>
+        </IconButton>
         <ColorSwatchChip color={hex} size="lg" />
         <div className="grid min-w-0 flex-1 grid-cols-3 gap-1">
           <RgbField channel="r" value={rgb.r} onChange={handleRgbChange} />

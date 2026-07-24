@@ -6,6 +6,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import { type CatalogNode, useReportTemplates } from "../useReportTemplates";
 
@@ -57,9 +58,7 @@ export function CatalogTreeNode({
         aria-current={selected ? "true" : undefined}
       >
         <TemplateIcon kind={node.templateKind} />
-        <span className="truncate" title={node.name}>
-          {node.name}
-        </span>
+        <TruncateHint title={node.name}>{node.name}</TruncateHint>
       </button>
     );
   }
@@ -76,9 +75,7 @@ export function CatalogTreeNode({
           aria-hidden
         />
         <Folder className="size-4 shrink-0 text-gray-500 dark:text-gray-400" aria-hidden />
-        <span className="truncate" title={node.name}>
-          {node.name}
-        </span>
+        <TruncateHint title={node.name}>{node.name}</TruncateHint>
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-0.5">
         {nodesQuery.isLoading ? <Skeleton className="mx-3 my-1 h-8 w-[calc(100%-1.5rem)] rounded-lg" /> : null}

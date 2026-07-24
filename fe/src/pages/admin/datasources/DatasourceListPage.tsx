@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button, IconButton } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import {
@@ -359,12 +360,12 @@ export function DatasourceListPage() {
                         {row.code}
                       </code>
                       {row.description?.trim() ? (
-                        <span
-                          className="max-w-[220px] truncate text-theme-xs text-gray-500 dark:text-gray-400"
+                        <TruncateHint
                           title={row.description.trim()}
+                          className="max-w-[220px] text-theme-xs text-gray-500 dark:text-gray-400"
                         >
                           {row.description.trim()}
-                        </span>
+                        </TruncateHint>
                       ) : null}
                     </div>
                   </div>,
@@ -374,12 +375,13 @@ export function DatasourceListPage() {
                       {endpoint.primary}
                     </p>
                     {endpoint.secondary ? (
-                      <p
-                        className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400"
+                      <TruncateHint
                         title={endpoint.secondary}
+                        as="p"
+                        className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400"
                       >
                         {endpoint.secondary}
-                      </p>
+                      </TruncateHint>
                     ) : null}
                   </div>,
                   <RowActions key={`${row.id}-actions`}>

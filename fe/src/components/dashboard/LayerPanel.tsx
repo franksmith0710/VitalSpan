@@ -34,20 +34,22 @@ type LayerRow = {
   widget: LayoutWidget;
   depth: number;
   sortReadOnly?: boolean;
-  zIndex: number;
+  stackRank?: number;
+  stackTotal?: number;
 };
 
 function buildLayerRows(widgets: LayoutWidget[]): LayerRow[] {
   const topLevel = sortWidgets(widgets.filter((w) => !w.parentTabsId)).reverse();
   const rows: LayerRow[] = [];
-  let zIndex = topLevel.length;
+  const stackTotal = topLevel.length;
+  let stackRank = stackTotal;
   for (const widget of topLevel) {
-    rows.push({ widget, depth: 0, zIndex: zIndex-- });
+    rows.push({ widget, depth: 0, stackRank: stackRank--, stackTotal });
     if (widget.type === "tabs" && widget.tabsConfig) {
       const childIds = widget.tabsConfig.panes.flatMap((pane) => pane.childWidgetIds);
       for (const childId of childIds) {
         const child = widgets.find((w) => w.id === childId);
-        if (child) rows.push({ widget: child, depth: 1, sortReadOnly: true, zIndex: 0 });
+        if (child) rows.push({ widget: child, depth: 1, sortReadOnly: true });
       }
     }
   }
@@ -85,12 +87,15 @@ export function LayerPanel({
   return (
     <section className={cn("flex min-h-0 flex-col", className)} data-layer-panel>
       <header className="mb-2 flex shrink-0 items-center justify-between gap-2">
-        <h3 className="text-theme-sm font-medium text-gray-800 dark:text-white/90">图层管理</h3>
-        <span className="text-theme-xs text-gray-500">{topLevelCount} 项</span>
+        <div className="min-w-0">
+          <h3 className="text-theme-sm font-medium text-gray-800 dark:text-white/90">图层管理</h3>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500">自上而下为叠放顺序，画布组件互为平级</p>
+        </div>
+        <span className="shrink-0 text-theme-xs text-gray-500">{topLevelCount} 项</span>
       </header>
 
       <ul className="custom-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
-        {rows.map(({ widget, depth, sortReadOnly, zIndex }) => {
+        {rows.map(({ widget, depth, sortReadOnly, stackRank, stackTotal }) => {
           const Icon = resolveLayerWidgetIcon(widget);
           const selected = selectedId === widget.id;
           return (
@@ -136,8 +141,11 @@ export function LayerPanel({
                   />
                   {depth > 0 ? (
                     <p className="truncate text-[10px] text-gray-400 dark:text-gray-500">Tab 内嵌</p>
-                  ) : zIndex > 0 ? (
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">层级 {zIndex}</p>
+                  ) : stackTotal && stackTotal > 1 && stackRank ? (
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                      叠放 {stackRank}/{stackTotal}
+                      {stackRank === stackTotal ? " · 最前" : stackRank === 1 ? " · 最后" : ""}
+                    </p>
                   ) : null}
                 </div>
 
@@ -157,7 +165,7 @@ export function LayerPanel({
                         : "text-gray-600 dark:text-gray-300",
                     )}
                     aria-label={widget.hidden ? "显示图层" : "隐藏图层"}
-                    title={widget.hidden ? "显示" : "隐藏"}
+                    tooltip={widget.hidden ? "显示" : "隐藏"}
                     onClick={() => patchWidget(widget.id, { hidden: !widget.hidden })}
                   >
                     {widget.hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
@@ -173,7 +181,7 @@ export function LayerPanel({
                         : "text-gray-600 dark:text-gray-300",
                     )}
                     aria-label={widget.locked ? "解锁图层" : "锁定图层"}
-                    title={widget.locked ? "解锁" : "锁定"}
+                    tooltip={widget.locked ? "解锁" : "锁定"}
                     onClick={() => patchWidget(widget.id, { locked: !widget.locked })}
                   >
                     {widget.locked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />}
@@ -186,7 +194,7 @@ export function LayerPanel({
                         size="xs"
                         className="dashboard-no-drag size-7 opacity-70 group-hover:opacity-100"
                         aria-label="上移一层"
-                        title="上移"
+                        tooltip="上移一层"
                         onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "down"))}
                       >
                         <ArrowUp className="size-3.5" />
@@ -197,7 +205,7 @@ export function LayerPanel({
                         size="xs"
                         className="dashboard-no-drag size-7 opacity-70 group-hover:opacity-100"
                         aria-label="下移一层"
-                        title="下移"
+                        tooltip="下移一层"
                         onClick={() => onWidgetsChange(moveWidget(widgets, widget.id, "up"))}
                       >
                         <ArrowDown className="size-3.5" />

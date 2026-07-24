@@ -3,6 +3,7 @@ import { BrowserRouter } from "react-router";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/context/auth-context";
 import { AppErrorBoundary } from "@/components/ui/route-error-boundary";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppRoutes } from "@/routes";
 
 const queryClient = new QueryClient({
@@ -14,9 +15,11 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AppErrorBoundary>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
+          <TooltipProvider delayDuration={250}>
+            <AuthProvider>
+              <AppRoutes />
+            </AuthProvider>
+          </TooltipProvider>
         </AppErrorBoundary>
         <Toaster position="top-center" richColors />
       </BrowserRouter>

@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { mapApiError } from "@/lib/apiError";
 import { ApiRequestError } from "@/lib/api";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { PrefabReportsEmptyPreview } from "./components/PrefabReportsEmptyPreview";
 import { PrefabBindingForm } from "./components/PrefabBindingForm";
 import { ReportExportCard } from "./components/ReportExportCard";
@@ -103,9 +104,13 @@ export function PrefabReportsPage() {
                       className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="min-w-0">
-                        <p className="truncate max-w-[200px] text-theme-sm font-medium text-gray-800 dark:text-white/90" title={binding.displayName}>
+                        <TruncateHint
+                          title={binding.displayName}
+                          as="p"
+                          className="max-w-[200px] text-theme-sm font-medium text-gray-800 dark:text-white/90"
+                        >
                           {binding.displayName}
-                        </p>
+                        </TruncateHint>
                         <p className="text-theme-xs text-gray-500 dark:text-gray-400">
                           {binding.analysisType} · {binding.entityTypeCode}
                         </p>

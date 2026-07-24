@@ -57,7 +57,7 @@ describe("LayerPanel", () => {
     );
     const rows = document.querySelectorAll("[data-layer-panel] li > div[role='button']");
     const barRow = rows[1] as HTMLElement;
-    fireEvent.click(within(barRow).getByTitle("隐藏"));
+    fireEvent.click(within(barRow).getByRole("button", { name: "隐藏图层" }));
     expect(onWidgetsChange).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ id: "w2", hidden: true })]),
     );
@@ -69,7 +69,7 @@ describe("LayerPanel", () => {
       <LayerPanel widgets={widgets} selectedId={null} onSelect={vi.fn()} onWidgetsChange={onWidgetsChange} />,
     );
     const rows = document.querySelectorAll("[data-layer-panel] li > div[role='button']");
-    fireEvent.click(within(rows[0] as HTMLElement).getByTitle("锁定"));
+    fireEvent.click(within(rows[0] as HTMLElement).getByRole("button", { name: "锁定图层" }));
     expect(onWidgetsChange).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ id: "w3", locked: true })]),
     );

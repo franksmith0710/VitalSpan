@@ -2,6 +2,7 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
+import { HintTooltip } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -52,13 +53,15 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "title">,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   loading?: boolean;
   loadingText?: React.ReactNode;
   spinner?: React.ReactNode;
   spinnerPlacement?: "start" | "end";
+  tooltip?: string;
+  tooltipSide?: "top" | "right" | "bottom" | "left";
 }
 
 function ButtonSpinner({ className }: { className?: string }) {
@@ -86,6 +89,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       spinner,
       spinnerPlacement = "start",
       children,
+      tooltip,
+      tooltipSide,
       ...props
     },
     ref,
@@ -108,11 +113,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       );
     }
 
-    return (
+    const button = (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         aria-busy={loading || undefined}
-        disabled={!asChild ? disabled || loading : undefined}
+        disabled={disabled || loading}
         data-loading={loading || undefined}
         ref={ref}
         {...props}
@@ -122,12 +127,22 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {loading && spinnerPlacement === "end" ? loadingIndicator : null}
       </Comp>
     );
+    if (!tooltip) return button;
+    return (
+      <HintTooltip label={tooltip} side={tooltipSide}>
+        {button}
+      </HintTooltip>
+    );
   },
 );
 Button.displayName = "Button";
 
-export interface IconButtonProps extends Omit<ButtonProps, "size"> {
+export interface IconButtonProps extends Omit<ButtonProps, "size" | "title"> {
   "aria-label": string;
+  /** 悬停说明；默认与 aria-label 相同 */
+  tooltip?: string;
+  tooltipSide?: "top" | "right" | "bottom" | "left";
+  showTooltip?: boolean;
   size?: "xs" | "sm" | "md" | "lg" | "icon";
   rounded?: "default" | "full";
 }
@@ -141,17 +156,34 @@ const iconButtonSizeClass = {
 } as const;
 
 const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ className, size = "sm", rounded = "default", children, ...props }, ref) => {
-    return (
+  (
+    {
+      className,
+      size = "sm",
+      rounded = "default",
+      children,
+      tooltip,
+      tooltipSide,
+      showTooltip = true,
+      "aria-label": ariaLabel,
+      ...props
+    },
+    ref,
+  ) => {
+    const button = (
       <Button
         ref={ref}
         size="icon"
         className={cn(iconButtonSizeClass[size], rounded === "full" && "rounded-full", className)}
+        aria-label={ariaLabel}
         {...props}
       >
         {children}
       </Button>
     );
+    const hint = tooltip ?? ariaLabel;
+    if (!showTooltip || !hint) return button;
+    return <HintTooltip label={hint} side={tooltipSide}>{button}</HintTooltip>;
   },
 );
 IconButton.displayName = "IconButton";

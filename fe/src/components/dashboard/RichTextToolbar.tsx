@@ -154,7 +154,6 @@ export const RichTextToolbar = forwardRef<HTMLDivElement, RichTextToolbarProps>(
         active && surfaceActive,
       )}
       aria-label={label}
-      title={label}
       disabled={disabled}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}

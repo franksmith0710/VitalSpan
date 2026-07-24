@@ -63,7 +63,6 @@ function ToolbarIconButton({
           "bg-white text-brand-500 shadow-theme-xs ring-1 ring-inset ring-brand-200 hover:bg-white hover:text-brand-600 dark:bg-brand-500/15 dark:text-brand-400 dark:ring-brand-500/30 dark:hover:bg-brand-500/15",
       )}
       aria-label={label}
-      title={label}
       aria-pressed={active}
       onClick={onClick}
     >

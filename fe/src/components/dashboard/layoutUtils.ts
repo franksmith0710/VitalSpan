@@ -590,17 +590,35 @@ export function sortWidgets(widgets: LayoutWidget[]): LayoutWidget[] {
   return [...widgets].sort((a, b) => a.order - b.order);
 }
 
+/** 图层同级分组键：画布顶层 vs 同一 Tab 页签内 */
+export function getLayerSiblingKey(widget: LayoutWidget): string {
+  if (widget.parentTabsId) {
+    return `tab:${widget.parentTabsId}:${widget.tabPaneId ?? ""}`;
+  }
+  return "canvas";
+}
+
+/** 与目标组件同级的兄弟列表（已按 order 升序） */
+export function getLayerSiblings(widgets: LayoutWidget[], id: string): LayoutWidget[] {
+  const target = widgets.find((w) => w.id === id);
+  if (!target) return [];
+  const key = getLayerSiblingKey(target);
+  return sortWidgets(widgets.filter((w) => getLayerSiblingKey(w) === key));
+}
+
 export function moveWidget(widgets: LayoutWidget[], id: string, direction: "up" | "down"): LayoutWidget[] {
-  const sorted = sortWidgets(widgets);
-  const idx = sorted.findIndex((w) => w.id === id);
+  const siblings = getLayerSiblings(widgets, id);
+  const idx = siblings.findIndex((w) => w.id === id);
   if (idx < 0) return widgets;
   const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (swapIdx < 0 || swapIdx >= sorted.length) return widgets;
-  const next = [...sorted];
-  const aOrder = next[idx].order;
-  next[idx] = { ...next[idx], order: next[swapIdx].order };
-  next[swapIdx] = { ...next[swapIdx], order: aOrder };
-  return next;
+  if (swapIdx < 0 || swapIdx >= siblings.length) return widgets;
+  const aOrder = siblings[idx]!.order;
+  const bOrder = siblings[swapIdx]!.order;
+  return widgets.map((w) => {
+    if (w.id === siblings[idx]!.id) return { ...w, order: bOrder };
+    if (w.id === siblings[swapIdx]!.id) return { ...w, order: aOrder };
+    return w;
+  });
 }
 
 export function moveWidgetToExtreme(
@@ -608,13 +626,13 @@ export function moveWidgetToExtreme(
   id: string,
   position: "top" | "bottom",
 ): LayoutWidget[] {
-  const sorted = sortWidgets(widgets);
-  const idx = sorted.findIndex((w) => w.id === id);
+  const siblings = getLayerSiblings(widgets, id);
+  const idx = siblings.findIndex((w) => w.id === id);
   if (idx < 0) return widgets;
   const targetOrder =
     position === "top"
-      ? Math.max(...sorted.map((w) => w.order)) + 1
-      : Math.min(...sorted.map((w) => w.order)) - 1;
+      ? Math.max(...siblings.map((w) => w.order)) + 1
+      : Math.min(...siblings.map((w) => w.order)) - 1;
   return widgets.map((w) => (w.id === id ? { ...w, order: targetOrder } : w));
 }
 

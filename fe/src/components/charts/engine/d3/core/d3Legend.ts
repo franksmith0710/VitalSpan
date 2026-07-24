@@ -19,18 +19,25 @@ export type D3LegendLayout = {
   icon?: ChartLegendIconShape;
   iconSize?: number;
   fontSize?: number;
+  color?: string;
   hAlign?: "left" | "center" | "right";
   vAlign?: "top" | "middle" | "bottom";
 };
 
+export type ChartMargin = { top: number; right: number; bottom: number; left: number };
+
 type LayoutOpts = {
   width: number;
   height: number;
-  margin: { top: number; right: number; bottom: number; left: number };
+  margin: ChartMargin;
   theme: AntvThemeTokens;
   layout?: D3LegendLayout;
   fontSize?: number;
 };
+
+const LEGEND_GAP = 6;
+const LEGEND_FALLBACK_ROW_H = 22;
+const LEGEND_FALLBACK_COL_W = 80;
 
 function resolveMarker(
   item: D3LegendItem,
@@ -49,24 +56,80 @@ function resolveMarker(
   return { marker, size, width: size, height: size };
 }
 
-function estimateLegendSize(
+function itemLabelWidth(item: D3LegendItem, fontSize: number, iconSize: number): number {
+  const iconW = item.marker === "line" ? (item.markerWidth ?? 14) : iconSize;
+  return item.label.length * fontSize * 0.62 + iconW + 16;
+}
+
+export function resolveInlineLegendOrient(layout?: D3LegendLayout): boolean {
+  if (layout?.orient) return layout.orient === "horizontal";
+  const position = layout?.position ?? "bottom";
+  return position === "top" || position === "bottom";
+}
+
+/** 估算图例占位（横向时按绘图区宽度折行） */
+export function estimateLegendBlockSize(
   items: D3LegendItem[],
-  horizontal: boolean,
-  fontSize: number,
-  iconSize: number,
+  layout: D3LegendLayout | undefined,
+  width: number,
+  height: number,
+  margin: ChartMargin,
 ): { width: number; height: number } {
-  if (items.length === 0) return { width: 0, height: 0 };
-  if (horizontal) {
-    const width = items.reduce((sum, item) => {
-      const w = item.marker === "line" ? (item.markerWidth ?? 14) : iconSize;
-      return sum + item.label.length * 7 + w + 24;
-    }, 0);
-    return { width, height: Math.max(iconSize, fontSize) + 6 };
+  const fontSize = layout?.fontSize ?? 11;
+  const iconSize = layout?.iconSize ?? 10;
+  const horizontal = resolveInlineLegendOrient(layout);
+  const rowH = Math.max(iconSize, fontSize) + 8;
+
+  if (items.length === 0) {
+    const position = layout?.position ?? "bottom";
+    if (position === "left" || position === "right") {
+      return { width: LEGEND_FALLBACK_COL_W, height: rowH * 2 };
+    }
+    return { width: width - margin.left - margin.right, height: LEGEND_FALLBACK_ROW_H };
   }
-  return {
-    width: Math.max(...items.map((item) => item.label.length * 7 + iconSize + 24), 48),
-    height: items.length * (Math.max(iconSize, fontSize) + 8),
-  };
+
+  if (!horizontal) {
+    return {
+      width: Math.max(...items.map((item) => itemLabelWidth(item, fontSize, iconSize)), 48),
+      height: items.length * rowH,
+    };
+  }
+
+  const innerW = Math.max(0, width - margin.left - margin.right);
+  const totalW = items.reduce((sum, item) => sum + itemLabelWidth(item, fontSize, iconSize), 0);
+  if (innerW > 0 && totalW > innerW) {
+    const rows = Math.ceil(totalW / innerW);
+    return { width: innerW, height: rows * rowH + 4 };
+  }
+  return { width: totalW, height: rowH };
+}
+
+/** 按图例位置扩展绘图边距，避免内联图例压住坐标轴/序列 */
+export function reserveLegendMargin(
+  margin: ChartMargin,
+  width: number,
+  height: number,
+  layout: D3LegendLayout | undefined,
+  items: D3LegendItem[],
+): ChartMargin {
+  if (items.length === 0 && !layout) return margin;
+
+  const position = layout?.position ?? "bottom";
+  const size = estimateLegendBlockSize(items, layout, width, height, margin);
+  const pad = LEGEND_GAP;
+
+  switch (position) {
+    case "top":
+      return { ...margin, top: margin.top + size.height + pad };
+    case "bottom":
+      return { ...margin, bottom: margin.bottom + size.height + pad };
+    case "left":
+      return { ...margin, left: margin.left + size.width + pad };
+    case "right":
+      return { ...margin, right: margin.right + size.width + pad };
+    default:
+      return margin;
+  }
 }
 
 function legendOrigin(
@@ -76,31 +139,30 @@ function legendOrigin(
   iconSize: number,
   fontSize: number,
 ): { x: number; y: number } {
-  const position = opts.layout?.position ?? "top";
+  const position = opts.layout?.position ?? "bottom";
   const hAlign = opts.layout?.hAlign ?? "left";
   const vAlign = opts.layout?.vAlign ?? "top";
   const { width, height, margin } = opts;
-  const size = estimateLegendSize(items, horizontal, fontSize, iconSize);
+  const size = estimateLegendBlockSize(items, opts.layout, width, height, margin);
 
   let x = margin.left;
-  let y = 10;
+  let y = margin.top;
 
   switch (position) {
     case "bottom":
-      y = height - margin.bottom + 6;
+      y = height - margin.bottom + 4;
       break;
     case "left":
-      x = 8;
+      x = Math.max(4, (margin.left - size.width) / 2);
       y = margin.top;
       break;
     case "right":
-      x = width - margin.right - size.width;
+      x = width - margin.right + 4;
       y = margin.top;
       break;
     case "top":
     default:
-      x = margin.left;
-      y = 10;
+      y = Math.max(4, (margin.top - size.height) / 2);
       break;
   }
 
@@ -110,8 +172,9 @@ function legendOrigin(
   }
 
   if (position === "left" || position === "right") {
-    if (vAlign === "middle") y = Math.max(margin.top, (height - size.height) / 2);
-    if (vAlign === "bottom") y = Math.max(margin.top, height - margin.bottom - size.height);
+    const plotH = Math.max(0, height - margin.top - margin.bottom);
+    if (vAlign === "middle") y = margin.top + Math.max(0, (plotH - size.height) / 2);
+    if (vAlign === "bottom") y = margin.top + Math.max(0, plotH - size.height);
   }
 
   return { x, y };
@@ -163,7 +226,7 @@ export function layoutD3InlineLegend(
   if (items.length === 0) return;
 
   root.selectAll("g.vs-legend").remove();
-  const horizontal = (opts.layout?.orient ?? "horizontal") === "horizontal";
+  const horizontal = resolveInlineLegendOrient(opts.layout);
   const fontSize = opts.layout?.fontSize ?? opts.fontSize ?? 11;
   const textColor = opts.layout?.color ?? opts.theme.legendText;
   const defaultIconSize = opts.layout?.iconSize ?? 10;
@@ -184,7 +247,7 @@ export function layoutD3InlineLegend(
       .text(item.label);
 
     const rowH = Math.max(resolved.height, fontSize) + 8;
-    const rowW = item.label.length * 7 + iconW + 24;
+    const rowW = itemLabelWidth(item, fontSize, defaultIconSize);
     if (horizontal) {
       offsetX += rowW;
     } else {

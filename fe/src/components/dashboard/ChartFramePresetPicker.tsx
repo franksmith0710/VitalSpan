@@ -3,6 +3,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { HintTooltip } from "@/components/ui/hint-tooltip";
 import {
   CHART_FRAME_BORDER_PRESETS,
   chartFramePresetThumbStyle,
@@ -111,13 +112,12 @@ export function ChartFramePresetPicker({
             {CHART_FRAME_BORDER_PRESETS.map((preset) => {
               const active = preset.id === selected;
               return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  aria-label={preset.label}
-                  title={preset.label}
+                <HintTooltip key={preset.id} label={preset.label}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    aria-label={preset.label}
                   className={cn(
                     "group relative aspect-[4/3] overflow-hidden rounded-lg border transition-colors",
                     "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
@@ -144,6 +144,7 @@ export function ChartFramePresetPicker({
                     </span>
                   ) : null}
                 </button>
+                </HintTooltip>
               );
             })}
           </div>

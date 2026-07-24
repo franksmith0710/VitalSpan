@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link, useLocation } from "react-router";
 import { ChevronDown } from "lucide-react";
 import * as Collapsible from "@radix-ui/react-collapsible";
+import { HintTooltip } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import {
   ADMIN_CONTENT_MARGIN_COLLAPSED_CLASS,
@@ -249,15 +250,10 @@ function SidebarNavItem({
 
   const active = isActive(item.path);
 
-  return (
+  const link = (
     <Link
       to={item.path}
       target={item.target}
-      title={
-        item.badgeLabel
-          ? "面向数据治理闭环；普通分析请使用仪表板。"
-          : undefined
-      }
       className={cn(
         "group menu-item",
         active ? "menu-item-active" : "menu-item-inactive",
@@ -281,6 +277,16 @@ function SidebarNavItem({
       ) : null}
     </Link>
   );
+
+  if (item.badgeLabel) {
+    return (
+      <HintTooltip label="面向数据治理闭环；普通分析请使用仪表板。">
+        {link}
+      </HintTooltip>
+    );
+  }
+
+  return link;
 }
 
 function SidebarSection({

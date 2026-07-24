@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { INSPECTOR_SWITCH_SIZE } from "./inspectorCompact";
 import { resolveChartColors } from "@/lib/chartPalette";
 import { CHART_FONT_SIZE_OPTIONS, resolveChartFontSizeOptions } from "@/lib/chartFontSizes";
+import { HintTooltip, TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import { DE_SELECT } from "./dashboardInspectorUi";
 import { INSPECTOR_LABEL, INSPECTOR_SELECT, useInspectorSectionOpen } from "./inspectorCompact";
@@ -149,12 +150,9 @@ export function ChartPaletteSeriesColorRow({
   return (
     <div className="flex min-w-0 items-center gap-1">
       <ChartPaletteColorSwatch value={value} aria-label={`${name} 系列色`} onChange={onChange} />
-      <span
-        className="min-w-0 flex-1 truncate text-[12px] text-gray-600 dark:text-gray-300"
-        title={name}
-      >
+      <TruncateHint title={name} className="min-w-0 flex-1 text-[12px] text-gray-600 dark:text-gray-300">
         {name}
-      </span>
+      </TruncateHint>
     </div>
   );
 }
@@ -367,11 +365,11 @@ export function ChartTableColorGridCell({
     <div className="min-w-0">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <button
-            type="button"
-            aria-label={`${label}取色器`}
-            aria-expanded={open}
-            title={swatchTitle}
+          <HintTooltip label={swatchTitle}>
+            <button
+              type="button"
+              aria-label={`${label}取色器`}
+              aria-expanded={open}
             className={cn(
               "flex h-7 w-full min-w-0 items-center gap-1.5 rounded-md border bg-white px-1.5 text-left shadow-theme-xs transition-[border-color,box-shadow] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:bg-white/[0.03]",
               open
@@ -398,6 +396,7 @@ export function ChartTableColorGridCell({
               aria-hidden
             />
           </button>
+          </HintTooltip>
         </PopoverTrigger>
         <PopoverContent
           align="start"
@@ -414,13 +413,12 @@ export function ChartTableColorGridCell({
                 {items.map((item) => {
                   const selected = normalizeHexColor(localValue) === normalizeHexColor(item.color);
                   return (
-                    <button
-                      key={item.color}
-                      type="button"
-                      role="option"
-                      aria-selected={selected}
-                      title={item.label}
-                      aria-label={item.label}
+                    <HintTooltip key={item.color} label={item.label}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={selected}
+                        aria-label={item.label}
                       className={cn(
                         "flex size-7 items-center justify-center rounded-md transition-colors",
                         "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
@@ -430,8 +428,9 @@ export function ChartTableColorGridCell({
                       )}
                       onClick={() => scheduleCommit(item.color)}
                     >
-                      <ColorSwatchChip color={item.color} size="sm" selected={selected} />
-                    </button>
+                        <ColorSwatchChip color={item.color} size="sm" selected={selected} />
+                      </button>
+                    </HintTooltip>
                   );
                 })}
               </div>

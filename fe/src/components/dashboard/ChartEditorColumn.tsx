@@ -116,7 +116,7 @@ export function ChartEditorColumn({
         className="h-8 w-full rounded-md text-[11px] font-medium"
         onClick={() => void validate()}
         disabled={validating}
-        title="校验配置并刷新图表数据"
+        tooltip="校验配置并刷新图表数据"
       >
         {validating ? "更新中…" : "更新图表数据"}
       </Button>

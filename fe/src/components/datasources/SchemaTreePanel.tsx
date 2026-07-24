@@ -5,6 +5,7 @@ import { apiFetch } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import {
   filterTables,
@@ -73,9 +74,12 @@ function SchemaGroup({
           aria-hidden
         />
         <Database className="size-4 shrink-0 text-brand-500" aria-hidden />
-        <span className="min-w-0 flex-1 truncate font-medium text-gray-800 dark:text-white/90" title={schema}>
+        <TruncateHint
+          title={schema}
+          className="min-w-0 flex-1 font-medium text-gray-800 dark:text-white/90"
+        >
           {schema}
-        </span>
+        </TruncateHint>
         {isDefault ? (
           <Badge variant="light" color="primary" size="sm" className="shrink-0">
             当前库
@@ -108,9 +112,9 @@ function SchemaGroup({
                 )}
               >
                 <Table2 className="size-3.5 shrink-0 opacity-70" aria-hidden />
-                <span className="min-w-0 flex-1 truncate" title={table.name}>
+                <TruncateHint title={table.name} className="min-w-0 flex-1">
                   {table.name}
-                </span>
+                </TruncateHint>
               </button>
             );
           })}

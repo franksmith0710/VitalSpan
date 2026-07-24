@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import {
   Dialog,
   DialogContent,
@@ -576,9 +577,9 @@ export function RoleListPage() {
                   <SelectItem value="__none__">不设置</SelectItem>
                   {reportTemplates?.items.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
-                      <span className="truncate" title={t.name}>
+                      <TruncateHint title={t.name} className="truncate">
                         {t.name}
-                      </span>
+                      </TruncateHint>
                     </SelectItem>
                   ))}
                 </SelectContent>

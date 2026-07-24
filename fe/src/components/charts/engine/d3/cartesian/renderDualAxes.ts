@@ -5,8 +5,7 @@ import { normalizeCartesianData } from "@/components/charts/engine/d3/core/serie
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { drawHorizontalMarkLines } from "@/components/charts/engine/d3/core/markLines";
 import { attachCartesianDataZoom } from "@/components/charts/engine/d3/core/dataZoom";
-import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
-import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
+import { renderConfiguredInlineLegend, type D3LegendItem } from "@/components/charts/engine/d3/core/d3Legend";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
@@ -26,6 +25,48 @@ function normalizeDataset(
   const normalized = normalizeCartesianData(data, xField, yField);
   const categories = [...new Set(normalized.map((d) => String(d.__category__ ?? "")))];
   return { categories, points: normalized };
+}
+
+function buildDualAxesLegendItems(params: {
+  dualLine: boolean;
+  lineName: string;
+  colName: string;
+  lineColor: string;
+  columnColor: string;
+  columnSeriesField?: string;
+  columnData: D3CartesianDatum[];
+  colors: string[];
+}): D3LegendItem[] {
+  const {
+    dualLine,
+    lineName,
+    colName,
+    lineColor,
+    columnColor,
+    columnSeriesField,
+    columnData,
+    colors,
+  } = params;
+  const items: D3LegendItem[] = [
+    { label: lineName, color: lineColor, marker: "line", markerWidth: 14, markerHeight: 3 },
+  ];
+  if (dualLine) {
+    items.push({ label: colName, color: columnColor, marker: "line", markerWidth: 14, markerHeight: 3 });
+    return items;
+  }
+  if (columnSeriesField) {
+    const names = [
+      ...new Set(columnData.map((row) => String(row[columnSeriesField] ?? "")).filter(Boolean)),
+    ];
+    if (names.length > 1) {
+      for (const [index, name] of names.entries()) {
+        items.push({ label: name, color: colors[index % colors.length] ?? columnColor });
+      }
+      return items;
+    }
+  }
+  items.push({ label: colName, color: columnColor });
+  return items;
 }
 
 export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxesRenderConfig): () => void {
@@ -72,13 +113,28 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     geometryOptions[0].geometry === "line" && (geometryOptions[0].smooth ?? styleSmooth);
   const columnOpts = geometryOptions[1].geometry === "column" ? geometryOptions[1] : { geometry: "column" as const };
 
-  const margin = resolveCategoryCartesianLayout(width, height, categories, {
+  const lineColor = colors[0] ?? "#465fff";
+  const columnColor = colors[1] ?? "#12b76a";
+  const lineName = lineLabels?.[0] ?? "线";
+  const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
+  const legendItems = buildDualAxesLegendItems({
+    dualLine,
+    lineName,
+    colName,
+    lineColor,
+    columnColor,
+    columnSeriesField,
+    columnData,
+    colors,
+  });
+
+  const { margin, innerW, innerH } = resolveCategoryCartesianLayout(width, height, categories, {
     showLegend,
+    legendLayout,
+    legendItems,
     axisStyle,
     marginOverrides: { right: 56 },
-  }).margin;
-  const innerW = Math.max(0, width - margin.left - margin.right);
-  const innerH = Math.max(0, height - margin.top - margin.bottom);
+  });
 
   const x = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
   const lineMax = d3.max(lineSet.points, (d) => Number(d.__value__)) ?? 0;
@@ -87,8 +143,6 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
     : resolveDualAxesColumnMax(columnData, xField, columnYField, columnSeriesField, columnOpts);
   const yLeft = d3.scaleLinear().domain([0, lineMax]).nice().range([innerH, 0]);
   const yRight = d3.scaleLinear().domain([0, columnMax]).nice().range([innerH, 0]);
-  const lineColor = colors[0] ?? "#465fff";
-  const columnColor = colors[1] ?? "#12b76a";
   const curve = lineSmooth ? d3.curveMonotoneX : d3.curveLinear;
 
   const root = appendChartSvg(container, width, height);
@@ -289,20 +343,6 @@ export function renderD3DualAxesChart(container: HTMLElement, config: D3DualAxes
       .on("mouseleave", () => tooltip?.style("opacity", "0"));
   }
 
-  const lineName = lineLabels?.[0] ?? "线";
-  const colName = lineLabels?.[1] ?? (dualLine ? "线2" : "柱");
-  const legendItems: Array<{ label: string; color: string; marker?: "line" | "rect"; markerWidth?: number; markerHeight?: number }> = [
-    { label: lineName, color: lineColor, marker: "line", markerWidth: 14, markerHeight: 3 },
-  ];
-  if (dualLine) {
-    legendItems.push({ label: colName, color: columnColor, marker: "line", markerWidth: 14, markerHeight: 3 });
-  } else if (columnLegendItems.length > 1 && columnLegendItems[0]?.label) {
-    for (const item of columnLegendItems) {
-      legendItems.push({ label: item.label, color: item.color });
-    }
-  } else {
-    legendItems.push({ label: colName, color: columnColor });
-  }
   renderConfiguredInlineLegend(root, showLegend, legendItems, {
     width,
     height,

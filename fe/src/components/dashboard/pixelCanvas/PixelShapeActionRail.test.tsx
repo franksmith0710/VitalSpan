@@ -41,9 +41,8 @@ describe("PixelShapeActionRail", () => {
       />,
     );
 
-    expect(screen.getByRole("tooltip", { name: "查看数据" })).toBeInTheDocument();
-    expect(screen.getByRole("tooltip", { name: "放大" })).toBeInTheDocument();
-    expect(screen.getByRole("tooltip", { name: "更多操作" })).toBeInTheDocument();
+    await user.hover(screen.getByRole("button", { name: "查看数据" }));
+    expect(await screen.findByRole("tooltip", { name: "查看数据" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "查看数据" }));
     await user.click(screen.getByRole("button", { name: "放大" }));

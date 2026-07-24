@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import {
   Sheet,
   SheetContent,
@@ -47,21 +48,23 @@ export function EntityDetailSheet({
             <>
               <div>
                 <p className="text-theme-xs text-gray-500 dark:text-gray-400">tableFqn</p>
-                <p
-                  className="truncate font-mono text-theme-sm text-gray-800 dark:text-white/90"
+                <TruncateHint
                   title={row.tableFqn}
+                  as="p"
+                  className="font-mono text-theme-sm text-gray-800 dark:text-white/90"
                 >
                   {row.tableFqn}
-                </p>
+                </TruncateHint>
               </div>
               <div>
                 <p className="text-theme-xs text-gray-500 dark:text-gray-400">dataSourceId</p>
-                <p
-                  className="truncate font-mono text-theme-sm text-gray-800 dark:text-white/90"
+                <TruncateHint
                   title={row.dataSourceId}
+                  as="p"
+                  className="font-mono text-theme-sm text-gray-800 dark:text-white/90"
                 >
                   {row.dataSourceId}
-                </p>
+                </TruncateHint>
               </div>
               <div>
                 <p className="mb-2 text-theme-sm font-medium text-gray-700 dark:text-gray-300">字段列</p>
@@ -100,7 +103,7 @@ export function EntityDetailSheet({
           <Button
             type="button"
             disabled={!drillTargetId}
-            title={drillTargetId ? undefined : "请先在仪表板配置实体总览下钻目标"}
+            tooltip={drillTargetId ? undefined : "请先在仪表板配置实体总览下钻目标"}
             onClick={onDrill}
           >
             下钻至仪表板

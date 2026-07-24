@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { IconButton } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { HintTooltip } from "@/components/ui/hint-tooltip";
 import { FilterControl } from "./FilterWidgetControls";
 import { TabNestedDragRail } from "./TabNestedDragRail";
 import { WidgetInlineTitle } from "./WidgetInlineTitle";
@@ -153,17 +153,18 @@ export function FilterWidget({
     >
       {showGridChrome && mode === "edit" ? (
         <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 bg-gray-50/90 px-2 py-1.5 dark:border-gray-800 dark:bg-white/[0.04]">
-          <div
-            className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"
-            role="group"
-            aria-label="拖动以移动组件"
-            title="拖动以移动组件"
-          >
-            <GripVertical
-              className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600"
-              aria-hidden
-            />
-          </div>
+          <HintTooltip label="拖动以移动组件">
+            <div
+              className="dashboard-drag-handle flex shrink-0 cursor-grab items-center active:cursor-grabbing"
+              role="group"
+              aria-label="拖动以移动组件"
+            >
+              <GripVertical
+                className="size-3.5 shrink-0 text-gray-300 dark:text-gray-600"
+                aria-hidden
+              />
+            </div>
+          </HintTooltip>
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-white text-gray-500 shadow-theme-xs dark:bg-white/5 dark:text-gray-400">
             <FilterIcon className="size-3.5" aria-hidden />
           </span>

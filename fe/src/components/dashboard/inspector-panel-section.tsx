@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 
 /** Dashboard 编辑区右栏分段标题（窄栏 ~300px） */
 export function InspectorPanelSection({
@@ -23,12 +24,13 @@ export function InspectorPanelSection({
             {title}
           </h3>
           {description ? (
-            <p
-              className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400"
+            <TruncateHint
               title={description}
+              as="p"
+              className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400"
             >
               {description}
-            </p>
+            </TruncateHint>
           ) : null}
         </div>
         {action}

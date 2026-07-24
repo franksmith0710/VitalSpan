@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { depthExtrudePx, resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
+import { reserveLegendMargin } from "@/components/charts/engine/d3/core/d3Legend";
 import { resolveDatumColor } from "@/components/charts/engine/d3/core/series";
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
@@ -55,7 +56,13 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
 
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
-  const margin = radialMargin(showLegend);
+  const colorScale = d3.scaleOrdinal<string>().domain(data.map((d) => d.stage)).range(colors);
+  const funnelLegendItems = data.map((row, index) => ({
+    label: row.stage,
+    color: colorScale(row.stage) ?? colors[index % colors.length] ?? "#465fff",
+  }));
+  let margin = radialMargin(false);
+  margin = reserveLegendMargin(margin, width, height, legendLayout, showLegend ? funnelLegendItems : []);
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   const cx = margin.left + innerW / 2;
@@ -73,7 +80,6 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
 
   const g = root.append("g");
   const tooltip = showTooltip ? createTooltip(container, theme, config.tooltipPresentation) : null;
-  const colorScale = d3.scaleOrdinal<string>().domain(data.map((d) => d.stage)).range(colors);
 
   data.forEach((row, index) => {
     const topW = (row.number / maxVal) * maxWidth;
@@ -170,10 +176,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     renderConfiguredInlineLegend(
       root,
       true,
-      data.map((row, index) => ({
-        label: row.stage,
-        color: colorScale(row.stage) ?? colors[index % colors.length] ?? "#465fff",
-      })),
+      funnelLegendItems,
       { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
     );
   }

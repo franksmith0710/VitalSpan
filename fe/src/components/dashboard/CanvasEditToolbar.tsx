@@ -56,7 +56,6 @@ const ToolbarNavButton = forwardRef<
       type="button"
       disabled={disabled}
       onClick={onClick}
-      title={title ?? label}
       aria-label={label}
       data-testid={testId}
       {...props}

@@ -6,6 +6,7 @@ import { EmbedToolCard, EmbedToolShell } from "@/components/embed/embed-tool-she
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api";
@@ -154,9 +155,9 @@ export function EmbedSharePanel() {
                     size="sm"
                     className="gap-1 pr-1 font-mono text-theme-xs"
                   >
-                    <span className="max-w-[200px] truncate" title={o}>
+                    <TruncateHint title={o} className="max-w-[200px] font-mono text-theme-xs">
                       {o}
-                    </span>
+                    </TruncateHint>
                     <button
                       type="button"
                       className={cn(

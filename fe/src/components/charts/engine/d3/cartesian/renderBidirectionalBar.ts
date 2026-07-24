@@ -43,7 +43,16 @@ export function renderD3BidirectionalBarChart(
   const maxLeft = d3.max(data, (d) => Math.abs(d.left)) ?? 0;
   const maxRight = d3.max(data, (d) => Math.abs(d.right)) ?? 0;
   const maxVal = Math.max(maxLeft, maxRight, 1);
+  const leftColor = colors[0] ?? "#465fff";
+  const rightColor = colors[1] ?? "#12b76a";
+  const bidirectionalLegendItems = [
+    { label: "左", color: leftColor },
+    { label: "右", color: rightColor },
+  ];
   const { margin, innerW, innerH } = resolveHorizontalCategoryCartesianLayout(width, height, categories, {
+    showLegend,
+    legendLayout,
+    legendItems: bidirectionalLegendItems,
     marginOverrides: { left: 72, right: 72 },
   });
   const centerX = innerW / 2;
@@ -51,8 +60,6 @@ export function renderD3BidirectionalBarChart(
   const y = d3.scaleBand<string>().domain(categories).range([0, innerH]).padding(resolveBarBandPadding(barWidthRatio));
   const xLeft = d3.scaleLinear().domain([0, maxVal]).range([centerX, 0]);
   const xRight = d3.scaleLinear().domain([0, maxVal]).range([centerX, innerW]);
-  const leftColor = colors[0] ?? "#465fff";
-  const rightColor = colors[1] ?? "#12b76a";
 
   const root = appendChartSvg(container, width, height);
   const g = root.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
@@ -137,10 +144,7 @@ export function renderD3BidirectionalBarChart(
   renderConfiguredInlineLegend(
     root,
     showLegend,
-    [
-      { label: "左", color: leftColor },
-      { label: "右", color: rightColor },
-    ],
+    bidirectionalLegendItems,
     { width, height, margin, theme, layout: legendLayout, fontSize: legendLayout?.fontSize },
   );
 

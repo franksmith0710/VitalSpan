@@ -47,8 +47,8 @@ describe("threeGeoOrbit", () => {
       enablePan: true,
       enableZoom: true,
       enableRotate: true,
-      addEventListener: vi.fn((_: string, fn: () => void) => {
-        (controls as { _clamp?: () => void })._clamp = fn;
+      addEventListener: vi.fn((event: string, fn: () => void) => {
+        if (event === "end") (controls as { _clamp?: () => void })._clamp = fn;
       }),
       removeEventListener: vi.fn(),
       update: vi.fn(),

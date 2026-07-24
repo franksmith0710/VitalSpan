@@ -88,18 +88,27 @@ export function renderD3BarChart(container: HTMLElement, config: D3CartesianRend
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
   const useGrouped = hasMultiSeries && (isGroup || !isStack);
+  const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
+
+  const legendItems = hasMultiSeries
+    ? seriesNames.map((name) => ({
+        label: name || "系列",
+        color: colorScale(name) ?? colors[0] ?? theme.accent,
+      }))
+    : undefined;
 
   const scene = buildCartesianScene({
     container,
     width,
     height,
     showLegend: Boolean(showLegend && hasMultiSeries),
+    legendLayout,
+    legendItems,
     incremental,
     categories,
     axisStyle,
   });
   const { root, defs, g, plot, innerW, innerH, margin } = scene;
-  const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
   const keys = resolveSeriesKeys(seriesNames);
 
   const wideRows: WideRow[] = categories.map((cat) => {

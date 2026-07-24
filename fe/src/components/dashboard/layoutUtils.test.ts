@@ -8,10 +8,12 @@ import {
   getTabChildWidgets,
   getTopLevelPixelWidgets,
   insertPixelWidgetIntoTab,
+  moveWidget,
   reconcileTabPaneChildIds,
   resolvePixelTabsHost,
   normalizeWidgetIds,
   parkPixelWidgetInTab,
+  sortWidgets,
 } from "./layoutUtils";
 import type { PixelLayoutWidget } from "./dashboardLayoutContracts";
 
@@ -372,5 +374,30 @@ describe("layoutUtils tabs", () => {
       globalFilters: [],
     };
     expect(resolvePixelTabsHost(layout, "tabs", { x: 0, y: 0 })?.id).toBe("tabs");
+  });
+});
+
+describe("layoutUtils layer siblings", () => {
+  const canvasWidgets = [
+    { id: "a", type: "chart" as const, title: "A", colSpan: 6, rowSpan: 4, order: 0 },
+    { id: "b", type: "chart" as const, title: "B", colSpan: 6, rowSpan: 4, order: 1 },
+    { id: "c", type: "chart" as const, title: "C", colSpan: 6, rowSpan: 4, order: 2 },
+  ];
+
+  it("moveWidget only swaps among canvas-level siblings", () => {
+    const tabChild = {
+      id: "tab-child",
+      type: "chart" as const,
+      title: "Tab 图",
+      colSpan: 6,
+      rowSpan: 4,
+      order: 1,
+      parentTabsId: "tabs",
+      tabPaneId: "p1",
+    };
+    const widgets = [...canvasWidgets, tabChild];
+    const moved = moveWidget(widgets, "b", "up");
+    expect(sortWidgets(moved).filter((w) => !w.parentTabsId).map((w) => w.id)).toEqual(["b", "a", "c"]);
+    expect(moved.find((w) => w.id === "tab-child")?.order).toBe(1);
   });
 });

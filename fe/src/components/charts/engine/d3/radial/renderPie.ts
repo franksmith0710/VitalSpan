@@ -7,6 +7,7 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { renderConfiguredInlineLegend, type D3LegendItem } from "@/components/charts/engine/d3/core/d3Legend";
 import { computePieLayout, PIE_RADIUS_FRAC_DEFAULT } from "./pieLayout";
 
 const PIE_PAD = VCDS.pie.padAngle;
@@ -57,7 +58,16 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
 
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
-  const layout = computePieLayout(width, height, showLegend);
+  const colorScale = d3
+    .scaleOrdinal<string>()
+    .domain(data.map((d) => String(d[colorField] ?? "")))
+    .range(colors);
+  const legendItems: D3LegendItem[] = data.map((row) => ({
+    label: String(row[colorField] ?? ""),
+    color: colorScale(String(row[colorField] ?? "")) ?? colors[0] ?? "#465fff",
+  }));
+
+  const layout = computePieLayout(width, height, showLegend, legendLayout, legendItems);
   const legendFontSize = legendLayout?.fontSize ?? 11;
   const outerPercent = Number(options.__outerRadiusPercent ?? 70);
   const outerR = fractionRadius(options.radius, layout.maxR, outerPercent / 100);
@@ -80,11 +90,6 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
     .arc<d3.PieArcDatum<D3Datum>>()
     .innerRadius((outerR + innerR) / 2)
     .outerRadius((outerR + innerR) / 2);
-
-  const colorScale = d3
-    .scaleOrdinal<string>()
-    .domain(data.map((d) => String(d[colorField] ?? "")))
-    .range(colors);
 
   const root = d3
     .select(container)
@@ -175,9 +180,8 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
   }
 
   if (showLegend) {
-    const legend = root.append("g");
     if (layout.legendMode === "right" && layout.legendBox) {
-      legend.attr("transform", `translate(${layout.legendBox.x},${layout.legendBox.y})`);
+      const legend = root.append("g").attr("transform", `translate(${layout.legendBox.x},${layout.legendBox.y})`);
       let offsetY = 0;
       for (const row of data) {
         const label = String(row[colorField] ?? "");
@@ -194,22 +198,14 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
         offsetY += 18;
       }
     } else {
-      legend.attr("transform", `translate(${layout.margin.left},${layout.margin.top - 16})`);
-      let offsetX = 0;
-      for (const row of data) {
-        const label = String(row[colorField] ?? "");
-        const color = colorScale(label) ?? colors[0] ?? "#465fff";
-        const item = legend.append("g").attr("transform", `translate(${offsetX},0)`);
-        item.append("rect").attr("width", 10).attr("height", 10).attr("rx", 2).attr("fill", color);
-        item
-          .append("text")
-          .attr("x", 14)
-          .attr("y", 9)
-          .attr("fill", theme.legendText)
-          .style("font-size", `${legendFontSize}px`)
-          .text(label);
-        offsetX += label.length * 7 + 28;
-      }
+      renderConfiguredInlineLegend(root, true, legendItems, {
+        width,
+        height,
+        margin: layout.margin,
+        theme,
+        layout: legendLayout,
+        fontSize: legendFontSize,
+      });
     }
   }
 

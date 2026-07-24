@@ -51,8 +51,14 @@ export function renderD3WaterfallChart(container: HTMLElement, config: D3Waterfa
   const categories = segments.map((d) => d.type);
   const yMin = Math.min(0, d3.min(segments, (d) => Math.min(d.start, d.end)) ?? 0);
   const yMax = d3.max(segments, (d) => Math.max(d.start, d.end)) ?? 0;
+  const legendItems = [
+    { label: "增加", color: posColor },
+    { label: "减少", color: negColor },
+  ];
   const { margin, innerW, innerH } = resolveCategoryCartesianLayout(width, height, categories, {
     showLegend,
+    legendLayout,
+    legendItems,
     axisStyle,
   });
 

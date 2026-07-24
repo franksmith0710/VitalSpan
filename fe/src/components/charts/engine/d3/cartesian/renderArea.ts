@@ -15,6 +15,7 @@ import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLa
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { applyPathDepthShadow } from "@/components/charts/engine/d3/core/depthEngine";
 import { attachPointCategoryInteraction } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
+import { renderConfiguredInlineLegend } from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
 
@@ -61,18 +62,27 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
   const seriesGroups = groupSeries(normalized, seriesField);
   const seriesNames = seriesGroups.map((s) => s.name);
   const hasMultiSeries = seriesNames.length > 1 && Boolean(seriesField);
+  const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
+
+  const legendItems = hasMultiSeries
+    ? seriesNames.map((name) => ({
+        label: name || "系列",
+        color: colorScale(name) ?? colors[0] ?? theme.accent,
+      }))
+    : undefined;
 
   const scene = buildCartesianScene({
     container,
     width,
     height,
     showLegend: Boolean(showLegend && hasMultiSeries),
+    legendLayout: config.legendLayout,
+    legendItems,
     incremental,
     categories,
     axisStyle,
   });
-  const { root, defs, g, plot, innerW, innerH } = scene;
-  const colorScale = d3.scaleOrdinal<string>().domain(seriesNames).range(colors);
+  const { root, defs, g, plot, margin, innerW, innerH } = scene;
 
   const x = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
   const wideRows: WideRow[] = categories.map((cat) => {
@@ -195,6 +205,17 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
             value: pt?.__value__ ?? 0,
           };
         }),
+    });
+  }
+
+  if (showLegend && hasMultiSeries && legendItems) {
+    renderConfiguredInlineLegend(root, true, legendItems, {
+      width,
+      height,
+      margin,
+      theme,
+      layout: config.legendLayout,
+      fontSize: config.legendLayout?.fontSize,
     });
   }
 

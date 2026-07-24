@@ -220,7 +220,7 @@ export function EntityOverviewPage() {
                             size="sm"
                             className="focus-visible:ring-2"
                             disabled={!drillTargetId}
-                            title={drillTargetId ? undefined : "请先在仪表板配置实体总览下钻目标"}
+                            tooltip={drillTargetId ? undefined : "请先在仪表板配置实体总览下钻目标"}
                             onClick={() => {
                               if (drillTargetId) navigate(`/admin/dashboards/${drillTargetId}`);
                             }}

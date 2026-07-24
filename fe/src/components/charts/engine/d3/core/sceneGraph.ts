@@ -13,6 +13,11 @@ import {
 import { VCDS, getDepthVisual } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { depthExtrudePx } from "@/components/charts/engine/d3/core/depthEngine";
 import { cartesianMargin } from "@/components/charts/engine/d3/core/margin";
+import {
+  reserveLegendMargin,
+  type D3LegendItem,
+  type D3LegendLayout,
+} from "@/components/charts/engine/d3/core/d3Legend";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import type { ChartAxisStyle } from "@/lib/chartDeStyleBlocks";
@@ -29,11 +34,35 @@ export type CartesianScene = {
   clipId: string;
 };
 
+export type InlineLegendMarginOpts = {
+  showLegend?: boolean;
+  legendLayout?: D3LegendLayout;
+  legendItems?: D3LegendItem[];
+};
+
+function applyInlineLegendMargin(
+  margin: ReturnType<typeof cartesianMargin>,
+  width: number,
+  height: number,
+  legend?: InlineLegendMarginOpts,
+): ReturnType<typeof cartesianMargin> {
+  if (!legend?.showLegend) return margin;
+  return reserveLegendMargin(
+    margin,
+    width,
+    height,
+    legend.legendLayout,
+    legend.legendItems ?? [],
+  );
+}
+
 type BuildCartesianSceneOptions = {
   container: HTMLElement;
   width: number;
   height: number;
   showLegend: boolean;
+  legendLayout?: D3LegendLayout;
+  legendItems?: D3LegendItem[];
   clipId?: string;
   incremental?: boolean;
   /** 用于小组件下预估横轴旋转并加大 bottom 边距 */
@@ -78,11 +107,13 @@ export function resolveCategoryCartesianLayout(
   categories: string[],
   options?: {
     showLegend?: boolean;
+    legendLayout?: D3LegendLayout;
+    legendItems?: D3LegendItem[];
     axisStyle?: ChartAxisStyle;
     marginOverrides?: Partial<ReturnType<typeof cartesianMargin>>;
   },
 ): CategoryCartesianLayout {
-  let margin = cartesianMargin(options?.showLegend ?? false, options?.marginOverrides);
+  let margin = cartesianMargin(false, options?.marginOverrides);
   const provisionalInnerW = Math.max(0, width - margin.left - margin.right);
   const xLayout = planCategoryAxisLayout(
     categories,
@@ -93,6 +124,11 @@ export function resolveCategoryCartesianLayout(
     ...margin,
     bottom: margin.bottom + xLayout.extraBottom,
   };
+  margin = applyInlineLegendMargin(margin, width, height, {
+    showLegend: options?.showLegend,
+    legendLayout: options?.legendLayout,
+    legendItems: options?.legendItems,
+  });
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   return { margin, innerW, innerH, xLayout };
@@ -105,30 +141,45 @@ export function resolveHorizontalCategoryCartesianLayout(
   categories: string[],
   options?: {
     showLegend?: boolean;
+    legendLayout?: D3LegendLayout;
+    legendItems?: D3LegendItem[];
     marginOverrides?: Partial<ReturnType<typeof cartesianMargin>>;
   },
 ): HorizontalCategoryCartesianLayout {
-  const baseMargin = cartesianMargin(options?.showLegend ?? false, options?.marginOverrides);
+  const baseMargin = cartesianMargin(false, options?.marginOverrides);
   const provisionalInnerH = Math.max(0, height - baseMargin.top - baseMargin.bottom);
   const yLayout = resolveHorizontalCategoryAxisLayout(categories, provisionalInnerH);
-  const margin = {
+  let margin = {
     ...baseMargin,
     left: Math.max(baseMargin.left, yLayout.leftMargin, options?.marginOverrides?.left ?? 0),
   };
+  margin = applyInlineLegendMargin(margin, width, height, {
+    showLegend: options?.showLegend,
+    legendLayout: options?.legendLayout,
+    legendItems: options?.legendItems,
+  });
   const innerW = Math.max(0, width - margin.left - margin.right);
   const innerH = Math.max(0, height - margin.top - margin.bottom);
   return { margin, innerW, innerH, yLayout };
 }
 
 export function buildCartesianScene(opts: BuildCartesianSceneOptions): CartesianScene {
+  const legendOpts: InlineLegendMarginOpts = {
+    showLegend: opts.showLegend,
+    legendLayout: opts.legendLayout,
+    legendItems: opts.legendItems,
+  };
   const { margin, innerW, innerH } =
     opts.categories && opts.categories.length > 0
       ? resolveCategoryCartesianLayout(opts.width, opts.height, opts.categories, {
           showLegend: opts.showLegend,
+          legendLayout: opts.legendLayout,
+          legendItems: opts.legendItems,
           axisStyle: opts.axisStyle,
         })
       : (() => {
-          const baseMargin = cartesianMargin(opts.showLegend);
+          let baseMargin = cartesianMargin(false);
+          baseMargin = applyInlineLegendMargin(baseMargin, opts.width, opts.height, legendOpts);
           return {
             margin: baseMargin,
             innerW: Math.max(0, opts.width - baseMargin.left - baseMargin.right),

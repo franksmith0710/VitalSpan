@@ -1113,7 +1113,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 size="xs"
                 disabled={!canUndo}
                 onClick={undo}
-                title="回退到上一步编辑 (Ctrl+Z)"
+                tooltip="回退到上一步编辑 (Ctrl+Z)"
                 aria-label="上一步"
               >
                 <Undo2 aria-hidden />
@@ -1124,7 +1124,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
                 size="xs"
                 disabled={!canRedo}
                 onClick={redo}
-                title="前进到下一步编辑 (Ctrl+Shift+Z 或 Ctrl+Y)"
+                tooltip="前进到下一步编辑 (Ctrl+Shift+Z 或 Ctrl+Y)"
                 aria-label="下一步"
               >
                 <Redo2 aria-hidden />

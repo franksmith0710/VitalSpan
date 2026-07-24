@@ -56,7 +56,7 @@ export function ListBatchModeButton({
       size="xs"
       className={className}
       aria-label={active ? "完成批量操作" : "批量操作"}
-      title={active ? "完成" : "批量操作"}
+      tooltip={active ? "完成" : "批量操作"}
       onClick={onToggle}
     >
       {active ? <Check className="size-3.5" aria-hidden /> : <ListChecks className="size-3.5" aria-hidden />}

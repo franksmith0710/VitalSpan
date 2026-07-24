@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 
 type EmbedToolShellProps = {
@@ -27,12 +28,13 @@ export function EmbedToolShell({
         <div className="grid min-w-0 flex-1 gap-1.5">
           <h1 className="truncate text-title-sm font-semibold text-gray-900 dark:text-white">{title}</h1>
           {description ? (
-            <p
-              className="truncate text-theme-sm text-gray-500 dark:text-gray-400"
+            <TruncateHint
               title={description}
+              as="p"
+              className="text-theme-sm text-gray-500 dark:text-gray-400"
             >
               {description}
-            </p>
+            </TruncateHint>
           ) : null}
         </div>
         <Button asChild variant="outline" size="sm" className="shrink-0">
@@ -70,9 +72,13 @@ export function EmbedToolCard({
         <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
           <h2 className="truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">{title}</h2>
           {description ? (
-            <p className="mt-1 truncate text-theme-xs text-gray-500 dark:text-gray-400" title={description}>
+            <TruncateHint
+              title={description}
+              as="p"
+              className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400"
+            >
               {description}
-            </p>
+            </TruncateHint>
           ) : null}
         </div>
       ) : null}
